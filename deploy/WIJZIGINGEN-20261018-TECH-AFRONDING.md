@@ -102,7 +102,7 @@ band («Подивитися як користувач») met e-mail, reden en d
 met wie, waarom, hoe lang, wat zichtbaar en wat nooit; «Дозволити» vraagt een verse **sterke** bevestiging (passkey/TOTP/herstelcode,
 daarna verbruikt), optioneel «ook acties». Daarna toont het tabblad van de beheerder de site van de gebruiker onder een rode band
 «Ви переглядаєте як … · залишилось mm:ss · Завершити» (gestreept met acties). Gebruiker: rode pil + «Хто зараз має доступ до мого
-акаунта» (`#wie-heeft-toegang`) met «Завершити негайно» en het journaal van de sessie.
+облікового запису» (`#wie-heeft-toegang`) met «Завершити негайно» en het journaal van de sessie.
 **Hoe (geen cookie of token van de gebruiker):** elke same-origin `/api/…`-fetch in dat tabblad gaat via `POST /api/impersonatie/aanroep`
 met de eigen sessie van de beheerder; de server controleert per aanroep de rij (actief, eind_op, dezelfde beheerder, hetzelfde tabblad,
 technisch profiel loopt) en voert de route in-process uit als de gebruiker (`site-dispatch.roepAlsImpersonatie`). Drie hekken «alleen
@@ -137,11 +137,11 @@ raakt de gewijzigde gedelegeerde tak niet — niet tegen een schone kopie nagega
 - **Service worker:** `/assets/tech/` wordt nooit onderschept of gecachet (één regel; `VERSION` niet verhoogd — dat doet A bij de volgende versie).
 - **Frontend:** `src/tech/tech-bundel.tsx` → `lazyTech()` (bij 404: status vernieuwen → nieuwe cookie als de activering hier nog loopt → één keer opnieuw) en `TechBundelGrens` (melding «Технічні модулі не завантажено … оновіть сторінку» i.p.v. witte pagina). Gebruikt voor AdminConsoleView, Terminal, Vlaggen, SSH, Віддалений стіл. `preloadCurrentView` laadt de beheerbundel niet meer vooraf (dat zou nu 404 geven). **Nieuwe beheerpagina's: laden via `lazyTech`** (de eenheidstest controleert dat).
 
-### G2 — «Сервер (для всіх) / Цей акаунт»
+### G2 — «Сервер (для всіх) / Цей обліковий запис»
 - **Zuiver** (`shared/diagnostiek-account.ts`): 7 diensten (Пошта, Календар, Drive, GitHub, ШІ, Пристрої, Мої налаштування), koppeling dienst → servercontroles, beoordeling uit feiten (alleen tellingen/ja-nee), conclusie `server` (iedereen) / `account` (alleen dit account) / `beide`, advies uk/nl per code.
 - **Backend** (`backend/diagnostiek-account.ts`, routes in `backend/admin-diagnostiek.ts`): Google-status per dienst + bij «Перевірити» of Google een toegangstoken uitgeeft (token nooit bewaard/teruggegeven; Google-foutteksten worden nooit een code), postvakken, wachtrij, GitHub gekoppeld (niet welke sleutel), AI-koppelingen, apparaten, accountstatus. Opslag `app.diagnostiek_account_uitslagen` (30 d). `POST /api/owner/admin/diagnostiek/account` (eigenaar of `diagnose.lezen`; eigen account of `gebruikerId`; beide kolommen; audit `diag.account.bekeken|uitgevoerd`). `POST /api/owner/diagnostiek/mijn-diensten` (iedere goedgekeurde gebruiker; ALLEEN eigen account, `gebruikerId` genegeerd, geen serverkolom; 10/10 min; audit `diag.account.zelf`).
 - **Planning:** serverronde elke 15 min (`cron.json` «diagnostiek-server» → `diagnostiekServerCron` → dezelfde `serverRonde` als de knop; `deploy/mijn-ruimte-diagnostiek-server.timer`, in `TIMERS` van `installeer-app.sh`). Account: op verzoek, met geschiedenis.
-- **UI:** Діагностика → tab «Для всіх / цей акаунт» (eigen account) en dezelfde tabel bij «Скарга користувача» (gekozen gebruiker). Налаштування → Акаунт → «Стан моїх служб» (kolom «Мій акаунт» + advies). Op ≤ 560 px worden rijen kaarten (390 px zonder horizontaal scrollen); kleuren uit het thema.
+- **UI:** Діагностика → tab «Для всіх / цей обліковий запис» (eigen account) en dezelfde tabel bij «Скарга користувача» (gekozen gebruiker). Налаштування → Обліковий запис → «Стан моїх служб» (kolom «Мій обліковий запис» + advies). Op ≤ 560 px worden rijen kaarten (390 px zonder horizontaal scrollen); kleuren uit het thema.
 
 ### Tests
 - `tests/eenheid/tech-assets.test.ts` 34/34: indeling, bouwcontrole (goed/slecht/leeg), SW, frontend-aansluiting (alle tech-imports via `lazyTech`), en de ECHTE server tegen PG: zonder sessie 404, verzonnen sleutel 404, sessie zonder tech 404, actieve activering 200 met `private, no-store` + `Vary: Cookie`, alleen hash in DB, geen nieuwe sleutel per status, ander tabblad wist niets, na beëindigen/verlopen 404, cookie gewist.
@@ -188,7 +188,7 @@ Tests: `ssh-ca-beheer` (echte sshd, echte passkey-hulp, ssh-keygen/KRL; 34), `ss
 ## N — Meldingen: gebruiker los van beheer; paneel in de technische band; geluid/pop-up per type (geen migratie)
 
 Verzoek eigenaar: «панель Сповіщення має бути розділена для користувача від адмін сповіщень … лише одна графа … можна обеззвучити,
-вимкнути спливаючі сповіщення для будь-якого типу».
+вимкнути спливні сповіщення для будь-якого типу».
 
 - **Eén classificatie** (`shared/melding-typen.ts` + `shared/melding-soorten.ts`): elke soort (kind) → type (10 persoonlijk, 13 technisch),
   ernst (kritiek/belangrijk/info) en voor technische soorten de vereiste mogelijkheid (`users.manage`, `diagnose.lezen`, `journaal.lezen`,
@@ -218,7 +218,7 @@ echt geteld geluid/pop-up, activeren en terug, zonder profiel; uk/nl, licht/donk
 ## T · Technisch profiel over tabbladen, lijst «⋯», extensie 0.4.2 (18.10.2026)
 
 **1. Profiel valt niet meer weg in een nieuw tabblad** (migratie **0071** `tech_activatie_erven`: `ouder_id`, `herkomst` eigen/geerfd/gedeeld).
-- Open activering («до виходу з акаунта/профілю») = hele browsersessie: elk tabblad van dezelfde ankersessie krijgt bij zijn eerste
+- Open activering («до виходу з облікового запису/профілю») = hele browsersessie: elk tabblad van dezelfde ankersessie krijgt bij zijn eerste
   `/api/owner/tech/status` een eigen kopie (`ervenOpen`, zonder stap-op, logboek `owner.tech.geerfd` «успадковано вкладкою»). Andere
   sessie/browser: nooit. Een tabblad waarvan de eigen activering ná het begin van de open activering eindigde, erft niet stil opnieuw.
 - Op tijd = eigen tabblad. Nieuw tabblad geopend vanuit een technisch tabblad (link in nieuw tabblad, middelklik, `window.open`): eenmalig
@@ -238,8 +238,8 @@ korte uitleg per knop, zoekveld (focus bij openen), ↑/↓/Home/End/Enter, Esc 
 (`open_in_tab`), `ownPage` eiste `!sender.tab` → `set-diag`/`self-test` geweigerd (schakelaar sprong terug, «Тест» brak). Nu: eigen
 id + `chrome-extension://<id>/`-adres (content scripts blijven geweigerd); opties melden mislukken. Site: `mcpIngang(…, extensie)`
 laat `agents#extension` / `?extension=welcome|update` staan; met profiel-uit toont `ExtensieTechAanbod` «Увімкнути технічний профіль
-(і підключити)» → activeervenster (stap-op), zelfde pagina; daarna koppelt/zet de installatiehulp zelf aan (eenmalig, `mr.ext.doorgaan`).
-Zonder technisch profiel: zoals vroeger naar ai.*/verbindingen. Popup: «Увімкнути технічний профіль і підключити». Pakket opnieuw bouwen
+(і під'єднати)» → activeervenster (stap-op), zelfde pagina; daarna koppelt/zet de installatiehulp zelf aan (eenmalig, `mr.ext.doorgaan`).
+Zonder technisch profiel: zoals vroeger naar ai.*/verbindingen. Popup: «Увімкнути технічний профіль і під'єднати». Pakket opnieuw bouwen
 (`scripts/build-extension.mjs`) bij de volgende uitrol.
 
 Tests: nieuw `tech-tabbladen` 31 (echte routes + PG), `extensie-opties` 22 (echte background.js met nep-chrome; oud gedrag nagebootst);
@@ -281,8 +281,8 @@ Zonder profiel/activering/passkey: knop uit + uitleg + actie (`WEIGER_UITLEG` in
 
 **Status altijd actueel zonder herladen.** Extensie duwt bij elke wijziging de publieke status naar eigen pagina's en naar open tabbladen
 (bridge → `window.postMessage`, alleen whitelist-velden, nooit sleutels/tokens); de site combineert dat met `GET /api/owner/agents/extensie-status`
-(elke 5 s zolang zichtbaar) — `src/extensie/extensie-live.ts`. Staten: «Не підключено до сайту», «Очікування Passkey», «Доступ відкрито»,
-«ШІ-агент підключено» (AI-opdracht in de laatste 120 s of lokale agent verbonden). Ook als regel in het «⋯»-menu van de technische band.
+(elke 5 s zolang zichtbaar) — `src/extensie/extensie-live.ts`. Staten: «Не під'єднано до сайту», «Очікування Passkey», «Доступ відкрито»,
+«ШІ-агент під'єднано» (AI-opdracht in de laatste 120 s of lokale agent verbonden). Ook als regel in het «⋯»-menu van de technische band.
 
 **Verzamelaar (alleen ontgrendeld én host ∈ domeinen).** Netwerk via `chrome.webRequest` (methode, pad zonder query, status, ms, type; nooit headers
 of bodies); console/uitzonderingen/LCP/CLS/long tasks via collector.js (passief tot de brug hem aanzet); DOM/prestaties/beveiliging via de nieuwe
@@ -309,7 +309,7 @@ repareerde: accountclaim na het wekken van de service worker).
 **Tests.** extensie-vergrendeling 108, extensie-validatie 11, extensie-verzamelaar 27, extensie-ui 67, extensie-native 56, extensie-ontgrendeling 52,
 extensie-ontgrendeling-crypto 12 (vaste testvector server = extensie), extensie-site 71, browser-extensie 21, browser-keten 41.
 
-## Y · 19.10.2026 — extensie 0.6 met twee profielen, hub «Підключення ШІ», «Доступи», contacten, mobiele mail (migraties 0073, 0074)
+## Y · 19.10.2026 — extensie 0.6 met twee profielen, hub «Під'єднання ШІ», «Доступи», contacten, mobiele mail (migraties 0073, 0074)
 
 **Waarom.** 0.5 maakte de extensie alleen-technisch: zonder tech-profiel verdween «Розширення браузера» van mcp.*/agents#apparaten/extensie.
 Nu: één extensie, twee profielen; de aangemelde sessie op de site is de enige bron van gezag (pakket 20261018-184832 vervalt, nooit geïnstalleerd).
@@ -328,7 +328,7 @@ prive-slot, een technische alleen het technische (nooit kruislings).
 `/api/owner/agents/extensie-beheer` (+ `/beleid`, `/intrekken`, `/verlengen`) voor eigenaar of activering met users.manage; eigenaar onaantastbaar
 voor anderen; nieuw beleid trekt wat erbuiten valt meteen in; melding aan de gebruiker; alles in audit.
 
-**Hub «Підключення ШІ» (mcp.*/agents).** Tabbladen Огляд · Конектори · Підключені ШІ · Розширення браузера · Пристрої · Токени · Доступи ·
+**Hub «Під'єднання ШІ» (mcp.*/agents).** Tabbladen Огляд · Конектори · Під'єднані ШІ · Розширення браузера · Пристрої · Токени · Доступи ·
 Технічне (alleen tech-modus) · Журнал. Oude adressen (#apparaten/extensie, #extension, mcp.*/verbindingen, ai.*/verbindingen) leiden hierheen;
 niets verwijderd. Огляд: matrix «Що через який спосіб» uit echte gegevens. Доступи: «Мої доступи» (alles wat ik gaf, per methode: intrekken,
 verlengen, beperken) en voor beheerders in tech-modus «Усі користувачі» (beleid, intrekken, verlengen).
@@ -355,9 +355,9 @@ tweede account (Google) als Учасник via «Додати інший обл�
 **Kritiek, gerepareerd.** Mail: iframe-hoogtelus (mail-body-passend: offsetHeight i.p.v. scrollHeight, frame niet observeren); bijlagevoorbeeld onder het
 iframe + Esc; bijlagekaarten zonder naam; contacten-melding onder de zijbalk; scan vals «Бракує дозволу Gmail» bij 502 (gmailFoutVan); vals «Підозрілий»
 voor subdomein van hetzelfde organisatiedomein; «Відкрити листи від нього» zonder filter; «Зняти позначку»; NL-codes in historie; thread zonder laatste
-antwoord; Drive-zoeken per woord; cloud-viewer onder zijbalk. Gebruiker: Пошта → Акаунти deed niets (MailAccountsHub zonder onConnect) → Google-OAuth
+antwoord; Drive-zoeken per woord; cloud-viewer onder zijbalk. Gebruiker: Пошта → Облікові записи deed niets (MailAccountsHub zonder onConnect) → Google-OAuth
 start; «Сесія закінчилася» voor Учасник op mcp.* → nieuwe code API_RECHT_VEREIST met uitleg, geen polling, geen «Стоп»; entitlement «Доступ до ШІ-мосту»
-nu in admin/access; welkomstkaart «Що далі» na goedkeuring; pending account ziet alleen het modaal; extensie «прив'язане до іншого акаунта»-kaart;
+nu in admin/access; welkomstkaart «Що далі» na goedkeuring; pending account ziet alleen het modaal; extensie «прив'язане до іншого облікового запису»-kaart;
 accountwissel beëindigt het tech-profiel van het vorige account. Noodstop «Стоп» trekt nu ook alle MCP-connectorverbindingen en tokens in (vroeger
 bleven Claude-tools in beide ruimtes werken). Admin-journaal toonde alleen service='admin' (sessieveld als filter) → filterveld `dienst`.
 
@@ -411,7 +411,7 @@ gewone regels in het «⋯»-menu van de sectiekop geworden; in de zijbalk blijf
 
 **6. github.*/accounts — koppelkaart.** Echte koppelkaart met logo uit het merkregister, status uit de server («niet gekoppeld / @gebruiker / token
 verlopen / door GitHub geweigerd»), rechtenlijst, veld **Server-URL** (`https://api.githubcopilot.com/mcp/x/all`) met kopiëren en https-validatie, en
-«Підключити» dat naar de kluis leidt — de enige weg die de server echt heeft. OAuth, GitHub App en de externe MCP-server staan er eerlijk bij als «nog
+«Під'єднати» dat naar de kluis leidt — de enige weg die de server echt heeft. OAuth, GitHub App en de externe MCP-server staan er eerlijk bij als «nog
 niet gebouwd», zonder knop. Nieuw: `POST /api/owner/github/koppeling` (geeft nooit het token terug).
 
 **7 + 8. Extensie 0.6.1.** Oorzaak van «Chrome не надав дозвіл налагоджувача» gevonden: Chrome accepteert `debugger` niet als optioneel recht — het
@@ -502,7 +502,7 @@ Nieuw in deze ronde: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `me
 - Знайдено й другу ваду: `connectors-tools.listTools()` наприкінці підміняє внутрішні `browser_*` на devtools-псевдоніми
   (`take_snapshot`, `click`, …), а `v2Lijst` шукав базу за ВНУТРІШНЬОЮ назвою — і не знаходив. Через це в конекторі v2 бракувало
   більшості браузерних інструментів **в обох** просторах; видно було лише ті, що не мають псевдоніма.
-- Додатково: нова вкладка успадковувала технічний профіль (міграція 0071), тож за замовчуванням усі вкладки були технічними і
+- Додатково: нова вкладка успадковувала технічний профіль (міграція 0071), тож типово усі вкладки були технічними і
   користувацький ШІ отримував відмову скрізь.
 
 **Зроблено.** Браузерні опції отримали `kanten: BEIDE`; v2 бере перелік із `aliassen: false`; нова чиста порота
@@ -510,7 +510,7 @@ Nieuw in deze ronde: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `me
 можливість → хост → профіль вкладки, плюс дозвіл налагоджувача) і кожна дає власне пояснення з кроками, а не «403». Відмова без
 дозволу Chrome прямо називає пакет «diagnose» і дає п'ять кроків. Технічні дії браузера пишуться в журнал як `owner.tech.browser`.
 Успадкування профілю новими вкладками стало керованим (міграція **0080**, `app.tech_profielen.erven_nieuwe_tabbladen`) і
-**за замовчуванням вимкнене** — нові вкладки тепер користувацькі.
+**типово вимкнене** — нові вкладки тепер користувацькі.
 
 ### Один конектор на агента, права за поточним станом
 
@@ -519,15 +519,15 @@ Nieuw in deze ronde: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `me
 - Шляхи: `AGENT_PAD_PREFIX = ''` → `mcp.tarasevych.com/claude`, `/gpt`, `/grok`, `/gemini`, `/copilot`, `/cursor`. Старі адреси
   (`/ai/<agent>` і їхні метадані) відповідають **308** (зберігає метод і тіло — 301/302 перетворили б POST на GET і зламали б MCP),
   і далі **читаються** в `slugUitResource`, щоб токени, видані з `resource=…/ai/claude`, лишились чинними.
-- `/mcp` **свідомо не редіректиться**: він обслуговує гранти без агента й токени `tvh_…`, яким адреса агента відмовила б 401. Він
+- `/mcp` **свідомо не перенаправляється**: він обслуговує гранти без агента й токени `tvh_…`, яким адреса агента відмовила б 401. Він
   отримав той самий живий розрахунок і позначений як перехідний; у `deploy/CONNECTOR-EEN-PAD.md` є запити, за якими видно, коли його
   можна прибрати.
 - Нова `effectieveRuimte(userId, rol, tabContext)` у `backend/ai-ruimte-poort.ts`: не власник → `prive`; власник без активного
   технічного профілю → `prive`; інакше `technisch`. Виклик від ШІ приходить **без вкладки**, тому додано `lopendeActivatie(userId)` —
-  «чи є зараз будь-яка активація цього акаунта» (з вкладкою працює старий, вужчий шлях).
+  «чи є зараз будь-яка активація цього облікового запису» (з вкладкою працює старий, вужчий шлях).
 - Фільтрація стоїть і на `tools/list`, і ще раз на `tools/call` — **відмова, а не тихе зниження до приватного простору**: інакше
   `browser_*_beheer` або `machine_exec` виконалися б на користувацьких вкладках. Вийшов із техпрофілю → технічні інструменти зникають
-  посеред сесії; увімкнув назад → повертаються без перепідключення.
+  посеред сесії; увімкнув назад → повертаються без перепід'єднання.
 - Згода спрощена: питання «приватний чи технічний» немає, вимога активного техпрофілю на момент згоди знята (лишилась вимога
   власника), жовте попередження «відкрийте в технічному просторі» прибране. V2-грант завжди пишеться з `ruimte='prive'`; що дозволено,
   живе в `connector_v2_rechten`, що діє зараз — рахує `effectieveRuimte`.
@@ -537,7 +537,7 @@ Nieuw in deze ronde: `ut-tabs-pijlen-20261019`, `menu-per-account-20261019`, `me
 ### Двосторонній календар (міграція 0076)
 
 Google Calendar тепер і читання, і запис: області `calendar.readonly` + `calendar.events`, **доповнення згоди** для тих, хто
-підключився лише на читання (окремий крок «Розширити доступ», `include_granted_scopes=true` — наявне підключення зберігається).
+під'єднався лише на читання (окремий крок «Розширити доступ», `include_granted_scopes=true` — наявне під'єднання зберігається).
 Створення, зміна, перенесення (`events.move`), видалення, учасники, RSVP. Конфлікти версій через `If-Match`/etag: 412 від Google →
 нічого не перезаписуємо, показуємо обидві версії поруч, «перезаписати все одно» — окрема свідома кнопка. Ідемпотентність: кожен запис
 несе ключ, id події виводиться детерміновано, два одночасні однакові запити дають одну подію. Синхронізація інкрементальна по кожному
@@ -545,16 +545,16 @@ Google Calendar тепер і читання, і запис: області `cal
 ICS-підписка — справжній завантажувач (лише https, DNS-pinning, тайм-аут, межа 4 МБ, `If-None-Match`, розклад від 15 хв), тож
 Outlook і Proton працюють через опубліковане посилання вже сьогодні. CalDAV — **читання** (PROPFIND/REPORT, пароль застосунку
 шифрований); запис не зроблено, і перелік того, чого бракує, їде у відповіді маршруту, на сторінці й на картці. ШІ отримав шість
-інструментів календаря, усі з підтвердженням власника; `calendar.write` і `calendar.delete` **вимкнені за замовчуванням**.
+інструментів календаря, усі з підтвердженням власника; `calendar.write` і `calendar.delete` **вимкнені типово**.
 
 ### GitHub: OAuth і GitHub App (міграція 0077)
 
 Повний OAuth web application flow: `state` зберігається лише як SHA-256, прив'язаний до користувача, сесії, хоста й часу (10 хв),
 видаляється при першому читанні, плюс PKCE S256; зворотний маршрут приймається лише на хості github цієї інсталяції; обмін коду,
-перевірка областей, оновлення через refresh token, відключення з реальним відкликанням (`DELETE /applications/{client_id}/token`).
-GitHub App: App ID + приватний ключ зі сховища → підписаний JWT RS256 → токен встановлення з оновленням, перелік установок і
+перевірка областей, оновлення через refresh token, вимкнення з реальним відкликанням (`DELETE /applications/{client_id}/token`).
+GitHub App: App ID + приватний ключ зі сховища → підписаний JWT RS256 → токен встановлення з оновленням, перелік встановлень і
 репозиторіїв. Єдина точка `backend/github-toegang.ts` сама обирає шлях **OAuth → GitHub App → PAT** і оновлює прострочене, тож решта
-коду не змінювалась. Значення `Homepage URL` і `Authorization callback URL` рахуються з домену інсталяції — у цих файлах немає жодної
+коду не змінювалась. Значення `Homepage URL` і `Authorization callback URL` враховуються з домену інсталяції — у цих файлах немає жодної
 згадки tarasevych.com (це перевіряє тест), бо платформа BYOS.
 
 ### MCP-клієнт на сервері (міграція 0078)
@@ -563,18 +563,18 @@ GitHub App: App ID + приватний ключ зі сховища → під�
 `initialize` з узгодженням версії протоколу, `tools/list` з пагінацією, `tools/call`, `resources`, `prompts`, повідомлення про зміну
 переліку, коректне закриття сесії. Усі вихідні запити — лише через `backend/veilige-fetch.ts` (додано потокову версію `pinnedStream`
 із тими самими гарантіями); білий список хостів веде власник, **порожній список = нікуди**. Межі: 1 МіБ, 20 с на запит, 60 с на
-сесію, 30 викликів/хв, 10 підключень, 150 інструментів. Описи чужих інструментів — **недовірені дані**: чистяться і подаються ШІ як
+сесію, 30 викликів/хв, 10 під'єднань, 150 інструментів. Описи чужих інструментів — **недовірені дані**: чистяться і подаються ШІ як
 `<untrusted_mcp_tool>`; усе, що не `readOnlyHint`, завжди чекає підтвердження власника. Нова вкладка «Зовнішні MCP» на `mcp.*/agents`.
 OAuth 2.1 з динамічною реєстрацією — **не зроблено**, перелік із п'яти пунктів показано без кнопки; MCP-сервер GitHub поки
-підключається персональним токеном.
+під'єднується персональним токеном.
 
 ### Тема й палітра — на обліковий запис і на профіль
 
 Останній шматок пунктів 2 і 4. Вигляд більше не лежить в одному спільному cookie: тема, палітра, авто-перемикання, звук, позиція
-дзвіночка й останні шляхи — на `<акаунт>|<простір>`; мова й фото — на акаунт (та сама людина читає однією мовою в обох профілях).
+дзвіночка й останні шляхи — на `<обліковий запис>|<простір>`; мова й фото — на обліковий запис (та сама людина читає однією мовою в обох профілях).
 Сервер — джерело істини (`weergave` у `owner_ui_preferences_v1`, маршрути з тією самою брамою `ownerMenuRuimte`: технічний запис без
 активного профілю → 403, і для власника теж), cookie лишається кешем першого кадру. Наявне спільне значення мігрує рівно в **активний
-акаунт у користувацькому просторі** — не роздається всім і не йде в техпрофіль. Технічний профіль має власний стандарт (темна тема,
+обліковий запис у користувацькому просторі** — не роздається всім і не йде в техпрофіль. Технічний профіль має власний стандарт (темна тема,
 палітра «grifel»), який власник може змінити. Уперше з'явилася межа розміру cookie (3000 символів, ≤4 простори) з розумним
 обрізанням; раніше межі не було взагалі.
 
@@ -584,44 +584,44 @@ OAuth 2.1 з динамічною реєстрацією — **не зробле
 
 Власник поскаржився на три речі одночасно. Кожну відтворено, причину знайдено в коді, виправлено й покрито тестом.
 
-**1. «Застрягло на циклі» при підключенні конектора.** Відтворено в його Chrome: на `mcp.tarasevych.com/agenten#technisch`, де технічний профіль **був активний**
+**1. «Застрягло на циклі» при під'єднанні конектора.** Відтворено в його Chrome: на `mcp.tarasevych.com/agenten#technisch`, де технічний профіль **був активний**
 (`<meta name="mjn-profiel" content="technisch">`, смуга [ТЕХ]), вікно згоди показувало жовтий блок «Двері сервера — це технічний простір. У приватному просторі
 цей запит дозволити не можна» і посилання «Відкрити в технічному просторі» → `/verbindingen?consent=mrd_…`. Перехід повертав назад на `/agenten#technisch`
 з тим самим вікном. Нескінченне коло. Сервер при цьому не заперечував: `POST …/consent/info` відповідав **200** з `soort:'deur'`, `ruimte:'technisch'`.
 
 Причина: `McpConsentModal` рахував простір **з адреси сторінки** (`McpServiceView`: `isBeheerPagina('mcp', section) ? 'technisch' : 'prive'`), а окремої сторінки
-«Технічні підключення» більше немає — її злито в хаб «Підключення ШІ» (вкладка `#technisch`). Тому вікно завжди вважало себе приватним, а посилання вело на
+«Технічні під'єднання» більше немає — її злито в хаб «Під'єднання ШІ» (вкладка `#technisch`). Тому вікно завжди вважало себе приватним, а посилання вело на
 адресу, яка редиректить назад. Це залишок старої моделі: 20.10 сам конектор уже перевели на живий стан (`effectieveRuimte`), а вікно — ні.
 
-Виправлено: простір рахується лише з живого `techActief()`; замість посилання — **дія** «Увімкнути технічний профіль» (той самий потік, що в технічній смузі),
+Виправлено: простір враховується лише з живого `techActief()`; замість посилання — **дія** «Увімкнути технічний профіль» (той самий потік, що в технічній смузі),
 після якої вікно саме перемальовується на «Дозволити» без переходу й без втрати запиту. Заразом: `?consent=` більше не губиться при переході
 (`canonicalNavigationUrl` зрізав querystring), а `/verbindingen` зникло з посилань у `backend/mcp-connector.ts` і `deploy/mcp/server.mjs`.
 
 **2. «Розлогінюється при перемиканні вкладки».** Причина виявилась **на сервері**, а не в браузері. У `ownerRequireSessionKern` вкладка без власного рядка
-`owner_tab_sessions` вважалася відмовленою, якщо в браузері жила хоч одна вкладка з **іншим** акаунтом, ніж якірна сесія — а так буває після будь-якого
-перемикання акаунта. Результат: `OWNER_TAB_SIGNED_OUT` → bootstrap повертав `signed_out` **без скидання cookie**, тобто сесія була жива весь час. Саме тому
-вибір акаунта зі списку потім проходив без пароля.
+`owner_tab_sessions` вважалася відмовленою, якщо в браузері жила хоч одна вкладка з **іншим** обліковим записом, ніж якірна сесія — а так буває після будь-якого
+перемикання облікового запису. Результат: `OWNER_TAB_SIGNED_OUT` → bootstrap повертав `signed_out` **без скидання cookie**, тобто сесія була жива весь час. Саме тому
+вибір облікового запису зі списку потім проходив без пароля.
 
-Виправлено: вкладка без рядка — це **нова** вкладка, вона отримує якірний акаунт браузера (і ніколи не акаунт іншої вкладки); рядок створюється в bootstrap.
+Виправлено: вкладка без рядка — це **нова** вкладка, вона отримує якірний обліковий запис браузера (і ніколи не обліковий запис іншої вкладки); рядок створюється в bootstrap.
 Підказка про живу сесію тепер ще й на пристрої (лише позитивна), тож нова вкладка показує спінер, а не екран входу.
 
 Заразом знайдено свіжу регресію від роботи 19–20.10: у `shared-preferences.ts` злиття карти `accountPerDienst` відкидало порожні значення, тому
-`forgetViewAccount()` і `clearViewAccounts()` **не робили нічого** — карта назавжди лишалася на старому акаунті. І `logout()` скидав цю карту для **всіх**
-акаунтів, через що вкладки іншого акаунта втрачали «який акаунт тут діє». Тепер забувається лише той акаунт, що виходить. Сам сервер робив правильно:
-`logout-account-browser` чіпає лише один акаунт і переанкерує cookie на інший живий.
+`forgetViewAccount()` і `clearViewAccounts()` **не робили нічого** — карта назавжди лишалася на старому обліковому записі. І `logout()` скидав цю карту для **всіх**
+облікових записів, через що вкладки іншого облікового запису втрачали «який обліковий запис тут діє». Тепер забувається лише той обліковий запис, що виходить. Сам сервер робив правильно:
+`logout-account-browser` чіпає лише один обліковий запис і переанкерує cookie на інший живий.
 
-Галочка «Зберегти цей акаунт для наступних сесій» була напівсправжньою: значення йшло на сервер при вході (і справді керувало приватним кешем пошти), але
+Галочка «Зберегти цей обліковий запис для наступних сесій» була напівсправжньою: значення йшло на сервер при вході (і справді керувало приватним кешем пошти), але
 **ніде не зберігалося** — `useState(true)` щоразу повертав «увімкнено», вимкнути свідомо було неможливо, а на хабі галочки не було зовсім. Тепер вибір живе
 на пристрої, надсилається й з хаба, синхронізується з відповіддю сервера і видимий у «Налаштування → Сесії та пристрої».
 
 **3. «Запамʼятати цей браузер (не питати знову до виходу)» не працювала — взагалі.** Вибір не зберігався ніде: `useState(false)` у вікні, TOTP і код
 відновлення не надсилали його на сервер, passkey теж, а в гілці Google надсилався **інший** параметр (`remember` керує запамʼятовуванням *входу*), який у
 `identity/transactions/create` для step-up жорстко перетирався на `false`. На сервері не було куди це писати. Напис був порожньою обіцянкою на всіх шляхах.
-Додатково галочка рендерилася всередині блоку «Виникли проблеми?» — при одному доступному методі її не було видно.
+Додатково галочка відмальовувалася всередині блоку «Виникли проблеми?» — при одному доступному методі її не було видно.
 
-Тепер: памʼять у `owner_step_up_v1.onthoudSessies`, ключ — сесія браузера цього акаунта (інший акаунт у тому ж браузері не зачеплений), межа **12 годин**,
+Тепер: памʼять у `owner_step_up_v1.onthoudSessies`, ключ — сесія браузера цього облікового запису (інший обліковий запис у тому ж браузері не зачеплений), межа **12 годин**,
 очищення при кожному виході й відкликанні. Вибір доходить з усіх чотирьох методів. Список «питати завжди» (`NOOIT_ONTHOUDEN`): схвалення випуску, права
-готувати випуски, passkey, коди відновлення, TOTP, пароль, способи входу, видалення акаунта, експорт, адміністрування, коди доступу — плюс сітки за шляхом
+готувати випуски, passkey, коди відновлення, TOTP, пароль, способи входу, видалення облікового запису, експорт, адміністрування, коди доступу — плюс сітки за шляхом
 (сховище/ключі, видалення, SSH, термінал, імперсонація, розблокування розширення) і **невідомий шлях теж означає «питати»**. Де запамʼятати не можна,
 галочки немає зовсім, а замість неї — видиме пояснення. У «Налаштування → Безпека» видно, які браузери запамʼятані, і є кнопка «забути».
 
@@ -651,18 +651,18 @@ Google Drive «файли на вимогу») і не матеріалізов�
 «Обрати файл ще раз», після якої завантаження продовжується з того самого зміщення. Перед стартом додано дешеву перевірку «файл ще читається»
 (512 байт, без запиту в мережу) — саме вона не дає створити порожній пакет у стані `uploaden`, що їв ліміт `TE_VEEL_OPEN`.
 
-**Історія спроб (замовлення власника).** «Чому сервіс в історії останніх розгортань не відмітив невдалу спробу?» Бо слід губився в трьох місцях:
+**Історія спроб (замовлення власника).** «Чому сервіс в історії останніх розгортань не позначив невдалу спробу?» Бо слід губився в трьох місцях:
 сервер не мав каналу, яким браузер міг би повідомити про обрив; недозавантажений пакет висів `uploaden` без етапу, відсотка й причини, а
 прибирання викликалося лише при відкритті сторінки (без неї пакет висів вічно); успішна друга спроба лишала в історії тільки себе.
 
 Тепер кожна спроба лишає слід. Нова таблиця `app.uitrol_pogingen` (міграція **0081**) з двома видами записів, які ніколи не змішуються:
 «повідомлено браузером» і «виявлено сервером». Маршрут `POST /api/uitrol/poging/afgebroken` приймає етап (вибір файлу, читання, перевірка,
 початок, завантаження, завершення, схвалення, встановлення), зсув, код причини, час і номер спроби — з межами частоти (60/год) і розміру,
-лише від того, хто має право готувати випуски; **відсоток сервер перераховує сам**, акаунт бере з сесії, тож збрехати про прогрес не можна.
+лише від того, хто має право готувати випуски; **відсоток сервер перераховує сам**, обліковий запис бере з сесії, тож збрехати про прогрес не можна.
 Закриття вкладки ловиться через `pagehide` і записується як чесне «обірвано без причини», відрізняване від відомої причини. Причини беруться з
 того самого `shared/foutuitleg.ts` — другої таблиці текстів немає. У «Останні розгортання» і «Уся історія» з'явився блок «Обірвані спроби» з
 дією «Продовжити» (коли справді є що продовжувати) або «Почати заново». Те саме потрапляє в адмін-журнал (`uitrol_poging_afgebroken`).
-Прибирання: 30 днів і максимум 200 записів на акаунт. Покинутий `uploaden` тепер закриває щогодинний cron, а не лише відкрита сторінка, і коди
+Прибирання: 30 днів і максимум 200 записів на обліковий запис. Покинутий `uploaden` тепер закриває щогодинний cron, а не лише відкрита сторінка, і коди
 `UPLOAD_STIL` / `UPLOAD_TE_OUD` нарешті мають переклад — раніше показувався голий код.
 
 **Тести.** 5698/5698. Нові: `bestand-lezen-fout-20261020` (36), `uitrol-pogingen-20261020` (38).
@@ -674,18 +674,18 @@ Google Drive «файли на вимогу») і не матеріалізов�
 хто має технічний доступ, має **сам вирішити**, чи матиме окремі простори, чи може їх об'єднувати. Оскільки це два різні простори, для
 їх інтеграції має бути процес об'єднання/роз'єднання, щоб не лишався доступ до сервісів після позбавлення прав.»
 
-**Чому так було.** `prive`/`technisch` стосувалося **лише підключень ШІ** — які інструменти бачить агент. Самі дані (пошта, хмара, календар,
-дошка, GitHub) прив'язані до `ownerUserId` і більше ні до чого, тож технічний профіль був просто підвищеним режимом **того самого** акаунта.
+**Чому так було.** `prive`/`technisch` стосувалося **лише під'єднань ШІ** — які інструменти бачить агент. Самі дані (пошта, хмара, календар,
+дошка, GitHub) прив'язані до `ownerUserId` і більше ні до чого, тож технічний профіль був просто підвищеним режимом **того самого** облікового запису.
 Спільний простір не був задуманий — він був успадкований.
 
-**Чотири рішення власника**, за якими зроблено: окремий простір **у тому ж акаунті**; запитати **один раз** при першій активації (доки не
+**Чотири рішення власника**, за якими зроблено: окремий простір **у тому ж обліковому записі**; запитати **один раз** при першій активації (доки не
 обрано — технічний простір порожній); при втраті прав **негайно заморозити**, а власник сервера вирішує; об'єднання **окремо на кожен сервіс**.
 
 ### Ядро (міграції 0082, 0087)
 
 Ключ даних став `(userId, ruimte)`. Рядок **без** поля `ruimte` завжди особистий — тому жоден наявний рядок не переноситься і для людей без
 технічного профілю не змінюється нічого. Стан кожного сервісу в технічному просторі: `eigen` (свої дані) / `gedeeld` (користується особистим
-підключенням) / `uit` (стандарт) / `bevroren`. Невідомий стан, невідомий сервіс, збій БД або відсутній вибір → **відмова з поясненням**, ніколи
+під'єднанням) / `uit` (стандарт) / `bevroren`. Невідомий стан, невідомий сервіс, збій БД або відсутній вибір → **відмова з поясненням**, ніколи
 не тихий перехід на особисту шухляду. Одна брама `gegevensLade()` вирішує, з якої шухляди читати; під'єднання сервісу вимагає step-up (і додане
 в список «питати завжди»), від'єднання діє миттєво, кожна дія — у журнал (`owner.ruimte.*`).
 
@@ -705,18 +705,18 @@ auditor) не мають, бо не створюють там даних. При
 ### Сервіси (міграції 0083–0086)
 
 **Пошта й контакти (0083).** Усі **113** маршрутів пошти й контактів під брамою — обгорнуто цілу таблицю маршрутів, тому новий маршрут теж
-буде під брамою автоматично; три винятки названі з причиною (два вебхуки провайдерів без людини й таба, і сам статус-маршрут, який мусить
+буде під брамою автоматично; три винятки названі з причиною (два вебхуки провайдерів без людини й вкладки, і сам статус-маршрут, який мусить
 читатися саме тоді, коли сервіс вимкнено). Контакти живуть у `app.mail_afzenders` (таблиці `mail_contacten` не існує). `ruimte` увійшла в
 первинний ключ: та сама адреса може існувати у двох шухлядах.
 
 **Хмара й календар (0084).** Знайдено **шість** файлів із маршрутами замість чотирьох — `google-suite-browser.ts` і
 `google-suite-calendar-photos.ts` не були в списку, а саме туди ведуть інструменти `drive_*` і `calendar_*`. Разом **46** маршрутів.
 Файли двох просторів лежать у **різних деревах** сховища (`cloud/…` і `cloud-technisch/…`), тож видалення одного фізично не може зачепити інше.
-**Закрито реальний отвір:** OAuth-callback Google приходить без сесії й таба, тож згода, почата в технічному просторі, створювала б
-**особисте** підключення і могла перезаписати особистий грант; тепер шухляда пишеться в сам OAuth-стан.
+**Закрито реальний отвір:** OAuth-callback Google приходить без сесії й вкладки, тож згода, почата в технічному просторі, створювала б
+**особисте** під'єднання і могла перезаписати особистий грант; тепер шухляда пишеться в сам OAuth-стан.
 
 **ШІ (0085).** Тут правд було **три**, і вони не знали одна про одну: колонка `ruimte` на рядках, живий `effectieveRuimte` і стан сервісу
-`ai` — останній **не читав ніхто**. Тобто власник, який ставив «Підключення ШІ → вимкнено», лишався з повним технічним конектором, технічним
+`ai` — останній **не читав ніхто**. Тобто власник, який ставив «Під'єднання ШІ → вимкнено», лишався з повним технічним конектором, технічним
 слотом розширення й технічними пристроями. Тепер головний — стан сервісу. **Закрито дірку:** `POST /api/owner/externe-mcp/toevoegen` брав
 простір із тіла запиту без жодної перевірки — будь-хто з сесією міг зареєструвати чужий MCP-сервер у технічному просторі.
 
@@ -751,7 +751,7 @@ GitHub прив'язана до `(людина, шлях, простір)`, то
 
 ### 1. Обрамлення вікна — лише коли ШІ справді дивиться
 
-Було: зелена рамка з'являлася від самого факту підключеного технічного слоту. Стало: рамку малює `markeringLezers()` —
+Було: зелена рамка з'являлася від самого факту під'єднаного технічного слоту. Стало: рамку малює `markeringLezers()` —
 тільки поки виконується справжня дія ШІ з вікном (знімок, читання сторінки, спостереження), плюс хвіст `MARKERING_STAART_MS = 4000`
 (єдина константа, `shared/markering-agenten.ts`). Сама брама `markeringVoor()` не змінилася.
 
@@ -790,14 +790,14 @@ Google Photos перевіряли лише власника — у межах 1
 ### 4. Хмара в технічному профілі: порожня сторінка без меню
 
 Причина не в правах. Сервер віддавав «мʼякий» 200 з тілом `providers:null, onboarding:null`, а `CloudFunctionalView` розіменовував їх —
-TypeError під час рендера **знімав усе дерево React разом із меню**, тому й меню «пропало». Виправлено з обох боків: сервер віддає ту саму
+TypeError під час відмальовування **знімав усе дерево React разом із меню**, тому й меню «пропало». Виправлено з обох боків: сервер віддає ту саму
 форму з порожніми значеннями, сторінка має `normaliseerBootstrap` і `?.`, а в `src/platform/client.ts` з'явилася загальна сітка безпеки
 на 403, щоб жодна інша сторінка більше не могла зняти оболонку.
 
-### 5. Швидке перемикання між акаунтами
+### 5. Швидке перемикання між обліковими записами
 
 Саме перемикання вже працювало; проблема була в тому, що меню закривалося й не казало, де ти. Тепер меню лишається відкритим і прямо
-називає акаунт, профіль і те, що **технічний профіль не переноситься** на інший акаунт.
+називає обліковий запис, профіль і те, що **технічний профіль не переноситься** на інший обліковий запис.
 
 ### 6. `/sessies`: текст по літері, кнопки різного розміру
 
@@ -806,11 +806,11 @@ TypeError під час рендера **знімав усе дерево React 
 `overflow-wrap:anywhere` перетворювало переповнення в перенос **по літері**. Ширини колонки (17rem) вистачало — винна була сітка рядка.
 
 Стало: `.sessie-dienst-kop` — сітка `auto minmax(0,1fr)`, бейджі винесені в окремий рядок і переносяться цілими словами;
-`anywhere` лишився тільки там, де й має бути (IPv6, ID, User-Agent). Чекбокс «Зберегти цей акаунт» став звичайним перемикачем сайту
+`anywhere` лишився тільки там, де й має бути (IPv6, ID, User-Agent). Прапорець «Зберегти цей обліковий запис» став звичайним перемикачем сайту
 (`.zijbalk-schakel`, `role="switch"`), а рядкові кнопки, кнопки картки й «Відкликати» зведені до однієї ваги (`min-height:2.5rem`,
-`border-radius:12px`, однаковий розмір іконок).
+`border-radius:12px`, однаковий розмір піктограм).
 
-### 7. Підключення пошти: справжні вікна замість блоків-пустушок
+### 7. Під'єднання пошти: справжні вікна замість блоків-пустушок
 
 Кожна плитка тепер відкриває **справжнє вікно** спільного шару, яке можна згорнути. Усередині — те, що насправді вміє цей сервіс
 (`shared/mail-aanbieders.ts`): Google-OAuth, Microsoft-OAuth, або IMAP з паролем застосунку. Де сервіс не підтримується
@@ -824,11 +824,11 @@ TypeError під час рендера **знімав усе дерево React 
 `(user_id, ruimte)`, міграція **0089**) і відновлюється на кожному піддомені через `src/platform/VensterHerstel.tsx` у `CanonicalChrome`.
 `zonderGeheimen()` вирізає секрети перед записом, а маршрут відмовляє з `OWNER_VENSTERS_GEHEIM_GEWEIGERD`, якщо їх усе ж надіслали.
 
-### 8. Чому логотипів пошти не було видно (справжня причина — у збірці)
+### 8. Чому логотипів пошти не було видно (справжня причина — у складанні)
 
 Логотипи не «забули додати». Спільний бренд-компонент і велика таблиця марок лежали в `src/integraties/`, а ця тека входить до
 `TECH_MAPPEN`: отже чанк із таблицею писався в `dist/assets/tech/`, а цю теку сервер віддає **лише з дійсною технічною кукою**.
-Звичайний користувач отримував 403 — і не бачив **жодного** логотипа на «Акаунти». Шлюз збірки це й показав:
+Звичайний користувач отримував 403 — і не бачив **жодного** логотипа на «Облікові записи». Шлюз складання це й показав:
 `openbare bundel …MailFunctionalView….js laadt ./tech/Logo-….js statisch`.
 
 Виправлено по суті, а не обходом: `src/integraties/Logo.tsx` → **`src/merk/MerkLogo.tsx`**, `src/integraties/logos.ts` →
@@ -845,14 +845,14 @@ TypeError під час рендера **знімав усе дерево React 
 для пояснення 308 та для «Іншого клієнта», який власного шляху не має. Інтерфейс каже це прямо.
 
 **Переорганізація.** Новий `src/agenten/AgentPagina.tsx` — плек `#agent/<slug>` у наявному хабі (нової сторінки й нової сутності не додано).
-На одній вкладці все про один ШІ: підключення (власна адреса, копіювання, стан, перепідключення, відкликання, активні коплінги), дозволи
+На одній вкладці все про один ШІ: під'єднання (власна адреса, копіювання, стан, перепід'єднання, відкликання, активні коплінги), дозволи
 (той самий `RechtenKiezer` — форму експортовано з `ConnectorsTab`, копії немає), простір, спосіб зв'язку й токени, колір агента
 і журнал **саме цього** агента. Щоб не дублювати: «Конектори» тепер лише список і масові дії, картка веде на сторінку агента;
 спільні вкладки (Пристрої, Зовнішні MCP, Розширення, повний журнал) лишилися спільними.
 
 ### Що власник має знати перед встановленням
 
-1. **Нова обов'язкова змінна `MAIL_APP_WACHTWOORD_SLEUTEL_V1`** — без неї IMAP-підключення не працюватиме (решта сайту працює).
+1. **Нова обов'язкова змінна `MAIL_APP_WACHTWOORD_SLEUTEL_V1`** — без неї IMAP-під'єднання не працюватиме (решта сайту працює).
 2. **Розширення 0.6.2 треба викласти разом із випуском**: `MIN_EXTENSIE_VERSIE` піднято, тож 0.6.1 отримає смугу обов'язкового оновлення.
 3. **Перший прогін крона Drive** для кожної технічної рекламації піде `phase:'initial'` заново (старий рядок стану без `ruimte` не
    знаходиться для технічної шухляди). Це лише метадані, до 100 файлів на сторінку.
@@ -870,7 +870,7 @@ TypeError під час рендера **знімав усе дерево React 
 ## AE. Після встановлення 20261020-173704: дозволи конектора, мова, сповіщення, дизайн, шифрування (21.10.2026)
 
 Власник установив попередній випуск і повідомив: «усі попередні дозволи з конектора пропали», назви інструментів англійською,
-технічні сповіщення в особистому просторі, підключення ШІ «зникло», admin /ai «не інтегровано», логотипи відсутні або псевдо,
+технічні сповіщення в особистому просторі, під'єднання ШІ «зникло», admin /ai «не інтегровано», логотипи відсутні або псевдо,
 «база поломана», контраст і мобільна верстка зламані. Кожне твердження перевірено; нижче — **доведена** причина, а не здогад.
 
 ### 1. «Дозволи пропали» — власник потрапив у двері сервера, а не в конектор
@@ -892,26 +892,25 @@ OAuth-метадані) один-в-один у застосунок (`127.0.0.1
 ### 2. Назви інструментів — українською й нідерландською
 
 Назви й описи вже були перекладені, але **описи параметрів** у всіх 114 інструментах лишалися англійськими, а devtools-аліаси старого
-`/mcp` мали інші тексти, ніж ті самі інструменти у `/claude`. Тепер мова — за власником гранту (налаштування мови акаунта, за
-замовчуванням uk), одне джерело текстів (`shared/hulpmiddel-teksten.ts`, параметри `p(uk, nl)` поруч із полем). Тест проходить
+`/mcp` мали інші тексти, ніж ті самі інструменти у `/claude`. Тепер мова — за власником гранту (налаштування мови облікового запису, типово uk), одне джерело текстів (`shared/hulpmiddel-teksten.ts`, параметри `p(uk, nl)` поруч із полем). Тест проходить
 114 × 2 сторони × 2 мови = 456 перекладів і падає на будь-якому англійському слові.
 
 ### 3. Сповіщення розділено між просторами (міграція 0091)
 
 Кожне сповіщення отримує `ruimte` при створенні — за **джерелом** (29 видів класифіковано: розгортання, SIEM, сервер, двері, сховище —
-технічні; безпека акаунта, способи входу, «Це були ви?», пошта, календар — особисті). Читання, лічильник дзвіночка і «прочитано» — лише
+технічні; безпека облікового запису, способи входу, «Це були ви?», пошта, календар — особисті). Читання, лічильник дзвіночка і «прочитано» — лише
 для живого простору. Сповіщення **не** стали окремим сервісом у «Розділенні просторів»: простір — властивість джерела, а не вибір людини
 («спільно» відтворило б саму скаргу). Push-підписок у проєкті немає — правило покриває 100 % доставки.
 **Старі сповіщення без `ruimte` лишаються особистими** (правило 0082) — власник може один раз «прочитати всі».
 
-### 4. Підключення ШІ — в одному місці, з одним кліком там, де він справді існує
+### 4. Під'єднання ШІ — в одному місці, з одним натисканням там, де він справді існує
 
-Причина «пропало»: сторінка агента мала лише адресу й форму дозволів, без кнопки «Підключити» і без кроків для конкретного клієнта; стан
-рахував тільки v2-гранти, тож підключення через двері або старий `/mcp` показувалось як «не підключено». На admin `/ai` причина та сама
+Причина «пропало»: сторінка агента мала лише адресу й форму дозволів, без кнопки «Під'єднати» і без кроків для конкретного клієнта; стан
+рахував тільки v2-гранти, тож під'єднання через двері або старий `/mcp` показувалось як «не під'єднано». На admin `/ai` причина та сама
 (`backend/ai-beleid.ts` читав лише `mcp_oauth_tokens`), а без встановленої політики сторінка показувала нуль агентів.
 
-Тепер кожна сторінка `#agent/<slug>` починається з «Підключити <ШІ>» (`src/agenten/verbind-recepten.ts`, uk+nl):
-**Cursor** і **VS Code/Copilot** — справжній один клік (deeplink); **Claude** — «Відкрити Claude → Connectors» + команда для Claude Code;
+Тепер кожна сторінка `#agent/<slug>` починається з «Під'єднати <ШІ>» (`src/agenten/verbind-recepten.ts`, uk+nl):
+**Cursor** і **VS Code/Copilot** — справжній один натискання (deeplink); **Claude** — «Відкрити Claude → Connectors» + команда для Claude Code;
 **ChatGPT** — Developer mode → Create (з чесною вимогою платного плану); **Gemini** і **Grok** — чесно: споживчі версії власних MCP не
 приймають, є конфіг для CLI-клієнтів. Стан правдивий: v2 / старий `/mcp` / двері / немає — з міткою й кнопкою «Відкликати старе».
 admin `/ai` показує стан по агентах у всіх станах політики, з посиланням на сторінку агента. Застарілі інструкції прибрано
@@ -922,7 +921,7 @@ admin `/ai` показує стан по агентах у всіх станах
 Бандл логотипів завантажувався (200). «Відсутні» — чорні гліфи GitHub/Anthropic/MCP на темній палітрі адмінки: **1,15:1**. Тепер одне
 правило (`merkKleuren` у `src/merk/merk-register.ts`): монохромний бренд малюється `var(--text)`, кольоровий — у тому самому тоні,
 доведеному до ≥3:1; перевірено 181 бренд × 26 палітр × 2 форми = 22 230 вимірювань. «Псевдо» («RA», «S2», «IS») — це не бренди
-(REST API, SCIM, IMAP/SMTP) — замінено іконками категорій; 20 буквених плиток «Секрети й ключі» — справжніми логотипами.
+(REST API, SCIM, IMAP/SMTP) — замінено піктограмами категорій; 20 буквених плиток «Секрети й ключі» — справжніми логотипами.
 
 ### 6. Дизайн: фундамент (рішення власника: «фундамент зараз, сторінки по черзі»)
 
@@ -931,8 +930,8 @@ admin `/ai` показує стан по агентах у всіх станах
 теми. Плюс 13 блоків `prefers-color-scheme` (тема пристрою замість теми сайту).
 
 Тепер: одна система токенів (`src/ontwerp/tokens.css`), глобальні примітиви (`primitieven.css`: кнопки, поля, картки, бейджі, перемикач,
-фокус) і мобільні правила (`mobiel.css`). `scripts/kleur-contrast-controle.mjs` перевіряє 1898 пар у 26 палітрах і **зупиняє збірку**,
-якщо пара нижча за 4,5:1 (текст) / 3:1 (іконки). Hex у CSS сторінок 2751 → ~2200 (залишок — переважно безпечні запаси `var(--x,#hex)`),
+фокус) і мобільні правила (`mobiel.css`). `scripts/kleur-contrast-controle.mjs` перевіряє 1898 пар у 26 палітрах і **зупиняє складання**,
+якщо пара нижча за 4,5:1 (текст) / 3:1 (піктограми). Hex у CSS сторінок 2751 → ~2200 (залишок — переважно безпечні запаси `var(--x,#hex)`),
 шрифт < 12 px 514 → 0.
 
 **Доведено локальним стендом** (151 сторінка/етап × 3 розміри × 2 теми × 2 мови = 997 знімків, axe-core + перевірка геометрії):
@@ -945,7 +944,7 @@ admin `/ai` показує стан по агентах у всіх станах
 | шрифт < 12 px | 513 / 59 | 0 |
 | дрібні цілі на телефоні | 1034 / 149 | 23 (усі — частково сховані за краєм прокрутки; справжній розмір ≥44 px) |
 
-Конкретно: «Дозволити» 1,74 → 10,45:1; «Підключити» (пошта) 2,25 → 8,06; cloud «Звично» 1,44 → 12,56; картки згоди 1,02 → 12,1.
+Конкретно: «Дозволити» 1,74 → 10,45:1; «Під'єднати» (пошта) 2,25 → 8,06; cloud «Звично» 1,44 → 12,56; картки згоди 1,02 → 12,1.
 Пошта на 390 px: права колонка 320 px лишала основній 0 px — привітання йшло **по літері**, а сама колонка перекривала плитки так, що
 **жодну не можна було натиснути**; тепер одна колонка до 1100 px. `/agenten`: ряд вкладок 1073 px на екрані 307 → прокручуваний ряд
 зі стрілками (`src/ontwerp/TabsRij.tsx`, винесено з технічної теки, бо `src/uitrol/` віддається лише з технічною кукою).
@@ -956,7 +955,7 @@ admin `/ai` показує стан по агентах у всіх станах
 
 Кожна людина × простір має власний ключ даних (DEK), який **ніколи не лежить на диску в розгорнутому вигляді**. Розгортається
 passkey (WebAuthn PRF — у браузері) або кодом відновлення (scrypt, показується один раз, після використання видається новий). Поки
-відкрита сесія або чинний грант ШІ, ключ у пам'яті сервера — фонова синхронізація й агенти працюють. **Адміністратор із базою, бекапом і
+відкрита сесія або чинний грант ШІ, ключ у пам'яті сервера — фонова синхронізація й агенти працюють. **Адміністратор із базою, резервною копією і
 env без входу людини не читає нічого під DEK.** Технічний DEK — окремий ключ, технічний профіль особистого не розгорне.
 
 Під DEK у цьому випуску (нові записи; старі читаються старим шляхом, кнопка «Перешифрувати мої дані зараз» переводить їх):
@@ -972,20 +971,20 @@ refresh-токен Google, паролі IMAP/SMTP, пароль CalDAV, токе
 `0007_rls_per_tabel.sql` (`ALTER COLUMN … SET EXPRESSION` — синтаксис PG17; Ubuntu 24.04 LTS постачає PG16). Тобто для нового
 BYOS-користувача база справді була «поломана». Мігратор не перевіряє контрольних сум, тож 0007 переписано безпечно: на PG17 виконується
 дослівно стара команда, на PG16 — еквівалент із перевіркою залежностей; уже застосовані бази 0007 не перечитують. Інсталятор перевіряє
-версію **до бекапу й міграцій** і каже прямо «PostgreSQL застаріла», мінімум — 16. Доведено: справжній мігратор на чистій PG16
+версію **до резервної копії й міграцій** і каже прямо «PostgreSQL застаріла», мінімум — 16. Доведено: справжній мігратор на чистій PG16
 пройшов 0001→0092 + rechten.sql без шима.
 
 Знайдено й виправлено **чужий дефект у 0092**: перевизначення `passkey_uitdagingen_doel_check` загубило значення
 `'extensie-ontgrendelen'` (0072) — розблокування розширення passkey зламалось би одразу після міграції.
 
-Також: стабільний 404 на `/downloads/extension-version.json` — `vite build` стирав `dist/downloads/`; тепер плагін збірки генерує його завжди.
+Також: стабільний 404 на `/downloads/extension-version.json` — `vite build` стирав `dist/downloads/`; тепер плагін складання генерує його завжди.
 
-### 9. Майстер підключень і секрети на сервері
+### 9. Майстер під'єднань і секрети на сервері
 
-admin → «Інтеграції» → **«Майстер підключень»**: для Google, Microsoft, GitHub OAuth і GitHub App — кнопка «Відкрити консоль», готові
+admin → «Інтеграції» → **«Майстер під'єднань»**: для Google, Microsoft, GitHub OAuth і GitHub App — кнопка «Відкрити консоль», готові
 значення для копіювання (redirect URI, origins, scopes з `SERVICE_HOSTS`), поле client id/secret (Google і GitHub — одразу на сайті з
-passkey, без перезапуску; Microsoft — поки лише серверною командою з прихованим вводом), і **справжня** перевірка через token endpoint.
-Кліки в консолі провайдера неминучі — там потрібен вхід і згода власника.
+passkey, без перезапуску; Microsoft — поки лише серверною командою з прихованим введенням), і **справжня** перевірка через token endpoint.
+Натискання в консолі провайдера неминучі — там потрібен вхід і згода власника.
 
 `deploy/geheimen-aanmaken.sh` (крок інсталятора, до міграцій) генерує **лише відсутні** ключі, друкує тільки назви й відбитки;
 `deploy/geheimen-register.sh` складає реєстр **без значень**. Тепер обов'язкові й генеруються автоматично:
@@ -993,7 +992,7 @@ passkey, без перезапуску; Microsoft — поки лише серв
 
 ### Що власник має знати перед і після встановлення
 
-1. **Перепідключити Claude** (видалити й додати `mcp.tarasevych.com/claude`, або «Reconnect»): поточний токен видали двері; після випуску
+1. **Перепід'єднати Claude** (видалити й додати `mcp.tarasevych.com/claude`, або «Reconnect»): поточний токен видали двері; після випуску
    застосунок відповість на нього 401, і Claude пройде OAuth уже через вікно v2 з обома просторами. Нова розмова — щоб Claude перечитав
    список інструментів.
 2. Однаково виконати `deploy/CONNECTOR-EEN-PAD.md` §1 (правило тунелю) — **після** встановлення випуску.
@@ -1033,13 +1032,13 @@ passkey, без перезапуску; Microsoft — поки лише серв
 ### 4. Меню «Інші дії» (⋮): кнопки інших листів поверх меню
 
 Меню жило всередині рядка, і наступні рядки малювалися поверх нього. На комп'ютері гірше: батьківський `transform` зсував меню
-на **2147 px при ширині 1280** — його взагалі не було видно. Тепер меню рендериться поверх усього, в межах екрана, пункти однакові,
+на **2147 px при ширині 1280** — його взагалі не було видно. Тепер меню відмальовується поверх усього, в межах екрана, пункти однакові,
 текст уміщується; крапка «непрочитане» більше не заходить під ⋮. Ім'я відправника має пріоритет над адресою.
 
 ### 5. Новий лист: меню ховалося, кнопки овальні, прокрутка не помітна
 
-- Випадаючі меню (з «⋯» і списків) обрізалися контейнером — на 390 px з 15 пунктів не було видно жодного. Тепер — поверх усього.
-- Іконкові кнопки: правило `width:auto !important` з'їдало ширину (скріпка була 19×36). Тепер усі 44×44.
+- Розкривні меню (з «⋯» і списків) обрізалися контейнером — на 390 px з 15 пунктів не було видно жодного. Тепер — поверх усього.
+- Піктограмні кнопки: правило `width:auto !important` з'їдало ширину (скріпка була 19×36). Тепер усі 44×44.
 - Ряд інструментів: на телефоні вміщується повністю (рідкісні дії — в «⋯»), а коли не вміщується — видно стрілку й тінь.
 - **Шаблони на телефоні** — першим розділом у «⋯» (були там і раніше, але меню обрізалося). Окремо: у темній темі блоки шаблонів
   мали контраст **1,01:1**.
@@ -1049,23 +1048,23 @@ passkey, без перезапуску; Microsoft — поки лише серв
 
 Текст зберігався, але після перезавантаження вікно не відкривалося саме, а дотик до «Чернетка» відкривав **новий** порожній лист.
 Крім того, запис не робився на `visibilitychange` — а мобільний браузер часто надсилає лише цю подію, коли вивантажує вкладку.
-Тепер: локальна копія окремо для кожного акаунта й простору (лише адресати, тема й текст — ніяких вкладень чи паролів), запис через
+Тепер: локальна копія окремо для кожного облікового запису й простору (лише адресати, тема й текст — ніяких вкладень чи паролів), запис через
 300 мс і синхронно при виході зі сторінки; серверна чернетка з повторними спробами; після перезавантаження вікно відкривається з тим
 самим текстом. Індикатор: «Збережено локально · на сервері о HH:MM».
 
-### 7. Додатковий Google-акаунт: «Не вдалося розпочати підключення»
+### 7. Додатковий Google-обліковий запис: «Не вдалося розпочати під'єднання»
 
-Вікно завжди надсилало роль «основний» і не передавало звідки прийшов запит. Оскільки основна Gmail у власника вже підключена,
-сервер відповідав «вже надано» без адреси переходу — а вікно вважало це помилкою. Вибрати **інший** акаунт Google було неможливо
-в принципі. Тепер роль береться з реального стану, Google показує вибір акаунта, а кожна відмова сервера має власне пояснення uk+nl.
+Вікно завжди надсилало роль «основний» і не передавало звідки прийшов запит. Оскільки основна Gmail у власника вже під'єднана,
+сервер відповідав «вже надано» без адреси переходу — а вікно вважало це помилкою. Вибрати **інший** обліковий запис Google було неможливо
+в принципі. Тепер роль береться з реального стану, Google показує вибір облікового запису, а кожна відмова сервера має власне пояснення uk+nl.
 
-### 8. Відключення акаунтів
+### 8. Вимкнення облікових записів
 
-Кожен підключений акаунт має стан, «Перепідключити», «Відключити» (з вибором «залишити / видалити локальні дані»; для основного —
-пряме попередження, що вхід на сайт не зачіпається), а кожна група — «Додати ще один». Новий маршрут відключення для Google; скриньки
-з відкликаним доступом раніше **мовчки зникали** зі списку — тепер видні й відключаються.
+Кожен під'єднаний обліковий запис має стан, «Перепід'єднати», «Вимкнути» (з вибором «залишити / видалити локальні дані»; для основного —
+пряме попередження, що вхід на сайт не зачіпається), а кожна група — «Додати ще один». Новий маршрут вимкнення для Google; скриньки
+з відкликаним доступом раніше **мовчки зникали** зі списку — тепер видні й вимикаються.
 
-### 9. Окрема секція «Додаткові акаунти Microsoft» — прибрано
+### 9. Окрема секція «Додаткові облікові записи Microsoft» — прибрано
 
 Плитка Outlook і «Додати ще один Outlook» роблять те саме через вікно.
 
@@ -1088,10 +1087,10 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 ### Що власник має знати
 
 1. Кнопку «Новий лист» більше не можна перетягувати — вона завжди над дзвоником.
-2. Значки Windows/Edge на сторінці сесій і Outlook/Ukr.net тощо на сторінці акаунтів тепер нейтральні плитки. Справжні логотипи —
+2. Значки Windows/Edge на сторінці сесій і Outlook/Ukr.net тощо на сторінці облікових записів тепер нейтральні плитки. Справжні логотипи —
    лише якщо ви покладете офіційні файли самі.
 3. Локальна копія листа лежить у браузері пристрою (незашифрованою, як і раніше), стирається після надсилання, видалення або через 30 днів.
-4. Справжній вхід Google для додаткового акаунта перевірено лише на імітації Google — пройдіть його один раз.
+4. Справжній вхід Google для додаткового облікового запису перевірено лише на імітації Google — пройдіть його один раз.
 
 ---
 
@@ -1101,10 +1100,10 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 
 | # | Що | Серйозність |
 |---|---|---|
-| 1 | У поштових маршрутах `ladeOf` завжди повертав **особисту** шухляду (у пошти власне AsyncLocalStorage). Технічна вкладка з поштою «власні дані» бачила особистий Gmail, а новий маршрут відключення дозволяв **відключити особистий Gmail і відкликати його токен** з технічного простору | висока |
+| 1 | У поштових маршрутах `ladeOf` завжди повертав **особисту** шухляду (у пошти власне AsyncLocalStorage). Технічна вкладка з поштою «власні дані» бачила особистий Gmail, а новий маршрут вимкнення дозволяв **вимкнути особистий Gmail і відкликати його токен** з технічного простору | висока |
 | 2 | Спадок старих `/mcp`-грантів визначав клієнта за `client_name`, яке клієнт задає сам. Застосунок «Evil (Claude)» з лише приватною згодою отримував на `/claude` **технічні** інструменти справжнього Claude (31 ключ). Тепер спадок лише від того самого `client_id`, виданого сервером | висока |
 | 3 | Двері сервера: шлях `/x/..//oauth2/token` давав SSRF на внутрішнє ім'я `oauth2`/`mcp`; хоп-заголовки клієнта йшли далі | середня |
-| 4 | «Вийти в усьому браузері / з усіх акаунтів» не закривав ключ даних у пам'яті | середня-низька |
+| 4 | «Вийти в усьому браузері / з усіх облікових записів» не закривав ключ даних у пам'яті | середня-низька |
 | 5 | Локальні чернетки переживали «Вийти» на чужому пристрої | середня-низька |
 | 6 | Очищення SVG перевіряло сирий текст — 9 обхідних шляхів через сутності й CSS-екранування | низька |
 | 7–8 | Необмежений запис власних логотипів; заголовки дверей | низька / посилення |
@@ -1113,13 +1112,13 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 
 ### 2. Огляд доступності (WCAG 2.2 AA)
 
-Фокус губився або тікав за межі в панелі сповіщень, вікні листа (14–18 разів за прохід Tab), меню редактора й рядка листа; меню мали неправильні ролі (axe: critical); 25 однакових «Інші дії» без контексту; **глобально**: Escape на будь-якій сторінці переносив фокус на аватар меню акаунта. Усе виправлено; axe після — 0 порушень, 6 клавіатурних сценаріїв на 390/1280 у uk і nl пройдено.
+Фокус губився або тікав за межі в панелі сповіщень, вікні листа (14–18 разів за прохід Tab), меню редактора й рядка листа; меню мали неправильні ролі (axe: critical); 25 однакових «Інші дії» без контексту; **глобально**: Escape на будь-якій сторінці переносив фокус на аватар меню облікового запису. Усе виправлено; axe після — 0 порушень, 6 клавіатурних сценаріїв на 390/1280 у uk і nl пройдено.
 
 ### 3. Логотипи — справжні, не намальовані (рішення власника)
 
 - **14 брендів** узято з відкритих пакетів офіційних логотипів з чесною ліцензією (`@iconify-json/logos` — CC0; `@iconify-json/vscode-icons` — MIT): Windows, Edge, Microsoft, Node.js, OneDrive, Teams, Azure, Yahoo, monday.com, Pipedrive, Webhook, OAuth, Outlook, OneNote. Скрипт `scripts/merk-officieel-maken.mjs` нічого не малює — вставляє файл як є, проганяє очищення SVG і записує походження (пакет, версія, ліцензія, sha256) у `src/merk/officieel/HERKOMST.json`.
 - **База логотипів сайту** (`app.merk_beeld`, міграція 0097): для домену сервер **сам** отримує офіційний логотип — спершу BIMI (DNS `default._bimi.<домен>`, саме для цього компанії й публікують знак), далі значки з сайту домену, далі `favicon.ico`; кеш 30 днів. Так приходять Ukr.net, I.ua, Online.ua, Entra, Fastmail, Freshdesk, Mollie, Tuya — з їхніх власних доменів на сервері власника. Нейтральна плитка лише до першого успішного отримання. Захист вихідних запитів: лише https, лише публічні IP з прив'язкою з'єднання, ≤3 редиректи, 5 с, 256 КБ.
-- **Фото відправників** (`app.afzender_beeld`, окремо для людини й простору, адреса лише як HMAC, під ключем людини): логотип організації відправника (BIMI/значок домену), фото з Google-контактів (People API, вимкнено за замовчуванням, інкрементна згода; стандартні «порожні» фото пропускаються), vCard, Gravatar (вимкнено за замовчуванням). Браузер нічого не вантажить ззовні — усе через сервер.
+- **Фото відправників** (`app.afzender_beeld`, окремо для людини й простору, адреса лише як HMAC, під ключем людини): логотип організації відправника (BIMI/значок домену), фото з Google-контактів (People API, вимкнено типово, інкрементна згода; стандартні «порожні» фото пропускаються), vCard, Gravatar (вимкнено типово). Браузер нічого не вантажить ззовні — усе через сервер.
 - Пріоритет: власний файл власника → вбудований офіційний → форма з відкритого набору → база сайту → нейтральна плитка.
 
 ### 4. Док згорнутих вікон більше не лежить на кнопках
@@ -1141,7 +1140,7 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 | Журнали CI | `github_ci_logs` | ні |
 | Власний домен для додатка | `app_domain` (технічний) | passkey + серверна команда |
 | Зображення | `image_generate` (локальний генератор на вашому сервері; без нього — чесна помилка) | «питати» |
-| Схеми | `diagram_generate` (Mermaid, перевірка на сервері, рендер без CDN) | «питати» |
+| Схеми | `diagram_generate` (Mermaid, перевірка на сервері, відмальовування без CDN) | «питати» |
 | Контекст дизайну | `screenshot_design` (лише стилі) | ні |
 | Платежі | `payments_list` (Stripe, лише обмежений ключ `rk_`) | ні |
 | Журнал безпеки | `audit_read` (IP і адреси замасковані) | ні (технічний) |
@@ -1154,21 +1153,21 @@ Outlook, Ukr.net, I.ua, Online.ua, Yahoo та ще 16 (OneDrive, Teams, Windows,
 ### Що власник має знати
 
 1. **Google: натиснути «Надати доступ»** для надсилання пошти, запису на Диск і Photos Picker (давні гранти цих дозволів не мають), і для фото з Google-контактів — увімкнути People API у своєму Google Cloud-проєкті.
-2. **iCloud:** пароль застосунку з appleid.apple.com → агенда → «Підключити iCloud».
+2. **iCloud:** пароль застосунку з appleid.apple.com → агенда → «Під'єднати iCloud».
 3. **Політику ШІ треба переп­ідписати**, щоб нові можливості (`mail.send`, `drive.write`, `drive.share`, `photos.read`, `media.*`, `payments.read`) почали діяти.
-4. **Stripe:** обмежений ключ з правами читання в майстрі підключень. **Генератор зображень:** запустити свій локальний сервіс і вписати адресу в адмінці.
+4. **Stripe:** обмежений ключ з правами читання в майстрі під'єднань. **Генератор зображень:** запустити свій локальний сервіс і вписати адресу в адмінці.
 5. **Свій домен для додатка:** `sudo /usr/local/sbin/mijn-ruimte-installeer app-domein <host>` і CNAME на тунель.
 6. **Логотипи Ukr.net, I.ua, Online.ua** прийдуть з їхніх доменів після першого показу на вашому сервері (звідси я їх отримати не зміг — їхні сервери віддавали помилку). Перемикач — admin → Інтеграції → «Логотипи відправників».
-7. **Gmail у технічному просторі з поштою «власні»** тепер порожній, доки Gmail не підключено саме там (раніше технічна сторона бачила особистий — це й була дірка №1).
+7. **Gmail у технічному просторі з поштою «власні»** тепер порожній, доки Gmail не під'єднано саме там (раніше технічна сторона бачила особистий — це й була дірка №1).
 
 ### 6. Злиття з випусками іншого агента (20261021-183141 / 191053 / 204442, «поза git»)
 
-Поки готувався цей випуск, на сервер встановлено три пакети агента grok із **повним пошуком `/zoek`** (ядро, синоніми, ранжування, джерела, OCR, черга, сторінка з фільтрами й історією; міграції `0093_zoek_index`, `0094_zoek_rls`, `0096_zoek_bronnen_index`). Вони зібрані поза git, тож цей випуск **містить їх повністю** (інакше встановлення відкотило б пошук): нові файли взято як є, вісім змінених — злито тристоронньо з базою `6aabff9` (конфліктів не було; `CloudFunctionalView.tsx` — автоматичне злиття). Номери міграцій `0093`/`0094` збіглися з моїми — передконтроль пакета справедливо відмовив («dubbel nummer»), тому мої три міграції перенумеровано: `0097_merk_beeld`, `0098_ai_bevestigingen`, `0099_dev_rechten_media_github` (на сервері власника вони ще не застосовувалися, тож перейменування безпечне); перевірено на чистій базі (0001→0099 без помилок, повторний запуск — «нічого робити»). Три дрібні правки до коду grok: невикористані імпорти (`tsc` із `noUnusedLocals`) і підсумковий рядок у тесті `zoek-etap-d`, щоб повний прогін його рахував.
+Поки готувався цей випуск, на сервер встановлено три пакети агента grok із **повним пошуком `/zoek`** (ядро, синоніми, ранжування, джерела, OCR, черга, сторінка з фільтрами й історією; міграції `0093_zoek_index`, `0094_zoek_rls`, `0096_zoek_bronnen_index`). Вони зібрані поза git, тож цей випуск **містить їх повністю** (інакше встановлення повернуло попередній стан б пошук): нові файли взято як є, вісім змінених — злито тристоронньо з базою `6aabff9` (конфліктів не було; `CloudFunctionalView.tsx` — автоматичне злиття). Номери міграцій `0093`/`0094` збіглися з моїми — передконтроль пакета справедливо відмовив («dubbel nummer»), тому мої три міграції перенумеровано: `0097_merk_beeld`, `0098_ai_bevestigingen`, `0099_dev_rechten_media_github` (на сервері власника вони ще не застосовувалися, тож перейменування безпечне); перевірено на чистій базі (0001→0099 без помилок, повторний запуск — «нічого робити»). Три дрібні правки до коду grok: невикористані імпорти (`tsc` із `noUnusedLocals`) і підсумковий рядок у тесті `zoek-etap-d`, щоб повний прогін його рахував.
 
 ## AH. Глобальний пошук «/zoek» за специфікацією власника: аудит, ядро, джерела, OCR, історія, ізоляція (22.10.2026)
 
 Завдання власника — «MIJN RUIMTE GLOBAL SEARCH» (19 розділів): одне поле, яке знаходить **функцію сайту без знання його структури**
-(«змінити мову», «хто входив у мій акаунт», «коди відновлення якщо загублю телефон»), листи й вкладення, файли, події, дошку, GitHub —
+(«змінити мову», «хто входив у мій обліковий запис», «коди відновлення якщо загублю телефон»), листи й вкладення, файли, події, дошку, GitHub —
 дев'ятьма мовами, з помилками, суржиком і транслітом, з чесним відсотком відповідності, автодоповненням, виправленням, історією на
 сервері та повною ізоляцією просторів. Працювало п'ять зон паралельно (Z1 ядро, Z2 джерела й каталог інтерфейсу, Z3 текст/OCR/архіви,
 Z4 сторінка й палітра, Z5 оцінка якості, продуктивність, ізоляція, документація), після чого Z1/Z2 виправляли прогалини, які знайшов Z5.
@@ -1178,7 +1177,7 @@ Z4 сторінка й палітра, Z5 оцінка якості, проду�
 Сторінка `/zoek` була, але: два незаповнені індекси (`0093 zoek_objecten`, `0096 zoek_document`), SQL-функція `app.zoek_norm`
 ламалась при `datctype=C`; справжній пошук ішов **у пам'яті** по ≤ 1 000 рядків на джерело; черга й адаптери — мертвий код; відсоток
 `score·10` сягав 1 000 %; автодоповнення — з поточних результатів на клієнті; історія в `localStorage` **без прив'язки до користувача**
-(витік між акаунтами на одному пристрої); OCR — лише кнопка (`AI_NOT_CONFIGURED`); жодного тесту з двома користувачами; секрети не
+(витік між обліковими записами на одному пристрої); OCR — лише кнопка (`AI_NOT_CONFIGURED`); жодного тесту з двома користувачами; секрети не
 фільтрувались. Повний аудит: `rapporten/zoek-audit.md` (локально) → висновки в `docs/zoek/ZOEKEN.md` §1.
 
 ### 2. Що зроблено
@@ -1235,12 +1234,12 @@ Z4 сторінка й палітра, Z5 оцінка якості, проду�
 - `tests/eenheid/tech-ruimte-pagina-20261020`: два статичні контролі вказували на старі файли (`GlobalSearchPanel` став обгорткою;
   `herkomstUitBody` обчислюється окремим рядком), а дві перевірки звіряли **весь** JSON відповіді, що містить сам запит — тепер звіряються
   лише групи результатів; правило покриття ≥ ½ груп (спільні слова «geheim-<sfx>») — не витік, а частковий збіг із нижчим відсотком.
-- `vite.config.ts`: `reportCompressedSize:false` — підрахунок gzip після збірки валив vite з 2,5 ГБ heap (ліміт інсталятора `BOUW_HEAP_MB`).
+- `vite.config.ts`: `reportCompressedSize:false` — підрахунок gzip після складання валив vite з 2,5 ГБ heap (ліміт інсталятора `BOUW_HEAP_MB`).
 
 ### 6. Міграції цього випуску
 
 `0100_zoek_kern`, `0101_zoek_bron_cursor`, `0102_zoek_ocr_tekst`, `0103_zoek_geschiedenis`, `0104_zoek_gin_lade` (+ `rechten.sql`:
-GRANT-и для нових таблиць). Усі ідемпотентні, відкат у шапці кожного файла; індекс — похідні дані, `TRUNCATE app.zoek_objecten`
+GRANT-и для нових таблиць). Усі ідемпотентні, повернення стану у шапці кожного файла; індекс — похідні дані, `TRUNCATE app.zoek_objecten`
 завжди безпечний, cron відбудує. Дані джерел не рухаються ніколи. Міграції grok `0093/0094/0096` лишаються (0096 `zoek_document` —
 порожня, позначена застарілою; видалити в наступному випуску).
 
@@ -1253,10 +1252,10 @@ GRANT-и для нових таблиць). Усі ідемпотентні, в�
 3. Не індексуються (чесно): вкладення IMAP-скриньок, пошта Microsoft, контакти, пристрої; zip64/7z/rar; морфологія uk/bg/pl — легка,
    без словника; семантичного пошуку немає (за специфікацією — без моделі).
 4. Словник синонімів власника є в ядрі (`app.zoek_synoniemen_eigenaar`), інтерфейсу для нього ще немає.
-5. Відкат: `mijn-ruimte-installeer terugdraaien` + `systemctl disable --now mijn-ruimte-zoek-index.timer`; міграції відкочувати не
+5. Повернення стану: `mijn-ruimte-installeer terugdraaien` + `systemctl disable --now mijn-ruimte-zoek-index.timer`; міграції повертати попередній стан не
    обов'язково — старий код нових колонок не читає (`docs/zoek/ZOEK-BEHEER.md` §6).
 
-## AI. Біла сторінка admin.*/updates після 20261021-221718 і «кнопка відкату не працює» (22.10.2026)
+## AI. Біла сторінка admin.*/updates після 20261021-221718 і «кнопка повернення стану не працює» (22.10.2026)
 
 ### 1. Причина білої сторінки — знайдено й відтворено на стенді
 
@@ -1265,7 +1264,7 @@ GRANT-и для нових таблиць). Усі ідемпотентні, в�
 завантаженні бандла `Uncaught ReferenceError: Buffer is not defined` → React нічого не малює, і **кожна** сторінка адміністрування
 (`/updates`, `/overzicht`, `/toegang`, …) лишається порожньою під технічною смугою. Сторінки без технічного профілю (брама) працювали,
 mcp.* та hub.* — теж, бо це інший бандл. Юніт-тести виконуються в Node, де `Buffer` є, тому не бачили; стенд 21.10 для цього випуску
-запускався лише для пошти/дока. Відтворено стендом `admin-updates` на остаточній збірці 221718 (`pageerror: Buffer is not defined`).
+запускався лише для пошти/дока. Відтворено стендом `admin-updates` на остаточній складанні 221718 (`pageerror: Buffer is not defined`).
 
 Виправлення: підпис PNG — звичайний масив байтів, порівняння побайтово (працює і на сервері, і в браузері); `Buffer` лишається лише
 всередині серверних функцій. Стенд усіх 12 сторінок admin.* (1280 і 390) після виправлення — 38 знімків, 0 помилок консолі.
@@ -1276,12 +1275,12 @@ mcp.* та hub.* — теж, бо це інший бандл. Юніт-тест�
 й виконується в голому `vm`-контексті **без** `Buffer`, `process`, `require`, `fs` (78 модулів). На коді 221718 падає з
 «shared/merk-eigen: Buffer is not defined», на виправленому — 3/3.
 
-### 3. «Відкат до попереднього» на mcp.*/dashboard — працює як задумано
+### 3. «Повернення стану до попереднього» на mcp.*/dashboard — працює як задумано
 
 Кнопка викликає `POST /api/mcp/server/terugdraaien` (passkey + підтвердження), а сервер виконує її лише якщо в
 `/etc/mijn-ruimte/mcp-rechten.json` стоїть `"terugdraaien": true`. **Типово це вимкнено** (`deploy/RUNBOOK-VEILIGE-UITROL.md` §6: щоб
 той, хто захопив застосунок, не міг котити сайт туди-сюди), і картка показує «Цю команду вимкнено у файлі /etc/mijn-ruimte/mcp-rechten.json
-на сервері». Відкат із сайту не передбачений без цього перемикача; штатний шлях — по SSH від робочого користувача:
+на сервері». Повернення стану із сайту не передбачений без цього перемикача; штатний шлях — по SSH від робочого користувача:
 `sudo mijn-ruimte-installeer terugdraaien`.
 
 ### Що власник має зробити (один раз, по SSH)
@@ -1289,38 +1288,38 @@ mcp.* та hub.* — теж, бо це інший бандл. Юніт-тест�
 Сторінка схвалення біла, тож цей пакет не можна схвалити з сайту. Два рівноцінні шляхи, обидва — лише через `mijn-ruimte-installeer`:
 
 **А (рекомендовано, повертає passkey-потік):** `ssh beheer@<сервер>` → `sudo mijn-ruimte-installeer terugdraaien` → активним стає
-20261022-001408 (там admin.* працює) → на admin.*/updates завантажити цей пакет і схвалити passkey як завжди. Міграції не відкочуються,
+20261022-001408 (там admin.* працює) → на admin.*/updates завантажити цей пакет і схвалити passkey як завжди. Міграції не повертаються до попереднього стану,
 дані не рухаються.
 
-**Б (без відкату):** скопіювати `mijn-ruimte-<версія>.tar.gz` на сервер (`scp … beheer@<сервер>:~/`), перевірити
+**Б (без повернення стану):** скопіювати `mijn-ruimte-<версія>.tar.gz` на сервер (`scp … beheer@<сервер>:~/`), перевірити
 `sha256sum mijn-ruimte-<версія>.tar.gz` проти суми з повідомлення, `mkdir -p ~/uitrol && tar -xzf mijn-ruimte-<версія>.tar.gz -C ~/uitrol`,
-`sudo mijn-ruimte-installeer installeren ~/uitrol/mijn-ruimte-<версія>` (копія бази → міграції → збірка → перемикання → `/__gezondheid`).
+`sudo mijn-ruimte-installeer installeren ~/uitrol/mijn-ruimte-<версія>` (копія бази → міграції → складання → перемикання → `/__gezondheid`).
 
-## AJ. Рендер-контроль і автовідкат (22.10.2026)
+## AJ. Відмальовування-контроль і автовідкат (22.10.2026)
 Після 20261021-221718 («Buffer is not defined», білі admin-сторінки при HTTP 200) інсталятор після gezond/nabewaking відкриває ключові
 сторінки нового випуску у headless Chromium на сервері (`scripts/rook-controle.mjs`): одноразова копія сайту (`dist-server/rook.mjs`) на
 одноразовій базі `mijnruimte_rook_<stempel>` із тестовим власником і технічним профілем, 13 сторінок + імпорт усіх бандлів; зламано
-(pageerror, ReferenceError/TypeError, порожній `#root`, бандл ≠ 200, «Internal server error») → автоматичний відкат на попередній випуск
-із подією `ROOK_TERUGGEDRAAID` і причиною на «Оновлення»; попередній перевіряється один раз, без другого відкату; міграції не
-відкочуються. Без браузера — модульна перевірка в Node (vm без Buffer/process/require) із чесним «рендеринг не перевірено».
+(pageerror, ReferenceError/TypeError, порожній `#root`, бандл ≠ 200, «Internal server error») → автоматичний повернення стану на попередній випуск
+із подією `ROOK_TERUGGEDRAAID` і причиною на «Оновлення»; попередній перевіряється один раз, без другого повернення стану; міграції не
+повертаються до попереднього стану. Без браузера — модульна перевірка в Node (vm без Buffer/process/require) із чесним «відмальовування не перевірено».
 Браузер: `sudo mijn-ruimte-installeer browser-controle` (chrome-headless-shell 156.0.8078.47, SHA-256). nazorg: live-перевірка через 2 хв
-після активації + запит із сайту. «Діагностика»: пункти «Рендеринг сторінок» (кнопка «Перевірити рендеринг») і «Індекс пошуку»,
+після активації + запит із сайту. «Діагностика»: пункти «Відмальовування сторінок» (кнопка «Перевірити відмальовування») і «Індекс пошуку»,
 сторінкові перевірки показують результат браузера або «лише HTTP». Документація: RUNBOOK-VEILIGE-UITROL §8a, LEESMIJ, ENV-VARS.
 Тести: rook-controle-20261022 40/40, uitrol-rook-terugdraai-20261022 19/19, uitrol-nazorg-rook-20261022 13/13, admin-diagnostiek-rook-20261022 26/26.
 
 
-## AK. Рішення власника з підписом passkey: відкат і зовнішні MCP-хости без SSH; одна стрічка історії (22.10.2026)
-«Відкат до попереднього» на mcp.*/dashboard і білий список зовнішніх MCP-хостів (mcp.*/agenten#extern) більше не потребують SSH і
+## AK. Рішення власника з підписом passkey: повернення стану і зовнішні MCP-хости без SSH; одна стрічка історії (22.10.2026)
+«Повернення стану до попереднього» на mcp.*/dashboard і білий список зовнішніх MCP-хостів (mcp.*/agenten#extern) більше не потребують SSH і
 `"opdracht.terugdraaien": true`: власник підписує рішення passkey-ем (challenge = sha256 канонічного вмісту + nonce + ≤ 5 хв, doel
 `eigenaar-besluit`), застосунок кладе підписаний файл у root-овий inbox `/srv/mijn-ruimte/besluit-inbox`, `mijn-ruimte-besluit.path` будить
 `/usr/local/sbin/mijn-ruimte-besluit` (root), який сам перераховує hash (`besluit-kern.mjs`), перевіряє перемикач і підпис
 (`mijn-ruimte-passkey verifieer-besluit`, ті самі root-ключі, одноразовий nonce) і лише тоді виконує `mijn-ruimte-installeer terugdraaien
-<naar>` (модус `besluit`; міграції не відкочуються; 1×/10 хв) або атомарно переписує `externeMcpHosts` у `mcp-rechten.json` (резервна
+<naar>` (модус `besluit`; міграції не повертаються до попереднього стану; 1×/10 хв) або атомарно переписує `externeMcpHosts` у `mcp-rechten.json` (резервна
 копія, перевірка JSON; файл лишається root-овим). Результат у `besluit-<id>.json`, подія в `gebeurtenissen.jsonl`, аудит
 `eigenaar_besluit_*`, таблиця `app.eigenaar_besluiten` (0105, RLS). Три стани: `opdracht.terugdraaien: true` = старий шлях + passkey;
-відсутній/false = лише passkey; `terugdraaien-passkey: false` = заборонено (аналогічно `externe-hosts-passkey`). UI: майстер відкату
+відсутній/false = лише passkey; `terugdraaien-passkey: false` = заборонено (аналогічно `externe-hosts-passkey`). UI: майстер повернення стану
 (з якого на який, попередження, passkey, живий стан через перезапуск) і картка «Дозволені хости» (чипи, додати/прибрати, підпис).
-Історія оновлень — одна стрічка за датою (встановлені, відкочені, автовідкат ROOK_*/NAZORG_*, обірвані, невдалі, відхилені), клік розгортає
+Історія оновлень — одна стрічка за датою (встановлені, повернуті до попереднього стану, автовідкат ROOK_*/NAZORG_*, обірвані, невдалі, відхилені), натискання розгортає
 подробиці, «Спробувати знову» неактивна з підказкою, якщо після спроби встановлено новіший випуск або версія старіша за активну; мобільна
 версія. Документація: RUNBOOK §15 (+ §7, §8), ENV-VARS. Тести: besluit-root-20261022 47/47, besluit-app-20261022 32/32 (RLS 33/33),
 uitrol-geschiedenis-tijdlijn-20261022 20/20; стенд besluit-* зі справжнім підписом віртуального passkey і root-скриптом.
@@ -1331,13 +1330,13 @@ uitrol-geschiedenis-tijdlijn-20261022 20/20; стенд besluit-* зі спра�
   наявних рядках `site_notifications`/`notification_jobs` за соортом, нічого не переміщується). Сервер віддає, рахує й позначає прочитаним
   лише сферу вкладки: дзвоник користувача — лише особисте, «Технічні сповіщення» смуги — лише технічне (активний профіль у вкладці).
 - **Дії на сайті** (`/api/owner/agents/activity`) теж мають сферу: адміністрування, оновлення, діагностика, SIEM, дії ШІ через технічне
-  підключення, пристрої технічного слота — лише в технічній панелі (розділ «Дії в технічному просторі», повтори зведено «N×», назви з
+  під'єднання, пристрої технічного слота — лише в технічній панелі (розділ «Дії в технічному просторі», повтори зведено «N×», назви з
   журналу); відмови воріт технічного простору — більше не «дії»; голландські результати показуються як «відхилено»/«помилка».
 - **«Звірка»:** виправлено bootstrap (grant якоря — свідомий системний крок з умовою власника), access/request (задачі для власника з
   отримувачем, системний крок), workspace/load (хибне спрацювання кешу просторів). Міграція `0108_zvirka_verholpen.sql` прибирає ці три
   старі лічильники, щоб групи RLS можна було вмикати.
 - **Аудит маршрутів:** `docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md` (генератор `scripts/beveiliging-routes-inventaris.mjs`):
-  682 маршрути, у всіх гейт; 33 з особистими даними — усі з атакуючим тестом (`ruimte-aanvallen-20261022`). Витоку між акаунтами не знайдено.
+  682 маршрути, у всіх гейт; 33 з особистими даними — усі з атакуючим тестом (`ruimte-aanvallen-20261022`). Витоку між обліковими записами не знайдено.
 - Дзвоник: прочитані рядки більше не напівпрозорі (контраст AA); на телефоні кнопки панелі ≥ 44 px, без вкладеної прокрутки.
 - Тести: `meldingen-sferen-20261022` 40/40, `ruimte-aanvallen-20261022` 31/31 (+ RLS-варіанти); оновлено `melding-soorten`, `ruimte-meldingen-20261020`.
 - Після встановлення: нічого вручну; за бажанням — `sudo deploy/db-rollen-instellen.sh status` і вмикання груп RLS по одній.
@@ -1367,18 +1366,18 @@ uitrol-geschiedenis-tijdlijn-20261022 20/20; стенд besluit-* зі спра�
 ### 1. Одне місце замість «Що може ШІ» під кожним браузером
 Нова вкладка **mcp.\*/agents → «Браузер і агенти»** (`#browser`): обидва слоти розширення (стан, строк, сторінки, «Відкрити доступ» /
 «Заблокувати»), матриця **слот × можливість × агент** (усі, Claude, ChatGPT, Grok, Gemini, Copilot, Cursor; читати, навігація,
-клік/введення, скріншот, консоль і мережа, глибока діагностика, скрипти), швидкі набори «Дозволити все для розробки» (з попередженням),
+натискання/введення, знімок екрана, консоль і мережа, глибока діагностика, скрипти), швидкі набори «Дозволити все для розробки» (з попередженням),
 «Лише читання», «Заблокувати», «Що ще має бути дозволено» (права конектора й режими) і останні відмови звичайною мовою. Кожен перемикач
 має «?» (uk/nl). Після «Зберегти» чинне розблокування переподписується одразу. Кожна відмова агентові (EXTENSIE_CAP, EXTENSIE_AGENT,
 EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне місце: https://mcp.tarasevych.com/agents#browser, слот, рядок і
-стовпчик. Стара вкладка «Розширення браузера» лише встановлює/підключає й веде сюди. На телефоні матриця показує один стовпчик за раз.
+стовпчик. Стара вкладка «Розширення браузера» лише встановлює/під'єднує й веде сюди. На телефоні матриця показує один стовпчик за раз.
 
 ### 2. Строк розблокування — ваш вибір, не «кожні 4 години»
-15 хв, 1 год, 4 год, до кінця технічної активації, **до закриття браузера**, до виходу з акаунта, до відкликання вручну, 1 тиждень,
+15 хв, 1 год, 4 год, до кінця технічної активації, **до закриття браузера**, до виходу з облікового запису, до відкликання вручну, 1 тиждень,
 1 місяць, 6 місяців, 1 рік (до 366 днів). Технічний слот може жити довше за активацію, але кожен технічний інструмент усе одно
 вимагає активного технічного профілю у вкладці. Перезапуск браузера не скидає «до виходу», «до відкликання» і тиждень…рік; короткі
 строки й «до закриття браузера» закінчуються з закриттям браузера (розширення 0.7.0 повідомляє ідентифікатор браузерної сесії — він
-може лише закрити доступ). **Вихід з акаунта закриває будь-який строк** (раніше приватне «N днів» його переживало). Міграції 0110, 0111.
+може лише закрити доступ). **Вихід з облікового запису закриває будь-який строк** (раніше приватне «N днів» його переживало). Міграції 0110, 0111.
 
 ### 3. Усі агенти — ті самі інструменти браузера, також назви chrome-devtools-mcp
 Відмінність між агентами — лише ваша матриця (тест рівності для шести агентів). За перемикачем агенти бачать і назви chrome-devtools-mcp
@@ -1391,7 +1390,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 ### Що власник має знати
 1. Відкрийте «Браузер і агенти», позначте можливості й натисніть «Зберегти» (до того діють старі дозволи на кожному браузері).
 2. Оновіть розширення до 0.7.0; CRX підпишіть локально своїм ключем (`node scripts/sign-extension.mjs`). 0.6.2 працює й далі зі старими межами.
-3. Будь-який вихід з акаунта (і перемикання акаунта у вкладці) закриває доступ розширення; Chrome, що працює у фоні, не вважається закритим.
+3. Будь-який вихід з облікового запису (і перемикання облікового запису у вкладці) закриває доступ розширення; Chrome, що працює у фоні, не вважається закритим.
 4. Якщо діє підписана політика ШІ, режими інструментів вирішує вона.
 ```
 
@@ -1400,9 +1399,9 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 
 - Нове: `src/werkblad/*` — «Робочий стіл» / «Werkblad» замість старого «Bureau» на /overzicht (адреса й меню ті самі; h1 «Робочий стіл»).
   Сітка 12/6/1 колонок без перекриттів (`shared/werkblad-indeling.ts plaatsen`), режим «Налаштувати»: перетягування (pointer events,
-  живий перегляд), розмір, каталог віджетів, фон (градієнти з токенів або власне зображення ≤ 400 КБ), «Скинути»; клавіатура (стрілки,
+  живий перегляд), розмір, каталог блоків інтерфейсу, фон (градієнти з токенів або власне зображення ≤ 400 КБ), «Скинути»; клавіатура (стрілки,
   Shift+стрілки, Delete) з aria-live; телефон — «вище/нижче», тап ≥ 44 px.
-- Віджети лише з наявних маршрутів: привітання, швидкий доступ (з лічильниками), пошта, календар, завдання, нотатки, дошка, файли,
+- Блоки інтерфейсу лише з наявних маршрутів: привітання, швидкий доступ (з лічильниками), пошта, календар, завдання, нотатки, дошка, файли,
   хмарні сховища (квота, яку сервер уже має), нещодавні пошуки, швидкі дії, ШІ для вас, статус служб (кнопка «Перевірити»), системна
   інформація (замість погоди — без зовнішніх хмар), підказка; технічна лада: сервер, оновлення, діагностика. GitHub — «скоро».
 - База: міграція 0112 `app.werkblad_indeling` (user_id + ruimte, RLS; GRANT у rechten.sql). Маршрути
@@ -1419,7 +1418,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 ## AP. Термінал: сервер як пристрій, командний термінал, PowerShell (зона G, 22–23.10.2026)
 
 Було: «Термінал» у технічній смузі — лише одноразовий контейнер на пристрої з podman; у технічному просторі власника не було жодного
-пристрою, тож вікно показувало «Немає пристрою з увімкненим терміналом…». Сервер підключався лише через переписаний з сайту код
+пристрою, тож вікно показувало «Немає пристрою з увімкненим терміналом…». Сервер під'єднувався лише через переписаний з сайту код
 (beheer-koppelen). PowerShell був заборонений.
 
 Стало:
@@ -1430,7 +1429,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   ProtectSystem=strict) із шаблону deploy/mijn-ruimte-apparaat.service. Стара unit mijn-ruimte-agent-beheer.service вимикається.
   Теки: /home/beheer (запис), /srv/mijn-ruimte і /var/log (читання); список програм — STANDAARD_ALLOW_SERVER.
 - Командний термінал (src/terminal/Terminal.tsx, backend/terminal-opdrachten.ts, міграція 0113 app.terminal_opdrachten з RLS):
-  - відкривається одразу на сервері: «підключено як beheer@<хост>, тека …, дозволено …»;
+  - відкривається одразу на сервері: «під'єднано як beheer@<хост>, тека …, дозволено …»;
   - одна програма на рядок без оболонки (| ; && > < відхиляються);
   - читання — одразу; команди, що змінюють, — підтвердження у вікні (налаштування пристрою: «кожна команда»);
   - автодоповнення, історія з виводом, копіювання; вивід записується;
@@ -1448,7 +1447,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 
 Стенд terminal-*: 28 знімків, 0 дефектів.
 
-Після встановлення: якщо сервер не підключився сам — `sudo mijn-ruimte-installeer terminal-inrichten`.
+Після встановлення: якщо сервер не під'єднався сам — `sudo mijn-ruimte-installeer terminal-inrichten`.
 ```
 
 ## AQ. Інтеграція зон AJ–AP у один випуск (23.10.2026)
@@ -1457,23 +1456,23 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 контрольною точкою (гілка `werk-20261023`, коміт 25fef3c, архів і git-бандл передано власнику), агенти продовжили з власного контексту,
 кожен спершу здав проміжний звіт. Під час злиття виправлено:
 
-- **Збірка впиралась у ліміт пам'яті інсталятора.** `vite build` на злитому дереві при `BOUW_HEAP_MB=2560` (як на сервері) падав із
+- **Складання впиралась у ліміт пам'яті інсталятора.** `vite build` на злитому дереві при `BOUW_HEAP_MB=2560` (як на сервері) падав із
   «JavaScript heap out of memory» уже після «✓ built» (пік ~3,1 ГБ RSS). Причина — два вже зібрані сторонні файли, які Rollup розбирав
   заново: `officeparser.browser.slim.mjs` (5,5 МБ) і h5wasm (4,2 МБ). Новий плагін `scripts/vendor-ongebundeld.mjs` кладе їх без змін у
-  `dist/assets/vendor/<назва>-<хеш>/` і підключає як зовнішні модулі (`/assets/vendor/…`); плюс `rollupOptions.cache: false` і
-  `maxParallelFileOps: 32`. Тепер збірка проходить із 2048 МБ (запас ~500 МБ до ліміту інсталятора) і вдвічі швидша (≈35 с замість 66 с).
+  `dist/assets/vendor/<назва>-<хеш>/` і під'єднує як зовнішні модулі (`/assets/vendor/…`); плюс `rollupOptions.cache: false` і
+  `maxParallelFileOps: 32`. Тепер складання проходить із 2048 МБ (запас ~500 МБ до ліміту інсталятора) і вдвічі швидша (≈35 с замість 66 с).
   Тест `vendor-ongebundeld-20261023` (26/26) стежить, щоб ці файли лишались самодостатніми ES-модулями і завантажувались лише динамічно.
-- **Перегляд вкладень .mdb/.accdb у пошті** падав у браузері з «process is not defined» (знайшов рендер-контроль зони AJ): перед
+- **Перегляд вкладень .mdb/.accdb у пошті** падав у браузері з «process is not defined» (знайшов відмальовування-контроль зони AJ): перед
   завантаженням `mdb-reader` тепер ставиться мінімальна заглушка `process`/`Buffer` (окремий модуль `src/platform/node-shim.ts`, який
-  завантажується першим у тому самому чанку), нічого наявного не перезаписуючи. Рендер-контроль зони AJ на остаточній збірці у справжньому
-  Chromium: **13 сторінок рендеряться, 506/506 бандлів завантажуються** (до виправлення — 506/507 із попередженням).
+  завантажується першим у тому самому чанку), нічого наявного не перезаписуючи. Відмальовування-контроль зони AJ на остаточній складанні у справжньому
+  Chromium: **13 сторінок відмальовуються, 506/506 бандлів завантажуються** (до виправлення — 506/507 із попередженням).
 - **`evaluate_script`** (псевдонім chrome-devtools-mcp із зони AN) додано до спільного переліку браузерних інструментів — інакше він
   вважався б не браузерним (`ai-ruimte` 18/18).
 - **Історія оновлень (AK):** Escape у розгорнутому рядку згортає його й повертає фокус на рядок (вимога доступності A5, раніше — для
   бічної шухляди, якої більше немає; `ui-audit-g` 59/59).
 - **Робочий стіл (AO):** у «Останніх файлах» замість `vnd.openxmlformats-officedocument…` — короткий формат (`xlsx`); на 390 px місяць у
   календарі на власному рядку, кнопки під ним (раніше «Жовтень 20…» обрізався, а стрілка переносилась).
-- **Стенд усіх нових кроків на злитій збірці (H-EIND, 213 знімків, 390/1280, світла/темна, uk/nl) знайшов і виправлено:**
+- **Стенд усіх нових кроків на злитій складанні (H-EIND, 213 знімків, 390/1280, світла/темна, uk/nl) знайшов і виправлено:**
   - зміни на екрані «Браузер і агенти» (`owner.extensie.matrix`, `.modi`) потрапляли в особистий дзвоник як «Дія на сайті: extensie
     matrix» — тепер це технічні дії з людською назвою («Змінено дозволи «Браузер і агенти»»), а кожне повідомлення чату в боковій панелі
     більше не стає сповіщенням (лишається в журналі);
@@ -1485,17 +1484,17 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - технічний робочий стіл: стан розгортання — словом («готово», а не `klaar`), перевірки діагностики — назвою й причиною (а не id і
     кодом), підсумок розгортання — у два рядки; у вікні індексації «10 хв» замість «10 хв 0 с».
 
-## AR. Пошта: глобальний пошук — у меню, а не поверх меню акаунтів пошти (24.10.2026)
+## AR. Пошта: глобальний пошук — у меню, а не поверх меню облікових записів пошти (24.10.2026)
 
 Запит власника (одне оновлення, лише ця зміна): «кнопка пошуку по всьому сайту з відділу пошти замість того щоб бути поверх меню
-акаунтів пошти, буде відображено натомість в меню між фото профілю та кнопкою редагування меню».
+облікових записів пошти, буде відображено натомість в меню між фото профілю та кнопкою редагування меню».
 
 - **Телефон (≤ 700 px, шухляда меню).** Кругла кнопка «Пошук у «Мій простір»» більше не висить у правому верхньому куті над аватаром
   Gmail (з-під неї стирчав логотип «G» — той «фрагмент логотипа»). Тепер вона в шапці шухляди: фото профілю … **пошук** ·
   «Редагувати меню» · «Закрити», 44×44. Дотик закриває шухляду й відкриває те саме вікно пошуку з курсором у полі; Esc → фокус на
-  кнопці меню ☰. Меню акаунтів пошти (аватар із логотипом) знову повністю ваше: центр аватара й логотипа — сам аватар.
+  кнопці меню ☰. Меню облікових записів пошти (аватар із логотипом) знову повністю ваше: центр аватара й логотипа — сам аватар.
 - **Комп'ютер і планшет (> 700 px).** Поле «Пошук у «Мій простір»… Ctrl K» більше не лежить на «Оновити пошту», «Швидкі налаштування»
-  і меню акаунтів пошти (так було на 1704 px із закріпленим меню). У шапці праворуч лишилось тільки фото профілю; кнопка пошуку стоїть
+  і меню облікових записів пошти (так було на 1704 px із закріпленим меню). У шапці праворуч лишилось тільки фото профілю; кнопка пошуку стоїть
   у верхньому рядку бічного меню: розгорнуте — одразу ліворуч від кнопок режиму з «Налаштувати меню» (така сама рамка й висота),
   згорнуте — під кнопкою режиму, док — перед ⚙. Підказка «Пошук у «Мій простір» (Ctrl K)». Це окрема кнопка поза панеллю «Режим бічної
   панелі» і той самий елемент при розгортанні/згортанні меню, тож після Esc фокус повертається саме на неї.
@@ -1505,7 +1504,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   `.sidebar-expanded .canonical-menu-toggle`) — тепер усі кнопки в один ряд (на всіх сторінках).
 - Код: `src/search/ZoekGlobaal.tsx` (`ZoekMenuKnop`, `zonderKnop`, повернення фокуса, якщо кнопки вже немає), `src/CanonicalChrome.tsx`
   (`zoekInMenu = current === 'mail'`), `src/ZijbalkWerkbalk.tsx` (`zoek`), `src/search/zoek.css`, `src/menu-v2.css`.
-- Перевірки: `zoek-in-menu-20261024` 23/23; повний набір 235 файлів + 8 RLS-варіантів; tsc 0 помилок; рендер-контроль 13 сторінок,
+- Перевірки: `zoek-in-menu-20261024` 23/23; повний набір 235 файлів + 8 RLS-варіантів; tsc 0 помилок; відмальовування-контроль 13 сторінок,
   506/506 бандлів; стенд `mail-zoek-in-menu`, `hub-zoek-ongewijzigd`, `zoek-palet-mail` на 360/390/768/1280/1704, світла/темна, uk/nl —
   усе гаразд (elementFromPoint: аватар, логотип, «Оновити пошту», «Швидкі налаштування» — самі себе; порядок у шапці шухляди
   фото → пошук → «Редагувати меню» → «Закрити», один ряд; фокус і Ctrl K).
@@ -1522,7 +1521,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   Логіка коду не змінювалась: лише шляхи імпортів, посилання на шляхи в тестах, скриптах і документах та назви файлів у коментарях.
   Назви компонентів усередині (`GoogleMailWorkspace`, `MailThreadContent`, …) лишились — карта показує, у якому файлі кожен.
 - **Карта.** `docs/kaart/KAART-BESTANDEN.md`: словник, винятки з причинами, таблиці за розділами — нова назва · була · експорти.
-  `docs/kaart/bestandskaart.json` — те саме для машин. Перший крок збірки — `scripts/kaart-controle.mjs`:
+  `docs/kaart/bestandskaart.json` — те саме для машин. Перший крок складання — `scripts/kaart-controle.mjs`:
   - кожен новий шлях існує;
   - жоден старий не повернувся;
   - у коді, тестах, скриптах і розширенні немає посилань на старі шляхи;
@@ -1542,7 +1541,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
 - **Безпека без змін, перевірено автоматично:**
   - для кожного з 794 файлів `src/` той самий клас «технічний/звичайний» (96 технічних); правила в `shared/tech-bundels.ts`:
     `Admin*` → `Beheer*`, `admin-*` → `beheer-*`, `src/flags/` → `src/vlaggen/`, `src/remote/` → `src/extern/`;
-  - збірка: так само 6 технічних бандлів (`BeheerConsoleWeergave`, `ExternBureaublad`, `SshBeheer`, `Terminal`, `Vlaggen`,
+  - складання: так само 6 технічних бандлів (`BeheerConsoleWeergave`, `ExternBureaublad`, `SshBeheer`, `Terminal`, `Vlaggen`,
     `ZoekIndexVenster`) і 497 звичайних;
   - пошуковий каталог інтерфейсу (`PLEKKEN`, 101 правило): для кожного файлу та сама служба, вкладка й доступ.
 - **Що змінилось для вас.** Команди з інструкцій мають нові назви скриптів:
@@ -1566,10 +1565,10 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   незмінних властивостей (технічні/звичайні класи, місця в каталозі).
 - Перевірки:
   - `tsc` (фронтенд і сервер) — 0 помилок;
-  - збірка: карта, каталог інтерфейсу 1149, L002, розумні вхідні, контраст, 6 технічних і 497 звичайних бандлів;
+  - складання: карта, каталог інтерфейсу 1149, L002, розумні вхідні, контраст, 6 технічних і 497 звичайних бандлів;
   - тести: 236 файлів, 8 769 перевірок, 0 провалів (12 перевірок RLS проходять у 8 RLS-варіантах; 4 файли пропущено, як завжди);
-  - рендер-контроль у Chromium — 13 сторінок, 506/506 бандлів;
-  - стенд до/після на 390 і 1280 px (39 знімків): відрізняються лише дані — час листів і адреса тестового акаунта, розкладка та сама.
+  - відмальовування-контроль у Chromium — 13 сторінок, 506/506 бандлів;
+  - стенд до/після на 390 і 1280 px (39 знімків): відрізняються лише дані — час листів і адреса тестового облікового запису, розкладка та сама.
 
 ## AT. Одне вікно листа для всіх режимів — адаптивна рамка (24.10.2026, пакет 1 «Adaptive Mail Canvas», крок 2)
 
@@ -1630,13 +1629,13 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - `mail-ux-beoordeling-20261021` R5: правило «Зменшити вікно» тепер у `lees-venster.css` і діє до 720 px;
   - `bestandskaart-20261024` +2: список «додані».
 - **Карта «що де».** У `docs/kaart/bestandskaart.json` з'явилось поле `toegevoegd` — 7 файлів, створених після перейменування, з
-  описом. `scripts/kaart-controle.mjs` зупиняє збірку, якщо такого файла немає. У `KAART-BESTANDEN.md` — розділ «Додані після
+  описом. `scripts/kaart-controle.mjs` зупиняє складання, якщо такого файла немає. У `KAART-BESTANDEN.md` — розділ «Додані після
   перейменування».
 - **Що змінилось для вас.** Нічого налаштовувати не треба. Режими «Праворуч» і «Знизу» (Швидкі налаштування пошти → «Область
   читання») тепер працюють так, як задумано, зокрема з меню праворуч чи доком.
 - Перевірки:
   - `tsc` (фронтенд і сервер) — 0 помилок;
-  - збірка: карта, каталог інтерфейсу 1149, L002, розумні вхідні, контраст, 6 технічних і 497 звичайних бандлів;
+  - складання: карта, каталог інтерфейсу 1149, L002, розумні вхідні, контраст, 6 технічних і 497 звичайних бандлів;
   - тести: 237 файлів, 8 859 перевірок, 0 провалів (12 перевірок RLS проходять у 8 RLS-варіантах; 4 файли пропущено, як завжди);
   - стенд `mail-lezer-*`:
     - ДО: у старій версії дефекти мали всі 40 вимірювань — повний, праворуч, знизу й плаваюче на 8 розмірах (на телефоні це
@@ -1645,9 +1644,9 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
       прокрутки) і меню праворуч / док зверху / док знизу на 5 розмірах комп'ютера;
   - e2e у Chromium: `mail-lijst-ux` 26/26 (разом із перетягуванням плаваючого вікна), `mail-opstel-venster` 25/25,
     `mail-verkenning` 1/1, `vensters` 11/11;
-  - рендер-контроль — 13 сторінок, 506/506 бандлів;
+  - відмальовування-контроль — 13 сторінок, 506/506 бандлів;
   - стенд інших сторінок (хаб, пошта, меню, ідентичність, технічний простір; 40 знімків, 390 і 1280 px) проти попереднього
-    випуску: відрізняються лише дані (час, тестовий акаунт).
+    випуску: відрізняються лише дані (час, тестовий обліковий запис).
 
 ## AU. Лист усередині вікна: повідомлення, панель контексту, кольори контактів, щільність (24.10.2026, пакет 2 «Adaptive Mail Canvas»)
 
@@ -1712,7 +1711,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     розділу, мітки, «Вигляд», клавіші, Esc і «Назад», панель телефона, а також те, що до «Показати» немає жодного запиту назовні.
 - **Карта «що де»:** +10 файлів пакета 2 у розділі «Додані після перейменування» (усього 17).
 - **Що змінилось для вас:**
-  - зовнішні зображення приховано за замовчуванням. Повернути як було: «Вигляд» → «Зовнішні зображення» → «Завжди показувати»;
+  - зовнішні зображення приховано типово. Повернути як було: «Вигляд» → «Зовнішні зображення» → «Завжди показувати»;
   - на телефоні «Згорнути лист» — у «Ще»;
   - у вузькому вікні «Вигляд», «Згорнути» й «Зменшити вікно» — у «⋮».
 - **Не зроблено (чесно):**
@@ -1728,16 +1727,16 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   довідка вища за панель дій); дзвіночок закривав текст і кнопки аркушів «Контекст» і «Ще» (тепер ховається під аркушем).
 - Перевірки:
   - `tsc` (фронтенд і сервер) — 0 помилок;
-  - збірка: карта, каталог інтерфейсу 1 174 елементи (+25), L002, розумні вхідні, контраст, 6 технічних і 496 звичайних бандлів;
+  - складання: карта, каталог інтерфейсу 1 174 елементи (+25), L002, розумні вхідні, контраст, 6 технічних і 496 звичайних бандлів;
   - тести: 239 файлів, 8 932 перевірки (+73 нові). Не пройшли 4, і жодна — не через пакет: 3 у `extensie-beheer` (див. знахідку
     вище) і 1 нестабільна в `ruimte-cloud-agenda-20261020` (фоновий планувальник; окремо — 48/48 двічі). 12 перевірок RLS проходять
     у 8 RLS-варіантах; 3 файли без результату, як завжди;
   - стенд `mail-lezer-*`: 71 із 71 без дефектів — ті самі 55, що в пакеті 1, і 16 нових вимірювань контексту (повний і праворуч на
     8 розмірах);
   - e2e у Chromium: `mail-lijst-ux` 26/26, `mail-opstel-venster` 25/25, `mail-verkenning` 1/1, `vensters` 11/11;
-  - рендер-контроль — 13 сторінок, 505/505 бандлів;
-  - стенд інших сторінок проти збірки пакета 1 — 54 знімки, 390 і 1280 px: хаб, пошта (вхідні, мітки, налаштування, контакти, список,
-    пошук у меню), хмара, ідентичність, дім, адміністрування, MCP, GitHub. Відрізняються лише дані: час, тестовий акаунт, час
+  - відмальовування-контроль — 13 сторінок, 505/505 бандлів;
+  - стенд інших сторінок проти складання пакета 1 — 54 знімки, 390 і 1280 px: хаб, пошта (вхідні, мітки, налаштування, контакти, список,
+    пошук у меню), хмара, ідентичність, дім, адміністрування, MCP, GitHub. Відрізняються лише дані: час, тестовий обліковий запис, час
     відповіді сервера, список служб, що довантажується.
 
 ## AV. ШІ з перевіркою джерел і двомовне читання (24–25.10.2026, пакет 3 «Adaptive Mail Canvas»)
@@ -1785,7 +1784,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - **Порівняти** — таблиця абзаців «оригінал ↔ переклад ШІ» (§1, §2 …). Абзаци-джерела пунктів позначено «Джерело для 2 пунктів
     · знайдено дослівно». На телефоні — одне під одним. Лист із форматуванням — одним натисканням «Оригінал»;
   - без агента доступний лише «Оригінал», і смуга пише чому; лист нікуди не надсилається.
-- **«Вигляд» → «Мова листа»** (`src/mail/WeergaveKeuze.tsx`, `src/mail/lees-modus.ts`): «Оригінал» (за замовчуванням) або
+- **«Вигляд» → «Мова листа»** (`src/mail/WeergaveKeuze.tsx`, `src/mail/lees-modus.ts`): «Оригінал» (типово) або
   «Перекладати» — тоді лист іншою мовою перекладається одразу під час відкриття. Під вибором прямо написано, що текст іде вашому
   ШІ-агенту (з назвою). Діє лише на цьому пристрої.
 - **Панель контексту** (`src/mail/ContextPaneel.tsx`):
@@ -1837,7 +1836,7 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - простий розбір шукає питання, прохання й терміни за словами-ознаками. Непряме прохання без таких слів він може пропустити;
   - справжню модель тут не викликано: у цьому середовищі немає ключа, тож стенд імітує приватного агента. Один з його пунктів
     навмисно вигаданий, і перевірка його відкинула;
-  - «Мова листа: Перекладати» надсилає агенту кожен відкритий лист іншою мовою — тому за замовчуванням «Оригінал»;
+  - «Мова листа: Перекладати» надсилає агенту кожен відкритий лист іншою мовою — тому типово «Оригінал»;
   - «Порівняти версії» порівнює лише текст, без OCR сканів;
   - Safari й Firefox не перевірено.
 - **Знайдено стендом і тестами й виправлено до випуску:**
@@ -1864,16 +1863,16 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     виправити окремо: так само чесно, як `acties`.
 - Перевірки:
   - `tsc` (фронтенд і сервер) — 0 помилок;
-  - збірка: карта, каталог інтерфейсу 1 194 елементи (+20), L002, розумні вхідні, контраст, 6 технічних і 497 звичайних бандлів;
+  - складання: карта, каталог інтерфейсу 1 194 елементи (+20), L002, розумні вхідні, контраст, 6 технічних і 497 звичайних бандлів;
   - тести: 243 файли, 9 129 перевірок (+197). Не пройшли 3 — у `extensie-beheer` (`LIMIT 500`, див. AU), не через пакет.
     `ruimte-cloud-agenda-20261020` цього разу 48/48. 12 перевірок RLS проходять у 8 RLS-варіантах; 3 файли без результату, як завжди;
   - стенд `mail-lezer-*` (усі 12 кроків, 8 розмірів, світла й темна тема, плюс нідерландський прохід) — 99 вимірювань:
     - кроки пакетів 1–2 українською — 71 з 71, як і в пакеті 2;
-    - нові кроки ШІ — 18 з 18 (8 розмірів × 2 режими + нідерландський прохід). У першому проході цієї збірки 3 вимірювання
+    - нові кроки ШІ — 18 з 18 (8 розмірів × 2 режими + нідерландський прохід). У першому проході цієї складання 3 вимірювання
       показали «12 px замість 13 px», бо перевірка стенду брала кнопку «Порівняти», навмисно 12 px. Перевірку виправлено, кроки
-      повторено на тій самій збірці. Після правки підказки кроки ШІ ще раз повторено на остаточній збірці (`LZ-p3g`) — знову 18 з 18;
+      повторено на тій самій складанні. Після правки підказки кроки ШІ ще раз повторено на остаточній складанні (`LZ-p3g`) — знову 18 з 18;
       підказка у відповіді рівно один раз на кожному розмірі, навіть після подвійного натискання. Кроки пакетів 1–2 виміряно на
-      збірці до цієї правки: вона змінює лише вставку підказки;
+      складанні до цієї правки: вона змінює лише вставку підказки;
     - axe (WCAG 2.2 AA) на блоці, «Звідки це?», таблиці й смузі, «Порівнянні версій» — 0 порушень (92 перевірені області);
       контраст у світлій і темній темах — 0;
     - на нових елементах жодного дефекту; решта дефектів знімків — ті самі елементи списку й листа, що й у пакеті 2 (538 → 550:
@@ -1881,32 +1880,32 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     - нідерландський прохід кроків контексту пакета 2 — «не пройдено» двічі: їхні перевірки шукають українські слова («Мітки»,
       «3 версії»), а на знімках ці елементи є нідерландською. Регресії немає;
   - e2e у Chromium: `mail-lijst-ux` 26/26, `mail-opstel-venster` 25/25, `mail-verkenning` 1/1, `vensters` 11/11;
-  - рендер-контроль — 13 сторінок, 506/506 бандлів;
-  - стенд інших сторінок проти збірки пакета 2 — 54 знімки, 390 і 1280 px (хаб, пошта, хмара, ідентичність, дім, адміністрування,
-    MCP, GitHub): відрізняються лише дані (час, тестовий акаунт, час відповіді сервера, список служб, що довантажується).
+  - відмальовування-контроль — 13 сторінок, 506/506 бандлів;
+  - стенд інших сторінок проти складання пакета 2 — 54 знімки, 390 і 1280 px (хаб, пошта, хмара, ідентичність, дім, адміністрування,
+    MCP, GitHub): відрізняються лише дані (час, тестовий обліковий запис, час відповіді сервера, список служб, що довантажується).
 
 ## AW. Плаваючі кнопки: зони й гнізда (25.10.2026)
 
 Еталон — затверджена пропозиція `claude/omlijsting/MAKET-PLAVAYUCHI-KNOPKY-2026-10-25.md` (рішення власника: стос дій плаває над
 списком; повна зона не приймає кнопку й підказує; лічильник сповіщень і на ☰; усе одним пакетом). Кнопки більше не рахують своє
 місце від країв екрана чи одна від одної: кожна стоїть у гнізді зони, а зону розставляє браузер (flex). Нічого не прибрано —
-дзвоник, панель, звук, лічильник, «Написати», «Вгору» й спливаючі сповіщення лишились; змінилось, де вони стоять і як їх переносити.
+дзвоник, панель, звук, лічильник, «Написати», «Вгору» й спливні сповіщення лишились; змінилось, де вони стоять і як їх переносити.
 
 - **Модель без DOM** (`shared/plaatsing.ts`):
   - класи пристроїв: телефон ≤ 700 px, планшет ≤ 1099 px, комп'ютер;
   - зони: `bovenbalk` (верхня панель, рядок), `lade-kop` (шапка меню, лише телефон), `zijbalk` (пунктами меню), `actiestapel`
     (стос дій у куті області вмісту, стовпчик). Місткість (телефон / планшет / комп'ютер): 5 / 6 / 6, 2 / 0 / 0, 3 / 3 / 3, 3 / 3 / 3;
-    мешканці зони (пошук, фото) і кнопки служби (на Пошті ⟳ і ⚙, на телефоні ще фото поштової скриньки) рахуються в місткість;
+    мешканці зони (пошук, фото) і кнопки служби (на Пошті ⟳ і ⚙, на телефоні ще фото поштової скриньки) враховуються в місткість;
   - кнопки: `bel`, `opstellen` («Написати», лише Пошта), `naar-boven` («Вгору», лише в стосі). Типово: телефон — дзвоник у шапці
     меню праворуч від фото, «Написати» в стосі, над нею гніздо «Вгору»; планшет і комп'ютер — дзвоник у верхній панелі праворуч від
     фото;
   - `indeling(voorkeur, ctx)` → кнопки по зонах; `verplaats(...)` → новий запис або відмова (`vol` з текстом підказки,
     `niet-toegestaan`); `terugzetten`, `normaliseerPlaatsing`; `stapelRechthoek` для дока вікон;
   - запис зберігається в налаштуваннях меню (`shared/menu-model.ts`, поле `plaatsing`), окремо для кожного класу пристроїв, за
-    акаунтом і простором — як меню. Нової таблиці й міграції немає.
+    обліковим записом і простором — як меню. Нової таблиці й міграції немає.
 - **Зони в оболонці** (`src/CanoniekOmlijsting.tsx`, `src/plaatsing/Plek.tsx`, `src/plaatsing/plaatsing-staat.ts`):
   - кожна зона — справжній блок розмітки з гніздами (`<Gniezda>`); гнізда існують ще до кнопки, тож після F5 нічого не стрибає;
-  - кнопка малюється в своє гніздо через портал (`<Plek knop=…>`); форма — кругла в зонах і рядком «іконка + назва» в меню;
+  - кнопка малюється в своє гніздо через портал (`<Plek knop=…>`); форма — кругла в зонах і рядком «піктограма + назва» в меню;
   - стос дій — `position: fixed` у куті області вмісту: праворуч від меню, ліворуч від меню праворуч (док «праворуч» 60 / 310 px),
     вище нижніх смуг (банер з'єднання, нижня смуга листа, згорнутий лист, док унизу, якщо він доходить до кута — вимірюється
     `ResizeObserver` + `MutationObserver`), у вікні іншої програми (iframe) — 72 px від краю (L002). Вміст має запас знизу на висоту
@@ -1917,17 +1916,17 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   відкривається над дзвоником (дзвоник у стосі), її висота не більша за ту, з якої рахувався верх. Пункт «Повернути в кут» тепер
   називається «Повернути на типове місце». Лічильник непрочитаних — і на ☰ (`.plaats-menu-teller`, також у назві кнопки), коли
   дзвоник у меню.
-- **Спливаюче сповіщення — на вільному місці** (`src/plaatsing/melding-plek.ts`). Дві ваші умови: з пропозиції — «на комп'ютері під
-  дзвоником, на телефоні вгорі під панеллю, не над стосом»; з QA 12.10 (№11 / M7) — сповіщення ніколи не лягає на кнопки (тоді клік після
+- **Спливне сповіщення — на вільному місці** (`src/plaatsing/melding-plek.ts`). Дві ваші умови: з пропозиції — «на комп'ютері під
+  дзвоником, на телефоні вгорі під панеллю, не над стосом»; з QA 12.10 (№11 / M7) — сповіщення ніколи не лягає на кнопки (тоді натискання після
   автозникнення потрапив на приховану кнопку рядка). Стенд показав, що під дзвоником на Пошті сповіщення лягало на «‹ 1–10 із 18 ›».
-  Тепер — кандидати за порядком, перемагає перший, під яким немає малої кнопки (кнопки, посилання, поля; великі клікові області на
-  весь рядок не рахуються, як і в 12.10):
+  Тепер — кандидати за порядком, перемагає перший, під яким немає малої кнопки (кнопки, посилання, поля; великі натисканню області на
+  весь рядок не враховуються, як і в 12.10):
   - комп'ютер: під дзвоником → унизу посередині області вмісту (як у 12.10) → угорі посередині під панеллю → перша вільна смуга в цій
     колонці;
   - телефон (на всю ширину): угорі під панеллю → над стосом → перша вільна смуга між панеллю й стосом;
   - якщо вільного місця немає — перший кандидат, і це видно в `data-melding-vrij="nee"`; вибране місце — у `data-melding-plek`;
   - заміряно на тестовій пошті: комп'ютер — угорі посередині між «Вхідні» й «‹ 1–10 із 18 ›»; телефон — угорі під панеллю; хаб на
-    телефоні — у вільній смузі під панеллю «Робочого столу» (угорі там кнопки «Налаштувати», «Оновити дані віджетів»);
+    телефоні — у вільній смузі під панеллю «Робочого столу» (угорі там кнопки «Налаштувати», «Оновити дані блоків інтерфейсу»);
   - на телефоні сповіщення — в один рядок (текст і кнопки поруч) на всіх сторінках і на всій ширині телефона; раніше так було лише на
     Пошті до 520 px, і на 640×400 сповіщення у два рядки лягало на «‹ 1–10 із 18 ›»;
   - попутно: із технічним профілем, коли смуга ховалась, сповіщення на комп'ютері з'їжджало на пів ширини ліворуч — це лишалось від
@@ -1941,33 +1940,33 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     (FLIP 160 мс, без анімації при «зменшити рух»); повна зона — червона рамка й підказка;
   - підвели до ☰ або в меню — меню розгортається через 650 мс, відвели — згортається через 400 мс (якщо тягу почали не в меню);
   - відпустили поза зоною, `pointercancel`, Esc — кнопка лишається, де була;
-  - без тяги: довге натискання без руху, правий клік, Shift+F10 / клавіша меню, у «Редагувати меню» — натискання → «Перемістити
+  - без тяги: довге натискання без руху, правий натискання, Shift+F10 / клавіша меню, у «Редагувати меню» — натискання → «Перемістити
     до…» (`PlaatsActies` у `Plek.tsx`): зони з лічильниками, «Лівіше / Правіше» або «Вище / Нижче», «Повернути на типове місце»,
     «Скинути всі кнопки до типового», «Закрити»; фокус у меню, Esc повертає на кнопку; результат — у `aria-live`.
 - **Один шар CSS** (`src/plaatsing/plaatsing.css`): зони, гнізда, стос, ховання під вікнами («Новий лист», шухляда, палітра пошуку,
-  відкритий лист, панель сповіщень — `visibility`, нічого не зсувається), спливаюче сповіщення на телефоні, вигляд тяги й
+  відкритий лист, панель сповіщень — `visibility`, нічого не зсувається), спливне сповіщення на телефоні, вигляд тяги й
   «Перемістити до…». З інших файлів прибрано правила, які тепер у шарі: `canoniek-omlijsting.css` (запас 140 px і 6 зсувів «Вгору»
   через `:has()`), `menu-v2.css`, `mail-qa-2026-10.css` (ховання FAB і дзвоника, позиції сповіщення), `mail-ux-beoordeling-20261021.css`,
   `mail-nieuw-bericht.css`, `zoek/zoek.css`; `tech/tech.css` компенсує технічну смугу для стосу, а не для дзвоника. Умовних правил
   (`:has(…)`) для дзвоника, «Написати», «Вгору» й сповіщення поза шаром: було 15 у 4 файлах, лишилось 2 — для сповіщення лише на
   Пошті (`mail-qa-2026-10.css`: угорі, коли відкрито «Новий лист»; сховане на телефоні, коли відкрито меню); у шарі вони діяли б на
   всіх сторінках, тож не переносив.
-- **Захист росту** (`scripts/plaatsing-controle.mjs`, крок збірки після карти): кнопка `<Plek knop=…>` без запису в каталозі чи
+- **Захист росту** (`scripts/plaatsing-controle.mjs`, крок складання після карти): кнопка `<Plek knop=…>` без запису в каталозі чи
   намальована двічі, типові місця понад місткість на будь-якому класі, розміри в CSS ≠ модель, нове правило `position: fixed` поза
-  шаром (порівняння з переліком наявних — `scripts/plaatsing-vaste-elementen.json`, 114 правил) → збірка зупиняється з підказкою
+  шаром (порівняння з переліком наявних — `scripts/plaatsing-vaste-elementen.json`, 114 правил) → складання зупиняється з підказкою
   «hoort in een zone».
 - **Одна Esc — один шар:** Esc панелі сповіщень (у фазі перехоплення, щоб на телефоні спершу закривалась панель, а не меню) не діє,
   коли фокус в іншому шарі зі своєю Esc — «бульбашці» пункту меню, «Перемістити до…», контекстному меню, пошуку — або на пункті
   меню з відкритою «бульбашкою». Знайшов стенд: одна Esc закривала і «бульбашку», і панель.
 - **Тести:**
   - новий `plaatsing-20261025` — 56 перевірок (модель на всіх класах, перенесення й відмови, нормалізація, перевірка в
-    збірці на підставлених помилках, вигляд зони, шар CSS без `display:none` і без анімації `left/top`, гнізда ≥ 44 px, одна Esc —
+    складанні на підставлених помилках, вигляд зони, шар CSS без `display:none` і без анімації `left/top`, гнізда ≥ 44 px, одна Esc —
     один шар, вільне місце сповіщення: порядок кандидатів, відмова через кнопку, вільна смуга);
   - оновлено, бо поведінку змінено навмисно: `meldingen-mobiel-20261021` (34; 7 перевірок старої позиції x,y замінено перевірками
     гнізд), `venster-dok-20261021` (54, +1), `ui-audit-g`, `vast-kader`, `mail-ux-beoordeling-20261021`, `zoek-in-menu-20261024`,
     `zoek-bronnen-20261022` (назва пункту), `scripts/l002-audit.mjs` (iframe 72 px — тепер у стосі);
   - QA-кроки Пошти для телефона (`tests/e2e/hulp/mail-qa-stappen-telefoon.json`): дзвоник — через ☰; пошук — за назвою поля «Пошук у
-    пошті», бо на телефоні в самому полі написано «Пошук» (крок не проходив і на збірці пакета 3, а після нього Enter відкривав лист);
+    пошті», бо на телефоні в самому полі написано «Пошук» (крок не проходив і на складанні пакета 3, а після нього Enter відкривав лист);
   - стенд: новий крок `plaatsing-na` (15 вимірів A–O: типові місця, сповіщення, прокрутка, адресний рядок, «Вгору», свайп, зум ×3,
     нижня смуга, тяга з F5, повна зона через меню, клавіатура, комп'ютер ↔ телефон, дзвоник рядком у меню, «Редагувати меню»,
     «Скинути»), `plaatsing-dok` (док праворуч / угорі / унизу, розтягнутий док) і `plaatsing-lagen` (лічильники, підказка повної зони,
@@ -1992,9 +1991,9 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     `data-melding-vrij="nee"`; на сторінках стенду такого не трапилось. Місце обирається, коли сповіщення з'являється, — якщо під ним
     потім з'явиться кнопка (довантажився список), воно не пересувається (живе до 10 с);
   - натискання на кнопку в «Редагувати меню» перевірено на телефоні; на комп'ютері режим відкривається з налаштувань меню, там те
-    саме меню — через правий клік чи Shift+F10;
-  - перевірка в збірці бачить лише CSS: фіксована кнопка, поставлена стилем просто в коді компонента, нею не ловиться;
-  - 2 правила спливаючого сповіщення лишились у `mail-qa-2026-10.css` (див. «Один шар CSS»);
+    саме меню — через правий натискання чи Shift+F10;
+  - перевірка в складанні бачить лише CSS: фіксована кнопка, поставлена стилем просто в коді компонента, нею не ловиться;
+  - 2 правила спливного сповіщення лишились у `mail-qa-2026-10.css` (див. «Один шар CSS»);
   - масштаб браузера (Ctrl +) змінює клас пристрою разом із розкладкою сайту: 1280 px при 200 % — це розкладка телефона, і кнопки
     стають туди, де їх поставлено для телефона;
   - адресний рядок і щипок на стенді імітовано (висота вікна ±56 px, `Emulation.setPageScaleFactor`); свайп через CDP в емуляції не
@@ -2020,13 +2019,13 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
     панель; QA-крок пошуку на телефоні шукав поле за написом «Пошук у пошті», а на телефоні там «Пошук» → за назвою поля.
 - Перевірки:
   - `tsc` (фронтенд і сервер) — 0 помилок;
-  - збірка: карта, `plaatsing-controle`, каталог інтерфейсу 1 194 елементи (без змін), L002 (47 давніх знахідок, нових немає), розумні
+  - складання: карта, `plaatsing-controle`, каталог інтерфейсу 1 194 елементи (без змін), L002 (47 давніх знахідок, нових немає), розумні
     вхідні, контраст, 6 технічних і 497 звичайних бандлів;
   - тести: 244 файли, 9 131 перевірка (+50 проти пакета 3: `plaatsing-20261025` +56, `venster-dok` +1, `meldingen-mobiel` −7). У
     звичайному прогоні не пройшли 12 — перевірки RLS, які проходять у 8 RLS-варіантах (534 з 534); 3 файли без результату, як
     завжди. `extensie-beheer` — 31 з 31: у пакеті 3 там було 3 «не пройдено», бо тестова база накопичила 977 тестових користувачів,
     а список обмежено 500; старі тестові записи почищено (копія збережена);
-  - стенд на остаточній збірці — 82 вимірювання, усі без дефектів:
+  - стенд на остаточній складанні — 82 вимірювання, усі без дефектів:
     - `plaatsing-na` — 8 розмірів (360–1704 px, світла й темна тема) + нідерландська на 1280 і 390 px = 10;
     - `plaatsing-dok` — 5 розмірів від 740 px + нідерландська = 6;
     - `plaatsing-lagen` — 8 розмірів + нідерландська на 1280 і 390 px = 10: axe (WCAG 2.2 AA, із контрастом) на лічильниках, підказці
@@ -2041,12 +2040,12 @@ EXTENSIE_HOST, EXTENSIE_VERGRENDELD, EXTENSIE_SCRIPT) називає точне 
   - загальні евристики знімків: лише рядки списку (обрізані імена відправників, малі кнопки в рядках) — ті самі, що й раніше; на нових
     елементах — жодного;
   - інші сторінки (54 знімки, 15 кроків, 390 і 1280 px: хаб, пошта, хмара, ідентичність, адміністрування, MCP, GitHub, зокрема з
-    технічним профілем) проти збірки пакета 3: відрізняється лише очікуване — дзвоник праворуч від фото / у шапці меню, лічильник
-    на ☰, меню акаунта зсунулось разом із фото, сповіщення на телефоні вгорі під панеллю, запас унизу сторінки (від −158 до +128 px:
-    старий запас 140 px під «Вгору» замінено запасом на висоту стосу), дані (час, тестові акаунти, час відповіді), висота бічної смуги
+    технічним профілем) проти складання пакета 3: відрізняється лише очікуване — дзвоник праворуч від фото / у шапці меню, лічильник
+    на ☰, меню облікового запису зсунулось разом із фото, сповіщення на телефоні вгорі під панеллю, запас унизу сторінки (від −158 до +128 px:
+    старий запас 140 px під «Вгору» замінено запасом на висоту стосу), дані (час, тестові облікові записи, час відповіді), висота бічної смуги
     на знімках усієї сторінки. Одна різниця — підказка над кнопкою режиму меню видна на старому знімку й не видна на новому; в
-    окремих повторах цього кроку меню не розгорталось ні на старій, ні на новій збірці, тож причину я не довів (найімовірніше — стан
+    окремих повторах цього кроку меню не розгорталось ні на старій, ні на новій складанні, тож причину я не довів (найімовірніше — стан
     наведення миші між кроками);
   - e2e у Chromium: `mail-lijst-ux` 26/26, `mail-opstel-venster` 25/25, `mail-verkenning` 1/1, `vensters` 11/11; суворі QA-кроки
     Пошти (12.10): телефон 23/23, комп'ютер 25/25 (там і перевірка, що сповіщення не праворуч на кнопках);
-  - рендер-контроль — 13 сторінок, 506/506 бандлів.
+  - відмальовування-контроль — 13 сторінок, 506/506 бандлів.
