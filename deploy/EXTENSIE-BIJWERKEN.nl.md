@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./EXTENSIE-BIJWERKEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./EXTENSIE-BIJWERKEN.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ОНОВЛЕННЯ-РОЗШИРЕННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Browserextensie bijwerken
 

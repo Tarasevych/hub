@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./LEESMIJ.uk.md) · **🇳🇱 Nederlands** ([origineel](./LEESMIJ.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ОГЛЯД-НАСКРІЗНИХ-ТЕСТІВ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../../docs/INDEX.nl.md)
 
 # Lokale browsertest (Playwright) — alleen voor ontwikkeling
 

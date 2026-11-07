@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261026-BLOK2-6.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261026-BLOK2-6.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261026-БЛОК2-6.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 ## Blokken 2, 3 en 6 — deel 1 (26-10-2026)
 

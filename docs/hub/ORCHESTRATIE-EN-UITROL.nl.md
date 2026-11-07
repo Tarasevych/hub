@@ -1,5 +1,5 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ORCHESTRATIE-EN-UITROL.uk.md) · **🇳🇱 Nederlands** ([origineel](./ORCHESTRATIE-EN-UITROL.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../INDEX.nl.md)
-> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-PRS.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
+> 🌐 **Taal / Мова:** [Українська](КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
+> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
 
 # Orchestratie van AI-Agenten (`ORCH-001`), Traceerbaarheid (`TRACE-001`), Serverstack (`B-009`) en Atomaire Uitrol
 
@@ -13,9 +13,9 @@ Aan de repository `Tarasevych/hub` werken **8 AI-agenten** parallel samen: **Cla
 
 ### 1.1. Enige Bron van Regels en Cryptografisch Slot
 1. **Canonieke regelbestanden:**
-   - [`AGENTS.md`](../../AGENTS.md) ([🇺🇦 UK](../../AGENTS.uk.md) ↔ [🇳🇱 NL](../../AGENTS.nl.md)) — mensleesbare regels voor alle agenten en ontwikkelaars.
+   - [`AGENTS.md`](../../AGENTS.md) ([🇺🇦 UK](../../ПРАВИЛА-АГЕНТІВ.uk.md) ↔ [🇳🇱 NL](../../AGENTENREGELS.nl.md)) — mensleesbare regels voor alle agenten en ontwikkelaars.
    - [`orchestratie/beleid.json`](../../orchestratie/beleid.json) — machineleesbaar beleid (lijst van agenten, overdrachtskanalen, beschermde takken en verplichte controles).
-   - [`orchestratie/BESLUITEN.md`](../../orchestratie/BESLUITEN.md) ([🇺🇦 UK](../../orchestratie/BESLUITEN.uk.md) ↔ [🇳🇱 NL](../../orchestratie/BESLUITEN.nl.md)) — append-only register van architecturale en organisatorische besluiten (`B-001`..`B-011`).
+   - [`orchestratie/BESLUITEN.md`](../../orchestratie/BESLUITEN.md) ([🇺🇦 UK](../../orchestratie/РІШЕННЯ.uk.md) ↔ [🇳🇱 NL](../../orchestratie/BESLUITEN.nl.md)) — append-only register van architecturale en organisatorische besluiten (`B-001`..`B-011`).
 2. **Dunne adapters (≤ 25 regels):** de bestanden `CLAUDE.md`, `ANTIGRAVITY.md`, `GEMINI.md`, `CODEX.md`, `CHATGPT.md`, `GROK.md`, `.cursorrules`, `.github/copilot-instructions.md` bevatten de marker `<!-- orch-adapter -->` en verwijzen uitsluitend naar `AGENTS.md`.
 3. **Cryptografische vingerafdruk [`orchestratie/regels.lock.json`](../../orchestratie/regels.lock.json):** legt de SHA-256 van alle drie de canonieke regelbestanden vast en wordt ondertekend met de persoonlijke sleutel van de eigenaar (`SSH ed25519` of `WebAuthn Passkey`). Het is agenten verboden om regelbestanden te wijzigen zonder expliciete opdracht van de eigenaar.
 
@@ -123,5 +123,5 @@ node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
 
 ## Gerelateerde Documentatie (🇺🇦 UK ↔ 🇳🇱 NL)
 
-- **Agentregels en besluitenregister:** [🇺🇦 `AGENTS.uk.md`](../../AGENTS.uk.md) ↔ [🇳🇱 `AGENTS.nl.md`](../../AGENTS.nl.md) ([origineel `AGENTS.md`](../../AGENTS.md)) · [🇺🇦 `orchestratie/BESLUITEN.uk.md`](../../orchestratie/BESLUITEN.uk.md) ↔ [🇳🇱 `orchestratie/BESLUITEN.nl.md`](../../orchestratie/BESLUITEN.nl.md)
-- **Uitrol, pakketten en herstel:** [🇺🇦 `deploy/LEESMIJ.uk.md`](../../deploy/LEESMIJ.uk.md) ↔ [🇳🇱 `deploy/LEESMIJ.nl.md`](../../deploy/LEESMIJ.nl.md) · [🇺🇦 `deploy/REGELS-UITROLPAKKET.uk.md`](../../deploy/REGELS-UITROLPAKKET.uk.md) ↔ [🇳🇱 `deploy/REGELS-UITROLPAKKET.nl.md`](../../deploy/REGELS-UITROLPAKKET.nl.md) · [🇺🇦 `deploy/HERSTEL.uk.md`](../../deploy/HERSTEL.uk.md) ↔ [🇳🇱 `deploy/HERSTEL.nl.md`](../../deploy/HERSTEL.nl.md)
+- **Agentregels en besluitenregister:** [🇺🇦 `AGENTS.uk.md`](../../ПРАВИЛА-АГЕНТІВ.uk.md) ↔ [🇳🇱 `AGENTENREGELS.nl.md`](../../AGENTENREGELS.nl.md) ([origineel `AGENTS.md`](../../AGENTS.md)) · [🇺🇦 `orchestratie/BESLUITEN.uk.md`](../../orchestratie/РІШЕННЯ.uk.md) ↔ [🇳🇱 `orchestratie/BESLUITEN.nl.md`](../../orchestratie/BESLUITEN.nl.md)
+- **Uitrol, pakketten en herstel:** [🇺🇦 `deploy/LEESMIJ.uk.md`](../../deploy/ОГЛЯД-РОЗГОРТАННЯ.uk.md) ↔ [🇳🇱 `deploy/PROJECTOVERZICHT.nl.md`](../../deploy/LEESMIJ.nl.md) · [🇺🇦 `deploy/REGELS-UITROLPAKKET.uk.md`](../../deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.uk.md) ↔ [🇳🇱 `deploy/REGELS-UITROLPAKKET.nl.md`](../../deploy/REGELS-UITROLPAKKET.nl.md) · [🇺🇦 `deploy/HERSTEL.uk.md`](../../deploy/ВІДНОВЛЕННЯ.uk.md) ↔ [🇳🇱 `deploy/HERSTEL.nl.md`](../../deploy/HERSTEL.nl.md)

@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./SIEM.uk.md) · **🇳🇱 Nederlands** ([origineel](./SIEM.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](МОНІТОРИНГ-ПОДІЙ-БЕЗПЕКИ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Logboek → uw SIEM (etappe E)
 

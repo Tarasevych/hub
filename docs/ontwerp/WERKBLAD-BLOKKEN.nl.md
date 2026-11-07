@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WERKBLAD-BLOKKEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./WERKBLAD-BLOKKEN.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](БЛОКИ-РОБОЧОГО-АРКУША.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Werkblad — Blokken (blok in blok), vrije maten en plekken
 

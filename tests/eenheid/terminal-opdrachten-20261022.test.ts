@@ -270,8 +270,8 @@ export async function main(): Promise<number> {
   check('agent pair --code - leest de code van stdin', /args\.code === '-'/.test(lees('deploy/agent/agent.mjs')));
   check('migratie 0113 + rechten: tabel met RLS, app-rol alleen SELECT', /CREATE TABLE IF NOT EXISTS app\.terminal_opdrachten/.test(lees('migrations/0113_terminal_opdrachten.sql')) && /ENABLE ROW LEVEL SECURITY/.test(lees('migrations/0113_terminal_opdrachten.sql')) && /GRANT SELECT ON app\.terminal_opdrachten TO mijnruimte_app/.test(lees('migrations/rechten.sql')));
   // docs/ staat niet in elke testkopie (synctest kopieert alleen de codemappen): dan alleen de agent-documenten.
-  const docs = existsSync(resolve('docs/terminal/TERMINAL.md')) ? lees('docs/terminal/TERMINAL.md') : null, win = lees('deploy/agent/WINDOWS-POWERSHELL.md'), lm = lees('deploy/agent/LEESMIJ.md');
-  check('docs: TERMINAL.md (uk+nl), WINDOWS-POWERSHELL.md (uk+nl, sc.exe/taakplanner, -NoProfile -NonInteractive -Command, elke opdracht bevestigd), LEESMIJ noemt 0.8.0 en term.exec',
+  const docs = existsSync(resolve('docs/terminal/ТЕРМІНАЛ.md')) ? lees('docs/terminal/ТЕРМІНАЛ.md') : null, win = lees('deploy/agent/ОБОЛОНКА-ВІНДОВС-ПОВЕРШЕЛ.md'), lm = lees('deploy/agent/ОГЛЯД-АГЕНТА.md');
+  check('docs: ТЕРМІНАЛ.md (uk+nl), ОБОЛОНКА-ВІНДОВС-ПОВЕРШЕЛ.md (uk+nl, sc.exe/taakplanner, -NoProfile -NonInteractive -Command, elke opdracht bevestigd), ОГЛЯД-АГЕНТА noemt 0.8.0 en term.exec',
     (docs === null || (/Nederlands/.test(docs) && /terminal-inrichten/.test(docs) && /\| ; &&/.test(docs))) && /-NoProfile -NonInteractive -Command/.test(win) && /sc\.exe|schtasks/.test(win) && /terminal-config on --powershell/.test(win) && /Nederlands/.test(win) && /0\.8\.0/.test(lm) && /term\.exec/.test(lm), docs === null ? 'docs/ niet in de testkopie' : '');
   return einde();
 }

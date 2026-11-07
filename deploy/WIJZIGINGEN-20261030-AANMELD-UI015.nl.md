@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261030-AANMELD-UI015.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261030-AANMELD-UI015.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261030-ВХІД-УІ015.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # UI-015 "Aanmeldmethoden" (Aanmeldmethoden vNext) — 30-10-2026
 

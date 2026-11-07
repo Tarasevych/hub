@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./INVENTARIS-EN-OORZAKEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./INVENTARIS-EN-OORZAKEN.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](РЕЄСТР-І-ПРИЧИНИ-СПОВІЩЕНЬ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # UI-007 — Meldingencentrum: inventaris, oorzaken en ontwerp (29.10.2026)
 

@@ -1,5 +1,5 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./GESCHIEDENIS.uk.md) · **🇳🇱 Nederlands** ([origineel](./GESCHIEDENIS.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../INDEX.nl.md)
-> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · **2. Geschiedenis** · [3. Takken, PR's & Releases](./TAKKEN-EN-PRS.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ІСТОРІЯ-РОЗВИТКУ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
+> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · **2. Geschiedenis** · [3. Takken, PR's & Releases](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
 
 # Chronologische geschiedenis van het project «Mijn Ruimte · Мій простір»
 
@@ -30,11 +30,11 @@ flowchart LR
 
 ## Fase II. Port naar Self-Hosted BYOS en Beveiligingshervorming Fasen 1–3 (2–6 Oktober 2026)
 
-- **Porteerplan ([`PORTEERPLAN.nl.md`](../../PORTEERPLAN.nl.md) / [`PORTEERPLAN.md`](../../PORTEERPLAN.md), 03.10.2026):** volledige verwijdering van `@appdeploy/sdk` (28 serverbestanden) en `@appdeploy/client` (33 clientbestanden) en verhuizing van het gehele platform naar een eigen Ubuntu LTS VM achter een uitgaande Cloudflare Tunnel (`cloudflared` → `127.0.0.1:8080`).
+- **Porteerplan ([`PORTEERPLAN.nl.md`](../../PORTEERPLAN.nl.md) / [`PORTEERPLAN.nl.md`](../../PORTEERPLAN.nl.md), 03.10.2026):** volledige verwijdering van `@appdeploy/sdk` (28 serverbestanden) en `@appdeploy/client` (33 clientbestanden) en verhuizing van het gehele platform naar een eigen Ubuntu LTS VM achter een uitgaande Cloudflare Tunnel (`cloudflared` → `127.0.0.1:8080`).
 - **Eigen platformkern (`@platform/server` en `@platform/client`):**
   - Compatibele databaselaag [`server/platform/db.ts`](../../server/platform/db.ts) bovenop PostgreSQL (`app.records` met JSONB GIN-indexen, keyset-paginering op `seq` en atomaire operaties `takeOne`, `takeArrayValue`, `zetAlsHoger`).
   - Lokale bestandsopslag [`server/platform/opslag.ts`](../../server/platform/opslag.ts) (`/srv/data/uploads`), allowlist voor geheimen [`server/platform/geheimen.ts`](../../server/platform/geheimen.ts) (`/etc/mijn-ruimte/geheimen.env`), canonieke HTTP-server [`server/start.ts`](../../server/start.ts) en versleutelde back-ups via `age` (takken [`basis-voor-zelf-hosten`](https://github.com/Tarasevych/hub/tree/basis-voor-zelf-hosten), [`zelf-hosten`](https://github.com/Tarasevych/hub/tree/zelf-hosten), [`sync-actief`](https://github.com/Tarasevych/hub/tree/sync-actief)).
-- **Beveiligingshervorming (Fasen A, B, Auth Fase 1, Beveiliging Fase 2–3, Audit Fixes — zie [`SECURITY-NOTES.nl.md`](../../SECURITY-NOTES.nl.md)):**
+- **Beveiligingshervorming (Fasen A, B, Auth Fase 1, Beveiliging Fase 2–3, Audit Fixes — zie [`BEVEILIGINGSNOTITIES.nl.md`](../../BEVEILIGINGSNOTITIES.nl.md)):**
   - **Fasen A en B (02–03.10.2026):** volledige rotatie van alle sleutels, strikte rate limiting en progressieve lockout (`app.rate_limits`, `app.login_lockouts`), `Origin`-allowlist tegen CSRF, willekeurige PKCE (`oauth_pkce_v1`), TOTP-versleuteling (`AES-256-GCM`), SSRF-bescherming met DNS-pinning (`backend/veilige-fetch.ts`) en e-mailsanitisatie met DOMPurify.
   - **Auth Fase 1 ([`auth-fase-1`](https://github.com/Tarasevych/hub/tree/auth-fase-1), 03.10.2026):** verwijdering van alle verouderde sessieroutes (`410 Gone`, migratie `0002`), strikte accountkoppeling op `(provider, subject)` zonder stille samenvoeging op e-mail, binding van aanmeldtransacties aan het tabblad (`__Secure-tsv_aanmeld_binding_*`) en binding van sessie-handoffs aan de browser (`tsv_handoff_binding`).
   - **Beveiliging Fase 2 & 3 ([`beveiliging-fase-2-3`](https://github.com/Tarasevych/hub/tree/beveiliging-fase-2-3), 03.10.2026):** invoering van **rijniveaubeveiliging (RLS)** in PostgreSQL (`migrations/0003`–`0005`), splitsing in 3 databaserollen (`mijnruimte_migrator`, `mijnruimte_app` met `NOBYPASSRLS`, `mijnruimte_system`), centrale authenticatiepoort [`server/platform/auth-poort.ts`](../../server/platform/auth-poort.ts), Step-Up bevestiging voor gevoelige acties ([`backend/stap-op.ts`](../../backend/stap-op.ts)) en AVG/GDPR-export.
@@ -68,7 +68,7 @@ flowchart LR
 ## Fase V. Consolidatie `SEC-001`, Agenten-orchestratie `ORCH-001` en `UX-AI-VAULT-001` (30 Oktober — 1 November 2026)
 
 - **Consolidatie en beveiligingsaudit `SEC-001` (30–31.10.2026):** de actuele productiesnapshot is geïmporteerd in [`audit/sec-001-20261030`](https://github.com/Tarasevych/hub/tree/audit/sec-001-20261030) (`016093f`), gevolgd door beveiligingsfixes in [`fix/sec-001-20261031-000224`](https://github.com/Tarasevych/hub/tree/fix/sec-001-20261031-000224) en de basisrelease [`release/sec-001-20261031-084138`](https://github.com/Tarasevych/hub/tree/release/sec-001-20261031-084138).
-- **Multi-agent coördinatiesysteem `ORCH-001` (31.10.2026, besluiten `B-001`–`B-006`):** één canonieke regelbron [`AGENTS.md`](../../AGENTS.md) ([🇳🇱 NL](../../AGENTS.nl.md) · [🇺🇦 UK](../../AGENTS.uk.md)), machinebeleid [`orchestratie/beleid.json`](../../orchestratie/beleid.json), cryptografische vingerafdruk [`orchestratie/regels.lock.json`](../../orchestratie/regels.lock.json) en de CLI/MCP/web-pijplijn [`scripts/orch.mjs`](../../scripts/orch.mjs) voor afgestemd samenwerken van 8 AI-agenten (Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor).
+- **Multi-agent coördinatiesysteem `ORCH-001` (31.10.2026, besluiten `B-001`–`B-006`):** één canonieke regelbron [`AGENTS.md`](../../AGENTS.md) ([🇳🇱 NL](../../AGENTENREGELS.nl.md) · [🇺🇦 UK](../../ПРАВИЛА-АГЕНТІВ.uk.md)), machinebeleid [`orchestratie/beleid.json`](../../orchestratie/beleid.json), cryptografische vingerafdruk [`orchestratie/regels.lock.json`](../../orchestratie/regels.lock.json) en de CLI/MCP/web-pijplijn [`scripts/orch.mjs`](../../scripts/orch.mjs) voor afgestemd samenwerken van 8 AI-agenten (Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor).
 - **`MCP-ACCESS-001` en `UX-AI-VAULT-001` (01.11.2026):** exacte serverdiagnostiek voor AI-toegang met isolatie per verbinding, agentbeheer op één plek met Passkey-bevestiging en de uniforme adaptieve Sleutelkluis (PR #17, #18, #19).
 
 ---
@@ -85,4 +85,4 @@ flowchart LR
 
 ---
 
-> 🔗 **Lees verder:** [1. Architectuur](./ARCHITECTUUR.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-PRS.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
+> 🔗 **Lees verder:** [1. Architectuur](./ARCHITECTUUR.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)

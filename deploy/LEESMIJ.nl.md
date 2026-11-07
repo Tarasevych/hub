@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./LEESMIJ.uk.md) · **🇳🇱 Nederlands** ([origineel](./LEESMIJ.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ОГЛЯД-РОЗГОРТАННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Deploy-bestanden Mijn Ruimte (VM achter Cloudflare Tunnel)
 
@@ -69,7 +69,7 @@ Niets hiervan wordt automatisch uitgerold. Volgorde voor een nieuwe VM (Debian/U
 | `../scripts/google-login-instellen.ps1` | Windows-pc: vraagt Client ID (zichtbaar) en Client geheim (`Read-Host -AsSecureString`) en stuurt ze via de **stdin** van `ssh -i T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver -o BatchMode=yes beheer@<VM-IP> sudo -n /usr/local/sbin/google-login-zetten`; toont alleen OK/mislukt. Vereist dat `beheer` dit zonder wachtwoord mag (`sudo -n`, zoals in `HERSTEL.md`). |
 
 ## Opties (omgevingsvariabelen van de scripts)
-Dit zijn geen app-geheimen (die staan in `ENV-VARS.md`), alleen instellingen van de deployscripts:
+Dit zijn geen app-geheimen (die staan in `OMGEVINGSVARIABELEN.nl.md`), alleen instellingen van de deployscripts:
 
 | Variabele | Script | Standaard | Betekenis |
 |---|---|---|---|
@@ -155,14 +155,14 @@ shred -u /root/.cloudflared/cert.pem
 ```
 Aanbevolen in het Cloudflare-dashboard: SSL/TLS **Full**, **Altijd Use HTTPS** aan (nu antwoordt `http://` nog met 200;
 HSTS van de app dekt browsers pas na het eerste https-bezoek). Daarna in Google Cloud de redirect-URI's op
-`https://id.tarasevych.com/…` zetten (ENV-VARS.md).
+`https://id.tarasevych.com/…` zetten (OMGEVINGSVARIABELEN.nl.md).
 
 ## Zoeken «/zoek» (22.10.2026)
 Globaal zoeken over interface, post, bijlagen, bestanden, agenda, bord en GitHub. Index in PostgreSQL (migraties 0100–0104), gevuld door de
 cron `zoek-index` (timer `mijn-ruimte-zoek-index.timer`); OCR optioneel via `mijn-ruimte-installeer ocr-talen` (tesseract + poppler-utils).
-Documentatie: `docs/zoek/ZOEKEN.md` (architectuur, index, API, ranking), `docs/zoek/ZOEK-BEHEER.md` (stand bekijken, herstel, migraties, uitrol,
-terugdraaien, prestaties), `docs/zoek/ZOEK-BEVEILIGING.md` (isolatie), `docs/zoek/ZOEK-UITBREIDEN.md` (nieuwe bron/soort), `docs/zoek/ZOEK-TESTEN.md`.
-Omgevingsvariabelen `ZOEK_*`: `ENV-VARS.md`. De index is afgeleide data: `TRUNCATE app.zoek_objecten` is altijd veilig.
+Documentatie: `docs/zoek/ZOEKEN.nl.md` (architectuur, index, API, ranking), `docs/zoek/ZOEK-BEHEER.nl.md` (stand bekijken, herstel, migraties, uitrol,
+terugdraaien, prestaties), `docs/zoek/ZOEK-BEVEILIGING.nl.md` (isolatie), `docs/zoek/ZOEK-UITBREIDEN.nl.md` (nieuwe bron/soort), `docs/zoek/ZOEK-TESTEN.nl.md`.
+Omgevingsvariabelen `ZOEK_*`: `OMGEVINGSVARIABELEN.nl.md`. De index is afgeleide data: `TRUNCATE app.zoek_objecten` is altijd veilig.
 
 ## Rendercontrole (22.10.2026)
 HTTP 200 is geen bewijs dat een pagina rendert (release 20261021-221718: «Buffer is niet defined», elke admin-pagina wit). Na het activeren

@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./REGELS-UITROLPAKKET.uk.md) · **🇳🇱 Nederlands** ([origineel](./REGELS-UITROLPAKKET.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Regels voor een uitrolpakket
 

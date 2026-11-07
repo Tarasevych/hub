@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ADAPTERS-LOKAAL-TESTEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./ADAPTERS-LOKAAL-TESTEN.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЛОКАЛЬНЕ-ТЕСТУВАННЯ-АДАПТЕРІВ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Adapters lokaal testen (UI-013 fase 2)
 

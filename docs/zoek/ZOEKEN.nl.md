@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ZOEKEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./ZOEKEN.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ПОШУК.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Globaal zoeken «/zoek» — architectuur, index, API, rangschikking
 

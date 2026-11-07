@@ -1,5 +1,5 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./OMGEVINGSVARIABELEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./OMGEVINGSVARIABELEN.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../INDEX.nl.md)
-> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-PRS.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІННІ-СЕРЕДОВИЩА-ЦЕНТРУ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
+> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
 
 # Overzicht van Omgevingsvariabelen en Encryptiesleutels (`ENV-VARS`)
 
@@ -55,7 +55,7 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 |---|---|
 | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth 2.0-client van Google (Redirect URI: `https://id.tarasevych.com/`). Kan ook via de Sleutelkluis van de eigenaar in `Admin → Integraties → Koppelwizard` worden ingesteld zonder herstart van de server. |
 | `GOOGLE_SUITE_CLIENT_ID` / `GOOGLE_SUITE_CLIENT_SECRET` | Client-alias voor Google Suite (indien ingesteld, moet deze overeenkomen met `GOOGLE_OAUTH_CLIENT_ID`). |
-| `GOOGLE_GMAIL_PUBSUB_TOPIC` / `_AUDIENCE` / `_SERVICE_ACCOUNT_EMAIL` | Parameters voor directe Gmail push-meldingen via Google Cloud Pub/Sub (`deploy/MAIL-PUSH-PUBSUB.md`). |
+| `GOOGLE_GMAIL_PUBSUB_TOPIC` / `_AUDIENCE` / `_SERVICE_ACCOUNT_EMAIL` | Parameters voor directe Gmail push-meldingen via Google Cloud Pub/Sub (`deploy/POST-MELDINGEN-PUBSUB.nl.md`). |
 | `MICROSOFT_GRAPH_CLIENT_ID` / `_CLIENT_SECRET` / `_TENANT_ID` | App-registratiegegevens in Microsoft Entra ID voor Outlook-e-mail (`mijn-ruimte-installeer oauth-client microsoft`). |
 | `MICROSOFT_GRAPH_WEBHOOK_URL` / `_WEBHOOK_CLIENT_STATE` | URL en gedeeld geheim voor webhook-meldingen over nieuwe Microsoft Graph-berichten. |
 
@@ -87,5 +87,5 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 
 ## Gerelateerde Documentatie (🇺🇦 UK ↔ 🇳🇱 NL)
 
-- **Volledige `ENV-VARS`-specificatie:** [🇺🇦 `ENV-VARS.uk.md`](../../ENV-VARS.uk.md) ↔ [🇳🇱 `ENV-VARS.nl.md`](../../ENV-VARS.nl.md) ([origineel `ENV-VARS.md`](../../ENV-VARS.md))
-- **Geheimenregister en encryptiesleutels:** [🇺🇦 `deploy/GEHEIMEN-REGISTER.uk.md`](../../deploy/GEHEIMEN-REGISTER.uk.md) ↔ [🇳🇱 `deploy/GEHEIMEN-REGISTER.nl.md`](../../deploy/GEHEIMEN-REGISTER.nl.md) · [🇺🇦 `deploy/KLYUCHI-I-SHYFRUVANNYA.uk.md`](../../deploy/KLYUCHI-I-SHYFRUVANNYA.uk.md) ↔ [🇳🇱 `deploy/KLYUCHI-I-SHYFRUVANNYA.nl.md`](../../deploy/KLYUCHI-I-SHYFRUVANNYA.nl.md)
+- **Volledige `ENV-VARS`-specificatie:** [🇺🇦 `ENV-VARS.uk.md`](../../ЗМІННІ-СЕРЕДОВИЩА.uk.md) ↔ [🇳🇱 `OMGEVINGSVARIABELEN.nl.md`](../../OMGEVINGSVARIABELEN.nl.md) ([origineel `OMGEVINGSVARIABELEN.nl.md`](../../OMGEVINGSVARIABELEN.nl.md))
+- **Geheimenregister en encryptiesleutels:** [🇺🇦 `deploy/GEHEIMEN-REGISTER.uk.md`](../../deploy/РЕЄСТР-ТАЄМНИЦЬ.uk.md) ↔ [🇳🇱 `deploy/GEHEIMEN-REGISTER.nl.md`](../../deploy/GEHEIMEN-REGISTER.nl.md) · [🇺🇦 `deploy/KLYUCHI-I-SHYFRUVANNYA.uk.md`](../../deploy/КЛЮЧІ-ТА-ШИФРУВАННЯ.uk.md) ↔ [🇳🇱 `deploy/SLEUTELS-EN-VERSLEUTELING.nl.md`](../../deploy/SLEUTELS-EN-VERSLEUTELING.nl.md)

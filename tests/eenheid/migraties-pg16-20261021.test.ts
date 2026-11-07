@@ -100,8 +100,8 @@ export async function main(): Promise<number> {
     && migreren.indexOf('pg_versie_controleren "$doel"') > 0 && migreren.indexOf('pg_versie_controleren "$doel"') < migreren.indexOf('back-up vóór migratie')
     && migreren.indexOf('pg_versie_controleren "$doel"') < migreren.indexOf('migrate.mjs"')
     && /voortgang pgversie [0-9]+ /.test(inst));
-  check('deploy/LEESMIJ.md noemt het minimum (16), de aanbeveling (17) en de controle vóór de migraties',
-    /minimaal \*\*16\*\*[\s\S]{0,200}aanbevolen \*\*17\*\*[\s\S]{0,400}--pg-controle/.test(lees(join(W, 'deploy/LEESMIJ.md'))));
+  check('deploy/LEESMIJ.nl.md noemt het minimum (16), de aanbeveling (17) en de controle vóór de migraties',
+    /minimaal \*\*16\*\*[\s\S]{0,200}aanbevolen \*\*17\*\*[\s\S]{0,400}--pg-controle/.test(lees(join(W, 'deploy/LEESMIJ.nl.md'))));
 
   // ---- 2. echte migrator op een eigen, nieuwe database
   const basis = String(process.env.DATABASE_URL || '');

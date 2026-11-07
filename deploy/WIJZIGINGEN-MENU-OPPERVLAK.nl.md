@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-MENU-OPPERVLAK.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-MENU-OPPERVLAK.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-ПОВЕРХНІ-МЕНЮ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Menu: account en sitebeheer
 
@@ -11,7 +11,7 @@ Beheer en API staan niet langer in hetzelfde menu als mail, ruimte en de AI-brug
 
 ## Na de inhoudsaudit (14-10)
 
-Ook het sitebeheer dat binnen de gebruikersdiensten leefde, verhuist achter het technische profiel (details: `deploy/AUDIT-BEHEER-OPPERVLAK.md`):
+Ook het sitebeheer dat binnen de gebruikersdiensten leefde, verhuist achter het technische profiel (details: `deploy/AUDIT-BEHEER-OPPERVLAK.nl.md`):
 
 - Twee webruimtes. Accountruimte: menu en tabbladen zonder beheer, zelfs wanneer het profiel is ingeschakeld. Technische ruimte (`admin`, `api`, beheerpagina's van `mcp`): menu uitsluitend "Beheer", "API" en "Server en uitrol", tabbladen uitsluitend voor beheer, zonder de modus "eenvoudig/uitgebreid".
 - AI-brug → site: "Uitrolpaneel", "Apps" (op de server) en "Archief op pc" staan alleen in de technische ruimte; een rechtstreeks adres (en `dashboard.tarasevych.com`) zonder profiel opent de poortpagina. De profielbalk heeft de knoppen "Uitrol" en "AI-toegang".

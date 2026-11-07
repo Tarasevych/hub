@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261030-AFSTEMMING-UI014.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261030-AFSTEMMING-UI014.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261030-УЗГОДЖЕННЯ-УІ014.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # UI-014 "Afstemming / Productontwikkeling" (Afstemming vNext) — 30-10-2026
 

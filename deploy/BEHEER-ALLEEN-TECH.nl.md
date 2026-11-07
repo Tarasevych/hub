@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./BEHEER-ALLEEN-TECH.uk.md) · **🇳🇱 Nederlands** ([origineel](./BEHEER-ALLEEN-TECH.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](КЕРУВАННЯ-ЛИШЕ-ТЕХНІЧНЕ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Beheerrechten alleen in een actief technisch profiel (fase B)
 

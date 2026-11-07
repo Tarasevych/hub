@@ -1,5 +1,5 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./MAP-STRUCTUUR.uk.md) · **🇳🇱 Nederlands** ([origineel](./MAP-STRUCTUUR.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../INDEX.nl.md)
-> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-PRS.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
+> 🌐 **Taal / Мова:** [Українська](СТРУКТУРА-ТЕК.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
+> 🧭 **Hub-secties (`docs/hub/`):** [1. Architectuur](./ARCHITECTUUR.nl.md) · [2. Geschiedenis](./GESCHIEDENIS.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
 
 # Mapstructuur en Codekaart (`Tarasevych/hub`)
 
@@ -12,9 +12,9 @@ Dit document beschrijft de volledige mappenstructuur van de repository `Tarasevy
 ```text
 Tarasevych/hub
 ├── AGENTS.md                        # Canonieke regels voor alle AI-agenten en ontwikkelaars (ORCH-001)
-├── ENV-VARS.md                      # Volledige beschrijving van omgevingsvariabelen en encryptiesleutels (/etc/mijn-ruimte/geheimen.env)
-├── SECURITY-NOTES.md                # Beveiligingsaudit, fixes van fasen A/B/1/2/3/Audit/Zoek/Werkblad en open vragen
-├── PORTEERPLAN.md                   # Architectuurplan voor de migratie van AppDeploy naar self-hosted Node.js + PostgreSQL
+├── OMGEVINGSVARIABELEN.nl.md                      # Volledige beschrijving van omgevingsvariabelen en encryptiesleutels (/etc/mijn-ruimte/geheimen.env)
+├── BEVEILIGINGSNOTITIES.nl.md                # Beveiligingsaudit, fixes van fasen A/B/1/2/3/Audit/Zoek/Werkblad en open vragen
+├── PORTEERPLAN.nl.md                   # Architectuurplan voor de migratie van AppDeploy naar self-hosted Node.js + PostgreSQL
 ├── cron.json                        # Definitie van 6 achtergrondtaken (mail, google-sync, opruimen, mail-queue, diagnostiek, zoek-index)
 ├── package.json                     # Afhankelijkheden (Node >= 24) en scripts voor build, controles, migraties en tests
 │
@@ -86,7 +86,7 @@ Tarasevych/hub
 │
 ├── migrations/                      # 139 PostgreSQL SQL-migraties (0001_basis.sql .. 0198_aanmeldmethoden_vnext.sql + rechten.sql)
 ├── deploy/                          # Installatiescripts (installeer-app.sh), systemd-units, timers, back-ups, runbooks
-├── docs/                            # Architectuurdocumentatie, specificaties en bestandskaart (docs/kaart/KAART-BESTANDEN.md)
+├── docs/                            # Architectuurdocumentatie, specificaties en bestandskaart (docs/kaart/KAART-BESTANDEN.nl.md)
 ├── scripts/                         # CLI-hulpprogramma's voor build, controles (kaart-controle, plaatsing-controle, l002-audit) en orch.mjs
 ├── tests/                           # Unit- (tests/eenheid/), visuele (tests/visueel/) en E2E-tests (tests/e2e/)
 └── extension/                       # Browserextensie Mijn Ruimte (Chrome / Edge)
@@ -125,13 +125,13 @@ Bevat isomorfe TypeScript-code zonder server- of browserafhankelijkheden, wat id
 
 Op 24 oktober 2026 zijn in het kader van de Nederlandse code-canonisatie **531 bestanden** in `src/`, `backend/`, `shared/`, `server/`, `tests/` en `scripts/` hernoemd naar het Nederlands volgens één uniform domeinwoordenboek.
 
-- **Volledige vertaaltabel van oude (EN) naar nieuwe (NL) bestandsnamen:** [`docs/kaart/KAART-BESTANDEN.md`](../kaart/KAART-BESTANDEN.md) ([🇺🇦 UK](../kaart/KAART-BESTANDEN.uk.md) ↔ [🇳🇱 NL](../kaart/KAART-BESTANDEN.nl.md)).
+- **Volledige vertaaltabel van oude (EN) naar nieuwe (NL) bestandsnamen:** [`docs/kaart/KAART-BESTANDEN.nl.md`](../kaart/КАРТА-ФАЙЛІВ.md) ([🇺🇦 UK](../kaart/КАРТА-ФАЙЛІВ.uk.md) ↔ [🇳🇱 NL](../kaart/KAART-BESTANDEN.nl.md)).
 - **Automatische controle tijdens de build:** het script [`scripts/kaart-controle.mjs`](../../scripts/kaart-controle.mjs) wordt als eerste stap in `npm run build` uitgevoerd en controleert dat er bij het samenvoegen van takken geen oude Engelstalige bestandsnamen terugkeren in de repository.
 
 ---
 
 ## Gerelateerde Documentatie (🇺🇦 UK ↔ 🇳🇱 NL)
 
-- **Bestandskaart (EN → NL):** [🇺🇦 `docs/kaart/KAART-BESTANDEN.uk.md`](../kaart/KAART-BESTANDEN.uk.md) ↔ [🇳🇱 `docs/kaart/KAART-BESTANDEN.nl.md`](../kaart/KAART-BESTANDEN.nl.md)
-- **Platformarchitectuur:** [🇺🇦 `docs/hub/ARCHITECTUUR.uk.md`](./ARCHITECTUUR.uk.md) ↔ [🇳🇱 `docs/hub/ARCHITECTUUR.nl.md`](./ARCHITECTUUR.nl.md)
-- **Orchestratie & Uitrol:** [🇺🇦 `docs/hub/ORCHESTRATIE-EN-UITROL.uk.md`](./ORCHESTRATIE-EN-UITROL.uk.md) ↔ [🇳🇱 `docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./ORCHESTRATIE-EN-UITROL.nl.md)
+- **Bestandskaart (EN → NL):** [🇺🇦 `docs/kaart/KAART-BESTANDEN.uk.md`](../kaart/КАРТА-ФАЙЛІВ.uk.md) ↔ [🇳🇱 `docs/kaart/KAART-BESTANDEN.nl.md`](../kaart/KAART-BESTANDEN.nl.md)
+- **Platformarchitectuur:** [🇺🇦 `docs/hub/ARCHITECTUUR.uk.md`](АРХІТЕКТУРА-ЦЕНТРУ.uk.md) ↔ [🇳🇱 `docs/hub/ARCHITECTUUR.nl.md`](./ARCHITECTUUR.nl.md)
+- **Orchestratie & Uitrol:** [🇺🇦 `docs/hub/ORCHESTRATIE-EN-UITROL.uk.md`](КООРДИНАЦІЯ-ТА-РОЗГОРТАННЯ.uk.md) ↔ [🇳🇱 `docs/hub/ORCHESTRATIE-EN-UITROL.nl.md`](./ORCHESTRATIE-EN-UITROL.nl.md)

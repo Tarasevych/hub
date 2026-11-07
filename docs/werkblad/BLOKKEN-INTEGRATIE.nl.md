@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./BLOKKEN-INTEGRATIE.uk.md) · **🇳🇱 Nederlands** ([origineel](./BLOKKEN-INTEGRATIE.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ІНТЕГРАЦІЯ-БЛОКІВ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Werkblad «Blokken» — integratie in Werkblad v3
 

@@ -331,8 +331,8 @@ export async function main(): Promise<number> {
     controleerMerkEigen('png', Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]), Buffer.from('IHDR'), Buffer.alloc(30)])).ok === true
     && !controleerMerkEigen('png', Buffer.from('GIF89a........................................')).ok && !controleerMerkEigen('png', Buffer.alloc(210 * 1024)).ok);
   check('bestandsnamen: alleen <sleutel>.svg|png in kleine letters', merkEigenBestandsnaam('ukrnet.svg')?.sleutel === 'ukrnet' && !merkEigenBestandsnaam('../x.svg') && !merkEigenBestandsnaam('Ukr.SVG') && !merkEigenBestandsnaam('x.gif'));
-  const leesmij = bron('deploy/LEESMIJ.md');
-  check('deploy/LEESMIJ.md beschrijft de map, de regels en het opladen via admin', leesmij.includes('/srv/mijn-ruimte/merk-eigen') && leesmij.includes('MERK_EIGEN_MAP') && leesmij.includes('200 KB'));
+  const leesmij = bron('deploy/ОГЛЯД-РОЗГОРТАННЯ.md');
+  check('deploy/ОГЛЯД-РОЗГОРТАННЯ.md beschrijft de map, de regels en het opladen via admin', leesmij.includes('/srv/mijn-ruimte/merk-eigen') && leesmij.includes('MERK_EIGEN_MAP') && leesmij.includes('200 KB'));
 
   return einde();
 }

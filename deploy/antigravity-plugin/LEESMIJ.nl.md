@@ -1,4 +1,6 @@
-> 🇳🇱 **Nederlandse versie** · 🇺🇦 [Українська (канонічна)](./LEESMIJ.uk.md)
+> 🌐 **Taal / Мова:** [Українська](ОГЛЯД-РОЗШИРЕННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../../docs/INDEX.nl.md)
+
+> 🇳🇱 **Nederlandse versie** · 🇺🇦 [Українська (канонічна)](ОГЛЯД-РОЗШИРЕННЯ.uk.md)
 
 # Plug-in en tweerichtingsconnector van Google Antigravity (`mijn-ruimte`)
 

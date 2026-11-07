@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-DIAGNOSTIEK.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261017-DIAGNOSTIEK.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261017-ДІАГНОСТИКА.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Діагностика (/diagnostiek) — wijzigingen 17 oktober 2026
 

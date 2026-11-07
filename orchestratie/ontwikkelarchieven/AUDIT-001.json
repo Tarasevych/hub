@@ -3,7 +3,7 @@
   "taakId": "AUDIT-001",
   "datum": "2026-11-05",
   "taal": "uk",
-  "opdracht": "Виконати повний комплексний аудит проєкту Mijn Ruimte після другого переписування історії Git (B-011) та двомовної документації (f3f3fab), безконфліктно об’єднати чотири паралельні напрями робіт агентів (PRIVACY-001, MAILFIX-001/MAILFIT-001/MAILFIT-002, IDENTITY-001/002 з виправленнями cbeb3d0 і a318ba0, DESIGN-001) на канонічній після-рерайтній історії без втягування до-рерайтного предка e547381, відновити криптографічний замок правил (regelsVersie 1.4.8, B-013), синхронізувати українські та нідерландські версії документації (.uk.md/.nl.md), перевірити повну складання й тести, оновити гілки integratie та voornaamst і опублікувати канонічний інсталяційний реліз.",
+  "opdracht": "Виконати повний комплексний аудит проєкту Mijn Ruimte після другого переписування історії Git (B-011) та двомовної документації (f3f3fab), безконфліктно об’єднати чотири паралельні напрями робіт агентів (PRIVACY-001, MAILFIX-001/MAILFIT-001/MAILFIT-002, IDENTITY-001/002 з виправленнями cbeb3d0 і a318ba0, DESIGN-001) на канонічній післяпереписній історії без втягування допереписного предка e547381, відновити криптографічний замок правил (regelsVersie 1.4.8, B-013), синхронізувати українські та нідерландські версії документації (.uk.md/.nl.md), перевірити повну складання й тести, оновити гілки integratie та voornaamst і опублікувати канонічний інсталяційний випуск.",
   "herkomst": {
     "eigenaar": "Eigenaar Test",
     "agent": "antigravity",
@@ -14,7 +14,7 @@
   },
   "privacy": {
     "geheimenUitgesloten": true,
-    "toelichting": "Жодних паролів, токенів, приватних ключів, файлів cookie, домашніх адрес або приватних IP-адрес; усі конфігуровані параметри винесено в MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET."
+    "toelichting": "Жодних паролів, маркерів доступу, приватних ключів, файлів cookie, домашніх адрес або приватних IP-адрес; усі конфігуровані параметри винесено в MR_EIGENAAR_NAAM, MR_CONTACT_EMAIL, MR_BEHEERSUBNET."
   },
   "tijdlijn": [
     {
@@ -31,7 +31,7 @@
       "stap": "Інтегровано PRIVACY-001 (3095e5f..d4fb253) поверх канонічної бази f3f3fabb2f3b зі збереженням двомовних навігаційних шапок (.uk.md/.nl.md), конфігурованих змінних MR_EIGENAAR_NAAM / MR_CONTACT_EMAIL / MR_BEHEERSUBNET та рішень B-010..B-014; перепідписано замок правил regels.lock.json (regelsVersie 1.4.9) і перегенеровано CONTEXT-COMPACT.md.",
       "bewijzen": [
         "AGENTS.md",
-        "ENV-VARS.md",
+        "ЗМІННІ-СЕРЕДОВИЩА.md",
         "orchestratie/beleid.json",
         "orchestratie/BESLUITEN.md",
         "orchestratie/regels.lock.json",
@@ -42,7 +42,7 @@
     },
     {
       "volgorde": 3,
-      "stap": "Інтегровано MAILFIX-001, MAILFIT-001 та MAILFIT-002 (7ba7a0d..98beb2a620de) без повернення стану B-009: відновлено безпечний OAuth-потік Google Mail, адаптовано розкладку пошти для мобільних і настільних екранів, виправлено перевірку UITROL-BASIS для до-рерайтних базових комітів зі збереженням захисту від зниження версії, а також забезпечено сумісність tarfile.extractall у Python 3.11+.",
+      "stap": "Інтегровано MAILFIX-001, MAILFIT-001 та MAILFIT-002 (7ba7a0d..98beb2a620de) без повернення стану B-009: відновлено безпечний OAuth-потік Google Mail, адаптовано розкладку пошти для мобільних і настільних екранів, виправлено перевірку UITROL-BASIS для допереписних базових фіксацій змін зі збереженням захисту від зниження версії, а також забезпечено сумісність tarfile.extractall у Python 3.11+.",
       "bewijzen": [
         "src/MailFunctioneelWeergave.tsx",
         "src/mail/MailKoppelVenster.tsx",
@@ -74,23 +74,23 @@
     },
     {
       "volgorde": 5,
-      "stap": "Синхронізовано всі 433 Markdown-файли репозиторію (додано .uk.md та .nl.md версії і двомовні шапки для docs/ontwerp/identity-account/*, оновлено AGENTS.uk.md/nl.md, BESLUITEN.uk.md/nl.md, docs/INDEX.md/nl.md), виправлено 4 регресії в модульних тестах і виконано повну 11-етапну складання npm run build.",
+      "stap": "Синхронізовано всі 433 Markdown-файли репозиторію (додано .uk.md та .nl.md версії і двомовні шапки для docs/ontwerp/identity-account/*, оновлено AGENTS.uk.md/nl.md, BESLUITEN.uk.md/nl.md, docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.md/nl.md), виправлено 4 регресії в модульних тестах і виконано повну 11-етапну складання npm run build.",
       "bewijzen": [
-        "docs/ontwerp/identity-account/README-account.uk.md",
-        "docs/ontwerp/identity-account/README-account.nl.md",
-        "docs/ontwerp/identity-account/TZ-account-2026-11-04.uk.md",
-        "docs/ontwerp/identity-account/TZ-account-2026-11-04.nl.md",
-        "docs/ontwerp/identity-account/identity-coverage.uk.md",
-        "docs/ontwerp/identity-account/identity-coverage.nl.md",
-        "docs/ontwerp/identity-account/ontwerp-account-samenvatting.uk.md",
-        "docs/ontwerp/identity-account/ontwerp-account-samenvatting.nl.md",
-        "docs/INDEX.md",
+        "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.uk.md",
+        "docs/ontwerp/identiteit-account/OVERZICHT-ACCOUNT.nl.md",
+        "docs/ontwerp/identiteit-account/ТЕХНІЧНЕ-ЗАВДАННЯ-ОБЛІКОВОГО-ЗАПИСУ-2026-11-04.uk.md",
+        "docs/ontwerp/identiteit-account/SPECIFICATIE-ACCOUNT-2026-11-04.nl.md",
+        "docs/ontwerp/identiteit-account/ПОКРИТТЯ-ІДЕНТИЧНОСТІ.uk.md",
+        "docs/ontwerp/identiteit-account/IDENTITEITSDEKKING.nl.md",
+        "docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.uk.md",
+        "docs/ontwerp/identiteit-account/ONTWERP-ACCOUNT-SAMENVATTING.nl.md",
+        "docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.md",
         "docs/INDEX.nl.md"
       ]
     },
     {
       "volgorde": 6,
-      "stap": "Перебазовано метадані випуску UITROL-BASIS та beleid.json (B-014, regelsVersie 1.4.9) на фактично встановлену серверну версію 20261105-061659 (a318ba0b1c731390217458dabadcf0e086d13635) і забезпечено тотожність BRON-COMMIT та HEAD гілки (commit == head) для перевірки TRACE-001.",
+      "stap": "Перенесено на нову базу метадані випуску UITROL-BASIS та beleid.json (B-014, regelsVersie 1.4.9) на фактично встановлену серверну версію 20261105-061659 (a318ba0b1c731390217458dabadcf0e086d13635) і забезпечено тотожність BRON-COMMIT та HEAD гілки (commit == head) для перевірки TRACE-001.",
       "bewijzen": [
         "orchestratie/beleid.json",
         "orchestratie/BESLUITEN.md",
@@ -104,14 +104,14 @@
       "stap": "Виконано повне мовне очищення всіх двомовних статей і документації (.uk.md, .nl.md, .md) та метаданих моделей (shared/ai-bronnen.ts) поверх актуальної гілки integratie та AGPLUGIN-001: усунено всі символи російської абетки, понад 300 росіянізмів, суржикових конструкцій і активних дієприкметників на -учий/-ючий, а також англомовні фрази й глоси, створено двомовні версії для навички Antigravity та випущено пакет 20261106-141500.",
       "bewijzen": [
         "README.md",
-        "README.uk.md",
-        "README.nl.md",
-        "docs/canonical-account-menu-architecture.uk.md",
-        "docs/canonical-account-menu-architecture.nl.md",
+        "ОГЛЯД-ПРОЄКТУ.uk.md",
+        "PROJECTOVERZICHT.nl.md",
+        "docs/АРХІТЕКТУРА-КАНОНІЧНОГО-МЕНЮ-ОБЛІКОВОГО-ЗАПИСУ.uk.md",
+        "docs/CANONIEK-ACCOUNTMENU-ARCHITECTUUR.nl.md",
         "docs/ontwerp/WERKBLAD-BLOKKEN.nl.md",
-        ".agents/skills/mijn-ruimte/SKILL.uk.md",
-        ".agents/skills/mijn-ruimte/SKILL.nl.md",
-        "deploy/antigravity-plugin/LEESMIJ.uk.md",
+        ".agents/skills/mijn-ruimte/НАВИЧКА-МІЙ-ПРОСТІР.uk.md",
+        ".agents/skills/mijn-ruimte/VAARDIGHEID.nl.md",
+        "deploy/antigravity-plugin/ОГЛЯД-МОДУЛЯ-АНТИГРАВІТІ.uk.md",
         "deploy/antigravity-plugin/LEESMIJ.nl.md",
         "shared/ai-bronnen.ts",
         "scripts/l002-audit.mjs",
@@ -123,12 +123,18 @@
       "fase": "uitvoering",
       "actor": "antigravity",
       "stap": "Інтегровано DESIGN-003 (3b64d1d) і EXT090-001 (1b74a15), виконано повне мовне очищення вихідного коду, каталогів пошуку (backend/zoek/catalogus-ui.ts, shared/zoek-synoniemen.ts, shared/zoek-normalisatie.ts), компонентів src/, backend/, shared/, deploy/ і тестів від усіх російських слів, суржику та англомовних пошукових фраз; перегенеровано shared/zoek-ui-knoppen.generated.ts та опубліковано випуск 20261106-171500."
+    },
+    {
+      "tijd": "2026-11-06T19:00:00Z",
+      "fase": "uitvoering",
+      "actor": "antigravity",
+      "stap": "Виконано повне перейменування всіх українських (.md, .uk.md) та нідерландських (.nl.md) статей і каталогів документації на автентичні українські та нідерландські назви, очищено зміст усіх статей і правил (B-017, regelsVersie 1.4.12) від англіцизмів, латинських транслітерацій, технічного сленгу, русизмів і кальок, оновлено перехресні посилання й одиничні випробування та опубліковано випуск 20261106-190000."
     }
   ],
   "keuzes": [
     {
-      "keuze": "Портування змін із до-рерайтних гілок (MAILFIT-002, IDENTITY-002, DESIGN-001) поверх після-рерайтної бази f3f3fabb2f3b замість git merge до-рерайтних комітів",
-      "reden": "Прямий git merge гілок, що походять від до-рерайтного дерева e547381, повернув би в історію репозиторію 139 старих комітів із персональними даними та приватними IP-адресами, видаленими в B-010 і B-011.",
+      "keuze": "Портування змін із допереписних гілок (MAILFIT-002, IDENTITY-002, DESIGN-001) поверх післяпереписної бази f3f3fabb2f3b замість git merge допереписних фіксацій змін",
+      "reden": "Прямий git merge гілок, що походять від допереписного дерева e547381, повернув би в історію репозиторію 139 старих фіксацій змін із персональними даними та приватними IP-адресами, видаленими в B-010 і B-011.",
       "альтернатива": "Звичайний git merge гілок запитів #28 та #27 — відхилено через порушення вимог приватності B-010/B-011."
     },
     {
@@ -232,7 +238,7 @@
     },
     {
       "controle": "npm run typecheck:server && NODE_OPTIONS=--max-old-space-size=5120 npm run build",
-      "результат": "Усі 11 етапів складання (каталог кнопок інтерфейсу, розміщення фіксованих елементів, колірний контраст 1898 пар, клієнтська складання Vite, перевірка пакунків сумісності, складання розширення браузера та серверного пакунка) пройшли з кодом 0.",
+      "результат": "Усі 11 етапів складання (каталог кнопок інтерфейсу, розміщення фіксованих елементів, колірний контраст 1898 пар, клієнтська складання Vite, перевірка пакунків сумісності, складання розширення оглядача та серверного пакунка) пройшли з кодом 0.",
       "стан": "пройдено"
     },
     {

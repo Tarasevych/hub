@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./TECH-RUIMTES-API.uk.md) · **🇳🇱 Nederlands** ([origineel](./TECH-RUIMTES-API.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ІНТЕРФЕЙС-ТЕХНІЧНИХ-ПРОСТОРІВ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Technische ruimtes v2 — API-contract (T-BACKEND ↔ T-UI)
 

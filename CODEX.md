@@ -1,3 +1,5 @@
+> 🌐 **Мова:** **Українська** · [Nederlands](CODEX.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
+
 <!-- orch-adapter -->
 # Адаптер для Codex · Adapter voor Codex
 

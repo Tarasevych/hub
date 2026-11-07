@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261029-КАЛЕНДАР-І-ПАКЕТ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 ## Agenda: venster "Agenda koppelen" + drie oplossingen voor pakketcontrole (29-10-2026)
 

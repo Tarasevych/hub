@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./INTEGRATIE-20261027.uk.md) · **🇳🇱 Nederlands** ([origineel](./INTEGRATIE-20261027.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ІНТЕГРАЦІЯ-ФАЙЛІВ-20261027.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Mijn Ruimte · Universal Bestand Workspace v0.3 · integratie boven op release 2026-10-27 21:14:25
 

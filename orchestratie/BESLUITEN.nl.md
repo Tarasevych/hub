@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./BESLUITEN.uk.md) · **🇳🇱 Nederlands** ([🔒 canoniek `BESLUITEN.md`](./BESLUITEN.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](РІШЕННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Besluitenregister (`BESLUITEN.nl.md` · ORCH-001)
 
@@ -12,7 +12,7 @@ Statussen: `voorstel` (voorgesteld door een agent), `bevestigd` (bevestigd door 
 ## B-001 · 2026-10-31 · 1.0.0 · voorstel
 
 **Context.** Aan Mijn Ruimte werken parallel Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini en Cursor. De regels stonden verspreid over
-`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, de gedeelde kennismap en chats; elke agent had een eigen beeld van de codebasis.
+`deploy/REGELS-UITROLPAKKET.nl.md`, `RUNBOOK-*.md`, de gedeelde kennismap en chats; elke agent had een eigen beeld van de codebasis.
 
 **Besluit.** De enige bron van regels is [`AGENTS.md`](../AGENTS.md) (voor mens en agent) + [`orchestratie/beleid.json`](./beleid.json) (voor de machine) + dit register. `CLAUDE.md`, `GEMINI.md` en andere omgevingsbestanden
 zijn uitsluitend adapters van ≤ 25 regels met de markering `<!-- orch-adapter -->`. De vingerafdruk van de regels ligt vast in [`orchestratie/regels.lock.json`](./regels.lock.json);
@@ -227,5 +227,15 @@ codes `ORCH_CODES` in `shared/orch-model.ts`, hulpteksten `orch.inlevering` / `o
 **Besluit.** Alle Russische leenvertalingen, Surzjyk-wendingen en slang-termen in alle gepubliceerde artikelen (`*.md`, `*.uk.md`, `*.txt`) vervangen door authentiek Oekraïens; `regelsVersie` verhogen naar `1.4.11` en `orchestratie/regels.lock.json` en `orchestratie/CONTEXT-COMPACT.md` opnieuw opbouwen.
 
 **Gevolgen.** `regelsVersie` 1.4.10 → 1.4.11; 0 treffers van Russismen, leenvertalingen of slang in alle documentatieartikelen.
+
+**Wie.** Verzoek van de eigenaar op 06-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.
+
+## B-017 · 2026-11-06 · 1.4.12 · voorstel
+
+**Context.** De eigenaar heeft toestemming gegeven voor het volledig hernoemen van alle artikelbestanden, documentatiemappen en takken in alle opslagplaatsen onder `Tarasevych` (inclusief `Tarasevych/hub`), zodat alle Oekraïense artikelen authentieke Oekraïense bestandsnamen en zuivere taal hebben en alle Nederlandse artikelen zuivere Nederlandse bestandsnamen.
+
+**Besluit.** Alle Oekraïense artikelen (`.md` en `.uk.md`) en Nederlandse artikelen (`.nl.md`) hernoemd naar zuivere Oekraïense en Nederlandse namen, alle onderliggende verwijzingen en eenheidstests bijgewerkt, en `regelsVersie` verhoogd naar `1.4.12`.
+
+**Gevolgen.** `regelsVersie` 1.4.11 → 1.4.12; volledige tweetalige documentatie met zuivere bestandsnamen en inhoud.
 
 **Wie.** Verzoek van de eigenaar op 06-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.

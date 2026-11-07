@@ -1,3 +1,5 @@
+> 🌐 **Мова:** **Українська** · [Nederlands](CLAUDE.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
+
 <!-- orch-adapter -->
 # Адаптер для Claude (Claude Code, claude.ai, MCP-конектор mcp.tarasevych.com) · Adapter voor Claude (Claude Code, claude.ai, MCP-конектор mcp.tarasevych.com)
 

@@ -1,3 +1,5 @@
+> 🌐 **Мова:** **Українська** · [Nederlands](GROK.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
+
 <!-- orch-adapter -->
 # Адаптер для Grok (MCP-конектор, ZIP/TAR.GZ) · Adapter voor Grok (MCP-конектор, ZIP/TAR.GZ)
 

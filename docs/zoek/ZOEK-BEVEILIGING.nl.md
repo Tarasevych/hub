@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ZOEK-BEVEILIGING.uk.md) · **🇳🇱 Nederlands** ([origineel](./ZOEK-BEVEILIGING.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](БЕЗПЕКА-ПОШУКУ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Zoeken «/zoek» — isolatie en beveiliging
 

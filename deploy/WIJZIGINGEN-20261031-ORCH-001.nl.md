@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261031-ORCH-001.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261031-ORCH-001.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261031-КООРДИНАЦІЯ-001.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # ORCH-001 · Eenduidig coördinatiesysteem voor AI-agenten — wijzigingsoverzicht
 

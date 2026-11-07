@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ZOEK-BEHEER.uk.md) · **🇳🇱 Nederlands** ([origineel](./ZOEK-BEHEER.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](КЕРУВАННЯ-ПОШУКОМ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Zoeken «/zoek» — beheer: monitoring, herstel, migraties, uitrol, terugdraaien, prestaties
 
@@ -13,7 +13,7 @@ Stand: 22-10-2026. Voor de BYOS-servereigenaar. Alles draait op de eigen server;
 | `tesseract` (CLI) + traineddata `ukr nld eng rus` | nee (aanbevolen) | OCR van scans/afbeeldingen | `mijn-ruimte-installeer ocr-talen` (installeert pakket en talen in `/srv/mijn-ruimte/ocr/tessdata`) — zie `deploy/installeer-app.sh`; zonder dit pakket is de status «OCR niet beschikbaar» |
 | `pdftoppm` (poppler-utils) | nee (aanbevolen) | rasteriseren van PDF-pagina's voor OCR | dezelfde stap; zonder dit hulpmiddel valt het systeem terug op `pdfjs-afbeelding` (langzamer) |
 
-Omgevingsvariabelen (allemaal optioneel; volledig overzicht in `ENV-VARS.md`, sectie «Zoeken»): `ZOEK_TEKST_MAX_BYTES` (25 MiB),
+Omgevingsvariabelen (allemaal optioneel; volledig overzicht in `OMGEVINGSVARIABELEN.nl.md`, sectie «Zoeken»): `ZOEK_TEKST_MAX_BYTES` (25 MiB),
 `ZOEK_TEKST_TIMEOUT_MS` (60 000), `ZOEK_TEKST_WERKER_MB` (512), `ZOEK_PDF_MAX_PAGINAS` (500), `ZOEK_OCR_MAX_PAGINAS` (50),
 `ZOEK_OCR_MAX_BYTES` (20 MiB), `ZOEK_OCR_PAGINA_TIMEOUT_MS` (45 000), `ZOEK_OCR_PARALLEL` (1), `ZOEK_OCR_ENGINE` (`auto|tesseract-cli|tesseract-js|platform-ai|uit`),
 `ZOEK_OCR_TALEN` (`ukr+nld+eng+rus`), `ZOEK_OCR_TALEN_MAP`, `ZOEK_OCR_TESSERACT_PAD`, `ZOEK_OCR_PDFTOPPM_PAD`, `ZOEK_ARCHIEF_MAX_*`,
@@ -90,7 +90,7 @@ de wachtrij wordt uitsluitend voor de eigen laden gelezen (`zoekOphalen(…, { u
 Als de lock bezet is (cron/achtergrondronde/handmatige run van iemand anders), **sluit de handmatige run aan** (status `aangesloten`): hij volgt de wachtrij
 van de eigen laden en probeert de lock telkens opnieuw; zodra die vrijkomt, verwerkt hij zelf verder.
 
-**Limieten** (ENV, `ENV-VARS.md`): `ZOEK_BEHEER_RUN_MS` (10 min) en `ZOEK_BEHEER_ITEMS` (2000). Daarna wordt de status `tijd`/`limiet` en werkt de cron de rest af.
+**Limieten** (ENV, `OMGEVINGSVARIABELEN.nl.md`): `ZOEK_BEHEER_RUN_MS` (10 min) en `ZOEK_BEHEER_ITEMS` (2000). Daarna wordt de status `tijd`/`limiet` en werkt de cron de rest af.
 «Stoppen» stopt na het huidige item + annuleert **geplande scanstappen** van deze laden (`status geannuleerd`, `last_error HANDMATIG_GESTOPT`;
 individuele bijlage-/inhoudstaken blijven staan — de cron werkt die zelf af en plant scanstappen sowieso opnieuw in).
 

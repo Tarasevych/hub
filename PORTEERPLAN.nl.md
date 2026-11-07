@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./PORTEERPLAN.uk.md) · **🇳🇱 Nederlands** ([origineel](./PORTEERPLAN.md)) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [🏠 Головна (UK)](./README.md) · [📚 Documentatie-index](./docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ПЛАН-ПЕРЕНЕСЕННЯ.uk.md) · **Nederlands** | [Hoofdpagina](LEESMIJ.md) · [Documentatie-index](docs/INDEX.nl.md)
 
 # Porteerplan «Мій простір»: zelf hosten zonder AppDeploy
 
@@ -17,7 +17,7 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
   Aan de frontend-kant zijn het `api.post/get` (±200 aanroepen), `image.resizeIfNeeded` (3×) en `invitesClient` (4×).
 * **AppDeploy-auth wordt niet gebruikt.** De app heeft een eigen authenticatielaag: Google OIDC voor de eigenaar, wachtwoord met TOTP en herstelcodes, eigen sessiecookies en eigen RBAC. Er moet dus geen auth-provider vervangen worden.
 * **Aanbevolen aanpak: een compatibiliteitslaag ("shim").** We schrijven eigen modules met precies dezelfde API (`db`, `storage`, `secrets`, `ai`, `invites`, `router/json/error`; client: `api`, `image`, `invitesClient`) bovenop Postgres (JSONB), het lokale bestandssysteem en env-variabelen.
-  De ±770 db-aanroepen blijven dan ongewijzigd. Een volledig relationeel schema (zoals in `docs/mail/MAIL_DATABASE_SCHEMA.md`) is fase 2 en optioneel.
+  De ±770 db-aanroepen blijven dan ongewijzigd. Een volledig relationeel schema (zoals in `docs/post/POST-DATABASESCHEMA.nl.md`) is fase 2 en optioneel.
 * **Inschatting:** ±14–19 werkdagen voor één ontwikkelaar, inclusief de beveiligingspunten en het testen. Zie §7.
 * **Build nu:** er is geen `package-lock.json`, dus `npm ci` faalt meteen. `npm install` lukt wel. `npm run build` faalt in Vite op `Rollup failed to resolve import "@appdeploy/client"` (Node 20 én Node 24.21/npm 11).
   Met een tijdelijke stub van de client-SDK bouwt de frontend volledig (`✓ built in 29.64s`). Details in §6.
@@ -37,7 +37,7 @@ Doelomgeving: Ubuntu 24.04.5, Node.js 24.21 / npm 11, PostgreSQL 17 op 127.0.0.1
 | API-transport | De client-SDK riep `https://api-v2.appdeploy.ai/app/migrated-bg2v4h/...` aan (zie `connect-src` en `API_COOKIE_PATH=/app/migrated-bg2v4h/`). Daarom zijn de cookies cross-site: `SameSite=None; Partitioned`. |
 | Cron | `cron.json`: `mail-provider-maintenance` (*/5, `batchLimit:3`) en `google-suite-bplus-sync` (*/5, `accountLimit:10`), tijdzone Europe/Brussels. |
 | Realtime | `backend/realtime.ts` en `backend/realtime-subscribers.ts` (`ws.send`, tabel `entity_subscriptions`) worden **nergens geïmporteerd** door `index.ts`, en de frontend gebruikt `ws` niet. Dit is dode code. |
-| Docs | `docs/mail/MAIL_DATABASE_SCHEMA.md` beschrijft al een normatief PostgreSQL-doelschema voor mail (fase 2). |
+| Docs | `docs/post/POST-DATABASESCHEMA.nl.md` beschrijft al een normatief PostgreSQL-doelschema voor mail (fase 2). |
 
 ---
 
@@ -219,7 +219,7 @@ Opmerkingen:
 * `db.add` doet een `INSERT ... RETURNING id`, `db.get` doet `WHERE tbl=$1 AND id = ANY($2)` en de shim herordent de resultaten naar de volgorde van de aanvraag. `db.update` doet `UPDATE ... SET data=$, updated_at=now()`, `db.delete` doet `DELETE ... WHERE id = ANY`.
 * `db.list` doet `WHERE tbl=$1 AND seq > $cursor AND data @> $filter ORDER BY seq LIMIT $n+1`.
 * Transacties: AppDeploy had die niet. De shim krijgt een `db.tx(fn)` voor nieuwe code (handoff redeem, rate limits).
-* Fase 2 (optioneel, later): de hete tabellen (`users`, `owner_service_sessions_v1`, `mail_items_v1`, `mail_accounts_v1`, `cloud_items_v1`) normaliseren naar echte kolommen volgens `docs/mail/MAIL_DATABASE_SCHEMA.md`. Dat kost ±2–4 weken extra en is pas zinvol als de prestaties dat vragen.
+* Fase 2 (optioneel, later): de hete tabellen (`users`, `owner_service_sessions_v1`, `mail_items_v1`, `mail_accounts_v1`, `cloud_items_v1`) normaliseren naar echte kolommen volgens `docs/post/POST-DATABASESCHEMA.nl.md`. Dat kost ±2–4 weken extra en is pas zinvol als de prestaties dat vragen.
 
 ### 3.3 Data uit AppDeploy
 
@@ -510,7 +510,7 @@ Bekende beperkingen:
 4. Technische AppDeploy-host, OwnerTestApp, QA-fixtures en integratielabs verwijderd; l002-audit en `tests/tests.txt` aangepast.
 
 ### 10.4 Fase B beveiliging: afgerond (commit `8a2d63f`)
-Alle punten uit §5 zijn opgelost; details en status per punt in `SECURITY-NOTES.md` §3, env-vars in `ENV-VARS.md`.
+Alle punten uit §5 zijn opgelost; details en status per punt in `BEVEILIGINGSNOTITIES.nl.md` §3, env-vars in `OMGEVINGSVARIABELEN.nl.md`.
 Passkeys zijn **uitgeschakeld** (niet geïmplementeerd) tot er echte WebAuthn-verificatie is.
 Tests: rooktest 42/42, eenheidstests 12/12 (`scripts/eenheidstests.mjs`), browsertest 7/7
 (`scripts/lokaal-e2e/test-alles.sh` draait alles). Servertypecheck: 74 bestaande meldingen (was 77), frontend 222 (was 224).
@@ -518,11 +518,11 @@ Tests: rooktest 42/42, eenheidstests 12/12 (`scripts/eenheidstests.mjs`), browse
 ### 10.5 Deploy-artefacten (map `deploy/`, niet uitgerold)
 `mijn-ruimte.service`, `mijn-ruimte-cron@.service` + timers (mail-onderhoud, google-sync, opruimen),
 `mijn-ruimte-backup.service/.timer` + `backup-maken.sh` (pull-model), `cloudflared-config.yml`,
-`installeer-app.sh` (inrichten / installeren met automatische rollback / terugdraaien / lijst). Zie `deploy/LEESMIJ.md`.
+`installeer-app.sh` (inrichten / installeren met automatische rollback / terugdraaien / lijst). Zie `deploy/PROJECTOVERZICHT.nl.md`.
 
 ### 10.6 Laatste theoretische risico's gesloten (commit `0160a0b`)
 Handoff gebonden aan de aanmakende browser (`tsv_handoff_binding`), herstelcode atomisch verbruikt (`db.takeArrayValue`).
-Zie `SECURITY-NOTES.md` §3 (punten 14 en 15). Tests: rooktest 47/47, eenheidstests 19/19, browsertest 10/10.
+Zie `BEVEILIGINGSNOTITIES.nl.md` §3 (punten 14 en 15). Tests: rooktest 47/47, eenheidstests 19/19, browsertest 10/10.
 
 ### 10.7 Eerste uitrol op de VM (3 okt 2026, commit `0b32ecd`, release `20261003-115704`)
 VM `mijn-ruimte-webserver` (<VM-IP>): `installeer-app.sh inrichten` + `installeren`, geheimen op de VM gegenereerd
@@ -530,7 +530,7 @@ VM `mijn-ruimte-webserver` (<VM-IP>): `installeer-app.sh inrichten` + `installer
 (incl. proefherstel). Alleen `127.0.0.1:8080` nieuw; ufw ongewijzigd. Tijdens de uitrol gevonden en opgelost:
 vite-build OOM op 2 GB RAM (build nu in een cgroup met geheugenplafond), zelfverwijzende `current`-symlink bij de
 eerste installatie, en de server die via de symlink `current/` stil niet startte (isMain met realpath).
-Cloudflare Tunnel: alleen `/etc/cloudflared/config.yml` met plaatshouder; nog geen tunnel/DNS (zie `deploy/LEESMIJ.md`).
+Cloudflare Tunnel: alleen `/etc/cloudflared/config.yml` met plaatshouder; nog geen tunnel/DNS (zie `deploy/PROJECTOVERZICHT.nl.md`).
 
 ### 10.8 Cloudflare Tunnel live (3 okt 2026, ~12:16)
 Tunnel `mijn-ruimte` (`a176c08b-29e7-47b0-95d9-9ec9383572f2`), 10 nieuwe CNAME's, gehardende `cloudflared.service`,
@@ -543,7 +543,7 @@ Publieke-sleutelmodel: één X25519-sleutelpaar, op de pc gemaakt; de privésleu
 `age -R` (release 20261003-123345, commit c4429df); de VM kan zijn back-ups niet ontsleutelen. Versleuteld
 geheimenarchief (`geheimen.env` + tunnel-credentials) op R:\; proefontsleuteling en proefherstel (via een
 `cmd /c`-pijp van de pc naar een tijdelijke database) geslaagd. `deploy/reservekopie-ophalen.ps1` haalt de
-nieuwste back-up op naar R:\; `deploy/HERSTEL.md` is het noodplan. Uitleg per map (Oekraïens + Nederlands):
+nieuwste back-up op naar R:\; `deploy/HERSTEL.nl.md` is het noodplan. Uitleg per map (Oekraïens + Nederlands):
 `deploy/pc-uitleg/`.
 
 ### 10.10 Nog open

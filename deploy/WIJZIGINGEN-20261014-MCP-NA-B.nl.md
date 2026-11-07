@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261014-MCP-NA-B.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261014-MCP-NA-B.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261014-ПРОТОКОЛ-ПІСЛЯ-Б.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Release na e6cbf73: MCP-spiegel van de deuren, zonder terugdraaien van SSH en schakelaar B
 

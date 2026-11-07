@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./RUIMTES-COMPATIBILITEIT.uk.md) · **🇳🇱 Nederlands** ([origineel](./RUIMTES-COMPATIBILITEIT.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](СУМІСНІСТЬ-ПРОСТОРІВ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Ruimtes: compatibiliteit van de browserextensie en de MCP-klanten
 

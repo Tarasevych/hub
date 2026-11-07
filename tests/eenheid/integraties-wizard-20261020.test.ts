@@ -196,7 +196,7 @@ export async function main(): Promise<number> {
     check('Integraties.tsx: tabblad «Майстер підключень» bestaat en rendert Wizard', /id: 'wizard', uk: 'Майстер підключень', nl: 'Koppelwizard'/.test(bron('src/integraties/Integraties.tsx')) && /<Wizard lang=\{lang\} context=\{context\}/.test(bron('src/integraties/Integraties.tsx')));
 
     // =============================================================== 6. geen oude paden, geen vast domein in de teksten
-    const teksten = [bron('shared/integraties-wizard.ts'), ui, bron('deploy/GEHEIMEN-REGISTER.md'), (() => { try { return bron('ENV-VARS.md'); } catch { return ''; } })()].join('\n');
+    const teksten = [bron('shared/integraties-wizard.ts'), ui, bron('deploy/РЕЄСТР-ТАЄМНИЦЬ.md'), (() => { try { return bron('ЗМІННІ-СЕРЕДОВИЩА.md'); } catch { return ''; } })()].join('\n');
     check('teksten noemen geen oude paden (/mcp als pad, /ai/)', !/['"\s(]\/mcp(\/|['"\s)]|$)/.test(teksten) && !/\/ai\//.test(teksten));
     check('wizard-teksten zijn tweetalig zonder Nederlands in de Oekraïense helft', WIZARD_PROVIDERS.every((p) => WIZARD_STAPPEN[p.id].every((s) => !/\b(de|het|een|van|met)\b/.test(s.tekst[0].replace(/«[^»]*»/g, '')))));
 
@@ -234,9 +234,9 @@ export async function main(): Promise<number> {
     const inst = bron('deploy/installeer-app.sh');
     check('installer: stap «geheimen» vóór bouwen/migreren, hulpscripts naar /usr/local/sbin, verbs geheimen / geheimen-register / oauth-client',
       inst.indexOf('geheimen_controleren "$(readlink -f "$bron")"') > 0 && inst.indexOf('geheimen_controleren "$(readlink -f "$bron")"') < inst.indexOf('migreren "$doel"') && /hulpscripts_installeren "\$doel"/.test(inst) && /^\s+geheimen\) vereis_root;/m.test(inst) && /^\s+oauth-client\) vereis_root;/m.test(inst) && /^\s+geheimen-register\) vereis_root;/m.test(inst) && !/geheimen-aanvullen/.test(inst));
-    // ENV-VARS.md staat in de wortel van de repo; een testkopie zonder dat bestand slaat deze controle eerlijk over.
-    let envDoc = ''; try { envDoc = bron('ENV-VARS.md'); } catch { envDoc = ''; }
-    check('ENV-VARS.md: MAIL_APP_WACHTWOORD_SLEUTEL_V1 verplicht, de wizard en de nieuwe opdrachten staan erin; Entra en Google Auth Platform (niet «Azure-app»)', !envDoc || (/MAIL_APP_WACHTWOORD_SLEUTEL_V1.*(?:Verplicht|Обов['’]язковий)/.test(envDoc) && /Майстер підключень/.test(envDoc) && /oauth-client google\|microsoft/.test(envDoc) && /Google Auth Platform/.test(envDoc) && /entra\.microsoft\.com/.test(envDoc) && !/Azure-app/.test(envDoc)), envDoc ? '' : 'ENV-VARS.md niet in de testkopie: overgeslagen');
+    // ЗМІННІ-СЕРЕДОВИЩА.md staat in de wortel van de repo; een testkopie zonder dat bestand slaat deze controle eerlijk over.
+    let envDoc = ''; try { envDoc = bron('ЗМІННІ-СЕРЕДОВИЩА.md'); } catch { envDoc = ''; }
+    check('ЗМІННІ-СЕРЕДОВИЩА.md: MAIL_APP_WACHTWOORD_SLEUTEL_V1 verplicht, de wizard en de nieuwe opdrachten staan erin; Entra en Google Auth Platform (niet «Azure-app»)', !envDoc || (/MAIL_APP_WACHTWOORD_SLEUTEL_V1.*(?:Verplicht|Обов['’]язковий)/.test(envDoc) && /Майстер під['’]єднань|Майстер підключень/.test(envDoc) && /oauth-client google\|microsoft/.test(envDoc) && /Google Auth Platform/.test(envDoc) && /entra\.microsoft\.com/.test(envDoc) && !/Azure-app/.test(envDoc)), envDoc ? '' : 'ЗМІННІ-СЕРЕДОВИЩА.md niet in de testkopie: overgeslagen');
   } finally {
     globalThis.fetch = fetchOud;
     setIntegratiesKluis(null); setKoppelingKluis(null);

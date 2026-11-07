@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ONTWERP.uk.md) · **🇳🇱 Nederlands** ([origineel](./ONTWERP.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ПРОЄКТ-ФОТОСЛУЖБИ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # UI-002 — «Фото» en de verhuizing van «Календар»/«Фото» naar «Мій простір»
 

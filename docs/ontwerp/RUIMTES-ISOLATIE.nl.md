@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./RUIMTES-ISOLATIE.uk.md) · **🇳🇱 Nederlands** ([origineel](./RUIMTES-ISOLATIE.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ІЗОЛЯЦІЯ-ПРОСТОРІВ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Ruimtes-isolatie — «prive» ↔ «technisch» (28.10.2026, migratie 0123, vlag `ruimtes-scheiding`)
 

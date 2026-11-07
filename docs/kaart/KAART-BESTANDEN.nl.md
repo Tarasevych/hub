@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./KAART-BESTANDEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./KAART-BESTANDEN.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](КАРТА-ФАЙЛІВ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Bestandskaart «wat staat waar» — hernoeming naar het Nederlands, 24.10.2026
 

@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./GEHEIMEN-REGISTER.uk.md) · **🇳🇱 Nederlands** ([origineel](./GEHEIMEN-REGISTER.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](РЕЄСТР-ТАЄМНИЦЬ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Geheimenregister «Mijn Ruimte» — SJABLOON
 
@@ -53,7 +53,7 @@ waarden). Ze worden uitsluitend via de site ingevoerd met passkey/TOTP en worden
 ### Waar dit bestand hoort
 
 - Naast de waarden zelf in de wachtwoordmanager van de eigenaar (apart item «Mijn Ruimte — register»).
-- In de versleutelde back-up van de geheimen (`deploy/HERSTEL.md`), los van de databaseback-up.
+- In de versleutelde back-up van de geheimen (`deploy/HERSTEL.nl.md`), los van de databaseback-up.
 - **Niet** in git, **niet** in de chat, **niet** in tickets.
 
 ### Regel

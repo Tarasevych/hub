@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.11",
+  "regelsVersie": "1.4.12",
   "bijgewerkt": "2026-11-06",
   "regelBestanden": [
     "AGENTS.md",
@@ -11,7 +11,7 @@
     "versie": "20261105-061659",
     "bronCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
     "verificatie": "geverifieerd_productie",
-    "opmerking": "Встановлена на сервері версія 20261105-061659 (у до-рерайтній історії commit a318ba0b1c731390217458dabadcf0e086d13635; у канонічній після-рерайтній історії B-011/B-013/B-014 база voornaamst f3f3fabb2f3b5209b1ee8eba3078e403de831844, див. B-014)."
+    "opmerking": "Встановлена на сервері версія 20261105-061659 (у допереписній історії фіксація змін a318ba0b1c731390217458dabadcf0e086d13635; у канонічній післяпереписній історії B-011/B-013/B-014 база voornaamst f3f3fabb2f3b5209b1ee8eba3078e403de831844, див. B-014)."
   },
   "integratie": {
     "tak": "integratie",
@@ -25,7 +25,7 @@
       "typecheck:server",
       "trace-001:ontwikkelarchief"
     ],
-    "toelichting": "Послідовна черга: wachtrij volgende → (людина/агент зливає гілку в integratie без force) → wachtrij klaar --uitkomst integrated --hoofd <sha>. Лише одна задача bezig."
+    "toelichting": "Послідовна черга: wachtrij volgende → (людина/агент зливає гілку в integratie без примусу) → wachtrij klaar --uitkomst integrated --hoofd <sha>. Лише одна задача bezig."
   },
   "takPatroon": "^(feature|fix|audit|release)/[a-z0-9]+(-[a-z0-9]+)*-[0-9]{8}-[0-9]{6}$",
   "taakIdPatroon": "^[A-Z][A-Z0-9]{1,9}-\\d{3,5}$",
@@ -96,7 +96,7 @@
       "GEEN_BASIS для версій ≥ basisVerplichtVanaf",
       "GitHub-ontwikkelarchief op vaste commit/tak en exact Release .tar.gz digest verplicht (vanaf 20261103-211555)"
     ],
-    "toelichting": "node scripts/orch.mjs pakket --taak <ID> --auteur \"…\" [--manifest …] [--testresultaten …] [--sig …] збирає tar.gz через deploy/uitrol/maak-voorstelpakket.sh (нічого не дублюється) і пакет передачі. UITROL-BASIS = ВСТАНОВЛЕНА база (orchestratie/geinstalleerd.json, інакше basis); basisCommit в ORCH-OVERDRACHT = база ГІЛКИ задачі (від неї inleveren відтворює зміни). Перевірка без установки: pakket-controleer --bron <zip>. Підписує лише власник на своєму ПК (kritiek.privesleutelsNaarAgenten = false).",
+    "toelichting": "node scripts/orch.mjs pakket --taak <ID> --auteur \"…\" [--manifest …] [--testresultaten …] [--sig …] збирає tar.gz через deploy/uitrol/maak-voorstelpakket.sh (нічого не дублюється) і пакет передачі. UITROL-BASIS = ВСТАНОВЛЕНА база (orchestratie/geinstalleerd.json, інакше basis); basisCommit в ORCH-OVERDRACHT = база ГІЛКИ задачі (від неї inleveren відтворює зміни). Перевірка без встановлення: pakket-controleer --bron <zip>. Підписує лише власник на своєму ПК (kritiek.privesleutelsNaarAgenten = false).",
     "ontwikkelArchief": {
       "bestand": "ONTWIKKELARCHIEF.json",
       "verplichtVanaf": "20261103-211555",
@@ -139,7 +139,7 @@
   "compactContext": {
     "bestand": "orchestratie/CONTEXT-COMPACT.md",
     "maxBytes": 12000,
-    "synchronisatie": "Агент без GitHub/MCP отримує CONTEXT-COMPACT.md + патч від basisCommit; повертає патч/ZIP з ORCH-OVERDRACHT.json. Після відновлення лімітів: node scripts/orch.mjs versheid --taak <ID> --fase overdracht."
+    "synchronisatie": "Агент без GitHub/MCP отримує CONTEXT-COMPACT.md + латку від basisCommit; повертає латку/ZIP з ORCH-OVERDRACHT.json. Після відновлення лімітів: node scripts/orch.mjs versheid --taak <ID> --fase overdracht."
   },
   "site": {
     "routes": "/api/owner/orch/*",
@@ -163,7 +163,7 @@
       "statusBestand": "/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json",
       "takPatroon": "^regels/[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]{8}-[0-9]{6}$"
     },
-    "toelichting": "Сайт, MCP і HTTP не мають власної логіки: маршрути й інструменти викликають ті самі функції, що й CLI (inleveren, beoordeelVoorstel, vergrendel, compacteContext). Зміна правил власником: редагування regelBestanden на сайті → beoordeelVoorstel (regelsVersie вища, запис у BESLUITEN.md, beleid.json валідний) → рішення passkey soort orch-regels → root лише дописує підтвердження у rootJournaal і переписує statusBestand → застосунок створює гілку regels/<versie>-<час> із новим regels.lock.json (eigenaar.soort = passkey) і CONTEXT-COMPACT.md, запускає controleer і відправляє гілку в origin. Злиття в integratie лишається за власником. GitOps довіряє passkey-lock лише якщо той самий запис є в rootJournaal."
+    "toelichting": "Сайт, MCP і HTTP не мають власної логіки: маршрути й інструменти викликають ті самі функції, що й CLI (inleveren, beoordeelVoorstel, vergrendel, compacteContext). Зміна правил власником: редагування regelBestanden на сайті → beoordeelVoorstel (regelsVersie вища, запис у BESLUITEN.md, beleid.json дійсний) → рішення ключа доступу soort orch-regels → root лише дописує підтвердження у rootJournaal і переписує statusBestand → застосунок створює гілку regels/<versie>-<час> із новим regels.lock.json (eigenaar.soort = passkey) і CONTEXT-COMPACT.md, запускає controleer і відправляє гілку в origin. Злиття в integratie лишається за власником. GitOps довіряє passkey-lock лише якщо той самий запис є в rootJournaal."
   },
   "agenten": [
     {

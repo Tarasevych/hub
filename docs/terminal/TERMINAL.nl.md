@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./TERMINAL.uk.md) · **🇳🇱 Nederlands** ([origineel](./TERMINAL.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ТЕРМІНАЛ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Terminal van het technisch profiel (zone G, 22.10.2026)
 
@@ -62,7 +62,7 @@ besluit hoort bij wie root heeft op de machine (dezelfde grens als bij de passke
 en daarna gaat alles via de site.
 
 ## Windows-pc (PowerShell)
-Volledige handleiding: `deploy/agent/WINDOWS-POWERSHELL.md` (Node op Windows, `pair` met de code uit `mcp.*` → Apparaten in de technische ruimte,
+Volledige handleiding: `deploy/agent/WINDOWS-OPDRACHTSCHIL.nl.md` (Node op Windows, `pair` met de code uit `mcp.*` → Apparaten in de technische ruimte,
 `terminal-config on --powershell --geen-container`, starten via Taakplanner — `sc.exe` is ongeschikt omdat Node/PowerShell geen Windows-service is). In de terminal: apparaatkeuze «server / pc»,
 statusregel «PowerShell op \<pc\>», prompt `PS C:\…>`. Via de AI-connector (`uitvoeren_opdracht`, `command: "powershell"`) — dezelfde
 vaste start `-NoProfile -NonInteractive -Command`, dezelfde bevestiging op de site — **altijd**, zelfs als voor het apparaat de toestemming «altijd»

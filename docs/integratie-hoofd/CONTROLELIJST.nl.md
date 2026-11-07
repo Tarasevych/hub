@@ -1,0 +1,93 @@
+> 🌐 **Taal / Мова:** [Українська](ПЕРЕЛІК-ПЕРЕВІРКИ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
+
+# Controlelijst voor nieuwe functies
+
+Hoe te gebruiken: loop na de installatie de punten één voor één langs. Zet bij elk punt een vinkje in één vakje: «werkt» of «werkt niet». Als er iets niet klopt, noteer dan het nummer van het punt en kort wat u zag.
+
+Hoe een vlag in te schakelen: Technisch profiel → «Schakelaars» (vlaggen) → zoek de naam → zet «Alleen ik» («Тільки я») aan. Na de controle kunt u de vlag weer uitzetten, en dan werkt alles weer zoals voorheen.
+
+---
+
+## 1. Snel submenu in het menu (UI-001)
+1. **Waar:** het horizontale menu (bovenaan of onderaan het scherm), op een computer of tablet. Op de telefoon en in het zijmenu zit dit niet.
+2. **Vlag:** niet nodig, werkt meteen.
+3. **Wat te controleren:** klik met de rechtermuisknop op een dienst met een pijltje (bijvoorbeeld «Пошта» / Mail). Het bijbehorende submenu moet openen zonder dat de pagina wisselt. Op een tablet gebeurt hetzelfde bij lang indrukken met een vinger. De toets Esc sluit het submenu. Gewoon klikken werkt zoals voorheen.
+4. ☐ werkt ☐ werkt niet
+
+## 2. Nieuw onderdeel «Фото» (UI-002)
+1. **Waar:** «Мій простір» (Mijn Ruimte) → «Фото» (Foto's).
+2. **Vlag:** «Новий розділ «Фото»» (`foto-dienst`).
+3. **Wat te controleren:** de pagina «Фото» opent. Met de knop «Додати фото» (Foto's toevoegen) kunt u foto's vanaf uw computer of een archief (Google, Instagram, Facebook, Telegram, ZIP) toevoegen. De foto's verschijnen in de tijdlijn. Een foto opent op volledig scherm en sluit met de toets Esc. Op de telefoon past alles binnen de schermbreedte.
+4. ☐ werkt ☐ werkt niet
+
+## 3. Kalender en Foto's verhuisd naar «Мій простір» (UI-002)
+1. **Waar:** het menu van «Мій простір» en het menu van «Хмарне сховище» (Cloudopslag).
+2. **Vlag:** «Календар і Фото в «Моєму просторі»» (`menu-kalender-foto-eigen`).
+3. **Wat te controleren:** «Календар» en «Фото» staan nu in «Мій простір» en zijn verdwenen uit «Хмарне сховище». Oude bladwijzers naar kalender en foto's in de cloud verwijzen automatisch door naar de nieuwe plek.
+4. ☐ werkt ☐ werkt niet
+
+## 4. Nieuw verbindingencentrum «Облікові записи» (UI-003)
+1. **Waar:** «Хмарне сховище» → «Облікові записи».
+2. **Vlag:** «Новий центр під'єднань («Облікові записи»)» (`verbindingen-centrum-v2`).
+3. **Wat te controleren:** bovenaan staat een kort statusoverzicht (werkend, vragen aandacht, klaar om te koppelen, laatste synchronisatie). Daaronder vier blokken: «Мої під'єднання» (Mijn verbindingen), «Каталог сервісів» (Dienstencatalogus), «Синхронізація» (Synchronisatie), «Історія» (Geschiedenis), elk met één ronde «?». Uw Google-account wordt getoond en heeft een knop «Керувати» (Beheren). Op de telefoon steekt niets buiten de schermrand uit, en de «?»-knoppen zijn rond, niet ovaal.
+4. ☐ werkt ☐ werkt niet
+
+## 5. «ШІ для вас» opent de juiste pagina (UI-004)
+1. **Waar:** menu → «ШІ для вас» (AI voor u).
+2. **Vlag:** niet nodig (dit is een bugfix).
+3. **Wat te controleren:** klikken op «ШІ для вас» opent de AI-pagina, en niet de MCP-pagina.
+4. ☐ werkt ☐ werkt niet
+
+## 6. «Розумний будинок» zonder serverfout (UI-005)
+1. **Waar:** «Розумний будинок» (Slim huis).
+2. **Vlag:** niet nodig voor de bugfix. Het nieuwe beginscherm is zichtbaar wanneer «Розумний будинок (Huis vNext)» is ingeschakeld.
+3. **Wat te controleren:** de pagina opent zonder «interne serverfout». De knop «Створити оселю» (Woning aanmaken) werkt. Als er iets niet geladen kon worden, verschijnt er een duidelijke uitleg en een knop «Спробувати ще» (Opnieuw proberen) in plaats van een lege pagina.
+4. ☐ werkt ☐ werkt niet
+
+## 7. Venster «Перевірка всіх адрес» sluit niet vanzelf (BUG-002)
+1. **Waar:** «Пошта» → contacten of afzenders → «Перевірка всіх адрес» (Alle adressen controleren).
+2. **Vlag:** niet nodig (dit is een bugfix).
+3. **Wat te controleren:** start de controle. Het venster blijft open totdat u het zelf sluit. Na «Згорнути» (Minimaliseren) en het wisselen naar een ander browsertabblad springt het niet vanzelf weer open. Als de verbinding kort wegvalt, gaat de controle vanzelf verder.
+4. ☐ werkt ☐ werkt niet
+
+## 8. PDF's scrollen in bijlagen (BUG-003)
+1. **Waar:** «Пошта» → bericht met een PDF → bijlage openen.
+2. **Vlag:** niet nodig (dit is een bugfix).
+3. **Wat te controleren:** de PDF scrollt met het muiswiel en met twee vingers op het touchpad, vloeiend en zonder schokken.
+4. ☐ werkt ☐ werkt niet
+
+## 9. Nieuwe bijlageviewer in Mail (UI-006)
+1. **Waar:** «Пошта» → bericht met bijlage → bijlage openen.
+2. **Vlag:** «Новий перегляд вкладень у пошті» (`bijlage-viewer-v2`).
+3. **Wat te controleren:** bovenaan staan compacte knoppen met pictogrammen en tooltips. Het document neemt bijna het hele venster in. Vertaling en bestandsinformatie openen aan de zijkant alleen op uw verzoek. Downloaden, opslaan, afdrukken en bewerken werken zoals voorheen.
+4. ☐ werkt ☐ werkt niet
+
+## 10. Nieuw meldingencentrum (UI-007)
+1. **Waar:** het belletje rechtsboven.
+2. **Vlag:** «Новий центр сповіщень» (`meldingen-v2`).
+3. **Wat te controleren:** de lijst is compact, gelijke meldingen zijn samengevoegd tot één rij. Er zijn tabbladen «Важливі» (Belangrijk), «Усі» (Alle), «Непрочитані» (Ongelezen). U kunt meldingen van een afzonderlijke dienst dempen en «Не турбувати» (Niet storen) inschakelen. Belangrijke beveiligingsmeldingen komen nog steeds binnen. Esc sluit de lijst.
+4. ☐ werkt ☐ werkt niet
+
+## 11. Verfijnd accountmenu (UI-008)
+1. **Waar:** klik op uw foto of initialen rechtsboven.
+2. **Vlag:** «Охайніше меню облікового запису» (`accountmenu-v2`).
+3. **Wat te controleren:** bovenaan staan uw foto, naam en e-mailadres. De knoppen zijn uniform en verzorgd. De taalvlaggen 🇺🇦 en 🇳🇱 worden als echte vlaggen weergegeven. Het thema wisselt met één kleine schakelaar. Bij een blok staat hoogstens één «?». Uitloggen en een account toevoegen werken zoals voorheen.
+4. ☐ werkt ☐ werkt niet
+
+## 12. Nieuw zoeken en filters in Mail (UI-009)
+1. **Waar:** «Пошта» → zoekveld → filterknop.
+2. **Vlag:** «Новий пошук і фільтри в Пошті» (`mail-zoeken-v2`).
+3. **Wat te controleren:** er opent één compact paneel: snelle filters, handige periodekeuze, opgeslagen zoekopdrachten. Zoeken vindt dezelfde berichten als voorheen. De knop «Очистити» (Wissen) verwijdert alle voorwaarden.
+4. ☐ werkt ☐ werkt niet
+
+## 13. Alles tegelijk (controle dat de vernieuwingen elkaar niet in de weg zitten)
+1. **Waar:** elke pagina van «Мій простір», op de computer en op de telefoon, in het lichte en donkere thema.
+2. **Vlaggen:** alle bovenstaande vlaggen tegelijk ingeschakeld.
+3. **Wat te controleren:** het menu, het belletje en het accountmenu openen en sluiten goed. Twee vensters overlappen elkaar niet. Niets steekt buiten de rand van het telefoonscherm uit.
+4. ☐ werkt ☐ werkt niet
+
+## 14. Alles uitgeschakeld, zoals voorheen
+1. **Waar:** dezelfde pagina's.
+2. **Vlaggen:** alle nieuwe vlaggen uitgeschakeld.
+3. **Wat te controleren:** de site oogt en werkt precies zoals vóór de update. De bugfixes uit de punten 1, 5, 6, 7 en 8 blijven daarbij behouden.
+4. ☐ werkt ☐ werkt niet

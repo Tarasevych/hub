@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-INTEGRATIES.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261017-INTEGRATIES.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261017-ІНТЕГРАЦІЇ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Admin → /mappen «Інтеграції» (17 oktober 2026)
 

@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261014-B-SSH.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261014-B-SSH.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261014-Б-БЕЗПЕЧНА-ОБОЛОНКА.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Release 14.10.2026 (na 6660758): SSH-certificaat (C dl. 2, andere agent + reparaties) en schakelaar B
 
@@ -29,13 +29,13 @@ Een andere agent werkte al bovenop 6660758 (al mijn wijzigingen zitten daarin) e
 6. Venster: duidelijke hint (`~/.ssh/id_ed25519-cert.pub`, `ssh beheer@…`), fouten worden voorgelezen (`role="alert"`).
 7. Test `ssh-ca`: onder root negeert het script bewust testpaden, waardoor de test naar het echte `/etc/mijn-ruimte/ssh-ca` schreef. Nu draait
    het script onder root als `nobody`.
-8. Handleiding `deploy/SSH-CA.md`: stap voor stap inschakelen, testen zonder de huidige sessie te verliezen, uitschakelen.
+8. Handleiding `deploy/SSH-CA.nl.md`: stap voor stap inschakelen, testen zonder de huidige sessie te verliezen, uitschakelen.
 
 ## Wat ik heb toegevoegd (plan)
 - **B — «beheerrechten alleen in een actief technisch profiel»**: root-schakelaar `"beheer-alleen-tech": true` in `mcp-rechten.json`,
   **standaard uitgeschakeld**. Wanneer ingeschakeld, wordt een beheeractie alleen uitgevoerd met een actief profiel in dit tabblad met het vereiste recht;
   zowel de siteregel als OPA moeten toestemming geven; als OPA onbereikbaar is, wordt de actie geweigerd (fail-closed); elke weigering komt in het logboek.
-  De status van de schakelaar wordt getoond op het tabblad «Правила (OPA)» (Regels (OPA)). Handleiding: `deploy/BEHEER-ALLEEN-TECH.md`.
+  De status van de schakelaar wordt getoond op het tabblad «Правила (OPA)» (Regels (OPA)). Handleiding: `deploy/BEHEER-ALLEEN-TECH.nl.md`.
 - **Testhygiëne**: elke e2e overschreef het e-mailadres van de eigenaar, waardoor de eigenaar van de eenheidstests zijn rol verloor. Vandaar dubbele gebruikers en
   «36/37» in `tech-profiel`. Nu zet de e2e-server bij het stoppen de rollen terug zoals ze waren.
 

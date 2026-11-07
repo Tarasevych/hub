@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./AUDIT-BEHEER-OPPERVLAK.uk.md) · **🇳🇱 Nederlands** ([origineel](./AUDIT-BEHEER-OPPERVLAK.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](АУДИТ-ПОВЕРХНІ-КЕРУВАННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Audit: wat op de site beheer is en wat bij het account hoort
 
@@ -34,7 +34,7 @@ Tweede iteratie (14.10, avond): de scheiding werkt in twee richtingen.
 
 - Meldingen: het belletje filtert servermeldingen per ruimte (`shared/meldingen-ruimte.ts`: type + link). In de accountruimte — alleen wat de gebruiker aangaat (beveiliging, aanmeldmethoden, herstel, gedeelde toegang, ondersteuning); in de technische ruimte — alleen beheer (toegangsverzoek, Google-omgeving, app-geheim, kluissleutel, updates, server). Aparte sleutel «bekeken» (`…:technisch`), geen e-mailtellers in de technische ruimte; «Alles als gelezen markeren» markeert alleen wat zichtbaar is.
 - AI-koppelingen: elke grant, elk token en elk apparaat heeft een `ruimte` (`0042_ai_ruimte.sql`). De accountruimte (mcp/agents) toont en maakt uitsluitend privékoppelingen — alleen de connector `/mcp`, zonder deuren. De technische ruimte heeft de pagina **mcp/verbindingen «Technische verbindingen»** (`TechVerbindingen`) gekregen: serverdeuren of technische connector, technische grants en tokens, lijst van deur-toegangen (verplaatst vanuit «Tokens en deuren»), agenten op de server. Het venster «Toestaan» kent de ruimte van de pagina en stuurt die mee; een deurverzoek in de accountruimte kan alleen in de technische ruimte worden geopend.
-- Server: `tools/list` toont alleen hulpmiddelen van de ruimte, `tools/call` buiten de ruimte → `SPACE_SEPARATED`; apparaten worden gefilterd op ruimte; het recht «updates voorbereiden» hoort alleen bij technische verbindingen; de technische ruimte wordt alleen aangemaakt door de eigenaar met een actief technisch profiel (`backend/ai-ruimte-poort.ts`). Details — `deploy/MCP-CONNECTOR.md`, sectie «Twee ruimtes».
+- Server: `tools/list` toont alleen hulpmiddelen van de ruimte, `tools/call` buiten de ruimte → `SPACE_SEPARATED`; apparaten worden gefilterd op ruimte; het recht «updates voorbereiden» hoort alleen bij technische verbindingen; de technische ruimte wordt alleen aangemaakt door de eigenaar met een actief technisch profiel (`backend/ai-ruimte-poort.ts`). Details — `deploy/MCP-VERBINDER.nl.md`, sectie «Twee ruimtes».
 
 ## Wat er precies is gewijzigd
 

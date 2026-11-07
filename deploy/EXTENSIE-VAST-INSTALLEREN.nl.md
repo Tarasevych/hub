@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./EXTENSIE-VAST-INSTALLEREN.uk.md) · **🇳🇱 Nederlands** ([origineel](./EXTENSIE-VAST-INSTALLEREN.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ПОСТІЙНЕ-ВСТАНОВЛЕННЯ-РОЗШИРЕННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Extensie blijft staan na een herstart van Chrome
 

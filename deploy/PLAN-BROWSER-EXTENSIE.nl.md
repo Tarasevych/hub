@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./PLAN-BROWSER-EXTENSIE.uk.md) · **🇳🇱 Nederlands** ([origineel](./PLAN-BROWSER-EXTENSIE.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ПЛАН-РОЗШИРЕННЯ-ОГЛЯДАЧА.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Plan: browserextensie «Mijn Ruimte» en AI-toegang tot de site
 
@@ -30,7 +30,7 @@ Doel: de gebruiker zet in zijn accountomgeving één schakelaar om, installeert 
 4. (voltooid) Klikken/typen/site-acties: uitsluitend met een bevestigingsverzoek.
 5. Publicatie in de Chrome Web Store (vereist besluit en account van de eigenaar) — openstaand. Controle in een echte Chrome-browser — handmatig na installatie.
 
-Beschrijving van de implementatie: `deploy/BROWSER-EXTENSIE.md`.
+Beschrijving van de implementatie: `deploy/BROWSER-EXTENSIE.nl.md`.
 
 ## Open vragen aan de eigenaar
 - Welke site-acties moeten als eerste worden gedeclareerd (overzicht van secties en bewerkingen)?

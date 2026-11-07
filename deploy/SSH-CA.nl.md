@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./SSH-CA.uk.md) · **🇳🇱 Nederlands** ([origineel](./SSH-CA.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЦЕНТР-СЕРТИФІКАЦІЇ-БЕЗПЕЧНОЇ-ОБОЛОНКИ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # SSH-certificaat voor één uur (etappe C, deel 2)
 

@@ -1,4 +1,6 @@
-> **Taal / Мова:** [Українська](./CONTEXT-COMPACT.uk.md) · **Nederlands** (huidig) · [Canoniek bestand](./CONTEXT-COMPACT.md)
+> 🌐 **Taal / Мова:** [Українська](СТИСЛИЙ-КОНТЕКСТ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
+
+> **Taal / Мова:** [Українська](СТИСЛИЙ-КОНТЕКСТ.uk.md) · **Nederlands** (huidig) · [Canoniek bestand](./CONTEXT-COMPACT.md)
 
 <!-- GEGENEREERD op basis van node scripts/orch.mjs context — Nederlandse versie van de compacte agentcontext -->
 # Mijn Ruimte — compacte agentcontext (Nederlandse versie)
@@ -26,7 +28,7 @@ Voeg dit bestand volledig in aan het begin van het werk. Vermeld in het overdrac
 
 ## 2. Vóór je begint (verplicht)
 
-1. Lees `AGENTS.nl.md` / `AGENTS.md` (of `orchestratie/CONTEXT-COMPACT.nl.md` als er geen toegang tot de repository is) en `orchestratie/beleid.json`.
+1. Lees `AGENTENREGELS.nl.md` / `AGENTS.md` (of `orchestratie/CONTEXT-COMPACT.nl.md` als er geen toegang tot de repository is) en `orchestratie/beleid.json`.
 2. Codebasis: `beleid.json → basis.bronCommit` (nu `f3f3fabb…`, versie `20261105-061659`, status `geverifieerd_productie` — geverifieerd met de server, zie `B-014`; de takken `integratie` en `voornaamst` zijn gesynchroniseerd). Als je toegang hebt tot de site, controleer dan `/api/version` en leg het resultaat vast in `BESLUITEN.md`.
 3. Registreer de taak: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS` (zonder repository: maak `ORCH-OVERDRACHT.json` handmatig aan volgens het sjabloon `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
 4. Draai `node scripts/orch.mjs controleer` en `node scripts/orch.mjs versheid --taak <ID> --fase start`. Bij rood: niet beginnen, eerst rebasen of de regels herlezen.
@@ -56,4 +58,4 @@ Voeg dit bestand volledig in aan het begin van het werk. Vermeld in het overdrac
 - Installatiemodi (`beleid.json → kritiek.installatieModi`): `handmatig`, `na_bevestiging` (Passkey/handtekening van de eigenaar; standaard), `automatisch_beperkt` — uitsluitend onder een apart goedgekeurd en ondertekend beleid. Momenteel zijn de eerste twee toegestaan.
 - Kritiek beleid (`kritiek`) is pas geldig met bevestiging van de eigenaar in `orchestratie/regels.lock.json → eigenaar`: SSH-handtekening (`orch bevestig`) of passkey op de site (`eigenaar.soort = passkey`, registratie in het root-journaal); tot dat moment heeft het de status «voorstel».
 - Regels wijzigen door de eigenaar zonder SSH: site `mcp.tarasevych.com/agents` → «Coördinatie» → bewerken van de regelbestanden → controle van het voorstel (`regelsVersie` hoger, besluit in `BESLUITEN.md`, `beleid.json` geldig) → passkey (besluit `orch-regels`; root legt alleen de bevestiging vast in zijn eigen journaal) → tak `regels/<versie>-<tijd>` met nieuw lock en `CONTEXT-COMPACT.md` gaat naar `origin`. Samenvoegen in `integratie` doet alleen de eigenaar. Site/MCP/HTTP roepen exact dezelfde functies aan als de CLI (`inleveren`, `beoordeelVoorstel`, `vergrendel`) — er is geen aparte logica (`beleid.json → site`).
-- **TRACE-001 (vanaf `20261103-211555`):** verplicht `ONTWIKKELARCHIEF.json` en een geverifieerde exacte GitHub Release-asset SHA-256. Het ontwikkelarchief is gecommit; de server en root weigeren ontbrekende, onjuiste of onbereikbare gegevens. Volledige voorwaarden in `AGENTS.nl.md` §5, `B-007`, `deploy/REGELS-UITROLPAKKET.nl.md` §7.
+- **TRACE-001 (vanaf `20261103-211555`):** verplicht `ONTWIKKELARCHIEF.json` en een geverifieerde exacte GitHub Release-asset SHA-256. Het ontwikkelarchief is gecommit; de server en root weigeren ontbrekende, onjuiste of onbereikbare gegevens. Volledige voorwaarden in `AGENTENREGELS.nl.md` §5, `B-007`, `deploy/REGELS-UITROLPAKKET.nl.md` §7.

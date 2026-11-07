@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-UITROL-HERSTEL.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261017-UITROL-HERSTEL.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261017-ВІДНОВЛЕННЯ-РОЗГОРТАННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Herstel van de uitrol (updates), technisch profiel en logboek — 17 oktober 2026
 

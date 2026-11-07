@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261018-TECH-AFRONDING.uk.md) · **🇳🇱 Nederlands** ([origineel](./WIJZIGINGEN-20261018-TECH-AFRONDING.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ЗМІНИ-20261018-ТЕХ-ЗАВЕРШЕННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Afronding technisch profiel en open punten — 18.10.2026
 
@@ -522,7 +522,7 @@ Op verzoek van de eigenaar: de ruimte wordt op het moment van toestemming niet m
   (`/ai/<agent>` en hun metadata) antwoorden met **308** (behoudt methode en body — 301/302 zouden POST in GET veranderen en MCP breken),
   en worden nog steeds **gelezen** in `slugUitResource`, zodat tokens die zijn uitgegeven met `resource=…/ai/claude` geldig blijven.
 - `/mcp` **wordt bewust niet doorgestuurd**: het bedient grants zonder agent en `tvh_…`-tokens die op een agentadres 401 zouden krijgen. Het
-  kreeg dezelfde live-berekening en is gemarkeerd als overgangspad; in `deploy/CONNECTOR-EEN-PAD.md` staan de zoekopdracht's waarmee te zien is wanneer het
+  kreeg dezelfde live-berekening en is gemarkeerd als overgangspad; in `deploy/VERBINDER-EEN-PAD.nl.md` staan de zoekopdracht's waarmee te zien is wanneer het
   weg kan.
 - Nieuwe `effectieveRuimte(userId, rol, tabContext)` in `backend/ai-ruimte-poort.ts`: geen eigenaar → `prive`; eigenaar zonder actief
   technisch profiel → `prive`; anders `technisch`. Een aanroep vanuit een AI komt **zonder tabblad** binnen, daarom is `lopendeActivatie(userId)` toegevoegd —
@@ -864,7 +864,7 @@ de gedeelde tabbladen (Пристрої, Зовнішні MCP, Розширен�
 5. **Kiosksessies van Photos zijn nu aan een lade gebonden**: een selectie starten in de technische ruimte en afronden in de persoonlijke kan niet meer —
    dat geeft `GOOGLE_PHOTOS_SESSION_NOT_FOUND` in plaats van een stille import op de verkeerde plek.
 6. **Volgorde**: eerst de release installeren, en pas daarna de cloudflared-regel voor de korte connectoradressen aanpassen
-   (`deploy/CONNECTOR-EEN-PAD.md`).
+   (`deploy/VERBINDER-EEN-PAD.nl.md`).
 7. De IMAP/SMTP-client is nooit tegen echte servers getest — het eerste om handmatig door te lopen.
 
 ---
@@ -879,7 +879,7 @@ technische meldingen in de persoonlijke ruimte, AI-koppeling «verdwenen», admi
 
 Het toestemmingsvenster met «Технічний простір… Жодної пошти, Drive чи особистих пристроїв» en de twee blokken «Читання»/«Підписаний випуск» is het
 venster van de **serverdeur** (`deploy/mcp/server.mjs`, poort 8091; precies 11 hulpmiddelen). Het verzoek kwam daar terecht omdat de tunnelregel
-`^/(claude|chatgpt|…)` → 8091 op de server nog steeds actief is (de wijziging uit `deploy/CONNECTOR-EEN-PAD.md` §1 was niet uitgevoerd). Connector v2 bood al
+`^/(claude|chatgpt|…)` → 8091 op de server nog steeds actief is (de wijziging uit `deploy/VERBINDER-EEN-PAD.nl.md` §1 was niet uitgevoerd). Connector v2 bood al
 beide kanten aan en sloeg ze op in de grant — hij werd alleen niet aangesproken. Bewezen met een live-aanroep: `host_status` via `mcp.tarasevych.com/claude`
 antwoordde met de stem van de deur.
 
@@ -998,7 +998,7 @@ Klikken in de console van de aanbieder blijft onvermijdelijk — daar zijn inlog
 1. **Claude opnieuw verbinden** (`mcp.tarasevych.com/claude` verwijderen en toevoegen, of «Reconnect»): het huidige token is door de deur uitgegeven; na de release
    antwoordt de app daarop met 401 en doorloopt Claude OAuth via het v2-venster met beide ruimtes. Start een nieuw gesprek zodat Claude de
    lijst met hulpmiddelen opnieuw inleest.
-2. Voer evengoed `deploy/CONNECTOR-EEN-PAD.md` §1 (tunnelregel) uit — **na** de installatie van de release.
+2. Voer evengoed `deploy/VERBINDER-EEN-PAD.nl.md` §1 (tunnelregel) uit — **na** de installatie van de release.
 3. Na de installatie: id.* → Способи входу → «Шифрування моїх даних» → aanzetten, **herstelcode bewaren** (verlies van de code én alle
    passkeys = onherroepelijk verlies van de gegevens onder de sleutel — niemand, ook de beheerder niet, kan ze herstellen), passkey toevoegen, «Перешифрувати мої дані зараз»;
    herhaal dit in de technische ruimte.
@@ -1181,7 +1181,7 @@ De pagina `/zoek` bestond, maar: twee ongevulde indexen (`0093 zoek_objecten`, `
 liep stuk bij `datctype=C`; het daadwerkelijke zoeken liep **in het geheugen** over ≤ 1 000 rijen per bron; wachtrij en adapters waren dode code; het percentage
 `score·10` liep op tot 1 000 %; aanvullen kwam op de client uit de huidige resultaten; de geschiedenis lag in `localStorage` **zonder koppeling aan de gebruiker**
 (lek tussen accounts op hetzelfde apparaat); OCR was alleen een knop (`AI_NOT_CONFIGURED`); geen enkele test met twee gebruikers; geheimen werden niet
-gefilterd. Volledige audit: `rapporten/zoek-audit.md` (lokaal) → bevindingen in `docs/zoek/ZOEKEN.md` §1.
+gefilterd. Volledige audit: `rapporten/zoek-audit.md` (lokaal) → bevindingen in `docs/zoek/ZOEKEN.nl.md` §1.
 
 ### 2. Wat er is gebouwd
 
@@ -1190,7 +1190,7 @@ gefilterd. Volledige audit: `rapporten/zoek-audit.md` (lokaal) → bevindingen i
 | Index | twee lege indexen, zoeken in het geheugen | **één** `app.zoek_objecten` (migratie `0100_zoek_kern`): titels en tekst worden in Node genormaliseerd (`*_norm`), `zoek_vector` (simple) + `zoek_stam` (stemmers nl/en/de/fr/ro/ru + lichte achtervoegsels uk/bg/pl) als GENERATED-kolommen, trigram voor fuzzy zoeken; `0104_zoek_gin_lade` — `btree_gin`, lade + full-text in één index |
 | UI-catalogus | handmatige lijst | generator `scripts/zoek-ui-catalogus.mjs` leest `src/**/*.tsx` → `shared/zoek-ui-knoppen.generated.ts` (**1 132** knoppen/koppen/dialogen met beide talen en locatie) + `backend/zoek/catalogus-ui.ts` (**1 670** objecten: pagina's, tabbladen, secties, instellingen, «?»-uitleg, AI-rechten, integraties) met intentiewoordenboek `INTENTIES` (≈55 pagina's uk/nl/en/ru + soerzjyk). Actualiteitscontrole in `npm run build` en in de test |
 | Talen | translit + 17 synoniemgroepen | 9 talen (uk, nl, en, ru, bg, pl, de, fr, ro): normalisatie cyrillisch↔latijn, diakrieten, `varianten()` van soerzjyk/transliteratie in de zoekopdracht, **166 synoniemgroepen**, stopwoorden, lichte morfologie |
-| Rangschikking | twee verschillende formules TS/SQL | één formule (`shared/zoek-rangschikking.ts`, `docs/zoek/ZOEKEN.md` §6): exacte titel > volledige frase > prefix > titelwoorden > tekst > synoniem > fuzzy; `percent = round(100·(score/max)^0,75)` — monotoon ten opzichte van de beste treffer **in deze zoekopdracht**; «Чому релевантно» op de kaart uit exact dezelfde signalen |
+| Rangschikking | twee verschillende formules TS/SQL | één formule (`shared/zoek-rangschikking.ts`, `docs/zoek/ZOEKEN.nl.md` §6): exacte titel > volledige frase > prefix > titelwoorden > tekst > synoniem > fuzzy; `percent = round(100·(score/max)^0,75)` — monotoon ten opzichte van de beste treffer **in deze zoekopdracht**; «Чому релевантно» op de kaart uit exact dezelfde signalen |
 | Aanvullen / correctie | client | server vanuit de lade van de gebruiker (`/api/owner/zoek/suggesties`): functies, pagina's, categorieën, correcties (transposities, transliteratie → origineel), ≤ 3 verzoeken op 12 tekens (debounce), ARIA-listbox |
 | Filters / facetten / paginering | client bovenop ≤ 80 resultaten | server: `bronnen/soorten/formaten/talen/sinds/tot/minPercent/sorteer/pagina`, `facets`, `totaal`; op de telefoon een onderblad (`role=dialog`, focus-trap, Escape) |
 | Geschiedenis | `localStorage` | `app.zoek_geschiedenis` (`0103`, RLS, per lade): slaat alleen `(bron,id)` + filters op; opnieuw openen **herberekent** tegen de actuele index en toont «nieuw — N, niet meer beschikbaar — M» (`nieuw`/`weg`); «Очистити історію»/«×» |
@@ -1198,7 +1198,7 @@ gefilterd. Volledige audit: `rapporten/zoek-audit.md` (lokaal) → bevindingen i
 | Tekst, OCR, archieven | knop zonder engine | `backend/zoek/{tekst-extractie,tekst-kern,tekst-werker}.ts`: PDF (tekstlaag via pdfjs), DOCX/XLSX/PPTX, TXT/MD/CSV/HTML, zip/tar/gz (bescherming tegen zip-bommen, `../`, diepte) — in een **worker-thread** met geheugen- en tijdslimiet; OCR `backend/zoek/ocr-engines.ts`: systeem-`tesseract` → `tesseract.js` → platform-AI, cache `app.zoek_ocr_tekst` (`0102`, per gebruiker/ruimte/sha256), talen worden geïnstalleerd met `sudo mijn-ruimte-installeer ocr-talen` (`deploy/ocr-talen-installeren.sh`, tessdata met SHA-256). Zonder engine meldt de bron eerlijk «OCR niet beschikbaar» |
 | Geheimen | — | één lijst `shared/geheim-patronen.ts` (PEM, `ghp_`, `sk_live_`/`pk_`, JWT, `password=`, verbindingsstrings) — gemaskeerd **vóór** de index, in fragmenten en in suggesties |
 | Pagina / palet | oude `SearchPage` + paneel «Overal zoeken» met eigen zoekfunctie | `src/search/{ZoekPagina,ZoekVeld,ZoekKaart,ZoekFilters,ZoekGlobaal}.tsx`: pagina `hub/zoek` volgens het ontwerp van de eigenaar (categorieën met tellers, kaarten met percentage, facetten, bronstatus, geschiedenis, tip), palet ⌘K/Ctrl+K vanaf elke pagina (één voor hub/mail/cloud…; `GlobalSearchPanel` is een dunne schil), `?focus=<hulpsleutel>` licht het gevonden element op de doelpagina uit (`src/platform/focus-doel.ts`); ontwerptokens, axe 0 op 390/1280 |
-| Documentatie | — | `docs/zoek/{ZOEKEN,ZOEK-BEVEILIGING,ZOEK-BEHEER,ZOEK-UITBREIDEN,ZOEK-TESTEN}.md`, `ENV-VARS.md` («Zoeken», alle `ZOEK_*`), `SECURITY-NOTES.md` (sectie Z), `deploy/LEESMIJ.md` |
+| Documentatie | — | `docs/zoek/{ZOEKEN,ZOEK-BEVEILIGING,ZOEK-BEHEER,ZOEK-UITBREIDEN,ZOEK-TESTEN}.md`, `OMGEVINGSVARIABELEN.nl.md` («Zoeken», alle `ZOEK_*`), `BEVEILIGINGSNOTITIES.nl.md` (sectie Z), `deploy/PROJECTOVERZICHT.nl.md` |
 
 ### 3. Isolatie — bewezen, niet beloofd (`tests/eenheid/zoek-isolatie-20261022.test.ts`, 49/49 met gewone pool en onder RLS)
 
@@ -1249,14 +1249,14 @@ leeg en gemarkeerd als verouderd; te verwijderen in de volgende release).
 ### Wat de eigenaar moet weten
 
 1. Na de installatie vult de eerste cron (≤ 5 min) de index; tot die tijd toont `/zoek` «wordt geïndexeerd» en werken de hubblokken zoals voorheen.
-   De eerste volledige doorloop van een grote mailbox duurt uren (limieten per run staan in `ENV-VARS.md`).
+   De eerste volledige doorloop van een grote mailbox duurt uren (limieten per run staan in `OMGEVINGSVARIABELEN.nl.md`).
 2. **OCR** voor scans: `sudo mijn-ruimte-installeer ocr-talen` (apt `tesseract-ocr` + `poppler-utils`, tessdata ±29 MB, SHA-256). Zonder
    dit worden documenten op naam en tekstlaag geïndexeerd en meldt de bron «OCR niet beschikbaar».
 3. Worden niet geïndexeerd (eerlijk): bijlagen van IMAP-mailboxen, Microsoft-mail, contacten, apparaten; zip64/7z/rar; de morfologie voor uk/bg/pl is licht,
    zonder woordenboek; semantisch zoeken is er niet (volgens de specificatie — zonder model).
 4. Het synoniemenwoordenboek van de eigenaar zit in de kern (`app.zoek_synoniemen_eigenaar`), een interface ervoor is er nog niet.
 5. Terugdraaien: `mijn-ruimte-installeer terugdraaien` + `systemctl disable --now mijn-ruimte-zoek-index.timer`; de migraties terugdraaien is niet
-   verplicht — de oude code leest de nieuwe kolommen niet (`docs/zoek/ZOEK-BEHEER.md` §6).
+   verplicht — de oude code leest de nieuwe kolommen niet (`docs/zoek/ZOEK-BEHEER.nl.md` §6).
 
 ## AI. Witte pagina op admin.*/updates na 20261021-221718 en «knop voor terugdraaien werkt niet» (22-10-2026)
 
@@ -1281,7 +1281,7 @@ en uitgevoerd in een kale `vm`-context **zonder** `Buffer`, `process`, `require`
 ### 3. «Terugdraaien naar vorige» op mcp.*/dashboard — werkt zoals bedoeld
 
 De knop roept `POST /api/mcp/server/terugdraaien` aan (passkey + bevestiging), en de server voert deze alleen uit als in
-`/etc/mijn-ruimte/mcp-rechten.json` `"terugdraaien": true` staat ingesteld. **Standaard staat dit uit** (`deploy/RUNBOOK-VEILIGE-UITROL.md` §6: zodat
+`/etc/mijn-ruimte/mcp-rechten.json` `"terugdraaien": true` staat ingesteld. **Standaard staat dit uit** (`deploy/DRAAIBOEK-VEILIGE-UITROL.nl.md` §6: zodat
 iemand die de applicatie heeft overgenomen de site niet heen en weer kan rollen), en de kaart toont «Deze opdracht is uitgeschakeld in het bestand /etc/mijn-ruimte/mcp-rechten.json
 op de server». Terugdraaien vanaf de site is zonder deze schakelaar niet mogelijk; de standaardroute loopt via SSH onder de werkgebruiker:
 `sudo mijn-ruimte-installeer terugdraaien`.
@@ -1338,7 +1338,7 @@ uitrol-geschiedenis-tijdlijn-20261022 20/20; testopstelling besluit-* met echte 
 - **«Verificatie»:** bootstrap hersteld (anker-grant is een bewuste systeemstap met eigenaarsvoorwaarde), access/request (taken voor de eigenaar met
   ontvanger, systeemstap), workspace/load (vals-positieve melding van de ruimtes-cache). Migratie `0108_zvirka_verholpen.sql` ruimt deze drie
   oude tellers op zodat RLS-groepen kunnen worden ingeschakeld.
-- **Route-audit:** `docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.md` (generator `scripts/beveiliging-routes-inventaris.mjs`):
+- **Route-audit:** `docs/beveiliging/MAATREGELEN-PER-ROUTE-20261022.nl.md` (generator `scripts/beveiliging-routes-inventaris.mjs`):
   682 routes, allemaal voorzien van een poort; 33 met persoonsgegevens — allemaal met een aanvalstest (`ruimte-aanvallen-20261022`). Geen lekken tussen accounts gevonden.
 - Belletje: gelezen rijen zijn niet langer halftransparant (contrast AA); op de telefoon zijn paneelknoppen ≥ 44 px, zonder genest scrollen.
 - Tests: `meldingen-sferen-20261022` 40/40, `ruimte-aanvallen-20261022` 31/31 (+ RLS-varianten); bijgewerkt: `melding-soorten`, `ruimte-meldingen-20261020`.
@@ -1385,7 +1385,7 @@ kan de toegang uitsluitend sluiten). **Uitloggen uit het account beëindigt elke
 ### 3. Alle agenten — dezelfde browserhulpmiddelen, ook met de namen van chrome-devtools-mcp
 Het enige verschil tussen agenten is uw matrix (gelijkheidstest voor zes agenten). Met een schakelaar zien agenten ook de namen van chrome-devtools-mcp
 (navigate_page, take_snapshot, click, fill, … evaluate_script) — deze leiden naar dezelfde hulpmiddelen met dezelfde grenzen;
-`evaluate_script` is uitsluitend beschikbaar voor het technische slot, het pakket «diagnostiek» en het vinkje «Scripts». Beschrijving voor agenten: `docs/agenten/BROWSER-VIA-CONNECTOR.md`.
+`evaluate_script` is uitsluitend beschikbaar voor het technische slot, het pakket «diagnostiek» en het vinkje «Scripts». Beschrijving voor agenten: `docs/agenten/BROWSER-VIA-VERBINDER.nl.md`.
 
 ### 4. Chat «AI voor u» in het zijpaneel van de extensie
 Naast het huidige tabblad, met het recht «API-platform» en uw eigen modelsleutel; alleen zolang het slot geopend is; het model beschikt uitsluitend over de hulpmiddelen van deze browser.
@@ -1441,8 +1441,8 @@ Nu:
 - Agent 0.8.0: `terminal-config on --opdrachten | --powershell | --geen-container`. PowerShell — uitsluitend als
   `powershell.exe -NoProfile -NonInteractive -Command <tekst>` (één argument, zonder cmd.exe). Elke PowerShell-opdracht vereist bevestiging
   op de site, zowel in de terminal als via AI (uitvoeren_opdracht): backend/connectors-commands.ts stelt dit verplicht, zelfs met de toestemming
-  «altijd». Windows: deploy/agent/WINDOWS-POWERSHELL.md (Taakplanner S4U; sc.exe is niet geschikt voor node/powershell).
-- Documentatie: docs/terminal/TERMINAL.md, deploy/agent/LEESMIJ.md (0.8.0).
+  «altijd». Windows: deploy/agent/WINDOWS-OPDRACHTSCHIL.nl.md (Taakplanner S4U; sc.exe is niet geschikt voor node/powershell).
+- Documentatie: docs/terminal/TERMINAL.nl.md, deploy/agent/PROJECTOVERZICHT.nl.md (0.8.0).
 
 Tests:
 - terminal-opdrachten-20261022 69/69 — een andere gebruiker ziet het apparaat niet, zonder technisch profiel 403, RLS, aanvallen op parser/agent/PowerShell;
@@ -1523,7 +1523,7 @@ tussenarchief vóór het adaptieve raamwerk van de e-maillezer.
   `mail-dichtheid-profiel.ts`). Drie mappen: `src/search` → `src/zoek`, `src/flags` → `src/vlaggen`, `src/remote` → `src/extern`.
   De codelogica is niet gewijzigd: uitsluitend importpaden, padverwijzingen in tests, scripts en documenten en bestandsnamen in commentaar.
   De componentnamen binnenin (`GoogleMailWorkspace`, `MailThreadContent`, …) zijn gebleven — de kaart laat zien in welk bestand elk onderdeel staat.
-- **Kaart.** `docs/kaart/KAART-BESTANDEN.md`: woordenlijst, uitzonderingen met redenen, tabellen per sectie — nieuwe naam · oude naam · exports.
+- **Kaart.** `docs/kaart/KAART-BESTANDEN.nl.md`: woordenlijst, uitzonderingen met redenen, tabellen per sectie — nieuwe naam · oude naam · exports.
   `docs/kaart/bestandskaart.json` — hetzelfde voor machines. De eerste stap van de build is `scripts/kaart-controle.mjs`:
   - elk nieuw pad bestaat;
   - geen enkel oud pad is teruggekeerd;

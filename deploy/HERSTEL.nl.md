@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./HERSTEL.uk.md) · **🇳🇱 Nederlands** ([origineel](./HERSTEL.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ВІДНОВЛЕННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # HERSTEL — Mijn Ruimte terugzetten na verlies van de VM
 
@@ -55,7 +55,7 @@ Get-Content SHA256SUMS | % { $h,$n = $_ -split '\s+',2; if ((Get-FileHash $n).Ha
 
 ## 1. Nieuwe VM
 Ubuntu met LUKS, gebruiker `beheer` met de SSH-sleutel `T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver(.pub)`.
-Pakketten: Node 24, npm, git, rsync, curl, PostgreSQL 17 (+ client), `age`, `cloudflared` (zie `deploy/LEESMIJ.md`).
+Pakketten: Node 24, npm, git, rsync, curl, PostgreSQL 17 (+ client), `age`, `cloudflared` (zie `deploy/PROJECTOVERZICHT.nl.md`).
 
 ## 2. Broncode en inrichten (op de VM)
 ```bash
@@ -113,7 +113,7 @@ Kopieer daarna bewust per onderdeel (units naar `/etc/systemd/system`, `systemct
 
 ## 6. Tunnel
 Met de teruggezette credentials: `deploy/cloudflared.service` installeren en `systemctl enable --now cloudflared`
-(zie `deploy/LEESMIJ.md`, "Tunnel"). Geen nieuwe tunnel of DNS nodig zolang het tunnel-ID hetzelfde blijft.
+(zie `deploy/PROJECTOVERZICHT.nl.md`, "Tunnel"). Geen nieuwe tunnel of DNS nodig zolang het tunnel-ID hetzelfde blijft.
 
 ## Na een herstel
 - Maak meteen een nieuwe back-up (`sudo systemctl start mijn-ruimte-backup.service`) en haal die op

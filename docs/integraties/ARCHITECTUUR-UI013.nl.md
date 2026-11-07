@@ -1,11 +1,11 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ARCHITECTUUR-UI013.uk.md) · **🇳🇱 Nederlands** ([origineel](./ARCHITECTUUR-UI013.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](АРХІТЕКТУРА-УІ013.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # UI-013 — verspreid verbindingssysteem: architectuur, oorzaken en plan (fase 1)
 
 ## Eén model (etappe B)
 - **Aanbieders/posities**: `shared/integraties-catalogus.ts` (160, ongewijzigd) = enige bron van waarheid voor wat er bestaat.
 - **Register**: `shared/integraties-register.ts` — per positie: `uitvoering` (werkend/basis/geen) met bewijsbestanden, officiële wijze,
-  vereisten, operaties, nog te doen, beperking van de aanbieder, doeldienst, prioriteit. Inventaris: `docs/integraties/INVENTARIS.md` (gegenereerd).
+  vereisten, operaties, nog te doen, beperking van de aanbieder, doeldienst, prioriteit. Inventaris: `docs/integraties/INVENTARIS.nl.md` (gegenereerd).
 - **Accounts/stand**: bestaande serverroutes, geen nieuwe tokenopslag: `POST /api/owner/admin/integraties/stand` (kluis, AI-agenten, beleid,
   laatste controles), nieuw `POST /api/owner/admin/integraties/google-stand` (alleen de canonieke Google-grant), `…/controleer`, `…/loskoppelen`.
 - **Groep** (`groepVan`): fout → «Потребують уваги»; verbonden → «Під'єднані»; sleutel aanwezig maar niet gecontroleerd → «Потребують налаштування»;

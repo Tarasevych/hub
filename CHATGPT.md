@@ -1,3 +1,5 @@
+> 🌐 **Мова:** **Українська** · [Nederlands](CHATGPT.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
+
 <!-- orch-adapter -->
 # Адаптер для ChatGPT (веб, без GitHub — працює через CONTEXT-COMPACT.md і ZIP) · Adapter voor ChatGPT (веб, без GitHub — працює через CONTEXT-COMPACT.md і ZIP)
 

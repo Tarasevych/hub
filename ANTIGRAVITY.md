@@ -1,3 +1,5 @@
+> 🌐 **Мова:** **Українська** · [Nederlands](ANTIGRAVITY.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
+
 <!-- orch-adapter -->
 # Адаптер для Antigravity · Adapter voor Antigravity
 

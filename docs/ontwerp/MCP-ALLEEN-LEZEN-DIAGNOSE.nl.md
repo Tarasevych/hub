@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./MCP-ALLEEN-LEZEN-DIAGNOSE.uk.md) · **🇳🇱 Nederlands** ([origineel](./MCP-ALLEEN-LEZEN-DIAGNOSE.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ДІАГНОСТИКА-ЛИШЕ-ДЛЯ-ЧИТАННЯ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Ontwerpvoorstel: Tijdelijke Alleen-Lezen Technische Diagnose voor MCP (`MCP-ALLEEN-LEZEN-DIAGNOSE`)
 

@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./LEESMIJ.uk.md) · **🇳🇱 Nederlands** ([origineel](./LEESMIJ.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](ОГЛЯД-АГЕНТА.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../../docs/INDEX.nl.md)
 
 # Hub Agent (Local Machine Connector) — 0.8.0
 
@@ -123,7 +123,7 @@ node agent.mjs pair … --code -                                           # kop
   (op Linux/macOS `pwsh`), `shell:false`, nooit via `cmd.exe`; de hele regel is één argument. Binnen PowerShell is de tekst willekeurig —
   daarom bevestigt de site ELKE PowerShell-opdracht, ook via de AI-weg (`uitvoeren_opdracht`/`machine_exec` met `command: "powershell"`
   gaat door dezelfde `exec` en vraagt altijd goedkeuring — de server forceert dat in `submitCommand`, ook met een «altijd»-grant). Zonder `--powershell` blijven `powershell`/`pwsh` geweigerd zoals alle shells.
-  Stap voor stap voor Windows: `deploy/agent/WINDOWS-POWERSHELL.md`.
+  Stap voor stap voor Windows: `deploy/agent/WINDOWS-OPDRACHTSCHIL.nl.md`.
 - **De server als apparaat zonder code overtypen**: `sudo mijn-ruimte-installeer terminal-inrichten` (ook stil aan het einde van
   `installeren`, alleen de eerste keer). De installer vraagt als dienstgebruiker een koppelcode voor de eigenaar
   (`dist-server/apparaat-koppelcode.mjs`, ruimte «technisch»), geeft hem via stdin aan `pair --code -` als `beheer`, zet

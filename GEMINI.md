@@ -1,3 +1,5 @@
+> 🌐 **Мова:** **Українська** · [Nederlands](GEMINI.nl.md) | [Головна](README.md) · [Покажчик документації](docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
+
 <!-- orch-adapter -->
 # Адаптер для Gemini (Gemini CLI / Antigravity-сумісні середовища) · Adapter voor Gemini (Gemini CLI / Antigravity-сумісні середовища)
 

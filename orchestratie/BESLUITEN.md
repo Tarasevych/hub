@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./BESLUITEN.uk.md) · [🇳🇱 **Nederlandse versie**](./BESLUITEN.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+> 🌐 **Мова:** **Українська** · [Nederlands](BESLUITEN.nl.md) | [Головна](../README.md) · [Покажчик документації](../docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
 
 # Реєстр рішень · Besluitenregister (ORCH-001)
 
@@ -13,26 +13,26 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 ## B-001 · 2026-10-31 · 1.0.0 · voorstel
 
 **Контекст.** Над Mijn Ruimte паралельно працюють Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor. Правила були розсипані по
-`deploy/REGELS-UITROLPAKKET.md`, `RUNBOOK-*.md`, спільній теці знань і чатах; кожен агент мав власне уявлення про базу коду.
+`deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md`, `RUNBOOK-*.md`, спільній теці знань і чатах; кожен агент мав власне уявлення про базу коду.
 
 **Рішення.** Єдине джерело правил — `AGENTS.md` (людиною) + `orchestratie/beleid.json` (машиною) + цей реєстр. `CLAUDE.md`, `GEMINI.md` та інші файли
-середовищ — лише адаптери ≤ 25 рядків із маркером `<!-- orch-adapter -->`. Відбиток правил фіксується в `orchestratie/regels.lock.json`;
+середовищ — лише перехідники ≤ 25 рядків із маркером `<!-- orch-adapter -->`. Відбиток правил фіксується в `orchestratie/regels.lock.json`;
 `node scripts/orch.mjs controleer` падає, якщо правила змінено без підвищення версії.
 
-**Наслідки.** Старі документи лишаються як довідка (runbooks, REGELS-UITROLPAKKET); де вони суперечать AGENTS.md — чинний AGENTS.md.
+**Наслідки.** Старі документи лишаються як довідка (операційні інструкції, REGELS-UITROLPAKKET); де вони суперечать AGENTS.md — чинний AGENTS.md.
 
 **Хто.** Запропоновано агентом `claude` (ORCH-001, гілка `feature/orch-001-20261031-112355`). Потребує підтвердження власника.
 
 ## B-002 · 2026-10-31 · 1.0.0 · voorstel
 
 **Контекст.** Остання заявлена встановлена версія `20261031-093842`, BRON-COMMIT `b279ccabe31a27139b337822162653ccc13b6a5a`
-(гілка `release/sec-001-20261031-084138`, автор коміту Antigravity). Гілка `voornaamst` (default) містить лише README і є предком цього коміту.
+(гілка `release/sec-001-20261031-084138`, автор фіксації змін Antigravity). Гілка `voornaamst` (default) містить лише README і є предком цього фіксації змін.
 
 **Рішення.** Базою для всіх нових задач є `b279ccab…`, доки власник не підтвердить іншу. Статус бази — `opgave_eigenaar`
 (заявлено власником): агент не мав мережевого доступу до `hub.tarasevych.com/api/version`, звірку з production не виконано.
 `voornaamst` не вважається актуальною базою коду.
 
-**Наслідки.** Після незалежної звірки (власник або агент із доступом до сайту/інсталятора): `basis.verificatie = geverifieerd_productie`,
+**Наслідки.** Після незалежної звірки (власник або агент із доступом до сайту/встановлювача): `basis.verificatie = geverifieerd_productie`,
 новий запис B-00x, підвищення `regelsVersie` до 1.0.1.
 
 **Хто.** Агент `claude`. Потребує підтвердження власника.
@@ -56,10 +56,10 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 вебзавантаження); раніше кожен канал мав власну долю і міг тихо перезаписати чужу роботу.
 
 **Рішення.** Усі канали йдуть через один конвеєр `node scripts/orch.mjs inleveren`: розпакувати → `ORCH-OVERDRACHT.json` → звірити правила й базу →
-накласти на нову гілку від базового commit у тимчасовому worktree → виявити зміни → `git merge-tree` проти `integratie` → тести з
+накласти на нову гілку від базової фіксації змін у тимчасовому worktree → виявити зміни → `git merge-tree` проти `integratie` → тести з
 `beleid.json → inlevering.standaardTests` → запис `orchestratie/inleveringen/<id>.json` → черга. Відхилена передача не лишає гілки й не торкається
 `integratie`. Черга послідовна (`wachtrij volgende|klaar|terugtrekken`, одна задача `bezig`). Статус `installed` виводиться лише з
-`orchestratie/geinstalleerd.json` (пише інсталятор/власник), `integrated` — з факту злиття, `released` — з факту пакета.
+`orchestratie/geinstalleerd.json` (пише встановлювач/власник), `integrated` — з факту злиття, `released` — з факту пакета.
 
 **Наслідки.** `regelsVersie` 1.0.0 → 1.1.0 (додано `inlevering.standaardTests`, `werkruimte`, `geinstalleerd`); задачі з `regelsVersie 1.0.0` мають
 перечитати правила (`versheid` → `REGELS_VEROUDERD`).
@@ -68,20 +68,20 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 
 ## B-005 · 2026-10-31 · 1.2.0 · voorstel
 
-**Контекст.** Етап 2 ORCH-001: випуск мав бути один для всіх агентів, а інсталятор перевіряв лише дату версії — пакет, зібраний на застарілій базі
+**Контекст.** Етап 2 ORCH-001: випуск мав бути один для всіх агентів, а встановлювач перевіряв лише дату версії — пакет, зібраний на застарілій базі
 або з іншими правилами, встановлювався, якщо його версія була новішою.
 
 **Рішення.**
-1. У пакеті `mijn-ruimte-<versie>.tar.gz` з'являється `UITROL-BASIS` (встановлена версія + commit + відбиток правил). Root-інсталятор звіряє його з
+1. У пакеті `mijn-ruimte-<versie>.tar.gz` з'являється `UITROL-BASIS` (встановлена версія + commit + відбиток правил). Root-встановлювач звіряє його з
    `$WERK_ROOT/laatste-versie` і `laatste-commit` (`BASIS_VEROUDERD`, `BASIS_COMMIT_VERSCHILT`, `BASIS_ONGELDIG`), з `20261201-000000` — обов'язково
    (`GEEN_BASIS`). Якщо в пакеті є `orchestratie/regels.lock.json`, відбиток правил і `regelsVersie` мають збігатися (`REGELS_NIET_VERGRENDELD`),
    а режим встановлення — бути дозволеним у `kritiek.installatieModi` (`MODUS_NIET_TOEGESTAAN`). GitOps (`gitops-ophalen.sh`, автоматично) працює лише
    за `automatisch_beperkt` **і** підписаним власником lock.
 2. Єдиний пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` збирає `node scripts/orch.mjs pakket` (через `maak-voorstelpakket.sh`, без
-   дублювання): архів, SHA-256, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`, тести, `RAPPORT.md`, коміти (`COMMITS.txt` + `commits.bundle`),
+   дублювання): архів, SHA-256, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`, тести, `RAPPORT.md`, фіксації змін (`COMMITS.txt` + `commits.bundle`),
    агенти (`AGENTEN.json`), підпис `.sig` лише якщо власник підписав сам. Перевірка — `pakket-controleer`, імпорт без git — той самий `inleveren`.
-3. Дві бази свідомо різні: `UITROL-BASIS`/`installatie` = **встановлена** (для інсталятора), `basisCommit` в `ORCH-OVERDRACHT.json` = **база гілки
-   задачі** (від неї `inleveren` відтворює зміни й рахує коміти).
+3. Дві бази свідомо різні: `UITROL-BASIS`/`installatie` = **встановлена** (для встановлювача), `basisCommit` в `ORCH-OVERDRACHT.json` = **база гілки
+   задачі** (від неї `inleveren` відтворює зміни й рахує фіксації змін).
 4. Власний `orchestratie/taken/<taakId>.json` дозволено в передачі (агент реєструє задачу у своїй гілці — іншого шляху в нього немає); інший стан
    координації лишається захищеним. При злитті версія `integratie` перемагає (`.gitattributes` → `merge=orch-staat`, драйвер задає
    `orch wachtrij volgende`).
@@ -97,7 +97,7 @@ Alleen toevoegen. Elke wijziging van de regels = nieuw besluit hier + hogere `re
 
 **Контекст.** Етап 3 ORCH-001: координацією можна було керувати лише з командного рядка (`scripts/orch.mjs`), а правила змінювати лише через
 git і підпис SSH на ПК власника. Власник хоче бачити задачі, чергу й передачі на сайті, приймати пакети агентів без SSH і змінювати правила з
-тією самою певністю, що й затвердження оновлень (passkey, §13/§15 RUNBOOK).
+тією самою певністю, що й затвердження оновлень (passkey, §13/§15 ІНСТРУКЦІЯ-БЕЗПЕЧНОГО-РОЗГОРТАННЯ).
 
 **Рішення.**
 1. Сайт (`mcp.tarasevych.com/agents` → «Координація»), HTTP (`/api/owner/orch/*`, лише власник) і MCP (`orch_overzicht`, `orch_context`,
@@ -105,7 +105,7 @@ git і підпис SSH на ПК власника. Власник хоче ба
    `beoordeelVoorstel`, `vergrendel`, `compacteContext`. Робоча копія координації на сервері — `ORCH_WORTEL` (`/srv/mijn-ruimte/orch-repo`),
    завантаження — `ORCH_INBOX`, фрагментами по 512 КіБ зі звіркою SHA-256; записи передач і черга — ті самі файли `orchestratie/*`.
 2. Зміна правил власником: редагування `AGENTS.md` / `beleid.json` / `BESLUITEN.md` на сайті → перевірка пропозиції (`regelsVersie` вища,
-   запис `## B-xxx · … · <versie> · …` у `BESLUITEN.md`, `beleid.json` валідний, інші файли правил не змінилися) → рішення passkey нового
+   запис `## B-xxx · … · <versie> · …` у `BESLUITEN.md`, `beleid.json` дійсний, інші файли правил не змінилися) → рішення passkey нового
    виду **`orch-regels`** (той самий канал, що `terugdraaien`/`externe-hosts`; вимикач `orch-regels-passkey` у `/etc/mijn-ruimte/mcp-rechten.json`,
    типово відкритий) → **root нічого не виконує**: він дописує підтвердження (`regelsVersie`, `hash`, `kritiekHash`, `voorstel`, `passkey`,
    `besluit`) у власний журнал `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl` (0600) і переписує читабельну копію
@@ -115,8 +115,8 @@ git і підпис SSH на ПК власника. Власник хоче ба
 3. Lock із `eigenaar.soort = "passkey"` рівноцінний підписові SSH для `eigenaarStatus`/`controleer`. GitOps (`gitops-ophalen.sh`, root) довіряє
    такому lock **лише** якщо той самий запис (`besluit`, `regelsVersie`, `hash`, `kritiekHash`, `voorstel`) є в root-журналі — застосунок не може
    сам «підтвердити» правила. Підпис SSH лишається повноцінною альтернативою (`orch onderteken-bericht` / `bevestig`).
-4. Інсталятор створює `orch-inbox` і повідомляє, чи є робоча копія координації; саму копію (`git clone` з deploy-ключем) робить власник
-   (RUNBOOK §18). Без неї сайт чесно показує `ORCH_GEEN_REPO`, нічого не емулюючи.
+4. Встановлювач створює `orch-inbox` і повідомляє, чи є робоча копія координації; саму копію (`git clone` з deploy-ключем) робить власник
+   (ІНСТРУКЦІЯ-БЕЗПЕЧНОГО-РОЗГОРТАННЯ §18). Без неї сайт чесно показує `ORCH_GEEN_REPO`, нічого не емулюючи.
 
 **Наслідки.** `regelsVersie` 1.2.0 → 1.3.0 (розділ `site`; `kritiek.toelichting` згадує passkey як другий шлях підтвердження — через це
 змінився `kritiekHash`, самі критичні політики без змін); задачі з 1.2.0 перечитують правила. Новий код події `BESLUIT_ORCH_REGELS_OK`,
@@ -128,11 +128,11 @@ git і підпис SSH на ПК власника. Власник хоче ба
 
 **Контекст.** Власник вимагає для кожного наступного випуску постійний, відтворюваний журнал обробки запиту та перевірку, що повний код і точний інсталяційний архів справді опубліковані на GitHub. Попередні випуски містили commit, але не доводили наявності незмінного документа рішень і саме того tar.gz у GitHub Release.
 
-**Рішення.** Від `20261103-211555` кожен пакет має `ONTWIKKELARCHIEF.json` з `taakId`, `repo`, `tak`, 40-символьним `commit` (= `BRON-COMMIT`), `pad` на комічений журнал `orchestratie/ontwikkelarchieven/<TASK-ID>.json`, його SHA-256, канонічною URL до GitHub blob, URL GitHub Release за `UITROL-VERSIE` і назвою `.tar.gz`. Обов'язковий журнал має запит, часову послідовність, рішення та компроміси, зміни, тести, посилання на першоджерела/вкладення, відомі проблеми, причини та виняток. Штатний `orch pakket` перевіряє, що журнал уже в HEAD і не підмінений локально, та вписує посилання в tar. Site voorcontrole та root незалежно запитують лише фіксований GitHub API (`Tarasevych/hub`), перевіряють вміст документа і хеш, належність commit гілці, наявність GitHub Release і `asset.digest` SHA-256 ідентичного завантаженого tar.gz. Будь-яка невідповідність, відсутність або мережевий збій — fail closed. Без завершеної GitHub публікації встановити пакет не можна.
+**Рішення.** Від `20261103-211555` кожен пакет має `ONTWIKKELARCHIEF.json` з `taakId`, `repo`, `tak`, 40-символьним `commit` (= `BRON-COMMIT`), `pad` на зафіксований журнал `orchestratie/ontwikkelarchieven/<TASK-ID>.json`, його SHA-256, канонічною URL до GitHub blob, URL GitHub Release за `UITROL-VERSIE` і назвою `.tar.gz`. Обов'язковий журнал має запит, часову послідовність, рішення та компроміси, зміни, тести, посилання на першоджерела/вкладення, відомі проблеми, причини та виняток. Штатний `orch pakket` перевіряє, що журнал уже в HEAD і не підмінений локально, та вписує посилання в tar. Site voorcontrole та root незалежно запитують лише фіксований GitHub API (`Tarasevych/hub`), перевіряють вміст документа і хеш, належність commit гілці, наявність GitHub Release і `asset.digest` SHA-256 ідентичного завантаженого tar.gz. Будь-яка невідповідність, відсутність або мережевий збій — fail closed. Без завершеної GitHub публікації встановити пакет не можна.
 
-**Захист даних.** Не вносити секрети, приватні файли, вміст листів, необмежені журнали, сирі credentials та приховану chain-of-thought ШІ. Фіксувати доступні кроки й **стислі перевірювані обґрунтування** рішень, посилання/хеші артефактів, явні прогалини. Неможливість автоматично відновити внутрішню історію моделі треба позначати, а не вигадувати. Бінарний tar зберігається як GitHub Release asset, повний код — у git-коміті; через циклічність хешів сам tar не додається до власного джерельного commit.
+**Захист даних.** Не вносити секрети, приватні файли, вміст листів, необмежені журнали, сирі credentials та приховану chain-of-thought ШІ. Фіксувати доступні кроки й **стислі перевірювані обґрунтування** рішень, посилання/хеші артефактів, явні прогалини. Неможливість автоматично відновити внутрішню історію моделі треба позначати, а не вигадувати. Бінарний tar зберігається як GitHub Release asset, повний код — у фіксації змін у git; через циклічність хешів сам tar не додається до власного джерельного commit.
 
-**Наслідки.** `regelsVersie` 1.3.0 → 1.4.0, нові коди відхилення `ONTWIKKELARCHIEF_*`, розширені правила `pakket`, `AGENTS.md` і runbook. Root та сайт повинні бути встановлені у складі цього випуску, політика проходить `vergrendel`; статус до незалежного Passkey/SSH-затвердження — пропозиція. Жодне минуле встановлення не змінюється; власник підтверджує правило й інсталяцію окремо.
+**Наслідки.** `regelsVersie` 1.3.0 → 1.4.0, нові коди відхилення `ONTWIKKELARCHIEF_*`, розширені правила `pakket`, `AGENTS.md` і операційна інструкція. Root та сайт повинні бути встановлені у складі цього випуску, політика проходить `vergrendel`; статус до незалежного Passkey/SSH-затвердження — пропозиція. Жодне минуле встановлення не змінюється; власник підтверджує правило й інсталяцію окремо.
 
 **Хто.** Вимога Власника від 03.11.2026, реалізація агентом ChatGPT/Codex у задачі TRACE-001. Очікує passkey/SSH-підтвердження власника для чинності критичних правил.
 
@@ -154,7 +154,7 @@ git і підпис SSH на ПК власника. Власник хоче ба
 **Рішення.**
 1. **Зафіксувати оновлений стек production ВМ `<VM-IP>` у правилах (`AGENTS.md` §1, §5):**
    - ОС: `Ubuntu 26.04.1 LTS (Resolute)`, ядро `7.0.0-42-generic`, `glibc 2.43`, `systemd 259.9`, LUKS + `clevis-tpm2`.
-   - Середовище та сервіси: `Node.js v26.13.0 LTS` (`npm 11.20.0`), `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` із `--data-checksums`), `Caddy v2.11.7` (сокет `admin unix//run/caddy/admin.sock|0660` для групи `caddy`/`mr-apps`), `OPA v1.22.0`, `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2` (`containerd 2.4.2`).
+   - Середовище та сервіси: `Node.js v26.13.0 LTS` (`npm 11.20.0`), `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` із `--data-checksums`), `Caddy v2.11.7` (гніздо з'єднання `admin unix//run/caddy/admin.sock|0660` для групи `caddy`/`mr-apps`), `OPA v1.22.0`, `age v1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2` (`containerd 2.4.2`).
    - Інструменти ПК власника (`T:\mijn-ruimte\hulpmiddelen\`): `Node.js v26.13.0 LTS`, `PostgreSQL 18.6-5`, `rclone v1.75.2`.
 2. **Усунути блокування `openat2` у `systemd 259` (`RestrictSUIDSGID=no`):**
    - На сервері `<VM-IP>` розгорнуто постійні drop-in файли `/etc/systemd/system/<unit>.d/ubuntu2604-openat2.conf` із `RestrictSUIDSGID=no` для всіх 9 сервісів `mijn-ruimte*` та `cloudflared.service`.
@@ -173,7 +173,7 @@ git і підпис SSH на ПК власника. Власник хоче ба
 
 **Контекст.** Власник виявив персональні дані (ім'я, e-mailadressen, телефонний номер, адреси сервера) у публічному репозиторії: у коді, тестах, CI, документації, журналах і правилах.
 
-**Рішення.** (1) Персональні дані прибрано з коду й тестів; ім'я та контакт юридичних сторінок читаються із серверної конфігурації (`MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`). (2) Адреси сервера в документації й правилах замінено плейсхолдерами (`<VM-IP>`, `<beheersubnet>`). Beheersubnet voor de HA-beveiliging komt uit `MR_BEHEERSUBNET` (standaard 10.0.0.0/8, faalt dicht). (3) Adminscripts lezen het SSH-doel uit `MR_VM_SSH` of de SSH-alias `mijn-ruimte-vm`. (4) De geschiedenis van de repository is herschreven: persoonsgegevens vervangen door fictieve waarden. De mapping oud → nieuw wordt bewaard.
+**Рішення.** (1) Персональні дані прибрано з коду й тестів; ім'я та контакт юридичних сторінок читаються із серверної конфігурації (`MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`). (2) Адреси сервера в документації й правилах замінено текстами-замінниками (`<VM-IP>`, `<beheersubnet>`). Beheersubnet voor de HA-beveiliging komt uit `MR_BEHEERSUBNET` (standaard 10.0.0.0/8, faalt dicht). (3) Adminscripts lezen het SSH-doel uit `MR_VM_SSH` of de SSH-alias `mijn-ruimte-vm`. (4) De geschiedenis van de repository is herschreven: persoonsgegevens vervangen door fictieve waarden. De mapping oud → nieuw wordt bewaard.
 
 **Наслідки.** `regelsVersie` 1.4.2 → 1.4.4 (1.4.3 was een concept dat nooit is geïnstalleerd). De inhoud van de regels verandert niet; alleen plaatshouders en verwijzingen. Commit-SHA's veranderen door de herschrijving, `regels.lock.json` is opnieuw vergrendeld. Oude BRON-COMMIT-verwijzingen van eerdere pakketten wijzen naar SHA's die op GitHub niet meer bestaan; de mapping in de back-up koppelt ze aan de nieuwe.
 
@@ -193,30 +193,30 @@ git і підпис SSH на ПК власника. Власник хоче ба
 
 ## B-012 · 2026-11-05 · 1.4.7 · базова версія сервера після злиття identity-документів
 
-**Контекст.** Сервер працює на версії `20261104-164906`. Її коміт у попередній історії — `b0d41b77…`; після переписування (B-010, B-011) той самий стан має SHA `50e63737…`, а тег `20261104-164906` на GitHub вказує на `50e63737`. Базу в `beleid.json` (`20261031-093842` @ `5a023b41…`) було застаріло: установлювач відхилив би пакет з `BASIS_VEROUDERD`. Гілка identity-account (`50e63737…`) додає лише документацію та журнал IDENTITY-001: 8 нових файлів, код не змінено.
+**Контекст.** Сервер працює на версії `20261104-164906`. Її фіксація змін у попередній історії — `b0d41b77…`; після переписування (B-010, B-011) той самий стан має SHA `50e63737…`, а тег `20261104-164906` на GitHub вказує на `50e63737`. Базу в `beleid.json` (`20261031-093842` @ `5a023b41…`) було застаріло: встановлювач відхилив би пакет з `BASIS_VEROUDERD`. Гілка identity-account (`50e63737…`) додає лише документацію та журнал IDENTITY-001: 8 нових файлів, код не змінено.
 
-**Рішення.** (1) `50e63737…` злито в `release/persoonsgegevens-20261104-164147` (merge-commit `cef3f7c`, без конфліктів, лише нові файли). (2) Базу в `beleid.json` → `20261104-164906` @ `50e63737…`; `regelsVersie` 1.4.6 → 1.4.7. (3) Перед встановленням власник ставить `laatste-commit` на сервері на `50e63737…`; без цього установлювач відхилить пакет з `BASIS_COMMIT_VERSCHILT`. (4) Пакет 1.4.6 (`20261104-201630`) не публікується: його база — стара версія `20261031-093842`.
+**Рішення.** (1) `50e63737…` злито в `release/persoonsgegevens-20261104-164147` (фіксація злиття `cef3f7c`, без конфліктів, лише нові файли). (2) Базу в `beleid.json` → `20261104-164906` @ `50e63737…`; `regelsVersie` 1.4.6 → 1.4.7. (3) Перед встановленням власник ставить `laatste-commit` на сервері на `50e63737…`; без цього встановлювач відхилить пакет з `BASIS_COMMIT_VERSCHILT`. (4) Пакет 1.4.6 (`20261104-201630`) не публікується: його база — стара версія `20261031-093842`.
 
-**Наслідки.** SHA гілки релізу змінюється через злиття. Пакети `20261104-171525` і `20261104-201630` не придатні для встановлення. Базу `5a023b41…` збережено в історії, але вона більше не є базою. Для встановлення потрібні нова GitHub Release і новий пакет.
+**Наслідки.** SHA гілки випуску змінюється через злиття. Пакети `20261104-171525` і `20261104-201630` не придатні для встановлення. Базу `5a023b41…` збережено в історії, але вона більше не є базою. Для встановлення потрібні нова GitHub Release і новий пакет.
 
 **Хто.** Рішення власника (план B, 05.11.2026); виконання — агент Claude (Haiku 5.5). Очікується від власника: `laatste-commit` на сервері та GitHub Release для нового пакета.
 
 ## B-013 · 2026-11-05 · 1.4.8 · Консолідація аудиту 2026-11-05, двомовної документації та паралельних гілок (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001)
 
-**Контекст.** Після другого переписування історії (`B-011`) та додавання двомовних навігаційних шапок (`uk`/`nl`) на гілці `voornaamst` (`f3f3fabb2f3b`) виникло розщеплення між чотирма паралельними гілками агентів (`PRIVACY-001` @ `d4fb253`, `MAILFIT-002` @ `98beb2a`, `IDENTITY-002` @ `a318ba0`, `DESIGN-001` @ `052fae3`) та порушення криптографічного замка правил (`REGELS_NIET_VERGRENDELD` у `node scripts/orch.mjs controleer`). Незалежна звірка живого продакшн-кінцевій точці `https://hub.tarasevych.com/api/version` підтвердила активну версію `20261104-204906` (у до-рерайтній історії commit `6e815a00307dd9c00a0b2907838be099be8c5610`).
+**Контекст.** Після другого переписування історії (`B-011`) та додавання двомовних навігаційних шапок (`uk`/`nl`) на гілці `voornaamst` (`f3f3fabb2f3b`) виникло розщеплення між чотирма паралельними гілками агентів (`PRIVACY-001` @ `d4fb253`, `MAILFIT-002` @ `98beb2a`, `IDENTITY-002` @ `a318ba0`, `DESIGN-001` @ `052fae3`) та порушення криптографічного замка правил (`REGELS_NIET_VERGRENDELD` у `node scripts/orch.mjs controleer`). Незалежна звірка живого кінцевій точці робочого середовища `https://hub.tarasevych.com/api/version` підтвердила активну версію `20261104-204906` (у допереписній історії commit `6e815a00307dd9c00a0b2907838be099be8c5610`).
 
-**Рішення.** (1) Безконфліктно об'єднати в рамках задачі `AUDIT-001` на канонічній після-рерайтній історії (`voornaamst` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844`) усі чотири активні напрями без втягування до-рерайтного предка `e547381`: `PRIVACY-001` (`MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`, `MR_BEHEERSUBNET`, `git -c core.autocrlf=false archive`), `MAILFIX-001`/`MAILFIT-001`/`MAILFIT-002` (адаптивний `MailOrbitIntro`, мобільні відступи, коди причин помилок Gmail OAuth), `IDENTITY-001/002` (12-секційна сторінка облікового запису включно з виправленнями аудиту 05.11.2026 `cbeb3d0` — центрована камера 22px та кошик 24px — і `a318ba0` — `.ia-dialoog-achtergrond` `z-index: 99500`, `.ia-toc` `top: 70px/62px`, `.ia-sectie` `scroll-margin-top: 170px/150px`) та `DESIGN-001` (`src/ontwerp/modern.css`, радіуси `--straal-s/m/l/xl` = `10px/14px/20px/26px`). (2) Зафіксувати в `orchestratie/beleid.json → basis` версію `20261104-204906` (`verificatie: "geverifieerd_productie"`, канонічний після-рерайтний базовий коміт `f3f3fabb2f3b5209b1ee8eba3078e403de831844`), підвищити `regelsVersie` до `1.4.8` та перегенерувати `orchestratie/regels.lock.json` і `orchestratie/CONTEXT-COMPACT.md`. (3) Синхронізувати українські (`.uk.md`) та нідерландські (`.nl.md`) версії всієї документації та оновити гілки `integratie` і `voornaamst` разом із GitHub Release.
+**Рішення.** (1) Безконфліктно об'єднати в рамках задачі `AUDIT-001` на канонічній післяпереписній історії (`voornaamst` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844`) усі чотири активні напрями без втягування допереписного предка `e547381`: `PRIVACY-001` (`MR_EIGENAAR_NAAM`, `MR_CONTACT_EMAIL`, `MR_BEHEERSUBNET`, `git -c core.autocrlf=false archive`), `MAILFIX-001`/`MAILFIT-001`/`MAILFIT-002` (адаптивний `MailOrbitIntro`, мобільні відступи, коди причин помилок Gmail OAuth), `IDENTITY-001/002` (12-секційна сторінка облікового запису включно з виправленнями аудиту 05.11.2026 `cbeb3d0` — центрована камера 22px та кошик 24px — і `a318ba0` — `.ia-dialoog-achtergrond` `z-index: 99500`, `.ia-toc` `top: 70px/62px`, `.ia-sectie` `scroll-margin-top: 170px/150px`) та `DESIGN-001` (`src/ontwerp/modern.css`, радіуси `--straal-s/m/l/xl` = `10px/14px/20px/26px`). (2) Зафіксувати в `orchestratie/beleid.json → basis` версію `20261104-204906` (`verificatie: "geverifieerd_productie"`, канонічний післяпереписний базовий фіксація змін `f3f3fabb2f3b5209b1ee8eba3078e403de831844`), підвищити `regelsVersie` до `1.4.8` та перегенерувати `orchestratie/regels.lock.json` і `orchestratie/CONTEXT-COMPACT.md`. (3) Синхронізувати українські (`.uk.md`) та нідерландські (`.nl.md`) версії всієї документації та оновити гілки `integratie` і `voornaamst` разом із GitHub Release.
 Consolidatie van audit 2026-11-05 (`AUDIT-001`), tweetalige documentatie (`uk`/`nl`) en de vier parallelle takken (`PRIVACY-001`, `MAILFIT-002`, `IDENTITY-002`, `DESIGN-001`) op de canonieke post-rewrite geschiedenis (`voornaamst` @ `f3f3fabb2f3b`) met `regelsVersie 1.4.8`, hervergrendelde `regels.lock.json` en bijgewerkte `CONTEXT-COMPACT.md`.
 
 **Наслідки.** `regelsVersie` 1.4.7 → 1.4.8; `node scripts/orch.mjs controleer` проходить без помилок і попереджень; гілки `integratie` та `voornaamst` отримують усі виправлення аудиту 2026-11-05 та повні досьє `TRACE-001`.
 
 **Хто.** Запит власника від 05.11.2026 (`AUDIT-001`); виконання — агент `antigravity`.
 
-## B-014 · 2026-11-05 · 1.4.9 · Перебазування випуску AUDIT-001 на встановлену серверну версію 20261105-061659 (a318ba0b1c73)
+## B-014 · 2026-11-05 · 1.4.9 · Перенесення бази випуску AUDIT-001 на встановлену серверну версію 20261105-061659 (a318ba0b1c73)
 
 **Контекст.** Під час встановлення пакета `20261105-080000` на сервері вже було встановлено новішу версію `20261105-061659` (`BRON-COMMIT: a318ba0b1c731390217458dabadcf0e086d13635`, `IDENTITY-002`), через що перевірка `UITROL-BASIS` відхилила пакет `20261105-080000` із кодом `BASIS_VEROUDERD` (оскільки він був зібраний із `UITROL-BASIS: versie=20261104-204906`). Усі зміни коду з `20261105-061659` (`a318ba0b1c731390217458dabadcf0e086d13635`) вже повністю інтегровані у гілку `AUDIT-001` (`integratie` / `voornaamst`).
 
-**Рішення.** (1) Оновити в `orchestratie/beleid.json → basis.versie` та `AGENTS.md` встановлену серверну версію до `20261105-061659` (фактичний серверний коміт `a318ba0b1c731390217458dabadcf0e086d13635`, канонічна після-рерайтна база `f3f3fabb2f3b5209b1ee8eba3078e403de831844`). (2) Підвищити `regelsVersie` з `1.4.8` до `1.4.9`, перепідписати `orchestratie/regels.lock.json` та перегенерувати `orchestratie/CONTEXT-COMPACT.md`. (3) Перезібрати та опублікувати оновлений випуск `20261105-093500` на базі `20261105-061659` @ `a318ba0b1c731390217458dabadcf0e086d13635`.
+**Рішення.** (1) Оновити в `orchestratie/beleid.json → basis.versie` та `AGENTS.md` встановлену серверну версію до `20261105-061659` (фактичний серверний фіксація змін `a318ba0b1c731390217458dabadcf0e086d13635`, канонічна післяпереписна база `f3f3fabb2f3b5209b1ee8eba3078e403de831844`). (2) Підвищити `regelsVersie` з `1.4.8` до `1.4.9`, перепідписати `orchestratie/regels.lock.json` та перегенерувати `orchestratie/CONTEXT-COMPACT.md`. (3) Перезібрати та опублікувати оновлений випуск `20261105-093500` на базі `20261105-061659` @ `a318ba0b1c731390217458dabadcf0e086d13635`.
 Herbouwen van release `AUDIT-001` (`20261105-093500`) bovenop de op de server geïnstalleerde versie `20261105-061659` (`a318ba0b1c731390217458dabadcf0e086d13635`) met `regelsVersie 1.4.9`.
 
 **Наслідки.** `regelsVersie` 1.4.8 → 1.4.9; новий пакет `20261105-093500` містить `UITROL-BASIS: versie=20261105-061659, commit=a318ba0b1c731390217458dabadcf0e086d13635` і проходить перевірку `voorcontrole` та `mijn-ruimte-uitrol.sh` на сервері без помилки `BASIS_VEROUDERD`.
@@ -243,3 +243,12 @@ Herbouwen van release `AUDIT-001` (`20261105-093500`) bovenop de op de server ge
 
 **Хто.** Запит власника від 06.11.2026 (`AUDIT-001`); виконання — агент `antigravity`.
 
+## B-017 · 2026-11-06 · 1.4.12 · voorstel
+
+**Контекст.** Власник надав одноразовий дозвіл на повне перейменування всіх назв файлів статей документації, каталогів і гілок у всіх сховищах облікового запису `Tarasevych` (включно з `Tarasevych/hub`), щоб жодна назва української статті, розділу чи текст не містили англіцизмів, латинської транслітерації, технічного жаргону, русизмів, кальок чи суржику.
+
+**Рішення.** (1) Перейменувати всі українські статті документації (`.md` та `.uk.md`) на автентичні українські кириличні назви без латиниці та жаргону, а всі нідерландські статті (`.nl.md`) — на чисті нідерландські назви, замінивши також англомовні назви підкаталогів (`docs/controlepunten`, `docs/wolk`, `docs/contracten`, `docs/identiteit`, `docs/post`, `docs/fout002`, `docs/bijlage-weergave-v2`, `docs/post-zoeken-v2`, `docs/ontwerp/identiteit-account`). (2) Очистити тексти всіх статей, правил (`AGENTS.md`, `orchestratie/BESLUITEN.md`, `orchestratie/beleid.json`) і перехресних посилань від залишків технічного сленгу, англіцизмів, кальок та русизмів, оновити шляхи в одиничних випробуваннях і перевірниках, підвищити `regelsVersie` до `1.4.12`, оновити `orchestratie/regels.lock.json` та `orchestratie/CONTEXT-COMPACT.md`.
+
+**Наслідки.** `regelsVersie` 1.4.11 → 1.4.12; уся документація у `Tarasevych/hub` та супутніх сховищах має виключно чисті українські (`.md`/`.uk.md`) та нідерландські (`.nl.md`) назви файлів і вичищений зміст зі збереженням двомовних перемикачів.
+
+**Хто.** Запит власника від 06.11.2026 (`AUDIT-001`); виконання — агент `antigravity`.

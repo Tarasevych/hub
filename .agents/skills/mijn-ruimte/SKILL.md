@@ -1,11 +1,13 @@
-> 🇺🇦 **Українська (канонічна)** · 🇳🇱 [Nederlandse versie](./SKILL.nl.md)
+> 🌐 **Мова / Taal:** **Українська** · [Nederlands](VAARDIGHEID.nl.md) | [Головна](../../../README.md) · [Покажчик документації](../../../docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md)
+
+> 🇺🇦 **Українська (канонічна)** · 🇳🇱 [Nederlandse versie](./VAARDIGHEID.nl.md)
 
 ---
 name: mijn-ruimte
-description: Двосторонній плагін і з'єднувач MCP Google Antigravity для Mijn Ruimte (*.tarasevych.com) — розбудова й керування сайтом, керування розширенням браузера, локальним комп'ютером (agent.mjs), сервером і багатоагентною координацією через https://mcp.tarasevych.com/antigravity.
+description: Двосторонній модуль розширення і з'єднувач MCP Google Antigravity для Mijn Ruimte (*.tarasevych.com) — розбудова й керування сайтом, керування розширенням браузера, локальним комп'ютером (agent.mjs), сервером і багатоагентною координацією через https://mcp.tarasevych.com/antigravity.
 ---
 
-# Mijn Ruimte — плагін і двосторонній міст Google Antigravity (`/antigravity`)
+# Mijn Ruimte — модуль розширення і двосторонній міст Google Antigravity (`/antigravity`)
 
 Ця навичка надає **Google Antigravity** виділений двосторонній з'єднувач (`https://mcp.tarasevych.com/antigravity`) і міст командного рядка (`<шлях-до-навички>/scripts/mijn-ruimte`) для роботи з платформою **Mijn Ruimte** (`*.tarasevych.com`) через чотири робочі канали:
 
@@ -113,5 +115,5 @@ node .agents/skills/mijn-ruimte/scripts/mijn-ruimte McpStdio
 
 ## Правила безпеки та врядування
 - **Очікування підтвердження**: коли інструмент запису або дії повертає `status: "pending"`, сайт очікує підтвердження користувача в `BevestigingenPaneel` на `https://mcp.tarasevych.com/agenten#agent/antigravity`. Повідомте про це користувача й не повторюйте виклик у циклі.
-- **Технічний простір (`_beheer`)**: якщо інструмент `_beheer` повертає `TECH_PROFILE_OFF`, попросіть власника увімкнути або делегувати технічну сесію на `https://mcp.tarasevych.com/agenten#agent/antigravity`.
+- **Технічний простір (`_beheer`)**: якщо інструмент `_beheer` повертає `TECH_PROFILE_OFF`, попросіть власника увімкнути або делегувати технічну сеанс на `https://mcp.tarasevych.com/agenten#agent/antigravity`.
 - **Правила репозиторію**: завжди дотримуйтесь `AGENTS.md` та `ANTIGRAVITY.md` під час внесення змін у `Tarasevych/hub`.

@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./BROWSER-EXTENSIE.uk.md) · **🇳🇱 Nederlands** ([origineel](./BROWSER-EXTENSIE.md)) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [🏠 Головна (UK)](../README.md) · [📚 Documentatie-index](../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](РОЗШИРЕННЯ-ОГЛЯДАЧА.uk.md) · **Nederlands** | [Hoofdpagina](../LEESMIJ.md) · [Documentatie-index](../docs/INDEX.nl.md)
 
 # Browserextensie «Mijn Ruimte»
 
@@ -67,7 +67,7 @@ Chrome staat niet toe dat een extensie buiten de winkel om zonder tussenkomst va
 1. De site herkent zelf het besturingssysteem en biedt een **hulpbestand** aan: `Install-MijnRuimte.cmd` (Windows) of `install-mijn-ruimte.sh` (macOS/Linux). Dit downloadt de ZIP van onze site, **controleert de SHA-256** (de controlesom is tijdens de build ingebakken), pakt uit naar een aparte profielmap (zonder beheerdersrechten), zet het pad op het klembord en opent `chrome://extensions`. De gebruiker hoeft alleen nog «Ontwikkelaarsmodus» aan te zetten en de map te kiezen.
 2. Direct na installatie **opent de extensie zelf** `mcp.tarasevych.com/agents?extension=welcome`. Als de gebruiker nog niet is aangemeld, volgt eerst het aanmelden; de welkomstvlag blijft tijdens het aanmelden bewaard (`src/extensie-welkom-opslag.ts`). Daarna volgt de wizard: extensie gevonden → u bent aangemeld → koppelen → mogelijkheden kiezen → inschakelen voor AI.
 3. Het extensievenster geeft aan wat er moet gebeuren: «Aanmelden en koppelen op de site», «Inschakelen op de site», «Aanmelden op de site» (wanneer er geen sessie is), «AI actief». De status wordt van de server opgehaald met het eigen token (`POST /api/owner/agents/self`).
-4. Echte «één-klik-installatie»: publicatie in de Chrome Web Store, zie `deploy/CHROME-WEB-STORE.md` (de knop op de site verschijnt zodra de URL in `extension/store-url.txt` staat).
+4. Echte «één-klik-installatie»: publicatie in de Chrome Web Store, zie `deploy/EXTENSIE-WINKEL-PUBLICATIE.nl.md` (de knop op de site verschijnt zodra de URL in `extension/store-url.txt` staat).
 
 ## CRX-variant (eigen ondertekend pakket)
 

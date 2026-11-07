@@ -1,4 +1,4 @@
-> 🌐 **Taal / Мова:** [🇺🇦 **Українська версія**](./ZOEK-UITBREIDEN.uk.md) · **🇳🇱 Nederlands** ([origineel](./ZOEK-UITBREIDEN.md)) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [🏠 Головна (UK)](../../README.md) · [📚 Documentatie-index](../../docs/INDEX.nl.md)
+> 🌐 **Taal / Мова:** [Українська](РОЗШИРЕННЯ-ПОШУКУ.uk.md) · **Nederlands** | [Hoofdpagina](../../LEESMIJ.md) · [Documentatie-index](../INDEX.nl.md)
 
 # Zoeken «/zoek» — een nieuw objecttype of een nieuwe bron toevoegen
 
