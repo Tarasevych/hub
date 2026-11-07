@@ -47,3 +47,6 @@ AUTEUR
 AGENT
 SAMENVATTING
 BRON-COMMIT
+
+# тимчасові робочі файли агента
+.tmp-*

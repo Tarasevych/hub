@@ -103,7 +103,7 @@ jobs:
               "deelnemers": [
                   {"soort": "mens", "naam": "Тарасевич Павло", "rollen": ["auteur", "controle"]},
                   {"soort": "ai", "naam": "AutoClaw", "platform": "AutoClaw", "tool": "PowerShell, git, GitHub Actions",
-                   "model": {"id": None, "versie": None, "bron": "onbekend"},
+                   "model": {"id": "zai_auto-fast", "versie": None, "bron": "auteur"},
                    "rollen": ["ontwikkeling", "verpakken"]},
               ],
               "beschrijving": {
@@ -113,7 +113,7 @@ jobs:
                                          "Вікно фото: пристрій, фото сервісу, посилання https; смітничок 24 px у куті",
                                          "Пристосування до ширини за контейнером: кнопки на всю ширину до 640 px"],
                          "fixes": [],
-                         "beperkingen": [os.environ["BEPERKING_UK"]],
+                         "beperkingen": [os.environ["BEPERKING_UK"], "Обрано режим Auto-Fast: платформа сама підбирає модель під кожен запит."],
                          "instructies": "Перегляньте сторінку й підтвердьте випуск ключем доступу власника."},
                   "nl": {"titel": "Accountpagina",
                          "samenvatting": os.environ["SAMENVATTING_NL"],
@@ -121,7 +121,7 @@ jobs:
                                          "Venster voor foto's: apparaat, servicefoto, https-koppeling; prullenbak van 24 px in de hoek",
                                          "Aanpassing aan de breedte via de container: knoppen over de volle breedte tot 640 px"],
                          "fixes": [],
-                         "beperkingen": [os.environ["BEPERKING_NL"]],
+                         "beperkingen": [os.environ["BEPERKING_NL"], "Auto-Fast gekozen: het platform kiest per verzoek zelf een model."],
                          "instructies": "Bekijk de pagina en keur de uitgave goed met de toegangssleutel van de eigenaar."},
               },
           }
