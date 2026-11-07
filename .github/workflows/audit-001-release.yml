@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований випуск 20261107-114500
+name: AUDIT-001 · консолідований випуск 20261107-121500
 
 on:
   push:
@@ -47,7 +47,7 @@ jobs:
       - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
-          export VERSIE="20261107-114500"
+          export VERSIE="20261107-121500"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
@@ -71,7 +71,7 @@ jobs:
             echo "LIVE_COMMIT=2c71d1179064018bd60d3464a91e1a0ef17e912b" >> "$GITHUB_ENV"
           fi
 
-      - name: Bouw en controleer pakket 20261107-114500
+      - name: Bouw en controleer pakket 20261107-121500
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
@@ -81,7 +81,7 @@ jobs:
           {
             "schema": 1,
             "versie": "$VERSIE",
-            "aangemaakt": "2026-11-07T11:45:00Z",
+            "aangemaakt": "2026-11-07T12:15:00Z",
             "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
             "auteur": "$ACCOUNT_AUTEUR",
             "zonderAi": false,
@@ -106,16 +106,17 @@ jobs:
             ],
             "beschrijving": {
               "uk": {
-                "titel": "Аудит 05.11.2026, перейменування всіх статей на питомі назви, повне мовне очищення (UK/NL) та автентифікація метаданих пакета",
-                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт, повне перейменування та мовне очищення всіх статей (.uk.md / .nl.md / .md), каталогів, пошукових словників, коду й тестів без російських літер, русизмів і суржику, а також сувора перевірка автора облікового запису та моделі ШІ в UITROL-MANIFEST.json.",
+                "titel": "Аудит 05.11.2026, перейменування всіх статей на питомі назви, повне мовне очищення (UK/NL) та фото профілю й логотипи агентів у меню оновлень",
+                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт, повне перейменування та мовне очищення всіх статей (.uk.md / .nl.md / .md), каталогів, пошукових словників, коду й тестів без російських літер, русизмів і суржику, сувора перевірка автора облікового запису та моделі ШІ в UITROL-MANIFEST.json, а також автоматичне підтягування фото профілю з особистого кабінету та фірмових логотипів ШІ-агентів у всіх меню оновлень.",
                 "wijzigingen": [
                   "Перейменовано всі статті та підкаталоги документації на питомі українські (.md, .uk.md) та нідерландські (.nl.md) назви з оновленням усіх взаємних посилань.",
                   "Замінено всі кальки, русизми та технічний сленг в усіх українських статтях, правилах оркестрації, компонентах src/, backend/, shared/, deploy/, розширенні оглядача й тестах.",
                   "Запроваджено автоматичне визначення імені й пошти облікового запису власника при розгортанні, заборонено фіктивні псевдоніми («Власник», «Eigenaar») і порожнє поле моделі («модель невідома»)."
                 ],
                 "fixes": [
+                  "Автоматичне підтягування фото профілю учасника-людини з особистого кабінету (включно з базовими зображеннями data:image/...;base64,... до 360 КБ та локальним кешем профілю) й відображення фірмових логотипів ШІ-агентів у плитках «Автор»/«Агент», списку учасників, бічній панелі та історії оновлень.",
                   "Усунено хибне дублювання сторонніх агентів у deelnemers (вказується виключно фактичний агент antigravity зі справжньою моделлю claude-opus-4-6 · 20260205) та виправлено роль облікового запису власника на «автор».",
-                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261106-171500) та нова версія пакета 20261107-114500.",
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261106-171500) та нова версія пакета 20261107-121500.",
                   "Перевірка відсутності російських літер, суржику та побитих відносних посилань у всіх 455 статтях репозиторію (0 збігів)."
                 ],
                 "beperkingen": [
@@ -124,16 +125,17 @@ jobs:
                 "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу власника."
               },
               "nl": {
-                "titel": "Audit 05-11-2026, hernoeming van alle artikelen naar zuivere namen, volledige taalzuivering (UK/NL) en strikte pakketmetadata",
-                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen, volledige hernoeming en taalzuivering van alle artikelen (.uk.md / .nl.md / .md), mappen, zoekcatalogi, broncode en tests zonder Russische letters, russismen of Surzjyk, en strikte verificatie van het eigenaarsaccount en AI-model in UITROL-MANIFEST.json.",
+                "titel": "Audit 05-11-2026, hernoeming van alle artikelen naar zuivere namen, volledige taalzuivering (UK/NL) en profielfoto's en agentlogo's in het updatemenu",
+                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen, volledige hernoeming en taalzuivering van alle artikelen (.uk.md / .nl.md / .md), mappen, zoekcatalogi, broncode en tests zonder Russische letters, russismen of Surzjyk, strikte verificatie van het eigenaarsaccount en AI-model in UITROL-MANIFEST.json, en automatische weergave van de profielfoto uit het persoonlijke kabinet en merklogo's van AI-agenten in alle updatemenu's.",
                 "wijzigingen": [
                   "Alle artikelen en documentatiemappen hernoemd naar zuivere Oekraïense (.md, .uk.md) en Nederlandse (.nl.md) bestandsnamen met bijgewerkte kruisverwijzingen.",
                   "Alle Surzjyk-vormen, russismen en leenwoorden vervangen in alle Oekraïense artikelen, orchestratieregels, componenten onder src/, backend/, shared/, deploy/, de browserextensie en tests.",
                   "Automatische vaststelling van de naam en het e-mailadres van het eigenaarsaccount bij uitrol ingevoerd; generieke bijnamen («Власник», «Eigenaar») en «model onbekend» zijn verboden."
                 ],
                 "fixes": [
+                  "Automatisch ophalen van de profielfoto van menselijke deelnemers uit het persoonlijke kabinet (inclusief data:image/...;base64,...-afbeeldingen tot 360 KB en lokale profielcache) en weergave van de merklogo's van AI-agenten in de tegels «Auteur»/«Agent», de deelnemerslijst, de zijbalk en de updategeschiedenis.",
                   "Onterechte vermelding van niet-betrokken agenten in deelnemers verwijderd (uitsluitend de daadwerkelijke agent antigravity met het echte model claude-opus-4-6 · 20260205) en de rol van het eigenaarsaccount op «auteur» gezet.",
-                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261106-171500) en nieuwe pakketversie 20261107-114500.",
+                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261106-171500) en nieuwe pakketversie 20261107-121500.",
                   "Controle op afwezigheid van Russische letters, Surzjyk en verbroken relatieve koppelingen in alle 455 artikelen van de repository (0 treffers)."
                 ],
                 "beperkingen": [
@@ -190,7 +192,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261107-114500 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261107-121500 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

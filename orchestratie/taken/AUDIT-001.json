@@ -13,8 +13,8 @@
   "omschrijving": "Виправлення проблем аудиту 2026-11-05, безконфліктна інтеграція PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001, AGPLUGIN-001 та повна мовна вичитка української й нідерландської документації",
   "kanaal": "github_pr",
   "overdrachten": [],
-  "releaseVersie": "20261107-114500",
-  "releaseZip": "mijn-ruimte-20261107-114500-antigravity-overdracht.zip",
+  "releaseVersie": "20261107-121500",
+  "releaseZip": "mijn-ruimte-20261107-121500-antigravity-overdracht.zip",
   "regelsHerlezen": [
     {
       "van": "1.4.8",

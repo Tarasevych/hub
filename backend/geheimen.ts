@@ -117,7 +117,7 @@ export async function geheimenLijst(userId: string, nu = Date.now()): Promise<{ 
 
 // ------------------------------------------------------------------------------------------------ geschiedenis
 const veiligTekst = (v: unknown, max = 120) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, max);
-const fotoVeilig = (v: unknown) => { const s = String(v ?? ''); return /^https:\/\/[^\s"'<>]{1,400}$/.test(s) ? s : ''; };
+const fotoVeilig = (v: unknown) => { const s = String(v ?? '').trim(); return (/^https:\/\/[^\s"'<>]{1,1024}$/.test(s) || (/^data:image\/(?:jpeg|png|webp|svg\+xml|x-icon|vnd\.microsoft\.icon);base64,[A-Za-z0-9+/=]+$/.test(s) && s.length <= 360_000)) ? s : ''; };
 
 /** Auditregel → gebeurtenis. Neemt alleen veilige velden over (nooit een waarde). */
 export function alsGebeurtenis(r: Pick<AuditRij, 'id' | 'action' | 'result' | 'details' | 'createdAt' | 'actorId' | 'device'>, wie: GeheimGebeurtenis['wie']): GeheimGebeurtenis | null {

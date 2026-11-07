@@ -136,6 +136,12 @@
       "fase": "uitvoering",
       "actor": "antigravity",
       "stap": "Запроваджено автоматичне визначення імені та пошти облікового запису власника при розгортанні, заборонено загальні псевдоніми («Власник», «Eigenaar») і невизначену модель ШІ («модель невідома» / bron=onbekend) у UITROL-MANIFEST.json та ORCH-OVERDRACHT.json, залишено в deelnemers виключно фактичного агента antigravity зі справжньою моделлю claude-opus-4-6 (20260205) і роллю власника «auteur», та зібрано випуск 20261107-114500 поверх 20261106-171500."
+    },
+    {
+      "tijd": "2026-11-07T12:15:00Z",
+      "fase": "uitvoering",
+      "actor": "antigravity",
+      "stap": "Виправлено підтягування фото профілю учасника з особистого кабінету (підтримка data:image/...;base64,... до 360 КБ у fotoVeilig, вибірка customPhoto/customPicture/picture/providerPicture в uitrol-goedkeuring.ts та кешу профілю в Persoon.tsx і UitgaveBeschrijving.tsx) і додано відображення фірмових логотипів ШІ-агентів (<AgentLogo>) та фото автора у плитках «Автор»/«Агент», списку учасників, бічній панелі та історії оновлень; зібрано випуск 20261107-121500."
     }
   ],
   "keuzes": [

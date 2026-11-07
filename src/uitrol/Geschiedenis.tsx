@@ -130,9 +130,9 @@ export default function Geschiedenis({ lang, context, openId, onOpenId, naarUplo
 
     {fout && <p className='ut-fout' role='alert'>{fout}</p>}
     <ol className='ut-tl' aria-label={tr(lang, 'Історія розгортань', 'Geschiedenis van uitrollen')} aria-busy={laadt} data-ut-tijdlijn={tijdlijn.length}>
-      {!v2 && tijdlijn.map((it) => <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} />)}
+      {!v2 && tijdlijn.map((it) => <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} account={data?.ik} accounts={data?.kandidaten?.accounts} />)}
       {v2 && groepeer(tijdlijn).map((g) => {
-        const regel = (it: TijdlijnItem) => { const v = voorstelVan(it, data?.voorstellen || []); return <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} v2 voorstel={v} hoofd={hoofdDeelnemer(v)} naarLog={naarLog} naarDiagnose={naarDiagnose} />; };
+        const regel = (it: TijdlijnItem) => { const v = voorstelVan(it, data?.voorstellen || []); return <TijdlijnRegel key={it.id} lang={lang} context={context} item={it} open={open === it.id} onToggle={() => kies(it.id)} naarUpload={naarUpload} v2 voorstel={v} hoofd={hoofdDeelnemer(v)} naarLog={naarLog} naarDiagnose={naarDiagnose} account={data?.ik} accounts={data?.kandidaten?.accounts} />; };
         if (g.items.length === 1) return regel(g.items[0]);
         const isOpen = groepOpen === g.sleutel || g.items.some((x) => x.id === open);
         return <li key={g.sleutel} className='ut-tl-groep' data-tl-groep={g.items.length} data-open={isOpen || undefined}>
@@ -154,7 +154,7 @@ export default function Geschiedenis({ lang, context, openId, onOpenId, naarUplo
 }
 
 /** Eén regel van de tijdlijn + (opengeklapt) de details en de knop «Спробувати знову». */
-function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = false, voorstel, hoofd, naarLog, naarDiagnose }: { lang: Lang; context: Record<string, unknown>; item: TijdlijnItem; open: boolean; onToggle: () => void; naarUpload?: (hervat: boolean) => void; v2?: boolean; voorstel?: Voorstel; hoofd?: string; naarLog?: (runId: string) => void; naarDiagnose?: () => void }) {
+function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = false, voorstel, hoofd, naarLog, naarDiagnose, account, accounts }: { lang: Lang; context: Record<string, unknown>; item: TijdlijnItem; open: boolean; onToggle: () => void; naarUpload?: (hervat: boolean) => void; v2?: boolean; voorstel?: Voorstel; hoofd?: string; naarLog?: (runId: string) => void; naarDiagnose?: () => void; account?: Overzicht['ik']; accounts?: Overzicht['kandidaten']['accounts'] }) {
   const it = item;
   const samenvatting = it.soort === 'poging' && it.poging ? pogingOorzaak(lang, it.poging.code, it.poging.redenBekend).waarom : (lang === 'uk' ? it.uk : it.nl);
   const vg = it.poging ? voortgang(it.poging) : null;
@@ -179,7 +179,7 @@ function TijdlijnRegel({ lang, context, item, open, onToggle, naarUpload, v2 = f
     {open && <div className='ut-tl-detail' id={detailId} onKeyDown={opEsc}>
       {it.soort === 'run' && it.run && <RunDetail lang={lang} context={context} runId={it.run.id} hoogte={360} />}
       {it.soort === 'poging' && it.poging && <PogingDetail lang={lang} p={it.poging} />}
-      {v2 && <Betrokkenen lang={lang} it={it} v={voorstel} />}
+      {v2 && <Betrokkenen lang={lang} it={it} v={voorstel} account={account} accounts={accounts} />}
       {v2 && it.soort === 'poging' && it.poging && <Herstel lang={lang} acties={herstelActies(it.poging)} naarUpload={naarUpload} naarDiagnose={naarDiagnose} naarLog={naarLog && it.run ? () => naarLog(it.run!.id) : undefined} />}
       {it.soort === 'voorstel' && it.voorstel && <dl className='ut-dl'>
         <dt>{tr(lang, 'Стан', 'Stand')}</dt><dd>{VOORSTEL_STATUS[it.voorstel.status] ? tr(lang, VOORSTEL_STATUS[it.voorstel.status][0], VOORSTEL_STATUS[it.voorstel.status][1]) : it.voorstel.status}{it.code ? ` · ${it.code}` : ''}</dd>
@@ -215,14 +215,14 @@ function PogingDetail({ lang, p }: { lang: Lang; p: PogingUit }) {
 }
 
 /** UI-010 fase 2: wie maakte, uploadde en keurde goed, met welke methode — bewaard bij het voorstel, dus ook na het intrekken van rechten. */
-function Betrokkenen({ lang, it, v }: { lang: Lang; it: TijdlijnItem; v?: Voorstel }) {
+function Betrokkenen({ lang, it, v, account, accounts }: { lang: Lang; it: TijdlijnItem; v?: Voorstel; account?: Overzicht['ik']; accounts?: Overzicht['kandidaten']['accounts'] }) {
   const m = manifestVan(v);
   return <dl className='ut-dl ut-betrokkenen' data-ut-betrokkenen>
     <dt>{tr(lang, 'Метод', 'Methode')}</dt><dd>{it.soort === 'poging' ? tr(lang, 'не дійшло до встановлення', 'kwam niet tot installatie') : methodeTekst(lang, it.methode)}</dd>
     {(v?.voorbereider || it.run?.voorbereider) && <><dt>{tr(lang, 'Завантажив', 'Geüpload door')}</dt><dd>{v?.voorbereider || it.run?.voorbereider}</dd></>}
     {(v?.beslistDoor || it.run?.goedgekeurdDoor) && <><dt>{tr(lang, 'Схвалив', 'Goedgekeurd door')}</dt><dd>{v?.beslistDoor || it.run?.goedgekeurdDoor}</dd></>}
     {it.run?.sha256 && <><dt>SHA-256</dt><dd><code className='ut-mono ut-breek'>{it.run.sha256}</code></dd></>}
-    <dt>{tr(lang, 'Учасники', 'Deelnemers')}</dt><dd>{m ? <Deelnemers lang={lang} m={m} /> : <span className='ut-hint'>{v?.pakketMeta?.auteur || v?.pakketMeta?.agent ? `${tr(lang, 'Старий формат: ', 'Oud formaat: ')}${[v.pakketMeta.auteur, v.pakketMeta.agent].filter(Boolean).join(' · ')}` : tr(lang, 'Дані про учасників недоступні для цього запису.', 'Geen deelnemersgegevens voor deze regel.')}</span>}</dd>
+    <dt>{tr(lang, 'Учасники', 'Deelnemers')}</dt><dd>{m ? <Deelnemers lang={lang} m={m} account={account} accounts={accounts} /> : <span className='ut-hint'>{v?.pakketMeta?.auteur || v?.pakketMeta?.agent ? `${tr(lang, 'Старий формат: ', 'Oud formaat: ')}${[v.pakketMeta.auteur, v.pakketMeta.agent].filter(Boolean).join(' · ')}` : tr(lang, 'Дані про учасників недоступні для цього запису.', 'Geen deelnemersgegevens voor deze regel.')}</span>}</dd>
   </dl>;
 }
 

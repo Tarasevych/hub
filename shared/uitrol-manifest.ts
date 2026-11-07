@@ -157,3 +157,54 @@ export function kiesBeschrijving(m: Pick<Manifest, 'beschrijving'> | null | unde
 }
 /** Raadt NIET de taal; alleen zichtbaar of een oude SAMENVATTING Cyrillisch bevat (dan uk), anders «оригінал (латиниця)». */
 export const oudeTaal = (s: string | null | undefined): Taal | null => (!s ? null : /[\u0400-\u04FF]/.test(s) ? 'uk' : null);
+
+/** Foto van een account voor uitroloverzicht en deelnemers: https-adres of data-afbeelding uit het persoonlijke kabinet (tot 360 KB base64). */
+export function fotoVeilig(waarde: unknown): string {
+  const raw = String(waarde || '').trim();
+  if (!raw) return '';
+  if (/^data:image\/(?:jpeg|png|webp|svg\+xml|x-icon|vnd\.microsoft\.icon);base64,[A-Za-z0-9+/=]+$/.test(raw)) return raw.length <= 360_000 ? raw : '';
+  try {
+    const u = new URL(raw); const host = u.hostname.toLowerCase();
+    if (u.protocol !== 'https:' || u.username || u.password || !(host === 'googleusercontent.com' || host.endsWith('.googleusercontent.com') || host === 'avatars.githubusercontent.com' || host.endsWith('.githubusercontent.com'))) return '';
+    u.hash = ''; return u.toString().slice(0, 2048);
+  } catch { return ''; }
+}
+
+/** Kiest de eerste geldige profielfoto uit een gebruikersrecord (customPhoto, customPicture, picture, providerPicture). */
+export function kiesAccountFoto(r: Record<string, unknown> | null | undefined): string {
+  if (!r) return '';
+  for (const v of [r.customPhoto, typeof r.customPicture === 'string' ? r.customPicture : '', r.picture, r.providerPicture]) {
+    const veilig = fotoVeilig(v);
+    if (veilig) return veilig;
+  }
+  return '';
+}
+
+export type DeelnemerAccount = { id?: string; naam?: string; email?: string; label?: string; foto?: string | null };
+
+/** Повертає справжнє ім'я або ел. пошту облікового запису власника замість загальних псевдонімів на кшталт «Власник». */
+export function mensWeergaveNaam(naam: string | null | undefined, account?: DeelnemerAccount | null): string {
+  const schoon = (naam || '').trim();
+  const accNaam = (account?.naam || '').trim();
+  const accEmail = (account?.email || '').trim();
+  const accVol = accNaam && accEmail ? `${accNaam} (${accEmail})` : accNaam || accEmail;
+  if ((!schoon || GENERIEKE_AUTEUR.test(schoon)) && accVol) return accVol;
+  return schoon || accVol || '';
+}
+
+/** Знаходить фото профілю учасника-людини з облікового запису власника або списку облікових записів. */
+export function mensFotoUitAccount(naam: string | null | undefined, account?: DeelnemerAccount | null, accounts?: readonly DeelnemerAccount[]): string {
+  const zoek = (naam || '').trim().toLowerCase();
+  if (accounts?.length && zoek) {
+    const gevonden = accounts.find((a) => {
+      const n = (a.naam || '').trim().toLowerCase();
+      const l = (a.label || a.email || '').trim().toLowerCase();
+      return (n && zoek.includes(n)) || (l && zoek.includes(l));
+    });
+    const uitLijst = fotoVeilig(gevonden?.foto);
+    if (uitLijst) return uitLijst;
+  }
+  return fotoVeilig(account?.foto);
+}
+
+

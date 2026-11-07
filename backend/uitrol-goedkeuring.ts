@@ -228,24 +228,16 @@ export async function grantIntrekken(door: { id: string; email?: string }, id: u
     `https://id.tarasevych.com/methods?wijziging=${wijziging}`);
   return grantUit(rows[0]);
 }
-/** Foto van een account voor de lijst: alleen een https-adres van Google of een kleine data-afbeelding (de lijst wordt vaak ververst). */
-export function fotoVeilig(waarde: unknown): string {
-  const raw = String(waarde || '').trim();
-  if (/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(raw)) return raw.length <= 60_000 ? raw : '';
-  try {
-    const u = new URL(raw); const host = u.hostname.toLowerCase();
-    if (u.protocol !== 'https:' || u.username || u.password || !(host === 'googleusercontent.com' || host.endsWith('.googleusercontent.com'))) return '';
-    u.hash = ''; return u.toString().slice(0, 2048);
-  } catch { return ''; }
-}
+export { fotoVeilig, kiesAccountFoto } from '../shared/uitrol-manifest';
+import { fotoVeilig, kiesAccountFoto } from '../shared/uitrol-manifest';
 export type EigenaarKaart = { naam: string; email: string; foto: string };
 /** Naam, e-mail en foto per account-id, voor kaarten met een echt gezicht in plaats van een monogram. */
 export async function eigenaren(ids: string[]): Promise<Map<string, EigenaarKaart>> {
   const uniek = [...new Set(ids.filter(Boolean))]; const kaart = new Map<string, EigenaarKaart>();
   if (!uniek.length) return kaart;
   try {
-    const { rows } = await sys().query(`SELECT id, data->>'name' AS name, data->>'email' AS email, data->>'picture' AS picture FROM app.records WHERE tbl = 'users' AND id::text = ANY($1::text[])`, [uniek]);
-    for (const r of rows) kaart.set(String(r.id), { naam: tekst(r.name || '', 120), email: tekst(r.email || '', 120), foto: fotoVeilig(r.picture) });
+    const { rows } = await sys().query(`SELECT id, data->>'name' AS name, data->>'email' AS email, data->>'picture' AS picture, data->>'customPhoto' AS "customPhoto", data->>'customPicture' AS "customPicture", data->>'providerPicture' AS "providerPicture" FROM app.records WHERE tbl = 'users' AND id::text = ANY($1::text[])`, [uniek]);
+    for (const r of rows) kaart.set(String(r.id), { naam: tekst(r.name || '', 120), email: tekst(r.email || '', 120), foto: kiesAccountFoto(r) });
   } catch { /* zonder gezicht valt de kaart terug op een monogram */ }
   return kaart;
 }
@@ -272,9 +264,9 @@ async function kandidaten(zoek = '') {
   const filter = term ? ` AND (data->>'email' ILIKE $1 OR data->>'name' ILIKE $1)` : '';
   const args = term ? [`%${term.replace(/[%_\\]/g, (c) => `\\${c}`)}%`] : [];
   const accountsTotaal = Number((await sys().query(`SELECT count(*)::int AS n FROM app.records WHERE ${waar}${filter}`, args)).rows[0]?.n || 0);
-  const accounts = (await sys().query(`SELECT id, data->>'email' AS email, data->>'name' AS name, data->>'picture' AS picture FROM app.records
+  const accounts = (await sys().query(`SELECT id, data->>'email' AS email, data->>'name' AS name, data->>'picture' AS picture, data->>'customPhoto' AS "customPhoto", data->>'customPicture' AS "customPicture", data->>'providerPicture' AS "providerPicture" FROM app.records
     WHERE ${waar}${filter} ORDER BY data->>'email' LIMIT ${KANDIDATEN_MAX}`, args)).rows
-    .map((r) => ({ id: String(r.id), label: tekst(r.email || r.name || r.id, 80), naam: tekst(r.name || '', 120), foto: fotoVeilig(r.picture) }));
+    .map((r) => ({ id: String(r.id), label: tekst(r.email || r.name || r.id, 80), naam: tekst(r.name || '', 120), foto: kiesAccountFoto(r) }));
   const tokens = (await sys().query(`SELECT t.id, t.name, t.prefix, r.data->>'email' AS email FROM app.mcp_console_tokens t LEFT JOIN app.records r ON r.tbl = 'users' AND r.id = t.user_id
     WHERE t.revoked_at IS NULL AND t.expires_at > now() AND t.ruimte = 'technisch' ORDER BY t.created_at DESC LIMIT 100`)).rows
     .map((r) => ({ id: String(r.id), label: tekst(`${r.name} (${r.prefix}…) · ${r.email || ''}`, 120) }));
@@ -871,7 +863,8 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     'POST /api/owner/uitrol/overzicht': [eigenaar({}, async (_ctx, auth) => {
       const ov = await overzicht({ id: auth.user.id, email: auth.user.email });
       const eig = (await eigenaren([auth.user.id])).get(auth.user.id);
-      return { ...ov, ik: { id: auth.user.id, email: auth.user.email || eig?.email || '', naam: eig?.naam || '', foto: eig?.foto || '' } };
+      const userRec = auth.user as unknown as Record<string, unknown>;
+      return { ...ov, ik: { id: auth.user.id, email: auth.user.email || eig?.email || '', naam: eig?.naam || tekst(userRec.name || '', 120), foto: eig?.foto || kiesAccountFoto(userRec) } };
     })],
     // Zoeken in «Кому дозволено»: met meer dan KANDIDATEN_MAX goedgekeurde accounts toont het overzicht er maar een deel; dit is de
     // weg om iedereen te vinden, ook buiten het eerste alfabetische blok. Alleen de eigenaar, zoals de rest van deze routes.

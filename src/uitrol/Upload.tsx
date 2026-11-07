@@ -2,10 +2,12 @@
 //   1 Файл → 2 Перевірка (вміст пакета, опис змін з архіву) → 3 Завантаження → 4 Схвалення passkey → 5 Встановлення.
 // Кожен крок має стан (чекає / зараз / готово). Коли крок завершено, сторінка сама прокручується до наступного й підсвічує його головну кнопку.
 // Стан майстра передається вгору (onFlow), щоб чотири етапи «Підготовка / Схвалення / Перевірки / Розгортання» починалися заново для нового файлу.
-import UitgaveBeschrijving, { Deelnemers, mensWeergaveNaam } from './UitgaveBeschrijving';
+import UitgaveBeschrijving, { Deelnemers, mensFoto, mensWeergaveNaam } from './UitgaveBeschrijving';
+import AgentLogo from '../agenten/AgentLogo';
+import Persoon from './Persoon';
 import KopieerBlokKnop from './KopieerBlokKnop';
 import { nietNieuwerUitleg } from './versie-uitleg';
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, Copy, File as FileIcoon, FileArchive, FileCode, FileImage, FileText, Files, Fingerprint, FolderArchive, GitCommitHorizontal, HardDrive, Loader2, Music, Package, PackageCheck, Rocket, RotateCcw, ShieldCheck, Tag, UploadCloud, UserRound, Video, X, XCircle, FileSpreadsheet, Cpu, DatabaseBackup, Activity, Undo2, LifeBuoy, type LucideIcon } from 'lucide-react';
 import { api } from '../platform/client';
 import { foutCode } from '../platform/webauthn';
@@ -58,9 +60,9 @@ const WACHT = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms))
 const GEEN_HERHALING = ['STATUS_ONGELDIG', 'NIET_GEVONDEN', 'DATA_ONGELDIG', 'TE_VEEL_DATA', 'GEEN_VOORBEREIDER_GRANT', 'STUK_TE_GROOT'];
 const EINDE = ['geinstalleerd', 'mislukt', 'geweigerd', 'afgewezen', 'verlopen', 'afgebroken'];
 
-function Tegel({ Icoon, label, waarde, mono = false, kopieer }: { Icoon: LucideIcon; label: string; waarde: string; mono?: boolean; kopieer?: boolean }) {
+function Tegel({ Icoon, pict, label, waarde, mono = false, kopieer }: { Icoon: LucideIcon; pict?: ReactNode; label: string; waarde: string; mono?: boolean; kopieer?: boolean }) {
   const [ok, setOk] = useState(false);
-  return <div className='ut-tegel'><span className='ut-tegel-pict'><Icoon aria-hidden='true' /></span>
+  return <div className='ut-tegel'><span className='ut-tegel-pict'>{pict || <Icoon aria-hidden='true' />}</span>
     <span className='ut-tegel-tekst'><small>{label}</small><b className={mono ? 'ut-mono' : undefined} title={waarde}>{waarde || '—'}</b></span>
     {kopieer && waarde ? <button type='button' className='ut-tegel-kopie' aria-label={label} onClick={() => { void navigator.clipboard?.writeText(waarde).then(() => { setOk(true); window.setTimeout(() => setOk(false), 1500); }).catch(() => undefined); }}>{ok ? <CheckCircle2 aria-hidden='true' /> : <Copy aria-hidden='true' />}</button> : null}
   </div>;
@@ -347,8 +349,8 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
           <Tegel Icoon={FileArchive} label={tr(lang, 'Файл і розмір', 'Bestand en grootte')} waarde={`${bestand.name} · ${mb(bestand.size)}`} />
           <Tegel Icoon={Tag} label={tr(lang, 'Версія', 'Versie')} waarde={info.versie} mono />
           <Tegel Icoon={CalendarClock} label={tr(lang, 'Зібрано', 'Samengesteld')} waarde={versieDatum(info.versie, lang)} />
-          <Tegel Icoon={UserRound} label={tr(lang, 'Автор', 'Auteur')} waarde={mensWeergaveNaam(info.auteur, data.ik)} />
-          <Tegel Icoon={Bot} label={tr(lang, 'Агент', 'Agent')} waarde={info.agent} />
+          <Tegel Icoon={UserRound} pict={<Persoon naam={mensWeergaveNaam(info.auteur, data.ik)} id={data.ik?.id || data.ik?.email} foto={mensFoto(info.auteur, data.ik, data.kandidaten.accounts)} klein />} label={tr(lang, 'Автор', 'Auteur')} waarde={mensWeergaveNaam(info.auteur, data.ik)} />
+          <Tegel Icoon={Bot} pict={info.agent ? <AgentLogo agent={info.agent} naam={info.agent} size={32} /> : undefined} label={tr(lang, 'Агент', 'Agent')} waarde={info.agent} />
           <Tegel Icoon={GitCommitHorizontal} label={tr(lang, 'Коміт', 'Commit')} waarde={info.commit ? commitWeergave(lang, info.commit).kort : ''} mono={!commitWeergave(lang, info.commit).waarschuwing} kopieer={!commitWeergave(lang, info.commit).waarschuwing} />
           <Tegel Icoon={Files} label={tr(lang, 'Файлів у пакеті', 'Bestanden in pakket')} waarde={info.bestanden ? String(info.bestanden) : ''} />
           <Tegel Icoon={Fingerprint} label='sha256' waarde={analyse.sha256} mono kopieer />
@@ -358,7 +360,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
         <div className='ut-beschrijving' ref={beschrijvingRef} data-aanwezig={samenvatting.length >= 20 || undefined}>
           {(info.manifest || samenvatting) ? <KopieerBlokKnop lang={lang} blok={beschrijvingRef} /> : null}
           <h4><FileText aria-hidden='true' />{tr(lang, 'Що змінено', 'Wat er verandert')} <span className='ut-badge ut-badge-verplicht' data-kopieer-negeer>{tr(lang, 'обов’язково · з файлу SAMENVATTING в архіві', 'verplicht · uit het bestand SAMENVATTING in het archief')}</span></h4>
-          {info.manifest ? <><UitgaveBeschrijving lang={lang} manifest={info.manifest} samenvatting={samenvatting} /><Deelnemers lang={lang} m={info.manifest} account={data.ik} /></> : samenvatting ? <><UitgaveBeschrijving lang={lang} manifest={null} samenvatting={samenvatting} kort={false} /></> : <p className='ut-fout'>{tr(lang, 'Опису в архіві немає. Без опису змін встановлення неможливе.', 'Het archief bevat geen beschrijving. Zonder beschrijving van de wijzigingen kan niet worden geïnstalleerd.')}</p>}
+          {info.manifest ? <><UitgaveBeschrijving lang={lang} manifest={info.manifest} samenvatting={samenvatting} /><Deelnemers lang={lang} m={info.manifest} account={data.ik} accounts={data.kandidaten.accounts} /></> : samenvatting ? <><UitgaveBeschrijving lang={lang} manifest={null} samenvatting={samenvatting} kort={false} /></> : <p className='ut-fout'>{tr(lang, 'Опису в архіві немає. Без опису змін встановлення неможливе.', 'Het archief bevat geen beschrijving. Zonder beschrijving van de wijzigingen kan niet worden geïnstalleerd.')}</p>}
         </div>
         {problemen.length > 0 ? <div className='ut-probleem' role='alert'><XCircle aria-hidden='true' /><div><b>{tr(lang, 'Встановлення неможливе — виправте пакет:', 'Installeren is niet mogelijk — herstel het pakket:')}</b>
           <ul>{problemen.map((p) => <li key={p}>{PROBLEEM[p] ? <><b>{tr(lang, PROBLEEM[p][0], PROBLEEM[p][1])}</b>{tr(lang, PROBLEEM[p][2], PROBLEEM[p][3]) ? <> {tr(lang, PROBLEEM[p][2], PROBLEEM[p][3])}</> : null}{p === 'NIET_NIEUWER' ? <span className='ut-hint' data-ut-niet-nieuwer> {nietNieuwerUitleg(lang, info.versie, actieveVersie, data.stand)}</span> : null}</> : p}</li>)}</ul>

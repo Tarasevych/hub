@@ -4,6 +4,7 @@ import { CheckCircle2, ExternalLink, Fingerprint, ScrollText, Settings2, Stethos
 import { api } from '../platform/client';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { Avatar } from './Voorbereiders';
+import AgentLogo from '../agenten/AgentLogo';
 import Persoon from './Persoon';
 import CommitTekst from './CommitTekst';
 import ToegangBlok from './ToegangBlok';
@@ -43,7 +44,7 @@ export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, n
       </dl>
       {data.stand && data.stand.afwijkingen.length > 0 && <button type='button' className='ut-stand-afw' onClick={naarDiagnose}>
         <XCircle aria-hidden='true' />{tr(lang, `Джерела статусу розходяться (${data.stand.afwijkingen.length}) — відкрити «Діагностика»`, `Statusbronnen lopen uiteen (${data.stand.afwijkingen.length}) — open «Діагностика»`)}</button>}
-      {(versie?.samenvatting || versie?.manifest) && <details><summary>{tr(lang, 'Про цей випуск', 'Over deze release')}</summary><UitgaveBeschrijving lang={lang} manifest={versie.manifest} samenvatting={versie.samenvatting} kort />{versie.manifest && <Deelnemers lang={lang} m={versie.manifest} account={data.ik} />}</details>}
+      {(versie?.samenvatting || versie?.manifest) && <details><summary>{tr(lang, 'Про цей випуск', 'Over deze release')}</summary><UitgaveBeschrijving lang={lang} manifest={versie.manifest} samenvatting={versie.samenvatting} kort />{versie.manifest && <Deelnemers lang={lang} m={versie.manifest} account={data.ik} accounts={data.kandidaten.accounts} />}</details>}
       <ul className='ut-checks'>
         <Rij ok={data.schakelaar}>{data.schakelaar ? tr(lang, 'Схвалення passkey увімкнено', 'Goedkeuren met passkey staat aan') : tr(lang, 'Схвалення passkey вимкнено на сервері', 'Goedkeuren met passkey staat uit')}</Rij>
         <Rij ok={data.passkeys.length > 0}>{tr(lang, `Passkey, що схвалюють: ${data.passkeys.length}`, `Passkeys die goedkeuren: ${data.passkeys.length}`)}{data.wachtend.length ? tr(lang, ` (+${data.wachtend.length} чекає)`, ` (+${data.wachtend.length} wacht)`) : ''}</Rij>
@@ -69,7 +70,7 @@ export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, n
     {v2 ? <ToegangBlok lang={lang} data={data} naarInstellen={naarInstellen} /> : <section className='ut-kaart'>
       <h2>{tr(lang, 'Хто готує оновлення', 'Wie bereidt updates voor')}</h2>
       {actieveGrants.length === 0 ? <p className='ut-hint'>{tr(lang, 'Ніхто окремо. Власний архів можна завантажити завжди.', 'Niemand apart. Uw eigen archief kunt u altijd uploaden.')}</p>
-        : <ul className='ut-lijst ut-lijst-klein ut-zij-agents'>{actieveGrants.map((g) => <li key={g.id}>{g.soort === 'account' && g.eigenaar ? <Persoon naam={g.eigenaar.naam || g.label} id={g.onderwerp} foto={g.eigenaar.foto} klein /> : <Avatar naam={g.label} id={g.onderwerp} klein />}<span><b>{g.soort === 'account' && g.eigenaar?.naam ? g.eigenaar.naam : g.label}</b><small>{g.onbepaald ? tr(lang, 'до відкликання', 'tot intrekking') : <>{tr(lang, 'до ', 'tot ')}{datum(lang, g.verlooptOp)}</>}</small></span></li>)}</ul>}
+        : <ul className='ut-lijst ut-lijst-klein ut-zij-agents'>{actieveGrants.map((g) => <li key={g.id}>{g.soort === 'account' && g.eigenaar ? <Persoon naam={g.eigenaar.naam || g.label} id={g.onderwerp} foto={g.eigenaar.foto} klein /> : g.soort !== 'account' ? <AgentLogo agent={g.soort === 'agent' ? g.onderwerp : g.label} naam={g.label} size={30} /> : <Avatar naam={g.label} id={g.onderwerp} klein />}<span><b>{g.soort === 'account' && g.eigenaar?.naam ? g.eigenaar.naam : g.label}</b><small>{g.onbepaald ? tr(lang, 'до відкликання', 'tot intrekking') : <>{tr(lang, 'до ', 'tot ')}{datum(lang, g.verlooptOp)}</>}</small></span></li>)}</ul>}
       <button type='button' className='ut-knop' onClick={naarInstellen}>{tr(lang, 'Керувати доступом', 'Toegang beheren')}</button>
     </section>}
   </aside>;

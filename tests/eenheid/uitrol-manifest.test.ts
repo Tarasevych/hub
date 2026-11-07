@@ -1,5 +1,5 @@
 // UI-010 / BUG-004: shared/uitrol-manifest.ts — tweetalige metadata, deelnemers, modellen, TESTRESULTATEN v2.
-import { kiesBeschrijving, leesTestresultaten, manifestVerplicht, testDetails, valideerManifest } from '../../shared/uitrol-manifest';
+import { fotoVeilig, kiesBeschrijving, leesTestresultaten, manifestVerplicht, mensFotoUitAccount, mensWeergaveNaam, testDetails, valideerManifest } from '../../shared/uitrol-manifest';
 import { manifestVoor } from '../fixtures/uitrol/manifest-voorbeeld';
 import { checker } from './hulp/nep-google';
 
@@ -35,6 +35,11 @@ export async function main(): Promise<number> {
     ['auteur', 'deelnemers[0].naam', 'deelnemers[1].model.bron', 'deelnemers[1].model.id'].every((v) => veld(striktAlias).includes(v)), JSON.stringify(veld(striktAlias)));
   const striktGoed = valideerManifest(manifestVoor(V2, { auteur: 'Тарасевич Павло (tarasevych.pavlo@gmail.com)', deelnemers: [{ soort: 'mens', naam: 'Тарасевич Павло (tarasevych.pavlo@gmail.com)', rollen: ['auteur'] }, { soort: 'ai', naam: 'antigravity', platform: 'Google Antigravity', tool: 'Antigravity IDE', model: { id: 'claude-opus-4-6', versie: '20260205', bron: 'omgeving' }, rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken'] }] }), V2);
   check('vanaf 20261106: echte accountnaam en concreet AI-model → geldig', striktGoed.fouten.length === 0 && !!striktGoed.manifest, JSON.stringify(striktGoed.fouten));
+  const groteFoto = `data:image/png;base64,${'A'.repeat(120_000)}`;
+  check('fotoVeilig + mensFotoUitAccount: profielfoto > 60 KB uit persoonlijk kabinet wordt behouden en gekoppeld',
+    fotoVeilig(groteFoto) === groteFoto
+    && mensFotoUitAccount('Тарасевич Павло (tarasevych.pavlo@gmail.com)', { naam: 'Тарасевич Павло', email: 'tarasevych.pavlo@gmail.com', foto: groteFoto }) === groteFoto
+    && mensWeergaveNaam('Власник', { naam: 'Тарасевич Павло', email: 'tarasevych.pavlo@gmail.com' }) === 'Тарасевич Павло (tarasevych.pavlo@gmail.com)');
 
   // taalkeuze en terugval
   const m = goed.manifest!;

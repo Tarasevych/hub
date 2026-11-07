@@ -1,30 +1,38 @@
 // UI-010: tweetalige beschrijving + deelnemers van een release (UITROL-MANIFEST.json), met eerlijke terugval voor oude pakketten.
 // Gebruikt in de wizard (voorbeeld vóór upload) en in «Про цей випуск» (Zijkant). De taal volgt `lang` zonder herladen.
+import { useEffect, useState } from 'react';
 import AgentLogo from '../agenten/AgentLogo';
-import { kiesBeschrijving, oudeTaal, type Manifest, type Rol } from '../../shared/uitrol-manifest';
+import { kiesBeschrijving, mensFotoUitAccount, mensWeergaveNaam, oudeTaal, type DeelnemerAccount, type Manifest, type Rol } from '../../shared/uitrol-manifest';
+import { actieveAccountFoto } from './Persoon';
 import { tr, type Lang } from './types';
+
+export { mensWeergaveNaam, type DeelnemerAccount };
 
 const ROL: Record<Rol, [string, string]> = { ontwikkeling: ['розробка', 'ontwikkeling'], controle: ['перевірка', 'controle'], testen: ['тестування', 'testen'], verpakken: ['пакування', 'verpakken'], auteur: ['автор', 'auteur'] };
 const slug = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-const GENERIEKE_MENS = /^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author|невідомо|onbekend|unknown)$/i;
 
-/** Повертає справжнє ім'я або ел. пошту облікового запису власника замість загальних псевдонімів на кшталт «Власник». */
-export function mensWeergaveNaam(naam: string | null | undefined, account?: { naam?: string; email?: string } | null): string {
-  const schoon = (naam || '').trim();
-  const accNaam = (account?.naam || '').trim();
-  const accEmail = (account?.email || '').trim();
-  const accVol = accNaam && accEmail ? `${accNaam} (${accEmail})` : accNaam || accEmail;
-  if ((!schoon || GENERIEKE_MENS.test(schoon)) && accVol) return accVol;
-  return schoon || accVol || '';
+/** Знаходить фото профілю учасника-людини з особистого кабінету або списку облікових записів. */
+export function mensFoto(naam: string | null | undefined, account?: DeelnemerAccount | null, accounts?: readonly DeelnemerAccount[]): string {
+  return mensFotoUitAccount(naam, account, accounts) || actieveAccountFoto(account?.foto);
 }
 
-export function Deelnemers({ lang, m, account }: { lang: Lang; m: Manifest; account?: { naam?: string; email?: string } | null }) {
+function MensDeelnemerFoto({ naam, account, accounts }: { naam: string; account?: DeelnemerAccount | null; accounts?: readonly DeelnemerAccount[] }) {
+  const foto = mensFoto(naam, account, accounts);
+  const [kapot, setKapot] = useState(false);
+  useEffect(() => { setKapot(false); }, [foto]);
+  return <span className='ut-deelnemer-mens' aria-hidden='true' data-kopieer-negeer>
+    {foto && !kapot ? <img src={foto} alt='' loading='lazy' decoding='async' referrerPolicy='no-referrer' onError={() => setKapot(true)} /> : (naam.slice(0, 1) || '?')}
+  </span>;
+}
+
+export function Deelnemers({ lang, m, account, accounts }: { lang: Lang; m: Manifest; account?: DeelnemerAccount | null; accounts?: readonly DeelnemerAccount[] }) {
   return <ul className='ut-deelnemers' data-ut-deelnemers>
     {m.zonderAi && <li className='ut-hint'>{tr(lang, 'Випуск зроблено без ШІ (людське авторство).', 'Release gemaakt zonder AI (menselijk auteurschap).')}</li>}
     {m.deelnemers.map((d, i) => {
       const weergaveNaam = d.soort === 'mens' ? mensWeergaveNaam(d.naam, account) : d.naam;
+      const aiSleutel = [slug(d.naam), d.naam, d.platform, d.tool, d.model?.id].filter(Boolean).join(' ');
       return <li key={i} className='ut-deelnemer'>
-        {d.soort === 'ai' ? <AgentLogo agent={slug(d.naam)} naam={d.naam} size={22} /> : <span className='ut-deelnemer-mens' aria-hidden='true' data-kopieer-negeer>{weergaveNaam.slice(0, 1)}</span>}
+        {d.soort === 'ai' ? <AgentLogo agent={aiSleutel} naam={d.naam} size={22} /> : <MensDeelnemerFoto naam={weergaveNaam} account={account} accounts={accounts} />}
         <span><b>{weergaveNaam}</b>{d.platform ? ` · ${d.platform}` : ''}{d.tool && d.tool !== d.platform ? ` · ${d.tool}` : ''}
           {d.soort === 'ai' && <small className='ut-hint' title={d.model?.bron === 'omgeving' ? tr(lang, 'Підтверджено середовищем', 'Door de omgeving bevestigd') : d.model?.bron === 'auteur' ? tr(lang, 'Заявлено автором, не перевірено', 'Door de auteur opgegeven, niet gecontroleerd') : tr(lang, 'Модель невідома', 'Model onbekend')}>
             {' · '}{d.model?.id ? `${d.model.id}${d.model.versie ? ` ${d.model.versie}` : ''} (${d.model.bron === 'omgeving' ? tr(lang, 'підтверджено', 'bevestigd') : tr(lang, 'зі слів автора', 'volgens auteur')})` : tr(lang, 'модель невідома', 'model onbekend')}</small>}
