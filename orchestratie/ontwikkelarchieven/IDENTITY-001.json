@@ -20,32 +20,32 @@
     {
       "volgorde": 1,
       "stap": "Досліджено проєкт: індекс 2684 файлів, 148 таблиць, 682 маршрути, категорія identity налічує 12 сторінок.",
-      "bewijzen": ["docs/ontwerp/identity-account/identity-coverage.md", "docs/ontwerp/identity-account/README-account.md"]
+      "bewijzen": ["docs/ontwerp/identiteit-account/ПОКРИТТЯ-ІДЕНТИЧНОСТІ.md", "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md"]
     },
     {
       "volgorde": 2,
       "stap": "Зібрано вимоги з 14 зображень власника й записано факти без вигадування сум, кодів і дат.",
-      "bewijzen": ["docs/ontwerp/identity-account/arhiv-zobrazhen-2026-11-04.md"]
+      "bewijzen": ["docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md"]
     },
     {
       "volgorde": 3,
       "stap": "Створено живий прототип на одній сторінці: 12 блоків identity, меню 14 служб, прокрутка до розділу зі scroll-spy.",
-      "bewijzen": ["docs/ontwerp/identity-account/identity-live.html"]
+      "bewijzen": ["docs/ontwerp/identiteit-account/ПРОТОТИП-АКАУНТА.html"]
     },
     {
       "volgorde": 4,
       "stap": "Перевірено прототип у браузері: 12 секцій і заголовків, #svc/mail/inbox → заглушка, #identity/themes → «Теми», діалог фото (open=true, img після застосування), смітничок повертає ініціали.",
-      "bewijzen": ["docs/ontwerp/identity-account/ontwerp-account-samenvatting.md"]
+      "bewijzen": ["docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md"]
     },
     {
       "volgorde": 5,
       "stap": "Старі 46 файлів дизайну переміщено в tijdelijke-bestanden/archief-ontwerp без видалення; створено README-account.md з одним актуальним файлом.",
-      "bewijzen": ["docs/ontwerp/identity-account/README-account.md"]
+      "bewijzen": ["docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md"]
     },
     {
       "volgorde": 6,
       "stap": "Звірено правила 1.4.2 (коміт c1a4375e, hash f5e5f6bc) і B-009; підтверджено прод 20261104-075953 @ e97a58c через /api/version?ts= (без cache-buster віддає стару 063430).",
-      "bewijzen": ["docs/ontwerp/identity-account/regels-1.4.2-verificatie.md", "docs/ontwerp/identity-account/uitrol-checklists.md"]
+      "bewijzen": ["docs/ontwerp/identiteit-account/regels-1.4.2-verificatie.md", "docs/ontwerp/identiteit-account/uitrol-checklists.md"]
     },
     {
       "volgorde": 7,
@@ -60,7 +60,7 @@
     {
       "volgorde": 9,
       "stap": "12 розділів перенесено в застосунок: оболонка src/identity з меню-змістом і scroll-spy, діалог фото з трьох джерел, адаптивність за контейнером.",
-      "bewijzen": ["src/identity/IdentityAccountPagina.tsx", "src/identity/Profielfoto.tsx", "src/identity/identity-account.css"]
+      "bewijzen": ["src/identiteit/IdentiteitAccountPagina.tsx", "src/identiteit/Profielfoto.tsx", "src/identiteit/identiteit-account.css"]
     }
   ],
   "keuzes": [
@@ -82,7 +82,7 @@
     {
       "keuze": "Коміт лише документації, без коду застосунку",
       "reden": "Не перетинати чужі гілки і не змінювати поведінку прода без окремої задачі на інтеграцію.",
-      "альтернатива": "Одночасна інтеграція в src/identity/* — відхилено в цьому випуску, потребує API і тестів."
+      "альтернатива": "Одночасна інтеграція в src/identiteit/* — відхилено в цьому випуску, потребує API і тестів."
     },
     {
       "keuze": "Реліз через CI гілки, а не через токен у чаті",
@@ -92,27 +92,27 @@
   ],
   "wijzigingen": [
     {
-      "bestand": "docs/ontwerp/identity-account/identity-live.html",
+      "bestand": "docs/ontwerp/identiteit-account/ПРОТОТИП-АКАУНТА.html",
       "soort": "додано",
       "опис": "Живий прототип: 12 блоків identity, меню 14 служб, діалог фото, палітри, панель стану JSON."
     },
     {
-      "bestand": "docs/ontwerp/identity-account/TZ-account-2026-11-04.md",
+      "bestand": "docs/ontwerp/identiteit-account/ТЕХНІЧНЕ-ЗАВДАННЯ-ОБЛІКОВОГО-ЗАПИСУ-2026-11-04.md",
       "soort": "додано",
       "опис": "Технічне завдання на 12 екранів і поведінку компонентів."
     },
     {
-      "bestand": "docs/ontwerp/identity-account/identity-coverage.md",
+      "bestand": "docs/ontwerp/identiteit-account/ПОКРИТТЯ-ІДЕНТИЧНОСТІ.md",
       "soort": "додано",
       "опис": "Матриця покриття категорії identity."
     },
     {
-      "bestand": "docs/ontwerp/identity-account/ontwerp-account-samenvatting.md",
+      "bestand": "docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md",
       "soort": "додано",
       "опис": "Підсумок дизайну, перевірки в браузері, метрики мобільних ширини."
     },
     {
-      "bestand": "docs/ontwerp/identity-account/README-account.md",
+      "bestand": "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md",
       "soort": "додано",
       "опис": "Орієнтир по теці: один актуальний файл, історія в архіві."
     },
@@ -175,12 +175,12 @@
     }
   ],
   "bronnen": [
-    "docs/ontwerp/identity-account/identity-live.html",
-    "docs/ontwerp/identity-account/TZ-account-2026-11-04.md",
-    "docs/ontwerp/identity-account/identity-coverage.md",
-    "docs/ontwerp/identity-account/ontwerp-account-samenvatting.md",
-    "docs/ontwerp/identity-account/README-account.md",
-    "docs/ontwerp/identity-account/regels-1.4.2-verificatie.md",
+    "docs/ontwerp/identiteit-account/ПРОТОТИП-АКАУНТА.html",
+    "docs/ontwerp/identiteit-account/ТЕХНІЧНЕ-ЗАВДАННЯ-ОБЛІКОВОГО-ЗАПИСУ-2026-11-04.md",
+    "docs/ontwerp/identiteit-account/ПОКРИТТЯ-ІДЕНТИЧНОСТІ.md",
+    "docs/ontwerp/identiteit-account/ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.md",
+    "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.md",
+    "docs/ontwerp/identiteit-account/regels-1.4.2-verificatie.md",
     "deploy/REGELS-UITROLPAKKET.md",
     "deploy/uitrol/maak-voorstelpakket.sh",
     "scripts/orch.mjs",
