@@ -71,12 +71,15 @@ gebeurtenis() { # gebeurtenis <code> <niveau> <uk> <nl>  (zelfde vorm als gitops
   (
     flock 7
     tmp="$(mktemp "$STATUS_DIR/.gebeurtenis.XXXXXX")"
-    python3 - "$STATUS_DIR/gebeurtenissen.jsonl" "$tmp" uitrol "$1" "$2" "$3" "$4" "${VERSIE:-}" <<'PY'
+    python3 - "$STATUS_DIR/gebeurtenissen.jsonl" "$tmp" uitrol "$1" "$2" "$3" "$4" "${VERSIE:-}" "$MODUS" <<'PY'
 import json, sys, datetime, secrets
-pad, tmp, bron, code, niveau, uk, nl, tag = sys.argv[1:9]
+pad, tmp, bron, code, niveau, uk, nl, tag, herkomst = sys.argv[1:10]
 nu = datetime.datetime.now(datetime.timezone.utc)
-regel = json.dumps({"id": nu.strftime("%Y%m%dT%H%M%S%fZ") + "-" + secrets.token_hex(4), "tijd": nu.isoformat(), "bron": bron,
-                    "code": code, "niveau": niveau, "uk": uk, "nl": nl, "tag": tag}, ensure_ascii=False)
+regel_d = {"id": nu.strftime("%Y%m%dT%H%M%S%fZ") + "-" + secrets.token_hex(4), "tijd": nu.isoformat(), "bron": bron,
+           "code": code, "niveau": niveau, "uk": uk, "nl": nl, "tag": tag}
+if herkomst in ("passkey", "handtekening"):
+    regel_d["herkomst"] = herkomst
+regel = json.dumps(regel_d, ensure_ascii=False)
 try:
     oud = open(pad, encoding="utf-8").read().splitlines()[-499:]
 except FileNotFoundError:
@@ -100,7 +103,7 @@ trap opruimen EXIT
 weiger() { # weiger <code> <uk> <nl>
   log "GEWEIGERD: $1 — $3"
   status geweigerd "$1" "$2" "$3" "${VERSIE:-}"
-  [ "$MODUS" = passkey ] && gebeurtenis "$1" waarschuwing "$2" "$3"
+  gebeurtenis "$1" waarschuwing "$2" "$3"
   # Het geweigerde pakket uit de inbox halen (rm volgt geen symlinks), anders blijft de path-unit afgaan.
   [ -n "${NAAM:-}" ] && rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig" "$INBOX/$NAAM.goedkeuring.json"
   exit 2
@@ -205,17 +208,22 @@ LAATSTE="$(cat "$WERK_ROOT/laatste-versie" 2>/dev/null || echo 00000000-000000)"
 # ---- 5. installeren (alleen ondertekende code) ----
 rm -f -- "$INBOX/$NAAM" "$INBOX/$NAAM.sig" "$INBOX/$NAAM.goedkeuring.json"
 status bezig INSTALLEREN "Встановлюю випуск $VERSIE." "Release $VERSIE wordt geïnstalleerd." "$VERSIE"
+export MIJN_RUIMTE_UITROL_MODUS="$MODUS"
 if [ -n "$INSTALLEER" ]; then cmd=( "$INSTALLEER" installeren "$BRON" ); else cmd=( bash "$BRON/deploy/installeer-app.sh" installeren "$BRON" ); fi
 if "${cmd[@]}" > "$WERK/installeer.log" 2>&1; then
   printf '%s\n' "$VERSIE" > "$WERK_ROOT/laatste-versie"
   # Oudere (nooit meer installeerbare) pakketten uit de inbox halen.
   find "$INBOX" -maxdepth 1 -type f \( -name 'mijn-ruimte-*.tar.gz' -o -name 'mijn-ruimte-*.tar.gz.sig' -o -name 'mijn-ruimte-*.tar.gz.goedkeuring.json' \) -delete 2>/dev/null || true
   status klaar OK "Випуск $VERSIE встановлено." "Release $VERSIE is geïnstalleerd." "$VERSIE"
-  [ "$MODUS" = passkey ] && gebeurtenis OK info "Випуск $VERSIE встановлено (схвалено passkey)." "Release $VERSIE is geïnstalleerd (goedgekeurd met passkey)."
+  if [ "$MODUS" = passkey ]; then
+    gebeurtenis OK info "Випуск $VERSIE встановлено (схвалено passkey)." "Release $VERSIE is geïnstalleerd (goedgekeurd met passkey)."
+  else
+    gebeurtenis OK info "Випуск $VERSIE встановлено (підпис ключем випуску)." "Release $VERSIE is geïnstalleerd (ondertekend met de uitrolsleutel)."
+  fi
   log "klaar: $VERSIE"
 else
   tail -n 40 "$WERK/installeer.log" >&2 || true
   status mislukt INSTALLATIE_MISLUKT "Встановлення не вдалося; попередній випуск лишився активним." "Installeren mislukt; de vorige release blijft actief." "$VERSIE"
-  [ "$MODUS" = passkey ] && gebeurtenis INSTALLATIE_MISLUKT fout "Встановлення $VERSIE не вдалося; попередній випуск лишився активним." "Installeren van $VERSIE mislukt; de vorige release blijft actief."
+  gebeurtenis INSTALLATIE_MISLUKT fout "Встановлення $VERSIE не вдалося; попередній випуск лишився активним." "Installeren van $VERSIE mislukt; de vorige release blijft actief."
   exit 1
 fi

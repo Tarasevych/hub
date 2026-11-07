@@ -17,7 +17,8 @@ type Grant={id:string;soort:'account'|'agenttoken'|'mcp-koppeling';onderwerp:str
 type Passkey={vingerafdruk:string;kort:string;label:string;toegevoegd?:string;door?:string};
 type Wachtend={vingerafdruk:string;kort:string;label:string;aangemaakt:string;sshOpdracht:string};
 type Keuze={id:string;label:string};
-type Overzicht={schakelaar:boolean;rpId:string;origins:string[];passkeys:Passkey[];wachtend:Wachtend[];voorstellen:Voorstel[];voorbereiders:Grant[];kandidaten:{accounts:Keuze[];agenttokens:Keuze[];koppelingen:Keuze[]};rootStatus:{staat?:string;versie?:string;code?:string;uk?:string;nl?:string;tijd?:string;methode?:string}|null;limieten:{voorbereiderMaxDagen:number;maxBytes?:number;maxStuk?:number};ik?:{id:string;email:string}};
+type Installatie={id:string;tijd:string;code:string;herkomst:string;wie:string;pakket:string;release:string;commit:string;adres:string;uk:string;nl:string};
+type Overzicht={schakelaar:boolean;rpId:string;origins:string[];passkeys:Passkey[];wachtend:Wachtend[];voorstellen:Voorstel[];installaties?:Installatie[];voorbereiders:Grant[];kandidaten:{accounts:Keuze[];agenttokens:Keuze[];koppelingen:Keuze[]};rootStatus:{staat?:string;versie?:string;code?:string;uk?:string;nl?:string;tijd?:string;methode?:string}|null;limieten:{voorbereiderMaxDagen:number;maxBytes?:number;maxStuk?:number};ik?:{id:string;email:string}};
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='uk'?uk:nl;
 const datum=(lang:Lang,v?:string)=>v?new Date(v).toLocaleString(lang==='uk'?'uk-UA':'nl-BE',{dateStyle:'short',timeStyle:'short'}):'—';
@@ -181,10 +182,15 @@ export default function AdminUitrolView({lang,sourceOrigin,tabContext}:Props){
     </section>
 
     <section className='admin-section'>
-      <header><RefreshCw/><div><h2>{tr(lang,'Історія','Geschiedenis')}</h2></div></header>
+      <header><RefreshCw/><div><h2>{tr(lang,'Історія','Geschiedenis')}</h2><p>{tr(lang,'Рядок «Завантажується» — це пакет із браузера, доки його не зібрано. Встановлення з SSH або за підписом з’являється окремим рядком і цей пакет не змінює.','Een rij «Wordt geüpload» is een pakket uit de browser zolang het niet compleet is. Een installatie via SSH of met een handtekening verschijnt als een aparte rij en wijzigt dat pakket niet.')}</p></div></header>
       <ul className='admin-uitrol-lijst'>
+        {(data.installaties??[]).map(i=>{
+          const wat=i.code==='SSH_TERUG'?tr(lang,'Відкочено з SSH','Teruggedraaid via SSH'):i.code==='INSTALLATIE_MISLUKT'?tr(lang,'Не вдалося (підпис)','Mislukt (handtekening)'):i.herkomst==='ssh'?tr(lang,'Встановлено з SSH','Geïnstalleerd via SSH'):tr(lang,'Встановлено (підпис)','Geïnstalleerd (handtekening)');
+          const wie=i.wie||(i.herkomst==='handtekening'?tr(lang,'ключ випуску','uitrolsleutel'):'—');
+          return <li key={i.id} data-status={i.herkomst||i.code} data-installatie={i.code}><span><b>{i.release||i.pakket}</b> · {wat} · {wie}{i.adres?` · ${i.adres}`:''} · {datum(lang,i.tijd)}{i.uk||i.nl?` · ${lang==='uk'?i.uk:i.nl}`:''}</span></li>;
+        })}
         {overige.map(v=><li key={v.id} data-status={v.status}><span><b>{v.versie}</b> · {st(v.status)} · {v.voorbereider} · {datum(lang,v.beslistOp||v.aangemaaktOp)}{v.uitkomst&&(v.uitkomst.uk||v.uitkomst.nl)?` · ${lang==='uk'?v.uitkomst.uk:v.uitkomst.nl}`:''}{v.uitkomst?.reden?` · ${v.uitkomst.reden}`:''}</span></li>)}
-        {overige.length===0&&<li className='admin-uitrol-leeg'>{tr(lang,'Поки порожньо.','Nog leeg.')}</li>}
+        {(data.installaties??[]).length===0&&overige.length===0&&<li className='admin-uitrol-leeg'>{tr(lang,'Поки порожньо.','Nog leeg.')}</li>}
       </ul>
     </section>
   </div>;

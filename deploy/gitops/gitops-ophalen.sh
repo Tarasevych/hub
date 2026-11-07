@@ -266,6 +266,7 @@ printf '%s\n' "$KIES" > "$BRON/UITROL-TAG"
 # ---- 4. installeren (alleen code uit de ondertekende tag) ----
 status bezig INSTALLEREN "Встановлюю випуск $KIES." "Release $KIES wordt geïnstalleerd." "$KIES"
 gebeurtenis INSTALLEREN info "Встановлюю підписаний тег $KIES." "Ondertekende tag $KIES wordt geïnstalleerd." "$KIES"
+export MIJN_RUIMTE_UITROL_MODUS=gitops
 if [ -n "$INSTALLEER" ]; then cmd=( "$INSTALLEER" installeren "$BRON" ); else cmd=( bash "$BRON/deploy/installeer-app.sh" installeren "$BRON" ); fi
 # Loopt er al een installatie (methode 2 of handmatig), dan eerst wachten; die ronde telt dan niet als mislukt.
 flock -w 2700 "$INSTALLEER_LOCK" true 2>/dev/null || true
