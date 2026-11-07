@@ -10,7 +10,7 @@
 ## Що зробив інший агент і що з цього взято
 
 Взято без змін (конвеєр розгортання, аудит встановлень):
-- `deploy/installeer-app.sh` — `noteer_ssh`: ручне встановлення або відкат через SSH пише рядок аудиту
+- `deploy/installeer-app.sh` — `noteer_ssh`: ручне встановлення або повернення стану через SSH пише рядок аудиту
   (`SSH_OK` / `SSH_TERUG`): хто (`SUDO_USER`), з якої адреси (`SSH_CONNECTION`), пакет, коміт. Тестова підкоманда
   `noteer-proef` працює лише не від root і лише з `INSTALLEER_NOTEER_PROEF=1`.
 - `deploy/uitrol/mijn-ruimte-uitrol.sh` — аудит і для встановлень з підписом ключа випуску (раніше лише passkey);
