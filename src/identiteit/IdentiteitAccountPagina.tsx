@@ -1,10 +1,10 @@
-// IDENTITY-002 · оболонка одного екрана: меню-зміст, 12 секцій, scroll-spy.
-// Секції наповнює наявний код сторінок identity — тут лише розкладка й перехід до розділу.
+// Оформлення сторінки облікового запису (завдання IDENTITY-002): оболонка одного екрана з меню-змістом, дванадцятьма розділами й підсвічуванням під час прокрутки.
+// Розділи наповнює наявний код сторінок категорії «ідентичність» — тут лише розкладка й перехід до розділу.
 import { useEffect, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
-import { IDENTITY_TABS } from './identiteit-tabs';
+import { IDENTITEIT_TABS } from './identiteit-tabs';
 
-export type IdentitySectie = { id: string; titel: string; inhoud: ReactNode };
+export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
 type Props = {
   lang: 'uk' | 'nl';
@@ -12,17 +12,17 @@ type Props = {
   actief: string;
   /** Заголовок сторінки, який уже є в застосунку (не дублюємо тексти). */
   kop?: ReactNode;
-  secties: readonly IdentitySectie[];
+  secties: readonly IdentiteitSectie[];
   /** Перехід до розділу: застосунок сам вирішує, чи це зміна адреси, чи лише прокрутка. */
   onKies: (id: string) => void;
 };
 
 const sectieId = (id: string) => `identity-sectie-${id}`;
 
-export function IdentityAccountPagina({ lang, actief, kop, secties, onKies }: Props) {
+export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
 
-  // Адреса змінилася (наприклад, клік у бічному меню або пряме посилання) — показуємо цей розділ.
+  // Адреса змінилася (наприклад, натискання в бічному меню або пряме посилання) — показуємо цей розділ.
   useEffect(() => {
     setInBeeld(actief);
     const doel = document.getElementById(sectieId(actief));
@@ -31,7 +31,7 @@ export function IdentityAccountPagina({ lang, actief, kop, secties, onKies }: Pr
     }
   }, [actief]);
 
-  // Scroll-spy: підсвічуємо розділ, який зараз найбільше видно. Без IntersectionObserver — тихо лишаємо як є.
+  // Підсвічування під час прокрутки: визначаємо розділ, який зараз найбільше видно. Без спостережника перетинів — тихо лишаємо як є.
   useEffect(() => {
     if (typeof IntersectionObserver !== 'function') return;
     const waarnemer = new IntersectionObserver(
@@ -64,7 +64,7 @@ export function IdentityAccountPagina({ lang, actief, kop, secties, onKies }: Pr
     <div className='ia-account'>
       {kop}
       <nav className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
-        {IDENTITY_TABS.map((tab, index) => (
+        {IDENTITEIT_TABS.map((tab, index) => (
           <button
             key={tab.id}
             type='button'

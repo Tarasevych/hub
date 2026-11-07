@@ -5,16 +5,16 @@
   "taal": "uk",
   "opdracht": "Eigenaar Test: модернізувати сторінку керування обліковим записом у категорії «ідентичність» (12 сторінок) — спершу дизайн і живий прототип, потім випуск, який власник зможе встановити через сайт (Admin → Оновлення). Взяти останній знімок, не перетирати чужі роботи, зафіксувати власною гілкою, оновити інформацію про оновлення на GitHub і на сайті.",
   "herkomst": {
-    "eigenaar": "Eigenaar Test",
+    "eigenaar": "Тарасевич Павло",
     "agent": "AutoClaw",
     "basis": "e97a58ceaf70f6a4a8d63608541d47e455ddb66a",
     "vorigeProductieversie": "20261104-075953",
     "vorigeProductieCommit": "e97a58ceaf70f6a4a8d63608541d47e455ddb66a",
-    "tak": "feature/identiteit-account-20261107-140000"
+    "tak": "feature/identiteit-account-20261107-190000"
   },
   "privacy": {
     "geheimenUitgesloten": true,
-    "toelichting": "Geen wachtwoorden, ключ доступуs, sleutels, cookies of persoonsgegevens van derden; alleen paden, versienummers, commits en openbare URL's."
+    "toelichting": "Geen wachtwoorden, toegangssleutels, sleutels, cookies of persoonsgegevens van derden; alleen paden, versienummers, vastleggingen en openbare adressen."
   },
   "tijdlijn": [
     {
@@ -73,7 +73,7 @@
       "volgorde": 8,
       "stap": "Замість передавання токена в чат реліз збирає CI самої гілки через штатний GITHUB_TOKEN (contents: write): пакет, .sha256 і GitHub Release з тим самим архівом.",
       "bewijzen": [
-        ".github/робочий процесs/identiteit-account-uitgave.yml"
+        ".github/workflows/identiteit-account-uitgave.yml"
       ]
     },
     {
@@ -83,6 +83,14 @@
         "src/identiteit/IdentiteitAccountPagina.tsx",
         "src/identiteit/Profielfoto.tsx",
         "src/identiteit/identiteit-account.css"
+      ]
+    },
+    {
+      "volgorde": 10,
+      "stap": "Випуск 20261107-172451 опубліковано з фіксації dca8aa32 (робочий процес — успіх, запуск 42396173225): пакет mijn-ruimte-20261107-172451.tar.gz, 11 573 514 байтів, SHA-256 e7cbdb90…c515. Встановлення лишається за власником: ключ доступу в чат не передається.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/releases/tag/20261107-172451",
+        "orchestratie/ontwikkelarchieven/IDENTITEIT-001.json"
       ]
     }
   ],
@@ -140,7 +148,7 @@
       "опис": "Орієнтир по теці: один актуальний файл, історія в архіві."
     },
     {
-      "bestand": ".github/робочий процесs/identiteit-account-uitgave.yml",
+      "bestand": ".github/workflows/identiteit-account-uitgave.yml",
       "soort": "додано",
       "опис": "CI-реліз: збірка пакета, .sha256, GitHub Release через GITHUB_TOKEN."
     },
@@ -210,10 +218,9 @@
     "https://github.com/Tarasevych/hub/tree/feature/identity-account-20261104-120000/docs/ontwerp/identity-account"
   ],
   "beperkingen": [
-    "beleid.json → basis лишається 20261031-093842; оновлення до 20261104-075953 потребує окремого BESLUIT і підпису власника.",
+    "beleid.json → basis лишається 20261031-093842; оновлення до 20261107-172451 потребує окремого РІШЕННЯ і підпису власника.",
     "regels.lock → eigenaar: null: критичні політики без підпису, режим лише «na_bevestiging».",
-    "Встановлення через сайт можливе лише після ключ доступу-підтвердження власника; агент цього не робить.",
-    "Тести застосунку не запускалися, бо змінено лише документацію.",
-    "Юніт-тести застосунку не запускалися: для них потрібні змінні бази й ключів; перевірено tsc і повну збірку."
+    "Встановлення через сайт можливе лише після підтвердження ключем доступу власника; агент цього не робить.",
+    "Випробувань застосунку не запускали: для них потрібні змінні бази й ключів; перевірено складання типів і повне складання."
   ]
 }

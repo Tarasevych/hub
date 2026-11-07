@@ -1,9 +1,9 @@
 > 🌐 **Taal / Мова:** [Українська](ТЕХНІЧНЕ-ЗАВДАННЯ-ОБЛІКОВОГО-ЗАПИСУ-2026-11-04.uk.md) · **Nederlands** | [Hoofdpagina](../../../LEESMIJ.md) · [Documentatie-index](../../INDEX.nl.md)
 
-# Technische specificatie: accountbeheerpagina (`TZ-account-2026-11-04.nl.md`)
+# Technische specificatie: accountbeheerpagina (`SPECIFICATIE-ACCOUNT-2026-11-04.nl.md`)
 
 **Datum:** 2026-11-04 (bijgewerkt na implementatie van `IDENTITY-002` en audit 2026-11-05)
-**Interactief prototype:** [`identity-live.html`](./identity-live.html)
+**Interactief prototype:** [`ПРОТОТИП-АКАУНТА.html`](./ПРОТОТИП-АКАУНТА.html)
 **Implementatie in de applicatie:** `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css`, `src/identiteit/identiteit-tabs.ts`
 **Ontwerpbron:** `src/ontwerp/tokens.css` (uitsluitend tokens, geen losse hex-kleuren)
 
@@ -20,7 +20,7 @@
 
 ## 2. Schermopbouw en de 12 secties
 
-Alle 12 secties uit `IDENTITY_TABS` (`src/identiteit/identiteit-tabs.ts`) staan onder elkaar op één pagina:
+Alle 12 secties uit `IDENTITEIT_TABS` (`src/identiteit/identiteit-tabs.ts`) staan onder elkaar op één pagina:
 
 | # | ID | Titel (🇳🇱 NL) | Titel (🇺🇦 UK) |
 |---|---|---|---|
@@ -71,4 +71,4 @@ Alle 12 secties uit `IDENTITY_TABS` (`src/identiteit/identiteit-tabs.ts`) staan 
 
 - Alle 12 secties zijn op één pagina bereikbaar op breedtes van 320–1440 px zonder horizontaal scrollen (`@container ia-account`).
 - Geen enkele kleur buiten `src/ontwerp/tokens.css`; `node scripts/kleur-contrast-controle.mjs` en `node scripts/plaatsing-controle.mjs` slagen zonder fouten.
-- De eenheidstests `node scripts/eenheidstests.mjs identiteit-account-ui.test.ts` bevestigen alle 6 invarianten.
+- De eenheidstests `node scripts/eenheidstests.mjs identiteit-account-ui` bevestigen alle 6 invarianten.

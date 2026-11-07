@@ -1,10 +1,10 @@
 > 🌐 **Taal / Мова:** [Українська](ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.uk.md) · **Nederlands** | [Hoofdpagina](../../../LEESMIJ.md) · [Documentatie-index](../../INDEX.nl.md)
 
-# Account: één actueel ontwerp (`README-account.nl.md`)
+# Account: één actueel ontwerp (`OVERZICHT-ACCOUNT.nl.md`)
 
 ## Actueel prototype en implementatie
 
-**[`identity-live.html`](./identity-live.html)** — **één pagina**: alle 12 `identity`-onderdelen staan onder elkaar op één scherm; het menu wisselt geen losse pagina's meer maar **scrollt vloeiend naar de gekozen sectie** (met automatische `scroll-spy`-markering).
+**[`ПРОТОТИП-АКАУНТА.html`](./ПРОТОТИП-АКАУНТА.html)** — **één pagina**: alle 12 onderdelen van `identity` staan onder elkaar op één scherm; het menu wisselt geen losse pagina's meer maar **scrollt vloeiend naar de gekozen sectie** (met automatische markering tijdens scrollen).
 De productie-implementatie in de applicatie staat in `src/identiteit/IdentiteitAccountPagina.tsx`, `src/identiteit/Profielfoto.tsx`, `src/identiteit/identiteit-account.css` en `src/identiteit/identiteit-tabs.ts` (`IDENTITY-002`).
 
 ## Wat is verwerkt
@@ -18,6 +18,6 @@ De productie-implementatie in de applicatie staat in `src/identiteit/IdentiteitA
 
 ## Gerelateerde documenten
 
-- [`TZ-account-2026-11-04.nl.md`](./SPECIFICATIE-ACCOUNT-2026-11-04.nl.md) ([🇺🇦 UK](ТЕХНІЧНЕ-ЗАВДАННЯ-ОБЛІКОВОГО-ЗАПИСУ-2026-11-04.uk.md)) — technische specificatie (API-routes, staten, tests, acceptatiecriteria).
-- [`identity-coverage.nl.md`](./IDENTITEITSDEKKING.nl.md) ([🇺🇦 UK](ПОКРИТТЯ-ІДЕНТИЧНОСТІ.uk.md)) — dekkingsmatrix 12/12 `identity`-secties.
-- [`ontwerp-account-samenvatting.nl.md`](./ONTWERP-ACCOUNT-SAMENVATTING.nl.md) ([🇺🇦 UK](ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.uk.md)) — ontwerpsamenvatting, tokens en iteratiegeschiedenis.
+- [`SPECIFICATIE-ACCOUNT-2026-11-04.nl.md`](./SPECIFICATIE-ACCOUNT-2026-11-04.nl.md) ([🇺🇦 UK](ТЕХНІЧНЕ-ЗАВДАННЯ-ОБЛІКОВОГО-ЗАПИСУ-2026-11-04.uk.md)) — technische specificatie (API-routes, staten, tests, acceptatiecriteria).
+- [`IDENTITEITSDEKKING.nl.md`](./IDENTITEITSDEKKING.nl.md) ([🇺🇦 UK](ПОКРИТТЯ-ІДЕНТИЧНОСТІ.uk.md)) — dekkingsmatrix 12/12 secties van `identity`.
+- [`ONTWERP-ACCOUNT-SAMENVATTING.nl.md`](./ONTWERP-ACCOUNT-SAMENVATTING.nl.md) ([🇺🇦 UK](ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.uk.md)) — ontwerpsamenvatting, tokens en iteratiegeschiedenis.

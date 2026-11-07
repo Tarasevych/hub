@@ -1,6 +1,6 @@
 // IDENTITY-002 / AUDIT-001 · Перевірка єдиної сторінки облікового запису (12 розділів), діалогу фото та 4 виправлень аудиту 05.11.2026.
 import { readFileSync } from 'node:fs';
-import { IDENTITY_TABS, identityTitel, isIdentityTab } from '../../src/identiteit/identiteit-tabs';
+import { IDENTITEIT_TABS, identiteitTitel, isIdentiteitTab } from '../../src/identiteit/identiteit-tabs';
 import { checker } from './hulp/nep-google';
 
 export async function main(): Promise<number> {
@@ -10,18 +10,18 @@ export async function main(): Promise<number> {
   const css = readFileSync('src/identiteit/identiteit-account.css', 'utf8');
   const plaatsing = JSON.parse(readFileSync('scripts/plaatsing-vaste-elementen.json', 'utf8'));
 
-  check('IDENTITY_TABS містить рівно 12 розділів у канонічному порядку з двомовними назвами (uk/nl)',
-    IDENTITY_TABS.length === 12
-    && IDENTITY_TABS.every((t) => isIdentityTab(t.id) && t.uk.length > 0 && t.nl.length > 0)
-    && !isIdentityTab('onbekend')
-    && identityTitel('personalization', 'uk') === 'Персоналізація'
-    && identityTitel('recovery', 'nl') === 'Toegangsherstel'
-    && identityTitel('onbekend', 'uk') === 'onbekend');
+  check('IDENTITEIT_TABS містить рівно 12 розділів у канонічному порядку з двомовними назвами (uk/nl)',
+    IDENTITEIT_TABS.length === 12
+    && IDENTITEIT_TABS.every((t) => isIdentiteitTab(t.id) && t.uk.length > 0 && t.nl.length > 0)
+    && !isIdentiteitTab('onbekend')
+    && identiteitTitel('personalization', 'uk') === 'Персоналізація'
+    && identiteitTitel('recovery', 'nl') === 'Toegangsherstel'
+    && identiteitTitel('onbekend', 'uk') === 'onbekend');
 
-  check('IdentityAccountPagina рендерить меню-зміст (.ia-toc) і всі 12 секцій (.ia-sectie) зі scrollIntoView',
+  check('IdentiteitAccountPagina рендерить меню-зміст (.ia-toc) і всі 12 секцій (.ia-sectie) зі scrollIntoView',
     pagina.includes("className='ia-toc'")
     && pagina.includes("className='ia-sectie'")
-    && pagina.includes('IDENTITY_TABS.map')
+    && pagina.includes('IDENTITEIT_TABS.map')
     && pagina.includes('scrollIntoView'));
 
   check('Profielfoto підтримує 3 джерела фото (apparaat, dienst, link), центровану камеру та окремий смітничок',

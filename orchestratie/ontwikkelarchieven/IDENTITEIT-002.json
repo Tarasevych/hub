@@ -3,14 +3,14 @@
   "taakId": "IDENTITEIT-002",
   "datum": "2026-11-05",
   "taal": "uk",
-  "opdracht": "Eigenaar Test: інтегрувати 12 розділів керування обліковим записом (identity) в застосунок на одній сторінці з меню-змістом і прокруткою, реалізувати діалог фото з трьох джерел та виправити 4 зауваження аудиту від 05.11.2026 (центрована камера 22px, смітничок 24px у куті, z-index модального вікна вище шапки та sticky/scroll-margin під фіксованими верхніми барами).",
+  "opdracht": "Тарасевич Павло: інтегрувати 12 розділів керування обліковим записом («ідентичність») в застосунок на одній сторінці з меню-змістом і прокруткою, реалізувати вікно фото з трьох джерел та виправити 4 зауваження аудиту від 05.11.2026 (центрована камера 22 px, смітничок 24 px у куті, z-index вікна вище за шапку та scroll-margin під фіксованими верхніми смугами).",
   "herkomst": {
-    "eigenaar": "Eigenaar Test",
+    "eigenaar": "Тарасевич Павло",
     "agent": "AutoClaw",
     "basis": "50e63737ddb3f7b032f8fc74dc343ed28fda0af8",
     "vorigeProductieversie": "20261104-204906",
     "vorigeProductieCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
-    "tak": "fix/identiteit-account-namen-20261107-140000"
+    "tak": "feature/identiteit-account-20261107-190000"
   },
   "privacy": {
     "geheimenUitgesloten": true,
@@ -19,34 +19,50 @@
   "tijdlijn": [
     {
       "volgorde": 1,
-      "stap": "Реалізовано єдиний екран облікового запису src/identity/IdentityAccountPagina.tsx із 12 секціями (src/identity/identity-tabs.ts), меню-змістом (.ia-toc) та scroll-spy.",
+      "stap": "Реалізовано єдиний екран облікового запису src/identiteit/IdentiteitAccountPagina.tsx із 12 секціями (src/identiteit/identiteit-tabs.ts), меню-змістом (.ia-toc) та підсвічування під час прокрутки.",
       "bewijzen": [
-        "src/identity/IdentityAccountPagina.tsx",
-        "src/identity/identity-tabs.ts",
+        "src/identiteit/IdentiteitAccountPagina.tsx",
+        "src/identiteit/identiteit-tabs.ts",
         "src/InstellingencentrumWeergave.tsx",
         "src/VerenigdDienstApp.tsx"
       ]
     },
     {
       "volgorde": 2,
-      "stap": "Створено компонент src/identity/Profielfoto.tsx із трьома джерелами фото (пристрій, фото сервісу, HTTPS-посилання), центрованою іконкою камери 22×22 px та окремою кутовою кнопкою смітничка 24×24 px (cbeb3d0).",
+      "stap": "Створено компонент src/identiteit/Profielfoto.tsx із трьома джерелами фото (пристрій, фото сервісу, HTTPS-посилання), центрованою іконкою камери 22×22 px та окремою кутовою кнопкою смітничка 24×24 px (cbeb3d0).",
       "bewijzen": [
-        "src/identity/Profielfoto.tsx",
-        "src/identity/identity-account.css"
+        "src/identiteit/Profielfoto.tsx",
+        "src/identiteit/identiteit-account.css"
       ]
     },
     {
       "volgorde": 3,
       "stap": "Усунено перекриття шапкою та підменю (a318ba0): .ia-dialoog-achtergrond отримав z-index: 99500 та верхній відступ calc(76px + env(safe-area-inset-top, 0px)); .ia-toc зміщено на top: 70px (62px до 720px); .ia-sectie отримав scroll-margin-top: 170px (150px до 720px).",
       "bewijzen": [
-        "src/identity/identity-account.css",
+        "src/identiteit/identiteit-account.css",
         "scripts/plaatsing-vaste-elementen.json"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Назви файлів, символів і коментарів узгоджено з мовним законом: тека identiteit, IdentiteitAccountPagina, IDENTITEIT_TABS, IdentiteitTab; коментарі без англійської прози.",
+      "bewijzen": [
+        "src/identiteit/IdentiteitAccountPagina.tsx",
+        "src/identiteit/identiteit-tabs.ts",
+        "tests/eenheid/identiteit-account-ui.test.ts"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Випуск 20261107-172451 опубліковано з фіксації dca8aa32 (запуск 42396173225, успіх); пакет 11 573 514 байтів, SHA-256 e7cbdb90…c515; встановлення — за рішенням власника.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/releases/tag/20261107-172451"
       ]
     }
   ],
   "keuzes": [
     {
-      "keuze": "12 розділів identity на одній сторінці з меню-змістом і scroll-spy",
+      "keuze": "12 розділів «ідентичність» на одній сторінці з меню-змістом і підсвічування під час прокрутки",
       "reden": "Відповідає затвердженому ТЗ (IDENTITY-001) і дозволяє переглядати всі налаштування акаунта без перезавантаження вкладок.",
       "альтернатива": "Окремі ізольовані екрани для кожного з 12 пунктів — відхилено."
     },
@@ -58,29 +74,29 @@
   ],
   "wijzigingen": [
     {
-      "bestand": "src/identity/IdentityAccountPagina.tsx",
+      "bestand": "src/identiteit/IdentiteitAccountPagina.tsx",
       "soort": "додано",
       "опис": "Єдина сторінка облікового запису з 12 розділами identity, меню-змістом і глибокими посиланнями."
     },
     {
-      "bestand": "src/identity/Profielfoto.tsx",
+      "bestand": "src/identiteit/Profielfoto.tsx",
       "soort": "додано",
       "опис": "Аватар із центрованою камерою 22px, смітничком 24px у куті та діалогом вибору фото з трьох джерел."
     },
     {
-      "bestand": "src/identity/identity-account.css",
+      "bestand": "src/identiteit/identiteit-account.css",
       "soort": "додано",
       "опис": "Стилі сторінки акаунта, адаптивність @container та виправлення z-index / sticky top / scroll-margin-top."
     },
     {
-      "bestand": "src/identity/identity-tabs.ts",
+      "bestand": "src/identiteit/identiteit-tabs.ts",
       "soort": "додано",
-      "опис": "Перелік і метадані 12 вкладок категорії identity."
+      "опис": "Перелік і метадані 12 вкладок категорії «ідентичність»."
     },
     {
       "bestand": "src/InstellingencentrumWeergave.tsx",
       "soort": "змінено",
-      "опис": "Підключення IdentityAccountPagina для категорії identity."
+      "опис": "Підключення IdentiteitAccountPagina для категорії «ідентичність»."
     },
     {
       "bestand": "src/VerenigdDienstApp.tsx",
@@ -95,22 +111,22 @@
   ],
   "controles": [
     {
-      "controle": "Юніт-тести identity-account-ui.test.ts",
+      "controle": "Випробування сторінки облікового запису (identiteit-account-ui.test.ts)",
       "результат": "Перевірено 12 секцій, 3 джерела фото, центровану камеру 22px, смітничок 24px, z-index 99500, top 70px/62px та scroll-margin-top 170px/150px.",
       "стан": "пройдено"
     },
     {
-      "controle": "Повна збірка npm run build та перевірки розміщення/контрасту/каталогу",
-      "результат": "Усі 11 етапів npm run build та npm run typecheck:server проходять без помилок.",
+      "controle": "Повне складання та перевірки розміщення, контрасту й каталогу",
+      "результат": "Усі 11 кроків повного складання і перевірка типів серверної частини проходять без помилок.",
       "стан": "пройдено"
     }
   ],
   "bronnen": [
-    "docs/ontwerp/identity-account/TZ-account-2026-11-04.md",
-    "src/identity/IdentityAccountPagina.tsx",
-    "src/identity/Profielfoto.tsx",
-    "src/identity/identity-account.css",
-    "src/identity/identity-tabs.ts"
+    "docs/ontwerp/identiteit-account/ТЕХНІЧНЕ-ЗАВДАННЯ-ОБЛІКОВОГО-ЗАПИСУ-2026-11-04.md",
+    "src/identiteit/IdentiteitAccountPagina.tsx",
+    "src/identiteit/Profielfoto.tsx",
+    "src/identiteit/identiteit-account.css",
+    "src/identiteit/identiteit-tabs.ts"
   ],
   "beperkingen": [
     "Видалення фото на сервері повертає фото підключеного сервісу або ініціали (окремий серверний DELETE-маршрут не додавався)."

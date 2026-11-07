@@ -1,6 +1,6 @@
 > 🌐 **Taal / Мова:** [Українська](ПІДСУМОК-ПРОЄКТУ-ОБЛІКОВОГО-ЗАПИСУ.uk.md) · **Nederlands** | [Hoofdpagina](../../../LEESMIJ.md) · [Documentatie-index](../../INDEX.nl.md)
 
-# Accountpagina — ontwerpsamenvatting (`ontwerp-account-samenvatting.nl.md`)
+# Accountpagina — ontwerpsamenvatting (`ONTWERP-ACCOUNT-SAMENVATTING.nl.md`)
 
 ## Ontwerprichting en tokensysteem
 
