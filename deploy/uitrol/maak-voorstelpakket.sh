@@ -34,10 +34,22 @@ else
   commit="zonder-git:$ZONDER_GIT"
   echo "LET OP: pakket wordt BUITEN git gebouwd (BRON-COMMIT = $commit); de site toont dit als waarschuwing." >&2
 fi
-# Правило 2 (PRAVYLA-ADRESY-I-VYPUSKY.md): обовʼязкові метадані випуску. Без них машина відхилить архів.
+# Правило 2 (ПРАВИЛА-АДРЕС-І-ВИПУСКІВ.md): обовʼязкові метадані випуску. Без них машина відхилить архів.
+# Якщо AUTEUR не передано або вказано загальну роль («Власник»/«Eigenaar»/«Owner»), автоматично підтягуємо обліковий запис із git/середовища.
 AUTEUR="${AUTEUR:-}"; AGENT="${AGENT:-}"; SAMENVATTING="${SAMENVATTING:-}"
-[ -n "$AUTEUR" ] || { echo "FOUT: встановіть AUTEUR (email/імʼя автора випуску)" >&2; exit 1; }
-[[ "$AGENT" =~ ^[a-z][a-z0-9-]{1,31}$ ]] || { echo "FOUT: встановіть AGENT (claude/cursor/gpt, малі літери)" >&2; exit 1; }
+if [ -z "$AUTEUR" ] || [[ "${AUTEUR,,}" =~ ^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author)$ ]]; then
+  GIT_NAAM="$(git config user.name 2>/dev/null || true)"
+  GIT_EMAIL="$(git config user.email 2>/dev/null || true)"
+  [[ "$GIT_EMAIL" == *"@users.noreply.github.com" ]] && GIT_EMAIL="${MR_CONTACT_EMAIL:-}"
+  if [ -n "${MR_EIGENAAR_NAAM:-}" ] && [ -n "${MR_CONTACT_EMAIL:-}" ]; then AUTEUR="$MR_EIGENAAR_NAAM ($MR_CONTACT_EMAIL)"
+  elif [ -n "$GIT_NAAM" ] && [ -n "$GIT_EMAIL" ]; then AUTEUR="$GIT_NAAM ($GIT_EMAIL)"
+  elif [ -n "$GIT_NAAM" ]; then AUTEUR="$GIT_NAAM"
+  elif [ -n "$GIT_EMAIL" ]; then AUTEUR="$GIT_EMAIL"
+  fi
+fi
+[ -n "$AUTEUR" ] || { echo "FOUT: встановіть AUTEUR (імʼя та ел. пошта облікового запису автора випуску)" >&2; exit 1; }
+[[ ! "${AUTEUR,,}" =~ ^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author)$ ]] || { echo "FOUT: псевдоніми на кшталт «$AUTEUR» заборонені — вкажіть справжнє імʼя або ел. пошту облікового запису" >&2; exit 1; }
+[[ "$AGENT" =~ ^[a-z][a-z0-9-]{1,31}$ ]] || { echo "FOUT: встановіть AGENT (claude/cursor/gpt/antigravity, малі літери)" >&2; exit 1; }
 [ "${#SAMENVATTING}" -ge 20 ] || { echo "FOUT: встановіть SAMENVATTING (підсумок, мінімум 20 символів)" >&2; exit 1; }
 doel="$uit/mijn-ruimte-$versie.tar.gz"
 # ORCH-001 (31.10.2026): UITROL-BASIS — op welke GEÏNSTALLEERDE versie en commit dit pakket is gebouwd (BASIS_VERSIE=JJJJMMDD-UUMMSS,

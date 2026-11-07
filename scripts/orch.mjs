@@ -282,8 +282,10 @@ function staatCommit() {
 
 function doePakket() {
   const beleid = laadBeleid(); const lock = laadLock();
+  const modelId = optie('model-id', null);
   const r = maakOverdrachtPakket({ wortel, beleid, lock, taakId: optie('taak', ''), auteur: optie('auteur', ''), agent: optie('agent', undefined), versie: optie('versie', undefined), uit: optie('uit', join(wortel, 'uitvoer')),
-    manifestPad: optie('manifest', undefined), testresultatenPad: optie('testresultaten', undefined), sigPad: optie('sig', undefined), agentPlatform: optie('platform', undefined),
+    manifestPad: optie('manifest', undefined), testresultatenPad: optie('testresultaten', undefined), sigPad: optie('sig', undefined), agentPlatform: optie('platform', undefined), agentTool: optie('tool', undefined),
+    model: modelId ? { id: modelId, versie: optie('model-versie', null), bron: optie('model-bron', 'omgeving') } : undefined,
     samenvatting: optie('samenvatting-uk', null) ? { uk: optie('samenvatting-uk', ''), nl: optie('samenvatting-nl', optie('samenvatting-uk', '')) } : undefined,
     nietGedaan: optie('niet-gedaan', null) ? { uk: optie('niet-gedaan', ''), nl: optie('niet-gedaan', '') } : undefined });
   const code = toon(r.zaken);

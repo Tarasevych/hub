@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований випуск 20261106-193000
+name: AUDIT-001 · консолідований випуск 20261107-114500
 
 on:
   push:
@@ -39,13 +39,15 @@ jobs:
           node scripts/zoek-ui-catalogus.mjs --controle
           npm run typecheck:server
           node scripts/eenheidstests.mjs orch-kern
+          node scripts/eenheidstests.mjs uitrol-manifest
+          node scripts/eenheidstests.mjs uitrol-weergave-v2
           node scripts/eenheidstests.mjs zoek-diepe-link-20261105
           node scripts/eenheidstests.mjs zoek-ui-tabblad
 
       - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
-          export VERSIE="20261106-193000"
+          export VERSIE="20261107-114500"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
@@ -64,40 +66,30 @@ jobs:
               console.log("Встановлено на сайті: " + versie + " @ " + commit);
             ' "$RUNNER_TEMP/prod.json"
           else
-            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261106-142434"
-            echo "LIVE_VERSIE=20261106-142434" >> "$GITHUB_ENV"
-            echo "LIVE_COMMIT=3b64d1d3c8474f6279005ea8555a5f80e750aac9" >> "$GITHUB_ENV"
+            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261106-171500"
+            echo "LIVE_VERSIE=20261106-171500" >> "$GITHUB_ENV"
+            echo "LIVE_COMMIT=2c71d1179064018bd60d3464a91e1a0ef17e912b" >> "$GITHUB_ENV"
           fi
 
-      - name: Bouw en controleer pakket 20261106-193000
+      - name: Bouw en controleer pakket 20261107-114500
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
+          GIT_NAAM="$(git log -1 --format='%an')"
+          ACCOUNT_AUTEUR="${GIT_NAAM:-Тарасевич Павло} (tarasevych.pavlo@gmail.com)"
           cat << EOF > "$RUNNER_TEMP/manifest.json"
           {
             "schema": 1,
             "versie": "$VERSIE",
-            "aangemaakt": "2026-11-06T19:30:00Z",
+            "aangemaakt": "2026-11-07T11:45:00Z",
             "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
-            "auteur": "Власник",
+            "auteur": "$ACCOUNT_AUTEUR",
             "zonderAi": false,
             "deelnemers": [
               {
                 "soort": "mens",
-                "naam": "Власник",
-                "rollen": ["auteur", "controle"]
-              },
-              {
-                "soort": "ai",
-                "naam": "claude",
-                "platform": "Claude Code",
-                "tool": "Claude Code",
-                "model": {
-                  "id": null,
-                  "versie": null,
-                  "bron": "onbekend"
-                },
-                "rollen": ["ontwikkeling", "controle", "testen"]
+                "naam": "$ACCOUNT_AUTEUR",
+                "rollen": ["auteur"]
               },
               {
                 "soort": "ai",
@@ -105,26 +97,26 @@ jobs:
                 "platform": "Google Antigravity",
                 "tool": "Antigravity IDE",
                 "model": {
-                  "id": null,
-                  "versie": null,
-                  "bron": "onbekend"
+                  "id": "claude-opus-4-6",
+                  "versie": "20260205",
+                  "bron": "omgeving"
                 },
                 "rollen": ["ontwikkeling", "controle", "testen", "verpakken"]
               }
             ],
             "beschrijving": {
               "uk": {
-                "titel": "Аудит 05.11.2026, перейменування всіх статей на питомі назви та повне мовне очищення коду й документації (UK/NL)",
-                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт і повне перейменування та мовне очищення всіх статей (.uk.md / .nl.md / .md), каталогів, пошукових словників, коду й тестів без російських літер, русизмів, кальок, суржику та технічного сленгу.",
+                "titel": "Аудит 05.11.2026, перейменування всіх статей на питомі назви, повне мовне очищення (UK/NL) та автентифікація метаданих пакета",
+                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт, повне перейменування та мовне очищення всіх статей (.uk.md / .nl.md / .md), каталогів, пошукових словників, коду й тестів без російських літер, русизмів і суржику, а також сувора перевірка автора облікового запису та моделі ШІ в UITROL-MANIFEST.json.",
                 "wijzigingen": [
                   "Перейменовано всі статті та підкаталоги документації на питомі українські (.md, .uk.md) та нідерландські (.nl.md) назви з оновленням усіх взаємних посилань.",
                   "Замінено всі кальки, русизми та технічний сленг в усіх українських статтях, правилах оркестрації, компонентах src/, backend/, shared/, deploy/, розширенні оглядача й тестах.",
-                  "Інтегровано DESIGN-003, EXT090-001 (розширення 0.9.2 з offscreen.html і локальним ШІ), AGPLUGIN-001, ZOEKDIEP-001, PRIVACY-001, MAILFIT-002 та IDENTITY-002 у всі активні гілки."
+                  "Запроваджено автоматичне визначення імені й пошти облікового запису власника при розгортанні, заборонено фіктивні псевдоніми («Власник», «Eigenaar») і порожнє поле моделі («модель невідома»)."
                 ],
                 "fixes": [
-                  "Повне усунення російських слів, суржику та англіцизмів у всіх статтях і гілках репозиторію та синхронізація всіх активних гілок на GitHub.",
-                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера та тотожність BRON-COMMIT і верхівки гілки (commit == head) для TRACE-001.",
-                  "Перевірка відсутності російських літер, суржику та побитих відносних посилань у всіх 446 статтях репозиторію (0 збігів)."
+                  "Усунено хибне дублювання сторонніх агентів у deelnemers (вказується виключно фактичний агент antigravity зі справжньою моделлю claude-opus-4-6 · 20260205) та виправлено роль облікового запису власника на «автор».",
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261106-171500) та нова версія пакета 20261107-114500.",
+                  "Перевірка відсутності російських літер, суржику та побитих відносних посилань у всіх 455 статтях репозиторію (0 збігів)."
                 ],
                 "beperkingen": [
                   "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» (B-018, версія 1.4.13) до підпису власника особистим ключем безпечної оболонки."
@@ -132,17 +124,17 @@ jobs:
                 "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу власника."
               },
               "nl": {
-                "titel": "Audit 05-11-2026, hernoeming van alle artikelen naar zuivere namen en volledige taalzuivering van code en documentatie (UK/NL)",
-                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen en volledige hernoeming en taalzuivering van alle artikelen (.uk.md / .nl.md / .md), mappen, zoekcatalogi, broncode en tests zonder Russische letters, russismen, Surzjyk of technisch jargon.",
+                "titel": "Audit 05-11-2026, hernoeming van alle artikelen naar zuivere namen, volledige taalzuivering (UK/NL) en strikte pakketmetadata",
+                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen, volledige hernoeming en taalzuivering van alle artikelen (.uk.md / .nl.md / .md), mappen, zoekcatalogi, broncode en tests zonder Russische letters, russismen of Surzjyk, en strikte verificatie van het eigenaarsaccount en AI-model in UITROL-MANIFEST.json.",
                 "wijzigingen": [
                   "Alle artikelen en documentatiemappen hernoemd naar zuivere Oekraïense (.md, .uk.md) en Nederlandse (.nl.md) bestandsnamen met bijgewerkte kruisverwijzingen.",
                   "Alle Surzjyk-vormen, russismen en leenwoorden vervangen in alle Oekraïense artikelen, orchestratieregels, componenten onder src/, backend/, shared/, deploy/, de browserextensie en tests.",
-                  "DESIGN-003, EXT090-001 (extensie 0.9.2 met offscreen.html en lokale AI), AGPLUGIN-001, ZOEKDIEP-001, PRIVACY-001, MAILFIT-002 en IDENTITY-002 geïntegreerd in alle actieve takken."
+                  "Automatische vaststelling van de naam en het e-mailadres van het eigenaarsaccount bij uitrol ingevoerd; generieke bijnamen («Власник», «Eigenaar») en «model onbekend» zijn verboden."
                 ],
                 "fixes": [
-                  "Volledige verwijdering van Russische woorden, Surzjyk en anglicismen in alle artikelen en takken van de repository en synchronisatie van alle actieve takken op GitHub.",
-                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie en gelijkheid van BRON-COMMIT en tak-HEAD (commit == head) voor TRACE-001.",
-                  "Controle op afwezigheid van Russische letters, Surzjyk en verbroken relatieve koppelingen in alle 446 artikelen van de repository (0 treffers)."
+                  "Onterechte vermelding van niet-betrokken agenten in deelnemers verwijderd (uitsluitend de daadwerkelijke agent antigravity met het echte model claude-opus-4-6 · 20260205) en de rol van het eigenaarsaccount op «auteur» gezet.",
+                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261106-171500) en nieuwe pakketversie 20261107-114500.",
+                  "Controle op afwezigheid van Russische letters, Surzjyk en verbroken relatieve koppelingen in alle 455 artikelen van de repository (0 treffers)."
                 ],
                 "beperkingen": [
                   "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» (B-018, versie 1.4.13) totdat de eigenaar ondertekent met zijn SSH-sleutel."
@@ -154,14 +146,14 @@ jobs:
           EOF
           cat << 'EOF' > "$RUNNER_TEMP/testresultaten.json"
           {
-            "geslaagd": 622,
+            "geslaagd": 630,
             "mislukt": 0,
-            "samenvatting": "Повне 11-етапне складання npm run build, серверна перевірка типів typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 622/622 перевірок пройдено, 0 помилок.",
+            "samenvatting": "Повне 11-етапне складання npm run build, серверна перевірка типів typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, uitrol-manifest, uitrol-weergave-v2, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 630/630 перевірок пройдено, 0 помилок.",
             "falend": [],
             "basis": null,
             "uitleg": {
-              "uk": "Усі 622 перевірки у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
-              "nl": "Alle 622 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
+              "uk": "Усі 630 перевірок у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
+              "nl": "Alle 630 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
             }
           }
           EOF
@@ -175,12 +167,16 @@ jobs:
           EOF
           node scripts/orch.mjs pakket \
             --taak AUDIT-001 \
-            --auteur "Власник" \
+            --auteur "$ACCOUNT_AUTEUR" \
             --versie "$VERSIE" \
             --uit uitvoer \
             --manifest "$RUNNER_TEMP/manifest.json" \
             --testresultaten "$RUNNER_TEMP/testresultaten.json" \
-            --platform "Antigravity"
+            --platform "Google Antigravity" \
+            --tool "Antigravity IDE" \
+            --model-id "claude-opus-4-6" \
+            --model-versie "20260205" \
+            --model-bron "omgeving"
           node scripts/orch.mjs pakket-controleer \
             --bron "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip"
           rm -f orchestratie/geinstalleerd.json
@@ -194,7 +190,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261106-193000 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261107-114500 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -144,7 +144,7 @@ export type Overzicht = {
   /** Wat het ondertekende AI-beleid zegt over «Розгортати сайт» per agent + alle agents als tegels (backend/uitrol-beleid-sync.ts). */
   beleid?: { staat: string; agents: Array<{ slug: string; modus: 'always' | 'ask' | 'off' | null; code: string; uitdrukkelijk: boolean }>; tegels: AgentTegel[] } | null;
   rootStatus: { staat?: string; versie?: string; code?: string; uk?: string; nl?: string; tijd?: string; methode?: string } | null;
-  limieten: { voorbereiderMaxDagen: number; maxBytes?: number; maxStuk?: number }; ik?: { id: string; email: string };
+  limieten: { voorbereiderMaxDagen: number; maxBytes?: number; maxStuk?: number }; ik?: { id: string; email: string; naam?: string; foto?: string };
   /** UITROL-VERSIE van de release die nu draait (voor «niet nieuwer dan de actieve versie»). */
   actieveVersie?: string | null;
   /** Eén bron van waarheid (0062, backend/uitrol-bron.ts): samengevoegde stand + afwijkingen tussen de bronnen. */

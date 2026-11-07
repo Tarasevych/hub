@@ -868,7 +868,11 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
 
   return {
     // `ik`: wie de pagina bekijkt (voor «Розгорнути з цього пристрою»: de eigenaar als voorbereider van zijn eigen pakket).
-    'POST /api/owner/uitrol/overzicht': [eigenaar({}, async (_ctx, auth) => ({ ...(await overzicht({ id: auth.user.id, email: auth.user.email })), ik: { id: auth.user.id, email: auth.user.email || '' } }))],
+    'POST /api/owner/uitrol/overzicht': [eigenaar({}, async (_ctx, auth) => {
+      const ov = await overzicht({ id: auth.user.id, email: auth.user.email });
+      const eig = (await eigenaren([auth.user.id])).get(auth.user.id);
+      return { ...ov, ik: { id: auth.user.id, email: auth.user.email || eig?.email || '', naam: eig?.naam || '', foto: eig?.foto || '' } };
+    })],
     // Zoeken in «Кому дозволено»: met meer dan KANDIDATEN_MAX goedgekeurde accounts toont het overzicht er maar een deel; dit is de
     // weg om iedereen te vinden, ook buiten het eerste alfabetische blok. Alleen de eigenaar, zoals de rest van deze routes.
     'POST /api/owner/uitrol/kandidaten': [eigenaar({}, async (ctx) => ({ kandidaten: await kandidaten(String((body(ctx.body) as { zoek?: unknown }).zoek ?? '')) }))],

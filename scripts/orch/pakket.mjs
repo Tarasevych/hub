@@ -23,9 +23,27 @@ export function basisVoorPakket(wortel, beleid) {
   return { versie: beleid.basis.versie, commit: beleid.basis.bronCommit, bron: `beleid.json (${beleid.basis.verificatie})` };
 }
 
+const GENERIEKE_AUTEUR = /^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author|невідомо|onbekend|unknown)$/i;
+const ALLEEN_FAMILIE = /^(claude|grok|gpt|gemini|cursor|copilot|llama|mistral|ai|llm|onbekend|unknown|невідомо)$/i;
+
+function bepaalAuteur(opgegeven, git) {
+  const ruw = String(opgegeven ?? '').trim();
+  if (ruw && !GENERIEKE_AUTEUR.test(ruw)) return ruw;
+  const envNaam = String(process.env.MR_EIGENAAR_NAAM ?? '').trim();
+  const envEmail = String(process.env.MR_CONTACT_EMAIL ?? '').trim();
+  if (envNaam && envEmail) return `${envNaam} (${envEmail})`;
+  const gitNaam = (git('config', 'user.name') || '').trim();
+  let gitEmail = (git('config', 'user.email') || '').trim();
+  if (gitEmail.endsWith('@users.noreply.github.com')) gitEmail = envEmail;
+  if (gitNaam && gitEmail && !GENERIEKE_AUTEUR.test(gitNaam)) return `${gitNaam} (${gitEmail})`;
+  if (gitNaam && !GENERIEKE_AUTEUR.test(gitNaam)) return gitNaam;
+  if (gitEmail && !GENERIEKE_AUTEUR.test(gitEmail)) return gitEmail;
+  return ruw;
+}
+
 /**
  * Збирає tar.gz (через maak-voorstelpakket.sh) і пакет передачі. opties: { wortel, beleid, lock, taakId, auteur, agent?, versie?, uit, samenvatting?,
- * manifestPad?, testresultatenPad?, sigPad?, agentPlatform?, model?, nietGedaan?, nu? }. Повертає { zaken, zipPad, ... } — zaken з ernst fout = не зібрано.
+ * manifestPad?, testresultatenPad?, sigPad?, agentPlatform?, agentTool?, model?, nietGedaan?, nu? }. Повертає { zaken, zipPad, ... } — zaken з ernst fout = не зібрано.
  */
 export function maakOverdrachtPakket(o) {
   const nu = o.nu ?? new Date().toISOString(); const z = []; const git = gitIn(o.wortel);
@@ -33,7 +51,9 @@ export function maakOverdrachtPakket(o) {
   if (!existsSync(taakPad)) return { zaken: [fout('TAAK_ONBEKEND', `задача ${o.taakId} не зареєстрована (orchestratie/taken)`, `taak ${o.taakId} niet geregistreerd`)] };
   const taak = JSON.parse(readFileSync(taakPad, 'utf8'));
   const agent = o.agent ?? taak.agent;
-  if (!o.auteur || String(o.auteur).trim().length < 3) return { zaken: [fout('GEEN_AUTEUR', 'вкажіть --auteur (людина-автор випуску, ≥ 3 символи)', 'geef --auteur (menselijke auteur, ≥ 3 tekens)')] };
+  const auteur = bepaalAuteur(o.auteur, git);
+  if (!auteur || auteur.length < 3) return { zaken: [fout('GEEN_AUTEUR', 'вкажіть --auteur (справжнє імʼя або ел. пошту облікового запису власника, ≥ 3 символи)', 'geef --auteur (echte naam of e-mailadres van het eigenaarsaccount, ≥ 3 tekens)')] };
+  if (GENERIEKE_AUTEUR.test(auteur)) return { zaken: [fout('AUTEUR_ONGELDIG', `псевдоніми на кшталт «${auteur}» заборонені — має вказуватися справжнє імʼя або ел. пошта облікового запису`, `aliassen zoals «${auteur}» zijn verboden — geef de echte naam of het e-mailadres van het account`)] };
   if ((git('status', '--porcelain', '--untracked-files=no') ?? 'x') !== '') return { zaken: [fout('NIET_GECOMMIT', 'є незакомічені зміни — пакет збирається лише з HEAD', 'niet-gecommitte wijzigingen — alleen HEAD wordt verpakt')] };
   const head = git('rev-parse', 'HEAD'); const tak = git('branch', '--show-current') || taak.tak;
   const versie = o.versie ?? versieNu(nu);
@@ -55,7 +75,7 @@ export function maakOverdrachtPakket(o) {
 
   const werk = mkdtempSync(join(tmpdir(), 'orch-pakket-'));
   try {
-    const env = { ...process.env, AUTEUR: String(o.auteur), AGENT: agent, SAMENVATTING: sam.uk, BASIS_VERSIE: basis.versie, BASIS_COMMIT: basis.commit, UITROL_VERSIE_OVERRIDE: versie };
+    const env = { ...process.env, AUTEUR: auteur, AGENT: agent, SAMENVATTING: sam.uk, BASIS_VERSIE: basis.versie, BASIS_COMMIT: basis.commit, UITROL_VERSIE_OVERRIDE: versie };
     // TRACE-001: log is inhoud van HEAD. Een werkmapbestand dat niet gecommit is telt niet.
     if (versie >= '20261103-211555') {
       const pad = `orchestratie/ontwikkelarchieven/${o.taakId}.json`;
@@ -110,22 +130,43 @@ export function maakOverdrachtPakket(o) {
     writeFileSync(join(map, 'COMMITS.txt'), `# коміти гілки задачі ${o.taakId}: від бази гілки ${takBasis} до ${head} (${commits.length})\n# встановлена база: ${basis.versie} @ ${basis.commit}${sindsInstallatie ? ` — від установки ${sindsInstallatie.commits} комітів, ${sindsInstallatie.bestanden} файлів` : ''}\n${commits.map((c) => `${c.sha} ${c.auteur}: ${c.onderwerp}`).join('\n')}\n`);
     // git bundle потребує ref у діапазоні (голий SHA → «Refusing to create empty bundle»): HEAD == head, бо дерево чисте й нічого не комітилось.
     if (commits.length) { const b = spawnSync('git', ['bundle', 'create', join(map, 'commits.bundle'), `${takBasis}..HEAD`], { cwd: o.wortel, encoding: 'utf8' }); if (b.status !== 0) z.push(waarsch('BUNDLE_MISLUKT', `commits.bundle не створено: ${(b.stderr || '').trim().split('\n').pop()}`, 'commits.bundle niet gemaakt')); }
-    let deelnemers;
-    if (o.manifestPad) { try { deelnemers = JSON.parse(readFileSync(resolve(o.manifestPad), 'utf8')).deelnemers ?? []; } catch { deelnemers = []; } }
+    let manifestObj = null;
+    if (o.manifestPad) { try { manifestObj = JSON.parse(readFileSync(resolve(o.manifestPad), 'utf8')); } catch { manifestObj = null; } }
+    let deelnemers = manifestObj?.deelnemers ?? [];
+    const aiUitManifest = deelnemers.find((d) => d?.soort === 'ai' && d?.naam === agent) ?? deelnemers.find((d) => d?.soort === 'ai');
+    const ag = (o.beleid.agenten ?? []).find((a) => a.id === agent);
+    const effPlatform = o.agentPlatform ?? aiUitManifest?.platform ?? ag?.weergave ?? agent;
+    const effTool = o.agentTool ?? aiUitManifest?.tool ?? effPlatform;
+    const effModel = o.model ?? aiUitManifest?.model ?? { id: null, versie: null, bron: 'onbekend' };
+    if (versie >= '20261106-000000') {
+      if (!effModel?.id || ALLEEN_FAMILIE.test(String(effModel.id)) || !['omgeving', 'auteur'].includes(effModel.bron)) {
+        return { zaken: [fout('MODEL_ONBEKEND', 'заборонено вказувати «модель невідома» або порожню модель ШІ — вкажіть справжній model.id і bron «omgeving» або «auteur»', '«model onbekend» of leeg AI-model is verboden — geef een echte model.id en bron «omgeving» of «auteur»')] };
+      }
+      for (const [i, d] of deelnemers.entries()) {
+        if (d?.soort === 'mens' && GENERIEKE_AUTEUR.test(String(d?.naam ?? '').trim())) {
+          return { zaken: [fout('MANIFEST_ONGELDIG', `deelnemers[${i}].naam: псевдоніми на кшталт «${d.naam}» заборонені — вкажіть справжнє імʼя або ел. пошту облікового запису`, `deelnemers[${i}].naam: aliassen zoals «${d.naam}» zijn verboden`)] };
+        }
+        if (d?.soort === 'ai') {
+          const mid = String(d?.model?.id ?? '').trim();
+          if (!mid || ALLEEN_FAMILIE.test(mid) || !['omgeving', 'auteur'].includes(d?.model?.bron)) {
+            return { zaken: [fout('MANIFEST_ONGELDIG', `deelnemers[${i}].model: заборонено «модель невідома» або порожній id — вкажіть справжню модель ШІ`, `deelnemers[${i}].model: «model onbekend» of lege id is verboden`)] };
+          }
+        }
+      }
+    }
     if (!deelnemers?.length) {
-      const ag = (o.beleid.agenten ?? []).find((a) => a.id === agent);
-      deelnemers = [{ soort: 'mens', naam: String(o.auteur), rollen: ['auteur', 'controle'] }, { soort: 'ai', naam: agent, platform: o.agentPlatform ?? ag?.weergave ?? agent, tool: o.agentPlatform ?? 'onbekend', model: o.model ?? { id: null, versie: null, bron: 'onbekend' }, rollen: ['ontwikkeling', 'verpakken'] }];
+      deelnemers = [{ soort: 'mens', naam: auteur, rollen: ['auteur'] }, { soort: 'ai', naam: agent, platform: effPlatform, tool: effTool, model: effModel, rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken'] }];
     }
     writeFileSync(join(map, 'AGENTEN.json'), JSON.stringify({ schema: 1, deelnemers, taakId: o.taakId, aangemaakt: nu }, null, 2));
     const overdracht = {
-      schema: 1, taakId: o.taakId, agent, agentPlatform: o.agentPlatform ?? null, model: o.model ?? { id: null, versie: null, bron: 'onbekend' },
+      schema: 1, taakId: o.taakId, agent, agentPlatform: effPlatform ?? null, model: effModel,
       basisCommit: takBasis, basisVersie: basis.versie, basisBron: basis.bron, installatie: { versie: basis.versie, commit: basis.commit, bron: basis.bron, inHead: basisBekend }, sindsInstallatie, regelsVersie: o.beleid.regelsVersie, regelsHash: o.lock?.hash ?? null, kritiekBevestigd: !!o.lock?.eigenaar,
       tak, kanaal: 'zip', zonderGit: null, commits: commits.map((c) => c.sha), bestanden, samenvatting: sam, tests, nietGedaan: o.nietGedaan ?? { uk: '', nl: '' }, conflicten: [],
       pakket: { naam: basename(tarPad), versie, sha256: sha, bytes, bronCommit: head, handtekening, modus: o.beleid.kritiek.installatieModi.standaard },
       aangemaakt: nu,
     };
     writeFileSync(join(map, 'ORCH-OVERDRACHT.json'), `${JSON.stringify(overdracht, null, 2)}\n`);
-    writeFileSync(join(map, 'RAPPORT.md'), maakRapport({ versie, taakId: o.taakId, agent, agentPlatform: o.agentPlatform, model: o.model, auteur: o.auteur, bytes, sha256: sha, commit: head, basisVersie: basis.versie, basisCommit: basis.commit, basisBron: basis.bron, takBasis, tak, sindsInstallatie, regelsVersie: o.beleid.regelsVersie, regelsHash: o.lock?.hash, kritiekBevestigd: !!o.lock?.eigenaar, modus: o.beleid.kritiek.installatieModi.standaard, handtekening, samenvatting: sam, commits, bestanden: alle, tests, deelnemers, nietGedaan: o.nietGedaan }));
+    writeFileSync(join(map, 'RAPPORT.md'), maakRapport({ versie, taakId: o.taakId, agent, agentPlatform: effPlatform, model: effModel, auteur, bytes, sha256: sha, commit: head, basisVersie: basis.versie, basisCommit: basis.commit, basisBron: basis.bron, takBasis, tak, sindsInstallatie, regelsVersie: o.beleid.regelsVersie, regelsHash: o.lock?.hash, kritiekBevestigd: !!o.lock?.eigenaar, modus: o.beleid.kritiek.installatieModi.standaard, handtekening, samenvatting: sam, commits, bestanden: alle, tests, deelnemers, nietGedaan: o.nietGedaan }));
     writeFileSync(join(map, 'LEESMIJ.txt'), `Mijn Ruimte — пакет передачі ${versie} (агент ${agent}, задача ${o.taakId}).\nВстановлюється ЛИШЕ ${basename(tarPad)} через інсталятор Mijn Ruimte (майстер «Нове оновлення» + passkey власника, або підписаний .sig в inbox).\nПеревірка: node scripts/orch.mjs pakket-controleer --bron ${overdrachtZipNaam(versie, agent)}\nІмпорт без git: node scripts/orch.mjs inleveren --bron ${overdrachtZipNaam(versie, agent)}\nДив. RAPPORT.md.\n`);
     mkdirSync(o.uit, { recursive: true });
     const zipPad = join(resolve(o.uit), overdrachtZipNaam(versie, agent));

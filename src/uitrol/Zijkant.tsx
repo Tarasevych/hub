@@ -8,7 +8,7 @@ import Persoon from './Persoon';
 import CommitTekst from './CommitTekst';
 import ToegangBlok from './ToegangBlok';
 import { useUitrolV2 } from './uitrol-vlag';
-import UitgaveBeschrijving, { Deelnemers } from './UitgaveBeschrijving';
+import UitgaveBeschrijving, { Deelnemers, mensWeergaveNaam } from './UitgaveBeschrijving';
 import { datum, duur, mb, tr, type DiagnoseAntwoord, type Lang, type Overzicht, type Versie } from './types';
 
 type Props = { lang: Lang; context: Record<string, unknown>; data: Overzicht; kanPasskey: boolean; naarUpload: () => void; naarLog: () => void; naarDiagnose: () => void; naarInstellen: () => void };
@@ -38,12 +38,12 @@ export default function Zijkant({ lang, context, data, kanPasskey, naarUpload, n
         {/* Eén bron van waarheid (0062): de versie komt uit de samengevoegde stand (hoofdbron: runs); /api/version is alleen nog de achtervang. */}
         <dt>{tr(lang, 'Працює версія', 'Draaiende versie')}</dt><dd><b className='ut-mono'>{data.stand?.versie || versie?.versie || '—'}</b>{data.stand?.release && data.stand.release !== data.stand.versie ? <small className='ut-hint'> · {tr(lang, 'тека', 'map')} {data.stand.release}</small> : null}</dd>
         {(data.stand?.versie || versie?.versie) && <><dt>{tr(lang, 'Коміт', 'Commit')}</dt><dd><CommitTekst lang={lang} commit={data.stand?.commit || versie?.commit} /></dd></>}
-        {versie?.auteur && <><dt>{tr(lang, 'Автор', 'Auteur')}</dt><dd>{versie.auteur}{versie.agent ? ` · ${versie.agent}` : ''}</dd></>}
+        {versie?.auteur && <><dt>{tr(lang, 'Автор', 'Auteur')}</dt><dd>{mensWeergaveNaam(versie.auteur, data.ik)}{versie.agent ? ` · ${versie.agent}` : ''}</dd></>}
         {(data.stand?.tijd || data.rootStatus?.tijd) && <><dt>{tr(lang, 'Останнє встановлення', 'Laatste installatie')}</dt><dd>{datum(lang, data.stand?.tijd || data.rootStatus?.tijd)}</dd></>}
       </dl>
       {data.stand && data.stand.afwijkingen.length > 0 && <button type='button' className='ut-stand-afw' onClick={naarDiagnose}>
         <XCircle aria-hidden='true' />{tr(lang, `Джерела статусу розходяться (${data.stand.afwijkingen.length}) — відкрити «Діагностика»`, `Statusbronnen lopen uiteen (${data.stand.afwijkingen.length}) — open «Діагностика»`)}</button>}
-      {(versie?.samenvatting || versie?.manifest) && <details><summary>{tr(lang, 'Про цей випуск', 'Over deze release')}</summary><UitgaveBeschrijving lang={lang} manifest={versie.manifest} samenvatting={versie.samenvatting} kort />{versie.manifest && <Deelnemers lang={lang} m={versie.manifest} />}</details>}
+      {(versie?.samenvatting || versie?.manifest) && <details><summary>{tr(lang, 'Про цей випуск', 'Over deze release')}</summary><UitgaveBeschrijving lang={lang} manifest={versie.manifest} samenvatting={versie.samenvatting} kort />{versie.manifest && <Deelnemers lang={lang} m={versie.manifest} account={data.ik} />}</details>}
       <ul className='ut-checks'>
         <Rij ok={data.schakelaar}>{data.schakelaar ? tr(lang, 'Схвалення passkey увімкнено', 'Goedkeuren met passkey staat aan') : tr(lang, 'Схвалення passkey вимкнено на сервері', 'Goedkeuren met passkey staat uit')}</Rij>
         <Rij ok={data.passkeys.length > 0}>{tr(lang, `Passkey, що схвалюють: ${data.passkeys.length}`, `Passkeys die goedkeuren: ${data.passkeys.length}`)}{data.wachtend.length ? tr(lang, ` (+${data.wachtend.length} чекає)`, ` (+${data.wachtend.length} wacht)`) : ''}</Rij>

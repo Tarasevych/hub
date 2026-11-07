@@ -541,9 +541,15 @@ try:
 except Exception:
     print("UITROL-MANIFEST.json: geen geldige JSON"); sys.exit(0)
 f = []
+versie = sys.argv[2]
+strikt = bool(re.fullmatch(r"\d{8}-\d{6}", versie)) and versie >= "20261106-000000"
+generiek = {"власник", "eigenaar", "owner", "admin", "administrator", "адміністратор", "user", "користувач", "gebruiker", "автор", "auteur", "author", "невідомо", "onbekend", "unknown"}
+familie = {"claude", "grok", "gpt", "gemini", "cursor", "copilot", "llama", "mistral", "ai", "llm", "onbekend", "unknown", "невідомо"}
 if not isinstance(d, dict): print("UITROL-MANIFEST.json: geen object"); sys.exit(0)
 if d.get("schema") != 1: f.append("schema")
-if str(d.get("versie", "")).strip() != sys.argv[2]: f.append("versie")
+if str(d.get("versie", "")).strip() != versie: f.append("versie")
+auteur = str(d.get("auteur", "")).strip()
+if len(auteur) < 3 or (strikt and auteur.lower() in generiek): f.append("auteur")
 for t in ("uk", "nl"):
     b = (d.get("beschrijving") or {}).get(t) or {}
     if len(str(b.get("titel", "")).strip()) < 3: f.append(f"beschrijving.{t}.titel")
@@ -555,11 +561,20 @@ else:
     ai = [x for x in dn if isinstance(x, dict) and x.get("soort") == "ai"]
     for i, x in enumerate(dn):
         if not isinstance(x, dict) or x.get("soort") not in ("ai", "mens"): f.append(f"deelnemers[{i}].soort"); continue
-        if not str(x.get("naam", "")).strip(): f.append(f"deelnemers[{i}].naam")
+        naam = str(x.get("naam", "")).strip()
+        if not naam or (strikt and x.get("soort") == "mens" and naam.lower() in generiek): f.append(f"deelnemers[{i}].naam")
         if x.get("soort") == "ai":
             for k in ("platform", "tool"):
-                if not str(x.get(k, "")).strip(): f.append(f"deelnemers[{i}].{k}")
-            if (x.get("model") or {}).get("bron") not in ("omgeving", "auteur", "onbekend"): f.append(f"deelnemers[{i}].model.bron")
+                w = str(x.get(k, "")).strip()
+                if not w or (strikt and w.lower() in ("onbekend", "unknown", "невідомо")): f.append(f"deelnemers[{i}].{k}")
+            m = x.get("model") or {}
+            bron = m.get("bron")
+            mid = str(m.get("id") or "").strip()
+            if strikt:
+                if bron not in ("omgeving", "auteur"): f.append(f"deelnemers[{i}].model.bron")
+                if not mid or mid.lower() in familie: f.append(f"deelnemers[{i}].model.id")
+            else:
+                if bron not in ("omgeving", "auteur", "onbekend"): f.append(f"deelnemers[{i}].model.bron")
     if (d.get("zonderAi") is True) == bool(ai): f.append("zonderAi")
 print(", ".join(f[:12]))
 PY

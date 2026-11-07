@@ -29,6 +29,12 @@ export async function main(): Promise<number> {
   check('versie ≠ UITROL-VERSIE → fout «versie»', veld(valideerManifest(manifestVoor('20261102-000000'), V)).includes('versie'));
   check('kapotte JSON → fout met bestandsnaam', veld(valideerManifest('{kapot', V)).includes('UITROL-MANIFEST.json'));
   check('beleid: oude versie niet verplicht, nieuwe wel', !manifestVerplicht('20261029-131639') && manifestVerplicht('20261101-000000') && manifestVerplicht(V));
+  const V2 = '20261107-114500';
+  const striktAlias = valideerManifest(manifestVoor(V2, { auteur: 'Власник', deelnemers: [{ soort: 'mens', naam: 'Власник', rollen: ['auteur'] }, { soort: 'ai', naam: 'antigravity', platform: 'Google Antigravity', tool: 'Antigravity IDE', model: { id: null, versie: null, bron: 'onbekend' }, rollen: ['ontwikkeling', 'verpakken'] }] }), V2);
+  check('vanaf 20261106: alias «Власник» en «model onbekend» verboden → fouten auteur, deelnemers[0].naam, deelnemers[1].model.bron, deelnemers[1].model.id',
+    ['auteur', 'deelnemers[0].naam', 'deelnemers[1].model.bron', 'deelnemers[1].model.id'].every((v) => veld(striktAlias).includes(v)), JSON.stringify(veld(striktAlias)));
+  const striktGoed = valideerManifest(manifestVoor(V2, { auteur: 'Тарасевич Павло (tarasevych.pavlo@gmail.com)', deelnemers: [{ soort: 'mens', naam: 'Тарасевич Павло (tarasevych.pavlo@gmail.com)', rollen: ['auteur'] }, { soort: 'ai', naam: 'antigravity', platform: 'Google Antigravity', tool: 'Antigravity IDE', model: { id: 'claude-opus-4-6', versie: '20260205', bron: 'omgeving' }, rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken'] }] }), V2);
+  check('vanaf 20261106: echte accountnaam en concreet AI-model → geldig', striktGoed.fouten.length === 0 && !!striktGoed.manifest, JSON.stringify(striktGoed.fouten));
 
   // taalkeuze en terugval
   const m = goed.manifest!;

@@ -42,7 +42,10 @@ export type ManifestFout = { veld: string; uk: string; nl: string };
 const str = (x: unknown, max = 4000) => (typeof x === 'string' ? x.replace(/\0/g, '').trim().slice(0, max) : '');
 const lijst = (x: unknown) => (Array.isArray(x) ? x.map((y) => str(y, 1000)).filter(Boolean).slice(0, 60) : []);
 /** «Claude», «Grok», «GPT» zijn platforms/families, geen model-id. */
-const ALLEEN_FAMILIE = /^(claude|grok|gpt|gemini|cursor|copilot|llama|mistral|ai|llm|onbekend|unknown)$/i;
+const ALLEEN_FAMILIE = /^(claude|grok|gpt|gemini|cursor|copilot|llama|mistral|ai|llm|onbekend|unknown|невідомо)$/i;
+/** З цієї версії заборонені псевдоніми («Власник», «Eigenaar») замість імені облікового запису та «onbekend»/null замість справжньої моделі ШІ. */
+export const MANIFEST_STRIKT_VANAF = '20261106-000000';
+export const GENERIEKE_AUTEUR = /^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author|невідомо|onbekend|unknown)$/i;
 
 /** Valideert het manifest. Geeft het genormaliseerde manifest en een lijst concrete fouten (veldnaam + hoe te herstellen). */
 export function valideerManifest(ruw: string | null | undefined, versie: string): { manifest: Manifest | null; fouten: ManifestFout[] } {
@@ -53,12 +56,14 @@ export function valideerManifest(ruw: string | null | undefined, versie: string)
   if (!j || typeof j !== 'object' || Array.isArray(j)) { f(MANIFEST_BESTAND, 'очікується JSON-об\'єкт', 'een JSON-object verwacht'); return { manifest: null, fouten }; }
   if (j.schema !== 1) f('schema', 'має бути 1', 'moet 1 zijn');
   if (str(j.versie) !== versie) f('versie', `має дорівнювати UITROL-VERSIE (${versie || '—'})`, `moet gelijk zijn aan UITROL-VERSIE (${versie || '—'})`);
+  const strikt = /^[0-9]{8}-[0-9]{6}$/.test(versie) && versie >= MANIFEST_STRIKT_VANAF;
   const aangemaakt = str(j.aangemaakt, 40);
   if (!aangemaakt || Number.isNaN(Date.parse(aangemaakt))) f('aangemaakt', 'дата створення у форматі ISO 8601, напр. 2026-10-29T19:00:00+01:00', 'aanmaakdatum in ISO 8601, bv. 2026-10-29T19:00:00+01:00');
   const herkomst = str(j.herkomst, 500);
   if (herkomst.length < 5) f('herkomst', 'звідки код (репозиторій/гілка/база), мінімум 5 символів', 'herkomst van de code (repo/branch/basis), minstens 5 tekens');
   const auteur = str(j.auteur, 200);
   if (auteur.length < 3) f('auteur', 'ім\'я автора випуску (мінімум 3 символи)', 'naam van de auteur (minstens 3 tekens)');
+  else if (strikt && GENERIEKE_AUTEUR.test(auteur)) f('auteur', 'псевдоніми на кшталт «Власник» заборонені — вкажіть справжнє ім\'я або ел. пошту облікового запису власника', 'aliassen zoals «Власник» zijn verboden — geef de echte naam of het e-mailadres van het eigenaarsaccount');
   const zonderAi = j.zonderAi === true;
   const deelnemers: Deelnemer[] = [];
   const ruweD = Array.isArray(j.deelnemers) ? j.deelnemers.slice(0, 30) : [];
@@ -67,19 +72,26 @@ export function valideerManifest(ruw: string | null | undefined, versie: string)
     const p = `deelnemers[${i}]`;
     const soort = d?.soort === 'ai' ? 'ai' : d?.soort === 'mens' ? 'mens' : null;
     if (!soort) f(`${p}.soort`, 'має бути «ai» або «mens»', 'moet «ai» of «mens» zijn');
-    const naam = str(d?.naam, 80); if (!naam) f(`${p}.naam`, 'назва агента чи ім\'я людини', 'naam van agent of persoon');
+    const naam = str(d?.naam, 80);
+    if (!naam) f(`${p}.naam`, 'назва агента чи ім\'я людини', 'naam van agent of persoon');
+    else if (strikt && soort === 'mens' && GENERIEKE_AUTEUR.test(naam)) f(`${p}.naam`, 'псевдоніми на кшталт «Власник» заборонені — вкажіть справжнє ім\'я або ел. пошту облікового запису', 'aliassen zoals «Власник» zijn verboden — geef de echte naam of het e-mailadres van het account');
     const rollen = (Array.isArray(d?.rollen) ? d.rollen : []).filter((r: unknown) => ROLLEN.includes(r as Rol)) as Rol[];
     if (!rollen.length) f(`${p}.rollen`, `хоча б одна роль: ${ROLLEN.join(', ')}`, `minstens één rol: ${ROLLEN.join(', ')}`);
     const dn: Deelnemer = { soort: soort || 'mens', naam, rollen };
     if (soort === 'ai') {
       dn.platform = str(d?.platform, 80); dn.tool = str(d?.tool, 80);
-      if (!dn.platform) f(`${p}.platform`, 'платформа агента, напр. «Cursor», «Claude Code», «Grok Bot»', 'platform van de agent, bv. «Cursor», «Claude Code», «Grok Bot»');
-      if (!dn.tool) f(`${p}.tool`, 'інструмент, через який агент працював', 'tool waarmee de agent werkte');
+      if (!dn.platform || (strikt && /^(onbekend|unknown|невідомо)$/i.test(dn.platform))) f(`${p}.platform`, 'платформа агента, напр. «Google Antigravity», «Cursor», «Claude Code» (не порожнє і не «невідомо»)', 'platform van de agent, bv. «Google Antigravity», «Cursor», «Claude Code» (niet leeg en niet «onbekend»)');
+      if (!dn.tool || (strikt && /^(onbekend|unknown|невідомо)$/i.test(dn.tool))) f(`${p}.tool`, 'інструмент, через який агент працював (не порожнє і не «невідомо»)', 'tool waarmee de agent werkte (niet leeg en niet «onbekend»)');
       const m = d?.model ?? {}; const bron: ModelBron = m.bron === 'omgeving' || m.bron === 'auteur' ? m.bron : 'onbekend';
       const id = str(m.id, 120) || null; const mv = str(m.versie, 80) || null;
-      if (m.bron !== 'omgeving' && m.bron !== 'auteur' && m.bron !== 'onbekend') f(`${p}.model.bron`, 'звідки відомо модель: «omgeving» (підтверджено середовищем), «auteur» (заявлено автором) або «onbekend»', 'bron van het model: «omgeving», «auteur» of «onbekend»');
-      if (bron !== 'onbekend' && (!id || ALLEEN_FAMILIE.test(id))) f(`${p}.model.id`, 'конкретний ідентифікатор моделі (не лише «Claude»/«Grok»/«GPT»); якщо невідомо — bron «onbekend» і id null', 'concrete model-id (niet alleen «Claude»/«Grok»/«GPT»); onbekend → bron «onbekend» en id null');
-      if (bron === 'onbekend' && id) f(`${p}.model.id`, 'при bron «onbekend» id має бути null — не вгадуйте модель', 'bij bron «onbekend» moet id null zijn — raad het model niet');
+      if (strikt) {
+        if (m.bron !== 'omgeving' && m.bron !== 'auteur') f(`${p}.model.bron`, 'вкажіть «omgeving» (підтверджено середовищем) або «auteur» (заявлено автором); «onbekend» заборонено', 'geef «omgeving» of «auteur»; «onbekend» is verboden');
+        if (!id || ALLEEN_FAMILIE.test(id)) f(`${p}.model.id`, 'вкажіть справжній конкретний ідентифікатор моделі (напр. «claude-opus-4-6»); порожнє значення або «модель невідома» заборонені', 'geef een echte concrete model-id (bv. «claude-opus-4-6»); leeg of «model onbekend» is verboden');
+      } else {
+        if (m.bron !== 'omgeving' && m.bron !== 'auteur' && m.bron !== 'onbekend') f(`${p}.model.bron`, 'звідки відомо модель: «omgeving» (підтверджено середовищем), «auteur» (заявлено автором) або «onbekend»', 'bron van het model: «omgeving», «auteur» of «onbekend»');
+        if (bron !== 'onbekend' && (!id || ALLEEN_FAMILIE.test(id))) f(`${p}.model.id`, 'конкретний ідентифікатор моделі (не лише «Claude»/«Grok»/«GPT»); якщо невідомо — bron «onbekend» і id null', 'concrete model-id (niet alleen «Claude»/«Grok»/«GPT»); onbekend → bron «onbekend» en id null');
+        if (bron === 'onbekend' && id) f(`${p}.model.id`, 'при bron «onbekend» id має бути null — не вгадуйте модель', 'bij bron «onbekend» moet id null zijn — raad het model niet');
+      }
       dn.model = { id: bron === 'onbekend' ? null : id, versie: bron === 'onbekend' ? null : mv, bron };
     }
     deelnemers.push(dn);

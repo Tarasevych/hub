@@ -5,11 +5,12 @@
   "taal": "uk",
   "opdracht": "Виконати повний комплексний аудит проєкту Mijn Ruimte після другого переписування історії Git (B-011) та двомовної документації (f3f3fab), безконфліктно об’єднати чотири паралельні напрями робіт агентів (PRIVACY-001, MAILFIX-001/MAILFIT-001/MAILFIT-002, IDENTITY-001/002 з виправленнями cbeb3d0 і a318ba0, DESIGN-001) на канонічній післяпереписній історії без втягування допереписного предка e547381, відновити криптографічний замок правил (regelsVersie 1.4.8, B-013), синхронізувати українські та нідерландські версії документації (.uk.md/.nl.md), перевірити повну складання й тести, оновити гілки integratie та voornaamst і опублікувати канонічний інсталяційний випуск.",
   "herkomst": {
-    "eigenaar": "Eigenaar Test",
+    "eigenaar": "Тарасевич Павло (tarasevych.pavlo@gmail.com)",
     "agent": "antigravity",
+    "model": "claude-opus-4-6 (20260205)",
     "basis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
-    "vorigeProductieversie": "20261105-061659",
-    "vorigeProductieCommit": "a318ba0b1c731390217458dabadcf0e086d13635",
+    "vorigeProductieversie": "20261106-171500",
+    "vorigeProductieCommit": "2c71d1179064018bd60d3464a91e1a0ef17e912b",
     "tak": "audit/audit-2026-11-05-20261105-070523"
   },
   "privacy": {
@@ -74,7 +75,7 @@
     },
     {
       "volgorde": 5,
-      "stap": "Синхронізовано всі 433 Markdown-файли репозиторію (додано .uk.md та .nl.md версії і двомовні шапки для docs/ontwerp/identity-account/*, оновлено AGENTS.uk.md/nl.md, BESLUITEN.uk.md/nl.md, docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.md/nl.md), виправлено 4 регресії в модульних тестах і виконано повну 11-етапну складання npm run build.",
+      "stap": "Синхронізовано всі 433 Markdown-файли репозиторію (додано .uk.md та .nl.md версії і двомовні шапки для docs/ontwerp/identiteit-account/*, оновлено AGENTS.uk.md/nl.md, BESLUITEN.uk.md/nl.md, docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.md/nl.md), виправлено 4 регресії в модульних тестах і виконано повну 11-етапну складання npm run build.",
       "bewijzen": [
         "docs/ontwerp/identiteit-account/ОГЛЯД-ОБЛІКОВОГО-ЗАПИСУ.uk.md",
         "docs/ontwerp/identiteit-account/OVERZICHT-ACCOUNT.nl.md",
@@ -129,6 +130,12 @@
       "fase": "uitvoering",
       "actor": "antigravity",
       "stap": "Виконано повне перейменування всіх українських (.md, .uk.md) та нідерландських (.nl.md) статей і каталогів документації на автентичні українські та нідерландські назви, очищено зміст усіх статей і правил (B-017, regelsVersie 1.4.12) від англіцизмів, латинських транслітерацій, технічного сленгу, русизмів і кальок, оновлено перехресні посилання й одиничні випробування та опубліковано випуск 20261106-190000."
+    },
+    {
+      "tijd": "2026-11-07T11:45:00Z",
+      "fase": "uitvoering",
+      "actor": "antigravity",
+      "stap": "Запроваджено автоматичне визначення імені та пошти облікового запису власника при розгортанні, заборонено загальні псевдоніми («Власник», «Eigenaar») і невизначену модель ШІ («модель невідома» / bron=onbekend) у UITROL-MANIFEST.json та ORCH-OVERDRACHT.json, залишено в deelnemers виключно фактичного агента antigravity зі справжньою моделлю claude-opus-4-6 (20260205) і роллю власника «auteur», та зібрано випуск 20261107-114500 поверх 20261106-171500."
     }
   ],
   "keuzes": [

@@ -65,11 +65,11 @@ Het root-script controleert het manifest (nog) niet; een SSH-installatie zonder 
 
 ```json
 {
-  "schema": 1, "versie": "<UITROL-VERSIE>", "aangemaakt": "2026-10-29T19:00:00+01:00",
-  "herkomst": "git: <branch>@<commit> (basis <versie>)", "auteur": "Eigenaar Test", "zonderAi": false,
+  "schema": 1, "versie": "<UITROL-VERSIE>", "aangemaakt": "2026-11-07T11:45:00Z",
+  "herkomst": "git: <branch>@<commit> (basis <versie>)", "auteur": "Тарасевич Павло (tarasevych.pavlo@gmail.com)", "zonderAi": false,
   "deelnemers": [
-    { "soort": "mens", "naam": "Eigenaar Test", "rollen": ["auteur", "controle"] },
-    { "soort": "ai", "naam": "grok", "platform": "Grok Bot", "tool": "executor", "model": { "id": null, "versie": null, "bron": "onbekend" }, "rollen": ["ontwikkeling", "testen", "verpakken"] }
+    { "soort": "mens", "naam": "Тарасевич Павло (tarasevych.pavlo@gmail.com)", "rollen": ["auteur"] },
+    { "soort": "ai", "naam": "antigravity", "platform": "Google Antigravity", "tool": "Antigravity IDE", "model": { "id": "claude-opus-4-6", "versie": "20260205", "bron": "omgeving" }, "rollen": ["ontwikkeling", "controle", "testen", "verpakken"] }
   ],
   "beschrijving": {
     "uk": { "titel": "…", "samenvatting": "… (≥ 20, cyrillisch)", "wijzigingen": [], "fixes": [], "beperkingen": [], "instructies": "" },
@@ -78,9 +78,10 @@ Het root-script controleert het manifest (nog) niet; een SSH-installatie zonder 
 }
 ```
 
+- `auteur` en `deelnemers` (`soort: "mens"`): moet de werkelijke naam en het e-mailadres van het eigenaarsaccount vermelden van waaruit wordt uitgerold (automatisch opgehaald uit de account-/Git-configuratie); generieke bijnamen (`Власник`, `Eigenaar`, `Owner`, `Admin`) zijn verboden (`MANIFEST_STRIKT_VANAF = 20261106-000000`). De rol van de mens bij voorbereiding door een agent is `["auteur"]`.
+- `deelnemers` (`soort: "ai"`): vermeld uitsluitend AI-agenten die objectief aan dit pakket hebben meegewerkt (geen niet-betrokken agenten automatisch toevoegen).
 - `rollen`: `ontwikkeling`, `controle`, `testen`, `verpakken`, `auteur`.
-- `model.bron`: `omgeving` (door de omgeving bevestigd), `auteur` (door de auteur opgegeven),
-  `onbekend` (dan `id` = null). «Claude», «Grok», «GPT» zijn geen model-id en worden geweigerd.
+- `model.bron`: `omgeving` (door de omgeving bevestigd) of `auteur` (door de auteur opgegeven) met een concrete `model.id` (bijv. `claude-opus-4-6`) en `model.versie`. De waarde `onbekend` («model onbekend»), een lege `model.id` of familienamen («Claude», «Grok», «GPT») zijn verboden en worden geweigerd.
 - Zonder AI: `"zonderAi": true` + een mens met de rol `ontwikkeling`.
 - De lijsten `wijzigingen/fixes/beperkingen` in `uk` en `nl` moeten evenveel punten bevatten.
 - Fouten worden getoond met de exacte veldnaam (`beschrijving.uk.titel`, `deelnemers[1].model.id` …).
