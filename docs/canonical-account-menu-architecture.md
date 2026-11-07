@@ -2,11 +2,11 @@
 
 ## 1. Призначення
 
-`CanonicalAccountMenu` є канонічним presentation-шаром для вибору вже відомого акаунта, запуску нового входу, завершення поточного входу та керування фото профілю. Компонент не визначає auth-політики й не створює власних account/session джерел.
+`CanonicalAccountMenu` є канонічним presentation-шаром для вибору вже відомого облікового запису, запуску нового входу, завершення поточного входу та керування фото профілю. Компонент не визначає auth-політики й не створює власних account/session джерел.
 
 Архітектура розділена на:
 
-- `src/CanonicalAccountMenu.tsx` — відкриття/закриття, expanded/collapsed UI, виклик переданих user actions і рендеринг;
+- `src/CanonicalAccountMenu.tsx` — відкриття/закриття, expanded/collapsed UI, виклик переданих user actions і відмальовування;
 - `src/canonical-account-menu-model.ts` — identity, deduplication, classification, MRU, visibility, preview candidates і photo resolution;
 - `src/canonical-account-menu.css` — виключно стилі CanonicalAccountMenu;
 - backend session endpoints — авторитетний стан browser grants та активних сесій.
@@ -15,8 +15,8 @@
 
 | Дані | Джерело | Авторитетність | Використання |
 |---|---|---:|---|
-| Поточний акаунт | активний tab/session payload (`user`) | найвища | лише header меню |
-| Відомі акаунти | `/api/owner/session/accounts → accounts` | авторитетне | known/signed-in/reauth класифікації |
+| Поточний обліковий запис | активний tab/session payload (`user`) | найвища | лише header меню |
+| Відомі облікові записи | `/api/owner/session/accounts → accounts` | авторитетне | known/signed-in/reauth класифікації |
 | `snapshot.previews` | backend-проєкція тих самих browser grants | legacy, не окреме джерело | зберігається для сумісності, не використовується як provider candidate |
 | External candidates | `externalCandidates` із явним `source: provider або browser` | авторитетне лише за наявності реального feed | add-account preview |
 | Локальна history | `tsv-recent-account-previews-v1` (legacy `tsv_recent_account_previews_v1` мігрується один раз і видаляється) | допоміжна | лише уточнює MRU вже авторитетних identity |
@@ -69,7 +69,7 @@ History не створює `knownAccounts`, `signedInAccounts`, `reauthAccounts
 
 ### Непорушні інваріанти
 
-1. `currentAccount` рендериться тільки в header.
+1. `currentAccount` відмальовується тільки в header.
 2. `otherKnownAccounts = knownAccounts - currentAccount` через `isSameAccount`.
 3. `signedInAccounts` містить лише `active` або `signed_in`.
 4. `externalConnectableCandidates` походить тільки з явного external feed, не з history, grants preview або reauth list.
@@ -83,7 +83,7 @@ History не створює `knownAccounts`, `signedInAccounts`, `reauthAccounts
 ### Menu state
 
 - `closed` — panel не змонтований;
-- `open/collapsed` — panel відкритий, список інших акаунтів згорнутий;
+- `open/collapsed` — panel відкритий, список інших облікових записів згорнутий;
 - `open/expanded` — panel відкритий, відображається `visibleExpandedAccounts`.
 
 Якщо `shouldShowOtherAccountsToggle === false`, `expanded` примусово повертається в `false`.
@@ -96,7 +96,7 @@ History не створює `knownAccounts`, `signedInAccounts`, `reauthAccounts
 | Один current account | toggle відсутній |
 | Current + мінімум один other known | toggle видимий |
 | Expanded | список містить тільки `otherKnownAccounts` |
-| Два або більше signed-in identity | `Вийти з усіх акаунтів` видимий |
+| Два або більше signed-in identity | `Вийти з усіх облікових записів` видимий |
 | Лише reauth/history identity | не збільшує signed-in count |
 
 ## 7. Preview rules
@@ -107,7 +107,7 @@ History не створює `knownAccounts`, `signedInAccounts`, `reauthAccounts
 - Якщо кандидатів немає, preview JSX не монтується.
 - Collapsed і expanded preview взаємовиключні в JSX; CSS не приховує зайвий DOM.
 
-Поки backend не має перевіреного provider/browser discovery feed, він повертає `externalCandidates: []`. Це навмисний fail-closed контракт: краще не показати ілюстрацію, ніж видати history або grant за доступний зовнішній акаунт.
+Поки backend не має перевіреного provider/browser discovery feed, він повертає `externalCandidates: []`. Це навмисний fail-closed контракт: краще не показати ілюстрацію, ніж видати history або grant за доступний зовнішній обліковий запис.
 
 ## 8. Photo fallback
 
@@ -143,11 +143,11 @@ Backend як і раніше перевіряє MIME, magic bytes і розмі�
 Blocking test/audit покривають:
 
 1. перший запуск;
-2. один акаунт;
-3. два акаунти — collapsed;
-4. два акаунти — expanded;
+2. один обліковий запис;
+3. два облікові записи — collapsed;
+4. два облікові записи — expanded;
 5. logout-all visibility;
-6. 3–4 акаунти та MRU limit/order;
+6. 3–4 облікові записи та MRU limit/order;
 7. broken provider photo → initials;
 8. custom photo priority;
 9. external candidates only для add preview;

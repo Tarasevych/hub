@@ -426,7 +426,7 @@ een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). 
 
 ### 13.3 Voorbereiders toestaan of intrekken
 
-Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (акаунт / токен агента / MCP-підключення), wie, aantal dagen (1–30),
+Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (обліковий запис / токен агента / MCP-під'єднання), wie, aantal dagen (1–30),
 «Дозволити» (step-up). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
 grant vervalt ook als het account geblokkeerd of met pensioen is of als AI voor dat account geblokkeerd is.
 
