@@ -5,6 +5,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { checker } from './hulp/nep-google';
 import { V2_AGENTEN, agentUrl, redirectPastBijAgent, slugUitPad, slugUitResource, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { V2_GROEPEN, V2_OPTIES, v2Optie } from '../../shared/connector-v2/catalogus';
+import { functieOptie } from '../../shared/connector-functies';
 import { MAX_NAAM, NAAM_RE, alleNamen, ontleed, toolNaam } from '../../shared/connector-v2/namen';
 import { MODI, STANDAARD, modusStaatToe, modusVan, pasModusToe, schoon, verschil, breidtUit, hoogsteRisico } from '../../shared/connector-v2/rechten';
 import { STATISCHE_TOOLNAMEN } from '../../backend/connectors-tools';
@@ -64,13 +65,13 @@ export async function main(): Promise<number> {
   // ------------------------------------------------------------ rechten
   const std = STANDAARD();
   check('standaard: alleen lezen, laag risico, niet gevoelig, privékant — geen mail, geen schrijven, geen beheer',
-    std.length > 5 && std.every((k) => { const x = v2Optie(k)!; return x.soort === 'lezen' && x.risico === 'laag' && !x.gevoelig && x.kant === 'gebruiker'; }) && !std.includes('mail_read_message:gebruiker'));
+    std.length > 5 && std.every((k) => { const x = v2Optie(k) ?? functieOptie(k); return !!x && x.soort === 'lezen' && x.risico === 'laag' && !x.gevoelig && x.kant === 'gebruiker'; }) && !std.includes('mail_read_message:gebruiker'));
   check('modi: alles ⊇ lezen-schrijven ⊇ lezen; schrijven zonder lezen; geen = niets',
     modusStaatToe('alles', 'wissen') && modusStaatToe('lezen-schrijven', 'schrijven') && !modusStaatToe('lezen-schrijven', 'wissen') && !modusStaatToe('lezen', 'schrijven')
     && modusStaatToe('schrijven', 'wissen') && !modusStaatToe('schrijven', 'lezen') && MODI.every((m) => m === 'geen' ? !modusStaatToe(m, 'lezen') : true));
   const bordRW = pasModusToe([], 'lezen-schrijven', ['gebruiker'], { groep: 'bord' });
   check('modus per groep: bord lezen+schrijven zonder verwijderen, en modusVan herkent het', bordRW.includes('create_task:gebruiker') && !bordRW.includes('delete_board_item:gebruiker')
-    && modusVan(bordRW, ['gebruiker'], { groep: 'bord' }) === 'lezen-schrijven' && modusVan([...bordRW, 'delete_board_item:gebruiker'], ['gebruiker'], { groep: 'bord' }) === 'alles');
+    && modusVan(bordRW, ['gebruiker'], { groep: 'bord' }) === 'lezen-schrijven' && modusVan(pasModusToe(bordRW, 'alles', ['gebruiker'], { groep: 'bord' }), ['gebruiker'], { groep: 'bord' }) === 'alles');
   check('schoon: beheersleutels vallen weg zonder technische kant; onbekend en «in ontwikkeling» vallen weg',
     schoon(['get_live_release:beheer', 'search_board:gebruiker', 'bestaat_niet:gebruiker', `${dev.key}`], ['gebruiker']).join() === 'search_board:gebruiker');
   const vs = verschil(['a:gebruiker', 'b:gebruiker'], ['b:gebruiker', 'c:gebruiker']);
