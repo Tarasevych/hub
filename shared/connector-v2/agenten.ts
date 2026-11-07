@@ -21,7 +21,7 @@ export const AGENT_PAD_PREFIX = '';
 export const OUD_AGENT_PAD_PREFIX = '/ai';
 export const MCP_BASIS = 'https://mcp.tarasevych.com';
 
-export type AgentSlug = 'claude' | 'gpt' | 'grok' | 'gemini' | 'copilot' | 'cursor' | 'antigravity';
+export type AgentSlug = 'claude' | 'gpt' | 'grok' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw';
 export interface V2Agent {
   slug: AgentSlug;
   naam: string;
@@ -62,6 +62,9 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'antigravity', naam: 'Antigravity', klant: 'antigravity', webHosts: [], appSchemas: [], loopback: true,
     uk: 'Antigravity: плагін mijn-ruimte (CLI + навичка) або ~/.gemini/settings.json → mcpServers → url із цією адресою.',
     nl: 'Antigravity: plug-in mijn-ruimte (CLI + vaardigheid) of ~/.gemini/settings.json → mcpServers → url met dit adres.' },
+  { slug: 'autoclaw', naam: 'AutoClaw', klant: 'autoclaw', webHosts: ['autoclaw.z.ai', 'chat.z.ai', 'z.ai'], appSchemas: [], loopback: true,
+    uk: 'AutoClaw (Z.ai / GLM-5.3-flashX-Legal): команда мосту mijn-ruimte або mcp.json із власною адресою /autoclaw та правничою перевіркою джерел.',
+    nl: 'AutoClaw (Z.ai / GLM-5.3-flashX-Legal): opdracht van de mijn-ruimte-brug of mcp.json met het eigen adres /autoclaw en juridische broncontrole.' },
 ]);
 
 const PER_SLUG = new Map(V2_AGENTEN.map((a) => [a.slug, a]));

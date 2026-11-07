@@ -9,7 +9,7 @@ import { imapLevend } from '../../backend/beheer-integraties';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('integraties-catalogus-v2');
-  check('register heeft precies één rij per catalogusitem (161)', REGISTER.length === INTEGRATIES.length && INTEGRATIES.length === 161 && INTEGRATIES.every((i) => REGISTER.filter((r) => r.id === i.id).length === 1));
+  check('register heeft precies één rij per catalogusitem (162)', REGISTER.length === INTEGRATIES.length && INTEGRATIES.length === 162 && INTEGRATIES.every((i) => REGISTER.filter((r) => r.id === i.id).length === 1));
   check('elk bewijsbestand bestaat echt', REGISTER.every((r) => r.bewijs.every((b) => existsSync(b))));
   check('werkend/basis heeft bewijs; geen heeft geen bewijs', REGISTER.every((r) => (r.uitvoering === 'geen') === (r.bewijs.length === 0)));
   check('elke rij heeft uk+nl voor vereist/operaties/nog te doen', REGISTER.every((r) => [r.vereist, r.operaties, r.nogTeDoen].every((t) => t[0] && t[1])));
@@ -31,7 +31,7 @@ export async function main(): Promise<number> {
   check('kapotte opslag → standaard', leesVoorkeur('{kapot').weergave === 'raster' && leesVoorkeur(JSON.stringify({ cat: 'bestaat-niet', methode: 'x' })).cat === '');
   // Indeling
   const blokken = indelen(INTEGRATIES, (i) => (i.id === 'github' ? 'verbonden' : i.id === 'telegram' ? 'fout' : null), { sorteer: 'stand' }, 'uk');
-  check('alle 161 kaarten staan in een blok (niets verborgen of weggelaten)', blokken.reduce((n, b) => n + b.groepen.reduce((m, g) => m + g.lijst.length, 0), 0) === 161);
+  check('alle 162 kaarten staan in een blok (niets verborgen of weggelaten)', blokken.reduce((n, b) => n + b.groepen.reduce((m, g) => m + g.lijst.length, 0), 0) === 162);
   const code = blokken.find((b) => b.cat === 'code')!;
   check('verbonden staat boven niet-verbonden binnen een thema', code.groepen[0].id === 'verbonden' && code.groepen[0].lijst[0].id === 'github');
   check('thema’s met koppelingen eerst', blokken[0].verbonden > 0);

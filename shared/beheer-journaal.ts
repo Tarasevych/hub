@@ -411,7 +411,7 @@ export function agentVan(details: unknown): string {
   const v = d.agent ?? d.klant ?? d.clientName ?? obj(d.doel).id;
   if (Array.isArray(v)) return str(v[0], 60);
   const t = str(v, 60);
-  return /^(claude|gpt|grok|gemini|copilot|cursor|antigravity)$/i.test(t) || /claude|chatgpt|openai|grok|gemini|copilot|cursor|antigravity|jetski/i.test(t) ? t : (typeof d.agent === 'string' ? t : '');
+  return /^(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)$/i.test(t) || /claude|chatgpt|openai|grok|gemini|copilot|cursor|antigravity|jetski|autoclaw|openclaw|zhipu|chatglm|\bglm\b/i.test(t) ? t : (typeof d.agent === 'string' ? t : '');
 }
 const kort = (v: unknown): string => { if (v === undefined || v === null || v === '') return '—'; if (typeof v === 'object') { try { return JSON.stringify(v).slice(0, 120); } catch { return '…'; } } return String(v).slice(0, 120); };
 export const wijzigingTekst = (w: Wijziging | null): string => !w ? '' : ('van' in w && w.van !== undefined ? `${kort(w.van)} → ${kort(w.naar)}` : `→ ${kort(w.naar)}`);

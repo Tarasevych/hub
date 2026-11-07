@@ -68,7 +68,7 @@ const DETAILS: Record<string, IntegratieDetail> = {
   'rest-api': { rechten: [['Кожен токен має власні обмежені права й термін дії', 'Elk token heeft eigen beperkte rechten en een looptijd']], stappen: [['Відкрийте API → Доступ і створіть токен із мінімальними правами.', 'Open API → Toegang en maak een token met minimale rechten.']], docs: 'https://api.tarasevych.com' },
   'oauth-clients': { rechten: [['Застосунки бачать лише ті дозволи, які ви схвалили', 'Apps zien alleen de toestemmingen die u hebt goedgekeurd']], stappen: [['Відкрийте «Додатки та OAuth» і оберіть політику для нових застосунків.', 'Open «Apps en OAuth» en kies het beleid voor nieuwe apps.']], docs: 'https://oauth.net/2/' },
 };
-for (const slug of ['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity']) {
+for (const slug of ['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity', 'autoclaw']) {
   const i = integratie(slug);
   if (i) DETAILS[slug] = { rechten: MCP_RECHTEN, stappen: MCP_STAPPEN(i.naam), docs: i.site };
 }

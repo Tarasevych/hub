@@ -13,7 +13,7 @@
 //  F. «Потребує відповіді», markeren in het origineel (ook met «…» en tekens buiten het BMP), taal, normaliseren.
 import { checker } from './hulp/nep-google';
 import {
-  alineasVan, alineasVoorModel, antwoordNodig, bronLabel, controleerPunten, datumUit, eenvoudigeOntleding, gespreksAlineas,
+  alineasVan, alineasVoorModel, anonimiseerTekst, antwoordNodig, bouwBewijsIndex, bronLabel, controleerPunten, datumUit, eenvoudigeOntleding, gespreksAlineas,
   markeerCitaat, normaliseer, taalVan, telGevonden, termijnInBron, termijnInZin, termijnWoorden, zinnenVan, zoekCitaat,
   type GecontroleerdPunt,
 } from '../../shared/ai-bronnen';
@@ -171,6 +171,23 @@ export async function main(): Promise<number> {
     check('F taal: uk, nl, en (zelfde ruwe regels als de server)', taalVan(UK) === 'uk' && taalVan(NL) === 'nl' && taalVan('Please confirm the meeting.') === 'en');
     check('F normaliseren: NFKC, aanhalingstekens, streepjes, harde spatie, zacht afbreekteken, hoofdletters',
       normaliseer('„Ｈuur” –­bedrag ’s') === '"huur" -bedrag \'s', JSON.stringify(normaliseer('„Ｈuur” –­bedrag ’s')));
+  }
+
+  // ------------------------------------------------------------------ G. juridisch dossier & anonimiseren (AutoClaw / GLM-5.3-flashX-Legal)
+  {
+    const bronUk = 'Договір оренди: контакт olena@voorbeeld.ua, тел. +380 (67) 123-45-67, рахунок UA21 3223 1300 0002 6007 2335 6600 1, ЄДРПОУ: 12345678. Оплату 500 грн здійснити до 28 жовтня.';
+    const anUk = anonimiseerTekst(bronUk, 'uk');
+    check('G anonimiseerTekst (uk): e-mail, telefoon, IBAN en ЄДРПОУ verborgen en geteld',
+      anUk.telling.email === 1 && anUk.telling.telefoon === 1 && anUk.telling.rekening === 1 && anUk.telling.code === 1 && anUk.telling.totaal === 4
+      && anUk.tekst.includes('[ПРИХОВАНО_ПОШТА]') && anUk.tekst.includes('[ПРИХОВАНО_ТЕЛЕФОН]') && anUk.tekst.includes('[ПРИХОВАНО_РАХУНОК]') && anUk.tekst.includes('[ПРИХОВАНО_КОД]')
+      && !anUk.tekst.includes('olena@voorbeeld.ua') && !anUk.tekst.includes('12345678'), JSON.stringify(anUk));
+    const anNl = anonimiseerTekst('Contact jan@voorbeeld.nl, IBAN NL91 ABNA 0417 1643 00, KvK 87654321, tel 06 1234 5678.', 'nl');
+    check('G anonimiseerTekst (nl): Nederlandse labels [VERBORGEN_*]',
+      anNl.telling.totaal === 4 && anNl.tekst.includes('[VERBORGEN_E_MAIL]') && anNl.tekst.includes('[VERBORGEN_REKENING]') && anNl.tekst.includes('[VERBORGEN_NUMMER]') && anNl.tekst.includes('[VERBORGEN_TELEFOON]'), JSON.stringify(anNl));
+    const idx = bouwBewijsIndex([{ brief: 1, tekst: UK }, { brief: 2, tekst: bronUk }], 'uk', REF);
+    check('G bouwBewijsIndex: bouwt alinea-index, letterlijke punten, chronologische tijdlijn en Markdown-tabel zonder lekken',
+      idx.samenvatting.totaalAlineas >= 5 && idx.samenvatting.letterlijkGevonden === idx.samenvatting.totaalPunten && idx.samenvatting.geanonimiseerd === 4
+      && idx.markdown.includes('AutoClaw · GLM-5.3-flashX-Legal') && idx.markdown.includes('лист 1 · §2') && !idx.markdown.includes('olena@voorbeeld.ua'), idx.markdown);
   }
 
   return einde();

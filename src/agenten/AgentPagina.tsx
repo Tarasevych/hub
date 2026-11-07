@@ -25,6 +25,7 @@ import { RUIMTE_NAAM, RUIMTE_UITLEG } from '../../shared/ai-ruimte';
 import { WEIGER_UITLEG, type AgentToegangDiagnose } from '../../shared/ai-toegang-diagnose';
 import { STAND_NAAM } from '../../shared/ruimte-scheiding';
 import { agentSlugUitNaam } from '../../shared/markering-agenten';
+import { bouwBewijsIndex } from '../../shared/ai-bronnen';
 import { KANT_TEKST, type Kant } from '../../shared/connector-v2/catalogus';
 import { STANDAARD, schoon } from '../../shared/connector-v2/rechten';
 import { levendeKanten, SOORT_TEKST, zichtbareSleutels, type VerbindingSoort } from '../../shared/connector-v2/stand';
@@ -449,16 +450,38 @@ function AgentToegangGereedheid({
   );
 }
 
-type BrugKanaal = 'site' | 'browser' | 'pc' | 'server';
+type BrugKanaal = 'site' | 'browser' | 'pc' | 'server' | 'juridisch';
+
+const JURIDISCH_VOORBEELD_UK = [
+  'Договір про надання правничих та ІТ-послуг № 2026-11/07',
+  '',
+  'Виконавець (контакт: jurist@voorbeeld.ua, тел. +380 (67) 555-12-34, рахунок UA21 3223 1300 0002 6007 2335 6600 1, ЄДРПОУ: 40123456) зобов’язується передати підписаний акт приймання-передачі до 18 листопада 2026.',
+  '',
+  'У вкладенні узгоджений кошторис і реєстр доказів. Винагорода становить 48000 грн. Чи підтверджуєте ви погодження остаточної редакції договору?',
+].join('\n');
+
+const JURIDISCH_VOORBEELD_NL = [
+  'Overeenkomst voor juridische en IT-dienstverlening nr. 2026-11/07',
+  '',
+  'Opdrachtnemer (contact: jurist@voorbeeld.nl, tel. 06 1234 5678, IBAN NL91 ABNA 0417 1643 00, KvK: 87654321) dient de ondertekende akte van oplevering uiterlijk vóór 18 november 2026 terug te sturen.',
+  '',
+  'In bijlage vindt u de goedgekeurde begroting en het bewijsregister. De vergoeding bedraagt € 2400. Kunt u de definitieve versie van de overeenkomst bevestigen?',
+].join('\n');
 
 function AntigravityBrugPaneel({
-  tr, uk, adres, diag, hulpmiddelenNu, naWijziging,
+  tr, uk, slug, adres, diag, hulpmiddelenNu, naWijziging,
 }: {
-  tr: Tr; uk: boolean; adres: string; diag: AgentToegangDiagnose | null; hulpmiddelenNu: number; naWijziging: () => Promise<void>;
+  tr: Tr; uk: boolean; slug: AgentSlug; adres: string; diag: AgentToegangDiagnose | null; hulpmiddelenNu: number; naWijziging: () => Promise<void>;
 }) {
-  const [kanaal, setKanaal] = useState<BrugKanaal>('site');
+  const isAutoClaw = slug === 'autoclaw';
+  const [kanaal, setKanaal] = useState<BrugKanaal>(isAutoClaw ? 'juridisch' : 'site');
   const [gekopieerd, setGekopieerd] = useState('');
   const [verversBezig, setVerversBezig] = useState(false);
+  const [juridischTekst, setJuridischTekst] = useState(() => (uk ? JURIDISCH_VOORBEELD_UK : JURIDISCH_VOORBEELD_NL));
+  const bewijsDossier = useMemo(
+    () => bouwBewijsIndex([{ brief: 1, tekst: juridischTekst }], uk ? 'uk' : 'nl'),
+    [juridischTekst, uk],
+  );
   const kopieer = (sleutel: string, tekst: string) => {
     void navigator.clipboard?.writeText(tekst).then(() => {
       setGekopieerd(sleutel);
@@ -479,11 +502,11 @@ function AntigravityBrugPaneel({
     site: {
       titel: ['1. Сайт і координація (GitOps / MCP)', '1. Site en coördinatie (GitOps / MCP)'],
       uitleg: [
-        'Двостороннє створення й оновлення сайту через власну адресу /antigravity: пошта, календар, файли, дошка, GitHub та 6 інструментів оркестрації (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).',
-        'Tweerichtingsbouw en -beheer van de site via /antigravity: mail, agenda, bestanden, bord, GitHub en de 6 orkestratiehulpmiddelen (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).',
+        `Двостороннє створення й оновлення сайту через власну адресу /${slug}: пошта, календар, файли, дошка, GitHub та 6 інструментів оркестрації (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).`,
+        `Tweerichtingsbouw en -beheer van de site via /${slug}: mail, agenda, bestanden, bord, GitHub en de 6 orkestratiehulpmiddelen (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).`,
       ],
       opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Status --url ${adres}`,
-      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --hulpmiddel tonen_agent_coordinatie_antigravity_admin_tarasevych_com_beheer',
+      rpcVoorbeeld: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --url ${adres} --hulpmiddel tonen_agent_coordinatie_${slug}_admin_tarasevych_com_beheer`,
       href: '#orch',
       hrefLabel: ['Відкрити «Координація»', 'Open «Coördinatie»'],
     },
@@ -493,8 +516,8 @@ function AntigravityBrugPaneel({
         'Керування вкладками в реальному часі (21 інструмент): відкриття сторінок, знімок DOM, клік, введення тексту, форми, скріншоти, консоль, мережа та глибока діагностика Chrome Debugger.',
         'Realtime tabbladbeheer (21 hulpmiddelen): pagina’s openen, DOM-opname, klikken, typen, formulieren, schermafdrukken, console, netwerk en diepe Chrome Debugger-diagnose.',
       ],
-      opdracht: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserTabs --kant gebruiker',
-      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserOpen --doelUrl https://tarasevych.com',
+      opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserTabs --url ${adres} --kant gebruiker`,
+      rpcVoorbeeld: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserOpen --url ${adres} --doelUrl https://tarasevych.com`,
       href: '#browser',
       hrefLabel: ['Відкрити «Браузер і агенти»', 'Open «Browser en agenten»'],
     },
@@ -504,8 +527,8 @@ function AntigravityBrugPaneel({
         'Двосторонній міст із вашим комп’ютером: стан системи, процеси, читання й запис файлів у дозволених коренях, безпечне виконання команд із списку дозволених і перегляд контейнерів Docker.',
         'Tweerichtingsbrug met uw computer: systeemstatus, processen, bestanden lezen en schrijven in toegestane mappen, veilige opdrachten van de witte lijst en Docker-containers bekijken.',
       ],
-      opdracht: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcStatus --kant gebruiker',
-      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcBestanden --pad . --kant gebruiker',
+      opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcStatus --url ${adres} --kant gebruiker`,
+      rpcVoorbeeld: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcBestanden --url ${adres} --pad . --kant gebruiker`,
       href: '#apparaten',
       hrefLabel: ['Відкрити «Пристрої»', 'Open «Apparaten»'],
     },
@@ -515,19 +538,34 @@ function AntigravityBrugPaneel({
         'Керування сервером у технічному просторі: стан служб, журнали випусків, перевірка БД (SELECT), хвіст аудиту, безпека та підписані випуски.',
         'Serverbeheer in de technische ruimte: dienststatus, releaselogboeken, DB-controle (SELECT), auditstaart, beveiliging en ondertekende releases.',
       ],
-      opdracht: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerGezondheid',
-      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerUitrolStatus',
+      opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerGezondheid --url ${adres}`,
+      rpcVoorbeeld: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerUitrolStatus --url ${adres}`,
       href: '#technisch',
       hrefLabel: ['Відкрити «Технічне»', 'Open «Technisch»'],
     },
+    juridisch: {
+      titel: ['5. Правнича перевірка й реєстр доказів (GLM-5.3-flashX-Legal)', '5. Juridische broncontrole en bewijsregister (GLM-5.3-flashX-Legal)'],
+      uitleg: [
+        'Дослівна перевірка кожного пункту договору чи листа за номером абзацу (§1, §2…), звірка строків з оригіналом без вигадок, автоматичне знеособлення чутливих реквізитів (ел. пошта, IBAN, телефон, ЄДРПОУ/ІПН) та побудова хронологічного реєстру доказів.',
+        'Letterlijke controle van elk contract- of briefpunt per alineanummer (§1, §2…), termijnverificatie in het origineel zonder hallucinaties, automatische anonimisering van gevoelige gegevens (e-mail, IBAN, telefoon, KvK/BSN) en chronologisch bewijsregister.',
+      ],
+      opdracht: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte JuridischControleer --taal uk',
+      rpcVoorbeeld: 'node .agents/skills/mijn-ruimte/scripts/mijn-ruimte AutoClawPakket --taal uk',
+      href: '#orch',
+      hrefLabel: ['Відкрити «Координація»', 'Open «Coördinatie»'],
+    },
   };
 
+  const zichtbareKanalen: readonly BrugKanaal[] = isAutoClaw
+    ? (['juridisch', 'site', 'browser', 'pc', 'server'] as const)
+    : (['site', 'browser', 'pc', 'server'] as const);
   const actiefKanaal = kanalen[kanaal];
+  const brugNaam = isAutoClaw ? 'AutoClaw · GLM-5.3-flashX-Legal' : 'Google Antigravity';
 
   return (
     <section className='ag-kaart' data-agent-sectie='brug' aria-labelledby='ag-antigravity-brug-kop'>
       <div className='ag-kaart-kop'>
-        <h3 id='ag-antigravity-brug-kop'><Zap size={16} aria-hidden='true' /> {tr('Двосторонній міст Google Antigravity (Сайт · Браузер · ПК · Сервер)', 'Tweerichtingsbrug Google Antigravity (Site · Browser · Pc · Server)')}</h3>
+        <h3 id='ag-antigravity-brug-kop'><Zap size={16} aria-hidden='true' /> {tr(`Двосторонній міст ${brugNaam} (Сайт · Браузер · ПК · Сервер)`, `Tweerichtingsbrug ${brugNaam} (Site · Browser · Pc · Server)`)}</h3>
         <span className={`ag-badge ${verbonden ? 'ag-ok' : 'ag-warn'}`} data-brug-verbonden={verbonden ? '1' : '0'}>
           <Check size={12} aria-hidden='true' />
           {verbonden
@@ -536,14 +574,19 @@ function AntigravityBrugPaneel({
         </span>
       </div>
       <p className='hub-meta'>
-        {tr(
-          'Плагін і конектор працюють у двох напрямках: ви керуєте дозволами, браузером, ПК і сервером із цього інтерфейсу, а агент Antigravity виконує дії та повертає живий стан назад на сайт.',
-          'De plug-in en connector werken in twee richtingen: u beheert rechten, browser, pc en server vanuit dit scherm, en de Antigravity-agent voert acties uit en stuurt de levende stand terug naar de site.',
-        )}
+        {isAutoClaw
+          ? tr(
+              'AutoClaw та правнича модель GLM-5.3-flashX-Legal (Z.ai) підключаються через власну адресу /autoclaw: дослівна перевірка цитат (§1, §2…), знеособлення реквізитів, реєстр доказів і багатоагентна координація без витоку сирих токенів.',
+              'AutoClaw en het juridische model GLM-5.3-flashX-Legal (Z.ai) verbinden via het eigen adres /autoclaw: letterlijke citaatcontrole (§1, §2…), anonimisering van gegevens, bewijsregister en multi-agentcoördinatie zonder lekken van ruwe tokens.',
+            )
+          : tr(
+              'Плагін і конектор працюють у двох напрямках: ви керуєте дозволами, браузером, ПК і сервером із цього інтерфейсу, а агент Antigravity виконує дії та повертає живий стан назад на сайт.',
+              'De plug-in en connector werken in twee richtingen: u beheert rechten, browser, pc en server vanuit dit scherm, en de Antigravity-agent voert acties uit en stuurt de levende stand terug naar de site.',
+            )}
       </p>
 
-      <div className='ag-verbind-knoppen' role='tablist' aria-label={tr('Канали мосту Antigravity', 'Brugkanalen van Antigravity')}>
-        {(['site', 'browser', 'pc', 'server'] as const).map((k) => (
+      <div className='ag-verbind-knoppen' role='tablist' aria-label={tr(`Канали мосту ${brugNaam}`, `Brugkanalen van ${brugNaam}`)}>
+        {zichtbareKanalen.map((k) => (
           <button
             key={k}
             type='button'
@@ -567,6 +610,13 @@ function AntigravityBrugPaneel({
                 <span className={`ag-badge ${techAan ? 'ag-ok' : 'ag-warn'}`}>
                   {techAan ? tr('Технічний простір активний', 'Technische ruimte actief') : tr('Потрібен технічний сеанс', 'Technische sessie vereist')}
                 </span>
+              ) : kanaal === 'juridisch' ? (
+                <span className='ag-badge ag-ok'>
+                  {tr(
+                    `Підтверджено дослівно: ${bewijsDossier.samenvatting.letterlijkGevonden}/${bewijsDossier.samenvatting.totaalPunten} · Знеособлено: ${bewijsDossier.samenvatting.geanonimiseerd}`,
+                    `Letterlijk bevestigd: ${bewijsDossier.samenvatting.letterlijkGevonden}/${bewijsDossier.samenvatting.totaalPunten} · Geanonimiseerd: ${bewijsDossier.samenvatting.geanonimiseerd}`,
+                  )}
+                </span>
               ) : (
                 <span className='ag-badge ag-ok'>{tr('Двосторонній канал', 'Tweerichtingskanaal')}</span>
               )}
@@ -575,6 +625,23 @@ function AntigravityBrugPaneel({
             <p className='hub-meta'>
               <code>{actiefKanaal.opdracht}</code>
             </p>
+            {kanaal === 'juridisch' ? (
+              <div className='ag-juridisch-proef' data-autoclaw-juridisch='1'>
+                <label className='hub-meta' htmlFor='ag-autoclaw-tekst'>
+                  <b>{tr('Текст договору або листа для дослівної звірки (§1, §2…) та знеособлення:', 'Contract- of brieftekst voor letterlijke controle (§1, §2…) en anonimisering:')}</b>
+                </label>
+                <textarea
+                  id='ag-autoclaw-tekst'
+                  rows={5}
+                  value={juridischTekst}
+                  onChange={(e) => setJuridischTekst(e.target.value)}
+                  style={{ width: '100%', marginTop: 6, marginBottom: 8, fontFamily: 'inherit' }}
+                />
+                <pre className='hub-meta' style={{ whiteSpace: 'pre-wrap', margin: 0 }} data-autoclaw-markdown='1'>
+                  {bewijsDossier.markdown}
+                </pre>
+              </div>
+            ) : null}
           </div>
           <div className='ag-diagnose-acties'>
             <button
@@ -589,9 +656,13 @@ function AntigravityBrugPaneel({
               type='button'
               className='ag-knop'
               data-brug-kopieer={`rpc-${kanaal}`}
-              onClick={() => kopieer(`rpc-${kanaal}`, actiefKanaal.rpcVoorbeeld)}
+              onClick={() => kopieer(`rpc-${kanaal}`, kanaal === 'juridisch' ? bewijsDossier.markdown : actiefKanaal.rpcVoorbeeld)}
             >
-              {gekopieerd === `rpc-${kanaal}` ? tr('Скопійовано', 'Gekopieerd') : tr('Приклад виклику', 'Voorbeeldaanroep')}
+              {gekopieerd === `rpc-${kanaal}`
+                ? tr('Скопійовано', 'Gekopieerd')
+                : kanaal === 'juridisch'
+                  ? tr('Скопіювати реєстр Markdown', 'Markdown-register kopiëren')
+                  : tr('Приклад виклику', 'Voorbeeldaanroep')}
             </button>
             <a className='ag-knop' href={actiefKanaal.href} data-brug-open={kanaal}>
               {uk ? actiefKanaal.hrefLabel[0] : actiefKanaal.hrefLabel[1]} <ExternalLink size={13} aria-hidden='true' />
@@ -750,8 +821,8 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
       {/* 1b (21.10.2026): wat DEZE AI voorstelde en op uw «Підтвердити» wacht (mail verzenden, delen, foto's …). */}
       <BevestigingenPaneel tr={tr} agent={slug} />
 
-      {slug === 'antigravity' ? (
-        <AntigravityBrugPaneel tr={tr} uk={uk} adres={adres} diag={diag} hulpmiddelenNu={hulpmiddelenNu} naWijziging={naWijziging} />
+      {slug === 'antigravity' || slug === 'autoclaw' ? (
+        <AntigravityBrugPaneel tr={tr} uk={uk} slug={slug} adres={adres} diag={diag} hulpmiddelenNu={hulpmiddelenNu} naWijziging={naWijziging} />
       ) : null}
 
       {/* 2: дозволи — dezelfde kiezer als in het toestemmingsvenster, met herverbinden en intrekken. */}

@@ -66,6 +66,7 @@ export const MERK_ALIAS: Readonly<Record<string, string>> = Object.freeze({
   chatgpt: 'gpt', openai: 'gpt', 'gpt-4': 'gpt', 'gpt4': 'gpt',
   googlegemini: 'gemini', bard: 'gemini',
   googleantigravity: 'antigravity', 'google-antigravity': 'antigravity', jetski: 'antigravity',
+  openclaw: 'autoclaw', glm: 'autoclaw', chatglm: 'autoclaw', zhipu: 'autoclaw', zhipuai: 'autoclaw', zai: 'autoclaw', 'z.ai': 'autoclaw', 'glm-5.3-flashx-legal': 'autoclaw',
   githubcopilot: 'copilot', 'github-copilot': 'copilot',
   xai: 'grok', 'x-ai': 'grok',
   macos: 'apple', ios: 'apple', ipados: 'apple', iphone: 'apple', ipad: 'apple', mac: 'apple',

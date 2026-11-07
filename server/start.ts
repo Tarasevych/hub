@@ -457,7 +457,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // kan geen open verbinding vasthouden, dus hier, vóór de routering (backend/connector-v2-stroom.ts).
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
     if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res); return; }
-    const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/.exec(url.pathname);
+    const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
     if (m) { await stroomVerzoek(req, res, m[1]); return; }
   }
   // MCP-connector voor Claude: nette URL's op mcp.* worden onder /api/mcp-connector/* gerouteerd (zie connectorPad).

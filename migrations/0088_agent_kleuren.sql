@@ -13,7 +13,7 @@
 
 CREATE TABLE IF NOT EXISTS app.agent_kleuren (
   user_id    text        NOT NULL,
-  agent      text        NOT NULL CHECK (agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity')),
+  agent      text        NOT NULL CHECK (agent IN ('claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity', 'autoclaw')),
   accent     text        NOT NULL CHECK (accent ~ '^[a-z]{3,12}$'),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, agent)

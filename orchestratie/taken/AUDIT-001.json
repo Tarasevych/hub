@@ -5,11 +5,11 @@
   "tak": "audit/audit-2026-11-05-20261105-070523",
   "basisCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
   "basisVersie": "20261105-061659",
-  "regelsVersie": "1.4.13",
-  "regelsHash": "4b08f84beda53f08065eb91485c159b72c26517a04e96ae6c5a22bb6fb30e3e4",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
   "staat": "integrated",
   "gestart": "2026-11-05T07:10:49.603Z",
-  "bijgewerkt": "2026-11-07T11:12:14.506Z",
+  "bijgewerkt": "2026-11-07T14:20:13.344Z",
   "omschrijving": "Виправлення проблем аудиту 2026-11-05, безконфліктна інтеграція PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001, AGPLUGIN-001 та повна мовна вичитка української й нідерландської документації",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -50,6 +50,11 @@
       "van": "1.4.12",
       "naar": "1.4.13",
       "op": "2026-11-07T11:12:14.506Z"
+    },
+    {
+      "van": "1.4.13",
+      "naar": "1.4.14",
+      "op": "2026-11-07T14:20:13.344Z"
     }
   ]
 }

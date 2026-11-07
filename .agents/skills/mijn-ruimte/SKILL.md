@@ -109,11 +109,24 @@ node .agents/skills/mijn-ruimte/scripts/mijn-ruimte ServerAudit --limiet 25
 # Викликати будь-який інструмент v2 безпосередньо за повною або короткою назвою
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --hulpmiddel <назва_інструмента> --args '{"ключ":"значення"}'
 
-# Запустити стандартний сервер stdio MCP з мостом до https://mcp.tarasevych.com/antigravity
-node .agents/skills/mijn-ruimte/scripts/mijn-ruimte McpStdio
+# Запустити стандартний сервер stdio MCP з мостом до https://mcp.tarasevych.com/antigravity або /autoclaw
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte McpStdio [--url https://mcp.tarasevych.com/autoclaw]
+```
+
+### 7. Правнича перевірка договорів, реєстр доказів і AutoClaw (`GLM-5.3-flashX-Legal` / `/autoclaw`)
+```bash
+# Під'єднати AutoClaw (GLM) до власної кінцевої точки /autoclaw
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url https://mcp.tarasevych.com/autoclaw [--token <МАРКЕР_ДОСТУПУ>]
+
+# Виконати дослівну перевірку договору чи листа за абзацами (§1, §2…), знеособлення реквізитів і побудову реєстру доказів
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte JuridischControleer [--bestand <ШЛЯХ> | --tekst "<ТЕКСТ>"] [--taal uk|nl]
+
+# Вивести повний пакет матеріалів і перевірочний перелік для участі в «Built with AutoClaw — Round 3»
+node .agents/skills/mijn-ruimte/scripts/mijn-ruimte AutoClawPakket [--taal uk|nl]
 ```
 
 ## Правила безпеки та врядування
-- **Очікування підтвердження**: коли інструмент запису або дії повертає `status: "pending"`, сайт очікує підтвердження користувача в `BevestigingenPaneel` на `https://mcp.tarasevych.com/agenten#agent/antigravity`. Повідомте про це користувача й не повторюйте виклик у циклі.
-- **Технічний простір (`_beheer`)**: якщо інструмент `_beheer` повертає `TECH_PROFILE_OFF`, попросіть власника увімкнути або делегувати технічну сеанс на `https://mcp.tarasevych.com/agenten#agent/antigravity`.
-- **Правила репозиторію**: завжди дотримуйтесь `AGENTS.md` та `ANTIGRAVITY.md` під час внесення змін у `Tarasevych/hub`.
+- **Очікування підтвердження**: коли інструмент запису або дії повертає `status: "pending"`, сайт очікує підтвердження користувача в `BevestigingenPaneel` на `https://mcp.tarasevych.com/agenten#agent/antigravity` (або `#agent/autoclaw`). Повідомте про це користувача й не повторюйте виклик у циклі.
+- **Технічний простір (`_beheer`)**: якщо інструмент `_beheer` повертає `TECH_PROFILE_OFF`, попросіть власника увімкнути або делегувати технічний сеанс на `https://mcp.tarasevych.com/agenten#agent/antigravity` (або `#agent/autoclaw`).
+- **Правила репозиторію**: завжди дотримуйтесь `AGENTS.md`, `ANTIGRAVITY.md` та `AUTOCLAW.md` під час внесення змін у `Tarasevych/hub`.
+

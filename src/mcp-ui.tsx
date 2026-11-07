@@ -79,12 +79,12 @@ export function Help({ tr, content, tone = 'info' }: { tr: Tr; content: HelpCont
   );
 }
 
-export type LogoKind = 'windows' | 'linux' | 'macos' | 'chrome' | 'edge' | 'firefox' | 'opera' | 'brave' | 'vivaldi' | 'safari' | 'node' | 'browser' | 'docker' | 'google' | 'microsoft' | 'internal' | 'claude' | 'github' | 'device' | 'server' | 'search' | 'mail' | 'calendar' | 'grok' | 'cursor' | 'gemini' | 'copilot' | 'antigravity' | 'openai' | 'aiclient' | 'key';
+export type LogoKind = 'windows' | 'linux' | 'macos' | 'chrome' | 'edge' | 'firefox' | 'opera' | 'brave' | 'vivaldi' | 'safari' | 'node' | 'browser' | 'docker' | 'google' | 'microsoft' | 'internal' | 'claude' | 'github' | 'device' | 'server' | 'search' | 'mail' | 'calendar' | 'grok' | 'cursor' | 'gemini' | 'copilot' | 'antigravity' | 'autoclaw' | 'openai' | 'aiclient' | 'key';
 
 // Welke `kind` een echt merk is. De vormen staan NIET meer hier: ze komen uit het ene merkregister van de site
 // (src/merk/merk-tabel.ts), zodat Claude, ChatGPT, Chrome, Apple of Docker op elke pagina hetzelfde teken krijgt. Eerder stond
 // hier een eigen set van 21 gliefjes die dezelfde merken nóg een keer tekende — en wel in de hoofdbundel.
-const MERK_TEGEL = new Set<string>(['claude', 'grok', 'cursor', 'gemini', 'copilot', 'antigravity', 'openai', 'internal']);
+const MERK_TEGEL = new Set<string>(['claude', 'grok', 'cursor', 'gemini', 'copilot', 'antigravity', 'autoclaw', 'openai', 'internal']);
 const MERK_GLIEFJE = new Set<string>(['windows', 'microsoft', 'google', 'chrome', 'edge', 'firefox', 'opera', 'brave', 'vivaldi', 'safari', 'node', 'macos', 'linux', 'docker', 'github']);
 
 /** Merkteken of pictogram, altijd op dezelfde maat. Merken komen uit src/merk/, de rest uit de pictogrammenbibliotheek. */

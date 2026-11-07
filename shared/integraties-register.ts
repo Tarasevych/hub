@@ -78,7 +78,7 @@ const BEVINDINGEN: RegisterRij[] = [
 ];
 
 const AGENT_BEWIJS = ['backend/connector-v2-opslag.ts', 'shared/connector-v2/agenten.ts'];
-for (const id of ['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity', 'mcp-server']) {
+for (const id of ['claude', 'chatgpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity', 'autoclaw', 'mcp-server']) {
   BEVINDINGEN.push(W({ id, bewijs: AGENT_BEWIJS, officieel: 'MCP (Model Context Protocol) + OAuth', doelDienst: 'ai', pagina: { dienst: 'mcp', tab: 'connect' }, vereist: ['Акаунт у цьому ШІ-сервісі; доступи видаєте окремо.', 'Account bij deze AI-dienst; rechten geeft u apart.'], operaties: ['Агент отримує лише ті права, які ви дозволили.', 'De agent krijgt alleen de rechten die u toestaat.'], nogTeDoen: ['—', '—'], prioriteit: 2 }));
 }
 for (const id of ['google-signin', 'rest-api', 'oauth-clients']) {

@@ -257,3 +257,9 @@ Herbouwen van release `AUDIT-001` (`20261105-093500`) bovenop de op de server ge
 - **Зачеплено:** `orchestratie/BESLUITEN.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
 - **Причина:** Остаточне очищення відмінюваних форм технічних термінів у супровідній документації та журналі рішень.
 - **Суть:** Усі відмінювані форми запозичених технічних слів замінено на питомі українські відповідники.
+
+## B-019 · 2026-11-07 · 1.4.14 · voorstel
+- **Зачеплено:** `orchestratie/beleid.json`, `AUTOCLAW.md`, `src/merk/merk-register.ts`, `src/merk/merk-tabel.ts`, `shared/connector-v2/agenten.ts`, `shared/ai-bronnen.ts`, `src/agenten/AgentPagina.tsx`
+- **Причина:** Реєстрація агента AutoClaw (`autoclaw` / `GLM-5.3-flashX-Legal` / `Z.ai`) з власною фірмовою емблемою, кінцевою точкою MCP `/autoclaw`, перехідником правил оркестрації та інструментами правничої перевірки договорів і реєстру доказів для участі в «Built with AutoClaw — Раунд 3».
+- **Суть:** Агент `autoclaw` внесено до реєстру емблем, з'єднувача MCP v2, правил оркестрації (`1.4.14`) та наділено вбудованою перевіркою дослівних витримок (`§1, §2…`), знеособленням чутливих реквізитів (`anonimiseerTekst`) і побудовою хронологічного реєстру доказів (`bouwBewijsIndex`).
+

@@ -83,7 +83,7 @@ const NAAM_REGELS: readonly Regel[] = [
   { re: /^(SSH_|ROOT_|SERVER_)|SSH_CA|(^|_)SSH(_|$)/i, dienst: 'ssh', groep: 'server' },
   { re: /^(GITHUB_|GH_)/i, dienst: 'github', groep: 'cloud' },
   { re: /^(ANTHROPIC|CLAUDE)/i, dienst: 'anthropic', groep: 'ai' },
-  { re: /^(OPENAI|GPT|GEMINI|GROK|XAI|COPILOT|MISTRAL)/i, dienst: 'openai', groep: 'ai' },
+  { re: /^(OPENAI|GPT|GEMINI|GROK|XAI|COPILOT|MISTRAL|ZAI|AUTOCLAW|ZHIPU|GLM)/i, dienst: 'openai', groep: 'ai' },
   { re: /^(MCP_|AGENT_|AI_)/i, dienst: 'mcp', groep: 'ai' },
   { re: /^TELEGRAM/i, dienst: 'telegram', groep: 'cloud' },
   { re: /^(HOME_?ASSISTANT|HASS)/i, dienst: 'home-assistant', groep: 'cloud' },

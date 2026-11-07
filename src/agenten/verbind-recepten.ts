@@ -171,6 +171,18 @@ export function recept(slug: AgentSlug): Recept {
         DOZVIL, KLAAR,
       ],
     };
+    case 'autoclaw': return {
+      slug, serverNaam: SERVER_NAAM,
+      knoppen: [
+        { soort: 'opdracht', label: ['Скопіювати команду мосту AutoClaw', 'Opdracht voor AutoClaw-brug kopiëren'], kopieer: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Verbind --url ${url}`, uitleg: ['Настільний застосунок або термінал AutoClaw (Z.ai / GLM-5.3-flashX-Legal): одна команда вмикає двосторонній міст та правничу перевірку джерел.', 'Desktop-app of terminal van AutoClaw (Z.ai / GLM-5.3-flashX-Legal): één opdracht activeert de tweerichtingsbrug en juridische broncontrole.'] },
+        { soort: 'config', label: ['Скопіювати mcp.json для AutoClaw', 'mcp.json voor AutoClaw kopiëren'], kopieer: mcpJsonConfig(slug), uitleg: ['Налаштування MCP у AutoClaw Desktop: підключення за власною адресою /autoclaw із автовиявленням OAuth (RFC 9728).', 'MCP-instellingen in AutoClaw Desktop: koppeling op het eigen adres /autoclaw met automatische OAuth-ontdekking (RFC 9728).'] },
+      ],
+      stappen: [
+        [`У настільному застосунку AutoClaw (https://autoclaw.z.ai/) відкрийте налаштування MCP або виконайте скопійовану команду з адресою ${url}.`, `Open in de AutoClaw-desktopapp (https://autoclaw.z.ai/) de MCP-instellingen of voer de gekopieerde opdracht met het adres ${url} uit.`],
+        ['Оберіть модель GLM-5.3-flashX-Legal (для правничої практики й дослівної перевірки договорів) або основну модель GLM для багатоагентної координації.', 'Kies het model GLM-5.3-flashX-Legal (voor de juridische praktijk en letterlijke contractcontrole) of het algemene GLM-model voor multi-agent-coördinatie.'],
+        DOZVIL, KLAAR,
+      ],
+    };
   }
   // Onbereikbaar (alle slugs staan hierboven), maar TypeScript wil een pad: zonder knop, met het kale adres.
   return { slug, serverNaam: SERVER_NAAM, knoppen: [{ soort: 'config', label: ['Скопіювати mcp.json', 'mcp.json kopiëren'], kopieer: mcpJsonConfig(slug) }], stappen: [PLAK(url), DOZVIL, KLAAR] };

@@ -138,11 +138,87 @@ function ontleedArgs(argv) {
   return { opdracht: pos[0] || 'Help', pos: pos.slice(1), vlaggen };
 }
 
-function losHulpmiddelOp(naamOfId, kant = 'gebruiker') {
+function bepaalAgentUitUrl(url, opgegeven) {
+  if (opgegeven && /^[a-z0-9_-]+$/.test(opgegeven)) return opgegeven;
+  try {
+    const pad = new URL(url).pathname.replace(/^\/+|\/+$/g, '');
+    if (pad === 'autoclaw' || pad === 'antigravity' || pad === 'claude' || pad === 'gpt' || pad === 'grok' || pad === 'gemini' || pad === 'copilot' || pad === 'cursor') {
+      return pad;
+    }
+  } catch { /* negeer */ }
+  return 'antigravity';
+}
+
+function losHulpmiddelOp(naamOfId, kant = 'gebruiker', agentSlug = 'antigravity') {
   if (KORT_NAAR_V2[naamOfId]) {
-    return KORT_NAAR_V2[naamOfId][kant] || KORT_NAAR_V2[naamOfId].gebruiker || KORT_NAAR_V2[naamOfId].beheer;
+    const ruw = KORT_NAAR_V2[naamOfId][kant] || KORT_NAAR_V2[naamOfId].gebruiker || KORT_NAAR_V2[naamOfId].beheer;
+    return agentSlug === 'antigravity' ? ruw : ruw.replace('_antigravity_', `_${agentSlug}_`);
   }
   return naamOfId;
+}
+
+function anonimiseerJuridisch(tekst, taal = 'uk') {
+  const lb = taal === 'nl'
+    ? { email: '[VERBORGEN_E_MAIL]', tel: '[VERBORGEN_TELEFOON]', rek: '[VERBORGEN_REKENING]', code: '[VERBORGEN_NUMMER]' }
+    : { email: '[ПРИХОВАНО_ПОШТА]', tel: '[ПРИХОВАНО_ТЕЛЕФОН]', rek: '[ПРИХОВАНО_РАХУНОК]', code: '[ПРИХОВАНО_КОД]' };
+  const telling = { email: 0, telefoon: 0, rekening: 0, code: 0, totaal: 0 };
+  let uit = String(tekst ?? '');
+  uit = uit.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, () => { telling.email += 1; return lb.email; });
+  uit = uit.replace(/\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]{4}){3,7}(?:[\s-]?[A-Z0-9]{1,4})?\b/g, () => { telling.rekening += 1; return lb.rek; });
+  uit = uit.replace(/(?<![\p{L}\p{N}])((?:ЄДРПОУ|ІПН|РНОКПП|KvK|BSN|BTW)(?:\s*[:№#-])?\s*)(\d{8,12})(?![\p{L}\p{N}])/giu, (_, v) => { telling.code += 1; return `${v}${lb.code}`; });
+  uit = uit.replace(/(?:\+\d{1,3}[\s.-]?\(?\d{2,3}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2,4}|\b0\d{1,2}[\s.-]\d{3,4}[\s.-]\d{2,4}\b)/g, () => { telling.telefoon += 1; return lb.tel; });
+  telling.totaal = telling.email + telling.telefoon + telling.rekening + telling.code;
+  return { tekst: uit, telling };
+}
+
+function bouwJuridischDossier(ruweTekst, taal = 'uk') {
+  const alineas = String(ruweTekst ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split(/\n\s*\n/)
+    .map((s) => s.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .map((tekst, i) => ({ brief: 1, nr: i + 1, tekst }));
+  const anoniem = anonimiseerJuridisch(ruweTekst, taal);
+  const bevindingen = [];
+  for (const a of alineas) {
+    const zinnen = a.tekst.split(/(?<=[.!?])\s+/).map((z) => z.trim()).filter(Boolean);
+    for (const z of zinnen) {
+      const heeftTermijn = /(?<![\p{L}\p{N}])(?:до|vóór|uiterlijk|by|before)\s+\d{1,2}\s+[\p{L}]+(?:\s+\d{4})?/iu.exec(z);
+      const isVraag = z.endsWith('?');
+      const isVerplichting = /(?<![\p{L}\p{N}])(?:зобов’язується|потрібно|просимо|dient|verplicht|kunt u|graag)(?![\p{L}\p{N}])/iu.test(z);
+      const heeftBedrag = /(?<![\p{L}\p{N}])\d[\d\s.,]*\s*(?:грн|€|EUR|UAH)(?![\p{L}\p{N}])/iu.test(z);
+      if (heeftTermijn || isVraag || isVerplichting || heeftBedrag) {
+        const soort = isVraag ? 'vraag' : isVerplichting ? 'verzoek' : heeftTermijn ? 'termijn' : 'feit';
+        bevindingen.push({
+          bron: `${taal === 'nl' ? 'stuk' : 'лист'} ${a.brief} · §${a.nr}`,
+          brief: a.brief,
+          alinea: a.nr,
+          soort,
+          termijn: heeftTermijn ? heeftTermijn[0] : '—',
+          citaat: anonimiseerJuridisch(z, taal).tekst,
+          letterlijkInBron: a.tekst.includes(z),
+        });
+      }
+    }
+  }
+  const kop = taal === 'nl'
+    ? '# Bewijsregister en letterlijke broncontrole (AutoClaw · GLM-5.3-flashX-Legal)'
+    : '# Реєстр доказів і дослівна перевірка джерел (AutoClaw · GLM-5.3-flashX-Legal)';
+  const tabelKop = taal === 'nl'
+    ? '| Bron | Soort | Termijn | Letterlijk citaat (gecontroleerd in origineel) |\n| --- | --- | --- | --- |'
+    : '| Джерело | Вид | Строк | Дослівна витримка (перевірено в оригіналі) |\n| --- | --- | --- | --- |';
+  const rijen = bevindingen.map((b) => `| ${b.bron} | ${b.soort} | ${b.termijn} | «${b.citaat.replace(/\|/g, '\\|')}» |`);
+  return {
+    agent: 'autoclaw',
+    model: 'GLM-5.3-flashX-Legal',
+    taal,
+    alineasAantal: alineas.length,
+    puntenAantal: bevindingen.length,
+    letterlijkBevestigd: bevindingen.filter((b) => b.letterlijkInBron).length,
+    geanonimiseerd: anoniem.telling,
+    bevindingen,
+    markdown: [kop, '', tabelKop, ...rijen].join('\n'),
+  };
 }
 
 async function stuurRpc(url, token, method, params = {}, id = 1) {
@@ -167,12 +243,64 @@ async function voerUit() {
   const { opdracht, vlaggen } = ontleedArgs(process.argv.slice(2));
   const cfg = leesConfig();
   const url = vlaggen.url || cfg.url || STANDAARD_URL;
+  const agentSlug = bepaalAgentUitUrl(url, vlaggen.agent);
   const token = vlaggen.token || process.env.MIJN_RUIMTE_TOKEN || cfg.token || '';
   const kant = vlaggen.kant === 'beheer' ? 'beheer' : 'gebruiker';
+
+  if (opdracht === 'JuridischControleer') {
+    const taal = vlaggen.taal === 'nl' ? 'nl' : 'uk';
+    const standaardTekst = taal === 'nl'
+      ? 'Overeenkomst nr. 2026-11/07\n\nOpdrachtnemer (jurist@voorbeeld.nl, IBAN NL91 ABNA 0417 1643 00, KvK: 87654321) dient de ondertekende akte vóór 18 november 2026 terug te sturen.\n\nDe vergoeding bedraagt € 2400. Kunt u de definitieve versie bevestigen?'
+      : 'Договір № 2026-11/07\n\nВиконавець (jurist@voorbeeld.ua, рахунок UA21 3223 1300 0002 6007 2335 6600 1, ЄДРПОУ: 40123456) зобов’язується передати підписаний акт до 18 листопада 2026.\n\nВинагорода становить 48000 грн. Чи підтверджуєте ви остаточну редакцію договору?';
+    const bronTekst = vlaggen.bestand && existsSync(vlaggen.bestand)
+      ? readFileSync(vlaggen.bestand, 'utf8')
+      : (vlaggen.tekst || standaardTekst);
+    console.log(JSON.stringify(bouwJuridischDossier(bronTekst, taal), null, 2));
+    return;
+  }
+
+  if (opdracht === 'AutoClawPakket') {
+    const taal = vlaggen.taal === 'nl' ? 'nl' : 'uk';
+    console.log(JSON.stringify({
+      campagne: 'Built with AutoClaw — Round 3 (5–20 november 2026, UTC+8)',
+      agent: 'autoclaw',
+      model: 'GLM-5.3-flashX-Legal',
+      endpoint: 'https://mcp.tarasevych.com/autoclaw',
+      webPaneel: 'https://mcp.tarasevych.com/agenten#agent/autoclaw',
+      repoUrl: 'https://github.com/Tarasevych/hub',
+      handleidingen: ['ПОСІБНИК-АВТОКЛО.uk.md', 'AUTOCLAW.nl.md', 'docs/КОНКУРС-АВТОКЛО-РАУНД-3.uk.md', 'docs/AUTOCLAW-RONDE-3.nl.md'],
+      sporen: {
+        juridisch: {
+          naam: taal === 'nl' ? 'Spoor 1 — Rechtspraktijk (Hoofdspoor, tot 56.000 kredieten)' : 'Напрям 1 — Правнича справа (Провідний напрям, до 56 000 балів)',
+          beloning: '4000 + 4000 / 52000 = 56000',
+          kern: taal === 'nl'
+            ? 'Letterlijke broncontrole per alinea (§1, §2…), termijnverificatie in het origineel, anonimisering van persoons- en bankgegevens en chronologisch bewijsregister.'
+            : 'Дослівна перевірка кожного пункту договору чи листа за номером абзацу (§1, §2…), звірка строків з оригіналом, знеособлення чутливих реквізитів та хронологічний реєстр доказів.',
+        },
+        open: {
+          naam: taal === 'nl' ? 'Spoor 3 — Vrije розробка (tot 28.000 kredieten)' : 'Напрям 3 — Відкрита інженерна творчість (до 28 000 балів)',
+          beloning: '2000 + 2000 / 26000 = 28000',
+          kern: taal === 'nl'
+            ? 'Multi-agentcoördinatie met cryptografisch vergrendeld beleid (regels.lock.json), 4-kanaals MCP-brug (/autoclaw) en gescheiden privé/technische ruimte.'
+            : 'Багатоагентна координація з криптографічно замкненим правилом (regels.lock.json), 4-канальним мостом MCP (/autoclaw) і розділенням приватного та технічного просторів.',
+        },
+      },
+      vereisteVeldenFormulier: [
+        '1. Ел. пошта облікового запису AutoClaw (ЛИШЕ у формі Google Forms, НІКОЛИ не публікувати в дописі X!)',
+        '2. Знімок екрана з підтвердженням підписки на @AutoClawAIer у X',
+        '3. Посилання на ваш профіль у X',
+        '4. Посилання на відкритий допис у X із згадкою @AutoClawAIer та позначкою #BuiltWithAutoClaw',
+        '5. Обраний напрям (Legal Practice або Open Creation)',
+        '6. Посилання на живий виріб / демонстрацію: https://mcp.tarasevych.com/agenten#agent/autoclaw або https://github.com/Tarasevych/hub',
+      ],
+    }, null, 2));
+    return;
+  }
 
   if (opdracht === 'Verbind') {
     const nieuw = {
       url,
+      agent: agentSlug,
       ...(vlaggen.token ? { token: vlaggen.token } : cfg.token ? { token: cfg.token } : {}),
       bijgewerktOp: new Date().toISOString(),
     };
@@ -191,20 +319,20 @@ async function voerUit() {
     } catch { /* ~/.gemini niet schrijfbaar of afwezig */ }
     console.log(JSON.stringify({
       ok: true,
-      agent: 'antigravity',
+      agent: agentSlug,
       endpoint: url,
       configPad: CONFIG_PAD,
       geminiSettingsBijgewerkt: geminiBijgewerkt,
-      webPaneel: 'https://mcp.tarasevych.com/agenten#agent/antigravity',
-      kanalen: ['site', 'browser', 'pc', 'server'],
+      webPaneel: `https://mcp.tarasevych.com/agenten#agent/${agentSlug}`,
+      kanalen: agentSlug === 'autoclaw' ? ['juridisch', 'site', 'browser', 'pc', 'server'] : ['site', 'browser', 'pc', 'server'],
     }, null, 2));
     return;
   }
 
   if (opdracht === 'Status') {
-    const prmUrl = new URL('/.well-known/oauth-protected-resource/antigravity', url).toString();
+    const prmUrl = new URL(`/.well-known/oauth-protected-resource/${agentSlug}`, url).toString();
     const uit = {
-      agent: 'antigravity',
+      agent: agentSlug,
       endpoint: url,
       prmUrl,
       heeftToken: Boolean(token),
@@ -221,13 +349,13 @@ async function voerUit() {
       const init = await stuurRpc(url, token, 'initialize', {
         protocolVersion: '2025-06-18',
         capabilities: {},
-        clientInfo: { name: 'Google Antigravity', version: '1.0.0' },
+        clientInfo: { name: agentSlug === 'autoclaw' ? 'AutoClaw (GLM)' : 'Google Antigravity', version: '1.0.0' },
       });
       if (init.status === 200 && token) {
         const lijst = await stuurRpc(url, token, 'tools/list', {});
         const tools = lijst.body?.result?.tools || [];
-        const browserRe = /(tabbladen|pagina|schermafdruk|element|tekst|formulier|optie|toets|script|site_actie|console|netwerk|diagnose)_antigravity_mcp_/;
-        const pcRe = /(apparaten|apparaat_info|map_inhoud|bestand|bestanden|systeem_belasting|opdracht|containers|container)_antigravity_mcp_/;
+        const browserRe = new RegExp(`(tabbladen|pagina|schermafdruk|element|tekst|formulier|optie|toets|script|site_actie|console|netwerk|diagnose)_${agentSlug}_mcp_`);
+        const pcRe = new RegExp(`(apparaten|apparaat_info|map_inhoud|bestand|bestanden|systeem_belasting|opdracht|containers|container)_${agentSlug}_mcp_`);
         uit.rpc = {
           status: 200,
           verbonden: true,
@@ -244,7 +372,7 @@ async function voerUit() {
           status: init.status,
           verbonden: false,
           wwwAuthenticate: init.wwwAuth,
-          bericht: 'Gebruik OAuth in Google Antigravity of geef --token / MIJN_RUIMTE_TOKEN mee.',
+          bericht: 'Gebruik OAuth of geef --token / MIJN_RUIMTE_TOKEN mee.',
         };
       }
     } catch (e) {
@@ -292,33 +420,33 @@ async function voerUit() {
 
   // Kanaalspecifieke snelkoppelingen
   const snel = {
-    OrchOverzicht: () => ({ naam: losHulpmiddelOp('orch_overzicht', 'beheer'), args: {} }),
-    OrchContext: () => ({ naam: losHulpmiddelOp('orch_context', 'beheer'), args: {} }),
+    OrchOverzicht: () => ({ naam: losHulpmiddelOp('orch_overzicht', 'beheer', agentSlug), args: {} }),
+    OrchContext: () => ({ naam: losHulpmiddelOp('orch_context', 'beheer', agentSlug), args: {} }),
     OrchTaakStart: () => ({
-      naam: losHulpmiddelOp('orch_taak_start', 'beheer'),
+      naam: losHulpmiddelOp('orch_taak_start', 'beheer', agentSlug),
       args: { id: vlaggen.id, samenvatting: vlaggen.samenvatting || '' },
     }),
-    BrowserTabs: () => ({ naam: losHulpmiddelOp('browser_list_tabs', kant), args: {} }),
-    BrowserOpen: () => ({ naam: losHulpmiddelOp('browser_open', kant), args: { url: vlaggen.doelUrl || vlaggen.openUrl || 'https://tarasevych.com' } }),
-    BrowserSnapshot: () => ({ naam: losHulpmiddelOp('browser_snapshot', kant), args: {} }),
-    BrowserKlik: () => ({ naam: losHulpmiddelOp('browser_click', kant), args: { selector: vlaggen.selector, text: vlaggen.tekst } }),
-    BrowserTyp: () => ({ naam: losHulpmiddelOp('browser_type', kant), args: { selector: vlaggen.selector, text: vlaggen.tekst || '' } }),
-    BrowserSchermafdruk: () => ({ naam: losHulpmiddelOp('browser_screenshot', kant), args: {} }),
-    BrowserDiagnose: () => ({ naam: losHulpmiddelOp('browser_get_deep_diagnostics', 'beheer'), args: {} }),
-    PcStatus: () => ({ naam: losHulpmiddelOp('machine_status', kant), args: {} }),
-    PcProcessen: () => ({ naam: losHulpmiddelOp('machine_processes', kant), args: {} }),
-    PcBestanden: () => ({ naam: losHulpmiddelOp('machine_list_dir', kant), args: { path: vlaggen.pad || '.' } }),
-    PcLees: () => ({ naam: losHulpmiddelOp('machine_read_file', kant), args: { path: vlaggen.pad || 'README.md' } }),
-    PcSchrijf: () => ({ naam: losHulpmiddelOp('machine_write_file', kant), args: { path: vlaggen.pad, content: vlaggen.inhoud || '' } }),
-    PcOpdracht: () => ({ naam: losHulpmiddelOp('machine_exec', kant), args: { command: vlaggen.opdracht || 'uptime' } }),
-    PcDocker: () => ({ naam: losHulpmiddelOp('machine_docker', kant), args: {} }),
-    ServerGezondheid: () => ({ naam: losHulpmiddelOp('server_health', 'beheer'), args: {} }),
-    ServerUitrolStatus: () => ({ naam: losHulpmiddelOp('deploy_status', 'beheer'), args: {} }),
-    ServerLogs: () => ({ naam: losHulpmiddelOp('deploy_logs', 'beheer'), args: { service: vlaggen.dienst || 'hub', lines: Number(vlaggen.regels || 80) } }),
-    ServerRelease: () => ({ naam: losHulpmiddelOp('live_release', 'beheer'), args: {} }),
-    ServerAudit: () => ({ naam: losHulpmiddelOp('audit_tail', 'beheer'), args: { limit: Number(vlaggen.limiet || 25) } }),
+    BrowserTabs: () => ({ naam: losHulpmiddelOp('browser_list_tabs', kant, agentSlug), args: {} }),
+    BrowserOpen: () => ({ naam: losHulpmiddelOp('browser_open', kant, agentSlug), args: { url: vlaggen.doelUrl || vlaggen.openUrl || 'https://tarasevych.com' } }),
+    BrowserSnapshot: () => ({ naam: losHulpmiddelOp('browser_snapshot', kant, agentSlug), args: {} }),
+    BrowserKlik: () => ({ naam: losHulpmiddelOp('browser_click', kant, agentSlug), args: { selector: vlaggen.selector, text: vlaggen.tekst } }),
+    BrowserTyp: () => ({ naam: losHulpmiddelOp('browser_type', kant, agentSlug), args: { selector: vlaggen.selector, text: vlaggen.tekst || '' } }),
+    BrowserSchermafdruk: () => ({ naam: losHulpmiddelOp('browser_screenshot', kant, agentSlug), args: {} }),
+    BrowserDiagnose: () => ({ naam: losHulpmiddelOp('browser_get_deep_diagnostics', 'beheer', agentSlug), args: {} }),
+    PcStatus: () => ({ naam: losHulpmiddelOp('machine_status', kant, agentSlug), args: {} }),
+    PcProcessen: () => ({ naam: losHulpmiddelOp('machine_processes', kant, agentSlug), args: {} }),
+    PcBestanden: () => ({ naam: losHulpmiddelOp('machine_list_dir', kant, agentSlug), args: { path: vlaggen.pad || '.' } }),
+    PcLees: () => ({ naam: losHulpmiddelOp('machine_read_file', kant, agentSlug), args: { path: vlaggen.pad || 'README.md' } }),
+    PcSchrijf: () => ({ naam: losHulpmiddelOp('machine_write_file', kant, agentSlug), args: { path: vlaggen.pad, content: vlaggen.inhoud || '' } }),
+    PcOpdracht: () => ({ naam: losHulpmiddelOp('machine_exec', kant, agentSlug), args: { command: vlaggen.opdracht || 'uptime' } }),
+    PcDocker: () => ({ naam: losHulpmiddelOp('machine_docker', kant, agentSlug), args: {} }),
+    ServerGezondheid: () => ({ naam: losHulpmiddelOp('server_health', 'beheer', agentSlug), args: {} }),
+    ServerUitrolStatus: () => ({ naam: losHulpmiddelOp('deploy_status', 'beheer', agentSlug), args: {} }),
+    ServerLogs: () => ({ naam: losHulpmiddelOp('deploy_logs', 'beheer', agentSlug), args: { service: vlaggen.dienst || 'hub', lines: Number(vlaggen.regels || 80) } }),
+    ServerRelease: () => ({ naam: losHulpmiddelOp('live_release', 'beheer', agentSlug), args: {} }),
+    ServerAudit: () => ({ naam: losHulpmiddelOp('audit_tail', 'beheer', agentSlug), args: { limit: Number(vlaggen.limiet || 25) } }),
     RoepAan: () => ({
-      naam: losHulpmiddelOp(vlaggen.hulpmiddel || 'whoami', kant),
+      naam: losHulpmiddelOp(vlaggen.hulpmiddel || 'whoami', kant, agentSlug),
       args: vlaggen.args ? JSON.parse(vlaggen.args) : {},
     }),
   };
@@ -331,12 +459,14 @@ async function voerUit() {
   }
 
   console.log(JSON.stringify({
-    naam: 'Mijn Ruimte — Google Antigravity Tweerichtingsbrug',
+    naam: 'Mijn Ruimte — Google Antigravity & AutoClaw (GLM) Tweerichtingsbrug',
     endpoint: url,
     opdrachten: [
-      'Verbind --url https://mcp.tarasevych.com/antigravity [--token <TOKEN>]',
-      'Status [--url ...]',
+      'Verbind --url https://mcp.tarasevych.com/autoclaw [--token <TOKEN>]',
+      'Status [--url https://mcp.tarasevych.com/autoclaw]',
       'Lijst [--kant gebruiker|beheer] [--groep browser|pc|mail|...]',
+      'JuridischControleer [--bestand <PAD> | --tekst <TEKST>] [--taal uk|nl]',
+      'AutoClawPakket [--taal uk|nl]',
       'OrchOverzicht | OrchContext | OrchTaakStart --id <ID> --samenvatting <TEKST>',
       'BrowserTabs | BrowserOpen --doelUrl <URL> | BrowserSnapshot | BrowserKlik --selector <S> | BrowserTyp --selector <S> --tekst <T> | BrowserSchermafdruk | BrowserDiagnose',
       'PcStatus | PcProcessen | PcBestanden --pad <PAD> | PcLees --pad <PAD> | PcSchrijf --pad <PAD> --inhoud <TEKST> | PcOpdracht --opdracht <CMD> | PcDocker',

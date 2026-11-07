@@ -88,8 +88,8 @@ export async function main(): Promise<number> {
     !recept('gemini').knoppen.some((k) => k.soort === 'web' || k.soort === 'deeplink') && !!recept('gemini').grens && JSON.parse(geminiCliConfig('gemini')).mcpServers[SERVER_NAAM].httpUrl === agentUrl('gemini') && /2026/.test(recept('gemini').grens![0]));
   check('Grok: eerlijk — geen verzonnen vendorknop, wel mcp.json en de grens benoemd',
     !recept('grok').knoppen.some((k) => k.soort === 'web' || k.soort === 'deeplink') && !!recept('grok').grens && JSON.parse(mcpJsonConfig('grok')).mcpServers[SERVER_NAAM].url === agentUrl('grok'));
-  check('heeftEenKlik: Cursor, Copilot, Claude (opdracht) en Antigravity (opdracht) wel; ChatGPT, Gemini en Grok niet',
-    heeftEenKlik('cursor') && heeftEenKlik('copilot') && heeftEenKlik('claude') && heeftEenKlik('antigravity') && !heeftEenKlik('gpt') && !heeftEenKlik('gemini') && !heeftEenKlik('grok'));
+  check('heeftEenKlik: Cursor, Copilot, Claude (opdracht), Antigravity (opdracht) en AutoClaw (opdracht) wel; ChatGPT, Gemini en Grok niet',
+    heeftEenKlik('cursor') && heeftEenKlik('copilot') && heeftEenKlik('claude') && heeftEenKlik('antigravity') && heeftEenKlik('autoclaw') && !heeftEenKlik('gpt') && !heeftEenKlik('gemini') && !heeftEenKlik('grok'));
 
   // ================================================================ 3. de WARE stand: v2 + erfenis + deur
   check('stand: v2-koppeling → verbonden, niet oud', standVan({ v2: 1, erfenis: 0, deur: 0 }).code === 'v2' && standVan({ v2: 1, erfenis: 0, deur: 0 }).verbonden && !standVan({ v2: 1, erfenis: 0, deur: 0 }).alleenOud);

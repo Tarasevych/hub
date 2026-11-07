@@ -439,3 +439,184 @@ export function taalVan(tekst: string): string {
   if (/\b(?:czy|dla|jest|nie|tak|proszę|dziękuję|faktura)\b/i.test(sample)) return 'pl';
   return 'en';
 }
+
+// ------------------------------------------------------------------ juridisch dossier & anonimiseren (AutoClaw / GLM-5.3-flashX-Legal)
+
+export type AnonimiseerTelling = {
+  email: number;
+  telefoon: number;
+  rekening: number;
+  code: number;
+  totaal: number;
+};
+
+export type AnonimiseerResultaat = {
+  tekst: string;
+  telling: AnonimiseerTelling;
+};
+
+const LABELS_ANONIEM = {
+  uk: {
+    email: '[ПРИХОВАНО_ПОШТА]',
+    telefoon: '[ПРИХОВАНО_ТЕЛЕФОН]',
+    rekening: '[ПРИХОВАНО_РАХУНОК]',
+    code: '[ПРИХОВАНО_КОД]',
+  },
+  nl: {
+    email: '[VERBORGEN_E_MAIL]',
+    telefoon: '[VERBORGEN_TELEFOON]',
+    rekening: '[VERBORGEN_REKENING]',
+    code: '[VERBORGEN_NUMMER]',
+  },
+} as const;
+
+/**
+ * Zнеособлення (anonimiseren) van gevoelige persoons- en betaalgegevens in contracten, brieven en bewijsstukken vóór overdracht of
+ * publicatie (e-mail, IBAN-rekening, telefoonnummer, fiscaal/KvK/ЄДРПОУ/ІПН-nummer). Puur en deterministisch.
+ */
+export function anonimiseerTekst(tekst: string, lang: 'uk' | 'nl' = 'uk'): AnonimiseerResultaat {
+  const lb = LABELS_ANONIEM[lang];
+  const telling: AnonimiseerTelling = { email: 0, telefoon: 0, rekening: 0, code: 0, totaal: 0 };
+  let uit = String(tekst ?? '');
+
+  // 1. E-mailadressen
+  uit = uit.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, () => {
+    telling.email += 1;
+    return lb.email;
+  });
+
+  // 2. IBAN-bankrekeningen (bv. NL91 ABNA 0417 1643 00 of UA21 3223 1300 0002 6007 2335 6600 1)
+  uit = uit.replace(/\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]{4}){3,7}(?:[\s-]?[A-Z0-9]{1,4})?\b/g, () => {
+    telling.rekening += 1;
+    return lb.rekening;
+  });
+
+  // 3. Fiscale / registratiecodes met sleutelwoord (ЄДРПОУ, ІПН, РНОКПП, KvK, BSN, BTW)
+  uit = uit.replace(/(?<![\p{L}\p{N}])((?:ЄДРПОУ|ІПН|РНОКПП|KvK|BSN|BTW)(?:\s*[:№#-])?\s*)(\d{8,12})(?![\p{L}\p{N}])/giu, (_, voor: string) => {
+    telling.code += 1;
+    return `${voor}${lb.code}`;
+  });
+
+  // 4. Telefoonnummers (internationaal +380 / +31 of lokale notatie met minstens 9 cijfers)
+  uit = uit.replace(/(?:\+\d{1,3}[\s.-]?\(?\d{2,3}\)?[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2,4}|\b0\d{1,2}[\s.-]\d{3,4}[\s.-]\d{2,4}\b)/g, () => {
+    telling.telefoon += 1;
+    return lb.telefoon;
+  });
+
+  telling.totaal = telling.email + telling.telefoon + telling.rekening + telling.code;
+  return { tekst: uit, telling };
+}
+
+export type BewijsTijdlijnRij = {
+  id: string;
+  bronLabel: string;
+  brief: number;
+  nr: number;
+  soort: PuntSoort;
+  termijn: string;
+  datumIso: string | null;
+  citaat: string;
+  status: 'letterlijk' | 'niet-gevonden';
+};
+
+export type BewijsIndex = {
+  alineas: BronAlinea[];
+  punten: GecontroleerdPunt[];
+  kort: GecontroleerdPunt[];
+  tijdlijn: BewijsTijdlijnRij[];
+  anoniem: AnonimiseerResultaat;
+  samenvatting: {
+    totaalAlineas: number;
+    totaalPunten: number;
+    letterlijkGevonden: number;
+    metTermijn: number;
+    geanonimiseerd: number;
+  };
+  markdown: string;
+};
+
+/**
+ * Bouwt een volledig juridisch bewijsregister en tijdlijn uit één of meer brieven/contractstukken:
+ *   - verdeelt in genummerde alinea's (§1, §2, …);
+ *   - extraheert en controleert verzoeken, vragen, termijnen en kernfeiten letterlijk tegen de brontekst;
+ *   - ordent gevonden punten met datum/termijn chronologisch;
+ *   - anonimiseert persoons- en rekeninggegevens voor veilige verwerking of indiening;
+ *   - levert een tweetalig (`uk` / `nl`) Markdown-dossier klaar voor AutoClaw / GLM-5.3-flashX-Legal.
+ */
+export function bouwBewijsIndex(
+  brieven: ReadonlyArray<{ brief: number; tekst: string }>,
+  lang: 'uk' | 'nl' = 'uk',
+  refMs: number = Date.now(),
+): BewijsIndex {
+  const alineas = gespreksAlineas(brieven);
+  const { punten, kort } = eenvoudigeOntleding(brieven);
+  const alle = [...punten, ...kort];
+  const volledig = brieven.map((b) => b.tekst).join('\n\n');
+  const anoniem = anonimiseerTekst(volledig, lang);
+
+  const tijdlijnMetMs = alle.map((p) => {
+    const plek = p.bron ?? { brief: p.brief ?? 1, nr: p.alinea ?? 1 };
+    const d = datumUit(p.termijn || p.citaat, refMs);
+    const datumIso = d ? new Date(d.start).toISOString().slice(0, 10) : null;
+    return {
+      ms: d ? d.start : Number.MAX_SAFE_INTEGER,
+      rij: {
+        id: p.id,
+        bronLabel: bronLabel(lang, plek),
+        brief: plek.brief,
+        nr: plek.nr,
+        soort: p.soort ?? 'feit',
+        termijn: p.termijn ?? '',
+        datumIso,
+        citaat: anonimiseerTekst(p.citaat, lang).tekst,
+        status: p.status,
+      } satisfies BewijsTijdlijnRij,
+    };
+  });
+
+  tijdlijnMetMs.sort((a, b) => a.ms - b.ms || a.rij.brief - b.rij.brief || a.rij.nr - b.rij.nr);
+  const tijdlijn = tijdlijnMetMs.map((x) => x.rij);
+
+  const letterlijkGevonden = alle.filter((p) => p.status === 'letterlijk').length;
+  const metTermijn = tijdlijn.filter((r) => Boolean(r.termijn || r.datumIso)).length;
+
+  const kop = lang === 'uk'
+    ? '# Реєстр доказів і дослівна перевірка джерел (AutoClaw · GLM-5.3-flashX-Legal)'
+    : '# Bewijsregister en letterlijke broncontrole (AutoClaw · GLM-5.3-flashX-Legal)';
+  const metaRegel = lang === 'uk'
+    ? `- Абзаців джерела: **${alineas.length}** · Дослівно підтверджено: **${letterlijkGevonden} із ${alle.length}** · Термінів/дат: **${metTermijn}** · Знеособлено чутливих реквізитів: **${anoniem.telling.totaal}**`
+    : `- Bronalinea's: **${alineas.length}** · Letterlijk bevestigd: **${letterlijkGevonden} van ${alle.length}** · Termijnen/datums: **${metTermijn}** · Geanonimiseerde gegevens: **${anoniem.telling.totaal}**`;
+  const tabelKop = lang === 'uk'
+    ? '| Джерело | Вид | Термін / дата | Дослівна витримка (перевірено в оригіналі) |\n| --- | --- | --- | --- |'
+    : '| Bron | Soort | Termijn / datum | Letterlijk citaat (gecontroleerd in het origineel) |\n| --- | --- | --- | --- |';
+  const soortNaam: Record<PuntSoort, [string, string]> = {
+    verzoek: ['зобов’язання / вимога', 'verzoek / verplichting'],
+    vraag: ['питання', 'vraag'],
+    termijn: ['граничний строк', 'termijn'],
+    feit: ['ключовий факт / сума', 'kernfeit / bedrag'],
+  };
+  const rijenMd = tijdlijn.map((r) => {
+    const s = soortNaam[r.soort][lang === 'uk' ? 0 : 1];
+    const t = r.termijn || r.datumIso || '—';
+    return `| ${r.bronLabel} | ${s} | ${t} | «${r.citaat.replace(/\|/g, '\\|')}» |`;
+  });
+
+  const markdown = [kop, '', metaRegel, '', tabelKop, ...rijenMd].join('\n');
+
+  return {
+    alineas,
+    punten,
+    kort,
+    tijdlijn,
+    anoniem,
+    samenvatting: {
+      totaalAlineas: alineas.length,
+      totaalPunten: alle.length,
+      letterlijkGevonden,
+      metTermijn,
+      geanonimiseerd: anoniem.telling.totaal,
+    },
+    markdown,
+  };
+}
+

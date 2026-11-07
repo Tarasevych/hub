@@ -72,7 +72,7 @@ export async function main(): Promise<number> {
 
   // — адаптери —
   const adapters = beleid.adapters.bestanden.filter((p: string) => existsSync(p));
-  check('усі зареєстровані адаптери існують (8)', adapters.length === 8, adapters.join(','));
+  check('усі зареєстровані адаптери існують (9)', adapters.length === 9, adapters.join(','));
   check('кожен адаптер: маркер, посилання на AGENTS.md, ≤ maxRegels', adapters.every((p: string) => k.controleerAdapter(p, lees(p), beleid.adapters.maxRegels).length === 0));
   check('CLAUDE.md згадує id «claude», GEMINI.md — «gemini»', /`claude`/.test(lees('CLAUDE.md')) && /`gemini`/.test(lees('GEMINI.md')));
   const lang = `<!-- orch-adapter -->\nAGENTS.md\n${'regel\n'.repeat(40)}`;

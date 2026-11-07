@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.13",
-  "bijgewerkt": "2026-11-06",
+  "regelsVersie": "1.4.14",
+  "bijgewerkt": "2026-11-07",
   "regelBestanden": [
     "AGENTS.md",
     "orchestratie/beleid.json",
@@ -133,6 +133,7 @@
       "CODEX.md",
       "GROK.md",
       "ANTIGRAVITY.md",
+      "AUTOCLAW.md",
       "CHATGPT.md"
     ]
   },
@@ -186,6 +187,18 @@
         "zip"
       ],
       "adapter": "ANTIGRAVITY.md"
+    },
+    {
+      "id": "autoclaw",
+      "weergave": "AutoClaw (GLM)",
+      "kanalen": [
+        "github_pr",
+        "mcp",
+        "zip",
+        "tar_gz",
+        "git_patch"
+      ],
+      "adapter": "AUTOCLAW.md"
     },
     {
       "id": "chatgpt",

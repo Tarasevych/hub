@@ -89,6 +89,13 @@ export const BORD_AGENTEN: readonly BordAgent[] = Object.freeze([
     mcpUk: 'Antigravity → плагін Mijn Ruimte або ~/.gemini/settings.json (mcpServers) → вставте адресу /antigravity.',
     tokenUk: 'Токен консолі передається як Bearer або змінна MIJN_RUIMTE_TOKEN для мосту mijn-ruimte.',
   },
+  {
+    id: 'autoclaw', naam: 'AutoClaw',
+    kan: 'Працює з вашим простором через власну MCP-адресу /autoclaw та моделі Z.ai (зокрема GLM-5.3-flashX-Legal для правничої перевірки договорів і джерел).',
+    toegang: TOEGANG, methoden: ['mcp', 'token'], vendorUrl: 'https://autoclaw.z.ai',
+    mcpUk: 'AutoClaw Desktop → налаштування MCP (mcp.json) або міст mijn-ruimte → вставте адресу /autoclaw.',
+    tokenUk: 'Ключ доступу консолі передається як Bearer або змінна MIJN_RUIMTE_TOKEN для мосту mijn-ruimte.',
+  },
 ]);
 
 const BORD_MAP = new Map(BORD_AGENTEN.map((a) => [a.id, a]));
@@ -109,7 +116,7 @@ export type SiteStaat = {
 };
 export const STANDAARD_STAAT: SiteStaat = { agent: {}, methode: {}, cap: {} };
 
-const AGENT_SLEUTEL = /^agent:(grok|claude|chatgpt|gemini|copilot|cursor|antigravity)$/;
+const AGENT_SLEUTEL = /^agent:(grok|claude|chatgpt|gemini|copilot|cursor|antigravity|autoclaw)$/;
 const METHODE_SLEUTEL = /^methode:(mcp|token)$/;
 const CAP_SLEUTEL = /^cap:[a-z][a-z0-9.]{1,40}$/;
 

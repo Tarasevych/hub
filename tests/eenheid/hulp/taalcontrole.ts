@@ -25,7 +25,7 @@ export const TOEGESTAAN = new Set([
   // ORCH-001 (координація агентів): назви файлів, команд, кодів і агентів, які текст називає буквально; «commit» — термін git, як у AGENTS.md
   'AGENTS', 'orchestratie', 'ORCH-OVERDRACHT', 'controleer', 'inleveren', 'scripts', 'regelsVersie', 'regelsHash', 'basisCommit', 'kritiekHash',
   'integratie', 'aanvaard', 'geweigerd', 'zaken', 'lock', 'orch', 'beleid', 'taak-start', 'Task', 'patch', 'zip', 'YYYYMMDD', 'HHMMSS', 'feature', 'ABC-001',
-  'commit', 'RUNBOOK', 'orch-regels', 'mijn-ruimte-besluit', 'origin', 'push', 'codex', 'gemini', 'grok', 'copilot', 'cursor', 'antigravity', 'chatgpt',
+  'commit', 'RUNBOOK', 'orch-regels', 'mijn-ruimte-besluit', 'origin', 'push', 'codex', 'gemini', 'grok', 'copilot', 'cursor', 'antigravity', 'autoclaw', 'AutoClaw', 'GLM', 'chatgpt',
 ]);
 /** Wat vóór de controle uit een tekst verdwijnt: technische namen met «_», adressen en paden, en alles tussen rechte aanhalingstekens. */
 export const schoon = (s: string) => s

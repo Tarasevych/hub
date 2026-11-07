@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований випуск 20261107-121500
+name: AUDIT-001 · консолідований випуск 20261107-130000
 
 on:
   push:
@@ -39,6 +39,11 @@ jobs:
           node scripts/zoek-ui-catalogus.mjs --controle
           npm run typecheck:server
           node scripts/eenheidstests.mjs orch-kern
+          node scripts/eenheidstests.mjs merk-register
+          node scripts/eenheidstests.mjs contrast-knoppen-logos-20261021
+          node scripts/eenheidstests.mjs ai-bronnen-20261024
+          node scripts/eenheidstests.mjs agent-verbinden-20261020
+          node scripts/eenheidstests.mjs integraties-catalogus-v2-20261029
           node scripts/eenheidstests.mjs uitrol-manifest
           node scripts/eenheidstests.mjs uitrol-weergave-v2
           node scripts/eenheidstests.mjs zoek-diepe-link-20261105
@@ -47,7 +52,7 @@ jobs:
       - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
-          export VERSIE="20261107-121500"
+          export VERSIE="20261107-130000"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
@@ -71,7 +76,7 @@ jobs:
             echo "LIVE_COMMIT=2c71d1179064018bd60d3464a91e1a0ef17e912b" >> "$GITHUB_ENV"
           fi
 
-      - name: Bouw en controleer pakket 20261107-121500
+      - name: Bouw en controleer pakket 20261107-130000
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
@@ -81,7 +86,7 @@ jobs:
           {
             "schema": 1,
             "versie": "$VERSIE",
-            "aangemaakt": "2026-11-07T12:15:00Z",
+            "aangemaakt": "2026-11-07T13:00:00Z",
             "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
             "auteur": "$ACCOUNT_AUTEUR",
             "zonderAi": false,
@@ -106,40 +111,40 @@ jobs:
             ],
             "beschrijving": {
               "uk": {
-                "titel": "Аудит 05.11.2026, перейменування всіх статей на питомі назви, повне мовне очищення (UK/NL) та фото профілю й логотипи агентів у меню оновлень",
-                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт, повне перейменування та мовне очищення всіх статей (.uk.md / .nl.md / .md), каталогів, пошукових словників, коду й тестів без російських літер, русизмів і суржику, сувора перевірка автора облікового запису та моделі ШІ в UITROL-MANIFEST.json, а також автоматичне підтягування фото профілю з особистого кабінету та фірмових логотипів ШІ-агентів у всіх меню оновлень.",
+                "titel": "Підтримка агента AutoClaw / GLM-5.3-flashX-Legal, правнича перевірка й реєстр доказів, фото профілю в оновленнях та повне мовне очищення (UK/NL)",
+                "samenvatting": "Зареєстровано AutoClaw (Z.ai · GLM-5.3-flashX-Legal / OpenClaw) як повноцінного ШІ-агента з фірмовим логотипом, окремою кінцевою точкою MCP v2 (/autoclaw), правилами оркестрації (regelsVersie 1.4.14, B-019), інтерактивною панеллю правничої перевірки договорів, знеособлення персональних даних і реєстру доказів, командами оболонки JuridischControleer / AutoClawPakket та двомовними матеріалами для конкурсу Built with AutoClaw — Round 3.",
                 "wijzigingen": [
-                  "Перейменовано всі статті та підкаталоги документації на питомі українські (.md, .uk.md) та нідерландські (.nl.md) назви з оновленням усіх взаємних посилань.",
-                  "Замінено всі кальки, русизми та технічний сленг в усіх українських статтях, правилах оркестрації, компонентах src/, backend/, shared/, deploy/, розширенні оглядача й тестах.",
-                  "Запроваджено автоматичне визначення імені й пошти облікового запису власника при розгортанні, заборонено фіктивні псевдоніми («Власник», «Eigenaar») і порожнє поле моделі («модель невідома»)."
+                  "Додано агента AutoClaw (autoclaw) із власною векторною емблемою (#FFFFFF на #2563EB) у реєстр знаків (src/merk/merk-register.ts), каталог з'єднувача v2 (/autoclaw), каталог інтеграцій (162 позиції), правила оркестрації (beleid.json 1.4.14, AUTOCLAW.md) та підтримувані міграції.",
+                  "Реалізовано модуль правничої перевірки, знеособлення персональних даних (IBAN, ЄДРПОУ, ІПН, KvK, е-пошта, телефони) та побудови реєстру доказів із перевіркою джерел (anonimiseerTekst, bouwBewijsIndex у shared/ai-bronnen.ts) для моделі GLM-5.3-flashX-Legal.",
+                  "Додано інтерактивний канал «5. Правнича перевірка й реєстр доказів (GLM-5.3-flashX-Legal)» на сторінці агента AutoClaw (src/agenten/AgentPagina.tsx), команди JuridischControleer і AutoClawPakket у сценарії навички mijn-ruimte та двомовні посібники для конкурсу Built with AutoClaw — Round 3 (docs/КОНКУРС-АВТОКЛО-РАУНД-3.uk.md, docs/AUTOCLAW-RONDE-3.nl.md)."
                 ],
                 "fixes": [
-                  "Автоматичне підтягування фото профілю учасника-людини з особистого кабінету (включно з базовими зображеннями data:image/...;base64,... до 360 КБ та локальним кешем профілю) й відображення фірмових логотипів ШІ-агентів у плитках «Автор»/«Агент», списку учасників, бічній панелі та історії оновлень.",
-                  "Усунено хибне дублювання сторонніх агентів у deelnemers (вказується виключно фактичний агент antigravity зі справжньою моделлю claude-opus-4-6 · 20260205) та виправлено роль облікового запису власника на «автор».",
-                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261106-171500) та нова версія пакета 20261107-121500.",
-                  "Перевірка відсутності російських літер, суржику та побитих відносних посилань у всіх 455 статтях репозиторію (0 збігів)."
+                  "Автоматичне підтягування фото профілю учасника-людини з особистого кабінету (включно з data:image/...;base64,... до 360 КБ) та відображення фірмових логотипів ШІ-агентів у всіх меню оновлень.",
+                  "Коректне розпізнавання кириличних меж слів (ЄДРПОУ, ІПН, РНОКПП) під час знеособлення договорів через Unicode-перевірку меж (?<![\\p{L}\\p{N}]).",
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера та нова версія пакета 20261107-130000.",
+                  "Перевірка чистоти мови (0 російських літер, 0 русизмів/суржику, 0 англіцизмів) у всіх статтях та інтерфейсі."
                 ],
                 "beperkingen": [
-                  "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» (B-018, версія 1.4.13) до підпису власника особистим ключем безпечної оболонки."
+                  "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» (B-019, версія 1.4.14) до підпису власника особистим ключем безпечної оболонки."
                 ],
                 "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу власника."
               },
               "nl": {
-                "titel": "Audit 05-11-2026, hernoeming van alle artikelen naar zuivere namen, volledige taalzuivering (UK/NL) en profielfoto's en agentlogo's in het updatemenu",
-                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen, volledige hernoeming en taalzuivering van alle artikelen (.uk.md / .nl.md / .md), mappen, zoekcatalogi, broncode en tests zonder Russische letters, russismen of Surzjyk, strikte verificatie van het eigenaarsaccount en AI-model in UITROL-MANIFEST.json, en automatische weergave van de profielfoto uit het persoonlijke kabinet en merklogo's van AI-agenten in alle updatemenu's.",
+                "titel": "Ondersteuning voor AutoClaw / GLM-5.3-flashX-Legal, juridische controle en bewijsindex, profielfoto's in updates en volledige taalzuivering (UK/NL)",
+                "samenvatting": "AutoClaw (Z.ai · GLM-5.3-flashX-Legal / OpenClaw) geregistreerd als volwaardige AI-agent met eigen merklogo, eigen MCP v2-eindpunt (/autoclaw), orchestratieregels (regelsVersie 1.4.14, B-019), interactief paneel voor juridische contractcontrole, anonimisering van persoonsgegevens en bewijsindex, CLI-opdrachten JuridischControleer / AutoClawPakket en tweetalig deelnamemateriaal voor Built with AutoClaw — Round 3.",
                 "wijzigingen": [
-                  "Alle artikelen en documentatiemappen hernoemd naar zuivere Oekraïense (.md, .uk.md) en Nederlandse (.nl.md) bestandsnamen met bijgewerkte kruisverwijzingen.",
-                  "Alle Surzjyk-vormen, russismen en leenwoorden vervangen in alle Oekraïense artikelen, orchestratieregels, componenten onder src/, backend/, shared/, deploy/, de browserextensie en tests.",
-                  "Automatische vaststelling van de naam en het e-mailadres van het eigenaarsaccount bij uitrol ingevoerd; generieke bijnamen («Власник», «Eigenaar») en «model onbekend» zijn verboden."
+                  "Agent AutoClaw (autoclaw) met eigen vectorembleem (#FFFFFF op #2563EB) toegevoegd aan het merkregister (src/merk/merk-register.ts), connector-v2 (/autoclaw), de integratiecatalogus (162 items), orchestratieregels (beleid.json 1.4.14, AUTOCLAW.md) en migraties.",
+                  "Module voor juridische controle, anonimisering van persoonsgegevens (IBAN, ЄДРПОУ, ІПН, KvK, e-mail, telefoonnummers) en opbouw van een bewijsindex met bronverificatie (anonimiseerTekst, bouwBewijsIndex in shared/ai-bronnen.ts) geïmplementeerd voor GLM-5.3-flashX-Legal.",
+                  "Interactief kanaal «5. Juridische controle & bewijsindex (GLM-5.3-flashX-Legal)» toegevoegd op de agentpagina van AutoClaw (src/agenten/AgentPagina.tsx), opdrachten JuridischControleer en AutoClawPakket in het mijn-ruimte-vaardigheidsscript en tweetalige handleidingen voor Built with AutoClaw — Round 3 (docs/КОНКУРС-АВТОКЛО-РАУНД-3.uk.md, docs/AUTOCLAW-RONDE-3.nl.md)."
                 ],
                 "fixes": [
-                  "Automatisch ophalen van de profielfoto van menselijke deelnemers uit het persoonlijke kabinet (inclusief data:image/...;base64,...-afbeeldingen tot 360 KB en lokale profielcache) en weergave van de merklogo's van AI-agenten in de tegels «Auteur»/«Agent», de deelnemerslijst, de zijbalk en de updategeschiedenis.",
-                  "Onterechte vermelding van niet-betrokken agenten in deelnemers verwijderd (uitsluitend de daadwerkelijke agent antigravity met het echte model claude-opus-4-6 · 20260205) en de rol van het eigenaarsaccount op «auteur» gezet.",
-                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261106-171500) en nieuwe pakketversie 20261107-121500.",
-                  "Controle op afwezigheid van Russische letters, Surzjyk en verbroken relatieve koppelingen in alle 455 artikelen van de repository (0 treffers)."
+                  "Automatisch ophalen van de profielfoto van menselijke deelnemers uit het persoonlijke kabinet (inclusief data:image/...;base64,... tot 360 KB) en weergave van merklogo's van AI-agenten in alle updatemenu's.",
+                  "Correcte herkenning van Cyrillische woordgrenzen (ЄДРПОУ, ІПН, РНОКПП) bij contractanonimisering via Unicode-grenscontroles (?<![\\p{L}\\p{N}]).",
+                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie en nieuwe pakketversie 20261107-130000.",
+                  "Controle op taalzuiverheid (0 Russische letters, 0 russismen/Surzjyk, 0 anglicismen) in alle artikelen en de gebruikersomgeving."
                 ],
                 "beperkingen": [
-                  "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» (B-018, versie 1.4.13) totdat de eigenaar ondertekent met zijn SSH-sleutel."
+                  "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» (B-019, versie 1.4.14) totdat de eigenaar ondertekent met zijn SSH-sleutel."
                 ],
                 "instructies": "Upload mijn-ruimte-$VERSIE.tar.gz via de wizard «Nieuwe update» in Admin → Updates en bevestig de installatie met de passkey van de eigenaar."
               }
@@ -148,14 +153,14 @@ jobs:
           EOF
           cat << 'EOF' > "$RUNNER_TEMP/testresultaten.json"
           {
-            "geslaagd": 630,
+            "geslaagd": 685,
             "mislukt": 0,
-            "samenvatting": "Повне 11-етапне складання npm run build, серверна перевірка типів typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, uitrol-manifest, uitrol-weergave-v2, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 630/630 перевірок пройдено, 0 помилок.",
+            "samenvatting": "Повне 11-етапне складання npm run build, серверна перевірка типів typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, merk-register, contrast-knoppen-logos, ai-bronnen, agent-verbinden, integraties-catalogus-v2, zoek-*, extensie-*, uitrol-manifest, uitrol-weergave-v2, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, werkblad-canvas-kern, meldingen-v2, ai-vertaling, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 685/685 перевірок пройдено, 0 помилок.",
             "falend": [],
             "basis": null,
             "uitleg": {
-              "uk": "Усі 630 перевірок у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
-              "nl": "Alle 630 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
+              "uk": "Усі 685 перевірок у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
+              "nl": "Alle 685 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
             }
           }
           EOF
@@ -192,7 +197,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261107-121500 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261107-130000 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -204,7 +209,7 @@ jobs:
           - **Встановлювальний архів (\`.tar.gz\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE.tar.gz\`
           - **SHA-256 (\`.tar.gz\`):** \`$RELEASE_SHA\`
           - **Пакет передачі (\`-overdracht.zip\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE-antigravity-overdracht.zip\`
-          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\` (\`regelsVersie 1.4.13\`, \`B-018\`)
+          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\` (\`regelsVersie 1.4.14\`, \`B-019\`)
           - **Вихідна фіксація (\`BRON-COMMIT\`):** $COMMIT (гілка \`audit/audit-2026-11-05-20261105-070523\`, злито в \`integratie\` та \`voornaamst\`)
           - **Журнал розробки (TRACE-001):** \`orchestratie/ontwikkelarchieven/AUDIT-001.json\`
           EOF
@@ -215,7 +220,7 @@ jobs:
             "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
             "uitvoer/mijn-ruimte-$VERSIE.voorstel.json" \
             --target "$COMMIT" \
-            --title "AUDIT-001 · $VERSIE (Перейменування статей на питомі назви та повне мовне очищення UK/NL на базі $LIVE_VERSIE)" \
+            --title "AUDIT-001 · $VERSIE (AutoClaw / GLM-5.3-flashX-Legal, правнича перевірка й реєстр доказів на базі $LIVE_VERSIE)" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" \

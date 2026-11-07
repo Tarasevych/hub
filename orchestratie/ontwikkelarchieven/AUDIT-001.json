@@ -142,6 +142,12 @@
       "fase": "uitvoering",
       "actor": "antigravity",
       "stap": "Виправлено підтягування фото профілю учасника з особистого кабінету (підтримка data:image/...;base64,... до 360 КБ у fotoVeilig, вибірка customPhoto/customPicture/picture/providerPicture в uitrol-goedkeuring.ts та кешу профілю в Persoon.tsx і UitgaveBeschrijving.tsx) і додано відображення фірмових логотипів ШІ-агентів (<AgentLogo>) та фото автора у плитках «Автор»/«Агент», списку учасників, бічній панелі та історії оновлень; зібрано випуск 20261107-121500."
+    },
+    {
+      "tijd": "2026-11-07T13:00:00Z",
+      "fase": "uitvoering",
+      "actor": "antigravity",
+      "stap": "Зареєстровано AutoClaw / GLM (autoclaw, GLM-5.3-flashX-Legal) як окремого підтримуваного агента в src/merk/merk-register.ts, каталозі з'єднувача v2 (/autoclaw), каталозі інтеграцій (162 позиції) та правилах оркестрації (beleid.json 1.4.14, B-019, AUTOCLAW.md); реалізовано модуль правничої перевірки, знеособлення персональних даних та реєстру доказів (anonimiseerTekst, bouwBewijsIndex у shared/ai-bronnen.ts), інтерактивний канал 5 на сторінці агента (src/agenten/AgentPagina.tsx), команди JuridischControleer / AutoClawPakket у сценарії навички mijn-ruimte та двомовні конкурсні посібники для Built with AutoClaw — Round 3 (docs/КОНКУРС-АВТОКЛО-РАУНД-3.uk.md, docs/AUTOCLAW-RONDE-3.nl.md); зібрано випуск 20261107-130000."
     }
   ],
   "keuzes": [
@@ -170,22 +176,47 @@
     {
       "bestand": "orchestratie/beleid.json",
       "soort": "змінено",
-      "опис": "Підвищено regelsVersie до 1.4.9, оновлено basis до 20261105-061659 @ f3f3fabb2f3b5209b1ee8eba3078e403de831844."
+      "опис": "Підвищено regelsVersie до 1.4.14 (B-019), додано адаптер autoclaw (AUTOCLAW.md) та кінцеву точку /autoclaw."
     },
     {
       "bestand": "orchestratie/BESLUITEN.md",
       "soort": "змінено",
-      "опис": "Додано рішення B-010, B-011, B-012, B-013 та B-014."
+      "опис": "Додано рішення B-010..B-019 (зокрема B-019 щодо інтеграції AutoClaw / GLM-5.3-flashX-Legal та правничого реєстру доказів)."
     },
     {
       "bestand": "orchestratie/regels.lock.json",
       "soort": "змінено",
-      "опис": "Перепідписано замок правил для regelsVersie 1.4.9."
+      "опис": "Перепідписано замок правил для regelsVersie 1.4.14."
     },
     {
       "bestand": "orchestratie/CONTEXT-COMPACT.md",
       "soort": "змінено",
-      "опис": "Перегенеровано компактний контекст для правил 1.4.9."
+      "опис": "Перегенеровано компактний контекст для правил 1.4.14."
+    },
+    {
+      "bestand": "src/merk/merk-register.ts",
+      "soort": "змінено",
+      "опис": "Зареєстровано знак AutoClaw (#FFFFFF на #2563EB) та псевдоніми openclaw, glm, chatglm, zhipu, zhipuai, zai, z.ai, glm-5.3-flashx-legal."
+    },
+    {
+      "bestand": "shared/ai-bronnen.ts",
+      "soort": "змінено",
+      "опис": "Додано модель GLM-5.3-flashX-Legal (Z.ai · AutoClaw) та функції anonimiseerTekst і bouwBewijsIndex для правничої перевірки й реєстру доказів."
+    },
+    {
+      "bestand": "src/agenten/AgentPagina.tsx",
+      "soort": "змінено",
+      "опис": "Увімкнено інтерактивну панель для autoclaw з каналом «5. Правнича перевірка й реєстр доказів (GLM-5.3-flashX-Legal)»."
+    },
+    {
+      "bestand": "AUTOCLAW.md",
+      "soort": "додано",
+      "опис": "Адаптер оркестрації для агента AutoClaw (GLM / Z.ai · OpenClaw) та двомовні відповідники АДАПТЕР-АВТОКЛО.uk.md і AUTOCLAW.nl.md."
+    },
+    {
+      "bestand": "docs/КОНКУРС-АВТОКЛО-РАУНД-3.uk.md",
+      "soort": "додано",
+      "опис": "Двомовний посібник і готові матеріали для участі в конкурсі Built with AutoClaw — Round 3 (разом із docs/AUTOCLAW-RONDE-3.nl.md)."
     },
     {
       "bestand": "backend/uitrol-voorcontrole.ts",
@@ -233,11 +264,6 @@
       "опис": "Оновлені радіуси --straal-s/m/l/xl (10px/14px/20px/26px) (DESIGN-001)."
     },
     {
-      "bestand": "shared/ai-bronnen.ts",
-      "soort": "змінено",
-      "опис": "Виправлено українську транслітерацію імені та опису моделі штучного інтелекту без російських літер."
-    },
-    {
       "bestand": "scripts/l002-audit.mjs",
       "soort": "змінено",
       "опис": "Оновлено перевірку заголовків документації відповідно до чистої української термінології."
@@ -246,7 +272,7 @@
   "controles": [
     {
       "controle": "node scripts/orch.mjs controleer && node scripts/orch.mjs versheid --taak AUDIT-001 --fase start",
-      "результат": "ORCH: усе гаразд · alles in orde (regelsVersie 1.4.9, hash fd7f99f180da…); versheid: vers · свіжо.",
+      "результат": "ORCH: усе гаразд · alles in orde (regelsVersie 1.4.14, hash 568ee500104c…); versheid: vers · свіжо.",
       "стан": "пройдено"
     },
     {

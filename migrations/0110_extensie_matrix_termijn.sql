@@ -27,7 +27,7 @@
 CREATE TABLE IF NOT EXISTS app.extensie_matrix (
   user_id             text        NOT NULL,
   ruimte              text        NOT NULL CHECK (ruimte IN ('prive', 'technisch')),
-  agent               text        NOT NULL CHECK (agent IN ('*', 'claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity')),
+  agent               text        NOT NULL CHECK (agent IN ('*', 'claude', 'gpt', 'grok', 'gemini', 'copilot', 'cursor', 'antigravity', 'autoclaw')),
   caps                text[]      NOT NULL DEFAULT '{}',
   zonder_bevestiging  boolean     NOT NULL DEFAULT false,
   devtools_namen      boolean     NOT NULL DEFAULT false,

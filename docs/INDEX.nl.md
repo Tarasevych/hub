@@ -43,6 +43,7 @@ Alle artikelen, specificaties, wijzigingslogboeken (wijzigingen), uitrolhandleid
 | **Agentregels (`AGENTS.md`)** | Enige regelbron voor alle 8 AI-agenten (`ORCH-001`, `TRACE-001`, `B-009`, `B-013`) | [🇳🇱 `AGENTENREGELS.nl.md`](../AGENTENREGELS.nl.md) | [🇺🇦 `AGENTS.uk.md`](../ПРАВИЛА-АГЕНТІВ.uk.md) | [`AGENTS.md`](../AGENTS.md) *(tweetalige canon)* |
 | **Besluitenregister (`BESLUITEN.md`)** | Append-only register van architectuur- en organisatiebesluiten `B-001`–`B-013` | [🇳🇱 `BESLUITEN.nl.md`](../orchestratie/BESLUITEN.nl.md) | [🇺🇦 `BESLUITEN.uk.md`](../orchestratie/РІШЕННЯ.uk.md) | [`orchestratie/BESLUITEN.md`](../orchestratie/BESLUITEN.md) |
 | **Compacte context (`CONTEXT-COMPACT.md`)** | Automatisch gegenereerde tweetalige context voor agenten zonder directe GitHub-toegang | [🇳🇱/🇺🇦 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [🇺🇦/🇳🇱 `CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) | [`orchestratie/CONTEXT-COMPACT.md`](../orchestratie/CONTEXT-COMPACT.md) |
+| **Adapter en gids AutoClaw (`GLM-5.3-flashX-Legal`)** | Officiële regeladapter `AUTOCLAW.md` en volledige begeleiding voor «Built with AutoClaw — Ronde 3» | [🇳🇱 `AUTOCLAW-RONDE-3.nl.md`](./AUTOCLAW-RONDE-3.nl.md) · [`AUTOCLAW.nl.md`](../AUTOCLAW.nl.md) | [🇺🇦 `КОНКУРС-АВТОКЛО-РАУНД-3.uk.md`](./КОНКУРС-АВТОКЛО-РАУНД-3.uk.md) · [`АДАПТЕР-АВТОКЛО.uk.md`](../АДАПТЕР-АВТОКЛО.uk.md) | [`AUTOCLAW.md`](../AUTOCLAW.md) |
 
 ---
 

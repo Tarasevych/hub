@@ -25,7 +25,7 @@ export const accessSeconden = (d: Duur) => (d.accessSec > 0 ? d.accessSec : NOOI
 export const refreshSeconden = (d: Duur) => (d.refreshDagen > 0 ? d.refreshDagen * 86400 : NOOIT_SEC);
 
 // ---------------------------------------------------------------- welke AI-klant
-export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'overig';
+export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw' | 'overig';
 export type Klant = { id: KlantId; naam: string; deur: string | null };
 /** deur = pad van de MCP-deur op mcp.* (zoals in de tunnelregel); null = alleen via de connector /mcp. */
 export const KLANTEN: readonly Klant[] = Object.freeze([
@@ -36,6 +36,7 @@ export const KLANTEN: readonly Klant[] = Object.freeze([
   { id: 'copilot', naam: 'Copilot', deur: 'copilot' },
   { id: 'cursor', naam: 'Cursor', deur: null },
   { id: 'antigravity', naam: 'Antigravity', deur: null },
+  { id: 'autoclaw', naam: 'AutoClaw', deur: null },
   { id: 'overig', naam: 'Інший клієнт', deur: null },
 ]);
 const normaal = (s: string) => s.toLowerCase().normalize('NFKC').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -50,6 +51,7 @@ export function klantVan(naam: string | null | undefined): KlantId {
   if (/\b(anysphere|cursormcp)\b/.test(n)) return 'cursor';
   if (/\b(vscode|vs code|visual studio|github)\b/.test(n)) return 'copilot';
   if (/\b(antigravity|jetski)\b/.test(n)) return 'antigravity';
+  if (/\b(autoclaw|openclaw|zhipu|zhipuai|chatglm|glm|zai|z ai)\b/.test(n)) return 'autoclaw';
   return 'overig';
 }
 export const klant = (id: unknown): Klant => KLANTEN.find((k) => k.id === id) ?? KLANTEN[KLANTEN.length - 1];
@@ -62,7 +64,7 @@ export function duurVoorKlant(instellingen: unknown, id: KlantId): DuurId {
 // ---------------------------------------------------------------- OAuth-terugkeeradressen (RFC 8252)
 export type RedirectSoort = 'web' | 'loopback' | 'app';
 /** https-hosts van bekende AI-klanten (exact of subdomein). */
-export const WEB_HOSTS: readonly string[] = Object.freeze(['claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com']);
+export const WEB_HOSTS: readonly string[] = Object.freeze(['claude.ai', 'claude.com', 'grok.com', 'x.ai', 'chatgpt.com', 'openai.com', 'vscode.dev', 'cursor.com', 'autoclaw.z.ai', 'chat.z.ai', 'z.ai']);
 /** Eigen schema's van desktopapps (RFC 8252 §7.1): alleen deze, met een host (cursor://anysphere.cursor-mcp/oauth/callback). */
 export const APP_SCHEMAS: readonly string[] = Object.freeze(['cursor', 'vscode', 'vscode-insiders', 'windsurf']);
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);

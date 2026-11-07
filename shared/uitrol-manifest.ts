@@ -41,8 +41,8 @@ export type ManifestFout = { veld: string; uk: string; nl: string };
 
 const str = (x: unknown, max = 4000) => (typeof x === 'string' ? x.replace(/\0/g, '').trim().slice(0, max) : '');
 const lijst = (x: unknown) => (Array.isArray(x) ? x.map((y) => str(y, 1000)).filter(Boolean).slice(0, 60) : []);
-/** «Claude», «Grok», «GPT» zijn platforms/families, geen model-id. */
-const ALLEEN_FAMILIE = /^(claude|grok|gpt|gemini|cursor|copilot|llama|mistral|ai|llm|onbekend|unknown|невідомо)$/i;
+/** «Claude», «Grok», «GPT», «AutoClaw» zijn platforms/families, geen model-id. */
+const ALLEEN_FAMILIE = /^(claude|grok|gpt|gemini|cursor|copilot|autoclaw|openclaw|zhipu|llama|mistral|ai|llm|onbekend|unknown|невідомо)$/i;
 /** З цієї версії заборонені псевдоніми («Власник», «Eigenaar») замість імені облікового запису та «onbekend»/null замість справжньої моделі ШІ. */
 export const MANIFEST_STRIKT_VANAF = '20261106-000000';
 export const GENERIEKE_AUTEUR = /^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author|невідомо|onbekend|unknown)$/i;
