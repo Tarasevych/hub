@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./WIJZIGINGEN-MENU-OPPERVLAK.md)) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-MENU-OPPERVLAK.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-MENU-OPPERVLAK.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-MENU-OPPERVLAK.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # Меню: обліковий запис і управління сайтом
 

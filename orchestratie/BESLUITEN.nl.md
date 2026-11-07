@@ -219,3 +219,13 @@ codes `ORCH_CODES` in `shared/orch-model.ts`, hulpteksten `orch.inlevering` / `o
 **Gevolgen.** `regelsVersie` 1.4.9 → 1.4.10; 0 Russische tekens of Surzjyk-treffers in de gehele repository.
 
 **Wie.** Verzoek van de eigenaar op 06-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.
+
+## B-016 · 2026-11-06 · 1.4.11 · Volledige zuivering van alle gepubliceerde artikelen en documentatie van Russismen, leenvertalingen en tech-slang
+
+**Context.** In de documentatieartikelen stonden nog diepere morfologische leenvertalingen en tech-slang die door eenvoudige ASCII-woordgrenzen `\b` in JS werden gemist.
+
+**Besluit.** Alle Russische leenvertalingen, Surzjyk-wendingen en slang-termen in alle gepubliceerde artikelen (`*.md`, `*.uk.md`, `*.txt`) vervangen door authentiek Oekraïens; `regelsVersie` verhogen naar `1.4.11` en `orchestratie/regels.lock.json` en `orchestratie/CONTEXT-COMPACT.md` opnieuw opbouwen.
+
+**Gevolgen.** `regelsVersie` 1.4.10 → 1.4.11; 0 treffers van Russismen, leenvertalingen of slang in alle documentatieartikelen.
+
+**Wie.** Verzoek van de eigenaar op 06-11-2026 (`AUDIT-001`); uitvoering door agent `antigravity`.

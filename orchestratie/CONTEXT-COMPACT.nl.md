@@ -1,79 +1,59 @@
 > **Taal / Мова:** [Українська](./CONTEXT-COMPACT.uk.md) · **Nederlands** (huidig) · [Canoniek bestand](./CONTEXT-COMPACT.md)
 
-<!-- GEGENEREERD door node scripts/orch.mjs context — niet met de hand wijzigen · ЗГЕНЕРОВАНО, не редагувати вручну -->
-# Mijn Ruimte — компактний контекст агента · compacte agentcontext
+<!-- GEGENEREERD op basis van node scripts/orch.mjs context — Nederlandse versie van de compacte agentcontext -->
+# Mijn Ruimte — compacte agentcontext (Nederlandse versie)
 
-- regelsVersie: `1.4.10`
-- regelsHash: `beb437706865e56735ee15f56f75422968d3b133221148282986b23645078847`
-- kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (НЕ підтверджено власником · NIET bevestigd door eigenaar)
-- база · basis: `20261105-061659` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844` (geverifieerd_productie)
-- інтеграційна гілка · integratietak: `integratie`
+- regelsVersie: `1.4.11`
+- regelsHash: `716dbdebfa4c1916ff4f10448c4c486157232dae595e3c48629683d9389262a3`
+- kritiekHash: `15fb72c45e30c0347440c8bc5002934d080b229eb61ce20543f5d1cd49b43bf7` (NIET bevestigd door eigenaar)
+- basis: `20261105-061659` @ `f3f3fabb2f3b5209b1ee8eba3078e403de831844` (geverifieerd_productie)
+- integratietak: `integratie`
 
-Вставте цей файл повністю на початку роботи. У відповіді-передачі вкажіть regelsHash і базовий commit, від якого ви працювали —
-інакше результат буде позначено як «застаріла база/правила» й не потрапить у чергу без повторної перевірки.
+Voeg dit bestand volledig in aan het begin van het werk. Vermeld in het overdrachtsrapport de `regelsHash` en de basiscommit waarvan je bent vertrokken — anders wordt het resultaat gemarkeerd als «verouderde basis/regels» en komt het niet zonder hercontrole in de wachtrij.
 
-## 0. Головний принцип · Hoofdprincipe
+## 0. Hoofdprincipe
 
-Одна пам'ять проєкту, одна система правил, одна інтеграційна черга, один узгоджений випуск — незалежно від кількості й типу агентів
-(Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor, майбутні).
-Één projectgeheugen, één regelset, één integratiewachtrij, één afgestemde release — hoeveel en welke agenten er ook zijn.
+Één projectgeheugen, één regelset, één integratiewachtrij, één afgestemde release — ongeacht het aantal en het type agenten (Claude, Antigravity, ChatGPT, Codex, Grok, Copilot, Gemini, Cursor en toekomstige agenten).
 
-## 1. Платформа · Platform (незмінне)
+## 1. Platform (onveranderlijk)
 
-- Mijn Ruimte — self-hosted BYOS-платформа (Ubuntu VM на залізі користувача). Жодних зовнішніх хмар для хостингу чи розгортання.
-- Випуски атомарні: `mijn-ruimte-YYYYMMDD-HHMMSS.tar.gz`, SHA-256, установка лише через `/usr/local/sbin/mijn-ruimte-installeer`
-  (`deploy/uitrol/mijn-ruimte-uitrol.sh`). Правила пакета: `deploy/REGELS-UITROLPAKKET.md` (UITROL-VERSIE, AUTEUR, AGENT, SAMENVATTING, BRON-COMMIT, UITROL-MANIFEST.json з 20261101).
-- Жодного сирого root: дії від робочого користувача (`beheer`), системні зміни через заздалегідь написані конфіги/units. Нічого не розпаковувати в `/root`.
-- Простори користувачів ізольовані й шифровані їхнім методом входу; власник сервера не має змоги їх розшифрувати.
-- Мови: спілкування і звіти — українською; коментарі в коді — українською або нідерландською; тексти UI — українською/нідерландською.
-  Англійська лише для неперекладних технічних термінів. Шляхи/адреси — нідерландською (`/verbindingen`, не `/connections`).
-- Стек ВМ `<VM-IP>` (B-009): `Ubuntu 26.04.1 LTS` (`kernel 7.0`, `glibc 2.43`, `systemd 259.9`), `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`,
-  `Caddy 2.11.7` (`admin.sock|0660`), `OPA 1.22.0`, `age 1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. У `deploy/*.service` — `RestrictSUIDSGID=no` (інакше seccomp блокує `openat2` у `tar 1.35`).
+- Mijn Ruimte is een zelfstandig BYOS-platform (Ubuntu-VM op de eigen hardware van de gebruiker). Geen externe clouds voor hosting of uitrol.
+- Releases zijn atomisch: `mijn-ruimte-YYYYMMDD-HHMMSS.tar.gz`, SHA-256, installatie uitsluitend via `/usr/local/sbin/mijn-ruimte-installeer` (`deploy/uitrol/mijn-ruimte-uitrol.sh`). Pakketregels: `deploy/REGELS-UITROLPAKKET.nl.md` (`UITROL-VERSIE`, `AUTEUR`, `AGENT`, `SAMENVATTING`, `BRON-COMMIT`, `UITROL-MANIFEST.json` vanaf `20261101`).
+- Geen directe root-acties met de hand: acties lopen via de werkgebruiker (`beheer`), systeemwijzigingen via vooraf geschreven configuraties en systemd-units. Niets uitpakken in `/root`.
+- Gebruikersruimtes zijn geïsoleerd en versleuteld met hun eigen aanmeldmethode; de servereigenaar kan deze niet ontsleutelen.
+- Talen: communicatie en rapportages in het Oekraïens; commentaar in de code in het Oekraïens of Nederlands; UI-teksten in het Oekraïens en Nederlands. Engels uitsluitend voor onvertaalbare technische termen. Paden en URL-adressen in het Nederlands (`/verbindingen`, niet `/connections`).
+- Stack van VM `<VM-IP>` (`B-009`): `Ubuntu 26.04.1 LTS` (`kernel 7.0`, `glibc 2.43`, `systemd 259.9`), `Node.js 26.13.0 LTS`, `PostgreSQL 18.6`, `Caddy 2.11.7` (`admin.sock|0660`), `OPA 1.22.0`, `age 1.3.2`, `cloudflared 2026.10.7`, `Docker 29.9.2`. In `deploy/*.service` staat `RestrictSUIDSGID=no` (anders blokkeert seccomp `openat2` in `tar 1.35`).
 
-## 2. Перед початком роботи · Vóór je begint (обов'язково)
+## 2. Vóór je begint (verplicht)
 
-1. Прочитай цей файл (або `orchestratie/CONTEXT-COMPACT.md`, якщо нема доступу до репозиторію) і `orchestratie/beleid.json`.
-2. База коду: `beleid.json → basis.bronCommit` (зараз `f3f3fabb…`, версія `20261105-061659`, статус `geverifieerd_productie` — звірено з сервером, див. B-014).
-   Гілки `integratie` та `voornaamst` синхронізовані. Якщо маєш доступ до сайту — звір `/api/version` і зафіксуй результат у BESLUITEN.md.
-3. Зареєструй задачу: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS`
-   (без репозиторію — створи `ORCH-OVERDRACHT.json` вручну за зразком `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
-4. Запусти `node scripts/orch.mjs controleer` і `node scripts/orch.mjs versheid --taak <ID> --fase start`. Червоне — не починай, спершу перебазуйся/перечитай правила.
+1. Lees `AGENTS.nl.md` / `AGENTS.md` (of `orchestratie/CONTEXT-COMPACT.nl.md` als er geen toegang tot de repository is) en `orchestratie/beleid.json`.
+2. Codebasis: `beleid.json → basis.bronCommit` (nu `f3f3fabb…`, versie `20261105-061659`, status `geverifieerd_productie` — geverifieerd met de server, zie `B-014`; de takken `integratie` en `voornaamst` zijn gesynchroniseerd). Als je toegang hebt tot de site, controleer dan `/api/version` en leg het resultaat vast in `BESLUITEN.md`.
+3. Registreer de taak: `node scripts/orch.mjs taak-start --id ORCH-001 --agent claude --basis <sha> --tak feature/orch-001-YYYYMMDD-HHMMSS` (zonder repository: maak `ORCH-OVERDRACHT.json` handmatig aan volgens het sjabloon `orchestratie/sjablonen/ORCH-OVERDRACHT.json`).
+4. Draai `node scripts/orch.mjs controleer` en `node scripts/orch.mjs versheid --taak <ID> --fase start`. Bij rood: niet beginnen, eerst rebasen of de regels herlezen.
 
-## 3. Під час роботи · Tijdens het werk
+## 3. Tijdens het werk
 
-- Власна гілка `feature|fix|audit|release/<тема>-YYYYMMDD-HHMMSS` від базового commit. Один Task ID (`ABC-001`) на задачу; він у назві гілки, коміті, PR, пакеті.
-- Ніколи не пиши в чужі гілки, `voornaamst`, `integratie`, `release/*`. Ніколи не force-push, не переписуй історію, не видаляй резервні копії.
-- Тихе перезаписування чужих змін заборонене: при конфлікті — rebase на інтеграційну гілку, конфлікти розв'язати явно, згадати в звіті.
-- Виявив стару помилку — виправ (окремим комітом), не ігноруй. Нічого не прибирай «щоб запрацювало»: кнопку, вкладку, тест, перевірку.
-- Секрети, токени, приватні ключі, вміст листів — ніколи в чат, лог, коміт чи пакет. Приватні ключі власника агентам не передаються.
-- Production, default branch, резервні копії, критичні дозволи — тільки після явного погодження власника (не іншого агента).
-- Діагностика й час власника (B-009): не просити власника вручну виконувати команди в терміналі (`df -h`, `journalctl`) чи вручну збирати пакети; без доступу до `<VM-IP>` дати стислий висновок (1–2 речення) для інфраструктурного агента на ПК власника. Не вгадувати причину збою `voorcontrole` (не списувати на `.zip`, якщо `structuur` пройдено). Деталі нижче, B-009.
+- Eigen tak `feature|fix|audit|release/<onderwerp>-YYYYMMDD-HHMMSS` vanaf de basiscommit. Één Task ID (`ABC-001`) per taak; deze staat in de taknaam, commit, PR en het pakket.
+- Schrijf nooit in takken van andere agenten, `voornaamst`, `integratie` of `release/*`. Nooit force-pushen, nooit de geschiedenis herschrijven, nooit back-ups verwijderen.
+- Stil overschrijven van andermans wijzigingen is verboden: bij een conflict rebasen op de integratietak, conflicten expliciet oplossen en vermelden in het rapport.
+- Oude fout gevonden? Los haar op (in een aparte commit) en negeer haar niet. Verwijder nooit iets «om het werkend te krijgen»: geen knop, tabblad, test of controle weghalen.
+- Geheimen, tokens, privésleutels en e-mailinhoud horen nooit in de chat, logs, commits of pakketten. Privésleutels van de eigenaar worden nooit aan agenten gegeven.
+- Productie, de standaardtak, back-ups en kritieke rechten worden alleen gewijzigd na expliciete toestemming van de eigenaar (niet van een andere agent).
+- Diagnostiek en tijd van de eigenaar (`B-009`): vraag de eigenaar nooit om handmatig terminalcommando's uit te voeren (`df -h`, `journalctl`) of handmatig pakketten te bouwen; geef zonder directe toegang tot `<VM-IP>` een korte technische conclusie (1–2 zinnen) voor de infrastructuuragent op de pc van de eigenaar. Gis nooit naar de oorzaak van een `voorcontrole`-fout (wijt het niet aan een `.zip` als de stap `structuur` al geslaagd is). Details bij `B-009`.
 
-## 4. Перед передаванням результату · Vóór overdracht
+## 4. Vóór overdracht van het resultaat
 
-1. Усе закомічено. `node scripts/orch.mjs versheid --taak <ID> --fase overdracht` — зелене (база не застаріла з перетином файлів, правила чинні).
-2. Тести: `node scripts/eenheidstests.mjs <фільтр>`, `npm run typecheck:server` (де можливо). Результати — у `TESTRESULTATEN` (формат v2) і звіті.
-3. Передача будь-яким каналом з `beleid.json → inlevering.kanalen` (PR, MCP, HTTP API, локальний файл, ZIP, TAR.GZ, git patch, вебзавантаження),
-   але завжди з `ORCH-OVERDRACHT.json`: taakId, agent, basisCommit, regelsVersie, regelsHash, samenvatting, список змінених файлів, тести.
-   Приймає все один конвеєр: `node scripts/orch.mjs inleveren --bron <файл|тека|гілка>` — нова гілка від бази, зміни, конфлікти з `integratie`
-   (`git merge-tree`), тести, запис у `orchestratie/inleveringen/`, черга. Передача, що змінює файли стану (`orchestratie/taken`, `inleveringen`,
-   `wachtrij.json`, `regels.lock.json`, `geinstalleerd.json`), відхиляється — їх пише лише `orch` або власник. Єдиний виняток — власний
-   `orchestratie/taken/<ID>.json` (декларація агента з `taak-start`); при злитті лишається версія `integratie` (`.gitattributes` → `merge=orch-staat`).
-4. Звіт українською: 1-м рядком — пряме посилання на `mijn-ruimte-<versie>.tar.gz` (окремо від `-overdracht.zip`); далі — що готово, що перевірено (фактично, не за метаданими), де результат, що наступне, що свідомо не зроблено.
-5. Статус задачі: `in_progress` → `ter_integratie` (передано) → `integrated` (злито в `integratie`) → `released` (пакет зібрано) → `installed`
-   (встановлено інсталятором на сервері). Статус змінює лише той крок, що його здійснив; агент не ставить `installed` сам.
+1. Alles is gecommit. `node scripts/orch.mjs versheid --taak <ID> --fase overdracht` is groen (basis niet verouderd met overlappende bestanden, regels actueel).
+2. Tests: `node scripts/eenheidstests.mjs <filter>`, `npm run typecheck:server` (waar mogelijk). Resultaten opnemen in `TESTRESULTATEN` (formaat v2) en in het rapport.
+3. Inlevering via elk kanaal uit `beleid.json → inlevering.kanalen` (PR, MCP, HTTP API, lokaal bestand, ZIP, TAR.GZ, git patch, web-upload), maar altijd met `ORCH-OVERDRACHT.json`: `taakId`, `agent`, `basisCommit`, `regelsVersie`, `regelsHash`, `samenvatting`, lijst van gewijzigde bestanden, tests. Alles loopt door één pijplijn: `node scripts/orch.mjs inleveren --bron <bestand|map|tak>` — nieuwe tak vanaf de basis, wijzigingen, conflicten met `integratie` (`git merge-tree`), tests, registratie in `orchestratie/inleveringen/`, wachtrij. Een inlevering die statusbestanden wijzigt (`orchestratie/taken`, `inleveringen`, `wachtrij.json`, `regels.lock.json`, `geinstalleerd.json`) wordt geweigerd — die worden alleen door `orch` of de eigenaar geschreven. De enige uitzondering is het eigen `orchestratie/taken/<ID>.json` (declaratie van de agent uit `taak-start`); bij het samenvoegen wint de versie van `integratie` (`.gitattributes` → `merge=orch-staat`).
+4. Rapport (in het Oekraïens voor de eigenaar): op de 1e regel de directe link naar `mijn-ruimte-<versie>.tar.gz` (los van `-overdracht.zip`); daarna wat klaar is, wat daadwerkelijk getest is (feitelijk, niet op basis van metadata), waar het resultaat staat, wat de volgende stap is en wat bewust niet is gedaan.
+5. Taakstatus: `in_progress` → `ter_integratie` (ingeleverd) → `integrated` (samengevoegd in `integratie`) → `released` (pakket gebouwd) → `installed` (geïnstalleerd door de installer op de server). De status wordt uitsluitend gewijzigd door de stap die haar uitvoert; een agent zet een taak nooit zelf op `installed`.
 
-## 5. Інтеграція та випуск · Integratie en release
+## 5. Integratie en release
 
-- Одна послідовна черга: `orchestratie/wachtrij.json` (FIFO за базою; `wachtrij volgende|klaar|terugtrekken`, лише одна задача `bezig`).
-  Злиття в `integratie` — завжди `--no-ff`, без force; конфлікт → `klaar --uitkomst afgewezen`, задача повертається агентові на rebase.
-- Пакет на застарілій базі (basisCommit не предок `integratie`, перетин файлів) не випускається й не встановлюється.
-- Режими встановлення (`beleid.json → kritiek.installatieModi`): `handmatig`, `na_bevestiging` (Passkey/підпис власника; типовий),
-  `automatisch_beperkt` — лише за окремо затвердженою й підписаною політикою. Зараз дозволені перші два.
-- Критичні політики (`kritiek`) чинні лише з підтвердженням власника в `orchestratie/regels.lock.json → eigenaar`: підпис SSH (`orch bevestig`)
-  або passkey на сайті (`eigenaar.soort = passkey`, запис у root-журналі); до того — «пропозиція».
-- Зміна правил власником без SSH: сайт `mcp.tarasevych.com/agents` → «Координація» → редагування файлів правил → перевірка пропозиції (`regelsVersie`
-  вища, запис у `BESLUITEN.md`, `beleid.json` валідний) → passkey (рішення `orch-regels`; root лише фіксує підтвердження у своєму журналі) →
-  гілка `regels/<versie>-<час>` з новим lock і `CONTEXT-COMPACT.md` іде в `origin`. Злиття в `integratie` — лише власник. Сайт/MCP/HTTP викликають
-  ті самі функції, що й CLI (`inleveren`, `beoordeelVoorstel`, `vergrendel`) — окремої логіки немає (`beleid.json → site`).
-- **TRACE-001 (з 20261103-211555):** обов'язковий `ONTWIKKELARCHIEF.json` і підтверджена точна GitHub Release-asset SHA-256. Журнал комічений, сервер і root відхиляють відсутнє, неправильне чи недоступне. Детальні умови нижче, B-007, deploy/REGELS-UITROLPAKKET.md §7.
+- Één sequentiële wachtrij: `orchestratie/wachtrij.json` (FIFO per basis; `wachtrij volgende|klaar|terugtrekken`, slechts één taak tegelijk `bezig`). Samenvoegen in `integratie` gebeurt altijd met `--no-ff`, zonder force; bij een conflict → `klaar --uitkomst afgewezen`, en de taak gaat terug naar de agent voor een rebase.
+- Een pakket op een verouderde basis (`basisCommit` is geen voorouder van `integratie`, met overlappende bestanden) wordt niet uitgebracht en niet geïnstalleerd.
+- Installatiemodi (`beleid.json → kritiek.installatieModi`): `handmatig`, `na_bevestiging` (Passkey/handtekening van de eigenaar; standaard), `automatisch_beperkt` — uitsluitend onder een apart goedgekeurd en ondertekend beleid. Momenteel zijn de eerste twee toegestaan.
+- Kritiek beleid (`kritiek`) is pas geldig met bevestiging van de eigenaar in `orchestratie/regels.lock.json → eigenaar`: SSH-handtekening (`orch bevestig`) of passkey op de site (`eigenaar.soort = passkey`, registratie in het root-journaal); tot dat moment heeft het de status «voorstel».
+- Regels wijzigen door de eigenaar zonder SSH: site `mcp.tarasevych.com/agents` → «Coördinatie» → bewerken van de regelbestanden → controle van het voorstel (`regelsVersie` hoger, besluit in `BESLUITEN.md`, `beleid.json` geldig) → passkey (besluit `orch-regels`; root legt alleen de bevestiging vast in zijn eigen journaal) → tak `regels/<versie>-<tijd>` met nieuw lock en `CONTEXT-COMPACT.md` gaat naar `origin`. Samenvoegen in `integratie` doet alleen de eigenaar. Site/MCP/HTTP roepen exact dezelfde functies aan als de CLI (`inleveren`, `beoordeelVoorstel`, `vergrendel`) — er is geen aparte logica (`beleid.json → site`).
+- **TRACE-001 (vanaf `20261103-211555`):** verplicht `ONTWIKKELARCHIEF.json` en een geverifieerde exacte GitHub Release-asset SHA-256. Het ontwikkelarchief is gecommit; de server en root weigeren ontbrekende, onjuiste of onbereikbare gegevens. Volledige voorwaarden in `AGENTS.nl.md` §5, `B-007`, `deploy/REGELS-UITROLPAKKET.nl.md` §7.

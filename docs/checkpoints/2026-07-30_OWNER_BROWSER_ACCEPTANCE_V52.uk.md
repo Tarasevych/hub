@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./2026-07-30_OWNER_BROWSER_ACCEPTANCE_V52.md)) · [🇳🇱 **Nederlandse versie**](./2026-07-30_OWNER_BROWSER_ACCEPTANCE_V52.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./2026-07-30_OWNER_BROWSER_ACCEPTANCE_V52.uk.md) · [🇳🇱 **Nederlandse versie**](./2026-07-30_OWNER_BROWSER_ACCEPTANCE_V52.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
 # Приймання в браузері власника v52 (Власник Browser Acceptance v52)
 
@@ -13,7 +13,7 @@
 
 Канаркова версія для власника працює на наявних власних доменах лише за наявності параметра `owner_test=1`. Стандартні продуктивні маршрути, продуктивний секрет OAuth і продуктивний центр авторизації не замінюються цією контрольною точкою.
 
-Відкат (Rollback): продуктивна версія AppDeploy v51 (`1785379626280`).
+Повернення стану (Rollback): продуктивна версія AppDeploy v51 (`1785379626280`).
 
 ## URL-адреси для власника
 

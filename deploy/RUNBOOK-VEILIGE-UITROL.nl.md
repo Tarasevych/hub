@@ -305,7 +305,7 @@ of `systemctl disable --now mijn-ruimte-gitops.timer mijn-ruimte-uitrol.path` en
 
 1. **Automatisch**: mislukt de gezondheidscontrole na het activeren, dan zet `installeer-app.sh` zelf de vorige release terug (methode 1 en 2).
    Sinds 22.10.2026 ook als de pagina's **niet renderen** terwijl HTTP 200 is — zie §8a (rendercontrole).
-2. **Via de site met een passkey-besluit** (22.10.2026, §15, standaard AAN): mcp → Панель розгортання → *Відкат до попереднього* →
+2. **Via de site met een passkey-besluit** (22.10.2026, §15, standaard AAN): mcp → Панель розгортання → *Повернення стану до попереднього* →
    de wizard toont van → naar, u tekent met uw passkey, root controleert de handtekening zelf en voert de terugdraaiing uit (1× per 10 min).
    De oude directe knop (methode 3, alleen als `"opdracht": {"terugdraaien": true}`) bestaat nog, maar is niet meer nodig.
 3. **Via SSH**:
@@ -346,13 +346,13 @@ beloofde autoterugdraai bleef uit. De eigenaar moest via SSH een pakket installe
      `Buffer`/`process`/`require` (met een lichte DOM-schim). Dat vangt precies de fout van 20261021 in het «paginaskelet» (entry,
      lazy routes van het eerste niveau, tech-chunks en wat die statisch importeren); een lazy bibliotheek dieper (bv. `mdb-reader` bij het
      openen van een Access-bijlage) is een **waarschuwing**, geen terugdraai. Het logboek en «Діагностика» zeggen dan eerlijk
-     «рендеринг не перевірено (встановіть browser-controle)»;
+     «відмальовування не перевірено (встановіть browser-controle)»;
 3. uitkomst **0** (in orde) → «actief»; **2** (niet uitgevoerd: geen browser, geen postgres-rol, time-out) → ook actief, met een duidelijke
    waarschuwing — nooit terugdraaien op een infrastructuurfout; **1** (kapot) → **automatisch terug** naar de vorige release, herstart,
-   gezondheidscontrole, gebeurtenis `ROOK_TERUGGEDRAAID` (warn) met de reden («сторінка admin-updates не рендериться (pageerror: Fout:
-   Buffer is niet defined)») in `gebeurtenissen.jsonl` → zichtbaar op «Оновлення» als «Відкочено автоматично: сторінка не рендериться», en
+   gezondheidscontrole, gebeurtenis `ROOK_TERUGGEDRAAID` (warn) met de reden («сторінка admin-updates не відмальовується (pageerror: Fout:
+   Buffer is niet defined)») in `gebeurtenissen.jsonl` → zichtbaar op «Оновлення» als «Повернуто попередній стан автоматично: сторінка не відмальовується», en
    de installatie eindigt met `FOUT: installatie van … mislukt: rendercontrole — …` (bij passkey/handtekening neemt `mijn-ruimte-uitrol.sh`
-   die regel over als oorzaak: stap «рендер-контроль», code INSTALLATIE_MISLUKT).
+   die regel over als oorzaak: stap «відмальовування-контроль», code INSTALLATIE_MISLUKT).
 4. **Geen lus**: de vorige release wordt na de terugdraai nog **één keer live** nagekeken (publieke pagina's, geen aanmelding) — alleen
    gemeld (`ROOK_MISLUKT` als ook die kapot is), nooit nog een terugdraai. Zonder vorige release: `ROOK_MISLUKT` (fout) met de SSH-aanwijzing.
 5. **Migraties worden niet teruggedraaid** (zoals altijd: het schema blijft op de nieuwste stand; de rook-stand gebruikt een eigen database
@@ -364,9 +364,9 @@ de app-CSP `upgrade-insecure-requests` heeft). Kapot = storing → dezelfde teru
 `NAZORG_TERUGGEDRAAID` met `reden: rook`. Nooit twee keer (markering `nazorg-rook`).
 
 **«Діагностика» → «Сторінки й маршрути».** Elke pagina-controle toont naast de HTTP-schil wat de laatste browsercontrole over DIE pagina zei
-(`рендеринг ок у браузері (tijd)` / `рендеринг ЗЛАМАНО: …` → fout ROOK_KAPOT / `лише HTTP, рендеринг не перевірено (встановіть
-browser-controle)`). Het item «Рендеринг сторінок» leest `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json` (ok / kapot / verouderd /
-niet gecontroleerd / nooit). De knop «Перевірити рендеринг» zet een **leeg** verzoekbestand in de goedkeur-inbox; de nazorg-timer ziet dat,
+(`відмальовування ок у браузері (tijd)` / `відмальовування ЗЛАМАНО: …` → fout ROOK_KAPOT / `лише HTTP, відмальовування не перевірено (встановіть
+browser-controle)`). Het item «Відмальовування сторінок» leest `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json` (ok / kapot / verouderd /
+niet gecontroleerd / nooit). De knop «Перевірити відмальовування» zet een **leeg** verzoekbestand in de goedkeur-inbox; de nazorg-timer ziet dat,
 verwijdert het en voert `rook-controle` uit (stand met testeigenaar; hoogstens 1× per 10 min; nooit terugdraaien). De site start zelf geen browser.
 Een kapotte uitslag blijft apart bewaard als `rook-controle-kapot.json`.
 
@@ -502,7 +502,7 @@ een assertie van een al bekende sleutel (`mijn-ruimte-goedkeur-sleutels.path`). 
 
 ### 13.3 Voorbereiders toestaan of intrekken
 
-Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (акаунт / токен агента / MCP-підключення), wie, aantal dagen (1–30),
+Admin → «Оновлення» → «Кому дозволено готувати оновлення»: soort (обліковий запис / токен агента / MCP-під'єднання), wie, aantal dagen (1–30),
 «Дозволити» (extra bevestiging). «Відкликати» trekt meteen in en breekt lopende uploads af. Alles staat in de audit (`uitrol_voorbereider_*`). Een
 grant vervalt ook als het account geblokkeerd of met pensioen is of als AI voor dat account geblokkeerd is.
 
@@ -658,7 +658,7 @@ step-up).
   `owner.step_up.google rejected`. Geen verse bevestiging: `STEP_UP_NOT_FRESH`.
 - De callback-antwoorden van een step-up dragen `stepUp: true`; bij een fout zet `OwnerIdentityCallback` de reden in
   `sessionStorage` (`mijn-ruimte-stap-op-fout`, alleen een foutcode) en stuurt terug naar de pagina. Het venster toont de
-  reden («Ви вибрали інший акаунт Google…», «Google не підтвердив новий вхід…»). Opent het venster opnieuw direct na een
+  reden («Ви вибрали інший обліковий запис Google…», «Google не підтвердив новий вхід…»). Opent het venster opnieuw direct na een
   hervatting zonder bewaarde reden, dan toont het «Повторний вхід через Google не підтвердив доступ…».
 
 **Herstelcodes (GitHub-achtig).**
@@ -710,7 +710,7 @@ hash:
 | Hash | Tabblad |
 |---|---|
 | `#overzicht` | Огляд / Overzicht |
-| `#ai` | Підключені ШІ / Verbonden AI |
+| `#ai` | Під'єднані ШІ / Verbonden AI |
 | `#apparaten` | Пристрої й браузери / Apparaten en browsers |
 | `#tokens` | Токени / Tokens (двері сервера — на mcp/verbindingen, технічний профіль) |
 | `#journaal` | Журнал / Logboek |
@@ -732,7 +732,7 @@ hash:
 - Rijen zijn standaard dicht: titel, één statusregel en een knop rechts. Open zie je alle technische gegevens.
 - Acties die iets weghalen, vragen eerst om een bevestiging op de pagina (geen `window.confirm`). Daarna volgen een
   spinner en een melding met wat er veranderde en hoe laat.
-- Ingetrokken of losgekoppelde items blijven zichtbaar in een dichte groep «Відкликані / Відключені» (90 dagen).
+- Ingetrokken of losgekoppelde items blijven zichtbaar in een dichte groep «Відкликані / Вимкнені» (90 dagen).
 
 **Nieuwe server-endpoints** (eigenaar, `ownerGate`):
 - `POST /api/owner/agents/overzicht` geeft:
@@ -803,7 +803,7 @@ haalt de sleutel uit `/etc/mijn-ruimte/goedkeur-passkeys.json`, schrijft de stat
 Een eenmaal ingetrokken vingerafdruk kan **niet** via de app (assertion) terugkomen (`OPNIEUW_VIA_SSH`), alleen met
 `sudo mijn-ruimte-passkey toevoegen <fp>` — dat wist de markering.
 
-**«Це був не я — скасувати та захистити акаунт».** Sterke step-up. Ligt het verzoek nog in de inbox: verzoek weg, recht
+**«Це був не я — скасувати та захистити обліковий запис».** Sterke step-up. Ligt het verzoek nog in de inbox: verzoek weg, recht
 blijft. Heeft root al verwerkt: nieuwe aanmelding + de UI toont eerlijk de SSH-opdracht. Een verwijderde passkey wordt in de
 app hersteld. De sessie die de wijziging deed wordt beëindigd (tenzij het de huidige is). Alles in audit + geschiedenis.
 
@@ -880,7 +880,7 @@ Wat verandert voor de gebruiker:
 - Scrollpijlen ▲/▼ met vervaging, alleen als er meer is; klik = vloeiend een stuk, ingedrukt houden = doorlopend.
 - Smalle rail 60 px, zonder zichtbare scrollbalk (de pijlen zijn de aanwijzing); cirkels als markering; brede stand: pil om icoon+tekst.
 - Site-tooltips (rechts) op elk item in de smalle stand, ook bij toetsenbordfocus; geen native `title`.
-- Instellingen → Меню: **Стиль іконок** (Класичний / Кольоровий) en de zijbalkmodus.
+- Instellingen → Меню: **Стиль піктограм** (Класичний / Кольоровий) en de zijbalkmodus.
 - Nieuwe standaardiconen (Налаштування = tandwiel, MCP = kabel); een bewust gekozen icoon blijft.
 
 Controle na uitrol: `/menu` openen → «Кольоровий» kiezen → in een tweede browser hetzelfde account → kleur staat er ook.
@@ -920,7 +920,7 @@ min), stille uren (geen puls/herinnering, badges blijven), per soort aan/uit (П
 агенти, Система). Opgeslagen in het bestaande `sidebar`-veld (`meldingen`, strikt genormaliseerd op browser én server).
 
 B2 — bronnen: de bestaande bel-meldingen (`site_notifications`, alleen ongelezen) + de e-mailteller. Soort → menu-item en kleur
-(`shared/menu-meldingen.ts`): access_request → Адмін › Доступ (oranje), account_email_conflict → Налаштування › Акаунт (rood),
+(`shared/menu-meldingen.ts`): access_request → Адмін › Доступ (oranje), account_email_conflict → Налаштування › Обліковий запис (rood),
 workspace_share → Мій простір › Огляд (groen), google_login_config → Адмін › Контур (grijs), ongelezen e-mail → Пошта › Вхідні (blauw).
 Een badge op een pagina telt ook op het hoofditem. Aanwijzen/focus → bellen (max. 5, nieuwste eerst; tekst via React, geen HTML);
 × bij een servermelding = «gelezen» via de bestaande route `notifications/read` (met id, nooit «alles»); × bij de e-mailteller =
@@ -1030,7 +1030,7 @@ Datamodel stage 2: `shared/menu-model.ts` — stabiele ids `svc:<dienst>` / `pg:
 
 ## 15. Besluiten van de eigenaar met een passkey-handtekening: terugdraaien en externe MCP-hosts zonder SSH (22.10.2026)
 
-**Waarom.** «Відкат до попереднього» op mcp.*/dashboard werkte alleen met `"opdracht": {"terugdraaien": true}` in het root-bestand
+**Waarom.** «Повернення стану до попереднього» op mcp.*/dashboard werkte alleen met `"opdracht": {"terugdraaien": true}` in het root-bestand
 (standaard uit, met reden: een gekaapte app mag de site niet terugdraaien), en de witte lijst van externe MCP-hosts (`externeMcpHosts`)
 was alleen via SSH te wijzigen. De eigenaar wil beide beslissen op de site — met dezelfde zekerheid als het goedkeuren van updates (§13).
 
@@ -1070,9 +1070,9 @@ teruggedraaid (zie §8); de wizard zegt dat er expliciet bij.
 
 ### 15.2 Bediening
 
-- **mcp.*/dashboard → Керування сервером → «Відкат до попереднього»**: wizard met «Зараз активний» → «Повернути на» (standaard de vorige,
+- **mcp.*/dashboard → Керування сервером → «Повернення стану до попереднього»**: wizard met «Зараз активний» → «Повернути на» (standaard de vorige,
   elke volledige release uit `/srv/mijn-ruimte/releases` kan), waarschuwing over migraties en de 10-minutenlimiet, «Підписати passkey й
-  відкотити» → «Рішення передано, root перевіряє підпис…» → live stand (de dienst herstart; de pagina wacht daar doorheen) →
+  повернути попередній стан» → «Рішення передано, root перевіряє підпис…» → live stand (de dienst herstart; de pagina wacht daar doorheen) →
   «Виконано» / «Відхилено root-ом» met code en reden / «Не вдалося».
 - **mcp.*/agenten → Зовнішні MCP → «Дозволені хости»**: de lijst uit het bestand (chips), hosts uit `EXTERNE_MCP_HOSTS` apart
   (niet te wijzigen), toevoegen/weghalen, «Підписати passkey й зберегти список» → root schrijft → de pagina herlaadt de witte lijst.
@@ -1093,7 +1093,7 @@ teruggedraaid (zie §8); de wizard zegt dat er expliciet bij.
 - omgeving (alleen tests/stand): `BESLUIT_INBOX`, `BESLUIT_APP_ROOT`, `OPDRACHT_STATUS_DIR`, `MCP_RECHTEN_PAD`, `GOEDKEUR_SLEUTELS`;
   root-script buiten root: `BESLUIT_*` alleen met paden onder /tmp.
 - Terugdraaien op een besluit schrijft de installer als `TERUG_OK` met herkomst `besluit` (wie = `passkey`); in «Історія» staat die als
-  methode «Опрацювання завдання» met «Відкочено».
+  methode «Опрацювання завдання» met «Повернуто попередній стан».
 
 ### 15.4 Controle en problemen
 

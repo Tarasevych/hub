@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./PORTEERPLAN.md)) · [🇳🇱 **Nederlandse versie**](./PORTEERPLAN.nl.md) · [🏠 Головна (UK)](./README.md) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [📚 Каталог статей](./docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./PORTEERPLAN.uk.md) · [🇳🇱 **Nederlandse versie**](./PORTEERPLAN.nl.md) · [🏠 Головна (UK)](./README.md) · [🏠 Hoofdpagina (NL)](./LEESMIJ.md) · [📚 Каталог статей / Index](./docs/INDEX.md)
 
 # План портування «Мій простір»: власний хостинг (self-hosting) без AppDeploy
 
@@ -16,10 +16,10 @@
   Крім того, код використовує `secrets` (±40×), `storage` (2 файли), `ai` (3 виклики), `invites` (1 потік), `ws` (мертвий код) і `router/json/error`.
   На боці фронтенду це `api.post/get` (±200 викликів), `image.resizeIfNeeded` (3×) та `invitesClient` (4×).
 * **Автентифікація AppDeploy не використовується.** Застосунок має власний шар автентифікації: Google OIDC для власника, пароль із TOTP та кодами відновлення, власні сесійні куки та власний RBAC. Отже, замінювати auth-провайдера не потрібно.
-* **Рекомендований підхід: шар сумісності ("shim").** Ми пишемо власні модулі з точно таким самим API (`db`, `storage`, `secrets`, `ai`, `invites`, `router/json/error`; клієнт: `api`, `image`, `invitesClient`) поверх Postgres (JSONB), локальної файлової системи та змінних оточення.
+* **Рекомендований підхід: шар сумісності ("shim").** Ми пишемо власні модулі з точно таким самим API (`db`, `storage`, `secrets`, `ai`, `invites`, `router/json/error`; клієнт: `api`, `image`, `invitesClient`) поверх Postgres (JSONB), локальної файлової системи та змінних середовища.
   Тоді ±770 викликів `db` залишаються без змін. Повністю реляційна схема (як у `docs/mail/MAIL_DATABASE_SCHEMA.md`) — це фаза 2 і є опціональною.
 * **Оцінка трудомісткості:** ±14–19 робочих днів для одного розробника, включно з пунктами безпеки та тестуванням. Див. §7.
-* **Стан збірки на старті:** файлу `package-lock.json` немає, тому `npm ci` одразу падає. `npm install` проходить успішно. `npm run build` падає у Vite на `Rollup failed to resolve import "@appdeploy/client"` (як на Node 20, так і на Node 24.21/npm 11).
+* **Стан складання на старті:** файлу `package-lock.json` немає, тому `npm ci` одразу падає. `npm install` проходить успішно. `npm run build` падає у Vite на `Rollup failed to resolve import "@appdeploy/client"` (як на Node 20, так і на Node 24.21/npm 11).
   Із тимчасовою заглушкою (stub) клієнтського SDK фронтенд збирається повністю (`✓ built in 29.64s`). Деталі в §6.
 * **Жодної жорсткої перешкоди немає.** Усі сервіси AppDeploy можна замінити. Лише `ai.*` потребує зовнішнього ШІ-провайдера (або локальних моделей), а production-дані з AppDeploy непросто експортувати. Див. рішення у §9.
 
@@ -30,7 +30,7 @@
 | Компонент | Знахідка |
 |---|---|
 | Фронтенд | Vite 6 + React 19 + Tailwind 3. Точка входу `index.html` → `src/main.tsx`. `base: './'`, вивід у `dist/` (`APPDEPLOY_VITE_OUT_DIR`). Є service фоновий обробник (`public/service-worker.js`, пропускає `/api/`). |
-| Pre-build скрипти | `scripts/l002-audit.mjs` (статичний аудит, який лише записує `public/l002-diagnostic.json` і ніколи не падає), `scripts/beveiliging-bouw.mjs` та `scripts/mail-slimme-inbox-audit.mjs`. **Увага:** `beveiliging-bouw.mjs` перезаписує `index.html` **безпосередньо в робочому дереві**: вбудовані скрипти та стилі виносяться в `public/canonical-*.js/css`. Тому запускайте збірку в чистій копії або адаптуйте скрипт, щоб він писав у директорію збірки. |
+| Pre-build скрипти | `scripts/l002-audit.mjs` (статичний аудит, який лише записує `public/l002-diagnostic.json` і ніколи не падає), `scripts/beveiliging-bouw.mjs` та `scripts/mail-slimme-inbox-audit.mjs`. **Увага:** `beveiliging-bouw.mjs` перезаписує `index.html` **безпосередньо в робочому дереві**: вбудовані скрипти та стилі виносяться в `public/canonical-*.js/css`. Тому запускайте складання в чистій копії або адаптуйте скрипт, щоб він писав у директорію складання. |
 | Runtime-конфігурація фронтенду | `public/canonical-service.js` містить імена хостів 9 служб: `hub`, `id`, `mail`, `cloud`, `ai`, `github`, `huis`, `api` та `admin` (`*.tarasevych.com`). «Технічний хост» розпізнавався за суфіксом `*.v2.appdeploy.ai`. |
 | CSP | Встановлювався лише через тег `<meta>` скриптом `public/canonical-security.js`. Продакшен: `script-src 'self'`, `connect-src` із `api-v2.appdeploy.ai`. Технічний хост: `'unsafe-inline' 'unsafe-eval'`. |
 | Бекенд | `backend/index.ts` експортує `handler` (маршрутизатор), `mailMaintenanceCron` та `googleSuiteSyncCron`. Поля Lambda-події, які використовуються: `event.headers`, `event.body`, `event.queryStringParameters` та `event.requestContext.http.sourceIp`. Відповіді завжди мають вигляд `{statusCode, headers, body:string}` (без base64/бінарних тіл). Зовнішні npm-залежності бекенду: лише `pdf-lib` та `html-entities`, решта — вбудовані модулі `node:*`. |
@@ -65,7 +65,7 @@
 | `backend/api-platform-tokens.ts` | `db, error, json` | db 3 |
 | `backend/api-platform-verbindingen.ts`, `cognitief-context.ts`, `hub-indeling-voorkeuren.ts`, `mail-pmid-opstart.ts` | `db` (+ `error/json`) | db 1–2 на файл |
 | `backend/mail-periode-grenzen-cache.ts` | `db` | db 1 (динамічна таблиця `mail_period_bounds_v2:<hash>`) |
-| `backend/mail-handschrift.ts` | `ai, error, json` | ai.ocr 1 (розпізнавання рукописного вводу) |
+| `backend/mail-handschrift.ts` | `ai, error, json` | ai.ocr 1 (розпізнавання рукописного введення) |
 | `backend/globaal-zoek.ts`, `hub-block-data.ts`, `mail-search.ts` | `db, error, json` | db через хелпери |
 | `backend/cloud-google-drive.ts`, `google-suite-browser.ts`, `rbac.ts` | `error, json` | лише хелпери відповідей |
 
@@ -86,7 +86,7 @@
 | `router/json/error` | 1 маршрутизатор, ±285 маршрутів `'POST /api/...'` із `:params`, `ctx = {body, query, params, event}` | **Власний `router()` із тією самою семантикою** плюс HTTP-адаптер на `node:http`. Адаптер формує Lambda-подібну подію (`headers` у нижньому регістрі, `body` як рядок, `queryStringParameters`, `requestContext.http.sourceIp` = `cf-connecting-ip`). `json(data,status)` та `error(msg,status)` повертають `{"error": msg}`. Встановлюється ліміт тіла запиту ±12 МБ (6 МБ файл як base64 у JSON). |
 | `invites.create/join` (+ `isInviteError`) | Спільний доступ до робочих просторів (`resourceType:'workspace_share'`, `authMode:'anonymous'`, із терміном дії) | **Власний модуль і таблиця `app.invites`.** Код — 128 біт випадкових даних (`base64url`). Поля: `status`, `expires_at`, `revoked_at` та `context jsonb`. `InviteError` отримує ті самі значення `code`. `resolve`/`revoke` — лише за потреби. |
 | `ai.extract` (2×) та `ai.ocr` (1×) | Пропозиція метаданих для елементів хмари (з детермінованим резервним варіантом), переклад листів та OCR рукописного тексту | **Адаптер `server/platform/ai.ts`** із `AI_PROVIDER=none|openai|anthropic|gemini|xai|ollama`. `extract` означає виклик чату з JSON-схемою (structured виведення) плюс валідацію. `ocr` означає vision-виклик. При `none` кидається `AI_UNAVAILABLE` (`AI_NOT_CONFIGURED`). Тоді хмара переходить на детерміновану логіку, а переклад і рукописне введення показують охайне повідомлення. Це **рішення власника** (§9). |
-| `ws.send` + `realtime.ts` | Не підключено | **Видалити**: `backend/realtime.ts`, `backend/realtime-subscribers.ts` та невикористовуваний маршрут `/api/subscriptions`. |
+| `ws.send` + `realtime.ts` | Не під'єднано | **Видалити**: `backend/realtime.ts`, `backend/realtime-subscribers.ts` та невикористовуваний маршрут `/api/subscriptions`. |
 | Cron (`cron.json`, обробники в `index.ts`) | 2 задачі, кожні 5 хвилин | **systemd-таймери**, які викликають невеликий CLI (`node dist-server/cron.mjs <назва>`) із тим самим корисним навантаженням, що й у `cron.json`. `Type=oneshot` запобігає накладанню запусків. Логування йде в `journald`. Додатково: `pg_advisory_lock` на кожну задачу. Альтернатива: внутрішньопроцесний `croner` (простіше, але менш ізольовано). |
 | `@appdeploy/client` `api` | ±200 викликів | **`src/platform/client.ts`:** `fetch` на same-origin `/api/...`, `credentials:'same-origin'`, JSON, axios-подібна відповідь `{data}` та об'єкт помилки з `response:{status,statusText,data}`, `status`, `responseText` і `message`. |
 | `image.resizeIfNeeded` | 3× | Власна реалізація (±60 рядків) через `createImageBitmap` + `canvas`/`OffscreenCanvas` → `toBlob` → base64. Формат повернення: `{data,mimeType,width,height,bytes,resized}`. |
@@ -111,7 +111,7 @@
 
 | Домен | Таблиці |
 |---|---|
-| Ідентичність та акаунти | `users`, `account_identities`, `access_requests`, `identity_passwords_v1`, `identity_totp_v1`, `identity_recovery_codes_v1`, `identity_phones_v1`, `identity_webauthn_v1`, `identity_method_bindings_v1`, `access_method_policy_v1` |
+| Ідентичність та облікові записи | `users`, `account_identities`, `access_requests`, `identity_passwords_v1`, `identity_totp_v1`, `identity_recovery_codes_v1`, `identity_phones_v1`, `identity_webauthn_v1`, `identity_method_bindings_v1`, `access_method_policy_v1` |
 | Сесії та токени | `owner_service_sessions_v1`, `owner_tab_sessions_v1`, `owner_browser_grants_v1`, `owner_auth_transactions_v1`, `owner_revocation_state_v1`, `service_sessions`, `service_handoffs`, `browser_grants`, `browser_policies`, `google_sessions`, `google_auth_codes`, `google_oauth_states`, `auth_broker_requests`, `api_machine_tokens_v1` |
 | Адміністрування та аудит | `admin_role_assignments_v1`, `admin_sso_policy_v1`, `admin_oauth_access_policy_v1`, `admin_directory_connectors_v1`, `owner_security_audit_v2`, `security_audit`, `credential_contours_v1`, `owner_ui_preferences_v1` |
 | API-платформа | `owner_vault_v1`, `owner_connections_v1` |
@@ -224,17 +224,17 @@ COMMIT;
 ### 3.3 Дані з AppDeploy
 
 Функції експорту для бази даних або файлового сховища AppDeploy не існує (навіть через MCP-інструменти AppDeploy). Є два варіанти:
-1. **Почати з чистого аркуша (рекомендовано).** Усі токени, гранти, елементи сховища, TOTP-секрети та сесії все одно мають бути ротовані й перепідключені згідно з `SECURITY-NOTES.md`. Що втрачається: робочі простори/блоки/нотатки в Хабі, елементи хмари та завантажені файли, а також користувацькі налаштування.
-2. Тимчасово розгорнути ендпоінт експорту (лише для власника) на старому застосунку AppDeploy. Він вивантажить кожну таблицю у JSON і файли у base64, після чого ми імпортуємо їх в `app.records`. Це вимагає додаткового деплою на скомпрометованій платформі. Робіть це лише якщо ці дані справді необхідні, і спершу проведіть криміналістичну перевірку.
+1. **Почати з чистого аркуша (рекомендовано).** Усі токени, гранти, елементи сховища, TOTP-секрети та сесії все одно мають бути ротовані й перепід'єднані згідно з `SECURITY-NOTES.md`. Що втрачається: робочі простори/блоки/нотатки в Хабі, елементи хмари та завантажені файли, а також користувацькі налаштування.
+2. Тимчасово розгорнути кінцева точка експорту (лише для власника) на старому застосунку AppDeploy. Він вивантажить кожну таблицю у JSON і файли у base64, після чого ми імпортуємо їх в `app.records`. Це вимагає додаткового розгортання на скомпрометованій платформі. Робіть це лише якщо ці дані справді необхідні, і спершу проведіть криміналістичну перевірку.
 
 ---
 
 ## 4. Фронтенд, автентифікація та секрети
 
-### 4.1 Збірка та роздача фронтенду
-* Збірка залишається `vite build` → `dist/` разом із pre-build скриптами. Адаптувати `vite.config.ts`: зафіксувати `outDir` на `dist`, прибрати `APPDEPLOY_*` (за потреби `SOURCEMAP=hidden`), встановити `base: '/'`.
-* `beveiliging-bouw.mjs` повинен записувати вивід у директорію збірки (раніше він перезаписував `index.html` у git). Інакше робоче дерево залишається «брудним» після кожної збірки.
-* `public/canonical-service.js`: `isTechnicalHost` стає `false` у продакшені (хост AppDeploy зникає). Список доменів має бути конфігурованим, щоб ми могли тестувати локально (див. §7.3). Наприклад, винести його у згенерований сервером `/canonical-config.js` або у змінну збірки `VITE_PUBLIC_DOMAIN`. Той самий список також присутній у `backend/index.ts` (`SERVICE_ORIGINS`), `backend/eigenaar-sessie-overdracht.ts`, `backend/google-suite-inrichting.ts` (`CALLBACK`), `backend/api-platform-kluis.ts` (`revealHostAllowed`) та кількох файлах `src/*`. Це стає **єдиним джерелом** у `backend/deployment-identity.ts` (`TECH_ORIGIN`, `API_COOKIE_PATH`, імена кук).
+### 4.1 Складання та роздача фронтенду
+* Складання залишається `vite build` → `dist/` разом із pre-build скриптами. Адаптувати `vite.config.ts`: зафіксувати `outDir` на `dist`, прибрати `APPDEPLOY_*` (за потреби `SOURCEMAP=hidden`), встановити `base: '/'`.
+* `beveiliging-bouw.mjs` повинен записувати вивід у директорію складання (раніше він перезаписував `index.html` у git). Інакше робоче дерево залишається «брудним» після кожної складання.
+* `public/canonical-service.js`: `isTechnicalHost` стає `false` у продакшені (хост AppDeploy зникає). Список доменів має бути конфігурованим, щоб ми могли тестувати локально (див. §7.3). Наприклад, винести його у згенерований сервером `/canonical-config.js` або у змінну складання `VITE_PUBLIC_DOMAIN`. Той самий список також присутній у `backend/index.ts` (`SERVICE_ORIGINS`), `backend/eigenaar-sessie-overdracht.ts`, `backend/google-suite-inrichting.ts` (`CALLBACK`), `backend/api-platform-kluis.ts` (`revealHostAllowed`) та кількох файлах `src/*`. Це стає **єдиним джерелом** у `backend/deployment-identity.ts` (`TECH_ORIGIN`, `API_COOKIE_PATH`, імена кук).
 * Node-сервер обслуговує всі імена хостів з одного процесу. Служба визначається за заголовком `Host` (`ownerCustomHostService`), і це вже працює саме так.
 
 ### 4.2 Як працює автентифікація
@@ -248,14 +248,14 @@ COMMIT;
   * Куки на службу/вкладку стають host-only (`Path=/; SameSite=Strict`).
   * Вбудовані самотести, які перевіряють `SameSite=None`/`Partitioned`, оновлюються відповідно.
 
-### 4.3 Секрети та змінні оточення (усі згенерувати **заново**)
+### 4.3 Секрети та змінні середовища (усі згенерувати **заново**)
 У `/etc/mijn-ruimte/geheimen.env` (`0640 root:mijnruimte`):
 `DATABASE_URL` (вже існує), `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` (аліаси `GOOGLE_SUITE_CLIENT_ID` та `GOOGLE_SUITE_CLIENT_SECRET`), `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1`, `OWNER_VAULT_ENCRYPTION_KEY_V1`, `MAIL_TOKEN_ENCRYPTION_KEY_V1`, `MICROSOFT_GRAPH_CLIENT_ID`, `MICROSOFT_GRAPH_CLIENT_SECRET`, `MICROSOFT_GRAPH_TENANT_ID`, `MICROSOFT_GRAPH_WEBHOOK_URL`, `MICROSOFT_GRAPH_WEBHOOK_CLIENT_STATE`, `GOOGLE_GMAIL_PUBSUB_TOPIC`, `GOOGLE_GMAIL_PUBSUB_AUDIENCE`, `GOOGLE_GMAIL_PUBSUB_SERVICE_ACCOUNT_EMAIL`, `SCIM_BEARER_TOKEN` (необов'язково).
 **Нові через портування:** `OWNER_EMAIL`, `OWNER_GOOGLE_SUB` (рекомендовано), `IDENTITY_TOTP_ENCRYPTION_KEY_V1` (`TOTP_ENCRYPTION_KEY_V1`), `IDENTITY_RECOVERY_PEPPER_V1` (`RECOVERY_CODE_PEPPER`), `SESSION_TOKEN_PEPPER_V1` (необов'язково), `AI_PROVIDER` та `AI_API_KEY` (залежно від вибору), `PUBLIC_DOMAIN=tarasevych.com`, `PORT=8080`, `HOST=127.0.0.1`, `UPLOADS_DIR=/srv/data/uploads`.
-**Скасовуються:** `APPDEPLOY_VITE_OUT_DIR`, `APPDEPLOY_VITE_SOURCEMAP` та ключі акаунта AppDeploy (обов'язково відкликати в AppDeploy).
+**Скасовуються:** `APPDEPLOY_VITE_OUT_DIR`, `APPDEPLOY_VITE_SOURCEMAP` та ключі облікового запису AppDeploy (обов'язково відкликати в AppDeploy).
 Крім того, відкликати і створити заново: усі `tsv_`-токени, елементи сховища (Home Assistant, Telegram, GitHub PAT, вебхуки), усі refresh-токени Google і Microsoft, паролі та TOTP.
 **OAuth-додатки, які потрібно створити заново:**
-* Google Cloud: **новий OAuth-клієнт** (старий секрет скомпрометовано, а стандартний Client ID жорстко закодований у `google-contour.ts:5` та `src/CanoniekImplementatieWaarheidMatrix.tsx`). Redirect URI `https://id.tarasevych.com/`, JS-origins для використовуваних хостів. Крім того, Pub/Sub-топік із push-підпискою на `https://<host>/api/owner/mail/google/pubsub/push` і сервісний акаунт.
+* Google Cloud: **новий OAuth-клієнт** (старий секрет скомпрометовано, а стандартний Client ID жорстко закодований у `google-contour.ts:5` та `src/CanoniekImplementatieWaarheidMatrix.tsx`). Redirect URI `https://id.tarasevych.com/`, JS-origins для використовуваних хостів. Крім того, Pub/Sub-топік із push-підпискою на `https://<host>/api/owner/mail/google/pubsub/push` і сервісний обліковий запис.
 * Microsoft Entra: новий клієнтський секрет (або нова реєстрація додатка), redirect `https://id.tarasevych.com/` та URL вебхука Graph на публічному хості.
 
 ---
@@ -269,31 +269,31 @@ COMMIT;
 | 3 | **`SameSite=None/Partitioned` без перевірки CSRF** | Конструктори кук у `backend/index.ts` (екосистемні, грант-, identity- та redirect-куки) і `backend/eigenaar-sessie-overdracht.ts`. Немає перевірки `Origin` на POST-запитах. | Same-origin API із `SameSite=Lax/Strict` (§4.2), плюс **глобальний білий список Origin** в HTTP-адаптері: для кожного не-GET `/api/*` заголовок `Origin` (або `Referer`) повинен дорівнювати `https://<Host>` і входити до списку служб. Винятки: вебхуки (`/api/owner/mail/microsoft/webhook`, `/api/owner/mail/google/pubsub/push`, які мають власну криптографічну перевірку), `/api/v1/*` із Bearer та SCIM. `Content-Type` має бути `application/json`. |
 | 4 | **Довіра до `x-forwarded-host`** | `backend/index.ts:278` `ownerHost`, `backend/eigenaar-sessie-overdracht.ts:17` `hostOf`, `backend/api-platform-kluis.ts:69` `requestHost` | Використовувати лише `Host` і валідувати за списком дозволених хостів (інакше 421/400). Сервер слухає на `127.0.0.1`. У `cloudflared` **не** встановлювати `httpHostHeader`. Адаптер видаляє вхідний `x-forwarded-host` із `event.headers`. **Також:** `revealHostAllowed` (`api-platform-kluis.ts:73`) дозволяв `localhost`, `127.0.0.1` та `internal.appdeploy.runtime`. Це небезпечно при власному хостингу, бо будь-який локальний процес міг би звернутися до сховища секретів. Ці значення потрібно прибрати. |
 | 5 | **CSP `unsafe-inline`/`unsafe-eval`** | `public/canonical-security.js` (qa/технічна політика). HTML-сторінка callback із `script-src 'unsafe-inline'` у `backend/index.ts:321`. CSP стояв лише в meta-тезі. | Технічний хост зникає, а разом із ним і qa-політика. CSP передається як **HTTP-заголовок** від Node-сервера: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'self'`. Директива `'wasm-unsafe-eval'` необхідна, оскільки `sql.js`, `h5wasm` і `pdf.js` використовують WebAssembly. Сторінка callback отримує per-request `nonce` або `sha256`-хеш. Meta-тег залишається як другий шар, без хостів AppDeploy. Інші заголовки (HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP) додаються також на статичні відповіді. |
-| 6 | **Відсутній DOMPurify** | `src/MailOpgemaaktDocumentVoorbeeld.tsx:1` `dangerouslySetInnerHTML={{__html:content.html}}`. Додатково перевірити: `src/mail-document-inhoud.ts` та `src/mail-docx-kopie.ts` (`template.innerHTML`, інертний, але вивід рендериться). | Додати `dompurify`. `DOMPurify.sanitize(html,{USE_PROFILES:{html:true}, FORBID_TAGS:['style','form','input','iframe','object','embed'], FORBID_ATTR:['style'], ALLOW_DATA_ATTR:false})` та хук, який блокує або перезаписує зовнішні `src`/`href`. Використовувати єдиний хелпер `sanitizeHtml()` в усіх місцях. |
+| 6 | **Відсутній DOMPurify** | `src/MailOpgemaaktDocumentVoorbeeld.tsx:1` `dangerouslySetInnerHTML={{__html:content.html}}`. Додатково перевірити: `src/mail-document-inhoud.ts` та `src/mail-docx-kopie.ts` (`template.innerHTML`, інертний, але вивід відмальовується). | Додати `dompurify`. `DOMPurify.sanitize(html,{USE_PROFILES:{html:true}, FORBID_TAGS:['style','form','input','iframe','object','embed'], FORBID_ATTR:['style'], ALLOW_DATA_ATTR:false})` та хук, який блокує або перезаписує зовнішні `src`/`href`. Використовувати єдиний хелпер `sanitizeHtml()` в усіх місцях. |
 | 7 | **TOTP-секрети у відкритому тексті. Коди відновлення хешовані через HMAC із фіксованим ключем** | `backend/toegangslaag.ts:30` (`createHmac('sha256','mij-prostir-access-v1')`). Запис TOTP `identity_totp_v1.secret` (base32, використовується на р. 216 і 409). | Шифрувати TOTP-секрет за допомогою `AES-256-GCM` (`TOTP_ENCRYPTION_KEY_V1`, `AAD = userId`). Коди відновлення: `HMAC-SHA256` із `RECOVERY_CODE_PEPPER`, одноразове використання. Оскільки ми починаємо з чистої БД (а старі записи мігруються автоматично при першому використанні), усі секрети захищені. |
-| 8 | **Жорстко закодований власник** | `backend/index.ts:30` `OWNER`, `backend/rbac.ts:8` `OWNER_EMAIL` | Береться зі змінної оточення `OWNER_EMAIL` (і за бажанням `OWNER_GOOGLE_SUB`). Перевірка під час запуску: без цього значення сервер не стартує. Окремо захистити Google-акаунт власника (див. `SECURITY-NOTES.md`). |
-| 9 | Перевизначення секретів через базу даних у `google-contour` | `backend/google-contour.ts:162–163` (`mutable.readSecret=...`) | Видалити. Секрети надходять виключно з оточення (пізніше — також із криптографічно захищеного сховища власника). Текст UI про «контурне» зберігання оновити. |
+| 8 | **Жорстко закодований власник** | `backend/index.ts:30` `OWNER`, `backend/rbac.ts:8` `OWNER_EMAIL` | Береться зі змінної середовища `OWNER_EMAIL` (і за бажанням `OWNER_GOOGLE_SUB`). Перевірка під час запуску: без цього значення сервер не стартує. Окремо захистити Google-обліковий запис власника (див. `SECURITY-NOTES.md`). |
+| 9 | Перевизначення секретів через базу даних у `google-contour` | `backend/google-contour.ts:162–163` (`mutable.readSecret=...`) | Видалити. Секрети надходять виключно з середовище (пізніше — також із криптографічно захищеного сховища власника). Текст UI про «контурне» зберігання оновити. |
 | 10 | Обмін handoff працює за схемою list-then-delete (гонитва) та вразливий до login-CSRF через `?handoff=` | `backend/eigenaar-sessie-overdracht.ts:48` (`POST /api/owner/session/handoff/redeem`) | Атомарно: `DELETE FROM app.records WHERE tbl='service_handoffs' AND data @> {...} RETURNING data` (через `db.takeOne`). Handoff-токен прив'язується до браузерної куки `tsv_handoff_binding`, встановленої під час створення, а обмін вимагає POST із перевіркою `Origin`. |
-| 11 | DNS-rebinding TOCTOU у захисті від SSRF для зовнішніх зображень | `backend/google-suite-mail-browser.ts:26` (`publicHttpsTarget` виконує `lookup()`, а потім окремо `fetch()`) | Власний `pinnedFetch` із перевіркою та закріпленням (pinning) публічної IP-адреси безпосередньо в `lookup`-хуку сокета під час з'єднання, із відхиленням приватних діапазонів. Не слідувати за редиректами автоматично (перевіряти кожен хоп окремо). Обмеження на розмір і час. |
+| 11 | DNS-rebinding TOCTOU у захисті від SSRF для зовнішніх зображень | `backend/google-suite-mail-browser.ts:26` (`publicHttpsTarget` виконує `lookup()`, а потім окремо `fetch()`) | Власний `pinnedFetch` із перевіркою та закріпленням (pinning) публічної IP-адреси безпосередньо в `lookup`-хуку сокета під час з'єднання, із відхиленням приватних діапазонів. Не переходити за за редиректами автоматично (перевіряти кожен хоп окремо). Обмеження на розмір і час. |
 | 12 | Невикористовувані `/api/subscriptions` та realtime-код | `backend/realtime*.ts` | Видалити. |
 | 13 | QA-фікстури та технічний хост | `OWNER_QA_FIXTURES_ENABLED=false` (`index.ts`), `src/OwnerTestApp.tsx`, `internal.appdeploy.runtime` у самотесті | Повністю видалити з коду продакшену. |
 | 14 | Наявна раніше проблема: WebAuthn без верифікації | `backend/toegangslaag.ts:366–390` | Вимкнути в UI у Фазі B, а згодом реалізувати повноцінну криптографічну перевірку (див. гілки `passkey-schvalennya` та `aanmeldmethoden`). |
 
 ---
 
-## 6. Стан збірки й тестів на момент аналізу (протестовано в чистій копії у `/tmp`)
+## 6. Стан складання й тестів на момент аналізу (протестовано в чистій копії у `/tmp`)
 
 | Крок | Результат |
 |---|---|
 | `npm ci` | **Падає одразу:** `EUSAGE: The npm ci command can only install with an existing package-lock.json`. У репозиторії не було lock-файлу. |
 | `npm install` | Успішно (284 пакети). Попередження: `file-type@22` та `pdfjs-dist@6` вимагають Node ≥ 22 (на тестовій машині був Node 20.19). З Node 24.21/npm 11.21 (через `npx -p node@24`) також проходить добре, але npm 11 повідомляє, що скрипти встановлення `esbuild` та `tesseract.js` іще не схвалені (`npm install-scripts approve`). |
-| `npm run build` (Node 20 та Node 24) | Аудити проходять успішно. L002 повідомляє 2 діагностичні пункти, які не блокують збірку: `b4-important-free:src/mail-zijbalk-navigatie.css` та `test-suite-current-generation-count`. Після цього **падає Vite:** `[vite]: Rollup failed to resolve import "@appdeploy/client" from "src/App.tsx"`. **Цього пакета навіть немає в `package.json`**: він інжектитьcя платформою AppDeploy. |
-| Збірка з тимчасовою заглушкою для `@appdeploy/client` | **Успішно** (`✓ built in 29.64s`). Є великі чанки (зокрема `hdf5_hl` 4,8 МБ, `officeparser` 2,7 МБ, головний чанк 2,9 МБ). Працює, але розділення коду (code-splitting) є бажаним покращенням. |
+| `npm run build` (Node 20 та Node 24) | Аудити проходять успішно. L002 повідомляє 2 діагностичні пункти, які не блокують складання: `b4-important-free:src/mail-zijbalk-navigatie.css` та `test-suite-current-generation-count`. Після цього **падає Vite:** `[vite]: Rollup failed to resolve import "@appdeploy/client" from "src/App.tsx"`. **Цього пакета навіть немає в `package.json`**: він інжектитьcя платформою AppDeploy. |
+| Складання з тимчасовою заглушкою для `@appdeploy/client` | **Успішно** (`✓ built in 29.64s`). Є великі чанки (зокрема `hdf5_hl` 4,8 МБ, `officeparser` 2,7 МБ, головний чанк 2,9 МБ). Працює, але розділення коду (code-splitting) є бажаним покращенням. |
 | `tsc` бекенду (із заглушками типів SDK) | 15 помилок типів, які **не мають жодного стосунку до SDK** (напр. `toegangslaag.ts:52/56` "Expected 3 arguments, but got 4", `index.ts:241` порівняння з `'owner'` та `mail-search.ts:1`). AppDeploy, вочевидь, не виконував перевірку типів. Бандлінг через `esbuild` працює. |
-| `tsc -p tsconfig.json` (фронтенд, із заглушками) | 219 наявних помилок типів у 58 файлах (`strict`, невикористані змінні, ...). Це не блокує збірку Vite. Очищення типів не залежить від портування. |
+| `tsc -p tsconfig.json` (фронтенд, із заглушками) | 219 наявних помилок типів у 58 файлах (`strict`, невикористані змінні, ...). Це не блокує складання Vite. Очищення типів не залежить від портування. |
 | Тести | Тест-раннера не було. `tests/tests.txt` містив 10 ручних/E2E-сценаріїв (у форматі AppDeploy QA). |
 
-Висновок: єдине, що падало через SDK — це резолюція імпортів (`@appdeploy/client` у фронтенді, `@appdeploy/sdk` у бекенді). Решта збірки працювала.
+Висновок: єдине, що падало через SDK — це резолюція імпортів (`@appdeploy/client` у фронтенді, `@appdeploy/sdk` у бекенді). Решта складання працювала.
 
 ---
 
@@ -323,7 +323,7 @@ COMMIT;
 
 ### 7.2 Кроки виконання (у цьому порядку)
 1. **Lock-файл та інструментарій:** додати поле `engines` (`node >=24`). На Node 24/npm 11 запустити `npm install` і закомітити `package-lock.json`. Схвалити install-скрипти (`esbuild`). Так знову запрацює `npm ci`.
-2. **Зробити збірку гігієнічною:** `beveiliging-bouw.mjs` працює як плагін або пише в директорію збірки, `vite.config.ts` без `APPDEPLOY_*` та з `base:'/'`.
+2. **Зробити складання гігієнічною:** `beveiliging-bouw.mjs` працює як плагін або пише в директорію складання, `vite.config.ts` без `APPDEPLOY_*` та з `base:'/'`.
 3. **Клієнтський shim** `src/platform/client.ts` плюс аліас. Завдяки цьому збирається фронтенд.
 4. **Каркас сервера:** `server/start.ts` (`node:http`, ліміт тіла запиту, побудова події, валідація `Host`, перевірка `Origin`, заголовки безпеки, статична `dist/` із SPA-fallback, `/api/_healthcheck` та `/__gezondheid`). `router/json/error` із тією самою семантикою.
 5. **Платформні shims:** `db` (Postgres JSONB), `storage` (ФС), `secrets` (env), `invites`, `ai`. Міграція `0001_basis.sql` плюс виконавець (`node dist-server/migrate.mjs`).
@@ -333,7 +333,7 @@ COMMIT;
 9. **Cron** перевести на CLI і таймери, додавши фонову задачу TTL-очищення для динамічних таблиць, `rate_limits` і прострочених сесій.
 10. **Локальне тестування** (§7.3).
 11. **Розгортання на ВМ** (§8). Спершу лише `hub` та `id` через тунель, потім решта хостів.
-12. **Налаштувати нові OAuth-клієнти й секрети**, перепідключити інтеграції (Google, Microsoft, сховище). Після цього вимкнути застосунок в AppDeploy і відкликати ключі AppDeploy.
+12. **Налаштувати нові OAuth-клієнти й секрети**, перепід'єднати інтеграції (Google, Microsoft, сховище). Після цього вимкнути застосунок в AppDeploy і відкликати ключі AppDeploy.
 
 ### 7.3 Локальне тестування
 * **Node 24+:** `npx -y -p node@24 -p npm@11 ...` або встановлений системно Node LTS.
@@ -429,22 +429,22 @@ ingress:
 ### 10.1 Фаза A: завершено (3 жовтня 2026, гілка `zelf-hosten`)
 
 Застосовані рішення власника:
-1. **Чиста база даних.** Жодної міграції даних із AppDeploy і жодного ендпоінта експорту.
+1. **Чиста база даних.** Жодної міграції даних із AppDeploy і жодного кінцевої точки експорту.
 2. **ШІ на старті Фази A вимкнено.**
    - `ai.extract`/`ai.ocr`/`ai.generate` повертали `AI_NOT_CONFIGURED` (503).
    - Хмара використовувала вбудовані детерміновані пропозиції (`aiState=fallback`, `CLOUD_AI_FALLBACK`).
    - Переклад повертав 503 `AI_NOT_CONFIGURED`. OCR рукописного тексту — 503 `MAIL_HANDWRITING_OCR_UNAVAILABLE`.
-3. **Дашборд (`dashboard.tarasevych.com`).**
+3. **Панель керування (`dashboard.tarasevych.com`).**
    - Сервер роздає статичні файли з `DASHBOARD_DIR` (стандартно `/srv/mijn-ruimte/dashboard`) для `dashboard.tarasevych.com`.
    - Якщо директорія відсутня, повертає 404. Жодного API там немає.
-4. **Google лише через змінні оточення.**
+4. **Google лише через змінні середовища.**
    - Жорстко закодований Client ID та перевизначення секретів через базу даних видалено.
    - Без `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET` діє стан `configured:false` без падіння сервера.
-   - Microsoft/Outlook вимкнено, доки змінні оточення відсутні.
+   - Microsoft/Outlook вимкнено, доки змінні середовища відсутні.
 5. **Єдиний вхід для всіх піддоменів `*.tarasevych.com`.**
    - Куки: `Domain=.tarasevych.com; Path=/; Secure; HttpOnly; SameSite=Lax` (куки вкладок — `Strict`).
    - Більше немає `SameSite=None`/`Partitioned`. API працює як same-origin на кожному хості (`/api/*`).
-   - Багатокористувацький і мультиакаунтний режими (екосистемна сесія, сесії вкладок, браузерні гранти, перемикання акаунтів) збережено повністю.
+   - Багатокористувацький і багатообліковий режими (екосистемна сесія, сесії вкладок, браузерні гранти, перемикання облікових записів) збережено повністю.
 
 Що створено у Фазі A:
 - **Платформний шар** (`server/platform/`):
@@ -462,7 +462,7 @@ ingress:
   - CSP як HTTP-заголовок (плюс `frame-ancestors 'none'`), HSTS, `nosniff`, `Referrer-Policy`, `X-Frame-Options` та `Permissions-Policy`.
   - Ліміт тіла запиту 12 МБ, коректне завершення роботи (graceful shutdown).
 - **Cron:** `server/cron.ts`, CLI для `mail-provider-maintenance` та `google-suite-bplus-sync`. Призначено для systemd-таймерів із `pg_try_advisory_lock` і логуванням у `app.cron_runs`.
-- **Збірка:**
+- **Складання:**
   - `security-build` (`beveiliging-bouw`) оформлено як плагін Vite, щоб робоче дерево більше не перезаписувалося.
   - `npm run build` = аудити + Vite + `dist-server/*.mjs` (`esbuild`).
   - Згенеровано `package-lock.json` (Node 24).
@@ -472,11 +472,11 @@ ingress:
   - `/__gezondheid` → `{"ok":true,"db":true}`; `/api/_healthcheck` → 200.
   - `hub`/`id`/`cloud` завантажуються зі статусом 200 та заголовком CSP. SPA-fallback працює; відсутній асет повертає 404. Асети: `immutable` + ETag/304.
   - Невідомий хост → 421. Підробка `X-Forwarded-Host` → 421. Path traversal → `index`/404, ніколи не видає файли поза `dist/`.
-  - Дашборд: 404 без директорії, 200 із директорією (власний CSP). `/api/*` на дашборді → 404.
+  - Панель керування: 404 без директорії, 200 із директорією (власний CSP). `/api/*` на панелі керування → 404.
 - **`scripts/rooktest-lokaal.mjs`** (22/22):
   - Анонімний bootstrap; кука очищення з `Domain=.tarasevych.com` і `SameSite=Lax`, без `Partitioned`.
   - Одна посіяна сесія дійсна на `hub`, `cloud`, `mail` та `id`. Служба, що не відповідає хосту → 401.
-  - Список акаунтів (multi-account) відповідає. IP сесії = `cf-connecting-ip`.
+  - Список облікових записів (multi-account) відповідає. IP сесії = `cf-connecting-ip`.
   - Створення робочого простору; рядок з'являється в `app.records`.
   - Завантаження і скачування файлу повертає ідентичні байти, із рядком у `storage_objects` та файлом на диску. Пошук знаходить елемент.
   - Другий користувач не бачить елементів власника.
@@ -504,14 +504,14 @@ ingress:
 4. Технічний хост AppDeploy, `OwnerTestApp`, QA-фікстури та інтеграційні лабораторії видалено; `l002-audit` і `tests/tests.txt` оновлено.
 
 ### 10.4 Фаза B безпеки: завершено (коміт `8a2d63f`)
-Усі пункти з §5 вирішено; деталі та статус за кожним пунктом наведено в [`SECURITY-NOTES.uk.md`](./SECURITY-NOTES.uk.md) §3, змінні оточення — в [`ENV-VARS.uk.md`](./ENV-VARS.uk.md).
+Усі пункти з §5 вирішено; деталі та статус за кожним пунктом наведено в [`SECURITY-NOTES.uk.md`](./SECURITY-NOTES.uk.md) §3, змінні середовища — в [`ENV-VARS.uk.md`](./ENV-VARS.uk.md).
 Неверифіковані Passkeys було вимкнено до впровадження справжньої WebAuthn-верифікації (яку реалізовано 08–09.10.2026 у гілках `passkey-schvalennya` та `aanmeldmethoden`).
 Тести: димовий тест 42/42, модульні тести 12/12 (`scripts/eenheidstests.mjs`), браузерний тест 7/7 (`scripts/lokaal-e2e/test-alles.sh` запускає все).
 
 ### 10.5 Артефакти розгортання (директорія `deploy/`)
 `mijn-ruimte.service`, `mijn-ruimte-cron@.service` + таймери (`mail-onderhoud`, `google-sync`, `opruimen`),
 `mijn-ruimte-backup.service/.timer` + `backup-maken.sh` (pull-модель), `cloudflared-config.yml`,
-`installeer-app.sh` (ініціалізація / встановлення з автоматичним відкатом / відкат / список релізів). Див. [`deploy/LEESMIJ.uk.md`](./deploy/LEESMIJ.uk.md) / [`deploy/LEESMIJ.md`](./deploy/LEESMIJ.md).
+`installeer-app.sh` (ініціалізація / встановлення з автоматичним поверненням стану / повернення стану / список релізів). Див. [`deploy/LEESMIJ.uk.md`](./deploy/LEESMIJ.uk.md) / [`deploy/LEESMIJ.md`](./deploy/LEESMIJ.md).
 
 ### 10.6 Закриття останніх теоретичних ризиків (коміт `0160a0b`)
 Handoff прив'язано до браузера, який його створює (`tsv_handoff_binding`), код відновлення витрачається атомарно (`db.takeArrayValue`).
@@ -519,9 +519,9 @@ Handoff прив'язано до браузера, який його створ�
 
 ### 10.7 Перше розгортання на ВМ (3 жовтня 2026, коміт `0b32ecd`, реліз `20261003-115704`)
 ВМ `mijn-ruimte-webserver` (`<VM-IP>`): виконано `installeer-app.sh inrichten` + `installeren`, секрети згенеровано на ВМ
-(`geheimen-aanvullen.sh`), дашборд розміщено в `/srv/mijn-ruimte/dashboard`, основна служба + чотири таймери активні, резервне копіювання протестовано
+(`geheimen-aanvullen.sh`), панель керування розміщено в `/srv/mijn-ruimte/dashboard`, основна служба + чотири таймери активні, резервне копіювання протестовано
 (включно з пробним відновленням). Відкрито лише локальний порт `127.0.0.1:8080`; правила `ufw` без змін. Під час розгортання виявлено й вирішено:
-нестачу пам'яті (OOM) при збірці Vite на 2 ГБ RAM (збірку перенесено в cgroup з обмеженням пам'яті), самопосилальний симлінк `current` під час
+нестачу пам'яті (OOM) при складанні Vite на 2 ГБ RAM (складання перенесено в cgroup з обмеженням пам'яті), самопосилальний симлінк `current` під час
 першої інсталяції та тихий не-старт сервера через симлінк `current/` (виправлено перевірку `isMain` із `realpath`).
 
 ### 10.8 Запуск Cloudflare Tunnel (3 жовтня 2026, ~12:16)
@@ -536,6 +536,6 @@ Handoff прив'язано до браузера, який його створ�
 архів секретів (`geheimen.env` + облікові дані тунелю) збережено на `R:\`; пробне розшифрування та пробне відновлення (через конвеєр із ПК у тимчасову базу даних) пройшли успішно. Скрипт `deploy/reservekopie-ophalen.ps1` завантажує найновішу резервну копію на `R:\`; [`deploy/HERSTEL.md`](./deploy/HERSTEL.md) — план аварійного відновлення. Пояснення по кожній теці (українською + нідерландською): `deploy/pc-uitleg/`.
 
 ### 10.10 Подальші кроки (виконані у жовтні–листопаді 2026)
-- Офлайн-копія ключа відновлення (USB/папір); заплановане завдання для автоматичного завантаження бекапів; Cloudflare: Завжди Use HTTPS.
+- Офлайн-копія ключа відновлення (USB/папір); заплановане завдання для автоматичного завантаження резервних копій; Cloudflare: Завжди Use HTTPS.
 - Старі незашифровані тестові резервні копії `20261003-115845`/`-115908` на ВМ автоматично видалені за 7-денною ротацією.
 - Новий Google OAuth-клієнт (`redirect_uri: https://id.tarasevych.com/`), повноцінне WebAuthn-ядро (`passkey-schvalennya` та `aanmeldmethoden`), інтеграція ШІ-агентів через MCP (`mcp.tarasevych.com`), глобальний пошук `/zoek` та мультиагентна оркестрація `ORCH-001` / `TRACE-001` повністю реалізовані на наступних етапах (див. [Історію проєкту](./docs/hub/GESCHIEDENIS.uk.md)).

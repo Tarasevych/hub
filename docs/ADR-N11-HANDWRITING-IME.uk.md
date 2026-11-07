@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./ADR-N11-HANDWRITING-IME.md)) · [🇳🇱 **Nederlandse versie**](./ADR-N11-HANDWRITING-IME.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ADR-N11-HANDWRITING-IME.uk.md) · [🇳🇱 **Nederlandse versie**](./ADR-N11-HANDWRITING-IME.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # ADR N-11 — рукописне введення та IME
 

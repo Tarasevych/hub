@@ -5,7 +5,7 @@
   "tak": "audit/audit-2026-11-05-20261105-070523",
   "basisCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
   "basisVersie": "20261105-061659",
-  "regelsVersie": "1.4.10",
+  "regelsVersie": "1.4.11",
   "regelsHash": "beb437706865e56735ee15f56f75422968d3b133221148282986b23645078847",
   "staat": "integrated",
   "gestart": "2026-11-05T07:10:49.603Z",

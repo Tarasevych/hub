@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "regelsVersie": "1.4.10",
-  "bijgewerkt": "2026-11-05",
+  "regelsVersie": "1.4.11",
+  "bijgewerkt": "2026-11-06",
   "regelBestanden": [
     "AGENTS.md",
     "orchestratie/beleid.json",

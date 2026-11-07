@@ -179,7 +179,7 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
 
     <!-- 1 ACCOUNT -->
     <section class="page on" id="p-account">
-      <p class="lead">Профіль, фото, e-mail. Фото змінюється кліком по аватару — як у Google.</p>
+      <p class="lead">Профіль, фото, e-mail. Фото змінюється натисканням по аватару — як у Google.</p>
       <div class="card">
         <h2>Профіль</h2><p class="sub">Дані, які бачать інші служби екосистеми.</p>
         <div class="photo">
@@ -193,17 +193,17 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
           </div>
         </div>
         <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
-        <details><summary>Деталі акаунта</summary><div class="in">UUID f3a1…9c2e · створено 12.09.2026 · мова й тема прив'язані до акаунта. E-mail — атрибут, не ключ.</div></details>
+        <details><summary>Деталі облікового запису</summary><div class="in">UUID f3a1…9c2e · створено 12.09.2026 · мова й тема прив'язані до облікового запису. E-mail — атрибут, не ключ.</div></details>
       </div>
       <div class="card">
-        <h2>Небезпечна зона</h2><p class="sub">Видалення власного акаунта.</p>
-        <div class="row"><div><b>Видалити акаунт</b><small>30 днів на відновлення, потім остаточно</small></div><button class="btn danger" disabled title="OWNER_NIET_WISSEN">Заблоковано для власника</button></div>
+        <h2>Небезпечна зона</h2><p class="sub">Видалення власного облікового запису.</p>
+        <div class="row"><div><b>Видалити обліковий запис</b><small>30 днів на відновлення, потім остаточно</small></div><button class="btn danger" disabled title="OWNER_NIET_WISSEN">Заблоковано для власника</button></div>
       </div>
     </section>
 
     <!-- 2 IDENTITY -->
     <section class="page" id="p-identity">
-      <p class="lead">Кілька ідентичностей на один акаунт: (провайдер, subject). Одна ідентичність — рівно один акаунт.</p>
+      <p class="lead">Кілька ідентичностей на один обліковий запис: (провайдер, subject). Одна ідентичність — рівно один обліковий запис.</p>
       <div class="card"><h2>Прив'язані ідентичності</h2><p class="sub">Основна визначає вхід типово.</p>
         <div class="list" id="identities">
           <div class="item"><span class="ic"><svg><use href="#g-google"/></svg></span><div><b>Google</b><small>eigenaar@example.test · основна · останній вхід 07:12</small></div><div class="acts"><span class="btn sm" style="cursor:default">Основна</span><button class="btn sm" data-unlink>Відв'язати</button></div></div>
@@ -212,7 +212,7 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
         </div>
       </div>
       <div class="card"><h2>Додати ідентичність</h2><p class="sub">Автоматичного об'єднання немає — лише явне підтвердження.</p>
-        <div class="row"><div><b>Google (інший акаунт)</b><small>Окремий профіль, не зливається з поточним</small></div><button class="btn" data-connect>Додати</button></div>
+        <div class="row"><div><b>Google (інший обліковий запис)</b><small>Окремий профіль, не зливається з поточним</small></div><button class="btn" data-connect>Додати</button></div>
       </div>
     </section>
 
@@ -221,10 +221,10 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
       <p class="lead">Способи входу. Passkey чесно вимкнено: серверна перевірка WebAuthn не готова.</p>
       <div class="card"><h2>Активні способи</h2><p class="sub">Прибрати останній спосіб неможливо.</p>
         <div class="list" id="methods">
-          <div class="item"><span class="ic"><svg><use href="#g-google"/></svg></span><div><b>Google</b><small>основний · 07:12</small></div><span class="btn sm" style="cursor:default">Підключено</span></div>
+          <div class="item"><span class="ic"><svg><use href="#g-google"/></svg></span><div><b>Google</b><small>основний · 07:12</small></div><span class="btn sm" style="cursor:default">Під'єднано</span></div>
           <div class="item"><span class="ic"><svg><use href="#i-key"/></svg></span><div><b>Пароль + TOTP</b><small>увімкнено · заміна з підтвердженням</small></div><button class="btn sm" data-toast="Зміна пароля — демо">Змінити</button></div>
-          <div class="item"><span class="ic"><svg><use href="#g-microsoft"/></svg></span><div><b>Microsoft</b><small>не підключено</small></div><button class="btn sm" data-connect>Підключити</button></div>
-          <div class="item"><span class="ic"><svg><use href="#g-apple"/></svg></span><div><b>Apple</b><small>не підключено</small></div><button class="btn sm" data-connect>Підключити</button></div>
+          <div class="item"><span class="ic"><svg><use href="#g-microsoft"/></svg></span><div><b>Microsoft</b><small>не під'єднано</small></div><button class="btn sm" data-connect>Під'єднати</button></div>
+          <div class="item"><span class="ic"><svg><use href="#g-apple"/></svg></span><div><b>Apple</b><small>не під'єднано</small></div><button class="btn sm" data-connect>Під'єднати</button></div>
           <div class="item"><span class="ic"><svg><use href="#i-shield"/></svg></span><div><b>Passkey</b><small>WebAuthn не реалізовано</small></div><span class="btn sm" style="cursor:default;opacity:.6">Недоступно</span></div>
         </div>
       </div>
@@ -272,7 +272,7 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
 
     <!-- 7 PERSONALIZATION -->
     <section class="page" id="p-personalization">
-      <p class="lead">Щільність, анімації, підказки — впливає на весь інтерфейс акаунта.</p>
+      <p class="lead">Щільність, анімації, підказки — впливає на весь інтерфейс облікового запису.</p>
       <div class="card"><h2>Інтерфейс</h2>
         <div class="row"><div><b>Щільність</b><small>Скільки повітря між рядками</small></div><div class="seg" id="density"><button data-v="compact">Щільно</button><button class="on" data-v="normal">Звичайно</button><button data-v="air">Просторо</button></div></div>
         <div class="row"><div><b>Анімації</b><small>Переходи меню й панелей</small></div><div class="switch on" data-toggle="animations"></div></div>
@@ -283,7 +283,7 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
 
     <!-- 8 THEMES -->
     <section class="page" id="p-themes">
-      <p class="lead">Чотири палітри проєкту і три режими. Вибір зберігається за акаунтом.</p>
+      <p class="lead">Чотири палітри проєкту і три режими. Вибір зберігається за обліковим записом.</p>
       <div class="card"><h2>Палітра</h2><p class="sub">Змінює акцент, не ламаючи контраст.</p>
         <div class="palettes" id="palettes">
           <button class="pal on" data-pal="grifel"><span class="sw" style="background:linear-gradient(135deg,#2f6f73,#12b3a0)"></span><b>Grifel</b></button>
@@ -327,13 +327,13 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
 
     <!-- 11 WIDGETS -->
     <section class="page" id="p-widgets">
-      <p class="lead">Віджети на огляді. Вимкнені не зникають зі списку — їх можна повернути.</p>
-      <div class="card"><h2>Віджети</h2><p class="sub">Порядок і видимість.</p>
+      <p class="lead">Блоки інтерфейсу на огляді. Вимкнені не зникають зі списку — їх можна повернути.</p>
+      <div class="card"><h2>Блоки інтерфейсу</h2><p class="sub">Порядок і видимість.</p>
         <div class="list" id="widgets">
           <div class="item" data-w="mail"><span class="ic"><svg><use href="#i-mail"/></svg></span><div><b>Пошта</b><small>Непрочитані й останні листи</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
           <div class="item" data-w="calendar"><span class="ic"><svg><use href="#i-cal"/></svg></span><div><b>Календар</b><small>Найближчі події</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
           <div class="item" data-w="cloud"><span class="ic"><svg><use href="#i-cloud"/></svg></span><div><b>Cloud</b><small>Останні файли</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch" data-vis></div></div></div>
-          <div class="item" data-w="agents"><span class="ic"><svg><use href="#i-plug"/></svg></span><div><b>Агенти</b><small>Стан підключень</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
+          <div class="item" data-w="agents"><span class="ic"><svg><use href="#i-plug"/></svg></span><div><b>Агенти</b><small>Стан під'єднань</small></div><div class="acts"><button class="btn sm" data-up>↑</button><button class="btn sm" data-down>↓</button><div class="switch on" data-vis></div></div></div>
         </div>
       </div>
     </section>
@@ -348,7 +348,7 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
         </div>
         <div class="row"><div><b>Запросити доступ</b><small>Надіслати посилання з обмеженим терміном</small></div><button class="btn sm" data-toast="Демо: посилання доступу створено">Створити</button></div>
       </div>
-      <div class="card"><h2>Гостьові сесії</h2><p class="sub">Тимчасовий доступ без акаунта.</p>
+      <div class="card"><h2>Гостьові сесії</h2><p class="sub">Тимчасовий доступ без облікового запису.</p>
         <div class="list" id="guests">
           <div class="item" data-guest><span class="ic"><svg><use href="#i-people"/></svg></span><div><b>Гість · iPad</b><small>до 18:00 · лише перегляд</small></div><button class="btn sm danger" data-revoke>Завершити</button></div>
         </div>
@@ -358,7 +358,7 @@ dialog.pd::backdrop{background:rgba(15,23,42,.5)}
       <p class="lead" id="stubLead"></p>
       <div class="card">
         <h2 id="stubTitle"></h2>
-        <p class="sub">Ця сторінка не входить до макета акаунта — тут показано лише навігацію, щоб перевірити меню.</p>
+        <p class="sub">Ця сторінка не входить до макета облікового запису — тут показано лише навігацію, щоб перевірити меню.</p>
         <button class="btn" id="stubBack">← До облікового запису</button>
       </div>
     </section>
@@ -569,7 +569,7 @@ bindSeg('#dateFmt',state.languages,'date');
 bindSeg('#dock',state.menu,'dock');
 bindSeg('#dockSize',state.menu,'size');
 
-/* меню та віджети: порядок/видимість */
+/* меню та блоки інтерфейсу: порядок/видимість */
 function bindReorder(listSel,orderKey,visKey){
   const list=$(listSel);
   list.addEventListener('click',e=>{

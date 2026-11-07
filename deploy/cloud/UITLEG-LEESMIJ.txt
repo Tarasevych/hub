@@ -45,9 +45,9 @@ Map / Тека: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-rui
   - НЕ створюйте теку mijn-ruimte-reservekopie вручну і НЕ перейменовуйте/переносьте її.
   - Файли в ній можна переглядати й завантажувати у браузері.
 
-ОДНОРАЗОВО: ПІДКЛЮЧИТИ GOOGLE DRIVE (робить Власник, ~15 хвилин)
+ОДНОРАЗОВО: ПІД'ЄДНАТИ GOOGLE DRIVE (робить Власник, ~15 хвилин)
   Спільний клієнт rclone Google вимикає у 2026 році, тому потрібен ВЛАСНИЙ OAuth-клієнт.
-  А) У браузері: https://console.cloud.google.com/ (ваш Google-акаунт)
+  А) У браузері: https://console.cloud.google.com/ (ваш Google-обліковий запис)
      1. Угорі "Select a project" -> "New project" -> назва mijn-ruimte-backup -> Create.
      2. Меню -> APIs & Services -> Library -> знайдіть "Google Drive API" -> Enable.
      3. Меню -> Google Auth Platform (або "OAuth consent screen") -> Get started:
@@ -63,15 +63,15 @@ Map / Тека: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-rui
         Нікуди їх не зберігайте у файл.
   Б) У ЗВИЧАЙНОМУ PowerShell (НЕ від імені адміністратора) на цьому ПК:
        powershell -NoProfile -ExecutionPolicy Bypass -File T:\mijn-ruimte\scripts\cloud\cloud-koppelen.ps1
-     Скрипт попросить Client ID і Client secret (вставте: правий клік), потім відкриє
+     Скрипт попросить Client ID і Client secret (вставте: правий натискання), потім відкриє
      браузер. Що ви побачите:
-       - вибір Google-акаунта -> оберіть свій;
+       - вибір Google-облікового запису -> оберіть свій;
        - можливо "Google hasn't verified this app": це ВАШ власний клієнт -> Advanced ->
          "Go to mijn-ruimte-backup (unsafe)";
        - "mijn-ruimte-backup wants access to your Google Account ... See, edit, create, and
          delete only the specific Google Drive files you use with this app" -> Continue/Allow;
        - у браузері: "Success! All done. Please go back to rclone."
-     У PowerShell: "6/6 OK: Google Drive підключено ..." і питання про перше вивантаження
+     У PowerShell: "6/6 OK: Google Drive під'єднано ..." і питання про перше вивантаження
      (Enter = так). Перше вивантаження ~1-3 хвилини (набір ~45 МБ).
   Після цього все працює саме, щодня після 09:00.
 
@@ -106,7 +106,7 @@ Map / Тека: T:\mijn-ruimte\scripts\cloud\   (копія / kopie: R:\mijn-rui
 
 ФАЙЛИ
   cloud-reservekopie.ps1   щоденне вивантаження (запускає reservekopie-ophalen.ps1)
-  cloud-koppelen.ps1       одноразове підключення Google (крок Б)
+  cloud-koppelen.ps1       одноразове під'єднання Google (крок Б)
   cloud-wachtwoord.ps1     допоміжний: дає rclone пароль до зашифрованого rclone.conf (DPAPI)
   config-UITLEG-LEESMIJ.txt  пояснення для теки C:\Users\t\AppData\Local\mijn-ruimte\rclone
   Код: GitHub Tarasevych/hub, гілка zelf-hosten, deploy/cloud/.

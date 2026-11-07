@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./ADAPTERS-LOKAAL-TESTEN.md)) · [🇳🇱 **Nederlandse versie**](./ADAPTERS-LOKAAL-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ADAPTERS-LOKAAL-TESTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./ADAPTERS-LOKAAL-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
 # Локальне тестування адаптерів (UI-013 фаза 2)
 

@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./GEHEIMEN-REGISTER.md)) · [🇳🇱 **Nederlandse versie**](./GEHEIMEN-REGISTER.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./GEHEIMEN-REGISTER.uk.md) · [🇳🇱 **Nederlandse versie**](./GEHEIMEN-REGISTER.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # Реєстр секретів «Mijn Ruimte» — ШАБЛОН
 
@@ -33,7 +33,7 @@ sudo cat /etc/mijn-ruimte/GEHEIMEN-REGISTER.md      # перегляд; файл
 | `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1` | AES-256 для Google-токенів | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати |
 | `OWNER_VAULT_ENCRYPTION_KEY_V1` | AES-256 сховища секретів | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати |
 | `MAIL_TOKEN_ENCRYPTION_KEY_V1` | AES-256 токенів поштових провайдерів | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати |
-| `MAIL_APP_WACHTWOORD_SLEUTEL_V1` | AES-256 паролів застосунку IMAP/SMTP (iCloud, Ukr.net, Yahoo, I.ua) | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати (інакше — перепідключення пошти) |
+| `MAIL_APP_WACHTWOORD_SLEUTEL_V1` | AES-256 паролів застосунку IMAP/SMTP (iCloud, Ukr.net, Yahoo, I.ua) | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати (інакше — перепід'єднання пошти) |
 | `AGENDA_ABONNEMENT_SLEUTEL_V1` | AES-256 паролів CalDAV | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати |
 | `GITHUB_KOPPELING_SLEUTEL_V1` | AES-256 токенів GitHub (необов’язковий; без нього — TOTP-ключ) | geheimen.env | `xxxxxxxx` | 2026-… | не ротувати |
 | `GOOGLE_OAUTH_CLIENT_ID` | Client ID Google (публічний) | geheimen.env **або** сховище (doel `google`) | публічне | 2026-… | Google Cloud Console → Credentials |

@@ -1,8 +1,8 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./RUNBOOK-WERKBLAD-V3-CANVAS.md)) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-WERKBLAD-V3-CANVAS.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-WERKBLAD-V3-CANVAS.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-WERKBLAD-V3-CANVAS.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # Робочий аркуш v3 — полотно (canvas)
 
-Шар взаємодії вільного робочого аркуша (Етап C). Ще НЕ підключено до `src/werkblad/Werkblad.tsx` — це робить інтегратор
+Шар взаємодії вільного робочого аркуша (Етап C). Ще НЕ під'єднано до `src/werkblad/Werkblad.tsx` — це робить інтегратор
 за прапорцем функції `werkblad-v3`. Нічого в цьому компоненті не звертається до сервера; збереження відбувається через `onCommit` батьківського компонента.
 
 ## Файли

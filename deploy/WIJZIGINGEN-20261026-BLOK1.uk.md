@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./WIJZIGINGEN-20261026-BLOK1.md)) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261026-BLOK1.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261026-BLOK1.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261026-BLOK1.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 ## AX. Блок 1 «швидкі виправлення» (26.10.2026)
 

@@ -1,16 +1,16 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./INTEGRATIE-20261027.md)) · [🇳🇱 **Nederlandse versie**](./INTEGRATIE-20261027.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INTEGRATIE-20261027.uk.md) · [🇳🇱 **Nederlandse versie**](./INTEGRATIE-20261027.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
 # Мій простір · Universal Файл Workspace v0.3 · інтеграція поверх випуску 2026-10-27 21:14:25
 
-**Джерело:** наданий власником архів `mijn-ruimte-20261027-211425.tar.gz`. **Режим:** нова candidate-збірка без розгортання на сервері.
+**Джерело:** наданий власником архів `mijn-ruimte-20261027-211425.tar.gz`. **Режим:** нова candidate-складання без розгортання на сервері.
 
 ## 0. Висновок аудиту
 
-В останній збірці вже існує багатоформатний і складний файловий перегляд. Тому стара ідея «створити PDF/Office/Archive-переглядачі з нуля» скасована. Визначення форматів і рендерери **не перезаписували**. Від старого UFW v0.2 взято контракти й тести в ізольований `integrations/universal-file-workspace-core-v0.2/`, а інтеграційний шар v0.3 використовує наявні рендерери.
+В останній складанні вже існує багатоформатний і складний файловий перегляд. Тому стара ідея «створити PDF/Office/Archive-переглядачі з нуля» скасована. Визначення форматів і відмальовувачі **не перезаписували**. Від старого UFW v0.2 взято контракти й тести в ізольований `integrations/universal-file-workspace-core-v0.2/`, а інтеграційний шар v0.3 використовує наявні відмальовувачі.
 
 Підтверджено кодом останнього архіву:
 
-- `src/MailBijlageVoorbeeld.tsx` — великий диспетчер формату; окремі рендерери PDF, DOCX, spreadsheet, presentation, archive, signature, media та спеціалізованих форматів.
+- `src/MailBijlageVoorbeeld.tsx` — великий диспетчер формату; окремі відмальовувачі PDF, DOCX, spreadsheet, presentation, archive, signature, media та спеціалізованих форматів.
 - `src/MailBijlageVensters.tsx` — окремі draggable/resizable Mail-вікна із системою `platform/vensters`.
 - `src/DriveBrowser.tsx` — Google Drive **вже повторно використовує** `loadMailAttachmentPreviewFromBlob` і `MailAttachmentPreviewBody`.
 - `shared/bestandsformaten.ts` — спільна таксономія 13 файлових сімейств для UI.
@@ -62,9 +62,9 @@ openUniverseelBestand({
 2. Використати Node.js **24+** (вимога саме цього `package.json`), встановити залежності `npm ci`, провести `npm run build` та `npm run typecheck:server`.
 3. Chrome E2E з реальною авторизацією: відкрити PDF/DOCX/XLSX/PPTX, ZIP/ASiC, P7S, ICS/VCF, невідомий формат, порожній/пошкоджений/дуже великий файл, мобільне/ПК вікно; перевірити старі inline preview і upload/download.
 4. Перевірити Google Drive нову кнопку: вона використовує **ті самі байти**, ніколи не створює нового OAuth grant; зворотна навігація та scroll збережені.
-5. Перевірити відсутність витоку між 2 Gmail/Drive-акаунтами, між приватним і технічним простором, logout, перехід в інший tab, TTL кешу та відсутність сирих даних у localStorage.
+5. Перевірити відсутність витоку між 2 Gmail/Drive-обліковими записами, між приватним і технічним простором, logout, перехід в інший tab, TTL кешу та відсутність сирих даних у localStorage.
 6. Лише після QA змінити `UNIVERSELE_MAIL_ENABLED` на `true` і повторити весь набір mail regression E2E; до цього старі mail-вікна працюють без змін.
-7. Після успішного staged rollout поступово підключати додаткові джерела через їх наявні ACL backend endpoints, без універсального SSRF fetch endpoint.
+7. Після успішного staged rollout поступово під'єднувати додаткові джерела через їх наявні ACL backend endpoints, без універсального SSRF fetch endpoint.
 
 ## 4. Розподіл паралельних агентів
 
@@ -82,6 +82,6 @@ openUniverseelBestand({
 - ✅ TypeScript `transpileModule` перевірив синтаксис 5 дотичних змінених/нових файлів.
 - ⚠️ Повний Vite/React build та e2e **не виконано**: наявний Node.js 22.16.0, а app вимагає 24+, `npm ci` не завершилося, відсутні потрібні dependencies.
 - ⚠️ `plaatsing-controle.mjs` не виконався через відсутній dependency; це не доводить дефект самого коду.
-- ⚠️ `universal-file-workspace-core-v0.2` ще не підключений runtime як джерело of truth: він збережений для контрольованої поступової міграції.
+- ⚠️ `universal-file-workspace-core-v0.2` ще не під'єднаний runtime як джерело of truth: він збережений для контрольованої поступової міграції.
 
 Не називати цей архів deployed або ready-to-production: це **candidate, очікує full build та QA**.

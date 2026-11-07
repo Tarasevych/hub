@@ -19,10 +19,10 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 
 ## 1. Платформа · Platform (незмінне)
 
-- Mijn Ruimte — self-hosted BYOS-платформа (Ubuntu VM на залізі користувача). Жодних зовнішніх хмар для хостингу чи розгортання.
-- Випуски атомарні: `mijn-ruimte-YYYYMMDD-HHMMSS.tar.gz`, SHA-256, установка лише через `/usr/local/sbin/mijn-ruimte-installeer`
+- Mijn Ruimte — self-hosted BYOS-платформа (Ubuntu VM на обладнанні користувача). Жодних зовнішніх хмар для хостингу чи розгортання.
+- Випуски атомарні: `mijn-ruimte-YYYYMMDD-HHMMSS.tar.gz`, SHA-256, встановлення лише через `/usr/local/sbin/mijn-ruimte-installeer`
   (`deploy/uitrol/mijn-ruimte-uitrol.sh`). Правила пакета: `deploy/REGELS-UITROLPAKKET.md` (UITROL-VERSIE, AUTEUR, AGENT, SAMENVATTING, BRON-COMMIT, UITROL-MANIFEST.json з 20261101).
-- Жодного сирого root: дії від робочого користувача (`beheer`), системні зміни через заздалегідь написані конфіги/units. Нічого не розпаковувати в `/root`.
+- Жодного прямого доступу root: дії від робочого користувача (`beheer`), системні зміни через заздалегідь написані конфіги/units. Нічого не розпаковувати в `/root`.
 - Простори користувачів ізольовані й шифровані їхнім методом входу; власник сервера не має змоги їх розшифрувати.
 - Мови: спілкування і звіти — українською; коментарі в коді — українською або нідерландською; тексти UI — українською/нідерландською.
   Англійська лише для неперекладних технічних термінів. Шляхи/адреси — нідерландською (`/verbindingen`, не `/connections`).
@@ -85,7 +85,7 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
   `mijn-ruimte-<versie>.tar.gz` (через `deploy/uitrol/maak-voorstelpakket.sh`, з файлом `UITROL-BASIS` = встановлена версія + commit + відбиток
   правил) і пакет передачі `mijn-ruimte-<versie>-<agent>-overdracht.zip` (архів, `.sha256`, `ORCH-OVERDRACHT.json`, `UITROL-MANIFEST.json`,
   `TESTRESULTATEN.json`, `RAPPORT.md`, `COMMITS.txt` + `commits.bundle`, `AGENTEN.json`, `.sig` — лише якщо власник підписав на своєму ПК).
-  Перевірка без установки: `pakket-controleer --bron <zip>`; імпорт на іншому боці без git: `inleveren --bron <zip>` (той самий конвеєр).
+  Перевірка без встановлення: `pakket-controleer --bron <zip>`; імпорт на іншому боці без git: `inleveren --bron <zip>` (той самий конвеєр).
 - Інсталятор (root) відхиляє пакет: база старіша за встановлену (`BASIS_VEROUDERD`), інший встановлений commit (`BASIS_COMMIT_VERSCHILT`),
   без `UITROL-BASIS` із версії `20261201` (`GEEN_BASIS`), правила ≠ `regels.lock.json` (`REGELS_NIET_VERGRENDELD`), режим поза політикою
   (`MODUS_NIET_TOEGESTAAN`). GitOps (автоматично) працює лише за `automatisch_beperkt` **і** підписаним lock. Приватні ключі агентам не передаються.
@@ -112,13 +112,13 @@ Dit is de canonieke bron. Adapters (`CLAUDE.md`, `GEMINI.md`, …) verwijzen hie
 | Задачі агентів | `orchestratie/taken/<TASK-ID>.json` |
 | Записи передач (усі канали, прийняті й відхилені) | `orchestratie/inleveringen/<TASK-ID>-<час>.json` |
 | Черга інтеграції | `orchestratie/wachtrij.json` |
-| Факт установки (пише інсталятор/власник) | `orchestratie/geinstalleerd.json` |
+| Факт встановлення (пише інсталятор/власник) | `orchestratie/geinstalleerd.json` |
 | Шаблони передачі | `orchestratie/sjablonen/` |
 | Пакети випуску (локально, не в git) | `uitvoer/` — `mijn-ruimte-<versie>.tar.gz` + `mijn-ruimte-<versie>-<agent>-overdracht.zip` (`orch pakket`) |
 | Стан координації при злитті | `.gitattributes` (`merge=orch-staat`: версія `integratie` перемагає) |
 | Журнал розробки для випуску | `orchestratie/ontwikkelarchieven/<TASK-ID>.json` (у git), `ONTWIKKELARCHIEF.json` (у тар) |
 | Правила пакета випуску | `deploy/REGELS-UITROLPAKKET.md`, `shared/uitrol-manifest.ts`, `shared/uitrol-codes.ts` |
-| Безпечне розгортання, passkey, відкат | `deploy/RUNBOOK-VEILIGE-UITROL.md` (§13 passkey, §15 рішення власника, §18 координація на сервері) |
+| Безпечне розгортання, passkey, повернення стану | `deploy/RUNBOOK-VEILIGE-UITROL.md` (§13 passkey, §15 рішення власника, §18 координація на сервері) |
 | Керування з сайту / HTTP / MCP (та сама логіка, що й CLI) | `src/agenten/TabOrch.tsx`, `backend/orch-routes.ts` (`/api/owner/orch/*`), `backend/orch-opslag.ts`, `backend/orch-hulpmiddelen.ts` (`orch_*`), `shared/orch-model.ts` |
 | Робоча копія координації на сервері, завантаження | `ORCH_WORTEL` (`/srv/mijn-ruimte/orch-repo`), `ORCH_INBOX` (`/srv/mijn-ruimte/orch-inbox`) |
 | Підтвердження правил passkey (пише лише root) | `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; копія для застосунку `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` |
@@ -142,7 +142,7 @@ node scripts/orch.mjs status                         # in_progress / integrated 
 node scripts/orch.mjs staat-commit                   # закомітити лише файли стану координації
 node scripts/orch.mjs pakket --taak ORCH-001 --auteur "Імʼя" [--manifest m.json] [--testresultaten t.json] [--sig p.sig] [--uit uitvoer]
                                                      # tar.gz (UITROL-BASIS) + <versie>-<agent>-overdracht.zip; задача → released
-node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip   # перевірка без установки
+node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip   # перевірка без встановлення
 node scripts/orch.mjs onderteken-bericht             # рядок, який власник підписує (ssh-keygen -Y sign -n mijn-ruimte-regels)
 node scripts/orch.mjs bevestig <bericht.sig>         # записати підпис власника в lock (альтернатива — passkey на сайті, §5)
 node scripts/eenheidstests.mjs orch                  # тести координації (kern, cli, inleveren, pakket, uitrol-basis, site, besluit-root)

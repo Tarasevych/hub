@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./CLOUD_DATABASE_SCHEMA.md)) · [🇳🇱 **Nederlandse versie**](./CLOUD_DATABASE_SCHEMA.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CLOUD_DATABASE_SCHEMA.uk.md) · [🇳🇱 **Nederlandse versie**](./CLOUD_DATABASE_SCHEMA.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
 # Схема бази даних Cloud — v1
 

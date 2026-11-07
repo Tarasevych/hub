@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./BEHEER-ALLEEN-TECH.md)) · [🇳🇱 **Nederlandse versie**](./BEHEER-ALLEEN-TECH.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./BEHEER-ALLEEN-TECH.uk.md) · [🇳🇱 **Nederlandse versie**](./BEHEER-ALLEEN-TECH.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # Адмін-права лише в активному технічному профілі (етап B)
 

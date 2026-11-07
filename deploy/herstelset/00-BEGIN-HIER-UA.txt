@@ -176,7 +176,7 @@ F: - флешка з ключем. Якщо літери інші - підста
     цей набір: scripts\reservekopie-ophalen.ps1 і scripts\herstelset-bijwerken.ps1
     (у них шляхи T:\ і R:\ - на новому ПК задайте свої параметри -Project/-Reserve/-Doel
     або попросіть помічника).
-  - Google Drive знову підключити (щоденна копія): scripts\cloud\UITLEG-LEESMIJ.txt -
+  - Google Drive знову під'єднати (щоденна копія): scripts\cloud\UITLEG-LEESMIJ.txt -
     нова програма rclone і scripts\cloud\cloud-koppelen.ps1 з ТИМ САМИМ OAuth-клієнтом Google
     (тоді rclone бачить старі файли).
   - Якщо ПК ЗЛАМАЛИ: вважайте, що секрети і ключ відновлення могли вкрасти.
@@ -192,7 +192,7 @@ F: - флешка з ключем. Якщо літери інші - підста
 4. КОПІЯ В GOOGLE DRIVE (якщо цього диска немає або там є новіша копія)
 ==============================================================================
 Щодня (після 09:00) ПК сам вивантажує ЗАШИФРОВАНІ копії в Google Drive, у теку
-mijn-ruimte-reservekopie (ваш Google-акаунт, https://drive.google.com):
+mijn-ruimte-reservekopie (ваш Google-обліковий запис, https://drive.google.com):
   dagelijks\<дата>\   database.dump.age, uploads.tar.gz.age, SHA256SUMS
    (останні 30 днів + по одній за місяць, 12 місяців)
   geheimen\<дата>\    зашифровані секрети сервера

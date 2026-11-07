@@ -1,13 +1,13 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./MAIL-PUSH-PUBSUB.md)) · [🇳🇱 **Nederlandse versie**](./MAIL-PUSH-PUBSUB.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL-PUSH-PUBSUB.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL-PUSH-PUBSUB.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # Push-синхронізація Gmail через Google Cloud Pub/Sub
 
 Стан на 07.10.2026: код push **є** (`backend/index.ts`: `mailGoogleWatch`, `mailGooglePush`, перевірка підпису JWT, маршрут
 `POST /api/owner/mail/google/pubsub/push`), але на сервері **не налаштовано** три секрети, тому система працює на запасному варіанті
-(історія Gmail + перевірка кожні 15 хвилин, cron `mail-provider-maintenance`). Для акаунта з новим дозволом
+(історія Gmail + перевірка кожні 15 хвилин, cron `mail-provider-maintenance`). Для облікового запису з новим дозволом
 (`google_oauth_grant_v1`) push тепер вмикається автоматично, щойно секрети з'являться (`mailPushConfigured()`); до того нічого не змінюється.
 
-Усе в Google Cloud Console виконує власник (потрібен ваш акаунт Google; пароль чи токени мені не передавайте).
+Усе в Google Cloud Console виконує власник (потрібен ваш обліковий запис Google; пароль чи токени мені не передавайте).
 
 ## 1. Увімкнути API
 У проєкті, де створений OAuth-клієнт `google_suite_web_oauth_client`: **APIs & Services → Library**: увімкніть **Gmail API** і **Cloud Pub/Sub API**.

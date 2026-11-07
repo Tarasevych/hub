@@ -62,7 +62,7 @@ Dit bestand staat zowel in T:\mijn-ruimte\ als in R:\mijn-ruimte-reservekopie\.
 ЩО ВАЖЛИВО ЗРОБИТИ ВАМ
 - Зробити офлайн-копію herstelsleutel-age.txt (флешка в сейфі та/або папір).
 - Щоденне завдання "Mijn Ruimte - reservekopie ophalen" (09:00) вже є; воно ж робить копію в Drive.
-- ОДИН РАЗ підключити Google Drive: scripts\cloud\UITLEG-LEESMIJ.txt (кроки А і Б).
+- ОДИН РАЗ під'єднати Google Drive: scripts\cloud\UITLEG-LEESMIJ.txt (кроки А і Б).
 - Ніколи не надсилати і не завантажувати в хмару вміст тек sleutels\ та SSH-ключ.
 
 ##############################################################################

@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./LOGBOEK.md)) · [🇳🇱 **Nederlandse versie**](./LOGBOEK.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./LOGBOEK.uk.md) · [🇳🇱 **Nederlandse versie**](./LOGBOEK.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
 # BUG-002 — вікно «Перевірка всіх адрес» саме відкривається і закривається
 

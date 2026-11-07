@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./HERSTEL.md)) · [🇳🇱 **Nederlandse versie**](./HERSTEL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./HERSTEL.uk.md) · [🇳🇱 **Nederlandse versie**](./HERSTEL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # HERSTEL — Відновлення «Mijn Ruimte» після втрати віртуальної машини (VM)
 

@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./ECOSYSTEM_SSO_NAVIGATION_V1.md)) · [🇳🇱 **Nederlandse versie**](./ECOSYSTEM_SSO_NAVIGATION_V1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей](../../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ECOSYSTEM_SSO_NAVIGATION_V1.uk.md) · [🇳🇱 **Nederlandse versie**](./ECOSYSTEM_SSO_NAVIGATION_V1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
 # SSO-навігація екосистеми v1
 

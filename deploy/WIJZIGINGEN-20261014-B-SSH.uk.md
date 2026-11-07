@@ -1,4 +1,4 @@
-> 🌐 **Мова / Taal:** **🇺🇦 Українська** ([оригінал](./WIJZIGINGEN-20261014-B-SSH.md)) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261014-B-SSH.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей](../docs/INDEX.md)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261014-B-SSH.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261014-B-SSH.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
 # Випуск 14.10.2026 (після 6660758): SSH-сертифікат (C ч. 2, інший агент + виправлення) і перемикач B
 
