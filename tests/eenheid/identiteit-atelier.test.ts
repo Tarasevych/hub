@@ -10,6 +10,9 @@ export async function main(): Promise<number> {
   const atelier = readFileSync('src/identiteit/IdentiteitAtelierPagina.tsx', 'utf8');
   const stijl = readFileSync('src/identiteit/identiteit-atelier.css', 'utf8');
   const migratie = readFileSync('migrations/0199_identiteit_account_atelier.sql', 'utf8');
+  const basisMigratie = readFileSync('migrations/0038_feature_flags.sql', 'utf8');
+  const omschrijvingGrens = Number(basisMigratie.match(/CHECK\s*\(char_length\(omschrijving\)\s*<=\s*(\d+)\)/)?.[1]);
+  const omschrijving = migratie.match(/VALUES\s*\(\s*'identiteit-account-atelier',\s*'((?:''|[^'])*)'\s*,\s*false,\s*false\s*\)/s)?.[1]?.replaceAll("''", "'");
   const sleutel = 'identiteit-account-atelier';
   const vlag: Vlag = { sleutel, omschrijving: '', aan: false, standaard: false, percentage: 0, gebruikers: [] };
 
@@ -18,6 +21,7 @@ export async function main(): Promise<number> {
   check('de nieuwe weergave ontvangt de bestaande onderdelen en hun handelingen', pagina.includes('secties={secties}') && atelier.includes('{sectie.inhoud as ReactNode}'));
   check('het oude uiterlijk blijft ongewijzigd beschikbaar', pagina.includes("if (atelier) return <IdentiteitAtelierPagina") && pagina.includes("<div className='ia-account'>"));
   check('de databasevlag staat aanvankelijk uit', /false, false\)\s*ON CONFLICT/.test(migratie));
+  check('de vlagomschrijving past binnen de werkelijke databasegrens', Number.isInteger(omschrijvingGrens) && omschrijvingGrens > 0 && !!omschrijving && [...omschrijving].length <= omschrijvingGrens);
   check('een ontbrekende of uitgeschakelde vlag toont het oude uiterlijk', evalueer(sleutel, undefined, 'eigenaar').value === false && evalueer(sleutel, vlag, 'eigenaar').value === false);
   check('de eigenaar kan de nieuwe vorm alleen voor zichzelf inschakelen', evalueer(sleutel, { ...vlag, aan: true, gebruikers: ['eigenaar'] }, 'eigenaar').value === true && evalueer(sleutel, { ...vlag, aan: true, gebruikers: ['eigenaar'] }, 'ander').value === false);
   check('de schakelaar heeft uitleg in beide talen', !!VLAG_UITLEG[sleutel] && VLAG_UITLEG[sleutel].wat.every((x) => x.length > 20));

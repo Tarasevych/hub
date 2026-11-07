@@ -87,7 +87,7 @@ jobs:
           set -euo pipefail
           node --input-type=module -e '
             import {writeFileSync} from "node:fs";
-            writeFileSync("uitgave-testen.json",JSON.stringify({geslaagd:13,mislukt:0,falend:[],uitleg:{uk:"Тринадцять окремих перевірок нового вигляду успішні; також пройдено перевірки типів і повне складання.",nl:"Dertien afzonderlijke controles van de nieuwe vorm geslaagd; ook typecontroles en de volledige bouw geslaagd."}},null,2)+"\n");
+            writeFileSync("uitgave-testen.json",JSON.stringify({geslaagd:14,mislukt:0,falend:[],uitleg:{uk:"Чотирнадцять перевірок нового вигляду, зокрема довжини опису прапорця за обмеженням бази даних, успішні; також пройдено перевірки типів і складання.",nl:"Veertien controles van de nieuwe vorm, inclusief de maximale omschrijvingslengte volgens het databaseschema, geslaagd; ook typecontroles en de volledige bouw geslaagd."}},null,2)+"\n");
           '
 
       - name: Скласти сумісний архів за правилами
@@ -106,7 +106,7 @@ jobs:
           test -f "uitvoer/$BESTAND"
           sha256sum "uitvoer/$BESTAND" | sed 's#  uitvoer/#  #' > "uitvoer/$BESTAND.sha256"
           gh release create "$VERSIE" "uitvoer/$BESTAND" "uitvoer/$BESTAND.sha256" "uitvoer/mijn-ruimte-$VERSIE-codex-overdracht.zip" \
-            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "IDENTITEIT-003 · $VERSIE" --notes 'Нове оформлення облікового запису за вимкненим спочатку перемикачем. Справжнє встановлення потребує підтвердження власника.' --prerelease --latest=false
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "IDENTITEIT-003 · $VERSIE" --notes 'Виправлено причину відмови попереднього встановлення: опис прапорця тепер відповідає обмеженню бази даних у 300 символів. Новий вигляд початково вимкнено. Встановлення потребує підтвердження власника.' --prerelease --latest=false
 
       - name: Звірити відбиток опублікованого файлу
         shell: bash
