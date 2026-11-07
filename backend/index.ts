@@ -61,6 +61,7 @@ import {runGoogleSuiteDriveSync} from './google-suite-sync';
 import {runGoogleSuiteCalendarSync} from './google-suite-calendar-sync';
 import {createGoogleSuiteCalendarPhotosRoutes} from './google-suite-calendar-photos';
 import {createGlobalSearchRoutes} from './global-search';
+import {createConnectorActieRoutes} from './connector-acties';
 import {createHubBlockDataRoutes} from './hub-block-data';import {createHubLayoutPreferenceRoutes} from './hub-layout-preferences';
 import {createCognitiveContextRoutes} from './cognitive-context';
 import {createMailViewPreferenceRoutes} from './mail-view-preferences';
@@ -534,6 +535,7 @@ export const handler = router({
   ...wrapFactoryMutations(createGoogleSuiteMailBrowserRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGoogleSuiteCalendarPhotosRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createGlobalSearchRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
+  ...wrapFactoryMutations(createConnectorActieRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createHubBlockDataRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createHubLayoutPreferenceRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createCognitiveContextRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),

@@ -5,6 +5,7 @@
 // Een nieuwe integratie toevoegen = een SiteTool aan SITE_TOOLS toevoegen (en zijn route aan TOEGESTANE_ROUTES in site-dispatch.ts).
 // Wijzigende hulpmiddelen (write: true) staan standaard op "vragen": de gebruiker keurt elke aanroep goed op de site.
 import type { ToolDef } from './connectors-tools';
+import { ACTIE_SITE_TOOLS } from './connector-acties';
 
 export type SiteGroup = 'mail' | 'calendar' | 'drive' | 'site' | 'github';
 export type SiteTool = {
@@ -544,6 +545,8 @@ SITE_TOOLS.push(
     shape: (d) => compact(d),
   },
 );
+
+SITE_TOOLS.push(...(ACTIE_SITE_TOOLS as SiteTool[]));
 
 export const SITE_TOOL_BY_NAME = new Map(SITE_TOOLS.map((t) => [t.tool.name, t]));
 

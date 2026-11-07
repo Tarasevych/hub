@@ -54,7 +54,7 @@ const PLAN: PlanService[] = ['mail', 'drive', 'calendar', 'photos'];
 const CONFIG: Record<PlanService, { title: string; tokenName: string; scopes: string[]; classification: string; runtimeBinding: string }> = {
   mail: { title: 'Gmail', tokenName: 'google_mail_token', scopes: ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.labels'], classification: 'restricted', runtimeBinding: 'grant_captured_mail_runtime_not_migrated' },
   drive: { title: 'Google Drive', tokenName: 'google_drive_token', scopes: ['https://www.googleapis.com/auth/drive'], classification: 'restricted', runtimeBinding: 'drive_grant_only_sync_not_started' },
-  calendar: { title: 'Google Calendar', tokenName: 'google_calendar_token', scopes: ['https://www.googleapis.com/auth/calendar.readonly'], classification: 'sensitive', runtimeBinding: 'grant_only_calendar_runtime_not_active' },
+  calendar: { title: 'Google Calendar', tokenName: 'google_calendar_token', scopes: ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/calendar.events'], classification: 'sensitive', runtimeBinding: 'grant_only_calendar_runtime_not_active' },
   photos: { title: 'Google Photos', tokenName: 'google_photos_token', scopes: ['https://www.googleapis.com/auth/photospicker.mediaitems.readonly'], classification: 'sensitive', runtimeBinding: 'grant_only_photos_picker_runtime_not_active' }
 };
 const MAIL_QUERY_SCOPES = ['https://mail.google.com/', 'https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/gmail.readonly'] as const;
