@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "taakId": "IDENTITY-002",
+  "taakId": "IDENTITEIT-002",
   "datum": "2026-11-05",
   "taal": "uk",
   "opdracht": "Eigenaar Test: інтегрувати 12 розділів керування обліковим записом (identity) в застосунок на одній сторінці з меню-змістом і прокруткою, реалізувати діалог фото з трьох джерел та виправити 4 зауваження аудиту від 05.11.2026 (центрована камера 22px, смітничок 24px у куті, z-index модального вікна вище шапки та sticky/scroll-margin під фіксованими верхніми барами).",
   "herkomst": {
     "eigenaar": "Eigenaar Test",
-    "agent": "AutoClaw / Antigravity",
+    "agent": "AutoClaw",
     "basis": "50e63737ddb3f7b032f8fc74dc343ed28fda0af8",
     "vorigeProductieversie": "20261104-204906",
     "vorigeProductieCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
-    "tak": "feature/identity-account-ui-20261104-180000"
+    "tak": "fix/identiteit-account-namen-20261107-140000"
   },
   "privacy": {
     "geheimenUitgesloten": true,
