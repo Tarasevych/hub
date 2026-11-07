@@ -31,7 +31,7 @@ export async function main(): Promise<number> {
   const wp = RUIMTE_GESCHEIDEN('prive', 'get_live_release'), wt = RUIMTE_GESCHEIDEN('technisch', 'mail_search_messages');
   check('weigering: begint met SPACE_SEPARATED, noemt de ruimte en het hulpmiddel, verwijst naar de juiste pagina en zegt «niet anders proberen»',
     /^SPACE_SEPARATED: /.test(wp) && /private/.test(wp) && /get_live_release/.test(wp) && /Technical connections/.test(wp) && /Do not try another way/.test(wp)
-    && /^SPACE_SEPARATED: /.test(wt) && /technical/.test(wt) && /mail_search_messages/.test(wt) && /Agents/.test(wt) && /Do not try another way/.test(wt));
+    && /^SPACE_SEPARATED: /.test(wt) && /technical/.test(wt) && /mail_search_messages/.test(wt) && /ai\.tarasevych\.com → Connections/.test(wt) && /Do not try another way/.test(wt));
   check('instructies per ruimte: privé zegt «never manage the site», technisch zegt «never reaches the user\'s mail» en «cannot approve»',
     /can never manage the site or the server/.test(RUIMTE_INSTRUCTIES.prive) && /never reaches the user's mail/.test(RUIMTE_INSTRUCTIES.technisch) && /cannot approve a release/.test(RUIMTE_INSTRUCTIES.technisch) && !/approve a release/.test(RUIMTE_INSTRUCTIES.prive));
 

@@ -75,7 +75,7 @@ export const RUIMTE_GESCHEIDEN = (ruimte: AiRuimte, tool: string) =>
   `SPACE_SEPARATED: this connection belongs to the ${ruimte === 'prive' ? 'private (user) space' : 'technical (site management) space'} and "${tool}" belongs to the other one. `
   + (ruimte === 'prive'
     ? 'A user-space AI can never manage the site or the server. If the user wants that, they connect a separate AI in the technical space (mcp.tarasevych.com → Technical connections, technical profile). Do not try another way.'
-    : 'A technical-space AI never reaches the user\'s mail, Drive, board or personal devices. If the user wants that, they connect a separate AI in their private space (mcp.tarasevych.com → Agents). Do not try another way.');
+    : 'A technical-space AI never reaches the user\'s mail, Drive, board or personal devices. If the user wants that, they connect a separate AI in their private space (ai.tarasevych.com → Connections). Do not try another way.');
 
 /** Instructies voor de AI-klant per ruimte (initialize.instructions). */
 export const RUIMTE_INSTRUCTIES: Record<AiRuimte, string> = {

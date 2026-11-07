@@ -6,6 +6,7 @@ import { canonicalNavigationUrl } from '../canonical-navigation';
 import { sessionBody, type ToolCall } from '../agents-data';
 import { Logo, Section, type Tr } from '../mcp-ui';
 import McpToolsPanel, { ToolApprovals } from '../McpToolsPanel';
+import AiToegangTab from './AiToegangTab';
 import { aiEigenaar, aiLogo, isoMs, type DeurToken, type OauthVerbinding, type Overzicht } from './data';
 import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Knop, Melding, Rij, Tech, Tijd, useActies } from './ui';
 
@@ -102,6 +103,14 @@ export default function TabAi({ tr, overzicht, tokens, naActie, item, kies, call
             [tr('Діє до', 'Geldig tot'), exact(isoMs(t.expiresAt))],
             t.revokedAt ? [tr('Відкликано', 'Ingetrokken'), exact(isoMs(t.revokedAt))] : null,
           ]} />
+        ) : null}
+        {!historisch ? (
+          <section className='ag-kaart' data-toegang-tab={x.sleutel}>
+            <div className='ag-kaart-kop'><h3>{tr('Доступ ШІ', 'AI-toegang')}</h3></div>
+            <AiToegangTab
+              verbinding={{ soort: x.soort, id: x.oauth?.id ?? x.token?.id ?? '', naam: x.naam }}
+              tr={tr} metBeheer />
+          </section>
         ) : null}
       </Rij>
     );
