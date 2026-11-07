@@ -15,11 +15,11 @@ Alle bestanden staan in **één bovenmap** `mijn-ruimte-<VERSIE>/` van `mijn-rui
 
 | Файл · Bestand | Вміст · Inhoud | Навіщо · Waarom | Без нього · Zonder |
 |---|---|---|---|
-| `UITROL-VERSIE` | `РРРРММДД-ГГХХСС`, дорівнює версії в назві й **новіша** за встановлену · gelijk aan de naam en **nieuwer** dan de geïnstalleerde | захист від відкату старим пакетом · geen terugrol met een oud pakket | `GEEN_VERSIE`, `VERSIE_VERSCHILT`, `NIET_NIEUWER` |
+| `UITROL-VERSIE` | `РРРРММДД-ГГХХСС`, дорівнює версії в назві й **новіша** за встановлену · gelijk aan de naam en **nieuwer** dan de geïnstalleerde | захист від повернення стану старим пакетом · geen terugrol met een oud pakket | `GEEN_VERSIE`, `VERSIE_VERSCHILT`, `NIET_NIEUWER` |
 | `AUTEUR` | хто автор (≥ 3 символи), напр. `Eigenaar Test` · wie de auteur is | відповідальність · verantwoordelijkheid | `GEEN_AUTEUR`, `AUTEUR_ONGELDIG` |
 | `AGENT` | через якого агента: `claude`, `cursor`, `gpt`… (малі літери) · via welke agent | видно, хто готував · zichtbaar wie voorbereidde | `GEEN_AGENT`, `AGENT_ONGELDIG` |
 | `SAMENVATTING` | що змінено й навіщо, що було/з'явилося/зникло (≥ 20 символів) · wat en waarom | власник бачить, що схвалює · de eigenaar ziet wat hij goedkeurt | `GEEN_SAMENVATTING`, `SAMENVATTING_TE_KORT` |
-| `BRON-COMMIT` | **повний** git-коміт (40 hex) **або** `zonder-git:<причина>` · **volledige** commit **of** `zonder-git:<reden>` | видно, який код працює; збірку можна відтворити · welke code draait; build is te herhalen | `GEEN_BRON_COMMIT` |
+| `BRON-COMMIT` | **повний** git-коміт (40 hex) **або** `zonder-git:<причина>` · **volledige** commit **of** `zonder-git:<reden>` | видно, який код працює; складання можна відтворити · welke code draait; build is te herhalen | `GEEN_BRON_COMMIT` |
 | `deploy/installeer-app.sh` | інсталятор з цього ж коду · de installer uit dezelfde code | встановлення · installatie | `GEEN_INSTALLER` |
 
 Заборонено в архіві · Verboden in het archief: символьні/жорсткі посилання, пристрої, абсолютні шляхи, `..`, більше однієї верхньої теки
@@ -40,7 +40,7 @@ AUTEUR="Eigenaar Test" AGENT=claude SAMENVATTING="Що змінено і нав�
 AUTEUR=… AGENT=… SAMENVATTING=… deploy/uitrol/maak-uitrolpakket.sh ~/.ssh/uitrol-sleutel /tmp/uit   # підписаний ключем
 
 # 2) поза git — лише з явною причиною · buiten git — alleen met een reden
-AUTEUR=… AGENT=claude SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh --zonder-git "збірка в пісочниці агента без історії git" /tmp/uit
+AUTEUR=… AGENT=claude SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh --zonder-git "складання в пісочниці агента без історії git" /tmp/uit
 ```
 
 Windows: `powershell -File deploy\uitrol\maak-uitrolpakket.ps1 [-ZonderGit "причина"]`.
@@ -104,4 +104,4 @@ een SSH-installatie zonder voorcontrole slaat deze regel dus over (zie STATUS UI
 
 Сайт показує, які саме файли падали, і чи падали вони на базовій версії («ook op basis») чи нові («NIEUW»). Без `falend` — «деталі недоступні в цьому пакеті».
 
-Збірка · bouwen: `MANIFEST=pad/UITROL-MANIFEST.json TESTRESULTATEN_BESTAND=pad/testen.json AUTEUR=… AGENT=… SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh /tmp/uit`
+Складання · bouwen: `MANIFEST=pad/UITROL-MANIFEST.json TESTRESULTATEN_BESTAND=pad/testen.json AUTEUR=… AGENT=… SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh /tmp/uit`

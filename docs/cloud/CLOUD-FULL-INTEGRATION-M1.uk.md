@@ -4,12 +4,12 @@
 
 ## Що написано в коді
 
-- `shared/cloud-integratie-contract.ts`: стабільні ідентифікатори файлів/просторів/акаунтів, 16 дій, типи результатів (`native`, `gateway`, `needs-consent`, `forbidden`, `unavailable`, `temporarily-unavailable`), правила доступності, whitelist чинного Cloud-native 6 MiB та fail-closed план операції.
+- `shared/cloud-integratie-contract.ts`: стабільні ідентифікатори файлів/просторів/облікових записів, 16 дій, типи результатів (`native`, `gateway`, `needs-consent`, `forbidden`, `unavailable`, `temporarily-unavailable`), правила доступності, whitelist чинного Cloud-native 6 MiB та fail-closed план операції.
 - `shared/cloud-aanbieder-register.ts`: строгий реєстр адаптерів провайдерів; не дозволяє двічі реєструвати provider та не читає між різними просторами.
-- `backend/cloud-integratie-google.ts`: актуальний Google Drive `files.get` через наявний B+ grant та наявний snapshot акаунтів; токен не повертається користувачеві; metadata ACL береться з Google під час кожного запиту; timeout 12 s, без несанкціонованих редиректів.
-- `backend/cloud-integratie-register.ts`: справді підключено лише Google Drive для live inspection; інших адаптерів не фальсифіковано.
+- `backend/cloud-integratie-google.ts`: актуальний Google Drive `files.get` через наявний B+ grant та наявний snapshot облікових записів; токен не повертається користувачеві; metadata ACL береться з Google під час кожного запиту; timeout 12 s, без несанкціонованих редиректів.
+- `backend/cloud-integratie-register.ts`: справді під'єднано лише Google Drive для live inspection; інших адаптерів не фальсифіковано.
 - `backend/cloud-integratie-routes.ts`: нові **read-only** POST маршрути `status`, `google/file/capabilities`, `transfer/plan`.
-- `backend/cloud-platform.ts`: мінімальна інтеграція маршрутів у **вже існуючий** `ladePoort('cloud', authorize, ...)`.
+- `backend/cloud-platform.ts`: мінімальна інтеграція маршрутів у **вже наявний** `ladePoort('cloud', authorize, ...)`.
 - `tests/eenheid/cloud-integratie-contract.test.ts`: автоматичні перевірки політик, помилкових дозволів, ізоляції, MOVE, MIME, 6 MiB.
 
 **Жодної зміни** у `package.json`, OAuth, міграціях, Identity, UI, CanonicalChrome, SSH, розгортанні, платіжних функціях. Новий Cloud UI **не активовано**.
@@ -44,7 +44,7 @@ POST /api/owner/cloud/integrations/v1/transfer/plan
 
 1. Звірити копію з актуальним deployed Git SHA / архівом. `Tarasevych/hub` у доступній гілці `voornaamst` не містить `package.json`; GitHub-commit `bdb63c9d...` в ньому не знайдений. Не форсувати merge в цей репозиторій без підтвердження джерела істини.
 2. Узгодити атомарний процес життєвого циклу переносів у PostgreSQL: `plan → authorize → stream → verify → commit`, `idempotency` з унікальним індексом і повторним ACL при кожній зміні. План повинен зберігати owner + space + provider/account/resource + etag, без токенів.
-3. Підключити Google → власний Cloud лише після усунення 6 MiB/форматного обмеження або чіткого спеціального bounded flow. Спочатку COPY. MOVE — лише після підтвердження copy і delete-after-verify.
+3. Під'єднати Google → власний Cloud лише після усунення 6 MiB/форматного обмеження або чіткого спеціального bounded flow. Спочатку COPY. MOVE — лише після підтвердження copy і delete-after-verify.
 4. Додати уніфіковані адаптери і contract-тести Microsoft Graph (Personal/Business/SharePoint), Dropbox, Nextcloud/WebDAV+OCS, Box. Кожен з власною моделлю OAuth/ACL/pagination/resumable upload/rate limits.
 5. Реалізувати isolated QA fixture для permission negative-tests. Перенести наявний Mail/Drive document viewer у спільне ядро без регресій.
 6. Після затвердження всіх заявлених провайдерів — впровадити `/overzicht` та інтегроване UI, прогнати повні e2e, staging та rollback; сформувати єдиний новий UITROL-VERSIE.
