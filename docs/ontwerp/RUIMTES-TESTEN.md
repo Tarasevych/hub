@@ -1,48 +1,50 @@
-# Ruimtes: testen (agent 4)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUIMTES-TESTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./RUIMTES-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-> **Українською коротко.** Усі перевірки запускаються локально однією командою:
+# Простори: тестування (агент 4)
+
+> **Коротко.** Усі перевірки запускаються локально однією командою:
 > `scripts/lokaal-e2e/ruimtes-alles.sh --bouw`. Нічого не звертається до справжнього сайту.
 
-Alles ALLEEN LOKAAL: Chrome → `*.tarasevych.com` wordt via host-resolver naar 127.0.0.1 (ruimtes-proxy.mjs) gestuurd;
-elk ander verzoek wordt geblokkeerd en geteld («0 verzoeken naar andere hosts»). Eigen database (`RU_DB`, standaard `ru4`).
+Усе ЛИШЕ ЛОКАЛЬНО: Chrome → `*.tarasevych.com` направляється через host-resolver на `127.0.0.1` (`ruimtes-proxy.mjs`);
+кожний інший запит блокується й враховується («0 запитів до інших хостів»). Власна база даних (`RU_DB`, типово `ru4`).
 
-## Hoe draaien (één opdracht per suite)
+## Як запускати (одна команда на набір)
 
-| Suite | Opdracht | Uitslag |
+| Набір | Команда | Результат |
 |---|---|---|
-| Alles | `scripts/lokaal-e2e/ruimtes-alles.sh [--bouw]` | `/workspace/ru-uitslag/*.json` |
-| Server+proxy | `eval "$(scripts/lokaal-e2e/ruimtes-start.sh [--bouw] \| tail -1)"` | log `/tmp/ru-server-ru4.log` |
-| Geen lekken tussen ruimtes | `node scripts/lokaal-e2e/ruimtes-lekkage.mjs` | `ruimtes-lekkage.json`, `lekkage/` |
-| Directe URL geblokkeerd | `node scripts/lokaal-e2e/ruimtes-directe-url.mjs` | `ruimtes-directe-url.json` |
-| Visueel in de site (390/768/1440, donker) | `node scripts/lokaal-e2e/ruimtes-visueel-mail.mjs [--bijwerken] [--filter 05]` | `ruimtes-visueel-mail.json`, `visueel/` |
-| Visueel zuiver (agent 3, licht+donker) | `scripts/lokaal-e2e/ruimtes-visueel-zuiver.sh [--bijwerken]` | `zuiver/uitslag.json` |
-| Extensie/MCP (agent 5) | `node scripts/eenheidstests.mjs ruimtes-compatibiliteit` | console |
+| Усе | `scripts/lokaal-e2e/ruimtes-alles.sh [--bouw]` | `/workspace/ru-uitslag/*.json` |
+| Сервер+проксі | `eval "$(scripts/lokaal-e2e/ruimtes-start.sh [--bouw] \| tail -1)"` | журнал `/tmp/ru-server-ru4.log` |
+| Жодних витоків між просторами | `node scripts/lokaal-e2e/ruimtes-lekkage.mjs` | `ruimtes-lekkage.json`, `lekkage/` |
+| Пряма URL-адреса заблокована | `node scripts/lokaal-e2e/ruimtes-directe-url.mjs` | `ruimtes-directe-url.json` |
+| Візуально на сайті (390/768/1440, темна) | `node scripts/lokaal-e2e/ruimtes-visueel-mail.mjs [--bijwerken] [--filter 05]` | `ruimtes-visueel-mail.json`, `visueel/` |
+| Візуально чисто (агент 3, світла+темна) | `scripts/lokaal-e2e/ruimtes-visueel-zuiver.sh [--bijwerken]` | `zuiver/uitslag.json` |
+| Розширення/MCP (агент 5) | `node scripts/eenheidstests.mjs ruimtes-compatibiliteit` | консоль |
 
-Corpus visueel: `tests/hulp/mails/` (agent 3) als die er is, anders `tests/hulp/mails-qa/`; `RU_CORPUS=<map>` kiest zelf.
-Basislijn: eerste run legt vast (`visueel/basislijn/`), `--bijwerken` legt opnieuw vast; drempel `RU_DREMPEL` (standaard 0,5 %).
+Візуальний корпус: `tests/hulp/mails/` (агент 3), якщо він є, інакше `tests/hulp/mails-qa/`; `RU_CORPUS=<тека>` обирає вручну.
+Базова лінія: перший запуск фіксує еталон (`visueel/basislijn/`), `--bijwerken` перезаписує еталон; поріг `RU_DREMPEL` (типово 0,5 %).
 
-## Eis → test
+## Вимога → тест
 
-| Eis (t338u) | Test |
+| Вимога (t338u) | Тест |
 |---|---|
-| Geen menging van brieven, meldingen, instellingen tussen ruimtes | ruimtes-lekkage: lijsten, leesvenster na wissel, bel (99+), zoeken, opslag, cachekoppen, 20× wissel, twee tabbladen, 390 px |
-| Directe URL zonder (geldige) hoofdsessie → 401/403 | ruimtes-directe-url: geen sessie, verlopen, ingetrokken, andere gebruiker, vlag uit/aan, technische sessie zonder hoofdsessie |
-| Wissel in één klik zonder wachtwoord/TOTP | ruimtes-lekkage (wissel via menu, geen stap-op-vraag) |
-| Donkere brieven: geen wit vlak, WCAG-contrast, opmaak gelijk | ruimtes-visueel-mail (site) + ruimtes-visueel-zuiver (omzetting) op 390/768/1440 |
-| Extensie en MCP onder scope en sessiebinding | tests/eenheid/ruimtes-compatibiliteit-{puur,db} (agent 5) |
+| Жодного змішування листів, сповіщень, налаштувань між просторами | `ruimtes-lekkage`: списки, вікно читання після перемикання, дзвіночок (99+), пошук, сховище, заголовки кешу, 20× перемикань, дві вкладки, 390 px |
+| Пряма URL-адреса без (дійсної) основної сесії → 401/403 | `ruimtes-directe-url`: немає сесії, прострочена, відкликана, інший користувач, прапорець вимк./увімк., технічна сесія без основної сесії |
+| Перемикання одним натисканням без пароля/TOTP | `ruimtes-lekkage` (перемикання через меню, без запиту step-up) |
+| Темні листи: без білого аркуша, контраст WCAG, розмітка незмінна | `ruimtes-visueel-mail` (сайт) + `ruimtes-visueel-zuiver` (перетворення) на 390/768/1440 |
+| Розширення та MCP під простором і прив'язкою сесії | `tests/eenheid/ruimtes-compatibiliteit-{puur,db}` (агент 5) |
 
-## Basislijn op master 1f0078c (vóór samenvoegen, 28.10.2026)
+## Базова лінія на master 1f0078c (до злиття, 28.10.2026)
 
-Verwacht ROOD: dit zijn precies de fouten die agenten 1–3 oplossen.
+Очікувано ЧЕРВОНЕ: це саме ті помилки, які виправляють агенти 1–3.
 
-- **ruimtes-lekkage:** 2/3 bij de laatste volledige run — op 390 px na de wissel naar technisch nog persoonlijke inhoud en bel «99+».
-- **ruimtes-directe-url:** 51/84. Faalt: admin-pagina's (`admin/`, `admin/updates`, `admin/gebruikers`, `api/`) geven HTML
-  zonder sessie, met verlopen/ingetrokken hoofdsessie en voor een andere gebruiker; admin-API's (`admin/overview`,
-  `uitrol/overzicht`, `diagnostiek/overzicht`, `hub/tech/ruimtes/toegang`) antwoorden zonder technische sessie.
-- **ruimtes-visueel-mail:** basis heeft geen donkere omzetting en geen wissel «Оригінал / Темний вигляд»: wit vlak tot
-  ~92 % van het leesvenster. BEKEND OPEN PUNT: het harnas opent na de eerste brief de volgende brieven niet betrouwbaar (ook niet met het
-  omgebogen adres uit b098838; run 28.10 14:43: 2/60, «leesvenster met deze brief geopend» faalt, run > 15 min).
-  Tot dat hersteld is: per brief draaien met `--filter <nr>` (de eerste brief opent wel) of ruimtes-visueel-zuiver.sh gebruiken.
-- **ruimtes-visueel-zuiver:** niet te draaien op de basis (het script komt met agent 3).
+- **ruimtes-lekkage:** 2/3 під час останнього повного прогону — на 390 px після перемикання в технічний простір ще залишався особистий вміст і дзвіночок «99+».
+- **ruimtes-directe-url:** 51/84. Падає: адмін-сторінки (`admin/`, `admin/updates`, `admin/gebruikers`, `api/`) віддають HTML
+  без сесії, із простроченою/відкликаною основною сесією та для іншого користувача; адмін-API (`admin/overview`,
+  `uitrol/overzicht`, `diagnostiek/overzicht`, `hub/tech/ruimtes/toegang`) відповідають без технічної сесії.
+- **ruimtes-visueel-mail:** база не має темного перетворення і перемикача «Оригінал / Темний вигляд»: біле поле займає до
+  ~92 % вікна читання. ВІДОМИЙ ВІДКРИТИЙ ПУНКТ: стенд після першого листа ненадійно відкриває наступні листи (навіть із
+  перенаправленою адресою з b098838; прогін 28.10 14:43: 2/60, «вікно читання з цим листом відкрито» падає, тривалість > 15 хв).
+  Доки це не виправлено: запускати окремо по кожному листу з `--filter <номер>` (перший лист відкривається) або використовувати `ruimtes-visueel-zuiver.sh`.
+- **ruimtes-visueel-zuiver:** неможливо запустити на базі (скрипт з'являється в агента 3).
 
-Na samenvoegen (ru-int) alle suites opnieuw: groen verwacht behalve waar een eis bewust anders is besloten.
+Після злиття (`ru-int`) усі набори запускаються повторно: очікується зелений результат, окрім місць, де для вимоги свідомо ухвалено інше рішення.

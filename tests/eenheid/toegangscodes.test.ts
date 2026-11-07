@@ -19,8 +19,11 @@ const fc = (f: () => unknown) => { try { f(); return ''; } catch (e) { return St
 export async function main(): Promise<number> {
   const { check, einde } = checker('toegangscodes');
   const T = `${Date.now()}-${randomBytes(2).toString('hex')}`;
-  const ENV = ['PASSKEY_RP_ID', 'PASSKEY_ORIGINS', 'OWNER_EMAIL'] as const;
+  const ENV = ['PASSKEY_RP_ID', 'PASSKEY_ORIGINS', 'OWNER_EMAIL', 'AUDIT_IP_PEPPER'] as const;
   const vorige = Object.fromEntries(ENV.map((k) => [k, process.env[k]]));
+  // Eigen pepper voor de IP-hash (≥ 32 tekens): zonder AUDIT_IP_PEPPER uit de omgeving bleef laatstIpKort null en faalde
+  // «laatste keer (apparaat + IP-hash)». Hersteld via ENV in het finally-blok.
+  if (String(process.env.AUDIT_IP_PEPPER || '').length < 32) process.env.AUDIT_IP_PEPPER = `eenheidstest-toegangscodes-pepper-${randomBytes(16).toString('hex')}`;
   delete process.env.PASSKEY_RP_ID; delete process.env.PASSKEY_ORIGINS;
   const eigenaar = `gc-eig-${T}@example.test`, aMail = `gc-a-${T}@example.test`;
   const G = await nepGoogle({ ownerEmail: eigenaar });

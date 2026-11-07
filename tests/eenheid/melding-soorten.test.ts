@@ -1,6 +1,6 @@
 // Meldingen voor de gebruiker los van de beheermeldingen (verzoek eigenaar, 18.10.2026):
 //  «панель Сповіщення має бути розділена для користувача від адмін сповіщень … лише одна графа … можна обеззвучити, вимкнути
-//   спливаючі сповіщення для будь-якого типу».
+//   спливні сповіщення для будь-якого типу».
 // 1. Elke soort die backend/ maakt staat in ÉÉN tabel (shared/melding-soorten.ts) met type, ernst en — technisch — vereiste mogelijkheid.
 // 2. De server levert technische meldingen alleen aan wie een technisch profiel met die mogelijkheid heeft (echte DB, siteNotificationOverview).
 // 3. De gewone bel toont alleen persoonlijke meldingen + één regel «У технічній панелі N …»; voorkeuren per type schakelen geluid en

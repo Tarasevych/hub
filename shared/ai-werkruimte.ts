@@ -112,9 +112,9 @@ export function middelen(f: Feiten): Middel[] {
     },
     {
       id: 'bestanden', groep: 'bestanden', naam: ['Файли на ваших пристроях', 'Bestanden op uw apparaten'],
-      wat: ['Читати й шукати у дозволених папках; запис — лише з вашим підтвердженням.', 'Lezen en zoeken in toegestane mappen; schrijven alleen met uw goedkeuring.'],
+      wat: ['Читати й шукати у дозволених теках; запис — лише з вашим підтвердженням.', 'Lezen en zoeken in toegestane mappen; schrijven alleen met uw goedkeuring.'],
       staat: staat(heeftTool(f, ['machine_list_dir', 'machine_read_file', 'machine_search_files']), f.apparaten.totaal > 0),
-      detail: ['Межі (папки, команди) задає сам агент на пристрої', 'De agent op het apparaat stelt de grenzen (mappen, opdrachten) zelf'],
+      detail: ['Межі (теки, команди) задає сам агент на пристрої', 'De agent op het apparaat stelt de grenzen (mappen, opdrachten) zelf'],
       waar: HUB_APPARATEN,
     },
     {
@@ -225,8 +225,8 @@ export const STARTVRAGEN: readonly Startvraag[] = [
   { id: 'samenvatten', groep: 'algemeen', tools: [], tekst: ['Поясни простими словами текст, який я зараз вставлю, і виділи головне.', 'Leg de tekst die ik hierna plak in gewone woorden uit en haal het belangrijkste eruit.'] },
   { id: 'server-stand', groep: 'server', tools: ['machine_list', 'machine_info'], tekst: ['Покажи мої пристрої та стан системи на тому, що онлайн.', 'Toon mijn apparaten en de systeemstand van degene die online is.'] },
   { id: 'server-docker', groep: 'server', tools: ['docker_list_containers'], tekst: ['Які контейнери Docker запущені на моєму пристрої і який у них стан?', 'Welke Docker-containers draaien op mijn apparaat en wat is hun stand?'] },
-  { id: 'bestanden-map', groep: 'bestanden', tools: ['machine_list_dir'], tekst: ['Покажи вміст дозволеної папки проєкту на моєму ПК.', 'Toon de inhoud van de toegestane projectmap op mijn pc.'] },
-  { id: 'bestanden-zoek', groep: 'bestanden', tools: ['machine_search_files'], tekst: ['Знайди у дозволеній папці файли, де згадується «TODO», і покажи де саме.', 'Zoek in de toegestane map bestanden waarin «TODO» staat en toon waar precies.'] },
+  { id: 'bestanden-map', groep: 'bestanden', tools: ['machine_list_dir'], tekst: ['Покажи вміст дозволеної теки проєкту на моєму ПК.', 'Toon de inhoud van de toegestane projectmap op mijn pc.'] },
+  { id: 'bestanden-zoek', groep: 'bestanden', tools: ['machine_search_files'], tekst: ['Знайди у дозволеній теці файли, де згадується «TODO», і покажи де саме.', 'Zoek in de toegestane map bestanden waarin «TODO» staat en toon waar precies.'] },
   { id: 'apps', groep: 'server', tools: ['app_list', 'app_logs'], tekst: ['Які мої додатки розгорнуті й чи немає помилок у їхніх журналах?', 'Welke van mijn apps staan uitgerold en staan er fouten in hun logboeken?'] },
   { id: 'browser-pagina', groep: 'browser', tools: ['browser_pages', 'browser_history'], tekst: ['Які сторінки відкриті в моєму браузері зараз?', 'Welke pagina\'s staan nu open in mijn browser?'] },
   { id: 'github-werk', groep: 'github', tools: ['github_get'], tekst: ['Що зі моїми задачами на GitHub: які відкриті й що змінилося за тиждень?', 'Hoe staan mijn GitHub-issues: welke zijn open en wat veranderde er deze week?'] },

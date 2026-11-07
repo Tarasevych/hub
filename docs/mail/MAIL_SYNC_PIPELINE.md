@@ -1,6 +1,8 @@
-# Mail Sync Pipeline v1
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_SYNC_PIPELINE.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_SYNC_PIPELINE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-## 1. State machine
+# Конвеєр синхронізації Пошти v1
+
+## 1. Скінченний автомат станів
 
 ```text
 authorization_required
@@ -11,28 +13,28 @@ authorization_required
 → disconnected
 ```
 
-Status `connected` requires: verified provider identity, encrypted refresh token, active watch/subscription, completed initial sync and valid cursor.
+Статус `connected` вимагає: підтвердженої ідентичності провайдера, зашифрованого refresh-токена, активного watch/підписки, завершеної початкової синхронізації та валідного курсора.
 
-## 2. Provider connection pipeline
+## 2. Конвеєр під'єднання провайдера
 
-1. User explicitly clicks Connect Gmail/Microsoft.
-2. Backend validates canonical Mail session and account ownership.
-3. Readiness gate checks client configuration, encryption key, callback allowlist and provider policy.
-4. Create hashed, expiring provider OAuth state with PKCE and exact scopes.
-5. Same-tab or approved popup navigation starts provider consent; no token/proof in URL beyond provider code/state.
-6. Callback claims state with processing lease.
-7. Exchange code server-side.
-8. Verify provider identity matches selected/new account policy.
-9. Encrypt refresh token with AES-256-GCM and AAD.
-10. Commit account scopes/status and token atomically.
-11. Create watch/subscription.
-12. Enqueue initial sync.
-13. Return to Mail Accounts with truthful progress state.
-14. Publish account revision over websocket.
+1. Користувач явно натискає «Під'єднати Gmail/Microsoft».
+2. Бекенд перевіряє канонічну сесію Пошти та право власності на обліковий запис.
+3. Шлюз готовності (readiness gate) перевіряє конфігурацію клієнта, ключ шифрування, білий список callback-адрес та політику провайдера.
+4. Створюється хешований стан OAuth провайдера з обмеженим терміном дії, PKCE та точними областями доступу (scopes).
+5. Перехід у тій самій вкладці або схваленому спливному вікні запускає отримання згоди у провайдера; в URL немає жодних токенів чи доказів, окрім коду/стану провайдера.
+6. Зворотний виклик (callback) захоплює стан із короткостроковою орендою обробки (processing lease).
+7. Сервер виконує обмін коду на токени.
+8. Перевіряється відповідність ідентичності провайдера політиці вибраного або нового облікового запису.
+9. Refresh-токен шифрується за допомогою AES-256-GCM та AAD.
+10. Області доступу/статус облікового запису та токен фіксуються атомарно.
+11. Створюється watch/підписка.
+12. У чергу ставиться завдання початкової синхронізації.
+13. Відбувається повернення до розділу Поштові облікові записи із правдивим станом прогресу.
+14. Через websocket публікується ревізія облікового запису.
 
-Failure before token commit leaves `authorization_required`; failure after token commit but before sync leaves `degraded`/`initial_sync`, never falsely `connected`.
+Збій до фіксації токена залишає статус `authorization_required`; збій після фіксації токена, але до завершення синхронізації, залишає статус `degraded`/`initial_sync` і ніколи хибно не встановлює `connected`.
 
-## 3. Gmail push → UI
+## 3. Шлях Gmail push → Інтерфейс (UI)
 
 ```text
 Gmail mailbox change
@@ -59,79 +61,79 @@ worker claims incremental job
 → UI refetches normalized owner-scoped data
 ```
 
-Push body is not treated as message content. Duplicate or out-of-order notifications are safe because sync starts from persisted cursor and writes are idempotent.
+Тіло push-запиту не розглядається як вміст повідомлення. Дубльовані або невпорядковані сповіщення є безпечними, оскільки синхронізація починається зі збереженого курсора, а операції запису є ідемпотентними.
 
-## 4. Gmail initial sync
+## 4. Початкова синхронізація Gmail
 
-### 4.1 Preparation
+### 4.1 Підготовка
 
-- account status `initial_sync`;
-- establish/renew watch first to reduce change gap;
-- persist watch expiration/history baseline;
-- create one initial-sync job with account idempotency key.
+- статус облікового запису переводиться в `initial_sync`;
+- спочатку створюється/поновлюється watch, щоб мінімізувати проміжок можливих змін;
+- зберігається час закінчення дії watch та базовий рівень історії (history baseline);
+- створюється одне завдання початкової синхронізації з ключем ідемпотентності облікового запису.
 
-### 4.2 Labels
+### 4.2 Мітки
 
-- fetch labels;
-- map provider system/user labels;
-- upsert by `(account, provider_label_id)`;
-- preserve unknown provider labels instead of dropping them.
+- завантаження списку міток;
+- відображення системних і користувацьких міток провайдера;
+- upsert за парою `(account, provider_label_id)`;
+- збереження невідомих міток провайдера замість їх відкидання.
 
-### 4.3 Messages
+### 4.3 Повідомлення
 
-- paginate message IDs using bounded page size;
-- checkpoint page token separately from final history cursor;
-- fetch message content with concurrency/rate limit;
-- normalize headers and addresses;
-- parse MIME recursively with depth, part count and decoded-size limits;
-- prefer text/plain; sanitize HTML; block remote images;
-- record attachment metadata; large attachment bytes are lazy jobs;
-- upsert message by provider id;
-- associate provider thread;
-- map labels;
-- update thread counts/latest timestamp.
+- пагінація ідентифікаторів повідомлень із використанням обмеженого розміру сторінки;
+- фіксація контрольної точки (checkpoint) токена сторінки окремо від фінального курсора історії;
+- завантаження вмісту повідомлень з обмеженням паралельності та частоти запитів (rate limit);
+- нормалізація заголовків та адрес;
+- рекурсивний розбір MIME з обмеженнями на глибину, кількість частин та розмір декодованих даних;
+- надання переваги `text/plain`; санітизація HTML; блокування зовнішніх зображень;
+- запис метаданих вкладень; байти великих вкладень вивантажуються відкладеними (lazy) завданнями;
+- upsert повідомлення за ідентифікатором провайдера;
+- прив’язка до ланцюжка провайдера;
+- відображення міток;
+- оновлення лічильників та часової мітки останнього повідомлення в ланцюжку.
 
-### 4.4 Completion
+### 4.4 Завершення
 
-- drain pages;
-- reconcile deletions only within explicit sync scope;
-- commit initial cursor and completed timestamp;
-- set account `connected` if watch remains valid;
-- enqueue neuro jobs only for changed content hashes;
-- publish revision.
+- вичерпання всіх сторінок пагінації;
+- узгодження видалень лише в межах явно визначеної області синхронізації;
+- фіксація початкового курсора та часової мітки завершення;
+- встановлення статусу облікового запису `connected`, якщо watch залишається валідним;
+- постановка в чергу нейрозавдань лише для змінених хешів вмісту;
+- публікація ревізії.
 
-Restart safety: the job can repeat a page without duplicate messages because provider IDs and idempotency keys are unique.
+Безпека перезапуску: завдання може повторно обробити сторінку без створення дублікатів повідомлень, оскільки ідентифікатори провайдера та ключі ідемпотентності є унікальними.
 
-## 5. Gmail incremental details
+## 5. Деталі інкрементальної синхронізації Gmail
 
-History changes handled:
+Зміни історії, що обробляються:
 
-- `messagesAdded`: fetch and upsert full metadata/content;
-- `messagesDeleted`: mark provider deletion/tombstone;
-- `labelsAdded`: upsert relation;
-- `labelsRemoved`: remove relation;
-- changes with only message id: fetch current provider state.
+- `messagesAdded`: завантаження та upsert повних метаданих/вмісту;
+- `messagesDeleted`: позначення видалення у провайдера (tombstone);
+- `labelsAdded`: upsert зв’язку;
+- `labelsRemoved`: видалення зв’язку;
+- зміни лише з ідентифікатором повідомлення: завантаження поточного стану від провайдера.
 
-Cursor rules:
+Правила роботи з курсором:
 
-- one active lease per account;
-- history pages processed in order;
-- cursor is not advanced on a failed page;
-- final cursor uses authoritative response/history result;
-- invalid `startHistoryId` sets recovery flag and schedules bounded rebootstrap;
-- periodic fallback runs even with active push.
+- одна активна оренда (lease) на обліковий запис;
+- сторінки історії обробляються послідовно;
+- курсор не просувається у разі збою на сторінці;
+- фінальний курсор використовує авторитетний результат відповіді історії;
+- невалідний `startHistoryId` встановлює прапорець відновлення та планує обмежений повторний bootstrap;
+- періодичний резервний механізм працює навіть за активного push-потоку.
 
-## 6. Gmail watch lifecycle
+## 6. Життєвий цикл Gmail watch
 
-- `users.watch` created after consent/token commit;
-- expiration persisted;
-- daily renewal job;
-- urgent renewal when expiration is near;
-- `users.stop` on disconnect where appropriate;
-- watch error does not delete mailbox data;
-- expired watch changes status to degraded and fallback sync continues.
+- `users.watch` створюється після отримання згоди та фіксації токена;
+- зберігається час закінчення дії (expiration);
+- щоденне завдання поновлення;
+- термінове поновлення, коли час закінчення дії наближається;
+- виклик `users.stop` при вимкненні облікового запису, де це доречно;
+- помилка watch не видаляє дані поштової скриньки;
+- прострочений watch змінює статус на `degraded`, а резервна синхронізація продовжує роботу.
 
-## 7. Microsoft notification → UI
+## 7. Шлях сповіщення Microsoft → Інтерфейс (UI)
 
 ```text
 Graph change notification
@@ -152,96 +154,96 @@ worker
 → neuro jobs + notifications + websocket revision
 ```
 
-Subscriptions are renewed before expiration. Lifecycle events trigger reauthorization or subscription recreation as appropriate.
+Підписки поновлюються до закінчення терміну їхньої дії. Події життєвого циклу запускають повторну авторизацію або перестворення підписки залежно від ситуації.
 
-## 8. MIME parser contract
+## 8. Контракт аналізатора MIME
 
-Input is untrusted. Limits:
+Вхідні дані вважаються недовіреними. Обмеження:
 
-- maximum raw message bytes;
-- maximum MIME depth;
-- maximum number of parts;
-- maximum decoded part size;
-- bounded header count/length;
-- charset allowlist/fallback;
-- no script execution;
-- HTML sanitizer;
-- remote images blocked;
-- `cid:` references rewritten only to scanned local attachments;
-- dangerous filenames normalized;
-- archive expansion disabled in ingestion.
+- максимальний розмір сирого повідомлення в байтах;
+- максимальна глибина вкладень MIME;
+- максимальна кількість частин (parts);
+- максимальний розмір декодованої частини;
+- обмежена кількість та довжина заголовків;
+- білий список кодувань символів (charset allowlist) та резервне кодування;
+- жодного виконання скриптів;
+- санітизатор HTML;
+- блокування зовнішніх зображень;
+- посилання `cid:` переписуються лише на перевірені локальні вкладення;
+- нормалізація небезпечних імен файлів;
+- розпакування архівів під час поглинання даних вимкнено.
 
-Parser result stores warnings. A malformed body does not discard basic sender/subject/date/provider identity.
+Результат роботи аналізатора зберігає попередження. Пошкоджене тіло листа не відкидає базову інформацію про відправника, тему, дату та ідентичність провайдера.
 
-## 9. Thread builder
+## 9. Побудовник ланцюжків
 
-Primary key is provider thread/conversation id. Internal builder:
+Первинним ключем є ідентифікатор ланцюжка/розмови провайдера. Внутрішній побудовник:
 
-- upserts thread;
-- links messages;
-- computes latest timestamp, unread/message counts and participants;
-- keeps provider semantics;
-- does not heuristically merge unrelated provider threads;
-- manual-import messages may use a distinct synthetic thread id.
+- виконує upsert ланцюжка;
+- зв’язує повідомлення;
+- обчислює часову мітку останнього листа, лічильники непрочитаних/усіх повідомлень та список учасників;
+- зберігає семантику провайдера;
+- не об’єднує евристично непов’язані ланцюжки провайдера;
+- повідомлення ручного імпорту можуть використовувати окремий синтетичний ідентифікатор ланцюжка.
 
-## 10. Label mapper
+## 10. Відображувач міток
 
-Internal labels preserve provider identity and expose normalized capabilities:
+Внутрішні мітки зберігають ідентичність провайдера та відкривають нормалізовані можливості:
 
-- inbox;
-- unread/read;
-- sent;
-- draft;
-- trash/deleted;
-- spam/junk;
-- starred/flagged;
-- user label/folder/category.
+- вхідні (inbox);
+- непрочитане/прочитане (unread/read);
+- надіслані (sent);
+- чернетки (draft);
+- кошик/видалені (trash/deleted);
+- спам/небажана пошта (spam/junk);
+- із зірочкою/прапорцем (starred/flagged);
+- користувацька мітка / тека / категорія.
 
-Provider write actions are adapter commands with idempotency and audit. UI triage is separate from provider labels unless the user explicitly enables a mapping rule.
+Дії запису у провайдера є командами адаптера з підтримкою ідемпотентності та аудиту. Тріаж в інтерфейсі відокремлений від міток провайдера, якщо користувач явно не ввімкнув правило відображення.
 
-## 11. Attachment pipeline
+## 11. Конвеєр обробки вкладень
 
-1. Store metadata during message parse.
-2. Policy decides eager vs lazy download.
-3. Download worker validates account/message ownership and token.
-4. Stream with size limit; compute SHA-256.
-5. Store in private object path.
-6. Scan/classify; mark clean/blocked/unsupported.
-7. UI never exposes bytes before safe status.
-8. Disconnect/retention cleanup deletes objects idempotently.
+1. Збереження метаданих під час розбору повідомлення.
+2. Політика визначає негайне (eager) або відкладене (lazy) завантаження.
+3. Воркер завантаження перевіряє право власності на обліковий запис/повідомлення та токен.
+4. Потокове завантаження з обмеженням розміру; обчислення SHA-256.
+5. Збереження за приватним шляхом в об’єктному сховищі.
+6. Сканування/класифікація; встановлення мітки `clean` / `blocked` / `unsupported`.
+7. Інтерфейс ніколи не відкриває доступ до байтів до отримання безпечного статусу.
+8. Очищення при вимкненні облікового запису або за політикою зберігання видаляє об’єкти ідемпотентно.
 
-## 12. Neuroinclusive pipeline
+## 12. Нейроінклюзивний конвеєр
 
-### 12.1 Deterministic pass
+### 12.1 Детермінований прохід
 
-- noise indicators;
-- sender/context extraction;
-- dates/action phrases;
-- deterministic citation segments;
-- conservative triage suggestion;
-- content hash.
+- індикатори інформаційного шуму;
+- вилучення даних про відправника та контекст;
+- дати та фрази, що вказують на необхідність дії;
+- детерміновані сегменти цитування;
+- консервативна пропозиція тріажу;
+- хеш вмісту.
 
-### 12.2 AI pass
+### 12.2 Прохід ШІ
 
-Only on changed, sanitized bounded text:
+Виконується лише на зміненому, санітизованому тексті обмеженого розміру:
 
-- system instruction treats email as data, never instructions;
-- schema output includes who/what/when/next action, confidence and citation references;
-- references must resolve to stored source segments;
-- invalid citations reject the artifact;
-- output always `requires_review=true`;
-- no provider mutation tools are available.
+- системна інструкція трактує лист виключно як дані, і ніколи як команди до виконання;
+- вивід за схемою містить поля хто/що/коли/наступна дія, рівень впевненості та посилання на цитати;
+- посилання повинні вказувати на збережені сегменти джерела;
+- невалідні цитати відхиляють артефакт;
+- результат завжди має `requires_review=true`;
+- жодні інструменти для мутації даних у провайдера недоступні.
 
-### 12.3 UI projection
+### 12.3 Проєкція в інтерфейсі
 
-- Focus View presents one message;
-- low energy exposes reply/task/snooze only;
-- silent resume-context persistence stores exact message/thread/panel context without an unsolicited prompt or rail;
-- Action/Waiting/Info/Later remains user-correctable;
-- soft reminders use calm thresholds;
-- no red backlog counters.
+- Режим фокусування (Focus View) показує одне повідомлення;
+- режим низької енергії відкриває лише дії відповісти / створити завдання / відкласти (snooze);
+- тихе збереження контексту відновлення фіксує точне повідомлення/ланцюжок/стан панелі без нав’язливих запитів чи бічних панелей;
+- стани До дії / Очікування / Інфо / Пізніше (Action/Waiting/Info/Later) залишаються відкритими для виправлення користувачем;
+- м’які нагадування використовують спокійні пороги спрацьовування;
+- жодних червоних лічильників накопиченої пошти.
 
-## 13. Send pipeline
+## 13. Конвеєр надсилання
 
 ```text
 user edits draft
@@ -259,48 +261,48 @@ user edits draft
 → audit and publish revision
 ```
 
-A timeout after provider call is ambiguous: worker checks provider message/idempotency evidence before retry. No automatic send from AI, reminder, background queue or low-energy shortcut.
+Таймаут після виклику провайдера є неоднозначним: воркер перевіряє наявність повідомлення у провайдера та докази ідемпотентності перед повторною спробою. Автоматичне надсилання через ШІ, нагадування, фонову чергу або скорочення режиму низької енергії заборонено.
 
-## 14. Retry and rate-limit policy
+## 14. Політика повторних спроб та обмеження частоти запитів
 
-- provider-specific classification (`401`, `403`, `404 cursor`, `409`, `429`, `5xx`);
-- exponential backoff + jitter;
-- honor Retry-After;
-- account-level concurrency caps;
-- token refresh lock;
-- separate cheap sync from AI enrichment;
-- stale UI remains readable during provider outage;
-- dead-letter records retain safe error code, not message content or token.
+- специфічна для провайдера класифікація кодів (`401`, `403`, `404 cursor`, `409`, `429`, `5xx`);
+- експоненційна затримка (exponential backoff) + випадкове відхилення (jitter);
+- дотримання заголовка `Retry-After`;
+- обмеження паралельності на рівні облікового запису;
+- блокування (lock) на оновлення токена;
+- відокремлення легкої синхронізації від збагачення даними ШІ;
+- застарілий інтерфейс залишається доступним для читання під час збою на боці провайдера;
+- записи dead-letter зберігають безпечний код помилки, а не вміст повідомлення чи токен.
 
-## 15. Recovery matrix
+## 15. Матриця відновлення
 
-| Failure | Recovery |
+| Збій | Відновлення |
 |---|---|
-| Duplicate webhook | Dedupe and return success |
-| Dropped Gmail push | Periodic history fallback |
-| Invalid Gmail history cursor | Recovery initial sync |
-| Expired Graph deltaLink | Folder-scoped rebootstrap |
-| Revoked refresh token | `reauth_required` |
-| Watch/subscription expired | Recreate; retain data |
-| MIME parse failure | Metadata-only record + warning |
-| AI unavailable | Deterministic cited summary remains |
-| Queue worker crash | Lease expiry and retry |
-| Send uncertain | Provider reconciliation, no blind retry |
-| Disconnect | Stop subscription, revoke/delete token, cleanup jobs |
+| Дубльований вебхук | Дедуплікація та повернення успішної відповіді |
+| Пропущений push від Gmail | Періодичний резервний прохід по історії (history fallback) |
+| Невалідний курсор історії Gmail | Відновлювальна початкова синхронізація |
+| Прострочений `deltaLink` у Graph | Повторний bootstrap на рівні теки |
+| Відкликаний refresh-токен | Перехід у стан `reauth_required` |
+| Закінчився термін дії watch/підписки | Перестворення зі збереженням наявних даних |
+| Збій розбору MIME | Запис лише метаданих + попередження |
+| ШІ недоступний | Залишається детерміноване резюме з цитатами |
+| Аварійне завершення воркера черги | Закінчення терміну оренди (lease expiry) та повторна спроба |
+| Невизначений результат надсилання | Узгодження зі станом провайдера, без сліпих повторів |
+| Вимкнення облікового запису | Зупинка підписки, відкликання/видалення токена, очищення завдань |
 
-## 16. Observability
+## 16. Спостережуваність
 
-Per account:
+Для кожного облікового запису відстежуються:
 
-- last push and last fallback sync;
-- watch/subscription expiration;
-- cursor age;
-- queue depth/retries/dead jobs;
-- messages changed;
-- parse warnings;
-- token refresh result;
-- rate-limit state;
-- websocket revision;
-- notification eligibility counts without punitive user-facing language.
+- час останнього push-сповіщення та останньої резервної синхронізації;
+- час закінчення дії watch/підписки;
+- вік курсора;
+- глибина черги / повторні спроби / мертві завдання (dead завдання);
+- кількість змінених повідомлень;
+- попередження аналізатора;
+- результат оновлення токена;
+- стан обмеження частоти запитів (rate-limit);
+- ревізія websocket;
+- лічильники відповідності критеріям сповіщень без каральних формулювань в інтерфейсі користувача.
 
-Operational metrics are separated from compassionate UI copy.
+Операційні метрики чітко відокремлені від доброзичливих текстів користувацького інтерфейсу.

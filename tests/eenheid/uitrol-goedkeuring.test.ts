@@ -1,3 +1,4 @@
+process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // Updates goedkeuren met de passkey van de eigenaar (RUNBOOK-VEILIGE-UITROL.md §13): WebAuthn-kern, root-hulp (onafhankelijke
 // controle, replay, eerste sleutel via SSH), mijn-ruimte-uitrol --goedkeuring end-to-end, en het contract van de app
 // (grants, voorbereiden, eigenaar-only, eenmalige challenge, agents keuren nooit goed). Echte handtekeningen via nep-passkey.
@@ -74,8 +75,13 @@ function rootOmgeving(basis: string, schakelaar = true): RootOmg {
   const env = { ...process.env, GOEDKEUR_SLEUTELS: sleutels, GOEDKEUR_RECHTEN: rechten, GOEDKEUR_STAAT: join(dir, 'staat'), GOEDKEUR_INBOX: inbox, GOEDKEUR_STATUS_DIR: statusDir, GOEDKEUR_GROEP: 'nogroup' };
   return { dir, env, sleutels, rechten, inbox, statusDir };
 }
+// Als root neemt de root-hulp (en het uitrolscript) bewust GEEN testpaden over (zie plafond). Dan draaien ze als 'nobody' op de eigen
+// tijdelijke map (zoals ssh-ca-beheer.test.ts) — nooit tegen de echte /etc/mijn-ruimte of /var/lib/mijn-ruimte-uitrol-status.
+const ALS_ROOT = process.getuid?.() === 0;
+const NIEMAND = 65534;
+const alsNiemand = (map: string) => { if (!ALS_ROOT) return {}; spawnSync('chown', ['-R', `${NIEMAND}:${NIEMAND}`, map]); spawnSync('chmod', ['o+x', join(map, '..')]); return { uid: NIEMAND, gid: NIEMAND }; };
 const hulp = (o: RootOmg, ...args: string[]) => {
-  const r = spawnSync(process.execPath, [HULP, ...args], { env: o.env, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [HULP, ...args], { ...alsNiemand(o.dir), env: o.env, encoding: 'utf8' });
   let uit: any = null; try { uit = JSON.parse(r.stdout.trim().split('\n').pop() || ''); } catch { uit = null; }
   return { status: r.status, stdout: r.stdout, stderr: r.stderr, uit };
 };
@@ -213,7 +219,7 @@ function uitrolTests(basis: string, check: Check) {
   const spoor = join(o.dir, 'spoor'); const stub = join(o.dir, 'stub.sh');
   writeFileSync(stub, `#!/bin/bash\necho "$1 $2" >> "${spoor}"\ncat "$2/UITROL-VERSIE" >> "${spoor}"\necho "stub-installatieregel voor $1"\necho "wachtwoord=GEHEIM-NIET-TONEN"\nsleep 3\n`); chmodSync(stub, 0o755);
   const env = { ...o.env, UITROL_GOEDKEUR_INBOX: o.inbox, UITROL_INBOX: join(o.dir, 'sig-inbox'), UITROL_WERK: werk, UITROL_STATUS_DIR: statusMap, UITROL_ONDERTEKENAARS: join(o.dir, 'geen'), UITROL_INSTALLEER: stub, UITROL_LOCK: join(o.dir, 'lock'), UITROL_GROEP: 'nogroup', UITROL_GOEDKEUR_HULP: `${process.execPath} ${HULP}` };
-  const draai = () => spawnSync('bash', [UITROL, '--goedkeuring'], { env, encoding: 'utf8' });
+  const draai = () => spawnSync('bash', [UITROL, '--goedkeuring'], { ...alsNiemand(o.dir), env, encoding: 'utf8' });
   const status = () => { try { return JSON.parse(readFileSync(join(statusMap, 'status.json'), 'utf8')); } catch { return {}; } };
   const spoorN = () => (existsSync(spoor) ? readFileSync(spoor, 'utf8').trim().split('\n').filter(Boolean).length : 0);
   const leg = (versie: string, goedkeuring: ((p: string) => string) | null) => {

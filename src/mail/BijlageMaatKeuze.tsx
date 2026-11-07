@@ -8,7 +8,7 @@ const LABEL: Record<BijlageMaat, [string, string]> = {
   scherm: ['Екран', 'Scherm'],
 };
 
-/** Швидкі налаштування: розмір спливаючого перегляду вкладення (блок 3, п. 6.2). */
+/** Швидкі налаштування: розмір спливного перегляду вкладення (блок 3, п. 6.2). */
 export default function BijlageMaatKeuze({ waarde, onKies, lang }: { waarde: unknown; onKies: (maat: BijlageMaat) => void; lang: 'uk' | 'nl' }) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const huidig = bijlageMaatVan(waarde);

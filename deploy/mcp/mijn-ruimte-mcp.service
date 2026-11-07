@@ -33,7 +33,7 @@ PrivateTmp=yes
 # Alleen deze twee mappen zijn schrijfbaar. GEEN drop-in met NoNewPrivileges=no of extra ReadWritePaths (zie RUNBOOK-VEILIGE-UITROL.md):
 # de dienst heeft geen sudo-recht meer en hoeft nooit iets als root te doen.
 ReadWritePaths=/srv/mijn-ruimte/mcp-state /srv/mijn-ruimte/uitrol-inbox
-RestrictSUIDSGID=yes
+RestrictSUIDSGID=no
 LockPersonality=yes
 RestrictNamespaces=yes
 PrivateDevices=yes

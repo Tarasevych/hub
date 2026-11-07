@@ -1,53 +1,55 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./canonical-account-menu-architecture.uk.md) · [🇳🇱 **Nederlandse versie**](./canonical-account-menu-architecture.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # CanonicalAccountMenu: архітектура станів і контракти
 
 ## 1. Призначення
 
-`CanonicalAccountMenu` є канонічним presentation-шаром для вибору вже відомого акаунта, запуску нового входу, завершення поточного входу та керування фото профілю. Компонент не визначає auth-політики й не створює власних account/session джерел.
+`CanonicalAccountMenu` є канонічним презентаційним шаром для вибору вже відомого облікового запису, запуску нового входу, завершення поточного входу та керування фото профілю. Компонент не визначає політики автентифікації й не створює власних джерел облікових записів чи сесій.
 
 Архітектура розділена на:
 
-- `src/CanoniekAccountMenu.tsx` — відкриття/закриття, expanded/collapsed UI, виклик переданих user actions і рендеринг;
-- `src/canoniek-account-menu-model.ts` — identity, deduplication, classification, MRU, visibility, preview candidates і photo resolution;
-- `src/canoniek-account-menu.css` — виключно стилі CanonicalAccountMenu;
-- backend session endpoints — авторитетний стан browser grants та активних сесій.
+- `src/CanoniekAccountMenu.tsx` — відкриття та закриття, розгорнутий і згорнутий інтерфейс, виклик переданих дій користувача та відмальовування;
+- `src/canoniek-account-menu-model.ts` — ідентичність, дедуплікація, класифікація, порядок нещодавнього використання (`MRU`), видимість, кандидати попереднього перегляду та визначення фото;
+- `src/canoniek-account-menu.css` — виключно стилі `CanonicalAccountMenu`;
+- кінцеві точки сесії бекенду — авторитетний стан браузерних дозволів та активних сесій.
 
 ## 2. Карта джерел даних
 
 | Дані | Джерело | Авторитетність | Використання |
 |---|---|---:|---|
-| Поточний акаунт | активний tab/session payload (`user`) | найвища | лише header меню |
-| Відомі акаунти | `/api/owner/session/accounts → accounts` | авторитетне | known/signed-in/reauth класифікації |
-| `snapshot.previews` | backend-проєкція тих самих browser grants | legacy, не окреме джерело | зберігається для сумісності, не використовується як provider candidate |
-| External candidates | `externalCandidates` із явним `source: provider або browser` | авторитетне лише за наявності реального feed | add-account preview |
-| Локальна history | `tsv-recent-account-previews-v1` (legacy `tsv_recent_account_previews_v1` мігрується один раз і видаляється) | допоміжна | лише уточнює MRU вже авторитетних identity |
-| Custom photo | `user.customPicture === true` + `user.picture`, або `customPhoto/customPicture` URL | авторитетне для presentation | перший photo priority |
-| Provider photo | `providerPicture` або звичайне `picture` | вторинне | другий photo priority |
+| Поточний обліковий запис | активні дані вкладки/сесії (`user`) | найвища | лише шапка меню |
+| Відомі облікові записи | `/api/owner/session/accounts → accounts` | авторитетне | класифікація відомих, активних та тих, що потребують повторного входу |
+| `snapshot.previews` | бекенд-проєкція тих самих браузерних дозволів | застаріле, не окреме джерело | зберігається для сумісності, не використовується як кандидат постачальника |
+| Зовнішні кандидати | `externalCandidates` із явним джерелом постачальника або браузера | авторитетне лише за наявності реального потоку | попередній перегляд додавання облікового запису |
+| Локальна історія | `tsv-recent-account-previews-v1` (застарілий `tsv_recent_account_previews_v1` мігрується один раз і видаляється) | допоміжна | лише уточнює порядок `MRU` вже авторитетних ідентичностей |
+| Власне фото | `user.customPicture === true` + `user.picture`, або URL `customPhoto`/`customPicture` | авторитетне для відображення | перший пріоритет фото |
+| Фото постачальника | `providerPicture` або звичайне `picture` | вторинне | другий пріоритет фото |
 
-History не створює `knownAccounts`, `signedInAccounts`, `reauthAccounts` або `externalConnectableCandidates`.
+Історія не створює `knownAccounts`, `signedInAccounts`, `reauthAccounts` або `externalConnectableCandidates`.
 
 ## 3. Попереднє дублювання та рішення
 
 До консолідації `CanoniekAccountMenu.tsx` окремо формував:
 
 1. `previewCandidates` із `accounts + previews + history`;
-2. `quickPreviews` через повторну status/grant-фільтрацію;
-3. `connectionPreviews` через другу, конфліктну status/history-фільтрацію;
-4. `authorizedAccountCount` через третю identity/status-фільтрацію;
-5. `accountRows = snapshot.accounts`, що повторно показувало current account у expanded list.
+2. `quickPreviews` через повторну фільтрацію статусів і дозволів;
+3. `connectionPreviews` через другу, суперечливу фільтрацію статусів та історії;
+4. `authorizedAccountCount` через третю фільтрацію ідентичності та статусів;
+5. `accountRows = snapshot.accounts`, що повторно показувало поточний обліковий запис у розгорнутому списку.
 
-`App.tsx` і `VerenigdDienstApp.tsx` додатково підміняли відсутні `previews` масивом `accounts`, створюючи ще одну паралельну preview-модель.
+`App.tsx` і `VerenigdDienstApp.tsx` додатково підміняли відсутні `previews` масивом `accounts`, створюючи ще одну паралельну модель попереднього перегляду.
 
-Доведення неавторитетності старої connection-preview логіки: backend `ownerGrantMenuData` формував `accounts` і `previews` з одного набору browser grant cookies. `previews` відрізнявся лише правилом menu visibility і лімітом, але не був provider/browser discovery feed. Тому він не може бути джерелом `externalConnectableCandidates`.
+Доведення неавторитетності старої логіки попереднього перегляду під'єднань: бекенд `ownerGrantMenuData` формував `accounts` і `previews` з одного набору реп'яшків браузерних дозволів. `previews` відрізнявся лише правилом видимості в меню та лімітом, але не був потоком виявлення від постачальника чи браузера. Тому він не може бути джерелом `externalConnectableCandidates`.
 
-## 4. Identity та deduplication
+## 4. Ідентичність та дедуплікація
 
 Єдиний контракт — `isSameAccount(left, right)`:
 
-1. якщо обидві сторони мають stable `id/accountId`, порівнюються тільки ці ID;
-2. normalized email використовується лише коли stable ID відсутній хоча б з одного боку;
-3. account-specific винятків немає.
+1. якщо обидві сторони мають стабільний `id`/`accountId`, порівнюються тільки ці ідентифікатори;
+2. нормалізована електронна адреса використовується лише тоді, коли стабільний ідентифікатор відсутній хоча б з одного боку;
+3. винятків для окремих облікових записів немає.
 
-`accountIdentityKey` використовується лише як стабільний React/key та допоміжний deterministic tie-breaker. Усі масиви deduplicate через `isSameAccount`.
+`accountIdentityKey` використовується лише як стабільний ключ React та допоміжний детермінований критерій впорядкування. Усі масиви дедуплікуються через `isSameAccount`.
 
 ## 5. Єдина модель
 
@@ -69,90 +71,90 @@ History не створює `knownAccounts`, `signedInAccounts`, `reauthAccounts
 
 ### Непорушні інваріанти
 
-1. `currentAccount` рендериться тільки в header.
+1. `currentAccount` відмальовується тільки в шапці меню.
 2. `otherKnownAccounts = knownAccounts - currentAccount` через `isSameAccount`.
 3. `signedInAccounts` містить лише `active` або `signed_in`.
-4. `externalConnectableCandidates` походить тільки з явного external feed, не з history, grants preview або reauth list.
-5. Preview не дублює current/known identity.
-6. MRU виконується тільки `sortAccountsByMru`.
-7. Порівняння identity виконується тільки `isSameAccount`.
+4. `externalConnectableCandidates` походить тільки з явного зовнішнього потоку, а не з історії, перегляду дозволів чи списку повторного входу.
+5. Попередній перегляд не дублює поточну чи відому ідентичність.
+6. Сортування за нещодавнім використанням (`MRU`) виконується тільки через `sortAccountsByMru`.
+7. Порівняння ідентичності виконується тільки через `isSameAccount`.
 8. Усі аватари використовують `resolveAccountPhoto`.
 
-## 6. State machine і visibility
+## 6. Скінченний автомат станів і видимість
 
-### Menu state
+### Стан меню
 
-- `closed` — panel не змонтований;
-- `open/collapsed` — panel відкритий, список інших акаунтів згорнутий;
-- `open/expanded` — panel відкритий, відображається `visibleExpandedAccounts`.
+- `closed` — панель не змонтована;
+- `open/collapsed` — панель відкрита, список інших облікових записів згорнутий;
+- `open/expanded` — панель відкрита, відображається `visibleExpandedAccounts`.
 
-Якщо `shouldShowOtherAccountsToggle === false`, `expanded` примусово повертається в `false`.
+Якщо `shouldShowOtherAccountsToggle === false`, стан `expanded` примусово повертається у `false`.
 
-### Account scenarios
+### Сценарії облікових записів
 
 | Сценарій | Поведінка |
 |---|---|
-| `currentAccount === null && knownAccounts.length === 0` | CTA `Увійти в обліковий запис через`; toggle і preview відсутні |
-| Один current account | toggle відсутній |
-| Current + мінімум один other known | toggle видимий |
-| Expanded | список містить тільки `otherKnownAccounts` |
-| Два або більше signed-in identity | `Вийти з усіх акаунтів` видимий |
-| Лише reauth/history identity | не збільшує signed-in count |
+| `currentAccount === null && knownAccounts.length === 0` | кнопка дії `Увійти в обліковий запис через`; перемикач і попередній перегляд відсутні |
+| Один поточний обліковий запис | перемикач відсутній |
+| Поточний + щонайменше один інший відомий | перемикач видимий |
+| Розгорнутий стан | список містить тільки `otherKnownAccounts` |
+| Дві або більше активних ідентичностей | кнопка `Вийти з усіх облікових записів` видима |
+| Лише ідентичності повторного входу або історії | не збільшує лічильник активних входів |
 
-## 7. Preview rules
+## 7. Правила попереднього перегляду
 
-- Collapsed toggle preview: `otherSignedInAccounts`, MRU, максимум `MAX_PREVIEW_ACCOUNTS = 3`.
-- Expanded add preview: тільки `externalConnectableCandidates`, MRU, максимум 3.
-- `reauthAccounts`, `knownAccounts`, `signedInAccounts`, legacy `previews` та history заборонено використовувати для add preview.
-- Якщо кандидатів немає, preview JSX не монтується.
-- Collapsed і expanded preview взаємовиключні в JSX; CSS не приховує зайвий DOM.
+- Попередній перегляд згорнутого перемикача: `otherSignedInAccounts`, порядок `MRU`, максимум `MAX_PREVIEW_ACCOUNTS = 3`.
+- Попередній перегляд додавання у розгорнутому стані: тільки `externalConnectableCandidates`, порядок `MRU`, максимум 3.
+- `reauthAccounts`, `knownAccounts`, `signedInAccounts`, застарілі `previews` та історію заборонено використовувати для попереднього перегляду додавання.
+- Якщо кандидатів немає, розмітка попереднього перегляду (`JSX`) не монтується.
+- Згорнутий і розгорнутий попередні перегляди взаємовиключні в `JSX`; `CSS` не приховує зайві вузли `DOM`.
 
-Поки backend не має перевіреного provider/browser discovery feed, він повертає `externalCandidates: []`. Це навмисний fail-closed контракт: краще не показати ілюстрацію, ніж видати history або grant за доступний зовнішній акаунт.
+Поки бекенд не має перевіреного потоку виявлення від постачальника чи браузера, він повертає `externalCandidates: []`. Це навмисний захищений контракт: краще не показати ілюстрацію, ніж видати історію або дозвіл за доступний зовнішній обліковий запис.
 
-## 8. Photo fallback
+## 8. Резервування фото
 
-`resolveAccountPhoto(account)` має єдиний порядок:
+`resolveAccountPhoto(account)` має єдиний порядок пріоритетів:
 
-1. custom photo;
-2. provider photo;
-3. initials.
+1. власне фото користувача;
+2. фото від постачальника;
+3. ініціали.
 
-URL проходить через `normalizeAvatarUrl`. Image rendering використовує `StableAvatar`, який попередньо перевіряє завантаження. Невдале зображення переходить до initials без browser broken-image icon і без циклічного `onError`.
+URL-адреса проходить через `normalizeAvatarUrl`. Відображення зображень використовує `StableAvatar`, який попередньо перевіряє завантаження. Невдале зображення переходить до ініціалів без піктограми пошкодженого зображення браузера і без циклічного `onError`.
 
-## 9. Camera control
+## 9. Керування камерою
 
-File-picker контракт не змінено:
+Контракт вибору файлу не змінено:
 
 - `image/jpeg`;
 - `image/png`;
 - `image/webp`.
 
-Camera button має стабільний розмір, `aria-label`, native tooltip (`title`), `aria-busy`, disabled/busy state, `:focus-visible` outline і явні contrast variables для light, dark, plum-light та plum-dark themes.
+Кнопка камери має стабільний розмір, `aria-label`, системну підказку (`title`), `aria-busy`, неактивний стан і стан зайнятості, контур `:focus-visible` та явні змінні контрастності для світлої, темної, сливово-світлої та сливово-темної тем.
 
-Backend як і раніше перевіряє MIME, magic bytes і розмір, зберігає custom photo та не перезаписує його наступним Google sign-in.
+Бекенд, як і раніше, перевіряє `MIME`-тип, сигнатуру байтів і розмір, зберігає власне фото та не перезаписує його під час наступного входу через Google.
 
 ## 10. Ризики й межі
 
-- External add preview навмисно порожній до появи окремого, перевіреного provider/browser feed.
-- Legacy `snapshot.previews` не видалений із transport type, щоб не ламати сумісність; model його ігнорує.
-- Auth, remembered switch, logout-current, logout-account-browser і logout-all flows не змінюються.
-- Меню не робить network polling і не зберігає auth tokens.
+- Зовнішній попередній перегляд додавання навмисно порожній до появи окремого перевіреного потоку від постачальника чи браузера.
+- Застаріле поле `snapshot.previews` не видалене з транспортного типу, щоб не порушувати сумісність; модель його ігнорує.
+- Потоки автентифікації, перемикання збережених облікових записів, виходу з поточного облікового запису, забування в браузері та виходу з усіх облікових записів не змінюються.
+- Меню не виконує мережевого опитування й не зберігає токенів автентифікації.
 
 ## 11. Регресійна матриця
 
-Blocking test/audit покривають:
+Блокувальні тести й аудит покривають:
 
 1. перший запуск;
-2. один акаунт;
-3. два акаунти — collapsed;
-4. два акаунти — expanded;
-5. logout-all visibility;
-6. 3–4 акаунти та MRU limit/order;
-7. broken provider photo → initials;
-8. custom photo priority;
-9. external candidates only для add preview;
-10. current account лише у header;
-11. mutual-exclusive preview JSX;
-12. mobile viewport;
-13. camera contrast/focus/busy contracts;
-14. release і rollback metadata.
+2. один обліковий запис;
+3. два облікові записи — згорнутий стан;
+4. два облікові записи — розгорнутий стан;
+5. видимість виходу з усіх облікових записів;
+6. 3–4 облікові записи та ліміт і порядок `MRU`;
+7. пошкоджене фото постачальника → ініціали;
+8. пріоритет власного фото;
+9. зовнішні кандидати лише для попереднього перегляду додавання;
+10. поточний обліковий запис лише у шапці меню;
+11. взаємовиключна розмітка `JSX` попереднього перегляду;
+12. мобільне вікно перегляду;
+13. контракти контрастності, фокусу та стану зайнятості кнопки камери;
+14. метадані випуску та повернення стану.

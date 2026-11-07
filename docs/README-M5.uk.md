@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./README-M5.uk.md) · [🇳🇱 **Nederlandse versie**](./README-M5.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # M5 Cloud Drivers — DevKit
 
 Це виключно вихідні файли/патч для розробників, НЕ пакет оновлення сайту.
@@ -16,4 +18,4 @@ node --experimental-strip-types --test tests/eenheid/cloud-m5-aanbieder-golf.tes
 node scripts/cloud-volledige-uitgave-poort.mjs # ЗОБОВ'ЯЗАНИЙ повернути BLOCKED доки немає live доказів
 ```
 
-Не копіюйте API keys у вихідні файли, архіви або браузер; реєстрація OAuth App і ключі B2/S3 виконуються лише на окремому staging.
+Не копіюйте API ключі у вихідні файли, архіви або браузер; реєстрація OAuth App і ключі B2/S3 виконуються лише на окремому staging.

@@ -88,7 +88,6 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
   .wb-tegel-inhoud{flex:none;min-height:auto;overflow:visible}
   .wb-snel{height:auto;grid-auto-rows:minmax(72px,auto)}
   .wb-balk-acties{margin-left:0;width:100%}
-  .wb-catalogus-lijst{max-height:none;overflow:visible}
 }
 @media (prefers-reduced-motion:reduce){.wb-tegel{transition:none}}
 
@@ -322,6 +321,10 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
   .wb-agenda-vandaag,.wb-alles,.wb-link-knop,.wb-acties button,.wb-zoek-rij,.wb-chips button{min-height:var(--tik-hoogte-mobiel)}
   .wb-balk-acties .knop-stil.is-klein:not(:has(> :not(svg))),.wb-agenda-knoppen .wb-icoonknop{min-width:var(--tik-hoogte-mobiel);width:var(--tik-hoogte-mobiel);height:var(--tik-hoogte-mobiel)}
   .wb-rijen li>a,.wb-snelkoppeling{min-height:var(--tik-hoogte-mobiel)}
+  /* Catalogus in het venster: op de telefoon scrollt alleen het venster (05.11.2026). Stond in het eerste mobiele blok en verloor daar
+     van de basisregel `.wb-catalogus-lijst{max-height:min(58vh,560px);overflow:auto}` verderop (zelfde specificiteit, later):
+     een lijst van 490 px met eigen scroll en ±2,5 kaarten in beeld. */
+  .wb-catalogus-lijst{max-height:none;overflow:visible}
   /* 23.10 (integratie, stand 390): met vier knoppen van 44 px bleef voor de maand maar «Жовтень 20…» over en sprong de laatste pijl naar
      een eigen regel. Op de telefoon: de maand op een eigen volle regel, de knoppen eronder over de hele breedte («Сьогодні» links). */
   .wb-agenda-balk{flex-wrap:wrap;row-gap:var(--ruimte-1)}
@@ -335,7 +338,7 @@ html.theme-dark .canonical-chrome[data-achtergrond='eigen'],html.theme-plum-dark
 .wb3 .wb3-widget{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
 .wb3 .wb3-widget .wb-tegel-inhoud{flex:1;min-height:0;overflow:auto}
 .wb3-niet{margin:.5rem;font-size:.85rem;opacity:.8}
-.wb3-bibliotheek{max-height:min(60vh,36rem);overflow:auto;margin:0 0 .75rem;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:var(--kleur-oppervlak)}
+.wb3-bibliotheek{max-height:min(60vh,36rem);overflow:auto;margin:0 0 .75rem;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:var(--panel)}
 .wb3-instellingen{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:0 0 .75rem}
 .wb3-veld{display:inline-flex;gap:.4rem;align-items:center;min-height:44px}
 .wb3-veld select{min-height:36px}

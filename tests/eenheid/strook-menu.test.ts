@@ -7,11 +7,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { readFileSync } from 'node:fs';
 import { checker } from './hulp/nep-google';
 import { groepeer, knopMenu, type KnopMenuContext } from '../../src/tech/strook-menu';
-import { StrookInstelInhoud, StrookKnopMenuInhoud } from '../../src/tech/StrookPaneel';
+import { nepBrowser } from './hulp/nep-browser';
 import { normaliseer } from '../../src/tech/strook-voorkeur';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('strook-menu');
+  // StrookPaneel laadt via HulpVraag → Vraag → tech-opslag → src/canoniek-dienst.ts, dat zijn runtime bij het importeren uit `window`
+  // leest: eerst de nepbrowser (tests/eenheid/hulp/nep-browser.ts), dan pas de module laden (niet bovenaan importeren).
+  nepBrowser();
+  const { StrookInstelInhoud, StrookKnopMenuInhoud } = await import('../../src/tech/StrookPaneel');
   const log: string[] = [];
   const ctx = (o: Partial<KnopMenuContext>): KnopMenuContext => ({
     uk: true, id: 'beheer', naam: 'Адміністрування', plek: 1, aantal: 4, kiesbaar: true, modus: 'auto', label: 'beide',
@@ -70,7 +74,7 @@ export async function main(): Promise<number> {
     const uk = renderToStaticMarkup(createElement(StrookInstelInhoud, { uk: true, voorkeur: v, onWijzig: () => undefined, onSluit: () => undefined }));
     const nl = renderToStaticMarkup(createElement(StrookInstelInhoud, { uk: false, voorkeur: v, onWijzig: () => undefined, onSluit: () => undefined }));
     check('paneel uk: modi, grootte en vorm (woorden van de eigenaar), uitleg bij de modus', ['Розгорнуто', 'Згорнуто', 'Автоматично', 'Малі', 'Лише піктограми', 'Піктограми з написами', 'Лише написи', 'розгортається, коли наводите'].every((w) => uk.includes(w)));
-    check('paneel: kop zoals een venster (titel + sluitknop), radiogroepen met aria-checked', uk.includes('class="tech-strook-kop"') && uk.includes('tech-strook-titel') && uk.includes('aria-label="Закрити"') && (uk.match(/role="radiogroup"/g) || []).length === 3 && /role="radio" aria-checked="true"[^>]*>Автоматично/.test(uk));
+    check('paneel: kop zoals een venster (titel + sluitknop), radiogroepen met aria-checked', uk.includes('class="tech-strook-kop"') && uk.includes('tech-strook-titel') && uk.includes('aria-label="Закрити"') && (uk.match(/role="radiogroup"/g) || []).length === 3 && /role="radio"[^>]*aria-checked="true"[^>]*>Автоматично/.test(uk));
     check('paneel: elke rij sleepbaar met een greep, ↑/↓ en een vinkje; zichtbare knoppen eerst', (uk.match(/draggable="true"/g) || []).length >= 10 && uk.includes('tech-strook-greep') && /data-strook-rij="meldingen"[\s\S]*data-strook-rij="uit"[\s\S]*data-strook-rij="wissel"/.test(uk));
     check('paneel nl: geen Oekraïense of Engelse woorden in de tekst', !/[А-Яа-яІіЇїЄєҐґ]/.test(nl.replace(/<[^>]+>/g, '')) && !/\b(Settings|Close|Mode|Size|Reset|Buttons)\b/.test(nl.replace(/<[^>]+>/g, ' ')) && nl.includes('Alleen pictogrammen') && nl.includes('Standaard herstellen'));
   }

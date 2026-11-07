@@ -75,7 +75,7 @@ export default function AgentsPanel({ tr, service = 'mcp' }: { tr: Tr; service?:
   }, tr('Дія вже недійсна.', 'Deze actie is niet meer geldig.'));
 
   const command = pairing
-    ? `node agent.mjs pair --server ${location.origin} --code ${pairing.code} --name "${tr('Мій ПК', 'Mijn pc')}" --root <${tr('ДОЗВОЛЕНА_ПАПКА', 'TOEGESTANE_MAP')}> --allow git,node\nnode agent.mjs run`
+    ? `node agent.mjs pair --server ${location.origin} --code ${pairing.code} --name "${tr('Мій ПК', 'Mijn pc')}" --root <${tr('ДОЗВОЛЕНА_ТЕКА', 'TOEGESTANE_MAP')}> --allow git,node\nnode agent.mjs run`
     : '';
 
   return (

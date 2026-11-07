@@ -6,7 +6,7 @@ export type Os = 'windows' | 'macos' | 'linux';
 export const winQuote = (value: string) => `"${value.replace(/"/g, '').replace(/(\\+)$/, '$1$1')}"`;
 export const posixQuote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`;
 /** Typische fout: in de uitleg stond "<TOEGESTANE_MAP>" en de gebruiker liet de punthaken staan (in PowerShell is "<" gereserveerd). */
-export const looksLikePlaceholder = (value: string) => /[<>"|?*]/.test(value) || /ДОЗВОЛЕНА|TOEGESTANE|ПАПКА|FOLDER/i.test(value);
+export const looksLikePlaceholder = (value: string) => /[<>"|?*]/.test(value) || /ДОЗВОЛЕНА|TOEGESTANE|ТЕКА|FOLDER/i.test(value);
 
 /** `readonlyRoots`: mappen die de agent alleen mag lezen en tonen (agent 0.3.1+, `--readonly-root`), bv. back-ups op R:\. */
 export function buildAgentCommands(opts: { shell: Shell; server: string; code: string; name: string; roots: string[]; readonlyRoots?: string[]; allow: string[] }): string[] {

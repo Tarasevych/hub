@@ -1,10 +1,12 @@
-# BUG-002 — «Перевірка всіх адрес» springt zelf open en dicht
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./LOGBOEK.uk.md) · [🇳🇱 **Nederlandse versie**](./LOGBOEK.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-Reproductie: `node --experimental-strip-types tests/e2e/scan-melding.e2e.ts <uitmap>`. Dat is de echte component `ContactenScanMelding` tegen een
-nepserver. Die bootst na: HTTP 502 op `scan/status` en `scan/start`, een time-out (afgebroken verzoek) en een run die de server na zijn eigen pogingen als «fout» opgeeft.
-Daarnaast doet het script een tabwissel naar «Контакти», een nieuwe mount (sessiecontrole), het periodieke bijwerken en verversen. De volledige logboeken staan in `logboek-{voor,na}-{computer,telefoon}.json`.
+# BUG-002 — вікно «Перевірка всіх адрес» саме відкривається і закривається
 
-## Voor de fix (computer 1440, uittreksel)
+Відтворення: `node --experimental-strip-types tests/e2e/scan-melding.e2e.ts <uitmap>`. Це справжній компонент `ContactenScanMelding` проти
+імітованого сервера. Він імітує: HTTP 502 на `scan/status` і `scan/start`, таймаут (перерваний запит) і прогін, який сервер після власних спроб завершує зі станом «fout» (помилка).
+Крім того, скрипт виконує перемикання вкладки на «Контакти», повторне монтування (перевірка сесії), періодичне оновлення та перезавантаження сторінки. Повні журнали лежать у `logboek-{voor,na}-{computer,telefoon}.json`.
+
+## До виправлення (комп'ютер 1440, витяг)
 ```
   1565  zicht venster:open → venster:klein     GEBRUIKER minimaliseert
  10572  GEBRUIKER wisselt naar «Контакти» en terug
@@ -20,9 +22,9 @@ Daarnaast doet het script een tabwissel naar «Контакти», een nieuwe mo
    137  zicht geen → venster:open               ← na verversen weer open, ondanks «Згорнути»
   2752  net scan/status → time-out              ← en weer stil
 ```
-Samenvatting: het venster ging na de keuze «Згорнути» 3 keer vanzelf open. Er waren 4 aanroepen van `scan/auto` en 2 verzoeken tegelijk. Na een 502 of time-out werd de stand niet meer bijgewerkt.
+Підсумок: після вибору «Згорнути» вікно 3 рази відкривалося саме. Було 4 виклики `scan/auto` і 2 запити одночасно. Після 502 або таймауту стан більше не оновлювався.
 
-## Na de fix (computer 1440, uittreksel)
+## Після виправлення (комп'ютер 1440, витяг)
 ```
   1563  zicht venster:open → venster:klein     GEBRUIKER minimaliseert
  10576  zicht venster:klein → geen              (tabblad «Контакти»: daar staat het paneel zelf)
@@ -34,25 +36,25 @@ Samenvatting: het venster ging na de keuze «Згорнути» 3 keer vanzelf o
    143  zicht geen → venster:klein              ← keuze bewaard na verversen
   2759  net scan/status → 200
 ```
-Samenvatting: het venster ging 0 keer vanzelf open en er was steeds 1 verzoek tegelijk. `scan/auto` werd 1 keer per paginabezoek aangeroepen (daarna pas weer na 15 min). De voortgang liep door na 502 en time-out.
-Op de telefoon (390) hetzelfde: de strook blijft in de stand die de gebruiker koos.
+Підсумок: вікно 0 разів відкрилося саме, і щоразу виконувався лише 1 запит одночасно. `scan/auto` викликався 1 раз на відвідування сторінки (наступний раз лише через 15 хв). Прогрес продовжував оновлюватися після 502 і таймауту.
+На телефоні (390) те саме: смужка залишається в тому стані, який обрав користувач.
 
-## Oorzaak in gewone woorden
-1. Het venster bestond alleen zolang de controle «iets te melden» had. Telkens als dat even niet zo was, werd het weggehaald en daarna nieuw neergezet. Dat gebeurde bij een tabwissel, een nieuwe mount, een run die als fout eindigde en opnieuw begon, het bijwerken en bij verversen.
-   Het vensterbeheer onthoudt «geminimaliseerd» alleen zolang het venster bestaat, dus het nieuwe venster opende gewoon weer.
-2. De controle zelf werd door meerdere mechanismen tegelijk aangestuurd:
-   - elke mount riep `scan/auto` opnieuw aan;
-   - elk paneel (melding en instellingen/«Контакти») hervatte apart;
-   - na elke nieuwe «fout» kwam er weer een nieuwe hervatting, bovenop de 12 pogingen van de server. Daar zat geen grens op.
-3. Eén mislukte statusvraag (502 of time-out) stopte het bijhouden van de voortgang zonder melding.
+## Причина простими словами
+1. Вікно існувало лише доти, доки перевірка «мала про що повідомити». Щоразу, коли на мить це було не так, вікно прибиралося і створювалося заново. Це ставалося під час перемикання вкладки, нового монтування, прогону, що завершився помилкою і почався знову, оновлення та перезавантаження сторінки.
+   Менеджер вікон пам'ятає стан «згорнуто» лише доки вікно існує, тому нове вікно просто відкривалося знову.
+2. Сама перевірка керувалася кількома механізмами одночасно:
+   - кожне монтування заново викликало `scan/auto`;
+   - кожна панель (сповіщення і налаштування/«Контакти») відновлювала роботу окремо;
+   - після кожної нової «помилки» запускалося нове відновлення поверх 12 спроб сервера. Обмеження на це не було.
+3. Один невдалий запит стану (502 або таймаут) зупиняв відстеження прогресу без жодного повідомлення.
 
-## Oplossing
-- `src/afzenders/scan-weergave.ts` scheidt de controle van het venster:
-  - de keuze open, klein of weg wordt per sessie bewaard en bij elke nieuwe mount teruggezet;
-  - het venster blijft nog 6 s staan na een korte wissel, zodat het niet knippert;
-  - het korte bijwerken opent het venster niet zelf;
-  - `scan/auto` gaat hoogstens 1 keer per 15 min;
-  - automatisch hervatten: steeds 1 tegelijk, hoogstens 3 keer per bezoek, minstens 30 s ertussen;
-  - starten gebeurt steeds met 1 verzoek tegelijk.
-- `src/afzenders/api.ts`: een mislukte statusvraag wordt opnieuw gesteld met een groeiende pauze (2,5 tot 30 s, hoogstens 12 keer).
-- Pauze, stoppen, hervatten vanaf de bewaarde pagina (server) en de herhaalladder van de server blijven ongewijzigd.
+## Рішення
+- `src/afzenders/scan-weergave.ts` відокремлює перевірку від вікна:
+  - вибір «відкрито», «згорнуто» або «приховано» зберігається на сесію і відновлюється при кожному новому монтуванні;
+  - вікно залишається ще на 6 с після короткого перемикання, щоб не блимати;
+  - коротке оновлення не відкриває вікно самостійно;
+  - `scan/auto` виконується щонайбільше 1 раз на 15 хв;
+  - автоматичне відновлення: завжди 1 одночасно, щонайбільше 3 рази за відвідування, щонайменше 30 с між спробами;
+  - запуск завжди виконується 1 запитом одночасно.
+- `src/afzenders/api.ts`: невдалий запит стану повторюється зі зростальною паузою (від 2,5 до 30 с, щонайбільше 12 разів).
+- Пауза, зупинка, відновлення зі збереженої сторінки (сервер) та шкала повторів сервера залишаються без змін.

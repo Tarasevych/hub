@@ -46,6 +46,7 @@ export function maakOverdrachtPakket(o) {
   if (git('merge-base', '--is-ancestor', takBasis, head) === null) return { zaken: [fout('BASIS_NIET_IN_HEAD', `база гілки ${takBasis.slice(0, 12)} (taak.basisCommit) не є предком HEAD — роботу зроблено не від заявленої бази`, `basis van de tak ${takBasis.slice(0, 12)} is geen voorouder van HEAD`)] };
   const basis = basisVoorPakket(o.wortel, o.beleid);
   if (git('cat-file', '-e', `${basis.commit}^{commit}`) === null) z.push(waarsch('BASIS_ONBEKEND', `встановлений commit ${basis.commit.slice(0, 12)} невідомий локально — підсумок «від установки» не пораховано`, `geïnstalleerde commit ${basis.commit.slice(0, 12)} lokaal onbekend — geen samenvatting sinds de installatie`));
+  else if (git('merge-base', '--is-ancestor', basis.commit, head) === null && basis.commit !== o.beleid.basis.bronCommit && git('merge-base', '--is-ancestor', o.beleid.basis.bronCommit, head) !== null) z.push(waarsch('BASIS_ONBEKEND', `встановлений commit ${basis.commit.slice(0, 12)} з до-рерайтної історії (канонічна база ${o.beleid.basis.bronCommit.slice(0, 12)} у HEAD)`, `geïnstalleerde commit ${basis.commit.slice(0, 12)} uit herschreven geschiedenis (canonieke basis ${o.beleid.basis.bronCommit.slice(0, 12)} in HEAD)`));
   const basisBekend = !z.length;
   if (basisBekend && git('merge-base', '--is-ancestor', basis.commit, head) === null) return { zaken: [fout('INSTALLATIE_NIET_IN_HEAD', `встановлена база ${basis.commit.slice(0, 12)} не є предком HEAD — пакет ставив би код, що не містить установленого; спершу rebase на integratie`, `geïnstalleerde basis ${basis.commit.slice(0, 12)} is geen voorouder van HEAD — eerst rebase`)] };
   if (versie <= basis.versie) return { zaken: [fout('NIET_NIEUWER', `версія ${versie} не новіша за встановлену ${basis.versie}`, `versie ${versie} is niet nieuwer dan de geïnstalleerde ${basis.versie}`)] };
@@ -55,6 +56,30 @@ export function maakOverdrachtPakket(o) {
   const werk = mkdtempSync(join(tmpdir(), 'orch-pakket-'));
   try {
     const env = { ...process.env, AUTEUR: String(o.auteur), AGENT: agent, SAMENVATTING: sam.uk, BASIS_VERSIE: basis.versie, BASIS_COMMIT: basis.commit, UITROL_VERSIE_OVERRIDE: versie };
+    // TRACE-001: log is inhoud van HEAD. Een werkmapbestand dat niet gecommit is telt niet.
+    if (versie >= '20261103-211555') {
+      const pad = `orchestratie/ontwikkelarchieven/${o.taakId}.json`;
+      let bytes;
+      try { bytes = execFileSync('git', ['show', `HEAD:${pad}`], {cwd:o.wortel, maxBuffer:256_000}); }
+      catch { return { zaken: [fout('GEEN_ONTWIKKELARCHIEF',
+        `Комічений журнал ${pad} не знайдено — пакет не можна створити`,
+        `Gecommit dossier ${pad} ontbreekt — pakket kan niet gebouwd worden`)] }; }
+      if (bytes.length > 256_000) return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','журнал завеликий','ontwikkeldossier te groot')] };
+      let dossier;
+      try { dossier=JSON.parse(bytes.toString('utf8')); } catch { return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','неправильний JSON журналу','ongeldige JSON van dossier')] }; }
+      if (dossier?.schema !== 1 || dossier?.taakId !== o.taakId ||
+          !['tijdlijn','keuzes','wijzigingen','controles','bronnen','beperkingen'].every((k)=>Array.isArray(dossier[k]) && dossier[k].length)) {
+        return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','журнал без обов’язкових розділів','dossier mist verplichte rubrieken')] };
+      }
+      const ref = { schema:1, taakId:o.taakId, repo:'Tarasevych/hub', tak, commit:head, pad,
+        sha256:createHash('sha256').update(bytes).digest('hex'),
+        url:`https://github.com/Tarasevych/hub/blob/${head}/${pad}`,
+        release:`https://github.com/Tarasevych/hub/releases/tag/${versie}`,
+        pakket:`mijn-ruimte-${versie}.tar.gz` };
+      const refPad=join(werk,'ONTWIKKELARCHIEF.json');
+      writeFileSync(refPad,JSON.stringify(ref,null,2)+'\n');
+      env.ONTWIKKELARCHIEF_BESTAND=refPad;
+    }
     if (o.manifestPad) env.MANIFEST = resolve(o.manifestPad);
     if (o.testresultatenPad) env.TESTRESULTATEN_BESTAND = resolve(o.testresultatenPad);
     const r = spawnSync('bash', [join(o.wortel, 'deploy/uitrol/maak-voorstelpakket.sh'), werk, basisBekend ? basis.commit : 'HEAD'], { cwd: o.wortel, env, encoding: 'utf8' });
@@ -73,6 +98,10 @@ export function maakOverdrachtPakket(o) {
     writeFileSync(join(map, `${basename(tarPad)}.sha256`), `${sha}  ${basename(tarPad)}\n`);
     copyFileSync(join(werk, `mijn-ruimte-${versie}.voorstel.json`), join(map, `mijn-ruimte-${versie}.voorstel.json`));
     if (o.manifestPad) copyFileSync(resolve(o.manifestPad), join(map, 'UITROL-MANIFEST.json'));
+    if (env.ONTWIKKELARCHIEF_BESTAND) {
+      copyFileSync(env.ONTWIKKELARCHIEF_BESTAND, join(map, 'ONTWIKKELARCHIEF.json'));
+      copyFileSync(join(o.wortel, `orchestratie/ontwikkelarchieven/${o.taakId}.json`), join(map, 'ONTWIKKEL-DOSSIER.json'));
+    }
     let tests = null;
     if (o.testresultatenPad) { copyFileSync(resolve(o.testresultatenPad), join(map, 'TESTRESULTATEN.json')); try { tests = JSON.parse(readFileSync(resolve(o.testresultatenPad), 'utf8')); } catch { tests = null; } }
     else writeFileSync(join(map, 'TESTRESULTATEN.json'), JSON.stringify({ geslaagd: null, mislukt: null, uitleg: { uk: 'результати тестів не додано до пакета', nl: 'geen testresultaten meegegeven' } }, null, 2));

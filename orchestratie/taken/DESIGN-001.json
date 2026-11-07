@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "DESIGN-001",
+  "agent": "codex",
+  "tak": "feature/design-001-20261105-140000",
+  "basisCommit": "6e815a00307dd9c00a0b2907838be099be8c5610",
+  "basisVersie": "20261104-204906",
+  "regelsVersie": "1.4.2",
+  "regelsHash": "f5e5f6bc7ddaa067b60f643c16cbeb7510d9b75df5d72ed5178106a8042dbb0a",
+  "staat": "in_progress",
+  "gestart": "2026-11-05T00:46:40.347Z",
+  "bijgewerkt": "2026-11-05T00:51:46.919Z",
+  "omschrijving": "Адаптивне оновлення візуальної системи",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

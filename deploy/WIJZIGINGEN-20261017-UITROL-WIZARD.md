@@ -1,69 +1,71 @@
-# Wizard «Нове оновлення», voorcontrole, nazorg-bewaker, agent-grants en technisch profiel — 17 oktober 2026 (tweede pakket)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-UITROL-WIZARD.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-UITROL-WIZARD.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-Voortbouwend op `WIJZIGINGEN-20261017-UITROL-DASHBOARD.md`. Alles hieronder is in code en test aangetoond; wat niet kon worden bewezen
-(omdat het alleen op de echte server gebeurt) staat onder «Niet bewezen».
+# Майстер «Нове оновлення», попередня перевірка, сторож післянагляду, дозволи агентів і технічний профіль — 17 жовтня 2026 (другий пакет)
 
-## 1. Technisch profiel (migratie 0048)
-- Vaste duren: 8 uur erbij (eigenaar-plafond 480 min). Rollen met een plafond < 240 min (beheerder, 60) krijgen **geen** open einde.
-- «До виходу з акаунта» en «До виходу з технічного profile» hebben geen tijdslimiet meer (technische achtervang 366 dagen in de database).
-- Het profiel eindigt bij uitloggen (`beeindigenBijUitloggen`, aangeroepen bij uitloggen van deze browser/het account/overal/alle browsers).
-- Het dialoogvenster toont geen «(не довше …)»-tekst meer; de balk toont «до виходу з акаунта / з профілю».
+Продовжує `WIJZIGINGEN-20261017-UITROL-DASHBOARD.md`. Усе наведене нижче доведено в коді й тестах; те, що не можна було довести
+(оскільки воно відбувається лише на справжньому сервері), зазначено в розділі «Не доведено».
 
-## 2. Wizard «Нове оновлення» (`src/uitrol/Upload.tsx`, vervangt «крок 5»)
-Vijf stappen: Файл → Перевірка → Завантаження → Схвалення → Встановлення. Na elke afgeronde stap scrollt de pagina naar de volgende,
-geeft de hoofdknop focus en pulseert de stap (met `prefers-reduced-motion`-terugval).
-- Bestandskaart met pictogram, grootte, datum en een **X** om de keuze te wissen; «Почати спочатку».
-- Bestandssoort wordt op de **inhoud** (magic bytes) herkend (`bestandssoort.ts`): geen tar.gz → uitleg wat het wel is (zip, 7z, rar, pdf, afbeelding, Office, programma, tekst…) en wat te doen.
-- De vier fasen bovenaan (Підготовка / Схвалення / Перевірки / Розгортання) beginnen **opnieuw** voor het gekozen bestand; de vorige run is een gedempte samenvatting. Een afgeronde run krijgt «Це завершене розгортання».
-- Tegels: bestand, versie, samengesteld, auteur, agent, commit, aantal bestanden, sha256, actieve versie.
-- «Що змінено» is **verplicht** en komt uit het bestand `SAMENVATTING` in het archief (niet meer te typen). Ontbreekt het (of AUTEUR/AGENT), dan is installeren niet mogelijk; de uitleg en de oplossing staan erbij. Ook de server weigert (`GEEN_AGENT`/`GEEN_SAMENVATTING` in het root-script en de voorcontrole).
-- «Версія не новіша» wordt al in de browser getoond (de server weigert dit ook).
+## 1. Технічний профіль (міграція 0048)
+- Фіксовані тривалості: додано 8 годин (стеля власника — 480 хв). Ролі зі стелею < 240 хв (адміністратор, 60) **не** отримують режимів без обмеження часу.
+- «До виходу з облікового запису» та «До виходу з технічного профілю» більше не мають обмеження в часі (технічний запобіжник у базі даних — 366 днів).
+- Профіль завершується під час виходу (`beeindigenBijUitloggen`, викликається при виході з цього браузера/облікового запису/всюди/усіх браузерів).
+- У діалоговому вікні більше немає тексту «(не довше …)»; смуга показує «до виходу з облікового запису / з профілю».
 
-## 3. Voorcontrole vóór de goedkeuring (migratie 0049, `backend/uitrol-voorcontrole.ts`)
-Na het uploaden pakt de site het archief in een tijdelijke map uit en controleert (zonder iets uit te voeren): structuur, versie, AUTEUR/AGENT/SAMENVATTING,
-`bash -n` van alle shell-scripts, bouwbestanden (package.json, lock, vite, serverbundel), nieuwe migraties (waarschuwing bij DROP/TRUNCATE/DELETE zonder WHERE…),
-geheimen (alleen bestandsnamen), en de tests die de voorbereider meldde. Faalt het: status `afgebroken` (`VOORCONTROLE_MISLUKT`), nooit goedkeurbaar.
-Het resultaat staat als lijst met pictogrammen, uitleg per controle en details in stap 4 en in «Чекають схвалення».
-Bewust **niet** in de voorcontrole: `npm ci`/build (dat gebeurt geïsoleerd in de installer) en een proefrun van migraties.
+## 2. Майстер «Нове оновлення» (`src/uitrol/Upload.tsx`, замінює «крок 5»)
+П'ять кроків: Файл → Перевірка → Завантаження → Схвалення → Встановлення. Після кожного завершеного кроку сторінка прокручується до наступного,
+передає фокус головній кнопці й підсвічує крок пульсацією (із урахуванням `prefers-reduced-motion`).
+- Картка файла з піктограмою, розміром, датою і кнопкою **X** для очищення вибору; «Почати спочатку».
+- Тип файла розпізнається за **вмістом** (magic bytes, `bestandssoort.ts`): якщо це не `tar.gz` — пояснення, що саме це за файл (zip, 7z, rar, pdf, зображення, Office, програма, текст…) і що робити.
+- Чотири фази зверху (Підготовка / Схвалення / Перевірки / Розгортання) починаються **заново** для вибраного файла; попередній запуск показується приглушеним зведенням. Завершений запуск отримує позначку «Це завершене розгортання».
+- Плитки: файл, версія, зібрано, автор, агент, коміт, кількість файлів, sha256, активна версія.
+- Поле «Що змінено» є **обов'язковим** і береться з файла `SAMENVATTING` в архіві (більше не вводиться вручну). Якщо його немає (або немає `AUTEUR`/`AGENT`), встановлення неможливе; поряд показано пояснення та спосіб виправлення. Сервер також відхиляє такі пакети (`GEEN_AGENT`/`GEEN_SAMENVATTING` у root-скрипті та попередній перевірці).
+- «Версія не новіша» показується вже в браузері (сервер також це відхиляє).
 
-## 4. Terugdraaien als u niet bij de server bent (`deploy/uitrol/mijn-ruimte-nazorg.sh`)
-- `installeer-app.sh`: na activering 40 s bewaking (pid-wissel of 3 mislukte gezondheidscontroles → automatisch terugdraaien).
-- Daarna 30 minuten een aparte root-timer (`mijn-ruimte-nazorg.timer`): 3 mislukte `/__gezondheid`-controles → `mijn-ruimte-installeer terugdraaien <vorige release>`; resultaat in `gebeurtenissen.jsonl` (`NAZORG_TERUGGEDRAAID` / `NAZORG_MISLUKT`) en op de pagina.
-- De site kan zichzelf niet terugdraaien als hij down is; daarom is de bewaker een root-dienst buiten de site.
-- **Databasemigraties worden bij terugdraaien niet teruggedraaid** (alleen de code); daarom de waarschuwing in de voorcontrole en de back-up vóór migratie.
+## 3. Попередня перевірка перед схваленням (міграція 0049, `backend/uitrol-voorcontrole.ts`)
+Після завантаження сайт розпаковує архів у тимчасову теку й перевіряє (нічого не запускаючи): структуру, версію, `AUTEUR`/`AGENT`/`SAMENVATTING`,
+`bash -n` усіх shell-скриптів, файли складання (`package.json`, lock, vite, серверний бандл), нові міграції (попередження при `DROP`/`TRUNCATE`/`DELETE` без `WHERE`…),
+секрети (лише назви файлів) і тести, про які повідомив підготовник. У разі невдачі: статус `afgebroken` (`VOORCONTROLE_MISLUKT`), схвалити неможливо.
+Результат показується списком із піктограмами, поясненням кожної перевірки та деталями на кроці 4 і в «Чекають схвалення».
+Свідомо **не** входить до попередньої перевірки: `npm ci`/складання (це виконується ізольовано в інсталяторі) та пробний прогін міграцій.
 
-## 5. Wie bereidt updates voor
-- Probleem (bewezen in code): een grant van soort `mcp-koppeling` hangt aan één OAuth-tokenrij en duurt standaard 1 dag. Verbindt de AI opnieuw (of verloopt de dag), dan is het een ander token: de agent staat nog in de lijst, maar `actieveGrant` vindt niets → «GEEN_VOORBEREIDER_GRANT».
-- Oplossing (migratie 0050): nieuwe soort **`agent`** (claude, gpt, grok, gemini, copilot, cursor). Geldt voor elke koppeling van die agent in de **technische** ruimte van dat account, tot hij verloopt (max. 30 dagen) of wordt uitgezet. Privé-koppelingen tellen nooit mee.
-- UI: kaarten met monogram-avatar, resterende tijd, waarschuwing bij een verweesde grant, «Додати агента» (venster met agentkeuze, 1/7/30 dagen), «Вимкнути доступ» in plaats van «Відкликати» (reden blijft verplicht: het getroffen account krijgt een melding), en een uitleg «Чому агент у списку, але не може розгортати?».
-- In «Останні розгортання» staat nu wie voorbereidde en de auteur/agent uit het pakket.
+## 4. Повернення стану, коли ви не біля сервера (`deploy/uitrol/mijn-ruimte-nazorg.sh`)
+- `installeer-app.sh`: після активації 40 с нагляду (зміна PID або 3 невдалі перевірки здоров'я → автоматичний повернення стану).
+- Далі упродовж 30 хвилин окремий root-таймер (`mijn-ruimte-nazorg.timer`): 3 невдалі перевірки `/__gezondheid` → `mijn-ruimte-installeer terugdraaien <попередній реліз>`; результат записується в `gebeurtenissen.jsonl` (`NAZORG_TERUGGEDRAAID` / `NAZORG_MISLUKT`) і показується на сторінці.
+- Сайт не може сам себе повернути попередній стан, якщо він упав; тому сторож є окремою root-службою поза сайтом.
+- **Міграції бази даних при поверненні стану не скасовуються** (повертається до попереднього стану лише код); саме тому є попередження у попередній перевірці та резервна копія перед міграцією.
 
-### Hoe wordt de agent herkend, en wat als een andere agent uploadt?
-- `AUTEUR` en `AGENT` in het pakket zijn **zelf opgegeven** (tekst, `^[a-z][a-z0-9-]{1,31}$`); ze zijn informatie voor de eigenaar, geen bewijs.
-- De werkelijke voorbereider komt uit de **grant** waarmee geüpload is (account, agenttoken of MCP-koppeling/agent) en staat los daarvan in de lijst («Підготував»).
-- Heeft een andere agent geen grant, dan weigert de site de upload (`GEEN_VOORBEREIDER_GRANT`). Heeft hij er wel een, dan wordt zijn naam getoond; het pakket kan nog steeds een andere `AGENT` claimen — daarom beslist altijd u met de passkey.
-- Goedkeuren kan **alleen** met een passkey (WebAuthn, ≤ 5 min, gebonden aan de sha256). Google-login, wachtwoord, sms of 2FA keuren geen uitrol goed; dat is bewust zo.
+## 5. Хто готує оновлення
+- Проблема (доведена в коді): дозвіл типу `mcp-koppeling` прив'язаний до одного рядка OAuth-токена і типово діє 1 день. Якщо ШІ перепід'єднується (або минає день), токен стає іншим: агент досі у списку, але `actieveGrant` нічого не знаходить → `GEEN_VOORBEREIDER_GRANT`.
+- Рішення (міграція 0050): новий вид дозволу **`agent`** (`claude`, `gpt`, `grok`, `gemini`, `copilot`, `cursor`). Діє для будь-якого під'єднання цього агента в **технічному** просторі відповідного облікового запису, доки не мине строк (макс. 30 днів) або його не вимкнуть. Приватні під'єднання ніколи не враховуються.
+- Інтерфейс: картки з аватаром-монограмою, залишком часу, попередженням при «осиротілому» дозволі, «Додати агента» (вікно з вибором агента, 1/7/30 днів), «Вимкнути доступ» замість «Відкликати» (причина лишається обов'язковою: відповідний обліковий запис отримує сповіщення), а також пояснення «Чому агент у списку, але не може розгортати?».
+- В «Останні розгортання» тепер видно, хто підготував пакет, а також автора/агента із самого пакета.
 
-## 6. Overig
-- Terminal: kleuren voor labels `[uitrol]`/`[installeer]`, commando's, paden, vlaggen, versies, aantallen, strings en sleutelwoorden; ANSI-codes worden omgezet (`terminal-kleur.ts`, 18 tests). Op aanraakschermen lager (geen scrollval).
-- Regeltijden: een run die laat in beeld komt krijgt verdeelde tijden (geen identieke); deelstappen tonen begin en duur.
-- Pagina ververst in pakketten van 2000 regels zonder wachttijd; foutmelding bij 502/503/504 («сервер перезапускається») verdwijnt vanzelf en heeft een sluitknop; succesmeldingen verdwijnen na 12 s.
-- Журнал-tabblad kiest de lopende run; gebeurteniscodes (GOEDGEKEURD, OK, …) zijn vertaald.
-- Dubbele «Оновити»: de bovenste knop van het beheerpaneel (herlaadt alleen paneelgegevens) is verborgen op de updates-pagina; de eigen knop herlaadt overzicht en lijst.
-- «Діагностика»: Oekraïens, uitvoerbare opdrachten met «?», gekleurd logboek, whitelist-uitvoering (`backend/uitrol-diagnose-run.ts`).
-- «Доступ ШІ»: nieuw ontwerp (zoeken, filters, groepsacties, controlelijst voor Розгортання).
+### Як розпізнається агент і що буде, якщо завантажить інший агент?
+- `AUTEUR` і `AGENT` у пакеті **вказані самим відправником** (текст, `^[a-z][a-z0-9-]{1,31}$`); це інформація для власника, а не доказ.
+- Справжній підготовник визначається з **дозволу (grant)**, за яким виконано завантаження (обліковий запис, токен агента або під'єднання MCP/агент), і показується окремо у списку («Підготував»).
+- Якщо інший агент не має дозволу, сайт відхиляє завантаження (`GEEN_VOORBEREIDER_GRANT`). Якщо дозвіл у нього є, показується його ім'я; пакет при цьому все одно може заявляти інший `AGENT` — тому остаточне рішення завжди приймаєте ви за допомогою passkey.
+- Схвалити розгортання можна **лише** за допомогою passkey (WebAuthn, ≤ 5 хв, прив'язаний до sha256). Вхід через Google, пароль, SMS чи 2FA не схвалюють розгортання; це зроблено свідомо.
 
-## Tests
-Nieuw/bijgewerkt: `uitrol-voorcontrole` 23, `uitrol-nazorg` 10, `terminal-kleur` 18, `uitrol-diagnose-run` 40, `uitrol-runs` 41, `uitrol-goedkeuring` 167/168, `uitrol-herstel` 31, `tar-lezen` 15, `ai-beleid` 27, `tech-profiel` 35/37.
-Bestaande, niet door deze wijziging veroorzaakte fouten (ook op het basispakket): `tech-profiel` «niet aan jezelf» en «app-rol kan niet schrijven», `uitrol-goedkeuring` «db: mijnruimte_app heeft geen toegang», 4× RLS-app-rol in `toegang-context` (testomgeving zonder app-rol).
-Browser (Chromium, uk/nl, licht/donker, 390 px): wizard 53 controles, dashboard 32 controles. De e2e `tests/e2e/uitrol-meester.e2e.ts` is aangepast aan de wizard maar kon hier niet draaien.
+## 6. Інше
+- Термінал: кольори для міток `[uitrol]`/`[installeer]`, команд, шляхів, прапорців, версій, чисел, рядків і ключових слів; ANSI-коди перетворюються (`terminal-kleur.ts`, 18 тестів). На сенсорних екранах блок нижчий (щоб не потрапляти в пастку прокрутки).
+- Час рядків: запуск, який з'являється на екрані із запізненням, отримує розподілений час (а не однаковий); підкроки показують початок і тривалість.
+- Сторінка оновлюється пачками по 2000 рядків без затримки; повідомлення про помилку при 502/503/504 («сервер перезапускається») зникає самостійно і має кнопку закриття; повідомлення про успіх зникають через 12 с.
+- Вкладка «Журнал» автоматично вибирає поточний запуск; коди подій (`GOEDGEKEURD`, `OK`, …) перекладено.
+- Подвійна кнопка «Оновити»: верхня кнопка панелі адміністрування (перезавантажує лише дані панелі) прихована на сторінці оновлень; власна кнопка сторінки перезавантажує огляд і список.
+- «Діагностика»: українська мова, виконувані команди з «?», кольоровий журнал, виконання за білим списком (`backend/uitrol-diagnose-run.ts`).
+- «Доступ ШІ»: новий дизайн (пошук, фільтри, групові дії, контрольний список для Розгортання).
 
-## Niet bewezen
-- Gedrag op de echte server: het nazorg-timer/-script op systemd, de 40 s-bewaking met een echte crash, en de e2e met echte Chrome en passkey.
-- Welke clientnaam Claude bij de OAuth-registratie gebruikt; de nieuwe agent-grant is daar onafhankelijk van (hij gebruikt de agent uit `/ai/<slug>`).
-- De inhoud van het live AI-beleid.
+## Тести
+Нові/оновлені: `uitrol-voorcontrole` 23, `uitrol-nazorg` 10, `terminal-kleur` 18, `uitrol-diagnose-run` 40, `uitrol-runs` 41, `uitrol-goedkeuring` 167/168, `uitrol-herstel` 31, `tar-lezen` 15, `ai-beleid` 27, `tech-profiel` 35/37.
+Наявні помилки, не спричинені цією зміною (такі самі на базовому пакеті): `tech-profiel` «niet aan jezelf» та «app-rol kan niet schrijven», `uitrol-goedkeuring` «db: mijnruimte_app heeft geen toegang», 4× RLS-app-rol у `toegang-context` (тестове середовище без ролі застосунку).
+Браузер (Chromium, uk/nl, світла/темна тема, 390 px): майстер — 53 перевірки, панель керування — 32 перевірки. E2E `tests/e2e/uitrol-meester.e2e.ts` адаптовано до майстра, але тут він не міг бути запущений.
 
-## Uitrollen
-1. `sudo bash deploy/installeer-app.sh installeren .` (migraties 0048–0050; installeert ook het nazorg-script en de timer).
-2. Na de installatie: «Налаштування» → «Хто готує оновлення» → «Додати агента» → Claude (30 dagen). Verweesde oude Claude-grants uitzetten.
-3. Controleren: `systemctl list-timers mijn-ruimte-nazorg.timer` en op de pagina «Діагностика».
+## Не доведено
+- Поведінка на справжньому сервері: таймер/скрипт післянагляду (nazorg) на systemd, 40-секундний нагляд зі справжнім падінням, а також e2e зі справжнім Chrome і passkey.
+- Яке ім'я клієнта використовує Claude під час реєстрації OAuth; новий дозвіл типу `agent` від цього не залежить (він визначає агента з `/ai/<slug>`).
+- Вміст живої політики ШІ на сервері.
+
+## Розгортання
+1. `sudo bash deploy/installeer-app.sh installeren .` (міграції 0048–0050; також встановлює скрипт післянагляду і таймер).
+2. Після встановлення: «Налаштування» → «Хто готує оновлення» → «Додати агента» → Claude (30 днів). Вимкнути «осиротілі» старі дозволи Claude.
+3. Перевірити: `systemctl list-timers mijn-ruimte-nazorg.timer` і на сторінці «Діагностика».

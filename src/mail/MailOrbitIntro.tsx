@@ -2,7 +2,7 @@
 // Alle namen, logo's en echte koppelwijzen komen uitsluitend uit het bestaande register.
 // Een niet-beschikbare dienst wordt nooit als koppelknop getekend.
 import { useId, useState } from 'react';
-import { ArrowRight, Check, ChevronRight, CircleHelp, LockKeyhole, Mail, MousePointer2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, CircleHelp, LockKeyhole, MousePointer2, ShieldCheck, Sparkles } from 'lucide-react';
 import Logo from '../merk/MerkLogo';
 import { MAIL_AANBIEDERS, mailAanbiederHeeftKnop, type MailAanbieder } from '../../shared/mail-aanbieders';
 import './mail-orbit-intro.css';
@@ -25,6 +25,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
   const catalogusId = useId();
   const actief = KOPPELBAAR.find((a) => a.id === hover) || null;
   const oauth = actief?.wijze === 'oauth-google' || actief?.wijze === 'oauth-microsoft';
+  const hoofdDienst = actief || KOPPELBAAR[0]!;
 
   return (
     <section className={'mail-orbit-intro' + (variant === 'inbox' ? ' is-inbox' : '')} data-mail-orbit-intro={variant} aria-label={t('Вибір поштового сервісу', 'Een e-maildienst kiezen')}>
@@ -32,16 +33,25 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
         <span className='mail-orbit-kicker'><Sparkles aria-hidden='true' size={15} /> {t('Пошта · Нове підключення', 'E-mail · Nieuwe koppeling')}</span>
         <h2>{variant === 'inbox' ? t('Ваша пошта починається тут.', 'Uw e-mail begint hier.') : t('Уся пошта. Один простір.', 'Al uw e-mail. Eén ruimte.')}</h2>
         <p>{variant === 'inbox'
-          ? t('Gmail ще не підключено. Оберіть поштовий сервіс — вікно підключення відкриється тут.', 'Gmail is nog niet gekoppeld. Kies een e-maildienst — het koppelvenster opent hier.')
+          ? t('Підключіть скриньку та керуйте всією поштою в одному просторі.', 'Koppel uw mailbox en beheer al uw e-mail op één plek.')
           : t('Підключіть першу скриньку. Листи різних сервісів і керування акаунтами будуть в одному місці.', 'Koppel uw eerste mailbox. E-mail van meerdere diensten en accountbeheer komen samen op één plek.')}</p>
+        {variant === 'inbox' && KOPPELBAAR[0] ? (
+          <button type='button' className='mail-orbit-desktop-hoofdknop' onClick={() => onSelect(KOPPELBAAR[0])}
+            aria-label={t('Підключити ', 'Koppelen: ') + KOPPELBAAR[0].naam}>
+            <Logo id={KOPPELBAAR[0].id} naam={KOPPELBAAR[0].naam} logo={KOPPELBAAR[0].merk} maat={24} />
+            <span>{t('Підключити Gmail', 'Gmail koppelen')}</span>
+            <ArrowRight size={19} aria-hidden='true' />
+          </button>
+        ) : null}
       </div>
 
       <div className='mail-orbit-stage' data-mail-orbit-active={actief ? 'ja' : 'nee'}
         onMouseLeave={() => setHover(null)}
         onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null); }}>
         <div className='mail-orbit-baan' aria-hidden='true'><span /><span /></div>
+        <div className='mail-orbit-lichtpunten' aria-hidden='true'><i /><i /><i /><i /><i /><i /></div>
         <div className='mail-orbit-kern' aria-hidden='true'>
-          <span className='mail-orbit-kern-brief'><Mail size={58} strokeWidth={1.1} /></span>
+          <span className='mail-orbit-kern-brief'><Logo id={hoofdDienst.id} naam={hoofdDienst.naam} logo={hoofdDienst.merk} maat={61} /></span>
           <span className='mail-orbit-kern-schaduw' />
         </div>
 
@@ -80,6 +90,23 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
         ) : null}
       </div>
 
+      <p className='mail-orbit-mobiel-aanwijzing'><MousePointer2 size={14} aria-hidden='true' /> {t('Торкніться конверта, щоб підключити пошту', 'Tik op een envelop om e-mail te koppelen')}</p>
+      {!actief && hoofdDienst ? <button type='button' className='mail-orbit-mobiel-hoofdknop' onClick={() => onSelect(hoofdDienst)}
+        aria-label={t('Підключити ', 'Koppelen: ') + hoofdDienst.naam}>
+        {t('Підключити ', 'Koppelen: ') + hoofdDienst.naam} <ArrowRight size={19} aria-hidden='true' />
+      </button> : null}
+      <div className='mail-orbit-mobiel-snel' aria-label={t('Популярні поштові сервіси', 'Populaire e-maildiensten')}>
+        <h3>{t('Оберіть поштовий сервіс', 'Kies een e-maildienst')}</h3>
+        <div className='mail-orbit-mobiel-snel-raster'>
+          {KOPPELBAAR.slice(0, 4).map((a) => (
+            <button key={a.id} type='button' className='mail-orbit-mobiel-snel-item' onClick={() => onSelect(a)} aria-label={t('Підключити ', 'Koppelen: ') + a.naam}>
+              <Logo id={a.id} naam={a.naam} logo={a.merk} maat={28} />
+              <span>{a.naam}</span>
+              <ChevronRight size={16} aria-hidden='true' />
+            </button>
+          ))}
+        </div>
+      </div>
       <div className='mail-orbit-onder'>
         <p id={catalogusId + '-hint'}><MousePointer2 size={16} aria-hidden='true' /> {t('Наведіть курсор або натисніть на конверт', 'Beweeg uw aanwijzer naar een envelop of tik erop')}</p>
         <div className='mail-orbit-knoppen'>

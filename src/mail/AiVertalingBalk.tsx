@@ -733,7 +733,7 @@ export default function AiVertalingBalk({
                 data-testid="ai-vb-save-defaults"
               >
                 <Check size={13} />
-                <span>Зберегти поточного агента й мову ({taalLabelUk(selectedLang)}) за замовчуванням</span>
+                <span>Зберегти поточного агента й мову ({taalLabelUk(selectedLang)}) типово</span>
               </button>
               <a href={AI_TOEGANG_HREF} className="ai-vb-toegang-link">
                 Керувати дозволами агентів у «Доступ ШІ» →

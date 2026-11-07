@@ -1,3 +1,4 @@
+process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // SEC-001 (31.10.2026): regressie- en verificatiesuite voor alle bevindingen SEC-001-01 t/m SEC-001-16.
 import { createCipheriv, randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -61,7 +62,7 @@ export async function main(): Promise<number> {
   // ---------------------------------------------------------------- SEC-001-02: centrale SSRF-bescherming
   {
     const nietPubliek = [
-      '127.0.0.1', '203.0.113.10', '169.254.169.254', '100.64.0.1',
+      '127.0.0.1', '10.0.0.10', '169.254.169.254', '100.64.0.1',
       '::1', '0:0:0:0:0:0:0:1', '::ffff:127.0.0.1', '::ffff:7f00:1', '::ffff:0:127.0.0.1',
       '2002:7f00:0001::1', '2002:0a4d:000a::1',
       '2001:0000:4136:e378:8000:63bf:3fff:fdd2',

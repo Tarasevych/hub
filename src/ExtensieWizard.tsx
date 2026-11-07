@@ -49,7 +49,7 @@ function detectOs(): OsKey {
 /** Схематична ілюстрація вікна браузера з підсвіченим місцем, куди треба натиснути. Це не знімок екрана: розташування в різних браузерах трохи відрізняється, підпис пояснює точно. */
 function Mock({ kind, tr, browser }: { kind: 'devmode' | 'load' | 'folder'; tr: Tr; browser: string }) {
   return (
-    <svg className='wiz-mock' viewBox='0 0 420 200' role='img' aria-label={kind === 'devmode' ? tr('Де ввімкнути режим розробника', 'Waar u de ontwikkelaarsmodus aanzet') : kind === 'load' ? tr('Де натиснути «Завантажити розпаковане»', 'Waar u "Uitgepakt laden" kiest') : tr('Вибір папки розширення', 'De map van de extensie kiezen')}>
+    <svg className='wiz-mock' viewBox='0 0 420 200' role='img' aria-label={kind === 'devmode' ? tr('Де ввімкнути режим розробника', 'Waar u de ontwikkelaarsmodus aanzet') : kind === 'load' ? tr('Де натиснути «Завантажити розпаковане»', 'Waar u "Uitgepakt laden" kiest') : tr('Вибір теки розширення', 'De map van de extensie kiezen')}>
       <rect x='4' y='4' width='412' height='192' rx='12' className='m-win' />
       <rect x='4' y='4' width='412' height='30' rx='12' className='m-bar' />
       <circle cx='20' cy='19' r='4' className='m-dot r' /><circle cx='34' cy='19' r='4' className='m-dot y' /><circle cx='48' cy='19' r='4' className='m-dot g' />
@@ -58,9 +58,9 @@ function Mock({ kind, tr, browser }: { kind: 'devmode' | 'load' | 'folder'; tr: 
       {kind === 'folder' ? (
         <>
           <rect x='40' y='54' width='340' height='120' rx='8' className='m-card' />
-          <text x='54' y='78' className='m-text'>{tr('Виберіть папку', 'Kies de map')}</text>
+          <text x='54' y='78' className='m-text'>{tr('Виберіть теку', 'Kies de map')}</text>
           <rect x='54' y='92' width='312' height='24' rx='6' className='m-field' /><text x='62' y='108' className='m-small'>…\MijnRuimte-extension</text>
-          <rect x='54' y='128' width='120' height='30' rx='8' className='m-hl' /><text x='64' y='148' className='m-btn'>{tr('Вибір папки', 'Map selecteren')}</text>
+          <rect x='54' y='128' width='120' height='30' rx='8' className='m-hl' /><text x='64' y='148' className='m-btn'>{tr('Вибір теки', 'Map selecteren')}</text>
         </>
       ) : (
         <>
@@ -118,21 +118,21 @@ export default function ExtensionWizard(p: WizardProps) {
     try {
       const out = await installExtensionToPickedFolder({ origin: location.origin, sha256: pkgSha, file: pkgFile, onStage: setPickBusy });
       setPicked(out); setDownloaded(true); p.onDownloaded();
-      emitCanonicalNotice({ text: tr(`Розширення збережено в папку «${out.folderName}/${SUBFOLDER}»`, `Extensie opgeslagen in map "${out.folderName}/${SUBFOLDER}"`), kind: 'success', source: 'browser', retain: true });
+      emitCanonicalNotice({ text: tr(`Розширення збережено в теку «${out.folderName}/${SUBFOLDER}»`, `Extensie opgeslagen in map "${out.folderName}/${SUBFOLDER}"`), kind: 'success', source: 'browser', retain: true });
     } catch (e) {
       const code = e instanceof PickerFailure ? e.code : 'WRITE';
       if (code !== 'CANCELLED') setPickError(({
-        UNSUPPORTED: tr('Цей браузер не вміє обирати папку. Скористайтеся командою в терміналі.', 'Deze browser kan geen map kiezen. Gebruik het commando in de terminal.'),
-        BLOCKED: tr('Браузер не дозволяє цю папку (системні й кореневі папки заблоковані). Створіть власну папку, наприклад D:\\Розширення, і оберіть її.', 'De browser staat deze map niet toe (systeem- en hoofdmappen zijn geblokkeerd). Maak een eigen map, bijvoorbeeld D:\\Extensies, en kies die.'),
-        DENIED: tr('Доступ до папки не надано. Натисніть кнопку ще раз і дозвольте запис.', 'Geen toegang tot de map. Klik opnieuw en sta schrijven toe.'),
+        UNSUPPORTED: tr('Цей браузер не вміє обирати теку. Скористайтеся командою в терміналі.', 'Deze browser kan geen map kiezen. Gebruik het commando in de terminal.'),
+        BLOCKED: tr('Браузер не дозволяє цю теку (системні й кореневі теки заблоковані). Створіть власну теку, наприклад D:\\Розширення, і оберіть її.', 'De browser staat deze map niet toe (systeem- en hoofdmappen zijn geblokkeerd). Maak een eigen map, bijvoorbeeld D:\\Extensies, en kies die.'),
+        DENIED: tr('Доступ до теки не надано. Натисніть кнопку ще раз і дозвольте запис.', 'Geen toegang tot de map. Klik opnieuw en sta schrijven toe.'),
         DOWNLOAD: tr('Не вдалося завантажити розширення з сайту.', 'De extensie kon niet van de site worden gehaald.'),
         SHA: tr('Контрольна сума не збігається: файл не записано.', 'De controlesom klopt niet: er is niets opgeslagen.'),
         BAD_ZIP: tr('Архів розширення пошкоджений або небезпечний: файл не записано.', 'Het archief is beschadigd of onveilig: er is niets opgeslagen.'),
-        WRITE: tr('Не вдалося записати файли в папку. Оберіть іншу папку.', 'Schrijven naar de map is mislukt. Kies een andere map.'),
+        WRITE: tr('Не вдалося записати файли в теку. Оберіть іншу теку.', 'Schrijven naar de map is mislukt. Kies een andere map.'),
       } as Record<string, string>)[code]);
     } finally { setPickBusy(''); }
   };
-  // Папку обирає користувач (на якому диску — його справа); жодного шляху за замовчуванням, нічого не створюється на диску, який він не обрав.
+  // Теку обирає користувач (на якому диску — його справа); жодного шляху типово, нічого не створюється на диску, який він не обрав.
   const folderOk = os === 'windows' ? /^([A-Za-z]:\\[^<>|?*"]+|%[A-Za-z_]+%\\[^<>|?*"]+|\\\\[^\\]+\\[^<>|?*"]+)$/.test(folder.trim()) : /^(~\/|\/)[^\0]{2,}$/.test(folder.trim());
   const folderChoices: Array<[string, string]> = os === 'windows'
     ? ['T', 'R', 'D', 'E', 'F', 'G', 'H'].map((d) => [`${d}:`, `${d}:\\MijnRuimte-extension`])
@@ -185,7 +185,7 @@ export default function ExtensionWizard(p: WizardProps) {
             </div> : null}
           </div> : null}
           <div className='wiz-tabs' role='tablist' aria-label={tr('Спосіб встановлення', 'Installatiemethode')}>
-            {p.release.sha256 && folderPickerSupported() ? <button type='button' role='tab' aria-selected={method === 'picker'} onClick={() => setMethod('picker')}><FolderOpen aria-hidden='true' />{tr('Кнопка: оберіть папку (рекомендовано)', 'Knop: kies een map (aanbevolen)')}</button> : null}
+            {p.release.sha256 && folderPickerSupported() ? <button type='button' role='tab' aria-selected={method === 'picker'} onClick={() => setMethod('picker')}><FolderOpen aria-hidden='true' />{tr('Кнопка: оберіть теку (рекомендовано)', 'Knop: kies een map (aanbevolen)')}</button> : null}
             {p.release.sha256 ? <button type='button' role='tab' aria-selected={method === 'terminal'} onClick={() => setMethod('terminal')}><Download aria-hidden='true' />{tr('Команда в терміналі (рекомендовано)', 'Commando in de terminal (aanbevolen)')}</button> : null}
             {hasHelper ? <button type='button' role='tab' aria-selected={method === 'helper'} onClick={() => setMethod('helper')}><Download aria-hidden='true' />{tr('Помічник (найпростіше)', 'Installatiehulp (eenvoudigst)')}</button> : null}
             <button type='button' role='tab' aria-selected={method === 'zip'} onClick={() => setMethod('zip')}><FileArchive aria-hidden='true' />{tr('ZIP (вручну)', 'ZIP (handmatig)')}</button>
@@ -198,64 +198,64 @@ export default function ExtensionWizard(p: WizardProps) {
           </div>
           {method === 'picker' && p.release.sha256 ? (
             <>
-              <p>{tr('Натисніть кнопку — відкриється вікно вашої системи, де ви самі обираєте будь-який диск і папку (не обов’язково C:). Розширення завантажиться, перевіриться (SHA-256) і запишеться в підпапку «MijnRuimte-extension» всередині обраної. Термінал не потрібен.', 'Klik op de knop: het venster van uw systeem opent, waar u zelf elke schijf en map kiest (niet per se C:). De extensie wordt gedownload, gecontroleerd (SHA-256) en opgeslagen in de submap "MijnRuimte-extension" binnen de gekozen map. Geen terminal nodig.')}</p>
-              <button type='button' className='wiz-primary' disabled={!!pickBusy} onClick={() => void pickFolder()}>{pickBusy ? <LoaderCircle className='wiz-spin' aria-hidden='true' /> : <FolderOpen aria-hidden='true' />}{pickBusy === 'download' ? tr('Завантажуємо…', 'Downloaden…') : pickBusy === 'verify' ? tr('Перевіряємо…', 'Controleren…') : pickBusy === 'write' ? tr('Записуємо файли…', 'Bestanden schrijven…') : picked ? tr('Обрати іншу папку', 'Andere map kiezen') : tr('Обрати папку й встановити', 'Map kiezen en installeren')}</button>
-              {picked ? <p className='wiz-ok' role='status'>{tr(`Готово: ${picked.files} файлів записано в «${picked.folderName}/${SUBFOLDER}». Не видаляйте цю папку.`, `Klaar: ${picked.files} bestanden opgeslagen in "${picked.folderName}/${SUBFOLDER}". Verwijder deze map niet.`)}</p> : null}
+              <p>{tr('Натисніть кнопку — відкриється вікно вашої системи, де ви самі обираєте будь-який диск і теку (не обов’язково C:). Розширення завантажиться, перевіриться (SHA-256) і запишеться в підтеку «MijnRuimte-extension» всередині обраної. Термінал не потрібен.', 'Klik op de knop: het venster van uw systeem opent, waar u zelf elke schijf en map kiest (niet per se C:). De extensie wordt gedownload, gecontroleerd (SHA-256) en opgeslagen in de submap "MijnRuimte-extension" binnen de gekozen map. Geen terminal nodig.')}</p>
+              <button type='button' className='wiz-primary' disabled={!!pickBusy} onClick={() => void pickFolder()}>{pickBusy ? <LoaderCircle className='wiz-spin' aria-hidden='true' /> : <FolderOpen aria-hidden='true' />}{pickBusy === 'download' ? tr('Завантажуємо…', 'Downloaden…') : pickBusy === 'verify' ? tr('Перевіряємо…', 'Controleren…') : pickBusy === 'write' ? tr('Записуємо файли…', 'Bestanden schrijven…') : picked ? tr('Обрати іншу теку', 'Andere map kiezen') : tr('Обрати теку й встановити', 'Map kiezen en installeren')}</button>
+              {picked ? <p className='wiz-ok' role='status'>{tr(`Готово: ${picked.files} файлів записано в «${picked.folderName}/${SUBFOLDER}». Не видаляйте цю теку.`, `Klaar: ${picked.files} bestanden opgeslagen in "${picked.folderName}/${SUBFOLDER}". Verwijder deze map niet.`)}</p> : null}
               {pickError ? <p className='wiz-note' role='alert'>{pickError}</p> : null}
               <p className='wiz-note'>{tr('Працює в Chrome, Edge, Opera, Brave. Firefox і Safari не підтримують — оберіть вкладку «Команда в терміналі».', 'Werkt in Chrome, Edge, Opera, Brave. Firefox en Safari ondersteunen het niet — kies dan het tabblad "Commando in de terminal".')}</p>
             </>
           ) : null}
           {method === 'terminal' && p.release.sha256 ? (
             <>
-              <p>{tr('Без завантаження виконуваних файлів: команда сама завантажує розширення, перевіряє SHA-256 і розпаковує у вказану папку. Це обходить блокування Windows («Захист смарт-програм» блокує .cmd, .ps1, .js).', 'Zonder uitvoerbare bestanden te downloaden: het commando haalt de extensie op, controleert de SHA-256 en pakt hem uit in de opgegeven map. Zo omzeilt u de blokkade van Windows ("Smart App Control" blokkeert .cmd, .ps1, .js).')}</p>
-              <p><strong>{tr('1. Оберіть, куди покласти розширення', '1. Kies waar de extensie komt')}</strong> {tr('— диск і папку вибираєте ви; нічого не створюється, поки ви не оберете. Папку потім не видаляйте: браузер читає розширення саме з неї.', '— u kiest schijf en map; er wordt niets aangemaakt zolang u niet kiest. Verwijder de map daarna niet: de browser leest de extensie uit die map.')}</p>
-              <p className='wiz-note'>{os === 'windows' ? tr('Як скопіювати шлях: у Провіднику відкрийте потрібну папку, клацніть по адресному рядку (або Shift + права кнопка на папці → «Копіювати як шлях»), Ctrl+C і вставте нижче. Лапки приберуться самі.', 'Pad kopiëren: open de map in Verkenner, klik in de adresbalk (of Shift + rechtsklik op de map → "Als pad kopiëren"), Ctrl+C en plak hieronder. Aanhalingstekens verdwijnen vanzelf.') : os === 'macos' ? tr('Як скопіювати шлях: у Finder утримуйте Option, клацніть правою на папці → «Скопіювати як шлях», вставте нижче.', 'Pad kopiëren: houd Option ingedrukt in Finder, rechtsklik op de map → "Kopieer als padnaam" en plak hieronder.') : tr('Як скопіювати шлях: у файловому менеджері Ctrl+L, Ctrl+C (або перетягніть папку в термінал) і вставте нижче.', 'Pad kopiëren: Ctrl+L, Ctrl+C in uw bestandsbeheer (of sleep de map naar de terminal) en plak hieronder.')}</p>
+              <p>{tr('Без завантаження виконуваних файлів: команда сама завантажує розширення, перевіряє SHA-256 і розпаковує у вказану теку. Це обходить блокування Windows («Захист смарт-програм» блокує .cmd, .ps1, .js).', 'Zonder uitvoerbare bestanden te downloaden: het commando haalt de extensie op, controleert de SHA-256 en pakt hem uit in de opgegeven map. Zo omzeilt u de blokkade van Windows ("Smart App Control" blokkeert .cmd, .ps1, .js).')}</p>
+              <p><strong>{tr('1. Оберіть, куди покласти розширення', '1. Kies waar de extensie komt')}</strong> {tr('— диск і теку вибираєте ви; нічого не створюється, поки ви не оберете. Теку потім не видаляйте: браузер читає розширення саме з неї.', '— u kiest schijf en map; er wordt niets aangemaakt zolang u niet kiest. Verwijder de map daarna niet: de browser leest de extensie uit die map.')}</p>
+              <p className='wiz-note'>{os === 'windows' ? tr('Як скопіювати шлях: у Провіднику відкрийте потрібну теку, клацніть по адресному рядку (або Shift + права кнопка на теці → «Копіювати як шлях»), Ctrl+C і вставте нижче. Лапки приберуться самі.', 'Pad kopiëren: open de map in Verkenner, klik in de adresbalk (of Shift + rechtsklik op de map → "Als pad kopiëren"), Ctrl+C en plak hieronder. Aanhalingstekens verdwijnen vanzelf.') : os === 'macos' ? tr('Як скопіювати шлях: у Finder утримуйте Option, клацніть правою на теці → «Скопіювати як шлях», вставте нижче.', 'Pad kopiëren: houd Option ingedrukt in Finder, rechtsklik op de map → "Kopieer als padnaam" en plak hieronder.') : tr('Як скопіювати шлях: у файловому менеджері Ctrl+L, Ctrl+C (або перетягніть теку в термінал) і вставте нижче.', 'Pad kopiëren: Ctrl+L, Ctrl+C in uw bestandsbeheer (of sleep de map naar de terminal) en plak hieronder.')}</p>
               <div className='wiz-os' role='group' aria-label={tr('Швидкий вибір', 'Snelle keuze')}>
                 {folderChoices.map(([label, path]) => <button key={label} type='button' aria-pressed={folder === path} onClick={() => setFolder(path)}>{os === 'windows' ? tr(`Диск ${label}`, `Schijf ${label}`) : label}</button>)}
                 {os === 'windows' ? <label className='wiz-field' style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{tr('Інша літера', 'Andere letter')}<input maxLength={1} style={{ width: 40, textAlign: 'center', textTransform: 'uppercase' }} aria-label={tr('Літера диска', 'Schijfletter')} value={/^[A-Za-z]:\\MijnRuimte-extension$/.test(folder) && !['C', 'D', 'E', 'F', 'G', 'H'].includes(folder[0].toUpperCase()) ? folder[0].toUpperCase() : ''} onChange={(e) => { const l = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase(); if (l) setFolder(`${l}:\\MijnRuimte-extension`); }} /></label> : null}
               </div>
-              <label className='wiz-field'>{tr('Або вставте шлях до своєї постійної папки на локальному диску (не Завантаження, не тимчасова, не мережева чи USB)', 'Of plak het pad naar uw eigen vaste map op een lokale schijf (niet Downloads, niet tijdelijk, geen netwerk- of USB-schijf)')}<input value={folder} onChange={(e) => setFolder(e.target.value.replace(/["\u201c\u201d]/g, '').trimStart())} spellCheck={false} placeholder={os === 'windows' ? '%LOCALAPPDATA%\\MijnRuimte\\extensie' : '~/MijnRuimte-extension'} /></label>
+              <label className='wiz-field'>{tr('Або вставте шлях до своєї постійної теки на локальному диску (не Завантаження, не тимчасова, не мережева чи USB)', 'Of plak het pad naar uw eigen vaste map op een lokale schijf (niet Downloads, niet tijdelijk, geen netwerk- of USB-schijf)')}<input value={folder} onChange={(e) => setFolder(e.target.value.replace(/["\u201c\u201d]/g, '').trimStart())} spellCheck={false} placeholder={os === 'windows' ? '%LOCALAPPDATA%\\MijnRuimte\\extensie' : '~/MijnRuimte-extension'} /></label>
               {/* UI-011: Chrome haalt een uitgepakte extensie weg als haar map bij de start ontbreekt (bewezen in Chrome 156). */}
-              {folder.trim() && /(^\\\\|\\temp\\|%temp%|\/tmp\/|downloads|onedrive|temp1_)/i.test(folder) ? <p className='wiz-note' role='alert'>{tr('Ця папка може зникнути (тимчасова, Завантаження, OneDrive або мережа). Якщо її не буде під час запуску Chrome, Chrome прибере розширення. Краще %LOCALAPPDATA%\\MijnRuimte\\extensie.', 'Deze map kan verdwijnen (tijdelijk, Downloads, OneDrive of netwerk). Ontbreekt hij bij de start van Chrome, dan haalt Chrome de extensie weg. Beter: %LOCALAPPDATA%\\MijnRuimte\\extensie.')}</p> : null}
+              {folder.trim() && /(^\\\\|\\temp\\|%temp%|\/tmp\/|downloads|onedrive|temp1_)/i.test(folder) ? <p className='wiz-note' role='alert'>{tr('Ця тека може зникнути (тимчасова, Завантаження, OneDrive або мережа). Якщо її не буде під час запуску Chrome, Chrome прибере розширення. Краще %LOCALAPPDATA%\\MijnRuimte\\extensie.', 'Deze map kan verdwijnen (tijdelijk, Downloads, OneDrive of netwerk). Ontbreekt hij bij de start van Chrome, dan haalt Chrome de extensie weg. Beter: %LOCALAPPDATA%\\MijnRuimte\\extensie.')}</p> : null}
               {folder.trim() && !folderOk ? <p className='wiz-note' role='alert'>{os === 'windows' ? tr('Шлях має починатися з літери диска, наприклад D:\\MijnRuimte-extension.', 'Het pad moet met een schijfletter beginnen, bijvoorbeeld D:\\MijnRuimte-extension.') : tr('Шлях має починатися з ~/ або /.', 'Het pad moet met ~/ of / beginnen.')}</p> : null}
               <p><strong>{tr('2. Виконайте команду', '2. Voer het commando uit')}</strong></p>
-              {!folderOk ? <p className='wiz-note' role='status'>{tr('Команда з’явиться, щойно ви оберете папку вище.', 'Het commando verschijnt zodra u hierboven een map kiest.')}</p> : extensionInstallCommands({ os, shell: os === 'windows' ? 'powershell' : 'bash', folder, sha256: pkgSha, origin: location.origin, file: pkgFile }).map((c, i) => <div key={i} className='wiz-copy'><code>{c}</code><button type='button' onClick={() => { void copy(c); setDownloaded(true); p.onDownloaded(); }}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>)}
+              {!folderOk ? <p className='wiz-note' role='status'>{tr('Команда з’явиться, щойно ви оберете теку вище.', 'Het commando verschijnt zodra u hierboven een map kiest.')}</p> : extensionInstallCommands({ os, shell: os === 'windows' ? 'powershell' : 'bash', folder, sha256: pkgSha, origin: location.origin, file: pkgFile }).map((c, i) => <div key={i} className='wiz-copy'><code>{c}</code><button type='button' onClick={() => { void copy(c); setDownloaded(true); p.onDownloaded(); }}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>)}
               <p className='wiz-note'>{os === 'windows' ? tr('Відкрийте PowerShell (Пуск → введіть PowerShell), вставте команду й натисніть Enter.', 'Open PowerShell (Start → typ PowerShell), plak het commando en druk op Enter.') : tr('Відкрийте термінал, вставте команду й натисніть Enter.', 'Open een terminal, plak het commando en druk op Enter.')}</p>
             </>
           ) : null}
           {method === 'helper' && os === 'windows' ? <p className='wiz-note' role='status'>{tr('Увага: Windows 11 із «Захистом смарт-програм» блокує завантажені .cmd без можливості дозволити їх. Тоді користуйтеся командою в терміналі.', 'Let op: Windows 11 met "Smart App Control" blokkeert gedownloade .cmd-bestanden zonder optie om ze toe te staan. Gebruik dan het commando in de terminal.')}</p> : null}
-          <p>{method === 'terminal' || method === 'picker' ? '' : method === 'helper' ? tr(`Помічник «${helperFile}» сам завантажить розширення, перевірить контрольну суму SHA-256, розпакує у вашу папку й підкаже останні два кліки в браузері.`, `De hulp "${helperFile}" haalt de extensie zelf op, controleert de SHA-256-som, pakt hem uit in uw map en toont de laatste twee klikken in de browser.`)
-            : method === 'zip' ? tr('ZIP-архів містить розширення. Його треба розпакувати у власну папку й підключити вручну (кроки нижче).', 'Het ZIP-bestand bevat de extensie. Pak hem uit in een eigen map en laad hem handmatig (stappen hieronder).')
+          <p>{method === 'terminal' || method === 'picker' ? '' : method === 'helper' ? tr(`Помічник «${helperFile}» сам завантажить розширення, перевірить контрольну суму SHA-256, розпакує у вашу теку й підкаже останні два кліки в браузері.`, `De hulp "${helperFile}" haalt de extensie zelf op, controleert de SHA-256-som, pakt hem uit in uw map en toont de laatste twee klikken in de browser.`)
+            : method === 'zip' ? tr('ZIP-архів містить розширення. Його треба розпакувати у власну теку й підключити вручну (кроки нижче).', 'Het ZIP-bestand bevat de extensie. Pak hem uit in een eigen map en laad hem handmatig (stappen hieronder).')
             : tr('CRX підписаний нашим ключем. Chrome на Windows і macOS зазвичай відхиляє пакети поза магазином: тоді використайте помічник або ZIP.', 'Het CRX-bestand is ondertekend met onze sleutel. Chrome op Windows en macOS weigert pakketten buiten de winkel meestal: gebruik dan de hulp of de ZIP.')}</p>
           {method !== 'terminal' && method !== 'picker' ? <a className='wiz-primary' href={href} download onClick={() => { setDownloaded(true); p.onDownloaded(); setOpen('open'); }}><Download aria-hidden='true' />{tr(`Завантажити ${fileName}`, `Download ${fileName}`)}</a> : null}
-          {downloaded && !present ? <p className='wiz-ok'>{tr('Файл завантажується. Знайдіть його в списку завантажень браузера (Ctrl+J) або в папці «Завантаження».', 'Het bestand wordt gedownload. Zoek het in de downloadlijst van de browser (Ctrl+J) of in de map "Downloads".')}</p> : null}
+          {downloaded && !present ? <p className='wiz-ok'>{tr('Файл завантажується. Знайдіть його в списку завантажень браузера (Ctrl+J) або в теці «Завантаження».', 'Het bestand wordt gedownload. Zoek het in de downloadlijst van de browser (Ctrl+J) of in de map "Downloads".')}</p> : null}
         </>
       ),
     });
     if (method === 'picker') {
       list.push({
-        id: 'open', title: tr('Папку збережено', 'Map opgeslagen'), done: present, manual: true,
-        body: picked ? <p className='wiz-ok'>{tr(`Розширення лежить у «${picked.folderName}/${SUBFOLDER}». На кроці «Додайте розширення» оберіть саме цю підпапку.`, `De extensie staat in "${picked.folderName}/${SUBFOLDER}". Kies bij de stap "Voeg de extensie toe" precies die submap.`)}</p> : <p className='wiz-note'>{tr('Спершу натисніть «Обрати папку й встановити» в попередньому кроці.', 'Klik eerst op "Map kiezen en installeren" in de vorige stap.')}</p>,
+        id: 'open', title: tr('Теку збережено', 'Map opgeslagen'), done: present, manual: true,
+        body: picked ? <p className='wiz-ok'>{tr(`Розширення лежить у «${picked.folderName}/${SUBFOLDER}». На кроці «Додайте розширення» оберіть саме цю підтеку.`, `De extensie staat in "${picked.folderName}/${SUBFOLDER}". Kies bij de stap "Voeg de extensie toe" precies die submap.`)}</p> : <p className='wiz-note'>{tr('Спершу натисніть «Обрати теку й встановити» в попередньому кроці.', 'Klik eerst op "Map kiezen en installeren" in de vorige stap.')}</p>,
       });
     } else if (method === 'terminal') {
       list.push({
-        id: 'open', title: tr('Перевірте, що папка створена', 'Controleer dat de map is gemaakt'), done: present, manual: true,
+        id: 'open', title: tr('Перевірте, що тека створена', 'Controleer dat de map is gemaakt'), done: present, manual: true,
         body: <>
-          <p>{tr('Після команди в терміналі має з’явитися рядок «Готово: …» зі шляхом. Це і є папка розширення; нічого іншого команда не створює (тимчасовий ZIP кладеться в ту саму папку й видаляється).', 'Na het commando verschijnt in de terminal een regel "Готово: …" met het pad. Dat is de map van de extensie; het commando maakt verder niets aan (het tijdelijke ZIP-bestand komt in dezelfde map en wordt verwijderd).')}</p>
-          {folderOk ? <div className='wiz-copy'><code>{folder.trim()}</code><button type='button' onClick={() => void copy(folder.trim())}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати шлях', 'Pad kopiëren')}</button></div> : <p className='wiz-note'>{tr('Спершу оберіть папку в попередньому кроці.', 'Kies eerst een map in de vorige stap.')}</p>}
-          <p className='wiz-note'>{tr('Цей шлях знадобиться за два кроки: його вставляють у вікно «Вибір папки».', 'Dit pad heeft u over twee stappen nodig: u plakt het in het venster "Map kiezen".')}</p>
+          <p>{tr('Після команди в терміналі має з’явитися рядок «Готово: …» зі шляхом. Це і є тека розширення; нічого іншого команда не створює (тимчасовий ZIP кладеться в ту саму теку й видаляється).', 'Na het commando verschijnt in de terminal een regel "Готово: …" met het pad. Dat is de map van de extensie; het commando maakt verder niets aan (het tijdelijke ZIP-bestand komt in dezelfde map en wordt verwijderd).')}</p>
+          {folderOk ? <div className='wiz-copy'><code>{folder.trim()}</code><button type='button' onClick={() => void copy(folder.trim())}>{copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати шлях', 'Pad kopiëren')}</button></div> : <p className='wiz-note'>{tr('Спершу оберіть теку в попередньому кроці.', 'Kies eerst een map in de vorige stap.')}</p>}
+          <p className='wiz-note'>{tr('Цей шлях знадобиться за два кроки: його вставляють у вікно «Вибір теки».', 'Dit pad heeft u over twee stappen nodig: u plakt het in het venster "Map kiezen".')}</p>
         </>,
       });
     } else if (method === 'helper') {
       list.push({
         id: 'open', title: tr('Запустіть помічник', 'Start de installatiehulp'), done: present, manual: true,
         body: <p>{os === 'windows' ? tr('Двічі клацніть завантажений файл Install-MijnRuimte.cmd. Якщо Windows питає «Захист SmartScreen», натисніть «Докладніше → Все одно виконати»: файл відкритий, його вміст можна переглянути в «Блокноті».', 'Dubbelklik op het gedownloade bestand Install-MijnRuimte.cmd. Vraagt Windows om "SmartScreen", kies dan "Meer informatie → Toch uitvoeren": het bestand is leesbaar en te bekijken in Kladblok.')
-          : tr('Відкрийте термінал у папці завантажень і виконайте: bash install-mijn-ruimte.sh', 'Open een terminal in de map Downloads en voer uit: bash install-mijn-ruimte.sh')}</p>,
+          : tr('Відкрийте термінал у теці завантажень і виконайте: bash install-mijn-ruimte.sh', 'Open een terminal in de map Downloads en voer uit: bash install-mijn-ruimte.sh')}</p>,
       });
     } else {
       list.push({
-        id: 'open', title: tr('Розпакуйте у власну папку', 'Pak uit in een eigen map'), done: present, manual: true,
-        body: <p>{tr('Правою кнопкою на ZIP → «Видобути все» (або двічі клацніть). Оберіть постійну папку, наприклад Документи\\MijnRuimte-extension, і не видаляйте її: браузер читає розширення саме з цієї папки.', 'Rechtsklik op de ZIP → "Alles uitpakken". Kies een vaste map, bijvoorbeeld Documenten\\MijnRuimte-extension, en verwijder die niet: de browser leest de extensie uit die map.')}</p>,
+        id: 'open', title: tr('Розпакуйте у власну теку', 'Pak uit in een eigen map'), done: present, manual: true,
+        body: <p>{tr('Правою кнопкою на ZIP → «Видобути все» (або двічі клацніть). Оберіть постійну теку, наприклад Документи\\MijnRuimte-extension, і не видаляйте її: браузер читає розширення саме з цієї теки.', 'Rechtsklik op de ZIP → "Alles uitpakken". Kies een vaste map, bijvoorbeeld Documenten\\MijnRuimte-extension, en verwijder die niet: de browser leest de extensie uit die map.')}</p>,
       });
     }
     list.push({
@@ -273,14 +273,14 @@ export default function ExtensionWizard(p: WizardProps) {
     });
     list.push({
       id: 'load', title: tr('Додайте розширення', 'Voeg de extensie toe'), done: present, manual: true,
-      body: method === 'picker' ? <><p>{tr(`Натисніть ${info.load[0]} і виберіть підпапку ${picked ? `«${picked.folderName}/${SUBFOLDER}»` : SUBFOLDER} (у ній лежить manifest.json).`, `Kies ${info.load[1]} en selecteer de submap ${picked ? `"${picked.folderName}/${SUBFOLDER}"` : SUBFOLDER} (daarin staat manifest.json).`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></> : method === 'helper' || method === 'terminal'
-        ? <><p>{tr(`Натисніть ${info.load[0]} і виберіть свою папку (${folder.trim() || '…'}).`, `Kies ${info.load[1]} en selecteer de map die de hulp toonde (${folder.trim() || '…'}).`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>
-        : <><p>{tr(`Натисніть ${info.load[0]} і виберіть розпаковану папку з файлом manifest.json.`, `Kies ${info.load[1]} en selecteer de uitgepakte map met het bestand manifest.json.`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>,
+      body: method === 'picker' ? <><p>{tr(`Натисніть ${info.load[0]} і виберіть підтеку ${picked ? `«${picked.folderName}/${SUBFOLDER}»` : SUBFOLDER} (у ній лежить manifest.json).`, `Kies ${info.load[1]} en selecteer de submap ${picked ? `"${picked.folderName}/${SUBFOLDER}"` : SUBFOLDER} (daarin staat manifest.json).`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></> : method === 'helper' || method === 'terminal'
+        ? <><p>{tr(`Натисніть ${info.load[0]} і виберіть свою теку (${folder.trim() || '…'}).`, `Kies ${info.load[1]} en selecteer de map die de hulp toonde (${folder.trim() || '…'}).`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>
+        : <><p>{tr(`Натисніть ${info.load[0]} і виберіть розпаковану теку з файлом manifest.json.`, `Kies ${info.load[1]} en selecteer de uitgepakte map met het bestand manifest.json.`)}</p><Mock kind='load' tr={tr} browser={browserScheme} /></>,
     });
     list.push({
       id: 'found', title: tr('Розширення знайдено', 'Extensie gevonden'), done: present,
       body: present ? <p className='wiz-ok'>{tr('Готово: цей браузер бачить розширення.', 'Klaar: deze browser ziet de extensie.')}</p>
-        : <p className='wiz-wait'><LoaderCircle className='wiz-spin' aria-hidden='true' />{p.presence === 'checking' ? tr('Перевіряємо…', 'Controleren…') : tr('Ще не бачимо розширення. Щойно ви його додасте, цей крок позначиться сам; сторінку оновлювати не треба. Якщо не з’являється, перезавантажте цю сторінку (F5).', 'We zien de extensie nog niet. Zodra u hem toevoegt, wordt deze stap vanzelf afgevinkt; vernieuwen is niet nodig. Verschijnt hij niet, vernieuw dan deze pagina (F5).')}</p>,
+        : <p className='wiz-wait'><LoaderCircle className='wiz-spin' aria-hidden='true' />{p.presence === 'checking' ? tr('Перевіряємо…', 'Controleren…') : tr('Ще не бачимо розширення. Щойно ви його додасте, цей крок позначиться сам — розширення 0.9.1+ саме під’єднується до вже відкритих сторінок, оновлювати не треба.', 'We zien de extensie nog niet. Zodra u hem toevoegt, wordt deze stap vanzelf afgevinkt — extensie 0.9.1+ koppelt zich zelf aan al open pagina’s, vernieuwen is niet nodig.')}</p>,
     });
     list.push({
       id: 'pair', title: tr('Підключіть до облікового запису', 'Koppel aan uw account'), done: p.paired && p.hasAgent,
@@ -296,7 +296,7 @@ export default function ExtensionWizard(p: WizardProps) {
       id: 'enable', title: tr('Увімкніть для ШІ', 'Zet aan voor de AI'), done: p.agentEnabled,
       body: (
         <>
-          <p>{tr('За замовчуванням ШІ зможе лише читати сторінки сайту. Усі дії зі змінами (кліки, введення, знімок екрана) чекатимуть вашого «Дозволити». Детальні перемикачі з’являться нижче, у картці браузера.', 'Standaard kan de AI alleen pagina\'s van de site lezen. Alle acties met wijzigingen (klikken, typen, schermopname) wachten op uw "Toestaan". Gedetailleerde schakelaars staan hieronder op de kaart van de browser.')}</p>
+          <p>{tr('Типово ШІ зможе лише читати сторінки сайту. Усі дії зі змінами (кліки, введення, знімок екрана) чекатимуть вашого «Дозволити». Детальні перемикачі з’являться нижче, у картці браузера.', 'Standaard kan de AI alleen pagina\'s van de site lezen. Alle acties met wijzigingen (klikken, typen, schermopname) wachten op uw "Toestaan". Gedetailleerde schakelaars staan hieronder op de kaart van de browser.')}</p>
           <button type='button' className='wiz-primary' disabled={!p.hasAgent || p.busy || p.agentEnabled} onClick={() => { netAangezet.current = true; p.onEnable(); }}><Power aria-hidden='true' />{p.agentEnabled ? tr('Увімкнено', 'Aangezet') : tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')}</button>
         </>
       ),

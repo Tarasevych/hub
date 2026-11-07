@@ -24,7 +24,8 @@ export async function main(): Promise<number> {
   await writeFile(path.join(releases, 'UITROL-VERSIE'), '20261014-120000\n');
   const appWortel = path.join(dir, 'app'); await mkdir(appWortel, { recursive: true });
   await symlink(releases, path.join(appWortel, 'current'));
-  const oud = { MCP_ROOT: process.env.MCP_ROOT, MCP_RELEASES_DIR: process.env.MCP_RELEASES_DIR, MCP_RECHTEN_PAD: process.env.MCP_RECHTEN_PAD, UITROL_APP_ROOT: process.env.UITROL_APP_ROOT };
+  const oud = { MCP_ROOT: process.env.MCP_ROOT, MCP_RELEASES_DIR: process.env.MCP_RELEASES_DIR, MCP_RECHTEN_PAD: process.env.MCP_RECHTEN_PAD, UITROL_APP_ROOT: process.env.UITROL_APP_ROOT, OWNER_EMAIL: process.env.OWNER_EMAIL };
+  process.env.OWNER_EMAIL = 'o@x'; // eigenaar = rol owner + OWNER_EMAIL (isOwner); de test bepaalt dat zelf
   process.env.UITROL_APP_ROOT = appWortel;
   process.env.MCP_ROOT = release;
   process.env.MCP_RELEASES_DIR = path.join(dir, 'releases');

@@ -1,7 +1,7 @@
 ﻿<#
   Controleert de herstelset: elk bestand uit SHA256SUMS.txt moet bestaan en dezelfde SHA256 hebben.
   Перевіряє набір відновлення: кожен файл із SHA256SUMS.txt має існувати і мати ту саму SHA256.
-  Starten / запуск (у папці набору):
+  Starten / запуск (у теці набору):
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\controleer-herstelset.ps1
 #>
 $ErrorActionPreference = 'Stop'

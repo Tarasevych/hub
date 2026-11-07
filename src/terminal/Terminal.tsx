@@ -331,7 +331,7 @@ function ContainerOpenen({ uk, lijst, sluit, terug, naarOpnames }: { uk: boolean
   return (
     <Venster id='terminal-openen' titel={uk ? 'Термінал · контейнер' : 'Terminal · container'} breedte={560} onSluit={sluit}>
       <form className='tech-venster' data-term-venster='openen' onSubmit={(e) => { e.preventDefault(); if (!bezig) void doe(); }}>
-        <p className='tech-lead'>{uk ? 'Командний рядок у тимчасовому контейнері на вашому пристрої: без мережі, обрана тека — за замовчуванням лише для читання. Вихід записується.' : 'Opdrachtregel in een tijdelijke container op uw apparaat: geen netwerk, gekozen map standaard alleen-lezen. Uitvoer wordt opgenomen.'} <Vraag help={HELP_TERMINAL} uk={uk} label={uk ? 'Термінал' : 'Terminal'} /></p>
+        <p className='tech-lead'>{uk ? 'Командний рядок у тимчасовому контейнері на вашому пристрої: без мережі, обрана тека — типово лише для читання. Вихід записується.' : 'Opdrachtregel in een tijdelijke container op uw apparaat: geen netwerk, gekozen map standaard alleen-lezen. Uitvoer wordt opgenomen.'} <Vraag help={HELP_TERMINAL} uk={uk} label={uk ? 'Термінал' : 'Terminal'} /></p>
         {!lijst.some((a) => a.terminal) ? (
           <p className='tech-melding'>{uk ? 'Немає пристрою з увімкненим контейнерним терміналом. На пристрої (агент 0.8): node agent.mjs terminal-config on, потім node agent.mjs run.' : 'Geen apparaat met containerterminal. Op het apparaat (agent 0.8): node agent.mjs terminal-config on, daarna node agent.mjs run.'}</p>
         ) : (
@@ -342,7 +342,7 @@ function ContainerOpenen({ uk, lijst, sluit, terug, naarOpnames }: { uk: boolean
               </select></label>
             <label className='tech-veld'><span>{uk ? 'Тека (стане /werk)' : 'Map (wordt /werk)'} <HulpVraag k='terminal.map' uk={uk} /></span>
               <select data-hulp='terminal.map' value={root} onChange={(e) => setRoot(e.target.value)} data-term-root='1'>{(ap?.roots ?? []).map((r) => <option key={r.pad} value={r.pad}>{r.pad}{r.alleenLezen ? (uk ? ' — лише читання' : ' — alleen lezen') : ''}</option>)}</select></label>
-            <label className='ond-nood'><input data-hulp='terminal.schrijven' type='checkbox' checked={schrijven && !rootInfo?.alleenLezen} disabled={!!rootInfo?.alleenLezen} onChange={(e) => setSchrijven(e.target.checked)} data-term-schrijven='1' />{uk ? 'Дозволити запис у теку (за замовчуванням лише читання)' : 'Schrijven in de map toestaan (standaard alleen lezen)'} <HulpVraag k='terminal.schrijven' uk={uk} /></label>
+            <label className='ond-nood'><input data-hulp='terminal.schrijven' type='checkbox' checked={schrijven && !rootInfo?.alleenLezen} disabled={!!rootInfo?.alleenLezen} onChange={(e) => setSchrijven(e.target.checked)} data-term-schrijven='1' />{uk ? 'Дозволити запис у теку (типово лише читання)' : 'Schrijven in de map toestaan (standaard alleen lezen)'} <HulpVraag k='terminal.schrijven' uk={uk} /></label>
             <label className='tech-veld'><span>{uk ? 'Термін' : 'Duur'} <HulpVraag k='terminal.duur' uk={uk} /></span><select data-hulp='terminal.duur' value={minuten} onChange={(e) => setMinuten(Number(e.target.value))} data-term-minuten='1'>{[5, 15, 30, 60].filter((m) => m <= (ap?.maxMinuten ?? 60)).map((m) => <option key={m} value={m}>{m} {uk ? 'хв' : 'min'}</option>)}</select></label>
             <label className='tech-veld'><span>{uk ? 'Причина' : 'Reden'}</span><input value={reden} onChange={(e) => setReden(e.target.value)} minLength={3} maxLength={300} required data-term-reden='1' /></label>
           </>

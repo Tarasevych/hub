@@ -1,4 +1,6 @@
-# Пошук «/zoek» — експлуатація: моніторинг, відновлення, міграції, розгортання, відкат, продуктивність
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ZOEK-BEHEER.uk.md) · [🇳🇱 **Nederlandse versie**](./ZOEK-BEHEER.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
+# Пошук «/zoek» — експлуатація: моніторинг, відновлення, міграції, розгортання, повернення стану, продуктивність
 
 Стан: 22.10.2026. Для власника сервера BYOS. Усе виконується на його сервері; жодних зовнішніх служб.
 
@@ -19,7 +21,7 @@
 
 ## 2. Де дивитись стан
 
-- **На сайті**: `/zoek` → панель «Стан джерел» (підключено / індексується / частково / помилка / не підключено, прогрес, час останнього
+- **На сайті**: `/zoek` → панель «Стан джерел» (під'єднано / індексується / частково / помилка / не під'єднано, прогрес, час останнього
   успіху, остання помилка, кількість об'єктів — **реальний count**, не оцінка).
 - **API**: `POST /api/owner/zoek/stand` (сесія власника).
 - **БД** (роль system):
@@ -43,18 +45,18 @@
 | «OCR недоступний» | немає `tesseract`/мов | `mijn-ruimte-installeer ocr-talen`; cron перевіряє доступність знову при наступному повному скані |
 | елементи черги `fout` з `TIJDSLIMIET`/`GEHEUGENLIMIET` | великий/пошкоджений файл | нічого робити не треба: документ індексується лише за назвою; за потреби підняти `ZOEK_TEKST_TIMEOUT_MS`/`ZOEK_TEKST_WERKER_MB` |
 | `KLUIS_GESLOTEN` у `laatste_fout` | ключ людини закритий (людина не входила) | норма: індексація пошти/Drive продовжиться після входу |
-| пошук повертає `bron:'live'` (fallback) | індекс лади порожній | дочекатися cron, «Оновити індекс» (`POST /api/owner/zoek/bronnen/vernieuwen`) або ручна індексація з технічного профілю (§5) |
+| пошук повертає `bron:'live'` | індекс лади порожній | дочекатися cron, «Оновити індекс» (`POST /api/owner/zoek/bronnen/vernieuwen`) або ручна індексація з технічного профілю (§5) |
 | повна переіндексація потрібна (зміна нормалізації/синонімів) | нова версія ядра | `UPDATE app.zoek_bron_stand SET versie=''` для потрібних лад (або `TRUNCATE app.zoek_objecten` — безпечно: індекс похідний); cron перебудує; `app.zoek_geschiedenis.stand` стане `verouderd` |
 | черга «зависла» у `bezig` | процес убито під час обробки | lease 5 хв спливає сам; елемент повертається у `wachtend` |
 
 Індекс — **похідні дані**: його можна видалити повністю (`TRUNCATE app.zoek_objecten, app.zoek_wachtrij; UPDATE app.zoek_bron_stand SET versie=''`)
 без втрати жодного листа/файла; OCR-кеш (`app.zoek_ocr_tekst`) теж можна очистити (коштує повторний OCR).
 
-## 4. Міграції (порядок, ідемпотентність, відкат)
+## 4. Міграції (порядок, ідемпотентність, повернення стану)
 
-| № | Файл | Що робить | Відкат |
+| № | Файл | Що робить | Повернення стану |
 |---|---|---|---|
-| 0093 | `0093_zoek_index.sql` | `app.zoek_objecten` (початкова), `app.zoek_norm` | застаріла основа; не відкочувати окремо |
+| 0093 | `0093_zoek_index.sql` | `app.zoek_objecten` (початкова), `app.zoek_norm` | застаріла основа; не повертати попередній стан окремо |
 | 0094 | `0094_zoek_rls.sql` | RLS на `zoek_objecten` | `ALTER TABLE app.zoek_objecten DISABLE ROW LEVEL SECURITY; DROP POLICY zoek_objecten_eigen` (не рекомендовано) |
 | 0096 | `0096_zoek_bronnen_index.sql` | `zoek_document` (застаріла), `zoek_wachtrij`, `zoek_ocr_cache` (старий), `zoek_bron_stand` | `DROP TABLE app.zoek_document, app.zoek_wachtrij, app.zoek_ocr_cache, app.zoek_bron_stand` |
 | 0100 | `0100_zoek_kern.sql` (Z1) | один індекс: нові колонки, `*_norm` з Node, `zoek_stam`, видалення `app.zoek_norm`, `bron` за regex, `zoek_bron_stand.stand/voortgang/versie`, `zoek_synoniemen_eigenaar` | покроково в шапці файла (DROP нових колонок, перейменування назад, повторний запуск 0093); `TRUNCATE` допустимий — дані похідні |
@@ -71,7 +73,7 @@
 Навіщо: не чекати cron (5 хв) і бачити, що саме робить індексатор — повна або часткова переіндексація з живим ходом і результатом.
 
 **Де**: `/zoek` → кнопка «Індексація…» (лише коли в цій вкладці активний технічний профіль; звичайний користувач кнопки не має, сервер
-відповідає `403 ZOEK_INDEX_TECH_PROFIEL_VEREIST`). Відкривається плаваюче вікно (`src/zoek/ZoekIndexVenster.tsx` на спільній системі
+відповідає `403 ZOEK_INDEX_TECH_PROFIEL_VEREIST`). Відкривається рухоме вікно (`src/zoek/ZoekIndexVenster.tsx` на спільній системі
 вікон `src/platform/vensters.tsx`): перетягування за заголовок, «Згорнути» у док, «Розгорнути», закриття, позиція/розмір запам'ятовуються;
 на телефоні (< 560 px) вікно на весь екран, повернутись — через док. `modaal=false`: сторінка пошуку працює далі, індексація триває на сервері.
 
@@ -117,19 +119,19 @@
 ## 6. Розгортання
 
 Як будь-який випуск: архів `mijn-ruimte-<дата>.tar.gz` + SHA-256 → `mijn-ruimte-installeer installeren` (копія бази → міграції 0100–0104 →
-збірка → перемикання `current` → перезапуск → `/__gezondheid`). Додатково в цьому випуску:
+складання → перемикання `current` → перезапуск → `/__gezondheid`). Додатково в цьому випуску:
 1. `inrichten`/`installeren` додає таймер `mijn-ruimte-zoek-index.timer` (TIMERS у `deploy/installeer-app.sh`) і запис `zoek-index` у `cron.json`.
 2. Необов'язково: `mijn-ruimte-installeer ocr-talen` для OCR.
 3. Перший cron заповнює індекс; до того `/zoek` показує «індексується», а `global-search` працює з пам'яті (як раніше).
-4. Перевірка після розгортання: `POST /api/owner/zoek/stand` (усі підключені джерела → `klaar` протягом ~15 хв), `SELECT count(*) FROM app.zoek_objecten`,
+4. Перевірка після розгортання: `POST /api/owner/zoek/stand` (усі під'єднані джерела → `klaar` протягом ~15 хв), `SELECT count(*) FROM app.zoek_objecten`,
    `journalctl -u mijn-ruimte-cron@zoek-index`.
 
-## 7. Відкат
+## 7. Повернення стану
 
 1. `mijn-ruimte-installeer terugdraaien` (попередній `current`): код до 22.10.2026 **не читає** нових колонок і не потребує їх; старий
    `/api/owner/global-search` працює з пам'яті (`ZOEK_INDEX` не виставлено → індекс не читається). Сторінка `/zoek` старої версії працює.
 2. Таймер `mijn-ruimte-zoek-index.timer` зупинити (`systemctl disable --now`), інакше старий `cron.mjs` просто не знайде обробник (помилка в журналі, без шкоди).
-3. Міграції відкочувати **не обов'язково** (нові колонки/таблиці старому коду не заважають). Якщо треба повністю: порядок 0104 → 0103 → 0102 → 0101 → 0100 за шапками файлів.
+3. Міграції повертати попередній стан **не обов'язково** (нові колонки/таблиці старому коду не заважають). Якщо треба повністю: порядок 0104 → 0103 → 0102 → 0101 → 0100 за шапками файлів.
 4. Дані джерел не зачіпаються ніколи.
 
 ## 8. Продуктивність: цілі й виміри
@@ -154,7 +156,7 @@
 
 Висновок з `EXPLAIN (ANALYZE, BUFFERS)` справжнього SQL ядра (перехоплено тестом, перший прогін): планувальник ішов через
 `zoek_objecten_lade_soort_idx` → **усі 10 000 рядків лади**, фільтр відкидав лише ~1 500; GIN-індекси (vector/stam/trgm) **не використовувались**,
-бо умова `… OR $q <% titel_norm` (нечіткість у тому ж WHERE) і сполучення з ладою не покриті одним індексом; для ~3 500 кандидатів рахувались
+бо умова `… OR $q <% titel_norm` (нечіткість у тому ж ДЕ) і сполучення з ладою не покриті одним індексом; для ~3 500 кандидатів рахувались
 6 tsquery-перевірок, `word_similarity`, `to_tsvector('simple', titel_norm)` і переносився `left(tekst, 20000)` у сортування. Після оптимізації Z1
 (CTE лише з id + сигналами, текст лише для сторінки) p95 упав утричі, але сканування всієї лади лишається: ціль 300 мс p95 на 10k **ще не
 досягнута** (463 мс). Третій крок (Z1, міграція **0104**): `btree_gin` + складені GIN-індекси `(user_id, ruimte, zoek_vector)` і `(user_id, ruimte, zoek_stam)` —
@@ -174,16 +176,3 @@ p50 68 / p95 83 мс ✓, індексація 1 635 об./с ✓. Пагіна�
 - Один запуск cron обробляє обмежену кількість елементів (ліміт у `backend/zoek/bronnen.ts`); при великих скриньках перший повний прохід
   триває години — це нормально й видно в «Стан джерел» як прогрес.
 - `TimeoutStartSec=15min` у `mijn-ruimte-cron@.service`: один запуск не триває довше; незавершене лишається в черзі.
-
----
-
-## NL — kort
-
-Installatie: PostgreSQL 16+ (`pg_trgm`, `unaccent`), Node 24; optioneel `tesseract` + traineddata en `pdftoppm` via
-`mijn-ruimte-installeer ocr-talen`. Stand bekijken: pagina `/zoek` → «Stand van bronnen», `POST /api/owner/zoek/stand`, tabellen
-`app.zoek_bron_stand` / `app.zoek_wachtrij` / `app.cron_runs`, `journalctl -u mijn-ruimte-cron@zoek-index`. De index is afgeleide data:
-`TRUNCATE app.zoek_objecten` is altijd veilig, de cron bouwt hem opnieuw. Migraties 0100–0104 zijn idempotent en in hun kop
-terugdraaibaar; terugdraaien van de code (`mijn-ruimte-installeer terugdraaien`) vereist géén migratie-terugdraai. Handmatig indexeren (zone D): `/zoek`
-→ «Indexeren…» in het technisch profiel → zwevend venster (volledig / gedeeltelijk, voortgang, uitkomst, journaal); zelfde advisory lock als de cron,
-alleen de eigen laden, grenzen `ZOEK_BEHEER_RUN_MS` / `ZOEK_BEHEER_ITEMS` (§5). Doelen: zoeken p95
-< 300 ms bij 10k objecten, suggesties < 100 ms; gemeten waarden staan in §8.

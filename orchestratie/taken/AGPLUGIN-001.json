@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "AGPLUGIN-001",
+  "agent": "antigravity",
+  "tak": "feature/agplugin-001-20261106-072500",
+  "basisCommit": "49760d814be61c460a219070471407534e1829f2",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.9",
+  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
+  "staat": "in_progress",
+  "gestart": "2026-11-06T07:24:53.857Z",
+  "bijgewerkt": "2026-11-06T10:12:00.000Z",
+  "omschrijving": "Плагін і двосторонній конектор Google Antigravity (/antigravity, AGPLUGIN-001 від antigravity) з 4-канальним UI-мостом, плюс виправлення root-інсталятора UTF-8 (UITROL-UTF8-001, PR №40 від claude) поверх випуску 20261106-092612",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

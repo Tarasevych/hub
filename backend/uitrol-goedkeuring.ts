@@ -31,6 +31,7 @@ import { ruimteOf } from '../shared/ai-ruimte';
 import { V2_AGENTEN, isAgentSlug } from '../shared/connector-v2/agenten';
 import { parseRootGebeurtenissen, toonbareInstallaties } from './server-beheer';
 import { pakketVoorcontrole } from './uitrol-voorcontrole';
+import { uitrolArchiefToken } from './uitrol-github';
 import { releaseInfo } from './uitgave-info';
 import { diagnose, liveStand, runDetail, runRegels, runsLijst, runsSynchroniseren } from './uitrol-runs';
 import { huidigeStand } from './uitrol-bron';
@@ -391,7 +392,9 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   // Voorcontrole (statisch, nooit code uit het pakket uitvoeren): zie backend/uitrol-voorcontrole.ts. Een fout houdt het pakket buiten de goedkeuring.
   let toegepast: Set<string> | null = null;
   try { toegepast = new Set((await sys().query('SELECT version FROM app.schema_migrations')).rows.map((r: { version: string }) => String(r.version))); } catch { toegepast = null; }
-  const vc = await pakketVoorcontrole(deel, { versie: String(row.versie), actieveVersie: releaseInfo().versie || undefined, toegepasteMigraties: toegepast, tests: row.tests || null });
+  let archiefToken: string | undefined;
+  try { archiefToken = await uitrolArchiefToken(grant.accountId); } catch { /* Geen kluis: een publiek dossier kan nog bevestigd worden. */ }
+  const vc = await pakketVoorcontrole(deel, { versie: String(row.versie), actieveVersie: releaseInfo().versie || undefined, toegepasteMigraties: toegepast, tests: row.tests || null, archiefToken });
   // De beschrijving komt uit het pakket zelf (SAMENVATTING): wat de voorbereider bij het begin opgaf, is niet leidend.
   const beschrijving = vc.meta.samenvatting.slice(0, 8000);
   if (!vc.resultaat.ok) {

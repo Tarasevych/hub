@@ -3,7 +3,7 @@
 .venster-achter{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(3px)}
 .venster{
   position:fixed;display:flex;flex-direction:column;min-width:0;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);
-  border-radius:16px;border:1px solid var(--line,#d7dee8);background:var(--panel,#fff);color:var(--text,#0f172a);
+  border-radius:var(--straal-xl,26px);border:1px solid var(--line,#d7dee8);background:var(--panel,#fff);color:var(--text,#0f172a);
   box-shadow:0 24px 70px rgba(0,0,0,.35);outline:none;overflow:hidden
 }
 .venster.is-boven{box-shadow:0 28px 80px rgba(0,0,0,.45),0 0 0 2px var(--venster-actief,#2563eb)}

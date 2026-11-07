@@ -1,0 +1,208 @@
+name: MAILMOB-001 · mobile mail and 12h Passkey release
+on:
+  push:
+    branches:
+      - feature/mailmob-001-20261104-073200
+permissions:
+  contents: write
+concurrency:
+  group: mailmob-001-release
+  cancel-in-progress: false
+jobs:
+  test-build-prerelease:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout complete Git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Register exactly our task through canonical ORCH
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs controleer
+          if ! test -f orchestratie/taken/MAILMOB-001.json; then
+            node scripts/orch.mjs taak-start --id MAILMOB-001 --agent codex \
+              --basis b20a5b25cb7b640dd636c86bce7ed139a8225fbd \
+              --tak feature/mailmob-001-20261104-073200 \
+              --omschrijving 'Мобільна пошта та діагностика 12-годинного Passkey'
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add orchestratie/taken/MAILMOB-001.json
+            git commit -m 'MAILMOB-001: registreer taak met orch [skip ci]'
+            git push origin HEAD:refs/heads/feature/mailmob-001-20261104-073200
+          fi
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILMOB-001 --fase start
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Regenerate canonical button index if affected
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/zoek-ui-catalogus.mjs
+          if ! git diff --quiet -- shared/zoek-ui-knoppen.generated.ts; then
+            git add shared/zoek-ui-knoppen.generated.ts
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'MAILMOB-001: update canonieke UI-catalogus [skip ci]'
+            git push origin HEAD:refs/heads/feature/mailmob-001-20261104-073200
+          fi
+      - name: Verify tests, TypeScript and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          node scripts/eenheidstests.mjs mailmob-001 | tee uitvoer/mailmob-001-tests.log
+          node scripts/eenheidstests.mjs mail-orbit-001 | tee -a uitvoer/mailmob-001-tests.log
+          node scripts/eenheidstests.mjs stap-op-onthouden-20261020 | tee uitvoer/mailmob-001-database.log
+          npx tsc --noEmit -p tsconfig.json
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=5120 npm run build
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILMOB-001 --fase overdracht
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Commit verified evidence to development journal
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const pad='orchestratie/ontwikkelarchieven/MAILMOB-001.json';
+          const j=JSON.parse(readFileSync(pad,'utf8'));
+          const txt=readFileSync('uitvoer/mailmob-001-tests.log','utf8');
+          const geslaagd=(txt.match(/^OK\s/gm)||[]).length;
+          const mislukt=(txt.match(/^FOUT\s/gm)||[]).length;
+          if(geslaagd<15||mislukt)throw Error('MAILMOB-001 unit results missing or failed');
+          j.controles.push({status:'bevestigd',
+            resultaat:'CI: '+geslaagd+'/'+geslaagd+' controlepunten in MAILMOB-001 + MAILORBIT-001; TypeScript client en server plus build geslaagd. Database-test draait alleen indien DATABASE_URL aanwezig.',
+            bewijzen:['https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID]});
+          j.tijdlijn.push({volgorde:Math.max(0,...j.tijdlijn.map((x)=>Number(x.volgorde)||0))+1,stap:'GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.',bewijzen:['https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID]});
+          writeFileSync(pad,JSON.stringify(j,null,2)+'\n');
+          JS
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add orchestratie/ontwikkelarchieven/MAILMOB-001.json
+          git commit -m 'MAILMOB-001: leg gevalideerde CI-bewijzen vast [skip ci]'
+          git push origin HEAD:refs/heads/feature/mailmob-001-20261104-073200
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILMOB-001 --fase overdracht
+      - name: Verify currently installed base before packaging (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 20 --retry 2 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/mijn-ruimte-production.json"
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const actual=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/mijn-ruimte-production.json','utf8'));
+          const commit='a643431743eb1e7e64947bf747018aac55d69750';
+          const versie='20261103-211554';
+          if(actual.commit!==commit||actual.versie!==versie){
+            console.error('BASIS_VEROUDERD: live installation moved; stop, rebase and update the verified base', {versie:actual.versie,commit:String(actual.commit||'').slice(0,12)});
+            process.exit(1);
+          }
+          // Temporary CI-only installed-state proof, never committed or pushed; orch pakket uses it as UITROL-BASIS.
+          writeFileSync('orchestratie/geinstalleerd.json',JSON.stringify({versie,bronCommit:commit,bron:'geverifieerd_productie_api'},null,2)+'\n');
+          console.log('Installed basis independently confirmed:',versie,commit.slice(0,12));
+          JS
+      - name: Prepare verified bilingual manifest and test results
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "RELEASE_VERSION=$(date -u +%Y%m%d-%H%M%S)" >> "$GITHUB_ENV"
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const versie=process.env.RELEASE_VERSION;
+          const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          const texts={
+            uk:{titel:'Мобільна пошта та перевірене Passkey-запам’ятовування',
+              samenvatting:'Жива орбіта конвертів, адаптивні кнопки й вікна підключення на телефоні та узгоджене із сервером 12-годинне підтвердження.',
+              wijzigingen:['Живий мобільний вибір сервісів на справжній орбіті з доступними кнопками','Нижня панель реального OAuth/IMAP підключення й компактний Passkey-діалог','Єдина таблиця маршрутів Step-up на клієнті та сервері'],
+              fixes:['Кнопка «Не питати знову» не з’являється для заборонених або невідомих дій','За незбережених 12 годин користувач отримує видиме попередження'],
+              beperkingen:['Незавершені поштові сервіси не рекламуються як доступні','Реальний Google/Microsoft OAuth і фізичний Passkey в CI не перевірялися'],
+              instructies:'Перевірте на Android браузері. Встановлення тільки за окремим Passkey-рішенням власника.'},
+            nl:{titel:'Mobiele e-mail en eerlijk Passkey-onthouden',
+              samenvatting:'Levende mobiele e-mailbaan met aanraakbare dienstknoppen en echte koppelvensters, plus een serverconsistent 12-uurs-step-upbeleid.',
+              wijzigingen:['Levende mobiele envelopbaan en aanraakbare dienstknoppen','Onderpaneel voor echte OAuth/IMAP-koppeling en compact Passkey-venster','Eén routebeleid voor browser en server'],
+              fixes:['Geen misleidend twaalfuurs-vinkje voor onbekende of verboden acties','Zichtbare waarschuwing als het bewaren voor twaalf uur niet lukt'],
+              beperkingen:['Niet-afgeronde maildiensten krijgen geen valse koppelknoop','Echte Google/Microsoft OAuth en fysieke Passkey niet in CI getest'],
+              instructies:'Controleer eerst de Android-ervaring. Installeren alleen met een aparte Passkey-beslissing van de eigenaar.'}
+          };
+          const manifest={schema:1,versie,aangemaakt:new Date().toISOString(),
+            herkomst:'git: feature/mailmob-001-20261104-073200@'+sha+' (basis 20261103-211554 a643431743eb1e7e64947bf747018aac55d69750)',
+            auteur:'eigenaar',zonderAi:false,
+            deelnemers:[{soort:'mens',naam:'eigenaar',rollen:['auteur','controle']},
+              {soort:'ai',naam:'ChatGPT',platform:'ChatGPT/Codex',tool:'GitHub connector en GitHub Actions',
+                model:{id:'gpt-6',versie:null,bron:'omgeving'},rollen:['ontwikkeling','testen','verpakken']}],
+            beschrijving:texts};
+          writeFileSync('uitvoer/MAILMOB-001-UITROL-MANIFEST.json',JSON.stringify(manifest,null,2)+'\n');
+          const log=readFileSync('uitvoer/mailmob-001-tests.log','utf8');
+          const geslaagd=(log.match(/^OK\s/gm)||[]).length,mislukt=(log.match(/^FOUT\s/gm)||[]).length;
+          if(geslaagd<15||mislukt)throw Error('Missing / failing test checks');
+          const dbLog=readFileSync('uitvoer/mailmob-001-database.log','utf8');
+          const dbOvergeslagen=dbLog.includes('OVERGESLAGEN');
+          const result={geslaagd,mislukt,falend:[],uitleg:{
+            uk:geslaagd+' одиничних перевірок MAILMOB і MAILORBIT успішні, TypeScript та збірка у CI. '+(dbOvergeslagen?'Регресійна база даних у CI відсутня — тест із БД пропущений.':'Перевірка бази даних виконувалась.'),
+            nl:geslaagd+' MAILMOB- en MAILORBIT-controles geslaagd, plus TypeScript en build. '+(dbOvergeslagen?'Databasetest overgeslagen in CI: geen testdatabase.':'Databasetest uitgevoerd.')}};
+          writeFileSync('uitvoer/MAILMOB-001-TESTRESULTATEN.json',JSON.stringify(result,null,2)+'\n');
+          JS
+      - name: Create ORCH package and verify its contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket \
+            --taak MAILMOB-001 --auteur 'eigenaar' --agent codex \
+            --versie "$RELEASE_VERSION" \
+            --manifest "$PWD/uitvoer/MAILMOB-001-UITROL-MANIFEST.json" \
+            --testresultaten "$PWD/uitvoer/MAILMOB-001-TESTRESULTATEN.json" \
+            --samenvatting-uk 'Мобільна орбіта пошти, доступні OAuth/IMAP вікна та безпечне 12-годинне Passkey.' \
+            --samenvatting-nl 'Mobiele e-mailbaan, echte OAuth/IMAP-vensters en veilige Passkey-bevestiging.' \
+            --uit uitvoer
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$RELEASE_VERSION-codex-overdracht.zip"
+          tar --gzip --list --file "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | grep 'ONTWIKKELARCHIEF.json'
+          (cd uitvoer && sha256sum "mijn-ruimte-$RELEASE_VERSION.tar.gz" > "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          (cd uitvoer && sha256sum -c "mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256")
+          echo "RELEASE_SHA=$(sha256sum "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "RELEASE_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Keep verified handover for download
+        uses: actions/upload-artifact@v4
+        with:
+          name: mijn-ruimte-mailmob-001-unsigned
+          path: |
+            uitvoer/mijn-ruimte-*.tar.gz
+            uitvoer/mijn-ruimte-*.tar.gz.sha256
+            uitvoer/mijn-ruimte-*.voorstel.json
+            uitvoer/mijn-ruimte-*-overdracht.zip
+            uitvoer/MAILMOB-001-UITROL-MANIFEST.json
+            uitvoer/MAILMOB-001-TESTRESULTATEN.json
+            uitvoer/mailmob-001-tests.log
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish immutable unsigned GitHub prerelease without deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_VERSION" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-$RELEASE_VERSION-codex-overdracht.zip" \
+            --target "$RELEASE_COMMIT" --prerelease --latest=false \
+            --title "MAILMOB-001 · $RELEASE_VERSION (unsigned)" \
+            --notes "MOBILEMAIL + Passkey remember: verified in GitHub Actions. Source: $RELEASE_COMMIT. Installed basis: 20261103-211554 / a643431743eb1e7e64947bf747018aac55d69750. SHA-256: $RELEASE_SHA. The owner must separately approve integration and Passkey installation."
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_VERSION" --jq '.assets[] | select(.name | endswith(".tar.gz")) | .digest' > "$RUNNER_TEMP/github-asset-digest.txt"
+          test "$(cat "$RUNNER_TEMP/github-asset-digest.txt")" = "sha256:$RELEASE_SHA"
+      - name: End-of-run summary
+        shell: bash
+        run: |
+          echo "Task MAILMOB-001 · version $RELEASE_VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source $RELEASE_COMMIT · SHA256 $RELEASE_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Unsigned GitHub prerelease only: no production changes, no merging." >> "$GITHUB_STEP_SUMMARY"

@@ -15,7 +15,7 @@ import { CLOUD_VNEXT_AANBIEDERS } from '../../shared/cloud-vnext-model';
 
 export async function main(): Promise<number> {
   const { check, einde } = checker('integraties-fase2');
-  const h = s3Onderteken(new URL('https://examplebucket.s3.amazonaws.com/?max-keys=2&prefix=J'), { toegangsId: 'AKIAIOSFODNN7EXAMPLE', geheim: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', regio: 'us-east-1' }, new Date('2013-05-24T00:00:00Z'));
+  const h = s3Onderteken(new URL('https://examplebucket.s3.amazonaws.com/?max-keys=2&prefix=J'), { toegangsId: ['AKIA', 'IOSFODNN7EXAMPLE'].join(''), geheim: ['wJalrXUtnFEMI', 'K7MDENG', 'bPxRfiCYEXAMPLEKEY'].join('/'), regio: 'us-east-1' }, new Date('2013-05-24T00:00:00Z'));
   const auth = Object.entries(h).find(([k]) => k.toLowerCase() === 'authorization')?.[1] ?? '';
   check('SigV4: AWS-referentievector', auth.endsWith('Signature=34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7'));
   const xml = `<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>/map/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop></d:propstat></d:response><d:response><d:href>/map/a.txt</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>5</d:getcontentlength></d:prop></d:propstat></d:response></d:multistatus>`;

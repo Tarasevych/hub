@@ -530,7 +530,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                   </div>
                   {items.length === 0 ? <p className="mcp-meta">{t("У цій колонці немає задач.", "Geen taken in deze kolom.")}</p> : null}
                   {items.map((task) => (
-                    <div key={task.id} className="mcp-task" data-board-item={task.id}>
+                    <div key={task.id} className="mcp-task" data-board-item={task.id} data-zoek-doel={`bord:${task.id}`}>
                       <p>{task.title}</p>
                       <div className="mcp-moves" role="group" aria-label={t("Перемістити до", "Verplaatsen naar")}>
                         {statuses.filter((next) => next !== status).map((next) => (
@@ -720,7 +720,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             {archive.name ? <p className="mcp-url">{archive.name}</p> : null}
             {archive.name && (archive.state === "ready" || archive.history.some((row) => row.name === archive.name && row.kept)) ? (
               <div className="mcp-form">
-                <button type="button" className="mcp-btn ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob())}>{archive.state === "ready" ? t("Завантажити архів (оберіть диск і папку)", "Archief downloaden (kies schijf en map)") : t("Завантажити ще раз", "Opnieuw downloaden")}</button>
+                <button type="button" className="mcp-btn ghost" disabled={Boolean(busy)} onClick={() => void run("archive", () => saveBlob())}>{archive.state === "ready" ? t("Завантажити архів (оберіть диск і теку)", "Archief downloaden (kies schijf en map)") : t("Завантажити ще раз", "Opnieuw downloaden")}</button>
                 {downloaded > 0 ? <small className="mcp-live"> {t("записано", "geschreven")} {sizeText(downloaded)}</small> : null}
               </div>
             ) : null}

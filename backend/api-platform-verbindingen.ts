@@ -16,8 +16,8 @@ const STATUSES:ConnectionStatus[]=['not_connected','configured','error','revoked
 const VAULT_PURPOSE:Partial<Record<ConnectionId,'home-assistant'|'telegram'|'github'|'anthropic'>>={'home-assistant':'home-assistant',telegram:'telegram',github:'github',anthropic:'anthropic'};
 export const API_PLATFORM_CONNECTIONS:Array<{id:ConnectionId;kind:ConnectionKind;labelUk:string;labelNl:string;noteUk:string;noteNl:string}>=[
   {id:'google-identity',kind:'google-link',labelUk:'Google identity',labelNl:'Google-identiteit',noteUk:'Живий екосистемний вхід. Без другого OAuth.',noteNl:'Bestaande ecosysteeminlog. Geen tweede OAuth.'},
-  {id:'google-gmail',kind:'google-link',labelUk:'Gmail',labelNl:'Gmail',noteUk:'Посилання на існуючий mail-grant. Без другого OAuth.',noteNl:'Verwijst naar de bestaande mail-grant. Geen tweede OAuth.'},
-  {id:'google-drive',kind:'google-link',labelUk:'Google Drive',labelNl:'Google Drive',noteUk:'Посилання на існуючий Drive-grant. Без другого OAuth.',noteNl:'Verwijst naar de bestaande Drive-grant. Geen tweede OAuth.'},
+  {id:'google-gmail',kind:'google-link',labelUk:'Gmail',labelNl:'Gmail',noteUk:'Посилання на наявний mail-grant. Без другого OAuth.',noteNl:'Verwijst naar de bestaande mail-grant. Geen tweede OAuth.'},
+  {id:'google-drive',kind:'google-link',labelUk:'Google Drive',labelNl:'Google Drive',noteUk:'Посилання на наявний Drive-grant. Без другого OAuth.',noteNl:'Verwijst naar de bestaande Drive-grant. Geen tweede OAuth.'},
   {id:'home-assistant',kind:'vault-secret',labelUk:'Home Assistant',labelNl:'Home Assistant',noteUk:'Long-lived token зберігається в owner vault.',noteNl:'Long-lived token wordt in de owner-kluis bewaard.'},
   {id:'telegram',kind:'vault-secret',labelUk:'Telegram',labelNl:'Telegram',noteUk:'Bot token зберігається в owner vault.',noteNl:'Bot-token wordt in de owner-kluis bewaard.'},
   {id:'anthropic',kind:'vault-secret',labelUk:'Anthropic (Claude API)',labelNl:'Anthropic (Claude-API)',noteUk:'Власний ключ API (BYOK) для чату на ai.tarasevych.com. Лише в owner vault.',noteNl:'Eigen API-sleutel (BYOK) voor de chat op ai.tarasevych.com. Alleen in de owner-kluis.'},

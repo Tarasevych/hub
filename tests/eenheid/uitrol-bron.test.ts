@@ -70,7 +70,7 @@ export async function main(): Promise<number> {
     // ---- 2. de nieuwe installer: SSH schrijft versie = pakketversie + release = map; opdracht/nazorg schrijven TERUG_OK → run ----
     const proefDir = mkdtempSync(join(tmpdir(), 'bron-noteer-'));
     const run = (args: string[], env: Record<string, string>) => spawnSync('bash', ['deploy/installeer-app.sh', 'noteer-proef', ...args], { encoding: 'utf8', env: { ...process.env, INSTALLEER_NOTEER_PROEF: '1', MIJN_RUIMTE_STATUS_DIR: proefDir, MIJN_RUIMTE_STATUS_GROEP: 'nogroup', ...env } });
-    if (process.getuid?.() === 0) check('installer-proef: overgeslagen als root', true);
+    if (process.getuid?.() === 0) { check('installer-proef: overgeslagen als root', true); current('20270401-100100'); } // zelfde stand als na het terugdraaien hieronder
     else {
       const ssh = run(['SSH_OK', '20270401-130000', '20270401-125900', 'abcdef1234567890abcdef1234567890abcdef12'], { SUDO_USER: 'beheer', SSH_CONNECTION: '10.0.0.5 1 2 3' });
       const status = JSON.parse(readFileSync(join(proefDir, 'status.json'), 'utf8'));

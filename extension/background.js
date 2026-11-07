@@ -99,6 +99,7 @@ function nieuwSlot(ruimte) {
 const sloten = { prive: nieuwSlot('prive'), technisch: nieuwSlot('technisch') };
 /** Profiel en techRecht van het account (uit /self; alleen weergave en de keuze of de technische kaart bestaat). */
 let accountInfo = { email: '', techRecht: false, at: 0 };
+const K_ACCOUNT = 'accountInfo';
 /** tabId -> { claim, profiel } — wat de brug van dat tabblad meldde. */
 const tabInfo = new Map();
 const attached = new Set(); // tabIds met debugger
@@ -422,6 +423,50 @@ async function slotStatus(r) {
     vergrendeldDoor: s.laatsteVergrendeling ? { ...s.laatsteVergrendeling } : null,
   };
 }
+// 0.9.1: ingebouwde AI van Chrome (lokale-ai.js, opties/zijpaneel). De service worker zelf heeft die API's niet; hij meldt alleen
+// de KEUZES (hoofdschakelaar + welke API's aan staan) zodat de site kan tonen wat in deze browser lokaal mag. Nooit tekst of uitvoer.
+const LAI_APIS = ['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader'];
+async function lokaleAiKeuze() {
+  const o = (await stil(() => chrome.storage.local.get('lokaleAi'))) || {};
+  const v = o.lokaleAi && typeof o.lokaleAi === 'object' ? o.lokaleAi : {};
+  const apis = v.apis && typeof v.apis === 'object' ? v.apis : {};
+  // Standaard (nog nooit opgeslagen): alles aan, net als STANDAARD in lokale-ai.js.
+  const aan = v.aan !== false;
+  // 0.9.1: stand per API zoals Chrome die IN DE EXTENSIE meldt (offscreen.html meet availability(), nooit create()). Nooit wachten:
+  // de status gebruikt de laatste meting; een nieuwe meting loopt op de achtergrond en meldt daarna statusWijziging().
+  if (aan) laiMeetAls();
+  // siteToegang («!», standaard uit): mogen pagina's van de site zelf de lokale AI gebruiken (LOKALE_AI via externally_connectable).
+  return { aan, apis: LAI_APIS.filter((id) => apis[id] !== false), siteToegang: v.siteToegang === true, ...(aan && laiMeting.data ? { stand: { ...laiMeting.data } } : {}) };
+}
+// ---- 0.9.2: stand per API voor de status (eigen pagina's en de site) via hetzelfde offscreen.html als de site-aanvragen ----
+// Стан кожної API для статусу: той самий offscreen-документ (naarOffscreen нижче), лише availability(), без завантаження.
+const LAI_STANDEN = ['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout'];
+const LAI_GELDIG_MS = 5 * 60_000;
+const laiMeting = { data: null, t: 0, bezig: null };
+/** Zuiver: alleen bekende API's en stand-namen uit het offscreen-antwoord ({apis}); 'uit' zegt de keuze al. Anders null. */
+function laiStandFilter(d) {
+  const a = d && typeof d === 'object' && d.apis && typeof d.apis === 'object' && !Array.isArray(d.apis) ? d.apis : null;
+  if (!a) return null;
+  const uit = {};
+  for (const id of LAI_APIS) if (LAI_STANDEN.includes(a[id])) uit[id] = a[id];
+  return Object.keys(uit).length ? uit : null;
+}
+async function meetLokaleAi() {
+  // naarOffscreen staat lager in dit bestand (function-declaratie, dus hier al bruikbaar); het document sluit zelf na een minuut.
+  const r = await Promise.race([naarOffscreen({ op: 'lokale-ai-stand' }).catch(() => null), new Promise((ok) => setTimeout(() => ok(null), 20_000))]);
+  return r && r.ok ? laiStandFilter(r) : null;
+}
+/** Start een meting als de vorige ouder is dan LAI_GELDIG_MS; nooit twee tegelijk. Na afloop: statusWijziging(). */
+function laiMeetAls(forceer = false) {
+  if (laiMeting.bezig || (!forceer && Date.now() - laiMeting.t < LAI_GELDIG_MS)) return laiMeting.bezig;
+  laiMeting.t = Date.now();
+  laiMeting.bezig = meetLokaleAi().then((d) => {
+    const anders = JSON.stringify(d) !== JSON.stringify(laiMeting.data);
+    laiMeting.data = d;
+    if (anders) void statusWijziging();
+  }, () => undefined).finally(() => { laiMeting.bezig = null; });
+  return laiMeting.bezig;
+}
 /** ExtStatus 0.6 voor eigen pagina's: geen sleutels of tokens. sloten.technisch = null als die kaart niet mag bestaan. */
 async function statusKern() {
   const gl = await globaal();
@@ -434,7 +479,8 @@ async function statusKern() {
   const nr = nativeRuimte();
   const techBestaat = tech.gekoppeld || accountInfo.techRecht === true;
   return {
-    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, accountEmail: accountInfo.email || '', techRecht: accountInfo.techRecht === true,
+    // 0.9.1: e-mail alleen zolang er een koppeling is (na ontkoppelen geen oude e-mail in de kop, maar de knop «Увійти»).
+    versie: VERSION, profielTab: opSite ? profielVan(tab.id) : null, accountEmail: prive.gekoppeld || tech.gekoppeld ? accountInfo.email || '' : '', techRecht: accountInfo.techRecht === true,
     account: opSite ? accountState(tabInfo.get(tab.id) ? tabInfo.get(tab.id).claim : null, userId) : 'unknown',
     sloten: { prive, technisch: techBestaat ? tech : null },
     lokaal: { toegestaan: nativeAan && !!nr, verbonden: lokaalInfo().verbonden, ruimte: nativeAan ? nr : null },
@@ -442,6 +488,7 @@ async function statusKern() {
     // 0.6.1 (punt 7): stand van het debuggerrecht — ook naar de site, zodat «дозвіл є / немає / відкликано» daar te zien is.
     diagnostiek: { ...(await diagStand()), losgelaten: losgelaten ? losgelaten.reden : null },
     gekoppeld: prive.gekoppeld || tech.gekoppeld, verbonden: prive.verbonden || tech.verbonden,
+    lokaleAi: await lokaleAiKeuze(),
   };
 }
 const slotPubliek = (x) => (x ? {
@@ -462,6 +509,7 @@ function publiek(s, profiel = s.profielTab, account = s.account) {
     versie: s.versie, profielTab: profiel === 'technisch' || profiel === 'gebruiker' ? profiel : null, account, prive, technisch, lokaalVerbonden: s.lokaal.verbonden,
     // 0.6.1: alleen de stand (nooit het pad naar een pakket of iets uit de opslag) — de site toont er «дозвіл є / немає / відкликано» mee.
     diagnostiek: { stand: d.stand || 'nee', optIn: d.optIn === true, actief: d.actief === true, aanvraagbaar: d.aanvraagbaar === true },
+    lokaleAi: s.lokaleAi || null,
     gekoppeld: spiegel.gekoppeld, verbonden: spiegel.verbonden, staat: spiegel.staat, exp: spiegel.exp, caps: spiegel.caps, domeinen: spiegel.domeinen,
     aiVerbonden: spiegel.aiVerbonden, agentId: spiegel.agentId,
   };
@@ -837,10 +885,44 @@ function waitComplete(tabId, ms = 15000) {
     chrome.tabs.onUpdated.addListener(listener);
   });
 }
+// 0.9.1 (EXT090-001): de brug komt ZELF op open tabbladen — geen F5 meer na installeren, bijwerken of herladen van de extensie.
+// Chrome zet content scripts alleen in pagina's die NA het laden van de extensie openen; open tabbladen van tarasevych.com hadden
+// daardoor geen brug tot de gebruiker vernieuwde. Nu: eerst vragen of er een levende brug is (ping); zo niet, dan collector.js
+// (MAIN, eigen dubbelbescherming) en bridge.js (ISOLATED; een nieuwe brug zet een verweesde oude stil) via chrome.scripting.
+// Alleen eigen tabbladen (https://*.tarasevych.com), dezelfde grens als host_permissions. Eén poging per tabblad tegelijk.
+const brugBezig = new Map(); // tabId -> Promise<boolean>
+async function brugLeeft(tabId) {
+  try { const a = await chrome.tabs.sendMessage(tabId, { op: 'brug?' }); return !!(a && a.ok === true); } catch { return false; }
+}
+async function zorgVoorBrug(tabId, url) {
+  if (!Number.isInteger(tabId) || (url !== undefined && !isOwnSiteUrl(url || ''))) return false;
+  if (brugBezig.has(tabId)) return brugBezig.get(tabId);
+  const p = (async () => {
+    if (await brugLeeft(tabId)) return true;
+    try {
+      await chrome.scripting.executeScript({ target: { tabId }, files: ['collector.js'], world: 'MAIN' });
+      await chrome.scripting.executeScript({ target: { tabId }, files: ['bridge.js'] });
+    } catch { return false; } // geen recht (chrome://, andere host) of tabblad weg
+    // De brug laadt eerst shared.js (dynamische import): even wachten tot hij antwoordt.
+    for (let i = 0; i < 10; i += 1) { if (await brugLeeft(tabId)) return true; await sleep(150); }
+    return false;
+  })().finally(() => brugBezig.delete(tabId));
+  brugBezig.set(tabId, p);
+  return p;
+}
+async function zorgVoorBruggen() {
+  for (const tab of (await stil(ownTabs)) || []) if (tab && tab.id !== undefined && !tab.discarded) await stil(() => zorgVoorBrug(tab.id, tab.url));
+}
+
 async function askTab(tabId, message, pogingen = 6) {
   let last;
   for (let i = 0; i < pogingen; i += 1) {
-    try { return await chrome.tabs.sendMessage(tabId, message); } catch (err) { last = err; await sleep(400); }
+    try { return await chrome.tabs.sendMessage(tabId, message); } catch (err) {
+      last = err;
+      // Geen ontvanger: de brug ontbreekt (tabblad van vóór de update) → plaatsen in plaats van de gebruiker om F5 te vragen.
+      if (i === 0) { await stil(() => zorgVoorBrug(tabId)); continue; }
+      await sleep(400);
+    }
   }
   throw new Error('The page is not ready or the extension is not active on it: ' + String((last && last.message) || last));
 }
@@ -1221,6 +1303,7 @@ async function selfTest(r) {
   const checks = [];
   const add = (id, ok, detail = '') => checks.push({ id, ok: !!ok, detail: String(detail).slice(0, 120) });
   const lijst = r ? [r] : RUIMTES;
+  // 0.9.1: 'bridge' blijft zichtbaar, maar is geen voorwaarde meer — de extensie plaatst de brug zelf (zorgVoorBrug).
   const info = ['debugger_permission', 'diag_opt_in', 'site_tab', 'bridge', 'account', 'profiel', 'markering'];
   for (const x of lijst) {
     const st = await slotState(x);
@@ -1243,6 +1326,8 @@ async function selfTest(r) {
   const tab = await stil(() => targetTab((t) => (g ? tabMag(doel, g, t) : isOwnSiteUrl(t.url || ''))));
   add('site_tab', !!tab, tab && g ? stripQuery(tab.url) : ''); // vergrendeld: geen adres of titel
   if (tab) {
+    // 0.9.1: ontbreekt de brug, dan eerst zelf plaatsen (geen F5); pas daarna de echte controle.
+    await stil(() => zorgVoorBrug(tab.id, tab.url));
     let bridge = null; try { bridge = await chrome.tabs.sendMessage(tab.id, { op: 'self_test' }); } catch { bridge = null; }
     add('bridge', !!(bridge && bridge.ok), bridge && bridge.data ? `buffer ${bridge.data.buffered}` : '');
     // 0.6.2: leest een AI dit tabblad NU? Alleen informatief — «niemand» is de normale toestand (geen werk = geen rand).
@@ -1270,6 +1355,9 @@ async function selfInfo(r, vers = false) {
       const data = await res.json();
       s.selfCache = { at: Date.now(), data: { enabled: !!data.enabled, active: !!data.active, ruimte: ruimteOf(data.ruimte) } };
       accountInfo = { email: typeof data.email === 'string' ? data.email.slice(0, 200) : accountInfo.email, techRecht: data.techRecht === true || (r === 'technisch' && data.techRecht !== false), at: Date.now() };
+      // 0.9.1: ook in chrome.storage.session (alleen deze browsersessie, TRUSTED_CONTEXTS): na het inslapen van de service worker
+      // stond in de kop anders «Обліковий запис: —» tot het volgende /self-antwoord.
+      void sessie.set({ [K_ACCOUNT]: { email: accountInfo.email, techRecht: accountInfo.techRecht } });
       if (ruimteOf(data.ruimte) !== r) await herindelen(r, ruimteOf(data.ruimte));
     }
   } catch { /* offline: toon wat we lokaal weten */ }
@@ -1322,6 +1410,71 @@ async function pair(code, name) {
   return { ok: true, agentId: data.agentId, ruimte };
 }
 
+// ---------------------------------------------------------------- 0.9.1: lokale AI via offscreen.html
+// De ingebouwde AI van Chrome bestaat niet in de service worker. Voor aanvragen van de site (en later andere achtergrondtaken)
+// opent de worker één onzichtbaar document (offscreen.html) en sluit het weer na een minuut zonder werk.
+// Site-aanvragen alleen als de gebruiker «!» siteToegang aanzette (standaard uit); nooit een modeldownload zonder klik.
+const OFFSCREEN_URL = 'offscreen.html';
+let offscreenBezig = null;
+let offscreenSluiter = null;
+async function offscreenOpen() {
+  if (!chrome.offscreen || typeof chrome.offscreen.createDocument !== 'function') throw Object.assign(new Error('OFFSCREEN_ONTBREEKT'), { code: 'OFFSCREEN_ONTBREEKT' });
+  const url = chrome.runtime.getURL(OFFSCREEN_URL);
+  let bestaat = false;
+  try {
+    if (chrome.runtime.getContexts) bestaat = (await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'], documentUrls: [url] })).length > 0;
+    else if (chrome.offscreen.hasDocument) bestaat = await chrome.offscreen.hasDocument();
+  } catch { bestaat = false; }
+  if (bestaat) return;
+  if (!offscreenBezig) {
+    offscreenBezig = chrome.offscreen.createDocument({ url: OFFSCREEN_URL, reasons: ['WORKERS'], justification: 'Ingebouwde AI van Chrome (Gemini Nano, Translator, Summarizer…) bestaat alleen in een document, niet in de service worker.' })
+      .catch((e) => { if (!/single offscreen|already/i.test(String(e && e.message))) throw e; })
+      .finally(() => { offscreenBezig = null; });
+  }
+  await offscreenBezig;
+}
+function offscreenLaterSluiten() {
+  if (offscreenSluiter) clearTimeout(offscreenSluiter);
+  offscreenSluiter = setTimeout(() => { offscreenSluiter = null; if (lokaleAiLopend.size === 0) { try { void chrome.offscreen.closeDocument().catch(() => undefined); } catch { /* al dicht */ } } }, 60_000);
+}
+const lokaleAiLopend = new Set();
+const lokaleAiTeller = new Map(); // origin → [tijdstempels] (max 20 per minuut)
+async function lokaleAiInstellingen() {
+  try { const o = await chrome.storage.local.get('lokaleAi'); return o && o.lokaleAi && typeof o.lokaleAi === 'object' ? o.lokaleAi : {}; } catch { return {}; }
+}
+async function naarOffscreen(bericht) {
+  await offscreenOpen();
+  offscreenLaterSluiten();
+  const r = await chrome.runtime.sendMessage({ ...bericht, doel: 'offscreen' });
+  offscreenLaterSluiten();
+  return r && typeof r === 'object' ? r : { ok: false, reason: 'OFFSCREEN_GEEN_ANTWOORD' };
+}
+const LOKALE_AI_MODI = ['summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader', 'prompt'];
+async function lokaleAiVoorSite(message, origin) {
+  const inst = await lokaleAiInstellingen();
+  if (inst.aan === false) return { ok: false, reason: 'UIT' };
+  if (inst.siteToegang !== true) return { ok: false, reason: 'SITE_TOEGANG_UIT' };
+  if (message.type === 'LOKALE_AI_STAND') return naarOffscreen({ op: 'lokale-ai-stand' });
+  const modus = String(message.modus || '');
+  if (!LOKALE_AI_MODI.includes(modus)) return { ok: false, reason: 'MODUS' };
+  const tekst = typeof message.tekst === 'string' ? message.tekst : '';
+  if (!tekst.trim()) return { ok: false, reason: 'LEEG' };
+  if (tekst.length > 20000) return { ok: false, reason: 'TE_LANG', max: 20000 };
+  const nu = Date.now();
+  const lijst = (lokaleAiTeller.get(origin) || []).filter((x) => nu - x < 60_000);
+  if (lijst.length >= 20) return { ok: false, reason: 'TE_VEEL' };
+  if (lokaleAiLopend.size >= 2) return { ok: false, reason: 'BEZIG' };
+  lijst.push(nu); lokaleAiTeller.set(origin, lijst);
+  const id = `${nu}-${Math.random().toString(36).slice(2)}`;
+  lokaleAiLopend.add(id);
+  try {
+    const taal = (v) => (typeof v === 'string' && /^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(v) ? v : undefined);
+    return await naarOffscreen({ op: 'lokale-ai-voer', id, modus, tekst, vanTaal: taal(message.bron), naarTaal: taal(message.doel), limietMs: 120000 });
+  } catch (e) {
+    return { ok: false, reason: (e && e.code) || 'OFFSCREEN_FOUT', detail: String((e && e.message) || e).slice(0, 200) };
+  } finally { lokaleAiLopend.delete(id); }
+}
+
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   (async () => {
     let origin = '';
@@ -1336,10 +1489,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     if (type === 'PING') {
       await geladen;
       const s = await selfStatus();
+      const vt = await voorTab(s);
+      // lokaleAi: publieke keuzes (aan/apis/stand) PLUS het PING-contract {ondersteund, siteToegang}; na de spread, anders overschreven.
       return sendResponse({ ok: true, version: VERSION, selfHosted: ZELF_GEHOST, latest: laatsteBekend || null, paired: s.gekoppeld, connected: s.verbonden,
-        diagOptIn: s.diagOptIn, ...(await voorTab(s)) });
+        diagOptIn: s.diagOptIn, ...vt, lokaleAi: { ...(vt.lokaleAi || {}), ondersteund: true, siteToegang: (await lokaleAiInstellingen()).siteToegang === true } });
     }
     if (type === 'STATUS') { await geladen; return sendResponse({ ok: true, ...(await voorTab(await statusKern())) }); }
+    // 0.9.1: lokale AI voor pagina's van de eigen site (alleen met «!» siteToegang; tekst blijft op dit apparaat)
+    if (type === 'LOKALE_AI' || type === 'LOKALE_AI_STAND') return sendResponse(await lokaleAiVoorSite(message, origin));
     const beheerOrigin = ['mcp.tarasevych.com', 'admin.tarasevych.com'].includes(new URL(origin).hostname);
     if ((type === 'SELF_TEST' || type === 'UPDATE_CHECK') && !beheerOrigin) return sendResponse({ ok: false, reason: 'WRONG_HOST' });
     if (type === 'SELF_TEST') return sendResponse({ ok: true, ...(await selfTest()) });
@@ -1506,6 +1663,10 @@ async function nativeBijwerken() {
 const geladen = (async () => {
   await stil(() => chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }));
   await gemigreerd();
+  { // 0.9.1: e-mail en techRecht uit deze browsersessie terug (zie selfInfo); het volgende /self overschrijft ze.
+    const a = (await sessie.get(K_ACCOUNT))[K_ACCOUNT];
+    if (a && typeof a === 'object' && !accountInfo.email) accountInfo = { email: typeof a.email === 'string' ? a.email.slice(0, 200) : '', techRecht: a.techRecht === true, at: 0 };
+  }
   for (const r of RUIMTES) {
     const s = sloten[r];
     const v = await sessie.get([K.ontgr(r), K.settings(r), K.intrek(r)]);
@@ -1526,7 +1687,8 @@ const geladen = (async () => {
   }
 })().catch(() => undefined);
 // Na het wekken: claims en profielen van open tabbladen opnieuw ophalen (geheugen is leeg), dan de status duwen.
-void geladen.then(async () => { for (const tab of (await stil(ownTabs)) || []) await stil(() => claimVan(tab.id)); }).then(() => statusWijziging());
+// 0.9.1: eerst de brug op elk open eigen tabblad (na update/herladen ontbreekt hij daar), dan de claims.
+void geladen.then(async () => { await zorgVoorBruggen(); for (const tab of (await stil(ownTabs)) || []) await stil(() => claimVan(tab.id)); }).then(() => statusWijziging());
 
 // Na het installeren opent de extensie zelf de pagina waar de gebruiker inlogt, koppelt en kiest wat mag.
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -1537,6 +1699,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     const old = await chrome.storage.local.get(['token']);
     if (old.token) { await chrome.storage.local.remove(['token', 'agentId', 'server', 'name']); chrome.tabs.create({ url: `${SITE}/agents?extension=update#extensie` }); }
   }
+  // 0.9.1: open tabbladen van tarasevych.com krijgen meteen de brug — de site ziet de extensie zonder F5 en de sessie blijft.
+  void zorgVoorBruggen().then(() => statusWijziging());
   connect();
 });
 
@@ -1548,5 +1712,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   for (const r of RUIMTES) if (alarm.name === K.alarm(r)) void eindeBereikt(r);
 });
 chrome.runtime.onStartup.addListener(() => { connect(); void versieOphalen(); });
+// 0.9.1: andere keuze voor de lokale AI in opties/zijpaneel → de site ziet het meteen.
+if (chrome.storage.onChanged) chrome.storage.onChanged.addListener((wijz, gebied) => { if (gebied === 'local' && wijz && wijz.lokaleAi) { laiMeting.t = 0; void statusWijziging(); } });
 void versieOphalen();
 connect();

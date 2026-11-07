@@ -1,0 +1,68 @@
+name: TRACE-001 auditregel en softwarecontrole
+on:
+  push:
+    branches:
+      - feature/trace-001-20261103-214810
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: trace-001-check
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Generate lock and compact through ORCH only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs vergrendel
+          node scripts/orch.mjs context
+          node scripts/orch.mjs taak-herlees --id TRACE-001
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add orchestratie/regels.lock.json orchestratie/CONTEXT-COMPACT.md orchestratie/taken/TRACE-001.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'TRACE-001: orch vergrendel/context/taak-herlees [skip ci]'
+            git push origin "HEAD:refs/heads/feature/trace-001-20261103-214810"
+          fi
+      - name: Canonical guard and start/transfer freshness
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak TRACE-001 --fase start
+          node scripts/orch.mjs versheid --taak TRACE-001 --fase overdracht
+      - name: Shell syntax
+        run: |
+          bash -n deploy/uitrol/maak-voorstelpakket.sh
+          bash -n deploy/uitrol/mijn-ruimte-uitrol.sh
+      - name: TRACE-001 negative and positive verification tests
+        run: node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
+      - name: Existing site package checks
+        run: node scripts/eenheidstests.mjs uitrol-voorcontrole
+      - name: Manifest and codes regressions
+        run: |
+          node scripts/eenheidstests.mjs uitrol-manifest
+          node scripts/eenheidstests.mjs uitrol-codes
+      - name: Pakketbouw en ORCH-regressietests
+        run: |
+          node scripts/eenheidstests.mjs uitrol-pakket-maken
+          node scripts/eenheidstests.mjs orch-pakket
+          node scripts/eenheidstests.mjs orch-uitrol-basis
+      - name: Typecheck server
+        run: npm run typecheck:server
+      - name: Typecheck client
+        run: npx tsc --noEmit -p tsconfig.json
+      - name: Build
+        run: npm run build

@@ -1,11 +1,13 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./BROWSER-VIA-CONNECTOR.uk.md) · [🇳🇱 **Nederlandse versie**](./BROWSER-VIA-CONNECTOR.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Браузер через конектор «Мій простір» — для будь-якого ШІ-агента
 
 Стан: 23.10.2026 (розширення 0.7.0, міграція 0110). Для власника BYOS-сервера і для розробників агентів. Усе працює на сервері
-власника і в його браузері; жодних зовнішніх служб, жодного стороннього хостингу. Нідерландська версія — нижче (§ NL).
+власника і в його браузері; жодних зовнішніх служб, жодного стороннього хостингу.
 
 ## 1. Що це
 
-Будь-який агент, підключений до нашого конектора (`https://mcp.<ваш-домен>/<агент>`: `claude`, `gpt`, `grok`, `gemini`, `copilot`, `cursor`),
+Будь-який агент, під'єднаний до нашого конектора (`https://mcp.<ваш-домен>/<агент>`: `claude`, `gpt`, `grok`, `gemini`, `copilot`, `cursor`),
 отримує **ті самі інструменти браузера**. Вони діють через розширення «Мій простір» у браузері власника — у двох окремих слотах:
 
 | Слот | Що бачить агент | Як відкривається | Найдовший строк |
@@ -18,15 +20,15 @@
 ## 2. Одне місце керування: mcp.\*/agents → «Браузер і агенти» (`#browser`)
 
 На одному екрані:
-1. **Слоти** — стан, залишок, строк (15 хв, 1 год, 4 год, до кінця технічної активації, до закриття браузера, до виходу з акаунта,
+1. **Слоти** — стан, залишок, строк (15 хв, 1 год, 4 год, до кінця технічної активації, до закриття браузера, до виходу з облікового запису,
    до відкликання, 1 тиждень, 1 місяць, 6 місяців, 1 рік), сторінки, «Відкрити доступ» / «Заблокувати».
-   **Перезапуск браузера** не скидає «до виходу з акаунта», «до відкликання» і строки від тижня до року (сервер зберігає розблокування
+   **Перезапуск браузера** не скидає «до виходу з облікового запису», «до відкликання» і строки від тижня до року (сервер зберігає розблокування
    й надсилає його знову). Короткі строки (15 хв, 1 год, 4 год, до кінця технічної активації) і «до закриття браузера» закінчуються,
    коли браузер закрито: розширення 0.7.0 при кожному з’єднанні повідомляє ідентифікатор браузерної сесії (`chrome.storage.session`),
    інший ідентифікатор = браузер перезапущено → сервер відкликає (`browser-gesloten`). Оновлення чи перезавантаження розширення теж
-   починає нову сесію. Якщо Chrome працює у фоні після закриття вікон, браузер ще не закрито. **Вихід з акаунта на сайті скидає
-   завжди — будь-який строк** в обох слотах (зокрема вихід в одній вкладці й перемикання акаунта у вкладці).
-2. **Матриця** можливість × агент (`усі` + шість агентів) для кожного слота: читати, навігація, клік/введення, скріншот,
+   починає нову сесію. Якщо Chrome працює у фоні після закриття вікон, браузер ще не закрито. **Вихід з облікового запису на сайті скидає
+   завжди — будь-який строк** в обох слотах (зокрема вихід в одній вкладці й перемикання облікового запису у вкладці).
+2. **Матриця** можливість × агент (`усі` + шість агентів) для кожного слота: читати, навігація, натискання/введення, знімок екрана,
    консоль/мережа, глибока діагностика (лише технічний), скрипти (лише технічний). Швидкі набори: «Дозволити все для розробки»
    (з попередженням), «Лише читання», «Заблокувати». Перемикачі «без підтвердження кожної дії» і «назви як у chrome-devtools-mcp».
    Збереження ширшого просить підтвердити вхід; чинне розблокування переподписується одразу — агентові нічого не треба повторювати.
@@ -37,14 +39,14 @@
 4. **Останні відмови агентам** — з журналу, людською мовою, з рядком/стовпчиком, якого бракує.
 
 ### Повний ланцюжок для одного виклику
-`права конектора (venster «Дозволити»)` → `жива сторона (технічна — лише з активним профілем і службою «Підключення ШІ»)` →
+`права конектора (venster «Дозволити»)` → `жива сторона (технічна — лише з активним профілем і службою «Під'єднання ШІ»)` →
 `режим інструмента (підписана політика ШІ, інакше налаштування сайту)` → `розблокування слота (строк, сторінки)` ∩ `політика розширення
 (власник / users.manage)` ∩ **`матриця для цього агента`** → `розширення ще раз перевіряє підпис, слот, профіль вкладки, хост, обліковий запис`.
 
 ## 3. Крок за кроком (для будь-якого агента)
 
-1. Встановіть розширення 0.7.0 (mcp.\*/agents → «Розширення браузера») і підключіть слот(и).
-2. Підключіть агента на його адресі (вкладка «Підключені ШІ»), у вікні «Дозволити» увімкніть групу **«Браузер»** — у приватній і/або
+1. Встановіть розширення 0.7.0 (mcp.\*/agents → «Розширення браузера») і під'єднайте слот(и).
+2. Під'єднайте агента на його адресі (вкладка «Під'єднані ШІ»), у вікні «Дозволити» увімкніть групу **«Браузер»** — у приватній і/або
    технічній частині.
 3. «Браузер і агенти»: позначте можливості для цього агента (або для «усі»), «Зберегти».
 4. Відкрийте слот на потрібний строк. Для технічного: активуйте технічний профіль у вкладці.
@@ -63,8 +65,8 @@
 | browser_get_diagnostics, browser_audit | tonen_diagnose, tonen_pagina_audit | performance_start_trace / _stop_trace (→ аудит швидкодії) | читати |
 | browser_console, browser_network | lezen_console, lezen_netwerk | list_console_messages, get_console_message, list_network_requests, get_network_request | консоль/мережа (разом із «читати»: старі дозволи на читання діють як і раніше, матриця додатково вимагає рядок «Консоль і мережа») |
 | browser_open, browser_history, browser_pages | openen_pagina, navigeren_geschiedenis, beheren_tabbladen | navigate_page, navigate_page_history, new_page, select_page, close_page | навігація |
-| browser_click, browser_type, browser_hover, browser_fill_form, browser_select_option, browser_press_key, browser_invoke_action | klikken_element, typen_tekst, aanwijzen_element, invullen_formulier, kiezen_optie, drukken_toets, uitvoeren_site_actie | click, fill, hover, fill_form, press_key | клік/введення |
-| browser_screenshot | maken_schermafdruk | take_screenshot | скріншот |
+| browser_click, browser_type, browser_hover, browser_fill_form, browser_select_option, browser_press_key, browser_invoke_action | klikken_element, typen_tekst, aanwijzen_element, invullen_formulier, kiezen_optie, drukken_toets, uitvoeren_site_actie | click, fill, hover, fill_form, press_key | натискання/введення |
+| browser_screenshot | maken_schermafdruk | take_screenshot | знімок екрана |
 | browser_get_deep_diagnostics | uitvoeren_diepe_diagnose | — | глибока діагностика (лише технічний, пакет «діагностика») |
 | browser_script | uitvoeren_script (лише `_beheer`) | evaluate_script | скрипти (лише технічний, пакет «діагностика», позначка в матриці) |
 
@@ -93,9 +95,9 @@
 | `EXTENSIE_AGENT` | для цього агента в матриці нічого не дозволено | матриця: стовпчик агента або «усі» |
 | `EXTENSIE_HOST` | адреса поза сторінками розблокування | картка слота → «Сторінки» |
 | `EXTENSIE_PROFIEL` | вкладка не в технічному режимі | активуйте технічний профіль у вкладці |
-| `EXTENSIE_RUIMTE` / `TECH_PROFILE_OFF` | інструмент іншого слота / технічна сторона не активна | технічний профіль, служба «Підключення ШІ» |
+| `EXTENSIE_RUIMTE` / `TECH_PROFILE_OFF` | інструмент іншого слота / технічна сторона не активна | технічний профіль, служба «Під'єднання ШІ» |
 | `EXTENSIE_SCRIPT` | скрипти: не технічний слот, розширення < 0.7.0 або без позначки «Скрипти» | матриця, пакет «діагностика» |
-| `PERMISSION_OFF` | права конектора цього агента не містять інструмента | «Підключені ШІ» → вікно «Дозволити» |
+| `PERMISSION_OFF` | права конектора цього агента не містять інструмента | «Під'єднані ШІ» → вікно «Дозволити» |
 | `NOT_SUPPORTED` | назва chrome-devtools-mcp, яку ми свідомо не підтримуємо | у тексті — список того, що є |
 | `TERMIJN_VEREIST_UPDATE` | довгий строк для розширення < 0.7.0 | оновіть розширення |
 
@@ -124,49 +126,3 @@ Anthropic у сховищі сайту, для технічного слота �
 ## 9. Що не відбувається ніколи
 Розширення не читає паролі, платіжні поля, cookie, сховище, вміст запитів; не відкриває сторонні сайти; приватний агент не бачить
 технічних вкладок; технічний — приватних; агент одного користувача не дістає слот іншого (тест `extensie-matrix-20261022`).
-
----
-
-## § NL — De browser via de connector van «Mijn Ruimte», voor elke AI-agent
-
-**Wat.** Elke agent op `https://mcp.<domein>/<agent>` (claude, gpt, grok, gemini, copilot, cursor) krijgt **dezelfde browserhulpmiddelen**,
-via de extensie in de browser van de eigenaar, in twee gescheiden sloten: **privé** (`…_gebruiker`; alleen uw eigen pagina’s, nooit
-admin.\*/api.\*; openen met een bevestiging van de aanmelding) en **technisch** (`…_beheer`; alleen tabbladen met een ACTIEF technisch
-profiel op de gekozen beheerhosts; ontgrendelen met uw passkey). Het verschil tussen agenten zit alleen in uw toestemmingen.
-
-**Eén plek: mcp.\*/agents → «Browser en agenten» (`#browser`).** Sloten (stand, termijn: 15 min, 1 u, 4 u, tot het einde van de
-technische activering, tot de browser sluit, tot uitloggen, tot intrekken, 1 week, 1 maand, 6 maanden, 1 jaar), de matrix mogelijkheid × agent per slot
-(lezen, navigatie, klikken/typen, schermafdruk, console/netwerk, diepe diagnose en scripts alleen technisch), snelle sets («Alles toestaan
-voor ontwikkeling» met waarschuwing, «Alleen lezen», «Blokkeren»), «zonder bevestiging per actie», «namen zoals chrome-devtools-mcp»,
-«Wat er verder nog toegestaan moet zijn» (connectorrechten en modi per hulpmiddel; opslaan van de matrix zet riskante browserhulpmiddelen
-aan voor de toegestane mogelijkheden — met een geldig ondertekend AI-beleid beslist dat beleid) en de laatste weigeringen in gewone taal.
-Ruimer opslaan vraagt een bevestiging; een lopende ontgrendeling wordt meteen opnieuw ondertekend.
-
-**Termijn en technisch profiel.** Een technische ontgrendeling die langer loopt dan de activering, overleeft die — maar elk technisch
-hulpmiddel eist bij gebruik toch een actief technisch profiel in het tabblad. Een herstart van de browser maakt geen einde aan «tot
-uitloggen», «tot intrekken» en een week tot een jaar (de server stuurt de ontgrendeling opnieuw); korte termijnen (15 min, 1 u, 4 u, tot
-het einde van de activering) en «tot de browser sluit» eindigen als de browser sluit — de extensie 0.7.0 meldt bij elke verbinding een
-browsersessie-id (`chrome.storage.session`), een andere id betekent een herstart (of een update van de extensie) en de server trekt in
-(`browser-gesloten`). **Uitloggen op de site maakt altijd een einde — aan elke termijn**, in beide sloten.
-
-**Stappen.** Extensie 0.7.0 installeren en sloten koppelen → agent koppelen op zijn adres en in het venster «Toestaan» de groep
-**Browser** aanzetten → in «Browser en agenten» vinkjes zetten en opslaan → slot openen voor de gewenste termijn (technisch: profiel
-activeren) → de agent roept `tools/list` aan.
-
-**Namen.** `<essentie>_<agent>_mcp_tarasevych_com_<gebruiker|beheer>`; zie de tabel in §4 (essentie, chrome-devtools-mcp-naam, mogelijkheid).
-Voorbeelden: zie §5. `uid` komt uit `controls[].uid` van de snapshot (`<index>_<hash>`), `name` kan ook. Een kale devtools-naam gaat naar
-het technische slot als dat leeft en is toegestaan, anders naar privé; `"slot":"prive"|"technisch"` of het achtervoegsel kiest zelf.
-Onbekende argumenten van chrome-devtools-mcp vallen weg en staan als «Ignored arguments» in het antwoord.
-
-**Weigeringen** (§6): EXTENSIE_VERGRENDELD, EXTENSIE_CAP, EXTENSIE_AGENT, EXTENSIE_HOST, EXTENSIE_PROFIEL, EXTENSIE_RUIMTE/TECH_PROFILE_OFF,
-EXTENSIE_SCRIPT, PERMISSION_OFF, NOT_SUPPORTED, TERMIJN_VEREIST_UPDATE — elk met het exacte adres `https://mcp.tarasevych.com/agents#browser`.
-
-**chrome-devtools-mcp** (§7): ondersteund en bewust niet ondersteund zoals hierboven; snapshot is JSON in plaats van een tekstboom;
-`evaluate_script` alleen technisch en zonder element-args. **Niet online geverifieerd:** de lijst komt uit kennis van de openbare
-repository ChromeDevTools/chrome-devtools-mcp (versies tot 2025).
-
-**Zijpaneel** (§8): chat «AI voor u — bij dit tabblad», met het token van het slot, alleen browserhulpmiddelen, alleen deze browser,
-dezelfde poorten; vereist een open slot, het recht «API-platform», een Anthropic-sleutel in de kluis en voor technisch een actief profiel.
-
-**Nooit** (§9): wachtwoorden, betaalvelden, cookies, opslag of inhoud van verzoeken; vreemde sites; kruisen tussen de sloten; het slot van
-een andere gebruiker.

@@ -1,0 +1,218 @@
+{
+  "schema": 1,
+  "taakId": "MAILMOB-001",
+  "datum": "2026-11-04",
+  "taal": "uk",
+  "opdracht": "Eigenaar Test просить випустити оновлення Mijn Ruimte, повністю оновити мобільний вигляд порожньої сторінки поштових акаунтів за погодженою анімованою концепцією орбіти конвертів, а також знайти й усунути причину повторних Passkey-підтверджень попри вибране «Не питати знову до 12 годин» без послаблення безпеки.",
+  "herkomst": {
+    "eigenaar": "Eigenaar Test",
+    "agent": "ChatGPT/Codex",
+    "basis": "b20a5b25cb7b640dd636c86bce7ed139a8225fbd",
+    "tak": "feature/mailmob-001-20261104-073200",
+    "vorigeProductieVersie": "20261103-205438",
+    "vorigeProductieCommit": "15025c3e9c8466b650f0a5488b18c42f54ab9d3a",
+    "voorgaandePrs": [
+      "https://github.com/Tarasevych/hub/pull/22",
+      "https://github.com/Tarasevych/hub/pull/23"
+    ],
+    "geverifieerdeProductieVersie": "20261103-211554",
+    "geverifieerdeProductieCommit": "a643431743eb1e7e64947bf747018aac55d69750"
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Отримано два мобільні знімки з Android Chrome: висока форма Passkey із вибраною опцією 12 годин та мобільна сторінка /accounts, де орбіта замінена довгою сіткою.",
+      "bewijzen": [
+        "Надано користувачем у чаті 04.11.2026, приватні вкладення не дублюються у GitHub"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Прочитані канонічні AGENTS.md, beleid.json 1.4.1, CONTEXT-COMPACT, deploy правила, runbook, BESLUITEN, MAILORBIT-001 та TRACE-001.",
+      "bewijzen": [
+        "AGENTS.md",
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md",
+        "https://github.com/Tarasevych/hub/pull/22",
+        "https://github.com/Tarasevych/hub/pull/23"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Візуально спроєктовані два стани мобільної пошти: повноекранна концепція орбіти та обраний Gmail із нижньою панеллю; остаточний код реалізується локальними CSS/SVG-компонентами, а не зображенням.",
+      "bewijzen": [
+        "src/mail/MailOrbitIntro.tsx",
+        "src/mail/mail-orbit-intro.css",
+        "src/mail/mail-koppel-mobile-sheet.css"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Діагностовано розбіжність: src/platform/stap-op.ts для невідомого URL повертав «bevestigen», дозволяючи чекбокс, а backend/stap-op.ts для того самого URL повертав «onbekend» і блокував 12-годинне запам’ятовування. Друга помилка: клієнт Passkey ігнорував фактичне поле «onthouden» у відповіді сервера, тому не показував невдале збереження.",
+      "bewijzen": [
+        "src/platform/stap-op.ts",
+        "backend/stap-op.ts",
+        "src/platform/bevestig-toegang.tsx",
+        "backend/toegangssleutels.ts"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Підготовлені єдина shared-мапа безпечних URL, чесне сповіщення при невдалому записі Passkey/TOTP/Google та мобільні responsive стилі. Ніколи не запам’ятовуються видалення, експорт, оновлення, passkey, паролі, секрети і невідомі маршрути.",
+      "bewijzen": [
+        "shared/stap-op-acties.ts",
+        "src/platform/stap-op.ts",
+        "src/platform/bevestig-toegang.tsx",
+        "src/mail/mail-orbit-intro.css"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Додано окремі перевірки для невідомого маршруту, небезпечних дій, факту серверного onthouden, мобільної орбіти, адаптивних кнопок і панелей. Реальні результати CI мають бути додані автоматично до випуску після виконання.",
+      "bewijzen": [
+        "tests/eenheid/mailmob-001.test.ts",
+        ".github/workflows/mailmob-001-release.yml"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Перший GitHub CI успішно виконав тести, перевірку типів і production build, але коректно зупинив випуск: production уже оновлено до 20261103-211554/a643431. Нова встановлена база перевірена як предок гілки через GitHub Compare (ahead=16, behind=0); фіксована база пакета скоригована. Жоден пакет із застарілою базою не випущено.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960",
+        "https://github.com/Tarasevych/hub/compare/a643431743eb1e7e64947bf747018aac55d69750...f583e01bf33b"
+      ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "GitHub CI перевірив контроль ORCH, unit-тести UI та Passkey, TypeScript і production build; фактичні результати внесені у комічений журнал.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41786254494"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Мобільна орбіта лишається справжньою UI-взаємодією",
+      "waarom": "Попередній CSS повністю ховав орбіту на екранах до 620 px, зводячи ефект до плиток.",
+      "compromis": "На 320–360 px зменшені конверти, але збережені центральна композиція, текст і великі окремі кнопки."
+    },
+    {
+      "besluit": "Використати лише наявні шість реально підключуваних сервісів",
+      "waarom": "Нові провайдери без реалізованого OAuth/IMAP не повинні бути фальшивими кнопками.",
+      "compromis": "Графічний концепт показує популярні бренди, але робочий код використовує канонічний список доступних шести, решту чесно пояснює в каталозі."
+    },
+    {
+      "besluit": "Спільна функція мапування маршруту для клієнта й сервера",
+      "waarom": "Різні значення для невідомого URL спричиняли оманливий 12-годинний чекбокс.",
+      "compromis": "Для невідомих і ризикових дій підтвердження все одно запитується, що відповідає політиці безпеки."
+    },
+    {
+      "besluit": "Повернути окремий результат запам’ятовування, не зривати успішний Passkey",
+      "waarom": "Сервер міг записати коротке 5-хвилинне підтвердження, але тихо не записати 12-годинну сесію.",
+      "compromis": "Коротке підтвердження використовується, користувач отримує попередження і знає, що 12 годин не активні."
+    },
+    {
+      "besluit": "Готовий GitHub prerelease без інсталяції на сервісі",
+      "waarom": "Промислове встановлення та зміни критичних правил потребують самостійного Passkey-схвалення власника.",
+      "compromis": "Архів та SHA будуть опубліковані лише після зеленого CI і підтвердження production-бази; у production агент не пише."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "src/mail/MailOrbitIntro.tsx",
+      "doel": "Чітка головна дія та мобільний вибір сервісів."
+    },
+    {
+      "bestand": "src/mail/mail-orbit-intro.css",
+      "doel": "Анімована адаптивна орбіта, 320–620px, теми, reduced-motion."
+    },
+    {
+      "bestand": "src/mail/MailKoppelVenster.tsx",
+      "doel": "Візуально адаптоване дійсне вікно підключення."
+    },
+    {
+      "bestand": "src/mail/mail-koppel-mobile-sheet.css",
+      "doel": "Нижня панель на мобільному без втрати спільного віконного механізму."
+    },
+    {
+      "bestand": "shared/stap-op-acties.ts",
+      "doel": "Одна довірена логіка класифікації URL."
+    },
+    {
+      "bestand": "backend/stap-op.ts",
+      "doel": "Сервер повторно використовує єдину класифікацію; заборони збережені."
+    },
+    {
+      "bestand": "src/platform/stap-op.ts",
+      "doel": "Безпечний невідомий URL і фактичне підтвердження 12-годинного збереження."
+    },
+    {
+      "bestand": "src/platform/bevestig-toegang.tsx",
+      "doel": "Сповіщення про невдалу пам’ять і недоступне для codeword збереження."
+    },
+    {
+      "bestand": "src/platform/bevestig-toegang.css",
+      "doel": "Компактне критичне вікно Passkey на телефоні."
+    },
+    {
+      "bestand": "tests/eenheid/mailmob-001.test.ts",
+      "doel": "Регресія UI і 12-годинної пам’яті."
+    },
+    {
+      "bestand": ".github/workflows/mailmob-001-release.yml",
+      "doel": "Підтверджений CI-пакет, перевірка live бази і GitHub prerelease."
+    }
+  ],
+  "controles": [
+    {
+      "status": "gepland",
+      "resultaat": "Статичні перевірки MAILMOB-001, MAILORBIT-001, TSC client+server, production build, контроль ORCH та випуск GitHub Release будуть виконані GitHub Actions. До завершення CI нічого не позначене успішним.",
+      "bewijzen": [
+        ".github/workflows/mailmob-001-release.yml"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "CI: 37/37 controlepunten in MAILMOB-001 + MAILORBIT-001; TypeScript client en server plus build geslaagd. Database-test draait alleen indien DATABASE_URL aanwezig.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960"
+      ]
+    },
+    {
+      "status": "geblokkeerd",
+      "resultaat": "CI 41785803960: unit/UI та TypeScript, production build і ORCH пройшли, але BASIS_VEROUDERD на live сервері: 20261103-211554 / a643431. Захист правильно зупинив публікацію до звірки й нової спроби.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41785803960"
+      ]
+    },
+    {
+      "status": "bevestigd",
+      "resultaat": "CI: 37/37 controlepunten in MAILMOB-001 + MAILORBIT-001; TypeScript client en server plus build geslaagd. Database-test draait alleen indien DATABASE_URL aanwezig.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41786254494"
+      ]
+    }
+  ],
+  "bronnen": [
+    "https://github.com/Tarasevych/hub/pull/22",
+    "https://github.com/Tarasevych/hub/pull/23",
+    "https://github.com/Tarasevych/hub/blob/b20a5b25cb7b640dd636c86bce7ed139a8225fbd/AGENTS.md"
+  ],
+  "beperkingen": [
+    "CI кодові тести пройдено під час першого запуску; пакет і GitHub Release ще не зібрано після виявленої зміни встановленої бази.",
+    "Реальне завершення Google/Microsoft OAuth, фізичний Passkey і перевірка живого Android потребують ручного E2E власника.",
+    "Перед застосуванням TRACE-001 критичні правила 1.4.1 потребують окремого підтвердження власника. Жодного автоматичного встановлення.",
+    "Початкове фото та скриншоти користувача не комітяться як приватні вкладення."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "onderbouwing": "Немає токенів, cookie, приватних листів, фотографій користувача чи прихованого внутрішнього ланцюжка думок ШІ; записані перевірювані дії та короткі мотиви."
+  }
+}

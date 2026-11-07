@@ -1,0 +1,168 @@
+/* MAILPOLISH-001 · Een productvenster, geen technisch formulier.
+   Dezelfde bestaande OAuth/IMAP-acties en het gezamenlijke vensterbeheer blijven behouden. */
+.mail-koppel-ervaring{
+  --mail-koppel-groen:var(--accent,#086b67);
+  box-sizing:border-box;display:grid;gap:20px;position:relative;isolation:isolate;
+  width:100%;min-width:0;padding:26px clamp(18px,4vw,32px) 23px;
+  color:var(--text,#122b31);background:
+    radial-gradient(ellipse 78% 160px at 50% -8%,color-mix(in srgb,var(--mail-koppel-groen) 10%,transparent),transparent 95%),
+    var(--panel,#fff);
+}
+.mail-koppel-ervaring>*{position:relative;z-index:1;min-width:0}
+.mail-koppel-hero{display:grid;justify-items:center;text-align:center;gap:7px}
+.mail-koppel-merk{
+  display:grid;place-items:center;width:95px;height:93px;margin-bottom:8px;
+  border-radius:28px;border:1px solid color-mix(in srgb,var(--mail-koppel-groen) 13%,var(--line,#e4e7e8));
+  background:linear-gradient(147deg,var(--panel,#fff) 5%,color-mix(in srgb,var(--papier) 75%,var(--panel,#fff)) 65%,color-mix(in srgb,var(--mail-koppel-groen) 7%,var(--panel,#fff)));
+  box-shadow:0 12px 35px color-mix(in srgb,var(--mail-koppel-groen) 12%,transparent),0 2px 10px color-mix(in srgb,var(--shadow,#183b3b) 8%,transparent),inset 0 1px 1px rgba(255,255,255,.75);
+  animation:mail-koppel-inzicht .65s cubic-bezier(.18,.89,.28,1.18) both;
+}
+.mail-koppel-merk :is(svg,img){max-width:64px;max-height:64px}
+.mail-koppel-kicker{
+  display:inline-flex;align-items:center;gap:6px;justify-content:center;
+  font-size:10px;font-weight:760;letter-spacing:.14em;line-height:1.5;color:var(--mail-koppel-groen);
+}
+.mail-koppel-hero h2{
+  margin:1px 0 0;font-size:clamp(1.65rem,4.5vw,2.17rem);
+  line-height:1.14;font-weight:800;letter-spacing:-.047em;color:var(--text,#102e33);
+  overflow-wrap:anywhere;text-wrap:balance;
+}
+.mail-koppel-hero>p{
+  margin:0;color:var(--muted,#60717a);font-size:clamp(.88rem,2vw,.99rem);
+  line-height:1.5;text-wrap:balance;
+}
+.mail-koppel-google{display:grid;gap:14px;min-width:0}
+.mail-koppel-vertrouwen{
+  display:grid;gap:0;min-width:0;padding:12px clamp(12px,3vw,20px);
+  border-radius:19px;border:1px solid color-mix(in srgb,var(--mail-koppel-groen) 47%,var(--line,#dbe6e3));
+  background:linear-gradient(140deg,color-mix(in srgb,var(--mail-koppel-groen) 4%,var(--panel,#fff)),var(--panel,#fff) 66%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--panel,#fff) 80%,transparent);
+}
+.mail-koppel-vertrouwen-rij{display:flex;align-items:center;gap:15px;min-width:0;padding:10px 0}
+.mail-koppel-vertrouwen-rij+.mail-koppel-vertrouwen-rij{border-top:1px solid color-mix(in srgb,var(--mail-koppel-groen) 14%,var(--line,#dfe5e5))}
+.mail-koppel-vertrouwen-rij>svg{flex:0 0 auto;color:var(--mail-koppel-groen)}
+.mail-koppel-vertrouwen-rij>span{display:grid;gap:4px;min-width:0;padding-left:15px;border-left:1px solid color-mix(in srgb,var(--mail-koppel-groen) 30%,var(--line,#dce3e3))}
+.mail-koppel-vertrouwen-rij strong{font-size:clamp(.88rem,2.2vw,.98rem);font-weight:760;line-height:1.25}
+.mail-koppel-vertrouwen-rij small{font-size:clamp(.76rem,1.8vw,.83rem);font-weight:430;line-height:1.45;color:var(--muted,#61717a)}
+.mail-koppel-google-acties{display:grid;gap:8px;min-width:0}
+.mail-koppel-hoofdactie{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  width:100%;min-width:0;min-height:58px;padding:12px 18px;
+  border:1px solid color-mix(in srgb,var(--mail-koppel-groen) 85%,transparent);
+  border-radius:17px;color:var(--text-on-accent,#fff);
+  background:linear-gradient(109deg,color-mix(in srgb,var(--mail-koppel-groen) 78%,#003c3e),var(--mail-koppel-groen));
+  font:inherit;font-size:clamp(.91rem,2.3vw,1.02rem);font-weight:760;line-height:1.35;
+  box-shadow:0 12px 24px color-mix(in srgb,var(--mail-koppel-groen) 20%,transparent),inset 0 1px 0 rgba(255,255,255,.16);
+  cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+.mail-koppel-hoofdactie>span:nth-last-child(2):not(.mail-koppel-google-embleem){flex:1;text-align:center}
+.mail-koppel-hoofdactie>svg{flex:none}
+.mail-koppel-google-embleem{
+  flex:0 0 auto;display:grid;place-items:center;width:33px;height:33px;
+  border-radius:50%;background:var(--papier);
+}
+.mail-koppel-google-embleem :is(svg,img){max-height:24px;max-width:24px}
+.mail-koppel-hoofdactie:hover:not(:disabled){filter:brightness(1.07);box-shadow:0 15px 30px color-mix(in srgb,var(--mail-koppel-groen) 27%,transparent);transform:translateY(-1px)}
+.mail-koppel-hoofdactie:active:not(:disabled){transform:translateY(1px) scale(.99)}
+.mail-koppel-hoofdactie:disabled{opacity:.65;cursor:wait}
+.mail-koppel-email{margin:1px 0 0;text-align:center;font-size:.81rem;color:var(--muted,#61717a);overflow-wrap:anywhere;line-height:1.4}
+.mail-koppel-email strong{font-weight:700;color:var(--text,#122b31)}
+.mail-koppel-andere-account{
+  width:100%;min-height:45px;padding:8px 13px;border:1px solid var(--line,#d7e2e0);
+  border-radius:13px;background:color-mix(in srgb,var(--panel,#fff) 96%,var(--mail-koppel-groen));
+  color:var(--text,#162f33);font:inherit;font-weight:670;font-size:.9rem;cursor:pointer;
+}
+.mail-koppel-andere-account:hover:not(:disabled){border-color:var(--mail-koppel-groen);background:color-mix(in srgb,var(--mail-koppel-groen) 5%,var(--panel,#fff))}
+.mail-koppel-andere-account:disabled{opacity:.65;cursor:wait}
+.mail-koppel-verbonden{
+  margin:0;font-size:.82rem;line-height:1.5;overflow-wrap:anywhere;
+  color:var(--muted,#5e7074);border-left:3px solid var(--mail-koppel-groen);padding:2px 0 2px 12px;
+}
+.mail-koppel-status{display:flex;align-items:center;gap:8px;min-width:0;margin:0;line-height:1.5;font-size:.87rem;color:var(--muted,#526772)}
+.mail-koppel-draait{animation:mail-koppel-draai .9s linear infinite}
+.mail-koppel-fout{margin:0;padding:12px 14px;border-radius:12px;border:1px solid color-mix(in srgb,var(--fout,#b42318) 30%,var(--line));background:color-mix(in srgb,var(--fout,#b42318) 6%,var(--panel,#fff));color:var(--fout,#b42318);line-height:1.5;overflow-wrap:anywhere}
+.mail-koppel-voet{display:grid;justify-items:center;gap:10px;padding-top:3px;text-align:center}
+.mail-koppel-voet p{display:flex;align-items:flex-start;justify-content:center;gap:8px;margin:0;color:var(--muted,#66747b);font-size:.76rem;line-height:1.5}
+.mail-koppel-voet p svg{flex:none;color:var(--mail-koppel-groen)}
+.mail-koppel-terug{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;
+  padding:8px 15px;border:0;border-radius:12px;background:transparent;
+  color:var(--mail-koppel-groen);font:inherit;font-size:.9rem;font-weight:760;cursor:pointer;
+}
+.mail-koppel-terug:hover{background:color-mix(in srgb,var(--mail-koppel-groen) 9%,transparent)}
+.mail-koppel-hoofdactie:focus-visible,.mail-koppel-andere-account:focus-visible,.mail-koppel-terug:focus-visible{
+  outline:3px solid var(--focus,var(--mail-koppel-groen));outline-offset:3px;
+}
+.mail-koppel-ervaring :is(input,select,textarea,button){max-width:100%;box-sizing:border-box}
+.mail-koppel-ervaring input{color:var(--text,#102e33);background:var(--panel,#fff)}
+.mail-koppel-ervaring a{color:var(--mail-koppel-groen)}
+.mail-koppel-ervaring :is(input,button){min-width:0}
+@media(min-width:560px){
+  .venster.mail-koppel-mobile-sheet{border-radius:23px}
+  .venster.mail-koppel-mobile-sheet .venster-inhoud{overscroll-behavior:contain}
+  .mail-koppel-ervaring{padding:27px 32px 22px}
+}
+/* Мобільне вікно підлаштовується під ВМІСТ, а не займає 74dvh типово. */
+@media(max-width:559px){
+  html .venster.mail-koppel-mobile-sheet.is-max{
+    inset:auto calc(8px + var(--veilig-rechts,0px) + var(--venster-dok-rechts,0px))
+      calc(8px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px))
+      calc(8px + var(--veilig-links,0px) + var(--venster-dok-links,0px))!important;
+    width:auto!important;height:fit-content!important;min-height:0!important;
+    max-height:calc(100dvh - 24px - var(--veilig-boven,0px) - var(--veilig-onder,0px) - var(--venster-dok-boven,0px) - var(--venster-dok-onder,0px))!important;
+    border-radius:27px 27px 20px 20px!important;
+    border:1px solid color-mix(in srgb,var(--accent,#086b67) 15%,var(--line,#e4e7e8));
+    box-shadow:0 28px 68px rgba(10,36,38,.25),0 4px 12px rgba(10,36,38,.08);
+    background:var(--panel,#fff);
+  }
+  html .venster.mail-koppel-mobile-sheet .venster-inhoud{
+    flex:0 1 auto;min-height:0;max-height:calc(100dvh - 78px - var(--veilig-boven,0px) - var(--veilig-onder,0px) - var(--venster-dok-boven,0px) - var(--venster-dok-onder,0px));
+    overflow-y:auto;overscroll-behavior:contain;
+    scrollbar-width:thin;
+  }
+  .venster.mail-koppel-mobile-sheet .venster-kop{
+    position:relative;min-height:40px;padding:8px 10px 1px;background:var(--panel,#fff);
+    border:0;cursor:default;
+  }
+  .venster.mail-koppel-mobile-sheet .venster-kop::before{
+    content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    width:42px;height:5px;border-radius:99px;background:color-mix(in srgb,var(--muted,#7c8d91) 25%,var(--panel,#fff));
+    pointer-events:none;
+  }
+  .venster.mail-koppel-mobile-sheet .venster-greep{min-height:30px}
+  .venster.mail-koppel-mobile-sheet .venster-titel{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .venster.mail-koppel-mobile-sheet .venster-knoppen button{width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--muted,#64748b) 8%,var(--panel,#fff))}
+  .venster.mail-koppel-mobile-sheet .venster-knoppen button:hover{background:color-mix(in srgb,var(--accent,#086b67) 12%,var(--panel,#fff))}
+  .mail-koppel-ervaring{padding:0 clamp(19px,5vw,29px) 17px;gap:16px}
+  .mail-koppel-merk{width:86px;height:84px;margin-bottom:5px;border-radius:24px}
+  .mail-koppel-merk :is(svg,img){max-width:57px;max-height:57px}
+  .mail-koppel-hero h2{font-size:clamp(1.52rem,6vw,1.93rem)}
+  .mail-koppel-hero>p{font-size:.88rem}
+  .mail-koppel-vertrouwen{padding:8px 13px;border-radius:18px}
+  .mail-koppel-vertrouwen-rij{gap:12px;padding:10px 0}
+  .mail-koppel-vertrouwen-rij>span{padding-left:12px}
+  .mail-koppel-vertrouwen-rij strong{font-size:.86rem}
+  .mail-koppel-vertrouwen-rij small{font-size:.77rem}
+  .mail-koppel-hoofdactie{min-height:55px;padding:10px 13px;font-size:.92rem}
+  .mail-koppel-voet{gap:6px}
+}
+@media(max-width:360px){
+  .mail-koppel-ervaring{gap:13px;padding-right:15px;padding-left:15px}
+  .mail-koppel-merk{width:75px;height:73px;border-radius:21px}
+  .mail-koppel-merk :is(svg,img){max-width:51px;max-height:51px}
+  .mail-koppel-hero h2{font-size:1.46rem}
+  .mail-koppel-vertrouwen-rij{gap:9px}
+  .mail-koppel-vertrouwen-rij>span{padding-left:9px}
+  .mail-koppel-vertrouwen-rij>svg{width:21px;height:21px}
+  .mail-koppel-hoofdactie{gap:8px;padding-left:11px;padding-right:11px;font-size:.86rem}
+}
+/* Een subtiele introductie; nooit als bewegende pagina voor wie dit heeft uitgeschakeld. */
+@keyframes mail-koppel-inzicht{
+  from{opacity:0;transform:translateY(17px) scale(.8) rotate(-7deg)}
+  to{opacity:1;transform:translateY(0) scale(1) rotate(0)}
+}
+@keyframes mail-koppel-draai{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+  .mail-koppel-ervaring *, .mail-koppel-ervaring *::before,.mail-koppel-ervaring *::after{animation:none!important;transition:none!important}
+  .mail-koppel-draait{animation:none}
+}

@@ -1,25 +1,27 @@
-# Admin → /mappen «Інтеграції» (17 oktober 2026)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-INTEGRATIES.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-INTEGRATIES.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-De tab `directories` (URL /mappen) is een integratiecentrum geworden: 160 kaarten in 21 categorieën, met zoeken, filters en een detailvenster.
+# Admin → /mappen «Інтеграції» (17 жовтня 2026)
 
-## Wat er staat
-- `shared/integraties-catalogus.ts`: 160 integraties (id, naam, categorie, methoden, uk/nl-tekst, site, status `klaar` / `instellen` / `binnenkort`).
-  **Eerlijk:** alleen wat werkelijk bestaat is `klaar` (19: Google Gmail/Agenda/Drive/Foto's/SSO, Telegram, GitHub, Home Assistant, Anthropic-sleutel, de zes AI-agenten, eigen MCP-client, webhooks, REST-API, OAuth-apps) of `instellen` (2: Entra, SCIM). De overige 139 zijn «Скоро»: de knop is uitgeschakeld en er staan geen verzonnen scopes of stappen.
-- `shared/integraties-detail.ts`: rechten, stappen, documentatielink per bestaande koppeling; filters «Популярні» (34) en «Нові» (de zes agenten + MCP-client); servercodes → uk/nl-tekst.
-- `src/integraties/`: `Integraties.tsx` (catalogus, «Мої підключення», «Зовнішні каталоги»), `Detail.tsx` (venster), `Logo.tsx`, `logos.ts`, `integraties.css`.
-- `backend/admin-integraties.ts` + migratie `0055_integraties.sql`: routes `admin/integraties/{stand,beleid,controleer,loskoppelen}` en `integraties/beschikbaar` (voor gewone gebruikers: alleen de id's die de beheerder opende).
-- Elke wijziging komt in het beheerlogboek (`integration.beleid.aan|uit|geweigerd`, `integration.test`, `integration.disconnect`), met wie/wat/van→naar.
+Вкладка `directories` (URL `/mappen`) стала центром інтеграцій: 160 карток у 21 категорії, з пошуком, фільтрами та вікном деталей.
 
-## Logo's
-Merklogo's uit simple-icons (CC0), 137 stuks, 105 kB (44 kB gzip), pas geladen als de pagina opent. Een eerdere versie had paden stuk-afgerond (56 van 137 corrupt); nu via `scripts/integraties-logos-maken.mjs` (svgo, 2 decimalen; 11 merken 3). De test controleert de padstructuur en dekt die fout af. 16 kaarten hebben geen simple-icons-logo (o.a. Outlook, OneDrive, Teams, Azure, Mollie — Microsoft-merken staan niet in de set) en krijgen een monogram in een eigen tint. Merknamen en -logo's zijn van hun eigenaars.
+## Що тут є
+- `shared/integraties-catalogus.ts`: 160 інтеграцій (id, назва, категорія, методи, uk/nl-текст, сайт, статус `klaar` / `instellen` / `binnenkort`).
+  **Чесно:** статус `klaar` має лише те, що справді існує (19: Google Gmail/Agenda/Drive/Foto's/SSO, Telegram, GitHub, Home Assistant, ключ Anthropic, шість ШІ-агентів, власний MCP-клієнт, вебхуки, REST API, OAuth-застосунки), або `instellen` (2: Entra, SCIM). Решта 139 — «Скоро»: кнопка вимкнена, жодних вигаданих скоупів чи кроків немає.
+- `shared/integraties-detail.ts`: права, кроки, посилання на документацію для кожного наявного під'єднання; фільтри «Популярні» (34) і «Нові» (шість агентів + MCP-клієнт); коди сервера → uk/nl-текст.
+- `src/integraties/`: `Integraties.tsx` (каталог, «Мої під'єднання», «Зовнішні каталоги»), `Detail.tsx` (вікно), `Logo.tsx`, `logos.ts`, `integraties.css`.
+- `backend/admin-integraties.ts` + міграція `0055_integraties.sql`: маршрути `admin/integraties/{stand,beleid,controleer,loskoppelen}` та `integraties/beschikbaar` (для звичайних користувачів: лише ті id, які відкрив адміністратор).
+- Кожна зміна потрапляє до журналу адміністрування (`integration.beleid.aan|uit|geweigerd`, `integration.test`, `integration.disconnect`), із зазначенням хто/що/було→стало.
 
-## Wat «Підключити», «Перевірити стан» en «Відключити» werkelijk doen
-- «Підключити»: opent de bestaande pagina van die koppeling (OAuth, MCP-adres of kluis). Er is geen tweede OAuth-stroom gebouwd.
-- «Перевірити стан»: configuratiecontrole op de site (bestaat er een sleutel/koppeling, is hij ingetrokken). Er gaat **geen** verzoek naar de externe dienst en een sleutel in de kluis geeft «let op: niet geverifieerd», nooit «ok».
-- «Відключити» (alleen sleutels in de kluis en eigen AI-koppelingen, met bevestiging): trekt de koppeling in; de waarde blijft in de kluis tot u haar daar verwijdert (met passkey).
-- Het schakelaartje «Voor gebruikers» zet een bestaande koppeling open voor gebruikers (`apps.manage`); `binnenkort` wordt geweigerd.
+## Логотипи
+Логотипи брендів із simple-icons (CC0), 137 штук, 105 КБ (44 КБ gzip), завантажуються лише при відкритті сторінки. У попередній версії шляхи SVG були зіпсовані через грубе округлення (56 зі 137 пошкоджені); тепер збираються через `scripts/integraties-logos-maken.mjs` (svgo, 2 знаки після коми; для 11 брендів — 3). Тест перевіряє структуру контурів і страхує від цієї помилки. 16 карток не мають логотипа в simple-icons (зокрема Outlook, OneDrive, Teams, Azure, Mollie — брендів Microsoft немає в наборі) і отримують монограму у власному відтінку. Назви брендів і логотипи належать їхнім власникам.
 
-## Niet gedaan / niet bewezen
-- Een gebruikerspagina die `integraties/beschikbaar` toont is niet gebouwd; de route en de beheerschakelaar zijn er.
-- Levende toestand van Google-koppelingen komt uit de bestaande diagnose; die van agenten en sleutels voor het account van de aanroeper.
-- Tests: `admin-integraties` 33, `integraties-catalogus` 21 (incl. padstructuur); browser (Chromium, uk/nl, licht/donker, 390 px) 60 controles. De migratie is op een lokale PG16 toegepast, niet op de echte server.
+## Що насправді роблять «Під'єднати», «Перевірити стан» і «Вимкнути»
+- «Під'єднати»: відкриває наявну сторінку відповідного під'єднання (OAuth, адреса MCP або сховище ключів). Другий потік OAuth не будувався.
+- «Перевірити стан»: перевірка конфігурації на сайті (чи існує ключ/під'єднання, чи не відкликано його). Жодного запиту до зовнішнього сервісу **не** надсилається, а ключ у сховищі дає «увага: не перевірено», ніколи не «ok».
+- «Вимкнути» (лише ключі у сховищі та власні під'єднання ШІ, з підтвердженням): відкликає під'єднання; саме значення лишається у сховищі, доки ви не видалите його там (із passkey).
+- Перемикач «Для користувачів» відкриває наявне під'єднання для користувачів (`apps.manage`); для `binnenkort` («Скоро») дію відхилено.
+
+## Не зроблено / не доведено
+- Сторінку для користувачів, яка відображає `integraties/beschikbaar`, ще не побудовано; маршрут і перемикач для адміністратора вже є.
+- Живий стан під'єднань Google береться з наявної діагностики; стан агентів і ключів — для облікового запису того, хто викликає.
+- Тести: `admin-integraties` 33, `integraties-catalogus` 21 (включно зі структурою контурів); браузер (Chromium, uk/nl, світла/темна тема, 390 px) — 60 перевірок. Міграцію застосовано на локальному PG16, а не на справжньому сервері.

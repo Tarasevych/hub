@@ -135,7 +135,7 @@ export function valideerEnPakGeheimIn(invoer: GeheimFormulierInvoer): GeheimForm
       ]);
     } else if (!GITHUB_CLIENT_ID_PATROON.test(clientId)) {
       fout('clientId', 'GITHUB_OAUTH_CLIENT_ID_ONGELDIG', [
-        'Невірний формат Client ID GitHub: очікується 8–80 латинських літер або цифр без пробілів (наприклад, Ov23li...).',
+        'Неправильний формат Client ID GitHub: очікується 8–80 латинських літер або цифр без пробілів (наприклад, Ov23li...).',
         'Ongeldig formaat GitHub Client ID: 8–80 Latijnse letters of cijfers zonder spaties verwacht (bijv. Ov23li...).',
       ]);
     }
@@ -146,7 +146,7 @@ export function valideerEnPakGeheimIn(invoer: GeheimFormulierInvoer): GeheimForm
       ]);
     } else if (!GITHUB_CLIENT_SECRET_PATROON.test(clientSecret)) {
       fout('clientSecret', 'GITHUB_OAUTH_CLIENT_SECRET_ONGELDIG', [
-        'Невірний формат Client Secret GitHub: очікується щонайменше 20 символів без пробілів.',
+        'Неправильний формат Client Secret GitHub: очікується щонайменше 20 символів без пробілів.',
         'Ongeldig formaat GitHub Client Secret: minimaal 20 tekens zonder spaties verwacht.',
       ]);
     }

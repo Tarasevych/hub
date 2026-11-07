@@ -61,6 +61,8 @@ button.mail-provider-tegel:hover{border-color:color-mix(in srgb,var(--accent) 45
 .mail-koppeling-melding{margin:0 0 var(--ruimte-3);padding:8px 12px;border-radius:10px;background:var(--ok-zacht);color:var(--text)}
 .mail-koppeling-melding.is-fout{background:var(--fout-zacht)}
 .mail-koppeling-noot{display:flex;gap:6px;align-items:flex-start;margin:var(--ruimte-3) 0 0;font-size:12px;color:var(--muted)}
+/* 05.11.2026: als flex-item kromp het schild (svg 1rem uit index.css, flex-shrink 1) naast de lange tekst tot een stip van 5 px. */
+.mail-koppeling-noot>svg{flex:none}
 .mail-koppeling-laatste{color:var(--text)}
 .mail-laatste-opnieuw{min-height:var(--tik-hoogte);padding:0 4px;border:0;background:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer}
 .mail-koppeling{position:relative}
@@ -72,5 +74,8 @@ button.mail-provider-tegel:hover{border-color:color-mix(in srgb,var(--accent) 45
 .mail-melding-venster p,.mail-melding-venster small{margin:0;color:var(--text);font-size:13px;line-height:1.45}
 .mail-melding-venster [role=radiogroup]{display:grid}
 .mail-melding-venster label{display:flex;gap:8px;align-items:center;min-height:var(--tik-hoogte)}
-@media (max-width:480px){.mail-melding-venster{position:static;width:auto;margin-top:8px}}
+/* Smal scherm (05.11.2026): het venster hoort bij de KAART (.mail-koppeling is position:relative), niet bij de bel. Was het static,
+   dan kreeg de bel (flex:none) de breedte van de tekst en bleef voor de adreskolom 0 px over: adres letter voor letter verticaal,
+   venster 43 px buiten de kaart. top:auto = direct onder de belknop; links en rechts binnen de kaart. */
+@media (max-width:480px){.mail-melding-bel{position:static}.mail-melding-venster{position:absolute;left:var(--ruimte-3);right:var(--ruimte-3);top:auto;width:auto;margin-top:6px}}
 

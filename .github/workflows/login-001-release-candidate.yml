@@ -118,9 +118,9 @@ jobs:
           writeFileSync(f, JSON.stringify({
             schema: 1, versie: version, aangemaakt: new Date().toISOString(),
             herkomst: 'git: feature/login-001-20261101-195230@' + sha + ' (basis 10a92781b4fb5e03825caebcb63aa74c4206eefc)',
-            auteur: 'Eigenaar Test', zonderAi: false,
+            auteur: 'eigenaar', zonderAi: false,
             deelnemers: [
-              {soort:'mens',naam:'Eigenaar Test',rollen:['auteur']},
+              {soort:'mens',naam:'eigenaar',rollen:['auteur']},
               {soort:'ai',naam:'ChatGPT',platform:'ChatGPT',tool:'GitHub connector en GitHub Actions',model:{id:'GPT-6',versie:null,bron:'omgeving'},rollen:['ontwikkeling','verpakken']}
             ],
             beschrijving:{
@@ -154,7 +154,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/orch.mjs pakket \
-            --taak LOGIN-001 --auteur 'Eigenaar Test' \
+            --taak LOGIN-001 --auteur 'eigenaar' \
             --agent chatgpt \
             --versie "$RELEASE_VERSION" \
             --manifest "$PWD/uitvoer/LOGIN-001-UITROL-MANIFEST.json" \

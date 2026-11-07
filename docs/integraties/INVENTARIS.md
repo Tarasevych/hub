@@ -1,275 +1,277 @@
-# Inventaris integraties (UI-013, gegenereerd)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INVENTARIS.uk.md) · [🇳🇱 **Nederlandse versie**](./INVENTARIS.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-Bron: `shared/integraties-register.ts` (machineleesbaar) + `shared/integraties-catalogus.ts`. Niet met de hand bewerken: `npx tsx scripts/integraties-inventaris.ts`.
+# Інвентар інтеграцій (UI-013, згенеровано)
 
-Totaal: **160** posities. Uitvoering in de code: werkend 21, basis 12, geen 127.
-Groep zonder gekoppeld account: Vragen aandacht 0, Gekoppeld 0, Klaar om te koppelen 21, Instellen nodig 12, In ontwikkeling 127.
+Джерело: `shared/integraties-register.ts` (машиночитаний) + `shared/integraties-catalogus.ts`. Не редагувати вручну: `npx tsx scripts/integraties-inventaris.ts`.
 
-«werkend» = er bestaat een volledige stroom op een pagina van de site (koppelen, controleren, ontkoppelen). Dat is NIET hetzelfde als «getest met een echt account»: dat is in UI-013 niet gebeurd (geen echte accounts/geheimen).
+Усього: **160** позицій. Реалізація в коді: працює (`werkend`) — 21, базова (`basis`) — 12, немає (`geen`) — 127.
+Група без під'єднаного облікового запису: Потребують уваги — 0, Під'єднано — 0, Готові до під'єднання — 21, Потрібне налаштування — 12, У розробці — 127.
 
-Prioriteit: 1 = infrastructuur en officiële interface aanwezig, eerst doen; 2 = daarna; 3 = afhankelijk van derden (betaalde API, app-review, hardware) of geen publieke interface.
+«працює» (`werkend`) = на сторінці сайту існує повний потік (під'єднання, перевірка, вимкнення). Це НЕ те саме, що «перевірено зі справжнім обліковим записом»: у межах UI-013 цього не робилося (немає реальних облікових записів/секретів).
 
-## E-mail (7)
+Пріоритет: 1 = інфраструктура й офіційний інтерфейс наявні, робити насамперед; 2 = після цього; 3 = залежить від третіх сторін (платний API, перевірка застосунку, обладнання) або немає публічного інтерфейсу.
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+## Електронна пошта (7)
+
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| gmail | Gmail | klaar | werkend | Klaar om te koppelen | Google OAuth 2.0 + Gmail API | mail | 1 | — |  | `backend/google-suite-inrichting.ts` |
-| outlook-mail | Outlook | binnenkort | basis | Instellen nodig | Microsoft Graph (OAuth) of IMAP met OAuth2 | mail | 1 | Microsoft-sleutels van de eigenaar, daarna controle. | Microsoft heeft gewone wachtwoorden voor IMAP uitgezet. | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` |
-| yahoo-mail | Yahoo Mail | binnenkort | werkend | Klaar om te koppelen | IMAP/SMTP met app-wachtwoord (OAuth alleen na partnerakkoord) | mail | 1 | Yahoo-OAuth vereist een akkoord met Yahoo. |  | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
-| icloud-mail | iCloud Mail | binnenkort | werkend | Klaar om te koppelen | IMAP/SMTP met app-specifiek wachtwoord | mail | 1 | — | Apple heeft geen OAuth voor mail. | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
-| proton-mail | Proton Mail | binnenkort | basis | Instellen nodig | Proton Mail Bridge (lokale IMAP/SMTP) | mail | 2 | Uitleg voor Bridge in de wizard. | Proton heeft geen openbare mail-API. | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
-| fastmail | Fastmail | binnenkort | basis | Instellen nodig | IMAP/SMTP + CalDAV met app-wachtwoord; JMAP | mail | 1 | Fastmail toevoegen aan de IMAP-aanbieders. |  | `backend/agenda-caldav.ts` |
-| imap | IMAP / SMTP | binnenkort | werkend | Klaar om te koppelen | IMAP4rev2 (RFC 9051) + SMTP | mail | 1 | Status in de globale catalogus tonen (gedaan in UI-013, vlag). |  | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
+| gmail | Gmail | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | Google OAuth 2.0 + Gmail API | mail | 1 | — |  | `backend/google-suite-inrichting.ts` |
+| outlook-mail | Outlook | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Microsoft Graph (OAuth) або IMAP з OAuth2 | mail | 1 | Ключі Microsoft від власника, після цього перевірка. | Microsoft вимкнув звичайні паролі для IMAP. | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` |
+| yahoo-mail | Yahoo Mail | незабаром (`binnenkort`) | працює (`werkend`) | Готово до під'єднання | IMAP/SMTP з паролем застосунку (OAuth лише після партнерської угоди) | mail | 1 | Yahoo-OAuth потребує угоди з Yahoo. |  | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
+| icloud-mail | iCloud Mail | незабаром (`binnenkort`) | працює (`werkend`) | Готово до під'єднання | IMAP/SMTP зі спеціальним паролем застосунку | mail | 1 | — | Apple не надає OAuth для пошти. | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
+| proton-mail | Proton Mail | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Proton Mail Bridge (локальний IMAP/SMTP) | mail | 2 | Пояснення для Bridge у майстрі під'єднання. | Proton не має публічного поштового API. | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
+| fastmail | Fastmail | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | IMAP/SMTP + CalDAV з паролем застосунку; JMAP | mail | 1 | Додати Fastmail до переліку IMAP-провайдерів. |  | `backend/agenda-caldav.ts` |
+| imap | IMAP / SMTP | незабаром (`binnenkort`) | працює (`werkend`) | Готово до під'єднання | IMAP4rev2 (RFC 9051) + SMTP | mail | 1 | Показувати стан у глобальному каталозі (виконано в UI-013, під прапорцем). |  | `backend/mail-imap.ts` `shared/mail-aanbieders.ts` `src/mail/MailKoppelVenster.tsx` |
 
-## Agenda en vergaderen (8)
+## Календар і зустрічі (8)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| google-calendar | Google Calendar | klaar | werkend | Klaar om te koppelen | Google OAuth 2.0 + Calendar API | agenda | 1 | — |  | `backend/google-suite-inrichting.ts` |
-| outlook-calendar | Outlook Calendar | binnenkort | basis | Instellen nodig | Microsoft Graph Calendar (OAuth) of ICS-publicatie | agenda | 1 | Graph-agenda na Microsoft-sleutels. |  | `backend/agenda-ics.ts` |
-| apple-calendar | Apple Calendar | binnenkort | basis | Instellen nodig | CalDAV (RFC 4791) met app-wachtwoord | agenda | 1 | Schrijven (PUT/DELETE met If-Match). |  | `backend/agenda-caldav.ts` `backend/agenda-ics.ts` |
-| calendly | Calendly | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / Webhook | agenda | 1 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| cal-com | Cal.com | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | agenda | 1 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| zoom | Zoom | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | agenda | 1 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| google-meet | Google Meet | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | agenda | 1 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| microsoft-teams | Microsoft Teams | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | agenda | 1 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| google-calendar | Google Calendar | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | Google OAuth 2.0 + Calendar API | agenda | 1 | — |  | `backend/google-suite-inrichting.ts` |
+| outlook-calendar | Outlook Calendar | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Microsoft Graph Calendar (OAuth) або публікація ICS | agenda | 1 | Календар Graph після ключів Microsoft. |  | `backend/agenda-ics.ts` |
+| apple-calendar | Apple Calendar | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | CalDAV (RFC 4791) з паролем застосунку | agenda | 1 | Запис (PUT/DELETE з If-Match). |  | `backend/agenda-caldav.ts` `backend/agenda-ics.ts` |
+| calendly | Calendly | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / Webhook | agenda | 1 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| cal-com | Cal.com | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | agenda | 1 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| zoom | Zoom | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | agenda | 1 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| google-meet | Google Meet | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | agenda | 1 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| microsoft-teams | Microsoft Teams | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | agenda | 1 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Bestandsopslag (9)
+## Сховища файлів (9)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| google-drive | Google Drive | klaar | werkend | Klaar om te koppelen | Google OAuth 2.0 + Drive API | cloud | 1 | — |  | `backend/google-suite-inrichting.ts` |
-| google-photos | Google Photos | klaar | werkend | Klaar om te koppelen | Google Photos Picker API | foto | 1 | — | Google staat alleen handmatige keuze toe (Picker), niet de hele bibliotheek. | `backend/google-suite-inrichting.ts` |
-| onedrive | OneDrive | binnenkort | basis | Instellen nodig | Microsoft Graph Files (OAuth + PKCE) | cloud | 1 | Sleutels van de eigenaar, daarna echte controle. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
-| dropbox | Dropbox | binnenkort | basis | Instellen nodig | Dropbox API v2 (OAuth + PKCE) | cloud | 1 | Sleutels van de eigenaar. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
-| box | Box | binnenkort | basis | Instellen nodig | Box API (OAuth 2.0) | cloud | 1 | Sleutels van de eigenaar. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
-| icloud-drive | iCloud Drive | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | Apple heeft geen openbare API voor iCloud Drive. |  |
-| nextcloud | Nextcloud | binnenkort | basis | Instellen nodig | WebDAV + Login Flow v2 (app-wachtwoord) | cloud | 1 | Koppelwizard en PROPFIND-controle. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-overdracht-m3-providers.ts` |
-| mega | MEGA | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | cloud | 1 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| s3 | S3-сумісне сховище | binnenkort | basis | Instellen nodig | S3 API (Signature V4, toegangssleutel) | cloud | 1 | Wizard en ListObjectsV2-controle. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-m9-xml.ts` |
+| google-drive | Google Drive | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | Google OAuth 2.0 + Drive API | cloud | 1 | — |  | `backend/google-suite-inrichting.ts` |
+| google-photos | Google Photos | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | Google Photos Picker API | foto | 1 | — | Google дозволяє лише ручний вибір (Picker), а не всю бібліотеку. | `backend/google-suite-inrichting.ts` |
+| onedrive | OneDrive | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Microsoft Graph Файли (OAuth + PKCE) | cloud | 1 | Ключі від власника, після цього реальна перевірка. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
+| dropbox | Dropbox | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Dropbox API v2 (OAuth + PKCE) | cloud | 1 | Ключі від власника. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
+| box | Box | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | Box API (OAuth 2.0) | cloud | 1 | Ключі від власника. |  | `backend/cloud-verbinding-m4-providers.ts` `backend/cloud-verbinding-m4-routes.ts` `shared/cloud-vnext-model.ts` |
+| icloud-drive | iCloud Drive | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | Apple не має публічного API для iCloud Drive. |  |
+| nextcloud | Nextcloud | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | WebDAV + Login Потік v2 (пароль застосунку) | cloud | 1 | Майстер під'єднання та перевірка PROPFIND. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-overdracht-m3-providers.ts` |
+| mega | MEGA | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | cloud | 1 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| s3 | S3-сумісне сховище | незабаром (`binnenkort`) | базова (`basis`) | Потрібне налаштування | S3 API (Signature V4, ключ доступу) | cloud | 1 | Майстер під'єднання та перевірка ListObjectsV2. |  | `backend/cloud-integratie-routes.ts` `backend/cloud-m9-xml.ts` |
 
-## Communicatie (8)
+## Комунікації (8)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| telegram | Telegram | klaar | werkend | Klaar om te koppelen | Telegram Bot API (token) | api | 2 | — |  | `backend/api-platform-verbindingen.ts` |
-| slack | Slack | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / Webhook | api | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| discord | Discord | binnenkort | geen | In ontwikkeling | Webhook / API-sleutel | api | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| whatsapp | WhatsApp Business | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | WhatsApp Business API nodig (Meta, betaald, bedrijfsverificatie). |  |
-| signal | Signal | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | Signal heeft geen officiële API voor derde apps. |  |
-| matrix | Matrix | binnenkort | geen | In ontwikkeling | API-sleutel | api | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mattermost | Mattermost | binnenkort | geen | In ontwikkeling | Webhook / API-sleutel | api | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| twilio | Twilio | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | api | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| telegram | Telegram | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | Telegram Bot API (token) | api | 2 | — |  | `backend/api-platform-verbindingen.ts` |
+| slack | Slack | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / Webhook | api | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| discord | Discord | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook / API-ключ | api | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| whatsapp | WhatsApp Business | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | Потрібен WhatsApp Business API (Meta, платний, верифікація бізнесу). |  |
+| signal | Signal | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | Signal не має офіційного API для сторонніх застосунків. |  |
+| matrix | Matrix | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mattermost | Mattermost | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook / API-ключ | api | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| twilio | Twilio | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | api | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## AI-agenten en modellen (13)
+## Агенти й моделі ШІ (13)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| claude | Claude | klaar | werkend | Klaar om te koppelen | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
-| chatgpt | ChatGPT | klaar | werkend | Klaar om te koppelen | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
-| grok | Grok | klaar | werkend | Klaar om te koppelen | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
-| gemini | Gemini | klaar | werkend | Klaar om te koppelen | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
-| copilot | GitHub Copilot | klaar | werkend | Klaar om te koppelen | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
-| cursor | Cursor | klaar | werkend | Klaar om te koppelen | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
-| anthropic-api | Anthropic API (BYOK) | klaar | werkend | Klaar om te koppelen | Anthropic API (sleutel) | ai | 2 | — |  | `backend/api-platform-verbindingen.ts` |
-| openai-api | OpenAI API | binnenkort | geen | In ontwikkeling | API-sleutel | ai | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mistral | Mistral AI | binnenkort | geen | In ontwikkeling | API-sleutel | ai | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| perplexity | Perplexity | binnenkort | geen | In ontwikkeling | API-sleutel | ai | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| huggingface | Hugging Face | binnenkort | geen | In ontwikkeling | API-sleutel | ai | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| ollama | Ollama | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | ai | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mcp-server | Власний MCP-клієнт | klaar | werkend | Klaar om te koppelen | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
+| claude | Claude | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
+| chatgpt | ChatGPT | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
+| grok | Grok | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
+| gemini | Gemini | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
+| copilot | GitHub Copilot | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
+| cursor | Cursor | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
+| anthropic-api | Anthropic API (BYOK) | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | Anthropic API (ключ) | ai | 2 | — |  | `backend/api-platform-verbindingen.ts` |
+| openai-api | OpenAI API | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | ai | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mistral | Mistral AI | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | ai | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| perplexity | Perplexity | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | ai | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| huggingface | Hugging Face | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | ai | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| ollama | Ollama | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | ai | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mcp-server | Власний MCP-клієнт | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | MCP (Model Context Protocol) + OAuth | ai | 2 | — |  | `backend/connector-v2-opslag.ts` `shared/connector-v2/agenten.ts` |
 
-## Code en ontwikkeling (8)
+## Код і розробка (8)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| github | GitHub | klaar | werkend | Klaar om te koppelen | GitHub OAuth App / fine-grained token | github | 2 | — |  | `backend/api-platform-verbindingen.ts` |
-| gitlab | GitLab | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | github | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| bitbucket | Bitbucket | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | github | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| gitea | Gitea | binnenkort | geen | In ontwikkeling | API-sleutel | github | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| codeberg | Codeberg | binnenkort | geen | In ontwikkeling | API-sleutel | github | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| sentry | Sentry | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | github | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| npm | npm | binnenkort | geen | In ontwikkeling | API-sleutel | github | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| docker-hub | Docker Hub | binnenkort | geen | In ontwikkeling | API-sleutel | github | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| github | GitHub | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | GitHub OAuth App / fine-grained token | github | 2 | — |  | `backend/api-platform-verbindingen.ts` |
+| gitlab | GitLab | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | github | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| bitbucket | Bitbucket | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | github | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| gitea | Gitea | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | github | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| codeberg | Codeberg | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | github | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| sentry | Sentry | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | github | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| npm | npm | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | github | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| docker-hub | Docker Hub | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | github | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## CI/CD en infrastructuur (6)
+## CI/CD та інфраструктура (6)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| github-actions | GitHub Actions | binnenkort | geen | In ontwikkeling | Webhook / API-sleutel | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| circleci | CircleCI | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| jenkins | Jenkins | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| argocd | Argo CD | binnenkort | geen | In ontwikkeling | API-sleutel | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| terraform | Terraform | binnenkort | geen | In ontwikkeling | API-sleutel | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| ansible | Ansible | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | github | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| github-actions | GitHub Дії | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook / API-ключ | github | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| circleci | CircleCI | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | github | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| jenkins | Jenkins | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | github | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| argocd | Argo CD | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | github | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| terraform | Terraform | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | github | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| ansible | Ansible | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | github | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Cloud en hosting (10)
+## Хмара і хостинг (10)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| aws | Amazon Web Services | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| google-cloud | Google Cloud | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| azure | Microsoft Azure | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| cloudflare | Cloudflare | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| vercel | Vercel | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| netlify | Netlify | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| digitalocean | DigitalOcean | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| hetzner | Hetzner | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| fly | Fly.io | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| heroku | Heroku | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| aws | Amazon Web Services | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| google-cloud | Google Cloud | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| azure | Microsoft Azure | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| cloudflare | Cloudflare | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| vercel | Vercel | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| netlify | Netlify | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| digitalocean | DigitalOcean | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| hetzner | Hetzner | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| fly | Fly.io | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| heroku | Heroku | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Databases (9)
+## Бази даних (9)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| postgresql | PostgreSQL | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mysql | MySQL | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mongodb | MongoDB | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| redis | Redis | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| supabase | Supabase | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| firebase | Firebase | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| elasticsearch | Elasticsearch | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| bigquery | BigQuery | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| snowflake | Snowflake | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| postgresql | PostgreSQL | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mysql | MySQL | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mongodb | MongoDB | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| redis | Redis | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| supabase | Supabase | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| firebase | Firebase | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| elasticsearch | Elasticsearch | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| bigquery | BigQuery | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| snowflake | Snowflake | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Analyse en monitoring (9)
+## Аналітика й моніторинг (9)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| google-analytics | Google Analytics | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| plausible | Plausible | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| matomo | Matomo | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mixpanel | Mixpanel | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| posthog | PostHog | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| grafana | Grafana | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| prometheus | Prometheus | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| datadog | Datadog | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| uptime-kuma | Uptime Kuma | binnenkort | geen | In ontwikkeling | Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| google-analytics | Google Analytics | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| plausible | Plausible | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| matomo | Matomo | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mixpanel | Mixpanel | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| posthog | PostHog | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| grafana | Grafana | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| prometheus | Prometheus | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| datadog | Datadog | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| uptime-kuma | Uptime Kuma | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## CRM en verkoop (4)
+## CRM і продажі (4)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| hubspot | HubSpot | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| salesforce | Salesforce | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| pipedrive | Pipedrive | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| zoho | Zoho CRM | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| hubspot | HubSpot | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| salesforce | Salesforce | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| pipedrive | Pipedrive | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| zoho | Zoho CRM | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Betalen en boekhouding (6)
+## Платежі й бухгалтерія (6)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| stripe | Stripe | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| paypal | PayPal | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mollie | Mollie | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| wise | Wise | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| quickbooks | QuickBooks | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| xero | Xero | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| stripe | Stripe | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| paypal | PayPal | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mollie | Mollie | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| wise | Wise | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| quickbooks | QuickBooks | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| xero | Xero | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Sociale media (9)
+## Соціальні мережі (9)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| x-twitter | X (Twitter) | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | De X-API is betaald. |  |
-| facebook | Facebook | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | App-review door Meta nodig. |  |
-| instagram | Instagram | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | Meta staat de API alleen toe voor bedrijfsaccounts na app-review. |  |
-| linkedin | LinkedIn | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| youtube | YouTube | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| tiktok | TikTok | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | App-review door TikTok nodig. |  |
-| mastodon | Mastodon | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| bluesky | Bluesky | binnenkort | geen | In ontwikkeling | API-sleutel | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| reddit | Reddit | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| x-twitter | X (Twitter) | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | API X є платним. |  |
+| facebook | Facebook | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | Потрібна перевірка застосунку (App Review) від Meta. |  |
+| instagram | Instagram | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | Meta дозволяє API лише для бізнес-облікових записів після перевірки застосунку. |  |
+| linkedin | LinkedIn | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| youtube | YouTube | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| tiktok | TikTok | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | Потрібна перевірка застосунку (App Review) від TikTok. |  |
+| mastodon | Mastodon | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| bluesky | Bluesky | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| reddit | Reddit | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Slim huis (9)
+## Розумний дім (9)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| home-assistant | Home Assistant | klaar | werkend | Klaar om te koppelen | Home Assistant REST/WebSocket (long-lived token) | huis | 2 | — |  | `backend/api-platform-verbindingen.ts` `backend/huis-adapter-thuis-assistent.ts` |
-| philips-hue | Philips Hue | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| google-home | Google Home | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| homekit | Apple Home | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | huis | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. | HomeKit werkt alleen op Apple-apparaten (geen cloud-API). |  |
-| mqtt | MQTT | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| zigbee2mqtt | Zigbee2MQTT | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| tuya | Tuya | binnenkort | geen | In ontwikkeling | API-sleutel | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| shelly | Shelly | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| sonos | Sonos | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | huis | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| home-assistant | Home Assistant | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | Home Assistant REST/WebSocket (long-lived token) | huis | 2 | — |  | `backend/api-platform-verbindingen.ts` `backend/huis-adapter-thuis-assistent.ts` |
+| philips-hue | Philips Hue | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | huis | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| google-home | Google Home | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | huis | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| homekit | Apple Home | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | huis | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. | HomeKit працює лише на пристроях Apple (немає хмарного API). |  |
+| mqtt | MQTT | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | huis | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| zigbee2mqtt | Zigbee2MQTT | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | huis | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| tuya | Tuya | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | huis | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| shelly | Shelly | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | huis | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| sonos | Sonos | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | huis | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Beveiliging en identiteit (9)
+## Безпека й ідентичність (9)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| google-signin | Вхід через Google (SSO) | klaar | werkend | Klaar om te koppelen | OpenID Connect | admin | 2 | — |  | `backend/index.ts` |
-| entra | Microsoft Entra ID | instellen | basis | Instellen nodig | Microsoft Graph (directory) | admin | 2 | Echte gebruikerssynchronisatie. |  | `backend/index.ts` |
-| scim | SCIM 2.0 (вхідна синхронізація) | instellen | basis | Instellen nodig | SCIM 2.0 | admin | 2 | Echte gebruikerssynchronisatie. |  | `backend/index.ts` |
-| okta | Okta | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / SCIM 2.0 | admin | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| auth0 | Auth0 | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | admin | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| keycloak | Keycloak | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | admin | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| onepassword | 1Password | binnenkort | geen | In ontwikkeling | API-sleutel | admin | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| bitwarden | Bitwarden | binnenkort | geen | In ontwikkeling | API-sleutel | admin | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| vault | HashiCorp Vault | binnenkort | geen | In ontwikkeling | API-sleutel | admin | 2 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| google-signin | Вхід через Google (SSO) | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | OpenID Connect | admin | 2 | — |  | `backend/index.ts` |
+| entra | Microsoft Entra ID | налаштувати (`instellen`) | базова (`basis`) | Потрібне налаштування | Microsoft Graph (directory) | admin | 2 | Справжня синхронізація користувачів. |  | `backend/index.ts` |
+| scim | SCIM 2.0 (вхідна синхронізація) | налаштувати (`instellen`) | базова (`basis`) | Потрібне налаштування | SCIM 2.0 | admin | 2 | Справжня синхронізація користувачів. |  | `backend/index.ts` |
+| okta | Okta | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / SCIM 2.0 | admin | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| auth0 | Auth0 | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | admin | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| keycloak | Keycloak | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | admin | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| onepassword | 1Password | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | admin | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| bitwarden | Bitwarden | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | admin | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| vault | HashiCorp Vault | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | admin | 2 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Documenten en notities (8)
+## Документи й нотатки (8)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| notion | Notion | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| google-docs | Google Docs | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| google-sheets | Google Sheets | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| confluence | Confluence | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| obsidian | Obsidian | binnenkort | geen | In ontwikkeling | Handmatig / standaardprotocol | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| evernote | Evernote | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| airtable | Airtable | binnenkort | geen | In ontwikkeling | API-sleutel / OAuth 2.0 (+PKCE) | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| onenote | OneNote | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | cloud | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| notion | Notion | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| google-docs | Google Docs | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| google-sheets | Google Sheets | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| confluence | Confluence | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| obsidian | Obsidian | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Вручну / стандартний протокол | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| evernote | Evernote | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| airtable | Airtable | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / OAuth 2.0 (+PKCE) | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| onenote | OneNote | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | cloud | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Projecten en taken (8)
+## Проєкти й задачі (8)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| trello | Trello | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| asana | Asana | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| jira | Jira | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| linear | Linear | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| monday | monday.com | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| clickup | ClickUp | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| todoist | Todoist | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| figma | Figma | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| trello | Trello | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| asana | Asana | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| jira | Jira | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| linear | Linear | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| monday | monday.com | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| clickup | ClickUp | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| todoist | Todoist | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| figma | Figma | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Automatisering en API (7)
+## Автоматизація та API (7)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| webhooks | Вебхуки (вхідні) | binnenkort | geen | In ontwikkeling | Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| rest-api | REST API і токени | klaar | werkend | Klaar om te koppelen | REST + OAuth-clients van deze site | api | 2 | — |  | `backend/index.ts` |
-| oauth-clients | OAuth-застосунки | klaar | werkend | Klaar om te koppelen | REST + OAuth-clients van deze site | api | 2 | — |  | `backend/index.ts` |
-| zapier | Zapier | binnenkort | geen | In ontwikkeling | Webhook / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| make | Make | binnenkort | geen | In ontwikkeling | Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| n8n | n8n | binnenkort | geen | In ontwikkeling | Webhook / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| ifttt | IFTTT | binnenkort | geen | In ontwikkeling | Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| webhooks | Вебхуки (вхідні) | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| rest-api | REST API і токени | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | REST + OAuth-клієнти цього сайту | api | 2 | — |  | `backend/index.ts` |
+| oauth-clients | OAuth-застосунки | готово (`klaar`) | працює (`werkend`) | Готово до під'єднання | REST + OAuth-клієнти цього сайту | api | 2 | — |  | `backend/index.ts` |
+| zapier | Zapier | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| make | Make | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| n8n | n8n | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| ifttt | IFTTT | незабаром (`binnenkort`) | немає (`geen`) | У розробці | Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Klantenservice (3)
+## Підтримка клієнтів (3)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| zendesk | Zendesk | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| intercom | Intercom | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| freshdesk | Freshdesk | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| zendesk | Zendesk | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| intercom | Intercom | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| freshdesk | Freshdesk | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Media en muziek (4)
+## Медіа і музика (4)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| spotify | Spotify | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| plex | Plex | binnenkort | geen | In ontwikkeling | API-sleutel | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| jellyfin | Jellyfin | binnenkort | geen | In ontwikkeling | API-sleutel | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| youtube-music | YouTube Music | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) | foto | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| spotify | Spotify | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| plex | Plex | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| jellyfin | Jellyfin | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| youtube-music | YouTube Music | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) | foto | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
 
-## Websites en webshops (6)
+## Сайти та інтернет-магазини (6)
 
-| id | naam | catalogus | uitvoering | groep (zonder account) | officiële wijze | doeldienst | prio | nog te doen | beperking aanbieder | bewijs |
+| id | назва | каталог | реалізація | група (без облікового запису) | офіційний спосіб | цільова служба | пріоритет | ще зробити | обмеження провайдера | доказ у коді |
 |---|---|---|---|---|---|---|---|---|---|---|
-| wordpress | WordPress | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| shopify | Shopify | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| woocommerce | WooCommerce | binnenkort | geen | In ontwikkeling | API-sleutel / Webhook | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| mailchimp | Mailchimp | binnenkort | geen | In ontwikkeling | OAuth 2.0 (+PKCE) / API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| sendgrid | SendGrid | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
-| brevo | Brevo | binnenkort | geen | In ontwikkeling | API-sleutel | api | 3 | Serveradapter, verbindingscontrole, ontkoppelen, tonen in de doeldienst, tests. |  |  |
+| wordpress | WordPress | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| shopify | Shopify | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| woocommerce | WooCommerce | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ / Webhook | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| mailchimp | Mailchimp | незабаром (`binnenkort`) | немає (`geen`) | У розробці | OAuth 2.0 (+PKCE) / API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| sendgrid | SendGrid | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |
+| brevo | Brevo | незабаром (`binnenkort`) | немає (`geen`) | У розробці | API-ключ | api | 3 | Серверний адаптер, перевірка з'єднання, вимкнення, показ у цільовій службі, тести. |  |  |

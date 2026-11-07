@@ -45,6 +45,18 @@ const tekstVan = (r: { content: Array<{ text: string }> } | undefined) => String
 const ontleedJson = (r: { content: Array<{ text: string }> } | undefined) => { try { return JSON.parse(tekstVan(r)); } catch { return null; } };
 
 export async function main(): Promise<number> {
+  // Eigen pepper voor de IP-hash (Audit-fix 10: geen terugval meer op RECOVERY_CODE_PEPPER): niet afhankelijk van de geheimen van de
+  // machine. Daarna terug zoals hij was (ook bij een vroege return of een fout), zodat suites in hetzelfde proces hem niet erven.
+  const vorigePepper = process.env.AUDIT_IP_PEPPER;
+  if (String(vorigePepper || '').length < 32) process.env.AUDIT_IP_PEPPER = randomBytes(48).toString('base64');
+  try {
+    return await hoofd();
+  } finally {
+    if (vorigePepper === undefined) delete process.env.AUDIT_IP_PEPPER; else process.env.AUDIT_IP_PEPPER = vorigePepper;
+  }
+}
+
+async function hoofd(): Promise<number> {
   const { check, einde } = checker('dev-rechten-beheer-20261021');
 
   // ============================================================== 1. puur

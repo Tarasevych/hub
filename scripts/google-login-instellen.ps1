@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   Zet de Google-login (OAuth-client voor id.tarasevych.com) op de webserver-VM.
   Встановлює вхід через Google (OAuth-клієнт для id.tarasevych.com) на VM вебсервера.
@@ -20,7 +20,7 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$Vm = 'beheer@203.0.113.10',
+  [string]$Vm = $(if ($env:MR_VM_SSH) { $env:MR_VM_SSH } else { 'beheer@mijn-ruimte-vm' }),
   [string]$Sleutel = 'T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver',
   [string]$OpdrachtOpVm = 'sudo -n /usr/local/sbin/google-login-zetten'
 )

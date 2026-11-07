@@ -1,0 +1,39 @@
+/* MAILFIX-001 — één aanbiederscatalogus per pagina, zonder verlies van bestaande functies.
+   De orbit heeft reeds de volledige lijst en de knop «Увесь каталог»; de strook erboven
+   mag daarom alleen bij een lege accountpagina verdwijnen. Bij gekoppelde accounts blijft
+   de gedeelde integratiestrook gewoon beschikbaar. */
+.mail-functional:has([data-mail-accounts-empty='true']) > .is2 {
+  display: none;
+}
+
+/* Op telefoons deden drie geneste kaders met 28 + 8 + 12 px binnenruimte de
+   ontwerpkaart onnodig krimpen. Alleen de lege orbit krijgt een eigen pagina-opmaak. */
+@media (max-width: 620px) {
+  .mail-functional .mail-provider-view:has([data-mail-accounts-empty='true']) {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .mail-provider-view:has([data-mail-accounts-empty='true']) > .mail-kicker,
+  .mail-provider-view:has([data-mail-accounts-empty='true']) > .mail-account-intro {
+    display: none;
+  }
+  .mail-provider-view .mail-accounts-hub.mail-accounts-orbit-mode {
+    padding: 0;
+    margin: 0;
+  }
+  .mail-provider-view .mail-accounts-orbit-mode .mail-orbit-intro {
+    width: 100%;
+    margin: 0;
+    padding-inline: clamp(11px, 3vw, 17px);
+    border-radius: 23px;
+  }
+}
+
+/* 05.11.2026 (ZOEKDIEP-001): beheer van Gmail (actieve postbus, zoektoegang bijwerken) — ingeklapt onder de accounthub. */
+.mail-gmail-beheer{margin-top:16px;border:1px solid var(--border,rgba(127,127,127,.25));border-radius:12px;padding:0 14px;background:var(--surface,transparent)}
+.mail-gmail-beheer>summary{cursor:pointer;padding:12px 0;font-weight:600;list-style-position:inside}
+.mail-gmail-beheer[open]>summary{border-bottom:1px solid var(--border,rgba(127,127,127,.25));margin-bottom:12px}
+.mail-gmail-beheer .google-mail-accounts{margin:0 0 14px}

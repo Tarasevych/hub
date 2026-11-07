@@ -20,7 +20,7 @@ type Props = {
   style?: CSSProperties;
   ariaLabelledBy?: string;
   ariaDescribedBy?: string;
-  /** data-geheim-invoer. За замовчуванням кодове слово. */
+  /** data-geheim-invoer. Типово кодове слово. */
   soort?: string;
   /** Додаткові data-атрибути, які вже шукають тести (наприклад mail-koppel-wachtwoord). */
   data?: Record<string, string>;

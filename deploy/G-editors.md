@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./G-editors.uk.md) · [🇳🇱 **Nederlandse versie**](./G-editors.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Звіт G: редактори (7.1–7.4)
 
 Перевірка коду. Браузер і e2e **не запускались**. Юніт — `node scripts/eenheidstests.mjs bewerker-schil-20261026`.

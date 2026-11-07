@@ -1,1 +1,26 @@
 .product-empty-state{min-height:var(--canonical-content-reserve,min(58vh,520px));display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:clamp(28px,7vw,72px) 20px}.product-empty-state.compact{min-height:280px}.product-empty-icon{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;background:var(--soft,#eef3f8);color:var(--accent,#2563eb)}.product-empty-icon svg{width:26px;height:26px}.product-empty-state h1,.product-empty-state h2{margin:4px 0 0;max-width:620px}.product-empty-state p{margin:0;max-width:560px;color:var(--muted,#64748b);line-height:1.55}.product-empty-state button{margin-top:8px;min-height:44px;padding:10px 18px;border:0;border-radius:12px;background:var(--accent,#2563eb);color:var(--text-on-accent);font-weight:700}@media(max-width:520px){.product-empty-state{min-height:12rem;padding:2rem 1rem}.product-empty-state.compact{min-height:12rem}}
+
+/* Ілюстрація стану: тема й наявна основна дія залишаються незмінними. */
+.product-empty-state{gap:18px}
+.product-empty-icon{
+  position:relative;isolation:isolate;border:1px solid color-mix(in srgb,var(--accent) 26%,var(--line));
+  border-radius:var(--straal-l);background:linear-gradient(145deg,var(--accent-soft),var(--panel));
+  box-shadow:0 12px 30px -18px var(--shadow);
+}
+.product-empty-icon::before{
+  content:'';position:absolute;inset:-7px;border:1px solid color-mix(in srgb,var(--accent) 18%,transparent);
+  border-radius:calc(var(--straal-l) + 7px);pointer-events:none;
+}
+.product-empty-icon::after{
+  content:'';position:absolute;right:-5px;top:-5px;width:10px;height:10px;border:2px solid var(--panel);
+  border-radius:50%;background:var(--accent);pointer-events:none;
+}
+.product-empty-icon svg{position:relative;z-index:1}
+.product-empty-state button{border-radius:var(--straal-m);transition:box-shadow .18s ease,filter .18s ease}
+.product-empty-state button:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+@media (hover:hover) and (pointer:fine){.product-empty-state button:hover{filter:brightness(1.05);box-shadow:var(--schaduw-2)}}
+@media (prefers-reduced-motion:reduce){.product-empty-state button{transition:none}}
+@media (forced-colors:active){.product-empty-icon,.product-empty-icon::before{border-color:CanvasText}}
+
+/* Заголовок порожнього стану використовує шрифт поточної оболонки. */
+.product-empty-state h1,.product-empty-state h2{font-family:inherit;letter-spacing:-.02em}

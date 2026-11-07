@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "PRIVACY-001",
+  "agent": "claude",
+  "tak": "release/persoonsgegevens-20261104-164147",
+  "basisCommit": "e5473812d547385378a278d91c24fb4e5389467f",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.4.3",
+  "regelsHash": "4027932cee22c99901c258d7616bfcd972b814e64ae814d268675bb1816fb2bc",
+  "staat": "in_progress",
+  "gestart": "2026-11-04T16:11:19.583Z",
+  "bijgewerkt": "2026-11-04T16:11:19.586Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

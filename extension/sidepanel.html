@@ -43,8 +43,41 @@
         <button type="button" id="chat-wissen" data-nl="Wissen">Очистити</button>
       </div>
     </form>
+    <!-- 0.9.0: hulpknoppen van de lokale AI (alleen zichtbaar als «chatHulp» aan staat en de API bestaat) -->
+    <div id="chat-lokaal" class="rij" hidden>
+      <button type="button" id="chat-proeflees" data-nl="Nakijken (lokaal)">Перевірити (локально)</button>
+      <button type="button" id="chat-herschrijf" data-nl="Herschrijven (lokaal)">Переписати (локально)</button>
+    </div>
     <p id="chat-stand" role="status" aria-live="polite" class="zacht"></p>
   </section>
+
+  <!-- 0.9.0: ingebouwde AI van Chrome — alles op dit apparaat, niets naar de server -->
+  <details class="paneel-blok" id="blok-lokale-ai"><summary id="kop-lokale-ai" data-nl="Lokale AI (op dit apparaat)">Локальний ШІ (на цьому пристрої)</summary>
+  <section aria-labelledby="kop-lokale-ai" class="lokale-ai">
+    <p id="lai-stand" class="zacht" role="status" aria-live="polite"></p>
+    <label class="veld"><span data-nl="Functie">Функція</span>
+      <select id="lai-modus"></select></label>
+    <label for="lai-invoer" class="vh" data-nl="Tekst">Текст</label>
+    <textarea id="lai-invoer" rows="5" maxlength="100000" placeholder="Текст або запит…" data-nl-placeholder="Tekst of vraag…"></textarea>
+    <div class="rij">
+      <button type="button" id="lai-tab" data-nl="Tekst van het tabblad">Текст вкладки</button>
+      <label id="lai-afbeelding-rij" class="bestand" hidden><span data-nl="Afbeelding">Зображення</span> <input type="file" id="lai-afbeelding" accept="image/*"></label>
+    </div>
+    <div class="rij">
+      <button type="button" id="lai-start" class="primair" data-nl="Uitvoeren">Виконати</button>
+      <button type="button" id="lai-stop" disabled data-nl="Stop">Стоп</button>
+      <button type="button" id="lai-nieuw" hidden data-nl="Nieuw gesprek">Новий діалог</button>
+    </div>
+    <progress id="lai-voortgang" max="1" value="0" hidden></progress>
+    <output id="lai-uitvoer" class="lai-uitvoer" for="lai-invoer" aria-live="polite"></output>
+    <p id="lai-notities" class="zacht"></p>
+    <div class="rij">
+      <button type="button" id="lai-kopieer" disabled data-nl="Kopiëren">Копіювати</button>
+      <button type="button" id="lai-naar-chat" disabled data-nl="Naar de chat">У поле чату</button>
+      <button type="button" id="lai-opties" data-nl="Instellingen">Налаштування</button>
+    </div>
+  </section>
+  </details>
 
   <details class="paneel-blok"><summary id="kop-tijdlijn" data-nl="Laatste opdrachten">Останні команди</summary>
   <section aria-labelledby="kop-tijdlijn">
@@ -73,5 +106,7 @@
 </main>
 <script src="ui.js"></script>
 <script src="sidepanel.js"></script>
+<script src="lokale-ai.js"></script>
+<script src="sidepanel-lokale-ai.js"></script>
 </body>
 </html>

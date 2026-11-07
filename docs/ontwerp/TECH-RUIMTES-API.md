@@ -1,77 +1,79 @@
-# Technische ruimtes v2 — API-contract (T-BACKEND ↔ T-UI)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./TECH-RUIMTES-API.uk.md) · [🇳🇱 **Nederlandse versie**](./TECH-RUIMTES-API.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-Status: geïmplementeerd in `backend/tech-ruimtes.ts` (routes), `backend/tech-ruimtes-kern.ts` (database, vlag, schaduw)
-en `shared/ruimte-toegang.ts` (één beslisfunctie, puur). Migratie `0115_tech_ruimtes_v2.sql`.
+# Технічні простори v2 — контракт API (T-BACKEND ↔ T-UI)
 
-Alle routes: `POST`, body met `hubAuthBody(...)` (dus `service`, `tabContext` (48 hex), `sourceOrigin`). Elke route vraagt een
-geldige site-sessie (401 met de code van de sessie) en een goedgekeurd account (403 `ACCOUNT_NOT_APPROVED`, behalve de eigenaar).
-Ongeldige tab → 400 `TAB_ONGELDIG`. Fout-JSON zoals overal: `{ "error": "<CODE>" }`.
+Статус: реалізовано в `backend/tech-ruimtes.ts` (маршрути), `backend/tech-ruimtes-kern.ts` (база даних, прапорець, тіньовий режим)
+та `shared/ruimte-toegang.ts` (єдина функція рішення, чиста). Міграція `0115_tech_ruimtes_v2.sql`.
 
-**Vlag `tech-ruimtes-v2` UIT** (voor deze gebruiker): `status` geeft `{ aan:false, ... }` (velden zoals hieronder, `sessie:null`);
-alle schrijfroutes geven **409 `TECH_RUIMTES_V2_UIT`**. De oude routes `/api/owner/tech/*` werken dan exact zoals vroeger.
-**Vlag AAN**: `/api/owner/tech/activeren` geeft 409 `GEBRUIK_RUIMTES_V2` (UI moet `ruimtes/starten` gebruiken);
-`/api/owner/tech/status` en `/api/owner/tech/beeindigen` blijven werken (status toont de v2-sessie als `activatie`).
+Усі маршрути: `POST`, тіло з `hubAuthBody(...)` (тобто `service`, `tabContext` (48 hex), `sourceOrigin`). Кожен маршрут вимагає
+дійсної сесії сайту (401 з кодом сесії) і схваленого облікового запису (403 `ACCOUNT_NOT_APPROVED`, крім власника).
+Недійсна вкладка → 400 `TAB_ONGELDIG`. JSON помилки, як усюди: `{ "error": "<CODE>" }`.
 
-## Begrippen
-- **Technische sessie** = één rij per aanmeldsessie van de site (ankersessie). Alle tabbladen van die aanmelding delen haar.
-- **actief** = `'prive' | 'technisch'` — de ruimte waarin die aanmelding NU werkt. `pauze = (actief === 'prive' && sessie loopt)`.
-- **Modi**:
-  - `tijd` — N minuten, eindigt om `eindTijd`. Eindigt ook bij `beeindigen`, bij uitloggen van de site, en bij uitloggen van het tabblad waarin ze liep (`logout-current`).
-  - `tot-technisch-einde` — geen klok; eindigt bij `beeindigen`, bij uitloggen van de site (elke vorm) en bij uitloggen van één tabblad (`logout-current`) dat erbij hoort.
-  - `tot-site-uitloggen` — geen klok; eindigt alleen bij `beeindigen` of bij uitloggen van de site-aanmelding zelf (browser, account, overal, sessie ingetrokken). Uitloggen van ÉÉN tabblad haalt dat tabblad eruit maar laat de sessie lopen.
-  - «Zonder tijdsgrens» is NIET stil 366 dagen: de harde grens is het absolute einde van de site-sessie (`grensTijd` in `sessie`).
-- Uitloggen van de site sluit ALTIJD ook de technische sessie. `beeindigen` logt NOOIT uit van de site.
+**Прапорець `tech-ruimtes-v2` ВИМКНЕНО** (для цього користувача): `status` повертає `{ aan:false, ... }` (поля як нижче, `sessie:null`);
+усі маршрути запису повертають **409 `TECH_RUIMTES_V2_UIT`**. Старі маршрути `/api/owner/tech/*` тоді працюють точно як раніше.
+**Прапорець УВІМКНЕНО**: `/api/owner/tech/activeren` повертає 409 `GEBRUIK_RUIMTES_V2` (інтерфейс має використовувати `ruimtes/starten`);
+`/api/owner/tech/status` і `/api/owner/tech/beeindigen` продовжують працювати (статус показує сесію v2 як `activatie`).
 
-## Routes
-### `/api/owner/hub/tech/ruimtes/status` (lezen; registreert dit tabblad bij de sessie)
+## Поняття
+- **Технічна сесія** = один рядок на сесію входу на сайт (якірна сесія). Усі вкладки цього входу ділять її між собою.
+- **actief** = `'prive' | 'technisch'` — простір, у якому цей вхід працює ЗАРАЗ. `pauze = (actief === 'prive' && sessie loopt)`.
+- **Режими (`modus`)**:
+  - `tijd` — N хвилин, закінчується о `eindTijd`. Закінчується також при `beeindigen`, при виході з сайту та при виході з вкладки, у якій вона працювала (`logout-current`).
+  - `tot-technisch-einde` — без таймера; закінчується при `beeindigen`, при виході з сайту (у будь-якій формі) та при виході з однієї вкладки (`logout-current`), що належить до неї.
+  - `tot-site-uitloggen` — без таймера; закінчується лише при `beeindigen` або при виході із самого входу на сайт (браузер, обліковий запис, усюди, відкликана сесія). Вихід з ОДНІЄЇ вкладки вилучає цю вкладку, але залишає сесію працювати.
+  - «Без обмеження часу» — це НЕ приховані 366 днів: жорсткою межею є абсолютний кінець сесії сайту (`grensTijd` у `sessie`).
+- Вихід із сайту ЗАВЖДИ закриває також технічну сесію. `beeindigen` НІКОЛИ не виходить із сайту.
+
+## Маршрути
+### `/api/owner/hub/tech/ruimtes/status` (читання; реєструє цю вкладку в сесії)
 ```ts
 { aan: boolean, actief: 'prive'|'technisch', technischToegestaan: boolean, pauze: boolean,
   sessie: null | { id: string, modus: 'tijd'|'tot-technisch-einde'|'tot-site-uitloggen', eindTijd: string|null /*ISO*/,
-                   gestartOp: string /*ISO*/, grensTijd: string /*ISO, einde site-sessie*/, rollen: string[], mogelijkheden: string[], reden: string },
-  termijnen: Array<{ modus, minuten?: number, label: {uk,nl}, beschikbaar: boolean, reden?: {uk,nl}, rollen: string[] /*rollen die bij deze termijn meekomen*/ }>,
+                   gestartOp: string /*ISO*/, grensTijd: string /*ISO, кінець сесії сайту*/, rollen: string[], mogelijkheden: string[], reden: string },
+  termijnen: Array<{ modus, minuten?: number, label: {uk,nl}, beschikbaar: boolean, reden?: {uk,nl}, rollen: string[] /*ролі, що надаються з цим строком*/ }>,
   maxMinuten: number, rollen: Array<{ naam: string, maxMinuten: number }>,
   eigenaar: boolean, schaduw: boolean, nu: string }
 ```
-Onbeschikbare termijnen worden met `reden` teruggegeven, nooit verborgen. Termijnen: tijd 15/30/60/120/240/480, `tot-technisch-einde`, `tot-site-uitloggen`.
-**Rolplafond (fix van tech-rollen.ts:55-60):** een termijn is beschikbaar zodra minstens één rol hem toelaat; de sessie krijgt dan
-ALLEEN de rollen waarvan het plafond de termijn toelaat (open modi: plafond ≥ 240). Voorbeeld: tester+beheerder, 480 min → alleen
-tester-rechten; 60 min → beide. `termijnen[].rollen` toont dat. `maxMinuten = min(profielMax, hoogste rolplafond)`.
+Недоступні строки повертаються з полем `reden` і ніколи не приховуються. Строки: час 15/30/60/120/240/480, `tot-technisch-einde`, `tot-site-uitloggen`.
+**Стеля ролей (виправлення `tech-rollen.ts:55-60`):** строк доступний, щойно принаймні одна роль його дозволяє; тоді сесія отримує
+ЛИШЕ ті ролі, чия стеля дозволяє цей строк (відкриті режими: стеля ≥ 240). Приклад: тестувальник+адміністратор, 480 хв → лише
+права тестувальника; 60 хв → обидві ролі. `termijnen[].rollen` це показує. `maxMinuten = min(profielMax, найвища стеля ролі)`.
 
-### `/api/owner/hub/tech/ruimtes/starten` `{ modus, minuten?, reden }` — stap-op vereist
-- 403 `STEP_UP_REQUIRED`/stap-op-antwoord (zoals `/api/owner/tech/activeren`), 403 `GEEN_TECH_PROFIEL`, 400 `MODUS_ONGELDIG`,
-  400 `DUUR_ONGELDIG` (termijn niet beschikbaar; extra veld niet gegarandeerd), 400 `REDEN_ONGELDIG` (3..300 tekens),
-  403 `SESSIE_VEREIST` (geen ankersessie), 409 `TECH_RUIMTES_V2_UIT`.
-- Een lopende sessie van dezelfde aanmelding wordt vervangen. Antwoord: de status (zoals hierboven), `actief:'technisch'`.
+### `/api/owner/hub/tech/ruimtes/starten` `{ modus, minuten?, reden }` — вимагає step-up
+- 403 `STEP_UP_REQUIRED`/відповідь step-up (як у `/api/owner/tech/activeren`), 403 `GEEN_TECH_PROFIEL`, 400 `MODUS_ONGELDIG`,
+  400 `DUUR_ONGELDIG` (строк недоступний; додаткове поле не гарантоване), 400 `REDEN_ONGELDIG` (3..300 символів),
+  403 `SESSIE_VEREIST` (немає якірної сесії), 409 `TECH_RUIMTES_V2_UIT`.
+- Поточна активна сесія того самого входу замінюється. Відповідь: статус (як вище), `actief:'technisch'`.
 
-### `/api/owner/hub/tech/ruimtes/wisselen` `{ naar: 'prive'|'technisch' }` — GEEN stap-op
-- 400 `NAAR_ONGELDIG`, 409 `GEEN_TECH_SESSIE` (naar technisch zonder lopende sessie → UI toont «Почати»). Antwoord: status.
+### `/api/owner/hub/tech/ruimtes/wisselen` `{ naar: 'prive'|'technisch' }` — БЕЗ step-up
+- 400 `NAAR_ONGELDIG`, 409 `GEEN_TECH_SESSIE` (перехід у технічний простір без активної сесії → інтерфейс показує «Почати»). Відповідь: статус.
 
-### `/api/owner/hub/tech/ruimtes/verlengen` `{ minuten, soort: 'bijtellen'|'vervangen' }` — stap-op vereist
-- `bijtellen`: einde = huidig einde + minuten. `vervangen`: einde = nu + minuten. Resultaat ≤ hoogste plafond van de rollen van de sessie en ≤ 8 uur vanaf nu.
-- 400 `SOORT_ONGELDIG`, 400 `DUUR_ONGELDIG`, 409 `GEEN_TECH_SESSIE`, 409 `NIET_OP_TIJD` (sessie zonder klok). Antwoord: status.
+### `/api/owner/hub/tech/ruimtes/verlengen` `{ minuten, soort: 'bijtellen'|'vervangen' }` — вимагає step-up
+- `bijtellen`: кінець = поточний кінець + хвилини. `vervangen`: кінець = зараз + хвилини. Результат ≤ найвища стеля ролей сесії та ≤ 8 годин від поточного моменту.
+- 400 `SOORT_ONGELDIG`, 400 `DUUR_ONGELDIG`, 409 `GEEN_TECH_SESSIE`, 409 `NIET_OP_TIJD` (сесія без таймера). Відповідь: статус.
 
 ### `/api/owner/hub/tech/ruimtes/beeindigen` `{}`
-- Beëindigt alleen de technische sessie van deze aanmelding (reden `zelf`). Site-sessie blijft. Idempotent. Antwoord: status.
+- Завершує лише технічну сесію цього входу (причина `zelf`). Сесія сайту залишається. Ідемпотентно. Відповідь: статус.
 
-### `/api/owner/hub/tech/ruimtes/toegang` (lezen)
+### `/api/owner/hub/tech/ruimtes/toegang` (читання)
 ```ts
-{ magBeheren: boolean, // users.manage of roles.delegate in de lopende technische ruimte (eigenaar: altijd in technische ruimte)
-  mensen: Array<{ userId, email, naam, rollen: string[], maxMinuten, eigenaar: boolean, actiefTot: string|null, ingetrokken: boolean }>, // leeg als !magBeheren
-  sessies: Array<{ id, modus, eindTijd, grensTijd, gestartOp, actief, dezeSessie: boolean }>,   // eigen technische sessies
+{ magBeheren: boolean, // users.manage або roles.delegate у поточному технічному просторі (власник: завжди в технічному просторі)
+  mensen: Array<{ userId, email, naam, rollen: string[], maxMinuten, eigenaar: boolean, actiefTot: string|null, ingetrokken: boolean }>, // порожньо, якщо !magBeheren
+  sessies: Array<{ id, modus, eindTijd, grensTijd, gestartOp, actief, dezeSessie: boolean }>,   // власні технічні сесії
   ai: Array<{ verbindingId, naam, agent: string|null, ruimtes: string[], termijn: string|null, eindTijd: string|null, tokenTot: string|null, bron: 'mcp-oauth'|'instelling' }>,
   extensie: Array<{ id, agentId, ruimte, eindeSoort, eindTijd: string|null, overleeftTabUitloggen: boolean }>,
   codes: Array<{ id, naam, scopes: string[], verlooptOp: string|null }>,
   vlagTests: Array<{ sleutel, waarde: boolean, tot: string }>,
-  fouten: string[] } // secties die niet gelezen konden worden (bv. migratie ontbreekt) — nooit stil leeg
+  fouten: string[] } // розділи, які не вдалося прочитати (напр., відсутня міграція) — ніколи не порожні мовчки
 ```
 
-### `/api/owner/hub/tech/ruimtes/ai-zetten` `{ verbindingId, ruimtes: ('prive'|'technisch')[], termijn: 'tijd'|'tot-technisch-einde'|'tot-site-uitloggen', minuten? }` — stap-op vereist
-- Alleen in een lopende technische ruimte (niet gepauzeerd) → anders 403 `TECH_RUIMTE_VEREIST`. `verbindingId` = id van de verbinding of `*` (alle).
-- 400 `VERBINDING_ONGELDIG`, 400 `RUIMTES_ONGELDIG`, 400 `TERMIJN_ONGELDIG`, 400 `DUUR_ONGELDIG` (tijd: 15..480).
-- Regel voor AI/MCP (vlag aan): technisch ALLEEN als er een lopende, niet-gepauzeerde technische sessie is ÉN een geldige ai-instelling
-  met `technisch` (bij `tot-technisch-einde`: gebonden aan de sessie waarin hij gezet werd). Geen instelling = privé. Antwoord: `toegang`.
+### `/api/owner/hub/tech/ruimtes/ai-zetten` `{ verbindingId, ruimtes: ('prive'|'technisch')[], termijn: 'tijd'|'tot-technisch-einde'|'tot-site-uitloggen', minuten? }` — вимагає step-up
+- Лише в активному технічному просторі (не на паузі) → інакше 403 `TECH_RUIMTE_VEREIST`. `verbindingId` = id з'єднання або `*` (усі).
+- 400 `VERBINDING_ONGELDIG`, 400 `RUIMTES_ONGELDIG`, 400 `TERMIJN_ONGELDIG`, 400 `DUUR_ONGELDIG` (час: 15..480).
+- Правило для ШІ/MCP (коли прапорець увімкнено): технічний простір доступний ЛИШЕ тоді, коли є активна, не призупинена технічна сесія І дійсне налаштування ШІ
+  з `technisch` (при `tot-technisch-einde`: прив'язане до сесії, у якій його встановили). Немає налаштування = особистий простір. Відповідь: `toegang`.
 
-## Eén beslisfunctie
-`ruimteToegang(ctx, ruimte)` in `shared/ruimte-toegang.ts`. Site (via `actieveActivatie`), AI/MCP (via `lopendeActivatie`/`effectieveRuimte`),
-vlaggen, terminal, impersonatie/ondersteuning, ssh-ca, beleid (adminContext-afdwinging) gaan onder de vlag allemaal hierdoor.
-Eigenaar = één definitie: `role === 'owner' && OWNER_EMAIL`. De eigenaar is altijd `technischToegestaan` (profiel herstelt zichzelf).
+## Єдина функція рішення
+`ruimteToegang(ctx, ruimte)` у `shared/ruimte-toegang.ts`. Сайт (через `actieveActivatie`), ШІ/MCP (через `lopendeActivatie`/`effectieveRuimte`),
+прапорці, термінал, імперсонація/підтримка, ssh-ca, політика (примус `adminContext`) під прапорцем проходять через неї.
+Власник = одне визначення: `role === 'owner' && OWNER_EMAIL`. Власник завжди має `technischToegestaan` (профіль самовідновлюється).

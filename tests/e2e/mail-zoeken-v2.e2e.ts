@@ -150,8 +150,8 @@ export async function main(): Promise<number> {
     }
     {
       const p = await open(1440, { modus: 'nieuw', weergave: 'label' });
-      check('labels: geen herhaald «Системна папка»', !(/Системна папка/.test(await p.locator('.mzv2').textContent() || '')));
-      check('labels: gegroepeerd (Папки / Мої мітки)', await p.locator('.mzv2-lijst h3', { hasText: 'Папки' }).count() === 1 && await p.locator('.mzv2-lijst h3', { hasText: 'Мої мітки' }).count() === 1);
+      check('labels: geen herhaald «Системна тека»', !(/Системна тека/.test(await p.locator('.mzv2').textContent() || '')));
+      check('labels: gegroepeerd (Теки / Мої мітки)', await p.locator('.mzv2-lijst h3', { hasText: 'Теки' }).count() === 1 && await p.locator('.mzv2-lijst h3', { hasText: 'Мої мітки' }).count() === 1);
       await p.context().close();
     }
     {

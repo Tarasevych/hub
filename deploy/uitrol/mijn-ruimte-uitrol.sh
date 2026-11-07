@@ -67,6 +67,9 @@ status() { # status <staat> <code> <uk> <nl> [versie]
   python3 - "$tmp" "$1" "$2" "$3" "$4" "${5:-}" "$MODUS" "$REDEN_TEKST" "$CONTEXT_BESTAND" <<'PY'
 import json, sys, datetime, os
 path, staat, code, uk, nl, versie, methode, reden, ctx = sys.argv[1:10]
+# UITROL-UTF8-001: tekst uit argv kan ongeldige UTF-8 bevatten (los surrogaat → json.dump faalt); maak er U+FFFD van.
+# Текст з argv може містити невалідний UTF-8 (сурогат ламає json.dump) — замінюємо на U+FFFD.
+uk, nl, reden = (os.fsencode(t).decode("utf-8", "replace") for t in (uk, nl, reden))
 d = {"staat": staat, "code": code, "uk": uk, "nl": nl, "versie": versie, "methode": methode,
      "tijd": datetime.datetime.now(datetime.timezone.utc).isoformat()}
 if reden.strip():
@@ -76,7 +79,8 @@ if ctx and os.path.isfile(ctx):
         d["context"] = [r[:300] for r in open(ctx, encoding="utf-8", errors="replace").read().splitlines() if r.strip()][:8]
     except OSError:
         pass
-json.dump(d, open(path, "w"), ensure_ascii=False)
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(d, f, ensure_ascii=False)
 PY
   chgrp "$GROEP" "$tmp" 2>/dev/null || true
   chmod 0640 "$tmp"
@@ -90,6 +94,9 @@ gebeurtenis() { # gebeurtenis <code> <niveau> <uk> <nl>  (zelfde vorm als gitops
     python3 - "$STATUS_DIR/gebeurtenissen.jsonl" "$tmp" uitrol "$1" "$2" "$3" "$4" "${VERSIE:-}" "$MODUS" "$REDEN_TEKST" "$CONTEXT_BESTAND" <<'PY'
 import json, sys, datetime, secrets, os
 pad, tmp, bron, code, niveau, uk, nl, tag, herkomst, reden, ctx = sys.argv[1:12]
+# UITROL-UTF8-001: zonder dit liet één ongeldig teken (bv. half Cyrillisch teken uit AUTEUR) python falen → onder `set -e` stierf het
+# script vóór de OK-regel. Невалідні байти → U+FFFD, щоб журнал подій ніколи не ламався.
+uk, nl, tag, reden = (os.fsencode(t).decode("utf-8", "replace") for t in (uk, nl, tag, reden))
 nu = datetime.datetime.now(datetime.timezone.utc)
 regel_d = {"id": nu.strftime("%Y%m%dT%H%M%S%fZ") + "-" + secrets.token_hex(4), "tijd": nu.isoformat(), "bron": bron,
            "code": code, "niveau": niveau, "uk": uk, "nl": nl, "tag": tag}
@@ -137,8 +144,11 @@ stap() { # stap <id> <bezig|ok|fout> <pct> <uk> <nl>
     flock 7
     tmp="$(mktemp "$STATUS_DIR/.stap.XXXXXX")" || exit 0
     python3 - "$STATUS_DIR/stappen.jsonl" "$tmp" "$RUN" "${VERSIE:-}" "$MODUS" "$1" "$2" "$3" "$4" "$5" <<'PY' || { rm -f -- "$tmp"; exit 0; }
-import json, sys, datetime
+import json, sys, datetime, os
 pad, tmp, run, versie, methode, stap, staat, pct, uk, nl = sys.argv[1:11]
+# UITROL-UTF8-001: ongeldige UTF-8 in de tekst → U+FFFD (vroeger ging de stapregel dan stil verloren).
+# Невалідний UTF-8 у тексті → U+FFFD (раніше рядок кроку мовчки губився).
+uk, nl, versie = (os.fsencode(t).decode("utf-8", "replace") for t in (uk, nl, versie))
 try:
     pct = max(0, min(100, int(pct)))
 except ValueError:
@@ -354,7 +364,26 @@ with tarfile.open(pakket, "r:gz") as tf:
         totaal += m.size
         if totaal > maxb * 4:
             sys.exit("uitgepakt te groot")
-    tf.extractall(doel, members=leden, filter="data")
+    if hasattr(tarfile, "data_filter"):
+        tf.extractall(doel, members=leden, filter="data")
+    else:
+        # python3 < 3.11.4 heeft nog geen data-filter (PEP 706): hetzelfde effect met de hand (alleen gewone bestanden en mappen,
+        # zie boven). Eigenaar = wie uitpakt, niet die uit het archief. Bestanden: geen setuid/setgid/sticky, geen schrijfrecht voor
+        # groep/anderen, de eigenaar mag lezen en schrijven, uitvoerbaar alleen als de eigenaar het al was. Mappen: de modus uit het
+        # archief telt niet; zoals bij het filter krijgen ze de umask van dit script (077, dus 0700).
+        import os
+        um = os.umask(0)
+        os.umask(um)
+        for m in leden:
+            m.uid, m.gid, m.uname, m.gname = os.geteuid(), os.getegid(), "", ""
+            if m.isfile():
+                m.mode &= 0o755
+                if not m.mode & 0o100:
+                    m.mode &= ~0o111
+                m.mode |= 0o600
+            else:
+                m.mode = 0o777 & ~um
+        tf.extractall(doel, members=leden)
 PY
 then
   weiger INHOUD_ONVEILIG "Архів містить недозволені елементи (посилання, пристрої, шляхи поза текою)." "Het archief bevat niet-toegestane onderdelen (links, apparaten, paden buiten de map): $(tail -c 200 "$WERK/tar.log" | tr '\n' ' ')"
@@ -464,7 +493,33 @@ fi
 # джерела (passkey/підпис/gitops/мобільний додаток). Файли додає скрипт збирання (deploy/uitrol/maak-*pakket).
 # Een ontbrekend bestand geeft een LEGE tekst, geen fout: `head` op een ontbrekend pad gaf rc 1 en onder pipefail stierf het hele script
 # vóór `weiger GEEN_AUTEUR` (status bleef «bezig CONTROLE»). Het `|| true` binnen de accolades houdt de pijplijn op 0.
-meta() { { head -c "$2" -- "$BRON/$1" 2>/dev/null || true; } | tr -d '\000' | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+# UITROL-UTF8-001 (06.11.2026): vroeger `head -c "$2"`, dus knippen per BYTE. Viel de grens midden in een Cyrillisch teken (AUTEUR
+# van 200+ bytes), dan kwam er een half teken in $AUTEUR; python3 in stap()/gebeurtenis() kreeg een los surrogaat en faalde bij het
+# schrijven van de JSON (stapregel «inhoud» stil weg, OK-gebeurtenis ontbrak en het script stierf ná de installatie). Nu knipt Python
+# op het begin van een heel UTF-8-teken (hoogstens 3 vervolgbytes terug) en worden ongeldige bytes U+FFFD: zichtbaar, niet stil weg.
+# Раніше `head -c` різав побайтово: пів кириличного символу ламало JSON у stap()/gebeurtenis(). Тепер обрізання — по цілому
+# символу UTF-8, а невалідні байти стають U+FFFD (видно, а не зникають мовчки). Відсутній файл, як і раніше, дає порожній текст.
+meta() { # meta <bestand> <max-bytes>
+  { python3 - "$BRON/$1" "$2" <<'PY' 2>/dev/null || true
+import sys
+pad, grens = sys.argv[1], int(sys.argv[2])
+try:
+    with open(pad, "rb") as f:
+        ruw = f.read(grens + 1)  # grens + 1: zo is te zien of er geknipt wordt en of byte <grens> een vervolgbyte is
+except OSError:
+    sys.exit(0)
+if len(ruw) > grens:
+    k = grens
+    # terug naar het begin van het teken dat de grens overschrijdt (vervolgbytes zijn 10xxxxxx; een UTF-8-teken heeft er hoogstens 3)
+    while k > max(0, grens - 3) and (ruw[k] & 0xC0) == 0x80:
+        k -= 1
+    if (ruw[k] & 0xC0) == 0x80:
+        k = grens  # geen geldig begin binnen 3 bytes: ongeldige bytes, knip gewoon op de grens (die worden hieronder U+FFFD)
+    ruw = ruw[:k]
+sys.stdout.buffer.write(ruw.replace(b"\0", b"").decode("utf-8", "replace").encode("utf-8"))
+PY
+  } | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
 AUTEUR="$(meta AUTEUR 200)"
 AGENT="$(meta AGENT 40)"
 SAMENVATTING="$(meta SAMENVATTING 8000 | tr '\n' ' ')"
@@ -521,6 +576,112 @@ COMMIT_TEKST=""
 if [[ "$BRON_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then COMMIT_TEKST="$BRON_COMMIT"
 elif [[ "$BRON_COMMIT" =~ ^zonder-git:[[:space:]]*(.{5,})$ ]]; then COMMIT_TEKST="zonder-git"
 else weiger GEEN_BRON_COMMIT "У пакеті немає дійсного BRON-COMMIT (40-символьний git-коміт або «zonder-git:<причина>»). Без нього неможливо сказати, який код працює. Випуск відхилено — див. deploy/REGELS-UITROLPAKKET.md." "BRON-COMMIT ontbreekt of is ongeldig (40-tekens git-commit of «zonder-git:<reden>»). Zonder commit is niet te zeggen welke code draait. Release geweigerd — zie deploy/REGELS-UITROLPAKKET.md."
+fi
+# TRACE-001: vóór installatie uitsluitend met VASTE GitHub-routes controleren dat
+# (1) het volledige ontwikkeldossier op de aangegeven commit in de taak-tak staat en
+# (2) exact deze pakketbytes als tar.gz in de release van dezelfde versie bestaan.
+# De URL uit het pakket wordt nooit geopend; geen script uit het pakket wordt uitgevoerd.
+if [[ ! "$VERSIE" < "20261103-211555" ]]; then
+  [ -f "$BRON/ONTWIKKELARCHIEF.json" ] || weiger GEEN_ONTWIKKELARCHIEF "Немає ONTWIKKELARCHIEF.json — обов'язкової перевіреної історії GitHub." "ONTWIKKELARCHIEF.json met gecontroleerde GitHub-herkomst ontbreekt."
+  ARCHIEF_UITKOMST="$(timeout 55 python3 - "$BRON/ONTWIKKELARCHIEF.json" "$BRON_COMMIT" "$VERSIE" "$WERK/pakket.tar.gz" <<'PY' 2>/dev/null || true
+import base64, hashlib, json, os, re, stat, sys, urllib.request, urllib.parse
+f, bron, versie, pakket = sys.argv[1:]
+repo='Tarasevych/hub'
+if not re.fullmatch(r'[0-9a-f]{40}', bron):
+    print('ONTWIKKELARCHIEF_ONGELDIG'); sys.exit()
+try:
+    if os.path.getsize(f)>8192: raise ValueError('te groot')
+    ref=json.load(open(f,encoding='utf-8'))
+    taak=ref.get('taakId','')
+    pad=f'orchestratie/ontwikkelarchieven/{taak}.json'
+    commit=ref.get('commit','')
+    tak=ref.get('tak','')
+    if (ref.get('schema')!=1 or not re.fullmatch(r'[A-Z][A-Z0-9]{1,9}-\d{3,5}',taak)
+        or not re.fullmatch(r'(feature|fix|audit|release)/[a-z0-9-]+-\d{8}-\d{6}',tak)
+        or ref.get('repo')!=repo or commit!=bron or ref.get('pad')!=pad
+        or not re.fullmatch(r'[0-9a-f]{64}',ref.get('sha256',''))
+        or ref.get('url')!=f'https://github.com/{repo}/blob/{commit}/{pad}'
+        or ref.get('release')!=f'https://github.com/{repo}/releases/tag/{versie}'
+        or ref.get('pakket')!=f'mijn-ruimte-{versie}.tar.gz'):
+        raise ValueError('ongeldige herkomst')
+except Exception:
+    print('ONTWIKKELARCHIEF_ONGELDIG');sys.exit()
+headers={'Accept':'application/vnd.github+json','User-Agent':'Mijn-Ruimte-Uitrol-TRACE-001',
+         'X-GitHub-Api-Version':'2022-11-28'}
+# Alleen de voor root afgeschermde oude tokenfile; geen geheim in argumenten, log of pakket.
+tokenfile='/etc/mijn-ruimte/github-token'
+try:
+    st=os.stat(tokenfile)
+    if st.st_uid==0 and not (stat.S_IMODE(st.st_mode)&0o077):
+        token=open(tokenfile,encoding='utf-8').read(4096).strip()
+        if token: headers['Authorization']='Bearer '+token
+except OSError: pass
+class GeenOmleiding(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self,*args,**kwargs): raise ValueError('redirect geweigerd')
+opener=urllib.request.build_opener(GeenOmleiding)
+def gh(url):
+    import time
+    for poging in range(3):
+        try:
+            req=urllib.request.Request(url,headers=headers)
+            with opener.open(req,timeout=12) as r:
+                if r.status!=200: raise ValueError('HTTP_'+str(r.status))
+                data=r.read(800001)
+                if len(data)>800000: raise ValueError('te groot')
+                return json.loads(data)
+        except urllib.error.HTTPError as e:
+            if e.code in (401,403) and 'Authorization' in headers:
+                headers.pop('Authorization',None)
+                continue
+            if e.code in (429,500,502,503,504) and poging<2:
+                time.sleep(1)
+                continue
+            raise
+        except urllib.error.URLError:
+            if poging<2:
+                time.sleep(1)
+                continue
+            raise
+try:
+    u=f'https://api.github.com/repos/{repo}/contents/{pad}?ref={commit}'
+    item=gh(u)
+    if item.get('type')!='file' or item.get('encoding')!='base64': raise ValueError('geen bestand')
+    raw=base64.b64decode(item['content'])
+    if len(raw)>256000 or hashlib.sha256(raw).hexdigest()!=ref['sha256']:
+        print('ONTWIKKELARCHIEF_SHA_VERSCHILT');sys.exit()
+    doc=json.loads(raw)
+    if (doc.get('schema')!=1 or doc.get('taakId')!=taak or
+        len(str(doc.get('opdracht','')).strip())<40 or
+        not all(isinstance(doc.get(x),list) and doc[x] for x in
+                ('tijdlijn','keuzes','wijzigingen','controles','bronnen','beperkingen')) or
+        doc.get('privacy',{}).get('geheimenUitgesloten') is not True):
+        raise ValueError('onvolledig dossier')
+    branch=gh(f'https://api.github.com/repos/{repo}/branches/{urllib.parse.quote(tak,safe="")}')
+    head=branch.get('commit',{}).get('sha','')
+    if not re.fullmatch(r'[0-9a-f]{40}',head): raise ValueError('geen tak')
+    compare=gh(f'https://api.github.com/repos/{repo}/compare/{commit}...{head}')
+    if compare.get('status') not in ('ahead','identical'):
+        print('ONTWIKKELARCHIEF_TAK_ONGELDIG');sys.exit()
+    release=gh(f'https://api.github.com/repos/{repo}/releases/tags/{versie}')
+    asset=next((a for a in release.get('assets',[]) if a.get('name')==ref['pakket']),None)
+    if not asset or asset.get('state')!='uploaded':
+        print('ONTWIKKELARCHIEF_PAKKET_ONTBREEKT');sys.exit()
+    digest=hashlib.file_digest(open(pakket,'rb'),'sha256').hexdigest()
+    if asset.get('digest')!='sha256:'+digest:
+        print('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT');sys.exit()
+    print('OK')
+except urllib.error.HTTPError as e:
+    print('ONTWIKKELARCHIEF_NIET_GEVONDEN' if e.code==404 else 'ONTWIKKELARCHIEF_ONBEREIKBAAR')
+except Exception:
+    print('ONTWIKKELARCHIEF_ONBEREIKBAAR')
+PY
+)"
+  case "$ARCHIEF_UITKOMST" in
+    OK) log "TRACE-001: GitHub commit, tak, dossier en exact pakketdigest bevestigd" ;;
+    GEEN_ONTWIKKELARCHIEF|ONTWIKKELARCHIEF_ONGELDIG|ONTWIKKELARCHIEF_SHA_VERSCHILT|ONTWIKKELARCHIEF_TAK_ONGELDIG|ONTWIKKELARCHIEF_PAKKET_ONTBREEKT|ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT|ONTWIKKELARCHIEF_NIET_GEVONDEN|ONTWIKKELARCHIEF_ONBEREIKBAAR)
+      weiger "$ARCHIEF_UITKOMST" "GitHub не підтвердив повну історію розробки й точний архів ($ARCHIEF_UITKOMST). Установлення відхилено." "GitHub kon het ontwikkeldossier en het exacte archief niet bevestigen ($ARCHIEF_UITKOMST). Installatie geweigerd." ;;
+    *) weiger ONTWIKKELARCHIEF_ONBEREIKBAAR "Перевірка GitHub не завершилась. Установлення відхилено." "GitHub-verificatie niet voltooid. Installatie geweigerd." ;;
+  esac
 fi
 log "метадані випуску: автор=$AUTEUR агент=$AGENT commit=${COMMIT_TEKST}"
 stap inhoud ok 40 "Вміст і метадані в порядку (автор: $AUTEUR, агент: $AGENT)." "Inhoud en metadata zijn in orde (auteur: $AUTEUR, agent: $AGENT)."

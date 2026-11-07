@@ -27,7 +27,7 @@ const GROUPS: Array<{ id: Group; logo: LogoKind; uk: string; nl: string; hint: [
     sources: [{ logo: 'google', uk: 'Gmail (Google)', nl: 'Gmail (Google)', live: true }, { logo: 'microsoft', uk: 'Outlook (Microsoft)', nl: 'Outlook (Microsoft)', live: false }] },
   { id: 'calendar', logo: 'calendar', uk: 'Календар', nl: 'Agenda', hint: ['Календарі й події.', 'Agenda\'s en afspraken.'],
     sources: [{ logo: 'google', uk: 'Google Calendar', nl: 'Google Agenda', live: true }, { logo: 'microsoft', uk: 'Outlook Calendar', nl: 'Outlook-agenda', live: false }] },
-  { id: 'drive', logo: 'internal', uk: 'Диск', nl: 'Schijf', hint: ['Перегляд папок і читання файлів. Зараз працює лише з Google Drive; інші диски з’являться, коли їх буде підключено до сайту.', 'Mappen bekijken en bestanden lezen. Nu alleen met Google Drive; andere schijven komen erbij zodra ze aan de site gekoppeld zijn.'],
+  { id: 'drive', logo: 'internal', uk: 'Диск', nl: 'Schijf', hint: ['Перегляд тек і читання файлів. Зараз працює лише з Google Drive; інші диски з’являться, коли їх буде підключено до сайту.', 'Mappen bekijken en bestanden lezen. Nu alleen met Google Drive; andere schijven komen erbij zodra ze aan de site gekoppeld zijn.'],
     sources: [{ logo: 'google', uk: 'Google Drive', nl: 'Google Drive', live: true }, { logo: 'microsoft', uk: 'OneDrive (Microsoft)', nl: 'OneDrive (Microsoft)', live: false }, { logo: 'internal', uk: 'Внутрішній диск сайту', nl: 'Interne schijf van de site', live: false }] },
   { id: 'site', logo: 'internal', uk: 'Пошук по сайту', nl: 'Zoeken op de site', hint: ['Єдиний пошук по всьому, що вже проіндексовано в Mijn Ruimte.', 'Eén zoekopdracht over alles wat Mijn Ruimte al heeft geïndexeerd.'],
     sources: [{ logo: 'internal', uk: 'Mijn Ruimte', nl: 'Mijn Ruimte', live: true }] },
@@ -43,7 +43,7 @@ const MODE_META: Record<Mode, { icon: typeof Check; uk: string; nl: string }> = 
 
 function ModeSwitch({ value, disabled, onChange, label, tr }: { value: Mode; disabled: boolean; onChange: (m: Mode) => void; label: string; tr: Tr }) {
   const help: Record<Mode, string> = {
-    always: tr('Завжди: Claude викликає без запиту від сайту. Межі агента (папки, список команд) лишаються.', 'Altijd: Claude roept het aan zonder vraag van de site. De grenzen van de agent (mappen, lijst met commando\'s) blijven gelden.'),
+    always: tr('Завжди: Claude викликає без запиту від сайту. Межі агента (теки, список команд) лишаються.', 'Altijd: Claude roept het aan zonder vraag van de site. De grenzen van de agent (mappen, lijst met commando\'s) blijven gelden.'),
     ask: tr('Питати: кожен виклик чекає вашого «Дозволити».', 'Vragen: elke aanroep wacht op uw "Toestaan".'),
     off: tr('Вимкнено: Claude не бачить цього інструмента й не може його викликати.', 'Uit: Claude ziet dit hulpmiddel niet en kan het niet aanroepen.'),
   };
@@ -142,11 +142,11 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
   const rows = tools.filter((t) => t.group === current.id);
   return (
     <div className='hub-tools-wrap' data-mcp-tools-panel='true' data-mcp-tools={String(tools.length)}>
-      <p className='hub-note'>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити») або «Вимк.» (Claude його не бачить). Інструменти зі знаком «!» змінюють дані або показують приватне: вони вимкнені за замовчуванням, але ви можете ввімкнути їх, коли це потрібно для задачі.', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen vraag van de site), "Vragen" (elke aanroep wacht op uw "Toestaan") of "Uit" (Claude ziet het niet). Hulpmiddelen met een "!" wijzigen gegevens of tonen iets privés: ze staan standaard uit, maar u kunt ze aanzetten wanneer een taak dat vraagt.')}</p>
+      <p className='hub-note'>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити») або «Вимк.» (Claude його не бачить). Інструменти зі знаком «!» змінюють дані або показують приватне: вони вимкнені типово, але ви можете ввімкнути їх, коли це потрібно для задачі.', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen vraag van de site), "Vragen" (elke aanroep wacht op uw "Toestaan") of "Uit" (Claude ziet het niet). Hulpmiddelen met een "!" wijzigen gegevens of tonen iets privés: ze staan standaard uit, maar u kunt ze aanzetten wanneer een taak dat vraagt.')}</p>
 
       <div className='hub-row' data-mcp-setall='true'>
         <span className='hub-row start'><b>{tr('Усі інструменти', 'Alle hulpmiddelen')}</b>
-          <Help tr={tr} content={{ title: tr('Усі інструменти одразу', 'Alle hulpmiddelen tegelijk'), what: tr('Змінює режим усіх інструментів в усіх вкладках.', 'Wijzigt de modus van alle hulpmiddelen op alle tabbladen.'), touches: tr('Інструменти зі знаком «!» не змінюються кнопками «Завжди» і «Питати»: їх вмикають окремо.', 'Hulpmiddelen met "!" worden door "Altijd" en "Vragen" niet gewijzigd: die zet u apart aan.'), on: tr('«За замовчуванням»: читання «Завжди», запис на сайті «Питати», небезпечні вимкнені.', '"Standaard": lezen "Altijd", schrijven op de site "Vragen", riskante uit.'), off: tr('«Вимк.»: Claude не бачить жодного інструмента, зокрема й безпечних.', '"Uit": Claude ziet geen enkel hulpmiddel, ook de veilige niet.') }} />
+          <Help tr={tr} content={{ title: tr('Усі інструменти одразу', 'Alle hulpmiddelen tegelijk'), what: tr('Змінює режим усіх інструментів в усіх вкладках.', 'Wijzigt de modus van alle hulpmiddelen op alle tabbladen.'), touches: tr('Інструменти зі знаком «!» не змінюються кнопками «Завжди» і «Питати»: їх вмикають окремо.', 'Hulpmiddelen met "!" worden door "Altijd" en "Vragen" niet gewijzigd: die zet u apart aan.'), on: tr('«Типово»: читання «Завжди», запис на сайті «Питати», небезпечні вимкнені.', '"Standaard": lezen "Altijd", schrijven op de site "Vragen", riskante uit.'), off: tr('«Вимк.»: Claude не бачить жодного інструмента, зокрема й безпечних.', '"Uit": Claude ziet geen enkel hulpmiddel, ook de veilige niet.') }} />
         </span>
         <span className='hub-seg' role='group' aria-label={tr('Усі інструменти', 'Alle hulpmiddelen')}>
           <button type='button' disabled={busy} onClick={() => void setAll('always')}><CheckCheck aria-hidden='true' />{tr('Завжди', 'Altijd')}</button>
@@ -181,7 +181,7 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
         <div className='hub-actions'>
           <IconButton icon={<Hand />} disabled={busy} onClick={() => void setAll('ask', current.id, true)}>{tr('Увімкнути групу: питати щоразу', 'Groep aanzetten: elke keer vragen')}</IconButton>
           <IconButton icon={<Ban />} disabled={busy} onClick={() => void setAll('off', current.id)}>{tr('Вимкнути групу', 'Groep uitzetten')}</IconButton>
-          <IconButton icon={<RotateCcw />} disabled={busy} onClick={() => void setAll('default', current.id)}>{tr('За замовчуванням', 'Standaard')}</IconButton>
+          <IconButton icon={<RotateCcw />} disabled={busy} onClick={() => void setAll('default', current.id)}>{tr('Типово', 'Standaard')}</IconButton>
         </div>
       </div>
 

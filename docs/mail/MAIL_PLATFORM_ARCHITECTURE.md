@@ -1,42 +1,44 @@
-# Mail Platform Architecture v1
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_PLATFORM_ARCHITECTURE.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_PLATFORM_ARCHITECTURE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
+# Архітектура поштової платформи v1
 
 ## 1. Мета і межа
 
-Цей документ визначає production-target архітектуру реальної поштової платформи `mail.tarasevych.com`, інтегрованої з canonical identity/session model. Поточний Mail Phase 1 залишається чесним manual/QA контуром. Цей реліз не активує Gmail або Microsoft OAuth, не зберігає provider tokens і не оголошує push/sync підключеними.
+Цей документ визначає цільову промислову архітектуру реальної поштової платформи `mail.tarasevych.com`, інтегрованої з канонічною моделлю ідентичності та сесії. Поточний Пошта (фаза 1) залишається чесним ручним тестовим контуром. Цей реліз не активує Gmail або Microsoft OAuth, не зберігає токени провайдера і не оголошує push-сповіщення та синхронізацію під'єднаними.
 
-Основна продуктова модель — **Inbox Functional**: система зменшує виконавче тертя, а не вимагає Inbox Zero. Синхронізація постачає достовірні provider-дані; нейроінклюзивний шар перетворює їх на одну найближчу дію, cited summary, silent resume-context persistence і energy-aware інтерфейс.
+Основна продуктова модель — **Функціональні Вхідні**: система зменшує виконавче тертя, а не вимагає Порожні Вхідні. Синхронізація постачає достовірні дані постачальника; нейроінклюзивний шар перетворює їх на одну найближчу дію, підсумок із цитатами, тихе збереження контексту відновлення і енергоощадний інтерфейс.
 
 ## 2. Архітектурні інваріанти
 
-1. Canonical ecosystem session і mailbox authorization — різні capabilities. Вхід через Google Identity не означає доступ до Gmail.
-2. Кожний mailbox record має `owner_user_id`; provider payload не може визначати owner.
-3. Refresh tokens зберігаються лише server-side у AES-256-GCM envelope; access tokens не потрапляють у browser storage, URL, logs або audit details.
-4. Provider callback state — single-use, короткоживучий, прив’язаний до owner, mail account, provider, initiating service, locale і safe return path.
-5. Webhook/push — лише сигнал. Авторитетний стан отримується через Gmail History або Microsoft Delta.
-6. Кожна ingestion і mutation операція має idempotency key.
-7. Sync cursor просувається лише після durable commit усіх пов’язаних змін.
-8. High-risk send виконується лише через prepare → explicit confirm → commit, з idempotency та audit.
-9. External email HTML, attachments і AI output є untrusted.
-10. AI не виконує інструкції з листа, не надсилає листи й не приховує джерело.
-11. Cited summary зберігає provenance до конкретних message parts/excerpts.
-12. Low-energy mode зменшує кількість рішень; він не є просто темою.
-13. Жодних каральних unread/overdue/missed формулювань.
-14. Manual import залишається окремим source type до окремого migration gate; він не змішується з provider truth.
+1. Канонічна сесія екосистеми та авторизація поштової скриньки — це різні спроможності. Вхід через Google Identity не означає доступ до Gmail.
+2. Кожен запис поштової скриньки має `owner_user_id`; дані постачальника не можуть визначати власника.
+3. Токени оновлення зберігаються лише на сервері у конверті AES-256-GCM; токени доступу не потрапляють у сховище браузера, URL-адреси, журнали чи деталі аудиту.
+4. Стан зворотного виклику постачальника є одноразовим, короткоживучим і прив’язаним до власника, поштового облікового запису, постачальника, сервісу-ініціатора, мови та безпечного шляху повернення.
+5. Вебхук або push-повідомлення — лише сигнал. Авторитетний стан отримується через історію Gmail або дельту Microsoft.
+6. Кожна операція приймання даних і зміни стану має ключ ідемпотентності.
+7. Курсор синхронізації просувається лише після надійної фіксації всіх пов’язаних змін.
+8. Надсилання підвищеного ризику виконується лише через підготовку → явне підтвердження → фіксацію, з ідемпотентністю та аудитом.
+9. Зовнішній HTML листа, вкладення та вивід ШІ вважаються недовіреними.
+10. ШІ не виконує інструкції з листа, не надсилає листи й не приховує джерело.
+11. Підсумок із цитатами зберігає походження до конкретних частин і уривків повідомлення.
+12. Режим низької енергії зменшує кількість рішень; він не є просто темою.
+13. Жодних каральних формулювань про непрочитані, прострочені чи пропущені листи.
+14. Ручний імпорт залишається окремим типом джерела до окремого шлюзу міграції; він не змішується з авторитетними даними постачальника.
 
 ## 3. Компоненти
 
 ### 3.1 Canonical Mail API
 
-Owner-scoped facade над provider adapters:
+Ізольований за власником фасад над адаптерами постачальників:
 
-- accounts і connection status;
-- messages/threads/labels;
-- draft/send command lifecycle;
-- sync health;
-- neuroinclusive state;
-- websocket entity updates.
+- облікові записи та стан під'єднання;
+- повідомлення, ланцюжки та мітки;
+- життєвий цикл чернеток і команд надсилання;
+- стан здоров’я синхронізації;
+- нейроінклюзивний стан;
+- оновлення сутностей через WebSocket.
 
-Public product contract:
+Публічний продуктовий контракт:
 
 - `GET /mail/accounts`
 - `GET /mail/{accountId}/messages`
@@ -44,66 +46,66 @@ Public product contract:
 - `POST /mail/{accountId}/send`
 - `POST /mail/{accountId}/labels`
 
-У чинному AppDeploy runtime owner session context передається через canonical POST body. Тому adapter routes можуть тимчасово мати форму `/api/owner/mail/...` без зміни продуктового контракту. GET facade вводиться лише після доведення безпечного session-context resolution для GET.
+У чинному середовищі виконання AppDeploy контекст сесії власника передається через канонічне тіло POST-запиту. Тому маршрути адаптера можуть тимчасово мати форму `/api/owner/mail/...` без зміни продуктового контракту. GET-фасад вводиться лише після підтвердження безпечного визначення контексту сесії для GET.
 
-### 3.2 Provider registry
+### 3.2 Реєстр провайдерів
 
-Один registry описує `google_gmail` і `microsoft_graph`:
+Один реєстр описує `google_gmail` і `microsoft_graph`:
 
-- scopes;
-- OAuth endpoints;
-- identity/profile resolver;
-- token refresh;
-- watch/subscription lifecycle;
-- initial sync;
-- incremental sync;
-- message/thread/label normalization;
-- send/modify capabilities;
-- provider rate-limit classifier;
-- disconnect/revoke.
+- області доступу (scopes);
+- кінцеві точки OAuth;
+- резолвер ідентичності/профілю;
+- оновлення токенів;
+- життєвий цикл watch/підписок;
+- початкова синхронізація;
+- інкрементальна синхронізація;
+- нормалізація повідомлень/ланцюжків/міток;
+- спроможності надсилання/зміни;
+- класифікатор лімітів частоти запитів (rate-limit) провайдера;
+- вимкнення/відкликання (disconnect/revoke).
 
-Provider-specific код не викликається без capability state `configured` і active account grant.
+Provider-specific код не викликається без capability стан `configured` і активного дозволу облікового запису (active account grant).
 
-### 3.3 Token vault
+### 3.3 Сховище токенів
 
-Envelope format:
+Формат конверта:
 
 - `ciphertext`;
-- 12-byte random `iv`;
+- 12-байтовий випадковий `iv`;
 - GCM `auth_tag`;
 - `key_version`;
 - `algorithm = AES-256-GCM`;
 - AAD: `owner_user_id | mail_account_id | provider | token_kind`.
 
-`MAIL_TOKEN_ENCRYPTION_KEY_V1` зберігається як AppDeploy secret або KMS-backed key. Відсутній/невалідний ключ блокує provider connection. Token refresh використовує account-level lease, rotation і compare-before-write.
+`MAIL_TOKEN_ENCRYPTION_KEY_V1` зберігається як AppDeploy секрет або KMS-backed key. Відсутній/невалідний ключ блокує провайдер connection. Token refresh використовує account-level lease, ротацію та compare-before-write.
 
-### 3.4 Push ingress
+### 3.4 Вхідний потік push-сповіщень
 
 #### Gmail
 
-Google Pub/Sub authenticated push endpoint:
+Автентифікована push-кінцева точка Google Pub/Sub:
 
 - перевіряє OIDC bearer JWT issuer/audience/expiry;
 - перевіряє allowlisted subscription/topic identity;
 - декодує Pub/Sub envelope;
 - дедуплікує `messageId`;
 - звіряє `emailAddress` з connected account;
-- створює coalesced incremental-sync job;
-- відповідає швидко, без provider fetch у request path.
+- створює coalesced incremental-sync завдання;
+- відповідає швидко, без провайдер fetch у запит path.
 
 #### Microsoft
 
-Graph webhook endpoint:
+Кінцева точка вебхуків Graph:
 
-- повертає validation token як plain text під час creation validation;
-- перевіряє `clientState` constant-time;
-- дедуплікує notification identity;
+- повертає validation token як plain текст під час creation validation;
+- перевіряє `clientState` за сталий час (constant-time);
+- дедуплікує ідентичність сповіщення;
 - підтримує lifecycle notifications;
-- ставить delta-sync job, не завантажує mailbox у webhook request.
+- ставить delta-sync завдання, не завантажує mailbox у webhook request.
 
-### 3.5 Durable queue і workers
+### 3.5 Надійна черга та воркери
 
-Job types:
+Типи завдань:
 
 - `token.refresh`
 - `provider.watch.renew`
@@ -121,139 +123,139 @@ Job types:
 - `send.commit`
 - `provider.disconnect.cleanup`
 
-Кожний job має idempotency key, lease, attempt count, exponential backoff з jitter, `available_at`, terminal status і dead-letter reason. Gmail events coalesce per account because notification rate is bounded and events can be dropped. Periodic fallback sync is mandatory.
+Кожне завдання має ключ ідемпотентності, оренду (lease), лічильник спроб, експоненційну затримку (exponential backoff) з jitter, `available_at`, термінальний статус і причину потрапляння в dead-letter. Події Gmail об’єднуються (coalesce) на рівні облікового запису, оскільки частота сповіщень обмежена і події можуть бути пропущені. Періодична резервна синхронізація є обов’язковою.
 
-### 3.6 Storage
+### 3.6 Сховище даних
 
-- Metadata, cursors, commands, triage, citations: relational database.
-- Sanitized plain text і bounded HTML: database або compressed object storage за size policy.
-- Attachments: private object storage, owner/account/message path, content hash, malware-scan state.
-- Provider raw payload: короткий encrypted/debug retention лише за explicit policy; default — normalized fields, не довічний raw archive.
+- Метадані, курсори, команди, тріаж, цитати: реляційна база даних.
+- Санітизований звичайний текст і обмежений HTML: база даних або стиснене об’єктне сховище згідно з політикою розміру.
+- Вкладення: приватне об’єктне сховище, шлях за власником/обліковим записом/повідомленням, хеш вмісту, стан перевірки на шкідливе ПЗ.
+- Сирий payload провайдера: коротке зашифроване/відлагоджувальне зберігання лише за явною політикою; типово зберігаються нормалізовані поля, а не довічний сирий архів.
 
-### 3.7 Realtime UI update
+### 3.7 Оновлення інтерфейсу в реальному часі
 
-1. Initial HTTP bootstrap.
-2. Frontend створює AppDeploy WS connection.
-3. Підписується на `mail_account:{accountId}` або owner-level mail feed.
-4. Worker після commit надсилає `entity.update` з revision/cursor, не full sensitive payload.
-5. Frontend invalidates/refetches owner-scoped API або застосовує bounded normalized delta.
-6. Unsubscribe при виході з Mail view; socket не перебудовується на кожній вкладці.
+1. Початковий HTTP bootstrap.
+2. Frontend створює AppDeploy WS-з’єднання.
+3. Підписується на `mail_account:{accountId}` або поштовий потік на рівні власника.
+4. Воркер після commit надсилає `entity.update` з ревізією/курсором, а не повний чутливий payload.
+5. Frontend інвалідує/повторно запитує owner-scoped API або застосовує обмежену нормалізовану дельту.
+6. Відписка (unsubscribe) при виході з подання Пошти; сокет не перебудовується на кожній вкладці.
 
-## 4. Google adapter
+## 4. Адаптер Google
 
-### 4.1 Consent
+### 4.1 Згода
 
-Mailbox OAuth є окремою incremental authorization transaction. Target scope contract:
+Mailbox OAuth є окремою інкрементальною транзакцією авторизації. Цільовий контракт областей доступу (scopes):
 
 - `https://www.googleapis.com/auth/gmail.readonly`
 - `https://www.googleapis.com/auth/gmail.modify`
 - `https://www.googleapis.com/auth/gmail.send`
 - `https://www.googleapis.com/auth/gmail.labels`
 
-`gmail.modify` перекриває значну частину read capability, але runtime не скорочує заданий користувачем scope contract без окремого consent/verification рішення. Restricted scopes потребують Google verification і, залежно від deployment, security assessment.
+`gmail.modify` перекриває значну частину можливостей читання, але середовище виконання (runtime) не скорочує заданий користувачем контракт областей доступу без окремого рішення щодо згоди/верифікації. Обмежені області доступу (restricted scopes) потребують верифікації Google і, залежно від розгортання, оцінки безпеки.
 
-Authorization використовує offline access; refresh token absence після повторного consent не стирає чинний token. Provider mailbox identity підтверджується через Gmail profile перед activation.
+Авторизація використовує офлайн-доступ (offline access); відсутність refresh-токена після повторної згоди не стирає чинний токен. Ідентичність поштової скриньки провайдера підтверджується через профіль Gmail перед активацією.
 
 ### 4.2 Watch
 
-Після token commit:
+Після фіксації токена:
 
-1. створити/оновити account;
-2. виконати labels bootstrap;
+1. створити/оновити обліковий запис;
+2. виконати первинне завантаження міток;
 3. викликати Gmail `users.watch`;
-4. зберегти returned `historyId` і expiration;
-5. поставити initial sync;
-6. поновлювати watch щодня й обов’язково до expiration;
-7. мати periodic history fallback.
+4. зберегти повернутий `historyId` та час закінчення дії (expiration);
+5. поставити в чергу початкову синхронізацію;
+6. поновлювати watch щодня й обов’язково до закінчення терміну дії;
+7. мати періодичний резервний механізм синхронізації історії (history fallback).
 
-### 4.3 Initial sync
+### 4.3 Початкова синхронізація
 
-- labels list;
-- paginated messages list за bounded policy;
-- fetch message metadata/full MIME;
-- normalize headers, body parts, attachments;
-- upsert messages;
-- build thread membership;
-- map labels;
-- queue attachment downloads according to policy;
-- commit initial cursor;
-- enqueue triage/summary only for new/changed content.
+- список міток;
+- посторінковий список повідомлень за обмеженою політикою;
+- завантаження метаданих повідомлення / повного MIME;
+- нормалізація заголовків, частин тіла листа та вкладень;
+- upsert повідомлень;
+- побудова належності до ланцюжків;
+- відображення міток;
+- постановка завантажень вкладень у чергу відповідно до політики;
+- фіксація початкового курсора;
+- постановка тріажу/резюме в чергу лише для нового або зміненого вмісту.
 
-### 4.4 Incremental sync
+### 4.4 Інкрементальна синхронізація
 
-- read stored history cursor;
-- call history list;
-- apply messages added/deleted and labels added/removed;
-- fetch changed messages;
-- commit changes and next cursor atomically;
-- on invalid/expired cursor perform bounded recovery bootstrap;
-- never advance cursor after partial failure.
+- читання збереженого курсора історії;
+- виклик списку історії;
+- застосування доданих/видалених повідомлень та доданих/видалених міток;
+- завантаження змінених повідомлень;
+- атомарна фіксація змін і наступного курсора;
+- у разі невалідного/простроченого курсора — виконання обмеженого відновлювального перезавантаження (recovery bootstrap);
+- ніколи не просувати курсор після часткового збою.
 
-## 5. Microsoft adapter
+## 5. Адаптер Microsoft
 
-- Authorization Code + PKCE + offline access.
-- Delegated scopes: `Mail.Read`, `Mail.ReadWrite`, `Mail.Send`.
-- Resolve mailbox identity via Graph `/me`.
-- Initial sync uses folder inventory plus paginated messages/delta.
-- Persist delta links per account/folder.
-- Webhook notification schedules delta sync.
-- Renew subscriptions before expiration; handle lifecycle events.
-- Thread mapping uses Graph conversation identifiers but preserves provider message identity.
+- Authorization Code + PKCE + офлайн-доступ.
+- Делеговані області доступу: `Mail.Read`, `Mail.ReadWrite`, `Mail.Send`.
+- Визначення ідентичності поштової скриньки через Graph `/me`.
+- Початкова синхронізація використовує інвентаризацію тек плюс посторінкові повідомлення/дельту.
+- Збереження delta-посилань для кожного облікового запису/теки.
+- Сповіщення вебхука планує дельта-синхронізацію.
+- Поновлення підписок до закінчення терміну дії; обробка подій життєвого циклу.
+- Відображення ланцюжків використовує ідентифікатори розмов Graph, але зберігає ідентичність повідомлення провайдера.
 
-## 6. Neuroinclusive processing boundary
+## 6. Межа нейроінклюзивної обробки
 
-Pipeline after normalized message commit:
+Конвеєр після фіксації нормалізованого повідомлення:
 
-1. deterministic noise/risk/header extraction;
-2. four-class triage suggestion (`action`, `waiting`, `info`, `later`);
-3. source segmentation and citation anchors;
-4. optional AI summary against sanitized untrusted text;
-5. validate output schema and citation references;
-6. store confidence, model/version, source hash and review-required flag;
-7. derive one next step;
-8. evaluate calm notification threshold;
-9. publish UI revision.
+1. детерміноване виділення шуму/ризиків/заголовків;
+2. чотирикласова пропозиція тріажу (`action`, `waiting`, `info`, `later`);
+3. сегментація джерела та якорі цитування;
+4. опціональне ШІ-резюме на основі санітизованого недовіреного тексту;
+5. валідація схеми виводу та посилань на цитати;
+6. збереження рівня впевненості (confidence), моделі/версії, хешу джерела та прапорця необхідності перевірки (`requires_review`);
+7. виведення одного наступного кроку;
+8. оцінка порогу спокійного сповіщення (calm notification threshold);
+9. публікація ревізії інтерфейсу.
 
-Low energy: максимум 2–3 safe options, no batch pressure. Medium: summary, draft, rationale. High: backlog rescue, rules and batching. AI never calls send/label provider tools directly.
+Низький рівень енергії (Low energy): максимум 2–3 безпечні варіанти, без тиску пакетної обробки. Середній (Medium): резюме, чернетка, обґрунтування. Високий (High): розбір накопичених листів (backlog rescue), правила та пакетна обробка. ШІ ніколи не викликає інструменти провайдера для надсилання чи зміни міток напряму.
 
-## 7. Security and privacy
+## 7. Безпека та приватність
 
-- least privilege and explicit mailbox consent;
-- provider token encryption and key rotation;
-- webhook JWT/clientState validation;
-- account/owner scoping on every read/write;
-- HTML sanitization and remote-image blocking by default;
-- MIME depth/size limits and zip-bomb protections;
-- attachment type/size allowlist and malware status;
-- prompt-injection isolation;
-- log redaction;
-- immutable audit for connect, refresh, scope change, sync, label mutation, draft and send;
-- disconnect revokes provider token where supported, stops watch/subscription, deletes local tokens, and schedules retention cleanup;
-- privacy export/delete path.
+- принцип найменших привілеїв та явна згода для поштової скриньки;
+- шифрування токенів провайдера та ротація ключів;
+- валідація JWT вебхуків та `clientState`;
+- ізоляція за обліковим записом/власником при кожному читанні та записі;
+- санітизація HTML та блокування зовнішніх зображень типово;
+- обмеження глибини/розміру MIME та захист від zip-бомб;
+- білий список типів/розмірів вкладень та статус перевірки на шкідливе ПЗ;
+- ізоляція від prompt-ін’єкцій;
+- редагування (приховування чутливих даних) у журналах логів;
+- незмінний аудит для під'єднання, оновлення токена, зміни областей доступу, синхронізації, мутації міток, чернеток і надсилання;
+- вимкнення облікового запису відкликає токен провайдера (де це підтримується), зупиняє watch/підписку, видаляє локальні токени та планує очищення згідно з політикою зберігання;
+- шлях експорту та видалення даних для забезпечення приватності.
 
-## 8. AppDeploy capability boundary
+## 8. Межа спроможностей AppDeploy
 
-AppDeploy DB is suitable for current control-plane and bounded foundation records, but it does not by itself prove SQL uniqueness, foreign keys, transactional cursor+message commits, high-throughput durable queues or production mailbox scale. Production target therefore requires either:
+База даних AppDeploy підходить для поточної панелі керування (control-plane) та обмежених базових записів, але сама по собі не доводить унікальність SQL, зовнішні ключі, транзакційні фіксації «курсор + повідомлення», високопродуктивні надійні черги або масштаб виробничої поштової скриньки. Тому цільове production-середовище вимагає або:
 
-- a managed relational database + durable queue/object storage; or
-- an explicitly verified AppDeploy implementation providing equivalent idempotency, leases and recovery guarantees.
+- керованої реляційної бази даних + надійної черги / об’єктного сховища; або
+- явно верифікованої реалізації AppDeploy, яка забезпечує еквівалентні гарантії ідемпотентності, оренди (leases) та відновлення.
 
-Until that evidence exists, UI status remains `not_connected`/`foundation_only`, not `production_ready`.
+Доки ці докази відсутні, статус в інтерфейсі залишається `not_connected`/`foundation_only`, а не `production_ready`.
 
-## 9. Failure modes
+## 9. Режими відмови
 
-- missing encryption key → connection blocked;
-- consent denied → account remains authorization required;
-- refresh revoked → status `reauth_required`, no destructive cleanup;
-- rate limit → retry with provider-aware backoff;
-- invalid history/delta cursor → bounded recovery sync;
-- webhook duplicates → idempotent no-op;
-- push gap → periodic fallback catches up;
-- malformed MIME → quarantine parsing result, preserve provider metadata;
-- attachment scan failure → unavailable, never auto-open;
-- send ambiguity → idempotency lookup before retry;
-- provider disconnect → stop renewals and sync immediately.
+- відсутній ключ шифрування → під'єднання заблоковано;
+- відмовлено у згоді → обліковий запис залишається у стані `authorization_required`;
+- відкликано refresh-токен → статус `reauth_required`, без деструктивного очищення;
+- перевищення ліміту запитів (rate limit) → повторна спроба з урахуванням специфіки провайдера (provider-aware backoff);
+- невалідний курсор історії/дельти → обмежена відновлювальна синхронізація;
+- дублікати вебхуків → ідемпотентна порожня операція (no-op);
+- пропуск push-сповіщень → періодичний резервний механізм наздоганяє зміни;
+- пошкоджений MIME → карантин результату розбору зі збереженням метаданих провайдера;
+- помилка сканування вкладення → вкладення недоступне, жодного автоматичного відкриття;
+- неоднозначність надсилання → перевірка ключа ідемпотентності перед повторною спробою;
+- вимкнення провайдера → негайна зупинка поновлень і синхронізації.
 
-## 10. Definition of Done
+## 10. Критерій готовності
 
-A provider is `connected` only when consent, encrypted refresh-token persistence, mailbox identity verification, watch/subscription creation, initial sync, incremental fallback and disconnect tests have passed. Automated tests do not replace real Chrome OAuth acceptance or cloud webhook evidence.
+Провайдер вважається `connected` лише тоді, коли успішно пройшли тести отримання згоди, збереження зашифрованого refresh-токена, перевірки ідентичності поштової скриньки, створення watch/підписки, початкової синхронізації, інкрементального резервного механізму та вимкнення. Автоматизовані тести не замінюють реального приймання OAuth у Chrome або доказів роботи хмарних вебхуків.

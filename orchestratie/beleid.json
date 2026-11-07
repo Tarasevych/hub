@@ -1,17 +1,17 @@
 {
   "schema": 1,
-  "regelsVersie": "1.3.0",
-  "bijgewerkt": "2026-10-31",
+  "regelsVersie": "1.4.11",
+  "bijgewerkt": "2026-11-06",
   "regelBestanden": [
     "AGENTS.md",
     "orchestratie/beleid.json",
     "orchestratie/BESLUITEN.md"
   ],
   "basis": {
-    "versie": "20261031-093842",
-    "bronCommit": "b279ccabe31a27139b337822162653ccc13b6a5a",
-    "verificatie": "opgave_eigenaar",
-    "opmerking": "Заявлено власником 31.10.2026; незалежна звірка з production ще не виконана (агент не мав доступу до hub.tarasevych.com/api/version). Після звірки → geverifieerd_productie + запис у BESLUITEN.md."
+    "versie": "20261105-061659",
+    "bronCommit": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "verificatie": "geverifieerd_productie",
+    "opmerking": "Встановлена на сервері версія 20261105-061659 (у до-рерайтній історії commit a318ba0b1c731390217458dabadcf0e086d13635; у канонічній після-рерайтній історії B-011/B-013/B-014 база voornaamst f3f3fabb2f3b5209b1ee8eba3078e403de831844, див. B-014)."
   },
   "integratie": {
     "tak": "integratie",
@@ -22,7 +22,8 @@
       "orch:controleer",
       "orch:versheid",
       "eenheidstests",
-      "typecheck:server"
+      "typecheck:server",
+      "trace-001:ontwikkelarchief"
     ],
     "toelichting": "Послідовна черга: wachtrij volgende → (людина/агент зливає гілку в integratie без force) → wachtrij klaar --uitkomst integrated --hoofd <sha>. Лише одна задача bezig."
   },
@@ -76,6 +77,8 @@
       "mijn-ruimte-<versie>.voorstel.json",
       "ORCH-OVERDRACHT.json",
       "UITROL-MANIFEST.json",
+      "ONTWIKKELARCHIEF.json (vanaf 20261103-211555)",
+      "ONTWIKKEL-DOSSIER.json (documentatie in overdracht.zip)",
       "TESTRESULTATEN.json",
       "RAPPORT.md",
       "COMMITS.txt",
@@ -90,9 +93,34 @@
       "UITROL-BASIS.commit == laatste-commit (інакше BASIS_COMMIT_VERSCHILT)",
       "regels.lock.json ↔ відбиток правил у пакеті (REGELS_NIET_VERGRENDELD)",
       "kritiek.installatieModi дозволяє режим (MODUS_NIET_TOEGESTAAN)",
-      "GEEN_BASIS для версій ≥ basisVerplichtVanaf"
+      "GEEN_BASIS для версій ≥ basisVerplichtVanaf",
+      "GitHub-ontwikkelarchief op vaste commit/tak en exact Release .tar.gz digest verplicht (vanaf 20261103-211555)"
     ],
-    "toelichting": "node scripts/orch.mjs pakket --taak <ID> --auteur \"…\" [--manifest …] [--testresultaten …] [--sig …] збирає tar.gz через deploy/uitrol/maak-voorstelpakket.sh (нічого не дублюється) і пакет передачі. UITROL-BASIS = ВСТАНОВЛЕНА база (orchestratie/geinstalleerd.json, інакше basis); basisCommit в ORCH-OVERDRACHT = база ГІЛКИ задачі (від неї inleveren відтворює зміни). Перевірка без установки: pakket-controleer --bron <zip>. Підписує лише власник на своєму ПК (kritiek.privesleutelsNaarAgenten = false)."
+    "toelichting": "node scripts/orch.mjs pakket --taak <ID> --auteur \"…\" [--manifest …] [--testresultaten …] [--sig …] збирає tar.gz через deploy/uitrol/maak-voorstelpakket.sh (нічого не дублюється) і пакет передачі. UITROL-BASIS = ВСТАНОВЛЕНА база (orchestratie/geinstalleerd.json, інакше basis); basisCommit в ORCH-OVERDRACHT = база ГІЛКИ задачі (від неї inleveren відтворює зміни). Перевірка без установки: pakket-controleer --bron <zip>. Підписує лише власник на своєму ПК (kritiek.privesleutelsNaarAgenten = false).",
+    "ontwikkelArchief": {
+      "bestand": "ONTWIKKELARCHIEF.json",
+      "verplichtVanaf": "20261103-211555",
+      "repo": "Tarasevych/hub",
+      "dossierPad": "orchestratie/ontwikkelarchieven/<taakId>.json",
+      "verplichteControles": [
+        "build:gecommit_dossier",
+        "site:github_dossier_en_tak",
+        "site:github_release_asset_sha256",
+        "root:github_dossier_en_tak",
+        "root:github_release_asset_sha256"
+      ],
+      "fouten": [
+        "GEEN_ONTWIKKELARCHIEF",
+        "ONTWIKKELARCHIEF_ONGELDIG",
+        "ONTWIKKELARCHIEF_SHA_VERSCHILT",
+        "ONTWIKKELARCHIEF_TAK_ONGELDIG",
+        "ONTWIKKELARCHIEF_PAKKET_ONTBREEKT",
+        "ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT",
+        "ONTWIKKELARCHIEF_NIET_GEVONDEN",
+        "ONTWIKKELARCHIEF_ONBEREIKBAAR"
+      ],
+      "privacy": "Geen geheimen, privaatberichten of verborgen keten van gedachten; alleen verifieerbare acties en samengevatte beslisredenen."
+    }
   },
   "adapters": {
     "maxRegels": 25,

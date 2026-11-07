@@ -1,21 +1,23 @@
-# Adapters lokaal testen (UI-013 fase 2)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ADAPTERS-LOKAAL-TESTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./ADAPTERS-LOKAAL-TESTEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-De adapters in `backend/verbinding-adapters/` doen alleen **leescontroles** (WebDAV PROPFIND Depth 1, S3 ListObjectsV2, MQTT CONNECT→CONNACK→DISCONNECT). Ze schrijven niets extern en bewaren geen gegevens.
+# Локальне тестування адаптерів (UI-013 фаза 2)
 
-## Lokale servers (alleen testwaarden)
-1. WebDAV + MQTT: een klein Node-script met `webdav-server` (poort 59100) en `aedes` (poort 59200), gebruiker `proef` / `proefwachtwoord`.
-2. S3: `moto_server` (Python, poort 59300), emmer `ui013-proef` met `proef.txt`, sleutel `proef` / `proefgeheim`.
-   - Eerlijk: moto controleert de SigV4-handtekening niet streng. De handtekening zelf is daarom apart getoetst met de officiële AWS-referentievector (eenheidstest `integraties-fase2`).
-   - De huidige MinIO-download weigert S3-bewerkingen zonder licentie; daarom is moto gebruikt.
+Адаптери в `backend/verbinding-adapters/` виконують лише **перевірки на читання** (WebDAV PROPFIND Depth 1, S3 ListObjectsV2, MQTT CONNECT→CONNACK→DISCONNECT). Вони нічого не записують у зовнішні сервіси й не зберігають жодних даних.
 
-## Uitvoeren
+## Локальні сервери (лише тестові значення)
+1. WebDAV + MQTT: невеликий Node-скрипт із `webdav-server` (порт 59100) та `aedes` (порт 59200), користувач `proef` / `proefwachtwoord`.
+2. S3: `moto_server` (Python, порт 59300), бакет `ui013-proef` із файлом `proef.txt`, ключ `proef` / `proefgeheim`.
+   - Чесно: `moto` не перевіряє підпис SigV4 суворо. Тому сам підпис окремо протестовано на офіційному еталонному векторі AWS (модульний тест `integraties-fase2`).
+   - Поточне завантаження MinIO відхиляє операції S3 без ліцензії; тому використано `moto`.
+
+## Запуск
 ```
 WEBDAV_URL=http://127.0.0.1:59100/ WEBDAV_GEBRUIKER=proef WEBDAV_WACHTWOORD=proefwachtwoord \
 S3_URL=http://127.0.0.1:59300 S3_EMMER=ui013-proef S3_ID=proef S3_GEHEIM=proefgeheim \
 MQTT_POORT=59200 MQTT_GEBRUIKER=proef MQTT_WACHTWOORD=proefwachtwoord \
 npx tsx tests/lokaal/verbinding-adapters-lokaal.ts
 ```
-Verwacht: `8/8 geslaagd`. Stop de servers daarna via hun eigen pid (nooit `pkill` op patroon).
+Очікуваний результат: `8/8 geslaagd`. Після цього зупиніть сервери через їхні власні PID (ніколи не використовуйте `pkill` за шаблоном).
 
-## Niet getest
-Echte Nextcloud, echte MinIO/AWS (strenge handtekeningcontrole), MQTT over TLS met een echte broker in het LAN, Outlook/Graph (потребує ключів власника).
+## Не протестовано
+Справжній Nextcloud, справжній MinIO/AWS (сувора перевірка підпису), MQTT через TLS зі справжнім брокером у локальній мережі (LAN), Outlook/Graph (потребує ключів власника).

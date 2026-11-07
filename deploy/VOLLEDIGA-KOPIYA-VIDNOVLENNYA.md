@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./VOLLEDIGA-KOPIYA-VIDNOVLENNYA.uk.md) · [🇳🇱 **Nederlandse versie**](./VOLLEDIGA-KOPIYA-VIDNOVLENNYA.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Повна копія «Mijn Ruimte»: що всередині і як відновити
 
 Цей набір створює `T:\mijn-ruimte\scripts\volledige-kopie.ps1` (можна запускати повторно: щоразу нова тека з міткою часу).
@@ -31,7 +33,7 @@ cd hub; git branch -a            # усі гілки, зокрема feature/con
 git checkout feature/connectors-agent-v2
 ```
 Або розпакувати `hub-werkmap.tar.gz` (там вже готова робоча тека з усіма незакоміченими файлами й історією), потім `npm ci`.
-Збірка й тести: `T:\mijn-ruimte\hulpmiddelen\node\env.ps1`, `npm run build`, перевірки `testdb.ps1` (див. `deploy/LEESMIJ.md`).
+Складання й тести: `T:\mijn-ruimte\hulpmiddelen\node\env.ps1`, `npm run build`, перевірки `testdb.ps1` (див. `deploy/LEESMIJ.md`).
 
 ## 3. Відновити сервер
 Основний сценарій такий самий, як у `deploy/HERSTEL.md` (він теж у теці `02-ontwikkeling\scripts.tar.gz` разом зі скриптами):
@@ -39,8 +41,8 @@ git checkout feature/connectors-agent-v2
 2. Зашифровані файли сервера (конфіги, секрети, код релізу, overlay, юніти) повертаються з ПК потоком, без проміжної розшифровки на диск:
 ```powershell
 $age='T:\mijn-ruimte\hulpmiddelen\age\age\age.exe'; $sl='<шлях до herstelsleutel-age.txt>'; $k='T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver'
-cmd /c "$age -d -i $sl 03-server\server-bestanden.tar.age | ssh -i $k beheer@203.0.113.10 sudo -n tar -xpf - -C /"
-ssh -i $k beheer@203.0.113.10 sudo -n systemctl daemon-reload
+cmd /c "$age -d -i $sl 03-server\server-bestanden.tar.age | ssh -i $k beheer@<VM-IP> sudo -n tar -xpf - -C /"
+ssh -i $k beheer@<VM-IP> sudo -n systemctl daemon-reload
 ```
 3. База й завантаження з `03-server\vm-back-up-<мітка>\` за кроком 5 з `HERSTEL.md` (`database.dump.age`, `uploads.tar.gz.age`).
 4. `sudo systemctl start mijn-ruimte 'mijn-ruimte-*.timer'`, перевірка `curl http://127.0.0.1:8080/__gezondheid` → `ok:true`.
@@ -54,7 +56,7 @@ cmd /c "$age -d -i $sl 04-geheimen-versleuteld\geheimen-pc.tar.age | tar -xf - -
 Журнали розмов і пам'ять асистента (необов'язково): `gesprekken-en-geheugen.tar.age` розпаковується у `C:\Users\<ви>\.claude\projects\` (`tar -xf - -C ...`).
 
 ## 5. Що не входить (і чому)
-- Диск самої віртуальної машини (`*.vhdx`): працююча зашифрована (LUKS) VM, її не можна консистентно скопіювати «на ходу». Замість неї: база, завантаження, конфіги, секрети й код: цього досить, щоб підняти сайт на новій VM.
+- Диск самої віртуальної машини (`*.vhdx`): робоча зашифрована (LUKS) VM, її не можна консистентно скопіювати «на ходу». Замість неї: база, завантаження, конфіги, секрети й код: цього досить, щоб підняти сайт на новій VM.
 - `node_modules`, `dist`, `dist-server`: відтворюються з `package-lock.json` і `npm run build`.
 - Портативні інструменти (`hulpmiddelen\node`, `postgres`, `rclone`): завантажуються заново (контрольні суми в `hulpmiddelen\*\VERIFICATIE.txt`).
-- Публічний код також лежить у GitHub (`Tarasevych/hub`), але Chrome Web Store, акаунти й паролі в GitHub не зберігаються.
+- Публічний код також лежить у GitHub (`Tarasevych/hub`), але Chrome Web Store, облікові записи й паролі в GitHub не зберігаються.

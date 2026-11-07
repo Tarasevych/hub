@@ -1,95 +1,97 @@
-# HERSTEL — Mijn Ruimte terugzetten na verlies van de VM
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./HERSTEL.uk.md) · [🇳🇱 **Nederlandse versie**](./HERSTEL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-> Hele pc kwijt? Gebruik de **offline herstelset** (`R:\mijn-ruimte-reservekopie\herstelset\`, kopie op een
-> externe schijf): stap-voor-stapplan `00-BEGIN-HIER-UA.txt/.pdf` en `00-BEGIN-HIER-NL.txt`, met
-> `scripts\herstel-vm.sh` en `scripts\ontsleutel-naar-vm.ps1`. Dit bestand is de korte versie.
+# HERSTEL — Відновлення «Mijn Ruimte» після втрати віртуальної машини (VM)
+
+> Втрачено весь ПК? Скористайтеся **офлайн-набором для відновлення** (`R:\mijn-ruimte-reservekopie\herstelset\`, копія на
+> зовнішньому диску): покроковий план `00-BEGIN-HIER-UA.txt/.pdf` і `00-BEGIN-HIER-NL.txt`, зі скриптами
+> `scripts\herstel-vm.sh` та `scripts\ontsleutel-naar-vm.ps1`. Цей файл — коротка версія.
 >
-> Externe schijf ook kwijt? Elke dag staan dezelfde **versleutelde** back-ups en de hele herstelset
-> (`herstelset-<datum>.zip.age`) op Google Drive in `mijn-ruimte-reservekopie/` (zie `deploy/cloud/UITLEG-LEESMIJ.txt`
-> en hoofdstuk 4 van `00-BEGIN-HIER-NL.txt`). Alleen `.age` + SHA256 staan daar; de herstelsleutel nooit.
+> Зовнішній диск теж втрачено? Щодня ті самі **зашифровані** резервні копії та весь набір для відновлення
+> (`herstelset-<дата>.zip.age`) зберігаються на Google Диску в теці `mijn-ruimte-reservekopie/` (див. `deploy/cloud/UITLEG-LEESMIJ.txt`
+> і розділ 4 файлу `00-BEGIN-HIER-NL.txt`). Там лежать лише файли `.age` + SHA256; ключа відновлення там ніколи немає.
 
-Je hebt vier dingen nodig. Zonder de **herstelsleutel** zijn 3 en 4 onbruikbaar.
+Вам потрібні чотири речі. Без **ключа відновлення** пункти 3 і 4 непридатні до використання.
 
-| # | Wat | Waar |
+| # | Що | Де |
 |---|---|---|
-| 1 | Herstelsleutel (age-privésleutel) | `R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt` + offline USB-schijf/papier |
-| 2 | Broncode | GitHub `Tarasevych/hub`, branch `zelf-hosten`; offline: `R:\mijn-ruimte-reservekopie\broncode\zelf-hosten\<datum-commit>\` (git-bundle + tar.gz + SHA256SUMS) |
-| 3 | Versleutelde back-up (database + uploads) | `R:\mijn-ruimte-reservekopie\vm-back-ups\<stempel>\` (`database.dump.age`, `uploads.tar.gz.age`) |
-| 4 | Versleutelde geheimen (`geheimen.env` + tunnel-credentials) | `R:\mijn-ruimte-reservekopie\geheimen\geheimen-<stempel>\geheimen-<stempel>.tar.age` |
+| 1 | Ключ відновлення (приватний ключ age) | `R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt` + офлайн USB-диск/папір |
+| 2 | Вихідний код | GitHub `Tarasevych/hub`, гілка `zelf-hosten`; офлайн: `R:\mijn-ruimte-reservekopie\broncode\zelf-hosten\<дата-коміт>\` (git-bundle + tar.gz + SHA256SUMS) |
+| 3 | Зашифрована резервна копія (база даних + завантаження) | `R:\mijn-ruimte-reservekopie\vm-back-ups\<штамп>\` (`database.dump.age`, `uploads.tar.gz.age`) |
+| 4 | Зашифровані секрети (`geheimen.env` + облікові дані тунелю) | `R:\mijn-ruimte-reservekopie\geheimen\geheimen-<штамп>\geheimen-<штамп>.tar.age` |
 
-Publieke sleutel (niet geheim, staat op de VM in `/etc/mijn-ruimte/backup-ontvanger.age.pub`):
-zie `herstelsleutel-age.pub.txt`. De VM kan zijn eigen back-ups **niet** ontsleutelen; dat kan alleen met 1.
-Zet de privésleutel nooit op de VM, in GitHub of op T:\. Hieronder wordt er alleen op de pc mee ontsleuteld
-en gaat de klare tekst via SSH rechtstreeks de nieuwe VM in.
+Публічний ключ (не секретний, лежить на VM у `/etc/mijn-ruimte/backup-ontvanger.age.pub`):
+див. `herstelsleutel-age.pub.txt`. Сама VM **не може** розшифрувати власні резервні копії; це можливо лише за допомогою пункту 1.
+Ніколи не кладіть приватний ключ на VM, у GitHub або на диск `T:\`. Нижче розшифрування виконується виключно на ПК,
+а відкритий потік передається через SSH безпосередньо на нову VM.
 
-## Snelste weg: het volledige archief (één bestand, één opdracht)
-Site `mcp.tarasevych.com` → «Архів на ПК» → «Зібрати повний архів» maakt `mijn-ruimte-<stempel>-volledig.tar.age` (root-script
-`/usr/local/sbin/mijn-ruimte-archief`, gestart door `mijn-ruimte-archief.path`; voortgang in `kit-status.txt`; uitvoer in de root-map
-`/var/lib/mijn-ruimte-archief/uitgifte` onder de vaste naam `archief-laatste.tar.age`; de laatste twee generaties blijven staan, de oudste
-verdwijnt; `ARCHIEF_BEWAAR` in het script regelt het aantal). Downloaden kan alleen de eigenaar, na step-up, via een
-eenmalige download-id. Het **hele archief** is met age versleuteld voor de bestaande publieke sleutel (sinds 2026-10; daarvoor waren alleen database,
-bestanden en geheimen versleuteld). Inhoud: code, MCP-deur, git-bundels, database + rollen, bestanden, systeemunits/tunnelconfig (geen sudoers), geheimen,
-`LEES-MIJ.txt`, `SHA256SUMS` en `vidnovyty.sh`. Op een nieuwe Ubuntu/Debian-machine (virtueel of fysiek, x86-64 of ARM64):
+## Найшвидший шлях: повний архів (один файл, одна команда)
+На сайті `mcp.tarasevych.com` → «Архів на ПК» → «Зібрати повний архів» створює `mijn-ruimte-<штамп>-volledig.tar.age` (root-скрипт
+`/usr/local/sbin/mijn-ruimte-archief`, запускається через `mijn-ruimte-archief.path`; перебіг у `kit-status.txt`; результат у root-теці
+`/var/lib/mijn-ruimte-archief/uitgifte` під постійною назвою `archief-laatste.tar.age`; зберігаються два останні покоління, найстаріше
+видаляється; кількість регулює `ARCHIEF_BEWAAR` у скрипті). Завантажити його може лише власник, після додаткового підтвердження (посилене підтвердження), через
+одноразовий ідентифікатор завантаження. **Увесь архів** зашифровано за допомогою age для наявного публічного ключа (починаючи з 2026-10; раніше шифрувалися лише база даних,
+файли та секрети). Вміст: код, MCP-двері, git-бандли, база даних + ролі, файли, системні юніти/конфігурація тунелю (без sudoers), секрети,
+`LEES-MIJ.txt`, `SHA256SUMS` і `vidnovyty.sh`. На новій машині з Ubuntu/Debian (віртуальній або фізичній, x86-64 чи ARM64):
 ```bash
 age -d -i /pad/naar/herstelsleutel-age.txt mijn-ruimte-<stempel>-volledig.tar.age | tar -x && cd mijn-ruimte-<stempel>-volledig
 # (Windows: & "$env:ProgramFiles\age\age.exe" -d -i T:\herstelsleutel-age.txt -o archief.tar mijn-ruimte-…-volledig.tar.age; daarna tar -xf archief.tar)
-sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt --proefrun   # eerst alleen tonen
-sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt              # echt uitvoeren
+sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt --proefrun   # спершу лише показати план
+sudo bash vidnovyty.sh --sleutel /pad/naar/herstelsleutel-age.txt              # виконати насправді
 ```
-Het script controleert de sommen, installeert Node/PostgreSQL 17/age/cloudflared, ontsleutelt, herstelt database/bestanden, bouwt de site voor deze
-architectuur (`installeer-app.sh`) en wacht op de gezondheidscontrole. Nog niet op een lege machine volledig doorlopen; de proefrun en het maken zijn
-getest op de productie-VM. De tweegeneratieregeling, de harde link en het herstel van de git-opslagplaatsen zijn nog niet op de VM getest.
-De handmatige stappen hieronder blijven de bewezen weg.
+Скрипт перевіряє контрольні суми, встановлює Node/PostgreSQL 17/age/cloudflared, розшифровує дані, відновлює базу даних і файли, збирає сайт під поточну
+архітектуру (`installeer-app.sh`) та чекає на перевірку працездатності. Повний прохід на порожній машині ще не виконувався; пробний запуск (`--proefrun`) і створення архіву
+протестовані на робочій VM. Правило двох поколінь, жорстке посилання (hard link) та відновлення git-репозиторіїв ще не перевірялися на VM.
+Ручні кроки нижче залишаються перевіреним шляхом.
 
-Git-opslagplaatsen (`kod/repos/*.bundle`, met `INDEX.tsv`) worden teruggezet op hun eigen pad onder `/srv/mijn-ruimte`, alleen als dat pad nog
-niet bestaat. Oude, onversleutelde archieven (`mijn-ruimte-*-volledig.tar`, `*.tar.gz`) in `/srv/data/uploads/mcp-archives` verwijdert de
-installer **niet**; hij meldt ze alleen. Controleer ze en verwijder ze zelf.
+Git-репозиторії (`kod/repos/*.bundle`, з `INDEX.tsv`) відновлюються за власними шляхами в `/srv/mijn-ruimte`, лише якщо відповідний шлях ще
+не існує. Старі незашифровані архіви (`mijn-ruimte-*-volledig.tar`, `*.tar.gz`) у `/srv/data/uploads/mcp-archives` інсталятор
+**не** видаляє, а лише повідомляє про них. Перевірте й видаліть їх самостійно.
 
-## 0. Controleren (PowerShell op de pc)
+## 0. Перевірка (PowerShell на ПК)
 ```powershell
 cd R:\mijn-ruimte-reservekopie\vm-back-ups\<stempel>
 Get-Content SHA256SUMS | % { $h,$n = $_ -split '\s+',2; if ((Get-FileHash $n).Hash.ToLower() -ne $h) { "FOUT $n" } else { "OK $n" } }
 ```
 
-## 1. Nieuwe VM
-Ubuntu met LUKS, gebruiker `beheer` met de SSH-sleutel `T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver(.pub)`.
-Pakketten: Node 24, npm, git, rsync, curl, PostgreSQL 17 (+ client), `age`, `cloudflared` (zie `deploy/LEESMIJ.md`).
+## 1. Нова VM
+Ubuntu з LUKS, користувач `beheer` із SSH-ключем `T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver(.pub)`.
+Пакети: Node 24, npm, git, rsync, curl, PostgreSQL 17 (+ клієнт), `age`, `cloudflared` (див. `deploy/LEESMIJ.md`).
 
-## 2. Broncode en inrichten (op de VM)
+## 2. Вихідний код і початкове налаштування (на VM)
 ```bash
-git clone -b zelf-hosten https://github.com/Tarasevych/hub.git ~/hub     # of: git clone <bundle> ~/hub
+git clone -b zelf-hosten https://github.com/Tarasevych/hub.git ~/hub     # або: git clone <bundle> ~/hub
 sudo bash ~/hub/deploy/installeer-app.sh inrichten ~/hub
 ```
-Maak rol en database `mijnruimte` aan (de opdracht staat in de uitvoer van `inrichten`).
+Створіть роль і базу даних `mijnruimte` (команда виводиться під час виконання `inrichten`).
 
-## 3. Geheimen terugzetten (vanaf de pc)
-`cmd /c` omdat PowerShell 5.1 binaire pijpen beschadigt; gebruik binnen `cmd /c "…"` geen `>` of `&`.
+## 3. Відновлення секретів (з ПК)
+Використовується `cmd /c`, оскільки PowerShell 5.1 псує бінарні потоки (pipes); не використовуйте `>` або `&` всередині `cmd /c "…"`.
 ```powershell
 $age = 'T:\mijn-ruimte\hulpmiddelen\age\age\age.exe'
 $sl  = 'R:\mijn-ruimte-reservekopie\sleutels\herstelsleutel-age.txt'
 $k   = 'T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver'
-$vm  = 'beheer@203.0.113.10'
+$vm  = 'beheer@<VM-IP>'
 $g   = 'R:\mijn-ruimte-reservekopie\geheimen\geheimen-<stempel>\geheimen-<stempel>.tar.age'
 cmd /c "$age -d -i $sl $g | ssh -i $k $vm sudo -n tar -xpf - -C /"
 ```
-Dit zet `/etc/mijn-ruimte/geheimen.env` en `/etc/cloudflared/<ID>.json` terug (root, 0600); archieven van na
-audit-fix 4 (`env-splitsen`) bevatten ook `/etc/mijn-ruimte/migratie.env` (daar staat dan `DATABASE_URL`). Controleer
-`DATABASE_URL` (wachtwoord van de nieuwe Postgres-rol moet overeenkomen) en zet de publieke sleutel terug:
+Це повертає `/etc/mijn-ruimte/geheimen.env` і `/etc/cloudflared/<ID>.json` (root, 0600); архіви, створені після
+виправлення аудиту 4 (`env-splitsen`), містять також `/etc/mijn-ruimte/migratie.env` (саме там тоді лежить `DATABASE_URL`). Перевірте
+`DATABASE_URL` (пароль нової ролі Postgres має збігатися) і поверніть публічний ключ:
 `scp herstelsleutel-age.pub.txt` → `sudo install -m 0644 … /etc/mijn-ruimte/backup-ontvanger.age.pub`.
 
-## 4. Applicatie installeren (op de VM)
+## 4. Встановлення застосунку (на VM)
 ```bash
 sudo ZONDER_BACKUP=1 bash ~/hub/deploy/installeer-app.sh installeren ~/hub
 sudo systemctl stop mijn-ruimte 'mijn-ruimte-*.timer'
 ```
 
-## 5. Database en uploads terugzetten (vanaf de pc)
+## 5. Відновлення бази даних і завантажень (з ПК)
 ```powershell
 $b = 'R:\mijn-ruimte-reservekopie\vm-back-ups\<stempel>'
 cmd /c "$age -d -i $sl $b\database.dump.age | ssh -i $k $vm sudo -n install -o postgres -m 0600 /dev/stdin /var/tmp/database.dump"
 cmd /c "$age -d -i $sl $b\uploads.tar.gz.age | ssh -i $k $vm sudo -n tar -xzpf - -C /srv/data"
 ```
-Daarna op de VM:
+Після цього на VM:
 ```bash
 sudo -u postgres dropdb mijnruimte && sudo -u postgres createdb -O mijnruimte mijnruimte
 sudo -u postgres pg_restore --no-owner --role=mijnruimte -d mijnruimte /var/tmp/database.dump
@@ -99,22 +101,22 @@ sudo systemctl start mijn-ruimte 'mijn-ruimte-*.timer'
 curl -s http://127.0.0.1:8080/__gezondheid
 ```
 
-### 5b. Systeemarchief (code, units, tunnelconfig, MCP-brug)
-Elke back-upmap bevat ook `systeem.tar.gz.age` en `systeem-info.txt` (klare tekst: versies van node/postgres/cloudflared/age, diensten, poorten,
-en welke paden niet leesbaar waren). Het archief bevat de actieve release, de systemd-units en timers, `/etc/cloudflared/config.yml` (zonder
-inloggegevens), de MCP-brug met overlay en `/etc/mijn-ruimte` zonder geheimen. Nodig als de release of een unit verloren is, of om de
-brug (poort 8091) en de tunnelconfiguratie na een totaalverlies exact terug te zetten:
+### 5b. Системний архів (код, юніти, конфігурація тунелю, MCP-міст)
+Кожна тека резервної копії містить також `systeem.tar.gz.age` і `systeem-info.txt` (відкритий текст: версії node/postgres/cloudflared/age, служби, порти
+та шляхи, які не вдалося прочитати). Архів містить активний реліз, systemd-юніти й таймери, `/etc/cloudflared/config.yml` (без
+облікових даних), MCP-міст з оверлеєм та `/etc/mijn-ruimte` без секретів. Це потрібно, якщо втрачено реліз чи юніт, або щоб
+точно відновити міст (порт 8091) і конфігурацію тунелю після повної втрати:
 ```powershell
 cmd /c "$age -d -i $sl $b\systeem.tar.gz.age | ssh -i $k $vm sudo -n sh -c 'mkdir -p /var/tmp/systeem-herstel && tar -xzpf - -C /var/tmp/systeem-herstel'"
 ```
-Kopieer daarna bewust per onderdeel (units naar `/etc/systemd/system`, `systemctl daemon-reload`); overschrijf nooit blind een draaiende server.
+Далі свідомо скопіюйте потрібні компоненти окремо (юніти в `/etc/systemd/system`, `systemctl daemon-reload`); ніколи не перезаписуйте наосліп робочий сервер.
 
-## 6. Tunnel
-Met de teruggezette credentials: `deploy/cloudflared.service` installeren en `systemctl enable --now cloudflared`
-(zie `deploy/LEESMIJ.md`, "Tunnel"). Geen nieuwe tunnel of DNS nodig zolang het tunnel-ID hetzelfde blijft.
+## 6. Тунель
+Із відновленими обліковими даними: встановіть `deploy/cloudflared.service` і виконайте `systemctl enable --now cloudflared`
+(див. `deploy/LEESMIJ.md`, розділ «Tunnel»). Новий тунель або записи DNS не потрібні, доки ідентифікатор тунелю (tunnel-ID) залишається тим самим.
 
-## Na een herstel
-- Maak meteen een nieuwe back-up (`sudo systemctl start mijn-ruimte-backup.service`) en haal die op
-  met `T:\mijn-ruimte\scripts\reservekopie-ophalen.ps1`.
-- Wordt de herstelsleutel ooit gelekt: nieuw sleutelpaar maken, de publieke sleutel op de VM vervangen,
-  een nieuw geheimenarchief maken en de geheimen zelf (sleutels in `geheimen.env`) roteren.
+## Після відновлення
+- Одразу створіть нову резервну копію (`sudo systemctl start mijn-ruimte-backup.service`) і заберіть її
+  скриптом `T:\mijn-ruimte\scripts\reservekopie-ophalen.ps1`.
+- Якщо ключ відновлення будь-коли буде скомпрометовано: створіть нову пару ключів, замініть публічний ключ на VM,
+  створіть новий архів секретів і виконайте ротацію самих секретів (ключів у `geheimen.env`).

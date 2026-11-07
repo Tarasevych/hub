@@ -1,176 +1,178 @@
-# Runbook: beveiliging fase 2 + 3 uitrollen (branch `beveiliging-fase-2-3`)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-FASE-2-3.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-FASE-2-3.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-Doel: de release met `owner_id`, RLS (eerst in audit-modus), drie databaserollen, centrale auth-poort,
-append-only audit, step-up en de fase-3-punten veilig uitrollen — **zonder iemand buiten te sluiten** en met
-een terugweg na elke stap. Elke stap is los te doen; tussen stap 3, 4 en 5 mag gerust dagen zitten.
+# Runbook: розгортання безпеки етапів 2 + 3 (гілка `beveiliging-fase-2-3`)
 
-Alle opdrachten als `root` op de VM (`ssh … beheer@203.0.113.10`, daarna `sudo -i`). Geen waarden van
-geheimen kopiëren of tonen. Tijden in de logs zijn UTC tenzij anders vermeld.
+Мета: безпечно розгорнути випуск із `owner_id`, RLS (спершу в режимі аудиту), трьома ролями бази даних, центральним шлюзом автентифікації (auth-poort),
+журналом аудиту лише для додавання (append-only), повторним підтвердженням (посилене підтвердження) та пунктами етапу 3 — **нікого не заблокувавши** і маючи
+шлях повернення стану після кожного кроку. Кожен крок можна виконувати окремо; між кроками 3, 4 і 5 може спокійно минути кілька днів.
 
-## 0. Vooraf
+Усі команди виконуються від імені `root` на ВМ (`ssh … beheer@<VM-IP>`, далі `sudo -i`). Не копіюйте і не показуйте значення
+секретів. Час у журналах зазначено в UTC, якщо не вказано інше.
 
-- [ ] Huidige release noteren: `deploy/installeer-app.sh lijst` (live: `20261003-210718`, commit `da8b0d0`).
-- [ ] Verse back-up: `systemctl start mijn-ruimte-backup.service && journalctl -u mijn-ruimte-backup -n 20`
-      (map `/srv/backups/mijn-ruimte/<datum>` met `KLAAR`). `installeren` maakt er zelf ook een.
-- [ ] Postgres laat wachtwoord-login via TCP toe voor de nieuwe rollen. Controle:
+## 0. Попередні кроки
+
+- [ ] Занотувати поточний випуск: `deploy/installeer-app.sh lijst` (живий: `20261003-210718`, коміт `da8b0d0`).
+- [ ] Свіжа резервна копія: `systemctl start mijn-ruimte-backup.service && journalctl -u mijn-ruimte-backup -n 20`
+      (тека `/srv/backups/mijn-ruimte/<дата>` з файлом `KLAAR`). Скрипт `installeren` також створює її самостійно.
+- [ ] Postgres дозволяє вхід за паролем через TCP для нових ролей. Перевірка:
       `grep -E '^host\s+all\s+all\s+127\.0\.0\.1/32\s+scram-sha-256' /etc/postgresql/17/main/pg_hba.conf`
-      (Debian-standaard). Staat er iets anders (bv. alleen `mijnruimte`), voeg dan vóór stap 3 toe:
+      (стандарт Debian). Якщо там написано щось інше (напр., лише `mijnruimte`), додайте перед кроком 3:
       `host mijnruimte mijnruimte_migrator,mijnruimte_app,mijnruimte_system 127.0.0.1/32 scram-sha-256`
-      en `systemctl reload postgresql`.
-- [ ] Niet aan zetten bij de uitrol: `AUTH_POORT_AFDWINGEN`, `ACCOUNT_DEFINITIEF_WISSEN`.
-      **Let op:** vanaf de audit-fixes (`deploy/RUNBOOK-AUDIT-FIXES.md`) is `AUDIT_IP_PEPPER` wél verplicht
-      (`deploy/geheimen-aanvullen.sh`); die release bevat ook alles van fase 2 + 3.
+      та виконайте `systemctl reload postgresql`.
+- [ ] Не вмикати під час розгортання: `AUTH_POORT_AFDWINGEN`, `ACCOUNT_DEFINITIEF_WISSEN`.
+      **Увага:** починаючи з випуску виправлень за аудитом (`deploy/RUNBOOK-AUDIT-FIXES.md`), змінна `AUDIT_IP_PEPPER` є обов'язковою
+      (`deploy/geheimen-aanvullen.sh`); той випуск також містить усе з етапів 2 + 3.
 
-## 1. Tarball naar de VM en controleren
+## 1. Передача tarball на ВМ і перевірка
 
-Op de pc (of waar de tarball staat):
+На ПК (або там, де лежить tarball):
 ```
-scp mijn-ruimte-beveiliging-fase-2-3-<stempel>-<sha>.tar.gz{,.sha256} beheer@203.0.113.10:/tmp/
+scp mijn-ruimte-beveiliging-fase-2-3-<stempel>-<sha>.tar.gz{,.sha256} beheer@<VM-IP>:/tmp/
 ```
-Op de VM:
+На ВМ:
 ```
-cd /tmp && sha256sum -c mijn-ruimte-beveiliging-fase-2-3-*.tar.gz.sha256      # moet "OK" geven
+cd /tmp && sha256sum -c mijn-ruimte-beveiliging-fase-2-3-*.tar.gz.sha256      # має видати "OK"
 rm -rf /root/bron-fase-2-3 && mkdir -p /root/bron-fase-2-3
 tar -xzf mijn-ruimte-beveiliging-fase-2-3-*.tar.gz -C /root/bron-fase-2-3
-cat /root/bron-fase-2-3/mijn-ruimte/BRON-COMMIT                              # commit van de release
+cat /root/bron-fase-2-3/mijn-ruimte/BRON-COMMIT                              # коміт випуску
 ```
 
-## 2. App installeren (migraties 0003–0006 lopen automatisch)
+## 2. Встановлення застосунку (міграції 0003–0006 виконуються автоматично)
 
 ```
 /root/bron-fase-2-3/mijn-ruimte/deploy/installeer-app.sh installeren /root/bron-fase-2-3/mijn-ruimte
 ```
-Wat er gebeurt: bouwen → back-up → migraties → `current` omzetten → herstart → gezondheidscontrole; faalt die,
-dan automatisch terug naar de vorige release.
+Що відбувається: складання → резервна копія → міграції → перемикання `current` → перезапуск → перевірка працездатності; якщо вона не проходить,
+відбувається автоматичний повернення стану до попереднього випуску.
 
-- `0003` voegt `owner_id` toe als STORED-kolom: **herschrijft `app.records` één keer** (korte exclusieve lock;
-  bij de huidige omvang seconden). Daarna `0004` (RLS-policy's, afdwingen = `uit`), `0005`, `0006` (audit) —
-  allemaal alleen toevoegend en idempotent. De vorige release werkt met dit schema (de policy's laten elke rol
-  behalve `mijnruimte_app` door).
-- Na de start zet de server een oude eigenaar (rol `owner` met een ander adres dan `OWNER_EMAIL`) terug naar `member`.
+- `0003` додає `owner_id` як STORED-колонку: **один раз перезаписує `app.records`** (коротке ексклюзивне блокування;
+  за поточного обсягу — лічені секунди). Далі `0004` (політики RLS, примусовий режим `afdwingen = uit`), `0005`, `0006` (аудит) —
+  усі лише додають об'єкти і є ідемпотентними. Попередній випуск працює з цією схемою (політики пропускають будь-яку роль,
+  крім `mijnruimte_app`).
+- Після запуску сервер переводить старого власника (роль `owner` з адресою, відмінною від `OWNER_EMAIL`) назад у `member`.
 
-Controle:
+Перевірка:
 ```
 curl -s http://127.0.0.1:8080/__gezondheid
-runuser -u postgres -- psql -d mijnruimte -Atc "select version from app.schema_migrations order by 1"   # t/m 0006
+runuser -u postgres -- psql -d mijnruimte -Atc "select version from app.schema_migrations order by 1"   # до 0006 включно
 journalctl -u mijn-ruimte -n 50 | grep -E 'eigenaar|auth-poort|rls-audit|FOUT|Error'
 ```
-Rooktest in de browser: aanmelden met Google op hub/id/admin, een werkruimte openen, mail en cloud openen.
+Швидка перевірка (smoke test) у браузері: увійти через Google на hub/id/admin, відкрити робочий простір, відкрити пошту та хмару.
 
-Let op (verwacht gedrag, geen fout):
-- Gevoelige acties geven **403 `STEP_UP_REQUIRED`** als de laatste Google-aanmelding ouder is dan 5 minuten
-  (wachtwoord, ontkoppelen, telefoon, toegangsbeleid, kluis onthullen, beheerrollen/-beleid/-gebruikers,
-  audit verwijderen, gegevensexport, account verwijderen). De UI heeft hier nog geen dialoog voor: **afmelden,
-  opnieuw met Google aanmelden en de actie binnen 5 minuten herhalen** (of TOTP via `/api/owner/access/stap-op`).
-  Noodschakelaar als dit iets dringends blokkeert: `STAP_OP_UIT=1` in `geheimen.env` + `systemctl restart mijn-ruimte`
-  (daarna weer verwijderen).
-- API-platform/kluis alleen nog voor de eigenaar of accounts met recht `api-platform` (identiteitsbeheer).
-- Bestaande gedeelde links blijven geldig tot ze verlopen; nieuwe links zijn eenmalig.
+Увага (очікувана поведінка, не помилка):
+- Чутливі дії повертають **403 `STEP_UP_REQUIRED`**, якщо з моменту останнього входу через Google минуло більше 5 хвилин
+  (пароль, від'єднання, телефон, політика доступу, розкриття сховища, ролі/політика/користувачі в адмінці,
+  видалення аудиту, експорт даних, видалення облікового запису). В інтерфейсі для цього ще немає діалогового вікна: **вийти з облікового запису,
+  знову увійти через Google і повторити дію протягом 5 хвилин** (або пройти TOTP через `/api/owner/access/stap-op`).
+  Аварійний вимикач, якщо це блокує щось термінове: `STAP_OP_UIT=1` у `geheimen.env` + `systemctl restart mijn-ruimte`
+  (після вирішення знову видалити).
+- API-платформа/сховище тепер доступні лише для власника або облікових записів із правом `api-platform` (керування ідентифікацією).
+- Наявні посилання спільного доступу залишаються дійсними до закінчення терміну дії; нові посилання є одноразовими.
 
-## 3. Databaserollen instellen
+## 3. Налаштування ролей бази даних
 
 ```
 /srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh instellen
 /srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh status
 ```
-`instellen` maakt `mijnruimte_migrator`, `mijnruimte_app`, `mijnruimte_system` (wachtwoorden op de VM gemaakt,
-nooit getoond, bij herhalen hergebruikt), zet eigendom/rechten en `FORCE ROW LEVEL SECURITY`, schrijft
-`DATABASE_URL_MIGRATIE/_APP/_SYSTEM` in `/etc/mijn-ruimte/geheimen.env`, herstart en controleert
-(Host-hub + `/__gezondheid`). Mislukt de controle, dan haalt het script de variabelen weer weg en zet de oude
-toestand terug.
+`instellen` створює `mijnruimte_migrator`, `mijnruimte_app`, `mijnruimte_system` (паролі генеруються на ВМ,
+ніколи не показуються, при повторному запуску використовуються наявні), встановлює власність/права та `FORCE ROW LEVEL SECURITY`, записує
+`DATABASE_URL_MIGRATIE/_APP/_SYSTEM` у `/etc/mijn-ruimte/geheimen.env`, перезапускає службу й перевіряє працездатність
+(Host-hub + `/__gezondheid`). Якщо перевірка не проходить, скрипт прибирає змінні та повертає старий
+стан.
 
-Verwacht in `status`: `afdwingen=uit`, `force_rls=t`, drie rollen (`mijnruimte_system(bypassrls)`), alle drie
-variabelen `gezet`.
+Очікується в `status`: `afdwingen=uit`, `force_rls=t`, три ролі (`mijnruimte_system(bypassrls)`), усі три
+змінні `gezet`.
 
-Controle back-up met de systeemrol (pg_dump als oude rol werkt niet meer onder FORCE RLS):
-`systemctl start mijn-ruimte-backup.service && journalctl -u mijn-ruimte-backup -n 20` → moet slagen.
+Перевірка резервного копіювання з системною роллю (`pg_dump` від імені старої ролі більше не працює під FORCE RLS):
+`systemctl start mijn-ruimte-backup.service && journalctl -u mijn-ruimte-backup -n 20` → має пройти успішно.
 
-> Na een herstel uit een back-up (`HERSTEL.md`) of een major-upgrade van Postgres: `instellen` opnieuw draaien.
+> Після відновлення з резервної копії (`HERSTEL.md`) або мажорного оновлення Postgres: запустіть `instellen` заново.
 
-## 4. RLS audit-modus verifiëren (enkele dagen normaal gebruik)
+## 4. Перевірка режиму аудиту RLS (кілька днів звичайного використання)
 
-In audit-modus weigert RLS niets; de app noteert in `app.rls_audit` wat `aan` zou weigeren
-(route, tabel, actie, aantal, eerste/laatste keer — geen id's of inhoud).
+У режимі аудиту RLS нічого не блокує; застосунок записує в `app.rls_audit` те, що режим `aan` відхилив би
+(маршрут, таблиця, дія, кількість, перший/останній раз — без ідентифікаторів чи вмісту).
 
 ```
 /srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh status
 journalctl -u mijn-ruimte --since "-24h" | grep -c '\[rls-audit\]'
 ```
-- **Leeg** (geen rijen behalve eventueel `anoniem-2xx`, zie stap 6) na een paar dagen gebruik van alle diensten
-  (hub, mail, cloud, foto's, agenda, delen, beheer, API) = klaar om af te dwingen.
-- **Rijen aanwezig**: niet afdwingen. Noteer route + tabel + actie en laat de code aanpassen (meestal een bewuste
-  systeemstap die `alsSysteem` nodig heeft, of een ontbrekende `owner_id`-bron).
-- Optioneel opnieuw beginnen met tellen na een fix: `runuser -u postgres -- psql -d mijnruimte -c "truncate app.rls_audit"`.
+- **Порожньо** (жодних рядків, крім, можливо, `anoniem-2xx`, див. крок 6) після кількох днів використання всіх служб
+  (hub, mail, cloud, фото, календар, спільний доступ, адмінка, API) = готово до примусового увімкнення.
+- **Є рядки**: не вмикати примусовий режим. Занотуйте маршрут + таблицю + дію і виправте код (зазвичай це свідомий
+  системний крок, якому потрібен `alsSysteem`, або відсутнє джерело `owner_id`).
+- Необов'язково почати підрахунок заново після виправлення: `runuser -u postgres -- psql -d mijnruimte -c "truncate app.rls_audit"`.
 
-## 5. RLS afdwingen (en terug)
+## 5. Примусове увімкнення RLS (і повернення назад)
 
 ```
-/srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh rls-aan     # direct actief, geen herstart
+/srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh rls-aan     # діє миттєво, без перезапуску
 ```
-Direct daarna: aanmelden, werkruimte, mail, cloud, delen en admin controleren; `journalctl -u mijn-ruimte -f`
-kijken naar `42501` / `row-level security` / 403/500-pieken.
+Одразу після цього: перевірте вхід, робочий простір, пошту, хмару, спільний доступ та адмінку; у `journalctl -u mijn-ruimte -f`
+слідкуйте за появою `42501` / `row-level security` / сплесків помилок 403/500.
 
-Terug naar audit-modus (direct, geen herstart, geen gegevensverlies):
+Повернення в режим аудиту (миттєво, без перезапуску, без втрати даних):
 ```
 /srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh rls-uit
 ```
-De schakelaar staat in de database (`app.rls_instellingen`); de app zelf kan hem niet omzetten.
+Перемикач зберігається в базі даних (`app.rls_instellingen`); сам застосунок змінити його не може.
 
-## 6. Auth-poort afdwingen
+## 6. Примусове увімкнення шлюзу автентифікації (Auth-poort)
 
-Standaard meldt de vangrail alleen: een anonieme 2xx-respons van een route die niet in `PUBLIEKE_ROUTES`
-(`server/platform/auth-poort.ts`) staat, geeft een logregel `[auth-poort]` en een rij in `app.rls_audit`
-met actie `anoniem-2xx`.
+Типово запобіжник лише повідомляє: анонімна 2xx-відповідь від маршруту, якого немає в `PUBLIEKE_ROUTES`
+(`server/platform/auth-poort.ts`), створює запис у журналі `[auth-poort]` і рядок у `app.rls_audit`
+із дією `anoniem-2xx`.
 
-Verifiëren (enkele dagen):
+Перевірка (кілька днів):
 ```
 journalctl -u mijn-ruimte --since "-72h" | grep '\[auth-poort\]' | sort | uniq -c | sort -rn | head
 runuser -u postgres -- psql -d mijnruimte -c "select route, aantal, laatst from app.rls_audit where actie='anoniem-2xx' order by laatst desc"
 ```
-- Elke gemelde route beoordelen: hoort hij echt publiek te zijn (bv. een nieuwe webhook) → aan `PUBLIEKE_ROUTES`
-  laten toevoegen met reden; anders is het precies het lek dat de poort dichtzet.
-- Leeg → afdwingen:
+- Оцініть кожен зафіксований маршрут: якщо він справді має бути публічним (напр., новий вебхук) → додайте його до `PUBLIEKE_ROUTES`
+  із зазначенням причини; інакше це саме той витік, який шлюз має закрити.
+- Порожньо → увімкнути примусовий режим:
 ```
 grep -q '^AUTH_POORT_AFDWINGEN=' /etc/mijn-ruimte/geheimen.env \
   && sed -i 's/^AUTH_POORT_AFDWINGEN=.*/AUTH_POORT_AFDWINGEN=1/' /etc/mijn-ruimte/geheimen.env \
   || echo 'AUTH_POORT_AFDWINGEN=1' >> /etc/mijn-ruimte/geheimen.env
 systemctl restart mijn-ruimte && sleep 2 && curl -s http://127.0.0.1:8080/__gezondheid
 ```
-  Daarna afgemeld de start-/aanmeldpagina's openen (moeten werken) en een paar API-routes zonder cookie
-  proberen (moeten 401 geven).
-- Terug: de regel verwijderen (`sed -i '/^AUTH_POORT_AFDWINGEN=/d' /etc/mijn-ruimte/geheimen.env`) en herstarten.
+  Після цього без входу в обліковий запис відкрийте стартові сторінки / сторінки входу (мають працювати) і спробуйте кілька API-маршрутів без cookie
+  (мають повернути 401).
+- Повернення назад: видалити рядок (`sed -i '/^AUTH_POORT_AFDWINGEN=/d' /etc/mijn-ruimte/geheimen.env`) і перезапустити службу.
 
-## 7. Later, bewust: definitief wissen na 30 dagen
+## 7. Пізніше, свідомо: остаточне видалення через 30 днів
 
-Verwijderde accounts zijn 30 dagen te herstellen. De opruimjob (elk uur) meldt daarna alleen wat hij zou wissen:
-`journalctl -u mijn-ruimte-cron@opruimen.service | grep 'verlopen accountverwijderingen'`. Pas na een geslaagde
-hersteltest van een back-up `ACCOUNT_DEFINITIEF_WISSEN=1` in `geheimen.env` zetten (onomkeerbaar: inhoud,
-identiteiten en bestanden van dat account weg, grafsteen zonder persoonsgegevens; audit blijft).
+Видалені облікові записи можна відновити протягом 30 днів. Завдання очищення (щогодини) після цього лише повідомляє, що саме воно б видалило:
+`journalctl -u mijn-ruimte-cron@opruimen.service | grep 'verlopen accountverwijderingen'`. Лише після успішного
+тесту відновлення з резервної копії встановіть `ACCOUNT_DEFINITIEF_WISSEN=1` у `geheimen.env` (необоротно: вміст,
+ідентифікатори та файли цього облікового запису видаляються, залишається запис-надгробок без персональних даних; аудит зберігається).
 
-## 8. Terugdraaien
+## 8. Повернення стану
 
-Volgorde is belangrijk: **eerst de rollen, dan de app.**
+Порядок важливий: **спершу ролі, потім застосунок.**
 
-1. Alleen RLS-problemen: `db-rollen-instellen.sh rls-uit` (stap 5) — vaak genoeg.
-2. Alleen auth-poort-problemen: `AUTH_POORT_AFDWINGEN` verwijderen + herstart (stap 6).
-3. Rollen terug:
+1. Лише проблеми з RLS: `db-rollen-instellen.sh rls-uit` (крок 5) — зазвичай цього достатньо.
+2. Лише проблеми зі шлюзом автентифікації: видалити `AUTH_POORT_AFDWINGEN` + перезапустити службу (крок 6).
+3. Повернення стану ролей:
    ```
    /srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh terugdraaien
    ```
-   Haalt de drie variabelen uit `geheimen.env`, geeft eigendom terug aan de oude rol, `NO FORCE`, afdwingen `uit`,
-   herstart. De rollen blijven ongebruikt bestaan (onschadelijk; met de hand weg te halen als `postgres`
-   na `REASSIGN/DROP OWNED`, niet nodig).
-4. App terug naar de vorige release:
+   Прибирає три змінні з `geheimen.env`, повертає власність старій ролі, встановлює `NO FORCE`, переводить примусовий режим у `uit`,
+   перезапускає службу. Самі ролі залишаються невикористаними (безпечно; за бажанням їх можна видалити вручну від імені `postgres`
+   після `REASSIGN/DROP OWNED`, але це не обов'язково).
+4. Повернення застосунку до попереднього випуску:
    ```
-   /srv/mijn-ruimte/current/deploy/installeer-app.sh terugdraaien            # of: terugdraaien 20261003-210718
+   /srv/mijn-ruimte/current/deploy/installeer-app.sh terugdraaien            # або: terugdraaien 20261003-210718
    ```
-   Migraties worden **niet** teruggedraaid; dat is ook niet nodig: `0003–0006` zijn toevoegend, de oude
-   release negeert `owner_id`, de policy's laten de oude rol door (`rls_vrij()`), en `app.audit` /
-   `audit_kop` blijven gewoon staan. Nieuwe auditregels van de nieuwe release blijven bewaard.
-5. Pas als het écht moet (schema terug): herstel uit de back-up van vóór stap 2 volgens `HERSTEL.md` — gegevens
-   van na die back-up gaan dan verloren.
+   Міграції **не** повертаються до попереднього стану, і в цьому немає потреби: `0003–0006` лише додають об'єкти, старий
+   випуск ігнорує `owner_id`, політики пропускають стару роль (`rls_vrij()`), а `app.audit` /
+   `audit_kop` просто залишаються на місці. Нові записи аудиту від нового випуску зберігаються.
+5. Лише за крайньої потреби (повернення стану схеми БД): відновлення з резервної копії, зробленої до кроку 2, згідно з `HERSTEL.md` — дані,
+   створені після тієї резервної копії, буде втрачено.
 
-## 9. Na afloop
+## 9. Після завершення
 
-- `db-rollen-instellen.sh status`, `systemctl list-timers 'mijn-ruimte-*'`, een back-up laten lopen.
-- In `SECURITY-NOTES.md` §3c staat per punt wat er veranderde; bekende beperkingen in §4.
+- Перевірте `db-rollen-instellen.sh status`, `systemctl list-timers 'mijn-ruimte-*'` та запустіть створення резервної копії.
+- У `SECURITY-NOTES.md` §3c по пунктах описано, що саме змінилося; відомі обмеження наведено в §4.

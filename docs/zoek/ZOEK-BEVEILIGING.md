@@ -1,6 +1,8 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ZOEK-BEVEILIGING.uk.md) · [🇳🇱 **Nederlandse versie**](./ZOEK-BEVEILIGING.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Пошук «/zoek» — ізоляція й безпека
 
-Стан: 22.10.2026. Спирається на специфікацію §9 («критично»). Доведення — атакуючі тести `tests/eenheid/zoek-isolatie-20261022.test.ts`
+Стан: 22.10.2026. Спирається на специфікацію §9 («критично»). Доведення — зловмисники тести `tests/eenheid/zoek-isolatie-20261022.test.ts`
 (два користувачі, три лади, справжній роутер і сесії, жива PostgreSQL) і `zoek-evaluatie-20261022.test.ts` (витоки в наборі оцінки).
 
 ## 1. Межі: лада, а не користувач
@@ -20,7 +22,7 @@
 - `ruimte` — з живого стану технічного профілю/активації вкладки (`gegevensRuimteVeilig`); вкладка може лише **звузити** простір.
 - Запити ШІ (`site_search` через конектор) проходять ту саму браму з `aiRuimte` гранту.
 
-## 3. Авторизація на рівні БД (RLS) + явний WHERE
+## 3. Авторизація на рівні БД (RLS) + явний ДЕ
 
 - `app.zoek_objecten` (0094), `app.zoek_geschiedenis` (0103), `app.zoek_ocr_tekst` (0102), `app.zoek_wachtrij` / `app.zoek_bron_stand`
   (0096/0100): політика `USING (current_user <> 'mijnruimte_app' OR user_id = app.huidige_gebruiker())` + `WITH CHECK`.
@@ -39,22 +41,22 @@
 - Історія зберігає лише `(bron, id)`; при повторному відкритті id ще раз проганяються через `/api/owner/zoek` → чужі/зниклі id
   повертаються як `weg`, без назв.
 
-## 5. Видалення, відключення, відкликання
+## 5. Видалення, вимкнення, відкликання
 
 | Подія | Що відбувається |
 |---|---|
 | документ видалено в джерелі | наступний скан: `verwijder(lade, bron, [id])`; OCR-кеш документа: `ocrCacheWissen(sleutel, sha256)` |
 | служба від'єднана в технічному просторі (`ontkoppel`) / заморожена | брама закриває ладу → джерело не шукається одразу (ще до переіндексації), названо в `gesloten`; cron: `verwijderBron` + `niet_gekoppeld` |
 | інтеграцію відкликано (Google/GitHub) | `koppelFeit` → `verbonden:false` → `verwijderBron`, стан `niet_gekoppeld` |
-| акаунт заблоковано/видалено | сесія недійсна → жоден маршрут; рядки лишаються під RLS до прибирання власником |
+| обліковий запис заблоковано/видалено | сесія недійсна → жоден маршрут; рядки лишаються під RLS до прибирання власником |
 | ключ людини закрито (sleutelkluis `gesloten`) | фонова індексація пошти/Drive пропускає ладу з кодом `KLUIS_GESLOTEN` (не читає зашифроване, нічого не пише, без 6 марних повторів) |
 
 ## 6. Жодних витоків через підказки, виправлення, фасети, історію, логи
 
-- Автодоповнення/виправлення — лише з `titel_norm`/синонімів **своєї лади** (той самий `alsGebruiker` + WHERE); лексикон іншого
+- Автодоповнення/виправлення — лише з `titel_norm`/синонімів **своєї лади** (той самий `alsGebruiker` + ДЕ); лексикон іншого
   користувача не підказується (тест із унікальним словом B).
-- Фасети й `totaal` рахуються тією самою вибіркою, що й результати.
-- Історія — у БД на ладу (0103); `localStorage` більше не використовується для історії (раніше витік між акаунтами одного браузера).
+- Фасети й `totaal` обчислюються тією самою вибіркою, що й результати.
+- Історія — у БД на ладу (0103); `localStorage` більше не використовується для історії (раніше витік між обліковими записами одного браузера).
 - Логи сервера (`console.*`) під час індексації й пошуку не містять назв/текстів документів — лише коди, лічильники, тривалість
   (тест перехоплює console).
 - Повідомлення про помилки витягу тексту (`fout`) — ≤120 знаків, без вмісту файла.
@@ -72,7 +74,7 @@ OpenAI, Slack, Google API, Stripe (`sk_live_`/`sk_test_`), JWT, `Bearer …`, р
 - Усі SQL параметризовані; tsquery будується з токенів `[a-z0-9]`, передається параметром; `sorteer` — лише з білого списку
   (`relevantie|nieuwste|oudest|titel`), `bronnen/soorten/talen/formaten` — лише значення з `ZOEK_BRONNEN`/`ZOEK_SOORTEN`/…, решта
   відкидається (`['*']` не означає «все чуже», а «нічого додаткового»); `pagina`/`perPagina` обрізаються до 1…/1–100; `q` ≤300 знаків,
-  NUL/керуючі символи вирізаються. 18 атак у тесті (`'; DROP`, `) OR 1=1`, `\`, оператори tsquery, 10 000 знаків, RTL/zero-width, сміття у
+  NUL/керівні символи вирізаються. 18 атак у тесті (`'; DROP`, `) OR 1=1`, `\`, оператори tsquery, 10 000 знаків, RTL/zero-width, сміття у
   фільтрах) → 200 або 400, ніколи 500, жодного чужого рядка, таблиця ціла.
 - Без `service` → 403; без сесії → 401/403.
 
@@ -83,15 +85,4 @@ OpenAI, Slack, Google API, Stripe (`sk_live_`/`sk_test_`), JWT, `Bearer …`, р
 - Індекс зберігає **відкритий** текст документів під RLS (як і проєкції пошти/хмари); DEK sleutelkluis охороняє токени/налаштування,
   не рядки. Власник сервера з доступом до БД бачить індекс так само, як бачить проєкції. Повне шифрування індексу ключем людини
   зробило б пошук без відкритого ключа неможливим — свідомо не реалізовано у цьому випуску; задокументовано як обмеження.
-- Старий кеш `app.zoek_ocr_cache` (0096, без `user_id`) порожній і не використовується; лишається для відкату.
-
----
-
-## NL — kort
-
-Isolatie-eenheid is de **lade** (`userId` + `ruimte`), nooit alleen de gebruiker; de zoekroute herhaalt per bron het besluit van de
-dienstpoort. Identiteit komt uitsluitend uit de sessie; `userId`/`ruimte` in het verzoek worden genegeerd. Elke query draait als
-`mijnruimte_app` onder RLS én met `user_id = $1 AND ruimte = $2`. Suggesties, correcties, facetten en geschiedenis komen alleen uit de
-eigen lade; logs bevatten geen documenttekst; geheimen (PEM, tokens, JWT, wachtwoordregels) worden vóór indexering gemaskeerd.
-Bewezen met tests met twee gebruikers en drie laden (`zoek-isolatie-20261022`). Bekend risico: de index bewaart platte tekst onder RLS
-(zoals de bestaande projecties); versleuteling met de sleutel van de mens is bewust niet gedaan.
+- Старий кеш `app.zoek_ocr_cache` (0096, без `user_id`) порожній і не використовується; лишається для повернення стану.

@@ -1,0 +1,124 @@
+name: MAILFIX-001 · full page mobile and OAuth diagnostics
+on:
+  push:
+    branches:
+      - fix/mailfix-001-20261104-095000
+permissions:
+  contents: write
+concurrency:
+  group: mailfix-001-checks
+  cancel-in-progress: false
+jobs:
+  tests-and-visual-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout complete historical branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Register task and enforce canonical rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs controleer
+          if ! test -f orchestratie/taken/MAILFIX-001.json; then
+            node scripts/orch.mjs taak-start --id MAILFIX-001 --agent codex \
+              --basis e97a58ceaf70f6a4a8d63608541d47e455ddb66a \
+              --tak fix/mailfix-001-20261104-095000 \
+              --omschrijving 'Виправити дубльований каталог, вузьку мобільну пошту та діагностику реального Google OAuth'
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add orchestratie/taken/MAILFIX-001.json
+            git commit -m 'MAILFIX-001: registreer traceerbare taak [skip ci]'
+            git push origin HEAD:refs/heads/fix/mailfix-001-20261104-095000
+          fi
+          node scripts/orch.mjs versheid --taak MAILFIX-001 --fase start
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+      - name: Maintain canonical button index
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/zoek-ui-catalogus.mjs
+          if ! git diff --quiet -- shared/zoek-ui-knoppen.generated.ts; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add shared/zoek-ui-knoppen.generated.ts
+            git commit -m 'MAILFIX-001: actualiseer canonieke knoppenindex [skip ci]'
+            git push origin HEAD:refs/heads/fix/mailfix-001-20261104-095000
+          fi
+      - name: Unit, client/server typing and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p uitvoer
+          node scripts/eenheidstests.mjs mailfix-001 | tee uitvoer/mailfix-tests.log
+          node scripts/eenheidstests.mjs mailpolish-001 | tee -a uitvoer/mailfix-tests.log
+          node scripts/eenheidstests.mjs mailmob-001 | tee -a uitvoer/mailfix-tests.log
+          node scripts/eenheidstests.mjs mail-orbit-001 | tee -a uitvoer/mailfix-tests.log
+          npx tsc --noEmit -p tsconfig.json
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=5120 npm run build
+          node scripts/orch.mjs versheid --taak MAILFIX-001 --fase overdracht
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Render the full real MailFunctionalView, not an isolated component
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx --yes playwright@1.56.1 install --with-deps chromium
+          npx vite --host 127.0.0.1 --port 4179 > uitvoer/mailfix-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for poging in $(seq 1 45); do
+            if curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-voorbeeld.html' > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-voorbeeld.html' > /dev/null
+          node tests/visueel/mailfix-screen.mjs
+          test -s uitvoer/mailfix-full-390.png
+      - name: Upload unaltered visual screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAILFIX-001-full-page-evidence
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            uitvoer/mailfix-full-*.png
+            uitvoer/mailfix-tests.log
+            uitvoer/mailfix-vite.log
+            uitvoer/mailfix-browser-errors.log
+      - name: Append verified results to TRACE-001 development journal
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const p='orchestratie/ontwikkelarchieven/MAILFIX-001.json';
+          const dossier=JSON.parse(readFileSync(p,'utf8'));
+          const txt=readFileSync('uitvoer/mailfix-tests.log','utf8');
+          const ok=(txt.match(/^OK\s/gm)||[]).length;
+          const fout=(txt.match(/^FOUT\s/gm)||[]).length;
+          if(ok<20||fout)throw Error('Required regressions did not pass: '+ok+' OK '+fout+' FOUT');
+          const url='https://github.com/Tarasevych/hub/actions/runs/'+process.env.GITHUB_RUN_ID;
+          dossier.controles.push({status:'bevestigd',resultaat:ok+' passed source-unit checks; TypeScript client/server and production build passed; actual full React page rendered at 320/390/1280px in CI Chromium. This does not prove owner Google OAuth.',bewijzen:[url]});
+          dossier.tijdlijn.push({volgorde:dossier.tijdlijn.length+1,stap:'GitHub Actions: full page width and duplicate strip evidence rendered from actual React/CSS; Google OAuth still requires server callback reason and real phone validation.',bewijzen:[url]});
+          writeFileSync(p,JSON.stringify(dossier,null,2)+'\n');
+          JS
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add orchestratie/ontwikkelarchieven/MAILFIX-001.json
+          git commit -m 'MAILFIX-001: archive verified full-page CI evidence [skip ci]'
+          git push origin HEAD:refs/heads/fix/mailfix-001-20261104-095000
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILFIX-001 --fase overdracht
+
+# No release, production deployment or installable archive until the owner validates
+# the actual Google callback reason and explicitly approves a fresh release.

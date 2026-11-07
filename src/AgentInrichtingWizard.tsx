@@ -15,7 +15,7 @@ const detectOs = (): Os => {
   return /Win/i.test(p) ? 'windows' : /Mac/i.test(p) ? 'macos' : 'linux';
 };
 
-/** Покроковий майстер підключення ПК чи віртуальної машини: перевірка Node.js, завантаження agent.mjs, папка й дозволені команди, готові команди для вашої оболонки або готовий файл запуску, і справжній стан підключення. */
+/** Покроковий майстер підключення ПК чи віртуальної машини: перевірка Node.js, завантаження agent.mjs, тека й дозволені команди, готові команди для вашої оболонки або готовий файл запуску, і справжній стан підключення. */
 export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise<void>; agents?: Agent[] }) {
   const [os, setOs] = useState<Os>(detectOs);
   const [shell, setShell] = useState<Shell>(() => (detectOs() === 'windows' ? 'powershell' : 'bash'));
@@ -41,7 +41,7 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
   const activeNode = nodeMethods.find((m) => m.id === nodeMethod) ?? nodeMethods[0];
   const roots = rootsText.split(/\r?\n/).map((r) => r.trim()).filter(Boolean);
   const readonlyRoots = readonlyText.split(/\r?\n/).map((r) => r.trim()).filter(Boolean);
-  const rootProblem = !roots.length && !readonlyRoots.length ? tr('Вкажіть хоча б одну папку, до якої агент матиме доступ.', 'Geef minstens één map op waartoe de agent toegang krijgt.')
+  const rootProblem = !roots.length && !readonlyRoots.length ? tr('Вкажіть хоча б одну теку, до якої агент матиме доступ.', 'Geef minstens één map op waartoe de agent toegang krijgt.')
     : [...roots, ...readonlyRoots].some(looksLikePlaceholder) ? tr('У шляху не повинно бути символів < > " | ? * і слів-підказок. Напишіть справжній шлях, наприклад T:\\ або C:\\Projects.', 'Het pad mag geen tekens < > " | ? * of voorbeeldwoorden bevatten. Schrijf een echt pad, bijvoorbeeld T:\\ of C:\\Projects.') : '';
   const cleanName = name.replace(/["\r\n]/g, '').trim().slice(0, 60) || tr('Мій ПК', 'Mijn pc');
   const left = pairing ? Math.max(0, Math.round((pairing.expiresAt - now) / 1000)) : 0;
@@ -95,7 +95,7 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
       <div className='wiz-head'>
         <span className='wiz-badge'><Plug aria-hidden='true' />{tr('Підключення ПК чи віртуальної машини', 'Pc of virtuele machine koppelen')}</span>
         <h3>{tr('Агент на вашому комп’ютері: покроково', 'De agent op uw computer: stap voor stap')}</h3>
-        <p>{tr('Агент — маленька програма (один файл agent.mjs). Вона сама підключається до сайту (відкривати порти не треба) і бачить лише папки та команди, які ви тут дозволите.', 'De agent is een klein programma (één bestand agent.mjs). Hij verbindt zelf met de site (geen poorten openzetten) en ziet alleen de mappen en commando\'s die u hier toestaat.')}</p>
+        <p>{tr('Агент — маленька програма (один файл agent.mjs). Вона сама підключається до сайту (відкривати порти не треба) і бачить лише теки та команди, які ви тут дозволите.', 'De agent is een klein programma (één bestand agent.mjs). Hij verbindt zelf met de site (geen poorten openzetten) en ziet alleen de mappen en commando\'s die u hier toestaat.')}</p>
       </div>
       <div className='wiz-os' role='group' aria-label={tr('Ваша система й оболонка', 'Uw systeem en shell')}>
         {([['windows', 'Windows'], ['macos', 'macOS'], ['linux', 'Linux']] as Array<[Os, string]>).map(([k, label]) => (
@@ -127,22 +127,22 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
         ))}
         {section('file', 2, tr('Завантажте agent.mjs', 'Download agent.mjs'), false, (
           <>
-            <p>{tr('Покладіть файл в окрему папку, наприклад Документи\\MijnRuimte-agent. Агент запускається саме звідти.', 'Zet het bestand in een eigen map, bijvoorbeeld Documenten\\MijnRuimte-agent. De agent wordt vanuit die map gestart.')}</p>
+            <p>{tr('Покладіть файл в окрему теку, наприклад Документи\\MijnRuimte-agent. Агент запускається саме звідти.', 'Zet het bestand in een eigen map, bijvoorbeeld Documenten\\MijnRuimte-agent. De agent wordt vanuit die map gestart.')}</p>
             <a className='wiz-primary' href='/downloads/agent.mjs' download><Download aria-hidden='true' />{tr('Завантажити agent.mjs', 'Download agent.mjs')}</a>
             {agentInfo ? <p className='wiz-note'>{tr('Перевірте файл (за бажанням): ця команда має показати суму', 'Controleer het bestand (optioneel): dit commando moet de som tonen')} <code>{agentInfo.sha256}</code> · <code>{checkCmd}</code></p> : null}
           </>
         ))}
-        {section('folder', 3, tr('Оберіть папки й дозволені команди', 'Kies mappen en toegestane commando\'s'), !rootProblem, (
+        {section('folder', 3, tr('Оберіть теки й дозволені команди', 'Kies mappen en toegestane commando\'s'), !rootProblem, (
           <>
             <label className='wiz-field'>{tr('Назва пристрою', 'Naam van het apparaat')}<input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></label>
-            <label className='wiz-field'>{tr('Папки, до яких агент матиме доступ (по одній у рядок)', 'Mappen waartoe de agent toegang krijgt (één per regel)')}
+            <label className='wiz-field'>{tr('Теки, до яких агент матиме доступ (по одній у рядок)', 'Mappen waartoe de agent toegang krijgt (één per regel)')}
               <textarea rows={3} value={rootsText} onChange={(e) => setRootsText(e.target.value)} placeholder={os === 'windows' ? 'T:\\\nC:\\Projects' : '/home/ik/projecten'} spellCheck={false} />
             </label>
-            <label className='wiz-field'>{tr('Папки лише для читання (за бажанням, по одній у рядок): агент бачить і читає, але не може змінити чи видалити — наприклад резервні копії', 'Mappen alleen-lezen (optioneel, één per regel): de agent ziet en leest, maar kan niets wijzigen of wissen — bijvoorbeeld back-ups')}
+            <label className='wiz-field'>{tr('Теки лише для читання (за бажанням, по одній у рядок): агент бачить і читає, але не може змінити чи видалити — наприклад резервні копії', 'Mappen alleen-lezen (optioneel, één per regel): de agent ziet en leest, maar kan niets wijzigen of wissen — bijvoorbeeld back-ups')}
               <textarea rows={2} value={readonlyText} onChange={(e) => setReadonlyText(e.target.value)} placeholder={os === 'windows' ? 'R:\\' : '/mnt/back-ups'} spellCheck={false} />
             </label>
             {rootProblem && (rootsText || readonlyText) ? <p className='wiz-note' role='alert' style={{ color: 'var(--warn)' }}>{rootProblem}</p> : null}
-            <p className='wiz-note'>{tr('Місця з ключами й секретами (папка «geheim», файли .pem, .key, .env, uitrol-sleutel, recovery.key) агент ніколи не читає й не змінює, навіть усередині дозволених папок.', 'Plekken met sleutels en geheimen (map «geheim», bestanden .pem, .key, .env, uitrol-sleutel, recovery.key) leest of wijzigt de agent nooit, ook niet binnen toegestane mappen.')}</p>
+            <p className='wiz-note'>{tr('Місця з ключами й секретами (тека «geheim», файли .pem, .key, .env, uitrol-sleutel, recovery.key) агент ніколи не читає й не змінює, навіть усередині дозволених тек.', 'Plekken met sleutels en geheimen (map «geheim», bestanden .pem, .key, .env, uitrol-sleutel, recovery.key) leest of wijzigt de agent nooit, ook niet binnen toegestane mappen.')}</p>
             <fieldset className='wiz-allow'><legend>{tr('Команди, які агент може запускати (без оболонки, лише ці програми)', 'Commando\'s die de agent mag starten (zonder shell, alleen deze programma\'s)')}</legend>
               {ALLOW_CHOICES.map((c) => <label key={c}><input type='checkbox' checked={allow.includes(c)} onChange={(e) => setAllow(e.target.checked ? [...allow, c] : allow.filter((x) => x !== c))} />{c}</label>)}
             </fieldset>
@@ -159,7 +159,7 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
               </>
             ) : (
               <>
-                <p>{tr(`Відкрийте термінал у папці з agent.mjs і вставте по черзі (код діє ще ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}):`, `Open een terminal in de map met agent.mjs en plak na elkaar (de code werkt nog ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}):`)}</p>
+                <p>{tr(`Відкрийте термінал у теці з agent.mjs і вставте по черзі (код діє ще ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}):`, `Open een terminal in de map met agent.mjs en plak na elkaar (de code werkt nog ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}):`)}</p>
                 {commands.map((c, i) => (
                   <div key={i} className='wiz-copy'><b>{i + 1}.</b><code>{c}</code><button type='button' onClick={() => void copy(`c${i}`, c)}>{copied === `c${i}` ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>
                 ))}

@@ -1,47 +1,49 @@
-# Provider Account Architecture — canonical B+
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./PROVIDER_ACCOUNT_ARCHITECTURE.uk.md) · [🇳🇱 **Nederlandse versie**](./PROVIDER_ACCOUNT_ARCHITECTURE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-## Core records
+# Архітектура облікових записів провайдерів — канонічна модель B+
 
-- `provider_principals_v1`: one Google/Microsoft/etc. identity per owner and provider account.
-- `google_oauth_grant_v1`: one encrypted Google refresh credential per Google provider principal.
-- `provider_service_grants_v1`: one service-specific lifecycle record per principal and service.
-- `provider_service_tokens_v1`: logical service handles that point to a canonical grant and contain no credential ciphertext.
-- service-owned account records: operational metadata for Drive, Mail, Calendar, Photos and future services.
+## Основні записи
 
-## Primary account
+- `provider_principals_v1`: одна ідентичність Google/Microsoft/тощо на кожного власника та обліковий запис провайдера.
+- `google_oauth_grant_v1`: один зашифрований refresh-токен Google на кожного суб'єкта провайдера Google (`provider principal`).
+- `provider_service_grants_v1`: один специфічний для сервісу запис життєвого циклу на кожного суб'єкта та сервіс.
+- `provider_service_tokens_v1`: логічні дескриптори сервісів, які вказують на канонічний дозвіл і не містять зашифрованих облікових даних (ciphertext).
+- записи облікових записів, що належать сервісам: операційні метадані для Drive, Mail, Calendar, Photos та майбутніх сервісів.
 
-The Google identity used for ecosystem sign-in becomes the primary provider principal after exact email and provider-subject verification. The system presents a Mail → Drive → Calendar → Photos plan. Every new sensitive or restricted scope set requires an explicit incremental consent.
+## Основний обліковий запис (Primary account)
 
-After consent, services reuse the principal's canonical grant. No repeated authorization is requested while the grant remains valid and contains the service's required scopes.
+Ідентичність Google, використана для входу в екосистему, стає основним суб'єктом провайдера після точної перевірки електронної пошти та ідентифікатора суб'єкта провайдера (`provider-subject`). Система пропонує план Mail → Drive → Calendar → Photos. Кожен новий чутливий (sensitive) або обмежений (restricted) набір областей доступу вимагає явної інкрементальної згоди.
 
-## Additional accounts
+Після надання згоди сервіси повторно використовують канонічний дозвіл цього суб'єкта. Повторна авторизація не запитується, доки дозвіл залишається дійсним і містить необхідні області доступу сервісу.
 
-Additional accounts are always linked explicitly and remain outside the primary sequence. Each additional Google account has its own provider principal, canonical grant, service grants, logical handles, operational account records, selection state and audit lifecycle. It reuses the same Suite Web OAuth Client but never reuses another principal's refresh credential.
+## Додаткові облікові записи (Additional accounts)
 
-## Logical token names
+Додаткові облікові записи завжди під'єднуються явно й залишаються поза межами основної послідовності. Кожен додатковий обліковий запис Google має власного суб'єкта провайдера, канонічний дозвіл, сервісні дозволи, логічні дескриптори, операційні записи облікового запису, стан вибору та життєвий цикл аудиту. Він повторно використовує той самий клієнт Suite Web OAuth, але ніколи не використовує refresh-токен іншого суб'єкта.
 
-- `google_identity_token` — Identity authentication remains a separate contract.
+## Імена логічних токенів
+
+- `google_identity_token` — автентифікація Identity залишається окремим контрактом.
 - `google_mail_token`
 - `google_drive_token`
 - `google_calendar_token`
 - `google_photos_token`
 
-The four Suite names are logical handles, not four refresh-token copies. Access tokens are ephemeral and never persisted.
+Чотири назви Suite є логічними дескрипторами, а не чотирма копіями refresh-токенів. Access-токени є ефемерними й ніколи не зберігаються на диску.
 
-## OAuth and scope boundary
+## Межа OAuth та областей доступу (scopes)
 
-Mail, Drive, Calendar and Photos use one Web OAuth Client and one Google Cloud project. Incremental authorization accumulates provider-approved scopes in the canonical principal grant. Before any service call the backend enforces:
+Mail, Drive, Calendar і Photos використовують один Web OAuth Client та один проєкт Google Cloud. Інкрементальна авторизація накопичує схвалені провайдером області доступу в канонічному дозволі суб'єкта. Перед будь-яким викликом сервісу бекенд примусово перевіряє умову:
 
 ```text
 requiredScopes ⊆ grantedScopes
 ```
 
-Service status, timestamps, audit and local revocation remain independent. A local service disconnect does not revoke a shared provider grant while another active service handle depends on it.
+Статус сервісу, часові мітки, аудит і локальне відкликання залишаються незалежними. Локальне вимкнення сервісу не відкликає спільний дозвіл провайдера, доки від нього залежить інший активний дескриптор сервісу.
 
-## Account switching
+## Перемикання облікових записів
 
-Switching the ecosystem account resolves the matching provider principal and its service handles. Drive's selected provider account remains owner-scoped and can be changed independently. Additional accounts are never promoted to primary without an exact identity-linked operation.
+Перемикання облікового запису екосистеми визначає відповідного суб'єкта провайдера та його сервісні дескриптори. Обраний обліковий запис провайдера в Drive залишається ізольованим за власником (`owner-scoped`) і може змінюватися незалежно. Додаткові облікові записи ніколи не підвищуються до статусу основного без операції з точним підтвердженням ідентичності.
 
-## Runtime boundary
+## Межа середовища виконання (Runtime boundary)
 
-Grant availability is not equivalent to runtime activation. Mail provider migration, Drive indexing/Changes/workers, Calendar ingestion and Photos ingestion require separate accepted checkpoints.
+Наявність дозволу (grant) не дорівнює активації в середовищі виконання. Міграція провайдера Mail, індексація/Changes/воркери Drive, імпорт Calendar та імпорт Photos потребують окремих прийнятих контрольних точок (checkpoints).

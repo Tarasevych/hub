@@ -144,7 +144,7 @@ async function bronEvents(nu: number): Promise<BronStand> {
 }
 
 async function bronRuns(nu: number): Promise<BronStand> {
-  const uit = leeg('runs', 'Історія в базі: кожен запуск із кроками, журналом, підсумком, sha256 і хто готував/схвалив. Переживає перезапуск і SSH-встановлення. Основне джерело за замовчуванням.', 'Geschiedenis in de database: elke run met stappen, logboek, uitkomst, sha256 en wie voorbereidde/goedkeurde. Overleeft een herstart en een SSH-installatie. Standaard de hoofdbron.');
+  const uit = leeg('runs', 'Історія в базі: кожен запуск із кроками, журналом, підсумком, sha256 і хто готував/схвалив. Переживає перезапуск і SSH-встановлення. Основне джерело типово.', 'Geschiedenis in de database: elke run met stappen, logboek, uitkomst, sha256 en wie voorbereidde/goedkeurde. Overleeft een herstart en een SSH-installatie. Standaard de hoofdbron.');
   try {
     const bezig = (await sys().query(`SELECT id, versie, release, staat, methode, gestart_op FROM app.uitrol_runs WHERE staat = 'bezig' ORDER BY gestart_op DESC LIMIT 1`)).rows[0];
     const laatsteKlaar = (await sys().query(`SELECT id, versie, release, staat, methode, code, bron_commit, geeindigd_op, gestart_op FROM app.uitrol_runs WHERE staat = 'klaar' ORDER BY geeindigd_op DESC NULLS LAST, gestart_op DESC LIMIT 1`)).rows[0];

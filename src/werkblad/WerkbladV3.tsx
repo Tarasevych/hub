@@ -193,7 +193,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
         const m = mappen.find((f) => cx >= f.x && cx <= f.x + f.w && cy >= f.y && cy <= f.y + f.h);
         if (m) {
           uit = { ...uit, items: uit.items.map((x) => (x.instanceId === e.instanceId ? { ...x, parent: m.instanceId } : x)) };
-          zetMelding(tr(lang, `Додано до папки «${m.titleOverride || 'Папка'}».`, `Toegevoegd aan map «${m.titleOverride || 'Map'}».`));
+          zetMelding(tr(lang, `Додано до теки «${m.titleOverride || 'Тека'}».`, `Toegevoegd aan map «${m.titleOverride || 'Map'}».`));
         }
       }
       // Een verwijderde map laat haar inhoud niet verdwijnen: die komt terug op het werkblad.
@@ -270,7 +270,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
 
   const render = useCallback((e: DesktopEntry, c: { bewerken: boolean }) => {
     if (e.kind === 'widget') return <WidgetV3 entry={e} lang={lang} acties={acties} basis={basis} kolommen={kolommen} bewerken={c.bewerken} rctx={rctx} vak={blk.aan && e.itemId === SNEL_TOEGANG ? blk.vakVoor(e, c.bewerken) : undefined} />;
-    if (e.kind === 'folder' && blk.aan) return <div className='wb3-tegel wb3-map-blok' data-wb3-map-blok={e.instanceId}><span className='wb3-map-titel'>{e.titleOverride || tr(lang, 'Папка', 'Map')}</span>{blk.vakVoor(e, c.bewerken)}</div>;
+    if (e.kind === 'folder' && blk.aan) return <div className='wb3-tegel wb3-map-blok' data-wb3-map-blok={e.instanceId}><span className='wb3-map-titel'>{e.titleOverride || tr(lang, 'Тека', 'Map')}</span>{blk.vakVoor(e, c.bewerken)}</div>;
     if (e.kind === 'shortcut' && blk.aan) { const los = blk.losseTegel(e, c.bewerken); if (los) return <div className='wb3-tegel'>{los}</div>; }
     if (e.kind === 'folder') {
       const kinderen = (lagenRef.current[klasseRef.current!]?.layout.items || []).filter((x) => x.parent === e.instanceId);
@@ -321,7 +321,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
           ) : <button type='button' className='knop-secundair is-klein' data-wb3='instellen' onClick={() => zetBewerken(true)}><Settings2 aria-hidden='true' />{tr(lang, 'Налаштувати робочий стіл', 'Werkblad instellen')}</button>) : null}
         </div>
       </div>
-      {bewerken ? <p className='wb-uitleg'>{tr(lang, 'Перетягуйте об’єкти куди завгодно; краї й кути змінюють розмір. На телефоні — довге натискання. Клавіатура: стрілки, Shift+стрілки, Enter — меню, Ctrl+Z / Ctrl+Y — скасувати/повторити. Ярлик, покладений на папку, потрапляє в папку.', 'Sleep objecten waar u wilt; randen en hoeken wijzigen het formaat. Op de telefoon: lang indrukken. Toetsenbord: pijltjes, Shift+pijltjes, Enter — menu, Ctrl+Z / Ctrl+Y — ongedaan/opnieuw. Een snelkoppeling op een map gaat de map in.')}{blk.aan ? ` ${tr(lang, 'Блоки: клік по значку в «Швидкому доступі» чи папці — властивості; Shift+клік — вибрати кілька; утримайте й перетягніть значок в інший блок, на стіл або в меню; M — «Перемістити в…».', 'Blokken: klik op een icoon in «Snelle toegang» of een map — eigenschappen; Shift+klik — meerdere kiezen; houd vast en sleep een icoon naar een ander blok, het werkblad of het menu; M — «Verplaatsen naar…».')}` : ''}</p> : null}
+      {bewerken ? <p className='wb-uitleg'>{tr(lang, 'Перетягуйте об’єкти куди завгодно; краї й кути змінюють розмір. На телефоні — довге натискання. Клавіатура: стрілки, Shift+стрілки, Enter — меню, Ctrl+Z / Ctrl+Y — скасувати/повторити. Ярлик, покладений на теку, потрапляє в теку.', 'Sleep objecten waar u wilt; randen en hoeken wijzigen het formaat. Op de telefoon: lang indrukken. Toetsenbord: pijltjes, Shift+pijltjes, Enter — menu, Ctrl+Z / Ctrl+Y — ongedaan/opnieuw. Een snelkoppeling op een map gaat de map in.')}{blk.aan ? ` ${tr(lang, 'Блоки: клік по значку в «Швидкому доступі» чи теці — властивості; Shift+клік — вибрати кілька; утримайте й перетягніть значок в інший блок, на стіл або в меню; M — «Перемістити в…».', 'Blokken: klik op een icoon in «Snelle toegang» of een map — eigenschappen; Shift+klik — meerdere kiezen; houd vast en sleep een icoon naar een ander blok, het werkblad of het menu; M — «Verplaatsen naar…».')}` : ''}</p> : null}
       {bewerken && instellingen ? (
         <div className='wb3-instellingen' data-wb3-paneel='instellingen'>
           <label className='wb3-veld'><Image aria-hidden='true' />{tr(lang, 'Фон', 'Achtergrond')}

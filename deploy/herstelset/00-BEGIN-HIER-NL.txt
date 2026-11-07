@@ -49,7 +49,7 @@ STAP 1. PowerShell openen en variabelen klaarzetten.
     Set-ExecutionPolicy -Scope Process Bypass -Force
     $sl = 'F:\herstelsleutel-age.txt'
     $k  = "$HOME\.ssh\mijn-ruimte-webserver"
-    $vm = 'beheer@203.0.113.10'
+    $vm = 'beheer@<VM-IP>'
     $g  = (Get-ChildItem .\back-ups\geheimen -Recurse -Filter *.tar.age | Sort-Object Name | Select-Object -Last 1).FullName
     $b  = (Get-ChildItem .\back-ups\database-en-uploads -Directory | Sort-Object Name | Select-Object -Last 1).FullName
   Set controleren:
@@ -89,7 +89,7 @@ STAP 5. Virtuele machine maken (PowerShell als administrator, in de map van de s
 STAP 6. Ubuntu installeren in het VM-venster (pijltjes, Enter, spatie = aanvinken):
   - Language: English. Keyboard: naar keuze. Type: Ubuntu Server.
   - Network: eth0 -> Edit IPv4 -> Manual:
-      Subnet 203.0.113.0/24   Address 203.0.113.10   Gateway 203.0.113.1   Name servers 1.1.1.1,9.9.9.9
+      Subnet <beheersubnet>/24   Address <VM-IP>   Gateway <PC-IP>   Name servers 1.1.1.1,9.9.9.9
   - Proxy: leeg. Mirror: laten staan.
   - Storage: "Use an entire disk", vink "Set up this disk as an LVM group" en
     "Encrypt the LVM group with LUKS" aan -> bedenk een schijfwachtwoordzin (LUKS).
@@ -103,7 +103,7 @@ STAP 7. Nieuwe SSH-sleutel op de nieuwe pc (gewone PowerShell; de oude sleutel z
   niet in de set - voor een nieuwe pc maak je een nieuwe):
     ssh-keygen -t ed25519 -f "$HOME\.ssh\mijn-ruimte-webserver"
   (twee keer Enter: geen wachtwoord). Publieke helft naar de VM:
-    Get-Content "$HOME\.ssh\mijn-ruimte-webserver.pub" | ssh beheer@203.0.113.10 'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
+    Get-Content "$HOME\.ssh\mijn-ruimte-webserver.pub" | ssh beheer@<VM-IP> 'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
   (Eerste keer yes typen, dan het wachtwoord van beheer.) Controle:
     ssh -i $k $vm hostname
   Verwacht: mijn-ruimte-webserver, zonder wachtwoordvraag.

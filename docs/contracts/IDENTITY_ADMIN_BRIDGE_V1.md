@@ -1,27 +1,29 @@
-# Identity Admin Bridge v1
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./IDENTITY_ADMIN_BRIDGE_V1.uk.md) · [🇳🇱 **Nederlandse versie**](./IDENTITY_ADMIN_BRIDGE_V1.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-## Source of truth
-Hub backend remains the only source of truth for users, access requests, roles, workspaces, deletion, recovery and audit.
+# Адміністративний міст Identity v1 (Identity Admin Bridge v1)
 
-## Flow
-1. An authenticated Hub tab creates a one-time handoff code for `identity`.
-2. The code expires after two minutes and can be consumed once.
-3. Identity exchanges the code server-to-server.
-4. Hub creates a service-scoped session with `identity.profile.read` and, for the owner, `identity.admin`.
-5. The Identity application stores the service token only in a host-only HttpOnly cookie selected by a non-secret per-tab identifier.
-6. Identity admin mutations call Hub service-admin endpoints, which reuse the same business functions as legacy Hub admin endpoints.
+## Джерело істини
+Бекенд Hub залишається єдиним джерелом істини щодо користувачів, запитів на доступ, ролей, робочих просторів, видалення, відновлення та аудиту.
 
-## Tab isolation
-Each browser tab stores only a non-secret tab ID in sessionStorage. The secret service token is kept in an HttpOnly cookie whose name includes that tab ID. Logging out one Identity tab revokes only that service session.
+## Потік виконання (Потік)
+1. Автентифікована вкладка Hub створює одноразовий код передачі (`handoff code`) для сервісу `identity`.
+2. Код втрачає чинність через дві хвилини й може бути використаний лише один раз.
+3. Сервіс Identity обмінює цей код у режимі «сервер — сервер».
+4. Hub створює ізольовану для сервісу сесію з дозволом `identity.profile.read` та, для власника, `identity.admin`.
+5. Застосунок Identity зберігає сервісний токен виключно в `host-only` `HttpOnly` cookie, яка обирається за несекретним ідентифікатором вкладки.
+6. Адміністративні мутації в Identity викликають сервісно-адміністративні кінцеві точки Hub, які повторно використовують ті самі бізнес-функції, що й застарілі (legacy) адміністративні кінцеві точки Hub.
 
-## Safety
-- one-time handoff;
-- deny by default;
-- owner checks on every administrative request;
-- recoverable deletion;
-- all Hub and service sessions revoked when an account is deleted;
-- audit entries for handoff and administrative mutations;
-- no service token in URLs, localStorage, sessionStorage or frontend logs.
+## Ізоляція вкладок (Tab isolation)
+Кожна вкладка браузера зберігає у `sessionStorage` лише несекретний ідентифікатор вкладки (`tab ID`). Секретний сервісний токен зберігається в `HttpOnly` cookie, ім'я якої містить цей `tab ID`. Вихід із системи в одній вкладці Identity відкликає лише цю конкретну сервісну сесію.
 
-## Rollback
-The legacy Hub admin backend routes remain available. The normal Hub UI no longer exposes them. `?legacy-admin=1` is an emergency rollback entry for the owner only.
+## Безпека
+- одноразова передача (`one-time handoff`);
+- заборона типово (`deny by default`);
+- перевірка прав власника на кожному адміністративному запиті;
+- оборотне видалення з можливістю відновлення;
+- відкликання всіх сесій Hub і сервісів під час видалення облікового запису;
+- записи аудиту для операцій handoff та адміністративних мутацій;
+- жодних сервісних токенів в URL-адресах, `localStorage`, `sessionStorage` або логах фронтенду.
+
+## Повернення стану (Rollback)
+Застарілі (legacy) адміністративні маршрути бекенду Hub залишаються доступними. Звичайний інтерфейс Hub більше їх не показує. Параметр `?legacy-admin=1` є аварійною точкою входу для повернення стану виключно для власника.

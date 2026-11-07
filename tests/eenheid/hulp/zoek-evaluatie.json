@@ -354,8 +354,8 @@
       "opmerking": "помилка в темі листа; лист-дублер (newsletter) не має бути першим"
     },
     {
-      "q": "нотариусом",
-      "taal": "ru",
+      "q": "нотаріусом",
+      "taal": "uk",
       "soort": "typefout",
       "verwacht": [
         {
@@ -368,7 +368,7 @@
         }
       ],
       "top": 5,
-      "opmerking": "ru-словоформа замість uk"
+      "opmerking": "словоформа в орудному відмінку"
     },
     {
       "q": "електронна пошта",
@@ -523,8 +523,8 @@
       "opmerking": "ro з діакритикою"
     },
     {
-      "q": "настройки",
-      "taal": "ru",
+      "q": "налаштування",
+      "taal": "uk",
       "soort": "meertalig",
       "verwacht": [
         {
@@ -533,7 +533,7 @@
         }
       ],
       "top": 5,
-      "opmerking": "ru/bg"
+      "opmerking": "uk"
     },
     {
       "q": "Kalender",
@@ -588,8 +588,8 @@
       "opmerking": "fr"
     },
     {
-      "q": "брояч устройства",
-      "taal": "bg",
+      "q": "пристрої",
+      "taal": "uk",
       "soort": "meertalig",
       "verwacht": [
         {
@@ -598,7 +598,7 @@
         }
       ],
       "top": 10,
-      "opmerking": "bg «устройства» → пристрої",
+      "opmerking": "пристрої",
       "ruimte": "technisch"
     },
     {
@@ -689,8 +689,8 @@
       "opmerking": "трансліт «налаштування»"
     },
     {
-      "q": "настройки почты",
-      "taal": "ru",
+      "q": "налаштування пошти",
+      "taal": "uk",
       "soort": "surzhyk",
       "verwacht": [
         {
@@ -699,7 +699,7 @@
         }
       ],
       "top": 5,
-      "opmerking": "суржик/ru → налаштування пошти"
+      "opmerking": "налаштування пошти"
     },
     {
       "q": "де поміняти мову",
@@ -728,8 +728,8 @@
       "opmerking": "nl-опис дії"
     },
     {
-      "q": "change language",
-      "taal": "en",
+      "q": "taal veranderen",
+      "taal": "nl",
       "soort": "surzhyk",
       "verwacht": [
         {
@@ -738,7 +738,7 @@
         }
       ],
       "top": 5,
-      "opmerking": "en-опис дії"
+      "opmerking": "nl-опис дії"
     },
     {
       "q": "змінити пароль",
@@ -842,7 +842,7 @@
         }
       ],
       "top": 5,
-      "opmerking": "суржикове написання"
+      "opmerking": "діалектне написання"
     },
     {
       "q": "shukaty lysty",
@@ -1212,7 +1212,7 @@
       "opmerking": "ідентифікатор моделі у тексті"
     },
     {
-      "q": "полис автоверзекеринг",
+      "q": "поліс автоверзекерінг",
       "taal": "mix",
       "soort": "translit",
       "verwacht": [

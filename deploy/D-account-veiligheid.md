@@ -1,4 +1,6 @@
-# Звіт D: безпека акаунта (4.1–4.4)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./D-account-veiligheid.uk.md) · [🇳🇱 **Nederlandse versie**](./D-account-veiligheid.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
+# Звіт D: безпека облікового запису (4.1–4.4)
 
 Гілка `werk-20261024`. Перший прохід — `agent/rapport-dg`. Цей допис закриває адмін-шлях і дірки 4.4, які лишились після нього.
 Перевірка — `node scripts/eenheidstests.mjs account-wissen-20261026` і `browser-extensie`.
@@ -15,14 +17,14 @@ Postgres у цьому середовищі немає. «Жоден рядок 
 - Функція `deleteRecoverably` лишилась у файлі для старих м’яких записів і прибиральної роботи. Нові маршрути її не кличуть (у `index.ts` рівно одне `deleteRecoverably(` — саме оголошення).
 - У адмінці рядок зі `retiredAt` каже «стерто одразу, відновити не можна», а не «без обмеження часу». Старе м’яке вікно (є `recoverableUntil`, немає `retiredAt`) у тексті лишається, доки такий запис ще є.
 - Реєстр `DELETE` у `accountMeteenWissen` іде одним `BEGIN` / `COMMIT` (`ROLLBACK`, якщо крок упав). `wisRecordsVanAccount` (надгробок і файли) лишається другим кроком після коміту: це не лише SQL.
-- `users`, `records`, `audit` зі SQL виключені. `app.audit` append-only. Підписи (`actor_id`, `gewijzigd_door`, …) і `app.uitrol_runs` не є рядком цього акаунта.
+- `users`, `records`, `audit` зі SQL виключені. `app.audit` append-only. Підписи (`actor_id`, `gewijzigd_door`, …) і `app.uitrol_runs` не є рядком цього облікового запису.
 
 ## 4.2 Критичні дії через сильний крок
 
 **Частково.** Матриця не змінювалась у цьому дописі.
 
 - Дії `account-verwijderen`, `aanmeldmethode`, `herstelcodes`, `ai-hoog`. Методи: `passkey`, `app-code`, `herstelcode`, `codewoord`. `googleAlleenVolstaat` для них хибний.
-- Якщо в акаунта немає passkey, TOTP і кодів відновлення, `sterkeStapOpFout` усе ще пускає свіжий Google (без «запам’ятати»). Кодове слово — брама сесії, не повторний запит на кожну зміну методу.
+- Якщо в облікового запису немає passkey, TOTP і кодів відновлення, `sterkeStapOpFout` усе ще пускає свіжий Google (без «запам’ятати»). Кодове слово — брама сесії, не повторний запит на кожну зміну методу.
 
 ## 4.3 Кодове слово (argon2id або scrypt)
 

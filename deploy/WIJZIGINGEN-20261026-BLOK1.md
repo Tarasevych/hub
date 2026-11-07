@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261026-BLOK1.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261026-BLOK1.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 ## AX. Блок 1 «швидкі виправлення» (26.10.2026)
 
 Перший із восьми блоків плану `PLAN-8-BLOKIV-2026-10-25.md` (пп. 1.1–1.4, 2.5, 6.1, 6.3, 8.1–8.3, 8.6). Зведення з `concept-AX.md`. База: `374dde7` (`werk-20261024`).

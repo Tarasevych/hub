@@ -51,7 +51,7 @@ const datum = (ms: number | null, uk: boolean) => (ms ? new Date(ms).toLocaleStr
 
 // ---------------------------------------------------------------- hulpjes
 
-const LOGO: Record<AgentSlug, LogoKind> = { claude: 'claude', gpt: 'openai', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor' };
+const LOGO: Record<AgentSlug, LogoKind> = { claude: 'claude', gpt: 'openai', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor', antigravity: 'antigravity' };
 const s = (v: unknown) => (typeof v === 'string' ? v : '');
 const ALLE_SLUGS: AgentSlug[] = V2_AGENTEN.map((a) => a.slug);
 
@@ -79,6 +79,7 @@ export function agentVanItem(e: JournaalItem): AgentSlug | null {
   if (/gemini/.test(n)) return 'gemini';
   if (/copilot|vscode/.test(n)) return 'copilot';
   if (/cursor/.test(n)) return 'cursor';
+  if (/antigravity|jetski/.test(n)) return 'antigravity';
   return null;
 }
 

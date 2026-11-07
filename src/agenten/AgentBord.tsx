@@ -1,7 +1,7 @@
 // Дошка підключення ШІ на ai.*/connections. Картка розгортається панеллю з горизонтальними вкладками.
 // MCP — лише спосіб, якщо каталог клієнта його має. Двері сервера й технічні інструменти сюди не входять.
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Copy, Plug } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, Copy, Plug } from 'lucide-react';
 import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
 import { canonicalNavigationUrl, serviceFromLocation } from '../canoniek-navigatie';
@@ -60,7 +60,11 @@ function useKolommen(ref: { current: HTMLElement | null }) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return undefined;
-    const meet = () => setN(Math.max(1, Math.floor(el.clientWidth / 260) || 1));
+    const meet = () => {
+      // Gebruik de gerenderde gridsporen, ook in een smal venster op een groot scherm.
+      const sporen = getComputedStyle(el).gridTemplateColumns.trim();
+      setN(sporen && sporen !== 'none' ? sporen.split(/\s+/).length : 1);
+    };
     meet();
     const ro = new ResizeObserver(meet);
     ro.observe(el);
@@ -80,6 +84,7 @@ export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: b
   const [bezig, setBezig] = useState('');
   const rooster = useRef<HTMLDivElement>(null);
   const kolommen = useKolommen(rooster);
+  const paneelId = useId();
 
   useEffect(() => {
     let actief = true;
@@ -151,13 +156,14 @@ export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: b
       <div className='ag-bord' ref={rooster} data-kolommen={kolommen}>
         {bord.agenten.map((a, i) => (
           <div key={a.id} className='ag-bord-sleuf' style={{ display: 'contents' }}>
-            <button type='button' className={`ag-bord-kaart${open === a.id ? ' is-open' : ''}${a.aan ? '' : ' is-uit'}`} data-agent={a.id} data-agent-aan={a.aan ? '1' : '0'} aria-expanded={open === a.id} disabled={!a.aan} onClick={() => openKaart(a.id, a.aan)}>
+            <button type='button' className={`ag-bord-kaart${open === a.id ? ' is-open' : ''}${a.aan ? '' : ' is-uit'}`} data-agent={a.id} data-agent-aan={a.aan ? '1' : '0'} aria-expanded={open === a.id} aria-controls={open === a.id ? paneelId : undefined} disabled={!a.aan} onClick={() => openKaart(a.id, a.aan)}>
               <Logo kind={aiLogo(a.naam)} size={36} label={a.naam} />
               <span className='ag-bord-naam'>{a.naam}</span>
               <span className='ag-bord-sub'>{a.aan ? tr('Ваш простір', 'Uw ruimte') : tr('Вимкнено для всіх на сайті', 'Uit voor iedereen op de site')}</span>
+              <ChevronDown className='ag-bord-pijl' size={16} aria-hidden='true' />
             </button>
             {i === eindeRij && gekozen ? (
-              <div className='ag-bord-paneel' data-agent-paneel={gekozen.id} role='region' aria-label={gekozen.naam}>
+              <div id={paneelId} className='ag-bord-paneel' data-agent-paneel={gekozen.id} role='region' aria-label={gekozen.naam}>
                 <div className='ag-bord-tabs' role='tablist' aria-label={tr(`Розділи: ${gekozen.naam}`, `Onderdelen: ${gekozen.naam}`)}>
                   {gekozen.tabs.map((id) => (
                     <button key={id} type='button' role='tab' className='ag-bord-tab' aria-selected={tab === id} data-tab={id} onClick={() => setTab(id)}>{tr(TAB[id][0], TAB[id][1])}</button>

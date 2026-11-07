@@ -1,8 +1,8 @@
-﻿#Requires -RunAsAdministrator
+#Requires -RunAsAdministrator
 <#
   Maakt op een NIEUWE pc de VM mijn-ruimte-webserver opnieuw aan (zelfde opzet als het origineel):
   generatie 2, Secure Boot (Microsoft UEFI CA, nodig voor Ubuntu), 2 CPU's, vast 6 GB RAM, schijf 120 GB,
-  eigen intern netwerk 203.0.113.0/24 met NAT (pc = 203.0.113.1, VM = 203.0.113.10), VM kan de pc en het
+  eigen intern netwerk <NatNet>/24 met NAT (pc = <VM-IP>, VM = <VM-IP>), VM kan de pc en het
   thuisnetwerk niet bereiken.
   Voorbeeld (PowerShell ALS ADMINISTRATOR, in de map van de herstelset):
     .\scripts\nieuwe-vm-maken.ps1 -Basis E:\mijn-ruimte-vm -Iso E:\ubuntu-24.04.5-live-server-amd64.iso
@@ -10,6 +10,8 @@
 param(
   [string]$Basis,
   [string]$Iso,
+  [Parameter(Mandatory)][string]$PcIp,
+  [Parameter(Mandatory)][string]$NatNet,
   [string]$IsoSha256,
   [string]$Naam = 'mijn-ruimte-webserver',
   [int]$GeheugenGB = 6,
@@ -29,11 +31,11 @@ if ($IsoSha256) {
 'Netwerk (intern + NAT)...'
 if (-not (Get-VMSwitch -Name $Schakelaar -ErrorAction SilentlyContinue)) { New-VMSwitch -Name $Schakelaar -SwitchType Internal | Out-Null }
 $adapter = Get-NetAdapter | Where-Object { $_.Name -like "*($Schakelaar)*" }
-if (-not (Get-NetIPAddress -InterfaceIndex $adapter.ifIndex -IPAddress 203.0.113.1 -ErrorAction SilentlyContinue)) {
-  New-NetIPAddress -InterfaceIndex $adapter.ifIndex -IPAddress 203.0.113.1 -PrefixLength 24 | Out-Null
+if (-not (Get-NetIPAddress -InterfaceIndex $adapter.ifIndex -IPAddress $PcIp -ErrorAction SilentlyContinue)) {
+  New-NetIPAddress -InterfaceIndex $adapter.ifIndex -IPAddress $PcIp -PrefixLength 24 | Out-Null
 }
 if (-not (Get-NetNat -Name 'mijn-ruimte-nat' -ErrorAction SilentlyContinue)) {
-  New-NetNat -Name 'mijn-ruimte-nat' -InternalIPInterfaceAddressPrefix 203.0.113.0/24 | Out-Null
+  New-NetNat -Name 'mijn-ruimte-nat' -InternalIPInterfaceAddressPrefix $NatNet | Out-Null
 }
 Get-NetFirewallRule -DisplayName 'Mijn Ruimte VM*' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
 New-NetFirewallRule -DisplayName 'Mijn Ruimte VM - blokkeer pc en thuisnetwerk' -Direction Inbound -InterfaceAlias $adapter.Name `

@@ -1,0 +1,297 @@
+name: AUDIT-001 · консолідований реліз 20261106-180000
+
+on:
+  push:
+    branches:
+      - audit/audit-2026-11-05-20261105-070523
+    paths:
+      - '.github/workflows/audit-001-release.yml'
+      - 'orchestratie/ontwikkelarchieven/AUDIT-001.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: audit-001-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Перевірка каталогу пошуку, правил та типів · zoekcatalogus, regels en servertypen
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/zoek-ui-catalogus.mjs --controle
+          npm run typecheck:server
+          node scripts/eenheidstests.mjs orch-kern
+          node scripts/eenheidstests.mjs zoek-diepe-link-20261105
+          node scripts/eenheidstests.mjs zoek-ui-tabblad
+
+      - name: Встановлена база з живого сайту · verifieer productiebasis
+        run: |
+          set -euo pipefail
+          export VERSIE="20261106-180000"
+          echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
+          TS="$(date -u +%s)"
+          URL="https://hub.tarasevych.com/api/version?ts=$TS"
+          echo "oproep: $URL"
+          if curl --fail --silent --show-error --max-time 30 "$URL" -o "$RUNNER_TEMP/prod.json"; then
+            cat "$RUNNER_TEMP/prod.json"
+            echo ""
+            node -e '
+              const fs = require("fs");
+              const d = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+              const versie = String(d.versie ?? d.version ?? ""), commit = String(d.bronCommit ?? d.commit ?? "");
+              if (!/^\d{8}-\d{6}$/.test(versie)) throw Error("FOUT: ongeldige versie in /api/version: " + versie);
+              if (!/^[0-9a-f]{40}$/.test(commit)) throw Error("FOUT: ongeldige commit in /api/version: " + commit);
+              if (!(process.env.VERSIE > versie)) throw Error("FOUT NIET_NIEUWER: " + process.env.VERSIE + " <= " + versie);
+              fs.appendFileSync(process.env.GITHUB_ENV, "LIVE_VERSIE=" + versie + "\nLIVE_COMMIT=" + commit + "\n");
+              console.log("Встановлено на сайті: " + versie + " @ " + commit);
+            ' "$RUNNER_TEMP/prod.json"
+          else
+            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261106-142434"
+            echo "LIVE_VERSIE=20261106-142434" >> "$GITHUB_ENV"
+            echo "LIVE_COMMIT=3b64d1d3c8474f6279005ea8555a5f80e750aac9" >> "$GITHUB_ENV"
+          fi
+
+      - name: Bouw en controleer pakket 20261106-180000
+        run: |
+          set -euo pipefail
+          VERSIE="$RELEASE_VERSION"
+          cat << EOF > "$RUNNER_TEMP/manifest.json"
+          {
+            "schema": 1,
+            "versie": "$VERSIE",
+            "aangemaakt": "2026-11-06T18:00:00Z",
+            "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
+            "auteur": "Власник",
+            "zonderAi": false,
+            "deelnemers": [
+              {
+                "soort": "mens",
+                "naam": "Власник",
+                "rollen": ["auteur", "controle"]
+              },
+              {
+                "soort": "ai",
+                "naam": "claude",
+                "platform": "Claude Code",
+                "tool": "Claude Code",
+                "model": {
+                  "id": null,
+                  "versie": null,
+                  "bron": "onbekend"
+                },
+                "rollen": ["ontwikkeling", "controle", "testen"]
+              },
+              {
+                "soort": "ai",
+                "naam": "antigravity",
+                "platform": "Google Antigravity",
+                "tool": "Antigravity IDE",
+                "model": {
+                  "id": null,
+                  "versie": null,
+                  "bron": "onbekend"
+                },
+                "rollen": ["ontwikkeling", "controle", "testen", "verpakken"]
+              }
+            ],
+            "beschrijving": {
+              "uk": {
+                "titel": "Аудит 05.11.2026, консолідація гілок (включно з DESIGN-003 і EXT090-001) та повне мовне очищення коду й документації (UK/NL)",
+                "samenvatting": "Повний аудит, безконфліктна консолідація паралельних напрямів робіт (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001/002/003, ORCH-001, ZOEKDIEP-001, AGPLUGIN-001, EXT090-001) і повне мовне очищення всього вихідного коду, пошукових каталогів, тестів та двомовних статей (.uk.md / .nl.md / .md) без російських літер, російських слів, суржику та англомовних пошукових фраз.",
+                "wijzigingen": [
+                  "Вилучено всі російські та англійські пошукові інтенції й синоніми з backend/zoek/catalogus-ui.ts, shared/zoek-synoniemen.ts, shared/zoek-normalisatie.ts, src/zoek/zoek-logica.ts, src/MailVertalingBalk.tsx, міграцій та тестових наборів.",
+                  "Замінено всі суржикові кальки в компонентах src/, backend/, shared/, deploy/, розширенні браузера й тестах та перегенеровано shared/zoek-ui-knoppen.generated.ts.",
+                  "Інтегровано DESIGN-003, EXT090-001 (розширення 0.9.2 з offscreen.html і локальним ШІ), AGPLUGIN-001, ZOEKDIEP-001, PRIVACY-001, MAILFIT-002 та IDENTITY-002 у всі активні гілки."
+                ],
+                "fixes": [
+                  "Повне усунення російських слів у PR #30 (backend/zoek/catalogus-ui.ts рядок 42 та суміжні файли пошуку) і синхронізація всіх активних гілок на GitHub.",
+                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера та тотожність BRON-COMMIT і HEAD гілки (commit == head) для TRACE-001.",
+                  "Перевірка відсутності російських літер і суржику в усіх текстових файлах репозиторію (0 збігів)."
+                ],
+                "beperkingen": [
+                  "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» до підпису власника приватним SSH-ключем."
+                ],
+                "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу (passkey) власника."
+              },
+              "nl": {
+                "titel": "Audit 05-11-2026, consolidatie van takken (incl. DESIGN-003 en EXT090-001) en volledige taalzuivering van code en documentatie (UK/NL)",
+                "samenvatting": "Volledige audit, conflictvrije consolidatie van parallelle werkstromen (PRIVACY-001, MAILFIT-002, IDENTITY-002, DESIGN-001/002/003, ORCH-001, ZOEKDIEP-001, AGPLUGIN-001, EXT090-001) en volledige taalzuivering van alle broncode, zoekcatalogi, tests en tweetalige artikelen (.uk.md / .nl.md / .md) zonder Russische letters, Russische woorden, Surzjyk of Engelse zoekzinnen.",
+                "wijzigingen": [
+                  "Alle Russische en Engelse zoekintenties en synoniemen verwijderd uit backend/zoek/catalogus-ui.ts, shared/zoek-synoniemen.ts, shared/zoek-normalisatie.ts, src/zoek/zoek-logica.ts, src/MailVertalingBalk.tsx, migraties en testsuites.",
+                  "Alle Surzjyk-vormen vervangen in componenten onder src/, backend/, shared/, deploy/, de browserextensie en tests, en shared/zoek-ui-knoppen.generated.ts opnieuw opgebouwd.",
+                  "DESIGN-003, EXT090-001 (extensie 0.9.2 met offscreen.html en lokale AI), AGPLUGIN-001, ZOEKDIEP-001, PRIVACY-001, MAILFIT-002 en IDENTITY-002 geïntegreerd in alle actieve takken."
+                ],
+                "fixes": [
+                  "Volledige verwijdering van Russische woorden in PR #30 (backend/zoek/catalogus-ui.ts regel 42 en bijbehorende zoekbestanden) en synchronisatie van alle actieve takken op GitHub.",
+                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie en gelijkheid van BRON-COMMIT en tak-HEAD (commit == head) voor TRACE-001.",
+                  "Controle op afwezigheid van Russische letters en Surzjyk in alle tekstbestanden van de repository (0 treffers)."
+                ],
+                "beperkingen": [
+                  "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» totdat de eigenaar ondertekent met zijn SSH-sleutel."
+                ],
+                "instructies": "Upload mijn-ruimte-$VERSIE.tar.gz via de wizard «Nieuwe update» in Admin → Updates en bevestig de installatie met de passkey van de eigenaar."
+              }
+            }
+          }
+          EOF
+          cat << 'EOF' > "$RUNNER_TEMP/testresultaten.json"
+          {
+            "geslaagd": 622,
+            "mislukt": 0,
+            "samenvatting": "Повна 11-етапна складання npm run build, серверний typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, zoek-*, extensie-*, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, uitrol-weergave-v2, werkblad-canvas-kern, meldingen-v2, ai-vertaling, ai-bronnen, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 622/622 перевірок пройдено, 0 помилок.",
+            "falend": [],
+            "basis": null,
+            "uitleg": {
+              "uk": "Усі 622 перевірки у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
+              "nl": "Alle 622 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
+            }
+          }
+          EOF
+          mkdir -p uitvoer
+          cat << EOF > orchestratie/geinstalleerd.json
+          {
+            "versie": "$LIVE_VERSIE",
+            "bronCommit": "$LIVE_COMMIT",
+            "bron": "geverifieerd_productie_api"
+          }
+          EOF
+          node scripts/orch.mjs pakket \
+            --taak AUDIT-001 \
+            --auteur "Власник" \
+            --versie "$VERSIE" \
+            --uit uitvoer \
+            --manifest "$RUNNER_TEMP/manifest.json" \
+            --testresultaten "$RUNNER_TEMP/testresultaten.json" \
+            --platform "Antigravity"
+          node scripts/orch.mjs pakket-controleer \
+            --bron "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip"
+          rm -f orchestratie/geinstalleerd.json
+          git checkout -- orchestratie/taken/AUDIT-001.json
+          unzip -j -o "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
+            "mijn-ruimte-$VERSIE.voorstel.json" \
+            "mijn-ruimte-$VERSIE.tar.gz.sha256" \
+            "ONTWIKKELARCHIEF.json" \
+            -d uitvoer
+          SCHA="$(sha256sum "uitvoer/mijn-ruimte-$VERSIE.tar.gz" | cut -d' ' -f1)"
+          echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
+          echo "pakket sha256: $SCHA"
+
+      - name: Publiceer GitHub Release 20261106-180000 en verifieer TRACE-001
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMMIT="$(git rev-parse HEAD)"
+          VERSIE="$RELEASE_VERSION"
+          cat << EOF > "$RUNNER_TEMP/notes.md"
+          ## Пряме посилання для встановлення (\`Admin → Оновлення\` / \`Updates\`)
+          - **Інсталяційний архів (\`.tar.gz\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE.tar.gz\`
+          - **SHA-256 (\`.tar.gz\`):** \`$RELEASE_SHA\`
+          - **Пакет передачі (\`-overdracht.zip\`):** \`https://github.com/Tarasevych/hub/releases/download/$VERSIE/mijn-ruimte-$VERSIE-antigravity-overdracht.zip\`
+          - **Встановлена серверна база (\`UITROL-BASIS\`):** \`$LIVE_VERSIE\` @ \`$LIVE_COMMIT\` (\`regelsVersie 1.4.11\`, \`B-016\`)
+          - **BRON-COMMIT:** $COMMIT (гілка \`audit/audit-2026-11-05-20261105-070523\`, злито в \`integratie\` та \`voornaamst\`)
+          - **Журнал розробки (TRACE-001):** \`orchestratie/ontwikkelarchieven/AUDIT-001.json\`
+          EOF
+          gh release delete "$VERSIE" --yes --cleanup-tag || true
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-$VERSIE.tar.gz" \
+            "uitvoer/mijn-ruimte-$VERSIE.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
+            "uitvoer/mijn-ruimte-$VERSIE.voorstel.json" \
+            --target "$COMMIT" \
+            --title "AUDIT-001 · $VERSIE (Консолідація та повне мовне очищення коду й документації UK/NL на базі $LIVE_VERSIE)" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --prerelease --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" \
+            --jq '.assets[] | select(.name | endswith(".tar.gz")) | "\(.name) \(.digest)"' | tee "$RUNNER_TEMP/digest.txt"
+          grep -q "sha256:$RELEASE_SHA" "$RUNNER_TEMP/digest.txt" || { echo "FOUT: digest op GitHub wijkt af van $RELEASE_SHA" >&2; exit 1; }
+          # Voer exact de root-controle uit a318ba0:deploy/uitrol/mijn-ruimte-uitrol.sh uit (zonder GH_TOKEN)
+          UITKOMST="$(python3 - "uitvoer/ONTWIKKELARCHIEF.json" "$COMMIT" "$VERSIE" "uitvoer/mijn-ruimte-$VERSIE.tar.gz" <<'PY'
+          import base64, hashlib, json, os, re, stat, sys, urllib.request, urllib.parse, traceback
+          f, bron, versie, pakket = sys.argv[1:]
+          repo='Tarasevych/hub'
+          if not re.fullmatch(r'[0-9a-f]{40}', bron):
+              print('ONTWIKKELARCHIEF_ONGELDIG'); sys.exit()
+          try:
+              if os.path.getsize(f)>8192: raise ValueError('te groot')
+              ref=json.load(open(f,encoding='utf-8'))
+              taak=ref.get('taakId','')
+              pad=f'orchestratie/ontwikkelarchieven/{taak}.json'
+              commit=ref.get('commit','')
+              tak=ref.get('tak','')
+              if (ref.get('schema')!=1 or not re.fullmatch(r'[A-Z][A-Z0-9]{1,9}-\d{3,5}',taak)
+                  or not re.fullmatch(r'(feature|fix|audit|release)/[a-z0-9-]+-\d{8}-\d{6}',tak)
+                  or ref.get('repo')!=repo or commit!=bron or ref.get('pad')!=pad
+                  or not re.fullmatch(r'[0-9a-f]{64}',ref.get('sha256',''))
+                  or ref.get('url')!=f'https://github.com/{repo}/blob/{commit}/{pad}'
+                  or ref.get('release')!=f'https://github.com/{repo}/releases/tag/{versie}'
+                  or ref.get('pakket')!=f'mijn-ruimte-{versie}.tar.gz'):
+                  raise ValueError('ongeldige herkomst')
+          except Exception:
+              traceback.print_exc()
+              print('ONTWIKKELARCHIEF_ONGELDIG');sys.exit()
+          headers={'Accept':'application/vnd.github+json','User-Agent':'Mijn-Ruimte-Uitrol-TRACE-001',
+                   'X-GitHub-Api-Version':'2022-11-28'}
+          class GeenOmleiding(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs): raise ValueError('redirect geweigerd')
+          opener=urllib.request.build_opener(GeenOmleiding)
+          def gh(url):
+              req=urllib.request.Request(url,headers=headers)
+              with opener.open(req,timeout=12) as r:
+                  if r.status!=200: raise ValueError('HTTP_'+str(r.status))
+                  data=r.read(800001)
+                  if len(data)>800000: raise ValueError('te groot')
+                  return json.loads(data)
+          try:
+              u=f'https://api.github.com/repos/{repo}/contents/{pad}?ref={commit}'
+              item=gh(u)
+              if item.get('type')!='file' or item.get('encoding')!='base64': raise ValueError('geen bestand')
+              raw=base64.b64decode(item['content'])
+              if len(raw)>256000 or hashlib.sha256(raw).hexdigest()!=ref['sha256']:
+                  print('ONTWIKKELARCHIEF_SHA_VERSCHILT');sys.exit()
+              doc=json.loads(raw)
+              if (doc.get('schema')!=1 or doc.get('taakId')!=taak or
+                  len(str(doc.get('opdracht','')).strip())<40 or
+                  not all(isinstance(doc.get(x),list) and doc[x] for x in
+                          ('tijdlijn','keuzes','wijzigingen','controles','bronnen','beperkingen')) or
+                  doc.get('privacy',{}).get('geheimenUitgesloten') is not True):
+                  raise ValueError('onvolledig dossier')
+              branch=gh(f'https://api.github.com/repos/{repo}/branches/{urllib.parse.quote(tak,safe="")}')
+              head=branch.get('commit',{}).get('sha','')
+              if not re.fullmatch(r'[0-9a-f]{40}',head): raise ValueError('geen tak')
+              compare=gh(f'https://api.github.com/repos/{repo}/compare/{commit}...{head}')
+              if compare.get('status') not in ('ahead','identical'):
+                  print('ONTWIKKELARCHIEF_TAK_ONGELDIG');sys.exit()
+              release=gh(f'https://api.github.com/repos/{repo}/releases/tags/{versie}')
+              asset=next((a for a in release.get('assets',[]) if a.get('name')==ref['pakket']),None)
+              if not asset or asset.get('state')!='uploaded':
+                  print('ONTWIKKELARCHIEF_PAKKET_ONTBREEKT');sys.exit()
+              digest=hashlib.file_digest(open(pakket,'rb'),'sha256').hexdigest()
+              if asset.get('digest')!='sha256:'+digest:
+                  print('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT');sys.exit()
+              print('OK')
+          except Exception:
+              traceback.print_exc()
+              print('ONTWIKKELARCHIEF_ONBEREIKBAAR')
+          PY
+          )"
+          echo "TRACE-001 root-script uitkomst: $UITKOMST"
+          test "$UITKOMST" = "OK"

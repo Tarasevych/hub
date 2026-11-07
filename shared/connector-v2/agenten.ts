@@ -21,7 +21,7 @@ export const AGENT_PAD_PREFIX = '';
 export const OUD_AGENT_PAD_PREFIX = '/ai';
 export const MCP_BASIS = 'https://mcp.tarasevych.com';
 
-export type AgentSlug = 'claude' | 'gpt' | 'grok' | 'gemini' | 'copilot' | 'cursor';
+export type AgentSlug = 'claude' | 'gpt' | 'grok' | 'gemini' | 'copilot' | 'cursor' | 'antigravity';
 export interface V2Agent {
   slug: AgentSlug;
   naam: string;
@@ -59,6 +59,9 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'cursor', naam: 'Cursor', klant: 'cursor', webHosts: ['cursor.com'], appSchemas: ['cursor'], loopback: true,
     uk: 'Cursor: кнопка «Add to Cursor» або Settings → Tools & MCP → New MCP server → url.',
     nl: 'Cursor: knop «Add to Cursor» of Settings → Tools & MCP → New MCP server → url.' },
+  { slug: 'antigravity', naam: 'Antigravity', klant: 'antigravity', webHosts: [], appSchemas: [], loopback: true,
+    uk: 'Antigravity: плагін mijn-ruimte (CLI + навичка) або ~/.gemini/settings.json → mcpServers → url із цією адресою.',
+    nl: 'Antigravity: plug-in mijn-ruimte (CLI + vaardigheid) of ~/.gemini/settings.json → mcpServers → url met dit adres.' },
 ]);
 
 const PER_SLUG = new Map(V2_AGENTEN.map((a) => [a.slug, a]));

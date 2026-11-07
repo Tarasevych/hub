@@ -1,31 +1,33 @@
-# Herstel van de uitrol (updates), technisch profiel en logboek — 17 oktober 2026
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-UITROL-HERSTEL.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-UITROL-HERSTEL.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-Aanleiding: na de wijzigingen van pakket 20261017-112000 (agent grok) werkten updates vanaf de site, de pagina «Оновлення», de duur van
-het technisch profiel en het zicht op de uitrol niet meer betrouwbaar. Dit pakket herstelt alleen wat in code en test is aangetoond.
+# Відновлення розгортання (оновлень), технічного профілю та журналу — 17 жовтня 2026
 
-## Wat is gerepareerd
+Передумова: після змін пакета 20261017-112000 (агент grok) оновлення з сайту, сторінка «Оновлення», тривалість
+технічного профілю та огляд ходу розгортання перестали працювати надійно. Цей пакет виправляє лише те, що доведено в коді й тестах.
 
-| Onderdeel | Oorzaak (bewezen) | Herstel |
+## Що виправлено
+
+| Компонент | Причина (доведена) | Виправлення |
 |---|---|---|
-| Passkey-/handtekening-uitrol blijft hangen op «bezig INSTALLEREN»; voorstel blijft «goedgekeurd» | `deploy/uitrol/mijn-ruimte-uitrol.sh` draait met `set -euo pipefail`. Na een geslaagde installatie volgt `ls … \| tail \| xargs` op een lege releases-map: `ls` geeft 2, het script stopt vóór `status klaar` en vóór de «OK»-gebeurtenis | Eerst de uitkomst (`status klaar`, gebeurtenis `OK`), daarna de extra's (archief, GitHub) in een best-effort blok zonder `set -e` |
-| Geen zicht op het verloop van een uitrol | `/api/owner/uitrol/log` las `/var/lib/mijn-ruimte-uitrol/pakket.*` (root:root 0700, voor de app onleesbaar), was een GET zonder sessiecontext en slikte elke fout | Root publiceert elke 2 s de laatste 200 regels (geheimen gemaskeerd) als `installeer.log` in de statusmap (root:mijnruimte 0640); route is nu `POST /api/owner/uitrol/log` en leest alleen dat bestand |
-| Voorstellen blijven eeuwig «goedgekeurd» | `synchroniseer()` keek alleen naar het láátste `status.json` (alleen `methode=passkey`, dezelfde versie); geen time-out | Uitkomst uit alle recente regels van `gebeurtenissen.jsonl`, gekoppeld op versie en pas ná het goedkeurmoment; zonder uitkomst na 30 min → `verlopen` (`GEEN_UITKOMST`), behalve als root er nog mee bezig is |
-| «Updaten vanaf de site werkt niet» na een mislukte poging | `versie` was UNIQUE voor alle statussen (VERSIE_BESTAAT_AL), en verlaten uploads telden mee voor `TE_VEEL_OPEN` (max. 3) tot 24 uur | Migratie 0046: versie alleen uniek voor levende voorstellen (uploaden, wacht, goedgekeurd, geïnstalleerd); uploads zonder voortgang > 30 min worden afgebroken (`UPLOAD_STIL`), ook bij elke nieuwe `voorstel/begin` |
-| Technisch profiel: «tot uitloggen» / «tot verlaten» gaven een fout | `activeren` rekende 30 resp. 7 dagen; de CHECK `tech_activaties_duur` (migratie 0030) staat maximaal 8 uur toe | Beide vallen onder het rolplafond (eigenaar 120 min) en de 8-uurs grens; het einde wordt in de database uitgerekend (`now() + duur`); de teksten in het venster noemen het echte maximum |
-| Logboek | Alle auditaanroepen in `tech-profiel.ts` en `uitrol-goedkeuring.ts` slikten fouten (`.catch(() => undefined)`) | Een mislukte auditregel komt altijd in het servicelogboek (`AUDIT MISLUKT …`); het verlopen en vervangen van een technische activering wordt nu ook gelogd |
-| Pagina «Оновлення» | `AdminUitrolModern` kwam bovenop de oude secties (dubbele lijsten), kreeg geen `passkeys` («Passkey: Немає»), `SSH_OK` telde als fout (rode stip), vijf knoppen deden niets, goedkeuren zonder sha256/commit/wijzigingen, valse voortgang, UTC-tijden | Het blok toont alleen nog de echte uitrolstatus (controle → installatie → klaar/mislukt) + logboek; alles anders staat één keer in de secties eronder; tijden lokaal; verwijderd: dode `AdminUitrolProgress.tsx`, kapotte route `uitrol/archief` |
-| Meldingen | `TE_VEEL_OPEN`, `VERSIE_BESTAAT_AL`, `GEEN_VOORBEREIDER_GRANT` hadden geen tekst | Teksten (UK/NL) in `AdminUitrolView` |
+| Розгортання з passkey/підписом зависає на «bezig INSTALLEREN»; пропозиція лишається «goedgekeurd» | `deploy/uitrol/mijn-ruimte-uitrol.sh` працює з `set -euo pipefail`. Після вдалого встановлення виконується `ls … \| tail \| xargs` на порожній теці релізів: `ls` повертає 2, скрипт зупиняється ще до `status klaar` і до події «OK» | Спочатку записується результат (`status klaar`, подія `OK`), а потім додаткові дії (архів, GitHub) у блоці best-effort без `set -e` |
+| Не видно перебігу розгортання | `/api/owner/uitrol/log` читав `/var/lib/mijn-ruimte-uitrol/pakket.*` (`root:root 0700`, нечитабельний для застосунку), був GET-запитом без контексту сесії й ковтав усі помилки | Root що 2 с публікує останні 200 рядків (секрети замасковано) як `installeer.log` у теці стану (`root:mijnruimte 0640`); маршрут тепер `POST /api/owner/uitrol/log` і читає лише цей файл |
+| Пропозиції вічно лишаються «goedgekeurd» | `synchroniseer()` дивився лише на **останній** `status.json` (лише `methode=passkey`, та сама версія); без таймауту | Результат береться з усіх свіжих рядків `gebeurtenissen.jsonl`, прив'язаних за версією й лише **після** моменту схвалення; без результату за 30 хв → `verlopen` (`GEEN_UITKOMST`), окрім випадків, коли root ще працює |
+| «Оновлення з сайту не працює» після невдалої спроби | `versie` була UNIQUE для всіх статусів (`VERSIE_BESTAAT_AL`), а покинуті завантаження враховувалися в `TE_VEEL_OPEN` (макс. 3) упродовж 24 годин | Міграція 0046: версія унікальна лише для живих пропозицій (`uploaden`, `wacht`, `goedgekeurd`, `geïnstalleerd`); завантаження без руху > 30 хв перериваються (`UPLOAD_STIL`), зокрема й при кожному новому `voorstel/begin` |
+| Технічний профіль: «до виходу з облікового запису» / «до виходу з профілю» видавали помилку | `activeren` рахував 30 і 7 діб відповідно; обмеження ПЕРЕВІРКА `tech_activaties_duur` (міграція 0030) дозволяє щонайбільше 8 годин | Обидва режими підпадають під стелю ролі (власник — 120 хв) та 8-годинну межу; кінець обчислюється в базі даних (`now() + duur`); тексти у вікні називають справжній максимум |
+| Журнал | Усі виклики аудиту в `tech-profiel.ts` і `uitrol-goedkeuring.ts` ковтали помилки (`.catch(() => undefined)`) | Невдалий запис аудиту завжди потрапляє до журналу служби (`AUDIT MISLUKT …`); закінчення строку й заміна технічної активації тепер також записуються в журнал |
+| Сторінка «Оновлення» | `AdminUitrolModern` відмальовувався поверх старих секцій (подвійні списки), не отримував `passkeys` («Passkey: Немає»), `SSH_OK` вважався помилкою (червона крапка), п'ять кнопок нічого не робили, схвалення без sha256/commit/змін, фальшивий прогрес, час у UTC | Блок показує лише справжній стан розгортання (перевірка → встановлення → готово/збій) + журнал; усе інше розташовано один раз у секціях нижче; час локальний; видалено мертвий `AdminUitrolProgress.tsx` і зламаний маршрут `uitrol/archief` |
+| Повідомлення | `TE_VEEL_OPEN`, `VERSIE_BESTAAT_AL`, `GEEN_VOORBEREIDER_GRANT` не мали перекладу | Додано тексти (UK/NL) у `AdminUitrolView` |
 
-## Tests
-- Nieuw: `tests/eenheid/uitrol-herstel.test.ts` (25 controles: hergebruik versie, opruimen, uitkomst van root, duur en logboek van het technisch profiel).
-- Bijgewerkt: `tests/eenheid/uitrol-goedkeuring.test.ts` — testpakketten dragen AUTEUR/AGENT/SAMENVATTING (regel van 15 oktober), het testtoken heeft ruimte `technisch` (migratie 0042), en een controle op het gepubliceerde installatielogboek met gemaskeerde geheimen.
+## Тести
+- Новий: `tests/eenheid/uitrol-herstel.test.ts` (25 перевірок: повторне використання версії, очищення, результат від root, тривалість і журнал технічного профілю).
+- Оновлено: `tests/eenheid/uitrol-goedkeuring.test.ts` — тестові пакети містять `AUTEUR`/`AGENT`/`SAMENVATTING` (правило від 15 жовтня), тестовий токен має простір `technisch` (міграція 0042), додано перевірку опублікованого журналу встановлення із замаскованими секретами.
 
-## Uitrollen
-1. Pakket uploaden via «Оновлення» (of de MCP-hulpmiddelen), met de passkey goedkeuren. De installer voert migratie 0046 uit.
-2. Controleren: `journalctl -u mijn-ruimte-uitrol -n 100` na de installatie en op de pagina de status «Встановлено».
-3. Uitrolscript (`deploy/uitrol/mijn-ruimte-uitrol.sh`) wordt door root-installer zelf geïnstalleerd; zie RUNBOOK-VEILIGE-UITROL.md.
+## Розгортання
+1. Завантажити пакет через «Оновлення» (або MCP-інструменти), схвалити за допомогою passkey. Інсталятор виконає міграцію 0046.
+2. Перевірити: `journalctl -u mijn-ruimte-uitrol -n 100` після встановлення та статус «Встановлено» на сторінці.
+3. Скрипт розгортання (`deploy/uitrol/mijn-ruimte-uitrol.sh`) встановлюється самим root-інсталятором; див. `RUNBOOK-VEILIGE-UITROL.md`.
 
-## Bewust niet aangepast (apart besluit nodig)
-- De root-hulp maakt een GitHub-release met de inhoud van `SAMENVATTING` ongeëscaped in JSON en met een token als root; het blok draait nu pas ná de uitkomst en is niet fataal, maar de inhoud is niet herzien.
-- Het archief naar `/srv/mijn-ruimte/releases` wordt door het script nooit gevuld (bronpad bestaat niet); daarom is de downloadroute verwijderd in plaats van gerepareerd.
-- Donkere modus voor `admin-uitrol.css` (vaste kleuren), de hash-keten-controle over het hele logboek, verloren logboekregels vóór 17.10 09:27 (databasecontrole nodig).
+## Свідомо не змінювалося (потрібне окреме рішення)
+- Допоміжний root-скрипт створює GitHub-реліз із вмістом `SAMENVATTING` без екранування в JSON і з токеном від імені root; тепер цей блок виконується лише після запису результату й не є фатальним, але сам механізм не переглядався.
+- Архів у `/srv/mijn-ruimte/releases` ніколи не наповнюється скриптом (вихідного шляху не існує); тому маршрут завантаження видалено, а не виправлено.
+- Темна тема для `admin-uitrol.css` (фіксовані кольори), перевірка геш-ланцюжка по всьому журналу, втрачені записи журналу до 17.10 09:27 (потрібна перевірка бази даних).

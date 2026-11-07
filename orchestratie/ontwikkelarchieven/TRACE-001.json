@@ -1,0 +1,271 @@
+{
+  "schema": 1,
+  "taakId": "TRACE-001",
+  "datum": "2026-11-03",
+  "taal": "uk",
+  "opdracht": "Eigenaar Test: кожен наступний інсталяційний архів має доводити, що вихідний код, детальний перевірюваний журнал розробки з рішеннями, спробами, змінами й тестами збережені в GitHub у правильній гілці; точний архів із тією самою SHA-256 має бути опублікований як GitHub Release. Сайт і root-інсталятор повинні автоматично відхиляти завантаження, якщо журнал/гілка/посилання/архів відсутні, не збігаються або GitHub недоступний. Правило записати в канонічні інструкції та політику назавжди.",
+  "herkomst": {
+    "eigenaar": "Eigenaar Test",
+    "agent": "ChatGPT Codex",
+    "basis": "a643431743eb1e7e64947bf747018aac55d69750",
+    "vorigeProductieversie": "20261103-205438",
+    "vorigeProductieCommit": "15025c3e9c8466b650f0a5488b18c42f54ab9d3a",
+    "tak": "feature/trace-001-20261103-214810"
+  },
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Знайдено канонічні інструкції й підтверджено правила власної гілки, без force-push чи продакшн-дій.",
+      "bewijzen": [
+        "AGENTS.md",
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Прочитані правила інсталяційного пакета, runbook, наявні перевірки сайту/інсталятора й штатний пакувальник.",
+      "bewijzen": [
+        "deploy/REGELS-UITROLPAKKET.md",
+        "deploy/RUNBOOK-VEILIGE-UITROL.md",
+        "backend/uitrol-voorcontrole.ts",
+        "deploy/uitrol/mijn-ruimte-uitrol.sh"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Створено окрему робочу гілку TRACE-001 від підтвердженої MAILORBIT-001 та зареєстровано власну ORCH-задачу через CI.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41725115446",
+        "orchestratie/taken/TRACE-001.json"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Підготовлено формат журналу й посилання, незалежні перевірки пакета на сайті та в root, нові коди відмови й зміни пакувальника.",
+      "bewijzen": [
+        "shared/ontwikkelarchief.ts",
+        "backend/uitrol-ontwikkelarchief.ts",
+        "backend/uitrol-voorcontrole.ts",
+        "scripts/orch/pakket.mjs"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Підготовлено B-007 і нову версію правил 1.4.0, документацію, тестові сценарії 200/404/hash mismatch/branch mismatch/network unavailable.",
+      "bewijzen": [
+        "AGENTS.md",
+        "orchestratie/beleid.json",
+        "orchestratie/BESLUITEN.md",
+        "tests/eenheid/trace-001-ontwikkelarchief.test.ts"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Збереження змін у власному коміті, CI-перевірка, звіт тестів та погодження власником — фіксуються зовнішніми посиланнями; на момент створення документа результати ще не були підтверджені.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/tree/feature/trace-001-20261103-214810"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Перше CI відхилило надто великий CONTEXT-COMPACT (13 834 > 12 000 байтів); після перенесення повного опису за межі compact ORCH вимагав окремого підвищення версії правил. Зроблено рішення B-008, політику 1.4.1, і повторено перевірки.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41727205002",
+        "https://github.com/Tarasevych/hub/actions/runs/41727565249",
+        "orchestratie/BESLUITEN.md"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "CI після оновлення правил: контроль ORCH, shell, TRACE-001, попередня перевірка, маніфест і коди пройдені. Typecheck server пройдено. Етап typecheck client помилково викликав відсутню npm-команду, виправлено на наявний npx tsc; розширено регресії пакування.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41727884803",
+        ".github/workflows/trace-001-guard.yml"
+      ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "Повний CI TRACE-001 завершився успішно: ORCH контроль/актуальність, синтаксис Bash, 136/136 одиничних і регресійних перевірок, TypeScript client і server, повна клієнтська та серверна збірка. Журнал доповнено підтвердженим результатом; після цього коміту необхідний повторний CI.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/actions/runs/41728319429"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "besluit": "Fail closed",
+      "waarom": "За відсутності мережі, GitHub Release або перевірюваного digest не можна гарантувати незмінність пакета.",
+      "compromis": "Інсталяція залежатиме від доступності GitHub; навіть коректний локальний архів буде тимчасово відхилено."
+    },
+    {
+      "besluit": "Пінування commit + SHA-256 GitHub-файлу",
+      "waarom": "Рухома назва гілки або URL без checksum не доводить незмінність журналу.",
+      "compromis": "Потрібно зберігати журнал до збирання пакета."
+    },
+    {
+      "besluit": "Точний GitHub Release asset digest",
+      "waarom": "Один BRON-COMMIT сам по собі не підтверджує, що користувач завантажив той самий tar.gz.",
+      "compromis": "Додатковий крок публікації випуску перед завантаженням на сайт."
+    },
+    {
+      "besluit": "Окреме джерело журналу в Git та передача pointer всередині tar",
+      "waarom": "Неможливо включити SHA готового tar у джерельний commit і одночасно зберегти стабільний TAR: це циклічна залежність.",
+      "compromis": "Джерельний commit з журналом + release asset для бінарного пакета."
+    },
+    {
+      "besluit": "Зворотна сумісність до 20261103-211554",
+      "waarom": "Не блокувати вже сформовані та інстальовані раніше пакети.",
+      "compromis": "Нова перевірка застосовується тільки до пакетів із версією від 20261103-211555."
+    },
+    {
+      "besluit": "Замість прихованих міркувань моделі — перевірювані пояснення",
+      "waarom": "Закриті внутрішні обчислення ШІ не надаються й не можуть бути достовірно відтворені, а секрети публікувати не можна.",
+      "compromis": "Зберігається повна доступна історія дій і доказів, не недоступний внутрішній потік думок."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "bestand": "AGENTS.md",
+      "doel": "Постійне правило випусків TRACE-001."
+    },
+    {
+      "bestand": "orchestratie/beleid.json",
+      "doel": "Правила пакета і інтеграційних контролів, versie 1.4.0."
+    },
+    {
+      "bestand": "orchestratie/BESLUITEN.md",
+      "doel": "Нове рішення власника B-007 (очікує формального підтвердження)."
+    },
+    {
+      "bestand": "deploy/REGELS-UITROLPAKKET.md",
+      "doel": "Формат pointer, процес і коди відмови."
+    },
+    {
+      "bestand": "deploy/RUNBOOK-VEILIGE-UITROL.md",
+      "doel": "Операторські умови й налаштування приватного доступу."
+    },
+    {
+      "bestand": "shared/ontwikkelarchief.ts",
+      "doel": "Єдина схема і валідація посилань."
+    },
+    {
+      "bestand": "backend/uitrol-ontwikkelarchief.ts",
+      "doel": "Перевірка GitHub API й sha256."
+    },
+    {
+      "bestand": "backend/uitrol-voorcontrole.ts",
+      "doel": "Новий блокувальний крок на сайті."
+    },
+    {
+      "bestand": "backend/uitrol-goedkeuring.ts",
+      "doel": "Передати власний GitHub-токен із наявної захищеної скриньки."
+    },
+    {
+      "bestand": "backend/uitrol-github.ts",
+      "doel": "Доступ до власного секрету без розголошення."
+    },
+    {
+      "bestand": "deploy/uitrol/mijn-ruimte-uitrol.sh",
+      "doel": "Незалежна коренева перевірка перед інсталяцією."
+    },
+    {
+      "bestand": "deploy/uitrol/maak-voorstelpakket.sh",
+      "doel": "Обов'язковий pointer в TAR."
+    },
+    {
+      "bestand": "scripts/orch/pakket.mjs",
+      "doel": "Генерація pointer тільки з уже закоміченого журналу."
+    },
+    {
+      "bestand": "shared/uitrol-codes.ts",
+      "doel": "Українські та нідерландські причини відмов."
+    },
+    {
+      "bestand": "tests/eenheid/trace-001-ontwikkelarchief.test.ts",
+      "doel": "Позитивні й негативні тести перевірки."
+    }
+  ],
+  "controles": [
+    {
+      "status": "bevestigd",
+      "resultaat": "TRACE-001 старт через ORCH і versheid; GitHub Actions успішна.",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41725115446"
+    },
+    {
+      "status": "uitvoering_nog_niet_bevestigd",
+      "resultaat": "Нова CI перевірить синтаксис shell, TypeScript, unit та orch vergrendel/context.",
+      "pad": ".github/workflows/trace-001-guard.yml"
+    },
+    {
+      "status": "niet_uitgevoerd",
+      "resultaat": "Ні root-інсталяції, ні production deploy, ні E2E з реальним passkey/GitHub приватними токенами в цьому завданні не виконували."
+    },
+    {
+      "status": "afgewezen",
+      "resultaat": "CI 41727205002: CONTEXT_TE_GROOT; CI 41727565249: VERSIE_NIET_VERHOOGD — виправлено в окремому наступному коміті; результат наступного CI очікується.",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41727565249"
+    },
+    {
+      "status": "gedeeltelijk",
+      "resultaat": "CI 41727884803: ORCH, bash -n, TRACE-001 unit, site unit, codes, manifest, server TypeScript = success; npm run typecheck script absent; replaced by npx tsc.",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41727884803"
+    },
+    {
+      "status": "geslaagd",
+      "resultaat": "CI 41728319429: 136/136 автоматичних тестів; trace-001 16/16, uitrol-voorcontrole 42/42, uitrol-manifest 18/18, uitrol-codes 17/17, uitrol-pakket-maken 5/5, orch-pakket 23/23, orch-uitrol-basis 15/15. ORCH controleer/versheid, bash -n root + builder, server/client TS, npm run build — success.",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41728319429"
+    }
+  ],
+  "bronnen": [
+    {
+      "soort": "broncode",
+      "url": "https://github.com/Tarasevych/hub/tree/feature/trace-001-20261103-214810",
+      "omschrijving": "Повні джерельні файли з історією комітів."
+    },
+    {
+      "soort": "bron",
+      "url": "https://github.com/Tarasevych/hub/commit/a643431743eb1e7e64947bf747018aac55d69750",
+      "omschrijving": "Початкова база цього завдання."
+    },
+    {
+      "soort": "voorgaand",
+      "url": "https://github.com/Tarasevych/hub/pull/22",
+      "omschrijving": "Попередній дизайн-пакет MAILORBIT-001."
+    },
+    {
+      "soort": "ci",
+      "url": "https://github.com/Tarasevych/hub/actions/runs/41725115446",
+      "omschrijving": "Реєстрація ORCH завдання."
+    },
+    {
+      "soort": "instructies",
+      "pad": "AGENTS.md",
+      "omschrijving": "Головні правила роботи."
+    },
+    {
+      "soort": "documentatie",
+      "pad": "deploy/REGELS-UITROLPAKKET.md",
+      "omschrijving": "Формат випуску, наслідки для сайту."
+    }
+  ],
+  "beperkingen": [
+    "Точна первинна розмова користувача зображувалася лише в поточному чаті, а вкладені зображення не були копійовані в GitHub як raw особисті дані.",
+    "Окремі тимчасові чернетки та недоступні внутрішні дані моделі не зберігаються й не можуть бути чесно відновлені заднім числом.",
+    "Історія відтворюється за доступними доказами, часовим порядком, комітами, PR, CI і явно позначеними прогалинами.",
+    "Створення вимоги й програмного коду в гілці не означає, що правило вже запроваджено на production: потрібні перегляд, об'єднання й схвалення власника.",
+    "GitHub Digest API має підтверджувати SHA-256, а приватному репозиторію потрібен належний серверний доступ.",
+    "Наскрізне production E2E із реальними приватними GitHub токенами, GitHub Release asset і Passkey не виконувалося; CI використовує локальні та мережеві mock перевірки.",
+    "На цьому етапі перевіряється конкретний BRON-COMMIT і його належність гілці, документ журналу та точний SHA-256 TAR у GitHub Release. Окреме побайтове зіставлення кожного файлу TAR із Git tree ще не реалізовано; тому застереження щодо повної відтворюваності залишається."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "uitgesloten": [
+      "API-токени, приватні SSH-ключі, парольні фрази й персональні листи",
+      "приховані внутрішні міркування й необроблені персональні дані",
+      "вкладення користувача, не потрібні для доказів із згодою"
+    ],
+    "beleid": "Фіксуємо операції, коміти, результати і стислий мотив рішення; жодні секрети чи chain-of-thought не публікуємо."
+  },
+  "resultaat": "Реалізація TRACE-001 перевірена CI, пропозиція політики v1.4.1 записана у власній гілці та PR #23. Установлення production, merge чи затвердження власником не виконувалися."
+}

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "MAILMOB-001",
+  "agent": "codex",
+  "tak": "feature/mailmob-001-20261104-073200",
+  "basisCommit": "b20a5b25cb7b640dd636c86bce7ed139a8225fbd",
+  "basisVersie": "20261031-093842",
+  "regelsVersie": "1.4.2",
+  "regelsHash": "f5e5f6bc7ddaa067b60f643c16cbeb7510d9b75df5d72ed5178106a8042dbb0a",
+  "staat": "in_progress",
+  "gestart": "2026-11-04T06:29:11.775Z",
+  "bijgewerkt": "2026-11-04T11:42:06.295Z",
+  "omschrijving": "Мобільна пошта та діагностика 12-годинного Passkey",
+  "kanaal": "github_pr",
+  "overdrachten": [],
+  "regelsHerlezen": [
+    {
+      "van": "1.4.1",
+      "naar": "1.4.2",
+      "op": "2026-11-04T11:42:06.295Z"
+    }
+  ]
+}

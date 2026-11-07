@@ -160,7 +160,7 @@ function doeVersheid() {
     feiten.schoon = git('status', '--porcelain', '--untracked-files=no') === '';
     const integratie = ['origin/' + beleid.integratie.tak, beleid.integratie.tak, 'origin/' + beleid.integratie.basisTak].find((r) => git('rev-parse', '--verify', '-q', r));
     if (integratie) {
-      const voor = (git('rev-list', '--reverse', `${taak.basisCommit}..${integratie}`) || '').split('\n').filter(Boolean);
+      const voor = (git('rev-list', '--reverse', `${feiten.headIsAfstammeling ? 'HEAD' : taak.basisCommit}..${integratie}`) || '').split('\n').filter(Boolean);
       feiten.integratieVoorsprong = voor.map((sha) => ({ sha, bestanden: (git('diff-tree', '--no-commit-id', '--name-only', '-r', sha) || '').split('\n').filter(Boolean) }));
       feiten.eigenBestanden = (git('diff', '--name-only', `${taak.basisCommit}...HEAD`) || '').split('\n').filter(Boolean);
     }

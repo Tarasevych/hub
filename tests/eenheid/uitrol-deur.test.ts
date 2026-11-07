@@ -12,6 +12,11 @@ import { checker } from './hulp/nep-google';
 
 const SCRIPT = 'deploy/uitrol/mijn-ruimte-uitrol.sh';
 const sh = (cmd: string, cwd?: string) => spawnSync('bash', ['-c', cmd], { cwd, encoding: 'utf8' });
+// Als root negeert het uitrolscript bewust alle UITROL_*-testpaden (zie plafond). Dan draait het als 'nobody' op de eigen
+// tijdelijke map (zoals ssh-ca-beheer.test.ts) — nooit tegen de echte /srv/mijn-ruimte/uitrol-inbox of /var/lib/mijn-ruimte-uitrol.
+const ALS_ROOT = process.getuid?.() === 0;
+const NIEMAND = 65534;
+const alsNiemand = (map: string) => { if (!ALS_ROOT) return {}; spawnSync('chown', ['-R', `${NIEMAND}:${NIEMAND}`, map]); return { uid: NIEMAND, gid: NIEMAND }; };
 
 function sleutel(map: string, naam: string) {
   const f = join(map, naam);
@@ -21,13 +26,13 @@ function sleutel(map: string, naam: string) {
 }
 
 /** Bouwt een pakket zoals maak-uitrolpakket.sh (één bovenmap met UITROL-VERSIE en deploy/installeer-app.sh). */
-function pakket(werk: string, versie: string, opties: { inhoudVersie?: string; symlink?: boolean; extra?: string; zonder?: string[]; meta?: Record<string, string> } = {}) {
+function pakket(werk: string, versie: string, opties: { inhoudVersie?: string; symlink?: boolean; extra?: string; zonder?: string[]; meta?: Record<string, string | Buffer>; lastig?: boolean } = {}) {
   const top = join(werk, `bron-${versie}-${randomBytes(3).toString('hex')}`);
   const binnen = join(top, `mijn-ruimte-${versie}`);
   mkdirSync(join(binnen, 'deploy'), { recursive: true });
   writeFileSync(join(binnen, 'UITROL-VERSIE'), `${opties.inhoudVersie ?? versie}\n`);
   // Verplichte metadata (regel 2 en 3): standaard aanwezig; `zonder` laat bestanden weg, `meta` overschrijft de inhoud.
-  const meta: Record<string, string> = { AUTEUR: 'Test Auteur\n', AGENT: 'claude\n', SAMENVATTING: 'Testpakket voor de uitrol: wat en waarom, wat was en wat er bijkwam.\n',
+  const meta: Record<string, string | Buffer> = { AUTEUR: 'Test Auteur\n', AGENT: 'claude\n', SAMENVATTING: 'Testpakket voor de uitrol: wat en waarom, wat was en wat er bijkwam.\n',
     'BRON-COMMIT': `${createHash('sha1').update(versie).digest('hex')}\n`, ...(opties.meta || {}) };
   for (const z of opties.zonder || []) delete meta[z];
   for (const [n, v] of Object.entries(meta)) writeFileSync(join(binnen, n), v);
@@ -35,10 +40,94 @@ function pakket(werk: string, versie: string, opties: { inhoudVersie?: string; s
   if (opties.extra) writeFileSync(join(binnen, 'extra.txt'), opties.extra);
   if (opties.symlink) symlinkSync('/etc/shadow', join(binnen, 'deploy/schaduw'));
   const uit = join(werk, `mijn-ruimte-${versie}.tar.gz`);
-  const r = sh(`tar -czf "${uit}" -C "${top}" "mijn-ruimte-${versie}"`);
+  const r = opties.lastig
+    ? spawnSync('python3', ['-I', '-c', LASTIG_PAKKET, uit, top, `mijn-ruimte-${versie}`], { encoding: 'utf8' })
+    : sh(`tar -czf "${uit}" -C "${top}" "mijn-ruimte-${versie}"`);
   if (r.status !== 0) throw new Error(r.stderr);
   return uit;
 }
+// Map lastig/ met modi die het data-filter moet temmen, eigenaar 1234 «vreemd» (zoals een pakket van een andere machine).
+const LASTIG_PAKKET = `import io, sys, tarfile
+uit, top, naam = sys.argv[1:4]
+def lid(tf, pad, modus, data=None):
+    ti = tarfile.TarInfo(naam + "/lastig" + ("/" + pad if pad else ""))
+    ti.uid = ti.gid = 1234
+    ti.uname = ti.gname = "vreemd"
+    ti.mode = modus
+    ti.mtime = 1760000000
+    if data is None:
+        ti.type = tarfile.DIRTYPE
+        tf.addfile(ti)
+    else:
+        ti.size = len(data)
+        tf.addfile(ti, io.BytesIO(data))
+with tarfile.open(uit, "w:gz") as tf:
+    tf.add(top + "/" + naam, arcname=naam)
+    lid(tf, "", 0o777)
+    lid(tf, "setuid", 0o4755, b"s")
+    lid(tf, "iedereen", 0o777, b"i")
+    lid(tf, "groep-schrijft", 0o664, b"g")
+    lid(tf, "alleen-anderen-x", 0o010, b"a")
+    lid(tf, "alleen-lezen", 0o500)
+    lid(tf, "alleen-lezen/binnen", 0o644, b"b")
+    lid(tf, "plak", 0o1777)
+`;
+// Nagebootste python 3.11.2 (vóór PEP 706): geen data_filter, extractall zonder 'filter' en met het oude chown/chmod/mkdir.
+// Schrijft bij elke extractall een regel naar $OUDPY_SPOOR: zo bewijst de test dat de terugval-tak echt draaide.
+const OUDE_PYTHON = `import copy, os, tarfile
+try:
+    import grp, pwd
+except ImportError:
+    grp = pwd = None
+for naam in ("data_filter", "tar_filter", "fully_trusted_filter"):
+    if hasattr(tarfile, naam):
+        delattr(tarfile, naam)
+def chown_3112(self, tarinfo, targetpath, numeric_owner):
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        g, u = tarinfo.gid, tarinfo.uid
+        if not numeric_owner:
+            try:
+                if grp:
+                    g = grp.getgrnam(tarinfo.gname)[2]
+            except KeyError:
+                pass
+            try:
+                if pwd:
+                    u = pwd.getpwnam(tarinfo.uname)[2]
+            except KeyError:
+                pass
+        os.chown(targetpath, u, g)
+def chmod_3112(self, tarinfo, targetpath):
+    os.chmod(targetpath, tarinfo.mode)
+def makedir_3112(self, tarinfo, targetpath):
+    try:
+        os.mkdir(targetpath, 0o700)
+    except FileExistsError:
+        pass
+def extractall_3112(self, path=".", members=None, *, numeric_owner=False, **kw):
+    if kw:
+        raise TypeError("extractall() got an unexpected keyword argument %r" % next(iter(kw)))
+    spoor = os.environ.get("OUDPY_SPOOR")
+    if spoor:
+        with open(spoor, "a") as f:
+            f.write("oude extractall\\n")
+    directories = []
+    for tarinfo in (self if members is None else members):
+        if tarinfo.isdir():
+            directories.append(tarinfo)
+            tarinfo = copy.copy(tarinfo)
+            tarinfo.mode = 0o700
+        self._extract_member(tarinfo, os.path.join(path, tarinfo.name), set_attrs=not tarinfo.isdir(), numeric_owner=numeric_owner)
+    for tarinfo in sorted(directories, key=lambda a: a.name, reverse=True):
+        dirpath = os.path.join(path, tarinfo.name)
+        self.chown(tarinfo, dirpath, numeric_owner=numeric_owner)
+        self.utime(tarinfo, dirpath)
+        self.chmod(tarinfo, dirpath)
+tarfile.TarFile.chown = chown_3112
+tarfile.TarFile.chmod = chmod_3112
+tarfile.TarFile.makedir = makedir_3112
+tarfile.TarFile.extractall = extractall_3112
+`;
 const onderteken = (bestand: string, key: string) => {
   rmSync(`${bestand}.sig`, { force: true });
   const r = spawnSync('ssh-keygen', ['-q', '-Y', 'sign', '-f', key, '-n', 'mijn-ruimte-uitrol', bestand], { encoding: 'utf8' });
@@ -61,7 +150,7 @@ export async function main(): Promise<number> {
     const modusBestand = join(basis, 'modus');
     writeFileSync(stub, `#!/bin/bash\necho "$1 $2" >> "${spoor}"\ncat "$2/UITROL-VERSIE" >> "${spoor}"\nprintf '%s\\n' "\${MIJN_RUIMTE_UITROL_MODUS:-}" > "${modusBestand}"\n`); chmodSync(stub, 0o755);
     const env = { ...process.env, UITROL_INBOX: inbox, UITROL_WERK: werk, UITROL_STATUS_DIR: statusMap, UITROL_ONDERTEKENAARS: ondertekenaars, UITROL_INSTALLEER: stub, UITROL_LOCK: join(basis, 'lock'), UITROL_GROEP: 'nogroup', UITROL_PAKKETTEN_DIR: join(basis, 'pakketten') };
-    const draai = () => spawnSync('bash', [SCRIPT], { env, encoding: 'utf8' });
+    const draai = () => spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env, encoding: 'utf8' });
     const status = () => { try { return JSON.parse(readFileSync(join(statusMap, 'status.json'), 'utf8')); } catch { return {}; } };
     const spoorRegels = () => existsSync(spoor) ? readFileSync(spoor, 'utf8').trim().split('\n').filter(Boolean) : [];
     const leg = (bestand: string, metSig = true) => {
@@ -160,11 +249,17 @@ export async function main(): Promise<number> {
 
     // 10. ondertekenaarsbestand ontbreekt
     const p10 = pakket(pk, '20261008-130000'); onderteken(p10, goed); leg(p10);
-    r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_ONDERTEKENAARS: join(basis, 'bestaat-niet') }, encoding: 'utf8' });
+    r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_ONDERTEKENAARS: join(basis, 'bestaat-niet') }, encoding: 'utf8' });
     check('zonder publieke sleutel geen uitrol (GEEN_SLEUTEL)', r.status === 2 && status().code === 'GEEN_SLEUTEL');
 
     // ---------------------------------------------------------------- audit 18.10.2026: nooit stil sterven, echte oorzaak, voortgang, commit
     await nooitStil({ pk, inbox, statusMap, werk, basis, goed, env, draai, status, audit, spoorRegels, leg, check });
+
+    // ---------------------------------------------------------------- rev'ю 06.11.2026: uitpakken zonder data-filter = met data-filter
+    oudePython({ pk, basis, goed, env, status, leg, check });
+
+    // ---------------------------------------------------------------- UITROL-UTF8-001 (06.11.2026): meta() knipt op een heel teken
+    kyrillischeMeta({ pk, inbox, statusMap, werk, basis, goed, env, draai, status, audit, spoorRegels, leg, check });
 
     // ---------------------------------------------------------------- MCP-deur: OAuth + alleen inbox
     await deurTests(basis, check, goed);
@@ -175,6 +270,103 @@ export async function main(): Promise<number> {
     rmSync(basis, { recursive: true, force: true });
   }
   return einde();
+}
+
+/**
+ * Rev'ю 06.11.2026 (ORCH-001): zonder tarfile.data_filter (python3 < 3.11.4) pakt de uitrol met de hand uit. Dat moet hetzelfde
+ * opleveren als het data-filter. Eén soort pakket met lastige modi en eigenaar 1234 gaat er twee keer door: met het filter van deze
+ * python en met een nagebootste 3.11.2 (sitecustomize via PYTHONPATH). Beide uitkomsten moeten gelijk zijn én veilig: geen
+ * setuid/setgid/sticky, geen schrijfrecht voor groep/anderen, mappen volgens de umask (0700), eigenaar = wie uitpakt.
+ * Vroeger hield de terugval de mapmodus uit het archief (0500 → 0500, 1777 → 0755) en week zo af van het filter.
+ */
+function oudePython(c: { pk: string; basis: string; goed: string; env: NodeJS.ProcessEnv; status: () => Record<string, any>; leg: (bestand: string, metSig?: boolean) => string; check: (n: string, ok: boolean, i?: string) => void }) {
+  const { pk, basis, goed, env, status, leg, check } = c;
+  const oud = join(basis, 'oud-python'); mkdirSync(oud);
+  writeFileSync(join(oud, 'sitecustomize.py'), OUDE_PYTHON);
+  const spoorOud = join(basis, 'oud-python-spoor');
+  const stubStat = join(basis, 'stub-stat.sh');
+  writeFileSync(stubStat, `#!/bin/bash\ncd "$2" && find lastig -printf '%p %m %U %G\\n' | LC_ALL=C sort > "${basis}/stat-$(cat UITROL-VERSIE)"\n`); chmodSync(stubStat, 0o755);
+  const uid = ALS_ROOT ? NIEMAND : process.getuid!(); const gid = ALS_ROOT ? NIEMAND : process.getgid!();
+  const verwacht = [['lastig', 700], ['lastig/alleen-anderen-x', 600], ['lastig/alleen-lezen', 700], ['lastig/alleen-lezen/binnen', 644],
+    ['lastig/groep-schrijft', 644], ['lastig/iedereen', 755], ['lastig/plak', 700], ['lastig/setuid', 755]].map(([n, m]) => `${n} ${m} ${uid} ${gid}`).join('\n');
+  const uitkomst: Record<string, string> = {};
+  for (const [versie, oudePy] of [['20261010-100000', false], ['20261010-110000', true]] as const) {
+    const naam = oudePy ? 'nagebootste python 3.11.2 (zonder data-filter)' : 'python met data-filter';
+    const p = pakket(pk, versie, { lastig: true }); onderteken(p, goed); leg(p);
+    const r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_INSTALLEER: stubStat, PYTHONPATH: oudePy ? oud : '', OUDPY_SPOOR: oudePy ? spoorOud : '' }, encoding: 'utf8' });
+    check(`${naam}: pakket met lastige modi geïnstalleerd (klaar)`, r.status === 0 && status().staat === 'klaar' && status().versie === versie, `${r.status} ${JSON.stringify(status())} ${String(r.stderr).slice(-300)}`);
+    uitkomst[versie] = existsSync(join(basis, `stat-${versie}`)) ? readFileSync(join(basis, `stat-${versie}`), 'utf8').trim() : '';
+    check(`${naam}: modi zoals het data-filter, eigenaar = wie uitpakt (niet 1234)`, uitkomst[versie] === verwacht, `${uitkomst[versie]} ≠ ${verwacht}`);
+  }
+  const oudeRegels = existsSync(spoorOud) ? readFileSync(spoorOud, 'utf8').trim().split('\n').filter(Boolean).length : 0;
+  check('nagebootste 3.11.2 nam echt de terugval-tak (precies één oude extractall)', oudeRegels === 1, String(oudeRegels));
+  check('terugval en data-filter geven precies dezelfde boom', !!uitkomst['20261010-100000'] && uitkomst['20261010-100000'] === uitkomst['20261010-110000']);
+  // Eigenaar uit het archief: extractall zet die alleen als root (chown bij euid 0). Het script zelf draait hier als nobody, dus
+  // draaien we als root het uitpakfragment van het script direct (dezelfde tekst, geen kopie). Zonder root niet te toetsen.
+  if (ALS_ROOT) {
+    const fragment = /# ---- 4\. inhoud[^\n]*\n[\s\S]*?<<'PY'\n([\s\S]*?)\nPY\n/.exec(readFileSync(SCRIPT, 'utf8'));
+    check('als root: uitpakfragment van het script gevonden', !!fragment);
+    if (fragment) {
+      const frag = join(basis, 'uitpak-fragment.py'); writeFileSync(frag, `${fragment[1]}\n`);
+      const versie = '20261010-120000'; const p = pakket(pk, versie, { lastig: true });
+      const spoorRoot = join(basis, 'oud-python-spoor-root');
+      const verwachtRoot = verwacht.split('\n').map((r) => r.replace(/ \d+ \d+$/, ' 0 0')).join('\n');
+      const bomen: Record<string, string> = {};
+      for (const oudePy of [false, true]) {
+        const naam = oudePy ? 'nagebootste python 3.11.2' : 'python met data-filter';
+        const doel = join(basis, `als-root-${oudePy ? 'oud' : 'filter'}`); mkdirSync(doel);
+        const r = spawnSync('bash', ['-c', 'umask 077 && exec python3 "$0" "$1" "$2" 1000000000', frag, p, doel],
+          { env: { ...process.env, PYTHONPATH: oudePy ? oud : '', OUDPY_SPOOR: oudePy ? spoorRoot : '' }, encoding: 'utf8' });
+        bomen[naam] = spawnSync('bash', ['-c', `cd "$0/mijn-ruimte-${versie}" && find lastig -printf '%p %m %U %G\\n' | LC_ALL=C sort`, doel], { encoding: 'utf8' }).stdout.trim();
+        check(`als root, ${naam}: eigenaar root (niet 1234 uit het archief), modi zoals het data-filter`, r.status === 0 && bomen[naam] === verwachtRoot, `${r.status} ${String(r.stderr).slice(-200)} ${bomen[naam]} ≠ ${verwachtRoot}`);
+      }
+      const oudRoot = existsSync(spoorRoot) ? readFileSync(spoorRoot, 'utf8').trim().split('\n').filter(Boolean).length : 0;
+      check('als root: nagebootste 3.11.2 nam echt de terugval-tak', oudRoot === 1, String(oudRoot));
+    }
+  }
+}
+
+/**
+ * UITROL-UTF8-001 (06.11.2026): meta() knipte AUTEUR (200) en SAMENVATTING (8000) met `head -c`, dus per BYTE. Viel de grens midden
+ * in een Cyrillisch teken (2 bytes), dan kwam er een half teken in $AUTEUR. Python decodeert argv dan met surrogateescape en
+ * json.dumps(..., ensure_ascii=False) + schrijven als UTF-8 faalde: stap() verloor de stapregel «inhoud» stil, en gebeurtenis() stierf
+ * onder `set -e` vóór de OK-regel, zodat een geslaagde installatie in de audit ontbrak. Ongeldige bytes midden in de tekst gaven
+ * hetzelfde. Nu: knippen op een heel teken, ongeldige bytes worden U+FFFD — zichtbaar, nooit stil weggelaten, nooit kapotte JSON.
+ * meta() різала AUTEUR/SAMENVATTING побайтово: пів кириличного символу ламало JSON у stap() і gebeurtenis(). Тепер — по цілому
+ * символу, а невалідні байти стають U+FFFD.
+ */
+function kyrillischeMeta(c: NooitStilCtx) {
+  const { pk, statusMap, goed, draai, status, audit, leg, check } = c;
+  const runStappen = () => { const a = leesStappen(statusMap); const run = a.length ? a[a.length - 1].run : ''; return a.filter((s) => s.run === run); };
+  // Elke regel moet geldige JSON zijn (audit() en leesStappen() zouden anders gooien) en mag geen U+FFFD bevatten tenzij verwacht.
+  const regelsGeldig = (bestand: string) => {
+    const pad = join(statusMap, bestand);
+    if (!existsSync(pad)) return false;
+    try { readFileSync(pad, 'utf8').trim().split('\n').filter(Boolean).forEach((l) => JSON.parse(l)); return true; } catch { return false; }
+  };
+  // 'A' + 100 × «Ж» = 201 bytes: de grens van 200 valt midden in de laatste «Ж». Verwacht: 'A' + 99 × «Ж» (heel teken, niets verzonnen).
+  const auteurLang = `A${'Ж'.repeat(100)}`;
+  const auteurGeknipt = `A${'Ж'.repeat(99)}`;
+  // SAMENVATTING: 'x' + 4000 × «я» = 8001 bytes, grens 8000 midden in het laatste teken.
+  const samenvattingLang = `x${'я'.repeat(4000)}`;
+  const gevallen: Array<{ versie: string; naam: string; meta: Record<string, string | Buffer>; auteur: string }> = [
+    { versie: '20261011-100000', naam: 'AUTEUR 201 bytes (grens 200 midden in «Ж»)', meta: { AUTEUR: `${auteurLang}\n` }, auteur: auteurGeknipt },
+    { versie: '20261011-110000', naam: 'SAMENVATTING 8001 bytes (grens 8000 midden in «я»)', meta: { AUTEUR: 'Тарасевич Павло\n', SAMENVATTING: `${samenvattingLang}\n` }, auteur: 'Тарасевич Павло' },
+    { versie: '20261011-120000', naam: 'ongeldige byte 0xFF midden in AUTEUR', meta: { AUTEUR: Buffer.concat([Buffer.from('Автор '), Buffer.from([0xff]), Buffer.from(' Тест\n')]) }, auteur: 'Автор � Тест' },
+  ];
+  for (const g of gevallen) {
+    const auditVoor = audit().length;
+    const p = pakket(pk, g.versie, { meta: g.meta }); onderteken(p, goed); leg(p);
+    const r = draai();
+    check(`${g.naam}: geïnstalleerd (klaar)`, r.status === 0 && status().staat === 'klaar' && status().versie === g.versie, `${r.status} ${JSON.stringify(status())} ${String(r.stderr).slice(-400)}`);
+    check(`${g.naam}: gebeurtenissen.jsonl en stappen.jsonl blijven geldige JSON per regel`, regelsGeldig('gebeurtenissen.jsonl') && regelsGeldig('stappen.jsonl'));
+    const ok = audit().filter((e) => e.code === 'OK' && e.tag === g.versie).pop();
+    check(`${g.naam}: OK-gebeurtenis in de audit met de auteur op een heel teken`, !!ok && ok.uk.includes(`Автор: ${g.auteur},`) && ok.nl.includes(`Auteur: ${g.auteur},`), JSON.stringify(ok));
+    check(`${g.naam}: eerdere auditregels niet gewist`, audit().length > auditVoor, `${auditVoor} → ${audit().length}`);
+    const inhoud = runStappen().find((s) => s.stap === 'inhoud' && s.staat === 'ok');
+    check(`${g.naam}: stap «inhoud» ok aanwezig en noemt de auteur op een heel teken`, !!inhoud && String(inhoud.uk).includes(`(автор: ${g.auteur},`), JSON.stringify(runStappen().map((s) => `${s.stap}:${s.staat}`)));
+    if (!g.auteur.includes('�')) check(`${g.naam}: geen U+FFFD verzonnen bij een geldige tekst`, !!ok && !ok.uk.includes('�') && !String(inhoud?.uk ?? '').includes('�'));
+  }
 }
 
 type NooitStilCtx = {
@@ -218,7 +410,7 @@ async function nooitStil(c: NooitStilCtx) {
 
   // 3. onverwachte interne fout na «bezig CONTROLE» (testhaak, als root gewist) → trap schrijft mislukt AFGEBROKEN met regel en code.
   { const p = pakket(pk, '20261009-120000'); onderteken(p, goed); leg(p);
-    const r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_TEST_BREEK: 'controle' }, encoding: 'utf8' });
+    const r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_TEST_BREEK: 'controle' }, encoding: 'utf8' });
     const st = status();
     check('interne fout: vroeger bleef status «bezig CONTROLE»; nu mislukt AFGEBROKEN', r.status !== 0 && st.staat === 'mislukt' && st.code === 'AFGEBROKEN', `${r.status} ${JSON.stringify(st)}`);
     check('interne fout: tekst noemt regel en afsluitcode (uk + nl)', /рядок \d+, код \d+/.test(st.uk || '') && /regel \d+, code \d+/.test(st.nl || ''), `${st.uk} | ${st.nl}`);
@@ -229,7 +421,7 @@ async function nooitStil(c: NooitStilCtx) {
   { const stub = join(basis, 'stub-voortgang.sh');
     writeFileSync(stub, ['#!/bin/bash', ...[['kopie', 45], ['npm', 55], ['bouwen', 70], ['backup', 75], ['migraties', 80], ['activeren', 90], ['gezondheid', 95], ['nabewaken', 98]].map(([id, pct]) => `echo "[installeer] stap: ${id} (${pct}%) test"`), 'echo "[installeer] actief: x"', 'exit 0', ''].join('\n')); chmodSync(stub, 0o755);
     const p = pakket(pk, '20261009-130000'); onderteken(p, goed); leg(p);
-    const r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
+    const r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
     const pcts = runStappen().filter((s) => s.stap === 'installeren' && s.staat === 'bezig').map((s) => s.pct);
     check('voortgang: vroeger alleen 42 % tijdens het installeren; nu 42→45→55→70→75→80→90→95→98', r.status === 0 && JSON.stringify(pcts) === JSON.stringify([42, 45, 55, 70, 75, 80, 90, 95, 98]), JSON.stringify(pcts));
     check('voortgang: elke stapregel heeft een leesbare tekst (uk + nl)', runStappen().filter((s) => s.stap === 'installeren' && s.pct > 42).every((s) => s.uk.length > 10 && s.nl.length > 10));
@@ -254,7 +446,7 @@ echo "[installeer] FOUT: bouwen mislukt (journalctl -u mijn-ruimte-bouw-x)" >&2
 exit 1
 `); chmodSync(stub, 0o755);
     const p = pakket(pk, '20261009-140000'); onderteken(p, goed); leg(p);
-    const r = spawnSync('bash', [SCRIPT], { env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
+    const r = spawnSync('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
     const st = status(); const g = laatsteGeb('INSTALLATIE_MISLUKT');
     check('oorzaak: mislukt INSTALLATIE_MISLUKT (exit 1)', r.status === 1 && st.staat === 'mislukt' && st.code === 'INSTALLATIE_MISLUKT', `${r.status} ${JSON.stringify(st)}`);
     check('oorzaak: «reden» is de EERSTE echte foutregel (error TS6133), niet «bouwen mislukt (journalctl …)»', /error TS6133: 'PackageOpen'/.test(st.reden || '') && !/journalctl/.test(st.reden || ''), st.reden);
@@ -266,9 +458,12 @@ exit 1
   // 6. van buitenaf gestopt (systemd-timeout / systemctl stop = SIGTERM) tijdens «installeren» → mislukt ONDERBROKEN; installer gestopt.
   { const pidBestand = join(basis, 'stub-traag.pid');
     const stub = join(basis, 'stub-traag.sh');
-    writeFileSync(stub, `#!/bin/bash\necho $$ > "${pidBestand}"\necho "[installeer] stap: npm (55%) npm ci"\nsleep 60 & wait\n`); chmodSync(stub, 0o755);
+    // exec: de pid in het bestand is de slaap zelf. Met «sleep 60 & wait» bleef de slaap als wees 60 s leven en hield hij de
+    // uitrolvergrendeling (fd 8) vast, zodat elke latere uitrol in deze test stil «er loopt al een uitrol» gaf (systemd ruimt in
+    // productie de hele cgroup op; hier niet).
+    writeFileSync(stub, `#!/bin/bash\necho $$ > "${pidBestand}"\necho "[installeer] stap: npm (55%) npm ci"\nexec sleep 60\n`); chmodSync(stub, 0o755);
     const p = pakket(pk, '20261009-150000'); onderteken(p, goed); leg(p);
-    const proc = spawn('bash', [SCRIPT], { env: { ...env, UITROL_INSTALLEER: stub }, stdio: 'ignore' });
+    const proc = spawn('bash', [SCRIPT], { ...alsNiemand(basis), env: { ...env, UITROL_INSTALLEER: stub }, stdio: 'ignore' });
     const klaar = new Promise<number | null>((res) => proc.on('exit', (code, sig) => res(code ?? (sig ? 128 : null))));
     for (let i = 0; i < 100 && !(status().code === 'INSTALLEREN' && existsSync(pidBestand)); i++) await new Promise((r) => setTimeout(r, 100));
     const bezig = status().code === 'INSTALLEREN';
@@ -414,8 +609,11 @@ function plafond(check: (n: string, ok: boolean, i?: string) => void) {
   const unit = lees('deploy/mcp/mijn-ruimte-mcp.service');
   check('plafond: MCP-unit met NoNewPrivileges=yes', /^NoNewPrivileges=yes/m.test(unit));
   const uitrol = lees(SCRIPT);
-  check('plafond: uitrol controleert handtekening vóór uitpakken', uitrol.indexOf('ssh-keygen -Y verify') > 0 && uitrol.indexOf('ssh-keygen -Y verify') < uitrol.indexOf('extractall'));
-  check('plafond: uitrol pakt uit met filter="data"', /filter="data"/.test(uitrol));
+  // Echte aanroepen, niet de commentaarkop bovenaan (die noemt «ssh-keygen -Y verify» ook; met indexOf was deze check altijd groen).
+  const uitrolCode = zonderCommentaar(uitrol);
+  const verifieerOp = uitrolCode.search(/\bssh-keygen -Y verify\b/), uitpakOp = uitrolCode.search(/^\s*tf\.extractall\(/m);
+  check('plafond: uitrol controleert handtekening vóór uitpakken', verifieerOp > 0 && uitpakOp > 0 && verifieerOp < uitpakOp, `${verifieerOp} ${uitpakOp}`);
+  check('plafond: uitrol pakt uit met filter="data"', /^\s*tf\.extractall\(doel, members=leden, filter="data"\)\s*$/m.test(uitrol));
   check('plafond: uitrol negeert pad-overrides als root', /id -u\)" -eq 0 \]; then\s*\n?\s*unset UITROL_INBOX/.test(uitrol) || /unset UITROL_INBOX UITROL_WERK/.test(uitrol));
   const archief = lees('deploy/archief-maken.sh');
   check('plafond: archief in zijn geheel versleuteld (geen klare tar meer)', /\| versleutel "\$werk\/\$naam"/.test(archief) && !/tar --create --file "\$UIT\/\$naam/.test(archief));

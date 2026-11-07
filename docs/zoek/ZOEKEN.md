@@ -1,8 +1,10 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ZOEKEN.uk.md) · [🇳🇱 **Nederlandse versie**](./ZOEKEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Глобальний пошук «/zoek» — архітектура, індекс, API, ранжування
 
-Стан: 22.10.2026 (випуск «zoek-kern-2»). Українська — основна мова цього документа; короткий розділ nl — наприкінці.
-Супутні документи в цій теці: `ZOEK-BEVEILIGING.md` (ізоляція й безпека), `ZOEK-BEHEER.md` (моніторинг, відновлення, міграції,
-розгортання, відкат, продуктивність), `ZOEK-UITBREIDEN.md` (як додати нове джерело або тип об'єкта), `ZOEK-TESTEN.md` (тести, набір оцінки).
+Стан: 22.10.2026 (випуск «zoek-kern-2»).
+Супутні документи в цій теці: [`ZOEK-BEVEILIGING.uk.md`](./ZOEK-BEVEILIGING.uk.md) (ізоляція й безпека), [`ZOEK-BEHEER.uk.md`](./ZOEK-BEHEER.uk.md) (моніторинг, відновлення, міграції,
+розгортання, повернення стану, продуктивність), [`ZOEK-UITBREIDEN.uk.md`](./ZOEK-UITBREIDEN.uk.md) (як додати нове джерело або тип об'єкта), [`ZOEK-TESTEN.uk.md`](./ZOEK-TESTEN.uk.md) (тести, набір оцінки).
 
 ## 1. Що це і що воно робить
 
@@ -19,8 +21,8 @@
 | Контакти, пристрої | `contact`, `apparaat` | зарезервовано в моделі; на 22.10.2026 **не індексуються** |
 
 Користувач може не знати назви функції: працюють точні збіги, префікси (автодоповнення), повний текст, нормалізація (регістр,
-діакритика, кирилиця ↔ латиниця), легка морфологія, нечіткий пошук (trigram, помилки 1–2 літери), синоніми й міжмовні
-відповідники (uk, ru, nl, en, de, fr, pl, ro, bg), суржик/трансліт (`poshta`, «настройки почты»), опис призначення кнопки.
+діакритика, кирилиця ↔ латиниця), легка морфологія, нечіткий пошук (триграми, помилки 1–2 літери), синоніми й міжмовні
+відповідники (`uk`, `nl`, `de`, `fr`, `pl`, `ro`, `bg`), транслітерація (`poshta`, «налаштування пошти»), опис призначення кнопки.
 Кожна картка результату пояснює, **чому** вона знайдена (`uitleg`), показує шлях, фрагмент із підсвіткою, відсоток відповідності
 (0–100, методика нижче) і безпечний перехід (`route`: лише хост служби + шлях, ніколи довільний URL).
 
@@ -52,40 +54,40 @@ PostgreSQL 16: app.zoek_objecten (FTS simple + стемер + trigram, GIN), RLS
 - **Лада з сервера.** `userId` + `ruimte` ніколи не читаються з тіла запиту. Брама — та сама, що для пошти/хмари/календаря.
 - **Нічого не сканується під час пошуку.** Пошук читає лише індекс; OCR, архіви й обхід джерел — у фоновій черзі.
 - **Без зовнішніх сервісів.** Усе на сервері власника: PostgreSQL (`pg_trgm`, `unaccent`, вбудовані стемери), Node, за бажанням `tesseract`.
-- **Fallback.** Якщо для лади індекс порожній (`aantalInLade = 0`, напр. перший запуск до cron), `/api/owner/global-search`
+- **Резервний режим.** Якщо для лади індекс порожній (`aantalInLade = 0`, напр. перший запуск до `cron`), `/api/owner/global-search`
   повертає результати з пам'яті (як до 22.10.2026) і `bron:'live'`, `index:false`; `/api/owner/zoek` чесно показує стан джерел «індексується».
 
 ## 3. Схема індексу (`migrations/0100_zoek_kern.sql` розширює 0093)
 
 | Колонка | Тип | Призначення |
 |---|---|---|
-| `user_id`, `ruimte` | text NOT NULL | лада; CHECK `ruimte IN ('prive','technisch')`; RLS 0094: `user_id = app.huidige_gebruiker()` для ролі `mijnruimte_app` |
-| `bron` | text `~ '^[a-z_]{2,32}$'` | джерело (`ZOEK_BRONNEN` у `shared/zoek-model.ts`) |
-| `bron_id` | text ≤700 | стабільний id у джерелі (id листа, файла, `pagina:mail/inbox`, `hulp:tech.duur` …) |
-| `soort`, `formaat`, `taal` | text | тип (`ZOEK_SOORTEN`), формат файла (фасет), мова вмісту (`uk ru nl en de fr pl ro bg` або `''`) |
-| `titel`, `titels` (jsonb) | text | канонічна назва + назви за мовами (uk/nl для інтерфейсу); усі форми — вага A |
-| `omschrijving` | text | що робить кнопка/сторінка; вага C |
-| `tekst` | text ≤200 000 | повний текст (лист, документ, OCR); вага D |
-| `trefwoorden` | text | ключові слова/альтернативні назви, з'єднані ` ; `; вага B |
-| `pad`, `route` (jsonb) | | шлях для картки («Налаштування › Мови»); безпечний перехід `{host, pad, hash?, params?}` |
-| `extra` (jsonb ≤8 KiB) | | метадані (відправник, MIME, розмір, repo, сторінка PDF …). **Без секретів** |
-| `versie` | text | sha256 вмісту або версія джерела → повторна індексація незміненого об'єкта пропускається |
-| `titel_norm`, `trefwoorden_norm`, `omschrijving_norm`, `tekst_norm`, `stam_norm` | text | нормалізовані форми, **обчислені в Node** (`zoekNorm`, `lichteStam`) — SQL-функція `app.zoek_norm` з 0093 видалена, бо ламалась при `datctype = C` |
-| `zoek_vector` | tsvector GENERATED | `simple` по `*_norm` з вагами A/B/C/D |
-| `zoek_stam` | tsvector GENERATED | стемер PostgreSQL за `taal` (dutch, english, german, french, romanian, russian) по оригінальному тексту; для uk/bg/pl — `simple` по `stam_norm` |
-| `aangemaakt_op`, `bijgewerkt_op` | timestamptz | дати джерела (свіжість — допоміжний сигнал) |
+| `user_id`, `ruimte` | `text` обов'язкове | лада; перевірка `ruimte IN ('prive','technisch')`; RLS 0094: `user_id = app.huidige_gebruiker()` для ролі `mijnruimte_app` |
+| `bron` | `text` `~ '^[a-z_]{2,32}$'` | джерело (`ZOEK_BRONNEN` у `shared/zoek-model.ts`) |
+| `bron_id` | `text` ≤700 | стабільний ідентифікатор у джерелі (ідентифікатор листа, файла, `pagina:mail/inbox`, `hulp:tech.duur` …) |
+| `soort`, `formaat`, `taal` | `text` | тип (`ZOEK_SOORTEN`), формат файла (фасет), мова вмісту (`uk nl de fr pl ro bg` або `''`) |
+| `titel`, `titels` (`jsonb`) | `text` | канонічна назва + назви за мовами (`uk`/`nl` для інтерфейсу); усі форми — вага A |
+| `omschrijving` | `text` | що робить кнопка/сторінка; вага C |
+| `tekst` | `text` ≤200 000 | повний текст (лист, документ, OCR); вага D |
+| `trefwoorden` | `text` | ключові слова/альтернативні назви, з'єднані ` ; `; вага B |
+| `pad`, `route` (`jsonb`) | | шлях для картки («Налаштування › Мови»); безпечний перехід `{host, pad, hash?, params?}` |
+| `extra` (`jsonb` ≤8 KiB) | | метадані (відправник, MIME, розмір, репозиторій, сторінка PDF …). **Без секретів** |
+| `versie` | `text` | `sha256` вмісту або версія джерела → повторна індексація незміненого об'єкта пропускається |
+| `titel_norm`, `trefwoorden_norm`, `omschrijving_norm`, `tekst_norm`, `stam_norm` | `text` | нормалізовані форми, **обчислені в Node** (`zoekNorm`, `lichteStam`) — SQL-функція `app.zoek_norm` з 0093 видалена, бо ламалась при `datctype = C` |
+| `zoek_vector` | `tsvector GENERATED` | `simple` по `*_norm` з вагами A/B/C/D |
+| `zoek_stam` | `tsvector GENERATED` | стемер PostgreSQL за `taal` по оригінальному тексту; для `uk`/`bg`/`pl` — `simple` по `stam_norm` |
+| `aangemaakt_op`, `bijgewerkt_op` | `timestamptz` | дати джерела (свіжість — допоміжний сигнал) |
 
 Індекси: GIN(`zoek_vector`), GIN(`zoek_stam`), GIN trigram(`titel_norm`), btree(`user_id`,`ruimte`,`bron`,`bijgewerkt_op DESC`).
 Унікальність: `(user_id, ruimte, bron, bron_id)`.
 
 Супутні таблиці: `app.zoek_bron_stand` (стан джерела на ладу: `niet_gekoppeld | indexeert | gedeeltelijk | fout | klaar`, `voortgang` 0–100,
-`documenten`, остання спроба/успіх/помилка), `app.zoek_wachtrij` (черга індексації: `wachtend/bezig/klaar/fout/geannuleerd`, lease,
+`documenten`, остання спроба/успіх/помилка), `app.zoek_wachtrij` (черга індексації: `wachtend/bezig/klaar/fout/geannuleerd`, оренда,
 експоненційні повтори), `app.zoek_ocr_tekst` (0102: OCR-кеш **по користувачу й простору**), `app.zoek_geschiedenis` (0103: історія на
 ладу — лише `(bron,id)` знайденого, без назв/тексту), `app.zoek_synoniemen_eigenaar` (словник власника, без UI на 22.10.2026).
 
 ## 4. API (контракт `scratchpad/zoek-API.md` → код `shared/zoek-model.ts`)
 
-Усі маршрути — POST, JSON, сесія власника; у тілі обов'язкові `service` і `tabContext` (як у всіх owner-маршрутах; без них 403
+Усі маршрути — POST, JSON, сесія власника; у тілі обов'язкові `service` і `tabContext` (як у всіх маршрутах власника; без них 403
 `OWNER_SESSION_CONTEXT_REQUIRED`).
 
 ### `POST /api/owner/zoek` — тіло `ZoekVraag`
@@ -101,7 +103,7 @@ PostgreSQL 16: app.zoek_objecten (FTS simple + стемер + trigram, GIN), RLS
 виправлення через `similarity` по словах лади + вбудовані синоніми). Виправлення **не підміняє** запит: UI показує «Можливо, ви мали на увазі» і дозволяє обидва.
 
 ### `POST /api/owner/zoek/stand` → `{ standen: ZoekBronStand[], gesloten }`
-`ZoekBronStand = { bron, stand, voortgang, aantal (реальний count), laatsteOk, laatstePoging, fout, versie, bijgewerktOp }`.
+`ZoekBronStand = { bron, stand, voortgang, aantal (реальна кількість), laatsteOk, laatstePoging, fout, versie, bijgewerktOp }`.
 
 ### `POST /api/owner/zoek/geschiedenis/lijst|open|bewaren|wis|wis-alles` (Z4, 0103)
 Запис історії: запит, нормалізований запит, фільтри, дата, версії алгоритму/індексу, `(bron,id)` знайденого (≤200), `totaal`, стан
@@ -109,27 +111,26 @@ PostgreSQL 16: app.zoek_objecten (FTS simple + стемер + trigram, GIN), RLS
 без дублів, дата оновлюється. Назв і текстів у таблиці немає.
 
 ### `POST /api/owner/zoek/index/starten|stand|stoppen|geschiedenis` (зона D, технічний профіль)
-Ручна повна/часткова індексація власних лад із живим ходом — див. `ZOEK-BEHEER.md` §5. Лише з активною технічною активацією вкладки
+Ручна повна/часткова індексація власних лад із живим ходом — див. `ZOEK-BEHEER.uk.md` §5. Лише з активною технічною активацією вкладки
 (`backend/tech-profiel.ts` → `actieveActivatie`), інакше `403 ZOEK_INDEX_TECH_PROFIEL_VEREIST`.
 
 ### `POST /api/owner/global-search` (старий маршрут; також інструмент ШІ `site_search`)
 Та сама форма відповіді, що раніше (`groups[{source, items[{id, title, subtitle, excerpt, relevance …}]}]`), тепер поверх індексу
-(`mode:'zoek_kern_2'`); fallback у пам'ять, якщо індекс лади порожній (`index:false`).
+(`mode:'zoek_kern_2'`); резервне повернення з пам'яті, якщо індекс лади порожній (`index:false`).
 
 ## 5. Нормалізація, мови, синоніми (`shared/zoek-normalisatie.ts`, `shared/zoek-synoniemen.ts`)
 
-- `zoekNorm(s)`: NFC → нижній регістр → кирилиця uk/ru/bg → латиниця (одна таблиця: х→kh, г→g, и→y, і→i, ї→yi, є→ye, щ→shch, ю→yu,
-  я→ya; ь/ъ/апостроф → ∅) → ł/ß/ø/æ/œ/đ/ı → NFKD без діакритики → лише `\p{L}\p{N}@._-` → одинарні пробіли. Без фонетичного
+- `zoekNorm(s)`: NFC → нижній регістр → кирилиця → латиниця (одна таблиця: х→kh, г→g, ґ→g, и→y, і→i, ї→yi, є→ye, щ→shch, ю→yu,
+  я→ya; м’який знак та апостроф → ∅) → ł/ß/ø/æ/œ/đ/ı → NFKD без діакритики → лише `\p{L}\p{N}@._-` → одинарні пробіли. Без фонетичного
   згортання (`Jan de Wijk` лишається `jan de wijk`). Однакова на сервері й у клієнті.
 - `zoekTokens(s)`: унікальні токени ≥2 символів (розбиває і на `-_.@`), ≤12. Стоп-слова прибираються лише коли лишаються інші токени.
-- `varianten(token)` (лише для **запиту**): суржик/трансліт — `y↔i`, `kh↔h`, `g↔h`, `ts↔c`, `ye↔e`, `yi↔i`, `iu↔yu`, `ia↔ya`, `w↔v`,
+- `varianten(token)` (лише для **запиту**): транслітерація — `y↔i`, `kh↔h`, `g↔h`, `ts↔c`, `ye↔e`, `yi↔i`, `iu↔yu`, `ia↔ya`, `w↔v`,
   `j↔y`, `shch↔sch↔sht`, `ii→i`; до 8 варіантів, кожен — OR-альтернатива з префіксом `:*`.
-- `lichteStam(token)`: закритий список суфіксів (uk/ru/bg/pl у латинському записі: `-amy -ami -akh -iv -oyu -ovi -ykh -ymy -oho -omu
+- `lichteStam(token)`: закритий список суфіксів (у латинському записі: `-amy -ami -akh -iv -oyu -ovi -ykh -ymy -oho -omu
   -ty -la -sia …`, однолітерні `-a -y -i -u -o -e` для слів ≥5). **Межі**: немає чергування основ (кінь/коня), префіксів, словника.
-  Для nl/en/de/fr/ro/ru працює справжній стемер PostgreSQL (`zoek_stam`).
-- `taalRaden(s)`: кирилиця (і/ї/є/ґ → uk; ы/э → ru; ъ без ы → bg), латиниця — голосування по стоп-словах nl/en/de/fr/pl/ro.
-- Синоніми: `SYNONIEM_GROEPEN` ≥120 груп `{canoniek, taal:'multi', domein, synoniemen[]}` з членами 9 мовами («пошта/почта/mail/e-mail/
-  post/courrier/poczta/poștă/поща», «налаштування/settings/instellingen/Einstellungen/paramètres/ustawienia/setări/настройки» …).
+  Для західноєвропейських мов працює вбудований стемер PostgreSQL (`zoek_stam`).
+- `taalRaden(s)`: кирилиця (`і/ї/є/ґ` → `uk`), латиниця — голосування за стоп-словами `nl/de/fr/pl/ro`.
+- Синоніми: `SYNONIEM_GROEPEN` ≥120 груп `{canoniek, taal:'multi', domein, synoniemen[]}` з членами різними мовами («пошта/post/courrier/poczta/poștă/поща», «налаштування/instellingen/Einstellungen/paramètres/ustawienia/setări» …).
   У tsquery синоніми йдуть **без** префікса `:*` (щоб `post` не ловив `postcode`); літеральні токени запиту й їхні варіанти — з префіксом.
   Ідентифікатори, імена файлів і назви продуктів (`mijn-ruimte`, `passkey`, `Claude`) не перекладаються.
 - Словник власника: `app.zoek_synoniemen_eigenaar` (RLS; `eigenSynoniemen(lade)`, `eigenSynoniemZetten`) додається до вбудованого на
@@ -161,7 +162,7 @@ volledige_zin / voorvoegsel / titelwoorden / dekking / rank_* / vaag / handeling
   lease 5 хв, повтори 30 с → 6 год, ≤6 спроб; незворотні помилки — без повторів). Каталог інтерфейсу індексується на ладу з версією
   `ui-<hash>`: змінився код UI → лише змінені об'єкти перезаписуються.
 - **Інкрементальна**: створення/зміна → upsert за `versie` (sha256 вмісту або версія джерела; незмінене пропускається); видалення →
-  `verwijder`; відключення служби/відкликання інтеграції → `verwijderBron` + стан `niet_gekoppeld`; повторна авторизація → повний скан.
+  `verwijder`; вимкнення служби/відкликання інтеграції → `verwijderBron` + стан `niet_gekoppeld`; повторна авторизація → повний скан.
 - **Між перезапусками** індекс зберігається в PostgreSQL; пошук ніколи не читає джерела.
 - **OCR** — окремі задачі черги (`soort:'ocr'`), ≤1 паралельно на процес, кеш `app.zoek_ocr_tekst` по (user_id, ruimte, sha256, сторінка,
   двигун, мови): незмінений документ не розпізнається вдруге.
@@ -172,20 +173,20 @@ volledige_zin / voorvoegsel / titelwoorden / dekking / rank_* / vaag / handeling
 
 ## 7a. Інтерфейс `/zoek` (Z4 + зона D, 22.10.2026)
 
-- **Картки** (`src/zoek/ZoekKaart.tsx`): кольорова плитка-іконка за джерелом (токени: інтерфейс/налаштування — info, пошта — ok,
+- **Картки** (`src/zoek/ZoekKaart.tsx`): кольорова плитка-піктограма за джерелом (токени: інтерфейс/налаштування — info, пошта — ok,
   файли — accent, календар — warn, GitHub — нейтральна, дошка — змішана), для листа — фото/логотип відправника (`src/afzenders/AfzenderFoto`
   → `app.afzender_beeld`, як у пошті; без зображення — ініціали), для файла — формат у плитці (PDF, DOCX…), для GitHub/Drive — офіційний
   логотип із `src/merk` (ніколи власний малюнок). Далі: назва (посилання на справжній маршрут), джерело › шлях, фрагмент з підсвіткою
   позицій сервера, теги, дата, «Відповідність N%», дія за типом, «Чому релевантно».
-- **Упорядкування** «За релевантністю» / «За джерелами»: друге групує результати за категоріями з заголовком-розділювачем (іконка, назва,
+- **Упорядкування** «За релевантністю» / «За джерелами»: друге групує результати за категоріями з заголовком-розділювачем (піктограма, назва,
   лічильник) у сталому порядку категорій (`groepeerPerCategorie`, `src/zoek/zoek-logica.ts`); порядок усередині групи — як дав сервер.
 - **Список / сітка**: перемикач у смузі результатів; сітка = плитки (вертикальні картки, `.zk-lijst.is-raster`), на телефоні одна колонка.
   Вибір зберігається лише в цьому браузері (`localStorage`, `mr.zoek.weergave.v1`) — зручність, не дані.
 - **Чипи категорій і фільтри** показують лічильники з фасетів сервера (жодних вигаданих чисел); «Останні пошуки» — рядки зі стрілкою,
   запитом і відносним часом («2 год тому», «вчора»; старше 7 днів — дата).
 - **Технічний профіль**: смужка «Ви шукаєте в технічному просторі…» з посиланням на пошук в особистому просторі (нова вкладка), у
-  «Стані джерел» біля кожного джерела — лада (особистий/технічний), кнопка «Індексація…» → плаваюче вікно ручної індексації
-  (`ZOEK-BEHEER.md` §5). Для звичайного користувача нічого з цього не показується.
+  «Стані джерел» біля кожного джерела — лада (особистий/технічний), кнопка «Індексація…» → рухоме вікно ручної індексації
+  (`ZOEK-BEHEER.uk.md` §5). Для звичайного користувача нічого з цього не показується.
 - Більше двох недоступних у цьому просторі служб (у технічному профілі без вибору — сім) — один згортуваний блок «Недоступні в цьому
   просторі служби (N): …», усередині ті самі пояснення з кнопкою, що й на всьому сайті (`RuimteGeslotenVlak`).
 - Фільтри на телефоні/планшеті (≤ 900 px) — нижній аркуш (`role=dialog`, `aria-modal`). Він живе в робочій області, а меню сайту
@@ -205,9 +206,9 @@ volledige_zin / voorvoegsel / titelwoorden / dekking / rank_* / vaag / handeling
 - OCR потребує встановленого `tesseract` (+ traineddata) на сервері власника (`mijn-ruimte-installeer ocr-talen`); без нього джерело
   показує «OCR недоступний», документи індексуються лише за назвою й текстовим шаром.
 - Архіви: zip (stored/deflate), tar, tar.gz, gz; zip64, шифровані zip, 7z, rar → «не підтримується» (чесно в `problemen`).
-- Один cron-процес на сервер; при тисячах листів перший повний прохід триває годинами (ліміт елементів на запуск — див. `ZOEK-BEHEER.md`).
+- Один cron-процес на сервер; при тисячах листів перший повний прохід триває годинами (ліміт елементів на запуск — див. `ZOEK-BEHEER.uk.md`).
 - Словник власника без UI (лише функції ядра).
-- `app.zoek_document` (0096) лишається в схемі для відкату, порожня.
+- `app.zoek_document` (0096) лишається в схемі для повернення стану, порожня.
 
 ## 9. Файли
 
@@ -216,16 +217,3 @@ volledige_zin / voorvoegsel / titelwoorden / dekking / rank_* / vaag / handeling
 `backend/globaal-zoek.ts`, `backend/zoek-geschiedenis.ts`, `backend/zoek/{bronnen,adapters,wachtrij,stand,catalogus-ui,tekst-extractie,
 tekst-kern,tekst-werker,ocr,ocr-engines,inhoud,archief,beheer}.ts` (beheer = ручна індексація, зона D); `src/zoek/*` (зокрема `ZoekIndexVenster.tsx`, `zoek-index-{api,logic}.ts`, `ZoekCategorieIcoon.ts`), `shared/zoek-hulp.ts`; `migrations/0100_zoek_kern.sql`, `0101_*` (Z2), `0102_zoek_ocr_tekst.sql`,
 `0103_zoek_geschiedenis.sql`, `0104_zoek_gin_lade.sql`; `tests/eenheid/zoek-*.test.ts` (ручна індексація: `zoek-index-beheer-20261022`), `tests/eenheid/hulp/zoek-evaluatie.json`, стенд `tests/e2e/hulp/stand-zoek.ts`.
-
----
-
-## NL — kort
-
-`/zoek` op hub.* doorzoekt alles wat de mens in de huidige ruimte mag zien: interface (pagina's, knoppen, instellingen, «?»-uitleg,
-AI-rechten, integraties), post en bijlagen, bestanden (cloud, Drive), agenda, bord en GitHub. Eén index `app.zoek_objecten`
-(FTS `simple` op genormaliseerde tekst + PostgreSQL-stemmers + trigram), gevuld door een wachtrij en de cron `zoek-index`; zoeken leest
-nooit de bronnen zelf. De lade (`user_id` + `ruimte`) komt uitsluitend van de server (dezelfde poort als post/cloud/agenda), elke query
-draait onder RLS én draagt `user_id = $1 AND ruimte = $2`. Normalisatie (Cyrillisch ↔ Latijn, diacritica, surzhyk-varianten), ≥120
-synoniemgroepen in 9 talen, lichte stamregels voor uk/bg/pl, fuzzy via `pg_trgm`. Het percentage «Відповідність» is een monotone
-normalisatie van de ruwe score t.o.v. de beste treffer in dezelfde zoekopdracht (formule in §6). Beperkingen: geen semantisch model,
-geen IMAP-bijlagen, OCR alleen met geïnstalleerde `tesseract`, uk/bg/pl-morfologie beperkt.

@@ -96,7 +96,7 @@
     geweigerd: ['Chrome не підтвердив дозвіл. Відкрийте chrome://extensions і ввімкніть «Mijn Ruimte» знову.', 'Chrome heeft het recht niet bevestigd. Open chrome://extensions en zet «Mijn Ruimte» weer aan.'],
     ingetrokken: ['Дозвіл налагоджувача зараз не діє. Перезавантажте розширення в chrome://extensions (кнопка ↻). Нічого не збирається.',
       'Het debuggerrecht werkt nu niet. Herlaad de extensie in chrome://extensions (knop ↻). Er wordt niets verzameld.'],
-    'niet-aanvraagbaar': ['Стандартний пакет навмисно не має дозволу налагоджувача (його має лише пакет «діагностика»). Для глибокої діагностики встановіть пакет «діагностика» (посилання нижче) в окрему постійну папку. Усе інше працює й без цього дозволу.',
+    'niet-aanvraagbaar': ['Стандартний пакет навмисно не має дозволу налагоджувача (його має лише пакет «діагностика»). Для глибокої діагностики встановіть пакет «діагностика» (посилання нижче) в окрему постійну теку. Усе інше працює й без цього дозволу.',
       'Het standaardpakket heeft bewust geen debuggerrecht (dat heeft alleen het pakket «diagnose»). Voor diepe diagnose installeert u het pakket «diagnose» (link hieronder) in een aparte vaste map. Al het andere werkt ook zonder dit recht.'],
   });
   /** Waarom dit recht nodig is (altijd zichtbaar bij de knop, zodat niemand het blind aanzet). */
@@ -433,11 +433,29 @@
     if ($('toestand')) {
       $('toestand').replaceChildren(...toestandModel(s).map((x) => maak('li', { 'data-stand': x.stand, 'data-id': x.id }, maak('span', { class: 'stip', 'aria-hidden': 'true' }), maak('span', null, x.tekst), maak('span', { class: 'vh' }, x.stand === 'ja' ? t('гаразд', 'in orde') : x.stand === 'nee' ? t('проблема', 'probleem') : t('увага', 'let op')))));
     }
+    // 0.9.1 (EXT090-001): zonder koppeling geen leeg «Обліковий запис: —» en geen «Активна вкладка не на tarasevych.com», maar
+    // één knop «Увійти»: opent de site, die na het inloggen deze extensie meteen aan het account koppelt (?koppel=prive).
+    const sl0 = slotenVan(s);
+    const mail = s && typeof s.accountEmail === 'string' && s.accountEmail ? s.accountEmail.slice(0, 120) : '';
+    // Zonder antwoord van de dienst (s null) weten we het niet: dan geen knop, maar de oude neutrale regel.
+    const gekoppeld = !s || !!mail || !!((sl0.prive && sl0.prive.gekoppeld) || (sl0.technisch && sl0.technisch.gekoppeld));
     if ($('account')) {
-      const mail = s && typeof s.accountEmail === 'string' && s.accountEmail ? s.accountEmail.slice(0, 120) : '';
-      $('account').textContent = `${t('Обліковий запис', 'Account')}: ${mail || '—'}`;
+      const el = $('account');
+      el.setAttribute('data-ingelogd', gekoppeld ? '1' : '0');
+      if (!s) el.textContent = `${t('Обліковий запис', 'Account')}: —`;
+      else if (gekoppeld) el.textContent = `${t('Обліковий запис', 'Account')}: ${mail || t('підключено (пошта завантажується…)', 'gekoppeld (e-mail wordt geladen…)')}`;
+      else {
+        const knop = maak('button', { type: 'button', id: 'inloggen', class: 'primair klein', 'aria-describedby': 'inloggen-uitleg',
+          title: t('Відкриває tarasevych.com у новій вкладці. Увійдіть (якщо ще не ввійшли) — сайт сам підключить це розширення до вашого облікового запису; тут з’явиться ваша пошта, а ШІ отримає доступ лише після вашого дозволу на сайті.',
+            'Opent tarasevych.com in een nieuw tabblad. Meld u aan (als dat nog niet gebeurde) — de site koppelt deze extensie zelf aan uw account; hier verschijnt dan uw e-mail, en de AI krijgt pas toegang na uw toestemming op de site.') },
+        t('Увійти', 'Aanmelden'));
+        knop.addEventListener('click', () => openTab(URLS.koppelenPrive));
+        el.replaceChildren(maak('span', null, t('Не ввійшли', 'Niet aangemeld')), ' ', knop,
+          maak('span', { id: 'inloggen-uitleg', class: 'vh' }, t('Розширення ще не підключене до облікового запису.', 'De extensie is nog niet aan een account gekoppeld.')));
+      }
     }
-    if ($('profiel-tab')) {
+    if ($('profiel-tab')) $('profiel-tab').hidden = !gekoppeld; // zonder account zegt het profiel van een tabblad niets
+    if ($('profiel-tab') && gekoppeld) {
       const p = s && (s.profielTab === 'technisch' || s.profielTab === 'gebruiker') ? s.profielTab : null;
       // «Технічний» alleen als de technische kaart bestaat (anders kan er geen technisch tabblad voor dit account zijn).
       const toon = p === 'technisch' && !slotenVan(s).technisch ? 'gebruiker' : p;

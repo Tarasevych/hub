@@ -1,50 +1,52 @@
-# Ontwerpvoorstel: Tijdelijke Alleen-Lezen Technische Diagnose voor MCP (`MCP-ALLEEN-LEZEN-DIAGNOSE`)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MCP-ALLEEN-LEZEN-DIAGNOSE.uk.md) · [🇳🇱 **Nederlandse versie**](./MCP-ALLEEN-LEZEN-DIAGNOSE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-**Status:** Ontwerpvoorstel (standaard **UIT** — wordt **niet** geactiveerd zonder expliciet besluit van de eigenaar)  
-**Datum:** 01.11.2026  
-**Taak:** `MCP-ACCESS-001` (§6 — optionele read-only diagnostische autorisatie voor betrouwbare agentaudits)
+# Проєктна пропозиція: Тимчасова технічна діагностика «лише для читання» для MCP (`MCP-ALLEEN-LEZEN-DIAGNOSE`)
 
----
-
-## 1. Probleemstelling
-
-Externe AI-agents in de cloud (zoals Cursor Cloud Agents, ChatGPT of Claude Web) draaien vaak asynchroon voor onafhankelijke code- en release-audits (bijv. het controleren van de huidige productieversie, GitHub PR-status of read-only systeemgezondheid), op momenten dat de eigenaar geen interactieve technische browsersessie open heeft staan.
-
-In het huidige beveiligingsmodel gelden voor `_beheer`-hulpmiddelen terecht vier gelijktijdige voorwaarden:
-1. Actieve, niet-gepauzeerde technische sessie van de eigenaar (`tech-ruimtes-v2` / `tech-profiel`);
-2. Per-verbinding AI-sessiedelegatie (`app.tech_ruimte_ai` op `verbinding_id`);
-3. Ingeschakelde dienst `ai` in de technische gegevensruimte (`ruimte-scheiding`);
-4. Toestemming in het ondertekende AI-beleidsplafond (`keten.json` op `admin/ai`).
-
-Zodra de eigenaar zijn browser sluit of naar de persoonlijke ruimte wisselt (`PAUZE`), vervallen alle `_beheer`-hulpmiddelen onmiddellijk — inclusief zuiver **alleen-lezen** inspectiehulpmiddelen (zoals versielijst, PR/audit-status en read-only systeemdiagnose).
+**Статус:** Проєктна пропозиція (типово **ВИМКНЕНО** — **не** активується без явного рішення власника)  
+**Дата:** 01.11.2026  
+**Завдання:** `MCP-ACCESS-001` (§6 — необов'язкова діагностична авторизація лише для читання для надійних аудитів агентів)
 
 ---
 
-## 2. Voorgesteld Model (Standaard Uitgeschakeld)
+## 1. Постановка проблеми
 
-Een afzonderlijke, strikt begrensde modus **`technisch_alleen_lezen_diagnose`** per individuele MCP-verbinding (`verbinding_id`), die **uitsluitend** na expliciete WebAuthn/Passkey step-up door de servereigenaar voor een vaste eindtijd kan worden afgegeven.
+Зовнішні хмарні ШІ-агенти (такі як Cursor Cloud Agents, ChatGPT або Claude Web) часто працюють асинхронно для незалежних аудитів коду та випусків (наприклад, перевірка поточної продакшен-версії, стану GitHub PR або перевірка стану здоров'я системи лише для читання) у ті моменти, коли у власника не відкрита інтерактивна технічна сесія в браузері.
 
-### 2.1 Harde Veiligheidsgrenzen
+У поточній моделі безпеки для інструментів `_beheer` справедливо діють чотири одночасні умови:
+1. Активна, не призупинена технічна сесія власника (`tech-ruimtes-v2` / `tech-profiel`);
+2. Делегування ШІ-сесії для конкретного з'єднання (`app.tech_ruimte_ai` на `verbinding_id`);
+3. Увімкнена служба `ai` в технічному просторі даних (`ruimte-scheiding`);
+4. Дозвіл у підписаній стелі політики ШІ (`keten.json` на `admin/ai`).
 
-1. **Standaard UIT (`default: off`):** Geen enkele bestaande of nieuwe OAuth-koppeling krijgt deze modus automatisch.
-2. **Alleen per `verbinding_id` (nooit `'*'`):** De autorisatie is gebonden aan één specifieke OAuth-grant (`connector_v2_rechten.grant_id`) en één `AgentSlug`. Geen enkel ander AI-kanaal erft deze toestemming.
-3. **Verplichte Passkey Step-Up + Maximale Duur:** Afgifte vereist `OWNER_REQUIRED` + verse passkey-bevestiging (`stepUp`) en een harde vervaltijd (`expires_at`, bijv. 1 uur, 4 uur of max. 24 uur voor een nachtelijke audit — **nooit** `tot-intrekken` zonder eindtijd).
-4. **Strikte Witte Lijst van Zuiver Alleen-Lezen Hulpmiddelen:**
-   - Uitsluitend hulpmiddelen die in `shared/connector-v2/catalogus.ts` zowel `actie: 'lezen'` als een expliciete vlag `diagnoseAlleenLezenToegestaan: true` dragen (bijv. productieversie/gezondheid lezen, orchestratiestatus lezen, GitHub PR/checks lezen zonder secrets).
-   - **Absoluut uitgesloten (nooit beschikbaar zonder volledige live technische sessie):**
-     - Alle schrijf-, wijzig- of verwijderacties (`actie !== 'lezen'`);
-     - Uitrol, herstart, SSH, terminal, containers, vlaggen wijzigen, gebruikersbeheer (`users_manage`, `flags_manage`);
-     - Lezen van geheimen, tokens, kluiswaarden, ruwe e-mailinhoud of sessiesleutels.
-5. **Ondertekend AI-Beleid (`keten.json`) Blijft Plafond:** Zelfs met een actieve read-only diagnosegrant blijft `controleerAiBeleid()` leidend — als `admin/ai` een hulpmiddel of agent verbiedt, blijft het hulpmiddel gesloten.
-6. **Direct Intrekbaar & Volledig Geaudit:**
-   - Één klik op `«Стоп ШІ»` (`AiStopKnop`), `«Відкликати»` op `#agent/<slug>` of het verstrijken van `expires_at` trekt de modus onmiddellijk in en stuurt `notifications/tools/list_changed`.
-   - Elke aanroep onder deze modus schrijft een auditregel met `modus: 'alleen_lezen_diagnose'`, `verbindingId` en `agent`.
+Щойно власник закриває браузер або перемикається в особистий простір (`PAUZE`), усі інструменти `_beheer` миттєво вимикаються — включно із суто **читальними** інструментами інспекції (такими як список версій, стан PR/аудиту та діагностика системи лише для читання).
 
 ---
 
-## 3. Benodigde Beslissing van de Eigenaar vóór Implementatie
+## 2. Запропонована модель (типово вимкнено)
 
-Dit voorstel is in `MCP-ACCESS-001` **bewust alleen als ontwerp gedocumenteerd** en niet in productiecode ingeschakeld. Als de eigenaar deze modus in een vervolgtaak wil laten bouwen, volstaat een keuze op drie punten:
-1. Maximale toegestane duur per afgifte (aanbevolen plafond: **4 uur** of **12 uur**);
-2. Exacte lijst van toegestane read-only `_beheer`-sleutels (aanbevolen: versie/gezondheid, `orch`-status lezen, read-only auditlog-samenvatting en GitHub PR-lezen);
-3. Of elke afgifte naast Passkey step-up ook een directe zichtbare banner in de bovenbalk moet tonen zolang een cloud-agent een lopend read-only diagnosevenster heeft.
+Окремий, суворо обмежений режим **`technisch_alleen_lezen_diagnose`** для окремого MCP-з'єднання (`verbinding_id`), який може бути виданий **виключно** після явного підтвердження WebAuthn/Passkey (посилене підтвердження) власником сервера на фіксований час дії.
+
+### 2.1 Жорсткі межі безпеки
+
+1. **Типово ВИМКНЕНО (`default: off`):** Жодне наявне чи нове OAuth-під'єднання не отримує цей режим автоматично.
+2. **Лише для конкретного `verbinding_id` (ніколи `'*'`):** Авторизація прив'язана до одного конкретного OAuth-гранту (`connector_v2_rechten.grant_id`) і одного `AgentSlug`. Жоден інший канал ШІ не успадковує цей дозвіл.
+3. **Обов'язковий Passkey Step-Up + максимальна тривалість:** Видача вимагає `OWNER_REQUIRED` + свіжого підтвердження passkey (`stepUp`) і жорсткого часу закінчення (`expires_at`, напр., 1 година, 4 години або макс. 24 години для нічного аудиту — **ніколи** `tot-intrekken` без кінцевого часу).
+4. **Суворий білий список суто читальних інструментів:**
+   - Виключно інструменти, які в `shared/connector-v2/catalogus.ts` мають одночасно `actie: 'lezen'` та явний прапорець `diagnoseAlleenLezenToegestaan: true` (напр., читання версії/здоров'я продакшену, читання стану оркестрації, читання GitHub PR/перевірок без секретів).
+   - **Абсолютно виключені (ніколи не доступні без повної живої технічної сесії):**
+     - Усі дії запису, зміни чи видалення (`actie !== 'lezen'`);
+     - Розгортання, перезапуск, SSH, термінал, контейнери, зміна прапорців, керування користувачами (`users_manage`, `flags_manage`);
+     - Читання секретів, токенів, значень сховища ключів, сирого вмісту листів або ключів сесій.
+5. **Підписана політика ШІ (`keten.json`) залишається стелею:** Навіть за активного діагностичного гранту лише для читання `controleerAiBeleid()` залишається визначальним — якщо `admin/ai` забороняє інструмент або агента, інструмент залишається закритим.
+6. **Миттєве відкликання та повний аудит:**
+   - Один натискання на `«Стоп ШІ»` (`AiStopKnop`), `«Відкликати»` на `#agent/<slug>` або закінчення `expires_at` негайно відкликає режим і надсилає `notifications/tools/list_changed`.
+   - Кожен виклик у цьому режимі записує рядок аудиту з `modus: 'alleen_lezen_diagnose'`, `verbindingId` та `agent`.
+
+---
+
+## 3. Необхідне рішення власника перед реалізацією
+
+Ця пропозиція в `MCP-ACCESS-001` **свідомо задокументована лише як проєкт** і не увімкнена в продакшен-коді. Якщо власник захоче реалізувати цей режим у наступному завданні, достатньо вибору за трьома пунктами:
+1. Максимальна дозволена тривалість однієї видачі (рекомендована стеля: **4 години** або **12 годин**);
+2. Точний список дозволених ключів `_beheer` лише для читання (рекомендовано: версія/здоров'я, читання стану `orch`, зведення журналу аудиту лише для читання та читання GitHub PR);
+3. Чи має кожна видача, окрім Passkey step-up, також показувати прямий видимий банер у верхній панелі, доки хмарний агент має активне вікно діагностики лише для читання.

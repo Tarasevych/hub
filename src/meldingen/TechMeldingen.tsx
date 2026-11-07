@@ -136,7 +136,7 @@ export function TechMeldingenPaneel({ uk, sluit }: { uk: boolean; sluit: () => v
           </section>
         ) : null}
         <div className='tech-knoppen tm-voet'>
-          <small>{t('Звук, спливаючі й приховування типів — у налаштуваннях дзвіночка («Типи сповіщень»).', 'Geluid, pop-ups en verbergen per soort: in de instellingen van de bel («Soorten meldingen»).')}</small>
+          <small>{t('Звук, спливні й приховування типів — у налаштуваннях дзвіночка («Типи сповіщень»).', 'Geluid, pop-ups en verbergen per soort: in de instellingen van de bel («Soorten meldingen»).')}</small>
           <button type='button' className='is-hoofd' disabled={(!ongelezen.length || !lees) && !ongelezenActiviteit.length || bezig} aria-busy={bezig || undefined} data-tm-alles onClick={() => void allesGelezen()}><CheckCheck aria-hidden='true' />{t('Позначити все прочитаним', 'Alles als gelezen')}</button>
         </div>
       </div>

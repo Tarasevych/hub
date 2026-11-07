@@ -224,19 +224,86 @@ small.ag-melding{display:block}
 @media(max-width:560px){.ag-verbind .ag-segment{display:grid;width:100%}.ag-verbind .ag-segment-optie{border-left:0;border-top:1px solid var(--line);padding-right:0}.ag-verbind .ag-segment-optie:first-child{border-top:0}.ag-verbind .ag-segment button[role=radio]{width:100%}}
 /* Дошка підключення ШІ: картки й панель на всю ширину рядка, вкладки як у браузері. */
 .ag-bord-wrap{max-width:1100px}
-.ag-bord{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;align-items:stretch}
-.ag-bord-kaart{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:148px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer;font:inherit}
-.ag-bord-kaart:hover:not(:disabled){border-color:var(--accent);box-shadow:0 8px 24px color-mix(in srgb,var(--text) 6%,transparent)}
-.ag-bord-kaart.is-open{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
-.ag-bord-kaart.is-uit,.ag-bord-kaart:disabled{cursor:not-allowed;opacity:.72}
-.ag-bord-kaart:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.ag-bord-naam{font-size:1.15rem;font-weight:700}
-.ag-bord-sub{color:var(--muted);font-size:.85rem}
-.ag-bord-paneel{grid-column:1 / -1;display:grid;gap:12px;padding:12px 14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);min-width:0}
-.ag-bord-tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
-.ag-bord-tab{flex:0 0 auto;padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--muted);font:inherit;font-weight:650;cursor:pointer}
-.ag-bord-tab[aria-selected=true]{color:var(--text);background:var(--panel);border-color:var(--line);box-shadow:inset 0 -2px 0 var(--accent)}
-.ag-bord-tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ag-bord {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--ruimte-3);
+  align-items: stretch;
+  min-width: 0;
+}
+.ag-bord-kaart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "logo naam pijl" "logo stand pijl";
+  align-items: center;
+  align-content: center;
+  gap: var(--ruimte-1) var(--ruimte-3);
+  min-width: 0;
+  min-height: 5rem;
+  padding: var(--ruimte-3) var(--ruimte-4);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-l);
+  background: var(--panel);
+  box-shadow: var(--schaduw-1);
+  color: var(--text);
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+}
+.ag-bord-kaart > :first-child { grid-area: logo; }
+.ag-bord-naam { grid-area: naam; overflow-wrap: anywhere; font-size: var(--tekst-basis); font-weight: 700; line-height: 1.25; }
+.ag-bord-sub { grid-area: stand; overflow-wrap: anywhere; color: var(--muted); font-size: var(--tekst-klein); line-height: 1.35; }
+.ag-bord-pijl { grid-area: pijl; color: var(--muted); }
+.ag-bord-kaart.is-open {
+  border-color: var(--accent);
+  background: linear-gradient(120deg, var(--accent-soft), var(--panel));
+}
+.ag-bord-kaart.is-open .ag-bord-pijl { color: var(--accent); transform: rotate(180deg); }
+.ag-bord-kaart.is-uit, .ag-bord-kaart:disabled { cursor: not-allowed; opacity: .72; }
+.ag-bord-kaart:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .ag-bord-kaart:hover:not(:disabled) { border-color: var(--accent); box-shadow: var(--schaduw-2); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ag-bord-kaart { transition: border-color var(--ruimte-beweging), box-shadow var(--ruimte-beweging); }
+  .ag-bord-pijl { transition: transform var(--ruimte-beweging); }
+}
+.ag-bord-paneel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-4);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-l);
+  background: var(--panel);
+  min-width: 0;
+}
+.ag-bord-tabs {
+  display: flex;
+  gap: var(--ruimte-1);
+  min-width: 0;
+  padding: var(--ruimte-1);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-m);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.ag-bord-tab {
+  flex: none;
+  min-height: var(--tik-hoogte);
+  padding: var(--ruimte-1) var(--ruimte-3);
+  border: 1px solid transparent;
+  border-radius: var(--straal-s);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.ag-bord-tab[aria-selected=true] { background: var(--panel); color: var(--text); border-color: var(--line); box-shadow: var(--schaduw-1); }
+.ag-bord-tab:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.ag-bord-blad .ag-knop { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .ag-bord-blad{display:grid;gap:10px;min-width:0}
 .ag-bord-blad p,.ag-bord-blad li{margin:0;line-height:1.5}
 .ag-bord-eerlijk{padding:10px 12px;border-radius:10px;background:var(--panel)}
@@ -252,6 +319,73 @@ a.ag-knop{text-decoration:none}
   .ag-bord{grid-template-columns:1fr}
   .ag-bord-kaart{min-height:0}
   .ag-bord-tab{padding:8px 10px}
+}
+
+/* Eén profiel en het vierkanaalspaneel: de beschikbare kaartbreedte bepaalt de indeling. */
+.ag-agent { --ag-r: var(--straal-l); }
+.ag-agent .ag-agent-kop {
+  padding: var(--ruimte-3) var(--ruimte-4);
+  border: 1px solid var(--line);
+  border-radius: var(--straal-l);
+  background: linear-gradient(115deg, var(--accent-soft), var(--panel) 72%);
+}
+.ag-agent .ag-kaart { box-shadow: var(--schaduw-1); }
+.ag-agent .ag-agent-kop h2, .ag-agent .ag-kaart-kop h3 { font-family: inherit; overflow-wrap: anywhere; }
+.ag-agent [data-agent-sectie='brug'] {
+  container: ag-brug / inline-size;
+  gap: var(--ruimte-3);
+}
+.ag-agent [data-agent-sectie='brug'] .ag-verbind-knoppen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--ruimte-2);
+  align-items: stretch;
+}
+.ag-agent [data-agent-sectie='brug'] .ag-knop {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--tik-hoogte);
+  padding: var(--ruimte-2) var(--ruimte-3);
+  border-radius: var(--straal-m);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+.ag-agent [data-brug-kanaal] { justify-content: flex-start; text-align: start; }
+.ag-agent [data-brug-kanaal][aria-selected=true] { background: var(--accent); color: var(--text-on-accent); }
+.ag-agent [data-agent-sectie='brug'] .ag-diagnose-rij {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ruimte-3);
+  align-items: start;
+  padding: var(--ruimte-3);
+  border-radius: var(--straal-m);
+}
+.ag-agent [data-agent-sectie='brug'] .ag-diagnose-info { gap: var(--ruimte-2); overflow-wrap: anywhere; }
+.ag-agent [data-agent-sectie='brug'] .ag-diagnose-info code {
+  display: block;
+  padding: var(--ruimte-2) var(--ruimte-3);
+  border-radius: var(--straal-s);
+  background: var(--panel);
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ag-agent [data-agent-sectie='brug'] .ag-diagnose-acties {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  align-items: stretch;
+  gap: var(--ruimte-2);
+}
+.ag-agent [data-agent-sectie='brug'] .ag-knop:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@container ag-brug (min-width: 43rem) {
+  .ag-agent [data-agent-sectie='brug'] .ag-diagnose-rij { grid-template-columns: minmax(0, 1fr) minmax(12rem, 15rem); }
+}
+@media (forced-colors: active) {
+  .ag-bord-kaart.is-open, .ag-bord-tab[aria-selected=true], .ag-agent [data-brug-kanaal][aria-selected=true] {
+    border: 2px solid Highlight;
+  }
 }
 
 /* «Доступ ШІ» (shared/ai-toegang.ts): перемикачі скоупів одного підключення. Світла, сучасна; вузький екран — стовпчиком. */
@@ -313,6 +447,12 @@ a.ag-knop{text-decoration:none}
 .ag-ext-regel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0;padding:12px;border:1px dashed var(--line);border-radius:var(--ag-r,10px)}
 .ag-ext-regel span{flex:1 1 240px;min-width:0;line-height:1.5}
 .ag-ext-regel .ag-knop{min-height:44px}
+/* EXT090-001 (0.9.2): «Вбудований ШІ Chrome» → gebruik door pagina's van de site (siteToegang) en proefformulier. */
+.ag-ext-lai-site{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.ag-ext-lai-site .ag-knop{min-height:44px;justify-self:start;white-space:normal}
+.ag-ext-lai-site .ag-veld{display:grid;gap:4px;font-size:.85rem;font-weight:600}
+.ag-ext-lai-site :is(select,textarea){width:100%;max-width:100%;box-sizing:border-box;font:inherit;font-weight:400;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text)}
+.ag-ext-lai-uit{margin:0;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--text);font:inherit}
 .ext-toestemmingen{margin-top:12px;min-width:0}
 .ext-toestemmingen>h4{margin:0 0 8px;font-size:.95rem}
 .ag-ext [data-paneel],.ag-ext .ag-kaart{min-width:0;overflow-wrap:anywhere}

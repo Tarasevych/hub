@@ -408,7 +408,7 @@ async function defaultLoadUserMailStore(userId: string): Promise<{
 function detectLanguageCode(text: string): string {
   const sample = String(text || '').slice(0, 2000);
   if (/[іїєґІЇЄҐ]/.test(sample)) return 'uk';
-  if (/[а-яА-ЯёЁ]/.test(sample)) return 'uk';
+  if (/[а-яА-Я]/.test(sample)) return 'uk';
   if (/\b(?:de|het|een|voor|met|niet|van|naar|bij|vriendelijke|groet|factuur|betaling)\b/i.test(sample)) return 'nl';
   if (/\b(?:der|die|das|und|für|mit|nicht|von|rechnung|vielen|dank)\b/i.test(sample)) return 'de';
   if (/\b(?:le|la|les|des|pour|avec|dans|bonjour|merci|facture)\b/i.test(sample)) return 'fr';

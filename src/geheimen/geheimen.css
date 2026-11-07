@@ -125,10 +125,6 @@ html.theme-dark .gm-root{--gm-warn:var(--warn)}
   .gm-teller>span{max-width:45%}
 }
 @media (prefers-reduced-motion:reduce){.gm-teller>span{transition:none}}
-/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
-@media (max-width:700px){
-  .gm-root .gm-knop,.gm-kluis-formulier .gm-knop{min-height:var(--tik-hoogte)}
-}
 /* UX-AI-VAULT-001: canoniek adaptief kluisformulier (werkt zowel binnen .gm-root als los in Venster op github.* en op api.*\/vault). */
 .gm-kluis-formulier{--gm-ok:var(--ok,#16a34a);--gm-bad:var(--fout,#dc2626);--gm-warn:var(--warn,#d97706);--gm-bg:var(--panel,#fff);--gm-bg2:var(--surface,#f8fafc);--gm-line:var(--line,#e2e8f0);--gm-text:var(--text,#0f172a);--gm-muted:var(--muted,#64748b);--gm-accent:var(--accent,#2563eb);display:grid;gap:12px;color:var(--gm-text)}
 .gm-kluis-formulier *{box-sizing:border-box}
@@ -154,3 +150,10 @@ html.theme-dark .gm-root{--gm-warn:var(--warn)}
 .gm-extra>summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;font-weight:650;font-size:.86rem;color:var(--gm-text)}
 .gm-extra-samenvatting{font-weight:400;font-size:.78rem;color:var(--gm-muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .gm-extra-inhoud{display:grid;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--gm-line)}
+/* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen.
+   Laatste laag van dit bestand: daarvóór stond het boven de regels van UX-AI-VAULT-001, en `.gm-kluis-formulier .gm-knop{min-height:38px}`
+   (zelfde specificiteit, later) won op de telefoon (oude fout, 05.11.2026). */
+@media (max-width:700px){
+  .gm-root .gm-knop{min-height:var(--tik-hoogte)}
+  .gm-kluis-formulier .gm-knop{min-height:var(--tik-hoogte)}
+}

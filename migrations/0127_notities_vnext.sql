@@ -122,7 +122,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ------------------------------------------------------------------------------------------------ de vlag (standaard uit)
 INSERT INTO app.feature_flags (sleutel, omschrijving, aan, standaard)
 VALUES ('notities-vnext',
-  'Нові нотатки: папки, архів, кошик, редактор Markdown, імпорт/експорт. Nieuwe notities. Записи та дозволи ті самі.',
+  'Нові нотатки: теки, архів, кошик, редактор Markdown, імпорт/експорт. Nieuwe notities. Записи та дозволи ті самі.',
   false, false)
 ON CONFLICT (sleutel) DO NOTHING;
 

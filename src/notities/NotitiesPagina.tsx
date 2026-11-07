@@ -12,6 +12,7 @@ import NotitieKaart from './NotitieKaart';
 import { NotitiesFout, notitiesClient, voorkeurenBewaren, voorkeurenLezen, type LijstAntwoord, type Voorkeuren } from './notities-client';
 import { SOORT_LABEL, foutTekst, inVeld, locale, tr, useSmal, type Lang } from './tekst';
 import './notities-vnext.css';
+import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
 const NotitieBewerker = lazy(() => import('./NotitieBewerker'));
 const NotitiesImport = lazy(() => import('./NotitiesImport'));
@@ -89,6 +90,15 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
     finally { setBezig(false); }
   };
   const open = (n: Notitie) => { if (n.verwijderdOp) return; setLaag({ soort: 'bewerk', notitie: n }); };
+  // ZOEKDIEP-001 (05.11.2026): diepe link uit de zoekpagina (?open_item_id=<id>; zelfde id als het bord, migratie 0127) → de notitie
+  // ophalen (ook als zij niet op de eerste pagina staat) en in de bewerker openen. Niet gevonden → eerlijke melding.
+  const zoekNotitie = useRef(typeof location !== 'undefined' ? diepeWaarde(location.search, DIEPE_PARAMS.item) : '');
+  useEffect(() => {
+    const id = zoekNotitie.current; if (!id) return;
+    zoekNotitie.current = ''; wisDiepeParams(DIEPE_PARAMS.item);
+    notitiesClient.een(id).then((n) => { if (n && !n.verwijderdOp) open(n); else setFout(tr(lang, 'Нотатку з пошуку не знайдено: можливо, її вже видалено.', 'De notitie uit de zoekresultaten is niet gevonden: misschien is zij verwijderd.')); },
+      () => setFout(tr(lang, 'Нотатку з пошуку не знайдено: можливо, її вже видалено.', 'De notitie uit de zoekresultaten is niet gevonden: misschien is zij verwijderd.')));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const bewaard = (n: Notitie, nieuw: boolean) => { toon(nieuw ? tr(lang, 'Нотатку створено.', 'Notitie aangemaakt.') : tr(lang, 'Збережено.', 'Opgeslagen.')); if (nieuw) setLaag({ soort: 'bewerk', notitie: n }); void laad({ stil: true }); };
   const mapNieuw = async () => {
     const naam = (nieuweMap ?? '').trim(); if (!naam) { setNieuweMap(null); return; }
@@ -101,7 +111,7 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
     catch (e) { setFout(foutTekst(lang, e instanceof NotitiesFout ? e.code : 'FOUT')); }
   };
   const mapWeg = async (m: NotitieMap) => {
-    try { await notitiesClient.mapVerwijder(m.id); if (mapId === m.id) setMapId(null); toon(tr(lang, 'Папку прибрано; нотатки залишилися.', 'Map weggehaald; de notities blijven.')); await laad({ stil: true }); }
+    try { await notitiesClient.mapVerwijder(m.id); if (mapId === m.id) setMapId(null); toon(tr(lang, 'Теку прибрано; нотатки залишилися.', 'Map weggehaald; de notities blijven.')); await laad({ stil: true }); }
     catch (e) { setFout(foutTekst(lang, e instanceof NotitiesFout ? e.code : 'FOUT')); }
   };
 
@@ -119,7 +129,7 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
 
   const kies = (s: Scherm) => { setScherm(s); if (s !== 'bronnen') { setMapId(null); } };
   const filterActief = Boolean(vraag.trim() || etiket || soort || mapId);
-  const kop = scherm === 'bronnen' ? tr(lang, 'Інтеграції', 'Integraties') : mapId ? (mappen.find((m) => m.id === mapId)?.naam ?? tr(lang, 'Папка', 'Map')) : tr(lang, WEERGAVE_LABEL[weergave][0], WEERGAVE_LABEL[weergave][1]);
+  const kop = scherm === 'bronnen' ? tr(lang, 'Інтеграції', 'Integraties') : mapId ? (mappen.find((m) => m.id === mapId)?.naam ?? tr(lang, 'Тека', 'Map')) : tr(lang, WEERGAVE_LABEL[weergave][0], WEERGAVE_LABEL[weergave][1]);
 
   // Minikalender «Vandaag»: dagen waarop notities zijn gewijzigd krijgen een stip (uit wat er geladen is).
   const dagen = useMemo(() => {
@@ -159,11 +169,11 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
         ); })}
         <li><button type='button' className={scherm === 'bronnen' ? 'is-actief' : ''} aria-current={scherm === 'bronnen' ? 'page' : undefined} onClick={() => kies('bronnen')} data-vn-weergave='bronnen'><Plug aria-hidden='true' />{tr(lang, 'Інтеграції', 'Integraties')}</button></li>
       </ul>
-      <div className='vn-rail-kop'><span>{tr(lang, 'Папки', 'Mappen')}</span><button type='button' className='vn-icoonknop' onClick={() => setNieuweMap('')} aria-label={tr(lang, 'Нова папка', 'Nieuwe map')} title={tr(lang, 'Нова папка', 'Nieuwe map')} data-vn-map-nieuw='1'><FolderPlus /></button></div>
+      <div className='vn-rail-kop'><span>{tr(lang, 'Теки', 'Mappen')}</span><button type='button' className='vn-icoonknop' onClick={() => setNieuweMap('')} aria-label={tr(lang, 'Нова тека', 'Nieuwe map')} title={tr(lang, 'Нова тека', 'Nieuwe map')} data-vn-map-nieuw='1'><FolderPlus /></button></div>
       {nieuweMap !== null ? (
         <form className='vn-rail-vorm' onSubmit={(e) => { e.preventDefault(); void mapNieuw(); }}>
-          <input autoFocus value={nieuweMap} maxLength={80} placeholder={tr(lang, 'назва папки', 'mapnaam')} aria-label={tr(lang, 'Назва нової папки', 'Naam van de nieuwe map')} onChange={(e) => setNieuweMap(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setNieuweMap(null); }} />
-          <button type='submit' className='vn-icoonknop' aria-label={tr(lang, 'Створити папку', 'Map maken')}><Check /></button>
+          <input autoFocus value={nieuweMap} maxLength={80} placeholder={tr(lang, 'назва теки', 'mapnaam')} aria-label={tr(lang, 'Назва нової теки', 'Naam van de nieuwe map')} onChange={(e) => setNieuweMap(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setNieuweMap(null); }} />
+          <button type='submit' className='vn-icoonknop' aria-label={tr(lang, 'Створити теку', 'Map maken')}><Check /></button>
           <button type='button' className='vn-icoonknop' onClick={() => setNieuweMap(null)} aria-label={tr(lang, 'Скасувати', 'Annuleren')}><X /></button>
         </form>
       ) : null}
@@ -172,7 +182,7 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
           <li key={m.id}>
             {mapBewerk?.id === m.id ? (
               <form className='vn-rail-vorm' onSubmit={(e) => { e.preventDefault(); void mapHernoem(); }}>
-                <input autoFocus value={mapBewerk.naam} maxLength={80} aria-label={tr(lang, 'Нова назва папки', 'Nieuwe mapnaam')} onChange={(e) => setMapBewerk({ id: m.id, naam: e.target.value })} onKeyDown={(e) => { if (e.key === 'Escape') setMapBewerk(null); }} />
+                <input autoFocus value={mapBewerk.naam} maxLength={80} aria-label={tr(lang, 'Нова назва теки', 'Nieuwe mapnaam')} onChange={(e) => setMapBewerk({ id: m.id, naam: e.target.value })} onKeyDown={(e) => { if (e.key === 'Escape') setMapBewerk(null); }} />
                 <button type='submit' className='vn-icoonknop' aria-label={tr(lang, 'Зберегти', 'Opslaan')}><Check /></button>
                 <button type='button' className='vn-icoonknop' onClick={() => setMapBewerk(null)} aria-label={tr(lang, 'Скасувати', 'Annuleren')}><X /></button>
               </form>
@@ -181,13 +191,13 @@ export default function NotitiesPagina({ lang }: { lang: Lang }) {
                 <button type='button' className={mapId === m.id ? 'is-actief' : ''} aria-current={mapId === m.id ? 'page' : undefined} onClick={() => { setScherm('alle'); setMapId(mapId === m.id ? null : m.id); }} data-vn-map={m.id}><Folder aria-hidden='true' /><span className={`vn-stip kleur-${m.kleur}`} aria-hidden='true' />{m.naam}<span className='vn-telling'>{m.aantal || ''}</span></button>
                 <span className='vn-rail-mapknoppen'>
                   <button type='button' className='vn-icoonknop' onClick={() => setMapBewerk({ id: m.id, naam: m.naam })} aria-label={tr(lang, `Перейменувати «${m.naam}»`, `«${m.naam}» hernoemen`)}><Pencil /></button>
-                  <button type='button' className='vn-icoonknop is-gevaar' onClick={() => void mapWeg(m)} aria-label={tr(lang, `Прибрати папку «${m.naam}» (нотатки залишаться)`, `Map «${m.naam}» weghalen (notities blijven)`)}><X /></button>
+                  <button type='button' className='vn-icoonknop is-gevaar' onClick={() => void mapWeg(m)} aria-label={tr(lang, `Прибрати теку «${m.naam}» (нотатки залишаться)`, `Map «${m.naam}» weghalen (notities blijven)`)}><X /></button>
                 </span>
               </>
             )}
           </li>
         ))}
-        {!mappen.length ? <li className='vn-rail-leeg'>{tr(lang, 'Папок ще немає.', 'Nog geen mappen.')}</li> : null}
+        {!mappen.length ? <li className='vn-rail-leeg'>{tr(lang, 'Тек ще немає.', 'Nog geen mappen.')}</li> : null}
       </ul>
       {data?.etiketten.length ? (
         <>

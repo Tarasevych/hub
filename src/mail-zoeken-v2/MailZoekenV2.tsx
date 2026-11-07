@@ -122,7 +122,7 @@ export default function MailZoekenV2(p: Props) {
   const titel: Record<V2Weergave, string> = {
     home: t('Пошук і фільтри', 'Zoeken en filters'), text: t('Текст і слова', 'Tekst en woorden'), people: t('Люди', 'Personen'),
     subject: t('Тема', 'Onderwerp'), status: t('Стан листа', 'Berichtstatus'), date: t('Період', 'Periode'),
-    label: t('Папка / мітка', 'Map / label'), scope: t('Область пошуку', 'Zoekbereik'), attachment: t('Вкладення і тип вмісту', 'Bijlagen en inhoudstype'),
+    label: t('Тека / мітка', 'Map / label'), scope: t('Область пошуку', 'Zoekbereik'), attachment: t('Вкладення і тип вмісту', 'Bijlagen en inhoudstype'),
     size: t('Розмір', 'Grootte'), saved: t('Збережені пошуки', 'Opgeslagen zoekopdrachten'),
   };
   const froms = mailSearchFromValues(c), tos = mailSearchToValues(c), subjects = mailSearchSubjectValues(c), plekken = mailSearchLocations(c);
@@ -221,8 +221,8 @@ export default function MailZoekenV2(p: Props) {
               onKies={(v) => set({ locationKind: v, locationValue: '', locationName: '', accountIds: v === 'all' ? allIds : [p.currentAccountId].filter(Boolean) })}
               opties={[['current', t('Поточний розділ', 'Huidige sectie')], ['all', t('Уся пошта', 'Alle e-mail')]]} />
             <p className="mzv2-noot">{c.locationKind === 'current'
-              ? t('Шукати лише у відкритій зараз папці цього акаунта.', 'Alleen zoeken in de nu geopende map van dit account.')
-              : t('Шукати в усіх папках усіх підключених акаунтів. Інші умови діють разом із цим.', 'Zoeken in alle mappen van alle gekoppelde accounts. Andere voorwaarden gelden tegelijk.')}</p>
+              ? t('Шукати лише у відкритій зараз теці цього акаунта.', 'Alleen zoeken in de nu geopende map van dit account.')
+              : t('Шукати в усіх теках усіх підключених акаунтів. Інші умови діють разом із цим.', 'Zoeken in alle mappen van alle gekoppelde accounts. Andere voorwaarden gelden tegelijk.')}</p>
             {(['SPAM', 'TRASH'] as const).map((id) => (
               <Schakelaar key={id} aan={c.excludeSystemLabels.includes(id)}
                 onWissel={(v) => set({ excludeSystemLabels: v ? [...new Set([...c.excludeSystemLabels, id])] : c.excludeSystemLabels.filter((x) => x !== id) })}>
@@ -411,8 +411,8 @@ function LabelEditor({ lang, c, set, facets, labels, currentAccountId, allIds }:
   return (
     <div className="mzv2-editor">
       <label className="mzv2-zoek-veld"><Search aria-hidden="true" />
-        <input data-mzv2-focus value={term} onChange={(e) => setTerm(e.target.value)} placeholder={t('Знайти папку або мітку', 'Map of label zoeken')} aria-label={t('Знайти папку або мітку', 'Map of label zoeken')} /></label>
-      {sys.length > 0 && <Lijst titel={t('Папки', 'Mappen')}>{sys.map(([id, uk, nl, ik]) => knop({ kind: 'system', value: id, name: lang === 'uk' ? uk : nl }, ik))}</Lijst>}
+        <input data-mzv2-focus value={term} onChange={(e) => setTerm(e.target.value)} placeholder={t('Знайти теку або мітку', 'Map of label zoeken')} aria-label={t('Знайти теку або мітку', 'Map of label zoeken')} /></label>
+      {sys.length > 0 && <Lijst titel={t('Теки', 'Mappen')}>{sys.map(([id, uk, nl, ik]) => knop({ kind: 'system', value: id, name: lang === 'uk' ? uk : nl }, ik))}</Lijst>}
       {eig.length > 0 && <Lijst titel={t('Мої мітки', 'Mijn labels')}>{eig.map((l) => knop({ kind: 'label', value: l.id, name: l.name }, <Tag />))}</Lijst>}
       {!sys.length && !eig.length && <p className="mzv2-leeg">{t('Нічого не знайдено.', 'Niets gevonden.')}</p>}
     </div>

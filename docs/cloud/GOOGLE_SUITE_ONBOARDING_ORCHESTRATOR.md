@@ -1,85 +1,87 @@
-# Primary Google Suite Onboarding Orchestrator — B+
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./GOOGLE_SUITE_ONBOARDING_ORCHESTRATOR.uk.md) · [🇳🇱 **Nederlandse versie**](./GOOGLE_SUITE_ONBOARDING_ORCHESTRATOR.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-## Scope
+# Оркестратор під'єднання основного облікового запису Google Suite — B+
 
-The primary Google identity is onboarded through one Google Cloud project and one Web OAuth Client. Consent remains contextual and sequential:
+## Обсяг
+
+Основна ідентичність Google під'єднується через один проєкт Google Cloud та один клієнт Web OAuth. Надання згоди залишається контекстним і послідовним:
 
 1. Mail
 2. Drive
 3. Calendar
 4. Photos
 
-Every step is an explicit incremental authorization request. The sequence does not activate Mail migration, Drive indexing/Changes/workers, Calendar ingestion, or Photos ingestion.
+Кожен крок є явним інкрементальним запитом авторизації. Ця послідовність не активує міграцію Mail, індексацію/Changes/воркери Drive, імпорт Calendar або імпорт Photos.
 
-## Canonical grant model
+## Канонічна модель дозволів (Canonical grant model)
 
-`google_oauth_grant_v1` stores exactly one encrypted refresh credential per Google provider principal:
+Таблиця `google_oauth_grant_v1` зберігає рівно один зашифрований refresh-токен на кожного суб'єкта провайдера Google (`provider principal`):
 
 - `principalId`
 - `providerAccountId`
 - `clientRef = google_suite_web_oauth_client`
-- AES-256-GCM envelope
-- cumulative `grantedScopes`
+- конверт AES-256-GCM
+- сукупні надані області доступу `grantedScopes`
 - `grantStatus`
 - `issuedAt`
 - `lastVerifiedAt`
 
-The refresh token is never copied into service rows. Access tokens are refreshed on demand and never persisted.
+Refresh-токен ніколи не копіюється в рядки окремих сервісів. Access-токени оновлюються за запитом і ніколи не зберігаються на диску.
 
-## Logical service handles
+## Логічні дескриптори сервісів (Logical service handles)
 
-`provider_service_tokens_v1` contains logical handles only:
+Таблиця `provider_service_tokens_v1` містить лише логічні дескриптори:
 
 - `google_mail_token`
 - `google_drive_token`
 - `google_calendar_token`
 - `google_photos_token`
 
-Each handle points to `oauthGrantId`, stores its own `requiredScopes`, status, timestamps and revocation state, and contains no ciphertext. Before an API call the backend enforces:
+Кожен дескриптор вказує на `oauthGrantId`, зберігає власні `requiredScopes`, статус, часові мітки та стан відкликання і не містить шифротексту. Перед викликом API бекенд примусово перевіряє умову:
 
 ```text
 requiredScopes ⊆ grantedScopes
 ```
 
-`provider_service_grants_v1` remains the service-specific lifecycle and audit boundary.
+Таблиця `provider_service_grants_v1` залишається специфічною для сервісу межею життєвого циклу та аудиту.
 
-## Principal and account isolation
+## Ізоляція суб'єктів та облікових записів
 
-The ecosystem sign-in-matching Google identity is the primary provider principal. Additional Drive accounts remain explicit and outside the primary sequence. Each additional Google identity receives its own provider principal and its own canonical `google_oauth_grant_v1` row, while reusing the same Web OAuth Client configuration.
+Google-ідентичність, що збігається з обліковим записом входу в екосистему, є основним суб'єктом провайдера (`primary provider principal`). Додаткові облікові записи Drive залишаються явними та поза межами основної послідовності. Кожна додаткова ідентичність Google отримує власного суб'єкта провайдера та власний канонічний рядок у `google_oauth_grant_v1`, повторно використовуючи ту саму конфігурацію Web OAuth Client.
 
-Disconnecting one Drive handle does not revoke a shared primary Google grant while another service handle is active. Provider revocation is attempted only when no other active handle depends on that principal grant.
+Вимкнення одного дескриптора Drive не відкликає спільний основний дозвіл Google, доки активний інший сервісний дескриптор. Спроба відкликання на боці провайдера виконується лише тоді, коли жоден інший активний дескриптор не залежить від цього дозволу суб'єкта.
 
-## Persistent tables
+## Постійні таблиці
 
 - `provider_principals_v1`
 - `google_oauth_grant_v1`
-- `provider_service_tokens_v1` — logical handles only
+- `provider_service_tokens_v1` — лише логічні дескриптори
 - `provider_service_grants_v1`
 - `google_suite_oauth_states_v1`
 - `google_suite_onboarding_v1`
 - `cloud_provider_accounts_v1`
 - `cloud_provider_selections_v1`
 
-Legacy refresh-token copies in `provider_service_tokens_v1` or `cloud_provider_tokens_v1` are removed only after a canonical grant has been written successfully.
+Застарілі копії refresh-токенів у `provider_service_tokens_v1` або `cloud_provider_tokens_v1` видаляються лише після успішного запису канонічного дозволу.
 
-## OAuth and token rules
+## Правила OAuth і токенів
 
-- one client reference: `google_suite_web_oauth_client`;
+- одне посилання на клієнта: `google_suite_web_oauth_client`;
 - `access_type=offline`;
 - `include_granted_scopes=true`;
 - PKCE S256;
-- exact Identity-root redirect;
-- explicit consent for every new service scope set;
-- exact primary-email match;
-- replay-safe addressable state and processing lease;
-- no access-token persistence;
-- no refresh-token duplication.
+- точний редирект у корінь Identity;
+- явна згода для кожного нового набору областей доступу сервісу;
+- точний збіг основної електронної пошти;
+- захищений від повторного відтворення (replay-safe) адресований стан та оренда обробки (processing lease);
+- жодного збереження access-токенів;
+- жодного дублювання refresh-токенів.
 
-## AppDeploy secrets
+## Секрети AppDeploy
 
 - `GOOGLE_SUITE_CLIENT_ID`
 - `GOOGLE_SUITE_CLIENT_SECRET`
-- `GOOGLE_SUITE_REDIRECT_URI` — exactly `https://id.tarasevych.com/`
+- `GOOGLE_SUITE_REDIRECT_URI` — точно `https://id.tarasevych.com/`
 - `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1`
 
-Missing or invalid shared configuration disables every Suite consent step and all additional Drive linking. The UI remains fail-closed and does not claim connectivity.
+Відсутня або некоректна спільна конфігурація вимикає кожен крок надання згоди Suite та все під'єднання додаткових облікових записів Drive. Інтерфейс користувача залишається в безпечному закритому стані (`fail-closed`) і не заявляє про наявність під'єднання.

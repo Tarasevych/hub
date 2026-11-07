@@ -4,7 +4,7 @@
 // (sleutel-intrekken zonder assertie; terug alleen via SSH). Via de echte handler met nagebootste Google en nep-passkeys.
 import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { JOURNAAL_ACTIES, journaalItem } from '../../backend/connectors-routes';
@@ -25,10 +25,17 @@ export async function main(): Promise<number> {
   const sleutels = join(basis, 'goedkeur-passkeys.json'); const rechten = join(basis, 'mcp-rechten.json');
   writeFileSync(sleutels, JSON.stringify({ versie: 1, rpId: 'tarasevych.com', origins: ['https://admin.tarasevych.com', 'https://id.tarasevych.com'], sleutels: [] }));
   writeFileSync(rechten, JSON.stringify({ 'passkey-goedkeuring': true }));
-  const ENV = ['GOEDKEUR_SLEUTELS', 'GOEDKEUR_INBOX', 'MCP_RECHTEN_PAD', 'OPDRACHT_STATUS_DIR', 'PASSKEY_RP_ID', 'PASSKEY_ORIGINS', 'OWNER_EMAIL', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET'] as const;
+  // Als root (cloud-sessie) negeert de root-hulp bewust de testpaden (GOEDKEUR_*) en zou hij de ECHTE /etc-, /srv- en /var-paden raken.
+  // Dan draait de hulp als nobody (65534; zelfde patroon als ai-beleid en besluit-root): de testmap wordt van 65534 en de inbox krijgt
+  // setgid, zodat de bestanden die de app (root) er met 0640 neerlegt groep 65534 krijgen en voor de hulp leesbaar zijn.
+  const alsNobody: { uid?: number; gid?: number } = process.getuid?.() === 0 ? { uid: 65534, gid: 65534 } : {};
+  if (alsNobody.uid) { spawnSync('chown', ['-R', '65534:65534', basis]); chmodSync(inbox, 0o2770); }
+  const ENV = ['GOEDKEUR_SLEUTELS', 'GOEDKEUR_INBOX', 'MCP_RECHTEN_PAD', 'OPDRACHT_STATUS_DIR', 'PASSKEY_RP_ID', 'PASSKEY_ORIGINS', 'OWNER_EMAIL', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET', 'AUDIT_IP_PEPPER'] as const;
   const vorige = Object.fromEntries(ENV.map((k) => [k, process.env[k]]));
   Object.assign(process.env, { GOEDKEUR_SLEUTELS: sleutels, GOEDKEUR_INBOX: inbox, MCP_RECHTEN_PAD: rechten, OPDRACHT_STATUS_DIR: statusDir });
   delete process.env.PASSKEY_RP_ID; delete process.env.PASSKEY_ORIGINS;
+  // Eigen pepper voor de IP-hash (Audit-fix 10: geen terugval meer op RECOVERY_CODE_PEPPER): niet afhankelijk van de geheimen van de machine.
+  if (String(process.env.AUDIT_IP_PEPPER || '').length < 32) process.env.AUDIT_IP_PEPPER = randomBytes(48).toString('base64');
   const eigenaar = `tc-eig-${T}@example.test`, aMail = `tc-a-${T}@example.test`, bMail = `tc-b-${T}@example.test`;
   const G = await nepGoogle({ ownerEmail: eigenaar });
   const pool = getPool();
@@ -37,7 +44,7 @@ export async function main(): Promise<number> {
   type B = ReturnType<typeof G.browser>;
   const id = (b: B, pad: string, extra: Record<string, unknown> = {}, service = 'identity') => b.verzoek(`${service === 'identity' ? 'id' : service}.tarasevych.com`, pad, b.ctxBody(service, extra));
   const P = '/api/owner/access/passkeys', A_ = '/api/owner/access';
-  const rootHulp = (...args: string[]) => spawnSync(process.execPath, [HULP, ...args], { env: { ...process.env, GOEDKEUR_SLEUTELS: sleutels, GOEDKEUR_STAAT: join(basis, 'staat'), GOEDKEUR_INBOX: inbox, GOEDKEUR_STATUS_DIR: statusDir, GOEDKEUR_RECHTEN: rechten, GOEDKEUR_GROEP: 'nogroup' }, encoding: 'utf8' });
+  const rootHulp = (...args: string[]) => spawnSync(process.execPath, [HULP, ...args], { env: { ...process.env, GOEDKEUR_SLEUTELS: sleutels, GOEDKEUR_STAAT: join(basis, 'staat'), GOEDKEUR_INBOX: inbox, GOEDKEUR_STATUS_DIR: statusDir, GOEDKEUR_RECHTEN: rechten, GOEDKEUR_GROEP: 'nogroup' }, encoding: 'utf8', ...alsNobody });
   const rootN = () => JSON.parse(readFileSync(sleutels, 'utf8')).sleutels.length as number;
   const registreerMet = async (b: B, pk: NepPasskey, naam: string) => {
     const opt = await id(b, `${P}/registreren/opties`);
@@ -105,16 +112,16 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- notities
     const N = `${A_}/notities`;
     const setS = String(ov.data.setSleutel);
-    const n1 = await id(A, `${N}/opslaan`, { soort: 'herstelset', sleutel: setS, tekst: 'Папка «Документи», конверт\u0000 2' });
+    const n1 = await id(A, `${N}/opslaan`, { soort: 'herstelset', sleutel: setS, tekst: 'Тека «Документи», конверт\u0000 2' });
     const n2 = await id(A, `${N}/opslaan`, { soort: 'herstelcode', sleutel: c1.sleutel, tekst: 'Gebruikt op de laptop van kantoor' });
-    check('notities: opslaan (set + losse code), stuurtekens weg', n1.status === 200 && n2.status === 200 && n1.data.notitie.tekst.startsWith('Папка «Документи», конверт') && !n1.data.notitie.tekst.includes('\u0000'), JSON.stringify(n1.data));
+    check('notities: opslaan (set + losse code), stuurtekens weg', n1.status === 200 && n2.status === 200 && n1.data.notitie.tekst.startsWith('Тека «Документи», конверт') && !n1.data.notitie.tekst.includes('\u0000'), JSON.stringify(n1.data));
     const lijst = await id(A, `${N}/lijst`);
     check('notities: lijst geeft ze terug', lijst.data.notities.length === 2 && lijst.data.notities.some((n: any) => n.soort === 'herstelcode' && n.sleutel === c1.sleutel));
     check('notities: > 500 tekens geweigerd', (await id(A, `${N}/opslaan`, { soort: 'passkey', sleutel: 'x', tekst: 'я'.repeat(501) })).data.error === 'NOTITIE_TE_LANG' && (await id(A, `${N}/opslaan`, { soort: 'passkey', sleutel: 'x', tekst: 'я'.repeat(500) })).status === 200);
     check('notities: onbekende soort / rare sleutel geweigerd', (await id(A, `${N}/opslaan`, { soort: 'wachtwoord', sleutel: 'x', tekst: 'a' })).data.error === 'NOTITIE_SOORT_ONGELDIG' && (await id(A, `${N}/opslaan`, { soort: 'passkey', sleutel: '../x y', tekst: 'a' })).data.error === 'NOTITIE_SLEUTEL_ONGELDIG');
     check('notities: leeg = verwijderen', (await id(A, `${N}/opslaan`, { soort: 'passkey', sleutel: 'x', tekst: '   ' })).status === 200 && (await id(A, `${N}/lijst`)).data.notities.length === 2);
     await id(Bb, `${N}/opslaan`, { soort: 'herstelset', sleutel: setS, tekst: 'Notitie van B' });
-    check('notities: B ziet alleen de eigen notitie; die van A is onveranderd', (await id(Bb, `${N}/lijst`)).data.notities.length === 1 && (await id(A, `${N}/lijst`)).data.notities.find((n: any) => n.soort === 'herstelset').tekst.startsWith('Папка'));
+    check('notities: B ziet alleen de eigen notitie; die van A is onveranderd', (await id(Bb, `${N}/lijst`)).data.notities.length === 1 && (await id(A, `${N}/lijst`)).data.notities.find((n: any) => n.soort === 'herstelset').tekst.startsWith('Тека'));
     let rls = 'open';
     try { await alsGebruiker(bId, (q) => q("insert into app.toegang_notities (user_id, soort, sleutel, tekst) values ($1, 'passkey', 'y', 'z')", [aId])); } catch { rls = 'dicht'; }
     check('notities: RLS — app-rol kan geen notitie voor een ander schrijven', rls === 'dicht');

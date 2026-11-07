@@ -12,12 +12,12 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $site = 'https://mcp.tarasevych.com'
 $expected = '@@SHA256@@'
-# Ви самі обираєте диск і папку: нічого не створюється без вашого вибору.
+# Ви самі обираєте диск і теку: нічого не створюється без вашого вибору.
 Add-Type -AssemblyName System.Windows.Forms
 $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
-$dlg.Description = 'Оберіть диск і папку, де зберегти розширення (усередині буде створено підпапку MijnRuimte-extension). Цю папку не видаляйте.'
+$dlg.Description = 'Оберіть диск і теку, де зберегти розширення (усередині буде створено підтеку MijnRuimte-extension). Цю теку не видаляйте.'
 $dlg.ShowNewFolderButton = $true
-if ($dlg.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK -or -not $dlg.SelectedPath) { Write-Host 'Папку не обрано: встановлення скасовано, нічого не створено.'; return }
+if ($dlg.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK -or -not $dlg.SelectedPath) { Write-Host 'Теку не обрано: встановлення скасовано, нічого не створено.'; return }
 $dir = Join-Path $dlg.SelectedPath 'MijnRuimte-extension'
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
 $zip = Join-Path $dir 'mijn-ruimte-extension.zip'
@@ -48,7 +48,7 @@ if ($chrome) { Start-Process $chrome 'chrome://extensions' } elseif (Test-Path $
 Write-Host ''
 Write-Host 'Залишилось 3 кліки (Chrome не дозволяє встановлювати розширення без вашої участі):' -ForegroundColor Green
 Write-Host '  1. Увімкніть «Режим розробника» (перемикач праворуч угорі).'
-Write-Host '  2. Натисніть «Завантажити розпаковане» і вставте шлях (Ctrl+V) у поле вибору папки:'
+Write-Host '  2. Натисніть «Завантажити розпаковане» і вставте шлях (Ctrl+V) у поле вибору теки:'
 Write-Host "     $dir" -ForegroundColor Yellow
-Write-Host '  3. Натисніть «Вибір папки». Розширення саме відкриє сторінку активації на сайті.'
+Write-Host '  3. Натисніть «Вибір теки». Розширення саме відкриє сторінку активації на сайті.'
 Write-Host '(Шлях уже скопійовано в буфер обміну.)'

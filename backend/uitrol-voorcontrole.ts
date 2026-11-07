@@ -14,6 +14,8 @@
 // Uitkomst: { ok, fouten, waarschuwingen, controles[] }. «fout» blokkeert de goedkeuring; «waarschuwing» niet. Bouwen (npm ci + vite) en
 // migreren gebeuren pas bij de installatie, geïsoleerd, met database-back-up, gezondheidscontrole, nabewaking en automatisch terugdraaien.
 import { MANIFEST_BESTAND, MANIFEST_MAX, TESTRESULTATEN_MAX, leesTestresultaten, manifestVerplicht, testDetails, valideerManifest } from '../shared/uitrol-manifest';
+import { ONTWIKKELARCHIEF_BESTAND, ONTWIKKELARCHIEF_MAX, ontwikkelArchiefVerplicht, leesOntwikkelArchief, type OntwikkelArchief } from '../shared/ontwikkelarchief';
+import { controleerOntwikkelArchiefOnline, sha256VanBestand, type ArchiefControle } from './uitrol-ontwikkelarchief';
 import { execFile } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -27,7 +29,7 @@ export type Niveau = 'ok' | 'waarschuwing' | 'fout';
 export type Controle = { id: string; niveau: Niveau; uk: string; nl: string; details?: string[] };
 export type PakketMeta = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string;
   /** UI-010: gevalideerd manifest (deelnemers, beschrijving uk+nl); blijft in uitrol_voorstellen.pakket_meta, ook na intrekken van rechten. */
-  manifest?: import('../shared/uitrol-manifest').Manifest | null };
+  manifest?: import('../shared/uitrol-manifest').Manifest | null; ontwikkelArchiefUrl?: string };
 export type Voorcontrole = { versie: 1; tijd: string; ok: boolean; fouten: number; waarschuwingen: number; controles: Controle[] };
 export type VoorcontroleUitkomst = { resultaat: Voorcontrole; meta: PakketMeta };
 
@@ -72,7 +74,7 @@ const SQL_RISICO: Array<[RegExp, string, string]> = [
 // De patronen staan sinds 22.10.2026 in shared/geheim-patronen.ts (GEHEIM_PATRONEN_STRIKT), gedeeld met de zoekindex.
 const GEHEIM_PATRONEN = GEHEIM_PATRONEN_STRIKT;
 
-export async function pakketVoorcontrole(pakket: string, opties: { versie: string; actieveVersie?: string; toegepasteMigraties?: ReadonlySet<string> | null; tests?: { geslaagd?: number | null; mislukt?: number | null } | null }): Promise<VoorcontroleUitkomst> {
+export async function pakketVoorcontrole(pakket: string, opties: { versie: string; actieveVersie?: string; toegepasteMigraties?: ReadonlySet<string> | null; tests?: { geslaagd?: number | null; mislukt?: number | null } | null; archiefToken?: string; archiefControle?: (ref: OntwikkelArchief, pakketSha: string) => Promise<ArchiefControle> }): Promise<VoorcontroleUitkomst> {
   const controles: Controle[] = [];
   const voeg = (id: string, niveau: Niveau, uk: string, nl: string, details?: string[]) => { controles.push({ id, niveau, uk, nl, ...(details?.length ? { details: details.slice(0, id === 'tests' || id === 'manifest' ? 120 : 12) } : {}) }); };
   const meta: PakketMeta = { auteur: '', agent: '', samenvatting: '', bestanden: 0, bytesUitgepakt: 0, commit: '', bovenmap: '' };
@@ -147,6 +149,42 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     if (bc.status === 'git') voeg('commit', 'ok', `Коміт ${bc.commit.slice(0, 12)} — випуск відтворюваний з git.`, `Commit ${bc.commit.slice(0, 12)} — de release is te herleiden tot git.`);
     else if (bc.status === 'zonder-git') voeg('commit', 'waarschuwing', `Пакет зібрано поза git (явно вказано): ${bc.reden}. Відтворити збірку з коміту не вийде.`, `Pakket buiten git gebouwd (uitdrukkelijk opgegeven): ${bc.reden}. De build is niet uit een commit te herhalen.`);
     else voeg('commit', 'fout', 'GEEN_BRON_COMMIT: у пакеті немає дійсного BRON-COMMIT (40-символьний git-коміт або «zonder-git:<причина>»). Сервер відхилить пакет — див. deploy/REGELS-UITROLPAKKET.md.', 'GEEN_BRON_COMMIT: het pakket heeft geen geldige BRON-COMMIT (40-tekens git-commit of «zonder-git:<reden>»). De server weigert het pakket — zie deploy/REGELS-UITROLPAKKET.md.', [bc.status === 'ontbreekt' ? 'BRON-COMMIT ontbreekt of is leeg' : 'BRON-COMMIT heeft een ongeldige vorm (bv. «unknown» of een korte hash)']);
+
+    // TRACE-001: het dossier én de exacte TAR.GZ moeten echt op GitHub staan.
+    // Niet het URL-veld uit het pakket ophalen: uitsluitend canonieke GitHub API-routes.
+    if (ontwikkelArchiefVerplicht(inhoudVersie)) {
+      const tekst = await bestaat(ONTWIKKELARCHIEF_BESTAND)
+        ? await leesMeta(bron, ONTWIKKELARCHIEF_BESTAND, ONTWIKKELARCHIEF_MAX + 1) : null;
+      if (!tekst) {
+        voeg('ontwikkelarchief', 'fout',
+          'GEEN_ONTWIKKELARCHIEF: у пакеті відсутнє обов’язкове посилання на історію розробки на GitHub.',
+          'GEEN_ONTWIKKELARCHIEF: verplichte GitHub-ontwikkelherkomst ontbreekt.');
+      } else {
+        const archief = leesOntwikkelArchief(tekst, inhoudVersie, bc.commit);
+        if (archief.fouten.length || !archief.ref || bc.status !== 'git') {
+          voeg('ontwikkelarchief', 'fout',
+            'ONTWIKKELARCHIEF_ONGELDIG: дані архіву розробки або BRON-COMMIT недійсні.',
+            'ONTWIKKELARCHIEF_ONGELDIG: ontwikkeldossier of BRON-COMMIT is ongeldig.',
+            archief.fouten);
+        } else {
+          const sha = await sha256VanBestand(pakket);
+          const online = await (opties.archiefControle
+            ? opties.archiefControle(archief.ref, sha)
+            : controleerOntwikkelArchiefOnline(archief.ref, sha, { token: opties.archiefToken }));
+          if (!online.ok) voeg('ontwikkelarchief', 'fout',
+            `${online.code}: GitHub не підтвердив історію розробки й саме цей інсталяційний архів.`,
+            `${online.code}: GitHub bevestigt het dossier en deze exacte tar.gz niet.`,
+            [online.reden]);
+          else {
+            meta.ontwikkelArchiefUrl = archief.ref.url;
+            voeg('ontwikkelarchief', 'ok',
+              'GitHub: документ історії, коміт, гілку та SHA-256 точного пакета перевірено.',
+              'GitHub: dossier, commit, tak en SHA-256 van het exacte pakket bevestigd.',
+              [archief.ref.url, archief.ref.release]);
+          }
+        }
+      }
+    }
 
     // ---- 4. scripts (syntaxis)
     const alle = await alleBestanden(bron);

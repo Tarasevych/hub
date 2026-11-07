@@ -1,65 +1,67 @@
-# UI-009 — Inventaris geavanceerd zoeken in Mail (fase 1, basis 131639)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INVENTARIS-UI-009.uk.md) · [🇳🇱 **Nederlandse versie**](./INVENTARIS-UI-009.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-Bron: actuele code (geformatteerd gelezen), geen live site. Alles hieronder is uit code vastgesteld, tenzij «niet getest» staat.
+# UI-009 — Інвентаризація розширеного пошуку в Пошті (фаза 1, база 131639)
 
-## Betrokken bestanden
-| Bestand | Rol |
+Джерело: актуальний код (прочитаний у відформатованому вигляді), без живого сайту. Усе нижче встановлено з коду, якщо не зазначено «не протестовано».
+
+## Задіяні файли
+| Файл | Роль |
 |---|---|
-| `src/MailZoekVeld.tsx` | Zoekbalk, live-suggesties (geschiedenis + berichten), knop `.mail-top-search-tune` (filterknop). |
-| `src/MailZoekFilters.tsx` | Paneel «Фільтри пошуку»: snelfilters (Непрочитані/Прочитані/★/📎), pickers Період/Від/Тип вмісту/Папка, bereik, knop «Ще умови»; buiten het paneel de samenvattende chips-rij. |
-| `src/MailGeavanceerdZoeken.tsx` | Paneel «Ще умови»: 10 kaarten (tekst, mensen, onderwerp, status, periode, map/label, bijlagen, grootte, bereik, opgeslagen) + editors. |
-| `src/MailPeriodeKiezer.tsx`, `src/MailDatumKalender.tsx`, `src/mail-datum-periodes.ts` | Periode-editor (grenzen, snel, van–tot, maand, jaar, kwartaal, seizoen). |
-| `src/MailZoekActiefChips.tsx` | Actieve criteria als chips, elk apart weg, «alles wissen». |
-| `src/mail-zoek.ts` | Criteriamodel, normalisatie, Gmail-spec, lokale filtering. |
-| `src/mail-zoek-cache.ts` | Opgeslagen (max 3) en recente (max 12) zoekopdrachten in localStorage. |
-| `src/GoogleMailWerkruimte.tsx` | Staat, `executeSearch`, facetten, periodegrenzen, koppeling van de panelen. |
-| `backend/mail-zoek*.ts` | Server: index-zoeken, duurzame cursor, relevantie. |
+| `src/MailZoekVeld.tsx` | Рядок пошуку, живі підказки (історія + листи), кнопка `.mail-top-search-tune` (кнопка фільтрів). |
+| `src/MailZoekFilters.tsx` | Панель «Фільтри пошуку»: швидкі фільтри (Непрочитані/Прочитані/★/📎), вибір Період/Від/Тип вмісту/Тека, область, кнопка «Ще умови»; поза панеллю — підсумковий ряд чипів. |
+| `src/MailGeavanceerdZoeken.tsx` | Панель «Ще умови»: 10 карток (текст, люди, тема, стан, період, тека/мітка, вкладення, розмір, область, збережені) + редактори. |
+| `src/MailPeriodeKiezer.tsx`, `src/MailDatumKalender.tsx`, `src/mail-datum-periodes.ts` | Редактор періоду (межі, швидкий вибір, від–до, місяць, рік, квартал, сезон). |
+| `src/MailZoekActiefChips.tsx` | Активні критерії у вигляді чипів, кожен видаляється окремо, «очистити все». |
+| `src/mail-zoek.ts` | Модель критеріїв, нормалізація, специфікація Gmail, локальна фільтрація. |
+| `src/mail-zoek-cache.ts` | Збережені (макс. 3) та останні (макс. 12) пошукові запити в localStorage. |
+| `src/GoogleMailWerkruimte.tsx` | Стан, `executeSearch`, фасети, межі періоду, зв’язування панелей. |
+| `backend/mail-zoek*.ts` | Сервер: індексний пошук, тривалий курсор, релевантність. |
 
-## Per voorwaarde (V1, zoals nu)
-| Voorwaarde | Opent | Keuze | Bewaard | Toepassen |
+## За кожною умовою (V1, як зараз)
+| Умова | Відкриває | Вибір | Зберігається | Застосування |
 |---|---|---|---|---|
-| Tekst en woorden | kaart → editor | query (Gmail-operators), «alle woorden», «niet bevat», recente zoekopdrachten, onderwerp-suggesties | `searchInput`, `includeWords`, `excludeWords` | velden: alleen in concept (`onChange`), pas bij «Шукати»; klik op suggestie: alleen concept |
-| Люди | kaart | handmatig 1 afzender; lijsten afzenders/ontvangers (max 60, multi) | `from`, `fromValues`, `toValues` | klik in lijst = **meteen zoeken** (`onApply` → `executeSearch`); handmatig veld pas bij «Шукати». Handmatig «Кому» ontbreekt in V1 (alleen lijst). |
-| Тема | kaart | vrij veld + lijst (max 40, multi) | `subject`, `subjectValues` | lijst = meteen zoeken; veld = concept |
-| Стан листа | kaart | 3 vinkjes: Непрочитані, Прочитані, ★ | `readStates`, `starred` | meteen zoeken |
-| Період | kaart (+ grenzen laden) | grenzen, snel (14 presets), van–tot, maand, jaar, kwartaal, seizoen | `datePreset/dateFrom/dateTo/dateMonth/dateYear` | elke keuze meteen zoeken |
-| Папка / мітка | kaart | zoeken + lijst (systeem + eigen, max 120, multi) | `locations` | meteen zoeken |
-| Вкладення | kaart | «є вкладення», bestandsnaam, formaten (multi, tellers) | `hasAttachment`, `filename`, `attachmentTypes` | vinkje/formaat = meteen; naam = concept |
-| Тип вмісту | alleen in filterpaneel | documenten/afbeeldingen/archieven/overig | `attachmentGroup` | meteen zoeken (en paneel sluit) |
-| Розмір | kaart | select vergelijking, getal, eenheid | `sizeMode/sizeValue/sizeUnit` | concept, pas bij «Шукати» |
-| Область пошуку | kaart | huidig/alles, Spam/Prullenbak uitsluiten | `locationKind`, `accountIds`, `excludeSystemLabels` | huidig/alles = meteen; uitsluiten = concept |
-| Збережені пошуки | kaart | lijst (max 3), verwijderen | localStorage | klik = criteria in concept zetten (zoekt **niet**), elders (`applySavedSearch`) zoekt wel |
+| Текст і слова | картка → редактор | запит (оператори Gmail), «усі слова», «не містить», останні пошуки, підказки тем | `searchInput`, `includeWords`, `excludeWords` | поля: лише в чернетку (`onChange`), тільки при «Шукати»; натискання на підказку: лише чернетка |
+| Люди | картка | вручну 1 відправник; списки відправників/отримувачів (макс. 60, мульти) | `from`, `fromValues`, `toValues` | натискання у списку = **одразу шукати** (`onApply` → `executeSearch`); ручне поле — лише при «Шукати». Ручне «Кому» відсутнє у V1 (лише список). |
+| Тема | картка | вільне поле + список (макс. 40, мульти) | `subject`, `subjectValues` | список = одразу шукати; поле = чернетка |
+| Стан листа | картка | 3 прапорці: Непрочитані, Прочитані, ★ | `readStates`, `starred` | одразу шукати |
+| Період | картка (+ завантаження меж) | межі, швидкий вибір (14 пресетів), від–до, місяць, рік, квартал, сезон | `datePreset/dateFrom/dateTo/dateMonth/dateYear` | кожен вибір одразу запускає пошук |
+| Тека / мітка | картка | пошук + список (системні + власні, макс. 120, мульти) | `locations` | одразу шукати |
+| Вкладення | картка | «є вкладення», назва файлу, формати (мульти, лічильники) | `hasAttachment`, `filename`, `attachmentTypes` | прапорець/формат = одразу; назва = чернетка |
+| Тип вмісту | лише в панелі фільтрів | документи/зображення/архіви/інше | `attachmentGroup` | одразу шукати (і панель закривається) |
+| Розмір | картка | вибір порівняння, число, одиниця | `sizeMode/sizeValue/sizeUnit` | чернетка, лише при «Шукати» |
+| Область пошуку | картка | поточний/усе, виключити Спам/Кошик | `locationKind`, `accountIds`, `excludeSystemLabels` | поточний/усе = одразу; виключити = чернетка |
+| Збережені пошуки | картка | список (макс. 3), видалення | localStorage | натискання = підставити критерії в чернетку (**не** шукає), в інших місцях (`applySavedSearch`) шукає |
 
-Voettekst: «Скинути» = `clearSearch` (alles leeg, ook resultaten, paneel dicht); «Зберегти» = huidige query+criteria opslaan (zelfde handtekening → bijwerken; naam = query/afzender/onderwerp, max 3); «Шукати» = `executeSearch(searchInput, searchCriteria)`. Sluiten (Esc/buiten/✕) zet het **concept terug** naar de laatst uitgevoerde criteria.
+Нижній колонтитул: «Скинути» = `clearSearch` (усе очищується, включно з результатами, панель закривається); «Зберегти» = зберегти поточний запит+критерії (однакова сигнатура → оновити; назва = запит/відправник/тема, макс. 3); «Шукати» = `executeSearch(searchInput, searchCriteria)`. Закриття (Esc/зовні/✕) **повертає чернетку** до останніх виконаних критеріїв.
 
-Bestaande bewerkingen opgeslagen zoekopdrachten: maken ✔, starten ✔, verwijderen ✔, **hernoemen: de opslagfunctie ondersteunt een naam, maar er is geen UI**.
+Наявні операції зі збереженими пошуками: створення ✔, запуск ✔, видалення ✔, **перейменування: функція збереження підтримує назву, але UI немає**.
 
-## Leesstatus-combinatie (vastgesteld, niet gewijzigd)
-Client (`mail-zoek.ts` r. 530/703) en server (`backend/mail-zoek.ts`): alleen als er precies één leesstatus is, wordt gefilterd (`is:unread` / `is:read`). Beide gekozen = geen leesfilter (= «alle»). V2 toont dit daarom als één exclusieve keuze «Усі / Непрочитані / Прочитані»; «beide» uit oude opgeslagen data wordt als «Усі» getoond — semantisch identiek.
+## Комбінація стану прочитання (встановлено, не змінено)
+Клієнт (`mail-zoek.ts` р. 530/703) та сервер (`backend/mail-zoek.ts`): фільтрація виконується лише тоді, коли вибрано рівно один стан прочитання (`is:unread` / `is:read`). Вибрано обидва = без фільтра прочитання (= «усі»). Тому V2 показує це як один взаємовиключний вибір «Усі / Непрочитані / Прочитані»; «обидва» зі старих збережених даних відображається як «Усі» — семантично ідентично.
 
-## Bevestigde defecten / oorzaken (uit code)
-1. **Gewone datumkeuze geblokkeerd zonder grenzen.** `MailPeriodeKiezer`: velden Van/Tot `disabled={!calendarReady}` en tonen «Межі не підтверджені»; maanden, kwartalen, seizoenen ook uit. `calendarReady` vereist cache-grenzen **en** `providerYearsComplete`. Bij time-out/serverfout/geen cache kan de gebruiker dus helemaal geen datum kiezen, terwijl de zoekmotor gewoon `dateFrom/dateTo` accepteert. Geen technische reden voor de blokkade.
-2. **«Визначаємо межі пошти…»** = `providerYearsChecking` (verwachte laadtoestand: eerst servercache lezen, alleen zonder cache één achtergrondprobe, daarna polling). **«Межі не підтверджені»** = elke toestand zonder `calendarReady`: laden, fout (`providerRefreshError` + code, bv. `MAIL_PERIOD_BOUNDS_TIMEOUT`, rate-limit, herautorisatie), of cache gecontroleerd zonder data (`providerCheckedAt` zonder min/max). Dezelfde tekst voor vier verschillende oorzaken.
-3. **Overbodige zoekverzoeken.** In «Ще умови» start elke klik in een lijst (afzender, onderwerp, label, formaat, status, periode) meteen `executeSearch`; vijf afzenders aanvinken = vijf volledige zoekopdrachten (elk tot 200 Gmail-pagina's per account), waarvan de vorige als `cancelled` wordt afgebroken. Facetten worden bij elk openen van beide panelen opnieuw geladen (`onLoadFacets`, `onTune`).
-4. **Inconsistente toepassing.** Deels meteen, deels pas bij «Шукати» (zie tabel); bij sluiten gaat ingevuld concept (tekst, grootte, uitsluiten) verloren.
-5. **Twee editorsystemen** voor periode/afzender/label/bestandstype (filterpaneel én «Ще умови») met verschillende code en gedrag.
-6. **Geneste scrolls.** `.mail-search-list{max-height:360px;overflow:auto}` binnen `.mail-advanced-body{overflow:auto}`; chips-rij `max-height:76/92px;overflow-y:auto`; jaarlijst horizontaal scrollend (`.mail-date-year-track`).
-7. **Herhaald label** «Системна папка» / «Мітка» per rij; «Знайдено у вкладеннях» en «Реальна тема з пошти» per rij.
-8. **«Кому» handmatig** niet invoerbaar (alleen uit lijst), terwijl het model `to` heeft.
-9. **Opgeslagen zoekopdracht starten** zoekt in «Ще умови» niet, elders wel.
-10. **Grootte**: geen validatie (negatief/0/leeg wordt stil genegeerd; `sizeBytes = max(0, …)`).
+## Підтверджені дефекти / причини (з коду)
+1. **Звичайний вибір дати заблокований без меж.** `MailPeriodeKiezer`: поля Від/До мають `disabled={!calendarReady}` і показують «Межі не підтверджені»; місяці, квартали, сезони також вимкнені. `calendarReady` вимагає наявності кешованих меж **та** `providerYearsComplete`. При таймауті/помилці сервера/відсутності кешу користувач узагалі не може вибрати дату, хоча пошуковий рушій спокійно приймає `dateFrom/dateTo`. Технічної причини для блокування немає.
+2. **«Визначаємо межі пошти…»** = `providerYearsChecking` (очікуваний стан завантаження: спочатку читання серверного кешу, лише за відсутності кешу один фоновий зонд, далі опитування). **«Межі не підтверджені»** = будь-який стан без `calendarReady`: завантаження, помилка (`providerRefreshError` + код, напр. `MAIL_PERIOD_BOUNDS_TIMEOUT`, rate-limit, повторна авторизація), або кеш перевірено без даних (`providerCheckedAt` без min/max). Один і той самий текст для чотирьох різних причин.
+3. **Надлишкові пошукові запити.** У «Ще умови» кожен натискання у списку (відправник, тема, мітка, формат, стан, період) одразу запускає `executeSearch`; позначити п’ятьох відправників = п’ять повних пошукових запитів (кожен до 200 сторінок Gmail на обліковий запис), де попередній переривається як `cancelled`. Фасети перезавантажуються при кожному відкритті обох панелей (`onLoadFacets`, `onTune`).
+4. **Непослідовне застосування.** Частково одразу, частково лише при «Шукати» (див. таблицю); при закритті заповнена чернетка (текст, розмір, виняток) втрачається.
+5. **Дві системи редакторів** для періоду/відправника/мітки/типу файлу (панель фільтрів і «Ще умови») з різним кодом і поведінкою.
+6. **Вкладені прокрутки.** `.mail-search-list{max-height:360px;overflow:auto}` всередині `.mail-advanced-body{overflow:auto}`; ряд чипів `max-height:76/92px;overflow-y:auto`; список років із горизонтальною прокруткою (`.mail-date-year-track`).
+7. **Повторюваний підпис** «Системна тека» / «Мітка» у кожному рядку; «Знайдено у вкладеннях» та «Реальна тема з пошти» у кожному рядку.
+8. **«Кому» вручну** неможливо ввести (лише зі списку), хоча модель має поле `to`.
+9. **Запуск збереженого пошуку** у «Ще умови» не виконує пошук, а в інших місцях — виконує.
+10. **Розмір**: немає валідації (від’ємне/0/порожнє тихо ігнорується; `sizeBytes = max(0, …)`).
 
-## Diagnose (apart, uit code; niet live geverifieerd)
-- **Gedeeltelijk afgerond zoeken** (`providerComplete=false`): (a) een account faalde (`failures`, errorCode in het rapport onder 🔔), (b) per account plafond van 200 Gmail-pagina's (`pages >= 200` → `complete=false`), (c) duurzame cursor gepauzeerd (rate-limit `GOOGLE_MAIL_MESSAGES_RATE_LIMITED`, `retryAt`), (d) afgebroken door een nieuwe zoekopdracht (`cancelled`) — wat door punt 3 vaak gebeurt.
-- **Min/max archiefdatum**: servercache per account (`requestPeriodBounds('cache')`), anders één probe (`'probe'`) met polling; handmatig «синхронізувати» = `'refresh'`. Browser houdt een spiegel (`hydratePeriodCache`).
-- **Tellers bijlageformaten/suggesties**: komen uit de facet-snapshot van de lokale/serverindex (`attachmentTypeCounts`, `senders`, `subjects`), dus = geïndexeerde berichten, niet heel Gmail. V2 benoemt dit in ⓘ («за проіндексованими листами»).
-- **Paginering**: bij actieve zoekopdracht gaat `loadMoreMessages` niet door (`searchScope==='all' || searchPaging`); resultaten komen uit de zoekrun zelf.
-- **Lege resultaten / netwerkfouten**: versoepeling (`mail-zoek-versoepeling.ts`) toont alternatieven met de versoepelde voorwaarde; fouten per account in rapport.
+## Діагностика (окремо, з коду; наживо не перевірено)
+- **Частково завершений пошук** (`providerComplete=false`): (a) збій облікового запису (`failures`, errorCode у звіті під 🔔), (b) ліміт 200 сторінок Gmail на обліковий запис (`pages >= 200` → `complete=false`), (c) тривалий курсор призупинено (rate-limit `GOOGLE_MAIL_MESSAGES_RATE_LIMITED`, `retryAt`), (d) перервано новим пошуковим запитом (`cancelled`) — що часто трапляється через пункт 3.
+- **Мін./макс. дата архіву**: серверний кеш на обліковий запис (`requestPeriodBounds('cache')`), інакше один зонд (`'probe'`) з опитуванням; вручну «синхронізувати» = `'refresh'`. Браузер тримає дзеркало (`hydratePeriodCache`).
+- **Лічильники форматів вкладень/підказок**: надходять зі знімка фасетів локального/серверного індексу (`attachmentTypeCounts`, `senders`, `subjects`), тобто = проіндексовані листи, а не весь Gmail. V2 явно зазначає це в ⓘ («за проіндексованими листами»).
+- **Пагінація**: за активного пошукового запиту `loadMoreMessages` не виконується (`searchScope==='all' || searchPaging`); результати надходять із самого пошукового прогону.
+- **Порожні результати / мережеві помилки**: пом’якшення умов (`mail-zoek-versoepeling.ts`) показує альтернативи з послабленою умовою; помилки по облікових записах — у звіті.
 
-## Ontwerp V2 (vlag `mail-zoeken-v2`, standaard UIT)
-Eén paneel (vervangt bij vlag AAN zowel het filterpaneel als «Ще умови»), verankerd onder de zoekbalk:
-- kop (titel, terug, sluiten) · actieve chips (concept) · **één** scrollend werkgebied · voet «Скинути / Зберегти / Шукати» altijd zichtbaar;
-- home: zoekveld, snelfilters (segment Усі/Непрочитані/Прочитані, ★, 📎) en gegroepeerde voorwaarden: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце* (Стан, Папка/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип, Розмір), *Додатково* (Збережені);
-- **alle wijzigingen gaan in een concept**; één zoekopdracht bij «Шукати» (lost punt 3/4 op); concept blijft bewaard bij wisselen van categorie;
-- periode: presets 7/30 dagen, пів року, рік, «будь-коли»; kalender altijd bruikbaar (grenzen beperken alleen als ze bevestigd zijn); maand/jaar/kwartaal/seizoen in uitklapgebied; grensstatus als één regel met ⓘ en vernieuwen;
-- zoekmotor, API's, criteriamodel en CanonicalChrome ongewijzigd.
+## Дизайн V2 (прапорець `mail-zoeken-v2`, типово ВИМКНЕНО)
+Одна панель (при увімкненому прапорці замінює і панель фільтрів, і «Ще умови»), закріплена під рядком пошуку:
+- шапка (заголовок, назад, закрити) · активні чипи (чернетка) · **одна** прокручувана робоча область · нижній колонтитул «Скинути / Зберегти / Шукати» завжди видимий;
+- головний екран: поле пошуку, швидкі фільтри (сегмент Усі/Непрочитані/Прочитані, ★, 📎) та згруповані умови: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце* (Стан, Тека/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип, Розмір), *Додатково* (Збережені);
+- **усі зміни потрапляють у чернетку**; один пошуковий запит при натисканні «Шукати» (вирішує пункти 3/4); чернетка зберігається при перемиканні категорії;
+- період: пресети 7/30 днів, пів року, рік, «будь-коли»; календар завжди доступний (межі обмежують лише тоді, коли вони підтверджені); місяць/рік/квартал/сезон у розгорнутій області; статус меж одним рядком з ⓘ та оновленням;
+- пошуковий рушій, API, модель критеріїв та CanonicalChrome залишаються без змін.

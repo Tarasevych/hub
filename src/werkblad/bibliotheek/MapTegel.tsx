@@ -21,7 +21,7 @@ export function MapTegel(p: MapTegelProps) {
   const knop = useRef<HTMLButtonElement>(null);
   const paneel = useRef<HTMLDivElement>(null);
   const id = useId();
-  const naam = p.map.titleOverride || tr(p.lang, 'Папка', 'Map');
+  const naam = p.map.titleOverride || tr(p.lang, 'Тека', 'Map');
   const kinderen = p.kinderen.filter((k) => k.kind === 'shortcut');
   useEffect(() => {
     if (!open) return;
@@ -33,13 +33,13 @@ export function MapTegel(p: MapTegelProps) {
   return (
     <div className='bib-map'>
       <button ref={knop} type='button' className='bib-tegel' aria-expanded={open} aria-controls={id} onClick={() => !p.instellen && setOpen((o) => !o)}
-        aria-label={tr(p.lang, `Папка «${naam}», елементів: ${kinderen.length}`, `Map «${naam}», items: ${kinderen.length}`)} data-werkblad-map={p.map.instanceId} title={naam}>
+        aria-label={tr(p.lang, `Тека «${naam}», елементів: ${kinderen.length}`, `Map «${naam}», items: ${kinderen.length}`)} data-werkblad-map={p.map.instanceId} title={naam}>
         <span className='bib-tegel-icoon bib-map-icoon'>{kinderen.length ? kinderen.slice(0, 4).map((k) => <RegisterIcoon key={k.instanceId} icoon={k.iconOverride || registerItem(k.itemId, p.persoonlijk)?.icoon || 'dot'} />) : <RegisterIcoon icoon={p.map.iconOverride || 'folder'} />}</span>
         <span className='bib-tegel-naam'>{naam}</span>
       </button>
       {open && (
         <div ref={paneel} id={id} className='bib-map-paneel' role='dialog' aria-label={naam} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); knop.current?.focus(); } }}>
-          {kinderen.length === 0 ? <p className='bib-leeg'>{tr(p.lang, 'Папка порожня.', 'De map is leeg.')}</p> : (
+          {kinderen.length === 0 ? <p className='bib-leeg'>{tr(p.lang, 'Тека порожня.', 'De map is leeg.')}</p> : (
             <ul>{kinderen.map((k) => <li key={k.instanceId}><ShortcutTegel itemId={k.itemId} lang={p.lang} ctx={p.ctx} donker={p.donker} titleOverride={k.titleOverride} iconOverride={k.iconOverride} persoonlijk={p.persoonlijk} navigeer={p.navigeer} />{p.onUitnemen && <button type='button' className='bib-map-uit' data-werkblad-uitnemen={k.instanceId} onClick={() => p.onUitnemen!(k.instanceId)}>{tr(p.lang, 'Вийняти', 'Eruit halen')}</button>}</li>)}</ul>
           )}
         </div>

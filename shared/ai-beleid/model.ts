@@ -131,7 +131,7 @@ export function assertPolicy(p: unknown): asserts p is Policy {
     const ag = a as Record<string, unknown>;
     if (!ag || typeof ag.name !== 'string' || ag.name.length === 0 || ag.name.length > 80) throw new PolicyError('bad_agents', `Агент «${id}»: некоректна назва.`);
     if (typeof ag.enabled !== 'boolean') throw new PolicyError('bad_agents', `Агент «${id}»: не вказано, увімкнений він чи ні.`);
-    assertMode(ag.defaultMode, `Агент «${id}» (за замовчуванням)`);
+    assertMode(ag.defaultMode, `Агент «${id}» (типово)`);
     if (!ag.capabilities || typeof ag.capabilities !== 'object' || Array.isArray(ag.capabilities)) {
       throw new PolicyError('bad_agents', `Агент «${id}»: немає списку можливостей.`);
     }
@@ -337,7 +337,7 @@ export interface GrantRow {
   capability: string;
   group: string;
   label: string;
-  /** true — це значення «за замовчуванням» агента, а не окремий запис. */
+  /** true — це значення «типово» агента, а не окремий запис. */
   inherited: boolean;
   mode: Mode;
   /** Що діє ЗАРАЗ (з урахуванням строку). */

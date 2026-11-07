@@ -253,6 +253,10 @@
   {
    "sleutel": "src/tech/strook.css :: @media (min-width:769px) .tech-band .tech-band-extra.is-open",
    "reden": "De volledige ⋯-lijst van de technische band op een breed scherm (zoekronde 02.11.2026): hetzelfde paneel als op de telefoon, onder de band. Geen knop; de knop ⋯ staat in de zone van de band."
+  },
+  {
+   "sleutel": "src/identiteit/identiteit-account.css :: .ia-dialoog-achtergrond",
+   "reden": "IDENTITY-002: achtergrondlaag van de fotodialoog (venster, geen zwevende knop). Het venster moet boven de pagina en de instellingenkaarten staan; zonder position:fixed kan het niet het hele scherm bedekken. Sluit met Escape of klik op de achtergrond."
   }
  ],
  "kopReserves": [

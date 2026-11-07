@@ -1,22 +1,24 @@
-# Admin-pakket: 15 punten (17 oktober 2026, derde pakket)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./WIJZIGINGEN-20261017-ADMIN-15-PUNTEN.uk.md) · [🇳🇱 **Nederlandse versie**](./WIJZIGINGEN-20261017-ADMIN-15-PUNTEN.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-Bouwt voort op `WIJZIGINGEN-20261017-UITROL-WIZARD.md`. Gedetailleerde notities per onderdeel: `WIJZIGINGEN-20261017-INTEGRATIES.md`, `WIJZIGINGEN-20261017-DIAGNOSTIEK.md`.
+# Адмін-пакет: 15 пунктів (17 жовтня 2026, третій пакет)
 
-1. **Wie bereidt updates voor** (`Voorbereiders.tsx`, `Persoon.tsx`): vaste layout, foto/naam/e-mail van het account (initialen zonder foto); alleen wie echt recht heeft; verweesde en door AI-beleid geblokkeerde rechten apart.
-2–6. **/updates**: uploadwizard bovenaan; «Чекають схвалення» alleen als er iets wacht; max. 5 recente + «Уся історія»; fasenblok en wizard leeg na 30 s; terminal pas zichtbaar zodra de installatie begint, weg 30 s na afloop.
-7. **Instellingen**: kaart «Розгортання з телефона» met drie stappen en statuschips.
-8. **Agent toevoegen**: merklogo's (`public/agent-logos`, ±7 kB), looptijd 1/7/30 dagen of «до відкликання» (migratie 0052), eerlijke uitleg bij lege lijst van privé-koppelingen; sluitknoppen overal gecentreerd (`platform/sluitknop.css`).
-9. **Доступ ШІ**: logo's; «Розгортати сайт» ⇄ recht «agent» automatisch (alleen automatische rechten worden ingetrokken; handmatige nooit).
-10. **Logboek (/audit)**: alle rechtenwijzigingen (`agent.grant.*`, `agent.policy.*`) met wie/aan wie/voor→na/looptijd/reden; filters, zoeken, datum, groepering, export, hash-keten. Hulpfunctie `backend/audit-gebeurtenis.ts` (`schrijfBeheerAudit`).
-11. **Technische balk**: past zich aan de beschikbare breedte aan (incl. zijmenu), laatste stap «⋯»-menu.
-12. **/contour → «Секрети й ключі»**: inventaris, tonen/wijzigen/verwijderen alleen met step-up (passkey/app-code/herstelcode), waarde 30 s zichtbaar, mislukte pogingen en overzicht gelogd.
-13. **/mappen**: integratiecentrum met 160 kaarten (19 klaar, 2 instellen, 139 «Скоро» — eerlijk), categorieën, zoeken, filters, detail, test, loskoppelen, schakelaar voor gebruikers (migratie 0055).
-14. **/diagnostiek**: 42 controles in 11 categorieën, «Потребує уваги», storingshistorie en trend (migratie 0056), gebruikersklacht-tab, alles gelogd.
-15. **/overzicht**: 13 widgets, verslepen/formaat/verbergen/herstellen (per beheerder opgeslagen, migratie 0057), snapshots elk uur/dag, gebruikersgeschiedenis zonder vertrouwelijke gegevens (migratie 0058).
+Продовжує `WIJZIGINGEN-20261017-UITROL-WIZARD.md`. Докладні нотатки за компонентами: `WIJZIGINGEN-20261017-INTEGRATIES.md`, `WIJZIGINGEN-20261017-DIAGNOSTIEK.md`.
 
-## Migraties
-0052, 0053, 0055, 0056, 0057, 0058 (nummers 0051 en 0054 bestaan niet — dat is bewust, de volgorde blijft alfabetisch).
+1. **Хто готує оновлення** (`Voorbereiders.tsx`, `Persoon.tsx`): стабільна розкладка, фото/ім'я/e-mail облікового запису (ініціали, якщо фото немає); лише ті, хто справді має право; «осиротілі» дозволи та заблоковані політикою ШІ — окремо.
+2–6. **/updates**: майстер завантаження зверху; «Чекають схвалення» лише коли щось чекає; макс. 5 останніх + «Уся історія»; блок фаз і майстер очищаються через 30 с; термінал з'являється лише з початком встановлення і зникає через 30 с після завершення.
+7. **Налаштування**: картка «Розгортання з телефона» з трьома кроками та чипами стану.
+8. **Додати агента**: логотипи брендів (`public/agent-logos`, ±7 КБ), строк дії 1/7/30 днів або «до відкликання» (міграція 0052), чесне пояснення при порожньому списку приватних під'єднань; кнопки закриття всюди відцентровано (`platform/sluitknop.css`).
+9. **Доступ ШІ**: логотипи; «Розгортати сайт» ⇄ право «agent» автоматично (відкликаються лише автоматичні права; видані вручну — ніколи).
+10. **Журнал (/audit)**: усі зміни прав (`agent.grant.*`, `agent.policy.*`) із зазначенням хто/кому/було→стало/строк/причина; фільтри, пошук, дата, групування, експорт, геш-ланцюжок. Допоміжна функція `backend/audit-gebeurtenis.ts` (`schrijfBeheerAudit`).
+11. **Технічна смуга**: підлаштовується під доступну ширину (включно з бічним меню), останній крок — меню «⋯».
+12. **/contour → «Секрети й ключі»**: інвентар, показ/зміна/видалення лише зі step-up (passkey/код застосунку/код відновлення), значення видиме 30 с, невдалі спроби й перегляд записуються в журнал.
+13. **/mappen**: центр інтеграцій на 160 карток (19 готово, 2 налаштувати, 139 «Скоро» — чесно), категорії, пошук, фільтри, деталі, тест, від'єднання, перемикач для користувачів (міграція 0055).
+14. **/diagnostiek**: 42 перевірки в 11 категоріях, «Потребує уваги», історія збоїв і тренд (міграція 0056), вкладка скарг користувача, усе записується в журнал.
+15. **/overzicht**: 13 блоків інтерфейсу, перетягування/розмір/приховування/відновлення (зберігається для кожного адміністратора, міграція 0057), знімки щогодини/щодня, історія користувача без конфіденційних даних (міграція 0058).
 
-## Niet bewezen
-Echte passkey/WebAuthn in Chrome, echte serverchecks (subdomeinen/TLS/Google), 90-dagen snapshotgeschiedenis (vult zich met de tijd), de nazorg-timer op systemd. Gebruikerspagina die `integraties/beschikbaar` toont bestaat nog niet.
-Bekende tests die ook vóór deze wijziging faalden: `tech-profiel` (2), `uitrol-goedkeuring` «db: mijnruimte_app», 4× RLS in `toegang-context`.
+## Міграції
+0052, 0053, 0055, 0056, 0057, 0058 (номерів 0051 і 0054 не існує — це свідомо, алфавітний порядок збережено).
+
+## Не доведено
+Справжній passkey/WebAuthn у Chrome, справжні серверні перевірки (піддомени/TLS/Google), 90-денна історія знімків (наповнюється з часом), таймер післянагляду (nazorg) на systemd. Користувацька сторінка, що показує `integraties/beschikbaar`, ще не створена.
+Відомі тести, які падали ще до цієї зміни: `tech-profiel` (2), `uitrol-goedkeuring` «db: mijnruimte_app», 4× RLS у `toegang-context`.

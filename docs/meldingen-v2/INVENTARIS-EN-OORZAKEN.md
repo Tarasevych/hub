@@ -1,53 +1,55 @@
-# UI-007 — Meldingencentrum: inventaris, oorzaken en ontwerp (29.10.2026)
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./INVENTARIS-EN-OORZAKEN.uk.md) · [🇳🇱 **Nederlandse versie**](./INVENTARIS-EN-OORZAKEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-Basis: release 20261029-131639. Nieuw gedrag achter vlag `meldingen-v2` (standaard UIT, migratie 0142).
+# UI-007 — Центр сповіщень: інвентар, причини та проєкт (29.10.2026)
 
-## 1. Inventaris van wat er al is (hergebruikt, niet gedupliceerd)
+База: випуск 20261029-131639. Нова поведінка за прапорцем `meldingen-v2` (типово ВИМКНЕНО, міграція 0142).
 
-| Onderdeel | Bestand | Rol |
+## 1. Інвентар того, що вже є (використано повторно, не продубльовано)
+
+| Компонент | Файл | Роль |
 |---|---|---|
-| Bel + paneel (CanonicalChrome) | `src/CanoniekMeldingencentrum.tsx` (+ `canoniek-meldingencentrum.css`) | Bel in een zone (`<Plek knop='bel'>`), paneel (popover op pc, schermvullend ≤560 px), kop, voettools (geluid, soorten, standaardplek, alles gelezen), toast, geluid (`playChime`), tellers (`unreadCount`). |
-| Lijst | `src/MeldingenpaneelInhoud.tsx` (+ `meldingenpaneel.css`) | Voegt 3 bronnen samen, chips «Усі/Непрочитані/Очікують/Проблеми», groepeerknop, zoekveld, «Фільтри» met secties + volgorde, kaarten met dag-koppen. |
-| Lokale meldingen | `src/canoniek-meldingen.ts` | `emitCanonicalNotice`, dedupe (90 s, localStorage), tweetalige teksten. |
-| Servermeldingen | `site_notifications` (app.records), `backend/index.ts` (`notify`, `/api/notifications/read`), `backend/meldingen-ruimte.ts`, `shared/meldingen-ruimte.ts`, `shared/meldingen-soorten.ts` (sfeer prive/technisch, 0091/0107) | Lade per ruimte; technische meldingen alleen in de technische ruimte. |
-| Activiteiten | `src/connector-activiteit.ts` | Opdrachten agenten/browser/site-tools (status, duur, oorzaak). |
-| Instellingen | `shared/melding-typen.ts`, `shared/melding-soorten.ts`, `src/meldingen/MeldingVoorkeurenPaneel.tsx` | Per type geluid/opduiken/tonen; `kritiek` = niet te verbergen. Bewaard in zijbalkvoorkeuren (server). |
-| Technische lade | `src/meldingen/TechMeldingen.tsx`, `tech-meldingen-opslag.ts` | Aparte technische meldingen (alleen met technisch profiel). |
-| Stijl/bron | `src/melding-stijl.tsx` | Sectie → pictogram, aanbieder → logo. |
+| Дзвіночок + панель (CanonicalChrome) | `src/CanoniekMeldingencentrum.tsx` (+ `canoniek-meldingencentrum.css`) | Дзвіночок у зоні (`<Plek knop='bel'>`), панель (поповер на ПК, на весь екран ≤560 px), шапка, нижні інструменти (звук, типи, стандартне місце, усе прочитано), тост, звук (`playChime`), лічильники (`unreadCount`). |
+| Список | `src/MeldingenpaneelInhoud.tsx` (+ `meldingenpaneel.css`) | Об'єднує 3 джерела, чипи «Усі/Непрочитані/Очікують/Проблеми», кнопка групування, поле пошуку, «Фільтри» з розділами + порядком, картки із заголовками за днями. |
+| Локальні сповіщення | `src/canoniek-meldingen.ts` | `emitCanonicalNotice`, дедуплікація (90 с, localStorage), двомовні тексти. |
+| Серверні сповіщення | `site_notifications` (`app.records`), `backend/index.ts` (`notify`, `/api/notifications/read`), `backend/meldingen-ruimte.ts`, `shared/meldingen-ruimte.ts`, `shared/meldingen-soorten.ts` (сфера `prive`/`technisch`, 0091/0107) | Лада на простір; технічні сповіщення лише в технічному просторі. |
+| Активності | `src/connector-activiteit.ts` | Команди агентів/браузера/інструментів сайту (статус, тривалість, причина). |
+| Налаштування | `shared/melding-typen.ts`, `shared/melding-soorten.ts`, `src/meldingen/MeldingVoorkeurenPaneel.tsx` | Для кожного типу: звук/спливання/показ; `kritiek` = не можна приховати. Зберігається в налаштуваннях бічної панелі (сервер). |
+| Технічна лада | `src/meldingen/TechMeldingen.tsx`, `tech-meldingen-opslag.ts` | Окремі технічні сповіщення (лише з технічним профілем). |
+| Стиль/джерело | `src/melding-stijl.tsx` | Розділ → значок, провайдер → логотип. |
 
-## 2. Oorzaken van de klachten (129 ongelezen, 163 regels, 39 problemen)
+## 2. Причини скарг (129 непрочитаних, 163 рядки, 39 проблем)
 
-Vastgesteld uit de code; de live-aantallen zelf kon ik niet nameten (geen toegang tot de live site).
+Встановлено з коду; самі живі числа я не міг переміряти (немає доступу до живого сайту).
 
-1. **Elke regel = één ongelezen.** `unreadCount = lokaal + server + activiteiten` telt per REGEL. Een proces dat start en eindigt (bv. adrescontrole, synchronisatie, agentopdracht) levert 2+ ongelezen; tientallen rondes → tientallen ongelezen.
-2. **Geslaagd achtergrondwerk telt mee.** Succes-activiteiten en `success`-meldingen tellen in de bel; er is geen «stil» niveau.
-3. **Groeperen alleen visueel en op tekst.** `groupKeyOf(bron, tekst zonder cijfers)` voegt «gestart» en «klaar» NIET samen (andere tekst) en is alleen weergave: tellers blijven per regel.
-4. **«Проблеми» ≠ open problemen.** Elke `error`/`failed`-regel telt, ook als een latere ronde slaagde → 39 «problemen» die al lang voorbij zijn. Gelezen werd als «afgehandeld» behandeld; er bestond geen «вирішено».
-5. **Technische ruis in de gewone lade.** Opdrachten met herhaalpogingen, «extensie ontgrendeld/geweigerd», interne codes (`MAIL_…_FAILED`) komen als activiteit in het gewone paneel; de sfeer-scheiding (0107) dekt servermeldingen, niet elke activiteit-tekst.
-6. **Overladen bediening.** Kop (titel + 2 tellers + «…» + inklappen), chiprij (5 chips), zoekveld, «Фільтри», secties, volgorde-select, voet met 4 knoppen (die ook achter «…» zitten) → dubbele tools boven en onder.
-7. **Grote gekleurde kaarten.** Elke regel is een kaart met rand + achtergrondtint per sectie + dag-kop → veel witruimte, weinig regels per scherm.
-8. **Bron verzonnen.** `styleOf` gokt «Google» voor elke mail/cloud/agenda-melding zonder aanbieder; bij twee accounts van één aanbieder is niet te zien welk account.
-9. **Instellingen alleen per type, niet per dienst/account**; geen tijdelijke «Не турбувати».
+1. **Кожен рядок = одне непрочитане.** `unreadCount = lokaal + server + activiteiten` рахує ПО РЯДКАХ. Процес, який починається й завершується (напр., перевірка адрес, синхронізація, команда агента), дає 2+ непрочитаних; десятки циклів → десятки непрочитаних.
+2. **Успішна фонова робота теж враховується.** Успішні активності й `success`-сповіщення додаються до лічильника дзвіночка; немає «тихого» рівня.
+3. **Групування лише візуальне й за текстом.** `groupKeyOf(bron, tekst zonder cijfers)` НЕ об'єднує «розпочато» та «завершено» (різний текст) і діє лише у відображенні: лічильники залишаються по рядках.
+4. **«Проблеми» ≠ відкриті проблеми.** Враховується кожен рядок `error`/`failed`, навіть якщо наступний цикл завершився успішно → 39 «проблем», які вже давно минули. Прочитане трактувалося як «опрацьоване»; стану «вирішено» не існувало.
+5. **Технічний шум у звичайній ладі.** Команди з повторними спробами, «розширення розблоковано/відхилено», внутрішні коди (`MAIL_…_FAILED`) потрапляють як активність у звичайну панель; поділ за сферами (0107) покриває серверні сповіщення, але не кожен текст активності.
+6. **Перевантажене керування.** Шапка (заголовок + 2 лічильники + «…» + згортання), ряд чипів (5 чипів), поле пошуку, «Фільтри», розділи, вибір порядку, підвал із 4 кнопками (які також продубльовані під «…») → подвійні інструменти зверху й знизу.
+7. **Великі кольорові картки.** Кожен рядок — це картка з рамкою + фоновим відтінком за розділом + заголовком дня → багато порожнього місця, мало рядків на екран.
+8. **Вигадане джерело.** `styleOf` вгадує «Google» для кожного сповіщення пошти/хмари/календаря без провайдера; за наявності двох облікових записів одного провайдера не видно, який саме це обліковий запис.
+9. **Налаштування лише за типом, а не за службою/обліковим записом**; немає тимчасового режиму «Не турбувати».
 
-## 3. Ontwerp v2 (wat gebouwd is)
+## 3. Проєкт v2 (що побудовано)
 
-- **Kop:** titel + één teller «потребує уваги» + pictogrammen (zoeken, filters, Не турбувати, alles gelezen, regels, inklappen) met tooltip en `aria-label`.
-- **Segment:** «Важливі / Усі / Непрочитані». Opent op «Важливі» als er iets aandacht vraagt.
-- **Lijst:** compacte rij (bronpictogram + ernststip, titel, één metaregel bron · aanbieder · account · toestand · tijd, «×N» bij samengevoegd, «…»-menu). Kleur alleen op pictogram/stip.
-- **Contextmenu:** Позначити прочитаним, Відкрити джерело, Позначити вирішеним, В архів, Зробити тихими події цього типу, Вимкнути повідомлення цього акаунта, Налаштувати джерело. Beschermde meldingen: dempen niet aangeboden.
-- **Zoeken:** pictogram klapt veld uit, filtert live, wissen, Esc sluit.
-- **Filters:** één contextpaneel (bron, account, status, periode, volgorde).
-- **Volledige geschiedenis:** apart scherm (paneel schermvullend), tot 500 items, met «записів X → об’єднано в Y».
-- **Responsief:** popover (pc), uitschuifpaneel rechts (561–1024 px), schermvullend (≤560 px, bestaand gedrag). `prefers-reduced-motion`.
-- **Groepering** (`shared/meldingen-v2/groepering.ts`): op proces-id (expliciet, of soort zonder fase-achtervoegsel, of activiteit bron+soort+onderwerp), anders dienst+account+soort+titel. Open fout blijft staan tot een latere geslaagde ronde. Toestanden open/actie/opgelost/archief los van gelezen.
-- **Tellers:** bel = ongelezen ITEMS met modus prioriteit/normaal; aandacht apart.
-- **Leveringsregels** (`shared/meldingen-v2/beleid.ts`, `backend/meldingen-regels.ts`): per dienst/account/categorie, 4 modi, Не турбувати (max. 7 dagen), server-side per gebruiker (`melding_regels_v1`, RLS-groep voorkeuren, 0143). Beschermd: beveiliging/inzage (kritieke types), bevestigingsverzoeken, verplicht.
-- **Technisch:** ruis (herhaalpogingen, extensie-teksten, interne codes, agent-service) gaat niet in het gewone centrum; een fout met actie blijft, met technische details in uitklap. Teller verwijst naar de bestaande technische lade.
-- **Bron:** aanbieder/account alleen als de bron ze opgeeft; adres gemaskeerd (p…@gmail.com) tenzij label of «Показувати повні адреси».
+- **Шапка:** заголовок + один лічильник «потребує уваги» + значки (пошук, фільтри, Не турбувати, усе прочитано, правила, згорнути) з підказкою (tooltip) та `aria-label`.
+- **Сегмент:** «Важливі / Усі / Непрочитані». Відкривається на «Важливі», якщо є щось, що потребує уваги.
+- **Список:** компактний рядок (значок джерела + крапка важливості, заголовок, один мета-рядок: джерело · провайдер · обліковий запис · стан · час, «×N» для згрупованих, меню «…»). Колір лише на значку/крапці.
+- **Контекстне меню:** Позначити прочитаним, Відкрити джерело, Позначити вирішеним, В архів, Зробити тихими події цього типу, Вимкнути повідомлення цього облікового запису, Налаштувати джерело. Для захищених сповіщень приглушення не пропонується.
+- **Пошук:** значок розгортає поле, фільтрує наживо, очищення, Esc закриває.
+- **Фільтри:** одна контекстна панель (джерело, обліковий запис, статус, період, порядок).
+- **Повна історія:** окремий екран (панель на весь екран), до 500 елементів, із підписом «записів X → об’єднано в Y».
+- **Адаптивність:** поповер (ПК), висувна панель праворуч (561–1024 px), на весь екран (≤560 px, наявна поведінка). Підтримка `prefers-reduced-motion`.
+- **Групування** (`shared/meldingen-v2/groepering.ts`): за ідентифікатором процесу (явним, або типом без суфікса фази, або активністю `bron+soort+onderwerp`), інакше `dienst+account+soort+titel`. Відкрита помилка залишається видимою до пізнішого успішного циклу. Стани `open`/`actie`/`opgelost`/`archief` окремо від прочитання.
+- **Лічильники:** дзвіночок = непрочитані ЕЛЕМЕНТИ з режимом «пріоритет/звичайний»; «потребує уваги» враховується окремо.
+- **Правила доставки** (`shared/meldingen-v2/beleid.ts`, `backend/meldingen-regels.ts`): за службою/обліковим записом/категорією, 4 режими, «Не турбувати» (макс. 7 днів), на сервері для кожного користувача (`melding_regels_v1`, RLS-група `voorkeuren`, 0143). Захищені: безпека/перегляд (критичні типи), запити на підтвердження, обов'язкові.
+- **Технічне:** шум (повторні спроби, тексти розширення, внутрішні коди, служба агента) не потрапляє до звичайного центру; помилка, що вимагає дії, залишається, а технічні деталі сховані під розгортанням. Лічильник посилається на наявну технічну ладу.
+- **Джерело:** провайдер/обліковий запис показуються лише тоді, коли джерело їх передає; адреса маскується (`p…@gmail.com`), якщо немає мітки або не ввімкнено «Показувати повні адреси».
 
-## 4. Grenzen (eerlijk)
+## 4. Межі (чесно)
 
-- Bestaande producenten van meldingen geven nog geen `account`/`accountLabel`/`procesId`/`provider` mee; v2 leest ze als ze er zijn, anders heuristiek (soort-fase, activiteit). Producenten aanpassen = vervolgstap per dienst.
-- «Вирішено» / «В архів» zijn in deze versie per sessie in de browser (geen servervelden toegevoegd aan `site_notifications`).
-- Geluid volgt in v2: oude geluidsknop + Не турбувати. Per-melding geluid volgens modus is nog niet in `playChime` aangesloten.
-- Regels gelden voor het gewone (persoonlijke) centrum; de technische lade is ongewijzigd.
+- Наявні генератори сповіщень ще не передають `account`/`accountLabel`/`procesId`/`provider`; v2 читає їх, якщо вони є, інакше застосовує евристику (фаза типу, активність). Оновлення генераторів = наступний крок для кожної служби.
+- «Вирішено» / «В архів» у цій версії зберігаються на сесію в браузері (нові серверні поля до `site_notifications` не додавалися).
+- Звук у v2 наслідує стару кнопку звуку + «Не турбувати». Індивідуальний звук на сповіщення за режимом ще не під'єднаний до `playChime`.
+- Правила діють для звичайного (особистого) центру; технічна лада залишається без змін.

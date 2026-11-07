@@ -57,3 +57,22 @@ html.theme-plum-dark{--ap-op-accent:#2a1024}
 /* Geen opacity meer (3.1–4.3:1 in de lichte paletten): de gewone gedempte tekstkleur van het venster, ≥ 4.5:1. */
 .bevestig-toegang-uitleg[data-onthoud-uitleg]{font-size:.78rem;color:var(--muted,var(--boot-muted,#5a6672))}
 .bevestig-toegang-uitleg[data-onthoud='nooit']{margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(180,120,30,.1);border:1px solid rgba(180,120,30,.28);font-size:.8rem;line-height:1.4}
+
+/* MAILMOB-001: het kritieke Passkey-venster neemt niet meer onnodig het hele scherm in.
+   De gedeelde vensterlaag blijft prioriteit/focus/dok beheren; de inhoud kan scrollen. */
+@media(max-width:559px){
+  html .venster.bevestig-toegang-venster.is-max{
+    inset:auto calc(8px + var(--veilig-rechts,0px) + var(--venster-dok-rechts,0px))
+      calc(8px + env(safe-area-inset-bottom,0px) + var(--venster-dok-onder,0px))
+      calc(8px + var(--veilig-links,0px) + var(--venster-dok-links,0px))!important;
+    width:auto!important;height:auto!important;min-height:0!important;
+    max-height:calc(100dvh - 32px - var(--veilig-boven,0px) - var(--venster-dok-boven,0px) - var(--venster-dok-onder,0px))!important;
+    border-radius:22px 22px 16px 16px!important;
+  }
+  .venster.bevestig-toegang-venster .venster-kop{min-height:48px;cursor:default}
+  .venster.bevestig-toegang-venster .venster-inhoud{overflow-y:auto;overscroll-behavior:contain}
+  .bevestig-toegang-venster .bevestig-toegang{padding:17px 12px 14px;gap:10px}
+  .bevestig-toegang-venster .bevestig-toegang-kaart{padding:12px;gap:9px}
+  .bevestig-toegang-venster .bevestig-toegang-account strong{white-space:normal;overflow-wrap:anywhere}
+  .bevestig-toegang-venster .bevestig-toegang-primair{min-height:47px}
+}

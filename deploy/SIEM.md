@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./SIEM.uk.md) · [🇳🇱 **Nederlandse versie**](./SIEM.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
+
 # Журнал → ваш SIEM (етап E)
 
 Кожен запис журналу безпеки (`app.audit`) тепер має три поля контексту:
@@ -14,7 +16,7 @@
 
 ## Експорт у SIEM на цьому ж сервері
 
-За замовчуванням **вимкнено**. Нічого не йде назовні: є лише два напрямки, обидва на цій машині.
+Типово **вимкнено**. Нічого не йде назовні: є лише два напрямки, обидва на цій машині.
 
 1. **Файл NDJSON** `/var/log/mijn-ruimte/audit.ndjson`: один JSON на рядок. Його читає агент вашого SIEM (Wazuh agent,
    Promtail/Grafana Alloy, Vector, Fluent Bit). Тека `2750`, група `adm` (якщо є), logrotate щодня, 30 днів.
@@ -26,7 +28,7 @@
 sudo /usr/local/sbin/mijn-ruimte-installeer siem aan --bestand
 # або Loki на цьому сервері:
 sudo /usr/local/sbin/mijn-ruimte-installeer siem aan --loki http://127.0.0.1:3100
-# обидва одразу; --vanaf-begin = також уся наявна історія (за замовчуванням — лише нові записи)
+# обидва одразу; --vanaf-begin = також уся наявна історія (типово — лише нові записи)
 sudo /usr/local/sbin/mijn-ruimte-installeer siem aan --bestand --loki http://127.0.0.1:3100
 ```
 Команда пише в `/etc/mijn-ruimte/siem.env` лише рядки `SIEM_…` (root:mijnruimte, 0640) і перезапускає сайт.

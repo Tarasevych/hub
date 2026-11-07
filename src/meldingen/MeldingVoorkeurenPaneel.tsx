@@ -82,14 +82,14 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen }: Props) {
         </label>
         <label className='mv-veld'>
           <span>{t('Поведінка', 'Gedrag')}</span>
-          <select data-mv-veld='gedrag' value={v.vast ? 'vast' : 'timer'} disabled={!popup} onChange={(e) => zetTypeVoorkeur(id, 'vast', e.target.value === 'vast')} aria-label={`${naam}: ${t('поведінка спливаючого вікна', 'gedrag van de pop-up')}`}>
+          <select data-mv-veld='gedrag' value={v.vast ? 'vast' : 'timer'} disabled={!popup} onChange={(e) => zetTypeVoorkeur(id, 'vast', e.target.value === 'vast')} aria-label={`${naam}: ${t('поведінка спливного вікна', 'gedrag van de pop-up')}`}>
             <option value='timer'>{t('Зникає за таймером', 'Verdwijnt na de tijd')}</option>
             <option value='vast'>{t('Висить, доки не закрию', 'Blijft staan tot ik sluit')}</option>
           </select>
         </label>
         <label className='mv-veld'>
           <span>{t('Тривалість', 'Duur')}</span>
-          <select className='mv-duur' data-mv-veld='seconden' value={v.seconden} disabled={!popup || v.vast} onChange={(e) => zetTypeSeconden(id, Number(e.target.value))} aria-label={`${naam}: ${t('скільки секунд показувати спливаюче вікно', 'duur van de pop-up in seconden')}`}>
+          <select className='mv-duur' data-mv-veld='seconden' value={v.seconden} disabled={!popup || v.vast} onChange={(e) => zetTypeSeconden(id, Number(e.target.value))} aria-label={`${naam}: ${t('скільки секунд показувати спливне вікно', 'duur van de pop-up in seconden')}`}>
             {[...new Set([0, ...TOAST_SECONDEN_KEUZES, v.seconden])].sort((a, b) => a - b).map((s) => <option key={s} value={s}>{s === 0 ? t('Авто (за типом і текстом)', 'Auto (volgens soort en tekst)') : `${s} ${t('с', 's')}`}</option>)}
           </select>
         </label>
@@ -110,7 +110,7 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen }: Props) {
         {ids.map(rij)}
         <div className='mv-acties'>
           <button type='button' data-mv-alles={`${sleutel}-geluid`} onClick={() => zetAlleTypen(ids, 'geluid', allesStil)}>{allesStil ? <Volume2 aria-hidden='true' /> : <VolumeX aria-hidden='true' />}{allesStil ? t('Увімкнути звук для всіх', 'Geluid voor alles aan') : t('Без звуку для всіх', 'Alles zonder geluid')}</button>
-          <button type='button' data-mv-alles={`${sleutel}-opduiken`} onClick={() => zetAlleTypen(ids, 'opduiken', geenPopups)}><BellOff aria-hidden='true' />{geenPopups ? t('Спливаючі для всіх', 'Pop-ups voor alles') : t('Без спливаючих', 'Geen pop-ups')}</button>
+          <button type='button' data-mv-alles={`${sleutel}-opduiken`} onClick={() => zetAlleTypen(ids, 'opduiken', geenPopups)}><BellOff aria-hidden='true' />{geenPopups ? t('Спливні для всіх', 'Pop-ups voor alles') : t('Без спливних', 'Geen pop-ups')}</button>
         </div>
       </fieldset>
     );
@@ -118,7 +118,7 @@ export default function MeldingVoorkeurenPaneel({ lang, techTypen }: Props) {
   return (
     <div className='mv-paneel' data-melding-voorkeuren>
       <p className='mv-uitleg'>{t('Зберігається у вашому акаунті й діє в усіх вкладках і на всіх пристроях.', 'Wordt in uw account bewaard en geldt in alle tabbladen en op alle apparaten.')}</p>
-      <p className='mv-uitleg'>{t('Спливаюче вікно зникає саме за вказаний час («Авто» — коротше для «готово», довше для помилок і довгого тексту). Поки курсор на ньому, відлік стоїть. Після закриття сповіщення лишається в панелі.', 'De pop-up verdwijnt vanzelf na de ingestelde tijd («Auto» — korter voor «klaar», langer voor fouten en lange tekst). Zolang de muis erop staat, staat de aftelling stil. Na het sluiten blijft de melding in het paneel.')}</p>
+      <p className='mv-uitleg'>{t('Спливне вікно зникає саме за вказаний час («Авто» — коротше для «готово», довше для помилок і довгого тексту). Поки курсор на ньому, відлік стоїть. Після закриття сповіщення лишається в панелі.', 'De pop-up verdwijnt vanzelf na de ingestelde tijd («Auto» — korter voor «klaar», langer voor fouten en lange tekst). Zolang de muis erop staat, staat de aftelling stil. Na het sluiten blijft de melding in het paneel.')}</p>
       {groep(t('Мої сповіщення', 'Mijn meldingen'), t('Пошта, безпека акаунта, спільний доступ та інше, що стосується лише вас.', 'E-mail, beveiliging van uw account, delen en andere zaken die alleen u aangaan.'), prive, 'prive')}
       {techTypen ? groep(t('Технічна панель', 'Technisch paneel'), t('Видно лише з технічним профілем і лише те, що стосується ваших ролей. Самі сповіщення — у смузі технічного режиму.', 'Alleen zichtbaar met een technisch profiel en alleen wat uw rollen aangaat. De meldingen zelf staan in de band van de technische modus.'), tech, 'technisch') : null}
     </div>

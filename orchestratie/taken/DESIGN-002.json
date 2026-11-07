@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "DESIGN-002",
+  "agent": "codex",
+  "tak": "feature/design-002-20261105-134500",
+  "basisCommit": "53a7b918038c9a0657e76c170415de4151885fcf",
+  "basisVersie": "20261105-101500",
+  "regelsVersie": "1.4.9",
+  "regelsHash": "fd7f99f180da62313ee13a1ffe7a99c5e933883419d54efc2d9f4d7bcd7b8dd4",
+  "staat": "in_progress",
+  "gestart": "2026-11-05T13:45:36.617Z",
+  "bijgewerkt": "2026-11-05T13:45:36.617Z",
+  "omschrijving": "Адаптивний інтерфейс і завершення попередніх покращень",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

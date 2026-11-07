@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ZOEK-UITBREIDEN.uk.md) · [🇳🇱 **Nederlandse versie**](./ZOEK-UITBREIDEN.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Пошук «/zoek» — як додати новий тип об'єкта або нове джерело
 
 Стан: 22.10.2026. Покроково, з файлами. Правило: нове джерело **ніколи** не вигадує власний пошук чи власну таблицю — воно лише
@@ -8,32 +10,32 @@
 1. `shared/zoek-model.ts` → `ZOEK_SOORTEN`: додати назву (a–z). Якщо це «дія/налаштування/сторінка» (короткі запити-команди мають
    отримувати бонус), додати і в `ACTIE_SOORTEN`.
 2. Адаптер джерела (`backend/zoek/adapters.ts` або `catalogus-ui.ts`): віддавати об'єкти з новим `soort`.
-3. UI: `src/zoek/ZoekKaart.tsx` — іконка й підпис типу (uk + nl), дія переходу; `src/zoek/zoek-logica.ts` — фільтр «Тип» бере значення з
+3. UI: `src/zoek/ZoekKaart.tsx` — піктограма й підпис типу (uk + nl), дія переходу; `src/zoek/zoek-logica.ts` — фільтр «Тип» бере значення з
    `ZOEK_SOORTEN`, тож нова назва з'явиться сама, але підпис uk/nl треба додати.
 4. Тести: `tests/eenheid/zoek-kern-*.test.ts` (модель), додати 1–2 запити в `tests/eenheid/hulp/zoek-evaluatie.json` з очікуваним `soort`.
-5. Міграція **не потрібна** (`soort` — вільний text).
+5. Міграція **не потрібна** (`soort` — вільний текст).
 
 ## B. Нове джерело (`bron`), напр. «контакти» або «пристрої»
 
 1. **Модель** — `shared/zoek-model.ts`:
-   - `ZOEK_BRONNEN`: додати ім'я (`^[a-z_]{2,32}$` — це CHECK у 0100; міграція не потрібна);
+   - `ZOEK_BRONNEN`: додати ім'я (`^[a-z_]{2,32}$` — це ПЕРЕВІРКА у 0100; міграція не потрібна);
    - `DIENST_VAN_BRON`: до якої ділимої служби належить (`mail | cloud | agenda | contacten | ai | bord | github`) або `null`
      (лежить у базовій ладі вкладки). Це визначає, **яка брама** вирішує доступ;
    - `BRON_NAAM` (uk/nl), `SOORT_VAN_BRON`.
 2. **Адаптер** — `backend/zoek/adapters.ts`: функція `xxxObject(rij, lade): ZoekObject` → `{ id (стабільний у джерелі), bron, soort, titel,
    titels?, omschrijving?, tekst?, trefwoorden?, pad, route {host, pad, hash?, params?} (лише хост служби сайту), taal, formaat, bijgewerktOp,
    versie (hash вмісту або версія джерела), extra (≤8 KiB, без секретів), rechten: {userId, ruimte} }`. Текст файлів — тільки через
-   `tekstUit()` (`backend/zoek/tekst-extractie.ts`), ніколи власним парсером. Секрети маскує ядро/`maskeerGeheimen` — але не кладіть
+   `tekstUit()` (`backend/zoek/tekst-extractie.ts`), ніколи власним аналізатором. Секрети маскує ядро/`maskeerGeheimen` — але не кладіть
    їх і в `extra`.
 3. **Читання джерела** — `backend/zoek/bronnen.ts`:
-   - `koppelFeit(bron, lade, besluit)`: чи підключене джерело для цієї лади (реальна перевірка, не припущення) і код помилки;
+   - `koppelFeit(bron, lade, besluit)`: чи під'єднане джерело для цієї лади (реальна перевірка, не припущення) і код помилки;
    - у `volledigeScan`/`verwerk` (назви за файлом): прочитати рядки **лише через `projectieLade` + `hoortBij`** (або `alsGebruiker`), ніколи
-     через фільтр лише по `ownerUserId`; віддати в `indexeer(lade, objecten)`; видалені → `verwijder`; відключене → `verwijderBron`;
+     через фільтр лише по `ownerUserId`; віддати в `indexeer(lade, objecten)`; видалені → `verwijder`; вимкнене → `verwijderBron`;
    - дотримуватися `kluisStand(lade)`: якщо джерело потребує DEK (OAuth-токени), при `gesloten` повертати `KLUIS_GESLOTEN` без спроб.
 4. **Стан джерела**: `standZetten(lade, bron, {...})` на початку (`indexeert`, `voortgang`), наприкінці (`klaar`/`gedeeltelijk`/`fout`, `laatsteOk`).
 5. **Інкрементальність**: де джерело має події (вебхук, push, синхронізація проєкції) — ставити елемент у чергу (`zoekMelden` у `wachtrij.ts`)
    замість чекати повного скану; інакше повний скан за інтервалом (задокументуйте реальну затримку у `ZOEKEN.md` §7).
-6. **UI**: `src/zoek/zoek-logica.ts` (категорія, лічильник показується лише коли джерело підключене), `ZoekKaart.tsx` (іконка, дія),
+6. **UI**: `src/zoek/zoek-logica.ts` (категорія, лічильник показується лише коли джерело під'єднане), `ZoekKaart.tsx` (піктограма, дія),
    панель стану (назва з `BRON_NAAM`).
 7. **Синоніми**: якщо у джерела свої терміни — група в `shared/zoek-synoniemen.ts` (9 мов) або `trefwoorden` в об'єкті.
 8. **Тести** (обов'язково перед релізом):
@@ -54,15 +56,5 @@ JSX із текстом uk/nl у `src/**/*.tsx` (генератор `scripts/zoe
 ## D. Нова мова запиту
 
 `shared/zoek-normalisatie.ts`: транслітерація (якщо нова абетка), `STOPWOORDEN`, `taalRaden`; `shared/zoek-model.ts` → `ZOEK_TALEN`,
-`PG_STEMMER` (лише стемери, що **існують** у PG: `select cfgname from pg_ts_config`); `0100` → CHECK `zoek_objecten_taal_check` (міграція
+`PG_STEMMER` (лише стемери, що **існують** у PG: `select cfgname from pg_ts_config`); `0100` → ПЕРЕВІРКА `zoek_objecten_taal_check` (міграція
 `01xx`: `DROP CONSTRAINT`/`ADD CONSTRAINT`) і гілка в `zoek_stam`; групи синонімів доповнити формами нової мови; запити в наборі оцінки.
-
----
-
-## NL — kort
-
-Nieuw `soort`: `ZOEK_SOORTEN` (+ `ACTIE_SOORTEN`), adapter, kaart-icoon, test — geen migratie. Nieuwe `bron`: `ZOEK_BRONNEN` +
-`DIENST_VAN_BRON` (welke poort beslist), adapter in `adapters.ts` (tekst alleen via `tekstUit`, geen geheimen in `extra`), lezen in
-`bronnen.ts` uitsluitend via de poort (`projectieLade` + `hoortBij`), `koppelFeit`, `standZetten`, wachtrij-events, UI-categorie, synoniemen,
-tests (bronnen, isolatie met twee gebruikers, evaluatieset) en documentatie. Nieuwe interface-elementen komen vanzelf in de catalogus
-(menu-model, tab-labels, JSX-knoppen, `data-hulp` + hulp-register).

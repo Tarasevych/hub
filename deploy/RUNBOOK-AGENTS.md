@@ -1,30 +1,32 @@
-# Runbook: Local Machine Connector (agents) uitrollen
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./RUNBOOK-AGENTS.uk.md) · [🇳🇱 **Nederlandse versie**](./RUNBOOK-AGENTS.nl.md) · [🏠 Головна (UK)](../README.md) · [🏠 Hoofdpagina (NL)](../LEESMIJ.md) · [📚 Каталог статей / Index](../docs/INDEX.md)
 
-Dit runbook rolt migratie `0009_agents.sql`, het WebSocket-kanaal `/agent/ws`, de API `/api/owner/agents/*` en het
-scherm **Agenten** op `mcp.tarasevych.com` uit, met het gewone `deploy/installeer-app.sh`. Het is geschreven voor
-een uitrol door de eigenaar, met een eerste test op een eigen apparaat.
+# Runbook: розгортання Local Machine Connector (агентів)
 
-Er zijn **geen nieuwe geheimen of omgevingsvariabelen**. Nieuw zijn: de tabellen `app.agents`, `app.agent_pairing_codes`,
-`app.agent_commands`, de runtime-afhankelijkheid `ws` (komt via `npm ci` uit `package-lock.json`) en een tunnelregel.
+Ця інструкція (runbook) розгортає міграцію `0009_agents.sql`, WebSocket-канал `/agent/ws`, API `/api/owner/agents/*` та
+екран **Агенти (Agenten)** на `mcp.tarasevych.com` за допомогою звичайного скрипта `deploy/installeer-app.sh`. Вона написана для
+розгортання власником із першим тестом на власному пристрої.
 
-**Volgorde:** (0) tarball maken op de pc → (1) controles op de VM → (2) app installeren → (3) app lokaal controleren →
-(4) pas daarna de tunnel wijzigen → (5) test van begin tot eind → (6) zo nodig terugdraaien. De app gaat dus **vóór**
-de tunnel live: zolang de tunnel niet is aangepast verandert er voor `mcp.*` niets (die host wijst nog naar de brug op 8091).
+**Нових секретів чи змінних середовища немає.** Новим є: таблиці `app.agents`, `app.agent_pairing_codes`,
+`app.agent_commands`, рантайм-залежність `ws` (встановлюється через `npm ci` з `package-lock.json`) і правило тунелю.
 
-Rollback in één regel: app `installeer-app.sh terugdraaien`, tunnel `cp` van de back-up + `systemctl restart cloudflared`.
-Migratie 0009 voegt alleen tabellen toe; de vorige release draait er ongestoord naast (zie §6).
+**Порядок дій:** (0) зібрати tarball на ПК → (1) попередні перевірки на ВМ → (2) встановити застосунок → (3) перевірити застосунок локально →
+(4) лише після цього змінити тунель → (5) наскрізний тест від початку до кінця → (6) за потреби виконати повернення стану. Отже, застосунок запускається **перед**
+тунелем: доки тунель не змінено, для `mcp.*` нічого не змінюється (цей хост усе ще вказує на міст на порту 8091).
+
+Повернення стану в один рядок: застосунок `installeer-app.sh terugdraaien`, тунель `cp` із резервної копії + `systemctl restart cloudflared`.
+Міграція 0009 лише додає таблиці; попередній випуск безперешкодно працює поруч із ними (див. §6).
 
 ---
 
-## 0. Op de pc: tarball maken (alles op T:)
+## 0. На ПК: створення tarball (усе на диску T:)
 
-Alleen de **gecommitte** stand telt. Controleer eerst of de branch op GitHub staat en niets openstaat.
+Враховується лише **закомічений** стан. Спершу перевірте, чи гілка є на GitHub і чи немає незакомічених змін.
 
 ```powershell
 cd T:\mijn-ruimte\ontwikkeling\hub
-git status --short                       # moet leeg zijn
+git status --short                       # має бути порожньо
 git log --oneline -3
-git fetch origin; git status -sb         # "ahead 0"? anders eerst: git push origin feature/connectors-agent
+git fetch origin; git status -sb         # "ahead 0"? інакше спершу: git push origin feature/connectors-agent
 ```
 
 ```powershell
@@ -35,111 +37,111 @@ $naam  = "mijn-ruimte-agents-$stamp-$kort.tar.gz"
 $stage = "T:\mijn-ruimte\ontwikkeling\staging\$stamp"
 New-Item -ItemType Directory -Force $stage | Out-Null
 Set-Content -Path "$stage\BRON-COMMIT" -Value $sha -Encoding ascii -NoNewline
-# Eén git archive: bewaart de uitvoerbare bits (.sh) en geeft geen binaire data via een PowerShell-pipe.
+# Один виклик git archive: зберігає біти виконання (.sh) і не передає бінарні дані через конвеєр PowerShell.
 git archive --format=tar.gz --prefix=mijn-ruimte/ --add-file="$stage\BRON-COMMIT" -o "T:\mijn-ruimte\uitrol\$naam" HEAD
 $hash = (Get-FileHash "T:\mijn-ruimte\uitrol\$naam" -Algorithm SHA256).Hash.ToLower()
 "$hash  $naam" | Set-Content "T:\mijn-ruimte\uitrol\$naam.sha256" -Encoding ascii
 $naam
 ```
 
-`BRON-COMMIT` zorgt dat de release het juiste commit-label krijgt (zonder dat bestand wordt het "onbekend").
-Controle vóór het versturen (optioneel): `tar -tvzf T:\mijn-ruimte\uitrol\$naam | Select-String 'installeer-app.sh$'`
-moet `-rwxr-xr-x`/`-rwxrwxr-x` tonen. Maak het archief **niet** door het uit te pakken en opnieuw in te pakken op Windows:
-dan gaan de uitvoerbare bits verloren.
+`BRON-COMMIT` гарантує, що випуск отримає правильну мітку коміту (без цього файлу буде «onbekend» / «unknown»).
+Перевірка перед надсиланням (необов'язково): `tar -tvzf T:\mijn-ruimte\uitrol\$naam | Select-String 'installeer-app.sh$'`
+має показати `-rwxr-xr-x`/`-rwxrwxr-x`. **Не** створюйте архів шляхом розпакування й повторного запакування у Windows:
+так губляться біти виконання.
 
-Naar de VM (zoals bij de vorige uitrol):
+Передача на ВМ (як і під час попереднього розгортання):
 
 ```powershell
 $sleutel = 'T:\mijn-ruimte\hulpmiddelen\ssh\mijn-ruimte-webserver'
-scp -i $sleutel "T:\mijn-ruimte\uitrol\$naam" "T:\mijn-ruimte\uitrol\$naam.sha256" beheer@203.0.113.10:/tmp/
-ssh -i $sleutel beheer@203.0.113.10
+scp -i $sleutel "T:\mijn-ruimte\uitrol\$naam" "T:\mijn-ruimte\uitrol\$naam.sha256" beheer@<VM-IP>:/tmp/
+ssh -i $sleutel beheer@<VM-IP>
 ```
 
-## 1. Op de VM: voorcontroles
+## 1. На ВМ: попередні перевірки
 
 ```bash
-cd /tmp && sha256sum -c mijn-ruimte-agents-*.tar.gz.sha256        # moet "OK" geven, anders STOP
+cd /tmp && sha256sum -c mijn-ruimte-agents-*.tar.gz.sha256        # має видати "OK", інакше СТОП
 sudo -i
-/srv/mijn-ruimte/current/deploy/installeer-app.sh lijst           # noteer de actieve release = terugdraaipunt
+/srv/mijn-ruimte/current/deploy/installeer-app.sh lijst           # занотуйте активний випуск = точка повернення стану
 node -v                                                           # >= v24
-df -h /srv /var | tail -n +2                                      # genoeg ruimte (build ~1 GB)
-free -m | head -2                                                 # de build gebruikt max. 3 GB (cgroup)
-curl -sI https://registry.npmjs.org/ws | head -1                  # HTTP/2 200: npm ci moet 'ws' kunnen halen
-bash /srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh status   # rollen aanwezig, 'afdwingen=uit' of 'aan' (beide goed)
+df -h /srv /var | tail -n +2                                      # достатньо місця (складання ~1 ГБ)
+free -m | head -2                                                 # складання використовує макс. 3 ГБ (cgroup)
+curl -sI https://registry.npmjs.org/ws | head -1                  # HTTP/2 200: npm ci має змогу завантажити 'ws'
+bash /srv/mijn-ruimte/current/deploy/db-rollen-instellen.sh status   # ролі наявні, 'afdwingen=uit' або 'aan' (обидва варіанти добрі)
 systemctl start mijn-ruimte-backup.service && journalctl -u mijn-ruimte-backup -n 12 --no-pager
 ```
 
-Controleer dat de back-up zonder fout klaar is. `installeren` maakt er ook een vóór de migratie
-(`ZONDER_BACKUP=1` slaat dat over; doe dat niet).
+Переконайтеся, що резервна копія завершилася без помилок. Скрипт `installeren` також створює резервну копію перед міграцією
+(`ZONDER_BACKUP=1` пропускає це; не робіть цього).
 
-## 2. App installeren
+## 2. Встановлення застосунку
 
 ```bash
 mkdir -p /root/bron-agents && tar -xzf /tmp/mijn-ruimte-agents-*.tar.gz -C /root/bron-agents
 bash /root/bron-agents/mijn-ruimte/deploy/installeer-app.sh installeren /root/bron-agents/mijn-ruimte
 ```
 
-Wat er gebeurt (in deze volgorde): bron kopiëren → bouwen als gebruiker `mijnruimte` (`npm ci`, audits, vite,
-server-bundel; enkele minuten) → back-up → migraties (`0009_agents` + `rechten.sql`) als `mijnruimte_migrator` →
-`current` atomair omzetten → herstart → gezondheidscontrole. Mislukt die controle, dan draait het script **zelf terug**
-naar de vorige release. Een mislukte build of migratie laat de actieve release ongemoeid.
+Що відбувається (у такому порядку): копіювання вихідного коду → складання від імені користувача `mijnruimte` (`npm ci`, аудити, vite,
+серверний бандл; кілька хвилин) → резервна копія → міграції (`0009_agents` + `rechten.sql`) від імені `mijnruimte_migrator` →
+атомарне перемикання `current` → перезапуск → перевірка працездатності (health перевірка). Якщо перевірка не проходить, скрипт **сам виконує повернення стану**
+до попереднього випуску. Невдала складання чи міграція залишає активний випуск недоторканим.
 
-Verwachte slotregel: `[installeer] klaar: release <stempel> (commit <sha>)`.
+Очікуваний підсумковий рядок: `[installeer] klaar: release <stempel> (commit <sha>)`.
 
-## 3. Controle van de app (nog zonder tunnel)
+## 3. Перевірка застосунку (ще без тунелю)
 
 ```bash
 curl -s http://127.0.0.1:8080/__gezondheid ; echo                  # {"ok":true,"db":true}
-journalctl -u mijn-ruimte -n 25 --no-pager                         # geen fouten; "luistert op http://127.0.0.1:8080"
+journalctl -u mijn-ruimte -n 25 --no-pager                         # без помилок; "luistert op http://127.0.0.1:8080"
 sudo -u postgres psql -d mijnruimte -Atc "select version from app.schema_migrations order by 1 desc limit 2"   # ...0009_agents
 sudo -u postgres psql -d mijnruimte -Atc "select tablename||' '||tableowner from pg_tables where tablename like 'agent%' order by 1"
 sudo -u postgres psql -d mijnruimte -Atc "select has_table_privilege('mijnruimte_app','app.agents','INSERT'), (select relrowsecurity from pg_class where oid='app.agents'::regclass)"   # t|t
 ```
 
-Drie tabellen met eigenaar `mijnruimte_migrator`, `t|t` bij de laatste.
+Три таблиці з власником `mijnruimte_migrator`, `t|t` в останньому запиті.
 
-Het kanaal en de publieke route, rechtstreeks op de app (poort 8080, met de juiste Host-header):
+Перевірка каналу та публічного маршруту безпосередньо на застосунку (порт 8080, з правильним заголовком Host):
 
 ```bash
 H='Host: mcp.tarasevych.com'
-# 1. ongeldige koppelcode -> 400 PAIRING_CODE_INVALID (route is publiek, maar weigert zonder geldige code)
+# 1. недійсний код під'єднання -> 400 PAIRING_CODE_INVALID (маршрут публічний, але відхиляє запит без дійсного коду)
 curl -s -w ' %{http_code}\n' -X POST -H "$H" -H 'Content-Type: application/json' -d '{"code":"AAAAAAAA"}' http://127.0.0.1:8080/api/owner/agents/pair
-# 2. WebSocket-upgrade -> HTTP/1.1 101 (curl wacht daarna; --max-time sluit af, exitcode 28 is normaal)
+# 2. WebSocket-upgrade -> HTTP/1.1 101 (після цього curl чекає; --max-time закриває з'єднання, код виходу 28 є нормальним)
 curl -s -i -N --max-time 3 -H "$H" -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' http://127.0.0.1:8080/agent/ws | head -1
-# 3. onbekende host en onbekend pad -> geen upgrade
+# 3. невідомий хост і невідомий шлях -> без upgrade
 curl -s -i -N --max-time 3 -H 'Host: kwaad.example.com' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' http://127.0.0.1:8080/agent/ws | head -1
 curl -s -i -N --max-time 3 -H "$H" -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' http://127.0.0.1:8080/agent/anders | head -1
-# 4. zonder sessie geen toegang tot de beheerroutes
+# 4. без сесії немає доступу до маршрутів керування
 curl -s -w ' %{http_code}\n' -X POST -H "$H" -H 'Origin: https://mcp.tarasevych.com' -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:8080/api/owner/agents/list
 ```
 
-Verwacht: (1) `{"error":"PAIRING_CODE_INVALID"} 400`; (2) `HTTP/1.1 101 Switching Protocols`; (3) `HTTP/1.1 404 Not Found`
-twee keer; (4) 401 of 403, nooit 200.
+Очікується: (1) `{"error":"PAIRING_CODE_INVALID"} 400`; (2) `HTTP/1.1 101 Switching Protocols`; (3) `HTTP/1.1 404 Not Found`
+двічі; (4) 401 або 403, ніколи не 200.
 
-Als iets hier niet klopt: **niet** verder naar de tunnel. Terugdraaien (§6) of eerst de oorzaak vinden.
+Якщо тут щось не збігається: **не** переходьте до тунелю. Виконайте повернення стану (§6) або спершу знайдіть причину.
 
-## 4. Tunnel: `mcp.tarasevych.com` op pad splitsen
+## 4. Тунель: розділення `mcp.tarasevych.com` за шляхами
 
-Waarom: de hostnaam `mcp.` heeft de rol "MCP-instellingen, agenten, sleutels en tools". Nu wijst hij helemaal naar de
-alleen-lezen MCP-brug (poort 8091). Na de splitsing blijven de deuren van de brug daar, en gaat al het andere
-(schermen, `/api/*`, WSS `/agent/ws`) naar de hoofdapp (8080).
+Навіщо: ім'я хоста `mcp.` виконує роль «налаштування MCP, агенти, ключі та інструменти». Зараз воно повністю вказує на
+MCP-міст лише для читання (порт 8091). Після розділення двері мосту залишаються там, а все інше
+(екрани, `/api/*`, WSS `/agent/ws`) іде до основного застосунку (8080).
 
-> **Stand 2026-10-06:** op de VM is deze splitsing al actief (back-ups: `config.yml.bak-mcp`, `config.yml.bak-mcp-ui`).
-> Een eerste versie matchte `Grok` alleen met een hoofdletter, waardoor `/grok` bij de app (200, SPA) uitkwam in plaats
-> van bij de brug. Dat is om 21:37 hoofdletterongevoelig gemaakt (back-up `config.yml.voor-hoofdletters-20261006-213725`)
-> en na de herstart publiek gecontroleerd: `/Grok` en `/grok` -> 401 (brug), `/agents` -> 200, WSS `/agent/ws` -> 4401.
-> Gebruik dit hoofdstuk daarom vooral om te **controleren** (en bij een nieuwe VM om in te richten).
+> **Стан на 2026-10-06:** на ВМ це розділення вже активне (резервні копії: `config.yml.bak-mcp`, `config.yml.bak-mcp-ui`).
+> Перша версія зіставляла `Grok` лише з великої літери, через що `/grok` потрапляв до застосунку (200, SPA) замість
+> мосту. О 21:37 правило зробили нечутливим до регістру (резервна копія `config.yml.voor-hoofdletters-20261006-213725`)
+> і після перезапуску перевірили публічно: `/Grok` та `/grok` -> 401 (міст), `/agents` -> 200, WSS `/agent/ws` -> 4401.
+> Тому використовуйте цей розділ насамперед для **перевірки** (а на новій ВМ — для налаштування).
 
-**Pas dit pas toe nadat §3 groen is, en bekijk eerst uw echte `/etc/cloudflared/config.yml`:** het sjabloon in de
-repo is niet per se gelijk aan de live-configuratie.
+**Застосовуйте це лише після того, як §3 став зеленим, і спершу перегляньте свій справжній `/etc/cloudflared/config.yml`:** шаблон у
+репозиторії не обов'язково збігається з живою конфігурацією.
 
 ```bash
 cp -a /etc/cloudflared/config.yml /etc/cloudflared/config.yml.voor-agents-$(date +%F)
-grep -n -B1 -A3 'mcp' /etc/cloudflared/config.yml        # huidige regel(s) voor mcp.tarasevych.com
+grep -n -B1 -A3 'mcp' /etc/cloudflared/config.yml        # поточні правила для mcp.tarasevych.com
 ```
 
-De bestaande `mcp.tarasevych.com`-regel (naar `http://127.0.0.1:8091`) vervangt u door **deze twee, in deze volgorde**,
-vóór de afsluitende `http_status:404`:
+Наявне правило `mcp.tarasevych.com` (на `http://127.0.0.1:8091`) замініть на **ці два, саме в такому порядку**,
+перед завершальним `http_status:404`:
 
 ```yaml
   - hostname: mcp.tarasevych.com
@@ -149,7 +151,7 @@ vóór de afsluitende `http_status:404`:
     service: http://127.0.0.1:8080
 ```
 
-Controleer **zonder iets te herstarten** welke regel elk pad krijgt. De uitvoer noemt de gevonden regel en de dienst:
+Перевірте **без перезапуску**, яке правило отримує кожен шлях. Вивід показує знайдене правило та службу:
 
 ```bash
 CF='cloudflared tunnel --config /etc/cloudflared/config.yml ingress'
@@ -162,15 +164,15 @@ echo ---; for p in '' overview agents access connect tools api/owner/agents/pair
 done
 ```
 
-| Pad | Moet naar |
+| Шлях | Має вести на |
 |---|---|
-| `/Grok`, `/grok`, `/claude`, `/chatgpt`, `/gemini`, `/copilot`, `/health`, `/oauth/*`, `/.well-known/*` | **8091** (brug) |
-| `/`, `/overview`, `/agents`, `/access`, `/connect`, `/tools`, `/api/*`, `/agent/ws`, `/assets/*` | **8080** (hoofdapp) |
+| `/Grok`, `/grok`, `/claude`, `/chatgpt`, `/gemini`, `/copilot`, `/health`, `/oauth/*`, `/.well-known/*` | **8091** (міст) |
+| `/`, `/overview`, `/agents`, `/access`, `/connect`, `/tools`, `/api/*`, `/agent/ws`, `/assets/*` | **8080** (основний застосунок) |
 
-Eén pad naar de verkeerde poort of een fout bij `validate`: **niet herstarten**; pas de regex of de volgorde aan en herhaal.
-(De regex is Go-RE2; alleen `cloudflared` zelf kan hem bevestigen, vandaar deze controle.)
+Якщо хоча б один шлях веде не на той порт або виникла помилка під час `validate`: **не перезапускайте**; виправте регулярний вираз або порядок і повторіть перевірку.
+(Регулярний вираз використовує Go-RE2; лише сам `cloudflared` може його підтвердити, саме тому потрібна ця перевірка.)
 
-Pas toe (alle hostnamen herverbinden kort, enkele seconden):
+Застосуйте зміни (усі імена хостів коротко перепід'єднаються на кілька секунд):
 
 ```bash
 systemctl restart cloudflared && sleep 4
@@ -178,76 +180,76 @@ systemctl status cloudflared --no-pager | head -6
 journalctl -u cloudflared -n 15 --no-pager | grep -iE 'registered|connection|error|ERR' | tail -8   # "Registered tunnel connection"
 ```
 
-Terugdraaien van alleen de tunnel:
+Повернення стану лише тунелю:
 
 ```bash
 cp -a /etc/cloudflared/config.yml.voor-agents-<datum> /etc/cloudflared/config.yml && systemctl restart cloudflared
 ```
 
-## 5. Test van begin tot eind
+## 5. Наскрізний тест від початку до кінця
 
-### 5a. Extern, via Cloudflare (nog op de VM; de verbinding loopt VM → Cloudflare → tunnel → VM)
+### 5a. Зовнішній, через Cloudflare (ще на ВМ; з'єднання проходить ВМ → Cloudflare → тунель → ВМ)
 
 ```bash
-# De brug werkt nog (poort 8091): /health, een deur zonder token = 401 met www-authenticate, OAuth-metadata
+# Міст усе ще працює (порт 8091): /health, двері без токена = 401 із www-authenticate, метадані OAuth
 curl -s -w ' %{http_code}\n' https://mcp.tarasevych.com/health
 curl -s -i https://mcp.tarasevych.com/Grok | sed -n '1p;/^www-authenticate/Ip'
 curl -s -w ' %{http_code}\n' https://mcp.tarasevych.com/.well-known/oauth-authorization-server | tail -c 80
-# De hoofdapp bereikbaar op dezelfde host
+# Основний застосунок доступний на тому самому хості
 curl -s -o /dev/null -w '%{http_code} %{content_type}\n' https://mcp.tarasevych.com/agents                  # 200 text/html
 curl -s -w ' %{http_code}\n' -X POST -H 'Content-Type: application/json' -d '{"code":"AAAAAAAA"}' https://mcp.tarasevych.com/api/owner/agents/pair   # PAIRING_CODE_INVALID 400
-# WSS door de tunnel: "open", na ~5 s "close code=4401 reason=auth timeout", exit 0
+# WSS через тунель: "open", через ~5 с "close code=4401 reason=auth timeout", exit 0
 node /srv/mijn-ruimte/current/deploy/agent/ws-check.mjs wss://mcp.tarasevych.com/agent/ws ; echo "exit=$?"
 ```
 
-`/health` → `{"ok":true,"service":"mijn-ruimte-mcp"} 200`; `/Grok` → `401` met `www-authenticate: Bearer …`.
-**Is de brug niet meer bereikbaar** (bijv. 404 of HTML van de SPA bij `/Grok`): de tunnelregel in §4 is verkeerd.
-Direct terugzetten (§4, "Terugdraaien van alleen de tunnel") en Grok-toegang opnieuw controleren.
+`/health` → `{"ok":true,"service":"mijn-ruimte-mcp"} 200`; `/Grok` → `401` із `www-authenticate: Bearer …`.
+**Якщо міст більше недоступний** (напр., 404 або HTML від SPA на `/Grok`): правило тунелю в §4 неправильне.
+Негайно поверніть попередню конфігурацію (§4, «Повернення стану лише тунелю») і знову перевірте доступ Grok.
 
-Dezelfde WSS-controle kan op de pc: `node T:\mijn-ruimte\ontwikkeling\hub\deploy\agent\ws-check.mjs` (met de
-portable Node in `T:\mijn-ruimte\hulpmiddelen\node`).
+Таку саму перевірку WSS можна виконати на ПК: `node T:\mijn-ruimte\ontwikkeling\hub\deploy\agent\ws-check.mjs` (з
+портативним Node у `T:\mijn-ruimte\hulpmiddelen\node`).
 
-### 5b. Het scherm en een echt apparaat (pc), alles op T:
+### 5b. Екран і справжній пристрій (ПК), усе на диску T:
 
-1. Log in op `https://mcp.tarasevych.com/agents` als eigenaar. Verwacht: scherm **Agenten** met het blok
-   *Mijn apparaten*, lijst leeg.
-2. Op de pc: testmap en een eigen config, **niets op C:**. Begin met de lokale beveiligingstest van de agent
-   (16 controles: uitbreken met `..`, absoluut pad, naastgelegen map met dezelfde prefix, symlink/junction,
-   allow-list, groottelimieten; ruimt zichzelf op):
+1. Увійдіть на `https://mcp.tarasevych.com/agents` як власник. Очікується: екран **Агенти (Agenten)** з блоком
+   *Мої пристрої (Mijn apparaten)*, список порожній.
+2. На ПК: тестова тека і власна конфігурація, **нічого на C:**. Почніть із локального тесту безпеки агента
+   (16 перевірок: вихід за межі через `..`, абсолютний шлях, сусідня тека з тим самим префіксом, symlink/junction,
+   список дозволених команд allow-list, ліміти розміру; сам прибирає за собою):
 
    ```powershell
    . T:\mijn-ruimte\hulpmiddelen\node\env.ps1
    $t = 'T:\mijn-ruimte\ontwikkeling\agent-test'
    New-Item -ItemType Directory -Force $t | Out-Null
    Copy-Item T:\mijn-ruimte\ontwikkeling\hub\deploy\agent\agent.mjs $t\agent.mjs
-   node $t\agent.mjs selftest --root $t                    # moet eindigen met "alles OK" en exit 0
-   $env:HUB_AGENT_CONFIG = "$t\agent-config.json"        # standaard zou dit onder C:\Users\... komen
+   node $t\agent.mjs selftest --root $t                    # має завершитися з "alles OK" та exit 0
+   $env:HUB_AGENT_CONFIG = "$t\agent-config.json"        # типово це потрапило б у C:\Users\...
    ```
-3. In de UI: **+ Pc of virtuele machine koppelen** → code verschijnt (10 min). Op de pc:
+3. В інтерфейсі: **+ Під'єднати ПК або віртуальну машину (+ Pc of virtuele machine koppelen)** → з'являється код (10 хв). На ПК:
 
    ```powershell
    node $t\agent.mjs pair --server https://mcp.tarasevych.com --code <CODE> --name "Test-pc" --root $t --allow node,git
    node $t\agent.mjs run
    ```
-   Verwacht: `Paired. …` en daarna `[agent] connected as <id>`. In de UI springt het apparaat binnen ~4 s op **Connected**.
-   Het configuratiebestand bevat het agenttoken: laat het in `$t`, deel het niet.
-4. **Verbinding testen** → *Laatste actie* wordt `sys.info · succeeded` met hostnaam, platform en uw map (leesopdracht, direct).
-   *Agent 0.2.0:* extra opdrachten `sys.metrics` (direct), `docker.ps` (direct, vereist `--allow docker`) en `docker.manage` (altijd goedkeuring); migratie 0011 breidt het CHECK-type uit.
-5. **Test goedkeuring** → onder *Wachten op uw goedkeuring* verschijnt `fs.write` met pad `hub-agent-test.txt`.
-   Eerst **Weigeren** (herhaal stap 5 om opnieuw een verzoek te krijgen): status `rejected`, geen bestand.
-   Dan **Toestaan**: status `succeeded` en `T:\mijn-ruimte\ontwikkeling\agent-test\hub-agent-test.txt` bestaat.
-   Als `failed` met een fout over schrijfrechten: de Windows-bescherming op T: blokkeert `node.exe`; dat is de beveiliging,
-   geen fout in de app.
-6. **Herstart**: `systemctl restart mijn-ruimte` op de VM. De agent meldt `[agent] disconnected (<code>), retry in 1s`
-   (de wachttijd loopt op tot 30 s) en verbindt daarna zelf opnieuw; de UI toont kort Disconnected en dan weer Connected.
-7. **Intrekken**: klik **Intrekken**. De agent meldt `токен відкликано або недійсний. Виконайте pair заново.` en stopt.
-   Het apparaat verdwijnt uit de lijst. Start `node $t\agent.mjs run` nogmaals: hetzelfde bericht (de server sluit met 4403).
-8. **Limiet**: vraag 6 koppelcodes binnen 10 minuten aan; de 6e geeft de melding over de limiet (5 per 10 minuten per gebruiker).
+   Очікується: `Paired. …` і далі `[agent] connected as <id>`. В інтерфейсі пристрій за ~4 с переходить у стан **Connected**.
+   Конфігураційний файл містить токен агента: залиште його в `$t`, нікому не передавайте.
+4. **Перевірити з'єднання (Verbinding testen)** → *Остання дія (Laatste actie)* стає `sys.info · succeeded` з іменем хоста, платформою та вашою текою (команда читання, виконується одразу).
+   *Агент 0.2.0:* додаткові команди `sys.metrics` (одразу), `docker.ps` (одразу, вимагає `--allow docker`) та `docker.manage` (завжди з підтвердженням); міграція 0011 розширює обмеження CHECK.
+5. **Тест підтвердження (Test goedkeuring)** → під *Очікують вашого підтвердження (Wachten op uw goedkeuring)* з'являється `fs.write` зі шляхом `hub-agent-test.txt`.
+   Спершу натисніть **Відхилити (Weigeren)** (повторіть крок 5, щоб знову отримати запит): статус `rejected`, файл не створено.
+   Потім натисніть **Дозволити (Toestaan)**: статус `succeeded`, і файл `T:\mijn-ruimte\ontwikkeling\agent-test\hub-agent-test.txt` існує.
+   Якщо `failed` із помилкою про права запису: захист Windows на диску T: блокує `node.exe`; це робота системи безпеки ОС,
+   а не помилка в застосунку.
+6. **Перезапуск**: `systemctl restart mijn-ruimte` на ВМ. Агент повідомляє `[agent] disconnected (<code>), retry in 1s`
+   (час очікування зростає до 30 с) і після цього сам перепід'єднується; інтерфейс коротко показує Disconnected, а потім знову Connected.
+7. **Відкликання**: натисніть **Відкликати (Intrekken)**. Агент повідомляє `токен відкликано або недійсний. Виконайте pair заново.` і зупиняється.
+   Пристрій зникає зі списку. Запустіть `node $t\agent.mjs run` ще раз: те саме повідомлення (сервер закриває з'єднання з кодом 4403).
+8. **Ліміт**: запросіть 6 кодів під'єднання протягом 10 хвилин; 6-й поверне повідомлення про перевищення ліміту (5 на 10 хвилин на користувача).
 
-Uitbreken uit de map kan de UI niet uitlokken (de knoppen sturen vaste, veilige opdrachten); dat dekt de `selftest` in stap 2.
-De AI-tools (`machine_*`) zijn onder een sessie bereikbaar via `/api/owner/agents/tools/call`, maar hebben nog geen scherm.
+Вихід за межі дозволеної теки через інтерфейс викликати неможливо (кнопки надсилають фіксовані безпечні команди); це покриває `selftest` у кроці 2.
+ШІ-інструменти (`machine_*`) доступні в межах сесії через `/api/owner/agents/tools/call`, але ще не мають окремого екрана.
 
-### 5c. Controle op de VM na de test
+### 5c. Перевірка на ВМ після тесту
 
 ```bash
 journalctl -u mijn-ruimte --since '-30 min' --no-pager | grep -iE 'agent|upgrade|error' | tail -15
@@ -255,35 +257,35 @@ sudo -u postgres psql -d mijnruimte -Atc "select name, status, platform, revoked
 sudo -u postgres psql -d mijnruimte -Atc "select type, status, to_char(created_at,'HH24:MI:SS') from app.agent_commands order by created_at desc limit 8"
 ```
 
-Het audit-spoor (`owner.agent.paired`, `owner.agent.command`, `.approved`, `.rejected`, `.revoked`) staat in de beheer-auditweergave.
+Аудит-слід (`owner.agent.paired`, `owner.agent.command`, `.approved`, `.rejected`, `.revoked`) відображається в журналі аудиту адмінпанелі.
 
-## 6. Terugdraaien
+## 6. Повернення стану
 
-| Wat | Hoe | Opmerking |
+| Що | Як | Примітка |
 |---|---|---|
-| Alleen de tunnel | `cp -a /etc/cloudflared/config.yml.voor-agents-<datum> /etc/cloudflared/config.yml && systemctl restart cloudflared` | `mcp.*` wijst weer volledig naar 8091 |
-| De app | `/srv/mijn-ruimte/current/deploy/installeer-app.sh terugdraaien` | Migraties worden niet teruggedraaid; 0009 voegt alleen tabellen toe, de vorige release negeert ze |
-| Eén apparaat | UI → Intrekken | Token onmiddellijk ongeldig, verbinding wordt gesloten |
-| Alle agents uitzetten | `UPDATE app.agents SET revoked_at = now()` als `mijnruimte_system`; daarna `systemctl restart mijn-ruimte` | Nodig bij een verdenking van een gelekt token |
-| Tabellen verwijderen | Alleen op expliciet verzoek, als `mijnruimte_migrator`: `DROP TABLE app.agent_commands, app.agents, app.agent_pairing_codes` | Verwijder dan ook de regel `0009_agents` uit `app.schema_migrations`, anders wordt hij niet opnieuw aangemaakt |
+| Лише тунель | `cp -a /etc/cloudflared/config.yml.voor-agents-<datum> /etc/cloudflared/config.yml && systemctl restart cloudflared` | `mcp.*` знову повністю вказує на 8091 |
+| Застосунок | `/srv/mijn-ruimte/current/deploy/installeer-app.sh terugdraaien` | Міграції не повертаються до попереднього стану; 0009 лише додає таблиці, попередній випуск їх ігнорує |
+| Один пристрій | Інтерфейс → Відкликати (Intrekken) | Токен миттєво стає недійсним, з'єднання закривається |
+| Вимкнути всі агенти | `UPDATE app.agents SET revoked_at = now()` від імені `mijnruimte_system`; потім `systemctl restart mijn-ruimte` | Потрібно за підозри витоку токена |
+| Видалити таблиці | Лише за явним запитом, від імені `mijnruimte_migrator`: `DROP TABLE app.agent_commands, app.agents, app.agent_pairing_codes` | Тоді також видаліть рядок `0009_agents` із `app.schema_migrations`, інакше таблиці не створяться заново |
 
-## 7. Bekende beperkingen
+## 7. Відомі обмеження
 
-- De WebSocket-verbindingen leven in het geheugen van **één** app-proces (zoals nu). Meer processen vragen LISTEN/NOTIFY.
-- Cloudflare breekt HTTP-verzoeken na 100 s af. Wachten op goedkeuring door een AI-tool duurt daarom maximaal 60 s; daarna
-  meldt de tool dat er een goedkeuring openstaat. De WebSocket zelf is niet beperkt.
-- Op Windows kunnen `.cmd`-scripts (`npm`, `npx`) niet zonder shell worden gestart; sta alleen `node`, `git`, `python` toe.
-- Niet in deze uitrol: OAuth-koppelingen (Gmail, Notion, Slack, …) en token-refresh. Google loopt via de bestaande grants.
-- De AI-tools (`machine_*`, `github_get`) zijn bereikbaar via `/api/owner/agents/tools/*` onder een sessie; externe
-  MCP-clients (Grok enz.) krijgen ze nog niet. Dat vraagt eigen toegangstokens.
+- WebSocket-з'єднання живуть у пам'яті **одного** процесу застосунку (як і зараз). Більше процесів вимагатимуть LISTEN/NOTIFY.
+- Cloudflare обриває HTTP-запити через 100 с. Тому очікування підтвердження ШІ-інструментом триває максимум 60 с; після цього
+  інструмент повідомляє, що запит на підтвердження відкритий. Сам WebSocket не обмежений.
+- У Windows скрипти `.cmd` (`npm`, `npx`) не можна запустити без shell; дозволяйте лише `node`, `git`, `python`.
+- Не входить у це розгортання: OAuth-під'єднання (Gmail, Notion, Slack, …) та оновлення токенів (token-refresh). Google працює через наявні гранти.
+- ШІ-інструменти (`machine_*`, `github_get`) доступні через `/api/owner/agents/tools/*` у межах сесії; зовнішні
+  MCP-клієнти (Grok тощо) їх поки не отримують. Це вимагає окремих токенів доступу.
 
-## 8. Afvinklijst
+## 8. Контрольний список
 
-- [ ] Tarball gemaakt, sha256 op de VM `OK`
-- [ ] Back-up vóór de uitrol gelukt
-- [ ] `installeren` klaar, `0009_agents` in `schema_migrations`
-- [ ] §3: 400 / 101 / 404 / 404 / 401-of-403
-- [ ] Tunnelconfig gekopieerd, `validate` OK, alle paden in de tabel naar de juiste poort
-- [ ] §5a: `/health` 200, `/Grok` 401, `/agents` 200, WSS `4401` en exit 0
-- [ ] §5b: `selftest` alles OK, pairing, Connected, `sys.info`, weigeren, toestaan, herstart, intrekken, limiet
-- [ ] Grok-toegang tot de brug nog werkend (de bestaande werkwijze)
+- [ ] Tarball створено, sha256 на ВМ `OK`
+- [ ] Резервна копія перед розгортанням успішна
+- [ ] `installeren` завершено, `0009_agents` у `schema_migrations`
+- [ ] §3: 400 / 101 / 404 / 404 / 401-або-403
+- [ ] Конфігурацію тунелю скопійовано, `validate` OK, усі шляхи в таблиці ведуть на правильний порт
+- [ ] §5a: `/health` 200, `/Grok` 401, `/agents` 200, WSS `4401` та exit 0
+- [ ] §5b: `selftest` alles OK, під'єднання (pairing), Connected, `sys.info`, відхилення, дозвіл, перезапуск, відкликання, ліміт
+- [ ] Доступ Grok до мосту все ще працює (наявний робочий процес)

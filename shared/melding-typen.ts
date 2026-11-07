@@ -1,5 +1,5 @@
 // Soorten meldingen waarvoor de gebruiker zelf kiest: geluid, opduiken (toast) en tonen (18.10.2026, verzoek eigenaar: «у
-// користувацькій панелі можна обеззвучити, вимкнути спливаючі сповіщення для будь-якого типу»).
+// користувацькій панелі можна обеззвучити, вимкнути спливні сповіщення для будь-якого типу»).
 // Zonder afhankelijkheden: shared/menu-meldingen-voorkeuren.ts (browser én server) normaliseert hiermee het `sidebar`-veld.
 // Welke serversoort (kind) bij welk type hoort, staat in shared/melding-soorten.ts.
 

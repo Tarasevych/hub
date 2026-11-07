@@ -13,6 +13,28 @@ const defaultBack=()=>'https://hub.tarasevych.com/';
 const safeBack=(value:string)=>{const fallback=defaultBack();try{const url=new URL(value||fallback,location.origin),host=url.hostname.toLowerCase(),allowed=host==='tarasevych.com'||host.endsWith('.tarasevych.com');return url.protocol==='https:'&&allowed?url.toString():fallback}catch{return fallback}};
 const apiFailure=(caught:unknown)=>{let reason='OWNER_CALLBACK_REQUEST_FAILED',status='',locale:Lang|''='',returnTo='';if(caught&&typeof caught==='object'){const item=caught as Record<string,unknown>;const response=item.response&&typeof item.response==='object'?item.response as Record<string,unknown>:null;const data=response?.data&&typeof response.data==='object'?response.data as Record<string,unknown>:item.data&&typeof item.data==='object'?item.data as Record<string,unknown>:null;reason=String(data?.reasonCode||data?.error||item.message||reason);status=String(response?.status||item.status||'');if(data?.locale==='uk'||data?.locale==='nl')locale=data.locale;returnTo=String(data?.returnTo||'')}return{reason,status,locale,returnTo}};
 
+// MAILFIX-001: servercode zichtbaar maken zonder ooit OAuth-code, state of URL te tonen.
+// De eigenaar zag op Android alleen «Не вдалося завершити вхід» en kon de echte oorzaak
+// (browserbinding, Google-tokenwisseling, bereikbaarheid...) daardoor niet onderscheiden.
+const veiligeFoutcode=(reason:string)=>/^[A-Za-z][A-Za-z0-9_]{2,89}$/.test(reason)?reason.toUpperCase():'OWNER_CALLBACK_REQUEST_FAILED';
+const callbackUitleg=(lang:Lang,reason:string)=>{
+  switch(veiligeFoutcode(reason)){
+    case 'GOOGLE_SUITE_BROWSER_BINDING_MISMATCH':return lang==='uk'
+      ?'Захисне підтвердження браузера не повернулося після Google. Перевірте, чи дозволені cookie для tarasevych.com, і розпочніть підключення знову в тому самому браузері.'
+      :'De beveiligde browserkoppeling kwam niet terug van Google. Sta cookies voor tarasevych.com toe en start opnieuw in dezelfde browser.';
+    case 'GOOGLE_SUITE_TOKEN_EXCHANGE_REJECTED':return lang==='uk'
+      ?'Google не прийняв обмін тимчасового коду на дозвіл пошти. Потрібно перевірити налаштування OAuth на сервері.'
+      :'Google heeft de omwisseling van de tijdelijke code geweigerd. De OAuth-instellingen op de server moeten worden gecontroleerd.';
+    case 'GOOGLE_SUITE_OAUTH_MATERIAL_MISSING':return lang==='uk'
+      ?'Сервер не знайшов одноразове підтвердження цієї спроби Google. Поверніться до пошти та почніть нове підключення.'
+      :'De server heeft de eenmalige bevestiging van deze Google-poging niet gevonden. Ga terug naar e-mail en begin opnieuw.';
+    case 'NETWORK_ERROR':return lang==='uk'
+      ?'Телефон не зміг зв’язатися із сервером під час завершення входу. Ми повторили запит, але підтвердження ще немає.'
+      :'De telefoon kon de server niet bereiken tijdens het afronden. Het verzoek is herhaald, maar er is nog geen bevestiging.';
+    default:return failureCopy(lang,reason);
+  }
+};
+
 export default function OwnerIdentityCallback(){
   const initialUrl=new URL(location.href);
   const initialLocale=localeFromCallbackUrl(initialUrl);
@@ -20,6 +42,7 @@ export default function OwnerIdentityCallback(){
   const[locale,setLocale]=useState<Lang>(initialLocale);
   const[message,setMessage]=useState(copy(initialLocale).working);
   const[failed,setFailed]=useState(false);const[backTo,setBackTo]=useState('https://hub.tarasevych.com/');
+  const[diagnostic,setDiagnostic]=useState<{code:string;status:string}|null>(null);
   useEffect(()=>{
     if(started.current)return;
     started.current=true;
@@ -34,11 +57,11 @@ export default function OwnerIdentityCallback(){
     try{history.replaceState({},'',current.pathname||'/')}catch{}
     let stopped=false;
     let retryTimer=0;let watchdog=0;
-    const showFailure=(reason:string,nextLocale:Lang=initialLocale,_status='',returnTo='')=>{if(stopped)return;setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(true);setMessage(failureCopy(nextLocale,reason));setBackTo(safeBack(returnTo))};
+    const showFailure=(reason:string,nextLocale:Lang=initialLocale,status='',returnTo='')=>{if(stopped)return;setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(true);setMessage(callbackUitleg(nextLocale,reason));setDiagnostic({code:veiligeFoutcode(reason),status:/^[0-9]{3}$/.test(status)?status:''});setBackTo(safeBack(returnTo||(suiteState?'https://mail.tarasevych.com/accounts':'')));window.clearTimeout(watchdog)};
     watchdog=window.setTimeout(()=>showFailure('OWNER_CALLBACK_TIMEOUT'),25000);if(!state){showFailure('OWNER_CALLBACK_STATE_MISSING');return()=>{stopped=true;window.clearTimeout(watchdog)}};
-    const submit=(attempt=0)=>{void api.post(callbackEndpoint,{state,code,error:providerError}).then(response=>{if(stopped)return;const data=(response.data||{})as CallbackResult;const nextLocale=initialLocale;const reason=providerError||String(data.reasonCode||'OWNER_REDIRECT_COMPLETE_FAILED');if(reason==='CALLBACK_IN_PROGRESS'&&attempt<20){retryTimer=window.setTimeout(()=>submit(attempt+1),Math.min(300+attempt*100,1000));return}if(data.flowMode==='redirect'){const authorized=Boolean(data.sessionCreated||data.mailboxAuthorized||data.cloudStorageAuthorized||data.suiteServiceAuthorized);if(!data.ok||!authorized){/* mislukte step-up («Підтвердіть доступ»): terug naar de pagina, het venster toont de reden */if(data.stepUp&&data.returnTo){bewaarStapOpFout(reason);location.replace(safeBack(String(data.returnTo)));return}showFailure(reason,nextLocale,'',String(data.returnTo||''));return}let returnTo=String(data.returnTo||'https://hub.tarasevych.com/');if(data.suiteServiceAuthorized){setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(false);setMessage(nextLocale==='nl'?'Google-toestemming is opgeslagen. Het koppelplan wordt bijgewerkt…':'Дозвіл Google збережено. Оновлюємо план підключення…');let target=returnTo;try{const next=new URL(returnTo,location.origin);if(data.service)next.searchParams.set('google_suite_connected',data.service);next.searchParams.set('google_suite_callback','success');target=next.toString()}catch{}retryTimer=window.setTimeout(()=>location.replace(target),250);return}location.replace(returnTo);return}if(data.ok){const fallbackTo=String(data.returnTo||'https://hub.tarasevych.com/');location.replace(fallbackTo);return}showFailure(reason,nextLocale,'',String(data.returnTo||''))}).catch(caught=>{const{reason,status,returnTo}=apiFailure(caught);showFailure(providerError||reason,initialLocale,status,returnTo)})};
+    const submit=(attempt=0)=>{void api.post(callbackEndpoint,{state,code,error:providerError}).then(response=>{if(stopped)return;const data=(response.data||{})as CallbackResult;const nextLocale=initialLocale;const reason=providerError||String(data.reasonCode||'OWNER_REDIRECT_COMPLETE_FAILED');if(reason==='CALLBACK_IN_PROGRESS'&&attempt<20){retryTimer=window.setTimeout(()=>submit(attempt+1),Math.min(300+attempt*100,1000));return}if(data.flowMode==='redirect'){const authorized=Boolean(data.sessionCreated||data.mailboxAuthorized||data.cloudStorageAuthorized||data.suiteServiceAuthorized);if(!data.ok||!authorized){/* mislukte step-up («Підтвердіть доступ»): terug naar de pagina, het venster toont de reden */if(data.stepUp&&data.returnTo){bewaarStapOpFout(reason);location.replace(safeBack(String(data.returnTo)));return}showFailure(reason,nextLocale,'',String(data.returnTo||''));return}let returnTo=String(data.returnTo||'https://hub.tarasevych.com/');if(data.suiteServiceAuthorized){setLocale(nextLocale);document.documentElement.lang=nextLocale;setFailed(false);setMessage(nextLocale==='nl'?'Google-toestemming is opgeslagen. Het koppelplan wordt bijgewerkt…':'Дозвіл Google збережено. Оновлюємо план підключення…');let target=returnTo;try{const next=new URL(returnTo,location.origin);if(data.service)next.searchParams.set('google_suite_connected',data.service);next.searchParams.set('google_suite_callback','success');target=next.toString()}catch{}retryTimer=window.setTimeout(()=>location.replace(target),250);return}location.replace(returnTo);return}if(data.ok){const fallbackTo=String(data.returnTo||'https://hub.tarasevych.com/');location.replace(fallbackTo);return}showFailure(reason,nextLocale,'',String(data.returnTo||''))}).catch(caught=>{const{reason,status,returnTo}=apiFailure(caught);if(!providerError&&attempt<2&&(reason==='NETWORK_ERROR'||['502','503','504'].includes(status))){retryTimer=window.setTimeout(()=>submit(attempt+1),500*(attempt+1));return}showFailure(providerError||reason,initialLocale,status,returnTo)})};
     submit();
     return()=>{stopped=true;if(retryTimer)window.clearTimeout(retryTimer);if(watchdog)window.clearTimeout(watchdog)};
   },[initialLocale]);
-  return <main lang={locale} style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'var(--bg,#f5f7f6)',color:'var(--text,#173b3d)',fontFamily:'system-ui,sans-serif'}}><section style={{maxWidth:560,padding:32,textAlign:'center'}}><strong>{message}</strong>{failed&&<p style={{marginTop:20}}><a href={backTo} style={{color:'var(--accent,#146b6d)',fontWeight:700}}>{copy(locale).back}</a></p>}</section></main>;
+  return <main lang={locale} style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'var(--bg,#f5f7f6)',color:'var(--text,#173b3d)',fontFamily:'system-ui,sans-serif'}}><section style={{width:'min(100%,560px)',boxSizing:'border-box',padding:'24px',textAlign:'center',lineHeight:1.55}}><strong>{message}</strong>{failed&&<><p style={{marginTop:20}}><a href={backTo} style={{color:'var(--accent,#146b6d)',fontWeight:700}}>{copy(locale).back}</a></p>{diagnostic&&<details style={{marginTop:24,fontSize:13,color:'var(--muted,#5d6b70)'}}><summary style={{cursor:'pointer'}}>{locale==='uk'?'Код збою':'Foutcode'}: <code style={{overflowWrap:'anywhere'}}>{diagnostic.code}</code>{diagnostic.status?` · HTTP ${diagnostic.status}`:''}</summary><small style={{display:'block',marginTop:10}}>{locale==='uk'?'Цей код можна безпечно надіслати розробнику. Не надсилайте адресу з параметрами OAuth.':'Deze code kunt u veilig met de ontwikkelaar delen. Deel de OAuth-URL met parameters niet.'}</small></details>}</>}</section></main>;
 }

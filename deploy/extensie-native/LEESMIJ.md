@@ -1,3 +1,5 @@
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./LEESMIJ.uk.md) · [🇳🇱 **Nederlandse versie**](./LEESMIJ.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
 # Локальний агент для розширення «Мій простір» (0.5.0)
 
 Необов’язковий **другий канал** між розширенням браузера і ШІ-агентом на **вашому власному комп’ютері** (Claude Desktop або
@@ -14,10 +16,10 @@ Claude Desktop / Claude Code ⇄ mr-native-mcp.mjs ⇄ локальний сок
   | Інструмент MCP     | Команда розширення     | Що повертає |
   |--------------------|------------------------|-------------|
   | `lokaal_status`    | `browser.self_test`    | стан розширення (заблоковано/розблоковано, до коли, права) і самоперевірка |
-  | `lokaal_snapshot`  | `browser.snapshot`     | адреса (без query), заголовок, видимий текст, назви елементів |
+  | `lokaal_snapshot`  | `browser.snapshot`     | адреса (без запит), заголовок, видимий текст, назви елементів |
   | `lokaal_diagnose`  | `browser.diagnostics`  | помилки JavaScript, консолі, невдалі запити, базові метрики |
-  | `lokaal_console`   | `browser.console`      | останні повідомлення консолі (`types`: error, warn, log, info, debug) |
-  | `lokaal_netwerk`   | `browser.network`      | останні запити: метод, адреса без query, статус, тривалість (`failed_only`) |
+  | `lokaal_console`   | `browser.console`      | останні повідомлення консолі (`types`: помилка, warn, log, info, debug) |
+  | `lokaal_netwerk`   | `browser.network`      | останні запити: метод, адреса без запит, статус, тривалість (`failed_only`) |
   | `lokaal_audit`     | `browser.audit`        | продуктивність, знахідки безпеки, структура DOM (`soort`: alles, prestaties, beveiliging, dom) |
 
 - Працює **тільки** після розблокування на сайті вашим passkey з позначкою **«локальний агент»** і лише до кінця вибраного часу
@@ -27,7 +29,7 @@ Claude Desktop / Claude Code ⇄ mr-native-mcp.mjs ⇄ локальний сок
 
 ## Чого він ніколи не робить
 
-- Ніколи не клікає, не друкує, не переходить за адресами, не робить знімків екрана і не вмикає налагоджувач — лише 6 команд
+- Ніколи не натискає, не друкує, не переходить за адресами, не робить знімків екрана і не вмикає налагоджувач — лише 6 команд
   читання (білий список і в хості, і в розширенні; розширення ще раз перевіряє розблокування, права `browser.read`, домени й обліковий запис).
 - Ніколи не передає ключі, токени, cookies, значення полів, паролі чи query-рядки. До хоста йдуть лише `{staat, exp, caps}`.
 - Не відкриває мережевих портів: лише named pipe `\\.\pipe\mijn-ruimte-extensie-<користувач>` (Windows) або unix-сокет
@@ -44,7 +46,7 @@ Claude Desktop / Claude Code ⇄ mr-native-mcp.mjs ⇄ локальний сок
 ### Windows (без прав адміністратора)
 
 ```powershell
-cd <папка з цими файлами>
+cd <тека з цими файлами>
 powershell -ExecutionPolicy Bypass -File .\installeer-windows.ps1 -ClaudeDesktop
 ```
 

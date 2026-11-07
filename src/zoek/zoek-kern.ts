@@ -4,6 +4,7 @@
 // (mr.search.history.v1 stond zonder gebruiker/ruimte: die wordt gewist en nooit meer geschreven — de geschiedenis staat
 // nu op de server, migratie 0103).
 import type { ZoekBron, ZoekRoute, ZoekSoort } from '../../shared/zoek-model';
+import { diepeRoute } from '../../shared/zoek-diepe-link';
 export type Lang = 'uk' | 'nl';
 export type Range = [number, number];
 
@@ -43,19 +44,37 @@ export function levenshtein(a: string, b: string, max = Infinity): number {
 // ---------------------------------------------------------------- routes → echte URL
 // Eén leidende schuine streep (nooit «//host»), geen «..», alleen veilige tekens.
 const PAD_OK = /^\/(?!\/)(?!.*\.\.)[A-Za-z0-9._~\-\/%]*$/;
-const HOST_DIENST: Record<ZoekRoute['host'], string> = { hub: 'hub', mail: 'mail', cloud: 'cloud', id: 'identity', mcp: 'mcp', ai: 'ai', github: 'github' };
-/** Hosts van de diensten uit public/canonical-service.js (lui gelezen: deze module laadt ook zonder browser, in tests). */
-const dienstHosts = (): Record<string, string> => { try { return (globalThis as { window?: { __TSV_CANONICAL_SERVICE__?: { domains?: Record<string, string> } } }).window?.__TSV_CANONICAL_SERVICE__?.domains || {}; } catch { return {}; } };
+const HOST_DIENST: Record<ZoekRoute['host'], string> = { hub: 'hub', mail: 'mail', cloud: 'cloud', id: 'identity', identity: 'identity', mcp: 'mcp', ai: 'ai', github: 'github', huis: 'huis', api: 'api', admin: 'admin' };
+type Canoniek = { domains?: Record<string, string>; tabs?: Record<string, readonly string[]>; tabSlug?: (id: string) => string };
+/** public/canonical-service.js (lui gelezen: deze module laadt ook zonder browser, in tests). */
+const canoniek = (): Canoniek => { try { return (globalThis as { window?: { __TSV_CANONICAL_SERVICE__?: Canoniek } }).window?.__TSV_CANONICAL_SERVICE__ || {}; } catch { return {}; } };
+/**
+ * Het pad binnen de dienst. Een pad met «/» blijft (alleen veilige tekens). Een tabblad-id zonder «/» — zo schrijven de
+ * UI-catalogus en de adapters hun routes (shared/zoek-model.ts) — wordt het canonieke pad /<Nederlandse slug>, maar alleen als
+ * het een tabblad van DEZE dienst is; anders «/». Tot 05.11.2026 werd elk tabblad-id «/», dus opende geen enkel
+ * catalogusobject zijn tabblad (ORCH-001, oude fout).
+ */
+function padVan(dienst: string, pad: string | undefined, c: Canoniek): string {
+  if (pad && PAD_OK.test(pad)) return pad;
+  const tab = String(pad || '');
+  if (!tab || !(c.tabs?.[dienst] || []).includes(tab) || typeof c.tabSlug !== 'function') return '/';
+  const slug = String(c.tabSlug(tab) || '');
+  const uit = `/${encodeURIComponent(slug)}`;
+  return slug && PAD_OK.test(uit) ? uit : '/';
+}
 /**
  * De URL van een route: host = dienst van de site (domains uit public/canonical-service.js), pad binnen die dienst
- * (alleen veilige tekens), params als zoekparameters (lang wordt altijd gezet), hash. Een route die niet past geeft ''.
+ * (padVan), params als zoekparameters (lang wordt altijd gezet), hash. Een route die niet past geeft ''.
  * `focus` (sleutel van data-hulp) → ?focus=<sleutel>: src/platform/focus-doel.ts scrolt, markeert en focust het element op de pagina.
  */
 export function routeUrl(route: ZoekRoute | null | undefined, lang: Lang): string {
+  // ZOEKDIEP-001: oude parameternamen (bericht/item/drive/afspraak) → de namen die de pagina's lezen (shared/zoek-diepe-link.ts).
+  route = diepeRoute(route);
   if (!route) return '';
-  const dienst = HOST_DIENST[route.host]; const host = dienst ? dienstHosts()[dienst] || '' : '';
+  const c = canoniek();
+  const dienst = HOST_DIENST[route.host]; const host = dienst ? c.domains?.[dienst] || '' : '';
   if (!host) return '';
-  const pad = route.pad && PAD_OK.test(route.pad) ? route.pad : '/';
+  const pad = padVan(dienst, route.pad, c);
   const u = new URL(`https://${host}${pad}`);
   for (const [k, v] of Object.entries(route.params || {})) if (k !== 'lang' && v) u.searchParams.set(k, v);
   u.searchParams.set('lang', lang);

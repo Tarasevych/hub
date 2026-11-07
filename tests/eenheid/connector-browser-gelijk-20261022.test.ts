@@ -28,7 +28,7 @@ export async function main(): Promise<number> {
 
   // ---------------------------------------------------------------- 1. catalogus
   const perAgent = V2_AGENTEN.map((a) => browser.map((o) => zonderSlug(toolNaam(o, a.slug), a.slug)).sort().join('|'));
-  check('catalogus: elke agent dezelfde browsernamen (zonder slug)', V2_AGENTEN.length === 6 && perAgent.every((x) => x === perAgent[0]), `${V2_AGENTEN.length} agenten`);
+  check('catalogus: elke agent dezelfde browsernamen (zonder slug)', V2_AGENTEN.length >= 6 && perAgent.every((x) => x === perAgent[0]), `${V2_AGENTEN.length} agenten`);
   check('catalogus: technisch = privé + browser_script, verder gelijk',
     beh.length === gebr.length + 1 && gebr.every((g) => beh.some((b) => b.id === g.id)) && beh.filter((b) => !gebr.some((g) => g.id === b.id)).map((b) => b.id).join() === 'browser_script');
   check('catalogus: elk browserhulpmiddel heeft een intern doel en een unieke naam per agent',
@@ -64,7 +64,7 @@ export async function main(): Promise<number> {
       normV.every((x) => x === normV[0]) && vooraf[0].length > 0 && vooraf[0].length < gebr.length && !vooraf[0].some((n) => n.startsWith('klikken_element_')), `${vooraf.map((l) => l.length).join(',')}`);
     const keten0 = await matrix.ketenVoor(U);
     check('ketting: toont per agent welke browserhulpmiddelen de modus van de site uitzet (bron «site»)',
-      keten0.length === 6 && keten0.every((k) => k.bron === 'site' && k.kanten[0].uit.includes('browser_click') && k.kanten[0].rechten === null));
+      keten0.length === V2_AGENTEN.length && keten0.every((k) => k.bron === 'site' && k.kanten[0].uit.includes('browser_click') && k.kanten[0].rechten === null));
     // 2b. ÉÉN PLEK: de matrix opslaan (alles, met bevestiging) zet de modi van de site mee → elke agent alle 20 / 41
     const naP = (await matrix.schrijfMatrix(U, matrix.valideerInvoer({ ruimte: 'prive', rijen: [{ agent: '*', caps: ['browser.read', 'browser.navigate', 'browser.interact', 'browser.screenshot', 'browser.console'] }] }), 'test')).na;
     const nModi = await matrix.modiVolgenMatrix(U, naP);

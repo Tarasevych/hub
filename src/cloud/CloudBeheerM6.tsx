@@ -40,7 +40,7 @@ export function CloudBeheerM6({tabContext}:Props){
  return <section className="tsv-cloud-governance" aria-labelledby="tsv-cloud-gov-title">
   <header><p className="tsv-cloud-governance__eyebrow">Адміністрування · Технічний простір</p>
    <h2 id="tsv-cloud-gov-title">Політики хмарних провайдерів</h2>
-   <p>Провайдери заборонені за замовчуванням. Підключення працюють лише після підписаних CI-перевірок і дозволу власника.</p></header>
+   <p>Провайдери заборонені типово. Підключення працюють лише після підписаних CI-перевірок і дозволу власника.</p></header>
   <label>Причина зміни політики <textarea rows={2} value={reason} onChange={e=>setReason(e.target.value.slice(0,500))} placeholder="Наприклад: результати приймальних перевірок релізу…"/></label>
   <div className="tsv-cloud-governance__items">{items.map(p=><article key={p.provider}>
    <div className="tsv-cloud-governance__top"><strong>{labels[p.provider]||p.provider}</strong><small>ревізія {p.revision}</small></div>

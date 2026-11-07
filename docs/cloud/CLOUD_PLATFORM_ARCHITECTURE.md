@@ -1,22 +1,24 @@
-# Cloud Platform Architecture — Workspace Functional v1
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CLOUD_PLATFORM_ARCHITECTURE.uk.md) · [🇳🇱 **Nederlandse versie**](./CLOUD_PLATFORM_ARCHITECTURE.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-## 1. Purpose
+# Архітектура платформи Cloud — Функціонал робочого простору v1
 
-`cloud.tarasevych.com` is a neuroinclusive digital-asset workspace, not a conventional folder browser. Its primary responsibility is to externalize part of the user's executive function: capture first, preserve context, reduce naming decisions, and make resumption obvious.
+## 1. Призначення
 
-## 2. Architectural boundary
+`cloud.tarasevych.com` — це нейроінклюзивний робочий простір для цифрових активів, а не звичайний файловий браузер із теками. Його основне завдання — взяти на себе частину виконавчої функції (executive function) користувача: спочатку захопити матеріал, зберегти контекст, зменшити кількість рішень щодо іменування та зробити повернення до роботи очевидним.
 
-Cloud is a named service context inside the existing ecosystem and reuses, but does not own:
+## 2. Архітектурна межа
+
+Cloud є іменованим сервісним контекстом усередині наявної екосистеми, який повторно використовує, але не володіє такими компонентами:
 
 - CanonicalChrome;
 - CanonicalAccountMenu;
-- canonical Identity and tab-scoped session policy;
-- language and theme controllers;
-- owner approval gate.
+- канонічна Identity та політика сесій, ізольованих за вкладками (tab-scoped);
+- контролери мови та теми;
+- шлюз схвалення власником (власник схвалення gate).
 
-Cloud owns a separate domain model. Existing Hub `workspaces` remain dashboard-composition workspaces and MUST NOT be reused as Cloud project workspaces. Cloud records use the `cloud_*_v1` namespace to prevent semantic and authorization leakage.
+Cloud володіє окремою доменною моделлю. Наявні `workspaces` у Hub залишаються робочими просторами для компонування панелі керування і НЕ ПОВИННІ використовуватися повторно як проєктні робочі простори Cloud. Записи Cloud використовують простір імен `cloud_*_v1`, щоб запобігти семантичному витоку та витоку авторизації.
 
-## 3. Context diagram
+## 3. Контекстна діаграма
 
 ```text
 Browser / CanonicalChrome
@@ -40,21 +42,21 @@ Cloud Domain Service -> Provider Registry -> OAuth Token Vault -> Adapter Worker
                                             `-> Dropbox
 ```
 
-## 4. Core aggregates
+## 4. Основні агрегати
 
 ### CloudWorkspace
-A context-bearing project/topic/life-area. It contains a stable template and shallow visual sections, not a user-maintained folder tree.
+Контекстний проєкт / тема / сфера життя. Містить стабільний шаблон і поверхневі візуальні секції, а не дерево тек, яке користувач має підтримувати вручну.
 
 ### CloudItem
-A captured note, link or stored file. It may remain in Quick Capture (`workspaceId = ''`) indefinitely. Placement is optional and reversible.
+Захоплена нотатка, посилання або збережений файл. Може залишатися у Quick Capture (`workspaceId = ''`) необмежено довго. Розміщення є необов'язковим і оборотним.
 
 ### CloudResume
-One owner-scoped continuation pointer: current workspace, current item, focus state and energy mode.
+Один ізольований за власником вказівник продовження роботи: поточний робочий простір, поточний елемент, стан фокусу та енергетичний режим.
 
 ### CloudAiDecision
-A non-content audit record of AI/fallback metadata decisions. Raw user content is not duplicated into this table.
+Аудиторський запис рішень ШІ / резервних метаданих без вмісту. Сирий вміст користувача не дублюється в цю таблицю.
 
-## 5. Smart Capture pipeline
+## 5. Конвеєр Smart Capture
 
 ```text
 User selects note/link/file
@@ -73,99 +75,99 @@ User selects note/link/file
   -> return calm success or fallback message
 ```
 
-Failure policy:
+Політика обробки збоїв:
 
-- capture remains functional when AI fails;
-- an object write is rolled back if metadata persistence fails;
-- unsupported or oversized files fail before persistence;
-- provider content is never treated as instructions;
-- the AI cannot create permissions, execute tools, move data across owners or invent workspace IDs.
+- захоплення залишається працездатним, коли ШІ недоступний або зазнає збою;
+- запис об'єкта повертається до попереднього стану, якщо не вдається зберегти метадані;
+- непідтримувані або завеликі файли відхиляються до збереження;
+- вміст із провайдерів ніколи не трактується як інструкції;
+- ШІ не може створювати дозволи, виконувати інструменти, переміщувати дані між власниками або вигадувати ідентифікатори робочих просторів.
 
-## 6. Search architecture
+## 6. Архітектура пошуку
 
-Phase 1 uses a deterministic weighted metadata index over:
+Фаза 1 використовує детермінований зважений індекс метаданих за такими полями:
 
-- title;
-- tags;
-- explicit people;
-- workspace title;
-- description;
-- source filename/URL;
-- note text.
+- заголовок (`title`);
+- теги (`tags`);
+- явно вказані особи (`explicit people`);
+- назва робочого простору (`workspace title`);
+- опис (`description`);
+- вихідне ім'я файлу / URL (`source filename/URL`);
+- текст нотатки (`note text`).
 
-The API returns a declared mode `weighted-metadata-v1`; it does not claim vector or semantic indexing. Future deep indexing adds extracted text, embeddings and linked captures through asynchronous jobs without changing the Unified Cloud API contract.
+API повертає задекларований режим `weighted-metadata-v1`; він не заявляє про векторну чи семантичну індексацію. Майбутня глибока індексація додасть витягнутий текст, ембедінги та пов'язані захоплені елементи через асинхронні завдання без зміни контракту Unified Cloud API.
 
-## 7. Storage architecture
+## 7. Архітектура сховища
 
-Own files are written to AppDeploy private object storage under an opaque owner hash and random object key. Metadata stores the object path server-side only. The browser receives a short-lived signed URL only after an owner-scoped open request.
+Власні файли записуються до приватного об'єктного сховища AppDeploy під непрозорим хешем власника та випадковим ключем об'єкта. Метадані зберігають шлях до об'єкта лише на стороні сервера. Браузер отримує короткостроковий підписаний URL лише після ізольованого за власником запиту на відкриття.
 
-Phase 1 safe-type policy:
+Політика безпечних типів Фази 1:
 
 - JPEG, PNG, WebP, GIF;
 - PDF;
-- plain text, CSV, Markdown;
+- простий текст, CSV, Markdown;
 - ZIP;
-- Office Open XML and OpenDocument files;
-- maximum 6 MB.
+- файли Office Open XML та OpenDocument;
+- максимум 6 МБ.
 
-HTML, SVG and executable formats are intentionally excluded until malware scanning and content-disposition controls are proven.
+HTML, SVG та виконувані формати навмисно виключені, доки не буде доведено роботу сканування на шкідливе ПЗ та контролю `content-disposition`.
 
-## 8. Security and tenancy
+## 8. Безпека та ізоляція власників (Tenancy)
 
-Every protected request must satisfy all of the following:
+Кожен захищений запит має одночасно задовольняти всі наведені умови:
 
-1. canonical session exists;
-2. session service is `cloud`;
-3. user status is `approved`;
-4. every DB lookup validates `ownerUserId`;
-5. every workspace/item relationship is revalidated server-side;
-6. storage paths never come from the client;
-7. external URLs allow only HTTP(S), reject credentials and strip fragments;
-8. high-risk sharing/provider mutations remain disabled.
+1. існує канонічна сесія;
+2. сервісом сесії є `cloud`;
+3. статус користувача — `approved`;
+4. кожен запит до БД перевіряє `ownerUserId`;
+5. кожен зв'язок між робочим простором та елементом повторно перевіряється на стороні сервера;
+6. шляхи сховища ніколи не надходять від клієнта;
+7. зовнішні URL дозволяють лише HTTP(S), відхиляють облікові дані в URL та видаляють фрагменти (`#...`);
+8. високоризикові мутації спільного доступу / провайдерів залишаються вимкненими.
 
-Sharing is blocked until Actor A / Actor B adversarial isolation tests exist. Provider OAuth is blocked until token-vault, least-privilege scopes, revocation, webhook validation, sync cursors and rollback are accepted.
+Спільний доступ заблоковано, доки не з'являться змагальні тести ізоляції Actor A / Actor B. OAuth провайдерів заблоковано до прийняття сховища токенів (token-vault), областей найменших привілеїв (least-privilege scopes), відкликання, валідації вебхуків, курсорів синхронізації та механізму повернення стану.
 
-## 9. AI pipeline evolution
+## 9. Еволюція конвеєра ШІ
 
-### Phase 1 — active
-- synchronous, bounded naming and existing-workspace suggestion;
-- deterministic fallback;
-- output validation and decision fingerprint.
+### Фаза 1 — активна
+- синхронне, обмежене іменування та пропозиція наявного робочого простору;
+- детермінований резервний варіант;
+- валідація виводу та відбиток рішення (decision fingerprint).
 
-### Phase 2 — planned worker runtime
-- `cloud_jobs_v1` queue;
-- MIME-aware text extraction;
-- chunking and content fingerprints;
-- embeddings / lexical hybrid index;
-- duplicate and linked-capture detection;
-- photo grouping and review batches.
+### Фаза 2 — заплановане середовище виконання воркерів
+- черга `cloud_jobs_v1`;
+- вилучення тексту з урахуванням MIME-типу;
+- розбиття на фрагменти (chunking) та відбитки вмісту;
+- гібридний індекс ембедінгів та лексичного пошуку;
+- виявлення дублікатів і пов'язаних захоплень;
+- групування фотографій і пакети для перегляду.
 
-### Phase 3 — guarded assistance
-- gentle check-ins;
-- project starter wizard from captured context;
-- reminders based on explicit item states;
-- no autonomous external write or sharing.
+### Фаза 3 — контрольована допомога
+- лагідні нагадування (gentle check-ins);
+- майстер запуску проєкту на основі захопленого контексту;
+- нагадування на основі явних станів елементів;
+- жодного автономного зовнішнього запису чи надання спільного доступу.
 
-## 10. Neuroinclusive release gates
+## 10. Нейроінклюзивні релізні ворота
 
-A release fails when it introduces:
+Реліз вважається неуспішним, якщо він вводить:
 
-- mandatory organization during capture;
-- deep folder navigation as the primary path;
-- shame, overdue, failure or streak language;
-- more than one dominant next action in low-energy mode;
-- loss of Resume after refresh;
-- inaccessible labels, keyboard focus or error identification;
-- simulated provider connectivity;
-- hidden owner-scope failures.
+- обов'язкову організацію під час захоплення;
+- глибоку навігацію теками як основний шлях;
+- мову сорому, прострочення, невдачі або «серій» (streaks);
+- більше ніж одну домінуючу наступну дію в режимі низької енергії;
+- втрату стану Resume після оновлення сторінки;
+- недоступні підписи, фокус клавіатури або індикацію помилок;
+- імітовану під'єднаність провайдерів;
+- приховані збої перевірки ізоляції власника (`owner-scope`).
 
-## 11. Concurrency and deployment isolation
+## 11. Конкурентність та ізоляція розгортання
 
-Cloud development is isolated from the parallel Mail implementation:
+Розробка Cloud ізольована від паралельної реалізації Mail:
 
-- Cloud modules use `cloud-*` file and table namespaces;
-- no `mail-*` source file, table or route is modified;
-- shared-file edits are context-rich surgical diffs only;
-- the newest applied snapshot is re-read before deploy;
-- a changed shared anchor causes rebase/fail-safe, never whole-file overwrite;
-- rollback is the immediately preceding applied Version ID.
+- модулі Cloud використовують простори імен файлів і таблиць `cloud-*`;
+- жоден вихідний файл, таблиця чи маршрут `mail-*` не модифікується;
+- редагування спільних файлів виконується лише як точкові хірургічні diff-зміни з багатим контекстом;
+- найновіший застосований знімок (snapshot) перечитується перед розгортанням;
+- змінений спільний якір (anchor) викликає rebase / fail-safe зупинку, але ніколи не перезапис усього файлу;
+- повернення стану здійснюється до безпосередньо попереднього застосованого Версія ID.

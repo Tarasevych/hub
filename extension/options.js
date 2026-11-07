@@ -93,6 +93,9 @@ function toonDiagWerkelijk(s) {
   if (bezig.diag) return;
   const w = UI.diagWerkelijk(s);
   const status = document.getElementById('diag-status');
+  // 0.9.0 (oude fout): zonder technische kaart haalt toonOverig #diag-status uit de DOM → elke volgende statusverversing gooide
+  // «Cannot read properties of null (reading 'setAttribute')». Geen element = niets te tonen.
+  if (!status) return;
   status.setAttribute('data-werkelijk', w.code);
   status.textContent = `${UI.t(w.uk, w.nl)} — ${UI.t(w.reden[0], w.reden[1])}`;
   status.className = w.code === 'geblokkeerd' || w.code === 'fout' ? 'fout' : w.code === 'wacht' ? 'off' : w.code === 'uit' ? 'zacht' : 'ok';
@@ -171,12 +174,13 @@ const HERSTEL = {
   settings: ['Сервер ще не надіслав дозволи. Зачекайте хвилину або відкрийте сайт.', 'De server stuurde nog geen rechten. Wacht een minuut of open de site.'],
   unlocked: ['Доступ закрито. Це нормально, доки ви не відкриєте його на сайті.', 'De toegang is dicht. Dat is normaal tot u hem op de site opent.'],
   profiel: ['Відкрийте сторінку tarasevych.com у потрібному режимі.', 'Open een tarasevych.com-pagina in de juiste modus.'],
-  debugger_permission: ['Дозвіл налагоджувача не діє. Оновіть розширення до 0.8.0 і натисніть ↻ у chrome://extensions.', 'Het debuggerrecht werkt niet. Werk de extensie bij naar 0.8.0 en klik ↻ in chrome://extensions.'],
+  debugger_permission: ['Стандартний пакет навмисно без дозволу налагоджувача. Для глибокої діагностики встановіть пакет «діагностика» з сайту й натисніть ↻ у chrome://extensions.', 'Het standaardpakket heeft bewust geen debuggerrecht. Installeer voor diepe diagnose het pakket «diagnose» van de site en klik ↻ in chrome://extensions.'],
   diag_opt_in: ['Глибоку діагностику не дозволено. Увімкніть перемикач вище, якщо вона потрібна.', 'Diepe diagnose is niet toegestaan. Zet de schakelaar hierboven aan als u die nodig hebt.'],
   site_tab: ['Відкрийте будь-яку сторінку tarasevych.com в активній вкладці.', 'Open een tarasevych.com-pagina in het actieve tabblad.'],
-  bridge: ['Оновіть сторінку tarasevych.com (F5), щоб розширення під’єдналося до неї.', 'Vernieuw de tarasevych.com-pagina (F5) zodat de extensie zich eraan koppelt.'],
+  // 0.9.1: geen F5 meer — de extensie plaatst zich zelf op open tabbladen; dit verschijnt alleen als Chrome dat weigerde.
+  bridge: ['Розширення під’єднується до відкритих сторінок tarasevych.com саме, без оновлення. Якщо цей рядок лишився — вкладка заснула або Chrome не дав доступу до неї: перейдіть на вкладку й натисніть «Перевірити» ще раз.', 'De extensie koppelt zich zelf aan open tarasevych.com-pagina’s, zonder vernieuwen. Blijft deze regel staan, dan sliep het tabblad of gaf Chrome geen toegang: ga naar het tabblad en klik nogmaals op «Controleren».'],
   account: ['На сторінці інший обліковий запис. Увійдіть тим самим, що й у розширенні.', 'Op de pagina staat een ander account. Meld u aan met hetzelfde als in de extensie.'],
-  markering: ['Позначка вкладки не з’явилася. Оновіть сторінку.', 'De markering van het tabblad verscheen niet. Vernieuw de pagina.'],
+  markering: ['Позначка вкладки не з’явилася. Натисніть «Перевірити» ще раз — розширення під’єднається до сторінки саме.', 'De markering van het tabblad verscheen niet. Klik nogmaals op «Controleren» — de extensie koppelt zich zelf aan de pagina.'],
   native_permission: ['Chrome не дав дозвіл Native Messaging. Увімкніть перемикач у «Додатково».', 'Chrome gaf geen Native Messaging-recht. Zet de schakelaar in «Extra» aan.'],
   native: ['Локальна програма не відповідає. Встановіть її за інструкцією на сайті.', 'Het lokale programma antwoordt niet. Installeer het volgens de instructies op de site.'],
 };
@@ -244,7 +248,7 @@ function toonOverig(s, sl) {
   const m = chrome.runtime.getManifest();
   document.getElementById('extra-info').replaceChildren(
     regel('ja', `${UI.t('Версія', 'Versie')} ${m.version} · ID ${chrome.runtime.id}`),
-    regel(m.update_url ? 'ja' : 'let-op', m.update_url ? UI.t('Встановлено з підписаного пакета (оновлюється сама)', 'Geïnstalleerd uit het ondertekende pakket (werkt zichzelf bij)') : UI.t('Завантажено з папки («розпаковане»). Папка має лишатися на місці: якщо її видалити чи перемістити, Chrome прибере розширення після перезапуску.', 'Geladen uit een map («uitgepakt»). De map moet blijven staan: wordt hij verwijderd of verplaatst, dan haalt Chrome de extensie na een herstart weg.')));
+    regel(m.update_url ? 'ja' : 'let-op', m.update_url ? UI.t('Встановлено з підписаного пакета (оновлюється сама)', 'Geïnstalleerd uit het ondertekende pakket (werkt zichzelf bij)') : UI.t('Завантажено з теки («розпаковане»). Тека має лишатися на місці: якщо її видалити чи перемістити, Chrome прибере розширення після перезапуску.', 'Geladen uit een map («uitgepakt»). De map moet blijven staan: wordt hij verwijderd of verplaatst, dan haalt Chrome de extensie na een herstart weg.')));
   const d = s && s.diagnostiek ? s.diagnostiek : {};
   document.getElementById('tech-details').textContent = JSON.stringify({ versie: m.version, id: chrome.runtime.id, rechten: m.permissions, optioneel: m.optional_permissions, diagnostiek: { recht: d.recht, optIn: d.optIn, stand: d.stand, actief: d.actief, laatsteFout: d.laatsteFout || null }, profielTab: p }, null, 2);
 }

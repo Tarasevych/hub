@@ -13,6 +13,12 @@
 // technisch alleen als deze pagina NU technisch is, prive nooit op een technische pagina.
 // Gebeurtenissen van de pagina (mr-diag, mr-perf, postMessage) zijn onbetrouwbare data: alleen gefilterde, begrensde velden.
 (async () => {
+  // 0.9.1 (EXT090-001): het achtergrondproces plaatst de brug zelf op tabbladen die al open waren (geen F5). Dubbel plaatsen mag
+  // niets verdubbelen: leeft er in deze wereld al een brug van de WERKENDE extensie, dan stopt deze meteen (synchroon, vóór de
+  // eerste await). Een verweesde brug van vóór de update/herladen (chrome.runtime.id weg) telt niet en zwijgt voortaan zelf.
+  const leeft = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch { return false; } };
+  if (globalThis.__mrBrug && typeof globalThis.__mrBrug.leeft === 'function' && globalThis.__mrBrug.leeft()) return;
+  globalThis.__mrBrug = { leeft };
   const shared = await import(chrome.runtime.getURL('shared.js'));
   const { isSensitiveField, pickByName, ALLOWED_KEYS, parseAccountClaim, parseProfiel, profielToegestaan, isRuimte, pushDiag, stripQuery, markeringVoor } = shared;
   // 0.7.0 (zone E): uid per bedieningselement (zoals chrome-devtools-mcp); een oudere shared.js zonder deze functies → alleen op naam.
@@ -52,7 +58,24 @@
   const CAPS = ['browser.read', 'browser.navigate', 'browser.interact', 'browser.screenshot', 'browser.debug'];
   const HOST_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
   const PUBLIEK_VELDEN = Object.freeze(['versie', 'profielTab', 'account', 'prive', 'technisch', 'lokaalVerbonden', 'diagnostiek',
-    'gekoppeld', 'verbonden', 'staat', 'exp', 'caps', 'domeinen', 'aiVerbonden', 'agentId']);
+    'gekoppeld', 'verbonden', 'staat', 'exp', 'caps', 'domeinen', 'aiVerbonden', 'agentId', 'lokaleAi']);
+  /** 0.9.1: ingebouwde AI van Chrome — alleen de KEUZES van de gebruiker (hoofdschakelaar + welke API's aan), nooit tekst of uitvoer. */
+  const LAI_APIS = Object.freeze(['prompt', 'summarizer', 'writer', 'rewriter', 'translator', 'detector', 'proofreader']);
+  // 0.9.1: plus de stand per API die de extensie zelf mat (offscreen.html, alleen availability()); alleen namen uit deze lijst.
+  const LAI_STANDEN = Object.freeze(['available', 'downloadable', 'downloading', 'unavailable', 'ontbreekt', 'stil', 'fout']);
+  function laiPubliek(bron) {
+    const d = bron && typeof bron === 'object' ? bron : null;
+    if (!d) return null;
+    const uit = { aan: d.aan === true, apis: Array.isArray(d.apis) ? [...new Set(d.apis.filter((x) => LAI_APIS.includes(x)))] : [] };
+    if (typeof d.siteToegang === 'boolean') uit.siteToegang = d.siteToegang; // 0.9.2: «!» toegang voor pagina's van de site
+    const st = d.stand && typeof d.stand === 'object' && !Array.isArray(d.stand) ? d.stand : null;
+    if (st) {
+      const s = {};
+      for (const id of LAI_APIS) if (LAI_STANDEN.includes(st[id])) s[id] = st[id];
+      if (Object.keys(s).length) uit.stand = s;
+    }
+    return uit;
+  }
   /** 0.6.1 (punt 7): alleen deze vier velden over het debuggerrecht gaan naar de pagina; nooit paden, opslag of foutteksten. */
   const DIAG_STANDEN = Object.freeze(['ja', 'nee', 'geweigerd', 'ingetrokken', 'niet-aanvraagbaar']);
   function diagPubliek(bron) {
@@ -98,6 +121,7 @@
       profielTab, account: ['ok', 'mismatch', 'unknown'].includes(s.account) ? s.account : 'unknown', prive, technisch,
       lokaalVerbonden: (s.lokaalVerbonden ?? (lokaal && lokaal.verbonden)) === true,
       diagnostiek: diagPubliek(s.diagnostiek),
+      lokaleAi: laiPubliek(s.lokaleAi),
       ...spiegel, // platte velden = spiegel van het slot van dit tabblad (overgang voor de 0.5-site)
     };
     const schoon = {};
@@ -177,6 +201,8 @@
   // ---- 1c. aanwezigheid en status op verzoek (alleen berichten van de pagina zelf, zelfde oorsprong) ----
   window.addEventListener('message', async (event) => {
     if (!vanPagina(event)) return;
+    // 0.9.1: een verweesde brug (extensie bijgewerkt of herladen) antwoordt niet meer — anders meldt ze «niet gekoppeld» naast de nieuwe.
+    if (!leeft()) return;
     if (event.data.mrExtPing) {
       const pub = naarPubliek(await haalStatus());
       say({ type: 'hello', ...pub, paired: pub.gekoppeld || pub.prive.gekoppeld || !!(pub.technisch && pub.technisch.gekoppeld), connected: pub.verbonden, extensionId: chrome.runtime.id, version: VERSION });
@@ -635,6 +661,8 @@
         // Na het wekken van de service worker en vóór elke opdracht: ruwe accountclaim + profiel (het achtergrondproces parseert zelf).
         if (message.op === 'account?') return sendResponse({ ok: true, data: { claim: metaInhoud('mjn-account').slice(0, 300), profiel: huidigProfiel() } });
         if (message.op === 'diag-clear') { if (!isRuimte(message.ruimte) || message.ruimte === bufferRuimte) { buffer = []; spillQueue = []; } return sendResponse({ ok: true, data: { cleared: true } }); }
+        // 0.9.1: levensteken voor zorgVoorBrug in het achtergrondproces (geen gegevens).
+        if (message.op === 'brug?') return sendResponse({ ok: true, data: { versie: VERSION } });
         if (message.op === 'self_test') {
           const m = mark ? mark.markeringStand() : null;
           return sendResponse({ ok: true, data: { bridge: true, diagnostics: diagModus, ruimte: bufferRuimte, buffered: fresh().length, claim: !!parseAccountClaim(lastClaim || ''), profiel: huidigProfiel(), url: location.origin + location.pathname, markering: m ? m.ruimte : null, lezers: m ? m.lezers : 0 } });

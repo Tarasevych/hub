@@ -1,10 +1,10 @@
-﻿<#
+<#
   Ontsleutelt een .age-bestand uit de herstelset met de herstelsleutel en stuurt de inhoud RECHTSTREEKS via SSH
   naar een stap van herstel-vm.sh op de VM. Er komt niets ontsleuteld op de schijf van de pc.
   (PowerShell 5.1 beschadigt binaire pijpen met |; daarom koppelt dit script de twee processen zelf.)
   Розшифровує .age-файл ключем відновлення і одразу передає вміст через SSH на VM. На диск ПК нічого не пишеться.
 
-  Voorbeelden / приклади (in de map van de herstelset / у папці набору):
+  Voorbeelden / приклади (in de map van de herstelset / у теці набору):
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel F:\herstelsleutel-age.txt -Stap controle-sleutel
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand $g -Sleutel F:\herstelsleutel-age.txt -Stap geheimen
     .\scripts\ontsleutel-naar-vm.ps1 -Bestand "$b\database.dump.age" -Sleutel F:\herstelsleutel-age.txt -Stap db-terugzetten
@@ -14,7 +14,7 @@ param(
   [Parameter(Mandatory)][string]$Bestand,
   [Parameter(Mandatory)][string]$Sleutel,
   [Parameter(Mandatory)][string]$Stap,
-  [string]$Vm = 'beheer@203.0.113.10',
+  [string]$Vm = $(if ($env:MR_VM_SSH) { $env:MR_VM_SSH } else { 'beheer@mijn-ruimte-vm' }),
   [string]$SshSleutel = (Join-Path $HOME '.ssh\mijn-ruimte-webserver'),
   [string]$OpdrachtOpVm   # alleen voor tests: andere opdracht op de VM dan herstel-vm.sh <Stap>
 )

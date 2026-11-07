@@ -11,7 +11,7 @@
 //   CalDAV/Fastmail  LEZEN met een app-wachtwoord. Schrijven is NIET gebouwd en de kaart zegt wat ervoor mist.
 //   Microsoft/Proton geen directe koppeling — maar hun .ics-link werkt vandaag al als abonnement. Dat staat erbij.
 // Niets doet alsof: een kaart zonder koppeling heeft GEEN koppelknop.
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useAgendaV3 } from './v3/agenda-vlag';
 // Agenda v3 (vlag agenda-v3, standaard UIT): lui geladen, zodat de oude agenda zonder vlag precies dezelfde bundel en weergave houdt.
 const AgendaPagina = lazy(() => import('./v3/AgendaPagina'));
@@ -36,6 +36,7 @@ import ICloudVenster from './ICloudVenster';
 import * as client from './agenda-client';
 import { foutCodeTekst } from './abonnement-fouten';
 import './agenda.css';
+import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
@@ -137,6 +138,17 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
       .finally(() => setBezig(false));
   };
   useEffect(() => { laad(); }, [ownerUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ZOEKDIEP-001 (05.11.2026): diepe link uit de zoekpagina (?open_event_id=google:<agenda>:<gebeurtenis>, shared/zoek-diepe-link.ts).
+  // Zodra het overzicht er is: de week van de afspraak tonen en haar venster openen. Niet gevonden → eerlijke melding.
+  const zoekAfspraak = useRef(typeof location !== 'undefined' ? diepeWaarde(location.search, DIEPE_PARAMS.afspraak) : '');
+  useEffect(() => {
+    const doel = zoekAfspraak.current; if (!doel || !data) return;
+    zoekAfspraak.current = ''; wisDiepeParams(DIEPE_PARAMS.afspraak);
+    const item = (data.items || []).find((x) => x.id === doel);
+    if (!item) { setMelding(tr(lang, 'Подію з пошуку в календарі не знайдено: можливо, її вже видалено або календар ще синхронізується.', 'De afspraak uit de zoekresultaten staat niet in de agenda: misschien is zij verwijderd of wordt de agenda nog gesynchroniseerd.')); return; }
+    const dag = new Date(item.begin); if (!Number.isNaN(dag.getTime())) setAnker(isoDag(dag));
+    void openItem(item);
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toegang = data?.toegang;
   // In welke lade kijkt deze mens? Staat de dienst in de technische ruimte uit of is zij bevroren, dan komt het

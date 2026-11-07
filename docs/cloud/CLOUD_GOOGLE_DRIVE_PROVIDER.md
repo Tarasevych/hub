@@ -1,16 +1,18 @@
-# Cloud Google Drive Provider — B+ grant integration
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./CLOUD_GOOGLE_DRIVE_PROVIDER.uk.md) · [🇳🇱 **Nederlandse versie**](./CLOUD_GOOGLE_DRIVE_PROVIDER.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-Google Drive uses `https://www.googleapis.com/auth/drive`, Google's full restricted Drive scope. The provider foundation requests read, create, update, delete and permission capabilities, but performs no automatic deletion, overwrite, indexing, Changes API processing or background synchronization in this checkpoint.
+# Провайдер Cloud Google Drive — інтеграція B+ grant
 
-## Account model
+Google Drive використовує `https://www.googleapis.com/auth/drive` — повний обмежений (restricted) область дії Google Drive. Базова платформа провайдера запитує можливості читання, створення, оновлення, видалення та керування дозволами, але на цій контрольній точці (checkpoint) не виконує автоматичного видалення, перезапису, індексації, обробки Зміни API чи фонової синхронізації.
 
-Drive participates in the shared provider-principal architecture. The sign-in-matching Google identity is the primary principal and is connected through the second step of the Suite plan. Other Drive accounts are explicit additional principals and remain outside the primary sequence. Active Drive selection is owner-scoped and independent from the ecosystem identity session.
+## Модель облікових записів
 
-## B+ token model
+Drive є частиною спільної архітектури `provider-principal`. Google-ідентичність, що збігається з обліковим записом входу в систему, є основним суб'єктом (`primary principal`) і під'єднується на другому кроці плану Suite. Інші облікові записи Drive є явними додатковими суб'єктами (`additional principals`) і залишаються поза межами основної послідовності. Вибір активного Drive ізольований у межах власника (`owner-scoped`) і не залежить від сесії ідентичності екосистеми.
 
-Drive no longer owns a separate refresh-token vault or OAuth client. One canonical encrypted grant is stored per Google provider principal in `google_oauth_grant_v1` and uses the shared client reference `google_suite_web_oauth_client`.
+## Модель токенів B+
 
-`google_drive_token` is a logical handle in `provider_service_tokens_v1`:
+Drive більше не володіє окремим сховищем refresh-токенів або окремим клієнтом OAuth. Один канонічний зашифрований дозвіл (grant) зберігається для кожного суб'єкта провайдера Google у таблиці `google_oauth_grant_v1` і використовує спільне посилання на клієнта `google_suite_web_oauth_client`.
+
+`google_drive_token` — це логічний дескриптор (handle) у `provider_service_tokens_v1`:
 
 ```text
 google_drive_token
@@ -18,16 +20,16 @@ google_drive_token
 → requiredScopes = [https://www.googleapis.com/auth/drive]
 ```
 
-Before refresh or API use the backend requires `requiredScopes ⊆ grantedScopes`. Access tokens are ephemeral and never persisted.
+Перед оновленням токена або викликом API бекенд вимагає виконання умови `requiredScopes ⊆ grantedScopes`. Access-токени є ефемерними й ніколи не зберігаються на диску.
 
-Required AppDeploy secrets:
+Необхідні секрети AppDeploy:
 
 - `GOOGLE_SUITE_CLIENT_ID`
 - `GOOGLE_SUITE_CLIENT_SECRET`
-- `GOOGLE_SUITE_REDIRECT_URI` — exactly `https://id.tarasevych.com/`
+- `GOOGLE_SUITE_REDIRECT_URI` — точно `https://id.tarasevych.com/`
 - `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1`
 
-## Tables
+## Таблиці
 
 - `provider_principals_v1`
 - `google_oauth_grant_v1`
@@ -38,16 +40,16 @@ Required AppDeploy secrets:
 - `cloud_provider_selections_v1`
 - `cloud_audit_v1`
 
-`cloud_provider_tokens_v1` is legacy-only. A matching legacy Drive refresh-token copy is deleted after the canonical grant is committed.
+Таблиця `cloud_provider_tokens_v1` підтримується лише для сумісності зі спадщиною (legacy-only). Відповідна застаріла копія refresh-токена Drive видаляється після успішного збереження канонічного дозволу.
 
-## Consent and disconnect semantics
+## Семантика згоди та вимкнення
 
-Primary Drive consent requires every prior Suite step. Additional Drive linking remains explicit and creates a separate principal grant. A mismatched Google account cannot silently become primary.
+Надання згоди для основного Drive вимагає проходження кожного попереднього кроку Suite. Під'єднання додаткових облікових записів Drive залишається явним і створює окремий дозвіл суб'єкта (`principal grant`). Невідповідний обліковий запис Google не може непомітно стати основним.
 
-Disconnect deactivates only the Drive handle and Drive account. If Mail, Calendar or Photos still depends on the same principal grant, Google-level revocation is not attempted. When Drive is the final active handle for that principal, revocation is attempted best-effort and the canonical grant is marked revoked. Local copies are retained.
+Вимкнення деактивує лише дескриптор Drive та обліковий запис Drive. Якщо Mail, Calendar або Photos все ще залежать від того самого дозволу суб'єкта, відкликання на рівні Google не здійснюється. Коли Drive є останнім активним дескриптором для цього суб'єкта, виконується спроба відкликання за принципом `best-effort`, а канонічний дозвіл позначається як відкликаний (`revoked`). Локальні копії зберігаються.
 
-## Checkpoint boundary
+## Межі контрольної точки (Checkpoint boundary)
 
-Included: shared-client incremental consent, PKCE S256, one encrypted principal grant, logical Drive handle, primary/additional accounts, selection, audit and explicit disconnect.
+Увімкнено: інкрементальна згода спільного клієнта, PKCE S256, один зашифрований дозвіл суб'єкта, логічний дескриптор Drive, основні/додаткові облікові записи, вибір активного облікового запису, аудит та явне вимкнення.
 
-Not active: initial listing, Changes API, workers, automatic file mutations, conflict resolution, sharing, OneDrive, Dropbox, Mail runtime migration, Calendar runtime or Photos runtime.
+Не активно: початковий перелік файлів, Зміни API, воркери, автоматичні зміни файлів, розв'язання конфліктів, спільний доступ (sharing), OneDrive, Dropbox, міграція середовища виконання Mail, середовище виконання Calendar або Photos.

@@ -45,7 +45,7 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('github-koppelkaart-20261019');
 
   // ---------------------------------------------------------------- 2. Server-URL
-  check('URL за замовчуванням саме https://api.githubcopilot.com/mcp/x/all', GITHUB_MCP_URL === 'https://api.githubcopilot.com/mcp/x/all' && geldigeMcpUrl(GITHUB_MCP_URL));
+  check('URL типово саме https://api.githubcopilot.com/mcp/x/all', GITHUB_MCP_URL === 'https://api.githubcopilot.com/mcp/x/all' && geldigeMcpUrl(GITHUB_MCP_URL));
   check('Server-URL валідується як https без логіна, параметрів і сміття',
     ['http://api.githubcopilot.com/mcp/x/all', 'https://user:pw@api.githubcopilot.com/mcp', 'https://api.githubcopilot.com/mcp?token=x', 'https://localhost/mcp', 'ftp://a.b/c', 'api.githubcopilot.com/mcp', '', '   ', null, 42, `https://a.b/${'x'.repeat(400)}`]
       .every((waarde) => geldigeMcpUrl(waarde) === false)

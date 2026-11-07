@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "taakId": "DESIGN-003",
+  "agent": "codex",
+  "agentPlatform": "ChatGPT Codex",
+  "model": {
+    "id": null,
+    "versie": null,
+    "bron": "onbekend"
+  },
+  "basisCommit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
+  "basisVersie": "20261106-141500",
+  "installatie": {
+    "versie": "20261106-141500",
+    "commit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
+    "bron": "/api/version · 2026-11-06"
+  },
+  "regelsVersie": "1.4.10",
+  "regelsHash": "beb437706865e56735ee15f56f75422968d3b133221148282986b23645078847",
+  "tak": "feature/design-003-20261106-103743",
+  "kanaal": "github_pr",
+  "zonderGit": null,
+  "commits": [
+    "6f4af07eaa151eba445a124ba7d02083ba226653"
+  ],
+  "bestanden": {
+    "gewijzigd": [
+      "src/agenten/AgentBord.tsx",
+      "src/agenten/agenten.css",
+      "ORCH-OVERDRACHT.json"
+    ],
+    "toegevoegd": [
+      "orchestratie/taken/DESIGN-003.json",
+      "tests/visueel/design-003-agenten.html",
+      "tests/visueel/design-003-agenten.tsx",
+      "tests/visueel/design-003-controle.mjs",
+      "orchestratie/ontwikkelarchieven/DESIGN-003.json",
+      ".github/workflows/design-003-release.yml",
+      "tests/uitrol/design-003-pakket.py"
+    ],
+    "verwijderd": []
+  },
+  "samenvatting": {
+    "uk": "Панель агента розгортається під усім вибраним рядком. Записи CLI, кнопки й чотири канали Antigravity підлаштовуються під ширину профілю.",
+    "nl": "Het agentpaneel opent onder de gekozen rij. CLI-opdrachten, knoppen en de vier Antigravity-kanalen passen zich aan de profielbreedte aan."
+  },
+  "tests": {
+    "geslaagd": 5,
+    "mislukt": 0,
+    "falend": [],
+    "uitleg": {
+      "uk": "Браузерний стенд пройшов сценарій дошки й чотири розміри профілю з перемиканням усіх каналів (320–1280 px). Повні результати збірки додаються в TESTRESULTATEN.",
+      "nl": "De bordproef en vier profielbreedten met alle kanalen zijn in Chromium geslaagd (320–1280 px). De bouw levert de verdere controles in TESTRESULTATEN."
+    }
+  },
+  "nietGedaan": {
+    "uk": "Перевірки підключень виконано з тестовими відповідями. Робочі облікові записи й особисті дані власника не використовувалися.",
+    "nl": "De verbindingen zijn met testantwoorden gecontroleerd. Er zijn geen productieaccounts of privégegevens gebruikt."
+  },
+  "conflicten": [],
+  "aangemaakt": "2026-11-06T14:26:04.381Z"
+}

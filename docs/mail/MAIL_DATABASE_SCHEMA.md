@@ -1,10 +1,12 @@
-# Mail Database Schema v1
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./MAIL_DATABASE_SCHEMA.uk.md) · [🇳🇱 **Nederlandse versie**](./MAIL_DATABASE_SCHEMA.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
 
-## 1. Scope
+# Схема бази даних Пошти v1
 
-Це production-target PostgreSQL schema. Вона є нормативною моделлю для identity, constraints, indexes, owner scoping, idempotency і retention. Поточні AppDeploy `mail_*_v1` tables є compatibility foundation і не оголошуються еквівалентними SQL-транзакціям.
+## 1. Межі та призначення
 
-## 2. Extensions and enums
+Це цільова production-схема PostgreSQL. Вона є нормативною моделлю для ідентичності (identity), обмежень (constraints), індексів (indexes), ізоляції за власником (власник scoping), ідемпотентності (idempotency) та політики зберігання даних (retention). Поточні таблиці AppDeploy `mail_*_v1` є базою сумісності (compatibility foundation) і не оголошуються еквівалентними SQL-транзакціям.
+
+## 2. Розширення та перелічувані типи
 
 ```sql
 create extension if not exists pgcrypto;
@@ -20,7 +22,7 @@ create type mail_command_status as enum ('prepared','confirmed','executing','suc
 create type mail_source_type as enum ('provider','manual','qa');
 ```
 
-## 3. Core accounts and token vault
+## 3. Основні облікові записи та сховище токенів
 
 ```sql
 create table mail_accounts (
@@ -92,7 +94,7 @@ create table mail_oauth_states (
 create index mail_oauth_states_expiry_idx on mail_oauth_states(status,expires_at);
 ```
 
-## 4. Provider subscriptions and cursors
+## 4. Підписки провайдера та курсори
 
 ```sql
 create table mail_provider_subscriptions (
@@ -135,7 +137,7 @@ create table mail_sync_state (
 create index mail_sync_state_due_idx on mail_sync_state(recovery_required,last_success_at);
 ```
 
-## 5. Messages, bodies, threads and labels
+## 5. Повідомлення, тіла листів, ланцюжки та мітки
 
 ```sql
 create table mail_threads (
@@ -230,7 +232,7 @@ create table mail_message_labels (
 create index mail_message_labels_label_idx on mail_message_labels(label_id,message_id);
 ```
 
-## 6. Attachments
+## 6. Вкладення
 
 ```sql
 create table mail_attachments (
@@ -254,7 +256,7 @@ create index mail_attachments_message_idx on mail_attachments(message_id);
 create index mail_attachments_scan_idx on mail_attachments(scan_status,download_status);
 ```
 
-## 7. Queue, webhook dedupe and attempts
+## 7. Черга, дедуплікація вебхуків та спроби виконання
 
 ```sql
 create table mail_webhook_events (
@@ -308,7 +310,7 @@ create table mail_job_attempts (
 );
 ```
 
-## 8. Neuroinclusive state and AI provenance
+## 8. Нейроінклюзивний стан та походження ШІ-артефактів
 
 ```sql
 create table mail_triage (
@@ -381,7 +383,7 @@ create table mail_notification_preferences (
 );
 ```
 
-## 9. Draft and send command model
+## 9. Модель чернеток і команд надсилання
 
 ```sql
 create table mail_drafts (
@@ -420,7 +422,7 @@ create table mail_outbox_commands (
 create index mail_outbox_commands_owner_status_idx on mail_outbox_commands(owner_user_id,status,prepared_at desc);
 ```
 
-## 10. Audit and retention
+## 10. Аудит і політика зберігання
 
 ```sql
 create table mail_audit_log (
@@ -440,11 +442,11 @@ create table mail_audit_log (
 create index mail_audit_owner_time_idx on mail_audit_log(owner_user_id,created_at desc);
 ```
 
-Retention is policy-driven. Token records are deleted immediately on disconnect; webhook payloads are short-lived; message bodies/attachments follow owner retention/export/delete policy. Audit stores no token, cookie, raw authorization header, full body or attachment content.
+Зберігання даних (retention) керується політиками. Записи токенів видаляються негайно при вимкненні облікового запису; корисні навантаження вебхуків (webhook payloads) є короткоживучими; тіла повідомлень і вкладення підпорядковуються політиці власника щодо зберігання/експорту/видалення. Журнал аудиту не зберігає токени, cookie, сирі заголовки авторизації, повні тіла листів або вміст вкладень.
 
-## 11. Owner-scoping query rule
+## 11. Правило запитів з ізоляцією за власником
 
-Every protected query includes both owner and resource identity:
+Кожен захищений запит обов’язково містить як ідентифікатор власника, так і ідентифікатор ресурсу:
 
 ```sql
 select * from mail_messages
@@ -453,16 +455,16 @@ where owner_user_id = :actor_owner
   and deleted_at is null;
 ```
 
-Resource ID alone is never authorization. Foreign keys prevent orphaned records; service authorization still validates owner/workspace membership before SQL execution.
+Сам по собі ідентифікатор ресурсу (Resource ID) ніколи не є авторизацією. Зовнішні ключі (foreign ключі) запобігають появі осиротілих записів; авторизація на рівні сервісу додатково перевіряє належність власника/робочого простору перед виконанням SQL.
 
-## 12. AppDeploy compatibility mapping
+## 12. Відображення сумісності з AppDeploy
 
-Current tables:
+Поточні таблиці:
 
-- `mail_accounts_v1` → preliminary `mail_accounts`
-- `mail_items_v1` → manual/QA subset of `mail_messages + bodies + triage`
-- `mail_resume_v1` → preliminary `mail_resume_state`
-- `mail_metrics_v1` → product analytics projection
-- `mail_notification_preferences_v1` → preliminary owner-level preference
+- `mail_accounts_v1` → попередня версія `mail_accounts`
+- `mail_items_v1` → ручна/QA підмножина `mail_messages + bodies + triage`
+- `mail_resume_v1` → попередня версія `mail_resume_state`
+- `mail_metrics_v1` → проєкція продуктової аналітики
+- `mail_notification_preferences_v1` → попередні налаштування на рівні власника
 
-Future bounded foundation tables may use `_v2` names, but migration must be dual-read/dual-write with evidence and rollback. No existing record is deleted merely because target SQL schema is documented.
+Майбутні обмежені базові таблиці можуть використовувати імена з суфіксом `_v2`, але міграція повинна виконуватися за схемою подвійного читання/подвійного запису (dual-read/dual-write) з доказами та можливістю повернення стану. Жоден наявний запис не видаляється лише тому, що задокументовано цільову SQL-схему.

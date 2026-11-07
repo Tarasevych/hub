@@ -143,7 +143,7 @@ export async function main(): Promise<number> {
       && await sec.getByRole('tab', { name: /Claude/ }).count() === 1 && await sec.getByRole('tab', { name: /Grok/ }).count() === 1);
     // Groepen staan ingeklapt tenzij ze een lopende timer hebben: klap «Пристрої» open om de mogelijkheden te zien.
     await sec.getByRole('button', { name: /^Пристрої/ }).and(sec.locator('.aiz-groep-toggle')).click();
-    check('Claude: «Виконувати команди на ПК» вимкнено, решта як за замовчуванням (питати)',
+    check('Claude: «Виконувати команди на ПК» вимкнено, решта як типово (питати)',
       /Вимкнено/.test(await sec.locator('[data-cap="device.exec"] .aib-status').innerText()) && /Питати щоразу/.test(await sec.locator('[data-cap="device.read"] .aib-status').innerText()));
     await sec.getByRole('tab', { name: /Grok/ }).click();
     const grokTimer = sec.locator('[data-cap="mail.read"] .aib-timer');

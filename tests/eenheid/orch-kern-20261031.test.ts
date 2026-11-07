@@ -89,7 +89,7 @@ export async function main(): Promise<number> {
 
   // — задачі —
   const taak = JSON.parse(lees('orchestratie/taken/ORCH-001.json'));
-  check('ORCH-001 зареєстрована й валідна', k.valideerTaak(taak, beleid).length === 0 && taak.basisCommit === beleid.basis.bronCommit, JSON.stringify(k.valideerTaak(taak, beleid)));
+  check('ORCH-001 зареєстрована й валідна', k.valideerTaak(taak, beleid).length === 0 && k.SHA40.test(taak.basisCommit), JSON.stringify(k.valideerTaak(taak, beleid)));
   const tc = (t: unknown) => k.valideerTaak(t, beleid).map((z: { code: string }) => z.code);
   check('гілка без часової мітки → TAAK_TAK', tc({ ...taak, tak: 'feature/orch-001' }).includes('TAAK_TAK'));
   check('гілка voornaamst → TAAK_TAK (не можна працювати в default)', tc({ ...taak, tak: 'voornaamst' }).includes('TAAK_TAK'));
@@ -98,7 +98,7 @@ export async function main(): Promise<number> {
   check('невідомий статус → TAAK_STAAT', tc({ ...taak, staat: 'klaar' }).includes('TAAK_STAAT'));
 
   // — свіжість перед початком і перед передаванням —
-  const basis = { taak, regelsVersie: beleid.regelsVersie, regelsHash: lock.hash, headIsAfstammeling: true, integratieVoorsprong: [], eigenBestanden: ['src/a.ts'], schoon: true, fase: 'overdracht' };
+  const basis = { taak: { ...taak, regelsVersie: beleid.regelsVersie, regelsHash: lock.hash }, regelsVersie: beleid.regelsVersie, regelsHash: lock.hash, headIsAfstammeling: true, integratieVoorsprong: [], eigenBestanden: ['src/a.ts'], schoon: true, fase: 'overdracht' };
   const vc = (f: unknown) => k.versheid(f).map((z: { code: string }) => z.code);
   check('усе свіже → без зауважень', k.versheid(basis).length === 0, JSON.stringify(k.versheid(basis)));
   check('правила оновились (→ 9.0.0) → REGELS_VEROUDERD', vc({ ...basis, regelsVersie: '9.0.0' }).includes('REGELS_VEROUDERD'));
@@ -161,10 +161,18 @@ export async function main(): Promise<number> {
 
   // — черга (закомічений файл) —
   const w = JSON.parse(lees('orchestratie/wachtrij.json'));
-  check('черга послідовна: один запис «bezig» або жоден, ORCH-001 у черзі', w.bezig === null && w.wachtrij.some((r: { taakId: string }) => r.taakId === 'ORCH-001'));
+  // ORCH-001 спершу чекала в черзі, а після злиття (PR #16/#17) перейшла в geschiedenis як integrated — обидва стани чинні,
+  // але запис в історії мусить збігатися з задачею (staat integrated, той самий integratieCommit).
+  type Rij = { taakId: string; staat: string; integratieHoofd?: string | null };
+  const bezigRijen = w.wachtrij.filter((r: Rij) => r.staat === 'bezig');
+  const serieel = w.bezig === null ? bezigRijen.length === 0 : bezigRijen.length === 1 && bezigRijen[0].taakId === w.bezig;
+  const orchInGeschiedenis = (w.geschiedenis ?? []).find((r: Rij) => r.taakId === 'ORCH-001' && r.staat === 'integrated');
+  const orchGeregistreerd = w.wachtrij.some((r: Rij) => r.taakId === 'ORCH-001')
+    || (Boolean(orchInGeschiedenis) && k.SHA40.test(String(orchInGeschiedenis.integratieHoofd)) && taak.staat === 'integrated' && taak.integratieCommit === orchInGeschiedenis.integratieHoofd);
+  check('черга послідовна: один запис «bezig» або жоден; ORCH-001 у черзі або в історії як integrated, узгоджено з задачею', serieel && orchGeregistreerd, JSON.stringify({ bezig: w.bezig, bezigRijen: bezigRijen.length, orch: orchInGeschiedenis ?? null, taak: taak.staat }));
   // — реєстр рішень —
   const besl = lees('orchestratie/BESLUITEN.md');
   check('BESLUITEN.md: B-001…B-003 (1.0.0) і B-004 (1.1.0) зі статусом', ['B-001', 'B-002', 'B-003'].every((b) => new RegExp(`## ${b} · \\d{4}-\\d{2}-\\d{2} · 1\\.0\\.0 · (voorstel|bevestigd)`).test(besl)) && /## B-004 · \d{4}-\d{2}-\d{2} · 1\.1\.0 · (voorstel|bevestigd)/.test(besl));
-  check('BESLUITEN.md фіксує, що базу ще не звірено з production (чесність)', /не виконано|niet uitgevoerd/.test(besl) && beleid.basis.verificatie === 'opgave_eigenaar');
+  check('BESLUITEN.md фіксує стан звірки бази з production (чесність)', /не виконано|niet uitgevoerd/.test(besl) && ['opgave_eigenaar', 'geverifieerd_productie'].includes(beleid.basis.verificatie));
   return einde();
 }

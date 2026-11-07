@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "catalog_id": "mijn-ruimte",
+  "name": "Mijn Ruimte (Tarasevych Hub)",
+  "display_name": "Mijn Ruimte · Google Antigravity Bridge",
+  "version": "1.0.0",
+  "vendor": "Mijn Ruimte (tarasevych.com)",
+  "agent_slug": "antigravity",
+  "description": "Двосторонній плагін і MCP-конектор Google Antigravity для Mijn Ruimte (*.tarasevych.com): створення й редагування сайту, керування браузером, локальним ПК (agent.mjs), сервером та координацією агентів.",
+  "homepage": "https://mcp.tarasevych.com/agenten#agent/antigravity",
+  "mcp": {
+    "server_name": "mijn-ruimte",
+    "transport": "streamable-http",
+    "url": "https://mcp.tarasevych.com/antigravity",
+    "oauth_protected_resource_metadata": "https://mcp.tarasevych.com/.well-known/oauth-protected-resource/antigravity",
+    "dynamic_client_registration": "https://mcp.tarasevych.com/oauth2/register",
+    "stdio_fallback": {
+      "command": "node",
+      "args": [".agents/skills/mijn-ruimte/scripts/mijn-ruimte", "McpStdio"]
+    }
+  },
+  "channels": {
+    "site": {
+      "endpoint": "https://mcp.tarasevych.com/antigravity",
+      "groups": ["mail", "agenda", "bestanden", "fotos", "bord", "taken", "github", "releases"]
+    },
+    "browser": {
+      "extension_min_version": "0.8.1",
+      "manage_url": "https://mcp.tarasevych.com/agenten#browser",
+      "capabilities": [
+        "browser.read",
+        "browser.navigate",
+        "browser.interact",
+        "browser.screenshot",
+        "browser.console",
+        "browser.debug",
+        "browser.script"
+      ]
+    },
+    "pc": {
+      "agent_script": "deploy/agent/agent.mjs",
+      "manage_url": "https://mcp.tarasevych.com/agenten#apparaten",
+      "tools": [
+        "machine_status",
+        "machine_processes",
+        "machine_list_dir",
+        "machine_read_file",
+        "machine_write_file",
+        "machine_exec",
+        "machine_docker"
+      ]
+    },
+    "server": {
+      "space": "technisch (_beheer)",
+      "manage_url": "https://mcp.tarasevych.com/agenten#technisch",
+      "tools": [
+        "server_health",
+        "deploy_status",
+        "deploy_logs",
+        "deploy_release",
+        "db_query_readonly",
+        "audit_tail",
+        "security_overview"
+      ]
+    }
+  },
+  "skills": [
+    {
+      "name": "mijn-ruimte",
+      "path": ".agents/skills/mijn-ruimte/SKILL.md",
+      "cli": ".agents/skills/mijn-ruimte/scripts/mijn-ruimte"
+    }
+  ]
+}

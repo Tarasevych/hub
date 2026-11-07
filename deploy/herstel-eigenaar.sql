@@ -5,7 +5,7 @@
 --
 -- Alles staat in ÉÉN transactie die standaard wordt TERUGGEDRAAID (ROLLBACK onderaan). Lees eerst de SELECT-uitvoer;
 -- is die juist, vervang dan de laatste regel ROLLBACK door COMMIT en voer opnieuw uit.
--- Усе в ОДНІЙ транзакції, яка за замовчуванням ВІДКОЧУЄТЬСЯ (ROLLBACK унизу). Спочатку перегляньте вивід SELECT;
+-- Усе в ОДНІЙ транзакції, яка типово ВІДКОЧУЄТЬСЯ (ROLLBACK унизу). Спочатку перегляньте вивід SELECT;
 -- якщо все правильно — замініть останній рядок ROLLBACK на COMMIT і виконайте знову.
 --
 -- Stap 1 — eigenaarsrol terugzetten op het OUDSTE actieve account met OWNER_EMAIL (alleen als er nu géén eigenaar is).

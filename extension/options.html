@@ -24,6 +24,7 @@
     <a href="#tabbladen" data-sectie="tabbladen" data-nl="Browser en tabbladen">Браузер і вкладки</a>
     <a href="#diagnose" data-sectie="diagnose" data-nl="Diagnose">Діагностика</a>
     <a href="#agenten" data-sectie="agenten" data-nl="AI-agenten en koppelingen">ШІ-агенти та інтеграції</a>
+    <a href="#lokale-ai" data-sectie="lokale-ai" data-nl="Ingebouwde AI (Chrome)">Вбудований ШІ (Chrome)</a>
     <a href="#extra" data-sectie="extra" data-nl="Extra">Додатково</a>
   </nav>
   <main>
@@ -42,12 +43,12 @@
 
     <section id="account-sectie" class="sectie" aria-labelledby="kop-account" hidden>
       <div class="sectie-kop"><h2 id="kop-account" data-nl="Account en profielen">Обліковий запис і профілі</h2><button type="button" class="help" data-help="uitleg-account"></button></div>
-      <p id="uitleg-account" class="zacht" hidden data-nl="Het account van Mijn Ruimte is één account voor de hele site. Koppelingen van externe AI-diensten staan onder «AI-agenten».">Обліковий запис Mijn Ruimte — один для всього сайту. Підключення зовнішніх ШІ — у розділі «ШІ-агенти».</p>
+      <p id="uitleg-account" class="zacht" hidden data-nl="Het account van Mijn Ruimte is één account voor de hele site. Koppelingen van externe AI-diensten staan onder «AI-agenten».">Обліковий запис Mijn Ruimte — один для всього сайту. Під'єднання зовнішніх ШІ — у розділі «ШІ-агенти».</p>
       <div class="kop-info">
         <span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
         <div><p id="account" class="account"></p><p id="profiel-tab" class="profiel" data-profiel="geen"></p></div>
       </div>
-      <h3 id="kop-koppeling" data-nl="Koppelingen van deze browser">Підключення цього браузера</h3>
+      <h3 id="kop-koppeling" data-nl="Koppelingen van deze browser">Під'єднання цього браузера</h3>
       <ul id="koppelingen" class="koppelingen"></ul>
     </section>
 
@@ -82,9 +83,19 @@
 
     <section id="agenten" class="sectie" aria-labelledby="kop-agenten" hidden>
       <div class="sectie-kop"><h2 id="kop-agenten" data-nl="AI-agenten en koppelingen">ШІ-агенти та інтеграції</h2><button type="button" class="help" data-help="uitleg-agenten"></button></div>
-      <p id="uitleg-agenten" class="zacht" hidden data-nl="Welke AI verbonden is, ziet u hier. Rechten van AI-diensten worden op de site beheerd (één plek), niet in de extensie. Een model wordt alleen getoond als het zeker bekend is.">Тут видно, який ШІ підключено. Дозволи ШІ-сервісів керуються на сайті (в одному місці), а не в розширенні. Модель показується лише тоді, коли вона точно відома.</p>
+      <p id="uitleg-agenten" class="zacht" hidden data-nl="Welke AI verbonden is, ziet u hier. Rechten van AI-diensten worden op de site beheerd (één plek), niet in de extensie. Een model wordt alleen getoond als het zeker bekend is.">Тут видно, який ШІ під'єднано. Дозволи ШІ-сервісів керуються на сайті (в одному місці), а не в розширенні. Модель показується лише тоді, коли вона точно відома.</p>
       <ul id="agenten-lijst" class="toestand"></ul>
       <div class="knoppen-rij"><button type="button" id="naar-agenten" data-nl="Agenten op de site">Агенти на сайті</button></div>
+    </section>
+
+    <!-- 0.9.0: ingebouwde AI van Chrome (Gemini Nano op dit apparaat); inhoud wordt door options-lokale-ai.js gebouwd -->
+    <section id="lokale-ai" class="sectie" aria-labelledby="kop-lokale-ai" hidden>
+      <div class="sectie-kop"><h2 id="kop-lokale-ai" data-nl="Ingebouwde AI van Chrome">Вбудований ШІ Chrome</h2><button type="button" class="help" data-help="uitleg-lokale-ai"></button></div>
+      <div id="uitleg-lokale-ai" hidden>
+        <p class="zacht" data-nl="Chrome heeft een eigen AI-model (Gemini Nano) dat volledig op deze computer draait: samenvatten, schrijven, herschrijven, vertalen, taal herkennen, proeflezen en een vrij gesprek. Tekst verlaat het apparaat niet — ook de server van Mijn Ruimte ziet hem niet. Gebruik: zijpaneel → «Lokale AI».">Chrome має власну модель ШІ (Gemini Nano), що повністю працює на цьому комп’ютері: стислий виклад, написання, переписування, переклад, визначення мови, коректура й вільний діалог. Текст не залишає пристрій — навіть сервер Mijn Ruimte його не бачить. Використання: бічна панель → «Локальний ШІ».</p>
+        <p class="zacht" data-nl="Vereisten: Windows 10/11, macOS 13+, Linux of ChromeOS (Chromebook Plus); ≥22 GB vrij op de schijf van het Chrome-profiel; GPU met meer dan 4 GB of 16 GB RAM en 4 kernen; een onbeperkte verbinding voor de eerste download. Het model kent Engels, Spaans, Japans, Duits en Frans; Oekraïens en Nederlands gaan via de vertaler.">Вимоги: Windows 10/11, macOS 13+, Linux або ChromeOS (Chromebook Plus); ≥22 ГБ вільного місця на диску профілю Chrome; GPU понад 4 ГБ або 16 ГБ RAM і 4 ядра; безлімітне з’єднання для першого завантаження. Модель знає англійську, іспанську, японську, німецьку й французьку; українська та нідерландська — через перекладач.</p>
+      </div>
+      <div id="lokale-ai-inhoud"></div>
     </section>
 
     <section id="extra" class="sectie" aria-labelledby="kop-extra" hidden>
@@ -101,7 +112,7 @@
           <li data-nl="Zet deze schakelaar aan; Chrome vraagt om toestemming.">Увімкніть цей перемикач — Chrome попросить дозвіл.</li>
           <li data-nl="Kies bij het openen van de toegang op de site «lokale agent».">Під час відкриття доступу на сайті позначте «локальний агент».</li>
         </ol>
-        <p><a id="native-link" href="https://mcp.tarasevych.com/agents#extension-lokaal" target="_blank" rel="noopener noreferrer" data-nl="Installatie-instructies op de site">Інструкція з установлення на сайті</a></p>
+        <p><a id="native-link" href="https://mcp.tarasevych.com/agents#extension-lokaal" target="_blank" rel="noopener noreferrer" data-nl="Installatie-instructies op de site">Інструкція з встановлення на сайті</a></p>
       </div>
       <h3 data-nl="Versie en installatie">Версія та встановлення</h3>
       <ul id="extra-info" class="toestand"></ul>
@@ -111,5 +122,7 @@
 </div>
 <script src="ui.js"></script>
 <script src="options.js"></script>
+<script src="lokale-ai.js"></script>
+<script src="options-lokale-ai.js"></script>
 </body>
 </html>

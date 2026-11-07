@@ -68,7 +68,7 @@ export async function main(): Promise<number> {
   const gelijk = (a: string, b: string) => ['--bg', '--panel', '--surface', '--surface2', '--line', '--text', '--muted', '--faint', '--accent', '--accentText', '--accent-soft'].every((k) => hexVan(a, k) === hexVan(b, k));
   check('grifel/violet op <html> (tokens.css) = .canonical-chrome.theme-* (canoniek-omlijsting.css): geen dubbele standaard', gelijk(tokBlok(':root, .theme-light'), chromeBlok('theme-light')) && gelijk(tokBlok('.theme-dark'), chromeBlok('theme-dark')) && gelijk(tokBlok('.theme-plum-light'), chromeBlok('theme-plum-light')) && gelijk(tokBlok('.theme-plum-dark'), chromeBlok('theme-plum-dark')));
   check('index.css en ecosysteem-productie.css definiëren geen eigen --bg/--accent meer (vroeger drie sets)', !/\.theme-dark\s*\{[^}]*--accent:/.test(indexCss) && !/\.theme-light\s*\{[^}]*--accent:/.test(indexCss) && !/\.theme-dark\{[^}]*--accent:/.test(eco) && !/\.theme-light\{[^}]*--accent:/.test(eco));
-  check('ritme-tokens: ruimte 4/8/12/16/24, stralen, tekst 16/14/12, tikhoogte 40 + 44 op aanraking', ['--ruimte-1:4px', '--ruimte-2:8px', '--ruimte-3:12px', '--ruimte-4:16px', '--ruimte-5:24px', '--straal-s:8px', '--straal-m:12px', '--straal-l:16px', '--tekst-basis:16px', '--tekst-klein:14px', '--tekst-mini:12px', '--tik-hoogte:40px', '--tik-hoogte-mobiel:44px'].every((s) => tokens.includes(s)) && /@media \(pointer:coarse\), \(max-width:700px\)\s*\{\s*:root\s*\{\s*--tik-hoogte:44px/.test(tokens));
+  check('ritme-tokens: ruimte 4/8/12/16/24, stralen 10/14/20/26 (DESIGN-001), tekst 16/14/12, tikhoogte 40 + 44 op aanraking', ['--ruimte-1:4px', '--ruimte-2:8px', '--ruimte-3:12px', '--ruimte-4:16px', '--ruimte-5:24px', '--straal-s:10px', '--straal-m:14px', '--straal-l:20px', '--straal-xl:26px', '--tekst-basis:16px', '--tekst-klein:14px', '--tekst-mini:12px', '--tik-hoogte:40px', '--tik-hoogte-mobiel:44px'].every((s) => tokens.includes(s)) && /@media \(pointer:coarse\), \(max-width:700px\)\s*\{\s*:root\s*\{\s*--tik-hoogte:44px/.test(tokens));
   check('aliassen voor vroeger ongedefinieerde namen (--soft, --canonical-*, --fout/--warn/--ok, --border) op :where(*)', ['--soft:var(--surface)', '--canonical-panel:var(--panel)', '--canonical-muted:var(--muted)', '--border:var(--line)', '--text-on-accent:var(--accentText)', '--venster-actief:var(--focus)'].every((s) => tokens.includes(s)) && /:where\(\*\)\s*\{/.test(tokens));
   check('fundament.css bundelt tokens → primitieven → mobiel en wordt ná index.css (Tailwind preflight) geladen', /tokens\.css[\s\S]*primitieven\.css[\s\S]*mobiel\.css/.test(fundament) && main.indexOf("import './index.css'") < main.indexOf("import './ontwerp/fundament.css'") && main.indexOf("import './ontwerp/fundament.css'") > 0);
   check('tokens/primitieven/mobiel: nergens prefers-color-scheme (thema = klasse op <html>)', !/prefers-color-scheme/.test(tokens + prim + mobiel));
@@ -121,6 +121,64 @@ export async function main(): Promise<number> {
     for (const m of css.matchAll(/(?:^|[;{\s])(min-)?width:\s*(\d{3,})px/g)) if (Number(m[2]) > 360 && !(m[1] && scrolt)) breed.push(`${p}: ${m[0].trim()}`);
   }
   check('geen vaste width > 360px in src/**/*.css; min-width > 360 alleen waar een scrollcontainer (overflow:auto) is', breed.length === 0, breed.slice(0, 8).join(' | '));
+  // Rev'ю 06.11.2026 (ORCH-001): var(--x) zonder terugval op een naam die nergens bestaat, maakt de hele declaratie ongeldig
+  // (achtergrond of rand verdwijnt stil). Zo hadden het werkbladcanvas (--kleur-oppervlak/-tekst/-focus) en cloud (--cf-line) geen
+  // thema: het canvasmenu bleef wit in het donker. Gedefinieerd telt: «--x:» als CSS-tekst (CSS, index.html, strings en
+  // template-literals in TS/TSX), en in TS/TSX een objectsleutel ('--x': …, ['--x' as string]: …), een toewijzing (style['--x'] = …)
+  // of setProperty('--x', …).
+  // Strenger sinds de pre-merge-controle van PR #30 (стара помилка): vroeger telde élke '--x'-string, ook getPropertyValue('--x')
+  // (alleen lezen), en «--x:» in een //-commentaar (TS) of in <!-- --> (index.html). Zo kon een naam die nergens bestaat, groen blijven.
+  const ongedefinieerdeVars = (bestanden: { pad: string; tekst: string }[]) => {
+    const schoon = bestanden.map(({ pad, tekst }) => {
+      let t = zonderCommentaar(tekst);
+      if (pad.endsWith('.html')) t = t.replace(/<!--[\s\S]*?-->/g, '');
+      // //-commentaar alleen na begin van de regel, witruimte of leesteken: «https://…» in een string blijft staan.
+      if (/\.tsx?$/.test(pad)) t = t.replace(/(^|[\s;{}(),])\/\/[^\n]*/gm, '$1');
+      return { pad, t };
+    });
+    const gedefinieerd = new Set<string>();
+    for (const { pad, t } of schoon) {
+      for (const m of t.matchAll(/(?:^|[;{\s('"`])(--[A-Za-z0-9_-]+)\s*:/g)) gedefinieerd.add(m[1]);
+      if (!/\.tsx?$/.test(pad)) continue;
+      for (const m of t.matchAll(/['"`](--[A-Za-z0-9_-]+)['"`]\s*(?:as\s+[A-Za-z.]+\s*)?\]?\s*(?::|=(?!=))/g)) gedefinieerd.add(m[1]);
+      for (const m of t.matchAll(/setProperty\(\s*['"`](--[A-Za-z0-9_-]+)['"`]/g)) gedefinieerd.add(m[1]);
+    }
+    const zonder: string[] = [];
+    for (const { pad, t } of schoon) for (const m of t.matchAll(/var\(\s*(--[A-Za-z0-9_-]+)\s*\)/g)) if (!gedefinieerd.has(m[1])) zonder.push(`${pad}: ${m[1]}`);
+    return [...new Set(zonder)];
+  };
+  // De detector zelf, op de gevallen uit de controle: wat alleen gelezen of in commentaar genoemd wordt, is niet gedefinieerd.
+  const cssGeval = { pad: 'x.css', tekst: '.x{background:var(--rand-weg)}' };
+  const detectorGevallen: [string, { pad: string; tekst: string }[], boolean][] = [
+    ['alleen var(--x)', [cssGeval], false],
+    ["TS getPropertyValue('--x') (alleen lezen)", [cssGeval, { pad: 'a.ts', tekst: "getComputedStyle(el).getPropertyValue('--rand-weg');" }], false],
+    ['TS //-commentaar «--x: #fff»', [cssGeval, { pad: 'a.ts', tekst: '// vroeger: --rand-weg: #fff\nconst a = 1;' }], false],
+    ['index.html <!-- --x: #fff -->', [cssGeval, { pad: 'index.html', tekst: '<!-- <style>:root{--rand-weg:#fff}</style> -->' }], false],
+    ['CSS «--x:» elders', [cssGeval, { pad: 'y.css', tekst: '.y{--rand-weg:#fff}' }], true],
+    ["TSX style-object { '--x': … }", [cssGeval, { pad: 'a.tsx', tekst: "const s = { '--rand-weg': kleur } as CSSProperties;" }], true],
+    ["TSX ['--x' as string]: …", [cssGeval, { pad: 'a.tsx', tekst: "const s = { ['--rand-weg' as string]: kleur };" }], true],
+    ["TS setProperty('--x', …)", [cssGeval, { pad: 'a.ts', tekst: "el.style.setProperty('--rand-weg', '#fff');" }], true],
+    ['TS template-literal «--x: …»', [cssGeval, { pad: 'a.ts', tekst: 'el.style.cssText = `--rand-weg: ${k}`;' }], true],
+    ["TS «https://…» in een string vóór een definitie op dezelfde regel", [cssGeval, { pad: 'a.ts', tekst: "const u = 'https://x.nl'; el.style.setProperty('--rand-weg', '#fff');" }], true],
+  ];
+  const detectorFout = detectorGevallen.filter(([, b, verwachtGedefinieerd]) => (ongedefinieerdeVars(b).length === 0) !== verwachtGedefinieerd).map(([n]) => n);
+  check('detector «var(--x) zonder definitie»: lezen en commentaar tellen niet als definitie, sleutel/setProperty/CSS-tekst wel', detectorFout.length === 0, detectorFout.join(' | '));
+  const bronnen: string[] = [];
+  const loopSrc = (d: string) => { for (const n of readdirSync(d)) { const q = join(d, n); if (statSync(q).isDirectory()) loopSrc(q); else if (/\.(css|tsx?)$/.test(n)) bronnen.push(q.replace(/\\/g, '/')); } };
+  loopSrc('src');
+  const zonderTerugval = ongedefinieerdeVars([...bronnen, 'index.html'].map((pad) => ({ pad, tekst: lees(pad) })));
+  check('geen var(--x) zonder terugval op een custom property die nergens in src/ of index.html bestaat', zonderTerugval.length === 0, zonderTerugval.slice(0, 8).join(' | '));
+  // Voorbeeldpagina's in tests/visueel renderen echte componenten met hun echte CSS. Zonder tokens.css bleven daar var(--x) zonder
+  // terugval leeg (mailfit/mailfix 38 namen, mailpolish 8: o.a. --fout, --ok-vlak, --overlay, --straal-m), dus zagen de schermafdrukken
+  // er anders uit dan de site. Een eigen :root van zo'n pagina moet html:root zijn, anders wint tokens.css (komt later) van de paginawaarden.
+  const voorbeelden = readdirSync('tests/visueel').filter((n) => n.endsWith('.tsx')).map((n) => `tests/visueel/${n}`);
+  const zonderTokens = voorbeelden.filter((q) => !/^import\s+['"](?:\.\.\/)+src\/ontwerp\/(?:tokens|fundament)\.css['"]/m.test(lees(q)));
+  check(`voorbeeldpagina's in tests/visueel (${voorbeelden.length}) laden de sitetokens (src/ontwerp/tokens.css of fundament.css)`, voorbeelden.length >= 5 && zonderTokens.length === 0, zonderTokens.join(', '));
+  const kaleRoot = readdirSync('tests/visueel').filter((n) => n.endsWith('.html')).filter((n) => /(?:^|[\s}>])(?<!html):root\s*\{/.test(zonderCommentaar(lees(`tests/visueel/${n}`))));
+  check("voorbeeldpagina's: eigen tokens staan in html:root (0,1,1), zodat tokens.css de paginawaarden niet overschrijft", kaleRoot.length === 0, kaleRoot.join(', '));
+  const kleurStreep = alle.filter((q) => /var\(\s*--kleur-/.test(zonderCommentaar(lees(q))));
+  check('geen --kleur-*-namen in de CSS (die bestaan niet; het thema heet --panel/--text/--focus …)', kleurStreep.length === 0, kleurStreep.join(','));
+  check('werkbladcanvas: menu en status op --panel/--text, focus en grepen op --focus (volgen het thema)', /\.wbc-menu\{[^}]*background:var\(--panel\);color:var\(--text\)/.test(lees('src/werkblad/canvas/canvas.css')) && /\.wbc-status\{[^}]*background:var\(--panel\);color:var\(--text\)/.test(lees('src/werkblad/canvas/canvas.css')) && /\.wbc-greep\{[^}]*background:var\(--focus\)/.test(lees('src/werkblad/canvas/canvas.css')));
   // consent: tokens, geen hex, geen prefers; kaarten op surface/text; TSX zonder inline kleuren
   check('toestemmingsscherm: kaarten «Читання»/«Підписаний випуск» op var(--surface) + var(--text), icoon op var(--panel), waarschuwing op var(--warn-zacht)', /\.mcp-consent-group\{[^}]*background:var\(--surface\)[^}]*color:var\(--text\)/.test(consentCss) && /\.mcp-consent-group-icon\{[^}]*background:var\(--panel\)/.test(consentCss) && /\.mcp-consent-warn\{[^}]*background:var\(--warn-zacht\);color:var\(--text\)/.test(consentCss));
   check('toestemmingsscherm: geen hex, geen --soft, geen prefers-color-scheme; knoppen op --accent/--text-on-accent; focus op --focus', !HEX.test(consentCss) && !consentCss.includes('--soft') && !consentCss.includes('prefers-color-scheme') && consentCss.includes('.mcp-consent-primary{background:var(--accent);color:var(--text-on-accent)}') && consentCss.includes('outline:3px solid var(--focus)'));

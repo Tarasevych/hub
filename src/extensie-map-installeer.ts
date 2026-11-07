@@ -1,5 +1,5 @@
-// Встановлення розширення прямо з браузера в папку, яку користувач обирає сам у рідному вікні (File System Access API, Chromium).
-// Браузер не віддає повний шлях — лише дескриптор: ми обираємо папку, перевіряємо SHA-256, розпаковуємо й записуємо файли самі.
+// Встановлення розширення прямо з браузера в теку, яку користувач обирає сам у рідному вікні (File System Access API, Chromium).
+// Браузер не віддає повний шлях — лише дескриптор: ми обираємо теку, перевіряємо SHA-256, розпаковуємо й записуємо файли самі.
 import { unzipSync } from 'fflate';
 
 export type PickerError = 'CANCELLED' | 'UNSUPPORTED' | 'BLOCKED' | 'DENIED' | 'DOWNLOAD' | 'SHA' | 'BAD_ZIP' | 'WRITE';
@@ -14,7 +14,7 @@ export const SUBFOLDER = 'MijnRuimte-extension';
 
 export async function installExtensionToPickedFolder(opts: { origin: string; sha256: string; file?: string; onStage?: (stage: 'download' | 'verify' | 'write') => void }): Promise<{ folderName: string; files: number }> {
   if (!folderPickerSupported()) throw new PickerFailure('UNSUPPORTED');
-  // Вікно вибору папки мусить відкритися першим, у відповідь на клік користувача.
+  // Вікно вибору теки мусить відкритися першим, у відповідь на клік користувача.
   let root: Dir;
   try { root = await (window as unknown as { showDirectoryPicker: (o: object) => Promise<Dir> }).showDirectoryPicker({ id: 'mijn-ruimte-extension', mode: 'readwrite' }); }
   catch (e) {

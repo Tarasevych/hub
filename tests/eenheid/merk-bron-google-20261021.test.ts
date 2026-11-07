@@ -21,10 +21,13 @@ const FOTO_SCOPES = ['https://www.googleapis.com/auth/contacts.readonly', 'https
 export async function main(): Promise<number> {
   const { check, einde } = checker('merk-bron-google-20261021');
   const T = `${Date.now()}-${randomBytes(2).toString('hex')}`;
-  const omgevingVoor = Object.fromEntries(['GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1'].map((n) => [n, process.env[n]]));
+  // Eigen pepper voor de persoonlijke laag (adresHash): zonder AFZENDER_BEELD_PEPPER/AUDIT_IP_PEPPER uit de omgeving bleef die laag
+  // uit en faalden 3 checks (05.11.2026). Na afloop hersteld, zoals de sleutel van de grants.
+  const omgevingVoor = Object.fromEntries(['GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1', 'AFZENDER_BEELD_PEPPER'].map((n) => [n, process.env[n]]));
   const eigenaar = `mbg-eig-${T}@example.test`, sub = `sub-mbg-${T}`;
   const G = await nepGoogle({ ownerEmail: eigenaar });
   process.env.GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1 = `eenheidstest-merk-bron-google-${T}-32-tekens-minstens`;
+  process.env.AFZENDER_BEELD_PEPPER = `eenheidstest-merk-bron-google-pepper-${randomBytes(16).toString('hex')}`;
   const mb = await import('../../backend/merk-bron');
   const FOTO = jpeg('contact-anna');
   const web = await nepMerkWeb(['lh3.googleusercontent.com'], { 'lh3.googleusercontent.com': (pad) => (pad === '/foto-anna' ? { body: FOTO } : null) });

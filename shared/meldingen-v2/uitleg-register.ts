@@ -187,7 +187,7 @@ export const REGISTER: UitlegSoort[] = [
     waarom: ['ШІ попросив дію, а пристрій її виконав або відмовив (стан і причина — у тексті).', 'De AI vroeg de actie; het apparaat voerde ze uit of weigerde (status en reden in de tekst).'],
     gevolg: ['Записаний файл змінено на пристрої. Невдала спроба нічого не змінила.', 'Een geschreven bestand is op het apparaat gewijzigd. Een mislukte poging veranderde niets.'],
     doen: ['Перевірте журнал дій агента. Якщо не очікували — вимкніть автоматичні дозволи пристрою.', 'Bekijk het actielogboek van de agent. Onverwacht? Zet de automatische rechten van het apparaat uit.'],
-    rechten: ['Агент має доступ лише до папок, які ви дозволили для цього пристрою.', 'De agent heeft alleen toegang tot de mappen die u voor dit apparaat toeliet.'],
+    rechten: ['Агент має доступ лише до тек, які ви дозволили для цього пристрою.', 'De agent heeft alleen toegang tot de mappen die u voor dit apparaat toeliet.'],
     deeplink: () => `${MCP}#overview`,
     acties: [
       { soort: 'openen', label: ['Журнал агента', 'Logboek van de agent'], href: () => `${MCP}#overview` },

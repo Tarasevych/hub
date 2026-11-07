@@ -113,7 +113,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
         {feiten.modellen.length > 1 ? (
           <label>{tr('Модель', 'Model')}{' '}
             <select value={model} onChange={(e) => setModel(e.target.value)} disabled={bezig}>
-              {feiten.modellen.map((m) => <option key={m.id} value={m.id}>{m.id}{m.standaard ? tr(' (за замовчуванням)', ' (standaard)') : ''}</option>)}
+              {feiten.modellen.map((m) => <option key={m.id} value={m.id}>{m.id}{m.standaard ? tr(' (типово)', ' (standaard)') : ''}</option>)}
             </select>
           </label>
         ) : (

@@ -7,7 +7,7 @@ import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
 import { checker } from './hulp/nep-google';
 import { manifestVoor } from '../fixtures/uitrol/manifest-voorbeeld';
 
-const V = '20270301-101010';
+const V = '20261103-211554'; // TRACE-001: bestaande testcases testen oude vorm zonder verplicht ontwikkelarchief
 type Opties = { zonder?: string[]; extra?: Record<string, string>; versie?: string; link?: boolean; tweeMappen?: boolean; pad?: string };
 
 export async function main(): Promise<number> {
@@ -31,13 +31,36 @@ export async function main(): Promise<number> {
     else execFileSync('tar', ['-czf', tgz, '-C', join(basis, naam), ...(o.tweeMappen ? ['mijn-ruimte-' + V, 'andere'] : ['mijn-ruimte-' + V])]);
     return tgz;
   };
-  const opties = { versie: V, actieveVersie: '20270101-000000', toegepasteMigraties: new Set(['0001_basis']), tests: { geslaagd: 158, mislukt: 0 } };
+  const opties = { versie: V, actieveVersie: '20261102-000000', toegepasteMigraties: new Set(['0001_basis']), tests: { geslaagd: 158, mislukt: 0 } };
   const niv = (r: Awaited<ReturnType<typeof pakketVoorcontrole>>, id: string) => r.resultaat.controles.find((c) => c.id === id)?.niveau;
   try {
     const goed = await pakketVoorcontrole(maak(), opties);
     check('goed pakket: ok, geen fouten, geen waarschuwingen', goed.resultaat.ok && goed.resultaat.fouten === 0 && goed.resultaat.waarschuwingen === 0, JSON.stringify(goed.resultaat.controles.map((c) => c.id + ':' + c.niveau)));
     check('metadata uit het pakket: auteur, agent, samenvatting, commit', goed.meta.auteur === 'Claude (Anthropic)' && goed.meta.agent === 'claude' && goed.meta.samenvatting.startsWith('Nieuwe uitrol-pagina') && goed.meta.commit === 'a'.repeat(40), JSON.stringify(goed.meta));
     check('alle controles aanwezig (incl. commit en manifest)', ['manifest', 'structuur', 'versie', 'metadata', 'commit', 'scripts', 'bouwen', 'migraties', 'geheimen', 'tests'].every((id) => niv(goed, id)));
+
+    // TRACE-001: de toekomstige sitevoorcontrole weigert zonder bevestigd GitHub-dossier.
+    const traceVersie = '20261103-215555', traceCommit = 'a'.repeat(40);
+    const traceBasis = { ...opties, versie: traceVersie, actieveVersie: V };
+    const zonderTrace = await pakketVoorcontrole(maak({ versie: traceVersie }), traceBasis);
+    check('TRACE-001: nieuwe versie zonder ONTWIKKELARCHIEF.json geweigerd',
+      niv(zonderTrace,'ontwikkelarchief') === 'fout' &&
+      zonderTrace.resultaat.controles.find((c)=>c.id === 'ontwikkelarchief')?.nl.includes('GEEN_ONTWIKKELARCHIEF'));
+    const tracePad='orchestratie/ontwikkelarchieven/TRACE-001.json';
+    const traceRef={schema:1,taakId:'TRACE-001',repo:'Tarasevych/hub',
+      tak:'feature/trace-001-20261103-214810',commit:traceCommit,pad:tracePad,sha256:'b'.repeat(64),
+      url:`https://github.com/Tarasevych/hub/blob/${traceCommit}/${tracePad}`,
+      release:`https://github.com/Tarasevych/hub/releases/tag/${traceVersie}`,pakket:`mijn-ruimte-${traceVersie}.tar.gz`};
+    const tracePakket=maak({ versie: traceVersie, extra:{ 'ONTWIKKELARCHIEF.json': JSON.stringify(traceRef) }});
+    const traceGoed = await pakketVoorcontrole(tracePakket,{...traceBasis,
+      archiefControle:async()=>({ok:true,code:'OK',reden:'test',url:traceRef.url})});
+    check('TRACE-001: geverifieerd dossier wordt getoond',
+      niv(traceGoed,'ontwikkelarchief')==='ok' && traceGoed.meta.ontwikkelArchiefUrl===traceRef.url);
+    const traceKapot=await pakketVoorcontrole(tracePakket,{...traceBasis,
+      archiefControle:async()=>({ok:false,code:'ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT',reden:'SHA ongelijk'})});
+    check('TRACE-001: afwijkende GitHub SHA-256 → blokkerende fout',
+      niv(traceKapot,'ontwikkelarchief')==='fout' &&
+      traceKapot.resultaat.controles.find((c)=>c.id==='ontwikkelarchief')?.nl.includes('ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT'));
 
     const geenOmschrijving = await pakketVoorcontrole(maak({ zonder: ['SAMENVATTING'] }), opties);
     check('SAMENVATTING ontbreekt → fout «опису змін немає», pakket geblokkeerd', !geenOmschrijving.resultaat.ok && niv(geenOmschrijving, 'metadata') === 'fout' && /опису змін немає/.test(geenOmschrijving.resultaat.controles.find((c) => c.id === 'metadata')!.uk));
@@ -55,7 +78,7 @@ export async function main(): Promise<number> {
     check('«zonder-git:<reden>» → waarschuwing (niet blokkerend), reden zichtbaar, commit = «zonder-git:<reden>»', zg.resultaat.ok && niv(zg, 'commit') === 'waarschuwing' && /sandbox zonder git/.test(zg.resultaat.controles.find((c) => c.id === 'commit')!.nl) && zg.meta.commit === 'zonder-git:gebouwd in een sandbox zonder git', JSON.stringify(zg.meta));
     check('«zonder-git:» zonder reden → fout', niv(await pakketVoorcontrole(maak({ extra: { 'BRON-COMMIT': 'zonder-git:\n' } }), opties), 'commit') === 'fout');
     check('versie wijkt af van het voorstel → fout', niv(await pakketVoorcontrole(maak({ versie: '20270301-111111' }), opties), 'versie') === 'fout');
-    check('versie niet nieuwer dan actief → fout', niv(await pakketVoorcontrole(maak(), { ...opties, actieveVersie: '20270301-101010' }), 'versie') === 'fout');
+    check('versie niet nieuwer dan actief → fout', niv(await pakketVoorcontrole(maak(), { ...opties, actieveVersie: V }), 'versie') === 'fout');
     check('UITROL-VERSIE ontbreekt → fout', niv(await pakketVoorcontrole(maak({ zonder: ['UITROL-VERSIE'] }), opties), 'versie') === 'fout');
     check('symbolische link in het pakket → structuur-fout', niv(await pakketVoorcontrole(maak({ link: true }), opties), 'structuur') === 'fout');
     check('twee bovenmappen → structuur-fout', niv(await pakketVoorcontrole(maak({ tweeMappen: true }), opties), 'structuur') === 'fout');

@@ -6,12 +6,20 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+const binPad = resolve('node_modules/.bin');
+if (process.env.PATH && !process.env.PATH.split(':').includes(binPad)) process.env.PATH = `${binPad}:${process.env.PATH}`;
+
 // Binnen de repo (node_modules moet resolvebaar zijn); rapporten/ staat in .gitignore.
 const filter = process.argv[2] || '';
 // Een exacte bestandsnaam (eindigt op .test.ts) matcht alleen dat bestand. Zo matcht «beleid.test.ts» niet ook «ai-beleid.test.ts»:
 // dat gaf een oneindige keten van kind-processen (elk kind startte weer hetzelfde bestand).
 const exact = filter.endsWith('.test.ts');
 const bestanden = (await readdir('tests/eenheid')).filter(n => n.endsWith('.test.ts') && (exact ? n === filter : n.includes(filter)));
+// Een filter zonder treffers (tikfout, hernoemd bestand) draaide vroeger 0 suites en eindigde met 0: stil «groen» zonder test.
+if (!bestanden.length) {
+  console.error(`eenheidstests: geen testbestand gevonden voor «${filter}» in tests/eenheid / тестових файлів для «${filter}» у tests/eenheid не знайдено`);
+  process.exit(1);
+}
 // INTEG-001: elk testbestand in een eigen proces. Alle bestanden in één proces lieten globals (window, location, localStorage)
 // en openstaande handles van eerdere tests doorwerken: dat gaf afwijkingen die alleen in de volledige run optraden, en één
 // hangend bestand hield de hele run vast. Een bestand alleen (of met een exacte naam) draait gewoon in het eigen proces.
@@ -19,7 +27,8 @@ if (bestanden.length > 1) {
   let status = 0;
   for (const f of bestanden) {
     const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), f], { stdio: 'inherit', env: process.env });
-    if (r.status) status = r.status;
+    // Een kind dat door een signaal stierf (OOM-killer, SIGKILL, timeout) heeft status null: vroeger telde dat als geslaagd.
+    if (r.status !== 0) status = r.status || 1;
   }
   process.exit(status);
 }

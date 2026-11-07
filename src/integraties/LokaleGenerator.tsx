@@ -69,7 +69,7 @@ export default function LokaleGenerator({ lang, context }: { lang: Lang; context
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
           <label className='il-w-veld'><span>{t('Час очікування, с', 'Wachttijd, s')}</span><input type='number' min={10} max={900} value={inst.timeoutS} onChange={getal('timeoutS')} /></label>
           <label className='il-w-veld'><span>{t('Найбільша сторона, px', 'Grootste zijde, px')}</span><input type='number' min={256} max={2048} step={64} value={inst.maxZijde} onChange={getal('maxZijde')} /></label>
-          <label className='il-w-veld'><span>{t('Кроки за замовчуванням', 'Standaard aantal stappen')}</span><input type='number' min={1} max={150} value={inst.stappen} onChange={getal('stappen')} /></label>
+          <label className='il-w-veld'><span>{t('Кроки типово', 'Standaard aantal stappen')}</span><input type='number' min={1} max={150} value={inst.stappen} onChange={getal('stappen')} /></label>
         </div>
         <label className='il-w-veld' style={{ display: 'flex', alignItems: 'center', gap: 8 }}><input data-hulp='integraties.generator-aan' type='checkbox' checked={inst.aan} onChange={(e) => setInst((x) => ({ ...x, aan: e.target.checked }))} style={{ width: 'auto' }} /><span>{t('Увімкнено: ШІ з цим дозволом може створювати зображення', 'Aan: een AI met dit recht kan afbeeldingen genereren')} <HulpVraag k='integraties.generator-aan' /></span></label>
         <div className='il-w-acties'>

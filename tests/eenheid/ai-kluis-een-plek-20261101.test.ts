@@ -15,7 +15,7 @@
 //         admin.tarasevych.com/contour met 0 JS pageErrors.
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, chownSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import https from 'node:https';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -310,7 +310,20 @@ export async function main(): Promise<number> {
 
   // ==================================================================== E2E OP POSTGRESQL 17.11 (FORCE RLS) + ECHTE CHROME 156 HTTPS
   const werk = mkdtempSync(join(tmpdir(), 'mr-ux-ai-vault-'));
-  const maakMap = (n: string) => { const p = join(werk, n); mkdirSync(p, { recursive: true }); chmodSync(p, 0o777); return p; };
+  // mkdtemp maakt 0700: draait de test als root, dan draait goedkeur-hulp.mjs hieronder als nobody (alsNobody) en kan die de
+  // submappen niet bereiken («inbox … ontbreekt»). Doorgang (x) volstaat; de bestanden zelf blijven van root.
+  // Alleen als root: als gewone gebruiker draait alles als die gebruiker, en dan is 0700 genoeg.
+  if (process.getuid?.() === 0) chmodSync(werk, 0o711);
+  // Submappen alleen voor wie ze echt gebruikt (06.11.2026, ORCH-001, стара помилка): vroeger 0777, en met de doorgang 0711
+  // hierboven kon elke lokale gebruiker als root-run in de goedkeur-inbox en de orch-inbox schrijven. Nu als root: eigendom van
+  // nobody (de gebruiker van goedkeur-hulp.mjs), 0700; root zelf heeft geen bitjes nodig. Als gewone gebruiker: 0700.
+  const ALS_ROOT = process.getuid?.() === 0;
+  const maakMap = (n: string) => {
+    const p = join(werk, n); mkdirSync(p, { recursive: true });
+    if (ALS_ROOT) chownSync(p, 65534, 65534);
+    chmodSync(p, 0o700);
+    return p;
+  };
   const dirs = {
     beleid: maakMap('ai-beleid'),
     inbox: maakMap('goedkeur-inbox'),
@@ -318,6 +331,10 @@ export async function main(): Promise<number> {
     staat: maakMap('goedkeur-staat'),
     orchInbox: maakMap('orch-inbox'),
   };
+  const mapRechten = Object.values(dirs).map((p) => { const st = statSync(p); return { p, modus: st.mode & 0o777, uid: st.uid }; });
+  check('tijdelijke submappen (inboxen, status, staat) niet toegankelijk voor andere lokale gebruikers: 0700, als root van nobody',
+    mapRechten.every((m) => m.modus === 0o700 && (!ALS_ROOT || m.uid === 65534)),
+    mapRechten.map((m) => `${m.p.slice(werk.length + 1)} ${m.modus.toString(8)} ${m.uid}`).join(', '));
   const sleutelsPad = join(werk, 'goedkeur-passkeys.json');
   const distDir = resolve(process.env.DIST_DIR || 'dist');
 

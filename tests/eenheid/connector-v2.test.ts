@@ -46,6 +46,11 @@ export async function main(): Promise<number> {
   check('ontleed: naam van een andere agent wordt herkend en geweigerd (ANDERE_AGENT)', !andere.ok && andere.reden === 'ANDERE_AGENT' && andere.agent === 'grok');
   check('ontleed: eigen naam → optie; onbekend en oud formaat → ONBEKEND', ontleed(toolNaam(o, 'gpt'), 'gpt').ok && !ontleed('mail_read_message', 'gpt').ok
     && (ontleed('mail_read_message', 'gpt') as { reden: string }).reden === 'ONBEKEND');
+  const { KORT_NAAR_V2 } = await import('../../.agents/skills/mijn-ruimte/scripts/mijn-ruimte');
+  const brugNamen = Object.values(KORT_NAAR_V2 as Record<string, Record<string, string>>).flatMap((m) => Object.values(m));
+  const ongeldigeBrugNamen = brugNamen.filter((n) => !ontleed(n, 'antigravity').ok);
+  check('antigravity-brug (mijn-ruimte): elke korte v2-koppeling (site/orch, browser, pc, server) ontleedt geldig voor antigravity',
+    brugNamen.length >= 20 && ongeldigeBrugNamen.length === 0, ongeldigeBrugNamen.join(', '));
   // 21.10.2026: alle opties «у розробці» zijn gebouwd (besluit van de eigenaar). De regel blijft gelden voor een volgende: test haar
   // met een opgebouwde optie in dezelfde vorm (intern = null), zodat «in ontwikkeling werkt nooit» bewezen blijft.
   const dev: V2Optie = V2_OPTIES.find((x) => x.status === 'in-ontwikkeling')

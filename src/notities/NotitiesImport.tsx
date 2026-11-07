@@ -97,8 +97,8 @@ export default function NotitiesImport({ lang, smal, mappen, onSluit, onKlaar }:
               {voorbeeld.fouten.map((f, i) => <li key={`f${i}`} className='is-fout'><strong>{f.bestand}</strong><em><AlertCircle aria-hidden='true' />{foutTekst(lang, f.fout)}</em></li>)}
             </ul>
             <div className='vn-vorm-rij'>
-              <label className='vn-veld'><span>{tr(lang, 'У папку', 'In map')}</span>
-                <select value={mapId} onChange={(e) => setMapId(e.target.value)}><option value=''>{tr(lang, '— без папки —', '— geen map —')}</option>{mappen.map((m) => <option key={m.id} value={m.id}>{m.naam}</option>)}</select></label>
+              <label className='vn-veld'><span>{tr(lang, 'У теку', 'In map')}</span>
+                <select value={mapId} onChange={(e) => setMapId(e.target.value)}><option value=''>{tr(lang, '— без теки —', '— geen map —')}</option>{mappen.map((m) => <option key={m.id} value={m.id}>{m.naam}</option>)}</select></label>
               <label className='vn-veld'><span>{tr(lang, 'Додати тег', 'Etiket erbij')}</span><input value={etiket} maxLength={40} placeholder={tr(lang, 'напр. імпорт-2026', 'bv. import-2026')} onChange={(e) => setEtiket(e.target.value)} /></label>
             </div>
             {voorbeeld.dubbel ? <label className='vn-schakel'><input type='checkbox' checked={ookDubbelen} onChange={(e) => setOokDubbelen(e.target.checked)} />{tr(lang, 'Імпортувати й дублікати', 'Ook de dubbele importeren')}</label> : null}

@@ -176,3 +176,8 @@
 
 /* Live-audit 19.10 (F6): het conceptwidget van de mail (.mail-minimized-viewer, rechtsonder, vast) lag over «Керування» onderaan het paneel → extra ruimte onderaan zolang dat widget er is. */
 .canonical-chrome:has(.mail-minimized-viewer) .ctv { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+
+/* Telefoon: tikvlak 44 px (LAATSTE blok, 05.11.2026). `.ctv-acties .afz-knop{min-height:40px}` en `.ctv-eigen-foto .afz-knop{min-height:32px}`
+   hierboven (0,2,0, op elke breedte) versloegen de mobiele regel van afzenders.css (`.afz-knop`, 0,1,0, ≤700 px): de 8 knoppen met
+   icoon + tekst bleven 40 px (het vangnet van ontwerp/mobiel.css telt ze als icoonknop). Zelfde grens als afzenders.css; pc ongewijzigd. */
+@media (max-width:700px){.ctv-acties .afz-knop,.ctv-eigen-foto .afz-knop{min-height:var(--tik-hoogte)}}

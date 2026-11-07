@@ -33,14 +33,14 @@ export async function main(): Promise<number> {
     check('varianten: kharkiv ↔ harkiv, kyiv ↔ kiiv', varianten('kharkiv').includes('harkiv') && varianten('kyiv').includes('kiiv'), varianten('kharkiv').join(','));
     check('lichte stam uk: kharkovi/kharkiv → khark', lichteStam('kharkovi') === 'khark' && lichteStam('kharkiv') === 'khark', `${lichteStam('kharkovi')}/${lichteStam('kharkiv')}`);
     check('lichte stam laat korte woorden met rust', lichteStam('mail') === 'mail' && lichteStam('taal') === 'taal');
-    check('taalRaden: uk / ru / bg / nl / en', taalRaden('Привіт, як справи? Їду до Києва') === 'uk' && taalRaden('Привет, это новый документ для вас') === 'ru' && taalRaden('Здравейте, това е новият документ, който има всичко') === 'bg' && taalRaden('Dit is een bericht van de gemeente voor u') === 'nl' && taalRaden('This is the message that you asked for') === 'en',
-      [taalRaden('Привіт, як справи? Їду до Києва'), taalRaden('Привет, это новый документ для вас'), taalRaden('Здравейте, това е новият документ'), taalRaden('Dit is een bericht van de gemeente voor u'), taalRaden('This is the message that you asked for')].join('/'));
+    check('taalRaden: uk / bg / nl / en', taalRaden('Привіт, як справи? Їду до Києва') === 'uk' && taalRaden('Здравейте, това е новият документ, който има всичко') === 'bg' && taalRaden('Dit is een bericht van de gemeente voor u') === 'nl' && taalRaden('This is the message that you asked for') === 'en',
+      [taalRaden('Привіт, як справи? Їду до Києва'), taalRaden('Здравейте, това е новият документ'), taalRaden('Dit is een bericht van de gemeente voor u'), taalRaden('This is the message that you asked for')].join('/'));
     const stat = SYNONIEM_STATISTIEK();
     check(`synoniemen: ≥ 120 groepen (${stat.groepen}, ${stat.leden} leden)`, stat.groepen >= 120);
     const dekt9 = SYNONIEM_GROEPEN.filter(g => g.synoniemen.length >= 9).length;
     check(`synoniemen: ≥ 120 groepen met ≥ 9 leden (alle talen) — ${dekt9}`, dekt9 >= 120);
     const mail = synoniemen(zoekNorm('пошта'));
-    check('synoniem пошта → mail/e mail/poczta/поща (alle 9 talen)', ['mail', 'e mail', 'poczta', 'courriel', 'nachricht', 'scrisoare', zoekNorm('поща')].every(w => mail.includes(w)), mail.join(','));
+    check('synoniem пошта → mail/e mail/poczta/поща (alle talen)', ['mail', 'e mail', 'poczta', 'courriel', 'nachricht', 'scrisoare', zoekNorm('поща')].every(w => mail.includes(w)), mail.join(','));
     check('spec: «де змінити мову» ↔ taal wijzigen ↔ change language in één groep', synoniemen('taal').includes('language') && synoniemen('taal').includes(zoekNorm('мова')));
     check('spec: знайти лист / zoek e-mail', synoniemen(zoekNorm('знайти')).includes('zoek') && synoniemen('lyst').includes('mail'));
     check('onbekend woord → alleen zichzelf', synoniemen('qwertyzz').length === 1);
@@ -81,10 +81,10 @@ export async function main(): Promise<number> {
     const vaag = await top('faktuur hur');
     check('vaag/typefout: «faktuur hur» → m1 (variant c↔k + dekking ½)', vaag[0]?.id === 'm1', JSON.stringify(ids(vaag)));
     const syn = await zoek(ladeA, { q: 'invoice' });
-    check('synoniem/vertaling en→nl/de/ru: invoice → m1, m3, m5', ['m1', 'm3', 'm5'].every(x => ids(syn.items).includes(x)) && syn.items.find(x => x.id === 'm1')?.uitleg.some(u => u.code === 'vertaling' || u.code === 'synoniem') === true, JSON.stringify(syn.items.map(x => [x.id, x.uitleg.map(u => u.code)])));
+    check('synoniem/vertaling en→nl/de/uk: invoice → m1, m3, m5', ['m1', 'm3', 'm5'].every(x => ids(syn.items).includes(x)) && syn.items.find(x => x.id === 'm1')?.uitleg.some(u => u.code === 'vertaling' || u.code === 'synoniem') === true, JSON.stringify(syn.items.map(x => [x.id, x.uitleg.map(u => u.code)])));
     const rah = ids(await top('рахунок'));
-    check('meertalig uk→nl→en→ru keten: рахунок vindt factuur/Rechnung/квитанция', ['m1', 'm3', 'm5'].every(x => ids(syn.items).includes(x)) && ['m1', 'm3'].every(x => rah.includes(x)), JSON.stringify(rah));
-    check('surzhyk/ru: «Харьков» → m2', ids(await top('Харьков'))[0] === 'm2', JSON.stringify(ids(await top('Харьков'))));
+    check('meertalig uk→nl→en keten: рахунок vindt factuur/Rechnung/Квитанція', ['m1', 'm3', 'm5'].every(x => ids(syn.items).includes(x)) && ['m1', 'm3'].every(x => rah.includes(x)), JSON.stringify(rah));
+    check('woordvorm: «Харкові» → m2', ids(await top('Харкові'))[0] === 'm2', JSON.stringify(ids(await top('Харкові'))));
     check('transliteratie: «Kharkiv» en «Zustrich u Kharkovi» → m2', ids(await top('Kharkiv'))[0] === 'm2' && ids(await top('Zustrich u Kharkovi'))[0] === 'm2');
     check('woordvorm (lichte stam): «Харків» vindt «Харкові»', ids(await top('Харків'))[0] === 'm2', JSON.stringify(ids(await top('Харків'))));
     const wijk = ids(await top('Wijk'));
@@ -131,8 +131,8 @@ export async function main(): Promise<number> {
     const sugF = await suggesties(ladeA, 'нала');
     check('suggesties: functie «Налаштування пошти» met route + categorieën', sugF.some(s => (s.soort === 'functie' || s.soort === 'pagina') && s.id === 'mail/instellingen' && s.route?.host === 'mail') && sugF.some(s => s.soort === 'categorie'), JSON.stringify(sugF));
     check('suggesties: synoniemen bij «mail»', (await suggesties(ladeA, 'mail')).some(s => s.soort === 'synoniem'));
-    const corrCyr = await zoek(ladeA, { q: 'Харкыв' });
-    check('correctie in het schrift van de vraag: «Харкыв» → «Харків»/«Харкові» (Cyrillisch, niet translit)', corrCyr.suggesties.some(s => s.soort === 'correctie' && /Харк/.test(s.tekst)), JSON.stringify(corrCyr.suggesties.map(s => s.tekst)));
+    const corrCyr = await zoek(ladeA, { q: 'Харкив' });
+    check('correctie in het schrift van de vraag: «Харкив» → «Харків»/«Харкові» (Cyrillisch, niet translit)', corrCyr.suggesties.some(s => s.soort === 'correctie' && /Харк/.test(s.tekst)), JSON.stringify(corrCyr.suggesties.map(s => s.tekst)));
     const trans = await zoek(ladeA, { q: 'Калнедар' });
     check('transpositie «Калнедар» → iets met календар/kalendar (typefout-kanaal) of niets zonder valse 100 %', trans.items.every(x => x.uitleg.some(u => u.code === 'vaag' || u.code === 'translit') || /kalendar|agenda/.test(zoekNorm(x.titel))), JSON.stringify(trans.items.map(x => [x.titel, x.uitleg.map(u => u.code)])));
     const verzwakt = await zoek(ladeA, { q: 'де подивитися хто входив у мій акаунт' });

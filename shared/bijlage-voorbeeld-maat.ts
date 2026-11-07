@@ -1,4 +1,4 @@
-/** Розмір спливаючого перегляду вкладення (блок 3, п. 6.2). S — як було до 26.10. */
+/** Розмір спливного перегляду вкладення (блок 3, п. 6.2). S — як було до 26.10. */
 export const BIJLAGE_MATEN = ['S', 'M', 'L', 'XL', 'scherm'] as const;
 export type BijlageMaat = (typeof BIJLAGE_MATEN)[number];
 

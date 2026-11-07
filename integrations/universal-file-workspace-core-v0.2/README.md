@@ -1,8 +1,10 @@
-# Universal File Workspace · Mijn Ruimte
+> 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./README.uk.md) · [🇳🇱 **Nederlandse versie**](./README.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../../docs/INDEX.md)
+
+# Universal Файл Workspace · Mijn Ruimte
 
 Це **локальний початковий інтеграційний пакет**, а не патч production-репозиторію.
 
-**Вміст:** `src/contracts.ts` (модель), `src/sniff.ts` (magic/ZIP manifest), `src/registry.ts` (adapters/engines/ACL), `src/default-engines.ts` (manifest кандидатів), `test/` (6 Node tests), `docs/` (аудит і план міграції), `demo/index.html` (самостійний адаптивний демо-інтерфейс).
+**Вміст:** `src/contracts.ts` (модель), `src/sniff.ts` (magic/ZIP manifest), `src/registry.ts` (adapters/engines/ACL), `src/default-engines.ts` (manifest кандидатів), `test/` (6 Node-тестів), `docs/` (аудит і план міграції), `demo/index.html` (самостійний адаптивний демо-інтерфейс).
 
 ## Перевірка
 
@@ -10,12 +12,12 @@
 npm test
 ```
 
-Requires Node.js 22+ and TypeScript (`tsc`) available locally. No network dependencies in starter. The demo is static HTML/JS/CSS with local-only file opening; all network source labels are demo.
+Потребує локально встановлених Node.js 22+ і TypeScript (`tsc`). У стартовому пакеті немає мережевих залежностей. Демо — це статичний HTML/JS/CSS лише з локальним відкриттям файлів; усі мітки мережевих джерел є демонстраційними.
 
 ## Не заявлено як виконане
 
-Поточний production source не змінено, не перевірено поточний Git commit, реальні OAuth/Drive/Gmail/GitHub адаптери ще не підключено, серверних конвертацій і криптографічної валідації немає. `proposedEngines` — маніфести майбутніх інтеграцій; їхні actual packages не входять у цей starter. До включення в production потрібна реальна інтеграція, tests, security review.
+Поточний production-код не змінено, поточний Git-коміт не перевірено, реальні адаптери OAuth/Drive/Gmail/GitHub ще не під'єднано, серверних конвертацій і криптографічної валідації немає. `proposedEngines` — маніфести майбутніх інтеграцій; їхні фактичні пакети не входять у цей стартовий набір. До увімкнення в production потрібна реальна інтеграція, тести та перевірка безпеки.
 
 ## Базовий пріоритет
 
-Reuse існуючих viewer functions перш ніж замінювати. Спочатку read-only core & consumer migration, потім повноцінний engine settings, write/convert jobs та документні редактори.
+Повторне використання наявних viewer-функцій перед їх заміною. Спочатку ядро лише для читання та міграція споживачів, потім повноцінні налаштування рушіїв, завдання запису/конвертації та редактори документів.

@@ -348,12 +348,17 @@ export async function main(): Promise<number> {
       `document.readyState === 'complete' && (document.body?.innerText || '').includes('Доступ ШІ') ? document.body.innerText.slice(0, 200) : ''`);
     check('Chrome admin.tarasevych.com/ai («Доступ ШІ» beleidspagina) rendert zonder fouten', Boolean(adminAiTekst));
 
-    // Controleer ook ORCH-001 tabblad «Координація агентів» (TabOrch op /agents#orch) op de samengevoegde code
+    // Controleer ook ORCH-001 tabblad «Координація агентів» (TabOrch op /agents#orch) op de samengevoegde code.
+    // Чинна версія правил береться з orchestratie/beleid.json: раніше тут стояло жорстке 1.3.0, і після кожного
+    // підвищення правил перевірка чекала на текст, якого вже не буває (у Chrome — тайм-аут, без Chrome — пропуск).
+    const regelsVersie = String(JSON.parse(readFileSync(resolve('orchestratie/beleid.json'), 'utf8')).regelsVersie || '');
+    if (!/^\d+\.\d+\.\d+$/.test(regelsVersie)) throw new Error(`orchestratie/beleid.json: regelsVersie ontbreekt / відсутня (${regelsVersie})`);
+    const orchVerwacht = `regelsVersie ${regelsVersie}`;
     await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents#orch' }, s);
-    const orchTekst = await wachtOp<string>('TabOrch #orch met regelsVersie geladen',
-      `(document.querySelector('[data-orch]')?.innerText || '').includes('regelsVersie 1.3.0') ? document.querySelector('[data-orch]').innerText : ''`);
-    check('Chrome tabblad «Координація агентів» (/agents#orch): toont regelsVersie 1.3.0 en agenten op samengevoegde code',
-      orchTekst.includes('Координація агентів') && orchTekst.includes('regelsVersie 1.3.0'), orchTekst.slice(0, 140));
+    const orchTekst = await wachtOp<string>(`TabOrch #orch met ${orchVerwacht} geladen`,
+      `(document.querySelector('[data-orch]')?.innerText || '').includes(${JSON.stringify(orchVerwacht)}) ? document.querySelector('[data-orch]').innerText : ''`);
+    check(`Chrome tabblad «Координація агентів» (/agents#orch): toont ${orchVerwacht} uit beleid.json en agenten op samengevoegde code`,
+      orchTekst.includes('Координація агентів') && orchTekst.includes(orchVerwacht), orchTekst.slice(0, 140));
 
     // ============================================================== 2. Pagina #agent/cursor
     await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents#agent/cursor' }, s);

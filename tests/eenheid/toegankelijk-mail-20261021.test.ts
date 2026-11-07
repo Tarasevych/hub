@@ -187,7 +187,7 @@ export async function main(): Promise<number> {
     hub.includes("role='alertdialog' aria-labelledby={`${vraagId}-titel`} aria-describedby={`${vraagId}-uitleg`}") && hub.includes("rijVan(nu)?.querySelector<HTMLElement>('[data-mail-ontkoppel-annuleer]')?.focus()") && hub.includes("rij.querySelector<HTMLElement>('[data-mail-ontkoppel]')?.focus()") && hub.includes("hub.querySelector<HTMLElement>('[data-mail-melding-focus]')?.focus()") && hub.includes("if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setVraag(null); }"));
   const kv = lees('src/mail/MailKoppelVenster.tsx');
   check('G koppelvenster: wachtwoordveld heet «Пароль застосунку» (aria-labelledby), uitleg = aria-describedby; na koppelen focus op het resultaat (role=status)',
-    kv.includes('ariaLabelledBy={`${veldId}-naam`} ariaDescribedBy={`${veldId}-uitleg`}') && kv.includes("ref={klaarRef} tabIndex={-1} role='status'") && kv.includes('useEffect(() => { if (klaar) klaarRef.current?.focus(); }, [klaar]);') && kv.includes("<p role='alert'"));
+    kv.includes('ariaLabelledBy={`${veldId}-naam`} ariaDescribedBy={`${veldId}-uitleg`}') && kv.includes("ref={klaarRef} tabIndex={-1} role='status'") && kv.includes('useEffect(() => { if (klaar) klaarRef.current?.focus(); }, [klaar]);') && kv.includes("role='alert'>{fout}</p>"));
   try {
     const Merk = (await import('../../src/merk/Merk')).default;
     const plaat = renderToStaticMarkup(createElement(Merk, { merk: 'ukrnet', maat: 36 }));

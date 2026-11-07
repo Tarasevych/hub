@@ -8,7 +8,7 @@ UITLEG-LEESMIJ.txt - T:\mijn-ruimte\hulpmiddelen\ssh\
 
 ЩО ЦЕ
 - mijn-ruimte-webserver - СЕКРЕТНИЙ SSH-ключ (без пароля) для входу на сервер (VM,
-  адреса 203.0.113.10) як користувач "beheer". "beheer" може виконувати команди адміністратора.
+  адреса <VM-IP>) як користувач "beheer". "beheer" може виконувати команди адміністратора.
 - mijn-ruimte-webserver.pub - публічна частина. Не секрет; вона записана на сервері.
 
 НАВІЩО
@@ -43,7 +43,7 @@ NEDERLANDS
 
 WAT IS DIT
 - mijn-ruimte-webserver - GEHEIME SSH-sleutel (zonder wachtwoord) om op de server (VM,
-  adres 203.0.113.10) in te loggen als "beheer". "beheer" mag beheerdersopdrachten uitvoeren.
+  adres <VM-IP>) in te loggen als "beheer". "beheer" mag beheerdersopdrachten uitvoeren.
 - mijn-ruimte-webserver.pub - publieke helft. Niet geheim; staat op de server.
 
 WAAROM

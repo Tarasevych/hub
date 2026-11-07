@@ -402,7 +402,7 @@ export type NotitieBron = {
 export const NOTITIE_BRONNEN: readonly NotitieBron[] = Object.freeze([
   { id: 'bestanden', naam: 'Markdown / TXT / JSON', stand: 'beschikbaar', soort: ['Файли', 'Bestanden'], formaten: ['md', 'markdown', 'txt', 'json'], bron: 'https://daringfireball.net/projects/markdown/',
     uitleg: ['Імпорт файлів .md, .txt і .json (експорт цієї сторінки) з попереднім переглядом і перевіркою дублікатів; експорт у JSON та Markdown.', 'Import van .md, .txt en .json (de export van deze pagina) met voorbeeld en dubbelcontrole; export naar JSON en Markdown.'],
-    wat: ['Працює в цьому випуску. Папки з Obsidian — просто перетягніть файли .md.', 'Werkt in deze release. Mappen uit Obsidian: sleep de .md-bestanden hierheen.'] },
+    wat: ['Працює в цьому випуску. Теки з Obsidian — просто перетягніть файли .md.', 'Werkt in deze release. Mappen uit Obsidian: sleep de .md-bestanden hierheen.'] },
   { id: 'obsidian', naam: 'Obsidian', stand: 'alleen-invoer', soort: ['Локальні файли .md', 'Lokale .md-bestanden'], formaten: ['md'], bron: 'https://obsidian.md',
     uitleg: ['Сховище Obsidian — це тека з файлами .md на вашому ПК. Їх можна імпортувати як файли (frontmatter із тегами розпізнається).', 'Een Obsidian-kluis is een map met .md-bestanden op uw pc. Die kunt u als bestanden importeren (frontmatter met tags wordt herkend).'],
     wat: ['Автоматичної синхронізації теки немає: потрібен агент на ПК і ваш дозвіл на теку.', 'Geen automatische mapsynchronisatie: daarvoor is een agent op de pc en uw toestemming voor de map nodig.'] },
