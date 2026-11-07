@@ -58,7 +58,7 @@ Beheer op de site: `mcp.tarasevych.com` → **Агенти** (Agenten) → «Н�
 | `calendar_list_calendars`, `calendar_list_events` | Altijd | Agenda's en afspraken van Google Calendar |
 | `drive_browse`, `drive_read_file` | Altijd | Mappen/zoeken op naam en lezen van tekstbestanden uit Google Drive |
 
-**Modus per hulpmiddel** (op de pagina «Агенти → Інструменти й дозволи», opgeslagen op de server, `app.connector_tool_settings.modes`): «Завжди» (Altijd — zonder extra verzoek op de site), «Питати» (Vragen — elke aanroep wacht op «Дозволити» op de site; voor site-hulpmiddelen is dit de wachtrij `app.connector_tool_calls`, voor apparaten en browser is dit een verplichte goedkeuring bovenop het agentbeleid), «Вимк.» (Uit — verborgen voor Claude en geweigerd op de server). Er zijn knoppen voor «Усі інструменти» (Alle hulpmiddelen), «Вимкнути групу» (Groep uitschakelen) en «За замовчуванням» (Standaard). Risicovolle hulpmiddelen (`RISKY_TOOLS`: bestanden schrijven, opdrachten uitvoeren, Docker-beheer, klikken/typen/selecteren/toetsen/site-acties, schermafbeelding, diepe diagnose) staan **standaard uit** en zijn niet zichtbaar voor Claude. De gebruiker kan deze zelf op «Питати» of «Завжди» zetten (met een «!»-teken, uitleg van de risico's en bevestiging op de pagina). «Завжди» betekent hier: zonder klik bij elke afzonderlijke aanroep, terwijl de grenzen van de agent (mappen, opdrachtenlijst) en de schakelaars van de extensie van kracht blijven. De bulkactie «Усі інструменти → Завжди/Питати» raakt deze risicovolle hulpmiddelen niet aan.
+**Modus per hulpmiddel** (op de pagina «Агенти → Інструменти й дозволи», opgeslagen op de server, `app.connector_tool_settings.modes`): «Завжди» (Altijd — zonder extra verzoek op de site), «Питати» (Vragen — elke aanroep wacht op «Дозволити» op de site; voor site-hulpmiddelen is dit de wachtrij `app.connector_tool_calls`, voor apparaten en browser is dit een verplichte goedkeuring bovenop het agentbeleid), «Вимк.» (Uit — verborgen voor Claude en geweigerd op de server). Er zijn knoppen voor «Усі інструменти» (Alle hulpmiddelen), «Вимкнути групу» (Groep uitschakelen) en «Типово» (Standaard). Risicovolle hulpmiddelen (`RISKY_TOOLS`: bestanden schrijven, opdrachten uitvoeren, Docker-beheer, klikken/typen/selecteren/toetsen/site-acties, schermafbeelding, diepe diagnose) staan **standaard uit** en zijn niet zichtbaar voor Claude. De gebruiker kan deze zelf op «Питати» of «Завжди» zetten (met een «!»-teken, uitleg van de risico's en bevestiging op de pagina). «Завжди» betekent hier: zonder klik bij elke afzonderlijke aanroep, terwijl de grenzen van de agent (mappen, opdrachtenlijst) en de schakelaars van de extensie van kracht blijven. De bulkactie «Усі інструменти → Завжди/Питати» raakt deze risicovolle hulpmiddelen niet aan.
 
 **Beveiliging van interne aanroepen:** site-hulpmiddelen roepen siteroutes aan in hetzelfde proces via een event dat uitsluitend door `site-aanroep.ts` wordt aangemaakt (gemarkeerd in een `WeakMap`); `ownerRequireSession` geeft de sessie terug van exact de gebruiker uit het OAuth-token van Claude. Een extern HTTP-verzoek kan nooit «gedelegeerd» zijn (wordt gecontroleerd door een test). Alleen routes uit de lijst `TOEGESTANE_ROUTES` zijn toegankelijk. Nieuw hulpmiddel = nieuw item in `SITE_TOOLS` + route in deze lijst.
 
@@ -90,11 +90,11 @@ rechten en grants worden gecontroleerd.
 
 | | Privéruimte | Technische ruimte |
 |---|---|---|
-| Waar te koppelen | mcp.* → **Агенти** (accountruimte) | mcp.* → **Технічні підключення** (technisch profiel; alleen eigenaar) |
+| Waar te koppelen | mcp.* → **Агенти** (accountruimte) | mcp.* → **Технічні під'єднання** (technisch profiel; alleen eigenaar) |
 | Waarheen | alleen connector `/mcp` | serverdeuren `/Grok`, `/claude`, … of connector `/mcp` |
 | Wat de AI ziet | apparaten en browsers van de gebruiker, mail, agenda, Drive, bord, notities, GitHub-token | releases (`get_live_release`, `list_releases`, `read_release_file`), serverstatus (`get_system_health`), voorbereiden van updates `uitrol_voorstel_*` (alleen met grant), serverdeuren, agents op de server |
 | Wat de AI niet ziet | geen enkel site-/serverhulpmiddel; geen enkel apparaat uit de technische ruimte | geen mail, Drive, bord of browser; geen enkel persoonlijk apparaat |
-| Apparaten | `app.agents.ruimte='prive'` (koppelcodes vanaf de pagina Agenten) | `app.agents.ruimte='technisch'` (codes vanaf de pagina Apps → «Підключити цей сервер») |
+| Apparaten | `app.agents.ruimte='prive'` (koppelcodes vanaf de pagina Agenten) | `app.agents.ruimte='technisch'` (codes vanaf de pagina Apps → «Під'єднати цей сервер») |
 | Recht «updates voorbereiden» | wordt nooit verleend (`RUIMTE_PRIVE`) | alleen aan technische tokens/grants; goedkeuring altijd door de eigenaar met passkey |
 | Meldingen | belletje van de accountruimte | belletje van de technische ruimte (`shared/meldingen-ruimte.ts`) |
 
@@ -164,19 +164,19 @@ Symptoom: «Couldn't reach the MCP server», terwijl er in het applicatielogboek
 
 ## AI koppelen: met één klik of handmatig (vanaf 13-10-2026)
 
-Site: `mcp.<domein>` → **Агенти → Токени → «Підключити ШІ»** (privéruimte) of **Технічні підключення → «Підключити ШІ»** (technische ruimte, alleen eigenaar met profiel). Kies de AI (Grok, Claude, ChatGPT, Gemini, Copilot, Cursor, overige),
+Site: `mcp.<domein>` → **Агенти → Токени → «Під'єднати ШІ»** (privéruimte) of **Технічні під'єднання → «Під'єднати ШІ»** (technische ruimte, alleen eigenaar met profiel). Kies de AI (Grok, Claude, ChatGPT, Gemini, Copilot, Cursor, overige),
 waarheen u wilt koppelen (**serverdeuren** `/Grok`, `/claude`, … — alleen servereigenaar; of **connector** `/mcp` — uw apparaten, mail, Drive)
 en de **toegangsduur** voor deze AI: 1 uur (wordt vernieuwd tot 14 dagen, aanbevolen), 8 uur, 1 dag, 7 dagen, 30 dagen, onbeperkt (tot intrekking).
 Lange termijnen (7 dagen en langer) vereisen een nieuwe aanmeldingsbevestiging (step-up). De termijn kan nogmaals worden aangepast in het venster «Дозволити».
 
-**1. «Підключити автоматично (в один клік)» (Automatisch koppelen met één klik)** — OAuth 2.1 + PKCE (S256) + dynamische registratie:
+**1. «Під'єднати автоматично (одним натисканням)» (Automatisch koppelen met één klik)** — OAuth 2.1 + PKCE (S256) + dynamische registratie:
 - plak het adres (`https://mcp.<domein>/Grok` of `/mcp`) in de AI-client; de client opent zelf de site — u bent al aangemeld, klik op **«Дозволити»**;
 - de deuren (`GET /oauth/authorize`) vragen niet langer om een deurtoken: ze sturen door naar het sitevenster `…/verbindingen?consent=mrd_…` (technische ruimte)
   (controle van de eigenaarssessie + nieuwe aanmeldingsbevestiging), waarna de site het besluit via loopback doorgeeft aan de deur;
 - voor clients die zelf geen aanmeldvenster kunnen openen: gebruik de knop **«Отримати токен зараз»** (Nu token ophalen) — de site doorloopt zelf OAuth met PKCE in een pop-upvenster
   en toont het Bearer-token eenmalig (inclusief kant-en-klare `mcp.json`-configuratie en een controleopdracht met `curl`).
 
-**2. «Підключити вручну (прямий токен)» (Handmatig koppelen met direct token)** — zoals voorheen: een `tvh_…`-token (30 dagen) in de header `Authorization: Bearer …` van de clientconfiguratie.
+**2. «Під'єднати вручну (прямий токен)» (Handmatig koppelen met direct token)** — zoals voorheen: een `tvh_…`-token (30 dagen) in de header `Authorization: Bearer …` van de clientconfiguratie.
 Dit werkt nu zowel op `/mcp` als op de deuren (op de deuren uitsluitend met een token van de servereigenaar). Het oude formulier met een deurtoken is behouden:
 `/oauth/authorize?…&methode=token` of via de link «Ввести токен дверей вручну» in het venster «Дозволити».
 
@@ -188,7 +188,7 @@ Dit werkt nu zowel op `/mcp` als op de deuren (op de deuren uitsluitend met een 
 - `/intern/*` — uitsluitend voor de site: alleen loopback, zonder tunnelheaders (`cf-connecting-ip`, `cf-ray`, `x-forwarded-for`) en met een sleutel
   die de deuren bij elke start wegschrijven naar `/srv/mijn-ruimte/mcp-state/intern.sleutel` (0640, gebruiker `mijnruimte`). In de tunnelregel
   komt `/intern` niet voor, zodat deze adressen van buitenaf onbereikbaar zijn;
-- overzicht van toegangen via de deuren (wie heeft toegestaan, duur, laatste activiteit) en intrekken — onder «Технічні підключення» (technisch profiel); acties worden vastgelegd in het logboek
+- overzicht van toegangen via de deuren (wie heeft toegestaan, duur, laatste activiteit) en intrekken — onder «Технічні під'єднання» (technisch profiel); acties worden vastgelegd in het logboek
   (`owner.mcp.deur.approved` / `denied` / `revoked`, met deur, client en termijn);
 - JSON-RPC-batches, een onbekende `Mcp-Session-Id` na een herstart geeft niet langer 404, en CORS voor `/.well-known`, `/oauth/*` en de deuren.
 

@@ -5,12 +5,12 @@
 Basis: hoofdarchief 20261029-193103 (branch `integratie`, commit ba499d9). Migratie: **0180** (alleen een vlag).
 
 ## Nieuw (achter vlag `integraties-catalogus-v2`, standaard UIT)
-- Catalogus op Admin → Інтеграції per **thema**, binnen elk thema groepen uit de **echte stand**: Потребують уваги · Підключені · Можна підключити ·
+- Catalogus op Admin → Інтеграції per **thema**, binnen elk thema groepen uit de **echte stand**: Потребують уваги · Під'єднані · Можна під'єднати ·
   Потребують налаштування · У розробці. Thema’s en groepen in-/uitklapbaar; klaptoestand, weergave (raster/lijst), themavolgorde, thema- en
   wijzefilter per account in deze browser bewaard. «У розробці» standaard ingeklapt.
 - Koppelfouten staan **altijd** bovenaan («Потребують уваги зараз»), los van filters en ingeklapte blokken.
 - Kaart: logo, naam, thema + koppelwijze, wat Mijn Ruimte werkelijk kan, stand, account/aantal (vertaald via code), laatste controle of «stand gelezen; nog
-  geen controle». Hoofdactie: Підключити / Керувати / Відновити / Налаштувати / **План** (in plaats van de uitgeschakelde «Скоро»).
+  geen controle». Hoofdactie: Під'єднати / Керувати / Відновити / Налаштувати / **План** (in plaats van de uitgeschakelde «Скоро»).
   «План» toont: officiële wijze, wat nodig is, wat nog te doen is, beperking van de aanbieder.
 - Favorieten («Обране») bovenaan zonder de echte categorie te wijzigen (de bestaande ster).
 - Eén «?» per blok (hulpregister `integraties.v2-catalogus`). Zoeken op naam, thema, mogelijkheid, aanbieder/protocol.
@@ -20,7 +20,7 @@ Basis: hoofdarchief 20261029-193103 (branch `integratie`, commit ba499d9). Migra
 - **BUG Google-melding**: nieuwe lichte route `POST /api/owner/admin/integraties/google-stand` (admin.read, alleen `googleSuiteOnboardingSnapshot`).
   De catalogus gebruikt die eerst; de zware diagnostiek alleen nog als terugval. De melding toont nu de foutcode. Oorzaak: zie ARCHITECTUUR-UI013.md.
 - `POST /api/owner/admin/integraties/stand` bevat nu ook de **IMAP-koppelingen** van het eigen account (iCloud, Yahoo, Proton, Outlook, overige → IMAP),
-  met de tijd van de laatste geslaagde serveraanmelding en de foutcode. Gevolg ook in de oude weergave: IMAP-kaarten krijgen de chip «Підключено»/«Помилка».
+  met de tijd van de laatste geslaagde serveraanmelding en de foutcode. Gevolg ook in de oude weergave: IMAP-kaarten krijgen de chip «Під'єднано»/«Помилка».
 
 ## Audit en plan
 - `shared/integraties-register.ts`: machineleesbaar register van alle 160 posities (werkend 21, basis 12, geen 127) met bewijsbestanden (test controleert

@@ -98,7 +98,7 @@ Wanneer `shouldShowOtherAccountsToggle === false`, wordt `expanded` geforceerd t
 | Eén huidig account | schakelknop ontbreekt |
 | Huidig + minimaal één ander bekend account | schakelknop zichtbaar |
 | Uitgeklapt (`expanded`) | lijst bevat uitsluitend `otherKnownAccounts` |
-| Twee of meer ingelogde identiteiten | `Вийти з усіх акаунтів` (Uitloggen bij alle accounts) zichtbaar |
+| Twee of meer ingelogde identiteiten | `Вийти з усіх облікових записів` (Uitloggen bij alle accounts) zichtbaar |
 | Alleen reauth-/geschiedenis-identiteiten | verhoogt het aantal ingelogde accounts niet |
 
 ## 7. Voorvertoningsregels (preview rules)

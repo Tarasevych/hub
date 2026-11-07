@@ -82,7 +82,7 @@ De deur doet niets meer wat de app niet beter doet; haar enige reden om te blijv
 # a) kijken of er nog iets van de deur gebruikt wordt
 sudo journalctl -u mijn-ruimte-mcp --since '7 days ago' | grep -c ' /oauth/'
 
-# b) elke deurverbinding intrekken op de site (mcp.* → Технічні підключення → Токени й двері → «Відкликати»),
+# b) elke deurverbinding intrekken op de site (mcp.* → Технічні під'єднання → Токени й двері → «Відкликати»),
 #    of in één keer alles wat de deur ooit uitgaf:
 sudo sh -c 'date +%s%3N > /etc/mijn-ruimte/mcp-intrekken'
 
@@ -102,7 +102,7 @@ optie aanbiedt; ze worden alleen niet meer geactiveerd.
 `/mcp` blijft bestaan en blijft de app. Daar hangen twee dingen aan die geen agent-slug hebben:
 
 * OAuth-koppelingen van vóór connector v2 (`app.mcp_oauth_tokens` met `agent IS NULL`);
-* de agenttokens van de site (`tvh_…`, «Підключити вручну», `app.mcp_console_tokens`).
+* de agenttokens van de site (`tvh_…`, «Під'єднати вручну», `app.mcp_console_tokens`).
 
 Een 308 van `/mcp` naar `/claude` zou die allemaal een 401 geven, want een v2-adres accepteert alleen een token dat aan dat adres
 gebonden is. `/mcp` krijgt daarom dezelfde **levende** rechtenberekening als de nieuwe adressen (een technische koppeling zonder

@@ -36,7 +36,7 @@ Vastgesteld uit de code; de live-aantallen zelf kon ik niet nameten (geen toegan
 - **Kop:** titel + één teller «потребує уваги» + pictogrammen (zoeken, filters, Не турбувати, alles gelezen, regels, inklappen) met tooltip en `aria-label`.
 - **Segment:** «Важливі / Усі / Непрочитані». Opent op «Важливі» als er iets aandacht vraagt.
 - **Lijst:** compacte rij (bronpictogram + ernststip, titel, één metaregel bron · aanbieder · account · toestand · tijd, «×N» bij samengevoegd, «…»-menu). Kleur alleen op pictogram/stip.
-- **Contextmenu:** Позначити прочитаним, Відкрити джерело, Позначити вирішеним, В архів, Зробити тихими події цього типу, Вимкнути повідомлення цього акаунта, Налаштувати джерело. Beschermde meldingen: dempen niet aangeboden.
+- **Contextmenu:** Позначити прочитаним, Відкрити джерело, Позначити вирішеним, В архів, Зробити тихими події цього типу, Вимкнути повідомлення цього облікового запису, Налаштувати джерело. Beschermde meldingen: dempen niet aangeboden.
 - **Zoeken:** pictogram klapt veld uit, filtert live, wissen, Esc sluit.
 - **Filters:** één contextpaneel (bron, account, status, periode, volgorde).
 - **Volledige geschiedenis:** apart scherm (paneel schermvullend), tot 500 items, met «записів X → об’єднано в Y».
