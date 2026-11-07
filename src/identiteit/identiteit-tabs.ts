@@ -1,4 +1,4 @@
-// IDENTITY-002 · один екран для 12 сторінок категорії `identity`.
+// Оформлення сторінки облікового запису (завдання IDENTITY-002): один екран для дванадцяти сторінок категорії «ідентичність».
 // Перелік ідентичний shared/menu-model.ts:23 і public/canonical-service.js:6; порядок — як у меню.
 export type IdentiteitTab =
   | 'personalization' | 'menu' | 'themes' | 'languages' | 'widgets' | 'sharing'
