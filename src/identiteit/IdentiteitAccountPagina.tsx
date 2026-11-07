@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
+import { useVlag } from '../functievlag-lezen';
+import { IdentiteitAtelierPagina } from './IdentiteitAtelierPagina';
 
 export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -21,6 +23,8 @@ const sectieId = (id: string) => `identity-sectie-${id}`;
 
 export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
+  // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
+  const atelier = useVlag('identiteit-account-atelier', false);
 
   // Адреса змінилася (наприклад, натискання в бічному меню або пряме посилання) — показуємо цей розділ.
   useEffect(() => {
@@ -59,6 +63,8 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: 
       doel.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
   };
+
+  if (atelier) return <IdentiteitAtelierPagina lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
 
   return (
     <div className='ia-account'>

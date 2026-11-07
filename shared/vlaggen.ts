@@ -80,6 +80,12 @@ export function vlagFout(v: Partial<Vlag>): string | null {
  */
 export type VlagUitleg = { naam: [string, string]; wat: [string, string]; wanneer: [string, string]; gevolg: [string, string] };
 export const VLAG_UITLEG: Record<string, VlagUitleg> = {
+  'identiteit-account-atelier': {
+    naam: ['Нове оформлення «Керування обліковим записом»', 'Nieuwe vorm van «Accountbeheer»'],
+    wat: ['Оновлене оформлення сторінки облікового запису: дванадцять зрозумілих розділів, змістовні кольорові піктограми, ілюстрації та розгортні налаштування. Справжні дії залишаються незмінними.', 'Vernieuwde accountpagina met twaalf duidelijke onderdelen, betekenisvolle gekleurde pictogrammen, illustraties en uitklapbare instellingen. De echte handelingen blijven hetzelfde.'],
+    wanneer: ['Увімкніть спершу тільки для себе. Потім можна відкрити для вибраних людей, частини користувачів або всіх.', 'Zet eerst alleen voor uzelf aan. Daarna eventueel voor gekozen mensen, een deel van de gebruikers of iedereen.'],
+    gevolg: ['Вимкнення негайно повертає попереднє оформлення без втрати налаштувань. Перемикач не змінює прав доступу й способів входу.', 'Uitschakelen brengt de vorige vorm onmiddellijk terug zonder instellingen te verliezen. De schakelaar verandert geen rechten of aanmeldmethoden.'],
+  },
   'aanmeldmethoden-vnext': {
     naam: ['Нові «Способи входу» (UI-015)', 'Nieuwe aanmeldmethoden (UI-015)'],
     wat: ['Сучасна сторінка способів входу: банер, зрозумілі картки методів з однією дією, деталі в бокових панелях. Усі чинні механізми (Google, passkeys, TOTP, коди відновлення, шифрування, коди доступу, step-up) — ті самі, лише в новому поданні; плюс чесний каталог майбутніх провайдерів.', 'Moderne aanmeldmethoden-pagina: hero, duidelijke methodekaarten met één hoofdactie, details in zijpanelen. Alle bestaande mechanismen (Google, passkeys, TOTP, herstelcodes, versleuteling, toegangscodes, step-up) blijven dezelfde; plus een eerlijke catalogus van toekomstige aanbieders.'],

@@ -1,0 +1,130 @@
+name: IDENTITEIT-003 · безпечний випуск оформлення облікового запису
+
+on:
+  push:
+    branches:
+      - 'feature/identiteit-003-account-atelier-*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identiteit-003-uitgave
+  cancel-in-progress: false
+
+jobs:
+  pakket:
+    name: Перевірка, пакет і звірення опублікованого випуску
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NODE_OPTIONS: --max-old-space-size=6144
+    steps:
+      - name: Отримати вихідні файли та історію
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Підготувати середовище
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Звірити правила й встановлену основу
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak IDENTITEIT-003 --fase overdracht
+          curl --fail --silent --show-error --max-time 30 'https://id.tarasevych.com/api/version' -o "$RUNNER_TEMP/werkend.json"
+          node --input-type=module -e '
+            import {readFileSync,writeFileSync} from "node:fs";
+            const d=JSON.parse(readFileSync(process.argv[1],"utf8"));
+            const versie=String(d.versie||"");const bronCommit=String(d.commit||d.bronCommit||"");
+            if(!/^\d{8}-\d{6}$/.test(versie)||!/^[a-f0-9]{40}$/.test(bronCommit))throw Error("INSTALLATIE_ONBEKEND");
+            writeFileSync("orchestratie/geinstalleerd.json",JSON.stringify({versie,bronCommit,bron:"rechtstreeks gecontroleerde /api/version"},null,2)+"\n");
+            console.log(`Встановлена основа: ${versie} @ ${bronCommit.slice(0,12)}`);
+          ' "$RUNNER_TEMP/werkend.json"
+          BASIS_COMMIT="$(node -p 'require("./orchestratie/geinstalleerd.json").bronCommit')"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD || { echo 'ВІДХИЛЕНО: встановлена основа не є предком випуску'; exit 1; }
+
+      - name: Установити засоби складання
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Перевірити справжні дії й безпечне повернення
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/eenheidstests.mjs identiteit-atelier.test.ts
+          npm run typecheck:server
+          npx tsc --noEmit -p tsconfig.json
+          npm run build
+
+      - name: Підготувати двомовні відомості випуску
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          node --input-type=module -e '
+            import {writeFileSync,readFileSync} from "node:fs";
+            const versie=process.argv[1];const sha=process.env.GITHUB_SHA;
+            const basis=JSON.parse(readFileSync("orchestratie/geinstalleerd.json","utf8"));
+            const naam="Павло Тарасевич (tarasevych.pavlo@gmail.com)";
+            const m={schema:1,versie,aangemaakt:new Date().toISOString(),herkomst:`git: commit ${sha} (basis ${basis.versie} ${basis.bronCommit})`,auteur:naam,zonderAi:false,
+              deelnemers:[{soort:"mens",naam,rollen:["auteur"]},{soort:"ai",naam:"codex",platform:"ChatGPT",tool:"Codex",model:{id:"gpt-6",versie:null,bron:"omgeving"},rollen:["ontwikkeling","controle","testen","verpakken"]}],
+              beschrijving:{
+                uk:{titel:"Нове оформлення керування обліковим записом",samenvatting:"Дванадцять розділів із відповідними змісту піктограмами, ілюстраціями та розгортними налаштуваннями. Оновлення можна вмикати для себе, вибраних людей або всіх і негайно вимикати без втрати даних.",wijzigingen:["Окрема нова оболонка сторінки за перемикачем.","Кольорові піктограми й тематичні ілюстрації дванадцяти розділів.","Розгортні налаштування та блок запланованих можливостей.","Підтримка двох мов, вузьких екранів і тем."],fixes:["Збережено попередню сторінку як запасну.","Відокремлено читання перемикачів від технічних засобів керування."],beperkingen:["Новий вигляд спочатку вимкнено — власник обирає аудиторію.","Неоголошені серверні дії не вмикаються; 153 пункти зразка не є 153 підключеними діями."],instructies:"У технічному профілі відкрийте «Нові можливості сайту», знайдіть «Нове оформлення «Керування обліковим записом»», оберіть спершу «Тільки я». Для негайного повернення оберіть «Вимкнено»."},
+                nl:{titel:"Vernieuwd accountbeheer met veilige terugkeer",samenvatting:"Twaalf onderdelen met betekenisvolle pictogrammen, illustraties en uitklapbare instellingen. Het nieuwe uiterlijk kan eerst voor de eigenaar, daarna voor gekozen mensen of iedereen aan en zonder gegevensverlies uit.",wijzigingen:["Afzonderlijke nieuwe accountvorm achter een schakelaar.","Gekleurde pictogrammen en passende illustraties voor twaalf onderdelen.","Uitklapbare instellingen en een blok met plannen.","Ondersteuning voor twee talen, kleine schermen en thema’s."],fixes:["De bestaande pagina blijft als terugval behouden.","Het lezen van schakelaars staat los van technisch beheer."],beperkingen:["De nieuwe vorm staat aanvankelijk uit; de eigenaar kiest wie haar ziet.","Toekomstige serverhandelingen worden niet aangezet; 153 proefonderdelen zijn niet 153 aangesloten handelingen."],instructies:"Open in het technische profiel «Nieuwe mogelijkheden», zoek «Nieuwe vorm van Accountbeheer» en kies eerst «Alleen ik». Kies «Uit» om meteen terug te keren."}}};
+            writeFileSync("uitgave-manifest.json",JSON.stringify(m,null,2)+"\n");
+          ' "$VERSIE"
+
+      - name: Налаштувати описи та результати випробувань
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module -e '
+            import {writeFileSync} from "node:fs";
+            writeFileSync("uitgave-testen.json",JSON.stringify({geslaagd:13,mislukt:0,falend:[],uitleg:{uk:"Тринадцять окремих перевірок нового вигляду успішні; також пройдено перевірки типів і повне складання.",nl:"Dertien afzonderlijke controles van de nieuwe vorm geslaagd; ook typecontroles en de volledige bouw geslaagd."}},null,2)+"\n");
+          '
+
+      - name: Скласти сумісний архів за правилами
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak IDENTITEIT-003 --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' --agent codex --model-id gpt-6 --model-bron omgeving --platform ChatGPT --tool Codex --versie "$VERSIE" --manifest uitgave-manifest.json --testresultaten uitgave-testen.json --uit uitvoer
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-$VERSIE-codex-overdracht.zip"
+
+      - name: Опублікувати точний архів у GitHub
+        id: publiceren
+        shell: bash
+        run: |
+          set -euo pipefail
+          BESTAND="mijn-ruimte-$VERSIE.tar.gz"
+          test -f "uitvoer/$BESTAND"
+          sha256sum "uitvoer/$BESTAND" | sed 's#  uitvoer/#  #' > "uitvoer/$BESTAND.sha256"
+          gh release create "$VERSIE" "uitvoer/$BESTAND" "uitvoer/$BESTAND.sha256" "uitvoer/mijn-ruimte-$VERSIE-codex-overdracht.zip" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "IDENTITEIT-003 · $VERSIE" --notes 'Нове оформлення облікового запису за вимкненим спочатку перемикачем. Справжнє встановлення потребує підтвердження власника.' --prerelease --latest=false
+
+      - name: Звірити відбиток опублікованого файлу
+        shell: bash
+        run: |
+          set -euo pipefail
+          BESTAND="mijn-ruimte-$VERSIE.tar.gz"
+          for SPROBE in 1 2 3 4 5; do
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+            WERKELIJK="$(node -e 'const r=require(process.argv[1]);const b=(r.assets||[]).find(a=>a.name===process.argv[2]);console.log(b?.digest||"")' "$RUNNER_TEMP/uitgave.json" "$BESTAND")"
+            VERWACHT="sha256:$(sha256sum "uitvoer/$BESTAND" | cut -d ' ' -f 1)"
+            if [ "$WERKELIJK" = "$VERWACHT" ]; then echo "Перевірено: $WERKELIJK"; exit 0; fi
+            sleep 2
+          done
+          echo 'ВІДХИЛЕНО: відбиток випуску не збігається з архівом'
+          exit 1
+
+      - name: Заблокувати невдалий опублікований випуск
+        if: failure() && steps.publiceren.outcome == 'success'
+        shell: bash
+        run: |
+          gh release edit "$VERSIE" --repo "$GITHUB_REPOSITORY" --draft=true --notes 'НЕ ВСТАНОВЛЮВАТИ: перевірка опублікованого архіву не пройдена.'

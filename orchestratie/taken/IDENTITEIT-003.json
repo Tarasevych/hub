@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-003",
+  "agent": "codex",
+  "tak": "feature/identiteit-003-account-atelier-20261107-190805",
+  "basisCommit": "f7965fc747ecec7b28aa870d093ee514977f8793",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "ter_integratie",
+  "gestart": "2026-11-07T19:08:17.507Z",
+  "bijgewerkt": "2026-11-07T19:26:21.367Z",
+  "omschrijving": "Оформлення центру облікового запису з перемикачем і миттєвим поверненням попереднього вигляду",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
