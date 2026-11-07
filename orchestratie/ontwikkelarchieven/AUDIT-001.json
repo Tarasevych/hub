@@ -148,6 +148,12 @@
       "fase": "uitvoering",
       "actor": "antigravity",
       "stap": "Зареєстровано AutoClaw / GLM (autoclaw, GLM-5.3-flashX-Legal) як окремого підтримуваного агента в src/merk/merk-register.ts, каталозі з'єднувача v2 (/autoclaw), каталозі інтеграцій (162 позиції) та правилах оркестрації (beleid.json 1.4.14, B-019, AUTOCLAW.md); реалізовано модуль правничої перевірки, знеособлення персональних даних та реєстру доказів (anonimiseerTekst, bouwBewijsIndex у shared/ai-bronnen.ts), інтерактивний канал 5 на сторінці агента (src/agenten/AgentPagina.tsx), команди JuridischControleer / AutoClawPakket у сценарії навички mijn-ruimte та двомовні конкурсні посібники для Built with AutoClaw — Round 3; усунено хибне спрацьовування NIET_NIEUWER («Цей самий пакет уже встановлено») на кроці 2 у src/uitrol/Upload.tsx після того, як щойно встановлений пакет стає активною версією на сервері; безконфліктно об'єднано з останніми змінами integratie (b581ea7: deployment-identiteit.ts, IDENTITEIT-001/002) та зібрано узгоджений випуск 20261107-170000."
+    },
+    {
+      "tijd": "2026-11-07T18:05:00Z",
+      "fase": "uitvoering",
+      "actor": "antigravity",
+      "stap": "Проведено повний пофайловий аудит усіх 53 гілок сховища Tarasevych/hub від 6 ШІ-агентів (Antigravity, Claude, Codex, AutoClaw, ChatGPT, Cursor), злито фіксацію dca8aa3 (20261107-172451 від AutoClaw), уточнено діагностику розбіжностей status.json та історії запусків у backend/uitrol-bron.ts (розрізнення незавершених/відхилених спроб від фактичного встановлення поза історією) та зібрано єдиний узгоджений випуск 20261107-180500."
     }
   ],
   "keuzes": [

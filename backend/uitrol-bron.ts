@@ -253,10 +253,17 @@ function afwijkingenVan(bronnen: BronStand[], hoofd: BronStand): Afwijking[] {
     if (['vorige', 'nazorg', 'github', 'backups'].includes(b.id)) continue;
     if (b.versie && hoofd.versie && b.versie !== hoofd.versie) {
       const nieuwer = b.versie > hoofd.versie;
+      const nietKlaar = b.staat && b.staat !== 'klaar';
       zeg(b.id, 'versie', b.versie, hoofd.versie,
-        nieuwer ? `${naam(b.id)} каже про новішу версію ${b.versie}, ніж основне джерело (${naam(hoofdNaam)}: ${hoofd.versie}). Ймовірно, встановлення пройшло шляхом, який не залишив запису в історії (старий скрипт, ручне копіювання). Як «працює зараз» показано версію, яку реально запущено; стан і час — з ${naam(hoofdNaam)}.`
+        nieuwer
+          ? (nietKlaar
+              ? `${naam(b.id)} містить запис про новішу версію ${b.versie} зі станом «${b.staat}» (перевірка або спроба встановлення не завершилася успіхом чи ще триває), тоді як основне джерело (${naam(hoofdNaam)}: ${hoofd.versie}) показує останню успішно встановлену версію.`
+              : `${naam(b.id)} каже про новішу версію ${b.versie}, ніж основне джерело (${naam(hoofdNaam)}: ${hoofd.versie}). Ймовірно, встановлення пройшло шляхом, який не залишив запису в історії (старий скрипт, ручне копіювання). Як «працює зараз» показано версію, яку реально запущено; стан і час — з ${naam(hoofdNaam)}.`)
           : `${naam(b.id)} ще показує стару версію ${b.versie}; основне джерело (${naam(hoofdNaam)}) каже ${hoofd.versie}. Це джерело застаріло — його ніхто не оновив після останнього встановлення.`,
-        nieuwer ? `${naam(b.id, 'nl')} noemt een nieuwere versie ${b.versie} dan de hoofdbron (${naam(hoofdNaam, 'nl')}: ${hoofd.versie}). Waarschijnlijk een installatie langs een weg die geen run achterliet (oud script, handmatig kopiëren). Als «draait nu» staat de versie die echt gestart is; staat en tijd komen van ${naam(hoofdNaam, 'nl')}.`
+        nieuwer
+          ? (nietKlaar
+              ? `${naam(b.id, 'nl')} vermeldt een nieuwere versie ${b.versie} met staat «${b.staat}» (controle of installatiepoging is niet voltooid of nog bezig), terwijl de hoofdbron (${naam(hoofdNaam, 'nl')}: ${hoofd.versie}) de laatst geslaagde installatie toont.`
+              : `${naam(b.id, 'nl')} noemt een nieuwere versie ${b.versie} dan de hoofdbron (${naam(hoofdNaam, 'nl')}: ${hoofd.versie}). Waarschijnlijk een installatie langs een weg die geen run achterliet (oud script, handmatig kopiëren). Als «draait nu» staat de versie die echt gestart is; staat en tijd komen van ${naam(hoofdNaam, 'nl')}.`)
           : `${naam(b.id, 'nl')} toont nog de oude versie ${b.versie}; de hoofdbron (${naam(hoofdNaam, 'nl')}) zegt ${hoofd.versie}. Deze bron is verouderd — niemand werkte hem bij na de laatste installatie.`,
         b.id === 'releasemap' || b.id === 'versie' ? 'error' : 'warn');
     }
