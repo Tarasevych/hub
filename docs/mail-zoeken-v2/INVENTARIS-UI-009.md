@@ -6,7 +6,7 @@ Bron: actuele code (geformatteerd gelezen), geen live site. Alles hieronder is u
 | Bestand | Rol |
 |---|---|
 | `src/MailZoekVeld.tsx` | Zoekbalk, live-suggesties (geschiedenis + berichten), knop `.mail-top-search-tune` (filterknop). |
-| `src/MailZoekFilters.tsx` | Paneel «Фільтри пошуку»: snelfilters (Непрочитані/Прочитані/★/📎), pickers Період/Від/Тип вмісту/Папка, bereik, knop «Ще умови»; buiten het paneel de samenvattende chips-rij. |
+| `src/MailZoekFilters.tsx` | Paneel «Фільтри пошуку»: snelfilters (Непрочитані/Прочитані/★/📎), pickers Період/Від/Тип вмісту/Тека, bereik, knop «Ще умови»; buiten het paneel de samenvattende chips-rij. |
 | `src/MailGeavanceerdZoeken.tsx` | Paneel «Ще умови»: 10 kaarten (tekst, mensen, onderwerp, status, periode, map/label, bijlagen, grootte, bereik, opgeslagen) + editors. |
 | `src/MailPeriodeKiezer.tsx`, `src/MailDatumKalender.tsx`, `src/mail-datum-periodes.ts` | Periode-editor (grenzen, snel, van–tot, maand, jaar, kwartaal, seizoen). |
 | `src/MailZoekActiefChips.tsx` | Actieve criteria als chips, elk apart weg, «alles wissen». |
@@ -23,7 +23,7 @@ Bron: actuele code (geformatteerd gelezen), geen live site. Alles hieronder is u
 | Тема | kaart | vrij veld + lijst (max 40, multi) | `subject`, `subjectValues` | lijst = meteen zoeken; veld = concept |
 | Стан листа | kaart | 3 vinkjes: Непрочитані, Прочитані, ★ | `readStates`, `starred` | meteen zoeken |
 | Період | kaart (+ grenzen laden) | grenzen, snel (14 presets), van–tot, maand, jaar, kwartaal, seizoen | `datePreset/dateFrom/dateTo/dateMonth/dateYear` | elke keuze meteen zoeken |
-| Папка / мітка | kaart | zoeken + lijst (systeem + eigen, max 120, multi) | `locations` | meteen zoeken |
+| Тека / мітка | kaart | zoeken + lijst (systeem + eigen, max 120, multi) | `locations` | meteen zoeken |
 | Вкладення | kaart | «є вкладення», bestandsnaam, formaten (multi, tellers) | `hasAttachment`, `filename`, `attachmentTypes` | vinkje/formaat = meteen; naam = concept |
 | Тип вмісту | alleen in filterpaneel | documenten/afbeeldingen/archieven/overig | `attachmentGroup` | meteen zoeken (en paneel sluit) |
 | Розмір | kaart | select vergelijking, getal, eenheid | `sizeMode/sizeValue/sizeUnit` | concept, pas bij «Шукати» |
@@ -44,7 +44,7 @@ Client (`mail-zoek.ts` r. 530/703) en server (`backend/mail-zoek.ts`): alleen al
 4. **Inconsistente toepassing.** Deels meteen, deels pas bij «Шукати» (zie tabel); bij sluiten gaat ingevuld concept (tekst, grootte, uitsluiten) verloren.
 5. **Twee editorsystemen** voor periode/afzender/label/bestandstype (filterpaneel én «Ще умови») met verschillende code en gedrag.
 6. **Geneste scrolls.** `.mail-search-list{max-height:360px;overflow:auto}` binnen `.mail-advanced-body{overflow:auto}`; chips-rij `max-height:76/92px;overflow-y:auto`; jaarlijst horizontaal scrollend (`.mail-date-year-track`).
-7. **Herhaald label** «Системна папка» / «Мітка» per rij; «Знайдено у вкладеннях» en «Реальна тема з пошти» per rij.
+7. **Herhaald label** «Системна тека» / «Мітка» per rij; «Знайдено у вкладеннях» en «Реальна тема з пошти» per rij.
 8. **«Кому» handmatig** niet invoerbaar (alleen uit lijst), terwijl het model `to` heeft.
 9. **Opgeslagen zoekopdracht starten** zoekt in «Ще умови» niet, elders wel.
 10. **Grootte**: geen validatie (negatief/0/leeg wordt stil genegeerd; `sizeBytes = max(0, …)`).
@@ -59,7 +59,7 @@ Client (`mail-zoek.ts` r. 530/703) en server (`backend/mail-zoek.ts`): alleen al
 ## Ontwerp V2 (vlag `mail-zoeken-v2`, standaard UIT)
 Eén paneel (vervangt bij vlag AAN zowel het filterpaneel als «Ще умови»), verankerd onder de zoekbalk:
 - kop (titel, terug, sluiten) · actieve chips (concept) · **één** scrollend werkgebied · voet «Скинути / Зберегти / Шукати» altijd zichtbaar;
-- home: zoekveld, snelfilters (segment Усі/Непрочитані/Прочитані, ★, 📎) en gegroepeerde voorwaarden: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце* (Стан, Папка/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип, Розмір), *Додатково* (Збережені);
+- home: zoekveld, snelfilters (segment Усі/Непрочитані/Прочитані, ★, 📎) en gegroepeerde voorwaarden: *Текст і учасники* (Текст, Люди, Тема), *Стан і місце* (Стан, Тека/мітка, Область), *Час* (Період), *Файли* (Вкладення і тип, Розмір), *Додатково* (Збережені);
 - **alle wijzigingen gaan in een concept**; één zoekopdracht bij «Шукати» (lost punt 3/4 op); concept blijft bewaard bij wisselen van categorie;
 - periode: presets 7/30 dagen, пів року, рік, «будь-коли»; kalender altijd bruikbaar (grenzen beperken alleen als ze bevestigd zijn); maand/jaar/kwartaal/seizoen in uitklapgebied; grensstatus als één regel met ⓘ en vernieuwen;
 - zoekmotor, API's, criteriamodel en CanonicalChrome ongewijzigd.
