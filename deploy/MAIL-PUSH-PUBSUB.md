@@ -2,10 +2,10 @@
 
 Стан на 07.10.2026: код push **є** (`backend/index.ts`: `mailGoogleWatch`, `mailGooglePush`, перевірка підпису JWT, маршрут
 `POST /api/owner/mail/google/pubsub/push`), але на сервері **не налаштовано** три секрети, тому система працює на запасному варіанті
-(історія Gmail + перевірка кожні 15 хвилин, cron `mail-provider-maintenance`). Для акаунта з новим дозволом
+(історія Gmail + перевірка кожні 15 хвилин, cron `mail-provider-maintenance`). Для облікового запису з новим дозволом
 (`google_oauth_grant_v1`) push тепер вмикається автоматично, щойно секрети з'являться (`mailPushConfigured()`); до того нічого не змінюється.
 
-Усе в Google Cloud Console виконує власник (потрібен ваш акаунт Google; пароль чи токени мені не передавайте).
+Усе в Google Cloud Console виконує власник (потрібен ваш обліковий запис Google; пароль чи токени мені не передавайте).
 
 ## 1. Увімкнути API
 У проєкті, де створений OAuth-клієнт `google_suite_web_oauth_client`: **APIs & Services → Library**: увімкніть **Gmail API** і **Cloud Pub/Sub API**.
