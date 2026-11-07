@@ -7,7 +7,7 @@
 - **RLS** — запити йдуть через `db.*`/`gebruiker()` у контексті користувача (`zetGebruiker` після гейта): політики `app.records` (0007/0033) і RLS таблиць застосовуються; **системна** = свідомий `alsSysteem` або системний маршрут (BYPASSRLS, контроль прав у коді).
 - **WHERE** — явний фільтр за власником (`userId`/`ownerUserId`/`recipientUserId`/`user_id = $n`) у самому обробнику.
 - **Step-up** — маршрут вимагає свіжого підтвердження (passkey/Google step-up) для чутливих дій.
-- **Тест 2 користувачі** — тест, що викликає маршрут від імені двох акаунтів і перевіряє відмову для чужого (атакуючий тест). «Тести» — будь-який тест, що згадує маршрут.
+- **Тест 2 користувачі** — тест, що викликає маршрут від імені двох облікових записів і перевіряє відмову для чужого (атакуючий тест). «Тести» — будь-який тест, що згадує маршрут.
 - **Особисті таблиці** — таблиці з груп RLS (0033) чи особистих app-таблиць, яких торкається обробник.
 
 Маршрутів: **682** (POST 658, GET 22, інші 2). З особистими таблицями: **33**, з них без атакуючого тесту (поза admin/системними): **0** (список у §2). Без розпізнаного гейта: **0** (§3 — перевірені вручну).
@@ -257,19 +257,19 @@
 | `POST /api/owner/ai-bevestiging/bevestigen` | ai-bevestiging-routes.ts | сесія (vooraf() модуля) | — | користувач | так | так | — | — | ai-bevestiging-20261021, dev-rechten-beheer-20261021 | ai-bevestiging-20261021, dev-rechten-beheer-20261021 |
 | `POST /api/owner/ai-bevestiging/lijst` | ai-bevestiging-routes.ts | сесія (vooraf() модуля) | — | користувач | — | — | — | — | ai-bevestiging-20261021 | ai-bevestiging-20261021 |
 | `POST /api/owner/ai-bevestiging/weigeren` | ai-bevestiging-routes.ts | сесія (vooraf() модуля) | — | користувач | так | — | — | — | ai-bevestiging-20261021 | ai-bevestiging-20261021 |
-| `POST /api/owner/ai-bord` | mcp-connector-routes.ts | сесія акаунта (accountGate) | — | користувач | — | — | — | — | — | — |
-| `POST /api/owner/ai-bord/modus` | mcp-connector-routes.ts | сесія акаунта (accountGate) | — | користувач | — | — | — | — | — | — |
-| `POST /api/owner/ai-bord/token` | mcp-connector-routes.ts | сесія акаунта (accountGate) | — | користувач | — | так | — | — | — | — |
+| `POST /api/owner/ai-bord` | mcp-connector-routes.ts | сесія облікового запису (accountGate) | — | користувач | — | — | — | — | — | — |
+| `POST /api/owner/ai-bord/modus` | mcp-connector-routes.ts | сесія облікового запису (accountGate) | — | користувач | — | — | — | — | — | — |
+| `POST /api/owner/ai-bord/token` | mcp-connector-routes.ts | сесія облікового запису (accountGate) | — | користувач | — | так | — | — | — | — |
 | `POST /api/owner/ai-rechten/fotos/sessie` | dev-rechten-gebruiker.ts | сесія | так | користувач | — | — | так | — | — | dev-rechten-gebruiker-20261021 |
 | `POST /api/owner/ai-rechten/fotos/stand` | dev-rechten-gebruiker.ts | сесія | так | користувач | — | — | так | — | — | dev-rechten-gebruiker-20261021 |
 | `POST /api/owner/ai-rechten/google-stand` | dev-rechten-gebruiker.ts | сесія користувача (обгортка mens()) | — | користувач | — | — | — | — | — | dev-rechten-gebruiker-20261021 |
 | `POST /api/owner/ai-rechten/google-toegang` | dev-rechten-gebruiker.ts | сесія користувача (обгортка mens()) | — | користувач | — | — | — | — | — | dev-rechten-gebruiker-20261021 |
 | `POST /api/owner/ai-site-schakelaars` | mcp-connector-routes.ts | сесія сайту (siteGate) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/ai-site-schakelaars/zet` | mcp-connector-routes.ts | сесія сайту (siteGate) | — | користувач | — | — | — | — | — | — |
-| `POST /api/owner/ai-toegang/beheer` | mcp-connector-routes.ts | сесія акаунта (accountGate) | — | користувач | — | — | — | — | — | — |
-| `POST /api/owner/ai-toegang/beheer/zet` | mcp-connector-routes.ts | сесія акаунта (accountGate) | — | користувач | — | — | — | — | — | — |
-| `POST /api/owner/ai-toegang/overzicht` | mcp-connector-routes.ts | сесія акаунта (accountGate) | — | користувач | — | — | — | — | — | — |
-| `POST /api/owner/ai-toegang/zet` | mcp-connector-routes.ts | сесія акаунта (accountGate) | — | користувач | — | — | — | — | — | — |
+| `POST /api/owner/ai-toegang/beheer` | mcp-connector-routes.ts | сесія облікового запису (accountGate) | — | користувач | — | — | — | — | — | — |
+| `POST /api/owner/ai-toegang/beheer/zet` | mcp-connector-routes.ts | сесія облікового запису (accountGate) | — | користувач | — | — | — | — | — | — |
+| `POST /api/owner/ai-toegang/overzicht` | mcp-connector-routes.ts | сесія облікового запису (accountGate) | — | користувач | — | — | — | — | — | — |
+| `POST /api/owner/ai-toegang/zet` | mcp-connector-routes.ts | сесія облікового запису (accountGate) | — | користувач | — | — | — | — | — | — |
 | `POST /api/owner/ai/block` | connectors-routes.ts | сесія + право api-platform (ownerGate) | — | користувач | — | так | — | — | — | — |
 | `POST /api/owner/ai/grants/add` | connectors-routes.ts | сесія + право api-platform (ownerGate) | — | користувач | — | так | — | — | — | — |
 | `POST /api/owner/ai/grants/list` | connectors-routes.ts | сесія + право api-platform (ownerGate) | — | користувач | так | — | — | — | ai-toegang-beheer | agenten.e2e, ai-toegang-beheer |
@@ -701,7 +701,7 @@
 
 ## 2. Маршрути з особистими таблицями без атакуючого тесту (статичний аналіз)
 
-Маршрути поза admin-/системними, які торкаються особистих таблиць і для яких жоден тест не викликає їх від імені двох акаунтів. 22.10.2026 таких було 23; після тестів `ruimte-aanvallen-20261022` (§1–§5) — список нижче (ціль: порожній).
+Маршрути поза admin-/системними, які торкаються особистих таблиць і для яких жоден тест не викликає їх від імені двох облікових записів. 22.10.2026 таких було 23; після тестів `ruimte-aanvallen-20261022` (§1–§5) — список нижче (ціль: порожній).
 
 | Маршрут | Гейт | Таблиці | WHERE | RLS-група |
 |---|---|---|---|---|
@@ -715,10 +715,10 @@
 
 ## 4. Як працює ізоляція (узагальнення для власника)
 
-1. **Сесія → контекст користувача.** Кожен гейт після успішної перевірки викликає `zetGebruiker(userId)`; усі подальші `db.*`/`gebruiker()`-запити цього запиту йдуть від ролі `mijnruimte_app` із `SET LOCAL app.user_id` (server/platform/db.ts). Політики RLS (0004/0007/0033) бачать лише `owner_id = app.huidige_gebruiker()` або руімти, де користувач є учасником. Поки група RLS у режимі «аудит», рядки, які RLS відхилив би, рахуються в `app.rls_audit` — це і є сторінка «Звірка».
+1. **Сесія → контекст користувача.** Кожен гейт після успішної перевірки викликає `zetGebruiker(userId)`; усі подальші `db.*`/`gebruiker()`-запити цього запиту йдуть від ролі `mijnruimte_app` із `SET LOCAL app.user_id` (server/platform/db.ts). Політики RLS (0004/0007/0033) бачать лише `owner_id = app.huidige_gebruiker()` або руімти, де користувач є учасником. Поки група RLS у режимі «аудит», рядки, які RLS відхилив би, враховуються в `app.rls_audit` — це і є сторінка «Звірка».
 2. **Явний WHERE у коді.** Незалежно від RLS кожен обробник фільтрує за `userId`/`ownerUserId`/`recipientUserId` (стовпець «WHERE»), і `workspaceAccess()` перевіряє членство в робочому просторі перед читанням блоків.
 3. **Лада з сервера.** Особистий/технічний простір (`ruimte`) обчислюється на сервері з активації технічного профілю у вкладці (`gegevensRuimteVeilig`); тіло запиту може лише звузити її, ніколи не розширити.
-4. **Системні кроки — явні.** `alsSysteem(...)` вживається лише там, де запис законно стосується іншого акаунта (сповіщення власнику, якірна сесія браузера), з коментарем «бевуста системна стап» і атакуючим тестом (`ruimte-aanvallen-20261022`).
+4. **Системні кроки — явні.** `alsSysteem(...)` вживається лише там, де запис законно стосується іншого облікового запису (сповіщення власнику, якірна сесія браузера), з коментарем «бевуста системна стап» і атакуючим тестом (`ruimte-aanvallen-20261022`).
 5. **Адміністративні маршрути** (`/api/owner/admin/*`, `/api/admin/*`, `/api/owner/audit/beheer/*`) — системний контекст із власною перевіркою здатностей (`adminContext(…, "users.manage")` тощо) і step-up; їх покривають тести `audit-toegang`, `gebruiker-audit-2026-10-19`, `impersonatie`.
 
 Повний список маршрутів з атакуючими тестами, доданими 22.10.2026: див. `tests/eenheid/ruimte-aanvallen-20261022.test.ts` (шапка файла).
@@ -727,12 +727,12 @@
 
 | Маршрут · таблиця · дія | Причина | Виправлення | Тест |
 |---|---|---|---|
-| `POST /api/owner/session/bootstrap` · owner_browser_grants_v1 · lezen · 74× | Після «Змінити акаунт у цій вкладці» (B-005) акаунт вкладки ≠ акаунт якоря браузера. Bootstrap перевидає cookie «запам’ятати браузер» ЯКОРЯ, читаючи його grant у контексті акаунта ВКЛАДКИ → RLS-емуляція рахує читання чужого рядка. Витоку немає (рядок обраний лише за `grantId` власної якірної сесії, у відповідь йде лише cookie якоря), але під увімкненим RLS читання б зникло і cookie не перевидавалась. | Свідомий системний крок (`alsSysteem`) з ЯВНОЮ умовою `grant.userId === anker.userId` і коментарем у `backend/index.ts` (bootstrap). Чужий id (навіть підроблений у якірній сесії) → «не знайдено», cookie не видається. | `ruimte-aanvallen-20261022` §1 (4× bootstrap у вкладці іншого акаунта → 0 у `app.rls_audit`; підроблений `grantId` → без cookie) |
-| `POST /api/access/request` · notification_jobs · toevoegen · 2× | Задачі e-mail/telegram «новий запит на доступ» створювалися БЕЗ отримувача (`owner_id` NULL) від імені заявника: під RLS заявник не може вставити рядок, що нікому не належить. | Отримувач = власник (`recipientUserId` → `owner_id`), `sfeer: technisch`, вставка як свідомий системний крок (як `notify()`); без акаунта власника задача не створюється. | `ruimte-aanvallen-20261022` §2 (заявник C → 2 задачі з `owner_id` власника, 0 у звірці; жодної задачі з `owner_id` C) |
+| `POST /api/owner/session/bootstrap` · owner_browser_grants_v1 · lezen · 74× | Після «Змінити обліковий запис у цій вкладці» (B-005) обліковий запис вкладки ≠ обліковий запис якоря браузера. Bootstrap перевидає cookie «запам’ятати браузер» ЯКОРЯ, читаючи його grant у контексті облікового запису ВКЛАДКИ → RLS-емуляція рахує читання чужого рядка. Витоку немає (рядок обраний лише за `grantId` власної якірної сесії, у відповідь йде лише cookie якоря), але під увімкненим RLS читання б зникло і cookie не перевидавалась. | Свідомий системний крок (`alsSysteem`) з ЯВНОЮ умовою `grant.userId === anker.userId` і коментарем у `backend/index.ts` (bootstrap). Чужий id (навіть підроблений у якірній сесії) → «не знайдено», cookie не видається. | `ruimte-aanvallen-20261022` §1 (4× bootstrap у вкладці іншого облікового запису → 0 у `app.rls_audit`; підроблений `grantId` → без cookie) |
+| `POST /api/access/request` · notification_jobs · toevoegen · 2× | Задачі e-mail/telegram «новий запит на доступ» створювалися БЕЗ отримувача (`owner_id` NULL) від імені заявника: під RLS заявник не може вставити рядок, що нікому не належить. | Отримувач = власник (`recipientUserId` → `owner_id`), `sfeer: technisch`, вставка як свідомий системний крок (як `notify()`); без облікового запису власника задача не створюється. | `ruimte-aanvallen-20261022` §2 (заявник C → 2 задачі з `owner_id` власника, 0 у звірці; жодної задачі з `owner_id` C) |
 | `POST /api/workspace/load` · workspace_blocks · toevoegen · 6× | ХИБНЕ спрацювання емуляції (не дірка): власник (що вже мав особистий простір) уперше відкрив hub у ТЕХНІЧНІЙ вкладці → load створив «Мій простір — технічний» + 6 блоків. Кеш робочих просторів запиту (`c.werkruimtes`) був обчислений ДО вставки простору і не знав нового id → 6 «порушень». Справжня політика (`app.mijn_werkruimtes`, live) ці вставки дозволяє. | `server/platform/rls-audit.ts`: після кожного запису в `workspaces`/`workspace_members` запит забуває кеш (синхронно, до першого await) → наступна перевірка читає з бази після коміту. | `ruimte-aanvallen-20261022` §3 (A з особистим простором + технічна активація → технічний простір + 6 блоків, 0 у звірці; на старому коді — 6) |
 
 **Старі лічильники.** Міграція `0108_zvirka_verholpen.sql` прибирає з `app.rls_audit` саме ці три комбінації (лише записи, що вже є на момент міграції; усі інші лічильники лишаються). Без неї сторінка й далі показувала б «Ще є порушення: 74/2/6», а `db-rollen-instellen.sh rls-groep … aan` відмовляв би вмикати групи «verbindingen», «meldingen», «werkruimtes». Якщо після оновлення з’явиться лічильник із часом ДО активації нового випуску — це старий процес у вікні між міграцією й перезапуском; з часом ПІСЛЯ — справжній, його треба дослідити (`sudo deploy/db-rollen-instellen.sh status`).
 
 **Що ще показує звірка і НЕ є помилкою коду.** У режимі «аудит» лічильник рахує й спроби атаки, які код відхилив: наприклад, B викликає `blocks/<id-A>/update` → обробник читає рядок за id (щоб відповісти 403) і RLS-емуляція рахує «lezen workspace_blocks». Під увімкненим RLS той самий запит дасть 404 без читання. Тож після ввімкнення групи такі записи зникають; до того — одиничні «lezen» на маршрутах з `:id` можуть бути слідами відхилених спроб, не витоків (сторінка показує лише лічильник без вмісту).
 
-**Межі цієї таблиці.** Стовпці «Таблиці/WHERE/Пише» відображають лише тіло обробника; доступ до даних у модулях (пошта, хмара, агенда, пошук, агенти) відбувається в їхніх функціях і покривається їхніми тестами (`ruimte-mail-20261020`, `ruimte-cloud-agenda-20261020`, `ruimte-drive-projectie-20261020`, `ruimte-bord-github-20261020`, `ruimte-ai-20261020`, `rls-groepen`, `audit-rls`, `zoek-*`). Маршрути потоку входу (`identity/redirect/finalize`, `identity/transactions/redeem`) працюють на одноразових транзакціях, прив’язаних до вкладки, походження, секрету й cookie браузера; атакуючий тест із двома акаунтами — `ruimte-aanvallen-20261022` §5 (чужа транзакція з іншої вкладки → OWNER_TAB_MISMATCH, з чужою вкладкою без секрету → OWNER_REDEEM_SECRET_MISMATCH, повтор → 409, finalize без/з підробленою cookie → 401; браузер B лишається B).
+**Межі цієї таблиці.** Стовпці «Таблиці/WHERE/Пише» відображають лише тіло обробника; доступ до даних у модулях (пошта, хмара, агенда, пошук, агенти) відбувається в їхніх функціях і покривається їхніми тестами (`ruimte-mail-20261020`, `ruimte-cloud-agenda-20261020`, `ruimte-drive-projectie-20261020`, `ruimte-bord-github-20261020`, `ruimte-ai-20261020`, `rls-groepen`, `audit-rls`, `zoek-*`). Маршрути потоку входу (`identity/redirect/finalize`, `identity/transactions/redeem`) працюють на одноразових транзакціях, прив’язаних до вкладки, походження, секрету й cookie браузера; атакуючий тест із двома обліковими записами — `ruimte-aanvallen-20261022` §5 (чужа транзакція з іншої вкладки → OWNER_TAB_MISMATCH, з чужою вкладкою без секрету → OWNER_REDEEM_SECRET_MISMATCH, повтор → 409, finalize без/з підробленою cookie → 401; браузер B лишається B).
