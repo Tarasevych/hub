@@ -2,7 +2,7 @@
 
 # Схема бази даних Cloud — v1
 
-Усі записи за замовчуванням є приватними та ізольованими в межах власника (`owner-scoped`). Ідентифікатори бази даних генеруються платформою.
+Усі записи типово є приватними та ізольованими в межах власника (`owner-scoped`). Ідентифікатори бази даних генеруються платформою.
 
 ## `cloud_workspaces_v1`
 
@@ -13,7 +13,7 @@
 | `normalizedTitle` | string | NFKC + нижній регістр; унікальність у межах власника |
 | `description` | string | до 500 символів |
 | `template` | enum | `project`, `documentation`, `meeting`, `personal` |
-| `sections` | array | стабільні поверхневі візуальні орієнтири; не папки |
+| `sections` | array | стабільні поверхневі візуальні орієнтири; не теки |
 | `status` | enum | `active`, `archived` |
 | `createdAt`, `updatedAt` | epoch ms | керується сервером |
 | `archivedAt` | epoch ms | `0`, поки активний |

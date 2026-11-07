@@ -104,7 +104,7 @@ band («Подивитися як користувач») met e-mail, reden en d
 met wie, waarom, hoe lang, wat zichtbaar en wat nooit; «Дозволити» vraagt een verse **sterke** bevestiging (passkey/TOTP/herstelcode,
 daarna verbruikt), optioneel «ook acties». Daarna toont het tabblad van de beheerder de site van de gebruiker onder een rode band
 «Ви переглядаєте як … · залишилось mm:ss · Завершити» (gestreept met acties). Gebruiker: rode pil + «Хто зараз має доступ до мого
-акаунта» (`#wie-heeft-toegang`) met «Завершити негайно» en het journaal van de sessie.
+облікового запису» (`#wie-heeft-toegang`) met «Завершити негайно» en het journaal van de sessie.
 **Hoe (geen cookie of token van de gebruiker):** elke same-origin `/api/…`-fetch in dat tabblad gaat via `POST /api/impersonatie/aanroep`
 met de eigen sessie van de beheerder; de server controleert per aanroep de rij (actief, eind_op, dezelfde beheerder, hetzelfde tabblad,
 technisch profiel loopt) en voert de route in-process uit als de gebruiker (`site-dispatch.roepAlsImpersonatie`). Drie hekken «alleen
@@ -139,11 +139,11 @@ raakt de gewijzigde gedelegeerde tak niet — niet tegen een schone kopie nagega
 - **Service worker:** `/assets/tech/` wordt nooit onderschept of gecachet (één regel; `VERSION` niet verhoogd — dat doet A bij de volgende versie).
 - **Frontend:** `src/tech/tech-bundel.tsx` → `lazyTech()` (bij 404: status vernieuwen → nieuwe cookie als de activering hier nog loopt → één keer opnieuw) en `TechBundelGrens` (melding «Технічні модулі не завантажено … оновіть сторінку» i.p.v. witte pagina). Gebruikt voor AdminConsoleView, Terminal, Vlaggen, SSH, Віддалений стіл. `preloadCurrentView` laadt de beheerbundel niet meer vooraf (dat zou nu 404 geven). **Nieuwe beheerpagina's: laden via `lazyTech`** (de eenheidstest controleert dat).
 
-### G2 — «Сервер (для всіх) / Цей акаунт»
+### G2 — «Сервер (для всіх) / Цей обліковий запис»
 - **Zuiver** (`shared/diagnostiek-account.ts`): 7 diensten (Пошта, Календар, Drive, GitHub, ШІ, Пристрої, Мої налаштування), koppeling dienst → servercontroles, beoordeling uit feiten (alleen tellingen/ja-nee), conclusie `server` (iedereen) / `account` (alleen dit account) / `beide`, advies uk/nl per code.
 - **Backend** (`backend/diagnostiek-account.ts`, routes in `backend/admin-diagnostiek.ts`): Google-status per dienst + bij «Перевірити» of Google een toegangstoken uitgeeft (token nooit bewaard/teruggegeven; Google-foutteksten worden nooit een code), postvakken, wachtrij, GitHub gekoppeld (niet welke sleutel), AI-koppelingen, apparaten, accountstatus. Opslag `app.diagnostiek_account_uitslagen` (30 d). `POST /api/owner/admin/diagnostiek/account` (eigenaar of `diagnose.lezen`; eigen account of `gebruikerId`; beide kolommen; audit `diag.account.bekeken|uitgevoerd`). `POST /api/owner/diagnostiek/mijn-diensten` (iedere goedgekeurde gebruiker; ALLEEN eigen account, `gebruikerId` genegeerd, geen serverkolom; 10/10 min; audit `diag.account.zelf`).
 - **Planning:** serverronde elke 15 min (`cron.json` «diagnostiek-server» → `diagnostiekServerCron` → dezelfde `serverRonde` als de knop; `deploy/mijn-ruimte-diagnostiek-server.timer`, in `TIMERS` van `installeer-app.sh`). Account: op verzoek, met geschiedenis.
-- **UI:** Діагностика → tab «Для всіх / цей акаунт» (eigen account) en dezelfde tabel bij «Скарга користувача» (gekozen gebruiker). Налаштування → Акаунт → «Стан моїх служб» (kolom «Мій акаунт» + advies). Op ≤ 560 px worden rijen kaarten (390 px zonder horizontaal scrollen); kleuren uit het thema.
+- **UI:** Діагностика → tab «Для всіх / цей обліковий запис» (eigen account) en dezelfde tabel bij «Скарга користувача» (gekozen gebruiker). Налаштування → Обліковий запис → «Стан моїх служб» (kolom «Мій обліковий запис» + advies). Op ≤ 560 px worden rijen kaarten (390 px zonder horizontaal scrollen); kleuren uit het thema.
 
 ### Tests
 - `tests/eenheid/tech-assets.test.ts` 34/34: indeling, bouwcontrole (goed/slecht/leeg), SW, frontend-aansluiting (alle tech-imports via `lazyTech`), en de ECHTE server tegen PG: zonder sessie 404, verzonnen sleutel 404, sessie zonder tech 404, actieve activering 200 met `private, no-store` + `Vary: Cookie`, alleen hash in DB, geen nieuwe sleutel per status, ander tabblad wist niets, na beëindigen/verlopen 404, cookie gewist.
@@ -190,7 +190,7 @@ Tests: `ssh-ca-beheer` (echte sshd, echte passkey-hulp, ssh-keygen/KRL; 34), `ss
 ## N — Meldingen: gebruiker los van beheer; paneel in de technische band; geluid/pop-up per type (geen migratie)
 
 Verzoek eigenaar: «панель Сповіщення має бути розділена для користувача від адмін сповіщень … лише одна графа … можна обеззвучити,
-вимкнути спливаючі сповіщення для будь-якого типу».
+вимкнути спливні сповіщення для будь-якого типу».
 
 - **Eén classificatie** (`shared/melding-typen.ts` + `shared/melding-soorten.ts`): elke soort (kind) → type (10 persoonlijk, 13 technisch),
   ernst (kritiek/belangrijk/info) en voor technische soorten de vereiste mogelijkheid (`users.manage`, `diagnose.lezen`, `journaal.lezen`,
@@ -220,7 +220,7 @@ echt geteld geluid/pop-up, activeren en terug, zonder profiel; uk/nl, licht/donk
 ## T · Technisch profiel over tabbladen, lijst «⋯», extensie 0.4.2 (18.10.2026)
 
 **1. Profiel valt niet meer weg in een nieuw tabblad** (migratie **0071** `tech_activatie_erven`: `ouder_id`, `herkomst` eigen/geerfd/gedeeld).
-- Open activering («до виходу з акаунта/профілю») = hele browsersessie: elk tabblad van dezelfde ankersessie krijgt bij zijn eerste
+- Open activering («до виходу з облікового запису/профілю») = hele browsersessie: elk tabblad van dezelfde ankersessie krijgt bij zijn eerste
   `/api/owner/tech/status` een eigen kopie (`ervenOpen`, zonder stap-op, logboek `owner.tech.geerfd` «успадковано вкладкою»). Andere
   sessie/browser: nooit. Een tabblad waarvan de eigen activering ná het begin van de open activering eindigde, erft niet stil opnieuw.
 - Op tijd = eigen tabblad. Nieuw tabblad geopend vanuit een technisch tabblad (link in nieuw tabblad, middelklik, `window.open`): eenmalig
@@ -240,8 +240,8 @@ korte uitleg per knop, zoekveld (focus bij openen), ↑/↓/Home/End/Enter, Esc 
 (`open_in_tab`), `ownPage` eiste `!sender.tab` → `set-diag`/`self-test` geweigerd (schakelaar sprong terug, «Тест» brak). Nu: eigen
 id + `chrome-extension://<id>/`-adres (content scripts blijven geweigerd); opties melden mislukken. Site: `mcpIngang(…, extensie)`
 laat `agents#extension` / `?extension=welcome|update` staan; met profiel-uit toont `ExtensieTechAanbod` «Увімкнути технічний профіль
-(і підключити)» → activeervenster (stap-op), zelfde pagina; daarna koppelt/zet de installatiehulp zelf aan (eenmalig, `mr.ext.doorgaan`).
-Zonder technisch profiel: zoals vroeger naar ai.*/verbindingen. Popup: «Увімкнути технічний профіль і підключити». Pakket opnieuw bouwen
+(і під'єднати)» → activeervenster (stap-op), zelfde pagina; daarna koppelt/zet de installatiehulp zelf aan (eenmalig, `mr.ext.doorgaan`).
+Zonder technisch profiel: zoals vroeger naar ai.*/verbindingen. Popup: «Увімкнути технічний профіль і під'єднати». Pakket opnieuw bouwen
 (`scripts/build-extension.mjs`) bij de volgende uitrol.
 
 Tests: nieuw `tech-tabbladen` 31 (echte routes + PG), `extensie-opties` 22 (echte background.js met nep-chrome; oud gedrag nagebootst);
@@ -283,8 +283,8 @@ Zonder profiel/activering/passkey: knop uit + uitleg + actie (`WEIGER_UITLEG` in
 
 **Status altijd actueel zonder herladen.** Extensie duwt bij elke wijziging de publieke status naar eigen pagina's en naar open tabbladen
 (bridge → `window.postMessage`, alleen whitelist-velden, nooit sleutels/tokens); de site combineert dat met `GET /api/owner/agents/extensie-status`
-(elke 5 s zolang zichtbaar) — `src/extensie/extensie-live.ts`. Staten: «Не підключено до сайту», «Очікування Passkey», «Доступ відкрито»,
-«ШІ-агент підключено» (AI-opdracht in de laatste 120 s of lokale agent verbonden). Ook als regel in het «⋯»-menu van de technische band.
+(elke 5 s zolang zichtbaar) — `src/extensie/extensie-live.ts`. Staten: «Не під'єднано до сайту», «Очікування Passkey», «Доступ відкрито»,
+«ШІ-агент під'єднано» (AI-opdracht in de laatste 120 s of lokale agent verbonden). Ook als regel in het «⋯»-menu van de technische band.
 
 **Verzamelaar (alleen ontgrendeld én host ∈ domeinen).** Netwerk via `chrome.webRequest` (methode, pad zonder query, status, ms, type; nooit headers
 of bodies); console/uitzonderingen/LCP/CLS/long tasks via collector.js (passief tot de brug hem aanzet); DOM/prestaties/beveiliging via de nieuwe
@@ -311,7 +311,7 @@ repareerde: accountclaim na het wekken van de service worker).
 **Tests.** extensie-vergrendeling 108, extensie-validatie 11, extensie-verzamelaar 27, extensie-ui 67, extensie-native 56, extensie-ontgrendeling 52,
 extensie-ontgrendeling-crypto 12 (vaste testvector server = extensie), extensie-site 71, browser-extensie 21, browser-keten 41.
 
-## Y · 19.10.2026 — extensie 0.6 met twee profielen, hub «Підключення ШІ», «Доступи», contacten, mobiele mail (migraties 0073, 0074)
+## Y · 19.10.2026 — extensie 0.6 met twee profielen, hub «Під'єднання ШІ», «Доступи», contacten, mobiele mail (migraties 0073, 0074)
 
 **Waarom.** 0.5 maakte de extensie alleen-technisch: zonder tech-profiel verdween «Розширення браузера» van mcp.*/agents#apparaten/extensie.
 Nu: één extensie, twee profielen; de aangemelde sessie op de site is de enige bron van gezag (pakket 20261018-184832 vervalt, nooit geïnstalleerd).
@@ -330,7 +330,7 @@ prive-slot, een technische alleen het technische (nooit kruislings).
 `/api/owner/agents/extensie-beheer` (+ `/beleid`, `/intrekken`, `/verlengen`) voor eigenaar of activering met users.manage; eigenaar onaantastbaar
 voor anderen; nieuw beleid trekt wat erbuiten valt meteen in; melding aan de gebruiker; alles in audit.
 
-**Hub «Підключення ШІ» (mcp.*/agents).** Tabbladen Огляд · Конектори · Підключені ШІ · Розширення браузера · Пристрої · Токени · Доступи ·
+**Hub «Під'єднання ШІ» (mcp.*/agents).** Tabbladen Огляд · Конектори · Під'єднані ШІ · Розширення браузера · Пристрої · Токени · Доступи ·
 Технічне (alleen tech-modus) · Журнал. Oude adressen (#apparaten/extensie, #extension, mcp.*/verbindingen, ai.*/verbindingen) leiden hierheen;
 niets verwijderd. Огляд: matrix «Що через який спосіб» uit echte gegevens. Доступи: «Мої доступи» (alles wat ik gaf, per methode: intrekken,
 verlengen, beperken) en voor beheerders in tech-modus «Усі користувачі» (beleid, intrekken, verlengen).
@@ -357,9 +357,9 @@ tweede account (Google) als Учасник via «Додати інший обл�
 **Kritiek, gerepareerd.** Mail: iframe-hoogtelus (mail-body-passend: offsetHeight i.p.v. scrollHeight, frame niet observeren); bijlagevoorbeeld onder het
 iframe + Esc; bijlagekaarten zonder naam; contacten-melding onder de zijbalk; scan vals «Бракує дозволу Gmail» bij 502 (gmailFoutVan); vals «Підозрілий»
 voor subdomein van hetzelfde organisatiedomein; «Відкрити листи від нього» zonder filter; «Зняти позначку»; NL-codes in historie; thread zonder laatste
-antwoord; Drive-zoeken per woord; cloud-viewer onder zijbalk. Gebruiker: Пошта → Акаунти deed niets (MailAccountsHub zonder onConnect) → Google-OAuth
+antwoord; Drive-zoeken per woord; cloud-viewer onder zijbalk. Gebruiker: Пошта → Облікові записи deed niets (MailAccountsHub zonder onConnect) → Google-OAuth
 start; «Сесія закінчилася» voor Учасник op mcp.* → nieuwe code API_RECHT_VEREIST met uitleg, geen polling, geen «Стоп»; entitlement «Доступ до ШІ-мосту»
-nu in admin/access; welkomstkaart «Що далі» na goedkeuring; pending account ziet alleen het modaal; extensie «прив'язане до іншого акаунта»-kaart;
+nu in admin/access; welkomstkaart «Що далі» na goedkeuring; pending account ziet alleen het modaal; extensie «прив'язане до іншого облікового запису»-kaart;
 accountwissel beëindigt het tech-profiel van het vorige account. Noodstop «Стоп» trekt nu ook alle MCP-connectorverbindingen en tokens in (vroeger
 bleven Claude-tools in beide ruimtes werken). Admin-journaal toonde alleen service='admin' (sessieveld als filter) → filterveld `dienst`.
 
@@ -413,7 +413,7 @@ gewone regels in het «⋯»-menu van de sectiekop geworden; in de zijbalk blijf
 
 **6. github.*/accounts — koppelkaart.** Echte koppelkaart met logo uit het merkregister, status uit de server («niet gekoppeld / @gebruiker / token
 verlopen / door GitHub geweigerd»), rechtenlijst, veld **Server-URL** (`https://api.githubcopilot.com/mcp/x/all`) met kopiëren en https-validatie, en
-«Підключити» dat naar de kluis leidt — de enige weg die de server echt heeft. OAuth, GitHub App en de externe MCP-server staan er eerlijk bij als «nog
+«Під'єднати» dat naar de kluis leidt — de enige weg die de server echt heeft. OAuth, GitHub App en de externe MCP-server staan er eerlijk bij als «nog
 niet gebouwd», zonder knop. Nieuw: `POST /api/owner/github/koppeling` (geeft nooit het token terug).
 
 **7 + 8. Extensie 0.6.1.** Oorzaak van «Chrome не надав дозвіл налагоджувача» gevonden: Chrome accepteert `debugger` niet als optioneel recht — het
@@ -592,7 +592,7 @@ De eigenaar klaagde over drie dingen tegelijk. Elk ervan is gereproduceerd, de o
 met hetzelfde venster. Een eindeloze cirkel. De server had er intussen geen bezwaar tegen: `POST …/consent/info` antwoordde **200** met `soort:'deur'`, `ruimte:'technisch'`.
 
 Oorzaak: `McpConsentModal` berekende de ruimte **uit het pagina-adres** (`McpServiceView`: `isBeheerPagina('mcp', section) ? 'technisch' : 'prive'`), terwijl er geen aparte pagina
-«Technische verbindingen» meer bestaat — die is samengevoegd in de hub «Підключення ШІ» (tabblad `#technisch`). Daardoor beschouwde het venster zichzelf altijd als privé, en verwees de link naar
+«Technische verbindingen» meer bestaat — die is samengevoegd in de hub «Під'єднання ШІ» (tabblad `#technisch`). Daardoor beschouwde het venster zichzelf altijd als privé, en verwees de link naar
 een adres dat terugredirect. Dit was een restant van het oude model: op 20.10 was de connector zelf al overgezet op de live-status (`effectieveRuimte`), maar het venster niet.
 
 Opgelost: de ruimte wordt alleen nog berekend uit het live `techActief()`; in plaats van een link staat er nu de **actie** «Увімкнути технічний профіль» (dezelfde stroom als in de technische balk),
@@ -612,7 +612,7 @@ Tegelijk is een verse regressie uit het werk van 19–20.10 gevonden: in `shared
 accounts, waardoor tabbladen van een ander account kwijtraakten «welk account hier actief is». Nu wordt alleen het account vergeten dat uitlogt. De server zelf deed het al goed:
 `logout-account-browser` raakt maar één account aan en verankert de cookie opnieuw op een ander levend account.
 
-Het vinkje «Зберегти цей акаунт для наступних сесій» was half-echt: de waarde ging bij het inloggen naar de server (en stuurde daadwerkelijk de privécache van de mail aan), maar
+Het vinkje «Зберегти цей обліковий запис для наступних сесій» was half-echt: de waarde ging bij het inloggen naar de server (en stuurde daadwerkelijk de privécache van de mail aan), maar
 **werd nergens opgeslagen** — `useState(true)` gaf telkens weer «aan» terug, bewust uitzetten was onmogelijk, en op de hub ontbrak het vinkje helemaal. Nu leeft de keuze
 op het apparaat, wordt ze ook vanaf de hub meegestuurd, synchroniseert ze met het antwoord van de server en is ze zichtbaar in «Налаштування → Сесії та пристрої».
 
@@ -718,7 +718,7 @@ Bestanden van de twee ruimtes liggen in **verschillende bomen** van de opslag (`
 **persoonlijke** koppeling zou aanmaken en de persoonlijke grant kon overschrijven; nu wordt de lade in de OAuth-state zelf geschreven.
 
 **AI (0085).** Hier waren er **drie** waarheden die niets van elkaar wisten: de kolom `ruimte` op de rijen, het live `effectieveRuimte` en de status van de dienst
-`ai` — die laatste **las niemand**. Oftewel: een eigenaar die «Підключення ШІ → вимкнено» instelde, bleef zitten met een volledige technische connector, een technisch
+`ai` — die laatste **las niemand**. Oftewel: een eigenaar die «Під'єднання ШІ → вимкнено» instelde, bleef zitten met een volledige technische connector, een technisch
 extensieslot en technische apparaten. Nu is de status van de dienst leidend. **Gat gedicht:** `POST /api/owner/externe-mcp/toevoegen` nam
 de ruimte zonder enige controle uit de request-body over — iedereen met een sessie kon een vreemde MCP-server in de technische ruimte registreren.
 
@@ -808,7 +808,7 @@ Oorzaak — `.sessie-dienst-kop` was één flex-rij zonder terugloop: het titelb
 `overflow-wrap:anywhere` de overloop omzette in afbreken **per letter**. De kolombreedte (17rem) was ruim voldoende — de schuldige was de rij-indeling.
 
 Wordt: `.sessie-dienst-kop` is een grid `auto minmax(0,1fr)`, de badges staan op een eigen regel en lopen per heel woord terug;
-`anywhere` is alleen gebleven waar het hoort (IPv6, ID, User-Agent). Het selectievakje «Зберегти цей акаунт» is een gewone siteschakelaar geworden
+`anywhere` is alleen gebleven waar het hoort (IPv6, ID, User-Agent). Het selectievakje «Зберегти цей обліковий запис» is een gewone siteschakelaar geworden
 (`.zijbalk-schakel`, `role="switch"`), en rijknoppen, kaartknoppen en «Відкликати» zijn teruggebracht tot één gewicht (`min-height:2.5rem`,
 `border-radius:12px`, gelijke icoongrootte).
 
@@ -830,7 +830,7 @@ waardoor SSRF per ontwerp onmogelijk is. App-wachtwoorden worden met AES-256-GCM
 
 De logo's waren niet «vergeten». De gedeelde merkcomponent en de grote merktabel lagen in `src/integraties/`, en die map hoort bij
 `TECH_MAPPEN`: daardoor werd de chunk met de tabel naar `dist/assets/tech/` geschreven, en die map levert de server **alleen met een geldige technische cookie** uit.
-Een gewone gebruiker kreeg 403 — en zag **geen enkel** logo op «Акаунти». De buildpoort liet dat ook precies zien:
+Een gewone gebruiker kreeg 403 — en zag **geen enkel** logo op «Облікові записи». De buildpoort liet dat ook precies zien:
 `openbare bundel …MailFunctionalView….js laadt ./tech/Logo-….js statisch`.
 
 Inhoudelijk opgelost, niet met een omweg: `src/integraties/Logo.tsx` → **`src/merk/MerkLogo.tsx`**, `src/integraties/logos.ts` →
@@ -908,11 +908,11 @@ voor de actieve ruimte. Meldingen zijn **geen** aparte dienst geworden in «Sche
 
 ### 4. AI koppelen — op één plek, met één klik waar die echt bestaat
 
-Oorzaak van «verdwenen»: de agentpagina had alleen het adres en het rechtenformulier, zonder knop «Підключити» en zonder stappen voor de specifieke client; de status
+Oorzaak van «verdwenen»: de agentpagina had alleen het adres en het rechtenformulier, zonder knop «Під'єднати» en zonder stappen voor de specifieke client; de status
 telde alleen v2-grants mee, waardoor een koppeling via de deur of het oude `/mcp` als «niet verbonden» werd getoond. Op admin `/ai` was de oorzaak hetzelfde
 (`backend/ai-beleid.ts` las alleen `mcp_oauth_tokens`), en zonder ingesteld beleid toonde de pagina nul agenten.
 
-Nu begint elke pagina `#agent/<slug>` met «Підключити <ШІ>» (`src/agenten/verbind-recepten.ts`, uk+nl):
+Nu begint elke pagina `#agent/<slug>` met «Під'єднати <ШІ>» (`src/agenten/verbind-recepten.ts`, uk+nl):
 **Cursor** en **VS Code/Copilot** — echt één klik (deeplink); **Claude** — «Open Claude → Connectors» + opdracht voor Claude Code;
 **ChatGPT** — Developer mode → Create (met eerlijke vermelding van het vereiste betaalde abonnement); **Gemini** en **Grok** — eerlijk: de consumentenversies accepteren geen eigen MCP's,
 er staat een configuratie voor CLI-clients. De status is waarheidsgetrouw: v2 / oud `/mcp` / deur / geen — met label en knop «Oude intrekken».
@@ -947,7 +947,7 @@ lettergrootte < 12 px 514 → 0.
 | lettergrootte < 12 px | 513 / 59 | 0 |
 | te kleine raakvlakken op telefoon | 1034 / 149 | 23 (allemaal deels achter de scrollrand verborgen; werkelijke grootte ≥44 px) |
 
-Concreet: «Дозволити» 1,74 → 10,45:1; «Підключити» (mail) 2,25 → 8,06; cloud «Звично» 1,44 → 12,56; toestemmingskaarten 1,02 → 12,1.
+Concreet: «Дозволити» 1,74 → 10,45:1; «Під'єднати» (mail) 2,25 → 8,06; cloud «Звично» 1,44 → 12,56; toestemmingskaarten 1,02 → 12,1.
 Mail op 390 px: een rechterkolom van 320 px liet 0 px over voor de hoofdkolom — de begroeting liep **letter voor letter** terug, en de kolom zelf overlapte de tegels zodat er
 **geen enkele kon worden aangetikt**; nu één kolom tot 1100 px. `/agenten`: tabbladrij van 1073 px op een scherm van 307 → scrollbare rij
 met pijlen (`src/ontwerp/TabsRij.tsx`, uit de technische map gehaald omdat `src/uitrol/` alleen met een technische cookie wordt uitgeleverd).
@@ -984,7 +984,7 @@ Daarnaast: een vaste 404 op `/downloads/extension-version.json` — `vite build`
 
 ### 9. Verbindingsassistent en geheimen op de server
 
-admin → «Інтеграції» → **«Майстер підключень»**: voor Google, Microsoft, GitHub OAuth en GitHub App — knop «Відкрити консоль», kant-en-klare
+admin → «Інтеграції» → **«Майстер під'єднань»**: voor Google, Microsoft, GitHub OAuth en GitHub App — knop «Відкрити консоль», kant-en-klare
 waarden om te kopiëren (redirect URI, origins, scopes uit `SERVICE_HOSTS`), veld voor client id/secret (Google en GitHub — direct op de site met
 passkey, zonder herstart; Microsoft — voorlopig alleen met een serveropdracht met verborgen invoer), en een **echte** controle via het token endpoint.
 Klikken in de console van de provider blijft onvermijdelijk — daar zijn inlog en toestemming van de eigenaar vereist.
@@ -1055,7 +1055,7 @@ Nu: een lokale kopie apart per account en ruimte (alleen geadresseerden, onderwe
 300 ms en synchroon bij het verlaten van de pagina; serverconcept met herhaalpogingen; na herladen opent het venster met dezelfde
 tekst. Indicator: «Збережено локально · на сервері о HH:MM».
 
-### 7. Extra Google-account: «Не вдалося розпочати підключення»
+### 7. Extra Google-account: «Не вдалося розпочати під'єднання»
 
 Het venster stuurde altijd de rol «primair» mee en gaf niet door waar het verzoek vandaan kwam. Omdat het primaire Gmail-account van de eigenaar al gekoppeld is,
 antwoordde de server met «al verleend» zonder doorstuuradres — en het venster zag dat als een fout. Een **ander** Google-account kiezen was
@@ -1063,11 +1063,11 @@ in principe onmogelijk. Nu komt de rol uit de werkelijke status, toont Google de
 
 ### 8. Accounts ontkoppelen
 
-Elk gekoppeld account heeft een status, «Перепідключити», «Відключити» (met de keuze «lokale gegevens behouden / verwijderen»; voor het primaire account
+Elk gekoppeld account heeft een status, «Перепід'єднати», «Вимкнути» (met de keuze «lokale gegevens behouden / verwijderen»; voor het primaire account
 een directe waarschuwing dat het inloggen op de site niet wordt geraakt), en elke groep heeft «Додати ще один». Nieuwe ontkoppelroute voor Google; postvakken
 met ingetrokken toegang **verdwenen eerder stilzwijgend** uit de lijst — ze zijn nu zichtbaar en kunnen worden ontkoppeld.
 
-### 9. Aparte sectie «Додаткові акаунти Microsoft» — verwijderd
+### 9. Aparte sectie «Додаткові облікові записи Microsoft» — verwijderd
 
 De tegel Outlook en «Додати ще один Outlook» doen via het venster precies hetzelfde.
 
@@ -1156,7 +1156,7 @@ Nieuwe hulpmiddelen worden niet door oude grants geërfd — elk ervan moet expl
 ### Wat de eigenaar moet weten
 
 1. **Google: klik op «Toegang verlenen»** voor het verzenden van mail, schrijven naar Drive en de Photos Picker (oude grants hebben deze scopes niet), en zet voor foto's uit Google Contacten de People API aan in uw eigen Google Cloud-project.
-2. **iCloud:** app-wachtwoord van appleid.apple.com → agenda → «Підключити iCloud».
+2. **iCloud:** app-wachtwoord van appleid.apple.com → agenda → «Під'єднати iCloud».
 3. **Het AI-beleid moet opnieuw worden ondertekend** zodat de nieuwe mogelijkheden (`mail.send`, `drive.write`, `drive.share`, `photos.read`, `media.*`, `payments.read`) actief worden.
 4. **Stripe:** beperkte sleutel met leesrechten in de verbindingsassistent. **Afbeeldingsgenerator:** start uw eigen lokale dienst en vul het adres in het beheer in.
 5. **Eigen domein voor een app:** `sudo /usr/local/sbin/mijn-ruimte-installeer app-domein <host>` en een CNAME naar de tunnel.

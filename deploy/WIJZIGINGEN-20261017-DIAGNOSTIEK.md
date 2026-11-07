@@ -5,7 +5,7 @@
 Admin → «Діагностика» is een pagina met controles per categorie (src/diagnostiek/, backend/admin-diagnostiek.ts, shared/admin-diagnostiek.ts; migratie 0056).
 
 ## Wat er nu is
-- 11 categorieën, 42 alleen-lezen controles: Сервіси (9 subdomeinen), Сторінки (6 adminpagina's, interfacebestand, API), Підключення (Google, GitHub, OAuth, MCP-deur), **Пошта** (Gmail-API, wachtrij), **Хмара й Drive** (opslag, Drive-API), **ШІ-агенти й MCP** (OAuth-verbindingen, toestemmingen «Хто готує оновлення» — vindt «weesgrants»), **Пристрої** (lokale agenten, hun opdrachten), Дані, Сервер, Мережа й сертифікати, Фонові завдання (met link naar «Оновлення»).
+- 11 categorieën, 42 alleen-lezen controles: Сервіси (9 subdomeinen), Сторінки (6 adminpagina's, interfacebestand, API), Під'єднання (Google, GitHub, OAuth, MCP-deur), **Пошта** (Gmail-API, wachtrij), **Хмара й Drive** (opslag, Drive-API), **ШІ-агенти й MCP** (OAuth-verbindingen, toestemmingen «Хто готує оновлення» — vindt «weesgrants»), **Пристрої** (lokale agenten, hun opdrachten), Дані, Сервер, Мережа й сертифікати, Фонові завдання (met link naar «Оновлення»).
 - Per controle: «Перевірити» (één, categorie, alles), status, reactietijd, wat is gecontroleerd, waarom het nodig is, oorzaak van de fout, stappen om het op te lossen, geschiedenis.
 - «Потребує уваги» bovenaan: storingen → waarschuwingen → «recent gefaald, nu weer in orde»; nooit uitgevoerd staat er niet in (geen verzonnen groen).
 - **Storingsgeschiedenis + trend**: 14 dagen balkjes, weektotalen, «faalde het vaakst», sinds wanneer iets faalt, laatste succes. Bewaartermijn 30 dagen.

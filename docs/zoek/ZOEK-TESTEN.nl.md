@@ -21,8 +21,8 @@ GitHub en OCR-engines zijn gemockt (`tests/eenheid/hulp/nep-*.ts`).
 
 Vraagformaat: `{ q, taal, soort, verwacht: [{bron, id} | {bron, titelRegex}], nietVerwacht?: [...], top, opmerking }`.
 `bron:'ui'` = elk van `ui/pagina/instelling/hulp`. Categorieën (`soort`): `exact` 8, `typefout` 7, `synoniem` 6, `meertalig` 15 (uk↔nl↔en↔ru↔de↔fr↔pl↔ro↔bg),
-`translit` 4, `surzhyk` 12 («poshta», «настройки почты», «де поміняти мову», «taal wijzigen», «змінити пароль», «passkey», «вийти з усіх пристроїв»,
-«підключити claude», «темна тема», «згорнуті вікна»), `prefix` 5, `doel` 8 (beschrijving van het doel in plaats van de naam), `bijlage` 4 (woorden alleen binnenin
+`translit` 4, `surzhyk` 12 («poshta», «настройки почти», «де поміняти мову», «taal wijzigen», «змінити пароль», «passkey», «вийти з усіх пристроїв»,
+«під'єднати claude», «темна тема», «згорнуті вікна»), `prefix` 5, `doel` 8 (beschrijving van het doel in plaats van de naam), `bijlage` 4 (woorden alleen binnenin
 een bijlage), `ocr` 2, `inhoud` 7, `onbereikbaar` 3 (vreemd/technisch document mag niet verschijnen), `geheim` 1.
 
 Metrieken: `P@k = |relevant ∩ top-k| / min(k, |relevant|)` (bij één relevant item — hit@k), `MRR = mean(1/rang van eerste relevante treffer)`,

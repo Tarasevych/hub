@@ -2,12 +2,12 @@
 
 # Hub Agent (Конектор локального пристрою) — 0.8.0
 
-Програма, яка підключає ПК або віртуальну машину користувача до сайту. Агент сам встановлює вихідне з’єднання (WSS через
+Програма, яка під'єднує ПК або віртуальну машину користувача до сайту. Агент сам встановлює вихідне з’єднання (WSS через
 Cloudflare Tunnel); відкривати порти чи налаштовувати роутер не потрібно.
 
 ## Використання
 
-1. `mcp.tarasevych.com` → Агенти → «Підключити ПК / віртуальну машину»: показує код (діє 10 хвилин, одноразовий).
+1. `mcp.tarasevych.com` → Агенти → «Під'єднати ПК / віртуальну машину»: показує код (діє 10 хвилин, одноразовий).
 2. На пристрої (Node.js 22 або новіший, поруч `agent.mjs`):
 
    ```
@@ -24,7 +24,7 @@ Cloudflare Tunnel); відкривати порти чи налаштовува�
 ## Додатки (Apps, 0.5+, «Додатки», BYOS)
 
 Необов’язково: агент може збирати й запускати вебдодатки на цьому пристрої для ШІ, якому власник дав на це дозвіл
-(інструменти MCP `app_*`, за замовчуванням вимкнені). Усе залишається на власному обладнанні; зовнішнього хостингу немає.
+(інструменти MCP `app_*`, типово вимкнені). Усе залишається на власному обладнанні; зовнішнього хостингу немає.
 
 ```
 node agent.mjs apps-config --apps-root ./apps --runtime podman [--domain "{app}.apps.example.com"] [--caddy-admin unix:/run/caddy/admin.sock] [--caddy-server srv0] [--memory 512m]
@@ -46,14 +46,14 @@ node agent.mjs apps-config --disable
 
 ## Цей сервер як пристрій (0.5.1+)
 
-На сайті: `mcp.*` → «Додатки» або «Агенти → Пристрої → Цей сервер» створює коди підключення та ОДНУ команду, напр.:
+На сайті: `mcp.*` → «Додатки» або «Агенти → Пристрої → Цей сервер» створює коди під'єднання та ОДНУ команду, напр.:
 
 ```
 sudo /usr/local/sbin/mijn-ruimte-installeer beheer-koppelen <CODE> --gebruiker beheer --root '/home/beheer' --readonly-root /srv/mijn-ruimte/current --allow git
 ```
 
 Тоді агент працює як користувач `beheer` (systemd `mijn-ruimte-agent-beheer.service`) з `NoNewPrivileges=yes` (без `sudo`, у тому числі через
-`node`/`python`), `ProtectSystem=strict` і правом запису лише у вибрані теки. Перше підключення свідомо виконується в
+`node`/`python`), `ProtectSystem=strict` і правом запису лише у вибрані теки. Перше під'єднання свідомо виконується в
 консолі: сайт сам собі не дає доступу до власного хоста. Після цього власник керує всім на сайті. Під час кожного
 випуску (`installeren`) інсталятор оновлює агента на сервері й перезапускає його (`agenten_bijwerken`).
 
@@ -84,7 +84,7 @@ node agent.mjs rechten set exec on
 
 Оболонка НІКОЛИ не запускається на самому пристрої (оболонки залишаються забороненими в allow-списку), а лише в одноразовому контейнері:
 безрутовий `podman` (або `docker`), `--network none`, `--cap-drop ALL`, `no-new-privileges`, `--read-only`, ліміти (512 МБ, 128 процесів),
-одна дозволена коренева тека на `/werk` (за замовчуванням лише читання), секретні місця всередині цієї теки перекриті (`tmpfs` або `/dev/null`).
+одна дозволена коренева тека на `/werk` (типово лише читання), секретні місця всередині цієї теки перекриті (`tmpfs` або `/dev/null`).
 Вивід записується на сайті (asciicast), ввід — ні. Відкриття лише з технічного профілю з правом на термінал, із зазначенням причини
 та свіжим підтвердженням входу, і лише на ВЛАСНИХ пристроях; ШІ відкрити термінал не може.
 
@@ -116,7 +116,7 @@ node agent.mjs terminal-config off
 node agent.mjs terminal-config on --opdrachten [--geen-container]        # вимагає allow-список (pair … --allow git,systemctl,…)
 node agent.mjs terminal-config on --powershell [--geen-container]        # Windows: рядок передається як текст -Command у powershell.exe
 node agent.mjs terminal-config on --opdrachten --powershell              # обидва режими
-node agent.mjs pair … --code -                                           # код підключення зі stdin (інсталятор: ніколи не світиться в таблиці процесів)
+node agent.mjs pair … --code -                                           # код під'єднання зі stdin (інсталятор: ніколи не світиться в таблиці процесів)
 ```
 
 - **PowerShell** — єдина можлива «оболонка», і лише як фіксована програма: `powershell.exe -NoProfile -NonInteractive -Command <текст>`
@@ -125,18 +125,18 @@ node agent.mjs pair … --code -                                           # к�
   проходить через той самий `exec` і завжди вимагає схвалення — сервер примусово вимагає цього в `submitCommand`, навіть за наявності дозволу «завжди»). Без `--powershell` команди `powershell`/`pwsh` відхиляються, як і всі інші оболонки.
   Покрокова інструкція для Windows: `deploy/agent/WINDOWS-POWERSHELL.md`.
 - **Сервер як пристрій без ручного введення коду**: `sudo mijn-ruimte-installeer terminal-inrichten` (також тихо наприкінці
-  `installeren`, лише вперше). Інсталятор від імені сервісного користувача запитує код підключення для власника
+  `installeren`, лише вперше). Інсталятор від імені сервісного користувача запитує код під'єднання для власника
   (`dist-server/apparaat-koppelcode.mjs`, простір «technisch»), передає його через `stdin` у `pair --code -` від імені `beheer`, вмикає
   `terminal-config on --opdrachten --geen-container` і запускає `mijn-ruimte-apparaat.service` (`User=beheer`, `NoNewPrivileges`,
   `ProtectSystem=strict`; шаблон `deploy/mijn-ruimte-apparaat.service`). Стандартні roots: `/home/beheer` (запис), `/srv/mijn-ruimte`
   та `/var/log` (лише читання); стандартний allow-список: `STANDAARD_ALLOW_SERVER` у `shared/terminal-opdrachten.ts`. Це замінює
   `beheer-koppelen` для того самого користувача (старий юніт вимикається).
-- Можливості (`capabilities`) тепер також повідомляють `gebruiker` і `host` (рядок стану «підключено як beheer@host») та `terminal.{container,opdrachten,powershell}`.
+- Можливості (`capabilities`) тепер також повідомляють `gebruiker` і `host` (рядок стану «під'єднано як beheer@host») та `terminal.{container,opdrachten,powershell}`.
 
 ## Безпека
 
 - Токен агента: у базі даних зберігається лише sha256-хеш; сам токен лежить у `~/.hub-agent/config.json` (режим `0600`).
-- Код підключення: хешований, одноразовий, діє 10 хвилин, максимум 5 кодів за 10 хвилин на користувача.
+- Код під'єднання: хешований, одноразовий, діє 10 хвилин, максимум 5 кодів за 10 хвилин на користувача.
 - Агент сам перевіряє теки (`realpath`, без виходу через симлінки) та команди (без оболонки; програма + аргументи).
 - Корінь диска як root (`T:\`, `/`) працює для всіх підтек (0.3.1; раніше будь-яка підтека видавала «path outside allowed roots»).
 - Секретні місця ніколи не доступні, навіть усередині дозволеного root (0.3.1): теки `geheim`, `geheimen`, `secrets`, `.ssh`,

@@ -131,7 +131,7 @@ node agent.mjs pair … --code -                                           # kop
   ProtectSystem=strict; sjabloon `deploy/mijn-ruimte-apparaat.service`). Standaard roots: `/home/beheer` (schrijven), `/srv/mijn-ruimte`
   en `/var/log` (alleen lezen); standaard allow-lijst: `STANDAARD_ALLOW_SERVER` in `shared/terminal-opdrachten.ts`. Dit vervangt
   `beheer-koppelen` voor dezelfde gebruiker (die unit wordt uitgezet).
-- Capabilities melden nu ook `gebruiker` en `host` (statusregel «підключено як beheer@host») en `terminal.{container,opdrachten,powershell}`.
+- Capabilities melden nu ook `gebruiker` en `host` (statusregel «під'єднано як beheer@host») en `terminal.{container,opdrachten,powershell}`.
 
 ## Veiligheid
 
