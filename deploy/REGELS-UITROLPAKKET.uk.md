@@ -12,11 +12,11 @@
 
 | Файл | Вміст | Навіщо | Без нього |
 |---|---|---|---|
-| `UITROL-VERSIE` | `РРРРММДД-ГГХХСС`, дорівнює версії в назві й **новіша** за встановлену | захист від відкату старим пакетом | `GEEN_VERSIE`, `VERSIE_VERSCHILT`, `NIET_NIEUWER` |
+| `UITROL-VERSIE` | `РРРРММДД-ГГХХСС`, дорівнює версії в назві й **новіша** за встановлену | захист від повернення стану старим пакетом | `GEEN_VERSIE`, `VERSIE_VERSCHILT`, `NIET_NIEUWER` |
 | `AUTEUR` | хто автор (≥ 3 символи), напр. `Eigenaar Test` | відповідальність | `GEEN_AUTEUR`, `AUTEUR_ONGELDIG` |
 | `AGENT` | через якого агента: `claude`, `cursor`, `gpt`… (малі літери) | видно, хто готував | `GEEN_AGENT`, `AGENT_ONGELDIG` |
 | `SAMENVATTING` | що змінено й навіщо, що було/з'явилося/зникло (≥ 20 символів) | власник бачить, що схвалює | `GEEN_SAMENVATTING`, `SAMENVATTING_TE_KORT` |
-| `BRON-COMMIT` | **повний** git-коміт (40 hex) **або** `zonder-git:<причина>` | видно, який код працює; збірку можна відтворити | `GEEN_BRON_COMMIT` |
+| `BRON-COMMIT` | **повний** git-коміт (40 hex) **або** `zonder-git:<причина>` | видно, який код працює; складання можна відтворити | `GEEN_BRON_COMMIT` |
 | `ONTWIKKELARCHIEF.json` | з `20261103-211555`: SHA-256 документа історії у GitHub commit + відповідна гілка + посилання на GitHub Release із точною `.tar.gz` | повне, перевірюване походження змін | `GEEN_ONTWIKKELARCHIEF`, `ONTWIKKELARCHIEF_ONGELDIG`, `ONTWIKKELARCHIEF_ONBEREIKBAAR`, `ONTWIKKELARCHIEF_PAKKET_SHA_VERSCHILT` |
 | `deploy/installeer-app.sh` | інсталятор з цього ж коду | встановлення | `GEEN_INSTALLER` |
 
@@ -37,7 +37,7 @@ AUTEUR="Eigenaar Test" AGENT=claude SAMENVATTING="Що змінено і нав�
 AUTEUR=… AGENT=… SAMENVATTING=… deploy/uitrol/maak-uitrolpakket.sh ~/.ssh/uitrol-sleutel /tmp/uit   # підписаний ключем
 
 # 2) поза git — лише з явною причиною
-AUTEUR=… AGENT=claude SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh --zonder-git "збірка в пісочниці агента без історії git" /tmp/uit
+AUTEUR=… AGENT=claude SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh --zonder-git "складання в пісочниці агента без історії git" /tmp/uit
 ```
 
 Windows: `powershell -File deploy\uitrol\maak-uitrolpakket.ps1 [-ZonderGit "причина"]`.
@@ -97,7 +97,7 @@ Root-скрипт маніфест (ще) не перевіряє; отже, в�
 
 Сайт показує, які саме файли падали, і чи падали вони на базовій версії («ook op basis») чи нові («NIEUW»). Без `falend` — «деталі недоступні в цьому пакеті».
 
-Збірка: `MANIFEST=pad/UITROL-MANIFEST.json TESTRESULTATEN_BESTAND=pad/testen.json AUTEUR=… AGENT=… SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh /tmp/uit`
+Складання: `MANIFEST=pad/UITROL-MANIFEST.json TESTRESULTATEN_BESTAND=pad/testen.json AUTEUR=… AGENT=… SAMENVATTING=… deploy/uitrol/maak-voorstelpakket.sh /tmp/uit`
 
 ## 6. UITROL-BASIS і пакет передачі (ORCH-001, з 31.10.2026)
 
@@ -112,7 +112,7 @@ Root-інсталятор (`deploy/uitrol/mijn-ruimte-uitrol.sh`) після п�
 | Код | Коли |
 |---|---|
 | `BASIS_ONGELDIG` | `UITROL-BASIS` є, але без коректних `versie`/`commit` |
-| `BASIS_VEROUDERD` | `versie` у `UITROL-BASIS` старіша за `$WERK_ROOT/laatste-versie` — хтось установив між збіркою й цим пакетом; rebase і зібрати знову |
+| `BASIS_VEROUDERD` | `versie` у `UITROL-BASIS` старіша за `$WERK_ROOT/laatste-versie` — хтось установив між складанням й цим пакетом; rebase і зібрати знову |
 | `BASIS_COMMIT_VERSCHILT` | `commit` ≠ `$WERK_ROOT/laatste-commit` (root пише його після кожної вдалої встановлення з 40-hex `BRON-COMMIT`) |
 | `GEEN_BASIS` | версія ≥ `20261201-000000` без `UITROL-BASIS` |
 | `REGELS_NIET_VERGRENDELD` | у пакеті є `orchestratie/regels.lock.json`, але відбиток правил (`AGENTS.md`, `beleid.json`, `BESLUITEN.md`; LF, без кінцевих пробілів) або `regelsVersie` не збігається |
@@ -131,7 +131,7 @@ Root-інсталятор (`deploy/uitrol/mijn-ruimte-uitrol.sh`) після п�
 
 ## 7. TRACE-001 — обов'язковий архів процесу в GitHub (з 20261103-211555)
 
-**Кожний новий пакет мусить містити `ONTWIKKELARCHIEF.json`.** Цей файл створює штатна команда `node scripts/orch.mjs pakket` із **вже закоміченого** документа `orchestratie/ontwikkelarchieven/<TASK-ID>.json`. Збірка поза Git для наступних версій заборонена.
+**Кожний новий пакет мусить містити `ONTWIKKELARCHIEF.json`.** Цей файл створює штатна команда `node scripts/orch.mjs pakket` із **вже закоміченого** документа `orchestratie/ontwikkelarchieven/<TASK-ID>.json`. Складання поза Git для наступних версій заборонена.
 
 Документ на GitHub зберігає весь **доступний і безпечний** доказовий матеріал про завдання:
 

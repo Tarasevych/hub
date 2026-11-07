@@ -11,7 +11,7 @@ description: Двосторонній плагін і з'єднувач MCP Goog
 
 1. **Сайт і багатоагентна координація (`site` / `orch`)** — читання та запис пошти, календаря, хмарних файлів, дошки завдань, репозиторіїв GitHub і координація задач між агентами штучного інтелекту (`orch_overzicht`, `orch_context`, `orch_taak_start`, `orch_inleveren_*`).
 2. **Розширення браузера (`browser`)** — керування розширенням Mijn Ruimte для Chrome/Firefox у реальному часі в приватному (`_gebruiker`) і технічному (`_beheer`) слотах вкладок (`browser_open`, `browser_snapshot`, `browser_click`, `browser_type`, `browser_fill_form`, `browser_screenshot`, `browser_console`, `browser_network`, `browser_get_deep_diagnostics`, `browser_script`).
-3. **Локальний комп'ютер (`pc` через `agent.mjs`)** — огляд і керування підключеним комп'ютером (`machine_status`, `machine_processes`, `machine_read_file`, `machine_write_file`, `machine_list_dir`, `machine_exec`, `machine_docker`) у приватному (`_gebruiker`) або технічному (`_beheer`) контурі.
+3. **Локальний комп'ютер (`pc` через `agent.mjs`)** — огляд і керування під'єднаним комп'ютером (`machine_status`, `machine_processes`, `machine_read_file`, `machine_write_file`, `machine_list_dir`, `machine_exec`, `machine_docker`) у приватному (`_gebruiker`) або технічному (`_beheer`) контурі.
 4. **Сервер і випуски (`server` у `_beheer`)** — моніторинг і адміністрування робочого сервера за активного технічного простору власника (`server_health`, `deploy_status`, `deploy_logs`, `deploy_release`, `db_query_readonly`, `audit_tail`, `security_overview`).
 
 ## Канонічна адреса та іменування інструментів
@@ -73,7 +73,7 @@ node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserDiagnose
 
 ### 4. Двостороннє керування локальним комп'ютером (`machine_*`)
 ```bash
-# Стан системи (процесор, пам'ять, ОС, час роботи) підключеного комп'ютера
+# Стан системи (процесор, пам'ять, ОС, час роботи) під'єднаного комп'ютера
 node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcStatus [--kant gebruiker]
 
 # Переглянути теки або прочитати файли в дозволених кореневих каталогах

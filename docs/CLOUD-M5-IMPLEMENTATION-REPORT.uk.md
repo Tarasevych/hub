@@ -7,15 +7,15 @@
 ## 1. Що реально змінилося
 
 Зберегли всі M1–M4 і додали:
-- `shared/cloud-m5-catalogus.ts`: каталог **11 типів підключень / 10 сервісів** (OneDrive Personal/Business розділені), сімейства API, авторизація, верхня межа можливостей, обмеження й чесний статус готовності. Публічні capabilities у каталозі **НЕ** означають готові інтерфейсні дії.
+- `shared/cloud-m5-catalogus.ts`: каталог **11 типів під'єднань / 10 сервісів** (OneDrive Personal/Business розділені), сімейства API, авторизація, верхня межа можливостей, обмеження й чесний статус готовності. Публічні capabilities у каталозі **НЕ** означають готові інтерфейсні дії.
 - `backend/cloud-m5-pcloud.ts`: транспорт `stat/download/upload` до pCloud, із жорстким вибором US/EU API host, bearer лише сервером, відсутністю токена у CDN-запиті, перевіркою відповіді й лімітами 32 MiB.
 - `backend/cloud-m5-pcloud-oauth.ts`: серверна логіка OAuth 2.0 `code` потік pCloud: URL погодження, одноразовий стан, перевірка власника/простору, host/locationid, серверний token exchange та передавання отриманого токена до **інтерфейсу зашифрованого сховища** (потрібна реальна реалізація репозиторію). pCloud не повертає стандартний refresh token; код не створює його вигадано.
 - `backend/cloud-m5-backblaze.ts`: B2 S3-compatible SigV4 `HEAD/GET/PUT`, endpoint `s3.<region>.backblazeb2.com`, серверні B2 application ключі, захист від overwrite. Без довільних endpoint URL.
 - `backend/cloud-m5-github.ts`: GitHub REST Contents `stat/download/create`, обов'язковий перевірений server repo/branch, per-repo access token через broker. Upload — **створення коміту**, не звичайна завантаження. Видалення, MOVE, LFS, великі файли ще не реалізовані.
 - `backend/cloud-m5-driver-registry.ts`: реєстрація лише після перевіреного підтвердження від окремого CI/accepted-live verifier, match власник+space+accountId.
-- `backend/cloud-m5-governor.ts`: модель рішень власника в активному технічному просторі. Атомарна зміна з audit через repository interface, версії CAS. Не підключена до адмін-маршруту до перевірки авторизації.
-- `backend/cloud-m5-catalogue-routes.ts`: один staging-only захищений route `POST /api/owner/cloud/integrations/v1/catalogue`; повертає статуси **not-ready** без доказів. Підключено лише всередині чинного `ladePoort('cloud')` у `cloud-platform.ts`. Flag `CLOUD_M5_CATALOGUE_STAGING` типово OFF.
-- `src/cloud/CloudAanbiedersM5.tsx` + CSS: адаптивна оглядова сторінка підтримки, без дублю CanonicalChrome, без фіктивної кнопки «Підключити». Компонент поки не вмонтовано у production nav.
+- `backend/cloud-m5-governor.ts`: модель рішень власника в активному технічному просторі. Атомарна зміна з audit через repository interface, версії CAS. Не під'єднана до адмін-маршруту до перевірки авторизації.
+- `backend/cloud-m5-catalogue-routes.ts`: один staging-only захищений route `POST /api/owner/cloud/integrations/v1/catalogue`; повертає статуси **not-ready** без доказів. Під'єднано лише всередині чинного `ladePoort('cloud')` у `cloud-platform.ts`. Flag `CLOUD_M5_CATALOGUE_STAGING` типово OFF.
+- `src/cloud/CloudAanbiedersM5.tsx` + CSS: адаптивна оглядова сторінка підтримки, без дублю CanonicalChrome, без фіктивної кнопки «Під'єднати». Компонент поки не вмонтовано у production nav.
 - `shared/cloud-integratie-contract.ts`: назви `pcloud`, `backblaze-b2` для єдиного посилання на файл.
 - `scripts/cloud-volledige-uitgave-poort.mjs`: +9 live/CI evidence-блокерів M5. Тепер **45 обов’язково перевірки**, у цьому пакеті `BLOCKED`.
 - `tests/eenheid/cloud-m5-aanbieder-golf.test.mjs`: 29 нових offline тестів.
@@ -41,27 +41,27 @@
 ## 3. Як має бути організовано управління
 
 ### Користувач
-Окремий власник+простір+ID підключення; кожен акаунт називається ідентифікованим аліасом. Вибір джерела вкладки не змінює решту вкладок. Список підключень завжди серверний. Після відкликання доступу жодна нова фонова передача з цього акаунта не стартує. Браузер не отримує refresh-токенів чи credential secrets.
+Окремий власник+простір+ID під'єднання; кожен обліковий запис називається ідентифікованим аліасом. Вибір джерела вкладки не змінює решту вкладок. Список під'єднань завжди серверний. Після відкликання доступу жодна нова фонова передача з цього облікового запису не стартує. Браузер не отримує refresh-токенів чи credential secrets.
 
 ### Власник сайту
-Каталог провайдерів -> дозволена політика -> перевірка live CI evidence -> enable. Увімкнення НЕ дає можливості обійти per-user OAuth та ACL. Дві окремі опції: нові підключення та операції наявних підключень. Зміна має аудиторський запис і atomic CAS. У M5 це доменний модуль і тести; admin HTTP endpoint + PG реалізація та атестація ще відсутні.
+Каталог провайдерів -> дозволена політика -> перевірка live CI evidence -> enable. Увімкнення НЕ дає можливості обійти per-user OAuth та ACL. Дві окремі опції: нові під'єднання та операції наявних під'єднань. Зміна має аудиторський запис і atomic CAS. У M5 це доменний модуль і тести; admin HTTP endpoint + PG реалізація та атестація ще відсутні.
 
-### Майстер підключення
-OAuth: «Підключити» -> офіційний consent -> server callback -> акаунт із дозволами -> перевірка файлів. Підключення на основі ключів (S3, B2) **не можна чесно назвати одно-кнопковим OAuth**: потрібне створення least-privileged IAM role/app ключ, а потім перевірка ключа/регіону на сервері. Nextcloud — Login Потік v2 з підтвердженим instance URL; GitHub — GitHub App install + consent, а не довільний PAT. 
+### Майстер під'єднання
+OAuth: «Під'єднати» -> офіційний consent -> server callback -> обліковий запис із дозволами -> перевірка файлів. Під'єднання на основі ключів (S3, B2) **не можна чесно назвати одно-кнопковим OAuth**: потрібне створення least-privileged IAM role/app ключ, а потім перевірка ключа/регіону на сервері. Nextcloud — Login Потік v2 з підтвердженим instance URL; GitHub — GitHub App install + consent, а не довільний PAT. 
 
 ## 4. Стан тестування
 
-- `node --experimental-strip-types --test` для M1–M5: **133/133 passed** (offline unit/mock). Тільки mock/logic, не реальні сервісні акаунти.
+- `node --experimental-strip-types --test` для M1–M5: **133/133 passed** (offline unit/mock). Тільки mock/logic, не реальні сервісні облікові записи.
 - `node scripts/kaart-controle.mjs --stil`: повертає 0 із попередженнями про декілька англомовних назв файлів.
 - `node scripts/cloud-volledige-uitgave-poort.mjs`: exit 2, **BLOCKED 45/45** — немає підтверджень live E2E.
-- **Не виконано:** повну Node.js 24+ build, DB migrations у staging, багатобраузерні E2E, ліміти/тарифи живих акаунтів, реальний OAuth для кожного провайдера.
+- **Не виконано:** повну Node.js 24+ build, DB migrations у staging, багатобраузерні E2E, ліміти/тарифи живих облікових записів, реальний OAuth для кожного провайдера.
 
 ## 5. Критичні захисні вимоги перед релізом
 
 1. **M5 transport code поки не реєструється в production registry**, хоча вірогідні мережеві запити реалізовано. Потрібні credential resolvers з PostgreSQL/Vault і owner-space-account identity для кожного провайдера, тести скасованих grants.
 2. Nextcloud і всі custom-hosted сховища: захист мережевих адрес, DNS rebinding, private IP, redirect, port. Не достатньо перевірити regex URL на рівні JS — мережевий proxy має обмежити egress.
 3. Копіювання: resumable transfer, реальне сховище завдання стан, SHA-256 після download, компенсація часткової копії. MOVE не може активуватися для pCloud/GitHub/B2 без перевіреного conditional видалити або безпечної альтернативи.
-4. Багато акаунтів одного провайдера: live two-tab, two-browser, simultaneous personal/business, per-tab selection, disconnected-account завдання cancellation.
+4. Багато облікових записів одного провайдера: live two-tab, two-browser, simultaneous personal/business, per-tab selection, disconnected-account завдання cancellation.
 5. Збереження shared ACL між провайдерами не гарантується. Потрібен явний conversion/report із відмінностями, а не мовчазне копіювання ACL.
 6. Уніфікований переглядач та Cloud UI активуються разом із реальними адаптерами. Demo кнопки і статичні statuses не допускаються на робочій сторінці.
 7. Окремий власник admin: дозволені сервісні інструменти, scope-конфігурація, стан OAuth app, webhook, черги, аудит, помилки без секретів; права superadmin + active technical profile.

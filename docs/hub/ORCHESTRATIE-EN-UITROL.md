@@ -1,5 +1,5 @@
 > 🌐 **Мова / Taal:** [🇺🇦 **Українська версія**](./ORCHESTRATIE-EN-UITROL.uk.md) · [🇳🇱 **Nederlandse versie**](./ORCHESTRATIE-EN-UITROL.nl.md) · [🏠 Головна (UK)](../../README.md) · [🏠 Hoofdpagina (NL)](../../LEESMIJ.md) · [📚 Каталог статей / Index](../INDEX.md)
-> 🧭 **Розділи Хабу (`docs/hub/`):** [1. Архітектура](./ARCHITECTUUR.uk.md) · [2. Історія](./GESCHIEDENIS.uk.md) · [3. Гілки, PR та Випуски](./TAKKEN-EN-PRS.uk.md) · [4. Структура коду](./MAP-STRUCTUUR.uk.md) · [5. Змінні оточення](./OMGEVINGSVARIABELEN.uk.md) · [6. Оркестрація та Розгортання](./ORCHESTRATIE-EN-UITROL.uk.md)
+> 🧭 **Розділи Хабу (`docs/hub/`):** [1. Архітектура](./ARCHITECTUUR.uk.md) · [2. Історія](./GESCHIEDENIS.uk.md) · [3. Гілки, PR та Випуски](./TAKKEN-EN-PRS.uk.md) · [4. Структура коду](./MAP-STRUCTUUR.uk.md) · [5. Змінні середовища](./OMGEVINGSVARIABELEN.uk.md) · [6. Оркестрація та Розгортання](./ORCHESTRATIE-EN-UITROL.uk.md)
 
 # Оркестрація ШІ-Агентів (`ORCH-001`), Трасування (`TRACE-001`), Серверний Стек (`B-009`) та Атомарне Розгортання
 
@@ -56,7 +56,7 @@
 | **Середовище виконання** | `Node.js v26.13.0 LTS` (`npm 11.20.0`) |
 | **База даних** | `PostgreSQL 18.6` (`/srv/data/postgresql/18/main` з увімкненим `--data-checksums`) |
 | **Мережа та шлюзи** | `Cloudflare Tunnel (cloudflared 2026.10.7)` · `Caddy v2.11.7` (`admin unix//run/caddy/admin.sock\|0660`) · `OPA v1.22.0` (`127.0.0.1:8181`) |
-| **Контейнери та криптографія** | `Docker 29.9.2` (`containerd 2.4.2`) · `age v1.3.2` (асиметричне шифрування бекапів) |
+| **Контейнери та криптографія** | `Docker 29.9.2` (`containerd 2.4.2`) · `age v1.3.2` (асиметричне шифрування резервних копій) |
 | **Сумісність `systemd 259` + `GNU tar 1.35`** | У `Ubuntu 26.04.1 LTS` `tar --extract` викликає системний виклик `openat2(..., RESOLVE_BENEATH)`. Щоб seccomp-фільтр `systemd 259` не блокував його з помилкою `-ENOSYS`, у всіх `deploy/*.service` та серверних drop-in встановлено `RestrictSUIDSGID=no` (при збереженні `NoNewPrivileges=yes`, `ProtectSystem=strict`, `PrivateTmp=yes`). |
 
 ### 3.2. Фонові завдання (`cron.json` та systemd-таймери)
@@ -68,7 +68,7 @@
 | `mail-provider-maintenance` | `*/5 * * * *` (кожні 5 хв) | Синхронізація та обслуговування поштових скриньок (`mailMaintenanceCron`, `batchLimit: 3`). |
 | `google-suite-bplus-sync` | `*/5 * * * *` (кожні 5 хв) | Фонова синхронізація Google Suite — пошта, календар, диск (`googleSuiteSyncCron`, `accountLimit: 10`). |
 | `zoek-index` | `*/5 * * * *` (кожні 5 хв) | Індексація нових та змінених об'єктів у глобальний пошук `/zoek` (`zoekIndexCron`, `limiet: 60`). |
-| `mail-queue-send` | `* * * * *` (щохвилини) | Відправлення листів із черги вихідної пошти (`mailQueueCron`). |
+| `mail-queue-send` | `* * * * *` (щохвилини) | Надсилання листів із черги вихідної пошти (`mailQueueCron`). |
 | `diagnostiek-server` | `*/15 * * * *` (кожні 15 хв) | Збір показників здоров'я сервера та перевірок безпеки (`diagnostiekServerCron`). |
 | `opruimen` | `17 * * * *` (щогодини) | Очищення прострочених OAuth-станів, PKCE, сесій, handoff-кодів, лімітів та старих логів (`opruimCron`). |
 | `mijn-ruimte-backup.timer` | Щодня о `03:30` | Дамп PostgreSQL (`pg_dump -Fc`) + архів `/srv/data/uploads`, зашифровані напряму через `age -R` публічним ключем (`/etc/mijn-ruimte/backup-ontvanger.age.pub`) у `/srv/backups/mijn-ruimte/<дата>/`. |
@@ -79,22 +79,22 @@
 
 Оновлення платформи ніколи не відбувається шляхом редагування коду на льоту на продакшені. Кожне оновлення проходить строгий конвеєр:
 
-1. **Збірка та верифікація пакета (`npm run build` + `orch.mjs pakket`):** створює `mijn-ruimte-<versie>.tar.gz` із `PAKKET-MANIFEST.json` та `ONTWIKKELARCHIEF.json`.
+1. **Складання та верифікація пакета (`npm run build` + `orch.mjs pakket`):** створює `mijn-ruimte-<versie>.tar.gz` із `PAKKET-MANIFEST.json` та `ONTWIKKELARCHIEF.json`.
 2. **Передконтроль (`voorcontrole`) та схвалення власником через Passkey:** у розділі `Admin → Оновлення` (в активному Технічному профілі) власник перевіряє склад пакета, міграції та GitHub Release, після чого підписує дозвіл на встановлення власним ключем доступу **WebAuthn Passkey**.
 3. **Атомарне встановлення (`mijn-ruimte-installeer`):**
    - Розпаковує реліз у `/srv/mijn-ruimte/releases/<versie>/`.
    - Виконує SQL-міграції під роллю `mijnruimte_migrator` (`/etc/mijn-ruimte/migratie.env`) та застосовує `migrations/rechten.sql`.
    - Атомарно перемикає симлінк `/srv/mijn-ruimte/actief` на новий реліз і перезапускає `mijn-ruimte.service` та `mijn-ruimte-mcp-deur.service` (порт `8091`).
-4. **Димова перевірка у реальному браузері (`rook-controle`):** запускає headless Chromium (`deploy/rook-controle.mjs`), перевіряючи `/api/health`, відсутність помилок у консолі та рендеринг усіх основних піддоменів. У разі збою інсталятор автоматично повертає симлінк `actief` на попередній справний випуск.
+4. **Димова перевірка у реальному браузері (`rook-controle`):** запускає headless Chromium (`deploy/rook-controle.mjs`), перевіряючи `/api/health`, відсутність помилок у консолі та відмальовування усіх основних піддоменів. У разі збою інсталятор автоматично повертає симлінк `actief` на попередній справний випуск.
 
 ---
 
 ## 5. Основні команди розробки, перевірки та оркестрації
 
 ```bash
-# 1. Локальний запуск та повна перевірка збірки
+# 1. Локальний запуск та повна перевірка складання
 npm run dev                                          # Запуск Vite dev-сервера фронтенду
-npm run build                                        # Повний конвеєр збірки:
+npm run build                                        # Повний конвеєр складання:
                                                      #   kaart-controle → plaatsing-controle → hulp-vraagtekens-controle →
                                                      #   zoek-ui-catalogus → l002-audit → mail-slimme-inbox-audit →
                                                      #   kleur-contrast-controle → vite build → tech-bundels-controle →
@@ -113,7 +113,7 @@ node scripts/orch.mjs status                         # Поточний стат
 node scripts/orch.mjs context                        # Генерація компактного контексту orchestratie/CONTEXT-COMPACT.md
 node scripts/orch.mjs taak-start --id <TASK-ID> --agent <agent> --basis <sha40> --tak <branch>
 node scripts/orch.mjs versheid --taak <TASK-ID> --fase start|overdracht
-node scripts/orch.mjs pakket --taak <TASK-ID> --auteur "<Ім'я>"   # Збірка mijn-ruimte-<versie>.tar.gz + <versie>-<agent>-overdracht.zip
+node scripts/orch.mjs pakket --taak <TASK-ID> --auteur "<Ім'я>"   # Складання mijn-ruimte-<versie>.tar.gz + <versie>-<agent>-overdracht.zip
 node scripts/orch.mjs pakket-controleer --bron uitvoer/mijn-ruimte-<versie>-<agent>-overdracht.zip
 node scripts/orch.mjs inleveren --bron <zip|tar.gz|patch|тека|гілка>
 node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken

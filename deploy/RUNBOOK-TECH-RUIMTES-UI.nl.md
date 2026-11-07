@@ -10,7 +10,7 @@ Werker T-UI, 27.10.2026. Hoort bij de backend van werker T-BACKEND (`backend/tec
   tabblad zelf (geen herladen; getypte tekst en open vensters blijven). Naar «Звичайний» = de technische sessie **pauzeert**.
   Toetsenbord: ←/→, Home/End; één tab-stop.
 - **Startvenster** «Вхід у технічний простір» met precies drie termijnen:
-  «На час (до HH:MM)», «До завершення технічного сеансу», «До виходу з акаунта на сайті» (NL: «Voor een tijd (tot HH:MM)»,
+  «На час (до HH:MM)», «До завершення технічного сеансу», «До виходу з облікового запису на сайті» (NL: «Voor een tijd (tot HH:MM)»,
   «Tot het einde van de technische sessie», «Tot afmelden van het account op de site»), elk met één regel uitleg.
   Niet-beschikbare keuzes blijven zichtbaar, uitgegrijsd, met de reden van de server. Loopt er al een sessie: «Змінити термін»
   (telt vanaf nu) of «Додати час» (bijtellen) — het woord «Подовжити» verdwijnt.
@@ -18,10 +18,10 @@ Werker T-UI, 27.10.2026. Hoort bij de backend van werker T-BACKEND (`backend/tec
   Люди з технічним доступом / Коди доступу і гості / Прапорці-тести), gevoed door `…/ruimtes/toegang`. AI heeft één
   termijnenset (1 година … «До відкликання вручну»). Laatst gekozen tabblad blijft bewaard.
 - **Uitloggen in drie duidelijke keuzes** met gevolg: «Вийти з технічного сеансу» (blijft aangemeld; extensie-ontgrendelingen
-  blijven), «Вийти з акаунта на сайті» (sluit ook technisch; extensie-ontgrendelingen in deze browser vervallen), «Вийти всюди»
+  blijven), «Вийти з облікового запису на сайті» (sluit ook technisch; extensie-ontgrendelingen in deze browser vervallen), «Вийти всюди»
   (opent Безпека → Сесії om te bevestigen). Plus: «Закриття однієї вкладки не знімає довгі дозволи розширення» (besluit t330u).
-- **Woorden** (audit): band en Сесії zeggen «до виходу з акаунта на сайті» / «до завершення технічного сеансу»; het
-  bevestigvenster zegt «Не питати знову, доки я не вийду з акаунта на сайті (не довше N год)».
+- **Woorden** (audit): band en Сесії zeggen «до виходу з облікового запису на сайті» / «до завершення технічного сеансу»; het
+  bevestigvenster zegt «Не питати знову, доки я не вийду з облікового запису на сайті (не довше N год)».
 - Versheid tussen subdomeinen: status elke 15 s zolang het tabblad zichtbaar is + meteen bij focus/zichtbaar (was tot 60 s).
 
 Met de vlag **UIT** is alles precies zoals vóór deze wijziging (oude venster, oude woorden, oude knoppen).

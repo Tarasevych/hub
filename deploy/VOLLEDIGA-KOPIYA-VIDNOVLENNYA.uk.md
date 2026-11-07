@@ -33,7 +33,7 @@ cd hub; git branch -a            # усі гілки, зокрема feature/con
 git checkout feature/connectors-agent-v2
 ```
 Або розпакувати `hub-werkmap.tar.gz` (там вже готова робоча тека з усіма незакоміченими файлами й історією), потім `npm ci`.
-Збірка й тести: `T:\mijn-ruimte\hulpmiddelen\node\env.ps1`, `npm run build`, перевірки `testdb.ps1` (див. `deploy/LEESMIJ.md`).
+Складання й тести: `T:\mijn-ruimte\hulpmiddelen\node\env.ps1`, `npm run build`, перевірки `testdb.ps1` (див. `deploy/LEESMIJ.md`).
 
 ## 3. Відновити сервер
 Основний сценарій такий самий, як у `deploy/HERSTEL.md` (він теж у теці `02-ontwikkeling\scripts.tar.gz` разом зі скриптами):
@@ -59,4 +59,4 @@ cmd /c "$age -d -i $sl 04-geheimen-versleuteld\geheimen-pc.tar.age | tar -xf - -
 - Диск самої віртуальної машини (`*.vhdx`): робоча зашифрована (LUKS) VM, її не можна консистентно скопіювати «на ходу». Замість неї: база, завантаження, конфіги, секрети й код: цього досить, щоб підняти сайт на новій VM.
 - `node_modules`, `dist`, `dist-server`: відтворюються з `package-lock.json` і `npm run build`.
 - Портативні інструменти (`hulpmiddelen\node`, `postgres`, `rclone`): завантажуються заново (контрольні суми в `hulpmiddelen\*\VERIFICATIE.txt`).
-- Публічний код також лежить у GitHub (`Tarasevych/hub`), але Chrome Web Store, акаунти й паролі в GitHub не зберігаються.
+- Публічний код також лежить у GitHub (`Tarasevych/hub`), але Chrome Web Store, облікові записи й паролі в GitHub не зберігаються.

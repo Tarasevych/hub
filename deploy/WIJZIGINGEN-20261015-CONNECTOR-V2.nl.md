@@ -35,8 +35,8 @@
 5. **Tabblad «Конектори» (Connectoren)** op `mcp.*/agents` en op `mcp.*/verbindingen`.
    - Adressen met kopieer- en verbindingsknop.
    - Beperken werkt direct, uitbreiden pas na opnieuw verbinden; de keuze wordt onthouden.
-   - Knoppen «Перепідключити» (Opnieuw verbinden) en «Відкликати» (Intrekken).
-   - Instelling «Додаткове підтвердження кожного нового підключення» (Extra bevestiging bij elke nieuwe verbinding: passkey of app-code) en advies als 2FA ontbreekt.
+   - Knoppen «Перепід'єднати» (Opnieuw verbinden) en «Відкликати» (Intrekken).
+   - Instelling «Додаткове підтвердження кожного нового під'єднання» (Extra bevestiging bij elke nieuwe verbinding: passkey of app-code) en advies als 2FA ontbreekt.
 6. **Migratie 0045**:
    - velden `agent` en `v2_keuze` op verzoeken en tokens;
    - tabellen `connector_v2_rechten`, `connector_v2_voorkeur` en `connector_v2_instellingen` (met RLS).

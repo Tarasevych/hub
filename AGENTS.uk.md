@@ -110,7 +110,7 @@
 | Стан координації при злитті | [`.gitattributes`](./.gitattributes) (`merge=orch-staat`: версія `integratie` перемагає) |
 | Журнал розробки для випуску | `orchestratie/ontwikkelarchieven/<TASK-ID>.json` (у git), `ONTWIKKELARCHIEF.json` (у тар) |
 | Правила пакета випуску | [`deploy/REGELS-UITROLPAKKET.md`](./deploy/REGELS-UITROLPAKKET.md), [`shared/uitrol-manifest.ts`](./shared/uitrol-manifest.ts), [`shared/uitrol-codes.ts`](./shared/uitrol-codes.ts) |
-| Безпечне розгортання, passkey, відкат | [`deploy/RUNBOOK-VEILIGE-UITROL.md`](./deploy/RUNBOOK-VEILIGE-UITROL.md) (§13 passkey, §15 рішення власника, §18 координація на сервері) |
+| Безпечне розгортання, passkey, повернення стану | [`deploy/RUNBOOK-VEILIGE-UITROL.md`](./deploy/RUNBOOK-VEILIGE-UITROL.md) (§13 passkey, §15 рішення власника, §18 координація на сервері) |
 | Керування з сайту / HTTP / MCP (та сама логіка, що й CLI) | [`src/agenten/TabOrch.tsx`](./src/agenten/TabOrch.tsx), [`backend/orch-routes.ts`](./backend/orch-routes.ts) (`/api/owner/orch/*`), [`backend/orch-opslag.ts`](./backend/orch-opslag.ts), [`backend/orch-hulpmiddelen.ts`](./backend/orch-hulpmiddelen.ts) (`orch_*`), [`shared/orch-model.ts`](./shared/orch-model.ts) |
 | Робоча копія координації на сервері, завантаження | `ORCH_WORTEL` (`/srv/mijn-ruimte/orch-repo`), `ORCH_INBOX` (`/srv/mijn-ruimte/orch-inbox`) |
 | Підтвердження правил passkey (пише лише root) | `/var/lib/mijn-ruimte/besluit/orch-regels-bevestigd.jsonl`; копія для застосунку `/var/lib/mijn-ruimte-uitrol-status/orch-regels-bevestigd.json` |
