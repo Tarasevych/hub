@@ -19,7 +19,7 @@ UITLEG-LEESMIJ.txt - T:\mijn-ruimte\geheim\  (sleutel uitrol-sleutel)
      протягом 5 хвилин (якщо GitOps увімкнено).
   2. Пакет:  powershell -ExecutionPolicy Bypass -File deploy\uitrol\maak-uitrolpakket.ps1
      Створює пакет (.tar.gz), підпис (.sig) і файл з розміром і сумою (.txt) для Grok (mcp.tarasevych.com) або SSH.
-  3. Кнопки на сайті (MCP → «Керування сервером»): перевірити випуски зараз, резервна копія, відкат.
+  3. Кнопки на сайті (MCP → «Керування сервером»): перевірити випуски зараз, резервна копія, повернення стану.
      Вони НЕ можуть встановити непідписаний код.
 Пароль запитує ssh-add або ssh-keygen; скрипти його не бачать і не зберігають.
 
