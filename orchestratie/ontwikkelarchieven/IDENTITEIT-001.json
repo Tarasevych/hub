@@ -93,6 +93,14 @@
         ".github/workflows/identiteit-account-uitgave.yml",
         "orchestratie/taken/IDENTITEIT-001.json"
       ]
+    },
+    {
+      "volgorde": 11,
+      "stap": "Службові файли агента прибрано з дерева й додано до переліку виключень, щоб пакет містив лише код і документи.",
+      "bewijzen": [
+        ".gitignore",
+        "orchestratie/ontwikkelarchieven/IDENTITEIT-001.json"
+      ]
     }
   ],
   "keuzes": [
