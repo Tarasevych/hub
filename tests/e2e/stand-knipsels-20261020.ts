@@ -13,7 +13,7 @@ import { startE2eServer, chromeArgs } from './server';
 import { techAan } from './hulp/tech';
 import { getPool } from '../../server/platform/pg';
 import * as c from '../../backend/mcp-connector';
-import { SERVICE_HOSTS } from '../../backend/deployment-identity';
+import { SERVICE_HOSTS } from '../../backend/deployment-identiteit';
 import { mailNep, mailNepUit, wachtOpLijst, meetLijst, meetMenu, meetPostvakken } from './hulp/stand-mail-nep';
 import { paneelVol, fabBel } from './hulp/stand-meldingen'; // 21.10 агент A: панель сповіщень + FAB/дзвоник
 import { plaatsingDok, plaatsingLagen, plaatsingNa, plaatsingNu } from './hulp/stand-plaatsing'; // 25.10: zwevende knoppen — scrollen, adresbalk, «Вгору», veeg op de bel, knijpzoom, pc → telefoon, herladen

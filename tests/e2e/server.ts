@@ -30,7 +30,7 @@ export async function startE2eServer(o: { ownerEmail: string; poort: number; tls
   // Optioneel: het WSS-kanaal voor echte agents (agent.mjs als apart proces), zoals server/start.ts het aan de HTTP-server hangt.
   if (o.agentGateway) {
     const { attachAgentGateway } = await import('../../backend/connectors-gateway');
-    const { SERVICE_HOSTS } = await import('../../backend/deployment-identity');
+    const { SERVICE_HOSTS } = await import('../../backend/deployment-identiteit');
     attachAgentGateway(s as never, new Set<string>(Object.values(SERVICE_HOSTS)));
   }
   await new Promise<void>((r) => s.listen(o.poort, '127.0.0.1', () => r()));

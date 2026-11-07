@@ -18,7 +18,7 @@ import { error, isOwnerEmail, json } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
 import type { RouterMiddleware } from '../server/platform/router';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import { alsGebruiker } from './ai-toestemmingen';
 import { meld } from './melder';
 import { onthoudMagVoorActie, onthoudVastleggen, passkeyStapOpVastleggen, stapOpSessieId, type StapOpAuth } from './stap-op';

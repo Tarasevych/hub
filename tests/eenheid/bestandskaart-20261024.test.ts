@@ -50,7 +50,7 @@ export async function main(): Promise<number> {
 
   // D
   const beh = new Map(kaart.behouden.map((b) => [b.pad, b.reden]));
-  for (const p of ['backend/deployment-identity.ts', 'scripts/rook-controle.mjs', 'server/pg-versie.ts', 'server/apparaat-koppelcode.ts', 'server/migrate.ts', 'scripts/build-server.mjs', 'scripts/installer/Install-MijnRuimte.cmd'])
+  for (const p of ['backend/deployment-identiteit.ts', 'scripts/rook-controle.mjs', 'server/pg-versie.ts', 'server/apparaat-koppelcode.ts', 'server/migrate.ts', 'scripts/build-server.mjs', 'scripts/installer/Install-MijnRuimte.cmd'])
     check(`D ${p} behouden met reden`, existsSync(p) && !!beh.get(p));
   check('D bouwingangen dist-server ongewijzigd (start, cron, migrate, zoek-werker, rook, apparaat-koppelcode)', /start: 'server\/start\.ts', cron: 'server\/cron\.ts', migrate: 'server\/migrate\.ts', 'zoek-werker': 'backend\/zoek\/tekst-werker\.ts', rook: 'server\/rook\.ts', 'apparaat-koppelcode': 'server\/apparaat-koppelcode\.ts'/.test(readFileSync('scripts/build-server.mjs', 'utf8')));
 

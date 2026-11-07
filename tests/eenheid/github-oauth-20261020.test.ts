@@ -32,7 +32,7 @@ export async function main(): Promise<number> {
   check('de kaart en de gedeelde laag noemen geen enkel vast domein (BYOS)',
     !/tarasevych/.test(bron('shared/github-koppeling.ts')) && !/tarasevych/.test(bron('backend/github-oauth.ts')) && !/tarasevych/.test(bron('backend/github-app.ts')));
   check('backend rekent het adres uit SERVICE_HOSTS.github (één bron voor de identiteit van de deployment)',
-    /githubInstelWaarden\(SERVICE_HOSTS\.github\)/.test(bron('backend/github-platform.ts')) && /PUBLIC_DOMAIN/.test(bron('backend/deployment-identity.ts')));
+    /githubInstelWaarden\(SERVICE_HOSTS\.github\)/.test(bron('backend/github-platform.ts')) && /PUBLIC_DOMAIN/.test(bron('backend/deployment-identiteit.ts')));
   check('leeg of onzinnig domein geeft geen half adres', githubInstelWaarden('').callbackUrl === '' && githubInstelWaarden(null).homepageUrl === '');
 
   // =============================================================== scopes en invoer van de eigenaar

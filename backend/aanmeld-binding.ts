@@ -16,7 +16,7 @@
 // kan de cookie niet lezen of zetten, dus een ondergeschoven state/code is daar waardeloos.
 // Ontbreekt de hash in de transactie (oude rij of v1-binding), dan faalt het dicht.
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
-import {COOKIE_SCOPE} from './deployment-identity';
+import {COOKIE_SCOPE} from './deployment-identiteit';
 
 export const AANMELD_BINDING_PREFIX='__Secure-tsv_aanmeld_binding_';
 /** Even lang als de langste aanmeldtransactie (redirect: 10 min) plus marge. */

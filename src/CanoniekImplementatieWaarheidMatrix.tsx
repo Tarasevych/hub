@@ -1,5 +1,5 @@
 import {useMemo,useState} from 'react';
-import {APP_ID} from '../backend/deployment-identity';
+import {APP_ID} from '../backend/deployment-identiteit';
 import {AlertTriangle,Archive,CheckCircle2,CircleHelp,Filter,GitBranch,Search,ShieldCheck} from 'lucide-react';
 import './canoniek-implementatie-waarheid.css';
 import {WAARHEID_CLAIMS,type WaarheidClaim,type WaarheidClassificatie} from '../backend/waarheid-claims';

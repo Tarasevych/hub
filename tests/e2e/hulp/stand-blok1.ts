@@ -5,7 +5,7 @@
 //   stand-blok1-vensters.ts       — de bel en de zone bedekken nooit de knoppen van een venster (2.5)
 //   stand-blok1-toegang.ts        — venster «Підтвердіть доступ» en chips in de toestemming: niets buiten het venster, contrast (8.6)
 import type { Page } from 'playwright-core';
-import type { SERVICE_HOSTS } from '../../../backend/deployment-identity';
+import type { SERVICE_HOSTS } from '../../../backend/deployment-identiteit';
 import { actiesStappen } from './stand-blok1-acties';
 import { geminimaliseerdStappen } from './stand-blok1-geminimaliseerd';
 import { venstersStappen } from './stand-blok1-vensters';

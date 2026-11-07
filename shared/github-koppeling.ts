@@ -71,7 +71,7 @@ export function scopeVoldoet(toegekend: unknown): { ok: boolean; mist: string[];
 
 /**
  * De waarden die de eigenaar letterlijk in zijn eigen OAuth-app (of GitHub App) op github.com moet zetten. BYOS: alles wordt
- * gerekend uit de host van ZIJN GitHub-dienst (backend/deployment-identity.ts → SERVICE_HOSTS.github), nooit uit een vaste
+ * gerekend uit de host van ZIJN GitHub-dienst (backend/deployment-identiteit.ts → SERVICE_HOSTS.github), nooit uit een vaste
  * domeinnaam in de code. Zet iemand de site op git.voorbeeld.nl, dan staat die naam hier.
  */
 export type GithubInstelWaarden = { host: string; homepageUrl: string; callbackUrl: string; scopes: readonly string[]; scopeTekst: string };

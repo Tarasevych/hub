@@ -28,7 +28,7 @@ import { aiStandVeilig } from './ai-ruimte-poort';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
 import { effectiveMode, taalVanGebruiker, type ToolDef } from './connectors-hulpmiddelen';
 import * as store from './connectors-opslag';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import { githubKoppeling } from './github-platform';
 import { githubWeg } from './github-toegang';
 import { meld, meldLink } from './melder';

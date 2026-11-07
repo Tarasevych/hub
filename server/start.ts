@@ -15,7 +15,7 @@ import { createReadStream, realpathSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identity';
+import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identiteit';
 import { handler } from '../backend/index';
 import { attachAgentGateway, closeAllAgents } from '../backend/connectors-gateway';
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';

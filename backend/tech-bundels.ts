@@ -11,7 +11,7 @@
 // krijgt de beheercode niet.
 import { createHash, randomBytes } from 'node:crypto';
 import { getPool } from '../server/platform/pg';
-import { COOKIE_DOMAIN } from './deployment-identity';
+import { COOKIE_DOMAIN } from './deployment-identiteit';
 import { TECH_ASSET_COOKIE } from '../shared/tech-bundels';
 
 const sys = () => getPool('systeem');

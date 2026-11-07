@@ -163,7 +163,7 @@ export async function main(): Promise<number> {
     // In de redirect-flow komen transactionId en redeemSecret nooit in de browser (alleen hashes in owner_auth_transactions_v1). Toch: stel dat B
     // ze toch kent of raadt — een VOLTOOIDE transactie van A (zelfde dienst/herkomst) verzilveren mag B nooit een sessie van A opleveren.
     const shaH = (v: string) => createHash('sha256').update(v).digest('hex');
-    const { REDIRECT_COOKIE } = await import('../../backend/deployment-identity');
+    const { REDIRECT_COOKIE } = await import('../../backend/deployment-identiteit');
     const txId = randomBytes(32).toString('base64url'), geheim = randomBytes(32).toString('base64url'), tabA = randomBytes(24).toString('hex'), nuTx = Date.now();
     const txRij = randomUUID(); ids.push(txRij);
     await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['owner_auth_transactions_v1', txRij, { transactionHash: shaH(txId), attachHash: shaH('x'), redeemHash: shaH(geheim), sourceOrigin: 'https://hub.tarasevych.com', targetService: 'hub', tabHash: shaH(tabA), tabContext: tabA, intent: 'login', flowMode: 'popup', returnTo: 'https://hub.tarasevych.com/', status: 'complete', userId: A, createdAt: nuTx, expiresAt: nuTx + 300_000, attachedAt: nuTx, completedAt: nuTx }]);

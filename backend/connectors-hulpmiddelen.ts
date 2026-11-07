@@ -20,7 +20,7 @@ import { apparaatInRuimte } from '../shared/ai-ruimte';
 import { CommandRefused, submitCommand, waitForCommand } from './connectors-opdrachten';
 import { agentOnline } from './connectors-gateway';
 import { maakGeheimVerzoek, maakTicket, meldGeheimVerzoek, vergeetTicket } from './apps-overdracht';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as store from './connectors-opslag';
 import { controleerBrowserOpdracht } from './extensie-ontgrendeling';
 import * as techn from './browser-technisch';

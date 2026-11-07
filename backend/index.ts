@@ -26,7 +26,7 @@ import { meldingenLade, meldingenVanLade, ruimteVoorNieuweMelding, sfeerVoorNieu
 import { meldingenInLade } from '../shared/meldingen-ruimte'
 import { auditControle, auditToevoegen, auditVoorWeergave, auditVerwijderen, ipHash as auditIpHash, zetAuditContextBron } from '../server/platform/audit';
 import { createHash, createHmac, createPublicKey, randomBytes, verify } from 'node:crypto';
-import {API_COOKIE_PATH, COOKIE_DOMAIN as OWNER_COOKIE_DOMAIN, COOKIE_SCOPE as OWNER_COOKIE_SCOPE, ECOSYSTEM_COOKIE, REDIRECT_COOKIE} from './deployment-identity';
+import {API_COOKIE_PATH, COOKIE_DOMAIN as OWNER_COOKIE_DOMAIN, COOKIE_SCOPE as OWNER_COOKIE_SCOPE, ECOSYSTEM_COOKIE, REDIRECT_COOKIE} from './deployment-identiteit';
 import {googleClientSecret,resolveGoogleContour} from './google-contour';
 import {MAIL_JOB_TYPES,MAIL_PROVIDER_SCOPES,decryptMailToken,encryptMailToken,mailGoogleAuthorizationUrl,mailGoogleStateParts,mailGoogleStateValue,mailJobIdempotencyKey,mailPlatformPolicySelfTest,mailProviderReadiness,type MailJobRecord,type MailTokenEnvelope} from './mail-platform';
 import {isMailMeldingNiveau,mailMeldingSleutelGeldig} from '../shared/mail-melding-niveau';

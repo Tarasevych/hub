@@ -16,7 +16,7 @@ export async function main(): Promise<number> {
   const { check, einde } = checker('ruimtes-compatibiliteit-db');
   const pool = getPool('systeem');
   const { handler } = await import('../../backend/index');
-  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
   const { totpStapOpVastleggen } = await import('../../backend/stap-op');
   const { naUitloggen } = await import('../../backend/extensie-ontgrendeling');
   const { effectieveRuimte } = await import('../../backend/ai-ruimte-poort');

@@ -1532,7 +1532,7 @@ tussenarchief vóór het adaptieve raamwerk van de e-maillezer.
 
   De test `bestandskaart-20261024` (26 controles) houdt dit vast in de testsuite.
 - **Niet hernoemd (en waarom):**
-  - `backend/deployment-identity.ts` — `installeer-app.sh` en `apparaat-inrichten.sh` lezen hieruit het domein;
+  - `backend/deployment-identiteit.ts` — `installeer-app.sh` en `apparaat-inrichten.sh` lezen hieruit het domein;
   - `scripts/rook-controle.mjs`, `server/pg-versie.ts`, `server/apparaat-koppelcode.ts` — worden aangeroepen door de installer;
   - `server/migrate.ts`, `scripts/build-server.mjs` — de voorcontrole van de reeds geïnstalleerde versie vereist deze in elk nieuw pakket
     (gevonden door de voorcontrole van dit pakket: zonder deze bestanden zou de server de update weigeren);

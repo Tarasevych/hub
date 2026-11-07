@@ -162,7 +162,7 @@ export async function main(): Promise<number> {
     // ================================================================ C. geschiedenis op de server (0103) via de echte routes
     const pool = getPool('systeem');
     const idx = await import('../../backend/index');
-    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
     const mig = lees('migrations/0103_zoek_geschiedenis.sql');
     await getPool('migratie').query(mig); await getPool('migratie').query(mig);
     check('C 0103 draait twee keer zonder fout; RLS aan; policy aanwezig; geen tekstkolom voor titels/fragmenten', (await pool.query(`SELECT relrowsecurity FROM pg_class WHERE oid = 'app.zoek_geschiedenis'::regclass`)).rows[0]?.relrowsecurity === true

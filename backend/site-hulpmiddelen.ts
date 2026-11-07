@@ -13,7 +13,7 @@ import { controleerMermaid } from '../shared/mermaid-schema';
 import { foutUitleg } from '../shared/ai-bevestiging';
 import { GENERATOR_CODES, generatorTekst } from '../shared/media-generator';
 import { devMgFoutTekst } from '../shared/dev-media-github';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 export type SiteGroup = 'mail' | 'calendar' | 'drive' | 'site' | 'github';
 export type SiteTool = {

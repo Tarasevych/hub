@@ -108,7 +108,7 @@ async function hoofd(): Promise<number> {
     zeg(`migraties: ${gedaan.length} uitgevoerd in ${Date.now() - t0} ms`);
   }
 
-  const { SERVICE_HOSTS, PUBLIC_DOMAIN } = await import('../backend/deployment-identity');
+  const { SERVICE_HOSTS, PUBLIC_DOMAIN } = await import('../backend/deployment-identiteit');
   const G = nepGoogle(process.env.GOOGLE_OAUTH_CLIENT_ID);
   // Serverlog (één regel per verzoek) niet in het installatielogboek: alleen fouten blijven zichtbaar.
   const echteLog = console.log;

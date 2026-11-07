@@ -85,7 +85,7 @@ Ongewijzigd: namen van diensten en formaten (Google, GitHub, MCP, AI, PDF, CalDA
 | `backend/beleid.ts` | genoemd in deploy/ (scripts, units, agent) |
 | `backend/connector-v2.ts` | genoemd in deploy/ (scripts, units, agent) |
 | `backend/connectors-crypto.ts` | genoemd in deploy/ (scripts, units, agent) |
-| `backend/deployment-identity.ts` | installeer-app.sh en apparaat-inrichten.sh lezen PUBLIC_DOMAIN uit dit bestand |
+| `backend/deployment-identiteit.ts` | installeer-app.sh en apparaat-inrichten.sh lezen PUBLIC_DOMAIN uit dit bestand |
 | `backend/eigenaar-besluit.ts` | genoemd in deploy/ (scripts, units, agent) |
 | `backend/index.ts` | genoemd in deploy/ (scripts, units, agent) |
 | `backend/remote-bureaublad.ts` | genoemd in deploy/ (scripts, units, agent) |

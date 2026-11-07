@@ -30,7 +30,7 @@ import {
   type CategorieId, type Historie, type Stand, type Toestand, type Uitslag,
 } from '../shared/beheer-diagnostiek';
 import { beoordeelRook, browserAanwezig, huidigeVersie, leesRook, paginaUitRook, rookAanvragen, rookWachtend, type RookUitslag } from './rook-controle'; // zone A 22.10: rendercontrole
-import { PUBLIC_DOMAIN } from './deployment-identity';
+import { PUBLIC_DOMAIN } from './deployment-identiteit';
 import { huidigeBundel, serverControles } from './diagnose';
 import { heeftTechMogelijkheid, isEigenaar, TAB_RE } from './tech-profiel';
 import { maskeer } from './uitrol-diagnose-run';

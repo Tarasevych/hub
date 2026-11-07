@@ -35,7 +35,7 @@ import { metLade } from './ruimte-cloud-agenda';
 import { herversleutelEnvelop, isGeslotenFout, ontzegel, registreerHerversleutelaar, verzegel } from './sleutelkluis';
 import { SLEUTEL_GESLOTEN_CODE, isServerEnvelop } from '../shared/sleutelkluis';
 import { meld } from './melder';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 import { huidigeNamens } from './mcp-namens';
 
 const sys = () => getPool('systeem');

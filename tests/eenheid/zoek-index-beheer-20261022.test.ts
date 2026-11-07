@@ -65,7 +65,7 @@ export async function main(): Promise<number> {
     // ================================================================ B. de echte routes
     const pool = getPool('systeem');
     const idx = await import('../../backend/index');
-    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
     const sfx = randomBytes(4).toString('hex');
     const mk = async (email: string) => { const id = randomUUID(); await pool.query('INSERT INTO app.records (tbl,id,data) VALUES ($1,$2,$3)', ['users', id, { email, role: 'member', status: 'approved', name: email }]); return { id, email }; };
     const A = await mk(`zoek-idx-a-${sfx}@eenheid.test`), B = await mk(`zoek-idx-b-${sfx}@eenheid.test`);

@@ -22,7 +22,7 @@
 
 ## 2. De 11 subdomeinen van het ecosysteem (`*.tarasevych.com`)
 
-Alle subdomeinen (vastgelegd in [`backend/deployment-identity.ts`](../../backend/deployment-identity.ts) en gerouteerd via [`deploy/cloudflared-config.yml`](../../deploy/cloudflared-config.yml)) worden bediend door één serverkern [`server/start.ts`](../../server/start.ts) op `127.0.0.1:8080` met een gedeelde beveiligde sessiecontour (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
+Alle subdomeinen (vastgelegd in [`backend/deployment-identiteit.ts`](../../backend/deployment-identiteit.ts) en gerouteerd via [`deploy/cloudflared-config.yml`](../../deploy/cloudflared-config.yml)) worden bediend door één serverkern [`server/start.ts`](../../server/start.ts) op `127.0.0.1:8080` met een gedeelde beveiligde sessiecontour (`Domain=.tarasevych.com; Secure; HttpOnly; SameSite=Lax`):
 
 | Subdomein | Dienst | Doel en belangrijkste mogelijkheden | Belangrijkste modules in de code |
 |---|---|---|---|
@@ -80,7 +80,7 @@ flowchart TB
 
 ### 4.1. `Host`-validatie, canonieke paden en bescherming tegen header-spoofing
 - De VM accepteert geen rechtstreekse inkomende HTTP/HTTPS-verbindingen vanaf het internet: al het verkeer komt binnen via de uitgaande `cloudflared`-tunnel op de lokale socket `127.0.0.1:8080`.
-- De server [`server/start.ts`](../../server/start.ts) controleert de `Host`-header tegen de strikte allowlist van dienstdomeinen ([`backend/deployment-identity.ts`](../../backend/deployment-identity.ts)). Een onbekende `Host` wordt direct geweigerd met `421 Misdirected Request`.
+- De server [`server/start.ts`](../../server/start.ts) controleert de `Host`-header tegen de strikte allowlist van dienstdomeinen ([`backend/deployment-identiteit.ts`](../../backend/deployment-identiteit.ts)). Een onbekende `Host` wordt direct geweigerd met `421 Misdirected Request`.
 - Alle door de client meegestuurde headers `x-forwarded-host`, `forwarded` en `x-real-ip` worden verwijderd; het werkelijke client-IP komt uitsluitend uit de geverifieerde Cloudflare-header `cf-connecting-ip`.
 - De router [`server/platform/router.ts`](../../server/platform/router.ts) controleert vóór elke CSRF- of rate-limitcheck of het pad canoniek is: verzoeken met dubbele slashes (`/api//...`) of een afsluitende slash krijgen `404 PATH_NOT_CANONICAL`.
 

@@ -109,7 +109,7 @@ export async function main(): Promise<number> {
 
     // ---------------------------------------------------------------- rechten via de echte routes
     const { handler } = await import('../../backend/index');
-    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+    const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
     const bestaand = (await pool.query(`SELECT id, data->>'email' AS email FROM app.records WHERE tbl='users' AND data->>'role'='owner' LIMIT 1`)).rows[0];
     const eig = bestaand ? String(bestaand.id) : randomUUID();
     if (bestaand) process.env.OWNER_EMAIL = String(bestaand.email);

@@ -39,7 +39,7 @@ import {
 import { buildMime, headerSafe, parseAddressList, toGmailRaw } from './mail-mime';
 import { deleteDraft, getDraft } from './mail-opstel';
 import { caldavLijst, caldavOphalen } from './agenda-caldav';
-import { SERVICE_HOSTS } from './deployment-identity';
+import { SERVICE_HOSTS } from './deployment-identiteit';
 
 const sys = () => getPool('systeem');
 /** Hoe lang een aanroep op het besluit van de mens wacht (standaard ~50 s, backend/ai-bevestiging.ts). Alleen tests korten het in. */

@@ -94,7 +94,7 @@ export async function main(): Promise<number> {
   process.env.DIST_DIR = dist;
   const { createServer } = await import('../../server/start');
   const { handler } = await import('../../backend/index');
-  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identity');
+  const { ECOSYSTEM_COOKIE } = await import('../../backend/deployment-identiteit');
   const tp = await import('../../backend/tech-profiel');
   const ta = await import('../../backend/tech-bundels');
   const srv = createServer();

@@ -39,7 +39,7 @@ import { ghCiLogs, ghCreatePr, logSamenvatting, setGithubDeps } from '../../back
 import { controleerStripe, isBeperkteSleutel, stripeLijst, zetStripeDeps } from '../../backend/betalingen-stripe';
 import { doelVan, generatorVerzoek, genereer, opdrachtStand, startOpdracht, zetGeneratorOpzoeker, type GeneratorFout } from '../../backend/media-generator';
 import { cssBlokken } from '../../backend/ontwerp-context';
-import { SERVICE_HOSTS } from '../../backend/deployment-identity';
+import { SERVICE_HOSTS } from '../../backend/deployment-identiteit';
 
 const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
 const bron = (p: string) => readFileSync(p, 'utf8');

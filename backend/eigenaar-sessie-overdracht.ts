@@ -1,6 +1,6 @@
 import {createHash,randomBytes} from 'node:crypto';
 import {db} from '../server/platform';
-import {COOKIE_SCOPE, ECOSYSTEM_COOKIE} from './deployment-identity';
+import {COOKIE_SCOPE, ECOSYSTEM_COOKIE} from './deployment-identiteit';
 import {handoffBindingVanBrowser, handoffBindingVoorAanmaken, metBindingCookie} from './overdracht-binding';
 
 const HANDOFF_MS=120000;

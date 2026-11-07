@@ -22,7 +22,7 @@ import {
 import { ID_RE, type AgentUitslag, type BevestigBeschrijving } from '../shared/ai-bevestiging';
 import { leesPrVoorstel, prSamenvatting, type PrVoorstel } from '../shared/github-pr';
 import { dnsUitleg, leesDomeinVoorstel, siteHosts, type DnsStand, type DomeinVoorstel } from '../shared/app-domein';
-import { COOKIE_DOMAIN, DASHBOARD_HOST, SERVICE_HOSTS } from './deployment-identity';
+import { COOKIE_DOMAIN, DASHBOARD_HOST, SERVICE_HOSTS } from './deployment-identiteit';
 import { ghCreatePr, type GhWie } from './github-platform';
 import { apparaatInRuimte, ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import { agentOnline } from './connectors-gateway';
