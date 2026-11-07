@@ -10,7 +10,7 @@
     "basis": "e97a58ceaf70f6a4a8d63608541d47e455ddb66a",
     "vorigeProductieversie": "20261104-075953",
     "vorigeProductieCommit": "e97a58ceaf70f6a4a8d63608541d47e455ddb66a",
-    "tak": "feature/identity-account-20261104-120000"
+    "tak": "feature/identiteit-account-20261107-140000"
   },
   "privacy": {
     "geheimenUitgesloten": true,
@@ -55,11 +55,11 @@
     {
       "volgorde": 8,
       "stap": "Замість передавання токена в чат реліз збирає CI самої гілки через штатний GITHUB_TOKEN (contents: write): пакет, .sha256 і GitHub Release з тим самим архівом.",
-      "bewijzen": [".github/workflows/identity-account-release.yml"]
+      "bewijzen": [".github/workflows/identiteit-account-uitgave.yml"]
     },
     {
       "volgorde": 9,
-      "stap": "12 розділів перенесено в застосунок: оболонка src/identity з меню-змістом і scroll-spy, діалог фото з трьох джерел, адаптивність за контейнером.",
+      "stap": "12 розділів перенесено в застосунок: оболонка в теці сторінки облікового запису з меню-змістом і підсвічуванням під час прокрутки, вікно фото з трьох джерел, пристосування до ширини за контейнером.",
       "bewijzen": ["src/identiteit/IdentiteitAccountPagina.tsx", "src/identiteit/Profielfoto.tsx", "src/identiteit/identiteit-account.css"]
     }
   ],
@@ -117,7 +117,7 @@
       "опис": "Орієнтир по теці: один актуальний файл, історія в архіві."
     },
     {
-      "bestand": ".github/workflows/identity-account-release.yml",
+      "bestand": ".github/workflows/identiteit-account-uitgave.yml",
       "soort": "додано",
       "опис": "CI-реліз: збірка пакета, .sha256, GitHub Release через GITHUB_TOKEN."
     },
