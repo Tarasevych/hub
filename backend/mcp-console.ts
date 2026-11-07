@@ -20,7 +20,9 @@ import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-grants";
 import { huidigeNamens, metNamens } from "./mcp-namens";
 import { ruimteUitVerzoek } from "./ai-ruimte-poort";
-import { RUIMTE_GESCHEIDEN, ruimteOf, toolInRuimte } from "../shared/ai-ruimte";
+import { geefStandaard, isOntbrekendeTabel, magTool, verwijderToegang } from "./ai-toegang";
+import { RUIMTE_GESCHEIDEN, ruimteOf, toolInRuimte, type AiRuimte } from "../shared/ai-ruimte";
+import { scopeVoorTool } from "../shared/ai-toegang";
 import { beslissing, weigerTekst } from "./ai-beleid";
 import { gedelegeerdeSessie } from "./site-dispatch";
 import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResultaat, voerOpdrachtUit, type Werkwoord } from "./server-beheer";
@@ -135,6 +137,14 @@ const taskOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, status: r
 const noteOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, tags: r.tags || [], author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
 const tokenOut = (r: any) => ({ id: r.id, name: r.name, prefix: r.prefix, scopes: r.scopes, createdAt: iso(r.created_at), expiresAt: iso(r.expires_at), revokedAt: iso(r.revoked_at), calls: Number(r.calls || 0), lastSeenAt: iso(r.last_seen_at), ruimte: ruimteOf(r.ruimte) });
 
+/** Agenttoken van deze gebruiker (voor de toegangs-tab «Доступ ШІ»): id + naam, nooit het geheim. */
+export async function agentTokenVanGebruiker(userId: string, id: string): Promise<{ id: string; name: string } | null> {
+  const { rows } = await getPool("systeem").query(
+    `SELECT id::text AS id, name FROM app.mcp_console_tokens
+      WHERE id::text = $1 AND user_id = $2 AND revoked_at IS NULL AND expires_at > now()`, [id, userId]);
+  return rows[0] ?? null;
+}
+
 async function board(userId: string) {
   return alsGebruiker(userId, async (q) => {
     const { rows } = await q("SELECT * FROM app.mcp_console_items WHERE user_id = $1 ORDER BY created_at DESC LIMIT 400", [userId]);
@@ -224,7 +234,21 @@ const SITE_ONLY_TOOLS = new Set(["server_backup", "server_uitrol_nu", "server_te
 const BOARD_TOOLS = new Set(["list_tasks", "list_notes", "estate_search", "upsert_task", "upsert_note"]);
 const REMOVED_TOOLS = new Set(["write_staging", "list_staging", "read_staging", "install_release", "update_door", "start_backup"]);
 
-async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string, agentTokenId?: string) {
+async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string, agentTokenId?: string, ruimte: AiRuimte = 'prive') {
+  // Gedetailleerde toegang per agenttoken (0043, shared/ai-toegang.ts): default-deny per scope, vóór uitvoering.
+  // Zonder tokenId belt de mens zelf via de console — dan geldt dit niet (wel het AI-beleid en de vlaggen).
+  // Alleen instrumenten uit de catalogus vallen onder scopes; de rest houdt zijn eigen poorten
+  // (ruimte, eigenaar, step-up) met hun eigen foutcodes (bv. SPACE_SEPARATED, OWNER_ONLY).
+  if (agentTokenId && scopeVoorTool(name) !== undefined) {
+    try {
+      const toegang = await magTool({ soort: 'agenttoken', id: agentTokenId }, name, ruimteOf(ruimte));
+      if (!toegang.ok) throw new Error(`TOEGANG_GESCHEIDEN:${toegang.scope ?? 'onbekend'}`);
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith('TOEGANG_GESCHEIDEN')) throw err;
+      // Tabel 0043 ontbreekt (migratie nog niet gedraaid): oud gedrag; elke andere DB-fout = weigeren.
+      if (!isOntbrekendeTabel(err)) throw new Error(`TOEGANG_GESCHEIDEN:${scopeVoorTool(name) ?? 'onbekend'}`);
+    }
+  }
   // Updates voorbereiden (passkey-goedkeuring, RUNBOOK-VEILIGE-UITROL.md §13): alleen met een grant uit "Кому дозволено"; goedkeuren
   // kan een agent of de console nooit (alleen de eigenaar op de site met zijn passkey).
   if (isGoedkeurPoging(name)) throw new Error("ALLEEN_EIGENAAR_MET_PASSKEY: goedkeuren kan alleen de eigenaar op de site met zijn passkey");
@@ -607,6 +631,8 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
           [auth.user.id, name, raw.slice(0, 12), sha(raw), poort.ruimte])).rows[0];
       });
       if (!row) return error("TOKEN_LIMIT_REACHED", 409);
+      // Gedetailleerde toegang (0043): een nieuw token krijgt de niet-gevoelige standaardscopes.
+      await geefStandaard(auth.user.id, { soort: 'agenttoken', id: String(row.id) }, poort.ruimte).catch(() => undefined);
       await logCall(auth.user.id, { method: "token.issue", detail: name, ...wie(ctx, auth), ok: true, ms: 0 });
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name, ruimte: poort.ruimte } }).catch(() => undefined);
       return json({ token: { ...tokenOut(row), token: raw } });
@@ -614,6 +640,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
     "POST /api/mcp/tokens/revoke": [gate("member", {}, async (ctx, auth) => {
       const weg = await alsGebruiker(auth.user.id, async (q) => (await q("UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE id::text = $2 AND user_id = $1 AND revoked_at IS NULL RETURNING name, prefix", [auth.user.id, String(bodyOf(ctx.body).id || "")])).rows[0]);
       if (!weg) return error("TOKEN_NOT_FOUND", 404);
+      await verwijderToegang({ soort: 'agenttoken', id: String(bodyOf(ctx.body).id || "") }).catch(() => undefined);
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_revoked", type: "ai", result: "ok", details: { tokenId: String(bodyOf(ctx.body).id || ""), name: String(weg.name || ""), prefix: String(weg.prefix || "") } }).catch(() => undefined);
       return json({ ok: true });
     })],
@@ -742,7 +769,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
         return json({ ok: false, error: `AI_BELEID:${beleid.code}`, message: weigerTekst(beleid) }, 403);
       }
       try {
-        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}`, ruimte }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id)));
+        const result = await metNamens({ client: String(tok.name), grantId: `token:${tok.id}`, ruimte }, () => runTool(tok.user_id, tok.role === "owner", name, args, `agent:${tok.name}`, String(tok.id), ruimte));
         await logCall(tok.user_id, { method: "tools/call", detail: name, transport: "agent", agent: tok.name, ok: true, ms: Date.now() - started });
         return json({ ok: true, result: text(result) });
       } catch (err) {

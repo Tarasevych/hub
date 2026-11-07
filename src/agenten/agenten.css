@@ -221,3 +221,40 @@ small.ag-melding{display:block}
 /* Keuze deur/connector: op een smal scherm twee volle rijen, tekst mag afbreken (niets buiten de kaart). */
 .ag-verbind .ag-segment button[role=radio]{min-height:40px;white-space:normal;text-align:left}
 @media(max-width:560px){.ag-verbind .ag-segment{display:grid;width:100%}.ag-verbind .ag-segment-optie{border-left:0;border-top:1px solid var(--line);padding-right:0}.ag-verbind .ag-segment-optie:first-child{border-top:0}.ag-verbind .ag-segment button[role=radio]{width:100%}}
+/* «Доступ ШІ» (shared/ai-toegang.ts): перемикачі скоупів одного підключення. Світла, сучасна; вузький екран — стовпчиком. */
+.at{display:grid;gap:12px;min-width:0}
+.at-ondertitel{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5;max-width:70ch}
+.at-leeg{margin:0;color:var(--muted)}
+.at-melding{margin:0;padding:8px 12px;border-radius:8px;font-size:.86rem;line-height:1.45}
+.at-fout{background:color-mix(in srgb,var(--ag-bad,#cf222e) 10%,transparent);color:var(--ag-bad,#cf222e)}
+.at-ok{background:color-mix(in srgb,var(--ag-ok,#1a7f37) 10%,transparent);color:var(--ag-ok,#1a7f37)}
+.at-groep h4{margin:0 0 6px;font-size:.92rem}
+.at-groep ul{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--ag-r);background:var(--panel);overflow:hidden}
+.at-rij{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line)}
+.at-rij:first-child{border-top:0}
+.at-rij.is-beheer-uit{opacity:.75}
+.at-schakelaar{flex:0 0 auto;width:40px;height:24px;margin-top:2px;border-radius:99px;border:1px solid var(--line);background:var(--surface);cursor:pointer;position:relative;padding:0}
+.at-schakelaar .at-knop{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:left .15s,background .15s}
+.at-schakelaar.is-aan,.at-schakelaar[aria-checked=true]{background:color-mix(in srgb,var(--ag-ok,#1a7f37) 85%,transparent);border-color:transparent}
+.at-schakelaar[aria-checked=true] .at-knop{left:18px;background:#fff}
+.at-schakelaar:disabled{cursor:not-allowed;opacity:.6}
+.at-schakelaar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.at-tekst{display:grid;gap:2px;min-width:0}
+.at-naam{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-weight:600;font-size:.9rem}
+.at-lijn{color:var(--muted);font-size:.82rem;line-height:1.45}
+.at-gevoelig{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;background:color-mix(in srgb,var(--ag-warn,#9a6700) 14%,transparent);color:var(--ag-warn,#9a6700);font-size:.72rem;font-weight:700}
+.at-beheer{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:.78rem}
+.at-bevest{border:1px solid var(--ag-warn,#9a6700);border-radius:var(--ag-r);padding:12px;background:var(--panel);display:grid;gap:8px}
+.at-bevest p{margin:0;font-size:.88rem;line-height:1.5;display:flex;gap:6px;align-items:flex-start}
+.at-bevest-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.at-voet{display:flex;flex-wrap:wrap;gap:8px}
+.at-knop-prim{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:0;background:var(--accent);color:#fff;font:inherit;font-weight:600;font-size:.88rem;cursor:pointer}
+.at-knop-prim:disabled{opacity:.6;cursor:wait}
+.at-knop-twee{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:.88rem;cursor:pointer}
+.at-knop-twee:disabled{opacity:.6}
+.at-beheer{border:1px dashed var(--line);border-radius:var(--ag-r);padding:12px;display:grid;gap:8px}
+.at-beheer h4{margin:0;display:flex;align-items:center;gap:6px;font-size:.9rem}
+.at-beheer-lijst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.at-beheer-rij2{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.84rem}
+.at-beheer-groep-naam{color:var(--muted);font-size:.76rem}
+@media(max-width:560px){.at-rij{padding:10px}.at-voet .at-knop-prim,.at-voet .at-knop-twee{flex:1 1 100%;justify-content:center}}
