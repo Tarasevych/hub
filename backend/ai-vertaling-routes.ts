@@ -15,6 +15,13 @@ import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import { alineasVoorModel, controleerPunten, gespreksAlineas, type AiPunt, type BronAlinea, type PuntSoort } from '../shared/ai-bronnen';
 import { klantVan } from '../shared/ai-verbinding';
 import {
+  AI_AANBIEDERS,
+  AI_AANBIEDER_BIJ_ID,
+  aanbiederUitAgent,
+  GEMINI_ACTIES_RESPONSE_SCHEMA,
+  type AiAanbiederId,
+} from '../shared/ai-aanbieders';
+import {
   AI_TOEGANG_HREF,
   AI_VERTALING_MODES,
   AI_VERTALING_SUMMARY_DEPTHS,
@@ -54,6 +61,7 @@ const inMemoryPrefs = new Map<string, AiVertalingInstellingen>();
 export type AiVertalingDeps = {
   fetch?: typeof fetch;
   getApiKey?: (userId: string) => Promise<string | null>;
+  getApiKeyForProvider?: (userId: string, provider: AiAanbiederId) => Promise<string | null>;
   loadAgents?: (userId: string) => Promise<AiVertalingAgentInfo[]>;
   loadPolicyCeiling?: (userId: string, clientName: string) => Promise<{
     mailRead: 'always' | 'ask' | 'off';
@@ -266,7 +274,44 @@ async function defaultLoadAgents(userId: string): Promise<AiVertalingAgentInfo[]
     // Ignore if DB unavailable
   }
 
-  // 4. Check user's own Anthropic key in vault or built-in private workspace assistant
+  // 4. Перевірка ізольованих ключів користувача (userId) у Sleutelkluis для кожного незалежного постачальника ШІ
+  const gebruikerCaps = await leesGebruikerCaps(userId).catch(() => ({} as Record<string, Record<string, boolean>>));
+  for (const aanbieder of AI_AANBIEDERS) {
+    let heeftAanbiederSleutel = false;
+    try {
+      if (customDeps?.getApiKeyForProvider) {
+        heeftAanbiederSleutel = Boolean(await customDeps.getApiKeyForProvider(userId, aanbieder.id));
+      } else if (!customDeps?.getApiKey && defaultChatDeps.getApiKeyForPurpose) {
+        heeftAanbiederSleutel = Boolean(await defaultChatDeps.getApiKeyForPurpose(userId, aanbieder.id));
+      }
+    } catch {
+      heeftAanbiederSleutel = false;
+    }
+    if (!heeftAanbiederSleutel) continue;
+
+    const klant = klantVan(aanbieder.agentSlug);
+    const kCaps = klant !== 'overig' ? gebruikerCaps[klant] : undefined;
+    const aanbiederScopes = baseScopes.filter((sc) => {
+      if (sc === 'mail.read' && kCaps?.['mail.read'] === false) return false;
+      if (sc === 'files.read' && (kCaps?.['files.read'] === false || kCaps?.['drive.read'] === false)) return false;
+      return true;
+    });
+
+    result.push({
+      id: aanbieder.priveAgentId,
+      name: `Власний ключ ШІ (${aanbieder.naamUk} · Приватний)`,
+      platform: `${aanbieder.id}-prive`,
+      source: 'vault',
+      ruimte: 'prive',
+      scopes: aanbiederScopes,
+      allowedMailRead: aanbiederScopes.includes('mail.read'),
+      allowedFilesRead: aanbiederScopes.includes('files.read'),
+      statusUk: aanbiederScopes.includes('mail.read')
+        ? 'Активний (приватний простір)'
+        : 'Пошту вимкнено для цього агента в обліковому записі',
+    });
+  }
+
   let hasVaultKey = false;
   try {
     const getKey = customDeps?.getApiKey ?? ((uid: string) => defaultChatDeps.getApiKey(uid));
@@ -467,40 +512,107 @@ async function callAnthropicJson<T>(
   systemPrompt: string,
   userPrompt: string,
   maxTokens = 1400,
+  chosenAgent?: AiVertalingAgentInfo | null,
+  responseSchema?: Record<string, unknown>,
 ): Promise<T | null> {
-  const getKey = customDeps?.getApiKey ?? ((uid: string) => defaultChatDeps.getApiKey(uid));
+  const aanbieder = aanbiederUitAgent(chosenAgent);
   const fetchFn = customDeps?.fetch ?? fetch;
   let apiKey: string | null = null;
   try {
-    apiKey = await getKey(userId);
+    if (customDeps?.getApiKeyForProvider) {
+      apiKey = await customDeps.getApiKeyForProvider(userId, aanbieder);
+    } else if (customDeps?.getApiKey) {
+      apiKey = await customDeps.getApiKey(userId);
+    } else if (defaultChatDeps.getApiKeyForPurpose) {
+      apiKey = await defaultChatDeps.getApiKeyForPurpose(userId, aanbieder);
+      if (!apiKey && (!chosenAgent || chosenAgent.id === 'prive:mijn-ruimte-assistent')) {
+        apiKey = await defaultChatDeps.getApiKey(userId);
+      }
+    } else {
+      apiKey = await defaultChatDeps.getApiKey(userId);
+    }
   } catch {
     apiKey = null;
   }
   if (!apiKey) return null;
 
   try {
-    const res = await fetchFn(ANTHROPIC_URL, {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: process.env.MAIL_AI_MODEL || process.env.CHAT_MODEL || DEFAULT_MODEL,
-        max_tokens: maxTokens,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
-      signal: AbortSignal.timeout(45_000),
-    });
+    let res: Response;
+    if (aanbieder === 'gemini') {
+      const geminiModel = process.env.MAIL_GEMINI_MODEL || AI_AANBIEDER_BIJ_ID.gemini.standaardVertaalModel;
+      const geminiUrl = `${AI_AANBIEDER_BIJ_ID.gemini.eindpunt}/${encodeURIComponent(geminiModel)}:generateContent`;
+      res = await fetchFn(geminiUrl, {
+        method: 'POST',
+        headers: {
+          'x-goog-api-key': apiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            maxOutputTokens: maxTokens,
+            responseMimeType: 'application/json',
+            ...(responseSchema ? { responseSchema } : {}),
+          },
+        }),
+        signal: AbortSignal.timeout(45_000),
+      });
+    } else if (aanbieder === 'openai' || aanbieder === 'grok' || aanbieder === 'autoclaw') {
+      const meta = AI_AANBIEDER_BIJ_ID[aanbieder];
+      res = await fetchFn(meta.eindpunt, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: meta.standaardVertaalModel,
+          max_tokens: maxTokens,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+        signal: AbortSignal.timeout(45_000),
+      });
+    } else {
+      res = await fetchFn(ANTHROPIC_URL, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: process.env.MAIL_AI_MODEL || process.env.CHAT_MODEL || DEFAULT_MODEL,
+          max_tokens: maxTokens,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+        signal: AbortSignal.timeout(45_000),
+      });
+    }
+
     if (!res.ok) return null;
     const data: any = await res.json().catch(() => null);
-    const rawText = (Array.isArray(data?.content) ? data.content : [])
-      .filter((b: any) => b.type === 'text')
-      .map((b: any) => String(b.text || ''))
-      .join('\n')
-      .trim();
+    let rawText = '';
+    if (Array.isArray(data?.candidates) && data.candidates[0]?.content?.parts) {
+      rawText = data.candidates[0].content.parts
+        .filter((p: any) => typeof p?.text === 'string')
+        .map((p: any) => String(p.text))
+        .join('\n')
+        .trim();
+    } else if (Array.isArray(data?.choices) && typeof data.choices[0]?.message?.content === 'string') {
+      rawText = String(data.choices[0].message.content).trim();
+    } else if (Array.isArray(data?.content)) {
+      rawText = data.content
+        .filter((b: any) => b.type === 'text')
+        .map((b: any) => String(b.text || ''))
+        .join('\n')
+        .trim();
+    }
     if (!rawText) return null;
     const jsonMatch = /\{[\s\S]*\}/.exec(rawText);
     if (!jsonMatch) return null;
@@ -878,6 +990,7 @@ export async function executeAiVertalingRun(
         wrapUntrusted(JSON.stringify(toTranslate), 22_000),
       ].join('\n'),
       2200,
+      chosenAgent,
     );
 
     // Schone vertaling: alleen wat de motor echt teruggaf. Een fragment zonder antwoord blijft het ORIGINEEL — geen markering
@@ -936,6 +1049,8 @@ export async function executeAiVertalingRun(
         wrapAlineas(alineasVoorModel(alineas)),
       ].join('\n'),
       1600,
+      chosenAgent,
+      GEMINI_ACTIES_RESPONSE_SCHEMA as unknown as Record<string, unknown>,
     );
 
     // Geen (bruikbaar) antwoord: eerlijk zeggen. De browser toont dan zijn eenvoudige ontleding zonder model.
@@ -1002,6 +1117,7 @@ export async function executeAiVertalingRun(
         wrapUntrusted(combinedText),
       ].join('\n'),
       1400,
+      chosenAgent,
     );
 
     const sentences = splitSentences(combinedText);
@@ -1069,6 +1185,7 @@ export async function executeAiVertalingRun(
         wrapUntrusted(combinedText),
       ].join('\n'),
       1400,
+      chosenAgent,
     );
 
     const sums = extractSumsFromText(combinedText);
@@ -1200,6 +1317,7 @@ export async function executeAiVertalingRun(
       ),
     ].join('\n'),
     1500,
+    chosenAgent,
   );
 
   const defaultOverview = relatedContext.citations.length

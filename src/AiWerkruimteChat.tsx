@@ -10,6 +10,7 @@ import { api, isAfgebroken } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import { foutCode, foutTekst } from './agenten/fouten';
 import { WERKRUIMTE_FOUTEN, type Feiten, type Startstaat } from '../shared/ai-werkruimte';
+import { AI_AANBIEDER_BIJ_ID, aanbiederUitModel } from '../shared/ai-aanbieders';
 import './chat-paneel.css';
 import './ai-werkruimte.css';
 
@@ -22,16 +23,19 @@ const sessieLichaam = () => ({ service: 'ai', tabContext: ecosystemTabContext(),
 const kort = (waarde: unknown) => JSON.stringify(waarde, null, 2).slice(0, 800);
 
 /** Eén zin met de echte reden. Onze eigen codes eerst; de rest gaat naar de bestaande uitleg van de hub (fouten.ts). */
-export function werkruimteFout(e: unknown, tr: Tr): string {
+export function werkruimteFout(e: unknown, tr: Tr, modelId?: string): string {
   const { code } = foutCode(e);
+  const aanbieder = modelId ? AI_AANBIEDER_BIJ_ID[aanbiederUitModel(modelId)] : null;
+  const naamUk = aanbieder ? aanbieder.naamUk : 'Anthropic';
+  const naamNl = aanbieder ? aanbieder.naamNl : 'Anthropic';
   const met = (uk: string, nl: string) => `${tr(uk, nl)} (${tr('код', 'code')}: ${code})`;
-  if (code === WERKRUIMTE_FOUTEN.geenSleutel) return met('Ключа Anthropic немає у сховищі — чат не може звернутися до моделі.', 'Geen Anthropic-sleutel in de kluis — de chat kan het model niet bereiken.');
+  if (code === WERKRUIMTE_FOUTEN.geenSleutel) return met(`Ключа ${naamUk} немає у сховищі — чат не може звернутися до моделі.`, `Geen ${naamNl}-sleutel in de kluis — de chat kan het model niet bereiken.`);
   if (code === WERKRUIMTE_FOUTEN.geenModel) return met('Власник сервера не налаштував жодної моделі (CHAT_MODEL).', 'De eigenaar van de server heeft geen model ingesteld (CHAT_MODEL).');
   if (code === WERKRUIMTE_FOUTEN.modelOnbekend) return met('Цю модель сервер не налаштовано використовувати. Виберіть зі списку.', 'Dit model is op de server niet ingesteld. Kies er een uit de lijst.');
-  if (code === WERKRUIMTE_FOUTEN.teVeel) return met('Забагато запитів за хвилину на цьому акаунті. Зачекайте хвилину.', 'Te veel verzoeken per minuut op dit account. Wacht een minuut.');
+  if (code === WERKRUIMTE_FOUTEN.teVeel) return met('Забагато запитів за хвилину для цього облікового запису. Зачекайте хвилину.', 'Te veel verzoeken per minuut op dit account. Wacht een minuut.');
   if (code === WERKRUIMTE_FOUTEN.laatsteMoetVraagZijn) return met('Останнім у розмові має бути ваше питання.', 'Het laatste in het gesprek moet uw eigen vraag zijn.');
-  if (code.startsWith(`${WERKRUIMTE_FOUTEN.aanbieder}_401`)) return met('Anthropic відхилив ключ зі сховища — перевірте або замініть його.', 'Anthropic weigert de sleutel uit de kluis — controleer of vervang hem.');
-  if (code.startsWith(`${WERKRUIMTE_FOUTEN.aanbieder}_429`)) return met('Anthropic обмежив ваш ключ (ліміт запитів). Спробуйте трохи згодом.', 'Anthropic beperkt uw sleutel (verzoeklimiet). Probeer het iets later.');
+  if (code.startsWith(`${WERKRUIMTE_FOUTEN.aanbieder}_401`)) return met(`${naamUk} відхилив ключ зі сховища — перевірте або замініть його.`, `${naamNl} weigert de sleutel uit de kluis — controleer of vervang hem.`);
+  if (code.startsWith(`${WERKRUIMTE_FOUTEN.aanbieder}_429`)) return met(`${naamUk} обмежив ваш ключ (ліміт запитів). Спробуйте трохи згодом.`, `${naamNl} beperkt uw sleutel (verzoeklimiet). Probeer het iets later.`);
   if (code.startsWith(WERKRUIMTE_FOUTEN.aanbieder)) return met('Постачальник моделі повернув помилку. Текст помилки є в журналі.', 'De modelaanbieder gaf een fout terug. De tekst staat in het logboek.');
   return foutTekst(e, tr, ['Не вдалося отримати відповідь', 'Geen antwoord gekregen']);
 }
@@ -57,6 +61,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
   const [model, setModel] = useState(stand.model);
   const afbreker = useRef<AbortController | null>(null);
   const einde = useRef<HTMLDivElement | null>(null);
+  const actieveAanbieder = AI_AANBIEDER_BIJ_ID[aanbiederUitModel(model || stand.model)];
 
   useEffect(() => { setModel((huidig) => (feiten.modellen.some((m) => m.id === huidig) ? huidig : stand.model)); }, [feiten.modellen, stand.model]);
 
@@ -92,7 +97,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
     } catch (e) {
       // Afgebroken door de gebruiker: geen fout, maar wel eerlijk dat er geen antwoord is.
       if (isAfgebroken(e)) setMelding(tr('Зупинено. Відповіді немає — надішліть запит ще раз, якщо потрібно.', 'Gestopt. Er is geen antwoord — stuur de vraag opnieuw als u wilt.'));
-      else setFout(werkruimteFout(e, tr));
+      else setFout(werkruimteFout(e, tr, model));
     }
     afbreker.current = null;
     setBezig(false);
@@ -103,7 +108,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
 
   const beslis = async (id: string, besluit: 'approve' | 'reject') => {
     try { await api.post(`/api/owner/agents/commands/${id}/${besluit}`, sessieLichaam()); }
-    catch (e) { setFout(werkruimteFout(e, tr)); }
+    catch (e) { setFout(werkruimteFout(e, tr, model)); }
     void leesWachtend().catch(() => undefined);
   };
 
@@ -111,14 +116,17 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
     <section className='chat-panel' data-aiw-chat='true'>
       <div className='aiw-model' data-aiw-model={model || 'geen'}>
         {feiten.modellen.length > 1 ? (
-          <label>{tr('Модель', 'Model')}{' '}
+          <label>{tr('Модель ШІ', 'AI-model')}{' '}
             <select value={model} onChange={(e) => setModel(e.target.value)} disabled={bezig}>
-              {feiten.modellen.map((m) => <option key={m.id} value={m.id}>{m.id}{m.standaard ? tr(' (типово)', ' (standaard)') : ''}</option>)}
+              {feiten.modellen.map((m) => {
+                const a = AI_AANBIEDER_BIJ_ID[aanbiederUitModel(m.id)];
+                return <option key={m.id} value={m.id}>{a.naamUk}: {m.id}{m.standaard ? tr(' (типово)', ' (standaard)') : ''}</option>;
+              })}
             </select>
           </label>
         ) : (
           <span>{stand.model
-            ? tr(`Модель: ${stand.model} — її налаштував власник сервера`, `Model: ${stand.model} — ingesteld door de eigenaar van de server`)
+            ? tr(`Модель (${actieveAanbieder.naamUk}): ${stand.model} — її налаштував власник сервера`, `Model (${actieveAanbieder.naamNl}): ${stand.model} — ingesteld door de eigenaar van de server`)
             : tr('Модель не налаштована на сервері', 'Geen model ingesteld op de server')}</span>
         )}
         <span>{tr('Інструментів у чаті', 'Hulpmiddelen in de chat')}: {stand.aantalTools}</span>
@@ -136,7 +144,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
         ) : null}
         {berichten.map((b, i) => (
           <div key={i} className={`chat-msg chat-${b.rol}`}>
-            <b>{b.rol === 'user' ? tr('Ви', 'U') : 'Claude'}</b>
+            <b>{b.rol === 'user' ? tr('Ви', 'U') : tr(actieveAanbieder.naamUk, actieveAanbieder.naamNl)}</b>
             <p>{b.tekst || tr('(порожня відповідь)', '(leeg antwoord)')}</p>
             {b.onvolledig ? <small>{tr('Відповідь неповна: час або кроки закінчилися. Напишіть «продовжуй».', 'Antwoord onvolledig: tijd of stappen op. Schrijf «ga verder».')}</small> : null}
           </div>
@@ -146,7 +154,7 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
             {stappen.map((s, i) => <li key={i} className={s.isError ? 'chat-step-err' : 'chat-step-ok'}>{s.tool}</li>)}
           </ul>
         ) : null}
-        {bezig ? <p className='chat-busy'>{tr('Claude працює…', 'Claude is bezig…')}</p> : null}
+        {bezig ? <p className='chat-busy'>{tr(`${actieveAanbieder.naamUk} працює…`, `${actieveAanbieder.naamNl} is bezig…`)}</p> : null}
         <div ref={einde} />
       </div>
 

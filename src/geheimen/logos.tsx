@@ -14,7 +14,8 @@ export const GROEP_ICOON: Record<GeheimGroep, ComponentType<{ className?: string
  * op lichtblauw/oranje = 2,3–3,0:1 en voor merken die wél een logo hebben een pseudo-logo (contrastronde 21.10.2026).
  */
 export const DIENST_MERK: Record<DienstId, string> = {
-  google: 'google', microsoft: 'microsoft', github: 'github', anthropic: 'anthropic', openai: 'gpt', telegram: 'telegram',
+  google: 'google', microsoft: 'microsoft', github: 'github', anthropic: 'anthropic', openai: 'gpt',
+  gemini: 'gemini', grok: 'grok', autoclaw: 'autoclaw', telegram: 'telegram',
   'home-assistant': 'homeassistant', webhook: 'webhook', postgres: 'postgresql', ssh: 'icoon-terminal', cloudflare: 'cloudflare',
   stripe: 'stripe', smtp: 'icoon-mail', scim: 'icoon-scim', site: 'internal', audit: 'icoon-journaal', versleuteling: 'icoon-slot',
   mcp: 'icoon-bot', api: 'icoon-api', overig: 'icoon-sleutel',

@@ -19,7 +19,7 @@ export const GROEP_NAAM: Record<GeheimGroep, Tekst> = {
   eigen: ['Власні ключі', 'Eigen sleutels'],
 };
 
-export type DienstId = 'google' | 'microsoft' | 'github' | 'anthropic' | 'openai' | 'telegram' | 'home-assistant' | 'webhook' | 'postgres'
+export type DienstId = 'google' | 'microsoft' | 'github' | 'anthropic' | 'openai' | 'gemini' | 'grok' | 'autoclaw' | 'telegram' | 'home-assistant' | 'webhook' | 'postgres'
   | 'ssh' | 'cloudflare' | 'stripe' | 'smtp' | 'scim' | 'site' | 'audit' | 'versleuteling' | 'mcp' | 'api' | 'overig';
 export const DIENSTEN: Record<DienstId, { naam: Tekst; kleur: string; letters: string }> = {
   google: { naam: ['Google', 'Google'], kleur: '#4285f4', letters: 'G' },
@@ -27,6 +27,9 @@ export const DIENSTEN: Record<DienstId, { naam: Tekst; kleur: string; letters: s
   github: { naam: ['GitHub', 'GitHub'], kleur: '#24292f', letters: 'GH' },
   anthropic: { naam: ['Anthropic (Claude)', 'Anthropic (Claude)'], kleur: '#c15f3c', letters: 'A' },
   openai: { naam: ['OpenAI', 'OpenAI'], kleur: '#10a37f', letters: 'O' },
+  gemini: { naam: ['Google Gemini API', 'Google Gemini API'], kleur: '#1a73e8', letters: 'GM' },
+  grok: { naam: ['xAI (Grok)', 'xAI (Grok)'], kleur: '#0f172a', letters: 'X' },
+  autoclaw: { naam: ['AutoClaw (Z.ai / GLM)', 'AutoClaw (Z.ai / GLM)'], kleur: '#0d9488', letters: 'AC' },
   telegram: { naam: ['Telegram', 'Telegram'], kleur: '#229ed9', letters: 'T' },
   'home-assistant': { naam: ['Home Assistant', 'Home Assistant'], kleur: '#18bcf2', letters: 'HA' },
   webhook: { naam: ['Webhook', 'Webhook'], kleur: '#7c3aed', letters: 'W' },
@@ -45,7 +48,7 @@ export const DIENSTEN: Record<DienstId, { naam: Tekst; kleur: string; letters: s
 };
 
 /** Doelen (purpose) van een sleutel in de eigen kluis → dienst en groep. */
-export const VAULT_DOELEN = ['home-assistant', 'telegram', 'github', 'github-oauth', 'github-app', 'github-uitrol', 'anthropic', 'openai', 'google', 'microsoft', 'cloudflare',
+export const VAULT_DOELEN = ['home-assistant', 'telegram', 'github', 'github-oauth', 'github-app', 'github-uitrol', 'anthropic', 'openai', 'gemini', 'grok', 'autoclaw', 'google', 'microsoft', 'cloudflare',
   'stripe', 'smtp', 'database', 'ssh', 'webhook', 'other'] as const;
 export type VaultDoel = typeof VAULT_DOELEN[number];
 export const DOEL_INFO: Record<VaultDoel, { dienst: DienstId; groep: GeheimGroep; naam: Tekst }> = {
@@ -60,6 +63,9 @@ export const DOEL_INFO: Record<VaultDoel, { dienst: DienstId; groep: GeheimGroep
   'github-uitrol': { dienst: 'github', groep: 'server', naam: ['GitHub — релізи сайту (технічний)', 'GitHub — site-releases (technisch)'] },
   anthropic: { dienst: 'anthropic', groep: 'ai', naam: ['Anthropic (Claude)', 'Anthropic (Claude)'] },
   openai: { dienst: 'openai', groep: 'ai', naam: ['OpenAI', 'OpenAI'] },
+  gemini: { dienst: 'gemini', groep: 'ai', naam: ['Google Gemini API', 'Google Gemini API'] },
+  grok: { dienst: 'grok', groep: 'ai', naam: ['xAI (Grok)', 'xAI (Grok)'] },
+  autoclaw: { dienst: 'autoclaw', groep: 'ai', naam: ['AutoClaw (Z.ai / GLM)', 'AutoClaw (Z.ai / GLM)'] },
   google: { dienst: 'google', groep: 'google', naam: ['Google', 'Google'] },
   microsoft: { dienst: 'microsoft', groep: 'oauth', naam: ['Microsoft', 'Microsoft'] },
   cloudflare: { dienst: 'cloudflare', groep: 'cloud', naam: ['Cloudflare', 'Cloudflare'] },
@@ -83,7 +89,10 @@ const NAAM_REGELS: readonly Regel[] = [
   { re: /^(SSH_|ROOT_|SERVER_)|SSH_CA|(^|_)SSH(_|$)/i, dienst: 'ssh', groep: 'server' },
   { re: /^(GITHUB_|GH_)/i, dienst: 'github', groep: 'cloud' },
   { re: /^(ANTHROPIC|CLAUDE)/i, dienst: 'anthropic', groep: 'ai' },
-  { re: /^(OPENAI|GPT|GEMINI|GROK|XAI|COPILOT|MISTRAL|ZAI|AUTOCLAW|ZHIPU|GLM)/i, dienst: 'openai', groep: 'ai' },
+  { re: /^(GEMINI)/i, dienst: 'gemini', groep: 'ai' },
+  { re: /^(GROK|XAI)/i, dienst: 'grok', groep: 'ai' },
+  { re: /^(ZAI|AUTOCLAW|ZHIPU|GLM)/i, dienst: 'autoclaw', groep: 'ai' },
+  { re: /^(OPENAI|GPT|COPILOT|MISTRAL)/i, dienst: 'openai', groep: 'ai' },
   { re: /^(MCP_|AGENT_|AI_)/i, dienst: 'mcp', groep: 'ai' },
   { re: /^TELEGRAM/i, dienst: 'telegram', groep: 'cloud' },
   { re: /^(HOME_?ASSISTANT|HASS)/i, dienst: 'home-assistant', groep: 'cloud' },

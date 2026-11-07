@@ -452,8 +452,15 @@ export default function AiVertalingBalk({
             <select
               value={selectedAgentId}
               onChange={e => {
-                setSelectedAgentId(e.target.value);
+                const nextAgentId = e.target.value;
+                setSelectedAgentId(nextAgentId);
                 setRefusal(null);
+                void persistSettings({ defaultAgentId: nextAgentId });
+                if (translationActive || activeMode === 'translate') {
+                  void runAction('translate', { agent: nextAgentId });
+                } else if (activeMode) {
+                  void runAction(activeMode, { agent: nextAgentId });
+                }
               }}
               aria-label={t('Підключений ШІ-агент', 'Gekoppelde AI-agent')}
               data-testid="ai-vb-agent-select"
@@ -737,6 +744,9 @@ export default function AiVertalingBalk({
               </button>
               <a href={AI_TOEGANG_HREF} className="ai-vb-toegang-link">
                 Керувати дозволами агентів у «Доступ ШІ» →
+              </a>
+              <a href="https://mcp.tarasevych.com/agents#sleutels" className="ai-vb-toegang-link" data-testid="ai-vb-sleutels-link">
+                Керувати ключами постачальників у «Сховищі ключів» →
               </a>
             </div>
           </div>

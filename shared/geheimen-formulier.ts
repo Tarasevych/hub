@@ -14,6 +14,9 @@ export const STANDAARD_NAAM_PER_DOEL: Record<VaultDoel, string> = {
   'github-uitrol': 'github-uitrol',
   anthropic: 'anthropic-api-key',
   openai: 'openai-api-key',
+  gemini: 'gemini-api-key',
+  grok: 'grok-api-key',
+  autoclaw: 'autoclaw-api-key',
   google: 'google-oauth',
   microsoft: 'microsoft-oauth',
   cloudflare: 'cloudflare-api-token',
@@ -34,6 +37,9 @@ export const PLACEHOLDER_PER_DOEL: Record<VaultDoel, Tekst> = {
   'github-uitrol': ['github_pat_11A... (Contents: write)', 'github_pat_11A... (Contents: write)'],
   anthropic: ['sk-ant-api03-...', 'sk-ant-api03-...'],
   openai: ['sk-proj-...', 'sk-proj-...'],
+  gemini: ['AIzaSy... (Google AI Studio / Gemini API)', 'AIzaSy... (Google AI Studio / Gemini API)'],
+  grok: ['xai-... (xAI Grok API)', 'xai-... (xAI Grok API)'],
+  autoclaw: ['glm-... або ключ AutoClaw / Z.ai', 'glm-... of AutoClaw / Z.ai-sleutel'],
   google: ['ya29.... або секрет інтеграції Google', 'ya29.... of Google-integratiegeheim'],
   microsoft: ['Секрет клієнта Microsoft / Azure', 'Microsoft / Azure client-secret'],
   cloudflare: ['cfut_... або Cloudflare API Token', 'cfut_... of Cloudflare API-token'],
@@ -55,7 +61,7 @@ const GITHUB_APP_ID_PATROON = /^[0-9]{1,20}$/;
 const PEM_BLOK = new RegExp('-----BEGIN (?:RSA )?PRIVATE' + ' KEY-----[\\s\\S]+?-----END (?:RSA )?PRIVATE' + ' KEY-----');
 
 export function standaardSoortVoorDoel(doel: VaultDoel): VaultSoort {
-  if (doel === 'anthropic' || doel === 'openai') return 'ai';
+  if (doel === 'anthropic' || doel === 'openai' || doel === 'gemini' || doel === 'grok' || doel === 'autoclaw') return 'ai';
   if (doel === 'ssh') return 'device';
   return 'service';
 }

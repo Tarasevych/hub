@@ -927,11 +927,11 @@ export const VERTAAL_MOTOREN: readonly VertaalMotor[] = [
   {
     id: 'eigen-agent',
     naam: 'Ваш приватний ШІ-агент',
-    leverancier: 'Anthropic (ваш власний ключ)',
+    leverancier: 'Claude · Gemini · ChatGPT · Grok · AutoClaw (ваш власний ключ)',
     staat: 'aansluiten',
     plek: 'eigen-sleutel',
-    uitlegUk: 'Переклад, підсумок і контекст робить агент, підключений у «Доступ ШІ» з вашим власним ключем. Лист ніколи не залишає ваш сервер без цього агента.',
-    uitlegNl: 'Vertaling, samenvatting en context komen van de agent die u in «AI-toegang» koppelde met uw eigen sleutel. Zonder die agent verlaat het bericht uw server niet.',
+    uitlegUk: 'Переклад, підсумок і контекст робить той незалежний ШІ-агент (Claude, Google Gemini API, ChatGPT, Grok або AutoClaw / GLM), який ви увімкнули у своєму обліковому записі в «Доступ ШІ» з вашим власним ізольованим ключем.',
+    uitlegNl: 'Vertaling, samenvatting en context komen van de onafhankelijke AI-agent (Claude, Google Gemini API, ChatGPT, Grok of AutoClaw / GLM) die u voor uw eigen account in «AI-toegang» met uw eigen sleutel hebt ingeschakeld.',
     aansluitenHref: AI_TOEGANG_HREF,
   },
   {

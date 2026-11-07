@@ -26,6 +26,7 @@ import { WEIGER_UITLEG, type AgentToegangDiagnose } from '../../shared/ai-toegan
 import { STAND_NAAM } from '../../shared/ruimte-scheiding';
 import { agentSlugUitNaam } from '../../shared/markering-agenten';
 import { bouwBewijsIndex } from '../../shared/ai-bronnen';
+import { aanbiederVoorAgentSlug, AI_AANBIEDER_BIJ_ID } from '../../shared/ai-aanbieders';
 import { KANT_TEKST, type Kant } from '../../shared/connector-v2/catalogus';
 import { STANDAARD, schoon } from '../../shared/connector-v2/rechten';
 import { levendeKanten, SOORT_TEKST, zichtbareSleutels, type VerbindingSoort } from '../../shared/connector-v2/stand';
@@ -450,7 +451,7 @@ function AgentToegangGereedheid({
   );
 }
 
-type BrugKanaal = 'site' | 'browser' | 'pc' | 'server' | 'juridisch';
+type BrugKanaal = 'site' | 'post_ai' | 'browser' | 'pc' | 'server' | 'juridisch';
 
 const JURIDISCH_VOORBEELD_UK = [
   'Договір про надання правничих та ІТ-послуг № 2026-11/07',
@@ -474,6 +475,8 @@ function AntigravityBrugPaneel({
   tr: Tr; uk: boolean; slug: AgentSlug; adres: string; diag: AgentToegangDiagnose | null; hulpmiddelenNu: number; naWijziging: () => Promise<void>;
 }) {
   const isAutoClaw = slug === 'autoclaw';
+  const info = v2Agent(slug);
+  const aanbieder = AI_AANBIEDER_BIJ_ID[aanbiederVoorAgentSlug(slug)];
   const [kanaal, setKanaal] = useState<BrugKanaal>(isAutoClaw ? 'juridisch' : 'site');
   const [gekopieerd, setGekopieerd] = useState('');
   const [verversBezig, setVerversBezig] = useState(false);
@@ -502,29 +505,40 @@ function AntigravityBrugPaneel({
     site: {
       titel: ['1. Сайт і координація (GitOps / MCP)', '1. Site en coördinatie (GitOps / MCP)'],
       uitleg: [
-        `Двостороннє створення й оновлення сайту через власну адресу /${slug}: пошта, календар, файли, дошка, GitHub та 6 інструментів оркестрації (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).`,
-        `Tweerichtingsbouw en -beheer van de site via /${slug}: mail, agenda, bestanden, bord, GitHub en de 6 orkestratiehulpmiddelen (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).`,
+        `Двостороннє створення й оновлення сайту через власну незалежну адресу /${slug}: пошта, календар, файли, дошка, GitHub та 6 інструментів координації (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).`,
+        `Tweerichtingsbouw en -beheer van de site via het eigen onafhankelijke adres /${slug}: mail, agenda, bestanden, bord, GitHub en de 6 orkestratiehulpmiddelen (orch_overzicht, orch_context, orch_taak_start, orch_inleveren_*).`,
       ],
       opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte Status --url ${adres}`,
       rpcVoorbeeld: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte RoepAan --url ${adres} --hulpmiddel tonen_agent_coordinatie_${slug}_admin_tarasevych_com_beheer`,
       href: '#orch',
       hrefLabel: ['Відкрити «Координація»', 'Open «Coördinatie»'],
     },
-    browser: {
-      titel: ['2. Браузер (розширення Mijn Ruimte)', '2. Browser (Mijn Ruimte-extensie)'],
+    post_ai: {
+      titel: ['2. Пошта, переклад і власний ключ API (Sleutelkluis)', '2. Mail, vertaling en eigen API-sleutel (Sleutelkluis)'],
       uitleg: [
-        'Керування вкладками в реальному часі (21 інструмент): відкриття сторінок, знімок DOM, клік, введення тексту, форми, скріншоти, консоль, мережа та глибока діагностика Chrome Debugger.',
+        `Повністю незалежна робота ${info.naam} (${aanbieder.naamUk}) для вашого облікового запису: збережіть ізольований ключ призначення «${aanbieder.id}» у Sleutelkluis, увімкніть доступ до пошти — і переклад листів, витяг дій («Що від вас потрібно?») та чат ai.tarasevych.com працюватимуть напряму через ${aanbieder.standaardModel} без жодної прив’язки до інших агентів.`,
+        `Volledig onafhankelijke werking van ${info.naam} (${aanbieder.naamNl}) voor uw eigen account: bewaar een geïsoleerde sleutel met doel «${aanbieder.id}» in de Sleutelkluis, zet mailtoegang aan — en mailvertaling, actie-extractie en de chat op ai.tarasevych.com werken rechtstreeks via ${aanbieder.standaardModel} zonder enige afhankelijkheid van andere agenten.`,
+      ],
+      opdracht: `purpose="${aanbieder.id}" · agent="${aanbieder.priveAgentId}" · model="${aanbieder.standaardModel}"`,
+      rpcVoorbeeld: `${aanbieder.eindpunt} (${aanbieder.standaardVertaalModel})`,
+      href: '#toegang',
+      hrefLabel: ['Відкрити «Доступи»', 'Open «Toegang»'],
+    },
+    browser: {
+      titel: ['3. Оглядач (розширення Mijn Ruimte)', '3. Browser (Mijn Ruimte-extensie)'],
+      uitleg: [
+        'Керування вкладками в реальному часі (21 інструмент): відкриття сторінок, знімок DOM, натискання, введення тексту, форми, знімки екрана, консоль, мережа та глибока діагностика оглядача.',
         'Realtime tabbladbeheer (21 hulpmiddelen): pagina’s openen, DOM-opname, klikken, typen, formulieren, schermafdrukken, console, netwerk en diepe Chrome Debugger-diagnose.',
       ],
       opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserTabs --url ${adres} --kant gebruiker`,
       rpcVoorbeeld: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte BrowserOpen --url ${adres} --doelUrl https://tarasevych.com`,
       href: '#browser',
-      hrefLabel: ['Відкрити «Браузер і агенти»', 'Open «Browser en agenten»'],
+      hrefLabel: ['Відкрити «Оглядач і агенти»', 'Open «Browser en agenten»'],
     },
     pc: {
-      titel: ['3. Локальний ПК / Комп’ютер (agent.mjs)', '3. Lokale pc / computer (agent.mjs)'],
+      titel: ['4. Локальний ПК / Комп’ютер (agent.mjs)', '4. Lokale pc / computer (agent.mjs)'],
       uitleg: [
-        'Двосторонній міст із вашим комп’ютером: стан системи, процеси, читання й запис файлів у дозволених коренях, безпечне виконання команд із списку дозволених і перегляд контейнерів Docker.',
+        'Двосторонній міст із вашим комп’ютером: стан системи, процеси, читання й запис файлів у дозволених коренях, безпечне виконання команд зі списку дозволених і перегляд контейнерів Docker.',
         'Tweerichtingsbrug met uw computer: systeemstatus, processen, bestanden lezen en schrijven in toegestane mappen, veilige opdrachten van de witte lijst en Docker-containers bekijken.',
       ],
       opdracht: `node .agents/skills/mijn-ruimte/scripts/mijn-ruimte PcStatus --url ${adres} --kant gebruiker`,
@@ -533,7 +547,7 @@ function AntigravityBrugPaneel({
       hrefLabel: ['Відкрити «Пристрої»', 'Open «Apparaten»'],
     },
     server: {
-      titel: ['4. Сервер і випуски (_beheer)', '4. Server en releases (_beheer)'],
+      titel: ['5. Сервер і випуски (_beheer)', '5. Server en releases (_beheer)'],
       uitleg: [
         'Керування сервером у технічному просторі: стан служб, журнали випусків, перевірка БД (SELECT), хвіст аудиту, безпека та підписані випуски.',
         'Serverbeheer in de technische ruimte: dienststatus, releaselogboeken, DB-controle (SELECT), auditstaart, beveiliging en ondertekende releases.',
@@ -544,7 +558,7 @@ function AntigravityBrugPaneel({
       hrefLabel: ['Відкрити «Технічне»', 'Open «Technisch»'],
     },
     juridisch: {
-      titel: ['5. Правнича перевірка й реєстр доказів (GLM-5.3-flashX-Legal)', '5. Juridische broncontrole en bewijsregister (GLM-5.3-flashX-Legal)'],
+      titel: ['6. Правнича перевірка й реєстр доказів (GLM-5.3-flashX-Legal)', '6. Juridische broncontrole en bewijsregister (GLM-5.3-flashX-Legal)'],
       uitleg: [
         'Дослівна перевірка кожного пункту договору чи листа за номером абзацу (§1, §2…), звірка строків з оригіналом без вигадок, автоматичне знеособлення чутливих реквізитів (ел. пошта, IBAN, телефон, ЄДРПОУ/ІПН) та побудова хронологічного реєстру доказів.',
         'Letterlijke controle van elk contract- of briefpunt per alineanummer (§1, §2…), termijnverificatie in het origineel zonder hallucinaties, automatische anonimisering van gevoelige gegevens (e-mail, IBAN, telefoon, KvK/BSN) en chronologisch bewijsregister.',
@@ -557,15 +571,19 @@ function AntigravityBrugPaneel({
   };
 
   const zichtbareKanalen: readonly BrugKanaal[] = isAutoClaw
-    ? (['juridisch', 'site', 'browser', 'pc', 'server'] as const)
-    : (['site', 'browser', 'pc', 'server'] as const);
+    ? (['juridisch', 'site', 'post_ai', 'browser', 'pc', 'server'] as const)
+    : (['site', 'post_ai', 'browser', 'pc', 'server'] as const);
   const actiefKanaal = kanalen[kanaal];
-  const brugNaam = isAutoClaw ? 'AutoClaw · GLM-5.3-flashX-Legal' : 'Google Antigravity';
+  const brugNaam = isAutoClaw
+    ? 'AutoClaw · GLM-5.3-flashX-Legal'
+    : slug === 'antigravity'
+      ? 'Google Antigravity'
+      : info.naam;
 
   return (
     <section className='ag-kaart' data-agent-sectie='brug' aria-labelledby='ag-antigravity-brug-kop'>
       <div className='ag-kaart-kop'>
-        <h3 id='ag-antigravity-brug-kop'><Zap size={16} aria-hidden='true' /> {tr(`Двосторонній міст ${brugNaam} (Сайт · Браузер · ПК · Сервер)`, `Tweerichtingsbrug ${brugNaam} (Site · Browser · Pc · Server)`)}</h3>
+        <h3 id='ag-antigravity-brug-kop'><Zap size={16} aria-hidden='true' /> {tr(`Незалежна панель керування та міст ${brugNaam} (Сайт · Пошта · Оглядач · ПК · Сервер)`, `Onafhankelijk beheerpaneel en brug ${brugNaam} (Site · Mail · Browser · Pc · Server)`)}</h3>
         <span className={`ag-badge ${verbonden ? 'ag-ok' : 'ag-warn'}`} data-brug-verbonden={verbonden ? '1' : '0'}>
           <Check size={12} aria-hidden='true' />
           {verbonden
@@ -576,12 +594,12 @@ function AntigravityBrugPaneel({
       <p className='hub-meta'>
         {isAutoClaw
           ? tr(
-              'AutoClaw та правнича модель GLM-5.3-flashX-Legal (Z.ai) підключаються через власну адресу /autoclaw: дослівна перевірка цитат (§1, §2…), знеособлення реквізитів, реєстр доказів і багатоагентна координація без витоку сирих токенів.',
+              'AutoClaw та правнича модель GLM-5.3-flashX-Legal (Z.ai) підключаються через власну адресу /autoclaw: дослівна перевірка цитат (§1, §2…), знеособлення реквізитів, реєстр доказів і багатоагентна координація без витоку сирих маркерів доступу.',
               'AutoClaw en het juridische model GLM-5.3-flashX-Legal (Z.ai) verbinden via het eigen adres /autoclaw: letterlijke citaatcontrole (§1, §2…), anonimisering van gegevens, bewijsregister en multi-agentcoördinatie zonder lekken van ruwe tokens.',
             )
           : tr(
-              'Плагін і конектор працюють у двох напрямках: ви керуєте дозволами, браузером, ПК і сервером із цього інтерфейсу, а агент Antigravity виконує дії та повертає живий стан назад на сайт.',
-              'De plug-in en connector werken in twee richtingen: u beheert rechten, browser, pc en server vanuit dit scherm, en de Antigravity-agent voert acties uit en stuurt de levende stand terug naar de site.',
+              `${info.naam} працює повністю незалежно від інших ШІ-інструментів через власну адресу /${slug} та ізольований ключ облікового запису («${aanbieder.id}»): вмикайте, вимикайте або налаштовуйте пошту, переклад, чат, оглядач, ПК і сервер окремо саме для цього агента.`,
+              `${info.naam} werkt volledig onafhankelijk van andere AI-hulpmiddelen via het eigen adres /${slug} en de geïsoleerde accountsleutel («${aanbieder.id}»): schakel mail, vertaling, chat, browser, pc en server afzonderlijk in of uit voor juist deze agent.`,
             )}
       </p>
 
@@ -618,7 +636,7 @@ function AntigravityBrugPaneel({
                   )}
                 </span>
               ) : (
-                <span className='ag-badge ag-ok'>{tr('Двосторонній канал', 'Tweerichtingskanaal')}</span>
+                <span className='ag-badge ag-ok'>{tr('Незалежний двосторонній канал', 'Onafhankelijk tweerichtingskanaal')}</span>
               )}
             </div>
             <small className='hub-meta'>{uk ? actiefKanaal.uitleg[0] : actiefKanaal.uitleg[1]}</small>
@@ -821,9 +839,7 @@ export default function AgentPagina({ tr, slug, terug }: { tr: Tr; slug: AgentSl
       {/* 1b (21.10.2026): wat DEZE AI voorstelde en op uw «Підтвердити» wacht (mail verzenden, delen, foto's …). */}
       <BevestigingenPaneel tr={tr} agent={slug} />
 
-      {slug === 'antigravity' || slug === 'autoclaw' ? (
-        <AntigravityBrugPaneel tr={tr} uk={uk} slug={slug} adres={adres} diag={diag} hulpmiddelenNu={hulpmiddelenNu} naWijziging={naWijziging} />
-      ) : null}
+      <AntigravityBrugPaneel tr={tr} uk={uk} slug={slug} adres={adres} diag={diag} hulpmiddelenNu={hulpmiddelenNu} naWijziging={naWijziging} />
 
       {/* 2: дозволи — dezelfde kiezer als in het toestemmingsvenster, met herverbinden en intrekken. */}
       <section className='ag-kaart' data-agent-sectie='rechten' aria-labelledby={`ag-agent-rechten-${slug}`}>

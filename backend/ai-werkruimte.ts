@@ -27,6 +27,7 @@ import { githubKoppeling } from './github-platform';
 import { googleSuiteOnboardingSnapshot } from './google-suite-inrichting';
 import { listUserGrants } from './mcp-connector';
 import { aanbiederFout, LEGE_FEITEN, startStaat, WERKRUIMTE_FOUTEN, type Feiten, type ModelKeuze } from '../shared/ai-werkruimte';
+import { AI_AANBIEDERS } from '../shared/ai-aanbieders';
 
 /** Diensten waarvan dit scherm bereikbaar is: ai.* (het scherm zelf), mcp.* (de hub ernaast) en 'api' voor clients. */
 const DIENSTEN = ['ai', 'mcp', 'api'] as const;
@@ -41,6 +42,48 @@ export function ingesteldeModellen(): ModelKeuze[] {
   const lijst = String(process.env.CHAT_MODELLEN ?? '').split(',').map((s) => s.trim()).filter((s) => MODEL_ID.test(s));
   const uit = lijst.length ? lijst : [String(process.env.CHAT_MODEL ?? DEFAULT_MODEL).trim()].filter((s) => MODEL_ID.test(s));
   return uit.slice(0, 12).map((id, i) => ({ id, standaard: i === 0 }));
+}
+
+/**
+ * Bepaalt welke onafhankelijke AI-aanbieders (anthropic, gemini, openai, grok, autoclaw) een actieve sleutel
+ * in de Sleutelkluis van deze gebruiker hebben, en stelt de beschikbare modellen samen.
+ */
+export async function modellenVoorGebruiker(
+  userId: string,
+  chatDeps: ChatDeps = defaultChatDeps,
+): Promise<{ sleutel: boolean; modellen: ModelKeuze[] }> {
+  const serverModellen = ingesteldeModellen();
+  const leesSleutel = async (purpose: 'anthropic' | 'gemini' | 'openai' | 'grok' | 'autoclaw'): Promise<boolean> => {
+    try {
+      if (chatDeps.getApiKeyForPurpose) return !!(await chatDeps.getApiKeyForPurpose(userId, purpose));
+      if (purpose === 'anthropic') return !!(await chatDeps.getApiKey(userId));
+      return false;
+    } catch {
+      return false;
+    }
+  };
+  const statussen = await Promise.all(AI_AANBIEDERS.map(async (a) => ({ aanbieder: a, heeftSleutel: await leesSleutel(a.id) })));
+  const actieve = statussen.filter((s) => s.heeftSleutel).map((s) => s.aanbieder);
+  if (actieve.length === 0) {
+    return { sleutel: false, modellen: serverModellen };
+  }
+  const heeftAnthropic = actieve.some((a) => a.id === 'anthropic');
+  const ids: string[] = [];
+  if (heeftAnthropic) {
+    for (const m of serverModellen) {
+      if (!ids.includes(m.id)) ids.push(m.id);
+    }
+  }
+  for (const a of actieve) {
+    if (!ids.includes(a.standaardModel) && MODEL_ID.test(a.standaardModel)) ids.push(a.standaardModel);
+  }
+  if (ids.length === 0) {
+    for (const m of serverModellen) ids.push(m.id);
+  }
+  return {
+    sleutel: true,
+    modellen: ids.slice(0, 12).map((id, i) => ({ id, standaard: i === 0 })),
+  };
 }
 
 /** Google Suite per dienst. Lukt het lezen niet, dan `bekend: false` — dan beweert het scherm nergens «підключено». */
@@ -62,8 +105,8 @@ const browserActief = (a: store.AgentRow) => a.browser_enabled === true && !!a.a
  */
 export async function feitenVan(user: { id: string; email?: string }, recht: boolean): Promise<Feiten> {
   const veilig = async <T>(fn: () => Promise<T>, terug: T): Promise<T> => { try { return await fn(); } catch { return terug; } };
-  const [sleutel, chatTools, agents, github, google, koppelingen] = await Promise.all([
-    veilig(async () => !!(await defaultChatDeps.getApiKey(user.id)), false),
+  const [aanbiederStand, chatTools, agents, github, google, koppelingen] = await Promise.all([
+    veilig(() => modellenVoorGebruiker(user.id), { sleutel: false, modellen: ingesteldeModellen() }),
     // Precies de lijst die de chat zelf krijgt: dezelfde naam in het AI-beleid en dezelfde privéruimte.
     veilig(async () => (await metNamens({ client: CHAT_KLANT }, () => listTools(user.id))).map((t) => t.name), [] as string[]),
     veilig(() => store.listAgents(user.id), [] as store.AgentRow[]),
@@ -75,8 +118,10 @@ export async function feitenVan(user: { id: string; email?: string }, recht: boo
   const browsers = agents.filter(isBrowser);
   return {
     ...LEGE_FEITEN,
-    recht, sleutel, chatTools,
-    modellen: ingesteldeModellen(),
+    recht,
+    sleutel: aanbiederStand.sleutel,
+    chatTools,
+    modellen: aanbiederStand.modellen,
     apparaten: { totaal: machines.length, online: machines.filter((a) => agentOnline(a.id)).length },
     browsers: { totaal: browsers.length, actief: browsers.filter(browserActief).length },
     github, google, koppelingen,
@@ -134,7 +179,8 @@ export function aiWerkruimteRoutes(deps: WerkruimteDeps): Record<string, RouterM
       const modellen = ingesteldeModellen();
       if (!modellen.length) return error(WERKRUIMTE_FOUTEN.geenModel, 409);
       const gevraagd = String(body.model ?? '').trim();
-      if (gevraagd && !modellen.some((m) => m.id === gevraagd)) return error(WERKRUIMTE_FOUTEN.modelOnbekend, 400);
+      const toegestaanDoorAanbieder = AI_AANBIEDERS.some((a) => a.standaardModel === gevraagd || a.standaardVertaalModel === gevraagd);
+      if (gevraagd && !modellen.some((m) => m.id === gevraagd) && !toegestaanDoorAanbieder) return error(WERKRUIMTE_FOUTEN.modelOnbekend, 400);
       const model = gevraagd || (modellen.find((m) => m.standaard) ?? modellen[0]).id;
 
       const berichten = sanitizeHistory(body.messages);

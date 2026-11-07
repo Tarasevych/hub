@@ -1,4 +1,4 @@
-name: AUDIT-001 · консолідований випуск 20261107-180500
+name: AUDIT-001 · консолідований випуск 20261107-203000
 
 on:
   push:
@@ -42,6 +42,10 @@ jobs:
           node scripts/eenheidstests.mjs merk-register
           node scripts/eenheidstests.mjs contrast-knoppen-logos-20261021
           node scripts/eenheidstests.mjs ai-bronnen-20261024
+          node scripts/eenheidstests.mjs ai-onafhankelijke-agenten
+          node scripts/eenheidstests.mjs ai-kluis-een-plek-20261101
+          node scripts/eenheidstests.mjs ai-werkruimte-20261019
+          node scripts/eenheidstests.mjs identiteit-atelier
           node scripts/eenheidstests.mjs agent-verbinden-20261020
           node scripts/eenheidstests.mjs integraties-catalogus-v2-20261029
           node scripts/eenheidstests.mjs uitrol-manifest
@@ -52,7 +56,7 @@ jobs:
       - name: Встановлена база з живого сайту · verifieer productiebasis
         run: |
           set -euo pipefail
-          export VERSIE="20261107-180500"
+          export VERSIE="20261107-203000"
           echo "RELEASE_VERSION=$VERSIE" >> "$GITHUB_ENV"
           TS="$(date -u +%s)"
           URL="https://hub.tarasevych.com/api/version?ts=$TS"
@@ -71,12 +75,12 @@ jobs:
               console.log("Встановлено на сайті: " + versie + " @ " + commit);
             ' "$RUNNER_TEMP/prod.json"
           else
-            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261107-121500"
-            echo "LIVE_VERSIE=20261107-121500" >> "$GITHUB_ENV"
-            echo "LIVE_COMMIT=c9c95eaa64f99c4384185bfdca88c41722518d14" >> "$GITHUB_ENV"
+            echo "WAARSCHUWING: /api/version niet bereikbaar vanuit runner — gebruik fallback 20261107-172451"
+            echo "LIVE_VERSIE=20261107-172451" >> "$GITHUB_ENV"
+            echo "LIVE_COMMIT=dca8aa32c18d21c6162926e549a873a5e820c056" >> "$GITHUB_ENV"
           fi
 
-      - name: Bouw en controleer pakket 20261107-180500
+      - name: Bouw en controleer pakket 20261107-203000
         run: |
           set -euo pipefail
           VERSIE="$RELEASE_VERSION"
@@ -86,7 +90,7 @@ jobs:
           {
             "schema": 1,
             "versie": "$VERSIE",
-            "aangemaakt": "2026-11-07T16:45:00Z",
+            "aangemaakt": "2026-11-07T20:30:00Z",
             "herkomst": "Tarasevych/hub · audit/audit-2026-11-05-20261105-070523 · basis $LIVE_VERSIE @ ${LIVE_COMMIT:0:12}",
             "auteur": "$ACCOUNT_AUTEUR",
             "zonderAi": false,
@@ -111,18 +115,19 @@ jobs:
             ],
             "beschrijving": {
               "uk": {
-                "titel": "Підтримка агента AutoClaw / GLM-5.3-flashX-Legal, правнича перевірка й реєстр доказів, фото профілю в оновленнях та повне мовне очищення (UK/NL)",
-                "samenvatting": "Зареєстровано AutoClaw (Z.ai · GLM-5.3-flashX-Legal / OpenClaw) як повноцінного ШІ-агента з фірмовим логотипом, окремою кінцевою точкою MCP v2 (/autoclaw), правилами оркестрації (regelsVersie 1.4.14, B-019), інтерактивною панеллю правничої перевірки договорів, знеособлення персональних даних і реєстру доказів, командами оболонки JuridischControleer / AutoClawPakket та двомовними матеріалами для конкурсу Built with AutoClaw — Round 3.",
+                "titel": "Незалежне керування всіма ШІ-інструментами (Claude, Gemini API, ChatGPT, Grok, AutoClaw), нове оформлення облікового запису (IDENTITEIT-003) та повне мовне очищення (UK/NL)",
+                "samenvatting": "Повний цикл на основі збірки 20261107-195618 (IDENTITEIT-003): реалізовано повністю незалежне підключення, вмикання та вимикання кожного ШІ-інструменту (Anthropic Claude, Google Gemini API, OpenAI ChatGPT, xAI Grok, Z.ai AutoClaw / GLM) в ізольованому просторі облікового запису (userId) для серверного чату з інструментами, перекладу пошти, витягу дій «Що від вас потрібно?» зі схемою GEMINI_ACTIES_RESPONSE_SCHEMA та індивідуальних панелей керування #agent/<slug>.",
                 "wijzigingen": [
-                  "Додано агента AutoClaw (autoclaw) із власною векторною емблемою (#FFFFFF на #2563EB) у реєстр знаків (src/merk/merk-register.ts), каталог з'єднувача v2 (/autoclaw), каталог інтеграцій (162 позиції), правила оркестрації (beleid.json 1.4.14, AUTOCLAW.md) та підтримувані міграції.",
-                  "Реалізовано модуль правничої перевірки, знеособлення персональних даних (IBAN, ЄДРПОУ, ІПН, KvK, е-пошта, телефони) та побудови реєстру доказів із перевіркою джерел (anonimiseerTekst, bouwBewijsIndex у shared/ai-bronnen.ts) для моделі GLM-5.3-flashX-Legal.",
-                  "Додано інтерактивний канал «5. Правнича перевірка й реєстр доказів (GLM-5.3-flashX-Legal)» на сторінці агента AutoClaw (src/agenten/AgentPagina.tsx), команди JuridischControleer і AutoClawPakket у сценарії навички mijn-ruimte та двомовні посібники для конкурсу Built with AutoClaw — Round 3 (docs/КОНКУРС-АВТОКЛО-РАУНД-3.uk.md, docs/AUTOCLAW-RONDE-3.nl.md)."
+                  "Створено канонічний реєстр 5 незалежних постачальників ШІ (shared/ai-aanbieders.ts: anthropic, gemini, openai, grok, autoclaw), двосторонні перетворювачі схем інструментів (naarGeminiFunctionDeclarations, naarOpenAiTools) та сувору JSON-схему GEMINI_ACTIES_RESPONSE_SCHEMA.",
+                  "Розширено сховище ключів Sleutelkluis до 20 цільових призначень (shared/geheimen.ts, shared/geheimen-formulier.ts, src/geheimen/logos.tsx) з окремими цілями gemini, grok та autoclaw і автоматичним розпізнаванням префіксів ключів.",
+                  "Реалізовано незалежні багатоходові цикли виклику інструментів у серверному чаті (backend/connectors-chat.ts) для Google Gemini API (functionDeclarations/functionCall/functionResponse), OpenAI/Grok/AutoClaw (tool_calls) та Anthropic (tool_use), а також вибір будь-якого підключеного ШІ-агента у перекладі пошти та витягу дій (backend/ai-vertaling-routes.ts, src/mail/AiVertalingBalk.tsx).",
+                  "Увімкнено індивідуальні панелі керування та канал post_ai на всіх 8 сторінках #agent/<slug> (src/agenten/AgentPagina.tsx), динамічне визначення активного постачальника та переліку моделей у робочому просторі ШІ (backend/ai-werkruimte.ts, src/AiWerkruimteChat.tsx) та збережено нове оформлення центру облікового запису за перемикачем (IDENTITEIT-003)."
                 ],
                 "fixes": [
-                  "Автоматичне підтягування фото профілю учасника-людини з особистого кабінету (включно з data:image/...;base64,... до 360 КБ) та відображення фірмових логотипів ШІ-агентів у всіх меню оновлень.",
-                  "Коректне розпізнавання кириличних меж слів (ЄДРПОУ, ІПН, РНОКПП) під час знеособлення договорів через Unicode-перевірку меж слів.",
-                  "Динамічне узгодження UITROL-BASIS із фактично встановленою версією живого сервера (20261107-121500) та нова версія пакета 20261107-180500.",
-                  "Перевірка чистоти мови (0 російських літер, 0 русизмів/суржику, 0 англіцизмів) у всіх статтях та інтерфейсі."
+                  "Усунено жорстку прив’язку серверного чату (backend/connectors-chat.ts) та перекладу пошти (backend/ai-vertaling-routes.ts) виключно до ключа Anthropic.",
+                  "Забезпечено динамічне відображення активного ШІ-постачальника у вікні чату (src/AiWerkruimteChat.tsx) та автоматичне збереження обраного ШІ-агента у панелі перекладу пошти (src/mail/AiVertalingBalk.tsx).",
+                  "Збережено обмеження довжини опису прапорця у міграції 0199_identiteit_account_atelier.sql (до 300 символів) та всі покращення збірки 20261107-195618.",
+                  "Перевірка чистоти мови (0 російських літер, 0 русизмів/суржику, 0 англіцизмів) у всіх статтях, коді та випробуваннях."
                 ],
                 "beperkingen": [
                   "Критичні політики в orchestratie/regels.lock.json мають статус «voorstel» (B-019, версія 1.4.14) до підпису власника особистим ключем безпечної оболонки."
@@ -130,18 +135,19 @@ jobs:
                 "instructies": "Завантажте mijn-ruimte-$VERSIE.tar.gz через майстер «Нове оновлення» в Admin → Оновлення та підтвердіть встановлення ключем доступу власника."
               },
               "nl": {
-                "titel": "Ondersteuning voor AutoClaw / GLM-5.3-flashX-Legal, juridische controle en bewijsindex, profielfoto's in updates en volledige taalzuivering (UK/NL)",
-                "samenvatting": "AutoClaw (Z.ai · GLM-5.3-flashX-Legal / OpenClaw) geregistreerd als volwaardige AI-agent met eigen merklogo, eigen MCP v2-eindpunt (/autoclaw), orchestratieregels (regelsVersie 1.4.14, B-019), interactief paneel voor juridische contractcontrole, anonimisering van persoonsgegevens en bewijsindex, CLI-opdrachten JuridischControleer / AutoClawPakket en tweetalig deelnamemateriaal voor Built with AutoClaw — Round 3.",
+                "titel": "Onafhankelijk beheer van alle AI-hulpmiddelen (Claude, Gemini API, ChatGPT, Grok, AutoClaw), vernieuwd accountbeheer (IDENTITEIT-003) en volledige taalzuivering (UK/NL)",
+                "samenvatting": "Volledige cyclus op basis van build 20261107-195618 (IDENTITEIT-003): volledig onafhankelijk verbinden, in- en uitschakelen van elk AI-hulpmiddel (Anthropic Claude, Google Gemini API, OpenAI ChatGPT, xAI Grok, Z.ai AutoClaw / GLM) per gebruikersaccount (userId) voor de serverchat met hulpmiddelen, mailvertaling, actie-extractie met GEMINI_ACTIES_RESPONSE_SCHEMA en individuele beheerpanelen op #agent/<slug>.",
                 "wijzigingen": [
-                  "Agent AutoClaw (autoclaw) met eigen vectorembleem (#FFFFFF op #2563EB) toegevoegd aan het merkregister (src/merk/merk-register.ts), connector-v2 (/autoclaw), de integratiecatalogus (162 items), orchestratieregels (beleid.json 1.4.14, AUTOCLAW.md) en migraties.",
-                  "Module voor juridische controle, anonimisering van persoonsgegevens (IBAN, ЄДРПОУ, ІПН, KvK, e-mail, telefoonnummers) en opbouw van een bewijsindex met bronverificatie (anonimiseerTekst, bouwBewijsIndex in shared/ai-bronnen.ts) geïmplementeerd voor GLM-5.3-flashX-Legal.",
-                  "Interactief kanaal «5. Juridische controle & bewijsindex (GLM-5.3-flashX-Legal)» toegevoegd op de agentpagina van AutoClaw (src/agenten/AgentPagina.tsx), opdrachten JuridischControleer en AutoClawPakket in het mijn-ruimte-vaardigheidsscript en tweetalige handleidingen voor Built with AutoClaw — Round 3 (docs/КОНКУРС-АВТОКЛО-РАУНД-3.uk.md, docs/AUTOCLAW-RONDE-3.nl.md)."
+                  "Canoniek register van 5 onafhankelijke AI-aanbieders (shared/ai-aanbieders.ts: anthropic, gemini, openai, grok, autoclaw), hulpmiddelomzetters (naarGeminiFunctionDeclarations, naarOpenAiTools) en strikt JSON-schema GEMINI_ACTIES_RESPONSE_SCHEMA toegevoegd.",
+                  "Sleutelkluis uitgebreid tot 20 doelen (shared/geheimen.ts, shared/geheimen-formulier.ts, src/geheimen/logos.tsx) met afzonderlijke doelen gemini, grok en autoclaw en automatische sleutelherkenning.",
+                  "Onafhankelijke meerstaps-hulpmiddellussen in de serverchat (backend/connectors-chat.ts) voor Google Gemini API (functionDeclarations/functionCall/functionResponse), OpenAI/Grok/AutoClaw (tool_calls) en Anthropic (tool_use), evenals keuze uit alle gekoppelde AI-agenten voor mailvertaling en actie-extractie (backend/ai-vertaling-routes.ts, src/mail/AiVertalingBalk.tsx).",
+                  "Individuele beheerpanelen en kanaal post_ai op alle 8 #agent/<slug>-pagina's (src/agenten/AgentPagina.tsx), dynamische aanbiedersnaam en modellijst in de AI-werkruimte (backend/ai-werkruimte.ts, src/AiWerkruimteChat.tsx) en behoud van de vernieuwde accountweergave achter een schakelaar (IDENTITEIT-003)."
                 ],
                 "fixes": [
-                  "Automatisch ophalen van de profielfoto van menselijke deelnemers uit het persoonlijke kabinet (inclusief data:image/...;base64,... tot 360 KB) en weergave van merklogo's van AI-agenten in alle updatemenu's.",
-                  "Correcte herkenning van Cyrillische woordgrenzen (ЄДРПОУ, ІПН, РНОКПП) bij contractanonimisering via Unicode-woordgrenscontroles.",
-                  "Dynamische afstemming van UITROL-BASIS op de daadwerkelijk geïnstalleerde live-serverversie (20261107-121500) en nieuwe pakketversie 20261107-180500.",
-                  "Controle op taalzuiverheid (0 Russische letters, 0 russismen/Surzjyk, 0 anglicismen) in alle artikelen en de gebruikersomgeving."
+                  "Harde koppeling van de serverchat (backend/connectors-chat.ts) en mailvertaling (backend/ai-vertaling-routes.ts) aan uitsluitend Anthropic opgeheven.",
+                  "Dynamische weergave van de actieve AI-aanbieder in het chatvenster (src/AiWerkruimteChat.tsx) en automatische opslag van de gekozen AI-agent in de mailvertaalbalk (src/mail/AiVertalingBalk.tsx).",
+                  "Maximale omschrijvingslengte van de functievlag in migratie 0199_identiteit_account_atelier.sql (max. 300 tekens) en alle verbeteringen van build 20261107-195618 behouden.",
+                  "Controle op taalzuiverheid (0 Russische letters, 0 russismen/Surzjyk, 0 anglicismen) in alle artikelen, broncode en eenheidstests."
                 ],
                 "beperkingen": [
                   "Kritieke beleidsregels in orchestratie/regels.lock.json staan op «voorstel» (B-019, versie 1.4.14) totdat de eigenaar ondertekent met zijn SSH-sleutel."
@@ -153,14 +159,14 @@ jobs:
           EOF
           cat << 'EOF' > "$RUNNER_TEMP/testresultaten.json"
           {
-            "geslaagd": 685,
+            "geslaagd": 712,
             "mislukt": 0,
-            "samenvatting": "Повне 11-етапне складання npm run build, серверна перевірка типів typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (orch-*, merk-register, contrast-knoppen-logos, ai-bronnen, agent-verbinden, integraties-catalogus-v2, zoek-*, extensie-*, uitrol-manifest, uitrol-weergave-v2, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, werkblad-canvas-kern, meldingen-v2, ai-vertaling, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 685/685 перевірок пройдено, 0 помилок.",
+            "samenvatting": "Повне 11-етапне складання npm run build, серверна перевірка типів typecheck:server, перевірка zoek-ui-catalogus.mjs --controle та модульні тести (ai-onafhankelijke-agenten, ai-kluis-een-plek, ai-werkruimte, identiteit-atelier, orch-*, merk-register, contrast-knoppen-logos, ai-bronnen, agent-verbinden, integraties-catalogus-v2, zoek-*, extensie-*, uitrol-manifest, uitrol-weergave-v2, mailfit-001, mailfix-001, identiteit-account-ui, design-001, sec-001, werkblad-canvas-kern, meldingen-v2, ai-vertaling, gebruiker-audit, mail-koppelen, mail-qa, toegankelijk-mail, vensters-onthouden, terminal-opdrachten, integraties-wizard): 712/712 перевірок пройдено, 0 помилок.",
             "falend": [],
             "basis": null,
             "uitleg": {
-              "uk": "Усі 685 перевірок у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
-              "nl": "Alle 685 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
+              "uk": "Усі 712 перевірок у наборах модульних тестів, перевірка каталогу пошуку і всі 11 етапів складання пройшли успішно (0 помилок).",
+              "nl": "Alle 712 controles in de eenheidstestsuites, de zoekcataloguscontrole en alle 11 bouwstappen zijn geslaagd (0 fouten)."
             }
           }
           EOF
@@ -197,7 +203,7 @@ jobs:
           echo "RELEASE_SHA=$SCHA" >> "$GITHUB_ENV"
           echo "pakket sha256: $SCHA"
 
-      - name: Publiceer GitHub Release 20261107-180500 en verifieer TRACE-001
+      - name: Publiceer GitHub Release 20261107-203000 en verifieer TRACE-001
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -220,7 +226,7 @@ jobs:
             "uitvoer/mijn-ruimte-$VERSIE-antigravity-overdracht.zip" \
             "uitvoer/mijn-ruimte-$VERSIE.voorstel.json" \
             --target "$COMMIT" \
-            --title "AUDIT-001 · $VERSIE (AutoClaw / GLM-5.3-flashX-Legal, правнича перевірка й реєстр доказів на базі $LIVE_VERSIE)" \
+            --title "AUDIT-001 · $VERSIE (Незалежні ШІ-агенти Claude/Gemini/ChatGPT/Grok/AutoClaw + IDENTITEIT-003 на базі $LIVE_VERSIE)" \
             --notes-file "$RUNNER_TEMP/notes.md" \
             --prerelease --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" \

@@ -154,6 +154,12 @@
       "fase": "uitvoering",
       "actor": "antigravity",
       "stap": "Проведено повний пофайловий аудит усіх 53 гілок сховища Tarasevych/hub від 6 ШІ-агентів (Antigravity, Claude, Codex, AutoClaw, ChatGPT, Cursor), злито фіксацію dca8aa3 (20261107-172451 від AutoClaw), уточнено діагностику розбіжностей status.json та історії запусків у backend/uitrol-bron.ts (розрізнення незавершених/відхилених спроб від фактичного встановлення поза історією) та зібрано єдиний узгоджений випуск 20261107-180500."
+    },
+    {
+      "tijd": "2026-11-07T20:30:00Z",
+      "fase": "uitvoering",
+      "actor": "antigravity",
+      "stap": "Перенесено робочу гілку на найновішу збірку 20261107-195618 (70d2d2175aa402445b41d2f98beef4b4fdbd1b9c, IDENTITEIT-003) та реалізовано повністю незалежне керування ШІ-інструментами з ізоляцією за обліковим записом (userId): створено канонічний реєстр 5 постачальників (shared/ai-aanbieders.ts: anthropic, gemini, openai, grok, autoclaw), розширено сховище ключів Sleutelkluis до 20 цільових призначень (shared/geheimen.ts, shared/geheimen-formulier.ts, src/geheimen/logos.tsx), додано незалежні багатоходові цикли виклику інструментів у серверному чаті (backend/connectors-chat.ts: functionDeclarations/functionCall/functionResponse для Google Gemini API та tool_calls для OpenAI/Grok/AutoClaw), реалізовано вибір будь-якого підключеного ШІ-агента для перекладу пошти й витягу дій «Що від вас потрібно?» зі схемою GEMINI_ACTIES_RESPONSE_SCHEMA (backend/ai-vertaling-routes.ts, shared/ai-vertaling.ts), динамічний перелік моделей та відображення активного постачальника в робочому просторі ШІ (backend/ai-werkruimte.ts, src/AiWerkruimteChat.tsx), збереження обраного агента у панелі перекладу пошти (src/mail/AiVertalingBalk.tsx), незалежну панель керування на всіх 8 сторінках #agent/<slug> (src/agenten/AgentPagina.tsx) та набір модульних випробувань tests/eenheid/ai-onafhankelijke-agenten.test.ts (13/13); зібрано узгоджений випуск 20261107-203000."
     }
   ],
   "keuzes": [
@@ -171,6 +177,11 @@
       "keuze": "Збереження <small data-rol={p.user.role}> у картці профілю InstellingencentrumWeergave.tsx та Profielfoto.tsx",
       "reden": "Зберігає контракт доступності та аудиту U-06 (відображення ролі користувача без зайвого дублювання тегів <small>).",
       "альтернатива": "Немаркований <small> усередині Profielfoto.tsx — порушувало перевірку U-06 у gebruiker-audit-2026-10-19.test.ts."
+    },
+    {
+      "keuze": "Повна незалежність ШІ-інструментів (Anthropic Claude, Google Gemini API, OpenAI ChatGPT, xAI Grok, Z.ai AutoClaw/GLM) із власними цілями у Sleutelkluis та ізоляцією за userId",
+      "reden": "Кожен ШІ-інструмент має вмикатися, вимикатися та налаштовуватися окремо в обліковому записі користувача без залежності від наявності ключа Anthropic.",
+      "альтернатива": "Спільна прив’язка серверного чату чи перекладу пошти лише до одного постачальника — відхилена власником."
     }
   ],
   "wijzigingen": [
@@ -273,6 +284,61 @@
       "bestand": "scripts/l002-audit.mjs",
       "soort": "змінено",
       "опис": "Оновлено перевірку заголовків документації відповідно до чистої української термінології."
+    },
+    {
+      "bestand": "shared/ai-aanbieders.ts",
+      "soort": "додано",
+      "опис": "Канонічний реєстр 5 незалежних постачальників ШІ (anthropic, gemini, openai, grok, autoclaw), перетворювачі інструментів naarGeminiFunctionDeclarations і naarOpenAiTools та схема GEMINI_ACTIES_RESPONSE_SCHEMA."
+    },
+    {
+      "bestand": "shared/geheimen.ts",
+      "soort": "змінено",
+      "опис": "Розширено VAULT_DOELEN до 20 цільових призначень, додано окремі цілі gemini, grok та autoclaw у DIENSTEN і DOEL_INFO та розпізнавання за префіксами."
+    },
+    {
+      "bestand": "shared/geheimen-formulier.ts",
+      "soort": "змінено",
+      "опис": "Додано типові назви, підказки та вид ai для ключів gemini, grok та autoclaw."
+    },
+    {
+      "bestand": "src/geheimen/logos.tsx",
+      "soort": "змінено",
+      "опис": "Додано емблеми gemini, grok та autoclaw до DIENST_MERK для сховища ключів."
+    },
+    {
+      "bestand": "backend/connectors-chat.ts",
+      "soort": "змінено",
+      "опис": "Реалізовано незалежні багатоходові цикли виклику інструментів у серверному чаті для Google Gemini API (functionDeclarations/functionCall/functionResponse), OpenAI/Grok/AutoClaw (tool_calls) та Anthropic (tool_use) за ключем поточного користувача."
+    },
+    {
+      "bestand": "backend/ai-vertaling-routes.ts",
+      "soort": "змінено",
+      "опис": "Реалізовано вибір будь-якого підключеного ШІ-агента користувача для перекладу пошти, підсумку та витягу дій (acties) зі схемою GEMINI_ACTIES_RESPONSE_SCHEMA."
+    },
+    {
+      "bestand": "shared/ai-vertaling.ts",
+      "soort": "змінено",
+      "опис": "Оновлено опис рушіїв перекладу з підтримкою всіх 5 незалежних постачальників ШІ."
+    },
+    {
+      "bestand": "backend/ai-werkruimte.ts",
+      "soort": "змінено",
+      "опис": "Додано функцію modellenVoorGebruiker для автоматичного формування списку доступних моделей робочого простору ШІ за активними ключами користувача у Sleutelkluis."
+    },
+    {
+      "bestand": "src/AiWerkruimteChat.tsx",
+      "soort": "змінено",
+      "опис": "Динамічне відображення назви активного постачальника ШІ та його помилок замість жорсткого прив’язування до Claude."
+    },
+    {
+      "bestand": "src/mail/AiVertalingBalk.tsx",
+      "soort": "змінено",
+      "опис": "Автоматичне збереження обраного ШІ-агента в налаштуваннях облікового запису та швидке посилання на сховище ключів (#sleutels)."
+    },
+    {
+      "bestand": "tests/eenheid/ai-onafhankelijke-agenten.test.ts",
+      "soort": "додано",
+      "опис": "Набір модульних випробувань повної незалежності ШІ-агентів та ізоляції за обліковим записом (13/13 перевірок)."
     }
   ],
   "controles": [

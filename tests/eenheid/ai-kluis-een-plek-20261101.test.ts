@@ -253,9 +253,10 @@ export async function main(): Promise<number> {
     ontwerpHersteld.agents.cursor.enabled === true
     && ontwerpHersteld.agents.cursor.capabilities['github.read']?.kind === 'always');
 
-  // Deel 2 pure checks: alle 17 VAULT_DOELEN gedekt
-  check('Unit 2a (VAULT_DOELEN dekking): alle 17 doelen hebben standaardnaam, placeholder en geldige standaardVaultMeta',
-    VAULT_DOELEN.length === 17
+  // Deel 2 pure checks: alle 20 VAULT_DOELEN gedekt (inclusief onafhankelijke gemini, grok, autoclaw)
+  check('Unit 2a (VAULT_DOELEN dekking): alle 20 doelen hebben standaardnaam, placeholder en geldige standaardVaultMeta',
+    VAULT_DOELEN.length === 20
+    && (['gemini', 'grok', 'autoclaw', 'anthropic', 'openai'] as const).every((d) => VAULT_DOELEN.includes(d))
     && VAULT_DOELEN.every((d) =>
       /^[a-z0-9._-]{2,64}$/i.test(STANDAARD_NAAM_PER_DOEL[d])
       && PLACEHOLDER_PER_DOEL[d][0].length >= 4
