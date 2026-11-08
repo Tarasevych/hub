@@ -2506,6 +2506,9 @@
 /* MOBIEL-001: oudere pilvormregels hebben een hogere nauwkeurigheid.
    De lade krijgt daarom ook bij een boven- of onderdok een eigen inhoudsstroom. */
 @media(max-width:900px){
+  .ia-at-v49.rail-bottom{
+    padding:0!important;border-top:0!important;
+  }
   .ia-at-v49.rail-pills:is(.rail-top,.rail-bottom) .anchor-rail.ia-at-nav{
     width:auto!important;min-width:0!important;height:auto!important;min-height:0!important;
     max-height:min(76dvh,690px)!important;flex-direction:column!important;
