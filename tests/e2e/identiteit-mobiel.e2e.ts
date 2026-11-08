@@ -107,6 +107,16 @@ export async function main(): Promise<number> {
           }
         }
         if (breedte === 390 && plaats === 'right') await pagina.screenshot({ path: join(uitvoer, 'telefoon-390.png'), fullPage: false });
+        if ((breedte === 390 && plaats === 'right') || (breedte === 320 && plaats === 'bottom')) {
+          await pagina.evaluate(() => document.documentElement.classList.add('theme-light'));
+          await pagina.locator('.ia-at-v49.light').waitFor();
+          const licht = await pagina.evaluate(() => {
+            const kaart = document.querySelector('.setting-section')?.getBoundingClientRect();
+            return { document: document.documentElement.scrollWidth, venster: window.visualViewport?.width, kaartRechts: kaart?.right, kaartLinks: kaart?.left };
+          });
+          controleer(`${breedte}/${plaats}: licht thema binnen scherm`, licht.document <= breedte + 1 && !!licht.kaartRechts && licht.kaartRechts <= breedte + 1 && licht.kaartLinks! >= -1, licht);
+          await pagina.screenshot({ path: join(uitvoer, `telefoon-${breedte}-licht.png`), fullPage: false });
+        }
         if (breedte === 1280) await pagina.screenshot({ path: join(uitvoer, 'computer-1280.png'), fullPage: false });
         await context.close();
       }
