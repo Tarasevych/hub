@@ -49,9 +49,20 @@ export async function main(): Promise<number> {
           return route.continue();
         });
         const jsFouten: string[] = [];
+        const verzoekFouten: string[] = [];
         pagina.on('pageerror', e => jsFouten.push(String(e)));
+        pagina.on('console', bericht => { if (bericht.type() === 'error') jsFouten.push(bericht.text()); });
+        pagina.on('response', antwoord => { if (antwoord.status() >= 400) verzoekFouten.push(`${antwoord.status()} ${antwoord.url()}`); });
         await pagina.goto(`http://127.0.0.1:${poort}/`);
-        await pagina.locator('.ia-at-v49 .setting-section').first().waitFor();
+        try { await pagina.locator('.ia-at-v49 .setting-section').first().waitFor({ timeout: 12000 }); }
+        catch (fout) {
+          await pagina.screenshot({ path: join(uitvoer, `mislukt-${breedte}-${plaats}.png`), fullPage: false });
+          const toestand = await pagina.evaluate(() => ({
+            adres: location.href, titel: document.title, wortel: document.getElementById('root')?.innerHTML.slice(0, 700),
+            scripts: [...document.scripts].map(el => el.src),
+          }));
+          throw new Error(`Geen onderdeel zichtbaar: ${JSON.stringify({ toestand, jsFouten, verzoekFouten, fout: String(fout) })}`);
+        }
         const maten = await pagina.evaluate(() => {
           const kies = (selector: string) => {
             const e = document.querySelector(selector);
