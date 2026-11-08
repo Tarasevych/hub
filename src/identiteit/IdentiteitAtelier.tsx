@@ -63,22 +63,23 @@ function schuifouder(el: HTMLElement | null): HTMLElement | null {
 }
 
 /** Ілюстрація з даних: полотно 440×337 масштабується цілим під рамку («cover»), без обрізаних підписів і роздутих блоків. */
-export function Kunst({ html, accent, className = '' }: { html: string; accent: string; className?: string }) {
+export function Kunst({ html, accent, className = '', zoom = 1 }: { html: string; accent: string; className?: string; zoom?: number }) {
   const raam = useRef<HTMLDivElement>(null);
   const [maat, setMaat] = useState({ s: 1, x: 0, y: 0 });
   useLayoutEffect(() => {
     const el = raam.current; if (!el) return;
     const meet = () => {
       const b = el.clientWidth, h = el.clientHeight; if (!b || !h) return;
-      // Вписуємо полотно повністю й дозволяємо лише легке збільшення (до 12 %), щоб жодна деталь не обрізалась.
-      const s = Math.min(Math.max(b / 440, h / 337), Math.min(b / 440, h / 337) * 1.12);
+      // Вписуємо полотно повністю (підписи й мітки ілюстрації не обрізаються); лише малі плитки огляду
+      // можуть трохи збільшити його (zoom), бо там важливий образ, а не дрібні підписи.
+      const s = Math.min(Math.max(b / 440, h / 337), Math.min(b / 440, h / 337) * zoom);
       setMaat({ s, x: (b - 440 * s) / 2, y: (h - 337 * s) / 2 });
     };
     meet();
     if (typeof ResizeObserver !== 'function') return;
     const w = new ResizeObserver(meet); w.observe(el);
     return () => w.disconnect();
-  }, []);
+  }, [zoom]);
   return <div ref={raam} className={`mr-kunst-raam accent-${accent} ${className}`} aria-hidden='true'>
     <div className={`mr-kunst accent-${accent}`} style={{ transform: `translate(${maat.x}px, ${maat.y}px) scale(${maat.s})` }} dangerouslySetInnerHTML={{ __html: html }}/>
   </div>;
@@ -349,7 +350,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
               <div className='mr-at-tegels'>{bron.secties.filter(s => (g.ids as readonly string[]).includes(s.id) && s.id !== 'personalization').map(s => {
                 const P = ATELIER_SYMBOLEN[s.id];
                 return <button type='button' key={s.id} data-jump={s.id} className={`mr-at-tegel accent-${s.accent}`} onClick={() => ga(s.id)}>
-                  <Kunst html={s.art[lang]} accent={s.accent} className='mr-at-tegel-kunst'/>
+                  <Kunst html={s.art[lang]} accent={s.accent} className='mr-at-tegel-kunst' zoom={1.12}/>
                   <span className='mr-at-tegel-tekst'>
                     <span className='mr-at-tegel-lijn'><span className='mr-at-glief'><P size={15}/></span><small>{s.number} · {s[lang].kicker}</small></span>
                     <strong>{s[lang].name}</strong>

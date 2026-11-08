@@ -97,7 +97,9 @@
 .mr-at-held-cijfers{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:24px;font-size:12px;color:rgba(235,238,255,.72)}
 .mr-at-held-cijfers span{display:inline-flex;align-items:baseline;gap:6px}
 .mr-at-held-cijfers b{font-size:20px;font-weight:600;color:#fff;letter-spacing:-.02em}
-.mr-at-held-kunst{position:relative;margin:0 -22px;height:200px;border-top:1px solid rgba(255,255,255,.08)}
+.mr-at-held-kunst{position:relative;margin:0 -22px;height:min(236px,62cqi);max-width:none}
+/* У героя ілюстрація без власної «коробки»: лише м'яке сяйво, що розчиняється в тлі (жодних різких країв). */
+.mr-at-held .mr-kunst-raam{background:radial-gradient(ellipse at 50% 50%,var(--glow,rgba(138,112,234,.22)),transparent 68%)}
 .mr-at-held-noot{position:relative;z-index:1;margin:0 -22px;padding:12px 22px;font-size:12px;line-height:1.5;color:rgba(235,238,255,.7);background:rgba(8,10,26,.35);border-top:1px solid rgba(255,255,255,.07)}
 
 /* ── Рамка ілюстрації (полотно масштабує компонент Kunst) ─────────────────── */
@@ -108,7 +110,7 @@
 /* ── Заголовок розділу ───────────────────────────────────────────────────── */
 .mr-at-kop{display:flex;flex-direction:column-reverse;border-radius:var(--r-xl);overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);
   scroll-margin-top:80px;animation:mrAtVerschijn .45s cubic-bezier(.2,.7,.2,1) both}
-.mr-at-kop-kunst{height:190px}
+.mr-at-kop-kunst{height:min(240px,62cqi)}
 .mr-at-kop-tekst{padding:20px 20px 22px;min-width:0}
 .mr-at-kop-lijn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--quiet);font-weight:600;min-width:0}
 .mr-at-kop-lijn b{color:var(--a-ink);font-weight:700}
@@ -291,7 +293,7 @@
   .mr-at-held{padding:38px 36px 0;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);align-items:stretch;gap:20px}
   .mr-at-held h1{font-size:clamp(38px,5.6cqi,66px)}
   .mr-at-held-tekst{padding-bottom:30px}
-  .mr-at-held-kunst{margin:-38px -36px 0 0;height:auto;min-height:330px;border-top:0;border-left:1px solid rgba(255,255,255,.07)}
+  .mr-at-held-kunst{margin:-38px -36px 0 0;height:auto;min-height:330px}
   .mr-at-held-noot{grid-column:1/-1;margin:0 -36px;padding:12px 36px}
   .mr-at-kop{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);min-height:337px}
   .mr-at-kop-kunst{height:auto;min-height:100%}
@@ -351,6 +353,8 @@
   .mr-at-kiezer-veld{padding:6px 10px 10px 16px}
   .mr-at-kiezer-voet{display:none}
   .mr-at-kiezer-raster .mr-at-item{min-height:48px}
+  /* Загальне правило :where([role=dialog]) обмежує вікна до 100vw − 16px; аркуш знизу має бути на всю ширину. */
+  .mr-at-kiezer,.mr-at-popover{max-width:none}
   .mr-at-popover{top:auto;bottom:0;left:0;right:0;transform:none;width:auto;border-radius:24px 24px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
   .mr-at-plaatsen{grid-template-columns:repeat(2,1fr)}
 }
