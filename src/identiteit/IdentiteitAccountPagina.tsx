@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag } from '../functievlag-lezen';
-import { IdentiteitAtelierPagina } from './IdentiteitAtelierPagina';
+import { IdentiteitAtelierV49 } from './IdentiteitAtelierV49';
 
 export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -64,7 +64,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: 
     }
   };
 
-  if (atelier) return <IdentiteitAtelierPagina lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
+  if (atelier) return <IdentiteitAtelierV49 lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
 
   return (
     <div className='ia-account'>

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-004",
+  "agent": "codex",
+  "tak": "feature/identiteit-atelier-v49-20261108-071906",
+  "basisCommit": "7bb8765df3ac5e38d8185a94fc5d22c30a46d345",
+  "basisVersie": "20261107-195618",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-08T06:59:03.716Z",
+  "bijgewerkt": "2026-11-08T08:05:22.000Z",
+  "omschrijving": "Точно відтворити погоджений зразок сторінки керування обліковим записом версії 49, усунути повтори й зберегти чинні дії та перемикач безпечного повернення до старого вигляду.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
