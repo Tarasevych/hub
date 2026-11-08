@@ -212,6 +212,8 @@
 .mr-at .mr-at-voet{display:flex;flex-direction:row;align-items:center;text-align:left;gap:14px;padding:18px 4px 6px;border-top:1px solid var(--line);margin-top:6px}
 .mr-at-monogram{flex:none;height:40px;padding:0 10px;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:2px;border-radius:12px;border:1px solid var(--line2);font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
 .mr-at-monogram span{color:var(--accent-ink)}
+.mr-at-weergave{display:flex;justify-content:center;margin-top:22px}
+.mr-at-weergave .ia-vormgeving{background:var(--surface)}
 .mr-at-voet div{display:flex;flex-direction:column;line-height:1.3;min-width:0}
 .mr-at-voet strong{font-size:13px}
 .mr-at-voet small{font-size:12px;color:var(--quiet)}
@@ -286,6 +288,10 @@
 .mr-at-stijlen{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .mr-at-stijlen button{min-height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--muted)}
 .mr-at-popover p{margin:12px 2px 0;font-size:12px;line-height:1.55;color:var(--quiet)}
+/* Вибір вигляду всередині вікна навігації. Weergavekeuze in het navigatievenster. */
+.mr-at-popover .mr-at-vormgeving{margin-top:12px;border-radius:14px;justify-self:stretch;background:var(--surface)}
+.mr-at-popover .mr-at-vormgeving .ia-vormgeving-label{flex-basis:100%;padding:2px 6px 0}
+.mr-at-popover .mr-at-vormgeving button{flex:1 1 0;border-radius:10px}
 
 /* ── Ширші робочі області (планшет і більше) ─────────────────────────────── */
 @container mr-at (min-width:560px){

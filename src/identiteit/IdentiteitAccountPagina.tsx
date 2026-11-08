@@ -5,6 +5,8 @@ import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag, vlaggenBekend } from '../functievlag-lezen';
 import { IdentiteitAtelier } from './IdentiteitAtelier';
+import { useVormgeving } from './identiteit-vormgeving';
+import { VormgevingKiezer } from './VormgevingKiezer';
 
 export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -25,6 +27,8 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: 
   const [inBeeld, setInBeeld] = useState(actief);
   // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
   const atelier = useVlag('identiteit-account-atelier', false);
+  // Прапорець відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag: altijd de klassieke weergave.
+  const [vormgeving] = useVormgeving();
 
   // Адреса змінилася (наприклад, натискання в бічному меню або пряме посилання) — показуємо цей розділ.
   useEffect(() => {
@@ -67,10 +71,11 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: 
   // Поки прапорці не відомі, не показуємо жоден із двох виглядів: інакше старий вигляд на мить монтує всі 12 розділів,
   // їхні запити й прокрутки, а потім його змінює новий (сторінка «стрибала» вниз). Totdat de vlaggen bekend zijn: rustige plaatshouder.
   if (!vlaggenBekend()) return <div className='ia-account ia-wacht' aria-busy='true' aria-label={lang === 'uk' ? 'Завантаження налаштувань' : 'Instellingen laden'} />;
-  if (atelier) return <IdentiteitAtelier lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
+  if (atelier && vormgeving === 'studio') return <IdentiteitAtelier lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
 
   return (
     <div className='ia-account'>
+      {atelier && <VormgevingKiezer lang={lang} />}
       {kop}
       <nav className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
         {IDENTITEIT_TABS.map((tab, index) => (

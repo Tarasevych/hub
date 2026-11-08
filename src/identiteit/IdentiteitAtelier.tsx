@@ -10,6 +10,7 @@ import { useZijbalkVoorkeuren } from '../zijbalk-voorkeuren';
 import { AtelierInhoud } from './atelier-inhoud';
 import bron from './atelier-v49-gegevens.json';
 import './atelier-illustraties.css';
+import { VormgevingKiezer } from './VormgevingKiezer';
 import './identiteit-atelier.css';
 
 type Taal = 'uk' | 'nl';
@@ -379,6 +380,9 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
             {volgende ? <button type='button' className={`is-volgende accent-${volgende.accent}`} onClick={() => ga(volgende.id)}><span><small>{vertaal(lang, 'Далі', 'Volgende')} · {volgende.number}</small><strong>{volgende[lang].name}</strong></span><ArrowRight size={18}/></button> : <span/>}
           </nav>
 
+          {/* Вибір вигляду доступний на будь-якій ширині, також на телефоні, де бічної панелі немає. */}
+          <div className='mr-at-weergave'><VormgevingKiezer lang={lang}/></div>
+
           <footer className='mr-at-voet'>
             <span className='mr-at-monogram'>M<span>·</span>R</span>
             <div><strong>{vertaal(lang, 'Мій простір', 'Mijn Ruimte')}</strong><small>{vertaal(lang, 'Центр налаштувань', 'Instellingencentrum')}</small></div>
@@ -397,6 +401,7 @@ export function IdentiteitAtelier({ lang, actief, secties, onKies }: Props) {
             <button type='button' aria-pressed={stijl === 'classic'} onClick={() => setStijl('classic')}>{vertaal(lang, 'Звичайна панель', 'Gewone balk')}</button>
             <button type='button' aria-pressed={stijl === 'pills'} onClick={() => setStijl('pills')}>{vertaal(lang, 'Окремі кнопки', 'Losse knoppen')}</button>
           </div>
+          <VormgevingKiezer lang={lang} className='mr-at-vormgeving'/>
           <p>{vertaal(lang, 'На телефоні навігація завжди відкривається аркушем знизу, щоб не забирати ширину в налаштувань.', 'Op een telefoon opent de navigatie altijd als blad van onderen, zodat de instellingen hun breedte houden.')}</p>
         </div>
       </>}

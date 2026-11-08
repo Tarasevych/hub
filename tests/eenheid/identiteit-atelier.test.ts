@@ -31,7 +31,13 @@ export async function main(): Promise<number> {
   check('de oorspronkelijke drieënveertig groepen behouden', Object.values(gegevens.groepen).flat().length === 43);
   check('de oorspronkelijke honderddrieënvijftig keuzen behouden', (Object.values(gegevens.groepen).flat() as { рядки: unknown[] }[]).reduce((a, g) => a + g.рядки.length, 0) === 153);
   check('de nieuwe weergave ontvangt de bestaande onderdelen en hun handelingen', pagina.includes('secties={secties}') && atelier.includes("<div className='mr-at-paneel-inhoud ia-at-werkelijk'>{inhoud}</div>"));
-  check('het oude uiterlijk blijft ongewijzigd beschikbaar', pagina.includes("if (atelier) return <IdentiteitAtelier ") && pagina.includes("<div className='ia-account'>"));
+  check('het oude uiterlijk blijft ongewijzigd beschikbaar', pagina.includes("if (atelier && vormgeving === 'studio') return <IdentiteitAtelier ") && pagina.includes("<div className='ia-account'>"));
+  // IDENTITEIT-007: de gebruiker kiest zelf de weergave; zonder vlag blijft alles klassiek en zonder kiezer.
+  const vormgeving = readFileSync('src/identiteit/identiteit-vormgeving.ts', 'utf8');
+  const kiezerBron = readFileSync('src/identiteit/VormgevingKiezer.tsx', 'utf8');
+  check('de weergavekiezer staat alleen open met de vlag', pagina.includes('{atelier && <VormgevingKiezer lang={lang} />}') && atelier.includes("<VormgevingKiezer lang={lang} className='mr-at-vormgeving'/>"));
+  check('de weergavekeuze valt zonder opslag terug op de Studio en accepteert alleen bekende waarden', vormgeving.includes("return 'studio';") && vormgeving.includes('(VORMGEVINGEN as readonly string[]).includes(v)'));
+  check('elke weergave heeft uitleg over de gevolgen in beide talen', /ukUitleg: '[^']{40,}'/.test(vormgeving) && /nlUitleg: '[^']{40,}'/.test(vormgeving) && kiezerBron.includes('title={uitleg}') && kiezerBron.includes("role='radiogroup'"));
   check('de databasevlag staat aanvankelijk uit', /false, false\)\s*ON CONFLICT/.test(migratie));
   check('de vlagomschrijving past binnen de werkelijke databasegrens', Number.isInteger(omschrijvingGrens) && omschrijvingGrens > 0 && !!omschrijving && [...omschrijving].length <= omschrijvingGrens);
   check('een ontbrekende of uitgeschakelde vlag toont het oude uiterlijk', evalueer(sleutel, undefined, 'eigenaar').value === false && evalueer(sleutel, vlag, 'eigenaar').value === false);
