@@ -1,12 +1,13 @@
 // Оформлення сторінки облікового запису (завдання IDENTITY-002): оболонка одного екрана з меню-змістом, дванадцятьма розділами й підсвічуванням під час прокрутки.
 // Розділи наповнює наявний код сторінок категорії «ідентичність» — тут лише розкладка й перехід до розділу.
-import { useEffect, useState, type ReactNode } from 'react';
+import { Component, useEffect, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag, vlaggenBekend } from '../functievlag-lezen';
 import { IdentiteitAtelier } from './IdentiteitAtelier';
 import { useVormgeving } from './identiteit-vormgeving';
 import { VormgevingKiezer } from './VormgevingKiezer';
+import { IdentiteitMaquette, type MaquetteGebruiker } from './maquette/IdentiteitMaquette';
 
 export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -19,11 +20,21 @@ type Props = {
   secties: readonly IdentiteitSectie[];
   /** Перехід до розділу: застосунок сам вирішує, чи це зміна адреси, чи лише прокрутка. */
   onKies: (id: string) => void;
+  /** Ім'я та світлина облікового запису для аватарів у вигляді «Макет». */
+  gebruiker?: MaquetteGebruiker;
 };
 
 const sectieId = (id: string) => `identity-sectie-${id}`;
 
-export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: Props) {
+/** Запобіжник вигляду «Макет»: збій двигуна макета показує класичну сторінку замість порожнього екрана. Een fout in het ontwerp laat de klassieke pagina zien. */
+class MaquetteGrens extends Component<{ terugval: ReactNode; children: ReactNode }, { fout: boolean }> {
+  state = { fout: false };
+  static getDerivedStateFromError() { return { fout: true }; }
+  componentDidCatch(fout: unknown) { console.error('[identiteit] вигляд «Макет» впав, показано класичний вигляд:', fout); }
+  render() { return this.state.fout ? this.props.terugval : this.props.children; }
+}
+
+export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
   // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
   const atelier = useVlag('identiteit-account-atelier', false);
@@ -73,7 +84,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: 
   if (!vlaggenBekend()) return <div className='ia-account ia-wacht' aria-busy='true' aria-label={lang === 'uk' ? 'Завантаження налаштувань' : 'Instellingen laden'} />;
   if (atelier && vormgeving === 'studio') return <IdentiteitAtelier lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
 
-  return (
+  const klassiek = (
     <div className='ia-account'>
       {atelier && <VormgevingKiezer lang={lang} />}
       {kop}
@@ -107,4 +118,9 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies }: 
       </div>
     </div>
   );
+  // Типовий вигляд — макет власника (IDENTITEIT-007); «Студія» і класичний лишаються на вибір. Збій макета повертає класичну сторінку.
+  if (atelier && vormgeving === 'maquette') {
+    return <MaquetteGrens terugval={klassiek}><IdentiteitMaquette lang={lang} actief={actief} secties={secties} onKies={onKies} gebruiker={gebruiker} /></MaquetteGrens>;
+  }
+  return klassiek;
 }

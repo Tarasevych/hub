@@ -269,6 +269,58 @@
   {
    "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-popover",
    "reden": "IDENTITEIT-006: keuzevenster voor de plaats en stijl van de navigatie; op de telefoon een onderblad. Venster, geen knop."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq:before",
+   "reden": "IDENTITEIT-007: сяйво тла макета власника (pointer-events:none, z-index:-1), як body:before у макеті; не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .scroll-progress",
+   "reden": "IDENTITEIT-007: тонка смуга поступу прокрутки макета під командною смугою сайту (top:var(--mq-site)); не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .anchor-rail",
+   "reden": "IDENTITEIT-007: якірне меню макета, яке користувач закріплює ліворуч/праворуч/згори/знизу (перетягуванням або у вікні навігації); зсуви від бічного меню сайту через --mq-links/--mq-boven."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .search-overlay",
+   "reden": "IDENTITEIT-007: шар швидкого переходу Ctrl+K макета на весь екран; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .toast",
+   "reden": "IDENTITEIT-007: коротке повідомлення макета (role=status); не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .anchor-tooltip",
+   "reden": "IDENTITEIT-007: підказка якірного меню в згорнутому режимі (role=tooltip); не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .settings-drawer",
+   "reden": "IDENTITEIT-007: бічна шухляда макета (у версії сайту не відкривається — панелі розгортаються в картках), правило лишено для тотожності стилів."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .horizontal-nav-popup",
+   "reden": "IDENTITEIT-007: випадний перелік групи для меню згори/знизу; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-smart-open .adaptive-nav-scrim:not([hidden])",
+   "reden": "IDENTITEIT-007: затемнення під розгорнутим адаптивним меню на телефоні; не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-pills.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-pills.rail-right .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:not(.rail-smart-open) .adaptive-nav-edge",
+   "reden": "IDENTITEIT-007: тонка зона біля краю екрана, яка розгортає адаптивне меню на телефоні; частина меню, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-right .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
   }
  ],
  "kopReserves": [

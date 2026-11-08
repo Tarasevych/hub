@@ -1,0 +1,56 @@
+/* Оболонка вигляду «Макет» (IDENTITEIT-007): стик макета власника з оболонкою сайту. Ручні правила; згенеровані — у maquette-stijlen.css.
+   De aansluiting van het ontwerp op de omlijsting van de site: volle breedte van het werkvlak, globale regels van de site terugdraaien,
+   echte panelen in de kaarten. Чотири класи, як і в згенерованих стилях (0,4,0). */
+
+/* Корінь займає всю робочу область сайту (її відступи знімаємо від'ємними полями, виміряними двигуном: --mq-site/-links/-rechts/-onder),
+   а бічне меню сайту враховуємо лівим відступом, як у макеті смугу сервісів (margin-left:74px). */
+.mr-mq.mr-mq.mr-mq.mr-mq{
+  margin:calc(-1 * var(--mq-site,0px)) calc(-1 * var(--mq-rechts,0px)) calc(-1 * var(--mq-onder,0px)) calc(-1 * var(--mq-links,0px));
+  padding:var(--mq-site,0px) 0 0 var(--mq-links,0px);
+  min-height:100vh;
+  overflow-x:clip;
+  isolation:isolate;
+}
+/* Заголовки сайту мають шрифт Georgia (index.css); у макеті вони успадковують Inter, курсив героя лишає свій Georgia (власне правило макета сильніше). */
+.mr-mq.mr-mq.mr-mq.mr-mq :where(h1,h2,h3,h4):not(.mq-echt *){font-family:inherit}
+/* Елементне правило footer сайту (ширина 80rem, центрування, space-between) не стосується підвалу макета. */
+.mr-mq.mr-mq.mr-mq.mr-mq footer.site-footer{position:static;z-index:auto;width:auto;max-width:none;margin-inline:0;margin-bottom:0;justify-content:flex-start}
+
+/* Монограма підвалу: у макеті grid розкладав «M», «·», «R» у три рядки (вада макета, видно й на оригінальних знімках); тут — в один рядок. */
+.mr-mq.mr-mq.mr-mq.mr-mq .footer-monogram{display:flex;align-items:center;justify-content:center;gap:1px}
+
+/* Гніздо справжньої панелі: шрифти й кольори сайту всередині, щоб форми, кнопки та попередження виглядали як у решті застосунку. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt{display:block;min-width:0}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud{
+  --mq-paneel-bg:color-mix(in srgb,var(--surface) 86%,transparent);
+  font-family:'Trebuchet MS',Verdana,sans-serif;font-size:14px;line-height:1.35;color:var(--text);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud :where(h1,h2,h3){font-family:Georgia,'Times New Roman',serif}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud svg{width:1rem;height:1rem;stroke-width:1.9}
+/* Панель сайту всередині картки без власної рамки: рамка й тло — від картки або розгорнутої панелі макета. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center{padding:0;margin:0;border:0;background:transparent;box-shadow:none}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-direct{display:block}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-direct .mq-echt-inhoud{padding:4px 2px 2px}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-settings-controls .mq-echt-inhoud{padding:2px 0 6px}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-settings-workspace.no-preview{display:block}
+
+/* Перемикач вигляду (макет / «Студія» / класичний) у вікні навігації та під підвалом — у стилі макета. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving{margin-top:14px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving-voet{display:flex;justify-content:center;padding:0 0 42px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--muted)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer .ia-vormgeving-label{margin-right:4px;letter-spacing:.06em;text-transform:uppercase;font-size:10px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button{
+  min-height:30px;padding:5px 11px;border-radius:999px;border:1px solid var(--card-border);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12px;cursor:pointer;transition:background .2s,border-color .2s,color .2s!important;
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button:hover{border-color:rgba(var(--global-rgb),.55)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button.is-actief{background:rgba(var(--global-rgb),.18);border-color:rgba(var(--global-rgb),.6);color:var(--text)}
+
+/* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів. */
+@media(max-width:730px){
+  /* Вікно навігації на телефоні прив'язане знизу; з перемикачем вигляду воно вище за екран 844 px — тож прокручується всередині. */
+  .mr-mq.mr-mq.mr-mq.mr-mq.bp-max-730 .popover-panel{max-height:calc(100dvh - var(--mq-site,0px) - 97px);overflow:auto;overscroll-behavior:contain}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving-voet{padding:0 14px 110px}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer{justify-content:center}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button{min-height:var(--tik-hoogte,40px)}
+}

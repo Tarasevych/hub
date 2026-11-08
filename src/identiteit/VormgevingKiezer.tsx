@@ -1,13 +1,14 @@
 // Перемикач вигляду центру облікового запису. Keuzeknoppen voor de weergave; de uitleg vertelt wat er wel en niet verandert.
-import { VORMGEVINGEN, VORMGEVING_TEKST, useVormgeving } from './identiteit-vormgeving';
+import { VORMGEVING_TEKST, useBeschikbareVormgevingen, useVormgeving } from './identiteit-vormgeving';
 
 export function VormgevingKiezer({ lang, className = '' }: { lang: 'uk' | 'nl'; className?: string }) {
   const [huidig, kies] = useVormgeving();
+  const beschikbaar = useBeschikbareVormgevingen();
   const label = lang === 'uk' ? 'Вигляд сторінки' : 'Weergave van de pagina';
   return (
     <div className={`ia-vormgeving ${className}`} role='radiogroup' aria-label={label}>
       <span className='ia-vormgeving-label'>{label}</span>
-      {VORMGEVINGEN.map((v) => {
+      {beschikbaar.map((v) => {
         const t = VORMGEVING_TEKST[v];
         const uitleg = (lang === 'uk' ? t.ukUitleg : t.nlUitleg) + ' ' + (lang === 'uk'
           ? 'Вибір зберігається на цьому пристрої.'

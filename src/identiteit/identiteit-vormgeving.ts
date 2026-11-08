@@ -1,13 +1,22 @@
 // Вибір вигляду центру облікового запису (IDENTITEIT-007): користувач сам обирає, як виглядає сторінка.
 // Keuze van de weergave van het accountcentrum: alleen het uiterlijk wisselt, gegevens, handelingen en rechten blijven gelijk.
 import { useEffect, useState } from 'react';
+import { useVlag } from '../functievlag-lezen';
 
-export type Vormgeving = 'studio' | 'klassiek';
+/** Прапорець вигляду «Макет» (IDENTITEIT-007). Zonder deze vlag blijven alleen de Studio en de klassieke weergave over. */
+export const VLAG_MAQUETTE = 'identiteit-account-maquette';
 
-/** Volgorde in de kiezer. Новий вигляд за макетом власника додається сюди, коли буде готовий. */
-export const VORMGEVINGEN: readonly Vormgeving[] = ['studio', 'klassiek'];
+export type Vormgeving = 'maquette' | 'studio' | 'klassiek';
+
+/** Volgorde in de kiezer: eerst het ontwerp van de eigenaar (standaard), dan de Studio, dan de klassieke lange pagina. */
+export const VORMGEVINGEN: readonly Vormgeving[] = ['maquette', 'studio', 'klassiek'];
 
 export const VORMGEVING_TEKST: Record<Vormgeving, { uk: string; nl: string; ukUitleg: string; nlUitleg: string }> = {
+  maquette: {
+    uk: 'Макет', nl: 'Ontwerp',
+    ukUitleg: 'Дизайн власника: герой, картки чотирьох груп, якірне меню, яке можна закріпити з будь-якого краю, пошук Ctrl+K. Налаштування й дані ті самі, лише подання інше.',
+    nlUitleg: 'Het ontwerp van de eigenaar: hero, kaarten in vier groepen, een ankermenu dat aan elke rand kan, zoeken met Ctrl+K. Instellingen en gegevens blijven gelijk, alleen de weergave wisselt.',
+  },
   studio: {
     uk: 'Студія', nl: 'Studio',
     ukUitleg: 'Один розділ на екрані, огляд груп і пошук Ctrl+K. Налаштування й дані не змінюються, лише їх подання.',
@@ -23,12 +32,19 @@ export const VORMGEVING_TEKST: Record<Vormgeving, { uk: string; nl: string; ukUi
 const sleutel = 'identiteit-account-vormgeving';
 const melding = 'identiteit-vormgeving-gewijzigd';
 
-export function leesVormgeving(): Vormgeving {
+/** Збережений вибір, якщо він серед доступних; інакше перший доступний (макет із прапорцем, без нього — «Студія»). */
+export function leesVormgeving(beschikbaar: readonly Vormgeving[] = VORMGEVINGEN): Vormgeving {
   try {
     const v = localStorage.getItem(sleutel);
-    if (v && (VORMGEVINGEN as readonly string[]).includes(v)) return v as Vormgeving;
+    if (v && (beschikbaar as readonly string[]).includes(v)) return v as Vormgeving;
   } catch { /* Без сховища — типовий вигляд. Zonder opslag: standaard. */ }
-  return 'studio';
+  return beschikbaar[0] ?? 'studio';
+}
+
+/** Доступні вигляди за прапорцем «Макет». */
+export function useBeschikbareVormgevingen(): readonly Vormgeving[] {
+  const maquette = useVlag(VLAG_MAQUETTE, false);
+  return maquette ? VORMGEVINGEN : VORMGEVINGEN.filter((v) => v !== 'maquette');
 }
 
 export function bewaarVormgeving(v: Vormgeving) {
@@ -38,13 +54,15 @@ export function bewaarVormgeving(v: Vormgeving) {
 
 /** Поточний вибір; оновлюється одразу в усіх відкритих частинах сторінки й інших вкладках. */
 export function useVormgeving(): [Vormgeving, (v: Vormgeving) => void] {
-  const [waarde, setWaarde] = useState<Vormgeving>(leesVormgeving);
+  const beschikbaar = useBeschikbareVormgevingen();
+  const [waarde, setWaarde] = useState<Vormgeving>(() => leesVormgeving(beschikbaar));
   useEffect(() => {
-    const opnieuw = () => setWaarde(leesVormgeving());
+    const opnieuw = () => setWaarde(leesVormgeving(beschikbaar));
+    opnieuw();
     const opslag = (e: StorageEvent) => { if (e.key === sleutel) opnieuw(); };
     window.addEventListener(melding, opnieuw);
     window.addEventListener('storage', opslag);
     return () => { window.removeEventListener(melding, opnieuw); window.removeEventListener('storage', opslag); };
-  }, []);
+  }, [beschikbaar.length]);
   return [waarde, bewaarVormgeving];
 }
