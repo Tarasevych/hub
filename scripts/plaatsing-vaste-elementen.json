@@ -257,6 +257,66 @@
   {
    "sleutel": "src/identiteit/identiteit-account.css :: .ia-dialoog-achtergrond",
    "reden": "IDENTITY-002: achtergrondlaag van de fotodialoog (venster, geen zwevende knop). Het venster moet boven de pagina en de instellingenkaarten staan; zonder position:fixed kan het niet het hele scherm bedekken. Sluit met Escape of klik op de achtergrond."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49:before",
+   "reden": "IDENTITEIT-005: niet-bedienbare achtergrondgloed van de goedgekeurde vorm; pointer-events:none, geen knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .scroll-progress",
+   "reden": "IDENTITEIT-005: smalle voortgangsstrook bovenaan uit het vormvoorbeeld; geen knop of bediening."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .app-rail",
+   "reden": "IDENTITEIT-005: vaste zijbalk uit het oorspronkelijke vormvoorbeeld; de werkende accountpagina tekent deze balk niet en behoudt de bestaande toepassingsnavigatie."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .anchor-rail",
+   "reden": "IDENTITEIT-005: volledige navigatiebalk met onderdeelgroepen; geen afzonderlijke zwevende actieknop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .popover-panel",
+   "reden": "IDENTITEIT-005: instellingsvenster voor de ligging van de navigatie; een paneel, geen zwevende knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .search-overlay",
+   "reden": "IDENTITEIT-005: schermvullende achtergrond van het venster voor zoeken naar onderdelen; geen knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .toast",
+   "reden": "IDENTITEIT-005: tijdelijke uitkomstmelding uit het oorspronkelijke vormvoorbeeld; geen bedienbare knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .anchor-tooltip",
+   "reden": "IDENTITEIT-005: niet-bedienbare toelichting bij een navigatieonderdeel; pointer-events:none, geen knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .settings-drawer",
+   "reden": "IDENTITEIT-005: schermvullende laag voor het instellingenpaneel uit het vormvoorbeeld; pointer-events:none op de buitenlaag, geen losse knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .horizontal-nav-popup",
+   "reden": "IDENTITEIT-005: uitklapvenster van de horizontale onderdeelnavigatie; een paneel, geen losse knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed.rail-smart-open .adaptive-nav-scrim:not([hidden])",
+   "reden": "IDENTITEIT-005: verduisteringslaag achter een geopend navigatievenster; geen bediening."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed.rail-pills.rail-left .popover-panel,.ia-at-v49.rail-smart-condensed.rail-pills.rail-right .popover-panel",
+   "reden": "IDENTITEIT-005: plaatsing van hetzelfde navigatie-instellingenvenster bij de compacte zijbalk; geen knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed:not(.rail-smart-open) .adaptive-nav-edge",
+   "reden": "IDENTITEIT-005: randzone van de compacte navigatie uit het oorspronkelijke vormvoorbeeld; niet afzonderlijk aanwezig in de werkende accountpagina."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed.rail-left .popover-panel,.ia-at-v49.rail-smart-condensed.rail-right .popover-panel",
+   "reden": "IDENTITEIT-005: plaatsing van hetzelfde navigatie-instellingenvenster naast een compacte balk; geen losse knop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .anchor-rail.ia-at-nav",
+   "reden": "IDENTITEIT-005: bestaande navigatiebalk van de accountpagina met bijzondere plaatsing; geen afzonderlijke zwevende actieknop."
   }
  ],
  "kopReserves": [
