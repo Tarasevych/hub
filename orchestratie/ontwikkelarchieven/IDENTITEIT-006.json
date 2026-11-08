@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-006",
+  "datum": "2026-11-08",
+  "taal": "uk",
+  "opdracht": "Замість адаптації прототипу v49 створити сучасний, витончений і інтуїтивний дизайн центру налаштувань акаунта для телефона, планшета й ПК, зберігши всі 12 розділів, 43 групи, 153 налаштування, ілюстрації v49, чинні дії, перевірки прав і прапорець повернення до старого вигляду.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "model": "onbekend",
+    "repo": "Tarasevych/hub",
+    "basisTak": "integratie",
+    "basisCommit": "d819cb721cd7f8e9f3ca1b801f1b426ff99ce3b3",
+    "geinstalleerdeVersie": "20261108-111700",
+    "geinstalleerdeCommit": "944336a259731cd9b90afb29a191e896f48cec38",
+    "tak": "feature/identiteit-006-20261108-162906"
+  },
+  "bronnen": [
+    {"soort": "запит власника", "omschrijving": "Власник відкинув попереднє перенесення як «адаптацію замість модернізації» з обрізанням, накладанням і горизонтальною прокруткою на телефоні.", "bewijzen": ["Повідомлення власника від 08.11.2026 у треді проєкту"]},
+    {"soort": "прототип", "omschrijving": "Дані прототипу v49: розділи, групи, налаштування, статуси та ілюстрації обома мовами.", "bewijzen": ["src/identiteit/atelier-v49-gegevens.json"]},
+    {"soort": "наявний код", "omschrijving": "Справжні панелі налаштувань і розподіл панелей доступу між розділами.", "bewijzen": ["src/identiteit/IdentiteitAccountPagina.tsx", "src/toegangslaag-panelen.tsx", "src/ToegangslaagWeergave.tsx"]},
+    {"soort": "чинне встановлення", "omschrijving": "Випуск MOBIEL-001 20261108-111700 (BRON-COMMIT 944336a), наданий власником.", "bewijzen": ["https://github.com/Tarasevych/hub/releases/tag/20261108-111700"]}
+  ],
+  "tijdlijn": [
+    {"volgorde": 1, "stap": "Розібрано прототип, попереднє перенесення і правила оболонки сайту (прокрутка в робочій області, правило плаского вмісту, загальні шрифти заголовків і обмеження вікон).", "bewijzen": ["src/canoniek-omlijsting.css", "src/ontwerp/primitieven.css"]},
+    {"volgorde": 2, "stap": "Написано нову компоненту «Студія»: один розділ на екрані, огляд із плитками груп, дорожня карта, сусідні розділи, пошук Ctrl/Cmd+K.", "bewijzen": ["src/identiteit/IdentiteitAtelier.tsx"]},
+    {"volgorde": 3, "stap": "Макет переведено на контейнерні запити від ширини робочої області; аркуш знизу на телефоні; чотири положення панелі на ПК; світла і темна тема.", "bewijzen": ["src/identiteit/identiteit-atelier.css"]},
+    {"volgorde": 4, "stap": "Ілюстрації v49 винесено в окремий простір імен і вписано без обрізання підписів.", "bewijzen": ["src/identiteit/atelier-illustraties.css"]},
+    {"volgorde": 5, "stap": "Виправлено старі помилки: апостроф у index.html, стрибок сторінки донизу, спалах старого вигляду, 14 px переповнення на телефоні.", "bewijzen": ["index.html", "src/toegangslaag-panelen.tsx", "src/functievlag-lezen.ts", "src/menu-v2.css"]},
+    {"volgorde": 6, "stap": "Перевірено в справжньому Chromium на зібраному сайті: 12 розділів × 7 ширин × 2 теми; власник переглянув і погодив знімки 08.11.2026.", "bewijzen": ["https://github.com/Tarasevych/hub/pull/50"]}
+  ],
+  "keuzes": [
+    {"keuze": "Нова компонента замість доопрацювання перенесеного прототипу", "reden": "240 КБ стилів прототипу конфліктували з оболонкою сайту і монтували 12 прихованих форм одночасно.", "alternatief": "Не латати atelier-v49-bron.css далі."},
+    {"keuze": "Контейнерні запити замість медіазапитів", "reden": "Ширина робочої області залежить від бічного меню сайту, а не від вікна.", "alternatief": "Не прив'язувати макет до ширини вікна."},
+    {"keuze": "Не змінювати дані, права і дії", "reden": "Змінено лише вигляд; справжні панелі вбудовано без змін, прапорець повертає старий вигляд.", "alternatief": "Не переписувати обробники чи серверні перевірки."}
+  ],
+  "wijzigingen": [
+    {"pad": "src/identiteit/IdentiteitAtelier.tsx", "omschrijving": "Нова компонента «Студія»."},
+    {"pad": "src/identiteit/identiteit-atelier.css", "omschrijving": "Стилі «Студії», мобільний шар у кінці файла."},
+    {"pad": "src/identiteit/atelier-illustraties.css", "omschrijving": "Ілюстрації v49 у власному просторі імен."},
+    {"pad": "src/identiteit/IdentiteitAccountPagina.tsx", "omschrijving": "Підключення нової компоненти і заглушка під час завантаження прапорців."},
+    {"pad": "tests/eenheid/identiteit-atelier.test.ts", "omschrijving": "Перевірки нової компоненти (33)."},
+    {"pad": "tests/e2e/identiteit-mobiel.e2e.ts", "omschrijving": "Браузерні перевірки телефона, планшета і ПК."}
+  ],
+  "controles": [
+    {"opdracht": "node scripts/eenheidstests.mjs identiteit-atelier", "uitkomst": "33 із 33 успішно"},
+    {"opdracht": "node scripts/eenheidstests.mjs mobiel-cascade-20261105", "uitkomst": "22 із 22 успішно"},
+    {"opdracht": "node scripts/eenheidstests.mjs mobiel-geometrie", "uitkomst": "56 із 56 успішно"},
+    {"opdracht": "браузерна перевірка identiteit-mobiel", "uitkomst": "0 збоїв на 6 ширинах і 4 положеннях панелі"},
+    {"opdracht": "обхід зібраного сайту в Chromium", "uitkomst": "12 розділів × 7 ширин × 2 теми: 0 переповнень, 0 помилок JS"},
+    {"opdracht": "node scripts/plaatsing-controle.mjs", "uitkomst": "успішно"}
+  ],
+  "beperkingen": [
+    "Знімки зроблено на зібраному сайті з підробленими відповідями API; на справжньому сервері вигляд варто ще раз переглянути в режимі «Тільки я».",
+    "Інші сторінки поза центром облікового запису не змінювались.",
+    "Встановлення лише власником через ключ доступу після звірення контрольної суми."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних паролів, приватних ключів, особистих листів або користувацьких даних не включено."
+  }
+}

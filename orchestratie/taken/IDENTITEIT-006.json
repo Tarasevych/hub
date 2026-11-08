@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-006",
+  "agent": "claude",
+  "tak": "feature/identiteit-006-20261108-162906",
+  "basisCommit": "944336a259731cd9b90afb29a191e896f48cec38",
+  "basisVersie": "20261108-111700",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-08T16:29:06.396Z",
+  "bijgewerkt": "2026-11-08T16:29:06.396Z",
+  "omschrijving": "Новий дизайн центру налаштувань акаунта «Студія» на ідеях прототипу v49: один розділ на екрані, аркуш розділів на телефоні, панель на ПК, пошук по 153 налаштуваннях; без зміни прав, даних і дій.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
