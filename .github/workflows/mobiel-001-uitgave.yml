@@ -64,11 +64,6 @@ jobs:
           node scripts/eenheidstests.mjs identiteit-atelier
           node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
           node scripts/eenheidstests.mjs uitrol-voorcontrole
-      - name: Типи і складання
-        run: |
-          npx tsc --noEmit
-          npm run typecheck:server
-          NODE_OPTIONS=--max-old-space-size=6144 npm run build
       - name: Справжні вузькі екрани у браузері
         shell: bash
         run: |
@@ -82,6 +77,11 @@ jobs:
           test -x "$CHROME"
           PLAYWRIGHT_CORE="$PWD/node_modules/playwright-core" CHROME="$CHROME" \
             node scripts/e2e-lokaal.mjs identiteit-mobiel
+      - name: Типи і складання
+        run: |
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
       - name: Підтвердити незмінність файлів
         run: |
           git diff --exit-code

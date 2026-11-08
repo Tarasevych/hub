@@ -21,11 +21,13 @@ export async function main(): Promise<number> {
     define: { 'process.env.NODE_ENV': '"production"', 'import.meta.env.DEV': 'false', 'import.meta.env': '{}' },
     logLevel: 'error',
   });
-  const html = '<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/stand.css"></head><body style="margin:0"><div id="root"></div><script type="module" src="/stand.js"></script></body></html>';
+  const html = '<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/stand.css"><script src="/canonical-service.js"></script></head><body style="margin:0"><div id="root"></div><script type="module" src="/stand.js"></script></body></html>';
   const server = createServer((req, res) => {
     const naam = (req.url || '/').split('?')[0];
     const bestand = join(map, naam.replace(/^\/+/, ''));
-    if (naam !== '/' && existsSync(bestand)) {
+    if (naam === '/canonical-service.js') {
+      res.writeHead(200, { 'content-type': 'text/javascript' }).end(readFileSync('public/canonical-service.js'));
+    } else if (naam !== '/' && existsSync(bestand)) {
       res.writeHead(200, { 'content-type': naam.endsWith('.css') ? 'text/css' : 'text/javascript' }).end(readFileSync(bestand));
     } else res.writeHead(200, { 'content-type': 'text/html' }).end(html);
   });
