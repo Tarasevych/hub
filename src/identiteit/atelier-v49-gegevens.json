@@ -1,0 +1,2707 @@
+{
+  "secties": [
+    {
+      "id": "personalization",
+      "group": "personal",
+      "number": "01",
+      "accent": "violet",
+      "uk": {
+        "name": "Персоналізація",
+        "kicker": "ВАШ ПОЧЕРК",
+        "title": "Простір, який відчувається вашим.",
+        "description": "Зовнішній вигляд, поведінка інтерфейсу та особисті вподобання — зібрані в одному красивому місці.",
+        "details": [
+          {
+            "icon": "◈",
+            "label": "Меню й піктограми",
+            "note": "Порядок, кольори та характер навігації"
+          },
+          {
+            "icon": "☼",
+            "label": "Теми й атмосфера",
+            "note": "Світло, контраст і ваша палітра"
+          },
+          {
+            "icon": "⊞",
+            "label": "Віджети та блоки",
+            "note": "Робочий простір без зайвого шуму"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Personalisatie",
+        "kicker": "JOUW STIJL",
+        "title": "Een ruimte die helemaal van jou voelt.",
+        "description": "Het uiterlijk, het gedrag en jouw voorkeuren op één rustige en stijlvolle plek.",
+        "details": [
+          [
+            "Menu en pictogrammen",
+            "Volgorde, kleuren en navigatiestijl"
+          ],
+          [
+            "Thema's en sfeer",
+            "Licht, contrast en jouw kleuren"
+          ],
+          [
+            "Widgets en blokken",
+            "Een rustige persoonlijke werkplek"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-personalization\"><div class=\"art-halo\"></div><div class=\"floating-window main-window\"><div class=\"window-top\"><i></i><i></i><i></i></div><div class=\"window-row\"><span></span><b></b></div><div class=\"window-row second\"><span></span><b></b></div><div class=\"window-row third\"><span></span><b></b></div></div><div class=\"floating-window smaller-window\"><span>✦</span><strong>Ваш стиль.</strong><small>ОСОБИСТИЙ ПРОСТІР</small></div><span class=\"art-spark spark-a\">✳</span><span class=\"art-spark spark-b\">✦</span></div>",
+        "nl": "<div class=\"art art-personalization\"><div class=\"art-halo\"></div><div class=\"floating-window main-window\"><div class=\"window-top\"><i></i><i></i><i></i></div><div class=\"window-row\"><span></span><b></b></div><div class=\"window-row second\"><span></span><b></b></div><div class=\"window-row third\"><span></span><b></b></div></div><div class=\"floating-window smaller-window\"><span>✦</span><strong>Helemaal jij.</strong><small>PERSOONLIJKE RUIMTE</small></div><span class=\"art-spark spark-a\">✳</span><span class=\"art-spark spark-b\">✦</span></div>"
+      }
+    },
+    {
+      "id": "menu",
+      "group": "personal",
+      "number": "02",
+      "accent": "cyan",
+      "uk": {
+        "name": "Меню",
+        "kicker": "ПОВНА СВОБОДА",
+        "title": "Навігація під вашу руку.",
+        "description": "Розташування меню, швидкий доступ, стиль іконок та делікатні анімації. Точне налаштування без складності.",
+        "details": [
+          {
+            "icon": "↔",
+            "label": "Розташування",
+            "note": "Ліворуч · праворуч · верх · низ"
+          },
+          {
+            "icon": "◌",
+            "label": "Швидкий доступ",
+            "note": "Ваші улюблені дії під рукою"
+          },
+          {
+            "icon": "⋮",
+            "label": "Вигляд панелі",
+            "note": "Розгорнутий, компактний або док"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Menu",
+        "kicker": "ALLE VRIJHEID",
+        "title": "Navigatie die met je meebeweegt.",
+        "description": "Menupositie, snelle toegang, iconen en subtiele animaties. Precies instelbaar, toch eenvoudig.",
+        "details": [
+          [
+            "Positie",
+            "Links · rechts · boven · onder"
+          ],
+          [
+            "Snelle toegang",
+            "Je favoriete acties binnen handbereik"
+          ],
+          [
+            "Paneelweergave",
+            "Uitgevouwen, compact of als dock"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-menu\"><div class=\"art-orbit\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h16\"/><circle cx=\"7\" cy=\"6\" r=\"1\" fill=\"currentColor\"/><circle cx=\"7\" cy=\"12\" r=\"1\" fill=\"currentColor\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2a10 10 0 0 0 0 20h1a2 2 0 0 0 2-2c0-.9-.6-1.2-.6-2 0-1.2.8-2 2-2h2.3a3.3 3.3 0 0 0 3.3-3.3A10 10 0 0 0 12 2Z\"/><circle cx=\"7\" cy=\"10\" r=\"1\"/><circle cx=\"11\" cy=\"6.5\" r=\"1\"/><circle cx=\"17\" cy=\"9\" r=\"1\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"8\" height=\"8\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1.5\"/><rect x=\"14\" y=\"11\" width=\"7\" height=\"10\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"8\" height=\"7\" rx=\"1.5\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3 20v-2a6 6 0 0 1 12 0v2M17 6a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M1 21h22M12 17v4\"/></svg></span></div><div class=\"art-middle\">МЕНЮ<br><b>360°</b></div><div class=\"art-menu-label\">БУДЬ-ЯКЕ РОЗТАШУВАННЯ</div></div>",
+        "nl": "<div class=\"art art-menu\"><div class=\"art-orbit\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h16\"/><circle cx=\"7\" cy=\"6\" r=\"1\" fill=\"currentColor\"/><circle cx=\"7\" cy=\"12\" r=\"1\" fill=\"currentColor\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2a10 10 0 0 0 0 20h1a2 2 0 0 0 2-2c0-.9-.6-1.2-.6-2 0-1.2.8-2 2-2h2.3a3.3 3.3 0 0 0 3.3-3.3A10 10 0 0 0 12 2Z\"/><circle cx=\"7\" cy=\"10\" r=\"1\"/><circle cx=\"11\" cy=\"6.5\" r=\"1\"/><circle cx=\"17\" cy=\"9\" r=\"1\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"8\" height=\"8\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\" rx=\"1.5\"/><rect x=\"14\" y=\"11\" width=\"7\" height=\"10\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"8\" height=\"7\" rx=\"1.5\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3 20v-2a6 6 0 0 1 12 0v2M17 6a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M1 21h22M12 17v4\"/></svg></span></div><div class=\"art-middle\">MENU<br><b>360°</b></div><div class=\"art-menu-label\">OP ELKE SCHERMRAND</div></div>"
+      }
+    },
+    {
+      "id": "themes",
+      "group": "personal",
+      "number": "03",
+      "accent": "pink",
+      "uk": {
+        "name": "Теми",
+        "kicker": "ГРА СВІТЛА",
+        "title": "Настрій у кожному пікселі.",
+        "description": "Оберіть темний камерний простір або легку світлу атмосферу. Відтінки, які підтримують концентрацію.",
+        "details": [
+          {
+            "icon": "◕",
+            "label": "Темна",
+            "note": "Глибина, спокій та кінематографічний контраст"
+          },
+          {
+            "icon": "◒",
+            "label": "Світла",
+            "note": "Повітря, м'які тіні та чистота"
+          },
+          {
+            "icon": "✳",
+            "label": "Акцент",
+            "note": "Особистий колір для активних елементів"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Thema's",
+        "kicker": "SPEL VAN LICHT",
+        "title": "Sfeer in iedere pixel.",
+        "description": "Kies de diepte van een donker thema of de luchtigheid van een lichte omgeving.",
+        "details": [
+          [
+            "Donker",
+            "Rust en een filmisch contrast"
+          ],
+          [
+            "Licht",
+            "Ruimte, zachte schaduwen en helderheid"
+          ],
+          [
+            "Accent",
+            "Jouw kleur voor actieve elementen"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-themes\"><div class=\"theme-sample theme-sample-back\"><span class=\"theme-sample-dot\"></span><i></i><i></i></div><div class=\"theme-sample theme-sample-front\"><div class=\"sample-moon\">◑</div><strong>Тонка<br>гармонія.</strong><div class=\"sample-pills\"><span></span><span></span><span></span></div></div></div>",
+        "nl": "<div class=\"art art-themes\"><div class=\"theme-sample theme-sample-back\"><span class=\"theme-sample-dot\"></span><i></i><i></i></div><div class=\"theme-sample theme-sample-front\"><div class=\"sample-moon\">◑</div><strong>Mooi in<br>balans.</strong><div class=\"sample-pills\"><span></span><span></span><span></span></div></div></div>"
+      }
+    },
+    {
+      "id": "languages",
+      "group": "personal",
+      "number": "04",
+      "accent": "mint",
+      "uk": {
+        "name": "Мови",
+        "kicker": "ВАШ ГОЛОС",
+        "title": "Зрозуміло з першого погляду.",
+        "description": "Мова інтерфейсу — це частина комфорту. Швидке перемикання між українською та нідерландською.",
+        "details": [
+          {
+            "icon": "УК",
+            "label": "Українська",
+            "note": "Основна мова інтерфейсу"
+          },
+          {
+            "icon": "NL",
+            "label": "Nederlands",
+            "note": "Для повсякденного життя в Бельгії"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Talen",
+        "kicker": "JOUW TAAL",
+        "title": "Meteen duidelijk.",
+        "description": "De taal van je interface hoort bij je comfort. Wissel eenvoudig tussen Oekraïens en Nederlands.",
+        "details": [
+          [
+            "Українська",
+            "Oekraïense interface"
+          ],
+          [
+            "Nederlands",
+            "Voor je dagelijkse leven in België"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-languages\"><div class=\"language-card language-back\">Вітаю <span>Привіт</span></div><div class=\"language-card language-front\"><small>ЄДИНИЙ ПРОСТІР</small><strong>Привіт,<br>Павле.</strong><span>UA ↔ NL</span></div><span class=\"language-ring\"></span></div>",
+        "nl": "<div class=\"art art-languages\"><div class=\"language-card language-back\">Welkom <span>Hallo</span></div><div class=\"language-card language-front\"><small>ÉÉN RUIMTE</small><strong>Hallo,<br>Pavlo.</strong><span>UA ↔ NL</span></div><span class=\"language-ring\"></span></div>"
+      }
+    },
+    {
+      "id": "widgets",
+      "group": "personal",
+      "number": "05",
+      "accent": "amber",
+      "uk": {
+        "name": "Віджети",
+        "kicker": "ЗБЕРІТЬ СВОЄ",
+        "title": "Маленькі деталі. Велика різниця.",
+        "description": "Побудуйте робочий простір із корисних блоків. Обирайте те, що важливе саме сьогодні.",
+        "details": [
+          {
+            "icon": "⊞",
+            "label": "Додавання блоків",
+            "note": "Сервіси, інструменти та зовнішні посилання"
+          },
+          {
+            "icon": "▥",
+            "label": "Компонування",
+            "note": "Зручні розміри й порядок елементів"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Widgets",
+        "kicker": "MAAK HET EIGEN",
+        "title": "Kleine details. Groot verschil.",
+        "description": "Stel je werkplek samen met de blokken die vandaag voor jou belangrijk zijn.",
+        "details": [
+          [
+            "Blokken toevoegen",
+            "Diensten, hulpmiddelen en externe links"
+          ],
+          [
+            "Indeling",
+            "Handige afmetingen en volgorde"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-widgets\"><div class=\"widget-art-grid\"><div><small>ВІДЖЕТИ</small><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M7 3v4M17 3v4M3 10h18M8 14h3M8 17h6\"/></svg></span><small>КАЛЕНДАР</small></div><div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"m3 7 9 7 9-7\"/></svg></span><small>ПОШТА</small></div><div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><path d=\"M8 8h8M8 12h8M8 16h5\"/></svg></span><small>НОТАТКИ</small></div><div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v10M7 12h10\"/></svg></span><small>ДОДАТИ</small></div></div></div>",
+        "nl": "<div class=\"art art-widgets\"><div class=\"widget-art-grid\"><div><small>WIDGETS</small><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M7 3v4M17 3v4M3 10h18M8 14h3M8 17h6\"/></svg></span><small>AGENDA</small></div><div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"m3 7 9 7 9-7\"/></svg></span><small>MAIL</small></div><div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><path d=\"M8 8h8M8 12h8M8 16h5\"/></svg></span><small>NOTITIES</small></div><div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v10M7 12h10\"/></svg></span><small>TOEVOEGEN</small></div></div></div>"
+      }
+    },
+    {
+      "id": "sharing",
+      "group": "social",
+      "number": "06",
+      "accent": "blue",
+      "uk": {
+        "name": "Спільний доступ",
+        "kicker": "ВАШІ КОРДОНИ",
+        "title": "Діліться лише тим, чим хочете.",
+        "description": "Прозорі права доступу, чіткі запрошення й повне розуміння того, хто що бачить.",
+        "details": [
+          {
+            "icon": "♙",
+            "label": "Доступ за акаунтом",
+            "note": "Запрошення та керовані ролі"
+          },
+          {
+            "icon": "↗",
+            "label": "Доступ за посиланням",
+            "note": "Окремі параметри та обмеження"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Delen",
+        "kicker": "JOUW GRENZEN",
+        "title": "Deel alleen wat jij wilt.",
+        "description": "Heldere toegangsrechten en uitnodigingen. Je ziet precies wie wat mag bekijken.",
+        "details": [
+          [
+            "Toegang per account",
+            "Uitnodigingen en rollen"
+          ],
+          [
+            "Toegang via link",
+            "Aparte opties en beperkingen"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-sharing\"><div class=\"sharing-permissions-card\"><div class=\"sharing-card-head\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span><strong>ПРИКЛАД ПРАВ ДОСТУПУ</strong></div><div class=\"sharing-person-row\"><div class=\"sharing-person-avatar profile-avatar\" data-profile-photo></div><span>ВЛАСНИК</span><b><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 1 1-2-5\"/><path d=\"m8 12 3 3 9-10\"/></svg></b></div><div class=\"sharing-person-row\"><div class=\"sharing-person-avatar sharing-invite-avatar\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3 20v-2a6 6 0 0 1 12 0v2M19 8v8m-4-4h8\"/></svg></div><span>ЗАПРОШЕНА ОСОБА</span><em>ПЕРЕГЛЯД</em></div><div class=\"sharing-link-row\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 15 6-6M7.5 10.5l-2 2a4 4 0 0 0 5.7 5.7l2-2m3.3-2.7 2-2a4 4 0 0 0-5.7-5.7l-2 2\"/></svg></span><strong>ПРИВАТНЕ ПОСИЛАННЯ</strong><small>ВИМКНЕНО</small></div><div class=\"sharing-card-foot\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2 20 6v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"M8 12h8\"/></svg><span>ДОСТУП ПІД КОНТРОЛЕМ</span></div></div><div class=\"sharing-art-footer\">ЛИШЕ ІЛЮСТРАЦІЯ</div></div>",
+        "nl": "<div class=\"art art-sharing\"><div class=\"sharing-permissions-card\"><div class=\"sharing-card-head\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span><strong>VOORBEELD VAN RECHTEN</strong></div><div class=\"sharing-person-row\"><div class=\"sharing-person-avatar profile-avatar\" data-profile-photo></div><span>EIGENAAR</span><b><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 1 1-2-5\"/><path d=\"m8 12 3 3 9-10\"/></svg></b></div><div class=\"sharing-person-row\"><div class=\"sharing-person-avatar sharing-invite-avatar\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3 20v-2a6 6 0 0 1 12 0v2M19 8v8m-4-4h8\"/></svg></div><span>GENODIGDE</span><em>BEKIJKEN</em></div><div class=\"sharing-link-row\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 15 6-6M7.5 10.5l-2 2a4 4 0 0 0 5.7 5.7l2-2m3.3-2.7 2-2a4 4 0 0 0-5.7-5.7l-2 2\"/></svg></span><strong>PRIVÉKOPPELING</strong><small>UITGESCHAKELD</small></div><div class=\"sharing-card-foot\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2 20 6v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"M8 12h8\"/></svg><span>TOEGANG ONDER CONTROLE</span></div></div><div class=\"sharing-art-footer\">ALLEEN ILLUSTRATIE</div></div>"
+      }
+    },
+    {
+      "id": "identities",
+      "group": "social",
+      "number": "07",
+      "accent": "violet",
+      "uk": {
+        "name": "Ідентичності",
+        "kicker": "ДВА РЕЖИМИ",
+        "title": "Кожна роль на своєму місці.",
+        "description": "Особистий і технічний профілі залишаються виразно відокремленими — і в логіці, і у візуальному стилі.",
+        "details": [
+          {
+            "icon": "◉",
+            "label": "Звичайний профіль",
+            "note": "Щоденні інструменти та особистий простір"
+          },
+          {
+            "icon": "⌘",
+            "label": "Технічний профіль",
+            "note": "Окремий візуальний режим для адміністрування"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Identiteiten",
+        "kicker": "TWEE MODI",
+        "title": "Elke rol op de juiste plek.",
+        "description": "Privé- en technisch profiel blijven duidelijk gescheiden, zowel visueel als functioneel.",
+        "details": [
+          [
+            "Normaal profiel",
+            "Dagelijkse tools en persoonlijke ruimte"
+          ],
+          [
+            "Technisch profiel",
+            "Een eigen stijl voor beheer"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-identities\"><div class=\"identity-card identity-back\"><small>ТЕХНІЧНИЙ ПРОФІЛЬ</small><strong class=\"identity-tech-mark\"><svg viewBox=\"0 0 48 48\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"13\" y=\"13\" width=\"22\" height=\"22\" rx=\"5\"/><path d=\"M18 5v8M30 5v8M18 35v8M30 35v8M5 18h8M5 30h8M35 18h8M35 30h8\"/><path d=\"m20 24 3 3 6-7\"/></svg></strong><span>КЕРУВАННЯ</span></div><div class=\"identity-card identity-front\"><small>ОСОБИСТИЙ ПРОСТІР</small><div class=\"identity-avatar profile-avatar\" data-profile-photo></div><strong data-profile-name>Користувач</strong><span>ЩОДЕННИЙ ПРОСТІР</span></div><span class=\"identity-mode-badge\">ОСОБИСТИЙ ПРОСТІР</span></div>",
+        "nl": "<div class=\"art art-identities\"><div class=\"identity-card identity-back\"><small>TECHNISCH PROFIEL</small><strong class=\"identity-tech-mark\"><svg viewBox=\"0 0 48 48\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"13\" y=\"13\" width=\"22\" height=\"22\" rx=\"5\"/><path d=\"M18 5v8M30 5v8M18 35v8M30 35v8M5 18h8M5 30h8M35 18h8M35 30h8\"/><path d=\"m20 24 3 3 6-7\"/></svg></strong><span>BEHEER</span></div><div class=\"identity-card identity-front\"><small>PERSOONLIJKE RUIMTE</small><div class=\"identity-avatar profile-avatar\" data-profile-photo></div><strong data-profile-name>Користувач</strong><span>JOUW DAGELIJKSE RUIMTE</span></div><span class=\"identity-mode-badge\">PERSOONLIJKE RUIMTE</span></div>"
+      }
+    },
+    {
+      "id": "account",
+      "group": "account",
+      "number": "08",
+      "accent": "cyan",
+      "uk": {
+        "name": "Акаунт і дані",
+        "kicker": "ВАШІ ДАНІ",
+        "title": "Усе важливе — під контролем.",
+        "description": "Профіль, дані та відповідальні дії згруповано за змістом. Важливі рішення ніколи не губляться серед дрібних перемикачів.",
+        "details": [
+          {
+            "icon": "▧",
+            "label": "Профіль",
+            "note": "Основні відомості вашого акаунта"
+          },
+          {
+            "icon": "⇩",
+            "label": "Дані й експорт",
+            "note": "Перегляд та керування вашими даними"
+          },
+          {
+            "icon": "!",
+            "label": "Небезпечні дії",
+            "note": "Відокремлена зона з підтвердженням"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Account en gegevens",
+        "kicker": "JOUW GEGEVENS",
+        "title": "Alles wat belangrijk is, onder controle.",
+        "description": "Profiel, gegevens en gevoelige acties zijn logisch gegroepeerd.",
+        "details": [
+          [
+            "Profiel",
+            "Basisgegevens van je account"
+          ],
+          [
+            "Gegevens en export",
+            "Je gegevens bekijken en beheren"
+          ],
+          [
+            "Gevoelige acties",
+            "Een aparte zone met bevestiging"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-account\"><div class=\"account-outer-ring\"></div><div class=\"account-folder\"><div class=\"folder-tab\"></div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 2h7l5 5v15H5V4a2 2 0 0 1 2-2ZM14 2v5h5M8 12h8M8 16h8\"/></svg></span><strong>ВАШІ ДАНІ</strong><small>ПІД ВАШИМ КОНТРОЛЕМ</small></div><div class=\"account-stamp\">КОНФІДЕНЦІЙНО ЗА ЗАДУМОМ</div></div>",
+        "nl": "<div class=\"art art-account\"><div class=\"account-outer-ring\"></div><div class=\"account-folder\"><div class=\"folder-tab\"></div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 2h7l5 5v15H5V4a2 2 0 0 1 2-2ZM14 2v5h5M8 12h8M8 16h8\"/></svg></span><strong>JOUW GEGEVENS</strong><small>IN EIGEN HANDEN</small></div><div class=\"account-stamp\">PRIVACY ALS UITGANGSPUNT</div></div>"
+      }
+    },
+    {
+      "id": "sessions",
+      "group": "account",
+      "number": "09",
+      "accent": "mint",
+      "uk": {
+        "name": "Сесії та пристрої",
+        "kicker": "ВАШІ ПІДКЛЮЧЕННЯ",
+        "title": "Видно кожен пристрій.",
+        "description": "Активні сесії, історія та підключені пристрої — візуально зрозумілі з першого погляду.",
+        "details": [
+          {
+            "icon": "▱",
+            "label": "Пристрої",
+            "note": "Тип, браузер і остання активність"
+          },
+          {
+            "icon": "◷",
+            "label": "Сесії",
+            "note": "Огляд та керування входами"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Sessies en apparaten",
+        "kicker": "JOUW VERBINDINGEN",
+        "title": "Elk apparaat in beeld.",
+        "description": "Actieve sessies, geschiedenis en gekoppelde apparaten meteen duidelijk.",
+        "details": [
+          [
+            "Apparaten",
+            "Type, browser en recente activiteit"
+          ],
+          [
+            "Sessies",
+            "Inlogmomenten bekijken en beheren"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-sessions\"><div class=\"device-screen\"><div class=\"device-notch\"></div><div class=\"device-wave\"></div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M7 21h10M12 18v3M7 8h10M7 12h6\"/></svg></span></div><div class=\"device-phone\"><div class=\"device-notch\"></div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 1 1-2-5\"/><path d=\"m8 12 3 3 9-10\"/></svg></span></div><div class=\"device-label\">ПІДКЛЮЧЕНІ ПРИСТРОЇ</div></div>",
+        "nl": "<div class=\"art art-sessions\"><div class=\"device-screen\"><div class=\"device-notch\"></div><div class=\"device-wave\"></div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M7 21h10M12 18v3M7 8h10M7 12h6\"/></svg></span></div><div class=\"device-phone\"><div class=\"device-notch\"></div><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 1 1-2-5\"/><path d=\"m8 12 3 3 9-10\"/></svg></span></div><div class=\"device-label\">VERBONDEN APPARATEN</div></div>"
+      }
+    },
+    {
+      "id": "methods",
+      "group": "account",
+      "number": "10",
+      "accent": "pink",
+      "uk": {
+        "name": "Способи входу",
+        "kicker": "БЕЗ ЗАЙВИХ ПАРОЛІВ",
+        "title": "Безпечний вхід. Менше тертя.",
+        "description": "Google, ключі доступу та способи підтвердження важливих дій — кожен на своєму місці.",
+        "details": [
+          {
+            "icon": "G",
+            "label": "Google",
+            "note": "Основний спосіб входу"
+          },
+          {
+            "icon": "✳",
+            "label": "Ключі доступу",
+            "note": "Підтвердження захищених дій"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Inlogmethoden",
+        "kicker": "ZONDER GEDOE",
+        "title": "Veilig inloggen, zonder frictie.",
+        "description": "Google, passkeys en bevestiging van belangrijke acties overzichtelijk samen.",
+        "details": [
+          [
+            "Google",
+            "Primaire inlogmethode"
+          ],
+          [
+            "Passkeys",
+            "Bevestiging van beveiligde acties"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-methods\"><div class=\"methods-art-card\"><div class=\"methods-art-row\"><span class=\"methods-art-brand\"><svg class=\"brand-symbol brand-google\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"#4285F4\" d=\"M21.6 12.23c0-.73-.06-1.42-.18-2.09H12v3.96h5.4a4.6 4.6 0 0 1-2 3.02v2.47h3.2c1.87-1.73 3-4.26 3-7.36Z\"/><path fill=\"#34A853\" d=\"M12 22c2.69 0 4.95-.89 6.6-2.41l-3.2-2.47c-.89.6-2.03.97-3.4.97-2.61 0-4.82-1.76-5.61-4.13H3.08v2.55A9.99 9.99 0 0 0 12 22Z\"/><path fill=\"#FBBC05\" d=\"M6.39 13.96A5.97 5.97 0 0 1 6.07 12c0-.68.12-1.34.32-1.96V7.49H3.08A9.96 9.96 0 0 0 2 12c0 1.63.39 3.16 1.08 4.51l3.31-2.55Z\"/><path fill=\"#EA4335\" d=\"M12 5.91c1.46 0 2.76.5 3.79 1.49l2.84-2.84A9.73 9.73 0 0 0 12 2a9.99 9.99 0 0 0-8.92 5.49l3.31 2.55c.79-2.37 3-4.13 5.61-4.13Z\"/></svg></span><span><strong>Google</strong><small>ОСНОВНИЙ ВХІД</small></span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 1 1-2-5\"/><path d=\"m8 12 3 3 9-10\"/></svg></div><div class=\"methods-art-divider\"><span></span><small>ДВА РІЗНІ ПРИЗНАЧЕННЯ</small><span></span></div><div class=\"methods-art-row\"><span class=\"methods-art-key\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"8.5\" cy=\"14\" r=\"4.5\"/><path d=\"M12 10.5 20 3l1 1-2 2 2 2-3 3-2-2-3 3\"/></svg></span><span><strong>КЛЮЧ ДОСТУПУ</strong><small>ПІДТВЕРДЖЕННЯ ДІЙ</small></span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></div></div></div>",
+        "nl": "<div class=\"art art-methods\"><div class=\"methods-art-card\"><div class=\"methods-art-row\"><span class=\"methods-art-brand\"><svg class=\"brand-symbol brand-google\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"#4285F4\" d=\"M21.6 12.23c0-.73-.06-1.42-.18-2.09H12v3.96h5.4a4.6 4.6 0 0 1-2 3.02v2.47h3.2c1.87-1.73 3-4.26 3-7.36Z\"/><path fill=\"#34A853\" d=\"M12 22c2.69 0 4.95-.89 6.6-2.41l-3.2-2.47c-.89.6-2.03.97-3.4.97-2.61 0-4.82-1.76-5.61-4.13H3.08v2.55A9.99 9.99 0 0 0 12 22Z\"/><path fill=\"#FBBC05\" d=\"M6.39 13.96A5.97 5.97 0 0 1 6.07 12c0-.68.12-1.34.32-1.96V7.49H3.08A9.96 9.96 0 0 0 2 12c0 1.63.39 3.16 1.08 4.51l3.31-2.55Z\"/><path fill=\"#EA4335\" d=\"M12 5.91c1.46 0 2.76.5 3.79 1.49l2.84-2.84A9.73 9.73 0 0 0 12 2a9.99 9.99 0 0 0-8.92 5.49l3.31 2.55c.79-2.37 3-4.13 5.61-4.13Z\"/></svg></span><span><strong>Google</strong><small>BELANGRIJKSTE AANMELDING</small></span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 11a8 8 0 1 1-2-5\"/><path d=\"m8 12 3 3 9-10\"/></svg></div><div class=\"methods-art-divider\"><span></span><small>TWEE VERSCHILLENDE DOELEN</small><span></span></div><div class=\"methods-art-row\"><span class=\"methods-art-key\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"8.5\" cy=\"14\" r=\"4.5\"/><path d=\"M12 10.5 20 3l1 1-2 2 2 2-3 3-2-2-3 3\"/></svg></span><span><strong>TOEGANGSSLEUTEL</strong><small>ACTIES BEVESTIGEN</small></span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></div></div></div>"
+      }
+    },
+    {
+      "id": "security",
+      "group": "security",
+      "number": "11",
+      "accent": "blue",
+      "uk": {
+        "name": "Безпека",
+        "kicker": "ТИХА ВПЕВНЕНІСТЬ",
+        "title": "Захист, який можна зрозуміти.",
+        "description": "Двофакторна автентифікація, шифрування, ключі та дозволи — без прихованих деталей і двозначності.",
+        "details": [
+          {
+            "icon": "⊙",
+            "label": "Підтвердження входу",
+            "note": "TOTP і ключі доступу"
+          },
+          {
+            "icon": "⌘",
+            "label": "Шифрування",
+            "note": "Ключі та межі захисту даних"
+          },
+          {
+            "icon": "♙",
+            "label": "Гостьовий доступ",
+            "note": "Обмежені права й історія"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Beveiliging",
+        "kicker": "RUST EN ZEKERHEID",
+        "title": "Beveiliging die je begrijpt.",
+        "description": "Tweestapsverificatie, versleuteling en rechten helder uitgelegd.",
+        "details": [
+          [
+            "Inlogbevestiging",
+            "TOTP en toegangssleutels"
+          ],
+          [
+            "Versleuteling",
+            "Sleutels en gegevensbescherming"
+          ],
+          [
+            "Gasttoegang",
+            "Beperkte rechten en geschiedenis"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-security\"><div class=\"security-ring ring-outer\"></div><div class=\"security-ring ring-inner\"></div><div class=\"shield-shape\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span></div><span class=\"security-art-label security-label-one\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"6\" y=\"2\" width=\"12\" height=\"20\" rx=\"2\"/><path d=\"M10 5h4M9 14l2 2 4-5M11 19h2\"/></svg> ПІДТВЕРДЖЕННЯ</span><span class=\"security-art-label security-label-two\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"10\" width=\"16\" height=\"12\" rx=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3M12 15v3\"/></svg> ШИФРУВАННЯ</span></div>",
+        "nl": "<div class=\"art art-security\"><div class=\"security-ring ring-outer\"></div><div class=\"security-ring ring-inner\"></div><div class=\"shield-shape\"><span><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 2 8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4Z\"/><path d=\"m8 12 3 3 5-6\"/></svg></span></div><span class=\"security-art-label security-label-one\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"6\" y=\"2\" width=\"12\" height=\"20\" rx=\"2\"/><path d=\"M10 5h4M9 14l2 2 4-5M11 19h2\"/></svg> BEVESTIGEN</span><span class=\"security-art-label security-label-two\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"10\" width=\"16\" height=\"12\" rx=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3M12 15v3\"/></svg> VERSLEUTELING</span></div>"
+      }
+    },
+    {
+      "id": "recovery",
+      "group": "security",
+      "number": "12",
+      "accent": "amber",
+      "uk": {
+        "name": "Відновлення доступу",
+        "kicker": "ПЛАН Б",
+        "title": "Спокій навіть у непередбачуваному.",
+        "description": "Відновлення доступу повинно бути передбачуваним: із чіткими поясненнями, ризиками та шляхами дій.",
+        "details": [
+          {
+            "icon": "⌑",
+            "label": "Коди відновлення",
+            "note": "Резервний спосіб підтвердження"
+          },
+          {
+            "icon": "◈",
+            "label": "Рекомендації",
+            "note": "Що зберегти та як не втратити доступ"
+          }
+        ]
+      },
+      "nl": {
+        "name": "Toegang herstellen",
+        "kicker": "PLAN B",
+        "title": "Rust, ook als het tegenzit.",
+        "description": "Een duidelijk herstelproces met uitleg, risico's en vervolgstappen.",
+        "details": [
+          [
+            "Herstelcodes",
+            "Een reserveoptie voor bevestiging"
+          ],
+          [
+            "Aanbevelingen",
+            "Voorkom verlies van toegang"
+          ]
+        ]
+      },
+      "art": {
+        "uk": "<div class=\"art art-recovery\"><div class=\"recovery-sun\"></div><div class=\"recovery-ticket\"><span>ВІДНОВЛЕННЯ</span><div class=\"recovery-art-code\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M7 8h4M7 12h4M7 16h4M15 10l2 2-2 2\"/></svg><strong>•••• ••••</strong></div><small>РЕЗЕРВНІ КОДИ</small></div><span class=\"recovery-star\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10a8 8 0 1 1 1 7M4 4v6h6\"/><path d=\"M12 7v5l3 2\"/></svg></span></div>",
+        "nl": "<div class=\"art art-recovery\"><div class=\"recovery-sun\"></div><div class=\"recovery-ticket\"><span>HERSTEL</span><div class=\"recovery-art-code\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M7 8h4M7 12h4M7 16h4M15 10l2 2-2 2\"/></svg><strong>•••• ••••</strong></div><small>HERSTELCODES</small></div><span class=\"recovery-star\"><svg class=\"meaningful-icon option-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10a8 8 0 1 1 1 7M4 4v6h6\"/><path d=\"M12 7v5l3 2\"/></svg></span></div>"
+      }
+    }
+  ],
+  "groepen": {
+    "personalization": [
+      {
+        "id": "переходи",
+        "uk": "Розділи персоналізації",
+        "nl": "Onderdelen van personalisatie",
+        "поясненняUk": "Кожний пункт відкриває відповідні параметри на цій сторінці.",
+        "поясненняNl": "Elk onderdeel opent zijn instellingen op deze pagina.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Меню й піктограми",
+            "nl": "Menu en pictogrammen",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "menu",
+            "пояснення": null
+          },
+          {
+            "uk": "Теми та кольори",
+            "nl": "Thema's en kleuren",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "themes",
+            "пояснення": null
+          },
+          {
+            "uk": "Мова інтерфейсу",
+            "nl": "Taal van de interface",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "languages",
+            "пояснення": null
+          },
+          {
+            "uk": "Віджети й блоки",
+            "nl": "Widgets en blokken",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "widgets",
+            "пояснення": null
+          },
+          {
+            "uk": "Спільний доступ",
+            "nl": "Delen",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "sharing",
+            "пояснення": null
+          },
+          {
+            "uk": "Ідентичності й захист",
+            "nl": "Identiteiten en beveiliging",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "identities",
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "особисте",
+        "uk": "Додаткові вподобання",
+        "nl": "Extra voorkeuren",
+        "поясненняUk": "Пропоновані можливості, які поки існують лише в макеті.",
+        "поясненняNl": "Voorgestelde mogelijkheden die voorlopig alleen in het ontwerp bestaan.",
+        "стан": "макет",
+        "рядки": [
+          {
+            "uk": "Щільність інтерфейсу",
+            "nl": "Dichtheid van de interface",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Комфортна",
+                "Comfortabel"
+              ],
+              [
+                "Компактна",
+                "Compact"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Делікатна поява блоків",
+            "nl": "Subtiele verschijning van blokken",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "menu": [
+      {
+        "id": "піктограми",
+        "uk": "Стиль піктограм",
+        "nl": "Pictogramstijl",
+        "поясненняUk": "Вигляд головних розділів і вкладених пунктів.",
+        "поясненняNl": "Uiterlijk van hoofdonderdelen en subonderdelen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Стиль піктограм",
+            "nl": "Pictogramstijl",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Класичні",
+                "Klassiek"
+              ],
+              [
+                "Кольорові",
+                "Kleurrijk"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Колір активного пункту",
+            "nl": "Kleur van het actieve onderdeel",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "панель",
+        "uk": "Поведінка бічної панелі",
+        "nl": "Gedrag van het zijpaneel",
+        "поясненняUk": "На вузьких екранах постійні режими приховані.",
+        "поясненняNl": "Op smalle schermen zijn vaste standen niet beschikbaar.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Режим розгортання",
+            "nl": "Uitklapstand",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Автоматично",
+                "Automatisch"
+              ],
+              [
+                "Розгорнуто",
+                "Uitgeklapt"
+              ],
+              [
+                "Згорнуто",
+                "Ingeklapt"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Розгортання при наведенні вздовж краю",
+            "nl": "Openen bij aanwijzen langs de rand",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відкриття натисканням і свайпом",
+            "nl": "Openen met tik of veeg",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "швидкий-доступ",
+        "uk": "Швидкий доступ",
+        "nl": "Snelle toegang",
+        "поясненняUk": "Керування улюбленими кнопками та їхнім порядком.",
+        "поясненняNl": "Beheer van favoriete knoppen en hun volgorde.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Додати пункт швидкого доступу",
+            "nl": "Snelkoppeling toevoegen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Прибрати пункт",
+            "nl": "Snelkoppeling verwijderen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Змінити порядок і положення",
+            "nl": "Volgorde en positie wijzigen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Власна піктограма та колір",
+            "nl": "Eigen pictogram en kleur",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Керування з клавіатури й сенсорного екрана",
+            "nl": "Bediening met toetsenbord en aanraakscherm",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "розташування",
+        "uk": "Розташування й порядок меню",
+        "nl": "Positie en volgorde van het menu",
+        "поясненняUk": "Бічна панель або док; налаштування застосовуються за його видом.",
+        "поясненняNl": "Zijpaneel of dock; opties hangen af van de gekozen vorm.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Розташування навігації",
+            "nl": "Navigatiepositie",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Ліворуч",
+                "Links"
+              ],
+              [
+                "Праворуч",
+                "Rechts"
+              ],
+              [
+                "Зверху",
+                "Boven"
+              ],
+              [
+                "Знизу",
+                "Onder"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Прозорість фону дока",
+            "nl": "Doorzichtigheid van de dockachtergrond",
+            "тип": "повзунок",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Збільшення піктограм при наведенні",
+            "nl": "Pictogrammen vergroten bij aanwijzen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Редагувати порядок і дублікати",
+            "nl": "Volgorde en kopieën bewerken",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Скинути власні зміни",
+            "nl": "Eigen wijzigingen herstellen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "сповіщення",
+        "uk": "Сповіщення в меню",
+        "nl": "Meldingen in het menu",
+        "поясненняUk": "Позначки, відомості при наведенні, нагадування та тихі години.",
+        "поясненняNl": "Markeringen, informatie bij aanwijzen, herinneringen en stille uren.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Показувати позначки",
+            "nl": "Markeringen tonen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Число нового або кольорова крапка",
+            "nl": "Aantal of gekleurde stip",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Число",
+                "Aantal"
+              ],
+              [
+                "Крапка",
+                "Stip"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відомості при наведенні",
+            "nl": "Informatie bij aanwijzen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Привертати увагу до нового",
+            "nl": "Aandacht vragen voor nieuwe meldingen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Нагадувати про непрочитане",
+            "nl": "Herinneren aan ongelezen meldingen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Частота нагадувань",
+            "nl": "Frequentie van herinneringen",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Ніколи",
+                "Nooit"
+              ],
+              [
+                "15 хв",
+                "15 min"
+              ],
+              [
+                "30 хв",
+                "30 min"
+              ],
+              [
+                "1 год",
+                "1 uur"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Увімкнути тихі години",
+            "nl": "Stille uren inschakelen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Початок тихих годин",
+            "nl": "Begin van stille uren",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Завершення тихих годин",
+            "nl": "Einde van stille uren",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Типи сповіщень",
+            "nl": "Soorten meldingen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "швидкодія",
+        "uk": "Переходи та швидкодія",
+        "nl": "Overgangen en snelheid",
+        "поясненняUk": "Параметри завантаження й перемикання розділів.",
+        "поясненняNl": "Instellingen voor laden en wisselen tussen onderdelen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Смужка завантаження",
+            "nl": "Laadbalk",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Плавне перемикання сторінок",
+            "nl": "Vloeiend wisselen tussen pagina's",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Попереднє завантаження при наведенні",
+            "nl": "Vooraf laden bij aanwijzen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Експериментальні можливості",
+            "nl": "Experimentele mogelijkheden",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Повністю готувати розділ заздалегідь",
+            "nl": "Onderdeel volledig vooraf voorbereiden",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Зберігати чернетки із шифруванням",
+            "nl": "Concepten versleuteld bewaren",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "видимість",
+        "uk": "Видимість і піктограми пунктів",
+        "nl": "Zichtbaarheid en pictogrammen",
+        "поясненняUk": "Пункти можна показувати або приховувати, не втрачаючи доступу до обов'язкових налаштувань.",
+        "поясненняNl": "Onderdelen kunnen worden getoond of verborgen; verplichte instellingen blijven bereikbaar.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Перелік розділів та їхня видимість",
+            "nl": "Lijst met onderdelen en hun zichtbaarheid",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Змінити піктограму пункту",
+            "nl": "Pictogram van een onderdeel wijzigen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Обов'язкові пункти залишаються доступними",
+            "nl": "Verplichte onderdelen blijven toegankelijk",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "додаткове",
+        "uk": "Вдосконалення навігації",
+        "nl": "Verbeteringen van navigatie",
+        "поясненняUk": "Рішення, схвалені для макета, які ще потребують окремої перевірки на робочому сайті.",
+        "поясненняNl": "Ontwerpkeuzes die nog apart op de werkende site moeten worden gecontroleerd.",
+        "стан": "макет",
+        "рядки": [
+          {
+            "uk": "Звичайна панель або окремі кнопки",
+            "nl": "Gewoon paneel of losse knoppen",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Панель",
+                "Paneel"
+              ],
+              [
+                "Кнопки",
+                "Knoppen"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Лише піктограми або піктограми з назвами",
+            "nl": "Alleen pictogrammen of met tekst",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Лише піктограми",
+                "Alleen pictogrammen"
+              ],
+              [
+                "З назвами",
+                "Met tekst"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Стійке розміщення піктограм",
+            "nl": "Vaste plaatsing van pictogrammen",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Підсвічування активного розділу",
+            "nl": "Actief onderdeel markeren",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "themes": [
+      {
+        "id": "режим",
+        "uk": "Світлий і темний режими",
+        "nl": "Lichte en donkere modus",
+        "поясненняUk": "Вибір освітлення незалежно від основної палітри.",
+        "поясненняNl": "Lichtkeuze onafhankelijk van het kleurenpalet.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Режим освітлення",
+            "nl": "Lichtmodus",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Світлий",
+                "Licht"
+              ],
+              [
+                "Темний",
+                "Donker"
+              ],
+              [
+                "Як на пристрої",
+                "Volgens apparaat"
+              ],
+              [
+                "Автоматично",
+                "Automatisch"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "розклад",
+        "uk": "Автоматична зміна",
+        "nl": "Automatisch wisselen",
+        "поясненняUk": "Сутінки у вибраному місті або власний розклад.",
+        "поясненняNl": "Schemering in een gekozen stad of een eigen tijdschema.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "За заходом і сходом сонця",
+            "nl": "Volgens zonsopkomst en zonsondergang",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "За сутінками",
+                "Volgens schemering"
+              ],
+              [
+                "За розкладом",
+                "Volgens schema"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Вибрати місто",
+            "nl": "Stad kiezen",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Брюссель",
+                "Brussel"
+              ],
+              [
+                "Гент",
+                "Gent"
+              ],
+              [
+                "Антверпен",
+                "Antwerpen"
+              ],
+              [
+                "Київ",
+                "Kyiv"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Визначити приблизне місце для сутінків",
+            "nl": "Geschatte locatie voor schemering bepalen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Час початку режиму",
+            "nl": "Begintijd van de modus",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Час завершення режиму",
+            "nl": "Eindtijd van de modus",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Тимчасове скасування автоматичного режиму",
+            "nl": "Automatische modus tijdelijk onderbreken",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "палітра",
+        "uk": "Основне кольорове оформлення",
+        "nl": "Basiskleuren",
+        "поясненняUk": "Наявні оформлення з різними світлими та темними відтінками.",
+        "поясненняNl": "Bestaande paletten met een lichte en donkere variant.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Оформлення сторінки",
+            "nl": "Paginaweergave",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Кольорове",
+                "Kleurrijk"
+              ],
+              [
+                "Грифельне",
+                "Leisteen"
+              ],
+              [
+                "Чисте",
+                "Zuiver"
+              ],
+              [
+                "Фіолетове",
+                "Paars"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "акцент",
+        "uk": "Допоміжний колір і виразність",
+        "nl": "Accentkleur en intensiteit",
+        "поясненняUk": "Допоміжний колір не замінює основного оформлення.",
+        "поясненняNl": "Accentkleur vervangt het basispalet niet.",
+        "стан": "макет",
+        "рядки": [
+          {
+            "uk": "Акцентна палітра",
+            "nl": "Accentkleuren",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Фіолетовий",
+                "Paars"
+              ],
+              [
+                "Бірюзовий",
+                "Turkoois"
+              ],
+              [
+                "Рожевий",
+                "Roze"
+              ],
+              [
+                "Бурштиновий",
+                "Amber"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Виразність декоративних ефектів",
+            "nl": "Intensiteit van decoratieve effecten",
+            "тип": "повзунок",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "languages": [
+      {
+        "id": "мова",
+        "uk": "Мова всього інтерфейсу",
+        "nl": "Taal van de hele interface",
+        "поясненняUk": "Написи, пояснення, стани та підказки змінюються разом із мовою.",
+        "поясненняNl": "Teksten, uitleg, toestanden en aanwijzingen veranderen mee.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Мова інтерфейсу",
+            "nl": "Taal van de interface",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Українська",
+                "Українська"
+              ],
+              [
+                "Нідерландська",
+                "Nederlands"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "widgets": [
+      {
+        "id": "створення",
+        "uk": "Додати віджет або сервіс",
+        "nl": "Widget of dienst toevoegen",
+        "поясненняUk": "Повна форма створення внутрішнього блоку чи зовнішнього посилання.",
+        "поясненняNl": "Volledig formulier voor een intern blok of externe koppeling.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Робочий простір",
+            "nl": "Werkruimte",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Мій простір",
+                "Mijn Ruimte"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Джерело",
+            "nl": "Bron",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Внутрішній сервіс",
+                "Interne dienst"
+              ],
+              [
+                "Зовнішнє посилання",
+                "Externe koppeling"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Сервіс або сторінка",
+            "nl": "Dienst of pagina",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Завдання",
+                "Taken"
+              ],
+              [
+                "Календар",
+                "Agenda"
+              ],
+              [
+                "Нотатки",
+                "Notities"
+              ],
+              [
+                "ШІ",
+                "AI"
+              ],
+              [
+                "Пошта",
+                "Mail"
+              ],
+              [
+                "Сховище",
+                "Opslag"
+              ],
+              [
+                "GitHub",
+                "GitHub"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Назва",
+            "nl": "Naam",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Опис",
+            "nl": "Beschrijving",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Посилання",
+            "nl": "Koppeling",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Розмір",
+            "nl": "Grootte",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Малий",
+                "Klein"
+              ],
+              [
+                "Звичайний",
+                "Normaal"
+              ],
+              [
+                "Широкий",
+                "Breed"
+              ],
+              [
+                "Власний",
+                "Eigen"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Додати свій сервіс",
+            "nl": "Eigen dienst toevoegen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "вигляд",
+        "uk": "Компонування віджетів",
+        "nl": "Indeling van widgets",
+        "поясненняUk": "Додатковий спосіб налаштувати робоче полотно.",
+        "поясненняNl": "Aanvullende manier om de werkruimte in te delen.",
+        "стан": "макет",
+        "рядки": [
+          {
+            "uk": "Показувати віджети",
+            "nl": "Widgets tonen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Попередній перегляд розташування",
+            "nl": "Voorbeeld van de indeling",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "sharing": [
+      {
+        "id": "запрошення",
+        "uk": "Доступ за обліковим записом",
+        "nl": "Toegang per account",
+        "поясненняUk": "Запрошення конкретної особи з визначеними правами. Потрібно узгодити перевірку прав в інтерфейсі та на сервері.",
+        "поясненняNl": "Een persoon uitnodigen met afgebakende rechten. De controle van rechten in de interface en op de server moet worden afgestemd.",
+        "стан": "частково",
+        "рядки": [
+          {
+            "uk": "Право запрошувати визначає роль у вибраному просторі",
+            "nl": "De rol in de gekozen werkruimte bepaalt het uitnodigingsrecht",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": "частково",
+            "перехід": null,
+            "пояснення": {
+              "uk": "Наявний інтерфейс перевіряє загальну роль користувача, а сервер — роль у вибраному просторі. До узгодження цих перевірок не показувати дозвіл як підтверджений.",
+              "nl": "De huidige interface controleert de algemene gebruikersrol, terwijl de server de rol in de gekozen werkruimte controleert. Toon de toestemming niet als bevestigd voordat beide controles overeenkomen."
+            }
+          },
+          {
+            "uk": "Робочий простір",
+            "nl": "Werkruimte",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Мій простір",
+                "Mijn Ruimte"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Адреса запрошеної особи",
+            "nl": "Adres van de genodigde",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Рівень доступу",
+            "nl": "Toegangsniveau",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Перегляд",
+                "Bekijken"
+              ],
+              [
+                "Редагування",
+                "Bewerken"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Надати доступ",
+            "nl": "Toegang verlenen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "посилання",
+        "uk": "Приватне посилання",
+        "nl": "Privékoppeling",
+        "поясненняUk": "Окремі дозволи та строк дії посилання.",
+        "поясненняNl": "Afzonderlijke rechten en vervaldatum van de koppeling.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Строк дії посилання",
+            "nl": "Geldigheidsduur",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Створити посилання",
+            "nl": "Koppeling maken",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "чинні",
+        "uk": "Чинні запрошення та дозволи",
+        "nl": "Bestaande uitnodigingen en rechten",
+        "поясненняUk": "Майбутнє окреме представлення керування правами.",
+        "поясненняNl": "Toekomstig apart overzicht voor rechtenbeheer.",
+        "стан": "заплановано",
+        "рядки": [
+          {
+            "uk": "Хто має доступ",
+            "nl": "Wie heeft toegang",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Змінити або відкликати право",
+            "nl": "Recht wijzigen of intrekken",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "identities": [
+      {
+        "id": "зв'язки",
+        "uk": "Розділи захисту й ідентичності",
+        "nl": "Onderdelen voor identiteit en beveiliging",
+        "поясненняUk": "Це переходи до справжніх налаштувань, а не їхні копії.",
+        "поясненняNl": "Koppelingen naar de echte instellingen, geen kopieën daarvan.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Сесії та пристрої",
+            "nl": "Sessies en apparaten",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "sessions",
+            "пояснення": null
+          },
+          {
+            "uk": "Способи входу",
+            "nl": "Inlogmethoden",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "methods",
+            "пояснення": null
+          },
+          {
+            "uk": "Безпека",
+            "nl": "Beveiliging",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "security",
+            "пояснення": null
+          },
+          {
+            "uk": "Відновлення доступу",
+            "nl": "Toegang herstellen",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "recovery",
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "профіль",
+        "uk": "Оформлення звичайного й технічного режимів",
+        "nl": "Weergave van normale en technische modus",
+        "поясненняUk": "Вигляд макета не змінює повноважень користувача.",
+        "поясненняNl": "De ontwerpweergave wijzigt geen gebruikersrechten.",
+        "стан": "макет",
+        "рядки": [
+          {
+            "uk": "Активний вигляд",
+            "nl": "Actieve weergave",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Звичайний",
+                "Normaal"
+              ],
+              [
+                "Технічний",
+                "Technisch"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Показувати позначку режиму",
+            "nl": "Modusmarkering tonen",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "account": [
+      {
+        "id": "особа",
+        "uk": "Профіль і фото",
+        "nl": "Profiel en foto",
+        "поясненняUk": "Справжня світлина надходить з авторизованого облікового запису. Вилучення фото наразі потребує окремої серверної дії.",
+        "поясненняNl": "De echte foto komt uit het aangemelde account. Verwijderen vereist nog een afzonderlijke serverhandeling.",
+        "стан": "частково",
+        "рядки": [
+          {
+            "uk": "Світлина з облікового запису",
+            "nl": "Foto uit het account",
+            "тип": "фото",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Прибрати власну світлину",
+            "nl": "Eigen foto verwijderen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": "частково",
+            "перехід": null,
+            "пояснення": {
+              "uk": "Виявлена кнопка не вилучає фото, а повторно його передає. Потрібні окрема серверна дія вилучення, підтвердження та оновлення усіх зображень профілю.",
+              "nl": "De huidige knop verwijdert de foto niet, maar verstuurt dezelfde foto opnieuw. Een afzonderlijke serverhandeling, bevestiging en verversing van alle profielafbeeldingen zijn nodig."
+            }
+          }
+        ]
+      },
+      {
+        "id": "стан",
+        "uk": "Стан підключених служб",
+        "nl": "Status van verbonden diensten",
+        "поясненняUk": "Перевірка підключення без читання вмісту листів і файлів.",
+        "поясненняNl": "Controle van verbindingen zonder inhoud van berichten of bestanden te lezen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Пошта й календар",
+            "nl": "Mail en agenda",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Хмарне сховище й GitHub",
+            "nl": "Cloudopslag en GitHub",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Підключення ШІ й пристрої",
+            "nl": "AI-verbindingen en apparaten",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Перевірити зараз",
+            "nl": "Nu controleren",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "простори",
+        "uk": "Мої робочі простори",
+        "nl": "Mijn werkruimten",
+        "поясненняUk": "Активний простір та його стан.",
+        "поясненняNl": "Actieve werkruimte en de bijbehorende status.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Активний робочий простір",
+            "nl": "Actieve werkruimte",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відновити архівований робочий простір",
+            "nl": "Gearchiveerde werkruimte herstellen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "видалення",
+        "uk": "Видалення облікового запису",
+        "nl": "Account verwijderen",
+        "поясненняUk": "Незворотна дія потребує окремої перевірки та підтвердження.",
+        "поясненняNl": "Onomkeerbare handeling vereist afzonderlijke controle en bevestiging.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Пояснення наслідків видалення",
+            "nl": "Gevolgen van verwijdering",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Підтвердити видалення",
+            "nl": "Verwijdering bevestigen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "експорт",
+        "uk": "Керування вивантаженням даних",
+        "nl": "Gegevensuitvoer beheren",
+        "поясненняUk": "Додатковий задум із попереднього макета; чинний спосіб роботи не підтверджено.",
+        "поясненняNl": "Aanvullend ontwerp; de werkende uitvoering is niet bevestigd.",
+        "стан": "макет",
+        "рядки": [
+          {
+            "uk": "Формат вивантаження",
+            "nl": "Uitvoerformaat",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Структурований",
+                "Gestructureerd"
+              ],
+              [
+                "Табличний",
+                "Tabelvorm"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Підготувати відомості",
+            "nl": "Gegevens voorbereiden",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "sessions": [
+      {
+        "id": "цей-пристрій",
+        "uk": "Збереження акаунта на пристрої",
+        "nl": "Account op dit apparaat bewaren",
+        "поясненняUk": "Чинний вибір для наступних входів.",
+        "поясненняNl": "Bestaande keuze voor volgende aanmeldingen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Зберегти обліковий запис",
+            "nl": "Account bewaren",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Наслідки для місцевих даних після виходу",
+            "nl": "Gevolgen voor lokale gegevens na afmelden",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "активні",
+        "uk": "Активні входи й пристрої",
+        "nl": "Actieve sessies en apparaten",
+        "поясненняUk": "Огляд пристроїв і керування завершенням входів.",
+        "поясненняNl": "Overzicht en beëindiging van aanmeldingen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Оновити список входів",
+            "nl": "Sessielijst vernieuwen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Завершити всі інші входи",
+            "nl": "Alle andere sessies beëindigen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Вийти всюди",
+            "nl": "Overal afmelden",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "гості",
+        "uk": "Гостьові сесії",
+        "nl": "Gastsessies",
+        "поясненняUk": "Обмежені за правами та строком входи інших осіб.",
+        "поясненняNl": "Sessies voor anderen met beperkte rechten en geldigheid.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Чинні гостьові входи",
+            "nl": "Actieve gastaanmeldingen",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "сповіщення",
+        "uk": "Сповіщення про новий вхід",
+        "nl": "Meldingen van nieuwe aanmeldingen",
+        "поясненняUk": "Додаткова можливість із макета, яку ще не підтверджено на робочому сайті.",
+        "поясненняNl": "Extra ontwerpmogelijkheid die nog niet op de werkende site is bevestigd.",
+        "стан": "макет",
+        "рядки": [
+          {
+            "uk": "Попереджати про новий пристрій",
+            "nl": "Melden bij een nieuw apparaat",
+            "тип": "перемикач",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "methods": [
+      {
+        "id": "основні",
+        "uk": "Основні способи входу",
+        "nl": "Belangrijkste inlogmethoden",
+        "поясненняUk": "Вхід через Google підтверджено. Ключ доступу слугує передусім для додаткового підтвердження важливих дій.",
+        "поясненняNl": "Aanmelden via Google is bevestigd. Een passkey dient vooral om belangrijke handelingen extra te bevestigen.",
+        "стан": "частково",
+        "рядки": [
+          {
+            "uk": "Електронна пошта та Google",
+            "nl": "E-mail en Google",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Ключ доступу для підтвердження важливих дій",
+            "nl": "Passkey om belangrijke handelingen te bevestigen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": "частково",
+            "перехід": null,
+            "пояснення": {
+              "uk": "Наявність ключа не означає, що ним можна самостійно ввійти. Показувати справжній стан ключів і відокремлювати вхід від підтвердження небезпечних дій.",
+              "nl": "Een passkey betekent niet automatisch dat je er zelfstandig mee kunt aanmelden. Toon de echte status en onderscheid aanmelden van het bevestigen van gevoelige handelingen."
+            }
+          },
+          {
+            "uk": "Застосунок-автентифікатор",
+            "nl": "Authenticatie-app",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "пароль",
+        "uk": "Пароль і тимчасовий доступ",
+        "nl": "Wachtwoord en tijdelijke toegang",
+        "поясненняUk": "Окреме керування паролем і підтвердження небезпечних змін.",
+        "поясненняNl": "Afzonderlijk wachtwoordbeheer en bevestiging van gevoelige wijzigingen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Стан пароля й вимога його заміни",
+            "nl": "Wachtwoordstatus en verplichte vervanging",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Новий пароль щонайменше з 10 символів",
+            "nl": "Nieuw wachtwoord van minstens 10 tekens",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Зберегти новий пароль",
+            "nl": "Nieuw wachtwoord bewaren",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Прибрати пароль",
+            "nl": "Wachtwoord verwijderen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "захист",
+        "uk": "Додатковий захист",
+        "nl": "Aanvullende bescherming",
+        "поясненняUk": "Засоби захисту й відновлення з окремими станами.",
+        "поясненняNl": "Beveiligings- en herstelmiddelen met eigen status.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Коди відновлення",
+            "nl": "Herstelcodes",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "recovery",
+            "пояснення": null
+          },
+          {
+            "uk": "Шифрування моїх даних",
+            "nl": "Versleuteling van mijn gegevens",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "security",
+            "пояснення": null
+          },
+          {
+            "uk": "Коди доступу для інших",
+            "nl": "Toegangscodes voor anderen",
+            "тип": "перехід",
+            "варіанти": [],
+            "стан": null,
+            "перехід": "security",
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "додаткові",
+        "uk": "Інші способи та готовність",
+        "nl": "Andere methoden en beschikbaarheid",
+        "поясненняUk": "Не показувати неввімкнений спосіб як готовий до входу.",
+        "поясненняNl": "Een niet-geactiveerde methode nooit als bruikbaar tonen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Microsoft — потрібне налаштування власника",
+            "nl": "Microsoft — configuratie van eigenaar nodig",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": "заплановано",
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Discord — потрібне налаштування власника",
+            "nl": "Discord — configuratie van eigenaar nodig",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": "заплановано",
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Telegram — потрібне налаштування власника",
+            "nl": "Telegram — configuratie van eigenaar nodig",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": "заплановано",
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Apple — потрібне налаштування власника",
+            "nl": "Apple — configuratie van eigenaar nodig",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": "заплановано",
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "WhatsApp — такий вхід недоступний",
+            "nl": "WhatsApp — deze inlogmethode bestaat niet",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "SMS — потребує окремої розробки",
+            "nl": "Sms — afzonderlijke ontwikkeling nodig",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": "заплановано",
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "security": [
+      {
+        "id": "ключі",
+        "uk": "Ключі доступу",
+        "nl": "Passkeys",
+        "поясненняUk": "Перелік, назви, нотатки та історія використання.",
+        "поясненняNl": "Overzicht, namen, notities en gebruiksgeschiedenis.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Переглянути ключі доступу",
+            "nl": "Passkeys bekijken",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Додати ключ доступу",
+            "nl": "Passkey toevoegen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Перейменувати ключ і додати нотатку",
+            "nl": "Passkey hernoemen en notitie toevoegen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Переглянути історію ключа",
+            "nl": "Geschiedenis van de passkey bekijken",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Вилучити ключ доступу",
+            "nl": "Passkey verwijderen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Підтвердити довіру до пристрою або обладнання",
+            "nl": "Vertrouwen in apparaat of hardware bevestigen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "другий-чинник",
+        "uk": "Двофакторна автентифікація",
+        "nl": "Tweestapsverificatie",
+        "поясненняUk": "Застосунок-автентифікатор і стан налаштування.",
+        "поясненняNl": "Authenticatie-app en configuratiestatus.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Стан другого чинника",
+            "nl": "Status van de tweede factor",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Налаштувати автентифікатор",
+            "nl": "Authenticatie-app instellen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "резервні-коди",
+        "uk": "Резервні коди",
+        "nl": "Herstelcodes",
+        "поясненняUk": "Кількість, використання, нотатки та перевипуск.",
+        "поясненняNl": "Aantal, gebruik, notities en vervanging.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Доступні та використані коди",
+            "nl": "Beschikbare en gebruikte codes",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Створити нові коди",
+            "nl": "Nieuwe codes maken",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Завантажити, скопіювати або надрукувати",
+            "nl": "Downloaden, kopiëren of afdrukken",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Підтвердити збереження кодів",
+            "nl": "Opslaan van codes bevestigen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відкликати або замінити чинні коди",
+            "nl": "Bestaande codes intrekken of vervangen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "шифрування",
+        "uk": "Шифрування особистих даних",
+        "nl": "Versleuteling van persoonlijke gegevens",
+        "поясненняUk": "Пояснення меж захисту й поточного стану.",
+        "поясненняNl": "Uitleg over de bescherming en de huidige toestand.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Стан особистого ключа",
+            "nl": "Status van persoonlijke sleutel",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Що захищено особистим ключем",
+            "nl": "Wat door de persoonlijke sleutel wordt beschermd",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Увімкнути захист власним ключем",
+            "nl": "Bescherming met eigen sleutel inschakelen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Замкнути або відімкнути сховище ключа",
+            "nl": "Sleutelkluis vergrendelen of ontgrendelen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відновити доступ кодом відновлення",
+            "nl": "Toegang herstellen met een herstelcode",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Повторно зашифрувати давні записи",
+            "nl": "Oude gegevens opnieuw versleutelen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "гостьові-коди",
+        "uk": "Коди доступу для інших",
+        "nl": "Toegangscodes voor anderen",
+        "поясненняUk": "Права, строки, використання й відкликання гостьових кодів.",
+        "поясненняNl": "Rechten, vervaltermijnen, gebruik en intrekking van gastcodes.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Створити обмежений код",
+            "nl": "Beperkte code maken",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Назва та приватна нотатка",
+            "nl": "Naam en privénotitie",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Дозволені розділи для перегляду",
+            "nl": "Toegestane onderdelen voor inzage",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Лише вибрані",
+                "Alleen geselecteerde"
+              ],
+              [
+                "Усі дозволені",
+                "Alle toegestane"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Строк дії та кількість використань",
+            "nl": "Geldigheidsduur en aantal keren gebruiken",
+            "тип": "поле",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Одноразове або багаторазове використання",
+            "nl": "Eenmalig of meermalig gebruik",
+            "тип": "вибір",
+            "варіанти": [
+              [
+                "Один раз",
+                "Eenmalig"
+              ],
+              [
+                "Кілька разів",
+                "Meermalig"
+              ]
+            ],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Показати код або відомості для зчитування",
+            "nl": "Code of scanbare gegevens tonen",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Змінити строк дії коду",
+            "nl": "Geldigheidsduur wijzigen",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Переглянути стан та історію",
+            "nl": "Status en geschiedenis bekijken",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Відкликати доступ",
+            "nl": "Toegang intrekken",
+            "тип": "обережна-дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ],
+    "recovery": [
+      {
+        "id": "засоби",
+        "uk": "Наявні засоби відновлення",
+        "nl": "Beschikbare herstelmiddelen",
+        "поясненняUk": "Огляд засобів без показу таємних значень.",
+        "поясненняNl": "Overzicht zonder geheime waarden te tonen.",
+        "стан": "наявне",
+        "рядки": [
+          {
+            "uk": "Коди відновлення",
+            "nl": "Herstelcodes",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Інші способи підтвердження",
+            "nl": "Andere bevestigingsmethoden",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "сценарії",
+        "uk": "Як відновити доступ",
+        "nl": "Toegang herstellen",
+        "поясненняUk": "Окремі зрозумілі сценарії для втрати різних засобів входу.",
+        "поясненняNl": "Duidelijke scenario's voor verlies van verschillende inlogmiddelen.",
+        "стан": "заплановано",
+        "рядки": [
+          {
+            "uk": "Втрачено пристрій",
+            "nl": "Apparaat verloren",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Втрачено ключ доступу",
+            "nl": "Passkey verloren",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Недоступний автентифікатор",
+            "nl": "Authenticatie-app niet beschikbaar",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Закінчилися резервні коди",
+            "nl": "Herstelcodes zijn op",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      },
+      {
+        "id": "поради",
+        "uk": "Запобігання втраті доступу",
+        "nl": "Toegangsverlies voorkomen",
+        "поясненняUk": "Поради з урахуванням можливого шифрування особистих даних.",
+        "поясненняNl": "Adviezen met aandacht voor mogelijke versleuteling van gegevens.",
+        "стан": "заплановано",
+        "рядки": [
+          {
+            "uk": "Перевірити резервні способи",
+            "nl": "Reserveopties controleren",
+            "тип": "дія",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          },
+          {
+            "uk": "Зрозуміти наслідки втрати ключа",
+            "nl": "Gevolgen van sleutelverlies begrijpen",
+            "тип": "відомості",
+            "варіанти": [],
+            "стан": null,
+            "перехід": null,
+            "пояснення": null
+          }
+        ]
+      }
+    ]
+  }
+}
