@@ -17,7 +17,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: identiteit-006-uitgave
+  # Нова назва групи: перший перезапуск завис у GitHub («not yet queued») і блокував чергу.
+  group: identiteit-006-uitgave-2
   cancel-in-progress: false
 
 env:
