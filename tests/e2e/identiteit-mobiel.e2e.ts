@@ -72,7 +72,11 @@ export async function main(): Promise<number> {
             const r = e.getBoundingClientRect();
             return { x: Math.round(r.x), rechts: Math.round(r.right), breedte: Math.round(r.width), hoogte: Math.round(r.height) };
           };
-          return { scherm: window.innerWidth, document: document.documentElement.scrollWidth, wortel: kies('.ia-at-v49'), hoofd: kies('.main-content'), pagina: kies('.page-wrap'), kaart: kies('.section-card'), afbeelding: kies('.art'), navigatie: kies('.anchor-rail'), twee: kies('.settings-menu-editor>article') };
+          const overschrijding = [...document.querySelectorAll('body *')].map(el => ({
+            element: el.tagName.toLowerCase(), klasse: (typeof el.className === 'string' ? el.className : '').slice(0, 75),
+            x: Math.round(el.getBoundingClientRect().x), rechts: Math.round(el.getBoundingClientRect().right),
+          })).filter(el => el.rechts > 321 && el.x < 321).slice(0, 12);
+          return { scherm: window.innerWidth, venster: window.visualViewport?.width, document: document.documentElement.scrollWidth, overschrijding: window.innerWidth > 320 && window.innerWidth > document.documentElement.clientWidth ? overschrijding : [], wortel: kies('.ia-at-v49'), hoofd: kies('.main-content'), pagina: kies('.page-wrap'), kaart: kies('.section-card'), afbeelding: kies('.art'), navigatie: kies('.anchor-rail'), twee: kies('.settings-menu-editor>article') };
         });
         controleer(`${breedte}/${plaats}: geen horizontaal uitschuiven`, maten.document <= breedte + 1, maten);
         controleer(`${breedte}/${plaats}: inhoud binnen scherm`, !!maten.kaart && maten.kaart.x >= -1 && maten.kaart.rechts <= breedte + 1, maten);
@@ -84,7 +88,21 @@ export async function main(): Promise<number> {
           if (await knop.isVisible()) {
             await knop.click();
             controleer(`${breedte}/${plaats}: nav open`, await pagina.locator('.anchor-rail').isVisible());
-            await pagina.locator('[data-jump="languages"]').click();
+            try { await pagina.locator('[data-jump="languages"]').click({ timeout: 2700 }); }
+            catch (fout) {
+              await pagina.screenshot({ path: join(uitvoer, `mislukt-menu-${breedte}-${plaats}.png`), fullPage: false });
+              const posities = await pagina.evaluate(() => {
+                const kies = (selector: string) => {
+                  const e = document.querySelector(selector);
+                  if (!e) return null;
+                  const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+                  return { x: r.x, y: r.y, breedte: r.width, hoogte: r.height, rechts: r.right, onder: r.bottom, weergave: s.display, positie: s.position, hoogteStijl: s.height, overloop: s.overflow, laag: s.zIndex };
+                };
+                const knop = document.querySelector('[data-jump="languages"]')?.getBoundingClientRect();
+                return { scherm: window.innerWidth, document: document.documentElement.scrollWidth, rail: kies('.anchor-rail'), items: kies('.rail-items'), groep: kies('.nav-group-open'), subitems: kies('.nav-group-open .nav-subitems'), knop: kies('[data-jump="languages"]'), raakvlak: knop ? document.elementFromPoint(knop.x + knop.width / 2, knop.y + knop.height / 2)?.outerHTML.slice(0, 180) : null };
+              });
+              throw new Error(`Неможливо натиснути пункт: ${JSON.stringify({ breedte, plaats, posities, fout: String(fout) })}`);
+            }
             controleer(`${breedte}/${plaats}: nav sluit na keuze`, !(await pagina.locator('.anchor-rail').isVisible()));
           }
         }
