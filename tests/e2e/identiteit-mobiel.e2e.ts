@@ -1,4 +1,5 @@
-// Afgeschermde, plaatselijke schermproef van het echte identiteit-atelier.
+// Afgeschermde, plaatselijke schermproef van het echte identiteit-atelier («Студія», IDENTITEIT-006).
+// Controleert op telefoon, tablet en computer: geen horizontaal uitschuiven, het onderdeelblad, het zoeken en het lichte thema.
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { mkdtempSync, existsSync, readFileSync, mkdirSync } from 'node:fs';
@@ -41,7 +42,8 @@ export async function main(): Promise<number> {
   };
   try {
     for (const breedte of [320, 360, 390, 430, 768, 1280]) {
-      for (const plaats of breedte < 500 ? ['left', 'right', 'top', 'bottom'] : ['right']) {
+      // De plaats van de navigatie telt pas op een breed scherm; op de telefoon blijft het een blad van onderen.
+      for (const plaats of breedte >= 1000 ? ['left', 'right', 'top', 'bottom'] : ['left']) {
         const context = await browser.newContext({ viewport: { width: breedte, height: 820 }, isMobile: breedte < 500, hasTouch: breedte < 500, deviceScaleFactor: breedte < 500 ? 2 : 1 });
         await context.addInitScript((keuze: string) => localStorage.setItem('identiteit-atelier-v49-navigatie', JSON.stringify({ plaats: keuze, stijl: 'pills' })), plaats);
         const pagina = await context.newPage();
@@ -51,73 +53,66 @@ export async function main(): Promise<number> {
           return route.continue();
         });
         const jsFouten: string[] = [];
-        const verzoekFouten: string[] = [];
         pagina.on('pageerror', e => jsFouten.push(String(e)));
         pagina.on('console', bericht => { if (bericht.type() === 'error') jsFouten.push(bericht.text()); });
-        pagina.on('response', antwoord => { if (antwoord.status() >= 400) verzoekFouten.push(`${antwoord.status()} ${antwoord.url()}`); });
         await pagina.goto(`http://127.0.0.1:${poort}/`);
-        try { await pagina.locator('.ia-at-v49 .setting-section').first().waitFor({ timeout: 12000 }); }
+        try { await pagina.locator('.mr-at .mr-at-paneel').first().waitFor({ timeout: 12000 }); }
         catch (fout) {
           await pagina.screenshot({ path: join(uitvoer, `mislukt-${breedte}-${plaats}.png`), fullPage: false });
-          const toestand = await pagina.evaluate(() => ({
-            adres: location.href, titel: document.title, wortel: document.getElementById('root')?.innerHTML.slice(0, 700),
-            scripts: [...document.scripts].map(el => el.src),
-          }));
-          throw new Error(`Geen onderdeel zichtbaar: ${JSON.stringify({ toestand, jsFouten, verzoekFouten, fout: String(fout) })}`);
+          throw new Error(`Geen paneel zichtbaar: ${JSON.stringify({ jsFouten, wortel: await pagina.evaluate(() => document.getElementById('root')?.innerHTML.slice(0, 500)), fout: String(fout) })}`);
         }
-        const maten = await pagina.evaluate(() => {
+        const maten = () => pagina.evaluate(() => {
           const kies = (selector: string) => {
             const e = document.querySelector(selector);
             if (!e) return null;
             const r = e.getBoundingClientRect();
             return { x: Math.round(r.x), rechts: Math.round(r.right), breedte: Math.round(r.width), hoogte: Math.round(r.height) };
           };
-          const overschrijding = [...document.querySelectorAll('body *')].map(el => ({
-            element: el.tagName.toLowerCase(), klasse: (typeof el.className === 'string' ? el.className : '').slice(0, 75),
-            x: Math.round(el.getBoundingClientRect().x), rechts: Math.round(el.getBoundingClientRect().right),
-          })).filter(el => el.rechts > 321 && el.x < 321).slice(0, 12);
-          return { scherm: window.innerWidth, venster: window.visualViewport?.width, document: document.documentElement.scrollWidth, overschrijding: window.innerWidth > 320 && window.innerWidth > document.documentElement.clientWidth ? overschrijding : [], wortel: kies('.ia-at-v49'), hoofd: kies('.main-content'), pagina: kies('.page-wrap'), kaart: kies('.section-card'), afbeelding: kies('.art'), navigatie: kies('.anchor-rail'), twee: kies('.settings-menu-editor>article') };
+          const grens = document.documentElement.clientWidth + 1;
+          const uitstekers = [...document.querySelectorAll('body *')].filter(el => !el.closest('.mr-kunst'))
+            .map(el => ({ el: el.tagName.toLowerCase() + '.' + String(el.className).slice(0, 50), rechts: Math.round(el.getBoundingClientRect().right), b: el.getBoundingClientRect().width }))
+            .filter(e => e.b > 0 && e.rechts > grens).slice(0, 6);
+          return { document: document.documentElement.scrollWidth, uitstekers, kop: kies('.mr-at-kop'), paneel: kies('.mr-at-paneel'), kunst: kies('.mr-at-kop .mr-kunst-raam'), balk: kies('.mr-at-balk'), gids: kies('.mr-at-gids'), actief: document.querySelector('.mr-at')?.getAttribute('data-actief') };
         });
-        controleer(`${breedte}/${plaats}: geen horizontaal uitschuiven`, maten.document <= breedte + 1, maten);
-        controleer(`${breedte}/${plaats}: inhoud binnen scherm`, !!maten.kaart && maten.kaart.x >= -1 && maten.kaart.rechts <= breedte + 1, maten);
-        controleer(`${breedte}/${plaats}: geen JavaScript-fouten`, jsFouten.length === 0, jsFouten);
-        if (breedte < 500) {
-          controleer(`${breedte}/${plaats}: afbeelding binnen scherm`, !!maten.afbeelding && maten.afbeelding.x >= -1 && maten.afbeelding.rechts <= breedte + 1, maten.afbeelding);
-          const knop = pagina.locator('.ia-at-mobiel-menu');
-          controleer(`${breedte}/${plaats}: nav-knop bereikbaar`, await knop.isVisible());
-          if (await knop.isVisible()) {
-            await knop.click();
-            controleer(`${breedte}/${plaats}: nav open`, await pagina.locator('.anchor-rail').isVisible());
-            try { await pagina.locator('[data-jump="languages"]').click({ timeout: 2700 }); }
-            catch (fout) {
-              await pagina.screenshot({ path: join(uitvoer, `mislukt-menu-${breedte}-${plaats}.png`), fullPage: false });
-              const posities = await pagina.evaluate(() => {
-                const kies = (selector: string) => {
-                  const e = document.querySelector(selector);
-                  if (!e) return null;
-                  const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-                  return { x: r.x, y: r.y, breedte: r.width, hoogte: r.height, rechts: r.right, onder: r.bottom, weergave: s.display, positie: s.position, hoogteStijl: s.height, overloop: s.overflow, laag: s.zIndex };
-                };
-                const knop = document.querySelector('[data-jump="languages"]')?.getBoundingClientRect();
-                return { scherm: window.innerWidth, document: document.documentElement.scrollWidth, rail: kies('.anchor-rail'), items: kies('.rail-items'), groep: kies('.nav-group-open'), subitems: kies('.nav-group-open .nav-subitems'), knop: kies('[data-jump="languages"]'), raakvlak: knop ? document.elementFromPoint(knop.x + knop.width / 2, knop.y + knop.height / 2)?.outerHTML.slice(0, 180) : null };
-              });
-              throw new Error(`Неможливо натиснути пункт: ${JSON.stringify({ breedte, plaats, posities, fout: String(fout) })}`);
-            }
-            controleer(`${breedte}/${plaats}: nav sluit na keuze`, !(await pagina.locator('.anchor-rail').isVisible()));
-          }
+        const m = await maten();
+        controleer(`${breedte}/${plaats}: geen horizontaal uitschuiven`, m.document <= breedte + 1 && !m.uitstekers.length, m);
+        controleer(`${breedte}/${plaats}: kop en paneel binnen scherm`, !!m.kop && !!m.paneel && m.paneel.x >= -1 && m.paneel.rechts <= breedte + 1 && m.kop.rechts <= breedte + 1, m);
+        controleer(`${breedte}/${plaats}: illustratie behouden en binnen scherm`, !!m.kunst && m.kunst.hoogte > 80 && m.kunst.rechts <= breedte + 1, m.kunst);
+        if (breedte < 980) {
+          // Telefoon en tablet: de sticky balk opent het blad met alle onderdelen.
+          const knop = pagina.locator('.mr-at-balk-kies');
+          controleer(`${breedte}/${plaats}: onderdeelknop bereikbaar`, await knop.isVisible(), m.balk);
+          await knop.click();
+          const blad = pagina.locator('.mr-at-kiezer');
+          controleer(`${breedte}/${plaats}: blad open`, await blad.isVisible());
+          const bladMaat = await blad.boundingBox();
+          controleer(`${breedte}/${plaats}: blad binnen scherm`, !!bladMaat && bladMaat.x >= -1 && bladMaat.x + bladMaat.width <= breedte + 1, bladMaat);
+          await blad.locator('[data-jump="languages"]').click({ timeout: 2700 });
+          controleer(`${breedte}/${plaats}: blad sluit na keuze en opent het onderdeel`, !(await blad.isVisible()) && (await maten()).actief === 'languages');
+        } else {
+          controleer(`${breedte}/${plaats}: vaste gids zichtbaar`, !!m.gids && m.gids.breedte > 0 && m.gids.rechts <= breedte + 1, m.gids);
+          await pagina.locator('.mr-at-gids [data-jump="languages"]').click();
+          await pagina.waitForTimeout(250);
+          controleer(`${breedte}/${plaats}: gids opent het onderdeel`, (await maten()).actief === 'languages');
         }
-        if (breedte === 390 && plaats === 'right') await pagina.screenshot({ path: join(uitvoer, 'telefoon-390.png'), fullPage: false });
-        if ((breedte === 390 && plaats === 'right') || (breedte === 320 && plaats === 'bottom')) {
+        // Zoeken: Ctrl+K opent het venster en vindt een keuze diep in een groep.
+        await pagina.keyboard.press('Control+k');
+        await pagina.locator('.mr-at-kiezer input').fill('тихі');
+        const treffers = await pagina.locator('.mr-at-treffer').count();
+        const trefferTekst = (await pagina.locator('.mr-at-treffer').allInnerTexts()).join(' | ');
+        controleer(`${breedte}/${plaats}: zoeken vindt «тихі години»`, treffers > 0 && trefferTekst.toLowerCase().includes('тихі години'), trefferTekst);
+        await pagina.keyboard.press('Escape');
+        controleer(`${breedte}/${plaats}: Esc sluit het zoeken`, !(await pagina.locator('.mr-at-kiezer').isVisible()));
+        controleer(`${breedte}/${plaats}: geen JavaScript-fouten`, jsFouten.length === 0, jsFouten);
+        if (breedte === 390) await pagina.screenshot({ path: join(uitvoer, 'telefoon-390.png'), fullPage: false });
+        if (breedte === 390 || breedte === 320) {
           await pagina.evaluate(() => document.documentElement.classList.add('theme-light'));
-          await pagina.locator('.ia-at-v49.light').waitFor();
-          const licht = await pagina.evaluate(() => {
-            const kaart = document.querySelector('.setting-section')?.getBoundingClientRect();
-            return { document: document.documentElement.scrollWidth, venster: window.visualViewport?.width, kaartRechts: kaart?.right, kaartLinks: kaart?.left };
-          });
-          controleer(`${breedte}/${plaats}: licht thema binnen scherm`, licht.document <= breedte + 1 && !!licht.kaartRechts && licht.kaartRechts <= breedte + 1 && licht.kaartLinks! >= -1, licht);
+          await pagina.locator('.mr-at.is-licht').waitFor();
+          const licht = await maten();
+          controleer(`${breedte}/${plaats}: licht thema binnen scherm`, licht.document <= breedte + 1 && !licht.uitstekers.length, licht);
           await pagina.screenshot({ path: join(uitvoer, `telefoon-${breedte}-licht.png`), fullPage: false });
         }
-        if (breedte === 1280) await pagina.screenshot({ path: join(uitvoer, 'computer-1280.png'), fullPage: false });
+        if (breedte === 1280) await pagina.screenshot({ path: join(uitvoer, `computer-1280-${plaats}.png`), fullPage: false });
         await context.close();
       }
     }
