@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-004",
+  "datum": "2026-11-08",
+  "taal": "uk",
+  "opdracht": "Точно перенести погоджений зразок оформлення версії 49 на сторінку керування обліковим записом без втрати чинних дій, подвійних налаштувань і можливості повернення до попереднього вигляду. Звірити малюнки, заокруглення, кольори, згортання груп та способи входу з джерелом зразка й робочими обробниками.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "codex",
+    "model": "gpt-6",
+    "repo": "Tarasevych/hub",
+    "basisTak": "integratie",
+    "basisCommit": "7bb8765df3ac5e38d8185a94fc5d22c30a46d345",
+    "geinstalleerdeVersie": "20261107-195618",
+    "geinstalleerdeCommit": "70d2d2175aa402445b41d2f98beef4b4fdbd1b9c",
+    "tak": "feature/identiteit-atelier-v49-20261108-071906",
+    "verzoekTotSamenvoeging": "https://github.com/Tarasevych/hub/pull/46"
+  },
+  "bronnen": [
+    {
+      "soort": "погоджений зразок",
+      "omschrijving": "Вихідні дані оформлення версії 49, що містять 12 тематичних малюнків, 43 групи та 153 позиції; передано як власний зразок, а не підтвердження роботи всіх майбутніх дій.",
+      "bewijzen": ["src/identiteit/atelier-v49-gegevens.json", "src/identiteit/atelier-v49-bron.css"]
+    },
+    {
+      "soort": "чинний сайт",
+      "omschrijving": "Обліковий запис і налаштування з наявними обробниками, перемикачами можливостей та старим виглядом для повернення.",
+      "bewijzen": ["src/identiteit/IdentiteitAccountPagina.tsx", "src/InstellingencentrumWeergave.tsx", "shared/vlaggen.ts"]
+    },
+    {
+      "soort": "встановлена основа",
+      "omschrijving": "У технічному керуванні підтверджено встановлену версію 20261107-195618; гілка інтеграції є її нащадком.",
+      "bewijzen": ["https://admin.tarasevych.com/updates"]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Перевірено чинну версію сайту, початкову фіксацію гілки інтеграції, правила проєкту та зміст погодженого зразка.",
+      "bewijzen": ["orchestratie/beleid.json", "orchestratie/CONTEXT-COMPACT.md", "orchestratie/taken/IDENTITEIT-004.json"]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Перенесено вихідну структуру та оформлення зразка з тематичними малюнками; справжні дії сторінки залишено підключеними до наявних обробників.",
+      "bewijzen": ["src/identiteit/IdentiteitAtelierV49.tsx", "src/identiteit/atelier-v49-bron.css", "src/identiteit/atelier-v49-gegevens.json"]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Упорядковано налаштування входу, захисту й відновлення, щоб не показувати ті самі дії двічі; дієві налаштування залишаються доступними.",
+      "bewijzen": ["src/identiteit/atelier-inhoud.ts", "src/identiteit/IdentiteitAccountPagina.tsx"]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Пов’язано кольорові піктограми з усією навігацією та збережено перемикач нового вигляду, який дозволяє повернення до попередньої сторінки.",
+      "bewijzen": ["src/identiteit/IdentiteitAtelierV49.tsx", "src/identiteit/IdentiteitAccountPagina.tsx"]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Перевірено 27 одиничних сценаріїв, типи застосунку та повне складання. Звірено відсутність відставання від integratie; власник окремо дозволив об’єднання.",
+      "bewijzen": ["tests/eenheid/identiteit-atelier.test.ts", "https://github.com/Tarasevych/hub/pull/46"]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Зберегти вихідне оформлення версії 49 як джерело вигляду",
+      "reden": "Схожі за стилем, але вигадані блоки й малюнки не відтворюють схваленого результату.",
+      "alternatief": "Вільне перемальовування відхилено."
+    },
+    {
+      "keuze": "Показувати справжні дії лише у відповідному розділі",
+      "reden": "Одна й та сама дія не має дублюватися в декількох групах.",
+      "alternatief": "Дублювання старих карток поряд із новими відхилено."
+    },
+    {
+      "keuze": "Зберегти старе оформлення за окремим перемикачем",
+      "reden": "Власник може відразу вимкнути нову сторінку без зміни даних або прав.",
+      "alternatief": "Незворотну заміну відхилено."
+    }
+  ],
+  "wijzigingen": [
+    {"pad": "src/identiteit/IdentiteitAtelierV49.tsx", "omschrijving": "Нова оболонка зразка та чинні дії."},
+    {"pad": "src/identiteit/atelier-v49-bron.css", "omschrijving": "Точні вихідні стилі й пристосування до екрана."},
+    {"pad": "src/identiteit/atelier-v49-gegevens.json", "omschrijving": "Структура, тексти та тематичні малюнки зразка."},
+    {"pad": "src/identiteit/atelier-inhoud.ts", "omschrijving": "Неповторні групи дієвих налаштувань."},
+    {"pad": "src/identiteit/IdentiteitAccountPagina.tsx", "omschrijving": "Перемикання вигляду з поверненням до попереднього."},
+    {"pad": "tests/eenheid/identiteit-atelier.test.ts", "omschrijving": "Перевірки структури та поведінки."}
+  ],
+  "controles": [
+    {"opdracht": "node scripts/eenheidstests.mjs identiteit-atelier", "uitkomst": "27 із 27 перевірок успішно"},
+    {"opdracht": "npx tsc --noEmit", "uitkomst": "успішно"},
+    {"opdracht": "NODE_OPTIONS=--max-old-space-size=5632 npx vite build --logLevel error", "uitkomst": "успішно"},
+    {"opdracht": "node scripts/orch.mjs controleer", "uitkomst": "успішно; непідписана критична політика забороняє автоматичне встановлення"},
+    {"opdracht": "node scripts/orch.mjs versheid --taak IDENTITEIT-004", "uitkomst": "основа актуальна"}
+  ],
+  "beperkingen": [
+    "У погодженому зразку наведено також заплановані можливості; вони не стають дієвими лише через появу картки.",
+    "Успішне складання не підтверджує встановлення на робочий сервер.",
+    "Повноцінне встановлення потребує окремого пакета, перевіреної публікації, сумісності з фактично встановленою основою та підтвердження власника.",
+    "Автоматичне встановлення залишається забороненим до підписання критичних правил власником."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "У журналі немає паролів, ключів доступу, приватних даних сеансу, вмісту листів чи особистих світлин; наведено лише загальнодоступні шляхи та результати перевірок."
+  }
+}
