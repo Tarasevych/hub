@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, ContactRound, Globe, KeyRound, LayoutGrid, Menu, MonitorSmartphone, Palette, PencilRuler, Search, Settings2, ShieldCheck, Sparkles, UsersRound, type LucideIcon } from 'lucide-react';
 import type { IdentiteitSectie } from './IdentiteitAccountPagina';
 import { useZijbalkVoorkeuren } from '../zijbalk-voorkeuren';
+import { AtelierInhoud } from './atelier-inhoud';
 import bron from './atelier-v49-gegevens.json';
 import './atelier-v49-bron.css';
 
@@ -84,7 +85,7 @@ export function IdentiteitAtelierV49({ lang, actief, inBeeld, secties, onKies }:
   };
   const wissel = (id: string) => setOpen(vorig => { const nieuw = new Set(vorig); if (nieuw.has(id)) nieuw.delete(id); else nieuw.add(id); return nieuw; });
   const wisselGroep = (id: string) => setNavGroepen(vorig => { const nieuw = new Set(vorig); if (nieuw.has(id)) nieuw.delete(id); else nieuw.add(id); return nieuw; });
-  return <div className={`ia-at-v49 rail-${plaats}${licht ? ' light' : ''}${compact ? ' rail-compact' : ''}${navStijl === 'pills' ? ' rail-pills' : ''}${zijbalk.icoonStijl === 'kleur' ? ' demo-colorful-icons' : ''}`}>
+  return <AtelierInhoud.Provider value={true}><div className={`ia-at-v49 rail-${plaats}${licht ? ' light' : ''}${compact ? ' rail-compact' : ''}${navStijl === 'pills' ? ' rail-pills' : ''}${zijbalk.icoonStijl === 'kleur' ? ' demo-colorful-icons' : ''}`}>
     <main className='main-content'>
       <header className='topbar'><div className='breadcrumbs'><span className='breadcrumb-dot'/>
         <span>{vertaal(lang, 'Мій простір', 'Mijn Ruimte')}</span><span className='slash'>/</span>
@@ -168,5 +169,5 @@ export function IdentiteitAtelierV49({ lang, actief, inBeeld, secties, onKies }:
       <div className='ia-at-zoekinvoer'><Search size={20}/><input type='search' autoFocus value={zoektekst} onChange={e => setZoektekst(e.target.value)} placeholder={vertaal(lang,'Назва розділу…','Naam van onderdeel…')}/><button type='button' onClick={() => setZoekOpen(false)}>×</button></div>
       <div className='ia-at-zoekresultaten'>{resultaten.map(s => { const Icoon = symbolen[s.id]; return <button type='button' key={s.id} onClick={() => ga(s.id)}><Icoon size={19}/>{s[lang].name}<ChevronRight size={16}/></button>; })}</div>
     </div></div>}
-  </div>;
+  </div></AtelierInhoud.Provider>;
 }

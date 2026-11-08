@@ -1,7 +1,10 @@
 // IDENTITEIT-003: de eigenaar kan het nieuwe uiterlijk uitzetten zonder bestaande handelingen te verliezen.
 import { readFileSync } from 'node:fs';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { evalueer, VLAG_UITLEG, type Vlag } from '../../shared/vlaggen';
 import { IDENTITEIT_TABS } from '../../src/identiteit/identiteit-tabs';
+import { AccessPlanePanels } from '../../src/toegangslaag-panelen';
 import { checker } from './hulp/nep-google';
 
 export async function main(): Promise<number> {
@@ -11,6 +14,9 @@ export async function main(): Promise<number> {
   const stijl = readFileSync('src/identiteit/atelier-v49-bron.css', 'utf8');
   const gegevens = JSON.parse(readFileSync('src/identiteit/atelier-v49-gegevens.json', 'utf8'));
   const migratie = readFileSync('migrations/0199_identiteit_account_atelier.sql', 'utf8');
+  const toegang = readFileSync('src/toegangslaag-panelen.tsx', 'utf8');
+  const toegangWeergave = readFileSync('src/ToegangslaagWeergave.tsx', 'utf8');
+  const aanmeldWeergave = readFileSync('src/aanmeld-vnext/AanmeldVnextPanelen.tsx', 'utf8');
   const basisMigratie = readFileSync('migrations/0038_feature_flags.sql', 'utf8');
   const omschrijvingGrens = Number(basisMigratie.match(/CHECK\s*\(char_length\(omschrijving\)\s*<=\s*(\d+)\)/)?.[1]);
   const omschrijving = migratie.match(/VALUES\s*\(\s*'identiteit-account-atelier',\s*'((?:''|[^'])*)'\s*,\s*false,\s*false\s*\)/s)?.[1]?.replaceAll("''", "'");
@@ -35,5 +41,42 @@ export async function main(): Promise<number> {
   check('de kleurrijke pictogrammen volgen de werkelijke menuvoorkeur in alle onderdelen', atelier.includes('useZijbalkVoorkeuren') && atelier.includes("zijbalk.icoonStijl === 'kleur'") && atelier.includes('data-jump={s.id}') && stijl.includes('.ia-at-v49.demo-colorful-icons .anchor-rail'));
   check('gesloten onderdelen verbergen hun inhoud volledig', stijl.includes('.ia-at-v49 .section-inline-settings[hidden]{display:none}'));
   check('verminderde beweging wordt gerespecteerd', stijl.includes('prefers-reduced-motion:reduce'));
+  check('de nieuwe accountvorm scheidt de toegangsfuncties van het oude formulier',
+    atelier.includes('<AtelierInhoud.Provider value={true}>') && toegangWeergave.includes('useContext(AtelierInhoud)') && toegangWeergave.includes('alleen={alleen}'));
+  check('aanmelden bevat alleen de aanmeldmethoden en tijdelijke toegangscodes',
+    toegang.includes("p.alleen==='methods'") && toegang.includes('{toonMethoden&&<Toegangscodes') && toegang.includes('{toonMethoden&&<section'));
+  check('beveiliging bevat authenticator en sleutelkluis, niet de herstelcodes',
+    toegang.includes("p.alleen==='security'") && toegang.includes('{toonBeveiliging&&<SleutelkluisSectie') && toegang.includes('{toonBeveiliging&&<section'));
+  check('herstel toont herstelcodes en tijdelijke wachtwoorden precies één keer',
+    toegang.includes("p.alleen==='recovery'") && toegang.includes('{toonHerstel&&<HerstelcodesSectie') && toegang.includes('{toonHerstel&&p.tempPassword'));
+  check('een tweede aanmeldweergave toont geen beveiligings- of herstelkaarten in het atelier',
+    aanmeldWeergave.includes("['google', 'password', 'passkey', 'guest-code'].includes(k.id)") && aanmeldWeergave.includes('!p.alleen&&<Hero') && aanmeldWeergave.includes("['alles', 'inloggen', 'passkey', 'delegatie']"));
+  const basis = {
+    tab: 'methods', lang: 'uk' as const,
+    data: {
+      architecture: 'access-plane-v1',
+      contour: { clientId: '', redirectUri: '', credentialsConfigured: true, source: '', hasVaultOverride: false, hasPlatformSecret: false, missing: [], lockProtected: false, updatedAt: 0 },
+      policy: { enabled: {}, mfa: 'optional' as const },
+      methods: [{ id: 'google', enabled: true, configured: true, status: 'active' }],
+      factors: [{ id: 'totp', enabled: true, enrolled: false, status: 'not_enrolled' }],
+      bindings: [], usableCount: 1, lockout: { protected: false, reason: '' },
+      password: { configured: false, mustChange: false }, totp: { enrolled: false },
+    },
+    busy: false, notice: '', password: '', setPassword: (_: string) => {},
+    otpauth: '', secret: '', code: '', setCode: (_: string) => {},
+    recovery: [], tempPassword: '', context: {},
+    write: async () => {}, load: async () => {}, nieuweHerstelcodes: async () => {},
+    totpUitschakelen: async () => {}, recoverySaved: async () => {},
+  };
+  const uitkomst = (alleen?: 'methods' | 'security' | 'recovery') => renderToStaticMarkup(createElement(AccessPlanePanels, { ...basis, tab: alleen || 'methods', alleen }));
+  const verdeeld = { methods: uitkomst('methods'), security: uitkomst('security'), recovery: uitkomst('recovery'), legacy: uitkomst() };
+  check('werkelijk gerenderde aanmeldpagina heeft enkel de aanmeldsectie',
+    verdeeld.methods.includes('data-access-section="google"') && !verdeeld.methods.includes('data-access-section="2fa"') && !verdeeld.methods.includes('data-access-section="recovery"'));
+  check('werkelijk gerenderde beveiligingspagina heeft geen Google of herstelcodes',
+    verdeeld.security.includes('data-access-section="2fa"') && !verdeeld.security.includes('data-access-section="google"') && !verdeeld.security.includes('data-access-section="recovery"'));
+  check('werkelijk gerenderde herstelpagina bevat de codes slechts één keer',
+    verdeeld.recovery.includes('data-access-section="recovery"') && !verdeeld.recovery.includes('data-access-section="2fa"') && !verdeeld.recovery.includes('data-access-section="google"'));
+  check('het oorspronkelijke paneel toont alle onderdelen bij uitgeschakelde nieuwe vorm',
+    ['google', '2fa', 'recovery'].every(deel => verdeeld.legacy.includes(`data-access-section="${deel}"`)));
   return einde();
 }
