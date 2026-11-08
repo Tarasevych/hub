@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-005",
+  "datum": "2026-11-08",
+  "taal": "uk",
+  "opdracht": "Продовжити вже виконану роботу над оформленням облікового запису версії 49, усунути перешкоду повного складання і підготувати перевірюваний архів для встановлення без втрати чинних налаштувань.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "codex",
+    "model": "gpt-6",
+    "repo": "Tarasevych/hub",
+    "basisTak": "integratie",
+    "basisCommit": "26d705c8195d892def7ce12430131320bf588ebf",
+    "geinstalleerdeVersie": "20261107-195618",
+    "geinstalleerdeCommit": "70d2d2175aa402445b41d2f98beef4b4fdbd1b9c",
+    "tak": "fix/identiteit-005-20261108-083100",
+    "voorafgaandVerzoek": "https://github.com/Tarasevych/hub/pull/46"
+  },
+  "bronnen": [
+    {
+      "soort": "погоджений зразок",
+      "omschrijving": "Оформлення облікового запису версії 49, перенесене й об'єднане в попередньому завданні.",
+      "bewijzen": ["src/identiteit/IdentiteitAtelierV49.tsx", "src/identiteit/atelier-v49-bron.css"]
+    },
+    {
+      "soort": "правила розміщення",
+      "omschrijving": "Єдиний перелік дозволених фіксованих шарів, вікон і навігаційних панелей застосунку.",
+      "bewijzen": ["scripts/plaatsing-controle.mjs", "scripts/plaatsing-vaste-elementen.json"]
+    },
+    {
+      "soort": "встановлена основа",
+      "omschrijving": "Безпосередня перевірка чинної версії через кінцеву точку сайту 08.11.2026; початкова фіксація змін є предком інтеграційної гілки.",
+      "bewijzen": ["https://hub.tarasevych.com/api/version"]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Продовжено роботу після об'єднання запиту №46; звірено встановлену основу, правила випуску та стан інтеграційної гілки.",
+      "bewijzen": ["orchestratie/taken/IDENTITEIT-004.json", "https://github.com/Tarasevych/hub/pull/46"]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Усі 27 цільових перевірок сторінки завершилися успішно. Перевірки типів клієнтської та серверної частин також успішні.",
+      "bewijzen": ["tests/eenheid/identiteit-atelier.test.ts"]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Повне складання виявило 15 раніше не зареєстрованих правил фіксованого розташування у вихідних стилях зразка.",
+      "bewijzen": ["src/identiteit/atelier-v49-bron.css", "scripts/plaatsing-controle.mjs"]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Зареєстровано точні селектори декоративних шарів, панелей і вікон із поясненням призначення кожного; кольори, форми й заокруглення не змінювалися.",
+      "bewijzen": ["scripts/plaatsing-vaste-elementen.json"]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Повне складання після доповнення дозволів пройшло успішно з доступною пам'яттю 6144 МіБ; перевірник розміщення не виявив порушень. Перша спроба з типовою межею пам'яті завершилася її вичерпанням.",
+      "bewijzen": ["scripts/plaatsing-controle.mjs", "scripts/build-server.mjs"]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Не змінювати погодженого оформлення",
+      "reden": "Зауваження перевірника стосувалися відсутності реєстрації шарів, а не неправильних значень оформлення.",
+      "alternatief": "Вилучення декоративних шарів або переписування стилів відхилено."
+    },
+    {
+      "keuze": "Додати окремі дозволи з поясненнями",
+      "reden": "Кожен селектор залишається видимим для наступних перевірок, а справжні кнопки й надалі підпорядковуються правилам розміщення.",
+      "alternatief": "Вимкнення загального перевірника відхилено."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "pad": "scripts/plaatsing-vaste-elementen.json",
+      "omschrijving": "П'ятнадцять точних дозволів для декоративних шарів, навігаційних панелей і вікон зразка."
+    },
+    {
+      "pad": "orchestratie/taken/IDENTITEIT-005.json",
+      "omschrijving": "Опис наступного завершального завдання, його чинної основи та обов'язкових правил."
+    },
+    {
+      "pad": "orchestratie/ontwikkelarchieven/IDENTITEIT-005.json",
+      "omschrijving": "Перевірюваний опис причин, рішень, виконаних перевірок і меж випуску."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/eenheidstests.mjs identiteit-atelier",
+      "uitkomst": "27 із 27 успішно"
+    },
+    {
+      "opdracht": "npm run typecheck:server",
+      "uitkomst": "успішно"
+    },
+    {
+      "opdracht": "npx tsc --noEmit",
+      "uitkomst": "успішно"
+    },
+    {
+      "opdracht": "node scripts/plaatsing-controle.mjs",
+      "uitkomst": "успішно після доповнення точних дозволів"
+    },
+    {
+      "opdracht": "NODE_OPTIONS=--max-old-space-size=6144 npm run build",
+      "uitkomst": "успішно, зібрано клієнтську та серверну частини"
+    }
+  ],
+  "beperkingen": [
+    "Зразок містить окремі майбутні можливості, які не стають чинними без відповідних серверних дій.",
+    "Успішне складання не доводить придатності випуску до встановлення без контрольної суми та запису оприлюдненого архіву в GitHub.",
+    "Автоматичне встановлення залишається забороненим до незалежного підтвердження критичних правил власником."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Паролі, ключі доступу, особисті листи, приватні зображення та приховані внутрішні міркування не внесено до журналу."
+  }
+}

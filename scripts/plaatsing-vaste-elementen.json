@@ -257,6 +257,18 @@
   {
    "sleutel": "src/identiteit/identiteit-account.css :: .ia-dialoog-achtergrond",
    "reden": "IDENTITY-002: achtergrondlaag van de fotodialoog (venster, geen zwevende knop). Het venster moet boven de pagina en de instellingenkaarten staan; zonder position:fixed kan het niet het hele scherm bedekken. Sluit met Escape of klik op de achtergrond."
+  },
+  {
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-sluier",
+   "reden": "IDENTITEIT-006: verduisterende achtergrond onder het onderdeelblad en het zoekvenster van de accountstudio; geen knop. Een tik erop sluit het venster."
+  },
+  {
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-kiezer",
+   "reden": "IDENTITEIT-006: dialoogvenster «Розділи / Пошук» van de accountstudio (role=dialog); op de telefoon een onderblad. Venster, geen zwevende knop; sluit met Escape of de sluier."
+  },
+  {
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-popover",
+   "reden": "IDENTITEIT-006: keuzevenster voor de plaats en stijl van de navigatie; op de telefoon een onderblad. Venster, geen knop."
   }
  ],
  "kopReserves": [

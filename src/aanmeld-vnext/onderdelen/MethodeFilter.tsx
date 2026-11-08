@@ -8,8 +8,8 @@ import type { Lang } from '../../toegangslaag-teksten';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 const ICOON: Record<AanmeldGroep, typeof LayoutGrid> = { alles: LayoutGrid, inloggen: LogIn, passkey: Fingerprint, bescherming: ShieldCheck, delegatie: Share2 };
 
-type Props = { lang: Lang; groep: AanmeldGroep; onGroep: (g: AanmeldGroep) => void; onZoek: (z: string) => void };
-export default function MethodeFilter({ lang, groep, onGroep, onZoek }: Props) {
+type Props = { lang: Lang; groep: AanmeldGroep; groepen?: readonly AanmeldGroep[]; onGroep: (g: AanmeldGroep) => void; onZoek: (z: string) => void };
+export default function MethodeFilter({ lang, groep, groepen = AANMELD_GROEPEN, onGroep, onZoek }: Props) {
   const [veld, setVeld] = useState('');
   useEffect(() => { const t = window.setTimeout(() => onZoek(veld), 280); return () => window.clearTimeout(t); }, [veld, onZoek]);
   return (
@@ -20,7 +20,7 @@ export default function MethodeFilter({ lang, groep, onGroep, onZoek }: Props) {
           aria-label={tr(lang, 'Пошук способу входу', 'Aanmeldmethode zoeken')} onChange={(e) => setVeld(e.target.value)} />
       </label>
       <div className='amv-chips' role='group' aria-label={tr(lang, 'Категорії', 'Categorieën')}>
-        {AANMELD_GROEPEN.map((g) => { const I = ICOON[g]; return (
+        {groepen.map((g) => { const I = ICOON[g]; return (
           <button key={g} type='button' className={`amv-chip${groep === g ? ' is-actief' : ''}`} aria-pressed={groep === g}
             data-amv-groep={g} onClick={() => onGroep(g)}>
             <I aria-hidden='true' />{aanmeldTekst(GROEP_LABEL[g], lang)}
