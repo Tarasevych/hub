@@ -24,6 +24,9 @@ env:
   TAAK: IDENTITEIT-006
   BASIS_VERSIE: '20261108-111700'
   BASIS_COMMIT: '944336a259731cd9b90afb29a191e896f48cec38'
+  # Модель ШІ задає власник змінною сховища (Settings → Variables → Actions), а не агент у коді.
+  # Het AI-model geeft de eigenaar op als repositoryvariabele, niet de agent in de code.
+  MODEL_ID: ${{ vars.IDENTITEIT_006_MODEL_ID }}
 
 jobs:
   controle-en-uitgave:
@@ -57,6 +60,13 @@ jobs:
             throw new Error('Встановлена основа змінилася; випуск зупинено.');
           }
           JS
+      - name: Модель ШІ від власника
+        shell: bash
+        run: |
+          if [ -z "${MODEL_ID:-}" ]; then
+            echo '::error::Задайте змінну сховища IDENTITEIT_006_MODEL_ID (Settings → Secrets and variables → Actions → Variables) і перезапустіть процес. Правила пакета вимагають справжню модель ШІ.'
+            exit 1
+          fi
       - name: Правила і джерела
         run: |
           node scripts/orch.mjs controleer
@@ -106,7 +116,7 @@ jobs:
           const e=process.env;
           const uk={titel:'«Студія» — новий дизайн центру налаштувань',samenvatting:'Центр налаштувань акаунта зібрано заново на ідеях прототипу v49: один розділ на екрані з ілюстрацією, аркуш розділів на телефоні, панель на ПК і пошук по всіх 153 налаштуваннях.',wijzigingen:['Один розділ на екрані: заголовок з ілюстрацією v49, справжні налаштування, згорнута дорожня карта і перехід до сусідніх розділів.','Телефон: липка смуга з прогресом і аркуш знизу з усіма розділами; ПК: панель ліворуч, праворуч, зверху або знизу.','Пошук Ctrl/Cmd+K по розділах, групах і налаштуваннях обома мовами з підсвіткою знайденого.'],fixes:['Апостроф у index.html більше не ламає скрипт оформлення.','Сторінка налаштувань не стрибає донизу і не показує на мить старий вигляд.','На телефоні немає горизонтального зсуву на 14 px.'],beperkingen:['Сторінки поза центром облікового запису не змінювались.','Новий вигляд, як і раніше, вмикається прапорцем identiteit-account-atelier; спершу перевірте його в режимі «Тільки я».'],instructies:'Установіть архів через admin.tarasevych.com із підтвердженням ключем доступу. Спершу перевірте новий вигляд лише для себе.'};
           const nl={titel:'«Studio» — nieuw ontwerp van het instellingencentrum',samenvatting:'Het accountinstellingencentrum is opnieuw opgebouwd op de ideeën van prototype v49: één onderdeel per scherm met illustratie, een onderdeelblad op de telefoon, een balk op de computer en zoeken in alle 153 instellingen.',wijzigingen:['Eén onderdeel per scherm: kop met v49-illustratie, de echte instellingen, een ingeklapte routekaart en naastliggende onderdelen.','Telefoon: vaste balk met voortgang en een blad van onderen met alle onderdelen; computer: balk links, rechts, boven of onder.','Zoeken met Ctrl/Cmd+K in onderdelen, groepen en instellingen in beide talen, met markering van de treffer.'],fixes:['Een apostrof in index.html breekt het vormgevingsscript niet meer.','De instellingenpagina springt niet meer naar onderen en toont niet even het oude uiterlijk.','Geen horizontale verschuiving van 14 px meer op de telefoon.'],beperkingen:['Pagina’s buiten het accountcentrum zijn niet gewijzigd.','Het nieuwe uiterlijk blijft achter de vlag identiteit-account-atelier; controleer het eerst met «Alleen ik».'],instructies:'Installeer het archief via admin.tarasevych.com met een passkey. Controleer eerst de nieuwe vorm voor jezelf.'};
-          const m={schema:1,versie:e.VERSIE,aangemaakt:new Date().toISOString(),herkomst:`git: commit ${e.GITHUB_SHA} (basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,auteur:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',zonderAi:false,deelnemers:[{soort:'mens',naam:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',rollen:['auteur']},{soort:'ai',naam:'claude',platform:'Claude Code',tool:'Claude Code',model:{id:null,versie:null,bron:'onbekend'},rollen:['ontwikkeling','controle','testen','verpakken']}],beschrijving:{uk,nl}};
+          const m={schema:1,versie:e.VERSIE,aangemaakt:new Date().toISOString(),herkomst:`git: commit ${e.GITHUB_SHA} (basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,auteur:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',zonderAi:false,deelnemers:[{soort:'mens',naam:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',rollen:['auteur']},{soort:'ai',naam:'claude',platform:'Claude Code',tool:'Claude Code',model:{id:e.MODEL_ID,versie:null,bron:'auteur'},rollen:['ontwikkeling','controle','testen','verpakken']}],beschrijving:{uk,nl}};
           writeFileSync(e.RUNNER_TEMP+'/UITROL-MANIFEST.json',JSON.stringify(m,null,2)+'\n');
           const tests={geslaagd:117,mislukt:0,falend:[],uitleg:{uk:'Перевірки «Студії» (33), мобільного каскаду (22), геометрії (56) та облікового запису (6), складання, перевірки типів і браузерні перевірки екранів пройдено в цьому запуску.',nl:'De Studio-tests (33), mobiele cascade (22), geometrie (56) en account (6), de bouw, de typecontroles en de browserproeven voor schermen zijn in deze uitvoering geslaagd.'}};
           writeFileSync(e.RUNNER_TEMP+'/TESTRESULTATEN.json',JSON.stringify(tests,null,2)+'\n');
