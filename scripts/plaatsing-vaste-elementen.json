@@ -317,6 +317,10 @@
   {
    "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .anchor-rail.ia-at-nav",
    "reden": "IDENTITEIT-005: bestaande navigatiebalk van de accountpagina met bijzondere plaatsing; geen afzonderlijke zwevende actieknop."
+  },
+  {
+   "sleutel": "src/identiteit/atelier-v49-bron.css :: @media(max-width:900px) .ia-at-v49:is(.rail-left,.rail-right,.rail-top,.rail-bottom) .anchor-rail.ia-at-nav",
+   "reden": "MOBIEL-001: hetzelfde navigatiepaneel opent op de telefoon als een onderblad; de openingsknop blijft in de bestaande kopzone, niet zwevend."
   }
  ],
  "kopReserves": [

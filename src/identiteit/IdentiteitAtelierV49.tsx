@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, ContactRound, Globe, KeyRound, LayoutGrid, Menu, MonitorSmartphone, Palette, PencilRuler, Search, Settings2, ShieldCheck, Sparkles, UsersRound, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ChevronRight, CircleHelp, ContactRound, Globe, KeyRound, LayoutGrid, Menu, MonitorSmartphone, Palette, PencilRuler, Search, Settings2, ShieldCheck, Sparkles, UsersRound, X, type LucideIcon } from 'lucide-react';
 import type { IdentiteitSectie } from './IdentiteitAccountPagina';
 import { useZijbalkVoorkeuren } from '../zijbalk-voorkeuren';
 import { AtelierInhoud } from './atelier-inhoud';
@@ -54,6 +54,8 @@ export function IdentiteitAtelierV49({ lang, actief, inBeeld, secties, onKies }:
     return 'right';
   });
   const [compact, setCompact] = useState(false);
+  const [mobiel, setMobiel] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
+  const [mobielOpen, setMobielOpen] = useState(false);
   const [navStijl, setNavStijl] = useState<'classic' | 'pills'>(() => {
     try { return JSON.parse(localStorage.getItem(opslag) || '{}').stijl === 'pills' ? 'pills' : 'classic'; }
     catch { return 'classic'; }
@@ -65,6 +67,10 @@ export function IdentiteitAtelierV49({ lang, actief, inBeeld, secties, onKies }:
   const [licht, setLicht] = useState(helder);
   const [voortgang, setVoortgang] = useState(0);
   useEffect(() => { setOpen(vorig => new Set([...vorig, ontwerp(actief)])); }, [actief]);
+  useEffect(() => { const media = window.matchMedia('(max-width: 900px)');
+    const vernieuw = () => { setMobiel(media.matches); if (!media.matches) setMobielOpen(false); };
+    vernieuw(); media.addEventListener('change', vernieuw);
+    return () => media.removeEventListener('change', vernieuw); }, []);
   useEffect(() => { const w = new MutationObserver(() => setLicht(helder()));
     w.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => w.disconnect(); }, []);
@@ -75,22 +81,23 @@ export function IdentiteitAtelierV49({ lang, actief, inBeeld, secties, onKies }:
     return () => { window.removeEventListener('scroll', meet); window.removeEventListener('resize', meet); }; }, []);
   useEffect(() => { const toets = (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setZoekOpen(true); }
-    if (e.key === 'Escape') { setZoekOpen(false); setInstellingen(false); }
+    if (e.key === 'Escape') { setZoekOpen(false); setInstellingen(false); setMobielOpen(false); }
   }; window.addEventListener('keydown', toets); return () => window.removeEventListener('keydown', toets); }, []);
   const resultaten = useMemo(() => bron.secties.filter(s =>
     `${s.uk.name} ${s.nl.name} ${s.uk.title} ${s.nl.title}`.toLowerCase().includes(zoektekst.toLowerCase())), [zoektekst]);
   const ga = (id: string) => {
-    setOpen(vorig => new Set([...vorig, id])); onKies(werkelijk(id)); setZoekOpen(false);
+    setOpen(vorig => new Set([...vorig, id])); onKies(werkelijk(id)); setZoekOpen(false); setMobielOpen(false);
     window.setTimeout(() => document.getElementById(`identity-sectie-${werkelijk(id)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   };
   const wissel = (id: string) => setOpen(vorig => { const nieuw = new Set(vorig); if (nieuw.has(id)) nieuw.delete(id); else nieuw.add(id); return nieuw; });
   const wisselGroep = (id: string) => setNavGroepen(vorig => { const nieuw = new Set(vorig); if (nieuw.has(id)) nieuw.delete(id); else nieuw.add(id); return nieuw; });
-  return <AtelierInhoud.Provider value={true}><div className={`ia-at-v49 rail-${plaats}${licht ? ' light' : ''}${compact ? ' rail-compact' : ''}${navStijl === 'pills' ? ' rail-pills' : ''}${zijbalk.icoonStijl === 'kleur' ? ' demo-colorful-icons' : ''}`}>
+  return <AtelierInhoud.Provider value={true}><div className={`ia-at-v49 rail-${plaats}${licht ? ' light' : ''}${compact ? ' rail-compact' : ''}${navStijl === 'pills' ? ' rail-pills' : ''}${mobielOpen ? ' mobiel-open' : ''}${zijbalk.icoonStijl === 'kleur' ? ' demo-colorful-icons' : ''}`}>
     <main className='main-content'>
       <header className='topbar'><div className='breadcrumbs'><span className='breadcrumb-dot'/>
         <span>{vertaal(lang, 'Мій простір', 'Mijn Ruimte')}</span><span className='slash'>/</span>
         <strong>{vertaal(lang, 'Налаштування', 'Instellingen')}</strong></div>
         <div className='top-actions'><span className='concept-pill'><span/>{vertaal(lang, 'Чинні налаштування', 'Bestaande instellingen')}</span>
+          <button type='button' className='ia-at-mobiel-menu' aria-label={vertaal(lang, 'Розділи сторінки', 'Paginaonderdelen')} aria-controls='ia-at-mobiel-navigatie' aria-expanded={mobielOpen} onClick={() => setMobielOpen(v => !v)}><Menu size={18}/><span>{vertaal(lang, 'Розділи', 'Onderdelen')}</span></button>
           <button type='button' className='search-action' onClick={() => setZoekOpen(true)}><Search size={15}/>
             <span>{vertaal(lang, 'Швидкий перехід', 'Snel navigeren')}</span><kbd>Ctrl K</kbd></button></div>
       </header>
@@ -142,10 +149,11 @@ export function IdentiteitAtelierV49({ lang, actief, inBeeld, secties, onKies }:
           <button type='button' className='to-top' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>{vertaal(lang, 'Повернутися вгору', 'Terug naar boven')} ↑</button></footer>
       </div>
     </main>
-    <nav className='anchor-rail ia-at-nav' aria-label={vertaal(lang, 'Навігація за розділами', 'Navigatie per onderdeel')}>
-      <div className='rail-title'><div className='rail-title-left'><button id='railExpand' type='button' className='rail-mark rail-expand' aria-pressed={compact} onClick={() => setCompact(v => !v)} aria-label={vertaal(lang, 'Згорнути меню', 'Navigatie inklappen')}><Menu size={20}/></button>
+    {mobielOpen && mobiel && <button type='button' className='ia-at-mobiel-achtergrond' aria-label={vertaal(lang, 'Закрити навігацію', 'Navigatie sluiten')} onClick={() => setMobielOpen(false)}/>}
+    <nav id='ia-at-mobiel-navigatie' className='anchor-rail ia-at-nav' inert={mobiel && !mobielOpen} aria-label={vertaal(lang, 'Навігація за розділами', 'Navigatie per onderdeel')}>
+      <div className='rail-title'><div className='rail-title-left'><button id='railExpand' type='button' className='rail-mark rail-expand' aria-pressed={mobiel ? mobielOpen : compact} onClick={() => mobiel ? setMobielOpen(false) : setCompact(v => !v)} aria-label={mobiel ? vertaal(lang, 'Закрити навігацію', 'Navigatie sluiten') : vertaal(lang, 'Згорнути меню', 'Navigatie inklappen')}>{mobiel ? <X size={20}/> : <Menu size={20}/>}</button>
         {!compact && <div><strong>{vertaal(lang, 'НАВІГАЦІЯ', 'NAVIGATIE')}</strong><small>{vertaal(lang, 'Розділи сторінки', 'Paginaonderdelen')}</small></div>}</div>
-        <button id='railConfig' type='button' className='rail-config' onClick={() => setInstellingen(v => !v)} aria-label={vertaal(lang, 'Розташування меню', 'Navigatiepositie')}><Settings2 size={18}/></button></div>
+        <button id='railConfig' type='button' className='rail-config' onClick={() => { setMobielOpen(false); setInstellingen(v => !v); }} aria-label={vertaal(lang, 'Розташування меню', 'Navigatiepositie')}><Settings2 size={18}/></button></div>
       <div className='rail-items'>{groepen.map(groep => <div className={`nav-group${navGroepen.has(groep.id) ? ' nav-group-open' : ''}`} key={groep.id}>
         <button type='button' className='nav-group-toggle' data-nav-group-toggle={groep.id} aria-expanded={navGroepen.has(groep.id)} onClick={() => wisselGroep(groep.id)}>
           <span className='anchor-icon'><LayoutGrid size={18}/></span><span className='nav-group-name'>{lang === 'uk' ? groep.ukNav : groep.nlNav}</span><ChevronRight className='nav-chevron' size={14}/></button>
