@@ -1,4 +1,6 @@
-// Точкові правки двигуна «Макет» після збирання: гнізда справжніх панелей, зв'язок із сайтом, прибирання, пороги ширини.
+// Точкові правки двигуна «Макет» після збирання: макет один в один, плюс стик із сайтом — справжні панелі в згортаному блоці
+// «Чинні налаштування», смуга сервісів веде на справжні сервіси, адресу змінює застосунок, прибирання слухачів, пороги ширини.
+// De puntsgewijze aanpassingen van de motor: het ontwerp één op één, plus de aansluiting op de site.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,31 +17,30 @@ v(`  // Version 32 stored icons as an exclusive style. Migrate without losing th
   preferences.theme=opties.licht?"light":"dark";
   // Version 32 stored icons as an exclusive style. Migrate without losing the`);
 
-// 2. Справжні панелі замість демонстраційних елементів: гніздо .mq-echt у картці (розділи 1–5 та «Ідентичності») і у вкладеній панелі.
+// 2. Елементи макета лишаються один в один; під ними — згортаний блок «Чинні налаштування» з гніздом .mq-echt, у яке застосунок
+//    монтує справжню панель розділу (чинні дії й права). Відкриті блоки пам'ятаємо, бо картки перемальовуються рядком HTML.
 v(`  function directSettings(s){
-    if(!directSettingsSections.has(s.id))return "";
-    return '<div class="direct-settings" role="group" aria-label="'+s.name+'">'+
-      locales[preferences.lang].panels[s.id].map((control,i)=>drawerControl(control,i,s.id)).join("")+
-      '</div>';
-  }`,
-`  // САЙТ: замість демонстраційних елементів макета — гніздо, у яке застосунок монтує справжню панель розділу з чинними діями й правами.
+    if(!directSettingsSections.has(s.id))return "";`,
+`  // САЙТ: блок справжніх налаштувань у стилі «Можливостей для доопрацювання» макета; гніздо .mq-echt заповнює застосунок.
+  const openeЧинні=new Set();
+  function tekenЧинні(id){
+    const nl=preferences.lang==="nl";
+    const kop=nl?"Huidige instellingen":"Чинні налаштування";
+    const uitleg=nl?"De echte instellingen van uw account: wijzigingen hier gelden meteen en volgen uw rechten.":"Справжні налаштування вашого облікового запису: зміни тут діють одразу й за вашими правами.";
+    return '<details class="future-section mq-echt-blok" data-echt-blok="'+id+'"'+(openeЧинні.has(id)?' open':'')+'>'+
+      '<summary class="future-section-head"><span class="future-section-flower" aria-hidden="true">⚙</span><div class="future-section-copy"><strong>'+kop+'</strong><p>'+uitleg+'</p></div><span class="future-section-chevron" aria-hidden="true">'+chevronIcon+'</span></summary>'+
+      '<div class="future-section-content"><div class="mq-echt" data-echt="'+id+'"></div></div></details>';
+  }
   function directSettings(s){
-    if(!directSettingsSections.has(s.id))return "";
-    return '<div class="direct-settings mq-direct" role="group" aria-label="'+s.name+'"><div class="mq-echt" data-echt="'+s.id+'"></div></div>';
-  }`);
-v(`    panel.innerHTML=
-      '<div class="inline-settings-header">`,
-`    if(panel.querySelector('.mq-echt')){оновитиФотоПрофілю();return;} // САЙТ: гніздо справжньої панелі будуємо один раз, щоб не втрачати змонтовану форму
-    panel.innerHTML=
-      '<div class="inline-settings-header">`);
-v(`      '<div class="inline-settings-workspace '+(visualPreview?'has-preview':'no-preview')+'">'+
-        '<div class="inline-settings-controls"><div class="drawer-controls-list">'+locales[preferences.lang].panels[id].map((control,i)=>drawerControl(control,i,id)).join("")+'</div></div>'+
-        (visualPreview?'<aside class="inline-live-panel" aria-label="'+t.previewSample+'"><div class="inline-preview-body">'+drawerPreview(s)+'</div></aside>':'')+
-      '</div>'+tekenМайбутніМожливості(id);`,
-`      '<div class="inline-settings-workspace no-preview">'+
-        '<div class="inline-settings-controls"><div class="mq-echt" data-echt="'+id+'"></div></div>'+
-      '</div>'+tekenМайбутніМожливості(id);
-    void visualPreview;`);
+    if(!directSettingsSections.has(s.id))return "";`);
+v(`      directSettings(s)+
+      (!expandable?tekenМайбутніМожливості(s.id):'')+`,
+`      directSettings(s)+
+      (!expandable?tekenЧинні(s.id)+tekenМайбутніМожливості(s.id):'')+ // САЙТ: справжня панель під елементами макета`);
+v(`      '</div>'+tekenМайбутніМожливості(id);
+    if(selectedInlineOptions.has(id))markInlineOption(id,selectedInlineOptions.get(id),false);`,
+`      '</div>'+tekenЧинні(id)+tekenМайбутніМожливості(id); // САЙТ: справжня панель під елементами макета
+    if(selectedInlineOptions.has(id))markInlineOption(id,selectedInlineOptions.get(id),false);`);
 v(`    if(newlyOpened){panel.hidden=false;renderInlinePanel(id);requestAnimationFrame(()=>panel.classList.add('entered'));}`,
 `    if(newlyOpened){panel.hidden=false;renderInlinePanel(id);opties.bijOpenen(id);requestAnimationFrame(()=>panel.classList.add('entered'));}`);
 
@@ -50,15 +51,27 @@ v(`  function jump(id){
     if(!stil&&sections.some(s=>s.id===id))opties.bijKies(id); // САЙТ: адресу сторінки змінює застосунок
     closeHorizontalNavMenu();`);
 
-// 4. Вибір файла світлини — лише в макеті; на сайті світлину змінюють у розділі «Акаунт».
+// 4. Діалог світлини: вибору файла немає (світлина — з облікового запису); кнопки ведуть до розділу «Акаунт» і до меню облікового запису сайту.
 v(`  byId("profilePhotoFile").addEventListener("change",подія=>{`, `  byId("profilePhotoFile")?.addEventListener("change",подія=>{`);
 v(`    byId("profilePhotoPickLabel").textContent=перекладПрофілю("Обрати свою світлину для макета","Eigen foto voor het ontwerp kiezen");`,
-`    { const вибір=byId("profilePhotoPickLabel"); if(вибір)вибір.textContent=перекладПрофілю("Обрати свою світлину для макета","Eigen foto voor het ontwerp kiezen"); } // САЙТ: вибору файла немає`);
+`    byId("profilePhotoPickLabel").textContent=перекладПрофілю("Змінити світлину — розділ «Акаунт»","Foto wijzigen — onderdeel «Account»"); // САЙТ
+    byId("profilePhotoAccount").textContent=перекладПрофілю("Обліковий запис, інші акаунти, вихід","Account, andere accounts, afmelden");`);
+v(`    if(подія.target.closest("[data-close-profile-photo]")||подія.target===діалог)діалог.close();
+  });`,
+`    if(подія.target.closest("[data-close-profile-photo]")||подія.target===діалог)діалог.close();
+    // САЙТ: дії діалогу світлини — справжній розділ «Акаунт» або меню облікового запису сайту.
+    const actie=подія.target.closest("[data-echt-actie]")?.dataset.echtActie;
+    if(actie){діалог.close();if(actie==="account-foto")gaNaar("account",true);else if(actie==="account-menu")opties.bijAccountMenu();}
+  });`);
 
-// 4б. Лівої смуги сервісів макета на сайті немає (її роль виконує бічне меню сайту).
-v(`    root.querySelector(".app-rail").setAttribute("aria-label",t.workspace);
-    root.querySelector(".brand-mark").setAttribute("aria-label",t.workspace);`,
-`    // САЙТ: смуги сервісів і знака макета немає — їх замінює бічне меню сайту.`);
+// 4б. Смуга сервісів макета веде на справжні сервіси сайту (у макеті показувала лише підказку «переходи не підключені»).
+v(`  root.querySelectorAll(".app-icon:not(.theme-button)").forEach(el=>el.addEventListener("click",()=>{
+    showToast(ui().navDemoToast);
+  }));`,
+`  root.querySelectorAll(".app-icon:not(.theme-button)").forEach(el=>el.addEventListener("click",()=>{
+    // САЙТ: активна кнопка (Налаштування) веде вгору сторінки, решта — до справжніх сервісів через застосунок.
+    if(el.classList.contains("active")||!el.dataset.dienst)jump("intro");else opties.bijDienst(el.dataset.dienst);
+  }));`);
 
 // 4в. Ctrl+K усередині вигляду відкриває пошук розділів макета, а не глобальний пошук сайту (сайт слухає ту саму комбінацію на document):
 //     слухаємо на window у фазі перехоплення і зупиняємо подальшу обробку лише для Ctrl/⌘+K.
@@ -73,37 +86,61 @@ v(`      if(e.target.closest('.section-inline-settings'))closeInlineSettings(e.t
     }
   },true);`);
 
-// 5. Спостерігачі й таймери прибираються разом із компонентом.
+// 5. Спостерігачі й таймери прибираються разом із компонентом; пороги ширини та зсуви закріплених елементів.
 v(`  if(typeof ResizeObserver!=="undefined")new ResizeObserver(()=>requestAnimationFrame(updatePillDimensions)).observe(byId("anchorRail"));`,
 `  if(typeof ResizeObserver!=="undefined"){const ro=new ResizeObserver(()=>requestAnimationFrame(updatePillDimensions));ro.observe(byId("anchorRail"));luisteraars.push(()=>ro.disconnect());}
-  // САЙТ: пороги ширини макета (@media) переведено на класи кореня за шириною робочої області, бо бічне меню сайту забирає ширину вікна.
-  // Зсуви закріплених елементів: бічне меню сайту (--mq-links), командна смуга сайту (--mq-site) і верхня планка макета (--mq-boven).
+  // САЙТ: пороги ширини макета (@media) переведено на класи кореня за шириною робочої області (не вікна).
+  // Зсуви закріплених елементів: смуга сервісів макета плюс відступ робочої області сайту (--mq-links), верхні відступи (--mq-site, --mq-boven).
   const DREMPELS=${JSON.stringify(drempels)};
   function zetMaten(){
     const b=breed();
     for(const n of DREMPELS){root.classList.toggle("bp-max-"+n,b<=n);root.classList.toggle("bp-min-"+n,b>=n);}
     const stijl=werkvlak?getComputedStyle(werkvlak):null;
     const maat=n=>stijl?parseFloat(stijl[n])||0:0;
-    const links=maat("paddingLeft"), site=maat("paddingTop");
+    const rail=root.querySelector(".app-rail");
+    const railBreed=rail&&getComputedStyle(rail).display!=="none"?rail.offsetWidth:0;
+    const links=maat("paddingLeft")+railBreed, site=maat("paddingTop");
     const planck=root.querySelector(".topbar")?.offsetHeight||0;
     root.style.setProperty("--mq-links",links+"px");
+    root.style.setProperty("--mq-site-links",maat("paddingLeft")+"px");
     root.style.setProperty("--mq-rechts",maat("paddingRight")+"px");
     root.style.setProperty("--mq-onder",maat("paddingBottom")+"px");
     root.style.setProperty("--mq-site",site+"px");
     root.style.setProperty("--mq-boven",(site+planck)+"px");
+    if(rail)rail.style.left=maat("paddingLeft")+"px";
   }
   zetMaten();
   if(typeof ResizeObserver!=="undefined"){const ro2=new ResizeObserver(()=>{zetMaten();requestAnimationFrame(updatePillDimensions);});ro2.observe(root);luisteraars.push(()=>ro2.disconnect());}
-  luisteraars.push(()=>{cancelRailAutoCollapse();clearTimeout(showToast.timer);});`);
+  luisteraars.push(()=>{cancelRailAutoCollapse();clearTimeout(showToast.timer);});
+  // САЙТ: відкриті блоки «Чинні налаштування» пам'ятаємо між перемальовуваннями; відкриття монтує справжню панель.
+  luister(root,"toggle",e=>{
+    const blok=e.target;
+    if(!(blok instanceof HTMLElement)||!blok.classList.contains("mq-echt-blok"))return;
+    const id=blok.dataset.echtBlok;
+    if(blok.open){openeЧинні.add(id);opties.bijOpenen(id);}else openeЧинні.delete(id);
+  },true);`);
 v(`  },{threshold:.06,rootMargin:"0px 0px 40px 0px"});
   renderAll();`,
 `  },{threshold:.06,rootMargin:"0px 0px 40px 0px"});
   luisteraars.push(()=>revealObserver.disconnect());
   renderAll();
   zetMaten();`);
+// Перехід від застосунку (адреса, меню облікового запису): показати розділ і розгорнути його справжні налаштування.
 v(`    ga(id, open) { jump(id); if (open) openInlineSettings(id); },`,
-`    ga(id, open) { if (open && !directSettingsSections.has(id)) openInlineSettings(id); jump(id, true); },
+`    ga(id, open) { gaNaar(id, open); },
     direct: [...directSettingsSections],`);
+v(`  function jump(id,stil=false){`,
+`  function gaNaar(id,open){
+    if(!sections.some(s=>s.id===id)){jump(id,true);return;}
+    if(open){
+      openeЧинні.add(id);
+      if(!directSettingsSections.has(id))openInlineSettings(id);
+      const blok=root.querySelector('.mq-echt-blok[data-echt-blok="'+id+'"]');
+      if(blok&&!blok.open)blok.open=true;
+    }
+    jump(id,true);
+  }
+  function jump(id,stil=false){`);
 v(`export type Maquette = { stop: () => void; ga: (id: string, open?: boolean) => void;`, `export type Maquette = { stop: () => void; direct: string[]; ga: (id: string, open?: boolean) => void;`);
 
 // 6. Після кожного перемальовування карток застосунок знову знаходить гнізда (картки будуються заново рядком HTML).
@@ -120,9 +157,13 @@ v(`    оновитиФотоПрофілю();
   function setPosition(position){`);
 v(`  /** Розділ розгорнуто: сайт монтує справжню панель у гніздо. */
   bijOpenen: (id: string) => void;`,
-`  /** Розділ розгорнуто: сайт монтує справжню панель у гніздо. */
+`  /** Розділ або блок «Чинні налаштування» розгорнуто: сайт монтує справжню панель у гніздо. */
   bijOpenen: (id: string) => void;
   /** Картки перемальовано (мова, повторне малювання): гнізда .mq-echt створено заново. */
-  bijRender: () => void;`);
+  bijRender: () => void;
+  /** Кнопка смуги сервісів: перехід до справжнього сервісу сайту (hub, ai, mail, cloud, github). */
+  bijDienst: (id: string) => void;
+  /** Діалог світлини: відкрити меню облікового запису сайту (інші акаунти, вихід). */
+  bijAccountMenu: () => void;`);
 fs.writeFileSync(f, s);
 console.log('ok');

@@ -1,5 +1,5 @@
 // Перетворює styles.css макета ChatGPT на стилі, вкладені в .mr-mq (простір імен сайту).
-// body → .mr-mq; :root → .mr-mq; @media (max/min-width) → класи bp-max-N / bp-min-N на корені (ширина робочої області, не вікна).
+// body → .mr-mq; :root → .mr-mq; @media (max/min-width) → :where(.bp-max-N / .bp-min-N) на корені (ширина робочої області, не вікна), без зайвої специфічності.
 import postcss from 'postcss';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,7 +13,9 @@ const UIT = path.join(WORTEL, 'src/identiteit/maquette/') + 'maquette-stijlen.cs
 // і правило оболонки «.canonical-chrome button:not(…)×3{transition:none!important}» (0,4,1), яке вимикає анімації кнопок.
 const PREFIX = '.mr-mq.mr-mq.mr-mq.mr-mq';
 const LICHAAM = new Set(['light','rail-left','rail-right','rail-top','rail-bottom','rail-pills','rail-icons','rail-compact','rail-mode-auto','rail-smart-condensed','rail-smart-open','dragging-rail','drawer-open','demo-colorful-icons','demo-dense','demo-motion-off','demo-widgets-hidden','demo-widgets-large','demo-technical-identity','demo-hide-identity-badge']);
-const ECHT = ':not(.mq-echt *)'; // справжні панелі сайту всередині макета не отримують його глобальних правил для svg/button/input
+// Справжні панелі сайту всередині макета не отримують його глобальних правил для svg/button/input; :where() не додає специфічності,
+// інакше елементне правило (button) переважало б класові правила самого макета (.primary-button).
+const ECHT = ':where(:not(.mq-echt *))';
 const drempels = new Set();
 
 function splitsCompound(sel) {
@@ -37,8 +39,7 @@ function herschrijf(sel, bpPrefix) {
   sel = sel.trim();
   if (!sel) return null;
   if (/^html\b/.test(sel)) return null;
-  if (/^(\.app-rail(-[a-z]+)?|\.app-shell|\.app-icon|\.brand-mark)\b/.test(sel) && !sel.includes(' ')) return null;
-  if (sel === '.main-content') return null;
+  // Смуга сервісів (.app-rail), знак і .main-content лишаються: оболонка макета один в один; зсув 74px стає var(--mq-links) нижче.
   if (sel === ':root') return PREFIX + bpPrefix;
   if (/^body\b/.test(sel)) return PREFIX + bpPrefix + sel.slice(4);
   if (sel.startsWith('*')) return PREFIX + bpPrefix + ' ' + sel + ECHT;
@@ -59,10 +60,11 @@ function mediaNaarKlassen(params) {
   if (!delen.length) return null;
   const overig = params.replace(/\((max|min)-width\s*:\s*\d+px\)/g, '').replace(/\band\b/g, '').trim();
   if (overig) throw new Error('Невідомий медіазапит: ' + params);
-  return delen.map(([, soort, n]) => { drempels.add(Number(n)); return `.bp-${soort}-${n}`; }).join('');
+  // :where() не додає специфічності: правила з @media зберігають ту саму вагу, що й в оригіналі (інакше пізніші правила макета програвали б).
+  return ':where(' + delen.map(([, soort, n]) => { drempels.add(Number(n)); return `.bp-${soort}-${n}`; }).join('') + ')';
 }
 
-/** true — правило лишається (селектори переписано); false — правило не стосується сайту (лівa смуга, html, .main-content). */
+/** true — правило лишається (селектори переписано); false — правило не стосується сайту (html). */
 function verwerkRegel(regel, bpPrefix) {
   const nieuw = regel.selectors.map(s => herschrijf(s, bpPrefix)).filter(Boolean);
   if (!nieuw.length) return false;
@@ -113,14 +115,18 @@ for (const node of [...wortel.nodes]) {
       }
       continue;
     }
-    uitvoer.append(node.clone()); // @keyframes, @supports, @property…
+    // @keyframes/@property/@font-face — без змін; @container/@supports/@layer містять звичайні правила, які теж вкладаємо під .mr-mq
+    // (інакше вони лишалися б без префікса й програвали власним правилам макета, напр. картка в один стовпчик у вузькому контейнері).
+    const k = node.clone();
+    if (!/keyframes$|^property$|^font-face$/.test(node.name)) k.walkRules(r => { if (!verwerkRegel(r, '')) r.remove(); });
+    uitvoer.append(k);
   }
 }
 const kop = `/* Стилі вигляду «Макет» центру облікового запису (IDENTITEIT-007). ЗГЕНЕРОВАНО з styles.css макета власника (ChatGPT, 2026-11-06)
    скриптом перетворення; не редагуйте вручну — зміни робіть у src/identiteit/maquette/maquette-omlijsting.css.
-   Правила: body → ${PREFIX}; @media (max/min-width:N) → класи .bp-max-N/.bp-min-N, які двигун виставляє за шириною робочої області
+   Правила: body → ${PREFIX}; @media (max/min-width:N) → :where(.bp-max-N.bp-min-N) — класи, які двигун виставляє за шириною робочої області
    (не вікна: бічне меню сайту забирає ширину). Потрійний клас перемагає правило flat-content оболонки сайту (0,3,0), яке знімає радіуси й тіні.
-   Зсуви: --mq-links (бічне меню сайту), --mq-site (командна смуга сайту), --mq-boven (смуга сайту + верхня планка макета). */
+   Зсуви: --mq-links (смуга сервісів макета + відступ робочої області), --mq-site (верхній відступ робочої області), --mq-boven (відступ + верхня планка макета). */
 `;
 fs.writeFileSync(UIT, kop + uitvoer.toString().replace(/\n{3,}/g, '\n\n'));
 fs.writeFileSync(UIT.replace(/\.css$/, '-drempels.json'), JSON.stringify([...drempels].sort((a, b) => a - b)));

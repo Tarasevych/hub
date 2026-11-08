@@ -6,6 +6,9 @@ import { useVlag } from '../functievlag-lezen';
 /** Прапорець вигляду «Макет» (IDENTITEIT-007). Zonder deze vlag blijven alleen de Studio en de klassieke weergave over. */
 export const VLAG_MAQUETTE = 'identiteit-account-maquette';
 
+/** Подія вікна від вигляду «Макет»: кнопка смуги сервісів просить застосунок перейти до сервісу сайту (detail — id пункту меню). */
+export const GA_NAAR_DIENST = 'mijn-ruimte:ga-naar-dienst';
+
 export type Vormgeving = 'maquette' | 'studio' | 'klassiek';
 
 /** Volgorde in de kiezer: eerst het ontwerp van de eigenaar (standaard), dan de Studio, dan de klassieke lange pagina. */

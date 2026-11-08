@@ -279,6 +279,10 @@
    "reden": "IDENTITEIT-007: тонка смуга поступу прокрутки макета під командною смугою сайту (top:var(--mq-site)); не кнопка."
   },
   {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .app-rail",
+   "reden": "IDENTITEIT-007: смуга сервісів макета власника (знак «Мій простір», шість сервісів, аватар) уздовж лівого краю на всю висоту, як у макеті; оболонка сайту на час вигляду схована, на телефоні (≤730) смуга прихована."
+  },
+  {
    "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .anchor-rail",
    "reden": "IDENTITEIT-007: якірне меню макета, яке користувач закріплює ліворуч/праворуч/згори/знизу (перетягуванням або у вікні навігації); зсуви від бічного меню сайту через --mq-links/--mq-boven."
   },

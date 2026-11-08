@@ -11,10 +11,14 @@ export type MaquetteOpties = {
   profiel: { bevestigd: boolean; naam: string; foto: string } | null;
   /** Перехід до розділу користувачем (адресу змінює застосунок). */
   bijKies: (id: string) => void;
-  /** Розділ розгорнуто: сайт монтує справжню панель у гніздо. */
+  /** Розділ або блок «Чинні налаштування» розгорнуто: сайт монтує справжню панель у гніздо. */
   bijOpenen: (id: string) => void;
   /** Картки перемальовано (мова, повторне малювання): гнізда .mq-echt створено заново. */
   bijRender: () => void;
+  /** Кнопка смуги сервісів: перехід до справжнього сервісу сайту (hub, ai, mail, cloud, github). */
+  bijDienst: (id: string) => void;
+  /** Діалог світлини: відкрити меню облікового запису сайту (інші акаунти, вихід). */
+  bijAccountMenu: () => void;
 };
 export type Maquette = { stop: () => void; direct: string[]; ga: (id: string, open?: boolean) => void; zetLicht: (licht: boolean) => void; zetProfiel: (p: MaquetteOpties['profiel']) => void };
 
@@ -338,7 +342,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     пояснення.textContent=текст[мова==="nl"?3:2];
     byId("profilePhotoEyebrow").textContent=перекладПрофілю("ОБЛІКОВИЙ ЗАПИС","ACCOUNT");
     byId("profilePhotoTitle").textContent=перекладПрофілю("Справжня світлина профілю","Echte profielfoto");
-    { const вибір=byId("profilePhotoPickLabel"); if(вибір)вибір.textContent=перекладПрофілю("Обрати свою світлину для макета","Eigen foto voor het ontwerp kiezen"); } // САЙТ: вибору файла немає
+    byId("profilePhotoPickLabel").textContent=перекладПрофілю("Змінити світлину — розділ «Акаунт»","Foto wijzigen — onderdeel «Account»"); // САЙТ
+    byId("profilePhotoAccount").textContent=перекладПрофілю("Обліковий запис, інші акаунти, вихід","Account, andere accounts, afmelden");
     root.querySelector("[data-close-profile-photo]")?.setAttribute("aria-label",перекладПрофілю("Закрити","Sluiten"));
   }
 
@@ -349,6 +354,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       if(!діалог.open)діалог.showModal();
     }
     if(подія.target.closest("[data-close-profile-photo]")||подія.target===діалог)діалог.close();
+    // САЙТ: дії діалогу світлини — справжній розділ «Акаунт» або меню облікового запису сайту.
+    const actie=подія.target.closest("[data-echt-actie]")?.dataset.echtActie;
+    if(actie){діалог.close();if(actie==="account-foto")gaNaar("account",true);else if(actie==="account-menu")opties.bijAccountMenu();}
   });
   byId("profilePhotoFile")?.addEventListener("change",подія=>{
     const файл=подія.target.files?.[0];
@@ -1066,13 +1074,12 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const panel=byId("inline-"+id);
     if(!panel)return;
     const visualPreview=visualPreviewSections.has(id);
-    if(panel.querySelector('.mq-echt')){оновитиФотоПрофілю();return;} // САЙТ: гніздо справжньої панелі будуємо один раз, щоб не втрачати змонтовану форму
     panel.innerHTML=
       '<div class="inline-settings-header"><div class="inline-settings-identity"><span class="inline-settings-section-icon'+(id==='identities'?' profile-avatar':'')+'"'+(id==='identities'?' data-profile-photo':'')+'>'+(id==='identities'?'':iconSvg(id))+'</span><div><span class="inline-settings-eyebrow">'+t.inlineEyebrow+'</span><h3>'+s.name+'</h3></div></div><button class="inline-close-button" data-close-inline="'+id+'" aria-label="'+t.collapseSection+'">'+t.collapseSection+' <span>⌃</span></button></div>'+
-      '<div class="inline-settings-workspace no-preview">'+
-        '<div class="inline-settings-controls"><div class="mq-echt" data-echt="'+id+'"></div></div>'+
-      '</div>'+tekenМайбутніМожливості(id);
-    void visualPreview;
+      '<div class="inline-settings-workspace '+(visualPreview?'has-preview':'no-preview')+'">'+
+        '<div class="inline-settings-controls"><div class="drawer-controls-list">'+locales[preferences.lang].panels[id].map((control,i)=>drawerControl(control,i,id)).join("")+'</div></div>'+
+        (visualPreview?'<aside class="inline-live-panel" aria-label="'+t.previewSample+'"><div class="inline-preview-body">'+drawerPreview(s)+'</div></aside>':'')+
+      '</div>'+tekenЧинні(id)+tekenМайбутніМожливості(id); // САЙТ: справжня панель під елементами макета
     if(selectedInlineOptions.has(id))markInlineOption(id,selectedInlineOptions.get(id),false);
     оновитиФотоПрофілю();
   }
@@ -1504,10 +1511,21 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   // The rail gear remains the single home for positioning and menu style.
   // Уже оформлені швидкі налаштування завжди залишаються на своїх місцях.
   const directSettingsSections=new Set(["personalization","menu","themes","languages","widgets","identities"]);
-  // САЙТ: замість демонстраційних елементів макета — гніздо, у яке застосунок монтує справжню панель розділу з чинними діями й правами.
+  // САЙТ: блок справжніх налаштувань у стилі «Можливостей для доопрацювання» макета; гніздо .mq-echt заповнює застосунок.
+  const openeЧинні=new Set();
+  function tekenЧинні(id){
+    const nl=preferences.lang==="nl";
+    const kop=nl?"Huidige instellingen":"Чинні налаштування";
+    const uitleg=nl?"De echte instellingen van uw account: wijzigingen hier gelden meteen en volgen uw rechten.":"Справжні налаштування вашого облікового запису: зміни тут діють одразу й за вашими правами.";
+    return '<details class="future-section mq-echt-blok" data-echt-blok="'+id+'"'+(openeЧинні.has(id)?' open':'')+'>'+
+      '<summary class="future-section-head"><span class="future-section-flower" aria-hidden="true">⚙</span><div class="future-section-copy"><strong>'+kop+'</strong><p>'+uitleg+'</p></div><span class="future-section-chevron" aria-hidden="true">'+chevronIcon+'</span></summary>'+
+      '<div class="future-section-content"><div class="mq-echt" data-echt="'+id+'"></div></div></details>';
+  }
   function directSettings(s){
     if(!directSettingsSections.has(s.id))return "";
-    return '<div class="direct-settings mq-direct" role="group" aria-label="'+s.name+'"><div class="mq-echt" data-echt="'+s.id+'"></div></div>';
+    return '<div class="direct-settings" role="group" aria-label="'+s.name+'">'+
+      locales[preferences.lang].panels[s.id].map((control,i)=>drawerControl(control,i,s.id)).join("")+
+      '</div>';
   }
 
   function renderCard(s){
@@ -1523,7 +1541,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         visual(s.art) +
       '</div>' +
       directSettings(s)+
-      (!expandable?tekenМайбутніМожливості(s.id):'')+
+      (!expandable?tekenЧинні(s.id)+tekenМайбутніМожливості(s.id):'')+ // САЙТ: справжня панель під елементами макета
       (expandable?'<div id="inline-'+s.id+'" class="section-inline-settings" data-inline-section="'+s.id+'" role="region" aria-label="'+s.name+'" hidden></div>':'')+
       '</section>';
   }
@@ -1582,7 +1600,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     byId("railConfig").title=t.navPlacement;
     syncRailCompactButton();
     byId("closeNavSettings").setAttribute("aria-label",t.drawerDone);
-    // САЙТ: смуги сервісів і знака макета немає — їх замінює бічне меню сайту.
+    root.querySelector(".app-rail").setAttribute("aria-label",t.workspace);
+    root.querySelector(".brand-mark").setAttribute("aria-label",t.workspace);
     root.querySelector(".top-avatar").setAttribute("aria-label",preferences.lang==="nl"?"Echte profielfoto bekijken":"Переглянути справжню світлину профілю");
     root.querySelectorAll(".app-icon:not(.theme-button)").forEach((el,i)=>{
       const titles=preferences.lang==="nl"?["Instellingen","Mijn Ruimte","AI voor jou","Mail","Cloudopslag","GitHub"]:["Налаштування","Мій простір","ШІ для вас","Пошта","Хмарне сховище","GitHub"];
@@ -1736,6 +1755,16 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     el.classList.add("show");
     clearTimeout(showToast.timer);
     showToast.timer=setTimeout(()=>el.classList.remove("show"),3600);
+  }
+  function gaNaar(id,open){
+    if(!sections.some(s=>s.id===id)){jump(id,true);return;}
+    if(open){
+      openeЧинні.add(id);
+      if(!directSettingsSections.has(id))openInlineSettings(id);
+      const blok=root.querySelector('.mq-echt-blok[data-echt-blok="'+id+'"]');
+      if(blok&&!blok.open)blok.open=true;
+    }
+    jump(id,true);
   }
   function jump(id,stil=false){
     if(!stil&&sections.some(s=>s.id===id))opties.bijKies(id); // САЙТ: адресу сторінки змінює застосунок
@@ -1896,25 +1925,36 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   luister(doc,"pointercancel",()=>{edgeSwipeStart=null;},{passive:true});
   luister(window,"resize",()=>requestAnimationFrame(updatePillDimensions));
   if(typeof ResizeObserver!=="undefined"){const ro=new ResizeObserver(()=>requestAnimationFrame(updatePillDimensions));ro.observe(byId("anchorRail"));luisteraars.push(()=>ro.disconnect());}
-  // САЙТ: пороги ширини макета (@media) переведено на класи кореня за шириною робочої області, бо бічне меню сайту забирає ширину вікна.
-  // Зсуви закріплених елементів: бічне меню сайту (--mq-links), командна смуга сайту (--mq-site) і верхня планка макета (--mq-boven).
+  // САЙТ: пороги ширини макета (@media) переведено на класи кореня за шириною робочої області (не вікна).
+  // Зсуви закріплених елементів: смуга сервісів макета плюс відступ робочої області сайту (--mq-links), верхні відступи (--mq-site, --mq-boven).
   const DREMPELS=[400,420,430,440,500,600,650,720,730,731,810,900,1000,1040,1120,1150,1250,1280];
   function zetMaten(){
     const b=breed();
     for(const n of DREMPELS){root.classList.toggle("bp-max-"+n,b<=n);root.classList.toggle("bp-min-"+n,b>=n);}
     const stijl=werkvlak?getComputedStyle(werkvlak):null;
     const maat=n=>stijl?parseFloat(stijl[n])||0:0;
-    const links=maat("paddingLeft"), site=maat("paddingTop");
+    const rail=root.querySelector(".app-rail");
+    const railBreed=rail&&getComputedStyle(rail).display!=="none"?rail.offsetWidth:0;
+    const links=maat("paddingLeft")+railBreed, site=maat("paddingTop");
     const planck=root.querySelector(".topbar")?.offsetHeight||0;
     root.style.setProperty("--mq-links",links+"px");
+    root.style.setProperty("--mq-site-links",maat("paddingLeft")+"px");
     root.style.setProperty("--mq-rechts",maat("paddingRight")+"px");
     root.style.setProperty("--mq-onder",maat("paddingBottom")+"px");
     root.style.setProperty("--mq-site",site+"px");
     root.style.setProperty("--mq-boven",(site+planck)+"px");
+    if(rail)rail.style.left=maat("paddingLeft")+"px";
   }
   zetMaten();
   if(typeof ResizeObserver!=="undefined"){const ro2=new ResizeObserver(()=>{zetMaten();requestAnimationFrame(updatePillDimensions);});ro2.observe(root);luisteraars.push(()=>ro2.disconnect());}
   luisteraars.push(()=>{cancelRailAutoCollapse();clearTimeout(showToast.timer);});
+  // САЙТ: відкриті блоки «Чинні налаштування» пам'ятаємо між перемальовуваннями; відкриття монтує справжню панель.
+  luister(root,"toggle",e=>{
+    const blok=e.target;
+    if(!(blok instanceof HTMLElement)||!blok.classList.contains("mq-echt-blok"))return;
+    const id=blok.dataset.echtBlok;
+    if(blok.open){openeЧинні.add(id);opties.bijOpenen(id);}else openeЧинні.delete(id);
+  },true);
 
   const popover=byId("navSettings");
   function toggleNavSettings(){
@@ -2078,7 +2118,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     if(target.classList.contains("demo-action")){showToast(ui().demoToast);}
   });
   root.querySelectorAll(".app-icon:not(.theme-button)").forEach(el=>el.addEventListener("click",()=>{
-    showToast(ui().navDemoToast);
+    // САЙТ: активна кнопка (Налаштування) веде вгору сторінки, решта — до справжніх сервісів через застосунок.
+    if(el.classList.contains("active")||!el.dataset.dienst)jump("intro");else opties.bijDienst(el.dataset.dienst);
   }));
   byId("railItems").addEventListener("pointerover",e=>{
     const item=e.target.closest(".anchor-link,.nav-group-toggle");
@@ -2129,7 +2170,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
 
   return {
     stop() { for (const weg of luisteraars) weg(); },
-    ga(id, open) { if (open && !directSettingsSections.has(id)) openInlineSettings(id); jump(id, true); },
+    ga(id, open) { gaNaar(id, open); },
     direct: [...directSettingsSections],
     zetLicht(l) { setTheme(l ? 'light' : 'dark'); },
     zetProfiel(p) { прийнятиФотоПрофілю(p); },
