@@ -103,6 +103,15 @@
         "tests/eenheid/tech-bundels.test.ts",
         "scripts/tech-bundels-controle.mjs"
       ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "Встановлення випуску 20261109-075936 на сервері впало на міграції 0200_identiteit_account_maquette (з IDENTITEIT-007): опис прапорця довший за 300 знаків, CHECK із 0038. Встановлений випуск лишився незмінним. Тред IDENTITEIT-007 скоротив опис (286 знаків) і додав перевірку довжини описів у всіх міграціях (коміт aeee9e4c); його перенесено сюди cherry-pick, щоб вийшов один архів. До процесу випуску додано прогін усіх міграцій на чистій PostgreSQL 16 (двічі).",
+      "bewijzen": [
+        "migrations/0200_identiteit_account_maquette.sql",
+        "tests/eenheid/identiteit-maquette.test.ts",
+        ".github/workflows/perf-001-uitgave.yml"
+      ]
     }
   ],
   "keuzes": [
@@ -181,6 +190,14 @@
     {
       "pad": "shared/tech-bundels.ts",
       "omschrijving": "TECH_OPENBAAR: смуга інтеграцій, її прапорець і стилі лишаються публічними, хоч лежать у src/integraties/."
+    },
+    {
+      "pad": "migrations/0200_identiteit_account_maquette.sql",
+      "omschrijving": "Коміт треду IDENTITEIT-007: опис прапорця скорочено до 286 знаків (межа 300)."
+    },
+    {
+      "pad": ".github/workflows/perf-001-uitgave.yml",
+      "omschrijving": "Новий крок: усі міграції на чистій базі PostgreSQL 16, перший і повторний прогін."
     }
   ],
   "controles": [
@@ -194,7 +211,7 @@
     },
     {
       "opdracht": "node scripts/eenheidstests.mjs identiteit-maquette.test.ts / identiteit-atelier / identiteit-account-ui",
-      "uitkomst": "42/42, 36/36, 6/6"
+      "uitkomst": "44/44, 36/36, 6/6"
     },
     {
       "opdracht": "node scripts/eenheidstests.mjs mobiel-cascade-20261105 / mobiel-geometrie / plaatsing-20261025",
@@ -223,6 +240,10 @@
     {
       "opdracht": "npm run build (з tech-bundels-controle) + node scripts/eenheidstests.mjs tech-bundels / tech-bundels-ruimtes-v2",
       "uitkomst": "6 технічних бандлів, жодного статичного посилання публічного коду на технічний; 34/34, 5/5"
+    },
+    {
+      "opdracht": "node dist-server/migrate.mjs на чистій БД UTF8 (двічі)",
+      "uitkomst": "до виправлення падає на 0200 (CHECK feature_flags_omschrijving_check); після — усі міграції застосовано, повторний прогін «niets te doen», прапорець identiteit-account-maquette вимкнений, опис 286 знаків"
     }
   ],
   "beperkingen": [
