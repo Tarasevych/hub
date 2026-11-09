@@ -72,7 +72,12 @@ export const zetWeergaveAccount=(waarde:unknown)=>{const account=normalizeAccoun
 export const zetWeergaveRuimte=(ruimte:MenuRuimte)=>{if(ruimte===ruimteNu)return;ruimteNu=ruimte;zetHint(WEERGAVE_RUIMTE_HINT,ruimte);melden()};
 
 // ---------------------------------------------------------------------------------------- lezen (cookie + sessionStorage)
-const cookieValue=()=>{try{return document.cookie.split('; ').find(item=>item.startsWith(`${COOKIE}=`))?.slice(COOKIE.length+1)||''}catch{return''}};
+// PERF-001 (09.11.2026): `document.cookie` lezen is in Chromium relatief duur (de hele cookiestring wordt per keer opgebouwd) en dit
+// wordt per beeld tientallen keren gevraagd (uiterlijkVanScope, thema, accountmenu): ~40 ms per paginastart in het profiel. Binnen
+// één synchrone taak verandert de waarde niet, behalve door onze eigen schrijfactie hieronder (die wist de kopie). Andere tabbladen
+// schrijven altijd in een ándere taak; na de microtask wordt opnieuw gelezen, dus niemand ziet ooit een verouderde waarde.
+let cookieKopie:string|null=null;
+const cookieValue=()=>{if(cookieKopie!==null)return cookieKopie;let v='';try{v=document.cookie.split('; ').find(item=>item.startsWith(`${COOKIE}=`))?.slice(COOKIE.length+1)||''}catch{v=''}cookieKopie=v;try{queueMicrotask(()=>{cookieKopie=null})}catch{cookieKopie=null}return v};
 const localValue=()=>{try{return sessionStorage.getItem(LOCAL)||''}catch{return''}};
 const ontleed=(value:string):Record<string,unknown>=>{try{return value?JSON.parse(decodeURIComponent(value))as Record<string,unknown>:{}}catch{return{}}};
 export const normalizeAvatarUrl=(value:unknown)=>{const raw=String(value||'').trim();if(!raw)return'';/* 21.10.2026: ook SVG en ICO van de eigen server (logo's/foto's van afzenders, backend/merk-bron.ts): in <img> voert een SVG nooit script uit */if(/^data:image\/(?:jpeg|png|webp|svg\+xml|x-icon|vnd\.microsoft\.icon);base64,[A-Za-z0-9+/=]+$/.test(raw)&&raw.length<=360000)return raw;if(raw.length>1024)return'';try{const url=new URL(raw);if(url.protocol!=='https:'||url.username||url.password)return'';url.hash='';return url.toString()}catch{return''}};
@@ -161,7 +166,7 @@ const bewaren=(opslag:Opslag)=>{
   const orde=[sleutel,...Object.keys(opslag.ruimtes).filter(k=>k!==sleutel).sort((a,b)=>Number(opslag.ruimtes[b]?.op||0)-Number(opslag.ruimtes[a]?.op||0))].slice(0,MAX_LOKAAL);
   try{sessionStorage.setItem(LOCAL,encodeURIComponent(JSON.stringify(deel(opslag,orde,[]))))}catch{/* privémodus */}
   const shared=location.hostname==='tarasevych.com'||location.hostname.endsWith('.tarasevych.com');
-  try{document.cookie=`${COOKIE}=${snijden(opslag,sleutel)}; Path=/; Max-Age=31536000; SameSite=Lax; Secure${shared?'; Domain=.tarasevych.com':''}`}catch{/* geen document */}
+  cookieKopie=null;try{document.cookie=`${COOKIE}=${snijden(opslag,sleutel)}; Path=/; Max-Age=31536000; SameSite=Lax; Secure${shared?'; Domain=.tarasevych.com':''}`}catch{/* geen document */}
   vorigeBron='';
 };
 const RUIMTE_VELDEN=['theme','palet','auto','menu','notificationSound','notificationBellPosition','lastPathByService','viewByRoute'] as const;

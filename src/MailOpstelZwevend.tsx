@@ -1,8 +1,10 @@
 import { MailPlus } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { registerZone, queueRecompute, bindAvoidanceListeners } from './zwevend-ontwijking';
-import MailNewMessageDialog from './MailNieuwBerichtDialoog';
+// PERF-001 (09.11.2026): het opstelvenster (ProseMirror, ~600 KB) lui geladen. Het blijft direct na de start gemonteerd (het herstelt
+// zelf concepten en opent zichzelf via onOpen), maar zit niet meer in de startbundel van elk subdomein.
+const MailNewMessageDialog = lazy(() => import('./MailNieuwBerichtDialoog'));
 import { Plek } from './plaatsing/Plek';
 import './toegankelijk.css'; // focusrand in twee tinten boven willekeurige inhoud
 
@@ -97,7 +99,7 @@ export default function MailComposeFloat(p: Props) {
         )}
       </Plek>
       {createPortal(
-        <MailNewMessageDialog
+        <Suspense fallback={null}><MailNewMessageDialog
           lang={p.lang}
           open={composeOpen}
           accountId={accountId}
@@ -105,7 +107,7 @@ export default function MailComposeFloat(p: Props) {
           onClose={() => setComposeOpen(false)}
           onOpen={() => setComposeOpen(true)}
           onSent={() => {}}
-        />,
+        /></Suspense>,
         // 21.10.2026: in <body>, naast de andere vensters — in .canonical-chrome (eigen stapelcontext) bleef de laag uit de
         // vensterstapel (zIndexVan) ingesloten en lag elk venster van de gezamenlijke laag erboven. Kleuren: tokens staan ook op <html>.
         document.body
