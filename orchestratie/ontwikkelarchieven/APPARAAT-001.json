@@ -17,48 +17,225 @@
     "werkTak": "feature/apparaat-001-20261109-164219"
   },
   "bronnen": [
-    { "soort": "запит власника", "omschrijving": "09.11.2026: дослідити Google Prompt / itsme і спроєктувати підтвердження з іншого пристрою з вибором символу (цифри, літери, піктограми); потім — «роби все в один випуск, логіка, креатив, дизайнерський та інженерний підхід, гнучкі налаштування й методи».", "bewijzen": ["Повідомлення власника 09.11.2026 у сесії Claude Code", "T:\\mijn-ruimte\\ontwikkeling\\ONTWERP-pidtverdzhennia-z-inshoho-prystroiu-20261109.md (проєктний документ, §0 — оновлена основа)"] },
-    { "soort": "відкриті джерела", "omschrijving": "Google Prompt (збіг числа 1 з 3, одна спроба), Microsoft Authenticator number matching (обов'язково з 05.2023), itsme (однакові іконки на обох екранах, одна виділена), FIDO2 hybrid, NIST SP 800-63B-4 (2025: вибір зі списку не для входу), CISA про push-бомбардування.", "bewijzen": ["Підсумок у §4 проєктного документа"] },
-    { "soort": "код", "omschrijving": "Випуск TELEGRAM-001: shared/telegram-aanmelden/beleid.ts (матриця), backend/telegram-aanmelden/beleid-poort.ts (поріг), app.tg_bevestigingen (0202), картки з відліком, Bevestigen.tsx; класичний step-up backend/stap-op.ts; вікно src/platform/bevestig-toegang.tsx; вікна src/platform/vensters.tsx.", "bewijzen": ["git show 8fe8b97f"] }
+    {
+      "soort": "запит власника",
+      "omschrijving": "09.11.2026: дослідити Google Prompt / itsme і спроєктувати підтвердження з іншого пристрою з вибором символу (цифри, літери, піктограми); потім — «роби все в один випуск, логіка, креатив, дизайнерський та інженерний підхід, гнучкі налаштування й методи».",
+      "bewijzen": [
+        "Повідомлення власника 09.11.2026 у сесії Claude Code",
+        "T:\\mijn-ruimte\\ontwikkeling\\ONTWERP-pidtverdzhennia-z-inshoho-prystroiu-20261109.md (проєктний документ, §0 — оновлена основа)"
+      ]
+    },
+    {
+      "soort": "відкриті джерела",
+      "omschrijving": "Google Prompt (збіг числа 1 з 3, одна спроба), Microsoft Authenticator number matching (обов'язково з 05.2023), itsme (однакові іконки на обох екранах, одна виділена), FIDO2 hybrid, NIST SP 800-63B-4 (2025: вибір зі списку не для входу), CISA про push-бомбардування.",
+      "bewijzen": [
+        "Підсумок у §4 проєктного документа"
+      ]
+    },
+    {
+      "soort": "код",
+      "omschrijving": "Випуск TELEGRAM-001: shared/telegram-aanmelden/beleid.ts (матриця), backend/telegram-aanmelden/beleid-poort.ts (поріг), app.tg_bevestigingen (0202), картки з відліком, Bevestigen.tsx; класичний step-up backend/stap-op.ts; вікно src/platform/bevestig-toegang.tsx; вікна src/platform/vensters.tsx.",
+      "bewijzen": [
+        "git show 8fe8b97f"
+      ]
+    }
   ],
   "tijdlijn": [
-    { "volgorde": 1, "stap": "Аналіз випуску 20261109-150705: дві паралельні системи підтвердження (класичний step-up і матриця TELEGRAM-001); рішення — не будувати третю, а додати метод «apparaat» у матрицю й двері для класичного step-up через один поріг.", "bewijzen": ["ONTWERP §0.2–0.3", "backend/apparaat-bevestiging/routes.ts (POST /api/owner/access/stap-op/poort)"] },
-    { "volgorde": 2, "stap": "Окреме робоче дерево від 8fe8b97f (гілка feature/apparaat-001-20261109-164219; префікс functie/ відхилив orch taak-start), npm ci, базові тести й перевірка типів: 8130 OK / 157 FOUT уже на основі (без бази), typecheck чистий.", "bewijzen": ["rapporten/basis-eenheid.txt (локально)", "orchestratie/taken/APPARAAT-001.json"] },
-    { "volgorde": 3, "stap": "Спільна модель і каталог символів: shared/apparaat-bevestiging/model.ts (налаштування адміністратора й користувача з межами, стани як у tg_bevestigingen) і symbolen.ts (24 піктограми з назвою uk/nl і емодзі, цифри 2–9, латинські літери без кириличних двійників, трекінг з підмінюваною випадковістю).", "bewijzen": ["shared/apparaat-bevestiging/model.ts", "shared/apparaat-bevestiging/symbolen.ts"] },
-    { "volgorde": 4, "stap": "Міграція 0204: прапорець apparaat-bevestiging-v1 (типово увімкнено), таблиці bevestigingen_apparaat (CHECK: ≤ 6 хв, juist < кількість), apparaat_instellingen, apparaat_voorkeuren; стовпці soort/kandidaten/juist на tg_bevestigingen; сценарій відкату.", "bewijzen": ["migrations/0204_apparaat_bevestiging.sql", "deploy/apparaat-bevestiging-terugdraaien.sql"] },
-    { "volgorde": 5, "stap": "Бекенд: kern.ts (aanvragen/stand/open/bekrachtigen/weigeren/intrekken, доступність з чесними причинами, лічильник помилок з паузою й вимкненням, аудит, сповіщення, тривога адміністратору), stroom.ts (SSE з тією ж перевіркою сесії), routes.ts (ALLEEN_SESSIE / MET_SLEUTEL, поріг step-up), kanalen.ts; stap-op.ts → stapOpVoorSessieVastleggen; поріг TELEGRAM-001 знає «apparaat» (beschikbaar, voldaan, verbruik); дія «stap-op» у матриці; символи в картці Telegram (літера «s», та сама лічба помилок).", "bewijzen": ["backend/apparaat-bevestiging/*", "backend/stap-op.ts", "backend/telegram-aanmelden/{beleid-poort,bevestigen,webhook,berichten,cryptografie,routes}.ts", "shared/telegram-aanmelden/{beleid,teksten}.ts"] },
-    { "volgorde": 6, "stap": "Інтерфейс: вкладки «Інший пристрій»/«У Telegram» у вікні «Підтвердіть доступ» (StapOpKanaal), плаваюче вікно «Це ви?» у спільному шарі вікон (Luisteraar + Venster: пересунути, розмір, згорнути, закрити, «Це не я», «Пізніше»), швидкий потік з опитуванням як запасним шляхом, розділ налаштувань у «Способах входу», розділ адміністрування в «Єдиний вхід», «ander apparaat» у вікні TELEGRAM-001; тексти лише uk/nl, кольори через палітру.", "bewijzen": ["src/apparaat-bevestiging/*", "src/platform/bevestig-toegang.tsx", "src/telegram-aanmelden/Bevestigen.tsx", "src/{CanoniekOmlijsting,ToegangslaagWeergave,BeheerConsoleWeergave}.tsx"] },
-    { "volgorde": 7, "stap": "Перевірки: typecheck сервера й клієнта чисті; npm run build чистий (попередження hulp-vraagtekens — 11, усі в старих файлах); чистий тест 52/52; тест проти бази 44/44 (після виправлення самого тесту: незакрита apparaat-бевестигинг v3 давала порогові перевагу — поведінка коду правильна); повний прогін усіх тестів без бази для порівняння з основою.", "bewijzen": ["tests/eenheid/apparaat-bevestiging-20261109.test.ts", "tests/eenheid/apparaat-bevestiging-stroom-20261109.test.ts", "rapporten/build.txt, rapporten/na-eenheid.txt (локально)"] },
-    { "volgorde": 8, "stap": "Документи: інструкція власника (uk), модель загроз (nl), примітки до випуску (nl+uk), рядки в покажчиках документації; оновлення проєктного документа на T: і пам'яті сесії.", "bewijzen": ["docs/apparaat-bevestiging/*", "docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md", "docs/INDEX.nl.md"] }
+    {
+      "volgorde": 1,
+      "stap": "Аналіз випуску 20261109-150705: дві паралельні системи підтвердження (класичний step-up і матриця TELEGRAM-001); рішення — не будувати третю, а додати метод «apparaat» у матрицю й двері для класичного step-up через один поріг.",
+      "bewijzen": [
+        "ONTWERP §0.2–0.3",
+        "backend/apparaat-bevestiging/routes.ts (POST /api/owner/access/stap-op/poort)"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Окреме робоче дерево від 8fe8b97f (гілка feature/apparaat-001-20261109-164219; префікс functie/ відхилив orch taak-start), npm ci, базові тести й перевірка типів: 8130 OK / 157 FOUT уже на основі (без бази), typecheck чистий.",
+      "bewijzen": [
+        "rapporten/basis-eenheid.txt (локально)",
+        "orchestratie/taken/APPARAAT-001.json"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Спільна модель і каталог символів: shared/apparaat-bevestiging/model.ts (налаштування адміністратора й користувача з межами, стани як у tg_bevestigingen) і symbolen.ts (24 піктограми з назвою uk/nl і емодзі, цифри 2–9, латинські літери без кириличних двійників, трекінг з підмінюваною випадковістю).",
+      "bewijzen": [
+        "shared/apparaat-bevestiging/model.ts",
+        "shared/apparaat-bevestiging/symbolen.ts"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Міграція 0204: прапорець apparaat-bevestiging-v1 (типово увімкнено), таблиці bevestigingen_apparaat (CHECK: ≤ 6 хв, juist < кількість), apparaat_instellingen, apparaat_voorkeuren; стовпці soort/kandidaten/juist на tg_bevestigingen; сценарій відкату.",
+      "bewijzen": [
+        "migrations/0204_apparaat_bevestiging.sql",
+        "deploy/apparaat-bevestiging-terugdraaien.sql"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Бекенд: kern.ts (aanvragen/stand/open/bekrachtigen/weigeren/intrekken, доступність з чесними причинами, лічильник помилок з паузою й вимкненням, аудит, сповіщення, тривога адміністратору), stroom.ts (SSE з тією ж перевіркою сесії), routes.ts (ALLEEN_SESSIE / MET_SLEUTEL, поріг step-up), kanalen.ts; stap-op.ts → stapOpVoorSessieVastleggen; поріг TELEGRAM-001 знає «apparaat» (beschikbaar, voldaan, verbruik); дія «stap-op» у матриці; символи в картці Telegram (літера «s», та сама лічба помилок).",
+      "bewijzen": [
+        "backend/apparaat-bevestiging/*",
+        "backend/stap-op.ts",
+        "backend/telegram-aanmelden/{beleid-poort,bevestigen,webhook,berichten,cryptografie,routes}.ts",
+        "shared/telegram-aanmelden/{beleid,teksten}.ts"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Інтерфейс: вкладки «Інший пристрій»/«У Telegram» у вікні «Підтвердіть доступ» (StapOpKanaal), плаваюче вікно «Це ви?» у спільному шарі вікон (Luisteraar + Venster: пересунути, розмір, згорнути, закрити, «Це не я», «Пізніше»), швидкий потік з опитуванням як запасним шляхом, розділ налаштувань у «Способах входу», розділ адміністрування в «Єдиний вхід», «ander apparaat» у вікні TELEGRAM-001; тексти лише uk/nl, кольори через палітру.",
+      "bewijzen": [
+        "src/apparaat-bevestiging/*",
+        "src/platform/bevestig-toegang.tsx",
+        "src/telegram-aanmelden/Bevestigen.tsx",
+        "src/{CanoniekOmlijsting,ToegangslaagWeergave,BeheerConsoleWeergave}.tsx"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Перевірки: typecheck сервера й клієнта чисті; npm run build чистий (попередження hulp-vraagtekens — 11, усі в старих файлах); чистий тест 52/52; тест проти бази 44/44 (після виправлення самого тесту: незакрита apparaat-бевестигинг v3 давала порогові перевагу — поведінка коду правильна); повний прогін усіх тестів без бази для порівняння з основою.",
+      "bewijzen": [
+        "tests/eenheid/apparaat-bevestiging-20261109.test.ts",
+        "tests/eenheid/apparaat-bevestiging-stroom-20261109.test.ts",
+        "rapporten/build.txt, rapporten/na-eenheid.txt (локально)"
+      ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Документи: інструкція власника (uk), модель загроз (nl), примітки до випуску (nl+uk), рядки в покажчиках документації; оновлення проєктного документа на T: і пам'яті сесії.",
+      "bewijzen": [
+        "docs/apparaat-bevestiging/*",
+        "docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md",
+        "docs/INDEX.nl.md"
+      ]
+    },
+    {
+      "volgorde": 9,
+      "stap": "Повний прогін усіх тестів без бази проти основи 8fe8b97f показав одну справжню прогалину: app.apparaat_instellingen (стовпець door) не була в реєстрі видалення облікового запису (shared/account-wissen.ts) — додано як виняток за зразком tg_instellingen; account-wissen 20/20. Кольори стану переведено на змінні палітри (--ok/--fout/--waarschuwing). Перший випуск 20261109-165303 зібрано процесом GitHub Actions (усі 18 кроків успішні); цей коміт дає наступний випуск із виправленням реєстру.",
+      "bewijzen": [
+        "shared/account-wissen.ts",
+        "tests/eenheid/account-wissen-20261026.test.ts",
+        "src/apparaat-bevestiging/apparaat.css",
+        ".github/workflows/apparaat-001-uitgave.yml",
+        "https://github.com/Tarasevych/hub/releases/tag/20261109-165303"
+      ]
+    }
   ],
   "keuzes": [
-    { "keuze": "Один поріг для всіх методів: «apparaat» — четвертий метод у матриці TELEGRAM-001; класичний step-up отримує step-up лише через POST /api/owner/access/stap-op/poort, що викликає poort().", "reden": "Інакше з'являється третя система з власною правдою про те, що «достатньо»; так вікно ніколи не обіцяє того, що поріг потім відхилить.", "alternatief": "Окрема стан-машина з прямою реєстрацією step-up у kern.bekrachtigen (перша чернетка) — відхилено." },
-    { "keuze": "Правильна позиція символу йде лише до запитувача (A); до B і в потік — лише кандидати.", "reden": "Модель itsme/Google: B має впізнати символ, а не отримати підказку.", "alternatief": "Показувати B лише один символ «Так/Ні» — дає бомбардування запитами (Microsoft 2023)." },
-    { "keuze": "Системна роль для нових таблиць (як 0202), авторизація в коді.", "reden": "SSE-потік працює поза маршрутизатором без контексту RLS; у проєктному документі спершу пропонувалась RLS як у 0023 — змінено під час реалізації.", "alternatief": "RLS «лише свої рядки» + окремий шлях для потоку." },
-    { "keuze": "Прапорець типово увімкнено, з аварійним вимикачем адміністратора без ключа.", "reden": "Спосіб не потребує зовнішніх ключів чи служб; власник просив робоче рішення одразу; вимкнути мусить бути легко.", "alternatief": "Типово вимкнено як у TELEGRAM-001 (там причина — ключ бота)." },
-    { "keuze": "Підтвердження на B лише ключем доступу; код автентифікатора — лише якщо дозволять і адміністратор, і користувач, і ніколи не «сильне».", "reden": "Пункт D TELEGRAM-001 і NIST: сам дотик не є доказом володіння фактором.", "alternatief": "Дозволити TOTP типово." },
-    { "keuze": "«Сильний» step-up для A лише за ключа на B і дозволу адміністратора (sterkBijPasskey); passkeySessies ніколи не ставиться.", "reden": "Чутливі дії матриці мають і далі вимагати локального ключа.", "alternatief": "Завжди сильний або ніколи сильний." },
-    { "keuze": "Символи: власні піктограми з назвою (браузер — lucide, Telegram — емодзі з тією самою назвою), цифри 2–9, латинські літери без двійників; у налаштуваннях вид обирає користувач, типовий — адміністратор.", "reden": "Емодзі виглядають по-різному на iOS/Android/Windows; назва робить вибір однозначним і доступним для читачів екрана.", "alternatief": "Лише цифри (Google) або лише емодзі." },
-    { "keuze": "Швидкий потік (SSE) як прискорення, опитування кожні 5 с як правда.", "reden": "Тунель або старий сервер можуть не тримати потік; функція не має залежати від нього.", "alternatief": "Лише опитування (повільніше) або лише SSE (крихко)." }
+    {
+      "keuze": "Один поріг для всіх методів: «apparaat» — четвертий метод у матриці TELEGRAM-001; класичний step-up отримує step-up лише через POST /api/owner/access/stap-op/poort, що викликає poort().",
+      "reden": "Інакше з'являється третя система з власною правдою про те, що «достатньо»; так вікно ніколи не обіцяє того, що поріг потім відхилить.",
+      "alternatief": "Окрема стан-машина з прямою реєстрацією step-up у kern.bekrachtigen (перша чернетка) — відхилено."
+    },
+    {
+      "keuze": "Правильна позиція символу йде лише до запитувача (A); до B і в потік — лише кандидати.",
+      "reden": "Модель itsme/Google: B має впізнати символ, а не отримати підказку.",
+      "alternatief": "Показувати B лише один символ «Так/Ні» — дає бомбардування запитами (Microsoft 2023)."
+    },
+    {
+      "keuze": "Системна роль для нових таблиць (як 0202), авторизація в коді.",
+      "reden": "SSE-потік працює поза маршрутизатором без контексту RLS; у проєктному документі спершу пропонувалась RLS як у 0023 — змінено під час реалізації.",
+      "alternatief": "RLS «лише свої рядки» + окремий шлях для потоку."
+    },
+    {
+      "keuze": "Прапорець типово увімкнено, з аварійним вимикачем адміністратора без ключа.",
+      "reden": "Спосіб не потребує зовнішніх ключів чи служб; власник просив робоче рішення одразу; вимкнути мусить бути легко.",
+      "alternatief": "Типово вимкнено як у TELEGRAM-001 (там причина — ключ бота)."
+    },
+    {
+      "keuze": "Підтвердження на B лише ключем доступу; код автентифікатора — лише якщо дозволять і адміністратор, і користувач, і ніколи не «сильне».",
+      "reden": "Пункт D TELEGRAM-001 і NIST: сам дотик не є доказом володіння фактором.",
+      "alternatief": "Дозволити TOTP типово."
+    },
+    {
+      "keuze": "«Сильний» step-up для A лише за ключа на B і дозволу адміністратора (sterkBijPasskey); passkeySessies ніколи не ставиться.",
+      "reden": "Чутливі дії матриці мають і далі вимагати локального ключа.",
+      "alternatief": "Завжди сильний або ніколи сильний."
+    },
+    {
+      "keuze": "Символи: власні піктограми з назвою (браузер — lucide, Telegram — емодзі з тією самою назвою), цифри 2–9, латинські літери без двійників; у налаштуваннях вид обирає користувач, типовий — адміністратор.",
+      "reden": "Емодзі виглядають по-різному на iOS/Android/Windows; назва робить вибір однозначним і доступним для читачів екрана.",
+      "alternatief": "Лише цифри (Google) або лише емодзі."
+    },
+    {
+      "keuze": "Швидкий потік (SSE) як прискорення, опитування кожні 5 с як правда.",
+      "reden": "Тунель або старий сервер можуть не тримати потік; функція не має залежати від нього.",
+      "alternatief": "Лише опитування (повільніше) або лише SSE (крихко)."
+    }
   ],
   "wijzigingen": [
-    { "pad": "shared/apparaat-bevestiging/*, backend/apparaat-bevestiging/*, src/apparaat-bevestiging/*", "omschrijving": "Нові модулі підтвердження з іншого пристрою (модель, символи, ядро, потік, маршрути, канали, інтерфейс, стилі)." },
-    { "pad": "migrations/0204_apparaat_bevestiging.sql, deploy/apparaat-bevestiging-terugdraaien.sql", "omschrijving": "Прапорець, таблиці, стовпці на tg_bevestigingen; відкат." },
-    { "pad": "backend/stap-op.ts, backend/toegangslaag.ts, backend/toegang-context.ts, backend/index.ts, server/start.ts", "omschrijving": "stapOpVoorSessieVastleggen; канали в /stap-op/methoden; мітки дій; монтування маршрутів; SSE перед маршрутизатором і прибирання." },
-    { "pad": "shared/telegram-aanmelden/{beleid,teksten}.ts, backend/telegram-aanmelden/{beleid-poort,bevestigen,webhook,berichten,cryptografie,routes}.ts", "omschrijving": "Метод «apparaat», дія «stap-op», нові вибори; символьні кнопки в картці; поріг читає обидві таблиці." },
-    { "pad": "shared/vlaggen.ts", "omschrijving": "Пояснення прапорця apparaat-bevestiging-v1." },
-    { "pad": "src/platform/{stap-op.ts,bevestig-toegang.tsx}, src/telegram-aanmelden/{api.ts,Bevestigen.tsx}, src/{CanoniekOmlijsting,ToegangslaagWeergave,BeheerConsoleWeergave}.tsx", "omschrijving": "Вкладки у вікні підтвердження; «ander apparaat» у вікні матриці; слухач у оболонці; розділи налаштувань і адміністрування." },
-    { "pad": "tests/eenheid/apparaat-bevestiging-20261109.test.ts, tests/eenheid/apparaat-bevestiging-stroom-20261109.test.ts", "omschrijving": "Чисті тести (52) і тести проти бази (44)." },
-    { "pad": "docs/apparaat-bevestiging/*, docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md, docs/INDEX.nl.md", "omschrijving": "Інструкція, модель загроз, примітки до випуску, покажчики." }
+    {
+      "pad": "shared/apparaat-bevestiging/*, backend/apparaat-bevestiging/*, src/apparaat-bevestiging/*",
+      "omschrijving": "Нові модулі підтвердження з іншого пристрою (модель, символи, ядро, потік, маршрути, канали, інтерфейс, стилі)."
+    },
+    {
+      "pad": "migrations/0204_apparaat_bevestiging.sql, deploy/apparaat-bevestiging-terugdraaien.sql",
+      "omschrijving": "Прапорець, таблиці, стовпці на tg_bevestigingen; відкат."
+    },
+    {
+      "pad": "backend/stap-op.ts, backend/toegangslaag.ts, backend/toegang-context.ts, backend/index.ts, server/start.ts",
+      "omschrijving": "stapOpVoorSessieVastleggen; канали в /stap-op/methoden; мітки дій; монтування маршрутів; SSE перед маршрутизатором і прибирання."
+    },
+    {
+      "pad": "shared/telegram-aanmelden/{beleid,teksten}.ts, backend/telegram-aanmelden/{beleid-poort,bevestigen,webhook,berichten,cryptografie,routes}.ts",
+      "omschrijving": "Метод «apparaat», дія «stap-op», нові вибори; символьні кнопки в картці; поріг читає обидві таблиці."
+    },
+    {
+      "pad": "shared/vlaggen.ts",
+      "omschrijving": "Пояснення прапорця apparaat-bevestiging-v1."
+    },
+    {
+      "pad": "src/platform/{stap-op.ts,bevestig-toegang.tsx}, src/telegram-aanmelden/{api.ts,Bevestigen.tsx}, src/{CanoniekOmlijsting,ToegangslaagWeergave,BeheerConsoleWeergave}.tsx",
+      "omschrijving": "Вкладки у вікні підтвердження; «ander apparaat» у вікні матриці; слухач у оболонці; розділи налаштувань і адміністрування."
+    },
+    {
+      "pad": "tests/eenheid/apparaat-bevestiging-20261109.test.ts, tests/eenheid/apparaat-bevestiging-stroom-20261109.test.ts",
+      "omschrijving": "Чисті тести (52) і тести проти бази (44)."
+    },
+    {
+      "pad": "docs/apparaat-bevestiging/*, docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md, docs/INDEX.nl.md",
+      "omschrijving": "Інструкція, модель загроз, примітки до випуску, покажчики."
+    }
   ],
   "controles": [
-    { "opdracht": "npx tsc -p tsconfig.server.json", "uitkomst": "0 помилок (до й після змін)." },
-    { "opdracht": "npx tsc -p tsconfig.json --noEmit", "uitkomst": "0 помилок." },
-    { "opdracht": "npm run build (усі передзбіркові перевірки + vite + сервер)", "uitkomst": "Успішно; hulp-vraagtekens 0 помилок / 11 попереджень — усі в старих файлах, жодного в apparaat-bevestiging." },
-    { "opdracht": "node scripts/eenheidstests.mjs apparaat-bevestiging-20261109.test.ts", "uitkomst": "52/52." },
-    { "opdracht": "тестова PostgreSQL 18.6 (testdb.ps1, порт 56329 замість виключеного Windows 54329), міграції 0199–0204, node scripts/eenheidstests.mjs apparaat-bevestiging-stroom-20261109.test.ts", "uitkomst": "44/44 (перша спроба 43/44: помилка була в самому тесті — не спожита бевестигинг v3; поведінка коду правильна й задокументована в тесті)." },
-    { "opdracht": "node scripts/eenheidstests.mjs (усі, без бази) — порівняння з основою 8fe8b97f", "uitkomst": "Див. звіт у чаті: кількість FOUT не вища за 157 з основи; нові файли додають 52 OK (тест проти бази без DATABASE_URL пропускається)." },
-    { "opdracht": "node scripts/orch.mjs controleer; versheid --taak APPARAAT-001 --fase start", "uitkomst": "Усе гаразд (regelsVersie 1.4.14); свіжо. Перед передачею — versheid --fase overdracht." }
+    {
+      "opdracht": "npx tsc -p tsconfig.server.json",
+      "uitkomst": "0 помилок (до й після змін)."
+    },
+    {
+      "opdracht": "npx tsc -p tsconfig.json --noEmit",
+      "uitkomst": "0 помилок."
+    },
+    {
+      "opdracht": "npm run build (усі передзбіркові перевірки + vite + сервер)",
+      "uitkomst": "Успішно; hulp-vraagtekens 0 помилок / 11 попереджень — усі в старих файлах, жодного в apparaat-bevestiging."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs apparaat-bevestiging-20261109.test.ts",
+      "uitkomst": "52/52."
+    },
+    {
+      "opdracht": "тестова PostgreSQL 18.6 (testdb.ps1, порт 56329 замість виключеного Windows 54329), міграції 0199–0204, node scripts/eenheidstests.mjs apparaat-bevestiging-stroom-20261109.test.ts",
+      "uitkomst": "44/44 (перша спроба 43/44: помилка була в самому тесті — не спожита бевестигинг v3; поведінка коду правильна й задокументована в тесті)."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs (усі, без бази) — порівняння з основою 8fe8b97f",
+      "uitkomst": "Див. звіт у чаті: кількість FOUT не вища за 157 з основи; нові файли додають 52 OK (тест проти бази без DATABASE_URL пропускається)."
+    },
+    {
+      "opdracht": "node scripts/orch.mjs controleer; versheid --taak APPARAAT-001 --fase start",
+      "uitkomst": "Усе гаразд (regelsVersie 1.4.14); свіжо. Перед передачею — versheid --fase overdracht."
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs account-wissen-20261026.test.ts",
+      "uitkomst": "20/20 (після додавання apparaat_instellingen до WIS_UITZONDERING)."
+    },
+    {
+      "opdracht": "GitHub Actions apparaat-001-uitgave.yml (запуск 42658780485 на 623da0f1)",
+      "uitkomst": "Усі кроки успішні за 2 хв 50 с: правила, тести, типи, збірка, міграції на чистій базі двічі + стрім-тести проти бази, пакет, оприлюднення 20261109-165303 з перевіреною сумою; нічого не встановлено."
+    }
   ],
   "beperkingen": [
     "Не перевірено у справжньому браузері на двох фізичних пристроях (відсутній доступ до робочого сервера); перевірено збіркою, типами й тестами проти бази з двома змодельованими сесіями (різні якорі).",
