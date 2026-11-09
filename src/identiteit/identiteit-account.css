@@ -478,6 +478,9 @@
 .ia-vormgeving button:hover { color: var(--text); }
 .ia-vormgeving button.is-actief { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .ia-vormgeving button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Вигляд без увімкненого перемикача функції: видно, але неактивний, з поясненням під кнопками. Zichtbaar maar uit. */
+.ia-vormgeving button.is-niet-beschikbaar { border-style: dashed; border-color: var(--line); color: var(--muted); opacity: 0.6; cursor: not-allowed; }
+.ia-vormgeving-hint { flex-basis: 100%; padding: 2px 8px 4px; font-size: 12px; line-height: 1.4; color: var(--muted); }
 
 /* Перемикач під розділами класичної сторінки — як у «Студії» та «Макеті». De kiezer onder de onderdelen. */
 .ia-vormgeving-voet { display: flex; justify-content: center; margin-top: var(--ruimte-3); }
