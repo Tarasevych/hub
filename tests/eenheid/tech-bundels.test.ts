@@ -28,12 +28,14 @@ export async function main(): Promise<number> {
   check('bronPad: absoluut, relatief, ?query, node_modules en virtuele modules', bronPad(`${R}/src/BeheerConsoleWeergave.tsx`, R) === 'src/BeheerConsoleWeergave.tsx'
     && bronPad('src/geheimen/X.tsx?used', '') === 'src/geheimen/X.tsx' && bronPad(`${R}/node_modules/react/index.js`, R) === '' && bronPad('\0vite/preload-helper', R) === '');
   const tech = ['src/BeheerConsoleWeergave.tsx', 'src/BeheerUitrolWeergave.tsx', 'src/beheer-console.css', 'src/uitrol/Stap.tsx', 'src/geheimen/Kluis.tsx', 'src/diagnostiek/hulp.ts',
-    'src/overzicht/O.tsx', 'src/audit/A.tsx', 'src/terminal/Terminal.tsx', 'src/vlaggen/Vlaggen.tsx', 'src/ssh/SshCertificaat.tsx', 'src/guacamole/G.tsx', 'src/UitrolMeester.tsx'];
+    'src/overzicht/O.tsx', 'src/audit/A.tsx', 'src/terminal/Terminal.tsx', 'src/vlaggen/Vlaggen.tsx', 'src/ssh/SshCertificaat.tsx', 'src/guacamole/G.tsx', 'src/UitrolMeester.tsx', 'src/integraties/Integraties.tsx', 'src/integraties/Wizard.tsx'];
   const openbaar = ['src/tech/TechLaag.tsx', 'src/tech/tech-bundel.tsx', 'src/tech/TechPoort.tsx', 'src/MailFunctioneelWeergave.tsx', 'src/diagnose/Diagnose.tsx', 'src/ondersteuning/Ondersteuning.tsx',
     'src/agenten/X.tsx', 'src/AdministratieHulp.tsx', 'src/InstellingencentrumWeergave.tsx', 'src/instellingen/MijnDiensten.tsx', 'shared/tech-bundels.ts',
     // 20.10.2026: merkvormen zijn NIET technisch. Stonden in src/integraties/ en werden daardoor naar assets/tech/ geschreven;
     // een gewone gebruiker kreeg 403 en zag geen merklogo op «Акаунти» (klacht «немає поштових логотипів»).
-    'src/merk/MerkLogo.tsx', 'src/merk/merk-logos.ts', 'src/merk/merk-register.ts', 'src/merk/Merk.tsx'];
+    'src/merk/MerkLogo.tsx', 'src/merk/merk-logos.ts', 'src/merk/merk-register.ts', 'src/merk/Merk.tsx',
+    // 09.11.2026 (PERF-001): integratiestrook op openbare pagina's, sinds lui laden in een eigen chunk.
+    'src/integraties/IntegratieStrook.tsx', 'src/integraties/catalogus-vlag.ts', 'src/integraties/integraties.css'];
   check('isTechModule: alle beheerpaden technisch', tech.every((p) => isTechModule(`${R}/${p}`, R)), tech.filter((p) => !isTechModule(`${R}/${p}`, R)).join());
   check('isTechModule: band/poort/diagnoselaag/mail/instellingen NIET technisch (nodig vóór activering)', openbaar.every((p) => !isTechModule(`${R}/${p}`, R)), openbaar.filter((p) => isTechModule(`${R}/${p}`, R)).join());
   check('isTechModule: markering // @tech-asset voor nieuwe pagina\'s buiten de lijst', isTechModule(`${R}/src/nieuw/Pagina.tsx`, R, () => '  // @tech-asset\nimport x') && !isTechModule(`${R}/src/nieuw/Pagina.tsx`, R, () => 'import x'));
