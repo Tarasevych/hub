@@ -56,5 +56,11 @@ export async function main(): Promise<number> {
     achtergrond.includes('Налаштувати тло') && achtergrond.includes('Achtergrond instellen')
     && achtergrond.includes('aria-expanded={instellingen}')
     && css.includes(':focus-visible'));
+  check('лінза працює без миші та не перехоплює дотик до форми',
+    achtergrond.includes('rect.width / 2, y: rect.height / 2')
+    && achtergrond.includes("houder.addEventListener('pointerdown', wijs")
+    && achtergrond.includes("e.pointerType !== 'mouse' && !lensRef.current")
+    && achtergrond.includes("e.target.closest('button,a,input,textarea,select,summary")
+    && achtergrond.includes("if (e.pointerType === 'mouse') aanwijzer.current.binnen = false"));
   return einde();
 }

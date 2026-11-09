@@ -146,10 +146,10 @@ jobs:
           };
           writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
           const tests = {
-            geslaagd: 79, mislukt: 0, falend: [],
+            geslaagd: 80, mislukt: 0, falend: [],
             uitleg: {
-              uk: 'Щонайменше 12 перевірок тла, 52 перевірки входу з іншого пристрою та 15 перевірок наявного поштового вибору. Також перевірено типи, складання, правила, повторні міграції й двопристроєвий перебіг на випробувальній базі.',
-              nl: 'Minstens 12 achtergrondcontroles, 52 controles voor bevestiging vanaf een ander apparaat en 15 controles van de bestaande e-mailkeuze. Ook typen, bouw, regels, herhaalde migraties en de stroom op een proefdatabank zijn gecontroleerd.'
+              uk: 'Щонайменше 13 перевірок тла, 52 перевірки входу з іншого пристрою та 15 перевірок наявного поштового вибору. Також перевірено типи, складання, правила, повторні міграції й двопристроєвий перебіг на випробувальній базі.',
+              nl: 'Minstens 13 achtergrondcontroles, 52 controles voor bevestiging vanaf een ander apparaat en 15 controles van de bestaande e-mailkeuze. Ook typen, bouw, regels, herhaalde migraties en de stroom op een proefdatabank zijn gecontroleerd.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
