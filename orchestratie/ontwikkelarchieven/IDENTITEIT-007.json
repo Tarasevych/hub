@@ -1,0 +1,213 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-007",
+  "datum": "2026-11-09",
+  "taal": "uk",
+  "opdracht": "Перенести макет власника «Мій простір — налаштування» (ChatGPT, 12 розділів у 4 групах) один в один як типовий вигляд центру облікового запису id.tarasevych.com: власна шапка й смуга сервісів макета, герой, картки з елементами макета, якірне меню, пошук Ctrl+K, діалог світлини, підказки й підвал; справжні налаштування, права й дії вбудувати без змін; вигляд вмикається прапорцем identiteit-account-maquette, «Студія» і класичний вигляд лишаються.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "model": "onbekend",
+    "repo": "Tarasevych/hub",
+    "basisTak": "feature/identiteit-006-20261108-162906",
+    "basisCommit": "9a040c6cd6450d0b63c47391fd9dc1972de33e70",
+    "integratieBasis": "d819cb721cd7f8e9f3ca1b801f1b426ff99ce3b3",
+    "geinstalleerdeVersie": "визначається процесом випуску з /api/version: 20261108-111700 @ 944336a або 20261108-180527 @ 9a040c6c",
+    "tak": "feature/identiteit-007-20261109-051209"
+  },
+  "bronnen": [
+    {
+      "soort": "запит власника",
+      "omschrijving": "Власник хоче саме свій макет із ChatGPT як типовий вигляд, а не інтерпретацію; першу версію (без шапки макета, з автопрокруткою й формами замість елементів макета) відхилив 08.11.2026 і надав 19 знімків з телефона.",
+      "bewijzen": [
+        "Повідомлення власника від 08.11.2026 у треді проєкту",
+        "https://mijn-ruimte-account-atelier-20261106.oakenmimosa1.chatgpt.site/"
+      ]
+    },
+    {
+      "soort": "макет",
+      "omschrijving": "Джерела макета власника: розмітка, стилі, скрипти, словники й словники профілю (збережено в репозиторії без змін).",
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/maquette-bron/index.html",
+        "docs/ontwerp/identiteit-account/maquette-bron/styles.css",
+        "docs/ontwerp/identiteit-account/maquette-bron/app.js",
+        "docs/ontwerp/identiteit-account/maquette-bron/locales.js"
+      ]
+    },
+    {
+      "soort": "наявний код",
+      "omschrijving": "Справжні панелі налаштувань, «Студія» (IDENTITEIT-006), оболонка сайту та навігація між сервісами.",
+      "bewijzen": [
+        "src/identiteit/IdentiteitAccountPagina.tsx",
+        "src/identiteit/IdentiteitAtelier.tsx",
+        "src/canoniek-omlijsting.css",
+        "src/VerenigdDienstApp.tsx"
+      ]
+    },
+    {
+      "soort": "чинне встановлення",
+      "omschrijving": "Випуски MOBIEL-001 20261108-111700 (BRON-COMMIT 944336a) та IDENTITEIT-006 20261108-180527 (BRON-COMMIT 9a040c6c); яка з них установлена, процес випуску звіряє з /api/version.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/releases/tag/20261108-111700",
+        "https://github.com/Tarasevych/hub/releases/tag/20261108-180527"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Джерела макета перевірено в браузері (81 еталонний знімок на телефоні, планшеті й ПК у двох темах) і збережено в репозиторії.",
+      "bewijzen": [
+        "docs/ontwerp/identiteit-account/maquette-bron/"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Побудовано генератори: стилі макета під префіксом .mr-mq з медіазапитами як класами порогів без специфічності, двигун макета з прив'язкою до кореня й гачками сайту, розмітка index.html як рядок.",
+      "bewijzen": [
+        "scripts/identiteit-maquette/bouw.mjs",
+        "scripts/identiteit-maquette/stijlen.mjs",
+        "scripts/identiteit-maquette/motor-aanpassingen.mjs",
+        "scripts/identiteit-maquette/sjabloon.mjs"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Компонент вигляду «Макет»: оболонка сайту схована на час вигляду, смуга сервісів веде на справжні сервіси, аватар — до розділу «Акаунт» і меню облікового запису; справжні панелі через портали в блоки «Чинні налаштування».",
+      "bewijzen": [
+        "src/identiteit/maquette/IdentiteitMaquette.tsx",
+        "src/identiteit/maquette/maquette-omlijsting.css",
+        "src/identiteit/identiteit-vormgeving.ts"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Перша версія відхилена власником 08.11.2026; переробка один в один: власна шапка й смуга сервісів, без автопрокрутки повз герой, елементи макета в картках і панелях, щит від правил оболонки сайту.",
+      "bewijzen": [
+        "https://github.com/Tarasevych/hub/pull/50"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Порівняння зі справжнім макетом у Chromium на 390/768/1440 у двох темах і двох мовах: обчислені стилі збігаються, крім свідомих відмінностей; аркуші порівняння переглянув і прийняв власник 09.11.2026.",
+      "bewijzen": [
+        "tests/eenheid/identiteit-maquette.test.ts"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Скрипти й стилі макета переносяться дослівно через генератори, а не переписуються",
+      "reden": "Власник вимагає відповідності один в один; генератори дозволяють повторити перенесення після змін у макеті без ручної роботи.",
+      "alternatief": "Не переписувати макет на React-компоненти вручну."
+    },
+    {
+      "keuze": "Медіазапити макета стають класами порогів у :where(), а елементні правила — :where(:not(.mq-echt *))",
+      "reden": "Префікс класів ламав каскад макета (специфічність), а елементні правила діставалися до справжніх панелей сайту.",
+      "alternatief": "Не покладатися на @media вікна: ширина робочої області залежить від оболонки."
+    },
+    {
+      "keuze": "Справжні налаштування — у згортаному блоці «Чинні налаштування» під елементами макета",
+      "reden": "Так вигляд лишається один в один з макетом, а всі чинні дії, права й перевірки доступні без змін коду панелей.",
+      "alternatief": "Не замінювати елементи макета формами й не ховати справжні панелі."
+    },
+    {
+      "keuze": "Оболонка сайту на час вигляду схована, меню облікового запису відкривається з діалогу світлини",
+      "reden": "Макет має власну шапку й смугу сервісів; подвійна шапка суперечила б макету, а вихід і зміна акаунта мають лишатися доступними.",
+      "alternatief": "Не дублювати хром сайту й не прибирати доступ до меню облікового запису."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "pad": "src/identiteit/maquette/IdentiteitMaquette.tsx",
+      "omschrijving": "Компонент вигляду «Макет»: запуск двигуна, портали справжніх панелей, перехід між розділами, меню облікового запису."
+    },
+    {
+      "pad": "src/identiteit/maquette/maquette-omlijsting.css",
+      "omschrijving": "Приховування оболонки сайту, щит від її правил, стилі гнізд справжніх панелей; мобільний шар у кінці файла."
+    },
+    {
+      "pad": "src/identiteit/maquette/maquette-motor.ts, maquette-sjabloon.ts, maquette-stijlen.css",
+      "omschrijving": "Згенеровані двигун, розмітка й стилі макета (не правити вручну)."
+    },
+    {
+      "pad": "scripts/identiteit-maquette/",
+      "omschrijving": "Генератори перенесення макета."
+    },
+    {
+      "pad": "src/identiteit/identiteit-vormgeving.ts, src/identiteit/VormgevingKiezer.tsx",
+      "omschrijving": "Вибір вигляду («Макет», «Студія», класичний) і подія переходу до сервісу."
+    },
+    {
+      "pad": "src/VerenigdDienstApp.tsx",
+      "omschrijving": "Слухач події переходу до сервісу зі смуги макета."
+    },
+    {
+      "pad": "src/canoniek-omlijsting.css",
+      "omschrijving": "Правило плаского вмісту не торкається вкладеного макета."
+    },
+    {
+      "pad": "shared/vlaggen.ts",
+      "omschrijving": "Прапорець identiteit-account-maquette з поясненням наслідків."
+    },
+    {
+      "pad": "scripts/plaatsing-vaste-elementen.json",
+      "omschrijving": "Реєстр закріплених елементів макета."
+    },
+    {
+      "pad": "tests/eenheid/identiteit-maquette.test.ts",
+      "omschrijving": "Перевірки вигляду «Макет» (40)."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/eenheidstests.mjs identiteit-maquette",
+      "uitkomst": "40 із 40 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs identiteit-atelier",
+      "uitkomst": "36 із 36 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs mobiel-cascade-20261105",
+      "uitkomst": "22 із 22 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs mobiel-geometrie",
+      "uitkomst": "56 із 56 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs identiteit-account-ui",
+      "uitkomst": "6 із 6 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs trace-001-ontwikkelarchief",
+      "uitkomst": "16 із 16 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs uitrol-voorcontrole",
+      "uitkomst": "42 із 42 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs plaatsing-20261025 і node scripts/plaatsing-controle.mjs",
+      "uitkomst": "68 із 68 успішно; реєстр закріплених елементів гаразд"
+    },
+    {
+      "opdracht": "порівняння зі справжнім макетом у Chromium (390/768/1440, темна й світла тема, uk/nl)",
+      "uitkomst": "усі перевірки поведінки пройдено; обчислені стилі збігаються, крім свідомих відмінностей (z-index +400, монограма підвалу в один рядок, блоки «Чинні налаштування»)"
+    },
+    {
+      "opdracht": "пробне node scripts/orch.mjs pakket + pakket-controleer",
+      "uitkomst": "див. запис процесу випуску"
+    }
+  ],
+  "beperkingen": [
+    "Знімки зроблено на зібраному сайті з підробленими відповідями API; на справжньому сервері вигляд варто ще раз переглянути в режимі «Тільки я».",
+    "Вигляд «Макет» потребує ввімкнених прапорців identiteit-account-atelier та identiteit-account-maquette; інші сторінки не змінювались.",
+    "Встановлення лише власником через ключ доступу після звірення контрольної суми; «макет як тема сайту» — окрема наступна задача."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних паролів, приватних ключів, особистих листів або користувацьких даних не включено; ім'я та світлина облікового запису беруться з сесії під час роботи сайту."
+  }
+}
