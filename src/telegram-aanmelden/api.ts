@@ -38,16 +38,16 @@ export async function openbaarGet<T = unknown>(pad: string): Promise<T> { return
 
 /** Leesbare tekst voor elke foutcode van de server; één taal tegelijk (de taal van de pagina). */
 const FOUTEN: Record<string, [string, string]> = {
-  VLAG_UIT: ['Вхід через Telegram ще не ввімкнено для вашого акаунта.', 'Aanmelden met Telegram staat nog niet aan voor uw account.'],
-  NIET_GEVONDEN: ['Вхід через Telegram ще не ввімкнено для вашого акаунта.', 'Aanmelden met Telegram staat nog niet aan voor uw account.'],
+  VLAG_UIT: ['Вхід через Telegram ще не ввімкнено для вашого облікового запису.', 'Aanmelden met Telegram staat nog niet aan voor uw account.'],
+  NIET_GEVONDEN: ['Вхід через Telegram ще не ввімкнено для вашого облікового запису.', 'Aanmelden met Telegram staat nog niet aan voor uw account.'],
   UITGESCHAKELD: ['Адміністратор тимчасово вимкнув вхід через Telegram для всіх.', 'De beheerder heeft aanmelden met Telegram tijdelijk voor iedereen uitgezet.'],
   TELEGRAM_UIT: ['Вхід через Telegram зараз вимкнено.', 'Aanmelden met Telegram staat nu uit.'],
-  NIET_TOEGESTAAN: ['Для вашого акаунта вхід через Telegram не дозволено.', 'Voor uw account is aanmelden met Telegram niet toegestaan.'],
+  NIET_TOEGESTAAN: ['Для вашого облікового запису вхід через Telegram не дозволено.', 'Voor uw account is aanmelden met Telegram niet toegestaan.'],
   LIMIET_BEREIKT: ['Досягнуто ліміту прив’язок Telegram. Спершу відв’яжіть одну з наявних.', 'Het maximum aantal Telegram-koppelingen is bereikt. Ontkoppel eerst een bestaande.'],
   RATE_LIMITED: ['Забагато спроб. Зачекайте хвилину — ми не блокуємо вас назавжди.', 'Te veel pogingen. Wacht een minuut — u bent niet blijvend geblokkeerd.'],
   VERLOPEN: ['Час вийшов. Почніть знову — це безпечно.', 'De tijd is om. Begin opnieuw — dat is veilig.'],
   VERZOEK_ONBEKEND: ['Запит не знайдено або він уже завершився. Почніть знову.', 'Verzoek niet gevonden of al afgerond. Begin opnieuw.'],
-  AL_GEKOPPELD: ['Цей Telegram уже прив’язано до вашого акаунта.', 'Deze Telegram is al aan uw account gekoppeld.'],
+  AL_GEKOPPELD: ['Цей Telegram уже прив’язано до вашого облікового запису.', 'Deze Telegram is al aan uw account gekoppeld.'],
   AL_GEBRUIKT: ['Цей запит уже використано. Почніть знову.', 'Dit verzoek is al gebruikt. Begin opnieuw.'],
   NOG_NIET_KLAAR: ['Спершу завершіть кроки в Telegram.', 'Rond eerst de stappen in Telegram af.'],
   KOPPELING_ONBEKEND: ['Прив’язку не знайдено.', 'Koppeling niet gevonden.'],

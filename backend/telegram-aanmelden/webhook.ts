@@ -84,8 +84,8 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
       const r = await koppelVanBot(arg.slice(2), van, chatId);
       if (r === 'telefoon') {
         await stuur(chatId, t(TEKST.telefoonVraag, taal), taal, { kaart: 'gewoon', antwoordToetsenbord: { keyboard: [[{ text: t(TEKST.deelKnop, taal === 'nl' ? 'nl' : 'uk'), request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } });
-      } else if (r === 'al-gekoppeld') await stuur(chatId, taal === 'nl' ? 'ℹ️ Deze Telegram is al aan dit account gekoppeld.' : taal === 'uk' ? 'ℹ️ Цей Telegram уже прив’язано до цього акаунта.' : 'ℹ️ Цей Telegram уже прив’язано до цього акаунта.\n\nℹ️ Deze Telegram is al aan dit account gekoppeld.', taal);
-      else if (r === 'te-veel') await stuur(chatId, taal === 'nl' ? '⛔ Deze Telegram is al aan het maximum aantal accounts gekoppeld.' : '⛔ Цей Telegram уже прив’язано до максимальної кількості акаунтів.', taal);
+      } else if (r === 'al-gekoppeld') await stuur(chatId, taal === 'nl' ? 'ℹ️ Deze Telegram is al aan dit account gekoppeld.' : taal === 'uk' ? 'ℹ️ Цей Telegram уже прив’язано до цього облікового запису.' : 'ℹ️ Цей Telegram уже прив’язано до цього облікового запису.\n\nℹ️ Deze Telegram is al aan dit account gekoppeld.', taal);
+      else if (r === 'te-veel') await stuur(chatId, taal === 'nl' ? '⛔ Deze Telegram is al aan het maximum aantal accounts gekoppeld.' : '⛔ Цей Telegram уже прив’язано до максимальної кількості облікових записів.', taal);
       else await stuur(chatId, t(TEKST.koppelVerlopen, taal), taal);
       return;
     }
@@ -115,7 +115,7 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
     const rijen = [];
     for (const k of lijst) rijen.push([{ letter: 'o' as const, doel: `vraag:${k.id}`, tekst: `${['🔵', '🟢', '🟣', '🟠', '🟤'][k.kleur] ?? '🔵'} ${(await accountNaam(k.user_id)) || k.naam}`.slice(0, 60) }]);
     rijen.push([{ letter: 'c' as const, doel: 'ontkoppelen', tekst: t(TEKST.knopAnnuleren, tl) }]);
-    await stuur(chatId, tl === 'nl' ? 'Welk account ontkoppelen?' : 'Від якого акаунта відв’язати?', taal, { knoppen: await knoppenMaken(tg, `ontkoppel-${Date.now()}`, rijen) });
+    await stuur(chatId, tl === 'nl' ? 'Welk account ontkoppelen?' : 'Від якого облікового запису відв’язати?', taal, { knoppen: await knoppenMaken(tg, `ontkoppel-${Date.now()}`, rijen) });
     return;
   }
   if (opdracht) { await stuur(chatId, t(TEKST.onbekend, taal), taal); return; }
@@ -199,7 +199,7 @@ async function knopUitvoeren(letter: string, rij: KnopRij, tg: string, taal: Bot
       const r = await inlogGoedkeuren(rij.doel, tg);
       if (r.uitkomst === 'ok') { await werk(t(TEKST.ingelogd, taal)); if (v) await succesTonen(v.chatId); }
       else if (r.uitkomst === 'code') await werk(taal === 'nl' ? '🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).' : taal === 'uk' ? '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).' : '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).\n\n🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).');
-      else if (r.uitkomst === 'passkey-nodig') await werk(taal === 'nl' ? '🔐 Voor dit account (of dit nieuwe apparaat) is een passkey nodig. Meld u op de site aan met uw passkey.' : '🔐 Для цього акаунта (або цього нового пристрою) потрібен ключ доступу. Увійдіть на сайті ключем доступу.');
+      else if (r.uitkomst === 'passkey-nodig') await werk(taal === 'nl' ? '🔐 Voor dit account (of dit nieuwe apparaat) is een passkey nodig. Meld u op de site aan met uw passkey.' : '🔐 Для цього облікового запису (або цього нового пристрою) потрібен ключ доступу. Увійдіть на сайті ключем доступу.');
       else if (r.uitkomst === 'geweigerd') await werk(t(TEKST.storingVast, taal));
       else await werk(t(TEKST.verlopen, taal));
       await gebeurtenis('knop-inloggen', r.uitkomst === 'ok' || r.uitkomst === 'code');

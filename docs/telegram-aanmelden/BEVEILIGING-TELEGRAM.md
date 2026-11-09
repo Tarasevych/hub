@@ -7,7 +7,7 @@ Taal van de site en de bot: alleen **Oekraïens (uk)** en **Nederlands (nl)**.
 
 | Dreiging | Maatregel |
 |---|---|
-| Iemand koppelt zijn eigen Telegram aan uw account | Koppelen vraagt een **passkey-step-up** op de site; de bot vraagt het **eigen telefoonnummer via `request_contact`**. Een getypt nummer of het contact van iemand anders (`contact.user_id ≠ from.id`) wordt geweigerd. Daarna ziet u de **volledige identiteit** (nummer, @nick, naam, Telegram-ID, foto) en bevestigt u met vinkje + aftelling + passkey. |
+| Iemand koppelt zijn eigen Telegram aan uw account | Koppelen vraagt een **passkey-step-up** op de site; de bot vraagt het **eigen telefoonnummer via `request_contact`**. Een getypt nummer of het contact van iemand anders (`contact.user_id ≠ from.id`) wordt geweigerd. Daarna ziet u de **volledige identiteit** (nummer, @gebruikersnaam, naam, Telegram-ID, foto) en bevestigt u met vinkje + aftelling + passkey. |
 | Telegram-account gekaapt (sim-swap, sessiediefstal) | Een kaper verandert eerst nick/naam/foto/nummer. Elke afwijking van de bij het koppelen vastgelegde **vingerafdruk** zet de koppeling op **«призупинено»/gepauzeerd**: geen aanmelden, geen bevestigen. «Так» in Telegram alléén heft dat **nooit** op; daarvoor is de site + passkey nodig (actie `wijziging-bevestigen`, minimum passkey). Ander **telefoonnummer = opnieuw koppelen**. Afwijkend Telegram-ID = vervalsing → koppeling uit + melding. Geen antwoord binnen 24 u → koppeling uit. |
 | Gekaapte Telegram gebruikt om verder te komen | Gevoelige acties (koppelen/ontkoppelen, rechten, aanmeldmethoden, telefoon, e-mail/wachtwoord, geheime code, bevestigingstabel, betalingen, beheerinstellingen, botsleutel) hebben **minimum passkey**: de tabel kan daar nooit «alleen Telegram» kiezen (server- én UI-zijde, `keuzeToegestaan`). |
 | «Ja» en «Nee» tegelijk | **«Ні» wint altijd**, ongeacht volgorde of kanaal; het conflict wordt aan de eigenaar getoond («Ні» діє одразу й завжди переважає). |
@@ -23,7 +23,7 @@ Taal van de site en de bot: alleen **Oekraïens (uk)** en **Nederlands (nl)**.
 | Uitval van Telegram | Statusdienst (elke minuut `getMe` + webhook-signalen) classificeert **tijdelijk / lang (>10 min) / vast**; site toont dat eerlijk en biedt de andere aanmeldmethoden. Noodschakelaar: alles uit, zonder passkey (uitzetten mag altijd snel). |
 
 ## 2. Transparantie — niets gemaskeerd
-De eigenaar en de beheerder zien de identiteit **volledig**: telefoonnummer tot het laatste cijfer, @nick, voor- en achternaam,
+De eigenaar en de beheerder zien de identiteit **volledig**: telefoonnummer tot het laatste cijfer, @gebruikersnaam, voor- en achternaam,
 Telegram-ID, foto. Kaarten in Telegram tonen apparaat, browser, plaats en tijd van het verzoek. Elke stap legt uit **waarom** hij gevraagd wordt.
 De enige waarde die nooit verschijnt is het **geheim** van de botsleutel (het publieke bot-ID wel).
 

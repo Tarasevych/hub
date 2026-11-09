@@ -27,7 +27,7 @@ export async function vingerafdrukControleren(k: KoppelRij, nieuw: Partial<Vinge
   if (ernst === 'vervalsing') {
     // Een ander Telegram-account dan gekoppeld: verzoek weigeren, de koppeling blijft ongemoeid.
     await audit(k.user_id, 'vervalsing', 'denied', { koppeling: k.id, bron, verwacht: k.telegram_id, gekregen: String(nieuw.telegramId || '') });
-    await beheerAlarm('vervalsing', { koppeling: k.id, userId: k.user_id, bron }, { uk: `Спроба входу іншим акаунтом Telegram (${String(nieuw.telegramId || '')}) замість прив’язаного ${k.telegram_id}. Запит відхилено.`, nl: `Poging met een ander Telegram-account (${String(nieuw.telegramId || '')}) in plaats van het gekoppelde ${k.telegram_id}. Verzoek geweigerd.` });
+    await beheerAlarm('vervalsing', { koppeling: k.id, userId: k.user_id, bron }, { uk: `Спроба входу іншим обліковим записом Telegram (${String(nieuw.telegramId || '')}) замість прив’язаного ${k.telegram_id}. Запит відхилено.`, nl: `Poging met een ander Telegram-account (${String(nieuw.telegramId || '')}) in plaats van het gekoppelde ${k.telegram_id}. Verzoek geweigerd.` });
     return { soort: 'vervalsing' };
   }
   // Is er al een open wijziging met precies dezelfde verschillen? Dan niet nog eens melden (geen spam bij elke update).

@@ -31,11 +31,11 @@ export const TEKST = {
     nl: 'Welkom! Dit is de officiële bot van «Mijn Ruimte» (id.tarasevych.com).\n\nWat ik doe:\n• uw aanmelding op de site bevestigen;\n• belangrijke handelingen bevestigen;\n• meldingen over aanmeldingen en wijzigingen tonen.\n\nKoppel deze Telegram eerst op de site: «Instellingen» → «Aanmeldmethoden» → «Telegram koppelen».',
   },
   koppelUitleg: {
-    uk: 'Прив’язати Telegram можна лише з уже відкритого сайту, ніколи звідси. Відкрийте «Способи входу» на сайті й натисніть «Прив’язати Telegram». Так ніхто чужий не прив’яже свій Telegram до вашого акаунта.',
+    uk: 'Прив’язати Telegram можна лише з уже відкритого сайту, ніколи звідси. Відкрийте «Способи входу» на сайті й натисніть «Прив’язати Telegram». Так ніхто чужий не прив’яже свій Telegram до вашого облікового запису.',
     nl: 'Koppelen kan alleen vanuit de site waar u al bent aangemeld, nooit vanaf hier. Open «Aanmeldmethoden» op de site en kies «Telegram koppelen». Zo kan niemand anders zijn Telegram aan uw account koppelen.',
   },
   telefoonVraag: {
-    uk: '📱 Крок 2 з 3: поділіться своїм номером телефону.\n\nНавіщо: номер підтверджує, що цей Telegram належить саме вам. Без нього хтось інший міг би прив’язати свій акаунт до вашого профілю.\n\nНатисніть кнопку «📱 Поділитися номером» унизу. Набраний вручну номер не приймається. Номер бачите лише ви та адміністратор сайту, повністю.',
+    uk: '📱 Крок 2 з 3: поділіться своїм номером телефону.\n\nНавіщо: номер підтверджує, що цей Telegram належить саме вам. Без нього хтось інший міг би прив’язати свій обліковий запис до вашого профілю.\n\nНатисніть кнопку «📱 Поділитися номером» унизу. Набраний вручну номер не приймається. Номер бачите лише ви та адміністратор сайту, повністю.',
     nl: '📱 Stap 2 van 3: deel uw telefoonnummer.\n\nWaarom: het nummer bevestigt dat deze Telegram echt van u is. Zonder nummer zou iemand anders zijn account aan uw profiel kunnen koppelen.\n\nTik onderaan op «📱 Nummer delen». Een getypt nummer wordt niet aanvaard. Alleen u en de beheerder van de site zien het nummer, volledig.',
   },
   deelKnop: { uk: '📱 Поділитися номером', nl: '📱 Nummer delen' },
@@ -46,9 +46,9 @@ export const TEKST = {
     nl: '✅ Nummer ontvangen. Stap 3 van 3: ga terug naar de site en bevestig de koppeling met uw passkey. De passkey bevestigt dat u zelf koppelt, niet iemand met toegang tot uw Telegram.',
   },
   koppelVerlopen: { uk: '⌛ Час на прив’язку минув. Почніть знову на сайті.', nl: '⌛ De tijd om te koppelen is verstreken. Begin opnieuw op de site.' },
-  gekoppeld: { uk: '✅ Telegram прив’язано до акаунта «{account}».', nl: '✅ Telegram is gekoppeld aan het account «{account}».' },
-  nietGekoppeld: { uk: 'Цей Telegram ще не прив’язано до жодного акаунта. Команда /koppelen пояснить, як це зробити.', nl: 'Deze Telegram is nog aan geen enkel account gekoppeld. /koppelen legt uit hoe.' },
-  welkAccount: { uk: 'До якого акаунта увійти?', nl: 'Bij welk account aanmelden?' },
+  gekoppeld: { uk: '✅ Telegram прив’язано до облікового запису «{account}».', nl: '✅ Telegram is gekoppeld aan het account «{account}».' },
+  nietGekoppeld: { uk: 'Цей Telegram ще не прив’язано до жодного облікового запису. Команда /koppelen пояснить, як це зробити.', nl: 'Deze Telegram is nog aan geen enkel account gekoppeld. /koppelen legt uit hoe.' },
+  welkAccount: { uk: 'До якого облікового запису увійти?', nl: 'Bij welk account aanmelden?' },
   inlogVraag: {
     uk: '🔐 Запит на вхід\n\nХто: {account}\nЩо: вхід на сайт «Мій простір»\nКоли: {tijd}\nЗвідки: {apparaat}\n\nЩо це означає: хтось (сподіваємось, ви) натиснув «Увійти через Telegram» на сайті.\nЩо далі: якщо це ви, натисніть «✅ Це я, увійти». Якщо ні, натисніть «⛔ Це не я», і вхід буде заблоковано.',
     nl: '🔐 Aanmeldverzoek\n\nWie: {account}\nWat: aanmelden op «Mijn Ruimte»\nWanneer: {tijd}\nVanwaar: {apparaat}\n\nWat dit betekent: iemand (hopelijk u) koos «Aanmelden met Telegram» op de site.\nWat nu: bent u het, tik dan «✅ Ik ben het, aanmelden». Zo niet, tik «⛔ Dit ben ik niet» en de aanmelding wordt geblokkeerd.',
@@ -74,7 +74,7 @@ export const TEKST = {
   teSnel: { uk: '⏸️ Забагато натискань. Зачекайте хвилину.', nl: '⏸️ Te veel tikken. Wacht een minuut.' },
   ingelogd: { uk: '✅ Вхід підтверджено. Поверніться на сайт, він відкриється сам.', nl: '✅ Aanmelding bevestigd. Ga terug naar de site; die opent vanzelf.' },
   bevestigd: { uk: '✅ Підтверджено.', nl: '✅ Bevestigd.' },
-  geweigerd: { uk: '⛔ Заблоковано. Ми повідомили власника акаунта й адміністратора.', nl: '⛔ Geblokkeerd. We hebben de eigenaar van het account en de beheerder ingelicht.' },
+  geweigerd: { uk: '⛔ Заблоковано. Ми повідомили власника облікового запису й адміністратора.', nl: '⛔ Geblokkeerd. We hebben de eigenaar van het account en de beheerder ingelicht.' },
   storingTijdelijk: { uk: '⚠️ Не вдалося, спробую ще раз автоматично через 10 секунд.', nl: '⚠️ Mislukt; ik probeer het over 10 seconden vanzelf opnieuw.' },
   storingLang: { uk: '⚠️ Сайт зараз не відповідає, ми це вже бачимо. Я напишу вам, щойно запрацює. Можна увійти іншим способом.', nl: '⚠️ De site antwoordt nu niet; we weten het al. Ik laat het u weten zodra het weer werkt. U kunt op een andere manier aanmelden.' },
   storingVast: { uk: '⛔ Цей спосіб зараз не працює, і повторна спроба не допоможе. Скористайтеся ключем доступу або кодом відновлення.', nl: '⛔ Deze manier werkt nu niet en opnieuw proberen helpt niet. Gebruik uw passkey of een herstelcode.' },
@@ -83,7 +83,7 @@ export const TEKST = {
     nl: '⛔ Ik heb uw bericht verwijderd: het lijkt op een code of wachtwoord. Stuur uw geheime code nooit in deze chat. Was het uw geheime code, wijzig die dan op de site (met uw passkey). Tot dan staat bevestigen met de geheime code uit.',
   },
   wijzigingVraag: {
-    uk: '⚠️ Ми помітили зміну у вашому Telegram\n\nАкаунт: {account}\nЩо змінилось: {veld}\nБуло: {oud}\nСтало: {nieuw}\nКоли: {tijd}\n\nЩо це означає: поки ви не підтвердите зміну на сайті ключем доступу, вхід через цей Telegram призупинено.\nЩо далі: «Це був я» лише позначає зміну як побачену; підтвердити можна тільки на сайті. Якщо це не ви, натисніть «⛔ Це не я».',
+    uk: '⚠️ Ми помітили зміну у вашому Telegram\n\nОбліковий запис: {account}\nЩо змінилось: {veld}\nБуло: {oud}\nСтало: {nieuw}\nКоли: {tijd}\n\nЩо це означає: поки ви не підтвердите зміну на сайті ключем доступу, вхід через цей Telegram призупинено.\nЩо далі: «Це був я» лише позначає зміну як побачену; підтвердити можна тільки на сайті. Якщо це не ви, натисніть «⛔ Це не я».',
     nl: '⚠️ We zagen een wijziging in uw Telegram\n\nAccount: {account}\nWat veranderde: {veld}\nWas: {oud}\nIs nu: {nieuw}\nWanneer: {tijd}\n\nWat dit betekent: tot u de wijziging op de site met uw passkey bevestigt, staat aanmelden met deze Telegram op pauze.\nWat nu: «Dat was ik» markeert de wijziging alleen als gezien; bevestigen kan alleen op de site. Bent u het niet, tik «⛔ Dit ben ik niet».',
   },
   gezien: { uk: '👁️ Позначено як побачене. Тепер підтвердіть зміну на сайті ключем доступу.', nl: '👁️ Gemarkeerd als gezien. Bevestig de wijziging nu op de site met uw passkey.' },
@@ -91,7 +91,7 @@ export const TEKST = {
     uk: '🚨 Увага: у Telegram хтось підтвердив зміну, а на сайті її заперечили. Схоже, ваш Telegram міг бути зламаний. Прив’язку вимкнено.\n\nЩо зробити:\n1. Telegram → Налаштування → Пристрої: завершіть усі чужі сеанси.\n2. Увімкніть хмарний пароль (двоетапну перевірку).\n3. Перевірте пристрої на сайті.',
     nl: '🚨 Let op: in Telegram bevestigde iemand de wijziging, maar op de site werd ze ontkend. Mogelijk is uw Telegram gekaapt. De koppeling staat uit.\n\nWat te doen:\n1. Telegram → Instellingen → Apparaten: beëindig alle vreemde sessies.\n2. Zet het cloudwachtwoord (tweestapsverificatie) aan.\n3. Controleer de apparaten op de site.',
   },
-  ontkoppelVraag: { uk: 'Відв’язати цей Telegram від акаунта «{account}»? Після цього входити через нього не вийде.', nl: 'Deze Telegram ontkoppelen van het account «{account}»? Daarna kunt u er niet meer mee aanmelden.' },
+  ontkoppelVraag: { uk: 'Відв’язати цей Telegram від облікового запису «{account}»? Після цього входити через нього не вийде.', nl: 'Deze Telegram ontkoppelen van het account «{account}»? Daarna kunt u er niet meer mee aanmelden.' },
   ontkoppeld: { uk: '✅ Відв’язано.', nl: '✅ Ontkoppeld.' },
   laatsteMethode: { uk: '⛔ Це ваш останній спосіб входу, тому його не можна відв’язати. Спершу додайте інший.', nl: '⛔ Dit is uw laatste aanmeldmethode en kan dus niet ontkoppeld worden. Voeg eerst een andere toe.' },
   hulp: {
@@ -104,9 +104,9 @@ export const TEKST = {
 } as const satisfies Record<string, BotTekst>;
 
 export const VELD_NAMEN: Record<string, BotTekst> = {
-  telegramId: { uk: 'номер акаунта Telegram', nl: 'Telegram-accountnummer' },
+  telegramId: { uk: 'номер облікового запису Telegram', nl: 'Telegram-accountnummer' },
   telefoon: { uk: 'номер телефону', nl: 'telefoonnummer' },
-  gebruikersnaam: { uk: '@нікнейм', nl: '@gebruikersnaam' },
+  gebruikersnaam: { uk: '@ім’я користувача', nl: '@gebruikersnaam' },
   voornaam: { uk: 'ім’я', nl: 'voornaam' },
   achternaam: { uk: 'прізвище', nl: 'achternaam' },
   fotoId: { uk: 'фото профілю', nl: 'profielfoto' },

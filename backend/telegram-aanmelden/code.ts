@@ -64,7 +64,7 @@ export async function codeControleren(userId: string, code: string): Promise<Cod
     await sql("UPDATE app.tg_geheime_codes SET uitgeschakeld = true, reden = 'alarm' WHERE user_id = $1", [userId]);
     for (const k of await koppelingenVanGebruiker(userId)) await standZetten(k.id, 'uitgeschakeld', 'alarmcode');
     await audit(userId, 'code.alarm', 'alarm');
-    await beheerAlarm('alarmcode', { userId }, { uk: 'Використано код тривоги. Усі прив’язки Telegram цього акаунта вимкнено.', nl: 'De alarmcode is gebruikt. Alle Telegram-koppelingen van dit account staan uit.' });
+    await beheerAlarm('alarmcode', { userId }, { uk: 'Використано код тривоги. Усі прив’язки Telegram цього облікового запису вимкнено.', nl: 'De alarmcode is gebruikt. Alle Telegram-koppelingen van dit account staan uit.' });
     return 'alarm';
   }
   const [na] = await sql<{ mislukt: number }>('UPDATE app.tg_geheime_codes SET mislukt = mislukt + 1 WHERE user_id = $1 RETURNING mislukt', [userId]);
