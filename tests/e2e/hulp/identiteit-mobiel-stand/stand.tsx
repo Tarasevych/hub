@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IdentiteitAtelierV49 } from '../../../../src/identiteit/IdentiteitAtelierV49';
+import { IdentiteitAtelier } from '../../../../src/identiteit/IdentiteitAtelier';
 import type { IdentiteitSectie } from '../../../../src/identiteit/IdentiteitAccountPagina';
 
 const ids = ['personalization', 'menu', 'themes', 'languages', 'widgets', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery'];
@@ -20,7 +20,7 @@ function Proef() {
       </div>}
     </div>,
   }));
-  return <IdentiteitAtelierV49 lang='uk' actief={actief} inBeeld={actief} secties={secties} onKies={setActief}/>;
+  return <IdentiteitAtelier lang='uk' actief={actief} inBeeld={actief} secties={secties} onKies={setActief}/>;
 }
 
 createRoot(document.getElementById('root')!).render(<Proef/>);

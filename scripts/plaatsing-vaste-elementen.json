@@ -259,68 +259,72 @@
    "reden": "IDENTITY-002: achtergrondlaag van de fotodialoog (venster, geen zwevende knop). Het venster moet boven de pagina en de instellingenkaarten staan; zonder position:fixed kan het niet het hele scherm bedekken. Sluit met Escape of klik op de achtergrond."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49:before",
-   "reden": "IDENTITEIT-005: niet-bedienbare achtergrondgloed van de goedgekeurde vorm; pointer-events:none, geen knop."
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-sluier",
+   "reden": "IDENTITEIT-006: verduisterende achtergrond onder het onderdeelblad en het zoekvenster van de accountstudio; geen knop. Een tik erop sluit het venster."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .scroll-progress",
-   "reden": "IDENTITEIT-005: smalle voortgangsstrook bovenaan uit het vormvoorbeeld; geen knop of bediening."
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-kiezer",
+   "reden": "IDENTITEIT-006: dialoogvenster «Розділи / Пошук» van de accountstudio (role=dialog); op de telefoon een onderblad. Venster, geen zwevende knop; sluit met Escape of de sluier."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .app-rail",
-   "reden": "IDENTITEIT-005: vaste zijbalk uit het oorspronkelijke vormvoorbeeld; de werkende accountpagina tekent deze balk niet en behoudt de bestaande toepassingsnavigatie."
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-popover",
+   "reden": "IDENTITEIT-006: keuzevenster voor de plaats en stijl van de navigatie; op de telefoon een onderblad. Venster, geen knop."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .anchor-rail",
-   "reden": "IDENTITEIT-005: volledige navigatiebalk met onderdeelgroepen; geen afzonderlijke zwevende actieknop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq:before",
+   "reden": "IDENTITEIT-007: сяйво тла макета власника (pointer-events:none, z-index:-1), як body:before у макеті; не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .popover-panel",
-   "reden": "IDENTITEIT-005: instellingsvenster voor de ligging van de navigatie; een paneel, geen zwevende knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .scroll-progress",
+   "reden": "IDENTITEIT-007: тонка смуга поступу прокрутки макета під командною смугою сайту (top:var(--mq-site)); не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .search-overlay",
-   "reden": "IDENTITEIT-005: schermvullende achtergrond van het venster voor zoeken naar onderdelen; geen knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .app-rail",
+   "reden": "IDENTITEIT-007: смуга сервісів макета власника (знак «Мій простір», шість сервісів, аватар) уздовж лівого краю на всю висоту, як у макеті; оболонка сайту на час вигляду схована, на телефоні (≤730) смуга прихована."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .toast",
-   "reden": "IDENTITEIT-005: tijdelijke uitkomstmelding uit het oorspronkelijke vormvoorbeeld; geen bedienbare knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .anchor-rail",
+   "reden": "IDENTITEIT-007: якірне меню макета, яке користувач закріплює ліворуч/праворуч/згори/знизу (перетягуванням або у вікні навігації); зсуви від бічного меню сайту через --mq-links/--mq-boven."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .anchor-tooltip",
-   "reden": "IDENTITEIT-005: niet-bedienbare toelichting bij een navigatieonderdeel; pointer-events:none, geen knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .settings-drawer",
-   "reden": "IDENTITEIT-005: schermvullende laag voor het instellingenpaneel uit het vormvoorbeeld; pointer-events:none op de buitenlaag, geen losse knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .search-overlay",
+   "reden": "IDENTITEIT-007: шар швидкого переходу Ctrl+K макета на весь екран; панель, не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .horizontal-nav-popup",
-   "reden": "IDENTITEIT-005: uitklapvenster van de horizontale onderdeelnavigatie; een paneel, geen losse knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .toast",
+   "reden": "IDENTITEIT-007: коротке повідомлення макета (role=status); не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed.rail-smart-open .adaptive-nav-scrim:not([hidden])",
-   "reden": "IDENTITEIT-005: verduisteringslaag achter een geopend navigatievenster; geen bediening."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .anchor-tooltip",
+   "reden": "IDENTITEIT-007: підказка якірного меню в згорнутому режимі (role=tooltip); не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed.rail-pills.rail-left .popover-panel,.ia-at-v49.rail-smart-condensed.rail-pills.rail-right .popover-panel",
-   "reden": "IDENTITEIT-005: plaatsing van hetzelfde navigatie-instellingenvenster bij de compacte zijbalk; geen knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .settings-drawer",
+   "reden": "IDENTITEIT-007: бічна шухляда макета (у версії сайту не відкривається — панелі розгортаються в картках), правило лишено для тотожності стилів."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed:not(.rail-smart-open) .adaptive-nav-edge",
-   "reden": "IDENTITEIT-005: randzone van de compacte navigatie uit het oorspronkelijke vormvoorbeeld; niet afzonderlijk aanwezig in de werkende accountpagina."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .horizontal-nav-popup",
+   "reden": "IDENTITEIT-007: випадний перелік групи для меню згори/знизу; панель, не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49.rail-smart-condensed.rail-left .popover-panel,.ia-at-v49.rail-smart-condensed.rail-right .popover-panel",
-   "reden": "IDENTITEIT-005: plaatsing van hetzelfde navigatie-instellingenvenster naast een compacte balk; geen losse knop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-smart-open .adaptive-nav-scrim:not([hidden])",
+   "reden": "IDENTITEIT-007: затемнення під розгорнутим адаптивним меню на телефоні; не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: .ia-at-v49 .anchor-rail.ia-at-nav",
-   "reden": "IDENTITEIT-005: bestaande navigatiebalk van de accountpagina met bijzondere plaatsing; geen afzonderlijke zwevende actieknop."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-pills.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-pills.rail-right .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
   },
   {
-   "sleutel": "src/identiteit/atelier-v49-bron.css :: @media(max-width:900px) .ia-at-v49:is(.rail-left,.rail-right,.rail-top,.rail-bottom) .anchor-rail.ia-at-nav",
-   "reden": "MOBIEL-001: hetzelfde navigatiepaneel opent op de telefoon als een onderblad; de openingsknop blijft in de bestaande kopzone, niet zwevend."
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:not(.rail-smart-open) .adaptive-nav-edge",
+   "reden": "IDENTITEIT-007: тонка зона біля краю екрана, яка розгортає адаптивне меню на телефоні; частина меню, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-right .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
   }
  ],
  "kopReserves": [

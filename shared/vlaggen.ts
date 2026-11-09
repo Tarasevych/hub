@@ -86,6 +86,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу тільки для себе. Потім можна відкрити для вибраних людей, частини користувачів або всіх.', 'Zet eerst alleen voor uzelf aan. Daarna eventueel voor gekozen mensen, een deel van de gebruikers of iedereen.'],
     gevolg: ['Вимкнення негайно повертає попереднє оформлення без втрати налаштувань. Перемикач не змінює прав доступу й способів входу.', 'Uitschakelen brengt de vorige vorm onmiddellijk terug zonder instellingen te verliezen. De schakelaar verandert geen rechten of aanmeldmethoden.'],
   },
+  'identiteit-account-maquette': {
+    naam: ['Вигляд «Макет» у «Керуванні обліковим записом»', 'Weergave «Ontwerp» in «Accountbeheer»'],
+    wat: ['Дизайн власника як типовий вигляд сторінки облікового запису: герой, картки чотирьох груп, якірне меню з будь-якого краю, швидкий пошук Ctrl+K. Справжні дії й права ті самі; у вигляді лишається вибір «Студія» або класичний.', 'Het ontwerp van de eigenaar als standaardweergave van de accountpagina: hero, kaarten in vier groepen, een ankermenu aan elke rand, snel zoeken met Ctrl+K. Echte handelingen en rechten blijven gelijk; de keuze «Studio» of klassiek blijft.'],
+    wanneer: ['Потребує ввімкненого прапорця «Нове оформлення». Спершу тільки для себе, потім для частини людей або всіх. Надалі цей вигляд планується як тема сайту.', 'Vereist de vlag «Nieuwe vorm». Eerst alleen voor uzelf, daarna voor een deel of iedereen. Later is deze weergave bedoeld als thema van de site.'],
+    gevolg: ['Вимкнення прибирає вигляд «Макет» з вибору; хто його обрав, бачить «Студію». Налаштування й дані не змінюються.', 'Uitschakelen haalt «Ontwerp» uit de keuze; wie het koos, ziet de Studio. Instellingen en gegevens veranderen niet.'],
+  },
   'aanmeldmethoden-vnext': {
     naam: ['Нові «Способи входу» (UI-015)', 'Nieuwe aanmeldmethoden (UI-015)'],
     wat: ['Сучасна сторінка способів входу: банер, зрозумілі картки методів з однією дією, деталі в бокових панелях. Усі чинні механізми (Google, passkeys, TOTP, коди відновлення, шифрування, коди доступу, step-up) — ті самі, лише в новому поданні; плюс чесний каталог майбутніх провайдерів.', 'Moderne aanmeldmethoden-pagina: hero, duidelijke methodekaarten met één hoofdactie, details in zijpanelen. Alle bestaande mechanismen (Google, passkeys, TOTP, herstelcodes, versleuteling, toegangscodes, step-up) blijven dezelfde; plus een eerlijke catalogus van toekomstige aanbieders.'],

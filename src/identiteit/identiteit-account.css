@@ -448,6 +448,34 @@
 
 
 /* Вузькі екрани: робоча область має padding-top 62 px (canoniek-omlijsting.css, max-width:700px). */
+/* Перемикач вигляду (IDENTITEIT-007): однаковий у класичному вигляді й у «Студії». Keuze van weergave. */
+.ia-vormgeving {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  justify-self: end;
+}
+.ia-vormgeving-label { padding: 0 8px; font-size: 12px; color: var(--muted); }
+.ia-vormgeving button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ia-vormgeving button:hover { color: var(--text); }
+.ia-vormgeving button.is-actief { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.ia-vormgeving button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 @media (max-width: 700px) {
   .ia-toc {
     top: 62px;
@@ -456,4 +484,7 @@
   .ia-sectie {
     scroll-margin-top: 150px;
   }
+  .ia-vormgeving { justify-self: stretch; border-radius: 16px; }
+  .ia-vormgeving-label { flex-basis: 100%; padding: 2px 6px 0; }
+  .ia-vormgeving button { flex: 1 1 0; }
 }
