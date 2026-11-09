@@ -1,6 +1,6 @@
 // Оформлення сторінки облікового запису (завдання IDENTITY-002): оболонка одного екрана з меню-змістом, дванадцятьма розділами й підсвічуванням під час прокрутки.
 // Розділи наповнює наявний код сторінок категорії «ідентичність» — тут лише розкладка й перехід до розділу.
-import { Component, useEffect, useState, type ReactNode } from 'react';
+import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
 import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag, vlaggenBekend } from '../functievlag-lezen';
@@ -40,6 +40,16 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   const atelier = useVlag('identiteit-account-atelier', false);
   // Прапорець відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag: altijd de klassieke weergave.
   const [vormgeving] = useVormgeving();
+  // Зміна вигляду користувачем: робоча область прокручується вгору, інакше новий вигляд відкривається на випадковій глибині
+  // попереднього (і перемикач класичної сторінки лишається поза екраном). Bij een andere weergave begint de pagina bovenaan.
+  const vorigeVormgeving = useRef(vormgeving);
+  useEffect(() => {
+    if (vorigeVormgeving.current === vormgeving) return;
+    vorigeVormgeving.current = vormgeving;
+    const werkruimte = document.querySelector<HTMLElement>('.canonical-workspace');
+    if (werkruimte) werkruimte.scrollTo({ top: 0 });
+    else window.scrollTo({ top: 0 });
+  }, [vormgeving]);
 
   // Адреса змінилася (наприклад, натискання в бічному меню або пряме посилання) — показуємо цей розділ.
   useEffect(() => {
@@ -101,6 +111,8 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
             <span className='ia-toc-tekst'>{tab[lang]}</span>
           </button>
         ))}
+        {/* Компактний перемикач у липкому меню: класична сторінка відкривається на розділі, а не згори, тож верхній перемикач поза екраном. */}
+        {atelier && <VormgevingKiezer lang={lang} compact />}
       </nav>
       <div className='ia-secties'>
         {secties.map((sectie) => (
@@ -116,6 +128,8 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
           </section>
         ))}
       </div>
+      {/* Під розділами теж, як у «Студії» та «Макеті»: дочитавши сторінку, можна одразу обрати інший вигляд. */}
+      {atelier && <div className='ia-vormgeving-voet'><VormgevingKiezer lang={lang} /></div>}
     </div>
   );
   // Типовий вигляд — макет власника (IDENTITEIT-007); «Студія» і класичний лишаються на вибір. Збій макета повертає класичну сторінку.

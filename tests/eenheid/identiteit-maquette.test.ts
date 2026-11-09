@@ -74,6 +74,10 @@ export async function main(): Promise<number> {
   check('прапорець identiteit-account-maquette має пояснення обома мовами', Boolean(VLAG_UITLEG['identiteit-account-maquette']) && VLAG_UITLEG['identiteit-account-maquette'].gevolg.every((t) => t.length > 40));
   check('без прапорця «Макет» зникає з вибору, типовим стає перший доступний вигляд', vormgeving.includes("VORMGEVINGEN.filter((v) => v !== 'maquette')") && vormgeving.includes("return beschikbaar[0] ?? 'studio';") && kiezer.includes('beschikbaar.map('));
   check('з прапорцем макет — перший і типовий, «Студія» та класичний лишаються', vormgeving.includes("['maquette', 'studio', 'klassiek']") && pagina.includes("vormgeving === 'maquette'") && pagina.includes("vormgeving === 'studio'"));
+  check('класичний вигляд: компактний перемикач у липкому меню, перемикач під розділами, зміна вигляду прокручує вгору',
+    pagina.includes('<VormgevingKiezer lang={lang} compact />') && pagina.includes("<div className='ia-vormgeving-voet'><VormgevingKiezer lang={lang} /></div>") &&
+    pagina.includes("werkruimte.scrollTo({ top: 0 })") && kiezer.includes("<details ref={details} className='ia-vormgeving-compact'>") &&
+    kiezer.includes('details.current.open = false'));
   check('перемикач вигляду є у вікні навігації та під підвалом макета', sjabloon.includes('data-echt=\\"vormgeving-venster\\"') && sjabloon.includes('data-echt=\\"vormgeving-voet\\"') && component.includes("id.startsWith('vormgeving')"));
 
   return einde();

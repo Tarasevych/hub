@@ -129,6 +129,10 @@
   .ia-sectie {
     padding: var(--ruimte-3);
   }
+
+  .ia-vormgeving-compact { grid-column: 1 / -1; margin-left: 0; }
+  .ia-vormgeving-compact > summary { width: 100%; justify-content: center; border-radius: var(--straal-m); }
+  .ia-vormgeving-compact-paneel { position: static; min-width: 0; margin-top: 6px; box-shadow: none; }
 }
 
 @container ia-account (max-width: 420px) {
@@ -475,6 +479,51 @@
 .ia-vormgeving button:hover { color: var(--text); }
 .ia-vormgeving button.is-actief { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .ia-vormgeving button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Перемикач під розділами класичної сторінки — як у «Студії» та «Макеті». De kiezer onder de onderdelen. */
+.ia-vormgeving-voet { display: flex; justify-content: center; margin-top: var(--ruimte-3); }
+.ia-vormgeving-voet .ia-vormgeving { justify-self: center; }
+
+/* Компактний перемикач у липкому меню-змісті: одна кнопка в стилі пунктів меню, вибір розкривається під нею.
+   De compacte kiezer in het klevende menu: één knop in de stijl van de menupunten, de keuze klapt eronder open. */
+.ia-vormgeving-compact { position: relative; margin-left: auto; }
+.ia-vormgeving-compact > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tik-hoogte);
+  padding: 6px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.ia-vormgeving-compact > summary::-webkit-details-marker { display: none; }
+.ia-vormgeving-compact > summary::after { content: '▾'; font-size: 11px; color: var(--muted); }
+.ia-vormgeving-compact[open] > summary::after { content: '▴'; }
+.ia-vormgeving-compact > summary:hover { border-color: var(--accent); background: var(--accent-soft); }
+.ia-vormgeving-compact > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ia-vormgeving-compact-label { color: var(--muted); }
+.ia-vormgeving-compact-paneel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 4;
+  min-width: min(360px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+.ia-vormgeving-compact-paneel .ia-vormgeving { border: 0; border-radius: 12px; background: transparent; justify-self: stretch; }
+.ia-vormgeving-compact-paneel .ia-vormgeving-label { flex-basis: 100%; padding: 2px 6px 4px; }
+.ia-vormgeving-compact-paneel .ia-vormgeving button { flex: 1 1 0; border-radius: 10px; }
 
 @media (max-width: 700px) {
   .ia-toc {
