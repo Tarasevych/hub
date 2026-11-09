@@ -141,5 +141,14 @@ export async function main(): Promise<number> {
   check('lui: agenda, notities, recent niet statisch in App.tsx', !/import Agenda from/.test(app) && !/import HubNotes from/.test(app) && !/import HubRecent from/.test(app) && /lazyZoek\(\(\)=>import\('\.\/agenda\/Agenda'\)\)/.test(app));
   check('lui: GitHub/API/afstemming niet statisch in VerenigdDienstApp', !/from '\.\/DienstWeergaven'/.test(dienst) && !/import AfstemmingWissel from/.test(dienst) && /lazy\(\(\)=>import\('\.\/AfstemmingWissel'\)\)/.test(dienst));
   check('lui: opstelvenster (ProseMirror) lui, maar wel direct gemonteerd met Suspense', /lazy\(\(\) => import\('\.\/MailNieuwBerichtDialoog'\)\)/.test(zwevend) && /<Suspense fallback=\{null\}><MailNewMessageDialog/.test(zwevend));
+
+  // ------------------------------------------------------------------ 8. oude fout: presentation-init moet parseerbaar zijn
+  // Стара вада: ASCII-апостроф у «під'єднань» обривав рядок → SyntaxError у canonical-presentation.js на кожній сторінці
+  // (заголовки, тема й мова до старту React не застосовувалися). Oude fout: ASCII-apostrof brak de string af.
+  const html = readFileSync('index.html', 'utf8');
+  const init = /<script id="presentation-init">([\s\S]*?)<\/script>/.exec(html)?.[1] || '';
+  let parseerbaar = false;
+  try { new Function(init); parseerbaar = true; } catch { parseerbaar = false; }
+  check('index.html: presentation-init zonder syntaxisfout (typografische apostrof)', init.length > 1000 && parseerbaar && init.includes('під’єднань'));
   return einde();
 }
