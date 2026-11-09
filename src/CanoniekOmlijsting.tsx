@@ -46,6 +46,7 @@ const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.se
 // De knop met het opgeslagen account opent het menu en start GEEN rotatie (dat is nog geen aanmelding — vroeger bleef de
 // Google-knop dan draaien zolang het menu open stond).
 import AanmeldAndereOpties from './AanmeldAndereOpties';
+import AanmeldTelegram from './telegram-aanmelden/AanmeldTelegram'; /* TELEGRAM-AANMELDEN v1: toont niets zolang de server zichtbaar=false zegt */
 import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
 export const AANMELD_BEZIG_SLEUTEL='mr-aanmelden-bezig';
 export const AANMELD_BEZIG_MS=5*60_000;
@@ -96,6 +97,7 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
     <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):(uk?'Увійти через Google':'Aanmelden met Google')}</span>
     <span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
    </button>
+   {!checking&&<AanmeldTelegram lang={lang} remember={rememberBrowser}/>}
    {!checking&&<AanmeldAndereOpties lang={lang}/>}
    {!checking&&onRememberBrowser&&<label className='mr-sign-in-remember'>
     <input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/>

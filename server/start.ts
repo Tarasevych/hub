@@ -23,6 +23,7 @@ import { attachAgentGateway, closeAllAgents } from '../backend/connectors-gatewa
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { purgeExpiredDiagnostics } from '../backend/browser-diag-archief';
 import { neemRootGebeurtenissenOp } from '../backend/server-beheer';
+import { statusRonde as telegramStatusRonde } from '../backend/telegram-aanmelden/status';
 import { siemConfig, siemRonde } from '../backend/siem';
 import { TECH_ASSET_KOPPEN, assetToegestaan } from '../backend/tech-bundels';
 import { diepAntwoord } from '../backend/diepe-gezondheid';
@@ -350,6 +351,9 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   [/^\/api\/mcp-connector\/authorize$/, 'mcp-authorize', 60, true],
   [/^\/api\/owner\/agents\/ws-ticket$/, 'ws-ticket', 60, true],
   [/^\/api\/aanmeld\/koppel\/[^/]+\/(start|terug)$/, 'aanmeld-koppel', 30, true],
+  // TELEGRAM-AANMELDEN v1: starten, code en inwisselen strikt per IP (de webhook en het pollen vallen onder de algemene limiet).
+  [/^\/api\/aanmelden\/telegram\/start$/, 'telegram-start', 20, true],
+  [/^\/api\/aanmelden\/telegram\/(code|voltooien|widget-terug)$/, 'telegram-code', 30, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
   [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
 ];
@@ -583,6 +587,11 @@ if (isMain) {
   const rootAudit = () => achtergrond('root-audit', () => neemRootGebeurtenissenOp()).catch((err) => console.error('[beheer] audit opnemen mislukt:', (err as Error).message));
   rootAudit();
   setInterval(rootAudit, 5 * 60_000).unref();
+  // TELEGRAM-AANMELDEN v1: statusdienst (getMe elke minuut), verlopen wijzigingen, opruimen. Doet niets zolang de vlag uit staat.
+  const telegramRonde = () => achtergrond('telegram-aanmelden', () => telegramStatusRonde())
+    .catch((err) => console.error('[telegram-aanmelden] ronde mislukt:', (err as Error).message));
+  setTimeout(telegramRonde, 30_000).unref();
+  setInterval(telegramRonde, 60_000).unref();
   // Sleutelkluis (0092): het achtergrondwerk dat een OPEN gegevenssleutel nodig heeft (Drive/agenda/CalDAV, postonderhoud) loopt hier,
   // in het proces waar de sleutel staat — onder dezelfde advisory lock als de cron, en alleen als er een sleutel open staat.
   const kluisRonde = () => achtergrond('sleutelkluis-ronde', () => sleutelkluisAchtergrondRonde([

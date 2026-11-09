@@ -35,6 +35,7 @@ export const WIS_UITZONDERING: Record<string, string> = {
   ai_media_generator: 'bijgewerkt_door на спільному налаштуванні генератора',
   extensie_beleid: 'user_id стирається стандартно; gewijzigd_door — хто змінив політику',
   extensie_matrix: 'user_id стирається стандартно; gewijzigd_door — хто змінив матрицю',
+  tg_instellingen: 'door — хто востаннє змінив спільні налаштування входу через Telegram (рядок сайту, не акаунта); прив’язки, коди й запити стираються стандартно за user_id',
   cloud_provider_policy_audit_m6: 'append-only журнал політики хмарних провайдерів сайту (actor_id власника, без DELETE)',
 };
 

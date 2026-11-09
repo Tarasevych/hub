@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "taakId": "TELEGRAM-001",
+  "datum": "2026-11-09",
+  "taal": "uk",
+  "opdracht": "Повністю реалізувати вхід і підтвердження дій через Telegram для «Мій простір» (id.tarasevych.com) поверх випуску 20261109-105221: бот @MijnRuimte_Bot, картки з фото/анімацією, обов'язкове поширення власного номера, повна ідентичність без маскування, виявлення змін прив'язаного Telegram, «Ні» завжди перемагає, відлік перед «Так, це я», таблиця підтверджень із passkey для чутливих дій, таємний і тривожний код, служба стану з чесними помилками, повний розділ адміністрування; лише uk/nl; за прапорцем telegram-aanmelden-v1 (типово вимкнено); без розгортання на робочий сервер.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "grok",
+    "model": "grok-bot",
+    "repo": "Tarasevych/hub",
+    "basisTak": "telegram-aanmelden-op-105221",
+    "basisCommit": "22742811cbb10dda3030faae607720d41236be2e",
+    "integratieBasis": "22742811cbb10dda3030faae607720d41236be2e",
+    "geinstalleerdeVersie": "20261109-105221 @ 22742811",
+    "tak": "feature/telegram-001-20261109-134807",
+    "werkTak": "telegram-aanmelden-op-105221"
+  },
+  "bronnen": [
+    {
+      "soort": "запит власника",
+      "omschrijving": "Реалізувати вхід через Telegram повністю, без прогалин у безпеці; надати покрокову інструкцію для бота.",
+      "bewijzen": [
+        "Повідомлення власника 09.11.2026 у треді проєкту"
+      ]
+    },
+    {
+      "soort": "запит власника",
+      "omschrijving": "Бот створено в BotFather під іменем @MijnRuimte_Bot (ім'я, фото, /setdomain id.tarasevych.com, joingroups вимкнено, privacy увімкнено). Ключ бота власник вводить сам після встановлення.",
+      "bewijzen": [
+        "Повідомлення власника 09.11.2026: «Зробив крок 1-4 але назву присвоїв : @MijnRuimte_Bot»"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Окреме робоче дерево від 22742811; міграції 0201 (прапорець, типово вимкнено) і 0202 (таблиці app.tg_*), сценарій відкату.",
+      "bewijzen": [
+        "migrations/0201_telegram_aanmelden_vlag.sql",
+        "migrations/0202_telegram_aanmelden_tabellen.sql",
+        "deploy/telegram-aanmelden-terugdraaien.sql"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Сервер: бот, вебхук із таємним заголовком, одноразові підписані кнопки, відлік на сервері, виявлення змін, таблиця підтверджень, коди, служба стану, адміністрування.",
+      "bewijzen": [
+        "backend/telegram-aanmelden/"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Інтерфейс: кнопка входу з офіційною емблемою Telegram, розділ у «Способи входу», розділ адміністрування в SSO; лише uk/nl.",
+      "bewijzen": [
+        "src/telegram-aanmelden/"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Перевірки: нові модульні й наскрізні тести, повний набір проти бази, збірка, міграції двічі, перевірка в справжньому браузері (світла/темна/мобільна тема).",
+      "bewijzen": [
+        "tests/eenheid/telegram-aanmelden-20261109.test.ts",
+        "tests/eenheid/telegram-aanmelden-stroom-20261109.test.ts"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Оцінка прапорця через впровадження залежності (registreerVlagBeoordelaar)",
+      "reden": "Правило: модуль прапорців імпортує лише backend/index.ts; прапорець ніколи не є правом.",
+      "alternatief": "Прямий імпорт vlaggen у модулі Telegram (порушує тест)."
+    },
+    {
+      "keuze": "Ключ бота лише в зашифрованому сховищі власника, вводиться власником після встановлення",
+      "reden": "Ключ ніколи не запитується й не показується; агент його не має.",
+      "alternatief": "Змінна середовища (лишається як запасний шлях AANMELD_TELEGRAM_BOT_TOKEN)."
+    },
+    {
+      "keuze": "Віджет входу Telegram лише в режимі переспрямування на окремій сторінці з вузькою CSP",
+      "reden": "Не послаблювати CSP основних сторінок.",
+      "alternatief": "Вбудований скрипт віджета на сторінці входу."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "pad": "backend/telegram-aanmelden/*, shared/telegram-aanmelden/*, src/telegram-aanmelden/*",
+      "omschrijving": "Нові модулі входу й підтвердження через Telegram."
+    },
+    {
+      "pad": "backend/index.ts, server/start.ts, server/platform/auth-poort.ts, backend/nieuw-apparaat.ts, shared/vlaggen.ts, shared/account-wissen.ts, src/CanoniekOmlijsting.tsx, src/ToegangslaagWeergave.tsx, src/BeheerConsoleWeergave.tsx, scripts/plaatsing-vaste-elementen.json",
+      "omschrijving": "Точки підключення; поведінка з вимкненим прапорцем незмінна."
+    },
+    {
+      "pad": "docs/telegram-aanmelden/*",
+      "omschrijving": "Інструкція для власника (uk), безпека, примітки до випуску."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/_run-eenheid-tg.mjs (усі tests/eenheid, свіжа база з усіма міграціями)",
+      "uitkomst": "Без нових падінь порівняно з базою 20261109-105221; ті самі 60 попередніх падінь (siem, bijlage-viewer-v2 UFW тощо) є й у базі."
+    },
+    {
+      "opdracht": "telegram-aanmelden-20261109 / telegram-aanmelden-stroom-20261109",
+      "uitkomst": "60/60 і 28/28"
+    },
+    {
+      "opdracht": "npm run build; міграції двічі на порожній базі; /__gezondheid",
+      "uitkomst": "Збірка без помилок; повторний запуск: «niets te doen»; 200 {ok:true,db:true}"
+    },
+    {
+      "opdracht": "Наскрізна перевірка в Chrome через локальний TLS-проксі (прапорець увімкнено, імітація Bot API)",
+      "uitkomst": "16/16; без порушень CSP"
+    }
+  ],
+  "beperkingen": [
+    "Справжній Telegram (Bot API, віджет, доставка карток) не перевірявся: ключа бота немає і він не запитувався; використано імітацію Bot API.",
+    "Розділ адміністрування в справжньому браузері не відкривався: потрібен технічний профіль із повторним підтвердженням входу; перевірено компонентами з імітованим API.",
+    "Гілка не надіслана на GitHub — посилання на досьє в ONTWIKKELARCHIEF.json запрацює після надсилання."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодного справжнього ключа бота, пароля чи cookie; у тестах лише локальні тестові значення й імітація Bot API."
+  }
+}

@@ -14,7 +14,7 @@ import { getPool } from '../server/platform/pg';
 import { meld } from './melder';
 
 const sys = () => getPool('systeem');
-export type AanmeldMethode = 'google' | 'passkey' | 'code';
+export type AanmeldMethode = 'google' | 'passkey' | 'code' | 'telegram';
 export type Locatie = { city?: string; region?: string; country?: string } | undefined;
 // Bestaande soorten hergebruikt (security_warning / security): geen wijziging aan het sfeer-register en migratie 0107 nodig.
 // Het uitlegregister herkent de kaart aan de titel («Новий вхід / новий пристрій», «… з іншого пристрою»).
@@ -23,7 +23,7 @@ const UUID = /^[0-9a-f-]{36}$/i;
 
 export const apparaatSleutel = (userId: string, label: string) => createHash('sha256').update(`bekend-apparaat\u0000${userId}\u0000${label}`).digest('hex').slice(0, 32);
 
-const METHODE: Record<AanmeldMethode, readonly [string, string]> = { google: ['Google', 'Google'], passkey: ['passkey', 'passkey'], code: ['код доступу', 'toegangscode'] };
+const METHODE: Record<AanmeldMethode, readonly [string, string]> = { google: ['Google', 'Google'], passkey: ['passkey', 'passkey'], code: ['код доступу', 'toegangscode'], telegram: ['Telegram', 'Telegram'] };
 const regioTekst = (l: Locatie) => [l?.city, l?.region, l?.country].map((v) => String(v || '').replace(/[^\p{L}\p{N} .'-]/gu, '').slice(0, 40)).filter(Boolean).join(', ');
 export const brusselsTijd = (t: number, lang: 'uk' | 'nl') => new Date(t).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' });
 
