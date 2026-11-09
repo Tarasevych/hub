@@ -110,6 +110,15 @@
         "src/identiteit/IdentiteitAccountPagina.tsx",
         "src/identiteit/identiteit-account.css"
       ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Другий випуск 20261109-060206 встановлено; власник не знайшов «Макет» у списку виглядів, бо перемикача функції на сервері не існувало. Тепер «Макет» завжди в списку (неактивний із поясненням, доки перемикач вимкнено або не створено), а міграція 0200 створює перемикач identiteit-account-maquette вимкненим. Третя гілка випуску росте з коміту другого випуску (4d71a818).",
+      "bewijzen": [
+        "src/identiteit/VormgevingKiezer.tsx",
+        "migrations/0200_identiteit_account_maquette.sql",
+        "tests/eenheid/identiteit-maquette.test.ts"
+      ]
     }
   ],
   "keuzes": [
@@ -142,6 +151,11 @@
       "keuze": "Друга гілка випуску росте з коміту першого випуску (8392ceb2), а не з гілки розробки",
       "reden": "Встановлена основа (BRON-COMMIT попереднього випуску) має бути предком нової гілки, інакше інсталятор і пакувальник відхиляють архів (INSTALLATIE_NIET_IN_HEAD).",
       "alternatief": "Не додавати комітів у вже опубліковану гілку випуску (TRACE-001)."
+    },
+    {
+      "keuze": "Недоступний вигляд показувати неактивним, а не ховати; перемикач функції створювати міграцією",
+      "reden": "Власник не знайшов «Макет» у списку, бо перемикача на сервері не було: без пункту в списку незрозуміло, що ввімкнути, а ручне створення перемикача — зайвий крок під час встановлення.",
+      "alternatief": "Ховати вигляд до появи перемикача (як було) або вмикати його одразу для всіх (відхилено: спершу «Тільки я»)."
     }
   ],
   "wijzigingen": [
@@ -183,11 +197,19 @@
     },
     {
       "pad": "tests/eenheid/identiteit-maquette.test.ts",
-      "omschrijving": "Перевірки вигляду «Макет» (40)."
+      "omschrijving": "Перевірки вигляду «Макет» (42)."
     },
     {
       "pad": "src/identiteit/VormgevingKiezer.tsx",
       "omschrijving": "Компактний варіант перемикача (details/summary) для липкого меню."
+    },
+    {
+      "pad": "src/identiteit/VormgevingKiezer.tsx",
+      "omschrijving": "Недоступний вигляд лишається в списку неактивним (disabled, пунктирна рамка) з поясненням, де ввімкнути перемикач функції."
+    },
+    {
+      "pad": "migrations/0200_identiteit_account_maquette.sql",
+      "omschrijving": "Створює перемикач функції identiteit-account-maquette (вимкнений) за зразком 0199."
     }
   ],
   "controles": [
@@ -234,6 +256,14 @@
     {
       "opdracht": "пробне node scripts/orch.mjs pakket + pakket-controleer",
       "uitkomst": "ГАРАЗД: архів зібрано й перевірено локально на основі 20261108-180527 @ 9a040c6c (4 коміти, 35 файлів); у процесі випуску основа береться з /api/version"
+    },
+    {
+      "opdracht": "npx vitest run tests/eenheid/identiteit-maquette.test.ts tests/eenheid/identiteit-atelier.test.ts",
+      "uitkomst": "42 із 42 та 36 із 36"
+    },
+    {
+      "opdracht": "браузерна перевірка без перемикача функції (390 і 1440, стенд vlagloos007.mjs)",
+      "uitkomst": "10 із 10: типовий вигляд «Студія», «Макет» у списку неактивний, пояснення називає «Перемикачі функцій», без помилок JS"
     }
   ],
   "beperkingen": [
