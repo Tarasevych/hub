@@ -198,7 +198,7 @@
     },
     {
       "opdracht": "пробне node scripts/orch.mjs pakket + pakket-controleer",
-      "uitkomst": "див. запис процесу випуску"
+      "uitkomst": "ГАРАЗД: архів зібрано й перевірено локально на основі 20261108-180527 @ 9a040c6c (4 коміти, 35 файлів); у процесі випуску основа береться з /api/version"
     }
   ],
   "beperkingen": [
