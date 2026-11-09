@@ -327,6 +327,10 @@
    "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
   },
   {
+   "sleutel": "src/uitrol/uitrol.css :: .ut-terminal[data-volledig]",
+   "reden": "UITROL-001: de installatieterminal schermvullend (knop «На весь екран», Esc sluit) — een door de gebruiker geopend venster, geen vaste knop of balk; op de telefoon de hele viewport (100dvh)."
+  },
+  {
    "sleutel": "src/uitrol/vereisten.css :: .ut-vr-scrim",
    "reden": "UITROL-001: modale achtergrond van het venster «Звіт про проблему» (geen knop); zelfde patroon als .ut-modal-schaduw in voorbereiders.css. Op de telefoon een onderaan opgeschoven aanzicht."
   }

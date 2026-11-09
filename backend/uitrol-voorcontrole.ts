@@ -17,6 +17,7 @@ import { MANIFEST_BESTAND, MANIFEST_MAX, TESTRESULTATEN_MAX, leesTestresultaten,
 import { ONTWIKKELARCHIEF_BESTAND, ONTWIKKELARCHIEF_MAX, ontwikkelArchiefVerplicht, leesOntwikkelArchief, type OntwikkelArchief } from '../shared/ontwikkelarchief';
 import { controleerOntwikkelArchiefOnline, sha256VanBestand, type ArchiefControle } from './uitrol-ontwikkelarchief';
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -74,7 +75,9 @@ const SQL_RISICO: Array<[RegExp, string, string]> = [
 // De patronen staan sinds 22.10.2026 in shared/geheim-patronen.ts (GEHEIM_PATRONEN_STRIKT), gedeeld met de zoekindex.
 const GEHEIM_PATRONEN = GEHEIM_PATRONEN_STRIKT;
 
-export async function pakketVoorcontrole(pakket: string, opties: { versie: string; actieveVersie?: string; toegepasteMigraties?: ReadonlySet<string> | null; tests?: { geslaagd?: number | null; mislukt?: number | null } | null; archiefToken?: string; archiefControle?: (ref: OntwikkelArchief, pakketSha: string) => Promise<ArchiefControle> }): Promise<VoorcontroleUitkomst> {
+/** UITROL-001: de proef vóór het uploaden (backend/uitrol-vereisten.ts → proefVoorArchief), met per migratie de SHA-256 van de geprobeerde SQL. */
+export type ProefVoorControle = { id: string; ok: boolean; status: string; sqlSha256: ReadonlyMap<string, string> };
+export async function pakketVoorcontrole(pakket: string, opties: { versie: string; actieveVersie?: string; toegepasteMigraties?: ReadonlySet<string> | null; tests?: { geslaagd?: number | null; mislukt?: number | null } | null; archiefToken?: string; archiefControle?: (ref: OntwikkelArchief, pakketSha: string) => Promise<ArchiefControle>; proef?: ProefVoorControle | null }): Promise<VoorcontroleUitkomst> {
   const controles: Controle[] = [];
   const voeg = (id: string, niveau: Niveau, uk: string, nl: string, details?: string[]) => { controles.push({ id, niveau, uk, nl, ...(details?.length ? { details: details.slice(0, id === 'tests' || id === 'manifest' ? 120 : 12) } : {}) }); };
   const meta: PakketMeta = { auteur: '', agent: '', samenvatting: '', bestanden: 0, bytesUitgepakt: 0, commit: '', bovenmap: '' };
@@ -212,7 +215,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
 
     // ---- 6. migraties
     const mig = alle.map((f) => f.replace(/\\/g, '/')).filter((f) => /^migrations\/[^/]+\.sql$/.test(f)).sort();
-    const migFout: string[] = []; const nummers = new Set<string>(); const nieuw: string[] = []; const risico: string[] = [];
+    const migFout: string[] = []; const nummers = new Set<string>(); const nieuw: string[] = []; const risico: string[] = []; const nieuwSha = new Map<string, string>();
     for (const f of mig) {
       const naam = path.basename(f, '.sql');
       if (!/^\d{4}_[a-z0-9_]+$/.test(naam) && naam !== 'rechten') { if (naam !== 'rechten') migFout.push(`ongeldige naam: ${naam}`); continue; }
@@ -222,8 +225,24 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
       const toegepast = opties.toegepasteMigraties;
       if (toegepast && !toegepast.has(naam)) {
         nieuw.push(naam);
-        const sql = (await readFile(path.join(bron, f), 'utf8')).replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+        const ruw = await readFile(path.join(bron, f), 'utf8');
+        nieuwSha.set(naam, createHash('sha256').update(ruw, 'utf8').digest('hex'));
+        const sql = ruw.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
         for (const [re, , nl] of SQL_RISICO) if (re.test(sql)) risico.push(`${naam}: ${nl}`);
+      }
+    }
+    // ---- 6b. UITROL-001: binding met de proef vóór het uploaden. De browser las de SQL en root probeerde die op een kopie van het schema;
+    // hier moet de SQL in het ÉCHT ontvangen archief byte voor byte dezelfde zijn (SHA-256 per migratie). Anders: fout → nooit goedkeurbaar.
+    // Прив’язка до проби: SQL нових міграцій у завантаженому архіві має збігатися з перевіреним; інакше — відхилення.
+    if (opties.toegepasteMigraties) {
+      const proef = opties.proef;
+      if (!nieuw.length) voeg('migratie-proef', 'ok', 'Нових міграцій немає — проба на копії схеми не потрібна.', 'Geen nieuwe migraties — een proef op een kopie van het schema is niet nodig.');
+      else if (!proef) voeg('migratie-proef', 'waarschuwing', `Пробу нових міграцій (${nieuw.length}) на копії схеми до завантаження не виконано або не знайдено (інший пристрій, застаріла сесія). Root повторить її першим кроком установлення.`, `De proef van de nieuwe migraties (${nieuw.length}) op een kopie van het schema is vóór het uploaden niet uitgevoerd of niet gevonden (ander apparaat, verlopen sessie). Root herhaalt haar als eerste installatiestap.`);
+      else {
+        const afwijkend = nieuw.filter((n) => proef.sqlSha256.get(n) !== nieuwSha.get(n));
+        if (afwijkend.length) voeg('migratie-proef', 'fout', `SQL міграцій у завантаженому архіві НЕ збігається з перевіреним пробою (${afwijkend.join(', ')}). Архів змінено після перевірки або підмінено — пакет відхилено.`, `De SQL van de migraties in het geüploade archief komt NIET overeen met wat de proef controleerde (${afwijkend.join(', ')}). Het archief is na de controle gewijzigd of verwisseld — pakket geweigerd.`, afwijkend.map((n) => `${n}: proef ${(proef.sqlSha256.get(n) || '—').slice(0, 16)}… ≠ archief ${(nieuwSha.get(n) || '—').slice(0, 16)}…`));
+        else if (!proef.ok) voeg('migratie-proef', 'fout', `Проба нових міграцій на копії схеми не пройшла (${proef.status}); пакет із такими міграціями не можна схвалити.`, `De proef van de nieuwe migraties op een kopie van het schema mislukte (${proef.status}); een pakket met deze migraties kan niet worden goedgekeurd.`);
+        else voeg('migratie-proef', 'ok', `Проба пройдена й прив’язана до цього архіву: SQL ${nieuw.length} нових міграцій збігається з перевіреним (SHA-256), проба ${proef.id.slice(0, 8)}.`, `Proef geslaagd en aan dit archief gebonden: de SQL van ${nieuw.length} nieuwe migraties is gelijk aan de gecontroleerde (SHA-256), proef ${proef.id.slice(0, 8)}.`);
       }
     }
     if (migFout.length) voeg('migraties', 'fout', 'Міграції: помилка в нумерації/назвах.', 'Migraties: fout in nummering/namen.', migFout);

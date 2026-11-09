@@ -103,6 +103,13 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
       return tr(lang, `Схвалено. Стежте за ходом встановлення версії ${v.versie} у картці вище — кожен крок і рядок терміналу з’являється в реальному часі.`, `Goedgekeurd. Volg de installatie van versie ${v.versie} in de kaart hierboven — elke stap en terminalregel verschijnt in real time.`);
     });
   }), [context, doe, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  // UITROL-001: «Зупинити встановлення» — de server vraagt step-up (client.ts handelt STEP_UP_REQUIRED af) en een reden ≥ 10 tekens.
+  const stoppen = useCallback((v: { id: string; versie: string; run: string; reden: string }) => { void doe(`stop-${v.versie}`, async () => {
+    const r = (await api.post('/api/owner/uitrol/run/stoppen', { ...context, id: v.id || undefined, versie: v.versie || undefined, reden: v.reden })).data as { modus: 'inbox' | 'lopend' | 'te-laat'; pct: number };
+    if (r.modus === 'inbox') return tr(lang, `Зупинено до початку: пакет ${v.versie} прибрано з черги сервера, нічого не змінено.`, `Gestopt vóór het begin: pakket ${v.versie} is uit de wachtrij van de server gehaald, er is niets gewijzigd.`);
+    if (r.modus === 'te-laat') return tr(lang, `Запит надійшов на ${r.pct} % — перемикання вже триває, тож сервер його не виконає. Результат вирішать перевірка здоров’я й автоматичний відкат.`, `Het verzoek kwam bij ${r.pct} % — het overschakelen loopt al, dus de server voert het niet uit. Gezondheidscontrole en automatische terugdraai beslissen.`);
+    return tr(lang, `Запит на зупинку передано серверу (${r.pct} %). За кілька секунд встановлення перерветься; попередній випуск лишиться активним.`, `Het stopverzoek is aan de server doorgegeven (${r.pct} %). Binnen enkele seconden breekt de installatie af; de vorige release blijft actief.`);
+  }); }, [context, doe, lang]);
   const afwijzen = useCallback((v: Voorstel, reden: string) => { void doe(`nee-${v.id}`, async () => { await api.post('/api/owner/uitrol/voorstel/afwijzen', { ...context, id: v.id, reden }); return tr(lang, 'Відхилено.', 'Afgewezen.'); }); }, [context, doe, lang]);
   const grantGeven = useCallback((g: { soort: GrantSoort; onderwerp: string; dagen: number; onbepaald?: boolean; label: string }) => { void doe('grant', async () => { await api.post('/api/owner/uitrol/voorbereiders/toevoegen', { ...context, ...g }); return tr(lang, 'Дозвіл надано.', 'Toestemming gegeven.'); }); }, [context, doe, lang]);
   const grantTermijn = useCallback((g: Grant, t: { dagen: number; onbepaald: boolean }) => { void doe(`tm-${g.id}`, async () => { await api.post('/api/owner/uitrol/voorbereiders/termijn', { ...context, id: g.id, ...t }); return tr(lang, 'Термін змінено й записано в журнал.', 'Termijn gewijzigd en in het logboek vastgelegd.'); }); }, [context, doe, lang]);
@@ -165,7 +172,7 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
         <div className='ut-hoofdkolom'>
           {/* Eerst de handeling (uploaden); daarna de levende kaart en de goedkeuring, die alleen iets tonen als er echt iets loopt of wacht. */}
           <Upload lang={lang} context={context} data={data} busy={busy} klaar={klaar} kanPasskey={kanPasskey} doe={doe} laden={laden} goedkeurenId={goedkeurenId} onFlow={setFlow} onNieuwId={setNieuwId} naarLive={naarLive} />
-          <LiveKaart lang={lang} context={context} wachtendOpGoedkeuring={wachtend} goedgekeurd={goedgekeurd} openLog={openLog} openDiagnose={() => setTab('diagnose')} onRunVerandert={onRunVerandert} flow={flow} />
+          <LiveKaart lang={lang} context={context} wachtendOpGoedkeuring={wachtend} goedgekeurd={goedgekeurd} openLog={openLog} openDiagnose={() => setTab('diagnose')} onRunVerandert={onRunVerandert} flow={flow} stoppen={stoppen} busy={busy} />
           <Goedkeuring lang={lang} data={data} busy={busy} klaar={klaar} goedkeuren={(v) => void goedkeuren(v)} afwijzen={afwijzen} verberg={nieuwId} />
           <section className='ut-kaart' aria-labelledby='ut-recent-titel'>
             <header className='ut-kaart-kop'><h2 id='ut-recent-titel'>{tr(lang, 'Останні розгортання', 'Laatste uitrollen')}</h2><button type='button' className='ut-knop' onClick={() => setTab('historie')}>{tr(lang, 'Уся історія', 'Volledige geschiedenis')}</button></header>

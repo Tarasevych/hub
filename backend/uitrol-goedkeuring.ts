@@ -26,12 +26,12 @@ import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import { GOEDGEKEURD_WACHT_MINUTEN } from '../shared/uitrol-tijden';
 import { bronCommit } from '../shared/bron-commit';
-import { meld } from './melder';
+import { meld, meldingenSluiten } from './melder';
 import { ruimteOf } from '../shared/ai-ruimte';
 import { V2_AGENTEN, isAgentSlug } from '../shared/connector-v2/agenten';
 import { parseRootGebeurtenissen, toonbareInstallaties } from './server-beheer';
 import { pakketVoorcontrole } from './uitrol-voorcontrole';
-import { VereistenFout, proefAanvragen, standaardOmgeving, vereistenStand, vereistenStarten } from './uitrol-vereisten';
+import { VereistenFout, proefAanvragen, proefVoorArchief, standaardOmgeving, vereistenStand, vereistenStarten } from './uitrol-vereisten';
 import { uitrolArchiefToken } from './uitrol-github';
 import { releaseInfo } from './uitgave-info';
 import { diagnose, liveStand, runDetail, runRegels, runsLijst, runsSynchroniseren } from './uitrol-runs';
@@ -387,7 +387,9 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   try { toegepast = new Set((await sys().query('SELECT version FROM app.schema_migrations')).rows.map((r: { version: string }) => String(r.version))); } catch { toegepast = null; }
   let archiefToken: string | undefined;
   try { archiefToken = await uitrolArchiefToken(grant.accountId); } catch { /* Geen kluis: een publiek dossier kan nog bevestigd worden. */ }
-  const vc = await pakketVoorcontrole(deel, { versie: String(row.versie), actieveVersie: releaseInfo().versie || undefined, toegepasteMigraties: toegepast, tests: row.tests || null, archiefToken });
+  // UITROL-001: de proef van vóór het uploaden (zelfde sha256) wordt aan dit archief gebonden: de SQL in het archief moet gelijk zijn aan de geprobeerde.
+  const proef = proefVoorArchief(String(row.sha256));
+  const vc = await pakketVoorcontrole(deel, { versie: String(row.versie), actieveVersie: releaseInfo().versie || undefined, toegepasteMigraties: toegepast, tests: row.tests || null, archiefToken, proef });
   // De beschrijving komt uit het pakket zelf (SAMENVATTING): wat de voorbereider bij het begin opgaf, is niet leidend.
   const beschrijving = vc.meta.samenvatting.slice(0, 8000);
   if (!vc.resultaat.ok) {
@@ -412,14 +414,21 @@ export async function voorstelKlaar(onderwerpen: Onderwerp[], a: Record<string, 
   return { id: String(row.id), versie: String(row.versie), status: 'wacht-op-goedkeuring', voorcontrole: vc.resultaat };
 }
 async function afbreken(id: string, code: string) {
-  await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'afgebroken', uitkomst_code = $2, bijgewerkt_op = now() WHERE id = $1`, [id, code]);
+  const { rows } = await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'afgebroken', uitkomst_code = $2, bijgewerkt_op = now() WHERE id = $1 RETURNING versie`, [id, code]);
   await rm(`${pakketPad(id)}.deel`, { force: true });
+  if (rows[0]) await wachtMeldingSluiten(rows[0].versie);
+}
+/** UITROL-001: «Оновлення X чекає схвалення» hoort weg zodra X niet meer wacht (geïnstalleerd, afgewezen, gestopt, mislukt, geannuleerd). */
+async function wachtMeldingSluiten(versie: unknown) {
+  const v = tekst(versie, 40);
+  if (v) await meldingenSluiten('uitrol', `${v} чекає схвалення`);
 }
 export async function voorstelAnnuleren(onderwerpen: Onderwerp[], a: Record<string, unknown>) {
   const { row } = await eigenVoorstel(onderwerpen, a.id);
   if (!['uploaden', 'wacht-op-goedkeuring'].includes(row.status)) fout('STATUS_ONGELDIG', 409);
   await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'afgebroken', uitkomst_code = 'GEANNULEERD', bijgewerkt_op = now() WHERE id = $1`, [row.id]);
   await rm(`${pakketPad(row.id)}.deel`, { force: true }); await rm(pakketPad(row.id), { force: true });
+  await wachtMeldingSluiten(row.versie);
   return { id: String(row.id), status: 'afgebroken' };
 }
 /**
@@ -452,10 +461,11 @@ export async function synchroniseer() {
       if (nieuw) {
         const { rows } = await sys().query(`UPDATE app.uitrol_voorstellen SET status = $2, uitkomst_code = $3, uitkomst = $4::jsonb, bijgewerkt_op = now()
           WHERE versie = $1 AND status = 'goedgekeurd' RETURNING id, versie`, [st.versie, nieuw, tekst(st.code, 40), JSON.stringify({ uk: tekst(st.uk, 300), nl: tekst(st.nl, 300), tijd: tekst(st.tijd, 40) })]);
-        for (const r of rows) await rm(pakketPad(r.id), { force: true });
+        for (const r of rows) { await rm(pakketPad(r.id), { force: true }); await wachtMeldingSluiten(r.versie); }
       }
     }
   } catch { /* nog geen status */ }
+  await stopVerzoekOpruimen();
   await runsSynchroniseren();
   await rootUitkomstenOpnemen();
   await opruimenVoorstellen();
@@ -503,7 +513,7 @@ export async function rootUitkomstenOpnemen() {
       const nieuwRun = run.staat === 'klaar' ? 'geinstalleerd' : run.staat === 'geweigerd' ? 'geweigerd' : 'mislukt';
       const upd = await sys().query(`UPDATE app.uitrol_voorstellen SET status = $2, uitkomst_code = $3, uitkomst = $4::jsonb, bijgewerkt_op = now() WHERE id = $1 AND status = 'goedgekeurd' RETURNING id`,
         [v.id, nieuwRun, tekst(run.code || (run.staat === 'klaar' ? 'OK' : 'INSTALLATIE_MISLUKT'), 40), JSON.stringify({ uk: tekst(run.uk, 300), nl: tekst(run.nl, 300), tijd: tekst(iso(run.geeindigd_op), 40) })]);
-      if (upd.rows[0]) await rm(pakketPad(String(v.id)), { force: true });
+      if (upd.rows[0]) { await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
       if (upd.rows[0] && nieuwRun === 'mislukt') await meldMislukt(v, String(run.uk || ''), String(run.nl || ''));
       if (upd.rows[0] && nieuwRun === 'geinstalleerd') await meldGeinstalleerd(v);
       continue;
@@ -522,7 +532,7 @@ export async function rootUitkomstenOpnemen() {
     if (!nieuw) continue;
     const upd = await sys().query(`UPDATE app.uitrol_voorstellen SET status = $2, uitkomst_code = $3, uitkomst = $4::jsonb, bijgewerkt_op = now() WHERE id = $1 AND status = 'goedgekeurd' RETURNING id`,
       [v.id, nieuw, tekst(code, 40), JSON.stringify({ uk: tekst(uk, 300), nl: tekst(nl, 300), tijd: tekst(tijd, 40) })]);
-    if (upd.rows[0]) await rm(pakketPad(String(v.id)), { force: true });
+    if (upd.rows[0]) { await rm(pakketPad(String(v.id)), { force: true }); await wachtMeldingSluiten(v.versie); }
     if (upd.rows[0] && (nieuw === 'mislukt' || nieuw === 'verlopen')) await meldMislukt(v, uk, nl);
     if (upd.rows[0] && nieuw === 'geinstalleerd') await meldGeinstalleerd(v);
   }
@@ -638,7 +648,66 @@ export async function afwijzen(eigenaar: Eigenaar, id: unknown, reden: unknown) 
   if (!rows[0]) fout('STATUS_ONGELDIG', 409);
   await rm(pakketPad(String(id)), { force: true }); await rm(`${pakketPad(String(id))}.deel`, { force: true });
   await auditeer(eigenaar.id, eigenaar.id, 'uitrol_voorstel_afgewezen', 'success', { voorstel: String(id), versie: String(rows[0].versie), reden: tekst(reden, 200) });
+  await wachtMeldingSluiten(rows[0].versie);
   return { id: String(id), status: 'afgewezen' };
+}
+
+// ------------------------------------------------------------------------------------------------ stoppen (UITROL-001)
+/**
+ * «Зупинити встановлення»: de eigenaar (step-up + reden) vraagt root een goedgekeurde installatie te stoppen.
+ *   • Ligt het pakket nog in de inbox en is er geen run bezig: pakket + goedkeuring uit de inbox, voorstel «afgebroken GESTOPT»
+ *     (root krijgt dan niets meer te zien). Voor de zekerheid ligt er óók een stop.json: pakte root het pakket net op, dan stopt hij zelf.
+ *   • Loopt de run al: alleen $INBOX/stop.json {doel:"stoppen", versie, run, voorstelId, tijd, door, reden}. Root honoreert dat tot vóór
+ *     het overschakelen (< 90 %) → uitkomst «mislukt GESTOPT»; daarna logt root STOP_TE_LAAT en beslissen gezondheidscontrole en
+ *     automatische terugdraai. Een stopverzoek kan nooit iets installeren of omzetten: het ergste is een afgebroken installatie.
+ * Зупинка: до перемикання — root перериває встановлення; після — запит лише фіксується, вирішують перевірка здоров’я та відкат.
+ */
+export async function stoppen(eigenaar: Eigenaar, input: { id?: unknown; versie?: unknown; reden?: unknown }) {
+  const reden = redenVan(input.reden);
+  const id = String(input.id || ''); const versieIn = String(input.versie || '');
+  const { rows } = UUID.test(id)
+    ? await sys().query(`SELECT * FROM app.uitrol_voorstellen WHERE id = $1 AND status = 'goedgekeurd'`, [id])
+    : VERSIE.test(versieIn) ? await sys().query(`SELECT * FROM app.uitrol_voorstellen WHERE versie = $1 AND status = 'goedgekeurd' ORDER BY beslist_op DESC LIMIT 1`, [versieIn]) : { rows: [] as Array<Record<string, unknown>> };
+  const v = rows[0];
+  if (!v) fout('STATUS_ONGELDIG', 409);
+  const versie = String(v.versie);
+  const run = (await sys().query(`SELECT id, staat, pct FROM app.uitrol_runs WHERE methode = 'passkey' AND versie = $1 ORDER BY gestart_op DESC LIMIT 1`, [versie])).rows[0] as { id: string; staat: string; pct: number } | undefined;
+  const bezig = !!run && run.staat === 'bezig';
+  const pct = bezig ? Number(run!.pct) || 0 : 0;
+  const inbox = goedkeurInbox();
+  const naam = `mijn-ruimte-${versie}.tar.gz`;
+  const door = eigenaar.email || eigenaar.id;
+  const verzoek = { doel: 'stoppen', versie, run: bezig ? run!.id : '', voorstelId: String(v.id), tijd: new Date().toISOString(), door: tekst(door, 120), reden: tekst(reden, 300) };
+  const tmp = path.join(inbox, `.stop.${randomBytes(4).toString('hex')}.tmp`);
+  await writeFile(tmp, JSON.stringify(verzoek) + '\n', { mode: 0o640 });
+  await rename(tmp, path.join(inbox, 'stop.json'));
+  let modus: 'inbox' | 'lopend' | 'te-laat' = bezig ? (pct >= 90 ? 'te-laat' : 'lopend') : 'inbox';
+  if (!bezig) {
+    // Nog niet opgepakt: pakket weg uit de inbox (root ziet dan niets meer) en het voorstel meteen afsluiten.
+    let lagErNog = false;
+    try { await unlink(path.join(inbox, naam)); lagErNog = true; } catch { /* al weg: root heeft het (net) opgepakt */ }
+    await rm(path.join(inbox, `${naam}.goedkeuring.json`), { force: true });
+    await rm(pakketPad(String(v.id)), { force: true });
+    if (!lagErNog && !run) modus = 'lopend'; // root kopieerde het al maar schreef nog geen stap: stop.json vangt het op
+    const uk = `Встановлення ${versie} зупинено власником (${door}) ще до початку: ${reden}. Нічого не змінено.`;
+    const nl = `Installatie van ${versie} door de eigenaar (${door}) gestopt vóór het begin: ${reden}. Er is niets gewijzigd.`;
+    if (lagErNog) await sys().query(`UPDATE app.uitrol_voorstellen SET status = 'afgebroken', uitkomst_code = 'GESTOPT', uitkomst = $2::jsonb, bijgewerkt_op = now() WHERE id = $1 AND status = 'goedgekeurd'`,
+      [String(v.id), JSON.stringify({ uk: tekst(uk, 300), nl: tekst(nl, 300), reden: tekst(reden, 500), door: tekst(door, 120), tijd: verzoek.tijd })]);
+  }
+  await wachtMeldingSluiten(versie);
+  await auditeer(eigenaar.id, eigenaar.id, 'uitrol_stop_aangevraagd', 'success', { voorstel: String(v.id), versie, modus, pct, reden: tekst(reden, 200), run: run?.id || '' });
+  return { id: String(v.id), versie, modus, pct, run: run?.id || '' };
+}
+/** stop.json dat niemand meer leest (root negeert na 1 u sowieso; de versie wacht niet meer) opruimen, zodat het nooit blijft slingeren. */
+async function stopVerzoekOpruimen() {
+  const f = path.join(goedkeurInbox(), 'stop.json');
+  try {
+    const st = await stat(f);
+    if (Date.now() - st.mtimeMs < 10 * 60_000) return;
+    const d = JSON.parse(await readFile(f, 'utf8')) as { versie?: string };
+    const { rows } = await sys().query(`SELECT 1 FROM app.uitrol_voorstellen WHERE versie = $1 AND status = 'goedgekeurd'`, [String(d.versie || '')]);
+    if (!rows.length) await unlink(f);
+  } catch { /* geen stop.json of niet van ons */ }
 }
 
 // ------------------------------------------------------------------------------------------------ passkeys van de eigenaar
@@ -910,6 +979,8 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
       return goedkeuren(wie(auth), body(ctx.body));
     })],
     'POST /api/owner/uitrol/voorstel/afwijzen': [eigenaar({}, async (ctx, auth) => afwijzen(wie(auth), body(ctx.body).id, body(ctx.body).reden))],
+    // UITROL-001: lopende (of net goedgekeurde) installatie stoppen — step-up + reden; root honoreert tot vóór het overschakelen.
+    'POST /api/owner/uitrol/run/stoppen': [eigenaar({ stepUp: true, reden: true }, async (ctx, auth) => stoppen(wie(auth), body(ctx.body)))],
     // Passkeys (registreren, «Може схвалювати оновлення сервера», intrekken): backend/toegangssleutels.ts → Instellingen → «Способи входу».
     // Voorbereiden met een gewone sessie (account-grant). Agents gebruiken de MCP-hulpmiddelen hierboven.
     'POST /api/uitrol/voorstel/begin': [voorbereider(voorstelBegin)],

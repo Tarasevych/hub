@@ -7,7 +7,7 @@
 // verzoek in /srv/mijn-ruimte/proef-inbox voor root (deploy/uitrol/mijn-ruimte-migratie-proef.sh: wegwerpkopie van het schema);
 // (3) vereistenStand() leest de uitslag. Pas als er geen «fout» is, begint de upload. Root controleert bij de installatie alles opnieuw.
 // Er draait hier nooit SQL uit het pakket; de site schrijft alleen het verzoekbestand en leest de uitslag.
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { constants as fsc } from 'node:fs';
 import { access, readFile, rename, statfs, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -29,7 +29,7 @@ const tekst = (v: unknown, n: number) => String(v ?? '').replace(/[\u0000-\u001f
 
 export class VereistenFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
 
-type Sessie = { antwoord: VereistenAntwoord; eigenaar: string; gemaakt: number; sql: Map<string, string>; proefSinds: number };
+type Sessie = { antwoord: VereistenAntwoord; eigenaar: string; gemaakt: number; sql: Map<string, string>; proefSinds: number; sha256: string };
 const SESSIES = new Map<string, Sessie>();
 const opruimen = () => { const grens = Date.now() - 3600_000; for (const [k, s] of SESSIES) if (s.gemaakt < grens) SESSIES.delete(k); };
 
@@ -228,7 +228,7 @@ export async function vereistenStarten(eigenaar: string, invoer: Record<string, 
     basis: a.basis ? { versie: tekst(a.basis.versie, 32), commit: tekst(a.basis.commit, 64) } : null, migraties: a.migraties.slice(0, 5000).map((m) => ({ naam: tekst(m.naam, 120), bytes: Math.max(0, Number(m.bytes) || 0) })),
     sha256: tekst(a.sha256, 64).toLowerCase(), ontwikkelArchief: a.ontwikkelArchief ? String(a.ontwikkelArchief).slice(0, 9000) : null };
   const ant = await vereistenBeoordelen(schoon as never, omg);
-  SESSIES.set(ant.id, { antwoord: ant, eigenaar, gemaakt: Date.now(), sql: new Map(), proefSinds: 0 });
+  SESSIES.set(ant.id, { antwoord: ant, eigenaar, gemaakt: Date.now(), sql: new Map(), proefSinds: 0, sha256: schoon.sha256 });
   await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_vereisten_gecontroleerd', type: 'beveiliging', result: ant.ok ? 'ok' : 'denied', service: 'admin',
     details: { id: ant.id, versie: schoon.versie, fouten: ant.vereisten.filter((x) => x.niveau === 'fout').map((x) => x.id), nieuw: ant.nieuweMigraties.length } }).catch(() => undefined);
   return ant;
@@ -270,6 +270,26 @@ export async function vereistenStand(eigenaar: string, invoer: Record<string, un
   await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_migratieproef', type: 'beveiliging', result: u.ok ? 'ok' : 'denied', service: 'admin',
     details: { id: s.antwoord.id, status: u.status, migraties: u.migraties.map((m) => ({ naam: m.naam, ms: m.ms, ok: m.ok, code: m.fout?.code })) } }).catch(() => undefined);
   return s.antwoord;
+}
+
+/**
+ * UITROL-001 (binding proef ↔ archief): de afgeronde proef voor het archief met deze sha256, mét de SHA-256 van elke geprobeerde
+ * migratie. backend/uitrol-voorcontrole.ts vergelijkt die bij «klaar» met de migraties in het ÉCHT geüploade archief: een archief dat
+ * na de proef is gewijzigd (of een proef op andere SQL) valt dan door de mand. De browser kan dus niet «een goede proef» voorleggen
+ * en iets anders uploaden. Прив’язка проби до архіву: SQL у завантаженому архіві має збігатися з перевіреним.
+ */
+export type ProefBinding = { id: string; eigenaar: string; ok: boolean; status: string; sqlSha256: Map<string, string>; tijd: string };
+export function proefVoorArchief(sha256: string): ProefBinding | null {
+  opruimen();
+  const sha = String(sha256 || '').toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(sha)) return null;
+  let beste: Sessie | null = null;
+  for (const s of SESSIES.values()) if (s.sha256 === sha && s.antwoord.proef.status === 'klaar' && (!beste || s.gemaakt > beste.gemaakt)) beste = s;
+  if (!beste) return null;
+  const u = beste.antwoord.proef.uitslag;
+  const sqlSha256 = new Map<string, string>();
+  for (const [naam, sql] of beste.sql) sqlSha256.set(naam, createHash('sha256').update(sql, 'utf8').digest('hex'));
+  return { id: beste.antwoord.id, eigenaar: beste.eigenaar, ok: !!u?.ok, status: String(u?.status || ''), sqlSha256, tijd: beste.antwoord.tijd };
 }
 
 /** Alleen voor tests. */

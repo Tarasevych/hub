@@ -7,7 +7,9 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileS
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fragmentRond, pgUitleg, positieNaarRegel, regelVoorTabel, teLangeTekst, telVereisten, oorzaakUitProef, type MigratieProefUitslag } from '../../shared/uitrol-vereisten';
-import { proefVerwerken, vereistenBeoordelen, type VereistenOmgeving } from '../../backend/uitrol-vereisten';
+import { _sessies, proefVerwerken, proefVoorArchief, vereistenBeoordelen, type VereistenOmgeving } from '../../backend/uitrol-vereisten';
+import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
+import { createHash } from 'node:crypto';
 import { proefUrl } from '../../server/migratie-proef';
 import { checker } from './hulp/nep-google';
 import { gzipSync } from 'node:zlib';
@@ -192,6 +194,31 @@ export async function main(): Promise<number> {
     const zonder = rapportTekst({ lang: 'nl', beschrijving: '', antwoord: ant, archief: null, omgeving: { actieveVersie: '', site: '', browser: '', tijdzone: '' }, delen: { oorzaak: true, vereisten: false, log: false, context: false } });
     check('rapport: uitgeschakelde delen ontbreken (nl)', zonder.tekst.includes('Oorzaak') && !zonder.tekst.includes('## Logboek') && !zonder.tekst.includes('## Context'));
     check('zonderUrlWachtwoord: https://u:p@h → https://u:***@h', zonderUrlWachtwoord('x https://user:pw@host/y') === 'x https://user:***@host/y');
+
+    // ---------------------------------------------------------------- binding proef ↔ archief (UITROL-001, eigenaar 09.11.2026: «niets mag te vervalsen zijn»)
+    // De browser legde SQL voor aan de proef; bij «klaar» moet de SQL in het ÉCHT geüploade archief daar byte voor byte mee overeenkomen.
+    const map = mkdtempSync(join(tmpdir(), 'vereisten-binding-'));
+    const archief = join(map, 'pakket.tar.gz'); writeFileSync(archief, tgz);
+    const toegepast = new Set(['0199_iets']);
+    const klaarAnt = proefVerwerken(basisAnt('wacht-op-sql', { vereisten: [{ id: 'migratie-proef', groep: 'compatibiliteit', niveau: 'wacht', uk: 'Проба', nl: 'Proef', waaromUk: '', waaromNl: '' }], log: [], nieuweMigraties: ['0200_identiteit_account_maquette'] }),
+      { id: 'proef-ok', ok: true, status: 'klaar', tijd: '', stappen: [], migraties: [{ naam: '0200_identiteit_account_maquette', ms: 5, ok: true }], log: [] });
+    _sessies.set('proef-ok', { antwoord: { ...klaarAnt, id: 'proef-ok' }, eigenaar: 'eig', gemaakt: Date.now(), proefSinds: 0, sha256, sql: new Map([['0200_identiteit_account_maquette', sql0200]]) });
+    const binding = proefVoorArchief(sha256);
+    check('binding: proef op sha256 van het archief gevonden, met SHA-256 per migratie', binding?.id === 'proef-ok' && binding.ok && binding.sqlSha256.get('0200_identiteit_account_maquette') === createHash('sha256').update(sql0200).digest('hex'));
+    check('binding: andere sha256 → geen proef', proefVoorArchief('f'.repeat(64)) === null && proefVoorArchief('kort') === null);
+    const vcZonder = await pakketVoorcontrole(archief, { versie: '20261109-065647', toegepasteMigraties: toegepast });
+    const mp = (vc: { resultaat: { controles: Array<{ id: string; niveau: string; nl: string }> } }) => vc.resultaat.controles.find((c) => c.id === 'migratie-proef');
+    check('voorcontrole: zonder proef → waarschuwing (root herhaalt de proef), geen fout', mp(vcZonder)?.niveau === 'waarschuwing', JSON.stringify(mp(vcZonder)));
+    const vcGoed = await pakketVoorcontrole(archief, { versie: '20261109-065647', toegepasteMigraties: toegepast, proef: binding });
+    check('voorcontrole: proef gebonden aan dit archief → ok (SQL gelijk)', mp(vcGoed)?.niveau === 'ok' && /proef-ok/.test(mp(vcGoed)?.nl || ''), JSON.stringify(mp(vcGoed)));
+    const vervalst = { ...binding!, sqlSha256: new Map([['0200_identiteit_account_maquette', createHash('sha256').update(sql0200 + ' ').digest('hex')]]) };
+    const vcFout = await pakketVoorcontrole(archief, { versie: '20261109-065647', toegepasteMigraties: toegepast, proef: vervalst });
+    check('voorcontrole: SQL in het archief wijkt af van de geprobeerde → fout, pakket nooit goedkeurbaar', mp(vcFout)?.niveau === 'fout' && vcFout.resultaat.ok === false && /0200_identiteit_account_maquette/.test(mp(vcFout)?.nl || ''), JSON.stringify(mp(vcFout)));
+    const vcMislukt = await pakketVoorcontrole(archief, { versie: '20261109-065647', toegepasteMigraties: toegepast, proef: { ...binding!, ok: false, status: 'mislukt' } });
+    check('voorcontrole: mislukte proef op dezelfde SQL → fout', mp(vcMislukt)?.niveau === 'fout' && vcMislukt.resultaat.ok === false);
+    const vcGeen = await pakketVoorcontrole(archief, { versie: '20261109-065647', toegepasteMigraties: new Set(['0199_iets', '0200_identiteit_account_maquette']) });
+    check('voorcontrole: geen nieuwe migraties → proef niet nodig (ok)', mp(vcGeen)?.niveau === 'ok');
+    _sessies.delete('proef-ok');
   }
   return einde();
 }

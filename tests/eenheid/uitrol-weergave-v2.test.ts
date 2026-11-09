@@ -57,7 +57,9 @@ export async function main(): Promise<number> {
 
   // root-script: de python-controle uit mijn-ruimte-uitrol.sh echt draaien
   const sh = readFileSync('deploy/uitrol/mijn-ruimte-uitrol.sh', 'utf8');
-  const py = sh.slice(sh.indexOf('import json, re, sys'), sh.indexOf('\nPY\n)"'));
+  const pyBegin = sh.indexOf('import json, re, sys');
+  // Het einde zoeken vanaf het begin van dít blok: het script heeft meer python-blokken met dezelfde afsluiter (UITROL-001: stop.json-controle).
+  const py = sh.slice(pyBegin, sh.indexOf('\nPY\n)"', pyBegin));
   const map = mkdtempSync(join(tmpdir(), 'rootmanifest-'));
   const draai = (inhoud: string, versie: string) => { const f = join(map, 'm.json'); writeFileSync(f, inhoud); writeFileSync(join(map, 'c.py'), py); return spawnSync('python3', [join(map, 'c.py'), f, versie], { encoding: 'utf8' }).stdout.trim(); };
   const V = '20261102-101010';

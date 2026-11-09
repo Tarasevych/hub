@@ -20,7 +20,7 @@ import { createGithubRoutes } from './github-platform'
 import { gedelegeerdeSessie } from './site-aanroep'
 import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort'
 import { googleAuthTijdVers, googleStapOpVastleggen, googleUitgifteVoorStapOpVers, onthoudAllesVergeten, onthoudMagVoorPad, onthoudVergeten, onthoudenSessies, stapOpFout, stapOpUit } from './stap-op'
-import { meldLink, registreerMelder } from './melder'
+import { meldLink, registreerMelder, registreerMeldingenSluiter } from './melder'
 // Meldingen per gegevensruimte (20.10.2026): elke melding draagt haar lade; lezen/tellen/gelezen alleen in de live ruimte van het tabblad.
 import { meldingenLade, meldingenVanLade, ruimteVoorNieuweMelding, sfeerVoorNieuweMelding } from './meldingen-ruimte'
 import { meldingenInLade } from '../shared/meldingen-ruimte'
@@ -612,6 +612,13 @@ type AdminRole='super_admin'|'security_admin'|'apps_admin'|'directory_admin'|'su
 const VEROUDERDE_ROUTE_WEG = [async () => ownerResponse({ ok: false, error: 'LEGACY_ROUTE_GONE', reasonCode: 'LEGACY_ROUTE_GONE' }, 410)];
 
 registreerMelder((u, e, k, t, m, l) => notify(u, e, k, t, m, l))
+// UITROL-001: verouderde meldingen («чекає схвалення» van een versie die al geïnstalleerd/afgewezen/gestopt is) gelezen zetten.
+registreerMeldingenSluiter(async (kind, zoek) => alsSysteem(async () => {
+  const { items } = await db.list<Record<string, unknown>>('site_notifications', { filter: { kind, read: false }, limit: 200, nieuwsteEerst: true });
+  const treffers = items.filter((m) => String(m.title || '').includes(zoek));
+  if (treffers.length) await db.update('site_notifications', treffers.map((m) => { const { id, ...record } = m; return { id, record: { ...record, read: true, readAt: Date.now(), geslotenDoor: 'systeem' } }; }));
+  return treffers.length;
+}))
 // Centrale toegangspoort (fase 2): requireAuth() gebruikt dezelfde sessiecontrole als de owner-routes.
 registreerSessieControle(async (event, body) => { const a = await ownerRequireSession(event as unknown as Record<string, unknown>, body); return 'errorCode' in a ? { errorCode: a.errorCode, status: a.errorCode.includes('FORBIDDEN') ? 403 : 401 } : { user: a.user, service: a.service } }, (user, perm) => can(user as never, perm as never))
 // Fase 3: step-up voor gevoelige acties (backend/stap-op.ts). 403 STEP_UP_REQUIRED: opnieuw met Google aanmelden

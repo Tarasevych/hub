@@ -84,6 +84,12 @@ TIMERS=(mijn-ruimte-mail-onderhoud.timer mijn-ruimte-google-sync.timer mijn-ruim
 ONVOLTOOID=""   # pad van een release die nog niet klaar is; wordt bij een fout verwijderd
 opruimen_bij_afbreken() { if [ -n "$ONVOLTOOID" ] && [ -d "$ONVOLTOOID" ]; then echo "[installeer] onvolledige release $ONVOLTOOID verwijderd" >&2; rm -rf -- "$ONVOLTOOID"; fi; }
 trap opruimen_bij_afbreken EXIT
+# UITROL-001: een stopverzoek van de eigenaar (root stuurt SIGTERM aan de hele procesgroep, zie mijn-ruimte-uitrol.sh) of een
+# systemd-timeout mag nooit stil eindigen: de EXIT-trap hierboven ruimt dan de onvolledige release op en het logboek zegt waar het stopte.
+# Vóór het overschakelen is dat veilig (de actieve release is niet aangeraakt; elke migratie draait in een eigen transactie en wordt
+# door PostgreSQL teruggedraaid als de verbinding wegvalt). Vanaf «activeren» honoreert root geen stopverzoek meer.
+HUIDIG_ONDERDEEL=""
+trap 'echo "[installeer] gestopt door een signaal (SIGTERM) tijdens «${HUIDIG_ONDERDEEL:-start}»; de vorige release blijft actief" >&2; exit 143' TERM INT HUP
 git_bron() { git -c safe.directory="$BRON_GIT" -C "$BRON_GIT" "$@"; }
 
 melding() { echo "[installeer] $*"; }
@@ -91,7 +97,7 @@ melding() { echo "[installeer] $*"; }
 # regels uit het logboek en zet ze als stap «installeren» met dit percentage in stappen.jsonl — zo beweegt de balk ook tijdens de lange
 # installatie (vroeger bleef hij op 42 % staan). Vorm: «[installeer] stap: <id> (<pct>%) <tekst>»; ids: kopie npm bouwen backup migraties
 # activeren gezondheid nabewaken. Via SSH zijn het gewoon leesbare regels.
-voortgang() { echo "[installeer] stap: $1 ($2%) ${3:-}"; }
+voortgang() { HUIDIG_ONDERDEEL="$1"; echo "[installeer] stap: $1 ($2%) ${3:-}"; }
 waarschuwing() { echo "[installeer] LET OP: $*" >&2; }
 fout() { echo "[installeer] FOUT: $*" >&2; exit 1; }
 

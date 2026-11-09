@@ -34,6 +34,8 @@ const INSTALLEER: Patroon[] = [
   [/^migraties worden NIET teruggedraaid; het databaseschema blijft op de nieuwste stand$/, () => 'міграції НЕ відкочуються; схема бази лишається найновішою'],
   [/^gezondheidscontrole mislukt \((.+?)\); (.+)$/, (m) => `перевірка роботи сайту не вдалася (${v(m, 1)}); ${v(m, 2)}`],
   [/^nabewaking mislukt; (.+)$/, (m) => `нагляд не вдався; ${v(m, 1)}`],
+  [/^stap: gestopt \((\d+)%\) зупинено власником \/ gestopt door de eigenaar$/, (m) => `крок: зупинено (${v(m, 1)}%) зупинено власником`],
+  [/^gestopt door een signaal \(SIGTERM\) tijdens «(.*?)»; de vorige release blijft actief$/, (m) => `зупинено сигналом (SIGTERM) під час «${v(m, 1)}»; попередній випуск лишився активним`],
   [/^stap: (\S+) \((\d+)%\) ?(.*)$/, (m) => `крок: ${v(m, 1)} (${v(m, 2)}%) ${STAPPEN[v(m, 3)] ?? v(m, 3)}`.trimEnd()],
 ];
 const UITROL: Patroon[] = [
@@ -50,6 +52,13 @@ const UITROL: Patroon[] = [
   [/^installatie mislukt \(afsluitcode (\S+)\): (.*)$/, (m) => `встановлення не вдалося (код виходу ${v(m, 1)}): ${v(m, 2)}`],
   [/^GEWEIGERD: (.*)$/, (m) => `ВІДХИЛЕНО: ${v(m, 1)}`],
   [/^AFGEBROKEN \((\S+)\): (.*)$/, (m) => `ПЕРЕРВАНО (${v(m, 1)}): ${v(m, 2)}`],
+  // UITROL-001: stopverzoek van de eigenaar
+  [/^STOP: eigenaar vraagt te stoppen bij (\d+) % \((.*?)\)(?:: (.*))? — installatie wordt afgebroken, vorige release blijft actief$/,
+    (m) => `СТОП: власник просить зупинити на ${v(m, 1)} % (${v(m, 2)})${m[3] ? `: ${m[3]}` : ''} — встановлення переривається, попередній випуск лишається активним`],
+  [/^STOP: verzoek van de eigenaar kwam bij (\d+) % — te laat \(het overschakelen loopt al\); de gezondheidscontrole en de automatische terugdraai beslissen$/,
+    (m) => `СТОП: запит власника надійшов на ${v(m, 1)} % — запізно (перемикання вже триває); вирішать перевірка здоров’я та автоматичний відкат`],
+  [/^installatie gestopt door de eigenaar \(afsluitcode (\S+)\)$/, (m) => `встановлення зупинено власником (код виходу ${v(m, 1)})`],
+  [/^stopverzoek genegeerd(.*)$/, (m) => `запит на зупинку проігноровано${v(m, 1)}`],
 ];
 
 export type TerminalVertaling = { tekst: string; vertaald: boolean };

@@ -219,6 +219,7 @@ installeer_stappen() {
       *) uk="Встановлення: $id."; nl="Installatie: $id." ;;
     esac
     stap installeren bezig "$pct" "$uk" "$nl"
+    printf '%s\n' "$pct" > "$WERK/stap-pct" 2>/dev/null || true
   done
   return 0
 }
@@ -239,7 +240,56 @@ opruimen() { rm -rf -- "$WERK"; }
 AFGEROND=0; ONDERBROKEN=0; FOUT_REGEL=""; INSTALL_PID=""
 set -E
 trap 'FOUT_REGEL="$LINENO"' ERR
-trap 'ONDERBROKEN=1; [ -n "$INSTALL_PID" ] && kill -TERM "$INSTALL_PID" 2>/dev/null; exit 143' TERM INT HUP
+trap 'ONDERBROKEN=1; [ -n "$INSTALL_PID" ] && { kill -TERM -- "-$INSTALL_PID" 2>/dev/null || kill -TERM "$INSTALL_PID" 2>/dev/null; }; exit 143' TERM INT HUP
+
+# ---- Stopverzoek van de eigenaar (UITROL-001) ----------------------------------------------------------------------------------
+# De site (als app-gebruiker, na step-up van de eigenaar) legt $INBOX/stop.json neer: {doel:"stoppen", versie, voorstelId, tijd, door,
+# reden}. Alleen in de passkey-inbox. Root honoreert het verzoek:
+#   • vóór de installatie (stap 1): het pakket wordt geweigerd met code GESTOPT en gaat uit de inbox;
+#   • tijdens de installatie tot vóór het overschakelen (< 90 %): de procesgroep van installeer-app.sh krijgt SIGTERM, de onvolledige
+#     releasemap wordt door het installatiescript zelf opgeruimd, de vorige release blijft actief → uitkomst «mislukt GESTOPT»;
+#   • vanaf het overschakelen (≥ 90 %): te laat — stoppen zou de site half omgeschakeld achterlaten. Het verzoek wordt gelogd en
+#     genegeerd; de gezondheidscontrole en de automatische terugdraai van het installatiescript beslissen.
+# Een stopverzoek kan niets installeren en niets anders dan deze run raken: het ergste dat een vervalst verzoek kan doen is een
+# installatie afbreken (beschikbaarheid), nooit code uitvoeren of iets omzetten. Het bestand wordt na lezing verwijderd.
+# Запит на зупинку від власника: лише зупиняє (до перемикання) — нічого не встановлює й не змінює; файл видаляється після читання.
+STOP_DOOR=""; STOP_REDEN=""
+stop_verzoek() { # stop_verzoek → 0 als er een geldig verzoek voor DEZE run/versie ligt (en het bestand is dan verwijderd)
+  local f="$INBOX/stop.json" uit
+  [ "$MODUS" = passkey ] || return 1
+  [ -f "$f" ] && [ ! -L "$f" ] || return 1
+  [ "$(stat -c %s "$f" 2>/dev/null || echo 99999)" -le 4096 ] || { rm -f -- "$f"; log "stopverzoek genegeerd: bestand te groot"; return 1; }
+  uit="$(timeout 5 python3 - "$f" "${VERSIE:-}" "${RUN:-}" <<'PY' 2>/dev/null || true
+import json, sys, datetime
+pad, versie, run = sys.argv[1:4]
+try:
+    d = json.load(open(pad, encoding="utf-8"))
+except Exception:
+    print("ONGELDIG"); sys.exit()
+if not isinstance(d, dict) or d.get("doel") != "stoppen":
+    print("ONGELDIG"); sys.exit()
+if str(d.get("versie", "")) != versie and str(d.get("run", "")) != run:
+    print("ANDER"); sys.exit()
+try:
+    t = datetime.datetime.fromisoformat(str(d.get("tijd", "")).replace("Z", "+00:00"))
+    if (datetime.datetime.now(datetime.timezone.utc) - t).total_seconds() > 3600:
+        print("VEROUDERD"); sys.exit()
+except Exception:
+    print("ONGELDIG"); sys.exit()
+schoon = lambda v, n: " ".join(str(v).split())[:n]
+print("OK"); print(schoon(d.get("door", ""), 120)); print(schoon(d.get("reden", ""), 300))
+PY
+)"
+  case "$(printf '%s
+' "$uit" | head -n1)" in
+    OK) STOP_DOOR="$(printf '%s
+' "$uit" | sed -n 2p)"; STOP_REDEN="$(printf '%s
+' "$uit" | sed -n 3p)"; rm -f -- "$f"; return 0 ;;
+    ANDER) return 1 ;;   # verzoek voor een ander pakket: laten liggen (die run leest het zelf)
+    *) rm -f -- "$f"; log "stopverzoek genegeerd ($(printf '%s
+' "$uit" | head -n1))"; return 1 ;;
+  esac
+}
 afsluiten() {
   local rc=$? code uk nl
   trap - ERR
@@ -292,6 +342,9 @@ else
   [ -f "$INBOX/$NAAM.sig" ] && [ ! -L "$INBOX/$NAAM.sig" ] || weiger SIG_ONTBREEKT "Немає файлу підпису (.sig)." "Het handtekeningbestand (.sig) ontbreekt."
 fi
 [ ! -L "$INBOX/$NAAM" ] || weiger SYMLINK "Пакет є символьним посиланням." "Het pakket is een symlink."
+if stop_verzoek; then
+  weiger GESTOPT "Власник зупинив установлення $VERSIE ще до початку${STOP_DOOR:+ ($STOP_DOOR)}${STOP_REDEN:+: $STOP_REDEN}. Нічого не змінено." "De eigenaar stopte de installatie van $VERSIE nog vóór het begin${STOP_DOOR:+ ($STOP_DOOR)}${STOP_REDEN:+: $STOP_REDEN}. Er is niets gewijzigd."
+fi
 status bezig CONTROLE "Перевіряю пакет $VERSIE." "Pakket $VERSIE wordt gecontroleerd." "$VERSIE"
 # Alleen tests (als root gewist, zie boven): een onverwachte fout na «bezig CONTROLE» nabootsen; de trap moet die als AFGEBROKEN melden.
 [ "${UITROL_TEST_BREEK:-}" = controle ] && false
@@ -738,10 +791,26 @@ export MIJN_RUIMTE_UITROL_MODUS="$MODUS"
 if [ -n "$INSTALLEER" ]; then cmd=( "$INSTALLEER" installeren "$BRON" ); else cmd=( bash "$BRON/deploy/installeer-app.sh" installeren "$BRON" ); fi
 publiceer_log
 set +e
-"${cmd[@]}" >> "$WERK/installeer.log" 2>&1 < /dev/null &
+# Eigen procesgroep (setsid): een stopverzoek of SIGTERM beëindigt dan ook npm, vite en node, niet alleen de bash van het script.
+setsid "${cmd[@]}" >> "$WERK/installeer.log" 2>&1 < /dev/null &
 INSTALL_PID=$!
-# Terwijl de installatie loopt elke 2 seconden de staart publiceren, zodat de site het verloop kan tonen.
-( while kill -0 "$INSTALL_PID" 2>/dev/null; do installeer_stappen; publiceer_log; sleep 2; done ) 8>&- &
+# Terwijl de installatie loopt elke 2 seconden de staart publiceren, zodat de site het verloop kan tonen; en op een stopverzoek letten.
+( while kill -0 "$INSTALL_PID" 2>/dev/null; do
+    installeer_stappen; publiceer_log
+    if [ ! -f "$WERK/gestopt" ] && stop_verzoek; then
+      pct="$(cat "$WERK/stap-pct" 2>/dev/null || echo 0)"; [[ "$pct" =~ ^[0-9]+$ ]] || pct=0
+      if [ "$pct" -lt 90 ]; then
+        printf '%s\n%s\n' "$STOP_DOOR" "$STOP_REDEN" > "$WERK/gestopt"
+        log "STOP: eigenaar vraagt te stoppen bij $pct % (${STOP_DOOR:-onbekend})${STOP_REDEN:+: $STOP_REDEN} — installatie wordt afgebroken, vorige release blijft actief"
+        printf '[installeer] stap: gestopt (%s%%) зупинено власником / gestopt door de eigenaar\n' "$pct" >> "$WERK/installeer.log"
+        kill -TERM -- "-$INSTALL_PID" 2>/dev/null || kill -TERM "$INSTALL_PID" 2>/dev/null
+      else
+        log "STOP: verzoek van de eigenaar kwam bij $pct % — te laat (het overschakelen loopt al); de gezondheidscontrole en de automatische terugdraai beslissen"
+        gebeurtenis STOP_TE_LAAT waarschuwing "Запит на зупинку надійшов, коли перемикання вже тривало ($pct %). Його проігноровано: результат вирішать перевірка здоров’я та автоматичний відкат." "Het stopverzoek kwam toen het overschakelen al liep ($pct %). Het is genegeerd: gezondheidscontrole en automatische terugdraai beslissen."
+      fi
+    fi
+    sleep 2
+  done ) 8>&- &
 LOG_PID=$!
 wait "$INSTALL_PID"
 INSTALL_RC=$?
@@ -781,6 +850,19 @@ if [ "$INSTALL_RC" -eq 0 ]; then
   # `$WERK/pakket.tar.gz`, de inbox is al leeg), dus er werd nooit een archief bewaard en nooit een GitHub-release gemaakt. GitHub
   # publiceert nu de site (backend/uitrol-github.ts) met de token uit de kluis; root heeft geen kluis en geen token-bestand meer nodig.
   [ -n "$PAKKET_PAD" ] || log "archief: niet bewaard (zie hierboven); de site kan dit pakket later niet aanbieden om te downloaden"
+elif [ -f "$WERK/gestopt" ]; then
+  STOP_DOOR="$(sed -n 1p "$WERK/gestopt")"; STOP_REDEN="$(sed -n 2p "$WERK/gestopt")"
+  pct="$(cat "$WERK/stap-pct" 2>/dev/null || echo 0)"
+  REDEN_TEKST="gestopt door de eigenaar${STOP_DOOR:+ ($STOP_DOOR)} bij $pct %${STOP_REDEN:+: $STOP_REDEN}"
+  REDEN_UK="Встановлення зупинено власником${STOP_DOOR:+ ($STOP_DOOR)} на $pct %${STOP_REDEN:+: $STOP_REDEN}. Попередній випуск лишився активним; незавершену теку випуску прибрано."
+  REDEN_NL="Installatie gestopt door de eigenaar${STOP_DOOR:+ ($STOP_DOOR)} bij $pct %${STOP_REDEN:+: $STOP_REDEN}. De vorige release blijft actief; de onvolledige releasemap is opgeruimd."
+  stap installeren fout 0 "$REDEN_UK" "$REDEN_NL"
+  status mislukt GESTOPT "$REDEN_UK" "$REDEN_NL" "$VERSIE"
+  AFGEROND=1
+  gebeurtenis GESTOPT waarschuwing "$REDEN_UK" "$REDEN_NL"
+  log "installatie gestopt door de eigenaar (afsluitcode $INSTALL_RC)"
+  publiceer_log
+  exit 1
 else
   tail -n 40 "$WERK/installeer.log" >&2 || true
   # Oorzaak (audit 18.10.2026, punt 6). Vroeger: de LAATSTE regel met een breed sleutelwoord («ts» paste op bijna alles, «mislykt» was een
