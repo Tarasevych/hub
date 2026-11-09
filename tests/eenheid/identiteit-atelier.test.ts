@@ -36,7 +36,7 @@ export async function main(): Promise<number> {
   const vormgeving = readFileSync('src/identiteit/identiteit-vormgeving.ts', 'utf8');
   const kiezerBron = readFileSync('src/identiteit/VormgevingKiezer.tsx', 'utf8');
   check('de weergavekiezer staat alleen open met de vlag', pagina.includes('{atelier && <VormgevingKiezer lang={lang} />}') && atelier.includes("<VormgevingKiezer lang={lang} className='mr-at-vormgeving'/>"));
-  check('de weergavekeuze valt zonder opslag terug op de Studio en accepteert alleen bekende waarden', vormgeving.includes("return beschikbaar[0] ?? 'studio';") && vormgeving.includes('(beschikbaar as readonly string[]).includes(v)') && vormgeving.includes("'identiteit-account-maquette'") && kiezerBron.includes('beschikbaar.map('));
+  check('de weergavekeuze valt zonder opslag terug op de Studio en accepteert alleen bekende waarden', vormgeving.includes("return beschikbaar[0] ?? 'studio';") && vormgeving.includes('(beschikbaar as readonly string[]).includes(v)') && vormgeving.includes("'identiteit-account-maquette'") && kiezerBron.includes('VORMGEVINGEN.map(') && kiezerBron.includes('disabled={!kan}'));
   check('elke weergave heeft uitleg over de gevolgen in beide talen', /ukUitleg: '[^']{40,}'/.test(vormgeving) && /nlUitleg: '[^']{40,}'/.test(vormgeving) && kiezerBron.includes('title={uitleg}') && kiezerBron.includes("role='radiogroup'"));
   check('de databasevlag staat aanvankelijk uit', /false, false\)\s*ON CONFLICT/.test(migratie));
   check('de vlagomschrijving past binnen de werkelijke databasegrens', Number.isInteger(omschrijvingGrens) && omschrijvingGrens > 0 && !!omschrijving && [...omschrijving].length <= omschrijvingGrens);
