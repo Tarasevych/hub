@@ -17,6 +17,7 @@ on:
       - 'server/platform/statisch-comprimeren.ts'
       - 'tests/eenheid/perf-001-20261109.test.ts'
       - 'orchestratie/ontwikkelarchieven/PERF-001.json'
+      - 'orchestratie/taken/**'
       - 'migrations/**'
       - 'shared/tech-bundels.ts'
       - 'index.html'
