@@ -158,7 +158,7 @@ export async function main(): Promise<number> {
     check('HUB-08: «einde»/«tijd»/«gesloten» vertaald in het terminalvenster', /eindeTekst\(m\.reden, uk\)/.test(term) && /einde: \['оболонку завершено'/.test(term) && /tijd: \['час вийшов'/.test(term));
     check('HUB-02: hub-venster: Esc sluit, Tab blijft binnen (focus-trap), role=dialog; modal boven het avatarmenu (z-index 400 > 360)', /e\.key === 'Escape'\) \{ e\.preventDefault\(\); setModal\(null\)/.test(app) && /role='dialog' aria-modal='true'/.test(app) && /\.modal-backdrop \{ position:fixed; z-index:400/.test(lees('src/index.css')));
     check('HUB-04: «Зараз» zonder stap toont uitleg + knop naar «Завдання» in dezelfde pagina; hub-interne links openen geen nieuw tabblad naar de hub zelf', /data-hub-focus='leeg'/.test(app) && /hub\\.tarasevych\\.com\\\/\\\?tab=\(\[a-z\]\+\)\$\/\.test\(functionalUrl\)/.test(app));
-    check('HUB-03/notes: «Останні» en «Нотатки» hebben eigen inhoud (HubRecent, HubNotes); notities-tab toont geen Drive-blok meer', /hubTab==='recent'\?<HubRecent/.test(app) && /hubTab==='notes'&&<HubNotes/.test(app) && /hubTab === 'notes' && block\.kind === 'custom'/.test(app));
+    check('HUB-03/notes: «Останні» en «Нотатки» hebben eigen inhoud (HubRecent, HubNotes); notities-tab toont geen Drive-blok meer', /hubTab==='recent'\?(<Suspense fallback=\{[^}]*\}>)?<HubRecent/.test(app) && /hubTab==='notes'&&(<Suspense fallback=\{[^}]*\}>)?<HubNotes/.test(app) && /hubTab === 'notes' && block\.kind === 'custom'/.test(app));
     // HubNotes → canonical-navigation leest het runtime-object bij het laden: tijdelijk een venster met dat object.
     const g = globalThis as Record<string, unknown>;
     const hadWin = 'window' in g, hadDoc = 'document' in g;

@@ -117,7 +117,8 @@ export async function main(): Promise<number> {
     !/integraties\/(Logo|logos)/.test(agendaImports) && pagina.includes('agenda-monogram'));
   const app = lees('src/App.tsx');
   check('agenda: het onderdeel staat op het tabblad «Календар»',
-    app.includes("{hubTab==='calendar'&&state==='authorized'&&<Agenda lang={lang} ownerUserId={user?.id||''}/>}"));
+    // PERF-001: lui geladen (Suspense) — zelfde tabblad, zelfde voorwaarden, zelfde props.
+    /\{hubTab==='calendar'&&state==='authorized'&&<Suspense fallback=\{[^}]*\}><Agenda lang=\{lang\} ownerUserId=\{user\?\.id\|\|''\}\/><\/Suspense>\}/.test(app));
 
   // ================================================================ 11. нотатки
   check('notities: de vier soorten die de eigenaar vroeg bestaan, met uitleg in beide talen',
@@ -241,7 +242,7 @@ export async function main(): Promise<number> {
   check('notities: de bestaande, zuivere lijst-functie blijft bestaan (andere plekken gebruiken haar)',
     notes.includes('export const hubNotities') && notes.includes("export type HubNotitie"));
   check('notities: niets verzonnen (geen voorbeelddata, geen willekeur)', !/Math\.random/.test(notes) && !/lorem/i.test(notes));
-  check('notities: het tabblad blijft het bestaande onderdeel gebruiken', app.includes("hubTab==='notes'&&<HubNotes lang={lang}/>"));
+  check('notities: het tabblad blijft het bestaande onderdeel gebruiken', /hubTab==='notes'&&<Suspense fallback=\{[^}]*\}><HubNotes lang=\{lang\}\/><\/Suspense>/.test(app) && /const HubNotes=lazyZoek\(\(\)=>import\('\.\/HubNotities'\)\)/.test(app));
 
   // ================================================================ punt 5: de twee grote knoppen
   check('punt 5: «Поділитися» en «Налаштувати поверхню» staan niet meer als grote knoppen in de zijbalk',

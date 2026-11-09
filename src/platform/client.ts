@@ -84,9 +84,107 @@ export const apiLopend = () => lopend;
 export function opApiActiviteit(f: (n: number) => void) { activiteitLuisteraars.add(f); return () => { activiteitLuisteraars.delete(f); }; }
 export const isAfgebroken = (e: unknown) => e instanceof ApiError && e.message === 'ABORTED';
 
+// ---------------------------------------------------------------------------------------------
+// PERF-001 (09.11.2026): minder verzoeken per pagina.
+// Gemeten op een lokale kopie van de site: id.* stuurde bij het openen 48 API-verzoeken, waarvan 15 dubbel (dezelfde lijst ×3,
+// notities ×9), omdat elke sectie haar eigen lijst laadt. Elk verzoek gaat bij de eigenaar door de Cloudflare-tunnel en controleert
+// op de server de sessie: dubbel werk is merkbare vertraging.
+//  1. Gelijktijdige IDENTIEKE leesverzoeken (zelfde methode, pad en lichaam) worden samengevoegd tot één netwerkverzoek; elke
+//     aanroeper krijgt een eigen kopie van het antwoord. Alleen paden die op de server zuiver lezen (lijst/laden/overzicht/status…);
+//     nooit schrijvende acties en nooit de herhaling na een step-up. Een AbortSignal stopt alleen het wachten van die aanroeper. Er wordt NIETS bewaard: zodra het
+//     antwoord er is, gaat het volgende verzoek weer naar de server.
+//  2. Prapori (OFREP): losse /api/ofrep/v1/evaluate/flags/<sleutel>-verzoeken die binnen 25 ms vertrekken (de pagina vraagt er bij het
+//     starten 6–9) gaan samen als één POST /api/flags met de lijst sleutels; elke aanroeper krijgt precies het OFREP-antwoord (en bij
+//     een onbekende vlag dezelfde 404) als bij het losse verzoek. Mislukt de bundel, dan valt elke vlag terug op het losse verzoek.
+// ---------------------------------------------------------------------------------------------
+export const LEES_PAD = /\/(lijst|list|load|laden|snapshot|overzicht|status|voor-mij|tellers|activity|extensie-status|mijn-diensten|gelezen|accounts)$/;
+const NOOIT_SAMENVOEGEN = /^\/api\/(beheer|owner\/session)\//;
+// Losse leesroutes die niet op het patroon eindigen (backend/sleutelkluis-routes.ts: «stand» = overzicht, schrijft niets).
+const LEES_EXTRA = new Set(['/api/owner/sleutelkluis/stand']);
+const lopendeLezingen = new Map<string, Promise<ApiResponse>>();
+const kopie = (r: ApiResponse): ApiResponse => {
+  let data = r.data;
+  if (data && typeof data === 'object') { try { data = structuredClone(data); } catch { data = JSON.parse(JSON.stringify(data)); } }
+  return { data, status: r.status, headers: r.headers };
+};
+export function magSamenvoegen(method: string, url: string, opnieuw: boolean): boolean {
+  if (opnieuw || (method !== 'POST' && method !== 'GET')) return false;
+  const pad = url.split('?')[0];
+  return pad.startsWith('/api/') && !NOOIT_SAMENVOEGEN.test(pad) && (LEES_PAD.test(pad) || LEES_EXTRA.has(pad));
+}
+const afgebroken = () => new ApiError(0, 'ABORTED', { error: 'ABORTED' }, '');
+/** Wacht op het gedeelde verzoek, maar geeft «afgebroken» zodra het EIGEN signaal afgaat (de andere wachtenden merken niets). */
+function metEigenSignaal<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return p;
+  if (signal.aborted) return Promise.reject(afgebroken());
+  return new Promise<T>((ok, nee) => {
+    const stop = () => nee(afgebroken());
+    signal.addEventListener('abort', stop, { once: true });
+    p.then((v) => { signal.removeEventListener('abort', stop); ok(v); }, (e) => { signal.removeEventListener('abort', stop); nee(e); });
+  });
+}
+
+const VLAG_PAD = /^\/api\/ofrep\/v1\/evaluate\/flags\/([a-z0-9][a-z0-9._-]{0,79})$/i;
+type VlagWacht = { sleutel: string; ok: (r: ApiResponse) => void; nee: (e: unknown) => void };
+const vlagRijen = new Map<string, { lichaam: unknown; wacht: VlagWacht[] }>();
+const ofrepVorm = (x: Record<string, unknown>) => ({ key: x.key, value: x.value, reason: x.reason, variant: x.variant, ...(x.errorCode ? { errorCode: x.errorCode, errorDetails: 'flag not found' } : {}), metadata: x.metadata ?? {} });
+function vlagBundelVersturen(sleutelLichaam: string) {
+  const rij = vlagRijen.get(sleutelLichaam); vlagRijen.delete(sleutelLichaam);
+  if (!rij) return;
+  const sleutels = [...new Set(rij.wacht.map((w) => w.sleutel))];
+  // Eén netwerkverzoek per sleutel, ook als meerdere onderdelen dezelfde vlag tegelijk vragen; elk krijgt een eigen kopie.
+  const losPerSleutel = new Map<string, Promise<ApiResponse>>();
+  const los = (w: VlagWacht) => {
+    let p = losPerSleutel.get(w.sleutel);
+    if (!p) { p = requestKern('POST', `/api/ofrep/v1/evaluate/flags/${w.sleutel}`, rij.lichaam, false, {}); losPerSleutel.set(w.sleutel, p); }
+    return p.then((r) => w.ok(kopie(r)), w.nee);
+  };
+  if (sleutels.length === 1) { rij.wacht.forEach(los); return; }
+  const basis = rij.lichaam && typeof rij.lichaam === 'object' ? rij.lichaam as Record<string, unknown> : {};
+  requestKern('POST', '/api/flags', { ...basis, sleutels }, false, {}).then((r) => {
+    const lijst = Array.isArray(r.data?.vlaggen) ? r.data.vlaggen as Record<string, unknown>[] : null;
+    if (!lijst) { rij.wacht.forEach(los); return; }
+    for (const w of rij.wacht) {
+      const x = lijst.find((v) => v && v.key === w.sleutel);
+      if (!x) { void los(w); continue; }
+      const antwoord = ofrepVorm(x);
+      if (x.errorCode) w.nee(new ApiError(404, 'Not Found', antwoord, JSON.stringify(antwoord)));
+      else w.ok({ data: antwoord, status: 200, headers: r.headers });
+    }
+  }, (e) => {
+    // 401/403: de losse verzoeken zouden hetzelfde zeggen — direct doorgeven. Andere fouten: elk nog één keer los.
+    if (e instanceof ApiError && (e.status === 401 || e.status === 403)) rij.wacht.forEach((w) => w.nee(e)); else rij.wacht.forEach(los);
+  });
+}
+function vlagInBundel(sleutel: string, lichaam: unknown): Promise<ApiResponse> {
+  return new Promise((ok, nee) => {
+    const k = JSON.stringify(lichaam ?? {});
+    let rij = vlagRijen.get(k);
+    if (!rij) { rij = { lichaam, wacht: [] }; vlagRijen.set(k, rij); setTimeout(() => vlagBundelVersturen(k), 25); }
+    rij.wacht.push({ sleutel, ok, nee });
+  });
+}
+
 async function request(method: string, url: string, data?: unknown, opnieuw = false, opties: ApiOpties = {}): Promise<ApiResponse> {
   meldActiviteit(1);
-  try { return await requestKern(method, url, data, opnieuw, opties); } finally { meldActiviteit(-1); }
+  try {
+    const vlag = method === 'POST' && !opnieuw && !opties.signal && typeof window !== 'undefined' ? VLAG_PAD.exec(url) : null;
+    if (vlag) return await vlagInBundel(vlag[1], data);
+    if (magSamenvoegen(method, url, opnieuw)) {
+      if (opties.signal?.aborted) throw afgebroken();
+      const sleutel = `${method} ${url} ${JSON.stringify(data ?? null)}`;
+      let lopende = lopendeLezingen.get(sleutel);
+      if (!lopende) {
+        // Het gedeelde verzoek draagt GEEN signaal van één aanroeper: wie afbreekt, stopt alleen het eigen wachten.
+        lopende = requestKern(method, url, data, opnieuw, {});
+        lopendeLezingen.set(sleutel, lopende);
+        const weg = () => { if (lopendeLezingen.get(sleutel) === lopende) lopendeLezingen.delete(sleutel); };
+        lopende.then(weg, weg);
+      }
+      return kopie(await metEigenSignaal(lopende, opties.signal));
+    }
+    return await requestKern(method, url, data, opnieuw, opties);
+  } finally { meldActiviteit(-1); }
 }
 
 async function requestKern(method: string, url: string, data: unknown, opnieuw: boolean, opties: ApiOpties): Promise<ApiResponse> {

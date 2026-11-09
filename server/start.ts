@@ -13,6 +13,8 @@
 import http from 'node:http';
 import { createReadStream, realpathSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
+import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
+import { COMPRIMEERBAAR, MIN_BYTES, gecomprimeerd, kiesCodering } from './platform/statisch-comprimeren';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identiteit';
@@ -75,6 +77,15 @@ const BASE_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
 };
+
+// PERF-001: welk achtergrondwerk loopt (voor de bewaking van de hoofdthread hieronder).
+const achtergrondLopend = new Set<string>(), achtergrondGezien = new Set<string>();
+function achtergrond<T>(naam: string, doe: () => Promise<T>): Promise<T> {
+  achtergrondLopend.add(naam); achtergrondGezien.add(naam);
+  let p: Promise<T>;
+  try { p = doe(); } catch (e) { achtergrondLopend.delete(naam); return Promise.reject(e); }
+  return p.finally(() => achtergrondLopend.delete(naam));
+}
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -232,6 +243,22 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
   }
   if (path.basename(file) === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
   if (path.basename(file) === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';
+  // PERF-001: tekstbestanden gecomprimeerd (brotli/gzip, één keer per bestand in het geheugen; zie server/platform/statisch-comprimeren.ts).
+  if (COMPRIMEERBAAR.has(ext) && s.size >= MIN_BYTES) {
+    headers.Vary = headers.Vary ? `${headers.Vary}, Accept-Encoding` : 'Accept-Encoding';
+    const codering = kiesCodering(req.headers['accept-encoding']);
+    const buf = codering ? await gecomprimeerd(file, ext, s.size, `${s.size}-${Math.floor(s.mtimeMs)}`, codering) : null;
+    if (codering && buf) {
+      const etagGz = `${etag.slice(0, -1)}-${codering === 'br' ? 'br' : 'gz'}"`;
+      headers.ETag = etagGz;
+      if (req.headers['if-none-match'] === etagGz) { send(res, 304, headers); return true; }
+      headers['Content-Encoding'] = codering;
+      headers['Content-Length'] = String(buf.length);
+      if (req.method === 'HEAD') { send(res, 200, headers); return true; }
+      send(res, 200, headers, buf);
+      return true;
+    }
+  }
   if (req.headers['if-none-match'] === etag) { send(res, 304, headers); return true; }
   headers['Content-Length'] = String(s.size);
   if (req.method === 'HEAD') { send(res, 200, headers); return true; }
@@ -478,8 +505,13 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     let body = '';
     try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req); }
     catch (err) { return sendJson(res, (err as { status?: number }).status || 400, { error: 'BODY_TOO_LARGE' }); }
-    const response = await handler(buildEvent(req, apiUrl, body, ip) as never);
-    return writeRouterResponse(res, response as RouterResponse);
+    const t0 = performance.now();
+    const response = await handler(buildEvent(req, apiUrl, body, ip) as never) as RouterResponse;
+    // PERF-001: hoe lang de server zelf over dit verzoek deed (zichtbaar in DevTools → Network → Timing en voor de paginacontrole
+    // van de extensie). Alleen de duur in ms, niets over de inhoud; zo is «traag door de server» te onderscheiden van «traag door
+    // de tunnel/het netwerk».
+    const duur = Math.max(0, performance.now() - t0).toFixed(1);
+    return writeRouterResponse(res, { ...response, headers: { 'Server-Timing': `app;dur=${duur}`, ...(response.headers || {}) } });
   }
   return serveStatic(req, res, url, DIST_DIR, true, APP_CSP);
 }
@@ -529,6 +561,18 @@ if (isMain) {
     .finally(() => {
       server.listen(PORT, HOST, () => console.log(`[server] luistert op http://${HOST}:${PORT} (dist: ${DIST_DIR})`));
     });
+  // PERF-001: bewaking van de hoofdthread. Achtergrondwerk (Google-sync, postonderhoud, zoekindex, SIEM) draait elke paar minuten in
+  // DIT proces; blokkeert iets de event loop, dan wacht elk verzoek van de site («сайт завмирає»). Elke minuut: is de langste
+  // vertraging boven LUS_DREMPEL_MS, dan één logregel met de duur en welk achtergrondwerk op dat moment liep — zo is een periodieke
+  // hapering op de server van de eigenaar aan te wijzen in plaats van te raden. Kost vrijwel niets (histogram van Node zelf).
+  const lus = monitorEventLoopDelay({ resolution: 20 });
+  lus.enable();
+  const LUS_DREMPEL_MS = Math.max(50, Number(process.env.LUS_DREMPEL_MS || 250));
+  setInterval(() => {
+    const max = lus.max / 1e6;
+    if (max >= LUS_DREMPEL_MS) console.warn(`[lus] hoofdthread tot ${Math.round(max)} ms geblokkeerd (p99 ${Math.round(lus.percentile(99) / 1e6)} ms; achtergrond in deze minuut: ${[...achtergrondGezien].join(', ') || 'geen'})`);
+    lus.reset(); achtergrondGezien.clear(); for (const n of achtergrondLopend) achtergrondGezien.add(n);
+  }, 60_000).unref();
   // Fase 3: verouderde eigenaarsrollen (adres ≠ OWNER_EMAIL) intrekken; faalt nooit de start.
   verouderdeEigenarenIntrekken().catch((err) => console.error('[eigenaar] opschonen mislukt:', (err as Error).message));
   // Diagnose-archief: verlopen archieven (90 dagen) bij de start en daarna elke 6 uur verwijderen; faalt nooit de start.
@@ -536,18 +580,18 @@ if (isMain) {
   diagOpruimen();
   setInterval(diagOpruimen, 6 * 3600_000).unref();
   // Root-gebeurtenissen (GitOps, gepantserde opdracht) uit het root-statusbestand in de audit opnemen; alleen lezen.
-  const rootAudit = () => neemRootGebeurtenissenOp().catch((err) => console.error('[beheer] audit opnemen mislukt:', (err as Error).message));
+  const rootAudit = () => achtergrond('root-audit', () => neemRootGebeurtenissenOp()).catch((err) => console.error('[beheer] audit opnemen mislukt:', (err as Error).message));
   rootAudit();
   setInterval(rootAudit, 5 * 60_000).unref();
   // Sleutelkluis (0092): het achtergrondwerk dat een OPEN gegevenssleutel nodig heeft (Drive/agenda/CalDAV, postonderhoud) loopt hier,
   // in het proces waar de sleutel staat — onder dezelfde advisory lock als de cron, en alleen als er een sleutel open staat.
-  const kluisRonde = () => sleutelkluisAchtergrondRonde([
+  const kluisRonde = () => achtergrond('sleutelkluis-ronde', () => sleutelkluisAchtergrondRonde([
     { naam: 'google-suite-bplus-sync', handler: googleSuiteSyncCron as never, payload: { accountLimit: 10 } },
     { naam: 'mail-provider-maintenance', handler: mailMaintenanceCron as never, payload: { batchLimit: 3 } },
     // Z2: de zoekindex leest bijlagen/Drive/GitHub alleen met een open sleutel; hier dus óók, onder dezelfde lock als de cron.
     { naam: 'zoek-index', handler: zoekIndexCron as never, payload: { limiet: 60 } },
   ]).then((u) => { const gedaan = u.filter((x) => x.status === 'ok' || x.status === 'fout'); if (gedaan.length) console.log(`[sleutelkluis] achtergrondronde: ${u.map((x) => `${x.naam}=${x.status}`).join(' ')}`); })
-    .catch((err) => console.error('[sleutelkluis] achtergrondronde mislukt:', (err as Error).message));
+    .catch((err) => console.error('[sleutelkluis] achtergrondronde mislukt:', (err as Error).message)));
   setTimeout(kluisRonde, 90_000).unref();
   setInterval(kluisRonde, ACHTERGROND_INTERVAL_MS).unref();
   // Etap E: journaal naar uw eigen SIEM (bestand en/of Loki op loopback). Uit tenzij /etc/mijn-ruimte/siem.env het aanzet.
@@ -555,7 +599,7 @@ if (isMain) {
   if (siem.lokiGeweigerd) console.error('[siem] SIEM_LOKI_URL geweigerd: alleen http://127.0.0.1, localhost of [::1] (deploy/SIEM.md)');
   if (siem.aan) {
     console.log(`[siem] export aan: ${[siem.bestand && 'bestand', siem.loki && 'loki'].filter(Boolean).join(' + ')}, elke ${siem.intervalS} s`);
-    const ronde = () => { void siemRonde(siem); };
+    const ronde = () => { void achtergrond('siem', () => siemRonde(siem)); };
     setTimeout(ronde, 5_000).unref();
     setInterval(ronde, siem.intervalS * 1000).unref();
   }
