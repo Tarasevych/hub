@@ -1,0 +1,120 @@
+/* UITROL-001 · Картка «Перевірка вимог до встановлення» + вікно звіту. Токени --ut-* з uitrol.css (світла й темна тема). Mobile-first. */
+.ut-vr{display:grid;gap:12px;padding:14px;border:1px solid var(--ut-line);border-radius:14px;background:var(--ut-bg);min-width:0}
+.ut-vr[data-stand="fout"]{border-color:color-mix(in srgb,var(--ut-err) 45%,var(--ut-line))}
+.ut-vr svg{width:16px;height:16px;flex:none}
+.ut-vr-kop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.ut-vr-kop h4{display:flex;align-items:center;gap:8px;margin:0;font-size:1rem}
+.ut-vr-kop h4 svg{width:18px;height:18px;color:var(--ut-accent)}
+.ut-vr-kop p{margin:4px 0 0;color:var(--ut-muted);font-size:.84rem;max-width:72ch}
+.ut-vr-chips{display:flex;gap:6px;flex-wrap:wrap}
+.ut-vr-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--ut-line);background:var(--ut-bg2);font-size:.8rem;font-weight:600;white-space:nowrap}
+.ut-vr-chip[data-soort="ok"]{color:var(--ut-ok);background:var(--ut-ok-bg);border-color:color-mix(in srgb,var(--ut-ok) 35%,var(--ut-line))}
+.ut-vr-chip[data-soort="waarschuwing"]{color:var(--ut-warn);background:var(--ut-warn-bg)}
+.ut-vr-chip[data-soort="fout"]{color:var(--ut-err);background:var(--ut-err-bg);border-color:color-mix(in srgb,var(--ut-err) 40%,var(--ut-line))}
+
+/* банер «не придатний» */
+.ut-vr-banner{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;padding:13px 14px;border-radius:13px;border:1px solid color-mix(in srgb,var(--ut-err) 50%,var(--ut-line));background:var(--ut-err-bg)}
+.ut-vr-banner>svg{width:24px;height:24px;color:var(--ut-err)}
+.ut-vr-banner h4{margin:0;font-size:.98rem}
+.ut-vr-banner p{margin:3px 0 0;font-size:.85rem}
+.ut-vr-bespaard{display:inline-flex;gap:6px;align-items:center;margin-top:6px;font-size:.8rem;color:var(--ut-ok);font-weight:650}
+.ut-vr-acties{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.ut-vr-let-op{display:flex;gap:8px;align-items:flex-start;margin:0;padding:9px 11px;border-radius:10px;background:var(--ut-warn-bg);font-size:.84rem}
+.ut-vr-let-op svg{color:var(--ut-warn);margin-top:2px}
+
+/* групи */
+.ut-vr-groepen{display:grid;gap:8px}
+.ut-vr-groep,.ut-vr-log{border:1px solid var(--ut-line);border-radius:12px;background:var(--ut-bg);overflow:hidden}
+.ut-vr-groep>summary,.ut-vr-log>summary{list-style:none;display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer;font-weight:650;font-size:.9rem;min-height:44px}
+.ut-vr-groep>summary::-webkit-details-marker,.ut-vr-log>summary::-webkit-details-marker{display:none}
+.ut-vr-groep>summary>svg:first-child,.ut-vr-log>summary>svg:first-child{color:var(--ut-accent)}
+.ut-vr-tel{margin-left:auto;font-size:.75rem;padding:2px 9px;border-radius:999px;background:var(--ut-ok-bg);color:var(--ut-ok)}
+.ut-vr-tel[data-soort="fout"]{background:var(--ut-err-bg);color:var(--ut-err)}
+.ut-vr-tel[data-soort="waarschuwing"]{background:var(--ut-warn-bg);color:var(--ut-warn)}
+.ut-vr-tel[data-soort="bezig"]{background:var(--ut-info-bg);color:var(--ut-info)}
+.ut-vr-pijl{color:var(--ut-muted);transition:transform .2s}
+details[open]>summary .ut-vr-pijl{transform:rotate(180deg)}
+.ut-vr-log>summary .ut-vr-pijl{margin-left:auto}
+.ut-vr-groep>ul{list-style:none;margin:0;padding:0}
+.ut-vr-regel{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:9px;padding:9px 12px;border-top:1px solid var(--ut-line);align-items:start;font-size:.86rem}
+.ut-vr-regel>svg{margin-top:2px}
+.ut-vr-regel[data-niveau="ok"]>svg{color:var(--ut-ok)}
+.ut-vr-regel[data-niveau="fout"]{background:color-mix(in srgb,var(--ut-err-bg) 55%,transparent)}
+.ut-vr-regel[data-niveau="fout"]>svg{color:var(--ut-err)}
+.ut-vr-regel[data-niveau="waarschuwing"]>svg{color:var(--ut-warn)}
+.ut-vr-regel[data-niveau="wacht"]>svg,.ut-vr-regel[data-niveau="overgeslagen"]>svg{color:var(--ut-muted)}
+.ut-vr-regel[data-niveau="bezig"]>svg{color:var(--ut-info)}
+.ut-vr-midden{min-width:0;display:grid;gap:2px}
+.ut-vr-midden>b{font-weight:600;display:flex;align-items:center;gap:4px}
+.ut-vr-midden>small{color:var(--ut-muted);font-size:.8rem;overflow-wrap:anywhere;user-select:text}
+.ut-vr-waarom{display:inline-grid;place-items:center;width:24px;height:24px;padding:0;border:0;background:transparent;color:var(--ut-muted);cursor:help;border-radius:50%}
+.ut-vr-waarom:hover,.ut-vr-waarom:focus-visible{color:var(--ut-accent);background:var(--ut-bg2)}
+.ut-vr-waarom svg{width:15px;height:15px}
+.ut-vr-uitleg{margin:4px 0 0;padding:7px 9px;border-radius:8px;background:var(--ut-info-bg);font-size:.8rem}
+.ut-vr-details{margin:4px 0 0;padding:0 0 0 14px;font-size:.74rem;color:var(--ut-muted)}
+.ut-vr-ms{font-size:.74rem;color:var(--ut-muted);white-space:nowrap;text-align:right}
+
+/* причина */
+.ut-vr-oorzaak{margin-top:7px;display:grid;gap:7px;padding:10px 11px;border-radius:10px;border:1px solid color-mix(in srgb,var(--ut-err) 40%,var(--ut-line));background:var(--ut-bg)}
+.ut-vr-oorzaak dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 10px;margin:0;font-size:.8rem}
+.ut-vr-oorzaak dt{color:var(--ut-muted)}
+.ut-vr-oorzaak dd{margin:0;overflow-wrap:anywhere;user-select:text}
+.ut-vr-fragment{margin:0;padding:9px 10px;border-radius:8px;background:var(--ut-term-bg);color:var(--ut-term-text);font-size:.74rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
+.ut-vr-doen{display:flex;gap:7px;align-items:flex-start;margin:0;padding:8px 10px;border-radius:8px;background:var(--ut-info-bg);font-size:.8rem}
+.ut-vr-doen svg{color:var(--ut-info);margin-top:1px}
+
+/* журнал */
+.ut-vr-live{font-style:normal;font-size:.7rem;font-weight:700;color:var(--ut-ok);display:inline-flex;align-items:center;gap:5px}
+.ut-vr-live::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ut-ok);animation:ut-vr-puls 1.4s infinite}
+@keyframes ut-vr-puls{50%{opacity:.35}}
+.ut-vr-logbalk{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 12px;border-top:1px solid var(--ut-line);font-size:.8rem;color:var(--ut-muted)}
+.ut-vr-logbalk label{display:inline-flex;gap:6px;align-items:center}
+.ut-vr-logbalk button{display:inline-flex;gap:5px;align-items:center;min-height:32px;padding:4px 10px;border-radius:8px;border:1px solid var(--ut-line);background:var(--ut-bg);color:var(--ut-text);font:inherit;cursor:pointer}
+.ut-vr-regels{max-height:280px;overflow:auto;background:var(--ut-term-bg);color:var(--ut-term-text);padding:8px 0;font-size:.75rem;line-height:1.6;user-select:text}
+.ut-vr-ln{display:grid;grid-template-columns:96px 52px minmax(0,1fr);gap:8px;padding:0 12px}
+.ut-vr-ts{color:#7f93a6}
+.ut-vr-dl{color:#5f7385;text-align:right}
+.ut-vr-tx{overflow-wrap:anywhere}
+.ut-vr-ln[data-niveau="ok"] .ut-vr-tx{color:#7fe0a5}
+.ut-vr-ln[data-niveau="fout"] .ut-vr-tx{color:#ff9a8f}
+.ut-vr-ln[data-niveau="waarschuwing"] .ut-vr-tx{color:#f3d27a}
+
+/* вікно звіту */
+.ut-vr-scrim{position:fixed;inset:0;z-index:60;background:rgba(10,16,22,.5);display:grid;place-items:start center;padding:6vh 12px 12px;overflow:auto}
+.ut-vr-modal{width:min(760px,100%);background:var(--ut-bg);color:var(--ut-text);border:1px solid var(--ut-line);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.3);overflow:hidden;display:grid}
+.ut-vr-modal svg{width:16px;height:16px;flex:none}
+.ut-vr-modal>header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--ut-line)}
+.ut-vr-modal h3{display:flex;gap:8px;align-items:center;margin:0;font-size:1.05rem}
+.ut-vr-modal h3 svg{width:18px;height:18px;color:var(--ut-accent)}
+.ut-vr-modal header p{margin:3px 0 0;color:var(--ut-muted);font-size:.83rem}
+.ut-vr-x{display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:var(--ut-muted);cursor:pointer}
+.ut-vr-x:hover{background:var(--ut-bg2);color:var(--ut-text)}
+.ut-vr-modal-body{display:grid;gap:8px;padding:12px 16px}
+.ut-vr-lab{font-size:.78rem;font-weight:650;color:var(--ut-muted)}
+.ut-vr-modal textarea{font:inherit;font-size:.88rem;padding:9px 11px;border:1px solid var(--ut-line);border-radius:10px;background:var(--ut-bg2);color:var(--ut-text);resize:vertical;min-height:64px}
+.ut-vr-schakels{display:flex;flex-wrap:wrap;gap:6px}
+.ut-vr-schakels label{display:inline-flex;gap:6px;align-items:center;min-height:36px;font-size:.8rem;padding:4px 11px;border-radius:999px;border:1px solid var(--ut-line);background:var(--ut-bg2);cursor:pointer}
+.ut-vr-schakels label[data-aan]{border-color:color-mix(in srgb,var(--ut-accent) 50%,var(--ut-line))}
+.ut-vr-voorbeeld{margin:0;max-height:min(40vh,320px);overflow:auto;padding:10px 12px;border-radius:10px;background:var(--ut-term-bg);color:var(--ut-term-text);font-size:.72rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
+.ut-vr-modal>footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 16px;border-top:1px solid var(--ut-line);background:var(--ut-bg2)}
+.ut-vr-schild{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;color:var(--ut-ok);font-weight:600}
+.ut-vr-modal .ut-vr-acties{grid-column:auto}
+
+@media (prefers-reduced-motion: reduce){.ut-vr-live::before{animation:none}.ut-vr-pijl{transition:none}}
+/* мобільний шар — у кінці файла (правило mobiel-cascade) */
+@media (max-width:640px){
+  .ut-vr{padding:11px}
+  .ut-vr-acties{display:grid;grid-template-columns:minmax(0,1fr)}
+  .ut-vr-acties .ut-knop{justify-content:center}
+  .ut-vr-regel{grid-template-columns:20px minmax(0,1fr)}
+  .ut-vr-ms{grid-column:2;text-align:left}
+  .ut-vr-oorzaak dl{grid-template-columns:minmax(0,1fr)}
+  .ut-vr-oorzaak dt{margin-top:4px}
+  .ut-vr-ln{grid-template-columns:max-content minmax(0,1fr);font-size:.72rem}
+  .ut-vr-dl{display:none}
+  .ut-vr-scrim{padding:0;place-items:end stretch}
+  .ut-vr-modal{border-radius:16px 16px 0 0;max-height:92vh;grid-template-rows:auto minmax(0,1fr) auto}
+  .ut-vr-modal-body{overflow:auto}
+  .ut-vr-modal>footer{display:grid}
+  .ut-vr-modal .ut-vr-acties{display:grid;grid-template-columns:1fr 1fr}
+}

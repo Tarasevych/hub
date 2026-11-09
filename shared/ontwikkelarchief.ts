@@ -30,7 +30,7 @@ export const ontwikkelArchiefRelease = (versie: string) => `https://github.com/$
 export const ontwikkelArchiefApi = (ref: OntwikkelArchief) =>
   `https://api.github.com/repos/${ONTWIKKELARCHIEF_REPO}/contents/${ref.pad}?ref=${ref.commit}`;
 export const ontwikkelReleaseApi = (ref: OntwikkelArchief) =>
-  `https://api.github.com/repos/${ONTWIKKELARCHIEF_REPO}/releases/tags/${ref.release.split('/').at(-1)}`;
+  `https://api.github.com/repos/${ONTWIKKELARCHIEF_REPO}/releases/tags/${ref.release.split('/').pop()}`;
 
 export function leesOntwikkelArchief(ruw: string | null | undefined, versie: string, bronCommit: string): { ref: OntwikkelArchief | null; fouten: string[] } {
   const fouten: string[] = [];

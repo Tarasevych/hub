@@ -325,6 +325,10 @@
   {
    "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-right .popover-panel",
    "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/uitrol/vereisten.css :: .ut-vr-scrim",
+   "reden": "UITROL-001: modale achtergrond van het venster «Звіт про проблему» (geen knop); zelfde patroon als .ut-modal-schaduw in voorbereiders.css. Op de telefoon een onderaan opgeschoven aanzicht."
   }
  ],
  "kopReserves": [

@@ -10,6 +10,22 @@ import { fragmentRond, pgUitleg, positieNaarRegel, regelVoorTabel, teLangeTekst,
 import { proefVerwerken, vereistenBeoordelen, type VereistenOmgeving } from '../../backend/uitrol-vereisten';
 import { proefUrl } from '../../server/migratie-proef';
 import { checker } from './hulp/nep-google';
+import { gzipSync } from 'node:zlib';
+import { leesPakket } from '../../src/platform/tar-lezen';
+import { rapportTekst, zonderUrlWachtwoord } from '../../src/uitrol/probleem-rapport';
+import { archiefBeschrijving, vereistenControleren } from '../../src/uitrol/vereisten-client';
+import { api } from '../../src/platform/client';
+import type { VereistenAntwoord } from '../../shared/uitrol-vereisten';
+
+/** Minimale ustar-kop + inhoud (zelfde vorm als tests/eenheid/tar-lezen.test.ts). */
+function tarKop(naam: string, grootte: number, type = '0') {
+  const b = Buffer.alloc(512);
+  b.write(naam, 0, 100); b.write('0000644\0', 100); b.write('0000000\0', 108); b.write('0000000\0', 116);
+  b.write(grootte.toString(8).padStart(11, '0') + '\0', 124); b.write('00000000000\0', 136); b.write('        ', 148); b.write(type, 156); b.write('ustar\0', 257); b.write('00', 263);
+  let som = 0; for (const x of b) som += x; b.write(som.toString(8).padStart(6, '0') + '\0 ', 148);
+  return b;
+}
+const tarBestand = (naam: string, tekst: string) => { const d = Buffer.from(tekst); return [tarKop(naam, d.length), Buffer.concat([d, Buffer.alloc((512 - (d.length % 512)) % 512)])]; };
 
 const SQL_0200 = `-- opmerking\nINSERT INTO app.feature_flags (sleutel, omschrijving, aan, standaard)\nVALUES ('x',\n  '${'а'.repeat(301)}',\n  false, false)\nON CONFLICT (sleutel) DO NOTHING;\n`;
 
@@ -118,5 +134,64 @@ export async function main(): Promise<number> {
     const nog = execFileSync('psql', [live.toString(), '-At', '-c', "SELECT count(*) FROM app.schema_migrations WHERE version = '0200_identiteit_account_maquette'"], { encoding: 'utf8' }).trim();
     check('root-script: productiedatabase onaangeroerd (0200 niet toegepast)', nog === '0', nog);
   } else console.log('(root-script-proef overgeslagen: PROEF_PG_URL niet gezet)');
+  // ---------------------------------------------------------------- browserkant: archief lezen → beschrijving → proef → stand
+  {
+    const sql0200 = readFileSync('tests/fixtures/uitrol/0200-omschrijving-301.sql', 'utf8');
+    const P = 'mijn-ruimte-20261109-065647';
+    const tgz = gzipSync(Buffer.concat([
+      ...tarBestand(`${P}/UITROL-VERSIE`, '20261109-065647'), ...tarBestand(`${P}/deploy/installeer-app.sh`, '#!/bin/bash\n'),
+      ...tarBestand(`${P}/UITROL-BASIS`, `versie=20261109-060206\ncommit=${'b'.repeat(40)}\nregelsVersie=1\n`),
+      ...tarBestand(`${P}/ONTWIKKELARCHIEF.json`, '{"taak":"IDENTITEIT-007"}'),
+      ...tarBestand(`${P}/migrations/0199_iets.sql`, 'SELECT 1;'), ...tarBestand(`${P}/migrations/0200_identiteit_account_maquette.sql`, sql0200),
+      ...tarBestand(`${P}/migrations/LEESMIJ.md`, 'geen migratie'), ...tarBestand(`${P}/src/migrations/0300_x.sql`, 'SELECT 3;'),
+      Buffer.alloc(1024)]));
+    const { info, sha256 } = await leesPakket(new Blob([tgz]));
+    check('browser: migraties (naam + grootte) uit migrations/ direct onder de bovenmap; geen andere .sql of .md', info.migraties.map((m) => m.naam).join() === '0199_iets,0200_identiteit_account_maquette' && info.migraties[1].bytes === Buffer.byteLength(sql0200), JSON.stringify(info.migraties));
+    check('browser: SQL-tekst in het geheugen, exact', info.migratieSql.get('0200_identiteit_account_maquette') === sql0200 && info.migratieSql.size === 2);
+    check('browser: UITROL-BASIS versie/commit gelezen', info.basis?.versie === '20261109-060206' && info.basis?.commit === 'b'.repeat(40), JSON.stringify(info.basis));
+    check('browser: ONTWIKKELARCHIEF.json als ruwe tekst', info.ontwikkelArchief === '{"taak":"IDENTITEIT-007"}');
+    const besch = archiefBeschrijving(info, { name: 'x.tar.gz', size: tgz.length }, 12.4);
+    check('beschrijving: alleen namen en groottes van migraties, geen SQL', JSON.stringify(besch).includes('0200_identiteit') && !JSON.stringify(besch).includes('feature_flags') && besch.leesMs === 12);
+
+    // vereistenControleren met een nep-API: start → proef (alleen de nieuwe SQL) → stand tot klaar.
+    const verzoeken: Array<{ url: string; body: Record<string, unknown> }> = [];
+    const basisAnt = (stand: VereistenAntwoord['proef']['status'], extra: Partial<VereistenAntwoord> = {}): VereistenAntwoord => ({ id: 'v1', tijd: new Date().toISOString(), ok: true, klaar: stand !== 'wacht-op-sql' && stand !== 'bezig', ms: 30, vereisten: [], nieuweMigraties: stand === 'wacht-op-sql' ? ['0200_identiteit_account_maquette'] : [], proef: { status: stand }, log: [], ...extra });
+    let standen = 0;
+    const origineel = api.post;
+    (api as { post: unknown }).post = async (url: string, body: Record<string, unknown>) => {
+      verzoeken.push({ url, body });
+      if (url.endsWith('/vereisten')) return { data: basisAnt('wacht-op-sql') };
+      if (url.endsWith('/vereisten/proef')) return { data: basisAnt('bezig') };
+      standen++;
+      return { data: standen < 2 ? basisAnt('bezig') : basisAnt('klaar', { ok: false, klaar: true }) };
+    };
+    const tussen: string[] = [];
+    try {
+      const eind = await vereistenControleren({}, { info, sha256, bestand: { name: 'x.tar.gz', size: tgz.length }, leesMs: 5 }, (a) => tussen.push(a.proef.status));
+      const proefBody = verzoeken.find((v) => v.url.endsWith('/proef'))?.body as { migraties?: Array<{ naam: string; sql: string }> } | undefined;
+      check('client: volgorde vereisten → proef → stand…', verzoeken.map((v) => v.url.split('/').pop()).join() === 'vereisten,proef,stand,stand', verzoeken.map((v) => v.url).join());
+      check('client: proef krijgt ALLEEN de nieuwe migratie (0200), met de exacte SQL', proefBody?.migraties?.length === 1 && proefBody.migraties[0].naam === '0200_identiteit_account_maquette' && proefBody.migraties[0].sql === sql0200);
+      check('client: start stuurt sha256 en ontwikkelArchief mee, geen SQL', (verzoeken[0].body.archief as { sha256?: string }).sha256 === sha256 && !JSON.stringify(verzoeken[0].body).includes('feature_flags'));
+      check('client: eindstand klaar + blokkeert; tussenstanden gemeld', eind.klaar && !eind.ok && tussen.join() === 'wacht-op-sql,bezig,bezig,klaar', tussen.join());
+      // Te grote SQL: niets versturen, eerlijke waarschuwing (root probeert bij de installatie).
+      verzoeken.length = 0;
+      const groot = { ...info, migratieSql: new Map([['0200_identiteit_account_maquette', 'x'.repeat(1024 * 1024 + 10)]]) };
+      const g = await vereistenControleren({}, { info: groot, sha256, bestand: { name: 'x', size: 1 }, leesMs: 1 }, () => undefined);
+      check('client: SQL > 1 MB → geen proefverzoek, klaar met «niet-beschikbaar»', verzoeken.length === 1 && g.klaar && g.proef.status === 'niet-beschikbaar' && g.log.some((l) => l.tekst.includes('proef overgeslagen')));
+    } finally { (api as { post: unknown }).post = origineel; }
+
+    // Probleemrapport: alles in één tekst, zonder geheimen.
+    const ant = proefVerwerken(basisAnt('wacht-op-sql', { vereisten: [{ id: 'migratie-proef', groep: 'compatibiliteit', niveau: 'wacht', uk: 'Проба', nl: 'Proef', waaromUk: '', waaromNl: '' }], log: [{ t: '2026-11-09T09:13:47.100Z', niveau: 'info', tekst: 'start postgres://mijnruimte_migrator:geheim123@127.0.0.1/db' }] }),
+      { id: 'v1', ok: false, status: 'mislukt', tijd: '', stappen: [{ id: 'migraties', ms: 40, ok: false }], migraties: [{ naam: '0200_identiteit_account_maquette', ms: 40, ok: false, fout: { code: '23514', bericht: 'new row violates check constraint', constraint: 'feature_flags_omschrijving_check', definitie: 'CHECK ((char_length(omschrijving) <= 300))', regel: 7, teLang: { lengte: 301, grens: 300 } } }], pg: '16.4' },
+      (n) => (n === '0200_identiteit_account_maquette' ? sql0200 : undefined));
+    const rap = rapportTekst({ lang: 'uk', beschrijving: 'Встановлював через Admin. Токен ghp_' + 'A'.repeat(36), antwoord: ant, archief: { bestand: 'x.tar.gz', bytes: 1, versie: '20261109-065647', commit: 'c'.repeat(40), sha256, agent: 'claude', auteur: 'Claude' },
+      omgeving: { actieveVersie: '20261109-060206', site: 'api.tarasevych.com', browser: 'test', tijdzone: 'Europe/Brussels' }, delen: { oorzaak: true, vereisten: true, log: true, context: true } });
+    check('rapport: oorzaak met migratie, regel, beperking, 301 > 300 en wat te doen', ['0200_identiteit_account_maquette', 'рядок 7', 'feature_flags_omschrijving_check', '301 > 300', 'Що робити'].every((x) => rap.tekst.includes(x)), rap.tekst.slice(0, 600));
+    check('rapport: geen wachtwoord uit een URL en geen GitHub-token', !rap.tekst.includes('geheim123') && !rap.tekst.includes('ghp_' + 'A'.repeat(36)) && rap.gemaskeerd.length >= 1, rap.gemaskeerd.join());
+    check('rapport: journaal met tijd tot ms; context met versies', rap.tekst.includes('09:13:47.100') && rap.tekst.includes('20261109-060206') && rap.tekst.includes('Europe/Brussels'));
+    const zonder = rapportTekst({ lang: 'nl', beschrijving: '', antwoord: ant, archief: null, omgeving: { actieveVersie: '', site: '', browser: '', tijdzone: '' }, delen: { oorzaak: true, vereisten: false, log: false, context: false } });
+    check('rapport: uitgeschakelde delen ontbreken (nl)', zonder.tekst.includes('Oorzaak') && !zonder.tekst.includes('## Logboek') && !zonder.tekst.includes('## Context'));
+    check('zonderUrlWachtwoord: https://u:p@h → https://u:***@h', zonderUrlWachtwoord('x https://user:pw@host/y') === 'x https://user:***@host/y');
+  }
   return einde();
 }

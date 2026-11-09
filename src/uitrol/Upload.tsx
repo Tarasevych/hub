@@ -15,7 +15,10 @@ import { leesPakket, naarBase64, type PakketInfo } from '../platform/tar-lezen';
 import { isLeesfout, leesDeel, leesKop } from '../../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../../shared/foutuitleg';
 import { meldAfbreking } from './poging-melden';
+import { vereistenControleren } from './vereisten-client';
+import type { VereistenAntwoord } from '../../shared/uitrol-vereisten';
 import Voorcontrole from './Voorcontrole';
+import Vereisten from './Vereisten';
 import { commitWeergave } from '../../shared/bron-commit';
 import { herkenBestand, type Pictogram, type Soort } from './bestandssoort';
 import { datum, mb, tr, type Flow, type Lang, type Overzicht, type VoorcontroleUit } from './types';
@@ -51,6 +54,7 @@ const PROBLEEM: Record<string, [string, string, string, string]> = {
   AGENT_ONGELDIG: ['AGENT має бути як-от claude / cursor / gpt (малі літери, цифри, дефіс).', 'AGENT moet bv. claude / cursor / gpt zijn (kleine letters, cijfers, streepje).', '', ''],
   GEEN_MANIFEST: ['У пакеті немає UITROL-MANIFEST.json (опис українською й нідерландською та учасники) — для нових випусків він обов’язковий.', 'Het pakket heeft geen UITROL-MANIFEST.json (beschrijving in het Oekraïens en Nederlands en deelnemers) — verplicht voor nieuwe releases.', 'Зберіть пакет скриптом deploy/uitrol/maak-voorstelpakket.sh з MANIFEST=шлях-до-файлу (див. deploy/REGELS-UITROLPAKKET.md §5).', 'Bouw het pakket met deploy/uitrol/maak-voorstelpakket.sh en MANIFEST=pad (zie deploy/REGELS-UITROLPAKKET.md §5).'],
   MANIFEST_ONGELDIG: ['UITROL-MANIFEST.json заповнено неповно або неправильно — поля нижче.', 'UITROL-MANIFEST.json is onvolledig of onjuist — zie de velden hieronder.', 'Виправте названі поля й зберіть пакет ще раз.', 'Herstel de genoemde velden en bouw het pakket opnieuw.'],
+  VEREISTEN_NIET_VOLDAAN: ['Архів не відповідає вимогам сервера — завантаження не почалося, трафік не витрачено.', 'Het archief voldoet niet aan de vereisten van de server — het uploaden is niet begonnen, er is geen verkeer verbruikt.', 'Причину й місце в коді показано в «Перевірка вимог» нижче. Виправте пакет і оберіть його ще раз.', 'De oorzaak en de plek in de code staan hieronder bij «Controle van de vereisten». Herstel het pakket en kies het opnieuw.'],
   NIET_NIEUWER: ['Версія не новіша за встановлену.', 'De versie is niet nieuwer dan de geïnstalleerde.', 'Сервер відхилить такий пакет. Потрібна новіша UITROL-VERSIE.', 'De server weigert zo’n pakket. Een nieuwere UITROL-VERSIE is nodig.'],
 };
 // Elk lezen van de schijf gaat via shared/bestand-lezen.ts (BestandLeesfout), nooit rauw: eigenaar 20.10.2026.
@@ -89,6 +93,11 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   const [leesfout, setLeesfout] = useState<{ code: string; procent: number | null; verstuurd: number } | null>(null);
   const [hervatWens, setHervatWens] = useState(false);
   const [puls, setPuls] = useState<StapId | ''>('');
+  // UITROL-001: vereisten vóór de upload. `vereistenRun` telt op bij elke nieuwe keuze, zodat een oud antwoord nooit een nieuw bestand overschrijft.
+  const [vereisten, setVereisten] = useState<VereistenAntwoord | null>(null);
+  const [vereistenFout, setVereistenFout] = useState('');
+  const [vereistenBezig, setVereistenBezig] = useState(false);
+  const vereistenRun = useRef(0);
   const invoer = useRef<HTMLInputElement>(null);
   // Wat er NU loopt, voor het geval het tabblad sluit of de pagina wordt verlaten: dan meldt de pagina de afbreking nog eerlijk
   // als «обірвано без причини» (de browser weet op dat moment echt niets meer). Zonder dit verdween zo'n poging uit de geschiedenis.
@@ -112,14 +121,20 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
     () => !!nieuw || !!(analyse?.sha256 && data.voorstellen.some((v) => v.sha256 === analyse.sha256 && (v.status === 'goedgekeurd' || v.status === 'geinstalleerd'))),
     [nieuw, analyse?.sha256, data.voorstellen],
   );
+  // Vereisten die blokkeren (niveau «fout») gelden als probleem: dan geen upload en geen verkeer.
+  const vereistenBlokkeren = !alDitPakketOpServer && !!vereisten && vereisten.klaar && !vereisten.ok;
+  const vereistenWachten = !alDitPakketOpServer && (vereistenBezig || (!!vereisten && !vereisten.klaar));
   const problemen = useMemo(() => {
     const p = [...(analyse?.info.problemen || [])];
+    if (vereistenBlokkeren) p.push('VEREISTEN_NIET_VOLDAAN');
     if (!alDitPakketOpServer && analyse && analyse.info.versie && /^\d{8}-\d{6}$/.test(analyse.info.versie) && actieveVersie && !(analyse.info.versie > actieveVersie) && !p.includes('NIET_NIEUWER')) p.push('NIET_NIEUWER');
     return p;
-  }, [alDitPakketOpServer, analyse, actieveVersie]);
+  }, [alDitPakketOpServer, analyse, actieveVersie, vereistenBlokkeren]);
+  // De kaart «Перевірка вимог» toont de reden zelf (met banner); in de gewone probleemlijst zou ze dubbel staan.
+  const zichtbareProblemen = problemen.filter((p) => p !== 'VEREISTEN_NIET_VOLDAAN');
 
   const actief: StapId = !bestand || !soort || !soort.ok ? 'bestand'
-    : bezigLezen || !analyse || problemen.length ? 'controle'
+    : bezigLezen || !analyse || problemen.length || vereistenWachten ? 'controle'
     : serverCheck && !serverCheck.ok ? 'upload'
     : !nieuw ? 'upload'
     : nieuw.status === 'wacht-op-goedkeuring' ? 'goedkeuren' : 'installeren';
@@ -128,8 +143,19 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
 
   const wis = useCallback(() => {
     setBestand(null); setSoort(null); setAnalyse(null); setNieuwId(''); onNieuwId(''); setVoortgang(null); setServerCheck(null); setBezigLezen(false); setLeesfout(null);
+    vereistenRun.current++; setVereisten(null); setVereistenFout(''); setVereistenBezig(false);
     if (invoer.current) invoer.current.value = '';
   }, [onNieuwId]);
+
+  const startVereisten = useCallback((f: File, a: { info: PakketInfo; sha256: string }, leesMs: number) => {
+    const run = ++vereistenRun.current;
+    setVereisten(null); setVereistenFout(''); setVereistenBezig(true);
+    void vereistenControleren(context, { info: a.info, sha256: a.sha256, bestand: f, leesMs }, (ant) => { if (vereistenRun.current === run) setVereisten(ant); }, () => vereistenRun.current !== run)
+      // Kan de site de vereisten niet controleren (oude server, netwerk), dan blokkeert dat NIET: root controleert alles bij de
+      // installatie opnieuw en probeert de migraties als eerste stap. De gebruiker ziet wel eerlijk dat de controle niet liep.
+      .catch((e) => { if (vereistenRun.current === run) setVereistenFout(foutCode(e) || 'VEREISTEN_NIET_BEREIKBAAR'); })
+      .finally(() => { if (vereistenRun.current === run) setVereistenBezig(false); });
+  }, [context]);
 
   // Tabblad gesloten of pagina verlaten tijdens het uploaden: de poging wordt nog gemeld, maar EERLIJK — zonder reden. De browser
   // weet op dat moment niets meer dan dat er is afgebroken; de geschiedenis mag daar geen oorzaak bij verzinnen (punt 6, eigenaar).
@@ -145,13 +171,19 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   const kies = useCallback(async (f: File | null) => {
     if (!f) { wis(); return; }
     setBestand(f); setSoort(null); setAnalyse(null); setNieuwId(''); onNieuwId(''); setVoortgang(null); setServerCheck(null); setLeesfout(null);
+    vereistenRun.current++; setVereisten(null); setVereistenFout(''); setVereistenBezig(false);
     try {
       const s = herkenBestand(f.name, await bestandKop(f));
       setSoort(s);
       if (!s.ok) return;
-      if (f.size > maxBytes) { setAnalyse({ info: { versie: '', commit: '', bovenmap: '', bestanden: 0, installer: false, auteur: '', agent: '', samenvatting: '', tests: null, manifest: null, manifestFouten: [], problemen: ['TE_GROOT'] }, sha256: '' }); return; }
+      if (f.size > maxBytes) { setAnalyse({ info: { versie: '', commit: '', bovenmap: '', bestanden: 0, installer: false, auteur: '', agent: '', samenvatting: '', tests: null, manifest: null, manifestFouten: [], basis: null, ontwikkelArchief: null, migraties: [], migratieSql: new Map(), problemen: ['TE_GROOT'] }, sha256: '' }); return; }
       setBezigLezen(true);
-      try { setAnalyse(await leesPakket(f)); } finally { setBezigLezen(false); }
+      const t0 = performance.now();
+      let a: { info: PakketInfo; sha256: string };
+      try { a = await leesPakket(f); setAnalyse(a); } finally { setBezigLezen(false); }
+      // UITROL-001: de vereisten (incl. de proef van nieuwe migraties op een wegwerpkopie) lopen METEEN na het lokale lezen,
+      // vóór er één byte van het archief over het netwerk gaat. Alleen als het pakket lokaal al in orde is.
+      if (!a.info.problemen.length) startVereisten(f, a, performance.now() - t0);
     } catch (e) {
       if (!isLeesfout(e)) throw e;
       // De browser kon het gekozen bestand niet (meer) lezen. Zonder dit bleef de stap «Перевірка» hangen en kwam de
@@ -162,7 +194,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       // in de geschiedenis staan. Versie en sha256 zijn hier meestal nog onbekend; de etappe en de reden zijn dat niet.
       meldAfbreking(context, { etappe: 'lezen', code: bestandLeesfoutCode(e), bestand: f.name, bytes: f.size });
     }
-  }, [maxBytes, onNieuwId, wis, context]);
+  }, [maxBytes, onNieuwId, wis, context, startVereisten]);
 
   // ---- upload (stukken met herhaling; hervatten waar de server bleef)
   const stuurStuk = async (id: string, offset: number, deel: Uint8Array): Promise<number> => {
@@ -180,7 +212,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
       }
     }
   };
-  const uploaden = () => { if (!bestand || !analyse || problemen.length || !data.ik) return; setHervatWens(false); void doe('pakket', async () => {
+  const uploaden = () => { if (!bestand || !analyse || problemen.length || vereistenWachten || !data.ik) return; setHervatWens(false); void doe('pakket', async () => {
     const f = bestand, a = analyse; setServerCheck(null); setLeesfout(null);
     // Goedkope controle (512 bytes van de schijf, geen netwerk) vóór «voorstel/begin»: is het bestand NU nog leesbaar? Zonder
     // deze controle maakt de server eerst een voorstel aan (dat dan als «uploaden» blijft hangen, max. 3 open voorstellen) en
@@ -287,7 +319,7 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
   }, [leesfout]);
   // Dezelfde keuze na een leesfout: de upload gaat zelf verder bij de offset die de server bewaarde (`hervatbaar.ontvangen`).
   useEffect(() => {
-    if (!hervatWens || !hervatbaar || !bestand || !analyse || problemen.length || busy || bezigLezen) return;
+    if (!hervatWens || !hervatbaar || !bestand || !analyse || problemen.length || vereistenWachten || busy || bezigLezen) return;
     setHervatWens(false);
     uploaden();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -368,16 +400,20 @@ export default function Upload({ lang, context, data, busy, klaar, kanPasskey, d
           <h4><FileText aria-hidden='true' />{tr(lang, 'Що змінено', 'Wat er verandert')} <span className='ut-badge ut-badge-verplicht' data-kopieer-negeer>{tr(lang, 'обов’язково · з файлу SAMENVATTING в архіві', 'verplicht · uit het bestand SAMENVATTING in het archief')}</span></h4>
           {info.manifest ? <><UitgaveBeschrijving lang={lang} manifest={info.manifest} samenvatting={samenvatting} /><Deelnemers lang={lang} m={info.manifest} account={data.ik} accounts={data.kandidaten.accounts} /></> : samenvatting ? <><UitgaveBeschrijving lang={lang} manifest={null} samenvatting={samenvatting} kort={false} /></> : <p className='ut-fout'>{tr(lang, 'Опису в архіві немає. Без опису змін встановлення неможливе.', 'Het archief bevat geen beschrijving. Zonder beschrijving van de wijzigingen kan niet worden geïnstalleerd.')}</p>}
         </div>
-        {problemen.length > 0 ? <div className='ut-probleem' role='alert'><XCircle aria-hidden='true' /><div><b>{tr(lang, 'Встановлення неможливе — виправте пакет:', 'Installeren is niet mogelijk — herstel het pakket:')}</b>
-          <ul>{problemen.map((p) => <li key={p}>{PROBLEEM[p] ? <><b>{tr(lang, PROBLEEM[p][0], PROBLEEM[p][1])}</b>{tr(lang, PROBLEEM[p][2], PROBLEEM[p][3]) ? <> {tr(lang, PROBLEEM[p][2], PROBLEEM[p][3])}</> : null}{p === 'NIET_NIEUWER' ? <span className='ut-hint' data-ut-niet-nieuwer> {nietNieuwerUitleg(lang, info.versie, actieveVersie, data.stand)}</span> : null}</> : p}</li>)}</ul>
+        {zichtbareProblemen.length > 0 ? <div className='ut-probleem' role='alert'><XCircle aria-hidden='true' /><div><b>{tr(lang, 'Встановлення неможливе — виправте пакет:', 'Installeren is niet mogelijk — herstel het pakket:')}</b>
+          <ul>{zichtbareProblemen.map((p) => <li key={p}>{PROBLEEM[p] ? <><b>{tr(lang, PROBLEEM[p][0], PROBLEEM[p][1])}</b>{tr(lang, PROBLEEM[p][2], PROBLEEM[p][3]) ? <> {tr(lang, PROBLEEM[p][2], PROBLEEM[p][3])}</> : null}{p === 'NIET_NIEUWER' ? <span className='ut-hint' data-ut-niet-nieuwer> {nietNieuwerUitleg(lang, info.versie, actieveVersie, data.stand)}</span> : null}</> : p}</li>)}</ul>
           {info.manifestFouten.length > 0 && <ul className='ut-manifest-fouten' data-ut-manifest-fouten>{info.manifestFouten.map((f, i) => <li key={i}><code>{f.veld}</code>: {lang === 'uk' ? f.uk : f.nl}</li>)}</ul>}
           <button type='button' className='ut-knop' data-ut-hoofdactie onClick={() => { wis(); window.setTimeout(() => invoer.current?.click(), 0); }}><FolderArchive aria-hidden='true' />{tr(lang, 'Обрати інший файл', 'Ander bestand kiezen')}</button></div></div>
-          : <p className='ut-goed'><CheckCircle2 aria-hidden='true' />{tr(lang, 'Пакет виглядає правильно. Сайт ще раз перевірить його після завантаження.', 'Het pakket ziet er goed uit. De site controleert het na het uploaden nog eens.')}</p>}
+          : !problemen.length && !vereistenWachten ? <p className='ut-goed'><CheckCircle2 aria-hidden='true' />{tr(lang, 'Пакет відповідає вимогам. Сайт ще раз перевірить його після завантаження, а root — під час установлення.', 'Het pakket voldoet aan de vereisten. De site controleert het na het uploaden nog eens, en root bij de installatie.')}</p> : null}
+        {!analyse.info.problemen.length && (vereisten || vereistenBezig || vereistenFout) && !alDitPakketOpServer && <Vereisten lang={lang} antwoord={vereisten} bezig={vereistenBezig} fout={vereistenFout} bytes={bestand.size}
+          rapport={{ archief: { bestand: bestand.name, bytes: bestand.size, versie: info.versie, commit: info.commit, sha256: analyse.sha256, agent: info.agent, auteur: info.auteur },
+            omgeving: { actieveVersie, site: typeof location !== 'undefined' ? location.host : '', browser: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 160) : '', tijdzone: Intl.DateTimeFormat().resolvedOptions().timeZone || '' } }}
+          onAnderArchief={() => { wis(); window.setTimeout(() => invoer.current?.click(), 0); }} />}
       </div>}
     </section>}
 
     {/* 3. Завантаження */}
-    {bestand && soort?.ok && analyse && !problemen.length && <section className='ut-wiz-stap' ref={(el) => { refs.current.upload = el; }} data-stap='upload' data-stand={stapStand(2)} data-puls={puls === 'upload' || undefined}>
+    {bestand && soort?.ok && analyse && !problemen.length && !vereistenWachten && <section className='ut-wiz-stap' ref={(el) => { refs.current.upload = el; }} data-stap='upload' data-stand={stapStand(2)} data-puls={puls === 'upload' || undefined}>
       {stapKop(2)}
       {!nieuw && !(serverCheck && !serverCheck.ok) && <>
         <p className='ut-sub'>{tr(lang, 'Файл передається на сервер частинами; обрив мережі не страшний — завантаження продовжиться. Після цього сайт розпакує пакет у тимчасову теку й перевірить його (нічого не запускаючи).', 'Het bestand gaat in stukken naar de server; een netwerkonderbreking is niet erg — de upload gaat verder. Daarna pakt de site het pakket tijdelijk uit en controleert het (zonder iets uit te voeren).')}</p>
