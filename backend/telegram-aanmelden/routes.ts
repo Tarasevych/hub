@@ -22,6 +22,7 @@ import { SITE_BASIS } from './berichten';
 import { audit } from './meldingen';
 import { KOPPEL_STANDEN, STROOK_KLEUREN } from '../../shared/telegram-aanmelden/model';
 import { beoordeel, keuzeToegestaan, voorinstellingToepassen, werkelijkeEis, type KeuzeId, type Voorinstelling } from '../../shared/telegram-aanmelden/beleid';
+import { apparaat as apparaatLabel } from '../../server/platform/audit';
 
 type Sessie = PoortAuth & { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type SessieFout = { errorCode: string };
@@ -42,6 +43,11 @@ const lichaam = (rc: RouterContext): Record<string, unknown> => (rc.body && type
 const str = (v: unknown, max = 200): string => (typeof v === 'string' ? v.slice(0, max) : '');
 const isBeheerder = (u: { role?: string }): boolean => u.role === 'owner' || u.role === 'admin';
 const markeer = (m: RouterMiddleware[], soort: symbol, actie = ''): RouterMiddleware[] => Object.assign(m, { [soort]: actie || true });
+/** APPARAAT-001: grof apparaatlabel («Chrome/Windows») van het vragende apparaat voor de kaart in Telegram; nooit de volledige user-agent. */
+const apparaatLabelVan = (rc: RouterContext): string => {
+  const ev = rc.event as unknown as { requestContext?: { http?: { userAgent?: string } }; headers?: Record<string, string> };
+  return apparaatLabel(String(ev?.requestContext?.http?.userAgent || ev?.headers?.['user-agent'] || '')) || 'onbekend/onbekend';
+};
 
 function vangen(run: () => Promise<RouterResponse>): Promise<RouterResponse> {
   return run().catch((e) => {
@@ -210,7 +216,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       await audit(a.user.id, 'matrix.gewijzigd', 'success', { keuzes });
       return json({ ok: true, keuzes });
     }),
-    'POST /api/owner/telegram/bevestiging/aanvragen': alleenSessie(async (_rc, a, d) => json(await bevestigingAanvragen(a.user.id, stapOpSessieId(a), str(d.actie, 41)))),
+    'POST /api/owner/telegram/bevestiging/aanvragen': alleenSessie(async (rc, a, d) => json(await bevestigingAanvragen(a.user.id, stapOpSessieId(a), str(d.actie, 41),
+      { apparaat: apparaatLabelVan(rc) }))),
     'POST /api/owner/telegram/bevestiging/status': alleenSessie(async (_rc, a, d) => json(await bevestigingStatus(a.user.id, stapOpSessieId(a), str(d.id, 12)))),
     'POST /api/owner/telegram/bevestiging/code': alleenSessie(async (_rc, a, d) => json(await codeVoorActie(a.user.id, stapOpSessieId(a), str(d.actie, 41), str(d.code, 64)))),
 

@@ -57,6 +57,12 @@ export const TEKST = {
     uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nКоли: {tijd}\n\nЩо це означає: на сайті потрібне ваше підтвердження цієї дії.\nЩо далі: якщо це ви, натисніть «✅ Підтвердити». Якщо ні, «⛔ Це не я».',
     nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nWanneer: {tijd}\n\nWat dit betekent: de site vraagt uw bevestiging voor deze handeling.\nWat nu: bent u het, tik «✅ Bevestigen». Zo niet, «⛔ Dit ben ik niet».',
   },
+  // APPARAAT-001: kaart met symbolen — op het scherm van de site is één van deze symbolen uitgelicht; dat tikt u hier.
+  bevestigVraagSymbool: {
+    uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nКоли: {tijd}\nЗвідки: {apparaat}\n\nНа екрані сайту виділено один символ. Натисніть ТОЙ САМИЙ символ нижче. Є лише одна спроба: інший символ скасує дію.\nЯкщо це не ви — натисніть «⛔ Це не я».',
+    nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nWanneer: {tijd}\nVanwaar: {apparaat}\n\nOp het scherm van de site is één symbool uitgelicht. Tik HETZELFDE symbool hieronder. U hebt één poging: een ander symbool annuleert de handeling.\nBent u het niet, tik «⛔ Dit ben ik niet».',
+  },
+  symboolFout: { uk: '⛔ Інший символ — дію скасовано. На сайті можна почати знову.', nl: '⛔ Een ander symbool — de handeling is geannuleerd. Op de site kunt u opnieuw beginnen.' },
   knopJaInloggen: { uk: '✅ Це я, увійти', nl: '✅ Ik ben het, aanmelden' },
   knopBevestigen: { uk: '✅ Підтвердити', nl: '✅ Bevestigen' },
   knopNietIk: { uk: '⛔ Це не я', nl: '⛔ Dit ben ik niet' },

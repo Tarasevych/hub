@@ -121,6 +121,7 @@ import { toegangscodeRoutes } from './toegangscodes-routes';
 import { gastSessieIntrekken } from './toegangscodes';
 import { sterkeStapOpFout, sessieIntrekken as telegramSessieIntrekken } from './toegang-context';
 import { telegramRoutes } from './telegram-aanmelden/routes'; /* TELEGRAM-AANMELDEN v1 (0201/0202), achter vlag telegram-aanmelden-v1 */
+import { apparaatRoutes } from './apparaat-bevestiging/routes'; /* APPARAAT-001 (0204): bevestigen vanaf een ander apparaat + poort voor de klassieke step-up, achter vlag apparaat-bevestiging-v1 */
 import { geheimenRoutes } from './geheimen';
 import {cloudGoogleCallbackPost,cloudGoogleStateParts} from './cloud-google-drive';
 import {googleSuiteMailLaatsteOntvangst} from './mail-laatste-ontvangst';
@@ -665,6 +666,7 @@ export const handler = router(metMailRuimte({
   ...afstemmingKoppelRoutes(ownerRequireSession as never),
   ...aanmeldKoppelRoutes(ownerRequireSession as never),
   ...telegramRoutes({ requireSession: ownerRequireSession as never, aanmeldStart: telegramAanmeldStart as never, aanmeldVoltooien: telegramAanmeldVoltooien as never, sessiesIntrekken: telegramSessiesIntrekken, vlagAan: async (userId: string) => (await flagsBerekenen({ id: userId } as never, ['telegram-aanmelden-v1']))[0]?.value === true }),
+  ...apparaatRoutes({ requireSession: ownerRequireSession as never, vlagAan: async (userId: string) => (await flagsBerekenen({ id: userId } as never, ['apparaat-bevestiging-v1']))[0]?.value === true }),
   // Technisch profiel (architectuur 13.10.2026): toekennen, op tijd activeren per tabblad, band.
   ...techRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...techRuimtesRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }), /* technische ruimtes v2 (0115), achter vlag tech-ruimtes-v2 */

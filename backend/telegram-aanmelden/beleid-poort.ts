@@ -12,6 +12,8 @@
 // dus alles wat gevoelig is vraagt daar vanzelf nog een toegangssleutel.
 import { passkeyStapOpGeldig, stapOpSessieId, type StapOpAuth } from '../stap-op';
 import { actieSoorten, instellingen, sql } from './opslag';
+// APPARAAT-001: vierde methode «apparaat» (bevestigen vanaf een ander apparaat) in dezelfde poort; geen tweede waarheid.
+import { apparaatBeschikbaar, voldaan as apparaatVoldaan, verbruik as apparaatVerbruik } from '../apparaat-bevestiging/kern';
 import { beoordeel, werkelijkeEis, type ActieSoort, type Beoordeling, type KeuzeId, type Methode } from '../../shared/telegram-aanmelden/beleid';
 
 export const BEVESTIGING_GELDIG_MS = 5 * 60 * 1000;
@@ -35,8 +37,10 @@ export async function eisVoor(userId: string, actie: string) {
 }
 
 /** Welke methoden heeft deze gebruiker en werken ze nu? (eerlijk: een methode in storing telt niet als beschikbaar) */
-export async function beschikbaarVoor(userId: string): Promise<Set<Methode>> {
+export async function beschikbaarVoor(userId: string, rol?: string): Promise<Set<Methode>> {
   const uit = new Set<Methode>();
+  // Ander apparaat: vlag, noodschakelaar, voorkeur, teller én minstens één andere levende browser (backend/apparaat-bevestiging/kern.ts).
+  if (await apparaatBeschikbaar(userId, rol).catch(() => false)) uit.add('apparaat');
   const inst = await instellingen();
   const [tg] = await sql("SELECT count(*)::int AS n FROM app.tg_koppelingen WHERE user_id = $1 AND stand = 'actief' AND 'bevestigen' = ANY(rechten)", [userId]);
   const [st] = await sql<{ stand: string; soort: string }>("SELECT stand, soort FROM app.tg_status WHERE methode = 'telegram'");
@@ -59,6 +63,7 @@ export async function voldaanVoor(auth: PoortAuth, actie: string, nu = Date.now(
     const rijen = await sql<{ methode: Methode }>(`SELECT DISTINCT methode FROM app.tg_bevestigingen WHERE user_id = $1 AND sessie_id = $2 AND actie = $3
       AND stand = 'bevestigd' AND bevestigd_op > $4`, [auth.user.id, sessie, actie, new Date(nu - BEVESTIGING_GELDIG_MS)]);
     for (const r of rijen) uit.add(r.methode);
+    if (await apparaatVoldaan(auth.user.id, sessie, actie, nu).catch(() => false)) uit.add('apparaat');
   }
   return uit;
 }
@@ -69,7 +74,7 @@ export type PoortUitkomst = { ok: true; beoordeling: Beoordeling } | { ok: false
 export async function poort(auth: PoortAuth, actie: string): Promise<PoortUitkomst> {
   const e = await eisVoor(auth.user.id, actie);
   if (!e) return { ok: false, status: 400, fout: 'ONBEKENDE_ACTIE', beoordeling: null };
-  const b = beoordeel(e.eis, await voldaanVoor(auth, actie), await beschikbaarVoor(auth.user.id));
+  const b = beoordeel(e.eis, await voldaanVoor(auth, actie), await beschikbaarVoor(auth.user.id, auth.user.role));
   if (b.toegestaan) return { ok: true, beoordeling: b };
   if (b.geblokkeerd) return { ok: false, status: 409, fout: 'METHODE_ONBESCHIKBAAR', beoordeling: b };
   if (b.ontbreekt.includes('passkey')) return { ok: false, status: 403, fout: 'STEP_UP_PASSKEY_REQUIRED', beoordeling: b };
@@ -81,6 +86,7 @@ export async function verbruik(auth: PoortAuth, actie: string): Promise<void> {
   const sessie = stapOpSessieId(auth);
   if (!sessie) return;
   await sql("UPDATE app.tg_bevestigingen SET stand = 'gebruikt' WHERE user_id = $1 AND sessie_id = $2 AND actie = $3 AND stand = 'bevestigd'", [auth.user.id, sessie, actie]);
+  await apparaatVerbruik(auth.user.id, sessie, actie).catch(() => undefined);
 }
 
 /** Merkteken op routes die door de poort lopen (de test leest het uit). */

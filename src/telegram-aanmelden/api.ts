@@ -8,7 +8,7 @@ import { ecosystemTabContext } from '../tab-context';
 export type Ctx = { service: string; tabContext: string; sourceOrigin: string };
 export const identiteitCtx = (): Ctx => ({ service: 'identity', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 
-export type Nodig = { actie: string; ontbreekt: string[]; onbeschikbaar: string[] };
+export type Nodig = { actie: string; ontbreekt: string[]; onbeschikbaar: string[]; /** APPARAAT-001: de hele eis (alternatieven), zodat het venster ook «ander apparaat» kan aanbieden */ eis?: string[][] };
 export class BevestigingNodig extends Error { constructor(public nodig: Nodig) { super('TELEGRAM_BEVESTIGING_NODIG'); } }
 
 export const foutCode = (e: unknown): string => (e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'NETWORK_ERROR');
@@ -26,7 +26,7 @@ export async function tgPost<T = unknown>(ctx: Ctx, pad: string, body: Record<st
     }
     if (code === 'TELEGRAM_BEVESTIGING_NODIG') {
       const d = data(e);
-      throw new BevestigingNodig({ actie: String(d.actie || ''), ontbreekt: (d.ontbreekt as string[]) || [], onbeschikbaar: (d.onbeschikbaar as string[]) || [] });
+      throw new BevestigingNodig({ actie: String(d.actie || ''), ontbreekt: (d.ontbreekt as string[]) || [], onbeschikbaar: (d.onbeschikbaar as string[]) || [], eis: Array.isArray(d.eis) ? (d.eis as string[][]) : [] });
     }
     throw e;
   }

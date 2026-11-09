@@ -29,6 +29,9 @@ import { TECH_ASSET_KOPPEN, assetToegestaan } from '../backend/tech-bundels';
 import { diepAntwoord } from '../backend/diepe-gezondheid';
 import { techMeldingVerwerken, telStatus } from '../backend/toegangsfout-tellers';
 import { sluitAlleStromen, stroomVerzoek, stroomVerzoekMcp } from '../backend/connector-v2-stroom';
+import { sluitAlleStromenApparaat, stroomVerzoekApparaat } from '../backend/apparaat-bevestiging/stroom'; /* APPARAAT-001: snelle stroom naar de tabbladen */
+import { opruimen as apparaatOpruimen } from '../backend/apparaat-bevestiging/kern';
+import { metVerzoek } from './platform/context';
 import { googleSuiteSyncCron, mailMaintenanceCron } from '../backend/index';
 import { ACHTERGROND_INTERVAL_MS, sleutelkluisAchtergrondRonde } from '../backend/sleutelkluis-achtergrond';
 import { zoekIndexCron } from '../backend/zoek/bronnen';
@@ -491,6 +494,16 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
     if (m) { await stroomVerzoek(req, res, m[1]); return; }
   }
+  // APPARAAT-001: de snelle stroom van de site zelf (GET /api/owner/stroom, Accept: text/event-stream) — het venster «Це ви?» op het
+  // andere apparaat binnen een seconde. Zelfde sessiecontrole als elke route (via backend/apparaat-bevestiging/routes.ts), dezelfde
+  // verzoekcontext als de router (metVerzoek), maar buiten de router omdat die geen open verbinding kan vasthouden.
+  if (req.method === 'GET' && url.pathname === '/api/owner/stroom' && /text\/event-stream/i.test(String(req.headers.accept || '')) && host !== SERVICE_HOSTS.mcp) {
+    const ip = clientIp(req);
+    const ev = buildEvent(req, url, '', ip);
+    const body = { service: url.searchParams.get('service') || '', tabContext: url.searchParams.get('tabContext') || '' };
+    await metVerzoek('GET /api/owner/stroom', () => stroomVerzoekApparaat(req, res, ev as unknown as Record<string, unknown>, body), { ip, ua: String(req.headers['user-agent'] || '') });
+    return;
+  }
   // MCP-connector voor Claude: nette URL's op mcp.* worden onder /api/mcp-connector/* gerouteerd (zie connectorPad).
   const connector = host === SERVICE_HOSTS.mcp ? connectorPad(url) : null;
   const apiUrl = connector ?? url;
@@ -592,6 +605,11 @@ if (isMain) {
     .catch((err) => console.error('[telegram-aanmelden] ronde mislukt:', (err as Error).message));
   setTimeout(telegramRonde, 30_000).unref();
   setInterval(telegramRonde, 60_000).unref();
+  // APPARAAT-001: verlopen verzoeken «Це ви?» sluiten en oude rijen (30 dagen) opruimen. Niets anders.
+  const apparaatRonde = () => achtergrond('apparaat-bevestiging', () => apparaatOpruimen())
+    .catch((err) => console.error('[apparaat-bevestiging] opruimen mislukt:', (err as Error).message));
+  setTimeout(apparaatRonde, 45_000).unref();
+  setInterval(apparaatRonde, 10 * 60_000).unref();
   // Sleutelkluis (0092): het achtergrondwerk dat een OPEN gegevenssleutel nodig heeft (Drive/agenda/CalDAV, postonderhoud) loopt hier,
   // in het proces waar de sleutel staat — onder dezelfde advisory lock als de cron, en alleen als er een sleutel open staat.
   const kluisRonde = () => achtergrond('sleutelkluis-ronde', () => sleutelkluisAchtergrondRonde([
@@ -618,6 +636,7 @@ if (isMain) {
     // Keep-alive-verbindingen (bv. pagina's die elke paar seconden pollen) houden server.close() open: rust eerst, daarna geforceerd, zodat een release-wissel geen "exit-code 1" geeft.
     closeAllAgents();
     sluitAlleStromen();
+    sluitAlleStromenApparaat();
     server.closeIdleConnections?.();
     setTimeout(() => server.closeAllConnections?.(), 4_000).unref();
     setTimeout(() => process.exit(1), 10_000).unref();

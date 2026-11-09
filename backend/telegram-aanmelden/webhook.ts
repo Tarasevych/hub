@@ -9,7 +9,7 @@ import { instellingen, koppelingenVanTelegram, sql, vlagHoofdschakelaar, gebeurt
 import { aftelRest, JA_LETTERS, bijwerken, knopAntwoord, knoppenMaken, stuur, succesTonen, taalVoor, strook, TAALKNOPPEN, type BotTaal, type Verzonden } from './berichten';
 import { contactVanBot, koppelVanBot, type TgGebruiker } from './koppelen';
 import { inlogGoedkeuren, inlogVanBot, inlogWeigeren } from './inloggen';
-import { bevestigingVanBot } from './bevestigen';
+import { bevestigingSymbool, bevestigingVanBot } from './bevestigen';
 import { wijziging, wijzigingBeantwoorden, vingerafdrukControleren } from './wijzigingen';
 import { ontkoppelen } from './ontkoppelen';
 import { codeInChatGezien, lijktOpCodeVan } from './code';
@@ -210,6 +210,14 @@ async function knopUitvoeren(letter: string, rij: KnopRij, tg: string, taal: Bot
       const ok = await inlogWeigeren(rij.doel, tg);
       await werk(ok ? t(TEKST.geweigerd, taal) : t(TEKST.verlopen, taal));
       return ok ? 'geweigerd' : 'verlopen';
+    }
+    case 's': {
+      // APPARAAT-001: symboolknop. Juist = bevestigd (zoals «Так»); anders geweigerd, één poging, teller loopt mee.
+      const r = await bevestigingSymbool(rij.doel, tg);
+      if (r === 'bevestigd') { await werk(`${t(TEKST.bevestigd, taal)}\n${taal === 'nl' ? 'Ga terug naar de site; de handeling gaat vanzelf verder.' : 'Поверніться на сайт — дія продовжиться сама.'}`); if (v) await succesTonen(v.chatId); }
+      else if (r === 'fout-symbool') await werk(t(TEKST.symboolFout, taal));
+      else await werk(t(TEKST.verlopen, taal));
+      return r;
     }
     case 'b': {
       const r = await bevestigingVanBot(rij.doel, tg, true);

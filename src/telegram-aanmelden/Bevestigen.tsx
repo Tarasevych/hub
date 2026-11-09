@@ -1,6 +1,8 @@
 // Gemeenschappelijke bouwstenen: een knop met aftelling, en het bevestigingsvenster voor TELEGRAM_BEVESTIGING_NODIG.
 // Het venster legt ALTIJD uit waarom het iets vraagt (welke handeling, welke methode, wat er gebeurt bij «Ні»).
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+// APPARAAT-001: vierde methode «ander apparaat» in hetzelfde venster.
+const StapOpKanaal = lazy(() => import('../apparaat-bevestiging/StapOpKanaal'));
 import { api } from '../platform/client';
 import { bevestigToegang } from '../platform/stap-op';
 import { BevestigingNodig, foutTekst, tgPost, type Ctx, type Nodig } from './api';
@@ -63,7 +65,7 @@ export function useBevestiging(ctx: Ctx, lang: Lang) {
 }
 
 function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; nodig: Nodig; klaar: (ok: boolean) => void }) {
-  const [stap, setStap] = useState<'kies' | 'telegram' | 'code'>(nodig.ontbreekt.includes('telegram') ? 'telegram' : nodig.ontbreekt.includes('code') ? 'code' : 'kies');
+  const [stap, setStap] = useState<'kies' | 'telegram' | 'apparaat' | 'code'>(nodig.ontbreekt.includes('telegram') ? 'telegram' : nodig.ontbreekt.includes('apparaat') ? 'apparaat' : nodig.ontbreekt.includes('code') ? 'code' : 'kies');
   const [fout, setFout] = useState('');
   const [info, setInfo] = useState('');
   const [code, setCode] = useState('');
@@ -76,7 +78,9 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
     const nog = rest.filter((m) => m !== klaarMet);
     setGedaan((g) => [...g, klaarMet]);
     if (nog.length === 0) { klaar(true); return; }
-    if (nog.includes('code')) setStap('code');
+    if (nog.includes('telegram')) setStap('telegram');
+    else if (nog.includes('apparaat')) setStap('apparaat');
+    else if (nog.includes('code')) setStap('code');
     else if (nog.includes('passkey')) void (async () => {
       const uit = await bevestigToegang({ service: ctx.service, tabContext: ctx.tabContext, post: (u, d) => api.post(u, d), toegestaan: ['passkey'], sterk: true });
       klaar(uit.ok);
@@ -122,6 +126,8 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
   });
 
   const methoden = nodig.ontbreekt.map((m) => tekstIn(METHODE_NAMEN[m as keyof typeof METHODE_NAMEN] ?? [m, m], lang)).join(' + ');
+  // APPARAAT-001: een alternatief dat uit één andere methode bestaat (bv. [['telegram'],['apparaat']]) mag de gebruiker zelf kiezen.
+  const losAlternatief = (m: 'telegram' | 'apparaat') => m !== stap && !gedaan.includes(m) && !!nodig.eis?.some((a) => a.length === 1 && a[0] === m);
   return <div className='tga-scherm' role='dialog' aria-modal='true' aria-labelledby='tga-bev-titel'>
     <div className='tga-venster'>
       <h2 id='tga-bev-titel'><TelegramLogo maat={28} /> {tr(lang, 'Підтвердіть, що це ви', 'Bevestig dat u het bent')}</h2>
@@ -132,6 +138,15 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
         {!fout && <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Чекаємо на вашу відповідь у Telegram…', 'Wachten op uw antwoord in Telegram…')}</p>}
         {nodig.ontbreekt.includes('code') && <p className='tga-klein'>{tr(lang, 'Потім ще попросимо ваш таємний код.', 'Daarna vragen we nog uw geheime code.')}</p>}
       </div>}
+      {stap === 'apparaat' && <div className='tga-blok'>
+        <Suspense fallback={<p>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
+          <StapOpKanaal kanaal='apparaat' ctx={{ service: ctx.service, tabContext: ctx.tabContext }} lang={lang} matrixActie={nodig.actie} naPoort={false} onKlaar={() => volgende('apparaat')} />
+        </Suspense>
+      </div>}
+      {(losAlternatief('apparaat') || losAlternatief('telegram')) && <p className='tga-klein'>
+        {losAlternatief('apparaat') && <button type='button' className='tga-link' onClick={() => { setFout(''); setStap('apparaat'); }}>{tr(lang, 'Або підтвердити з іншого пристрою', 'Of bevestigen vanaf een ander apparaat')}</button>}
+        {losAlternatief('telegram') && <button type='button' className='tga-link' onClick={() => { setFout(''); setStap('telegram'); }}>{tr(lang, 'Або підтвердити в Telegram', 'Of bevestigen in Telegram')}</button>}
+      </p>}
       {stap === 'code' && <form className='tga-blok' onSubmit={(e) => { e.preventDefault(); void codeSturen(); }}>
         <label htmlFor='tga-bev-code'>{tr(lang, 'Ваш таємний код', 'Uw geheime code')}</label>
         <input id='tga-bev-code' type='password' inputMode='text' autoComplete='off' value={code} onChange={(e) => setCode(e.target.value)} maxLength={64} autoFocus />

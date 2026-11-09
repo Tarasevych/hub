@@ -63,7 +63,7 @@ export function initDataControle(initData: string, botToken: string, nuSec = Mat
 // Vorm (≤ 64 bytes): «<a>.<id>.<sig>»  a = één letter van de handeling, id = 12 tekens base64url (verzoek/token-id),
 // sig = 16 tekens base64url van HMAC(sleutel, a|id|telegramId|vervaltijd). De vervaltijd en de binding zitten ook in de
 // databaserij (app.tg_knoppen); de handtekening voorkomt dat iemand willekeurige id's probeert.
-export const KNOP_ACTIES = { i: 'inloggen', n: 'weigeren', b: 'bevestigen', w: 'wijziging-gezien', x: 'wijziging-nee', o: 'ontkoppelen', t: 'taal-uk', l: 'taal-nl', a: 'account-kiezen', r: 'opnieuw', c: 'annuleren' } as const;
+export const KNOP_ACTIES = { i: 'inloggen', n: 'weigeren', b: 'bevestigen', w: 'wijziging-gezien', x: 'wijziging-nee', o: 'ontkoppelen', t: 'taal-uk', l: 'taal-nl', a: 'account-kiezen', r: 'opnieuw', c: 'annuleren', s: 'symbool' /* APPARAAT-001: één van de symbolen van de kaart */ } as const;
 export type KnopLetter = keyof typeof KNOP_ACTIES;
 export const isKnopLetter = (v: string): v is KnopLetter => Object.prototype.hasOwnProperty.call(KNOP_ACTIES, v);
 

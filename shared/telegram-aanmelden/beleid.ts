@@ -11,7 +11,8 @@
 // Gevoelige handelingen vragen ALTIJD een toegangssleutel, wat de gebruiker ook kiest: de toegangssleutel wordt aan elk alternatief toegevoegd.
 import type { Taal, Tekst } from './model';
 
-export const METHODEN = ['telegram', 'passkey', 'code'] as const;
+// APPARAAT-001: vierde methode «apparaat» = bevestigen vanaf een ander, al aangemeld apparaat (zelfde symbolen op beide schermen).
+export const METHODEN = ['telegram', 'passkey', 'code', 'apparaat'] as const;
 export type Methode = typeof METHODEN[number];
 export type Eis = Methode[][];
 export const isMethode = (v: unknown): v is Methode => typeof v === 'string' && (METHODEN as readonly string[]).includes(v);
@@ -20,6 +21,7 @@ export const METHODE_NAMEN: Record<Methode, Tekst> = {
   telegram: ['Telegram', 'Telegram'],
   passkey: ['ключ доступу', 'passkey'],
   code: ['таємний код', 'geheime code'],
+  apparaat: ['інший пристрій', 'ander apparaat'],
 };
 
 /** Benoemde keuzes die de interface toont; elke keuze is gewoon een eis. */
@@ -32,6 +34,11 @@ export const KEUZES = {
   'telegram-en-code-of-passkey': [['telegram', 'code'], ['passkey']],
   'passkey-en-code': [['passkey', 'code']],
   'alles': [['telegram', 'passkey', 'code']],
+  // APPARAAT-001
+  'apparaat': [['apparaat']],
+  'telegram-of-apparaat': [['telegram'], ['apparaat']],
+  'telegram-of-apparaat-of-passkey': [['telegram'], ['apparaat'], ['passkey']],
+  'apparaat-en-code': [['apparaat', 'code']],
 } as const satisfies Record<string, readonly (readonly Methode[])[]>;
 export type KeuzeId = keyof typeof KEUZES;
 export const KEUZE_IDS = Object.keys(KEUZES) as KeuzeId[];
@@ -47,6 +54,10 @@ export const KEUZE_NAMEN: Record<KeuzeId, Tekst> = {
   'telegram-en-code-of-passkey': ['Telegram і таємний код, або ключ доступу', 'Telegram en geheime code, of toegangssleutel'],
   'passkey-en-code': ['Ключ доступу і таємний код', 'Toegangssleutel en geheime code'],
   'alles': ['Telegram, ключ доступу і таємний код', 'Telegram, toegangssleutel en geheime code'],
+  'apparaat': ['Інший пристрій', 'Ander apparaat'],
+  'telegram-of-apparaat': ['Telegram або інший пристрій', 'Telegram of een ander apparaat'],
+  'telegram-of-apparaat-of-passkey': ['Telegram, інший пристрій або ключ доступу', 'Telegram, een ander apparaat of toegangssleutel'],
+  'apparaat-en-code': ['Інший пристрій і таємний код', 'Ander apparaat en geheime code'],
 };
 
 /** Eén soort bewaakte handeling. `gevoelig` = altijd toegangssleutel (besluit van de eigenaar, punt D). */
@@ -55,6 +66,10 @@ export type ActieSoort = { sleutel: string; naam: Tekst; minimum: KeuzeId; stand
 /** Ingebouwde handelingen. De beheerder kan er zonder nieuwe bouw bij zetten (tabel app.tg_acties). */
 export const INGEBOUWDE_ACTIES: readonly ActieSoort[] = Object.freeze([
   { sleutel: 'aanmelden', naam: ['Вхід на сайт', 'Aanmelden op de site'], minimum: 'telegram', standaard: 'telegram', gevoelig: false, ingebouwd: true },
+  // APPARAAT-001: de klassieke step-up («Підтвердіть доступ») zonder toegangssleutel op dit apparaat — via Telegram of een ander
+  // apparaat. Niet gevoelig: anders zou de toegangssleutel verplicht zijn en is er niets te kiezen. Wat «sterk» blijft, regelt
+  // backend/stap-op.ts (NOOIT_ONTHOUDEN, sterkeStapOpGeldig), niet deze tabel.
+  { sleutel: 'stap-op', naam: ['Підтвердження доступу без ключа на цьому пристрої', 'Toegang bevestigen zonder sleutel op dit apparaat'], minimum: 'telegram-of-apparaat', standaard: 'telegram-of-apparaat', gevoelig: false, ingebouwd: true },
   { sleutel: 'nieuw-apparaat', naam: ['Новий пристрій', 'Nieuw apparaat'], minimum: 'telegram', standaard: 'telegram-en-passkey', gevoelig: false, ingebouwd: true },
   { sleutel: 'bestanden-bekijken', naam: ['Перегляд файлів', 'Bestanden bekijken'], minimum: 'telegram', standaard: 'telegram', gevoelig: false, ingebouwd: true },
   { sleutel: 'wijziging-bevestigen', naam: ['Підтвердження зміни в Telegram', 'Wijziging in Telegram bevestigen'], minimum: 'passkey', standaard: 'passkey', gevoelig: true, ingebouwd: true },
@@ -158,7 +173,9 @@ export function voorinstellingToepassen(v: Voorinstelling, soorten: readonly Act
   const uit: Record<string, KeuzeId> = {};
   for (const s of soorten) {
     if (v === 'standaard') { uit[s.sleutel] = s.standaard; continue; }
-    if (v === 'veiligst') { uit[s.sleutel] = 'alles'; continue; }
+    // «Найбезпечніше» voor de step-up zonder sleutel: een ander apparaat mét geheime code («alles» zou de lokale toegangssleutel eisen
+    // en de hele methode zinloos maken).
+    if (v === 'veiligst') { uit[s.sleutel] = s.sleutel === 'stap-op' ? 'apparaat-en-code' : 'alles'; continue; }
     // «Telegram для всього, де дозволено»: Telegram alleen waar het minimum dat toelaat; anders de lichtste toegestane keuze met Telegram.
     const kandidaten: KeuzeId[] = ['telegram', 'telegram-of-passkey', 'telegram-en-code', 'telegram-en-passkey', 'alles'];
     uit[s.sleutel] = kandidaten.find((k) => keuzeToegestaan(s, k)) ?? s.standaard;

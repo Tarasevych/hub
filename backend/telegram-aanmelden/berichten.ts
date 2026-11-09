@@ -20,7 +20,7 @@ export function strook(accountNaam: string, kleur: number, taal: BotTaal): strin
 }
 
 /** Knoppen die iets TOESTAAN («Так, це я», «Підтвердити», «Це був я»): werken pas na de aftelling (op de server, zie webhook.ts). */
-export const JA_LETTERS: ReadonlySet<string> = new Set(['i', 'b', 'w']);
+export const JA_LETTERS: ReadonlySet<string> = new Set(['i', 'b', 'w', 's' /* APPARAAT-001: symboolknoppen tellen als «Так» (aftelling) */]);
 const AFTEL_KAARTEN: ReadonlySet<string> = new Set(['nieuwApparaat', 'verdacht']);
 
 /** Maakt eenmalige, ondertekende knoppen (rij per knop) en legt ze vast in app.tg_knoppen. */

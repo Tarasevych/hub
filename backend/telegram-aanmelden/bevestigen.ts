@@ -10,8 +10,15 @@ import { accountNaam, audit, beheerAlarm, siteMelding, tijdTekst } from './meldi
 import { knoppenMaken, stuur, strook, taalVoor } from './berichten';
 import { invullen, t, TEKST } from '../../shared/telegram-aanmelden/teksten';
 import { tekstIn } from '../../shared/telegram-aanmelden/model';
+// APPARAAT-001: symboolknoppen in de kaart van de dienst «stap-op» (zelfde trekking als bij «ander apparaat»; de site licht er één uit).
+import { instellingen as apparaatInstellingen, misluktTellen as apparaatMisluktTellen, voorkeuren as apparaatVoorkeuren } from '../apparaat-bevestiging/opslag';
+import { effectieveSoort } from '../../shared/apparaat-bevestiging/model';
+import { telegramKnopTekst, trek, type VasteSoort } from '../../shared/apparaat-bevestiging/symbolen';
+import { randomInt } from 'node:crypto';
 
-export async function bevestigingAanvragen(userId: string, sessieId: string, actie: string): Promise<{ id: string; verlooptOp: string; verstuurd: number }> {
+export type Aangevraagd = { id: string; verlooptOp: string; verstuurd: number; soort?: VasteSoort; kandidaten?: number[]; juist?: number };
+
+export async function bevestigingAanvragen(userId: string, sessieId: string, actie: string, opties: { apparaat?: string } = {}): Promise<Aangevraagd> {
   if (!sessieId) throw new Error('SESSIE_ONBEKEND');
   const soort = await soortVan(actie);
   if (!soort) throw new Error('ONBEKENDE_ACTIE');
@@ -23,18 +30,32 @@ export async function bevestigingAanvragen(userId: string, sessieId: string, act
   await sql("UPDATE app.tg_bevestigingen SET stand = 'verlopen' WHERE user_id = $1 AND sessie_id = $2 AND actie = $3 AND stand = 'wacht'", [userId, sessieId, actie]);
   const id = nieuweId();
   const verloopt = new Date(Date.now() + BEVESTIGING_GELDIG_MS);
-  await sql("INSERT INTO app.tg_bevestigingen (id, user_id, sessie_id, actie, methode, verloopt_op) VALUES ($1,$2,$3,$4,'telegram',$5)", [id, userId, sessieId, actie, verloopt]);
+  // Symbolen alleen voor de klassieke step-up én als de beheerder dat aan heeft; anders de gewone «✅ Підтвердити».
+  let trekking: { soort: VasteSoort; kandidaten: number[]; juist: number } | null = null;
+  if (actie === 'stap-op') {
+    const ai = await apparaatInstellingen().catch(() => null);
+    if (ai?.telegramSymbolen) {
+      const vk = await apparaatVoorkeuren(userId).catch(() => null);
+      trekking = trek(vk ? effectieveSoort(ai, vk.waarde) : ai.symbolenStandaard, ai.aantalKandidaten, randomInt);
+    }
+  }
+  await sql("INSERT INTO app.tg_bevestigingen (id, user_id, sessie_id, actie, methode, verloopt_op, soort, kandidaten, juist) VALUES ($1,$2,$3,$4,'telegram',$5,$6,$7,$8)",
+    [id, userId, sessieId, actie, verloopt, trekking?.soort ?? null, trekking?.kandidaten ?? null, trekking?.juist ?? null]);
   const naam = await accountNaam(userId);
+  const apparaat = String(opties.apparaat || '').slice(0, 80) || 'onbekend/onbekend';
   let verstuurd = 0;
   for (const k of await koppelingenVanGebruiker(userId)) {
     if (k.stand !== 'actief' || !k.rechten.includes('bevestigen')) continue;
     try {
       const { taal } = await taalVoor(k.telegram_id);
-      const een = (tl: 'uk' | 'nl') => invullen(TEKST.bevestigVraag[tl], { account: naam, actie: tekstIn(soort.naam, tl), tijd: tijdTekst(tl) });
       const tl: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
+      const een = (x: 'uk' | 'nl') => invullen((trekking ? TEKST.bevestigVraagSymbool : TEKST.bevestigVraag)[x], { account: naam, actie: tekstIn(soort.naam, x), tijd: tijdTekst(x), apparaat });
+      const knoppen = trekking
+        ? [trekking.kandidaten.map((_, pos) => ({ letter: 's' as const, doel: `${id}:${k.id}:${pos}`, tekst: telegramKnopTekst(trekking!.soort, trekking!.kandidaten[pos], tl) })), [{ letter: 'n' as const, doel: `b:${id}:${k.id}`, tekst: t(TEKST.knopNietIk, tl) }]]
+        : [[{ letter: 'b' as const, doel: `${id}:${k.id}`, tekst: t(TEKST.knopBevestigen, tl) }], [{ letter: 'n' as const, doel: `b:${id}:${k.id}`, tekst: t(TEKST.knopNietIk, tl) }]];
       await stuur(k.chat_id, `${strook(naam, k.kleur, taal)}\n\n${taal === 'beide' ? `${een('uk')}\n\n${een('nl')}` : een(taal)}`, taal, {
         kaart: soort.gevoelig ? 'nieuwApparaat' : 'gewoon',
-        knoppen: await knoppenMaken(k.telegram_id, `bevestig-${id}`, [[{ letter: 'b', doel: `${id}:${k.id}`, tekst: t(TEKST.knopBevestigen, tl) }], [{ letter: 'n', doel: `b:${id}:${k.id}`, tekst: t(TEKST.knopNietIk, tl) }]]),
+        knoppen: await knoppenMaken(k.telegram_id, `bevestig-${id}`, knoppen),
       });
       verstuurd++;
     } catch { /* volgende koppeling */ }
@@ -43,8 +64,34 @@ export async function bevestigingAanvragen(userId: string, sessieId: string, act
     await sql("UPDATE app.tg_bevestigingen SET stand = 'verlopen' WHERE id = $1", [id]);
     throw new Error('TELEGRAM_NIET_BEREIKBAAR');
   }
-  await audit(userId, 'bevestigen.aangevraagd', 'pending', { actie, verstuurd });
-  return { id, verlooptOp: verloopt.toISOString(), verstuurd };
+  await audit(userId, 'bevestigen.aangevraagd', 'pending', { actie, verstuurd, symbolen: !!trekking });
+  return { id, verlooptOp: verloopt.toISOString(), verstuurd, ...(trekking ? { soort: trekking.soort, kandidaten: trekking.kandidaten, juist: trekking.juist } : {}) };
+}
+
+/**
+ * APPARAAT-001: tik op een symboolknop in Telegram. doel = «<bevestigingId>:<koppelingId>:<positie>». Het juiste symbool = «Так»;
+ * een ander symbool = geweigerd (één poging) en telt mee in dezelfde teller als een verkeerd symbool op een ander apparaat.
+ */
+export async function bevestigingSymbool(doel: string, tg: string): Promise<'bevestigd' | 'fout-symbool' | 'geweigerd' | 'verlopen'> {
+  const [id, koppelingId, posTekst] = doel.split(':');
+  const pos = Number(posTekst);
+  const [r] = await sql<{ id: string; user_id: string; actie: string; stand: string; verloopt_op: Date; juist: number | null; kandidaten: number[] | null }>('SELECT * FROM app.tg_bevestigingen WHERE id = $1', [id]);
+  if (!r || r.stand !== 'wacht' || new Date(r.verloopt_op).getTime() < Date.now()) return 'verlopen';
+  if (r.juist === null || !Array.isArray(r.kandidaten) || !Number.isInteger(pos) || pos < 0 || pos >= r.kandidaten.length) return 'verlopen';
+  const k = (await koppelingenVanGebruiker(r.user_id)).find((x) => x.id === koppelingId);
+  if (!k || k.telegram_id !== tg || k.stand !== 'actief' || !k.rechten.includes('bevestigen')) return 'verlopen';
+  if (pos === Number(r.juist)) return bevestigingVanBot(`${id}:${koppelingId}`, tg, true);
+  const upd = await sql("UPDATE app.tg_bevestigingen SET stand = 'geweigerd', koppeling_id = $2 WHERE id = $1 AND stand = 'wacht' RETURNING id", [id, k.id]);
+  if (!upd.length) return 'verlopen';
+  const inst = await apparaatInstellingen().catch(() => null);
+  const teller = inst ? await apparaatMisluktTellen(r.user_id, inst).catch(() => null) : null;
+  await audit(r.user_id, 'bevestigen.fout-symbool', 'denied', { actie: r.actie, koppeling: k.id, mislukt: teller?.mislukt ?? null, uitkomst: teller?.uitkomst ?? '' });
+  if (teller?.uitkomst === 'uit') {
+    await siteMelding(r.user_id, { uk: 'Підтвердження символом вимкнено', nl: 'Bevestigen met symbool uitgeschakeld' },
+      { uk: `Неправильний символ обрано ${teller.mislukt} разів. Підтвердження з іншого пристрою та символом у Telegram вимкнено, доки ви не відновите його ключем доступу у «Способах входу».`, nl: `${teller.mislukt} keer een verkeerd symbool. Bevestigen vanaf een ander apparaat en met symbool in Telegram staat uit tot u het herstelt met uw toegangssleutel bij «Aanmeldmethoden».` });
+    await beheerAlarm('symbool-uit', { userId: r.user_id, mislukt: teller.mislukt }, { uk: 'Підтвердження символом вимкнено після забагатьох помилок.', nl: 'Bevestigen met symbool uitgeschakeld na te veel fouten.' });
+  }
+  return 'fout-symbool';
 }
 
 export async function bevestigingStatus(userId: string, sessieId: string, id: string): Promise<{ stand: string }> {
