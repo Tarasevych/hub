@@ -5,11 +5,12 @@ import {setAccountClaim} from './account-claim';
 import {KeyRound,LockKeyhole,Mail,ShieldCheck} from 'lucide-react';
 import './verenigd-dienst-inhoud.css';
 import type {SettingsShareInput,SettingsWidgetInput} from './InstellingencentrumWeergave';
-import {ApiServiceView,GitHubServiceView} from './DienstWeergaven';
+// PERF-001 (09.11.2026): GitHub- en API-weergave lui geladen — samen ~150 KB die vroeger in de startbundel van ELK subdomein zaten.
+const GitHubServiceView=lazy(()=>import('./DienstWeergaven').then(m=>({default:m.GitHubServiceView}))),ApiServiceView=lazy(()=>import('./DienstWeergaven').then(m=>({default:m.ApiServiceView})));
 import type {IdentityRequest,IdentityState,IdentityUser,IdentityWorkspace} from './IdentiteitBeheerWeergave';
 
 import type {SecuritySession} from './BeveiligingSessiesPaneel';
-import AfstemmingWissel from './AfstemmingWissel'; /* vlag afstemming-vnext (UI-014) kiest oud/nieuw */
+const AfstemmingWissel=lazy(()=>import('./AfstemmingWissel')); /* vlag afstemming-vnext (UI-014) kiest oud/nieuw; PERF-001: lui, alleen op api.* nodig */
 import {useThemaPresentatie} from './thema/useThema';
 import {applyDocumentPresentationTheme,cachedRouteView,clearCachedAvatar,clearRouteView,migrateLegacyPresentationStorage,readSharedPreferences,rememberAvatarUrl,rememberRouteView,themePreferenceFromValue,watchSharedPreferences,weergaveRuimteNu,writeSharedPreferences,type CachedRouteView,type ThemePreference} from './gedeelde-voorkeuren';
 import {chooseExplicitLanguage,persistBrowserLanguage,resolveAccountLanguage,resolveInitialLanguage} from './taal-controller';
