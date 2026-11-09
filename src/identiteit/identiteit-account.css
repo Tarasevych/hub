@@ -130,9 +130,8 @@
     padding: var(--ruimte-3);
   }
 
-  .ia-vormgeving-compact { grid-column: 1 / -1; margin-left: 0; }
-  .ia-vormgeving-compact > summary { width: 100%; justify-content: center; border-radius: var(--straal-m); }
-  .ia-vormgeving-compact-paneel { position: static; min-width: 0; margin-top: 6px; box-shadow: none; }
+  /* Вузько: меню не липке, а повний перемикач стоїть просто над заголовком — компактний був би дублем. */
+  .ia-vormgeving-compact { display: none; }
 }
 
 @container ia-account (max-width: 420px) {
