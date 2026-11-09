@@ -20,49 +20,80 @@
     {
       "soort": "запит власника",
       "omschrijving": "Сайт повільно реагує, час від часу завмирає, кожна сторінка/опція довантажується окремо; потрібна оптимізація без втрати функцій.",
-      "bewijzen": ["Повідомлення власника від 09.11.2026 07:01 у треді проєкту"]
+      "bewijzen": [
+        "Повідомлення власника від 09.11.2026 07:01 у треді проєкту"
+      ]
     },
     {
       "soort": "заміри",
       "omschrijving": "Одноразова локальна копія сайту (dist-server/rook.mjs, тестовий власник, порожня БД) у Chromium з процесором, сповільненим у 4 рази, і затримкою мережі 60 мс; по 2 прогони старої та нової версії, по 5 піддоменів холодно й тепло.",
-      "bewijzen": ["server/rook.ts", "scripts/rook-controle.mjs"]
+      "bewijzen": [
+        "server/rook.ts",
+        "scripts/rook-controle.mjs"
+      ]
     },
     {
       "soort": "живий сайт",
       "omschrijving": "Живий сайт з хмари недоступний (проксі блокує *.tarasevych.com, також із ВМ на ПК власника); вкладка власника в браузері була технічною, тож аудит швидкодії через розширення з приватного профілю недоступний.",
-      "bewijzen": ["Відповідь EXTENSIE_PROFIEL на browser_audit 09.11.2026"]
+      "bewijzen": [
+        "Відповідь EXTENSIE_PROFIEL на browser_audit 09.11.2026"
+      ]
     }
   ],
   "tijdlijn": [
     {
       "volgorde": 1,
       "stap": "Аналіз складання: стартовий бандл 2,37 МБ (gzip 0,73 МБ) + CSS 644 КБ на КОЖНОМУ піддомені; у ньому вікно нового листа з ProseMirror (~0,5 МБ), GitHub/API, агенда, нотатки, «Нещодавнє», афстемінг. Сервер віддавав файли без стиснення.",
-      "bewijzen": ["vite.config.ts", "server/start.ts"]
+      "bewijzen": [
+        "vite.config.ts",
+        "server/start.ts"
+      ]
     },
     {
       "volgorde": 2,
       "stap": "Заміри до змін: перший вхід на піддомен 2,0–2,4 с до готовності, JS 2,6–4,7 МБ по мережі; id.* — 48 API-запитів (notities/lijst ×9, snapshot/passkeys/toegangscodes/recovery/sleutelkluis ×3), 6–9 окремих запитів прапорців на сторінку.",
-      "bewijzen": ["tests/eenheid/perf-001-20261109.test.ts"]
+      "bewijzen": [
+        "tests/eenheid/perf-001-20261109.test.ts"
+      ]
     },
     {
       "volgorde": 3,
       "stap": "Трасування ініціаторів запитів (CDP) і профіль головного потоку: дублікати від трьох одночасних секцій доступу; document.cookie читається десятки разів за кадр (~40 мс).",
-      "bewijzen": ["src/ToegangContext.tsx", "src/gedeelde-voorkeuren.ts"]
+      "bewijzen": [
+        "src/ToegangContext.tsx",
+        "src/gedeelde-voorkeuren.ts"
+      ]
     },
     {
       "volgorde": 4,
       "stap": "Зміни: ліниве завантаження, злиття однакових читальних запитів, пакет прапорців, кеш cookie, стиснення brotli/gzip, Server-Timing і моніторинг блокувань головного потоку з назвою фонової задачі.",
-      "bewijzen": ["src/platform/client.ts", "server/platform/statisch-comprimeren.ts", "server/start.ts"]
+      "bewijzen": [
+        "src/platform/client.ts",
+        "server/platform/statisch-comprimeren.ts",
+        "server/start.ts"
+      ]
     },
     {
       "volgorde": 5,
       "stap": "Заміри після змін на тій самій установці: перший вхід 1,0–1,3 с (було 2,0–2,4), JS по мережі 0,54–1,29 МБ (було 2,6–4,7), id.* 23 API-запити (було 48), повторний вхід 0,55–1,0 с (було 0,7–1,1).",
-      "bewijzen": ["tests/eenheid/perf-001-20261109.test.ts"]
+      "bewijzen": [
+        "tests/eenheid/perf-001-20261109.test.ts"
+      ]
     },
     {
       "volgorde": 6,
       "stap": "Гілка випуску від встановленого коміту bc16016a (IDENTITEIT-007, третій випуск) з тим самим комітом PERF-001; PR у integratie з гілки claude/project-thread-qtn620.",
-      "bewijzen": ["orchestratie/taken/PERF-001.json"]
+      "bewijzen": [
+        "orchestratie/taken/PERF-001.json"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Стара вада, знайдена під час перевірок: ASCII-апостроф у «під'єднань» у вбудованому скрипті presentation-init (index.html) давав SyntaxError у canonical-presentation.js на кожній сторінці — заголовок, тема й мова до старту React не застосовувались; через це падали також mcp-scherm-lokale-controle (16/17) і mcp-toegang-diagnose (42/43) і на базі. Замінено на типографський апостроф; після виправлення 17/17 і 43/43.",
+      "bewijzen": [
+        "index.html",
+        "tests/eenheid/perf-001-20261109.test.ts"
+      ]
     }
   ],
   "keuzes": [
@@ -98,23 +129,84 @@
     }
   ],
   "wijzigingen": [
-    {"pad": "src/platform/client.ts", "omschrijving": "Злиття одночасних однакових читальних запитів (власна копія кожному, сигнал зупиняє лише власне очікування) і пакет запитів прапорців OFREP через /api/flags з відкатом."},
-    {"pad": "src/App.tsx", "omschrijving": "Агенда, нотатки й «Нещодавнє» хабу — ліниве завантаження із Suspense."},
-    {"pad": "src/VerenigdDienstApp.tsx", "omschrijving": "GitHub-, API-вигляд і афстемінг — ліниве завантаження."},
-    {"pad": "src/MailOpstelZwevend.tsx", "omschrijving": "Вікно нового листа (ProseMirror) — ліниве завантаження, змонтоване одразу."},
-    {"pad": "src/gedeelde-voorkeuren.ts", "omschrijving": "Кеш document.cookie у межах однієї синхронної задачі; власний запис скидає кеш."},
-    {"pad": "server/platform/statisch-comprimeren.ts", "omschrijving": "Новий модуль: вибір кодування, стиснення brotli/gzip із кешем LRU у пам'яті."},
-    {"pad": "server/start.ts", "omschrijving": "Стиснення статичних файлів (Vary, окремий ETag), Server-Timing для API, моніторинг блокувань головного потоку з назвами фонових задач."},
-    {"pad": "tests/eenheid/perf-001-20261109.test.ts", "omschrijving": "40 перевірок: злиття, запис без злиття, сигнали, помилки, пакет прапорців, стиснення, ліниві імпорти."}
+    {
+      "pad": "src/platform/client.ts",
+      "omschrijving": "Злиття одночасних однакових читальних запитів (власна копія кожному, сигнал зупиняє лише власне очікування) і пакет запитів прапорців OFREP через /api/flags з відкатом."
+    },
+    {
+      "pad": "src/App.tsx",
+      "omschrijving": "Агенда, нотатки й «Нещодавнє» хабу — ліниве завантаження із Suspense."
+    },
+    {
+      "pad": "src/VerenigdDienstApp.tsx",
+      "omschrijving": "GitHub-, API-вигляд і афстемінг — ліниве завантаження."
+    },
+    {
+      "pad": "src/MailOpstelZwevend.tsx",
+      "omschrijving": "Вікно нового листа (ProseMirror) — ліниве завантаження, змонтоване одразу."
+    },
+    {
+      "pad": "src/gedeelde-voorkeuren.ts",
+      "omschrijving": "Кеш document.cookie у межах однієї синхронної задачі; власний запис скидає кеш."
+    },
+    {
+      "pad": "server/platform/statisch-comprimeren.ts",
+      "omschrijving": "Новий модуль: вибір кодування, стиснення brotli/gzip із кешем LRU у пам'яті."
+    },
+    {
+      "pad": "server/start.ts",
+      "omschrijving": "Стиснення статичних файлів (Vary, окремий ETag), Server-Timing для API, моніторинг блокувань головного потоку з назвами фонових задач."
+    },
+    {
+      "pad": "tests/eenheid/perf-001-20261109.test.ts",
+      "omschrijving": "41 перевірка: злиття, запис без злиття, сигнали, помилки, пакет прапорців, стиснення, ліниві імпорти, синтаксис presentation-init."
+    },
+    {
+      "pad": "index.html",
+      "omschrijving": "Виправлено синтаксичну помилку у вбудованому скрипті presentation-init (типографський апостроф)."
+    },
+    {
+      "pad": "tests/eenheid/hub-agenda-notities-20261019.test.ts, mail-qa-2026-10-12.test.ts, ui-audit-g.test.ts",
+      "omschrijving": "Шаблони перевірок вихідного коду враховують ліниве завантаження (Suspense, lazyZoek)."
+    }
   ],
   "controles": [
-    {"opdracht": "node scripts/eenheidstests.mjs perf-001-20261109.test.ts", "uitkomst": "40 із 40 успішно"},
-    {"opdracht": "node scripts/eenheidstests.mjs menu-snelheid", "uitkomst": "29 із 29 успішно (переривання запитів не зламано)"},
-    {"opdracht": "node scripts/eenheidstests.mjs identiteit-maquette.test.ts / identiteit-atelier / identiteit-account-ui", "uitkomst": "42/42, 36/36, 6/6"},
-    {"opdracht": "node scripts/eenheidstests.mjs mobiel-cascade-20261105 / mobiel-geometrie / plaatsing-20261025", "uitkomst": "22/22, 56/56, 68/68"},
-    {"opdracht": "node scripts/eenheidstests.mjs trace-001-ontwikkelarchief / uitrol-voorcontrole", "uitkomst": "16/16, 42/42"},
-    {"opdracht": "npx tsc -p tsconfig.json --noEmit; npx tsc -p tsconfig.server.json --noEmit", "uitkomst": "без помилок"},
-    {"opdracht": "vite build + заміри в Chromium на локальній копії сайту (до/після, 2 прогони)", "uitkomst": "перший вхід 2,0–2,4 с → 1,0–1,3 с; API на id.* 48 → 23"}
+    {
+      "opdracht": "node scripts/eenheidstests.mjs perf-001-20261109.test.ts",
+      "uitkomst": "41 із 41 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs menu-snelheid",
+      "uitkomst": "29 із 29 успішно (переривання запитів не зламано)"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs identiteit-maquette.test.ts / identiteit-atelier / identiteit-account-ui",
+      "uitkomst": "42/42, 36/36, 6/6"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs mobiel-cascade-20261105 / mobiel-geometrie / plaatsing-20261025",
+      "uitkomst": "22/22, 56/56, 68/68"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs trace-001-ontwikkelarchief / uitrol-voorcontrole",
+      "uitkomst": "16/16, 42/42"
+    },
+    {
+      "opdracht": "npx tsc -p tsconfig.json --noEmit; npx tsc -p tsconfig.server.json --noEmit",
+      "uitkomst": "без помилок"
+    },
+    {
+      "opdracht": "vite build + заміри в Chromium на локальній копії сайту (до/після, 2 прогони)",
+      "uitkomst": "перший вхід 2,0–2,4 с → 1,0–1,3 с; API на id.* 48 → 23"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs hub-agenda-notities-20261019 / mail-qa-2026-10-12 / ui-audit-g",
+      "uitkomst": "65/65, 37/37, 57/57"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs mcp-scherm-lokale-controle-20261031 / mcp-toegang-diagnose-20261101 (з локальною БД)",
+      "uitkomst": "17/17, 43/43 (до виправлення 16/17, 42/43 і на базі)"
+    }
   ],
   "beperkingen": [
     "Живий сайт не профілювався: з хмари домени tarasevych.com заблоковані; заміри зроблено на локальній копії з порожньою БД, тож на справжніх даних числа будуть іншими, але напрям той самий.",
