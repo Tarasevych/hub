@@ -17,7 +17,7 @@ permissions:
 
 concurrency:
   group: mailbg-001-uitgave
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   TAAK: MAILBG-001
@@ -162,6 +162,8 @@ jobs:
           node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
             --agent codex --platform ChatGPT --model-id "$MODEL_ID" \
             --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk 'Живе тло входу до пошти й облікових записів: лінза, налаштування та збереження встановлених можливостей.' \
+            --samenvatting-nl 'Bewegende achtergrond voor aanmelden en e-mailaccounts, met vergrootlens, instellingen en behoud van geïnstalleerde functies.' \
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-codex-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
