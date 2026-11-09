@@ -94,6 +94,15 @@
         "index.html",
         "tests/eenheid/perf-001-20261109.test.ts"
       ]
+    },
+    {
+      "volgorde": 8,
+      "stap": "Перший запуск процесу випуску зупинила перевірка технічних бандлів: після лінивого завантаження GitHub/API публічна смуга інтеграцій (src/integraties/IntegratieStrook.tsx) потрапила в окремий чанк, який класифікувався як технічний, тож звичайні сторінки Пошти, Хмари, Дому, GitHub і API отримали б 403. Додано точний перелік TECH_OPENBAAR (як раніше для merk-форм); технічних бандлів знову 6, як на базі.",
+      "bewijzen": [
+        "shared/tech-bundels.ts",
+        "tests/eenheid/tech-bundels.test.ts",
+        "scripts/tech-bundels-controle.mjs"
+      ]
     }
   ],
   "keuzes": [
@@ -168,6 +177,10 @@
     {
       "pad": "tests/eenheid/hub-agenda-notities-20261019.test.ts, mail-qa-2026-10-12.test.ts, ui-audit-g.test.ts",
       "omschrijving": "Шаблони перевірок вихідного коду враховують ліниве завантаження (Suspense, lazyZoek)."
+    },
+    {
+      "pad": "shared/tech-bundels.ts",
+      "omschrijving": "TECH_OPENBAAR: смуга інтеграцій, її прапорець і стилі лишаються публічними, хоч лежать у src/integraties/."
     }
   ],
   "controles": [
@@ -206,6 +219,10 @@
     {
       "opdracht": "node scripts/eenheidstests.mjs mcp-scherm-lokale-controle-20261031 / mcp-toegang-diagnose-20261101 (з локальною БД)",
       "uitkomst": "17/17, 43/43 (до виправлення 16/17, 42/43 і на базі)"
+    },
+    {
+      "opdracht": "npm run build (з tech-bundels-controle) + node scripts/eenheidstests.mjs tech-bundels / tech-bundels-ruimtes-v2",
+      "uitkomst": "6 технічних бандлів, жодного статичного посилання публічного коду на технічний; 34/34, 5/5"
     }
   ],
   "beperkingen": [
