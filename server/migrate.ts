@@ -26,6 +26,9 @@ export async function migrate({ statusOnly = false } = {}): Promise<string[]> {
     if (done.has(version)) continue;
     if (statusOnly) { applied.push(version); continue; }
     const sql = await readFile(path.join(migrationsDir(), file), 'utf8');
+    // UITROL-001: begin en duur per migratie in het logboek, zodat de site elke migratie met tijd toont (живий журнал).
+    const begin = Date.now();
+    console.log(`[migratie] start: ${version}`);
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -34,7 +37,7 @@ export async function migrate({ statusOnly = false } = {}): Promise<string[]> {
       await client.query('INSERT INTO app.schema_migrations (version) VALUES ($1)', [version]);
       await client.query('COMMIT');
       applied.push(version);
-      console.log(`[migratie] uitgevoerd: ${version}`);
+      console.log(`[migratie] uitgevoerd: ${version} (${Date.now() - begin} ms)`);
     } catch (err) {
       await client.query('ROLLBACK').catch(() => undefined);
       throw new Error(`MIGRATIE_MISLUKT:${version}: ${(err as Error).message}`);

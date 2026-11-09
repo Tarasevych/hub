@@ -9,6 +9,10 @@ import {lazy,Suspense} from 'react';
 import {useAanmeldVnext} from './aanmeld-vnext/aanmeld-vlag'; /* UI-015: de vlag kiest alleen de PRESENTATIE van het methods-tabblad */
 import {AtelierInhoud} from './identiteit/atelier-inhoud';
 const AanmeldVnextPanelen=lazy(()=>import('./aanmeld-vnext/AanmeldVnextPanelen'));
+const TelegramSectie=lazy(()=>import('./telegram-aanmelden/TelegramSectie')); /* TELEGRAM-AANMELDEN v1: alleen met vlag telegram-aanmelden-v1 */
+const ApparaatSectie=lazy(()=>import('./apparaat-bevestiging/InstellingenSectie')); /* APPARAAT-001: alleen met vlag apparaat-bevestiging-v1 */
+import {useTelegramVlag} from './telegram-aanmelden/vlag';
+import {useApparaatVlag} from './apparaat-bevestiging/vlag'; /* APPARAAT-001 */
 import {bevestigToegang,metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
 type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
@@ -67,6 +71,8 @@ const sessionBody=()=>({service:new URLSearchParams(location.search).get('servic
 export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;lang:Lang;mode?:'identity'|'admin'}){
   const inAtelier=useContext(AtelierInhoud)&&mode==='identity';
   const alleen=inAtelier&&['methods','security','recovery'].includes(tab)?tab as 'methods'|'security'|'recovery':undefined;
+  const telegramAan=useTelegramVlag();
+  const apparaatAan=useApparaatVlag(); /* APPARAAT-001 */
   const aanmeldVnext=useAanmeldVnext(); /* alleen 'methods'; «Безпека» en «Відновлення» blijven op het bestaande formulier */
   const[data,setData]=useState<Snapshot>(pending());
   const[notice,setNotice]=useState('');
@@ -149,6 +155,7 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
   },[data]);// eslint-disable-line react-hooks/exhaustive-deps
   const recoverySaved=async()=>{await write('/api/owner/access/recovery/bekeken');setRecovery([]);};
   const panelen=<AccessPlanePanels alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/>;
-  if(tab==='methods'&&aanmeldVnext&&mode==='identity')return <Suspense fallback={panelen}><AanmeldVnextPanelen alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/></Suspense>;
-  return panelen;
+  const telegram=tab==='methods'&&mode==='identity'&&(telegramAan||apparaatAan)?<Suspense fallback={null}>{telegramAan&&<TelegramSectie lang={lang}/>}{apparaatAan&&<ApparaatSectie lang={lang}/>}</Suspense>:null;
+  if(tab==='methods'&&aanmeldVnext&&mode==='identity')return <>{<Suspense fallback={panelen}><AanmeldVnextPanelen alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/></Suspense>}{telegram}</>;
+  return telegram?<>{panelen}{telegram}</>:panelen;
 }

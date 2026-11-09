@@ -11,6 +11,7 @@ import {apparaat} from '../server/platform/audit';
 import {huidigeContext} from '../server/platform/context';
 import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStapOpFout} from './toegang-context';
 import {kritiekeActie} from '../shared/kritieke-acties';
+import {stapOpKanalen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
 
 const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
@@ -518,8 +519,11 @@ export function createAccessPlaneRoutes(deps:{
       // Mag deze actie onthouden worden? «sterk» (rechten intrekken, sleutels, goedkeuren) en de lijst NOOIT_ONTHOUDEN: nee.
       const onthoudMag=body.sterk!==true&&onthoudMagVoorActie(actieVan(body.actie));
       const onthoudTot=Number(onthouden[onthoudSessieId(auth as unknown as StapOpAuth)]||0);
+      // APPARAAT-001: kanalen zonder sleutel op dit apparaat (Telegram, ander apparaat) volgens de bevestigingstabel; nooit voor «sterk».
+      const kanalen=body.sterk===true?null:await stapOpKanalen(auth as never).catch(()=>null);
       return deps.respond({ok:true,email:auth.user.email,naam:String(u.name||'').slice(0,120),foto,
-        methoden:{passkey:passkeys>0,totp:Boolean(totp?.confirmed),herstelcode:Boolean(herstel&&herstel.remaining>0),google:true,codewoord:heeftCodewoord},
+        methoden:{passkey:passkeys>0,totp:Boolean(totp?.confirmed),herstelcode:Boolean(herstel&&herstel.remaining>0),google:true,codewoord:heeftCodewoord,telegram:!!kanalen?.telegram,apparaat:!!kanalen?.apparaat},
+        kanalen:kanalen?{apparaten:kanalen.apparaten,reden:kanalen.reden,eis:kanalen.eis,eisTekst:kanalen.eisTekst}:null,
         geldigTot,maxAgeSeconds:STAP_OP_MS/1000,onthoudMag,onthoudTot,onthoudUren:Math.round(STAP_OP_ONTHOUD_MS/3600000)});
     }],
     // Codewoord als step-up (4.3): alternatief voor passkey/TOTP bij hoog risico.

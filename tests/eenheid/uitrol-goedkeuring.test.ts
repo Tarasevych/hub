@@ -2,7 +2,7 @@ process.env.MR_BEHEERSUBNET = '203.0.113.0/24';
 // Updates goedkeuren met de passkey van de eigenaar (RUNBOOK-VEILIGE-UITROL.md §13): WebAuthn-kern, root-hulp (onafhankelijke
 // controle, replay, eerste sleutel via SSH), mijn-ruimte-uitrol --goedkeuring end-to-end, en het contract van de app
 // (grants, voorbereiden, eigenaar-only, eenmalige challenge, agents keuren nooit goed). Echte handtekeningen via nep-passkey.
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -265,6 +265,79 @@ function uitrolTests(basis: string, check: Check) {
   check('uitrol --goedkeuring: schakelaar uit → geweigerd', status().staat === 'geweigerd' && status().code === 'UIT' && spoorN() === 4);
 }
 
+// ------------------------------------------------------------------------------------------------ C2. stopverzoek van de eigenaar (UITROL-001)
+// De site legt (na step-up) $INBOX/stop.json neer. Root honoreert het alleen vóór het overschakelen; een vervalst verzoek kan hoogstens
+// een installatie afbreken, nooit iets installeren. Запит на зупинку: лише до перемикання; підробка може хіба що перервати встановлення.
+async function stopTests(basis: string, check: Check) {
+  const o = rootOmgeving(basis);
+  const eigenaar = nieuwePasskey(); zetSleutels(o, [sleutelUit(eigenaar)]);
+  const werk = join(o.dir, 'werk'); const statusMap = o.statusDir; const bron = join(o.dir, 'bron'); mkdirSync(bron);
+  const spoor = join(o.dir, 'spoor'); const pidBestand = join(o.dir, 'stub.pid');
+  const stubMaken = (naam: string, regels: string[]) => { const f = join(o.dir, naam); writeFileSync(f, ['#!/bin/bash', `echo "$1 $2" >> "${spoor}"`, `echo $$ > "${pidBestand}"`, ...regels, ''].join('\n')); chmodSync(f, 0o755); return f; };
+  const snel = stubMaken('stub-snel.sh', ['echo "[installeer] stap: npm (55%) npm ci"', 'sleep 3', 'exit 0']);
+  const traag = stubMaken('stub-traag.sh', ['echo "[installeer] stap: npm (55%) npm ci"', 'exec sleep 60']);
+  const laat = stubMaken('stub-laat.sh', ['echo "[installeer] stap: activeren (90%) overschakelen"', 'sleep 6', 'exit 0']);
+  const env = { ...o.env, UITROL_GOEDKEUR_INBOX: o.inbox, UITROL_INBOX: join(o.dir, 'sig-inbox'), UITROL_WERK: werk, UITROL_STATUS_DIR: statusMap, UITROL_ONDERTEKENAARS: join(o.dir, 'geen'), UITROL_INSTALLEER: snel, UITROL_LOCK: join(o.dir, 'lock'), UITROL_GROEP: 'nogroup', UITROL_GOEDKEUR_HULP: `${process.execPath} ${HULP}` };
+  const status = () => { try { return JSON.parse(readFileSync(join(statusMap, 'status.json'), 'utf8')); } catch { return {}; } };
+  const gebeurtenissen = () => { try { return readFileSync(join(statusMap, 'gebeurtenissen.jsonl'), 'utf8').split('\n').filter(Boolean).map((x) => JSON.parse(x)); } catch { return [] as any[]; } };
+  const spoorN = () => (existsSync(spoor) ? readFileSync(spoor, 'utf8').trim().split('\n').filter(Boolean).length : 0);
+  const runLog = () => { const d = join(statusMap, 'runs'); if (!existsSync(d)) return ''; const l = readdirSync(d).filter((n) => n.endsWith('.log')).sort(); return l.length ? readFileSync(join(d, l[l.length - 1]), 'utf8') : ''; };
+  const leg = (versie: string) => { const pk = pakketMaken(bron, versie); const naam = `mijn-ruimte-${versie}.tar.gz`; writeFileSync(join(o.inbox, naam), readFileSync(pk)); writeFileSync(join(o.inbox, `${naam}.goedkeuring.json`), readFileSync(goedkeuringBestand(o, eigenaar, pk, versie))); };
+  const stopJson = (versie: string, extra: Record<string, unknown> = {}) => writeFileSync(join(o.inbox, 'stop.json'), JSON.stringify({ doel: 'stoppen', versie, tijd: new Date().toISOString(), door: 'Тест Власник', reden: 'перевірка зупинки', ...extra }));
+  const draai = (stub = snel) => spawnSync('bash', [UITROL, '--goedkeuring'], { ...alsNiemand(o.dir), env: { ...env, UITROL_INSTALLEER: stub }, encoding: 'utf8' });
+  const wacht = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const leeft = () => { try { process.kill(Number(readFileSync(pidBestand, 'utf8').trim()), 0); return true; } catch { return false; } };
+  // Achtergrondrun: wachten tot de stub loopt, dan iets doen, dan op de uitkomst wachten.
+  const achtergrond = async (stub: string, tijdens: () => void) => {
+    rmSync(pidBestand, { force: true });
+    const proc = spawn('bash', [UITROL, '--goedkeuring'], { ...alsNiemand(o.dir), env: { ...env, UITROL_INSTALLEER: stub }, stdio: 'ignore' });
+    const klaar = new Promise<number | null>((res) => proc.on('exit', (code, sig) => res(code ?? (sig ? 128 : null))));
+    for (let i = 0; i < 150 && !existsSync(pidBestand); i++) await wacht(100);
+    const liep = existsSync(pidBestand);
+    tijdens();
+    const rc = await Promise.race([klaar, wacht(25000).then(() => -1)]);
+    if (rc === -1) proc.kill('SIGKILL');
+    return { liep, rc };
+  };
+
+  // 1. stopverzoek vóór het begin → GESTOPT geweigerd; installer nooit gestart; inbox leeg (ook stop.json weg).
+  leg('20261010-150000'); stopJson('20261010-150000');
+  let r = draai();
+  check('stop vóór het begin: geweigerd GESTOPT, installer niet gestart', r.status === 2 && status().staat === 'geweigerd' && status().code === 'GESTOPT' && spoorN() === 0, `${r.status} ${JSON.stringify(status())} ${r.stderr.slice(-300)}`);
+  check('stop vóór het begin: tekst noemt wie en waarom (uk + nl), «nog vóór het begin»', /Тест Власник/.test(status().uk || '') && /перевірка зупинки/.test(status().uk || '') && /vóór het begin/.test(status().nl || ''), `${status().uk} | ${status().nl}`);
+  check('stop vóór het begin: pakket én stop.json uit de inbox', !readdirSync(o.inbox).some((n) => n.endsWith('.tar.gz') || n === 'stop.json'), readdirSync(o.inbox).join(','));
+
+  // 2. vervalst/vreemd verzoek: andere versie → blijft liggen en stopt niets; verouderd (> 1 u) → genegeerd en opgeruimd; symlink → genegeerd.
+  leg('20261010-150100'); stopJson('20261109-999999');
+  r = draai();
+  check('stop voor een ANDERE versie: installatie gaat gewoon door (klaar), verzoek blijft liggen voor die andere run', status().staat === 'klaar' && spoorN() === 1 && existsSync(join(o.inbox, 'stop.json')), `${JSON.stringify(status())} ${readdirSync(o.inbox).join(',')}`);
+  rmSync(join(o.inbox, 'stop.json'), { force: true });
+  leg('20261010-150200'); stopJson('20261010-150200', { tijd: new Date(Date.now() - 2 * 3600_000).toISOString() });
+  r = draai();
+  check('verouderd stopverzoek (2 u oud): genegeerd (VEROUDERD), installatie klaar, bestand opgeruimd', status().staat === 'klaar' && spoorN() === 2 && !existsSync(join(o.inbox, 'stop.json')) && /stopverzoek genegeerd \(VEROUDERD\)/.test(runLog()), `${JSON.stringify(status())} ${runLog().slice(-300)}`);
+  leg('20261010-150300'); writeFileSync(join(o.dir, 'elders.json'), JSON.stringify({ doel: 'stoppen', versie: '20261010-150300', tijd: new Date().toISOString() })); spawnSync('ln', ['-s', join(o.dir, 'elders.json'), join(o.inbox, 'stop.json')]);
+  r = draai();
+  check('stop.json als symlink: genegeerd, installatie klaar', status().staat === 'klaar' && spoorN() === 3, JSON.stringify(status()));
+  rmSync(join(o.inbox, 'stop.json'), { force: true });
+
+  // 3. tijdens de installatie (55 %, vóór het overschakelen) → procesgroep gestopt, uitkomst mislukt GESTOPT, vorige release actief.
+  leg('20261010-150400');
+  let a = await achtergrond(traag, () => stopJson('20261010-150400'));
+  let st = status();
+  check('stop tijdens installeren (55 %): mislukt GESTOPT, exit 1', a.liep && a.rc === 1 && st.staat === 'mislukt' && st.code === 'GESTOPT', `liep=${a.liep} rc=${a.rc} ${JSON.stringify(st)}`);
+  check('stop tijdens installeren: tekst noemt wie, waarom en het percentage (uk + nl)', /Тест Власник/.test(st.uk || '') && /55 %/.test(st.uk || '') && /gestopt door de eigenaar/i.test(st.nl || ''), `${st.uk} | ${st.nl}`);
+  check('stop tijdens installeren: de installer (sleep) is mee gestopt — hele procesgroep', !leeft());
+  check('stop tijdens installeren: gebeurtenis GESTOPT (waarschuwing) + STOP-regel in het runlogboek, stop.json weg', gebeurtenissen().some((e) => e.code === 'GESTOPT' && e.niveau === 'waarschuwing') && /STOP: eigenaar vraagt te stoppen bij 55 %/.test(runLog()) && !existsSync(join(o.inbox, 'stop.json')), runLog().slice(-400));
+  check('stop tijdens installeren: laatste-versie niet bijgewerkt', !existsSync(join(werk, 'laatste-versie')) || readFileSync(join(werk, 'laatste-versie'), 'utf8').trim() !== '20261010-150400');
+
+  // 4. vanaf het overschakelen (≥ 90 %) → te laat: verzoek gelogd en genegeerd (STOP_TE_LAAT), installatie loopt af als klaar.
+  leg('20261010-150500');
+  a = await achtergrond(laat, () => stopJson('20261010-150500'));
+  st = status();
+  check('stop bij 90 % (overschakelen): te laat — installatie klaar, niet half omgeschakeld', a.liep && a.rc === 0 && st.staat === 'klaar' && st.code === 'OK', `liep=${a.liep} rc=${a.rc} ${JSON.stringify(st)}`);
+  check('stop bij 90 %: gebeurtenis STOP_TE_LAAT (waarschuwing) met uitleg (uk + nl), stop.json weg', gebeurtenissen().some((e) => e.code === 'STOP_TE_LAAT' && e.niveau === 'waarschuwing' && /перемикання/.test(e.uk || '') && /overschakelen/.test(e.nl || '')) && !existsSync(join(o.inbox, 'stop.json')), JSON.stringify(gebeurtenissen().slice(-3)));
+}
+
 // ------------------------------------------------------------------------------------------------ D. app-contract (database + routes)
 async function appTests(basis: string, check: Check) {
   const m = await import('../../backend/uitrol-goedkeuring');
@@ -321,7 +394,7 @@ async function appTests(basis: string, check: Check) {
 
     const u1 = await upload(HELPER, '20261008-150001');
     check('app: voorbereider uploadt in stukken → wacht-op-goedkeuring', u1.klaar?.data?.status === 'wacht-op-goedkeuring', JSON.stringify(u1.begin.data) + JSON.stringify(u1.klaar?.data));
-    check('app: voorcontrole bij «klaar» is opgeslagen en meegegeven (tien controles incl. commit en — sinds UI-010 — manifest, ok)', u1.klaar?.data?.voorcontrole?.ok === true && u1.klaar.data.voorcontrole.controles.length === 10 && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'manifest') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'commit' && c.niveau === 'ok'), JSON.stringify(u1.klaar?.data?.voorcontrole?.controles?.map((c: any) => c.id + ':' + c.niveau)));
+    check('app: voorcontrole bij «klaar» is opgeslagen en meegegeven (elf controles incl. commit, manifest en — UITROL-001 — migratie-proef, ok)', u1.klaar?.data?.voorcontrole?.ok === true && u1.klaar.data.voorcontrole.controles.length === 11 && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'migratie-proef' && c.niveau === 'ok') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'manifest') && u1.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'commit' && c.niveau === 'ok'), JSON.stringify(u1.klaar?.data?.voorcontrole?.controles?.map((c: any) => c.id + ':' + c.niveau)));
     { const slecht = await upload(HELPER, '20261008-150050', 3000, 'SAMENVATTING');
       check('app: pakket zonder SAMENVATTING (geen beschrijving) → afgebroken met VOORCONTROLE_MISLUKT en uitleg, nooit goedkeurbaar',
         slecht.klaar?.data?.status === 'afgebroken' && slecht.klaar.data.code === 'VOORCONTROLE_MISLUKT' && slecht.klaar.data.voorcontrole.controles.some((c: any) => c.id === 'metadata' && c.niveau === 'fout'), JSON.stringify(slecht.klaar?.data));
@@ -401,6 +474,23 @@ async function appTests(basis: string, check: Check) {
     const naam = 'mijn-ruimte-20261008-150001.tar.gz';
     check('app: eigenaar keurt goed met de passkey → pakket + .goedkeuring.json + aanvraag in de goedkeur-inbox', ok.status === 200 && ok.data.status === 'goedgekeurd' && existsSync(join(o.inbox, naam)) && existsSync(join(o.inbox, `${naam}.goedkeuring.json`)) && existsSync(join(o.inbox, 'aanvraag')), JSON.stringify(ok.data));
     check('app: goedkeuring staat in de audit', (await sys.query("SELECT 1 FROM app.audit WHERE action = 'uitrol_voorstel_goedgekeurd' AND details->>'voorstel' = $1", [u1.id]).catch(() => ({ rows: [] }))).rows.length === 1);
+    // UITROL-001: stoppen terwijl root bezig is (run 55 %) → alleen een stop.json in de inbox; pakket en voorstel blijven (root beslist).
+    { const stopPad = join(o.inbox, 'stop.json');
+      check('stop: zonder step-up geweigerd', (await call('POST /api/owner/uitrol/run/stoppen', OWNER, { id: u1.id, reden: 'Verkeerde versie gekozen, stop' })).fout === 'STEP_UP_REQUIRED');
+      stepUp = true;
+      check('stop: zonder reden (≥ 10 tekens) geweigerd', (await call('POST /api/owner/uitrol/run/stoppen', OWNER, { id: u1.id, reden: 'kort' })).fout === 'REDEN_TE_KORT' && !existsSync(stopPad));
+      check('stop: niet-eigenaar kan niet stoppen', (await call('POST /api/owner/uitrol/run/stoppen', HELPER, { id: u1.id, reden: 'Verkeerde versie gekozen, stop' })).status === 403);
+      await sys.query(`INSERT INTO app.uitrol_runs (id, methode, versie, staat, stap, pct, gestart_op, bijgewerkt_op) VALUES ('20261008T150001Z-test0001', 'passkey', '20261008-150001', 'bezig', 'installeren', 55, now(), now())`);
+      const st = await call('POST /api/owner/uitrol/run/stoppen', OWNER, { id: u1.id, reden: 'Verkeerde versie gekozen, stop' });
+      const stopJson = existsSync(stopPad) ? JSON.parse(readFileSync(stopPad, 'utf8')) : null;
+      check('stop: lopende run (55 %) → modus «lopend», stop.json met versie, run, wie en reden', st.status === 200 && st.data.modus === 'lopend' && st.data.pct === 55 && stopJson?.doel === 'stoppen' && stopJson.versie === '20261008-150001' && stopJson.run === '20261008T150001Z-test0001' && /Verkeerde versie/.test(stopJson.reden) && !!stopJson.door, JSON.stringify(st) + JSON.stringify(stopJson));
+      check('stop: pakket + goedkeuring blijven in de inbox (root beslist), voorstel blijft goedgekeurd', existsSync(join(o.inbox, naam)) && existsSync(join(o.inbox, `${naam}.goedkeuring.json`)) && (await sys.query('SELECT status FROM app.uitrol_voorstellen WHERE id = $1', [u1.id])).rows[0].status === 'goedgekeurd');
+      check('stop: aanvraag in de audit (modus, pct, reden)', (await sys.query("SELECT details FROM app.audit WHERE action = 'uitrol_stop_aangevraagd' AND details->>'voorstel' = $1", [u1.id]).catch(() => ({ rows: [] as any[] }))).rows.some((r: any) => r.details?.modus === 'lopend' && Number(r.details?.pct) === 55));
+      await sys.query("UPDATE app.uitrol_runs SET pct = 90 WHERE id = '20261008T150001Z-test0001'");
+      const laat = await call('POST /api/owner/uitrol/run/stoppen', OWNER, { id: u1.id, reden: 'Toch maar niet, te laat?' });
+      check('stop: bij 90 % → modus «te-laat» (root negeert; gezondheidscontrole en terugdraai beslissen)', laat.status === 200 && laat.data.modus === 'te-laat', JSON.stringify(laat.data));
+      stepUp = false;
+      await sys.query("DELETE FROM app.uitrol_runs WHERE id = '20261008T150001Z-test0001'"); rmSync(stopPad, { force: true }); }
     const root1 = hulp(o, 'verifieer-goedkeuring', join(o.inbox, naam), join(o.inbox, `${naam}.goedkeuring.json`), '20261008-150001');
     check('end-to-end: root accepteert precies deze goedkeuring van de app', root1.uit?.ok === true, JSON.stringify(root1.uit));
     check('end-to-end: root weigert dezelfde goedkeuring daarna (replay-opslag van root)', hulp(o, 'verifieer-goedkeuring', join(o.inbox, naam), join(o.inbox, `${naam}.goedkeuring.json`), '20261008-150001').uit?.code === 'HERGEBRUIKT');
@@ -420,6 +510,19 @@ async function appTests(basis: string, check: Check) {
     const ovSsh = await call('POST /api/owner/uitrol/overzicht', OWNER);
     check('app: status.json met methode ssh installeert geen wachtend voorstel', ovSsh.data.voorstellen.find((v: any) => v.id === u2.id)?.status === 'wacht-op-goedkeuring' && ovSsh.data.voorstellen.find((v: any) => v.id === u1.id)?.status === 'geinstalleerd');
     check('app: afwijzen door de eigenaar', (await call('POST /api/owner/uitrol/voorstel/afwijzen', OWNER, { id: u2.id, reden: 'nee' })).data?.status === 'afgewezen');
+    // UITROL-001: stoppen vóórdat root het pakket oppakte → pakket + goedkeuring uit de inbox, voorstel «afgebroken GESTOPT», stop.json als vangnet.
+    { const u3 = await upload(HELPER, '20261008-150009');
+      const uit7 = await call('POST /api/owner/uitrol/voorstel/uitdaging', OWNER, { id: u3.id });
+      const ok3 = await call('POST /api/owner/uitrol/voorstel/goedkeuren', OWNER, { id: u3.id, uitdagingId: uit7.data.uitdagingId, assertie: bevestig(telefoon, uit7.data.publicKey.challenge) });
+      const naam3 = 'mijn-ruimte-20261008-150009.tar.gz';
+      check('stop (inbox): pakket goedgekeurd en in de inbox', ok3.status === 200 && existsSync(join(o.inbox, naam3)), JSON.stringify(ok3));
+      stepUp = true;
+      const st3 = await call('POST /api/owner/uitrol/run/stoppen', OWNER, { versie: '20261008-150009', reden: 'Per ongeluk goedgekeurd, oude build' });
+      stepUp = false;
+      const v3 = (await sys.query('SELECT status, uitkomst_code, uitkomst FROM app.uitrol_voorstellen WHERE id = $1', [u3.id])).rows[0];
+      check('stop (inbox): modus «inbox», pakket + goedkeuring weg, voorstel afgebroken GESTOPT met wie/waarom', st3.status === 200 && st3.data.modus === 'inbox' && !existsSync(join(o.inbox, naam3)) && !existsSync(join(o.inbox, `${naam3}.goedkeuring.json`)) && v3?.status === 'afgebroken' && v3.uitkomst_code === 'GESTOPT' && /oude build/.test(v3.uitkomst?.reden || '') && /зупинено власником/.test(v3.uitkomst?.uk || ''), JSON.stringify(st3) + JSON.stringify(v3));
+      check('stop (inbox): stop.json als vangnet (root pakte het misschien net op) en daarna geen tweede stop meer mogelijk', existsSync(join(o.inbox, 'stop.json')) && (await (async () => { stepUp = true; const r = await call('POST /api/owner/uitrol/run/stoppen', OWNER, { id: u3.id, reden: 'Nog eens proberen te stoppen' }); stepUp = false; return r; })()).fout === 'STATUS_ONGELDIG');
+      rmSync(join(o.inbox, 'stop.json'), { force: true }); }
 
     // Agents: alleen voorbereiden en status.
     check('agents: MCP-hulpmiddelen bevatten geen goedkeuren', m.UITROL_TOOLS.every((t) => !m.isGoedkeurPoging(t.name)) && m.UITROL_TOOLS.length === 5);
@@ -622,7 +725,7 @@ export async function main(): Promise<number> {
     kernTests(check);
     rootTests(basis, check);
     if (spawnSync('python3', ['-V']).error || spawnSync('flock', ['-V']).error) console.log('overgeslagen: python3/flock ontbreekt (uitrol-script)');
-    else uitrolTests(basis, check);
+    else { uitrolTests(basis, check); await stopTests(basis, check); }
     await appTests(basis, check);
     plafondTests(check);
   } catch (err) {

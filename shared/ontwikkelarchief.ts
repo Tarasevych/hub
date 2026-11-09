@@ -8,7 +8,8 @@ const SHA = /^[0-9a-f]{40}$/;
 const HASH = /^[0-9a-f]{64}$/;
 const VERSIE = /^\d{8}-\d{6}$/;
 const TAAK = /^[A-Z][A-Z0-9]{1,9}-\d{3,5}$/;
-const TAK = /^(feature|fix|audit|release)\/[a-z0-9]+(?:-[a-z0-9]+)*-\d{8}-\d{6}$/;
+// TELEGRAM-001: naast de oude Engelse voorvoegsels ook Nederlandse (functie/herstel/controle); oude namen blijven geldig.
+export const TAK = /^(functie|herstel|controle|feature|fix|audit|release)\/[a-z0-9]+(?:-[a-z0-9]+)*-\d{8}-\d{6}$/;
 
 export type OntwikkelArchief = {
   schema: 1;
@@ -30,7 +31,7 @@ export const ontwikkelArchiefRelease = (versie: string) => `https://github.com/$
 export const ontwikkelArchiefApi = (ref: OntwikkelArchief) =>
   `https://api.github.com/repos/${ONTWIKKELARCHIEF_REPO}/contents/${ref.pad}?ref=${ref.commit}`;
 export const ontwikkelReleaseApi = (ref: OntwikkelArchief) =>
-  `https://api.github.com/repos/${ONTWIKKELARCHIEF_REPO}/releases/tags/${ref.release.split('/').at(-1)}`;
+  `https://api.github.com/repos/${ONTWIKKELARCHIEF_REPO}/releases/tags/${ref.release.split('/').pop()}`;
 
 export function leesOntwikkelArchief(ruw: string | null | undefined, versie: string, bronCommit: string): { ref: OntwikkelArchief | null; fouten: string[] } {
   const fouten: string[] = [];

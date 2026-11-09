@@ -1,0 +1,13 @@
+[Unit]
+Description=Mijn Ruimte: nieuwe migraties proberen op een wegwerpkopie van het schema (productiedatabase blijft onaangeroerd)
+Documentation=file:///srv/mijn-ruimte/current/deploy/uitrol/mijn-ruimte-migratie-proef.sh
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mijn-ruimte-migratie-proef
+TimeoutStartSec=10min
+Nice=5
+# Schrijft alleen in de eigen werkmap, de uitslagmap van de site-status en de inbox (verzoek weghalen). De SQL uit het pakket draait
+# via systemd-run als de app-gebruiker met de migratierol (NOSUPERUSER) in een wegwerpdatabase.
+ProtectHome=yes
+PrivateTmp=yes

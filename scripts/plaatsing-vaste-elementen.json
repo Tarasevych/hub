@@ -325,6 +325,18 @@
   {
    "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-right .popover-panel",
    "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/uitrol/uitrol.css :: .ut-terminal[data-volledig]",
+   "reden": "UITROL-001: de installatieterminal schermvullend (knop «На весь екран», Esc sluit) — een door de gebruiker geopend venster, geen vaste knop of balk; op de telefoon de hele viewport (100dvh)."
+  },
+  {
+   "sleutel": "src/uitrol/vereisten.css :: .ut-vr-scrim",
+   "reden": "UITROL-001: modale achtergrond van het venster «Звіт про проблему» (geen knop); zelfde patroon als .ut-modal-schaduw in voorbereiders.css. Op de telefoon een onderaan opgeschoven aanzicht."
+  },
+  {
+   "sleutel": "src/telegram-aanmelden/telegram.css :: .tga-scherm",
+   "reden": "TELEGRAM-AANMELDEN v1: achtergrondlaag van het bevestigingsvenster «Підтвердіть, що це ви» (Telegram/geheime code), modaal over het hele scherm zoals .bevestig-toegang-achter. Geen zwevende knop."
   }
  ],
  "kopReserves": [
