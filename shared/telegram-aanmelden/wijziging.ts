@@ -2,12 +2,12 @@
 //
 // Regels van de eigenaar (punt C):
 //  1. telegramId anders            → VERVALSING: weigeren, loggen, beheer alarmeren (de koppeling zelf blijft ongemoeid).
-//  2. telefoon anders              → GEBLOKKEERD tot volledig opnieuw koppelen (nieuw eigen contact + passkey).
-//  3. gebruikersnaam/naam/foto     → GEPAUZEERD tot bevestiging met passkey op de site.
+//  2. telefoon anders              → GEBLOKKEERD tot volledig opnieuw koppelen (nieuw eigen contact + toegangssleutel).
+//  3. gebruikersnaam/naam/foto     → GEPAUZEERD tot bevestiging met toegangssleutel op de site.
 //  4. nieuw apparaat               → bevestiging (zelfde weg als 3).
 //  5. «Ні, не я» waar dan ook wint van elk «Так» (het veiligere antwoord wint): koppeling uit, sessies eruit, apparaat
 //     geblokkeerd, conflictuitleg tonen, rood alarm naar beheer.
-//  6. Een «Так» in Telegram markeert alleen «gezien»; ALLEEN een passkey op de site bevestigt.
+//  6. Een «Так» in Telegram markeert alleen «gezien»; ALLEEN een toegangssleutel op de site bevestigt.
 //  7. Geen antwoord binnen de termijn → koppeling uit; alleen opnieuw koppelen vanaf nul.
 import type { KoppelStand, Vingerafdruk, VingerafdrukVeld } from './model';
 import { VINGERAFDRUK_VELDEN } from './model';
@@ -67,7 +67,7 @@ export type AntwoordGevolg = {
 };
 
 /**
- * Verwerkt één antwoord. `metPasskey` mag ALLEEN waar zijn als de server net een verse passkey-bevestiging op deze sessie zag.
+ * Verwerkt één antwoord. `metPasskey` mag ALLEEN waar zijn als de server net een verse bevestiging met toegangssleutel op deze sessie zag.
  * Een eindtoestand (bevestigd, geweigerd, verlopen) verandert alleen nog door een «nee» (veiliger) — nooit terug naar «ja».
  */
 export function antwoordVerwerken(t: WijzigingToestand, huidigeStand: KoppelStand, bron: AntwoordBron, antwoord: Antwoord, metPasskey: boolean): AntwoordGevolg {
@@ -89,7 +89,7 @@ export function antwoordVerwerken(t: WijzigingToestand, huidigeStand: KoppelStan
   // Site, «ja»:
   if (!metPasskey) return { toestand: { ...volgende, siteAntwoord: t.siteAntwoord }, koppelStand: huidigeStand, acties: [] };
   if (t.ernst === 'ernstig') {
-    // Telefoon gewijzigd: een passkey alleen is niet genoeg — opnieuw koppelen met een nieuw gedeeld contact.
+    // Telefoon gewijzigd: een toegangssleutel alleen is niet genoeg — opnieuw koppelen met een nieuw gedeeld contact.
     volgende.status = 'bevestigd';
     return { toestand: volgende, koppelStand: 'geblokkeerd', acties: ['opnieuw-koppelen-vereist'] };
   }

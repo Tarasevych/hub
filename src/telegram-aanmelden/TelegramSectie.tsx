@@ -1,7 +1,7 @@
 // «Способи входу» → Telegram (gebruiker). Alles wat u over uw eigen Telegram-koppelingen moet weten en kunnen, op één plek:
 //   • koppelingen met de VOLLEDIGE identiteit (nummer tot het laatste cijfer, @nickname, naam, foto, Telegram-id) — niets gemaskeerd;
 //   • koppelen in 3 stappen, met bij elke stap waarom het gevraagd wordt (eigen nummer delen is verplicht);
-//   • gewijzigde gegevens: kaart met oud → nieuw, «Ні, це не я» meteen, «Так, це я» pas na aftelling (+ vinkje bij ernstig) en passkey;
+//   • gewijzigde gegevens: kaart met oud → nieuw, «Ні, це не я» meteen, «Так, це я» pas na aftelling (+ vinkje bij ernstig) en toegangssleutel;
 //   • de bevestigingstabel (welke methode bevestigt welke handeling) en de geheime code met sterktemeter en alarmcode.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { foutTekst, identiteitCtx, tgPost, type Ctx } from './api';
@@ -62,7 +62,7 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
       <div><h2>Telegram</h2><p>{tr(lang, `Вхід і підтвердження через ваш власний Telegram (бот @${mijn.bot}).`, `Aanmelden en bevestigen via uw eigen Telegram (bot @${mijn.bot}).`)}</p></div>
       <span className={`tga-stand tga-stand-${storing ? 'storing' : mijn.status.stand}`}>{storing ? tr(lang, 'Тимчасово не працює', 'Tijdelijk buiten werking') : mijn.status.stand === 'werkt' ? tr(lang, 'Працює', 'Werkt') : mijn.status.stand === 'traag' ? tr(lang, 'Повільно', 'Traag') : tr(lang, 'Не налаштовано', 'Niet ingesteld')}</span>
     </header>
-    {storing && <p className='tga-let'>{mijn.status.soort === 'lang' ? tr(lang, 'Telegram не відповідає вже понад 10 хвилин. Ваші дії підтверджуються іншими способами (ключ доступу) — нічого не заблоковано.', 'Telegram antwoordt al meer dan 10 minuten niet. Uw handelingen worden met andere methoden (passkey) bevestigd — niets is geblokkeerd.')
+    {storing && <p className='tga-let'>{mijn.status.soort === 'lang' ? tr(lang, 'Telegram не відповідає вже понад 10 хвилин. Ваші дії підтверджуються іншими способами (ключ доступу) — нічого не заблоковано.', 'Telegram antwoordt al meer dan 10 minuten niet. Uw handelingen worden met andere methoden (toegangssleutel) bevestigd — niets is geblokkeerd.')
       : tr(lang, 'Telegram тимчасово не відповідає. Зазвичай це минає за кілька хвилин.', 'Telegram antwoordt tijdelijk niet. Meestal is dat binnen enkele minuten voorbij.')}</p>}
     {melding && <p className='tga-ok' role='status'>{melding}</p>}
     {fout && <p className='tga-fout' role='alert'>{fout}</p>}
@@ -83,7 +83,7 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
       <h3>{tr(lang, 'Заблоковані пристрої', 'Geblokkeerde apparaten')}</h3>
       <p className='tga-waarom'>{tr(lang, 'З цих пристроїв вхід через Telegram неможливий, бо на них відхилили вхід («Ні, це не я») або зміну. Розблокуйте, лише якщо це справді ваш пристрій.', 'Vanaf deze apparaten kan niemand met Telegram aanmelden, omdat daar een aanmelding («Nee, dit ben ik niet») of wijziging werd geweigerd. Hef de blokkade alleen op als het echt uw apparaat is.')}</p>
       <ul className='tga-stap-lijst'>{mijn.geblokkeerd.map((g) => <li key={g.apparaat} className='tga-rij'><span>⛔ {g.apparaat} · {tijd(g.op, lang)}</span>
-        <button type='button' className='tga-knop' onClick={() => void doeMet(() => tgPost(ctx, '/api/owner/telegram/deblokkeren', { apparaat: g.apparaat }), tr(lang, 'Пристрій розблоковано.', 'Apparaat gedeblokkeerd.'))}>{tr(lang, 'Розблокувати (ключ доступу)', 'Deblokkeren (passkey)')}</button></li>)}</ul>
+        <button type='button' className='tga-knop' onClick={() => void doeMet(() => tgPost(ctx, '/api/owner/telegram/deblokkeren', { apparaat: g.apparaat }), tr(lang, 'Пристрій розблоковано.', 'Apparaat gedeblokkeerd.'))}>{tr(lang, 'Розблокувати (ключ доступу)', 'Deblokkeren (toegangssleutel)')}</button></li>)}</ul>
     </div>}
 
     <Matrix ctx={ctx} lang={lang} rijen={mijn.matrix} beschikbaar={mijn.beschikbaar} opslaan={(body) => doeMet(() => tgPost(ctx, '/api/owner/telegram/matrix', body), tr(lang, 'Таблицю підтверджень збережено.', 'Bevestigingstabel opgeslagen.'))} />
@@ -184,7 +184,7 @@ function KoppelWizard({ ctx, lang, bot, aftel, uitvoeren, klaar }: { ctx: Ctx; l
 
   return <div className='tga-wizard' aria-live='polite'>
     <ol className='tga-wizard-stappen' aria-label={tr(lang, 'Кроки', 'Stappen')}>
-      {[tr(lang, 'Назва', 'Naam'), tr(lang, 'Telegram і номер', 'Telegram en nummer'), tr(lang, 'Перевірка й ключ доступу', 'Controle en passkey')].map((s, i) => <li key={s} aria-current={stap === i + 1 ? 'step' : undefined} className={stap > i ? 'klaar' : ''}>{i + 1}. {s}</li>)}
+      {[tr(lang, 'Назва', 'Naam'), tr(lang, 'Telegram і номер', 'Telegram en nummer'), tr(lang, 'Перевірка й ключ доступу', 'Controle en toegangssleutel')].map((s, i) => <li key={s} aria-current={stap === i + 1 ? 'step' : undefined} className={stap > i ? 'klaar' : ''}>{i + 1}. {s}</li>)}
     </ol>
     {stap === 1 && <div className='tga-blok'>
       <label className='tga-veld'>{tr(lang, 'Як назвати цей Telegram (бачите лише ви)', 'Hoe heet deze Telegram (alleen voor u)')}<input value={naam} maxLength={40} onChange={(e) => setNaam(e.target.value)} /></label>
@@ -194,13 +194,13 @@ function KoppelWizard({ ctx, lang, bot, aftel, uitvoeren, klaar }: { ctx: Ctx; l
     {stap === 2 && verzoek && <div className='tga-blok'>
       <a className='tga-aanmeld-knop' href={verzoek.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={20} /><span>{tr(lang, `Відкрити @${bot} у Telegram`, `@${bot} openen in Telegram`)}</span></a>
       <ol className='tga-stappen'>
-        <li>{tr(lang, 'Натисніть «Почати» у чаті з ботом.', 'Tik «Start» in de chat met de bot.')}</li>
+        <li>{tr(lang, 'Натисніть «Почати» у чаті з ботом.', 'Tik in de chat met de bot op de knop onderaan om te beginnen.')}</li>
         <li>{tr(lang, 'Натисніть кнопку «📱 Поділитися моїм номером». Ввести номер вручну не можна.', 'Tik de knop «📱 Mijn nummer delen». Een nummer typen kan niet.')}</li>
         <li>{tr(lang, 'Поверніться сюди — ми покажемо, що отримали.', 'Kom hier terug — we tonen wat we ontvingen.')}</li>
       </ol>
       <p className='tga-waarom'>{tr(lang, 'Навіщо номер: Telegram надсилає лише ВАШ власний номер, підтверджений ним самим. Якщо колись хтось захопить ваш Telegram і змінить номер, прив’язку буде одразу заблоковано — він не отримає доступу.',
         'Waarom het nummer: Telegram stuurt alleen UW eigen nummer, door Telegram zelf bevestigd. Neemt iemand ooit uw Telegram over en wijzigt het nummer, dan wordt de koppeling meteen geblokkeerd — hij krijgt geen toegang.')}</p>
-      <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {stand === 'wacht-telefoon' ? tr(lang, 'Бот отримав «Почати». Чекаємо на ваш номер…', 'De bot kreeg «Start». Wachten op uw nummer…') : tr(lang, 'Чекаємо на Telegram…', 'Wachten op Telegram…')}</p>
+      <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {stand === 'wacht-telefoon' ? tr(lang, 'Бот отримав «Почати». Чекаємо на ваш номер…', 'De bot is gestart. Wachten op uw nummer…') : tr(lang, 'Чекаємо на Telegram…', 'Wachten op Telegram…')}</p>
       {stand === 'verlopen' && <p className='tga-fout'>{tr(lang, 'Час (10 хв) вийшов. Почніть знову.', 'De tijd (10 min) is om. Begin opnieuw.')}</p>}
     </div>}
     {stap === 3 && id && <div className='tga-blok'>
@@ -210,7 +210,7 @@ function KoppelWizard({ ctx, lang, bot, aftel, uitvoeren, klaar }: { ctx: Ctx; l
         {KOPPEL_RECHTEN.map((r) => <label key={r}><input type='checkbox' checked={rechten.includes(r)} onChange={(e) => setRechten(e.target.checked ? [...rechten, r] : rechten.filter((x) => x !== r))} /> <strong>{lang === 'nl' ? RECHT_NAMEN[r][1] : RECHT_NAMEN[r][0]}</strong> — {lang === 'nl' ? RECHT_NAMEN[r][3] : RECHT_NAMEN[r][2]}</label>)}
       </fieldset>
       <label className='tga-vinkje'><input type='checkbox' checked={mijn} onChange={(e) => setMijnTg(e.target.checked)} /> {tr(lang, 'Це мій номер і мій обліковий запис Telegram, і лише я маю до нього доступ.', 'Dit is mijn nummer en mijn Telegram-account, en alleen ik heb er toegang toe.')}</label>
-      <p className='tga-waarom'>{tr(lang, 'Наступний крок попросить ваш ключ доступу — так ніхто з доступом лише до цього браузера не зможе прив’язати свій Telegram.', 'De volgende stap vraagt uw passkey — zo kan niemand met alleen toegang tot deze browser zijn eigen Telegram koppelen.')}</p>
+      <p className='tga-waarom'>{tr(lang, 'Наступний крок попросить ваш ключ доступу — так ніхто з доступом лише до цього браузера не зможе прив’язати свій Telegram.', 'De volgende stap vraagt uw toegangssleutel — zo kan niemand met alleen toegang tot deze browser zijn eigen Telegram koppelen.')}</p>
       <AftelKnop lang={lang} seconden={aftel} bezig={bezig} uit={!mijn || rechten.length === 0} onClick={() => void bevestigen()}>{tr(lang, 'Так, це мій Telegram — прив’язати', 'Ja, dit is mijn Telegram — koppelen')}</AftelKnop>
       <button type='button' className='tga-knop tga-knop-gevaar' onClick={annuleren}>{tr(lang, 'Ні, це не мій', 'Nee, dit is niet de mijne')}</button>
     </div>}
@@ -233,7 +233,7 @@ function WijzigingKaart({ ctx, lang, w, k, klaar }: { ctx: Ctx; lang: Lang; w: W
     try {
       const r = await tgPost<{ status: string; conflict: boolean; opnieuwKoppelen: boolean }>(ctx, '/api/owner/telegram/wijziging/antwoord', { id: w.id, antwoord: a, begrepen });
       setUitkomst(r.conflict ? tr(lang, '⚠️ Конфлікт: в одному місці підтвердили, в іншому — ні. Діє «Ні»: прив’язку вимкнено. Якщо це були ви — прив’яжіть знову.', '⚠️ Conflict: op de ene plek bevestigd, op de andere niet. «Nee» wint: de koppeling is uitgeschakeld. Was u het wel — koppel opnieuw.')
-        : r.opnieuwKoppelen ? tr(lang, 'Потрібне повторне прив’язування (новий номер + ключ доступу).', 'Opnieuw koppelen is nodig (nieuw nummer + passkey).')
+        : r.opnieuwKoppelen ? tr(lang, 'Потрібне повторне прив’язування (новий номер + ключ доступу).', 'Opnieuw koppelen is nodig (nieuw nummer + toegangssleutel).')
           : a === 'ja' ? tr(lang, 'Зміну підтверджено — Telegram знову працює.', 'Wijziging bevestigd — Telegram werkt weer.') : tr(lang, 'Прив’язку вимкнено, сесії через цей Telegram завершено.', 'Koppeling uitgeschakeld, sessies via deze Telegram beëindigd.'));
       window.setTimeout(klaar, 2500);
     } catch (e) { setFout(foutTekst(lang, e)); }
@@ -248,7 +248,7 @@ function WijzigingKaart({ ctx, lang, w, k, klaar }: { ctx: Ctx; lang: Lang; w: W
       {ernstig && <label className='tga-vinkje'><input type='checkbox' checked={begrepen} onChange={(e) => setBegrepen(e.target.checked)} /> {tr(lang, 'Я сам(а) зробив(ла) цю зміну і розумію: якщо це не так, підтвердження дасть доступ чужій людині.', 'Ik heb deze wijziging zelf gedaan en begrijp: is dat niet zo, dan geeft bevestigen een vreemde toegang.')}</label>}
       <div className='tga-rij'>
         <button type='button' className='tga-knop tga-knop-gevaar' disabled={bezig} onClick={() => void antwoord('nee')}>{tr(lang, 'Ні, це не я', 'Nee, dit ben ik niet')}</button>
-        {w.ernst !== 'vervalsing' && aftel !== null && <AftelKnop lang={lang} seconden={aftel} bezig={bezig} uit={ernstig && !begrepen} onClick={() => void antwoord('ja')}>{tr(lang, 'Так, це я (ключ доступу)', 'Ja, dit ben ik (passkey)')}</AftelKnop>}
+        {w.ernst !== 'vervalsing' && aftel !== null && <AftelKnop lang={lang} seconden={aftel} bezig={bezig} uit={ernstig && !begrepen} onClick={() => void antwoord('ja')}>{tr(lang, 'Так, це я (ключ доступу)', 'Ja, dit ben ik (toegangssleutel)')}</AftelKnop>}
       </div>
       <p className='tga-klein'>{tr(lang, '«Ні» діє одразу й завжди переважає — навіть якщо в Telegram натиснули «Так».', '«Nee» werkt meteen en wint altijd — ook als in Telegram «Ja» werd getikt.')}</p>
     </>}
@@ -266,7 +266,7 @@ function Matrix({ lang, rijen, beschikbaar, opslaan }: { ctx: Ctx; lang: Lang; r
   return <div className='tga-matrix'>
     <h3>{tr(lang, 'Чим підтверджувати дії', 'Waarmee handelingen bevestigen')}</h3>
     <p className='tga-waarom'>{tr(lang, 'Ви обираєте, чим підтверджувати кожну дію. Мінімум задає адміністратор; найчутливіші дії завжди потребують ключа доступу — навіть якщо хтось заволодіє вашим Telegram, цього не вистачить.',
-      'U kiest waarmee elke handeling bevestigd wordt. Het minimum zet de beheerder; de gevoeligste handelingen vragen altijd een passkey — wie uw Telegram overneemt, komt daarmee niet verder.')}</p>
+      'U kiest waarmee elke handeling bevestigd wordt. Het minimum zet de beheerder; de gevoeligste handelingen vragen altijd een toegangssleutel — wie uw Telegram overneemt, komt daarmee niet verder.')}</p>
     <div className='tga-rij'>
       {(['standaard', 'veiligst', 'telegram-overal'] as const).map((v) => <button key={v} type='button' className='tga-knop' disabled={bezig} onClick={() => void doe(() => opslaan({ voorinstelling: v }))}>
         {v === 'standaard' ? tr(lang, 'Як радить адміністратор', 'Zoals de beheerder aanraadt') : v === 'veiligst' ? tr(lang, 'Найбезпечніше', 'Veiligst') : tr(lang, 'Telegram скрізь, де можна', 'Telegram waar het mag')}</button>)}
@@ -274,7 +274,7 @@ function Matrix({ lang, rijen, beschikbaar, opslaan }: { ctx: Ctx; lang: Lang; r
     <table><thead><tr><th>{tr(lang, 'Дія', 'Handeling')}</th><th>{tr(lang, 'Чим підтверджувати', 'Bevestigen met')}</th></tr></thead><tbody>
       {rijen.map((r) => {
         const soort = { sleutel: r.sleutel, naam: r.naam, minimum: r.minimum, standaard: r.standaard, gevoelig: r.gevoelig, ingebouwd: true } as ActieSoort;
-        return <tr key={r.sleutel}><td>{tekstIn(r.naam, lang)}{r.gevoelig && <small className='tga-klein'> · {tr(lang, 'завжди + ключ доступу', 'altijd + passkey')}</small>}</td>
+        return <tr key={r.sleutel}><td>{tekstIn(r.naam, lang)}{r.gevoelig && <small className='tga-klein'> · {tr(lang, 'завжди + ключ доступу', 'altijd + toegangssleutel')}</small>}</td>
           <td><select value={keuzeToegestaan(soort, keuzes[r.sleutel]) ? keuzes[r.sleutel] : soort.minimum} onChange={(e) => setKeuzes({ ...keuzes, [r.sleutel]: e.target.value as KeuzeId })} aria-label={tekstIn(r.naam, lang)}>
             {KEUZE_IDS.filter((k) => keuzeToegestaan(soort, k)).map((k) => <option key={k} value={k} disabled={!haalbaar(k)}>{tekstIn(KEUZE_NAMEN[k], lang)}{!haalbaar(k) ? tr(lang, ' (спершу налаштуйте)', ' (eerst instellen)') : ''}</option>)}
           </select></td></tr>;
@@ -297,7 +297,7 @@ function GeheimeCode({ lang, code, telefoons, instellen, verwijderen, herstellen
     <h3>{tr(lang, 'Таємний код', 'Geheime code')}</h3>
     <p className='tga-waarom'>{tr(lang, 'Додатковий захист: навіть з вашим Telegram ніхто не увійде без коду, який знаєте лише ви. Код вводиться лише на сайті — ніколи в чаті.', 'Extra bescherming: ook met uw Telegram komt niemand binnen zonder de code die alleen u kent. De code typt u alleen op de site — nooit in de chat.')}</p>
     <p>{code.ingesteld ? (code.uitgeschakeld ? tr(lang, `Вимкнено (${redenNaam(lang, code.reden) || 'безпека'}).`, `Uitgeschakeld (${redenNaam(lang, code.reden) || 'beveiliging'}).`) : code.pauzeTot && new Date(code.pauzeTot).getTime() > Date.now() ? tr(lang, `Призупинено до ${tijd(code.pauzeTot, lang)} після невдалих спроб.`, `Gepauzeerd tot ${tijd(code.pauzeTot, lang)} na mislukte pogingen.`) : tr(lang, `Налаштовано${code.alarm ? ' · є тривожний код' : ''}.`, `Ingesteld${code.alarm ? ' · alarmcode aanwezig' : ''}.`)) : tr(lang, 'Не налаштовано.', 'Niet ingesteld.')}</p>
-    {code.ingesteld && code.uitgeschakeld && <button type='button' className='tga-knop' disabled={bezig} onClick={() => void doe(herstellen)}>{tr(lang, 'Відновити код (ключ доступу)', 'Code herstellen (passkey)')}</button>}
+    {code.ingesteld && code.uitgeschakeld && <button type='button' className='tga-knop' disabled={bezig} onClick={() => void doe(herstellen)}>{tr(lang, 'Відновити код (ключ доступу)', 'Code herstellen (toegangssleutel)')}</button>}
     {!open ? <div className='tga-rij'>
       <button type='button' className='tga-knop' onClick={() => setOpen(true)}>{code.ingesteld ? tr(lang, 'Змінити код', 'Code wijzigen') : tr(lang, 'Налаштувати код', 'Code instellen')}</button>
       {code.ingesteld && <button type='button' className='tga-knop tga-knop-gevaar' disabled={bezig} onClick={() => void doe(verwijderen)}>{tr(lang, 'Видалити код', 'Code verwijderen')}</button>}
@@ -311,7 +311,7 @@ function GeheimeCode({ lang, code, telefoons, instellen, verwijderen, herstellen
       <p className='tga-klein'>{tr(lang, 'Якщо вас змушують увійти — введіть тривожний код. Код буде «прийнято» без жодного попередження, але вхід не відкриється (виглядатиме як звичайна невдача), усі прив’язки Telegram буде вимкнено, а адміністратор отримає тривогу.', 'Wordt u gedwongen aan te melden — typ de alarmcode. De code wordt zonder waarschuwing «aanvaard», maar de aanmelding opent niet (het lijkt een gewone mislukking), alle Telegram-koppelingen worden uitgezet en de beheerder krijgt een alarm.')}</p>
       {alarmZwak && <p className='tga-fout'>{codeRedenTekst(alarmZwak, lang, code.minLengte, code.maxLengte)}</p>}
       {alarm && alarm === c1 && <p className='tga-fout'>{tr(lang, 'Тривожний код має відрізнятися від основного.', 'De alarmcode moet anders zijn dan de gewone code.')}</p>}
-      <div className='tga-rij'><button type='submit' className='tga-knop tga-knop-hoofd' disabled={!klaar || bezig}>{tr(lang, 'Зберегти (ключ доступу)', 'Opslaan (passkey)')}</button><button type='button' className='tga-knop' onClick={() => setOpen(false)}>{tr(lang, 'Скасувати', 'Annuleren')}</button></div>
+      <div className='tga-rij'><button type='submit' className='tga-knop tga-knop-hoofd' disabled={!klaar || bezig}>{tr(lang, 'Зберегти (ключ доступу)', 'Opslaan (toegangssleutel)')}</button><button type='button' className='tga-knop' onClick={() => setOpen(false)}>{tr(lang, 'Скасувати', 'Annuleren')}</button></div>
     </form>}
   </div>;
 }

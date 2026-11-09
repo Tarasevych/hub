@@ -1,5 +1,5 @@
 // Client voor de Telegram-routes. Twee vervolgstappen die de server kan vragen:
-//   403 STEP_UP_PASSKEY_REQUIRED   → venster «Підтвердіть доступ» met ALLEEN passkey (Google/TOTP tellen hier niet), daarna één keer opnieuw;
+//   403 STEP_UP_PASSKEY_REQUIRED   → venster «Підтвердіть доступ» met ALLEEN toegangssleutel (Google/TOTP tellen hier niet), daarna één keer opnieuw;
 //   403 TELEGRAM_BEVESTIGING_NODIG → de aanroeper toont <Bevestigen> (Telegram-knop of geheime code) en probeert dan opnieuw.
 import { api, ApiError } from '../platform/client';
 import { bevestigToegang } from '../platform/stap-op';
@@ -52,7 +52,7 @@ const FOUTEN: Record<string, [string, string]> = {
   NOG_NIET_KLAAR: ['Спершу завершіть кроки в Telegram.', 'Rond eerst de stappen in Telegram af.'],
   KOPPELING_ONBEKEND: ['Прив’язку не знайдено.', 'Koppeling niet gevonden.'],
   LAATSTE_METHODE: ['Це ваш останній спосіб входу — спершу додайте інший.', 'Dit is uw laatste aanmeldmethode — voeg eerst een andere toe.'],
-  PASSKEY_GEANNULEERD: ['Підтвердження ключем доступу скасовано — нічого не змінено.', 'Bevestiging met passkey geannuleerd — er is niets gewijzigd.'],
+  PASSKEY_GEANNULEERD: ['Підтвердження ключем доступу скасовано — нічого не змінено.', 'Bevestiging met toegangssleutel geannuleerd — er is niets gewijzigd.'],
   TE_SNEL: ['Зачекайте, доки закінчиться відлік, і прочитайте пояснення.', 'Wacht tot het aftellen klaar is en lees de uitleg.'],
   NIET_BEGREPEN: ['Позначте, що ви розумієте наслідки.', 'Vink aan dat u de gevolgen begrijpt.'],
   CODE_ZWAK: ['Код надто простий.', 'De code is te eenvoudig.'],
@@ -61,7 +61,7 @@ const FOUTEN: Record<string, [string, string]> = {
   METHODE_ONBESCHIKBAAR: ['Потрібний спосіб підтвердження зараз не працює. Скористайтеся іншим дозволеним способом.', 'De nodige bevestigingsmethode werkt nu niet. Gebruik een andere toegestane manier.'],
   TELEGRAM_NIET_BEREIKBAAR: ['Не вдалося надіслати запит у Telegram. Перевірте, що бот не заблоковано, або підтвердьте іншим способом.', 'Het verzoek kon niet naar Telegram. Controleer dat de bot niet geblokkeerd is, of bevestig op een andere manier.'],
   METHODE_STORING_LANG: ['Telegram не відповідає вже понад 10 хвилин. Увійдіть іншим способом — ми повідомимо, щойно запрацює.', 'Telegram antwoordt al meer dan 10 minuten niet. Meld u op een andere manier aan — we laten het weten zodra het werkt.'],
-  METHODE_STORING_VAST: ['Вхід через Telegram зараз не працює, і повторна спроба не допоможе. Скористайтеся Google або ключем доступу.', 'Aanmelden met Telegram werkt nu niet en opnieuw proberen helpt niet. Gebruik Google of uw passkey.'],
+  METHODE_STORING_VAST: ['Вхід через Telegram зараз не працює, і повторна спроба не допоможе. Скористайтеся Google або ключем доступу.', 'Aanmelden met Telegram werkt nu niet en opnieuw proberen helpt niet. Gebruik Google of uw toegangssleutel.'],
   AANMELDEN_MISLUKT: ['Не вдалося завершити вхід. Спробуйте інший спосіб.', 'De aanmelding kon niet worden afgerond. Probeer een andere manier.'],
   LOGIN_BINDING_MISMATCH: ['Вхід почато в іншому браузері чи вкладці. Почніть знову тут.', 'De aanmelding begon in een andere browser of tab. Begin hier opnieuw.'],
   GEEN_EIGEN_KOPPELING: ['Спершу прив’яжіть власний Telegram у «Способах входу».', 'Koppel eerst uw eigen Telegram bij «Aanmeldmethoden».'],

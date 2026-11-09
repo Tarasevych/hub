@@ -1,14 +1,15 @@
 // «Увійти через Telegram» op het aanmeldscherm (vlag telegram-aanmelden-v1; zonder vlag/sleutel toont de server zichtbaar=false
 // en staat hier NIETS). Stroom:
 //   1. start → server maakt dezelfde aanmeldtransactie als Google (bindingscookie voor DIT tabblad) + een eenmalig verzoek;
-//   2. de gebruiker opent de bot (deeplink t.me/<bot>?start=i_<id>) of het officiële Login Widget (eigen mini-pagina);
+//   2. de gebruiker opent de bot (directe verwijzing t.me/<bot>?start=i_<id>) of het officiële aanmeldvenster (eigen mini-pagina);
 //   3. in Telegram: kaart met apparaat, plaats en tijd → «Так, це я» (na aftelling) of «Ні, це не я» (blokkeert dit apparaat);
 //   4. deze pagina leest elke 2 s de stand; vraagt het account een geheime code, dan hier invullen (nooit in de chat);
-//   5. voltooien → sessie zoals bij Google (zonder step-up: gevoelige acties vragen daarna nog een passkey).
+//   5. voltooien → sessie zoals bij Google (zonder extra bevestiging: gevoelige acties vragen daarna nog een toegangssleutel).
 // Dubbel tikken doet niets, elke fout zegt eerlijk of opnieuw proberen zin heeft.
 import { useEffect, useRef, useState } from 'react';
 import { ecosystemTabContext } from '../tab-context';
-import { foutCode, foutTekst, openbaarGet, openbaarPost } from './api';
+import { foutCode, foutTekst, openbaarPost } from './api';
+import { laadAanmeldConfig } from './aanmeld-config';
 import TelegramLogo from './TelegramLogo';
 import { useEenmalig } from './Bevestigen';
 import './telegram.css';
@@ -35,8 +36,8 @@ export default function AanmeldTelegram({ lang, remember = true }: { lang: Lang;
 
   useEffect(() => {
     let actief = true;
-    openbaarGet<Config>('/api/aanmelden/telegram/config').then((c) => { if (actief) setCfg(c); }).catch(() => { if (actief) setCfg(null); });
-    // Terug van het Login Widget (?tg_inlog=<id>) of de pagina herladen tijdens het wachten: verder waar we waren.
+    void laadAanmeldConfig().then((c) => { if (actief) setCfg(c as Config | null); });
+    // Terug van het aanmeldvenster (?tg_inlog=<id>) of de pagina herladen tijdens het wachten: verder waar we waren.
     const url = new URL(location.href);
     const terug = url.searchParams.get('tg_inlog');
     const terugFout = url.searchParams.get('tg_fout');
@@ -45,7 +46,7 @@ export default function AanmeldTelegram({ lang, remember = true }: { lang: Lang;
     if (l && (!terug || terug === l.id) && new Date(l.verlooptOp).getTime() > Date.now()) setLopend(l);
     if (terugFout) setFout(terugFout === 'VERLOPEN' ? tr(lang, 'Підтвердження Telegram застаріло. Почніть знову.', 'De Telegram-bevestiging is verouderd. Begin opnieuw.')
       : terugFout === 'APPARAAT_GEBLOKKEERD' ? tr(lang, 'Цей пристрій заблоковано для входу через Telegram. Увійдіть через Google.', 'Dit apparaat is geblokkeerd voor aanmelden met Telegram. Meld u aan met Google.')
-      : terugFout === 'GEPAUZEERD' ? tr(lang, 'Вхід через цей Telegram призупинено: підтвердьте зміну даних на сайті ключем доступу.', 'Aanmelden met deze Telegram staat op pauze: bevestig de gewijzigde gegevens op de site met uw passkey.')
+      : terugFout === 'GEPAUZEERD' ? tr(lang, 'Вхід через цей Telegram призупинено: підтвердьте зміну даних на сайті ключем доступу.', 'Aanmelden met deze Telegram staat op pauze: bevestig de gewijzigde gegevens op de site met uw toegangssleutel.')
       : terugFout === 'NIET_GEKOPPELD' ? tr(lang, 'Цей Telegram не прив’язано до жодного облікового запису. Спершу увійдіть через Google і прив’яжіть його у «Способах входу».', 'Deze Telegram is aan geen enkel account gekoppeld. Meld u eerst aan met Google en koppel hem bij «Aanmeldmethoden».')
         : tr(lang, 'Telegram не підтвердив вхід. Спробуйте ще раз або іншим способом.', 'Telegram bevestigde de aanmelding niet. Probeer opnieuw of op een andere manier.'));
     return () => { actief = false; };
@@ -107,7 +108,7 @@ export default function AanmeldTelegram({ lang, remember = true }: { lang: Lang;
       setCode('');
       if (r.ok) { setCodeNodig(false); return; }
       setFout(r.uitkomst === 'pauze' ? tr(lang, 'Забагато невдалих спроб — код призупинено. Увійдіть іншим способом або спробуйте пізніше.', 'Te veel mislukte pogingen — de code is gepauzeerd. Meld u op een andere manier aan of probeer later.')
-        : r.uitkomst === 'uit' ? tr(lang, 'Код вимкнено. Увійдіть через Google і відновіть його з ключем доступу.', 'De code is uitgeschakeld. Meld u aan met Google en herstel hem met uw passkey.')
+        : r.uitkomst === 'uit' ? tr(lang, 'Код вимкнено. Увійдіть через Google і відновіть його з ключем доступу.', 'De code is uitgeschakeld. Meld u aan met Google en herstel hem met uw toegangssleutel.')
           : tr(lang, 'Код не підходить.', 'De code klopt niet.'));
     } catch (e) { setFout(foutTekst(lang, e)); }
   });
@@ -126,10 +127,10 @@ export default function AanmeldTelegram({ lang, remember = true }: { lang: Lang;
       : tr(lang, 'Telegram тимчасово не відповідає. Спробуйте за хвилину або увійдіть через Google.', 'Telegram antwoordt tijdelijk niet. Probeer over een minuut of meld u aan met Google.')}</p>}
     {stand === 'geweigerd' && <p className='tga-fout' role='alert'>{
       reden === 'niet-ik' ? tr(lang, 'Вхід відхилено в Telegram («Ні, це не я»), цей пристрій заблоковано для входу через Telegram. Якщо це були ви — увійдіть через Google.', 'Aanmelding geweigerd in Telegram («Nee, dit ben ik niet»); dit apparaat is geblokkeerd voor Telegram. Was u het wel — meld u aan met Google.')
-        : reden === 'passkey-nodig' ? tr(lang, 'Telegram підтвердив, але для цього пристрою (або облікового запису) ваші налаштування вимагають ще ключ доступу. Увійдіть через Google і підтвердьте ключем доступу — потім цей пристрій стане відомим.', 'Telegram bevestigde, maar voor dit apparaat (of account) vragen uw instellingen ook een passkey. Meld u aan met Google en bevestig met uw passkey — daarna is dit apparaat bekend.')
+        : reden === 'passkey-nodig' ? tr(lang, 'Telegram підтвердив, але для цього пристрою (або облікового запису) ваші налаштування вимагають ще ключ доступу. Увійдіть через Google і підтвердьте ключем доступу — потім цей пристрій стане відомим.', 'Telegram bevestigde, maar voor dit apparaat (of account) vragen uw instellingen ook een toegangssleutel. Meld u aan met Google en bevestig met uw toegangssleutel — daarna is dit apparaat bekend.')
           : reden === 'niet-gekoppeld' ? tr(lang, 'Цей Telegram не прив’язано до жодного облікового запису. Увійдіть через Google і прив’яжіть його у «Способах входу».', 'Deze Telegram is aan geen enkel account gekoppeld. Meld u aan met Google en koppel hem bij «Aanmeldmethoden».')
             : reden === 'apparaat-geblokkeerd' ? tr(lang, 'Цей пристрій заблоковано для входу через Telegram (раніше на ньому відхилили вхід). Увійдіть через Google.', 'Dit apparaat is geblokkeerd voor aanmelden met Telegram (eerder werd hier een aanmelding geweigerd). Meld u aan met Google.')
-            : reden === 'gepauzeerd' ? tr(lang, 'Вхід через цей Telegram призупинено: дані Telegram змінилися. Увійдіть через Google і підтвердьте зміну ключем доступу.', 'Aanmelden met deze Telegram staat op pauze: de Telegram-gegevens zijn gewijzigd. Meld u aan met Google en bevestig de wijziging met uw passkey.')
+            : reden === 'gepauzeerd' ? tr(lang, 'Вхід через цей Telegram призупинено: дані Telegram змінилися. Увійдіть через Google і підтвердьте зміну ключем доступу.', 'Aanmelden met deze Telegram staat op pauze: de Telegram-gegevens zijn gewijzigd. Meld u aan met Google en bevestig de wijziging met uw toegangssleutel.')
               : tr(lang, 'Вхід не вдалося завершити. Скористайтеся іншим способом.', 'De aanmelding kon niet worden afgerond. Gebruik een andere manier.')}</p>}
     {stand === 'verlopen' && <p className='tga-fout' role='alert'>{tr(lang, 'Час на підтвердження (3 хв) вийшов. Почніть знову.', 'De tijd om te bevestigen (3 min) is om. Begin opnieuw.')}</p>}
     {fout && <p className='tga-fout' role='alert'>{fout}</p>}
@@ -148,7 +149,7 @@ export default function AanmeldTelegram({ lang, remember = true }: { lang: Lang;
         <li>{tr(lang, 'Поверніться сюди — сторінка відкриється сама.', 'Kom hier terug — de pagina opent vanzelf.')}</li>
       </ol>
       <a className='tga-aanmeld-knop' href={lopend.deeplink} target='_blank' rel='noopener noreferrer'><TelegramLogo maat={20} /><span>{tr(lang, 'Відкрити Telegram', 'Telegram openen')}</span></a>
-      <a className='tga-link' href={lopend.widgetUrl}>{tr(lang, 'Telegram на іншому пристрої? Увійти через офіційне вікно входу Telegram', 'Telegram op een ander apparaat? Aanmelden met de officiële Telegram-widget')}</a>
+      <a className='tga-link' href={lopend.widgetUrl}>{tr(lang, 'Telegram на іншому пристрої? Увійти через офіційне вікно входу Telegram', 'Telegram op een ander apparaat? Aanmelden via het officiële aanmeldvenster van Telegram')}</a>
       <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, `Чекаємо на підтвердження… залишилось ${mmss}`, `Wachten op bevestiging… nog ${mmss}`)}</p>
       <p className='tga-klein'>{tr(lang, 'Чому так: вхід підтверджується лише у вашому власному Telegram, тож пароль не потрібен, а чужий пристрій ви одразу побачите й заблокуєте.', 'Waarom zo: de aanmelding wordt alleen in uw eigen Telegram bevestigd, dus geen wachtwoord nodig, en een vreemd apparaat ziet en blokkeert u meteen.')}</p>
     </>}

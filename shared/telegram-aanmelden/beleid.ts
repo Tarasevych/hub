@@ -3,12 +3,12 @@
 // in deze sessie al bevestigd is en welke methoden nu werken; dit bestand beslist.
 //
 // Vorm van een eis: een lijst van ALTERNATIEVEN (OF); elk alternatief is een verzameling methoden die SAMEN nodig zijn (EN).
-//   [['telegram'], ['passkey']]   = Telegram óf passkey
-//   [['telegram', 'passkey']]     = Telegram én passkey
+//   [['telegram'], ['passkey']]   = Telegram óf toegangssleutel
+//   [['telegram', 'passkey']]     = Telegram én toegangssleutel
 //   [['telegram', 'code']]        = Telegram én de geheime code
 // «Strenger of gelijk»: eis A is minstens zo streng als eis B als ELK alternatief van A een alternatief van B volledig bevat
 // (wie A haalt, haalt dus altijd B). De gebruiker mag alleen kiezen wat minstens zo streng is als het minimum van de beheerder.
-// Gevoelige handelingen vragen ALTIJD een passkey, wat de gebruiker ook kiest: de passkey wordt aan elk alternatief toegevoegd.
+// Gevoelige handelingen vragen ALTIJD een toegangssleutel, wat de gebruiker ook kiest: de toegangssleutel wordt aan elk alternatief toegevoegd.
 import type { Taal, Tekst } from './model';
 
 export const METHODEN = ['telegram', 'passkey', 'code'] as const;
@@ -41,15 +41,15 @@ export const eisVan = (k: KeuzeId): Eis => KEUZES[k].map((a) => [...a]);
 export const KEUZE_NAMEN: Record<KeuzeId, Tekst> = {
   'telegram': ['Telegram', 'Telegram'],
   'passkey': ['Ключ доступу', 'Passkey'],
-  'telegram-of-passkey': ['Telegram або ключ доступу', 'Telegram of passkey'],
-  'telegram-en-passkey': ['Telegram і ключ доступу', 'Telegram en passkey'],
+  'telegram-of-passkey': ['Telegram або ключ доступу', 'Telegram of toegangssleutel'],
+  'telegram-en-passkey': ['Telegram і ключ доступу', 'Telegram en toegangssleutel'],
   'telegram-en-code': ['Telegram і таємний код', 'Telegram en geheime code'],
-  'telegram-en-code-of-passkey': ['Telegram і таємний код, або ключ доступу', 'Telegram en geheime code, of passkey'],
-  'passkey-en-code': ['Ключ доступу і таємний код', 'Passkey en geheime code'],
-  'alles': ['Telegram, ключ доступу і таємний код', 'Telegram, passkey en geheime code'],
+  'telegram-en-code-of-passkey': ['Telegram і таємний код, або ключ доступу', 'Telegram en geheime code, of toegangssleutel'],
+  'passkey-en-code': ['Ключ доступу і таємний код', 'Toegangssleutel en geheime code'],
+  'alles': ['Telegram, ключ доступу і таємний код', 'Telegram, toegangssleutel en geheime code'],
 };
 
-/** Eén soort bewaakte handeling. `gevoelig` = altijd passkey (besluit van de eigenaar, punt D). */
+/** Eén soort bewaakte handeling. `gevoelig` = altijd toegangssleutel (besluit van de eigenaar, punt D). */
 export type ActieSoort = { sleutel: string; naam: Tekst; minimum: KeuzeId; standaard: KeuzeId; gevoelig: boolean; ingebouwd: boolean };
 
 /** Ingebouwde handelingen. De beheerder kan er zonder nieuwe bouw bij zetten (tabel app.tg_acties). */
@@ -92,14 +92,14 @@ export function minstensZoStreng(a: Eis, b: Eis): boolean {
   return A.every((alt) => B.some((bAlt) => bAlt.every((m) => alt.includes(m))));
 }
 
-/** Gevoelig: passkey wordt aan elk alternatief toegevoegd (Telegram alleen kan nooit genoeg zijn). */
+/** Gevoelig: toegangssleutel wordt aan elk alternatief toegevoegd (Telegram alleen kan nooit genoeg zijn). */
 export function metVerplichtePasskey(e: Eis): Eis {
   return eisNormaliseren(e.map((a) => (a.includes('passkey') ? a : [...a, 'passkey'])));
 }
 
 /**
  * De WERKELIJKE eis voor één handeling: keuze van de gebruiker (alleen als die minstens zo streng is als het minimum),
- * anders het minimum; gevoelige handelingen altijd met passkey; verplichte geheime code van de beheerder wordt toegevoegd.
+ * anders het minimum; gevoelige handelingen altijd met toegangssleutel; verplichte geheime code van de beheerder wordt toegevoegd.
  */
 export function werkelijkeEis(soort: ActieSoort, keuze: KeuzeId | null | undefined, opties: { codeVerplicht?: boolean } = {}): Eis {
   const minimum = eisVan(soort.minimum);
@@ -130,7 +130,7 @@ export type Beoordeling = {
 /**
  * DE beleidsfunctie. Elke bewaakte route gaat hierdoor (backend/telegram-aanmelden/beleid-poort.ts); er is geen tweede.
  *  - voldaan: wat in deze sessie al vers bevestigd is voor DEZE handeling;
- *  - beschikbaar: welke methoden nu werken (statusdienst) én die de gebruiker heeft (passkey ingesteld, code ingesteld…).
+ *  - beschikbaar: welke methoden nu werken (statusdienst) én die de gebruiker heeft (toegangssleutel ingesteld, code ingesteld…).
  */
 export function beoordeel(eis: Eis, voldaan: ReadonlySet<Methode>, beschikbaar: ReadonlySet<Methode>): Beoordeling {
   const e = eisNormaliseren(eis);

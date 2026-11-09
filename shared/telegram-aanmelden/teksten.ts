@@ -43,7 +43,7 @@ export const TEKST = {
   vreemdContact: { uk: '⛔ Це контакт іншої людини. Поділитися можна лише власним номером через кнопку.', nl: '⛔ Dit is het contact van iemand anders. Alleen uw eigen nummer via de knop telt.' },
   telefoonOntvangen: {
     uk: '✅ Номер отримано. Крок 3 з 3: поверніться на сайт і підтвердьте прив’язку ключем доступу. Ключ доступу підтверджує, що прив’язку робите саме ви, а не хтось із доступом до вашого Telegram.',
-    nl: '✅ Nummer ontvangen. Stap 3 van 3: ga terug naar de site en bevestig de koppeling met uw passkey. De passkey bevestigt dat u zelf koppelt, niet iemand met toegang tot uw Telegram.',
+    nl: '✅ Nummer ontvangen. Stap 3 van 3: ga terug naar de site en bevestig de koppeling met uw toegangssleutel. De toegangssleutel bevestigt dat u zelf koppelt, niet iemand met toegang tot uw Telegram.',
   },
   koppelVerlopen: { uk: '⌛ Час на прив’язку минув. Почніть знову на сайті.', nl: '⌛ De tijd om te koppelen is verstreken. Begin opnieuw op de site.' },
   gekoppeld: { uk: '✅ Telegram прив’язано до облікового запису «{account}».', nl: '✅ Telegram is gekoppeld aan het account «{account}».' },
@@ -77,16 +77,16 @@ export const TEKST = {
   geweigerd: { uk: '⛔ Заблоковано. Ми повідомили власника облікового запису й адміністратора.', nl: '⛔ Geblokkeerd. We hebben de eigenaar van het account en de beheerder ingelicht.' },
   storingTijdelijk: { uk: '⚠️ Не вдалося, спробую ще раз автоматично через 10 секунд.', nl: '⚠️ Mislukt; ik probeer het over 10 seconden vanzelf opnieuw.' },
   storingLang: { uk: '⚠️ Сайт зараз не відповідає, ми це вже бачимо. Я напишу вам, щойно запрацює. Можна увійти іншим способом.', nl: '⚠️ De site antwoordt nu niet; we weten het al. Ik laat het u weten zodra het weer werkt. U kunt op een andere manier aanmelden.' },
-  storingVast: { uk: '⛔ Цей спосіб зараз не працює, і повторна спроба не допоможе. Скористайтеся ключем доступу або кодом відновлення.', nl: '⛔ Deze manier werkt nu niet en opnieuw proberen helpt niet. Gebruik uw passkey of een herstelcode.' },
+  storingVast: { uk: '⛔ Цей спосіб зараз не працює, і повторна спроба не допоможе. Скористайтеся ключем доступу або кодом відновлення.', nl: '⛔ Deze manier werkt nu niet en opnieuw proberen helpt niet. Gebruik uw toegangssleutel of een herstelcode.' },
   geheimVerwijderd: {
     uk: '⛔ Я видалив ваше повідомлення: воно схоже на код чи пароль. Ніколи не надсилайте таємний код у цей чат. Якщо це був ваш таємний код, змініть його на сайті (ключем доступу). Доти підтвердження з таємним кодом вимкнено.',
-    nl: '⛔ Ik heb uw bericht verwijderd: het lijkt op een code of wachtwoord. Stuur uw geheime code nooit in deze chat. Was het uw geheime code, wijzig die dan op de site (met uw passkey). Tot dan staat bevestigen met de geheime code uit.',
+    nl: '⛔ Ik heb uw bericht verwijderd: het lijkt op een code of wachtwoord. Stuur uw geheime code nooit in deze chat. Was het uw geheime code, wijzig die dan op de site (met uw toegangssleutel). Tot dan staat bevestigen met de geheime code uit.',
   },
   wijzigingVraag: {
     uk: '⚠️ Ми помітили зміну у вашому Telegram\n\nОбліковий запис: {account}\nЩо змінилось: {veld}\nБуло: {oud}\nСтало: {nieuw}\nКоли: {tijd}\n\nЩо це означає: поки ви не підтвердите зміну на сайті ключем доступу, вхід через цей Telegram призупинено.\nЩо далі: «Це був я» лише позначає зміну як побачену; підтвердити можна тільки на сайті. Якщо це не ви, натисніть «⛔ Це не я».',
-    nl: '⚠️ We zagen een wijziging in uw Telegram\n\nAccount: {account}\nWat veranderde: {veld}\nWas: {oud}\nIs nu: {nieuw}\nWanneer: {tijd}\n\nWat dit betekent: tot u de wijziging op de site met uw passkey bevestigt, staat aanmelden met deze Telegram op pauze.\nWat nu: «Dat was ik» markeert de wijziging alleen als gezien; bevestigen kan alleen op de site. Bent u het niet, tik «⛔ Dit ben ik niet».',
+    nl: '⚠️ We zagen een wijziging in uw Telegram\n\nAccount: {account}\nWat veranderde: {veld}\nWas: {oud}\nIs nu: {nieuw}\nWanneer: {tijd}\n\nWat dit betekent: tot u de wijziging op de site met uw toegangssleutel bevestigt, staat aanmelden met deze Telegram op pauze.\nWat nu: «Dat was ik» markeert de wijziging alleen als gezien; bevestigen kan alleen op de site. Bent u het niet, tik «⛔ Dit ben ik niet».',
   },
-  gezien: { uk: '👁️ Позначено як побачене. Тепер підтвердіть зміну на сайті ключем доступу.', nl: '👁️ Gemarkeerd als gezien. Bevestig de wijziging nu op de site met uw passkey.' },
+  gezien: { uk: '👁️ Позначено як побачене. Тепер підтвердіть зміну на сайті ключем доступу.', nl: '👁️ Gemarkeerd als gezien. Bevestig de wijziging nu op de site met uw toegangssleutel.' },
   conflict: {
     uk: '🚨 Увага: у Telegram хтось підтвердив зміну, а на сайті її заперечили. Схоже, ваш Telegram міг бути зламаний. Прив’язку вимкнено.\n\nЩо зробити:\n1. Telegram → Налаштування → Пристрої: завершіть усі чужі сеанси.\n2. Увімкніть хмарний пароль (двоетапну перевірку).\n3. Перевірте пристрої на сайті.',
     nl: '🚨 Let op: in Telegram bevestigde iemand de wijziging, maar op de site werd ze ontkend. Mogelijk is uw Telegram gekaapt. De koppeling staat uit.\n\nWat te doen:\n1. Telegram → Instellingen → Apparaten: beëindig alle vreemde sessies.\n2. Zet het cloudwachtwoord (tweestapsverificatie) aan.\n3. Controleer de apparaten op de site.',

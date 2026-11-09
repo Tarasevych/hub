@@ -1,6 +1,6 @@
 // TELEGRAM-AANMELDEN v1 — alle cryptografie op één plek (alleen node:crypto).
 //
-//  • Login Widget: data_check_string (gesorteerde velden zonder hash, «\n»-gescheiden), sleutel = SHA-256(bottoken),
+//  • aanmeldvenster: data_check_string (gesorteerde velden zonder hash, «\n»-gescheiden), sleutel = SHA-256(bottoken),
 //    HMAC-SHA256, tijdconstante vergelijking, auth_date ≤ 5 minuten oud en niet in de toekomst (60 s speling);
 //    hergebruik van dezelfde handtekening wordt door de aanroeper geweigerd (tabel app.tg_eenmalig).
 //  • Mini App (WebApp initData): geheime sleutel = HMAC-SHA256(sleutel «WebAppData», bottoken), daarna HMAC over de
@@ -28,7 +28,7 @@ function versheid(authDate: number, nuSec: number): boolean {
   return Number.isFinite(authDate) && authDate > 0 && authDate <= nuSec + SPELING_SECONDEN && nuSec - authDate <= VERS_SECONDEN;
 }
 
-/** Login Widget (https://core.telegram.org/widgets/login#checking-authorization). */
+/** aanmeldvenster (https://core.telegram.org/widgets/login#checking-authorization). */
 export function widgetControle(velden: Record<string, unknown>, botToken: string, nuSec = Math.floor(Date.now() / 1000)): ControleUitkomst {
   const hash = String(velden.hash ?? '');
   if (!botToken || !/^[0-9a-f]{64}$/.test(hash)) return { ok: false, vers: false, reden: 'VELDEN_ONGELDIG', handtekeningHash: '' };

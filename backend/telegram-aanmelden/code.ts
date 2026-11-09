@@ -1,7 +1,7 @@
 // TELEGRAM-AANMELDEN v1 — de «таємний код» (geheime code). Alleen op de site ingevoerd (beschermd veld), nooit in de chat.
 // Opslag: Argon2id/scrypt-hash met eigen zout + serverpeper (sleutels.ts). Tijdconstante controle. Grenzen van de beheerder:
-// na `pauzeNa` fouten een pauze van `pauzeMinuten`; na `uitNa` fouten staat Telegram-bevestiging uit tot een passkey-aanmelding
-// (passkey-step-up op de pagina «Мої способи входу» → «Відновити»). Optionele alarmcode: lijkt te slagen, blokkeert stil en
+// na `pauzeNa` fouten een pauze van `pauzeMinuten`; na `uitNa` fouten staat Telegram-bevestiging uit tot een aanmelding met toegangssleutel
+// (extra bevestiging met toegangssleutel op de pagina «Мої способи входу» → «Відновити»). Optionele alarmcode: lijkt te slagen, blokkeert stil en
 // alarmeert de eigenaar (voor als iemand onder dwang staat).
 import { codeHashen, codeKlopt } from './cryptografie';
 import { codePeper } from './sleutels';
@@ -33,7 +33,7 @@ export async function codeVerwijderen(userId: string): Promise<void> {
   await audit(userId, 'code.verwijderd', 'success');
 }
 
-/** Herstel na «te veel pogingen» of «in chat gezien» — alleen aanroepen NA een passkey-bevestiging (poort 'geheime-code'). */
+/** Herstel na «te veel pogingen» of «in chat gezien» — alleen aanroepen NA een bevestiging met toegangssleutel (poort 'geheime-code'). */
 export async function codeHerstellen(userId: string): Promise<void> {
   await sql("UPDATE app.tg_geheime_codes SET mislukt = 0, pauze_tot = NULL, uitgeschakeld = false, reden = '' WHERE user_id = $1 AND reden <> 'alarm'", [userId]);
   await audit(userId, 'code.hersteld', 'success');
@@ -84,7 +84,7 @@ export async function codeControleren(userId: string, code: string): Promise<Cod
   return 'fout';
 }
 
-/** De bot zag iets dat op de code lijkt in de chat: code buiten gebruik tot de gebruiker hem met een passkey wijzigt. */
+/** De bot zag iets dat op de code lijkt in de chat: code buiten gebruik tot de gebruiker hem met een toegangssleutel wijzigt. */
 export async function codeInChatGezien(userId: string): Promise<void> {
   await sql("UPDATE app.tg_geheime_codes SET uitgeschakeld = true, reden = 'in-chat-gezien' WHERE user_id = $1 AND reden <> 'alarm'", [userId]);
   await audit(userId, 'code.in-chat', 'denied');

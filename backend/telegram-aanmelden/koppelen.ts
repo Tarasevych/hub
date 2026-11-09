@@ -1,8 +1,8 @@
 // TELEGRAM-AANMELDEN v1 — koppelen (punt A/B). Alleen vanaf de site, in een geldige sessie, nooit vanuit de bot.
-//   1. site: «Прив’язати Telegram» → verzoek (12 tekens, 10 min, gebonden aan deze sessie) → deeplink t.me/<bot>?start=k_<id>
+//   1. site: «Прив’язати Telegram» → verzoek (12 tekens, 10 min, gebonden aan deze sessie) → directe verwijzing t.me/<bot>?start=k_<id>
 //   2. bot: /start k_<id> → identiteit uit Telegram (id, @nikneim, naam) → «📱 Поділитися номером» (request_contact)
 //      Alleen een contact met user_id == afzender telt; een getypt nummer of andermans contact wordt geweigerd.
-//   3. site: toont ALLES volledig (id, nummer tot het laatste cijfer, @nikneim, naam, foto) → bevestigen met een verse passkey.
+//   3. site: toont ALLES volledig (id, nummer tot het laatste cijfer, @nikneim, naam, foto) → bevestigen met een verse toegangssleutel.
 // Atomisch: de koppeling ontstaat in één transactie, met de limiet en dubbele koppelingen gecontroleerd binnen die transactie.
 import { createHash } from 'node:crypto';
 import { botAanroep, botBestand } from './bot-api';
@@ -129,7 +129,7 @@ export async function koppelStatus(userId: string, sessieId: string, id: string)
   return uit;
 }
 
-/** Stap 3b (site): bevestigen. De route heeft de poort 'koppelen' (verse passkey) al gepasseerd. */
+/** Stap 3b (site): bevestigen. De route heeft de poort 'koppelen' (verse toegangssleutel) al gepasseerd. */
 export async function koppelBevestigen(userId: string, sessieId: string, id: string, o: { rechten?: unknown }): Promise<{ koppelingId: string; metCode: boolean }> {
   const v = await verzoek(id);
   if (!v || v.user_id !== userId || v.binding_hash !== bindingHash(sessieId)) throw new Error('VERZOEK_ONBEKEND');

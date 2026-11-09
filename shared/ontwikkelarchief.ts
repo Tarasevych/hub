@@ -8,7 +8,8 @@ const SHA = /^[0-9a-f]{40}$/;
 const HASH = /^[0-9a-f]{64}$/;
 const VERSIE = /^\d{8}-\d{6}$/;
 const TAAK = /^[A-Z][A-Z0-9]{1,9}-\d{3,5}$/;
-const TAK = /^(feature|fix|audit|release)\/[a-z0-9]+(?:-[a-z0-9]+)*-\d{8}-\d{6}$/;
+// TELEGRAM-001: naast de oude Engelse voorvoegsels ook Nederlandse (functie/herstel/controle); oude namen blijven geldig.
+export const TAK = /^(functie|herstel|controle|feature|fix|audit|release)\/[a-z0-9]+(?:-[a-z0-9]+)*-\d{8}-\d{6}$/;
 
 export type OntwikkelArchief = {
   schema: 1;

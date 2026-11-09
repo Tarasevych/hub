@@ -59,7 +59,7 @@ async function wijzigingMelden(k: KoppelRij, wijzigingId: string, v: VeldVerschi
   await siteMelding(k.user_id,
     { uk: '⚠️ Зміна у вашому Telegram', nl: '⚠️ Wijziging in uw Telegram' },
     { uk: `Змінилось: ${v.map((x) => `${VELD_NAMEN[x.veld].uk}: «${x.oud || '—'}» → «${x.nieuw || '—'}»`).join('; ')}. Вхід через цей Telegram призупинено, доки ви не підтвердите зміну ключем доступу.`,
-      nl: `Gewijzigd: ${v.map((x) => `${VELD_NAMEN[x.veld].nl}: «${x.oud || '—'}» → «${x.nieuw || '—'}»`).join('; ')}. Aanmelden met deze Telegram staat op pauze tot u de wijziging met uw passkey bevestigt.` },
+      nl: `Gewijzigd: ${v.map((x) => `${VELD_NAMEN[x.veld].nl}: «${x.oud || '—'}» → «${x.nieuw || '—'}»`).join('; ')}. Aanmelden met deze Telegram staat op pauze tot u de wijziging met uw toegangssleutel bevestigt.` },
     `/aanmeldmethoden?wijziging=${encodeURIComponent(wijzigingId)}`);
 }
 
@@ -67,7 +67,7 @@ export async function wijziging(id: string): Promise<WijzigingRij | null> {
   return (await sql<WijzigingRij>('SELECT * FROM app.tg_wijzigingen WHERE id::text = $1', [id]))[0] ?? null;
 }
 
-/** De site zegt: de bevestigingskaart is nu getoond (start van de server-side aftelling). */
+/** De site zegt: de bevestigingskaart is nu getoond (start van de op de server aftelling). */
 export async function wijzigingGetoond(userId: string, id: string): Promise<{ aftelSeconden: number } | null> {
   const w = await wijziging(id);
   if (!w || w.user_id !== userId) return null;

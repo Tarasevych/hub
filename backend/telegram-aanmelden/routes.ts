@@ -7,12 +7,13 @@ import type { RouterContext, RouterMiddleware, RouterResponse } from '../../serv
 import { json } from '../../server/platform';
 import { passkeyStapOpGeldig, stapOpSessieId } from '../stap-op';
 import { ALLEEN_SESSIE, BEWAAKT, OPENBAAR, poort, verbruik, keuzesVan, beschikbaarVoor, type PoortAuth } from './beleid-poort';
-import { actieSoorten, instellingen, koppelingenVanGebruiker, registreerVlagBeoordelaar, sql, vlagVoor } from './opslag';
+import { actieSoorten, instellingen, koppelingenVanGebruiker, registreerVlagBeoordelaar, sql, vlagHoofdschakelaar, vlagVoor } from './opslag';
 import { koppelAnnuleren, koppelBevestigen, koppelStart, koppelStatus, magTelegram, profielFotoData } from './koppelen';
 import { inlogCode, inlogGeluktMelden, inlogInwisselen, inlogSessieVastleggen, inlogStart, inlogStatus, publiekeConfig, widgetTerug } from './inloggen';
 import { bevestigingAanvragen, bevestigingStatus, codeVoorActie } from './bevestigen';
 import { codeHerstellen, codeInstellen, codeStand, codeVerwijderen } from './code';
 import { ontkoppelen, koppelingAanpassen } from './ontkoppelen';
+import { plaatsingLezen, plaatsingOpslaan, werkendeMethoden } from './plaatsing';
 import { wijzigingBeantwoorden, wijzigingGetoond, registreerSessieIntrekker, type SessieIntrekker } from './wijzigingen';
 import { kopKlopt, updateVerwerken, type Update } from './webhook';
 import { publiekeStand } from './status';
@@ -28,7 +29,7 @@ export type TelegramDeps = {
   requireSession: (event: Record<string, unknown>, body: unknown) => Promise<Sessie | SessieFout>;
   /** Maakt een aanmeldtransactie (zelfde tabel als Google) en geeft het transactie-id + bindingscookie terug. */
   aanmeldStart: (rc: RouterContext, o: { tab: string; locale: 'uk' | 'nl'; remember: boolean }) => Promise<{ transactieId: string; setCookie: string } | { fout: string }>;
-  /** Voltooit die transactie voor deze gebruiker (zelfde weg als Google, zonder step-up). */
+  /** Voltooit die transactie voor deze gebruiker (zelfde weg als Google, zonder extra bevestiging). */
   aanmeldVoltooien: (rc: RouterContext, o: { transactieId: string; userId: string }) => Promise<{ antwoord: RouterResponse; sessieId: string }>;
   sessiesIntrekken: SessieIntrekker;
   /** Vlag telegram-aanmelden-v1 voor één gebruiker (backend/index.ts → flagsBerekenen). */
@@ -36,7 +37,7 @@ export type TelegramDeps = {
 };
 
 const fout = (code: string, status = 400, extra: Record<string, unknown> = {}): RouterResponse => json({ error: code, reasonCode: code, ...extra }, status);
-const STATUS: Record<string, number> = { VLAG_UIT: 404, NIET_GEVONDEN: 404, VERZOEK_ONBEKEND: 404, KOPPELING_ONBEKEND: 404, ONBEKENDE_ACTIE: 400, RATE_LIMITED: 429, NIET_TOEGESTAAN: 403, UITGESCHAKELD: 409, LIMIET_BEREIKT: 409 };
+const STATUS: Record<string, number> = { VLAG_UIT: 404, NIET_GEVONDEN: 404, VERZOEK_ONBEKEND: 404, KOPPELING_ONBEKEND: 404, ONBEKENDE_ACTIE: 400, RATE_LIMITED: 429, NIET_TOEGESTAAN: 403, UITGESCHAKELD: 409, LIMIET_BEREIKT: 409, GEEN_WERKENDE_METHODE: 409 };
 const lichaam = (rc: RouterContext): Record<string, unknown> => (rc.body && typeof rc.body === 'object' ? rc.body as Record<string, unknown> : {});
 const str = (v: unknown, max = 200): string => (typeof v === 'string' ? v.slice(0, max) : '');
 const isBeheerder = (u: { role?: string }): boolean => u.role === 'owner' || u.role === 'admin';
@@ -105,7 +106,9 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
 
   return {
     // ================================================================================ OPENBAAR
-    'GET /api/aanmelden/telegram/config': openbaar(async () => json({ ...(await publiekeConfig()), status: await publiekeStand() })),
+    // plaatsing: alleen met de vlag aan; anders null → het aanmeldscherm blijft exact zoals vóór deze functie.
+    'GET /api/aanmelden/telegram/config': openbaar(async () => json({ ...(await publiekeConfig()), status: await publiekeStand(),
+      plaatsing: (await vlagHoofdschakelaar()) ? await plaatsingLezen() : null })),
     'POST /api/aanmelden/telegram/start': openbaar(async (rc) => {
       const d = lichaam(rc);
       const tx = await deps.aanmeldStart(rc, { tab: str(d.tab || d.tabContext, 200), locale: d.locale === 'nl' ? 'nl' : 'uk', remember: d.remember !== false });
@@ -126,8 +129,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       void inlogGeluktMelden(r.koppelingId).catch(() => undefined);
       return antwoord;
     }),
-    // Officieel Login Widget op een eigen mini-pagina met een eigen, smalle CSP (alleen telegram.org); de rest van de site houdt
-    // script-src 'self'. Redirect-modus (data-auth-url): geen inline script, geen callback in onze pagina.
+    // Officieel aanmeldvenster op een eigen mini-pagina met een eigen, smalle CSP (alleen telegram.org); de rest van de site houdt
+    // script-src 'self'. Doorverwijsmodus (data-auth-url): geen inline script, geen terugroepfunctie in onze pagina.
     'GET /api/aanmelden/telegram/widget': openbaar(async (rc): Promise<RouterResponse> => {
       const id = /^[A-Za-z0-9_-]{12}$/.test(String(rc.query.i || '')) ? String(rc.query.i) : '';
       const taal = rc.query.taal === 'nl' ? 'nl' : 'uk';
@@ -163,7 +166,7 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       return r === 'ok' ? json({ ok: true }) : fout(r === 'laatste' ? 'LAATSTE_METHODE' : 'KOPPELING_ONBEKEND', r === 'laatste' ? 409 : 404);
     }),
     'POST /api/owner/telegram/koppeling': bewaakt('koppeling-wijzigen', async (_rc, a, d) => { await koppelingAanpassen(a.user.id, str(d.koppelingId, 40), { naam: d.naam, rechten: d.rechten }); return json({ ok: true }); }),
-    // Een geblokkeerd apparaat weer toelaten: zelfde poort als naam/rechten van een koppeling (verse passkey).
+    // Een geblokkeerd apparaat weer toelaten: zelfde poort als naam/rechten van een koppeling (verse toegangssleutel).
     'POST /api/owner/telegram/deblokkeren': bewaakt('koppeling-wijzigen', async (_rc, a, d) => {
       const r = await sql('DELETE FROM app.tg_geblokkeerd WHERE user_id = $1 AND sleutel = $2 RETURNING sleutel', [a.user.id, str(d.apparaat, 80)]);
       if (!r.length) return fout('NIET_GEVONDEN', 404);
@@ -171,7 +174,7 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       return json({ ok: true });
     }),
     'POST /api/owner/telegram/wijziging/getoond': alleenSessie(async (_rc, a, d) => { const r = await wijzigingGetoond(a.user.id, str(d.id, 40)); return r ? json(r) : fout('VERZOEK_ONBEKEND', 404); }),
-    // «Ні, не я» kan altijd (het veiligere antwoord); «Так, це я» alleen met een verse passkey, na de server-side aftelling.
+    // «Ні, не я» kan altijd (het veiligere antwoord); «Так, це я» alleen met een verse toegangssleutel, na de op de server aftelling.
     'POST /api/owner/telegram/wijziging/antwoord': alleenSessie(async (_rc, a, d) => {
       const antwoord = d.antwoord === 'ja' ? 'ja' : 'nee';
       const metPasskey = antwoord === 'ja' ? await passkeyStapOpGeldig(a) : false;
@@ -221,6 +224,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
     'POST /api/owner/telegram/beheer/bot': bewaakt('beheer-bot-sleutel', async (_rc, a, d) => json(await beheer.botInstellen(a.user.id, { sleutel: d.sleutel, toch: d.toch })), { beheer: true }),
     'POST /api/owner/telegram/beheer/sleutel-annuleren': bewaakt('beheer-bot-sleutel', async (_rc, a) => { await beheer.nieuweSleutelAnnuleren(a.user.id); return json({ ok: true }); }, { beheer: true }),
     'POST /api/owner/telegram/beheer/instellingen': bewaakt('beheer-instellingen', async (_rc, a, d) => json({ instellingen: await beheer.instellingenOpslaan(a.user.id, d.instellingen) }), { beheer: true }),
+    'POST /api/owner/telegram/beheer/plaatsing-lezen': alleenSessie(async () => json({ plaatsing: await plaatsingLezen(), werkend: await werkendeMethoden() }), { beheer: true }),
+    'POST /api/owner/telegram/beheer/plaatsing': bewaakt('beheer-instellingen', async (_rc, a, d) => json(await plaatsingOpslaan(a.user.id, d.plaatsing)), { beheer: true }),
     'POST /api/owner/telegram/beheer/ongedaan': bewaakt('beheer-instellingen', async (_rc, a) => json({ instellingen: await beheer.instellingenOngedaan(a.user.id) }), { beheer: true }),
     // Noodschakelaar UIT moet altijd kunnen (zoals «Захист»): alleen sessie + beheerder. AAN vraagt de gewone poort.
     'POST /api/owner/telegram/beheer/nood-uit': alleenSessie(async (_rc, a) => { await beheer.noodschakelaar(a.user.id, false); return json({ ok: true }); }, { beheer: true }),
@@ -240,9 +245,9 @@ export const TELEGRAM_PUBLIEKE_ROUTES: Readonly<Record<string, string>> = Object
   'POST /api/aanmelden/telegram/status': 'Telegram-aanmelding volgen (id + geheim van deze browser)',
   'POST /api/aanmelden/telegram/code': 'geheime code bij Telegram-aanmelding (id + geheim; tellers en pauzes)',
   'POST /api/aanmelden/telegram/voltooien': 'Telegram-aanmelding inwisselen (id + geheim + bindingscookie, eenmalig)',
-  'GET /api/aanmelden/telegram/widget': 'mini-pagina met het officiële Telegram Login Widget (eigen smalle CSP)',
-  'GET /api/aanmelden/telegram/widget-terug': 'terugkeer van het Login Widget (HMAC-handtekening, 5 min, eenmalig)',
-  'POST /api/telegram/webhook': 'Telegram Bot API-webhook (geheime kop X-Telegram-Bot-Api-Secret-Token)',
+  'GET /api/aanmelden/telegram/widget': 'mini-pagina met het officiële aanmeldvenster van Telegram (eigen smalle CSP)',
+  'GET /api/aanmelden/telegram/widget-terug': 'terugkeer uit het aanmeldvenster van Telegram (HMAC-handtekening, 5 min, eenmalig)',
+  'POST /api/telegram/webhook': 'terugroepadres voor Telegram (geheime kop X-Telegram-Bot-Api-Secret-Token)',
 });
 
 export const WIDGET_CSP = ["default-src 'none'", "script-src https://telegram.org", "frame-src https://oauth.telegram.org", "img-src https://telegram.org https://t.me data:",

@@ -1,4 +1,4 @@
-// TELEGRAM-AANMELDEN v1 — ontkoppelen (vanaf de site met passkey, of vanuit de bot) en koppeling aanpassen.
+// TELEGRAM-AANMELDEN v1 — ontkoppelen (vanaf de site met toegangssleutel, of vanuit de bot) en koppeling aanpassen.
 import { getPool } from '../../server/platform/pg';
 import { koppeling as koppelingLezen, sql, standZetten } from './opslag';
 import { audit, siteMelding, accountNaam } from './meldingen';
@@ -7,7 +7,7 @@ import { t, TEKST } from '../../shared/telegram-aanmelden/teksten';
 import { isKoppelRecht, type KoppelRecht } from '../../shared/telegram-aanmelden/model';
 import { NAAM_RE } from './koppelen';
 
-/** Heeft dit account nog een andere manier om binnen te komen? (Google-identiteit of een passkey) */
+/** Heeft dit account nog een andere manier om binnen te komen? (Google-identiteit of een toegangssleutel) */
 export async function heeftAndereMethode(userId: string): Promise<boolean> {
   const r = await getPool('systeem').query("SELECT data->>'sub' AS sub FROM app.records WHERE tbl = 'users' AND id = $1", [userId]).catch(() => ({ rows: [] as Array<{ sub: string }> }));
   if (String(r.rows[0]?.sub || '')) return true;

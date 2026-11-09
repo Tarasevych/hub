@@ -1,4 +1,4 @@
-// TELEGRAM-AANMELDEN v1 — beheer («Способи входу» in het beheerpaneel). Alles hier vereist eigenaar/beheerder + verse passkey
+// TELEGRAM-AANMELDEN v1 — beheer («Способи входу» in het beheerpaneel). Alles hier vereist eigenaar/beheerder + verse toegangssleutel
 // (poort 'beheer-instellingen' of 'beheer-bot-sleutel'); de route controleert dat. De botsleutel komt ALLEEN via «Налаштувати
 // бота» binnen (beschermd veld), gaat rechtstreeks de kluis in en verlaat de server nooit meer; hier staat hoogstens het masker.
 import { auditToevoegen } from '../../server/platform/audit';

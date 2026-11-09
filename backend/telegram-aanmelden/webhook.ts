@@ -94,7 +94,7 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
       if (r === 'verlopen') await stuur(chatId, t(TEKST.verlopen, taal), taal);
       else if (r === 'niet-gekoppeld') await stuur(chatId, t(TEKST.nietGekoppeld, taal), taal);
       else if (r === 'apparaat-geblokkeerd') await stuur(chatId, taal === 'nl' ? '⛔ Dit apparaat is geblokkeerd voor aanmelden met Telegram (eerder tikte u «Nee, dit ben ik niet» of weigerde u een wijziging). Meld u aan met Google en hef de blokkade op bij «Aanmeldmethoden».' : '⛔ Цей пристрій заблоковано для входу через Telegram (раніше ви натиснули «Ні, це не я» або відхилили зміну). Увійдіть через Google і зніміть блокування у «Способах входу».', taal);
-      else if (r === 'gepauzeerd') await stuur(chatId, taal === 'nl' ? '⏸️ Aanmelden met deze Telegram staat op pauze: bevestig eerst de wijziging op de site met uw passkey.' : '⏸️ Вхід через цей Telegram призупинено: спершу підтвердьте зміну на сайті ключем доступу.', taal);
+      else if (r === 'gepauzeerd') await stuur(chatId, taal === 'nl' ? '⏸️ Aanmelden met deze Telegram staat op pauze: bevestig eerst de wijziging op de site met uw toegangssleutel.' : '⏸️ Вхід через цей Telegram призупинено: спершу підтвердьте зміну на сайті ключем доступу.', taal);
       return;
     }
     // Gewone /start: welkom + taal.
@@ -168,7 +168,7 @@ async function knopVerwerken(q: KnopUpdate): Promise<void> {
   if (!rij || rij.letter !== k.letter || rij.telegram_id !== tg || !knopHandtekeningKlopt(sleutel, k, tg, Number(rij.verloopt_sec))) { await knopAntwoord(q.id, t(TEKST.verlopen, tl), true); return; }
   if (Number(rij.verloopt_sec) * 1000 < Date.now()) { await knopAntwoord(q.id, t(TEKST.verlopen, tl), true); if (q.message) await bijwerken(bericht(q), t(TEKST.verlopen, taal), taal); return; }
   if (await teSnel(tg, String(q.message?.chat.id ?? tg))) { await knopAntwoord(q.id, t(TEKST.teSnel, tl)); return; }
-  // Aftelling (server-side): een «Так» vóór de tijd telt niet — eerst de kaart lezen. «Ні» werkt altijd meteen.
+  // Aftelling (op de server): een «Так» vóór de tijd telt niet — eerst de kaart lezen. «Ні» werkt altijd meteen.
   if (JA_LETTERS.has(k.letter) && rij.stand === 'nieuw') {
     const rest = aftelRest(new Date(rij.aangemaakt_op).getTime(), Number(rij.aftel_sec || 0), Date.now());
     if (rest > 0) { await knopAntwoord(q.id, tl === 'nl' ? `⏳ Nog ${rest} s — lees eerst de kaart: apparaat, plaats en tijd. Bent u het niet, tik dan «Nee».` : `⏳ Ще ${rest} с — спершу прочитайте картку: пристрій, місце і час. Якщо це не ви — натисніть «Ні».`, true); return; }
@@ -199,7 +199,7 @@ async function knopUitvoeren(letter: string, rij: KnopRij, tg: string, taal: Bot
       const r = await inlogGoedkeuren(rij.doel, tg);
       if (r.uitkomst === 'ok') { await werk(t(TEKST.ingelogd, taal)); if (v) await succesTonen(v.chatId); }
       else if (r.uitkomst === 'code') await werk(taal === 'nl' ? '🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).' : taal === 'uk' ? '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).' : '🔑 Підтверджено в Telegram. Тепер уведіть таємний код на сайті (ніколи тут у чаті).\n\n🔑 Bevestigd in Telegram. Typ nu uw geheime code op de site (nooit hier in de chat).');
-      else if (r.uitkomst === 'passkey-nodig') await werk(taal === 'nl' ? '🔐 Voor dit account (of dit nieuwe apparaat) is een passkey nodig. Meld u op de site aan met uw passkey.' : '🔐 Для цього облікового запису (або цього нового пристрою) потрібен ключ доступу. Увійдіть на сайті ключем доступу.');
+      else if (r.uitkomst === 'passkey-nodig') await werk(taal === 'nl' ? '🔐 Voor dit account (of dit nieuwe apparaat) is een toegangssleutel nodig. Meld u op de site aan met uw toegangssleutel.' : '🔐 Для цього облікового запису (або цього нового пристрою) потрібен ключ доступу. Увійдіть на сайті ключем доступу.');
       else if (r.uitkomst === 'geweigerd') await werk(t(TEKST.storingVast, taal));
       else await werk(t(TEKST.verlopen, taal));
       await gebeurtenis('knop-inloggen', r.uitkomst === 'ok' || r.uitkomst === 'code');

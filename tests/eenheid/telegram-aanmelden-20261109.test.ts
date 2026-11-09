@@ -20,12 +20,12 @@ export async function main(): Promise<number> {
 
   // ---------------------------------------------------------------- beleid
   const nieuwApparaat = INGEBOUWDE_ACTIES.find((a) => a.sleutel === 'nieuw-apparaat')!;
-  check('standaard: nieuw apparaat vraagt Telegram én passkey', JSON.stringify(werkelijkeEis(nieuwApparaat, null)) === JSON.stringify([['telegram', 'passkey']]));
-  check('elke gevoelige handeling vraagt altijd een passkey (ook bij keuze «telegram»)', INGEBOUWDE_ACTIES.filter((a) => a.gevoelig).every((a) => werkelijkeEis(a, 'telegram' as never).every((alt) => alt.includes('passkey'))));
+  check('standaard: nieuw apparaat vraagt Telegram én toegangssleutel', JSON.stringify(werkelijkeEis(nieuwApparaat, null)) === JSON.stringify([['telegram', 'passkey']]));
+  check('elke gevoelige handeling vraagt altijd een toegangssleutel (ook bij keuze «telegram»)', INGEBOUWDE_ACTIES.filter((a) => a.gevoelig).every((a) => werkelijkeEis(a, 'telegram' as never).every((alt) => alt.includes('passkey'))));
   check('keuze zwakker dan het minimum wordt geweigerd', !keuzeToegestaan(INGEBOUWDE_ACTIES.find((a) => a.sleutel === 'koppelen')!, 'telegram'));
   check('keuze strenger dan het minimum mag', keuzeToegestaan(INGEBOUWDE_ACTIES.find((a) => a.sleutel === 'aanmelden')!, 'alles'));
   const b1 = beoordeel(eisVan('telegram-en-code-of-passkey'), S(), S('telegram', 'code'));
-  check('beoordeel: goedkoopste haalbare weg (zonder passkey) → telegram+code ontbreekt', !b1.toegestaan && b1.ontbreekt.join() === 'telegram,code' && b1.onbeschikbaar.includes('passkey'));
+  check('beoordeel: goedkoopste haalbare weg (zonder toegangssleutel) → telegram+code ontbreekt', !b1.toegestaan && b1.ontbreekt.join() === 'telegram,code' && b1.onbeschikbaar.includes('passkey'));
   const b2 = beoordeel(eisVan('telegram'), S(), S('passkey'));
   check('beoordeel: Telegram in storing → METHODE_ONBESCHIKBAAR, eerlijk geblokkeerd', b2.geblokkeerd && b2.reden === 'METHODE_ONBESCHIKBAAR' && b2.onbeschikbaar.join() === 'telegram');
   check('beoordeel: voldaan → toegestaan', beoordeel(eisVan('telegram-of-passkey'), S('passkey'), S()).toegestaan);
@@ -33,7 +33,7 @@ export async function main(): Promise<number> {
   const veiligst = voorinstellingToepassen('veiligst', INGEBOUWDE_ACTIES);
   check('voorinstelling «veiligst» blijft overal ≥ minimum', INGEBOUWDE_ACTIES.every((a) => keuzeToegestaan(a, veiligst[a.sleutel])));
   const overal = voorinstellingToepassen('telegram-overal', INGEBOUWDE_ACTIES);
-  check('voorinstelling «Telegram overal» respecteert het minimum (gevoelig blijft passkey)', INGEBOUWDE_ACTIES.every((a) => keuzeToegestaan(a, overal[a.sleutel])));
+  check('voorinstelling «Telegram overal» respecteert het minimum (gevoelig blijft toegangssleutel)', INGEBOUWDE_ACTIES.every((a) => keuzeToegestaan(a, overal[a.sleutel])));
   check('alle keuzes hebben een eis', KEUZE_IDS.every((k) => eisVan(k).length > 0));
 
   // ---------------------------------------------------------------- wijzigingen
@@ -46,14 +46,14 @@ export async function main(): Promise<number> {
   const tgJa = antwoordVerwerken(open, 'gepauzeerd', 'telegram', 'ja', false);
   check('«Так» in Telegram alleen = alleen «gezien» (Telegram kan gekaapt zijn)', tgJa.toestand.status === 'gezien' && tgJa.koppelStand === 'gepauzeerd');
   const siteJaZonder = antwoordVerwerken(tgJa.toestand, 'gepauzeerd', 'site', 'ja', false);
-  check('«Так» op de site zonder verse passkey verandert niets', siteJaZonder.toestand.status === 'gezien' && siteJaZonder.koppelStand === 'gepauzeerd');
+  check('«Так» op de site zonder verse toegangssleutel verandert niets', siteJaZonder.toestand.status === 'gezien' && siteJaZonder.koppelStand === 'gepauzeerd');
   const siteJa = antwoordVerwerken(tgJa.toestand, 'gepauzeerd', 'site', 'ja', true);
-  check('«Так» op de site met passkey → bevestigd, koppeling weer actief', siteJa.toestand.status === 'bevestigd' && siteJa.koppelStand === 'actief');
+  check('«Так» op de site met toegangssleutel → bevestigd, koppeling weer actief', siteJa.toestand.status === 'bevestigd' && siteJa.koppelStand === 'actief');
   const daarnaNee = antwoordVerwerken(siteJa.toestand, 'actief', 'telegram', 'nee', false);
   check('«Ні» wint ALTIJD, ook na bevestiging: uit + sessies beëindigen + conflict', daarnaNee.toestand.status === 'geweigerd' && daarnaNee.koppelStand === 'uitgeschakeld' && daarnaNee.acties.includes('sessies-beeindigen') && daarnaNee.toestand.conflict);
   check('na «Ні» kan «Так» niets meer terugdraaien', antwoordVerwerken(daarnaNee.toestand, 'uitgeschakeld', 'site', 'ja', true).koppelStand === 'uitgeschakeld');
   const ernstig = antwoordVerwerken({ ...open, ernst: 'ernstig' }, 'geblokkeerd', 'site', 'ja', true);
-  check('telefoon gewijzigd: passkey alleen is niet genoeg → opnieuw koppelen', ernstig.koppelStand === 'geblokkeerd' && ernstig.acties.includes('opnieuw-koppelen-vereist'));
+  check('telefoon gewijzigd: toegangssleutel alleen is niet genoeg → opnieuw koppelen', ernstig.koppelStand === 'geblokkeerd' && ernstig.acties.includes('opnieuw-koppelen-vereist'));
   check('vervalsing kan nooit met «Так» bevestigd worden', antwoordVerwerken({ ...open, ernst: 'vervalsing' }, 'uitgeschakeld', 'site', 'ja', true).toestand.status === 'geweigerd');
   check('onbeantwoord na de termijn → uit', verlopenVerwerken(open, 25 * 3600_000, 0, 24)?.koppelStand === 'uitgeschakeld');
   check('te snel na het tonen bevestigd telt niet (server-side aftelling)', snelGenoegGeweigerd(1000, 3000, 5) && !snelGenoegGeweigerd(1000, 6500, 5) && snelGenoegGeweigerd(0, 99999, 5));
@@ -87,10 +87,10 @@ export async function main(): Promise<number> {
   const velden: Record<string, string> = { id: '42', first_name: 'Pavlo', username: 'pavlo', auth_date: String(nu - 10) };
   const data = Object.entries(velden).map(([k, v]) => `${k}=${v}`).sort().join('\n');
   const hash = createHmac('sha256', createHash('sha256').update(token).digest()).update(data).digest('hex');
-  check('widget: juiste handtekening + vers = ok', widgetControle({ ...velden, hash }, token, nu).ok && widgetControle({ ...velden, hash }, token, nu).vers);
-  check('widget: gewijzigd veld = HANDTEKENING_ONGELDIG', widgetControle({ ...velden, id: '43', hash }, token, nu).reden === 'HANDTEKENING_ONGELDIG');
-  check('widget: ouder dan 5 min = VERLOPEN', widgetControle({ ...velden, hash }, token, nu + 600).reden === 'VERLOPEN');
-  check('widget: andere bot-sleutel = ongeldig', !widgetControle({ ...velden, hash }, '987654321:BBexampleexampleexampleexample00', nu).ok);
+  check('aanmeldvenster: juiste handtekening + vers = ok', widgetControle({ ...velden, hash }, token, nu).ok && widgetControle({ ...velden, hash }, token, nu).vers);
+  check('aanmeldvenster: gewijzigd veld = HANDTEKENING_ONGELDIG', widgetControle({ ...velden, id: '43', hash }, token, nu).reden === 'HANDTEKENING_ONGELDIG');
+  check('aanmeldvenster: ouder dan 5 min = VERLOPEN', widgetControle({ ...velden, hash }, token, nu + 600).reden === 'VERLOPEN');
+  check('aanmeldvenster: andere bot-sleutel = ongeldig', !widgetControle({ ...velden, hash }, '987654321:BBexampleexampleexampleexample00', nu).ok);
   const ks = knopSleutel('geheim'.repeat(8));
   const kd = knopTekenen(ks, 'i', 'abcdefghijkl', '42', nu + 120);
   const kl = knopLezen(kd)!;
@@ -110,7 +110,7 @@ export async function main(): Promise<number> {
   const moetBewaakt = ['POST /api/owner/telegram/koppelen/bevestigen', 'POST /api/owner/telegram/ontkoppelen', 'POST /api/owner/telegram/koppeling', 'POST /api/owner/telegram/code/instellen', 'POST /api/owner/telegram/matrix', 'POST /api/owner/telegram/beheer/bot', 'POST /api/owner/telegram/beheer/instellingen', 'POST /api/owner/telegram/beheer/nood-aan', 'POST /api/owner/telegram/deblokkeren'];
   check('alles wat iets verandert loopt door de poort', moetBewaakt.every((k) => soort(r[k])[BEWAAKT]));
   check('noodschakelaar UIT kan altijd (alleen sessie + beheerder)', !!soort(r['POST /api/owner/telegram/beheer/nood-uit'])[ALLEEN_SESSIE]);
-  check('widget-CSP: alleen telegram.org, geen frames van ons', WIDGET_CSP.includes('script-src https://telegram.org') && WIDGET_CSP.includes("frame-ancestors 'none'") && !WIDGET_CSP.includes('unsafe-eval'));
+  check('aanmeldvenster-CSP: alleen telegram.org, geen frames van ons', WIDGET_CSP.includes('script-src https://telegram.org') && WIDGET_CSP.includes("frame-ancestors 'none'") && !WIDGET_CSP.includes('unsafe-eval'));
 
   // ---------------------------------------------------------------- bronnen
   const fe = readdirSync('src/telegram-aanmelden').map((f) => lees(`src/telegram-aanmelden/${f}`)).join('\n');
@@ -120,7 +120,7 @@ export async function main(): Promise<number> {
   check('frontend kent STEP_UP_PASSKEY_REQUIRED en TELEGRAM_BEVESTIGING_NODIG', fe.includes('STEP_UP_PASSKEY_REQUIRED') && fe.includes('TELEGRAM_BEVESTIGING_NODIG'));
   check('alleen Oekraïens en Nederlands in de bot', !/['"]en['"]\s*:/.test(lees('shared/telegram-aanmelden/teksten.ts')));
   const routesSrc = lees('backend/telegram-aanmelden/routes.ts');
-  check('Login Widget gebruikt de ingestelde botnaam (data-telegram-login) in redirect-modus', routesSrc.includes('data-telegram-login') && routesSrc.includes('data-auth-url') && !routesSrc.includes('data-onauth'));
+  check('officieel aanmeldvenster gebruikt de ingestelde botnaam (data-telegram-login) in omleidingsmodus', routesSrc.includes('data-telegram-login') && routesSrc.includes('data-auth-url') && !routesSrc.includes('data-onauth'));
   check('migraties 0201/0202 bestaan, vlag standaard UIT', /standaard[^\n]*false|false[^\n]*standaard|DEFAULT false|, false/.test(lees('migrations/0201_telegram_aanmelden_vlag.sql')));
   // Regressie (e2e 09.11): elke ingebouwde standaard moet zelf toegestaan zijn, anders toont de keuzelijst een lege waarde.
   check('elke ingebouwde standaard is minstens zo streng als het minimum', INGEBOUWDE_ACTIES.every((s) => keuzeToegestaan(s, s.standaard)), INGEBOUWDE_ACTIES.filter((s) => !keuzeToegestaan(s, s.standaard)).map((s) => s.sleutel).join(','));

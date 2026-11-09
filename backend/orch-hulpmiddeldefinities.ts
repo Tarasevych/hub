@@ -36,7 +36,7 @@ export const ORCH_TOOLS: readonly ToolDef[] = Object.freeze([
       properties: {
         id: { type: 'string', description: p('Ідентифікатор задачі у форматі ABC-001 (великі літери, дефіс, 3–5 цифр).', 'Taak-id in de vorm ABC-001 (hoofdletters, streepje, 3–5 cijfers).') },
         agent: { type: 'string', description: p('Ідентифікатор агента з orchestratie/beleid.json (claude, codex, gemini…). Типово — агент цього підключення.', 'Agent-id uit orchestratie/beleid.json (claude, codex, gemini…). Standaard de agent van deze koppeling.') },
-        tak: { type: 'string', description: p('Власна гілка задачі: feature/<id>-YYYYMMDD-HHMMSS (малими літерами).', 'Eigen tak van de taak: feature/<id>-YYYYMMDD-HHMMSS (kleine letters).') },
+        tak: { type: 'string', description: p('Власна гілка задачі: префікс/<id>-РРРРММДД-ГГХХСС (малими літерами; префікс — нідерландський або давній англійський).', 'Eigen tak van de taak: functie/<id>-JJJJMMDD-UUMMSS (kleine letters; het oude feature/ blijft geldig).') },
         basisCommit: { type: 'string', description: p('Повний SHA (40 hex) коміту, від якого починається робота — з orchestratie/beleid.json → basis.bronCommit, якщо не вказано інакше.', 'Volledige SHA (40 hex) van de commit waarvan het werk begint — uit orchestratie/beleid.json → basis.bronCommit tenzij anders afgesproken.') },
         omschrijving: { type: 'string', description: p('Коротко, що робить задача (до 300 символів).', 'Kort wat de taak doet (hoogstens 300 tekens).') },
       },

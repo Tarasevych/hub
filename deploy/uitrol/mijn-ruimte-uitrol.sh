@@ -667,7 +667,7 @@ try:
     commit=ref.get('commit','')
     tak=ref.get('tak','')
     if (ref.get('schema')!=1 or not re.fullmatch(r'[A-Z][A-Z0-9]{1,9}-\d{3,5}',taak)
-        or not re.fullmatch(r'(feature|fix|audit|release)/[a-z0-9-]+-\d{8}-\d{6}',tak)
+        or not re.fullmatch(r'(functie|herstel|controle|feature|fix|audit|release)/[a-z0-9-]+-\d{8}-\d{6}',tak)
         or ref.get('repo')!=repo or commit!=bron or ref.get('pad')!=pad
         or not re.fullmatch(r'[0-9a-f]{64}',ref.get('sha256',''))
         or ref.get('url')!=f'https://github.com/{repo}/blob/{commit}/{pad}'

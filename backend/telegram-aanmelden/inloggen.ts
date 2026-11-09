@@ -1,8 +1,8 @@
 // TELEGRAM-AANMELDEN v1 — aanmelden met Telegram (punt B + D).
 // De site start een gewone aanmeldtransactie (zelfde tabel en zelfde voltooiing als Google: backend/index.ts) en koppelt daar een
-// Telegram-verzoek aan: id (12 tekens, publiek in de deeplink) + geheim (32 bytes, alleen in deze browser, als sha256 bewaard).
-// Goedkeuren gebeurt in Telegram met een eenmalige, ondertekende knop (of via het officiële Login Widget); de sessie maakt
-// uitsluitend de browser met het geheim én de bindingscookie van de transactie. Een Telegram-aanmelding geeft GEEN step-up.
+// Telegram-verzoek aan: id (12 tekens, publiek in de directe verwijzing) + geheim (32 bytes, alleen in deze browser, als sha256 bewaard).
+// Goedkeuren gebeurt in Telegram met een eenmalige, ondertekende knop (of via het officiële aanmeldvenster); de sessie maakt
+// uitsluitend de browser met het geheim én de bindingscookie van de transactie. Een Telegram-aanmelding geeft GEEN extra bevestiging.
 import { createHash } from 'node:crypto';
 import { apparaat as apparaatLabel } from '../../server/platform/audit';
 import { getPool } from '../../server/platform/pg';
@@ -85,7 +85,7 @@ async function gebruikerVan(userId: string): Promise<{ id: string; role?: string
   return { id: userId, role: String(d.role || ''), status: String(d.status || ''), email: String(d.email || '') };
 }
 
-/** Kan dit account met Telegram (± geheime code) aan de eisen voldoen? Passkey kan hier nooit (die hoort bij een andere weg). */
+/** Kan dit account met Telegram (± geheime code) aan de eisen voldoen? Toegangssleutel kan hier nooit (die hoort bij een andere weg). */
 export function telegramWegVoor(eisen: Eis[], beschikbaar: ReadonlySet<Methode>): { kan: boolean; code: boolean } {
   let code = false;
   for (const eis of eisen) {
@@ -233,7 +233,7 @@ export async function inlogGeluktMelden(koppelingId: string): Promise<void> {
   } catch { /* extra */ }
 }
 
-// ------------------------------------------------------------------------------------------------ Login Widget (redirect-modus)
+// ------------------------------------------------------------------------------------------------ aanmeldvenster (redirect-modus)
 /** De terugkeer van het officiële widget (data-auth-url). Geeft de pagina waar de browser heen moet. */
 export async function widgetTerug(q: Record<string, string>): Promise<{ id: string; fout: string }> {
   const id = String(q.i || '');

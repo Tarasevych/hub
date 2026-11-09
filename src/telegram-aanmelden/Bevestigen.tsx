@@ -36,7 +36,7 @@ export function useEenmalig() {
 type Open = { nodig: Nodig; klaar: (ok: boolean) => void };
 
 /**
- * useBevestiging(): `uitvoeren(fn)` voert fn uit; vraagt de server een extra bevestiging (Telegram, geheime code of passkey),
+ * useBevestiging(): `uitvoeren(fn)` voert fn uit; vraagt de server een extra bevestiging (Telegram, geheime code of toegangssleutel),
  * dan opent het venster, en na bevestiging probeert het fn opnieuw (hoogstens 3 rondes). «Скасувати» = niets gewijzigd.
  */
 export function useBevestiging(ctx: Ctx, lang: Lang) {
@@ -46,7 +46,7 @@ export function useBevestiging(ctx: Ctx, lang: Lang) {
       try { return await fn(); }
       catch (e) {
         if (!(e instanceof BevestigingNodig) || ronde >= 3) throw e;
-        // Alleen een passkey ontbreekt → meteen het bestaande passkey-venster (zelfde als elders op de site).
+        // Alleen een toegangssleutel ontbreekt → meteen het bestaande passkey-venster (zelfde als elders op de site).
         if (e.nodig.ontbreekt.length === 1 && e.nodig.ontbreekt[0] === 'passkey') {
           const uit = await bevestigToegang({ service: ctx.service, tabContext: ctx.tabContext, post: (u, d) => api.post(u, d), toegestaan: ['passkey'], sterk: true });
           if (!uit.ok) throw new Error('PASSKEY_GEANNULEERD');
@@ -116,7 +116,7 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
       setCode('');
       if (r.ok) { volgende('code'); return; }
       setFout(r.uitkomst === 'pauze' ? tr(lang, 'Забагато невдалих спроб. Код тимчасово призупинено — спробуйте пізніше або іншим способом.', 'Te veel mislukte pogingen. De code is tijdelijk gepauzeerd — probeer later of op een andere manier.')
-        : r.uitkomst === 'uit' ? tr(lang, 'Код вимкнено після багатьох помилок. Відновіть його у «Способах входу» з ключем доступу.', 'De code is na te veel fouten uitgeschakeld. Herstel hem bij «Aanmeldmethoden» met uw passkey.')
+        : r.uitkomst === 'uit' ? tr(lang, 'Код вимкнено після багатьох помилок. Відновіть його у «Способах входу» з ключем доступу.', 'De code is na te veel fouten uitgeschakeld. Herstel hem bij «Aanmeldmethoden» met uw toegangssleutel.')
           : tr(lang, 'Код не підходить. Перевірте й спробуйте ще раз.', 'De code klopt niet. Controleer en probeer opnieuw.'));
     } catch (e) { setFout(foutTekst(lang, e)); }
   });

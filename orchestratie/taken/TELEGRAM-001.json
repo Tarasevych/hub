@@ -2,15 +2,15 @@
   "schema": 1,
   "id": "TELEGRAM-001",
   "agent": "grok",
-  "tak": "feature/telegram-001-20261109-134807",
+  "tak": "feature/telegram-001-20261109-150500",
   "basisCommit": "22742811cbb10dda3030faae607720d41236be2e",
   "basisVersie": "20261109-105221",
   "regelsVersie": "1.4.14",
   "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
   "staat": "in_progress",
   "gestart": "2026-11-09T09:30:00.000Z",
-  "bijgewerkt": "2026-11-09T12:55:00.000Z",
-  "omschrijving": "Вхід і підтвердження через Telegram (бот @MijnRuimte_Bot): картки, виявлення змін, таблиця підтверджень, таємний і тривожний код, служба стану, розділ адміністрування; прапорець telegram-aanmelden-v1 типово вимкнено.",
+  "bijgewerkt": "2026-11-09T14:05:00.000Z",
+  "omschrijving": "Вхід і підтвердження через Telegram (бот @MijnRuimte_Bot) і розміщення способів входу адміністратором: картки, виявлення змін, таблиця підтверджень, таємний і тривожний код, служба стану, розділ адміністрування; прапорець telegram-aanmelden-v1 типово вимкнено.",
   "kanaal": "tar_gz",
   "overdrachten": []
 }

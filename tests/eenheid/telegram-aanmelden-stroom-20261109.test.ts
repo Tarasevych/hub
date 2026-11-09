@@ -60,13 +60,13 @@ export async function main(): Promise<number> {
   const sql = async (q: string, w: unknown[] = []) => (await pool.query(q, w)).rows;
 
   try {
-    check('webhook-kop: juist geheim aanvaard, fout geweigerd', (await kopKlopt('w'.repeat(40))) && !(await kopKlopt('x'.repeat(40))) && !(await kopKlopt('')));
+    check('kop van het terugroepadres: juist geheim aanvaard, fout geweigerd', (await kopKlopt('w'.repeat(40))) && !(await kopKlopt('x'.repeat(40))) && !(await kopKlopt('')));
     const cfg = await publiekeConfig();
     check('aanmeldscherm: knop zichtbaar met bot @MijnRuimte_Bot zodra vlag + sleutel er zijn', cfg.zichtbaar && cfg.bot === 'MijnRuimte_Bot' && cfg.botId === '123456789');
 
     // ---------------------------------------------------------------- koppelen
     const k = await koppelStart({ id: eigenaar, role: 'owner', status: 'approved' }, 'sessie-a', { naam: 'Особистий' });
-    check('koppelen: deeplink naar t.me/MijnRuimte_Bot?start=k_<id>', k.deeplink === `https://t.me/MijnRuimte_Bot?start=k_${k.id}`);
+    check('koppelen: directe verwijzing naar t.me/MijnRuimte_Bot?start=k_<id>', k.deeplink === `https://t.me/MijnRuimte_Bot?start=k_${k.id}`);
     await bericht({ text: `/start k_${k.id}` });
     check('bot vraagt het nummer met de knop «поділитися» (request_contact)', /request_contact/.test(laatste('sendMessage')?.lichaam || '') || /request_contact/.test(laatste('sendPhoto')?.lichaam || ''));
     check('stand na /start = wacht-telefoon', (await koppelStatus(eigenaar, 'sessie-a', k.id)).stand === 'wacht-telefoon');
@@ -76,7 +76,7 @@ export async function main(): Promise<number> {
     check('contact van iemand anders telt niet', (await koppelStatus(eigenaar, 'sessie-a', k.id)).stand === 'wacht-telefoon');
     await bericht({ contact: { user_id: 777, phone_number: '+32470123456' } });
     const st = await koppelStatus(eigenaar, 'sessie-a', k.id);
-    check('eigen contact → wacht-passkey met de VOLLEDIGE identiteit (niets gemaskeerd)', st.stand === 'wacht-passkey' && st.identiteit?.telefoon.replace(/^\+/, '') === '32470123456' && st.identiteit?.gebruikersnaam === 'pavlo_t' && st.identiteit?.voornaam === 'Pavlo' && st.identiteit?.telegramId === '777');
+    check('eigen contact → wacht-toegangssleutel met de VOLLEDIGE identiteit (niets gemaskeerd)', st.stand === 'wacht-passkey' && st.identiteit?.telefoon.replace(/^\+/, '') === '32470123456' && st.identiteit?.gebruikersnaam === 'pavlo_t' && st.identiteit?.voornaam === 'Pavlo' && st.identiteit?.telegramId === '777');
     let andereSessie = '';
     try { await koppelStatus(eigenaar, 'sessie-b', k.id); } catch (e) { andereSessie = (e as Error).message; }
     check('een andere sessie ziet het verzoek niet', andereSessie === 'VERZOEK_ONBEKEND');
@@ -86,7 +86,7 @@ export async function main(): Promise<number> {
     // ---------------------------------------------------------------- aanmelden
     await sql('INSERT INTO app.tg_matrix (user_id, keuzes) VALUES ($1, $2::jsonb) ON CONFLICT (user_id) DO UPDATE SET keuzes = EXCLUDED.keuzes', [eigenaar, JSON.stringify({ 'nieuw-apparaat': 'telegram', aanmelden: 'telegram' })]);
     const i1 = await inlogStart('tx-1', 'Mozilla/5.0 (X11; Linux x86_64) Firefox/140.0');
-    check('aanmelden: deeplink t.me/MijnRuimte_Bot?start=i_<id>', i1.deeplink === `https://t.me/MijnRuimte_Bot?start=i_${i1.id}`);
+    check('aanmelden: directe verwijzing t.me/MijnRuimte_Bot?start=i_<id>', i1.deeplink === `https://t.me/MijnRuimte_Bot?start=i_${i1.id}`);
     await bericht({ text: `/start i_${i1.id}` });
     const ja = knop('i');
     check('kaart met «Так»-knop verstuurd', !!ja);

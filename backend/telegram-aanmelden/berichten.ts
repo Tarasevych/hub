@@ -19,7 +19,7 @@ export function strook(accountNaam: string, kleur: number, taal: BotTaal): strin
   return `${STROOK_KLEUREN[Math.max(0, Math.min(4, kleur))]} ${site}${accountNaam ? ` · ${accountNaam}` : ''}`;
 }
 
-/** Knoppen die iets TOESTAAN («Так, це я», «Підтвердити», «Це був я»): werken pas na de aftelling (server-side, zie webhook.ts). */
+/** Knoppen die iets TOESTAAN («Так, це я», «Підтвердити», «Це був я»): werken pas na de aftelling (op de server, zie webhook.ts). */
 export const JA_LETTERS: ReadonlySet<string> = new Set(['i', 'b', 'w']);
 const AFTEL_KAARTEN: ReadonlySet<string> = new Set(['nieuwApparaat', 'verdacht']);
 

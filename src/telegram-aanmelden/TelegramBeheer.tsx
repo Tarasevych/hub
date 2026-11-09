@@ -9,6 +9,7 @@ import TelegramLogo from './TelegramLogo';
 import { ecosystemTabContext } from '../tab-context';
 import { KEUZE_IDS, KEUZE_NAMEN, type KeuzeId } from '../../shared/telegram-aanmelden/beleid';
 import { isBotGebruikersnaam, tekstIn, type TelegramInstellingen } from '../../shared/telegram-aanmelden/model';
+import PlaatsingBeheer from './PlaatsingBeheer';
 import './telegram.css';
 
 import { bronNaam, koppelStandNaam, redenNaam, resultaatNaam, statusNaam } from './namen';
@@ -71,6 +72,7 @@ export default function TelegramBeheer({ lang }: { lang: Lang }) {
     <BotInstellen ctx={ctx} lang={lang} o={o} uitvoeren={uitvoeren} klaar={laden} />
     <Instellingen lang={lang} o={o} opslaan={(inst) => doeMet(() => tgPost(ctx, '/api/owner/telegram/beheer/instellingen', { instellingen: inst }), tr(lang, 'Збережено. Протягом 10 хвилин можна скасувати.', 'Opgeslagen. U kunt 10 minuten ongedaan maken.'))}
       ongedaan={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/beheer/ongedaan'), tr(lang, 'Попередні налаштування відновлено.', 'Vorige instellingen hersteld.'))} />
+    <PlaatsingBeheer ctx={ctx} lang={lang} uitvoeren={uitvoeren} />
     <Acties lang={lang} acties={o.acties} opslaan={(body) => doeMet(() => tgPost(ctx, '/api/owner/telegram/beheer/actie', body), tr(lang, 'Дії оновлено.', 'Handelingen bijgewerkt.'))} />
     <Koppelingen ctx={ctx} lang={lang} uit={(id) => doeMet(() => tgPost(ctx, '/api/owner/telegram/beheer/koppeling-uit', { koppelingId: id }), tr(lang, 'Прив’язку вимкнено, власника сповіщено.', 'Koppeling uitgezet, eigenaar op de hoogte gebracht.'))} />
     <Journaal ctx={ctx} lang={lang} />
@@ -81,8 +83,8 @@ function Noodschakelaar({ lang, aan, uit, weerAan }: { lang: Lang; aan: boolean;
   const { bezig, doe } = useEenmalig();
   return <div className={`tga-nood ${aan ? '' : 'tga-nood-uit'}`}>
     <strong>{aan ? tr(lang, 'Вхід через Telegram працює', 'Aanmelden met Telegram werkt') : tr(lang, '⛔ Вхід через Telegram вимкнено для всіх', '⛔ Aanmelden met Telegram staat voor iedereen uit')}</strong>
-    <p className='tga-klein'>{aan ? tr(lang, 'Аварійний вимикач: одразу зупиняє вхід і підтвердження через Telegram для всіх. Вимкнути можна завжди, без ключа доступу.', 'Noodschakelaar: stopt meteen aanmelden en bevestigen met Telegram voor iedereen. Uitzetten kan altijd, zonder passkey.')
-      : tr(lang, 'Користувачі входять іншими способами. Увімкнення потребує ключа доступу.', 'Gebruikers melden zich op een andere manier aan. Weer aanzetten vraagt een passkey.')}</p>
+    <p className='tga-klein'>{aan ? tr(lang, 'Аварійний вимикач: одразу зупиняє вхід і підтвердження через Telegram для всіх. Вимкнути можна завжди, без ключа доступу.', 'Noodschakelaar: stopt meteen aanmelden en bevestigen met Telegram voor iedereen. Uitzetten kan altijd, zonder toegangssleutel.')
+      : tr(lang, 'Користувачі входять іншими способами. Увімкнення потребує ключа доступу.', 'Gebruikers melden zich op een andere manier aan. Weer aanzetten vraagt een toegangssleutel.')}</p>
     {aan ? <button type='button' className='tga-knop tga-knop-gevaar' disabled={bezig} onClick={() => void doe(uit)}>{tr(lang, 'Вимкнути для всіх зараз', 'Nu voor iedereen uitzetten')}</button>
       : <button type='button' className='tga-knop tga-knop-hoofd' disabled={bezig} onClick={() => void doe(weerAan)}>{tr(lang, 'Увімкнути знову', 'Weer aanzetten')}</button>}
   </div>;
@@ -115,14 +117,14 @@ function BotInstellen({ ctx, lang, o, uitvoeren, klaar }: { ctx: Ctx; lang: Lang
     <dl className='tga-dl'>
       <dt>{tr(lang, 'Очікуваний бот', 'Verwachte bot')}</dt><dd>@{verwacht}</dd>
       <dt>{tr(lang, 'Ключ', 'Sleutel')}</dt><dd>{o.sleutel.aanwezig ? `${o.sleutel.masker} · ${bronNaam(lang, o.sleutel.bron)}` : tr(lang, 'ще не введено', 'nog niet ingegeven')}{o.sleutel.wisselLoopt && ` · ${tr(lang, 'заміна триває', 'wissel loopt')}`}</dd>
-      <dt>{tr(lang, 'Таємний заголовок адреси зворотного виклику', 'Geheime webhook-kop')}</dt><dd>{o.webhookGeheim ? '✓' : '—'}</dd>
+      <dt>{tr(lang, 'Таємний заголовок адреси зворотного виклику', 'Geheime kop van het terugroepadres')}</dt><dd>{o.webhookGeheim ? '✓' : '—'}</dd>
       <dt>{tr(lang, 'Сіль кодів', 'Codepeper')}</dt><dd>{o.peper ? '✓' : '—'}</dd>
       <dt>{tr(lang, 'Адреса зворотного виклику', 'Terugroepadres')}</dt><dd className='tga-mono'>{o.webhookUrl}</dd>
     </dl>
     <label className='tga-veld'>{tr(lang, `Ключ бота від @BotFather (для @${verwacht})`, `Botsleutel van @BotFather (voor @${verwacht})`)}
       <input type='password' autoComplete='off' spellCheck={false} value={sleutel} onChange={(e) => setSleutel(e.target.value)} placeholder={o.sleutel.aanwezig ? tr(lang, 'залиште порожнім, щоб лише оновити налаштування', 'leeg laten om alleen de instellingen bij te werken') : '1234567890:AA…'} />
     </label>
-    <p className='tga-klein'>{tr(lang, 'Ключ одразу йде в захищене сховище і більше ніколи не показується — ні тут, ні в журналі. Перед збереженням ми перевіряємо запитом до Telegram, що ключ належить саме цьому боту.', 'De sleutel gaat meteen de beveiligde kluis in en wordt nooit meer getoond — niet hier, niet in het journaal. Vóór opslaan controleren we met getMe dat de sleutel bij precies deze bot hoort.')}</p>
+    <p className='tga-klein'>{tr(lang, 'Ключ одразу йде в захищене сховище і більше ніколи не показується — ні тут, ні в журналі. Перед збереженням ми перевіряємо запитом до Telegram, що ключ належить саме цьому боту.', 'De sleutel gaat meteen de beveiligde kluis in en wordt nooit meer getoond — niet hier, niet in het journaal. Vóór opslaan controleren we bij Telegram dat de sleutel bij precies deze bot hoort.')}</p>
     {!vorm && <p className='tga-fout'>{tr(lang, 'Це не схоже на ключ бота (формат 123456789:ABC…).', 'Dit lijkt geen botsleutel (vorm 123456789:ABC…).')}</p>}
     {andere && <div className='tga-let' role='alert'>
       <p><strong>{tr(lang, `⚠️ Цей ключ належить боту @${andere.replace(/^@/, '')}, а не @${verwacht}.`, `⚠️ Deze sleutel hoort bij bot @${andere.replace(/^@/, '')}, niet bij @${verwacht}.`)}</strong></p>
@@ -137,7 +139,7 @@ function BotInstellen({ ctx, lang, o, uitvoeren, klaar }: { ctx: Ctx; lang: Lang
       {o.sleutel.wisselLoopt && <button type='button' className='tga-knop' disabled={bezig} onClick={() => void doe(async () => { await uitvoeren(() => tgPost(ctx, '/api/owner/telegram/beheer/sleutel-annuleren')); await klaar(); })}>{tr(lang, 'Скасувати заміну ключа', 'Sleutelwissel annuleren')}</button>}
     </div>
     {stappen.length > 0 && <ul className='tga-stap-lijst'>{stappen.map((s) => <li key={s.stap} className={s.ok ? 'ok' : 'nee'}>{s.ok ? '✓' : '✗'} {s.stap === 'proef' ? tr(lang, 'Пробне повідомлення', 'Proefbericht') : stapNaam(s.stap, lang)}{s.info ? ` · ${s.info}` : ''}{s.fout && s.fout !== 'ANDERE_BOT' ? ` · ${s.fout}` : ''}</li>)}</ul>}
-    {webhook && <p className={webhook.juist ? 'tga-ok' : 'tga-fout'}>{webhook.juist ? tr(lang, `Адреса зворотного виклику правильна, у черзі ${webhook.wachtend}.`, `Webhook klopt, ${webhook.wachtend} in de wachtrij.`) : tr(lang, `Адреса зворотного виклику вказує на «${webhook.url || '—'}». Натисніть «Налаштувати бота».`, `Webhook wijst naar «${webhook.url || '—'}». Tik «Bot instellen».`)}{webhook.laatsteFout && ` · ${webhook.laatsteFout} (${tijd(webhook.laatsteFoutOp, lang)})`}</p>}
+    {webhook && <p className={webhook.juist ? 'tga-ok' : 'tga-fout'}>{webhook.juist ? tr(lang, `Адреса зворотного виклику правильна, у черзі ${webhook.wachtend}.`, `Terugroepadres klopt, ${webhook.wachtend} in de wachtrij.`) : tr(lang, `Адреса зворотного виклику вказує на «${webhook.url || '—'}». Натисніть «Налаштувати бота».`, `Terugroepadres wijst naar «${webhook.url || '—'}». Tik «Bot instellen».`)}{webhook.laatsteFout && ` · ${webhook.laatsteFout} (${tijd(webhook.laatsteFoutOp, lang)})`}</p>}
     {fout && <p className='tga-fout' role='alert'>{fout}</p>}
   </div>;
 }
@@ -152,7 +154,7 @@ function Instellingen({ lang, o, opslaan, ongedaan }: { lang: Lang; o: Overzicht
   return <form className='tga-blok' onSubmit={(e) => { e.preventDefault(); if (naamOk) void doe(() => opslaan({ ...i, botGebruikersnaam: i.botGebruikersnaam.replace(/^@/, '') })); }}>
     <h3>{tr(lang, 'Налаштування', 'Instellingen')}</h3>
     <label className='tga-veld'>{tr(lang, 'Ім’я користувача бота', 'Gebruikersnaam van de bot')}<input value={i.botGebruikersnaam} maxLength={33} onChange={(e) => setI({ ...i, botGebruikersnaam: e.target.value.replace(/^@/, '') })} />
-      <small className='tga-klein'>{naamOk ? tr(lang, 'Використовується в посиланнях t.me, офіційному вікні входу Telegram та перевірці ключа.', 'Gebruikt in t.me-links, de aanmeldwidget en de sleutelcontrole.') : tr(lang, 'Має закінчуватися на «bot», 5–32 символи.', 'Moet op «bot» eindigen, 5–32 tekens.')}</small></label>
+      <small className='tga-klein'>{naamOk ? tr(lang, 'Використовується в посиланнях t.me, офіційному вікні входу Telegram та перевірці ключа.', 'Gebruikt in t.me-verwijzingen, het officiële aanmeldvenster van Telegram en de sleutelcontrole.') : tr(lang, 'Має закінчуватися на «bot», 5–32 символи.', 'Moet op «bot» eindigen, 5–32 tekens.')}</small></label>
     <label className='tga-veld'>{tr(lang, 'Кому дозволено', 'Wie mag')}<select value={i.wieMag} onChange={(e) => setI({ ...i, wieMag: e.target.value as TelegramInstellingen['wieMag'] })}>
       <option value='eigenaar'>{tr(lang, 'Лише власник і адміністратори', 'Alleen eigenaar en beheerders')}</option><option value='eigenaar-en-gasten'>{tr(lang, 'Власник, адміністратори й гості', 'Eigenaar, beheerders en gasten')}</option><option value='niemand'>{tr(lang, 'Нікому (нові прив’язки закрито)', 'Niemand (nieuwe koppelingen dicht)')}</option></select></label>
     <label className='tga-vinkje'><input type='checkbox' checked={i.afbeeldingen} onChange={(e) => setI({ ...i, afbeeldingen: e.target.checked })} /> {tr(lang, 'Картки-зображення в повідомленнях', 'Kaarten als afbeelding in berichten')}</label>
@@ -196,7 +198,7 @@ function Acties({ lang, acties, opslaan }: { lang: Lang; acties: Actie[]; opslaa
       <input placeholder='Naam' value={n.naam_nl} onChange={(e) => setN({ ...n, naam_nl: e.target.value })} required aria-label='nl' />
       <select value={n.minimum} onChange={(e) => setN({ ...n, minimum: e.target.value as KeuzeId })} aria-label={tr(lang, 'Мінімум', 'Minimum')}>{KEUZE_IDS.map((k) => <option key={k} value={k}>{tekstIn(KEUZE_NAMEN[k], lang)}</option>)}</select>
       <select value={n.standaard} onChange={(e) => setN({ ...n, standaard: e.target.value as KeuzeId })} aria-label={tr(lang, 'Типово', 'Standaard')}>{KEUZE_IDS.map((k) => <option key={k} value={k}>{tekstIn(KEUZE_NAMEN[k], lang)}</option>)}</select>
-      <label className='tga-vinkje'><input type='checkbox' checked={n.gevoelig} onChange={(e) => setN({ ...n, gevoelig: e.target.checked })} /> {tr(lang, 'чутлива (завжди ключ доступу)', 'gevoelig (altijd passkey)')}</label>
+      <label className='tga-vinkje'><input type='checkbox' checked={n.gevoelig} onChange={(e) => setN({ ...n, gevoelig: e.target.checked })} /> {tr(lang, 'чутлива (завжди ключ доступу)', 'gevoelig (altijd toegangssleutel)')}</label>
       <button type='submit' className='tga-knop' disabled={bezig}>{tr(lang, 'Додати', 'Toevoegen')}</button>
     </form>
   </div>;

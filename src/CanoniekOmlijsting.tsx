@@ -3,7 +3,7 @@ import{paginaVerborgen,useFotoVlaggen}from'./foto/foto-vlaggen';
 import{lazy,Suspense}from'react';import{useRuimtesV2}from'./tech/ruimtes/ruimtes-vlag';
 // 28.10.2026: ruimtewissel onderaan het zijmenu (vervangt de zwevende strook onderaan); alleen met vlag tech-ruimtes-v2 en een technisch profiel.
 const ZijbalkRuimte=lazy(()=>import('./tech/ruimtes/ZijbalkRuimte'));
-import{useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type PointerEvent as ReactPointerEvent,type FocusEvent as ReactFocusEvent,type KeyboardEvent as ReactKeyboardEvent,type ReactNode}from'react';
+import{Fragment,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type PointerEvent as ReactPointerEvent,type FocusEvent as ReactFocusEvent,type KeyboardEvent as ReactKeyboardEvent,type ReactNode}from'react';
 import './werkblad/pagina-achtergrond';
 import './schil-achtergrond.css';
 import{ArrowUp,Check,ChevronDown,Menu,PanelLeftClose,PencilRuler,Pin,RotateCcw,Undo2,X}from'lucide-react';import CanonicalNotificationCenter from'./CanoniekMeldingencentrum';import ZoekGlobaal,{ZoekMenuKnop}from'./zoek/ZoekGlobaal';import{focusDoelStarten}from'./platform/focus-doel';/* Z4 22.10.2026: globaal zoekveld + palet ⌘K; ?focus=<hulp-sleutel> → element markeren */import CanonicalConnectionBanner from'./CanoniekVerbindingBand';import type{CanonicalNoticeInput,CanonicalServerNotification}from'./canoniek-meldingen';
@@ -47,6 +47,8 @@ const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.se
 // Google-knop dan draaien zolang het menu open stond).
 import AanmeldAndereOpties from './AanmeldAndereOpties';
 import AanmeldTelegram from './telegram-aanmelden/AanmeldTelegram'; /* TELEGRAM-AANMELDEN v1: toont niets zolang de server zichtbaar=false zegt */
+import { useAanmeldConfig } from './telegram-aanmelden/aanmeld-config';
+import { aanmeldIndeling } from '../shared/aanmeld-plaatsing/plaatsing';
 import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
 export const AANMELD_BEZIG_SLEUTEL='mr-aanmelden-bezig';
 export const AANMELD_BEZIG_MS=5*60_000;
@@ -56,6 +58,7 @@ export function zetAanmeldenBezig(aan:boolean):void{try{if(aan)sessionStorage.se
 export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount,onGoogle}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null;onGoogle?:()=>void|Promise<unknown>}){
  const uk=lang==='uk';
  const[activating,setActivating]=useState(false);
+ const aanmeldCfg=useAanmeldConfig(); /* AANMELD-PLAATSING v1: hook vóór elke vroege return */
  // Terug van Google: alleen bij de EERSTE weergave in 'checking' gelezen (daarna zegt de app zelf of het profiel open is).
  const[terugVanAanmelden]=useState(()=>checking&&aanmeldenBezig());
  const vertrekt=useRef(false);
@@ -82,6 +85,15 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  };
  const known=!checking&&rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
  const draait=activating||checking;
+ const indeling=aanmeldIndeling(aanmeldCfg);
+ const googleG=<img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/>;
+ const googleKnop=(
+   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} aria-disabled={checking||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
+    <span className='mr-sign-in-logo' aria-hidden='true'>{googleG}</span>
+    <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):(uk?'Увійти через Google':'Aanmelden met Google')}</span>
+    <span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
+   </button>
+ );
  return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={draait?'true':'false'} aria-live={checking?'polite':undefined}>
   <div className='mr-sign-in-content'>
    <h1>{uk?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
@@ -92,13 +104,12 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
     <span aria-hidden='true' className='mr-sign-in-chevron'>⌄</span>
    </button>}
    {/* Focus naar een ander element op de pagina (bv. de accountkeuze die opent) = geen aanmelding meer; het venster verlaten (relatedTarget leeg) niet. */}
-   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} aria-disabled={checking||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
-    <span className='mr-sign-in-logo' aria-hidden='true'><img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/></span>
-    <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):(uk?'Увійти через Google':'Aanmelden met Google')}</span>
-    <span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
-   </button>
-   {!checking&&<AanmeldTelegram lang={lang} remember={rememberBrowser}/>}
-   {!checking&&<AanmeldAndereOpties lang={lang}/>}
+   {/* AANMELD-PLAATSING v1: volgorde en plaats per methode komen van de beheerder (met de vlag aan); zonder plaatsing exact zoals vroeger. */}
+   {indeling.hoofd.map(m=>m==='google'?<Fragment key='google'>{googleKnop}</Fragment>:m==='telegram'&&!checking?<AanmeldTelegram key='telegram' lang={lang} remember={rememberBrowser}/>:null)}
+   {!checking&&<AanmeldAndereOpties lang={lang} ids={indeling.andere} extra={{
+    ...(indeling.andere.includes('google')?{google:<button type='button' className='mr-sign-in-optie mr-sign-in-optie-google' onClick={google}><span className='mr-sign-in-optie-logo' aria-hidden='true'>{googleG}</span><span className='mr-sign-in-optie-tekst'><strong>{uk?'Увійти через Google':'Aanmelden met Google'}</strong></span></button>}:{}),
+    ...(indeling.andere.includes('telegram')?{telegram:<AanmeldTelegram lang={lang} remember={rememberBrowser}/>}:{}),
+   }}/>}
    {!checking&&onRememberBrowser&&<label className='mr-sign-in-remember'>
     <input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/>
     <span>{uk?'Зберегти обліковий запис на цьому пристрої':'Account op dit apparaat bewaren'}</span>

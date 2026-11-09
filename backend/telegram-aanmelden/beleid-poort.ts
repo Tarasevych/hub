@@ -3,13 +3,13 @@
 // niet-publieke route niet door bewaakt() of alleenSessie() (lezen van eigen gegevens) loopt.
 //
 // Wat telt als «voldaan» voor een handeling in DEZE sessie:
-//   passkey  — passkeyStapOpGeldig (backend/stap-op.ts): binnen 5 minuten op deze sessie met een eigen passkey bevestigd.
+//   toegangssleutel  — passkeyStapOpGeldig (backend/stap-op.ts): binnen 5 minuten op deze sessie met een eigen toegangssleutel bevestigd.
 //              Google, TOTP, herstelcode of «onthouden browser» tellen NIET (gevoelige handelingen: punt D).
 //   telegram — een rij in app.tg_bevestigingen (methode telegram) voor dezelfde gebruiker + sessie + handeling, bevestigd binnen
 //              5 minuten met een tik in Telegram op een eenmalige knop, nog niet gebruikt;
 //   code     — idem met methode code (geheime code op de site ingevoerd, nooit in de chat).
-// Een sessie die via Telegram is aangemaakt krijgt GEEN step-up (backend/index.ts geeft voor Telegram geen Google-tijd door),
-// dus alles wat gevoelig is vraagt daar vanzelf nog een passkey.
+// Een sessie die via Telegram is aangemaakt krijgt GEEN extra bevestiging (backend/index.ts geeft voor Telegram geen Google-tijd door),
+// dus alles wat gevoelig is vraagt daar vanzelf nog een toegangssleutel.
 import { passkeyStapOpGeldig, stapOpSessieId, type StapOpAuth } from '../stap-op';
 import { actieSoorten, instellingen, sql } from './opslag';
 import { beoordeel, werkelijkeEis, type ActieSoort, type Beoordeling, type KeuzeId, type Methode } from '../../shared/telegram-aanmelden/beleid';
@@ -42,7 +42,7 @@ export async function beschikbaarVoor(userId: string): Promise<Set<Methode>> {
   const [st] = await sql<{ stand: string; soort: string }>("SELECT stand, soort FROM app.tg_status WHERE methode = 'telegram'");
   const telegramWerkt = !st || st.stand === 'werkt' || st.stand === 'traag' || st.stand === 'onbekend';
   const [c] = await sql<{ uitgeschakeld: boolean; pauze_tot: Date | null; reden: string }>('SELECT uitgeschakeld, pauze_tot, reden FROM app.tg_geheime_codes WHERE user_id = $1', [userId]);
-  // Te veel foute codes of een code in de chat gezien: Telegram-bevestiging staat uit tot een passkey-aanmelding (punt F).
+  // Te veel foute codes of een code in de chat gezien: Telegram-bevestiging staat uit tot een aanmelding met toegangssleutel (punt F).
   const telegramGesloten = !!c && c.uitgeschakeld && (c.reden === 'te-veel-pogingen' || c.reden === 'in-chat-gezien' || c.reden === 'alarm');
   if (inst.aan && Number(tg?.n || 0) > 0 && telegramWerkt && !telegramGesloten) uit.add('telegram');
   const [pk] = await sql('SELECT count(*)::int AS n FROM app.passkeys WHERE user_id = $1', [userId]).catch(() => [{ n: 0 }]);
@@ -65,7 +65,7 @@ export async function voldaanVoor(auth: PoortAuth, actie: string, nu = Date.now(
 
 export type PoortUitkomst = { ok: true; beoordeling: Beoordeling } | { ok: false; status: number; fout: string; beoordeling: Beoordeling | null };
 
-/** DE beslissing. Volgorde: onbekende handeling → weigeren; dan beoordeel(); passkey eerst (de browser opent het venster vanzelf). */
+/** DE beslissing. Volgorde: onbekende handeling → weigeren; dan beoordeel(); toegangssleutel eerst (de browser opent het venster vanzelf). */
 export async function poort(auth: PoortAuth, actie: string): Promise<PoortUitkomst> {
   const e = await eisVoor(auth.user.id, actie);
   if (!e) return { ok: false, status: 400, fout: 'ONBEKENDE_ACTIE', beoordeling: null };

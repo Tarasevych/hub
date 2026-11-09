@@ -1,5 +1,5 @@
 // TELEGRAM-AANMELDEN v1 — de geheimen van de bot. Bron: de versleutelde kluis van de EIGENAAR (owner_vault_v1, doel «telegram»,
-// AES-256-GCM met OWNER_VAULT_ENCRYPTION_KEY_V1), gezet via het beheerpaneel met passkey. Terugval: de bestaande
+// AES-256-GCM met OWNER_VAULT_ENCRYPTION_KEY_V1), gezet via het beheerpaneel met toegangssleutel. Terugval: de bestaande
 // omgevingsvariabele AANMELD_TELEGRAM_BOT_TOKEN (UI-015), zodat een server die al zo was ingericht blijft werken.
 //
 // Regels: de waarde verlaat deze module alleen richting bot-api.ts en cryptografie.ts; nooit naar een antwoord, log of

@@ -1,7 +1,7 @@
 // TELEGRAM-AANMELDEN v1 — gedeeld model (server én browser). Vlag `telegram-aanmelden-v1` (migratie 0201), standaard UIT:
 // met de vlag uit gedraagt de site zich exact als 20261109-105221 (geen knop, geen route die iets doet, geen bot).
 //
-// Bouwt voort op UI-015 (`aanmeldmethoden-vnext`, backend/aanmeld-koppel.ts met de Login Widget-controle) en vervangt die
+// Bouwt voort op UI-015 (`aanmeldmethoden-vnext`, backend/aanmeld-koppel.ts met de aanmeldvenster-controle) en vervangt die
 // niet: dit is de «slimme» laag erbovenop (bot, kaarten, wijzigingsdetectie, bevestigingsmatrix, geheime code, statusdienst).
 
 export const TELEGRAM_VLAG = 'telegram-aanmelden-v1';
@@ -18,8 +18,8 @@ export const isKoppelRecht = (v: unknown): v is KoppelRecht => typeof v === 'str
 /**
  * Stand van een koppeling:
  *  - actief        : alles werkt volgens de rechten;
- *  - gepauzeerd    : er is een wijziging gezien (gebruikersnaam/naam/foto/apparaat) die nog met een passkey bevestigd moet worden;
- *  - geblokkeerd   : telefoonnummer gewijzigd → alleen volledig opnieuw koppelen (nieuw contact + passkey);
+ *  - gepauzeerd    : er is een wijziging gezien (gebruikersnaam/naam/foto/apparaat) die nog met een toegangssleutel bevestigd moet worden;
+ *  - geblokkeerd   : telefoonnummer gewijzigd → alleen volledig opnieuw koppelen (nieuw contact + toegangssleutel);
  *  - uitgeschakeld : «Це не я», verdachte gebeurtenis, onbeantwoorde wijziging of ontkoppeld → alleen opnieuw koppelen vanaf nul.
  */
 export const KOPPEL_STANDEN = ['actief', 'gepauzeerd', 'geblokkeerd', 'uitgeschakeld'] as const;

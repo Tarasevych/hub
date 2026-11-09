@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS app.tg_knoppen (
   stand         text        NOT NULL DEFAULT 'nieuw' CHECK (stand IN ('nieuw','bezig','klaar','vervallen')),
   groep         text        NOT NULL DEFAULT '',
   uitkomst      text        NOT NULL DEFAULT '',
-  -- «Так»-knoppen werken pas na deze seconden (server-side aftelling; de knop toont «⏳ N с» tot dan)
+  -- «Так»-knoppen werken pas na deze seconden (op de server aftelling; de knop toont «⏳ N с» tot dan)
   aftel_sec     integer     NOT NULL DEFAULT 0 CHECK (aftel_sec BETWEEN 0 AND 120),
   aangemaakt_op timestamptz NOT NULL DEFAULT now(),
   gebruikt_op   timestamptz
