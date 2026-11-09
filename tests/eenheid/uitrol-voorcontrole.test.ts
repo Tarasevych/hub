@@ -1,5 +1,6 @@
 // Voorcontrole van uitrolpakketten (backend/uitrol-voorcontrole.ts): wat blokkeert de goedkeuring, wat is alleen een waarschuwing.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -31,13 +32,16 @@ export async function main(): Promise<number> {
     else execFileSync('tar', ['-czf', tgz, '-C', join(basis, naam), ...(o.tweeMappen ? ['mijn-ruimte-' + V, 'andere'] : ['mijn-ruimte-' + V])]);
     return tgz;
   };
-  const opties = { versie: V, actieveVersie: '20261102-000000', toegepasteMigraties: new Set(['0001_basis']), tests: { geslaagd: 158, mislukt: 0 } };
+  // UITROL-001: een goed pakket heeft een proef vóór het uploaden die aan de SQL van de nieuwe migratie gebonden is (sha256 van de SQL).
+  const proef = { id: 'proef-0001', ok: true, status: 'klaar', sqlSha256: new Map([['0002_nieuw', createHash('sha256').update('ALTER TABLE a ADD COLUMN b int;', 'utf8').digest('hex')]]) };
+  const opties = { versie: V, actieveVersie: '20261102-000000', toegepasteMigraties: new Set(['0001_basis']), tests: { geslaagd: 158, mislukt: 0 }, proef };
   const niv = (r: Awaited<ReturnType<typeof pakketVoorcontrole>>, id: string) => r.resultaat.controles.find((c) => c.id === id)?.niveau;
   try {
     const goed = await pakketVoorcontrole(maak(), opties);
     check('goed pakket: ok, geen fouten, geen waarschuwingen', goed.resultaat.ok && goed.resultaat.fouten === 0 && goed.resultaat.waarschuwingen === 0, JSON.stringify(goed.resultaat.controles.map((c) => c.id + ':' + c.niveau)));
     check('metadata uit het pakket: auteur, agent, samenvatting, commit', goed.meta.auteur === 'Claude (Anthropic)' && goed.meta.agent === 'claude' && goed.meta.samenvatting.startsWith('Nieuwe uitrol-pagina') && goed.meta.commit === 'a'.repeat(40), JSON.stringify(goed.meta));
-    check('alle controles aanwezig (incl. commit en manifest)', ['manifest', 'structuur', 'versie', 'metadata', 'commit', 'scripts', 'bouwen', 'migraties', 'geheimen', 'tests'].every((id) => niv(goed, id)));
+    check('alle controles aanwezig (incl. commit, manifest en migratie-proef)', ['manifest', 'structuur', 'versie', 'metadata', 'commit', 'scripts', 'bouwen', 'migratie-proef', 'migraties', 'geheimen', 'tests'].every((id) => niv(goed, id)));
+    check('zonder proef vóór het uploaden → waarschuwing (root herhaalt de proef), pakket blijft installeerbaar', niv(await pakketVoorcontrole(maak(), { ...opties, proef: null }), 'migratie-proef') === 'waarschuwing');
 
     // TRACE-001: de toekomstige sitevoorcontrole weigert zonder bevestigd GitHub-dossier.
     const traceVersie = '20261103-215555', traceCommit = 'a'.repeat(40);
@@ -88,7 +92,9 @@ export async function main(): Promise<number> {
     check('package-lock.json ontbreekt → bouwen-fout', niv(await pakketVoorcontrole(maak({ zonder: ['package-lock.json'] }), opties), 'bouwen') === 'fout');
     check('package.json zonder build-script → bouwen-fout', niv(await pakketVoorcontrole(maak({ extra: { 'package.json': '{"scripts":{}}' } }), opties), 'bouwen') === 'fout');
     check('dubbel migratienummer → fout', niv(await pakketVoorcontrole(maak({ extra: { 'migrations/0002_ander.sql': 'SELECT 1;' } }), opties), 'migraties') === 'fout');
-    const risico = await pakketVoorcontrole(maak({ extra: { 'migrations/0003_weg.sql': 'ALTER TABLE a DROP COLUMN b;\nTRUNCATE a;' } }), opties);
+    const risico = await pakketVoorcontrole(maak({ extra: { 'migrations/0003_weg.sql': 'ALTER TABLE a DROP COLUMN b;\nTRUNCATE a;' } }), { ...opties, proef: null });
+    // UITROL-001: een migratie die de proef niet zag, is met proef een fout (archief ≠ gecontroleerd) — dat is de binding.
+    check('nieuwe migratie buiten de proef → migratie-proef fout, pakket geblokkeerd', !(await pakketVoorcontrole(maak({ extra: { 'migrations/0003_weg.sql': 'SELECT 1;' } }), opties)).resultaat.ok);
     check('nieuwe migratie met DROP COLUMN/TRUNCATE → waarschuwing, maar niet geblokkeerd', risico.resultaat.ok && niv(risico, 'migraties') === 'waarschuwing' && risico.resultaat.controles.find((c) => c.id === 'migraties')!.details!.length >= 2);
     check('oude (al toegepaste) migratie met DROP wordt niet gemeld', niv(await pakketVoorcontrole(maak({ extra: { 'migrations/0001_basis.sql': 'DROP TABLE a;' } }), opties), 'migraties') === 'ok');
     const geheim = await pakketVoorcontrole(maak({ extra: { 'src/x.ts': '// -----BEGIN PRIVATE' + ' KEY-----\nabc', '.env': 'A=1' } }), opties);
