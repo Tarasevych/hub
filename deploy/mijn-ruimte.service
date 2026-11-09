@@ -36,6 +36,8 @@ ReadWritePaths=/srv/data/uploads
 # Goedkeuren met een passkey: de app legt hier een goedgekeurd pakket of een sleutelverzoek neer; root controleert alles zelf
 # (deploy/RUNBOOK-VEILIGE-UITROL.md §13). "-" = geen fout als de map (nog) niet bestaat.
 ReadWritePaths=-/srv/mijn-ruimte/goedkeur-inbox
+# UITROL-001: verzoeken voor de migratieproef (alleen proef-<id>.json; root voert uit op een wegwerpkopie)
+ReadWritePaths=-/srv/mijn-ruimte/proef-inbox
 # SSH-certificaat: de app legt hier alleen het verzoek (publieke sleutel). Root tekent in een eigen map.
 ReadWritePaths=-/srv/mijn-ruimte/ssh-ca-inbox
 # Besluiten van de eigenaar (passkey, §15): de app legt hier besluit-<id>.json neer en tikt `aanvraag` aan; root (mijn-ruimte-besluit.path)

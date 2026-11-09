@@ -1,9 +1,11 @@
 // Venster «Підтвердіть доступ» / «Toegang bevestigen» (zoals GitHub «Confirm access», sudo mode). Wordt lui geladen door
 // stap-op.ts. Eén taal tegelijk: de taal van de pagina (<html lang>), live bijgewerkt als de gebruiker de taal omschakelt.
 // Toont alleen manieren die deze gebruiker heeft (POST /api/owner/access/stap-op/methoden); fouten in het venster, geen alerts.
-import { Component, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Fingerprint, KeyRound, LifeBuoy, LogIn, ShieldCheck } from 'lucide-react';
+import { Fingerprint, KeyRound, LifeBuoy, LogIn, Send, ShieldCheck, Smartphone } from 'lucide-react';
+// APPARAAT-001: tabbladen «Інший пристрій» en «У Telegram» (lui geladen; alleen als de server ze aanbiedt).
+const StapOpKanaal = lazy(() => import('../apparaat-bevestiging/StapOpKanaal'));
 import { kanPasskey } from './webauthn';
 import { bewaarHervat, bewaarOnthoudKeuze, neemTerugMelding, paginaTaal, passkeyStapOpCode, type BevestigOpties, type StapOpMethode, type StapOpUitkomst } from './stap-op';
 import { Venster as VensterLaag } from './vensters';
@@ -13,9 +15,10 @@ import { ruimtesV2Nu } from '../tech/ruimtes/ruimtes-vlag';
 import { WOORDEN } from '../tech/ruimtes/teksten';
 
 type Lang = 'uk' | 'nl';
-type Methoden = { passkey: boolean; totp: boolean; herstelcode: boolean; google: boolean; codewoord?: boolean };
-type Info = { email: string; naam: string; foto: string; methoden: Methoden; maxAgeSeconds: number; onthoudMag: boolean; onthoudUren: number };
-const ALLE: StapOpMethode[] = ['passkey', 'totp', 'herstelcode', 'codewoord', 'google'];
+type Methoden = { passkey: boolean; totp: boolean; herstelcode: boolean; google: boolean; codewoord?: boolean; apparaat?: boolean; telegram?: boolean };
+type Kanalen = { apparaten: number; reden: string; eis: string[][]; eisTekst: { uk: string; nl: string } } | null;
+type Info = { email: string; naam: string; foto: string; methoden: Methoden; maxAgeSeconds: number; onthoudMag: boolean; onthoudUren: number; kanalen?: Kanalen };
+const ALLE: StapOpMethode[] = ['passkey', 'totp', 'apparaat', 'telegram', 'herstelcode', 'codewoord', 'google'];
 
 const T = {
   titel: ['Підтвердіть доступ', 'Toegang bevestigen'],
@@ -40,6 +43,8 @@ const T = {
   altHerstel: ['Використати код відновлення', 'Herstelcode gebruiken'],
   altCodewoord: ['Використати кодове слово', 'Codewoord gebruiken'],
   altGoogle: ['Увійти повторно через Google', 'Opnieuw inloggen bij Google'],
+  altApparaat: ['Підтвердити з іншого пристрою', 'Bevestigen vanaf een ander apparaat'],
+  altTelegram: ['Підтвердити в Telegram', 'Bevestigen in Telegram'],
   tip: ['Порада: після підтвердження протягом 5 хвилин важливі дії в цьому вікні не вимагатимуть повторного підтвердження.', 'Tip: na de bevestiging vragen we 5 minuten lang in dit venster niet opnieuw om bevestiging voor belangrijke acties.'],
   onthoudUitleg: ['Ми запам’ятаємо підтвердження лише для цього браузера й цього акаунта. Воно зникає, коли ви виходите з акаунта, і діє щонайбільше {u} год.', 'We onthouden de bevestiging alleen voor deze browser en dit account. Hij verdwijnt zodra je uitlogt en geldt hoogstens {u} uur.'],
   onthoudNooit: ['Цю дію запам’ятати не можна: вона завжди вимагає підтвердження. Це стосується схвалення випусків, видалення, ключів у сховищі, passkey, кодів відновлення та зміни способів входу.', 'Deze actie kan niet onthouden worden: hiervoor vragen we altijd opnieuw. Dat geldt voor het goedkeuren van uitrollen, verwijderen, sleutels in de kluis, passkeys, herstelcodes en het wijzigen van aanmeldmethoden.'],
@@ -99,11 +104,12 @@ function useLang(): Lang {
 
 /** Eerste/primaire manier (GitHub: passkey > app > … ; zonder iets anders: Google). */
 export function primaireMethode(beschikbaar: StapOpMethode[]): StapOpMethode | null {
-  for (const m of ['passkey', 'totp', 'codewoord', 'google', 'herstelcode'] as StapOpMethode[]) if (beschikbaar.includes(m)) return m;
+  // Zonder toegangssleutel op dit apparaat: eerst de authenticator-code, dan een ander apparaat, dan Telegram (APPARAAT-001).
+  for (const m of ['passkey', 'totp', 'apparaat', 'telegram', 'codewoord', 'google', 'herstelcode'] as StapOpMethode[]) if (beschikbaar.includes(m)) return m;
   return null;
 }
 export function beschikbareMethoden(m: Methoden, toegestaan: StapOpMethode[], webauthn: boolean): StapOpMethode[] {
-  return ALLE.filter((x) => toegestaan.includes(x) && m[x] && (x !== 'passkey' || webauthn));
+  return ALLE.filter((x) => toegestaan.includes(x) && !!m[x] && (x !== 'passkey' || webauthn));
 }
 
 function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpUitkomst) => void }) {
@@ -196,7 +202,13 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
     finally { setBezig(''); }
   };
 
-  const ALT: Record<StapOpMethode, [keyof typeof T, typeof Fingerprint]> = { passkey: ['altPasskey', Fingerprint], totp: ['altTotp', KeyRound], herstelcode: ['altHerstel', LifeBuoy], codewoord: ['altCodewoord', KeyRound], google: ['altGoogle', LogIn] };
+  const ALT: Record<StapOpMethode, [keyof typeof T, typeof Fingerprint]> = { passkey: ['altPasskey', Fingerprint], totp: ['altTotp', KeyRound], herstelcode: ['altHerstel', LifeBuoy], codewoord: ['altCodewoord', KeyRound], google: ['altGoogle', LogIn], apparaat: ['altApparaat', Smartphone], telegram: ['altTelegram', Send] };
+  // APPARAAT-001: na een bevestiging via een kanaal is de step-up al door de server vastgelegd (poort); «onthouden» gaat dan apart.
+  const kanaalKlaar = (m: 'apparaat' | 'telegram') => {
+    klaar({ ok: true, methode: m });
+    if (onthoudAan) void opties.post('/api/owner/access/stap-op/onthouden', { service: opties.service, tabContext: opties.tabContext, actie: opties.actie || 'onbekend' })
+      .then((a) => { if ((a as { data?: { onthouden?: boolean } })?.data?.onthouden !== true) meldOnthoudMislukt(); }).catch(() => meldOnthoudMislukt());
+  };
   const alternatieven = beschikbaar.filter((m) => m !== weergave);
   const onthoudLabel = ruimtesV2Nu() ? WOORDEN.onthoud[lang === 'nl' ? 'nl' : 'uk'].replace('{u}', String(info?.onthoudUren || 12)) : lang === 'nl' ? 'Onthoud deze browser (niet opnieuw vragen tot uitloggen)' : 'Запам’ятати цей браузер (не питати знову до виходу)';
 
@@ -240,6 +252,10 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
           <button type='button' className='bevestig-toegang-primair' autoFocus disabled={!!bezig} onClick={() => void metGoogle()}><LogIn />{bezig === 'google' ? t('doorsturen') : t('googleKnop')}</button>
           <p className='bevestig-toegang-uitleg'>{t('googleUitleg')}</p>
         </>}
+
+        {(weergave === 'apparaat' || weergave === 'telegram') && <Suspense fallback={<p className='bevestig-toegang-uitleg'>{t('laden')}</p>}>
+          <StapOpKanaal kanaal={weergave} ctx={{ service: opties.service, tabContext: opties.tabContext }} lang={lang} matrixActie='stap-op' label={opties.actie} naPoort apparaten={info?.kanalen?.apparaten} onKlaar={kanaalKlaar} />
+        </Suspense>}
 
         {weergave === 'codewoord' && <form onSubmit={(e) => { e.preventDefault(); void metCodewoord(); }}>
           <label htmlFor='bevestig-toegang-codewoord'>{t('codewoordLabel')}</label>

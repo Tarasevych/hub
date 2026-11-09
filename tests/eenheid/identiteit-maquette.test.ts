@@ -1,7 +1,7 @@
 // IDENTITEIT-007: вигляд «Макет» — дизайн власника один в один (власна шапка, смуга сервісів, герой, елементи макета в картках),
 // справжні панелі сайту в згортаному блоці «Чинні налаштування», оболонка сайту схована, вибір за прапорцем.
 // De weergave «Ontwerp»: het ontwerp van de eigenaar één op één, de echte onderdelen van de site in een inklapbaar blok, keuze via een vlag.
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { VLAG_UITLEG } from '../../shared/vlaggen';
 import { IDENTITEIT_TABS } from '../../src/identiteit/identiteit-tabs';
 import { checker } from './hulp/nep-google';
@@ -82,6 +82,24 @@ export async function main(): Promise<number> {
   check('міграція створює перемикач identiteit-account-maquette вимкненим для всіх і не чіпає вибір власника',
     migratie.includes("'identiteit-account-maquette'") && /INSERT INTO app\.feature_flags \(sleutel, omschrijving, aan, standaard\)/.test(migratie) &&
     /false, false\)\s*ON CONFLICT \(sleutel\) DO NOTHING;/.test(migratie));
+  // Межа з 0038_feature_flags.sql: CHECK (char_length(omschrijving) <= N). Встановлення 20261109-065647 упало саме на цьому — перевіряємо всі міграції.
+  const schema = readFileSync('migrations/0038_feature_flags.sql', 'utf8');
+  const grens = Number(/char_length\(omschrijving\) <= (\d+)/.exec(schema)?.[1] ?? 0);
+  const omschrijvingen = (sql: string): string[] => {
+    const uit: string[] = [];
+    for (const blok of sql.matchAll(/INSERT INTO app\.feature_flags\s*\(([^)]*)\)\s*VALUES\s*\(((?:[^;']|'(?:[^']|'')*')*)\)/gi)) {
+      const kolommen = blok[1].split(',').map((k) => k.trim());
+      const waarden = [...blok[2].matchAll(/'((?:[^']|'')*)'/g)].map((w) => w[1].replace(/''/g, "'"));
+      const i = kolommen.indexOf('omschrijving');
+      if (i >= 0 && waarden[i] !== undefined) uit.push(waarden[i]);
+    }
+    return uit;
+  };
+  const eigen = omschrijvingen(migratie);
+  check('опис перемикача в міграції 0200 вкладається в межу схеми (CHECK char_length ≤ ' + grens + ')',
+    grens > 0 && eigen.length === 1 && [...eigen[0]].length <= grens && eigen[0].includes(' | '));
+  const teLang = readdirSync('migrations').filter((n) => n.endsWith('.sql')).flatMap((n) => omschrijvingen(readFileSync('migrations/' + n, 'utf8')).filter((o) => [...o].length > grens).map((o) => n + ' (' + [...o].length + ')'));
+  check('жодна міграція не вставляє опис перемикача довший за межу схеми', teLang.length === 0, teLang.join(', '));
   check('перемикач вигляду є у вікні навігації та під підвалом макета', sjabloon.includes('data-echt=\\"vormgeving-venster\\"') && sjabloon.includes('data-echt=\\"vormgeving-voet\\"') && component.includes("id.startsWith('vormgeving')"));
 
   return einde();

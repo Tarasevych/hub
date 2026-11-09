@@ -1,0 +1,230 @@
+name: UITROL-001 · перевірка та випуск модернізованого оновлення (вимоги, конвеєр, зупинка)
+
+# Цей процес нічого не встановлює. Власник окремо схвалює випуск ключем доступу.
+# Deze werkwijze installeert niets. De eigenaar keurt een uitgave afzonderlijk goed.
+on:
+  push:
+    branches:
+      - 'feature/uitrol-001-20261109-102608'
+    paths:
+      - '.github/workflows/uitrol-001-uitgave.yml'
+      - 'backend/**'
+      - 'deploy/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'src/**'
+      - 'migrations/**'
+      - 'tests/eenheid/**'
+      - 'orchestratie/ontwikkelarchieven/UITROL-001.json'
+      - 'orchestratie/taken/**'
+      - 'index.html'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: uitrol-001-uitgave
+  cancel-in-progress: false
+
+env:
+  TAAK: UITROL-001
+  # Встановлена основа визначається з /api/version під час запуску; дозволені лише ці три (усі — предки цієї гілки).
+  # De geïnstalleerde basis wordt bij het draaien uit /api/version gelezen; alleen deze drie zijn toegestaan.
+  TOEGESTANE_BASES: '20261109-083614=b025c713ebee642d44f099157837608024fb2054 20261109-065647=bc16016af3a96b61f58e81b13bf50bb9b76ff07e 20261109-060206=4d71a8180a3ec8ee17ea516652d235670e046ced'
+  # Модель ШІ задає власник змінною сховища (Settings → Variables → Actions), а не агент у коді.
+  # Het AI-model geeft de eigenaar op als repositoryvariabele, niet de agent in de code.
+  MODEL_ID: ${{ vars.UITROL_001_MODEL_ID || vars.PERF_001_MODEL_ID || vars.IDENTITEIT_007_MODEL_ID || vars.IDENTITEIT_006_MODEL_ID }}
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+    # Чиста база для прогону всіх міграцій (встановлення 09.11 впало на 0200). Schone database voor alle migraties.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Bronbestanden ophalen
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Node voorbereiden
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Afhankelijkheden installeren
+        run: npm ci --ignore-scripts
+      - name: Актуальна встановлена основа
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'feature/uitrol-001-20261109-102608'
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/actieve-versie.json"
+          node --input-type=module <<'JS'
+          import {readFileSync, appendFileSync} from 'node:fs';
+          const v=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/actieve-versie.json','utf8'));
+          const versie=String(v.versie||''), commit=String(v.bronCommit||v.commit||'');
+          const toegestaan=Object.fromEntries(process.env.TOEGESTANE_BASES.split(/\s+/).filter(Boolean).map(p=>p.split('=')));
+          if(toegestaan[versie]!==commit) throw new Error(`Встановлена основа ${versie} @ ${commit} не з дозволених; випуск зупинено.`);
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${commit}\n`);
+          console.log(`Встановлена основа: ${versie} @ ${commit}`);
+          JS
+      - name: Основа є предком гілки
+        run: git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+      - name: Модель ШІ від власника
+        shell: bash
+        run: |
+          if [ -z "${MODEL_ID:-}" ]; then
+            echo '::error::Задайте змінну сховища UITROL_001_MODEL_ID (або лишіть IDENTITEIT_006_MODEL_ID) у Settings → Secrets and variables → Actions → Variables і перезапустіть процес. Правила пакета вимагають справжню модель ШІ.'
+            exit 1
+          fi
+      - name: Правила і джерела
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/identiteit-maquette/bouw.mjs
+          git diff --exit-code -- src/identiteit/maquette
+          node scripts/eenheidstests.mjs perf-001-20261109.test.ts
+          node scripts/eenheidstests.mjs menu-snelheid
+          node scripts/eenheidstests.mjs uitrol-conveyor.test.ts
+          node scripts/eenheidstests.mjs terminal-kleur.test.ts
+          node scripts/eenheidstests.mjs uitrol-codes.test.ts
+          node scripts/eenheidstests.mjs uitrol-weergave-v2.test.ts
+          node scripts/eenheidstests.mjs uitrol-kopieerknop-20261030.test.ts
+          node scripts/eenheidstests.mjs tar-lezen.test.ts
+          node scripts/eenheidstests.mjs uitrol-vereisten-001.test.ts
+          node scripts/kleur-contrast-controle.mjs
+          node scripts/hulp-vraagtekens-controle.mjs
+          node scripts/eenheidstests.mjs identiteit-maquette.test.ts
+          node scripts/eenheidstests.mjs identiteit-atelier
+          node scripts/eenheidstests.mjs identiteit-account-ui
+          node scripts/eenheidstests.mjs mobiel-cascade-20261105
+          node scripts/eenheidstests.mjs mobiel-geometrie
+          node scripts/eenheidstests.mjs plaatsing-20261025
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
+          node scripts/eenheidstests.mjs uitrol-voorcontrole
+          node scripts/eenheidstests.mjs hub-agenda-notities-20261019.test.ts
+          node scripts/eenheidstests.mjs mail-qa-2026-10-12.test.ts
+          node scripts/eenheidstests.mjs ui-audit-g.test.ts
+          node scripts/plaatsing-controle.mjs
+      - name: Справжні вузькі екрани у браузері
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts playwright-core
+          CHROME="$(command -v google-chrome || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then
+            npx playwright-core install chromium
+            CHROME="$(node -p 'require("playwright-core").chromium.executablePath()')"
+          fi
+          test -x "$CHROME"
+          PLAYWRIGHT_CORE="$PWD/node_modules/playwright-core" CHROME="$CHROME" \
+            node scripts/e2e-lokaal.mjs identiteit-mobiel
+      - name: Типи і складання
+        run: |
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Усі міграції на чистій базі
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL=postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)" RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)" AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          node dist-server/migrate.mjs | tail -3
+          test "$(ls migrations/*.sql | wc -l)" -gt 0
+          # Повторний прогін нічого не змінює (ON CONFLICT / IF NOT EXISTS). Tweede keer: niets te doen.
+          node dist-server/migrate.mjs | tail -1
+      - name: Підтвердити незмінність файлів
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Дані випуску
+        id: gegevens
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "versie=$VERSIE" >> "$GITHUB_OUTPUT"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Версія вже існує.' >&2
+            exit 1
+          fi
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          const e=process.env;
+          const uk={"titel":"Оновлення сайту по-новому: перевірка до завантаження, конвеєр етапів, зупинка власником","samenvatting":"Сторінка Admin → Оновлення перевіряє архів ще до завантаження (зокрема пробує нові міграції на копії схеми), показує вісім етапів розгортання з реальним часом і тривалістю, живий журнал у вікні термінала з кольоровими мітками, і дає зупинити встановлення на будь-якому етапі до перемикання. Містить також прискорення сайту з випуску 20261109-083614.","wijzigingen":["Перевірка вимог до завантаження: браузер читає архів локально, сервер перевіряє вимоги, root пробує нові міграції на копії схеми; непридатний архів відхиляється без витрати трафіку.","Конвеєр із восьми етапів (Вимоги → Завантаження → Перевірка сайту → Схвалення → Підготовка → База даних → Перемикання → Здоров’я) зі станом, поточним підетапом і тривалістю; кожен етап розгортається до підетапів із часом.","Термінал встановлення як вікно: висоту можна тягнути, згорнути, розгорнути на весь екран і повернути; кольорові мітки показують, що належить root, інсталятору, npm, vite, базі даних; рядки перекладені мовою сайту, оригінал — перемикачем.","Кнопки скасування на кроках перевірки, завантаження та встановлення; «Зупинити встановлення» з причиною діє до етапу перемикання, далі сервер завершує встановлення або автоматично відкочує.","Схвалення passkey і проба міграцій прив’язані до SHA-256 архіву: підмінити пакет або SQL після перевірки неможливо; блок «Ланцюг довіри» показує кожну ланку.","Звіт про проблему одним вікном (опис, витяг журналу, контекст без секретів) для передачі агенту; результати перевірок у центрі сповіщень.","Сповіщення «пакет чекає схвалення» зникає, щойно пропозицію встановлено, відхилено чи зупинено."],"fixes":["Міграція 0200 (перемикач «Макет»): опис скорочено до 286 знаків — саме вона зірвала встановлення 20261109-065647.","Живий блок установлення більше не показує «помилка» на міграціях, коли встановлення зупинили під час npm: підетапи беруться з реального журналу.","Заголовок картки й підписи етапів не обрізаються на вузьких екранах."],"beperkingen":["Зупинка діє лише для встановлення з сайту (passkey); встановлення через SSH сайт зупинити не може.","Проба міграцій працює на копії схеми без даних: обмеження, що залежать від наявних рядків, виявляться лише під час установлення (з автоматичним відкатом).","Переклад рядків термінала стосується повідомлень сайту; вивід npm, vite і psql лишається мовою оригіналу."],"instructies":"Установіть архів через admin.tarasevych.com із підтвердженням ключем доступу. Після встановлення перевірте журнал сервера на рядок [lus] (прискорення) і спробуйте кнопку «Зупинити встановлення» на наступному оновленні."};
+          const nl={"titel":"Site bijwerken, vernieuwd: controle vóór het uploaden, fasenband, stoppen door de eigenaar","samenvatting":"De pagina Admin → Updates controleert het archief al vóór het uploaden (en probeert nieuwe migraties op een kopie van het schema), toont acht fasen van de uitrol met echte tijd en duur, een live logboek in een terminalvenster met gekleurde labels, en laat de installatie op elke fase vóór het overschakelen stoppen. Bevat ook de versnelling uit uitgave 20261109-083614.","wijzigingen":["Vereistencontrole vóór het uploaden: de browser leest het archief lokaal, de server controleert de vereisten, root probeert nieuwe migraties op een kopie van het schema; een ongeschikt archief wordt geweigerd zonder dataverbruik.","Een band van acht fasen (Vereisten → Upload → Controle site → Goedkeuring → Voorbereiding → Database → Overschakelen → Gezondheid) met stand, lopend onderdeel en duur; elke fase klapt uit naar onderdelen met tijdstip.","De installatieterminal als venster: in hoogte te slepen, in te klappen, schermvullend en terug; gekleurde labels tonen wat van root, de installer, npm, vite of de database is; regels in de taal van de site, het origineel via een schakelaar.","Annuleerknoppen bij controle, upload en installatie; «Installatie stoppen» met reden werkt tot de fase overschakelen, daarna maakt de server de installatie af of draait automatisch terug.","Passkey-goedkeuring en migratieproef zijn gebonden aan de SHA-256 van het archief: pakket of SQL na de controle verwisselen kan niet; het blok «Vertrouwensketen» toont elke schakel.","Probleemrapport in één venster (beschrijving, loguittreksel, context zonder geheimen) om aan een agent door te geven; controleresultaten in het meldingencentrum.","De melding «pakket wacht op goedkeuring» verdwijnt zodra het voorstel geïnstalleerd, afgewezen of gestopt is."],"fixes":["Migratie 0200 (schakelaar «Ontwerp»): omschrijving ingekort tot 286 tekens — zij brak de installatie van 20261109-065647.","Het live installatieblok toont geen «fout» meer bij de migraties als de installatie tijdens npm werd gestopt: onderdelen komen uit het echte logboek.","Kaartkop en fasenamen worden op smalle schermen niet meer afgeknipt."],"beperkingen":["Stoppen werkt alleen voor een installatie via de site (passkey); een installatie via SSH kan de site niet stoppen.","De migratieproef draait op een kopie van het schema zonder gegevens: beperkingen die van bestaande rijen afhangen blijken pas bij de installatie (met automatische terugdraai).","De vertaling van terminalregels betreft de meldingen van de site; uitvoer van npm, vite en psql blijft in de oorspronkelijke taal."],"instructies":"Installeer het archief via admin.tarasevych.com met een passkey. Controleer daarna het serverlog op de regel [lus] (versnelling) en probeer bij de volgende update de knop «Installatie stoppen»."};
+          const m={schema:1,versie:e.VERSIE,aangemaakt:new Date().toISOString(),herkomst:`git: commit ${e.GITHUB_SHA} (basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,auteur:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',zonderAi:false,deelnemers:[{soort:'mens',naam:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',rollen:['auteur']},{soort:'ai',naam:'claude',platform:'Claude Code',tool:'Claude Code',model:{id:e.MODEL_ID,versie:null,bron:'auteur'},rollen:['ontwikkeling','controle','testen','verpakken']}],beschrijving:{uk,nl}};
+          writeFileSync(e.RUNNER_TEMP+'/UITROL-MANIFEST.json',JSON.stringify(m,null,2)+'\n');
+          const tests={"geslaagd":1016,"mislukt":0,"falend":[],"uitleg":{"uk":"Перевірки прискорення (41), переривання запитів (29), конвеєра й міток (37), кольорів термінала (18), кодів розгортання (17), огляду розгортання (29), кнопки копіювання (19), читання архіву (24), вигляду «Макет» (44), «Студії» (36), облікового запису (6), мобільного каскаду (22), геометрії (56), розміщення (68), журналу розробки (16), передперевірки випуску (42), агенди й нотаток (65), пошти (37), аудиту інтерфейсу (59), вимог і проби міграцій (56), усіх міграцій на чистій базі (двічі), складання й перевірки типів пройдено в цьому запуску.","nl":"De tests van de versnelling (41), het afbreken van verzoeken (29), fasenband en labels (37), terminalkleuren (18), uitrolcodes (17), uitrolweergave (29), kopieerknop (19), archief lezen (24), weergave «Ontwerp» (44), Studio (36), account (6), mobiele cascade (22), geometrie (56), plaatsing (68), ontwikkeldossier (16), uitrolvoorcontrole (42), agenda en notities (65), e-mail (37), interface-audit (59), vereisten en migratieproef (56), alle migraties op een schone database (tweemaal), de bouw en de typecontroles zijn in deze uitvoering geslaagd."}};
+          writeFileSync(e.RUNNER_TEMP+'/TESTRESULTATEN.json',JSON.stringify(tests,null,2)+'\n');
+          writeFileSync('orchestratie/geinstalleerd.json',JSON.stringify({versie:e.BASIS_VERSIE,bronCommit:e.BASIS_COMMIT,bron:'geverifieerd_productie_api'},null,2)+'\n');
+          JS
+      - name: Архів та перевірка пакета
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent claude --platform 'Claude Code' \
+            --versie "$VERSIE" --uit uitvoer --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" \
+            --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+          printf 'UITROL-001 · Перевірена пропозиція (модернізоване оновлення: вимоги, конвеєр, термінал-вікно, зупинка власником; разом із прискоренням PERF-001). Встановлення лише власником через ключ доступу.\nBRON-COMMIT: %s\nОснова: %s @ %s\n' "$GITHUB_SHA" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Повторна перевірка чинного сервера
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/actuele-versie.json"
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const d=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/actuele-versie.json','utf8'));
+          if(d.versie!==process.env.BASIS_VERSIE||(d.bronCommit||d.commit)!==process.env.BASIS_COMMIT)throw Error('Встановлена основа змінилася; оприлюднення зупинено.');
+          JS
+      - name: Оприлюднити архів без встановлення
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "UITROL-001 · модернізоване оновлення · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/release.json"
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const e=process.env;
+          const p=`uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const hash=createHash('sha256').update(readFileSync(p)).digest('hex');
+          const r=JSON.parse(readFileSync(e.RUNNER_TEMP+'/release.json','utf8'));
+          const a=r.assets.find(x=>x.name===`mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if(r.draft||!a||a.state!=='uploaded'||a.digest!==`sha256:${hash}`)throw Error('Оприлюднений архів не збігається за контрольною сумою.');
+          JS
+      - name: У разі збою приховати непридатний випуск
+        if: failure() && steps.release.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти звіт виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uitrol-001-controle
+          path: |
+            rapporten/identiteit-mobiel/
+            uitvoer/
+          if-no-files-found: ignore

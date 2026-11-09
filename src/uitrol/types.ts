@@ -174,4 +174,5 @@ export type VoorcontroleUit = { versie: number; tijd: string; ok: boolean; foute
 export type PakketMetaUit = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string; manifest?: import('../../shared/uitrol-manifest').Manifest | null };
 /** Stand van de «nieuwe update» (de wizard op het tabblad Огляд), zodat de vier fasen bovenaan bij een nieuw bestand opnieuw beginnen. */
 export type FlowFase = 'leeg' | 'voorbereiding' | 'goedkeuring';
-export type Flow = { fase: FlowFase; versie: string; detail: string };
+/** UITROL-001: «stap»/«stand» zeggen de conveyor welke van de eerste vier knopen loopt (vereisten → upload → controle → goedkeuring). */
+export type Flow = { fase: FlowFase; versie: string; detail: string; stap?: 'vereisten' | 'upload' | 'controle' | 'goedkeuring'; stand?: 'wacht' | 'bezig' | 'fout' };

@@ -44,6 +44,9 @@ export const ACTIES = Object.freeze({
   export: ['Експорт даних', 'Gegevens exporteren'],
   'account-verwijderen': ['Видалення акаунта', 'Account verwijderen'],
   sleutelkluis: ['Шифрування моїх даних', 'Versleuteling van mijn gegevens'],
+  // APPARAAT-001: de toegangssleutel op apparaat B bekrachtigt een verzoek van apparaat A; en de instellingen van de methode zelf.
+  'apparaat-bevestigen': ['Підтвердження дії для іншого пристрою', 'Handeling voor een ander apparaat bevestigen'],
+  'apparaat-instellingen': ['Налаштування підтвердження з іншого пристрою', 'Instellingen voor bevestigen vanaf een ander apparaat'],
   onbekend: ['Інша дія', 'Andere actie'],
 } as const satisfies Record<string, readonly [string, string]>);
 export type Actie = keyof typeof ACTIES;

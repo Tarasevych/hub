@@ -13,6 +13,8 @@
 import http from 'node:http';
 import { createReadStream, realpathSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
+import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
+import { COMPRIMEERBAAR, MIN_BYTES, gecomprimeerd, kiesCodering } from './platform/statisch-comprimeren';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DASHBOARD_HOST, SERVICE_HOSTS } from '../backend/deployment-identiteit';
@@ -21,11 +23,15 @@ import { attachAgentGateway, closeAllAgents } from '../backend/connectors-gatewa
 import { verouderdeEigenarenIntrekken } from '../backend/eigenaar-opschonen';
 import { purgeExpiredDiagnostics } from '../backend/browser-diag-archief';
 import { neemRootGebeurtenissenOp } from '../backend/server-beheer';
+import { statusRonde as telegramStatusRonde } from '../backend/telegram-aanmelden/status';
 import { siemConfig, siemRonde } from '../backend/siem';
 import { TECH_ASSET_KOPPEN, assetToegestaan } from '../backend/tech-bundels';
 import { diepAntwoord } from '../backend/diepe-gezondheid';
 import { techMeldingVerwerken, telStatus } from '../backend/toegangsfout-tellers';
 import { sluitAlleStromen, stroomVerzoek, stroomVerzoekMcp } from '../backend/connector-v2-stroom';
+import { sluitAlleStromenApparaat, stroomVerzoekApparaat } from '../backend/apparaat-bevestiging/stroom'; /* APPARAAT-001: snelle stroom naar de tabbladen */
+import { opruimen as apparaatOpruimen } from '../backend/apparaat-bevestiging/kern';
+import { metVerzoek } from './platform/context';
 import { googleSuiteSyncCron, mailMaintenanceCron } from '../backend/index';
 import { ACHTERGROND_INTERVAL_MS, sleutelkluisAchtergrondRonde } from '../backend/sleutelkluis-achtergrond';
 import { zoekIndexCron } from '../backend/zoek/bronnen';
@@ -75,6 +81,15 @@ const BASE_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'DENY',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
 };
+
+// PERF-001: welk achtergrondwerk loopt (voor de bewaking van de hoofdthread hieronder).
+const achtergrondLopend = new Set<string>(), achtergrondGezien = new Set<string>();
+function achtergrond<T>(naam: string, doe: () => Promise<T>): Promise<T> {
+  achtergrondLopend.add(naam); achtergrondGezien.add(naam);
+  let p: Promise<T>;
+  try { p = doe(); } catch (e) { achtergrondLopend.delete(naam); return Promise.reject(e); }
+  return p.finally(() => achtergrondLopend.delete(naam));
+}
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
@@ -232,6 +247,22 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
   }
   if (path.basename(file) === 'speculatie.json') headers['Content-Type'] = 'application/speculationrules+json';
   if (path.basename(file) === 'service-worker.js') headers['Service-Worker-Allowed'] = '/';
+  // PERF-001: tekstbestanden gecomprimeerd (brotli/gzip, één keer per bestand in het geheugen; zie server/platform/statisch-comprimeren.ts).
+  if (COMPRIMEERBAAR.has(ext) && s.size >= MIN_BYTES) {
+    headers.Vary = headers.Vary ? `${headers.Vary}, Accept-Encoding` : 'Accept-Encoding';
+    const codering = kiesCodering(req.headers['accept-encoding']);
+    const buf = codering ? await gecomprimeerd(file, ext, s.size, `${s.size}-${Math.floor(s.mtimeMs)}`, codering) : null;
+    if (codering && buf) {
+      const etagGz = `${etag.slice(0, -1)}-${codering === 'br' ? 'br' : 'gz'}"`;
+      headers.ETag = etagGz;
+      if (req.headers['if-none-match'] === etagGz) { send(res, 304, headers); return true; }
+      headers['Content-Encoding'] = codering;
+      headers['Content-Length'] = String(buf.length);
+      if (req.method === 'HEAD') { send(res, 200, headers); return true; }
+      send(res, 200, headers, buf);
+      return true;
+    }
+  }
   if (req.headers['if-none-match'] === etag) { send(res, 304, headers); return true; }
   headers['Content-Length'] = String(s.size);
   if (req.method === 'HEAD') { send(res, 200, headers); return true; }
@@ -323,6 +354,9 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   [/^\/api\/mcp-connector\/authorize$/, 'mcp-authorize', 60, true],
   [/^\/api\/owner\/agents\/ws-ticket$/, 'ws-ticket', 60, true],
   [/^\/api\/aanmeld\/koppel\/[^/]+\/(start|terug)$/, 'aanmeld-koppel', 30, true],
+  // TELEGRAM-AANMELDEN v1: starten, code en inwisselen strikt per IP (de webhook en het pollen vallen onder de algemene limiet).
+  [/^\/api\/aanmelden\/telegram\/start$/, 'telegram-start', 20, true],
+  [/^\/api\/aanmelden\/telegram\/(code|voltooien|widget-terug)$/, 'telegram-code', 30, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
   [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
 ];
@@ -460,6 +494,16 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
     if (m) { await stroomVerzoek(req, res, m[1]); return; }
   }
+  // APPARAAT-001: de snelle stroom van de site zelf (GET /api/owner/stroom, Accept: text/event-stream) — het venster «Це ви?» op het
+  // andere apparaat binnen een seconde. Zelfde sessiecontrole als elke route (via backend/apparaat-bevestiging/routes.ts), dezelfde
+  // verzoekcontext als de router (metVerzoek), maar buiten de router omdat die geen open verbinding kan vasthouden.
+  if (req.method === 'GET' && url.pathname === '/api/owner/stroom' && /text\/event-stream/i.test(String(req.headers.accept || '')) && host !== SERVICE_HOSTS.mcp) {
+    const ip = clientIp(req);
+    const ev = buildEvent(req, url, '', ip);
+    const body = { service: url.searchParams.get('service') || '', tabContext: url.searchParams.get('tabContext') || '' };
+    await metVerzoek('GET /api/owner/stroom', () => stroomVerzoekApparaat(req, res, ev as unknown as Record<string, unknown>, body), { ip, ua: String(req.headers['user-agent'] || '') });
+    return;
+  }
   // MCP-connector voor Claude: nette URL's op mcp.* worden onder /api/mcp-connector/* gerouteerd (zie connectorPad).
   const connector = host === SERVICE_HOSTS.mcp ? connectorPad(url) : null;
   const apiUrl = connector ?? url;
@@ -478,8 +522,13 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     let body = '';
     try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req); }
     catch (err) { return sendJson(res, (err as { status?: number }).status || 400, { error: 'BODY_TOO_LARGE' }); }
-    const response = await handler(buildEvent(req, apiUrl, body, ip) as never);
-    return writeRouterResponse(res, response as RouterResponse);
+    const t0 = performance.now();
+    const response = await handler(buildEvent(req, apiUrl, body, ip) as never) as RouterResponse;
+    // PERF-001: hoe lang de server zelf over dit verzoek deed (zichtbaar in DevTools → Network → Timing en voor de paginacontrole
+    // van de extensie). Alleen de duur in ms, niets over de inhoud; zo is «traag door de server» te onderscheiden van «traag door
+    // de tunnel/het netwerk».
+    const duur = Math.max(0, performance.now() - t0).toFixed(1);
+    return writeRouterResponse(res, { ...response, headers: { 'Server-Timing': `app;dur=${duur}`, ...(response.headers || {}) } });
   }
   return serveStatic(req, res, url, DIST_DIR, true, APP_CSP);
 }
@@ -529,6 +578,18 @@ if (isMain) {
     .finally(() => {
       server.listen(PORT, HOST, () => console.log(`[server] luistert op http://${HOST}:${PORT} (dist: ${DIST_DIR})`));
     });
+  // PERF-001: bewaking van de hoofdthread. Achtergrondwerk (Google-sync, postonderhoud, zoekindex, SIEM) draait elke paar minuten in
+  // DIT proces; blokkeert iets de event loop, dan wacht elk verzoek van de site («сайт завмирає»). Elke minuut: is de langste
+  // vertraging boven LUS_DREMPEL_MS, dan één logregel met de duur en welk achtergrondwerk op dat moment liep — zo is een periodieke
+  // hapering op de server van de eigenaar aan te wijzen in plaats van te raden. Kost vrijwel niets (histogram van Node zelf).
+  const lus = monitorEventLoopDelay({ resolution: 20 });
+  lus.enable();
+  const LUS_DREMPEL_MS = Math.max(50, Number(process.env.LUS_DREMPEL_MS || 250));
+  setInterval(() => {
+    const max = lus.max / 1e6;
+    if (max >= LUS_DREMPEL_MS) console.warn(`[lus] hoofdthread tot ${Math.round(max)} ms geblokkeerd (p99 ${Math.round(lus.percentile(99) / 1e6)} ms; achtergrond in deze minuut: ${[...achtergrondGezien].join(', ') || 'geen'})`);
+    lus.reset(); achtergrondGezien.clear(); for (const n of achtergrondLopend) achtergrondGezien.add(n);
+  }, 60_000).unref();
   // Fase 3: verouderde eigenaarsrollen (adres ≠ OWNER_EMAIL) intrekken; faalt nooit de start.
   verouderdeEigenarenIntrekken().catch((err) => console.error('[eigenaar] opschonen mislukt:', (err as Error).message));
   // Diagnose-archief: verlopen archieven (90 dagen) bij de start en daarna elke 6 uur verwijderen; faalt nooit de start.
@@ -536,18 +597,28 @@ if (isMain) {
   diagOpruimen();
   setInterval(diagOpruimen, 6 * 3600_000).unref();
   // Root-gebeurtenissen (GitOps, gepantserde opdracht) uit het root-statusbestand in de audit opnemen; alleen lezen.
-  const rootAudit = () => neemRootGebeurtenissenOp().catch((err) => console.error('[beheer] audit opnemen mislukt:', (err as Error).message));
+  const rootAudit = () => achtergrond('root-audit', () => neemRootGebeurtenissenOp()).catch((err) => console.error('[beheer] audit opnemen mislukt:', (err as Error).message));
   rootAudit();
   setInterval(rootAudit, 5 * 60_000).unref();
+  // TELEGRAM-AANMELDEN v1: statusdienst (getMe elke minuut), verlopen wijzigingen, opruimen. Doet niets zolang de vlag uit staat.
+  const telegramRonde = () => achtergrond('telegram-aanmelden', () => telegramStatusRonde())
+    .catch((err) => console.error('[telegram-aanmelden] ronde mislukt:', (err as Error).message));
+  setTimeout(telegramRonde, 30_000).unref();
+  setInterval(telegramRonde, 60_000).unref();
+  // APPARAAT-001: verlopen verzoeken «Це ви?» sluiten en oude rijen (30 dagen) opruimen. Niets anders.
+  const apparaatRonde = () => achtergrond('apparaat-bevestiging', () => apparaatOpruimen())
+    .catch((err) => console.error('[apparaat-bevestiging] opruimen mislukt:', (err as Error).message));
+  setTimeout(apparaatRonde, 45_000).unref();
+  setInterval(apparaatRonde, 10 * 60_000).unref();
   // Sleutelkluis (0092): het achtergrondwerk dat een OPEN gegevenssleutel nodig heeft (Drive/agenda/CalDAV, postonderhoud) loopt hier,
   // in het proces waar de sleutel staat — onder dezelfde advisory lock als de cron, en alleen als er een sleutel open staat.
-  const kluisRonde = () => sleutelkluisAchtergrondRonde([
+  const kluisRonde = () => achtergrond('sleutelkluis-ronde', () => sleutelkluisAchtergrondRonde([
     { naam: 'google-suite-bplus-sync', handler: googleSuiteSyncCron as never, payload: { accountLimit: 10 } },
     { naam: 'mail-provider-maintenance', handler: mailMaintenanceCron as never, payload: { batchLimit: 3 } },
     // Z2: de zoekindex leest bijlagen/Drive/GitHub alleen met een open sleutel; hier dus óók, onder dezelfde lock als de cron.
     { naam: 'zoek-index', handler: zoekIndexCron as never, payload: { limiet: 60 } },
   ]).then((u) => { const gedaan = u.filter((x) => x.status === 'ok' || x.status === 'fout'); if (gedaan.length) console.log(`[sleutelkluis] achtergrondronde: ${u.map((x) => `${x.naam}=${x.status}`).join(' ')}`); })
-    .catch((err) => console.error('[sleutelkluis] achtergrondronde mislukt:', (err as Error).message));
+    .catch((err) => console.error('[sleutelkluis] achtergrondronde mislukt:', (err as Error).message)));
   setTimeout(kluisRonde, 90_000).unref();
   setInterval(kluisRonde, ACHTERGROND_INTERVAL_MS).unref();
   // Etap E: journaal naar uw eigen SIEM (bestand en/of Loki op loopback). Uit tenzij /etc/mijn-ruimte/siem.env het aanzet.
@@ -555,7 +626,7 @@ if (isMain) {
   if (siem.lokiGeweigerd) console.error('[siem] SIEM_LOKI_URL geweigerd: alleen http://127.0.0.1, localhost of [::1] (deploy/SIEM.md)');
   if (siem.aan) {
     console.log(`[siem] export aan: ${[siem.bestand && 'bestand', siem.loki && 'loki'].filter(Boolean).join(' + ')}, elke ${siem.intervalS} s`);
-    const ronde = () => { void siemRonde(siem); };
+    const ronde = () => { void achtergrond('siem', () => siemRonde(siem)); };
     setTimeout(ronde, 5_000).unref();
     setInterval(ronde, siem.intervalS * 1000).unref();
   }
@@ -565,6 +636,7 @@ if (isMain) {
     // Keep-alive-verbindingen (bv. pagina's die elke paar seconden pollen) houden server.close() open: rust eerst, daarna geforceerd, zodat een release-wissel geen "exit-code 1" geeft.
     closeAllAgents();
     sluitAlleStromen();
+    sluitAlleStromenApparaat();
     server.closeIdleConnections?.();
     setTimeout(() => server.closeAllConnections?.(), 4_000).unref();
     setTimeout(() => process.exit(1), 10_000).unref();

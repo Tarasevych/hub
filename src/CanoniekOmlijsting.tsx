@@ -4,7 +4,9 @@ import{lazy,Suspense}from'react';import{useRuimtesV2}from'./tech/ruimtes/ruimtes
 // 28.10.2026: ruimtewissel onderaan het zijmenu (vervangt de zwevende strook onderaan); alleen met vlag tech-ruimtes-v2 en een technisch profiel.
 const ZijbalkRuimte=lazy(()=>import('./tech/ruimtes/ZijbalkRuimte'));
 const MailAchtergrond=lazy(()=>import('./mail/MailAchtergrond'));
-import{useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type PointerEvent as ReactPointerEvent,type FocusEvent as ReactFocusEvent,type KeyboardEvent as ReactKeyboardEvent,type ReactNode}from'react';
+// APPARAAT-001: luisteraar voor «Це ви?» (bevestigen vanaf een ander apparaat) in elke aangemelde schil; toont niets zolang er geen verzoek is.
+const ApparaatLuisteraar=lazy(()=>import('./apparaat-bevestiging/Luisteraar'));
+import{Fragment,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type PointerEvent as ReactPointerEvent,type FocusEvent as ReactFocusEvent,type KeyboardEvent as ReactKeyboardEvent,type ReactNode}from'react';
 import './werkblad/pagina-achtergrond';
 import './schil-achtergrond.css';
 import{ArrowUp,Check,ChevronDown,Menu,PanelLeftClose,PencilRuler,Pin,RotateCcw,Undo2,X}from'lucide-react';import CanonicalNotificationCenter from'./CanoniekMeldingencentrum';import ZoekGlobaal,{ZoekMenuKnop}from'./zoek/ZoekGlobaal';import{focusDoelStarten}from'./platform/focus-doel';/* Z4 22.10.2026: globaal zoekveld + palet ⌘K; ?focus=<hulp-sleutel> → element markeren */import CanonicalConnectionBanner from'./CanoniekVerbindingBand';import type{CanonicalNoticeInput,CanonicalServerNotification}from'./canoniek-meldingen';
@@ -47,6 +49,9 @@ const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.se
 // De knop met het opgeslagen account opent het menu en start GEEN rotatie (dat is nog geen aanmelding — vroeger bleef de
 // Google-knop dan draaien zolang het menu open stond).
 import AanmeldAndereOpties from './AanmeldAndereOpties';
+import AanmeldTelegram from './telegram-aanmelden/AanmeldTelegram'; /* TELEGRAM-AANMELDEN v1: toont niets zolang de server zichtbaar=false zegt */
+import { useAanmeldConfig } from './telegram-aanmelden/aanmeld-config';
+import { aanmeldIndeling } from '../shared/aanmeld-plaatsing/plaatsing';
 import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
 export const AANMELD_BEZIG_SLEUTEL='mr-aanmelden-bezig';
 export const AANMELD_BEZIG_MS=5*60_000;
@@ -56,6 +61,7 @@ export function zetAanmeldenBezig(aan:boolean):void{try{if(aan)sessionStorage.se
 export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount,onGoogle}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null;onGoogle?:()=>void|Promise<unknown>}){
  const uk=lang==='uk';
  const[activating,setActivating]=useState(false);
+ const aanmeldCfg=useAanmeldConfig(); /* AANMELD-PLAATSING v1: hook vóór elke vroege return */
  // Terug van Google: alleen bij de EERSTE weergave in 'checking' gelezen (daarna zegt de app zelf of het profiel open is).
  const[terugVanAanmelden]=useState(()=>checking&&aanmeldenBezig());
  const vertrekt=useRef(false);
@@ -83,6 +89,15 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  const known=!checking&&rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
  const draait=activating||checking;
  const postdienst=typeof window!=='undefined'&&(window.location.hostname.startsWith('mail.')||window.location.pathname.startsWith('/mail'));
+ const indeling=aanmeldIndeling(aanmeldCfg);
+ const googleG=<img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/>;
+ const googleKnop=(
+   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} aria-disabled={checking||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
+    <span className='mr-sign-in-logo' aria-hidden='true'>{googleG}</span>
+    <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):(uk?'Увійти через Google':'Aanmelden met Google')}</span>
+    <span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
+   </button>
+ );
  return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={draait?'true':'false'} aria-live={checking?'polite':undefined}>
   {postdienst&&<Suspense fallback={null}><MailAchtergrond lang={lang} plaats='aanmelden'/></Suspense>}
   <div className='mr-sign-in-content'>
@@ -94,12 +109,12 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
     <span aria-hidden='true' className='mr-sign-in-chevron'>⌄</span>
    </button>}
    {/* Focus naar een ander element op de pagina (bv. de accountkeuze die opent) = geen aanmelding meer; het venster verlaten (relatedTarget leeg) niet. */}
-   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} aria-disabled={checking||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
-    <span className='mr-sign-in-logo' aria-hidden='true'><img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/></span>
-    <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):(uk?'Увійти через Google':'Aanmelden met Google')}</span>
-    <span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
-   </button>
-   {!checking&&<AanmeldAndereOpties lang={lang}/>}
+   {/* AANMELD-PLAATSING v1: volgorde en plaats per methode komen van de beheerder (met de vlag aan); zonder plaatsing exact zoals vroeger. */}
+   {indeling.hoofd.map(m=>m==='google'?<Fragment key='google'>{googleKnop}</Fragment>:m==='telegram'&&!checking?<AanmeldTelegram key='telegram' lang={lang} remember={rememberBrowser}/>:null)}
+   {!checking&&<AanmeldAndereOpties lang={lang} ids={indeling.andere} extra={{
+    ...(indeling.andere.includes('google')?{google:<button type='button' className='mr-sign-in-optie mr-sign-in-optie-google' onClick={google}><span className='mr-sign-in-optie-logo' aria-hidden='true'>{googleG}</span><span className='mr-sign-in-optie-tekst'><strong>{uk?'Увійти через Google':'Aanmelden met Google'}</strong></span></button>}:{}),
+    ...(indeling.andere.includes('telegram')?{telegram:<AanmeldTelegram lang={lang} remember={rememberBrowser}/>}:{}),
+   }}/>}
    {!checking&&onRememberBrowser&&<label className='mr-sign-in-remember'>
     <input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/>
     <span>{uk?'Зберегти обліковий запис на цьому пристрої':'Account op dit apparaat bewaren'}</span>
@@ -318,6 +333,7 @@ export default function CanonicalChrome({lang,theme,current,items,tabs,activeTab
  const scrollToWorkspaceTop=()=>{const workspace=workspaceRef.current;if(!workspace)return;const reduceMotion=window.matchMedia('(prefers-reduced-motion:reduce)').matches;workspace.scrollTo({top:0,behavior:reduceMotion?'auto':'smooth'})};
  const toggleLabel=touchMode?(drawerOpen?(lang==='uk'?'Закрити бічну панель':'Zijbalk sluiten'):(lang==='uk'?'Відкрити бічну панель':'Zijbalk openen')):pinned?(lang==='uk'?'Відкріпити бічну панель':'Zijbalk losmaken'):(lang==='uk'?'Зафіксувати бічну панель':'Zijbalk vastzetten'),toggleAction=touchMode?(drawerOpen?'close-drawer':'open-drawer'):(pinned?'unpin':'pin'),mode=drawer?'drawer':pinned?'pinned':hoverOpen?'hover-expanded':'collapsed',layout=!touchMode&&pinned?'reflow':expanded?'overlay':'collapsed',edgeLabel=lang==='uk'?'Наведіть і затримайте курсор, щоб відкрити меню':'Houd de aanwijzer even stil om het menu te openen';
  return <main className={`canonical-chrome schil-achtergrond ecosystem-v04 theme-${theme}${touchMode?' sidebar-drawer-mode':''}${expanded?' sidebar-expanded':''}${!touchMode&&pinned?' sidebar-pinned':''}${transient?' sidebar-hover':''}${drawer?' sidebar-drawer':''}`} data-surface-model='flat-content' data-scroll-top={scrollTopVisible?'1':undefined} data-sidebar-state={mode} data-sidebar-mode='safe-hover-pinned' data-sidebar-source={drawer?'touch':pinned?'hamburger':hoverSource} data-sidebar-pointer-inside={pointerInside.current?'true':'false'} data-layout-mode={layout} data-active-service={current} data-focus-mode={focusMode?'mail':'none'} data-sidebar-submenu-model='manual-persistent-safe-hover' data-active-submenu={activeSubmenuId||'none'} data-viewport-tooltips='true' data-icoon-stijl={zijbalk.icoonStijl} data-zijbalk-modus={modus} data-dock={dockPos} data-menu-bewerken={bewerken?'ja':'nee'} data-dock-vergroting={horizontaal&&zijbalk.dock.vergroting?'ja':'nee'} data-plaats-boven-n={bovenN>0?bovenN:undefined} data-plaats-stapel={stapelN>0?'ja':undefined} data-plaats-iframe={iframe?'ja':undefined} style={{...(horizontaal?{['--dock-dekking' as string]:`${100-zijbalk.dock.transparantie}%`}:{}),['--plaats-boven-n' as string]:bovenN,['--plaats-stapel-ruimte' as string]:`${stapelRuimte}px`}} ref={mainRef} onPointerDown={rememberSwipe} onPointerUp={finishSwipe}>
+  {goedgekeurd&&!signedOut&&<Suspense fallback={null}><ApparaatLuisteraar lang={lang} service={current}/></Suspense>}
   {!expanded&&!touchMode&&effModus!=='dicht'&&!bewerken&&<div className='canonical-sidebar-edge-zone' data-sidebar-edge-zone='safe-hover' aria-label={edgeLabel} onPointerEnter={event=>queueTransient('edge',event)} onPointerLeave={leaveTransient}/>} 
   {(transient||drawer)&&<div className={`canonical-sidebar-scrim${drawer?' drawer':''}`} aria-hidden='true' onClick={drawer?()=>closeDrawer():undefined}/>} 
   <aside ref={sidebarRef} className='canonical-sidebar' aria-label={lang==='uk'?'Навігація':'Navigatie'} onPointerEnter={event=>queueTransient('panel',event)} onPointerLeave={leaveTransient}>

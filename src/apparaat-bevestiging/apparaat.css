@@ -1,0 +1,80 @@
+/* APPARAAT-001 — «Підтвердження з іншого пристрою». Alle kleuren via de paletvariabelen van de site (--panel, --text, --muted,
+   --line, --accent, --focus): licht en donker zonder eigen uitzonderingen. Alleen uitgeschakelde knoppen hebben opacity < 1. */
+.apb-kanaal,.apb-inhoud,.apb-sectie,.apb-beheer{display:flex;flex-direction:column;gap:10px;color:inherit}
+.apb-uitleg{display:flex;gap:8px;align-items:flex-start;margin:0;font-size:.88rem;line-height:1.4;color:var(--muted,var(--boot-muted,#5a6672))}
+.apb-uitleg-icoon{flex:0 0 auto;width:18px;height:18px;margin-top:1px;color:var(--accent,var(--boot-accent,#2f6f73))}
+.apb-klein{margin:0;font-size:.8rem;line-height:1.4;color:var(--muted,var(--boot-muted,#5a6672))}
+.apb-wacht{display:flex;align-items:center;gap:8px;margin:0;font-size:.9rem}
+.apb-draai{display:inline-block;flex:0 0 auto;width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:apb-draai .8s linear infinite}
+@keyframes apb-draai{to{transform:rotate(360deg)}}
+.apb-fout{margin:0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--fout,#b3261e) 9%,transparent);border:1px solid color-mix(in srgb,var(--fout,#b3261e) 30%,transparent);font-size:.86rem;line-height:1.4}
+.apb-ok{margin:0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--ok,#1d6b4a) 10%,transparent);border:1px solid color-mix(in srgb,var(--ok,#1d6b4a) 30%,transparent);font-size:.9rem;line-height:1.4}
+.apb-rij{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.apb-knop{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:7px 14px;border-radius:10px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:transparent;color:inherit;font:inherit;font-size:.9rem;cursor:pointer}
+.apb-knop:hover:not(:disabled){background:rgba(127,127,127,.1)}
+.apb-knop:focus-visible{outline:2px solid var(--focus,#2f6f73);outline-offset:2px}
+.apb-knop:disabled{opacity:.55;cursor:default}
+.apb-knop-hoofd{border-color:var(--accent,var(--boot-accent,#2f6f73));background:var(--accent,var(--boot-accent,#2f6f73));color:var(--ap-op-accent,#fff);font-weight:600}
+.apb-knop-gevaar{border-color:color-mix(in srgb,var(--fout,#b3261e) 60%,transparent);color:var(--fout,#b3261e)}
+.apb-aftel{font-size:.75rem;font-variant-numeric:tabular-nums;color:var(--muted,var(--boot-muted,#5a6672))}
+
+/* Symbolen: dezelfde tegel op A en B. Op A is één tegel uitgelicht (ring + woord); op B zijn het knoppen met aftelling. */
+.apb-symbolen{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:10px;margin:4px 0}
+.apb-tegel{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:96px;padding:10px 6px;border-radius:14px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:rgba(127,127,127,.05);color:inherit;font:inherit}
+.apb-tegel.is-uitgelicht{border-color:var(--accent,var(--boot-accent,#2f6f73));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#2f6f73) 35%,transparent);background:color-mix(in srgb,var(--accent,#2f6f73) 10%,transparent)}
+.apb-tegel-label{position:absolute;top:-9px;left:50%;transform:translateX(-50%);padding:1px 8px;border-radius:999px;background:var(--accent,var(--boot-accent,#2f6f73));color:var(--ap-op-accent,#fff);font-size:.7rem;font-weight:700;letter-spacing:.02em}
+.apb-tegel-knop{cursor:pointer;transition:transform .12s ease,background .12s ease}
+.apb-tegel-knop:hover:not(:disabled){background:rgba(127,127,127,.12);transform:translateY(-1px)}
+.apb-tegel-knop:focus-visible{outline:2px solid var(--focus,#2f6f73);outline-offset:2px}
+.apb-tegel-knop:disabled{opacity:.55;cursor:default}
+.apb-symbool{display:flex;flex-direction:column;align-items:center;gap:4px}
+.apb-symbool-icoon{width:34px;height:34px;color:var(--text,inherit)}
+.apb-symbool-teken{font-size:2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.apb-symbool-naam{font-size:.78rem;line-height:1.2;text-align:center}
+.apb-symbool.is-klein .apb-symbool-icoon{width:20px;height:20px}
+.apb-symbool.is-klein .apb-symbool-teken{font-size:1.1rem}
+.apb-symbool.is-klein .apb-symbool-naam{display:none}
+
+/* Zwevend venster «Це ви?» (inhoud; de rand/kop komt van de gezamenlijke vensterlaag). */
+.apb-venster .venster-inhoud{padding:14px 16px 16px}
+.apb-kop{display:flex;align-items:center;gap:10px}
+.apb-kop h2{margin:0;font-size:1.15rem;font-weight:600}
+.apb-kop-icoon{width:28px;height:28px;color:var(--waarschuwing,#b7791f)}
+.apb-kop-icoon.is-ok{color:var(--ok,#1d6b4a)}.apb-kop-icoon.is-fout{color:var(--fout,#b3261e)}
+.apb-context{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:rgba(127,127,127,.04);font-size:.86rem}
+.apb-context div{display:contents}
+.apb-context dt{color:var(--muted,var(--boot-muted,#5a6672))}
+.apb-context dd{margin:0;overflow-wrap:anywhere}
+@media (max-width:480px){.apb-symbolen{grid-template-columns:repeat(3,1fr)}.apb-tegel{min-height:84px}}
+
+/* Geheime code (tabblad Telegram, als de tabel die ook vraagt). */
+.apb-code{display:flex;flex-direction:column;gap:8px}
+.apb-code label{font-weight:600;font-size:.9rem}
+.apb-code input:not([type=checkbox],[type=radio]){width:100%;box-sizing:border-box;padding:10px 12px;border-radius:9px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff));color:inherit;font-size:1.05rem;letter-spacing:.12em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* Instellingen (gebruiker) en beheer: dezelfde opmaak als de andere kaarten in «Способи входу». */
+.apb-sectie,.apb-beheer{margin-top:16px;padding:16px;border-radius:14px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff))}
+.apb-sectie-kop{display:flex;align-items:center;gap:10px}
+.apb-sectie-kop h3,.apb-sectie-kop h2{margin:0;font-size:1.05rem}
+.apb-sectie-kop svg{width:22px;height:22px;color:var(--accent,var(--boot-accent,#2f6f73))}
+.apb-stand{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:600;border:1px solid var(--line,var(--boot-line,#dce1e6))}
+.apb-stand[data-stand='werkt']{color:var(--ok,#1d6b4a);border-color:color-mix(in srgb,var(--ok,#1d6b4a) 40%,transparent)}
+.apb-stand[data-stand='niet']{color:var(--waarschuwing,#b7791f);border-color:color-mix(in srgb,var(--waarschuwing,#b7791f) 40%,transparent)}
+.apb-stand[data-stand='uit']{color:var(--fout,#b3261e);border-color:color-mix(in srgb,var(--fout,#b3261e) 40%,transparent)}
+.apb-veld{display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.apb-veld>span:first-child{font-weight:600}
+.apb-veld select,.apb-veld input[type=number]{max-width:320px;padding:7px 10px;border-radius:8px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff));color:inherit;font:inherit}
+.apb-vinkje{display:flex;align-items:flex-start;gap:8px;font-size:.9rem;line-height:1.35;cursor:pointer}
+.apb-vinkje input{margin:3px 0 0;flex:0 0 auto;width:auto}
+.apb-vinkje span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.apb-raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
+.apb-tabel{width:100%;border-collapse:collapse;font-size:.84rem}
+.apb-tabel th,.apb-tabel td{padding:6px 8px;border-bottom:1px solid var(--line,var(--boot-line,#dce1e6));text-align:left;vertical-align:top}
+.apb-tabel th{font-weight:600;color:var(--muted,var(--boot-muted,#5a6672))}
+.apb-tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.apb-cijfer{padding:10px 12px;border-radius:10px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:rgba(127,127,127,.04)}
+.apb-cijfer strong{display:block;font-size:1.4rem;font-variant-numeric:tabular-nums}
+.apb-cijfer span{font-size:.8rem;color:var(--muted,var(--boot-muted,#5a6672))}
+.apb-nood{padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--fout,#b3261e) 35%,transparent);background:color-mix(in srgb,var(--fout,#b3261e) 6%,transparent);font-size:.86rem}
+.apb-voorbeeld{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.apb-voorbeeld .apb-tegel{min-height:72px;min-width:72px;padding:6px}

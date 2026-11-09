@@ -118,7 +118,14 @@ export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 
   const t = (uk: string, nl: string) => lang === 'uk' ? uk : nl;
 
   useEffect(() => { voorkeurRef.current = voorkeuren; try { localStorage.setItem(SLEUTEL, JSON.stringify(voorkeuren)); } catch { /* Privémodus. */ } }, [voorkeuren]);
-  useEffect(() => { lensRef.current = lens; }, [lens]);
+  useEffect(() => {
+    lensRef.current = lens;
+    if (!lens || aanwijzer.current.binnen) return;
+    const houder = doek.current?.parentElement?.parentElement;
+    if (!houder) return;
+    const rect = houder.getBoundingClientRect();
+    aanwijzer.current = { x: rect.width / 2, y: rect.height / 2, dx: 0, dy: 0, binnen: true };
+  }, [lens]);
 
   useEffect(() => {
     const canvas = doek.current;
@@ -151,14 +158,16 @@ export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 
     };
     const effectiefAantal = () => Math.round(voorkeurRef.current.aantal * (breedte < 700 ? .38 : 1));
     const wijs = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return;
+      if (e.pointerType !== 'mouse' && !lensRef.current) return;
+      if (e.pointerType !== 'mouse' && e.target instanceof Element &&
+        e.target.closest('button,a,input,textarea,select,summary,[role="button"],[contenteditable="true"]')) return;
       const r = houder.getBoundingClientRect();
       const x = e.clientX - r.left, y = e.clientY - r.top;
       const p = aanwijzer.current;
       p.dx = begrens(x - p.x, -30, 30); p.dy = begrens(y - p.y, -30, 30);
       p.x = x; p.y = y; p.binnen = x >= 0 && x <= breedte && y >= 0 && y <= hoogte;
     };
-    const uit = () => { aanwijzer.current.binnen = false; };
+    const uit = (e: PointerEvent) => { if (e.pointerType === 'mouse') aanwijzer.current.binnen = false; };
     const rechts = (e: MouseEvent) => {
       if (e.button !== 2 || voorkeurRef.current.beweging === 'uit') return;
       const doel = e.target;
@@ -244,13 +253,15 @@ export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 
     const zichtwaarnemer = new IntersectionObserver(([waarde]) => { zichtbaar = waarde.isIntersecting; });
     zichtwaarnemer.observe(houder);
     houder.addEventListener('pointermove', wijs, { passive: true });
+    houder.addEventListener('pointerdown', wijs, { passive: true });
     houder.addEventListener('pointerleave', uit);
     houder.addEventListener('contextmenu', rechts);
     meet(); verzoek = requestAnimationFrame(teken);
     return () => {
       leeft = false;
       cancelAnimationFrame(verzoek); waarnemer.disconnect(); zichtwaarnemer.disconnect();
-      houder.removeEventListener('pointermove', wijs); houder.removeEventListener('pointerleave', uit);
+      houder.removeEventListener('pointermove', wijs); houder.removeEventListener('pointerdown', wijs);
+      houder.removeEventListener('pointerleave', uit);
       houder.removeEventListener('contextmenu', rechts);
     };
   }, []);
