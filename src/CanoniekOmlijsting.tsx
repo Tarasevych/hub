@@ -3,6 +3,7 @@ import{paginaVerborgen,useFotoVlaggen}from'./foto/foto-vlaggen';
 import{lazy,Suspense}from'react';import{useRuimtesV2}from'./tech/ruimtes/ruimtes-vlag';
 // 28.10.2026: ruimtewissel onderaan het zijmenu (vervangt de zwevende strook onderaan); alleen met vlag tech-ruimtes-v2 en een technisch profiel.
 const ZijbalkRuimte=lazy(()=>import('./tech/ruimtes/ZijbalkRuimte'));
+const MailAchtergrond=lazy(()=>import('./mail/MailAchtergrond'));
 import{useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type PointerEvent as ReactPointerEvent,type FocusEvent as ReactFocusEvent,type KeyboardEvent as ReactKeyboardEvent,type ReactNode}from'react';
 import './werkblad/pagina-achtergrond';
 import './schil-achtergrond.css';
@@ -81,7 +82,9 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  };
  const known=!checking&&rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
  const draait=activating||checking;
+ const postdienst=typeof window!=='undefined'&&(window.location.hostname.startsWith('mail.')||window.location.pathname.startsWith('/mail'));
  return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={draait?'true':'false'} aria-live={checking?'polite':undefined}>
+  {postdienst&&<Suspense fallback={null}><MailAchtergrond lang={lang} plaats='aanmelden'/></Suspense>}
   <div className='mr-sign-in-content'>
    <h1>{uk?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
    <p className='mr-sign-in-subtitle'>{uk?'Єдиний обліковий запис для вашої роботи, файлів і сервісів.':'Eén account voor uw werk, bestanden en diensten.'}</p>

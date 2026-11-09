@@ -4,6 +4,7 @@
 import { useId, useState } from 'react';
 import { ArrowRight, Check, ChevronRight, CircleHelp, LockKeyhole, MousePointer2, ShieldCheck, Sparkles } from 'lucide-react';
 import Logo from '../merk/MerkLogo';
+import MailAchtergrond from './MailAchtergrond';
 import { MAIL_AANBIEDERS, mailAanbiederHeeftKnop, type MailAanbieder } from '../../shared/mail-aanbieders';
 import './mail-orbit-intro.css';
 
@@ -29,6 +30,7 @@ export default function MailOrbitIntro({ lang, onSelect, variant = 'accounts', o
 
   return (
     <section className={'mail-orbit-intro' + (variant === 'inbox' ? ' is-inbox' : '')} data-mail-orbit-intro={variant} aria-label={t('Вибір поштового сервісу', 'Een e-maildienst kiezen')}>
+      <MailAchtergrond lang={lang} plaats='accounts' />
       <div className='mail-orbit-kop'>
         <span className='mail-orbit-kicker'><Sparkles aria-hidden='true' size={15} /> {t('Пошта · Нове підключення', 'E-mail · Nieuwe koppeling')}</span>
         <h2>{variant === 'inbox' ? t('Ваша пошта починається тут.', 'Uw e-mail begint hier.') : t('Уся пошта. Один простір.', 'Al uw e-mail. Eén ruimte.')}</h2>

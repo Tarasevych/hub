@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAILBG-001",
+  "agent": "codex",
+  "tak": "feature/mailbg-001-20261109-161500",
+  "basisCommit": "4c9786c5d46b99e3d3bfa7be7fdb4279f75e8e57",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-09T19:47:49.325Z",
+  "bijgewerkt": "2026-11-09T19:47:49.326Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
