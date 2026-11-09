@@ -31,6 +31,7 @@ import { ruimteOf } from '../shared/ai-ruimte';
 import { V2_AGENTEN, isAgentSlug } from '../shared/connector-v2/agenten';
 import { parseRootGebeurtenissen, toonbareInstallaties } from './server-beheer';
 import { pakketVoorcontrole } from './uitrol-voorcontrole';
+import { VereistenFout, proefAanvragen, standaardOmgeving, vereistenStand, vereistenStarten } from './uitrol-vereisten';
 import { uitrolArchiefToken } from './uitrol-github';
 import { releaseInfo } from './uitgave-info';
 import { diagnose, liveStand, runDetail, runRegels, runsLijst, runsSynchroniseren } from './uitrol-runs';
@@ -823,7 +824,7 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
   const metFouten = async (run: () => Promise<unknown>): Promise<Resp> => {
     try { return json(await run()); }
     catch (err) {
-      if (err instanceof UitrolFout) return error(err.code, err.status);
+      if (err instanceof UitrolFout || err instanceof VereistenFout) return error(err.code, err.status);
       console.error('[uitrol-goedkeuring]', (err as Error).message);
       return error('UITROL_FOUT', 500);
     }
@@ -888,6 +889,17 @@ export function uitrolGoedkeuringRoutes(deps: UitrolRouteDeps): Record<string, R
     // Pogingen die niet tot een installatie kwamen (migratie 0081): «Останні розгортання» en «Уся історія» tonen ze erbij,
     // met de etappe, het percentage en de reden — ook die van afbrekingen die alleen de browser zag.
     'POST /api/owner/uitrol/pogingen': [eigenaar({}, async (ctx) => pogingenLijst(body(ctx.body)))],
+    // UITROL-001: vereisten vóór de upload (backend/uitrol-vereisten.ts). Start = beschrijving uit de browser; proef = SQL van de nieuwe
+    // migraties (root probeert ze op een wegwerpkopie van het schema); stand = uitslag lezen. Begrensd: 30 starts per 10 minuten.
+    'POST /api/owner/uitrol/vereisten': [eigenaar({}, async (ctx, auth) => {
+      const limiet = await rateLimit(`uitrol-vereisten:${auth.user.id}`, 30, 600);
+      if (!limiet.ok) fout('RATE_LIMITED', 429);
+      const b = await leesSleutels().catch(() => null);
+      const omg = standaardOmgeving({ passkeyKlaar: async () => (await schakelaarAan()) && !!b?.sleutels.length, archiefToken: () => uitrolArchiefToken(auth.user.id) });
+      return vereistenStarten(auth.user.id, body(ctx.body), omg);
+    })],
+    'POST /api/owner/uitrol/vereisten/proef': [eigenaar({}, async (ctx, auth) => proefAanvragen(auth.user.id, body(ctx.body)))],
+    'POST /api/owner/uitrol/vereisten/stand': [eigenaar({}, async (ctx, auth) => vereistenStand(auth.user.id, body(ctx.body)))],
     'POST /api/owner/uitrol/voorbereiders/toevoegen': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantGeven(wie(auth), body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/termijn': [eigenaar({ stepUp: true }, async (ctx, auth) => ({ voorbereider: await grantTermijn(wie(auth), body(ctx.body).id, body(ctx.body)) }))],
     'POST /api/owner/uitrol/voorbereiders/intrekken': [eigenaar({ sterk: true, reden: true }, async (ctx, auth) => ({ voorbereider: await grantIntrekken(wie(auth), body(ctx.body).id, { reden: body(ctx.body).reden, auth: auth as never }) }))],

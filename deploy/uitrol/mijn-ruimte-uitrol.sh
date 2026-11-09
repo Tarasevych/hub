@@ -205,6 +205,8 @@ installeer_stappen() {
     [[ "$regel" =~ ^\[installeer\]\ stap:\ ([a-z]+)\ \(([0-9]{1,3})%\) ]] || continue
     id="${BASH_REMATCH[1]}"; pct="${BASH_REMATCH[2]}"
     case "$id" in
+      proef) uk="Проба нових міграцій на тимчасовій копії схеми (робоча база не змінюється)."; nl="Nieuwe migraties worden geprobeerd op een wegwerpkopie van het schema (productie blijft onaangeroerd)." ;;
+      pgversie) uk="Перевіряю версію PostgreSQL."; nl="PostgreSQL-versie wordt gecontroleerd." ;;
       kopie) uk="Копіюю код випуску в нову теку релізу."; nl="Broncode wordt naar een nieuwe releasemap gekopieerd." ;;
       npm) uk="Встановлюю залежності (npm ci)."; nl="Afhankelijkheden worden geïnstalleerd (npm ci)." ;;
       bouwen) uk="Збираю сайт і сервер (vite + серверна збірка)."; nl="Site en server worden gebouwd (vite + serverbundel)." ;;
@@ -818,6 +820,8 @@ PY
 )
   FOUT_STAP="${oorzaak[0]:-}"; REDEN_TEKST="${oorzaak[1]:-onbekende fout}"
   case "$FOUT_STAP" in
+    proef) STAP_UK="проба міграцій на копії схеми (нічого не змінено)"; STAP_NL="migratieproef op een schemakopie (niets gewijzigd)" ;;
+    pgversie) STAP_UK="перевірка версії PostgreSQL"; STAP_NL="controle PostgreSQL-versie" ;;
     kopie) STAP_UK="копіювання коду"; STAP_NL="broncode kopiëren" ;;
     npm) STAP_UK="встановлення залежностей (npm ci)"; STAP_NL="afhankelijkheden installeren (npm ci)" ;;
     bouwen) STAP_UK="збірка"; STAP_NL="bouwen" ;;

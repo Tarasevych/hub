@@ -724,6 +724,41 @@ pg_versie_controleren() {
   esac
 }
 
+# UITROL-001 (09.11.2026): de NIEUWE migraties eerst op een wegwerpkopie van het schema proberen — vóór kopiëren, npm ci en bouwen.
+# Release 20261109-065647 viel vroeger pas na ±3 minuten bouwen om in «databasemigraties» (CHECK feature_flags_omschrijving_check);
+# nu stopt zo'n pakket in seconden, met migratie, regel en beperking in het logboek. De productiedatabase wordt niet geraakt
+# (deploy/uitrol/mijn-ruimte-migratie-proef.sh). Niet uitvoerbaar (oude release zonder proefprogramma, geen postgres-gebruiker) →
+# waarschuwing en gewoon door: de echte migratie blijft per migratie transactioneel, met back-up en de vorige release actief.
+migratie_proef() {
+  local bron="$1" script uit rc=0
+  [ "${PROEF_UIT:-0}" != 1 ] || { melding "migratieproef overgeslagen (PROEF_UIT=1)"; return 0; }
+  [ -d "$bron/migrations" ] || return 0
+  script="$bron/deploy/uitrol/mijn-ruimte-migratie-proef.sh"
+  [ -s "$script" ] || script=/usr/local/sbin/mijn-ruimte-migratie-proef
+  [ -s "$script" ] || { waarschuwing "migratieproef: script ontbreekt; overgeslagen"; return 0; }
+  voortgang proef 44 "nieuwe migraties proberen op een kopie van het schema"
+  uit="$(mktemp)"
+  bash "$script" --map "$bron/migrations" --uit "$uit" --script "$HUIDIG/dist-server/migratie-proef.mjs" 2>&1 | sed 's/^/[installeer] /' || rc=${PIPESTATUS[0]}
+  if [ "$rc" -eq 4 ]; then
+    python3 - "$uit" <<'PY' || true
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+for m in d.get("migraties", []):
+    if m.get("ok"): print("[installeer] proef ok: %s (%s ms)" % (m["naam"], m.get("ms")))
+    else:
+        f = m.get("fout") or {}
+        print("[installeer] FOUT: migratieproef %s regel %s: %s %s%s" % (m["naam"], f.get("regel") or "?", f.get("code", ""), f.get("bericht", ""), (" · " + f["constraint"]) if f.get("constraint") else ""))
+PY
+    rm -f -- "$uit"
+    fout "migratieproef mislukt — dit pakket zou in «databasemigraties» omvallen; niets gewijzigd / проба міграцій не пройдена, нічого не змінено"
+  elif [ "$rc" -ne 0 ]; then
+    waarschuwing "migratieproef niet uitgevoerd (code $rc); de installatie gaat door met back-up en transactionele migraties"
+  else
+    melding "migratieproef: alle nieuwe migraties slagen op de kopie van het schema"
+  fi
+  rm -f -- "$uit"
+}
+
 migreren() {
   local doel="$1"
   pg_versie_controleren "$doel"
@@ -1086,6 +1121,7 @@ installeren() {
   [ ! -e "$doel" ] || fout "$doel bestaat al"
   install -d -o root -g "$GEBRUIKER" -m 0750 "$doel"
   ONVOLTOOID="$doel"
+  migratie_proef "$bron"
   voortgang kopie 45 "broncode kopiëren"; melding "bron kopiëren naar $doel…"; bron_kopieren "$bron" "$doel"
   # Geen patch-scripts meer tijdens het installeren (vroeger o.a. een base64-blob die als root werd uitgevoerd): wat in de bron
   # staat, is wat er gebouwd wordt. Zie deploy/RUNBOOK-VEILIGE-UITROL.md.
@@ -1109,6 +1145,15 @@ installeren() {
   db_rollen_hulp_inrichten "$doel"
   guacamole_inrichten "$doel"
   opa_inrichten "$doel"
+  # UITROL-001: migratieproef vóór de upload (root-script + path-unit; de site legt alleen proef-<id>.json in de inbox).
+  if [ -s "$doel/deploy/uitrol/mijn-ruimte-migratie-proef.sh" ]; then
+    install -m 0755 -o root -g root "$doel/deploy/uitrol/mijn-ruimte-migratie-proef.sh" /usr/local/sbin/mijn-ruimte-migratie-proef
+    install -d -o "$GEBRUIKER" -g "$GEBRUIKER" -m 0750 "$APP_ROOT/proef-inbox"
+    install -d -o root -g root -m 0711 /var/lib/mijn-ruimte-proef
+    install -d -o root -g "$GEBRUIKER" -m 0750 "$STATUS_GEBEURTENISSEN/proef"
+    systemctl enable --now mijn-ruimte-proef.path >/dev/null 2>&1 || waarschuwing "mijn-ruimte-proef.path kon niet worden gestart"
+    melding "migratieproef ingericht"
+  fi
   # Volledig archief ("Архів на ПК"): root-script + path-unit die het verzoekbestand van de site bewaakt (de site kan zelf niets als root
   # doen). Uitvoer in een root-map (uitgifte root:mijnruimte 0750, werkmap 0700), het hele archief age-versleuteld.
   if [ -s "$doel/deploy/archief-maken.sh" ]; then
