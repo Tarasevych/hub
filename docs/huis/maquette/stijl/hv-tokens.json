@@ -1,4 +1,22 @@
 {
+  "toelichting": {
+    "thema": "усі кольори як шістнадцяткові значення; палітра `kleur` розділу `huis`. У `licht` і `donker` наявні токени платформи (`--bg` … `--focus`) — зі справжніх файлів. Тема `inkt` нова: класу `theme-inkt` у платформі ще немає, тож усі її значення, зокрема 29 «наявних» назв, живуть лише тут до етапу 1 — як і точки неба",
+    "thema.--hv-hemel-boven/-onder/-gloed": "робочі токени неба; у `thema.*` — точки фази «день» своєї теми; `@property` має одне початкове значення на документ (`maten.hemel.eigenschap.initialValue`), значення теми задає звичайне оголошення; клієнт обчислює їх раз на хвилину",
+    "thema.--hv-omtrek": "власне значення теми (не `var(--faint)`); у палітрі `kleur` збігається з `--faint`",
+    "thema.--hv-arcering": "те саме значення, що `--hv-omtrek`; штрих і контур розрізняються малюнком, не кольором",
+    "hemel": "похідний розділ для зручності складальника; джерело — `thema.<thema>.--hv-hemel-<fase>-<punt>`; 24 точки замінюють «16 значень» плану §3.2",
+    "paren": "пари контрасту, що мають проходити в кожній темі",
+    "parenKeuze": "проходить, якщо хоч один із `eenVan` дає `min` проти `achter`",
+    "verboden": "поєднання, яких у стилях бути не може",
+    "aliassen": "псевдоніми: у стилях `--назва: var(--ціль)`",
+    "onderscheid": "відстані між тонами; `eisen` мусять проходити у світлій і темній темах; `onderDrempel` — чесний перелік пар нижче порога з носієм розрізнення",
+    "onderscheid.lichtheid": "пари тонів стану, `--warn` і `--accent` із взаємним контрастом нижче 1,3: за світлотою вони не розрізняються — лише за колірним тоном, формою знака і словом",
+    "onderscheid.kleurenblind": "пари, що за протанопії чи дейтеранопії (модель Machado 2009, повна втрата) стають ближчими за `ΔE2000` 5",
+    "maten.hemel.niveaus": "рівні неба: що саме малюється на кожному",
+    "maten.tonenOpPaletten": "тони `--hv-*` однакові в усіх палітрах; найнижчий контраст тонів до чотирьох поверхонь кожної палітри, де працює модуль",
+    "maten.profielen.gezicht": "анатомія обличчя профілів без сітки плиток (§7 документа, «Обличчя / Wijzerplaat»)",
+    "maten.thema.--hv-glas": "скло — похідне від `--panel` будь-якої палітри; шістнадцяткове значення має лише `--hv-glas-grens`"
+  },
   "thema": {
     "licht": {
       "--bg": "#f4f0ee",
@@ -30,8 +48,6 @@
       "--papier": "#ffffff",
       "--papier-zacht": "#e5e7eb",
       "--focus": "#1d4ed8",
-      "--hv-glas": "#fefcfacc",
-      "--hv-glas-rand": "#17212b1f",
       "--hv-aan": "#4f3f03",
       "--hv-aan-zacht": "#fbf2b0",
       "--hv-aan-vlak": "#fad414",
@@ -42,15 +58,15 @@
       "--hv-koud-zacht": "#d9f1f8",
       "--hv-zon": "#4a6600",
       "--hv-zon-zacht": "#ecf6c7",
-      "--hv-net-in": "#475569",
+      "--hv-net-in": "#243042",
       "--hv-net-in-zacht": "#e6eaef",
-      "--hv-net-uit": "#5b3fc4",
+      "--hv-net-uit": "#4f1984",
       "--hv-net-uit-zacht": "#ebe5fb",
       "--hv-batterij": "#0d635d",
       "--hv-batterij-zacht": "#d5f2ee",
       "--hv-auto": "#9a1aa6",
       "--hv-auto-zacht": "#f8e3fb",
-      "--hv-arcering": "#5f6975",
+      "--hv-arcering": "#5f6873",
       "--hv-warmte-1": "#edeef0",
       "--hv-warmte-2": "#d7dade",
       "--hv-warmte-3": "#c0c5cc",
@@ -71,7 +87,11 @@
       "--hv-hemel-schemer-boven": "#d4d0f1",
       "--hv-hemel-schemer-onder": "#f9d7cd",
       "--hv-hemel-schemer-gloed": "#ffdeb4",
-      "--hv-hemel-grens": "#bfcfb4"
+      "--hv-hemel-grens": "#bfcfb4",
+      "--hv-hemel-neerslag": "#8f9cc0",
+      "--hv-hemel-boven": "#bfddf7",
+      "--hv-hemel-onder": "#e7f2fb",
+      "--hv-hemel-gloed": "#fff4d2"
     },
     "donker": {
       "--bg": "#202021",
@@ -103,27 +123,25 @@
       "--papier": "#ffffff",
       "--papier-zacht": "#e5e7eb",
       "--focus": "#93c5fd",
-      "--hv-glas": "#2d2f31d6",
-      "--hv-glas-rand": "#f3f6f824",
-      "--hv-aan": "#fcf66a",
+      "--hv-aan": "#fffcab",
       "--hv-aan-zacht": "#3a3506",
       "--hv-aan-vlak": "#fefba0",
       "--hv-op-aan": "#17212b",
-      "--hv-warm": "#feb4cb",
+      "--hv-warm": "#ffafd4",
       "--hv-warm-zacht": "#45182a",
       "--hv-koud": "#7dd3ee",
       "--hv-koud-zacht": "#0f3442",
       "--hv-zon": "#bef264",
       "--hv-zon-zacht": "#2a3a0a",
-      "--hv-net-in": "#cbd5e1",
+      "--hv-net-in": "#fef2e4",
       "--hv-net-in-zacht": "#2b3441",
-      "--hv-net-uit": "#cfc2fe",
+      "--hv-net-uit": "#e2d8ff",
       "--hv-net-uit-zacht": "#2c2350",
       "--hv-batterij": "#5eead4",
       "--hv-batterij-zacht": "#0f3a36",
-      "--hv-auto": "#f0abfc",
+      "--hv-auto": "#f0a2ff",
       "--hv-auto-zacht": "#401646",
-      "--hv-arcering": "#a1acb7",
+      "--hv-arcering": "#a3aeb9",
       "--hv-warmte-1": "#23272d",
       "--hv-warmte-2": "#31363c",
       "--hv-warmte-3": "#40454c",
@@ -144,7 +162,11 @@
       "--hv-hemel-schemer-boven": "#241d4a",
       "--hv-hemel-schemer-onder": "#552c46",
       "--hv-hemel-schemer-gloed": "#6d3d2c",
-      "--hv-hemel-grens": "#33506b"
+      "--hv-hemel-grens": "#33506b",
+      "--hv-hemel-neerslag": "#6f7da3",
+      "--hv-hemel-boven": "#153c66",
+      "--hv-hemel-onder": "#234b73",
+      "--hv-hemel-gloed": "#33506b"
     },
     "inkt": {
       "--bg": "#ffffff",
@@ -176,8 +198,6 @@
       "--papier": "#ffffff",
       "--papier-zacht": "#ffffff",
       "--focus": "#000000",
-      "--hv-glas": "#ffffff",
-      "--hv-glas-rand": "#000000",
       "--hv-aan": "#000000",
       "--hv-aan-zacht": "#ffffff",
       "--hv-aan-vlak": "#000000",
@@ -217,7 +237,11 @@
       "--hv-hemel-schemer-boven": "#ffffff",
       "--hv-hemel-schemer-onder": "#ffffff",
       "--hv-hemel-schemer-gloed": "#ffffff",
-      "--hv-hemel-grens": "#ffffff"
+      "--hv-hemel-grens": "#ffffff",
+      "--hv-hemel-neerslag": "#000000",
+      "--hv-hemel-boven": "#ffffff",
+      "--hv-hemel-onder": "#ffffff",
+      "--hv-hemel-gloed": "#ffffff"
     }
   },
   "hemel": {
@@ -265,6 +289,15 @@
         "gloed": "#6d3d2c"
       }
     }
+  },
+  "aliassen": {
+    "--hv-rust": "--ok",
+    "--hv-let-op": "--warn",
+    "--hv-alarm": "--fout",
+    "--hv-gevaar": "--fout",
+    "--hv-sim": "--info",
+    "--hv-oud": "--muted",
+    "--hv-put": "--surface"
   },
   "paren": [
     {
@@ -553,7 +586,7 @@
       "voor": "--faint",
       "achter": "--surface2",
       "min": 3,
-      "waar": "службовий текст на натиснутому й вибраному"
+      "waar": "службова іконка на натиснутому й вибраному (текст тут — лише `--text` і `--muted`)"
     },
     {
       "voor": "--accent",
@@ -716,6 +749,18 @@
       "achter": "--fout-vlak",
       "min": 4.5,
       "waar": "текст на суцільній заливці `--fout-vlak`"
+    },
+    {
+      "voor": "--fout-vlak",
+      "achter": "--fout-zacht",
+      "min": 3,
+      "waar": "рамка аварійного шару й рейки критичної дії на підкладці `--fout-zacht`"
+    },
+    {
+      "voor": "--focus",
+      "achter": "--fout-zacht",
+      "min": 3,
+      "waar": "кільце фокуса на діях аварійного шару"
     },
     {
       "voor": "--info",
@@ -1396,6 +1441,78 @@
       "waar": "контур освітленого вікна в розрізі на небі"
     },
     {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-nacht-boven",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: ніч, верх"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-nacht-onder",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: ніч, низ"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-nacht-gloed",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: ніч, сяйво"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-dageraad-boven",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: світанок, верх"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-dageraad-onder",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: світанок, низ"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-dageraad-gloed",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: світанок, сяйво"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-dag-boven",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: день, верх"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-dag-onder",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: день, низ"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-dag-gloed",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: день, сяйво"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-schemer-boven",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: сутінки, верх"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-schemer-onder",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: сутінки, низ"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-schemer-gloed",
+      "min": 3,
+      "waar": "контур плитки й лінії розрізу на небі: сутінки, сяйво"
+    },
+    {
       "voor": "--text",
       "achter": "--hv-glas-grens",
       "min": 4.5,
@@ -1424,12 +1541,1019 @@
       "achter": "--hv-glas-grens",
       "min": 3,
       "waar": "межа елемента на склі"
+    },
+    {
+      "voor": "--hv-hemel-neerslag",
+      "achter": "--hv-hemel-nacht-boven",
+      "min": 1.5,
+      "waar": "штрих опадів на небі: ніч, верх (декоративний; факт дублює чип погоди)"
+    },
+    {
+      "voor": "--hv-hemel-neerslag",
+      "achter": "--hv-hemel-dageraad-boven",
+      "min": 1.5,
+      "waar": "штрих опадів на небі: світанок, верх (декоративний; факт дублює чип погоди)"
+    },
+    {
+      "voor": "--hv-hemel-neerslag",
+      "achter": "--hv-hemel-dag-boven",
+      "min": 1.5,
+      "waar": "штрих опадів на небі: день, верх (декоративний; факт дублює чип погоди)"
+    },
+    {
+      "voor": "--hv-hemel-neerslag",
+      "achter": "--hv-hemel-schemer-boven",
+      "min": 1.5,
+      "waar": "штрих опадів на небі: сутінки, верх (декоративний; факт дублює чип погоди)"
+    },
+    {
+      "voor": "--hv-hemel-neerslag",
+      "achter": "--hv-hemel-grens",
+      "min": 1.5,
+      "waar": "штрих опадів на найгіршій суміші неба (декоративний)"
     }
   ],
+  "parenKeuze": [
+    {
+      "eenVan": [
+        "--hv-aan-vlak",
+        "--hv-aan"
+      ],
+      "achter": "--hv-aan-zacht",
+      "min": 3,
+      "waar": "край рівня яскравості проти доріжки: заливка або її край 2 px"
+    },
+    {
+      "eenVan": [
+        "--hv-aan-vlak",
+        "--hv-aan"
+      ],
+      "achter": "--panel",
+      "min": 3,
+      "waar": "край рівня яскравості проти поверхні `--panel`: заливка або її край 2 px"
+    },
+    {
+      "eenVan": [
+        "--hv-aan-vlak",
+        "--hv-aan"
+      ],
+      "achter": "--surface",
+      "min": 3,
+      "waar": "край рівня яскравості проти поверхні `--surface`: заливка або її край 2 px"
+    },
+    {
+      "eenVan": [
+        "--hv-aan-vlak",
+        "--hv-aan"
+      ],
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "край рівня яскравості проти поверхні `--surface2`: заливка або її край 2 px"
+    },
+    {
+      "eenVan": [
+        "--hv-aan-vlak",
+        "--hv-aan"
+      ],
+      "achter": "--bg",
+      "min": 3,
+      "waar": "край рівня яскравості проти поверхні `--bg`: заливка або її край 2 px"
+    }
+  ],
+  "verboden": [
+    {
+      "voor": "--text",
+      "achter": "--hv-aan-vlak",
+      "waar": "текст на заливці «увімкнено» — лише `--hv-op-aan` (у темній темі `--text` дає 1,0:1)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-aan-vlak",
+      "waar": "приглушений текст на заливці «увімкнено» заборонено"
+    },
+    {
+      "voor": "--faint",
+      "achter": "--surface2",
+      "waar": "службовий текст 12 px на натиснутому й вибраному заборонено; лише іконка"
+    },
+    {
+      "voor": "--faint",
+      "achter": "--hv-hemel-grens",
+      "waar": "службовий текст на небі заборонено; лише `--text` і `--muted`"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-arcering",
+      "waar": "значення й вік на штриху застарілого заборонено: штрих малюється лише у вільній частині поля, текст стоїть на чистому `--panel`"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-arcering",
+      "waar": "текст на штриху застарілого чи неспостереженого заборонено"
+    }
+  ],
+  "onderscheid": {
+    "maat": "OKLab-afstand en ΔE2000 tussen tonen binnen één thema",
+    "drempel": 0.1,
+    "tonen": [
+      "--hv-aan",
+      "--hv-aan-vlak",
+      "--hv-warm",
+      "--hv-koud",
+      "--hv-zon",
+      "--hv-net-in",
+      "--hv-net-uit",
+      "--hv-batterij",
+      "--hv-auto"
+    ],
+    "tegen": [
+      "--ok",
+      "--warn",
+      "--warn-vlak",
+      "--fout",
+      "--fout-vlak",
+      "--info",
+      "--info-vlak",
+      "--focus",
+      "--accent",
+      "--muted",
+      "--faint",
+      "--hv-omtrek"
+    ],
+    "eisen": [
+      {
+        "a": "--hv-net-in",
+        "b": "--muted",
+        "minDeltaE": 10,
+        "waar": "імпорт не схожий на застаріле, вимкнене й симуляцію"
+      },
+      {
+        "a": "--hv-net-in",
+        "b": "--faint",
+        "minDeltaE": 10,
+        "waar": "імпорт не схожий на застаріле, вимкнене й симуляцію"
+      },
+      {
+        "a": "--hv-net-in",
+        "b": "--hv-omtrek",
+        "minDeltaE": 10,
+        "waar": "імпорт не схожий на застаріле, вимкнене й симуляцію"
+      },
+      {
+        "a": "--hv-net-in",
+        "b": "--info",
+        "minDeltaE": 10,
+        "waar": "імпорт не схожий на застаріле, вимкнене й симуляцію"
+      },
+      {
+        "a": "--hv-net-in",
+        "b": "--text",
+        "minDeltaE": 5,
+        "waar": "тон імпорту не збігається з кольором тексту"
+      },
+      {
+        "a": "--hv-net-uit",
+        "b": "--info",
+        "minDeltaE": 12,
+        "waar": "експорт не схожий на симуляцію й кільце фокуса"
+      },
+      {
+        "a": "--hv-net-uit",
+        "b": "--info-vlak",
+        "minDeltaE": 12,
+        "waar": "експорт не схожий на симуляцію й кільце фокуса"
+      },
+      {
+        "a": "--hv-net-uit",
+        "b": "--focus",
+        "minDeltaE": 12,
+        "waar": "експорт не схожий на симуляцію й кільце фокуса"
+      },
+      {
+        "a": "--hv-net-uit",
+        "b": "--hv-auto",
+        "minDeltaE": 12,
+        "waar": "експорт і зарядка авто в одному графіку"
+      },
+      {
+        "a": "--hv-net-in",
+        "b": "--hv-net-uit",
+        "minDeltaE": 12,
+        "waar": "імпорт і експорт в одному графіку"
+      },
+      {
+        "a": "--hv-warm",
+        "b": "--fout",
+        "minDeltaE": 12,
+        "waar": "«гріє» не схоже на помилку й тривогу"
+      },
+      {
+        "a": "--hv-warm",
+        "b": "--fout-vlak",
+        "minDeltaE": 12,
+        "waar": "«гріє» не схоже на заливку тривоги"
+      },
+      {
+        "a": "--hv-warm",
+        "b": "--hv-auto",
+        "minDeltaE": 12,
+        "waar": "тепло й зарядка авто в одному графіку"
+      },
+      {
+        "a": "--hv-aan",
+        "b": "--warn",
+        "minDeltaE": 14,
+        "waar": "«увімкнено» не схоже на «увагу» (план §3.2)"
+      },
+      {
+        "a": "--hv-aan",
+        "b": "--accent",
+        "minDeltaE": 14,
+        "waar": "«увімкнено» не схоже на мідний акцент (план §3.2)"
+      },
+      {
+        "a": "--hv-aan",
+        "b": "--hv-zon",
+        "minDeltaE": 12,
+        "waar": "«увімкнено» не схоже на сонце"
+      },
+      {
+        "a": "--hv-aan-vlak",
+        "b": "--warn-vlak",
+        "minDeltaE": 14,
+        "waar": "заливка «увімкнено» не схожа на заливку «уваги»"
+      }
+    ],
+    "onderDrempel": {
+      "licht": [
+        {
+          "a": "--hv-zon",
+          "b": "--ok",
+          "oklab": 0.056,
+          "deltaE": 13.5,
+          "contrast": 1.08,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-batterij",
+          "oklab": 0.061,
+          "deltaE": 16,
+          "contrast": 1.07,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--ok",
+          "oklab": 0.065,
+          "deltaE": 15,
+          "contrast": 1.01,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--muted",
+          "oklab": 0.071,
+          "deltaE": 13.4,
+          "contrast": 1.14,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--muted",
+          "oklab": 0.071,
+          "deltaE": 20.1,
+          "contrast": 1.07,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--faint",
+          "oklab": 0.082,
+          "deltaE": 13.8,
+          "contrast": 1.18,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-omtrek",
+          "oklab": 0.082,
+          "deltaE": 13.8,
+          "contrast": 1.18,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--fout",
+          "oklab": 0.085,
+          "deltaE": 20,
+          "contrast": 1.09,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--fout-vlak",
+          "oklab": 0.085,
+          "deltaE": 20,
+          "contrast": 1.09,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--faint",
+          "oklab": 0.093,
+          "deltaE": 20.2,
+          "contrast": 1.25,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--hv-omtrek",
+          "oklab": 0.093,
+          "deltaE": 20.2,
+          "contrast": 1.25,
+          "drager": "іконка, слово й форма знака"
+        }
+      ],
+      "donker": [
+        {
+          "a": "--hv-aan",
+          "b": "--hv-aan-vlak",
+          "oklab": 0.012,
+          "deltaE": 1.7,
+          "contrast": 1.01,
+          "drager": "один стан у двох ролях (край і заливка): у темній темі край зливається із заливкою, межу тримає сама заливка"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--info-vlak",
+          "oklab": 0.053,
+          "deltaE": 12.1,
+          "contrast": 1.07,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--focus",
+          "oklab": 0.053,
+          "deltaE": 12.1,
+          "contrast": 1.07,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--info",
+          "oklab": 0.06,
+          "deltaE": 14.3,
+          "contrast": 1.01,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--fout-vlak",
+          "oklab": 0.062,
+          "deltaE": 12.5,
+          "contrast": 1.11,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--ok",
+          "oklab": 0.063,
+          "deltaE": 12.7,
+          "contrast": 1.05,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--fout",
+          "oklab": 0.073,
+          "deltaE": 12.4,
+          "contrast": 1.18,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-net-uit",
+          "b": "--fout",
+          "oklab": 0.076,
+          "deltaE": 17.7,
+          "contrast": 1.07,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-net-uit",
+          "b": "--muted",
+          "oklab": 0.077,
+          "deltaE": 14.1,
+          "contrast": 1.21,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--muted",
+          "oklab": 0.08,
+          "deltaE": 16.4,
+          "contrast": 1.03,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-auto",
+          "oklab": 0.082,
+          "deltaE": 12.9,
+          "contrast": 1.09,
+          "drager": "маркер ряду й прямий підпис"
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--hv-net-in",
+          "oklab": 0.084,
+          "deltaE": 17.5,
+          "contrast": 1.04,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-batterij",
+          "oklab": 0.086,
+          "deltaE": 18.9,
+          "contrast": 1.14,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--ok",
+          "oklab": 0.09,
+          "deltaE": 15.7,
+          "contrast": 1.07,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-net-uit",
+          "b": "--info",
+          "oklab": 0.093,
+          "deltaE": 16,
+          "contrast": 1.26,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-aan-vlak",
+          "b": "--hv-net-in",
+          "oklab": 0.095,
+          "deltaE": 18.7,
+          "contrast": 1.03,
+          "drager": "іконка, слово й форма знака"
+        },
+        {
+          "a": "--hv-net-in",
+          "b": "--hv-net-uit",
+          "oklab": 0.096,
+          "deltaE": 22,
+          "contrast": 1.23,
+          "drager": "маркер ряду й прямий підпис"
+        },
+        {
+          "a": "--hv-net-in",
+          "b": "--fout",
+          "oklab": 0.096,
+          "deltaE": 17.5,
+          "contrast": 1.31,
+          "drager": "іконка, слово й форма знака"
+        }
+      ]
+    },
+    "inkt": "у темі чорнила всі тони — #000000; розрізнення несуть іконка, слово, маркер ряду й прямий підпис; щільність штриху — лише теплокарта, фази стрічки доби й застаріле",
+    "reeksen": {
+      "--hv-net-in": {
+        "merk": "vierkant",
+        "streep": "doorgetrokken",
+        "dikte": "2px"
+      },
+      "--hv-net-uit": {
+        "merk": "open vierkant",
+        "streep": "doorgetrokken",
+        "dikte": "2px"
+      },
+      "--hv-zon": {
+        "merk": "cirkel",
+        "streep": "doorgetrokken",
+        "dikte": "2px"
+      },
+      "--hv-batterij": {
+        "merk": "halve cirkel",
+        "streep": "doorgetrokken",
+        "dikte": "2px"
+      },
+      "--hv-auto": {
+        "merk": "kruis",
+        "streep": "doorgetrokken",
+        "dikte": "2px"
+      },
+      "--hv-warm": {
+        "merk": "streep",
+        "streep": "doorgetrokken",
+        "dikte": "2px"
+      }
+    },
+    "lichtheid": {
+      "maat": "onderling contrast (WCAG 2.x)",
+      "drempel": 1.3,
+      "tegen": [
+        "--warn",
+        "--accent"
+      ],
+      "regel": "тони стану не розрізняються за світлотою — лише за колірним тоном; `--warn` ніколи не передається самим кольором поруч із тоном стану: контурний трикутник і слово обов'язкові",
+      "paren": 53,
+      "licht": [
+        {
+          "a": "--hv-koud",
+          "b": "--hv-zon",
+          "contrast": 1.01,
+          "deltaE": 42.5
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-batterij",
+          "contrast": 1.01,
+          "deltaE": 46.8
+        },
+        {
+          "a": "--hv-auto",
+          "b": "--warn",
+          "contrast": 1.01,
+          "deltaE": 48.4
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--warn",
+          "contrast": 1.02,
+          "deltaE": 42.3
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--warn",
+          "contrast": 1.03,
+          "deltaE": 31.4
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-auto",
+          "contrast": 1.03,
+          "deltaE": 35
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--hv-auto",
+          "contrast": 1.04,
+          "deltaE": 36.7
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--warn",
+          "contrast": 1.04,
+          "deltaE": 38.9
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--hv-auto",
+          "contrast": 1.04,
+          "deltaE": 74.1
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-auto",
+          "contrast": 1.05,
+          "deltaE": 18.8
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--warn",
+          "contrast": 1.06,
+          "deltaE": 32.5
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-batterij",
+          "contrast": 1.07,
+          "deltaE": 16
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--hv-batterij",
+          "contrast": 1.08,
+          "deltaE": 25.2
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--accent",
+          "contrast": 1.08,
+          "deltaE": 38.5
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-koud",
+          "contrast": 1.08,
+          "deltaE": 47.7
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--accent",
+          "contrast": 1.09,
+          "deltaE": 45.6
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-zon",
+          "contrast": 1.09,
+          "deltaE": 58.2
+        },
+        {
+          "a": "--hv-auto",
+          "b": "--accent",
+          "contrast": 1.12,
+          "deltaE": 45
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--hv-net-uit",
+          "contrast": 1.13,
+          "deltaE": 53.3
+        },
+        {
+          "a": "--hv-net-in",
+          "b": "--hv-net-uit",
+          "contrast": 1.14,
+          "deltaE": 16.9
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--accent",
+          "contrast": 1.16,
+          "deltaE": 43.4
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--accent",
+          "contrast": 1.18,
+          "deltaE": 29.1
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--hv-net-in",
+          "contrast": 1.3,
+          "deltaE": 31.4
+        }
+      ],
+      "donker": [
+        {
+          "a": "--hv-koud",
+          "b": "--accent",
+          "contrast": 1,
+          "deltaE": 41.2
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--accent",
+          "contrast": 1.01,
+          "deltaE": 35.4
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-koud",
+          "contrast": 1.01,
+          "deltaE": 46.4
+        },
+        {
+          "a": "--hv-aan-vlak",
+          "b": "--hv-net-in",
+          "contrast": 1.03,
+          "deltaE": 18.7
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--warn",
+          "contrast": 1.03,
+          "deltaE": 37.4
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--hv-net-in",
+          "contrast": 1.04,
+          "deltaE": 17.5
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--hv-net-uit",
+          "contrast": 1.04,
+          "deltaE": 44.7
+        },
+        {
+          "a": "--hv-net-uit",
+          "b": "--warn",
+          "contrast": 1.06,
+          "deltaE": 45.7
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-auto",
+          "contrast": 1.09,
+          "deltaE": 12.9
+        },
+        {
+          "a": "--hv-net-uit",
+          "b": "--hv-batterij",
+          "contrast": 1.09,
+          "deltaE": 33.4
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--warn",
+          "contrast": 1.1,
+          "deltaE": 21.1
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-auto",
+          "contrast": 1.1,
+          "deltaE": 35.1
+        },
+        {
+          "a": "--hv-auto",
+          "b": "--accent",
+          "contrast": 1.1,
+          "deltaE": 46.4
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--hv-batterij",
+          "contrast": 1.13,
+          "deltaE": 26.8
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-batterij",
+          "contrast": 1.14,
+          "deltaE": 18.9
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--accent",
+          "contrast": 1.14,
+          "deltaE": 41.5
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-batterij",
+          "contrast": 1.15,
+          "deltaE": 53.4
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--warn",
+          "contrast": 1.17,
+          "deltaE": 44.9
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--hv-net-in",
+          "contrast": 1.18,
+          "deltaE": 26.4
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--warn",
+          "contrast": 1.18,
+          "deltaE": 49.7
+        },
+        {
+          "a": "--hv-aan-vlak",
+          "b": "--hv-zon",
+          "contrast": 1.21,
+          "deltaE": 12.3
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--hv-zon",
+          "contrast": 1.23,
+          "deltaE": 13.1
+        },
+        {
+          "a": "--hv-net-in",
+          "b": "--hv-net-uit",
+          "contrast": 1.23,
+          "deltaE": 22
+        },
+        {
+          "a": "--hv-net-uit",
+          "b": "--accent",
+          "contrast": 1.24,
+          "deltaE": 36.7
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-net-uit",
+          "contrast": 1.25,
+          "deltaE": 27.8
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--hv-auto",
+          "contrast": 1.25,
+          "deltaE": 45.3
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-net-uit",
+          "contrast": 1.26,
+          "deltaE": 17.1
+        },
+        {
+          "a": "--hv-aan-vlak",
+          "b": "--hv-net-uit",
+          "contrast": 1.26,
+          "deltaE": 43.8
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--hv-net-uit",
+          "contrast": 1.28,
+          "deltaE": 42.3
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--accent",
+          "contrast": 1.29,
+          "deltaE": 33.3
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-zon",
+          "contrast": 1.29,
+          "deltaE": 43.5
+        },
+        {
+          "a": "--hv-auto",
+          "b": "--warn",
+          "contrast": 1.29,
+          "deltaE": 61.8
+        }
+      ]
+    },
+    "kleurenblind": {
+      "model": "Machado, Oliveira, Fernandes 2009; protanopie en deuteranopie, ernst 1,0",
+      "drempel": 5,
+      "regel": "«увага» завжди має контурний трикутник і слово; тон сонця не стоїть без іконки `Sun` чи підпису ряду",
+      "licht": [
+        {
+          "a": "--hv-auto",
+          "b": "--info",
+          "protanopie": 1.2,
+          "deuteranopie": 8.9,
+          "deltaE": 21.3
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--warn-vlak",
+          "protanopie": 6.5,
+          "deuteranopie": 1.3,
+          "deltaE": 38.2
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--warn",
+          "protanopie": 4.5,
+          "deuteranopie": 2,
+          "deltaE": 31.4
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--accent",
+          "protanopie": 3.1,
+          "deuteranopie": 5.4,
+          "deltaE": 38.5
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--fout",
+          "protanopie": 3.9,
+          "deuteranopie": 13.9,
+          "deltaE": 32.5
+        },
+        {
+          "a": "--hv-aan",
+          "b": "--fout-vlak",
+          "protanopie": 3.9,
+          "deuteranopie": 13.9,
+          "deltaE": 32.5
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--fout",
+          "protanopie": 9.3,
+          "deuteranopie": 4.6,
+          "deltaE": 51
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--fout-vlak",
+          "protanopie": 9.3,
+          "deuteranopie": 4.6,
+          "deltaE": 51
+        }
+      ],
+      "donker": [
+        {
+          "a": "--hv-auto",
+          "b": "--info",
+          "protanopie": 6.1,
+          "deuteranopie": 0.3,
+          "deltaE": 24.8
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--hv-batterij",
+          "protanopie": 17,
+          "deuteranopie": 0.9,
+          "deltaE": 53.4
+        },
+        {
+          "a": "--hv-auto",
+          "b": "--info-vlak",
+          "protanopie": 4.8,
+          "deuteranopie": 1.6,
+          "deltaE": 28.5
+        },
+        {
+          "a": "--hv-auto",
+          "b": "--focus",
+          "protanopie": 4.8,
+          "deuteranopie": 1.6,
+          "deltaE": 28.5
+        },
+        {
+          "a": "--hv-zon",
+          "b": "--warn",
+          "protanopie": 4.5,
+          "deuteranopie": 2.7,
+          "deltaE": 21.1
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--fout",
+          "protanopie": 3.1,
+          "deuteranopie": 12.4,
+          "deltaE": 45.2
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-auto",
+          "protanopie": 10.5,
+          "deuteranopie": 3.3,
+          "deltaE": 35.1
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--hv-net-uit",
+          "protanopie": 3.5,
+          "deuteranopie": 7.6,
+          "deltaE": 27.8
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--info",
+          "protanopie": 5.1,
+          "deuteranopie": 3.5,
+          "deltaE": 14.3
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--info-vlak",
+          "protanopie": 6.2,
+          "deuteranopie": 4.5,
+          "deltaE": 12.1
+        },
+        {
+          "a": "--hv-koud",
+          "b": "--focus",
+          "protanopie": 6.2,
+          "deuteranopie": 4.5,
+          "deltaE": 12.1
+        },
+        {
+          "a": "--hv-net-in",
+          "b": "--hv-batterij",
+          "protanopie": 5,
+          "deuteranopie": 14.7,
+          "deltaE": 28.1
+        }
+      ]
+    }
+  },
   "maten": {
     "alle": {
       "--hv-glas-waas": "20px",
       "--hv-glas-verzadiging": "1.4",
+      "--hv-glas-filter": "blur(var(--hv-glas-waas)) saturate(var(--hv-glas-verzadiging))",
       "--hv-straal-plan": "2px",
       "--hv-straal-rail": "6px",
       "--hv-icoon-s": "16px",
@@ -1437,24 +2561,90 @@
       "--hv-icoon-l": "24px",
       "--hv-icoon-xl": "32px",
       "--hv-icoon-streep": "2",
+      "--hv-maker": "12px",
+      "--hv-maker-streep": "1.5",
+      "--hv-merk": "8px",
+      "--hv-risico-merk": "24px",
       "--hv-teken": "40px",
+      "--hv-teken-icoon": "var(--hv-icoon-m)",
+      "--hv-chip-hoogte": "36px",
+      "--hv-knop-uitleg": "24px",
+      "--hv-schuif-knop": "24px",
+      "--hv-schuif-baan": "8px",
+      "--hv-toets": "56px",
+      "--hv-nood-knop": "64px",
+      "--hv-nood-rand": "4px",
+      "--hv-opdracht-knop": "56px",
+      "--hv-opdracht-breedte": "640px",
+      "--hv-doel-kier": "8px",
       "--hv-streep": "1.5px",
+      "--hv-arcering-dikte": "1px",
+      "--hv-arcering-stap": "10px",
+      "--hv-arcering-hoek": "45deg",
+      "--hv-focus-rand": "2px",
+      "--hv-focus-afstand": "2px",
+      "--hv-rail-hoogte": "56px",
+      "--hv-rail-rand": "2px",
+      "--hv-kop-hoogte": "56px",
+      "--hv-kop-hoogte-telefoon": "48px",
+      "--hv-sim-rij": "28px",
+      "--hv-rand": "16px",
+      "--hv-onderbalk-hoogte": "56px",
+      "--hv-laag-breedte": "400px",
+      "--hv-laag-breedte-wand": "360px",
+      "--hv-laag-hoogte-max": "90svh",
+      "--hv-gevolg-breedte": "320px",
+      "--hv-toost-breedte": "360px",
+      "--hv-tegel-vulling": "var(--hv-kier)",
+      "--hv-tegel-niveau": "4px",
+      "--hv-doorsnede-hoogte": "96px",
+      "--hv-doorsnede-breedte-max": "360px",
+      "--hv-doorsnede-hoogte-max": "240px",
+      "--hv-venster-breedte": "12px",
+      "--hv-venster-hoogte": "16px",
+      "--hv-wijzer": "220px",
+      "--hv-dagstrook-fase": "24px",
+      "--hv-dagstrook-baan": "16px",
+      "--hv-grafiek-lijn": "2px",
+      "--hv-grafiek-ring": "12px",
+      "--hv-grafiek-hoogte": "160px",
+      "--hv-grafiek-hoogte-blok": "120px",
+      "--hv-ring": "160px",
+      "--hv-gezicht-vulling": "var(--hv-kier)",
+      "--hv-gezicht-stip": "6px",
+      "--hv-inkt-nummer": "24px",
+      "--hv-zone-plan": "720px",
+      "--hv-zone-min": "480px",
+      "--hv-zone-greep": "8px",
+      "--hv-schaal": "1",
       "--hv-zin": "clamp(24px, 3vw, 44px)",
       "--hv-getal-xl": "64px",
       "--hv-getal-l": "40px",
       "--hv-getal-m": "28px",
-      "--hv-getal-tv": "96px",
+      "--hv-tekst-kop": "20px",
+      "--hv-gewicht-kop": "700",
+      "--hv-gewicht-sterk": "600",
       "--hv-held-max": "25svh",
       "--hv-duur-1": "120ms",
       "--hv-duur-2": "200ms",
       "--hv-duur-3": "280ms",
       "--hv-duur-4": "480ms",
       "--hv-duur-houd": "1200ms",
+      "--hv-duur-houd-ruim": "2000ms",
+      "--hv-duur-aftel": "3000ms",
+      "--hv-duur-terug": "10000ms",
+      "--hv-duur-wacht": "10000ms",
+      "--hv-duur-mislukt": "60000ms",
+      "--hv-duur-puls": "1250ms",
+      "--hv-duur-skelet": "5000ms",
       "--hv-duur-hemel": "60s",
       "--hv-kromme-in": "cubic-bezier(.2,.8,.2,1)",
       "--hv-kromme-uit": "cubic-bezier(.4,0,1,1)",
       "--hv-z-glas": "20",
+      "--hv-z-gevolg": "225",
       "--hv-z-laag": "230",
+      "--hv-z-opdracht": "232",
+      "--hv-z-gevaar": "235",
       "--hv-z-toost": "240",
       "--hv-z-nood": "250"
     },
@@ -1473,25 +2663,30 @@
         "--hv-rij": "80px",
         "--hv-tik": "56px",
         "--hv-kier": "16px",
-        "--hv-teken": "48px"
+        "--hv-teken": "48px",
+        "--hv-teken-icoon": "var(--hv-icoon-l)"
       }
     },
     "thema": {
       "licht": {
+        "--hv-glas": "color-mix(in srgb, var(--panel) 80%, transparent)",
+        "--hv-glas-rand": "color-mix(in srgb, var(--text) 12%, transparent)",
         "--schaduw-1": "0 1px 2px rgba(15,23,42,.08), 0 1px 1px rgba(15,23,42,.04)",
         "--schaduw-2": "0 8px 24px rgba(15,23,42,.12)",
         "--schaduw-3": "0 24px 70px rgba(15,23,42,.28)",
-        "--overlay": "rgba(10,14,20,.55)",
-        "--hv-glas-filter": "blur(20px) saturate(1.4)"
+        "--overlay": "rgba(10,14,20,.55)"
       },
       "donker": {
+        "--hv-glas": "color-mix(in srgb, var(--panel) 84%, transparent)",
+        "--hv-glas-rand": "color-mix(in srgb, var(--text) 14%, transparent)",
         "--schaduw-1": "0 1px 2px rgba(0,0,0,.35), 0 1px 1px rgba(0,0,0,.2)",
         "--schaduw-2": "0 8px 24px rgba(0,0,0,.4)",
         "--schaduw-3": "0 24px 70px rgba(0,0,0,.6)",
-        "--overlay": "rgba(0,0,0,.66)",
-        "--hv-glas-filter": "blur(20px) saturate(1.4)"
+        "--overlay": "rgba(0,0,0,.66)"
       },
       "inkt": {
+        "--hv-glas": "var(--panel)",
+        "--hv-glas-rand": "var(--line)",
         "--schaduw-1": "none",
         "--schaduw-2": "none",
         "--schaduw-3": "none",
@@ -1502,19 +2697,183 @@
         "--hv-duur-2": "0ms",
         "--hv-duur-3": "0ms",
         "--hv-duur-4": "0ms",
-        "--hv-duur-hemel": "0s"
+        "--hv-duur-hemel": "0s",
+        "--hv-duur-puls": "0ms",
+        "--hv-arcering-stap": "4px"
       }
     },
     "hemel": {
+      "fasen": [
+        "nacht",
+        "dageraad",
+        "dag",
+        "schemer"
+      ],
+      "punten": [
+        "boven",
+        "onder",
+        "gloed"
+      ],
+      "werktokens": [
+        "--hv-hemel-boven",
+        "--hv-hemel-onder",
+        "--hv-hemel-gloed"
+      ],
+      "niveaus": {
+        "vol": "verloop + gloed + neerslagarcering",
+        "stil": "verloop zonder gloed en zonder neerslagarcering",
+        "licht": "als stil, plus --hv-duur-hemel: 0s (klasse .is-licht)",
+        "geen": "effen --bg (inkt: wit)"
+      },
+      "beginFase": "dag",
+      "eigenschap": {
+        "syntax": "<color>",
+        "inherits": true,
+        "initialValue": {
+          "--hv-hemel-boven": "#bfddf7",
+          "--hv-hemel-onder": "#e7f2fb",
+          "--hv-hemel-gloed": "#fff4d2"
+        },
+        "themaWaarde": "gewone declaratie onder .theme-dark, .theme-plum-dark en .theme-inkt"
+      },
+      "verloop": "linear-gradient(180deg, var(--hv-hemel-boven) 0%, var(--hv-hemel-onder) 100%)",
+      "gloed": "radial-gradient(120% 80% at 78% 100%, var(--hv-hemel-gloed) 0%, transparent 60%)",
+      "zonNacht": -6,
+      "zonDag": 6,
+      "klok": {
+        "nacht": [
+          22,
+          6
+        ],
+        "dageraad": [
+          6,
+          9
+        ],
+        "dag": [
+          9,
+          17
+        ],
+        "schemer": [
+          17,
+          22
+        ],
+        "mengMinuten": 30
+      },
       "bewolkingMax": 0.4,
       "mist": 0.6,
       "afwezig": 0.55,
       "mengselMax": 0.75,
+      "gloedDekking": "1 - bewolking; 0 bij mist en bij de standen «Afwezig», «Vakantie», «Nacht»",
       "nachtstandDonker": 0.35,
-      "gloed": "radial-gradient(120% 80% at 78% 100%, var(--hv-hemel-gloed) 0%, transparent 60%)",
-      "verloop": "linear-gradient(180deg, var(--hv-hemel-boven) 0%, var(--hv-hemel-onder) 100%)",
-      "zonNacht": -6,
-      "zonDag": 6
+      "volgorde": [
+        "fasen",
+        "--surface2",
+        "--bg"
+      ],
+      "neerslag": {
+        "kleur": "--hv-hemel-neerslag",
+        "dikte": "1px",
+        "regen": [
+          6,
+          10
+        ],
+        "hoek": 15,
+        "sneeuwPunt": "2px",
+        "sneeuwStap": "12px",
+        "zone": "bovenste derde"
+      },
+      "paletten": {
+        "kleur": [
+          "licht",
+          "donker"
+        ],
+        "grifel": [
+          "donker"
+        ],
+        "violet": [
+          "donker"
+        ],
+        "puur": []
+      },
+      "inktKlasse": {
+        "klasse": ".theme-inkt",
+        "waar": "новий клас модуля на корені `/paneel/inkt/*` і в пульті макета; платформа його ще не знає"
+      },
+      "palettenUit": {
+        "puur": "небо вимкнено за задумом (чорно-біла палітра), перевірку контрасту воно проходить",
+        "grifel licht": "перевірка неба не проходить (`--muted` на обвідній)",
+        "violet licht": "перевірка неба не проходить (`--muted` на обвідній)"
+      }
+    },
+    "tonenOpPaletten": {
+      "tonenOveralGelijk": true,
+      "tonen": [
+        "--hv-aan",
+        "--hv-warm",
+        "--hv-koud",
+        "--hv-zon",
+        "--hv-net-in",
+        "--hv-net-uit",
+        "--hv-batterij",
+        "--hv-auto"
+      ],
+      "vlakken": [
+        "--bg",
+        "--panel",
+        "--surface",
+        "--surface2"
+      ],
+      "min": 4.5,
+      "laagste": [
+        {
+          "palet": "kleur huis licht",
+          "contrast": 4.85,
+          "voor": "--hv-zon",
+          "achter": "--surface2"
+        },
+        {
+          "palet": "kleur huis donker",
+          "contrast": 4.66,
+          "voor": "--hv-auto",
+          "achter": "--surface2"
+        },
+        {
+          "palet": "grifel licht",
+          "contrast": 5.49,
+          "voor": "--hv-zon",
+          "achter": "--surface2"
+        },
+        {
+          "palet": "grifel donker",
+          "contrast": 5.7,
+          "voor": "--hv-auto",
+          "achter": "--surface2"
+        },
+        {
+          "palet": "violet licht",
+          "contrast": 4.79,
+          "voor": "--hv-zon",
+          "achter": "--surface2"
+        },
+        {
+          "palet": "violet donker",
+          "contrast": 6.37,
+          "voor": "--hv-auto",
+          "achter": "--surface2"
+        },
+        {
+          "palet": "puur licht",
+          "contrast": 5.52,
+          "voor": "--hv-zon",
+          "achter": "--surface2"
+        },
+        {
+          "palet": "puur donker",
+          "contrast": 9.38,
+          "voor": "--hv-auto",
+          "achter": "--surface2"
+        }
+      ]
     },
     "profielen": [
       {
@@ -1529,7 +2888,36 @@
             400
           ]
         ],
-        "kolommen": 1
+        "kolommen": 1,
+        "breedte": [
+          200,
+          400
+        ],
+        "viaAdres": false,
+        "dichtheid": "normaal",
+        "hemel": "stil",
+        "glas": "nee",
+        "gevaar": "aftelknop",
+        "uitleg": "bevestigstap",
+        "herbevestiging": "op de telefoon",
+        "tokens": {
+          "--hv-gezicht-vulling": "8px"
+        },
+        "gezicht": {
+          "bijschrift": "--tekst-mini / 600, boven; rechts hv-versheid",
+          "getal": "--hv-getal-l",
+          "toestand": "--tekst-klein, één regel",
+          "actie": "één knop, volle breedte, hoogte --hv-tik",
+          "vulling": "--hv-gezicht-vulling",
+          "tussen": "--ruimte-1",
+          "aantal": 3,
+          "lijst": [
+            "toestand",
+            "energie",
+            "meldingen"
+          ],
+          "blader": "onderste rij, hoogte --hv-tik: ‹ links, › rechts, stippen --hv-gezicht-stip ertussen"
+        }
       },
       {
         "id": "telefoon",
@@ -1541,9 +2929,27 @@
           [
             320,
             568
+          ],
+          [
+            360,
+            800
           ]
         ],
-        "kolommen": 4
+        "kolommen": 4,
+        "breedte": [
+          320,
+          699
+        ],
+        "viaAdres": true,
+        "dichtheid": "normaal",
+        "hemel": "vol",
+        "glas": "ja",
+        "gevaar": "rail",
+        "uitleg": "tik",
+        "tokens": {
+          "--hv-wijzer": "180px"
+        },
+        "herbevestiging": "platformdialoog"
       },
       {
         "id": "wand",
@@ -1554,7 +2960,28 @@
           ]
         ],
         "kolommen": 8,
-        "dichtheid": "ruim"
+        "dichtheid": "ruim",
+        "breedte": [
+          700,
+          1099
+        ],
+        "viaAdres": true,
+        "dichtheidViaAdres": "normaal",
+        "hemel": "vol",
+        "glas": "ja",
+        "gevaar": "rail",
+        "uitleg": "tik",
+        "rust": {
+          "naSeconden": 120,
+          "verschuifPx": 2,
+          "verschuifMinuten": 10,
+          "terugNaarThuisMinuten": 5
+        },
+        "herbevestiging": "via /paneel: hv-pincode met persoonlijke code; via gewoon adres: platformdialoog",
+        "tokens": {
+          "--hv-rand": "24px",
+          "--hv-held-max": "320px"
+        }
       },
       {
         "id": "bureau",
@@ -1564,7 +2991,22 @@
             800
           ]
         ],
-        "kolommen": 12
+        "kolommen": 12,
+        "breedte": [
+          1100,
+          1799
+        ],
+        "viaAdres": true,
+        "dichtheid": "compact",
+        "hemel": "vol",
+        "glas": "ja",
+        "gevaar": "rail",
+        "uitleg": "zweef en tik",
+        "herbevestiging": "platformdialoog",
+        "tokens": {
+          "--hv-rand": "24px",
+          "--hv-held-max": "320px"
+        }
       },
       {
         "id": "breed",
@@ -1574,7 +3016,23 @@
             1080
           ]
         ],
-        "kolommen": 16
+        "kolommen": 16,
+        "breedte": [
+          1800,
+          2399
+        ],
+        "viaAdres": true,
+        "dichtheid": "compact",
+        "hemel": "vol",
+        "glas": "ja",
+        "gevaar": "rail",
+        "uitleg": "zweef en tik",
+        "herbevestiging": "platformdialoog",
+        "tokens": {
+          "--hv-rand": "32px",
+          "--hv-held-max": "320px"
+        },
+        "planKolommen": 6
       },
       {
         "id": "ultrabreed",
@@ -1585,7 +3043,29 @@
           ]
         ],
         "kolommen": 12,
-        "zones": 3
+        "zones": 3,
+        "breedte": [
+          2400,
+          null
+        ],
+        "viaAdres": true,
+        "dichtheid": "compact",
+        "hemel": "vol",
+        "glas": "ja",
+        "gevaar": "rail",
+        "uitleg": "zweef en tik",
+        "herbevestiging": "platformdialoog",
+        "tokens": {
+          "--hv-rand": "32px",
+          "--hv-held-max": "320px"
+        },
+        "zoneBreedtes": {
+          "plan": "--hv-zone-plan",
+          "inhoud": "rest",
+          "blad": "--hv-laag-breedte",
+          "min": "--hv-zone-min",
+          "greep": "--hv-zone-greep"
+        }
       },
       {
         "id": "tv",
@@ -1596,8 +3076,27 @@
           ]
         ],
         "kolommen": 8,
-        "schaal": 1.5,
-        "dichtheid": "ruim"
+        "dichtheid": "ruim",
+        "breedte": null,
+        "viaAdres": false,
+        "afstandMeter": 3,
+        "hemel": "vol",
+        "glas": "nee",
+        "gevaar": "ok-knop",
+        "uitleg": "menu",
+        "tokens": {
+          "--hv-schaal": "1.5",
+          "--hv-focus-afstand": "4px",
+          "--hv-focus-rand": "3px",
+          "--hv-rand": "64px"
+        },
+        "herbevestiging": "op de telefoon",
+        "zoom": "var(--hv-schaal)",
+        "logisch": [
+          1280,
+          720
+        ],
+        "kolomLogisch": 130
       },
       {
         "id": "strook",
@@ -1611,8 +3110,73 @@
             400
           ]
         ],
-        "kolommen": 16,
-        "rijen": 4
+        "kolommen": [
+          16,
+          12
+        ],
+        "rijen": 4,
+        "breedte": [
+          1280,
+          1920
+        ],
+        "viaAdres": false,
+        "dichtheid": "normaal",
+        "hemel": "stil",
+        "glas": "nee",
+        "gevaar": "aftelknop",
+        "uitleg": "bevestigstap",
+        "herbevestiging": "op de telefoon",
+        "gezicht": {
+          "zones": {
+            "12": {
+              "tijdEnZin": [
+                1,
+                2
+              ],
+              "saldoEnPrijs": [
+                3,
+                5
+              ],
+              "stromen": [
+                6,
+                7
+              ],
+              "uitzonderingen": [
+                8,
+                9
+              ],
+              "favorieten": [
+                10,
+                12
+              ]
+            },
+            "16": {
+              "tijdEnZin": [
+                1,
+                3
+              ],
+              "saldoEnPrijs": [
+                4,
+                6
+              ],
+              "stromen": [
+                7,
+                9
+              ],
+              "uitzonderingen": [
+                10,
+                12
+              ],
+              "favorieten": [
+                13,
+                16
+              ]
+            }
+          },
+          "dagstrook": "onderste 64px",
+          "favorieten": "tegels 2×1 over de zonebreedte, onder elkaar: 4 (2)",
+          "getal": "--hv-getal-xl"
+        }
       },
       {
         "id": "vierkant",
@@ -1626,18 +3190,88 @@
             480
           ]
         ],
-        "kolommen": 1
+        "kolommen": 1,
+        "breedte": [
+          480,
+          720
+        ],
+        "viaAdres": false,
+        "dichtheid": "normaal",
+        "hemel": "stil",
+        "glas": "nee",
+        "gevaar": "rail",
+        "uitleg": "tik",
+        "herbevestiging": "hv-pincode met persoonlijke code",
+        "tokens": {
+          "--hv-wijzer": "320px"
+        },
+        "tokensTot599": {
+          "--hv-wijzer": "180px"
+        },
+        "gezicht": {
+          "bijschrift": "--tekst-mini / 600, boven; rechts hv-versheid",
+          "getal": "hv-wijzer in plaats van het getal; −/+ eronder",
+          "toestand": "--tekst-klein, één regel",
+          "actie": "één knop, volle breedte, hoogte --hv-tik",
+          "vulling": "--hv-gezicht-vulling",
+          "tussen": "--ruimte-1",
+          "aantal": "één per kamer",
+          "lijst": [
+            "kamer"
+          ],
+          "blader": "onderste rij, hoogte --hv-tik: ‹ links, › rechts, stippen --hv-gezicht-stip ertussen"
+        }
       },
       {
         "id": "rond",
         "beeld": [
+          [
+            720,
+            720
+          ],
           [
             480,
             480
           ]
         ],
         "kolommen": 1,
-        "inhoudCirkel": 0.76
+        "inhoudCirkel": 0.76,
+        "breedte": [
+          480,
+          720
+        ],
+        "viaAdres": false,
+        "dichtheid": "normaal",
+        "hemel": "stil",
+        "glas": "nee",
+        "gevaar": "rail",
+        "uitleg": "tik",
+        "herbevestiging": "hv-pincode met persoonlijke code",
+        "tokens": {
+          "--hv-wijzer": "320px"
+        },
+        "gezicht": {
+          "bijschrift": "--tekst-mini / 600, boven; rechts hv-versheid",
+          "getal": "--hv-getal-xl",
+          "toestand": "--tekst-klein, één regel",
+          "actie": "één knop, volle breedte, hoogte --hv-tik",
+          "vulling": "--hv-gezicht-vulling",
+          "tussen": "--ruimte-1",
+          "aantal": 1,
+          "lijst": [
+            "kamer of saldo"
+          ],
+          "boog": {
+            "dikte": "--hv-grafiek-ring",
+            "graden": 270,
+            "start": 135,
+            "richting": "met de klok mee vanaf drie uur",
+            "toont": "waarde van de wijzer of het saldo",
+            "spoor": "--surface",
+            "vulling": "toon van de klasse"
+          },
+          "blader": null
+        }
       },
       {
         "id": "klein",
@@ -1647,7 +3281,38 @@
             480
           ]
         ],
-        "kolommen": 4
+        "kolommen": 4,
+        "breedte": [
+          800,
+          800
+        ],
+        "viaAdres": false,
+        "dichtheid": "normaal",
+        "hemel": "stil",
+        "glas": "nee",
+        "gevaar": "rail",
+        "uitleg": "tik",
+        "herbevestiging": "hv-pincode met persoonlijke code",
+        "gezicht": {
+          "bijschrift": "--tekst-mini / 600, boven; rechts hv-versheid",
+          "getal": "--hv-getal-xl",
+          "toestand": "--tekst-klein, één regel",
+          "actie": "één knop, volle breedte, hoogte --hv-tik",
+          "vulling": "--hv-gezicht-vulling",
+          "tussen": "--ruimte-1",
+          "aantal": 2,
+          "lijst": [
+            "toestand",
+            "energie"
+          ],
+          "plaatsing": "naast elkaar, elk twee kolommen",
+          "knoppen": {
+            "max": 4,
+            "hoogte": "--hv-tik",
+            "plaats": "rij onder de gezichten"
+          },
+          "blader": null
+        }
       },
       {
         "id": "deur",
@@ -1658,7 +3323,39 @@
           ]
         ],
         "kolommen": 4,
-        "dichtheid": "ruim"
+        "dichtheid": "ruim",
+        "breedte": [
+          480,
+          480
+        ],
+        "viaAdres": false,
+        "hemel": "stil",
+        "glas": "nee",
+        "gevaar": "rail",
+        "uitleg": "tik",
+        "herbevestiging": "hv-pincode met persoonlijke code",
+        "gezicht": {
+          "bijschrift": "--tekst-mini / 600, boven; rechts hv-versheid",
+          "getal": "--hv-getal-xl",
+          "toestand": "--tekst-klein, één regel",
+          "actie": "één knop, volle breedte, hoogte --hv-tik",
+          "vulling": "--hv-gezicht-vulling",
+          "tussen": "--ruimte-1",
+          "aantal": 1,
+          "lijst": [
+            "tijd en weer"
+          ],
+          "voorCode": [
+            "tijd",
+            "weer",
+            "aanbellen"
+          ],
+          "naCode": [
+            "Ik ga weg",
+            "Ik ben thuis"
+          ],
+          "blader": null
+        }
       },
       {
         "id": "inkt",
@@ -1669,8 +3366,375 @@
           ]
         ],
         "kolommen": 4,
-        "thema": "inkt"
+        "thema": "inkt",
+        "breedte": null,
+        "viaAdres": false,
+        "dichtheid": "normaal",
+        "hemel": "geen",
+        "glas": "nee",
+        "gevaar": "aftelknop",
+        "uitleg": "bevestigstap",
+        "herbevestiging": "op de telefoon",
+        "gezicht": {
+          "volgorde": [
+            "huiszin",
+            "uitzonderingen",
+            "tegels"
+          ],
+          "nummer": {
+            "maat": "--hv-inkt-nummer",
+            "vlak": "#000000",
+            "cijfer": "#ffffff",
+            "tekst": "--tekst-klein / 600",
+            "plek": "linksboven",
+            "regel": "cijfer = fysieke knop"
+          },
+          "tegels": [
+            4,
+            8
+          ]
+        }
       }
-    ]
+    ],
+    "terugval": [
+      {
+        "als": ".is-licht",
+        "waar": "перемикач «Полегшений вигляд / Zuinige weergave» в налаштуваннях екрана; панель вмикає його й сама після виміру",
+        "typisch": "uit; aan op verzoek of na meting",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none",
+          "--hv-duur-hemel": "0s"
+        },
+        "hemel": "stil",
+        "meting": {
+          "beelden": 3,
+          "langerDanMs": 32
+        }
+      },
+      {
+        "als": "@media (prefers-reduced-transparency: reduce)",
+        "waar": "система просить менше прозорості",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "vol"
+      },
+      {
+        "als": "@supports not (backdrop-filter: blur(1px))",
+        "waar": "браузер без розмиття тла",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "vol"
+      },
+      {
+        "als": "profiel tv",
+        "waar": "телевізор",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "vol"
+      },
+      {
+        "als": "@media (prefers-contrast: more)",
+        "waar": "система просить більше контрасту",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "geen"
+      },
+      {
+        "als": "html.palet-puur",
+        "waar": "чорно-біла палітра: небо й скло вимкнено за задумом; перевірку контрасту небо тут проходить",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "geen"
+      },
+      {
+        "als": "html.palet-grifel .theme-light; html.palet-violet .theme-plum-light",
+        "waar": "світлі `grifel` і `violet`: перевірка неба не проходить (`--muted` на обвідній — 3,58 і 3,99)",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "geen"
+      },
+      {
+        "als": ".theme-inkt",
+        "waar": "тема чорнила",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "geen"
+      },
+      {
+        "als": ".is-nood",
+        "waar": "аварійний шар, тривога охорони",
+        "zet": {
+          "--hv-glas": "var(--panel)",
+          "--hv-glas-rand": "var(--line)",
+          "--hv-glas-filter": "none"
+        },
+        "hemel": "geen"
+      }
+    ],
+    "rustig": {
+      "als": "@media (prefers-reduced-motion: reduce)",
+      "zet": {
+        "--hv-duur-1": "0ms",
+        "--hv-duur-2": "0ms",
+        "--hv-duur-3": "0ms",
+        "--hv-duur-4": "0ms",
+        "--hv-duur-hemel": "0s",
+        "--hv-duur-puls": "0ms"
+      },
+      "waar": "усе миттєво; утримання, відлік і «Повернути» лишаються, бо це час на рішення, а не рух"
+    },
+    "gedrag": {
+      "zinKortMax": 36,
+      "heldChips": "één rij, horizontaal bladeren",
+      "nuMax": 3,
+      "toostMax": 3,
+      "toostPlek": {
+        "telefoon": "boven de knop Opdracht: --hv-onderbalk-hoogte + --hv-opdracht-knop + 2 × --hv-kier",
+        "overig": "rechtsonder"
+      },
+      "pincodeCijfers": [
+        4,
+        8
+      ],
+      "pincodeFouten": 5,
+      "pincodePauzeMinuten": 5,
+      "wijzerBoog": 270,
+      "wijzerBereik": [
+        5,
+        30
+      ],
+      "wijzerStap": 0.5,
+      "grafiekReeksen": 5,
+      "grafiekPunten": 300,
+      "grafiekTikken": 4,
+      "dagstrookBanen": [
+        "aanwezigheid",
+        "deuren",
+        "prijs",
+        "stand",
+        "makers"
+      ],
+      "dagstrookUren": [
+        -18,
+        6
+      ],
+      "doorsnedeKamersPerVerdieping": 5,
+      "doorsnedeVerdiepingenMax": 4,
+      "tegelVormen": {
+        "1x1": [
+          0,
+          160
+        ],
+        "2x1": [
+          160,
+          null
+        ],
+        "2x2": "vanaf 160 met niveau",
+        "4x2": "vanaf 320, alleen blokken",
+        "1x1Alleen": "binnen een blok met de kamernaam"
+      },
+      "tegelKolomMin": "74px",
+      "laagRechtsVanaf": {
+        "wand": 900,
+        "bureau": 1100
+      },
+      "blokInklapDuur": "--hv-duur-2",
+      "makerOpTegelMinuten": 10,
+      "zinDoelVulling": "10px",
+      "dagstrookStrookHoogte": "64px",
+      "dagstrookStrookBanen": [
+        "aanwezigheid",
+        "prijs"
+      ],
+      "noodActies": [
+        2,
+        3
+      ],
+      "noodActiesHorloge": 1,
+      "warmtekaartInkt": "vijf arceringsdichtheden of alleen getallen",
+      "opdrachtWerkwoorden": 6,
+      "makerTeken": {
+        "mens": "User",
+        "knop": "Hand",
+        "automatisering": "Diamond",
+        "agent": "eigen svg 12×12",
+        "simulator": "FlaskConical",
+        "dienst": "Cloud",
+        "optimalisatie": "Gauge",
+        "systeem": "Cpu",
+        "scene": null
+      },
+      "risicoTeken": {
+        "gewoon": null,
+        "gevoelig": "Eye",
+        "gevaarlijk": "Triangle",
+        "kritiek": "Octagon",
+        "fout": "CircleX"
+      },
+      "versheidTeken": {
+        "live": "stip",
+        "verversing": "RefreshCw",
+        "geenVerbinding": "WifiOff"
+      },
+      "nuMeer": "vierde regel: «Ще N у Журналі / Nog N in het logboek»",
+      "grafiekGeschat": "4 4",
+      "grafiekMerkStap": "48px",
+      "grafiekGeschatStaaf": "omtrek 4 4, vulling -zacht",
+      "stroomStreep": "4 8",
+      "stroomSnelheid": "24px/s",
+      "streepWacht": "6 4",
+      "streepVerondersteld": "2 3",
+      "streepOnbereikbaar": "12 6",
+      "onbereikbaarOpening": 0.25,
+      "arcering": {
+        "hoek": 45,
+        "stap": "--hv-arcering-stap",
+        "dikte": "--hv-arcering-dikte",
+        "dekking": 0.1,
+        "dekkingInkt": 0.25,
+        "plek": "alleen het vrije deel van het veld, nooit onder tekst"
+      },
+      "rustigWacht": "Hourglass",
+      "rustigVerondersteld": "woord «стан припущено / toestand verondersteld»",
+      "mislukt": {
+        "naMs": "--hv-duur-wacht",
+        "blijftMs": "--hv-duur-mislukt",
+        "teken": "CircleX",
+        "rand": "2px --fout"
+      },
+      "lichtMeting": {
+        "beelden": 3,
+        "langerDanMs": 32
+      },
+      "klasseToon": {
+        "aan": {
+          "klassen": [
+            "licht",
+            "stopcontact",
+            "media",
+            "huishoudelijk"
+          ],
+          "teken": "vlak --hv-aan-vlak, rand 2px --hv-aan, icoon --hv-op-aan",
+          "niveau": "--hv-aan-vlak met rand --hv-aan op --hv-aan-zacht"
+        },
+        "warm": {
+          "klassen": [
+            "verwarming",
+            "vloerverwarming",
+            "boiler",
+            "warmtepomp"
+          ],
+          "teken": "vlak --hv-warm-zacht, rand 2px en icoon --hv-warm",
+          "niveau": "--hv-warm op --hv-warm-zacht"
+        },
+        "koud": {
+          "klassen": [
+            "koeling",
+            "airco"
+          ],
+          "teken": "vlak --hv-koud-zacht, rand 2px en icoon --hv-koud",
+          "niveau": "--hv-koud op --hv-koud-zacht"
+        },
+        "auto": {
+          "klassen": [
+            "laadpaal",
+            "voertuig laden"
+          ],
+          "teken": "vlak --hv-auto-zacht, rand 2px en icoon --hv-auto",
+          "niveau": "--hv-auto op --hv-auto-zacht"
+        },
+        "batterij": {
+          "klassen": [
+            "thuisbatterij",
+            "accu van voertuig"
+          ],
+          "teken": "vlak --hv-batterij-zacht, rand 2px en icoon --hv-batterij",
+          "niveau": "--hv-batterij op --hv-batterij-zacht"
+        },
+        "neutraal": {
+          "klassen": [
+            "gordijnen",
+            "volume",
+            "ventilatie",
+            "beregening"
+          ],
+          "teken": "vlak --surface2, rand 2px en icoon --text",
+          "niveau": "--text op --surface"
+        },
+        "chipToon": "vlak -zacht, icoon in de toon, woord --text",
+        "gevuldTeken": "vlak toon, icoon --hv-op-toon: alleen grafiekmerken en legenda"
+      },
+      "inkt": {
+        "gekozen": "inversie: vlak #000000, tekst en icoon #ffffff",
+        "druk": "rand 3px",
+        "dagstrookFasen": {
+          "nacht": "arcering stap 3px",
+          "schemer": "arcering stap 6px",
+          "dageraad": "arcering stap 6px",
+          "dag": "geen arcering"
+        }
+      },
+      "dagstrookFasegrens": {
+        "lijn": "1px --hv-omtrek",
+        "iconen": [
+          "Sunrise",
+          "Sunset"
+        ],
+        "icoon": "--hv-icoon-s",
+        "tijd": "--tekst-mini / 600"
+      },
+      "dagstrookTik": "losse merktekens zijn geen doel; tik op de strook opent Terugblik op dat moment",
+      "zinVolgorde": [
+        "belangrijkste uitzondering",
+        "licht",
+        "deuren en beveiliging",
+        "eerstvolgende gebeurtenis"
+      ],
+      "gevolgVast": 1,
+      "schermDek": {
+        "met": [
+          "hv-gevaar",
+          "hv-opdracht",
+          "hv-laag onder"
+        ],
+        "zonder": [
+          "hv-laag rechts (schuift de inhoud op)"
+        ],
+        "kleur": "--overlay"
+      },
+      "opdrachtBoven": "12vh",
+      "kamerkaartStap": 0.5,
+      "huisstandSegmentVanaf": 700,
+      "wijzerMaat": {
+        "standaard": "220px",
+        "telefoon": "180px",
+        "vierkant 480": "180px",
+        "vierkant 720": "320px",
+        "rond": "320px"
+      }
+    }
   }
 }
