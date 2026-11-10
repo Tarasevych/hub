@@ -3,6 +3,11 @@ name: MAILSCAN-002 · перевірений випуск пошти
 # Оприлюднює архів після повторної звірки встановленої основи. Нічого не встановлює.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'feature/mailscan-002-uitgave-20261110-120000'
+    paths:
+      - '.github/workflows/mailscan-002-uitgave.yml'
 
 permissions:
   contents: write
