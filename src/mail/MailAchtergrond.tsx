@@ -228,7 +228,7 @@ export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 
       schrijft = e.pointerType !== 'touch' || voorkeurRef.current.tekenen;
       if (schrijft) { lijn = [{ ...plek }]; laatsteStreek = tijd; }
     };
-    const laatLos = (e: PointerEvent) => { schrijft = false; laatsteStreek = tijd; if (e.pointerType !== 'mouse') aanwijzer.current.binnen = false; };
+    const laatLos = (e: PointerEvent) => { schrijft = false; laatsteStreek = tijd; if (e.pointerType !== 'mouse' && !lensRef.current) aanwijzer.current.binnen = false; };
     const uit = (e: PointerEvent) => { if (e.pointerType === 'mouse' && !schrijft) aanwijzer.current.binnen = false; };
     const rechts = (e: MouseEvent) => {
       if (e.button !== 2 || voorkeurRef.current.beweging === 'uit') return;
