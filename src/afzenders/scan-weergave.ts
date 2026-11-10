@@ -53,14 +53,15 @@ export function scanZichtbaar(aandacht: boolean, wasZichtbaar: boolean, sinds: n
 }
 
 // ── levenscyclus van de achtergrondcontrole (één per paginabezoek, los van elk venster) ──
-let autoLaatst = 0;
+const autoLaatst = new Map<string, number>();
 /** Zo vaak hoogstens POST …/scan/auto (dezelfde grens als het bijwerken op de server: 15 min), hoeveel componenten er ook mounten. */
 export const SCAN_AUTO_INTERVAL_MS = 15 * 60_000;
 /** POST …/scan/auto hoogstens één keer per SCAN_AUTO_INTERVAL_MS per paginabezoek, hoe vaak de melding ook (opnieuw) mount. */
-export function eenmaligAuto(f: () => Promise<unknown>, nu = Date.now()) {
-  if (autoLaatst && nu - autoLaatst < SCAN_AUTO_INTERVAL_MS) return false;
-  autoLaatst = nu;
-  void f().catch(() => { autoLaatst = 0; });
+export function eenmaligAuto(f: () => Promise<unknown>, nu = Date.now(), sleutel = 'algemeen') {
+  const laatst = autoLaatst.get(sleutel) || 0;
+  if (laatst && nu - laatst < SCAN_AUTO_INTERVAL_MS) return false;
+  autoLaatst.set(sleutel, nu);
+  void f().catch(() => { autoLaatst.delete(sleutel); });
   return true;
 }
 
@@ -85,4 +86,4 @@ export function eenStart<T>(f: () => Promise<T>): Promise<T> {
 }
 
 /** Alleen voor tests. */
-export function _herstelVoorTest() { autoLaatst = 0; hervat.aantal = 0; hervat.laatst = 0; hervat.bezig = false; startInVlucht = null; }
+export function _herstelVoorTest() { autoLaatst.clear(); hervat.aantal = 0; hervat.laatst = 0; hervat.bezig = false; startInVlucht = null; }

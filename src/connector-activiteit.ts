@@ -55,6 +55,7 @@ const SITE_LABELS: Record<string, [string, string]> = {
   // внутрішній нідерландський ідентифікатор в українському інтерфейсі.
   'owner.mail.contacten.scan.gestart': ['Почалася перевірка адрес у пошті', 'Controle van de adressen in de mail gestart'], 'owner.mail.contacten.scan.klaar': ['Перевірку адрес у пошті завершено', 'Controle van de adressen in de mail voltooid'],
   'owner.mail.contacten.scan.beleid': ['Змінено, що робити при помилках перевірки адрес', 'Gedrag bij fouten van de adrescontrole gewijzigd'],
+  'owner.mail.contacten.scan.voorkeur': ['Змінено дозвіл на перевірку адрес окремої скриньки', 'Toestemming voor adrescontrole per mailbox gewijzigd'],
   'owner.mail.afzender.audit.gestart': ['Почалася перевірка відправників', 'Controle van de afzenders gestart'], 'owner.mail.afzender.audit.klaar': ['Перевірку відправників завершено', 'Controle van de afzenders voltooid'],
   'owner.mail.afzender.geverifieerd': ['Відправника позначено перевіреним', 'Afzender als geverifieerd gemarkeerd'], 'owner.mail.afzender.verdacht': ['Відправника позначено підозрілим', 'Afzender als verdacht gemarkeerd'],
   'owner.mail.afzender.ingetrokken': ['Перевірку відправника відкликано', 'Verificatie van afzender ingetrokken'], 'owner.mail.afzender.markering-opgeheven': ['Позначку відправника знято', 'Markering van afzender opgeheven'], 'owner.mail.afzender.bijgewerkt': ['Дані відправника оновлено', 'Gegevens van afzender bijgewerkt'],

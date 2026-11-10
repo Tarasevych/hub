@@ -179,6 +179,14 @@ export async function main(): Promise<number> {
   const rij = async (adres: string, u = A) => (await sys.query('SELECT status, reden, aantal, verzonden, accounts, officieel, organisatie, vertrouwen, in_contacten FROM app.mail_afzenders WHERE user_id = $1 AND adres = $2', [u, adres])).rows[0];
   try {
     check('vóór de controle: stand «nooit», markeringen uit', (await roep('contacten/scan/status')).b.scan?.staat === 'nooit' && !(await markeringenAan(A)));
+    const zonderToestemming = await roep('contacten/scan/auto');
+    check('MAILSCAN-002: без згоди жодна скринька не перевіряється', zonderToestemming.status === 200 && !zonderToestemming.b.scan?.loopt
+      && zonderToestemming.b.scan?.gekoppeld?.every((x: any) => x.voorkeur.aan === false));
+    for (const accountId of ['acc-1', 'acc-2']) {
+      const toestemming = await roep('contacten/scan/voorkeur', { accountId, voorkeur: { aan: true, werkwijze: 'periodiek', intervalMinuten: 15 } });
+      check(`MAILSCAN-002: окрема згода ${accountId}`, toestemming.status === 200
+        && toestemming.b.scan?.gekoppeld?.find((x: any) => x.accountId === accountId)?.voorkeur.aan === true);
+    }
     // Pagina 2 van mailbox 1 faalt steeds (tijdelijke Gmail-limiet) → «fout» na de herhalingen; mailbox 2 loopt wel door.
     lijstFout = (acc, tok) => (acc === 'acc-1' && tok === 'p50' ? 'GOOGLE_MAIL_RATE_LIMITED' : null);
     const auto = await roep('contacten/scan/auto');
@@ -217,7 +225,7 @@ export async function main(): Promise<number> {
 
     // Pauze en stop tijdens het lopen.
     kopVertraging = 15;
-    await roep('contacten/scan/start', { opnieuw: true });
+    await roep('contacten/scan/start', { bijwerken: true });
     const pz = await roep('contacten/scan/pauze');
     check('pauze: tijdens het lopen → «gepauzeerd», hervatbaar; auto start hem niet vanzelf opnieuw', pz.b.scan?.staat === 'gepauzeerd' && pz.b.scan?.loopt === false && (await contactenScanAuto(A, Date.now() + 3600_000)).automatisch !== true, JSON.stringify(pz.b.scan?.accounts));
     const st = await roep('contacten/scan/stop');

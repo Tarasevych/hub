@@ -18,7 +18,7 @@ import { error, json } from '../server/platform';
 import { getPool } from '../server/platform/pg';
 import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-toestemmingen';
-import { ladeVereist, MailRuimteFout } from './mail-ruimte';
+import { ladeVereist, mailboxenInLade, MailRuimteFout } from './mail-ruimte';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
 import {
@@ -34,6 +34,7 @@ import { taakBijwerken, taakLezen, taakPauze, taakSoort, taakStart, taakStilBij,
 import {
   isTijdelijkeScanFout, normaliseerScanBeleid, SCAN_MAX_POGINGEN, scanBackoffMs, scanHerhaalPlan, scanMagHerhalen, STANDAARD_SCAN_BELEID, type ScanBeleid,
 } from '../shared/mail-scan-beleid';
+import { magScanAutomatisch, normaliseerScanVoorkeur, type ScanVoorkeur } from '../shared/contacten-scan-voorkeuren';
 
 // ------------------------------------------------------------------------------------------------ Gmail-bron (vervangbaar in tests)
 export type GmailKop = { from: string; auth: string[]; tijd: number };
@@ -564,7 +565,7 @@ export const SCAN_PAGINA = 50, SCAN_DNS_PER_PAGINA = 8;
 let scanPauzeMs = 250;
 /** Alleen voor tests: geen wachttijd tussen pagina's. */
 export const zetScanPauze = (ms: number) => { scanPauzeMs = ms; };
-type ScanTaak = { verzoek: null | 'pauze' | 'stop'; klaar: Promise<void> };
+type ScanTaak = { verzoek: null | 'pauze' | 'stop'; klaar: Promise<void>; accountIds: Set<string> };
 const scanLopend = new Map<string, ScanTaak>();
 const autoLaatst = new Map<string, number>();
 export type ScanAccountStand = { accountId: string; email: string; staat: string; fase: 'volledig' | 'bijwerken'; verwerkt: number; schatting: number; fout: string; eersteKlaarOp: string | null; bijgewerktOp: string | null; gestartOp: string | null;
@@ -576,17 +577,47 @@ export type ScanStand = {
   tellers: { contacten: number; geverifieerd: number; verdacht: number; geschreven: number; officieel: number; dns: number };
   /** 0075: de bewaarde keuze «запам'ятати вибір» en het maximum aantal pogingen (zodat de browser dezelfde tekst toont). */
   beleid: ScanBeleid; maxPogingen: number;
+  gekoppeld: Array<{ accountId: string; email: string; voorkeur: ScanVoorkeur }>;
 };
 const scanRij = (r: any): ScanAccountStand => ({ accountId: r.account_id, email: r.account_email || '', staat: r.staat, fase: r.fase, verwerkt: Number(r.verwerkt || 0), schatting: Number(r.schatting || 0), fout: r.fout || '', eersteKlaarOp: iso(r.eerste_klaar_op), bijgewerktOp: iso(r.bijgewerkt_op), gestartOp: iso(r.gestart_op), poging: Number(r.poging || 0), wachtTot: iso(r.wacht_tot) });
 
+/** Перелік скриньок обмежений поточним простором; дозвіл в іншому просторі тут не діє. */
+const scanAccounts = async (userId: string) => mailboxenInLade(ladeVereist(userId), await scanBron.accounts(userId));
+const scanVoorkeurenUit = (ruw: unknown): Record<string, ScanVoorkeur> => {
+  if (!ruw || typeof ruw !== 'object' || Array.isArray(ruw)) return {};
+  return Object.fromEntries(Object.entries(ruw).filter(([id]) => id.length > 0 && id.length <= 300).map(([id, v]) => [id, normaliseerScanVoorkeur(v)]));
+};
+
+export async function contactenScanVoorkeurZetten(userId: string, accountId: unknown, ruw: unknown): Promise<ScanStand> {
+  const id = String(accountId || '');
+  if (!id || id.length > 300 || !(await scanAccounts(userId)).some((a) => a.id === id)) fout('SCAN_ACCOUNT_NIET_GEVONDEN', 404);
+  const voorkeur = normaliseerScanVoorkeur(ruw);
+  await inLade(userId, async (q, lade) => {
+    const oudRij = (await q(`SELECT voorkeuren -> $2 AS voorkeur FROM app.mail_contacten_scan_beleid WHERE ${W(lade)}`, [userId, id])).rows[0];
+    const oud = normaliseerScanVoorkeur(oudRij?.voorkeur);
+    await q(`INSERT INTO app.mail_contacten_scan_beleid (user_id, ruimte, beleid, voorkeuren) VALUES ($1, '${R(lade)}', $2, jsonb_build_object($3::text, $4::jsonb))
+      ON CONFLICT (user_id, ruimte) DO UPDATE SET voorkeuren = app.mail_contacten_scan_beleid.voorkeuren || EXCLUDED.voorkeuren, bijgewerkt_op = now()`,
+      [userId, STANDAARD_SCAN_BELEID, id, JSON.stringify(voorkeur)]);
+    if (!voorkeur.aan) await q(`UPDATE app.mail_contacten_scan SET staat = 'gestopt', bijgewerkt_op = now()
+      WHERE ${W(lade)} AND account_id = $2 AND staat IN ('wacht', 'bezig', 'gepauzeerd', 'fout')`, [userId, id]);
+    else if (!oud.aan && voorkeur.werkwijze !== 'handmatig') await q(`UPDATE app.mail_contacten_scan SET staat = 'wacht', bijgewerkt_op = now()
+      WHERE ${W(lade)} AND account_id = $2 AND staat = 'gestopt'`, [userId, id]);
+  });
+  await logboek(userId, 'owner.mail.contacten.scan.voorkeur', 'contacten@mail', { na: { accountId: id, aan: voorkeur.aan, werkwijze: voorkeur.werkwijze } });
+  return contactenScanStand(userId);
+}
+
 export async function contactenScanStand(userId: string): Promise<ScanStand> {
   const loopt = scanLopend.has(userId);
+  const verbonden = await scanAccounts(userId);
   return inLade(userId, async (q, lade) => {
     const rows = (await q(`SELECT * FROM app.mail_contacten_scan WHERE ${W(lade)} ORDER BY account_email, account_id`, [userId])).rows;
     const t = (await q(`SELECT count(*)::int AS n, count(*) FILTER (WHERE status = 'geverifieerd')::int AS g, count(*) FILTER (WHERE status = 'verdacht')::int AS v,
       count(*) FILTER (WHERE verzonden > 0)::int AS s, count(*) FILTER (WHERE officieel)::int AS o FROM app.mail_afzenders WHERE ${W(lade)}`, [userId])).rows[0];
     const dnsN = Number((await q(`SELECT count(*)::int AS n FROM app.mail_domein_dns WHERE ${W(lade)}`, [userId])).rows[0]?.n || 0);
-    const beleid = normaliseerScanBeleid((await q(`SELECT beleid FROM app.mail_contacten_scan_beleid WHERE ${W(lade)}`, [userId])).rows[0]?.beleid);
+    const instelling = (await q(`SELECT beleid, voorkeuren FROM app.mail_contacten_scan_beleid WHERE ${W(lade)}`, [userId])).rows[0];
+    const beleid = normaliseerScanBeleid(instelling?.beleid);
+    const voorkeuren = scanVoorkeurenUit(instelling?.voorkeuren);
     const accounts = rows.map(scanRij), st = accounts.map((a) => a.staat);
     // «overgeslagen» (0075, beleid «пропускати проблемні») is géén openstaande beslissing: de controle liep door, dus de stand
     // blijft 'klaar' zolang er niets anders wacht. Welke mailbox overgeslagen is, staat per rij in `accounts`.
@@ -595,7 +626,8 @@ export async function contactenScanStand(userId: string): Promise<ScanStand> {
     const klaar = accounts.every((a) => a.eersteKlaarOp) ? accounts.map((a) => a.eersteKlaarOp!).sort().at(-1) || null : null;
     return { staat, loopt, accounts, verwerkt: accounts.reduce((s, a) => s + a.verwerkt, 0), schatting: accounts.reduce((s, a) => s + a.schatting, 0), eersteKlaarOp: klaar,
       bijgewerktOp: accounts.map((a) => a.bijgewerktOp || '').sort().at(-1) || null,
-      tellers: { contacten: t.n, geverifieerd: t.g, verdacht: t.v, geschreven: t.s, officieel: t.o, dns: dnsN }, beleid, maxPogingen: SCAN_MAX_POGINGEN };
+      tellers: { contacten: t.n, geverifieerd: t.g, verdacht: t.v, geschreven: t.s, officieel: t.o, dns: dnsN }, beleid, maxPogingen: SCAN_MAX_POGINGEN,
+      gekoppeld: verbonden.map((a) => ({ accountId: a.id, email: a.email, voorkeur: normaliseerScanVoorkeur(voorkeuren[a.id]) })) };
   });
 }
 
@@ -615,17 +647,19 @@ export async function contactenScanBeleidZetten(userId: string, ruw: unknown): P
 }
 
 /** Volledige controle starten of hervatten. `opnieuw`: alles opnieuw tellen. `bijwerken`: afgeronde mailboxen incrementeel. */
-export async function contactenScanStarten(userId: string, i: { opnieuw?: unknown; bijwerken?: unknown } = {}) {
+export async function contactenScanStarten(userId: string, i: { opnieuw?: unknown; bijwerken?: unknown; accountIds?: unknown } = {}) {
   if (scanLopend.has(userId)) return contactenScanStand(userId);
-  const accounts = await scanBron.accounts(userId);
+  const stand = await contactenScanStand(userId);
+  const toegestaan = new Set(stand.gekoppeld.filter((a) => a.voorkeur.aan).map((a) => a.accountId));
+  const gevraagd = Array.isArray(i.accountIds) ? i.accountIds.filter((id): id is string => typeof id === 'string' && id.length <= 300) : [...toegestaan];
+  if (!gevraagd.length || gevraagd.some((id) => !toegestaan.has(id))) fout('SCAN_GEEN_TOESTEMMING', 403);
+  const accounts = (await scanAccounts(userId)).filter((a) => gevraagd.includes(a.id));
   if (!accounts.length) fout('GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED', 409);
+  // Повторна повна перевірка однієї скриньки не може обнулити спільні підсумки інших скриньок.
+  if (i.opnieuw === true) fout('SCAN_HERVOLLEDIG_VEREIST_VEILIG_HERTELLEN', 409);
   const schattingen = new Map<string, { email: string; totaal: number }>();
   for (const a of accounts) { try { schattingen.set(a.id, await scanBron.profiel(userId, a.id)); } catch { /* schatting is optioneel */ } }
   await inLade(userId, async (q, lade) => {
-    if (i.opnieuw === true) {
-      await q(`DELETE FROM app.mail_contacten_scan WHERE ${W(lade)}`, [userId]);
-      await q(`UPDATE app.mail_afzenders SET aantal = 0, verzonden = 0, laatst_verzonden_op = NULL, accounts = '{}', bewijs = bewijs - 'pass' - 'fail' - 'zonder' WHERE ${W(lade)}`, [userId]);
-    }
     const bestaand = new Map((await q(`SELECT account_id, staat FROM app.mail_contacten_scan WHERE ${W(lade)}`, [userId])).rows.map((r) => [r.account_id, r.staat]));
     for (const a of accounts) {
       const p = schattingen.get(a.id), email = (p?.email || a.email || '').slice(0, 254), staat = bestaand.get(a.id);
@@ -636,7 +670,7 @@ export async function contactenScanStarten(userId: string, i: { opnieuw?: unknow
     }
   });
   await logboek(userId, 'owner.mail.contacten.scan.gestart', 'contacten@mail', { na: { accounts: accounts.length, opnieuw: i.opnieuw === true, bijwerken: i.bijwerken === true } });
-  const taak: ScanTaak = { verzoek: null, klaar: Promise.resolve() };
+  const taak: ScanTaak = { verzoek: null, klaar: Promise.resolve(), accountIds: new Set(accounts.map((a) => a.id)) };
   scanLopend.set(userId, taak);
   taak.klaar = scanDraaien(userId, taak).catch((e) => { console.error('[mail-contacten]', String((e as Error).message).slice(0, 120)); }).finally(() => { scanLopend.delete(userId); });
   return contactenScanStand(userId);
@@ -653,22 +687,25 @@ export async function contactenScanOnderbreken(userId: string, soort: 'pauze' | 
 export async function contactenScanWachten(userId: string) { await scanLopend.get(userId)?.klaar; }
 
 /** Bij het openen van de mail: de eerste keer starten; daarna hervatten na een herstart, nieuwe mailboxen en (≥ 15 min) bijwerken. */
-export async function contactenScanAuto(userId: string, nu = Date.now()): Promise<ScanStand> {
+export async function contactenScanAuto(userId: string, nu = Date.now(), accountIds?: unknown): Promise<ScanStand> {
   if (scanLopend.has(userId) || nu - (autoLaatst.get(userId) || 0) < 60_000) return contactenScanStand(userId);
+  const stand = await contactenScanStand(userId);
+  const per = new Map(stand.accounts.map((a) => [a.accountId, a]));
+  const gevraagd = Array.isArray(accountIds) ? accountIds.filter((id): id is string => typeof id === 'string') : null;
+  const gekozen = stand.gekoppeld.filter((a) => {
+    if (gevraagd && !gevraagd.includes(a.accountId)) return false;
+    const st = per.get(a.accountId);
+    if (st && ['gestopt', 'gepauzeerd'].includes(st.staat)) return false;
+    if (!a.voorkeur.aan || a.voorkeur.werkwijze === 'handmatig') return false;
+    if (!st || st.staat === 'wacht') return true;
+    if (!magScanAutomatisch(a.voorkeur, st?.bijgewerktOp ? Date.parse(st.bijgewerktOp) : null, nu)) return false;
+    if (st.staat === 'bezig') return true;
+    if (st.staat === 'fout' || st.staat === 'overgeslagen') return (isTijdelijkeScanFout(st.fout) || /SCOPE_REQUIRED/.test(st.fout)) && nu - Date.parse(st.bijgewerktOp || '') > 3600_000;
+    return st.staat === 'klaar' && nu - Date.parse(st.bijgewerktOp || '') >= 15 * 60_000;
+  });
+  if (!gekozen.length) return stand;
   autoLaatst.set(userId, nu);
-  let accounts: Array<{ id: string }> = [];
-  try { accounts = await scanBron.accounts(userId); } catch { return contactenScanStand(userId); }
-  if (!accounts.length) return contactenScanStand(userId);
-  const stand = await contactenScanStand(userId), per = new Map(stand.accounts.map((a) => [a.accountId, a]));
-  if (stand.accounts.some((a) => a.staat === 'gestopt' || a.staat === 'gepauzeerd')) return stand; // de gebruiker koos zelf
-  const nieuw = accounts.some((a) => !per.has(a.id));
-  const onderbroken = stand.accounts.some((a) => a.staat === 'bezig' || a.staat === 'wacht');
-  // Herstelbare fouten na 1 u opnieuw proberen; een (vermeende) scope-fout na 1 u ook: één verzoek bewijst of die nog geldt (F2).
-  const herstelbaar = stand.accounts.some((a) => (a.staat === 'fout' || a.staat === 'overgeslagen')
-    && (isTijdelijkeScanFout(a.fout) || /SCOPE_REQUIRED/.test(a.fout)) && nu - Date.parse(a.bijgewerktOp || '') > 3600_000);
-  const oud = stand.accounts.length > 0 && stand.accounts.every((a) => a.staat === 'klaar') && nu - Date.parse(stand.bijgewerktOp || '') > 15 * 60_000;
-  if (!nieuw && !onderbroken && !herstelbaar && !oud) return stand;
-  const s = await contactenScanStarten(userId, { bijwerken: oud && !nieuw && !onderbroken });
+  const s = await contactenScanStarten(userId, { accountIds: gekozen.map((a) => a.accountId), bijwerken: true });
   return { ...s, automatisch: true };
 }
 
@@ -701,32 +738,40 @@ export function verzondenSamenvoegen(rij: AfzenderRij | null, w: Verzonden, klas
 }
 
 async function scanDraaien(userId: string, taak: ScanTaak) {
-  const accounts = await scanBron.accounts(userId);
+  const accounts = await scanAccounts(userId);
   const eigen = new Set(accounts.map((a) => a.email.toLowerCase()).filter(Boolean));
   const rows = await inLade(userId, async (q, lade) => (await q(`SELECT account_id, account_email, staat FROM app.mail_contacten_scan WHERE ${W(lade)}`, [userId])).rows);
   for (const r of rows) if (r.account_email) eigen.add(String(r.account_email).toLowerCase());
   // 0075: de bewaarde keuze bepaalt of een tijdelijke fout zelf herhaald wordt, overgeslagen wordt of op de gebruiker wacht.
   const beleid = await contactenScanBeleid(userId);
   for (const a of accounts) {
+    if (!taak.accountIds.has(a.id)) continue;
     const r = rows.find((x) => x.account_id === a.id);
     if (!r || !['wacht', 'bezig'].includes(r.staat)) continue;
     await scanAccount(userId, a.id, eigen, taak, beleid);
     if (taak.verzoek) return;
   }
-  await dnsRonde(userId, taak);
+  const nogToegestaan = (await contactenScanStand(userId)).gekoppeld.some((a) => taak.accountIds.has(a.accountId) && a.voorkeur.aan);
+  if (!nogToegestaan) return;
+  await dnsRonde(userId, taak, DNS_GRENS, [...taak.accountIds]);
   if (taak.verzoek) return;
   const s = await contactenScanStand(userId);
   await logboek(userId, 'owner.mail.contacten.scan.klaar', 'contacten@mail', { na: { verwerkt: s.verwerkt, contacten: s.tellers.contacten, geverifieerd: s.tellers.geverifieerd, verdacht: s.tellers.verdacht, geschreven: s.tellers.geschreven, dns: s.tellers.dns } });
 }
 
 async function scanAccount(userId: string, accountId: string, eigen: ReadonlySet<string>, taak: ScanTaak, beleid: ScanBeleid = STANDAARD_SCAN_BELEID) {
-  const zet = (staat: string, extra = '', params: unknown[] = []) => inLade(userId, (q, lade) => q(`UPDATE app.mail_contacten_scan SET staat = $3${extra}, bijgewerkt_op = now() WHERE ${W(lade)} AND account_id = $2`, [userId, accountId, staat, ...params]));
+  const zet = (staat: string, extra = '', params: unknown[] = []) => inLade(userId, (q, lade) => q(`UPDATE app.mail_contacten_scan SET staat = $3${extra}, bijgewerkt_op = now() WHERE ${W(lade)} AND account_id = $2 AND staat <> 'gestopt'`, [userId, accountId, staat, ...params]));
+  const toegestaan = async () => inLade(userId, async (q, lade) => {
+    const r = (await q(`SELECT voorkeuren -> $2 AS voorkeur FROM app.mail_contacten_scan_beleid WHERE ${W(lade)}`, [userId, accountId])).rows[0];
+    return normaliseerScanVoorkeur(r?.voorkeur).aan;
+  });
+  if (!await toegestaan()) return;
   await zet('bezig');
   let fouten = 0;
   for (;;) {
     if (taak.verzoek) { await zet(taak.verzoek === 'pauze' ? 'gepauzeerd' : 'gestopt'); return; }
-    const st = await inLade(userId, async (q, lade) => (await q(`SELECT page_token, fase, hoogwater FROM app.mail_contacten_scan WHERE ${W(lade)} AND account_id = $2`, [userId, accountId])).rows[0]);
-    if (!st) return;
+    const st = await inLade(userId, async (q, lade) => (await q(`SELECT page_token, fase, hoogwater, staat FROM app.mail_contacten_scan WHERE ${W(lade)} AND account_id = $2`, [userId, accountId])).rows[0]);
+    if (!st || st.staat === 'gestopt' || !await toegestaan()) return;
     const hoogwater = Number(st.hoogwater || 0), bijwerken = st.fase === 'bijwerken' && hoogwater > 0;
     try {
       // Gmail «after:» werkt op seconden; een uur overlap en daarna strikt filteren op internalDate > hoogwater: niets dubbel.
@@ -749,6 +794,10 @@ async function scanAccount(userId: string, accountId: string, eigen: ReadonlySet
       const bekend = await inLade(userId, async (q, lade) => new Set((await q(`SELECT domein FROM app.mail_domein_dns WHERE ${W(lade)} AND domein = ANY($2::text[]) AND gecontroleerd_op > now() - interval '24 hours'`, [userId, domeinen])).rows.map((r) => r.domein)));
       const nieuweDns = await beperkt(domeinen.filter((d) => !bekend.has(d)).slice(0, SCAN_DNS_PER_PAGINA), DNS_GELIJKTIJDIG, (d) => domeinDns(d));
       await inLade(userId, async (q, lade) => {
+        const nog = (await q(`SELECT staat,
+          (SELECT voorkeuren -> $2 FROM app.mail_contacten_scan_beleid WHERE ${W(lade)}) AS voorkeur
+          FROM app.mail_contacten_scan WHERE ${W(lade)} AND account_id = $2 FOR UPDATE`, [userId, accountId])).rows[0];
+        if (!nog || nog.staat === 'gestopt' || !normaliseerScanVoorkeur(nog.voorkeur).aan) return;
         for (const d of nieuweDns) await slaDnsOp(q, lade, d);
         const contacten = await contactenVan(q, lade);
         const rijen = await leesRijen(q, lade, [...new Set(ws.map((w) => w.adres))], true);
@@ -782,14 +831,14 @@ async function scanAccount(userId: string, accountId: string, eigen: ReadonlySet
       const plan = scanHerhaalPlan(code, fouten, beleid);
       if (plan.soort === 'herhaal') {
         const tot = new Date(Date.now() + plan.wachtMs).toISOString();
-        await inLade(userId, (q, lade) => q(`UPDATE app.mail_contacten_scan SET staat = 'bezig', fout = $3, poging = $4, wacht_tot = $5, bijgewerkt_op = now() WHERE ${W(lade)} AND account_id = $2`,
+        await inLade(userId, (q, lade) => q(`UPDATE app.mail_contacten_scan SET staat = 'bezig', fout = $3, poging = $4, wacht_tot = $5, bijgewerkt_op = now() WHERE ${W(lade)} AND account_id = $2 AND staat <> 'gestopt'`,
           [userId, accountId, code, plan.poging, tot]));
         // In tests staat scanPauzeMs op 0: dan geen echte wachttijd, maar wél dezelfde ladder en dezelfde stand in de database.
         if (scanPauzeMs) await slaap(plan.wachtMs);
         continue;
       }
       // «пропускати проблемні»: deze mailbox overslaan en de controle met de volgende mailbox laten doorgaan (scanDraaien).
-      await inLade(userId, (q, lade) => q(`UPDATE app.mail_contacten_scan SET staat = $3, fout = $4, poging = $5, wacht_tot = NULL, bijgewerkt_op = now() WHERE ${W(lade)} AND account_id = $2`,
+      await inLade(userId, (q, lade) => q(`UPDATE app.mail_contacten_scan SET staat = $3, fout = $4, poging = $5, wacht_tot = NULL, bijgewerkt_op = now() WHERE ${W(lade)} AND account_id = $2 AND staat <> 'gestopt'`,
         [userId, accountId, plan.soort === 'overslaan' ? 'overgeslagen' : 'fout', code, fouten]));
       return;
     }
@@ -797,12 +846,13 @@ async function scanAccount(userId: string, accountId: string, eigen: ReadonlySet
 }
 
 /** DNS-ronde: domeinen zonder (vers) DNS-bewijs, op alfabet (niet een willekeurige 2000), en het vertrouwen herberekenen. */
-async function dnsRonde(userId: string, taak: ScanTaak | null, max = DNS_GRENS): Promise<string[]> {
+async function dnsRonde(userId: string, taak: ScanTaak | null, max = DNS_GRENS, accountIds?: string[]): Promise<string[]> {
   // Ook de JOIN blijft binnen één lade: anders zou de technische lade het DNS-bewijs van de persoonlijke zien (of omgekeerd
   // denken dat er nog geen bewijs is). `COALESCE(..., 'prive')` houdt rijen van vóór 0083 persoonlijk.
   const domeinen = (await inLade(userId, async (q, lade) => (await q(`SELECT DISTINCT a.domein FROM app.mail_afzenders a
      LEFT JOIN app.mail_domein_dns d ON d.user_id = a.user_id AND COALESCE(d.ruimte, 'prive') = COALESCE(a.ruimte, 'prive') AND d.domein = a.domein
-     WHERE a.user_id = $1 AND COALESCE(a.ruimte, 'prive') = $3 AND (d.domein IS NULL OR d.gecontroleerd_op < now() - interval '24 hours') ORDER BY a.domein LIMIT $2`, [lade.userId, max, R(lade)])).rows.map((r) => String(r.domein))))
+     WHERE a.user_id = $1 AND COALESCE(a.ruimte, 'prive') = $3 AND ($4::text[] IS NULL OR a.accounts && $4::text[])
+       AND (d.domein IS NULL OR d.gecontroleerd_op < now() - interval '24 hours') ORDER BY a.domein LIMIT $2`, [lade.userId, max, R(lade), accountIds || null])).rows.map((r) => String(r.domein))))
     .filter((d) => !isGratisMailbox(d));
   for (let i = 0; i < domeinen.length; i += 20) {
     if (taak?.verzoek) return domeinen.slice(0, i);
@@ -1005,8 +1055,9 @@ export function mailAfzenderRoutes(deps: { requireSession: RequireSession }): Re
     'POST /api/owner/mail/contacten/verdacht': [route(async (b, u) => ({ afzender: await contactVerdachtMarkeren(u, b) }))],
     'POST /api/owner/mail/contacten/contact': [route(async (b, u) => ({ afzender: await contactInContacten(u, b) }))],
     'POST /api/owner/mail/contacten/scan/status': [route(async (_b, u) => ({ scan: await contactenScanStand(u) }))],
-    'POST /api/owner/mail/contacten/scan/start': [route(async (b, u) => ({ scan: await contactenScanStarten(u, { opnieuw: b.opnieuw, bijwerken: b.bijwerken }) }))],
-    'POST /api/owner/mail/contacten/scan/auto': [route(async (_b, u) => ({ scan: await contactenScanAuto(u) }))],
+    'POST /api/owner/mail/contacten/scan/start': [route(async (b, u) => ({ scan: await contactenScanStarten(u, { opnieuw: b.opnieuw, bijwerken: b.bijwerken, accountIds: b.accountIds }) }))],
+    'POST /api/owner/mail/contacten/scan/auto': [route(async (b, u) => ({ scan: await contactenScanAuto(u, Date.now(), b.accountIds) }))],
+    'POST /api/owner/mail/contacten/scan/voorkeur': [route(async (b, u) => ({ scan: await contactenScanVoorkeurZetten(u, b.accountId, b.voorkeur) }))],
     'POST /api/owner/mail/contacten/scan/pauze': [route(async (_b, u) => ({ scan: await contactenScanOnderbreken(u, 'pauze') }))],
     'POST /api/owner/mail/contacten/scan/stop': [route(async (_b, u) => ({ scan: await contactenScanOnderbreken(u, 'stop') }))],
     'POST /api/owner/mail/contacten/taak/start': [route(async (b, u) => ({ taak: await contactenTaakLopen(u, b.soort, 4) }))],
