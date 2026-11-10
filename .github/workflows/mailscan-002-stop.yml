@@ -1,0 +1,30 @@
+name: MAILSCAN-002 · зупинити зайве повторення
+
+# Після оприлюднення єдиного перевіреного випуску зупиняє зайве повторне складання.
+on:
+  push:
+    branches:
+      - feature/mailscan-002-uitgave-20261110-120000
+    paths:
+      - .github/workflows/mailscan-002-stop.yml
+
+permissions:
+  actions: write
+
+jobs:
+  stop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Перевірити публікацію та зупинити зайву спробу
+        shell: bash
+        run: |
+          set -euo pipefail
+          UITGAVE="$(gh api "repos/$GITHUB_REPOSITORY/releases/440265398" --jq '.draft')"
+          test "$UITGAVE" = false
+          STAND="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/42806551511" --jq '.status')"
+          if [ "$STAND" != completed ]; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/42806551511/cancel"
+          fi
