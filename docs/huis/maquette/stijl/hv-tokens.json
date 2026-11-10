@@ -1,0 +1,1676 @@
+{
+  "thema": {
+    "licht": {
+      "--bg": "#f4f0ee",
+      "--panel": "#fefcfa",
+      "--surface": "#eeeae7",
+      "--surface2": "#e3dcd8",
+      "--line": "#d2c6bf",
+      "--text": "#17212b",
+      "--muted": "#4b5563",
+      "--faint": "#5f6873",
+      "--accent": "#a14809",
+      "--accentText": "#ffffff",
+      "--accent-soft": "#f6e7dd",
+      "--ok": "#166534",
+      "--ok-zacht": "#dcfce7",
+      "--ok-vlak": "#15803d",
+      "--warn": "#8a4b06",
+      "--warn-zacht": "#fef3c7",
+      "--warn-vlak": "#92400e",
+      "--fout": "#b42318",
+      "--fout-zacht": "#fee2e2",
+      "--fout-vlak": "#b42318",
+      "--info": "#1e40af",
+      "--info-zacht": "#dbeafe",
+      "--info-vlak": "#1d4ed8",
+      "--text-on-vlak": "#ffffff",
+      "--text-on-licht": "#17212b",
+      "--text-on-donker": "#f3f6f8",
+      "--papier": "#ffffff",
+      "--papier-zacht": "#e5e7eb",
+      "--focus": "#1d4ed8",
+      "--hv-glas": "#fefcfacc",
+      "--hv-glas-rand": "#17212b1f",
+      "--hv-aan": "#4f3f03",
+      "--hv-aan-zacht": "#fbf2b0",
+      "--hv-aan-vlak": "#fad414",
+      "--hv-op-aan": "#17212b",
+      "--hv-warm": "#9d2c55",
+      "--hv-warm-zacht": "#fde4ec",
+      "--hv-koud": "#0b6482",
+      "--hv-koud-zacht": "#d9f1f8",
+      "--hv-zon": "#4a6600",
+      "--hv-zon-zacht": "#ecf6c7",
+      "--hv-net-in": "#475569",
+      "--hv-net-in-zacht": "#e6eaef",
+      "--hv-net-uit": "#5b3fc4",
+      "--hv-net-uit-zacht": "#ebe5fb",
+      "--hv-batterij": "#0d635d",
+      "--hv-batterij-zacht": "#d5f2ee",
+      "--hv-auto": "#9a1aa6",
+      "--hv-auto-zacht": "#f8e3fb",
+      "--hv-arcering": "#5f6975",
+      "--hv-warmte-1": "#edeef0",
+      "--hv-warmte-2": "#d7dade",
+      "--hv-warmte-3": "#c0c5cc",
+      "--hv-warmte-4": "#aab1ba",
+      "--hv-warmte-5": "#949ca8",
+      "--hv-omtrek": "#5f6873",
+      "--hv-op-toon": "#ffffff",
+      "--hv-glas-grens": "#cbcac8",
+      "--hv-hemel-nacht-boven": "#c7cfea",
+      "--hv-hemel-nacht-onder": "#dde0f1",
+      "--hv-hemel-nacht-gloed": "#e9e6f5",
+      "--hv-hemel-dageraad-boven": "#cad7f4",
+      "--hv-hemel-dageraad-onder": "#fbdecb",
+      "--hv-hemel-dageraad-gloed": "#ffeabd",
+      "--hv-hemel-dag-boven": "#bfddf7",
+      "--hv-hemel-dag-onder": "#e7f2fb",
+      "--hv-hemel-dag-gloed": "#fff4d2",
+      "--hv-hemel-schemer-boven": "#d4d0f1",
+      "--hv-hemel-schemer-onder": "#f9d7cd",
+      "--hv-hemel-schemer-gloed": "#ffdeb4",
+      "--hv-hemel-grens": "#bfcfb4"
+    },
+    "donker": {
+      "--bg": "#202021",
+      "--panel": "#2d2f31",
+      "--surface": "#3a3c3f",
+      "--surface2": "#494c4f",
+      "--line": "#60605f",
+      "--text": "#f3f6f8",
+      "--muted": "#c3cbd5",
+      "--faint": "#a3aeb9",
+      "--accent": "#fdba74",
+      "--accentText": "#10161c",
+      "--accent-soft": "#4c443b",
+      "--ok": "#86efac",
+      "--ok-zacht": "#14381f",
+      "--ok-vlak": "#4ade80",
+      "--warn": "#fcd34d",
+      "--warn-zacht": "#3d2a08",
+      "--warn-vlak": "#fbbf24",
+      "--fout": "#fecaca",
+      "--fout-zacht": "#4a1a1a",
+      "--fout-vlak": "#fca5a5",
+      "--info": "#a5c8ff",
+      "--info-zacht": "#172554",
+      "--info-vlak": "#93c5fd",
+      "--text-on-vlak": "#10161c",
+      "--text-on-licht": "#17212b",
+      "--text-on-donker": "#f3f6f8",
+      "--papier": "#ffffff",
+      "--papier-zacht": "#e5e7eb",
+      "--focus": "#93c5fd",
+      "--hv-glas": "#2d2f31d6",
+      "--hv-glas-rand": "#f3f6f824",
+      "--hv-aan": "#fcf66a",
+      "--hv-aan-zacht": "#3a3506",
+      "--hv-aan-vlak": "#fefba0",
+      "--hv-op-aan": "#17212b",
+      "--hv-warm": "#feb4cb",
+      "--hv-warm-zacht": "#45182a",
+      "--hv-koud": "#7dd3ee",
+      "--hv-koud-zacht": "#0f3442",
+      "--hv-zon": "#bef264",
+      "--hv-zon-zacht": "#2a3a0a",
+      "--hv-net-in": "#cbd5e1",
+      "--hv-net-in-zacht": "#2b3441",
+      "--hv-net-uit": "#cfc2fe",
+      "--hv-net-uit-zacht": "#2c2350",
+      "--hv-batterij": "#5eead4",
+      "--hv-batterij-zacht": "#0f3a36",
+      "--hv-auto": "#f0abfc",
+      "--hv-auto-zacht": "#401646",
+      "--hv-arcering": "#a1acb7",
+      "--hv-warmte-1": "#23272d",
+      "--hv-warmte-2": "#31363c",
+      "--hv-warmte-3": "#40454c",
+      "--hv-warmte-4": "#4f545c",
+      "--hv-warmte-5": "#5d646b",
+      "--hv-omtrek": "#a3aeb9",
+      "--hv-op-toon": "#10161c",
+      "--hv-glas-grens": "#4f5052",
+      "--hv-hemel-nacht-boven": "#0b1026",
+      "--hv-hemel-nacht-onder": "#1a2040",
+      "--hv-hemel-nacht-gloed": "#2a2e58",
+      "--hv-hemel-dageraad-boven": "#1f2a4d",
+      "--hv-hemel-dageraad-onder": "#55313f",
+      "--hv-hemel-dageraad-gloed": "#6b3f29",
+      "--hv-hemel-dag-boven": "#153c66",
+      "--hv-hemel-dag-onder": "#234b73",
+      "--hv-hemel-dag-gloed": "#33506b",
+      "--hv-hemel-schemer-boven": "#241d4a",
+      "--hv-hemel-schemer-onder": "#552c46",
+      "--hv-hemel-schemer-gloed": "#6d3d2c",
+      "--hv-hemel-grens": "#33506b"
+    },
+    "inkt": {
+      "--bg": "#ffffff",
+      "--panel": "#ffffff",
+      "--surface": "#ffffff",
+      "--surface2": "#ffffff",
+      "--line": "#000000",
+      "--text": "#000000",
+      "--muted": "#000000",
+      "--faint": "#000000",
+      "--accent": "#000000",
+      "--accentText": "#ffffff",
+      "--accent-soft": "#ffffff",
+      "--ok": "#000000",
+      "--ok-zacht": "#ffffff",
+      "--ok-vlak": "#000000",
+      "--warn": "#000000",
+      "--warn-zacht": "#ffffff",
+      "--warn-vlak": "#000000",
+      "--fout": "#000000",
+      "--fout-zacht": "#ffffff",
+      "--fout-vlak": "#000000",
+      "--info": "#000000",
+      "--info-zacht": "#ffffff",
+      "--info-vlak": "#000000",
+      "--text-on-vlak": "#ffffff",
+      "--text-on-licht": "#000000",
+      "--text-on-donker": "#ffffff",
+      "--papier": "#ffffff",
+      "--papier-zacht": "#ffffff",
+      "--focus": "#000000",
+      "--hv-glas": "#ffffff",
+      "--hv-glas-rand": "#000000",
+      "--hv-aan": "#000000",
+      "--hv-aan-zacht": "#ffffff",
+      "--hv-aan-vlak": "#000000",
+      "--hv-op-aan": "#ffffff",
+      "--hv-warm": "#000000",
+      "--hv-warm-zacht": "#ffffff",
+      "--hv-koud": "#000000",
+      "--hv-koud-zacht": "#ffffff",
+      "--hv-zon": "#000000",
+      "--hv-zon-zacht": "#ffffff",
+      "--hv-net-in": "#000000",
+      "--hv-net-in-zacht": "#ffffff",
+      "--hv-net-uit": "#000000",
+      "--hv-net-uit-zacht": "#ffffff",
+      "--hv-batterij": "#000000",
+      "--hv-batterij-zacht": "#ffffff",
+      "--hv-auto": "#000000",
+      "--hv-auto-zacht": "#ffffff",
+      "--hv-arcering": "#000000",
+      "--hv-warmte-1": "#ffffff",
+      "--hv-warmte-2": "#ffffff",
+      "--hv-warmte-3": "#ffffff",
+      "--hv-warmte-4": "#ffffff",
+      "--hv-warmte-5": "#ffffff",
+      "--hv-omtrek": "#000000",
+      "--hv-op-toon": "#ffffff",
+      "--hv-glas-grens": "#ffffff",
+      "--hv-hemel-nacht-boven": "#ffffff",
+      "--hv-hemel-nacht-onder": "#ffffff",
+      "--hv-hemel-nacht-gloed": "#ffffff",
+      "--hv-hemel-dageraad-boven": "#ffffff",
+      "--hv-hemel-dageraad-onder": "#ffffff",
+      "--hv-hemel-dageraad-gloed": "#ffffff",
+      "--hv-hemel-dag-boven": "#ffffff",
+      "--hv-hemel-dag-onder": "#ffffff",
+      "--hv-hemel-dag-gloed": "#ffffff",
+      "--hv-hemel-schemer-boven": "#ffffff",
+      "--hv-hemel-schemer-onder": "#ffffff",
+      "--hv-hemel-schemer-gloed": "#ffffff",
+      "--hv-hemel-grens": "#ffffff"
+    }
+  },
+  "hemel": {
+    "licht": {
+      "nacht": {
+        "boven": "#c7cfea",
+        "onder": "#dde0f1",
+        "gloed": "#e9e6f5"
+      },
+      "dageraad": {
+        "boven": "#cad7f4",
+        "onder": "#fbdecb",
+        "gloed": "#ffeabd"
+      },
+      "dag": {
+        "boven": "#bfddf7",
+        "onder": "#e7f2fb",
+        "gloed": "#fff4d2"
+      },
+      "schemer": {
+        "boven": "#d4d0f1",
+        "onder": "#f9d7cd",
+        "gloed": "#ffdeb4"
+      }
+    },
+    "donker": {
+      "nacht": {
+        "boven": "#0b1026",
+        "onder": "#1a2040",
+        "gloed": "#2a2e58"
+      },
+      "dageraad": {
+        "boven": "#1f2a4d",
+        "onder": "#55313f",
+        "gloed": "#6b3f29"
+      },
+      "dag": {
+        "boven": "#153c66",
+        "onder": "#234b73",
+        "gloed": "#33506b"
+      },
+      "schemer": {
+        "boven": "#241d4a",
+        "onder": "#552c46",
+        "gloed": "#6d3d2c"
+      }
+    }
+  },
+  "paren": [
+    {
+      "voor": "--text",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "текст на полотні"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "приглушений текст на полотні"
+    },
+    {
+      "voor": "--faint",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "службовий текст на полотні"
+    },
+    {
+      "voor": "--accent",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "акцент на полотні"
+    },
+    {
+      "voor": "--ok",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон стану `--ok` на полотні"
+    },
+    {
+      "voor": "--ok-vlak",
+      "achter": "--bg",
+      "min": 3,
+      "waar": "межа й іконка `--ok-vlak` на полотні"
+    },
+    {
+      "voor": "--warn",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон стану `--warn` на полотні"
+    },
+    {
+      "voor": "--warn-vlak",
+      "achter": "--bg",
+      "min": 3,
+      "waar": "межа й іконка `--warn-vlak` на полотні"
+    },
+    {
+      "voor": "--fout",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон стану `--fout` на полотні"
+    },
+    {
+      "voor": "--fout-vlak",
+      "achter": "--bg",
+      "min": 3,
+      "waar": "межа й іконка `--fout-vlak` на полотні"
+    },
+    {
+      "voor": "--info",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон стану `--info` на полотні"
+    },
+    {
+      "voor": "--info-vlak",
+      "achter": "--bg",
+      "min": 3,
+      "waar": "межа й іконка `--info-vlak` на полотні"
+    },
+    {
+      "voor": "--focus",
+      "achter": "--bg",
+      "min": 3,
+      "waar": "кільце фокуса на полотні"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--bg",
+      "min": 3,
+      "waar": "контур-стан і межа елемента на полотні"
+    },
+    {
+      "voor": "--hv-arcering",
+      "achter": "--bg",
+      "min": 3,
+      "waar": "штрих застарілого на полотні"
+    },
+    {
+      "voor": "--text",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "текст на папері (картка)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "приглушений текст на папері (картка)"
+    },
+    {
+      "voor": "--faint",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "службовий текст на папері (картка)"
+    },
+    {
+      "voor": "--accent",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "акцент на папері (картка)"
+    },
+    {
+      "voor": "--ok",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон стану `--ok` на папері (картка)"
+    },
+    {
+      "voor": "--ok-vlak",
+      "achter": "--panel",
+      "min": 3,
+      "waar": "межа й іконка `--ok-vlak` на папері (картка)"
+    },
+    {
+      "voor": "--warn",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон стану `--warn` на папері (картка)"
+    },
+    {
+      "voor": "--warn-vlak",
+      "achter": "--panel",
+      "min": 3,
+      "waar": "межа й іконка `--warn-vlak` на папері (картка)"
+    },
+    {
+      "voor": "--fout",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон стану `--fout` на папері (картка)"
+    },
+    {
+      "voor": "--fout-vlak",
+      "achter": "--panel",
+      "min": 3,
+      "waar": "межа й іконка `--fout-vlak` на папері (картка)"
+    },
+    {
+      "voor": "--info",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон стану `--info` на папері (картка)"
+    },
+    {
+      "voor": "--info-vlak",
+      "achter": "--panel",
+      "min": 3,
+      "waar": "межа й іконка `--info-vlak` на папері (картка)"
+    },
+    {
+      "voor": "--focus",
+      "achter": "--panel",
+      "min": 3,
+      "waar": "кільце фокуса на папері (картка)"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--panel",
+      "min": 3,
+      "waar": "контур-стан і межа елемента на папері (картка)"
+    },
+    {
+      "voor": "--hv-arcering",
+      "achter": "--panel",
+      "min": 3,
+      "waar": "штрих застарілого на папері (картка)"
+    },
+    {
+      "voor": "--text",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "текст на колодязі"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "приглушений текст на колодязі"
+    },
+    {
+      "voor": "--faint",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "службовий текст на колодязі"
+    },
+    {
+      "voor": "--accent",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "акцент на колодязі"
+    },
+    {
+      "voor": "--ok",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон стану `--ok` на колодязі"
+    },
+    {
+      "voor": "--ok-vlak",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "межа й іконка `--ok-vlak` на колодязі"
+    },
+    {
+      "voor": "--warn",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон стану `--warn` на колодязі"
+    },
+    {
+      "voor": "--warn-vlak",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "межа й іконка `--warn-vlak` на колодязі"
+    },
+    {
+      "voor": "--fout",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон стану `--fout` на колодязі"
+    },
+    {
+      "voor": "--fout-vlak",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "межа й іконка `--fout-vlak` на колодязі"
+    },
+    {
+      "voor": "--info",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон стану `--info` на колодязі"
+    },
+    {
+      "voor": "--info-vlak",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "межа й іконка `--info-vlak` на колодязі"
+    },
+    {
+      "voor": "--focus",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "кільце фокуса на колодязі"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "контур-стан і межа елемента на колодязі"
+    },
+    {
+      "voor": "--hv-arcering",
+      "achter": "--surface",
+      "min": 3,
+      "waar": "штрих застарілого на колодязі"
+    },
+    {
+      "voor": "--text",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "текст на натиснутому й вибраному"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "приглушений текст на натиснутому й вибраному"
+    },
+    {
+      "voor": "--faint",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "службовий текст на натиснутому й вибраному"
+    },
+    {
+      "voor": "--accent",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "акцент на натиснутому й вибраному"
+    },
+    {
+      "voor": "--ok",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон стану `--ok` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--ok-vlak",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "межа й іконка `--ok-vlak` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--warn",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон стану `--warn` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--warn-vlak",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "межа й іконка `--warn-vlak` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--fout",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон стану `--fout` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--fout-vlak",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "межа й іконка `--fout-vlak` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--info",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон стану `--info` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--info-vlak",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "межа й іконка `--info-vlak` на натиснутому й вибраному"
+    },
+    {
+      "voor": "--focus",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "кільце фокуса на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "контур-стан і межа елемента на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-arcering",
+      "achter": "--surface2",
+      "min": 3,
+      "waar": "штрих застарілого на натиснутому й вибраному"
+    },
+    {
+      "voor": "--accentText",
+      "achter": "--accent",
+      "min": 4.5,
+      "waar": "текст основної кнопки"
+    },
+    {
+      "voor": "--accent",
+      "achter": "--accent-soft",
+      "min": 4.5,
+      "waar": "активний розділ на м'якій підкладці акценту"
+    },
+    {
+      "voor": "--text",
+      "achter": "--accent-soft",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці акценту"
+    },
+    {
+      "voor": "--ok",
+      "achter": "--ok-zacht",
+      "min": 4.5,
+      "waar": "тон `--ok` на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--ok-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці `--ok-zacht`"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--ok-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці `--ok-zacht`"
+    },
+    {
+      "voor": "--text-on-vlak",
+      "achter": "--ok-vlak",
+      "min": 4.5,
+      "waar": "текст на суцільній заливці `--ok-vlak`"
+    },
+    {
+      "voor": "--warn",
+      "achter": "--warn-zacht",
+      "min": 4.5,
+      "waar": "тон `--warn` на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--warn-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці `--warn-zacht`"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--warn-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці `--warn-zacht`"
+    },
+    {
+      "voor": "--text-on-vlak",
+      "achter": "--warn-vlak",
+      "min": 4.5,
+      "waar": "текст на суцільній заливці `--warn-vlak`"
+    },
+    {
+      "voor": "--fout",
+      "achter": "--fout-zacht",
+      "min": 4.5,
+      "waar": "тон `--fout` на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--fout-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці `--fout-zacht`"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--fout-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці `--fout-zacht`"
+    },
+    {
+      "voor": "--text-on-vlak",
+      "achter": "--fout-vlak",
+      "min": 4.5,
+      "waar": "текст на суцільній заливці `--fout-vlak`"
+    },
+    {
+      "voor": "--info",
+      "achter": "--info-zacht",
+      "min": 4.5,
+      "waar": "тон `--info` на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--info-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці `--info-zacht`"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--info-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці `--info-zacht`"
+    },
+    {
+      "voor": "--text-on-vlak",
+      "achter": "--info-vlak",
+      "min": 4.5,
+      "waar": "текст на суцільній заливці `--info-vlak`"
+    },
+    {
+      "voor": "--hv-aan",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «увімкнено» на полотні"
+    },
+    {
+      "voor": "--hv-aan",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «увімкнено» на папері (картка)"
+    },
+    {
+      "voor": "--hv-aan",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «увімкнено» на колодязі"
+    },
+    {
+      "voor": "--hv-aan",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «увімкнено» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-aan",
+      "achter": "--hv-aan-zacht",
+      "min": 4.5,
+      "waar": "тон «увімкнено» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-aan-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «увімкнено»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-aan-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «увімкнено»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-aan-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «увімкнено»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-aan",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «увімкнено»"
+    },
+    {
+      "voor": "--hv-warm",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «гріє» на полотні"
+    },
+    {
+      "voor": "--hv-warm",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «гріє» на папері (картка)"
+    },
+    {
+      "voor": "--hv-warm",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «гріє» на колодязі"
+    },
+    {
+      "voor": "--hv-warm",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «гріє» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-warm",
+      "achter": "--hv-warm-zacht",
+      "min": 4.5,
+      "waar": "тон «гріє» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-warm-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «гріє»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-warm-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «гріє»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-warm-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «гріє»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-warm",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «гріє»"
+    },
+    {
+      "voor": "--hv-koud",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «охолоджує» на полотні"
+    },
+    {
+      "voor": "--hv-koud",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «охолоджує» на папері (картка)"
+    },
+    {
+      "voor": "--hv-koud",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «охолоджує» на колодязі"
+    },
+    {
+      "voor": "--hv-koud",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «охолоджує» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-koud",
+      "achter": "--hv-koud-zacht",
+      "min": 4.5,
+      "waar": "тон «охолоджує» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-koud-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «охолоджує»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-koud-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «охолоджує»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-koud-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «охолоджує»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-koud",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «охолоджує»"
+    },
+    {
+      "voor": "--hv-zon",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «сонце» на полотні"
+    },
+    {
+      "voor": "--hv-zon",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «сонце» на папері (картка)"
+    },
+    {
+      "voor": "--hv-zon",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «сонце» на колодязі"
+    },
+    {
+      "voor": "--hv-zon",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «сонце» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-zon",
+      "achter": "--hv-zon-zacht",
+      "min": 4.5,
+      "waar": "тон «сонце» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-zon-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «сонце»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-zon-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «сонце»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-zon-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «сонце»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-zon",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «сонце»"
+    },
+    {
+      "voor": "--hv-net-in",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «імпорт із мережі» на полотні"
+    },
+    {
+      "voor": "--hv-net-in",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «імпорт із мережі» на папері (картка)"
+    },
+    {
+      "voor": "--hv-net-in",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «імпорт із мережі» на колодязі"
+    },
+    {
+      "voor": "--hv-net-in",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «імпорт із мережі» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-net-in",
+      "achter": "--hv-net-in-zacht",
+      "min": 4.5,
+      "waar": "тон «імпорт із мережі» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-net-in-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «імпорт із мережі»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-net-in-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «імпорт із мережі»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-net-in-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «імпорт із мережі»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-net-in",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «імпорт із мережі»"
+    },
+    {
+      "voor": "--hv-net-uit",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «експорт у мережу» на полотні"
+    },
+    {
+      "voor": "--hv-net-uit",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «експорт у мережу» на папері (картка)"
+    },
+    {
+      "voor": "--hv-net-uit",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «експорт у мережу» на колодязі"
+    },
+    {
+      "voor": "--hv-net-uit",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «експорт у мережу» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-net-uit",
+      "achter": "--hv-net-uit-zacht",
+      "min": 4.5,
+      "waar": "тон «експорт у мережу» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-net-uit-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «експорт у мережу»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-net-uit-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «експорт у мережу»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-net-uit-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «експорт у мережу»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-net-uit",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «експорт у мережу»"
+    },
+    {
+      "voor": "--hv-batterij",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «батарея» на полотні"
+    },
+    {
+      "voor": "--hv-batterij",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «батарея» на папері (картка)"
+    },
+    {
+      "voor": "--hv-batterij",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «батарея» на колодязі"
+    },
+    {
+      "voor": "--hv-batterij",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «батарея» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-batterij",
+      "achter": "--hv-batterij-zacht",
+      "min": 4.5,
+      "waar": "тон «батарея» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-batterij-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «батарея»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-batterij-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «батарея»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-batterij-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «батарея»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-batterij",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «батарея»"
+    },
+    {
+      "voor": "--hv-auto",
+      "achter": "--bg",
+      "min": 4.5,
+      "waar": "тон «зарядка авто» на полотні"
+    },
+    {
+      "voor": "--hv-auto",
+      "achter": "--panel",
+      "min": 4.5,
+      "waar": "тон «зарядка авто» на папері (картка)"
+    },
+    {
+      "voor": "--hv-auto",
+      "achter": "--surface",
+      "min": 4.5,
+      "waar": "тон «зарядка авто» на колодязі"
+    },
+    {
+      "voor": "--hv-auto",
+      "achter": "--surface2",
+      "min": 4.5,
+      "waar": "тон «зарядка авто» на натиснутому й вибраному"
+    },
+    {
+      "voor": "--hv-auto",
+      "achter": "--hv-auto-zacht",
+      "min": 4.5,
+      "waar": "тон «зарядка авто» на власній м'якій підкладці"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-auto-zacht",
+      "min": 4.5,
+      "waar": "текст на м'якій підкладці «зарядка авто»"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-auto-zacht",
+      "min": 4.5,
+      "waar": "приглушений текст на м'якій підкладці «зарядка авто»"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-auto-zacht",
+      "min": 3,
+      "waar": "межа доріжки на м'якій підкладці «зарядка авто»"
+    },
+    {
+      "voor": "--hv-op-toon",
+      "achter": "--hv-auto",
+      "min": 4.5,
+      "waar": "іконка в знаку, залитому тоном «зарядка авто»"
+    },
+    {
+      "voor": "--hv-op-aan",
+      "achter": "--hv-aan-vlak",
+      "min": 4.5,
+      "waar": "іконка й текст на заливці «увімкнено»"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-warmte-1",
+      "min": 4.5,
+      "waar": "число в клітинці теплокарти, щабель 1"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-warmte-2",
+      "min": 4.5,
+      "waar": "число в клітинці теплокарти, щабель 2"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-warmte-3",
+      "min": 4.5,
+      "waar": "число в клітинці теплокарти, щабель 3"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-warmte-4",
+      "min": 4.5,
+      "waar": "число в клітинці теплокарти, щабель 4"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-warmte-5",
+      "min": 4.5,
+      "waar": "число в клітинці теплокарти, щабель 5"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-nacht-boven",
+      "min": 7,
+      "waar": "речення дому на небі: ніч, верх"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-nacht-boven",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: ніч, верх"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-nacht-onder",
+      "min": 7,
+      "waar": "речення дому на небі: ніч, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-nacht-onder",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: ніч, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-nacht-gloed",
+      "min": 7,
+      "waar": "речення дому на небі: ніч, сяйво"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-nacht-gloed",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: ніч, сяйво"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-dageraad-boven",
+      "min": 7,
+      "waar": "речення дому на небі: світанок, верх"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-dageraad-boven",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: світанок, верх"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-dageraad-onder",
+      "min": 7,
+      "waar": "речення дому на небі: світанок, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-dageraad-onder",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: світанок, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-dageraad-gloed",
+      "min": 7,
+      "waar": "речення дому на небі: світанок, сяйво"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-dageraad-gloed",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: світанок, сяйво"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-dag-boven",
+      "min": 7,
+      "waar": "речення дому на небі: день, верх"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-dag-boven",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: день, верх"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-dag-onder",
+      "min": 7,
+      "waar": "речення дому на небі: день, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-dag-onder",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: день, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-dag-gloed",
+      "min": 7,
+      "waar": "речення дому на небі: день, сяйво"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-dag-gloed",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: день, сяйво"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-schemer-boven",
+      "min": 7,
+      "waar": "речення дому на небі: сутінки, верх"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-schemer-boven",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: сутінки, верх"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-schemer-onder",
+      "min": 7,
+      "waar": "речення дому на небі: сутінки, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-schemer-onder",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: сутінки, низ (і смуга стрічки доби)"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-schemer-gloed",
+      "min": 7,
+      "waar": "речення дому на небі: сутінки, сяйво"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-schemer-gloed",
+      "min": 4.5,
+      "waar": "приглушений текст на небі: сутінки, сяйво"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-hemel-grens",
+      "min": 7,
+      "waar": "речення дому на найгіршій суміші неба (фази, хмарність, режим дому)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-grens",
+      "min": 4.5,
+      "waar": "приглушений текст на найгіршій суміші неба"
+    },
+    {
+      "voor": "--accent",
+      "achter": "--hv-hemel-grens",
+      "min": 3,
+      "waar": "підкреслення посилання в реченні й позначка «зараз» на небі"
+    },
+    {
+      "voor": "--focus",
+      "achter": "--hv-hemel-grens",
+      "min": 3,
+      "waar": "кільце фокуса на небі"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-hemel-grens",
+      "min": 3,
+      "waar": "лінії розрізу дому на небі"
+    },
+    {
+      "voor": "--hv-arcering",
+      "achter": "--hv-hemel-grens",
+      "min": 3,
+      "waar": "штрих неспостереженої кімнати в розрізі на небі"
+    },
+    {
+      "voor": "--hv-aan",
+      "achter": "--hv-hemel-grens",
+      "min": 3,
+      "waar": "контур освітленого вікна в розрізі на небі"
+    },
+    {
+      "voor": "--text",
+      "achter": "--hv-glas-grens",
+      "min": 4.5,
+      "waar": "текст на склі в найгіршому випадку (під склом чорне або біле)"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-glas-grens",
+      "min": 4.5,
+      "waar": "приглушений текст на склі в найгіршому випадку"
+    },
+    {
+      "voor": "--accent",
+      "achter": "--hv-glas-grens",
+      "min": 3,
+      "waar": "позначка активного розділу на склі"
+    },
+    {
+      "voor": "--focus",
+      "achter": "--hv-glas-grens",
+      "min": 3,
+      "waar": "кільце фокуса на склі"
+    },
+    {
+      "voor": "--hv-omtrek",
+      "achter": "--hv-glas-grens",
+      "min": 3,
+      "waar": "межа елемента на склі"
+    }
+  ],
+  "maten": {
+    "alle": {
+      "--hv-glas-waas": "20px",
+      "--hv-glas-verzadiging": "1.4",
+      "--hv-straal-plan": "2px",
+      "--hv-straal-rail": "6px",
+      "--hv-icoon-s": "16px",
+      "--hv-icoon-m": "20px",
+      "--hv-icoon-l": "24px",
+      "--hv-icoon-xl": "32px",
+      "--hv-icoon-streep": "2",
+      "--hv-teken": "40px",
+      "--hv-streep": "1.5px",
+      "--hv-zin": "clamp(24px, 3vw, 44px)",
+      "--hv-getal-xl": "64px",
+      "--hv-getal-l": "40px",
+      "--hv-getal-m": "28px",
+      "--hv-getal-tv": "96px",
+      "--hv-held-max": "25svh",
+      "--hv-duur-1": "120ms",
+      "--hv-duur-2": "200ms",
+      "--hv-duur-3": "280ms",
+      "--hv-duur-4": "480ms",
+      "--hv-duur-houd": "1200ms",
+      "--hv-duur-hemel": "60s",
+      "--hv-kromme-in": "cubic-bezier(.2,.8,.2,1)",
+      "--hv-kromme-uit": "cubic-bezier(.4,0,1,1)",
+      "--hv-z-glas": "20",
+      "--hv-z-laag": "230",
+      "--hv-z-toost": "240",
+      "--hv-z-nood": "250"
+    },
+    "dichtheid": {
+      "compact": {
+        "--hv-rij": "56px",
+        "--hv-tik": "44px",
+        "--hv-kier": "8px"
+      },
+      "normaal": {
+        "--hv-rij": "64px",
+        "--hv-tik": "44px",
+        "--hv-kier": "12px"
+      },
+      "ruim": {
+        "--hv-rij": "80px",
+        "--hv-tik": "56px",
+        "--hv-kier": "16px",
+        "--hv-teken": "48px"
+      }
+    },
+    "thema": {
+      "licht": {
+        "--schaduw-1": "0 1px 2px rgba(15,23,42,.08), 0 1px 1px rgba(15,23,42,.04)",
+        "--schaduw-2": "0 8px 24px rgba(15,23,42,.12)",
+        "--schaduw-3": "0 24px 70px rgba(15,23,42,.28)",
+        "--overlay": "rgba(10,14,20,.55)",
+        "--hv-glas-filter": "blur(20px) saturate(1.4)"
+      },
+      "donker": {
+        "--schaduw-1": "0 1px 2px rgba(0,0,0,.35), 0 1px 1px rgba(0,0,0,.2)",
+        "--schaduw-2": "0 8px 24px rgba(0,0,0,.4)",
+        "--schaduw-3": "0 24px 70px rgba(0,0,0,.6)",
+        "--overlay": "rgba(0,0,0,.66)",
+        "--hv-glas-filter": "blur(20px) saturate(1.4)"
+      },
+      "inkt": {
+        "--schaduw-1": "none",
+        "--schaduw-2": "none",
+        "--schaduw-3": "none",
+        "--overlay": "#ffffff",
+        "--hv-glas-filter": "none",
+        "--hv-icoon-streep": "2.5",
+        "--hv-duur-1": "0ms",
+        "--hv-duur-2": "0ms",
+        "--hv-duur-3": "0ms",
+        "--hv-duur-4": "0ms",
+        "--hv-duur-hemel": "0s"
+      }
+    },
+    "hemel": {
+      "bewolkingMax": 0.4,
+      "mist": 0.6,
+      "afwezig": 0.55,
+      "mengselMax": 0.75,
+      "nachtstandDonker": 0.35,
+      "gloed": "radial-gradient(120% 80% at 78% 100%, var(--hv-hemel-gloed) 0%, transparent 60%)",
+      "verloop": "linear-gradient(180deg, var(--hv-hemel-boven) 0%, var(--hv-hemel-onder) 100%)",
+      "zonNacht": -6,
+      "zonDag": 6
+    },
+    "profielen": [
+      {
+        "id": "horloge",
+        "beeld": [
+          [
+            200,
+            200
+          ],
+          [
+            400,
+            400
+          ]
+        ],
+        "kolommen": 1
+      },
+      {
+        "id": "telefoon",
+        "beeld": [
+          [
+            390,
+            844
+          ],
+          [
+            320,
+            568
+          ]
+        ],
+        "kolommen": 4
+      },
+      {
+        "id": "wand",
+        "beeld": [
+          [
+            768,
+            1024
+          ]
+        ],
+        "kolommen": 8,
+        "dichtheid": "ruim"
+      },
+      {
+        "id": "bureau",
+        "beeld": [
+          [
+            1280,
+            800
+          ]
+        ],
+        "kolommen": 12
+      },
+      {
+        "id": "breed",
+        "beeld": [
+          [
+            1920,
+            1080
+          ]
+        ],
+        "kolommen": 16
+      },
+      {
+        "id": "ultrabreed",
+        "beeld": [
+          [
+            2560,
+            1080
+          ]
+        ],
+        "kolommen": 12,
+        "zones": 3
+      },
+      {
+        "id": "tv",
+        "beeld": [
+          [
+            1920,
+            1080
+          ]
+        ],
+        "kolommen": 8,
+        "schaal": 1.5,
+        "dichtheid": "ruim"
+      },
+      {
+        "id": "strook",
+        "beeld": [
+          [
+            1920,
+            480
+          ],
+          [
+            1280,
+            400
+          ]
+        ],
+        "kolommen": 16,
+        "rijen": 4
+      },
+      {
+        "id": "vierkant",
+        "beeld": [
+          [
+            720,
+            720
+          ],
+          [
+            480,
+            480
+          ]
+        ],
+        "kolommen": 1
+      },
+      {
+        "id": "rond",
+        "beeld": [
+          [
+            480,
+            480
+          ]
+        ],
+        "kolommen": 1,
+        "inhoudCirkel": 0.76
+      },
+      {
+        "id": "klein",
+        "beeld": [
+          [
+            800,
+            480
+          ]
+        ],
+        "kolommen": 4
+      },
+      {
+        "id": "deur",
+        "beeld": [
+          [
+            480,
+            800
+          ]
+        ],
+        "kolommen": 4,
+        "dichtheid": "ruim"
+      },
+      {
+        "id": "inkt",
+        "beeld": [
+          [
+            800,
+            480
+          ]
+        ],
+        "kolommen": 4,
+        "thema": "inkt"
+      }
+    ]
+  }
+}
