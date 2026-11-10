@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "HUIS-001",
+  "agent": "claude",
+  "tak": "feature/huis-001-20261110-072933",
+  "basisCommit": "b9482efafbcf9c4cea9197e8094045ccf6aa19ed",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-10T07:30:10.887Z",
+  "bijgewerkt": "2026-11-10T07:30:10.887Z",
+  "omschrijving": "Розумний будинок huis.tarasevych.com, етап 0: дизайн «Живий дім / Levend huis» (специфікація двома мовами, клікабельний макет на вбудованому симуляторі) і виправлення старих помилок розділу «Дім»; без нового функціоналу в коді сайту",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
