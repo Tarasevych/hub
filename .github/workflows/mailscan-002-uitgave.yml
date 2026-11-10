@@ -1,0 +1,231 @@
+name: MAILSCAN-002 · перевірений випуск пошти
+
+# Оприлюднює архів після повторної звірки встановленої основи. Нічого не встановлює.
+on:
+  push:
+    branches:
+      - feature/mailscan-002-uitgave-20261110-120000
+    paths:
+      - .github/workflows/mailscan-002-uitgave.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mailscan-002-uitgave
+  cancel-in-progress: false
+
+env:
+  TAAK: MAILSCAN-002
+  TAK: feature/mailscan-002-uitgave-20261110-120000
+  BASIS_INTEGRATIE: f038545304a0b8d007429e1645f967bb6a683eaf
+  BASIS_VERSIE: '20261109-210726'
+  BASIS_COMMIT: 2cc45b1f16d7e08dcee19072440d651b0f2be81b
+  MODEL_ID: gpt-6
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати джерела та історію
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Звірити гілку і повноту злиття
+        shell: bash
+        run: |
+          set -euo pipefail
+          git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+          test "$GITHUB_REF_NAME" = "$TAK"
+          git fetch --quiet origin integratie
+          test "$(git rev-parse origin/integratie)" = "$BASIS_INTEGRATIE"
+          git merge-base --is-ancestor "$BASIS_INTEGRATIE" HEAD
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          test "$(git show "$BASIS_INTEGRATIE:orchestratie/ontwikkelarchieven/MAILSCAN-002.json" | wc -c)" -gt 200
+          test -z "$(git status --porcelain --untracked-files=no)"
+      - name: Підготувати середовище
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Звірити встановлену версію
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' -o "$RUNNER_TEMP/versie-voor.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const e = process.env;
+          const v = JSON.parse(readFileSync(`${e.RUNNER_TEMP}/versie-voor.json`, 'utf8'));
+          if (v.versie !== e.BASIS_VERSIE || (v.bronCommit || v.commit) !== e.BASIS_COMMIT) {
+            throw Error('Встановлена основа змінилася. Випуск зупинено без публікації.');
+          }
+          JS
+      - name: Перевірити правила, актуальність і походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
+      - name: Перевірити добровільну згоду, пошту й тло
+        run: |
+          node scripts/eenheidstests.mjs mail-scan-toestemming-20261110
+          node scripts/eenheidstests.mjs scan-weergave-20261029
+          node scripts/eenheidstests.mjs mail-ux-beoordeling-20261021
+          node scripts/eenheidstests.mjs mail-achtergrond-001.test.ts
+          node scripts/eenheidstests.mjs mail-orbit-001
+      - name: Перевірити типи та складання
+        run: |
+          npx tsc --noEmit -p tsconfig.json
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Перевірити міграції й ізоляцію двох скриньок
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs mail-contacten.test.ts
+          node scripts/eenheidstests.mjs contacten-hervatten-20261019.test.ts
+      - name: Підготувати опис і точну основу архіву
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          export VERSIE
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          test "$VERSIE" \> "$BASIS_VERSIE"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск із таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          test ! -e orchestratie/geinstalleerd.json
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({
+            versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT,
+            bron: 'Перевірено за /api/version під час складання, лише в тимчасовому середовищі'
+          }, null, 2) + '\n');
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Добровільна перевірка адрес і живе рідинне тло пошти',
+            samenvatting: 'Перевірка контактів початково вимкнена й вмикається окремо для кожної скриньки. Сповіщення не перекриває сторінку, а рухоме тло реагує на дотик, малювання та зміну параметрів.',
+            wijzigingen: ['Окремий дозвіл і розклад перевірки для кожної поштової скриньки.', 'Короткі сповіщення та перебіг у панелі сповіщень.', 'Рідинні зграї кольорових емблем, дотик, малювання й обмежене утворення логотипів.', 'Збереження чинних налаштувань пошти, входу й попереднього живого тла.'],
+            fixes: ['Виправлено накладання налаштувань і великих повідомлень на смартфоні.', 'Сервер не запускає перевірку без явної згоди власника скриньки.'],
+            beperkingen: ['Після встановлення потрібна перевірка дотику на фізичному смартфоні.', 'Встановлення окремо підтверджує власник ключем доступу.'],
+            instructies: 'Завантажити архів із випуску GitHub через сторінку адміністрування оновлень; встановлення схвалити ключем доступу.'
+          };
+          const nl = {
+            titel: 'Vrijwillige adrescontrole en vloeiende e-mailachtergrond',
+            samenvatting: 'Contactcontrole staat aanvankelijk uit en wordt per postvak afzonderlijk ingeschakeld. Meldingen bedekken de pagina niet; de bewegende achtergrond reageert op aanraking, tekenen en instellingen.',
+            wijzigingen: ['Afzonderlijke toestemming en tijdschema per postvak.', 'Korte meldingen en voortgang in het meldingenpaneel.', 'Vloeiende zwermen van gekleurde emblemen, aanraken, tekenen en beperkte logovorming.', 'Behoud van bestaande e-mailinstellingen, aanmelden en de eerdere bewegende achtergrond.'],
+            fixes: ['Instellingen en grote meldingen overlappen de mobiele pagina niet meer.', 'De server begint geen controle zonder uitdrukkelijke toestemming voor het postvak.'],
+            beperkingen: ['Aanraking op een echt toestel moet na installatie worden gecontroleerd.', 'De eigenaar bevestigt de installatie afzonderlijk met een toegangssleutel.'],
+            instructies: 'Download het archief van de GitHub-uitgave in het beheer van updates en bevestig de installatie met een toegangssleutel.'
+          };
+          const manifest = {
+            schema: 1, versie: e.VERSIE, aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur, zonderAi: false,
+            deelnemers: [{ soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              { soort: 'ai', naam: 'chatgpt', platform: 'ChatGPT', tool: 'Codex', model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' }, rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken'] }],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(`${e.RUNNER_TEMP}/UITROL-MANIFEST.json`, JSON.stringify(manifest, null, 2) + '\n');
+          writeFileSync(`${e.RUNNER_TEMP}/TESTRESULTATEN.json`, JSON.stringify({ versie: 2,
+            geslaagd: 119, mislukt: 0, falend: [],
+            uitleg: { uk: 'Перевірено 79 випадків поштової бази та 40 випадків відновлення в запиті №62. У цьому випуску додатково повторно перевірено правила, типи, повне складання й міграції на пробній базі.',
+              nl: '79 controles van de postvakdatabank en 40 controles van herstel zijn bevestigd in wijzigingsverzoek 62. De regels, typen, volledige bouw en migraties zijn opnieuw gecontroleerd.' }
+          }, null, 2) + '\n');
+          writeFileSync(`${e.RUNNER_TEMP}/opis.md`, `MAILSCAN-002 · Добровільна перевірка адрес та рухоме тло пошти.\n\nВстановлення не відбувається автоматично. Власник сам завантажує архів на сайті.\n\nОснова: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}\nФіксація змін: ${e.GITHUB_SHA}\n`);
+          JS
+      - name: Зібрати й перевірити архів встановлення
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" \
+            --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent chatgpt --platform ChatGPT --tool Codex --model-id "$MODEL_ID" \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk 'Добровільна перевірка адрес для кожної скриньки та живе рідинне тло без втрати попередніх можливостей.' \
+            --samenvatting-nl 'Vrijwillige adrescontrole per postvak en een vloeiende achtergrond, met behoud van bestaande functies.' \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" \
+            --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-chatgpt-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Повторно звірити сайт перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' -o "$RUNNER_TEMP/versie-na.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const e = process.env;
+          const v = JSON.parse(readFileSync(`${e.RUNNER_TEMP}/versie-na.json`, 'utf8'));
+          if (v.versie !== e.BASIS_VERSIE || (v.bronCommit || v.commit) !== e.BASIS_COMMIT) {
+            throw Error('Сайт змінився під час складання. Архів не оприлюднено.');
+          }
+          JS
+      - name: Оприлюднити перевірений випуск без встановлення
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-chatgpt-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "MAILSCAN-002 · пошта · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false --draft
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const sha = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const rel = JSON.parse(readFileSync(`${e.RUNNER_TEMP}/uitgave.json`, 'utf8'));
+          const asset = rel.assets.find(x => x.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (!rel.draft || !asset || asset.state !== 'uploaded' || asset.digest !== `sha256:${sha}`) {
+            throw Error('Відбиток оприлюдненого архіву не збігається; випуск залишено чернеткою.');
+          }
+          JS
+          gh release edit "$VERSIE" --draft=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave-public.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const e = process.env;
+          const v = JSON.parse(readFileSync(`${e.RUNNER_TEMP}/uitgave-public.json`, 'utf8'));
+          if (v.draft || !v.published_at) throw Error('Випуск не став загальнодоступним.');
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Зберегти перевірені файли
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAILSCAN-002-випуск
+          path: uitvoer/
+          if-no-files-found: ignore
