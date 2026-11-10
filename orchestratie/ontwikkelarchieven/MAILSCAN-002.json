@@ -23,7 +23,8 @@
     { "volgorde": 4, "stap": "Велике вікно замінено двосекундним сповіщенням за особистим вибором. Хід зберігається в панелі сповіщень; за відсутності дозволу вікно не виникає.", "bewijzen": ["src/afzenders/ContactenScanMelding.tsx", "src/CanoniekMeldingencentrum.tsx", "src/afzenders/ScanPaneel.tsx"] },
     { "volgorde": 5, "stap": "Мобільні налаштування тла винесено поза обрізаний контейнер. Значки живуть у плинних зграях, реагують на пальці, постукування й письмові рухи; емблеми служб набувають форми ненадовго, щонайбільше раз на добу в одному переглядачі.", "bewijzen": ["src/mail/MailAchtergrond.tsx", "src/mail/mail-vloeistof.ts", "src/mail/mail-achtergrond.css"] },
     { "volgorde": 6, "stap": "Усунено обхід окремої згоди через старе автоматичне відновлення. Повторне повне обчислення спільних лічильників тимчасово заблоковано, доки не буде безпечного перерахунку без втрати інших скриньок.", "bewijzen": ["backend/mail-afzenders.ts", "src/afzenders/ScanPaneel.tsx"] },
-    { "volgorde": 7, "stap": "Оновлено одиничні перевірки на нове правило добровільної згоди, зокрема давні перевірки, що вимагали автоматичного запуску.", "bewijzen": ["tests/eenheid/mail-scan-toestemming-20261110.test.ts", "tests/eenheid/mail-contacten.test.ts", "tests/eenheid/contacten-hervatten-20261019.test.ts"] }
+    { "volgorde": 7, "stap": "Оновлено одиничні перевірки на нове правило добровільної згоди, зокрема давні перевірки, що вимагали автоматичного запуску.", "bewijzen": ["tests/eenheid/mail-scan-toestemming-20261110.test.ts", "tests/eenheid/mail-contacten.test.ts", "tests/eenheid/contacten-hervatten-20261019.test.ts"] },
+    { "volgorde": 8, "stap": "Підготовлено окрему перевірку в захищеному середовищі: двічі застосувати міграції, перевірити дві скриньки на пробній базі, відмалювати повну поштову сторінку на чотирьох ширинах, перевірити межі налаштувань та перемикач малювання. Знімки зберігаються для перегляду власником; встановлення заборонено.", "bewijzen": [".github/workflows/mailscan-002-controle.yml", "tests/visueel/mailscan-002-scherm.mjs"] }
   ],
   "keuzes": [
     { "keuze": "Без згоди немає запуску", "reden": "Правило діє на сервері, а не лише за виглядом кнопки; одна скринька не успадковує налаштувань іншої." },
@@ -38,12 +39,12 @@
     "src/mail/MailAchtergrond.tsx", "src/mail/mail-vloeistof.ts", "src/mail/mail-achtergrond.css",
     "tests/eenheid/mail-scan-toestemming-20261110.test.ts", "tests/eenheid/mail-contacten.test.ts", "tests/eenheid/contacten-hervatten-20261019.test.ts",
     "tests/eenheid/scan-weergave-20261029.test.ts", "tests/eenheid/mail-ux-beoordeling-20261021.test.ts",
-    "orchestratie/ontwikkelarchieven/MAILSCAN-002.json"
+    "orchestratie/ontwikkelarchieven/MAILSCAN-002.json", ".github/workflows/mailscan-002-controle.yml", "tests/visueel/mailscan-002-scherm.mjs"
   ],
   "controles": [
     { "status": "bevestigd", "resultaat": "Перевірка типів серверної частини та вибраних компонентів інтерфейсу завершилася успішно.", "bewijzen": ["backend/mail-afzenders.ts", "src/mail/MailAchtergrond.tsx"] },
     { "status": "bevestigd", "resultaat": "15 перевірок нової поведінки, 28 перевірок відновлення і 47 перевірок поштового вигляду пройдено.", "bewijzen": ["tests/eenheid/mail-scan-toestemming-20261110.test.ts", "tests/eenheid/scan-weergave-20261029.test.ts", "tests/eenheid/mail-ux-beoordeling-20261021.test.ts"] },
-    { "status": "gepland", "resultaat": "Потрібна перевірка реальної бази даних, повної мобільної сторінки та фізичних дотиків перед встановленням.", "bewijzen": ["tests/eenheid/mail-contacten.test.ts", "tests/eenheid/contacten-hervatten-20261019.test.ts"] }
+    { "status": "gepland", "resultaat": "Окрема автоматична перевірка має перевірити пробну базу даних, справжнє відмальовування сторінки та відкриття налаштувань на вузьких екранах. Фізичні дотики на пристрої власника лишаються окремою перевіркою.", "bewijzen": [".github/workflows/mailscan-002-controle.yml", "tests/visueel/mailscan-002-scherm.mjs"] }
   ],
   "beperkingen": [
     "Проміжки перевірки відлічуються, доки сторінку відкрито; окреме постійне серверне планування не додається без явної згоди.",
