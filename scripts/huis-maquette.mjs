@@ -93,7 +93,18 @@ export function pultCss(tokens) {
 
 export function bronnen() {
   const volgorde = leesJson(join(MAP, 'volgorde.json'));
-  const stijl = volgorde.stijl.map((naam) => ({ naam, pad: join(MAP, naam), inhoud: lees(join(MAP, naam)) }));
+  // «stijl/schermen/*»: власний CSS-файл кожного екрана; так автори екранів не правлять спільних файлів стилів.
+  const stijl = [];
+  for (const naam of volgorde.stijl) {
+    if (naam.endsWith('/*')) {
+      const map = naam.slice(0, -2);
+      if (!existsSync(join(MAP, map))) continue;
+      for (const f of readdirSync(join(MAP, map)).filter((x) => x.endsWith('.css')).sort()) {
+        const rel = `${map}/${f}`;
+        if (!volgorde.stijl.includes(rel)) stijl.push({ naam: rel, pad: join(MAP, rel), inhoud: lees(join(MAP, rel)) });
+      }
+    } else stijl.push({ naam, pad: join(MAP, naam), inhoud: lees(join(MAP, naam)) });
+  }
   const script = [];
   const gezien = new Set();
   for (const naam of volgorde.script) {
@@ -370,7 +381,7 @@ export function controleer() {
   }
 
   // 5. Volgorde: elk bestand bestaat, niets dubbel; de artefactvariant voldoet aan de vorm.
-  for (const naam of volgorde.stijl) if (!existsSync(join(MAP, naam))) meld(`volgorde.json: ${naam} ontbreekt`);
+  for (const naam of volgorde.stijl) if (!naam.endsWith('/*') && !existsSync(join(MAP, naam))) meld(`volgorde.json: ${naam} ontbreekt`);
   const art = bouw({ artefact: true });
   if (!art.startsWith(`<title>${TITEL}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>`)) meld('artefact: begint niet met title, meta en style');
   if (/<!doctype|<html[\s>]|<head[\s>]|<body[\s>]/i.test(art)) meld('artefact: bevat doctype/html/head/body');
@@ -403,8 +414,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     writeFileSync(pad, html);
     console.log(`[maquette] artefact: ${pad} (${(Buffer.byteLength(html) / 1024).toFixed(0)} kB)`);
   } else {
+    // «--naar <pad>»: повний документ в інше місце (паралельна робота кількох авторів екранів без перезапису спільного файлу).
+    const j = args.indexOf('--naar');
+    if (j >= 0 && !args[j + 1]) { console.error('[maquette] --naar vraagt een pad'); process.exit(1); }
+    const doel = j >= 0 ? resolve(args[j + 1]) : UIT;
+    mkdirSync(dirname(doel), { recursive: true });
     const html = bouw();
-    writeFileSync(UIT, html);
-    console.log(`[maquette] ${UIT} (${(Buffer.byteLength(html) / 1024).toFixed(0)} kB)`);
+    writeFileSync(doel, html);
+    console.log(`[maquette] ${doel} (${(Buffer.byteLength(html) / 1024).toFixed(0)} kB)`);
   }
 }

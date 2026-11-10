@@ -9,7 +9,7 @@
 // Daarna een klikproef: de schakelaar van een lamp verandert de toestand, schrijft het Журнал en toont een сповіщення;
 // de schuif van het blad, een scène, de huisstand, scenario en tijdsnelheid (hemel verandert), inklappen, meldingencentrum.
 //
-// Gebruik: node scripts/huis-maquette-rook.mjs --uit <map voor schermafdrukken> [--snel]     (exit 1 bij fouten)
+// Gebruik: node scripts/huis-maquette-rook.mjs --uit <map voor schermafdrukken> [--snel] [--naar <eigen html>]     (exit 1 bij fouten)
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
@@ -44,7 +44,10 @@ const tel = { ladingen: 0, routes: 0, doelen: 0, acties: 0, afdrukken: 0, klikpr
 
 // Bouwen en als bestand openen (zelfde inhoud als docs/huis/maquette/huis-maquette.html).
 const html = bouw();
-const bestand = join(WORTEL, 'docs/huis/maquette/huis-maquette.html');
+// «--naar <pad>»: власна копія для паралельної роботи кількох авторів (без перезапису спільного файлу).
+const naarIndex = args.indexOf('--naar');
+const bestand = naarIndex >= 0 && args[naarIndex + 1] ? resolve(args[naarIndex + 1]) : join(WORTEL, 'docs/huis/maquette/huis-maquette.html');
+mkdirSync(dirname(bestand), { recursive: true });
 writeFileSync(bestand, html);
 const adres = pathToFileURL(bestand).href;
 
