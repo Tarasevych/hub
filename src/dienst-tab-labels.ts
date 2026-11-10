@@ -21,6 +21,11 @@ const LABELS: Record<string, Pair> = {
   diagnostics: ['Діагностика', 'Diagnostiek'], audit: ['Аудит', 'Audit'],
   dashboard: ['Панель розгортання', 'Deploy-dashboard'], services: ['Сервіси', 'Diensten'], tools: ['Інструменти', 'Hulpmiddelen'], board: ['Дошка', 'Bord'], playground: ['Пісочниця', 'Zandbak'], traffic: ['Трафік', 'Verkeer'],
   connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'],
+  // HUIS-001 (10.11.2026): ці вкладки не мали підпису — у чужому меню стояло англійське «Rooms», «Energy», «Files»…
+  // Dezelfde paren als shared/huis-model.ts (HUIS_TAB_LABEL) en de tabstrook in VerenigdDienstApp.
+  rooms: ['Кімнати', 'Kamers'], scenes: ['Сцени', 'Scènes'], automations: ['Автоматизації', 'Automatiseringen'], energy: ['Енергія', 'Energie'],
+  integrations: ['Інтеграції', 'Integraties'], assistant: ['ШІ-помічник', 'AI-assistent'], showroom: ['Вітрина', 'Toonzaal'], planner: ['Калькулятор', 'Planner'],
+  files: ['Мої файли', 'Mijn bestanden'],
 };
 
 const titleCase = (id: string) => id.charAt(0).toUpperCase() + id.slice(1).replace(/[-_]+/g, ' ');

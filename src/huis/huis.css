@@ -65,7 +65,6 @@
 .hv-melding.is-fout { background: var(--fout-zacht); color: var(--fout); }
 .hv-melding.is-info { background: var(--info-zacht); color: var(--info); }
 .hv-melding.is-ok { background: var(--ok-zacht); color: var(--ok); }
-.hv-toost { margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ok-zacht); color: var(--ok); font-size: var(--tekst-klein); justify-self: start; }
 .hv-fout-tekst { color: var(--fout); }
 
 /* ---- bouwstenen ---- */
