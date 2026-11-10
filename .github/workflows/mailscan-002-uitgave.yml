@@ -196,7 +196,9 @@ jobs:
             "uitvoer/mijn-ruimte-${VERSIE}-chatgpt-overdracht.zip" \
             --target "$GITHUB_SHA" --title "MAILSCAN-002 · пошта · ${VERSIE}" \
             --notes-file "$RUNNER_TEMP/opis.md" --latest=false --draft
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          UITGAVE_ID="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=50" --jq ".[] | select(.tag_name == \"$VERSIE\" and .draft == true) | .id")"
+          test -n "$UITGAVE_ID"
+          gh api "repos/$GITHUB_REPOSITORY/releases/$UITGAVE_ID" > "$RUNNER_TEMP/uitgave.json"
           node --input-type=module <<'JS'
           import { readFileSync } from 'node:fs';
           import { createHash } from 'node:crypto';
@@ -209,8 +211,7 @@ jobs:
             throw Error('Відбиток оприлюдненого архіву не збігається; випуск залишено чернеткою.');
           }
           JS
-          gh release edit "$VERSIE" --draft=false
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave-public.json"
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$UITGAVE_ID" -F draft=false > "$RUNNER_TEMP/uitgave-public.json"
           node --input-type=module <<'JS'
           import { readFileSync } from 'node:fs';
           const e = process.env;
