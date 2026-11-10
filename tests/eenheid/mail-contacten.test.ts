@@ -108,8 +108,9 @@ export async function main(): Promise<number> {
   // Punt 15 (19.10.2026): de lijst «welke fout is tijdelijk» staat niet meer als losse regex in de backend maar in
   // shared/mail-scan-beleid.ts (isTijdelijkeScanFout — dezelfde code in de browser en op de server). SCOPE_REQUIRED blijft er
   // apart bij staan, omdat één verzoek na een uur bewijst of die fout nog geldt. Zie contacten-hervatten-20261019.test.ts.
-  check('F2: contactenScanAuto hervat ook na een (vermeende) scope-fout ouder dan 1 u', /isTijdelijkeScanFout\(a\.fout\)/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
+  check('F2: automatisch hervatten na een tijdelijke fout vereist ook afzonderlijke toestemming', /isTijdelijkeScanFout\(st\.fout\)/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
     && /SCOPE_REQUIRED/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
+    && /!a\.voorkeur\.aan/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
     && ['GOOGLE_MAIL_RATE_LIMITED', 'GOOGLE_MAIL_PROVIDER_UNAVAILABLE', 'SCAN_MISLUKT'].every((c) => isTijdelijkeScanFout(c)));
 
   // ================================================================ 2. DNS met nep-DNS
@@ -309,7 +310,9 @@ export async function main(): Promise<number> {
     const leegHtml = renderToString(createElement(ContactenWeergave, { lang: 'uk', begin: { lijst: { ...lijstData, contacten: [], totaal: 0 }, zoek: 'zzz' } }));
     check('UI: lege zoekopdracht → «Нічого не знайдено.»; geen detailpaneel', leegHtml.includes('Нічого не знайдено.') && !leegHtml.includes('data-contact-detail'));
     const sp = renderToString(createElement(ScanPaneel, { lang: 'uk', s: { ...scanData, staat: 'gepauzeerd', loopt: false } }));
-    check('UI: gepauzeerd → «Продовжити» en «Перевірити все заново»', sp.includes('Продовжити') && sp.includes('Перевірити все заново') && !sp.includes('>Пауза<'));
+    check('UI: gepauzeerd → toestemming per mailbox, zonder gevaarlijke herstart of opdringerige knoppen',
+      sp.includes('Перевірка за вашою згодою') && sp.includes('Перевірку дозволено')
+      && sp.includes('Перевірити цю скриньку зараз') && !sp.includes('Перевірити все заново') && !sp.includes('>Пауза<'));
     const ab = renderToString(createElement(AfzendersBeheer, { lang: 'uk' }));
     check('UI: instellingen → Безпека → Відправники verwijst naar «Контакти й відправники»', ab.includes('id="mail-settings-senders"') && ab.includes('Відкрити «Контакти й відправники»'));
   } finally {
