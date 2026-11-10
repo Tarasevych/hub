@@ -5,7 +5,8 @@
     "stijl/schil.css",
     "stijl/onderdelen.css",
     "stijl/hemel.css",
-    "stijl/bladen.css"
+    "stijl/bladen.css",
+    "stijl/gezichten.css"
   ],
   "script": [
     "kern/tekst.js",

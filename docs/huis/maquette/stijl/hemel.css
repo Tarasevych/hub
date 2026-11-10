@@ -1,0 +1,104 @@
+/* hemel.css — небо (hv-hemel), герой (hv-held), розріз дому (hv-doorsnede) і компонування «Дому».
+   Небо несе контекст, а не дані: градієнт із трьох точок фази й нерухомий штрих опадів; без хмаринок і зірок. */
+
+/* ── hv-hemel: нерухомий шар на всю видиму область ── */
+.hv-doek { transition: --hv-hemel-boven var(--hv-duur-hemel) linear, --hv-hemel-onder var(--hv-duur-hemel) linear, --hv-hemel-gloed var(--hv-duur-hemel) linear; }
+.hv-doek.is-sprong { transition: none; }
+.hv-hemel { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(180deg, var(--hv-hemel-boven) 0%, var(--hv-hemel-onder) 100%); }
+.hv-hemel__gloed { position: absolute; inset: 0; background: radial-gradient(120% 80% at 78% 100%, var(--hv-hemel-gloed) 0%, transparent 60%); opacity: var(--hv-hemel-gloed-dekking, 1); }
+/* штрих опадів: риски 6/10 під кутом 15°, лише у верхній третині, ніколи під текстом */
+.hv-hemel__neerslag { position: absolute; inset: 0 0 66% 46%; display: none; opacity: 0.55; -webkit-mask-image: linear-gradient(90deg, transparent, var(--text) 45%), linear-gradient(180deg, var(--text) 35%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent, var(--text) 45%), linear-gradient(180deg, var(--text) 35%, transparent); mask-composite: intersect; }
+.is-regen .hv-hemel__neerslag { display: block; background-image: repeating-linear-gradient(105deg, transparent 0 21px, var(--hv-hemel-neerslag) 21px 22px); -webkit-mask-image: repeating-linear-gradient(15deg, var(--text) 0 6px, transparent 6px 16px), linear-gradient(90deg, transparent, var(--text) 45%), linear-gradient(180deg, var(--text) 35%, transparent); mask-image: repeating-linear-gradient(15deg, var(--text) 0 6px, transparent 6px 16px), linear-gradient(90deg, transparent, var(--text) 45%), linear-gradient(180deg, var(--text) 35%, transparent); }
+.is-sneeuw .hv-hemel__neerslag { display: block; background-image: radial-gradient(circle, var(--hv-hemel-neerslag) 1px, transparent 1.4px); background-size: 12px 12px; }
+/* тихе небо: градієнт без сяйва й штриха; вимкнене — рівний --bg */
+.hv-hemel--stil .hv-hemel__gloed, .hv-hemel--stil .hv-hemel__neerslag, .hv-hemel--geen .hv-hemel__gloed, .hv-hemel--geen .hv-hemel__neerslag, .is-licht .hv-hemel__gloed { display: none; }
+.hv-hemel--geen .hv-hemel { background: var(--bg); }
+
+/* ── hv-held: речення дому на небі ── */
+.hv-held { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-4); align-items: end; min-inline-size: 0; }
+.hv-held__tekst { display: grid; gap: var(--ruimte-2); min-inline-size: 0; align-content: start; }
+.hv-held__datum { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-held__tijd { color: var(--text); }
+.hv-held__huistijd { display: none; align-items: center; gap: 4px; margin-inline-start: var(--ruimte-2); font-size: var(--tekst-mini); }
+.hv-held__zin { font-size: clamp(24px, 3cqw, 44px); font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; max-inline-size: 22em; }
+.hv-held__vol { display: none; }
+.hv-held__kort { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.hv-zinlink { display: inline; padding-block: 10px; font: inherit; letter-spacing: inherit; color: inherit; text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 0.16em; border-radius: 6px; cursor: pointer; }
+.hv-held__chips { display: flex; gap: var(--ruimte-2); overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--hv-rand) * -1); padding-inline: var(--hv-rand); }
+.hv-held__chips::-webkit-scrollbar { display: none; }
+.hv-held__chips > span { display: inline-flex; flex: none; }
+.hv-held__beeld { display: none; justify-self: end; inline-size: 100%; max-inline-size: var(--hv-doorsnede-breedte-max); }
+
+/* ── hv-doorsnede: поверх — рядок, кімната — кнопка; вікно світиться лише за підтвердженого світла ── */
+.hv-doorsnede { display: grid; gap: var(--ruimte-1); inline-size: 100%; max-inline-size: var(--hv-doorsnede-breedte-max); color: var(--text); }
+.hv-doorsnede__tekening { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 2fr) auto; grid-template-rows: auto; align-items: end; border-block-end: var(--hv-streep) solid var(--hv-omtrek); }
+.hv-doorsnede__huis { display: grid; }
+.hv-doorsnede__zolder { position: relative; padding: 14px 25% 0; }
+.hv-doorsnede__dak { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; }
+.hv-doorsnede__dak path { fill: none; stroke: var(--hv-omtrek); stroke-width: var(--hv-streep); vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.hv-doorsnede__laag { border: var(--hv-streep) solid var(--hv-omtrek); border-block-end: 0; }
+.hv-doorsnede__rij { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.hv-doorsnede__kamer { position: relative; display: grid; place-items: center; min-block-size: var(--hv-tik); min-inline-size: 0; border-inline-start: var(--hv-streep) solid var(--hv-omtrek); transition: background var(--hv-duur-1); }
+.hv-doorsnede__rij > .hv-doorsnede__kamer:first-child { border-inline-start: 0; }
+.hv-doorsnede__zolder .hv-doorsnede__kamer { border-inline-start: 0; }
+.hv-doorsnede__kamer:active { background: color-mix(in srgb, var(--surface2) 60%, transparent); }
+.hv-doorsnede__naam { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.hv-venster { display: grid; place-items: center; inline-size: var(--hv-venster-breedte); block-size: var(--hv-venster-hoogte); border: var(--hv-streep) solid var(--hv-omtrek); border-radius: 2px; transition: background var(--hv-duur-2), box-shadow var(--hv-duur-2); }
+.is-aan > .hv-venster, .is-verondersteld > .hv-venster { background: var(--hv-aan-vlak); border: 2px solid var(--hv-aan); box-shadow: 0 0 14px 3px color-mix(in srgb, var(--hv-aan-vlak) 55%, transparent); }
+.is-verondersteld > .hv-venster { border-style: dashed; }
+.is-geen > .hv-venster { border-style: dotted; opacity: 0.6; }
+.is-onbereikbaar > .hv-venster { inline-size: 18px; block-size: 18px; border: var(--hv-streep) dashed var(--hv-omtrek); color: var(--muted); }
+.is-verouderd > .hv-venster { background: repeating-linear-gradient(var(--hv-arcering-hoek), var(--hv-arcering) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) 4px); }
+.hv-doorsnede__erf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; }
+.hv-doorsnede__garage { border: var(--hv-streep) solid var(--hv-omtrek); border-block-end: 0; border-inline-start: 0; }
+.hv-doorsnede__garage .hv-doorsnede__kamer, .hv-doorsnede__tuin .hv-doorsnede__kamer { border-inline-start: 0; inline-size: 100%; }
+.hv-doorsnede__ding { color: var(--hv-omtrek); display: grid; place-items: center; }
+.hv-doorsnede__ding[class*="hv-toon-"] { color: var(--toon); }
+.is-aan > .hv-doorsnede__ding { color: var(--hv-aan); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--hv-aan-vlak) 70%, transparent)); }
+.hv-doorsnede__labels { display: grid; grid-template-rows: repeat(3, var(--hv-tik)); align-content: end; padding-inline-start: var(--ruimte-2); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); line-height: 1.15; }
+.hv-doorsnede__labels span { display: flex; align-items: center; max-inline-size: 76px; }
+.hv-doorsnede__labels span:first-child { align-items: end; padding-block-end: 12px; }
+.hv-doorsnede__wissel { justify-self: start; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-doorsnede--lijst { background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); padding: var(--ruimte-2) var(--ruimte-4); }
+.hv-kaart--doorsnede { display: grid; justify-items: center; padding-block: var(--ruimte-3) var(--ruimte-1); }
+
+/* ── Компонування «Дому» ── */
+.hv-thuis { display: grid; gap: var(--ruimte-4); min-inline-size: 0; }
+.hv-thuis__rooster { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-3); min-inline-size: 0; align-items: start; }
+.hv-thuis__rooster > div { display: grid; gap: var(--ruimte-3); min-inline-size: 0; align-content: start; }
+.hv-thuis__rooster > div:empty { display: none; }
+.hv-dagstrook { min-inline-size: 0; }
+
+@container doek (max-width: 699px) {
+  /* телефон: герой не вищий за чверть екрана; коротке речення у два рядки; розріз — окремий блок нижче */
+  .hv-held { max-block-size: var(--hv-held-max); overflow: hidden; }
+  /* вузько: шість клітинок по ≥ 44 px важливіші за підписи поверхів (вони є в списку й у назвах кнопок) */
+  .hv-doorsnede__labels { display: none; }
+  .hv-doorsnede__tekening { grid-template-columns: minmax(0, 4fr) minmax(0, 2fr); }
+  .hv-hemel .hv-hemel__neerslag { display: none; } /* на телефоні верхню третину займає текст: факт опадів несе чип погоди */
+  .hv-held__tekst { gap: var(--ruimte-1); }
+}
+@container doek (max-width: 699px) and (max-height: 640px) {
+  .hv-held__datum { display: none; }
+}
+@container doek (min-width: 700px) {
+  .hv-held { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--ruimte-6); padding-block: var(--ruimte-3) var(--ruimte-2); }
+  .hv-held__vol { display: inline; }
+  .hv-held__kort { display: none; }
+  .hv-held__beeld { display: block; inline-size: var(--hv-doorsnede-breedte-max); max-inline-size: 42cqw; }
+  .hv-held__huistijd { display: inline-flex; }
+  .hv-held__chips { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  .hv-thuis__rooster > .hv-thuis__doorsnede { display: none; }
+  .hv-thuis { gap: var(--ruimte-5); }
+}
+@container doek (min-width: 1100px) {
+  .hv-thuis__rooster { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: var(--ruimte-5); row-gap: var(--ruimte-4); }
+  .hv-thuis__nu, .hv-thuis__breed { grid-column: 1 / -1; }
+  .hv-thuis__rechts .hv-kamers { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .hv-held { padding-block: var(--ruimte-5) var(--ruimte-3); }
+  .hv-blok--nu .hv-nu { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); column-gap: var(--ruimte-5); }
+  .hv-blok--nu .hv-nu__rij { border-block-start: 0; }
+}
+@container doek (min-width: 1800px) {
+  .hv-thuis__rooster { grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); }
+}

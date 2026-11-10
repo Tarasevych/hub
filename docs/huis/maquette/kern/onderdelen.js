@@ -230,22 +230,21 @@
         return '<button type="button" class="hv-kleur__staal' + (gekozen ? ' is-gekozen' : '') + '" aria-pressed="' + (gekozen ? 'true' : 'false') + '"' + actieAttrs(p.actie, g({ tint: v[1], verzadiging: v[2] })) + '><span class="hv-kleur__vlak" style="background:' + lichtKleur(v[1], v[2]) + '"></span><span class="hv-kleur__naam">' + h(HV.p(v[0])) + '</span></button>';
       }).join('') + '</div>';
     } else if (wijze === 'schuiven') {
-      lijf = o.schuif({ label: t('Відтінок', 'Tint'), waarde: Math.round(p.tint), min: 0, max: 359, stap: 5, eenheid: '°', actie: p.actie, gegevens: g({ as: 'tint', verzadiging: p.verzadiging }), klas: 'hv-schuif--tint', k: 'kleur-tint' }) +
-        o.schuif({ label: t('Насиченість', 'Verzadiging'), waarde: Math.round(p.verzadiging), min: 0, max: 100, stap: 5, actie: p.actie, gegevens: g({ as: 'verzadiging', tint: p.tint }), k: 'kleur-verz', stijl: '--hv-kleur-tint:' + Math.round(p.tint), klas: 'hv-schuif--verzadiging' });
+      lijf = o.schuif({ label: t('Відтінок', 'Tint'), waarde: Math.round(p.tint), min: 0, max: 359, stap: 5, eenheid: '°', actie: p.actie, gegevens: g({ as: 'tint', verzadiging: p.verzadiging }), klas: 'hv-schuif--tint', k: 'kleur-tint', stijl: '--hv-spoor: linear-gradient(90deg, ' + [0, 60, 120, 180, 240, 300, 359].map(function (x) { return lichtKleur(x, 85); }).join(', ') + ')' }) +
+        o.schuif({ label: t('Насиченість', 'Verzadiging'), waarde: Math.round(p.verzadiging), min: 0, max: 100, stap: 5, actie: p.actie, gegevens: g({ as: 'verzadiging', tint: p.tint }), k: 'kleur-verz', stijl: '--hv-spoor: linear-gradient(90deg, ' + lichtKleur(p.tint, 0) + ', ' + lichtKleur(p.tint, 100) + ')', klas: 'hv-schuif--verzadiging' });
     } else {
-      // коло: 12 відтінків × 2 насиченості — кожен сектор є кнопкою (клавіатура й дотик)
+      // коло: дванадцять відтінків і біле осердя — кожен сектор є кнопкою (клавіатура й дотик, ціль ≥ 44 px)
       var sectoren = '';
-      for (var ring = 0; ring < 2; ring++) {
-        for (var i = 0; i < 12; i++) {
-          var tint = i * 30, verz = ring === 0 ? 85 : 45;
-          var r1 = ring === 0 ? 96 : 62, r0 = ring === 0 ? 66 : 32;
-          var a0 = (i * 30 - 105) * Math.PI / 180, a1 = (i * 30 - 75) * Math.PI / 180;
-          var P = function (r, a) { return (100 + r * Math.cos(a)).toFixed(1) + ' ' + (100 + r * Math.sin(a)).toFixed(1); };
-          var gekozen = Math.abs(((p.tint - tint + 540) % 360) - 180) < 15 && Math.abs(p.verzadiging - verz) <= 20;
-          sectoren += '<path role="button" tabindex="0" class="hv-kleur__sector' + (gekozen ? ' is-gekozen' : '') + '" aria-label="' + h(t('Відтінок ', 'Tint ') + tint + '°, ' + t('насиченість ', 'verzadiging ') + verz + ' %') + '" aria-pressed="' + (gekozen ? 'true' : 'false') + '" style="fill:' + lichtKleur(tint, verz) + '" d="M' + P(r0, a0) + 'L' + P(r1, a0) + 'A' + r1 + ' ' + r1 + ' 0 0 1 ' + P(r1, a1) + 'L' + P(r0, a1) + 'A' + r0 + ' ' + r0 + ' 0 0 0 ' + P(r0, a0) + 'Z"' + actieAttrs(p.actie, g({ tint: tint, verzadiging: verz })) + '/>';
-        }
+      var P = function (r, hoek) { return (100 + r * Math.cos(hoek)).toFixed(1) + ' ' + (100 + r * Math.sin(hoek)).toFixed(1); };
+      for (var i = 0; i < 12; i++) {
+        var tint = i * 30, verz = 80, r1 = 98, r0 = 46;
+        var a0 = (i * 30 - 105) * Math.PI / 180, a1 = (i * 30 - 75) * Math.PI / 180;
+        var gekozen = p.verzadiging > 20 && Math.abs(((p.tint - tint + 540) % 360) - 180) < 15;
+        sectoren += '<path role="button" tabindex="0" class="hv-kleur__sector' + (gekozen ? ' is-gekozen' : '') + '" aria-label="' + h(t('Відтінок ', 'Tint ') + tint + '°') + '" aria-pressed="' + (gekozen ? 'true' : 'false') + '" style="fill:' + lichtKleur(tint, verz) + '" d="M' + P(r0, a0) + 'L' + P(r1, a0) + 'A' + r1 + ' ' + r1 + ' 0 0 1 ' + P(r1, a1) + 'L' + P(r0, a1) + 'A' + r0 + ' ' + r0 + ' 0 0 0 ' + P(r0, a0) + 'Z"' + actieAttrs(p.actie, g({ tint: tint, verzadiging: verz })) + '/>';
       }
-      lijf = '<svg class="hv-kleur__cirkel" viewBox="0 0 200 200" role="group" aria-label="' + h(t('Коло кольорів', 'Kleurcirkel')) + '">' + sectoren + '<circle class="hv-kleur__midden" cx="100" cy="100" r="24" style="fill:' + lichtKleur(p.tint, p.verzadiging) + '"/></svg>';
+      var wit = p.verzadiging <= 20;
+      lijf = '<svg class="hv-kleur__cirkel" viewBox="0 0 200 200" role="group" aria-label="' + h(t('Коло кольорів', 'Kleurcirkel')) + '">' + sectoren +
+        '<circle role="button" tabindex="0" class="hv-kleur__sector hv-kleur__midden' + (wit ? ' is-gekozen' : '') + '" aria-label="' + h(t('Білий', 'Wit')) + '" aria-pressed="' + (wit ? 'true' : 'false') + '" cx="100" cy="100" r="40" style="fill:' + lichtKleur(40, 0) + '"' + actieAttrs(p.actie, g({ tint: 40, verzadiging: 0 })) + '/></svg>';
     }
     return '<div class="hv-kleur" data-k="kleur">' + o.segment({ label: t('Спосіб вибору кольору', 'Manier van kleur kiezen'), waarde: wijze, actie: p.wijzeActie || 'kleur-wijze', gegevens: p.gegevens, opties: [
       { id: 'voorkeuzes', label: t('Заготовки', 'Voorkeuzes') }, { id: 'schuiven', label: t('Повзунки', 'Schuifregelaars') }, { id: 'cirkel', label: t('Коло', 'Kleurcirkel') }] }) + lijf + '</div>';
@@ -366,7 +365,7 @@
     // бажане значення під час очікування (риска)
     var gewenstAan = a.wacht && (a.wacht.mogelijkheid === 'aan' || a.wacht.mogelijkheid === 'afspelen' || a.wacht.mogelijkheid === 'laden') ? a.wacht.waarde : null;
     var gewenstNiveau = a.wacht && a.wacht.mogelijkheid === 'helderheid' ? a.wacht.waarde : null;
-    var aan = gewenstAan != null ? gewenstAan : b.aan;
+    var aan = dood ? false : (gewenstAan != null ? gewenstAan : b.aan);
     var naam = HV.p(a.naam);
     var kamer = op.metKamer ? HV.staat.kamer(a.kamer) : null;
     var woord = dood ? HV.woord.onbereikbaar() : a.wacht ? HV.woord.wacht() : b.woord;

@@ -9,13 +9,18 @@
     "parenKeuze": "проходить, якщо хоч один із `eenVan` дає `min` проти `achter`",
     "verboden": "поєднання, яких у стилях бути не може",
     "aliassen": "псевдоніми: у стилях `--назва: var(--ціль)`",
-    "onderscheid": "відстані між тонами; `eisen` мусять проходити у світлій і темній темах; `onderDrempel` — чесний перелік пар нижче порога з носієм розрізнення",
+    "onderscheid": "відстані між тонами; `eisen` мусять проходити у світлій і темній темах: запис із `minDeltaE` — `ΔE2000`, запис із `minOklab` — відстань `OKLab` (розрізнення фаз неба); `onderDrempel` — чесний перелік пар нижче порога з носієм розрізнення",
     "onderscheid.lichtheid": "пари тонів стану, `--warn` і `--accent` із взаємним контрастом нижче 1,3: за світлотою вони не розрізняються — лише за колірним тоном, формою знака і словом",
-    "onderscheid.kleurenblind": "пари, що за протанопії чи дейтеранопії (модель Machado 2009, повна втрата) стають ближчими за `ΔE2000` 5",
+    "onderscheid.kleurenblind": "пари, що за протанопії чи дейтеранопії (модель Machado 2009, повна втрата) стають ближчими за `ΔE2000` 5; із нейтральних у перелік входить `--muted` (він же `--hv-oud`, «застаріле»); `--faint` і `--hv-omtrek` таких пар із тонами не мають",
     "maten.hemel.niveaus": "рівні неба: що саме малюється на кожному",
     "maten.tonenOpPaletten": "тони `--hv-*` однакові в усіх палітрах; найнижчий контраст тонів до чотирьох поверхонь кожної палітри, де працює модуль",
     "maten.profielen.gezicht": "анатомія обличчя профілів без сітки плиток (§7 документа, «Обличчя / Wijzerplaat»)",
-    "maten.thema.--hv-glas": "скло — похідне від `--panel` будь-якої палітри; шістнадцяткове значення має лише `--hv-glas-grens`"
+    "maten.thema.--hv-glas": "скло — похідне від `--panel` будь-якої палітри; шістнадцяткове значення має лише `--hv-glas-grens`",
+    "thema.--hv-hemel-grens": "найгірша справжня суміш неба (не поканальна обвідна): у світлій темі — суміш із найменшою яскравістю, у темній — найсвітліша точка; як її знайдено — `maten.hemel.mengselControle`",
+    "thema.--hv-wens / --hv-wens-rand": "риска «бажаного» на рівні та її облямівка; у світлій і темній темах дорівнюють `--text` і `--panel`, у чорнилі — навпаки (біла риска з чорною облямівкою)",
+    "maten.hemel.mengselControle": "перевірка читабельності на небі перебором справжніх сумішей; замінює поканальну обвідну попередніх раундів",
+    "maten.gedrag.ritueelTeken": "знак на плитці для дії, що в поточному напрямі небезпечна чи критична: квадрат із подвійною рамкою замість кола",
+    "onderscheid.hemelVerloop": "чистота градієнта неба: найменша хрома `OKLCH` уздовж суміші верх → низ не менша за половину хроми слабшого краю, в обох темах; інакше посередині героя лежить сіра смуга"
   },
   "thema": {
     "licht": {
@@ -74,24 +79,26 @@
       "--hv-warmte-5": "#949ca8",
       "--hv-omtrek": "#5f6873",
       "--hv-op-toon": "#ffffff",
+      "--hv-wens": "#17212b",
+      "--hv-wens-rand": "#fefcfa",
       "--hv-glas-grens": "#cbcac8",
-      "--hv-hemel-nacht-boven": "#c7cfea",
-      "--hv-hemel-nacht-onder": "#dde0f1",
-      "--hv-hemel-nacht-gloed": "#e9e6f5",
-      "--hv-hemel-dageraad-boven": "#cad7f4",
-      "--hv-hemel-dageraad-onder": "#fbdecb",
-      "--hv-hemel-dageraad-gloed": "#ffeabd",
-      "--hv-hemel-dag-boven": "#bfddf7",
-      "--hv-hemel-dag-onder": "#e7f2fb",
-      "--hv-hemel-dag-gloed": "#fff4d2",
-      "--hv-hemel-schemer-boven": "#d4d0f1",
-      "--hv-hemel-schemer-onder": "#f9d7cd",
-      "--hv-hemel-schemer-gloed": "#ffdeb4",
-      "--hv-hemel-grens": "#bfcfb4",
-      "--hv-hemel-neerslag": "#8f9cc0",
-      "--hv-hemel-boven": "#bfddf7",
-      "--hv-hemel-onder": "#e7f2fb",
-      "--hv-hemel-gloed": "#fff4d2"
+      "--hv-hemel-nacht-boven": "#b8bcf6",
+      "--hv-hemel-nacht-onder": "#d5d6f5",
+      "--hv-hemel-nacht-gloed": "#e3ddf7",
+      "--hv-hemel-dageraad-boven": "#b8ebed",
+      "--hv-hemel-dageraad-onder": "#fedbae",
+      "--hv-hemel-dageraad-gloed": "#ffe7a7",
+      "--hv-hemel-dag-boven": "#9edaff",
+      "--hv-hemel-dag-onder": "#def1fd",
+      "--hv-hemel-dag-gloed": "#fdf8db",
+      "--hv-hemel-schemer-boven": "#e9bae7",
+      "--hv-hemel-schemer-onder": "#ffc2c0",
+      "--hv-hemel-schemer-gloed": "#ffceac",
+      "--hv-hemel-grens": "#b8bcf6",
+      "--hv-hemel-neerslag": "#7f8bb8",
+      "--hv-hemel-boven": "#9edaff",
+      "--hv-hemel-onder": "#def1fd",
+      "--hv-hemel-gloed": "#fdf8db"
     },
     "donker": {
       "--bg": "#202021",
@@ -149,19 +156,21 @@
       "--hv-warmte-5": "#5d646b",
       "--hv-omtrek": "#a3aeb9",
       "--hv-op-toon": "#10161c",
+      "--hv-wens": "#f3f6f8",
+      "--hv-wens-rand": "#2d2f31",
       "--hv-glas-grens": "#4f5052",
       "--hv-hemel-nacht-boven": "#0b1026",
       "--hv-hemel-nacht-onder": "#1a2040",
       "--hv-hemel-nacht-gloed": "#2a2e58",
-      "--hv-hemel-dageraad-boven": "#1f2a4d",
-      "--hv-hemel-dageraad-onder": "#55313f",
-      "--hv-hemel-dageraad-gloed": "#6b3f29",
+      "--hv-hemel-dageraad-boven": "#07303e",
+      "--hv-hemel-dageraad-onder": "#1d4a45",
+      "--hv-hemel-dageraad-gloed": "#624413",
       "--hv-hemel-dag-boven": "#153c66",
       "--hv-hemel-dag-onder": "#234b73",
       "--hv-hemel-dag-gloed": "#33506b",
-      "--hv-hemel-schemer-boven": "#241d4a",
-      "--hv-hemel-schemer-onder": "#552c46",
-      "--hv-hemel-schemer-gloed": "#6d3d2c",
+      "--hv-hemel-schemer-boven": "#2e1749",
+      "--hv-hemel-schemer-onder": "#5a2a47",
+      "--hv-hemel-schemer-gloed": "#73382d",
       "--hv-hemel-grens": "#33506b",
       "--hv-hemel-neerslag": "#6f7da3",
       "--hv-hemel-boven": "#153c66",
@@ -224,6 +233,8 @@
       "--hv-warmte-5": "#ffffff",
       "--hv-omtrek": "#000000",
       "--hv-op-toon": "#ffffff",
+      "--hv-wens": "#ffffff",
+      "--hv-wens-rand": "#000000",
       "--hv-glas-grens": "#ffffff",
       "--hv-hemel-nacht-boven": "#ffffff",
       "--hv-hemel-nacht-onder": "#ffffff",
@@ -247,24 +258,24 @@
   "hemel": {
     "licht": {
       "nacht": {
-        "boven": "#c7cfea",
-        "onder": "#dde0f1",
-        "gloed": "#e9e6f5"
+        "boven": "#b8bcf6",
+        "onder": "#d5d6f5",
+        "gloed": "#e3ddf7"
       },
       "dageraad": {
-        "boven": "#cad7f4",
-        "onder": "#fbdecb",
-        "gloed": "#ffeabd"
+        "boven": "#b8ebed",
+        "onder": "#fedbae",
+        "gloed": "#ffe7a7"
       },
       "dag": {
-        "boven": "#bfddf7",
-        "onder": "#e7f2fb",
-        "gloed": "#fff4d2"
+        "boven": "#9edaff",
+        "onder": "#def1fd",
+        "gloed": "#fdf8db"
       },
       "schemer": {
-        "boven": "#d4d0f1",
-        "onder": "#f9d7cd",
-        "gloed": "#ffdeb4"
+        "boven": "#e9bae7",
+        "onder": "#ffc2c0",
+        "gloed": "#ffceac"
       }
     },
     "donker": {
@@ -274,9 +285,9 @@
         "gloed": "#2a2e58"
       },
       "dageraad": {
-        "boven": "#1f2a4d",
-        "onder": "#55313f",
-        "gloed": "#6b3f29"
+        "boven": "#07303e",
+        "onder": "#1d4a45",
+        "gloed": "#624413"
       },
       "dag": {
         "boven": "#153c66",
@@ -284,9 +295,9 @@
         "gloed": "#33506b"
       },
       "schemer": {
-        "boven": "#241d4a",
-        "onder": "#552c46",
-        "gloed": "#6d3d2c"
+        "boven": "#2e1749",
+        "onder": "#5a2a47",
+        "gloed": "#73382d"
       }
     }
   },
@@ -1258,187 +1269,109 @@
       "voor": "--text",
       "achter": "--hv-hemel-nacht-boven",
       "min": 7,
-      "waar": "речення дому на небі: ніч, верх"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-nacht-boven",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: ніч, верх"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): ніч, верх"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-nacht-onder",
       "min": 7,
-      "waar": "речення дому на небі: ніч, низ (і смуга стрічки доби)"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-nacht-onder",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: ніч, низ (і смуга стрічки доби)"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): ніч, низ (і смуга стрічки доби)"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-nacht-gloed",
       "min": 7,
-      "waar": "речення дому на небі: ніч, сяйво"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-nacht-gloed",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: ніч, сяйво"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): ніч, сяйво"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-dageraad-boven",
       "min": 7,
-      "waar": "речення дому на небі: світанок, верх"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-dageraad-boven",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: світанок, верх"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): світанок, верх"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-dageraad-onder",
       "min": 7,
-      "waar": "речення дому на небі: світанок, низ (і смуга стрічки доби)"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-dageraad-onder",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: світанок, низ (і смуга стрічки доби)"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): світанок, низ (і смуга стрічки доби)"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-dageraad-gloed",
       "min": 7,
-      "waar": "речення дому на небі: світанок, сяйво"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-dageraad-gloed",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: світанок, сяйво"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): світанок, сяйво"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-dag-boven",
       "min": 7,
-      "waar": "речення дому на небі: день, верх"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-dag-boven",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: день, верх"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): день, верх"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-dag-onder",
       "min": 7,
-      "waar": "речення дому на небі: день, низ (і смуга стрічки доби)"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-dag-onder",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: день, низ (і смуга стрічки доби)"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): день, низ (і смуга стрічки доби)"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-dag-gloed",
       "min": 7,
-      "waar": "речення дому на небі: день, сяйво"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-dag-gloed",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: день, сяйво"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): день, сяйво"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-schemer-boven",
       "min": 7,
-      "waar": "речення дому на небі: сутінки, верх"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-schemer-boven",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: сутінки, верх"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): сутінки, верх"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-schemer-onder",
       "min": 7,
-      "waar": "речення дому на небі: сутінки, низ (і смуга стрічки доби)"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-schemer-onder",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: сутінки, низ (і смуга стрічки доби)"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): сутінки, низ (і смуга стрічки доби)"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-schemer-gloed",
       "min": 7,
-      "waar": "речення дому на небі: сутінки, сяйво"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-schemer-gloed",
-      "min": 4.5,
-      "waar": "приглушений текст на небі: сутінки, сяйво"
+      "waar": "текст на небі (речення, дата, заголовок блока, підпис поверху): сутінки, сяйво"
     },
     {
       "voor": "--text",
       "achter": "--hv-hemel-grens",
       "min": 7,
-      "waar": "речення дому на найгіршій суміші неба (фази, хмарність, режим дому)"
-    },
-    {
-      "voor": "--muted",
-      "achter": "--hv-hemel-grens",
-      "min": 4.5,
-      "waar": "приглушений текст на найгіршій суміші неба"
+      "waar": "речення дому на найгіршій справжній суміші неба (фази, градієнт, сяйво, хмарність, режим дому)"
     },
     {
       "voor": "--accent",
       "achter": "--hv-hemel-grens",
       "min": 3,
-      "waar": "підкреслення посилання в реченні й позначка «зараз» на небі"
+      "waar": "підкреслення посилання в реченні й позначка «зараз» на найгіршій справжній суміші неба"
     },
     {
       "voor": "--focus",
       "achter": "--hv-hemel-grens",
       "min": 3,
-      "waar": "кільце фокуса на небі"
+      "waar": "кільце фокуса на найгіршій справжній суміші неба"
     },
     {
       "voor": "--hv-omtrek",
       "achter": "--hv-hemel-grens",
       "min": 3,
-      "waar": "лінії розрізу дому на небі"
+      "waar": "лінії розрізу дому на найгіршій справжній суміші неба"
     },
     {
       "voor": "--hv-arcering",
       "achter": "--hv-hemel-grens",
       "min": 3,
-      "waar": "штрих неспостереженої кімнати в розрізі на небі"
+      "waar": "штрих неспостереженої кімнати в розрізі на найгіршій справжній суміші неба"
     },
     {
       "voor": "--hv-aan",
       "achter": "--hv-hemel-grens",
       "min": 3,
-      "waar": "контур освітленого вікна в розрізі на небі"
+      "waar": "контур освітленого вікна в розрізі на найгіршій справжній суміші неба"
     },
     {
       "voor": "--hv-omtrek",
@@ -1570,7 +1503,19 @@
       "voor": "--hv-hemel-neerslag",
       "achter": "--hv-hemel-grens",
       "min": 1.5,
-      "waar": "штрих опадів на найгіршій суміші неба (декоративний)"
+      "waar": "штрих опадів на найгіршій справжній суміші неба (декоративний)"
+    },
+    {
+      "voor": "--accentText",
+      "achter": "--text",
+      "min": 4.5,
+      "waar": "текст та іконка на інверсії: вибране, знак «увімкнено», номер плитки й аварійний шар у чорнилі"
+    },
+    {
+      "voor": "--hv-wens",
+      "achter": "--hv-wens-rand",
+      "min": 3,
+      "waar": "риска «бажаного» проти власної облямівки"
     }
   ],
   "parenKeuze": [
@@ -1618,6 +1563,114 @@
       "achter": "--bg",
       "min": 3,
       "waar": "край рівня яскравості проти поверхні `--bg`: заливка або її край 2 px"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-aan-vlak",
+      "min": 3,
+      "waar": "риска «бажаного» на заливці рівня `--hv-aan-vlak`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-warm",
+      "min": 3,
+      "waar": "риска «бажаного» на заливці рівня `--hv-warm`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-koud",
+      "min": 3,
+      "waar": "риска «бажаного» на заливці рівня `--hv-koud`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-auto",
+      "min": 3,
+      "waar": "риска «бажаного» на заливці рівня `--hv-auto`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-batterij",
+      "min": 3,
+      "waar": "риска «бажаного» на заливці рівня `--hv-batterij`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--text",
+      "min": 3,
+      "waar": "риска «бажаного» на заливці рівня `--text`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-aan-zacht",
+      "min": 3,
+      "waar": "риска «бажаного» на доріжці `--hv-aan-zacht`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-warm-zacht",
+      "min": 3,
+      "waar": "риска «бажаного» на доріжці `--hv-warm-zacht`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-koud-zacht",
+      "min": 3,
+      "waar": "риска «бажаного» на доріжці `--hv-koud-zacht`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-auto-zacht",
+      "min": 3,
+      "waar": "риска «бажаного» на доріжці `--hv-auto-zacht`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--hv-batterij-zacht",
+      "min": 3,
+      "waar": "риска «бажаного» на доріжці `--hv-batterij-zacht`: серцевина або облямівка"
+    },
+    {
+      "eenVan": [
+        "--hv-wens",
+        "--hv-wens-rand"
+      ],
+      "achter": "--surface",
+      "min": 3,
+      "waar": "риска «бажаного» на доріжці `--surface`: серцевина або облямівка"
     }
   ],
   "verboden": [
@@ -1639,7 +1692,7 @@
     {
       "voor": "--faint",
       "achter": "--hv-hemel-grens",
-      "waar": "службовий текст на небі заборонено; лише `--text` і `--muted`"
+      "waar": "службовий текст на небі заборонено; на небі лише `--text`"
     },
     {
       "voor": "--muted",
@@ -1650,6 +1703,11 @@
       "voor": "--text",
       "achter": "--hv-arcering",
       "waar": "текст на штриху застарілого чи неспостереженого заборонено"
+    },
+    {
+      "voor": "--muted",
+      "achter": "--hv-hemel-grens",
+      "waar": "приглушений текст на небі заборонено: підписи на небі — `--text` меншого кегля й ваги (12/600)"
     }
   ],
   "onderscheid": {
@@ -1782,6 +1840,78 @@
         "b": "--warn-vlak",
         "minDeltaE": 14,
         "waar": "заливка «увімкнено» не схожа на заливку «уваги»"
+      },
+      {
+        "a": "--hv-hemel-nacht-boven",
+        "b": "--hv-hemel-dageraad-boven",
+        "minOklab": 0.06,
+        "waar": "небо несе контекст: ніч і світанок розрізняються, верх"
+      },
+      {
+        "a": "--hv-hemel-nacht-boven",
+        "b": "--hv-hemel-dag-boven",
+        "minOklab": 0.06,
+        "waar": "небо несе контекст: ніч і день розрізняються, верх"
+      },
+      {
+        "a": "--hv-hemel-nacht-boven",
+        "b": "--hv-hemel-schemer-boven",
+        "minOklab": 0.06,
+        "waar": "небо несе контекст: ніч і сутінки розрізняються, верх"
+      },
+      {
+        "a": "--hv-hemel-dageraad-boven",
+        "b": "--hv-hemel-dag-boven",
+        "minOklab": 0.06,
+        "waar": "небо несе контекст: світанок і день розрізняються, верх"
+      },
+      {
+        "a": "--hv-hemel-dageraad-boven",
+        "b": "--hv-hemel-schemer-boven",
+        "minOklab": 0.06,
+        "waar": "небо несе контекст: світанок і сутінки розрізняються, верх"
+      },
+      {
+        "a": "--hv-hemel-dag-boven",
+        "b": "--hv-hemel-schemer-boven",
+        "minOklab": 0.06,
+        "waar": "небо несе контекст: день і сутінки розрізняються, верх"
+      },
+      {
+        "a": "--hv-hemel-nacht-onder",
+        "b": "--hv-hemel-dageraad-onder",
+        "minOklab": 0.05,
+        "waar": "небо несе контекст: ніч і світанок розрізняються, низ"
+      },
+      {
+        "a": "--hv-hemel-nacht-onder",
+        "b": "--hv-hemel-dag-onder",
+        "minOklab": 0.05,
+        "waar": "небо несе контекст: ніч і день розрізняються, низ"
+      },
+      {
+        "a": "--hv-hemel-nacht-onder",
+        "b": "--hv-hemel-schemer-onder",
+        "minOklab": 0.05,
+        "waar": "небо несе контекст: ніч і сутінки розрізняються, низ"
+      },
+      {
+        "a": "--hv-hemel-dageraad-onder",
+        "b": "--hv-hemel-dag-onder",
+        "minOklab": 0.05,
+        "waar": "небо несе контекст: світанок і день розрізняються, низ"
+      },
+      {
+        "a": "--hv-hemel-dageraad-onder",
+        "b": "--hv-hemel-schemer-onder",
+        "minOklab": 0.05,
+        "waar": "небо несе контекст: світанок і сутінки розрізняються, низ"
+      },
+      {
+        "a": "--hv-hemel-dag-onder",
+        "b": "--hv-hemel-schemer-onder",
+        "minOklab": 0.05,
+        "waar": "небо несе контекст: день і сутінки розрізняються, низ"
       }
     ],
     "onderDrempel": {
@@ -2397,12 +2527,13 @@
           "contrast": 1.29,
           "deltaE": 61.8
         }
-      ]
+      ],
+      "uitzondering": "задокументований виняток із критерію «взаємний контраст ≥ 1,3»: простір sRGB не вміщає стільки щаблів світлоти; прийняти виняток чи звузити критерій до `ΔE2000` — рішення власника, значень воно не змінює"
     },
     "kleurenblind": {
       "model": "Machado, Oliveira, Fernandes 2009; protanopie en deuteranopie, ernst 1,0",
       "drempel": 5,
-      "regel": "«увага» завжди має трикутник і слово; тон сонця не стоїть без іконки `Sun` чи підпису ряду",
+      "regel": "«увага» завжди має трикутник і слово; тон сонця не стоїть без іконки `Sun` чи підпису ряду; застаріле ніколи не передається самим `--muted` — лише штрих і вік",
       "licht": [
         {
           "a": "--hv-auto",
@@ -2459,6 +2590,20 @@
           "protanopie": 9.3,
           "deuteranopie": 4.6,
           "deltaE": 51
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--muted",
+          "protanopie": 4.2,
+          "deuteranopie": 16.5,
+          "deltaE": 28.8
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--muted",
+          "protanopie": 8.4,
+          "deuteranopie": 3.4,
+          "deltaE": 20.1
         }
       ],
       "donker": [
@@ -2545,8 +2690,160 @@
           "protanopie": 5,
           "deuteranopie": 14.7,
           "deltaE": 28.1
+        },
+        {
+          "a": "--hv-warm",
+          "b": "--muted",
+          "protanopie": 5.8,
+          "deuteranopie": 2.3,
+          "deltaE": 24
+        },
+        {
+          "a": "--hv-batterij",
+          "b": "--muted",
+          "protanopie": 11.2,
+          "deuteranopie": 2.2,
+          "deltaE": 24.1
         }
       ]
+    },
+    "hemelFasen": {
+      "maat": "OKLab-afstand tussen dezelfde punten van twee verschillende fasen, in het lichte en het donkere thema",
+      "minBoven": 0.06,
+      "minOnder": 0.05,
+      "paren": "alle zes, niet alleen aangrenzende",
+      "gemeten": {
+        "licht": {
+          "boven": {
+            "min": 0.067,
+            "paren": {
+              "nacht↔dageraad": 0.13,
+              "nacht↔dag": 0.079,
+              "nacht↔schemer": 0.071,
+              "dageraad↔dag": 0.067,
+              "dageraad↔schemer": 0.134,
+              "dag↔schemer": 0.116
+            }
+          },
+          "onder": {
+            "min": 0.07,
+            "paren": {
+              "nacht↔dageraad": 0.112,
+              "nacht↔dag": 0.07,
+              "nacht↔schemer": 0.088,
+              "dageraad↔dag": 0.102,
+              "dageraad↔schemer": 0.075,
+              "dag↔schemer": 0.122
+            }
+          },
+          "gloed": {
+            "min": 0.064,
+            "paren": {
+              "nacht↔dageraad": 0.12,
+              "nacht↔dag": 0.098,
+              "nacht↔schemer": 0.098,
+              "dageraad↔dag": 0.064,
+              "dageraad↔schemer": 0.066,
+              "dag↔schemer": 0.103
+            }
+          }
+        },
+        "donker": {
+          "boven": {
+            "min": 0.078,
+            "paren": {
+              "nacht↔dageraad": 0.114,
+              "nacht↔dag": 0.176,
+              "nacht↔schemer": 0.1,
+              "dageraad↔dag": 0.078,
+              "dageraad↔schemer": 0.094,
+              "dag↔schemer": 0.113
+            }
+          },
+          "onder": {
+            "min": 0.08,
+            "paren": {
+              "nacht↔dageraad": 0.143,
+              "nacht↔dag": 0.152,
+              "nacht↔schemer": 0.134,
+              "dageraad↔dag": 0.08,
+              "dageraad↔schemer": 0.13,
+              "dag↔schemer": 0.127
+            }
+          },
+          "gloed": {
+            "min": 0.061,
+            "paren": {
+              "nacht↔dageraad": 0.173,
+              "nacht↔dag": 0.107,
+              "nacht↔schemer": 0.165,
+              "dageraad↔dag": 0.133,
+              "dageraad↔schemer": 0.061,
+              "dag↔schemer": 0.136
+            }
+          }
+        }
+      }
+    },
+    "hemelVerloop": {
+      "maat": "laagste chroma OKLCH langs het verloop boven → onder (mengsel in sRGB, zoals linear-gradient), als aandeel van de chroma van de zwakste rand",
+      "waarom": "een verloop tussen bijna tegengestelde tinten loopt door grijs: een vuile band midden in de held",
+      "stap": 0.1,
+      "minAandeel": 0.5,
+      "gemeten": {
+        "licht": {
+          "nacht": {
+            "minChroma": 0.042,
+            "bij": 1,
+            "zwaksteRand": 0.042,
+            "aandeel": 1
+          },
+          "dageraad": {
+            "minChroma": 0.029,
+            "bij": 0.4,
+            "zwaksteRand": 0.052,
+            "aandeel": 0.55
+          },
+          "dag": {
+            "minChroma": 0.026,
+            "bij": 1,
+            "zwaksteRand": 0.026,
+            "aandeel": 1
+          },
+          "schemer": {
+            "minChroma": 0.067,
+            "bij": 0.7,
+            "zwaksteRand": 0.07,
+            "aandeel": 0.95
+          }
+        },
+        "donker": {
+          "nacht": {
+            "minChroma": 0.046,
+            "bij": 0,
+            "zwaksteRand": 0.046,
+            "aandeel": 1
+          },
+          "dageraad": {
+            "minChroma": 0.047,
+            "bij": 0.5,
+            "zwaksteRand": 0.05,
+            "aandeel": 0.94
+          },
+          "dag": {
+            "minChroma": 0.081,
+            "bij": 1,
+            "zwaksteRand": 0.081,
+            "aandeel": 1
+          },
+          "schemer": {
+            "minChroma": 0.08,
+            "bij": 0.8,
+            "zwaksteRand": 0.081,
+            "aandeel": 0.99
+          }
+        }
+      }
     }
   },
   "maten": {
@@ -2617,7 +2914,7 @@
       "--hv-zone-min": "480px",
       "--hv-zone-greep": "8px",
       "--hv-schaal": "1",
-      "--hv-zin": "clamp(24px, 3vw, 44px)",
+      "--hv-zin": "clamp(24px, 3cqi, 44px)",
       "--hv-getal-xl": "64px",
       "--hv-getal-l": "40px",
       "--hv-getal-m": "28px",
@@ -2646,7 +2943,33 @@
       "--hv-z-opdracht": "232",
       "--hv-z-gevaar": "235",
       "--hv-z-toost": "240",
-      "--hv-z-nood": "250"
+      "--hv-z-nood": "250",
+      "--hv-hemel-einde": "calc(var(--hv-kop-hoogte-telefoon) + var(--hv-held-max))",
+      "--hv-hemel-gloed-hoogte": "var(--hv-held-max)",
+      "--hv-streep-sterk": "2px",
+      "--hv-streep-druk": "3px",
+      "--hv-wens-dikte": "2px",
+      "--hv-wens-rand-dikte": "1px",
+      "--hv-wens-uit": "4px",
+      "--hv-chip-klein": "28px",
+      "--hv-pincode-stip": "12px",
+      "--hv-gevaar-breedte": "480px",
+      "--hv-scene-min": "96px",
+      "--hv-kleur-wiel": "220px",
+      "--hv-kleur-staal": "44px",
+      "--hv-opdracht-boven": "12vh",
+      "--hv-regel-mini": "16px",
+      "--hv-regel-klein": "18px",
+      "--hv-regel-basis": "20px",
+      "--hv-regel-kop": "24px",
+      "--hv-regel-getal-m": "32px",
+      "--hv-regel-getal-l": "44px",
+      "--hv-regel-getal-xl": "68px",
+      "--hv-duur-bezig": "60000ms",
+      "--hv-duur-deur": "30000ms",
+      "--hv-duur-opgeslagen": "3000ms",
+      "--hv-z-oproep": "233",
+      "--hv-z-aanmelding": "236"
     },
     "dichtheid": {
       "compact": {
@@ -2730,14 +3053,14 @@
         "syntax": "<color>",
         "inherits": true,
         "initialValue": {
-          "--hv-hemel-boven": "#bfddf7",
-          "--hv-hemel-onder": "#e7f2fb",
-          "--hv-hemel-gloed": "#fff4d2"
+          "--hv-hemel-boven": "#9edaff",
+          "--hv-hemel-onder": "#def1fd",
+          "--hv-hemel-gloed": "#fdf8db"
         },
         "themaWaarde": "gewone declaratie onder .theme-dark, .theme-plum-dark en .theme-inkt"
       },
-      "verloop": "linear-gradient(180deg, var(--hv-hemel-boven) 0%, var(--hv-hemel-onder) 100%)",
-      "gloed": "radial-gradient(120% 80% at 78% 100%, var(--hv-hemel-gloed) 0%, transparent 60%)",
+      "verloop": "linear-gradient(180deg, var(--hv-hemel-boven) 0, var(--hv-hemel-onder) var(--hv-hemel-einde))",
+      "gloed": "radial-gradient(120% var(--hv-hemel-gloed-hoogte) at 78% var(--hv-hemel-einde), var(--hv-hemel-gloed) 0%, transparent 60%)",
       "zonNacht": -6,
       "zonDag": 6,
       "klok": {
@@ -2767,8 +3090,9 @@
       "nachtstandDonker": 0.35,
       "volgorde": [
         "fasen",
+        "stand «Nacht», licht thema: --hv-hemel-nacht-boven",
         "--surface2",
-        "--bg"
+        "stand «Nacht», donker thema: --bg"
       ],
       "neerslag": {
         "kleur": "--hv-hemel-neerslag",
@@ -2777,10 +3101,12 @@
           6,
           10
         ],
+        "regenStap": "14px",
         "hoek": 15,
         "sneeuwPunt": "2px",
         "sneeuwStap": "12px",
-        "zone": "bovenste derde"
+        "zone": "held, buiten de tekstkolom + 12px",
+        "zoneTelefoon": "strook van 16px tussen de kop en de datum"
       },
       "paletten": {
         "kleur": [
@@ -2788,9 +3114,11 @@
           "donker"
         ],
         "grifel": [
+          "licht",
           "donker"
         ],
         "violet": [
+          "licht",
           "donker"
         ],
         "puur": []
@@ -2800,9 +3128,119 @@
         "waar": "новий клас модуля на корені `/paneel/inkt/*` і в пульті макета; платформа його ще не знає"
       },
       "palettenUit": {
-        "puur": "небо вимкнено за задумом (чорно-біла палітра), перевірку контрасту воно проходить",
-        "grifel licht": "перевірка неба не проходить (`--muted` на обвідній)",
-        "violet licht": "перевірка неба не проходить (`--muted` на обвідній)"
+        "puur": "небо вимкнено за задумом (чорно-біла палітра), перевірку контрасту воно проходить"
+      },
+      "einde": {
+        "token": "--hv-hemel-einde",
+        "waar": "onderkant van de held: kopbalk + --hv-held-max; daaronder effen --hv-hemel-onder",
+        "volScherm": "100% op tv en op profielen met wijzerplaten of zones"
+      },
+      "nachtstandLicht": 0.35,
+      "nachtstandLichtNaar": "--hv-hemel-nacht-boven",
+      "tekst": {
+        "toegestaan": [
+          "--text"
+        ],
+        "verboden": [
+          "--muted",
+          "--faint"
+        ],
+        "bijschrift": "--tekst-mini / 600 in --text"
+      },
+      "perPagina": {
+        "overzicht": "vol",
+        "overig": "stil"
+      },
+      "mengselControle": {
+        "als": "vervangt de kanaalsgewijze omhullende",
+        "stappen": {
+          "aangrenzendeFasen": 0.05,
+          "plekInVerloop": 0.1,
+          "gloedDekking": 0.1,
+          "surface2Tot075": 0.05,
+          "nachtstand": [
+            0,
+            0.35
+          ]
+        },
+        "eisen": {
+          "--text": 7,
+          "--accent": 3,
+          "--hv-omtrek": 3,
+          "--focus": 3,
+          "--hv-aan": 3
+        },
+        "grens": {
+          "licht": "mengsel met de laagste luminantie",
+          "donker": "lichtste punt (een mengsel is nooit lichter dan zijn lichtste bestanddeel)"
+        },
+        "mengsels": 325248,
+        "gemeten": {
+          "kleur huis licht": {
+            "grens": "#b8bcf6",
+            "--text": 8.97,
+            "--accent": 3.35,
+            "--hv-omtrek": 3.11,
+            "--focus": 3.69,
+            "--hv-aan": 5.65
+          },
+          "kleur huis donker": {
+            "grens": "#33506b",
+            "--text": 7.74,
+            "--accent": 4.98,
+            "--hv-omtrek": 3.72,
+            "--focus": 4.66,
+            "--hv-aan": 7.9
+          },
+          "grifel licht": {
+            "grens": "#b8bcf6",
+            "--text": 8.97,
+            "--accent": 3.17,
+            "--hv-omtrek": 3.11,
+            "--focus": 3.69,
+            "--hv-aan": 5.65
+          },
+          "grifel donker": {
+            "grens": "#33506b",
+            "--text": 7.74,
+            "--accent": 3.94,
+            "--hv-omtrek": 3.72,
+            "--focus": 4.66,
+            "--hv-aan": 7.9
+          },
+          "violet licht": {
+            "grens": "#b8bcf6",
+            "--text": 7.89,
+            "--accent": 4.92,
+            "--hv-omtrek": 3.11,
+            "--focus": 3.69,
+            "--hv-aan": 5.65
+          },
+          "violet donker": {
+            "grens": "#33506b",
+            "--text": 7.4,
+            "--accent": 4.02,
+            "--hv-omtrek": 3.72,
+            "--focus": 4.66,
+            "--hv-aan": 7.9
+          },
+          "puur licht": {
+            "grens": "#b8bcf6",
+            "--text": 11.56,
+            "--accent": 10.4,
+            "--hv-omtrek": 3.11,
+            "--focus": 3.69,
+            "--hv-aan": 5.65
+          },
+          "puur donker": {
+            "grens": "#33506b",
+            "--text": 8.4,
+            "--accent": 8.4,
+            "--hv-omtrek": 3.72,
+            "--focus": 4.66,
+            "--hv-aan": 7.9
+          }
+        }
       }
     },
     "tonenOpPaletten": {
@@ -2901,7 +3339,8 @@
         "uitleg": "bevestigstap",
         "herbevestiging": "op de telefoon",
         "tokens": {
-          "--hv-gezicht-vulling": "8px"
+          "--hv-gezicht-vulling": "8px",
+          "--hv-hemel-einde": "100%"
         },
         "gezicht": {
           "bijschrift": "--tekst-mini / 600, boven; rechts hv-versheid",
@@ -2914,10 +3353,18 @@
           "lijst": [
             "toestand",
             "energie",
-            "meldingen"
+            "alarmen"
           ],
-          "blader": "onderste rij, hoogte --hv-tik: ‹ links, › rechts, stippen --hv-gezicht-stip ertussen"
-        }
+          "blader": "onderste rij, hoogte --hv-tik: ‹ links, › rechts, stippen --hv-gezicht-stip ertussen",
+          "toestandWoorden": [
+            "rustig",
+            "let op",
+            "alarm"
+          ],
+          "toestandRegels": 2,
+          "vlak": "papieren kaart --panel; bijschrift, getal, toestand en knoppen staan op papier"
+        },
+        "toestemmingWijzigen": false
       },
       {
         "id": "telefoon",
@@ -2949,7 +3396,8 @@
         "tokens": {
           "--hv-wijzer": "180px"
         },
-        "herbevestiging": "platformdialoog"
+        "herbevestiging": "platformdialoog",
+        "toestemmingWijzigen": true
       },
       {
         "id": "wand",
@@ -2977,11 +3425,14 @@
           "verschuifMinuten": 10,
           "terugNaarThuisMinuten": 5
         },
-        "herbevestiging": "via /paneel: hv-pincode met persoonlijke code; via gewoon adres: platformdialoog",
+        "herbevestiging": "kritieke actie van een mens — via /paneel: hv-pincode met persoonlijke code; via gewoon adres: platformdialoog. Toestemming wijzigen: alleen via gewoon adres, platformdialoog van de eigenaar",
         "tokens": {
           "--hv-rand": "24px",
-          "--hv-held-max": "320px"
-        }
+          "--hv-held-max": "min(320px, 40svh)",
+          "--hv-hemel-einde": "calc(var(--hv-kop-hoogte) + var(--hv-held-max))"
+        },
+        "toestemmingWijzigen": true,
+        "toestemmingWijzigenViaPaneel": false
       },
       {
         "id": "bureau",
@@ -3005,8 +3456,10 @@
         "herbevestiging": "platformdialoog",
         "tokens": {
           "--hv-rand": "24px",
-          "--hv-held-max": "320px"
-        }
+          "--hv-held-max": "min(320px, 40svh)",
+          "--hv-hemel-einde": "calc(var(--hv-kop-hoogte) + var(--hv-held-max))"
+        },
+        "toestemmingWijzigen": true
       },
       {
         "id": "breed",
@@ -3030,9 +3483,11 @@
         "herbevestiging": "platformdialoog",
         "tokens": {
           "--hv-rand": "32px",
-          "--hv-held-max": "320px"
+          "--hv-held-max": "min(320px, 40svh)",
+          "--hv-hemel-einde": "calc(var(--hv-kop-hoogte) + var(--hv-held-max))"
         },
-        "planKolommen": 6
+        "planKolommen": 6,
+        "toestemmingWijzigen": true
       },
       {
         "id": "ultrabreed",
@@ -3057,7 +3512,8 @@
         "herbevestiging": "platformdialoog",
         "tokens": {
           "--hv-rand": "32px",
-          "--hv-held-max": "320px"
+          "--hv-held-max": "min(320px, 40svh)",
+          "--hv-hemel-einde": "calc(var(--hv-kop-hoogte) + var(--hv-held-max))"
         },
         "zoneBreedtes": {
           "plan": "--hv-zone-plan",
@@ -3065,7 +3521,8 @@
           "blad": "--hv-laag-breedte",
           "min": "--hv-zone-min",
           "greep": "--hv-zone-greep"
-        }
+        },
+        "toestemmingWijzigen": true
       },
       {
         "id": "tv",
@@ -3083,12 +3540,14 @@
         "hemel": "vol",
         "glas": "nee",
         "gevaar": "ok-knop",
-        "uitleg": "menu",
+        "uitleg": "focus op i",
         "tokens": {
           "--hv-schaal": "1.5",
           "--hv-focus-afstand": "4px",
           "--hv-focus-rand": "3px",
-          "--hv-rand": "64px"
+          "--hv-rand": "64px",
+          "--hv-hemel-einde": "100%",
+          "--hv-hemel-gloed-hoogte": "80%"
         },
         "herbevestiging": "op de telefoon",
         "zoom": "var(--hv-schaal)",
@@ -3096,7 +3555,16 @@
           1280,
           720
         ],
-        "kolomLogisch": 130
+        "kolomLogisch": 130,
+        "toestemmingWijzigen": false,
+        "laag": {
+          "plaats": "rechts",
+          "breedte": "400px (logisch)",
+          "vlak": "--panel",
+          "rand": "1px --line",
+          "focus": "gevangen in het blad",
+          "sluiten": "Terug"
+        }
       },
       {
         "id": "strook",
@@ -3176,7 +3644,12 @@
           "dagstrook": "onderste 64px",
           "favorieten": "tegels 2×1 over de zonebreedte, onder elkaar: 4 (2)",
           "getal": "--hv-getal-xl"
-        }
+        },
+        "tokens": {
+          "--hv-hemel-einde": "100%",
+          "--hv-zin": "24px"
+        },
+        "toestemmingWijzigen": false
       },
       {
         "id": "vierkant",
@@ -3203,7 +3676,8 @@
         "uitleg": "tik",
         "herbevestiging": "hv-pincode met persoonlijke code",
         "tokens": {
-          "--hv-wijzer": "320px"
+          "--hv-wijzer": "320px",
+          "--hv-hemel-einde": "100%"
         },
         "tokensTot599": {
           "--hv-wijzer": "180px"
@@ -3219,8 +3693,10 @@
           "lijst": [
             "kamer"
           ],
-          "blader": "onderste rij, hoogte --hv-tik: ‹ links, › rechts, stippen --hv-gezicht-stip ertussen"
-        }
+          "blader": "onderste rij, hoogte --hv-tik: ‹ links, › rechts, stippen --hv-gezicht-stip ertussen",
+          "vlak": "papieren kaart --panel; bijschrift, getal, toestand en knoppen staan op papier"
+        },
+        "toestemmingWijzigen": false
       },
       {
         "id": "rond",
@@ -3248,7 +3724,7 @@
         "uitleg": "tik",
         "herbevestiging": "hv-pincode met persoonlijke code",
         "tokens": {
-          "--hv-wijzer": "320px"
+          "--hv-hemel-einde": "100%"
         },
         "gezicht": {
           "bijschrift": "--tekst-mini / 600, boven; rechts hv-versheid",
@@ -3268,10 +3744,15 @@
             "richting": "met de klok mee vanaf drie uur",
             "toont": "waarde van de wijzer of het saldo",
             "spoor": "--surface",
-            "vulling": "toon van de klasse"
+            "vulling": "toon van de klasse",
+            "diameter": "schermbreedte − 2 × 8px"
           },
-          "blader": null
-        }
+          "blader": null,
+          "vlak": "papieren kaart --panel; bijschrift, getal, toestand en knoppen staan op papier",
+          "wijzer": "geen: de boog langs de rand neemt de rol van hv-wijzer over",
+          "onder": "−/+ in de onderste rij"
+        },
+        "toestemmingWijzigen": false
       },
       {
         "id": "klein",
@@ -3311,8 +3792,13 @@
             "hoogte": "--hv-tik",
             "plaats": "rij onder de gezichten"
           },
-          "blader": null
-        }
+          "blader": null,
+          "vlak": "papieren kaart --panel; bijschrift, getal, toestand en knoppen staan op papier"
+        },
+        "tokens": {
+          "--hv-hemel-einde": "100%"
+        },
+        "toestemmingWijzigen": false
       },
       {
         "id": "deur",
@@ -3348,14 +3834,25 @@
           "voorCode": [
             "tijd",
             "weer",
-            "aanbellen"
+            "aanbellen",
+            "code invoeren"
           ],
           "naCode": [
             "Ik ga weg",
             "Ik ben thuis"
           ],
-          "blader": null
-        }
+          "blader": null,
+          "vlak": "papieren kaart --panel; bijschrift, getal, toestand en knoppen staan op papier",
+          "slotNaSeconden": 30,
+          "codes": [
+            "persoonlijke code van een bewoner",
+            "gastcode met termijn"
+          ]
+        },
+        "tokens": {
+          "--hv-hemel-einde": "100%"
+        },
+        "toestemmingWijzigen": false
       },
       {
         "id": "inkt",
@@ -3378,13 +3875,14 @@
         "gezicht": {
           "volgorde": [
             "huiszin",
+            "versheid",
             "uitzonderingen",
             "tegels"
           ],
           "nummer": {
             "maat": "--hv-inkt-nummer",
-            "vlak": "#000000",
-            "cijfer": "#ffffff",
+            "vlak": "--text",
+            "cijfer": "--accentText",
             "tekst": "--tekst-klein / 600",
             "plek": "linksboven",
             "regel": "cijfer = fysieke knop"
@@ -3393,7 +3891,8 @@
             4,
             8
           ]
-        }
+        },
+        "toestemmingWijzigen": false
       }
     ],
     "terugval": [
@@ -3456,16 +3955,6 @@
       {
         "als": "html.palet-puur",
         "waar": "чорно-біла палітра: небо й скло вимкнено за задумом; перевірку контрасту небо тут проходить",
-        "zet": {
-          "--hv-glas": "var(--panel)",
-          "--hv-glas-rand": "var(--line)",
-          "--hv-glas-filter": "none"
-        },
-        "hemel": "geen"
-      },
-      {
-        "als": "html.palet-grifel .theme-light; html.palet-violet .theme-plum-light",
-        "waar": "світлі `grifel` і `violet`: перевірка неба не проходить (`--muted` на обвідній — 3,58 і 3,99)",
         "zet": {
           "--hv-glas": "var(--panel)",
           "--hv-glas-rand": "var(--line)",
@@ -3544,17 +4033,34 @@
       "doorsnedeKamersPerVerdieping": 5,
       "doorsnedeVerdiepingenMax": 4,
       "tegelVormen": {
-        "1x1": [
-          0,
-          160
-        ],
-        "2x1": [
-          160,
-          null
-        ],
-        "2x2": "vanaf 160 met niveau",
-        "4x2": "vanaf 320, alleen blokken",
-        "1x1Alleen": "binnen een blok met de kamernaam"
+        "1x1": {
+          "naam": "знак",
+          "doelen": 1,
+          "inhoud": "teken + naam 12/600, één regel",
+          "vulling": "12px boven en onder, --ruimte-2 opzij",
+          "waar": "1x1Alleen"
+        },
+        "2x1": {
+          "naam": "рядок",
+          "doelen": 2,
+          "inhoud": "teken · naam 16/600 (tot twee regels) · «waarde · leeftijd» 14",
+          "tussenTekenEnTekst": "--hv-kier",
+          "niveau": "strook --hv-tegel-niveau langs de onderrand"
+        },
+        "2x2": {
+          "naam": "прилад",
+          "doelen": "teken, lijf, −, schuif, +",
+          "inhoud": "rij 1: teken · naam + «waarde · leeftijd»; rij 2: − · hv-schuif · +",
+          "vanafBreedte": "224px",
+          "ook": "hv-kamerkaart"
+        },
+        "4x2": {
+          "naam": "блок",
+          "inhoud": "als 2x2 plus het getal --hv-getal-m rechts in rij 1; ook ring, grafiek, camera, hv-telemetrie",
+          "waar": "tegel met bediening wanneer twee kolommen smaller zijn dan 224px (telefoon, wand 768, bureau 1280)"
+        },
+        "1x1Alleen": "binnen een kamerblok met zes of meer schakelaars; het blad opent via de regel «Усі пристрої кімнати / Alle apparaten in de kamer» onder het rooster",
+        "kiest": "de inhoud bepaalt de vorm; de breedte is alleen de terugvalregel"
       },
       "tegelKolomMin": "74px",
       "laagRechtsVanaf": {
@@ -3563,7 +4069,7 @@
       },
       "blokInklapDuur": "--hv-duur-2",
       "makerOpTegelMinuten": 10,
-      "zinDoelVulling": "10px",
+      "zinDoelVulling": "geen: op aanraakprofielen zijn zinsdelen gewone tekst, doelen zijn alleen de chips eronder",
       "dagstrookStrookHoogte": "64px",
       "dagstrookStrookBanen": [
         "aanwezigheid",
@@ -3635,7 +4141,13 @@
             "licht",
             "stopcontact",
             "media",
-            "huishoudelijk"
+            "huishoudelijk",
+            "computer",
+            "netwerkopslag",
+            "printer",
+            "router",
+            "stofzuiger",
+            "grasmaaier"
           ],
           "teken": "vlak --hv-aan-vlak, rand 2px --hv-aan, icoon --hv-op-aan",
           "niveau": "--hv-aan-vlak met rand --hv-aan op --hv-aan-zacht"
@@ -3669,7 +4181,10 @@
         "batterij": {
           "klassen": [
             "thuisbatterij",
-            "accu van voertuig"
+            "accu van voertuig",
+            "fiets",
+            "step",
+            "bromfiets"
           ],
           "teken": "vlak --hv-batterij-zacht, rand 2px en icoon --hv-batterij",
           "niveau": "--hv-batterij op --hv-batterij-zacht"
@@ -3677,19 +4192,57 @@
         "neutraal": {
           "klassen": [
             "gordijnen",
+            "jaloezie",
             "volume",
             "ventilatie",
+            "luchtbevochtiger",
             "beregening"
           ],
           "teken": "vlak --surface2, rand 2px en icoon --text",
           "niveau": "--text op --surface"
         },
         "chipToon": "vlak -zacht, icoon in de toon, woord --text",
-        "gevuldTeken": "vlak toon, icoon --hv-op-toon: alleen grafiekmerken en legenda"
+        "gevuldTeken": "vlak toon, icoon --hv-op-toon: alleen grafiekmerken en legenda",
+        "geenToon": {
+          "klassen": [
+            "slot",
+            "poort",
+            "garagedeur",
+            "gasklep",
+            "waterklep",
+            "sirene",
+            "alarm",
+            "camera",
+            "deurbel",
+            "drone"
+          ],
+          "teken": "vlak --surface, rand 1,5px --hv-omtrek, icoon --text; toestand in icoon en woord",
+          "gevaarlijkeRichting": "ritueelTeken",
+          "teLangOpen": "«let op» in hv-nu, geen kleur op de tegel"
+        },
+        "sensor": {
+          "klassen": [
+            "temperatuur",
+            "vochtigheid",
+            "luchtkwaliteit",
+            "aanwezigheid",
+            "lichtsterkte",
+            "rook",
+            "lekkage",
+            "beweging",
+            "meter"
+          ],
+          "teken": "geen schakelaar: icoon --text op --surface, alleen waarde en leeftijd"
+        },
+        "uitTeken": "vlak --surface, rand 1,5px --hv-omtrek, icoon --muted"
       },
       "inkt": {
-        "gekozen": "inversie: vlak #000000, tekst en icoon #ffffff",
-        "druk": "rand 3px",
+        "gekozen": "inversie: vlak --text, tekst en icoon --accentText",
+        "druk": "rand --hv-streep-druk",
+        "tekenAan": "inversie",
+        "tekenUit": "wit met rand 1,5px; woord van de toestand verplicht",
+        "nood": "inversie",
+        "wens": "witte streep met zwarte rand",
         "dagstrookFasen": {
           "nacht": "arcering stap 3px",
           "schemer": "arcering stap 6px",
@@ -3723,7 +4276,8 @@
         "zonder": [
           "hv-laag rechts (schuift de inhoud op)"
         ],
-        "kleur": "--overlay"
+        "kleur": "--overlay",
+        "plek": "in de laag van het eigen dialoogvenster, direct eronder"
       },
       "opdrachtBoven": "12vh",
       "kamerkaartStap": 0.5,
@@ -3733,7 +4287,255 @@
         "telefoon": "180px",
         "vierkant 480": "180px",
         "vierkant 720": "320px",
-        "rond": "320px"
+        "rond": null
+      },
+      "tegelBesturingMin": "224px",
+      "tegelTekenKolommenSmal": 3,
+      "tegelHoogten": {
+        "compact": {
+          "2x1": 56,
+          "besturing": 108
+        },
+        "normaal": {
+          "1x1": 84,
+          "2x1": 64,
+          "besturing": 116
+        },
+        "ruim": {
+          "2x1": 80,
+          "besturing": 144
+        },
+        "tweeRegelsNaam": {
+          "2x1": [
+            74,
+            82,
+            90
+          ],
+          "besturing": [
+            126,
+            134,
+            154
+          ],
+          "regel": "compact, normaal, ruim; de roosterrij groeit waar dit boven de rij uitkomt"
+        }
+      },
+      "doorsnedeRijenMax": {
+        "44px": 5,
+        "56px": 4,
+        "regel": "floor(240 / --hv-tik), tuin meegeteld; anders een rij hv-kamerkaart"
+      },
+      "doorsnedeTelefoon": "standaard uitgeklapt (rij van 96px); inklappen is een keuze van de mens",
+      "blokIngeklapt": "papieren pil --tekst-mini / 600, hoogte --hv-chip-klein, rechts van de kop",
+      "blokLeeg": "een blok zonder inhoud verdwijnt; hv-leeg alleen op paginaniveau",
+      "leeg": [
+        "eerste start",
+        "filter zonder resultaten",
+        "bron ontbreekt"
+      ],
+      "ritueelTeken": {
+        "als": "de actie in de huidige richting is gevaarlijk of kritiek",
+        "vorm": "vierkant --hv-teken × --hv-teken",
+        "straal": "--hv-straal-rail",
+        "rand": "--hv-rail-rand: toon, tussenruimte --panel, toon",
+        "toon": {
+          "gevaarlijk": "--warn",
+          "kritiek": "--fout-vlak"
+        },
+        "vlak": "--panel",
+        "icoon": "--hv-teken-icoon in --text",
+        "doel": "--hv-tik",
+        "tik": "opent hv-gevaar; voert niets uit",
+        "vasthouden": "alleen op hv-rail in het dialoogvenster",
+        "veiligeRichting": "gewone cirkel hv-schakel",
+        "toestandOnbekend": "vorm van het hoogste niveau van beide richtingen",
+        "voorbeelden": {
+          "slot": {
+            "ontgrendelen": "kritiek",
+            "vergrendelen": "gewoon"
+          },
+          "alarm": {
+            "uitschakelen": "kritiek",
+            "inschakelen": "gevoelig"
+          },
+          "poort": {
+            "openen": "gevaarlijk",
+            "sluiten": "gevoelig"
+          },
+          "gasklep": {
+            "openen": "kritiek",
+            "sluiten": "gewoon"
+          },
+          "sirene": {
+            "aan": "gevaarlijk",
+            "uit": "gewoon"
+          },
+          "oven": {
+            "aan": "gevaarlijk",
+            "uit": "gewoon"
+          },
+          "drone": {
+            "opstijgen": "kritiek",
+            "zweven, naar huis, nu landen": "veiligheidsactie, direct"
+          }
+        },
+        "bron": "shared/huis-gevaar.ts"
+      },
+      "wens": {
+        "vorm": "verticale streep --hv-wens-dikte in --hv-wens met rand --hv-wens-rand-dikte in --hv-wens-rand aan beide kanten",
+        "steektUit": "--hv-wens-uit boven en onder de baan; op de strook van 2x1 alleen naar boven",
+        "niveaurand": "blijft binnen de hoogte van de baan"
+      },
+      "wachtPerKlasse": {
+        "eersteAntwoord": "--hv-duur-wacht",
+        "bezig": {
+          "standaard": "--hv-duur-bezig",
+          "gordijnen": 60,
+          "jaloezie": 60,
+          "poort": 90,
+          "garagedeur": 90,
+          "slot": 15,
+          "klep": 30
+        },
+        "eenheid": "s",
+        "bron": "manifest van de adapter; deze waarden zijn de standaard",
+        "toestand": "виконується / bezig: richtingwoord + waargenomen percentage, zonder puls"
+      },
+      "toostGroep": "acties van één scène of één run van een regel: één melding «Сцена „Вечір“: 6 дій / Scène ‘Avond’: 6 acties», uitklapbaar",
+      "toostMeer": "de vierde en volgende: regel «Ще N / Nog N» die hv-meldingen opent",
+      "toostWachtBijGevaar": true,
+      "actieSporen": {
+        "mens": {
+          "logboek": "altijd, teken User",
+          "toost": [
+            "er is «Повернути / Ongedaan maken»",
+            "niet uitgevoerd",
+            "het gevolg ligt buiten beeld (scène, groep, ander vertrek)"
+          ],
+          "maquette": "elke actie geeft een melding (plan §5.3)"
+        },
+        "overig": {
+          "logboek": "altijd",
+          "toost": "altijd",
+          "meldingen": "altijd"
+        }
+      },
+      "faseTeken": {
+        "nacht": "Moon",
+        "dageraad": "Sunrise",
+        "dag": "Sun",
+        "schemer": "Sunset"
+      },
+      "huisstandTeken": {
+        "thuis": "House",
+        "afwezig": "LogOut",
+        "nacht": "BedDouble",
+        "vakantie": "Luggage",
+        "gasten": "Users"
+      },
+      "alarmstandTeken": {
+        "uit": "ShieldOff",
+        "schil": "ShieldHalf",
+        "nachtstand": "ShieldEllipsis",
+        "volledig": "ShieldCheck",
+        "alarm": "ShieldAlert"
+      },
+      "weerTeken": {
+        "helder": "Sun",
+        "halfbewolkt": "CloudSun",
+        "bewolkt": "Cloudy",
+        "regen": "CloudRain",
+        "sneeuw": "CloudSnow",
+        "mist": "CloudFog",
+        "geenGegevens": "CloudOff",
+        "regel": "`Cloud` zelf is alleen het teken van de maker «externe dienst»"
+      },
+      "sensorTeken": {
+        "temperatuur": "Thermometer",
+        "vochtigheid": "Droplets",
+        "luchtkwaliteit": "Wind",
+        "aanwezigheid": "PersonStanding",
+        "lichtsterkte": "SunMedium",
+        "net": "UtilityPole"
+      },
+      "pauzeTeken": "Pause",
+      "pulsDekking": [
+        1,
+        0.35
+      ],
+      "kamerkaart": {
+        "vorm": "2x2",
+        "rij1": "naam + «waarde · leeftijd» (waarde --text 14/600), rechts het teken van het licht",
+        "rij2": "− · doel 14/600 · +",
+        "chips": "rij van --hv-chip-klein alleen bij uitzonderingen; de tegel groeit dan 36px"
+      },
+      "heldRegel": {
+        "pil": {
+          "tekst": "--tekst-mini / 600",
+          "hoogte": "--hv-chip-klein",
+          "vulling": "0 10px"
+        },
+        "tot359": "fase-icoon 16px + tijd",
+        "vanaf360": "fase · tijd",
+        "vanaf700": "fase · toestand of aantal · tijd",
+        "teller": "aparte chip met driehoek en aantal, doel --hv-tik, opent «Nu belangrijk»",
+        "versheidTelefoon": "alleen icoon met aria-label",
+        "hoogteTot480": "held meteen ingeklapt; hv-laag rechts"
+      },
+      "stand": {
+        "segmentBreedte": "naar inhoud (flex: 1 0 auto)",
+        "vinkje": "links van het woord",
+        "toestanden": [
+          "uit",
+          "vragen",
+          "altijd",
+          "wacht op aanmelding",
+          "opgeslagen",
+          "niet opgeslagen",
+          "alleen bekijken",
+          "gemengd",
+          "gepauzeerd",
+          "termijn verlopen"
+        ],
+        "opgeslagenMs": "--hv-duur-opgeslagen",
+        "uitlegGevaar": "één knop «!» met vijf regels; geen aparte «i»",
+        "wijzigen": "alleen de eigenaar, op een persoonlijk apparaat, met de platformdialoog; geen paneelcode en geen persoonlijke code"
+      },
+      "standMatrix": {
+        "uitvoerder": "rij filterpillen boven de lijst: scènes, automatiseringen, optimalisatie, agent op naam",
+        "breed": "vanaf bureau: hv-tabel, kolommen = uitvoerders; cel = woord van de stand, klapt hv-stand uit als regel eronder",
+        "groepen": "inklapbare hv-blok per risiconiveau en apparaatklasse, teller «Завжди: N / Altijd: N»",
+        "groepStand": "«Для всієї групи / Voor de hele groep»: zet alle acties van de groep, elke blijft apart instelbaar",
+        "gemengd": "geen segment gekozen, bijschrift 12/600",
+        "altijdMetGevaar": "één keer opnieuw aanmelden + lijst van geraakte acties in hv-gevaar",
+        "logboek": "één regel per actie"
+      },
+      "pauze": {
+        "wijzigtStanden": false,
+        "stoppen": [
+          "eigenaar",
+          "bewoner",
+          "op de noodlaag: iedereen voor het scherm"
+        ],
+        "hervatten": [
+          "eigenaar"
+        ],
+        "nooit": "agent en automatisering pauzeren of hervatten zichzelf niet",
+        "boven": "regel 12/600 met Pause: «Призупинено о 17:42 · Олена / Gepauzeerd om 17:42 · Olena» en «Відновити / Hervatten»",
+        "kop": "papieren chip «Самостійні дії зупинено / Zelfstandige acties gestopt»",
+        "spoor": "logboek + hv-meldingen, soort huis.systeem"
+      },
+      "verzoek": {
+        "wachtTot": "het moment waarna de actie geen zin meer heeft (noemt het verzoek zelf) of de termijn uit de kaders van de eigenaar; standaard zonder termijn",
+        "toestanden": [
+          "wacht",
+          "goedgekeurd",
+          "afgewezen",
+          "verlopen",
+          "uitgevoerd",
+          "niet uitgevoerd"
+        ],
+        "verlopen": "verzoek ingeklapt, regel in het logboek, actie niet uitgevoerd",
+        "termijnKader": "verloopt de termijn van de eigenaar: stand terug naar «Uit», chip «строк минув 01.12 / termijn verlopen op 01-12», logboekregel van maker «systeem»"
       }
     }
   }

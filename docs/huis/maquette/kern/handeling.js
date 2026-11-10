@@ -84,12 +84,22 @@
       case 'programma': return v === 'start' ? ['програму запущено', 'programma gestart'] : ['програму зупинено', 'programma gestopt'];
       case 'robot': return ({ start: ['працює', 'bezig'], pauze: ['пауза', 'pauze'], dock: ['повертається на базу', 'keert terug naar het station'] })[v] || beide(String(v));
       case 'herstart': return ['перезапуск', 'herstart'];
-      default:
-        if (HV.teksten && HV.teksten.waarde) { var t = HV.teksten.waarde(mogelijkheid, v); if (t) return t; }
-        return beide(String(v));
+      case 'aftel': return v ? ['вимкнеться о ' + HV.tijd(v), 'gaat uit om ' + HV.tijd(v)] : ['відлік скасовано', 'aftellen geannuleerd'];
+      case 'effect': case 'modus': case 'ventilator': case 'bron':
+        return WAARDE_NAAM[v] || beide(String(v));
+      case 'stand': return typeof v === 'number' ? (v === 0 ? ['вимкнено', 'uit'] : ['швидкість ' + v, 'stand ' + v]) : (WAARDE_NAAM[v] || beide(String(v)));
+      default: return beide(String(v));
     }
   }
+  var WAARDE_NAAM = {
+    geen: ['без ефекту', 'geen effect'], kaars: ['свічка', 'kaars'], adem: ['дихання', 'ademen'], regenboog: ['веселка', 'regenboog'], stroboscoop: ['стробоскоп', 'stroboscoop'],
+    uit: ['вимкнено', 'uit'], verwarmen: ['обігрів', 'verwarmen'], auto: ['авто', 'auto'], koelen: ['охолодження', 'koelen'], drogen: ['осушення', 'drogen'], boiler: ['лише вода', 'alleen water'],
+    pauze: ['пауза', 'pauze'], slim: ['розумно', 'slim'], snel: ['швидко', 'snel'], hdmi1: ['вхід 1', 'ingang 1'], hdmi2: ['вхід 2', 'ingang 2'], tv: ['ефір', 'tv-kijken']
+  };
+  HV.waardeNaam = WAARDE_NAAM;
   HV.beschrijf = beschrijf;
+  /** Бажане значення під час очікування підтвердження, інакше спостережене. */
+  HV.gewenst = function (a, mogelijkheid) { return a.wacht && a.wacht.mogelijkheid === mogelijkheid ? a.wacht.waarde : huidige(a, mogelijkheid); };
 
   function huidige(a, mogelijkheid) {
     var st = a.st;

@@ -127,8 +127,8 @@
         return '<div class="hv-baan' + (b.klas ? ' ' + h(b.klas) : '') + '"><span class="hv-baan__naam">' + h(b.naam) + '</span><div class="hv-baan__spoor">' + stukken + punten + '</div></div>';
       }).join('');
       var xLabels = (p.tikken || []).map(function (k) { return '<span class="hv-grafiek__x" style="left:' + X(k.x).toFixed(1) + '%">' + h(k.label) + '</span>'; }).join('');
-      var nu = p.nu != null ? '<span class="hv-grafiek__nu" style="left:' + X(p.nu).toFixed(1) + '%"><span>' + h(t('зараз', 'nu')) + '</span></span>' : '';
-      var veld = '<div class="hv-grafiek__banen" role="img" aria-label="' + h((p.titel || '') + '. ' + (p.samenvatting || '')) + '">' + banen + '<div class="hv-grafiek__banenas"><span class="hv-baan__naam"></span><div class="hv-baan__spoor">' + nu + xLabels + '</div></div></div>';
+      var nu = p.nu != null ? '<span class="hv-grafiek__nu hv-grafiek__nu--banen" style="--x:' + (X(p.nu) / 100).toFixed(4) + '"><span>' + h(t('зараз', 'nu')) + '</span></span>' : '';
+      var veld = '<div class="hv-grafiek__banen" role="img" aria-label="' + h((p.titel || '') + '. ' + (p.samenvatting || '')) + '">' + banen + '<div class="hv-grafiek__banenas"><span class="hv-baan__naam"></span><div class="hv-baan__spoor">' + xLabels + '</div></div>' + nu + '</div>';
       var rijen = [];
       p.banen.forEach(function (b) {
         (b.stukken || []).forEach(function (s) { if (s.label) rijen.push([b.naam, h(s.label), h((p.format ? p.format(s.van) : s.van) + '–' + (p.format ? p.format(s.tot) : s.tot))]); });

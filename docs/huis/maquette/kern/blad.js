@@ -86,7 +86,7 @@
     var b = o.beeld(a), st = a.st, uit = '', naam = HV.p(a.naam);
     var heeft = function (m) { return a.mog.indexOf(m) >= 0; };
     var sch = b.schakel;
-    uit += '<div class="hv-bediening__hoofd">' + o.schakel({ aan: a.wacht && sch && a.wacht.mogelijkheid === sch.mogelijkheid ? a.wacht.waarde : b.aan, icoon: b.icoon, toon: b.toon, kritiek: b.kritiek, staat: a.wacht ? 'wacht' : (a.beschikbaar !== 'ok' ? a.beschikbaar : null), actie: sch && !b.kritiek ? 'schakel' : null, gegevens: sch ? { doel: a.id, mogelijkheid: sch.mogelijkheid, op: sch.op, af: sch.af } : null, aria: naam }) +
+    uit += '<div class="hv-bediening__hoofd">' + o.schakel({ aan: a.beschikbaar === 'onbereikbaar' ? false : a.wacht && sch && a.wacht.mogelijkheid === sch.mogelijkheid ? a.wacht.waarde : b.aan, icoon: b.icoon, toon: b.toon, kritiek: b.kritiek, staat: a.wacht ? 'wacht' : (a.beschikbaar !== 'ok' ? a.beschikbaar : null), actie: sch && !b.kritiek ? 'schakel' : null, gegevens: sch ? { doel: a.id, mogelijkheid: sch.mogelijkheid, op: sch.op, af: sch.af } : null, aria: naam }) +
       '<div><p class="hv-bediening__woord">' + h(a.wacht ? HV.woord.wacht() : b.woord) + '</p>' + (b.waarde ? '<p class="hv-bediening__getal">' + b.waarde + '</p>' : '') + '</div></div>';
     var schuif = function (m, label, eenheid, min, max, stap) { return o.schuif({ label: label, waarde: st[m], min: min, max: max, stap: stap, eenheid: eenheid, toon: 'neutraal', actie: 'schuif-doe', gegevens: { doel: a.id, mogelijkheid: m } }); };
     var veld = function (label, html) { return '<div class="hv-veld"><span class="hv-veld__label">' + h(label) + '</span>' + html + '</div>'; };

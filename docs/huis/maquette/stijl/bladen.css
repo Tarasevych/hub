@@ -1,0 +1,143 @@
+/* bladen.css — шари над сторінкою: аркуш керування (hv-laag), діалог небезпечної дії (hv-gevaar) з рейкою (hv-rail),
+   Команда (hv-opdracht), центр сповіщень, аварійний шар (hv-nood). Скляна лише оболонка; вміст — на папері. */
+
+.hv-lagen { position: absolute; inset: 0; z-index: var(--hv-z-laag); pointer-events: none; }
+.hv-lagen > * { pointer-events: none; }
+.hv-lagen > * > * { pointer-events: auto; }
+.hv-lagen > .hv-toosten > * { pointer-events: auto; }
+.hv-dek { position: absolute; inset: 0; background: var(--overlay); animation: hv-vervaag var(--hv-duur-2) linear; }
+.hv-dek--dialoog { z-index: var(--hv-z-opdracht); }
+@keyframes hv-vervaag { from { opacity: 0; } }
+
+/* ── hv-laag: знизу на телефоні (до 90 % висоти), праворуч на комп'ютері ── */
+.hv-laag { position: absolute; inset-inline: 0; inset-block-end: 0; z-index: 1; display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; max-block-size: var(--hv-laag-hoogte-max); min-block-size: 40cqh; background: var(--hv-glas); -webkit-backdrop-filter: var(--hv-glas-filter); backdrop-filter: var(--hv-glas-filter); border: 1px solid var(--hv-glas-rand); border-block-end: 0; border-radius: var(--straal-xl) var(--straal-xl) 0 0; box-shadow: var(--schaduw-3); animation: hv-laag-op var(--hv-duur-3) var(--hv-kromme-in); }
+@keyframes hv-laag-op { from { transform: translateY(32px); opacity: 0; } }
+@keyframes hv-laag-zij { from { transform: translateY(12px); opacity: 0; } }
+.hv-laag__greep { justify-self: center; inline-size: 40px; block-size: 4px; margin-block-start: var(--ruimte-2); border-radius: 999px; background: var(--hv-omtrek); }
+.hv-laag__kop { display: flex; align-items: center; gap: var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-1) var(--ruimte-4); min-inline-size: 0; }
+.hv-laag__teken { inline-size: var(--hv-teken); block-size: var(--hv-teken); border-radius: var(--straal-s); display: grid; place-items: center; background: var(--panel); border: 1px solid var(--line); flex: none; }
+.hv-laag__naam { flex: 1 1 auto; min-inline-size: 0; display: grid; }
+.hv-laag__naam h2 { font-size: var(--hv-tekst-kop); font-weight: 650; letter-spacing: -0.01em; line-height: 1.2; }
+.hv-laag__naam p { font-size: var(--tekst-klein); color: var(--muted); font-weight: 500; }
+.hv-tabs--laag { margin-inline: 0; padding-inline: var(--ruimte-3); }
+.hv-laag__inhoud { overflow-y: auto; overscroll-behavior: contain; padding: var(--ruimte-2) var(--ruimte-3) var(--ruimte-4); scrollbar-width: thin; scrollbar-color: var(--hv-omtrek) transparent; min-block-size: 0; }
+.hv-laag__paneel { display: grid; gap: var(--hv-kier); align-content: start; }
+.hv-laag__paneel > .hv-kaart + .hv-kaart { margin-block-start: 0; }
+.hv-laag__voet { display: grid; gap: 2px; padding: var(--ruimte-2) var(--ruimte-4) calc(var(--ruimte-3) + env(safe-area-inset-bottom, 0px)); border-block-start: 1px solid var(--hv-glas-rand); }
+.hv-laag__voet .hv-stempel { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px var(--ruimte-3); justify-self: start; }
+.hv-laag__maker { display: flex; align-items: center; gap: var(--ruimte-1); font-size: var(--tekst-mini); color: var(--muted); }
+.hv-laag__noot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-mini); color: var(--muted); padding-inline: var(--ruimte-1); }
+
+/* вміст аркуша */
+.hv-bediening__hoofd { display: flex; align-items: center; gap: var(--ruimte-3); padding-block-end: var(--ruimte-3); }
+.hv-bediening__hoofd .hv-schakel { --hv-teken: 56px; inline-size: 60px; block-size: 60px; }
+.hv-bediening__hoofd .hv-schakel__ic { inline-size: var(--hv-icoon-l); block-size: var(--hv-icoon-l); }
+.hv-bediening__woord { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-bediening__getal { font-size: var(--hv-getal-l); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
+.hv-waarom { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-klein); font-weight: 600; }
+.hv-huisstand { display: grid; }
+.hv-huisstand__rij { display: flex; align-items: center; gap: var(--ruimte-1); border-block-start: 1px solid var(--line); }
+.hv-huisstand__rij:first-child { border-block-start: 0; }
+.hv-huisstand__knop { flex: 1 1 auto; display: flex; align-items: center; gap: var(--ruimte-3); min-block-size: calc(var(--hv-tik) + var(--ruimte-2)); font-weight: 600; border-radius: var(--straal-s); }
+.hv-huisstand__knop span { flex: 1 1 auto; }
+.hv-huisstand__rij.is-gekozen .hv-huisstand__knop { color: var(--text); }
+.hv-huisstand__rij:not(.is-gekozen) .hv-huisstand__knop > .hv-ic:first-child { color: var(--muted); }
+.hv-meldingen { display: grid; gap: var(--ruimte-1); }
+.hv-meldingen .hv-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--ruimte-3) * -1); padding-inline: var(--ruimte-3); }
+.hv-meldingen .hv-filter::-webkit-scrollbar { display: none; }
+.hv-meldingen .hv-berichten { background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); padding-inline: var(--ruimte-3); margin-block-start: var(--ruimte-2); }
+
+/* сторінка кімнати */
+.hv-kamer, .hv-kamerlijst { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-kamerkop { display: flex; align-items: center; gap: var(--ruimte-3); }
+.hv-kamerkop__teken { inline-size: 52px; block-size: 52px; border-radius: var(--straal-m); display: grid; place-items: center; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); flex: none; }
+.hv-kamerkop__sub { font-size: var(--tekst-klein); color: var(--muted); font-weight: 500; }
+.hv-kamerkop__chips { display: flex; gap: 0 var(--ruimte-2); overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--hv-rand) * -1); padding-inline: var(--hv-rand); }
+.hv-kamerkop__chips::-webkit-scrollbar { display: none; }
+
+/* ── hv-gevaar: діалог на папері; hv-rail: рейка утримання з подвійною рамкою ── */
+.hv-gevaar { position: absolute; z-index: var(--hv-z-gevaar); inset-inline: var(--hv-rand); inset-block-end: calc(var(--hv-rand) + env(safe-area-inset-bottom, 0px)); display: grid; gap: var(--ruimte-3); max-block-size: calc(100cqh - 2 * var(--hv-rand)); overflow-y: auto; padding: var(--ruimte-5) var(--ruimte-4) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-xl); box-shadow: var(--schaduw-3); animation: hv-laag-op var(--hv-duur-3) var(--hv-kromme-in); }
+.hv-gevaar__kop { display: grid; gap: var(--ruimte-1); }
+.hv-gevaar__kop h2 { font-size: 24px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.2; }
+.hv-gevaar__kop .hv-risico { font-size: var(--tekst-klein); }
+.hv-gevaar__doel { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-gevaar__doel span:first-child { font-weight: 600; }
+.hv-gevaar__knoppen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); justify-content: flex-end; }
+.hv-gevaar__knoppen .hv-knop { flex: 1 1 140px; }
+.hv-gevaar__noot { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-rail { --rail: var(--warn); --rail-zacht: var(--warn-zacht); position: relative; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-3); min-block-size: var(--hv-rail-hoogte); padding: var(--ruimte-2) var(--ruimte-4); border: var(--hv-rail-rand) solid var(--rail); border-radius: var(--hv-straal-rail); outline: var(--hv-rail-rand) solid var(--rail); outline-offset: var(--hv-rail-rand); margin: calc(var(--hv-rail-rand) * 2); background: var(--panel); font-weight: 600; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; overflow: hidden; }
+.hv-rail--kritiek { --rail: var(--fout-vlak); --rail-zacht: var(--fout-zacht); }
+.hv-rail:focus-visible { outline: var(--hv-rail-rand) solid var(--rail); box-shadow: 0 0 0 calc(var(--hv-rail-rand) * 2 + var(--hv-focus-rand) + 2px) var(--focus); }
+.hv-rail__vulling { position: absolute; inset-block: 0; inset-inline-start: 0; z-index: -1; inline-size: 0; background: var(--rail-zacht); }
+.hv-rail.is-houdt .hv-rail__vulling { inline-size: 100%; transition: inline-size var(--hv-duur-houd) linear; }
+.hv-rail__tekst { line-height: 1.25; }
+.hv-rail__tel { font-variant-numeric: tabular-nums; font-size: var(--tekst-klein); color: var(--muted); min-inline-size: 3.2em; text-align: end; }
+.hv-herbevestig { display: flex; gap: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-herbevestig__teken { inline-size: 44px; block-size: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--line); flex: none; }
+.hv-herbevestig__tekst { font-weight: 600; }
+.hv-herbevestig__noot { font-size: var(--tekst-klein); color: var(--muted); margin-block-start: 2px; }
+
+/* ── hv-opdracht: скляний діалог, рядки на папері ── */
+.hv-opdracht { position: absolute; z-index: var(--hv-z-opdracht); inset-inline: var(--ruimte-2); inset-block: calc(var(--hv-kop-h) + var(--ruimte-2)) var(--ruimte-2); display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--hv-glas); -webkit-backdrop-filter: var(--hv-glas-filter); backdrop-filter: var(--hv-glas-filter); border: 1px solid var(--hv-glas-rand); border-radius: var(--straal-xl); box-shadow: var(--schaduw-3); overflow: hidden; animation: hv-laag-op var(--hv-duur-3) var(--hv-kromme-in); }
+.hv-opdracht__zoek { display: flex; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-2) var(--ruimte-4); border-block-end: 1px solid var(--hv-glas-rand); color: var(--muted); }
+.hv-opdracht__zoek input { flex: 1 1 auto; min-inline-size: 0; min-block-size: var(--hv-tik); border: 0; background: transparent; font-size: 18px; font-weight: 500; color: var(--text); }
+.hv-opdracht__zoek input::placeholder { color: var(--muted); opacity: 1; }
+.hv-opdracht__lijf { overflow-y: auto; padding: var(--ruimte-3); }
+.hv-opdracht__lijf > .hv-rijen, .hv-opdracht__gevolg { background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); padding: var(--ruimte-1) var(--ruimte-4); }
+.hv-opdracht__gevolg { display: grid; gap: var(--ruimte-3); padding-block: var(--ruimte-4); }
+.hv-opdracht__gevolg h3 { font-size: var(--hv-tekst-kop); font-weight: 650; }
+.hv-opdracht__gevolg .hv-knoppen { justify-content: flex-end; }
+.hv-opdracht__werkwoorden { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--hv-kier); }
+.hv-opdracht__werkwoord { display: grid; gap: var(--ruimte-2); align-content: space-between; justify-items: start; min-block-size: 96px; padding: var(--ruimte-3) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); font-weight: 600; line-height: 1.2; }
+.hv-opdracht__werkwoord .hv-ic { color: var(--muted); }
+.hv-opdracht__werkwoord:active { background: var(--surface2); }
+
+/* ── hv-nood: суцільний аварійний шар, рамка 4 px; неба й скла під ним немає ── */
+.hv-nood { position: absolute; inset: 0; z-index: var(--hv-z-nood); display: grid; place-items: center; padding: var(--hv-rand); background: var(--fout-zacht); border: var(--hv-nood-rand) solid var(--fout-vlak); overflow-y: auto; }
+.hv-nood__binnen { display: grid; gap: var(--ruimte-3); inline-size: min(100%, 560px); }
+.hv-nood__teken { inline-size: 64px; block-size: 64px; border-radius: var(--hv-straal-rail); display: grid; place-items: center; background: var(--fout-vlak); color: var(--text-on-vlak); }
+.hv-nood h2 { font-size: clamp(28px, 6cqw, 44px); font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; }
+.hv-nood__wat { font-size: 18px; font-weight: 600; }
+.hv-nood__thuis { font-size: var(--tekst-basis); color: var(--muted); }
+.hv-nood__knoppen { display: grid; gap: var(--ruimte-2); margin-block-start: var(--ruimte-2); }
+.hv-nood__knop { min-block-size: var(--hv-nood-knop); padding: var(--ruimte-2) var(--ruimte-4); border-radius: var(--straal-m); background: var(--panel); border: 2px solid var(--text); font-size: 18px; font-weight: 650; text-align: center; }
+.hv-nood__knop--hoofd { background: var(--fout-vlak); border-color: var(--fout-vlak); color: var(--text-on-vlak); }
+.hv-nood__sim { display: flex; gap: var(--ruimte-2); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+
+@container doek (max-width: 899px) {
+  .heeft-laag .hv-toosten { inset-block: calc(var(--hv-kop-h) + var(--ruimte-2)) auto; }
+}
+@container doek (min-width: 700px) {
+  .hv-gevaar { inset-inline: auto; inset-block: auto; inset-inline-start: 50%; inset-block-start: 50%; transform: translate(-50%, -50%); inline-size: min(520px, calc(100cqw - 2 * var(--hv-rand))); animation-name: hv-vervaag; }
+  .hv-gevaar__knoppen .hv-knop { flex: 0 1 auto; }
+  .hv-opdracht { inset-inline: auto; inset-block: 12cqh auto; inset-inline-start: 50%; transform: translateX(-50%); inline-size: min(var(--hv-opdracht-breedte), calc(100cqw - 2 * var(--hv-rand))); max-block-size: 70cqh; animation-name: hv-vervaag; }
+  .hv-opdracht__werkwoorden { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hv-nood__knoppen { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+}
+/* настінна панель від 900 px — аркуш праворуч 360 px; комп'ютер — 400 px; вміст сторінки зсувається, затемнення немає */
+@container doek (min-width: 900px) {
+  .hv-laag { inset-inline: auto var(--ruimte-3); inset-block: calc(var(--hv-kop-h) + var(--ruimte-3)) var(--ruimte-3); inline-size: var(--hv-laag-breedte-wand); max-block-size: none; min-block-size: 0; border-block-end: 1px solid var(--hv-glas-rand); border-radius: var(--straal-xl); box-shadow: var(--schaduw-2); animation-name: hv-laag-zij; }
+  .hv-laag__greep { display: none; }
+  .hv-laag__kop { padding-block-start: var(--ruimte-3); }
+  .hv-dek--laag { display: none; }
+  .heeft-laag .hv-pagina { margin-inline: 0; max-inline-size: none; padding-inline-end: calc(var(--hv-laag-breedte-wand) + var(--ruimte-3) + var(--hv-rand)); }
+  .heeft-laag .hv-toosten { inset-inline-end: calc(var(--hv-laag-breedte-wand) + var(--ruimte-3) + var(--hv-rand)); }
+}
+@container doek (min-width: 1100px) {
+  .hv-laag { inline-size: var(--hv-laag-breedte); }
+  .hv-laag--breed { inline-size: calc(var(--hv-laag-breedte) + 80px); }
+  .heeft-laag .hv-pagina { padding-inline-end: calc(var(--hv-laag-breedte) + var(--ruimte-3) + var(--hv-rand)); }
+  .heeft-laag .hv-toosten { inset-inline-end: calc(var(--hv-laag-breedte) + var(--ruimte-3) + var(--hv-rand)); }
+  .heeft-laag .hv-thuis__rooster { grid-template-columns: minmax(0, 1fr); }
+  .heeft-laag .hv-held__beeld { display: none; }
+}
+@container doek (min-width: 1800px) {
+  .heeft-laag .hv-thuis__rooster { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .heeft-laag .hv-held__beeld { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hv-laag, .hv-gevaar, .hv-opdracht, .hv-dek { animation: none; }
+}
+@media (hover: hover) {
+  .hv-opdracht__werkwoord:hover, .hv-huisstand__knop:hover { background: var(--surface); }
+}

@@ -373,7 +373,7 @@ export function controleer() {
   for (const naam of volgorde.stijl) if (!existsSync(join(MAP, naam))) meld(`volgorde.json: ${naam} ontbreekt`);
   const art = bouw({ artefact: true });
   if (!art.startsWith(`<title>${TITEL}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>`)) meld('artefact: begint niet met title, meta en style');
-  if (/<!doctype|<html|<head|<body/i.test(art)) meld('artefact: bevat doctype/html/head/body');
+  if (/<!doctype|<html[\s>]|<head[\s>]|<body[\s>]/i.test(art)) meld('artefact: bevat doctype/html/head/body');
   if (/https?:\/\/(?!www\.w3\.org|huis\.tarasevych\.com)/.test(art)) meld('artefact: extern adres in het bestand');
 
   // 6. Tokens: thema's volledig.
