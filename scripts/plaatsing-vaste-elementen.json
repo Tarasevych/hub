@@ -119,6 +119,14 @@
  ],
  "toegestaan": [
   {
+   "sleutel": "src/afzenders/contacten.css :: .ctv-scan-korte-melding",
+   "reden": "MAILSCAN-002: bericht van hoogstens twee seconden na een uitdrukkelijk gekozen adrescontrole. Geen knop: pointer-events:none, raakvlakken blijven vrij en de vaste plaats verhindert dat de melding met de inhoud meeschuift."
+  },
+  {
+   "sleutel": "src/mail/mail-achtergrond.css :: .mail-achtergrond-instellingen-portaal",
+   "reden": "MAILSCAN-002: instellingenpaneel van de bewegende achtergrond, via document.body getoond. Geen zwevende knop: de bestaande knop blijft in de kop van de mailsectie, het paneel zelf krijgt een vaste plaats binnen de zichtbare schermranden en wordt niet door het smalle mobiele inhoudsvak afgesneden."
+  },
+  {
    "sleutel": "src/canoniek-meldingencentrum.css :: .cnc-pijl",
    "reden": "INTEG-001: pijltje van het meldingenpaneel/de pop-up naar de bel (deel van het venster, geen knop, pointer-events:none). Staat in hetzelfde kader als .canonical-notification-panel en -toast, die zelf al vast zijn; zonder position:fixed kan het niet aan de rand van dat venster hangen."
   },

@@ -1,0 +1,91 @@
+name: MAILSCAN-002 · згода і мобільне рідинне тло
+
+on:
+  push:
+    branches:
+      - fix/mailscan-002-20261110-082557
+
+permissions:
+  contents: read
+
+jobs:
+  controleren:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Джерельні файли та історія
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Підготувати середовище
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Правила та походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak MAILSCAN-002 --fase overdracht
+      - name: Перевірити добровільну згоду й інтерфейс
+        run: |
+          node scripts/eenheidstests.mjs mail-scan-toestemming-20261110
+          node scripts/eenheidstests.mjs scan-weergave-20261029
+          node scripts/eenheidstests.mjs mail-ux-beoordeling-20261021
+          npx tsc --noEmit -p tsconfig.json
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Перевірити нову міграцію та дві скриньки
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs mail-contacten.test.ts
+          node scripts/eenheidstests.mjs contacten-hervatten-20261019.test.ts
+      - name: Перевірити сторінки на вузьких екранах
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          npx --yes playwright@1.56.1 install --with-deps chromium
+          mkdir -p uitvoer
+          npx vite --host 127.0.0.1 --port 4179 > uitvoer/mailscan-002-vite.txt 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for poging in $(seq 1 45); do
+            if curl -fsS 'http://127.0.0.1:4179/tests/visueel/mailfix-voorbeeld.html' > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/visueel/mailscan-002-scherm.mjs
+      - name: Зберегти знімки та результати
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAILSCAN-002-перевірка
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            uitvoer/mailscan-002-*.png
+            uitvoer/mailscan-002-*.txt
+            uitvoer/mailscan-002-vite.txt
+      - name: Переконатися, що перевірки не змінили джерел
+        run: git diff --exit-code

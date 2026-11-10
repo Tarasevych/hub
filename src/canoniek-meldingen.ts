@@ -16,6 +16,8 @@ export type CanonicalNoticeInput = {
   action?: CanonicalNoticeAction;
   retain?: boolean;
   transient?: boolean;
+  /** Зберегти в переліку сповіщень, але не відкривати загальне спливне вікно й не відтворювати звук. */
+  alleenPaneel?: boolean;
   link?: { href: string; label: string };
   dedupeSeconds?: number;
   actionExpiresAt?: number;

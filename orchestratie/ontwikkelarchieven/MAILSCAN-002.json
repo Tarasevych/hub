@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "taakId": "MAILSCAN-002",
+  "datum": "2026-11-10",
+  "taal": "uk",
+  "opdracht": "Усунути самовільну перевірку всіх поштових адрес і велике вікно, що перекриває сторінку на телефоні. Зробити окрему згоду, спосіб, розклад, умови та короткі сповіщення для кожної скриньки. Виправити обрізані налаштування тла і додати живе рідинне тло з малюванням, дотиками, хвилями та нетривалим утворенням емблем поштових служб. Зберегти всі чинні дані та чужі зміни.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "ChatGPT",
+    "basis": "b9482efafbcf9c4cea9197e8094045ccf6aa19ed",
+    "tak": "fix/mailscan-002-20261110-082557",
+    "referentie": "https://github.com/Tarasevych/hub"
+  },
+  "bronnen": [
+    { "soort": "privaat_bewijs", "omschrijving": "Знімок екрана пошти з великим вікном перевірки адрес, 10.11.2026", "sha256": "02cc30d6cb137d0e3496da99d7c5c3202711de2179a63a9bb3382a959969c757", "inhoudGepubliceerd": false },
+    { "soort": "privaat_bewijs", "omschrijving": "Знімок екрана згорнутого вікна на мобільній сторінці", "sha256": "d8dde3cfcc719e81a6eb86641d1096cebe29d9a17ef2a8aee1f8f590d22c1250", "inhoudGepubliceerd": false },
+    { "soort": "privaat_bewijs", "omschrijving": "Знімок екрана обрізаних налаштувань рухомого тла", "sha256": "7149119724a4db8799a73dfde60cff05d5e9d1a30df65728101bec1fa8626508", "inhoudGepubliceerd": false }
+  ],
+  "tijdlijn": [
+    { "volgorde": 1, "stap": "Звірено правила сховища, базову фіксацію змін та декларацію завдання. Нову роботу відокремлено від інтеграційної гілки.", "bewijzen": ["AGENTS.md", "orchestratie/taken/MAILSCAN-002.json"] },
+    { "volgorde": 2, "stap": "Знайдено причину самовільної перевірки: попередній механізм автоматично звертався до запуску, не маючи окремого дозволу власника для кожної скриньки.", "bewijzen": ["backend/mail-afzenders.ts", "src/afzenders/scan-weergave.ts"] },
+    { "volgorde": 3, "stap": "Додано незалежні налаштування кожної підключеної скриньки. Відсутній запис означає заборону, усі серверні початки перевірки перевіряють згоду. Наявні результати не вилучаються.", "bewijzen": ["shared/contacten-scan-voorkeuren.ts", "migrations/0205_mail_contacten_voorkeuren.sql", "backend/mail-afzenders.ts"] },
+    { "volgorde": 4, "stap": "Велике вікно замінено двосекундним сповіщенням за особистим вибором. Хід зберігається в панелі сповіщень; за відсутності дозволу вікно не виникає.", "bewijzen": ["src/afzenders/ContactenScanMelding.tsx", "src/CanoniekMeldingencentrum.tsx", "src/afzenders/ScanPaneel.tsx"] },
+    { "volgorde": 5, "stap": "Мобільні налаштування тла винесено поза обрізаний контейнер. Значки живуть у плинних зграях, реагують на пальці, постукування й письмові рухи; емблеми служб набувають форми ненадовго, щонайбільше раз на добу в одному переглядачі.", "bewijzen": ["src/mail/MailAchtergrond.tsx", "src/mail/mail-vloeistof.ts", "src/mail/mail-achtergrond.css"] },
+    { "volgorde": 6, "stap": "Усунено обхід окремої згоди через старе автоматичне відновлення. Повторне повне обчислення спільних лічильників тимчасово заблоковано, доки не буде безпечного перерахунку без втрати інших скриньок.", "bewijzen": ["backend/mail-afzenders.ts", "src/afzenders/ScanPaneel.tsx"] },
+    { "volgorde": 7, "stap": "Оновлено одиничні перевірки на нове правило добровільної згоди, зокрема давні перевірки, що вимагали автоматичного запуску.", "bewijzen": ["tests/eenheid/mail-scan-toestemming-20261110.test.ts", "tests/eenheid/mail-contacten.test.ts", "tests/eenheid/contacten-hervatten-20261019.test.ts"] },
+    { "volgorde": 8, "stap": "Підготовлено окрему перевірку в захищеному середовищі: двічі застосувати міграції, перевірити дві скриньки на пробній базі, відмалювати повну поштову сторінку на чотирьох ширинах, перевірити межі налаштувань та перемикач малювання. Знімки зберігаються для перегляду власником; встановлення заборонено.", "bewijzen": [".github/workflows/mailscan-002-controle.yml", "tests/visueel/mailscan-002-scherm.mjs"] },
+    { "volgorde": 9, "stap": "Перший хмарний прогін відхилив випуск через два нові нерухомі елементи без реєстрації в перевірці розміщення. Коротке повідомлення без кнопок і перенесену панель налаштувань внесено до дозволених винятків із точним поясненням, не змінюючи вимог до рухомих кнопок.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42789170007", "scripts/plaatsing-vaste-elementen.json"] },
+    { "volgorde": 10, "stap": "Другий хмарний прогін успішно перевірив повне складання, типи й нові одиничні перевірки та знайшов дві застарілі умови в давній перевірці пробної бази. Умови оновлено відповідно до нової добровільної згоди: відновлення лише дозволених скриньок, відсутність небезпечної кнопки повного перерахунку.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42790026009", "tests/eenheid/mail-contacten.test.ts"] },
+    { "volgorde": 11, "stap": "Третій хмарний прогін успішно пройшов 79 із 79 перевірок пробної бази. У давньому випробуванні відновлення знайдено одну неточність: позначені перемикачі згоди двох скриньок рахувалися разом із трьома перемикачами способу обробки помилок. Підрахунок обмежено відповідними перемикачами.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42790865700", "tests/eenheid/contacten-hervatten-20261019.test.ts"] },
+    { "volgorde": 12, "stap": "Четвертий хмарний прогін завершився успішно: типи, повне складання, дві пробні скриньки, повторна міграція, усі одиничні перевірки та справжнє відмальовування повної сторінки на чотирьох ширинах. Збережено й оглянуто знімки 320, 390, 740 та 1280 пікселів. Дані власника й робочий сервер не змінювалися; потрібне окреме підтвердження перед інтеграцією та встановленням.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42791312802", "https://github.com/Tarasevych/hub/actions/runs/42791312802/artifacts/13751594794"] }
+  ],
+  "keuzes": [
+    { "keuze": "Без згоди немає запуску", "reden": "Правило діє на сервері, а не лише за виглядом кнопки; одна скринька не успадковує налаштувань іншої." },
+    { "keuze": "Не стирати спільні результати", "reden": "Дані декількох скриньок зведені в одні підсумки. Простий повний перерахунок однієї скриньки міг би знищити підсумки іншої." },
+    { "keuze": "Емблема щонайбільше раз на день", "reden": "Місцеве сховище переглядача обмежує частоту і зберігає відомості про попередню емблему без передавання персональних даних." },
+    { "keuze": "Зменшити рух на вимогу пристрою", "reden": "Якщо власник обрав зменшення руху в системі, початковий стан анімації призупинений." }
+  ],
+  "wijzigingen": [
+    "backend/mail-afzenders.ts", "migrations/0205_mail_contacten_voorkeuren.sql", "shared/contacten-scan-voorkeuren.ts",
+    "src/afzenders/ScanPaneel.tsx", "src/afzenders/ContactenScanMelding.tsx", "src/afzenders/scan-weergave.ts", "src/afzenders/api.ts", "src/afzenders/contacten.css",
+    "src/CanoniekMeldingencentrum.tsx", "src/canoniek-meldingen.ts", "src/connector-activiteit.ts",
+    "src/mail/MailAchtergrond.tsx", "src/mail/mail-vloeistof.ts", "src/mail/mail-achtergrond.css",
+    "tests/eenheid/mail-scan-toestemming-20261110.test.ts", "tests/eenheid/mail-contacten.test.ts", "tests/eenheid/contacten-hervatten-20261019.test.ts",
+    "tests/eenheid/scan-weergave-20261029.test.ts", "tests/eenheid/mail-ux-beoordeling-20261021.test.ts",
+    "orchestratie/ontwikkelarchieven/MAILSCAN-002.json", ".github/workflows/mailscan-002-controle.yml", "tests/visueel/mailscan-002-scherm.mjs", "scripts/plaatsing-vaste-elementen.json", "shared/zoek-ui-knoppen.generated.ts"
+  ],
+  "controles": [
+    { "status": "bevestigd", "resultaat": "Перевірка типів серверної частини та вибраних компонентів інтерфейсу завершилася успішно.", "bewijzen": ["backend/mail-afzenders.ts", "src/mail/MailAchtergrond.tsx"] },
+    { "status": "bevestigd", "resultaat": "15 перевірок нової поведінки, 28 перевірок відновлення і 47 перевірок поштового вигляду пройдено.", "bewijzen": ["tests/eenheid/mail-scan-toestemming-20261110.test.ts", "tests/eenheid/scan-weergave-20261029.test.ts", "tests/eenheid/mail-ux-beoordeling-20261021.test.ts"] },
+    { "status": "bevestigd", "resultaat": "Після уточнення винятків повне місцеве складання застосунку й серверної частини завершилося успішно; каталог кнопок узгоджено з доданими перемикачами. 16 перевірок простежуваності випуску також пройдено.", "bewijzen": ["scripts/plaatsing-vaste-elementen.json", "shared/zoek-ui-knoppen.generated.ts", "orchestratie/ontwikkelarchieven/MAILSCAN-002.json"] },
+    { "status": "afgekeurd", "resultaat": "Перший хмарний прогін виявив два незареєстровані нерухомі елементи; збірку відхилено до виправлення. Внесено обґрунтовані винятки без зміни правил розміщення рухомих кнопок.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42789170007", "scripts/plaatsing-vaste-elementen.json"] },
+    { "status": "afgekeurd", "resultaat": "Другий хмарний прогін: 77 із 79 перевірок пробної бази пройшли. Два попередні тести очікували автоматичного відновлення без окремої згоди та кнопки небезпечного перерахунку; умови перевірки виправлено, поведінку повернення до старого стану не відновлено.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42790026009", "tests/eenheid/mail-contacten.test.ts"] },
+    { "status": "afgekeurd", "resultaat": "Третій хмарний прогін: 79 із 79 перевірок пробної бази та 39 із 40 перевірок відновлення пройдено. Виявлено та уточнено помилку підрахунку позначених перемикачів у давньому випробуванні, спричинену появою окремої згоди для кожної скриньки.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42790865700", "tests/eenheid/contacten-hervatten-20261019.test.ts"] },
+    { "status": "bevestigd", "resultaat": "Четвертий хмарний прогін успішний: усі перевірки складання, пробної бази, погодження, відновлення та геометрії завершено. Чотири знімки сторінки збережено, архів доказів має SHA-256 44220c5ea101adf447daf43ce0aeebcb9c4ecc6725bd9c1d7491fb07bc9194e1. Ручні дотики на пристрої власника лишаються окремою перевіркою.", "bewijzen": ["https://github.com/Tarasevych/hub/actions/runs/42791312802", "https://github.com/Tarasevych/hub/actions/runs/42791312802/artifacts/13751594794", "tests/visueel/mailscan-002-scherm.mjs"] }
+  ],
+  "beperkingen": [
+    "Проміжки перевірки відлічуються, доки сторінку відкрито; окреме постійне серверне планування не додається без явної згоди.",
+    "Щоденне обмеження емблеми діє для одного переглядача пристрою, а не для всіх пристроїв одночасно.",
+    "Справжню взаємодію пальцем на пристрої власника та оновлення бази даних на його сервері ще не перевірено.",
+    "Немає підтвердження встановлення на сервері власника. Потрібна окрема захищена передперевірка випуску і підтвердження власника."
+  ],
+  "privacy": { "geenGeheimen": true, "geenBrieven": true, "geenVerborgenRedenering": true, "tijdelijkeBestanden": "Тимчасова робоча копія сховища без приватних поштових даних; докази з телефона наведено лише за відбитками SHA-256." }
+}

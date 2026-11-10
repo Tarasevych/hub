@@ -173,6 +173,21 @@
 .ctv-melding-knoppen .ctv-scan-knoppen { justify-content: flex-start; }
 @media (max-width: 560px) { .ctv-melding { bottom: 84px; } }
 
+/* MAILSCAN-002 · Самостійний вибір для кожної скриньки; без перекриття на малому екрані. */
+.ctv-scan-voorkeuren{grid-column:1/-1;display:grid;gap:12px;min-width:0}
+.ctv-scan-voorkeuren>h3{margin:0;font-size:16px}
+.ctv-scan-voorkeuren>p{margin:0;font-size:13px;color:var(--muted,#64748b)}
+.ctv-scan-skrinka{display:grid;gap:12px;min-width:0;margin:0;padding:12px;border:1px solid var(--line,#ced6df);border-radius:16px}
+.ctv-scan-skrinka legend{max-width:100%;padding:0 4px;overflow-wrap:anywhere;font-weight:650}
+.ctv-scan-schakelaar{display:flex;gap:10px;align-items:center;min-height:42px}
+.ctv-scan-schakelaar input{width:20px;height:20px;accent-color:var(--accent,#1772b5)}
+.ctv-scan-keuzen{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px}
+.ctv-scan-keuzen>label{display:grid;gap:6px;min-width:0;font-size:13px;font-weight:600}
+.ctv-scan-keuzen select{width:100%;min-width:0;min-height:44px;border:1px solid var(--line,#ced6df);border-radius:10px;padding:8px;background:var(--panel,#fff);color:var(--text,#1d2b38);font:inherit}
+.ctv-scan-skrinka>.afz-knop{justify-self:start;max-width:100%;min-height:44px;white-space:normal}
+.ctv-scan-korte-melding{position:fixed;z-index:275;inset-inline-end:max(12px,env(safe-area-inset-right,0px));top:calc(84px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:9px;max-width:min(320px,calc(100vw - 24px));padding:10px 13px;border-radius:14px;border:1px solid var(--line,#cfdae7);background:var(--panel,#fff);color:var(--text,#243547);font-size:13px;line-height:1.4;box-shadow:0 8px 30px #17345220;pointer-events:none}
+@media(max-width:560px){.ctv-scan-korte-melding{top:calc(66px + env(safe-area-inset-top,0px));font-size:12px}}
+
 
 /* Live-audit 19.10 (F6): het conceptwidget van de mail (.mail-minimized-viewer, rechtsonder, vast) lag over «Керування» onderaan het paneel → extra ruimte onderaan zolang dat widget er is. */
 .canonical-chrome:has(.mail-minimized-viewer) .ctv { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }

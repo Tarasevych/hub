@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   SCAN_BELEID_TEKST, SCAN_BELEIDEN, SCAN_MAX_POGINGEN, scanHerhaalPlan, scanHerhaalZin, STANDAARD_SCAN_BELEID, type ScanBeleid,
 } from '../../shared/mail-scan-beleid';
+import { SCAN_INTERVAL_MINUTEN, type ScanVoorkeur } from '../../shared/contacten-scan-voorkeuren';
 import { contactenApi, foutCode, zetScanStand, type ScanStand } from './api';
 import { eenStart, hervattenKlaar, hervattenTerug, reserveerHervatten } from './scan-weergave';
 import './contacten.css';
@@ -19,6 +20,7 @@ const I = { width: 16, height: 16 } as const;
 export const getal = (lang: Lang, n: number) => n.toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE');
 export const datumTijd = (lang: Lang, v: string | number | null | undefined) => (v ? new Date(v).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
 const FOUT: Record<string, [string, string]> = {
+  SLEUTELKLUIS_GESLOTEN: ['Ключ даних закритий. Розблокуйте його в розділі «Способи входу → Шифрування моїх даних», перш ніж перевіряти скриньку.', 'De gegevenssleutel is gesloten. Ontgrendel hem bij Aanmeldmethoden → Versleuteling van mijn gegevens voordat u de mailbox controleert.'],
   GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий акаунт Google не підключено.', 'Geen Google-mailaccount gekoppeld.'],
   GOOGLE_MAIL_RATE_LIMITED: ['Gmail тимчасово обмежив запити. Продовжіть пізніше — перевірка почнеться з місця зупинки.', 'Gmail beperkt tijdelijk de verzoeken. Ga later verder — de controle hervat waar hij stopte.'],
   GOOGLE_MAIL_REAUTH_REQUIRED: ['Потрібно знову підключити Gmail.', 'Gmail moet opnieuw gekoppeld worden.'],
@@ -38,7 +40,7 @@ export function bevestigdZin(lang: Lang, geverifieerd: number, totaal: number): 
 
 /** Eén zin over de stand (ook voor de compacte melding). */
 export function scanZin(lang: Lang, s: ScanStand | null): string {
-  if (!s || s.staat === 'nooit') return t(lang, 'Перевірку ще не запущено. Вона почнеться автоматично, коли ви відкриєте пошту.', 'De controle is nog niet gestart. Ze begint vanzelf zodra u de mail opent.');
+  if (!s || s.staat === 'nooit') return t(lang, 'Перевірка вимкнена, доки ви самі не дозволите її для вибраної скриньки.', 'De controle blijft uit totdat u haar zelf voor een gekozen mailbox toestaat.');
   const bijwerken = s.accounts.some((a) => a.fase === 'bijwerken' && a.staat !== 'klaar');
   const voortgang = s.schatting > 0 ? t(lang, `${getal(lang, s.verwerkt)} з ≈${getal(lang, s.schatting)} листів`, `${getal(lang, s.verwerkt)} van ≈${getal(lang, s.schatting)} berichten`) : t(lang, `${getal(lang, s.verwerkt)} листів`, `${getal(lang, s.verwerkt)} berichten`);
   if (s.staat === 'bezig') return bijwerken ? t(lang, `Перевіряються нові листи: ${voortgang}.`, `Nieuwe berichten worden gecontroleerd: ${voortgang}.`) : t(lang, `Перевірено ${voortgang} · знайдено ${getal(lang, s.tellers.contacten)} адрес.`, `${voortgang} gecontroleerd · ${getal(lang, s.tellers.contacten)} adressen gevonden.`);
@@ -48,8 +50,8 @@ export function scanZin(lang: Lang, s: ScanStand | null): string {
   if (s.staat === 'fout') return scanFoutTekst(lang, s.accounts.find((a) => a.fout)?.fout || 'SCAN_MISLUKT');
   const overgeslagen = s.accounts.filter((a) => a.staat === 'overgeslagen');
   const staart = overgeslagen.length ? t(lang, ` Пропущено скриньок: ${overgeslagen.length}.`, ` Overgeslagen mailboxen: ${overgeslagen.length}.`) : '';
-  return t(lang, `Усі адреси перевірено ${datumTijd(lang, s.eersteKlaarOp)}. ${bevestigdZin(lang, s.tellers.geverifieerd, s.tellers.contacten)} Підозрілих ${getal(lang, s.tellers.verdacht)}. Нові листи перевіряються автоматично.${staart}`,
-    `Alle adressen gecontroleerd ${datumTijd(lang, s.eersteKlaarOp)}. ${bevestigdZin(lang, s.tellers.geverifieerd, s.tellers.contacten)} ${getal(lang, s.tellers.verdacht)} verdacht. Nieuwe berichten worden vanzelf gecontroleerd.${staart}`);
+  return t(lang, `Адреси перевірено ${datumTijd(lang, s.eersteKlaarOp)}. ${bevestigdZin(lang, s.tellers.geverifieerd, s.tellers.contacten)} Підозрілих ${getal(lang, s.tellers.verdacht)}. Подальша перевірка залежить від вибору для кожної скриньки.${staart}`,
+    `Adressen gecontroleerd ${datumTijd(lang, s.eersteKlaarOp)}. ${bevestigdZin(lang, s.tellers.geverifieerd, s.tellers.contacten)} ${getal(lang, s.tellers.verdacht)} verdacht. Nieuwe controles volgen alleen de keuze per mailbox.${staart}`);
 }
 
 /** «Повторюю через N с · спроба X з Y» uit de stand die de SERVER bewaarde (overleeft het herladen van de pagina). */
@@ -155,7 +157,7 @@ export function ScanKnoppen({ lang, s, a, compact = false }: { lang: Lang; s: Sc
     {/* Melding van de eigenaar: in het venster stond geen «пропустити». Nu staat die keuze er — en als beleid die het onthoudt. */}
     {s.staat === 'fout' && <button type='button' className='afz-knop' disabled={a.bezig} onClick={() => void a.bijwerken()}><AlertTriangle aria-hidden='true' style={I} />{t(lang, 'Пропустити проблемне', 'Problematische overslaan')}</button>}
     {s.staat === 'klaar' && <button type='button' className='afz-knop' disabled={a.bezig} onClick={() => void a.bijwerken()}><RefreshCw aria-hidden='true' style={I} />{t(lang, 'Перевірити нові листи', 'Nieuwe berichten controleren')}</button>}
-    {!compact && s.staat !== 'nooit' && <button type='button' className='afz-knop' disabled={a.bezig} onClick={() => { if (window.confirm(t(lang, 'Перевірити всі листи заново? Лічильники буде перераховано; ваші ручні підтвердження збережуться.', 'Alle berichten opnieuw controleren? De tellers worden herberekend; uw eigen bevestigingen blijven.'))) void a.opnieuw(); }}><RotateCcw aria-hidden='true' style={I} />{t(lang, 'Перевірити все заново', 'Alles opnieuw')}</button>}
+    {!compact && s.staat !== 'nooit' && <button type='button' className='afz-knop' disabled title={t(lang, 'Тимчасово недоступно: спільні лічильники кількох скриньок потребують безпечного перерахунку.', 'Tijdelijk niet beschikbaar: gedeelde tellingen van meerdere mailboxen vereisen een veilige hertelling.')}><RotateCcw aria-hidden='true' style={I} />{t(lang, 'Перевірити все заново', 'Alles opnieuw')}</button>}
     {!compact && !s.loopt && <>
       <button type='button' className='afz-knop' data-taak='onbekend' disabled={a.bezig} onClick={() => void contactenApi.taakStart('onbekend')}><Play aria-hidden='true' style={I} />{t(lang, 'Продовжити неперевірені', 'Onbevestigde hervatten')}</button>
       <button type='button' className='afz-knop' data-taak='rest' disabled={a.bezig} onClick={() => void contactenApi.taakStart('rest')}><RefreshCw aria-hidden='true' style={I} />{t(lang, 'Перевірити решту', 'De rest controleren')}</button>
@@ -210,7 +212,18 @@ export function useScanBeleid(s: ScanStand | null) {
 
 export default function ScanPaneel({ lang, s }: { lang: Lang; s: ScanStand | null }) {
   const b = useScanBeleid(s), a = useScanActies(lang, b.beleid), pct = scanProcent(s);
-  useAutoHervatten(s, a, b.beleid);
+  const [bewaren, zetBewaren] = useState(''), [fout, zetFout] = useState('');
+  const gekozen = s?.gekoppeld || [];
+  const wijzig = (accountId: string, vorige: ScanVoorkeur, waarde: Partial<ScanVoorkeur>) => {
+    zetBewaren(accountId); zetFout('');
+    void contactenApi.scanVoorkeur(accountId, { ...vorige, ...waarde }).then(zetScanStand)
+      .catch((e) => zetFout(scanFoutTekst(lang, foutCode(e)))).finally(() => zetBewaren(''));
+  };
+  const controleer = (accountId: string) => {
+    zetFout('');
+    void contactenApi.scanStart({ accountIds: [accountId], bijwerken: true }).then(zetScanStand)
+      .catch((e) => zetFout(scanFoutTekst(lang, foutCode(e))));
+  };
   return <section className='ctv-scan' data-staat={s?.staat || 'nooit'} aria-labelledby='ctv-scan-titel'>
     <div className='ctv-scan-tekst'>
       <h2 id='ctv-scan-titel'>{t(lang, 'Перевірка всіх адрес', 'Controle van alle adressen')}</h2>
@@ -219,9 +232,55 @@ export default function ScanPaneel({ lang, s }: { lang: Lang; s: ScanStand | nul
       {s && (s.loopt || s.staat === 'gepauzeerd' || s.staat === 'gestopt') && <div className='afz-voortgang' role='progressbar' aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={t(lang, 'Хід перевірки', 'Voortgang van de controle')}><span style={{ width: `${pct}%` }} /></div>}
       {s && s.accounts.length > 1 && <ul className='ctv-scan-accounts'>{s.accounts.map((x) => <li key={x.accountId}><span className='afz-mono'>{x.email || x.accountId}</span> · {x.staat === 'klaar' ? t(lang, 'готово', 'klaar') : x.staat === 'overgeslagen' ? t(lang, 'пропущено', 'overgeslagen') : x.schatting ? `${getal(lang, x.verwerkt)} / ≈${getal(lang, x.schatting)}` : getal(lang, x.verwerkt)}{x.fout ? ` · ${scanFoutTekst(lang, x.fout)}` : ''}</li>)}</ul>}
       {a.fout && <p className='afz-fout' role='alert'>{a.fout}</p>}
+      {fout && <p className='afz-fout' role='alert'>{fout}</p>}
     </div>
-    <ScanKnoppen lang={lang} s={s} a={a} />
-    <ScanBeleidKeuze lang={lang} beleid={b.beleid} onKies={b.kies} bezig={b.bezig} />
+    <div className='ctv-scan-voorkeuren'>
+      <h3>{t(lang, 'Перевірка за вашою згодою', 'Controle alleen met uw toestemming')}</h3>
+      {!gekozen.length && <p>{t(lang, 'Підключених поштових скриньок немає. Перевірка не виконується.', 'Er zijn geen gekoppelde mailboxen. Er vindt geen controle plaats.')}</p>}
+      {gekozen.map((x) => {
+        const v = x.voorkeur, bezig = bewaren === x.accountId;
+        return <fieldset key={x.accountId} className='ctv-scan-skrinka' disabled={bezig}>
+          <legend className='afz-mono'>{x.email}</legend>
+          <label className='ctv-scan-schakelaar'><input type='checkbox' checked={v.aan} onChange={(e) => wijzig(x.accountId, v, { aan: e.target.checked })} />
+            <strong>{v.aan ? t(lang, 'Перевірку дозволено', 'Controle toegestaan') : t(lang, 'Перевірку вимкнено', 'Controle uitgeschakeld')}</strong></label>
+          {v.aan && <div className='ctv-scan-keuzen'>
+            <label>{t(lang, 'Спосіб перевірки', 'Manier van controleren')}
+              <select value={v.werkwijze} onChange={(e) => wijzig(x.accountId, v, { werkwijze: e.target.value as ScanVoorkeur['werkwijze'] })}>
+                <option value='handmatig'>{t(lang, 'Тільки вручну', 'Alleen handmatig')}</option>
+                <option value='bij-openen'>{t(lang, 'Коли відкриваю пошту', 'Bij het openen van de mail')}</option>
+                <option value='periodiek'>{t(lang, 'Через обрані проміжки часу', 'Met gekozen tussenpozen')}</option>
+              </select>
+            </label>
+            {v.werkwijze === 'periodiek' && <label>{t(lang, 'Як часто', 'Hoe vaak')}
+              <select value={v.intervalMinuten} onChange={(e) => wijzig(x.accountId, v, { intervalMinuten: Number(e.target.value) })}>
+                {SCAN_INTERVAL_MINUTEN.map((n) => <option key={n} value={n}>{n === 15 ? t(lang, 'Кожні 15 хвилин', 'Elke 15 minuten') : n === 60 ? t(lang, 'Щогодини', 'Elk uur') : n === 360 ? t(lang, 'Кожні 6 годин', 'Elke 6 uur') : n === 1440 ? t(lang, 'Щодня', 'Dagelijks') : t(lang, 'Щотижня', 'Wekelijks')}</option>)}
+              </select>
+            </label>}
+            {v.werkwijze !== 'handmatig' && <label>{t(lang, 'За яких умов', 'Onder welke voorwaarden')}
+              <select value={v.voorwaarde} onChange={(e) => wijzig(x.accountId, v, { voorwaarde: e.target.value as ScanVoorkeur['voorwaarde'] })}>
+                <option value='zichtbaar'>{t(lang, 'Лише коли сторінка відкрита на екрані', 'Alleen wanneer de pagina zichtbaar is')}</option>
+                <option value='verbonden'>{t(lang, 'Поки пошта відкрита в браузері', 'Zolang de mail in de browser openstaat')}</option>
+              </select>
+            </label>}
+            <label>{t(lang, 'Спливне повідомлення', 'Kort bericht op het scherm')}
+              <select value={v.melding} onChange={(e) => wijzig(x.accountId, v, { melding: e.target.value as ScanVoorkeur['melding'] })}>
+                <option value='geen'>{t(lang, 'Ніколи', 'Nooit')}</option>
+                <option value='begin'>{t(lang, 'На 2 секунди на початку', '2 seconden bij het begin')}</option>
+                <option value='fout'>{t(lang, 'На 2 секунди лише за помилки', '2 seconden alleen bij een fout')}</option>
+              </select>
+            </label>
+          </div>}
+          {v.aan && <button type='button' className='afz-knop' disabled={!!s?.loopt || bezig} onClick={() => controleer(x.accountId)}><Play aria-hidden='true' style={I} />{t(lang, 'Перевірити цю скриньку зараз', 'Deze mailbox nu controleren')}</button>}
+        </fieldset>;
+      })}
+      <p>{t(lang, 'Без вашої згоди жодна скринька не перевіряється. Заплановані перевірки запускаються, коли сайт відкритий; після початку обробка може тривати у фоновому режимі. Хід роботи доступний у сповіщеннях.', 'Zonder uw toestemming wordt geen mailbox gecontroleerd. Geplande controles beginnen wanneer de site openstaat; daarna kan het werk op de achtergrond doorgaan. De voortgang staat bij de meldingen.')}</p>
+    </div>
+    {s?.loopt && <ScanKnoppen lang={lang} s={s} a={a} compact />}
+    {gekosenBeleid(gekozen) && <ScanBeleidKeuze lang={lang} beleid={b.beleid} onKies={b.kies} bezig={b.bezig} />}
     <BronnenUitleg lang={lang} />
   </section>;
+}
+
+function gekosenBeleid(gekoppeld: NonNullable<ScanStand['gekoppeld']>): boolean {
+  return gekoppeld.some((a) => a.voorkeur.aan);
 }
