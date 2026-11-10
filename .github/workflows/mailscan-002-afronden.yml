@@ -1,0 +1,109 @@
+name: MAILSCAN-002 · завершити перевірений випуск
+
+# Завершує лише конкретну вже перевірену чернетку. Не встановлює сайт.
+on:
+  push:
+    branches:
+      - feature/mailscan-002-uitgave-20261110-120000
+    paths:
+      - .github/workflows/mailscan-002-afronden.yml
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: mailscan-002-afronden
+  cancel-in-progress: false
+
+jobs:
+  afronden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      UITGAVE_ID: '440265398'
+      VERSIE: '20261110-111711'
+      BRON: 'cf1d448c529bc0d0ed0e108be64196739a1f8f98'
+      BASIS_VERSIE: '20261109-210726'
+      BASIS_COMMIT: '2cc45b1f16d7e08dcee19072440d651b0f2be81b'
+      VERWACHTE_SHA: 'd0529cbc682f3efdd51d71ff5adab9dfb5f3892217bb0861b15467ee797189bc'
+      VORIGE_CONTROLE: '42805818803'
+    steps:
+      - name: Звірити завершені перевірки попереднього складання
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VORIGE_CONTROLE/jobs" > "$RUNNER_TEMP/controles.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const r = JSON.parse(readFileSync(`${process.env.RUNNER_TEMP}/controles.json`, 'utf8'));
+          const stappen = (r.jobs ?? []).flatMap(j => j.steps ?? []);
+          const nodig = [
+            'Звірити встановлену версію',
+            'Перевірити правила, актуальність і походження',
+            'Перевірити добровільну згоду, пошту й тло',
+            'Перевірити типи та складання',
+            'Перевірити міграції й ізоляцію двох скриньок',
+            'Підготувати опис і точну основу архіву',
+            'Зібрати й перевірити архів встановлення',
+            'Повторно звірити сайт перед оприлюдненням'
+          ];
+          for (const naam of nodig) {
+            if (!stappen.some(s => s.name === naam && s.conclusion === 'success')) {
+              throw Error(`Перевірку не підтверджено: ${naam}`);
+            }
+          }
+          JS
+      - name: Звірити вміст і відбитки чернетки
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/releases/$UITGAVE_ID" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const e = process.env;
+          const r = JSON.parse(readFileSync(`${e.RUNNER_TEMP}/uitgave.json`, 'utf8'));
+          if (!r.draft || r.id !== Number(e.UITGAVE_ID) || r.tag_name !== e.VERSIE || r.target_commitish !== e.BRON) {
+            throw Error('Чернетка або її джерела не відповідають перевіреному випуску.');
+          }
+          const verwacht = [
+            [`mijn-ruimte-${e.VERSIE}.tar.gz`, `sha256:${e.VERWACHTE_SHA}`, 12000000],
+            [`mijn-ruimte-${e.VERSIE}.tar.gz.sha256`, 'sha256:b44f592ffdc3ecaca99948205193c909abc01fb2e98fce3f2858ef09262aad19', 90],
+            [`mijn-ruimte-${e.VERSIE}-chatgpt-overdracht.zip`, 'sha256:718fc75dd300d6ea85bf2ce863a1c7bd22d86dac63685dcdd5161b5a5eb44276', 12000000]
+          ];
+          if (r.assets.length !== verwacht.length) throw Error('Кількість файлів випуску змінилася.');
+          for (const [naam, hash, grens] of verwacht) {
+            const a = r.assets.find(x => x.name === naam);
+            if (!a || a.digest !== hash || a.state !== 'uploaded' || a.size < grens) {
+              throw Error(`Файл випуску не пройшов перевірку: ${naam}`);
+            }
+          }
+          JS
+      - name: Повторно звірити встановлену основу
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const e = process.env;
+          const v = JSON.parse(readFileSync(`${e.RUNNER_TEMP}/versie.json`, 'utf8'));
+          if (v.versie !== e.BASIS_VERSIE || (v.bronCommit || v.commit) !== e.BASIS_COMMIT) {
+            throw Error('Основу вже змінено; випуск не оприлюднено.');
+          }
+          JS
+      - name: Оприлюднити лише перевірену чернетку
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$UITGAVE_ID" -F draft=false > "$RUNNER_TEMP/opublikovano.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const e = process.env;
+          const r = JSON.parse(readFileSync(`${e.RUNNER_TEMP}/opublikovano.json`, 'utf8'));
+          if (r.id !== Number(e.UITGAVE_ID) || r.tag_name !== e.VERSIE || r.draft || !r.published_at) {
+            throw Error('Оприлюднення не підтверджено.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
