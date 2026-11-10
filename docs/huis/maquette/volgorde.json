@@ -1,0 +1,33 @@
+{
+  "toelichting": "Порядок склеювання макета / Volgorde van samenstellen. «map/*» = alle overige .js-bestanden van die map, op naam. Een nieuw schermbestand in schermen/ komt er vanzelf bij; een later geregistreerd scherm, tabblad of blad met hetzelfde id VERVANGT het eerdere (nog-niet.js staat daarom vooraan).",
+  "stijl": [
+    "stijl/basis.css",
+    "stijl/schil.css",
+    "stijl/onderdelen.css",
+    "stijl/hemel.css",
+    "stijl/bladen.css"
+  ],
+  "script": [
+    "kern/tekst.js",
+    "kern/opslag.js",
+    "gegevens/paspoort.js",
+    "gegevens/tarief.js",
+    "kern/staat.js",
+    "gegevens/scenarios.js",
+    "gegevens/*",
+    "kern/gevaar.js",
+    "kern/handeling.js",
+    "kern/onderdelen.js",
+    "kern/grafiek.js",
+    "kern/hemel.js",
+    "kern/blad.js",
+    "kern/schil.js",
+    "kern/pult.js",
+    "kern/*",
+    "schermen/nog-niet.js",
+    "schermen/thuis.js",
+    "schermen/kamers.js",
+    "schermen/bladen-licht.js",
+    "schermen/*"
+  ]
+}
