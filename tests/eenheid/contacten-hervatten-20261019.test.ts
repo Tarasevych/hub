@@ -232,7 +232,7 @@ export async function main(): Promise<number> {
       html.includes('Перевірку дозволено') && html.includes('Перевірити цю скриньку зараз') && html.includes('ik@werk.example'), html.slice(0, 160));
     check('15/5 uitvoer: de drie bewaarde keuzes staan er, en precies één (de bewaarde) is aangevinkt',
       /data-scan-beleid="automatisch"/.test(html) && html.includes('Продовжувати автоматично') && html.includes('Пропускати проблемні') && html.includes('Питати щоразу')
-      && (html.match(/type="radio"/g) || []).length === 3 && (html.match(/checked=""/g) || []).length === 1,
+      && (html.match(/type="radio"/g) || []).length === 3 && (html.match(/<input type="radio"[^>]*checked=""/g) || []).length === 1,
       (/<input type="radio"[^>]*>/.exec(html) || [''])[0]);
     const bezigHtml = renderToString(createElement(ScanPaneel, {
       lang: 'uk',
