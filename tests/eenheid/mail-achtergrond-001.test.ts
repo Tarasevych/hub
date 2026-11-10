@@ -58,9 +58,10 @@ export async function main(): Promise<number> {
     && css.includes(':focus-visible'));
   check('лінза працює без миші та не перехоплює дотик до форми',
     achtergrond.includes('rect.width / 2, y: rect.height / 2')
-    && achtergrond.includes("houder.addEventListener('pointerdown', wijs")
+    && achtergrond.includes("houder.addEventListener('pointerdown', druk")
+    && achtergrond.includes('golfImpuls(d, plek)')
     && achtergrond.includes("e.pointerType !== 'mouse' && !lensRef.current")
     && achtergrond.includes("e.target.closest('button,a,input,textarea,select,summary")
-    && achtergrond.includes("if (e.pointerType === 'mouse') aanwijzer.current.binnen = false"));
+    && achtergrond.includes("if (e.pointerType === 'mouse' && !schrijft) aanwijzer.current.binnen = false"));
   return einde();
 }
