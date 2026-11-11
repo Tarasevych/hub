@@ -140,6 +140,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий вигляд.', 'Zet eerst alleen voor uzelf aan om de nieuwe weergave te proberen.'],
     gevolg: ['Усі дії ті самі; змінюється лише вигляд. Вимкнено — старе меню без змін.', 'Alle acties blijven; alleen het uiterlijk verandert. Uit = het oude menu, ongewijzigd.'],
   },
+  'accountmenu-v3': {
+    naam: ['Нове меню облікового запису (v3)', 'Nieuw accountmenu (v3)'],
+    wat: ['Орбіта світлин облікових записів по центру (або секційна картка в налаштуваннях), швидке перемикання палітри кольорів натиском чи утриманням, щиток кольору технічної смуги, лоток «Доступ і терміни» з кільцем часу та зміна масштабу вікна за кутик.', 'Profielfoto-orbita in het midden (of sectiekaart via instellingen), snelle kleurenpaletkeuze met klik of ingedrukt houden, schildje in de kleur van de technische strook, lade «Toegang en termijnen» met tijdring en schaalbaar venster via de hoek.'],
+    wanneer: ['Увімкніть спершу лише для себе, щоб випробувати нове спадне меню облікового запису.', 'Zet eerst alleen voor uzelf aan om het nieuwe accountmenu te proberen.'],
+    gevolg: ['Усі дії, сеанси й перевірки безпеки ті самі; змінюється лише вигляд меню. Вимкнено — попереднє меню без змін.', 'Alle handelingen, sessies en beveiligingscontroles blijven gelijk; alleen de weergave van het menu verandert. Uit = het vorige menu, ongewijzigd.'],
+  },
   'integraties-catalogus-v2': {
     naam: ['Новий каталог інтеграцій (теми й групи)', 'Nieuwe integratiecatalogus (thema’s en groepen)'],
     wat: ['Каталог на «Інтеграціях» групується за темами, а в кожній темі — за справжнім станом: підключені, можна підключити, потребують уваги, потребують налаштування, у розробці. Замість «Скоро» — чесний план.', 'De catalogus op «Integraties» staat per thema en daarbinnen per echte stand: gekoppeld, klaar om te koppelen, vraagt aandacht, instellen nodig, in ontwikkeling. In plaats van «Binnenkort» een eerlijk plan.'],

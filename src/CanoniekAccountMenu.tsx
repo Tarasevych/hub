@@ -67,6 +67,8 @@ import './account-afgemeld-menu.css'; // INTEG-001: afgemeld menu op een telefoo
 // UI-008 (vlag accountmenu-v2, standaard UIT): verfijnd menu. Zonder vlag blijft alles hieronder letterlijk zoals v6.
 import { avatarTip, useAccountmenuV2 } from './accountmenu-v2/vlag';
 import './accountmenu-v2/accountmenu-v2.css';
+import { useAccountmenuV3 } from './accountmenu-v3/vlag';
+import { AccountMenuV3 } from './accountmenu-v3/AccountMenuV3';
 import Vraag from './tech/Vraag';
 import { isLeesfout } from '../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../shared/foutuitleg';
@@ -345,6 +347,7 @@ export default function CanonicalAccountMenu({
   const tech = useTech();
   const v2 = useRuimtesV2();
   const am2 = useAccountmenuV2();
+  const am3 = useAccountmenuV3();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
   // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
   useEffect(() => {
@@ -702,6 +705,7 @@ export default function CanonicalAccountMenu({
       data-signed-out={!displayUser ? 'true' : 'false'}
       data-profile-photo-control={onProfilePhotoChange ? 'enabled' : 'unavailable'}
       data-account-menu-v2={am2 ? 'aan' : undefined}
+      data-account-menu-v3={am3 ? 'aan' : undefined}
     >
       {!displayUser && <div className='mr-sign-in-quick-controls' role='group' aria-label={lang === 'uk' ? 'Мова й тема' : 'Taal en thema'}>
         {/* Taal: echte vlag (SVG) + korte naam; klik wisselt. Dezelfde plek als voorheen, kleiner, met ruimte naast het thema-knopje. */}
@@ -715,11 +719,11 @@ export default function CanonicalAccountMenu({
       <button
         type='button'
         className='canonical-avatar-trigger'
-        aria-label={open ? t.close : am2 && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
-        title={am2 && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
+        aria-label={open ? t.close : (am2 || am3) && displayUser ? `${t.accounts}: ${displayUser.name || displayUser.email}` : t.accounts}
+        title={(am2 || am3) && !open && displayUser ? avatarTip(lang, displayUser.name || '', displayUser.email || '', model.knownAccounts.filter((a) => !isSameAccount(a.user, displayUser)).length) : undefined}
         data-am2-tip={am2 && displayUser ? 'ja' : undefined}
-        onPointerEnter={am2 && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
-        onFocus={am2 && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
+        onPointerEnter={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
+        onFocus={(am2 || am3) && !open && !geladenVoorTip.current ? () => { geladenVoorTip.current = true; void load(); } : undefined}
         aria-haspopup='dialog'
         aria-expanded={open}
         onClick={() => open ? close() : setOpen(true)}
@@ -733,6 +737,48 @@ export default function CanonicalAccountMenu({
 
       {open && (
         <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
+          {am3 && displayUser ? (
+            <AccountMenuV3
+              lang={lang}
+              theme={theme}
+              displayUser={displayUser}
+              visibleRows={visibleRows}
+              shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
+              expanded={expanded}
+              onToggleExpanded={() => setExpanded((value) => !value)}
+              busy={busy}
+              selecting={selecting}
+              forgetting={forgetting}
+              loading={loading}
+              loadFailed={loadFailed}
+              photoBusy={photoBusy}
+              photoError={photoError}
+              photoLeesfout={photoLeesfout}
+              photoFailedText={t.photoFailed}
+              changePhotoLabel={t.changePhoto}
+              manageLabel={t.manage}
+              settingsLabel={t.settings}
+              privacyLabel={t.privacy}
+              termsLabel={t.terms}
+              showLogoutAll={showLogoutAll}
+              wisselMelding={gewisseld ? { email: gewisseld.email, ...accountWisselMelding(lang, { techBeeindigd: gewisseld.techBeeindigd, heeftTechProfiel: !!tech.profiel, techActief: techActief(tech), techGeladen: tech.geladen }) } : null}
+              v2Ruimtes={v2}
+              onChangePhoto={changePhoto}
+              onSelectAccount={select}
+              onForgetAccount={onForgetAccount ? forget : undefined}
+              onAddAccount={add}
+              onManage={onManage}
+              onSettings={onSettings}
+              onTheme={onTheme}
+              onThemeColors={onThemeColors}
+              onLanguage={onLanguage}
+              onLogout={onLogout}
+              onLogoutAll={onLogoutAll}
+              onClose={close}
+              renderAvatar={(u, sz) => <Avatar user={u} size={sz} />}
+            />
+          ) : (
+            <>
           {displayUser ? (
             <>
               <header className='canonical-current-account'>
@@ -983,6 +1029,8 @@ export default function CanonicalAccountMenu({
             </div>
           ) : null}
           {footer}
+            </>
+          )}
         </section>
       )}
     </div>

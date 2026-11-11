@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-004",
+  "agent": "gemini",
+  "tak": "feature/identiteit-004-accountmenu-v3-20261111-133930",
+  "basisCommit": "7bb8765df3ac5e38d8185a94fc5d22c30a46d345",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-11T13:39:38.208Z",
+  "bijgewerkt": "2026-11-11T13:39:38.209Z",
+  "omschrijving": "Сучасне меню облікового запису v3 (Орбіта світлин та Секційна картка, палітри за моделлю В, умови технічного простору й масштабування панелі) за перемикачем можливості accountmenu-v3",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
