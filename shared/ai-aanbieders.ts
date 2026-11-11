@@ -96,9 +96,11 @@ export function aanbiederUitModel(model?: string | null): AiAanbiederId {
   if (m.startsWith('glm') || m.includes('autoclaw') || m.includes('zhipu') || m.includes('chatglm')) return 'autoclaw';
   if (
     m.startsWith('gpt-') ||
+    m.startsWith('codex') ||
     m.startsWith('o1') ||
     m.startsWith('o3') ||
     m.startsWith('o4') ||
+    m.includes('codex') ||
     m.includes('openai') ||
     m.includes('chatgpt')
   ) {
@@ -121,7 +123,7 @@ export function aanbiederUitAgent(agent?: {
   if (s.includes('gemini') || s.includes('google-ai') || s.includes('generativelanguage')) return 'gemini';
   if (s.includes('grok') || s.includes('xai') || s.includes('x.ai')) return 'grok';
   if (s.includes('autoclaw') || s.includes('glm') || s.includes('z.ai') || s.includes('zhipu')) return 'autoclaw';
-  if (s.includes('openai') || s.includes('chatgpt') || s.includes('gpt') || s.includes('copilot')) return 'openai';
+  if (s.includes('codex') || s.includes('openai') || s.includes('chatgpt') || s.includes('gpt') || s.includes('copilot')) return 'openai';
   return 'anthropic';
 }
 
@@ -133,7 +135,7 @@ export function aanbiederVoorAgentSlug(slug: string): AiAanbiederId {
   if (s === 'gemini' || s === 'antigravity') return 'gemini';
   if (s === 'grok') return 'grok';
   if (s === 'autoclaw') return 'autoclaw';
-  if (s === 'gpt' || s === 'copilot' || s === 'cursor') return 'openai';
+  if (s === 'gpt' || s === 'codex' || s === 'copilot' || s === 'cursor') return 'openai';
   return 'anthropic';
 }
 

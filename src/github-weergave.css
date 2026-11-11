@@ -109,3 +109,147 @@ a.gh-item:hover{background:var(--soft,rgba(120,140,160,.12))}
   .gh-btn{min-height:var(--tik-hoogte)}
   .gh-tabs>button:not(.gh-btn){min-height:var(--tik-hoogte)}
 }
+
+/* ==========================================================================
+   GITHUB-010: Volledige moderne tweerichtings-GitHub-werkruimte (desktop + mobiel)
+   Geen position:fixed — dialogen draaien in de systeemeigen bovenlaag (<dialog>).
+   ========================================================================== */
+
+.gh-root{max-width:1280px}
+
+/* --- Eénkliks koppelpaneel & apparaatcode --- */
+.gh-eenklik-held{display:grid;gap:14px;padding:18px;border:1px solid color-mix(in srgb,var(--accent) 36%,var(--line,#d6dde4));border-radius:16px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 9%,var(--panel,#fff)),var(--panel,#fff))}
+.gh-eenklik-kop{display:flex;gap:14px;align-items:flex-start}
+.gh-eenklik-tegel{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);flex-shrink:0}
+.gh-eenklik-tekst{display:grid;gap:4px;min-width:0}
+.gh-eenklik-tekst h3{margin:0;font-size:1.08rem}
+.gh-eenklik-tekst p{margin:0;font-size:.88rem;color:var(--muted,#64748b);line-height:1.45}
+.gh-eenklik-pijlers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+.gh-pijler{display:flex;gap:9px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid var(--line,#d6dde4);background:var(--panel,#fff);font-size:.82rem;line-height:1.4}
+.gh-pijler svg{color:var(--accent);flex-shrink:0;margin-top:2px}
+.gh-eenklik-rij{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.gh-btn-groot{min-height:40px;padding:6px 16px;font-weight:600;font-size:.9rem}
+.gh-apparaatcode-doos{display:grid;gap:12px;justify-items:center;text-align:center;padding:14px;border-radius:14px;border:1px dashed var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.gh-apparaatcode-waarde{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:1.65rem;font-weight:800;letter-spacing:.18em;padding:10px 18px;border-radius:12px;background:var(--panel,#fff);border:1px solid var(--line,#cbd5e1)}
+
+/* --- Actieve opslagplaatsbalk & snelle navigatie --- */
+.gh-repo-balk{gap:10px;padding:12px 14px}
+.gh-werkbalk{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.gh-werkbalk-groep{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.gh-select-wikkel{display:inline-flex;align-items:center;gap:7px;padding:0 10px;min-height:36px;border:1px solid var(--line,#cbd5e1);border-radius:10px;background:var(--panel,#fff);max-width:100%}
+.gh-select-wikkel select{border:0;background:transparent;color:inherit;font:inherit;font-size:.86rem;font-weight:600;min-height:34px;padding:0 4px;max-width:min(320px,65vw);outline:none}
+.gh-snel-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.gh-snel-pil{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:4px 12px;border-radius:99px;border:1px solid var(--line,#d6dde4);background:transparent;color:inherit;font:inherit;font-size:.82rem;font-weight:500;white-space:nowrap;cursor:pointer}
+.gh-snel-pil:hover{background:var(--soft,rgba(120,140,160,.12))}
+.gh-snel-pil.is-actief{background:color-mix(in srgb,var(--accent) 15%,transparent);border-color:var(--accent);color:var(--accent);font-weight:700}
+
+/* --- Werkruimtecontainers & gesegmenteerde schakelaars --- */
+.gh-werkruimte-code,.gh-werkruimte-zaken,.gh-werkruimte-acties,.gh-werkruimte-uitgaven,.gh-werkruimte-spiegel,.gh-werkvenster{display:grid;gap:12px;min-width:0}
+.gh-segment{display:inline-flex;border:1px solid var(--line,#cbd5e1);border-radius:10px;padding:2px;background:var(--soft,rgba(120,140,160,.08));gap:2px;flex-wrap:wrap}
+.gh-segment>button{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:3px 11px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:.81rem;cursor:pointer}
+.gh-segment>button.is-on,.gh-segment>button[aria-selected='true']{background:var(--panel,#fff);font-weight:700;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.gh-mobiel-wissel{display:none}
+
+/* --- Kruimelpad, bestandsboom & codeverkenner --- */
+.gh-kruimels{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:.84rem}
+.gh-kruimel-stap{display:inline-flex;align-items:center;gap:4px}
+.gh-kruimel{border:0;background:transparent;color:var(--accent);font:inherit;font-weight:600;padding:2px 6px;border-radius:6px;cursor:pointer}
+.gh-kruimel:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.gh-code-split{display:grid;grid-template-columns:minmax(240px,310px) minmax(0,1fr);gap:12px;align-items:start}
+.gh-boom-kolom,.gh-bestand-kolom{min-width:0}
+.gh-boom-lijst{list-style:none;margin:0;padding:0;display:grid;gap:2px;max-height:620px;overflow:auto}
+.gh-boom-rij{width:100%;display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid transparent;border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:.84rem;text-align:left;cursor:pointer}
+.gh-boom-rij:hover{background:var(--soft,rgba(120,140,160,.12))}
+.gh-boom-rij.is-actief{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 11%,transparent);font-weight:600}
+.gh-map-icoon{color:var(--accent);flex-shrink:0}
+.gh-boom-naam{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gh-boom-maat{font-size:.75rem;color:var(--muted,#64748b);white-space:nowrap}
+.gh-boom-leeg{padding:12px;font-size:.84rem;color:var(--muted,#64748b)}
+
+/* --- Codelezer & ingebouwde webeditor --- */
+.gh-bestand-lezer,.gh-editor-doos{display:grid;gap:10px;min-width:0}
+.gh-code-tabel-wikkel{border:1px solid var(--line,#d6dde4);border-radius:12px;overflow:auto;max-height:640px;background:color-mix(in srgb,var(--soft,rgba(120,140,160,.06)) 65%,var(--panel,#fff))}
+.gh-code-tabel{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.81rem;line-height:1.5}
+.gh-code-nr{width:1%;white-space:nowrap;user-select:none;text-align:right;padding:0 10px;color:var(--muted,#64748b);border-right:1px solid var(--line,#e2e8f0)}
+.gh-code-regel{padding:0 12px;white-space:pre;tab-size:2}
+.gh-editor-pad{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gh-editor-pad input{flex:1;min-width:200px;border:1px solid var(--line,#cbd5e1);border-radius:10px;background:var(--panel,#fff);color:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85rem;padding:7px 10px}
+.gh-editor-veld-wikkel{display:grid}
+.gh-code-invoer{width:100%;min-height:380px;box-sizing:border-box;border:1px solid var(--line,#cbd5e1);border-radius:12px;background:var(--panel,#fff);color:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.83rem;line-height:1.52;padding:12px;resize:vertical;tab-size:2}
+.gh-editor-voet,.gh-vastleg-kaart{display:grid;gap:10px;padding:12px;border:1px solid var(--line,#d6dde4);border-radius:12px;background:var(--soft,rgba(120,140,160,.06))}
+.gh-vastleg-doel,.gh-keuze-rij{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.gh-radio{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;cursor:pointer}
+.gh-veld-inline{display:inline-flex;align-items:center;gap:7px;font-size:.83rem;flex-wrap:wrap}
+.gh-veld-inline select,.gh-veld-inline input{min-height:34px;border:1px solid var(--line,#cbd5e1);border-radius:9px;background:var(--panel,#fff);color:inherit;font:inherit;padding:0 9px}
+
+/* --- Regel-voor-regel verschilweergave (Diff) --- */
+.gh-diff-bestand{display:grid;gap:6px;border:1px solid var(--line,#d6dde4);border-radius:12px;overflow:hidden}
+.gh-diff-wikkel{overflow:auto;max-height:540px;border:1px solid var(--line,#d6dde4);border-radius:10px}
+.gh-diff-bestand .gh-diff-wikkel{border:0;border-radius:0;border-top:1px solid var(--line,#d6dde4)}
+.gh-diff-tabel{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.48}
+.gh-diff-nr{width:1%;white-space:nowrap;user-select:none;text-align:right;padding:1px 8px;color:var(--muted,#64748b);border-right:1px solid var(--line,#e2e8f0)}
+.gh-diff-teken{width:18px;text-align:center;user-select:none;font-weight:700}
+.gh-diff-tekst{padding:1px 10px;white-space:pre;tab-size:2}
+.gh-diff-rij.is-add,.gh-diff-rij.is-toegevoegd{background:color-mix(in srgb,var(--ok,#16a34a) 13%,transparent)}
+.gh-diff-rij.is-del,.gh-diff-rij.is-verwijderd{background:color-mix(in srgb,var(--fout,#dc2626) 12%,transparent)}
+.gh-diff-rij.is-hunk,.gh-diff-rij.is-kop{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--muted,#64748b)}
+.gh-vergelijk-kop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gh-vergelijk-inhoud{display:grid;gap:12px;min-width:0}
+
+/* --- Vraagstukken, etiketten, samenvoegingsverzoeken & beoordelingen --- */
+.gh-item-knop{width:100%;border:1px solid transparent;background:transparent;font:inherit;text-align:left;cursor:pointer}
+.gh-item-knop:hover{background:var(--soft,rgba(120,140,160,.12));border-color:var(--line,#d6dde4)}
+.gh-zaak-kop{display:grid;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--line,#e2e8f0)}
+.gh-zaak-titelrij{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.gh-zaak-titelrij h3{margin:0;font-size:1.06rem;word-break:break-word}
+.gh-zaak-inhoud{white-space:pre-wrap;word-break:break-word;font-size:.88rem;line-height:1.55;padding:10px 12px;border-radius:10px;background:var(--soft,rgba(120,140,160,.06))}
+.gh-reactie-lijst{display:grid;gap:8px}
+.gh-reactie,.gh-subkaart{display:grid;gap:6px;padding:11px 13px;border:1px solid var(--line,#d6dde4);border-radius:12px;background:var(--soft,rgba(120,140,160,.05))}
+.gh-kleur-kiezer{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gh-kleur-knop{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;display:grid;place-items:center}
+.gh-kleur-knop.is-on{border-color:var(--ink,#0f172a);transform:scale(1.08)}
+.gh-kleur-stip{width:10px;height:10px;border-radius:50%;display:inline-block}
+.gh-label-knop{cursor:pointer;background:transparent;font:inherit}
+.gh-label-knop.is-on{font-weight:700;background:var(--soft,rgba(120,140,160,.18))}
+.gh-review-soort{display:flex;gap:10px;flex-wrap:wrap}
+
+/* --- Werkstromen, logboeken, uitgaven & tweerichtingsspiegel --- */
+.gh-werkstroom-kaarten,.gh-uitgaven-lijst{display:grid;gap:8px}
+.gh-werkstroom-rij{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.gh-run-rij{align-items:center;flex-wrap:wrap;border:1px solid var(--line,#e2e8f0);padding:10px 12px}
+.gh-logboek-vak{margin:0;padding:12px;border-radius:10px;border:1px solid var(--line,#cbd5e1);background:color-mix(in srgb,var(--ink,#0f172a) 6%,var(--panel,#fff));font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;line-height:1.48;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.gh-uitgave-kaart{display:grid;gap:8px;padding:14px;border:1px solid var(--line,#d6dde4);border-radius:14px;background:var(--panel,#fff)}
+.gh-stat-strook{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px}
+.gh-stat-kaart{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line,#d6dde4);border-radius:12px;background:var(--panel,#fff)}
+.gh-stat-kaart strong{font-size:1.2rem}
+
+/* --- Systeemeigen <dialog> in de bovenlaag (zonder position:fixed) --- */
+.gh-dialoog{border:1px solid var(--line,#cbd5e1);border-radius:16px;padding:0;background:var(--panel,#fff);color:inherit;width:min(580px,calc(100vw - 24px));max-height:calc(100dvh - 32px);margin:auto;box-shadow:0 22px 54px rgba(15,23,42,.26)}
+.gh-dialoog.gh-dialoog-breed{width:min(920px,calc(100vw - 24px))}
+.gh-dialoog::backdrop{background:rgba(15,23,42,.46);backdrop-filter:blur(2px)}
+.gh-dialoog-binnen{display:grid;grid-template-rows:auto minmax(0,1fr);max-height:calc(100dvh - 32px)}
+.gh-dialoog-kop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line,#e2e8f0)}
+.gh-dialoog-kop h3{margin:0;font-size:1rem}
+.gh-dialoog-lijf{padding:16px;overflow:auto;display:grid;gap:12px}
+
+/* --- Volledige mobiele aanpassing (smartphones & smalle schermen) --- */
+@media (max-width:860px){
+  .gh-code-split{grid-template-columns:1fr}
+  .gh-mobiel-wissel{display:inline-flex}
+  .gh-boom-kolom.is-verborgen-mobiel,.gh-bestand-kolom.is-verborgen-mobiel{display:none}
+}
+@media (max-width:700px){
+  .gh-snel-pil,.gh-segment>button,.gh-boom-rij,.gh-select-wikkel,.gh-select-wikkel select,.gh-veld-inline select,.gh-veld-inline input{min-height:var(--tik-hoogte,44px)}
+  .gh-icon{width:var(--tik-hoogte,44px);height:var(--tik-hoogte,44px)}
+  .gh-eenklik-held{padding:14px}
+  .gh-eenklik-kop{flex-direction:column;gap:10px}
+  .gh-eenklik-rij>.gh-btn{flex:1 1 100%;justify-content:center}
+  .gh-werkbalk-groep{width:100%}
+  .gh-select-wikkel{flex:1;min-width:0}
+  .gh-select-wikkel select{max-width:100%;width:100%}
+  .gh-dialoog,.gh-dialoog.gh-dialoog-breed{width:calc(100vw - 12px);max-width:none;max-height:calc(100dvh - 16px);border-radius:14px}
+  .gh-dialoog-binnen{max-height:calc(100dvh - 16px)}
+  .gh-dialoog-lijf{padding:12px}
+  .gh-apparaatcode-waarde{font-size:1.3rem;letter-spacing:.12em}
+}
+
