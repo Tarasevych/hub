@@ -49,9 +49,13 @@ type Props = {
   onInvoer: (waarde: string) => void;
   /** Wat de gebruiker moet doen als de chat (nog) niet kan antwoorden. */
   blokkadeUitleg: React.ReactNode;
+  /** Optionele geïsoleerde agent-werkruimte waarbinnen deze chat mag handelen. */
+  werkruimteId?: string;
+  /** Optionele sleutels van gedeelde werkcontext tussen taken. */
+  contextSleutels?: string[];
 };
 
-export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, blokkadeUitleg }: Props) {
+export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, blokkadeUitleg, werkruimteId, contextSleutels }: Props) {
   const [berichten, setBerichten] = useState<Bericht[]>([]);
   const [stappen, setStappen] = useState<Stap[]>([]);
   const [bezig, setBezig] = useState(false);
@@ -90,6 +94,8 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
     try {
       const res = await api.post('/api/owner/ai/werkruimte/chat', {
         ...sessieLichaam(), model,
+        ...(werkruimteId ? { werkruimteId } : {}),
+        ...(contextSleutels && contextSleutels.length ? { contextSleutels } : {}),
         messages: volgende.map((b) => ({ role: b.rol, content: b.tekst })),
       }, { signal: ctrl.signal });
       setBerichten([...volgende, { rol: 'assistant', tekst: String(res.data?.reply ?? ''), onvolledig: res.data?.truncated === true }]);

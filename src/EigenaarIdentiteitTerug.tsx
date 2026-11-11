@@ -17,10 +17,17 @@ const apiFailure=(caught:unknown)=>{let reason='OWNER_CALLBACK_REQUEST_FAILED',s
 // De eigenaar zag op Android alleen «Не вдалося завершити вхід» en kon de echte oorzaak
 // (browserbinding, Google-tokenwisseling, bereikbaarheid...) daardoor niet onderscheiden.
 const veiligeFoutcode=(reason:string)=>/^[A-Za-z][A-Za-z0-9_]{2,89}$/.test(reason)?reason.toUpperCase():'OWNER_CALLBACK_REQUEST_FAILED';
+const kluisPad=()=>{try{const u=new URL(location.origin),d=u.hostname.split('.');if(d.length>2)d[0]='id';else d.unshift('id');return `${u.protocol}//${d.join('.')}${u.port?`:${u.port}`:''}/aanmeldmethoden#aanmeldmethoden-sleutelkluis`}catch{return 'https://id.tarasevych.com/aanmeldmethoden#aanmeldmethoden-sleutelkluis'}};
 const callbackUitleg=(lang:Lang,reason:string)=>{
   switch(veiligeFoutcode(reason)){
+    case 'SLEUTELKLUIS_GESLOTEN':return lang==='uk'
+      ?'Google підтвердив вхід, але ваш особистий ключ шифрування даних на сервері зараз закритий (наприклад, після оновлення сервера). Відкрийте сховище ключів у «Способи входу → Шифрування» та повторіть підключення.'
+      :'Google heeft de aanmelding bevestigd, maar uw persoonlijke gegevenssleutel op de server is nu gesloten (bijvoorbeeld na een serverbijwerking). Ontgrendel de sleutelkluis bij «Aanmeldmethoden → Versleuteling» en probeer opnieuw.';
+    case 'GOOGLE_SUITE_REAUTH_REQUIRED':return lang==='uk'
+      ?'Попередній дозвіл Google більше не дійсний. Розпочніть підключення пошти ще раз і підтвердьте всі запитані доступи.'
+      :'De eerdere Google-toestemming is niet meer geldig. Start de mailkoppeling opnieuw en bevestig alle gevraagde rechten.';
     case 'GOOGLE_SUITE_BROWSER_BINDING_MISMATCH':return lang==='uk'
-      ?'Захисне підтвердження браузера не повернулося після Google. Перевірте, чи дозволені cookie для tarasevych.com, і розпочніть підключення знову в тому самому браузері.'
+      ?'Захисне підтвердження оглядача не повернулося після Google. Перевірте, чи дозволені реп’яшки для tarasevych.com, і розпочніть підключення знову в тому самому оглядачі.'
       :'De beveiligde browserkoppeling kwam niet terug van Google. Sta cookies voor tarasevych.com toe en start opnieuw in dezelfde browser.';
     case 'GOOGLE_SUITE_TOKEN_EXCHANGE_REJECTED':return lang==='uk'
       ?'Google не прийняв обмін тимчасового коду на дозвіл пошти. Потрібно перевірити налаштування OAuth на сервері.'
@@ -29,8 +36,8 @@ const callbackUitleg=(lang:Lang,reason:string)=>{
       ?'Сервер не знайшов одноразове підтвердження цієї спроби Google. Поверніться до пошти та почніть нове підключення.'
       :'De server heeft de eenmalige bevestiging van deze Google-poging niet gevonden. Ga terug naar e-mail en begin opnieuw.';
     case 'NETWORK_ERROR':return lang==='uk'
-      ?'Телефон не зміг зв’язатися із сервером під час завершення входу. Ми повторили запит, але підтвердження ще немає.'
-      :'De telefoon kon de server niet bereiken tijdens het afronden. Het verzoek is herhaald, maar er is nog geen bevestiging.';
+      ?'Пристрій не зміг зв’язатися із сервером під час завершення входу. Ми повторили запит, але підтвердження ще немає.'
+      :'Het apparaat kon de server niet bereiken tijdens het afronden. Het verzoek is herhaald, maar er is nog geen bevestiging.';
     default:return failureCopy(lang,reason);
   }
 };
@@ -63,5 +70,5 @@ export default function OwnerIdentityCallback(){
     submit();
     return()=>{stopped=true;if(retryTimer)window.clearTimeout(retryTimer);if(watchdog)window.clearTimeout(watchdog)};
   },[initialLocale]);
-  return <main lang={locale} style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'var(--bg,#f5f7f6)',color:'var(--text,#173b3d)',fontFamily:'system-ui,sans-serif'}}><section style={{width:'min(100%,560px)',boxSizing:'border-box',padding:'24px',textAlign:'center',lineHeight:1.55}}><strong>{message}</strong>{failed&&<><p style={{marginTop:20}}><a href={backTo} style={{color:'var(--accent,#146b6d)',fontWeight:700}}>{copy(locale).back}</a></p>{diagnostic&&<details style={{marginTop:24,fontSize:13,color:'var(--muted,#5d6b70)'}}><summary style={{cursor:'pointer'}}>{locale==='uk'?'Код збою':'Foutcode'}: <code style={{overflowWrap:'anywhere'}}>{diagnostic.code}</code>{diagnostic.status?` · HTTP ${diagnostic.status}`:''}</summary><small style={{display:'block',marginTop:10}}>{locale==='uk'?'Цей код можна безпечно надіслати розробнику. Не надсилайте адресу з параметрами OAuth.':'Deze code kunt u veilig met de ontwikkelaar delen. Deel de OAuth-URL met parameters niet.'}</small></details>}</>}</section></main>;
+  return <main lang={locale} style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'var(--bg,#f5f7f6)',color:'var(--text,#173b3d)',fontFamily:'system-ui,sans-serif'}}><section style={{width:'min(100%,560px)',boxSizing:'border-box',padding:'24px',textAlign:'center',lineHeight:1.55}}><strong>{message}</strong>{failed&&<>{diagnostic?.code==='SLEUTELKLUIS_GESLOTEN'&&<p style={{marginTop:16}}><a href={kluisPad()} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minHeight:42,padding:'8px 18px',borderRadius:12,background:'var(--accent,#146b6d)',color:'var(--text-on-accent,#fff)',fontWeight:700,textDecoration:'none'}}>{locale==='uk'?'Відкрити сховище ключів':'Sleutelkluis ontgrendelen'}</a></p>}<p style={{marginTop:16}}><a href={backTo} style={{color:'var(--accent,#146b6d)',fontWeight:700}}>{copy(locale).back}</a></p>{diagnostic&&<details style={{marginTop:24,fontSize:13,color:'var(--muted,#5d6b70)'}}><summary style={{cursor:'pointer'}}>{locale==='uk'?'Код збою':'Foutcode'}: <code style={{overflowWrap:'anywhere'}}>{diagnostic.code}</code>{diagnostic.status?` · HTTP ${diagnostic.status}`:''}</summary><small style={{display:'block',marginTop:10}}>{locale==='uk'?'Цей код можна безпечно надіслати розробнику. Не надсилайте адресу з параметрами OAuth.':'Deze code kunt u veilig met de ontwikkelaar delen. Deel de OAuth-URL met parameters niet.'}</small></details>}</>}</section></main>;
 }

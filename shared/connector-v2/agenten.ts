@@ -21,7 +21,7 @@ export const AGENT_PAD_PREFIX = '';
 export const OUD_AGENT_PAD_PREFIX = '/ai';
 export const MCP_BASIS = 'https://mcp.tarasevych.com';
 
-export type AgentSlug = 'claude' | 'gpt' | 'grok' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw';
+export type AgentSlug = 'claude' | 'gpt' | 'codex' | 'grok' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw';
 export interface V2Agent {
   slug: AgentSlug;
   naam: string;
@@ -47,6 +47,9 @@ export const V2_AGENTEN: readonly V2Agent[] = Object.freeze([
   { slug: 'gpt', naam: 'ChatGPT', klant: 'chatgpt', webHosts: ['chatgpt.com', 'openai.com'], appSchemas: [], loopback: true,
     uk: 'ChatGPT (лише в браузері): Settings → Apps → Advanced settings → Developer mode, далі «Create app» (адреса, OAuth); на Plus/Pro дії запису можуть не працювати.',
     nl: 'ChatGPT (alleen in de browser): Settings → Apps → Advanced settings → Developer mode, dan «Create app» (adres, OAuth); op Plus/Pro werken schrijfacties mogelijk niet.' },
+  { slug: 'codex', naam: 'Codex', klant: 'codex', webHosts: ['chatgpt.com', 'openai.com'], appSchemas: [], loopback: true,
+    uk: 'OpenAI Codex (термінал і середовище розробки): codex mcp add mijn-ruimte --url або ~/.codex/config.toml із власною адресою /codex.',
+    nl: 'OpenAI Codex (terminal en IDE): codex mcp add mijn-ruimte --url of ~/.codex/config.toml met het eigen adres /codex.' },
   { slug: 'grok', naam: 'Grok', klant: 'grok', webHosts: ['grok.com', 'x.ai'], appSchemas: [], loopback: true,
     uk: 'Споживчий Grok власного MCP-сервера не приймає; клієнти на моделях xAI з mcp.json — через адресу нижче.',
     nl: 'Consumenten-Grok neemt geen eigen MCP-server aan; clients op xAI-modellen met mcp.json via het adres hieronder.' },

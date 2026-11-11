@@ -60,6 +60,10 @@ BEGIN
     -- 0114/0116 (Werkblad v3 + blokken): lade/laag/items/plekken, eigen rijen onder RLS (zelfde vorm als 0112).
     IF to_regclass('app.werkblad_items') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_v3_lade, app.werkblad_layout, app.werkblad_items TO mijnruimte_app; END IF;
     IF to_regclass('app.werkblad_plekken') IS NOT NULL THEN GRANT SELECT, INSERT, UPDATE, DELETE ON app.werkblad_plekken TO mijnruimte_app; END IF;
+    -- 0207: AI-ecosysteem (geïsoleerde agent-werkruimtes, gedeelde context, overdrachten en ruimte-uitbreidingen): eigen rijen onder RLS.
+    IF to_regclass('app.ai_agent_werkruimtes') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.ai_agent_werkruimtes, app.ai_gedeelde_context, app.ai_agent_overdrachten, app.ai_ruimte_uitbreidingen TO mijnruimte_app;
+    END IF;
     -- 0115: technische ruimtes v2 (alleen lezen onder RLS voor app-rol).
     IF to_regclass('app.tech_ruimte_sessies') IS NOT NULL THEN
       GRANT SELECT ON app.tech_ruimte_sessies, app.tech_ruimte_tabs, app.tech_ruimte_ai TO mijnruimte_app;

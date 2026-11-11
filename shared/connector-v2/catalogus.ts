@@ -499,6 +499,20 @@ const DEFS: readonly Def[] = [
   { id: 'orch_inleveren_klaar', essentie: 'afronden_overdracht', sub: 'admin', kanten: B, soort: 'schrijven', groep: 'releases', risico: 'hoog',
     uk: ['Завершувати передачу результату', 'Звіряє SHA-256 і проганяє пакет через конвеєр приймання: гілка від бази, правила, захищені файли, конфлікти з integratie, тести, запис, черга.', 'Прийнята передача — лише власна гілка й місце в черзі; злиття в integratie та установку робить людина. Відхилена — не лишає гілки.'],
     nl: ['Overdracht van een resultaat afronden', 'Vergelijkt de SHA-256 en haalt het pakket door de inleverpijplijn: tak vanaf de basis, regels, beschermde bestanden, conflicten met integratie, tests, record, wachtrij.', 'Een aanvaarde overdracht is alleen een eigen tak en een plek in de wachtrij; samenvoegen en installeren doet een mens. Een geweigerde laat geen tak achter.'] },
+
+  // ---------------------------------------------------------------- ecosysteem: gedeelde context, taakoverdracht en ruimte-uitbreidingen
+  { id: 'ecosysteem_context_list', essentie: 'tonen_werkcontext', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',
+    uk: ['Читати спільний контекст завдань', 'Читає збережені записи спільного контексту між завданнями, підключеними застосунками та агентами ШІ у вашому просторі.', 'ШІ бачить лише контекст поточного простору (приватного або технічного) без доступу до іншого простору.'],
+    nl: ['Gedeelde werkcontext lezen', 'Leest opgeslagen items van de gedeelde werkcontext tussen taken, aangesloten toepassingen en AI-agenten in uw ruimte.', 'De AI ziet uitsluitend de context van de actieve ruimte (privé of technisch) zonder toegang tot de andere ruimte.'] },
+  { id: 'ecosysteem_context_save', essentie: 'bewaren_werkcontext', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Зберігати спільний контекст завдань', 'Створює або оновлює запис спільного контексту, щоб інші завдання, застосунки й агенти ШІ продовжували роботу без втрати даних.', 'Запис з’являється у вашому реєстрі спільного контексту після підтвердження на сайті.'],
+    nl: ['Gedeelde werkcontext bewaren', 'Maakt of werkt een gedeeld contextitem bij zodat volgende taken, toepassingen en AI-agenten verderwerken zonder contextverlies.', 'Het item verschijnt in uw register van gedeelde context na bevestiging op de site.'] },
+  { id: 'ecosysteem_agent_overdracht', essentie: 'overdragen_taak', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Передавати завдання іншому агенту ШІ', 'Реєструє передачу завдання та вибраних ключів спільного контексту іншому підключеному агенту ШІ за вашим розпорядженням.', 'Створює запис передачі у вашому просторі; інший агент діє лише в межах наданих вами прав і після підтвердження на сайті.'],
+    nl: ['Taak overdragen aan een andere AI-agent', 'Registreert een door u opgedragen taakoverdracht met gekozen contextsleutels naar een andere verbonden AI-agent.', 'Maakt een overdrachtsitem in uw ruimte na bevestiging op de site; de andere agent handelt uitsluitend binnen de rechten die u gaf.'] },
+  { id: 'ecosysteem_ruimte_uitbreiding', essentie: 'bewaren_uitbreiding', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Додавати розширення простору сайту', 'Реєструє адаптацію, системний міст або робочий потік, створений вами чи інструментом програмування ШІ у межах вашого простору облікового запису.', 'Розширення працює лише у вашому просторі після підтвердження на сайті та з тими середовищами, які ви йому відкрили.'],
+    nl: ['Uitbreiding van uw siteruimte bewaren', 'Registreert een aanpassing, systeembrug of werkstroom die door u of een programmeeragent binnen uw eigen accountruimte is gebouwd.', 'De uitbreiding werkt alleen in uw ruimte na bevestiging op de site en met de omgevingen die u ervoor openzette.'] },
 ];
 
 /**
