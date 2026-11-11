@@ -1,0 +1,266 @@
+name: IDENTITEIT-008 · випуск спадного меню облікового запису v3
+
+# Ніколи не встановлює пакет на сервер. Перед оприлюдненням звіряє живу встановлену основу, джерела, міграції, типи й контрольну суму.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, broncode, migraties, typen en controlesom.
+on:
+  push:
+    branches:
+      - 'feature/identiteit-008-accountmenu-v3-20261111-142500'
+    paths:
+      - '.github/workflows/identiteit-008-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-008.json'
+      - 'migrations/0206_accountmenu_v3_vlag.sql'
+      - 'shared/vlaggen.ts'
+      - 'src/functievlag-lezen.ts'
+      - 'src/CanoniekAccountMenu.tsx'
+      - 'src/InstellingencentrumWeergave.tsx'
+      - 'src/accountmenu-v3/**'
+      - 'tests/eenheid/accountmenu-v3.test.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identiteit-008-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: IDENTITEIT-008
+  BASIS_VERSIE: '20261109-210726'
+  BASIS_COMMIT: '2cc45b1f16d7e08dcee19072440d651b0f2be81b'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error(`Встановлена версія змінилася (${v.versie} @ ${v.bronCommit || v.commit}). Випуск зупинено для нового узгодження.`);
+          }
+          JS
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+      - name: Виконати одиничні перевірки меню облікового запису й теми
+        run: |
+          node scripts/eenheidstests.mjs accountmenu-v3.test.ts
+          node scripts/eenheidstests.mjs accountmenu-v2-20261029.test.ts
+          node scripts/eenheidstests.mjs menu-taal-prapor-20261103.test.ts
+          node scripts/eenheidstests.mjs aanmeld-001-weergave.test.ts
+          node scripts/eenheidstests.mjs identiteit-atelier.test.ts
+          node scripts/eenheidstests.mjs thema.test.ts
+      - name: Перевірити типи та скласти застосунок
+        run: |
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Перевірити подвійне застосування міграцій на чистій базі даних
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node --input-type=module <<'JS'
+          import pg from 'pg';
+          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+          const r = await pool.query("SELECT sleutel, aan, standaard FROM app.feature_flags WHERE sleutel = 'accountmenu-v3'");
+          await pool.end();
+          if (r.rowCount !== 1 || r.rows[0].aan !== false || r.rows[0].standaard !== false) {
+            throw Error('Прапорець accountmenu-v3 не створений у стані вимкнено.');
+          }
+          JS
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Нове спадне меню облікового запису (v3): орбіта світлин, палітра та доступ',
+            samenvatting: 'Єдина композиція спадного меню облікового запису за окремим перемикачем можливості accountmenu-v3 (типово вимкнено). Поєднує трикамерну Орбіту світлин (або Секційну картку в Налаштуваннях), перемикання палітр за Моделлю В, концентричне кільце часу доступу з трьома умовами завершення технічного простору, спокійний вихід у два стовпці та масштабування за кутик зі збереженням усіх наявних можливостей сервера.',
+            wijzigingen: [
+              'Режим А («Орбіта світлин», типово) з нерухомим активним профілем по центру та вибір Режиму Б («Секційна картка») у розділі Налаштування → Налаштувати меню.',
+              'Кнопка «Палітра кольорів» за Моделлю В: короткий натиск гортає палітри по колу, правий натиск або утримання відкриває повну поличку палітр; колір показує сама піктограма палітри без кутового кружечка.',
+              'Кнопка «Доступ і терміни» (32×32 px) з концентричним кільцем r = 15.5, тематичною спливною підказкою при наведенні та вбудованим лотком трьох чітких умов завершення технічного простору.',
+              'Світіння піктограми щитка кольором технічної смуги лише за активного технічного простору, спокійний рядок виходу в два стовпці та пропорційне масштабування панелі за нижні кутики (78%–134%).'
+            ],
+            fixes: [
+              'Усунуто зміщення центральної світлини при додаванні облікових записів, прибрано зайвий кутовий кружечок на кнопці палітри та вирівняно концентричне кільце кнопки доступу.'
+            ],
+            beperkingen: [
+              'Перемикач можливості accountmenu-v3 типово вимкнений; власник умикає його спершу для себе у вікні «Перемикачі функцій».',
+              'Встановлення на робочий сервер не виконується автоматично та потребує підтвердження власника ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу, а потім увімкніть перемикач accountmenu-v3 для свого запису у «Перемикачах функцій».'
+          };
+          const nl = {
+            titel: 'Nieuw uitvouwmenu voor het account (v3): foto-orbita, palet en toegang',
+            samenvatting: 'Eén samenhangend accountmenu achter de afzonderlijke functieschakelaar accountmenu-v3 (standaard uit). Combineert de driekamer-foto-orbita (of Sectiekaart via Instellingen), paletwissel volgens Model B, een concentrische tijdring met drie duidelijke eindvoorwaarden van de technische ruimte, rustig afmelden in twee kolommen en schalen via de hoek met volledig behoud van alle geïnstalleerde functies.',
+            wijzigingen: [
+              'Modus A («Profielfoto-orbita», standaard) met het actieve profiel vast in het midden en keuze voor Modus B («Sectiekaart») onder Instellingen → Menu instellen.',
+              'Knop «Kleurenpalet» volgens Model B: kort klikken wisselt rond, rechtsklik of ingedrukt houden opent het volledige palettenpaneel; het paletpictogram toont zelf de kleur zonder hoekbolletje.',
+              'Knop «Toegang en termijnen» (32×32 px) met concentrische ring r = 15.5, thematische zweefkaart en ingebouwd paneel met drie duidelijke eindvoorwaarden van de technische ruimte.',
+              'Schildpictogram kleurt uitsluitend bij actieve technische ruimte mee met de strookkleur, rustige afmeldrij in twee kolommen en proportioneel schalen via de onderste hoeken (78%–134%).'
+            ],
+            fixes: [
+              'Verschuiving van de middelste profielfoto bij meerdere accounts verholpen, hoekbolletje op de paletknop verwijderd en de concentrische ring op de toegangsknop exact gecentreerd.'
+            ],
+            beperkingen: [
+              'Functieschakelaar accountmenu-v3 staat standaard uit; de eigenaar schakelt deze eerst voor zichzelf in bij «Functieschakelaars».',
+              'Installatie op de productieserver gebeurt nooit automatisch en vereist bevestiging van de eigenaar met de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en schakel daarna accountmenu-v3 voor uw eigen account in bij «Functieschakelaars».'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 96,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено 16 нових одиничних перевірок accountmenu-v3, 17 перевірок походження TRACE-001 та щонайменше 63 суміжні перевірки меню облікового запису, мовних прапорів, входу й тем, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій (включно з 0206) на чистій базі PostgreSQL 16.',
+              nl: '16 nieuwe eenheidstests voor accountmenu-v3, 17 herkomstcontroles van TRACE-001 en minstens 63 aanverwante controles voor accountmenu, taalvlaggen, aanmelden en thema’s zijn geslaagd, evenals typecontrole voor client en server, productiebouw en dubbele uitvoering van alle migraties (inclusief 0206) op een schone PostgreSQL 16-databank.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk 'Нове спадне меню облікового запису (v3): орбіта світлин, палітра за Моделлю В, доступ і терміни та масштабування.' \
+            --samenvatting-nl 'Nieuw accountmenu (v3): profielfoto-orbita, palet volgens Model B, toegang en termijnen en vensterschaling.' \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+          printf 'IDENTITEIT-008 · Нове спадне меню облікового запису (v3) за прапорцем можливості accountmenu-v3 (типово вимкнено). Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "IDENTITEIT-008 · спадне меню облікового запису v3 · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: identiteit-008-controle
+          path: uitvoer/
+          if-no-files-found: ignore

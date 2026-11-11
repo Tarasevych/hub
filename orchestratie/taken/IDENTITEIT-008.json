@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-008",
+  "agent": "gemini",
+  "tak": "feature/identiteit-008-accountmenu-v3-20261111-142500",
+  "basisCommit": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-11T14:22:56.340Z",
+  "bijgewerkt": "2026-11-11T14:22:56.340Z",
+  "omschrijving": "Нове спадне меню облікового запису (v3): орбіта світлин, палітра кольорів за Моделлю В, доступ і терміни технічного простору та масштабування за перемикачем можливості accountmenu-v3.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

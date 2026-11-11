@@ -19,7 +19,7 @@ export function laadVlaggen(opnieuw = false): Promise<Map<string, Uitkomst>> {
   bezig = api.post('/api/flags', body()).then(
     (r) => new Map(((r.data?.vlaggen ?? []) as Uitkomst[]).map((x) => [x.key, x])),
     () => new Map<string, Uitkomst>(),
-  ).then((m) => { cache = m; bezig = null; luisteraars.forEach((f) => f()); return m; });
+  ).then((m) => { cache = m; bezig = null; luisteraars.forEach((f) => f()); try { window.dispatchEvent(new CustomEvent('mr:vlaggen-vernieuwd')); } catch { /* поза оглядачем */ } return m; });
   return bezig;
 }
 

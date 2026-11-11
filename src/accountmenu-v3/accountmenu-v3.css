@@ -1,0 +1,1334 @@
+/* IDENTITEIT-008 — Нове спадне меню облікового запису (v3) під прапорцем `accountmenu-v3`.
+   Усі правила обмежені селектором `[data-account-menu-v3]`: без увімкненого прапорця жоден стиль не змінюється.
+   Жодних фіксованих правил розташування; повна підтримка `prefers-reduced-motion: reduce`. */
+
+[data-account-menu-v3] .canonical-account-panel {
+  --am3-bg: var(--canonical-panel, var(--panel, #ffffff));
+  --am3-surface: var(--canonical-surface, var(--surface, #f3f5f8));
+  --am3-surface-2: var(--canonical-surface-2, var(--surface2, #e8ecf2));
+  --am3-line: var(--canonical-line, var(--line, #dce2ea));
+  --am3-text: var(--canonical-text, var(--text, #16202a));
+  --am3-muted: var(--canonical-muted, var(--muted, #556270));
+  --am3-accent: var(--canonical-accent, var(--accent, #0f766e));
+  --am3-accent-soft: var(--canonical-accent-soft, var(--accent-soft, rgba(15, 118, 110, 0.12)));
+  --am3-danger-icon: #dc2626;
+  width: min(392px, calc(100vw - 20px));
+  padding: 0;
+  border-radius: 24px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  overflow: visible;
+  transform: scale(var(--am3-scale, 1));
+  transform-origin: top right;
+  transition: transform 0.08s ease-out;
+}
+
+.theme-dark [data-account-menu-v3] .canonical-account-panel,
+html.theme-dark [data-account-menu-v3] .canonical-account-panel {
+  --am3-danger-icon: #f87171;
+}
+
+[data-account-menu-v3] .am3-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+}
+
+/* Тонка смужка стану технічного простору у верхній крайці вікна */
+[data-account-menu-v3] .am3-tech-strip {
+  height: 0;
+  overflow: hidden;
+  border-radius: 23px 23px 0 0;
+  transition: height 0.2s ease;
+}
+
+[data-account-menu-v3] .am3-tech-strip.is-active {
+  height: 5px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--am3-shield-color, #d97706) 0 8px,
+    color-mix(in srgb, var(--am3-shield-color, #d97706) 68%, #000000) 8px 16px
+  );
+}
+
+/* 1. Шапка профілю та Орбіта світлин (Режим А) / Секційна картка (Режим Б) */
+[data-account-menu-v3] .am3-hero {
+  padding: 18px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+[data-account-menu-v3] .am3-orbit-stage {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  min-height: 76px;
+  margin-bottom: 10px;
+}
+
+[data-account-menu-v3] .am3-orbit-wing {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-orbit-wing.is-left {
+  justify-content: flex-end;
+  padding-right: 12px;
+}
+
+[data-account-menu-v3] .am3-orbit-wing.is-right {
+  justify-content: flex-start;
+  padding-left: 12px;
+}
+
+[data-account-menu-v3] .am3-wing-list {
+  display: flex;
+  align-items: center;
+}
+
+[data-account-menu-v3] .am3-wing-list.is-spacious {
+  gap: 6px;
+}
+
+[data-account-menu-v3] .am3-wing-list.is-stacked .am3-orbit-node + .am3-orbit-node {
+  margin-left: -14px;
+}
+
+[data-account-menu-v3] .am3-wing-list.is-stacked:hover .am3-orbit-node + .am3-orbit-node,
+[data-account-menu-v3] .am3-wing-list.is-stacked:focus-within .am3-orbit-node + .am3-orbit-node {
+  margin-left: 4px;
+}
+
+[data-account-menu-v3] .am3-orbit-node {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--am3-bg);
+  background: var(--am3-surface-2);
+  color: var(--am3-text);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.16s ease, margin 0.18s ease, box-shadow 0.16s ease;
+}
+
+[data-account-menu-v3] .am3-orbit-node:hover,
+[data-account-menu-v3] .am3-orbit-node:focus-visible {
+  transform: translateY(-2px) scale(1.08);
+  z-index: 6;
+}
+
+[data-account-menu-v3] .am3-orbit-node .canonical-account-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-size: 0.72rem;
+}
+
+[data-account-menu-v3] .am3-orbit-node.is-add {
+  border: 1.5px dashed var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-muted);
+}
+
+[data-account-menu-v3] .am3-orbit-node.is-add:hover {
+  color: var(--am3-text);
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-orbit-node.is-add svg {
+  width: 15px;
+  height: 15px;
+}
+
+[data-account-menu-v3] .am3-orbit-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--am3-bg);
+  background: #16a34a;
+}
+
+[data-account-menu-v3] .am3-orbit-dot.is-expired {
+  background: #d97706;
+}
+
+[data-account-menu-v3] .am3-center-avatar-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto;
+}
+
+[data-account-menu-v3] .am3-center-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  padding: 2px;
+  border: 1.5px solid var(--am3-line);
+  background: var(--am3-surface);
+  display: grid;
+  place-items: center;
+}
+
+[data-account-menu-v3] .am3-center-avatar .canonical-account-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-size: 1.35rem;
+}
+
+[data-account-menu-v3] .am3-camera-btn {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+}
+
+[data-account-menu-v3] .am3-camera-btn:hover {
+  background: var(--am3-surface);
+}
+
+[data-account-menu-v3] .am3-camera-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+[data-account-menu-v3] .am3-user-name {
+  font-size: 1.04rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-user-email {
+  font-size: 0.78rem;
+  color: var(--am3-muted);
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+[data-account-menu-v3] .am3-manage-pill {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+[data-account-menu-v3] .am3-manage-pill:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-manage-pill svg {
+  width: 14px;
+  height: 14px;
+  color: var(--am3-accent);
+}
+
+/* 2. Плитки швидких дій (Налаштування | Перевірка) */
+[data-account-menu-v3] .am3-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  padding: 0 14px 10px;
+}
+
+[data-account-menu-v3] .am3-quick-tile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 8px 11px;
+  border-radius: 13px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+[data-account-menu-v3] .am3-quick-tile:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-quick-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--am3-bg);
+  color: var(--am3-accent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-quick-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+[data-account-menu-v3] .am3-quick-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-quick-copy b {
+  font-size: 0.77rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-account-menu-v3] .am3-quick-copy small {
+  font-size: 0.66rem;
+  color: var(--am3-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 3. Розкривний перелік «Інші облікові записи» */
+[data-account-menu-v3] .am3-accounts-card {
+  margin: 0 14px 10px;
+  border-radius: 15px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  overflow: hidden;
+}
+
+[data-account-menu-v3] .am3-accounts-toggle {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--am3-text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-accounts-toggle:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-accounts-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-accounts-toggle-left svg {
+  width: 15px;
+  height: 15px;
+  color: var(--am3-muted);
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-accounts-toggle-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-account-menu-v3] .am3-mini-avatars {
+  display: flex;
+  align-items: center;
+}
+
+[data-account-menu-v3] .am3-mini-avatars > span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--am3-surface);
+  overflow: hidden;
+  display: inline-flex;
+}
+
+[data-account-menu-v3] .am3-mini-avatars > span + span {
+  margin-left: -6px;
+}
+
+[data-account-menu-v3] .am3-mini-avatars .canonical-account-avatar {
+  width: 100%;
+  height: 100%;
+  font-size: 0.56rem;
+}
+
+[data-account-menu-v3] .am3-accounts-body {
+  border-top: 1px solid var(--am3-line);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-account-menu-v3] .am3-account-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 11px;
+  background: var(--am3-bg);
+  border: 1px solid transparent;
+}
+
+[data-account-menu-v3] .am3-account-row:hover {
+  border-color: var(--am3-line);
+}
+
+[data-account-menu-v3] .am3-account-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--am3-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-account-main .canonical-account-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-account-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-account-copy strong {
+  font-size: 0.77rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-account-menu-v3] .am3-account-copy small {
+  font-size: 0.67rem;
+  color: var(--am3-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-account-menu-v3] .am3-account-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-acc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-acc-btn:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-acc-btn.is-icon-only {
+  width: 28px;
+  padding: 0;
+  justify-content: center;
+  color: var(--am3-muted);
+}
+
+[data-account-menu-v3] .am3-acc-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+[data-account-menu-v3] .am3-add-row-btn {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px dashed var(--am3-line);
+  background: transparent;
+  color: var(--am3-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-add-row-btn:hover {
+  background: var(--am3-bg);
+}
+
+[data-account-menu-v3] .am3-add-row-btn svg {
+  width: 14px;
+  height: 14px;
+  color: var(--am3-accent);
+}
+
+/* 4. Картка налаштувань вигляду та простору (Тема, Мова, Простір) */
+[data-account-menu-v3] .am3-prefs-card {
+  margin: 0 14px 10px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-account-menu-v3] .am3-pref-block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-account-menu-v3] .am3-pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-pref-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.77rem;
+  font-weight: 700;
+  color: var(--am3-text);
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-pref-label > svg {
+  width: 15px;
+  height: 15px;
+  color: var(--am3-muted);
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-pref-label-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-pref-sub {
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--am3-muted);
+  line-height: 1.2;
+}
+
+[data-account-menu-v3] .am3-pref-sub.is-tech-active {
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-pref-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* Спокійні сегментні перемикачі без різких кольорових рамок */
+[data-account-menu-v3] .am3-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 11px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--am3-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+[data-account-menu-v3] .am3-seg-btn:hover {
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-seg-btn.active {
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-account-menu-v3] .am3-seg-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Щиток технічного режиму: сірий у звичайному стані, світиться кольором технічної смуги ЛИШЕ коли активний технічний простір */
+[data-account-menu-v3] .am3-seg-btn.is-tech-btn svg {
+  color: currentColor;
+  transition: color 0.18s ease, filter 0.18s ease;
+}
+
+[data-account-menu-v3] .am3-seg-btn.is-tech-btn.active svg {
+  color: var(--am3-shield-color, #d97706);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.16));
+}
+
+/* Прапори мов без спотворення кольорів */
+[data-account-menu-v3] .am3-flag {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  opacity: 1 !important;
+  forced-color-adjust: none;
+}
+
+/* Кругла кнопка Палітри кольорів (32x32, Модель В: короткий натиск — по колу, правий натиск або утримання — список) */
+[data-account-menu-v3] .am3-palette-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+[data-account-menu-v3] .am3-palette-btn:hover,
+[data-account-menu-v3] .am3-palette-btn.is-open {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-palette-btn > svg.am3-palette-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--am3-palette-color, var(--am3-accent));
+  transition: color 0.18s ease, transform 0.16s ease;
+}
+
+[data-account-menu-v3] .am3-palette-btn:hover > svg.am3-palette-icon {
+  transform: scale(1.08);
+}
+
+/* Концентричне кільце утримання на кнопці Палітри (32x32, r=15.5) */
+[data-account-menu-v3] .am3-hold-ring {
+  position: absolute;
+  inset: 0;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  transform: rotate(-90deg);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+[data-account-menu-v3] .am3-palette-btn.is-holding .am3-hold-ring {
+  opacity: 1;
+}
+
+[data-account-menu-v3] .am3-hold-ring circle {
+  fill: none;
+  stroke: var(--am3-palette-color, var(--am3-accent));
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 97.4;
+  stroke-dashoffset: 97.4;
+}
+
+[data-account-menu-v3] .am3-palette-btn.is-holding .am3-hold-ring circle {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.36s linear;
+}
+
+/* Миттєве сповіщення обраної палітри при короткому натисканні */
+[data-account-menu-v3] .am3-palette-toast {
+  position: absolute;
+  right: 0;
+  top: -32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  z-index: 15;
+  white-space: nowrap;
+}
+
+[data-account-menu-v3] .am3-palette-toast-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Вбудована поличка вибору кольорової палітри */
+[data-account-menu-v3] .am3-palette-tray {
+  margin-top: 4px;
+  padding: 10px;
+  border-radius: 13px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-account-menu-v3] .am3-tray-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--am3-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+[data-account-menu-v3] .am3-palette-sys-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+[data-account-menu-v3] .am3-pal-card {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-pal-card:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-pal-card.active {
+  background: var(--am3-accent-soft);
+}
+
+[data-account-menu-v3] .am3-pal-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+[data-account-menu-v3] .am3-pal-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-pal-copy b {
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-account-menu-v3] .am3-pal-copy small {
+  font-size: 0.6rem;
+  color: var(--am3-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-account-menu-v3] .am3-tints-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  padding-top: 2px;
+}
+
+[data-account-menu-v3] .am3-tint-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+  transition: transform 0.14s ease;
+}
+
+[data-account-menu-v3] .am3-tint-swatch:hover {
+  transform: scale(1.1);
+}
+
+[data-account-menu-v3] .am3-tint-swatch.active {
+  border-color: var(--am3-text);
+  transform: scale(1.12);
+}
+
+[data-account-menu-v3] .am3-tint-swatch svg {
+  width: 12px;
+  height: 12px;
+}
+
+[data-account-menu-v3] .am3-tray-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--am3-line);
+  font-size: 0.66rem;
+  color: var(--am3-muted);
+}
+
+[data-account-menu-v3] .am3-tray-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--am3-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-tray-link:hover {
+  text-decoration: underline;
+}
+
+/* Кругла кнопка «Доступ і терміни» (32x32 px) з ідеально концентричним кільцем r=15.5 і спливним сповіщенням при наведенні */
+[data-account-menu-v3] .am3-access-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+[data-account-menu-v3] .am3-access-btn.has-ring {
+  border-color: transparent;
+}
+
+[data-account-menu-v3] .am3-access-btn:hover,
+[data-account-menu-v3] .am3-access-btn.is-open {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-access-btn > svg.am3-access-icon {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+[data-account-menu-v3] .am3-access-ring {
+  position: absolute;
+  inset: 0;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  transform: rotate(-90deg);
+}
+
+[data-account-menu-v3] .am3-access-ring .ring-track {
+  fill: none;
+  stroke: var(--am3-line);
+  stroke-width: 1.5;
+}
+
+[data-account-menu-v3] .am3-access-ring .ring-fill {
+  fill: none;
+  stroke: var(--am3-shield-color, #d97706);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 97.4;
+  transition: stroke-dashoffset 0.25s ease, stroke 0.2s ease;
+}
+
+/* Тематична спливна картка при наведенні на кнопку «Доступ і терміни» */
+[data-account-menu-v3] .am3-access-hover-tip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: 248px;
+  padding: 8px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 20;
+}
+
+[data-account-menu-v3] .am3-access-btn:hover:not(.is-open) .am3-access-hover-tip,
+[data-account-menu-v3] .am3-access-btn:focus-visible:not(.is-open) .am3-access-hover-tip {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+[data-account-menu-v3] .am3-tip-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-tip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--am3-muted);
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-tip-dot.is-active {
+  background: var(--am3-shield-color, #d97706);
+}
+
+[data-account-menu-v3] .am3-tip-sub {
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--am3-muted);
+  line-height: 1.3;
+}
+
+[data-account-menu-v3] .am3-tip-hint {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--am3-accent);
+  margin-top: 1px;
+}
+
+/* Вбудований лоток «Доступ і терміни» (3 чіткі умови завершення + 2 охайні повноширинні кнопки) */
+[data-account-menu-v3] .am3-access-tray {
+  margin-top: 4px;
+  padding: 10px;
+  border-radius: 13px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+[data-account-menu-v3] .am3-cond-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+[data-account-menu-v3] .am3-cond-card {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-cond-card:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-cond-card.active {
+  background: var(--am3-accent-soft);
+}
+
+[data-account-menu-v3] .am3-cond-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+[data-account-menu-v3] .am3-cond-radio {
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--am3-muted);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-cond-card.active .am3-cond-radio {
+  border-color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-cond-card.active .am3-cond-radio::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-cond-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-cond-copy b {
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+[data-account-menu-v3] .am3-cond-copy small {
+  font-size: 0.64rem;
+  color: var(--am3-muted);
+  line-height: 1.3;
+}
+
+[data-account-menu-v3] .am3-time-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 23px;
+}
+
+[data-account-menu-v3] .am3-time-chip {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-bg);
+  color: var(--am3-text);
+  font-size: 0.66rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-time-chip:hover {
+  background: var(--am3-surface-2);
+}
+
+/* Кольори технічної смуги безпосередньо в лотку */
+[data-account-menu-v3] .am3-band-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: var(--am3-surface);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+[data-account-menu-v3] .am3-band-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+[data-account-menu-v3] .am3-band-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-band-dot.active {
+  border-color: var(--am3-text);
+  transform: scale(1.12);
+}
+
+[data-account-menu-v3] .am3-access-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 4px;
+  border-top: 1px solid var(--am3-line);
+}
+
+[data-account-menu-v3] .am3-tray-btn {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+  font-size: 0.73rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-tray-btn:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-tray-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+[data-account-menu-v3] .am3-tray-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Червоною є ЛИШЕ сама піктограма виходу або вимкнення */
+[data-account-menu-v3] .am3-danger-icon {
+  color: var(--am3-danger-icon) !important;
+}
+
+/* 5. Нижній рядок виходу 2А (Вийти з поточного | Вийти з усіх + кружечки) */
+[data-account-menu-v3] .am3-exit-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  padding: 0 14px 10px;
+}
+
+[data-account-menu-v3] .am3-exit-row.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+[data-account-menu-v3] .am3-exit-btn {
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+[data-account-menu-v3] .am3-exit-btn:hover {
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-exit-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-exit-btn > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 6. Підвал (Конфіденційність · Умови · Масштаб) та кутики розтягування */
+[data-account-menu-v3] .am3-footer {
+  position: relative;
+  padding: 8px 26px 10px;
+  border-top: 1px solid var(--am3-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  color: var(--am3-muted);
+}
+
+[data-account-menu-v3] .am3-footer a {
+  color: var(--am3-muted);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+[data-account-menu-v3] .am3-footer a:hover {
+  color: var(--am3-text);
+  text-decoration: underline;
+}
+
+[data-account-menu-v3] .am3-scale-badge {
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-muted);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+[data-account-menu-v3] .am3-scale-badge:hover {
+  color: var(--am3-text);
+  background: var(--am3-surface-2);
+}
+
+[data-account-menu-v3] .am3-resize-corner {
+  position: absolute;
+  bottom: 2px;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--am3-muted);
+  display: grid;
+  place-items: center;
+  opacity: 0.55;
+  touch-action: none;
+}
+
+[data-account-menu-v3] .am3-resize-corner:hover {
+  opacity: 1;
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-resize-corner.is-left {
+  left: 3px;
+  cursor: nesw-resize;
+}
+
+[data-account-menu-v3] .am3-resize-corner.is-right {
+  right: 3px;
+  cursor: nwse-resize;
+}
+
+[data-account-menu-v3] .am3-resize-corner svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-account-menu-v3] .canonical-account-panel,
+  [data-account-menu-v3] .am3-orbit-node,
+  [data-account-menu-v3] .am3-seg-btn,
+  [data-account-menu-v3] .am3-palette-btn > svg.am3-palette-icon,
+  [data-account-menu-v3] .am3-hold-ring circle,
+  [data-account-menu-v3] .am3-access-ring .ring-fill,
+  [data-account-menu-v3] .am3-access-hover-tip {
+    transition: none !important;
+  }
+}
