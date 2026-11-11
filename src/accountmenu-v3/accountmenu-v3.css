@@ -1,6 +1,7 @@
 /* IDENTITEIT-008 — Нове спадне меню облікового запису (v3) під прапорцем `accountmenu-v3`.
    Усі правила обмежені селектором `[data-account-menu-v3]`: без увімкненого прапорця жоден стиль не змінюється.
-   Жодних фіксованих правил розташування; повна підтримка `prefers-reduced-motion: reduce`. */
+   На смартфонах (<= 700 px) вікно відкривається у незалежному поверхневому шарі `[data-account-menu-v3].am3-mobiel-laag`;
+   повна підтримка `prefers-reduced-motion: reduce`. */
 
 [data-account-menu-v3] .canonical-account-panel {
   --am3-bg: var(--canonical-panel, var(--panel, #ffffff));
@@ -34,6 +35,10 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   display: flex;
   flex-direction: column;
   border-radius: 24px;
+}
+
+[data-account-menu-v3] .am3-shell > * {
+  flex-shrink: 0;
 }
 
 /* Тонка смужка стану технічного простору у верхній крайці вікна */
@@ -698,8 +703,8 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 [data-account-menu-v3] .am3-hold-ring {
   position: absolute;
   inset: 0;
-  width: 32px;
-  height: 32px;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   transform: rotate(-90deg);
   opacity: 0;
@@ -927,8 +932,8 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 [data-account-menu-v3] .am3-access-ring {
   position: absolute;
   inset: 0;
-  width: 32px;
-  height: 32px;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   transform: rotate(-90deg);
 }
@@ -1319,6 +1324,312 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 [data-account-menu-v3] .am3-resize-corner svg {
   width: 12px;
   height: 12px;
+}
+
+/* Захист від спадкових розтягувань .canonical-menu-action */
+[data-account-menu-v3] .am3-shell .am3-manage-pill {
+  width: auto;
+  max-width: 100%;
+  align-self: center;
+  justify-content: center;
+}
+
+[data-account-menu-v3] .am3-shell .am3-exit-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+[data-account-menu-v3] .am3-shell .am3-exit-btn > span {
+  flex: 0 1 auto;
+}
+
+/* 7. Незалежне мобільне поверхневе вікно (<= 700 px) поверх бічної панелі на всю ширину смартфона */
+[data-account-menu-v3].am3-mobiel-laag {
+  position: fixed;
+  inset: 0;
+  z-index: 360;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(10px + env(safe-area-inset-top, 0px))
+    calc(8px + env(safe-area-inset-right, 0px))
+    calc(10px + env(safe-area-inset-bottom, 0px))
+    calc(8px + env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+[data-account-menu-v3] .am3-mobiel-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+[data-account-menu-v3].am3-mobiel-laag > .canonical-account-panel.am3-mobiel-paneel {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  max-width: 420px;
+  max-height: 100%;
+  margin: 0 auto;
+  border-radius: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  transform: none !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
+  z-index: 1;
+}
+
+.theme-plum-dark [data-account-menu-v3] .canonical-account-panel,
+html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
+  --am3-danger-icon: #f87171;
+}
+
+[data-account-menu-v3] .am3-shell[data-am3-mobiel="ja"] .am3-resize-corner,
+[data-account-menu-v3] .am3-shell[data-am3-mobiel="ja"] .am3-scale-badge {
+  display: none !important;
+}
+
+[data-account-menu-v3] .am3-shell .am3-mobiel-sluit {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 12;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-muted);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+[data-account-menu-v3] .am3-shell .am3-mobiel-sluit:hover {
+  background: var(--am3-surface-2);
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-shell .am3-mobiel-sluit svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Мобільна адаптація (<= 700 px): специфічність (0,4,0) зберігає ідеально круглу геометрію кнопок
+   проти глобального правила min-height: 44px у src/ontwerp/mobiel.css (0,3,1), а зручну площу
+   дотику для пальця забезпечують прозорі зони ::after. */
+@media (max-width: 700px) {
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-hero {
+    padding: 16px 12px 12px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-quick-grid,
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-exit-row {
+    padding: 0 12px 10px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-accounts-card,
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-prefs-card {
+    margin: 0 12px 10px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-footer {
+    padding: 10px 16px 12px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-mobiel-sluit {
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-camera-btn {
+    width: 28px;
+    height: 28px;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-orbit-node {
+    width: 36px;
+    height: 36px;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-palette-btn,
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-access-btn {
+    width: 34px;
+    height: 34px;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 34px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-acc-btn.is-icon-only {
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tint-swatch {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 28px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-band-dot {
+    position: relative;
+    width: 22px;
+    height: 22px;
+    min-height: 0;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 22px;
+  }
+
+  /* Прозора зона дотику >= 44x44 px без спотворення видимої круглої форми */
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-mobiel-sluit, .am3-camera-btn, .am3-orbit-node, .am3-palette-btn, .am3-access-btn, .am3-acc-btn.is-icon-only, .am3-tint-swatch, .am3-band-dot)::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
+
+  /* Рівна висота всіх кнопок у сегментних перемикачах (піктограмних і текстових) */
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-seg-btn {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 9px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-manage-pill {
+    min-height: 36px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-acc-btn:not(.is-icon-only) {
+    min-height: 32px;
+    padding: 4px 10px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-time-chip {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 10px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tray-link {
+    min-height: 28px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-add-row-btn,
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tray-btn {
+    min-height: 38px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-exit-btn {
+    min-height: 40px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-tray-footer-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* На екранах смартфонів (<= 460 px) рядок «Простір» розкладається у 2 чисті лінії без розриву слів */
+@media (max-width: 460px) {
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row > .am3-pref-label {
+    width: 100%;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row > .am3-pref-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg {
+    flex: 1 1 auto;
+    display: flex;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg-btn {
+    flex: 1 1 0;
+  }
+}
+
+/* На вузьких смартфонах (<= 375 px) рядок «Тема» також переходить на 2 рівні лінії */
+@media (max-width: 375px) {
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row > .am3-pref-label {
+    width: 100%;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row > .am3-pref-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg {
+    flex: 1 1 auto;
+    display: flex;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn:last-child {
+    flex: 1 1 auto;
+  }
+}
+
+/* Надвузькі екрани (<= 350 px): охайна орбіта та одностовпцеві картки без обрізання написів */
+@media (max-width: 350px) {
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-orbit-wing.is-left {
+    padding-right: 8px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-orbit-wing.is-right {
+    padding-left: 8px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-orbit-node {
+    width: 32px;
+    height: 32px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-center-avatar-wrap,
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-center-avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-quick-grid,
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-palette-sys-grid,
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-exit-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* На сенсорних пристроях без курсора миші натискання одразу відкриває лоток, тож мишача підказка не заважає */
+@media (hover: none) and (pointer: coarse) {
+  [data-account-menu-v3] .am3-access-hover-tip {
+    display: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

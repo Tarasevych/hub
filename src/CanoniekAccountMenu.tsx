@@ -9,6 +9,8 @@ import {
   type ChangeEvent,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
+import { ladeBediening } from './plaatsing/plaatsing-staat';
 import {
   Camera,
   ChevronDown,
@@ -323,6 +325,23 @@ function IconAction({
   );
 }
 
+function useMobielAccountVenster(): boolean {
+  const [mobiel, setMobiel] = useState<boolean>(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 700px)').matches
+      : false,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia('(max-width: 700px)');
+    const werkBij = () => setMobiel(media.matches);
+    werkBij();
+    media.addEventListener?.('change', werkBij);
+    return () => media.removeEventListener?.('change', werkBij);
+  }, []);
+  return mobiel;
+}
+
 export default function CanonicalAccountMenu({
   lang,
   theme,
@@ -348,6 +367,7 @@ export default function CanonicalAccountMenu({
   const v2 = useRuimtesV2();
   const am2 = useAccountmenuV2();
   const am3 = useAccountmenuV3();
+  const mobielVenster = useMobielAccountVenster();
   useEffect(() => { if (v2) startRuimtes(); }, [v2]);
   // «Вийти з акаунта на сайті» / «Вийти всюди» uit het venster «Вийти» (src/tech/ruimtes/UitloggenKeuze.tsx) → de echte afmelding hier.
   useEffect(() => {
@@ -359,6 +379,7 @@ export default function CanonicalAccountMenu({
   const techUid = user?.id;
   useEffect(() => { if (techUid !== undefined) { techGebruiker(techUid); weergaveGebruiker(techUid); } }, [techUid]);
   const root = useRef<HTMLDivElement>(null);
+  const portaalRef = useRef<HTMLDivElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   // UI-008: de tooltip van de kleine avatar noemt ook hoeveel andere accounts er zijn; die lijst één keer ophalen bij aanwijzen.
   const geladenVoorTip = useRef(false);
@@ -386,6 +407,11 @@ export default function CanonicalAccountMenu({
     setOpen(false);
     setExpanded(false);
     setGewisseld(null);
+  };
+
+  const sluitMetLade = () => {
+    close();
+    if (mobielVenster) ladeBediening()?.sluit();
   };
 
   const applySnapshot = (next: AccountMenuSnapshot) => {
@@ -431,7 +457,7 @@ export default function CanonicalAccountMenu({
 
   useEffect(() => {
     const outside = (event: PointerEvent) => {
-      if (!open || root.current?.contains(event.target as Node)) return;
+      if (!open || root.current?.contains(event.target as Node) || portaalRef.current?.contains(event.target as Node)) return;
       const target = event.target as Element;
       const opensMail = Boolean(target.closest('.google-mail-open,.mail-row-date-mode'));
       const functional = Boolean(target.closest('button,a,input,select,textarea,summary,[contenteditable="true"],[role="button"],[role="menuitem"],[role="checkbox"],[tabindex]:not([tabindex="-1"]),.mail-row-interactive,.mail-row-hover-actions'));
@@ -735,7 +761,71 @@ export default function CanonicalAccountMenu({
             : <span className='canonical-account-avatar avatar-hero'><UserRound /></span>}
       </button>
 
-      {open && (
+      {open && am3 && displayUser && mobielVenster && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={portaalRef}
+              className='am3-mobiel-laag'
+              data-account-menu-v3='aan'
+              data-no-edge-swipe='1'
+              onPointerDown={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+            >
+              <div className='am3-mobiel-scrim' aria-hidden='true' onClick={close} />
+              <section
+                className='canonical-account-panel am3-mobiel-paneel'
+                role='dialog'
+                aria-modal='true'
+                aria-label={t.accounts}
+              >
+                <AccountMenuV3
+                  lang={lang}
+                  theme={theme}
+                  displayUser={displayUser}
+                  visibleRows={visibleRows}
+                  shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
+                  expanded={expanded}
+                  onToggleExpanded={() => setExpanded((value) => !value)}
+                  busy={busy}
+                  selecting={selecting}
+                  forgetting={forgetting}
+                  loading={loading}
+                  loadFailed={loadFailed}
+                  photoBusy={photoBusy}
+                  photoError={photoError}
+                  photoLeesfout={photoLeesfout}
+                  photoFailedText={t.photoFailed}
+                  changePhotoLabel={t.changePhoto}
+                  manageLabel={t.manage}
+                  settingsLabel={t.settings}
+                  privacyLabel={t.privacy}
+                  termsLabel={t.terms}
+                  showLogoutAll={showLogoutAll}
+                  wisselMelding={gewisseld ? { email: gewisseld.email, ...accountWisselMelding(lang, { techBeeindigd: gewisseld.techBeeindigd, heeftTechProfiel: !!tech.profiel, techActief: techActief(tech), techGeladen: tech.geladen }) } : null}
+                  v2Ruimtes={v2}
+                  onChangePhoto={changePhoto}
+                  onSelectAccount={select}
+                  onForgetAccount={onForgetAccount ? forget : undefined}
+                  onAddAccount={add}
+                  onManage={onManage}
+                  onSettings={onSettings}
+                  onTheme={onTheme}
+                  onThemeColors={onThemeColors}
+                  onLanguage={onLanguage}
+                  onLogout={onLogout}
+                  onLogoutAll={onLogoutAll}
+                  onClose={close}
+                  onSluitNavigatie={sluitMetLade}
+                  mobiel
+                  renderAvatar={(u, sz) => <Avatar user={u} size={sz} />}
+                />
+              </section>
+            </div>,
+            document.querySelector('.canonical-chrome') ?? document.body,
+          )
+        : null}
+
+      {open && !(am3 && displayUser && mobielVenster && typeof document !== 'undefined') && (
         <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
           {am3 && displayUser ? (
             <AccountMenuV3

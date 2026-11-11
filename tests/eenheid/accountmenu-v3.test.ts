@@ -61,18 +61,25 @@ export async function main(): Promise<number> {
   check('Модель В: у просторі ШІ violet входить у коло перемикання', volgendePaletKeuze('puur', true) === 'violet' && volgendePaletKeuze('violet', true) === 'blauw');
   check('колір піктограми палітри відповідає обраному тону', paletIcoonKleur('blauw', 'hub', false).startsWith('#') && paletIcoonKleur('oranje', 'hub', true).startsWith('#'));
 
-  // 4. Перевірка компонента та інтеграції з CanoniekAccountMenu.tsx
+  // 4. Перевірка компонента, мобільного поверхневого вікна та інтеграції з оболонкою сайту
   const menu = readFileSync('src/CanoniekAccountMenu.tsx', 'utf8');
+  const omlijsting = readFileSync('src/CanoniekOmlijsting.tsx', 'utf8');
   const v3Tsx = readFileSync('src/accountmenu-v3/AccountMenuV3.tsx', 'utf8');
   const v3Css = readFileSync('src/accountmenu-v3/accountmenu-v3.css', 'utf8');
   const instellingen = readFileSync('src/InstellingencentrumWeergave.tsx', 'utf8');
+  const plaatsingCss = readFileSync('src/plaatsing/plaatsing.css', 'utf8');
+  const vasteLijst = JSON.parse(readFileSync('scripts/plaatsing-vaste-elementen.json', 'utf8')) as {
+    toegestaan?: Array<{ sleutel: string; reden: string }>;
+  };
 
   check('CanoniekAccountMenu відмальовує AccountMenuV3 лише за увімкненого am3', menu.includes('data-account-menu-v3={am3 ? \'aan\' : undefined}') && menu.includes('{am3 && displayUser ? (') && menu.includes('<AccountMenuV3'));
+  check('На мобільних екранах (<= 700 px) вікно виводиться через createPortal у незалежний шар .am3-mobiel-laag поверх бічної панелі', menu.includes('createPortal(') && menu.includes("className='am3-mobiel-laag'") && menu.includes('onSluitNavigatie={sluitMetLade}') && omlijsting.includes('.am3-mobiel-laag'));
   check('Налаштування містять перемикач режимів меню v3 (AccountMenuV3Instellingen)', instellingen.includes('<AccountMenuV3Instellingen lang={p.lang}/>'));
-  check('AccountMenuV3 має трикамерну орбіту, палітру Моделі В, щиток та лоток 3 умов завершення', v3Tsx.includes('am3-orbit-stage') && v3Tsx.includes('onContextMenu={opPaletContextMenu}') && v3Tsx.includes('am3-access-ring') && v3Tsx.includes('tot-technisch-einde') && v3Tsx.includes('tot-site-uitloggen'));
+  check('AccountMenuV3 має трикамерну орбіту, палітру Моделі В, щиток, лоток 3 умов завершення та мобільну кнопку закриття', v3Tsx.includes('am3-orbit-stage') && v3Tsx.includes('onContextMenu={opPaletContextMenu}') && v3Tsx.includes('am3-access-ring') && v3Tsx.includes('tot-technisch-einde') && v3Tsx.includes('tot-site-uitloggen') && v3Tsx.includes('am3-mobiel-sluit'));
   check('кнопка Доступ і терміни має концентричне кільце 32x32 із r=15.5 та тематичну спливну підказку', v3Tsx.includes("viewBox='0 0 32 32'") && v3Tsx.includes("cx='16'") && v3Tsx.includes("r='15.5'") && v3Tsx.includes('am3-access-hover-tip'));
   check('щиток світиться кольором технічної смуги лише коли активний технічний простір', v3Css.includes('.am3-seg-btn.is-tech-btn svg') && v3Css.includes('color: currentColor;') && v3Css.includes('.am3-seg-btn.is-tech-btn.active svg') && v3Css.includes('color: var(--am3-shield-color'));
-  check('CSS v3: без position:fixed та з підтримкою prefers-reduced-motion', !/position:\s*fixed/.test(v3Css) && v3Css.includes('prefers-reduced-motion: reduce'));
+  check('мобільний шар зареєстрований у plaatsing-vaste-elementen.json і приховує плаваючий стек дій', !!vasteLijst.toegestaan?.some((x) => x.sleutel === 'src/accountmenu-v3/accountmenu-v3.css :: [data-account-menu-v3].am3-mobiel-laag' && x.reden.length > 30) && plaatsingCss.includes('html body:has(.am3-mobiel-laag) .plaats-actiestapel'));
+  check('CSS v3: має мобільний захист круглих кнопок проти 44px, адаптивні рядки простору й теми та підтримку prefers-reduced-motion', (v3Css.match(/position:\s*fixed/g) || []).length === 1 && v3Css.includes('[data-account-menu-v3].am3-mobiel-laag') && v3Css.includes('.am3-shell.am3-shell.am3-shell') && v3Css.includes('.am3-pref-row.is-space-row') && v3Css.includes('prefers-reduced-motion: reduce'));
 
   return einde();
 }

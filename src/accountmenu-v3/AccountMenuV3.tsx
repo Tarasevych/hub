@@ -136,6 +136,8 @@ export type AccountMenuV3Props = {
   onLogout?: () => void;
   onLogoutAll?: () => void;
   onClose: () => void;
+  onSluitNavigatie?: () => void;
+  mobiel?: boolean;
   renderAvatar: (user: AccountMenuUser, size?: 'profile' | 'hero' | 'regular' | 'mini') => ReactNode;
 };
 
@@ -185,9 +187,12 @@ export function AccountMenuV3({
   onLogout,
   onLogoutAll,
   onClose,
+  onSluitNavigatie,
+  mobiel = false,
   renderAvatar,
 }: AccountMenuV3Props) {
   const uk = lang === 'uk';
+  const sluitVoorNavigatie = onSluitNavigatie ?? onClose;
   const photoInput = useRef<HTMLInputElement | null>(null);
   const voorkeuren = useAccountmenuV3Voorkeuren();
   const dienst = typeof window !== 'undefined' ? serviceFromLocation() : 'hub';
@@ -213,16 +218,20 @@ export function AccountMenuV3({
     };
   }, []);
 
-  // Синхронізація CSS-змінної масштабу на панелі `.canonical-account-panel`
+  // Синхронізація CSS-змінної масштабу на панелі `.canonical-account-panel` (лише на комп'ютері)
   const shellRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const paneel = shellRef.current?.closest<HTMLElement>('.canonical-account-panel');
     if (!paneel) return;
+    if (mobiel) {
+      paneel.style.removeProperty('--am3-scale');
+      return;
+    }
     paneel.style.setProperty('--am3-scale', String(voorkeuren.schaal));
     return () => {
       paneel.style.removeProperty('--am3-scale');
     };
-  }, [voorkeuren.schaal]);
+  }, [voorkeuren.schaal, mobiel]);
 
   const donker = theme === 'dark' || theme === 'plum-dark' || (theme === 'auto' && autoStatus.presentatie === 'dark');
   const paletKleur = paletIcoonKleur(paletSync.keuze, dienst, donker);
@@ -430,12 +439,25 @@ export function AccountMenuV3({
       className='am3-shell'
       data-am3-indeling={voorkeuren.indeling}
       data-am3-tech={isTechActief ? 'aan' : 'uit'}
+      data-am3-mobiel={mobiel ? 'ja' : undefined}
       style={{
         ['--am3-shield-color' as string]: schildKleur,
         ['--am3-palette-color' as string]: paletKleur,
       }}
     >
       <div className={`am3-tech-strip${isTechActief ? ' is-active' : ''}`} aria-hidden='true' />
+
+      {mobiel ? (
+        <button
+          type='button'
+          className='am3-mobiel-sluit'
+          aria-label={uk ? 'Закрити меню облікового запису' : 'Accountmenu sluiten'}
+          title={uk ? 'Закрити' : 'Sluiten'}
+          onClick={onClose}
+        >
+          <X aria-hidden='true' />
+        </button>
+      ) : null}
 
       {/* 1. Шапка профілю: Орбіта світлин (Режим А) або чиста центральна світлина (Режим Б) */}
       <header className='am3-hero canonical-current-account'>
@@ -551,7 +573,7 @@ export function AccountMenuV3({
             type='button'
             className='am3-manage-pill canonical-menu-action primary'
             onClick={() => {
-              onClose();
+              sluitVoorNavigatie();
               onManage();
             }}
           >
@@ -580,7 +602,7 @@ export function AccountMenuV3({
               className='canonical-menu-action primary'
               data-account-gewisseld-actie='tech-aan'
               onClick={() => {
-                onClose();
+                sluitVoorNavigatie();
                 openTechVenster('activeren');
               }}
             >
@@ -600,7 +622,7 @@ export function AccountMenuV3({
             type='button'
             className='am3-quick-tile'
             onClick={() => {
-              onClose();
+              sluitVoorNavigatie();
               onSettings();
             }}
           >
@@ -617,7 +639,7 @@ export function AccountMenuV3({
           type='button'
           className='am3-quick-tile'
           onClick={() => {
-            onClose();
+            sluitVoorNavigatie();
             openDiagnose();
           }}
         >
@@ -745,7 +767,7 @@ export function AccountMenuV3({
             </div>
           ) : null}
 
-          <div className='am3-pref-row'>
+          <div className='am3-pref-row is-theme-row'>
             <span className='am3-pref-label'>
               <Sun aria-hidden='true' />
               <span>{uk ? 'Тема' : 'Thema'}</span>
@@ -908,7 +930,7 @@ export function AccountMenuV3({
                     className='am3-tray-link'
                     data-thema-kleuren=''
                     onClick={() => {
-                      onClose();
+                      sluitVoorNavigatie();
                       onThemeColors();
                     }}
                   >
@@ -921,7 +943,7 @@ export function AccountMenuV3({
         </div>
 
         {/* Рядок 2: Мова зі справжніми прапорами */}
-        <div className='am3-pref-row'>
+        <div className='am3-pref-row is-lang-row'>
           <span className='am3-pref-label'>
             <Globe aria-hidden='true' />
             <span>{uk ? 'Мова' : 'Taal'}</span>
@@ -960,7 +982,7 @@ export function AccountMenuV3({
         {/* Рядок 3: Простір (Звичайний | Технічний) + кругла кнопка «Доступ і терміни» (32x32 px) */}
         {heeftTech ? (
           <div className='am3-pref-block' data-ruimtes-menu='1'>
-            <div className='am3-pref-row'>
+            <div className='am3-pref-row is-space-row'>
               <span className='am3-pref-label'>
                 <ShieldCheck aria-hidden='true' />
                 <span className='am3-pref-label-stack'>
@@ -1147,7 +1169,7 @@ export function AccountMenuV3({
                     type='button'
                     className='am3-tray-btn'
                     onClick={() => {
-                      onClose();
+                      sluitVoorNavigatie();
                       openTechVenster(v2Ruimtes ? 'toegang' : 'activeren');
                     }}
                   >
@@ -1185,7 +1207,7 @@ export function AccountMenuV3({
             className='am3-exit-btn canonical-menu-action logout-current'
             disabled={busy}
             onClick={() => {
-              onClose();
+              sluitVoorNavigatie();
               onLogout();
             }}
           >
@@ -1200,7 +1222,7 @@ export function AccountMenuV3({
             className='am3-exit-btn canonical-menu-action logout-all'
             disabled={busy}
             onClick={() => {
-              onClose();
+              sluitVoorNavigatie();
               onLogoutAll();
             }}
           >
@@ -1232,11 +1254,11 @@ export function AccountMenuV3({
           </svg>
         </button>
 
-        <a href='?legal=privacy' data-legal-link='privacy' onClick={onClose}>
+        <a href='?legal=privacy' data-legal-link='privacy' onClick={sluitVoorNavigatie}>
           {privacyLabel}
         </a>
         <span>·</span>
-        <a href='?legal=terms' data-legal-link='terms' onClick={onClose}>
+        <a href='?legal=terms' data-legal-link='terms' onClick={sluitVoorNavigatie}>
           {termsLabel}
         </a>
         {voorkeuren.schaal !== SCHAAL_STANDAARD ? (
