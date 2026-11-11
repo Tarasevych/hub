@@ -33,7 +33,11 @@
     },
     {
       "tijd": "2026-11-11T14:39:30Z",
-      "stap": "Перший автоматизований прогін успішно пройшов звірку живого сервера, правила координації та всі одиничні тести, але зупинився на перевірці типів через неіменований імпорт AccountMenuV3Instellingen у InstellingencentrumWeergave.tsx (архів не публікувався). Виправлено імпорт на іменований."
+      "stap": "Перший автоматизований прогін успішно пройшов звірку живого сервера, правила координації та всі одиничні тести, але зупинився на перевірці типів через неіменований імпорт AccountMenuV3Instellingen у InstellingencentrumWeergave.tsx (архів не публікувався). Виправлено імпорт на іменований; наступний випуск 20261111-144206 успішно зібрано та перевірено."
+    },
+    {
+      "tijd": "2026-11-11T15:43:00Z",
+      "stap": "Під час огляду пакунка 20261111-144206 власник звернув увагу на жовте нагадування щодо двох жовтневих перейменованих міграцій (0093_globaal_zoeken_laatste та 0094_zoekindex) і доручив зробити перевірку розумним захисним механізмом. Додано розпізнавання задокументованих історичних перейменувань за наявності міграції-спадкоємиці та суворе блокування (MIGRATIES_ONTBREKEN) на обох рубежах перевірки, якщо в архіві справді зникла будь-яка застосована на сервері міграція."
     }
   ],
   "keuzes": [
@@ -43,11 +47,16 @@
     "Додати до розділу Налаштування → Налаштувати меню вибір між Режимом А («Орбіта світлин», типово) і Режимом Б («Секційна картка»), а також скидання масштабу до 100%.",
     "Втілити Модель В для кнопки Палітри кольорів: короткий натиск гортає доступні палітри по колу зі спливною позначкою, а правий натиск миші або утримання 0.38 с відкриває повну поличку системних палітр і фіксованих відтінків; колір відображає сама векторна піктограма палітри.",
     "Зробити кнопку Доступ і терміни (32×32 px) з ідеально концентричним кільцем r = 15.5, тематичною спливною карткою підказки при наведенні та розкладним лотком із трьома чіткими умовами завершення технічного простору, вибором кольору смуги та двома повноширинними кнопками.",
+    "Відокремити задокументовані жовтневі перейменування міграцій (0093_globaal_zoeken_laatste → 0093_zoek_index, 0094_zoekindex → 0094_zoek_rls) від реальної втрати застосованих міграцій: за наявності спадкоємиці в архіві перевірка дає зелений статус без хибного шуму, а відсутність будь-якої застосованої міграції блокує завантаження й схвалення кодом MIGRATIES_ONTBREKEN, не чіпаючи таблицю app.schema_migrations живого сервера.",
     "Зберігати встановлення виключно ручним через майстер оновлень на сайті з підтвердженням власника ключем доступу."
   ],
   "wijzigingen": [
     "migrations/0206_accountmenu_v3_vlag.sql",
     "shared/vlaggen.ts",
+    "shared/uitrol-vereisten.ts",
+    "shared/uitrol-codes.ts",
+    "backend/uitrol-vereisten.ts",
+    "backend/uitrol-voorcontrole.ts",
     "src/functievlag-lezen.ts",
     "src/CanoniekAccountMenu.tsx",
     "src/InstellingencentrumWeergave.tsx",
@@ -57,13 +66,15 @@
     "src/accountmenu-v3/AccountMenuV3.tsx",
     "src/accountmenu-v3/AccountMenuV3Instellingen.tsx",
     "tests/eenheid/accountmenu-v3.test.ts",
+    "tests/eenheid/uitrol-vereisten-001.test.ts",
+    "tests/eenheid/uitrol-voorcontrole.test.ts",
     "orchestratie/taken/IDENTITEIT-008.json",
     "orchestratie/ontwikkelarchieven/IDENTITEIT-008.json",
     ".github/workflows/identiteit-008-uitgave.yml"
   ],
   "controles": [
     "Перевірка координації та свіжості основи: node scripts/orch.mjs controleer і versheid --taak IDENTITEIT-008 --fase overdracht.",
-    "Одиничні перевірки accountmenu-v3.test.ts (16 перевірок), trace-001-ontwikkelarchief.test.ts, accountmenu-v2-20261029.test.ts, menu-taal-prapor-20261103.test.ts, aanmeld-001-weergave.test.ts, identiteit-atelier.test.ts і thema.test.ts.",
+    "Одиничні перевірки accountmenu-v3.test.ts, trace-001-ontwikkelarchief.test.ts, uitrol-vereisten-001.test.ts, uitrol-voorcontrole.test.ts, uitrol-codes.test.ts, accountmenu-v2-20261029.test.ts, menu-taal-prapor-20261103.test.ts, aanmeld-001-weergave.test.ts, identiteit-atelier.test.ts і thema.test.ts.",
     "Перевірка типів клієнта й сервера (tsc --noEmit та npm run typecheck:server) і повне виробниче складання застосунку (npm run build).",
     "Подвійний прогін усіх міграцій включно з 0206_accountmenu_v3_vlag.sql на чистій випробувальній базі PostgreSQL 16 (перевірка повторності та обмежень схеми).",
     "Перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."

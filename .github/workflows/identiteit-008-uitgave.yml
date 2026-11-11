@@ -11,11 +11,17 @@ on:
       - 'orchestratie/ontwikkelarchieven/IDENTITEIT-008.json'
       - 'migrations/0206_accountmenu_v3_vlag.sql'
       - 'shared/vlaggen.ts'
+      - 'shared/uitrol-vereisten.ts'
+      - 'shared/uitrol-codes.ts'
+      - 'backend/uitrol-vereisten.ts'
+      - 'backend/uitrol-voorcontrole.ts'
       - 'src/functievlag-lezen.ts'
       - 'src/CanoniekAccountMenu.tsx'
       - 'src/InstellingencentrumWeergave.tsx'
       - 'src/accountmenu-v3/**'
       - 'tests/eenheid/accountmenu-v3.test.ts'
+      - 'tests/eenheid/uitrol-vereisten-001.test.ts'
+      - 'tests/eenheid/uitrol-voorcontrole.test.ts'
   workflow_dispatch:
 
 permissions:
@@ -82,9 +88,12 @@ jobs:
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
           node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
-      - name: Виконати одиничні перевірки меню облікового запису й теми
+      - name: Виконати одиничні перевірки меню облікового запису, теми й розгортання
         run: |
           node scripts/eenheidstests.mjs accountmenu-v3.test.ts
+          node scripts/eenheidstests.mjs uitrol-vereisten-001.test.ts
+          node scripts/eenheidstests.mjs uitrol-voorcontrole.test.ts
+          node scripts/eenheidstests.mjs uitrol-codes.test.ts
           node scripts/eenheidstests.mjs accountmenu-v2-20261029.test.ts
           node scripts/eenheidstests.mjs menu-taal-prapor-20261103.test.ts
           node scripts/eenheidstests.mjs aanmeld-001-weergave.test.ts
@@ -135,16 +144,18 @@ jobs:
           const e = process.env;
           const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
           const uk = {
-            titel: 'Нове спадне меню облікового запису (v3): орбіта світлин, палітра та доступ',
-            samenvatting: 'Єдина композиція спадного меню облікового запису за окремим перемикачем можливості accountmenu-v3 (типово вимкнено). Поєднує трикамерну Орбіту світлин (або Секційну картку в Налаштуваннях), перемикання палітр за Моделлю В, концентричне кільце часу доступу з трьома умовами завершення технічного простору, спокійний вихід у два стовпці та масштабування за кутик зі збереженням усіх наявних можливостей сервера.',
+            titel: 'Нове спадне меню облікового запису (v3) та розумний захист повноти міграцій',
+            samenvatting: 'Єдина композиція спадного меню облікового запису за окремим перемикачем можливості accountmenu-v3 (типово вимкнено) разом із розумним захисним запобіжником повноти застосованих міграцій під час оновлення сайту. Розпізнає задокументовані жовтневі перейменування міграцій за наявності спадкоємиці без хибних попереджень і суворо блокує пакунок кодом MIGRATIES_ONTBREKEN на обох рубежах перевірки, якщо справді відсутня будь-яка застосована міграція.',
             wijzigingen: [
               'Режим А («Орбіта світлин», типово) з нерухомим активним профілем по центру та вибір Режиму Б («Секційна картка») у розділі Налаштування → Налаштувати меню.',
               'Кнопка «Палітра кольорів» за Моделлю В: короткий натиск гортає палітри по колу, правий натиск або утримання відкриває повну поличку палітр; колір показує сама піктограма палітри без кутового кружечка.',
               'Кнопка «Доступ і терміни» (32×32 px) з концентричним кільцем r = 15.5, тематичною спливною підказкою при наведенні та вбудованим лотком трьох чітких умов завершення технічного простору.',
-              'Світіння піктограми щитка кольором технічної смуги лише за активного технічного простору, спокійний рядок виходу в два стовпці та пропорційне масштабування панелі за нижні кутики (78%–134%).'
+              'Світіння піктограми щитка кольором технічної смуги лише за активного технічного простору, спокійний рядок виходу в два стовпці та пропорційне масштабування панелі за нижні кутики (78%–134%).',
+              'Захисний запобіжник повноти міграцій (MIGRATIES_ONTBREKEN) до завантаження та під час передперевірки пакунка: задокументовані жовтневі перейменування проходять зеленим за наявності спадкоємиці, а реальна втрата будь-якої застосованої міграції блокує оновлення.'
             ],
             fixes: [
-              'Усунуто зміщення центральної світлини при додаванні облікових записів, прибрано зайвий кутовий кружечок на кнопці палітри та вирівняно концентричне кільце кнопки доступу.'
+              'Усунуто зміщення центральної світлини при додаванні облікових записів, прибрано зайвий кутовий кружечок на кнопці палітри та вирівняно концентричне кільце кнопки доступу.',
+              'Усунуто хибне жовте попередження про жовтневі перейменовані міграції 0093/0094 та закрито прогалину, де реальна втрата застосованої міграції не блокувала неповний пакунок.'
             ],
             beperkingen: [
               'Перемикач можливості accountmenu-v3 типово вимкнений; власник умикає його спершу для себе у вікні «Перемикачі функцій».',
@@ -153,16 +164,18 @@ jobs:
             instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу, а потім увімкніть перемикач accountmenu-v3 для свого запису у «Перемикачах функцій».'
           };
           const nl = {
-            titel: 'Nieuw uitvouwmenu voor het account (v3): foto-orbita, palet en toegang',
-            samenvatting: 'Eén samenhangend accountmenu achter de afzonderlijke functieschakelaar accountmenu-v3 (standaard uit). Combineert de driekamer-foto-orbita (of Sectiekaart via Instellingen), paletwissel volgens Model B, een concentrische tijdring met drie duidelijke eindvoorwaarden van de technische ruimte, rustig afmelden in twee kolommen en schalen via de hoek met volledig behoud van alle geïnstalleerde functies.',
+            titel: 'Nieuw accountmenu (v3) en slimme integriteitsbewaking van migraties',
+            samenvatting: 'Samenhangend accountmenu achter de afzonderlijke functieschakelaar accountmenu-v3 (standaard uit), samen met slimme integriteitsbewaking van toegepaste migraties bij updates. Herkent gedocumenteerde oktober-hernoemingen zodra de opvolger aanwezig is zonder vals alarm en blokkeert een pakket strikt met MIGRATIES_ONTBREKEN vóór én na upload wanneer een al toegepaste migratie daadwerkelijk ontbreekt.',
             wijzigingen: [
               'Modus A («Profielfoto-orbita», standaard) met het actieve profiel vast in het midden en keuze voor Modus B («Sectiekaart») onder Instellingen → Menu instellen.',
               'Knop «Kleurenpalet» volgens Model B: kort klikken wisselt rond, rechtsklik of ingedrukt houden opent het volledige palettenpaneel; het paletpictogram toont zelf de kleur zonder hoekbolletje.',
               'Knop «Toegang en termijnen» (32×32 px) met concentrische ring r = 15.5, thematische zweefkaart en ingebouwd paneel met drie duidelijke eindvoorwaarden van de technische ruimte.',
-              'Schildpictogram kleurt uitsluitend bij actieve technische ruimte mee met de strookkleur, rustige afmeldrij in twee kolommen en proportioneel schalen via de onderste hoeken (78%–134%).'
+              'Schildpictogram kleurt uitsluitend bij actieve technische ruimte mee met de strookkleur, rustige afmeldrij in twee kolommen en proportioneel schalen via de onderste hoeken (78%–134%).',
+              'Integriteitsbewaking van migraties (MIGRATIES_ONTBREKEN) bij zowel de vereistencontrole vóór upload als de pakketvoorcontrole: gedocumenteerde oktober-hernoemingen geven groen zodra de opvolger aanwezig is, terwijl een echt ontbrekende toegepaste migratie de update blokkeert.'
             ],
             fixes: [
-              'Verschuiving van de middelste profielfoto bij meerdere accounts verholpen, hoekbolletje op de paletknop verwijderd en de concentrische ring op de toegangsknop exact gecentreerd.'
+              'Verschuiving van de middelste profielfoto bij meerdere accounts verholpen, hoekbolletje op de paletknop verwijderd en de concentrische ring op de toegangsknop exact gecentreerd.',
+              'Vals geel alarm voor de hernoemde oktober-migraties 0093/0094 verholpen en het hiaat gedicht waarbij een echt verdwenen toegepaste migratie een onvolledig pakket niet blokkeerde.'
             ],
             beperkingen: [
               'Functieschakelaar accountmenu-v3 staat standaard uit; de eigenaar schakelt deze eerst voor zichzelf in bij «Functieschakelaars».',
@@ -192,12 +205,12 @@ jobs:
           };
           writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
           const tests = {
-            geslaagd: 96,
+            geslaagd: 198,
             mislukt: 0,
             falend: [],
             uitleg: {
-              uk: 'Успішно пройдено 16 нових одиничних перевірок accountmenu-v3, 17 перевірок походження TRACE-001 та щонайменше 63 суміжні перевірки меню облікового запису, мовних прапорів, входу й тем, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій (включно з 0206) на чистій базі PostgreSQL 16.',
-              nl: '16 nieuwe eenheidstests voor accountmenu-v3, 17 herkomstcontroles van TRACE-001 en minstens 63 aanverwante controles voor accountmenu, taalvlaggen, aanmelden en thema’s zijn geslaagd, evenals typecontrole voor client en server, productiebouw en dubbele uitvoering van alle migraties (inclusief 0206) op een schone PostgreSQL 16-databank.'
+              uk: 'Успішно пройдено одиничні перевірки accountmenu-v3, походження TRACE-001, вимог до завантаження (uitrol-vereisten-001), передперевірки пакунка (uitrol-voorcontrole), реєстру кодів відмов (uitrol-codes) та суміжні перевірки меню облікового запису, мовних прапорів, входу й тем, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій (включно з 0206) на чистій базі PostgreSQL 16.',
+              nl: 'Eenheidstests voor accountmenu-v3, herkomst TRACE-001, vereistencontrole vóór upload (uitrol-vereisten-001), pakketvoorcontrole (uitrol-voorcontrole), weigercodes (uitrol-codes) en aanverwante controles voor accountmenu, taalvlaggen, aanmelden en thema’s zijn geslaagd, evenals typecontrole voor client en server, productiebouw en dubbele uitvoering van alle migraties (inclusief 0206) op een schone PostgreSQL 16-databank.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
