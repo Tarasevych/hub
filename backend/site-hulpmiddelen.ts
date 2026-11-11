@@ -297,6 +297,115 @@ SITE_TOOLS.push(
     request: (a) => ({ route: 'POST /api/owner/github/issue/comment', body: { repo: a.repo.trim(), number: a.number, body: a.body } }),
     shape: (d) => compact(d),
   },
+  ghRead('github_list_branches', 'List GitHub branches and tags', 'List branches and tags of a repository with the default branch and protection status.', { repo: repoProp }, ['repo'], 'POST /api/owner/github/branches', (a) => ({ repo: a.repo.trim() })),
+  ghRead(
+    'github_list_tree',
+    'Browse GitHub repository file tree',
+    'List directories and files of a GitHub repository at a branch, tag or commit.',
+    {
+      repo: repoProp,
+      ref: { type: 'string', description: p('Необов’язкова назва гілки або мітки версії (типово основна гілка сховища).', 'Optionele naam van de tak of tag (standaard de hoofdtak van de repository).') },
+      pad: { type: 'string', description: p('Необов’язковий шлях підкаталогу всередині сховища, наприклад "src/components".', 'Optioneel subpad binnen de repository, bijvoorbeeld "src/components".') },
+    },
+    ['repo'],
+    'POST /api/owner/github/tree',
+    (a) => without({ repo: a.repo.trim(), ref: a.ref, pad: a.pad, recursief: !a.pad }),
+    (a) => (a.ref === undefined || (typeof a.ref === 'string' && a.ref.length <= 120) ? null : 'Invalid "ref".')
+      || (a.pad === undefined || (typeof a.pad === 'string' && !a.pad.includes('..') && a.pad.length <= 400) ? null : 'Invalid "pad".'),
+  ),
+  ghRead(
+    'github_read_file',
+    'Read a file from a GitHub repository',
+    'Read a UTF-8 source or documentation file from a GitHub repository.',
+    {
+      repo: repoProp,
+      path: { type: 'string', description: p('Шлях до файла у сховищі, наприклад "src/App.tsx" або "README.md".', 'Pad naar het bestand in de repository, bijvoorbeeld "src/App.tsx" of "README.md".') },
+      ref: { type: 'string', description: p('Необов’язкова гілка або контрольна сума фіксації змін.', 'Optionele tak of controlesom van een vastlegging.') },
+    },
+    ['repo', 'path'],
+    'POST /api/owner/github/file',
+    (a) => without({ repo: a.repo.trim(), path: a.path.trim(), ref: a.ref }),
+    (a) => (typeof a.path === 'string' && a.path.trim().length >= 1 && a.path.length <= 500 && !a.path.includes('..') ? null : 'Invalid "path".')
+      || (a.ref === undefined || (typeof a.ref === 'string' && a.ref.length <= 120) ? null : 'Invalid "ref".'),
+  ),
+  ghRead(
+    'github_compare',
+    'Compare two GitHub branches or commits',
+    'Compare a base branch and a head branch in a GitHub repository and return commits and file diffs.',
+    {
+      repo: repoProp,
+      base: { type: 'string', description: p('Базова гілка або фіксація змін, наприклад "main".', 'Basistak of vastlegging, bijvoorbeeld "main".') },
+      head: { type: 'string', description: p('Порівнювана гілка або фіксація змін, наприклад "feature/nieuw".', 'Te vergelijken tak of vastlegging, bijvoorbeeld "feature/nieuw".') },
+    },
+    ['repo', 'base', 'head'],
+    'POST /api/owner/github/compare',
+    (a) => ({ repo: a.repo.trim(), base: a.base.trim(), head: a.head.trim() }),
+    (a) => (typeof a.base === 'string' && a.base.trim().length >= 1 && a.base.length <= 120 ? null : 'Invalid "base".')
+      || (typeof a.head === 'string' && a.head.trim().length >= 1 && a.head.length <= 120 ? null : 'Invalid "head".'),
+  ),
+  ghRead('github_list_releases', 'List GitHub releases', 'List published releases and release assets of a GitHub repository.', { repo: repoProp }, ['repo'], 'POST /api/owner/github/releases', (a) => ({ repo: a.repo.trim() })),
+  {
+    group: 'github', service: 'github', write: true,
+    tool: {
+      name: 'github_save_file', title: 'Save or create a file in a GitHub repository',
+      description: 'Create or update one text file in a GitHub repository on a chosen branch (or a new branch with an optional pull request). Changes GitHub, so the user approves each call on the site.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repo: repoProp,
+          path: { type: 'string', description: p('Шлях до файла у сховищі, наприклад "docs/огляд.md".', 'Pad naar het bestand in de repository, bijvoorbeeld "docs/overzicht.md".') },
+          content: { type: 'string', description: p('Повний текстовий вміст файла у кодуванні UTF-8.', 'Volledige tekstinhoud van het bestand in UTF-8.') },
+          message: { type: 'string', description: p('Повідомлення фіксації змін (3–250 символів).', 'Vastleggingsmelding (3 tot 250 tekens).') },
+          branch: { type: 'string', description: p('Цільова гілка сховища (необов’язково; типово основна гілка).', 'Doeltak van de repository (optioneel; standaard de hoofdtak).') },
+          sha: { type: 'string', description: p('Поточна контрольна сума SHA файла при оновленні наявного файла.', 'Actuele SHA-controlesom bij het bijwerken van een bestaand bestand.') },
+          nieuwe_tak: { type: 'string', description: p('Необов’язкова назва нової гілки, яку слід створити від базової перед записом файла.', 'Optionele naam van een nieuwe tak om vanaf de basistak te maken vóór het opslaan.') },
+          maak_pr: { type: 'boolean', description: p('Якщо "true" разом із "nieuwe_tak", одразу відкриває запит на злиття.', 'Indien "true" samen met "nieuwe_tak", opent direct een samenvoegingsverzoek.') },
+        },
+        required: ['repo', 'path', 'content', 'message'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    validate: (a) => repoOk(a)
+      || (typeof a.path === 'string' && a.path.trim().length >= 1 && a.path.length <= 500 && !a.path.includes('..') ? null : 'Invalid "path".')
+      || (typeof a.content === 'string' && a.content.length <= 500_000 ? null : 'Invalid "content".')
+      || (text(a.message, 3, 250) ? null : 'Invalid "message": 3-250 characters.')
+      || (a.branch === undefined || (typeof a.branch === 'string' && a.branch.length <= 120) ? null : 'Invalid "branch".')
+      || (a.sha === undefined || (typeof a.sha === 'string' && /^[0-9a-f]{40}$/i.test(a.sha.trim())) ? null : 'Invalid "sha".')
+      || (a.nieuwe_tak === undefined || (typeof a.nieuwe_tak === 'string' && a.nieuwe_tak.length <= 120) ? null : 'Invalid "nieuwe_tak".')
+      || (a.maak_pr === undefined || typeof a.maak_pr === 'boolean' ? null : 'Invalid "maak_pr".'),
+    request: (a) => ({
+      route: 'POST /api/owner/github/file/save',
+      body: without({
+        repo: a.repo.trim(),
+        path: a.path.trim(),
+        content: a.content,
+        message: a.message.trim(),
+        branch: a.branch,
+        sha: a.sha,
+        nieuweTak: a.nieuwe_tak,
+        maakPr: a.maak_pr,
+      }),
+    }),
+    shape: (d) => compact(d),
+  },
+  {
+    group: 'github', service: 'github', write: true,
+    tool: {
+      name: 'github_sync_mirror', title: 'Synchronise GitHub mirror in user space',
+      description: 'Synchronise the isolated two-way GitHub repository mirror and linked board issues in the user\'s active Mijn Ruimte space. Approved on the site.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          repo: { type: 'string', description: p('Необов’язкове конкретне сховище "власник/назва"; без нього синхронізуються останні сховища простору.', 'Optionele specifieke repository "eigenaar/naam"; zonder dit worden de recente repositories van de ruimte gesynchroniseerd.') },
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    validate: (a) => (a.repo === undefined ? null : repoOk(a)),
+    request: (a) => ({ route: 'POST /api/owner/github/spiegel/sync', body: without({ repo: typeof a.repo === 'string' ? a.repo.trim() : undefined }) }),
+    shape: (d) => compact(d),
+  },
 );
 
 // ---- MCP-diensten van de site (Dashboard-tabs: Bord, Verkeer, Diensten, Archief). De routes houden zelf de aan/uit-schakelaars van de gebruiker aan (PERMISSION_OFF:*). ----

@@ -53,12 +53,45 @@ export const nieuweState = (): string => randomBytes(32).toString('base64url');
 // ------------------------------------------------------------------------------------------------ gegevens van de app (kluis)
 
 /** Alleen voor tests: de kluis en de klok vervangen. */
+let kluisVervangen = false;
 let kluisRijen: (userId: string) => Promise<Array<{ keyName: string; purpose: string }>> = (userId) => apiPlatformVaultItems(userId) as unknown as Promise<Array<{ keyName: string; purpose: string }>>;
 let kluisWaarde: (userId: string, keyName: string, purpose: string) => Promise<string> = (userId, keyName, purpose) => readOwnerVaultPlaintext(userId, keyName, purpose as never);
 export const setKoppelingKluis = (deps: { rijen?: typeof kluisRijen; waarde?: typeof kluisWaarde } | null) => {
+  kluisVervangen = deps !== null;
   kluisRijen = deps?.rijen ?? ((userId) => apiPlatformVaultItems(userId) as unknown as Promise<Array<{ keyName: string; purpose: string }>>);
   kluisWaarde = deps?.waarde ?? ((userId, keyName, purpose) => readOwnerVaultPlaintext(userId, keyName, purpose as never));
 };
+export const isKoppelingKluisVervangen = (): boolean => kluisVervangen;
+
+export const EENKLIK_APP_TABEL = 'github_eenklik_app_v1';
+export type EenklikAppRecord = {
+  userId: string;
+  ruimte: AiRuimte;
+  appId: string;
+  slug: string;
+  clientId: string;
+  oauthZegel: string;
+  appPemZegel: string;
+  aangemaaktOp: number;
+  bijgewerktOp: number;
+};
+
+export async function eenklikAppLezen(userId: string, ruimte: AiRuimte = 'prive'): Promise<(EenklikAppRecord & { id: string }) | null> {
+  if (!userId) return null;
+  try {
+    const uit = await db.list<EenklikAppRecord>(EENKLIK_APP_TABEL, { filter: { userId }, limit: 10 });
+    const lade: Lade = { userId, ruimte: ruimteOf(ruimte) };
+    return (uit.items as Array<EenklikAppRecord & { id: string }>).find((r) => hoortBij(r as unknown as { userId?: unknown; ruimte?: unknown }, lade)) ?? null;
+  } catch { return null; }
+}
+
+/** Platformbrede OAuth-app uit de serveromgeving (optioneel ingesteld door de beheerder voor éénkliks koppelen van alle gebruikers). */
+export function platformOauthApp(): OauthApp | null {
+  const id = String(process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_PLATFORM_CLIENT_ID || '').trim();
+  const secret = String(process.env.GITHUB_OAUTH_CLIENT_SECRET || process.env.GITHUB_PLATFORM_CLIENT_SECRET || '').trim();
+  if (!id || !secret) return null;
+  return leesOauthApp(`${id}:${secret}`);
+}
 
 const uitKluis = async (userId: string, doel: string): Promise<string | null> => {
   let rijen: Array<{ keyName: string; purpose: string }>;
@@ -74,20 +107,44 @@ export async function doelAanwezig(userId: string, doel: string): Promise<boolea
 }
 
 /**
- * De OAuth-app van de eigenaar. `null` = er staat niets in de kluis; `'onleesbaar'` = er staat wel iets, maar het zijn geen
- * client id + client secret. Dat verschil maakt de kaart zichtbaar, zodat niemand naar een lege knop staart.
+ * De OAuth-app voor deze gebruiker:
+ *  1. eigen kluis van de gebruiker (doel «github-oauth»);
+ *  2. automatisch verzegelde app uit de éénkliks GitHub App Manifest Flow van deze gebruiker;
+ *  3. platformbrede OAuth-app van de server (tenzij een eenheidstest de kluis expliciet verving).
  */
-export async function oauthApp(userId: string): Promise<OauthApp | 'onleesbaar' | null> {
+export async function oauthApp(userId: string, ruimte: AiRuimte = 'prive'): Promise<OauthApp | 'onleesbaar' | null> {
   const rauw = await uitKluis(userId, GITHUB_OAUTH_DOEL);
-  if (rauw === null) return null;
-  return leesOauthApp(rauw) ?? 'onleesbaar';
+  if (rauw !== null) return leesOauthApp(rauw) ?? 'onleesbaar';
+  if (!kluisVervangen) {
+    const eenklik = await eenklikAppLezen(userId, ruimte);
+    if (eenklik?.oauthZegel) {
+      try {
+        const open = await ontzegelVoor(eenklik.oauthZegel, userId, zegelPad('eenklik:oauth', ruimte), ruimte);
+        const gelezen = leesOauthApp(open);
+        if (gelezen) return gelezen;
+      } catch { /* ga door naar platform-terugval */ }
+    }
+    const plat = platformOauthApp();
+    if (plat) return plat;
+  }
+  return null;
 }
 
-/** De sleutel van de GitHub App van de eigenaar; zelfde drie uitkomsten als bij de OAuth-app. */
-export async function appSleutel(userId: string): Promise<AppSleutel | 'onleesbaar' | null> {
+/** De sleutel van de GitHub App van de eigenaar (eigen kluis of automatisch verzegeld via éénkliks manifest). */
+export async function appSleutel(userId: string, ruimte: AiRuimte = 'prive'): Promise<AppSleutel | 'onleesbaar' | null> {
   const rauw = await uitKluis(userId, GITHUB_APP_DOEL);
-  if (rauw === null) return null;
-  return leesAppSleutel(rauw) ?? 'onleesbaar';
+  if (rauw !== null) return leesAppSleutel(rauw) ?? 'onleesbaar';
+  if (!kluisVervangen) {
+    const eenklik = await eenklikAppLezen(userId, ruimte);
+    if (eenklik?.appPemZegel) {
+      try {
+        const open = await ontzegelVoor(eenklik.appPemZegel, userId, zegelPad('eenklik:pem', ruimte), ruimte);
+        const gelezen = leesAppSleutel(open);
+        if (gelezen) return gelezen;
+      } catch { /* geen bruikbare sleutel */ }
+    }
+  }
+  return null;
 }
 
 // ------------------------------------------------------------------------------------------------ bewaarde koppeling

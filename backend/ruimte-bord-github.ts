@@ -275,6 +275,11 @@ registreerLadeUitvoerder({
     // githubTechnischIntrekken wist de rijen van de bekende wegen; wat er door een oudere versie nog staat, gaat hier weg.
     const rest = await koppelingenVanLade(userId, lade.ruimte);
     if (rest.length) await db.delete(KOPPELING_TABEL, rest.map((r) => r.id));
+    if (lade.ruimte === 'technisch') {
+      for (const tbl of ['github_spiegel_repos', 'github_spiegel_gebeurtenissen', 'github_bord_koppelingen', 'github_eenklik_manifesten']) {
+        await sys().query(`DELETE FROM app.${tbl} WHERE user_id = $1 AND ruimte = 'technisch'`, [userId]).catch(() => undefined);
+      }
+    }
     return [
       { tabel: KOPPELING_TABEL, rijen: rijen.length, opmerking: `echt ingetrokken bij GitHub: oauth=${ingetrokken.oauth}, app=${ingetrokken.app}` },
       { tabel: 'github_oauth_state_v1', rijen: ingetrokken.flows },

@@ -188,6 +188,13 @@ BEGIN
     IF to_regclass('app.agenda_koppeling') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.agenda_koppeling, app.agenda_abonnement, app.agenda_externe_gebeurtenis TO mijnruimte_app;
     END IF;
+    -- 0207 & 0208: AI-ecosysteem en tweerichtings-GitHub-werkruimte onder RLS per gebruiker en ruimte.
+    IF to_regclass('app.ai_agent_werkruimtes') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.ai_agent_werkruimtes, app.ai_gedeelde_context, app.ai_agent_overdrachten, app.ai_ruimte_uitbreidingen TO mijnruimte_app;
+    END IF;
+    IF to_regclass('app.github_spiegel_repos') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.github_spiegel_repos, app.github_spiegel_gebeurtenissen, app.github_bord_koppelingen, app.github_eenklik_manifesten TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).

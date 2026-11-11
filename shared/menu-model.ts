@@ -18,7 +18,7 @@ export const MENU_PAGINAS: Record<string, readonly string[]> = {
   ai: ['workspace', 'agents', 'runs', 'workflows', 'verbindingen'],
   mail: ['inbox', 'starred', 'snoozed', 'sent', 'drafts', 'archive', 'labels', 'accounts', 'local', 'unread', 'all', 'important', 'spam', 'trash', 'subscriptions', 'scheduled', 'settings', 'contacts'],
   cloud: ['overview', 'files', 'workspaces', 'capture', 'inbox', 'search', 'recent', 'calendar', 'photos', 'accounts', 'google', 'onedrive', 'dropbox'],
-  github: ['overview', 'repositories', 'projects', 'documentation', 'research', 'accounts', 'activity'],
+  github: ['overview', 'repositories', 'code', 'issues', 'pulls', 'actions', 'releases', 'sync', 'projects', 'documentation', 'research', 'activity', 'accounts'],
   huis: ['overview', 'rooms', 'devices', 'scenes', 'automations', 'security', 'energy', 'activity', 'integrations', 'assistant', 'settings', 'showroom', 'planner'], // huis vNext (0128)
   identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery'],
   api: ['verbindingen', 'vault', 'access', 'reconciliation'], // A10 (19.10.2026): oauth/webhooks/events/logs/import weg — ze toonden hetzelfde paneel als «access»
