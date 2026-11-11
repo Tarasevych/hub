@@ -15,7 +15,7 @@ import MijnDiensten from './instellingen/MijnDiensten';
 import { IdentiteitAccountPagina } from './identiteit/IdentiteitAccountPagina';
 import { IDENTITEIT_TABS } from './identiteit/identiteit-tabs';
 import { Profielfoto } from './identiteit/Profielfoto';
-import AccountMenuV3Instellingen from './accountmenu-v3/AccountMenuV3Instellingen';
+import { AccountMenuV3Instellingen } from './accountmenu-v3/AccountMenuV3Instellingen';
 
 type Lang='uk'|'nl';
 type Theme=ThemePreference;

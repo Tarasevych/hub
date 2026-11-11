@@ -125,3 +125,5 @@ export function AccountMenuV3Instellingen({ lang }: { lang: 'uk' | 'nl' }) {
     </section>
   );
 }
+
+export default AccountMenuV3Instellingen;
