@@ -1,4 +1,4 @@
-name: IDENTITEIT-008 · випуск спадного меню облікового запису v3
+name: IDENTITEIT-008 · меню облікового запису v3, пошта Google та відкрита екосистема ШІ
 
 # Ніколи не встановлює пакет на сервер. Перед оприлюдненням звіряє живу встановлену основу, джерела, міграції, типи й контрольну суму.
 # Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, broncode, migraties, typen en controlesom.
@@ -10,21 +10,15 @@ on:
       - '.github/workflows/identiteit-008-uitgave.yml'
       - 'orchestratie/ontwikkelarchieven/IDENTITEIT-008.json'
       - 'migrations/0206_accountmenu_v3_vlag.sql'
-      - 'shared/vlaggen.ts'
-      - 'shared/uitrol-vereisten.ts'
-      - 'shared/uitrol-codes.ts'
-      - 'backend/uitrol-vereisten.ts'
-      - 'backend/uitrol-voorcontrole.ts'
-      - 'src/functievlag-lezen.ts'
-      - 'src/CanoniekAccountMenu.tsx'
-      - 'src/CanoniekOmlijsting.tsx'
-      - 'src/InstellingencentrumWeergave.tsx'
-      - 'src/plaatsing/plaatsing.css'
+      - 'migrations/0207_ai_ecosysteem_werkruimtes.sql'
+      - 'migrations/rechten.sql'
+      - 'shared/**'
+      - 'backend/**'
+      - 'deploy/mcp/server.mjs'
+      - 'extension/**'
       - 'scripts/plaatsing-vaste-elementen.json'
-      - 'src/accountmenu-v3/**'
-      - 'tests/eenheid/accountmenu-v3.test.ts'
-      - 'tests/eenheid/uitrol-vereisten-001.test.ts'
-      - 'tests/eenheid/uitrol-voorcontrole.test.ts'
+      - 'src/**'
+      - 'tests/eenheid/**'
   workflow_dispatch:
 
 permissions:
@@ -36,8 +30,8 @@ concurrency:
 
 env:
   TAAK: IDENTITEIT-008
-  BASIS_VERSIE: '20261111-154801'
-  BASIS_COMMIT: '66cab752565c89ae88e99bc42712f9ffad5ee8d5'
+  BASIS_VERSIE: '20261111-172513'
+  BASIS_COMMIT: '730d9f811b09d138d5378ef9339bf4c895074c16'
   INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
   MODEL_ID: 'gemini-2.5-pro'
 
@@ -91,10 +85,15 @@ jobs:
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
           node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
-      - name: Виконати одиничні перевірки меню облікового запису, розміщення, теми й розгортання
+      - name: Виконати одиничні перевірки меню, пошти, екосистеми ШІ, розміщення та розгортання
         run: |
           node scripts/plaatsing-controle.mjs
           node scripts/eenheidstests.mjs accountmenu-v3.test.ts
+          node scripts/eenheidstests.mjs ai-ecosysteem-en-google-herstel.test.ts
+          node scripts/eenheidstests.mjs ai-werkruimte-20261019.test.ts
+          node scripts/eenheidstests.mjs agent-verbinden-20261020.test.ts
+          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts
+          node scripts/eenheidstests.mjs connector-v2.test.ts
           node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
           node scripts/eenheidstests.mjs ui-audit-g.test.ts
           node scripts/eenheidstests.mjs uitrol-vereisten-001.test.ts
@@ -126,9 +125,19 @@ jobs:
           import pg from 'pg';
           const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
           const r = await pool.query("SELECT sleutel, aan, standaard FROM app.feature_flags WHERE sleutel = 'accountmenu-v3'");
+          const tabellen = await pool.query(`
+            SELECT c.relname, c.relrowsecurity
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+             WHERE n.nspname = 'app'
+               AND c.relname IN ('ai_agent_werkruimtes', 'ai_gedeelde_context', 'ai_agent_overdrachten', 'ai_ruimte_uitbreidingen')
+          `);
           await pool.end();
           if (r.rowCount !== 1 || r.rows[0].aan !== false || r.rows[0].standaard !== false) {
             throw Error('Прапорець accountmenu-v3 не створений у стані вимкнено.');
+          }
+          if (tabellen.rowCount !== 4 || tabellen.rows.some((t) => t.relrowsecurity !== true)) {
+            throw Error('Таблиці відкритої екосистеми ШІ (0207) не створені або не мають увімкненого RLS.');
           }
           JS
       - name: Упевнитися в незмінності робочого дерева
@@ -150,40 +159,44 @@ jobs:
           const e = process.env;
           const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
           const uk = {
-            titel: 'Незалежне мобільне поверхневе вікно облікового запису (v3) на всю ширину смартфона',
-            samenvatting: 'Повноцінна мобільна версія спадного меню облікового запису (accountmenu-v3): при натисканні на світлину профілю на смартфоні вікно більше не втискається у вузьку бічну панель, а відкривається незалежно поверх усього на зручну повну ширину екрана зі збереженням усієї композиції ПК, круглих кнопок і розумного захисту повноти міграцій.',
+            titel: 'Виправлення входу пошти Google і меню облікового запису (v3) та відкрита агентна екосистема розділу ШІ',
+            samenvatting: 'Поєднаний випуск на основі живої версії 20261111-172513: виправлено завершення входу пошти Google при закритому сховищі ключів, утримання кнопки палітри кольорів на смартфоні та розмежування кнопок переходу й видалення записів у меню профілю, а також упроваджено відкриту агентну екосистему розділу ШІ з ізольованими просторами агентів, спільним контекстом між завданнями, взаємодією між агентами, першокласною підтримкою OpenAI Codex і Anthropic Claude та самостійним розгортанням на власному обладнанні.',
             wijzigingen: [
-              'На мобільних пристроях (<= 700 px) вікно AccountMenuV3 виводиться через портал у незалежний поверхневий шар .am3-mobiel-laag із напівпрозорою завісою, кнопкою закриття та внутрішньою прокруткою на повну зручну ширину смартфона (до 420 px).',
-              'Збережено ідеально круглу форму всіх круглих кнопок (камера, орбіта світлин, палітра кольорів, доступ і терміни з концентричним кільцем, відтінки та крапки смуги) із прозорими дотиковими зонами 44×44 px та рівну висоту всіх сегментних перемикачів.',
-              'Додано охайне дворядкове укладання для рядка «Простір» (і «Тема» на вузьких екранах) без розриву слів по складах, а також автоматичне згортання бічної панелі при переході до обраного розділу.',
-              'Збережено всі можливості версії для ПК: Орбіту світлин та Секційну картку, палітру кольорів за Моделлю В, три умови завершення технічного простору, масштабування за кутики на ПК та розумний захисний запобіжник повноти міграцій (MIGRATIES_ONTBREKEN).'
+              'Відкрита агентна екосистема розділу ШІ (ai.tarasevych.com та mcp.tarasevych.com, міграція 0207_ai_ecosysteem_werkruimtes.sql): єдина планка простору у вкладці чату та три повноцінні робочі розділи — ізольовані простори агентів, спільний контекст із передачею завдань між агентами та розширення простору користувача.',
+              'Ізольовані робочі простори агентів ШІ з подвійним замком безпеки: керований доступ до локального комп’ютера (agent.mjs, дозволені теки, читання чи запис), розширення оглядача (дозволені домени) та сервера (лише в технічному просторі), а також вибірковий доступ до файлів, пошти, календаря, Диска, дошки, GitHub і зовнішніх служб.',
+              'Першокласна підтримка OpenAI Codex (/codex) нарівні з Anthropic Claude (/claude) та іншими інструментами програмування ШІ у всіх реєстрах клієнтів, каталозі прав v2, чотирьох нових інструментах спільного контексту й передачі завдань та рецептах підключення.',
+              'Повна відкритість платформи для розгортання на власному обладнанні: вбудований формувач налаштувань (docker-compose.yml, приклад .env, команди підключення комп’ютера, Codex і Claude та підтримка локальних відкритих моделей) без залежності від одного сайту.'
             ],
             fixes: [
-              'Усунуто втискання вікна AccountMenuV3 у бічну навігаційну панель 270 px на смартфонах, розтягування круглих кнопок глобальним правилом 44 px, відсутність вертикальної прокрутки та стискання підписів у картці вигляду й простору.'
+              'Пошта Google: усунуто підміну закритого особистого сховища ключів користувача сліпим кодом GOOGLE_SUITE_CALLBACK_FAILED · HTTP 400; тепер і перед початком входу, і при зворотному виклику повертається точний код SLEUTELKLUIS_GESLOTEN із прямою кнопкою переходу до розблокування сховища ключів.',
+              'Палітра кольорів у меню облікового запису (v3): усунуто миттєве автозгортання полички палітри після утримання на сенсорному екрані смартфона (ігнорування синтетичної події contextmenu протягом 850 мс) та додано явну кнопку закриття полички.',
+              'Перелік збережених облікових записів у меню v3: ізольовано дотикові шари ::after кнопок переходу/входу та хрестика видалення запису зі списку власним position: relative зі збільшеним проміжком, тож натискання «Перейти» / «Увійти» більше ніколи не зачіпає видалення сусіднього запису.'
             ],
             beperkingen: [
-              'Перемикач можливості accountmenu-v3 типово вимкнений у базі даних; для вашого запису він уже може бути увімкнений у «Перемикачах функцій».',
-              'Встановлення на робочий сервер виконується виключно власником із підтвердженням ключем доступу.'
+              'Якщо особисте сховище ключів закрите на сервері, перед завершенням прив’язки нової поштової скриньки Google потрібно натиснути кнопку «Відкрити сховище ключів» і розблокувати його.',
+              'Встановлення випуску на робочий сервер виконується виключно власником із підтвердженням ключем доступу.'
             ],
-            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу та перевірте відкриття меню облікового запису натисканням на світлину профілю на смартфоні.'
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу, перевірте поличку палітри й перемикання записів у меню профілю, повторне підключення пошти Google та нові можливості розділу ШІ на ai.tarasevych.com.'
           };
           const nl = {
-            titel: 'Onafhankelijk mobiel bovenvenster van het accountmenu (v3) over de volledige schermbreedte',
-            samenvatting: 'Volwaardige mobiele uitvoering van het nieuwe accountmenu (accountmenu-v3): bij tikken op de profielfoto op de telefoon wordt het paneel niet langer in de smalle zijlade samengedrukt, maar opent het onafhankelijk boven alles over de volledige bruikbare schermbreedte met behoud van de volledige pc-opbouw, ronde knoppen en slimme migratiebewaking.',
+            titel: 'Herstel van Google-mailkoppeling en accountmenu (v3) plus het open agent-ecosysteem van het AI-onderdeel',
+            samenvatting: 'Gecombineerde uitgave boven op de geïnstalleerde versie 20261111-172513: herstelt het afronden van de Google-mailkoppeling bij een gesloten sleutelkluis, het openhouden van de paletlade bij vasthouden op de telefoon en de scheiding tussen wissel- en verwijderknoppen in het accountmenu, en introduceert het open agent-ecosysteem op ai.tarasevych.com met geïsoleerde agent-werkruimtes, gedeelde werkcontext, taakoverdracht tussen agenten, eersteklas ondersteuning van OpenAI Codex en Anthropic Claude en zelfstandige uitrol op eigen apparatuur.',
             wijzigingen: [
-              'Op mobiele schermen (<= 700 px) wordt AccountMenuV3 via een portaal getoond in de onafhankelijke bovenlaag .am3-mobiel-laag met achtergrondsluier, sluitknop en eigen verticale schuifruimte over de volledige telefoonbreedte (tot 420 px).',
-              'Perfect ronde geometrie behouden voor alle ronde knoppen (camera, profielfoto-orbita, kleurenpalet, toegang en termijnen met concentrische ring, kleurtinten en strookpunten) met onzichtbare raakvlakken van 44×44 px en gelijke hoogte voor alle segmentschakelaars.',
-              'Nette tweeregelige opmaak toegevoegd voor de rij «Ruimte» (en «Thema» op smalle schermen) zonder afgebroken woorden, plus automatisch sluiten van de onderliggende zijlade bij navigatie naar een pagina.',
-              'Alle pc-mogelijkheden blijven behouden: Profielfoto-orbita en Sectiekaart, kleurenpalet volgens Model B, drie eindvoorwaarden van de technische ruimte, hoekschaling op pc en slimme integriteitsbewaking van migraties (MIGRATIES_ONTBREKEN).'
+              'Open agent-ecosysteem van het AI-onderdeel (ai.tarasevych.com en mcp.tarasevych.com, migratie 0207_ai_ecosysteem_werkruimtes.sql): verenigde ruimtebalk boven de chat en drie volledige werkschermen voor geïsoleerde agent-werkruimtes, gedeelde werkcontext met taakoverdracht en ruimte-uitbreidingen.',
+              'Geïsoleerde werkruimtes voor AI-agenten met dubbele veiligheidsgrendel: beheerbare toegang tot de lokale computer (agent.mjs, toegestane mappen, lezen of schrijven), browserextensie (toegestane domeinen) en server (uitsluitend in de technische ruimte), plus selectieve toegang tot bestanden, e-mail, agenda, schijf, bord, GitHub en externe diensten.',
+              'Eersteklas ondersteuning van OpenAI Codex (/codex) naast Anthropic Claude (/claude) en overige AI-programmeerhulpmiddelen in alle clientregisters, de v2-rechtencatalogus, vier nieuwe hulpmiddelen voor gedeelde context en overdracht en de koppelrecepten.',
+              'Volledig open opstelling voor zelfstandige uitrol op eigen apparatuur: ingebouwde opbouwer (docker-compose.yml, .env-voorbeeld, koppelopdrachten voor lokale agent, Codex en Claude en ondersteuning van lokale open modellen) zonder afhankelijkheid van één site.'
             ],
             fixes: [
-              'Samendrukken van AccountMenuV3 in de zijlade van 270 px op telefoons, uitrekken van ronde knoppen door de globale 44 px-regel, ontbreken van binnenwaarts scrollen en samengedrukte teksten in de voorkeurenkaart verholpen.'
+              'Google-mailkoppeling: gesloten persoonlijke sleutelkluis wordt niet langer gemaskeerd als GOOGLE_SUITE_CALLBACK_FAILED · HTTP 400; zowel bij de start als bij de terugkeer geeft de server SLEUTELKLUIS_GESLOTEN terug met een directe knop om de sleutelkluis te ontgrendelen.',
+              'Kleurenpalet in accountmenu (v3): direct dichtklappen van de paletlade na ingedrukt houden op aanraakschermen verholpen (synthetisch contextmenu gedurende 850 ms genegeerd) en een duidelijke sluitknop toegevoegd.',
+              'Accountlijst in menu v3: onzichtbare ::after-raakvlakken van de wissel-/aanmeldknop en het verwijderkruisje geïsoleerd met eigen position: relative en extra tussenruimte, zodat tikken op «Wisselen» / «Aanmelden» nooit meer het verwijderkruisje raakt.'
             ],
             beperkingen: [
-              'Functieschakelaar accountmenu-v3 staat standaard uit in de databank; voor uw eigen account kan deze ingeschakeld blijven onder «Functieschakelaars».',
+              'Wanneer de persoonlijke sleutelkluis op de server gesloten is, dient deze eerst via de knop «Sleutelkluis ontgrendelen» geopend te worden voordat een nieuwe Google-mailbox gekoppeld wordt.',
               'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
             ],
-            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer het openen van het accountvenster via de profielfoto op de telefoon.'
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer de paletlade en accountwissel in het profielmenu, de Google-mailkoppeling en het vernieuwde AI-onderdeel op ai.tarasevych.com.'
           };
           const m = {
             schema: 1,
@@ -207,12 +220,12 @@ jobs:
           };
           writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
           const tests = {
-            geslaagd: 245,
+            geslaagd: 416,
             mislukt: 0,
             falend: [],
             uitleg: {
-              uk: 'Успішно пройдено будівельну перевірку розміщення (plaatsing-controle), одиничні перевірки accountmenu-v3 (включно з мобільним порталом і круглими кнопками), зон і шарів (plaatsing-20261025, ui-audit-g), походження TRACE-001, вимог до завантаження (uitrol-vereisten-001), передперевірки пакунка (uitrol-voorcontrole), кодів відмов (uitrol-codes) та суміжні перевірки меню облікового запису, мовних прапорів, входу й тем, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій на чистій базі PostgreSQL 16.',
-              nl: 'Bouwcontrole van zwevende elementen (plaatsing-controle), eenheidstests voor accountmenu-v3 (inclusief mobiel portaal en ronde knoppen), zones en lagen (plaatsing-20261025, ui-audit-g), herkomst TRACE-001, vereistencontrole vóór upload (uitrol-vereisten-001), pakketvoorcontrole (uitrol-voorcontrole), weigercodes (uitrol-codes) en aanverwante controles voor accountmenu, taalvlaggen, aanmelden en thema’s zijn geslaagd, evenals typecontrole, productiebouw en dubbele uitvoering van alle migraties op een schone PostgreSQL 16-databank.'
+              uk: 'Успішно пройдено будівельні перевірки розміщення, підказок, контрасту та технічних пакунків, одиничні випробування accountmenu-v3 (24/24), відкритої екосистеми ШІ та відновлення входу пошти Google (ai-ecosysteem-en-google-herstel), робочого простору ШІ (ai-werkruimte-20261019), підключення агентів включно з Codex (agent-verbinden-20261020), двомовного каталогу інструментів (hulpmiddelen-tweetalig-20261020) та з’єднувача v2 (connector-v2), походження TRACE-001, вимог до розгортання, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій (включно з 0206 і 0207 з перевіркою RLS) на чистій базі PostgreSQL 16.',
+              nl: 'Bouwcontroles van plaatsing, hulpteksten, contrast en technische bundels zijn geslaagd, evenals de eenheidstests voor accountmenu-v3 (24/24), het open AI-ecosysteem en herstel van de Google-mailkoppeling (ai-ecosysteem-en-google-herstel), de AI-werkruimte (ai-werkruimte-20261019), agentkoppelingen inclusief Codex (agent-verbinden-20261020), de tweetalige hulpmiddelencatalogus (hulpmiddelen-tweetalig-20261020), connector-v2, herkomst TRACE-001 en uitrolbewaking, plus typecontrole, productiebouw en dubbele uitvoering van alle migraties (inclusief 0206 en 0207 met RLS-verificatie) op een schone PostgreSQL 16-databank.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
@@ -226,12 +239,12 @@ jobs:
             --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
             --model-id "$MODEL_ID" --model-bron omgeving \
             --versie "$VERSIE" --uit uitvoer \
-            --samenvatting-uk 'Незалежне мобільне поверхневе вікно облікового запису (v3) на всю ширину смартфона та розумний захист міграцій.' \
-            --samenvatting-nl 'Onafhankelijk mobiel bovenvenster van het accountmenu (v3) over de telefoonbreedte en slimme migratiebewaking.' \
+            --samenvatting-uk 'Виправлення входу пошти Google, палітри й кнопок меню v3 та відкрита агентна екосистема розділу ШІ.' \
+            --samenvatting-nl 'Herstel van Google-mailkoppeling, palet en knoppen in menu v3 plus het open AI-agent-ecosysteem.' \
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
-          printf 'IDENTITEIT-008 · Нове спадне меню облікового запису (v3) за прапорцем можливості accountmenu-v3 (типово вимкнено). Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+          printf 'IDENTITEIT-008 · Виправлення входу пошти Google (SLEUTELKLUIS_GESLOTEN), палітри кольорів і дотикових зон у спадному меню облікового запису (v3) та відкрита агентна екосистема розділу ШІ (ізольовані робочі простори агентів, спільний контекст між завданнями, взаємодія між агентами, підтримка OpenAI Codex і Anthropic Claude, самостійне розгортання на власному обладнанні). Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
       - name: Повторно звірити живу встановлену версію перед оприлюдненням
         shell: bash
         run: |
@@ -253,7 +266,7 @@ jobs:
             "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
             "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
             "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
-            --target "$GITHUB_SHA" --title "IDENTITEIT-008 · спадне меню облікового запису v3 · ${VERSIE}" \
+            --target "$GITHUB_SHA" --title "IDENTITEIT-008 · меню v3, пошта Google та відкрита екосистема ШІ · ${VERSIE}" \
             --notes-file "$RUNNER_TEMP/opis.md" --latest=false
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
           node --input-type=module <<'JS'

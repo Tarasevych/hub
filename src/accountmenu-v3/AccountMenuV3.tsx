@@ -210,6 +210,7 @@ export function AccountMenuV3({
   const holdTimerRef = useRef<number | null>(null);
   const toastTimerRef = useRef<number | null>(null);
   const holdTriggeredRef = useRef(false);
+  const lastHoldToggleAtRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -295,7 +296,7 @@ export function AccountMenuV3({
 
   // Модель В для кнопки «Палітра кольорів»:
   // - короткий натиск гортає палітри по колу + показує спливну позначку;
-  // - правий натиск миші або утримання (0.38 с) відкриває/закриває поличку палітр.
+  // - правий натиск миші або утримання (0.38 с) відкриває/закриває поличку палітр без подвійного спрацьовування на сенсорному екрані.
   const toonPaletToast = (id: string) => {
     const gevonden = PALET_KEUZES_INFO.find((p) => p.id === id);
     if (!gevonden) return;
@@ -319,7 +320,9 @@ export function AccountMenuV3({
     holdTriggeredRef.current = false;
     setHoudtPaletVast(true);
     holdTimerRef.current = window.setTimeout(() => {
+      holdTimerRef.current = null;
       holdTriggeredRef.current = true;
+      lastHoldToggleAtRef.current = Date.now();
       setHoudtPaletVast(false);
       setToegangOpen(false);
       setPaletOpen((v) => !v);
@@ -331,7 +334,7 @@ export function AccountMenuV3({
   };
 
   const opPaletClick = () => {
-    if (holdTriggeredRef.current) {
+    if (holdTriggeredRef.current || Date.now() - lastHoldToggleAtRef.current < 650) {
       holdTriggeredRef.current = false;
       return;
     }
@@ -341,7 +344,13 @@ export function AccountMenuV3({
 
   const opPaletContextMenu = (e: ReactMouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     wisPaletHold();
+    // На сенсорних екранах оглядач надсилає contextmenu через ~120 мс після таймера утримання — не згортаємо щойно відкриту поличку.
+    if (holdTriggeredRef.current || Date.now() - lastHoldToggleAtRef.current < 850) {
+      return;
+    }
+    lastHoldToggleAtRef.current = Date.now();
     setToegangOpen(false);
     setPaletOpen((v) => !v);
   };
@@ -719,11 +728,14 @@ export function AccountMenuV3({
                     <div className='am3-account-actions'>
                       <button
                         type='button'
-                        className='am3-acc-btn'
+                        className='am3-acc-btn canonical-account-switch'
                         disabled={busy || selecting === item.grantId || !item.grantId}
-                        onClick={() => void onSelectAccount(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void onSelectAccount(item);
+                        }}
                       >
-                        <span>{st === 'active' ? (uk ? 'Перейти' : 'Wisselen') : (uk ? 'Увійти' : 'Aanmelden')}</span>
+                        <span>{st === 'active' || st === 'signed_in' ? (uk ? 'Перейти' : 'Wisselen') : (uk ? 'Увійти' : 'Aanmelden')}</span>
                       </button>
                       {onForgetAccount && item.grantId ? (
                         <button
@@ -732,7 +744,10 @@ export function AccountMenuV3({
                           disabled={busy || forgetting === item.grantId}
                           title={uk ? 'Прибрати зі списку на цьому пристрої' : 'Verwijderen uit de lijst op dit apparaat'}
                           aria-label={uk ? `Прибрати запис: ${item.user.email}` : `Account verwijderen: ${item.user.email}`}
-                          onClick={() => void onForgetAccount(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void onForgetAccount(item);
+                          }}
                         >
                           <X />
                         </button>
@@ -870,7 +885,18 @@ export function AccountMenuV3({
             <div className='am3-palette-tray' role='region' aria-label={uk ? 'Вибір кольорової палітри' : 'Kleurenpalet kiezen'}>
               <div className='am3-tray-head'>
                 <span>{uk ? 'Основні палітри' : 'Hoofdpaletten'}</span>
-                <span>{uk ? paletSync.info.uk : paletSync.info.nl}</span>
+                <span className='am3-tray-head-right'>
+                  <span>{uk ? paletSync.info.uk : paletSync.info.nl}</span>
+                  <button
+                    type='button'
+                    className='am3-tray-close'
+                    aria-label={uk ? 'Згорнути список палітр' : 'Paletlijst sluiten'}
+                    title={uk ? 'Згорнути список палітр' : 'Paletlijst sluiten'}
+                    onClick={() => setPaletOpen(false)}
+                  >
+                    <X />
+                  </button>
+                </span>
               </div>
 
               <div className='am3-palette-sys-grid'>
