@@ -76,7 +76,7 @@
     "Перевірка походження журналу розробки: node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts.",
     "Статичні перевірки якості, розміщення, каталогу пошуку інтерфейсу та макета розумного будинку HUIS-001: node scripts/l002-audit.mjs, node scripts/plaatsing-controle.mjs, node scripts/zoek-ui-catalogus.mjs --controle та node scripts/huis-maquette.mjs --controle.",
     "Модульні перевірки без бази даних: devtools-schema-tekst-20261112.test.ts (42/42), mcp-r1-beveiliging-20261112.test.ts (78/78) та mcp-2026-07-28-studio.test.ts (41/41).",
-    "Серверні інтеграційні перевірки з живою базою даних PostgreSQL 16 у GitHub Actions: mcp-connector.test.ts, mcp-klant-20261020.test.ts, connector-v2-20261021.test.ts та routes.test.ts.",
+    "Серверні інтеграційні перевірки з живою базою даних PostgreSQL 16 у GitHub Actions: mcp-connector.test.ts, mcp-klant-20261020.test.ts, connector-v2.test.ts та routes.test.ts.",
     "Перевірка типів клієнта та сервера (npx tsc --noEmit і npm run typecheck:server), повне виробниче складання застосунку (npm run build), перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."
   ],
   "bronnen": [

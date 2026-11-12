@@ -150,7 +150,7 @@ jobs:
           node dist-server/migrate.mjs
           node scripts/eenheidstests.mjs mcp-connector.test.ts
           node scripts/eenheidstests.mjs mcp-klant-20261020.test.ts
-          node scripts/eenheidstests.mjs connector-v2-20261021.test.ts
+          node scripts/eenheidstests.mjs connector-v2.test.ts
           node scripts/eenheidstests.mjs routes.test.ts
       - name: Упевнитися в незмінності робочого дерева
         run: |
@@ -236,8 +236,8 @@ jobs:
             mislukt: 0,
             falend: [],
             uitleg: {
-              uk: 'Успішно пройдено: правила координації, свіжість основи 20261112-192752 та перевірку походження TRACE-001; статичні перевірки l002-audit, розміщення, каталогу пошуку інтерфейсу та макета розумного будинку HUIS-001; модульні та серверні перевірки з PostgreSQL 16 для devtools-schema-tekst-20261112 (42/42), mcp-r1-beveiliging-20261112 (78/78), mcp-2026-07-28-studio (41/41), mcp-connector, mcp-klant-20261020, connector-v2-20261021 та routes; перевірку типів клієнта й сервера; повне виробниче складання застосунку.',
-              nl: 'Geslaagd: coördinatieregels, versheid van basis 20261112-192752 en herkomstcontrole TRACE-001; statische controles l002-audit, plaatsing, de UI-catalogus en de maquette HUIS-001; eenheids- en PostgreSQL 16-servertests voor devtools-schema-tekst-20261112 (42/42), mcp-r1-beveiliging-20261112 (78/78), mcp-2026-07-28-studio (41/41), mcp-connector, mcp-klant-20261020, connector-v2-20261021 en routes; typecontrole van client en server; volledige productiebouw.'
+              uk: 'Успішно пройдено: правила координації, свіжість основи 20261112-192752 та перевірку походження TRACE-001; статичні перевірки l002-audit, розміщення, каталогу пошуку інтерфейсу та макета розумного будинку HUIS-001; модульні та серверні перевірки з PostgreSQL 16 для devtools-schema-tekst-20261112 (42/42), mcp-r1-beveiliging-20261112 (78/78), mcp-2026-07-28-studio (41/41), mcp-connector, mcp-klant-20261020 (64/64), connector-v2 та routes; перевірку типів клієнта й сервера; повне виробниче складання застосунку.',
+              nl: 'Geslaagd: coördinatieregels, versheid van basis 20261112-192752 en herkomstcontrole TRACE-001; statische controles l002-audit, plaatsing, de UI-catalogus en de maquette HUIS-001; eenheids- en PostgreSQL 16-servertests voor devtools-schema-tekst-20261112 (42/42), mcp-r1-beveiliging-20261112 (78/78), mcp-2026-07-28-studio (41/41), mcp-connector, mcp-klant-20261020 (64/64), connector-v2 en routes; typecontrole van client en server; volledige productiebouw.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
