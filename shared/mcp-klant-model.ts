@@ -21,10 +21,11 @@ export const MCP_KLANT_NAAM = 'mijn-ruimte';
 export const MCP_KLANT_VERSIE = '1.0.0';
 
 /** Protocolversies die DEZE klant spreekt, nieuwste eerst. 2024-11-05 hoort bij het oude HTTP+SSE-vervoer. */
-export const MCP_KLANT_VERSIES = ['2025-06-18', '2025-03-26', '2024-11-05'] as const;
+export const MCP_KLANT_VERSIES = ['2026-07-28', '2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'] as const;
 export type McpVersie = typeof MCP_KLANT_VERSIES[number];
-/** Wat we in `initialize` vragen: de nieuwste die we kennen (specificatie: «SHOULD be the latest»). */
+/** Wat we in `initialize` vragen: de standaardversie voor achterwaarts compatibele handshakes. */
 export const MCP_KLANT_VOORKEUR: McpVersie = '2025-06-18';
+export const MCP_KLANT_MODERNE_VERSIE: McpVersie = '2026-07-28';
 
 export const MCP_VERVOEREN = ['streamable', 'sse'] as const;
 export type McpVervoer = typeof MCP_VERVOEREN[number];

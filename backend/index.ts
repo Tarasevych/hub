@@ -137,7 +137,7 @@ import {runGoogleSuiteCalendarSync} from './google-suite-agenda-sync';
 import {createGoogleSuiteCalendarPhotosRoutes} from './google-suite-agenda-fotos';
 import { googleSuiteCallbackPost, googleSuiteDisconnectMailAccount, googleSuiteMailPreview, googleSuiteMailProviderSnapshot, googleSuiteOnboardingSnapshot, googleSuitePrincipalAccessToken, googleSuiteStartMailConsent, googleSuiteStateParts } from './google-suite-inrichting';
 // 20.10.2026 — tweerichtingsagenda: schrijven naar Google (etag/If-Match, idempotent), ICS-abonnementen en CalDAV (lezen).
-import {createExterneMcpRoutes} from './mcp-klant-routes';import {createAgendaRoutes} from './agenda-routes';import {icsCronRonde} from './agenda-ics';import {caldavCronRonde} from './agenda-caldav';
+import {createExterneMcpRoutes} from './mcp-klant-routes';import {createMcpInspectorRoutes} from './mcp-inspector-routes';import {createAgendaRoutes} from './agenda-routes';import {icsCronRonde} from './agenda-ics';import {caldavCronRonde} from './agenda-caldav';
 import {createGlobalSearchRoutes} from './globaal-zoek';import {createZoekBronnenRoutes} from './zoek/bronnen';/* Z2 22.10.2026: stand per bron + «Оновити індекс» */import {createZoekGeschiedenisRoutes} from './zoek-geschiedenis';/* Z4 22.10.2026: zoekgeschiedenis per lade (0103) */import {createZoekBeheerRoutes} from './zoek/beheer';/* zone D 22.10.2026: handmatige indexatie vanuit het technisch profiel (/zoek/index/*) */
 import {createMailImapRoutes,mailImapHoortBij} from './mail-imap';import {createVensterRoutes} from './vensters-onthouden';import {createHubBlockDataRoutes} from './hub-blok-gegevens';import {createHubLayoutPreferenceRoutes} from './hub-indeling-voorkeuren';import {createHubBureauRoutes} from './hub-bureau';import {createWerkbladRoutes} from './werkblad';import {createWerkbladV3Routes} from './werkblad-v3';import {createWerkbladBlokkenRoutes} from './werkblad-blokken';import {REGISTER_V3_HAKEN} from '../shared/werkblad-register';/* Werkblad v3 (0114), vlag werkblad-v3 *//* Zone F 22.10.2026: werkblad per lade (0112) */
 import {createCognitiveContextRoutes} from './cognitief-context';
@@ -774,6 +774,7 @@ export const handler = router(metMailRuimte({
   ...wrapFactoryMutations(createGoogleSuiteCalendarPhotosRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createAgendaRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...createExterneMcpRoutes((event,body)=>ownerRequireSession(event,body)),
+  ...createMcpInspectorRoutes(ownerRequireSession as never),
   ...wrapFactoryMutations(createGlobalSearchRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createZoekBronnenRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),
   ...wrapFactoryMutations(createZoekGeschiedenisRoutes((event,body)=>ownerRequireSession(event,body)),(event,body)=>ownerRequireSession(event,body)),

@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "taakId": "MCP-001",
+  "titel": "Повна підтримка протоколу MCP 2026-07-28 + 2025-11-25, безпека OAuth 2.1 (Origin, CIMD, RFC 9207), ресурси, шаблони запитів, навички агента та вбудована студія-інспектор",
+  "opdracht": "Вдосконалити та розширити https://mcp.tarasevych.com із повним циклом підтримки всіх напрямків Model Context Protocol за офіційними джерелами (modelcontextprotocol.io/docs/2026-07-28/*, specification/2026-07-28, github.com/modelcontextprotocol/inspector): подвійна епоха протоколу (2026-07-28 і 2025-11-25), авторизація OAuth 2.1 (PKCE S256, RFC 9728, RFC 8414, RFC 8707, RFC 9207 iss, CIMD із захистом від SSRF, перевірка Origin 403), безстанове виявлення server/discover, ресурси resources/*, двомовні шаблони запитів prompts/*, автодоповнення completion/complete, підписки subscriptions/listen, навички агента, офіційні SDK (TypeScript, Python, Go, Rust), розширення, картка сервера .well-known/mcp-server-card.json, маніфест реєстру /server.json та вбудована інтерактивна студія-інспектор на сторінці /agenten поверх встановленої версії сервера 20261112-192752.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "gemini",
+    "tak": "feature/mcp-001-platform-20261112-210500",
+    "basis": "11e0aad8b641b62412d2efcf1382d117339d251f",
+    "geinstalleerdeBasis": "11e0aad8b641b62412d2efcf1382d117339d251f",
+    "geinstalleerdeVersie": "20261112-192752",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, таємниці сховища, вміст приватних листів чи файлів, сеанси оглядача та приховані внутрішні міркування моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-12T21:05:00Z",
+      "stap": "Звірено живу встановлену версію на робочому сервері 20261112-192752 (11e0aad8b641b62412d2efcf1382d117339d251f), створено гілку feature/mcp-001-platform-20261112-210500 та перенесено напрацювання R0 (переклад описів параметрів схем інструментів оглядача у backend/connector-v2-browser.ts і backend/connector-v2.ts) і R1 (перевірка Origin 403 у backend/mcp-origin.ts, підтримка CIMD із захистом від SSRF у backend/mcp-cimd.ts, параметр iss за RFC 9207 та відхилення застарілих пакетів JSON-RPC)."
+    },
+    {
+      "tijd": "2026-11-12T21:18:00Z",
+      "stap": "Реалізовано спільне ядро протоколу shared/mcp-protocol-2026-model.ts та серверний обробник backend/mcp-protocol-2026.ts: підтримка епох 2026-07-28 і 2025-11-25, перевірка _meta[\"io.modelcontextprotocol/protocolVersion\"], коди помилок -32020 / -32021 / -32022, методи server/discover, resources/list, resources/templates/list, resources/read (із суворим розмежуванням приватного і технічного просторів), resources/subscribe, prompts/list, prompts/get (6 двомовних шаблонів uk/nl), completion/complete, subscriptions/listen та logging/setLevel."
+    },
+    {
+      "tijd": "2026-11-12T21:28:00Z",
+      "stap": "Інтегровано протокол 2026-07-28, розширені анотації інструментів, векторні іконки груп, structuredContent + outputSchema та заголовки Mcp-Method / Mcp-Name у backend/connector-v2.ts і backend/mcp-connector.ts; додано публічні маршрути /.well-known/mcp-server-card.json, /.well-known/mcp.json та /server.json у server/start.ts, server/platform/auth-poort.ts і backend/mcp-connector-routes.ts."
+    },
+    {
+      "tijd": "2026-11-12T21:38:00Z",
+      "stap": "Створено серверні маршрути вбудованого інспектора backend/mcp-inspector-routes.ts (/api/owner/mcp-inspector/overzicht, /uitvoeren, /oauth-controle), клієнтський інтерфейс src/agenten/McpInspectorStudio.tsx у вкладці src/agenten/TabExternMcp.tsx, двомовну документацію docs/mcp/ПЛАН-MCP-2026-07-28.uk.md і docs/mcp/PLAN-MCP-2026-07-28.nl.md та модульний тест tests/eenheid/mcp-2026-07-28-studio.test.ts (41/41)."
+    }
+  ],
+  "keuzes": [
+    "Забезпечити одночасну підтримку обох епох специфікації MCP — сучасної безстанової 2026-07-28 (_meta[\"io.modelcontextprotocol/protocolVersion\"] та server/discover) і класичної сесійної 2025-11-25 / 2025-06-18 / 2025-03-26 (initialize), щоб усі наявні клієнти (Claude, ChatGPT, Gemini, Grok, Codex, Copilot, Cursor, Antigravity, AutoClaw) та новий MCP Inspector працювали без жодних регресій.",
+    "Ізолювати всі ресурси mr://* і шаблони запитів за автентифікованим користувачем і живим простором підключення (prive / technisch): ресурс mr://uitrol/huidig видимий і доступний для читання виключно тоді, коли активний технічний простір власника.",
+    "У вбудованому вебінспекторі на сторінці /agenten дозволити пряме пробне виконання лише для безпечних операцій читання (readOnlyHint: true) та діагностики (whoami), а для операцій запису чи видалення повертати структуровану відповідь input_required з вимогою підтвердження людини.",
+    "Захистити завантаження документів метаданих клієнта (CIMD, SEP-991) власним DNS-резолвером veiligeLookup, який відхиляє будь-яку відповідь із приватною, локальною або link-local IP-адресою ще до встановлення з'єднання TLS."
+  ],
+  "wijzigingen": [
+    ".github/workflows/mcp-001-uitgave.yml",
+    "backend/connector-v2-browser.ts",
+    "backend/connector-v2.ts",
+    "backend/index.ts",
+    "backend/mcp-cimd.ts",
+    "backend/mcp-connector-opslag.ts",
+    "backend/mcp-connector-routes.ts",
+    "backend/mcp-connector.ts",
+    "backend/mcp-inspector-routes.ts",
+    "backend/mcp-origin.ts",
+    "backend/mcp-protocol-2026.ts",
+    "docs/INDEX.nl.md",
+    "docs/mcp/PLAN-MCP-2026-07-28.nl.md",
+    "docs/mcp/ПЛАН-MCP-2026-07-28.uk.md",
+    "docs/ПОКАЖЧИК-ДОКУМЕНТАЦІЇ.uk.md",
+    "orchestratie/ontwikkelarchieven/MCP-001.json",
+    "orchestratie/taken/MCP-001.json",
+    "server/platform/auth-poort.ts",
+    "server/start.ts",
+    "shared/beheer-journaal.ts",
+    "shared/mcp-klant-model.ts",
+    "shared/mcp-protocol-2026-model.ts",
+    "src/agenten/McpInspectorStudio.tsx",
+    "src/agenten/TabExternMcp.tsx",
+    "tests/eenheid/devtools-schema-tekst-20261112.test.ts",
+    "tests/eenheid/mcp-2026-07-28-studio.test.ts",
+    "tests/eenheid/mcp-r1-beveiliging-20261112.test.ts"
+  ],
+  "controles": [
+    "Перевірка правил координації та свіжості основи на 11e0aad8b641b62412d2efcf1382d117339d251f (20261112-192752): node scripts/orch.mjs controleer і versheid --taak MCP-001 --fase overdracht.",
+    "Перевірка походження журналу розробки: node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts.",
+    "Статичні перевірки якості, розміщення, каталогу пошуку інтерфейсу та макета розумного будинку HUIS-001: node scripts/l002-audit.mjs, node scripts/plaatsing-controle.mjs, node scripts/zoek-ui-catalogus.mjs --controle та node scripts/huis-maquette.mjs --controle.",
+    "Модульні перевірки без бази даних: devtools-schema-tekst-20261112.test.ts (42/42), mcp-r1-beveiliging-20261112.test.ts (78/78) та mcp-2026-07-28-studio.test.ts (41/41).",
+    "Серверні інтеграційні перевірки з живою базою даних PostgreSQL 16 у GitHub Actions: mcp-connector.test.ts, mcp-klant-20261020.test.ts, connector-v2-20261021.test.ts та routes.test.ts.",
+    "Перевірка типів клієнта та сервера (npx tsc --noEmit і npm run typecheck:server), повне виробниче складання застосунку (npm run build), перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."
+  ],
+  "bronnen": [
+    "https://hub.tarasevych.com/api/version",
+    "https://mcp.tarasevych.com/agenten",
+    "https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro",
+    "https://modelcontextprotocol.io/specification/2026-07-28",
+    "https://github.com/modelcontextprotocol/inspector",
+    "https://github.com/Tarasevych/hub/commit/11e0aad8b641b62412d2efcf1382d117339d251f",
+    "AGENTS.md, orchestratie/beleid.json, deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md"
+  ],
+  "beperkingen": [
+    "Вбудований інспектор на сторінці /agenten без окремого підтвердження виконує лише безпечні операції читання та діагностики; дії запису чи видалення повертають input_required.",
+    "Пакунок випуску не встановлюється автоматично: завантаження та встановлення на робочий сервер виконує виключно власник із підтвердженням ключем доступу."
+  ]
+}
