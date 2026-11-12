@@ -361,14 +361,14 @@ export function GhDialoog({
 }
 
 /** Tweekleurige regel-voor-regel verschilweergave voor patches en voorvertoningen in de webeditor. */
-export function DiffWeergave({ patch, regels, tr }: { patch?: string; regels?: DiffRegel[]; tr: Tr }) {
+export function DiffWeergave({ patch, regels, tr, terugloop = false }: { patch?: string; regels?: DiffRegel[]; tr: Tr; terugloop?: boolean }) {
   const lijst = regels ?? ontleedDiffPatch(patch || '');
   if (!lijst.length) {
     return <p className="gh-sub">{tr('Текстова різниця змін відсутня (двійковий файл або без змін).', 'Geen tekstverschil beschikbaar (binair bestand of ongewijzigd).')}</p>;
   }
   return (
-    <div className="gh-diff-wikkel" role="region" aria-label={tr('Різниця змін за рядками', 'Regel-voor-regel verschil')}>
-      <table className="gh-diff-tabel">
+    <div className="gh-diff-wikkel" data-no-edge-swipe role="region" aria-label={tr('Різниця змін за рядками', 'Regel-voor-regel verschil')}>
+      <table className={`gh-diff-tabel${terugloop ? ' is-terugloop' : ''}`}>
         <tbody>
           {lijst.map((r, idx) => (
             <tr key={idx} className={`gh-diff-rij is-${r.soort}`}>

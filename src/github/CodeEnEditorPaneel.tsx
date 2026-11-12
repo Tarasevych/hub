@@ -57,6 +57,7 @@ export default function CodeEnEditorPaneel({
   const [opslaanBezig, setOpslaanBezig] = useState(false);
   const [actieFout, setActieFout] = useState('');
   const [gekopieerd, setGekopieerd] = useState(false);
+  const [regelTerugloop, setRegelTerugloop] = useState(false);
 
   // Dialogen: takkenbeheer, vergelijken, commitdetail
   const [takDialoog, setTakDialoog] = useState(false);
@@ -490,7 +491,7 @@ export default function CodeEnEditorPaneel({
 
           <div className="gh-code-split" data-mobiel-paneel={mobielPaneel}>
             {/* Linkerkolom: bestandsboom */}
-            <aside className="gh-card gh-boom-kolom" aria-label={tr('Провідник файлів сховища', 'Bestandsverkenner')}>
+            <aside className={`gh-card gh-boom-kolom${mobielPaneel !== 'boom' ? ' is-verborgen-mobiel' : ''}`} aria-label={tr('Провідник файлів сховища', 'Bestandsverkenner')}>
               <label className="gh-search">
                 <Search size={14} />
                 <input
@@ -583,7 +584,19 @@ export default function CodeEnEditorPaneel({
             </aside>
 
             {/* Rechterkolom: bestandslezer, README of volledige webeditor */}
-            <section className="gh-card gh-bestand-kolom" aria-label={tr('Робоче вікно файла', 'Werkvenster voor bestand')}>
+            <section className={`gh-card gh-bestand-kolom${mobielPaneel !== 'bestand' ? ' is-verborgen-mobiel' : ''}`} aria-label={tr('Робоче вікно файла', 'Werkvenster voor bestand')}>
+              <div className="gh-mobiel-terug-rij">
+                <button type="button" className="gh-btn" onClick={() => setMobielPaneel('boom')}>
+                  <Folder size={14} /> {tr('← До дерева файлів', '← Naar bestandsboom')}
+                </button>
+                <button
+                  type="button"
+                  className={`gh-btn${regelTerugloop ? ' gh-primary' : ''}`}
+                  onClick={() => setRegelTerugloop((v) => !v)}
+                >
+                  {tr('Перенос рядків', 'Regelterugloop')}
+                </button>
+              </div>
               {bewerkModus !== 'lezen' ? (
                 <div className="gh-editor-doos">
                   <header className="gh-detail-head">
@@ -656,7 +669,7 @@ export default function CodeEnEditorPaneel({
                       </div>
                     </div>
                   ) : (
-                    <DiffWeergave regels={voorvertoningVerschil?.regels ?? []} tr={tr} />
+                    <DiffWeergave regels={voorvertoningVerschil?.regels ?? []} tr={tr} terugloop={regelTerugloop} />
                   )}
 
                   <div className="gh-vastleg-kaart">
@@ -772,6 +785,13 @@ export default function CodeEnEditorPaneel({
                       <div className="gh-actions">
                         {!bestandVraag.data.binair ? (
                           <>
+                            <button
+                              type="button"
+                              className={`gh-btn${regelTerugloop ? ' gh-primary' : ''}`}
+                              onClick={() => setRegelTerugloop((v) => !v)}
+                            >
+                              {tr('Перенос', 'Terugloop')}
+                            </button>
                             <button type="button" className="gh-btn" onClick={kopieerInhoud}>
                               {gekopieerd ? <Check size={14} /> : <Copy size={14} />}
                               {gekopieerd ? tr('Скопійовано', 'Gekopieerd') : tr('Копіювати', 'Kopiëren')}
@@ -795,8 +815,8 @@ export default function CodeEnEditorPaneel({
                     {bestandVraag.data.binair ? (
                       <p className="gh-sub">{tr('Це двійковий файл. Його можна завантажити або переглянути безпосередньо на GitHub.', 'Dit is een binair bestand. U kunt het rechtstreeks op GitHub bekijken of downloaden.')}</p>
                     ) : (
-                      <div className="gh-code-tabel-wikkel">
-                        <table className="gh-code-tabel">
+                      <div className="gh-code-tabel-wikkel" data-no-edge-swipe>
+                        <table className={`gh-code-tabel${regelTerugloop ? ' is-terugloop' : ''}`}>
                           <tbody>
                             {bestandVraag.data.inhoud.split('\n').map((regel, idx) => (
                               <tr key={idx}>
@@ -822,7 +842,7 @@ export default function CodeEnEditorPaneel({
                       </a>
                     ) : null}
                   </header>
-                  <pre className="gh-readme">{readmeVraag.data.text}</pre>
+                  <pre className="gh-readme" data-no-edge-swipe>{readmeVraag.data.text}</pre>
                 </div>
               ) : (
                 <p className="gh-empty">
