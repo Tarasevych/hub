@@ -3,10 +3,11 @@
 //  • of verstuurt automatisch het officiële GitHub App Manifest zodat een eigen server in één bevestiging gekoppeld is;
 //  • plus aanmelden met een korte 8-teken apparaatcode (Device Flow) met automatische statuscontrole.
 import { useEffect, useRef, useState } from 'react';
-import { Check, CheckCircle2, Copy, ExternalLink, Github, Laptop, Loader2, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
+import { Check, CheckCircle2, Copy, ExternalLink, Github, KeyRound, Laptop, Loader2, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
+import { sleutelkluisOntgrendelAdres } from '../../shared/github-koppeling';
 import type { GithubEenklikFeiten } from '../../shared/github-werkruimte';
-import { GhDialoog, GhMelding, ghFoutTekst, ghPost, type Tr } from './github-client';
+import { GhDialoog, GhMelding, ghFoutCode, ghFoutTekst, ghPost, type Tr } from './github-client';
 
 function verstuurManifestFormulier(actionUrl: string, manifestJson: string) {
   const form = document.createElement('form');
@@ -37,6 +38,7 @@ export default function EenklikKoppelPaneel({
 }) {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState('');
+  const [foutCode, setFoutCode] = useState('');
   const [apparaatOpen, setApparaatOpen] = useState(false);
   const [apparaatBezig, setApparaatBezig] = useState(false);
   const [apparaatGegevens, setApparaatGegevens] = useState<{
@@ -86,6 +88,7 @@ export default function EenklikKoppelPaneel({
         .catch((e) => {
           window.clearInterval(id);
           pollTimer.current = null;
+          setFoutCode(ghFoutCode(e));
           setFout(ghFoutTekst(e, tr));
           setApparaatOpen(false);
         });
@@ -97,6 +100,7 @@ export default function EenklikKoppelPaneel({
   const startEenklik = async () => {
     setBezig(true);
     setFout('');
+    setFoutCode('');
     try {
       const uit = await ghPost<
         | { soort: 'oauth'; authUrl: string }
@@ -112,6 +116,7 @@ export default function EenklikKoppelPaneel({
       }
       throw new Error('GITHUB_OAUTH_AFGEWEZEN');
     } catch (e) {
+      setFoutCode(ghFoutCode(e));
       setFout(ghFoutTekst(e, tr));
       setBezig(false);
     }
@@ -120,6 +125,7 @@ export default function EenklikKoppelPaneel({
   const startApparaatCode = async () => {
     setApparaatBezig(true);
     setFout('');
+    setFoutCode('');
     try {
       const uit = await ghPost<{
         state: string;
@@ -131,6 +137,7 @@ export default function EenklikKoppelPaneel({
       setApparaatGegevens(uit);
       setApparaatOpen(true);
     } catch (e) {
+      setFoutCode(ghFoutCode(e));
       setFout(ghFoutTekst(e, tr));
     } finally {
       setApparaatBezig(false);
@@ -196,6 +203,14 @@ export default function EenklikKoppelPaneel({
       </div>
 
       {fout ? <GhMelding soort="error">{fout}</GhMelding> : null}
+      {foutCode === 'SLEUTELKLUIS_GESLOTEN' ? (
+        <div className="gh-actions">
+          <a className="gh-btn gh-primary" href={sleutelkluisOntgrendelAdres(window.location.origin)}>
+            <KeyRound size={15} />
+            {tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}
+          </a>
+        </div>
+      ) : null}
 
       <div className="gh-actions">
         <button type="button" className="gh-btn gh-primary gh-btn-groot" disabled={bezig} onClick={() => void startEenklik()}>

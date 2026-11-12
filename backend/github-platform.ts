@@ -13,7 +13,7 @@ import {
 import { githubTokenVoor, githubWeg, setPatLezer } from './github-toegang';
 import { oauthOntkoppelen, oauthStarten, oauthTerugkeer, oauthVernieuwen } from './github-oauth';
 import { appInstallaties, appOntkoppelen, appRepos, appTokenVernieuwen } from './github-app';
-import { appSleutel, oauthApp } from './github-koppeling-opslag';
+import { appSleutel, isGeslotenFout, isKoppelingKluisGesloten, oauthApp } from './github-koppeling-opslag';
 import { eenklikFeiten } from './github-eenklik';
 import { createGithubWerkruimteRoutes } from './github-werkruimte';
 import type { GithubEenklikFeiten } from '../shared/github-werkruimte';
@@ -135,6 +135,10 @@ export async function ghStatus(wie: GhWie) {
   if (!me.ok) {
     if (me.error !== 'GITHUB_TOKEN_MISSING') return me;
     const { userId, ruimte } = wieUit(wie);
+    if (await isKoppelingKluisGesloten(userId, ruimte)) {
+      const weg = await githubWeg(userId, ruimte).catch(() => null);
+      if (weg?.via) return { ok: false, error: 'SLEUTELKLUIS_GESLOTEN', status: 423 } as GhResult<any>;
+    }
     const eenklik = await eenklikFeiten(userId, ruimte).catch(() => undefined);
     return { ok: true, data: { connected: false, ...(eenklik ? { eenklik } : {}) } } as GhResult<any>;
   }
@@ -617,15 +621,19 @@ function koppelRoutes(deps: Parameters<typeof createGithubRoutes>[0]) {
       const host = hostVan(ctx.event);
       const veiligeHost = host === SERVICE_HOSTS.github ? host : SERVICE_HOSTS.github;
       if (host !== SERVICE_HOSTS.github) return omleiding(veiligeHost, 'GITHUB_OAUTH_HOST_ONJUIST');
-      const anker = deps.anchor ? await deps.anchor(ctx.event).catch(() => null) : null;
-      if (!anker?.user?.id) return omleiding(veiligeHost, 'OWNER_GITHUB_SESSION_REQUIRED');
-      if (!(await rateLimit(`github:oauth:cb:${anker.user.id}`, 20, 600, { failClosed: true })).ok) return omleiding(veiligeHost, 'RATE_LIMITED');
-      const uit = await oauthTerugkeer({
-        state: String(ctx.query?.state || ''), code: String(ctx.query?.code || ''), fout: String(ctx.query?.error || ''),
-        host, sessieToken: cookieVan(ctx.event, sessieCookie), userId: anker.user.id,
-      });
-      await deps.audit(anker.user.id, 'owner.github.oauth.callback', uit.ok ? 'success' : 'failure', { reason: uit.ok ? '' : uit.fout, login: uit.ok ? uit.data.login : '', ruimte: uit.ok ? uit.data.ruimte : '' });
-      return omleiding(veiligeHost, uit.ok ? 'ok' : uit.fout);
+      try {
+        const anker = deps.anchor ? await deps.anchor(ctx.event).catch(() => null) : null;
+        if (!anker?.user?.id) return omleiding(veiligeHost, 'OWNER_GITHUB_SESSION_REQUIRED');
+        if (!(await rateLimit(`github:oauth:cb:${anker.user.id}`, 20, 600, { failClosed: true })).ok) return omleiding(veiligeHost, 'RATE_LIMITED');
+        const uit = await oauthTerugkeer({
+          state: String(ctx.query?.state || ''), code: String(ctx.query?.code || ''), fout: String(ctx.query?.error || ''),
+          host, sessieToken: cookieVan(ctx.event, sessieCookie), userId: anker.user.id,
+        });
+        await deps.audit(anker.user.id, 'owner.github.oauth.callback', uit.ok ? 'success' : 'failure', { reason: uit.ok ? '' : uit.fout, login: uit.ok ? uit.data.login : '', ruimte: uit.ok ? uit.data.ruimte : '' }).catch(() => undefined);
+        return omleiding(veiligeHost, uit.ok ? 'ok' : uit.fout);
+      } catch (err) {
+        return omleiding(veiligeHost, isGeslotenFout(err) ? 'SLEUTELKLUIS_GESLOTEN' : 'GITHUB_KOPPELING_BEWAREN_MISLUKT');
+      }
     }],
 
     'POST /api/owner/github/oauth/vernieuwen': [async (ctx: any) => {
@@ -662,9 +670,9 @@ function koppelRoutes(deps: Parameters<typeof createGithubRoutes>[0]) {
       if (p.weigering) return p.weigering;
       const auth = p.auth;
       if (!(await rateLimit(`github:app:lijst:${auth.user.id}`, 60, 600, { failClosed: true })).ok) return error('RATE_LIMITED', 429);
-      const uit = await appInstallaties(auth.user.id);
+      const uit = await appInstallaties(auth.user.id, p.ruimte);
       if (!uit.ok) return error(uit.fout, uit.status);
-      const repos = await appRepos(auth.user.id);
+      const repos = await appRepos(auth.user.id, p.ruimte);
       return json({ ok: true, ...uit.data, repos: repos.ok ? repos.data.repos : [], doel: GITHUB_APP_DOEL });
     }],
 

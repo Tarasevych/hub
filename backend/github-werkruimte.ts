@@ -17,7 +17,7 @@ import { alsGebruiker } from './ai-toestemmingen';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import { githubLade } from './ruimte-bord-github';
 import { apparaatInRuimte, ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
-import { ontzegel, verzegel } from './github-koppeling-opslag';
+import { isGeslotenFout, ontzegel, verzegel } from './github-koppeling-opslag';
 import { apparaatCodePollen, apparaatCodeStarten, eenklikManifestTerugkeer, eenklikStarten } from './github-eenklik';
 import {
   ghAanroep, shapeCommit, shapeIssue, shapeRepo, validRepo, wieUit, type GhResult, type GhWie,
@@ -1579,20 +1579,25 @@ export function createGithubWerkruimteRoutes(deps: {
         body: '',
       });
       if (host !== SERVICE_HOSTS.github) return naarKaart('GITHUB_OAUTH_HOST_ONJUIST');
-      const anker = deps.anchor ? await deps.anchor(ctx.event).catch(() => null) : null;
-      if (!anker?.user?.id) return naarKaart('OWNER_GITHUB_SESSION_REQUIRED');
-      const uit = await eenklikManifestTerugkeer({
-        state: String(ctx.query?.state || ''),
-        code: String(ctx.query?.code || ''),
-        host,
-        sessieToken: cookieVan(ctx.event, sessieCookie),
-        userId: anker.user.id,
-      });
-      await deps.audit(anker.user.id, 'owner.github.eenklik.callback', uit.ok ? 'success' : 'failure', {
-        reason: uit.ok ? '' : uit.fout, ruimte: uit.ok ? uit.data.ruimte : '',
-      });
-      if (!uit.ok) return naarKaart(uit.fout);
-      return { statusCode: 302, headers: { Location: uit.data.vervolgUrl, 'Cache-Control': 'no-store' }, body: '' };
+      try {
+        const anker = deps.anchor ? await deps.anchor(ctx.event).catch(() => null) : null;
+        if (!anker?.user?.id) return naarKaart('OWNER_GITHUB_SESSION_REQUIRED');
+        if (!(await rateLimit(`github:eenklik:cb:${anker.user.id}`, 20, 600, { failClosed: true })).ok) return naarKaart('RATE_LIMITED');
+        const uit = await eenklikManifestTerugkeer({
+          state: String(ctx.query?.state || ''),
+          code: String(ctx.query?.code || ''),
+          host,
+          sessieToken: cookieVan(ctx.event, sessieCookie),
+          userId: anker.user.id,
+        });
+        await deps.audit(anker.user.id, 'owner.github.eenklik.callback', uit.ok ? 'success' : 'failure', {
+          reason: uit.ok ? '' : uit.fout, ruimte: uit.ok ? uit.data.ruimte : '',
+        }).catch(() => undefined);
+        if (!uit.ok) return naarKaart(uit.fout);
+        return { statusCode: 302, headers: { Location: uit.data.vervolgUrl, 'Cache-Control': 'no-store' }, body: '' };
+      } catch (err) {
+        return naarKaart(isGeslotenFout(err) ? 'SLEUTELKLUIS_GESLOTEN' : 'GITHUB_KOPPELING_BEWAREN_MISLUKT');
+      }
     }],
 
     'POST /api/owner/github/device/start': [async (ctx: any) => {

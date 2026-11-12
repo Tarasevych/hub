@@ -12,8 +12,8 @@ import { githubOauthScopeTekst, scopeVoldoet } from '../shared/github-koppeling'
 import { bouwGithubAppManifest, type GithubEenklikFeiten, type GithubEenklikModus } from '../shared/github-werkruimte';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import {
-  EENKLIK_APP_TABEL, doelAanwezig, eenklikAppLezen, hash, isKoppelingKluisVervangen, koppelingBewaren, nieuweState,
-  oauthApp, ontzegel, platformOauthApp, verzegel, verzegelVoor, zegelPad, type EenklikAppRecord,
+  EENKLIK_APP_TABEL, doelAanwezig, eenklikAppLezen, hash, isGeslotenFout, isKoppelingKluisGesloten, isKoppelingKluisVervangen,
+  koppelingBewaren, nieuweState, oauthApp, ontzegel, platformOauthApp, verzegel, verzegelVoor, zegelPad, type EenklikAppRecord,
 } from './github-koppeling-opslag';
 import { oauthStarten } from './github-oauth';
 import { GITHUB_OAUTH_DOEL } from '../shared/github-koppeling';
@@ -43,15 +43,16 @@ export async function eenklikFeiten(userId: string, ruimteIn: AiRuimte = 'prive'
   const platformKlaar = !isKoppelingKluisVervangen() && platformOauthApp() !== null;
   const appGelezen = await oauthApp(userId, ruimte);
   const heeftOauth = appGelezen !== null && appGelezen !== 'onleesbaar';
+  const kluisDicht = eenklikApp?.oauthZegel && !heeftOauth ? await isKoppelingKluisGesloten(userId, ruimte) : false;
   let modus: GithubEenklikModus = 'manifest';
   if (eigenKluisOauth && heeftOauth) modus = 'eigen-oauth';
-  else if (eenklikApp?.oauthZegel && heeftOauth) modus = 'eigen-app';
+  else if (eenklikApp?.oauthZegel && (heeftOauth || kluisDicht)) modus = 'eigen-app';
   else if (platformKlaar && heeftOauth) modus = 'platform-oauth';
   return {
     modus,
     directKlaar: true,
     platformOauthKlaar: platformKlaar,
-    apparaatCodeKlaar: heeftOauth,
+    apparaatCodeKlaar: heeftOauth || Boolean(eenklikApp?.oauthZegel && kluisDicht),
     eigenAppKlaar: Boolean(eenklikApp?.appId || eenklikApp?.clientId),
   };
 }
@@ -68,6 +69,9 @@ export async function eenklikStarten(
   const ruimte = ruimteOf(gegevens.ruimte);
   if (!gegevens.sessieToken) return mis('OWNER_GITHUB_SESSION_REQUIRED', 403);
   if (!gegevens.host) return mis('GITHUB_OAUTH_HOST_ONJUIST', 400);
+  // Controleer vooraf of de persoonlijke sleutelkluis open staat: zo maakt de gebruiker niet onnodig een GitHub App aan
+  // waarvan de sleutels straks niet verzegeld kunnen worden.
+  if (await isKoppelingKluisGesloten(userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
 
   const bestaandOauth = await oauthApp(userId, ruimte);
   if (bestaandOauth && bestaandOauth !== 'onleesbaar') {
@@ -133,6 +137,9 @@ export async function eenklikManifestTerugkeer(invoer: {
   }
   if (!invoer.host || String(rij.host) !== invoer.host) return mis('GITHUB_OAUTH_HOST_ONJUIST', 400);
 
+  const ruimte = ruimteOf(rij.ruimte);
+  if (await isKoppelingKluisGesloten(invoer.userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
+
   let omgezet: { status: number; data: any } | null = null;
   try {
     const res = await netwerk(`${GITHUB_API}/app-manifests/${encodeURIComponent(invoer.code)}/conversions`, {
@@ -148,38 +155,41 @@ export async function eenklikManifestTerugkeer(invoer: {
     return mis('GITHUB_MANIFEST_MISLUKT', 502);
   }
 
-  const ruimte = ruimteOf(rij.ruimte);
   const appId = String(omgezet.data.id || '').replace(/[^0-9]/g, '');
   const slug = String(omgezet.data.slug || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
   const clientId = String(omgezet.data.client_id).trim();
   const clientSecret = String(omgezet.data.client_secret).trim();
   const pem = typeof omgezet.data.pem === 'string' ? omgezet.data.pem.trim() : '';
 
-  const oauthZegel = await verzegelVoor(
-    JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
-    invoer.userId,
-    zegelPad('eenklik:oauth', ruimte),
-    ruimte,
-  );
-  const appPemZegel = pem && appId
-    ? await verzegelVoor(`app_id: ${appId}\nclient_id: ${clientId}\n${pem}`, invoer.userId, zegelPad('eenklik:pem', ruimte), ruimte)
-    : '';
+  try {
+    const oauthZegel = await verzegelVoor(
+      JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
+      invoer.userId,
+      zegelPad('eenklik:oauth', ruimte),
+      ruimte,
+    );
+    const appPemZegel = pem && appId
+      ? await verzegelVoor(`app_id: ${appId}\nclient_id: ${clientId}\n${pem}`, invoer.userId, zegelPad('eenklik:pem', ruimte), ruimte)
+      : '';
 
-  const nu = Date.now();
-  const bestaand = await eenklikAppLezen(invoer.userId, ruimte);
-  const record: EenklikAppRecord = {
-    userId: invoer.userId,
-    ruimte,
-    appId,
-    slug,
-    clientId,
-    oauthZegel,
-    appPemZegel,
-    aangemaaktOp: bestaand?.aangemaaktOp ?? nu,
-    bijgewerktOp: nu,
-  };
-  if (bestaand) await db.update(EENKLIK_APP_TABEL, [{ id: bestaand.id, record }]);
-  else await db.add(EENKLIK_APP_TABEL, [record]);
+    const nu = Date.now();
+    const bestaand = await eenklikAppLezen(invoer.userId, ruimte);
+    const record: EenklikAppRecord = {
+      userId: invoer.userId,
+      ruimte,
+      appId,
+      slug,
+      clientId,
+      oauthZegel,
+      appPemZegel,
+      aangemaaktOp: bestaand?.aangemaaktOp ?? nu,
+      bijgewerktOp: nu,
+    };
+    if (bestaand) await db.update(EENKLIK_APP_TABEL, [{ id: bestaand.id, record }]);
+    else await db.add(EENKLIK_APP_TABEL, [record]);
+  } catch (err) {
+    return isGeslotenFout(err) ? mis('SLEUTELKLUIS_GESLOTEN', 423) : mis('GITHUB_KOPPELING_BEWAREN_MISLUKT', 500);
+  }
 
   const start = await oauthStarten(invoer.userId, { sessieToken: invoer.sessieToken, host: invoer.host, ruimte });
   if (start.ok) {
@@ -198,6 +208,7 @@ export async function apparaatCodeStarten(
   gegevens: { ruimte?: AiRuimte },
 ): Promise<EenklikUitkomst<{ state: string; userCode: string; verificationUri: string; expiresIn: number; interval: number }>> {
   const ruimte = ruimteOf(gegevens.ruimte);
+  if (await isKoppelingKluisGesloten(userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
   const app = await oauthApp(userId, ruimte);
   if (app === null) return mis('GITHUB_OAUTH_APP_ONTBREEKT', 409);
   if (app === 'onleesbaar') return mis('GITHUB_OAUTH_APP_ONLEESBAAR', 409);
@@ -255,6 +266,7 @@ export async function apparaatCodePollen(
 ): Promise<EenklikUitkomst<{ status: 'wachten' } | { status: 'gekoppeld'; login: string; scopes: string[] }>> {
   const ruimte = ruimteOf(gegevens.ruimte);
   if (!gegevens.state || gegevens.state.length > 200) return mis('GITHUB_OAUTH_STATE_ONBEKEND', 400);
+  if (await isKoppelingKluisGesloten(userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
 
   const stateHash = hash(gegevens.state);
   const rij = await alsGebruiker(userId, async (q) => {
@@ -300,7 +312,8 @@ export async function apparaatCodePollen(
   if (errCode || !wissel.data?.access_token) return mis(errCode || 'GITHUB_MANIFEST_MISLUKT', 400);
 
   const token = String(wissel.data.access_token);
-  const controle = scopeVoldoet(wissel.data.scope);
+  const isGithubAppToken = inhoud.clientId.startsWith('Iv') || token.startsWith('ghu_');
+  const controle = scopeVoldoet(wissel.data.scope, { githubAppUserToken: isGithubAppToken });
   if (!controle.ok && controle.scopes.length > 0) return mis('GITHUB_OAUTH_SCOPE_TE_KLEIN', 400);
 
   let persoon = '';
@@ -319,14 +332,19 @@ export async function apparaatCodePollen(
   const refreshToken = typeof wissel.data.refresh_token === 'string' ? wissel.data.refresh_token : '';
   const refreshIn = Number(wissel.data.refresh_token_expires_in) || 0;
   const nu = Date.now();
-  await koppelingBewaren(userId, 'oauth', {
-    login: persoon,
-    scopes: controle.scopes.length ? controle.scopes : ['repo'],
-    tokenZegel: await verzegelVoor(token, userId, zegelPad('oauth', ruimte), ruimte),
-    verversZegel: refreshToken ? await verzegelVoor(refreshToken, userId, `${zegelPad('oauth', ruimte)}:verversen`, ruimte) : '',
-    verlooptOp: expiresIn > 0 ? nu + expiresIn * 1000 : 0,
-    verversVerlooptOp: refreshToken && refreshIn > 0 ? nu + refreshIn * 1000 : 0,
-  }, ruimte);
+  const bewaardeScopes = controle.scopes.length ? controle.scopes : ['repo'];
+  try {
+    await koppelingBewaren(userId, 'oauth', {
+      login: persoon,
+      scopes: bewaardeScopes,
+      tokenZegel: await verzegelVoor(token, userId, zegelPad('oauth', ruimte), ruimte),
+      verversZegel: refreshToken ? await verzegelVoor(refreshToken, userId, `${zegelPad('oauth', ruimte)}:verversen`, ruimte) : '',
+      verlooptOp: expiresIn > 0 ? nu + expiresIn * 1000 : 0,
+      verversVerlooptOp: refreshToken && refreshIn > 0 ? nu + refreshIn * 1000 : 0,
+    }, ruimte);
+  } catch (err) {
+    return isGeslotenFout(err) ? mis('SLEUTELKLUIS_GESLOTEN', 423) : mis('GITHUB_KOPPELING_BEWAREN_MISLUKT', 500);
+  }
 
-  return { ok: true, data: { status: 'gekoppeld', login: persoon, scopes: controle.scopes } };
+  return { ok: true, data: { status: 'gekoppeld', login: persoon, scopes: bewaardeScopes } };
 }

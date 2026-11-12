@@ -14,8 +14,9 @@ import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-k
 import { GITHUB_APP_DOEL, GITHUB_OAUTH_DOEL, leesAppSleutel, leesOauthApp, type AppSleutel, type OauthApp } from '../shared/github-koppeling';
 import { hoortBij, type Lade } from '../shared/ruimte-scheiding';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
-import { herversleutelEnvelop, ontzegel as kluisOntzegel, registreerHerversleutelaar, verzegel as kluisVerzegel } from './sleutelkluis';
+import { herversleutelEnvelop, isGeslotenFout, kluisStand, ontzegel as kluisOntzegel, registreerHerversleutelaar, verzegel as kluisVerzegel } from './sleutelkluis';
 import { isServerEnvelop } from '../shared/sleutelkluis';
+export { isGeslotenFout };
 
 export const KOPPELING_TABEL = 'github_koppeling_v1';
 export const STATE_TABEL = 'github_oauth_state_v1';
@@ -35,7 +36,8 @@ const aad = (userId: string, pad: string) => `github-koppeling-v1|${userId}|${pa
 /** Het pad waarmee een zegel van DEZE lade is gebonden: persoonlijk ongewijzigd, technisch met een eigen achtervoegsel. */
 export const zegelPad = (pad: string, ruimte: AiRuimte): string => (ruimteOf(ruimte) === 'technisch' ? `${pad}@technisch` : pad);
 export const verzegel = (waarde: string, userId: string, pad: string): string => sealWithEnvKey(SLEUTEL_NAAM(), waarde, aad(userId, pad));
-export const ontzegel = (zegel: string, userId: string, pad: string): string => openWithEnvKey(SLEUTEL_NAAM(), zegel, aad(userId, pad));
+export const ontzegel = (zegel: string, userId: string, pad: string): string => openWithEnvKey(SLEUTEL_NAAM(), waardeString(zegel), aad(userId, pad));
+const waardeString = (w: string): string => String(w || '');
 export const sleutelKlaar = (): boolean => !!envKey32(SLEUTEL_NAAM());
 /**
  * Sleutelkluis (0092): dezelfde zegels, maar onder de EIGEN gegevenssleutel van de mens zodra die de kluis aanzette (anders de
@@ -46,6 +48,16 @@ export const verzegelVoor = (waarde: string, userId: string, pad: string, ruimte
   kluisVerzegel({ userId, ruimte: ruimteOf(ruimte) }, KOPPELING_TABEL, waarde, aad(userId, pad), SLEUTEL_NAAM());
 export const ontzegelVoor = (zegel: string, userId: string, pad: string, ruimte: AiRuimte = 'prive'): Promise<string> =>
   kluisOntzegel({ userId, ruimte: ruimteOf(ruimte) }, KOPPELING_TABEL, zegel, aad(userId, pad), SLEUTEL_NAAM());
+
+/** Staat de persoonlijke gegevenssleutel van deze mens voor deze ruimte nu gesloten in het servergeheugen? */
+export async function isKoppelingKluisGesloten(userId: string, ruimte: AiRuimte = 'prive'): Promise<boolean> {
+  if (!userId) return false;
+  try {
+    return (await kluisStand({ userId, ruimte: ruimteOf(ruimte) })) === 'gesloten';
+  } catch {
+    return false;
+  }
+}
 
 export const hash = (waarde: string): string => createHash('sha256').update(waarde).digest('hex');
 export const nieuweState = (): string => randomBytes(32).toString('base64url');

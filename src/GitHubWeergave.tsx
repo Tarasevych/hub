@@ -8,7 +8,7 @@ import { openVault } from './AIDienstWeergave';
 import { canonicalNavigationUrl, writeLocalTab } from './canoniek-navigatie';
 import Merk from './merk/Merk';
 import {
-  GITHUB_MCP_URL, GITHUB_OAUTH_FOUTEN, GITHUB_RECHTEN, KOPPEL_PADEN, VIA_NAAM, geldigeMcpUrl, koppelPad, koppelKaartStaat, padKnopActief,
+  GITHUB_MCP_URL, GITHUB_OAUTH_FOUTEN, GITHUB_RECHTEN, KOPPEL_PADEN, VIA_NAAM, geldigeMcpUrl, koppelPad, koppelKaartStaat, padKnopActief, sleutelkluisOntgrendelAdres,
   type GithubKoppelingFeiten, type KaartInvoer, type KoppelPad,
 } from '../shared/github-koppeling';
 import type { GithubEenklikFeiten } from '../shared/github-werkruimte';
@@ -297,6 +297,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
   const sleutel = feiten?.sleutel ?? null;
   const [bezig, setBezig] = useState('');
   const [actieFout, setActieFout] = useState('');
+  const [actieFoutCode, setActieFoutCode] = useState('');
   const [kluisDoel, setKluisDoel] = useState<VaultDoel | null>(null);
   // Resultaat van de terugkeer van GitHub: de server zette alleen een CODE in de adresbalk (nooit een token of een code van
   // GitHub). Die lezen we één keer en halen we daarna uit de URL weg.
@@ -316,7 +317,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
 
   /** Een weg echt starten. De server antwoordt met het adres van GitHub; daar gaat de browser naartoe. */
   const start = async (pad: KoppelPad) => {
-    setBezig(pad.id); setActieFout('');
+    setBezig(pad.id); setActieFout(''); setActieFoutCode('');
     try {
       if (pad.actie === 'oauth') {
         const uit = await call('oauth/start');
@@ -326,7 +327,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
         return;
       }
       if (pad.actie === 'app') { await call('app/verbinden', {}); onHerlaad(); }
-    } catch (e) { setActieFout(errorText(e, tr)); } finally { setBezig(''); }
+    } catch (e) { setActieFoutCode(foutCode(e)); setActieFout(errorText(e, tr)); } finally { setBezig(''); }
   };
 
   /** Ontkoppelen: de server trekt de token bij GitHub in (OAuth) en verwijdert het record. */
@@ -334,13 +335,13 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
     const weg = staat.via === 'app' ? 'app' : 'oauth';
     if (staat.via === 'pat' || !staat.via) { openVault(); return; }
     if (!window.confirm(tr('Відключити GitHub і відкликати токен на GitHub?', 'GitHub ontkoppelen en de token bij GitHub intrekken?'))) return;
-    setBezig('ontkoppel'); setActieFout('');
-    try { await call('ontkoppelen', { weg }); onHerlaad(); } catch (e) { setActieFout(errorText(e, tr)); } finally { setBezig(''); }
+    setBezig('ontkoppel'); setActieFout(''); setActieFoutCode('');
+    try { await call('ontkoppelen', { weg }); onHerlaad(); } catch (e) { setActieFoutCode(foutCode(e)); setActieFout(errorText(e, tr)); } finally { setBezig(''); }
   };
 
   const vernieuw = async () => {
-    setBezig('vernieuw'); setActieFout('');
-    try { await call('oauth/vernieuwen'); onHerlaad(); } catch (e) { setActieFout(errorText(e, tr)); } finally { setBezig(''); }
+    setBezig('vernieuw'); setActieFout(''); setActieFoutCode('');
+    try { await call('oauth/vernieuwen'); onHerlaad(); } catch (e) { setActieFoutCode(foutCode(e)); setActieFout(errorText(e, tr)); } finally { setBezig(''); }
   };
 
   const termijnTekst = (ms: number) => {
@@ -361,6 +362,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
     fout: tr('Не вдалося перевірити підключення', 'Koppeling kon niet worden gecontroleerd'),
   };
   const Teken = staat.toon === 'ok' ? CheckCircle2 : staat.toon === 'waarschuwing' ? Clock : staat.toon === 'fout' ? XCircle : Loader2;
+  const kluisDicht = staat.reden === 'SLEUTELKLUIS_GESLOTEN' || terugkeer === 'SLEUTELKLUIS_GESLOTEN' || actieFoutCode === 'SLEUTELKLUIS_GESLOTEN';
   return <section className='gh-card gh-koppel' aria-label='GitHub'>
     <header className='gh-koppel-kop'>
       <Merk merk='github' naam='GitHub' maat={40} titel='GitHub' vorm='tegel' />
@@ -382,6 +384,9 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
     {staat.reden ? <Notice kind='error'>{codeTekst(staat.reden, tr)}</Notice> : null}
     {terugkeer && terugkeer !== 'ok' ? <Notice kind='error'>{codeTekst(terugkeer, tr)}</Notice> : null}
     {actieFout ? <Notice kind='error'>{actieFout}</Notice> : null}
+    {kluisDicht ? <div className='gh-actions'>
+      <a className='gh-btn gh-primary' href={sleutelkluisOntgrendelAdres(window.location.origin)}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</a>
+    </div> : null}
 
     {/* De weg waarlangs de server nu echt praat, met termijn en toegekende права — allemaal feiten van de server. */}
     {feiten?.verbinding?.via ? <dl className='gh-feiten'>
@@ -801,7 +806,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
         invoer={{ laden: koppeling.loading && !koppeling.data, fout: koppeling.code, feiten: koppeling.data }} />
     </>}
   </div>;
-  if (status.error) return <div className="gh-root"><Notice kind="error">{status.error}</Notice><button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div>;
+  if (status.error) return <div className="gh-root"><Notice kind="error">{status.error}</Notice><div className="gh-actions">{status.code === 'SLEUTELKLUIS_GESLOTEN' ? <a className="gh-btn gh-primary" href={sleutelkluisOntgrendelAdres(window.location.origin)}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</a> : null}<button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div></div>;
   if (!connected) return <div className="gh-root">
     <EenklikKoppelPaneel tr={tr} gekoppeld={false} eenklik={status.data?.eenklik} onGekoppeld={status.reload} />
     <section className="gh-card gh-connect">
