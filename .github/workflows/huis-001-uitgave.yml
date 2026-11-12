@@ -20,8 +20,9 @@ concurrency:
 
 env:
   TAAK: HUIS-001
-  BASIS_VERSIE: '20261111-220943'
-  BASIS_COMMIT: '3e18d5b366173e602187a7264cc2b9fa326183c5'
+  # Відомі встановлені основи (версія=фіксація змін); обидві — предки цієї гілки. Робочий процес бере ту, що зараз на сервері.
+  # Bekende geïnstalleerde bases (versie=commit); beide zijn voorouders van deze tak. De workflow kiest de basis die nu op de server staat.
+  BEKENDE_BASISSEN: '20261111-220943=3e18d5b366173e602187a7264cc2b9fa326183c5 20261112-024707=f9db50747048f7dc7a6937fff65b0ae4c1058f72'
   INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
   MODEL_ID: 'claude-fable-5-2'
 
@@ -62,12 +63,17 @@ jobs:
           set -euo pipefail
           curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
           node --input-type=module <<'JS'
-          import { readFileSync } from 'node:fs';
+          import { appendFileSync, readFileSync } from 'node:fs';
           const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
-          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
-            throw Error(`Встановлена версія змінилася (${v.versie} @ ${v.bronCommit || v.commit}). Випуск зупинено для нового узгодження.`);
+          const levend = v.bronCommit || v.commit;
+          const bekend = new Map(process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('=')));
+          if (bekend.get(v.versie) !== levend) {
+            throw Error(`Встановлена версія (${v.versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
           }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${v.versie}\nBASIS_COMMIT=${levend}\n`);
+          console.log(`Основа випуску: ${v.versie} @ ${levend}`);
           JS
+          BASIS_COMMIT="$(node -e "const v=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/versie.json','utf8'));process.stdout.write(v.bronCommit||v.commit)")"
           git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
           git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
       - name: Перевірити правила координації та журнал походження
@@ -137,13 +143,14 @@ jobs:
           const auteur = 'Павло Тарасевич';
           const uk = {
             titel: 'Розумний будинок «Живий дім»: клікабельний макет на сайті, специфікація дизайну та виправлення розділу «Дім»',
-            samenvatting: 'Етап 0 перетворення https://huis.tarasevych.com/ на повноцінний хаб розумного будинку, на основі живої версії 20261111-220943. На сайті з’являється повний клікабельний макет майбутнього хабу «Живий дім» (вкладка «Вітрина» та адреса /huis-maquette/): він працює на вбудованому симуляторі з вигаданими даними й нічим не керує. Разом із ним — специфікація дизайну двома мовами та виправлення старих помилок розділу «Дім». Справжня функціональність розділу не змінюється.',
+            samenvatting: 'Етап 0 перетворення https://huis.tarasevych.com/ на повноцінний хаб розумного будинку, на основі живої версії ' + e.BASIS_VERSIE + '. На сайті з’являється повний клікабельний макет майбутнього хабу «Живий дім» (вкладка «Вітрина» та адреса /huis-maquette/): він працює на вбудованому симуляторі з вигаданими даними й нічим не керує. Разом із ним — специфікація дизайну двома мовами та виправлення старих помилок розділу «Дім». Справжня функціональність розділу не змінюється.',
             wijzigingen: [
               'Клікабельний макет «Живий дім» на сайті: дім із небом за часом доби й реченням-підсумком, кімнати з планом, 57 вкладок без жодної заглушки, 104 аркуші керування для кожного типу пристрою, енергія з потоками й тарифом на 48 годин, безпека й камери, гараж із транспортом, безпілотниками (кабіна польоту) та роботами, автоматика з редактором правил, помічник і ШІ-агенти з повним переліком інструментів, Журнал і центр сповіщень.',
               'Дозволи за рішенням власника: для кожної дії доступні «Вимкнено · Питати · Завжди» окремо для кожного виконавця, типово «Вимкнено», змінює лише власник; попереджувальний знак «!» з поясненням ризику; кожна зміна й кожна дія — у Журналі.',
               'Тринадцять видів екранів у справжніх пікселях: годинник, телефон, настінна панель, комп’ютер, надширокий, телевізор, стрічкові 1920×480 і 1280×400, квадратний, круглий, малий, дверна панель, електронне чорнило; три теми й дві мови.',
               'Вбудований симулятор демо-дому «Wilgenlaan 12»: 88 пристроїв усіх типів, 15 сценаріїв (ранок, вечір, дим на кухні, протікання, огляд даху безпілотником, від’ємна ціна тощо), прискорення часу до ×600.',
               'Специфікація дизайну українською й нідерландською: головний документ, нормативна дизайн-мова з токенами та виміряним контрастом, десять зональних документів (docs/huis/).',
+              'Завершальна незалежна перевірка макета й специфікації (вигляд, поведінка, повнота, мова) і два кола виправлень: клавіатура й утримання фокуса в усіх шарах; «Немає зв’язку» вимикає всі дії; запит виконавця існує лише за «Питати» — за «Вимкнено» знімається сам, а схвалити його може лише людина з правом на це й із ритуалом рівня дії; команда без зміни не пише запису; «Складники» покривають усі 49 компонентів; однакові терміни в усіх розділах.',
               'Посилання на макет у вкладці «Вітрина / Toonzaal» і на інформаційній сторінці розділу; сторінка макета зібрана без вбудованих скриптів і стилів, політика безпеки сайту не послаблюється.'
             ],
             fixes: [
@@ -162,13 +169,14 @@ jobs:
           };
           const nl = {
             titel: 'Slim huis «Levend huis»: klikbare maquette op de site, ontwerpspecificatie en herstel van het onderdeel «Huis»',
-            samenvatting: 'Fase 0 van de ombouw van https://huis.tarasevych.com/ tot een volwaardige hub voor het slimme huis, boven op de geïnstalleerde versie 20261111-220943. Op de site komt de volledige klikbare maquette van de toekomstige hub «Levend huis» (tabblad «Toonzaal» en het adres /huis-maquette/): zij draait op de ingebouwde simulator met verzonnen gegevens en bedient niets. Daarbij horen de ontwerpspecificatie in twee talen en het herstel van oude fouten in het onderdeel «Huis». De echte werking van het onderdeel verandert niet.',
+            samenvatting: 'Fase 0 van de ombouw van https://huis.tarasevych.com/ tot een volwaardige hub voor het slimme huis, boven op de geïnstalleerde versie ' + e.BASIS_VERSIE + '. Op de site komt de volledige klikbare maquette van de toekomstige hub «Levend huis» (tabblad «Toonzaal» en het adres /huis-maquette/): zij draait op de ingebouwde simulator met verzonnen gegevens en bedient niets. Daarbij horen de ontwerpspecificatie in twee talen en het herstel van oude fouten in het onderdeel «Huis». De echte werking van het onderdeel verandert niet.',
             wijzigingen: [
               'Klikbare maquette «Levend huis» op de site: het huis met een hemel naar het tijdstip en een samenvattende zin, kamers met plattegrond, 57 tabbladen zonder één stomp, 104 bedieningsbladen voor elk soort apparaat, energie met stromen en een tarief voor 48 uur, beveiliging en camera’s, de garage met voertuigen, drones (vluchtcabine) en robots, automatisering met een regelbewerker, de assistent en AI-agenten met de volledige lijst hulpmiddelen, het Logboek en het meldingencentrum.',
               'Toestemmingen volgens het besluit van de eigenaar: voor elke actie «Uit · Vragen · Altijd» per uitvoerder, standaard «Uit», alleen de eigenaar wijzigt; een waarschuwingsteken «!» met uitleg van het risico; elke wijziging en elke actie staat in het Logboek.',
               'Dertien soorten schermen in echte pixels: horloge, telefoon, wandpaneel, computer, ultrabreed, televisie, stroken van 1920×480 en 1280×400, vierkant, rond, klein, deurpaneel en elektronische inkt; drie thema’s en twee talen.',
               'Ingebouwde simulator van het demohuis «Wilgenlaan 12»: 88 apparaten van alle soorten, 15 scenario’s (ochtend, avond, rook in de keuken, lekkage, dakinspectie met een drone, negatieve prijs enzovoort) en tijdversnelling tot ×600.',
               'Ontwerpspecificatie in het Oekraïens en het Nederlands: het hoofddocument, de normatieve ontwerptaal met tokens en gemeten contrast, en tien zonedocumenten (docs/huis/).',
+              'Onafhankelijke eindcontrole van de maquette en de specificatie (vormgeving, gedrag, volledigheid, taal) en twee herstelrondes: toetsenbord en focus in alle lagen; «Geen verbinding» schakelt alle acties uit; een verzoek van een uitvoerder bestaat alleen bij «Vragen» — bij «Uit» vervalt het vanzelf, en goedkeuren kan alleen een mens die dat mag, met het ritueel van het niveau van de actie; een opdracht die niets verandert, schrijft geen regel; «Onderdelen» dekt alle 49 componenten; dezelfde termen in alle onderdelen.',
               'Een link naar de maquette op het tabblad «Вітрина / Toonzaal» en op de informatiepagina van het onderdeel; de maquettepagina is gebouwd zonder inline scripts en stijlen, het beveiligingsbeleid van de site wordt niet versoepeld.'
             ],
             fixes: [
