@@ -35,7 +35,7 @@ export type SharedPreferences={lang?:'uk'|'nl';theme?:SharedTheme;menu?:string[]
 const COOKIE='tsv_ecosystem_preferences',LOCAL='tsv-ecosystem-presentation-v2';export const HUB_LAYOUTS_STORAGE_KEY='tsv-hub-workspace-layouts-v1';const LEGACY_THEME_KEYS=['pavlo-hub-theme','tarasevych-ecosystem-theme','tsv-ecosystem-theme-v1'] as const,LEGACY_LANGUAGE_KEYS=['pavlo-hub-language','tarasevych-ecosystem-language'] as const,LEGACY_LAYOUT_KEYS=['pavlo-hub-workspace-layouts'] as const;
 /** Hints per TABBLAD (sessionStorage is per tabblad, niet per browser): welk account en welke ruimte had dit tabblad als laatste?
  *  Zo toont het eerste beeld na F5 meteen het juiste uiterlijk en nooit dat van een ander account of een ander profiel. */
-export const WEERGAVE_ACCOUNT_HINT='tsv-weergave-account',WEERGAVE_RUIMTE_HINT='tsv-weergave-ruimte';
+export const WEERGAVE_ACCOUNT_HINT='tsv-weergave-account',WEERGAVE_RUIMTE_HINT='tsv-weergave-ruimte',WEERGAVE_ACCOUNT_REV='tsv-weergave-account-rev';
 /** Grenzen van de cookie-cache. Een cookie mag (naam + waarde + kenmerken) ongeveer 4096 tekens zijn, en hij gaat bij ELK verzoek
  *  naar alle subdomeinen mee, naast de sessiecookies. Daarom 3000 voor de waarde: ruim onder de grens van de browser en met plaats
  *  over in de verzoekkop. MAX_RUIMTES houdt hem ook bij veel accounts klein; de volledige stand staat op de server, en
@@ -43,7 +43,7 @@ export const WEERGAVE_ACCOUNT_HINT='tsv-weergave-account',WEERGAVE_RUIMTE_HINT='
 export const MAX_COOKIE=3000,MAX_RUIMTES=4,MAX_LOKAAL=12;
 const services:CanonicalService[]=[...UITERLIJK_DIENSTEN];
 const views:CachedRouteView[]=['signed-out','mail-empty','github-empty','api-empty'];
-type Opslag={versie:3;revisie:number;accountPerDienst:Partial<Record<CanonicalService,string>>;accounts:Record<string,UiterlijkAccount>;ruimtes:Record<string,UiterlijkRuimte>};
+type Opslag={versie:3;revisie:number;kaartOp?:number;accountPerDienst:Partial<Record<CanonicalService,string>>;accounts:Record<string,UiterlijkAccount>;ruimtes:Record<string,UiterlijkRuimte>};
 const leegOpslag=():Opslag=>({versie:3,revisie:0,accountPerDienst:{},accounts:{},ruimtes:{}});
 const huidigeDienst=():CanonicalService=>{try{return serviceForHostname()||'hub'}catch{return'hub'}};
 const normalizeAccountKey=(value:unknown)=>{const raw=String(value||'');return raw==='anon'||/^u-[a-f0-9]{8}$/.test(raw)?raw:''};
@@ -56,8 +56,18 @@ let ruimteNu:MenuRuimte=hint(WEERGAVE_RUIMTE_HINT)==='technisch'?'technisch':'ge
 let accountNu=normalizeAccountKey(hint(WEERGAVE_ACCOUNT_HINT));
 /** In welke webruimte (profiel) staat dit tabblad nu? */
 export const weergaveRuimteNu=()=>ruimteNu;
-/** Aan welk account hangt het uiterlijk nu ('anon' = niet aangemeld)? Zonder hint: het account van deze dienst uit de cookie. */
-export const weergaveAccountNu=()=>accountNu||normalizeAccountKey(leesOpslag().accountPerDienst[huidigeDienst()])||'anon';
+/** Aan welk account hangt het uiterlijk nu ('anon' = niet aangemeld)? Zonder hint, of zodra een ander subdomein een nieuwere
+ *  accountkaart (`kaartOp`) in de gedeelde cookie zette, geldt het huidige account van deze dienst uit de cookie. */
+export const weergaveAccountNu=()=>{
+  const opslag=leesOpslag(),kaart=normalizeAccountKey(opslag.accountPerDienst[huidigeDienst()]),kaartRev=Number(opslag.kaartOp||0),revHint=Number(hint(WEERGAVE_ACCOUNT_REV)||0);
+  if(accountNu&&kaartRev>0&&kaartRev>revHint){
+    const nieuw=kaart||'anon';
+    if(nieuw!==accountNu){accountNu=nieuw;zetHint(WEERGAVE_ACCOUNT_HINT,nieuw)}
+    zetHint(WEERGAVE_ACCOUNT_REV,String(kaartRev));
+    return nieuw;
+  }
+  return accountNu||kaart||'anon';
+};
 export const weergaveScopeNu=()=>sleutelVoor(weergaveAccountNu(),ruimteNu);
 
 const luisteraars=new Set<(value:SharedPreferences)=>void>();
@@ -67,7 +77,7 @@ export const abonneerWeergave=(listener:(value:SharedPreferences)=>void)=>{luist
 const melden=()=>{const signatuur=`${weergaveScopeNu()}#${JSON.stringify(leesOpslag().ruimtes[weergaveScopeNu()]||null)}#${JSON.stringify(leesOpslag().accounts[weergaveAccountNu()]||null)}`;if(signatuur===laatsteSignatuur)return;laatsteSignatuur=signatuur;const waarde=readSharedPreferences();for(const listener of [...luisteraars])listener(waarde)};
 
 /** Ander account in dit tabblad (bootstrap / accountwissel): nooit het uiterlijk van de ander toepassen of namens hem schrijven. */
-export const zetWeergaveAccount=(waarde:unknown)=>{const account=normalizeAccountKey(waarde)||'anon';if(account===weergaveAccountNu()&&account===accountNu)return account;accountNu=account;zetHint(WEERGAVE_ACCOUNT_HINT,account);melden();return account};
+export const zetWeergaveAccount=(waarde:unknown)=>{const account=normalizeAccountKey(waarde)||'anon',kaartRev=Number(leesOpslag().kaartOp||0);if(account===weergaveAccountNu()&&account===accountNu){if(kaartRev>0)zetHint(WEERGAVE_ACCOUNT_REV,String(kaartRev));return account}accountNu=account;zetHint(WEERGAVE_ACCOUNT_HINT,account);if(kaartRev>0)zetHint(WEERGAVE_ACCOUNT_REV,String(kaartRev));melden();return account};
 /** Van ruimte wisselen (gebruikersruimte ↔ technisch profiel): elke ruimte heeft zijn eigen thema, palet en de rest van het uiterlijk. */
 export const zetWeergaveRuimte=(ruimte:MenuRuimte)=>{if(ruimte===ruimteNu)return;ruimteNu=ruimte;zetHint(WEERGAVE_RUIMTE_HINT,ruimte);melden()};
 
@@ -108,6 +118,7 @@ const naarOpslag=(raw:Record<string,unknown>):Opslag=>{
   if(Number(raw.versie)!==3)return Object.keys(raw).length?migreer(raw):leegOpslag();
   const uit=leegOpslag();
   uit.revisie=Number(raw.revisie)||0;
+  const kaartOp=Number(raw.kaartOp)||0;if(kaartOp>0)uit.kaartOp=kaartOp;
   uit.accountPerDienst=accountKaart(raw.accountPerDienst);
   const accounts=raw.accounts&&typeof raw.accounts==='object'?raw.accounts as Record<string,unknown>:{};
   for(const [sleutel,waarde] of Object.entries(accounts)){const account=normalizeAccountKey(sleutel);if(!account)continue;const record=normaliseerUiterlijkAccount(waarde);if(!uiterlijkLeeg(record))uit.accounts[account]=record}
@@ -120,7 +131,9 @@ const naarOpslag=(raw:Record<string,unknown>):Opslag=>{
 const samen=(a:Opslag,b:Opslag):Opslag=>{
   const uit=leegOpslag();
   uit.revisie=Math.max(a.revisie,b.revisie);
-  uit.accountPerDienst=(a.revisie>=b.revisie?{...b.accountPerDienst,...a.accountPerDienst}:{...a.accountPerDienst,...b.accountPerDienst});
+  const maxKaart=Math.max(Number(a.kaartOp||0),Number(b.kaartOp||0));if(maxKaart>0)uit.kaartOp=maxKaart;
+  const ka=Number(a.kaartOp||a.revisie||0),kb=Number(b.kaartOp||b.revisie||0);
+  uit.accountPerDienst=ka>kb?{...a.accountPerDienst}:kb>ka?{...b.accountPerDienst}:{...b.accountPerDienst,...a.accountPerDienst};
   for(const sleutel of new Set([...Object.keys(a.accounts),...Object.keys(b.accounts)])){const x=a.accounts[sleutel],y=b.accounts[sleutel];uit.accounts[sleutel]=!x?y:!y?x:(Number(x.op||0)>=Number(y.op||0)?x:y)}
   for(const sleutel of new Set([...Object.keys(a.ruimtes),...Object.keys(b.ruimtes)])){const x=a.ruimtes[sleutel],y=b.ruimtes[sleutel];uit.ruimtes[sleutel]=!x?y:!y?x:(Number(x.op||0)>=Number(y.op||0)?x:y)}
   return uit;
@@ -148,7 +161,7 @@ export const readSharedPreferences=():SharedPreferences=>{
 const SNIJ_VELDEN=['routeBeeld','laatstePad','menu','belPositie','geluid'] as const;
 const zonder=(record:UiterlijkRuimte,velden:readonly string[]):UiterlijkRuimte=>Object.fromEntries(Object.entries(record).filter(([k])=>!velden.includes(k)))as UiterlijkRuimte;
 const deel=(opslag:Opslag,sleutels:string[],snij:readonly string[]):Opslag=>{
-  const uit:Opslag={versie:3,revisie:opslag.revisie,accountPerDienst:opslag.accountPerDienst,accounts:{},ruimtes:{}};
+  const uit:Opslag={versie:3,revisie:opslag.revisie,...(opslag.kaartOp?{kaartOp:opslag.kaartOp}:{}),accountPerDienst:opslag.accountPerDienst,accounts:{},ruimtes:{}};
   for(const sleutel of sleutels){const record=opslag.ruimtes[sleutel];if(record)uit.ruimtes[sleutel]=snij.length?zonder(record,snij):record;const account=sleutel.split('|')[0];if(opslag.accounts[account])uit.accounts[account]=opslag.accounts[account]}
   return uit;
 };
@@ -158,7 +171,7 @@ const snijden=(opslag:Opslag,sleutel:string)=>{
   const orde=[sleutel,...Object.keys(opslag.ruimtes).filter(k=>k!==sleutel).sort((a,b)=>Number(opslag.ruimtes[b]?.op||0)-Number(opslag.ruimtes[a]?.op||0))];
   for(const snij of [[],SNIJ_VELDEN] as const)for(let aantal=Math.min(orde.length,MAX_RUIMTES);aantal>=1;aantal--){const tekst=encodeURIComponent(JSON.stringify(deel(opslag,orde.slice(0,aantal),snij)));if(tekst.length<=MAX_COOKIE)return tekst}
   const record=opslag.ruimtes[sleutel]||{versie:1 as const},persoon=opslag.accounts[sleutel.split('|')[0]];
-  const minimaal:Opslag={versie:3,revisie:opslag.revisie,accountPerDienst:opslag.accountPerDienst,accounts:persoon?.taal?{[sleutel.split('|')[0]]:{versie:1,taal:persoon.taal,op:persoon.op}}:{},ruimtes:{[sleutel]:{versie:1,...(record.modus?{modus:record.modus}:{}),...(record.palet?{palet:record.palet}:{}),op:record.op}}};
+  const minimaal:Opslag={versie:3,revisie:opslag.revisie,...(opslag.kaartOp?{kaartOp:opslag.kaartOp}:{}),accountPerDienst:opslag.accountPerDienst,accounts:persoon?.taal?{[sleutel.split('|')[0]]:{versie:1,taal:persoon.taal,op:persoon.op}}:{},ruimtes:{[sleutel]:{versie:1,...(record.modus?{modus:record.modus}:{}),...(record.palet?{palet:record.palet}:{}),op:record.op}}};
   return encodeURIComponent(JSON.stringify(minimaal));
 };
 const bewaren=(opslag:Opslag)=>{
@@ -173,30 +186,42 @@ const RUIMTE_VELDEN=['theme','palet','auto','menu','notificationSound','notifica
 /** Schrijven gaat altijd naar de scope van DIT tabblad (dit account, deze ruimte) — nooit naar die van een ander account of profiel.
  *  `accountKeyByService` is de enige globale waarde: die zegt juist WELK account bij welke dienst hoort. */
 export const writeSharedPreferences=(patch:SharedPreferences)=>{
-  const opslag=leesOpslag(),account=weergaveAccountNu(),sleutel=sleutelVoor(account,ruimteNu),nu=Date.now();
+  const opslag=leesOpslag(),account=weergaveAccountNu(),sleutel=sleutelVoor(account,ruimteNu),nu=Date.now(),rev=Math.max(nu,opslag.revisie+1);
+  const kaartGewijzigd=Boolean(patch.accountKeyByService&&typeof patch.accountKeyByService==='object'&&Object.keys(patch.accountKeyByService).length);
   const vorigeRuimte=opslag.ruimtes[sleutel]||{versie:1 as const},vorigePersoon=opslag.accounts[account]||{versie:1 as const};
-  const volgende:Opslag={versie:3,revisie:nu,accountPerDienst:{...opslag.accountPerDienst,...accountKaart(patch.accountKeyByService)},accounts:{...opslag.accounts},ruimtes:{...opslag.ruimtes}};
+  const volgende:Opslag={versie:3,revisie:rev,...((kaartGewijzigd?rev:opslag.kaartOp)?{kaartOp:kaartGewijzigd?rev:opslag.kaartOp}:{}),accountPerDienst:{...opslag.accountPerDienst,...accountKaart(patch.accountKeyByService)},accounts:{...opslag.accounts},ruimtes:{...opslag.ruimtes}};
   for(const service of teWissenDiensten(patch.accountKeyByService))delete volgende.accountPerDienst[service];
   if(RUIMTE_VELDEN.some(veld=>veld in patch)){
     const samengevoegd=normaliseerUiterlijkRuimte({...vorigeRuimte,
       ...('theme' in patch?{modus:patch.theme}:{}),...('palet' in patch?{palet:patch.palet}:{}),...('auto' in patch?{auto:patch.auto}:{}),...('menu' in patch?{menu:patch.menu}:{}),
       ...('notificationSound' in patch?{geluid:patch.notificationSound}:{}),...('notificationBellPosition' in patch?{belPositie:patch.notificationBellPosition}:{}),
-      laatstePad:{...vorigeRuimte.laatstePad,...patch.lastPathByService},routeBeeld:{...vorigeRuimte.routeBeeld,...patch.viewByRoute},op:nu});
+      laatstePad:{...vorigeRuimte.laatstePad,...patch.lastPathByService},routeBeeld:{...vorigeRuimte.routeBeeld,...patch.viewByRoute},op:rev});
     volgende.ruimtes[sleutel]=samengevoegd;
     if(uiterlijkLeeg(samengevoegd))delete volgende.ruimtes[sleutel];
   }
   if('lang' in patch||'avatarUrl' in patch){
-    const persoon=normaliseerUiterlijkAccount({...vorigePersoon,...('lang' in patch?{taal:patch.lang}:{}),...('avatarUrl' in patch?{avatar:normaliseerUiterlijkAvatar(patch.avatarUrl)}:{}),op:nu});
+    const persoon=normaliseerUiterlijkAccount({...vorigePersoon,...('lang' in patch?{taal:patch.lang}:{}),...('avatarUrl' in patch?{avatar:normaliseerUiterlijkAvatar(patch.avatarUrl)}:{}),op:rev});
     volgende.accounts[account]=persoon;
     if(uiterlijkLeeg(persoon))delete volgende.accounts[account];
+  }
+  if(kaartGewijzigd){
+    const dienst=huidigeDienst();
+    if(patch.accountKeyByService&&dienst in patch.accountKeyByService){
+      const nieuwAccount=normalizeAccountKey(volgende.accountPerDienst[dienst])||'anon';
+      accountNu=nieuwAccount;
+      zetHint(WEERGAVE_ACCOUNT_HINT,nieuwAccount);
+      zetHint(WEERGAVE_ACCOUNT_REV,String(rev));
+    }else if(accountNu){
+      zetHint(WEERGAVE_ACCOUNT_REV,String(rev));
+    }
   }
   bewaren(volgende);melden();
   return readSharedPreferences();
 };
 /** Door de server geleverde stand toepassen zonder hem meteen terug te sturen (src/weergave-uiterlijk.ts). */
 export const uiterlijkVanServerZetten=(ruimte:MenuRuimte,record:UiterlijkRuimte,account=weergaveAccountNu())=>{
-  const opslag=leesOpslag(),sleutel=sleutelVoor(account,ruimte),volgende:Opslag={...opslag,revisie:Date.now(),accounts:{...opslag.accounts},ruimtes:{...opslag.ruimtes}};
-  const schoon=normaliseerUiterlijkRuimte({...record,op:Date.now()});
+  const opslag=leesOpslag(),sleutel=sleutelVoor(account,ruimte),rev=Math.max(Date.now(),opslag.revisie+1),volgende:Opslag={...opslag,revisie:rev,accounts:{...opslag.accounts},ruimtes:{...opslag.ruimtes}};
+  const schoon=normaliseerUiterlijkRuimte({...record,op:rev});
   if(JSON.stringify(zonder(schoon,['op']))===JSON.stringify(zonder(opslag.ruimtes[sleutel]||{versie:1},['op'])))return false;
   if(uiterlijkLeeg(schoon))delete volgende.ruimtes[sleutel];else volgende.ruimtes[sleutel]=schoon;
   bewaren(volgende);melden();

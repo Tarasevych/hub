@@ -9,8 +9,9 @@
 //   • het register: wat al onder de eigen sleutel staat en wat nog niet — mét reden (shared/sleutelkluis.ts).
 // Een passkey zonder PRF krijgt de eerlijke tekst KLUIS_TEKST.geenPrf en de weg via de herstelcode.
 import {useEffect,useState} from 'react';
-import {Check,Copy,Download,KeyRound,Lock,LockOpen,Plus,RefreshCw,ShieldCheck,Unplug,X} from 'lucide-react';
+import {Check,ChevronDown,Copy,Download,KeyRound,Lock,LockOpen,Plus,RefreshCw,ShieldCheck,Unplug,X} from 'lucide-react';
 import {api} from './platform/client';
+import {leesVergeten,swrPost} from './lees-cache';
 import {metHervat,stapOpUitleg} from './platform/stap-op';
 import {foutCode} from './platform/webauthn';
 import {kanPrf,kekUitPrf,omslaan,omslagOpenen,passkeyMetPrf,type PrfAssertieOpties} from './platform/sleutelkluis-client';
@@ -43,9 +44,9 @@ export function SleutelkluisSectie({lang,context}:Props){
   const[uitslag,setUitslag]=useState<Array<{tabel:string;gevonden:number;herversleuteld:number;fout?:string}>|null>(null);
   const[toonRegister,setToonRegister]=useState(false);
 
-  const laden=async()=>{try{setO((await api.post(`${P}/stand`,context)).data as Overzicht);}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
+  const laden=async(alleenVers=false)=>{try{await swrPost<Overzicht>(`${P}/stand`,context,d=>{if(d&&typeof d==='object'&&typeof d.stand==='string')setO(d);},{alleenVers});}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
   useEffect(()=>{void laden();},[]);// eslint-disable-line react-hooks/exhaustive-deps
-  const doe=async(naam:string,fn:()=>Promise<void>)=>{setBezig(naam);setMelding(null);try{await fn();await laden();}catch(c){const code=foutCode(c);console.error('[sleutelkluis]',naam,code);setMelding({ok:false,tekst:foutTekst(lang,code)});}finally{setBezig('');}};
+  const doe=async(naam:string,fn:()=>Promise<void>)=>{setBezig(naam);setMelding(null);try{await fn();leesVergeten(`${P}/stand`);await laden(true);}catch(c){const code=foutCode(c);console.error('[sleutelkluis]',naam,code);setMelding({ok:false,tekst:foutTekst(lang,code)});}finally{setBezig('');}};
 
   const inschakelen=()=>doe('inschakelen',async()=>{const r=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/inschakelen`,context))).data as {herstelcode:string};setNieuweCode(r.herstelcode);setBewaard(false);});
   const codeVernieuwen=()=>doe('code',async()=>{const r=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/herstelcode/vernieuwen`,context))).data as {herstelcode:string};setNieuweCode(r.herstelcode);setBewaard(false);});
@@ -85,10 +86,13 @@ export function SleutelkluisSectie({lang,context}:Props){
 
   const stand=o?.stand||'uit';
   const tone=stand==='open'?'good':stand==='gesloten'?'warn':'muted';
-  const serverGelezen=(o?.journaal||[]).filter(j=>j.soort==='serversleutel-gelezen'&&j.aantal>0);
-  const overgeslagen=(o?.journaal||[]).filter(j=>j.soort==='gesloten-overgeslagen'&&j.aantal>0);
-  const nietGekoppeld=(o?.passkeys||[]).filter(p=>!p.gekoppeld);
-  const gekoppeld=(o?.passkeys||[]).filter(p=>p.gekoppeld);
+  const houders=Array.isArray(o?.houders)?o.houders:[];
+  const omslagGrants=Array.isArray(o?.omslagen?.grants)?o.omslagen.grants:[];
+  const register=Array.isArray(o?.register)?o.register:[];
+  const serverGelezen=(Array.isArray(o?.journaal)?o.journaal:[]).filter(j=>j.soort==='serversleutel-gelezen'&&j.aantal>0);
+  const overgeslagen=(Array.isArray(o?.journaal)?o.journaal:[]).filter(j=>j.soort==='gesloten-overgeslagen'&&j.aantal>0);
+  const nietGekoppeld=(Array.isArray(o?.passkeys)?o.passkeys:[]).filter(p=>!p.gekoppeld);
+  const gekoppeld=(Array.isArray(o?.passkeys)?o.passkeys:[]).filter(p=>p.gekoppeld);
   const ruimteNaam=o?.ruimte==='technisch'?tr(lang,'технічний простір','technische ruimte'):tr(lang,'особистий простір','persoonlijke ruimte');
 
   return <section className='access-plane-section' id='aanmeldmethoden-sleutelkluis' data-access-section='sleutelkluis' tabIndex={-1}>
@@ -103,7 +107,7 @@ export function SleutelkluisSectie({lang,context}:Props){
         {stand==='open'?<LockOpen className='access-plane-row-icon'/>:<Lock className='access-plane-row-icon'/>}
         <div className='access-plane-row-main'>
           <span className='access-plane-row-title'><strong>{tr(lang,'Ключ даних','Gegevenssleutel')}</strong><span className={`access-plane-badge tone-${tone}`}>{o?t2(lang,KLUIS_TEKST.stand[stand]):tr(lang,'Завантаження…','Laden…')}</span></span>
-          <small>{o?`${ruimteNaam}${o.ingeschakeldOp?` · ${tr(lang,'увімкнено','aan sinds')} ${datum(lang,o.ingeschakeldOp)}`:''}${o.houders.length?` · ${tr(lang,'відкритий для','open voor')}: ${o.houders.filter(h=>h.soort==='sessie').length} ${tr(lang,'сесій','sessies')}, ${o.houders.filter(h=>h.soort==='grant').length} ${tr(lang,'підключень ШІ','AI-verbindingen')}`:''}`:''}</small>
+          <small>{o?`${ruimteNaam}${o.ingeschakeldOp?` · ${tr(lang,'увімкнено','aan sinds')} ${datum(lang,o.ingeschakeldOp)}`:''}${houders.length?` · ${tr(lang,'відкритий для','open voor')}: ${houders.filter(h=>h.soort==='sessie').length} ${tr(lang,'сесій','sessies')}, ${houders.filter(h=>h.soort==='grant').length} ${tr(lang,'підключень ШІ','AI-verbindingen')}`:''}`:''}</small>
           {stand==='gesloten'&&<small className='access-plane-warn'>{t2(lang,KLUIS_TEKST.gesloten)}</small>}
           {overgeslagen.length>0&&<small data-sleutelkluis-overgeslagen>{tr(lang,'Фонова синхронізація пропущена із закритим ключем: ','Achtergrondsynchronisatie overgeslagen met gesloten sleutel: ')}{overgeslagen.map(j=>`${j.tabel} (${j.aantal}, ${datum(lang,j.laatstOp)})`).join(', ')}</small>}
         </div>
@@ -137,13 +141,13 @@ export function SleutelkluisSectie({lang,context}:Props){
       {o&&stand!=='uit'&&<>
         <div className='access-plane-subrow' data-sleutelkluis-omslagen>
           <strong>{tr(lang,'Хто може відкрити ключ','Wie de sleutel kan openen')}</strong>
-          <ul className='herstel-lijst'>
-            <li data-omslag='herstelcode'><span>{tr(lang,'Код відновлення','Herstelcode')}</span><small>{o.omslagen.herstelcode?`${tr(lang,'створено','gemaakt')} ${datum(lang,o.omslagen.herstelcode.aangemaaktOp)}`:tr(lang,'немає','geen')}</small>
+          <ul className='herstel-lijst sleutelkluis-lijst'>
+            <li data-omslag='herstelcode'><span>{tr(lang,'Код відновлення','Herstelcode')}</span><small>{o.omslagen?.herstelcode?`${tr(lang,'створено','gemaakt')} ${datum(lang,o.omslagen.herstelcode.aangemaaktOp)}`:tr(lang,'немає','geen')}</small>
               {stand==='open'&&<button type='button' className='secondary' disabled={!!bezig} onClick={()=>void codeVernieuwen()}><RefreshCw/>{tr(lang,'Новий код','Nieuwe code')}</button>}</li>
             {gekoppeld.map(p=><li key={p.id} data-omslag='passkey'><span>Passkey «{p.naam}»</span><small>{tr(lang,'відкриває ключ (PRF)','opent de sleutel (PRF)')}</small>
               {stand==='open'&&<button type='button' className='secondary' disabled={!!bezig} onClick={()=>void ontkoppelen(p.id)}><Unplug/>{tr(lang,'Відʼєднати','Loskoppelen')}</button>}</li>)}
             {nietGekoppeld.map(p=><li key={p.id} data-omslag='passkey-los'><span>Passkey «{p.naam}»</span><small>{tr(lang,'ще не відкриває ключ','opent de sleutel nog niet')}</small></li>)}
-            {o.omslagen.grants.map(g=><li key={g.grantId} data-omslag='grant'><span>{tr(lang,'Підключення ШІ','AI-verbinding')} {g.grantId.slice(0,8)}…</span><small>{tr(lang,'працює без сесії, поки дійсне','werkt zonder sessie zolang het geldig is')}{g.laatstGebruiktOp?` · ${datum(lang,g.laatstGebruiktOp)}`:''}</small></li>)}
+            {omslagGrants.map(g=><li key={g.grantId} data-omslag='grant'><span>{tr(lang,'Підключення ШІ','AI-verbinding')} {g.grantId.slice(0,8)}…</span><small>{tr(lang,'працює без сесії, поки дійсне','werkt zonder sessie zolang het geldig is')}{g.laatstGebruiktOp?` · ${datum(lang,g.laatstGebruiktOp)}`:''}</small></li>)}
           </ul>
           {stand==='open'&&nietGekoppeld.length>0&&<div className='access-plane-actions'><button type='button' className='secondary' disabled={!!bezig||!kanPrf()} onClick={()=>void passkeyKoppelen()}><Plus/>{tr(lang,'Додати passkey як ключ','Passkey als sleutel toevoegen')}</button></div>}
           {!o.pepperAanwezig&&<small className='access-plane-warn'>{t2(lang,KLUIS_FOUT.SLEUTELKLUIS_PEPPER_ONTBREEKT)}</small>}
@@ -153,13 +157,17 @@ export function SleutelkluisSectie({lang,context}:Props){
           <strong>{tr(lang,'Старі записи','Oude rijen')}</strong>
           <small>{serverGelezen.length?tr(lang,`Ще серверним ключем читалося: ${serverGelezen.map(j=>`${j.tabel} (${j.aantal})`).join(', ')}.`,`Nog met de serversleutel gelezen: ${serverGelezen.map(j=>`${j.tabel} (${j.aantal})`).join(', ')}.`):tr(lang,'Записів, прочитаних серверним ключем, не зафіксовано.','Geen rijen met de serversleutel gelezen.')}{o.herversleuteldOp?` ${tr(lang,'Перешифровано','Herversleuteld')} ${datum(lang,o.herversleuteldOp)}.`:''}</small>
           {stand==='open'&&<div className='access-plane-actions'><button type='button' className='secondary' disabled={!!bezig} onClick={()=>void herversleutelen()}><RefreshCw/>{tr(lang,'Перешифрувати мої дані зараз','Mijn gegevens nu herversleutelen')}</button></div>}
-          {uitslag&&<ul className='herstel-lijst' data-sleutelkluis-uitslag>{uitslag.map(u=><li key={u.tabel}><span className='access-plane-mono'>{u.tabel}</span><small>{u.fout?`${tr(lang,'помилка','fout')}: ${u.fout}`:`${u.herversleuteld}/${u.gevonden}`}</small></li>)}</ul>}
+          {uitslag&&<ul className='herstel-lijst sleutelkluis-lijst' data-sleutelkluis-uitslag>{uitslag.map(u=><li key={u.tabel}><span className='access-plane-mono'>{u.tabel}</span><small>{u.fout?`${tr(lang,'помилка','fout')}: ${u.fout}`:`${u.herversleuteld}/${u.gevonden}`}</small></li>)}</ul>}
         </div>
       </>}
 
       {o&&<div className='access-plane-subrow' data-sleutelkluis-register>
-        <button type='button' className='secondary' onClick={()=>setToonRegister(v=>!v)}>{toonRegister?<X/>:<ShieldCheck/>}{tr(lang,'Що вже під моїм ключем, а що ще ні','Wat al onder mijn sleutel staat en wat nog niet')}</button>
-        {toonRegister&&<ul className='herstel-lijst'>{o.register.map(r=><li key={r.tabel} data-register-stand={r.stand}><span className='access-plane-mono'>{r.tabel}</span><small>{r.veld} · {r.stand==='dek'?tr(lang,'під моїм ключем (нові записи)','onder mijn sleutel (nieuwe rijen)'):`${tr(lang,'ще ні','nog niet')}: ${r.reden?t2(lang,r.reden):''}`}</small></li>)}</ul>}
+        <button type='button' className='secondary sleutelkluis-register-knop' aria-expanded={toonRegister} onClick={()=>setToonRegister(v=>!v)}>
+          <ShieldCheck aria-hidden='true'/>
+          <span>{tr(lang,'Що вже під моїм ключем, а що ще ні','Wat al onder mijn sleutel staat en wat nog niet')}</span>
+          <ChevronDown className='toegang-chevron' aria-hidden='true'/>
+        </button>
+        {toonRegister&&<ul className='herstel-lijst sleutelkluis-lijst'>{register.map(r=><li key={r.tabel} data-register-stand={r.stand}><span className='access-plane-mono'>{r.tabel}</span><small>{r.veld} · {r.stand==='dek'?tr(lang,'під моїм ключем (нові записи)','onder mijn sleutel (nieuwe rijen)'):`${tr(lang,'ще ні','nog niet')}: ${r.reden?t2(lang,r.reden):''}`}</small></li>)}</ul>}
       </div>}
     </div>
   </section>;

@@ -20,7 +20,7 @@ import { alsGebruiker } from './ai-toestemmingen';
 import { denyMutation } from './rbac';
 import { haDienstVoor, haGeschiedenis, haLezen, haOntdekken, haStuur, haVerbinden, komtOvereen, parseVertrouwdToestel, veiligAdres, vertrouwdeToestellenUitEnv, zetVertrouwdeToestellenBron, type OntdektApparaat } from './huis-adapter-thuis-assistent';
 import {
-  KRITIEKE_SOORTEN, MAX_RUIMTES, MAX_WONINGEN, OPDRACHT_DEADLINE_MS, OPDRACHT_EIND, droogloop, magOvergang, schoneOpdrachtWaarde, schoneRegel, schoneScene,
+  KRITIEKE_SOORTEN, MAX_RUIMTES, MAX_WONINGEN, OPDRACHT_DEADLINE_MS, OPDRACHT_EIND, droogloop, geldigeTijdzone, magOvergang, schoneOpdrachtWaarde, schoneRegel, schoneScene,
   type Apparaat, type Automatisering, type Gebeurtenis, type Integratie, type Lid, type Mogelijkheid, type MogelijkheidSoort, type Opdracht, type OpdrachtStand, type Ruimte, type Scene, type Toestand, type Voorstel, type Waarnemingen, type Woning,
 } from '../shared/huis-model';
 
@@ -73,7 +73,7 @@ export async function woningenLijst(userId: string): Promise<Woning[]> {
 }
 export async function woningMaken(userId: string, naam: string, tijdzone = 'Europe/Brussels', taal: 'uk' | 'nl' = 'uk'): Promise<Woning | { fout: string }> {
   const schoon = naam.replace(/\s+/g, ' ').trim(); if (!schoon || schoon.length > 80) return { fout: 'NAAM_ONGELDIG' };
-  if (!/^[A-Za-z_]+\/[A-Za-z_+-]+$/.test(tijdzone)) return { fout: 'TIJDZONE_ONGELDIG' };
+  if (!geldigeTijdzone(tijdzone)) return { fout: 'TIJDZONE_ONGELDIG' };
   return alsGebruiker(userId, async (q) => {
     const n = Number((await q(`SELECT count(*)::int AS n FROM app.huis_woningen WHERE user_id = $1`, [userId])).rows[0].n);
     if (n >= MAX_WONINGEN) return { fout: 'TE_VEEL_WONINGEN' };
@@ -493,7 +493,7 @@ export async function woningWijzigen(userId: string, woningId: string, v: { naam
     const lid = await lidVan(q, userId, woningId); if (!lid || !lid.eigenaar) return { fout: 'ALLEEN_EIGENAAR' as const };
     const cur = (await q(`SELECT * FROM app.huis_woningen WHERE id::text = $1`, [woningId])).rows[0];
     const naam = v.naam === undefined ? cur.naam : String(v.naam).replace(/\s+/g, ' ').trim(); if (!naam || naam.length > 80) return { fout: 'NAAM_ONGELDIG' as const };
-    const tijdzone = v.tijdzone === undefined ? cur.tijdzone : String(v.tijdzone); if (!/^[A-Za-z_]+\/[A-Za-z_+-]+$/.test(tijdzone)) return { fout: 'TIJDZONE_ONGELDIG' as const };
+    const tijdzone = v.tijdzone === undefined ? cur.tijdzone : String(v.tijdzone); if (!geldigeTijdzone(tijdzone)) return { fout: 'TIJDZONE_ONGELDIG' as const };
     const verd = Array.isArray(v.verdiepingen) ? v.verdiepingen.slice(0, 12).map((x: any, i: number) => ({ id: String(x?.id ?? i).slice(0, 10), naam: String(x?.naam ?? '').slice(0, 40) || `${i}` })) : cur.verdiepingen;
     const { rows } = await q(`UPDATE app.huis_woningen SET naam = $2, tijdzone = $3, taal = $4, verdiepingen = $5::jsonb, updated_at = now() WHERE id::text = $1 RETURNING *`, [woningId, naam, tijdzone, v.taal === 'nl' ? 'nl' : v.taal === 'uk' ? 'uk' : cur.taal, JSON.stringify(verd)]);
     return woningUit({ ...rows[0], rol: 'eigenaar' }, userId);

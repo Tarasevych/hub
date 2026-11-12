@@ -1,5 +1,5 @@
 // Кодове слово: scrypt + перець з середовища. Значення в журнал не пишеться.
-import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { getPool } from '../server/platform/pg';
 import { CODEWOORD_BLOK_MS, CODEWOORD_MAX_MISLUKT, codewoordSterk, normaliseerCodewoord, pogingToegestaan } from '../shared/codewoord';
@@ -83,15 +83,42 @@ export async function codewoordPoortOpen(userId: string, sessieId: string): Prom
 }
 
 /** Після правильного слова на цьому вході. Старі сесії відпадають самі. */
-export async function codewoordLoginVastleggen(userId: string, sessieId: string): Promise<void> {
-  if (!sessieId) return;
+export async function codewoordLoginVastleggen(userId: string, sessieId: string, extraSessieId = ''): Promise<void> {
+  const ids = [sessieId, extraSessieId].filter(Boolean);
+  if (!ids.length) return;
   const rij = await lees(userId);
   if (!rij) return;
   const nu = Date.now();
+  const bijgewerkt: Record<string, number> = { ...(rij.loginSessies || {}) };
+  for (const id of ids) bijgewerkt[id] = nu;
   const loginSessies = Object.fromEntries(
-    Object.entries({ ...(rij.loginSessies || {}), [sessieId]: nu }).filter(([, at]) => loginVers(Number(at), nu)).slice(-40),
+    Object.entries(bijgewerkt).filter(([, at]) => loginVers(Number(at), nu)).slice(-40),
   );
   await schrijf({ ...rij, loginSessies, updatedAt: nu });
+}
+
+/** Живий віртуальний запис профілю цього ж облікового запису в поточному оглядачі (для збереження пройдених воріт під час перемикання профілів). */
+async function browserProfielSessieId(userId: string, anchorId?: string): Promise<string> {
+  if (!userId || !anchorId) return '';
+  try {
+    const tabHash = createHash('sha256').update(`owner-browser-account-v1:${userId}`).digest('hex');
+    const r = await getPool().query(
+      `SELECT id FROM app.records
+        WHERE tbl = 'owner_tab_sessions_v1'
+          AND data->>'anchorSessionId' = $1
+          AND data->>'userId' = $2
+          AND data->>'tabHash' = $3
+          AND data->>'status' = 'active'
+          AND coalesce(nullif(data->>'revokedAt', '')::bigint, 0) = 0
+          AND coalesce(nullif(data->>'idleExpiresAt', '')::bigint, 0) > $4
+          AND coalesce(nullif(data->>'absoluteExpiresAt', '')::bigint, 0) > $4
+        LIMIT 1`,
+      [anchorId, userId, tabHash, Date.now()],
+    );
+    return String(r.rows[0]?.id || '');
+  } catch {
+    return '';
+  }
 }
 
 export { codewoordRouteVrij, codewoordSessieId } from '../shared/codewoord-poort';
@@ -120,7 +147,8 @@ export function codewoordRoutes(deps: {
     'POST /api/owner/identity/codewoord/zetten': [metSessie(async (user, body, _ctx, auth) => {
       const uit = await codewoordZetten(user.id, String(body.woord || ''), user.email, typeof body.huidig === 'string' ? body.huidig : '');
       if (uit !== 'OK') return deps.fail(uit === 'ZWAK' ? 'CODEWOORD_ZWAK' : uit === 'GEBLOKKEERD' ? 'CODEWOORD_GEBLOKKEERD' : 'CODEWOORD_ONJUIST', 400);
-      await codewoordLoginVastleggen(user.id, sessieVan(auth));
+      const profielSid = await browserProfielSessieId(user.id, auth.session?.id);
+      await codewoordLoginVastleggen(user.id, sessieVan(auth), profielSid);
       return deps.ok({ ok: true, codewoordPoort: false });
     })],
     'POST /api/owner/identity/codewoord/controleren': [metSessie(async (user, body) => {
@@ -135,7 +163,8 @@ export function codewoordRoutes(deps: {
       const c = await codewoordControleren(vol.user.id, String(deps.body(ctx.body).woord || ''));
       if (!c.ok) return deps.fail(c.code === 'NIET_INGESTELD' ? 'CODEWOORD_NIET_INGESTELD' : c.code === 'GEBLOKKEERD' ? 'CODEWOORD_GEBLOKKEERD' : 'CODEWOORD_ONJUIST', 403);
       const sid = sessieVan(vol);
-      await codewoordLoginVastleggen(vol.user.id, sid);
+      const profielSid = await browserProfielSessieId(vol.user.id, vol.session?.id);
+      await codewoordLoginVastleggen(vol.user.id, sid, profielSid);
       await codewoordStapOpVastleggen({ user: { id: vol.user.id }, session: vol.session, tabSession: vol.tabSession } as StapOpAuth);
       return deps.ok({ ok: true, codewoordPoort: false });
     }],

@@ -17,7 +17,7 @@ import {
   GITHUB_OAUTH_CALLBACK_PAD, githubOauthScopeTekst, scopeVoldoet,
 } from '../shared/github-koppeling';
 import {
-  koppelingBewaren, koppelingLezen, koppelingToken, koppelingVerversToken, koppelingWissen, oauthApp,
+  isGeslotenFout, isKoppelingKluisGesloten, koppelingBewaren, koppelingLezen, koppelingToken, koppelingVerversToken, koppelingWissen, oauthApp,
   stateBewaren, stateVerbruiken, stateVerifier, statesOpruimen, verzegelVoor, bijnaVerlopen, zegelPad,
   type KoppelingRecord,
 } from './github-koppeling-opslag';
@@ -54,7 +54,10 @@ export async function oauthStarten(userId: string, opties: { sessieToken: string
   const ruimte = ruimteOf(opties.ruimte);
   const host = String(opties.host || '').trim().toLowerCase();
   if (!host) return mis('GITHUB_OAUTH_HOST_ONJUIST', 400);
-  const app = await oauthApp(userId);
+  // Controleer vooraf of de persoonlijke sleutelkluis open is: zo voorkomt de start al dat de terugkeer straks op het
+  // verzegelen van de token strandt.
+  if (await isKoppelingKluisGesloten(userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
+  const app = await oauthApp(userId, ruimte);
   if (app === null) return mis('GITHUB_OAUTH_APP_ONTBREEKT', 409);
   if (app === 'onleesbaar') return mis('GITHUB_OAUTH_APP_ONLEESBAAR', 409);
 
@@ -127,7 +130,12 @@ export async function oauthTerugkeer(invoer: { state: string; code: string; fout
   if (invoer.fout) return mis(invoer.fout === 'access_denied' ? 'GITHUB_OAUTH_GEWEIGERD' : foutCodeVan(invoer.fout) || 'GITHUB_OAUTH_AFGEWEZEN', 400);
   if (!invoer.code) return mis('GITHUB_OAUTH_CODE_ONTBREEKT', 400);
 
-  const app = await oauthApp(rij.userId);
+  // De lade komt uit de BEWAARDE state, niet uit de terugkeer van GitHub: wie de flow in de technische ruimte begon, krijgt
+  // de token ook daar, en GitHub kan die keuze niet veranderen.
+  const ruimte = ruimteOf(rij.ruimte);
+  if (await isKoppelingKluisGesloten(rij.userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
+
+  const app = await oauthApp(rij.userId, ruimte);
   if (app === null) return mis('GITHUB_OAUTH_APP_ONTBREEKT', 409);
   if (app === 'onleesbaar') return mis('GITHUB_OAUTH_APP_ONLEESBAAR', 409);
   // De app mag tussen start en terugkeer niet zijn verwisseld: anders hoort de code niet bij deze client.
@@ -139,23 +147,25 @@ export async function oauthTerugkeer(invoer: { state: string; code: string; fout
   });
   if (!geruild.ok) return geruild;
 
-  const controle = scopeVoldoet(geruild.data.scope);
+  const token = String(geruild.data.access_token);
+  const isGithubAppToken = app.clientId.startsWith('Iv') || token.startsWith('ghu_');
+  const controle = scopeVoldoet(geruild.data.scope, { githubAppUserToken: isGithubAppToken });
   if (!controle.ok) return mis('GITHUB_OAUTH_SCOPE_TE_KLEIN', 403);
 
-  const token = String(geruild.data.access_token);
   const ik = await wieBenIk(token);
   if (!ik) return mis('GITHUB_TOKEN_INVALID', 401);
 
   const nu = Date.now();
   const verlooptOp = Number(geruild.data.expires_in) > 0 ? nu + Number(geruild.data.expires_in) * 1000 : 0;
-  // De lade komt uit de BEWAARDE state, niet uit de terugkeer van GitHub: wie de flow in de technische ruimte begon, krijgt
-  // de token ook daar, en GitHub kan die keuze niet veranderen.
-  const ruimte = ruimteOf(rij.ruimte);
-  await koppelingBewaren(rij.userId, 'oauth', {
-    login: ik.login, scopes: controle.scopes, tokenZegel: await verzegelVoor(token, rij.userId, zegelPad('oauth', ruimte), ruimte),
-    verversZegel: geruild.data.refresh_token ? await verzegelVoor(String(geruild.data.refresh_token), rij.userId, `${zegelPad('oauth', ruimte)}:verversen`, ruimte) : '',
-    verlooptOp, verversVerlooptOp: Number(geruild.data.refresh_token_expires_in) > 0 ? nu + Number(geruild.data.refresh_token_expires_in) * 1000 : 0,
-  }, ruimte);
+  try {
+    await koppelingBewaren(rij.userId, 'oauth', {
+      login: ik.login, scopes: controle.scopes, tokenZegel: await verzegelVoor(token, rij.userId, zegelPad('oauth', ruimte), ruimte),
+      verversZegel: geruild.data.refresh_token ? await verzegelVoor(String(geruild.data.refresh_token), rij.userId, `${zegelPad('oauth', ruimte)}:verversen`, ruimte) : '',
+      verlooptOp, verversVerlooptOp: Number(geruild.data.refresh_token_expires_in) > 0 ? nu + Number(geruild.data.refresh_token_expires_in) * 1000 : 0,
+    }, ruimte);
+  } catch (err) {
+    return isGeslotenFout(err) ? mis('SLEUTELKLUIS_GESLOTEN', 423) : mis('GITHUB_KOPPELING_BEWAREN_MISLUKT', 500);
+  }
   return { ok: true, data: { login: ik.login, scopes: controle.scopes, verlooptOp, ruimte } };
 }
 
@@ -169,11 +179,14 @@ export async function oauthTerugkeer(invoer: { state: string; code: string; fout
  */
 export async function oauthVernieuwen(userId: string, ruimteIn: AiRuimte = 'prive'): Promise<OauthUitkomst<{ token: string; verlooptOp: number }>> {
   const ruimte = ruimteOf(ruimteIn);
+  if (await isKoppelingKluisGesloten(userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
   const record = await koppelingLezen(userId, 'oauth', ruimte);
   if (!record) return mis('GITHUB_TOKEN_MISSING', 409);
-  const ververs = await koppelingVerversToken(record, userId);
+  let ververs: string | null = null;
+  try { ververs = await koppelingVerversToken(record, userId); }
+  catch (err) { return isGeslotenFout(err) ? mis('SLEUTELKLUIS_GESLOTEN', 423) : mis('bad_refresh_token', 401); }
   if (!ververs) return mis('bad_refresh_token', 401);
-  const app = await oauthApp(userId);
+  const app = await oauthApp(userId, ruimte);
   if (app === null || app === 'onleesbaar') return mis(app === null ? 'GITHUB_OAUTH_APP_ONTBREEKT' : 'GITHUB_OAUTH_APP_ONLEESBAAR', 409);
 
   const geruild = await tokenRuilen({ client_id: app.clientId, client_secret: app.clientSecret, grant_type: 'refresh_token', refresh_token: ververs });
@@ -183,12 +196,16 @@ export async function oauthVernieuwen(userId: string, ruimteIn: AiRuimte = 'priv
   const token = String(geruild.data.access_token);
   const verlooptOp = Number(geruild.data.expires_in) > 0 ? nu + Number(geruild.data.expires_in) * 1000 : 0;
   const scopes = geruild.data.scope ? scopeVoldoet(geruild.data.scope).scopes : record.scopes;
-  await koppelingBewaren(userId, 'oauth', {
-    tokenZegel: await verzegelVoor(token, userId, zegelPad('oauth', ruimte), ruimte),
-    verversZegel: geruild.data.refresh_token ? await verzegelVoor(String(geruild.data.refresh_token), userId, `${zegelPad('oauth', ruimte)}:verversen`, ruimte) : '',
-    verlooptOp, verversVerlooptOp: Number(geruild.data.refresh_token_expires_in) > 0 ? nu + Number(geruild.data.refresh_token_expires_in) * 1000 : 0,
-    scopes,
-  }, ruimte);
+  try {
+    await koppelingBewaren(userId, 'oauth', {
+      tokenZegel: await verzegelVoor(token, userId, zegelPad('oauth', ruimte), ruimte),
+      verversZegel: geruild.data.refresh_token ? await verzegelVoor(String(geruild.data.refresh_token), userId, `${zegelPad('oauth', ruimte)}:verversen`, ruimte) : '',
+      verlooptOp, verversVerlooptOp: Number(geruild.data.refresh_token_expires_in) > 0 ? nu + Number(geruild.data.refresh_token_expires_in) * 1000 : 0,
+      scopes,
+    }, ruimte);
+  } catch (err) {
+    return isGeslotenFout(err) ? mis('SLEUTELKLUIS_GESLOTEN', 423) : mis('GITHUB_KOPPELING_BEWAREN_MISLUKT', 500);
+  }
   return { ok: true, data: { token, verlooptOp } };
 }
 
@@ -225,7 +242,7 @@ export async function oauthOntkoppelen(userId: string, ruimteIn: AiRuimte = 'pri
   const record = await koppelingLezen(userId, 'oauth', ruimte);
   if (!record) return mis('GITHUB_TOKEN_MISSING', 409);
   const token = await koppelingToken(record, userId);
-  const app = await oauthApp(userId);
+  const app = await oauthApp(userId, ruimte);
   let ingetrokken = false;
   if (token && app && app !== 'onleesbaar') {
     try {

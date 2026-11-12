@@ -26,7 +26,7 @@ type Resp = ReturnType<typeof json>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 export type ToegangscodeRouteDeps = { requireSession: RequireSession; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
-const fout = (code: string, status = 400): never => { throw new ToegangFout(code, status); };
+const fout = (code: string, status = 400, retryAfter?: number): never => { throw new ToegangFout(code, status, retryAfter); };
 const ID_HOST = 'id.tarasevych.com', ID_ORIGIN = `https://${ID_HOST}`;
 const kop = (event: Record<string, unknown>, naam: string) => {
   const h = (event.headers || {}) as Record<string, string | undefined>;
@@ -62,7 +62,7 @@ export function toegangscodeRoutes(deps: ToegangscodeRouteDeps): Record<string, 
       const uit = await run(auth, lichaam(ctx.body), ctx);
       return uit && typeof uit === 'object' && 'statusCode' in (uit as object) ? uit as RouterResponse : json(uit);
     } catch (err) {
-      if (err instanceof ToegangFout) return error(err.code, err.status);
+      if (err instanceof ToegangFout) return error(err.code, err.status, err.retryAfter ? { retryAfter: err.retryAfter } : undefined);
       console.error('[toegangscodes]', (err as Error).message);
       return error('TOEGANGSCODE_FOUT', 500);
     }
@@ -75,7 +75,7 @@ export function toegangscodeRoutes(deps: ToegangscodeRouteDeps): Record<string, 
     sessieGeverifieerd();
     try { return { ...json(await run(g, lichaam(ctx.body))), headers: { ...json(null).headers, ...BEVEILIGING } }; }
     catch (err) {
-      if (err instanceof ToegangFout) return error(err.code, err.status);
+      if (err instanceof ToegangFout) return error(err.code, err.status, err.retryAfter ? { retryAfter: err.retryAfter } : undefined);
       console.error('[gast]', (err as Error).message);
       return error('GAST_FOUT', 500);
     }
@@ -89,7 +89,7 @@ export function toegangscodeRoutes(deps: ToegangscodeRouteDeps): Record<string, 
     }))],
     [`POST ${T}/maken`]: [eigenaar({ sterk: true }, async (a, b) => {
       const l = await rateLimit(`toegangscode-maken:${a.user.id}`, 20, 3600);
-      if (!l.ok) fout('RATE_LIMITED', 429);
+      if (!l.ok) fout('RATE_LIMITED', 429, l.retryAfter);
       return codeMaken({ id: a.user.id, email: a.user.email }, b, { sessieId: sessieInfo(a).sessieId, dienst: dienst(a) });
     })],
     // Korter maken mag zonder extra bevestiging; verlengen (of безстроково maken) vraagt een sterke step-up.
@@ -114,7 +114,7 @@ export function toegangscodeRoutes(deps: ToegangscodeRouteDeps): Record<string, 
         await clearLoginFailures(onderwerp).catch(() => undefined);
         return metCookie(json({ ok: true, eigenaar: await gastEigenaarNaam(g), code: g.codeNaam, scopes: g.scopes, tot: new Date(g.verlooptOp).toISOString() }), encodeURIComponent(token), (g.verlooptOp - Date.now()) / 1000);
       } catch (err) {
-        if (err instanceof ToegangFout) return error(err.code, err.status);
+        if (err instanceof ToegangFout) return error(err.code, err.status, err.retryAfter ? { retryAfter: err.retryAfter } : undefined);
         console.error('[gast] inwisselen:', (err as Error).message);
         return error('GAST_FOUT', 500);
       }

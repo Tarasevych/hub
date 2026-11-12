@@ -1,0 +1,294 @@
+name: IDENTITEIT-008 · меню облікового запису v3, пошта Google та відкрита екосистема ШІ
+
+# Ніколи не встановлює пакет на сервер. Перед оприлюдненням звіряє живу встановлену основу, джерела, міграції, типи й контрольну суму.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, broncode, migraties, typen en controlesom.
+on:
+  push:
+    branches:
+      - 'feature/identiteit-008-accountmenu-v3-20261111-142500'
+    paths:
+      - '.github/workflows/identiteit-008-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-008.json'
+      - 'migrations/0206_accountmenu_v3_vlag.sql'
+      - 'migrations/0207_ai_ecosysteem_werkruimtes.sql'
+      - 'migrations/rechten.sql'
+      - 'shared/**'
+      - 'backend/**'
+      - 'deploy/mcp/server.mjs'
+      - 'extension/**'
+      - 'scripts/plaatsing-vaste-elementen.json'
+      - 'src/**'
+      - 'tests/eenheid/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identiteit-008-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: IDENTITEIT-008
+  BASIS_VERSIE: '20261111-172513'
+  BASIS_COMMIT: '730d9f811b09d138d5378ef9339bf4c895074c16'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error(`Встановлена версія змінилася (${v.versie} @ ${v.bronCommit || v.commit}). Випуск зупинено для нового узгодження.`);
+          }
+          JS
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+      - name: Виконати одиничні перевірки меню, пошти, екосистеми ШІ, розміщення та розгортання
+        run: |
+          node scripts/plaatsing-controle.mjs
+          node scripts/eenheidstests.mjs accountmenu-v3.test.ts
+          node scripts/eenheidstests.mjs ai-ecosysteem-en-google-herstel.test.ts
+          node scripts/eenheidstests.mjs ai-werkruimte-20261019.test.ts
+          node scripts/eenheidstests.mjs agent-verbinden-20261020.test.ts
+          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts
+          node scripts/eenheidstests.mjs connector-v2.test.ts
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
+          node scripts/eenheidstests.mjs ui-audit-g.test.ts
+          node scripts/eenheidstests.mjs uitrol-vereisten-001.test.ts
+          node scripts/eenheidstests.mjs uitrol-voorcontrole.test.ts
+          node scripts/eenheidstests.mjs uitrol-codes.test.ts
+          node scripts/eenheidstests.mjs accountmenu-v2-20261029.test.ts
+          node scripts/eenheidstests.mjs menu-taal-prapor-20261103.test.ts
+          node scripts/eenheidstests.mjs aanmeld-001-weergave.test.ts
+          node scripts/eenheidstests.mjs identiteit-atelier.test.ts
+          node scripts/eenheidstests.mjs thema.test.ts
+      - name: Перевірити типи та скласти застосунок
+        run: |
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Перевірити подвійне застосування міграцій на чистій базі даних
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node --input-type=module <<'JS'
+          import pg from 'pg';
+          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+          const r = await pool.query("SELECT sleutel, aan, standaard FROM app.feature_flags WHERE sleutel = 'accountmenu-v3'");
+          const tabellen = await pool.query(`
+            SELECT c.relname, c.relrowsecurity
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+             WHERE n.nspname = 'app'
+               AND c.relname IN ('ai_agent_werkruimtes', 'ai_gedeelde_context', 'ai_agent_overdrachten', 'ai_ruimte_uitbreidingen')
+          `);
+          await pool.end();
+          if (r.rowCount !== 1 || r.rows[0].aan !== false || r.rows[0].standaard !== false) {
+            throw Error('Прапорець accountmenu-v3 не створений у стані вимкнено.');
+          }
+          if (tabellen.rowCount !== 4 || tabellen.rows.some((t) => t.relrowsecurity !== true)) {
+            throw Error('Таблиці відкритої екосистеми ШІ (0207) не створені або не мають увімкненого RLS.');
+          }
+          JS
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Виправлення входу пошти Google і меню облікового запису (v3) та відкрита агентна екосистема розділу ШІ',
+            samenvatting: 'Поєднаний випуск на основі живої версії 20261111-172513: виправлено завершення входу пошти Google при закритому сховищі ключів, утримання кнопки палітри кольорів на смартфоні та розмежування кнопок переходу й видалення записів у меню профілю, а також упроваджено відкриту агентну екосистему розділу ШІ з ізольованими просторами агентів, спільним контекстом між завданнями, взаємодією між агентами, першокласною підтримкою OpenAI Codex і Anthropic Claude та самостійним розгортанням на власному обладнанні.',
+            wijzigingen: [
+              'Відкрита агентна екосистема розділу ШІ (ai.tarasevych.com та mcp.tarasevych.com, міграція 0207_ai_ecosysteem_werkruimtes.sql): єдина планка простору у вкладці чату та три повноцінні робочі розділи — ізольовані простори агентів, спільний контекст із передачею завдань між агентами та розширення простору користувача.',
+              'Ізольовані робочі простори агентів ШІ з подвійним замком безпеки: керований доступ до локального комп’ютера (agent.mjs, дозволені теки, читання чи запис), розширення оглядача (дозволені домени) та сервера (лише в технічному просторі), а також вибірковий доступ до файлів, пошти, календаря, Диска, дошки, GitHub і зовнішніх служб.',
+              'Першокласна підтримка OpenAI Codex (/codex) нарівні з Anthropic Claude (/claude) та іншими інструментами програмування ШІ у всіх реєстрах клієнтів, каталозі прав v2, чотирьох нових інструментах спільного контексту й передачі завдань та рецептах підключення.',
+              'Повна відкритість платформи для розгортання на власному обладнанні: вбудований формувач налаштувань (docker-compose.yml, приклад .env, команди підключення комп’ютера, Codex і Claude та підтримка локальних відкритих моделей) без залежності від одного сайту.'
+            ],
+            fixes: [
+              'Пошта Google: усунуто підміну закритого особистого сховища ключів користувача сліпим кодом GOOGLE_SUITE_CALLBACK_FAILED · HTTP 400; тепер і перед початком входу, і при зворотному виклику повертається точний код SLEUTELKLUIS_GESLOTEN із прямою кнопкою переходу до розблокування сховища ключів.',
+              'Палітра кольорів у меню облікового запису (v3): усунуто миттєве автозгортання полички палітри після утримання на сенсорному екрані смартфона (ігнорування синтетичної події contextmenu протягом 850 мс) та додано явну кнопку закриття полички.',
+              'Перелік збережених облікових записів у меню v3: ізольовано дотикові шари ::after кнопок переходу/входу та хрестика видалення запису зі списку власним position: relative зі збільшеним проміжком, тож натискання «Перейти» / «Увійти» більше ніколи не зачіпає видалення сусіднього запису.'
+            ],
+            beperkingen: [
+              'Якщо особисте сховище ключів закрите на сервері, перед завершенням прив’язки нової поштової скриньки Google потрібно натиснути кнопку «Відкрити сховище ключів» і розблокувати його.',
+              'Встановлення випуску на робочий сервер виконується виключно власником із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу, перевірте поличку палітри й перемикання записів у меню профілю, повторне підключення пошти Google та нові можливості розділу ШІ на ai.tarasevych.com.'
+          };
+          const nl = {
+            titel: 'Herstel van Google-mailkoppeling en accountmenu (v3) plus het open agent-ecosysteem van het AI-onderdeel',
+            samenvatting: 'Gecombineerde uitgave boven op de geïnstalleerde versie 20261111-172513: herstelt het afronden van de Google-mailkoppeling bij een gesloten sleutelkluis, het openhouden van de paletlade bij vasthouden op de telefoon en de scheiding tussen wissel- en verwijderknoppen in het accountmenu, en introduceert het open agent-ecosysteem op ai.tarasevych.com met geïsoleerde agent-werkruimtes, gedeelde werkcontext, taakoverdracht tussen agenten, eersteklas ondersteuning van OpenAI Codex en Anthropic Claude en zelfstandige uitrol op eigen apparatuur.',
+            wijzigingen: [
+              'Open agent-ecosysteem van het AI-onderdeel (ai.tarasevych.com en mcp.tarasevych.com, migratie 0207_ai_ecosysteem_werkruimtes.sql): verenigde ruimtebalk boven de chat en drie volledige werkschermen voor geïsoleerde agent-werkruimtes, gedeelde werkcontext met taakoverdracht en ruimte-uitbreidingen.',
+              'Geïsoleerde werkruimtes voor AI-agenten met dubbele veiligheidsgrendel: beheerbare toegang tot de lokale computer (agent.mjs, toegestane mappen, lezen of schrijven), browserextensie (toegestane domeinen) en server (uitsluitend in de technische ruimte), plus selectieve toegang tot bestanden, e-mail, agenda, schijf, bord, GitHub en externe diensten.',
+              'Eersteklas ondersteuning van OpenAI Codex (/codex) naast Anthropic Claude (/claude) en overige AI-programmeerhulpmiddelen in alle clientregisters, de v2-rechtencatalogus, vier nieuwe hulpmiddelen voor gedeelde context en overdracht en de koppelrecepten.',
+              'Volledig open opstelling voor zelfstandige uitrol op eigen apparatuur: ingebouwde opbouwer (docker-compose.yml, .env-voorbeeld, koppelopdrachten voor lokale agent, Codex en Claude en ondersteuning van lokale open modellen) zonder afhankelijkheid van één site.'
+            ],
+            fixes: [
+              'Google-mailkoppeling: gesloten persoonlijke sleutelkluis wordt niet langer gemaskeerd als GOOGLE_SUITE_CALLBACK_FAILED · HTTP 400; zowel bij de start als bij de terugkeer geeft de server SLEUTELKLUIS_GESLOTEN terug met een directe knop om de sleutelkluis te ontgrendelen.',
+              'Kleurenpalet in accountmenu (v3): direct dichtklappen van de paletlade na ingedrukt houden op aanraakschermen verholpen (synthetisch contextmenu gedurende 850 ms genegeerd) en een duidelijke sluitknop toegevoegd.',
+              'Accountlijst in menu v3: onzichtbare ::after-raakvlakken van de wissel-/aanmeldknop en het verwijderkruisje geïsoleerd met eigen position: relative en extra tussenruimte, zodat tikken op «Wisselen» / «Aanmelden» nooit meer het verwijderkruisje raakt.'
+            ],
+            beperkingen: [
+              'Wanneer de persoonlijke sleutelkluis op de server gesloten is, dient deze eerst via de knop «Sleutelkluis ontgrendelen» geopend te worden voordat een nieuwe Google-mailbox gekoppeld wordt.',
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer de paletlade en accountwissel in het profielmenu, de Google-mailkoppeling en het vernieuwde AI-onderdeel op ai.tarasevych.com.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 416,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено будівельні перевірки розміщення, підказок, контрасту та технічних пакунків, одиничні випробування accountmenu-v3 (24/24), відкритої екосистеми ШІ та відновлення входу пошти Google (ai-ecosysteem-en-google-herstel), робочого простору ШІ (ai-werkruimte-20261019), підключення агентів включно з Codex (agent-verbinden-20261020), двомовного каталогу інструментів (hulpmiddelen-tweetalig-20261020) та з’єднувача v2 (connector-v2), походження TRACE-001, вимог до розгортання, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій (включно з 0206 і 0207 з перевіркою RLS) на чистій базі PostgreSQL 16.',
+              nl: 'Bouwcontroles van plaatsing, hulpteksten, contrast en technische bundels zijn geslaagd, evenals de eenheidstests voor accountmenu-v3 (24/24), het open AI-ecosysteem en herstel van de Google-mailkoppeling (ai-ecosysteem-en-google-herstel), de AI-werkruimte (ai-werkruimte-20261019), agentkoppelingen inclusief Codex (agent-verbinden-20261020), de tweetalige hulpmiddelencatalogus (hulpmiddelen-tweetalig-20261020), connector-v2, herkomst TRACE-001 en uitrolbewaking, plus typecontrole, productiebouw en dubbele uitvoering van alle migraties (inclusief 0206 en 0207 met RLS-verificatie) op een schone PostgreSQL 16-databank.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk 'Виправлення входу пошти Google, палітри й кнопок меню v3 та відкрита агентна екосистема розділу ШІ.' \
+            --samenvatting-nl 'Herstel van Google-mailkoppeling, palet en knoppen in menu v3 plus het open AI-agent-ecosysteem.' \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+          printf 'IDENTITEIT-008 · Виправлення входу пошти Google (SLEUTELKLUIS_GESLOTEN), палітри кольорів і дотикових зон у спадному меню облікового запису (v3) та відкрита агентна екосистема розділу ШІ (ізольовані робочі простори агентів, спільний контекст між завданнями, взаємодія між агентами, підтримка OpenAI Codex і Anthropic Claude, самостійне розгортання на власному обладнанні). Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "IDENTITEIT-008 · меню v3, пошта Google та відкрита екосистема ШІ · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: identiteit-008-controle
+          path: uitvoer/
+          if-no-files-found: ignore
