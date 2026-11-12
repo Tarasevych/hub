@@ -29,6 +29,8 @@ import { TECH_ASSET_KOPPEN, assetToegestaan } from '../backend/tech-bundels';
 import { diepAntwoord } from '../backend/diepe-gezondheid';
 import { techMeldingVerwerken, telStatus } from '../backend/toegangsfout-tellers';
 import { sluitAlleStromen, stroomVerzoek, stroomVerzoekMcp } from '../backend/connector-v2-stroom';
+import { isMcpRpcPad, mcpOriginBesluit, ORIGIN_403 } from '../backend/mcp-origin';
+import { eenKeerPer, journaalSchrijf } from '../backend/beheer-journaal';
 import { sluitAlleStromenApparaat, stroomVerzoekApparaat } from '../backend/apparaat-bevestiging/stroom'; /* APPARAAT-001: snelle stroom naar de tabbladen */
 import { opruimen as apparaatOpruimen } from '../backend/apparaat-bevestiging/kern';
 import { metVerzoek } from './platform/context';
@@ -318,6 +320,21 @@ export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders,
   return headers.cookie ? 'CSRF_ORIGIN_REQUIRED' : '';
 }
 
+/**
+ * MCP-001 R1: Origin-controle op MCP-eindpunten (backend/mcp-origin.ts). true = weigeren (403). Een geweigerde of — bij
+ * MCP_ORIGIN_MODUS=melden — alleen gemelde origin komt in het beheerlogboek (centrum voor meldingen), gedempt per origin.
+ */
+function mcpOriginGeweigerd(req: http.IncomingMessage): boolean {
+  const b = mcpOriginBesluit(req.headers.origin, ALLOWED_ORIGINS);
+  if (b.soort !== 'geweigerd') return false;
+  if (eenKeerPer(`mcp.origin:${b.origin}`, 10 * 60 * 1000)) {
+    void journaalSchrijf({ actie: 'owner.mcp.origin.denied', actor: null, eigenaar: null, resultaat: b.blokkeren ? 'denied' : 'warning', service: 'mcp',
+      reden: b.blokkeren ? 'Origin niet toegestaan (403)' : 'Origin niet toegestaan (alleen gemeld: MCP_ORIGIN_MODUS=melden)',
+      details: { origin: b.origin, pad: String(req.url || '').split('?')[0].slice(0, 120), ip: clientIp(req) } });
+  }
+  return b.blokkeren;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Rate limiting
 // ---------------------------------------------------------------------------------------------
@@ -490,9 +507,16 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // notifications/tools/list_changed stuurt zodra de levende staat (technisch profiel, dienst «ai») de lijst verandert. De router
   // kan geen open verbinding vasthouden, dus hier, vóór de routering (backend/connector-v2-stroom.ts).
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
-    if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res); return; }
+    // MCP-001 R1: Origin-controle alleen op de MCP-stromen zelf (niet op andere event-streams van de site, bv. APPARAAT-001).
+    if (url.pathname === '/mcp' || url.pathname === '/mcp/') {
+      if (mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
+      await stroomVerzoekMcp(req, res); return;
+    }
     const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
-    if (m) { await stroomVerzoek(req, res, m[1]); return; }
+    if (m) {
+      if (mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
+      await stroomVerzoek(req, res, m[1]); return;
+    }
   }
   // APPARAAT-001: de snelle stroom van de site zelf (GET /api/owner/stroom, Accept: text/event-stream) — het venster «Це ви?» op het
   // andere apparaat binnen een seconde. Zelfde sessiecontrole als elke route (via backend/apparaat-bevestiging/routes.ts), dezelfde
@@ -514,6 +538,9 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const method = String(req.method || 'GET').toUpperCase();
     // De connector-eindpunten gebruiken geen cookies maar OAuth/PKCE of een Bearer-token. Een Origin-controle zou
     // verzoeken van Anthropic (server-naar-server) onterecht weigeren; CSRF is hier niet van toepassing.
+    // MCP-001 R1: CSRF geldt hier niet, maar de MCP-specificatie eist wél een Origin-controle (DNS-rebinding): 403 bij een
+    // aanwezige, niet-toegestane Origin op het JSON-RPC-eindpunt. Zonder Origin (server-naar-server) verandert niets.
+    if (connector && isMcpRpcPad(apiUrl.pathname) && mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
     const csrf = connector ? '' : csrfAfwijzing(method, req.headers, apiUrl.pathname);
     if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
     const wacht = await rateLimitAfwijzing(method, apiUrl.pathname, ip);

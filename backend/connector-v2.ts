@@ -29,14 +29,14 @@ import { ontleed, toolNaam } from '../shared/connector-v2/namen';
 import { TECH_PROFIEL_UIT } from '../shared/ai-ruimte';
 import { breidtUit, isKant, schoon, STANDAARD } from '../shared/connector-v2/rechten';
 import { basisVan, berekenMassa, type MassaInvoer, type MassaUitkomst } from '../shared/connector-v2/massa';
-import { authenticate, ISSUER, lijstTools, PROTOCOL_VERSIONS, revokeUserGrant, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
+import { authenticate, BATCH_FOUT, batchToegestaan, ISSUER, lijstTools, PROTOCOL_VERSIONS, revokeUserGrant, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
 import { zetToegang } from './ai-toegang';
 import { meldLijstGewijzigd, sluitStromenVan } from './connector-v2-stroom';
 import { aiPoortNu } from './ai-ruimte-poort';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { taalVanGebruiker, vertaal, type ToolDef } from './connectors-hulpmiddelen';
 import { BEHEER_TOOLS } from './ai-beheer-hulpmiddeldefinities';
-import { tekstVanOptie, v2Staart, type ToolTaal } from '../shared/hulpmiddel-teksten';
+import { tekstVanOptie, v2Staart, vertaalSchema, type ToolTaal } from '../shared/hulpmiddel-teksten';
 import * as v2st from './connector-v2-opslag';
 import { erfenisUit, erfenisVoor, oudeGrantsVoor, rechtenVoorOudToken, type OudeGrant } from './connector-v2-erfenis';
 // Zone E (22.10.2026): chrome-devtools-mcp-namen als aliassen + «devtools-namen» in tools/list (matrix «Браузер і агенти»).
@@ -175,7 +175,7 @@ export async function v2Lijst(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: Ai
       // Alleen voor hulpmiddelen die deze koppeling aan DEZE kant echt heeft (recht + bestaat nu): een alias geeft nooit meer.
       const toegestaanIntern = new Set(V2_OPTIES.filter((o) => o.kant === kant && o.status === 'actief' && toegestaan.has(o.key) && o.intern && intern.has(o.intern)).map((o) => o.intern as string));
       const al = new Set(uit.map((t) => t.name));
-      for (const d of devtoolsDefinities(toegestaanIntern)) if (!al.has(d.name)) { uit.push(d); al.add(d.name); }
+      for (const d of devtoolsDefinities(toegestaanIntern, taal, kant)) if (!al.has(d.name)) { uit.push(d); al.add(d.name); }
     }
   }
   return uit;
@@ -312,7 +312,9 @@ async function bericht(who: Koppeling, rechten: v2st.V2Keuze, msg: any, ruimte: 
       if ((rechten.kanten.includes('beheer') && ruimte !== 'technisch') || (lijst.length <= 1 && rechten.sleutels.length > 1)) {
         void diagnoseVanKoppeling(who, rechten, ruimte).then((d) => meldAlsBeperkt(who, d, 'tools/list')).catch(() => undefined);
       }
-      return rpcResult(id, { tools: lijst.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })) });
+      // Vangnet (MCP-R0): elke `description` in een schema MOET een string zijn, anders laat de klant het hulpmiddel weg.
+      const taal = await taalVanGebruiker(who.userId);
+      return rpcResult(id, { tools: lijst.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: vertaalSchema(t.inputSchema, taal), annotations: t.annotations })) });
     }
     case 'tools/call': {
       const name = msg.params?.name;
@@ -347,7 +349,7 @@ export async function koppelingVan(slug: AgentSlug, authorization: string | unde
   return { koppeling, rechten, via: 'v2' };
 }
 
-export async function rpc(slug: string, authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
+export async function rpc(slug: string, authorization: string | undefined, rawBody: string, protocolKop?: string): Promise<RouterResponse> {
   if (!isAgentSlug(slug)) return respond(404, { error: 'unknown_agent' });
   const toegang = await koppelingVan(slug, authorization);
   if ('statusCode' in toegang) return toegang;
@@ -364,6 +366,7 @@ export async function rpc(slug: string, authorization: string | undefined, rawBo
   // een andere waarheid zien dan de andere helft). Elke tools/call controleert hem daarna in roepTool nog eens.
   const ruimte = await levendeRuimte(koppeling);
   if (Array.isArray(parsed)) {
+    if (!batchToegestaan(protocolKop)) return respond(400, BATCH_FOUT(String(protocolKop)));
     const out = (await Promise.all(parsed.map((m) => bericht(koppeling, rechten, m, ruimte, via)))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }
