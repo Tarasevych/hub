@@ -7,6 +7,7 @@ import { Activity, AlertCircle, Bot, Calculator, ChevronDown, CloudOff, Eye, Gau
 import { HUIS_TABS, HUIS_TAB_LABEL, type HuisTab } from '../../shared/huis-model';
 import { HuisFout, gekozenWoning, huisClient, kiesWoning, type Overzicht as OverzichtUit } from './huis-client';
 import { foutTekst, geledenTekst, serverFout, tr, useSmal, type Lang } from './tekst';
+import { emitCanonicalNotice } from '../canoniek-meldingen';
 import './huis.css';
 
 const Overzicht = lazy(() => import('./onderdelen/Overzicht'));
@@ -23,7 +24,7 @@ const Instellingen = lazy(() => import('./onderdelen/Instellingen'));
 const Showroom = lazy(() => import('./onderdelen/Showroom'));
 const Planner = lazy(() => import('./onderdelen/Planner'));
 
-export type OnderdeelProps = { lang: Lang; smal: boolean; woningId: string; ov: OverzichtUit; vernieuw: () => Promise<void>; toon: (t: string) => void; naarTab: (t: HuisTab) => void };
+export type OnderdeelProps = { lang: Lang; smal: boolean; woningId: string; ov: OverzichtUit; vernieuw: () => Promise<void>; toon: (t: string, soort?: 'ok' | 'fout') => void; naarTab: (t: HuisTab) => void };
 const ICOON: Record<HuisTab, typeof Home> = { overview: Home, rooms: LayoutGrid, devices: Lightbulb, scenes: Sparkles, automations: Workflow, security: ShieldCheck, energy: Gauge, activity: Activity, integrations: Plug, assistant: Bot, settings: Settings, showroom: Store, planner: Calculator };
 
 export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; tab: string; onNavigateTab: (id: string) => void }) {
@@ -33,7 +34,6 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
   const [woningId, setWoningId] = useState(gekozenWoning());
   const [ov, setOv] = useState<OverzichtUit | null>(null);
   const [fout, setFout] = useState('');
-  const [melding, setMelding] = useState('');
   const [nieuweNaam, setNieuweNaam] = useState('');
   const [bezig, setBezig] = useState(false);
   const [kiezer, setKiezer] = useState(false);
@@ -43,7 +43,10 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
   const naamVeld = useRef<HTMLInputElement | null>(null);
   const laadTeller = useRef(0);
 
-  const toon = useCallback((t: string) => { setMelding(t); window.setTimeout(() => setMelding(''), 4500); }, []);
+  // HUIS-001 (10.11.2026): elke uitkomst gaat naar het meldingencentrum van het platform (pop-up + regel in het paneel, dienst «Дім / Huis»),
+  // niet meer naar een eigen regel die na 4,5 s spoorloos verdween. `context` zegt over welke woning het gaat.
+  const woningNaam = useRef('');
+  const toon = useCallback((t: string, soort: 'ok' | 'fout' = 'ok') => { emitCanonicalNotice({ text: t, kind: soort === 'fout' ? 'error' : 'success', source: 'huis', context: woningNaam.current || undefined }); }, []);
   const laadWoningen = useCallback(async () => {
     try { const w = await huisClient.woningen(); setWoningen(w); setFout(''); setLijstFout(''); const keuze = w.find((x) => x.id === woningId) ? woningId : (w[0]?.id ?? ''); if (keuze !== woningId) { setWoningId(keuze); kiesWoning(keuze); } }
     catch (e) { setLijstFout(foutTekst(lang, e instanceof HuisFout ? (serverFout(e.status) ? 'SERVER' : e.code) : 'NETWERK')); setWoningen(null); }
@@ -59,6 +62,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
   // Polling (geen WS in deze release): elke 30 s de waarnemingen verversen zolang het tabblad zichtbaar is.
   useEffect(() => { const t = window.setInterval(() => { if (document.visibilityState === 'visible') void vernieuw(); }, 30_000); return () => window.clearInterval(t); }, [vernieuw]);
   const naarTab = useCallback((t: HuisTab) => onNavigateTab(t), [onNavigateTab]);
+  woningNaam.current = woningen?.find((w) => w.id === woningId)?.naam ?? '';
 
   const maakWoning = async () => {
     const naam = nieuweNaam.trim(); if (!naam || bezig) return;
@@ -112,7 +116,6 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
         </div>
       </header>
       {fout ? <p className='hv-melding is-fout' role='alert'><AlertCircle aria-hidden='true' />{fout}</p> : null}
-      {melding ? <p className='hv-toost' role='status' aria-live='polite'>{melding}</p> : null}
 
       {!publiek && lijstFout ? (
         <section className='hv-foutkaart' role='alert' data-hv-fout-kaart='1'>

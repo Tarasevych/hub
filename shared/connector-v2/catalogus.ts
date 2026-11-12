@@ -409,6 +409,27 @@ const DEFS: readonly Def[] = [
   { id: 'github_ci_logs', essentie: 'lezen_workflow_logboek', sub: 'github', dienst: 'github', kanten: G, soort: 'lezen', groep: 'github', risico: 'laag',
     uk: ['Журнали CI', 'Журнали запусків GitHub Actions: завдання, кроки й кінець журналу з рядками помилок.', 'У журналах бувають технічні деталі; GitHub сам приховує секрети як ***.'],
     nl: ['Logboeken van CI', 'Logboeken van GitHub Actions-runs: jobs, stappen en het einde van het logboek met de foutregels.', 'Logboeken kunnen technische details bevatten; GitHub verbergt geheimen zelf als ***.'] },
+  { id: 'github_list_branches', essentie: 'tonen_takken', sub: 'github', dienst: 'github', kanten: G, soort: 'lezen', groep: 'github', risico: 'laag',
+    uk: ['Гілки й мітки версій', 'Перелік гілок і міток сховища разом із типовою гілкою та станом захисту.', 'Лише назви гілок і контрольні суми фіксацій змін.'],
+    nl: ['Takken en tags bekijken', 'Overzicht van takken en tags van een repository met de hoofdtak en beveiligingsstatus.', 'Uitsluitend taknamen en controlesommen van vastleggingen.'] },
+  { id: 'github_list_tree', essentie: 'tonen_boom', sub: 'github', dienst: 'github', kanten: G, soort: 'lezen', groep: 'github', risico: 'laag',
+    uk: ['Дерево папок і файлів', 'Будова каталогів і файлів сховища для вибраної гілки чи мітки без читання їхнього вмісту.', 'ШІ бачить шляхи та розміри файлів сховища.'],
+    nl: ['Bestandsboom bekijken', 'Opbouw van mappen en bestanden van een repository voor een gekozen tak of tag zonder de inhoud te lezen.', 'De AI ziet paden en omvang van bestanden in de repository.'] },
+  { id: 'github_read_file', essentie: 'lezen_codebestand', sub: 'github', dienst: 'github', kanten: G, soort: 'lezen', groep: 'github', risico: 'midden',
+    uk: ['Читати файл сховища', 'Читає текстовий файл вихідного коду або документації зі сховища у вибраній гілці.', 'ШІ читає вміст файла у вашому приватному чи публічному сховищі.'],
+    nl: ['Codebestand lezen', 'Leest een broncode- of documentatiebestand uit een repository op de gekozen tak.', 'De AI leest de inhoud van het bestand in uw besloten of openbare repository.'] },
+  { id: 'github_compare', essentie: 'vergelijken_takken', sub: 'github', dienst: 'github', kanten: G, soort: 'lezen', groep: 'github', risico: 'laag',
+    uk: ['Порівнювати гілки', 'Порівнює дві гілки або фіксації змін і повертає перелік змінених файлів та різницю рядків.', 'ШІ бачить різницю коду між гілками.'],
+    nl: ['Takken vergelijken', 'Vergelijkt twee takken of vastleggingen en geeft de gewijzigde bestanden en regelverschillen terug.', 'De AI ziet het codeverschil tussen takken.'] },
+  { id: 'github_list_releases', essentie: 'tonen_uitgaven', sub: 'github', dienst: 'github', kanten: G, soort: 'lezen', groep: 'github', risico: 'laag',
+    uk: ['Випуски сховища', 'Перелік опублікованих випусків сховища з їхніми описами та прикріпленими архівами.', 'Лише відомості про випуски.'],
+    nl: ['Uitgaven van een repository', 'Overzicht van gepubliceerde uitgaven van een repository met hun beschrijving en bijlagen.', 'Uitsluitend gegevens over uitgaven.'] },
+  { id: 'github_save_file', essentie: 'opslaan_codebestand', sub: 'github', dienst: 'github', kanten: G, soort: 'schrijven', groep: 'github', risico: 'hoog',
+    uk: ['Зберігати файл у сховищі', 'Створює або оновлює файл у гілці чи новій гілці зі створенням запиту на злиття — лише після вашого підтвердження на сайті.', 'Нова фіксація змін з’явиться у вашому сховищі GitHub.', 'Кожне збереження ви підтверджуєте на сайті.'],
+    nl: ['Codebestand opslaan in repository', 'Maakt of werkt een bestand bij op een tak of nieuwe tak met een samenvoegingsverzoek — pas na uw goedkeuring op de site.', 'Er verschijnt een nieuwe vastlegging in uw GitHub-repository.', 'Elke opslagactie bevestigt u op de site.'] },
+  { id: 'github_sync_mirror', essentie: 'synchroniseren_repo', sub: 'github', dienst: 'github', kanten: G, soort: 'schrijven', groep: 'github', risico: 'midden',
+    uk: ['Синхронізувати дзеркало GitHub', 'Оновлює ізольоване двостороннє дзеркало сховищ та пов’язані задачі Дошки у вашому просторі на сайті.', 'Оновлюються записи дзеркала у вашому просторі без видалення сховищ на GitHub.'],
+    nl: ['GitHub-spiegel synchroniseren', 'Werkt de geïsoleerde tweerichtingsspiegel van repositories en gekoppelde bordtaken in uw ruimte op de site bij.', 'De spiegelregistraties in uw ruimte worden bijgewerkt zonder repositories op GitHub te wissen.'] },
 
   // ---------------------------------------------------------------- ontwerp en media
   // 21.10.2026 — nu echt: de LOKALE generator van de eigenaar (BYOS, backend/media-generator.ts), resultaat in de eigen hmara.
@@ -499,6 +520,20 @@ const DEFS: readonly Def[] = [
   { id: 'orch_inleveren_klaar', essentie: 'afronden_overdracht', sub: 'admin', kanten: B, soort: 'schrijven', groep: 'releases', risico: 'hoog',
     uk: ['Завершувати передачу результату', 'Звіряє SHA-256 і проганяє пакет через конвеєр приймання: гілка від бази, правила, захищені файли, конфлікти з integratie, тести, запис, черга.', 'Прийнята передача — лише власна гілка й місце в черзі; злиття в integratie та установку робить людина. Відхилена — не лишає гілки.'],
     nl: ['Overdracht van een resultaat afronden', 'Vergelijkt de SHA-256 en haalt het pakket door de inleverpijplijn: tak vanaf de basis, regels, beschermde bestanden, conflicten met integratie, tests, record, wachtrij.', 'Een aanvaarde overdracht is alleen een eigen tak en een plek in de wachtrij; samenvoegen en installeren doet een mens. Een geweigerde laat geen tak achter.'] },
+
+  // ---------------------------------------------------------------- ecosysteem: gedeelde context, taakoverdracht en ruimte-uitbreidingen
+  { id: 'ecosysteem_context_list', essentie: 'tonen_werkcontext', sub: 'ai', kanten: BEIDE, soort: 'lezen', groep: 'apps', risico: 'laag',
+    uk: ['Читати спільний контекст завдань', 'Читає збережені записи спільного контексту між завданнями, підключеними застосунками та агентами ШІ у вашому просторі.', 'ШІ бачить лише контекст поточного простору (приватного або технічного) без доступу до іншого простору.'],
+    nl: ['Gedeelde werkcontext lezen', 'Leest opgeslagen items van de gedeelde werkcontext tussen taken, aangesloten toepassingen en AI-agenten in uw ruimte.', 'De AI ziet uitsluitend de context van de actieve ruimte (privé of technisch) zonder toegang tot de andere ruimte.'] },
+  { id: 'ecosysteem_context_save', essentie: 'bewaren_werkcontext', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Зберігати спільний контекст завдань', 'Створює або оновлює запис спільного контексту, щоб інші завдання, застосунки й агенти ШІ продовжували роботу без втрати даних.', 'Запис з’являється у вашому реєстрі спільного контексту після підтвердження на сайті.'],
+    nl: ['Gedeelde werkcontext bewaren', 'Maakt of werkt een gedeeld contextitem bij zodat volgende taken, toepassingen en AI-agenten verderwerken zonder contextverlies.', 'Het item verschijnt in uw register van gedeelde context na bevestiging op de site.'] },
+  { id: 'ecosysteem_agent_overdracht', essentie: 'overdragen_taak', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Передавати завдання іншому агенту ШІ', 'Реєструє передачу завдання та вибраних ключів спільного контексту іншому підключеному агенту ШІ за вашим розпорядженням.', 'Створює запис передачі у вашому просторі; інший агент діє лише в межах наданих вами прав і після підтвердження на сайті.'],
+    nl: ['Taak overdragen aan een andere AI-agent', 'Registreert een door u opgedragen taakoverdracht met gekozen contextsleutels naar een andere verbonden AI-agent.', 'Maakt een overdrachtsitem in uw ruimte na bevestiging op de site; de andere agent handelt uitsluitend binnen de rechten die u gaf.'] },
+  { id: 'ecosysteem_ruimte_uitbreiding', essentie: 'bewaren_uitbreiding', sub: 'ai', kanten: BEIDE, soort: 'schrijven', groep: 'apps', risico: 'midden',
+    uk: ['Додавати розширення простору сайту', 'Реєструє адаптацію, системний міст або робочий потік, створений вами чи інструментом програмування ШІ у межах вашого простору облікового запису.', 'Розширення працює лише у вашому просторі після підтвердження на сайті та з тими середовищами, які ви йому відкрили.'],
+    nl: ['Uitbreiding van uw siteruimte bewaren', 'Registreert een aanpassing, systeembrug of werkstroom die door u of een programmeeragent binnen uw eigen accountruimte is gebouwd.', 'De uitbreiding werkt alleen in uw ruimte na bevestiging op de site en met de omgevingen die u ervoor openzette.'] },
 ];
 
 /**

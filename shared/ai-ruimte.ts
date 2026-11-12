@@ -51,7 +51,7 @@ const TECHNISCH = new Set([
   'admin_list_access', 'dashboard_usage', 'server_status', 'server_releases', 'server_backup', 'server_uitrol_nu', 'server_terugdraaien',
   'write_staging', 'list_staging', 'read_staging', 'install_release', 'update_door', 'start_backup',
 ]);
-const APPARAAT_PREFIX = /^(machine_|docker_|app_|system_metrics$)/;
+const APPARAAT_PREFIX = /^(machine_|docker_|app_|ecosysteem_|system_metrics$)/;
 /**
  * Browserhulpmiddelen (extensie 0.6, 19.10.2026): de interne browser_*-namen en de namen naar chrome-devtools-mcp (DEVTOOLS_ALIASES in
  * backend/connectors-hulpmiddelen.ts; tests/eenheid/ai-ruimte.test.ts houdt beide lijsten gelijk). Ze werken op een gekoppelde browseragent en

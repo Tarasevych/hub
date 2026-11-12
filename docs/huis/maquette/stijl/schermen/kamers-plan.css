@@ -1,0 +1,340 @@
+/* kamers-plan.css — «Кімнати → План» і «Кімнати → Пристрої».
+   План — креслярська мова на папері: стіни --text, кімнати прямокутниками, двері дугою, вікна подвійною лінією,
+   розмірні лінії й масштабна смуга. Колір ніколи не єдиний носій: у кімнаті завжди число чи слово. */
+
+/* ───────────── План ───────────── */
+.hv-plan { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-plan__zin { margin-block-end: calc(var(--ruimte-1) * -1); }
+.hv-plan__balk { display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-plan__verdiepingen { max-inline-size: 100%; }
+.hv-plan__lagen { min-inline-size: 0; }
+.hv-plan__werk { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); align-items: start; min-inline-size: 0; }
+.hv-plan__links { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-plan__zij { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+.hv-plan .hv-kaart + .hv-kaart { margin-block-start: 0; }
+
+.hv-plan__venster { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0;
+  background-color: var(--panel); background-attachment: local;
+  background-image: linear-gradient(color-mix(in srgb, var(--line) 75%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--line) 75%, transparent) 1px, transparent 1px); }
+.hv-plan__venster.is-zoom { overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--hv-omtrek) transparent; }
+.hv-plan__venster.is-terugblik { outline: var(--hv-streep-sterk) dashed var(--text); outline-offset: -7px; }
+.hv-plan__vel { position: relative; }
+.hv-plan__terugbliklabel { position: absolute; inset-block-start: 8px; inset-inline-end: 10px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--text); color: var(--panel); font-size: var(--tekst-mini); font-weight: 700; }
+
+/* розмірні лінії над і ліворуч від креслення */
+.hv-plan__maat { position: absolute; display: grid; place-items: center; pointer-events: none; color: var(--muted); font-size: var(--tekst-mini); font-weight: 600; font-variant-numeric: tabular-nums; }
+.hv-plan__maat--b { inset-block-start: 9px; block-size: 12px; border-inline: 1px solid var(--hv-omtrek); }
+.hv-plan__maat--b::before { content: ""; position: absolute; inset-inline: 0; inset-block-start: 50%; border-block-start: 1px solid var(--hv-omtrek); }
+.hv-plan__maat--h { inset-inline-start: 9px; inline-size: 12px; border-block: 1px solid var(--hv-omtrek); }
+.hv-plan__maat--h::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 50%; border-inline-start: 1px solid var(--hv-omtrek); }
+.hv-plan__maat span { position: relative; padding-inline: 4px; background: var(--panel); white-space: nowrap; line-height: 1; }
+.hv-plan__maat--h span { position: absolute; inset-inline-start: 50%; inset-block-start: 50%; transform: translate(-50%, -50%) rotate(-90deg); }
+
+/* креслення поверху */
+.hv-plan__grond { position: absolute; transform-origin: 0 0; transition: transform var(--hv-duur-4) var(--hv-kromme-in); box-shadow: 0 0 0 var(--hv-streep-sterk) var(--text); background: var(--panel); }
+.hv-plan__grond--kavel { box-shadow: none; outline: 1px dashed var(--hv-omtrek); background: transparent; }
+
+/* кімната: кнопка-прямокутник; стіна 1 px з кожного боку дає 2 px між сусідами */
+.hv-plan__kamer { position: absolute; z-index: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 6px 8px; text-align: start; color: var(--text); background: var(--panel); box-shadow: inset 0 0 0 1px var(--text); border-radius: 0; overflow: hidden; transition: background var(--hv-duur-2), box-shadow var(--hv-duur-1); }
+.hv-plan__kamer:hover { box-shadow: inset 0 0 0 1px var(--text), inset 0 0 0 3px color-mix(in srgb, var(--text) 18%, transparent); }
+.hv-plan__kamer:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: -5px; z-index: 1; }
+.hv-plan__kamer.is-gekozen { box-shadow: inset 0 0 0 1px var(--text), inset 0 0 0 4px var(--text); }
+.hv-plan__kamer.is-licht { background: var(--hv-aan-zacht); }
+.hv-plan__kamer.is-aanwezig { background: var(--surface2); }
+.hv-plan__kamer.hv-warmte--1 { background: var(--hv-warmte-1); }
+.hv-plan__kamer.hv-warmte--2 { background: var(--hv-warmte-2); }
+.hv-plan__kamer.hv-warmte--3 { background: var(--hv-warmte-3); }
+.hv-plan__kamer.hv-warmte--4 { background: var(--hv-warmte-4); }
+.hv-plan__kamer.hv-warmte--5 { background: var(--hv-warmte-5); }
+.hv-plan__kamer[class*="hv-warmte--"] .hv-plan__sub, .hv-plan__kamer[class*="hv-warmte--"] .hv-maat__eenheid, .hv-plan__kamer[class*="hv-warmte--"] .hv-plan__m2 { color: var(--text); }
+/* невиміряне — штрих у вільному полі, підпис на папері */
+.hv-plan__kamer.is-onbemeten { background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 30%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)), var(--panel); }
+.hv-plan__kamer.is-onbemeten .hv-plan__label, .hv-plan__kamer.is-verouderd .hv-plan__label { background: var(--panel); box-shadow: 0 0 0 1px var(--line); }
+.hv-plan__kamer.is-verouderd::after { content: ""; position: absolute; inset-block: 0; inset-inline-end: 0; inline-size: 40%; pointer-events: none; background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 30%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)); }
+/* тривога: подвійна рамка і слово, без миготіння */
+.hv-plan__kamer.is-alarm { box-shadow: inset 0 0 0 1px var(--text), inset 0 0 0 4px var(--fout), inset 0 0 0 6px var(--panel), inset 0 0 0 8px var(--fout); }
+
+.hv-plan__label { position: relative; z-index: 1; display: inline-grid; justify-items: start; gap: 1px; max-inline-size: 100%; padding: 2px 4px; border-radius: 4px; }
+.hv-plan__naam { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.25; overflow-wrap: anywhere; }
+.hv-plan__waarde { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hv-plan__van { font-size: var(--tekst-klein); font-weight: 600; letter-spacing: 0; }
+.hv-plan__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); line-height: 1.25; }
+.hv-plan__kamer.is-licht .hv-plan__sub, .hv-plan__kamer.is-aanwezig .hv-plan__sub { color: var(--text); }
+.hv-plan__sub--doel { white-space: nowrap; margin-block-start: 2px; padding: 0 6px; border: 1px dashed var(--text); border-radius: 999px; color: var(--text); font-weight: 600; }
+.hv-plan__chip { display: inline-flex; align-items: center; gap: 4px; margin-block-start: 3px; padding: 1px 8px; border-radius: 999px; background: var(--toon-zacht); border: 1px solid var(--toon); font-size: var(--tekst-mini); font-weight: 700; color: var(--text); }
+.hv-plan__chip .hv-ic { color: var(--toon); }
+.hv-plan__alarm { position: absolute; z-index: 1; inset-inline-start: 10px; inset-block-end: 10px; display: inline-flex; align-items: center; gap: 4px; max-inline-size: calc(100% - 20px); padding: 2px 8px; border-radius: 999px; background: var(--fout-zacht); border: 1px solid var(--fout); color: var(--text); font-size: var(--tekst-mini); font-weight: 700; }
+.hv-plan__alarm .hv-ic { color: var(--fout); flex: none; }
+.hv-plan__m2 { position: absolute; inset-inline-end: 6px; inset-block-end: 3px; font-size: var(--tekst-mini); color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; }
+
+/* неінтерактивні частини креслення */
+.hv-plan__vlak { position: absolute; z-index: 0; display: grid; place-content: center; text-align: center; gap: 2px; padding: 4px; color: var(--muted); }
+.hv-plan__vlak { overflow: hidden; }
+.hv-plan__vlak .hv-plan__naam { color: var(--muted); white-space: nowrap; overflow-wrap: normal; }
+.hv-plan__vlak--trap { background: var(--surface); box-shadow: inset 0 0 0 1px var(--text); place-content: end center; padding-block-end: 6px; }
+.hv-plan__vlak--trap .hv-plan__naam { background: var(--surface); padding-inline: 4px; }
+.hv-plan__vlak--straat { background: var(--surface2); }
+.hv-plan__vlak--straat .hv-plan__naam { color: var(--text); }
+.hv-plan__vlak--oprit { background: repeating-linear-gradient(90deg, transparent 0 calc(var(--hv-arcering-stap) * 2 - 1px), color-mix(in srgb, var(--hv-arcering) 30%, transparent) calc(var(--hv-arcering-stap) * 2 - 1px) calc(var(--hv-arcering-stap) * 2)), var(--surface); outline: 1px dashed var(--hv-omtrek); outline-offset: -1px; place-content: start center; padding-block-start: 8px; }
+.hv-plan__vlak--huis { color: var(--text); background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 22%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)), var(--panel); box-shadow: inset 0 0 0 var(--hv-streep-sterk) var(--text); }
+.hv-plan__vlak--huis .hv-plan__naam { color: var(--text); background: var(--panel); padding: 2px 6px; }
+.hv-plan__vlak--huis .hv-plan__sub { background: var(--panel); padding: 0 6px; }
+.hv-plan__vlak--huis:hover { box-shadow: inset 0 0 0 var(--hv-streep-sterk) var(--text), inset 0 0 0 5px color-mix(in srgb, var(--text) 18%, transparent); }
+.hv-plan__vlak--huis:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: 2px; }
+.hv-plan__vlak--maaizone { z-index: 1; pointer-events: none; outline: var(--hv-streep) dashed var(--hv-omtrek); outline-offset: -1px; place-content: end start; padding: 0 0 4px 8px; }
+
+/* лінії креслення: вікна, двері, сходи, схил даху, поля зору камер */
+.hv-plan__lijnen { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: visible; fill: none; }
+.hv-plan__raam-gat { stroke: var(--text); stroke-width: 6; }
+.hv-plan__raam { stroke: var(--panel); stroke-width: 2.5; }
+.hv-plan__deur-gat { stroke: var(--panel); stroke-width: 5; }
+.hv-plan__deur { stroke: var(--text); stroke-width: 1.5; }
+.hv-plan__deur--rol { stroke-dasharray: 6 3; stroke-width: 2.5; }
+.hv-plan__boog { stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 3 3; }
+.hv-plan__trede { stroke: var(--hv-omtrek); stroke-width: 1; }
+.hv-plan__looplijn { stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.hv-plan__schuin { stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 10 4 2 4; }
+.hv-plan__kegel { fill: color-mix(in srgb, var(--text) 7%, transparent); stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 4 3; }
+.hv-plan__kegel.is-dood { fill: none; }
+
+/* знак пристрою: коло 30 px у цілі 44 px */
+.hv-plan__merk { position: absolute; z-index: 3; inline-size: var(--hv-tik); block-size: var(--hv-tik); margin: calc(var(--hv-tik) / -2) 0 0 calc(var(--hv-tik) / -2); display: grid; place-items: center; border-radius: 50%; --toon: var(--text); --teken-vlak: var(--surface2); --teken-icoon: var(--text); }
+.hv-plan__stip { position: relative; inline-size: 30px; block-size: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--panel); border: var(--hv-streep) solid var(--hv-omtrek); color: var(--muted); box-shadow: var(--schaduw-1); transition: background var(--hv-duur-1), transform var(--hv-duur-1); }
+.hv-plan__merk.is-aan .hv-plan__stip { background: var(--teken-vlak); border: 2px solid var(--toon); color: var(--teken-icoon); }
+.hv-plan__merk.hv-toon-let-op.is-aan .hv-plan__stip { background: var(--warn-zacht); border-color: var(--warn); color: var(--warn); }
+.hv-plan__merk.hv-toon-alarm .hv-plan__stip { background: var(--fout-zacht); border: 2px solid var(--fout); color: var(--fout); }
+.hv-plan__merk.is-onbereikbaar .hv-plan__stip { border-style: dashed; background: var(--panel); color: var(--muted); box-shadow: none; }
+.hv-plan__merk.is-verouderd .hv-plan__stip, .hv-plan__merk.is-slaapt .hv-plan__stip { border-style: dashed; }
+.hv-plan__merk.is-verondersteld .hv-plan__stip { border-style: dotted; border-width: 2px; }
+.hv-plan__merk.is-wacht .hv-plan__stip { border: 2px dashed var(--text); animation: hv-puls var(--hv-duur-puls) ease-in-out infinite; }
+.hv-plan__staat { position: absolute; inset-block-start: 4px; inset-inline-end: 4px; inline-size: 10px; block-size: 10px; border-radius: 50%; background: var(--panel); border: var(--hv-streep) dashed var(--text); }
+button.hv-plan__merk:hover .hv-plan__stip { transform: scale(1.08); }
+button.hv-plan__merk:active .hv-plan__stip { transform: scale(0.94); }
+button.hv-plan__merk:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: -4px; }
+.hv-plan__merk--teller .hv-plan__stip { background: var(--surface2); color: var(--text); border: var(--hv-streep) solid var(--text); font-size: var(--tekst-mini); font-weight: 700; font-variant-numeric: tabular-nums; box-shadow: none; }
+.hv-plan__badge { position: absolute; inset-block-start: 12px; inset-inline-start: 38px; white-space: nowrap; padding: 0 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 700; color: var(--text); }
+
+/* інструменти під планом: масштаб, масштабна смуга, північ */
+.hv-plan__gereedschap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-1) var(--ruimte-3); }
+.hv-plan__zoom { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.hv-plan__zoom .hv-icoonknop { background: var(--panel); border: 1px solid var(--line); }
+.hv-plan__zoom .hv-icoonknop.is-grens { color: var(--muted); background: var(--surface); }
+.hv-plan__zoomgetal { min-inline-size: 4.2em; text-align: center; font-size: var(--tekst-klein); font-weight: 600; font-variant-numeric: tabular-nums; }
+.hv-plan__schaal { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-plan__schaalbalk { display: inline-block; block-size: 6px; border: var(--hv-streep) solid var(--text); background: linear-gradient(90deg, var(--text) 50%, var(--panel) 50%); }
+.hv-plan__schaal .hv-ic { margin-inline-start: var(--ruimte-2); color: var(--text); }
+
+/* легенда */
+.hv-plan__legenda > * + * { margin-block-start: var(--ruimte-3); }
+.hv-plan__legenda .hv-kaart__titel { margin-block-end: 0; }
+.hv-plan__schaalrij { display: grid; gap: 2px; font-size: var(--tekst-klein); }
+.hv-plan__schaalrij li { display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: 28px; }
+.hv-plan__staal { position: relative; flex: none; inline-size: 24px; block-size: 16px; border-radius: 2px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--text); }
+.hv-plan__staal.is-licht { background: var(--hv-aan-zacht); }
+.hv-plan__staal.is-aanwezig { background: var(--surface2); }
+.hv-plan__staal.is-dood { box-shadow: none; border: var(--hv-streep) dashed var(--hv-omtrek); border-radius: 50%; inline-size: 18px; block-size: 18px; }
+.hv-plan__staal.is-onbemeten { background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 40%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) 5px), var(--panel); }
+.hv-plan__staal.is-doel { box-shadow: none; border: 1px dashed var(--text); border-radius: 999px; }
+.hv-plan__staal.is-merk, .hv-plan__staal.is-merk-let-op { inline-size: 18px; block-size: 18px; border-radius: 50%; box-shadow: none; border: var(--hv-streep) solid var(--hv-omtrek); }
+.hv-plan__staal.is-merk-let-op { background: var(--warn-zacht); border: 2px solid var(--warn); }
+.hv-plan__staal.is-kegel { box-shadow: none; background: color-mix(in srgb, var(--text) 10%, transparent); clip-path: polygon(0 50%, 100% 0, 100% 100%); }
+.hv-plan__staal.is-alarm { box-shadow: inset 0 0 0 2px var(--fout), inset 0 0 0 4px var(--panel), inset 0 0 0 6px var(--fout); }
+.hv-plan__warmteschaal { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.hv-plan__warmteschaal li { display: grid; place-items: center; min-block-size: 36px; padding: 4px 2px; font-size: var(--tekst-mini); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); text-align: center; line-height: 1.15; }
+.hv-plan__warmteschaal li:first-child { border-radius: 6px 0 0 6px; }
+.hv-plan__warmteschaal li:last-child { border-radius: 0 6px 6px 0; }
+.hv-plan__eenheid { margin-block-start: 2px !important; font-size: var(--tekst-mini); color: var(--muted); text-align: end; }
+.hv-plan__legkop { display: flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); font-weight: 700; }
+.hv-plan__veilig { padding-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); display: grid; gap: var(--ruimte-1); }
+.hv-plan__regel { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-plan__totaal { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--ruimte-2); }
+.hv-plan__legenda .hv-knoppen { align-items: center; }
+.hv-plan__legenda .hv-segment__deel { padding-inline: 4px; font-size: var(--tekst-mini); }
+.hv-plan__actie { flex-wrap: nowrap; }
+.hv-plan__actie .hv-knop { flex: 1 1 auto; min-inline-size: 0; }
+
+/* перегляд минулого */
+.hv-terugblik { display: grid; gap: var(--ruimte-2); overflow-x: clip; }
+.hv-terugblik.is-actief { border: var(--hv-streep-sterk) dashed var(--text); }
+.hv-terugblik__kop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2); }
+.hv-terugblik__kop .hv-kaart__titel { margin: 0; justify-content: flex-start; gap: 6px; }
+.hv-terugblik__tijd { padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: var(--tekst-klein); font-weight: 700; font-variant-numeric: tabular-nums; }
+.hv-terugblik.is-actief .hv-terugblik__tijd { background: var(--text); color: var(--panel); border-color: var(--text); }
+.hv-terugblik__schuif { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 2px; }
+.hv-terugblik__vak { display: grid; min-inline-size: 0; --niveau: var(--text); --toon: var(--text); --toon-zacht: var(--surface); }
+.hv-terugblik__vak .hv-schuif__vulling { background: var(--surface2); border-inline-end-color: var(--text); }
+.hv-terugblik__vak.is-sleept .hv-schuif__vulling, .hv-terugblik__vak.is-sleept .hv-schuif__knop { transition: none; }
+.hv-terugblik__banen { position: relative; display: grid; gap: 3px; margin-inline: calc(var(--hv-schuif-knop) / 2); padding-block-end: 18px; }
+.hv-terugblik__baan { position: relative; block-size: 8px; border-radius: 3px; background: var(--surface); overflow: hidden; }
+.hv-terugblik__baan--thuis { block-size: 4px; }
+.hv-terugblik__tikken { position: absolute; inset-inline: 0; inset-block-end: 0; block-size: 14px; }
+.hv-terugblik__tik { position: absolute; transform: translateX(-50%); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1; }
+.hv-terugblik__kamer { display: grid; gap: var(--ruimte-1); padding-block-start: var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-terugblik__kamer .hv-knop { justify-self: start; }
+.hv-terugblik .hv-berichten { display: grid; }
+
+/* список під планом */
+.hv-plan__lijsten { display: grid; gap: var(--ruimte-4); align-items: start; min-inline-size: 0; }
+.hv-planrij { display: flex; align-items: center; gap: var(--ruimte-2); border-block-start: 1px solid var(--line); min-inline-size: 0; }
+.hv-planrij:first-child { border-block-start: 0; }
+.hv-planrij__lijf { flex: 1 1 auto; display: flex; align-items: center; gap: var(--ruimte-3); min-block-size: var(--hv-tik); min-inline-size: 0; padding-block: var(--ruimte-2); text-align: start; font-size: var(--tekst-klein); color: var(--text); border-radius: var(--straal-s); }
+.hv-planrij__lijf:active { background: var(--surface2); }
+.hv-planrij .hv-stapper { flex: none; }
+.hv-plan__lijststaal { inline-size: 32px; block-size: 32px; border-radius: 8px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); }
+.hv-plan__lijststaal.is-licht { background: var(--hv-aan-zacht); }
+.hv-plan__lijststaal.is-aanwezig { background: var(--surface2); }
+.hv-plan__lijststaal.hv-warmte--1 { background: var(--hv-warmte-1); }
+.hv-plan__lijststaal.hv-warmte--2 { background: var(--hv-warmte-2); }
+.hv-plan__lijststaal.hv-warmte--3 { background: var(--hv-warmte-3); }
+.hv-plan__lijststaal.hv-warmte--4 { background: var(--hv-warmte-4); }
+.hv-plan__lijststaal.hv-warmte--5 { background: var(--hv-warmte-5); }
+.hv-plan__lijststaal.is-onbemeten { background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 35%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) 6px), var(--panel); }
+.hv-plan__lijststaat { display: inline-block; margin-inline-start: 4px; padding: 0 6px; border: 1px dashed var(--hv-omtrek); border-radius: 999px; font-size: var(--tekst-mini); font-weight: 700; }
+
+@container doek (min-width: 900px) {
+  .hv-plan__werk { grid-template-columns: minmax(0, 1fr) minmax(260px, 300px); }
+  .hv-plan__balk { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--ruimte-4); }
+  .hv-plan__verdiepingen { max-inline-size: none; }
+}
+@container doek (min-width: 1100px) {
+  .hv-plan__lijsten { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .hv-plan__waarde { font-size: 22px; }
+}
+.hv-plan__lijsten .hv-rij__waarde { flex: 0 1 auto; min-inline-size: 0; flex-wrap: wrap; justify-content: flex-end; font-size: var(--tekst-klein); }
+/* телефон і вузька панель: план → легенда → перегляд минулого → списки */
+@container doek (max-width: 899px) {
+  .hv-plan__werk, .hv-plan__zij { display: contents; }
+  .hv-plan__links { order: 1; }
+  .hv-plan__legenda { order: 2; }
+  .hv-terugblik { order: 3; }
+  .hv-plan__lijsten { order: 4; }
+  .hv-plan__schaalrij { display: flex; flex-wrap: wrap; gap: 0 var(--ruimte-4); }
+}
+@container doek (max-width: 699px) {
+  .hv-plan__lagen { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--hv-rand) * -1); padding-inline: var(--hv-rand); }
+  .hv-plan__lagen::-webkit-scrollbar { display: none; }
+  .hv-plan__waarde { font-size: 18px; }
+  .hv-plan__kamer { padding: 4px 5px; }
+  .hv-plan__naam { letter-spacing: 0.02em; }
+  .hv-plan__naam { font-size: var(--tekst-mini); }
+  .hv-plan__m2 { display: none; }
+}
+
+/* ───────────── Реєстр пристроїв ───────────── */
+.hv-register { display: grid; gap: var(--ruimte-3); min-inline-size: 0; container-type: inline-size; container-name: register; }
+.hv-register__gezond { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--hv-kier); }
+.hv-gezond { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--ruimte-3); align-items: center; min-block-size: var(--hv-tik); padding: var(--ruimte-3); text-align: start; background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); color: var(--text); transition: background var(--hv-duur-1); }
+.hv-gezond__teken { grid-row: span 2; inline-size: 36px; block-size: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); color: var(--muted); }
+.hv-gezond.is-let-op .hv-gezond__teken { background: var(--warn-zacht); color: var(--warn); }
+.hv-gezond__getal { font-size: var(--hv-getal-m); font-weight: 700; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.hv-gezond__naam { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); line-height: 1.25; }
+.hv-gezond.is-gekozen { background: var(--surface2); border: 2px solid var(--text); }
+.hv-gezond:active { background: var(--surface2); }
+.hv-gezond:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); }
+
+.hv-register__zoekrij { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hv-doel-kier); }
+.hv-zoekveld { flex: 1 1 240px; display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); padding-inline: var(--ruimte-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-m); color: var(--muted); min-inline-size: 0; }
+.hv-zoekveld:focus-within { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); color: var(--text); }
+.hv-zoekveld input { flex: 1 1 auto; min-inline-size: 0; block-size: calc(var(--hv-tik) - 2px); border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--tekst-basis); outline: none; }
+.hv-zoekveld input::placeholder { color: var(--muted); }
+.hv-zoekveld input::-webkit-search-cancel-button { display: none; }
+.hv-knop.is-open { background: var(--surface2); border-color: var(--text); }
+
+.hv-register__weergaven, .hv-register__actief { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-2); min-inline-size: 0; }
+.hv-register__weergaven .hv-filter, .hv-register__actief .hv-filter { flex: 1 1 auto; min-inline-size: 0; align-items: center; }
+.hv-register__label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.hv-register__bewaard { display: inline-flex; align-items: center; }
+.hv-register__actief .hv-chip .hv-ic:last-child { color: var(--text); }
+
+.hv-register__paneel { display: grid; gap: var(--ruimte-4); }
+.hv-register__veld { display: grid; gap: var(--ruimte-1); min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.hv-register__veld legend { padding: 0; margin-block-end: var(--ruimte-1); font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.hv-register__velden { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-4); }
+.hv-register__verd { display: grid; gap: 0; }
+.hv-register__sub { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+
+.hv-register__hulp { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+.hv-register__hulp .hv-segment { flex: 1 1 280px; }
+.hv-register__lijst { display: grid; gap: var(--ruimte-4); min-inline-size: 0; }
+
+.hv-register__tegels { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: var(--hv-kier); }
+.hv-register__item { display: grid; gap: 4px; align-content: start; min-inline-size: 0; }
+.hv-meta { display: flex; flex-wrap: wrap; gap: 2px var(--ruimte-3); padding-inline: var(--ruimte-3); font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-meta__deel { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.hv-meta__deel.is-let-op { color: var(--text); font-weight: 700; }
+.hv-meta__deel.is-let-op .hv-ic { color: var(--warn); }
+.hv-meta__deel.is-update { color: var(--text); font-weight: 600; }
+
+.hv-kieskaart { display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-3); inline-size: 100%; min-block-size: var(--hv-rij, 64px); padding: var(--ruimte-2) var(--ruimte-3); text-align: start; background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); color: var(--text); transition: background var(--hv-duur-1); }
+.hv-kieskaart.is-gekozen { background: var(--surface2); border: 2px solid var(--text); }
+.hv-kieskaart.is-onbereikbaar { border-style: dashed; border-color: var(--hv-omtrek); }
+.hv-kieskaart__vink { inline-size: 24px; block-size: 24px; display: grid; place-items: center; border-radius: 6px; border: var(--hv-streep) solid var(--hv-omtrek); background: var(--panel); }
+.hv-kieskaart.is-gekozen .hv-kieskaart__vink { background: var(--text); border-color: var(--text); color: var(--panel); }
+.hv-kieskaart__teken { inline-size: 32px; block-size: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); color: var(--muted); }
+.hv-kieskaart__tekst { display: grid; min-inline-size: 0; }
+.hv-kieskaart__naam { font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.hv-kieskaart__sub { font-size: var(--tekst-klein); color: var(--muted); line-height: 1.3; }
+
+.hv-register__tabel { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); }
+.hv-rt { inline-size: 100%; border-collapse: collapse; font-size: var(--tekst-klein); }
+.hv-rt th[scope="col"] { padding: var(--ruimte-2) var(--ruimte-3); text-align: start; font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; border-block-end: 1px solid var(--line); background: var(--panel); }
+.hv-rt td, .hv-rt th[scope="row"] { padding: 0 var(--ruimte-3); border-block-start: 1px solid var(--line); vertical-align: middle; text-align: start; font-weight: 500; }
+.hv-rt tbody tr:first-child td, .hv-rt tbody tr:first-child th { border-block-start: 0; }
+.hv-rt td[data-kolom="gezien"], .hv-rt td[data-kolom="versie"] { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hv-rt__open { display: flex; align-items: center; gap: var(--ruimte-2); inline-size: 100%; min-block-size: 52px; text-align: start; font-weight: 600; color: var(--text); }
+.hv-rt__open:hover span:last-child { text-decoration: underline; text-underline-offset: 0.2em; }
+.hv-rt__teken { flex: none; inline-size: 30px; block-size: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); border: var(--hv-streep) solid var(--hv-omtrek); color: var(--muted); }
+.hv-rt__teken.is-aan { background: var(--teken-vlak); border: 2px solid var(--toon); color: var(--teken-icoon); }
+.hv-rt__teken.is-onbereikbaar, .hv-rt__teken.is-verouderd, .hv-rt__teken.is-slaapt { border-style: dashed; background: var(--panel); }
+.hv-rt__teken.is-verondersteld { border-style: dotted; border-width: 2px; }
+.hv-rt tr.is-onbereikbaar .hv-rt__open { color: var(--muted); }
+.hv-rt tr.is-gekozen td, .hv-rt tr.is-gekozen th { background: var(--surface2); }
+.hv-rt__kies { inline-size: 52px; padding-inline: var(--ruimte-1) 0 !important; }
+.hv-rt__vink { position: relative; inline-size: var(--hv-tik); block-size: var(--hv-tik); display: grid; place-items: center; color: var(--panel); }
+.hv-rt__vink::before { content: ""; position: absolute; inset: 10px; border-radius: 6px; border: var(--hv-streep) solid var(--hv-omtrek); background: var(--panel); }
+.hv-rt__vink.is-gekozen::before { background: var(--text); border-color: var(--text); }
+.hv-rt__vink > * { position: relative; }
+.hv-rt__eerlijk { display: inline-block; margin-inline-start: 6px; padding: 0 6px; border: 1px dashed var(--hv-omtrek); border-radius: 999px; font-size: var(--tekst-mini); font-weight: 700; white-space: nowrap; }
+.hv-rt__leeg { color: var(--muted); }
+
+@container register (min-width: 720px) {
+  .hv-register__gezond { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hv-register__velden { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container register (max-width: 559px) {
+  /* вузько: стан парку — гортальний ряд, перемикачі — лише іконки (назва лишається для зчитувача) */
+  .hv-register__gezond { display: flex; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--hv-rand) * -1); padding: 2px var(--hv-rand) 6px; }
+  .hv-register__gezond::-webkit-scrollbar { display: none; }
+  .hv-gezond { flex: 0 0 148px; padding: var(--ruimte-2) var(--ruimte-3); }
+  .hv-gezond__getal { font-size: var(--hv-tekst-kop); }
+  .hv-register__zoekrij .hv-knop { padding-inline: 0; inline-size: var(--hv-tik); justify-content: center; }
+  .hv-register__zoekrij .hv-knop > span, .hv-register__hulp .hv-register__weergave .hv-segment__deel > span { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hv-register__zoekrij .hv-zoekveld { flex-basis: 0; }
+  .hv-register__hulp { flex-wrap: nowrap; }
+  .hv-register__hulp .hv-segment { flex: 1 1 auto; }
+  .hv-register__hulp .hv-register__weergave { flex: 0 0 auto; }
+  .hv-register__weergave .hv-segment__deel { min-inline-size: var(--hv-tik); }
+  .hv-register__tegels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-register__tegels .hv-tegel__naam { font-size: var(--tekst-klein); }
+  .hv-kieskaart { grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2); padding-inline: var(--ruimte-2); }
+  .hv-kieskaart__teken { display: none; }
+  .hv-kieskaart__naam { font-size: var(--tekst-klein); overflow-wrap: break-word; }
+}
+@container register (max-width: 819px) {
+  .hv-rt [data-kolom="klasse"], .hv-rt [data-kolom="versie"], .hv-rt [data-kolom="gezien"] { display: none; }
+}
+@container register (max-width: 519px) {
+  .hv-rt [data-kolom="kamer"], .hv-rt [data-kolom="verbinding"] { display: none; }
+  .hv-rt td, .hv-rt th[scope="row"] { padding-inline: var(--ruimte-2); }
+}
+
+/* панель групової дії: прилипає до низу, папір із тінню */
+.hv-groepbalk { position: sticky; inset-block-end: var(--ruimte-2); z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2) var(--ruimte-3); padding: var(--ruimte-3) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-2); }
+.hv-groepbalk__titel { font-weight: 700; }
+.hv-groepbalk__knoppen { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hv-doel-kier); }
+.hv-groepbalk__loop { flex: 1 1 240px; display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-groepbalk__voortgang { display: block; block-size: 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--hv-omtrek); overflow: hidden; }
+.hv-groepbalk__voortgang i { display: block; block-size: 100%; background: var(--text); transition: inline-size var(--hv-duur-2); }
+.hv-groepbalk__uitkomst { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-groepbalk__details summary { display: flex; align-items: center; min-block-size: var(--hv-tik); font-size: var(--tekst-klein); font-weight: 600; cursor: pointer; }
+.hv-groepbalk__details ul { list-style: disc; padding-inline-start: 1.2em; font-size: var(--tekst-klein); color: var(--muted); }

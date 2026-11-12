@@ -1,0 +1,437 @@
+/* beveiliging.css — розділ «Безпека»: щит охорони, режими, зони, двері й замки, кадри камер (симулятор), маски, доступ,
+   виклик із дверей, коди гостей, датчики, перевірки. Спокій — без кольору (чорнило й папір); увага — --warn на одному
+   елементі; --fout — лише тривога. Кадр камери — це «знімок», а не інтерфейс: темне поле з власних токенів
+   --text-on-licht / --text-on-donker (однакові в обох темах), рамки виявлення — --hv-aan-vlak.
+   Кольори — лише токени; адаптивність — контейнерні запити (bev — сторінка, beeld — кадр). */
+
+/* ───────────── Сітка ───────────── */
+.hv-bev { container: bev / inline-size; display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-bev .hv-kaart + .hv-kaart { margin-block-start: 0; }
+.hv-bev-rooster { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); align-items: start; min-inline-size: 0; }
+.hv-bev-kolom { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+/* «Стан» у вузькій колонці: одна стрічка в порядку важливості (зараз → двері → перевірка й тривожна кнопка → …) */
+@container bev (max-width: 979px) {
+  .hv-bev-rooster--stand > .hv-bev-kolom { display: contents; }
+  .hv-bev-rooster--stand .hv-bev-nu { order: 1; } .hv-bev-rooster--stand .hv-bev-deuren { order: 2; } .hv-bev-rooster--stand .hv-bev-controle { order: 3; }
+  .hv-bev-rooster--stand .hv-bev-zones { order: 4; } .hv-bev-rooster--stand .hv-bev-cammini { order: 5; } .hv-bev-rooster--stand .hv-bev-melders { order: 6; }
+  .hv-bev-rooster--stand .hv-bev-gezond { order: 7; } .hv-bev-rooster--stand .hv-bev-wie { order: 8; } .hv-bev-rooster--stand .hv-bev-strookkaart { order: 9; }
+  .hv-bev-rooster--stand .hv-bev-standen-reg { order: 10; } .hv-bev-rooster--stand .hv-bev-oefen { order: 11; } .hv-bev-rooster--stand .hv-bev-log { order: 12; }
+}
+@container bev (min-width: 980px) {
+  .hv-bev-rooster--twee { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+  .hv-bev-rooster--cam { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+}
+.hv-bev-kaart { position: relative; min-inline-size: 0; }
+
+/* ───────────── Заголовок картки, примітки, перелік ───────────── */
+.hv-bev-kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); min-block-size: 32px; margin-block-end: var(--ruimte-3); flex-wrap: wrap; }
+.hv-bev-kop h3 { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-inline-size: 0; font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); color: var(--muted); }
+.hv-bev-kop h3 > .hv-ic { flex: none; inline-size: 28px; block-size: 28px; padding: 6px; border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-bev-kop__teller { display: inline-grid; place-items: center; min-inline-size: 24px; block-size: 22px; padding-inline: 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+.hv-bev-kop__rechts { display: inline-flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; margin-inline-start: auto; }
+.hv-bev-kop__rechts > .hv-knop--stil { margin-block: -6px; margin-inline-end: calc(var(--ruimte-2) * -1); }
+.hv-bev-noot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); margin-block-start: var(--ruimte-3); font-size: var(--tekst-mini); font-weight: 500; line-height: 1.45; color: var(--muted); text-wrap: pretty; }
+.hv-bev-noot > .hv-ic { flex: none; }
+.hv-bev-noot strong { color: var(--text); }
+.hv-bev-melding { display: flex; gap: var(--ruimte-2); align-items: flex-start; padding: var(--ruimte-3); margin-block: var(--ruimte-2); border-radius: var(--straal-m); background: var(--surface); font-size: var(--tekst-klein); line-height: 1.45; text-wrap: pretty; }
+.hv-bev-melding > .hv-ic { flex: none; margin-block-start: 2px; }
+.hv-bev-melding.is-let-op { background: var(--warn-zacht); }
+.hv-bev-melding.is-let-op > .hv-ic { color: var(--warn); }
+.hv-bev-waarde { display: inline-flex; align-items: center; gap: 6px; }
+.hv-bev-waarde.is-let-op { color: var(--warn); }
+.hv-bev-waarde.is-ok > .hv-ic { color: var(--ok); }
+.hv-bev-check { display: grid; gap: var(--ruimte-2); list-style: none; padding: 0; margin: 0; font-size: var(--tekst-klein); }
+.hv-bev-check li { display: flex; gap: var(--ruimte-2); align-items: flex-start; line-height: 1.45; }
+.hv-bev-check li > .hv-ic { flex: none; margin-block-start: 2px; color: var(--muted); }
+.hv-bev-check li > span > span { display: block; color: var(--muted); font-size: var(--tekst-mini); }
+.hv-bev-check li.is-ok > .hv-ic { color: var(--ok); }
+.hv-bev-check li.is-let-op > .hv-ic { color: var(--warn); }
+
+/* ───────────── Герой: щит і слово ───────────── */
+.hv-bev-held {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3) var(--ruimte-4); align-items: center;
+  padding: var(--ruimte-4); border-radius: var(--straal-xl); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
+  background: linear-gradient(140deg, var(--panel) 0%, var(--panel) 45%, var(--surface) 100%);
+}
+/* тривогу несе смуга .hv-bev-alarm над героєм; герой лишає свій стан, червоніє лише щит */
+.hv-bev-knop-fout { border: 2px solid var(--fout-vlak); }
+.hv-bev-knop-fout > .hv-ic { color: var(--fout); }
+.hv-bev-knop-kritiek .hv-ic--vol .hv-ic__glyph { stroke: var(--accent); }
+.hv-bev-held__schild { inline-size: 84px; }
+/* текст героя розкладено прямо в сітку героя: на телефоні щит стоїть біля слова, речення й чипи — на всю ширину */
+.hv-bev-held { row-gap: var(--ruimte-1); }
+.hv-bev-held__tekst { display: contents; }
+.hv-bev-held__schild { grid-column: 1; grid-row: 1 / span 2; inline-size: 72px; align-self: center; }
+.hv-bev-held__kicker { grid-column: 2; align-self: end; font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.hv-bev-held__woord { grid-column: 2; align-self: start; font-size: var(--hv-getal-l); font-weight: 700; line-height: 1.02; letter-spacing: -0.03em; color: var(--text); }
+.hv-bev-held__zin { grid-column: 1 / -1; margin-block-start: var(--ruimte-2); font-size: var(--tekst-basis); font-weight: 500; line-height: 1.45; color: var(--text); text-wrap: pretty; max-inline-size: 62ch; }
+.hv-bev-held__chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0 var(--hv-doel-kier); }
+.hv-bev-held__chips > span { display: contents; }
+@container bev (min-width: 640px) {
+  .hv-bev-held { padding: var(--ruimte-5) var(--ruimte-6); column-gap: var(--ruimte-6); align-items: start; }
+  .hv-bev-held__schild { inline-size: 120px; grid-row: 1 / span 4; }
+  .hv-bev-held__zin, .hv-bev-held__chips { grid-column: 2; }
+  .hv-bev-held__woord { font-size: var(--hv-getal-xl); }
+}
+
+/* hv-bev-schild: обідок — периметр; нижня половина — рух унизу; верхня — нагорі */
+.hv-bev-schild { display: block; inline-size: 100%; block-size: auto; overflow: visible; }
+.hv-bev-schild__rand { fill: var(--panel); stroke: var(--hv-omtrek); stroke-width: 4; stroke-dasharray: 7 6; stroke-linejoin: round; transition: stroke var(--hv-duur-2), stroke-width var(--hv-duur-2); }
+.hv-bev-schild__rand.is-aan { stroke: var(--text); stroke-width: 7; stroke-dasharray: none; }
+.hv-bev-schild__deel { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; stroke-linejoin: round; transition: fill var(--hv-duur-2); }
+.hv-bev-schild__deel.is-aan { fill: var(--text); stroke: var(--text); }
+.hv-bev-schild.is-uitloop .hv-bev-schild__rand.is-aan { stroke-dasharray: 10 6; animation: hv-bev-loop 1.2s linear infinite; }
+.hv-bev-schild.is-alarm .hv-bev-schild__rand, .hv-bev-schild.is-alarm .hv-bev-schild__deel.is-aan { stroke: var(--fout); }
+.hv-bev-schild.is-alarm .hv-bev-schild__deel.is-aan { fill: var(--fout); animation: hv-bev-puls 1s ease-in-out infinite; }
+@keyframes hv-bev-loop { to { stroke-dashoffset: -32; } }
+@keyframes hv-bev-puls { 50% { opacity: 0.45; } }
+
+/* відлік виходу */
+.hv-bev-uitloop { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); }
+.hv-bev-uitloop__tekst { display: grid; flex: 1 1 180px; min-inline-size: 0; font-size: var(--tekst-klein); color: var(--muted); }
+.hv-bev-uitloop__getal { font-size: var(--hv-getal-m); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+/* тривога: вторгнення чи тривожна кнопка */
+.hv-bev-alarm { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3) var(--ruimte-4); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--fout-zacht); border: var(--hv-nood-rand) solid var(--fout-vlak); }
+.hv-bev-alarm__teken { inline-size: 56px; block-size: 56px; display: grid; place-items: center; border-radius: var(--straal-m); background: var(--fout-vlak); color: var(--text-on-vlak); }
+.hv-bev-alarm__tekst { display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-bev-alarm__tekst h2 { font-size: 22px; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; }
+.hv-bev-alarm__tekst p { font-size: var(--tekst-klein); }
+.hv-bev-alarm__sim { display: flex; gap: var(--ruimte-1); align-items: center; color: var(--muted); font-weight: 600; font-size: var(--tekst-mini); }
+.hv-bev-alarm__knoppen { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+.hv-bev-alarm__knoppen .hv-knop--hoofd { background: var(--fout-vlak); border-color: var(--fout-vlak); color: var(--text-on-vlak); }
+
+/* ───────────── hv-alarmstand ───────────── */
+.hv-bev-standen { display: grid; gap: var(--ruimte-2); }
+.hv-bev-standen__rij { position: relative; display: flex; align-items: center; gap: var(--ruimte-1); padding-inline-end: var(--ruimte-1); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); transition: border-color var(--hv-duur-1), background var(--hv-duur-1); }
+.hv-bev-standen__rij.is-gekozen { border: 2px solid var(--text); background: var(--surface); }
+.hv-bev-standen__rij.is-wacht { border: 1.5px dashed var(--hv-omtrek); animation: hv-bev-puls var(--hv-duur-puls, 1.2s) ease-in-out infinite; }
+.hv-bev-standen__knop { flex: 1 1 auto; display: flex; align-items: center; gap: var(--ruimte-3); min-block-size: var(--hv-rij); padding: var(--ruimte-2) var(--ruimte-3); text-align: start; border-radius: var(--straal-m); min-inline-size: 0; }
+.hv-bev-standen__knop:active { background: var(--surface2); }
+.hv-bev-standen__teken { flex: none; inline-size: 40px; block-size: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--hv-omtrek); color: var(--text); }
+.is-gekozen .hv-bev-standen__teken { background: var(--text); border-color: var(--text); color: var(--panel); }
+.hv-bev-standen__tekst { display: grid; flex: 1 1 auto; min-inline-size: 0; }
+.hv-bev-standen__naam { font-size: var(--tekst-basis); font-weight: 600; }
+.hv-bev-standen__sub { font-size: var(--tekst-mini); color: var(--muted); font-weight: 500; }
+.is-niet-gereed .hv-bev-standen__sub { color: var(--warn); font-weight: 600; }
+.hv-bev-standen__vink { flex: none; display: grid; place-items: center; inline-size: 24px; block-size: 24px; border-radius: 50%; background: var(--text); color: var(--panel); }
+.hv-bev-standen__knop .hv-risico { flex: none; }
+@container bev (min-width: 760px) {
+  .hv-bev-standen:not(.is-smal) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hv-bev-standen:not(.is-smal) .hv-bev-standen__rij { align-items: stretch; padding: 0; }
+  .hv-bev-standen:not(.is-smal) .hv-bev-standen__knop { flex-direction: column; align-items: flex-start; gap: var(--ruimte-3); min-block-size: 136px; padding: var(--ruimte-4); }
+  .hv-bev-standen:not(.is-smal) .hv-bev-standen__vink, .hv-bev-standen:not(.is-smal) .hv-bev-standen__knop .hv-risico { position: absolute; inset-block-end: var(--ruimte-3); inset-inline-end: var(--ruimte-3); }
+  .hv-bev-standen:not(.is-smal) .hv-uitleg { position: absolute; inset-block-start: var(--ruimte-1); inset-inline-end: var(--ruimte-1); }
+  .hv-bev-standen:not(.is-smal) .hv-bev-standen__naam { font-size: 18px; }
+}
+
+/* ───────────── Зони ───────────── */
+.hv-bev-zones__rij { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: var(--ruimte-2); }
+.hv-bev-zone { display: grid; gap: 2px; align-content: start; text-align: start; padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); min-block-size: var(--hv-tik); }
+.hv-bev-zone:active { background: var(--surface2); }
+.hv-bev-zone.is-actief { box-shadow: inset 0 3px 0 var(--text); border-color: var(--hv-omtrek); }
+.hv-bev-zone__teken { display: grid; place-items: center; inline-size: 36px; block-size: 36px; margin-block-end: var(--ruimte-2); border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-bev-zone.is-actief .hv-bev-zone__teken { background: var(--text); color: var(--panel); }
+.hv-bev-zone.is-let-op .hv-bev-zone__teken { box-shadow: 0 0 0 2px var(--warn); }
+.hv-bev-zone__naam { font-size: var(--tekst-basis); font-weight: 600; }
+.hv-bev-zone__wat { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-zone__regel { font-size: var(--tekst-klein); font-weight: 600; margin-block-start: var(--ruimte-1); }
+.hv-bev-zone__instel { font-size: var(--tekst-mini); color: var(--muted); }
+
+/* ───────────── Аварійні датчики, батарея ───────────── */
+.hv-bev-melderrijen { display: grid; }
+.hv-bev-melderrij { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; grid-template-areas: "teken naam woord" "teken bat bat"; gap: 2px var(--ruimte-3); align-items: center; padding-block: var(--ruimte-2); text-align: start; border-block-start: 1px solid var(--line); min-block-size: var(--hv-tik); inline-size: 100%; }
+.hv-bev-melderrij:first-child { border-block-start: 0; }
+.hv-bev-melderrij__teken { grid-area: teken; display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 50%; background: var(--surface); }
+.hv-bev-melderrij__naam { grid-area: naam; display: grid; font-weight: 600; min-inline-size: 0; }
+.hv-bev-melderrij__naam > span { font-weight: 500; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-melderrij__woord { grid-area: woord; font-size: var(--tekst-klein); font-weight: 600; text-align: end; }
+.hv-bev-melderrij > .hv-bev-bat { grid-area: bat; }
+.hv-bev-melderrij.is-let-op .hv-bev-melderrij__woord { color: var(--warn); }
+.hv-bev-melderrij.is-alarm .hv-bev-melderrij__woord { color: var(--fout); }
+.hv-bev-melderrij.is-alarm .hv-bev-melderrij__teken { background: var(--fout-zacht); color: var(--fout); }
+@container bev (min-width: 560px) {
+  .hv-bev-melderrij { grid-template-columns: 32px minmax(0, 1fr) auto 150px; grid-template-areas: "teken naam woord bat"; }
+}
+.hv-bev-bat { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; }
+.hv-bev-bat__balk { position: relative; inline-size: 30px; block-size: 8px; border-radius: 4px; background: var(--surface2); overflow: hidden; }
+.hv-bev-bat__balk > i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--text); border-radius: 4px; }
+.hv-bev-bat__getal { font-variant-numeric: tabular-nums; }
+.hv-bev-bat__prognose { color: var(--muted); font-weight: 500; }
+.hv-bev-bat.is-laag { color: var(--warn); }
+.hv-bev-bat.is-laag .hv-bev-bat__balk > i { background: var(--warn); }
+.hv-bev-bat.is-net { color: var(--muted); }
+
+/* ───────────── Хто що охороняє, перевірка, тривожна кнопка ───────────── */
+.hv-bev-wie__kolommen { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: var(--ruimte-2); }
+.hv-bev-wie__kolom { padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-bev-wie__kolom h4 { display: flex; align-items: center; gap: var(--ruimte-2); margin-block-end: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 700; }
+.hv-bev-wie__kolom ul { display: grid; gap: var(--ruimte-2); list-style: none; padding: 0; margin: 0; }
+.hv-bev-wie__kolom li { display: flex; gap: var(--ruimte-2); align-items: flex-start; font-size: var(--tekst-klein); line-height: 1.4; }
+.hv-bev-wie__kolom li > .hv-ic { flex: none; margin-block-start: 2px; color: var(--muted); }
+.hv-bev-controleknoppen { display: grid; gap: var(--ruimte-2); }
+.hv-bev-controleknop { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "teken naam pijl" "teken sub pijl"; gap: 0 var(--ruimte-3); align-items: center; text-align: start; padding: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); min-block-size: var(--hv-rij); }
+.hv-bev-controleknop:active { background: var(--surface2); }
+.hv-bev-controleknop > .hv-ic:first-child { grid-area: teken; inline-size: 40px; block-size: 40px; padding: 9px; border-radius: 50%; background: var(--surface); }
+.hv-bev-controleknop__naam { grid-area: naam; font-weight: 600; }
+.hv-bev-controleknop__sub { grid-area: sub; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-controleknop__sub.is-let-op { color: var(--warn); font-weight: 600; }
+.hv-bev-controleknop__pijl { grid-area: pijl; color: var(--muted); }
+.hv-bev-noodknop { margin-block-start: var(--ruimte-4); }
+.hv-bev-noodknop__knop {
+  position: relative; overflow: hidden; isolation: isolate; display: flex; align-items: center; gap: var(--ruimte-3); inline-size: 100%;
+  min-block-size: var(--hv-nood-knop); padding-inline: var(--ruimte-4); border-radius: var(--straal-l); border: 2px solid var(--fout-vlak);
+  background: var(--panel); color: var(--text); font-size: var(--tekst-basis); font-weight: 700; text-align: start; touch-action: none; user-select: none;
+}
+.hv-bev-noodknop__knop > .hv-ic { flex: none; color: var(--fout); }
+.hv-bev-noodknop__vulling { position: absolute; inset-block: 0; inset-inline-start: 0; inline-size: 0; z-index: -1; background: var(--fout-zacht); }
+.hv-bev-noodknop__knop.is-houdt .hv-bev-noodknop__vulling { inline-size: 100%; transition: inline-size 3s linear; }
+.hv-bev-noodknop__tekst { flex: 1 1 auto; }
+.hv-bev-noodknop__tel { font-variant-numeric: tabular-nums; font-size: var(--tekst-klein); color: var(--fout); }
+
+/* дозволи: перелік hv-stand */
+.hv-bev-standenlijst { display: grid; gap: var(--ruimte-2); margin-block-start: var(--ruimte-3); }
+.hv-bev-standen-reg .hv-segment--rol { margin-block-start: var(--ruimte-3); }
+
+/* стрічка доби: смуги режимів охорони */
+.hv-baan__stuk.hv-bev-baan--nacht { background: color-mix(in srgb, var(--text) 45%, var(--surface)); }
+.hv-baan__stuk.hv-bev-baan--volledig { background: var(--text); }
+
+/* ───────────── Кадр камери (симулятор) ───────────── */
+.hv-bev-beeld { container: beeld / inline-size; margin: 0; min-inline-size: 0; }
+.hv-bev-beeld__raam {
+  position: relative; display: block; inline-size: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--straal-m);
+  background: var(--text-on-licht); color: var(--text-on-donker); text-align: start; isolation: isolate;
+}
+button.hv-bev-beeld__raam:active { transform: scale(0.995); }
+.hv-bev-beeld__raam::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--text-on-donker) 5%, transparent) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 55%, color-mix(in srgb, var(--text-on-licht) 55%, transparent) 100%);
+}
+.hv-bev-beeld__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+.hv-bev-s0 { fill: var(--text-on-licht); }
+.hv-bev-s1 { fill: color-mix(in srgb, var(--text-on-donker) 9%, var(--text-on-licht)); }
+.hv-bev-s2 { fill: color-mix(in srgb, var(--text-on-donker) 15%, var(--text-on-licht)); }
+.hv-bev-s3 { fill: color-mix(in srgb, var(--text-on-donker) 23%, var(--text-on-licht)); }
+.hv-bev-s4 { fill: color-mix(in srgb, var(--text-on-donker) 36%, var(--text-on-licht)); }
+.hv-bev-s5 { fill: color-mix(in srgb, var(--text-on-donker) 68%, var(--text-on-licht)); }
+.hv-bev-sl, .hv-bev-sl * { fill: none; stroke: color-mix(in srgb, var(--text-on-donker) 30%, var(--text-on-licht)); stroke-width: 1.4; stroke-linecap: round; }
+.is-dag .hv-bev-s1 { fill: color-mix(in srgb, var(--text-on-donker) 30%, var(--text-on-licht)); }
+.is-dag .hv-bev-s2 { fill: color-mix(in srgb, var(--text-on-donker) 40%, var(--text-on-licht)); }
+.is-dag .hv-bev-s3 { fill: color-mix(in srgb, var(--text-on-donker) 50%, var(--text-on-licht)); }
+.is-dag .hv-bev-s4 { fill: color-mix(in srgb, var(--text-on-donker) 62%, var(--text-on-licht)); }
+.is-dag .hv-bev-s5 { fill: color-mix(in srgb, var(--text-on-donker) 14%, var(--text-on-licht)); }
+.is-dag .hv-bev-sl, .is-dag .hv-bev-sl * { stroke: color-mix(in srgb, var(--text-on-donker) 58%, var(--text-on-licht)); }
+.is-nacht .hv-bev-gloed { fill: color-mix(in srgb, var(--text-on-donker) 58%, var(--text-on-licht)); }
+.hv-bev-beeld__boven, .hv-bev-beeld__onder { position: absolute; inset-inline: var(--ruimte-2); z-index: 4; display: flex; justify-content: space-between; align-items: center; gap: var(--ruimte-1); pointer-events: none; }
+.hv-bev-beeld__boven { inset-block-start: var(--ruimte-2); }
+.hv-bev-beeld__onder { inset-block-end: var(--ruimte-2); }
+.hv-bev-beeld__pil {
+  display: inline-flex; align-items: center; gap: 5px; min-inline-size: 0; max-inline-size: 70%; padding: 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--text-on-licht) 70%, transparent); color: var(--text-on-donker);
+  font-size: var(--tekst-mini); font-weight: 600; line-height: 1.5; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  backdrop-filter: blur(6px);
+}
+.hv-bev-beeld__stip { inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--ok-vlak); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok-vlak) 35%, transparent); }
+.hv-bev-beeld__dicht {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: var(--ruimte-2); padding: var(--ruimte-4); text-align: center;
+  font-size: var(--tekst-klein); font-weight: 600; color: color-mix(in srgb, var(--text-on-donker) 80%, var(--text-on-licht));
+  background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-on-donker) 7%, var(--text-on-licht)) 0 1px, var(--text-on-licht) 1px 10px);
+}
+.hv-bev-kader { position: absolute; z-index: 2; border: 2px solid var(--hv-aan-vlak); border-radius: 3px; pointer-events: none; }
+.hv-bev-kader > span { position: absolute; inset-block-end: 100%; inset-inline-start: -2px; padding: 1px 6px; border-radius: 3px 3px 3px 0; background: var(--hv-aan-vlak); color: var(--text-on-licht); font-size: var(--tekst-mini); font-weight: 700; line-height: 1.4; white-space: nowrap; }
+.hv-bev-masker { position: absolute; inset: 0; z-index: 2; display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(3, 1fr); pointer-events: none; }
+.hv-bev-masker__cel.is-aan { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-on-donker) 45%, transparent) 0 2px, color-mix(in srgb, var(--text-on-licht) 72%, transparent) 2px 9px); }
+.hv-bev-masker.is-bewerk { pointer-events: auto; z-index: 3; }
+.hv-bev-masker.is-bewerk .hv-bev-masker__cel { min-inline-size: 0; min-block-size: 0; border: 1px dashed color-mix(in srgb, var(--text-on-donker) 40%, transparent); }
+.hv-bev-masker.is-bewerk .hv-bev-masker__cel:active { background: color-mix(in srgb, var(--text-on-donker) 20%, transparent); }
+.hv-bev-masker.is-bewerk .hv-bev-masker__cel.is-aan:active { background: color-mix(in srgb, var(--text-on-donker) 30%, transparent); }
+@container beeld (max-width: 260px) {
+  .hv-bev-beeld__onder { display: none; }
+  .hv-bev-beeld__boven .hv-bev-beeld__pil:first-child { display: none; }
+  .hv-bev-beeld__naam { max-inline-size: 100%; }
+  .hv-bev-kader > span { display: none; }
+}
+
+/* ───────────── Камери: сторінка, сітка ───────────── */
+.hv-bev-cammini__rooster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); }
+.hv-bev-cambalk__rij { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2); }
+.hv-bev-raster { min-inline-size: 220px; }
+.hv-bev-prive { display: flex; align-items: center; gap: var(--ruimte-3); margin-block-start: var(--ruimte-3); padding-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-kaart > .hv-bev-prive:first-child { margin-block-start: 0; padding-block-start: 0; border: 0; }
+.hv-bev-prive__tekst { display: grid; flex: 1 1 auto; min-inline-size: 0; }
+.hv-bev-prive__naam { font-weight: 600; }
+.hv-bev-prive__sub { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-camen { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); }
+@container bev (min-width: 700px) { .hv-bev-camen:not(.is-een) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hv-bev-camen.is-een { gap: var(--ruimte-3); }
+.hv-bev-cam { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-2); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-bev-cam__onder { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); padding-inline: var(--ruimte-2); flex-wrap: wrap; }
+.hv-bev-cam__tekst { display: grid; min-inline-size: 0; }
+.hv-bev-cam__naam { font-weight: 600; }
+.hv-bev-cam__sub { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-camkeuze { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+.hv-bev-camkeuze__knop { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); padding-inline: var(--ruimte-3); border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); font-size: var(--tekst-klein); font-weight: 600; }
+.hv-bev-camkeuze__knop.is-gekozen { border: 2px solid var(--text); background: var(--surface); }
+.hv-bev-evs { display: grid; margin-block-start: var(--ruimte-2); }
+.hv-bev-ev { display: grid; grid-template-columns: 76px 24px minmax(0, 1fr) auto; gap: var(--ruimte-2); align-items: center; min-block-size: var(--hv-tik); padding-block: var(--ruimte-2); text-align: start; border-block-start: 1px solid var(--line); font-size: var(--tekst-klein); inline-size: 100%; }
+.hv-bev-ev:active { background: var(--surface2); }
+.hv-bev-ev__tijd { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+.hv-bev-ev__wat { display: grid; min-inline-size: 0; }
+.hv-bev-ev__wat > span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-ev__pijl { color: var(--muted); }
+.hv-bev-events .hv-filter { margin-block-end: var(--ruimte-2); }
+.hv-bev-gekeken { display: grid; gap: 2px; padding-block: var(--ruimte-2); border-block-start: 1px solid var(--line); font-size: var(--tekst-klein); }
+.hv-bev-gekeken:first-of-type { border-block-start: 0; }
+.hv-bev-gekeken__wat { color: var(--muted); font-size: var(--tekst-mini); }
+.hv-bev-gekeken__reden { display: block; }
+.hv-bev-avg__cam + .hv-bev-avg__cam { margin-block-start: var(--ruimte-3); padding-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-bev-avg__cam h4 { font-size: var(--tekst-klein); font-weight: 700; margin-block-end: var(--ruimte-2); }
+.hv-bev-camkop { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--ruimte-2) var(--ruimte-4); padding-inline: var(--ruimte-1); }
+.hv-bev-camkop h2 { font-size: var(--hv-tekst-kop); font-weight: 700; letter-spacing: -0.01em; }
+.hv-bev-camkop p { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-bev-camkop__chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-1); }
+.hv-bev-camgroot .hv-knoppen { margin-block-start: var(--ruimte-3); }
+.hv-bev-moment { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); margin-block-end: var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--info-zacht); font-size: var(--tekst-klein); }
+.hv-bev-moment > span { flex: 1 1 160px; }
+.hv-bev-geenopname { display: flex; gap: var(--ruimte-2); align-items: flex-start; margin-block-start: var(--ruimte-3); font-size: var(--tekst-mini); color: var(--muted); line-height: 1.45; }
+.hv-bev-geenopname strong { color: var(--text); }
+.hv-bev-tgrij { display: grid; gap: var(--ruimte-1); padding-block: var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-bev-tgrij:first-of-type { border-block-start: 0; padding-block-start: 0; }
+.hv-bev-tgrij__rol { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-bev-tgseg .hv-segment__deel { font-size: var(--tekst-mini); padding-inline: 4px; }
+
+/* ───────────── Доступ: замок, виклик, коди ───────────── */
+.hv-bev-slot { display: flex; align-items: center; gap: var(--ruimte-4); padding-block-end: var(--ruimte-2); }
+.hv-bev-slot > .hv-schakel { transform: scale(1.25); transform-origin: left center; margin-inline-end: var(--ruimte-2); }
+.hv-bev-slot__tekst { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-bev-slot__woord { font-size: var(--hv-getal-m); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.hv-bev-slot__woord::first-letter, .hv-bev-bladschild__woord::first-letter { text-transform: uppercase; }
+.hv-bev-slot.is-open .hv-bev-slot__woord { color: var(--warn); }
+.hv-bev-slot__naam { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-bev-slot__wie { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-slot__knoppen .hv-knop { flex: 1 1 140px; justify-content: center; }
+.hv-bev-schakelrij { display: flex; align-items: center; gap: var(--ruimte-3); padding-block: var(--ruimte-3); margin-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-bev-schakelrij__tekst { display: grid; flex: 1 1 auto; min-inline-size: 0; font-weight: 600; }
+.hv-bev-schakelrij__tekst > span + span { font-weight: 500; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-leeg { display: grid; gap: var(--ruimte-2); margin-block-start: var(--ruimte-2); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-kaart > .hv-bev-leeg:only-child { margin-block-start: 0; background: none; padding: 0; }
+.hv-bev-leeg h4 { font-size: var(--tekst-klein); font-weight: 700; }
+.hv-bev-oproepbalk { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-l); background: var(--warn-zacht); border: 2px solid var(--warn); }
+.hv-bev-oproepbalk__tekst h2 { display: flex; align-items: center; gap: var(--ruimte-2); font-size: 20px; font-weight: 700; }
+.hv-bev-oproepbalk__tekst p { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-bev-oproepbalk .hv-knoppen { margin: 0; }
+@container bev (min-width: 640px) {
+  .hv-bev-oproepbalk { grid-template-columns: 220px minmax(0, 1fr) auto; align-items: center; }
+}
+.hv-bev-codelijst { display: grid; }
+.hv-bev-code { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-3); padding-block: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-bev-code:first-child { border-block-start: 0; padding-block-start: 0; }
+.hv-bev-code__teken { flex: none; display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: 50%; background: var(--surface); }
+.hv-bev-code__tekst { display: grid; flex: 1 1 180px; min-inline-size: 0; }
+.hv-bev-code__naam { font-weight: 600; }
+.hv-bev-code__soort { font-weight: 500; font-size: var(--tekst-mini); color: var(--muted); margin-inline-start: 4px; }
+.hv-bev-code__sub { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-code__staat { font-size: var(--tekst-mini); font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface); color: var(--muted); }
+.hv-bev-code__staat.is-actief { background: var(--ok-zacht); color: var(--ok); }
+.hv-bev-code.is-uit .hv-bev-code__naam { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.hv-bev-sjablonen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); margin-block-start: var(--ruimte-2); }
+.hv-bev-bel__rij { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-3); }
+@container bev (min-width: 560px) { .hv-bev-bel__rij { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; } }
+.hv-bev-bel__woord { font-size: var(--hv-getal-m); font-weight: 700; letter-spacing: -0.02em; }
+.hv-bev-bezoekers { display: grid; margin-block-start: var(--ruimte-2); }
+.hv-bev-bezoeker { display: flex; align-items: center; gap: var(--ruimte-3); padding-block: var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-bev-bezoeker__teken { flex: none; display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 50%; background: var(--surface); }
+.hv-bev-bezoeker__tekst { display: grid; min-inline-size: 0; font-size: var(--tekst-klein); }
+.hv-bev-bezoeker__tekst > span:first-child { font-weight: 600; }
+.hv-bev-bezoeker__tekst > span + span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-bezoekrooster { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: var(--ruimte-3); }
+.hv-bev-bezoekkaart { display: grid; gap: var(--ruimte-2); }
+.hv-bev-bezoekkaart__tekst h3 { font-size: var(--tekst-basis); font-weight: 600; }
+.hv-bev-bezoekkaart__tekst p { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-oproep { display: grid; gap: var(--ruimte-2); }
+.hv-bev-oproep__status, .hv-bev-oproep__antwoord { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); font-size: var(--tekst-klein); }
+.hv-bev-oproep__antwoord { padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-bev-antwoorden { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: var(--ruimte-2); }
+.hv-bev-antwoord { display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: 56px; padding: var(--ruimte-2) var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-m); background: var(--panel); text-align: start; font-size: var(--tekst-klein); font-weight: 600; }
+.hv-bev-antwoord > .hv-ic { flex: none; }
+.hv-bev-antwoord:active { background: var(--surface2); }
+.hv-bev-antwoord.is-gekozen { border: 2px solid var(--text); background: var(--surface); }
+.hv-bev-oproep__knoppen { margin-block-start: 0; }
+.hv-bev-oproep__knoppen .hv-knop { flex: 1 1 140px; justify-content: center; }
+
+/* майстер коду гостя */
+.hv-bev-stappen { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ruimte-1); list-style: none; padding: 0; margin: 0; counter-reset: stap; }
+.hv-bev-stappen li { display: grid; justify-items: center; gap: 4px; text-align: center; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); line-height: 1.25; }
+.hv-bev-stappen li > span { display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; border: 1.5px solid var(--hv-omtrek); background: var(--panel); color: var(--text); font-variant-numeric: tabular-nums; }
+.hv-bev-stappen li.is-nu { color: var(--text); }
+.hv-bev-stappen li.is-nu > span { background: var(--text); border-color: var(--text); color: var(--panel); }
+.hv-bev-stappen li.is-klaar > span { background: var(--surface); border-color: var(--text); }
+.hv-bev-tekstgroot { margin-block-start: var(--ruimte-3); font-size: var(--tekst-basis); font-weight: 600; }
+.hv-bev-vink { display: flex; align-items: center; gap: var(--ruimte-2); inline-size: 100%; min-block-size: var(--hv-tik); margin-block-start: var(--ruimte-3); padding-inline: var(--ruimte-3); border: 1px solid var(--line); border-radius: var(--straal-m); text-align: start; font-weight: 600; }
+.hv-bev-vink.is-aan { border: 2px solid var(--text); background: var(--surface); }
+.hv-bev-overzicht { display: grid; }
+.hv-bev-gevolg { display: grid; gap: var(--ruimte-2); margin-block-start: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-bev-codeklaar { display: grid; justify-items: center; gap: var(--ruimte-2); text-align: center; padding-block: var(--ruimte-3); }
+.hv-bev-codeklaar__code { font-size: 40px; font-weight: 700; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; padding: var(--ruimte-2) var(--ruimte-4); border-radius: var(--straal-m); background: var(--surface); }
+.hv-bev-wizardknoppen { margin-block-start: 0; }
+.hv-bev-wizardknoppen .hv-knop { flex: 1 1 120px; justify-content: center; }
+
+/* ───────────── Датчики ───────────── */
+.hv-bev-tellers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: var(--ruimte-3); }
+.hv-bev-sensoren { display: grid; }
+.hv-bev-sensor { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "lijf lijf" "bat knop"; gap: var(--ruimte-1) var(--ruimte-3); align-items: center; padding-block: var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-bev-sensor:first-child { border-block-start: 0; padding-block-start: 0; }
+.hv-bev-sensor__lijf { grid-area: lijf; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-areas: "teken naam woord" "teken meta meta"; gap: 0 var(--ruimte-3); align-items: center; text-align: start; min-block-size: var(--hv-tik); inline-size: 100%; border-radius: var(--straal-s); }
+.hv-bev-sensor__lijf:active { background: var(--surface2); }
+.hv-bev-sensor__teken { grid-area: teken; display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: 50%; background: var(--surface); }
+.hv-bev-sensor__naam { grid-area: naam; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-inline-size: 0; font-weight: 600; }
+.hv-bev-sensor__naam > span + span { font-weight: 500; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-sensor__woord { grid-area: woord; font-size: var(--tekst-klein); font-weight: 600; text-align: end; }
+.hv-bev-sensor__meta { grid-area: meta; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-sensor__bat { grid-area: bat; padding-inline-start: calc(36px + var(--ruimte-3)); }
+.hv-bev-sensor__knop { grid-area: knop; justify-self: end; }
+.hv-bev-sensor.is-let-op .hv-bev-sensor__woord { color: var(--warn); }
+.hv-bev-sensor.is-let-op .hv-bev-sensor__teken { box-shadow: 0 0 0 2px var(--warn); }
+.hv-bev-sensor.is-alarm .hv-bev-sensor__woord { color: var(--fout); }
+.hv-bev-sensor.is-alarm .hv-bev-sensor__teken { background: var(--fout-zacht); color: var(--fout); }
+.hv-bev-sensor.is-oud .hv-bev-sensor__woord { color: var(--muted); }
+.hv-bev-sensor.is-wacht .hv-bev-sensor__teken { outline: 1.5px dashed var(--hv-omtrek); outline-offset: 2px; }
+@container bev (min-width: 620px) {
+  .hv-bev-sensor { grid-template-columns: minmax(0, 1fr) 140px auto; grid-template-areas: "lijf bat knop"; }
+  .hv-bev-sensor__bat { padding-inline-start: 0; }
+}
+
+/* ───────────── Перевірка ───────────── */
+.hv-bev-ckop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-3) var(--ruimte-4); }
+.hv-bev-ckop > div { flex: 1 1 220px; min-inline-size: 0; }
+.hv-bev-ckop__teken { flex: none; display: grid; place-items: center; inline-size: 56px; block-size: 56px; border-radius: 50%; background: var(--text); color: var(--panel); }
+.hv-bev-ckop h2 { font-size: var(--hv-tekst-kop); font-weight: 700; letter-spacing: -0.01em; }
+.hv-bev-ckop p { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-bev-citems { display: grid; }
+.hv-bev-citem { display: flex; align-items: center; gap: var(--ruimte-3); padding-block: var(--ruimte-2); border-block-start: 1px solid var(--line); min-block-size: var(--hv-tik); }
+.hv-bev-citem:first-child { border-block-start: 0; }
+.hv-bev-citem__teken { flex: none; display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 50%; background: var(--surface); }
+.hv-bev-citem__tekst { display: grid; flex: 1 1 auto; min-inline-size: 0; font-size: var(--tekst-klein); font-weight: 600; text-align: start; }
+.hv-bev-citem__tekst > span + span { font-weight: 500; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-citem__lijf { min-block-size: var(--hv-tik); }
+.hv-bev-cgroep--jij .hv-bev-citem__teken, .hv-bev-cgroep--onbekend .hv-bev-citem__teken { box-shadow: 0 0 0 2px var(--warn); }
+
+/* ───────────── Аркуші ───────────── */
+.hv-bev-hoofd__sub { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-bev-hoofd.is-let-op .hv-bediening__woord { color: var(--warn); }
+.hv-bev-hoofd.is-alarm .hv-bediening__woord { color: var(--fout); }
+.hv-bev-drie { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ruimte-1); padding: var(--ruimte-1); margin-block-end: var(--ruimte-2); border-radius: var(--straal-m); background: var(--surface); }
+.hv-bev-drie__deel { display: grid; justify-items: center; gap: 2px; padding: var(--ruimte-2) var(--ruimte-1); border-radius: var(--straal-s); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); text-align: center; }
+.hv-bev-drie__deel.is-nu { background: var(--text); color: var(--panel); }
+.hv-bev-bladschild { display: flex; align-items: center; gap: var(--ruimte-4); margin-block-end: var(--ruimte-3); }
+.hv-bev-bladschild > svg { inline-size: 64px; flex: none; }
+.hv-bev-bladschild__woord { font-size: var(--hv-getal-m); font-weight: 700; letter-spacing: -0.02em; }
+
+/* зменшений рух: щит і рядки не пульсують, заповнення кнопки — без переходу */
+@media (prefers-reduced-motion: reduce) {
+  .hv-bev-schild.is-uitloop .hv-bev-schild__rand.is-aan, .hv-bev-schild.is-alarm .hv-bev-schild__deel.is-aan, .hv-bev-standen__rij.is-wacht { animation: none; }
+  .hv-bev-noodknop__knop.is-houdt .hv-bev-noodknop__vulling { transition: none; }
+}
+.hv-bev-oefenknoppen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); margin-block-start: var(--ruimte-3); }

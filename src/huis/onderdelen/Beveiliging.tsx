@@ -19,7 +19,7 @@ const GROEPEN: Array<{ id: string; soorten: string[]; naam: [string, string] }> 
 
 export default function Beveiliging({ lang, woningId, ov, vernieuw, toon }: OnderdeelProps) {
   const [uit, setUit] = useState<Uit | null>(null);
-  const laad = async () => { try { setUit(await huisClient.beveiliging(woningId)); } catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT')); } };
+  const laad = async () => { try { setUit(await huisClient.beveiliging(woningId)); } catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); } };
   useEffect(() => { void laad(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [woningId, ov]);
   const magCmd = ov.lid.magSchrijven && ov.integraties.some((i) => i.schrijven);
   const apparaten = uit?.apparaten ?? [];
