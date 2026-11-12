@@ -11,7 +11,9 @@ const LABELS: Record<string, Pair> = {
   scheduled: ['Заплановані', 'Gepland'], settings: ['Налаштування', 'Instellingen'], contacts: ['Контакти й відправники', 'Contacten en afzenders'],
   workspaces: ['Простори', 'Werkruimtes'], capture: ['Захоплення', 'Vastleggen'], search: ['Пошук', 'Zoeken'], photos: ['Фото', "Foto's"], google: ['Google', 'Google'],
   onedrive: ['OneDrive', 'OneDrive'], dropbox: ['Dropbox', 'Dropbox'],
-  repositories: ['Репозиторії', 'Repositories'], projects: ['Проєкти', 'Projecten'], documentation: ['Документація', 'Documentatie'], research: ['Дослідження', 'Onderzoek'], activity: ['Активність', 'Activiteit'],
+  repositories: ['Сховища', 'Repositories'], code: ['Код і редактор', 'Code en editor'], issues: ['Задачі', 'Vraagstukken'], pulls: ['Запити на злиття', 'Samenvoegingen'],
+  actions: ['Конвеєри CI', 'CI-werkstromen'], releases: ['Випуски', 'Uitgaven'], sync: ['Дзеркало й пристрої', 'Spiegel en apparaten'],
+  projects: ['Проєкти', 'Projecten'], documentation: ['Документація', 'Documentatie'], research: ['Дослідження', 'Onderzoek'], activity: ['Активність', 'Activiteit'],
   personalization: ['Персоналізація', 'Personalisatie'], menu: ['Меню', 'Menu'], themes: ['Теми', "Thema's"], languages: ['Мови', 'Talen'], widgets: ['Віджети', 'Widgets'],
   sharing: ['Спільний доступ', 'Delen'], identity: ['Ідентичність', 'Identiteit'], account: ['Обліковий запис', 'Account'], sessions: ['Сесії', 'Sessies'], methods: ['Способи входу', 'Aanmeldmethoden'],
   security: ['Безпека', 'Beveiliging'], recovery: ['Відновлення', 'Herstel'],
@@ -21,6 +23,11 @@ const LABELS: Record<string, Pair> = {
   diagnostics: ['Діагностика', 'Diagnostiek'], audit: ['Аудит', 'Audit'],
   dashboard: ['Панель розгортання', 'Deploy-dashboard'], services: ['Сервіси', 'Diensten'], tools: ['Інструменти', 'Hulpmiddelen'], board: ['Дошка', 'Bord'], playground: ['Пісочниця', 'Zandbak'], traffic: ['Трафік', 'Verkeer'],
   connect: ['Підключення', 'Koppelen'], roadmap: ['Дорожня карта', 'Roadmap'], download: ['Завантаження', 'Download'],
+  // HUIS-001 (10.11.2026): ці вкладки не мали підпису — у чужому меню стояло англійське «Rooms», «Energy», «Files»…
+  // Dezelfde paren als shared/huis-model.ts (HUIS_TAB_LABEL) en de tabstrook in VerenigdDienstApp.
+  rooms: ['Кімнати', 'Kamers'], scenes: ['Сцени', 'Scènes'], automations: ['Автоматизації', 'Automatiseringen'], energy: ['Енергія', 'Energie'],
+  integrations: ['Інтеграції', 'Integraties'], assistant: ['ШІ-помічник', 'AI-assistent'], showroom: ['Вітрина', 'Toonzaal'], planner: ['Калькулятор', 'Planner'],
+  files: ['Мої файли', 'Mijn bestanden'],
 };
 
 const titleCase = (id: string) => id.charAt(0).toUpperCase() + id.slice(1).replace(/[-_]+/g, ' ');

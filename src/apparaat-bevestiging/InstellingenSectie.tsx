@@ -3,7 +3,7 @@
 // (voorbeeld), geluid, zwevend venster of alleen een melding, authenticator-code op het andere apparaat (als de beheerder dat
 // toestaat), de teller van verkeerde symbolen met herstel (toegangssleutel), en de laatste verzoeken. Wijzigen vraagt een verse
 // toegangssleutel (zoals alles wat de beveiliging zelf raakt).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { MonitorSmartphone, RefreshCw } from 'lucide-react';
 import { ecosystemTabContext } from '../tab-context';
 import Symbool from './Symbool';
@@ -24,6 +24,7 @@ const REDEN_UITLEG: Record<string, [string, string]> = {
 };
 
 export default function ApparaatInstellingenSectie({ lang, service = 'identity' }: { lang: Lang; service?: string }) {
+  const titelId = useId();
   const vlag = useApparaatVlag();
   const ctx = useMemo<Ctx>(() => ({ service, tabContext: ecosystemTabContext() }), [service]);
   const [o, setO] = useState<Overzicht | null>(null);
@@ -31,7 +32,15 @@ export default function ApparaatInstellingenSectie({ lang, service = 'identity' 
   const [fout, setFout] = useState('');
   const [melding, setMelding] = useState('');
   const [bezig, setBezig] = useState(false);
-  const laden = useCallback(async () => { try { const r = await overzicht(ctx); setO(r); setVk(r.voorkeuren); setFout(''); } catch (e) { setFout(foutTekst(lang, foutCode(e))); } }, [ctx, lang]);
+  const laden = useCallback(async () => {
+    try {
+      const r = await overzicht(ctx);
+      if (!r || !r.beheer || !r.voorkeuren || !r.teller) return;
+      setO({ ...r, apparaten: Array.isArray(r.apparaten) ? r.apparaten : [], recent: Array.isArray(r.recent) ? r.recent : [] });
+      setVk(r.voorkeuren);
+      setFout('');
+    } catch (e) { setFout(foutTekst(lang, foutCode(e))); }
+  }, [ctx, lang]);
   useEffect(() => { if (vlag) void laden(); }, [vlag, laden]);
   if (!vlag || !o || !vk) return null;
 
@@ -52,10 +61,10 @@ export default function ApparaatInstellingenSectie({ lang, service = 'identity' 
   const stand = o.beschikbaar ? 'werkt' : o.teller.uitgeschakeld || !o.beheer.aan ? 'uit' : 'niet';
   const gewijzigd = JSON.stringify(vk) !== JSON.stringify(o.voorkeuren);
 
-  return <section className='apb-sectie' data-apparaat-bevestiging aria-labelledby='apb-sectie-titel'>
+  return <section className='apb-sectie' data-apparaat-bevestiging aria-labelledby={titelId}>
     <header className='apb-sectie-kop'>
       <MonitorSmartphone aria-hidden='true' />
-      <h3 id='apb-sectie-titel'>{tr(lang, 'Підтвердження з іншого пристрою', 'Bevestigen vanaf een ander apparaat')}</h3>
+      <h3 id={titelId}>{tr(lang, 'Підтвердження з іншого пристрою', 'Bevestigen vanaf een ander apparaat')}</h3>
       <span className='apb-stand' data-stand={stand}>{stand === 'werkt' ? tr(lang, 'Працює', 'Werkt') : stand === 'uit' ? tr(lang, 'Вимкнено', 'Uit') : tr(lang, 'Зараз недоступно', 'Nu niet beschikbaar')}</span>
       <button type='button' className='apb-knop' onClick={() => void laden()} aria-label={tr(lang, 'Оновити', 'Vernieuwen')} title={tr(lang, 'Оновити', 'Vernieuwen')}><RefreshCw aria-hidden='true' style={{ width: 16, height: 16 }} /></button>
     </header>

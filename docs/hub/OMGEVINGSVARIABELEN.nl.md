@@ -82,6 +82,7 @@ Alle geheimen op de productie-VM van het platform "Mijn Ruimte / Мій прос
 | `ROOK_CHROMIUM` | auto-detectie `/srv/mijn-ruimte/browser/chrome-headless-shell` | Pad naar de headless-browser voor automatische rookcontrole na uitrol. |
 | `MR_EIGENAAR_NAAM` / `MR_CONTACT_EMAIL` | `власник / eigenaar` / `op aanvraag` | Naam van de verwerkingsverantwoordelijke en contact-e-mailadres voor publieke pagina's `/privacy` en `/terms` (`PRIVACY-001` / `B-010`). |
 | `MR_BEHEERSUBNET` / `MR_VM_SSH` | `10.0.0.0/8` / `mijn-ruimte-vm` | Beheersubnet voor bescherming van Huis vNext-gateways en SSH-doel voor beheerscripts (`B-010`). |
+| `HUIS_VERTROUWDE_TOESTELLEN` | leeg | Onderdeel «Huis» (Huis vNext): lijst met vertrouwde adressen van Home Assistant-gateways in het thuisnetwerk, gescheiden door een komma, puntkomma of nieuwe regel, bijvoorbeeld `http://192.168.1.20:8123,ha.thuis.example`. Alleen voor deze adressen zijn privéadressen en `http:` toegestaan; al het andere in het lokale netwerk weigert de server. Zonder pad, zoekdeel, gebruikersnaam of sterretjes. De eigenaar kan ook op de site adressen toevoegen (met bevestiging van de aanmelding); beide lijsten gelden samen. |
 
 ---
 

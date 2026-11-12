@@ -54,7 +54,7 @@ const DEUREN = new Map([["grok", "Grok"], ["claude", "claude"], ["chatgpt", "cha
  * deur uitkomt voor een agentadres. Alleen MCP_AGENTPADEN=deur (tests, noodgeval) laat de deur ze zelf bedienen.
  */
 const AGENTPADEN_NAAR_APP = (process.env.MCP_AGENTPADEN || "app") !== "deur";
-const AGENT_SLUGS = /^(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)$/i;
+const AGENT_SLUGS = /^(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)$/i;
 /** Het pad dat de app moet krijgen (agentslug in kleine letters), of null als dit pad van de deur zelf is. */
 function appPad(pathName) {
   if (!AGENTPADEN_NAAR_APP) return null;

@@ -14,8 +14,9 @@ import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-k
 import { GITHUB_APP_DOEL, GITHUB_OAUTH_DOEL, leesAppSleutel, leesOauthApp, type AppSleutel, type OauthApp } from '../shared/github-koppeling';
 import { hoortBij, type Lade } from '../shared/ruimte-scheiding';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
-import { herversleutelEnvelop, ontzegel as kluisOntzegel, registreerHerversleutelaar, verzegel as kluisVerzegel } from './sleutelkluis';
+import { herversleutelEnvelop, isGeslotenFout, kluisStand, ontzegel as kluisOntzegel, registreerHerversleutelaar, verzegel as kluisVerzegel } from './sleutelkluis';
 import { isServerEnvelop } from '../shared/sleutelkluis';
+export { isGeslotenFout };
 
 export const KOPPELING_TABEL = 'github_koppeling_v1';
 export const STATE_TABEL = 'github_oauth_state_v1';
@@ -35,7 +36,8 @@ const aad = (userId: string, pad: string) => `github-koppeling-v1|${userId}|${pa
 /** Het pad waarmee een zegel van DEZE lade is gebonden: persoonlijk ongewijzigd, technisch met een eigen achtervoegsel. */
 export const zegelPad = (pad: string, ruimte: AiRuimte): string => (ruimteOf(ruimte) === 'technisch' ? `${pad}@technisch` : pad);
 export const verzegel = (waarde: string, userId: string, pad: string): string => sealWithEnvKey(SLEUTEL_NAAM(), waarde, aad(userId, pad));
-export const ontzegel = (zegel: string, userId: string, pad: string): string => openWithEnvKey(SLEUTEL_NAAM(), zegel, aad(userId, pad));
+export const ontzegel = (zegel: string, userId: string, pad: string): string => openWithEnvKey(SLEUTEL_NAAM(), waardeString(zegel), aad(userId, pad));
+const waardeString = (w: string): string => String(w || '');
 export const sleutelKlaar = (): boolean => !!envKey32(SLEUTEL_NAAM());
 /**
  * Sleutelkluis (0092): dezelfde zegels, maar onder de EIGEN gegevenssleutel van de mens zodra die de kluis aanzette (anders de
@@ -47,18 +49,61 @@ export const verzegelVoor = (waarde: string, userId: string, pad: string, ruimte
 export const ontzegelVoor = (zegel: string, userId: string, pad: string, ruimte: AiRuimte = 'prive'): Promise<string> =>
   kluisOntzegel({ userId, ruimte: ruimteOf(ruimte) }, KOPPELING_TABEL, zegel, aad(userId, pad), SLEUTEL_NAAM());
 
+/** Staat de persoonlijke gegevenssleutel van deze mens voor deze ruimte nu gesloten in het servergeheugen? */
+export async function isKoppelingKluisGesloten(userId: string, ruimte: AiRuimte = 'prive'): Promise<boolean> {
+  if (!userId) return false;
+  try {
+    return (await kluisStand({ userId, ruimte: ruimteOf(ruimte) })) === 'gesloten';
+  } catch {
+    return false;
+  }
+}
+
 export const hash = (waarde: string): string => createHash('sha256').update(waarde).digest('hex');
 export const nieuweState = (): string => randomBytes(32).toString('base64url');
 
 // ------------------------------------------------------------------------------------------------ gegevens van de app (kluis)
 
 /** Alleen voor tests: de kluis en de klok vervangen. */
+let kluisVervangen = false;
 let kluisRijen: (userId: string) => Promise<Array<{ keyName: string; purpose: string }>> = (userId) => apiPlatformVaultItems(userId) as unknown as Promise<Array<{ keyName: string; purpose: string }>>;
 let kluisWaarde: (userId: string, keyName: string, purpose: string) => Promise<string> = (userId, keyName, purpose) => readOwnerVaultPlaintext(userId, keyName, purpose as never);
 export const setKoppelingKluis = (deps: { rijen?: typeof kluisRijen; waarde?: typeof kluisWaarde } | null) => {
+  kluisVervangen = deps !== null;
   kluisRijen = deps?.rijen ?? ((userId) => apiPlatformVaultItems(userId) as unknown as Promise<Array<{ keyName: string; purpose: string }>>);
   kluisWaarde = deps?.waarde ?? ((userId, keyName, purpose) => readOwnerVaultPlaintext(userId, keyName, purpose as never));
 };
+export const isKoppelingKluisVervangen = (): boolean => kluisVervangen;
+
+export const EENKLIK_APP_TABEL = 'github_eenklik_app_v1';
+export type EenklikAppRecord = {
+  userId: string;
+  ruimte: AiRuimte;
+  appId: string;
+  slug: string;
+  clientId: string;
+  oauthZegel: string;
+  appPemZegel: string;
+  aangemaaktOp: number;
+  bijgewerktOp: number;
+};
+
+export async function eenklikAppLezen(userId: string, ruimte: AiRuimte = 'prive'): Promise<(EenklikAppRecord & { id: string }) | null> {
+  if (!userId) return null;
+  try {
+    const uit = await db.list<EenklikAppRecord>(EENKLIK_APP_TABEL, { filter: { userId }, limit: 10 });
+    const lade: Lade = { userId, ruimte: ruimteOf(ruimte) };
+    return (uit.items as Array<EenklikAppRecord & { id: string }>).find((r) => hoortBij(r as unknown as { userId?: unknown; ruimte?: unknown }, lade)) ?? null;
+  } catch { return null; }
+}
+
+/** Platformbrede OAuth-app uit de serveromgeving (optioneel ingesteld door de beheerder voor éénkliks koppelen van alle gebruikers). */
+export function platformOauthApp(): OauthApp | null {
+  const id = String(process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_PLATFORM_CLIENT_ID || '').trim();
+  const secret = String(process.env.GITHUB_OAUTH_CLIENT_SECRET || process.env.GITHUB_PLATFORM_CLIENT_SECRET || '').trim();
+  if (!id || !secret) return null;
+  return leesOauthApp(`${id}:${secret}`);
+}
 
 const uitKluis = async (userId: string, doel: string): Promise<string | null> => {
   let rijen: Array<{ keyName: string; purpose: string }>;
@@ -74,20 +119,44 @@ export async function doelAanwezig(userId: string, doel: string): Promise<boolea
 }
 
 /**
- * De OAuth-app van de eigenaar. `null` = er staat niets in de kluis; `'onleesbaar'` = er staat wel iets, maar het zijn geen
- * client id + client secret. Dat verschil maakt de kaart zichtbaar, zodat niemand naar een lege knop staart.
+ * De OAuth-app voor deze gebruiker:
+ *  1. eigen kluis van de gebruiker (doel «github-oauth»);
+ *  2. automatisch verzegelde app uit de éénkliks GitHub App Manifest Flow van deze gebruiker;
+ *  3. platformbrede OAuth-app van de server (tenzij een eenheidstest de kluis expliciet verving).
  */
-export async function oauthApp(userId: string): Promise<OauthApp | 'onleesbaar' | null> {
+export async function oauthApp(userId: string, ruimte: AiRuimte = 'prive'): Promise<OauthApp | 'onleesbaar' | null> {
   const rauw = await uitKluis(userId, GITHUB_OAUTH_DOEL);
-  if (rauw === null) return null;
-  return leesOauthApp(rauw) ?? 'onleesbaar';
+  if (rauw !== null) return leesOauthApp(rauw) ?? 'onleesbaar';
+  if (!kluisVervangen) {
+    const eenklik = await eenklikAppLezen(userId, ruimte);
+    if (eenklik?.oauthZegel) {
+      try {
+        const open = await ontzegelVoor(eenklik.oauthZegel, userId, zegelPad('eenklik:oauth', ruimte), ruimte);
+        const gelezen = leesOauthApp(open);
+        if (gelezen) return gelezen;
+      } catch { /* ga door naar platform-terugval */ }
+    }
+    const plat = platformOauthApp();
+    if (plat) return plat;
+  }
+  return null;
 }
 
-/** De sleutel van de GitHub App van de eigenaar; zelfde drie uitkomsten als bij de OAuth-app. */
-export async function appSleutel(userId: string): Promise<AppSleutel | 'onleesbaar' | null> {
+/** De sleutel van de GitHub App van de eigenaar (eigen kluis of automatisch verzegeld via éénkliks manifest). */
+export async function appSleutel(userId: string, ruimte: AiRuimte = 'prive'): Promise<AppSleutel | 'onleesbaar' | null> {
   const rauw = await uitKluis(userId, GITHUB_APP_DOEL);
-  if (rauw === null) return null;
-  return leesAppSleutel(rauw) ?? 'onleesbaar';
+  if (rauw !== null) return leesAppSleutel(rauw) ?? 'onleesbaar';
+  if (!kluisVervangen) {
+    const eenklik = await eenklikAppLezen(userId, ruimte);
+    if (eenklik?.appPemZegel) {
+      try {
+        const open = await ontzegelVoor(eenklik.appPemZegel, userId, zegelPad('eenklik:pem', ruimte), ruimte);
+        const gelezen = leesAppSleutel(open);
+        if (gelezen) return gelezen;
+      } catch { /* geen bruikbare sleutel */ }
+    }
+  }
+  return null;
 }
 
 // ------------------------------------------------------------------------------------------------ bewaarde koppeling

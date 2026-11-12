@@ -15,7 +15,7 @@ import {useEffect,useRef,useState} from 'react';
 import {Check,Cloud,Fingerprint,KeyRound,Laptop,Pencil,Plus,ShieldCheck,Smartphone,Trash2,TriangleAlert,X} from 'lucide-react';
 import {InfoTip} from './InfoTip';
 import {api} from './platform/client';
-import {swrPost} from './lees-cache';
+import {leesVergeten,swrPost} from './lees-cache';
 import {metHervat,neemHervat} from './platform/stap-op';
 import {GebruikLijst,GeschiedenisLijst,NotitieVeld,RedenVeld,redenOk,useNotities,type Gebruik,type GeschiedenisItem} from './ToegangContext';
 import {foutCode,kanPasskey,passkeyAanmaken,passkeyBevestigen,type AssertieOpties,type RegistratieOpties} from './platform/webauthn';
@@ -103,14 +103,14 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
 
   // Fase B1: bewaarde lijst meteen, dan vers (alleen geheugen, per account); afbreken als de pagina verdwijnt.
   const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{
-    try{await swrPost<Lijst>('/api/owner/access/passkeys/lijst',context,d=>setData(d),o);}
+    try{await swrPost<Lijst>('/api/owner/access/passkeys/lijst',context,d=>{if(d&&Array.isArray(d.passkeys))setData(d);},o);}
     catch(c){setNotice({ok:false,text:foutTekst(lang,foutCode(c))});}
   };
   useEffect(()=>{const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[lang]);// eslint-disable-line react-hooks/exhaustive-deps
 
   const doe=async(sleutel:string,run:()=>Promise<string|void>)=>{
     setBusy(sleutel);setNotice(null);setHerhaal(null);
-    try{const ok=await run();if(ok)setNotice({ok:true,text:ok});await laden();onChange?.();}
+    try{const ok=await run();if(ok)setNotice({ok:true,text:ok});leesVergeten('/api/owner/access/passkeys/lijst');await laden();onChange?.();}
     catch(c){const code=foutCode(c);(code==='AbortError'?console.info:console.error)('[passkeys]',sleutel,code,c);if(code==='NotAllowedError')setHerhaal(()=>run);setNotice({ok:false,text:foutTekst(lang,code)});}
     finally{setBusy('');setWacht('');afbreken.current=null;}
   };
@@ -162,7 +162,7 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
   });};
 
   const g=beheer?data?.goedkeuring:undefined;
-  const aantal=data?.passkeys.length||0;
+  const aantal=data?.passkeys?.length||0;
   const vol=!!data&&aantal>=data.limiet;
   return <div className='access-plane-group' id='aanmeldmethoden-passkeys' data-access-section='passkeys'>
     <div className='access-plane-row'>
@@ -246,6 +246,6 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
       </li>)}
     </ul>}
 
-    {g&&g.onbekendBijRoot.length>0&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Сервер ще довіряє ключам, яких тут немає (наприклад, старим для admin.tarasevych.com): ','De server vertrouwt nog sleutels die hier niet staan (bijvoorbeeld oude voor admin.tarasevych.com): ')}{g.onbekendBijRoot.map(s=>`${s.label} (${s.vingerafdrukKort})`).join(', ')}. {tr(lang,'Прибрати їх можна на сервері: «sudo mijn-ruimte-passkey verwijderen <відбиток>».','Verwijderen kan op de server: «sudo mijn-ruimte-passkey verwijderen <vingerafdruk>».')}</p>}
+    {g&&Array.isArray(g.onbekendBijRoot)&&g.onbekendBijRoot.length>0&&<p className='access-plane-notice access-plane-subrow'>{tr(lang,'Сервер ще довіряє ключам, яких тут немає (наприклад, старим для admin.tarasevych.com): ','De server vertrouwt nog sleutels die hier niet staan (bijvoorbeeld oude voor admin.tarasevych.com): ')}{g.onbekendBijRoot.map(s=>`${s.label} (${s.vingerafdrukKort})`).join(', ')}. {tr(lang,'Прибрати їх можна на сервері: «sudo mijn-ruimte-passkey verwijderen <відбиток>».','Verwijderen kan op de server: «sudo mijn-ruimte-passkey verwijderen <vingerafdruk>».')}</p>}
   </div>;
 }

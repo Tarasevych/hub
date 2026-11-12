@@ -7,15 +7,19 @@ type Props = {
   naam: string;
   email: string;
   foto: string;
+  eigenFoto?: boolean;
   rolTekst: ReactNode;
   lang: 'uk' | 'nl';
-  /** Передає файл у наявний код застосунку (він стискає до 512 px і надсилає на сервер). */
-  onFoto?: (file: File) => Promise<unknown>;
+  /** Передає файл (або null для скидання власної світлини) у наявний код застосунку. */
+  onFoto?: (file: File | null) => Promise<unknown>;
 };
 
 type Bron = 'apparaat' | 'dienst' | 'link';
 
 const tekst = (lang: 'uk' | 'nl', uk: string, nl: string) => (lang === 'uk' ? uk : nl);
+
+const MAX_URL_FOTO_BYTES = 8 * 1024 * 1024;
+const MAX_APPARAAT_FOTO_BYTES = 12 * 1024 * 1024;
 
 const initialen = (naam: string) =>
   naam
@@ -25,17 +29,31 @@ const initialen = (naam: string) =>
     .map((deel) => deel[0]?.toUpperCase() ?? '')
     .join('');
 
-/** Перетворює URL у файл, щоб використати той самий шлях завантаження, що й для пристрою. */
+/** Перетворює URL у файл із обмеженням часу, розміру, заголовка джерела й дозволених растрових форматів. */
 async function bestandVanUrl(url: string): Promise<File> {
-  const antwoord = await fetch(url, { mode: 'cors', credentials: 'omit' });
-  if (!antwoord.ok) throw new Error(`HTTP ${antwoord.status}`);
-  const blob = await antwoord.blob();
-  if (!/^image\//.test(blob.type)) throw new Error('GEEN_AFBEELDING');
-  const naam = `foto-${Date.now()}.${(blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')}`;
-  return new File([blob], naam, { type: blob.type });
+  const regelaar = new AbortController();
+  const wekker = setTimeout(() => regelaar.abort(), 10_000);
+  try {
+    const antwoord = await fetch(url, {
+      mode: 'cors',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      signal: regelaar.signal,
+    });
+    if (!antwoord.ok) throw new Error(`HTTP ${antwoord.status}`);
+    const opgegeven = Number(antwoord.headers.get('content-length') || 0);
+    if (opgegeven > MAX_URL_FOTO_BYTES) throw new Error('FOTO_TE_GROOT');
+    const blob = await antwoord.blob();
+    if (blob.size > MAX_URL_FOTO_BYTES) throw new Error('FOTO_TE_GROOT');
+    if (!/^image\/(jpeg|png|webp)$/.test(blob.type)) throw new Error('GEEN_VEILIGE_AFBEELDING');
+    const naam = `foto-${Date.now()}.${(blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg')}`;
+    return new File([blob], naam, { type: blob.type });
+  } finally {
+    clearTimeout(wekker);
+  }
 }
 
-export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props) {
+export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFoto }: Props) {
   const [open, setOpen] = useState(false);
   const [bron, setBron] = useState<Bron>('apparaat');
   const [voorbeeld, setVoorbeeld] = useState<string>('');
@@ -68,6 +86,10 @@ export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props
       setFout(tekst(lang, 'Потрібен JPEG, PNG або WebP.', 'Alleen JPEG, PNG of WebP.'));
       return;
     }
+    if (file.size > MAX_APPARAAT_FOTO_BYTES) {
+      setFout(tekst(lang, 'Файл завеликий (максимум 12 МБ). Оберіть менше зображення.', 'Het bestand is te groot (maximaal 12 MB). Kies een kleinere afbeelding.'));
+      return;
+    }
     setVoorbeeldFile(file);
     setVoorbeeld(URL.createObjectURL(file));
   };
@@ -86,8 +108,8 @@ export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props
     } catch {
       setFout(tekst(
         lang,
-        'Не вдалося завантажити зображення за посиланням (сайт може забороняти прямий доступ). Збережіть файл і оберіть «Пристрій».',
-        'De afbeelding kon niet worden opgehaald (de site kan directe toegang weigeren). Bewaar het bestand en kies «Apparaat».',
+        'Не вдалося завантажити зображення JPEG/PNG/WebP за посиланням (сайт може забороняти прямий доступ або формат не підтримується). Збережіть файл і оберіть «Пристрій».',
+        'De JPEG/PNG/WebP-afbeelding kon niet worden opgehaald (de site kan directe toegang weigeren of het formaat wordt niet ondersteund). Bewaar het bestand en kies «Apparaat».',
       ));
     } finally {
       setBezig(false);
@@ -108,7 +130,7 @@ export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props
     } catch {
       setFout(tekst(
         lang,
-        'Сервісне фото не вдалося прочитати в браузері. Збережіть його як файл і оберіть «Пристрій».',
+        'Сервісне фото не вдалося прочитати в оглядачі. Збережіть його як файл і оберіть «Пристрій».',
         'De servicefoto kon de browser niet lezen. Bewaar haar als bestand en kies «Apparaat».',
       ));
     } finally {
@@ -135,20 +157,23 @@ export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props
 
   const herstel = async () => {
     setFout('');
-    if (!foto) {
+    if (!foto && !eigenFoto) {
       setFout(tekst(
         lang,
-        'Видалення фото на сервері ще не підтримується: поточне фото — єдине, що є.',
-        'Foto verwijderen wordt nog niet door de server ondersteund: er is alleen de huidige foto.',
+        'Власне фото профілю не встановлено.',
+        'Er is geen eigen profielfoto ingesteld.',
       ));
       return;
     }
+    if (!onFoto) return;
     setBezig(true);
     try {
-      await onFoto?.(await bestandVanUrl(foto));
+      await onFoto(null);
+      setVoorbeeld('');
+      setVoorbeeldFile(null);
       setOpen(false);
     } catch {
-      setFout(tekst(lang, 'Не вдалося повернути фото сервісу.', 'De servicefoto kon niet worden hersteld.'));
+      setFout(tekst(lang, 'Не вдалося прибрати власне фото профілю.', 'De eigen profielfoto kon niet worden verwijderd.'));
     } finally {
       setBezig(false);
     }
@@ -169,6 +194,7 @@ export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props
         <button
           type='button'
           className='ia-avatar-prullenbak'
+          disabled={bezig}
           onClick={() => void herstel()}
           aria-label={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
           title={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
@@ -216,7 +242,7 @@ export function Profielfoto({ naam, email, foto, rolTekst, lang, onFoto }: Props
               {bron === 'apparaat' && (
                 <>
                   <p>{tekst(lang, 'JPEG, PNG або WebP. Фото стиснеться до 512 px перед відправкою.', 'JPEG, PNG of WebP. De foto wordt vóór verzending verkleind naar 512 px.')}</p>
-                  <input ref={invoer} type='file' accept='image/jpeg,image/png,image/webp' className='ia-bestand' onChange={(e) => kiesBestand(e.target.files?.[0] ?? null)} />
+                  <input ref={invoer} type='file' accept='image/jpeg,image/png,image/webp' className='ia-bestand' onChange={(e) => { kiesBestand(e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} />
                   <button type='button' className='ia-knop' onClick={() => invoer.current?.click()}>
                     <ImagePlus />{tekst(lang, 'Обрати файл', 'Bestand kiezen')}
                   </button>

@@ -32,7 +32,7 @@
 .access-plane-inline-form button:disabled{opacity:.5;cursor:default}
 .access-plane-inline-form button svg{width:14px;height:14px}
 .access-plane-totp-setup,.access-plane-recovery-codes{flex-direction:column;align-items:stretch}
-.access-plane-secret{display:inline-block;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.05);letter-spacing:.05em;width:fit-content}
+.access-plane-secret{display:inline-block;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.05);letter-spacing:.05em;width:fit-content;max-width:100%;overflow-wrap:anywhere}
 .access-plane-code-list{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .access-plane-code-list li{padding:6px 8px;border-radius:7px;background:rgba(0,0,0,.05);text-align:center}
 /* Aanmeldmethoden: één pagina met secties (GitHub-stijl), ook op de telefoon bruikbaar. */
@@ -83,10 +83,14 @@ p.access-plane-notice.access-plane-subrow,p.access-plane-lockout.access-plane-su
 @media (max-width:560px){
   .access-plane-subrow{padding-left:14px}
   .access-plane-sublist{padding-left:0}
-  .access-plane-row{flex-direction:column}
-  .access-plane-row-actions{align-self:flex-end}
+  .access-plane-row{flex-direction:column;align-items:stretch}
+  .access-plane-row-actions{align-self:stretch;flex-wrap:wrap}
+  .access-plane-row-actions>*{flex:1 1 auto;justify-content:center}
   .access-plane-inline-form button,.access-plane-owner button{flex:1 1 auto;justify-content:center}
   .access-plane-code-list{grid-template-columns:1fr 1fr}
+}
+@media (max-width:440px){
+  .access-plane-code-list{grid-template-columns:1fr}
 }
 
 /* (?) uitleg naast titels — InfoTip.tsx */
@@ -254,5 +258,8 @@ html.theme-plum-dark{--ap-op-accent:#2a1024}
 /* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
 @media (max-width:700px){
   /* «?» (info-tip): tikvlak 44×44 via ::after in src/hulp/hulp-knop.css; zichtbare cirkel 22 px (29.10.2026). */
-  .access-plane-row-actions :is(button,a){min-height:var(--tik-hoogte)}
+  .access-plane-row-actions :is(button,a),.access-plane-button,.herstel-klaar button,.access-plane-actions button,.access-plane-owner button{min-height:var(--tik-hoogte)}
+}
+@media (max-width:440px){
+  .toegang-wijziging-details{grid-template-columns:1fr}
 }

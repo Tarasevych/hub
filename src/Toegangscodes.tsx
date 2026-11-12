@@ -74,7 +74,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
   const[melding,setMelding]=useState('');
   const notities=useNotities(context);
   // Fase B1: bewaarde lijst meteen tonen, dan vers ophalen (alleen geheugen, per account); afbreken als de pagina verdwijnt.
-  const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<Lijst&{beschikbaar?:boolean}>('/api/owner/access/toegangscodes/lijst',context,d=>{if(d.beschikbaar===false){setGeenToegang(true);return;}setData(d);},o);}catch(c){if(foutCode(c)==='OWNER_REQUIRED')setGeenToegang(true);else setFout(foutTekst(lang,foutCode(c)));}};
+  const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<Lijst&{beschikbaar?:boolean}>('/api/owner/access/toegangscodes/lijst',context,d=>{if(!d||typeof d!=='object')return;if(d.beschikbaar===false){setGeenToegang(true);return;}if(Array.isArray(d.codes))setData({...d,scopes:Array.isArray(d.scopes)?d.scopes:[],nooit:Array.isArray(d.nooit)?d.nooit:[],presets:Array.isArray(d.presets)?d.presets:[]});},o);}catch(c){if(foutCode(c)==='OWNER_REQUIRED')setGeenToegang(true);else setFout(foutTekst(lang,foutCode(c)));}};
   useEffect(()=>{const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(location.hash==='#toegangscodes'&&data)window.setTimeout(()=>document.getElementById('toegangscodes')?.scrollIntoView({block:'start'}),80);},[!!data]);// eslint-disable-line react-hooks/exhaustive-deps
   if(geenToegang)return null;

@@ -158,6 +158,12 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Увімкніть спершу лише для себе, щоб спробувати новий вигляд.', 'Zet eerst alleen voor uzelf aan om de nieuwe weergave te proberen.'],
     gevolg: ['Усі дії ті самі; змінюється лише вигляд. Вимкнено — старе меню без змін.', 'Alle acties blijven; alleen het uiterlijk verandert. Uit = het oude menu, ongewijzigd.'],
   },
+  'accountmenu-v3': {
+    naam: ['Нове меню облікового запису (орбіта світлин, палітра та доступ)', 'Nieuw accountmenu (foto-orbita, palet en toegang)'],
+    wat: ['Єдина композиція спадного меню облікового запису: «Орбіта світлин» у шапці (або «Секційна картка» у Налаштуваннях), швидке перемикання палітри кольорів, концентричне кільце часу доступу з трьома умовами завершення технічного простору, вихід у два стовпці з міні-кружечками та масштабування за кутик.', 'Eén samenhangend accountmenu: foto-orbita bovenaan (of sectiekaart via Instellingen), snelle paletwissel, concentrische tijdring met drie duidelijke eindvoorwaarden van de technische ruimte, tweekoloms afmelden met minicirkels en schalen via de hoek.'],
+    wanneer: ['Увімкніть спершу лише для себе у «Перемикачах функцій», перевірте обидва режими вигляду в «Налаштування → Налаштувати меню», а далі за потреби відкрийте вибраним людям або всім.', 'Zet eerst alleen voor uzelf aan bij «Functieschakelaars», probeer beide weergaven via «Instellingen → Menu instellen» en open daarna zo nodig voor gekozen mensen of iedereen.'],
+    gevolg: ['Вимкнення миттєво повертає попереднє меню облікового запису без втрати сеансів, кольорів чи налаштувань. Перемикач не змінює прав доступу.', 'Uitzetten brengt meteen het vorige accountmenu terug zonder sessies, kleuren of instellingen te verliezen. De schakelaar verandert geen rechten.'],
+  },
   'integraties-catalogus-v2': {
     naam: ['Новий каталог інтеграцій (теми й групи)', 'Nieuwe integratiecatalogus (thema’s en groepen)'],
     wat: ['Каталог на «Інтеграціях» групується за темами, а в кожній темі — за справжнім станом: підключені, можна підключити, потребують уваги, потребують налаштування, у розробці. Замість «Скоро» — чесний план.', 'De catalogus op «Integraties» staat per thema en daarbinnen per echte stand: gekoppeld, klaar om te koppelen, vraagt aandacht, instellen nodig, in ontwikkeling. In plaats van «Binnenkort» een eerlijk plan.'],

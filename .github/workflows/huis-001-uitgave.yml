@@ -1,0 +1,308 @@
+name: HUIS-001 · розумний будинок «Живий дім» — макет, специфікація, виправлення розділу «Дім»
+
+# Ніколи не встановлює пакет на сервер. Перед оприлюдненням звіряє живу встановлену основу, джерела, макет, типи, міграції й контрольну суму.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, broncode, maquette, typen, migraties en controlesom.
+on:
+  push:
+    branches:
+      - 'feature/huis-001-20261110-072933'
+    paths:
+      - '.github/workflows/huis-001-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/HUIS-001.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: huis-001-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: HUIS-001
+  # Відомі встановлені основи (версія=фіксація змін); усі — предки цієї гілки. Робочий процес бере ту, що зараз на сервері.
+  # Bekende geïnstalleerde bases (versie=commit); alle zijn voorouders van deze tak. De workflow kiest de basis die nu op de server staat.
+  BEKENDE_BASISSEN: '20261111-220943=3e18d5b366173e602187a7264cc2b9fa326183c5 20261112-024707=f9db50747048f7dc7a6937fff65b0ae4c1058f72 20261112-043627=61cc2541e2deb54a902ac00eb5bcc16f54bc4d9b'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'claude-fable-5-2'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          const levend = v.bronCommit || v.commit;
+          const bekend = new Map(process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('=')));
+          if (bekend.get(v.versie) !== levend) {
+            throw Error(`Встановлена версія (${v.versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${v.versie}\nBASIS_COMMIT=${levend}\n`);
+          console.log(`Основа випуску: ${v.versie} @ ${levend}`);
+          JS
+          BASIS_COMMIT="$(node -e "const v=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/versie.json','utf8'));process.stdout.write(v.bronCommit||v.commit)")"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+      - name: Перевірити макет «Живий дім» і модульні перевірки розділу «Дім», меню та розміщення
+        run: |
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/huis-maquette.mjs --controle
+          node scripts/eenheidstests.mjs huis-001-maquette-20261112.test.ts
+          node scripts/eenheidstests.mjs huis-001-oude-fouten-20261110.test.ts
+          node scripts/eenheidstests.mjs menu-v2.test.ts
+          node scripts/eenheidstests.mjs werkblad-register-20261027.test.ts
+          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts
+          node scripts/eenheidstests.mjs routes.test.ts
+      - name: Перевірити типи та скласти застосунок разом із макетом
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          test -s dist/huis-maquette/index.html
+          test -s dist/huis-maquette/maquette.css
+          test -s dist/huis-maquette/maquette.js
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const html = readFileSync('dist/huis-maquette/index.html', 'utf8');
+          if (/<script(?![^>]*\ssrc=)[^>]*>/i.test(html) || /<style[\s>]/i.test(html)) {
+            throw Error('Сторінка макета містить вбудований скрипт або стиль: політика безпеки сайту її не пропустить.');
+          }
+          JS
+      - name: Перевірити подвійне застосування міграцій і серверні тести з базою даних
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs huis-vnext-20261028.test.ts
+          node scripts/eenheidstests.mjs melding-soorten.test.ts
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич';
+          const uk = {
+            titel: 'Розумний будинок «Живий дім»: клікабельний макет на сайті, специфікація дизайну та виправлення розділу «Дім»',
+            samenvatting: 'Етап 0 перетворення https://huis.tarasevych.com/ на повноцінний хаб розумного будинку, на основі живої версії ' + e.BASIS_VERSIE + '. На сайті з’являється повний клікабельний макет майбутнього хабу «Живий дім» (вкладка «Вітрина» та адреса /huis-maquette/): він працює на вбудованому симуляторі з вигаданими даними й нічим не керує. Разом із ним — специфікація дизайну двома мовами та виправлення старих помилок розділу «Дім». Справжня функціональність розділу не змінюється.',
+            wijzigingen: [
+              'Клікабельний макет «Живий дім» на сайті: дім із небом за часом доби й реченням-підсумком, кімнати з планом, 57 вкладок без жодної заглушки, 104 аркуші керування для кожного типу пристрою, енергія з потоками й тарифом на 48 годин, безпека й камери, гараж із транспортом, безпілотниками (кабіна польоту) та роботами, автоматика з редактором правил, помічник і ШІ-агенти з повним переліком інструментів, Журнал і центр сповіщень.',
+              'Дозволи за рішенням власника: для кожної дії доступні «Вимкнено · Питати · Завжди» окремо для кожного виконавця, типово «Вимкнено», змінює лише власник; попереджувальний знак «!» з поясненням ризику; кожна зміна й кожна дія — у Журналі.',
+              'Тринадцять видів екранів у справжніх пікселях: годинник, телефон, настінна панель, комп’ютер, надширокий, телевізор, стрічкові 1920×480 і 1280×400, квадратний, круглий, малий, дверна панель, електронне чорнило; три теми й дві мови.',
+              'Вбудований симулятор демо-дому «Wilgenlaan 12»: 88 пристроїв усіх типів, 15 сценаріїв (ранок, вечір, дим на кухні, протікання, огляд даху безпілотником, від’ємна ціна тощо), прискорення часу до ×600.',
+              'Специфікація дизайну українською й нідерландською: головний документ, нормативна дизайн-мова з токенами та виміряним контрастом, десять зональних документів (docs/huis/).',
+              'Завершальна незалежна перевірка макета й специфікації (вигляд, поведінка, повнота, мова) і два кола виправлень: клавіатура й утримання фокуса в усіх шарах; «Немає зв’язку» вимикає всі дії; запит виконавця існує лише за «Питати» — за «Вимкнено» знімається сам, а схвалити його може лише людина з правом на це й із ритуалом рівня дії; команда без зміни не пише запису; «Складники» покривають усі 49 компонентів; однакові терміни в усіх розділах.',
+              'Посилання на макет у вкладці «Вітрина / Toonzaal» і на інформаційній сторінці розділу; сторінка макета зібрана без вбудованих скриптів і стилів, політика безпеки сайту не послаблюється.'
+            ],
+            fixes: [
+              'Вкладки розділу «Дім» (і «Мої файли» хмари) не мали підпису в чужому меню — там стояло англійське «Rooms», «Energy», «Files».',
+              '«Showroom» був однаковий в обох мовах — тепер «Вітрина / Toonzaal».',
+              'Часовий пояс оселі: замість жорсткого списку із 7 поясів і перевірки, яка відхиляла навіть «UTC» із цього списку, — повний перелік і спільна перевірка для браузера й сервера.',
+              'Результати дій у розділі «Дім» тепер потрапляють до центру сповіщень платформи, а помилки позначено як помилки.',
+              'Ключ прапорця huis-vnext має одне джерело; описано змінні середовища HUIS_VERTROUWDE_TOESTELLEN і MR_BEHEERSUBNET.'
+            ],
+            beperkingen: [
+              'Це етап 0: макет і специфікація. Реєстр пристроїв, потік реального часу, історія, рушій автоматизацій, інструменти агентів і справжні джерела — наступні етапи.',
+              'Макет працює лише на вигаданих даних симулятора й не має зв’язку з вашими пристроями; безпілотники — лише симуляція.',
+              'Встановлення випуску на робочий сервер виконує виключно власник із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення» і підтвердьте встановлення ключем доступу. Після встановлення відкрийте https://huis.tarasevych.com/huis-maquette/ або натисніть «Відкрити макет» на сторінці https://huis.tarasevych.com/. Ліворуч у макеті — пульт: тема, мова, вид екрана, роль, сценарій симулятора та швидкість часу.'
+          };
+          const nl = {
+            titel: 'Slim huis «Levend huis»: klikbare maquette op de site, ontwerpspecificatie en herstel van het onderdeel «Huis»',
+            samenvatting: 'Fase 0 van de ombouw van https://huis.tarasevych.com/ tot een volwaardige hub voor het slimme huis, boven op de geïnstalleerde versie ' + e.BASIS_VERSIE + '. Op de site komt de volledige klikbare maquette van de toekomstige hub «Levend huis» (tabblad «Toonzaal» en het adres /huis-maquette/): zij draait op de ingebouwde simulator met verzonnen gegevens en bedient niets. Daarbij horen de ontwerpspecificatie in twee talen en het herstel van oude fouten in het onderdeel «Huis». De echte werking van het onderdeel verandert niet.',
+            wijzigingen: [
+              'Klikbare maquette «Levend huis» op de site: het huis met een hemel naar het tijdstip en een samenvattende zin, kamers met plattegrond, 57 tabbladen zonder één stomp, 104 bedieningsbladen voor elk soort apparaat, energie met stromen en een tarief voor 48 uur, beveiliging en camera’s, de garage met voertuigen, drones (vluchtcabine) en robots, automatisering met een regelbewerker, de assistent en AI-agenten met de volledige lijst hulpmiddelen, het Logboek en het meldingencentrum.',
+              'Toestemmingen volgens het besluit van de eigenaar: voor elke actie «Uit · Vragen · Altijd» per uitvoerder, standaard «Uit», alleen de eigenaar wijzigt; een waarschuwingsteken «!» met uitleg van het risico; elke wijziging en elke actie staat in het Logboek.',
+              'Dertien soorten schermen in echte pixels: horloge, telefoon, wandpaneel, computer, ultrabreed, televisie, stroken van 1920×480 en 1280×400, vierkant, rond, klein, deurpaneel en elektronische inkt; drie thema’s en twee talen.',
+              'Ingebouwde simulator van het demohuis «Wilgenlaan 12»: 88 apparaten van alle soorten, 15 scenario’s (ochtend, avond, rook in de keuken, lekkage, dakinspectie met een drone, negatieve prijs enzovoort) en tijdversnelling tot ×600.',
+              'Ontwerpspecificatie in het Oekraïens en het Nederlands: het hoofddocument, de normatieve ontwerptaal met tokens en gemeten contrast, en tien zonedocumenten (docs/huis/).',
+              'Onafhankelijke eindcontrole van de maquette en de specificatie (vormgeving, gedrag, volledigheid, taal) en twee herstelrondes: toetsenbord en focus in alle lagen; «Geen verbinding» schakelt alle acties uit; een verzoek van een uitvoerder bestaat alleen bij «Vragen» — bij «Uit» vervalt het vanzelf, en goedkeuren kan alleen een mens die dat mag, met het ritueel van het niveau van de actie; een opdracht die niets verandert, schrijft geen regel; «Onderdelen» dekt alle 49 componenten; dezelfde termen in alle onderdelen.',
+              'Een link naar de maquette op het tabblad «Вітрина / Toonzaal» en op de informatiepagina van het onderdeel; de maquettepagina is gebouwd zonder inline scripts en stijlen, het beveiligingsbeleid van de site wordt niet versoepeld.'
+            ],
+            fixes: [
+              'De tabbladen van «Huis» (en «Mijn bestanden» van de cloud) hadden geen naam in een ander menu — daar stond het Engelse «Rooms», «Energy», «Files».',
+              '«Showroom» was in beide talen gelijk — nu «Вітрина / Toonzaal».',
+              'Tijdzone van de woning: in plaats van een vaste lijst van 7 zones en een controle die zelfs «UTC» uit die lijst weigerde, de volledige lijst en één gedeelde controle voor browser en server.',
+              'Uitkomsten van acties in «Huis» komen nu in het meldingencentrum van het platform, en fouten zijn als fout gemarkeerd.',
+              'De vlagsleutel huis-vnext heeft één bron; de omgevingsvariabelen HUIS_VERTROUWDE_TOESTELLEN en MR_BEHEERSUBNET zijn beschreven.'
+            ],
+            beperkingen: [
+              'Dit is fase 0: maquette en specificatie. Het apparatenregister, de realtimestroom, de geschiedenis, de automatiseringsmotor, de hulpmiddelen voor agenten en echte bronnen volgen in de volgende fasen.',
+              'De maquette draait alleen op verzonnen gegevens van de simulator en heeft geen verbinding met uw apparaten; drones zijn alleen simulatie.',
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update» en bevestig de installatie met uw toegangssleutel. Open daarna https://huis.tarasevych.com/huis-maquette/ of klik op «Maquette openen» op https://huis.tarasevych.com/. Links in de maquette staat het bedieningspaneel: thema, taal, soort scherm, rol, scenario van de simulator en tijdsnelheid.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'claude',
+                platform: 'Claude Code',
+                tool: 'Claude Code (хмарна сесія)',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 257,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено: правила координації та свіжість основи; статична перевірка макета (57 вкладок без заглушок, 104 аркуші керування, 130 дій, 15 сценаріїв, понад 7000 пар текстів за мовним законом); модульні перевірки макета (22/22), виправлень розділу «Дім» (16/16), меню, робочого аркуша, двомовності інструментів і маршрутів; перевірка типів; повна збірка з макетом у dist/huis-maquette/ без вбудованих скриптів і стилів; подвійне застосування міграцій; набір huis-vnext (54/54) і види сповіщень на чистій базі даних. У середовищі розробки додатково пройдено повну димову перевірку макета в браузері (усі маршрути в шести профілях, трьох темах і двох мовах — нуль помилок) і перевірку під справжньою політикою безпеки сайту.',
+              nl: 'Geslaagd: coördinatieregels en versheid van de basis; de statische controle van de maquette (57 tabbladen zonder stompen, 104 bedieningsbladen, 130 acties, 15 scenario’s, ruim 7000 tekstparen volgens de taalwet); eenheidstests van de maquette (22/22), van het herstel in «Huis» (16/16), van het menu, het werkblad, de tweetaligheid van hulpmiddelen en de routes; typecontrole; de volledige bouw met de maquette in dist/huis-maquette/ zonder inline scripts en stijlen; migraties tweemaal toegepast; de reeks huis-vnext (54/54) en de meldingssoorten op een schone database. In de ontwikkelomgeving is daarnaast de volledige rooktest van de maquette in de browser geslaagd (alle routes in zes profielen, drie thema’s en twee talen — nul fouten), evenals de controle onder het echte beveiligingsbeleid van de site.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          const opis = [
+            `HUIS-001 · Розумний будинок «Живий дім» (https://huis.tarasevych.com/) · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Виправлено:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            uk.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies.replace('<VERSIE>', e.VERSIE),
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич' \
+            --agent claude --platform 'Claude Code' --tool 'Claude Code (хмарна сесія)' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk 'Розумний будинок «Живий дім»: клікабельний макет на сайті, специфікація дизайну двома мовами та виправлення розділу «Дім».' \
+            --samenvatting-nl 'Slim huis «Levend huis»: klikbare maquette op de site, ontwerpspecificatie in twee talen en herstel van het onderdeel «Huis».' \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "HUIS-001 · розумний будинок «Живий дім»: макет, специфікація, виправлення · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: huis-001-controle
+          path: uitvoer/
+          if-no-files-found: ignore

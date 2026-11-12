@@ -11,8 +11,9 @@ html[data-identiteit-maquette='aan'] .canonical-chrome :is(.canonical-sidebar,.c
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar{visibility:hidden;background:transparent;border:0;box-shadow:none;pointer-events:none}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar :is(.canonical-account-panel,.canonical-notification-toast){visibility:visible;pointer-events:auto}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-content{min-height:0}
-/* На телефоні меню облікового запису живе в шухляді бічного меню: поки шухляду відчинено на прохання з діалогу світлини, її видно. */
+/* На телефоні меню облікового запису живе в шухляді бічного меню: поки шухляду відчинено на прохання з діалогу світлини, її видно, але коли поверх неї вже відкрито повноекранне меню облікового запису, саму шухляду ховаємо. */
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical-sidebar{display:flex!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer:has(.am3-mobiel-laag) :is(.canonical-sidebar,.canonical-sidebar-scrim){visibility:hidden;pointer-events:none}
 
 /* Корінь займає всю робочу область сайту (її відступи, якщо є, знімаємо від'ємними полями, виміряними двигуном: --mq-site/-site-links/-rechts/-onder);
    смугу сервісів макета враховує сам макет (.main-content{margin-left:var(--mq-links)}). */
@@ -101,6 +102,8 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical
 @media(max-width:730px){
   /* Вікно навігації на телефоні прив'язане знизу; з перемикачем вигляду воно вище за екран 844 px — тож прокручується всередині. */
   .mr-mq.mr-mq.mr-mq.mr-mq.bp-max-730 .popover-panel{max-height:calc(100dvh - var(--mq-site,0px) - 97px);overflow:auto;overscroll-behavior:contain}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok{padding-inline:12px}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud{overflow-wrap:anywhere}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving-voet{padding:0 14px 110px}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer{justify-content:center}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button{min-height:var(--tik-hoogte,40px)}

@@ -46,7 +46,21 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
   const [melding, setMelding] = useState('');
   const [wizard, setWizard] = useState(false);
   const { uitvoeren, venster } = useBevestiging(ctx, lang);
-  const laden = useCallback(async () => { try { setMijn(await tgPost<Mijn>(ctx, '/api/owner/telegram/mijn')); setFout(''); } catch (e) { setFout(foutTekst(lang, e)); } }, [ctx, lang]);
+  const laden = useCallback(async () => {
+    try {
+      const r = await tgPost<Partial<Mijn>>(ctx, '/api/owner/telegram/mijn');
+      if (!r || typeof r !== 'object' || !Array.isArray(r.koppelingen) || !r.code || !r.status) return;
+      setMijn({
+        ...(r as Mijn),
+        wijzigingen: Array.isArray(r.wijzigingen) ? r.wijzigingen : [],
+        koppelingen: r.koppelingen,
+        matrix: Array.isArray(r.matrix) ? r.matrix : [],
+        beschikbaar: Array.isArray(r.beschikbaar) ? r.beschikbaar : [],
+        geblokkeerd: Array.isArray(r.geblokkeerd) ? r.geblokkeerd : [],
+      });
+      setFout('');
+    } catch (e) { setFout(foutTekst(lang, e)); }
+  }, [ctx, lang]);
   useEffect(() => { void laden(); }, [laden]);
   const doeMet = async (fn: () => Promise<unknown>, ok: string) => {
     setMelding(''); setFout('');
@@ -54,7 +68,7 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
   };
 
   if (!mijn) return fout ? null : <section className='tga-sectie' aria-busy='true'><p><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Завантажуємо Telegram…', 'Telegram laden…')}</p></section>;
-  const storing = mijn.status.stand === 'storing';
+  const storing = mijn.status?.stand === 'storing';
   return <section className='tga-sectie' data-telegram-aanmelden>
     {venster}
     <header className='tga-sectie-kop'>
@@ -75,7 +89,7 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
       opslaan={(naam, rechten) => doeMet(() => tgPost(ctx, '/api/owner/telegram/koppeling', { koppelingId: k.id, naam, rechten }), tr(lang, 'Збережено.', 'Opgeslagen.'))}
       ontkoppelen={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/ontkoppelen', { koppelingId: k.id }), tr(lang, 'Telegram відв’язано. Бот більше не має доступу до вашого облікового запису.', 'Telegram ontkoppeld. De bot heeft geen toegang meer tot uw account.'))} />)}
 
-    {!mijn.mag ? (wizard ? <KoppelWizard ctx={ctx} lang={lang} bot={mijn.bot} aftel={mijn.aftel.gewoon} uitvoeren={uitvoeren} klaar={(ok) => { setWizard(false); if (ok) { setMelding(tr(lang, 'Telegram прив’язано. Ми надіслали підтвердження у чат.', 'Telegram gekoppeld. We stuurden een bevestiging in de chat.')); } void laden(); }} />
+    {!mijn.mag ? (wizard ? <KoppelWizard ctx={ctx} lang={lang} bot={mijn.bot} aftel={mijn.aftel?.gewoon ?? 10} uitvoeren={uitvoeren} klaar={(ok) => { setWizard(false); if (ok) { setMelding(tr(lang, 'Telegram прив’язано. Ми надіслали підтвердження у чат.', 'Telegram gekoppeld. We stuurden een bevestiging in de chat.')); } void laden(); }} />
       : <button type='button' className='tga-aanmeld-knop' onClick={() => setWizard(true)} disabled={storing}><TelegramLogo maat={20} /><span>{tr(lang, 'Прив’язати Telegram', 'Telegram koppelen')}</span></button>)
       : <p className='tga-let'>{mijn.mag === 'UITGESCHAKELD' ? tr(lang, 'Адміністратор тимчасово вимкнув Telegram для всіх. Наявні прив’язки збережено.', 'De beheerder heeft Telegram tijdelijk voor iedereen uitgezet. Bestaande koppelingen blijven bewaard.') : tr(lang, 'Адміністратор не дозволив прив’язувати Telegram до цього облікового запису.', 'De beheerder staat het koppelen van Telegram aan dit account niet toe.')}</p>}
 
@@ -87,7 +101,7 @@ export default function TelegramSectie({ lang }: { lang: Lang }) {
     </div>}
 
     <Matrix ctx={ctx} lang={lang} rijen={mijn.matrix} beschikbaar={mijn.beschikbaar} opslaan={(body) => doeMet(() => tgPost(ctx, '/api/owner/telegram/matrix', body), tr(lang, 'Таблицю підтверджень збережено.', 'Bevestigingstabel opgeslagen.'))} />
-    <GeheimeCode lang={lang} code={mijn.code} telefoons={mijn.koppelingen.map((k) => k.vingerafdruk.telefoon).join(' ')}
+    <GeheimeCode lang={lang} code={mijn.code} telefoons={mijn.koppelingen.map((k) => k.vingerafdruk?.telefoon || '').join(' ')}
       instellen={(code, alarmCode) => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/instellen', { code, alarmCode }), tr(lang, 'Таємний код збережено.', 'Geheime code opgeslagen.'))}
       verwijderen={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/verwijderen'), tr(lang, 'Таємний код видалено.', 'Geheime code verwijderd.'))}
       herstellen={() => doeMet(() => tgPost(ctx, '/api/owner/telegram/code/herstellen'), tr(lang, 'Таємний код знову працює.', 'De geheime code werkt weer.'))} />

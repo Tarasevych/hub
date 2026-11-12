@@ -51,7 +51,7 @@ const datum = (ms: number | null, uk: boolean) => (ms ? new Date(ms).toLocaleStr
 
 // ---------------------------------------------------------------- hulpjes
 
-const LOGO: Record<AgentSlug, LogoKind> = { claude: 'claude', gpt: 'openai', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor', antigravity: 'antigravity', autoclaw: 'autoclaw' };
+const LOGO: Record<AgentSlug, LogoKind> = { claude: 'claude', gpt: 'openai', codex: 'codex', grok: 'grok', gemini: 'gemini', copilot: 'copilot', cursor: 'cursor', antigravity: 'antigravity', autoclaw: 'autoclaw' };
 const s = (v: unknown) => (typeof v === 'string' ? v : '');
 const ALLE_SLUGS: AgentSlug[] = V2_AGENTEN.map((a) => a.slug);
 
@@ -74,6 +74,7 @@ export function agentVanItem(e: JournaalItem): AgentSlug | null {
   if ((ALLE_SLUGS as string[]).includes(a)) return a as AgentSlug;
   const n = `${e.onderwerp?.naam ?? ''} ${s(e.details.client)}`.toLowerCase();
   if (/claude|anthropic/.test(n)) return 'claude';
+  if (/\bcodex\b/.test(n)) return 'codex';
   if (/chatgpt|openai|gpt/.test(n)) return 'gpt';
   if (/grok|xai/.test(n)) return 'grok';
   if (/gemini/.test(n)) return 'gemini';
