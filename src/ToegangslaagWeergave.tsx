@@ -15,6 +15,7 @@ const ApparaatSectie=lazy(()=>import('./apparaat-bevestiging/InstellingenSectie'
 import {useTelegramVlag} from './telegram-aanmelden/vlag';
 import {useApparaatVlag} from './apparaat-bevestiging/vlag'; /* APPARAAT-001 */
 import {bevestigToegang,metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
+import {aanmeldPauzeBericht,leesAanmeldPauze} from './aanmeld-pauze';
 type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
 type Binding={id:string;method:string;email:string;status:string;providerSubject?:string};
@@ -130,15 +131,19 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
       setPassword('');
       setCode('');
     }catch(caught){
-      const message=String((caught as{response?:{data?:{error?:string}}})?.response?.data?.error||'');
-      setNotice(
-        message==='LAST_LOGIN_METHOD_PROTECTED'?t(lang,'t14'):
-        message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
-        /TOTP|CODE/.test(message)?t(lang,'t20'):
-        message==='RATE_LIMITED'||message==='LOGIN_RATE_LIMITED'?t(lang,'t21'):
-        message==='STEP_UP_REQUIRED'?stapOpUitleg():
-        t(lang,'t16')
-      );
+      const pauze=leesAanmeldPauze(caught);
+      if(pauze.isPauze){
+        setNotice(aanmeldPauzeBericht(pauze.seconden,lang,'bevestig',{maxAttempts:pauze.maxAttempts,windowSec:pauze.windowSec}).melding);
+      }else{
+        const message=String((caught as{response?:{data?:{error?:string}}})?.response?.data?.error||'');
+        setNotice(
+          message==='LAST_LOGIN_METHOD_PROTECTED'?t(lang,'t14'):
+          message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
+          /TOTP|CODE/.test(message)?t(lang,'t20'):
+          message==='STEP_UP_REQUIRED'?stapOpUitleg():
+          t(lang,'t16')
+        );
+      }
     }
     setBusy(false);
   };

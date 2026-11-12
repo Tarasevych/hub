@@ -9,7 +9,7 @@
 //   • het register: wat al onder de eigen sleutel staat en wat nog niet — mét reden (shared/sleutelkluis.ts).
 // Een passkey zonder PRF krijgt de eerlijke tekst KLUIS_TEKST.geenPrf en de weg via de herstelcode.
 import {useEffect,useState} from 'react';
-import {Check,Copy,Download,KeyRound,Lock,LockOpen,Plus,RefreshCw,ShieldCheck,Unplug,X} from 'lucide-react';
+import {Check,ChevronDown,Copy,Download,KeyRound,Lock,LockOpen,Plus,RefreshCw,ShieldCheck,Unplug,X} from 'lucide-react';
 import {api} from './platform/client';
 import {leesVergeten,swrPost} from './lees-cache';
 import {metHervat,stapOpUitleg} from './platform/stap-op';
@@ -141,7 +141,7 @@ export function SleutelkluisSectie({lang,context}:Props){
       {o&&stand!=='uit'&&<>
         <div className='access-plane-subrow' data-sleutelkluis-omslagen>
           <strong>{tr(lang,'Хто може відкрити ключ','Wie de sleutel kan openen')}</strong>
-          <ul className='herstel-lijst'>
+          <ul className='herstel-lijst sleutelkluis-lijst'>
             <li data-omslag='herstelcode'><span>{tr(lang,'Код відновлення','Herstelcode')}</span><small>{o.omslagen?.herstelcode?`${tr(lang,'створено','gemaakt')} ${datum(lang,o.omslagen.herstelcode.aangemaaktOp)}`:tr(lang,'немає','geen')}</small>
               {stand==='open'&&<button type='button' className='secondary' disabled={!!bezig} onClick={()=>void codeVernieuwen()}><RefreshCw/>{tr(lang,'Новий код','Nieuwe code')}</button>}</li>
             {gekoppeld.map(p=><li key={p.id} data-omslag='passkey'><span>Passkey «{p.naam}»</span><small>{tr(lang,'відкриває ключ (PRF)','opent de sleutel (PRF)')}</small>
@@ -157,13 +157,17 @@ export function SleutelkluisSectie({lang,context}:Props){
           <strong>{tr(lang,'Старі записи','Oude rijen')}</strong>
           <small>{serverGelezen.length?tr(lang,`Ще серверним ключем читалося: ${serverGelezen.map(j=>`${j.tabel} (${j.aantal})`).join(', ')}.`,`Nog met de serversleutel gelezen: ${serverGelezen.map(j=>`${j.tabel} (${j.aantal})`).join(', ')}.`):tr(lang,'Записів, прочитаних серверним ключем, не зафіксовано.','Geen rijen met de serversleutel gelezen.')}{o.herversleuteldOp?` ${tr(lang,'Перешифровано','Herversleuteld')} ${datum(lang,o.herversleuteldOp)}.`:''}</small>
           {stand==='open'&&<div className='access-plane-actions'><button type='button' className='secondary' disabled={!!bezig} onClick={()=>void herversleutelen()}><RefreshCw/>{tr(lang,'Перешифрувати мої дані зараз','Mijn gegevens nu herversleutelen')}</button></div>}
-          {uitslag&&<ul className='herstel-lijst' data-sleutelkluis-uitslag>{uitslag.map(u=><li key={u.tabel}><span className='access-plane-mono'>{u.tabel}</span><small>{u.fout?`${tr(lang,'помилка','fout')}: ${u.fout}`:`${u.herversleuteld}/${u.gevonden}`}</small></li>)}</ul>}
+          {uitslag&&<ul className='herstel-lijst sleutelkluis-lijst' data-sleutelkluis-uitslag>{uitslag.map(u=><li key={u.tabel}><span className='access-plane-mono'>{u.tabel}</span><small>{u.fout?`${tr(lang,'помилка','fout')}: ${u.fout}`:`${u.herversleuteld}/${u.gevonden}`}</small></li>)}</ul>}
         </div>
       </>}
 
       {o&&<div className='access-plane-subrow' data-sleutelkluis-register>
-        <button type='button' className='secondary' onClick={()=>setToonRegister(v=>!v)}>{toonRegister?<X/>:<ShieldCheck/>}{tr(lang,'Що вже під моїм ключем, а що ще ні','Wat al onder mijn sleutel staat en wat nog niet')}</button>
-        {toonRegister&&<ul className='herstel-lijst'>{register.map(r=><li key={r.tabel} data-register-stand={r.stand}><span className='access-plane-mono'>{r.tabel}</span><small>{r.veld} · {r.stand==='dek'?tr(lang,'під моїм ключем (нові записи)','onder mijn sleutel (nieuwe rijen)'):`${tr(lang,'ще ні','nog niet')}: ${r.reden?t2(lang,r.reden):''}`}</small></li>)}</ul>}
+        <button type='button' className='secondary sleutelkluis-register-knop' aria-expanded={toonRegister} onClick={()=>setToonRegister(v=>!v)}>
+          <ShieldCheck aria-hidden='true'/>
+          <span>{tr(lang,'Що вже під моїм ключем, а що ще ні','Wat al onder mijn sleutel staat en wat nog niet')}</span>
+          <ChevronDown className='toegang-chevron' aria-hidden='true'/>
+        </button>
+        {toonRegister&&<ul className='herstel-lijst sleutelkluis-lijst'>{register.map(r=><li key={r.tabel} data-register-stand={r.stand}><span className='access-plane-mono'>{r.tabel}</span><small>{r.veld} · {r.stand==='dek'?tr(lang,'під моїм ключем (нові записи)','onder mijn sleutel (nieuwe rijen)'):`${tr(lang,'ще ні','nog niet')}: ${r.reden?t2(lang,r.reden):''}`}</small></li>)}</ul>}
       </div>}
     </div>
   </section>;

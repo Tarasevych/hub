@@ -2,7 +2,7 @@
 // voorbeeld van het aanmeldscherm. Opslaan gaat via de gewone poort 'beheer-instellingen' (verse toegangssleutel) en het journaal.
 // Розміщення способів входу: адміністратор визначає, що видно на головній сторінці входу, а що — під «Інші способи входу».
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
 import { tgPost, foutTekst, type Ctx } from './api';
 import { useEenmalig } from './Bevestigen';
 import { indelen, METHODE_NAMEN, PLEK_NAMEN, PLEKKEN, plaatsingControleren, verschuiven, type MethodeId, type Plaatsing, type Plek } from '../../shared/aanmeld-plaatsing/plaatsing';
@@ -61,7 +61,7 @@ export default function PlaatsingBeheer({ ctx, lang, uitvoeren }: { ctx: Ctx; la
       <strong>{tr(lang, 'Попередній перегляд', 'Voorbeeld')}</strong>
       <div className='tga-voorbeeld-hoofd'>{voorbeeld.hoofd.map((m) => <span key={m} className='tga-voorbeeld-knop'>{tr(lang, `Увійти через ${kies(lang, METHODE_NAMEN[m])}`, `Aanmelden met ${kies(lang, METHODE_NAMEN[m])}`)}</span>)}</div>
       {voorbeeld.andere.length > 0
-        ? <div className='tga-voorbeeld-andere'><span className='tga-voorbeeld-schakel'>{tr(lang, 'Інші способи входу ⌄', 'Andere aanmeldmethoden ⌄')}</span>
+        ? <div className='tga-voorbeeld-andere'><span className='tga-voorbeeld-schakel'>{tr(lang, 'Інші способи входу', 'Andere aanmeldmethoden')} <ChevronDown size={16} aria-hidden='true' /></span>
           <ul>{voorbeeld.andere.map((m) => <li key={m}>{kies(lang, METHODE_NAMEN[m])}{!werkend.includes(m) && <em> · {tr(lang, 'недоступно', 'niet beschikbaar')}</em>}</li>)}</ul></div>
         : <p className='tga-klein'>{tr(lang, 'Кнопку «Інші способи входу» не показано: там нічого немає.', 'De knop «Andere aanmeldmethoden» wordt niet getoond: er staat niets onder.')}</p>}
       {voorbeeld.noodGoogle && <p className='tga-fout'>{tr(lang, 'Жоден робочий спосіб не видно — сторінка входу все одно покаже Google, щоб ніхто не залишився без входу.', 'Geen werkende methode zichtbaar — het aanmeldscherm toont toch Google, zodat niemand buitengesloten wordt.')}</p>}

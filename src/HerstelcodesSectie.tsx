@@ -119,9 +119,11 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
 
       {!nieuw&&heeft&&(codeRegels.length>0
         ?<ul className='herstel-lijst' data-herstel-lijst>{codeRegels.map(r=><li key={r.nr} data-status={r.status} data-herstel-nr={r.nr}>
-          <span className='access-plane-mono herstel-code'>{masker(r.hint)}</span>
-          <small>{r.status==='ongebruikt'?tr(lang,'Не використано','Ongebruikt'):r.status==='gebruikt'?`${tr(lang,'Використано','Gebruikt')}${r.gebruiktOp?` ${datum(lang,r.gebruiktOp)}`:''}`:tr(lang,'Відкликано','Ingetrokken')}</small>
-          {r.sleutel&&<NotitieVeld lang={lang} soort='herstelcode' sleutel={r.sleutel} notities={notities} compact/>}
+          <div className='herstel-rij-kop'>
+            <span className='access-plane-mono herstel-code'>{masker(r.hint)}</span>
+            <small>{r.status==='ongebruikt'?tr(lang,'Не використано','Ongebruikt'):r.status==='gebruikt'?`${tr(lang,'Використано','Gebruikt')}${r.gebruiktOp?` ${datum(lang,r.gebruiktOp)}`:''}`:tr(lang,'Відкликано','Ingetrokken')}</small>
+            {r.sleutel&&<NotitieVeld lang={lang} soort='herstelcode' sleutel={r.sleutel} notities={notities} compact/>}
+          </div>
           {r.sleutel&&r.gebruik&&r.gebruik.length>0&&<GebruikLijst lang={lang} gebruik={r.gebruik} id={r.sleutel}/>}
         </li>)}</ul>
         :<p className='access-plane-hint-line access-plane-subrow'>{tr(lang,'Це старий набір кодів без окремого списку. Створіть нові, щоб бачити стан кожного коду.','Dit is een oudere set zonder lijst per code. Maak nieuwe codes om de status van elke code te zien.')}</p>)}

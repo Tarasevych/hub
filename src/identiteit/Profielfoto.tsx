@@ -1,6 +1,7 @@
 // Оформлення сторінки облікового запису (завдання IDENTITY-002): натискання на аватар відкриває три джерела фото (пристрій, сервіс, посилання).
 // Смітничок — маленька кнопка 24 px у куті аватара, тому камера в центрі лишається вільною.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Camera, ImagePlus, Link2, Trash2, Upload, Cloud, X } from 'lucide-react';
 
 type Props = {
@@ -21,13 +22,16 @@ const tekst = (lang: 'uk' | 'nl', uk: string, nl: string) => (lang === 'uk' ? uk
 const MAX_URL_FOTO_BYTES = 8 * 1024 * 1024;
 const MAX_APPARAAT_FOTO_BYTES = 12 * 1024 * 1024;
 
-const initialen = (naam: string) =>
-  naam
+const initialen = (naam: string, email = '') => {
+  const delen = naam
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((deel) => deel[0]?.toUpperCase() ?? '')
     .join('');
+  if (delen) return delen;
+  return (email.trim().slice(0, 2) || '?').toUpperCase();
+};
 
 /** Перетворює URL у файл із обмеженням часу, розміру, заголовка джерела й дозволених растрових форматів. */
 async function bestandVanUrl(url: string): Promise<File> {
@@ -61,8 +65,13 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
   const [link, setLink] = useState('');
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState('');
+  const [fotoFout, setFotoFout] = useState(false);
   const dialoog = useRef<HTMLDivElement>(null);
   const invoer = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setFotoFout(false);
+  }, [foto]);
 
   useEffect(() => {
     if (!open) return;
@@ -116,23 +125,25 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
     }
   };
 
-  const gebruikDienstFoto = async () => {
+  const herstel = async () => {
     setFout('');
-    if (!foto) {
-      setFout(tekst(lang, 'У профілі немає фото від сервісу.', 'Er is geen servicefoto in het profiel.'));
-      return;
-    }
-    setBezig(true);
-    try {
-      const file = await bestandVanUrl(foto);
-      setVoorbeeldFile(file);
-      setVoorbeeld(URL.createObjectURL(file));
-    } catch {
+    if (!eigenFoto) {
       setFout(tekst(
         lang,
-        'Сервісне фото не вдалося прочитати в оглядачі. Збережіть його як файл і оберіть «Пристрій».',
-        'De servicefoto kon de browser niet lezen. Bewaar haar als bestand en kies «Apparaat».',
+        'Власне фото профілю не встановлено.',
+        'Er is geen eigen profielfoto ingesteld.',
       ));
+      return;
+    }
+    if (!onFoto) return;
+    setBezig(true);
+    try {
+      await onFoto(null);
+      setVoorbeeld('');
+      setVoorbeeldFile(null);
+      setOpen(false);
+    } catch {
+      setFout(tekst(lang, 'Не вдалося прибрати власне фото профілю.', 'De eigen profielfoto kon niet worden verwijderd.'));
     } finally {
       setBezig(false);
     }
@@ -155,29 +166,95 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
     }
   };
 
-  const herstel = async () => {
-    setFout('');
-    if (!foto && !eigenFoto) {
-      setFout(tekst(
-        lang,
-        'Власне фото профілю не встановлено.',
-        'Er is geen eigen profielfoto ingesteld.',
-      ));
-      return;
-    }
-    if (!onFoto) return;
-    setBezig(true);
-    try {
-      await onFoto(null);
-      setVoorbeeld('');
-      setVoorbeeldFile(null);
-      setOpen(false);
-    } catch {
-      setFout(tekst(lang, 'Не вдалося прибрати власне фото профілю.', 'De eigen profielfoto kon niet worden verwijderd.'));
-    } finally {
-      setBezig(false);
-    }
-  };
+  const toonFoto = Boolean(foto && !fotoFout);
+
+  const dialoogVenster = open ? (
+    <div className='ia-dialoog-achtergrond' role='presentation' onClick={() => setOpen(false)}>
+      <div
+        className='ia-dialoog'
+        role='dialog'
+        aria-modal='true'
+        aria-label={tekst(lang, 'Фото профілю', 'Profielfoto')}
+        tabIndex={-1}
+        ref={dialoog}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header>
+          <h3>{tekst(lang, 'Фото профілю', 'Profielfoto')}</h3>
+          <button type='button' className='ia-dialoog-sluit' onClick={() => setOpen(false)} aria-label={tekst(lang, 'Закрити', 'Sluiten')}>
+            <X />
+          </button>
+        </header>
+
+        <div className='ia-bronnen' role='tablist' aria-label={tekst(lang, 'Джерело фото', 'Bron van de foto')}>
+          <button type='button' role='tab' aria-selected={bron === 'apparaat'} className={bron === 'apparaat' ? 'actief' : ''} onClick={() => { setFout(''); setBron('apparaat'); }}>
+            <Upload />{tekst(lang, 'Пристрій', 'Apparaat')}
+          </button>
+          <button type='button' role='tab' aria-selected={bron === 'dienst'} className={bron === 'dienst' ? 'actief' : ''} onClick={() => { setFout(''); setBron('dienst'); }}>
+            <Cloud />{tekst(lang, 'Сервіс', 'Dienst')}
+          </button>
+          <button type='button' role='tab' aria-selected={bron === 'link'} className={bron === 'link' ? 'actief' : ''} onClick={() => { setFout(''); setBron('link'); }}>
+            <Link2 />{tekst(lang, 'Посилання', 'Link')}
+          </button>
+        </div>
+
+        <div className='ia-bron-inhoud'>
+          {bron === 'apparaat' && (
+            <>
+              <p>{tekst(lang, 'JPEG, PNG або WebP. Фото автоматично вирівнюється по центру у квадрат 512×512 px.', 'JPEG, PNG of WebP. De foto wordt automatisch in het midden uitgesneden tot 512×512 px.')}</p>
+              <input ref={invoer} type='file' accept='image/jpeg,image/png,image/webp' className='ia-bestand' onChange={(e) => { kiesBestand(e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} />
+              <button type='button' className='ia-knop' onClick={() => invoer.current?.click()}>
+                <ImagePlus />{tekst(lang, 'Обрати файл', 'Bestand kiezen')}
+              </button>
+            </>
+          )}
+          {bron === 'dienst' && (
+            eigenFoto ? (
+              <>
+                <p>{tekst(lang, 'Зараз встановлено вашу власну світлину. Ви можете повернути стандартне фото з вашого сервісу входу.', 'U gebruikt nu een eigen profielfoto. U kunt de standaardfoto van uw aanmelddienst herstellen.')}</p>
+                <button type='button' className='ia-knop' onClick={() => void herstel()} disabled={bezig || !onFoto}>
+                  <Cloud />{tekst(lang, 'Повернути сервісне фото', 'Servicefoto herstellen')}
+                </button>
+              </>
+            ) : (
+              <>
+                <p>{tekst(lang, 'Зараз використовується фото з вашого сервісу входу.', 'De foto uit uw aanmelddienst is al actief.')}</p>
+                {toonFoto ? <img className='ia-dienst-voorbeeld' src={foto} alt='' referrerPolicy='no-referrer' onError={() => setFotoFout(true)} /> : <p className='ia-leeg'>{tekst(lang, 'Сервіс не передав фото.', 'De dienst heeft geen foto geleverd.')}</p>}
+              </>
+            )
+          )}
+          {bron === 'link' && (
+            <>
+              <p>{tekst(lang, 'Пряме https-посилання на зображення.', 'Een directe https-link naar een afbeelding.')}</p>
+              <input type='url' className='ia-link' placeholder='https://…' value={link} onChange={(e) => setLink(e.target.value)} />
+              <button type='button' className='ia-knop' onClick={() => void vanafLink()} disabled={bezig}>
+                <Link2 />{tekst(lang, 'Завантажити', 'Ophalen')}
+              </button>
+            </>
+          )}
+        </div>
+
+        {bron !== 'dienst' && (
+          <div className='ia-voorbeeld'>
+            {voorbeeld ? <img src={voorbeeld} alt={tekst(lang, 'Попередній перегляд', 'Voorbeeld')} /> : <span>{tekst(lang, 'Попередній перегляд з’явиться після вибору', 'Het voorbeeld verschijnt na uw keuze')}</span>}
+          </div>
+        )}
+
+        {fout && <p className='ia-fout' role='alert'>{fout}</p>}
+
+        <footer>
+          <button type='button' className='ia-knop ia-knop-zwak' onClick={() => setOpen(false)}>
+            {tekst(lang, 'Скасувати', 'Annuleren')}
+          </button>
+          {bron !== 'dienst' && (
+            <button type='button' className='ia-knop' onClick={() => void toepassen()} disabled={!voorbeelFile || bezig || !onFoto}>
+              {tekst(lang, 'Застосувати', 'Toepassen')}
+            </button>
+          )}
+        </footer>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <article className='settings-profile-card ia-profiel'>
@@ -188,19 +265,21 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
           onClick={() => setOpen(true)}
           aria-label={tekst(lang, 'Змінити фото профілю', 'Profielfoto wijzigen')}
         >
-          {foto ? <img src={foto} alt='' /> : <span className='ia-initialen'>{initialen(naam)}</span>}
+          {toonFoto ? <img src={foto} alt='' referrerPolicy='no-referrer' onError={() => setFotoFout(true)} /> : <span className='ia-initialen'>{initialen(naam, email)}</span>}
           <span className='ia-avatar-camera' aria-hidden='true'><Camera /></span>
         </button>
-        <button
-          type='button'
-          className='ia-avatar-prullenbak'
-          disabled={bezig}
-          onClick={() => void herstel()}
-          aria-label={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
-          title={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
-        >
-          <Trash2 />
-        </button>
+        {eigenFoto && (
+          <button
+            type='button'
+            className='ia-avatar-prullenbak'
+            disabled={bezig}
+            onClick={() => void herstel()}
+            aria-label={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
+            title={tekst(lang, 'Прибрати власне фото', 'Eigen foto verwijderen')}
+          >
+            <Trash2 />
+          </button>
+        )}
       </span>
       <div>
         <strong>{naam}</strong>
@@ -208,83 +287,7 @@ export function Profielfoto({ naam, email, foto, eigenFoto, rolTekst, lang, onFo
         {rolTekst}
       </div>
 
-      {open && (
-        <div className='ia-dialoog-achtergrond' role='presentation' onClick={() => setOpen(false)}>
-          <div
-            className='ia-dialoog'
-            role='dialog'
-            aria-modal='true'
-            aria-label={tekst(lang, 'Фото профілю', 'Profielfoto')}
-            tabIndex={-1}
-            ref={dialoog}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header>
-              <h3>{tekst(lang, 'Фото профілю', 'Profielfoto')}</h3>
-              <button type='button' className='ia-dialoog-sluit' onClick={() => setOpen(false)} aria-label={tekst(lang, 'Закрити', 'Sluiten')}>
-                <X />
-              </button>
-            </header>
-
-            <div className='ia-bronnen' role='tablist' aria-label={tekst(lang, 'Джерело фото', 'Bron van de foto')}>
-              <button type='button' role='tab' aria-selected={bron === 'apparaat'} className={bron === 'apparaat' ? 'actief' : ''} onClick={() => setBron('apparaat')}>
-                <Upload />{tekst(lang, 'Пристрій', 'Apparaat')}
-              </button>
-              <button type='button' role='tab' aria-selected={bron === 'dienst'} className={bron === 'dienst' ? 'actief' : ''} onClick={() => setBron('dienst')}>
-                <Cloud />{tekst(lang, 'Сервіс', 'Dienst')}
-              </button>
-              <button type='button' role='tab' aria-selected={bron === 'link'} className={bron === 'link' ? 'actief' : ''} onClick={() => setBron('link')}>
-                <Link2 />{tekst(lang, 'Посилання', 'Link')}
-              </button>
-            </div>
-
-            <div className='ia-bron-inhoud'>
-              {bron === 'apparaat' && (
-                <>
-                  <p>{tekst(lang, 'JPEG, PNG або WebP. Фото стиснеться до 512 px перед відправкою.', 'JPEG, PNG of WebP. De foto wordt vóór verzending verkleind naar 512 px.')}</p>
-                  <input ref={invoer} type='file' accept='image/jpeg,image/png,image/webp' className='ia-bestand' onChange={(e) => { kiesBestand(e.target.files?.[0] ?? null); e.currentTarget.value = ''; }} />
-                  <button type='button' className='ia-knop' onClick={() => invoer.current?.click()}>
-                    <ImagePlus />{tekst(lang, 'Обрати файл', 'Bestand kiezen')}
-                  </button>
-                </>
-              )}
-              {bron === 'dienst' && (
-                <>
-                  <p>{tekst(lang, 'Поточне фото з вашого сервісу входу. Його можна використати як фото профілю.', 'De huidige foto uit uw aanmelddienst. U kunt haar als profielfoto gebruiken.')}</p>
-                  {foto ? <img className='ia-dienst-voorbeeld' src={foto} alt='' /> : <p className='ia-leeg'>{tekst(lang, 'Сервіс не передав фото.', 'De dienst heeft geen foto geleverd.')}</p>}
-                  <button type='button' className='ia-knop' onClick={() => void gebruikDienstFoto()} disabled={bezig || !foto}>
-                    <Cloud />{tekst(lang, 'Використати це фото', 'Deze foto gebruiken')}
-                  </button>
-                </>
-              )}
-              {bron === 'link' && (
-                <>
-                  <p>{tekst(lang, 'Пряме https-посилання на зображення.', 'Een directe https-link naar een afbeelding.')}</p>
-                  <input type='url' className='ia-link' placeholder='https://…' value={link} onChange={(e) => setLink(e.target.value)} />
-                  <button type='button' className='ia-knop' onClick={() => void vanafLink()} disabled={bezig}>
-                    <Link2 />{tekst(lang, 'Завантажити', 'Ophalen')}
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div className='ia-voorbeeld'>
-              {voorbeeld ? <img src={voorbeeld} alt={tekst(lang, 'Попередній перегляд', 'Voorbeeld')} /> : <span>{tekst(lang, 'Попередній перегляд з’явиться після вибору', 'Het voorbeeld verschijnt na uw keuze')}</span>}
-            </div>
-
-            {fout && <p className='ia-fout' role='alert'>{fout}</p>}
-
-            <footer>
-              <button type='button' className='ia-knop ia-knop-zwak' onClick={() => setOpen(false)}>
-                {tekst(lang, 'Скасувати', 'Annuleren')}
-              </button>
-              <button type='button' className='ia-knop' onClick={() => void toepassen()} disabled={!voorbeelFile || bezig || !onFoto}>
-                {tekst(lang, 'Застосувати', 'Toepassen')}
-              </button>
-            </footer>
-          </div>
-        </div>
-      )}
+      {dialoogVenster ? (typeof document !== 'undefined' && document.body ? createPortal(dialoogVenster, document.body) : dialoogVenster) : null}
     </article>
   );
 }

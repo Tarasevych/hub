@@ -4,14 +4,19 @@
    повна підтримка `prefers-reduced-motion: reduce`. */
 
 [data-account-menu-v3] .canonical-account-panel {
-  --am3-bg: var(--canonical-panel, var(--panel, #ffffff));
-  --am3-surface: var(--canonical-surface, var(--surface, #f3f5f8));
-  --am3-surface-2: var(--canonical-surface-2, var(--surface2, #e8ecf2));
-  --am3-line: var(--canonical-line, var(--line, #dce2ea));
-  --am3-text: var(--canonical-text, var(--text, #16202a));
-  --am3-muted: var(--canonical-muted, var(--muted, #556270));
-  --am3-accent: var(--canonical-accent, var(--accent, #0f766e));
-  --am3-accent-soft: var(--canonical-accent-soft, var(--accent-soft, rgba(15, 118, 110, 0.12)));
+  --canonical-panel: var(--panel, #ffffff);
+  --canonical-surface: var(--surface, #f3f5f8);
+  --canonical-line: var(--line, #dce2ea);
+  --canonical-text: var(--text, #16202a);
+  --canonical-muted: var(--muted, #556270);
+  --am3-bg: var(--panel, #ffffff);
+  --am3-surface: var(--surface, #f3f5f8);
+  --am3-surface-2: var(--surface2, #e8ecf2);
+  --am3-line: var(--line, #dce2ea);
+  --am3-text: var(--text, #16202a);
+  --am3-muted: var(--muted, #556270);
+  --am3-accent: var(--accent, #0f766e);
+  --am3-accent-soft: var(--accent-soft, rgba(15, 118, 110, 0.12));
   --am3-danger-icon: #dc2626;
   width: min(392px, calc(100vw - 20px));
   padding: 0;
@@ -186,6 +191,27 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   background: var(--am3-surface);
   display: grid;
   place-items: center;
+}
+
+[data-account-menu-v3] .am3-shell .canonical-account-avatar {
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+[data-account-menu-v3] .am3-shell .canonical-account-avatar img.avatar-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-orbit-node[data-selecting="ja"] {
+  border-color: var(--am3-accent);
+  cursor: progress;
 }
 
 [data-account-menu-v3] .am3-center-avatar .canonical-account-avatar {
@@ -376,20 +402,37 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+}
+
+[data-account-menu-v3] .am3-accounts-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--am3-muted);
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+[data-account-menu-v3] .am3-accounts-toggle[aria-expanded="true"] .am3-accounts-chevron {
+  transform: rotate(180deg);
+  color: var(--am3-text);
 }
 
 [data-account-menu-v3] .am3-mini-avatars {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 [data-account-menu-v3] .am3-mini-avatars > span {
   width: 20px;
   height: 20px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   border: 1.5px solid var(--am3-surface);
   overflow: hidden;
   display: inline-flex;
+  flex-shrink: 0;
 }
 
 [data-account-menu-v3] .am3-mini-avatars > span + span {
@@ -399,6 +442,7 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 [data-account-menu-v3] .am3-mini-avatars .canonical-account-avatar {
   width: 100%;
   height: 100%;
+  border: 0;
   font-size: 0.56rem;
 }
 
@@ -465,6 +509,37 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+[data-account-menu-v3] .am3-account-status {
+  font-style: normal;
+  font-size: 0.63rem;
+  color: var(--am3-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+[data-account-menu-v3] .am3-account-status.is-selecting {
+  color: var(--am3-accent);
+  font-weight: 600;
+}
+
+@keyframes am3-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+[data-account-menu-v3] .am3-acc-spinner {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.7px solid currentColor;
+  border-right-color: transparent;
+  flex-shrink: 0;
+  animation: am3-spin 0.65s linear infinite;
 }
 
 [data-account-menu-v3] .am3-account-actions {
@@ -775,6 +850,7 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 
 [data-account-menu-v3] .am3-tray-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
@@ -789,6 +865,15 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-account-menu-v3] .am3-tray-head-right > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 [data-account-menu-v3] .am3-tray-close {
@@ -873,10 +958,11 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 [data-account-menu-v3] .am3-tints-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  justify-items: center;
   align-items: center;
-  justify-content: space-between;
-  gap: 5px;
+  gap: 8px;
   padding-top: 2px;
 }
 
@@ -921,12 +1007,16 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 [data-account-menu-v3] .am3-tray-link {
+  max-width: 100%;
   border: 0;
   padding: 0;
   background: transparent;
   color: var(--am3-text);
   font-size: 0.68rem;
   font-weight: 700;
+  line-height: 1.3;
+  text-align: right;
+  white-space: normal;
   cursor: pointer;
 }
 
@@ -1167,9 +1257,10 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 /* Кольори технічної смуги безпосередньо в лотку */
 [data-account-menu-v3] .am3-band-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
   padding: 6px 8px;
   border-radius: 9px;
   background: var(--am3-surface);
@@ -1179,8 +1270,9 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 
 [data-account-menu-v3] .am3-band-dots {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
 }
 
 [data-account-menu-v3] .am3-band-dot {
@@ -1281,7 +1373,7 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   flex-shrink: 0;
 }
 
-[data-account-menu-v3] .am3-exit-btn > span {
+[data-account-menu-v3] .am3-exit-btn > span:not(.am3-mini-avatars) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1329,45 +1421,44 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 
 [data-account-menu-v3] .am3-resize-corner {
   position: absolute;
-  bottom: 2px;
-  width: 20px;
-  height: 20px;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
   border: 0;
   padding: 0;
   background: transparent;
-  color: var(--am3-muted);
-  display: grid;
-  place-items: center;
-  opacity: 0.55;
+  opacity: 0;
   touch-action: none;
 }
 
-[data-account-menu-v3] .am3-resize-corner:hover {
-  opacity: 1;
-  color: var(--am3-text);
-}
-
 [data-account-menu-v3] .am3-resize-corner.is-left {
-  left: 3px;
+  left: 0;
   cursor: nesw-resize;
 }
 
 [data-account-menu-v3] .am3-resize-corner.is-right {
-  right: 3px;
+  right: 0;
   cursor: nwse-resize;
 }
 
-[data-account-menu-v3] .am3-resize-corner svg {
-  width: 12px;
-  height: 12px;
-}
-
-/* Захист від спадкових розтягувань .canonical-menu-action */
-[data-account-menu-v3] .am3-shell .am3-manage-pill {
+/* Захист від спадкових розтягувань і перефарбувань .canonical-menu-action у світлій і темній темах */
+[data-account-menu-v3] .am3-shell.am3-shell .am3-manage-pill {
   width: auto;
   max-width: 100%;
   align-self: center;
   justify-content: center;
+  border: 1px solid var(--am3-line);
+  background: var(--am3-surface);
+  color: var(--am3-text);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell .am3-manage-pill:hover {
+  background: var(--am3-surface-2);
+  border-color: var(--am3-line);
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell .am3-manage-pill > svg {
+  color: var(--am3-accent);
 }
 
 [data-account-menu-v3] .am3-shell .am3-exit-btn {
@@ -1375,15 +1466,53 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   justify-content: center;
 }
 
-[data-account-menu-v3] .am3-shell .am3-exit-btn > span {
+[data-account-menu-v3] .am3-shell .am3-exit-btn > span:not(.am3-mini-avatars) {
   flex: 0 1 auto;
 }
 
-/* 7. Незалежне мобільне поверхневе вікно (<= 700 px) поверх бічної панелі на всю ширину смартфона */
+/* Єдиний незмінний вигляд панелі AccountMenuV3 на екрані входу (перекриває спадкові правила aanmeld-herontwerp.css) */
+.canonical-chrome:has(.mr-sign-in) [data-account-menu-v3][data-account-menu-v3] .canonical-account-panel.canonical-account-panel {
+  --canonical-panel: var(--panel, #ffffff);
+  --canonical-surface: var(--surface, #f3f5f8);
+  --canonical-line: var(--line, #dce2ea);
+  --canonical-text: var(--text, #16202a);
+  --canonical-muted: var(--muted, #556270);
+  padding: 0 !important;
+  border: 1px solid var(--am3-line);
+  border-radius: 24px;
+  background: var(--am3-bg) !important;
+  color: var(--am3-text);
+  backdrop-filter: none;
+}
+
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .canonical-account-panel.canonical-account-panel {
+  width: min(392px, calc(100vw - 24px));
+  max-height: min(86dvh, calc(100dvh - 86px));
+}
+
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-row {
+  background: var(--am3-bg);
+  border: 1px solid var(--am3-line);
+  border-radius: 12px;
+}
+
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-row:hover {
+  background: var(--am3-surface);
+}
+
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-main {
+  min-height: 0;
+}
+
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-footer {
+  font-size: 0.67rem;
+}
+
+/* 7. Незалежне мобільне поверхневе вікно (<= 700 px) поверх бічної панелі та кутової групи екрана входу */
 [data-account-menu-v3].am3-mobiel-laag {
   position: fixed;
   inset: 0;
-  z-index: 360;
+  z-index: 450;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -1455,6 +1584,30 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 [data-account-menu-v3] .am3-shell .am3-mobiel-sluit svg {
   width: 15px;
   height: 15px;
+}
+
+/* Рядок «Простір» у компактній спадній панелі (392 px на комп'ютері та на смартфонах) завжди розкладається у 2 просторі лінії без дроблення підпису */
+[data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row > .am3-pref-label {
+  width: 100%;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row > .am3-pref-controls {
+  width: 100%;
+  justify-content: space-between;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg {
+  flex: 1 1 auto;
+  display: flex;
+}
+
+[data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg-btn {
+  flex: 1 1 0;
 }
 
 /* Мобільна адаптація (<= 700 px): специфічність (0,4,0) зберігає ідеально круглу геометрію кнопок
@@ -1545,14 +1698,14 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 
   /* Прозора зона дотику >= 44x44 px без спотворення видимої круглої форми */
-  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-mobiel-sluit, .am3-camera-btn, .am3-orbit-node, .am3-palette-btn, .am3-access-btn, .am3-tray-close, .am3-tint-swatch, .am3-band-dot)::after {
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-mobiel-sluit, .am3-camera-btn, .am3-orbit-node, .am3-palette-btn, .am3-access-btn, .am3-tray-close)::after {
     content: '';
     position: absolute;
     inset: -6px;
   }
 
-  /* У рядку дій облікового запису (gap: 8px) зона дотику хрестика ніколи не налізає на сусідню кнопку «Перейти / Увійти» */
-  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-acc-btn.is-icon-only::after {
+  /* У рядах зі щільним кроком gap: 8px (палітра відтінків, крапки смуги, хрестик видалення запису) зона дотику не налізає на сусідню дію */
+  [data-account-menu-v3] .am3-shell.am3-shell.am3-shell :is(.am3-tint-swatch, .am3-band-dot, .am3-acc-btn.is-icon-only)::after {
     content: '';
     position: absolute;
     inset: -3px;
@@ -1598,34 +1751,8 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 }
 
-/* На екранах смартфонів (<= 460 px) рядок «Простір» розкладається у 2 чисті лінії без розриву слів */
-@media (max-width: 460px) {
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row > .am3-pref-label {
-    width: 100%;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row > .am3-pref-controls {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg {
-    flex: 1 1 auto;
-    display: flex;
-  }
-
-  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-space-row .am3-seg-btn {
-    flex: 1 1 0;
-  }
-}
-
-/* На вузьких смартфонах (<= 375 px) рядок «Тема» також переходить на 2 рівні лінії */
-@media (max-width: 375px) {
+/* На смартфонах (<= 420 px) рядок «Тема» переходить на 2 рівні лінії, а 8 відтінків палітри стають у сітку 4x2 */
+@media (max-width: 420px) {
   [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row {
     flex-wrap: wrap;
     gap: 7px;
@@ -1648,10 +1775,34 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-theme-row .am3-seg-btn:last-child {
     flex: 1 1 auto;
   }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-tints-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    row-gap: 10px;
+    column-gap: 8px;
+  }
 }
 
-/* Надвузькі екрани (<= 350 px): охайна орбіта та одностовпцеві картки без обрізання написів */
-@media (max-width: 350px) {
+/* Надвузькі екрани (<= 360 px): дворядковий вибір мови, охайна орбіта та одностовпцеві картки без обрізання написів */
+@media (max-width: 360px) {
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-pref-label {
+    width: 100%;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row > .am3-seg {
+    width: 100%;
+    display: flex;
+  }
+
+  [data-account-menu-v3] .am3-shell.am3-shell .am3-pref-row.is-lang-row .am3-seg-btn {
+    flex: 1 1 0;
+  }
+
   [data-account-menu-v3] .am3-shell.am3-shell.am3-shell .am3-orbit-wing.is-left {
     padding-right: 8px;
   }
@@ -1678,9 +1829,10 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
   }
 }
 
-/* На сенсорних пристроях без курсора миші натискання одразу відкриває лоток, тож мишача підказка не заважає */
+/* На сенсорних пристроях без курсора миші підказка вказівника та кутові ручки масштабування не показуються */
 @media (hover: none) and (pointer: coarse) {
-  [data-account-menu-v3] .am3-access-hover-tip {
+  [data-account-menu-v3] .am3-access-hover-tip,
+  [data-account-menu-v3] .am3-resize-corner {
     display: none !important;
   }
 }
@@ -1688,11 +1840,16 @@ html.theme-plum-dark [data-account-menu-v3] .canonical-account-panel {
 @media (prefers-reduced-motion: reduce) {
   [data-account-menu-v3] .canonical-account-panel,
   [data-account-menu-v3] .am3-orbit-node,
+  [data-account-menu-v3] .am3-accounts-chevron,
   [data-account-menu-v3] .am3-seg-btn,
   [data-account-menu-v3] .am3-palette-btn > svg.am3-palette-icon,
   [data-account-menu-v3] .am3-hold-ring circle,
   [data-account-menu-v3] .am3-access-ring .ring-fill,
   [data-account-menu-v3] .am3-access-hover-tip {
     transition: none !important;
+  }
+
+  [data-account-menu-v3] .am3-acc-spinner {
+    animation: none !important;
   }
 }

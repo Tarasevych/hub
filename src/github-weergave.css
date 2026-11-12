@@ -9,7 +9,7 @@
 .canonical-chrome .gh-root .gh-select-wikkel select:not([multiple]):not([size]){border:0;box-shadow:none;background-color:transparent;min-height:34px;width:100%;min-width:0;max-width:100%;text-overflow:ellipsis;padding-inline:4px 22px}
 
 .gh-me{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);flex-wrap:wrap}
-.gh-me img{border-radius:50%;flex-shrink:0}
+.gh-me img{display:block;width:40px;height:40px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;object-position:center;flex-shrink:0}
 .gh-me>div{display:grid;min-width:0;flex:1 1 180px}
 .gh-me>div strong,.gh-me>div span{overflow-wrap:anywhere}
 .gh-rate{margin-left:auto;max-width:100%;overflow-wrap:anywhere}
@@ -83,7 +83,7 @@ a.gh-item:hover{background:var(--soft)}
 .gh-staat.tone-waarschuwing{border-color:var(--warn);color:var(--warn);background:color-mix(in srgb,var(--warn-vlak) 12%,transparent)}
 .gh-staat.tone-fout{border-color:var(--fout);color:var(--fout);background:color-mix(in srgb,var(--fout-vlak) 10%,transparent)}
 .gh-koppel-wie{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.gh-koppel-wie img{border-radius:50%;flex-shrink:0}
+.gh-koppel-wie img{display:block;width:28px;height:28px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;object-position:center;flex-shrink:0}
 .gh-feiten{margin:0;display:grid;gap:6px}
 .gh-feiten>div{display:grid;grid-template-columns:minmax(140px,210px) minmax(0,1fr);gap:10px}
 .gh-feiten dt{color:var(--muted);font-size:.82rem}

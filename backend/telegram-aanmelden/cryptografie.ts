@@ -28,17 +28,24 @@ function versheid(authDate: number, nuSec: number): boolean {
   return Number.isFinite(authDate) && authDate > 0 && authDate <= nuSec + SPELING_SECONDEN && nuSec - authDate <= VERS_SECONDEN;
 }
 
+const EIGEN_ROUTE_VELDEN: ReadonlySet<string> = new Set(['hash', 'i', 'verzoek', 'state', 'taal']);
+
 /** aanmeldvenster (https://core.telegram.org/widgets/login#checking-authorization). */
 export function widgetControle(velden: Record<string, unknown>, botToken: string, nuSec = Math.floor(Date.now() / 1000)): ControleUitkomst {
-  const hash = String(velden.hash ?? '');
-  if (!botToken || !/^[0-9a-f]{64}$/.test(hash)) return { ok: false, vers: false, reden: 'VELDEN_ONGELDIG', handtekeningHash: '' };
-  const toegestaan = ['auth_date', 'first_name', 'id', 'last_name', 'photo_url', 'username'];
-  const paren = Object.entries(velden).filter(([k, v]) => k !== 'hash' && toegestaan.includes(k) && v !== undefined && v !== null && String(v) !== '')
-    .map(([k, v]) => `${k}=${String(v)}`).sort();
+  const hash = String(velden.hash ?? '').toLowerCase();
+  const telegramId = String(velden.id ?? '');
+  const authDate = Number(velden.auth_date);
+  if (!botToken || !/^[0-9a-f]{64}$/.test(hash) || !/^[0-9]{1,20}$/.test(telegramId) || !Number.isFinite(authDate) || authDate <= 0) {
+    return { ok: false, vers: false, reden: 'VELDEN_ONGELDIG', handtekeningHash: '' };
+  }
+  const paren = Object.entries(velden)
+    .filter(([k, v]) => !EIGEN_ROUTE_VELDEN.has(k) && v !== undefined && v !== null && String(v) !== '')
+    .map(([k, v]) => `${k}=${String(v)}`)
+    .sort();
   const sleutel = createHash('sha256').update(botToken).digest();
   const verwacht = createHmac('sha256', sleutel).update(paren.join('\n')).digest('hex');
   const ok = gelijk(verwacht, hash);
-  const vers = versheid(Number(velden.auth_date), nuSec);
+  const vers = versheid(authDate, nuSec);
   return { ok, vers, reden: !ok ? 'HANDTEKENING_ONGELDIG' : !vers ? 'VERLOPEN' : '', handtekeningHash: sha256hex(`widget:${hash}`) };
 }
 
@@ -63,7 +70,7 @@ export function initDataControle(initData: string, botToken: string, nuSec = Mat
 // Vorm (≤ 64 bytes): «<a>.<id>.<sig>»  a = één letter van de handeling, id = 12 tekens base64url (verzoek/token-id),
 // sig = 16 tekens base64url van HMAC(sleutel, a|id|telegramId|vervaltijd). De vervaltijd en de binding zitten ook in de
 // databaserij (app.tg_knoppen); de handtekening voorkomt dat iemand willekeurige id's probeert.
-export const KNOP_ACTIES = { i: 'inloggen', n: 'weigeren', b: 'bevestigen', w: 'wijziging-gezien', x: 'wijziging-nee', o: 'ontkoppelen', t: 'taal-uk', l: 'taal-nl', a: 'account-kiezen', r: 'opnieuw', c: 'annuleren', s: 'symbool' /* APPARAAT-001: één van de symbolen van de kaart */ } as const;
+export const KNOP_ACTIES = { i: 'inloggen', n: 'weigeren', b: 'bevestigen', w: 'wijziging-gezien', x: 'wijziging-nee', o: 'ontkoppelen', t: 'taal-uk', l: 'taal-nl', a: 'account-kiezen', r: 'opnieuw', c: 'annuleren', s: 'symbool' /* APPARAAT-001: één van de symbolen van de kaart */, z: 'sessie-intrekken' } as const;
 export type KnopLetter = keyof typeof KNOP_ACTIES;
 export const isKnopLetter = (v: string): v is KnopLetter => Object.prototype.hasOwnProperty.call(KNOP_ACTIES, v);
 

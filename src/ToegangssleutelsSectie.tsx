@@ -239,7 +239,7 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
           <GebruikLijst lang={lang} gebruik={p.gebruik||[]} id={p.id}/>
           <GeschiedenisLijst lang={lang} items={p.geschiedenis||[]} id={p.id}/>
         </div>
-        <div className='access-plane-row-actions'>
+        <div className='access-plane-row-actions access-plane-icon-acties'>
           <button type='button' className='secondary' disabled={!!busy} onClick={()=>setHernoem({id:p.id,naam:p.naam})} aria-label={tr(lang,'Перейменувати','Hernoemen')} title={tr(lang,'Перейменувати','Hernoemen')}><Pencil/></button>
           <button type='button' className='secondary' disabled={!!busy} onClick={()=>{setReden('');setBevestig({id:p.id,wat:'verwijderen'});}} aria-label={tr(lang,'Видалити','Verwijderen')} title={tr(lang,'Видалити','Verwijderen')}><Trash2/></button>
         </div>

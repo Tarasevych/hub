@@ -12,7 +12,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  ChevronUp,
   Globe,
   KeyRound,
   LifeBuoy,
@@ -102,7 +101,7 @@ export type AccountWisselMeldingData = {
 export type AccountMenuV3Props = {
   lang: 'uk' | 'nl';
   theme: ThemePreference;
-  displayUser: AccountMenuUser;
+  displayUser: AccountMenuUser | null;
   visibleRows: RememberedAccount[];
   shouldShowOtherAccountsToggle: boolean;
   expanded: boolean;
@@ -124,7 +123,7 @@ export type AccountMenuV3Props = {
   showLogoutAll: boolean;
   wisselMelding: AccountWisselMeldingData | null;
   v2Ruimtes: boolean;
-  onChangePhoto: (event: ChangeEvent<HTMLInputElement>) => Promise<void> | void;
+  onChangePhoto?: (event: ChangeEvent<HTMLInputElement>) => Promise<void> | void;
   onSelectAccount: (item: RememberedAccount) => Promise<void> | void;
   onForgetAccount?: (item: RememberedAccount) => Promise<void> | void;
   onAddAccount: () => void;
@@ -140,6 +139,18 @@ export type AccountMenuV3Props = {
   mobiel?: boolean;
   renderAvatar: (user: AccountMenuUser, size?: 'profile' | 'hero' | 'regular' | 'mini') => ReactNode;
 };
+
+function statusBijschrift(
+  st: ReturnType<typeof rememberedAccountStatus>,
+  isSelecting: boolean,
+  uk: boolean,
+): string {
+  if (isSelecting) return uk ? 'Переходимо до входу…' : 'Doorsturen naar aanmelding…';
+  if (st === 'active') return uk ? 'Активний сеанс' : 'Actieve sessie';
+  if (st === 'signed_in') return uk ? 'Готовий до входу' : 'Klaar om te openen';
+  if (st === 'registration') return uk ? 'Завершити реєстрацію' : 'Registratie voltooien';
+  return uk ? 'Повторний вхід через Google' : 'Opnieuw aanmelden met Google';
+}
 
 function formatMinuten(minuten: number, uk: boolean): string {
   const m = Math.max(1, Math.round(minuten));
@@ -206,6 +217,14 @@ export function AccountMenuV3({
   const [toegangOpen, setToegangOpen] = useState(false);
   const [paletMelding, setPaletMelding] = useState<{ tekst: string; kleur: string } | null>(null);
   const [houdtPaletVast, setHoudtPaletVast] = useState(false);
+  const [afgemeldIngeklapt, setAfgemeldIngeklapt] = useState(false);
+
+  useEffect(() => {
+    if (!displayUser) {
+      setToegangOpen(false);
+      setAfgemeldIngeklapt(false);
+    }
+  }, [displayUser]);
 
   const holdTimerRef = useRef<number | null>(null);
   const toastTimerRef = useRef<number | null>(null);
@@ -237,11 +256,11 @@ export function AccountMenuV3({
   const donker = theme === 'dark' || theme === 'plum-dark' || (theme === 'auto' && autoStatus.presentatie === 'dark');
   const paletKleur = paletIcoonKleur(paletSync.keuze, dienst, donker);
 
-  // Стан технічного простору та колір технічної смуги
-  const heeftTech = Boolean(tech.profiel) || Boolean(ruimtes.status?.technischToegestaan);
-  const isTechActief = (v2Ruimtes && ruimtes.status?.aan)
+  // Стан технічного простору та колір технічної смуги (активні виключно для увімкненого облікового запису)
+  const heeftTech = Boolean(displayUser) && (Boolean(tech.profiel) || Boolean(ruimtes.status?.technischToegestaan));
+  const isTechActief = Boolean(displayUser) && ((v2Ruimtes && ruimtes.status?.aan)
     ? ruimtes.status.actief === 'technisch'
-    : techActief(tech);
+    : techActief(tech));
   const bandKleurId: BandKleur = isBandKleur(tech.profiel?.band?.kleur) ? tech.profiel!.band.kleur : 'amber';
   const schildKleur = BAND_KLEUREN[bandKleurId]?.bg || '#f2b705';
 
@@ -291,8 +310,8 @@ export function AccountMenuV3({
         : (uk ? 'Умова: до виходу з облікового запису' : 'Voorwaarde: tot afmelden bij dit account');
 
   const toegangTipHint = isTechActief
-    ? (uk ? 'Натисніть, щоб змінити умову або час ▾' : 'Klik om voorwaarde of tijd te wijzigen ▾')
-    : (uk ? 'Натисніть, щоб переглянути доступи та умови ▾' : 'Klik om toegangen en voorwaarden te bekijken ▾');
+    ? (uk ? 'Натисніть, щоб змінити умову або час' : 'Klik om voorwaarde of tijd te wijzigen')
+    : (uk ? 'Натисніть, щоб переглянути доступи та умови' : 'Klik om toegangen en voorwaarden te bekijken');
 
   // Модель В для кнопки «Палітра кольорів»:
   // - короткий натиск гортає палітри по колу + показує спливну позначку;
@@ -441,6 +460,17 @@ export function AccountMenuV3({
 
   const actieveSessies = visibleRows.filter((item) => rememberedAccountStatus(item) === 'active');
   const gestapeldeVleugel = visibleRows.length >= 3;
+  const toonAccountsKaart = displayUser
+    ? (shouldShowOtherAccountsToggle || voorkeuren.indeling === 'kaart')
+    : (visibleRows.length > 0 || loading || loadFailed || voorkeuren.indeling === 'kaart');
+  const lijstOpen = displayUser ? expanded : !afgemeldIngeklapt;
+  const wisselLijstOpen = () => {
+    if (displayUser) onToggleExpanded();
+    else setAfgemeldIngeklapt((v) => !v);
+  };
+  const addKnopTitel = !displayUser && visibleRows.length === 0
+    ? (uk ? 'Увійти в обліковий запис' : 'Aanmelden bij uw account')
+    : (uk ? 'Увійти в інший обліковий запис' : 'Aanmelden bij een ander account');
 
   return (
     <div
@@ -448,6 +478,7 @@ export function AccountMenuV3({
       className='am3-shell'
       data-am3-indeling={voorkeuren.indeling}
       data-am3-tech={isTechActief ? 'aan' : 'uit'}
+      data-am3-signed-out={displayUser ? undefined : 'ja'}
       data-am3-mobiel={mobiel ? 'ja' : undefined}
       style={{
         ['--am3-shield-color' as string]: schildKleur,
@@ -468,7 +499,7 @@ export function AccountMenuV3({
         </button>
       ) : null}
 
-      {/* 1. Шапка профілю: Орбіта світлин (Режим А) або чиста центральна світлина (Режим Б) */}
+      {/* 1. Шапка профілю: єдина композиція Орбіти світлин (Режим А) або центрального знака (Режим Б) і до входу, і після входу */}
       <header className='am3-hero canonical-current-account'>
         {voorkeuren.indeling === 'orbita' ? (
           <div className='am3-orbit-stage' data-am3-orbit='stage'>
@@ -483,18 +514,24 @@ export function AccountMenuV3({
                   {visibleRows.slice(0, 4).map((item) => {
                     const st = rememberedAccountStatus(item);
                     const naam = item.user.name || item.user.email;
+                    const isSelecting = Boolean(item.grantId) && selecting === item.grantId;
+                    const actieTekst = displayUser || st === 'active' || st === 'signed_in'
+                      ? (uk ? `Перемкнутися на ${naam}` : `Wisselen naar ${naam}`)
+                      : (uk ? `Увійти як ${naam}` : `Aanmelden als ${naam}`);
                     return (
                       <button
                         key={item.grantId || item.user.email}
                         type='button'
                         className='am3-orbit-node'
-                        disabled={busy || selecting === item.grantId || !item.grantId}
-                        title={uk ? `Перемкнутися на ${naam} (${item.user.email})` : `Wisselen naar ${naam} (${item.user.email})`}
-                        aria-label={uk ? `Перемкнутися на ${naam}` : `Wisselen naar ${naam}`}
+                        data-selecting={isSelecting ? 'ja' : undefined}
+                        aria-busy={isSelecting || undefined}
+                        disabled={busy || isSelecting || !item.grantId}
+                        title={`${actieTekst} (${item.user.email})`}
+                        aria-label={actieTekst}
                         onClick={() => void onSelectAccount(item)}
                       >
                         {renderAvatar(item.user, 'regular')}
-                        <span className={`am3-orbit-dot${st === 'active' ? '' : ' is-expired'}`} aria-hidden='true' />
+                        <span className={`am3-orbit-dot${st === 'active' || st === 'signed_in' ? '' : ' is-expired'}`} aria-hidden='true' />
                       </button>
                     );
                   })}
@@ -504,27 +541,37 @@ export function AccountMenuV3({
 
             <div className='am3-center-avatar-wrap canonical-current-photo'>
               <div className='am3-center-avatar'>
-                {renderAvatar(displayUser, 'profile')}
+                {displayUser ? (
+                  renderAvatar(displayUser, 'profile')
+                ) : (
+                  <span className='canonical-account-avatar avatar-profile'>
+                    <UserRound aria-hidden='true' />
+                  </span>
+                )}
               </div>
-              <button
-                type='button'
-                className='am3-camera-btn canonical-profile-camera'
-                aria-label={changePhotoLabel}
-                title={changePhotoLabel}
-                disabled={busy || photoBusy}
-                aria-busy={photoBusy}
-                data-camera-state={photoBusy ? 'busy' : 'ready'}
-                onClick={() => photoInput.current?.click()}
-              >
-                <Camera />
-              </button>
-              <input
-                ref={photoInput}
-                className='canonical-profile-photo-input'
-                type='file'
-                accept='image/jpeg,image/png,image/webp'
-                onChange={(ev) => void onChangePhoto(ev)}
-              />
+              {displayUser && onChangePhoto ? (
+                <>
+                  <button
+                    type='button'
+                    className='am3-camera-btn canonical-profile-camera'
+                    aria-label={changePhotoLabel}
+                    title={changePhotoLabel}
+                    disabled={busy || photoBusy}
+                    aria-busy={photoBusy}
+                    data-camera-state={photoBusy ? 'busy' : 'ready'}
+                    onClick={() => photoInput.current?.click()}
+                  >
+                    <Camera />
+                  </button>
+                  <input
+                    ref={photoInput}
+                    className='canonical-profile-photo-input'
+                    type='file'
+                    accept='image/jpeg,image/png,image/webp'
+                    onChange={(ev) => void onChangePhoto(ev)}
+                  />
+                </>
+              ) : null}
             </div>
 
             <div className='am3-orbit-wing is-right'>
@@ -532,8 +579,8 @@ export function AccountMenuV3({
                 type='button'
                 className='am3-orbit-node is-add'
                 disabled={busy}
-                title={uk ? 'Увійти в інший обліковий запис' : 'Aanmelden bij een ander account'}
-                aria-label={uk ? 'Увійти в інший обліковий запис' : 'Aanmelden bij een ander account'}
+                title={addKnopTitel}
+                aria-label={addKnopTitel}
                 onClick={onAddAccount}
               >
                 <Plus />
@@ -543,57 +590,87 @@ export function AccountMenuV3({
         ) : (
           <div className='am3-center-avatar-wrap canonical-current-photo' style={{ marginBottom: '10px' }}>
             <div className='am3-center-avatar'>
-              {renderAvatar(displayUser, 'profile')}
+              {displayUser ? (
+                renderAvatar(displayUser, 'profile')
+              ) : (
+                <span className='canonical-account-avatar avatar-profile'>
+                  <UserRound aria-hidden='true' />
+                </span>
+              )}
             </div>
-            <button
-              type='button'
-              className='am3-camera-btn canonical-profile-camera'
-              aria-label={changePhotoLabel}
-              title={changePhotoLabel}
-              disabled={busy || photoBusy}
-              aria-busy={photoBusy}
-              data-camera-state={photoBusy ? 'busy' : 'ready'}
-              onClick={() => photoInput.current?.click()}
-            >
-              <Camera />
-            </button>
-            <input
-              ref={photoInput}
-              className='canonical-profile-photo-input'
-              type='file'
-              accept='image/jpeg,image/png,image/webp'
-              onChange={(ev) => void onChangePhoto(ev)}
-            />
+            {displayUser && onChangePhoto ? (
+              <>
+                <button
+                  type='button'
+                  className='am3-camera-btn canonical-profile-camera'
+                  aria-label={changePhotoLabel}
+                  title={changePhotoLabel}
+                  disabled={busy || photoBusy}
+                  aria-busy={photoBusy}
+                  data-camera-state={photoBusy ? 'busy' : 'ready'}
+                  onClick={() => photoInput.current?.click()}
+                >
+                  <Camera />
+                </button>
+                <input
+                  ref={photoInput}
+                  className='canonical-profile-photo-input'
+                  type='file'
+                  accept='image/jpeg,image/png,image/webp'
+                  onChange={(ev) => void onChangePhoto(ev)}
+                />
+              </>
+            ) : null}
           </div>
         )}
 
         <span className='canonical-account-copy canonical-current-copy' data-account-visual-isolation='text'>
-          <strong className='am3-user-name'>{displayUser.name || displayUser.email}</strong>
-          <small className='am3-user-email'>{displayUser.email}</small>
+          <strong className='am3-user-name'>
+            {displayUser ? (displayUser.name || displayUser.email) : (uk ? 'Облікові записи' : 'Accounts')}
+          </strong>
+          <small className='am3-user-email'>
+            {displayUser
+              ? displayUser.email
+              : visibleRows.length > 0
+                ? (uk ? 'Оберіть збережений запис або додайте інший' : 'Kies een bewaard account of voeg een ander toe')
+                : (uk ? 'Увійдіть, щоб відкрити свій простір' : 'Meld u aan om uw ruimte te openen')}
+          </small>
         </span>
-        {photoError ? (
+        {displayUser && photoError ? (
           <small className='canonical-profile-photo-error' role='status'>
             {photoLeesfout || photoFailedText}
           </small>
         ) : null}
 
-        {onManage ? (
+        {displayUser ? (
+          onManage ? (
+            <button
+              type='button'
+              className='am3-manage-pill canonical-menu-action primary'
+              onClick={() => {
+                sluitVoorNavigatie();
+                onManage();
+              }}
+            >
+              <UserRound />
+              <span>{manageLabel}</span>
+            </button>
+          ) : null
+        ) : (
           <button
             type='button'
-            className='am3-manage-pill canonical-menu-action primary'
-            onClick={() => {
-              sluitVoorNavigatie();
-              onManage();
-            }}
+            className='am3-manage-pill canonical-menu-action primary add-account'
+            disabled={busy}
+            onClick={onAddAccount}
           >
-            <UserRound />
-            <span>{manageLabel}</span>
+            {visibleRows.length > 0 ? <Plus aria-hidden='true' /> : <KeyRound aria-hidden='true' />}
+            <span>{addKnopTitel}</span>
           </button>
-        ) : null}
+        )}
       </header>
 
       {/* Повідомлення після швидкого перемикання облікового запису */}
-      {wisselMelding ? (
+      {displayUser && wisselMelding ? (
         <section
           className='canonical-account-gewisseld'
           role='status'
@@ -624,75 +701,87 @@ export function AccountMenuV3({
         </section>
       ) : null}
 
-      {/* 2. Дві симетричні плитки швидкого доступу: Налаштування та Перевірка */}
-      <div className='am3-quick-grid' role='group' aria-label={uk ? 'Швидкі дії' : 'Snelle acties'}>
-        {onSettings ? (
+      {/* 2. Дві симетричні плитки швидкого доступу для увімкненого профілю: Налаштування та Перевірка */}
+      {displayUser ? (
+        <div className='am3-quick-grid' role='group' aria-label={uk ? 'Швидкі дії' : 'Snelle acties'}>
+          {onSettings ? (
+            <button
+              type='button'
+              className='am3-quick-tile'
+              onClick={() => {
+                sluitVoorNavigatie();
+                onSettings();
+              }}
+            >
+              <span className='am3-quick-icon' aria-hidden='true'>
+                <Settings />
+              </span>
+              <span className='am3-quick-copy'>
+                <b>{settingsLabel}</b>
+                <small>{uk ? 'Меню, вигляд, мова' : 'Menu, weergave, taal'}</small>
+              </span>
+            </button>
+          ) : null}
           <button
             type='button'
             className='am3-quick-tile'
             onClick={() => {
               sluitVoorNavigatie();
-              onSettings();
+              openDiagnose();
             }}
           >
             <span className='am3-quick-icon' aria-hidden='true'>
-              <Settings />
+              <LifeBuoy />
             </span>
             <span className='am3-quick-copy'>
-              <b>{settingsLabel}</b>
-              <small>{uk ? 'Меню, вигляд, мова' : 'Menu, weergave, taal'}</small>
+              <b>{uk ? 'Перевірка' : 'Controle'}</b>
+              <small>{uk ? 'Щось не працює?' : 'Werkt iets niet?'}</small>
             </span>
           </button>
-        ) : null}
-        <button
-          type='button'
-          className='am3-quick-tile'
-          onClick={() => {
-            sluitVoorNavigatie();
-            openDiagnose();
-          }}
-        >
-          <span className='am3-quick-icon' aria-hidden='true'>
-            <LifeBuoy />
-          </span>
-          <span className='am3-quick-copy'>
-            <b>{uk ? 'Перевірка' : 'Controle'}</b>
-            <small>{uk ? 'Щось не працює?' : 'Werkt iets niet?'}</small>
-          </span>
-        </button>
-      </div>
+        </div>
+      ) : null}
 
-      {/* 3. Розкривний перелік «Інші облікові записи» */}
-      {(shouldShowOtherAccountsToggle || voorkeuren.indeling === 'kaart') && (
-        <section className='am3-accounts-card' aria-label={uk ? 'Інші облікові записи' : 'Andere accounts'}>
+      {/* 3. Розкривний перелік збережених / інших облікових записів */}
+      {toonAccountsKaart ? (
+        <section
+          className='am3-accounts-card'
+          aria-label={
+            displayUser
+              ? (uk ? 'Інші облікові записи' : 'Andere accounts')
+              : (uk ? 'Збережені облікові записи' : 'Bewaarde accounts')
+          }
+        >
           <button
             type='button'
             className='am3-accounts-toggle canonical-other-toggle-main'
-            aria-expanded={expanded}
-            onClick={onToggleExpanded}
+            aria-expanded={lijstOpen}
+            onClick={wisselLijstOpen}
           >
             <span className='am3-accounts-toggle-left'>
               <Users aria-hidden='true' />
               <span>
-                {uk
-                  ? `Інші облікові записи (${visibleRows.length})`
-                  : `Andere accounts (${visibleRows.length})`}
+                {displayUser
+                  ? (uk ? `Інші облікові записи (${visibleRows.length})` : `Andere accounts (${visibleRows.length})`)
+                  : (uk ? `Збережені облікові записи (${visibleRows.length})` : `Bewaarde accounts (${visibleRows.length})`)}
               </span>
             </span>
             <span className='am3-accounts-toggle-right'>
-              {!expanded && visibleRows.length > 0 ? (
+              {!lijstOpen && visibleRows.length > 0 ? (
                 <span className='am3-mini-avatars' aria-hidden='true'>
                   {visibleRows.slice(0, 3).map((item) => (
                     <span key={item.grantId || item.user.email}>{renderAvatar(item.user, 'mini')}</span>
                   ))}
                 </span>
               ) : null}
-              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              <ChevronDown size={16} className='am3-accounts-chevron' aria-hidden='true' />
             </span>
           </button>
 
-          {expanded && (
-            <div className='am3-accounts-body canonical-account-list' data-account-list='other-known'>
+          {lijstOpen ? (
+            <div
+              className='am3-accounts-body canonical-account-list'
+              data-account-list={displayUser ? 'other-known' : 'known'}
+            >
               {loading ? (
                 <p className='canonical-account-state'>
                   {uk ? 'Завантаження облікових записів…' : 'Accounts laden…'}
@@ -703,45 +792,63 @@ export function AccountMenuV3({
                   {uk ? 'Не вдалося оновити перелік облікових записів.' : 'Kan de accountlijst nu niet bijwerken.'}
                 </p>
               ) : null}
+              {!displayUser && !loading && !loadFailed && visibleRows.length === 0 ? (
+                <p className='canonical-account-empty'>
+                  {uk ? 'У цьому оглядачі ще немає збережених записів.' : 'Er zijn nog geen bewaarde accounts in deze browser.'}
+                </p>
+              ) : null}
               {visibleRows.map((item) => {
                 const st = rememberedAccountStatus(item);
                 const naam = item.user.name || item.user.email;
+                const isSelecting = Boolean(item.grantId) && selecting === item.grantId;
                 return (
                   <div
                     key={item.grantId || item.user.email}
-                    className={`am3-account-row canonical-account-row status-${st}`}
+                    className={`am3-account-row canonical-account-row status-${st}${isSelecting ? ' is-selecting' : ''}`}
                     data-account-row-status={st}
                     data-current-account='false'
                   >
                     <button
                       type='button'
                       className='am3-account-main canonical-account-select'
-                      disabled={busy || selecting === item.grantId || !item.grantId}
+                      aria-busy={isSelecting || undefined}
+                      disabled={busy || isSelecting || !item.grantId}
                       onClick={() => void onSelectAccount(item)}
                     >
                       {renderAvatar(item.user, 'regular')}
                       <span className='am3-account-copy' data-account-visual-isolation='text'>
                         <strong>{naam}</strong>
                         <small>{item.user.email}</small>
+                        <em className={`am3-account-status${isSelecting ? ' is-selecting' : ''}`}>
+                          {statusBijschrift(st, isSelecting, uk)}
+                        </em>
                       </span>
                     </button>
                     <div className='am3-account-actions'>
                       <button
                         type='button'
                         className='am3-acc-btn canonical-account-switch'
-                        disabled={busy || selecting === item.grantId || !item.grantId}
+                        aria-busy={isSelecting || undefined}
+                        disabled={busy || isSelecting || !item.grantId}
                         onClick={(e) => {
                           e.stopPropagation();
                           void onSelectAccount(item);
                         }}
                       >
-                        <span>{st === 'active' || st === 'signed_in' ? (uk ? 'Перейти' : 'Wisselen') : (uk ? 'Увійти' : 'Aanmelden')}</span>
+                        {isSelecting ? (
+                          <>
+                            <span className='am3-acc-spinner' aria-hidden='true' />
+                            <span>{uk ? 'Вхід…' : 'Bezig…'}</span>
+                          </>
+                        ) : (
+                          <span>{st === 'active' || st === 'signed_in' ? (uk ? 'Перейти' : 'Wisselen') : (uk ? 'Увійти' : 'Aanmelden')}</span>
+                        )}
                       </button>
                       {onForgetAccount && item.grantId ? (
                         <button
                           type='button'
                           className='am3-acc-btn is-icon-only canonical-account-forget'
-                          disabled={busy || forgetting === item.grantId}
+                          disabled={busy || isSelecting || forgetting === item.grantId}
                           title={uk ? 'Прибрати зі списку на цьому пристрої' : 'Verwijderen uit de lijst op dit apparaat'}
                           aria-label={uk ? `Прибрати запис: ${item.user.email}` : `Account verwijderen: ${item.user.email}`}
                           onClick={(e) => {
@@ -757,19 +864,21 @@ export function AccountMenuV3({
                 );
               })}
 
-              <button
-                type='button'
-                className='am3-add-row-btn canonical-menu-action add-account'
-                disabled={busy}
-                onClick={onAddAccount}
-              >
-                <Plus />
-                <span>{uk ? 'Увійти в інший обліковий запис' : 'Aanmelden bij een ander account'}</span>
-              </button>
+              {displayUser || visibleRows.length > 0 ? (
+                <button
+                  type='button'
+                  className='am3-add-row-btn canonical-menu-action add-account'
+                  disabled={busy}
+                  onClick={onAddAccount}
+                >
+                  <Plus />
+                  <span>{uk ? 'Увійти в інший обліковий запис' : 'Aanmelden bij een ander account'}</span>
+                </button>
+              ) : null}
             </div>
-          )}
+          ) : null}
         </section>
-      )}
+      ) : null}
 
       {/* 4. Картка налаштувань вигляду та простору: Тема + Палітра (Модель В), Мова, Простір + Доступ і терміни */}
       <section className='am3-prefs-card' aria-label={uk ? 'Вигляд і простір' : 'Weergave en ruimte'}>
@@ -950,7 +1059,7 @@ export function AccountMenuV3({
 
               <div className='am3-tray-footer-row'>
                 <span>{uk ? 'Короткий натиск на піктограму — по колу' : 'Kort klikken op pictogram — wisselt rond'}</span>
-                {onThemeColors ? (
+                {displayUser && onThemeColors ? (
                   <button
                     type='button'
                     className='am3-tray-link'
@@ -1226,46 +1335,50 @@ export function AccountMenuV3({
       </section>
 
       {/* 5. Нижній рядок виходу 2А: Вийти з поточного | Вийти з усіх + кружечки активних сеансів */}
-      <div className={`am3-exit-row${showLogoutAll ? '' : ' is-single'} canonical-session-actions`}>
-        {onLogout ? (
-          <button
-            type='button'
-            className='am3-exit-btn canonical-menu-action logout-current'
-            disabled={busy}
-            onClick={() => {
-              sluitVoorNavigatie();
-              onLogout();
-            }}
-          >
-            <LogOut className='am3-danger-icon' aria-hidden='true' />
-            <span>{uk ? 'Вийти з поточного' : 'Afmelden (huidig)'}</span>
-          </button>
-        ) : null}
+      {(displayUser && onLogout) || (showLogoutAll && onLogoutAll) ? (
+        <div
+          className={`am3-exit-row${displayUser && onLogout && showLogoutAll && onLogoutAll ? '' : ' is-single'} canonical-session-actions`}
+        >
+          {displayUser && onLogout ? (
+            <button
+              type='button'
+              className='am3-exit-btn canonical-menu-action logout-current'
+              disabled={busy}
+              onClick={() => {
+                sluitVoorNavigatie();
+                onLogout();
+              }}
+            >
+              <LogOut className='am3-danger-icon' aria-hidden='true' />
+              <span>{uk ? 'Вийти з поточного' : 'Afmelden (huidig)'}</span>
+            </button>
+          ) : null}
 
-        {showLogoutAll && onLogoutAll ? (
-          <button
-            type='button'
-            className='am3-exit-btn canonical-menu-action logout-all'
-            disabled={busy}
-            onClick={() => {
-              sluitVoorNavigatie();
-              onLogoutAll();
-            }}
-          >
-            <LogOut className='am3-danger-icon' aria-hidden='true' />
-            <span>{uk ? 'Вийти з усіх' : 'Overal afmelden'}</span>
-            {actieveSessies.length > 0 ? (
-              <span className='am3-mini-avatars' aria-hidden='true'>
-                {actieveSessies.slice(0, 3).map((item) => (
-                  <span key={item.grantId || item.user.email}>{renderAvatar(item.user, 'mini')}</span>
-                ))}
-              </span>
-            ) : null}
-          </button>
-        ) : null}
-      </div>
+          {showLogoutAll && onLogoutAll ? (
+            <button
+              type='button'
+              className='am3-exit-btn canonical-menu-action logout-all'
+              disabled={busy}
+              onClick={() => {
+                sluitVoorNavigatie();
+                onLogoutAll();
+              }}
+            >
+              <LogOut className='am3-danger-icon' aria-hidden='true' />
+              <span>{uk ? 'Вийти з усіх' : 'Overal afmelden'}</span>
+              {actieveSessies.length > 0 ? (
+                <span className='am3-mini-avatars' aria-hidden='true'>
+                  {actieveSessies.slice(0, 3).map((item) => (
+                    <span key={item.grantId || item.user.email}>{renderAvatar(item.user, 'mini')}</span>
+                  ))}
+                </span>
+              ) : null}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
-      {/* 6. Підвал (Конфіденційність · Умови · Масштаб) та кутики пропорційного масштабування */}
+      {/* 6. Підвал (Конфіденційність · Умови · Масштаб) та прозорі кутові зони масштабування без видимих насічок */}
       <footer className='am3-footer canonical-account-legal'>
         <button
           type='button'
@@ -1274,11 +1387,7 @@ export function AccountMenuV3({
           aria-label={uk ? 'Змінити масштаб меню (лівий кутик)' : 'Menu schalen (linkerhoek)'}
           onPointerDown={startSchalen('left')}
           onDoubleClick={() => herstelAccountmenuV3Schaal()}
-        >
-          <svg viewBox='0 0 12 12' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' aria-hidden='true'>
-            <path d='M2 6l4 4M2 2l8 8' />
-          </svg>
-        </button>
+        />
 
         <a href='?legal=privacy' data-legal-link='privacy' onClick={sluitVoorNavigatie}>
           {privacyLabel}
@@ -1308,11 +1417,7 @@ export function AccountMenuV3({
           aria-label={uk ? 'Змінити масштаб меню (правий кутик)' : 'Menu schalen (rechterhoek)'}
           onPointerDown={startSchalen('right')}
           onDoubleClick={() => herstelAccountmenuV3Schaal()}
-        >
-          <svg viewBox='0 0 12 12' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' aria-hidden='true'>
-            <path d='M10 6l-4 4M10 2l-8 8' />
-          </svg>
-        </button>
+        />
       </footer>
     </div>
   );

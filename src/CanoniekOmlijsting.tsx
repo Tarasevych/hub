@@ -9,7 +9,7 @@ const ApparaatLuisteraar=lazy(()=>import('./apparaat-bevestiging/Luisteraar'));
 import{Fragment,useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState,type PointerEvent as ReactPointerEvent,type FocusEvent as ReactFocusEvent,type KeyboardEvent as ReactKeyboardEvent,type ReactNode}from'react';
 import './werkblad/pagina-achtergrond';
 import './schil-achtergrond.css';
-import{ArrowUp,Check,ChevronDown,Menu,PanelLeftClose,PencilRuler,Pin,RotateCcw,Undo2,X}from'lucide-react';import CanonicalNotificationCenter from'./CanoniekMeldingencentrum';import ZoekGlobaal,{ZoekMenuKnop}from'./zoek/ZoekGlobaal';import{focusDoelStarten}from'./platform/focus-doel';/* Z4 22.10.2026: globaal zoekveld + palet ⌘K; ?focus=<hulp-sleutel> → element markeren */import CanonicalConnectionBanner from'./CanoniekVerbindingBand';import type{CanonicalNoticeInput,CanonicalServerNotification}from'./canoniek-meldingen';
+import{ArrowRight,ArrowUp,Check,ChevronDown,Clock,Menu,PanelLeftClose,PencilRuler,Pin,RotateCcw,Undo2,X}from'lucide-react';import CanonicalNotificationCenter from'./CanoniekMeldingencentrum';import ZoekGlobaal,{ZoekMenuKnop}from'./zoek/ZoekGlobaal';import{focusDoelStarten}from'./platform/focus-doel';/* Z4 22.10.2026: globaal zoekveld + palet ⌘K; ?focus=<hulp-sleutel> → element markeren */import CanonicalConnectionBanner from'./CanoniekVerbindingBand';import type{CanonicalNoticeInput,CanonicalServerNotification}from'./canoniek-meldingen';
 import{consumeEcosystemSidebarNavigation,ecosystemSidebarState,prepareEcosystemSidebarNavigation,reportEcosystemSidebarTransient,setEcosystemSidebarState}from'./tab-context';
 import{MENU_CATALOG,MenuGlyph,TECH_NAAM,isSiteBeheer,localTabIcon,normalizeMenuPreferences,type AnyMenuIconId,type MenuIconId,type MenuItemId,type MenuOppervlak,type MenuPreferenceItem}from'./menu-voorkeuren';
 import{canonicalNavigationUrl,railNavigationUrl,type TargetService}from'./canoniek-navigatie';import{dienstToegestaan,type AccountRechten}from'./account-rechten';import{useTech}from'./tech/tech-opslag';import{serviceTabLabel}from'./dienst-tab-labels';import ViewportTooltipLayer from'./ViewportKnopinfoLaag';import VensterHerstel from'./platform/VensterHerstel';import ZijbalkWerkbalk from'./ZijbalkWerkbalk';import{ScrollPijlen,useScrollPijlen}from'./zijbalk-scroll';import{useZijbalkVoorkeuren,zetZijbalk,zijbalkKeuzeBekend,zijbalkRuimte,zijbalkVoorkeuren}from'./zijbalk-voorkeuren';import{weergaveRuimte}from'./weergave-uiterlijk';import SnelleToegangEditor from'./SnelleToegangBewerker';import{DIENST_ACCENT,MENU_PAGINAS,allesTerugzetten,itemTerugzetten,type ZijbalkModus}from'../shared/menu-model';
@@ -53,21 +53,57 @@ import AanmeldTelegram from './telegram-aanmelden/AanmeldTelegram'; /* TELEGRAM-
 import { useAanmeldConfig } from './telegram-aanmelden/aanmeld-config';
 import { aanmeldIndeling } from '../shared/aanmeld-plaatsing/plaatsing';
 import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
+import { accountIdentityKey, resolveAccountPhoto, type AccountMenuUser, type RememberedAccount } from './canoniek-account-menu-model';
+import { aanmeldPauzeBericht, useAanmeldPauze } from './aanmeld-pauze';
 export const AANMELD_BEZIG_SLEUTEL='mr-aanmelden-bezig';
 export const AANMELD_BEZIG_MS=5*60_000;
+const MAX_ZICHTBARE_OPGESLAGEN=3;
 /** Loopt er in dit tabblad een aanmelding die op deze pagina begon (klik ≤ 5 min geleden)? */
 export function aanmeldenBezig(nu=Date.now()):boolean{try{const t=Number(sessionStorage.getItem(AANMELD_BEZIG_SLEUTEL)||0);return t>0&&nu-t>=0&&nu-t<AANMELD_BEZIG_MS}catch{return false}}
 export function zetAanmeldenBezig(aan:boolean):void{try{if(aan)sessionStorage.setItem(AANMELD_BEZIG_SLEUTEL,String(Date.now()));else sessionStorage.removeItem(AANMELD_BEZIG_SLEUTEL)}catch{/* privévenster of geen opslag: dan alleen de rotatie op deze pagina */}}
-export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,preferredAccount,onGoogle}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;preferredAccount?:{name?:string|null;email?:string|null}|null;onGoogle?:()=>void|Promise<unknown>}){
+type SignedOutPreferredAccount={id?:string;accountId?:string;name?:string|null;email?:string|null;picture?:string|null;providerPicture?:string|null;customPhoto?:string|null;customPicture?:boolean|string|null};
+function OpgeslagenAccountFoto({user}:{user:AccountMenuUser}){
+ const foto=resolveAccountPhoto(user);
+ const[misluktBron,setMisluktBron]=useState('');
+ const toonAfbeelding=foto.kind==='image'&&Boolean(foto.src)&&misluktBron!==foto.src;
+ return <span className={`mr-sign-in-initials${toonAfbeelding?' mr-sign-in-avatar':''}`} data-photo-source={toonAfbeelding?foto.source:'initials'} aria-hidden='true'>
+  {toonAfbeelding?<img className='mr-sign-in-avatar-img' src={foto.src} alt='' width={42} height={42} decoding='async' draggable={false} referrerPolicy='no-referrer' onError={()=>setMisluktBron(foto.src)}/>:foto.initials}
+ </span>;
+}
+function OpgeslagenAccountKaart({item,lang,meerdere,bezig,geblokkeerd,onSelect,onForget}:{item:RememberedAccount;lang:'uk'|'nl';meerdere:boolean;bezig:boolean;geblokkeerd:boolean;onSelect:()=>void;onForget?:()=>void}){
+ const uk=lang==='uk',naam=String(item.user.name||'').trim(),email=String(item.user.email||'').trim(),titel=naam||email;
+ const toonEmail=Boolean(naam&&email&&naam.toLowerCase()!==email.toLowerCase());
+ const statusTekst=item.silentAllowed===true?(uk?'Швидкий вхід на цьому пристрої':'Snelle aanmelding op dit apparaat'):item.silentAllowed===false?(uk?'Підтвердити через Google · збережений на пристрої':'Bevestigen met Google · op dit apparaat bewaard'):(uk?'Збережений на цьому пристрої':'Op dit apparaat bewaard');
+ const kiesLabel=uk?`Увійти як ${titel}${toonEmail?` (${email})`:''}`:`Aanmelden als ${titel}${toonEmail?` (${email})`:''}`;
+ const vergeetLabel=uk?`Забути на цьому пристрої: ${email||titel}`:`Op dit apparaat vergeten: ${email||titel}`;
+ const vergeetTitel=uk?'Забути на цьому пристрої':'Op dit apparaat vergeten';
+ return <div className={`mr-sign-in-account-row${onForget?' has-forget':''}`} role={meerdere?'listitem':undefined} data-account-bezig={bezig?'true':'false'}>
+  <button type='button' className='mr-sign-in-account' disabled={geblokkeerd} aria-busy={bezig?'true':undefined} aria-label={kiesLabel} onClick={onSelect}>
+   <OpgeslagenAccountFoto user={item.user}/>
+   <span className='mr-sign-in-account-copy'>
+    <strong>{titel}</strong>
+    {toonEmail&&<span className='mr-sign-in-account-email'>{email}</span>}
+    <small>{bezig?(uk?'Входимо…':'Aanmelden…'):statusTekst}</small>
+   </span>
+   {bezig?<span className='mr-sign-in-account-spinner' aria-hidden='true'/>:<ArrowRight className='mr-sign-in-account-enter' aria-hidden='true'/>}
+  </button>
+  {onForget&&<button type='button' className='mr-sign-in-account-forget' disabled={geblokkeerd} aria-label={vergeetLabel} title={vergeetTitel} onClick={onForget}><X aria-hidden='true'/></button>}
+ </div>;
+}
+export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrowser=true,onRememberBrowser,accounts,preferredAccount,onSelectAccount,onForgetAccount,onGoogle,foutMelding}:{lang:'uk'|'nl';checking?:boolean;onOpenAccount:()=>void;rememberBrowser?:boolean;onRememberBrowser?:(value:boolean)=>void;accounts?:RememberedAccount[];preferredAccount?:SignedOutPreferredAccount|null;onSelectAccount?:(grantId:string)=>void|Promise<unknown>;onForgetAccount?:(grantId:string)=>void|Promise<unknown>;onGoogle?:()=>void|Promise<unknown>;foutMelding?:string}){
  const uk=lang==='uk';
  const[activating,setActivating]=useState(false);
+ const[selectingGrant,setSelectingGrant]=useState('');
+ const[forgettingGrant,setForgettingGrant]=useState('');
  const aanmeldCfg=useAanmeldConfig(); /* AANMELD-PLAATSING v1: hook vóór elke vroege return */
+ const pauze=useAanmeldPauze();
  // Terug van Google: alleen bij de EERSTE weergave in 'checking' gelezen (daarna zegt de app zelf of het profiel open is).
  const[terugVanAanmelden]=useState(()=>checking&&aanmeldenBezig());
  const vertrekt=useRef(false);
  useEffect(()=>{if(!checking){vertrekt.current=false;zetAanmeldenBezig(false)}},[checking]);
+ useEffect(()=>{if(pauze.actief){vertrekt.current=false;setActivating(false);setSelectingGrant('');zetAanmeldenBezig(false)}},[pauze.actief]);
  useEffect(()=>{
-  const terug=(e:PageTransitionEvent)=>{if(e.persisted){vertrekt.current=false;setActivating(false);zetAanmeldenBezig(false)}};
+  const terug=(e:PageTransitionEvent)=>{if(e.persisted){vertrekt.current=false;setActivating(false);setSelectingGrant('');setForgettingGrant('');zetAanmeldenBezig(false)}};
   window.addEventListener('pageshow',terug);
   // Verdwijnt de kaart (profiel open), dan is de aanmelding klaar.
   return()=>{window.removeEventListener('pageshow',terug);if(!vertrekt.current)zetAanmeldenBezig(false)};
@@ -76,7 +112,7 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  const stop=()=>{vertrekt.current=false;setActivating(false);zetAanmeldenBezig(false)};
  const open=()=>{onOpenAccount()};
  const google=()=>{
-  if(activating||checking)return;
+  if(activating||checking||selectingGrant||forgettingGrant||pauze.actief)return;
   setActivating(true);zetAanmeldenBezig(true);vertrekt.current=false;
   const vertrek=()=>{vertrekt.current=true};
   window.addEventListener('beforeunload',vertrek);
@@ -86,33 +122,57 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
   if(uitkomst&&typeof(uitkomst as Promise<unknown>).then==='function')(uitkomst as Promise<unknown>).then(klaar,klaar);
   else window.setTimeout(klaar,6000);
  };
- const known=!checking&&rememberBrowser&&preferredAccount&&(preferredAccount.name||preferredAccount.email);
- const draait=activating||checking;
+ const kiesAccount=(item:RememberedAccount)=>{
+  if(activating||checking||selectingGrant||forgettingGrant||pauze.actief)return;
+  if(!item.grantId||!onSelectAccount){open();return}
+  setSelectingGrant(item.grantId);zetAanmeldenBezig(true);vertrekt.current=false;
+  const vertrek=()=>{vertrekt.current=true};
+  window.addEventListener('beforeunload',vertrek);
+  const klaar=()=>{window.setTimeout(()=>{window.removeEventListener('beforeunload',vertrek);if(!vertrekt.current){setSelectingGrant('');zetAanmeldenBezig(false)}},400)};
+  let uitkomst:unknown;
+  try{uitkomst=onSelectAccount(item.grantId)}catch{klaar();return}
+  if(uitkomst&&typeof(uitkomst as Promise<unknown>).then==='function')(uitkomst as Promise<unknown>).then(klaar,klaar);
+  else window.setTimeout(klaar,4000);
+ };
+ const vergeetAccount=(item:RememberedAccount)=>{
+  if(!item.grantId||!onForgetAccount||activating||checking||selectingGrant||forgettingGrant)return;
+  setForgettingGrant(item.grantId);
+  Promise.resolve(onForgetAccount(item.grantId)).catch(()=>undefined).finally(()=>setForgettingGrant(''));
+ };
+ const reserveLijst=rememberBrowser&&preferredAccount&&(preferredAccount?.name||preferredAccount?.email)?[{grantId:'',user:{id:preferredAccount.id,accountId:preferredAccount.accountId,name:String(preferredAccount.name||''),email:String(preferredAccount.email||''),picture:preferredAccount.picture||undefined,providerPicture:preferredAccount.providerPicture||undefined,customPhoto:preferredAccount.customPhoto||undefined,customPicture:preferredAccount.customPicture??undefined},lastUsedAt:0,expiresAt:0}as RememberedAccount]:[];
+ const opgeslagenLijst=!checking?(accounts?.length?accounts.filter(a=>Boolean(a?.user&&(a.user.name||a.user.email))):reserveLijst):[];
+ const zichtbareOpgeslagen=opgeslagenLijst.slice(0,MAX_ZICHTBARE_OPGESLAGEN);
+ const draait=(activating||checking)&&!pauze.actief;
+ const bezet=Boolean(draait||selectingGrant);
+ const pauzeTekst=pauze.actief||pauze.zojuistVrij?aanmeldPauzeBericht(Math.max(1,pauze.resterend),lang,pauze.soort,pauze.limiet):null;
  const postdienst=typeof window!=='undefined'&&(window.location.hostname.startsWith('mail.')||window.location.pathname.startsWith('/mail'));
  const indeling=aanmeldIndeling(aanmeldCfg);
  const googleG=<img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/>;
  const googleKnop=(
-   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} aria-disabled={checking||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
+   <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} data-pauze={pauze.actief?'true':undefined} disabled={(!checking&&pauze.actief)||undefined} aria-disabled={checking||Boolean(selectingGrant)||pauze.actief||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
     <span className='mr-sign-in-logo' aria-hidden='true'>{googleG}</span>
-    <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):(uk?'Увійти через Google':'Aanmelden met Google')}</span>
-    <span className='mr-sign-in-arrow' aria-hidden='true'>→</span>
+    <span className='mr-sign-in-main-tekst'>{checking?(uk?'Перевіряємо вхід…':'Aanmelding controleren…'):pauze.actief&&pauzeTekst?pauzeTekst.knop:(uk?'Увійти через Google':'Aanmelden met Google')}</span>
+    <span className='mr-sign-in-arrow' aria-hidden='true'>{pauze.actief?<Clock aria-hidden='true'/>:<ArrowRight aria-hidden='true'/>}</span>
    </button>
  );
- return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={draait?'true':'false'} aria-live={checking?'polite':undefined}>
+ return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={bezet?'true':'false'} aria-live={checking?'polite':undefined}>
   {postdienst&&<Suspense fallback={null}><MailAchtergrond lang={lang} plaats='aanmelden'/></Suspense>}
   <div className='mr-sign-in-content'>
    <h1>{uk?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
    <p className='mr-sign-in-subtitle'>{uk?'Єдиний обліковий запис для вашої роботи, файлів і сервісів.':'Eén account voor uw werk, bestanden en diensten.'}</p>
-   {known&&<button type='button' className='mr-sign-in-account' onClick={open} aria-label={uk?'Вибрати збережений обліковий запис':'Opgeslagen account kiezen'}>
-    <span className='mr-sign-in-initials' aria-hidden='true'>{String(preferredAccount?.name||preferredAccount?.email||'').trim().slice(0,1).toLocaleUpperCase(lang)}</span>
-    <span className='mr-sign-in-account-copy'><strong>{preferredAccount?.name||preferredAccount?.email}</strong><small>{uk?'Збережений на цьому пристрої':'Op dit apparaat bewaard'}</small></span>
-    <span aria-hidden='true' className='mr-sign-in-chevron'>⌄</span>
-   </button>}
+   {zichtbareOpgeslagen.length>0&&<div className='mr-sign-in-accounts' role={zichtbareOpgeslagen.length>1?'list':undefined} aria-label={zichtbareOpgeslagen.length>1?(uk?'Збережені облікові записи':'Opgeslagen accounts'):undefined}>
+    {zichtbareOpgeslagen.map((item,index)=><OpgeslagenAccountKaart key={item.grantId||accountIdentityKey(item.user)||String(index)} item={item} lang={lang} meerdere={zichtbareOpgeslagen.length>1} bezig={Boolean(item.grantId)&&selectingGrant===item.grantId} geblokkeerd={Boolean(activating||checking||selectingGrant||forgettingGrant||pauze.actief)} onSelect={()=>kiesAccount(item)} onForget={item.grantId&&onForgetAccount?()=>vergeetAccount(item):undefined}/>)}
+    {opgeslagenLijst.length>MAX_ZICHTBARE_OPGESLAGEN&&<button type='button' className='mr-sign-in-alternative mr-sign-in-alle-accounts' disabled={pauze.actief||bezet||undefined} onClick={open}><span>{uk?`Усі збережені облікові записи (${opgeslagenLijst.length})`:`Alle opgeslagen accounts (${opgeslagenLijst.length})`}</span><ChevronDown className='mr-sign-in-alt-pijl' aria-hidden='true'/></button>}
+   </div>}
    {/* Focus naar een ander element op de pagina (bv. de accountkeuze die opent) = geen aanmelding meer; het venster verlaten (relatedTarget leeg) niet. */}
    {/* AANMELD-PLAATSING v1: volgorde en plaats per methode komen van de beheerder (met de vlag aan); zonder plaatsing exact zoals vroeger. */}
    {indeling.hoofd.map(m=>m==='google'?<Fragment key='google'>{googleKnop}</Fragment>:m==='telegram'&&!checking?<AanmeldTelegram key='telegram' lang={lang} remember={rememberBrowser}/>:null)}
+   {!checking&&pauzeTekst&&(pauze.actief||pauze.zojuistVrij)&&<div className={`mr-sign-in-pauze${pauze.zojuistVrij?' is-vrij':''}`} role='status' aria-live='polite' data-aanmeld-pauze={pauze.actief?'wacht':'vrij'}>
+    {pauze.actief?<><strong>{pauzeTekst.kop}</strong><span>{pauzeTekst.uitleg}</span></>:<span>{pauzeTekst.vrij}</span>}
+   </div>}
+   {!checking&&foutMelding&&!pauze.actief?<p className='mr-sign-in-fout' role='alert'>{foutMelding}</p>:null}
    {!checking&&<AanmeldAndereOpties lang={lang} ids={indeling.andere} extra={{
-    ...(indeling.andere.includes('google')?{google:<button type='button' className='mr-sign-in-optie mr-sign-in-optie-google' onClick={google}><span className='mr-sign-in-optie-logo' aria-hidden='true'>{googleG}</span><span className='mr-sign-in-optie-tekst'><strong>{uk?'Увійти через Google':'Aanmelden met Google'}</strong></span></button>}:{}),
+    ...(indeling.andere.includes('google')?{google:<button type='button' className='mr-sign-in-optie mr-sign-in-optie-google' disabled={pauze.actief||undefined} onClick={google}><span className='mr-sign-in-optie-logo' aria-hidden='true'>{googleG}</span><span className='mr-sign-in-optie-tekst'><strong>{uk?'Увійти через Google':'Aanmelden met Google'}</strong></span></button>}:{}),
     ...(indeling.andere.includes('telegram')?{telegram:<AanmeldTelegram lang={lang} remember={rememberBrowser}/>}:{}),
    }}/>}
    {!checking&&onRememberBrowser&&<label className='mr-sign-in-remember'>
@@ -337,7 +397,7 @@ export default function CanonicalChrome({lang,theme,current,items,tabs,activeTab
   {!expanded&&!touchMode&&effModus!=='dicht'&&!bewerken&&<div className='canonical-sidebar-edge-zone' data-sidebar-edge-zone='safe-hover' aria-label={edgeLabel} onPointerEnter={event=>queueTransient('edge',event)} onPointerLeave={leaveTransient}/>} 
   {(transient||drawer)&&<div className={`canonical-sidebar-scrim${drawer?' drawer':''}`} aria-hidden='true' onClick={drawer?()=>closeDrawer():undefined}/>} 
   <aside ref={sidebarRef} className='canonical-sidebar' aria-label={lang==='uk'?'Навігація':'Navigatie'} onPointerEnter={event=>queueTransient('panel',event)} onPointerLeave={leaveTransient}>
-   {drawer?<div className='canonical-drawer-header'><div className='plaats-lade-kop' {...zoneLade}><div className='canonical-drawer-account'>{account}</div><Gniezda zone='lade-kop' ind={plaatsInd}/></div>{zoekInMenu&&<ZoekMenuKnop lang={lang} className='zk-menu-knop zk-menu-knop-lade' voorOpenen={closeDrawer}/>}<button type='button' className={`canonical-menu-toggle menu-lade-bewerken${bewerken?' actief':''}`} data-menu-bewerken-knop aria-pressed={bewerken} aria-label={bewerkTekst(lang)} title={bewerkTekst(lang)} onClick={()=>zetMenuBewerken(!bewerken)}><PencilRuler aria-hidden='true'/></button><button className='canonical-menu-toggle canonical-drawer-close' type='button' data-sidebar-action='close-drawer' aria-expanded='true' aria-pressed='true' aria-label={toggleLabel} title={toggleLabel} onClick={closeDrawer}><X aria-hidden='true'/><span className='canonical-menu-toggle-label'>{toggleLabel}</span></button></div>:touchMode?<button className='canonical-menu-toggle' type='button' data-sidebar-action={toggleAction} aria-expanded={expanded} aria-pressed={touchMode?drawerOpen:pinned} aria-label={menuTeller?`${toggleLabel} · ${lang==='uk'?'непрочитаних сповіщень':'ongelezen meldingen'}: ${menuTeller}`:toggleLabel} title={toggleLabel} data-plaats-teller={menuTeller||undefined} onClick={toggleSidebar}>{touchMode||!expanded?<Menu aria-hidden='true'/>:pinned?<PanelLeftClose aria-hidden='true'/>:<Pin aria-hidden='true'/>}<span className='canonical-menu-toggle-label'>{toggleLabel}</span>{menuTeller>0&&<small className='plaats-menu-teller' aria-hidden='true'>{menuTeller>99?'99+':menuTeller}</small>}</button>:<ZijbalkWerkbalk lang={lang} modus={modus} breed={expanded} onModus={kiesModus} instellingenHref={menuInstellingenHref} onInstellingen={naarMenuInstellingen} kant={tipKant==='left'?'left':'right'} bewerken={bewerken} onBewerken={()=>zetMenuBewerken(!bewerken)} dock={horizontaal} zoek={zoekInMenu} snelleToegang={<SnelleToegangEditor tr={tr2} rechten={rechten}/>}/>}
+   {drawer?<div className='canonical-drawer-header'><div className='plaats-lade-kop' {...zoneLade}><div className='canonical-drawer-account'>{account}</div><Gniezda zone='lade-kop' ind={plaatsInd}/></div><ZoekMenuKnop lang={lang} className='zk-menu-knop zk-menu-knop-lade' voorOpenen={closeDrawer}/><button type='button' className={`canonical-menu-toggle menu-lade-bewerken${bewerken?' actief':''}`} data-menu-bewerken-knop aria-pressed={bewerken} aria-label={bewerkTekst(lang)} title={bewerkTekst(lang)} onClick={()=>zetMenuBewerken(!bewerken)}><PencilRuler aria-hidden='true'/></button><button className='canonical-menu-toggle canonical-drawer-close' type='button' data-sidebar-action='close-drawer' aria-expanded='true' aria-pressed='true' aria-label={toggleLabel} title={toggleLabel} onClick={closeDrawer}><X aria-hidden='true'/><span className='canonical-menu-toggle-label'>{toggleLabel}</span></button></div>:touchMode?<button className='canonical-menu-toggle' type='button' data-sidebar-action={toggleAction} aria-expanded={expanded} aria-pressed={touchMode?drawerOpen:pinned} aria-label={menuTeller?`${toggleLabel} · ${lang==='uk'?'непрочитаних сповіщень':'ongelezen meldingen'}: ${menuTeller}`:toggleLabel} title={toggleLabel} data-plaats-teller={menuTeller||undefined} onClick={toggleSidebar}>{touchMode||!expanded?<Menu aria-hidden='true'/>:pinned?<PanelLeftClose aria-hidden='true'/>:<Pin aria-hidden='true'/>}<span className='canonical-menu-toggle-label'>{toggleLabel}</span>{menuTeller>0&&<small className='plaats-menu-teller' aria-hidden='true'>{menuTeller>99?'99+':menuTeller}</small>}</button>:<ZijbalkWerkbalk lang={lang} modus={modus} breed={expanded} onModus={kiesModus} instellingenHref={menuInstellingenHref} onInstellingen={naarMenuInstellingen} kant={tipKant==='left'?'left':'right'} bewerken={bewerken} onBewerken={()=>zetMenuBewerken(!bewerken)} dock={horizontaal} zoek snelleToegang={<SnelleToegangEditor tr={tr2} rechten={rechten}/>}/>}
    {!horizontaal&&bewerkBalk}<div className='zijbalk-scrollvak' data-zijbalk-scroll={pijlen.boven||pijlen.onder?'ja':'nee'}><nav ref={navRef} className='canonical-service-list' data-scrollbar-contract='overlay-arrows' aria-label={tr2('Меню','Menu')}>{menuZone&&<div className='plaats-zijbalk' {...zoneMenu} role='group' aria-label={tr2('Кнопки в меню','Knoppen in het menu')}><Gniezda zone='zijbalk' ind={plaatsInd}/>{bewerken&&plaatsInd.zones.zijbalk.lijst.length===0&&<span className='plaats-zijbalk-leeg'>{tr2('Сюди можна перенести дзвоник або «Написати» — утримайте кнопку й перетягніть.','Hierheen kunt u de bel of «Nieuw bericht» slepen — houd de knop vast en sleep.')}</span>}</div>}{(weergave.snelbalk.length>0||bewerken)&&<div className='menu-snelbalk' data-menu-lijst='snelbalk|' data-menu-richting={horizontaal?'h':'v'} role='group' aria-label={snelLabel}>{expanded&&<span className='menu-sectie-titel' aria-hidden='true'>{snelLabel}</span>}{weergave.snelbalk.map(losItem)}{bewerken&&weergave.snelbalk.length===0&&<span className='menu-leeg' aria-hidden='true'>{tr2('Перетягніть сюди','Sleep hierheen')}</span>}</div>}<div className='menu-hoofdlijst' data-menu-lijst='zijbalk|' data-menu-richting={horizontaal?'h':'v'}>{weergave.zijbalk.map(losItem)}{terugval.map(e=>groep(e))}</div></nav>{!horizontaal&&<ScrollPijlen lijst={navRef} boven={pijlen.boven} onder={pijlen.onder} lang={lang} smal={!expanded}/>}</div>
    {/* 29.10.2026: op de telefoon met dichte lade NIET tekenen — de lade-houder is dan alleen ☰ (58×62, overflow verborgen) en de rand + het
       ronde pictogram van de ruimtewissel staken er als streepje en half rondje onder uit (Pavlo, hub /recent). In de open lade: wel. */}{ruimtesV2&&techProfiel&&!horizontaal&&(!touchMode||drawer)&&<Suspense fallback={null}><ZijbalkRuimte lang={lang==='uk'?'uk':'nl'} breed={expanded||drawer}/></Suspense>}
@@ -345,7 +405,7 @@ export default function CanonicalChrome({lang,theme,current,items,tabs,activeTab
   </aside>
   <ViewportTooltipLayer/>
   {/* 20.10.2026: onthouden vensters (bijvoorbeeld een koppelvenster van de post) horen OP ELK subdomein in het dok te staan — zie src/platform/VensterHerstel.tsx. */}
-  <VensterHerstel lang={lang} dienst={current}/>
+  {goedgekeurd&&!signedOut&&<VensterHerstel lang={lang} dienst={current}/>}
   {horizontaal&&bewerkBalk}{dockPaneel}{actieMenu}
   <div className='menu-sr' aria-live='polite' data-menu-status>{bewerken?menuStatusTekst:''}</div><div className='menu-sr' aria-live='polite' data-plaats-status>{plaatsS.status}</div><PlaatsActies lang={lang} ind={plaatsInd} ctx={plaatsCtx} voorkeur={zijbalk.plaatsing} opslaan={plaatsOpslaan}/>
   {bel&&badges[bel.item]&&<MeldingBellen lang={lang} label={bel.label} badge={badges[bel.item]} anker={bel.rect} ankerEl={bel.knop} paneelRef={belPaneelRef} onBinnen={b=>{belBinnen.current=b;if(b)window.clearTimeout(belTimers.current.dicht);else belSluiten()}} onEsc={()=>{const k=bel.knop;setBel(null);belBinnen.current=false;belStilFocus.current=true;k.focus();belStilFocus.current=false}} onSluit={meldingWeg} onOpen={meldingOpenen} onAllesWeg={()=>{for(const m of badges[bel.item].meldingen)meldingWeg(m);setBel(null)}}/>}
