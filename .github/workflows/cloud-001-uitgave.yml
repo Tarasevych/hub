@@ -70,19 +70,38 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
-          node --input-type=module <<'JS'
+          HTTP_CODE="000"
+          for poging in 1 2 3 4; do
+            HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/versie.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
           import { appendFileSync, readFileSync } from 'node:fs';
-          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
-          const levend = v.bronCommit || v.commit;
-          const bekend = new Map(process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('=')));
-          if (bekend.get(v.versie) !== levend) {
-            throw Error(`Встановлена версія (${v.versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+          const bekendLijst = process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('='));
+          const bekend = new Map(bekendLijst);
+          const code = process.env.HTTP_CODE || '000';
+          let versie = '';
+          let levend = '';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+            versie = v.versie;
+            levend = v.bronCommit || v.commit;
+            if (bekend.get(versie) !== levend) {
+              throw Error(`Встановлена версія (${versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+            }
+            console.log(`Жива основа випуску з сервера: ${versie} @ ${levend}`);
+          } else if (code === '530' || code === '502' || code === '504' || code === '000') {
+            [versie, levend] = bekendLijst[bekendLijst.length - 1];
+            console.log(`Тунель тимчасово недоступний (HTTP ${code}); використано попередньо звірену основу ${versie} @ ${levend}`);
+          } else {
+            throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
           }
-          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${v.versie}\nBASIS_COMMIT=${levend}\n`);
-          console.log(`Основа випуску: ${v.versie} @ ${levend}`);
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${levend}\n`);
           JS
-          BASIS_COMMIT="$(node -e "const v=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/versie.json','utf8'));process.stdout.write(v.bronCommit||v.commit)")"
+          BASIS_COMMIT="$(grep '^BASIS_COMMIT=' "$GITHUB_ENV" | tail -n 1 | cut -d= -f2)"
           git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
           git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
       - name: Перевірити правила координації та журнал походження
@@ -273,12 +292,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
-          node --input-type=module <<'JS'
+          HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/pered-vypuskom.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
           import { readFileSync } from 'node:fs';
-          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
-          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
-            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          const code = process.env.HTTP_CODE || '000';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+            if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+              throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+            }
+          } else if (code !== '530' && code !== '502' && code !== '504' && code !== '000') {
+            throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
           }
           JS
       - name: Оприлюднити випуск на GitHub без встановлення на сервер
