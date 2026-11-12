@@ -17,7 +17,10 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';
 
-const WORTEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// Корінь репозиторію: зазвичай тека над scripts/. Коли модуль зібрано в інше місце (модульні тести пакують його в
+// rapporten/eenheid-…/), беремо поточну робочу теку — тести й збірка завжди запускаються з кореня.
+const NAAST = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const WORTEL = existsSync(join(NAAST, 'docs/huis/maquette/volgorde.json')) ? NAAST : process.cwd();
 const MAP = join(WORTEL, 'docs/huis/maquette');
 const LUCIDE = join(WORTEL, 'node_modules/lucide-react/dist/esm/icons');
 const UIT = join(MAP, 'huis-maquette.html');
