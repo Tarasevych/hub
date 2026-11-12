@@ -8,12 +8,17 @@ import { networkInterfaces } from 'node:os';
 
 export type NepEntiteit = { entity_id: string; state: string; attributes: Record<string, unknown>; last_changed: string; last_updated: string };
 export function nietLoopbackAdres(): string | null {
+  // HUIS-001 (10.11.2026): eerst een PRIVÉ-adres (RFC 1918). In een cloudcontainer is het eerste adres soms een documentatiereeks
+  // (192.0.2.x); die weigert de adapter terecht altijd (ADRES_GEWEIGERD), waardoor de hele suite daar niet draaide. Met een extra
+  // privé-adres op de machine (bv. een alias 192.168.x.y) kiest de test nu dat adres; zonder privé-adres blijft het oude gedrag.
+  const kandidaten: string[] = [];
   for (const lijst of Object.values(networkInterfaces())) {
     for (const i of lijst ?? []) {
-      if (i.family === 'IPv4' && !i.internal && !i.address.startsWith('203.0.113.')) return i.address;
+      if (i.family === 'IPv4' && !i.internal && !i.address.startsWith('203.0.113.')) kandidaten.push(i.address);
     }
   }
-  return null;
+  const prive = kandidaten.find((a) => /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(a));
+  return prive ?? kandidaten[0] ?? null;
 }
 export async function nepHomeAssistant(o: { token: string; entiteiten: NepEntiteit[]; vertragingMs?: number; doof?: boolean }) {
   const s = { entiteiten: new Map(o.entiteiten.map((e) => [e.entity_id, { ...e }])), aanroepen: [] as Array<{ methode: string; pad: string; body: unknown }>, vertragingMs: o.vertragingMs ?? 0, doof: Boolean(o.doof), geschiedenis: {} as Record<string, Array<{ state: string; last_changed: string }>> };

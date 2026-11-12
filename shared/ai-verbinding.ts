@@ -25,13 +25,14 @@ export const accessSeconden = (d: Duur) => (d.accessSec > 0 ? d.accessSec : NOOI
 export const refreshSeconden = (d: Duur) => (d.refreshDagen > 0 ? d.refreshDagen * 86400 : NOOIT_SEC);
 
 // ---------------------------------------------------------------- welke AI-klant
-export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw' | 'overig';
+export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'codex' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw' | 'overig';
 export type Klant = { id: KlantId; naam: string; deur: string | null };
 /** deur = pad van de MCP-deur op mcp.* (zoals in de tunnelregel); null = alleen via de connector /mcp. */
 export const KLANTEN: readonly Klant[] = Object.freeze([
   { id: 'grok', naam: 'Grok', deur: 'Grok' },
   { id: 'claude', naam: 'Claude', deur: 'claude' },
   { id: 'chatgpt', naam: 'ChatGPT', deur: 'chatgpt' },
+  { id: 'codex', naam: 'Codex', deur: null },
   { id: 'gemini', naam: 'Gemini', deur: 'gemini' },
   { id: 'copilot', naam: 'Copilot', deur: 'copilot' },
   { id: 'cursor', naam: 'Cursor', deur: null },
@@ -45,6 +46,7 @@ export function klantVan(naam: string | null | undefined): KlantId {
   const n = normaal(String(naam || ''));
   if (!n) return 'overig';
   for (const k of KLANTEN) if (k.id !== 'overig' && (n === k.id || n.split(' ').includes(k.id))) return k.id;
+  if (/\bcodex\b/.test(n)) return 'codex';
   if (/\b(openai|gpt)\b/.test(n)) return 'chatgpt';
   if (/\b(xai|x ai)\b/.test(n)) return 'grok';
   if (/\b(anthropic)\b/.test(n)) return 'claude';

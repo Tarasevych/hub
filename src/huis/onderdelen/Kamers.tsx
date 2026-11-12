@@ -22,7 +22,7 @@ export default function Kamers({ lang, smal, woningId, ov, vernieuw, toon }: Ond
   const kamer = open ? ov.ruimtes.find((r) => r.id === open.id) ?? null : null;
   const inKamer = useMemo(() => (kamer ? ov.apparaten.filter((a) => a.ruimteId === kamer.id) : []), [kamer, ov.apparaten]);
   const los = useMemo(() => ov.apparaten.filter((a) => !a.ruimteId), [ov.apparaten]);
-  const doe = async (f: () => Promise<unknown>, ok?: string) => { setBezig(true); try { await f(); await vernieuw(); if (ok) toon(ok); } catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT')); } finally { setBezig(false); } };
+  const doe = async (f: () => Promise<unknown>, ok?: string) => { setBezig(true); try { await f(); await vernieuw(); if (ok) toon(ok); } catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); } finally { setBezig(false); } };
   const maak = () => { const n = nieuw.trim(); if (!n) return; void doe(() => huisClient.ruimteNieuw(woningId, { naam: n, verdieping }), tr(lang, 'Кімнату додано.', 'Kamer toegevoegd.')); setNieuw(''); };
   const schuif = (r: Ruimte, dx: number, dy: number, dw = 0, dh = 0) => doe(() => huisClient.ruimteWijzig(woningId, r.id, { geometrie: { x: Math.max(0, r.geometrie.x + dx), y: Math.max(0, r.geometrie.y + dy), w: Math.max(1, r.geometrie.w + dw), h: Math.max(1, r.geometrie.h + dh) } }));
   return (

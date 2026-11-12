@@ -6,7 +6,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fragmentRond, pgUitleg, positieNaarRegel, regelVoorTabel, teLangeTekst, telVereisten, oorzaakUitProef, type MigratieProefUitslag } from '../../shared/uitrol-vereisten';
+import { beoordeelToegepasteMigraties, fragmentRond, pgUitleg, positieNaarRegel, regelVoorTabel, teLangeTekst, telVereisten, oorzaakUitProef, type MigratieProefUitslag } from '../../shared/uitrol-vereisten';
 import { _sessies, proefVerwerken, proefVoorArchief, vereistenBeoordelen, type VereistenOmgeving } from '../../backend/uitrol-vereisten';
 import { pakketVoorcontrole } from '../../backend/uitrol-voorcontrole';
 import { createHash } from 'node:crypto';
@@ -46,6 +46,10 @@ export async function main(): Promise<number> {
   check('uitleg bij te lange tekst noemt 301 en 300 (uk + nl)', /301/.test(u.uitlegUk) && /300/.test(u.uitlegUk) && /301/.test(u.uitlegNl) && /1 знак/.test(u.actieUk));
   check('onbekende code → algemene uitleg', /помилкою бази/.test(pgUitleg('XX000').uitlegUk));
   check('telVereisten: fout blokkeert', telVereisten([{ niveau: 'ok' }, { niveau: 'fout' }, { niveau: 'waarschuwing' }]).blokkeert === true && telVereisten([{ niveau: 'ok' }, { niveau: 'waarschuwing' }]).blokkeert === false);
+  const bmOk = beoordeelToegepasteMigraties(['0093_zoek_index', '0094_zoek_rls', '0198_x'], ['0093_globaal_zoeken_laatste', '0093_zoek_index', '0094_zoekindex', '0094_zoek_rls', '0198_x', 'rechten']);
+  check('beoordeelToegepasteMigraties: oktober-hernoeming met aanwezige opvolger → ok, niet ontbrekend', bmOk.echtOntbrekend.length === 0 && bmOk.historischHernoemd.length === 2 && bmOk.historischHernoemd[0].nieuw === '0093_zoek_index');
+  const bmZonderOpvolger = beoordeelToegepasteMigraties(['0198_x'], ['0093_globaal_zoeken_laatste', '0198_x', '0205_nieuw']);
+  check('beoordeelToegepasteMigraties: zonder opvolger of echt verdwenen → echtOntbrekend', bmZonderOpvolger.echtOntbrekend.join(',') === '0093_globaal_zoeken_laatste,0205_nieuw' && bmZonderOpvolger.historischHernoemd.length === 0);
   let weigert = false; try { proefUrl({ DATABASE_URL_MIGRATIE: 'postgres://m:p@127.0.0.1/live' }, 'mijnruimte_live'); } catch { weigert = true; }
   check('proefUrl weigert elke naam behalve mijnruimte_proef_*', weigert);
   check('proefUrl buigt de database om, rol blijft', proefUrl({ DATABASE_URL_MIGRATIE: 'postgres://m:p@127.0.0.1:5432/live' }, 'mijnruimte_proef_1').endsWith('/mijnruimte_proef_1') && proefUrl({ DATABASE_URL: 'postgres://m:p@h/live' }, 'mijnruimte_proef_1').startsWith('postgres://m:p@'));
@@ -83,6 +87,15 @@ export async function main(): Promise<number> {
   check('verplicht ontwikkeldossier ontbreekt → fout «github»', a7.vereisten.find((x) => x.id === 'github')?.niveau === 'fout');
   const a8 = await vereistenBeoordelen(archief({ migraties: [{ naam: '0198_x', bytes: 1 }, { naam: '0199_y', bytes: 1 }] }), omg());
   check('geen nieuwe migraties → proef niet nodig, klaar', a8.proef.status === 'niet-nodig' && a8.klaar === true && a8.vereisten.find((x) => x.id === 'migratie-proef')?.niveau === 'ok');
+  const a8b = await vereistenBeoordelen(
+    archief({ migraties: [{ naam: '0093_zoek_index', bytes: 1 }, { naam: '0094_zoek_rls', bytes: 1 }, { naam: '0198_x', bytes: 1 }, { naam: '0199_y', bytes: 1 }] }),
+    omg({ toegepast: async () => new Set(['0093_globaal_zoeken_laatste', '0093_zoek_index', '0094_zoekindex', '0094_zoek_rls', '0198_x', '0199_y']) }),
+  );
+  const mnHernoemd = a8b.vereisten.find((x) => x.id === 'migratie-namen');
+  check('historisch hernoemde oktober-migraties met aanwezige opvolger → ok, geen vals alarm', mnHernoemd?.niveau === 'ok' && a8b.ok === true && !!mnHernoemd?.details?.includes('0093_globaal_zoeken_laatste → 0093_zoek_index'));
+  const a8c = await vereistenBeoordelen(archief({ migraties: [{ naam: '0198_x', bytes: 1 }] }), omg());
+  const mnOntbreekt = a8c.vereisten.find((x) => x.id === 'migratie-namen');
+  check('echt verdwenen toegepaste migratie → blokkerende fout MIGRATIES_ONTBREKEN vóór upload', mnOntbreekt?.niveau === 'fout' && a8c.ok === false && /MIGRATIES_ONTBREKEN/.test(mnOntbreekt?.waardeUk || '') && /0199_y/.test(mnOntbreekt?.waardeUk || ''));
 
   // ---- proefuitslag verwerken (vorm = echte uitvoer van server/migratie-proef.ts)
   const uitslag: MigratieProefUitslag = { id: a1.id, ok: false, status: 'mislukt', code: 'MIGRATIE_PROEF_MISLUKT', tijd: new Date().toISOString(), pg: '16.4',
