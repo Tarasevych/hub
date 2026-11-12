@@ -26,6 +26,8 @@ import { callTool, listTools, resolveAlias, taalVanGebruiker, vertaal, type Tool
 import type { ToolTaal } from '../shared/hulpmiddel-teksten';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as st from './mcp-connector-opslag';
+import { CimdFoutmelding, cimdAan, cimdKlant, isCimdClientId } from './mcp-cimd';
+import { eenKeerPer } from './beheer-journaal';
 import { UITROL_TOOLS, UITROL_TOOL_NAMEN, UitrolFout, heeftVoorbereiderGrant, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from './uitrol-goedkeuring';
 import { BEHEER_ALLEEN_V2, BEHEER_TOOL_NAMEN, voerBeheerToolUit } from './ai-beheer-hulpmiddelen';
 import { DEV_MG_ALLEEN_V2, isDevMgTool } from '../shared/dev-media-github';
@@ -102,9 +104,55 @@ export const authorizationServerMetadata = () => respond(200, {
   revocation_endpoint: `${ISSUER}/revoke`,
   revocation_endpoint_auth_methods_supported: ['none'],
   scopes_supported: [SCOPE],
+  // MCP-001 R1 · RFC 9207: elke terugkeer naar de klant (code én fout) draagt `iss`; de klant MOET het vergelijken (mix-up-aanvallen).
+  authorization_response_iss_parameter_supported: true,
+  // MCP-001 R1 · CIMD (SEP-991): client_id mag een https-adres van een metadatadocument zijn (zie backend/mcp-cimd.ts).
+  ...(cimdAan() ? { client_id_metadata_document_supported: true } : {}),
 });
 
 // ---------------- dynamische clientregistratie (RFC 7591) ----------------
+
+const eigenaarVanUri = (rawUri: string) => {
+  const u = parseUrl(rawUri);
+  if (!u) return undefined;
+  const schema = u.protocol.replace(/:$/, '');
+  const host = u.hostname.toLowerCase();
+  return V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
+};
+
+/**
+ * SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere
+ * aanbieder claimen. Gedeeld door DCR (registerClient) en CIMD (MCP-001 R1). null = goed.
+ */
+export function klantNaamFout(name: string, uris: string[]): string | null {
+  const beweerdeKlant = klantVan(name);
+  if (beweerdeKlant === 'overig') return null;
+  for (const rawUri of uris) {
+    const eigenaar = eigenaarVanUri(rawUri);
+    if (eigenaar && eigenaar.klant !== beweerdeKlant) return 'client_name past niet bij redirect_uris';
+  }
+  return null;
+}
+
+/**
+ * Klant bij een client_id: een mcpc_…-id uit DCR (database) of — MCP-001 R1 — een CIMD-adres (https://…): document ophalen,
+ * controleren (backend/mcp-cimd.ts) en in dezelfde tabel bewaren, zodat token, verversen, intrekken en de lijst van verbindingen
+ * precies zo werken als bij DCR. Een fout geeft { fout } (nooit een omleiding: de redirect_uri is dan niet gecontroleerd).
+ */
+export async function klantVoorId(clientId: string): Promise<{ client_id: string; client_name: string; redirect_uris: string[] } | { fout: string } | null> {
+  if (!clientId) return null;
+  if (!isCimdClientId(clientId)) return st.getClient(clientId);
+  try {
+    const k = await cimdKlant(clientId, { redirectToegestaan: redirectUriAllowed, naamFout: klantNaamFout });
+    await st.upsertClient(k.client_id, k.client_name, k.redirect_uris);
+    return k;
+  } catch (e) {
+    const code = e instanceof CimdFoutmelding ? e.code : 'CIMD_NETWERK';
+    // Gedempt per adres: een aanvaller die steeds hetzelfde slechte document aanbiedt, vult het logboek niet.
+    if (eenKeerPer(`mcp.cimd:${clientId.slice(0, 200)}:${code}`)) await auditToevoegen({ ownerId: null, actorId: null, action: 'owner.mcp.cimd.denied', type: 'ai', result: 'denied', service: 'mcp', details: { client: clientId.slice(0, 200), code, reden: String((e as Error).message).slice(0, 200) } }).catch(() => undefined);
+    return { fout: code };
+  }
+}
 
 export async function registerClient(rawBody: string): Promise<RouterResponse> {
   let body: any;
@@ -115,25 +163,12 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
   }
   const method = body?.token_endpoint_auth_method;
   if (method !== undefined && method !== 'none') return respond(400, { error: 'invalid_client_metadata', error_description: 'Alleen token_endpoint_auth_method "none"' });
-  const eigenaarVanUri = (rawUri: string) => {
-    const u = parseUrl(rawUri);
-    if (!u) return undefined;
-    const schema = u.protocol.replace(/:$/, '');
-    const host = u.hostname.toLowerCase();
-    return V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
-  };
   const eersteEigenaar = (uris as string[]).map(eigenaarVanUri).find(Boolean);
   const opgegevenNaam = typeof body?.client_name === 'string' && body.client_name.trim() ? body.client_name.trim() : '';
   const name = (opgegevenNaam || eersteEigenaar?.naam || 'Claude').slice(0, 80);
-  // SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere aanbieder claimen.
-  const beweerdeKlant = opgegevenNaam ? klantVan(name) : 'overig';
-  if (beweerdeKlant !== 'overig') {
-    for (const rawUri of uris as string[]) {
-      const eigenaar = eigenaarVanUri(rawUri);
-      if (eigenaar && eigenaar.klant !== beweerdeKlant) {
-        return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name past niet bij redirect_uris' });
-      }
-    }
+  if (opgegevenNaam) {
+    const nf = klantNaamFout(name, uris as string[]);
+    if (nf) return respond(400, { error: 'invalid_client_metadata', error_description: nf });
   }
 
   if ((await st.countClients()) >= st.LIMITS.maxClients) {
@@ -151,13 +186,15 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
 // ---------------- autorisatie: Claude stuurt de gebruiker hierheen ----------------
 
 export async function authorize(query: Record<string, string>): Promise<RouterResponse> {
-  const client = query.client_id ? await st.getClient(query.client_id) : null;
+  const gevonden = await klantVoorId(query.client_id || '');
   const redirectUri = query.redirect_uri || '';
   // Bij een onbekende client of ongeldige redirect nooit redirecten: dat zou een open redirect zijn.
+  if (gevonden && 'fout' in gevonden) return plain(400, `Unknown client (${gevonden.fout})`);
+  const client = gevonden;
   if (!client) return plain(400, 'Unknown client');
   if (!redirectUri || !redirectMatches(client.redirect_uris, redirectUri)) return plain(400, 'Invalid redirect_uri');
 
-  const fail = (error: string, description: string) => redirect(withRedirect(redirectUri, { error, error_description: description, state: query.state }));
+  const fail = (error: string, description: string) => redirect(withRedirect(redirectUri, { error, error_description: description, state: query.state, iss: ISSUER }));
   if (query.response_type !== 'code') return fail('unsupported_response_type', 'response_type=code verwacht');
   if (!query.code_challenge || query.code_challenge_method !== 'S256' || !/^[A-Za-z0-9\-_]{43}$/.test(query.code_challenge)) {
     return fail('invalid_request', 'PKCE met S256 is verplicht');
@@ -213,7 +250,7 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   if (approve && a.agent && !v2) return { error: 'EXPIRED' };
   if (!approve) {
     const done = await st.decideAuth(rid, userId, false, null);
-    return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state }) } : { error: 'EXPIRED' };
+    return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state, iss: ISSUER }) } : { error: 'EXPIRED' };
   }
   // Стеля сайту (0043): вимкнений агент або спосіб MCP не отримує приватний дозвіл. Технічний простір цим не ріжеться.
   if (ruimteOf(ruimte) === 'prive') {
@@ -225,7 +262,7 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   // Duur: de keuze in het venster, anders de instelling van de gebruiker voor deze AI-klant (standaard 1 uur).
   const gekozen = isDuurId(duur) ? duur : (await leesDuren(userId))[klantVan(a.client_name)];
   const done = await st.decideAuth(rid, userId, true, sha256(code), gekozen, ruimteOf(ruimte), a.agent ? v2 : null);
-  return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state }) } : { error: 'EXPIRED' };
+  return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state, iss: ISSUER }) } : { error: 'EXPIRED' };
 }
 
 // ---------------- token-eindpunt (RFC 6749) ----------------
@@ -602,7 +639,18 @@ async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
   }
 }
 
-export async function rpcPost(authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
+/**
+ * MCP-001 R1: JSON-RPC-batches bestaan alleen in protocol 2025-03-26; sinds 2025-06-18 zijn ze uit de specificatie. Een klant die
+ * met de kop MCP-Protocol-Version een nieuwere versie aankondigt en tóch een batch stuurt, krijgt -32600. Zonder kop (oude klanten)
+ * blijft het zoals het was — zo breekt niets dat nu werkt.
+ */
+export const batchToegestaan = (protocolKop: string | undefined): boolean => {
+  const v = String(protocolKop || '').trim();
+  return !v || v === '2025-03-26' || v === '2024-11-05';
+};
+export const BATCH_FOUT = (versie: string) => rpcError(null, -32600, `JSON-RPC batch is not part of MCP ${String(versie).slice(0, 20)} — send one message per request`);
+
+export async function rpcPost(authorization: string | undefined, rawBody: string, protocolKop?: string): Promise<RouterResponse> {
   const who = await authenticate(authorization);
   // Een v2-token (gebonden aan /<agent>) werkt niet op het oude /mcp: daar zouden de rechten per hulpmiddel niet gelden.
   if (!who || who.agent) return unauthorized(!!String(authorization || '').trim());
@@ -616,6 +664,7 @@ export async function rpcPost(authorization: string | undefined, rawBody: string
   try { parsed = JSON.parse(rawBody); } catch { return respond(400, rpcError(null, -32700, 'Parse error')); }
 
   if (Array.isArray(parsed)) { // JSON-RPC batch (specificatie 2025-03-26)
+    if (!batchToegestaan(protocolKop)) return respond(400, BATCH_FOUT(String(protocolKop)));
     const out = (await Promise.all(parsed.map((m) => handleMessage(who, m)))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }

@@ -159,6 +159,8 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.connector.v2.herverbinden': ['Перепідключено агента', 'Agent opnieuw verbonden'],
   'owner.connector.v2.instellingen': ['Змінено налаштування конектора', 'Connectorinstellingen gewijzigd'],
   'owner.mcp.grant.approved': ['Схвалено підключення ШІ', 'AI-verbinding goedgekeurd'],
+  'owner.mcp.cimd.denied': ['MCP: відхилено документ метаданих клієнта (CIMD)', 'MCP: metadatadocument van de klant (CIMD) geweigerd'],
+  'owner.mcp.origin.denied': ['MCP: відхилено запит з недозволеного походження (Origin)', 'MCP: verzoek van niet-toegestane herkomst (Origin) geweigerd'],
   'owner.mcp.grant.denied': ['Відхилено підключення ШІ', 'AI-verbinding afgewezen'],
   'owner.mcp.grant.revoked': ['Відкликано підключення ШІ', 'AI-verbinding ingetrokken'],
   'owner.mcp.grant.connected': ['Підключено ШІ', 'AI verbonden'],

@@ -29,7 +29,7 @@ import { ontleed, toolNaam } from '../shared/connector-v2/namen';
 import { TECH_PROFIEL_UIT } from '../shared/ai-ruimte';
 import { breidtUit, isKant, schoon, STANDAARD } from '../shared/connector-v2/rechten';
 import { basisVan, berekenMassa, type MassaInvoer, type MassaUitkomst } from '../shared/connector-v2/massa';
-import { authenticate, ISSUER, lijstTools, PROTOCOL_VERSIONS, revokeUserGrant, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
+import { authenticate, BATCH_FOUT, batchToegestaan, ISSUER, lijstTools, PROTOCOL_VERSIONS, revokeUserGrant, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
 import { zetToegang } from './ai-toegang';
 import { meldLijstGewijzigd, sluitStromenVan } from './connector-v2-stroom';
 import { aiPoortNu } from './ai-ruimte-poort';
@@ -349,7 +349,7 @@ export async function koppelingVan(slug: AgentSlug, authorization: string | unde
   return { koppeling, rechten, via: 'v2' };
 }
 
-export async function rpc(slug: string, authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
+export async function rpc(slug: string, authorization: string | undefined, rawBody: string, protocolKop?: string): Promise<RouterResponse> {
   if (!isAgentSlug(slug)) return respond(404, { error: 'unknown_agent' });
   const toegang = await koppelingVan(slug, authorization);
   if ('statusCode' in toegang) return toegang;
@@ -366,6 +366,7 @@ export async function rpc(slug: string, authorization: string | undefined, rawBo
   // een andere waarheid zien dan de andere helft). Elke tools/call controleert hem daarna in roepTool nog eens.
   const ruimte = await levendeRuimte(koppeling);
   if (Array.isArray(parsed)) {
+    if (!batchToegestaan(protocolKop)) return respond(400, BATCH_FOUT(String(protocolKop)));
     const out = (await Promise.all(parsed.map((m) => bericht(koppeling, rechten, m, ruimte, via)))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }
