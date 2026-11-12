@@ -1,0 +1,449 @@
+/* drones.css — вкладка «Гараж → Безпілотники»: підменю й штамп «Лише симуляція», речення парку, картки дронів, док і батареї,
+   місії на схемі ділянки, кабіна польоту (кадр, HUD, телеметрія, hv-vluchtbalk), журнал польотів, правила й зони, перевірка перед зльотом.
+   Числа лежать на папері; кадр кабіни — темний «екран камери» з незмінних токенів --text-on-licht / --text-on-donker (однаковий у темах).
+   Кольори — лише токени; адаптивність — контейнерні запити (drn — сторінка вкладки, drnkab — кабіна, drnvb — смуга польоту). */
+
+/* ───────────── Сторінка й сітка ───────────── */
+.hv-drn { display: grid; gap: var(--hv-kier); min-inline-size: 0; container: drn / inline-size; }
+.hv-drn .hv-blok { min-inline-size: 0; }
+.hv-drn-rooster { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); align-items: start; min-inline-size: 0; }
+.hv-drn-kolom { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+.hv-drn-kolom > .hv-kaart + .hv-kaart { margin-block-start: 0; }
+@container drn (min-width: 860px) {
+  .hv-drn-rooster { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .hv-drn-rooster.is-breed-links { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .hv-drn-rooster.is-breed-rechts { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+}
+.hv-drn-klein { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-drn-chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-drn-terug { display: flex; }
+.hv-drn-terug > .hv-knop { margin-inline-start: calc(var(--ruimte-2) * -1); }
+
+/* ───────────── Підменю й постійний штамп ───────────── */
+.hv-drn-nav { display: flex; align-items: center; gap: var(--ruimte-3); min-inline-size: 0; flex-wrap: wrap; }
+/* Другий рівень — той самий сегмент, що й в інших зонах: розмітка несе класи ядра hv-segment / hv-segment__deel
+   (тло --surface, активна клітинка --panel з обвідкою). Тут лише розкладка: широко — клітинки за вмістом,
+   вузько — п'ять рівних клітинок без значків, усі розділи видно одразу (стрічка не гортається, активний пункт не ховається). */
+.hv-segment.hv-drn-nav__rij { grid-auto-columns: auto; max-inline-size: 100%; }
+.hv-drn-nav__punt { padding-inline: var(--ruimte-3); white-space: nowrap; }
+.hv-drn-nav__kort { display: none; }
+.hv-drn-nav__stip { flex: none; margin-inline-start: 2px; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--hv-batterij); box-shadow: 0 0 0 3px var(--hv-batterij-zacht); animation: hv-drn-puls var(--hv-duur-puls) ease-in-out infinite; }
+@keyframes hv-drn-puls { 50% { opacity: 0.35; } }
+.hv-drn-sim { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--info-zacht); color: var(--text); font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; margin-inline-start: auto; }
+.hv-drn-sim > .hv-ic { color: var(--info); }
+@container drn (max-width: 620px) {
+  .hv-segment.hv-drn-nav__rij { flex: 1 1 100%; grid-auto-columns: minmax(0, 1fr); }
+  .hv-drn-nav__punt { padding-inline: var(--ruimte-1); gap: 4px; }
+  .hv-drn-nav__punt > .hv-ic, .hv-drn-nav__vol { display: none; }
+  .hv-drn-nav__kort { display: inline; }
+}
+/* поки штамп не вміщується поруч зі смугою розділів, він стає під нею ліворуч, а не висить сам біля правого краю */
+@container drn (max-width: 760px) { .hv-drn-sim { margin-inline-start: 0; } }
+@container drn (max-width: 420px) { .hv-drn-nav__punt { font-size: var(--tekst-mini); } }
+
+/* ───────────── Герой зони: спільний o.zoneheld (папір без градієнта, лічильники однієї форми) ─────────────
+   Власного героя зона не має. Тут лише ряд під реченням: чип дока й головна дія «Відкрити кабіну» (тільки в польоті)
+   стоять окремим рядом ліворуч, а не третьою колонкою. */
+.hv-drn-zoneheld .hv-zoneheld__acties { grid-column: 1 / -1; justify-content: flex-start; }
+@container zoneheld (min-width: 720px) {
+  .hv-drn-zoneheld .hv-zoneheld__raam { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
+/* ───────────── Кількість, смуга заряду ───────────── */
+.hv-drn-balk { position: relative; display: block; block-size: 6px; border-radius: 999px; background: var(--surface2); overflow: visible; min-inline-size: 40px; }
+.hv-drn-balk > i { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; background: var(--toon); transition: width var(--hv-duur-3); }
+.hv-drn-balk > b { position: absolute; inset-block: -3px; inline-size: 2px; background: var(--text); border-radius: 1px; }
+.hv-drn-live { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--hv-batterij-zacht); color: var(--text); font-size: var(--tekst-mini); font-weight: 700; }
+.hv-drn-live::before { content: ""; inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--hv-batterij); animation: hv-drn-puls var(--hv-duur-puls) ease-in-out infinite; }
+.hv-drn-wacht { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+
+/* ───────────── Заголовки карток ───────────── */
+.hv-drn-kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); min-block-size: 32px; margin-block-end: var(--ruimte-3); }
+.hv-drn-kop h3 { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-inline-size: 0; font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); color: var(--text); }
+.hv-drn-kop h3 > .hv-ic { flex: none; inline-size: 28px; block-size: 28px; padding: 6px; border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-drn-kop.hv-toon-batterij h3 > .hv-ic, .hv-drn-kop.hv-toon-let-op h3 > .hv-ic { background: var(--toon-zacht); color: var(--toon); }
+.hv-drn-kop__rechts { display: inline-flex; align-items: center; gap: var(--ruimte-2); flex-wrap: wrap; justify-content: flex-end; min-inline-size: 0; text-align: end; }
+.hv-drn-kop__rechts > .hv-knop { margin-block: -6px; margin-inline-end: calc(var(--ruimte-2) * -1); }
+
+/* ───────────── Картки дронів ───────────── */
+.hv-drn-vloot { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); }
+@container drn (min-width: 620px) { .hv-drn-vloot { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hv-drn-rooster .hv-drn-vloot { grid-template-columns: minmax(0, 1fr); }
+@container drn (min-width: 1180px) { .hv-drn-rooster .hv-drn-vloot { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hv-drn-dkaart {
+  display: grid; align-content: start; min-inline-size: 0; padding: var(--ruimte-3) var(--ruimte-4);
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); transition: box-shadow var(--hv-duur-2);
+}
+.hv-drn-dkaart:hover { box-shadow: var(--schaduw-2); }
+.hv-drn-dkaart.is-lucht { border-color: var(--hv-batterij); box-shadow: 0 0 0 1px var(--hv-batterij), var(--schaduw-1); }
+.hv-drn-dkaart.is-alarm { border-color: var(--fout); box-shadow: 0 0 0 1px var(--fout), var(--schaduw-1); }
+.hv-drn-dkaart .hv-telemetrie__lijf { padding-block: var(--ruimte-1) var(--ruimte-2); }
+.hv-drn-dkaart .hv-telemetrie__silhouet { inline-size: 64px; block-size: 64px; display: grid; place-items: center; border-radius: 20px; background: var(--toon-zacht); color: var(--toon); }
+.hv-drn-dkaart .hv-telemetrie.hv-toon-neutraal .hv-telemetrie__silhouet { background: var(--surface); color: var(--text); }
+.hv-drn-dkaart.is-lucht .hv-telemetrie__silhouet > .hv-ic { animation: hv-drn-zweef 2.4s ease-in-out infinite; }
+@keyframes hv-drn-zweef { 50% { transform: translateY(-3px); } }
+.hv-drn-dkaart__voet { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); padding-block-start: var(--ruimte-3); margin-block-start: var(--ruimte-1); border-block-start: 1px solid var(--line); }
+.hv-drn-dkaart__acties { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); margin-inline-start: auto; }
+@container drn (max-width: 420px) { .hv-drn-dkaart__acties { margin-inline-start: 0; inline-size: 100%; } .hv-drn-dkaart__acties > .hv-knop { flex: 1 1 auto; } }
+
+/* ───────────── Док і батареї ───────────── */
+.hv-drn-dock .hv-drn-chips { margin-block-end: var(--ruimte-3); }
+.hv-drn-vakken { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); margin-block-end: var(--ruimte-2); }
+@container drn (min-width: 1180px) { .hv-drn-vakken { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.hv-drn-vak { display: grid; gap: 2px; align-content: start; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); border: 1px dashed var(--line); min-inline-size: 0; }
+.hv-drn-vak.is-bezet { border-style: solid; background: var(--panel); }
+.hv-drn-vak.is-accu { border-style: solid; }
+.hv-drn-vak__teken { display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 10px; background: var(--panel); color: var(--text); margin-block-end: var(--ruimte-1); }
+.hv-drn-vak.is-accu .hv-drn-vak__teken { background: var(--hv-batterij-zacht); color: var(--hv-batterij); }
+.hv-drn-vak__naam { font-size: var(--tekst-klein); font-weight: 600; overflow-wrap: anywhere; }
+.hv-drn-vak__sub { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-vak .hv-drn-balk { margin-block-start: var(--ruimte-1); }
+.hv-drn-rij { display: flex; align-items: center; gap: var(--ruimte-3); padding-block: var(--ruimte-2); border-block-start: 1px solid var(--line); min-block-size: var(--hv-rij); }
+.hv-drn-rij__tekst { display: grid; gap: 2px; flex: 1 1 auto; min-inline-size: 0; font-size: var(--tekst-klein); }
+.hv-drn-rij__tekst > span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-rij > .hv-ic { color: var(--muted); flex: none; }
+.hv-drn-accus__lijst { display: grid; gap: var(--ruimte-2); }
+.hv-drn-accu {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px var(--ruimte-3); align-items: center; padding: var(--ruimte-3);
+  border-radius: var(--straal-m); background: var(--surface); min-inline-size: 0;
+}
+.hv-drn-accu.is-rij + .hv-drn-accu.is-rij { margin-block-start: var(--ruimte-2); }
+.hv-drn-accu__kop { display: grid; gap: 2px; min-inline-size: 0; font-size: var(--tekst-klein); }
+.hv-drn-accu__kop > span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-accu__lading { font-size: var(--hv-tekst-kop); font-weight: 600; letter-spacing: -0.02em; }
+.hv-drn-accu > .hv-drn-balk { grid-column: 1 / -1; background: var(--panel); }
+.hv-drn-accu__feiten { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px var(--ruimte-3); font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-accu__feiten b { font-weight: 700; color: var(--text); }
+.hv-drn-accu__feiten .hv-toon-let-op b { color: var(--warn); }
+
+/* ───────────── Місії: картки ───────────── */
+.hv-drn-missies__kop { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); align-items: center; margin-block-end: var(--hv-kier); }
+.hv-drn-missies { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); }
+@container drn (min-width: 1180px) { .hv-drn-missies { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.hv-drn-mk { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+@container drn (min-width: 520px) and (max-width: 1179px) { .hv-drn-mk { grid-template-columns: minmax(160px, 0.8fr) minmax(0, 1.2fr); align-items: center; } }
+.hv-drn-mk .hv-drn-kaart { border-radius: var(--straal-m); }
+.hv-drn-mk__tekst { display: grid; gap: var(--ruimte-1); min-inline-size: 0; }
+.hv-drn-mk__tekst h4 { display: flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-basis); font-weight: 600; }
+.hv-drn-mk__tekst h4 > .hv-ic { color: var(--accent); }
+.hv-drn-mk__tekst > p { font-size: var(--tekst-klein); color: var(--muted); text-wrap: pretty; }
+.hv-drn-mk__feiten { display: flex; flex-wrap: wrap; gap: 4px; margin-block-start: var(--ruimte-1); }
+.hv-drn-mk__feiten > span { padding: 2px 8px; border-radius: 999px; background: var(--surface); color: var(--text); font-size: var(--tekst-mini); font-weight: 600; }
+.hv-drn-mk__feiten > span.is-te-laag { background: var(--warn-zacht); }
+.hv-drn-mk__knoppen { display: flex; flex-wrap: wrap; gap: var(--ruimte-1); margin-block-start: var(--ruimte-1); }
+
+/* ───────────── Агенти ───────────── */
+.hv-drn-agent__zin { font-size: var(--tekst-klein); line-height: 1.5; text-wrap: pretty; margin-block-end: var(--ruimte-3); }
+.hv-drn-agent__standen { display: grid; gap: var(--ruimte-2); margin-block-end: var(--ruimte-3); }
+.hv-drn-agent__standen > div { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); min-block-size: var(--hv-tik); }
+.hv-drn-agent__standen dt { font-size: var(--tekst-klein); font-weight: 600; min-inline-size: 0; }
+.hv-drn-agent__standen dd { display: inline-flex; align-items: center; gap: var(--ruimte-2); flex: none; font-size: var(--tekst-klein); }
+
+/* ───────────── Схема ділянки (метри у viewBox, штрих не масштабується) ───────────── */
+.hv-drn-kaart { display: block; inline-size: 100%; block-size: auto; border-radius: var(--straal-m); background: var(--surface); }
+.hv-drn-kaart * { vector-effect: non-scaling-stroke; }
+.hv-drn-w__straat { fill: var(--surface2); }
+.hv-drn-w__gras { fill: var(--hv-zon-zacht); }
+.hv-drn-w__tuin { fill: color-mix(in srgb, var(--hv-zon-zacht) 50%, var(--surface2)); }
+.hv-drn-w__bed { stroke: var(--hv-zon); stroke-width: 1px; stroke-dasharray: 2 2; }
+.hv-drn-w__pad { fill: var(--surface); }
+.hv-drn-w__terras { fill: var(--surface2); stroke: var(--line); stroke-width: 1px; }
+.hv-drn-w__huis { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5px; }
+.hv-drn-w__nok { stroke: var(--accent); stroke-width: 1.5px; }
+.hv-drn-w__schoorsteen { fill: var(--accent); }
+.hv-drn-w__paneel { fill: var(--hv-koud-zacht); stroke: var(--hv-koud); stroke-width: 1px; }
+.hv-drn-w__paneel.is-warm { fill: var(--hv-warm-zacht); stroke: var(--hv-warm); stroke-width: 2px; }
+.hv-drn-w__garage { fill: var(--surface); stroke: var(--hv-omtrek); stroke-width: 1px; }
+.hv-drn-w__boom { fill: color-mix(in srgb, var(--hv-zon) 28%, var(--hv-zon-zacht)); stroke: var(--hv-zon); stroke-width: 1px; }
+.hv-drn-w__grens { fill: none; stroke: var(--hv-omtrek); stroke-width: 1.5px; stroke-dasharray: 5 3; }
+.hv-drn-w__dock { fill: var(--panel); stroke: var(--text); stroke-width: 2px; }
+.hv-drn-w__h { fill: none; stroke: var(--text); stroke-width: 1.5px; }
+.hv-drn-w__buren { stroke: none; }
+.hv-drn-w__arclijn { stroke: var(--hv-arcering); stroke-width: 1px; opacity: 0.35; }
+.hv-drn-w__straal { fill: none; stroke: var(--info); stroke-width: 1.5px; stroke-dasharray: 2 4; }
+.hv-drn-w__route { fill: none; stroke: var(--accent); stroke-width: 2.5px; stroke-linejoin: round; stroke-linecap: round; }
+.hv-drn-w__route.is-plan { stroke-width: 1.5px; stroke-dasharray: 4 4; opacity: 0.7; }
+.hv-drn-w__punt circle { fill: var(--panel); stroke: var(--accent); stroke-width: 2px; }
+.hv-drn-w__punt text { fill: var(--text); font-weight: 700; text-anchor: middle; }
+.hv-drn-w__punt.is-gedaan circle { fill: var(--accent-soft); }
+.hv-drn-w__punt.is-gekozen circle { fill: var(--accent); stroke: var(--text); }
+.hv-drn-w__punt.is-gekozen text { fill: var(--accentText); }
+.hv-drn-w__punt.is-buiten circle { stroke: var(--fout); stroke-dasharray: 3 2; }
+.hv-drn-w__spoor { fill: none; stroke: var(--hv-koud); stroke-width: 2.5px; stroke-linejoin: round; stroke-linecap: round; }
+.hv-drn-w__laatst { fill: none; stroke: var(--fout); stroke-width: 1.5px; stroke-dasharray: 3 3; }
+.hv-drn-w__drone { transition: transform 0.5s linear; transform-box: view-box; transform-origin: 0 0; }
+.hv-drn-w__drone circle { fill: var(--text); stroke: var(--panel); stroke-width: 2px; }
+.hv-drn-w__drone path { fill: var(--panel); }
+.hv-drn-w__drone.is-kwijt circle { fill: var(--panel); stroke: var(--fout); stroke-dasharray: 2 2; }
+.hv-drn-w__drone.is-kwijt path { fill: var(--fout); }
+.hv-drn-w__drone.is-afspeel { transition: none; }
+.hv-drn-w__drone.is-afspeel circle { fill: var(--hv-koud); stroke: var(--panel); }
+.hv-drn-legenda { display: flex; flex-wrap: wrap; gap: 4px var(--ruimte-4); margin-block: var(--ruimte-2) 0; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-drn-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.hv-drn-legenda i { inline-size: 18px; block-size: 10px; border-radius: 3px; }
+.hv-drn-legenda i.is-route { block-size: 3px; background: var(--accent); }
+.hv-drn-legenda i.is-straal { block-size: 0; border-block-start: 2px dotted var(--info); }
+.hv-drn-legenda i.is-buren { background: repeating-linear-gradient(45deg, var(--hv-arcering) 0 1px, transparent 1px 5px); opacity: 0.6; }
+.hv-drn-legenda i.is-dock { inline-size: 10px; border: 2px solid var(--text); background: var(--panel); }
+
+/* ───────────── hv-vluchtbalk — смуга польоту ───────────── */
+.hv-vluchtbalk {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-2) var(--ruimte-3); min-block-size: var(--hv-rij);
+  border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-2); container: drnvb / inline-size; min-inline-size: 0;
+}
+.hv-vluchtbalk.is-vast { position: sticky; inset-block-end: var(--ruimte-2); z-index: 6; }
+.hv-vluchtbalk.hv-toon-batterij { border-color: var(--hv-batterij); }
+.hv-vluchtbalk.hv-toon-alarm { border-color: var(--fout); box-shadow: 0 0 0 1px var(--fout), var(--schaduw-2); }
+.hv-vluchtbalk__stand { display: flex; align-items: center; gap: var(--ruimte-3); flex: 1 1 220px; min-inline-size: 0; }
+.hv-vluchtbalk__teken { flex: none; display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--toon-zacht, var(--surface)); color: var(--toon, var(--text)); }
+.hv-vluchtbalk.hv-toon-neutraal .hv-vluchtbalk__teken { background: var(--surface); color: var(--text); }
+.hv-vluchtbalk.hv-toon-batterij .hv-vluchtbalk__teken > .hv-ic { animation: hv-drn-zweef 2.4s ease-in-out infinite; }
+.hv-vluchtbalk__tekst { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-vluchtbalk__tekst > strong { font-size: var(--tekst-klein); font-weight: 700; overflow-wrap: anywhere; }
+.hv-vluchtbalk__getallen { display: flex; flex-wrap: wrap; gap: 2px var(--ruimte-3); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-vluchtbalk__getallen > span { display: inline-flex; align-items: center; gap: 4px; }
+.hv-vluchtbalk__getallen .hv-maat__getal { color: var(--text); }
+.hv-vluchtbalk__knoppen { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); flex: 1 1 auto; justify-content: flex-end; }
+.hv-vluchtbalk__knoppen > .hv-knop { flex: 0 1 auto; }
+.hv-vluchtbalk.is-kwijt .hv-vluchtbalk__knoppen > .hv-knop { opacity: 0.6; }
+.hv-vluchtbalk__kort { display: none; }
+.hv-vluchtbalk__knop.is-gedrukt { background: var(--surface2); border-color: var(--text); }
+.hv-drn .hv-knop.is-uit, .hv-laag .hv-knop.is-uit { opacity: 0.55; }
+@container drnvb (max-width: 560px) {
+  .hv-vluchtbalk__knoppen { inline-size: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hv-vluchtbalk__knoppen > .hv-knop { padding-inline: var(--ruimte-2); gap: 6px; }
+  .hv-vluchtbalk__vol { display: none; }
+  .hv-vluchtbalk__knop { white-space: normal; line-height: 1.15; text-align: center; }
+  .hv-vluchtbalk__knop.is-gedrukt > .hv-ic { display: none; }
+  .hv-vluchtbalk__kort { display: inline; }
+  .hv-vluchtbalk__knoppen > .hv-knop:only-child { grid-column: 1 / -1; }
+}
+
+/* ───────────── Кабіна ───────────── */
+/* сповіщення не накривають смугу польоту з діями безпеки: у кабіні вони стоять угорі (як під час діалогу) */
+.hv-doek:has(.hv-drn--cockpit) .hv-lagen > .hv-toosten { inset-block: calc(var(--hv-kop-h) + var(--ruimte-2)) auto; }
+.hv-drn--cockpit { padding-block-end: var(--ruimte-2); }
+.hv-drn-cockpit { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "beeld" "getallen" "kaart"; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-drn-cockpit__beeld { grid-area: beeld; min-inline-size: 0; }
+.hv-drn-cockpit__getallen { grid-area: getallen; display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+.hv-drn-cockpit__kaartvak { grid-area: kaart; display: grid; gap: var(--ruimte-2); align-content: start; min-inline-size: 0; }
+@container drn (min-width: 860px) {
+  .hv-drn-cockpit { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); grid-template-areas: "beeld getallen" "kaart getallen"; }
+}
+@container drn (min-width: 1240px) {
+  .hv-drn-cockpit { grid-template-columns: minmax(0, 1.9fr) minmax(320px, 1fr); }
+}
+.hv-drn-cockpit__kies { display: flex; }
+.hv-drn-cockpit__kaart .hv-drn-kaart { margin-block-end: var(--ruimte-2); }
+.hv-drn-missie__doel { font-size: var(--tekst-klein); color: var(--muted); margin-block: calc(var(--ruimte-2) * -1) var(--ruimte-3); text-wrap: pretty; }
+.hv-drn-missie__kaart .hv-drn-kaart { max-block-size: 520px; }
+.hv-drn-vluchtdetail .hv-drn-kaart { max-block-size: 460px; }
+
+/* кадр камери: однаковий темний «екран» у всіх темах */
+.hv-drn-video { position: relative; border-radius: var(--straal-l); overflow: hidden; background: var(--text-on-licht); box-shadow: var(--schaduw-2); isolation: isolate; }
+.hv-drn-video > svg { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 16 / 9; }
+.hv-drn-video__achter { fill: var(--text-on-licht); }
+.hv-drn-video__wereld { transition: transform 0.5s linear; transform-box: view-box; transform-origin: 0 0; }
+.hv-drn-video__wereld * { vector-effect: non-scaling-stroke; }
+.hv-drn-video .hv-drn-video__buren { stroke: none; }
+.hv-drn-video__arc { stroke: var(--text-on-donker); stroke-width: 1px; opacity: 0.16; }
+.hv-drn-video .hv-drn-w__straat { fill: color-mix(in srgb, var(--text-on-donker) 10%, var(--text-on-licht)); }
+.hv-drn-video .hv-drn-w__gras { fill: color-mix(in srgb, var(--ok-vlak) 22%, var(--text-on-licht)); }
+.hv-drn-video .hv-drn-w__tuin { fill: color-mix(in srgb, var(--ok-vlak) 34%, var(--text-on-licht)); }
+.hv-drn-video .hv-drn-w__bed { stroke: color-mix(in srgb, var(--text-on-donker) 30%, transparent); }
+.hv-drn-video .hv-drn-w__pad, .hv-drn-video .hv-drn-w__terras { fill: color-mix(in srgb, var(--text-on-donker) 22%, var(--text-on-licht)); stroke: none; }
+.hv-drn-video .hv-drn-w__huis { fill: color-mix(in srgb, var(--accent) 30%, var(--text-on-licht)); stroke: color-mix(in srgb, var(--text-on-donker) 45%, transparent); }
+.hv-drn-video .hv-drn-w__nok { stroke: color-mix(in srgb, var(--text-on-donker) 55%, transparent); }
+.hv-drn-video .hv-drn-w__schoorsteen { fill: color-mix(in srgb, var(--text-on-donker) 40%, var(--text-on-licht)); }
+.hv-drn-video .hv-drn-w__paneel { fill: color-mix(in srgb, var(--info-vlak) 40%, var(--text-on-licht)); stroke: color-mix(in srgb, var(--text-on-donker) 40%, transparent); }
+.hv-drn-video .hv-drn-w__paneel.is-warm { fill: color-mix(in srgb, var(--fout-vlak) 70%, var(--text-on-licht)); stroke: var(--text-on-donker); }
+.hv-drn-video .hv-drn-w__garage { fill: color-mix(in srgb, var(--text-on-donker) 28%, var(--text-on-licht)); stroke: none; }
+.hv-drn-video .hv-drn-w__boom { fill: color-mix(in srgb, var(--ok-vlak) 45%, var(--text-on-licht)); stroke: color-mix(in srgb, var(--text-on-donker) 25%, transparent); }
+.hv-drn-video .hv-drn-w__grens { stroke: color-mix(in srgb, var(--text-on-donker) 55%, transparent); }
+.hv-drn-video .hv-drn-w__dock { fill: var(--text-on-licht); stroke: var(--text-on-donker); }
+.hv-drn-video .hv-drn-w__h { stroke: var(--text-on-donker); }
+.hv-drn-video .hv-drn-w__route { stroke: var(--hv-aan-vlak); stroke-width: 2px; stroke-dasharray: 6 5; opacity: 0.85; }
+.hv-drn-hud { fill: none; }
+.hv-drn-hud__kruis { stroke: var(--text-on-donker); stroke-width: 2px; fill: none; opacity: 0.9; }
+.hv-drn-hud__tik { stroke: var(--text-on-donker); stroke-width: 1.5px; opacity: 0.75; }
+.hv-drn-hud__as { stroke: var(--text-on-donker); stroke-width: 2px; opacity: 0.5; }
+.hv-drn-hud__wijzer { fill: var(--text-on-donker); }
+.hv-drn-hud__wijzer.is-hoogte { transition: transform 0.5s linear; }
+.hv-drn-video__kwijt { pointer-events: none; }
+.hv-drn-video.is-kwijt { box-shadow: 0 0 0 2px var(--fout), var(--schaduw-2); }
+/* написи HUD — HTML поверх кадру: сталий кегль на телефоні й комп'ютері */
+.hv-drn-video { container: drnvid / inline-size; }
+.hv-drn-video__hud { position: absolute; inset: 0; pointer-events: none; color: var(--text-on-donker); font-variant-numeric: tabular-nums; }
+.hv-drn-hud__kompas { position: absolute; inset-inline: 0; inset-block-start: 9.5%; block-size: 0; }
+.hv-drn-hud__letter { position: absolute; transform: translateX(-50%); font-size: var(--tekst-mini); font-weight: 700; text-shadow: 0 0 3px var(--text-on-licht), 0 0 2px var(--text-on-licht); }
+.hv-drn-hud__plafond { position: absolute; inset-inline-end: 2.2%; inset-block-start: 9.5%; font-size: var(--tekst-mini); font-weight: 600; opacity: 0.85; }
+.hv-drn-hud__hoogte { position: absolute; inset-inline-end: 7.5%; transform: translateY(-50%); font-size: var(--tekst-basis); font-weight: 700; transition: top 0.5s linear; text-shadow: 0 0 4px var(--text-on-licht); }
+.hv-drn-hud__snelheid { position: absolute; inset-inline-start: 3%; inset-block-start: 50%; transform: translateY(-50%); font-size: var(--tekst-basis); font-weight: 700; text-shadow: 0 0 4px var(--text-on-licht); }
+.hv-drn-video__hud small { font-size: var(--tekst-mini); font-weight: 600; opacity: 0.85; }
+.hv-drn-video__pil {
+  position: absolute; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--text-on-licht) 72%, transparent); border: 1px solid color-mix(in srgb, var(--text-on-donker) 22%, transparent);
+  font-size: var(--tekst-mini); font-weight: 600; color: var(--text-on-donker);
+}
+.hv-drn-video__pil.is-links { inset-inline-start: 2.5%; inset-block-end: 4%; }
+.hv-drn-video__pil.is-rechts { inset-inline-end: 2.5%; inset-block-end: 4%; }
+.hv-drn-video__pil.is-boven { inset-inline-start: 2.5%; inset-block-start: 4%; }
+.hv-drn-video__bericht {
+  position: absolute; inset-inline-start: 50%; inset-block-start: 50%; transform: translate(-50%, -50%); display: grid; gap: 2px; justify-items: center; text-align: center;
+  max-inline-size: 86%; padding: var(--ruimte-3) var(--ruimte-5); border-radius: var(--straal-l); background: color-mix(in srgb, var(--text-on-licht) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-on-donker) 25%, transparent);
+}
+.hv-drn-video__bericht.is-alarm { border: 2px solid var(--fout-vlak); }
+.hv-drn-video__bericht strong { font-size: var(--hv-tekst-kop); font-weight: 700; }
+.hv-drn-video__bericht span { font-size: var(--tekst-mini); font-weight: 600; opacity: 0.9; }
+.hv-drn-video.is-grond .hv-drn-hud__hoogte, .hv-drn-video.is-grond .hv-drn-hud__snelheid { opacity: 0.6; }
+@container drnvid (max-width: 460px) {
+  .hv-drn-video__pil.is-boven { display: none; }
+  .hv-drn-video__pil { padding: 3px 8px; }
+  .hv-drn-hud__hoogte, .hv-drn-hud__snelheid { font-size: var(--tekst-klein); }
+  .hv-drn-video__bericht { padding: var(--ruimte-2) var(--ruimte-3); }
+  .hv-drn-video__bericht strong { font-size: var(--tekst-basis); }
+}
+.hv-drn-video.is-kwijt .hv-drn-video__wereld { filter: grayscale(1) brightness(0.8); transition: none; }
+
+/* телеметрія */
+.hv-drn-tele { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); container: drntele / inline-size; }
+.hv-drn-tele__cel { position: relative; display: grid; gap: 2px; align-content: start; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); min-inline-size: 0; }
+.hv-drn-tele__cel.is-hoogte { grid-column: 1 / -1; }
+.hv-drn-tele__cel .hv-drn-balk { margin-block-start: var(--ruimte-2); background: var(--panel); }
+.hv-drn-tele__cel.is-let-op { background: var(--warn-zacht); }
+.hv-drn-tele__cel.is-alarm { background: var(--fout-zacht); }
+.hv-drn-tele__label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-drn-tele__waarde { font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hv-drn-tele__cel.is-hoogte .hv-drn-tele__waarde { font-size: var(--hv-getal-l); }
+/* число плитки — завжди один рядок: у вузькій колонці (плитка вужча за ≈ 150 px) кегль меншає, ряд плиток лишається рівним */
+@container drntele (max-width: 310px) { .hv-drn-tele__cel:not(.is-hoogte) .hv-drn-tele__waarde { font-size: var(--hv-tekst-kop); } }
+.hv-drn-tele__sub { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-tele__nee { color: var(--fout); }
+.hv-drn-tele.is-oud .hv-drn-tele__cel { background: repeating-linear-gradient(135deg, var(--surface) 0 8px, var(--panel) 8px 16px); }
+.hv-drn-tele.is-oud .hv-drn-tele__waarde { color: var(--muted); }
+.hv-drn-tele__vers { display: flex; align-items: center; gap: var(--ruimte-2); margin-block: var(--ruimte-3) 0; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-drn-tele__vers.is-alarm { color: var(--fout); }
+.hv-drn-voortgang { display: flex; flex-wrap: wrap; gap: 4px; }
+.hv-drn-voortgang > span { padding: 4px 10px; border-radius: 999px; background: var(--surface); font-size: var(--tekst-mini); font-weight: 600; }
+.hv-drn-voortgang > span:first-child { background: var(--accent-soft); }
+.hv-drn-piloot { display: flex; gap: var(--ruimte-2); align-items: flex-start; margin-block-start: var(--ruimte-3); padding-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); font-size: var(--tekst-mini); color: var(--muted); line-height: 1.45; }
+.hv-drn-piloot > .hv-ic { flex: none; color: var(--text); }
+.hv-drn-noot { padding-inline: var(--ruimte-2); }
+.hv-drn-simrij { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); padding: var(--ruimte-1) var(--ruimte-3); border-radius: var(--straal-m); border: 1px dashed var(--info); background: var(--info-zacht); }
+.hv-drn-simrij__label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 700; color: var(--text); margin-inline-end: auto; }
+.hv-drn-simrij__label > .hv-ic { color: var(--info); }
+
+/* ───────────── Сторінка місій ───────────── */
+.hv-drn-missiekop { display: flex; flex-wrap: wrap; gap: var(--hv-kier); align-items: center; justify-content: space-between; min-inline-size: 0; }
+.hv-drn-missiekop__acties { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); align-items: center; }
+.hv-drn-missielijst { display: flex; gap: var(--ruimte-2); overflow-x: auto; scrollbar-width: none; min-inline-size: 0; max-inline-size: 100%; padding-block: 2px; }
+.hv-drn-missielijst::-webkit-scrollbar { display: none; }
+.hv-drn-missieknop {
+  display: flex; align-items: center; gap: var(--ruimte-3); flex: none; min-block-size: 56px; padding: var(--ruimte-2) var(--ruimte-4) var(--ruimte-2) var(--ruimte-3);
+  border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); text-align: start; transition: border-color var(--hv-duur-1);
+}
+.hv-drn-missieknop > .hv-ic { color: var(--accent); }
+.hv-drn-missieknop > span { display: grid; gap: 2px; font-size: var(--tekst-klein); }
+.hv-drn-missieknop > span > span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-missieknop.is-gekozen { border: 2px solid var(--text); background: var(--surface); }
+.hv-drn-punten { display: grid; gap: 4px; counter-reset: none; }
+.hv-drn-puntrij { display: flex; align-items: center; gap: var(--ruimte-3); inline-size: 100%; min-block-size: var(--hv-tik); padding: 4px var(--ruimte-3) 4px 4px; border-radius: var(--straal-m); text-align: start; font-size: var(--tekst-klein); transition: background var(--hv-duur-1); }
+.hv-drn-puntrij:hover { background: var(--surface); }
+.hv-drn-puntrij.is-gekozen { background: var(--surface2); box-shadow: inset 0 0 0 2px var(--text); }
+.hv-drn-puntrij__nr { flex: none; display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 50%; border: 2px solid var(--accent); font-weight: 700; font-size: var(--tekst-klein); }
+.hv-drn-puntrij.is-gekozen .hv-drn-puntrij__nr { background: var(--accent); color: var(--accentText); }
+.hv-drn-puntrij.is-buiten .hv-drn-puntrij__nr { border-color: var(--fout); border-style: dashed; }
+.hv-drn-puntrij__waar { flex: 1 1 auto; color: var(--muted); }
+.hv-drn-puntrij__h { font-weight: 600; }
+.hv-drn-editor { margin-block-start: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-drn-editor__kop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); margin-block-end: var(--ruimte-2); }
+.hv-drn-editor__rij { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2); padding-block: var(--ruimte-1); }
+.hv-drn-editor__label { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-drn-editor .hv-stapper__getal { font-size: var(--hv-tekst-kop); min-inline-size: 3.6em; }
+.hv-drn-pijlen { display: inline-flex; gap: 2px; }
+.hv-drn-pijl { background: var(--panel); border: 1px solid var(--line); }
+
+/* ───────────── Польоти ───────────── */
+.hv-drn-vluchtdetail { display: grid; gap: var(--ruimte-3); }
+.hv-drn-vluchtdetail > .hv-drn-kop { margin-block-end: 0; }
+.hv-drn-afspeel { display: grid; gap: var(--ruimte-1); }
+.hv-drn-afspeel__tekst { font-size: var(--tekst-klein); font-weight: 600; font-variant-numeric: tabular-nums; }
+.hv-drn-feiten { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--ruimte-2) var(--ruimte-4); }
+.hv-drn-feiten > div { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-drn-feiten dt { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-drn-feiten dd { font-size: var(--tekst-klein); font-weight: 600; overflow-wrap: anywhere; }
+.hv-drn-gebeurt { display: grid; gap: 4px; padding-inline-start: var(--ruimte-3); border-inline-start: 2px solid var(--line); font-size: var(--tekst-klein); }
+.hv-drn-gebeurt li { display: flex; gap: var(--ruimte-3); }
+.hv-drn-gebeurt li > span { flex: none; min-inline-size: 4.5em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hv-drn-vondsten { padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--warn-zacht); }
+.hv-drn-vondsten .hv-drn-kop { margin-block-end: var(--ruimte-2); }
+.hv-drn-vondsten ul { display: grid; gap: var(--ruimte-1); font-size: var(--tekst-klein); }
+.hv-drn-vondsten li { display: flex; gap: var(--ruimte-2); align-items: flex-start; }
+.hv-drn-vondsten li > .hv-ic { flex: none; color: var(--warn); margin-block-start: 2px; }
+
+/* ───────────── Правила й зони ───────────── */
+.hv-drn-terinfo { display: flex; gap: var(--ruimte-2); align-items: flex-start; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--info-zacht); font-size: var(--tekst-klein); margin-block-end: var(--ruimte-3); }
+.hv-drn-terinfo > .hv-ic { flex: none; color: var(--info); margin-block-start: 2px; }
+.hv-drn-zones__vak { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-3); align-items: center; margin-block-end: var(--ruimte-3); }
+@container drn (min-width: 520px) { .hv-drn-zones__vak { grid-template-columns: minmax(160px, 220px) minmax(0, 1fr); } }
+.hv-drn-zones { display: block; inline-size: 100%; max-inline-size: 260px; block-size: auto; margin-inline: auto; border-radius: 50%; background: var(--surface); }
+.hv-drn-zones * { vector-effect: non-scaling-stroke; }
+.hv-drn-z__ring { fill: none; stroke: var(--line); stroke-width: 1px; stroke-dasharray: 3 3; }
+.hv-drn-z__spoor { fill: none; stroke: var(--hv-omtrek); stroke-width: 3px; stroke-dasharray: 6 3; }
+.hv-drn-z__zone { fill: var(--toon-zacht); stroke: var(--toon); stroke-width: 1.5px; opacity: 0.9; }
+.hv-drn-z__huis { fill: var(--accent); stroke: var(--panel); stroke-width: 2px; }
+.hv-drn-zones__lijst { display: grid; gap: var(--ruimte-2); font-size: var(--tekst-klein); }
+.hv-drn-zones__lijst li { display: flex; gap: var(--ruimte-2); align-items: flex-start; }
+.hv-drn-zones__lijst li > i { flex: none; inline-size: 14px; block-size: 14px; border-radius: 50%; margin-block-start: 3px; background: var(--toon-zacht); border: 2px solid var(--toon); }
+.hv-drn-zones__lijst li > i.is-ring { background: none; border: 1px dashed var(--hv-omtrek); }
+.hv-drn-zones__lijst li > span { display: grid; gap: 2px; }
+.hv-drn-zones__lijst li > span > span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-regellijst { display: grid; gap: var(--ruimte-2); margin-block-start: var(--ruimte-3); font-size: var(--tekst-klein); }
+.hv-drn-regellijst li { display: flex; gap: var(--ruimte-2); align-items: flex-start; }
+.hv-drn-regellijst li > .hv-ic { flex: none; color: var(--muted); margin-block-start: 2px; }
+.hv-drn-uitvoerders { margin-block: var(--ruimte-3); }
+.hv-drn-standen__lijst { display: grid; gap: var(--ruimte-2); }
+
+/* ───────────── Перевірка перед зльотом (аркуш) ───────────── */
+.hv-drn-opstijgen { display: grid; gap: var(--ruimte-3); }
+.hv-drn-opstijgen__kop { display: flex; align-items: center; gap: var(--ruimte-2); }
+.hv-drn-opstijgen__zin { font-size: var(--tekst-basis); font-weight: 600; line-height: 1.4; text-wrap: pretty; }
+.hv-drn-voorstel { display: flex; gap: var(--ruimte-2); align-items: center; padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); font-size: var(--tekst-klein); }
+.hv-drn-check { display: grid; gap: 0; border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.hv-drn-check__rij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px var(--ruimte-3); align-items: start; padding: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-drn-check__rij:first-child { border-block-start: 0; }
+.hv-drn-check__teken { display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-drn-check__rij.is-ok .hv-drn-check__teken { background: var(--ok-zacht); color: var(--ok); }
+.hv-drn-check__rij.is-let .hv-drn-check__teken, .hv-drn-check__rij.is-omweg .hv-drn-check__teken { background: var(--warn-zacht); color: var(--warn); }
+.hv-drn-check__rij.is-fout { background: var(--fout-zacht); }
+.hv-drn-check__rij.is-fout .hv-drn-check__teken { background: var(--panel); color: var(--fout); }
+.hv-drn-check__rij.is-info .hv-drn-check__teken { background: var(--surface); color: var(--muted); }
+.hv-drn-check__tekst { display: grid; gap: 2px; min-inline-size: 0; font-size: var(--tekst-klein); }
+.hv-drn-check__tekst > span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-check__rij.is-fout .hv-drn-check__tekst > span { color: var(--text); }
+.hv-drn-check__woord { font-size: var(--tekst-mini); font-weight: 700; color: var(--muted); padding-block-start: 5px; white-space: nowrap; }
+.hv-drn-check__rij.is-ok .hv-drn-check__woord { color: var(--ok); }
+.hv-drn-check__rij.is-fout .hv-drn-check__woord { color: var(--fout); }
+.hv-drn-check__rij.is-let .hv-drn-check__woord, .hv-drn-check__rij.is-omweg .hv-drn-check__woord { color: var(--warn); }
+.hv-drn-check__meer { justify-self: start; min-block-size: var(--hv-tik); margin-block: -6px -10px; font-size: var(--tekst-mini); font-weight: 700; color: var(--text); text-decoration: underline; text-underline-offset: 0.2em; }
+.hv-drn-check__waarom { grid-column: 2 / -1; display: grid; gap: var(--ruimte-1); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--panel); font-size: var(--tekst-mini); line-height: 1.45; }
+.hv-drn-wind { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3); border-radius: var(--straal-m); border: 2px dashed var(--warn); background: var(--warn-zacht); }
+.hv-drn-wind > p { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); }
+.hv-drn-wind .hv-knoppen { margin-block-start: 0; }
+.hv-drn-wind .hv-chip { white-space: normal; text-align: start; }
+.hv-drn-verklaring { display: flex; gap: var(--ruimte-3); align-items: flex-start; inline-size: 100%; min-block-size: var(--hv-tik); padding: var(--ruimte-3); border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); text-align: start; transition: border-color var(--hv-duur-1); }
+.hv-drn-verklaring > span:last-child { display: grid; gap: 2px; font-size: var(--tekst-klein); }
+.hv-drn-verklaring > span:last-child > span { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-drn-verklaring__vak { flex: none; display: grid; place-items: center; inline-size: 24px; block-size: 24px; border-radius: 6px; border: 2px solid var(--text); background: var(--panel); }
+.hv-drn-verklaring.is-aan { border-color: var(--text); }
+.hv-drn-verklaring.is-aan .hv-drn-verklaring__vak { background: var(--text); color: var(--panel); }
+.hv-drn-start { display: grid; gap: var(--ruimte-2); }
+.hv-drn-start > .hv-knop { min-block-size: 56px; font-size: var(--tekst-basis); }
+.hv-drn-start > .hv-knop[aria-disabled="true"] { opacity: 0.55; }
+.hv-drn-grond .hv-knoppen { margin-block-start: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hv-drn-video__wereld, .hv-drn-w__drone { transition: none; }
+  .hv-drn-nav__stip, .hv-drn-live::before, .hv-drn-dkaart.is-lucht .hv-telemetrie__silhouet > .hv-ic, .hv-vluchtbalk.hv-toon-batterij .hv-vluchtbalk__teken > .hv-ic { animation: none; }
+}

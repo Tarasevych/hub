@@ -252,16 +252,16 @@ async function zetTerug(userId:string,items:Awaited<ReturnType<typeof herstelbaa
   }
 }
 /** TOTP-code of ongebruikte herstelcode controleren, met atomische lockout (audit-fix 7). */
-async function codeControleren(userId:string,row:TotpRecord|null,code:string,herstelcodeActie:string|false='bevestigen'):Promise<'ok'|'ongeldig'|'hergebruikt'|'sleutel'|'geblokkeerd'>{
+async function codeControleren(userId:string,row:TotpRecord|null,code:string,herstelcodeActie:string|false='bevestigen'):Promise<{uitkomst:'ok'|'ongeldig'|'hergebruikt'|'sleutel'|'geblokkeerd';wachtSeconden:number}>{
   const subject=`stap-op:${userId}`;
   const poging=await pogingReserveren(subject);
-  if(!poging.toegestaan)return'geblokkeerd';
+  if(!poging.toegestaan)return{uitkomst:'geblokkeerd',wachtSeconden:poging.wachtSeconden};
   const uitkomst=row?await totpGebruiken(row,code):'ongeldig';
-  if(uitkomst==='sleutel')return'sleutel';
-  if(uitkomst==='ok'||(herstelcodeActie!==false&&await herstelcodeGebruiken(userId,code,herstelcodeActie))){await clearLoginFailures(subject);return'ok';}
-  return uitkomst;
+  if(uitkomst==='sleutel')return{uitkomst:'sleutel',wachtSeconden:0};
+  if(uitkomst==='ok'||(herstelcodeActie!==false&&await herstelcodeGebruiken(userId,code,herstelcodeActie))){await clearLoginFailures(subject);return{uitkomst:'ok',wachtSeconden:0};}
+  return{uitkomst,wachtSeconden:0};
 }
-const codeFout=(uitkomst:string)=>uitkomst==='geblokkeerd'?{code:'ACCESS_LOCKED_TEMPORARILY',http:429}:uitkomst==='sleutel'?{code:'ACCESS_TOTP_KEY_MISSING',http:503}:uitkomst==='hergebruikt'?{code:'ACCESS_TOTP_REUSED',http:400}:{code:'ACCESS_TOTP_CODE_REQUIRED',http:400};
+const codeFout=(uitkomst:string,wachtSeconden=0)=>uitkomst==='geblokkeerd'?{code:'ACCESS_LOCKED_TEMPORARILY',http:429,extra:wachtSeconden>0?{retryAfter:wachtSeconden}:undefined}:uitkomst==='sleutel'?{code:'ACCESS_TOTP_KEY_MISSING',http:503,extra:undefined}:uitkomst==='hergebruikt'?{code:'ACCESS_TOTP_REUSED',http:400,extra:undefined}:{code:'ACCESS_TOTP_CODE_REQUIRED',http:400,extra:undefined};
 const meldOntkoppeld=(userId:string,method:string,doorBeheer=false)=>meld(userId,'access_method_unlinked',
   'Спосіб входу від’єднано / Aanmeldmethode ontkoppeld',
   `${doorBeheer?'Адміністратор від’єднав':'Від’єднано'} спосіб входу «${method}». Протягом 7 днів його можна відновити на сторінці безпеки. Якщо це були не ви — відновіть і змініть доступ. / ${doorBeheer?'Een beheerder heeft':'Er is'} aanmeldmethode "${method}" ontkoppeld. Binnen 7 dagen kunt u die terugzetten op de beveiligingspagina. Was u dit niet: zet hem terug en controleer uw toegang.`);
@@ -449,7 +449,7 @@ const ipVan=(event:Record<string,unknown>)=>{const h=(event.headers||{}) as Reco
 export function createAccessPlaneRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
   respond:(data:unknown,status?:number)=>any;
-  fail:(message:string,status?:number)=>any;
+  fail:(message:string,status?:number,extra?:{retryAfter?:number;maxAttempts?:number;windowSec?:number})=>any;
   audit:(userId:string,action:string,result:string,details?:Record<string,unknown>)=>Promise<unknown>;
   body:(body:unknown)=>Record<string,unknown>;
 }){
@@ -482,7 +482,7 @@ export function createAccessPlaneRoutes(deps:{
         if(!herstel||herstel.remaining<=0)return deps.fail('STEP_UP_RECOVERY_NOT_ENROLLED',400);
         if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
         const poging=await pogingReserveren(`stap-op:${auth.user.id}`);
-        if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+        if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429,{retryAfter:poging.wachtSeconden});
         // actie: label uit de vaste lijst (toegang-context ACTIES); onbekend → 'onbekend'. Host = dienst van de sessie.
         const actie=actieVan(body.actie);
         const sleutel=await herstelcodeGebruiken(auth.user.id,String(body.code||''),actie,auth.service,false);
@@ -499,8 +499,8 @@ export function createAccessPlaneRoutes(deps:{
       const row=await totpFor(auth.user.id);
       if(!row?.confirmed)return deps.fail('STEP_UP_TOTP_NOT_ENROLLED',400);
       // Audit-fix 7: poging atomisch gereserveerd vóór de controle (geen race rond de lockout); alleen TOTP, geen herstelcode.
-      const uitkomst=await codeControleren(auth.user.id,row,String(body.code||''),false);
-      if(uitkomst==='geblokkeerd')return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+      const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,row,String(body.code||''),false);
+      if(uitkomst==='geblokkeerd')return deps.fail('ACCESS_LOCKED_TEMPORARILY',429,{retryAfter:wachtSeconden});
       if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
       if(uitkomst!=='ok'){await deps.audit(auth.user.id,'access.step-up','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_INVALID',400);}
       await totpStapOpVastleggen(auth as unknown as StapOpAuth);
@@ -566,13 +566,13 @@ export function createAccessPlaneRoutes(deps:{
       const body=deps.body(ctx.body);
       const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event),String(body.service||''));
       if(result.status==='ok'||result.status==='mfa')return deps.respond({ok:result.status==='ok',status:result.status,code:result.code,user:result.user,sessionIssued:false});
-      return deps.fail(result.code,result.http);
+      return deps.fail(result.code,result.http,'retryAfter'in result&&result.retryAfter?{retryAfter:result.retryAfter}:undefined);
     }],
     'POST /api/owner/auth/password/login':[async(ctx: any)=>{
       const body=deps.body(ctx.body);
       const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event),String(body.service||''));
       if(result.status==='mfa')return deps.respond({ok:false,mfaRequired:true,error:result.code,reasonCode:result.code,sessionIssued:false,sessionCreated:false});
-      if(result.status!=='ok'||!result.user)return deps.fail(result.code,result.http||401);
+      if(result.status!=='ok'||!result.user)return deps.fail(result.code,result.http||401,'retryAfter'in result&&result.retryAfter?{retryAfter:result.retryAfter}:undefined);
       return deps.respond({ok:true,reasonCode:'ACCESS_PASSWORD_VERIFIED',sessionIssued:false,sessionCreated:false,user:result.user});
     }],
     'POST /api/owner/access/password/set':[async(ctx: any)=>{
@@ -689,8 +689,8 @@ export function createAccessPlaneRoutes(deps:{
         // Audit-fix 2: een bevestigde TOTP vervangen vraagt step-up ÉN de huidige code (of een herstelcode).
         // Het oude geheim blijft geldig tot het nieuwe bevestigd is (pendingSecretEnc).
         const stap=await stapOp(auth);if(stap)return stap;
-        const uitkomst=await codeControleren(auth.user.id,existing,String(deps.body(ctx.body).currentCode||deps.body(ctx.body).code||''),'totp-wijzigen');
-        if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.replace.start','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
+        const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,existing,String(deps.body(ctx.body).currentCode||deps.body(ctx.body).code||''),'totp-wijzigen');
+        if(uitkomst!=='ok'){const f=codeFout(uitkomst,wachtSeconden);await deps.audit(auth.user.id,'access.totp.replace.start','failure',{reden:uitkomst});return deps.fail(f.code,f.http,f.extra);}
         await db.update(TOTP,[{id:existing.id,record:{...withoutId(existing),pendingSecretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),pendingAt:now,updatedAt:now}}]);
         await deps.audit(auth.user.id,'access.totp.replace.start','success',{});
       }else{
@@ -714,7 +714,7 @@ export function createAccessPlaneRoutes(deps:{
       if(!secret)return deps.fail(vervangen?'ACCESS_TOTP_REPLACE_EXPIRED':'ACCESS_TOTP_KEY_MISSING',vervangen?400:503);
       if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
       const poging=await pogingReserveren(`stap-op:${auth.user.id}`);
-      if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+      if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429,{retryAfter:poging.wachtSeconden});
       const stapNr=totpStap(fromBase32(secret),code);
       if(stapNr<0)return deps.fail('ACCESS_TOTP_INVALID',400);
       await clearLoginFailures(`stap-op:${auth.user.id}`);
@@ -737,8 +737,8 @@ export function createAccessPlaneRoutes(deps:{
       // Fase 3: uitschakelen vereist de huidige TOTP-code (of een ongebruikte herstelcode bij verlies van het toestel).
       if(row?.confirmed){
         const code=String(deps.body(ctx.body).code||'');
-        const uitkomst=await codeControleren(auth.user.id,row,code,'totp-uitschakelen');
-        if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
+        const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,row,code,'totp-uitschakelen');
+        if(uitkomst!=='ok'){const f=codeFout(uitkomst,wachtSeconden);await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(f.code,f.http,f.extra);}
       }
       if(row?.id)await db.delete(TOTP,[row.id]);
       await deps.audit(auth.user.id,'access.totp.disable','success',{});
@@ -754,8 +754,8 @@ export function createAccessPlaneRoutes(deps:{
       if(totpRij?.confirmed){
         const metPasskey=!String(deps.body(ctx.body).code||'')&&await passkeyStapOpGeldig(auth as unknown as StapOpAuth);
         if(!metPasskey){
-          const uitkomst=await codeControleren(auth.user.id,totpRij,String(deps.body(ctx.body).code||''),false);
-          if(uitkomst!=='ok'){const f=codeFout(uitkomst);return deps.fail(f.code,f.http);}
+          const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,totpRij,String(deps.body(ctx.body).code||''),false);
+          if(uitkomst!=='ok'){const f=codeFout(uitkomst,wachtSeconden);return deps.fail(f.code,f.http,f.extra);}
         }
       }else{const stap=await stapOp(auth,'herstelcodes');if(stap)return stap;}
       // «Створити нові»: de oude set vervalt meteen (het record wordt vervangen).

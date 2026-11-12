@@ -22,7 +22,7 @@ export default function Overzicht({ lang, smal, woningId, ov, vernieuw, toon, na
   const runScene = async (id: string) => {
     setBezig(id);
     try { const r = await huisClient.sceneUitvoeren(woningId, id, idem('scene')); toon(r.uitkomst === 'voltooid' ? tr(lang, 'Сцену виконано й підтверджено.', 'Scène uitgevoerd en bevestigd.') : r.uitkomst === 'gedeeltelijk' ? tr(lang, 'Сцену виконано частково — див. Сцени.', 'Scène gedeeltelijk — zie Scènes.') : tr(lang, 'Сцена не виконана — див. Сцени.', 'Scène mislukt — zie Scènes.')); await vernieuw(); }
-    catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT')); } finally { setBezig(''); }
+    catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); } finally { setBezig(''); }
   };
   const geenIntegratie = !ov.integraties.length;
   return (

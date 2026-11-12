@@ -345,6 +345,10 @@
   {
    "sleutel": "src/telegram-aanmelden/telegram.css :: .tga-scherm",
    "reden": "TELEGRAM-AANMELDEN v1: achtergrondlaag van het bevestigingsvenster «Підтвердіть, що це ви» (Telegram/geheime code), modaal over het hele scherm zoals .bevestig-toegang-achter. Geen zwevende knop."
+  },
+  {
+   "sleutel": "src/accountmenu-v3/accountmenu-v3.css :: [data-account-menu-v3].am3-mobiel-laag",
+   "reden": "IDENTITEIT-008: onafhankelijk mobiel bovenvenster van AccountMenuV3 (<= 700 px), geportaleerd naar .canonical-chrome zodat het menu niet in de smalle zijlade (270 px) wordt samengedrukt maar over de hele breedte van de telefoon verschijnt. De profielfotoknop blijft op haar vaste plek; dit is een vensterlaag met achtergrondsluier, geen zwevende knop."
   }
  ],
  "kopReserves": [

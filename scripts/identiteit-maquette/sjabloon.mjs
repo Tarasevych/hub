@@ -31,6 +31,35 @@ if (html.includes('profilePhotoFile') || !html.includes('data-echt-actie="accoun
 html = html.replace(/(<p>Можна також перетягнути заголовок панелі[^<]*<\/p>\s*<\/div>)/, '<div class="mq-echt mq-vormgeving" data-echt="vormgeving-venster"></div>\n    $1');
 html = html.replace(/(<\/footer>)/, '$1\n        <div class="mq-echt mq-vormgeving mq-vormgeving-voet" data-echt="vormgeving-voet"></div>');
 if (!html.includes('vormgeving-venster') || !html.includes('vormgeving-voet')) throw new Error('гнізда перемикача не вставлено');
+
+// САЙТ: відокремлення внутрішнього дороговказу розділів сторінки від головного гамбургера сайту в шапці .topbar.
+// Переносимо #adaptiveNavToggle із .topbar-start в окрему липку підсмугу змісту сторінки під шапкою зі списковою піктограмою та векторним шевроном.
+html = html.replace(/\s*<button id="adaptiveNavToggle"[^>]*>[\s\S]*?<\/button>/, '');
+html = html.replace(
+  '</header>',
+  '</header>\n      <div class="mq-sectie-balk" id="mqSectieBalk" data-zijde="left">' +
+    '<button id="adaptiveNavToggle" type="button" class="adaptive-nav-toggle" aria-controls="anchorRail" aria-expanded="false" aria-label="Відкрити розділи сторінки" title="Відкрити розділи сторінки">' +
+      '<svg class="mq-sectie-icoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="18" r="1"/><path d="M9 6h11M9 12h11M9 18h11"/></svg>' +
+      '<span class="mq-sectie-naam" id="mqSectieNaam">Розділи</span>' +
+      '<svg class="mq-sectie-pijl" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>' +
+    '</button>' +
+    '<button id="mqSectiePositie" type="button" class="mq-sectie-positie" aria-controls="navSettings" aria-label="Розташування навігації сторінки" title="Розташування навігації сторінки">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M9 4v16"/></svg>' +
+    '</button>' +
+  '</div>',
+);
+if (!html.includes('id="mqSectieBalk"') || /class="topbar-start">\s*<button id="adaptiveNavToggle"/.test(html) || html.includes('M4 7h16M4 12h16M4 17h16')) {
+  throw new Error('внутрішній перемикач розділів не винесено в підсмугу змісту сторінки');
+}
+
+// САЙТ: кнопка пошуку в шапці вигляду «Макет» відкриває загальносайтовий пошук «Мій простір · Mijn Ruimte».
+html = html.replace(
+  '<button class="search-action" id="openSearch" aria-label="Пошук розділу">',
+  '<button type="button" class="search-action" id="openSearch" data-zoek-trigger="maquette" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" aria-label="Пошук у «Мій простір» (Ctrl K)">',
+);
+html = html.replace('<span>Швидкий перехід</span>', '<span>Пошук у «Мій простір»…</span>');
+if (!html.includes('data-zoek-trigger="maquette"')) throw new Error('тригер загальносайтового пошуку не прив’язано');
+
 const uit = `// Оболонка вигляду «Макет» (IDENTITEIT-007): розмітка index.html макета власника один в один, без скриптів.
 // ЗГЕНЕРОВАНО; динамічні частини (картки, навігація, пошук) малює maquette-motor.ts. De vaste opmaak van het ontwerp van de eigenaar.
 export const MAQUETTE_SJABLOON = ${JSON.stringify(html.trim())};

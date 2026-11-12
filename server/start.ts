@@ -429,16 +429,28 @@ function strikteFactor(): number {
   if (!factorGemeld) { factorGemeld = true; console.warn('[rate-limit] E2E_LOKALE_LIMIETEN=1: strikte limieten ×20 (alleen lokale e2e-tests)'); }
   return 20;
 }
-export async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+const VLAG_LIMIT_PER_MIN = Math.max(30, Number(process.env.VLAG_RATE_LIMIT_PER_MIN || 240));
+export type RateLimitAfwijzing = { retryAfter: number; maxAttempts: number; windowSec: number };
+
+export async function rateLimitAfwijzingDetail(method: string, pathname: string, ip: string): Promise<RateLimitAfwijzing | null> {
+  if (pathname === '/api/flags' || pathname.startsWith('/api/ofrep/v1/evaluate/flags')) {
+    const vlagLimiet = geheugenLimiet(`vlag:${ip}`, VLAG_LIMIT_PER_MIN, 60_000);
+    return vlagLimiet.ok ? null : { retryAfter: vlagLimiet.retryAfter, maxAttempts: VLAG_LIMIT_PER_MIN, windowSec: 60 };
+  }
   const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
-  if (!algemeen.ok) return algemeen.retryAfter;
-  if (SAFE_METHODS.has(method) && !pathname.includes('/callback') && !/^\/api\/(mcp-connector\/authorize|auth\/|aanmeld\/koppel\/|owner\/agents\/ws-ticket)/.test(pathname)) return 0;
+  if (!algemeen.ok) return { retryAfter: algemeen.retryAfter, maxAttempts: API_LIMIT_PER_MIN, windowSec: 60 };
+  if (SAFE_METHODS.has(method) && !pathname.includes('/callback') && !/^\/api\/(mcp-connector\/authorize|auth\/|aanmeld\/koppel\/|owner\/agents\/ws-ticket)/.test(pathname)) return null;
   for (const [patroon, naam, max, failClosed] of STRIKTE_LIMIETEN) {
     if (!patroon.test(pathname)) continue;
-    const r = await rateLimit(`${naam}:${ip}`, max * strikteFactor(), 60, { failClosed });
-    return r.ok ? 0 : r.retryAfter;
+    const limiet = max * strikteFactor();
+    const r = await rateLimit(`${naam}:${ip}`, limiet, 60, { failClosed });
+    return r.ok ? null : { retryAfter: r.retryAfter, maxAttempts: limiet, windowSec: 60 };
   }
-  return 0;
+  return null;
+}
+
+export async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+  return (await rateLimitAfwijzingDetail(method, pathname, ip))?.retryAfter ?? 0;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -516,8 +528,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     // verzoeken van Anthropic (server-naar-server) onterecht weigeren; CSRF is hier niet van toepassing.
     const csrf = connector ? '' : csrfAfwijzing(method, req.headers, apiUrl.pathname);
     if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
-    const wacht = await rateLimitAfwijzing(method, apiUrl.pathname, ip);
-    if (wacht > 0) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(wacht) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: wacht }));
+    const afwijzing = await rateLimitAfwijzingDetail(method, apiUrl.pathname, ip);
+    if (afwijzing) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(afwijzing.retryAfter) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: afwijzing.retryAfter, maxAttempts: afwijzing.maxAttempts, windowSec: afwijzing.windowSec }));
     if (apiUrl.pathname === '/api/storing/tech-bundel' && method === 'POST') return sendJson(res, 200, techMeldingVerwerken(await readBody(req).catch(() => ''), host));
     let body = '';
     try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req); }

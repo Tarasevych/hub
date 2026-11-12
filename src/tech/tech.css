@@ -53,8 +53,10 @@ html[data-tech-patroon=stippen] .tech-band{background-image:radial-gradient(rgba
 .tech-vraag-laag.is-dev b{color:#5b21b6;opacity:1}
 .tech-vraag-laag.is-dev > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}
 .tech-vraag-laag.is-dev > summary::-webkit-details-marker{display:none}
-.tech-vraag-laag.is-dev > summary::before{content:'▸';font-size:12px;opacity:.7}
-.tech-vraag-laag.is-dev[open] > summary::before{content:'▾'}
+.tech-vraag-laag.is-dev > summary::after{display:none}
+.tech-vraag-laag.is-dev > summary::before{content:'';flex:0 0 14px;width:14px;height:14px;opacity:.75;background-color:currentColor;-webkit-mask:var(--icoon-pijl-omlaag) center/contain no-repeat;mask:var(--icoon-pijl-omlaag) center/contain no-repeat;transform:rotate(-90deg);transition:transform .18s ease}
+.tech-vraag-laag.is-dev[open] > summary::before{transform:rotate(0deg)}
+@media (prefers-reduced-motion:reduce){.tech-vraag-laag.is-dev > summary::before{transition:none}}
 .tech-vraag-laag.is-dev > summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
 .tech-vraag-bron{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .tech-vraag-bron code{font:11.5px/1.4 ui-monospace,monospace;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,currentColor 10%,transparent);overflow-wrap:anywhere}

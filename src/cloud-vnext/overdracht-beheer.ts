@@ -7,7 +7,7 @@
 //   • de sha256 wordt INCREMENTEEL berekend door het bestand in stukken te lezen — nooit heel in het geheugen.
 // Dit bestand importeert bewust GEEN cloud-client: het vervoer wordt geregistreerd (registreerVervoer) zodat tests een
 // nagebootst vervoer kunnen geven en Node geen browsermodules hoeft te laden.
-import { CLOUD_VNEXT_LIMIETEN } from '../../shared/cloud-vnext-model';
+import { CLOUD_VNEXT_LIMIETEN, veiligUploadMime } from '../../shared/cloud-vnext-model';
 import { HERVAT_PAUZE_MS, HERVAT_POGINGEN, PARALLEL_STUKKEN, overdrachtGrens, stukTotaal, type OverdrachtGrens } from '../../shared/cloud-overdracht-model';
 import type { CloudBestand } from '../../shared/cloud-vnext-model';
 
@@ -92,7 +92,7 @@ export class Sha256Stroom {
 /** Een leesbare bron: het bestand wordt ALTIJD in stukken gelezen (lees), nooit heel in het geheugen. */
 export type OverdrachtBron = { naam: string; bytes: number; mime: string; lees: (offset: number, lengte: number) => Promise<ArrayBuffer> };
 export const bronVanFile = (f: File): OverdrachtBron => ({
-  naam: f.name, bytes: f.size, mime: f.type || 'application/octet-stream',
+  naam: f.name, bytes: f.size, mime: veiligUploadMime(f.type, f.name),
   lees: (offset, lengte) => f.slice(offset, Math.min(offset + lengte, f.size)).arrayBuffer(),
 });
 /** sha256 van een bron, incrementeel in stukken van 4 MiB. */

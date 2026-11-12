@@ -111,33 +111,13 @@
   gap: var(--ruimte-3);
 }
 
-/* ≤ 640 px за контейнером: кнопки меню на всю ширину, однакові, у дві колонки лише на вузьких. */
+/* ≤ 640 px за контейнером: менші внутрішні поля карток; повний перемикач стоїть над заголовком, тож компактний у смузі ховається. */
 @container ia-account (max-width: 640px) {
-  .ia-toc {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    position: static;
-    backdrop-filter: none;
-  }
-
-  .ia-toc-knop {
-    width: 100%;
-    justify-content: flex-start;
-    border-radius: var(--straal-m);
-  }
-
   .ia-sectie {
     padding: var(--ruimte-3);
   }
 
-  /* Вузько: меню не липке, а повний перемикач стоїть просто над заголовком — компактний був би дублем. */
   .ia-vormgeving-compact { display: none; }
-}
-
-@container ia-account (max-width: 420px) {
-  .ia-toc {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* Повага до зменшеного руху: без плавної прокрутки. */
@@ -156,6 +136,7 @@
 .ia-avatar-wikkel {
   position: relative;
   display: inline-block;
+  flex-shrink: 0;
   width: 64px;
   height: 64px;
 }
@@ -163,8 +144,10 @@
 .ia-avatar {
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   width: 64px;
   height: 64px;
+  aspect-ratio: 1 / 1;
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -175,9 +158,15 @@
 }
 
 .ia-avatar img {
+  display: block;
+  flex: none;
   width: 64px;
   height: 64px;
+  min-width: 64px;
+  min-height: 64px;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
+  object-position: center;
 }
 
 .ia-initialen {
@@ -222,6 +211,12 @@
   background: var(--panel);
   color: var(--fout);
   cursor: pointer;
+}
+
+.ia-avatar-prullenbak::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
 }
 
 .ia-avatar-prullenbak svg {
@@ -400,17 +395,26 @@
 }
 
 .ia-voorbeeld img {
-  max-width: 140px;
-  max-height: 140px;
-  border-radius: var(--straal-m);
+  display: block;
+  width: 112px;
+  height: 112px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 1px solid var(--line);
   object-fit: cover;
+  object-position: center;
 }
 
 .ia-dienst-voorbeeld {
+  display: block;
+  justify-self: center;
   width: 96px;
   height: 96px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
+  border: 1px solid var(--line);
   object-fit: cover;
+  object-position: center;
 }
 
 .ia-leeg {
@@ -432,8 +436,34 @@
   gap: var(--ruimte-2);
 }
 
-/* ≤ 640 px за контейнером: кнопки на всю ширину, однакові; діалог — майже на весь екран. */
+/* ≤ 640 px за контейнером або вікном (портал у document.body та режими «Макет» / «Студія»): кнопки на всю ширину. */
 @container ia-account (max-width: 640px) {
+  .ia-bronnen {
+    grid-template-columns: 1fr;
+  }
+
+  .ia-dialoog > footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ia-knop,
+  .ia-bronnen button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .ia-dialoog-achtergrond {
+    padding: var(--ruimte-3);
+    padding-top: max(var(--ruimte-3), calc(66px + env(safe-area-inset-top, 0px)));
+  }
+
+  .ia-dialoog {
+    padding: var(--ruimte-3);
+    max-height: calc(100dvh - 84px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+
   .ia-bronnen {
     grid-template-columns: 1fr;
   }
@@ -506,8 +536,22 @@
   user-select: none;
 }
 .ia-vormgeving-compact > summary::-webkit-details-marker { display: none; }
-.ia-vormgeving-compact > summary::after { content: '▾'; font-size: 11px; color: var(--muted); }
-.ia-vormgeving-compact[open] > summary::after { content: '▴'; }
+.ia-vormgeving-compact > summary::after {
+  content: '';
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  color: var(--muted);
+  background-color: currentColor;
+  -webkit-mask: var(--icoon-pijl-omlaag, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")) center / contain no-repeat;
+  mask: var(--icoon-pijl-omlaag, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")) center / contain no-repeat;
+  transition: transform 180ms ease;
+}
+.ia-vormgeving-compact[open] > summary::after { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .ia-vormgeving-compact > summary::after { transition: none; }
+}
 .ia-vormgeving-compact > summary:hover { border-color: var(--accent); background: var(--accent-soft); }
 .ia-vormgeving-compact > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ia-vormgeving-compact-label { color: var(--muted); }
@@ -530,12 +574,32 @@
 @media (max-width: 700px) {
   .ia-toc {
     top: 62px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .ia-toc::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ia-toc-knop {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-height: 40px;
+    padding: 5px 10px;
   }
 
   .ia-sectie {
     scroll-margin-top: 150px;
   }
+
+  .ia-vormgeving-compact { display: none; }
+  .ia-dialoog-sluit { width: var(--tik-hoogte, 44px); height: var(--tik-hoogte, 44px); }
   .ia-vormgeving { justify-self: stretch; border-radius: 16px; }
   .ia-vormgeving-label { flex-basis: 100%; padding: 2px 6px 0; }
-  .ia-vormgeving button { flex: 1 1 0; }
+  .ia-vormgeving button { flex: 1 1 0; min-height: var(--tik-hoogte, 40px); }
 }

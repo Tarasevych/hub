@@ -473,6 +473,12 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   /* «прокрутити меню» — 30×20 → 44×44 */
   .zijbalk-pijl{height:var(--tik-hoogte)}
   .zijbalk-pijl button{width:var(--tik-hoogte);min-height:var(--tik-hoogte)}
+  .menu-dock-transparantie{flex-wrap:wrap}
+  .menu-snel-knoppen button,.menu-snel-knoppen select,.menu-snel-toevoegen select,.menu-snel-toevoegen button,.menu-aangepast button{min-height:var(--tik-hoogte)}
+  .zijbalk-meldingen{padding:12px}
+  .zijbalk-meldingen-tijden{flex-wrap:wrap;max-width:100%}
+  .zijbalk-meldingen .zijbalk-meldingen-tijden input[type='time']{flex:1 1 6.5rem;min-width:0;min-height:var(--tik-hoogte)}
+  .zijbalk-meldingen label.zijbalk-meldingen-rij select{width:100%;min-width:0;min-height:var(--tik-hoogte)}
 }
 
 /* 29.10.2026 (hub op de telefoon, menu dicht): de lade-houder toont alleen ☰ — geen restjes eronder (lege scrollvak met pijlen,

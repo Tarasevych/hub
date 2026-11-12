@@ -13,6 +13,7 @@ import GeheimInvoer from '../geheim/GeheimInvoer';
 import './bevestig-toegang.css';
 import { ruimtesV2Nu } from '../tech/ruimtes/ruimtes-vlag';
 import { WOORDEN } from '../tech/ruimtes/teksten';
+import { aanmeldPauzeBericht, useAftelPauze } from '../aanmeld-pauze';
 
 type Lang = 'uk' | 'nl';
 type Methoden = { passkey: boolean; totp: boolean; herstelcode: boolean; google: boolean; codewoord?: boolean; apparaat?: boolean; telegram?: boolean };
@@ -124,6 +125,10 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   const [fout, setFout] = useState(() => { const r = neemTerugMelding(); return r ? foutTekst(paginaTaal(), r) : ''; });
   const eersteWeergave = useRef(true);
   const invoer = useRef<HTMLInputElement | null>(null);
+  const pauze = useAftelPauze();
+  const pauzeTekst = pauze.actief || pauze.zojuistVrij
+    ? aanmeldPauzeBericht(Math.max(1, pauze.resterend), lang, 'bevestig', pauze.limiet)
+    : null;
   // Sterk (§13.10): Google valt weg zodra de gebruiker iets sterkers heeft (de server weigert het anders toch).
   const basisToegestaan = opties.toegestaan?.length ? opties.toegestaan : ALLE;
   const toegestaan = opties.sterk ? basisToegestaan.filter((m) => m !== 'google') : basisToegestaan;
@@ -155,27 +160,39 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
   const onthoudAan = onthoud && onthoudMag;
 
   const metPasskey = async () => {
+    if (pauze.actief) return;
     setBezig('passkey'); setFout('');
     const f = await passkeyStapOpCode(opties.service, opties.tabContext, opties.post, opties.actie, onthoudAan);
     setBezig('');
     if (!f || f === 'ONTHOUD_NIET_OPGESLAGEN') {
+      pauze.wis();
       klaar({ ok: true, methode: 'passkey' });
       if (f) meldOnthoudMislukt();
+    } else if (f === 'RATE_LIMITED') {
+      pauze.startPauze(60);
     } else setFout(foutTekst(lang, f));
   };
   const metCode = async (methode: 'totp' | 'herstelcode') => {
+    if (pauze.actief) return;
     const c = methode === 'totp' ? code.replace(/\D/g, '') : code.replace(/[\s-]/g, '').toUpperCase();
     if (methode === 'totp' ? c.length !== 6 : c.length < 8) return;
     if (opties.codeTerug) { klaar({ ok: true, methode, code: c }); return; }
     setBezig(methode); setFout('');
     try {
       const antwoord = (await opties.post('/api/owner/access/stap-op', { service: opties.service, tabContext: opties.tabContext, code: c, actie: opties.actie || 'onbekend', ...(onthoudAan ? { onthoud: true } : {}), ...(methode === 'herstelcode' ? { methode: 'herstelcode' } : {}) })) as { data?: { onthouden?: boolean } };
+      pauze.wis();
       klaar({ ok: true, methode });
       if (onthoudAan && antwoord?.data?.onthouden !== true) meldOnthoudMislukt();
-    } catch (e) { setFout(foutTekst(lang, foutVan(e))); setCode(''); invoer.current?.focus(); }
+    } catch (e) {
+      const p = pauze.vangPauze(e);
+      if (!p.isPauze) setFout(foutTekst(lang, foutVan(e)));
+      setCode('');
+      invoer.current?.focus();
+    }
     finally { setBezig(''); }
   };
   const metGoogle = async () => {
+    if (pauze.actief) return;
     setBezig('google'); setFout('');
     bewaarHervat(opties.hervat || null);
     // De keuze «запам'ятати» overleeft de omleiding in sessionStorage; na terugkeer stuurt client.ts hem naar de server.
@@ -187,18 +204,26 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
       // De pagina navigeert naar Google; het venster blijft «Перехід до Google…» tonen.
     } catch (e) {
       try { sessionStorage.removeItem('mijn-ruimte-bevestig-hervat'); } catch { /* negeren */ }
-      setBezig(''); setFout(foutTekst(lang, foutVan(e)));
+      setBezig('');
+      const p = pauze.vangPauze(e);
+      if (!p.isPauze) setFout(foutTekst(lang, foutVan(e)));
     }
   };
 
   const metCodewoord = async () => {
+    if (pauze.actief) return;
     const w = code.trim();
     if (w.length < 4) return;
     setBezig('codewoord'); setFout('');
     try {
       await opties.post('/api/owner/access/stap-op/codewoord', { service: opties.service, tabContext: opties.tabContext, woord: w, actie: opties.actie || 'onbekend' });
+      pauze.wis();
       klaar({ ok: true, methode: 'codewoord' });
-    } catch (e) { setFout(foutTekst(lang, foutVan(e))); setCode(''); }
+    } catch (e) {
+      const p = pauze.vangPauze(e);
+      if (!p.isPauze) setFout(foutTekst(lang, foutVan(e)));
+      setCode('');
+    }
     finally { setBezig(''); }
   };
 
@@ -234,22 +259,22 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
 
         {weergave === 'passkey' && <>
           <p className='bevestig-toegang-uitleg'>{t('passkeyUitleg')}</p>
-          <button type='button' className='bevestig-toegang-primair' autoFocus disabled={!!bezig} onClick={() => void metPasskey()}><Fingerprint />{bezig === 'passkey' ? t('passkeyBezig') : t('passkeyKnop')}</button>
+          <button type='button' className='bevestig-toegang-primair' autoFocus disabled={!!bezig || pauze.actief} onClick={() => void metPasskey()}><Fingerprint />{bezig === 'passkey' ? t('passkeyBezig') : pauze.actief && pauzeTekst ? pauzeTekst.knop : t('passkeyKnop')}</button>
         </>}
 
         {(weergave === 'totp' || weergave === 'herstelcode') && <form onSubmit={(e) => { e.preventDefault(); void metCode(weergave); }}>
           <label htmlFor='bevestig-toegang-code'>{weergave === 'totp' ? t('totpLabel') : t('herstelLabel')}</label>
           {weergave === 'totp'
             ? <input id='bevestig-toegang-code' ref={invoer} autoFocus inputMode='numeric' autoComplete='one-time-code' pattern='[0-9 ]*' maxLength={7} placeholder='123456' value={code}
-              onChange={(e) => { const v = e.target.value.replace(/[^\d ]/g, ''); setCode(v); if (v.replace(/\D/g, '').length === 6 && !bezig) window.setTimeout(() => (e.target.form as HTMLFormElement | null)?.requestSubmit(), 0); }} />
+              onChange={(e) => { const v = e.target.value.replace(/[^\d ]/g, ''); setCode(v); if (v.replace(/\D/g, '').length === 6 && !bezig && !pauze.actief) window.setTimeout(() => (e.target.form as HTMLFormElement | null)?.requestSubmit(), 0); }} />
             : <input id='bevestig-toegang-code' ref={invoer} autoFocus autoComplete='off' autoCapitalize='characters' spellCheck={false} maxLength={20} placeholder='XXXX-XXXX-XXXX' value={code} onChange={(e) => setCode(e.target.value)} />}
           <p className='bevestig-toegang-uitleg'>{weergave === 'totp' ? t('totpUitleg') : t('herstelUitleg')}</p>
-          <button type='submit' className='bevestig-toegang-primair' disabled={!!bezig || (weergave === 'totp' ? code.replace(/\D/g, '').length !== 6 : code.replace(/[\s-]/g, '').length < 8)}><KeyRound />{t('bevestigen')}</button>
+          <button type='submit' className='bevestig-toegang-primair' disabled={!!bezig || pauze.actief || (weergave === 'totp' ? code.replace(/\D/g, '').length !== 6 : code.replace(/[\s-]/g, '').length < 8)}><KeyRound />{pauze.actief && pauzeTekst ? pauzeTekst.knop : t('bevestigen')}</button>
         </form>}
 
         {weergave === 'google' && <>
           {alleenGoogle && <p className='bevestig-toegang-uitleg'>{t('alleenGoogle')}</p>}
-          <button type='button' className='bevestig-toegang-primair' autoFocus disabled={!!bezig} onClick={() => void metGoogle()}><LogIn />{bezig === 'google' ? t('doorsturen') : t('googleKnop')}</button>
+          <button type='button' className='bevestig-toegang-primair' autoFocus disabled={!!bezig || pauze.actief} onClick={() => void metGoogle()}><LogIn />{bezig === 'google' ? t('doorsturen') : pauze.actief && pauzeTekst ? pauzeTekst.knop : t('googleKnop')}</button>
           <p className='bevestig-toegang-uitleg'>{t('googleUitleg')}</p>
         </>}
 
@@ -261,10 +286,11 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
           <label htmlFor='bevestig-toegang-codewoord'>{t('codewoordLabel')}</label>
           <GeheimInvoer lang={lang} id='bevestig-toegang-codewoord' value={code} onChange={setCode} autoFocus />
           <p className='bevestig-toegang-uitleg'>{t('codewoordUitleg')}</p>
-          <button type='submit' className='bevestig-toegang-primair' disabled={!!bezig || code.trim().length < 4}><KeyRound />{t('bevestigen')}</button>
+          <button type='submit' className='bevestig-toegang-primair' disabled={!!bezig || pauze.actief || code.trim().length < 4}><KeyRound />{pauze.actief && pauzeTekst ? pauzeTekst.knop : t('bevestigen')}</button>
         </form>}
 
-        {fout && <p className='bevestig-toegang-fout' role='alert'>{fout}</p>}
+        {pauzeTekst && <p className={pauze.actief ? 'bevestig-toegang-fout' : 'bevestig-toegang-uitleg'} role='status' aria-live='polite'>{pauze.actief ? `${pauzeTekst.kop}. ${pauzeTekst.uitleg}` : pauzeTekst.vrij}</p>}
+        {fout && !pauze.actief && <p className='bevestig-toegang-fout' role='alert'>{fout}</p>}
 
         {info && weergave && (onthoudMag
           ? <><label className='bevestig-toegang-onthoud' data-onthoud='kan'>

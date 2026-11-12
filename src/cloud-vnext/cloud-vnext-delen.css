@@ -1,0 +1,952 @@
+/* Cloud vNext — Delen, Mappenbomen, Archiefverkenner & Statistiek (CLOUD-001).
+   Strikt op ontwerptokens uit src/ontwerp/tokens.css: nul hex-kleuren, nul position: fixed, tekst >= 12px. */
+
+/* ---- Deelbadges op bestandskaarten, rijen en mappen ---- */
+.cvn-deelknop.is-actief { color: var(--accent); background: var(--accent-soft); }
+
+.cvn-kaart-deelpil {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-1);
+  padding: 2px var(--ruimte-2);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--tekst-mini);
+  font-weight: 600;
+  width: fit-content;
+}
+.cvn-kaart-deelpil svg { width: 13px; height: 13px; }
+.cvn-kaart-deelpil.is-rij { margin-inline-start: var(--ruimte-2); vertical-align: middle; }
+
+.cvn-map-cel {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ruimte-1);
+}
+.cvn-map-cel .cvn-map { flex: 1 1 auto; min-width: 0; }
+.cvn-map-deelpil {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--tekst-mini);
+  font-weight: 600;
+}
+.cvn-map-deelpil svg { width: 12px; height: 12px; }
+.cvn-map-deelknop {
+  flex: 0 0 auto;
+  align-self: center;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.cvn-map-deelknop:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- DeelVenster (ontwerpdialoog) ---- */
+.cvn-deel-omhulsel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-4);
+}
+
+.cvn-deel-kaart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-4);
+  border-radius: var(--straal-l);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--schaduw-1);
+}
+
+.cvn-deel-kaart-kop {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ruimte-3);
+}
+.cvn-deel-kaart-kop > svg {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: var(--accent);
+}
+.cvn-deel-kaart-kop h3 {
+  margin: 0;
+  font-size: var(--tekst-basis);
+  font-weight: 650;
+  color: var(--text);
+}
+.cvn-deel-kaart-kop p {
+  margin: 2px 0 0;
+  font-size: var(--tekst-klein);
+  color: var(--muted);
+}
+
+.cvn-deel-keuze-rij {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: var(--ruimte-2);
+}
+
+.cvn-deel-tegel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: var(--ruimte-3);
+  border-radius: var(--straal-m);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease, transform .12s ease;
+}
+.cvn-deel-tegel svg { width: 18px; height: 18px; color: var(--accent); }
+.cvn-deel-tegel strong { font-size: var(--tekst-klein); font-weight: 650; }
+.cvn-deel-tegel span { font-size: var(--tekst-mini); color: var(--muted); }
+.cvn-deel-tegel:hover { border-color: var(--accent); }
+.cvn-deel-tegel.is-actief {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cvn-deel-subvak {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-3);
+  border-radius: var(--straal-m);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.cvn-deel-subvak input[type='search'],
+.cvn-deel-subvak input[type='email'],
+.cvn-deel-subvak input[type='password'],
+.cvn-deel-subvak input[type='text'] {
+  width: 100%;
+  min-height: var(--tik-hoogte);
+  padding: 0 var(--ruimte-3);
+  border-radius: var(--straal-s);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: var(--tekst-klein);
+}
+
+.cvn-deel-bereik-velden {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ruimte-3);
+}
+.cvn-deel-bereik-velden label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--tekst-mini);
+  color: var(--muted);
+}
+.cvn-deel-bereik-velden input[type='number'] {
+  min-height: var(--tik-hoogte);
+  padding: 0 var(--ruimte-3);
+  border-radius: var(--straal-s);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: var(--tekst-klein);
+}
+.cvn-deel-bereik-velden .cvn-hint,
+.cvn-deel-bereik-velden .cvn-deel-code-voorbeeld {
+  grid-column: 1 / -1;
+}
+
+.cvn-deel-code-voorbeeld {
+  max-height: 210px;
+  overflow: auto;
+  border-radius: var(--straal-s);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: var(--ruimte-2) 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--tekst-mini);
+}
+.cvn-deel-code-voorbeeld.is-groot { max-height: 560px; }
+.cvn-deel-code-regel {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: var(--ruimte-2);
+  padding: 2px var(--ruimte-3);
+  line-height: 1.5;
+}
+.cvn-deel-code-regel i {
+  font-style: normal;
+  text-align: right;
+  color: var(--muted);
+  user-select: none;
+}
+.cvn-deel-code-regel code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+
+/* ---- Boomselectie (map / archief) ---- */
+.cvn-deel-boomlijst {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow: auto;
+}
+.cvn-deel-boomrij {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-height: 38px;
+  padding: 4px var(--ruimte-2);
+  border-radius: var(--straal-s);
+  border: 1px solid transparent;
+  background: var(--panel);
+  cursor: pointer;
+}
+.cvn-deel-boomrij.is-aan {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.cvn-deel-boomrij svg { flex: 0 0 auto; width: 16px; height: 16px; color: var(--muted); }
+.cvn-deel-boompad {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--tekst-klein);
+  color: var(--text);
+}
+.cvn-deel-boomrij small {
+  flex: 0 0 auto;
+  font-size: var(--tekst-mini);
+  color: var(--muted);
+}
+
+/* ---- Formuliervelden & accounts ---- */
+.cvn-deel-velden-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ruimte-3);
+}
+.cvn-deel-veld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cvn-deel-veld > span {
+  font-size: var(--tekst-mini);
+  font-weight: 600;
+  color: var(--muted);
+}
+.cvn-deel-veld input,
+.cvn-deel-veld select {
+  min-height: var(--tik-hoogte);
+  padding: 0 var(--ruimte-3);
+  border-radius: var(--straal-s);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--tekst-klein);
+}
+
+.cvn-deel-account-invoer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+}
+.cvn-deel-account-invoer input { flex: 1 1 200px; }
+
+.cvn-deel-ontvangers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+}
+.cvn-deel-ontvangers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-2) var(--ruimte-3);
+  border-radius: var(--straal-s);
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.cvn-deel-ontvanger-kern {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cvn-deel-ontvanger-kern strong { font-size: var(--tekst-klein); }
+.cvn-deel-ontvanger-kern small { font-size: var(--tekst-mini); color: var(--muted); }
+
+.cvn-deel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--ruimte-2);
+  border-radius: 999px;
+  font-size: var(--tekst-mini);
+  font-weight: 600;
+}
+.cvn-deel-badge.is-ok { background: var(--ok-zacht); color: var(--ok); }
+.cvn-deel-badge.is-warn { background: var(--warn-zacht); color: var(--warn); }
+
+.cvn-deel-schakel {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  font-size: var(--tekst-klein);
+  cursor: pointer;
+}
+.cvn-deel-schakel svg { width: 16px; height: 16px; color: var(--accent); }
+.cvn-deel-ww-rij {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+.cvn-deel-ww-rij input { flex: 1 1 auto; }
+
+.cvn-deel-rechten-rij,
+.cvn-deel-hoofdknoppen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+
+.cvn-deel-meer-knop {
+  align-self: flex-start;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--tekst-klein);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- Aangemaakte koppeling (succeskaart + QR) ---- */
+.cvn-deel-succes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-4);
+  border-radius: var(--straal-l);
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+}
+.cvn-deel-succes-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+.cvn-deel-succes-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--ok-zacht);
+  color: var(--ok);
+  font-size: var(--tekst-mini);
+  font-weight: 700;
+}
+.cvn-deel-succes-badge svg { width: 14px; height: 14px; }
+
+.cvn-deel-url-balk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-2);
+  border-radius: var(--straal-m);
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.cvn-deel-url-balk > svg { width: 18px; height: 18px; color: var(--accent); margin-inline-start: 4px; }
+.cvn-deel-url-balk input {
+  flex: 1 1 200px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--tekst-klein);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.cvn-deel-succes-acties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+}
+.cvn-deel-qr-vak {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-3);
+  border-radius: var(--straal-m);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.cvn-deel-qr-svg {
+  border-radius: var(--straal-s);
+  border: 1px solid var(--line);
+}
+
+/* ---- Statuspillen en bestaande lijst in DeelVenster ---- */
+.cvn-deel-status,
+.cvn-deel-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: var(--tekst-mini);
+  font-weight: 600;
+}
+.cvn-deel-pil {
+  background: var(--surface2);
+  color: var(--text);
+}
+.cvn-deel-pil svg { width: 13px; height: 13px; color: var(--accent); }
+.cvn-deel-status.is-actief { background: var(--ok-zacht); color: var(--ok); }
+.cvn-deel-status.is-gepland { background: var(--info-zacht); color: var(--info); }
+.cvn-deel-status.is-gepauzeerd { background: var(--warn-zacht); color: var(--warn); }
+.cvn-deel-status.is-verlopen,
+.cvn-deel-status.is-limiet_bereikt,
+.cvn-deel-status.is-ingetrokken { background: var(--fout-zacht); color: var(--fout); }
+
+.cvn-deel-bestaande-lijst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+}
+.cvn-deel-bestaande-rij {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-3);
+  border-radius: var(--straal-m);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.cvn-deel-bestaande-boven {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-2);
+  flex-wrap: wrap;
+}
+.cvn-deel-bestaande-naam {
+  cursor: pointer;
+  font-size: var(--tekst-klein);
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 3px;
+}
+.cvn-deel-inline-hernoem {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-1);
+  flex: 1 1 200px;
+}
+.cvn-deel-inline-hernoem input {
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 0 var(--ruimte-2);
+  border-radius: var(--straal-s);
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  color: var(--text);
+}
+.cvn-deel-bestaande-cijfers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2) var(--ruimte-3);
+  font-size: var(--tekst-mini);
+  color: var(--muted);
+}
+.cvn-deel-bestaande-knoppen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+}
+
+/* ---- Archiefsectie in DetailPaneel ---- */
+.cvn-detail-archief {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-3);
+  border-radius: var(--straal-m);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.cvn-detail-archief-kop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-2);
+}
+.cvn-detail-archief-kop h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  font-size: var(--tekst-basis);
+}
+.cvn-detail-archief-acties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+}
+
+/* ---- Pagina /gedeeld (overzicht & statistiek) ---- */
+.cvn-gedeeld-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-4);
+}
+
+.cvn-gedeeld-statgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ruimte-3);
+}
+.cvn-gedeeld-statkaart {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-4);
+  border-radius: var(--straal-l);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--schaduw-1);
+}
+.cvn-gedeeld-staticoon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--straal-m);
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+.cvn-gedeeld-statkaart small { display: block; font-size: var(--tekst-mini); color: var(--muted); }
+.cvn-gedeeld-statkaart strong { display: block; font-size: 24px; line-height: 1.2; color: var(--text); }
+.cvn-gedeeld-statkaart span { display: block; font-size: var(--tekst-mini); color: var(--muted); }
+
+.cvn-gedeeld-werkbalk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-3);
+}
+.cvn-gedeeld-werkbalk-rechts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+
+.cvn-gedeeld-lijst {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+}
+.cvn-gedeeld-kaart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-4);
+  border-radius: var(--straal-l);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--schaduw-1);
+}
+.cvn-gedeeld-kaart-hoofd {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ruimte-3);
+}
+.cvn-gedeeld-doelicoon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--straal-m);
+  background: var(--surface);
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+.cvn-gedeeld-kern { flex: 1 1 auto; min-width: 0; }
+.cvn-gedeeld-titelrij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+.cvn-gedeeld-titelrij strong { font-size: var(--tekst-basis); }
+.cvn-gedeeld-sub {
+  margin: 4px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--tekst-klein);
+  color: var(--muted);
+}
+.cvn-gedeeld-sub svg { width: 14px; height: 14px; vertical-align: -2px; margin-inline-end: 3px; }
+
+.cvn-gedeeld-tellers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-3);
+  border-radius: var(--straal-m);
+  background: var(--surface);
+}
+.cvn-gedeeld-tellers > div {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+.cvn-gedeeld-tellers svg { width: 16px; height: 16px; color: var(--accent); flex: 0 0 auto; }
+.cvn-gedeeld-tellers b { font-size: var(--tekst-basis); color: var(--text); }
+.cvn-gedeeld-tellers small { font-size: var(--tekst-mini); color: var(--muted); }
+
+.cvn-gedeeld-acties {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+
+.cvn-gedeeld-sectietitel {
+  margin: var(--ruimte-2) 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  font-size: var(--tekst-basis);
+}
+.cvn-gedeeld-sectietitel svg { width: 18px; height: 18px; color: var(--accent); }
+
+/* ---- 14-daagse staafgrafiek ---- */
+.cvn-gedeeld-grafiek {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 4px;
+  height: 148px;
+  padding: var(--ruimte-3) var(--ruimte-2) var(--ruimte-2);
+  border-radius: var(--straal-m);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.cvn-gedeeld-staafkolom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.cvn-gedeeld-staafwaarde {
+  min-height: 16px;
+  font-size: var(--tekst-mini);
+  font-weight: 600;
+  color: var(--text);
+}
+.cvn-gedeeld-staafspoor {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 18px;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 999px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+.cvn-gedeeld-staaf {
+  width: 100%;
+  border-radius: 999px;
+  background: var(--line);
+  transition: height .2s ease;
+}
+.cvn-gedeeld-staaf.is-gevuld { background: var(--accent); }
+.cvn-gedeeld-staafkolom small {
+  font-size: var(--tekst-mini);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.cvn-gedeeld-loglijst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+  max-height: 300px;
+  overflow: auto;
+}
+.cvn-gedeeld-logrij {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-2) var(--ruimte-3);
+  border-radius: var(--straal-s);
+  background: var(--surface);
+  font-size: var(--tekst-klein);
+}
+.cvn-gedeeld-logrij.is-geweigerd { background: var(--fout-zacht); color: var(--fout); }
+.cvn-gedeeld-logmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+  font-size: var(--tekst-mini);
+  color: var(--muted);
+}
+
+/* ---- Publieke ontvangersweergave (/gedeeld/<code>) ---- */
+.cvn-gedeeld-scherm {
+  display: grid;
+  place-items: center;
+  min-height: 58vh;
+  padding: var(--ruimte-5) var(--ruimte-4);
+}
+.cvn-gedeeld-poortkaart {
+  width: min(100%, 480px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-5);
+  border-radius: var(--straal-xl);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--schaduw-2);
+}
+.cvn-gedeeld-poorticoon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.cvn-gedeeld-poorticoon.is-waarschuwing {
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+.cvn-gedeeld-poortkaart h2 { margin: 0; font-size: 20px; }
+.cvn-gedeeld-poortkaart p { margin: 0; font-size: var(--tekst-klein); color: var(--muted); }
+.cvn-gedeeld-poortkaart input {
+  width: 100%;
+  min-height: var(--tik-hoogte);
+  padding: 0 var(--ruimte-3);
+  border-radius: var(--straal-m);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--tekst-basis);
+  text-align: center;
+}
+
+.cvn-gedeeld-weergave {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-4);
+  padding: var(--ruimte-4);
+}
+.cvn-gedeeld-held {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ruimte-4);
+  padding: var(--ruimte-4);
+  border-radius: var(--straal-xl);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--schaduw-1);
+}
+.cvn-gedeeld-held-links {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ruimte-3);
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.cvn-gedeeld-held-icoon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--straal-m);
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+.cvn-gedeeld-held-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+  margin-bottom: 6px;
+}
+.cvn-gedeeld-held h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+.cvn-gedeeld-held-meta {
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--tekst-klein);
+  color: var(--muted);
+}
+.cvn-gedeeld-held-meta svg { width: 14px; height: 14px; vertical-align: -2px; }
+.cvn-gedeeld-held-notitie {
+  margin: var(--ruimte-2) 0 0;
+  padding: var(--ruimte-2) var(--ruimte-3);
+  border-radius: var(--straal-s);
+  background: var(--surface);
+  font-size: var(--tekst-klein);
+  color: var(--text);
+}
+.cvn-gedeeld-held-acties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+}
+
+.cvn-gedeeld-werkruimte {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ruimte-4);
+}
+@media (min-width: 980px) {
+  .cvn-gedeeld-werkruimte:has(.cvn-gedeeld-voorbeeldpaneel) {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 46%);
+  }
+}
+.cvn-gedeeld-kolom,
+.cvn-gedeeld-voorbeeldpaneel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-4);
+  border-radius: var(--straal-l);
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.cvn-gedeeld-voorbeeldkop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-2);
+}
+.cvn-gedeeld-bestandenlijst {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cvn-gedeeld-bestandrij {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-2);
+  padding: 6px var(--ruimte-2);
+  border-radius: var(--straal-s);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.cvn-gedeeld-bestandrij.is-actief {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.cvn-gedeeld-bestandknop {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-height: 36px;
+  padding: 0 var(--ruimte-2);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.cvn-gedeeld-bestandknop svg { width: 18px; height: 18px; color: var(--accent); flex: 0 0 auto; }
+.cvn-gedeeld-bestandknop span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--tekst-klein);
+}
+.cvn-gedeeld-bestandknop small {
+  flex: 0 0 auto;
+  font-size: var(--tekst-mini);
+  color: var(--muted);
+}
+
+.cvn-gedeeld-codeblok {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+}
+.cvn-gedeeld-codekop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-2);
+  font-size: var(--tekst-klein);
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .cvn-gedeeld-weergave { padding: var(--ruimte-2); }
+  .cvn-gedeeld-held,
+  .cvn-gedeeld-kaart,
+  .cvn-deel-kaart { padding: var(--ruimte-3); }
+  .cvn-gedeeld-grafiek { gap: 2px; padding: var(--ruimte-2) 4px; }
+  .cvn-gedeeld-staafkolom small { font-size: var(--tekst-mini); transform: rotate(-45deg); transform-origin: center; margin-top: 4px; }
+  .cvn-gedeeld-bestandrij { flex-wrap: wrap; }
+}
