@@ -5,7 +5,11 @@
 
   var taal = 'uk';
   HV.taal = function () { return taal; };
-  HV.zetTaal = function (x) { taal = x === 'nl' ? 'nl' : 'uk'; };
+  HV.zetTaal = function (x) {
+    taal = x === 'nl' ? 'nl' : 'uk';
+    // мова документа йде за мовою інтерфейсу (читач екрана, перенос слів)
+    try { var wortel = document.documentElement; if (wortel && wortel.getAttribute('lang') !== taal) wortel.setAttribute('lang', taal); } catch (e) { /* без документа (перевірка складальника) */ }
+  };
 
   /** Пара рядків → рядок поточною мовою. */
   HV.t = function (uk, nl) { return taal === 'nl' ? nl : uk; };

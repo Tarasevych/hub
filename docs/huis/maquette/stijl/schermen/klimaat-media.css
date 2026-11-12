@@ -43,7 +43,7 @@
 
 /* ───────────── Зони ───────────── */
 .hv-zones { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr)); gap: var(--hv-kier); }
-.hv-zone { position: relative; display: grid; grid-template-rows: 1fr auto; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; overflow: hidden; transition: background var(--hv-duur-2), border-color var(--hv-duur-2); }
+.hv-zone { container: zone / inline-size; position: relative; display: grid; grid-template-rows: 1fr auto; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; overflow: hidden; transition: background var(--hv-duur-2), border-color var(--hv-duur-2); }
 .hv-zone.is-bezig { background: var(--hv-warm-zacht); border-color: color-mix(in srgb, var(--hv-warm) 45%, transparent); }
 .hv-zone.is-koelt { background: var(--hv-koud-zacht); border-color: color-mix(in srgb, var(--hv-koud) 45%, transparent); }
 .hv-zone.is-pauze { border: var(--hv-streep) dashed var(--hv-omtrek); }
@@ -57,6 +57,13 @@
 .hv-zone__midden { display: flex; align-items: center; gap: var(--ruimte-2); min-inline-size: 0; }
 .hv-zone__getal { font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hv-zone__getal .hv-maat__eenheid { font-size: var(--tekst-basis); letter-spacing: 0; color: var(--muted); }
+/* вузька картка (телефон, дві колонки): число на щабель менше й дуга 48 px — «°C» лишається цілим */
+@container zone (max-width: 196px) {
+  .hv-zone__getal { font-size: calc((var(--hv-getal-m) + var(--hv-tekst-kop)) / 2); }
+  .hv-zone__getal .hv-maat__eenheid { font-size: var(--tekst-klein); }
+  .hv-zone__midden { gap: var(--ruimte-1); }
+  .hv-zone .hv-boog { inline-size: 48px; block-size: 48px; }
+}
 .hv-zone__woord { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; line-height: var(--hv-regel-mini); color: var(--muted); }
 .hv-zone.is-bezig .hv-zone__woord { color: var(--hv-warm); }
 .hv-zone.is-koelt .hv-zone__woord { color: var(--hv-koud); }
@@ -191,10 +198,12 @@
 .hv-rooster__dag:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: 1px; }
 .hv-rooster__naam { font-size: var(--tekst-klein); font-weight: 600; }
 .hv-rooster__dag.is-vandaag .hv-rooster__naam { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
-.hv-rooster__baan { position: relative; display: block; block-size: 30px; border-radius: var(--straal-s); overflow: hidden; background: var(--surface); }
+.hv-rooster__baan { container: roosterbaan / inline-size; position: relative; display: block; block-size: 30px; border-radius: var(--straal-s); overflow: hidden; background: var(--surface); }
 .hv-rooster__blok { position: absolute; inset-block: 0; display: grid; place-items: center; border-inline-end: 2px solid var(--panel); color: var(--text); font-size: var(--tekst-mini); font-weight: 600; overflow: hidden; }
-.hv-rooster__blok span { white-space: nowrap; }
-.hv-rooster__nu { position: absolute; inset-block: -2px; inline-size: 2px; margin-inline-start: -1px; background: var(--text); box-shadow: 0 0 0 2px var(--panel); }
+/* --deel — частка доби у відсотках (ставить скрипт); ширина блока = --deel × 1cqw. Менше 28 px — числу тісно, тож його ширина стає нулем.
+   Число лежить над лінією «зараз» на підкладці кольору блока: лінія розривається навколо тексту, а не перекреслює його. */
+.hv-rooster__blok span { --zicht: max(0px, calc((var(--deel, 100) * 1cqw - 28px) * 9999)); position: relative; z-index: 2; display: block; box-sizing: border-box; max-inline-size: var(--zicht); overflow: hidden; padding: 1px min(3px, var(--zicht)); border-radius: 3px; background: inherit; white-space: nowrap; line-height: var(--hv-regel-mini); }
+.hv-rooster__nu { position: absolute; z-index: 1; inset-block: -2px; inline-size: 2px; margin-inline-start: -1px; background: var(--text); box-shadow: 0 0 0 1px var(--panel); }
 .hv-rooster__as { display: grid; grid-template-columns: 2.6em minmax(0, 1fr); gap: var(--ruimte-2); padding-inline: var(--ruimte-1); }
 .hv-rooster__uren { display: flex; justify-content: space-between; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
 .hv-rooster__bewerk { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
@@ -289,16 +298,15 @@
   .hv-speler:not(.hv-speler--groot) .hv-hoes { inline-size: 64px; }
 }
 
-/* обкладинка: градієнт двох тонів і хвилі — дані, як фото */
-.hv-hoes { position: relative; display: grid; place-items: center; inline-size: 88px; aspect-ratio: 1; border-radius: var(--straal-m); overflow: hidden; background: linear-gradient(var(--hoek, 135deg), var(--a), var(--b)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent); isolation: isolate; }
+/* обкладинка джерела: папір (--surface2), тонка рамка й великий знак джерела — диск з іконкою, тією ж мовою, що й знак пристрою:
+   тиша — паперовий диск і приглушена іконка; грає — диск тоном зони (--teken-vlak) з іконкою --teken-icoon. Градієнт лишається лише небу. */
+.hv-hoes { display: grid; place-items: center; inline-size: 88px; aspect-ratio: 1; border-radius: var(--straal-m); background: var(--surface2); border: 1px solid var(--line); color: var(--muted); transition: color var(--hv-duur-2), border-color var(--hv-duur-2); }
 .hv-hoes--groot { inline-size: 100%; max-inline-size: 220px; border-radius: var(--straal-l); }
 .hv-speler--groot .hv-hoes--groot { justify-self: center; }
-.hv-hoes::before { content: ""; position: absolute; inset: -30%; z-index: -1; background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--panel) 55%, transparent) 0 18%, transparent 19%), radial-gradient(circle at 75% 80%, color-mix(in srgb, var(--panel) 30%, transparent) 0 26%, transparent 27%); }
-.hv-hoes__golf { position: absolute; inset: auto -10% -18% -10%; block-size: 60%; z-index: -1; border-radius: 50% 50% 0 0; background: color-mix(in srgb, var(--panel) 18%, transparent); box-shadow: 0 -18px 0 color-mix(in srgb, var(--panel) 12%, transparent); }
-.hv-hoes__ic { color: var(--panel); opacity: 0.92; inline-size: 30%; block-size: 30%; }
-.is-speelt .hv-hoes__golf { animation: hv-km-adem 6s ease-in-out infinite; }
-@keyframes hv-km-adem { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6%); } }
-@media (prefers-reduced-motion: reduce) { .is-speelt .hv-hoes__golf { animation: none; } }
+.hv-hoes::before { content: ""; grid-area: 1 / 1; inline-size: 68%; aspect-ratio: 1; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); transition: background var(--hv-duur-2), border-color var(--hv-duur-2); }
+.hv-hoes__ic { grid-area: 1 / 1; position: relative; inline-size: 32%; block-size: 32%; }
+.is-speelt .hv-hoes { color: var(--teken-icoon); }
+.is-speelt .hv-hoes::before { background: var(--teken-vlak); border-color: var(--hv-omtrek); }
 
 .hv-km-stilte { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: var(--ruimte-4); align-items: center; padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
 .hv-km-stilte .hv-hoes { inline-size: 120px; }
@@ -365,6 +373,7 @@
 
 /* тема «чорнило»: контури замість заливок */
 .theme-inkt .hv-zone.is-bezig, .theme-inkt .hv-zone.is-koelt { background: var(--panel); border: 2px solid var(--text); }
-.theme-inkt .hv-hoes { background: var(--surface); box-shadow: inset 0 0 0 2px var(--text); }
-.theme-inkt .hv-hoes__ic { color: var(--text); }
+.theme-inkt .hv-hoes, .theme-inkt .is-speelt .hv-hoes { background: var(--panel); border: 2px solid var(--text); color: var(--text); }
+.theme-inkt .hv-hoes::before, .theme-inkt .is-speelt .hv-hoes::before { background: var(--panel); border: 1px solid var(--text); }
+.theme-inkt .is-speelt .hv-hoes::before { border-width: 3px; }
 .theme-inkt .hv-tank__vulling { background: var(--text); }

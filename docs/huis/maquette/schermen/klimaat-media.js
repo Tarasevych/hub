@@ -503,7 +503,7 @@
     var week = '<div class="hv-rooster" role="group" aria-label="' + h(t('Огляд тижня', 'Weekoverzicht')) + '">' + dagen.map(function (dag, di) {
       var blokken = dag.map(function (b, i) {
         var tot = i + 1 < dag.length ? dag[i + 1].van : 1440;
-        return '<span class="hv-rooster__blok hv-km-t' + warmteTrede(b.temp) + '" style="left:' + (b.van / 14.4).toFixed(2) + '%;width:' + ((tot - b.van) / 14.4).toFixed(2) + '%" title="' + h(minTekst(b.van) + '–' + minTekst(tot) + ' · ' + HV.maatTekst(b.temp, '°C', 1)) + '"><span>' + HV.getal(b.temp, b.temp % 1 ? 1 : 0) + '</span></span>';
+        return '<span class="hv-rooster__blok hv-km-t' + warmteTrede(b.temp) + '" style="left:' + (b.van / 14.4).toFixed(2) + '%;width:' + ((tot - b.van) / 14.4).toFixed(2) + '%;--deel:' + ((tot - b.van) / 14.4).toFixed(2) + '" title="' + h(minTekst(b.van) + '–' + minTekst(tot) + ' · ' + HV.maatTekst(b.temp, '°C', 1)) + '"><span>' + HV.getal(b.temp, b.temp % 1 ? 1 : 0) + '</span></span>';
       }).join('');
       return '<button type="button" class="hv-rooster__dag' + (di === gekozen ? ' is-gekozen' : '') + (di === vandaag ? ' is-vandaag' : '') + '" aria-pressed="' + (di === gekozen ? 'true' : 'false') + '" data-actie="ui" data-naam="rooster-dag" data-waarde="' + di + '" aria-label="' + h(HV.p(DAGEN_LANG[di])) + '">' +
         '<span class="hv-rooster__naam">' + h(HV.p(DAGEN[di])) + '</span><span class="hv-rooster__baan">' + blokken + (di === vandaag ? '<span class="hv-rooster__nu" style="left:' + (nuMin / 14.4).toFixed(2) + '%"></span>' : '') + '</span></button>';
@@ -515,7 +515,7 @@
       return '<div class="hv-rooster__rij" data-k="rij-' + gekozen + '-' + i + '"><span class="hv-rooster__stip hv-km-t' + warmteTrede(b.temp) + '" aria-hidden="true"></span>' +
         '<span class="hv-rooster__tijd">' + (i === 0 ? '<span class="hv-rooster__vast">00:00</span>' : '<span class="hv-km-mini">' + o.icoonknop({ icoon: 'minus', aria: t('Раніше на 30 хв', '30 min eerder'), actie: 'km-rooster', gegevens: g('van', -1) }) + '<output>' + minTekst(b.van) + '</output>' + o.icoonknop({ icoon: 'plus', aria: t('Пізніше на 30 хв', '30 min later'), actie: 'km-rooster', gegevens: g('van', 1) }) + '</span>') +
         '<span class="hv-rooster__tot">' + h(t('до ', 'tot ') + minTekst(tot)) + '</span></span>' +
-        '<span class="hv-km-mini hv-rooster__temp">' + o.icoonknop({ icoon: 'minus', aria: t('Холодніше на 0,5°', '0,5° kouder'), actie: 'km-rooster', gegevens: g('temp', -1) }) + '<output>' + h(HV.maatTekst(b.temp, '°C', 1)) + '</output>' + o.icoonknop({ icoon: 'plus', aria: t('Тепліше на 0,5°', '0,5° warmer'), actie: 'km-rooster', gegevens: g('temp', 1) }) + '</span>' +
+        '<span class="hv-km-mini hv-rooster__temp">' + o.icoonknop({ icoon: 'minus', aria: t('Холодніше на 0,5 °C', '0,5 °C kouder'), actie: 'km-rooster', gegevens: g('temp', -1) }) + '<output>' + h(HV.maatTekst(b.temp, '°C', 1)) + '</output>' + o.icoonknop({ icoon: 'plus', aria: t('Тепліше на 0,5 °C', '0,5 °C warmer'), actie: 'km-rooster', gegevens: g('temp', 1) }) + '</span>' +
         (i > 0 ? o.icoonknop({ icoon: 'trash-2', aria: t('Видалити блок', 'Blok verwijderen'), actie: 'km-rooster', gegevens: { dag: gekozen, i: i, veld: 'weg', doel: a.id }, klas: 'hv-rooster__weg' }) : '<span class="hv-rooster__weg" aria-hidden="true"></span>') + '</div>';
     }).join('');
     var kopie = '<div class="hv-filter hv-rooster__kopie">' + [['werkdagen', ['На всі будні', 'Naar alle werkdagen']], ['weekend', ['На вихідні', 'Naar het weekend']], ['volgende', ['На наступний день', 'Naar de volgende dag']], ['alle', ['На весь тиждень', 'Naar de hele week']]].map(function (x) {
@@ -613,7 +613,7 @@
     var nb = klem(buiten, -15, 20);
     return '<svg class="hv-km-stooklijn__svg" viewBox="0 0 200 100" role="img" aria-label="' + h(t('Подача ', 'Aanvoer ') + HV.getal(punt(nb), 0) + t(' °C при ', ' °C bij ') + HV.getal(nb, 0) + t(' °C надворі', ' °C buiten')) + '">' +
       '<line class="hv-km-stooklijn__as" x1="0" x2="200" y1="90" y2="90"/><path class="hv-km-stooklijn__lijn" d="' + d + '"/><circle class="hv-km-stooklijn__nu" cx="' + X(nb).toFixed(1) + '" cy="' + Y(punt(nb)).toFixed(1) + '" r="4"/>' +
-      '<text x="2" y="99">−15°</text><text x="186" y="99">20°</text><text x="' + (X(nb) + 6).toFixed(1) + '" y="' + (Y(punt(nb)) - 6).toFixed(1) + '">' + HV.getal(punt(nb), 0) + '°</text></svg>';
+      '<text x="2" y="99">−15 °C</text><text x="198" y="99" text-anchor="end">20 °C</text><text x="' + (X(nb) + 6).toFixed(1) + '" y="' + (Y(punt(nb)) - 6).toFixed(1) + '">' + h(HV.maatTekst(punt(nb), '°C', 0)) + '</text></svg>';
   }
   HV.actie('km-lijn', function (ctx, g) {
     var a = ap(g.doel), nu = Number(String(HV.gewenst(a, 'stooklijn')).replace('lijn-', '')) || 0.6;
@@ -720,11 +720,9 @@
     var wie = bron === 'bluetooth' ? ['через Bluetooth', 'via Bluetooth'] : tr && tr[0].indexOf(' · ') > 0 ? [tr[0].split(' · ')[1], tr[1].split(' · ')[1]] : ['', ''];
     return { titel: HV.p(titel), wie: HV.p(wie), bron: bron === 'radio' ? HV.p(a.st.titel || ['Радіо', 'Radio']) : bron === 'lijst' ? HV.p(a.st.titel || ['Добірка', 'Afspeellijst']) : HV.p(NAMEN[bron] || [bron, bron]), i: i, aantal: lijst.length, zaad: zaadVan(HV.p(titel)) };
   }
-  var HOES = [['--hv-warm', '--hv-koud'], ['--hv-aan-vlak', '--hv-warm'], ['--hv-koud', '--hv-zon'], ['--hv-net-in', '--hv-warm'], ['--hv-warm', '--hv-aan-vlak']];
-  /** Обкладинка: градієнт двох тонів і мотив; колір — дані, тож лише токени. */
+  /** Обкладинка джерела: папір із тонкою рамкою й великою іконкою тону зони; градієнт дизайн-мова лишає лише небу. */
   function hoes(zaad, icoon, maat) {
-    var p = HOES[zaad % HOES.length];
-    return '<span class="hv-hoes' + (maat ? ' hv-hoes--' + maat : '') + '" style="--a:var(' + p[0] + ');--b:var(' + p[1] + ');--hoek:' + (zaad * 37 % 360) + 'deg" aria-hidden="true"><span class="hv-hoes__golf"></span>' + HV.icoon(icoon || 'music', { maat: 'l', klas: 'hv-hoes__ic' }) + '</span>';
+    return '<span class="hv-hoes hv-toon-aan' + (maat ? ' hv-hoes--' + maat : '') + '" aria-hidden="true">' + HV.icoon(icoon || 'music', { maat: 'l', klas: 'hv-hoes__ic' }) + '</span>';
   }
   function spelerKaart(ctx, a, opties) {
     var op = opties || {}, s = huidig(a), speelt = !!gewenst(a, 'afspelen'), vol = Number(gewenst(a, 'volume')) || 0, p = plafond();
@@ -848,7 +846,7 @@
       var punten = volgReeks(w, a.id, function () { return doel != null ? doel : nu; }, nu, { ruis: eenheid === '%' ? 0.9 : 0.18 });
       var reeksen = [{ naam: t('Виміряно', 'Gemeten'), toon: toon || 'warm', punten: punten, dik: true }];
       if (doel != null) reeksen.push({ naam: t('Ціль', 'Doel'), toon: 'neutraal', punten: [[w.tijd - DAG, doel], [w.tijd, doel]], streep: '4 4', merk: 'merk-streep' });
-      return lijnSmal({ id: 'hist-' + a.id, titel: titel, eenheid: eenheid, decimalen: eenheid === '%' ? 0 : 1, van: w.tijd - DAG, tot: w.tijd, nu: w.tijd, tikken: tikken24(w), reeksen: reeksen, samenvatting: t('Симульований ряд за добу; останнє значення виміряне зараз.', 'Gesimuleerde reeks over een etmaal; de laatste waarde is nu gemeten.') });
+      return lijnSmal({ id: 'hist-' + a.id, titel: HV.p(titel), eenheid: eenheid, decimalen: eenheid === '%' ? 0 : 1, van: w.tijd - DAG, tot: w.tijd, nu: w.tijd, tikken: tikken24(w), reeksen: reeksen, samenvatting: t('Симульований ряд за добу; останнє значення виміряне зараз.', 'Gesimuleerde reeks over een etmaal; de laatste waarde is nu gemeten.') });
     };
   }
   function grafiekWarmtepomp(ctx, a) {
@@ -875,7 +873,7 @@
     return HV.grafiek.lijn({ id: 'lr-pm', titel: t('PM2.5 у спальні за добу', 'PM2.5 in de slaapkamer, laatste etmaal'), eenheid: t('мкг/м³', 'µg/m³'), hoogte: 130, x: { min: van, max: w.tijd, tikken: tikken24(w), format: HV.tijd }, reeksen: [{ naam: 'PM2.5', toon: 'neutraal', vlak: true, punten: punten }], samenvatting: t('Пік увечері — готування на кухні. Межа «добре» — 15.', 'De piek ’s avonds komt van het koken. De grens ‘goed’ is 15.') });
   }
   function grafiekMedia(sleutel, titel) {
-    return function (ctx, a) { return staafWeek(ctx.staat, sleutel + a.id, a.soort === 'tv' ? 2.6 : 1.8, 1.6, t('год', 'u'), 'aan', titel, t('Симульовано; сьогодні — до цієї хвилини.', 'Gesimuleerd; vandaag tot deze minuut.')); };
+    return function (ctx, a) { return staafWeek(ctx.staat, sleutel + a.id, a.soort === 'tv' ? 2.6 : 1.8, 1.6, t('год', 'u'), 'aan', HV.p(titel), t('Симульовано; сьогодні — до цієї хвилини.', 'Gesimuleerd; vandaag tot deze minuut.')); };
   }
 
   function instelThermostaat(ctx, a) {
@@ -924,17 +922,17 @@
 
   var REG = [
     ['thermostaat', thermostaat, grafiekThermostaat, instelThermostaat],
-    ['airco', airco, grafiekTemp('tempslaap', t('Спальня за добу', 'Slaapkamer, laatste etmaal'), '°C', 'koud'), rijenInstel([['radio-tower', ['Керування', 'Bediening'], ['інфрачервоний передавач, без зворотного зв’язку', 'infraroodzender, zonder terugmelding']], ['zap', ['Потужність охолодження', 'Koelvermogen'], ['2,5 кВт', '2,5 kW']]])],
+    ['airco', airco, grafiekTemp('tempslaap', ['Спальня за добу', 'Slaapkamer, laatste etmaal'], '°C', 'koud'), rijenInstel([['radio-tower', ['Керування', 'Bediening'], ['інфрачервоний передавач, без зворотного зв’язку', 'infraroodzender, zonder terugmelding']], ['zap', ['Потужність охолодження', 'Koelvermogen'], ['2,5 кВт', '2,5 kW']]])],
     ['warmtepomp', warmtepomp, grafiekWarmtepomp, rijenInstel([['heater', ['Тип', 'Soort'], ['повітря — вода, 6 кВт', 'lucht-water, 6 kW']], ['moon', ['Тихі години', 'Stille uren'], ['22:00–07:00', '22:00–07:00']], ['droplet', ['Бойлер', 'Boiler'], ['200 л, у підсобці', '200 l, in de bijkeuken']]])],
-    ['vloerverwarming', vloer, grafiekTemp(null, t('Ванна за добу', 'Badkamer, laatste etmaal'), '°C', 'warm'), rijenInstel([['waves', ['Зона', 'Zone'], ['ванна, 6 м²', 'badkamer, 6 m²']], ['thermometer', ['Межа підлоги', 'Grens van de vloer'], ['щонайбільше 29 °C', 'hoogstens 29 °C']]])],
-    ['radiatorkraan', radiator, grafiekTemp('tempkinder', t('Дитяча за добу', 'Kinderkamer, laatste etmaal'), '°C', 'warm'), rijenInstel([['battery', ['Батарейка', 'Batterij'], ['71 %, заміна ≈ за 8 місяців', '71 %, vervangen over ≈ 8 maanden']], ['moon', ['Пробудження', 'Ontwaken'], ['кожні 5 хвилин', 'elke 5 minuten']]])],
+    ['vloerverwarming', vloer, grafiekTemp(null, ['Ванна за добу', 'Badkamer, laatste etmaal'], '°C', 'warm'), rijenInstel([['waves', ['Зона', 'Zone'], ['ванна, 6 м²', 'badkamer, 6 m²']], ['thermometer', ['Межа підлоги', 'Grens van de vloer'], ['щонайбільше 29 °C', 'hoogstens 29 °C']]])],
+    ['radiatorkraan', radiator, grafiekTemp('tempkinder', ['Дитяча за добу', 'Kinderkamer, laatste etmaal'], '°C', 'warm'), rijenInstel([['battery', ['Батарейка', 'Batterij'], ['71 %, заміна ≈ за 8 місяців', '71 %, vervangen over ≈ 8 maanden']], ['moon', ['Пробудження', 'Ontwaken'], ['кожні 5 хвилин', 'elke 5 minuten']]])],
     ['ventilatie', ventilatie, grafiekVentilatie, rijenInstel([['fan', ['Тип', 'Soort'], ['з рекуперацією тепла', 'met warmteterugwinning']], ['filter', ['Ресурс фільтра', 'Levensduur filter'], ['180 днів', '180 dagen']]])],
-    ['bevochtiger', bevochtiger, grafiekTemp(null, t('Вологість у дитячій за добу', 'Vochtigheid kinderkamer, laatste etmaal'), '%', 'neutraal'), rijenInstel([['droplets', ['Бак', 'Tank'], ['3 л', '3 l']], ['wrench', ['Догляд', 'Onderhoud'], ['чистити бак щотижня', 'tank wekelijks reinigen']]])],
+    ['bevochtiger', bevochtiger, grafiekTemp(null, ['Вологість у дитячій за добу', 'Vochtigheid kinderkamer, laatste etmaal'], '%', 'neutraal'), rijenInstel([['droplets', ['Бак', 'Tank'], ['3 л', '3 l']], ['wrench', ['Догляд', 'Onderhoud'], ['чистити бак щотижня', 'tank wekelijks reinigen']]])],
     ['luchtreiniger', luchtreiniger, grafiekReiniger, rijenInstel([['wind', ['Фільтр', 'Filter'], ['HEPA 13, ресурс 12 місяців', 'HEPA 13, 12 maanden']], ['ruler', ['Кімната', 'Ruimte'], ['до 30 м²', 'tot 30 m²']]])],
-    ['boiler', boiler, grafiekTemp(null, t('Вода в бойлері за добу', 'Water in de boiler, laatste etmaal'), '°C', 'warm'), rijenInstel([['droplet', ['Об’єм', 'Inhoud'], ['200 л', '200 l']], ['zap', ['Нагрівач', 'Element'], ['1,8 кВт', '1,8 kW']]])],
-    ['tv', tv, grafiekMedia('tv', t('Перегляд за тиждень', 'Kijktijd per week')), rijenInstel([['tv', ['Екран', 'Scherm'], ['OLED 55″', 'OLED 55″']], ['plug', ['Очікування', 'Stand-by'], ['≈ 0,5 Вт', '≈ 0,5 W']], ['wrench', ['Що перевірити, якщо недоступний', 'Wat te controleren als hij onbereikbaar is'], ['глибоке очікування, Wi-Fi', 'diepe stand-by, wifi']]])],
-    ['speaker', speaker, grafiekMedia('sp', t('Прослухано за тиждень', 'Luistertijd per week')), instelMedia],
-    ['speakergroep', speakergroep, grafiekMedia('gr', t('Мультирум за тиждень', 'Multiroom per week')), instelMedia]
+    ['boiler', boiler, grafiekTemp(null, ['Вода в бойлері за добу', 'Water in de boiler, laatste etmaal'], '°C', 'warm'), rijenInstel([['droplet', ['Об’єм', 'Inhoud'], ['200 л', '200 l']], ['zap', ['Нагрівач', 'Element'], ['1,8 кВт', '1,8 kW']]])],
+    ['tv', tv, grafiekMedia('tv', ['Перегляд за тиждень', 'Kijktijd per week']), rijenInstel([['tv', ['Екран', 'Scherm'], ['OLED 55″', 'OLED 55″']], ['plug', ['Очікування', 'Stand-by'], ['≈ 0,5 Вт', '≈ 0,5 W']], ['wrench', ['Що перевірити, якщо недоступний', 'Wat te controleren als hij onbereikbaar is'], ['глибоке очікування, Wi-Fi', 'diepe stand-by, wifi']]])],
+    ['speaker', speaker, grafiekMedia('sp', ['Прослухано за тиждень', 'Luistertijd per week']), instelMedia],
+    ['speakergroep', speakergroep, grafiekMedia('gr', ['Мультирум за тиждень', 'Multiroom per week']), instelMedia]
   ];
   REG.forEach(function (r) {
     HV.blad({ soort: r[0], past: function (a) { return a.soort === r[0]; }, delen: { bediening: r[1], geschiedenis: historie(r[2]), instellingen: instel(r[3]) } });
@@ -959,8 +957,8 @@
     if (vak) chips.unshift(o.chip({ icoon: 'luggage', toon: 'let-op', tekst: t('Відпустка до ', 'Vakantie tot ') + HV.p(datumPaar(vak.eind)), actie: 'blad', gegevens: { blad: 'apparaat:thermostaat' }, k: 'chip-vak' }));
     var open = zones.filter(function (x) { return x.raamOpen; });
     if (open.length) chips.push(o.chip({ icoon: 'app-window', toon: 'let-op', tekst: HV.p(open[0].kamer.naam) + t(': вікно відчинене', ': raam open'), actie: 'ga', gegevens: { naar: 'kamers-kamer-' + open[0].kamer.id }, k: 'chip-raam' }));
-    var acties = '<div class="hv-km-acties">' + o.knop({ tekst: t('На 1° нижче всюди', 'Overal 1° lager'), icoon: 'thermometer-snowflake', actie: 'km-alle', gegevens: { richting: -1 } }) +
-      o.knop({ tekst: t('На 1° вище всюди', 'Overal 1° hoger'), icoon: 'thermometer-sun', soort: 'stil', actie: 'km-alle', gegevens: { richting: 1 } }) +
+    var acties = '<div class="hv-km-acties">' + o.knop({ tekst: t('На 1 °C нижче всюди', 'Overal 1 °C lager'), icoon: 'thermometer-snowflake', actie: 'km-alle', gegevens: { richting: -1 } }) +
+      o.knop({ tekst: t('На 1 °C вище всюди', 'Overal 1 °C hoger'), icoon: 'thermometer-sun', soort: 'stil', actie: 'km-alle', gegevens: { richting: 1 } }) +
       (vak ? o.knop({ tekst: t('Завершити відпустку', 'Vakantie beëindigen'), icoon: 'x', soort: 'stil', actie: 'km-vakantie-eind' }) : o.knop({ tekst: t('Відпустка до…', 'Vakantie tot…'), icoon: 'luggage', soort: 'stil', actie: 'blad', gegevens: { blad: 'klimaatvakantie' } })) +
       o.gevolg(t('Що станеться: ціль кожної зони з регулюванням зміниться на 1 °C; зони без регулювання не зміняться. Пов’язано з: тепловий насос гріє, доки хоч одна зона нижче цілі; кожен градус ≈ 6 % енергії на опалення. Як повернути: «Повернути» у сповіщенні 10 с.', 'Wat er gebeurt: het doel van elke geregelde zone verandert 1 °C; zones zonder regeling blijven gelijk. Hangt samen met: de warmtepomp verwarmt zolang één zone onder het doel zit; elke graad is ≈ 6 % verwarmingsenergie. Terugdraaien: ‘Ongedaan maken’ in de melding (10 s).'), { kop: t('Усі зони', 'Alle zones') }) + '</div>';
     return '<header class="hv-km-kop" data-k="kl-kop"><p class="hv-pagina__zin">' + h(zin) + '</p><div class="hv-filter hv-km-chips">' + chips.join('') + '</div>' + acties + '</header>';
@@ -979,7 +977,7 @@
     return '<article class="hv-zone' + (x.bezig ? ' is-bezig' : '') + (x.koelt ? ' is-koelt' : '') + (x.pauze || x.raamOpen ? ' is-pauze' : '') + (x.staat ? ' is-' + x.staat : '') + '" data-k="zone-' + h(k.id) + '">' +
       '<button type="button" class="hv-zone__lijf" data-actie="blad" data-blad="' + h(blad) + '" aria-label="' + h(HV.p(k.naam) + ': ' + (x.gemeten != null ? HV.maatTekst(x.gemeten, '°C', 1) : '—') + ', ' + woord) + '">' +
       '<span class="hv-zone__kop"><span class="hv-zone__naam">' + h(HV.p(k.naam)) + '</span><span class="hv-zone__regelaar">' + h(regelaar) + '</span></span>' +
-      '<span class="hv-zone__midden">' + boog({ doel: x.doel, gemeten: x.gemeten, toon: toon, bezig: x.bezig || x.koelt }) + '<span class="hv-zone__getal">' + (x.gemeten != null ? HV.maat(x.gemeten, '°', 1) : '—') + '</span></span>' +
+      '<span class="hv-zone__midden">' + boog({ doel: x.doel, gemeten: x.gemeten, toon: toon, bezig: x.bezig || x.koelt }) + '<span class="hv-zone__getal">' + (x.gemeten != null ? HV.maat(x.gemeten, '°C', 1) : '—') + '</span></span>' +
       '<span class="hv-zone__woord">' + (x.bezig ? HV.icoon('flame', { maat: 'maker' }) : x.koelt ? HV.icoon('snowflake', { maat: 'maker' }) : x.pauze || x.raamOpen ? HV.icoon('app-window', { maat: 'maker' }) : '') + h(woord) + (x.raamOpen && !x.pauze ? h(t(' · вікно відчинене', ' · raam open')) : '') + '</span></button>' +
       '<div class="hv-zone__voet">' + stapper + (extra ? o.icoonknop({ icoon: HV.paspoort.soorten[extra.soort].icoon, aria: HV.p(extra.naam), actie: 'blad', gegevens: { blad: 'apparaat:' + extra.id }, klas: 'hv-zone__extra' + (extra.st.aan ? ' is-aan' : '') }) : '') + '</div></article>';
   }
@@ -1001,7 +999,7 @@
     var r = Number(g.richting), zones = zonesNu().filter(function (x) { return x.doel != null && !x.uit && x.staat !== 'verouderd'; });
     var voor = zones.map(function (x) { return { x: x, was: x.doel, werd: klem(x.doel + r, 5, 30) }; }).filter(function (p) { return p.werd !== p.was; });
     if (!voor.length) return;
-    var waarom = r < 0 ? ['«На 1° нижче всюди»', '‘Overal 1° lager’'] : ['«На 1° вище всюди»', '‘Overal 1° hoger’'];
+    var waarom = r < 0 ? ['«На 1 °C нижче всюди»', '‘Overal 1 °C lager’'] : ['«На 1 °C вище всюди»', '‘Overal 1 °C hoger’'];
     Promise.all(voor.map(function (p) { return zetZoneDoel(p.x, p.werd, { stil: true, waarom: waarom }); })).then(function (uitkomst) {
       var ok = voor.filter(function (p, i) { return uitkomst[i] && uitkomst[i].ok; });
       if (!ok.length) return;

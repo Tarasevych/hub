@@ -259,8 +259,12 @@ button.hv-flow__knop:active { background: var(--surface2); }
 .hv-zonboog__vlak svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; }
 .hv-zonboog__merk { position: absolute; inline-size: 10px; block-size: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--panel); border: 2px solid var(--text); }
 .hv-zonboog__merk--nu { inline-size: 14px; block-size: 14px; margin: -7px 0 0 -7px; background: var(--accent); border-color: var(--panel); box-shadow: 0 0 0 1.5px var(--accent); }
-.hv-zonboog__doel { position: absolute; inset-block: 10px 0; inline-size: 0; border-inline-start: 1.5px dashed var(--text); }
-.hv-zonboog__doel > span { position: absolute; inset-block-start: -2px; inset-inline-start: 6px; padding: 0 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; white-space: nowrap; }
+/* подія запуску: поле вище на один рядок — «зараз» у першому, підпис події в другому; підпис стоїть з того боку лінії, де є місце */
+.hv-zonboog.heeft-doel .hv-zonboog__veld { block-size: 156px; }
+.hv-zonboog.heeft-doel .hv-zonboog__vlak { inset-block-start: 24px; }
+.hv-zonboog__doel { position: absolute; inset-block: 2px 0; inline-size: 0; border-inline-start: 1.5px dashed var(--text); }
+.hv-zonboog__doeltekst { position: absolute; inset-block-start: 2px; inset-inline-start: calc(var(--hv-doel) + 6px); max-inline-size: calc(100% - var(--hv-doel) - 10px); padding: 0 6px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.hv-zonboog__doeltekst.is-links { inset-inline-start: auto; inset-inline-end: calc(100% - var(--hv-doel) + 6px); max-inline-size: calc(var(--hv-doel) - 10px); }
 .hv-zonboog__horizon { stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
 .hv-zonboog__pad { fill: none; stroke: var(--text); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .hv-zonboog__label { position: absolute; inset-block-end: 2px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 3px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -513,6 +517,7 @@ button.hv-agenda__lijf:active { background: var(--surface2); }
 .hv-laag .hv-regelzin { font-size: var(--tekst-klein); }
 .hv-laag .hv-recepten, .hv-laag .hv-intenties { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 .hv-laag .hv-zonboog__veld { block-size: 120px; }
+.hv-laag .hv-zonboog.heeft-doel .hv-zonboog__veld { block-size: 146px; }
 
 /* ───────────── Чорнило ───────────── */
 .theme-inkt .hv-aut-held, .theme-inkt .hv-regelkop, .theme-inkt .hv-aut-subkop, .theme-inkt .hv-scenetegel.is-actief, .theme-inkt .hv-standkaart.is-nu { background: var(--panel); }

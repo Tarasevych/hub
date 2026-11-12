@@ -2,22 +2,22 @@
 
 # Ontwerp van de slimme-woninghub ‘Живий дім / Levend huis’
 
-Taak HUIS-001 · fase 0 · 10.11.2026 · status: ter goedkeuring bij de eigenaar
+Taak HUIS-001 · fase 0 · 10-11-2026 · status: ter goedkeuring bij de eigenaar
 
-Het enige toegangspunt tot het ontwerp van `huis.tarasevych.com` voor de eigenaar en voor wie het werk uitvoert. Rangorde van de bronnen: besluiten van de eigenaar (plan HUIS-001 §1) → [ontwerptaal](ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md) en `docs/huis/maquette/stijl/hv-tokens.json` — alle waarden → zonespecificaties `zones/` — het gedrag van een zone → dit document — de samenvatting. Bij een verschil geldt de bron en wordt de samenvatting gecorrigeerd. Een **uitvoerder** is een scène, automatisering, optimalisator of agent die handelt zonder dat er een mens voor het scherm staat.
+Het enige toegangspunt tot het ontwerp van `huis.tarasevych.com` voor de eigenaar en voor wie het werk uitvoert. Rangorde van de bronnen: besluiten van de eigenaar (plan HUIS-001 §1) → [ontwerptaal](ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md) en `docs/huis/maquette/stijl/hv-tokens.json` — alle waarden → zonespecificaties `zones/` — het gedrag van een zone → dit document — de samenvatting. Bij een verschil geldt de bron en wordt de samenvatting gecorrigeerd. Een **uitvoerder** is een scène, een automatisering, de optimalisatie of een agent die handelt zonder dat er een mens voor het scherm staat.
 
 ## 1. Wat het is en waarom
 
 `huis.tarasevych.com` wordt het centrale bedieningspaneel van het thuisecosysteem van het platform ‘Mijn Ruimte’: licht, klimaat, media, energie, beveiliging en camera's, huishoudelijke apparatuur, vervoer, drones en robots — met mogelijkheden op het niveau van Home Assistant, maar als kant-en-klaar product. De basis is er al: de module ‘Huis vNext’ achter de uitgeschakelde vlag `huis-vnext` (`shared/huis-model.ts`, 11 tabellen `app.huis_*`, 13 tabbladen). Die bouwen we verder uit in plaats van opnieuw te beginnen; negen oude fouten worden in fase 0 met afzonderlijke vastleggingen hersteld.
 
-**Besluiten van de eigenaar (09–10.11.2026):**
+**Besluiten van de eigenaar (9–10 november 2026):**
 
 1. Eerst het ontwerp en de **simulator**; echte apparaten volgen later, via hetzelfde adaptermodel.
 2. Reikwijdte: licht, stopcontacten en sensoren, energie, beveiliging, klimaat en media, overige apparatuur, **vervoer, camera's, drones**.
 3. Schermen: telefoon, wandpaneel, computer, televisie, **smalle en gespecialiseerde externe schermen**.
 4. Visuele basis — **‘Levend huis’**: een sfeervolle hemel, diepte, glas op lagen.
 5. **Toestemmingen:** alle standen zijn beschikbaar voor elke handeling; standaard ‘Uit’; alleen de eigenaar zet ze aan en uit, zonder opgelegde plafonds of termijnen; een agent kan zijn rechten niet uitbreiden en ook niet inperken; het Logboek is verplicht; wat een mens kiest, wordt precies zo uitgevoerd.
-6. Na goedkeuring — **maquette en specificatie, daarna een pauze** voor beoordeling, zonder nieuwe functionaliteit in de code van de site.
+6. Na goedkeuring — **maquette en specificatie, daarna een pauze** voor beoordeling, zonder nieuwe bedieningsfuncties in de code van de site; de maquette zelf staat als aparte statische pagina op de site (§12).
 7. Hoger op de lijst komen Garage, Automatisering en AI-agenten, en Schermen. **De uitgave bevat alle bedieningsinstrumenten, zonder uitzondering.**
 
 ## 2. Concept ‘Живий дім / Levend huis’
@@ -39,7 +39,7 @@ Wat we bewust niet worden: een gecertificeerd alarmsysteem, een vervanging van d
 
 ## 3. De beeldtaal in het kort
 
-Volledige beschrijving — de [ontwerptaal](ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md); 48 nieuwe kleurtokens en 201 contrastparen in drie thema's doorstaan de controle.
+De volledige beschrijving staat in de [ontwerptaal](ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md); 48 nieuwe kleurtokens en 201 contrastparen in drie thema's doorstaan de controle.
 
 - **Drie lagen** (ontwerptaal §2): hemel — de achtergrond; papier `--panel` — alles met getallen; glas `--hv-glas` — **alleen** de kop, de navigatie, de bladen en ‘Opdracht’; boven alles de noodlaag `hv-nood`. Een effen terugvalweergave schakelt zichzelf in (minder doorzichtigheid, verhoogd contrast, televisie, inkt, alarm).
 - **Hemel** (ontwerptaal §3): nacht · dageraad · dag · schemer in het lichte en het donkere thema, onderscheiden door tint en niet door lichtheid. Bewolking is een bijmenging van `--surface2`, neerslag een stilstaande arcering; ‘Afwezig’ haalt de kleur weg, een alarm schakelt de hemel uit. Volledig alleen op ‘Thuis’, elders stil.
@@ -94,7 +94,7 @@ Volledige schetsen — zone 2 §2.1 en zone 1 §2. Tekens: `( )` — schakelcirk
 ┌ Samenvatting · Dagstrook −18…+6 uur ┃nu ──────────────────────────────┐
 ```
 
-**Telefoon** (390 px; de held is hoogstens ¼ van het scherm en krimpt tot een pil in de kop «Вечір · 2 важливі · 17:42 / Avond · 2 aandachtspunten · 17:42»):
+**Telefoon** (390 px; de held is hoogstens ¼ van het scherm en krimpt tot een pil in de kop «Вечір · 17:42 / Avond · 17:42»; de teller van aandachtspunten is een aparte chip):
 
 ```
 ┌ glas 48 ─────────────────────────┐
@@ -138,7 +138,7 @@ Elke zone heeft een paar bestanden (Oekraïens en Nederlands); hier staat de ker
 
 **Zone 6. Гараж / Garage** — [06-GARAGE](zones/06-GARAGE.nl.md). ‘Is het vervoer klaar, waar is het, wat is er in de lucht en op het perceel.’ De telemetriekaart `hv-telemetrie`: lading, actieradius, drie getallen, silhouet. Auto's, elektrische fietsen, een step, een brommer. Drones — alleen in simulatie, met stempel: vloot, accu's, controle vóór het opstijgen, cockpit met beeld en telemetrie, «Зависнути · Повернутися додому · Сісти зараз / Zweven · Naar huis · Nu landen», missies, vliegzones ter informatie. Een noodstop van de motoren heeft de hub niet — de cockpit zegt dat ook. Robots op de kaart van het perceel.
 
-**Zone 7. Автоматика / Automatisering** — [07-AUTOMATISERING](zones/07-AUTOMATISERING.nl.md). ‘Wat gebeurt er vanzelf, waarom en namens wie.’ De bewerker «Коли / Якщо / Тоді — Wanneer / Als / Dan» vanuit een bedoeling, een voorwaarde live ‘waar · onwaar · onbekend’, «Зараз спрацювала б: ні — … / Zou nu afgaan: nee — …». Het pad «Чернетка → Спостереження → Увімкнено / Concept → Meekijken → Aan», proefdraaien, verloop, versies; de motor handelt namens de persoon die de regel heeft ingeschakeld. Een stap met de toestemming ‘Uit’ wordt overgeslagen en vastgelegd. Scènes uit een momentopname van de toestand, standen, agenda, het Logboek ‘wie · wat · waarom · was → wordt · via welke toestemming’.
+**Zone 7. Автоматика / Automatisering** — [07-AUTOMATISERING](zones/07-AUTOMATISERING.nl.md). ‘Wat gebeurt er vanzelf, waarom en namens wie.’ De bewerker «Коли / Якщо / Тоді — Wanneer / Als / Dan» vanuit een bedoeling, een voorwaarde live ‘waar · onwaar · onbekend’, «Зараз спрацювала б: ні — … / Zou nu afgaan: nee — …». Het pad «Чернетка → Спостереження → Увімкнено / Concept → Meekijken → Aan», proefdraaien, verloop, versies; de motor handelt namens de persoon die de regel heeft ingeschakeld. Een stap met de toestemming ‘Uit’ wordt overgeslagen en vastgelegd. Scènes uit een momentopname van de toestand, standen, agenda, het Logboek ‘wie · wat · waarom · was → werd · via welke toestemming’.
 
 **Zone 8. Помічник і агенти / Assistent en agenten** — [08-ASSISTENT-EN-AGENTEN](zones/08-ASSISTENT-EN-AGENTEN.nl.md). De Huisassistent is een ingebouwde agent met dezelfde kolom toestemmingen als de externe. Opdracht → een kaart met de bedoeling ‘was → wordt’ uit een droge proefrun; een handeling die een mens bevestigt, is een handeling van die mens, met diens ritueel. Agentpagina: «Інструменти · Рамки · Дії · Що бачить агент / Instrumenten · Kaders · Handelingen · Wat de agent ziet». De wachtrij «Чекає на вас / Wacht op jou», «Чому це сталося / Waarom gebeurde dit», «Зупинити самостійні дії / Zelfstandige acties stoppen». De volledige set MCP-instrumenten; een instrument om toestemmingen te wijzigen bestaat niet. Rollen: eigenaar, bewoner, kind, gast.
 
@@ -185,14 +185,14 @@ Volledig — zone 9 §3.
 
 Het model — besluit nr. 5 (plan §3.8, ontwerptaal §10). Twee onafhankelijke dimensies: het **niveau van een handeling** bepaalt alleen het teken en het ritueel voor de mens voor het scherm; de **toestemming** bepaalt wat uitvoerders mogen doen. Het niveau beperkt de toestemmingen niet.
 
-- **Standen voor elke handeling, zonder uitzondering:** «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd» (`hv-stand`), afzonderlijk voor scène, automatisering, optimalisator, de Huisassistent en elke externe agent. Standaard — ‘Uit’.
+- **Standen voor elke handeling, zonder uitzondering:** «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd» (`hv-stand`), afzonderlijk voor scène, automatisering, de optimalisatie, de Huisassistent en elke externe agent. Standaard — ‘Uit’.
 - **Alleen de eigenaar zet ze aan en uit**, op een persoonlijk apparaat. Plafonds, opgelegde termijnen en onbereikbare segmenten zijn er niet: kiest de eigenaar ‘Altijd’ voor het ontgrendelen van deuren, het uitschakelen van de beveiliging, poorten, gas of het opstijgen van een drone, dan werkt het ook zo. Termijn, kamers, uren en een budget aan handelingen zijn optionele kaders die de eigenaar zelf instelt; standaard «без рамок / zonder kaders».
 - ‘Altijd’ voor een gevaarlijke of kritieke handeling vraagt een bevestiging van de aanmelding van de eigenaar — een controle dat hij het zelf is die de toestemming wijzigt, geen beperking van zijn keuze. Daarna staat bij de handeling, op de tegel en in de kop (‘! N’) een vaste, gevulde markering ‘!’.
 - **Een agent wijzigt geen toestemmingen** — niet uitbreiden en niet inperken, niet de eigen en niet die van anderen: zo'n bedieningselement en zo'n MCP-instrument bestaan niet. Andere rollen zien de stand als tekst met een slot: «Змінює лише власник / Alleen de eigenaar kan dit wijzigen».
-- **Het Logboek is verplicht:** elke wijziging van een toestemming en elke handeling op grond van een toestemming levert een vermelding ‘wie · wat · waarom · was → wordt · via welke toestemming’ op in het Logboek en in het meldingencentrum; het controlespoor kent alleen toevoegen, en niemand kan het uitschakelen.
+- **Het Logboek is verplicht:** elke wijziging van een toestemming en elke handeling op grond van een toestemming levert een vermelding ‘wie · wat · waarom · was → werd · via welke toestemming’ op in het Logboek en in het meldingencentrum; het controlespoor kent alleen toevoegen, en niemand kan het uitschakelen.
 - **‘Vragen’** maakt een verzoek `hv-verzoek` aan: «Схвалити раз / Eén keer goedkeuren · Відхилити / Afwijzen»; de goedkeuring doorloopt het ritueel van het niveau van de handeling.
 - **De pauze** «Зупинити самостійні дії / Zelfstandige acties stoppen» verandert de standen niet: wat gekozen is, blijft gekozen, er wordt alleen niets uitgevoerd. Stoppen kan de eigenaar of een bewoner, op de noodlaag iedereen voor het scherm; hervatten alleen de eigenaar.
-- **De pagina** `/instellingen/toestemmingen` — een matrix ‘handeling × uitvoerder’ met groepen en het groepsbrede «Для всієї групи / Voor de hele groep»; het register van niveaus staat op `/instellingen/risico`.
+- **De pagina** `/instellingen/toestemmingen` — een matrix ‘handeling × uitvoerder’ met groepen en het groepsbrede «Для всієї групи / Voor de hele groep»; het register van niveaus staat op `/instellingen/risico`. In de maquette zijn beide samengevoegd tot één tabblad (§12).
 
 | Handeling (voorbeelden uit zones 3–6) | Niveau | Ritueel van de mens | Standaardstand van uitvoerders |
 |---|---|---|---|
@@ -293,7 +293,7 @@ Volledig — zone 9; in fase 0 wordt hiervan niets gebouwd.
 | 4 | Garage | vervoer, drones, robots, kaart | 12 |
 | 5 | Automatisering en AI-agenten | bewerker, versies, goedkeuringen, volledige set MCP-instrumenten | 18 |
 | 6 | Schermen en panelen | 13 profielen, kiosk, koppelen, persoonlijke codes, app, plattegrondbewerker | 14 |
-| 7 | Geschiedenis en energie | grafieken, ‘Terugblik’, optimalisator | 16 |
+| 7 | Geschiedenis en energie | grafieken, ‘Terugblik’, de optimalisatie | 16 |
 | 8 | Mensen, rollen, privacy | uitnodigingen, rollen, toestemmingsverklaringen, meldingsregels | 14 |
 | 9 | Beveiliging en camera's | beveiliging, gastcodes, camera's, echte noodlaag | 12 |
 | 10 | Klimaat en media | themapagina's, weekschema's | 7 |
@@ -306,8 +306,15 @@ Fasen 1–11 — ongeveer 145 dagen. Tot fase 8 handelen agenten en automatiseri
 
 - **Waar:** de bronnen — `docs/huis/maquette/` (`stijl/` met `hv-tokens.json`, `gegevens/` — paspoort van het demohuis, tarief en scenario's, `kern/` — minisimulator en schil, `schermen/` — schermen, `volgorde.json` — volgorde van samenvoegen); de bouwer — `scripts/huis-maquette.mjs`; het resultaat — één op zichzelf staand bestand `docs/huis/maquette/huis-maquette.html` zonder externe afhankelijkheden.
 - **Bouwen en openen:** `node scripts/huis-maquette.mjs` → `huis-maquette.html` openen in een willekeurige moderne browser (een server is niet nodig); `--controle` — statische controles zonder browser; `--artefact <pad>` — variant voor een privépagina ter inzage; `node scripts/huis-maquette-rook.mjs --uit <map>` — rookproef in de browser.
+- **Op de site:** `node scripts/huis-maquette.mjs --site <map>` bouwt drie bestanden — `index.html`, `maquette.css` en `maquette.js` — zonder ingebedde stijlen en scripts, omdat het inhoudsbeveiligingsbeleid van de site dat eist; de bouw van de site (`npm run build`) zet ze na `vite build` in `dist/huis-maquette/`. Het adres is `huis.tarasevych.com/huis-maquette/`; de ingang is de knop «Відкрити макет / Maquette openen» op het tabblad «Вітрина / Toonzaal», en zolang de vlag `huis-vnext` uit staat op de huidige pagina van het slimme huis. De maquette opent in een nieuw tabblad en bedient niets: geen enkele handeling daarin bereikt de apparaten of verandert de woning.
 - **Wat erin zit:** een minisimulator met een vaste kiem — elke handeling gaat door de poorten ‘verbinding → bereikbaarheid → rol → ritueel → toestemming van de uitvoerder’ en laat een vermelding in het Logboek en een melding achter. Een bedieningspaneel buiten het canvas: thema (licht, donker, inkt), taal, 13 profielen in echte pixels, dichtheid, rol, toestand van de gegevens, 15 scenario's, tijdsnelheid. Klikbaar zijn alle secties en tabbladen, het blad van elk apparaattype, de toestemmingen met een werkende `hv-stand` en ‘!’, de agentpagina, de regelbewerker, Opdracht, de vluchtcockpit, de Simulator, de noodlaag en «Складники / Onderdelen». Met het stempel ‘later’: plattegrondbewerker, cameramaskers, koppelwizards.
-- **Bekende verschillen die in de herstelronde worden rechtgezet** (zone 10 §10): ‘Opdracht’ is op de telefoon een vierkant boven de onderbalk, geen onderdeel ervan; de adressen `/energie/zon`, `/automatiseringen/dagorde`, `/automatiseringen/agenten` → `/energie/opwek`, `/automatiseringen/agenda`, `/assistent/agenten`.
+- **Bekende verschillen tussen de maquette en de specificatie** (zie ook zone 10 §10). De maquette gaat precies zo de uitgave in; de specificatie blijft de norm tot de eigenaar de keuze van de maquette overneemt:
+  - **‘Opdracht’ op de telefoon:** in de maquette het middelste punt van de onderbalk; volgens de specificatie (ontwerptaal §9) een vierkant van 56 px boven de balk.
+  - **Volgorde van de blokken van ‘Thuis’ op de telefoon:** in de maquette «Зараз важливо / Nu belangrijk» → «Дім у розрізі / Huis in doorsnede» → scènes → favorieten → kamers → samenvatting → dagstrook; volgens de specificatie (ontwerptaal §7, de schets in §5) «Зараз важливо / Nu belangrijk» → scènes → favorieten → «Дім у розрізі / Huis in doorsnede» → samenvatting.
+  - **Toestemmingen:** in de maquette zijn de matrix ‘handeling × uitvoerder’ en het register van niveaus samengevoegd tot één tabblad «Дозволи й небезпечні дії / Toestemmingen en risicovolle acties» op het adres `/instellingen/risico`; het adres `/instellingen/toestemmingen` en een apart tabblad «Ризики / Risico's» heeft de maquette niet. De Nederlandse naam volgens de specificatie is ‘Toestemmingen en gevaarlijke acties’.
+  - **Adressen:** in de maquette `/energie/zon`, `/automatiseringen/dagorde`, `/automatiseringen/agenten`, `/instellingen/gegevens`; volgens de specificatie `/energie/opwek`, `/automatiseringen/agenda`, `/assistent/agenten`, `/instellingen/opslag`.
+  - **Namen van tabbladen** (maquette — specificatie): «Стан / Stand» — «Стан / Status»; «Порядок дня / Dagorde» — «Порядок дня / Agenda»; «Агенти й погодження / Agenten en goedkeuringen» — «Агенти / Agenten»; «Калькулятор / Rekenhulp» — «Калькулятор / Planner»; «Дані / Gegevens» — «Дані й зберігання / Gegevens en opslag».
+  - **Niet in de maquette:** de pagina's «Тунель і локальний шлях / Tunnel en lokale route» en «Для знавців / Expertweergave» (zone 9).
 
 ## 13. Besluiten vóór de volgende fasen
 

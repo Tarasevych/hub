@@ -34,7 +34,12 @@
 .hv-en-kop.hv-toon-zon h3 > .hv-ic, .hv-en-kop.hv-toon-batterij h3 > .hv-ic, .hv-en-kop.hv-toon-auto h3 > .hv-ic, .hv-en-kop.hv-toon-warm h3 > .hv-ic { background: var(--toon-zacht); color: var(--toon); }
 .hv-en-kop__rechts { display: inline-flex; align-items: center; gap: var(--ruimte-2); flex: none; }
 .hv-en-kop__rechts > .hv-knop { margin-block: -6px; margin-inline-end: calc(var(--ruimte-2) * -1); }
+/* картка потоків: довгий заголовок («Потоки · останній знімок») лишається в одному рядку, одиниця й чип стану стають під ним праворуч */
+.hv-en-stroomkaart .hv-en-kop { flex-wrap: wrap; }
+.hv-en-stroomkaart .hv-en-kop__rechts { margin-inline-start: auto; }
 .hv-en-eenheid { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+/* неподільний шматок у суцільному тексті: число з одиницею, сума, проміжок часу */
+.hv-en-vast { white-space: nowrap; }
 .hv-en-euro { white-space: normal; }
 .hv-en-vb { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0; line-height: 1.4; color: var(--muted); vertical-align: middle; }
 .hv-en-vb--los { margin-inline-start: 0; }
@@ -77,7 +82,10 @@
 .hv-en-knoop__tekst { display: grid; min-inline-size: 0; line-height: 1.2; }
 .hv-en-knoop__naam { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); overflow-wrap: anywhere; }
 .hv-en-knoop__getal { font-size: var(--hv-tekst-kop); font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
-.hv-en-knoop__woord { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+/* рядок значення з позначкою (заряд батареї): два неподільні шматки; у вузькому вузлі позначка стає під числом цілою */
+.hv-en-knoop__getal.heeft-bij { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+.hv-en-knoop__bij { padding: 1px 7px; border-radius: 999px; background: var(--toon-zacht); font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0; line-height: 1.4; white-space: nowrap; color: var(--text); }
+.hv-en-knoop__woord { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); overflow-wrap: anywhere; }
 .hv-en-knoop.is-stil .hv-en-knoop__teken { background: var(--surface); color: var(--muted); }
 .hv-en-knoop.is-stil .hv-en-knoop__getal { color: var(--muted); }
 .hv-en-knoop--huis {
@@ -90,6 +98,9 @@
 .hv-en-knoop--huis .hv-en-knoop__naam { font-size: var(--tekst-klein); color: var(--text); }
 .hv-en-knoop--huis .hv-en-knoop__getal { font-size: var(--hv-getal-m); line-height: 1.05; }
 .hv-en-knoop.is-oud, .hv-en-draad__balk.is-oud { background-image: repeating-linear-gradient(45deg, var(--hv-arcering) 0 1px, transparent 1px 10px); }
+/* штрих «останній знімок» лежить під підкладкою тексту: назва, число й слово вузла читаються так само, як наживо */
+.hv-en-knoop.is-oud .hv-en-knoop__tekst, .hv-en-knoop--huis.is-oud .hv-en-knoop__naam, .hv-en-knoop--huis.is-oud .hv-en-knoop__getal { padding-inline: 4px; border-radius: 4px; background: var(--panel); }
+.hv-en-knoop.is-oud .hv-en-knoop__tekst { justify-self: start; }
 
 .hv-en-draad { display: grid; gap: var(--ruimte-4); margin-block: var(--ruimte-2); }
 .hv-en-draad__groep { display: grid; gap: var(--ruimte-2); }
@@ -111,6 +122,13 @@
 @container enstroom (min-width: 520px) {
   .hv-en-schema { display: block; }
   .hv-en-draad { display: none; }
+}
+/* найвужча схема (520–639 px): вузли ширші й щільніші, поле вище — чотири рядки вузла («Батарея · 3,0 кВт · 48 % · віддає»)
+   не налазять на сусідній вузол, а довге слово («заряджається», «Warmtepomp») не виходить за рамку */
+@container enstroom (min-width: 520px) and (max-width: 639px) {
+  .hv-en-schema { aspect-ratio: 8 / 5; }
+  .hv-en-knoop--l, .hv-en-knoop--r { inline-size: 29.5%; gap: 6px; padding: var(--ruimte-2); }
+  .hv-en-knoop--l .hv-en-knoop__teken, .hv-en-knoop--r .hv-en-knoop__teken { inline-size: 28px; block-size: 28px; }
 }
 
 /* ───────────── Сальдо й дуга ───────────── */
@@ -263,6 +281,32 @@
 .hv-en-meer__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
 .hv-en-station { padding-block-end: var(--ruimte-4); }
 .hv-en-stationkaart .hv-telemetrie { margin-block-start: var(--ruimte-2); }
+
+/* ───────────── Сесії зарядки ───────────── */
+/* Запис — власна сітка у власному контейнері (ensessie): вузько — два ряди «дата · сума» і «спосіб · кВт·год»,
+   від 480 px — дата зі способом ліворуч, кВт·год і сума праворуч в один рядок. Дата не ламається всередині «8 листопада»;
+   день тижня у вузькому записі скорочено («пт»), щоб дата стояла в одному рядку. */
+.hv-en-sessies { container: ensessie / inline-size; }
+.hv-en-sessielijst { display: grid; margin-block-end: var(--ruimte-2); }
+.hv-en-sessie {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: "teken datum euro" "teken sub kwh";
+  align-items: baseline; gap: 2px var(--ruimte-3); padding-block: var(--ruimte-2); border-block-start: 1px solid var(--line);
+  font-size: var(--tekst-klein); line-height: 1.35; color: var(--text);
+}
+.hv-en-sessie:first-child { border-block-start: 0; }
+.hv-en-sessie__teken { grid-area: teken; align-self: center; display: grid; place-items: center; color: var(--muted); }
+.hv-en-sessie__datum { grid-area: datum; min-inline-size: 0; font-weight: 600; }
+.hv-en-sessie__lang { display: none; }
+.hv-en-sessie__sub { grid-area: sub; min-inline-size: 0; font-size: var(--tekst-mini); color: var(--muted); }
+.hv-en-sessie__euro { grid-area: euro; justify-self: end; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hv-en-sessie__kwh { grid-area: kwh; justify-self: end; font-size: var(--tekst-mini); font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@container ensessie (min-width: 480px) {
+  .hv-en-sessie { grid-template-columns: 24px minmax(0, 1fr) auto minmax(4.5em, auto); grid-template-areas: "teken datum kwh euro" "teken sub kwh euro"; }
+  .hv-en-sessie__kwh, .hv-en-sessie__euro { align-self: center; }
+  .hv-en-sessie__kwh { font-size: var(--tekst-klein); }
+  .hv-en-sessie__lang { display: inline; }
+  .hv-en-sessie__kort { display: none; }
+}
 
 /* ───────────── Батарея ───────────── */
 .hv-en-bathoofd { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-4); padding-block-end: var(--ruimte-3); }

@@ -28,7 +28,7 @@ De zone beheert de lijst met apparaten, de bladen van alle klassen, ‘Apparatuu
 - **Toestanden** zijn de twaalf gedeelde; de zone voegt alleen woorden toe. О (‘wacht’) bij slapende apparaten: «застосується після пробудження, до 14:32 / wordt toegepast na ontwaken, uiterlijk 14:32»; Р (‘bezig’): richting en percentage; В (‘niet uitgevoerd’): zowel «заклинило / klemt» als de eigen beveiliging van het apparaat (‘wind 14 m/s’) met de actie «Обійти раз / Eén keer omzeilen»; П (‘toestand verondersteld’): twee actiecirkels en «Виправити стан / Toestand corrigeren»; Б (‘geblokkeerd’): alleen de rol of de bron. «Несправність / storing» is een regel `hv-apparaatstoring` (code, «Що робити / Wat te doen») plus ‘aandacht’ in ‘Nu belangrijk’; «на обслуговуванні до 16:00 / in onderhoud tot 16:00» is een stille chip.
 - **Opdracht:** verzonden (О, tot 10 s) → ontvangen (Р) → bevestigd | niet uitgevoerd (В), via de stroom `POST /api/huis/stroom`. Voor een onbereikbaar apparaat is er geen wachtrij.
 - **Een groep** is één bewerking: «9 з 14 виконано / 9 van 14 uitgevoerd» en een verslag; gevaarlijke en kritieke stappen gaan samen door één `hv-gevaar` met een overzicht.
-- **«Повернути / Ongedaan maken»** alleen als de vorige waarde actueel is, anders «Повернути не можна: попередній стан 3 ламп невідомий / Ongedaan maken kan niet: de vorige toestand van 3 lampen is onbekend»; onomkeerbare gevoelige acties krijgen een aftelling van 3 s; uitvoerders tonen «Виконаю за 10 с · Зупинити / Uitvoeren over 10 s · Tegenhouden».
+- **«Повернути / Ongedaan maken»** alleen als de vorige waarde actueel is, anders «Повернути не можна: попередній стан 3 ламп невідомий / Ongedaan maken kan niet: de vorige toestand van 3 lampen is onbekend»; onomkeerbare gevoelige acties krijgen een aftelling van 3 s. Dit is het ritueel voor de mens: voor uitvoerders voegt het systeem geen vertraging toe (§8).
 - **Onbereikbaar:** «востаннє: увімкнено, 14:02 / laatst: aan, 14:02»; in het blad «Що перевірити / Wat te controleren» (stappen per klasse), `hv-verbindingsketen` met de verbroken schakel en «Перевірити зараз / Nu controleren».
 
 ## 3. De lijst `/apparaten`
@@ -137,7 +137,7 @@ Elke actie van elke klasse heeft een `hv-stand` «Вимкнено / Uit · Пи
 | kritiek | `ingang` openen, gas openen, de beveiliging verzwakken | houdrail en bevestiging van de aanmelding |
 
 - Een poort zonder obstakelsensor: sluiten wordt gevaarlijk, de houdrail toont het camerabeeld van de zone en een aftelling van 5 s. Het niveau in het register `/instellingen/risico` kan de eigenaar alleen verhogen: het niveau bepaalt het ritueel voor de mens, niet de toestemming.
-- **Agenten hebben de volledige set hulpmiddelen van de zone** (groep `huis` van de koppeling): apparaten, toestanden, geschiedenis, diagnose, batterijen en verbruik lezen; elke actie van elke klasse uitvoeren, groepsacties, timers, voorinstellingen, het plan voor het goedkope uur, ‘Eén keer omzeilen’, onderhoud, de beveiliging verzwakken, firmware; kamers, labels en namen wijzigen. Elk hulpmiddel valt onder een eigen `hv-stand`: ‘Vragen’ levert een `hv-verzoek` op, ‘Altijd’ een uitgestelde uitvoering met een auteursteken. Een hulpmiddel om toestemmingen te wijzigen bestaat niet.
+- **Agenten hebben de volledige set hulpmiddelen van de zone** (groep `huis` van de koppeling): apparaten, toestanden, geschiedenis, diagnose, batterijen en verbruik lezen; elke actie van elke klasse uitvoeren, groepsacties, timers, voorinstellingen, het plan voor het goedkope uur, ‘Eén keer omzeilen’, onderhoud, de beveiliging verzwakken, firmware; kamers, labels en namen wijzigen. Elk hulpmiddel valt onder een eigen `hv-stand`: ‘Vragen’ levert een `hv-verzoek` op, ‘Altijd’ betekent directe uitvoering binnen de kaders van de eigenaar, met een auteursteken, `hv-toost` en een vermelding in het Logboek. Een hulpmiddel om toestemmingen te wijzigen bestaat niet.
 
 ## 9. Toelichtingen en teksten
 
@@ -153,7 +153,7 @@ Vaste teksten komen uit het register; berekende uit `POST /api/huis/gevolg`.
 
 ## 11. Onderdelen
 
-**Uit OT:** `hv-tegel`, `hv-laag`, `hv-blok`, `hv-tabel`, `hv-grafiek`, `hv-stempel`, `hv-waarom`, `hv-schakel`, `hv-schuif`, `hv-wijzer`, `hv-kleur`, `hv-aftel`, `hv-risico`, `hv-stand`, `hv-gevaar`, `hv-rail`, `hv-gevolg`, `hv-verzoek`.
+**Uit OT:** `hv-tegel`, `hv-laag`, `hv-blok`, `hv-tabel`, `hv-grafiek`, `hv-stempel`, `hv-waarom`, `hv-schakel`, `hv-schuif`, `hv-wijzer`, `hv-kleur`, `hv-aftel`, `hv-risico`, `hv-stand`, `hv-gevaar`, `hv-rail`, `hv-gevolg`, `hv-verzoek`, `hv-toost`.
 
 **Eigen** (ter goedkeuring): `hv-selectiebalk`, `hv-apparaatkop`, `hv-bediening`, `hv-segment`, `hv-stapper`, `hv-voortgang`, `hv-afstand`, `hv-speler`, `hv-weekrooster`, `hv-zones`, `hv-kringloop`, `hv-knopschema`, `hv-verbindingsketen`, `hv-apparaatstoring`, `hv-waargebruikt`, `hv-verzwakt`, `hv-cyclus`, `hv-telang`, `hv-paspoort`, `hv-formulier`.
 

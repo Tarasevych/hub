@@ -174,7 +174,9 @@
       breed = !!vrij.breed;
       lijf = '<div class="hv-laag__paneel">' + vrij.render(ctx, r.id, r.deel) + '</div>';
     }
-    return '<aside class="hv-laag' + (breed ? ' hv-laag--breed' : '') + '" role="dialog" aria-labelledby="hv-laag-titel" data-k="laag-' + h(r.type + '-' + (r.id || '')) + '">' +
+    // на телефоні аркуш модальний (під ним затемнення); від 900 px він стоїть поруч зі сторінкою й нічого не перекриває
+    var modaal = (ctx.profiel.breedte || 0) < 900;
+    return '<aside class="hv-laag' + (breed ? ' hv-laag--breed' : '') + '" role="dialog" aria-modal="' + (modaal ? 'true' : 'false') + '" aria-labelledby="hv-laag-titel" data-k="laag-' + h(r.type + '-' + (r.id || '')) + '">' +
       '<div class="hv-laag__greep" aria-hidden="true"></div>' +
       '<header class="hv-laag__kop">' + (icoon ? '<span class="hv-laag__teken">' + HV.icoon(icoon) + '</span>' : '') +
       '<div class="hv-laag__naam"><h2 id="hv-laag-titel" tabindex="-1">' + h(titel) + '</h2>' + (sub ? '<p>' + h(sub) + '</p>' : '') + '</div>' +

@@ -23,6 +23,9 @@
 .hv-profiel-horloge .hv-gezicht__woord, .hv-profiel-horloge .hv-gezicht__getal { align-self: center; }
 .hv-profiel-horloge .hv-gezicht__getal { font-size: var(--hv-getal-l); }
 .hv-profiel-horloge .hv-gezicht__actie { min-block-size: var(--hv-tik); margin: 0; }
+/* «Увага»: речення — те, заради чого обличчя існує: до трьох рядків, число менше */
+.hv-profiel-horloge .hv-gezicht--horloge-meldingen .hv-gezicht__toestand { -webkit-line-clamp: 3; }
+.hv-profiel-horloge .hv-gezicht--horloge-meldingen .hv-gezicht__getal { font-size: var(--hv-getal-m); }
 .hv-profiel-horloge .hv-versheid span:not(.hv-versheid__stip) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
 .hv-profiel-horloge .hv-versheid { padding: 6px; }
 .hv-profiel-horloge .hv-toosten { inset: var(--ruimte-1); inline-size: auto; align-content: start; }
@@ -33,7 +36,12 @@
 .hv-profiel-strook .hv-gezicht { padding: 0; grid-template-rows: minmax(0, 1fr) auto; align-content: stretch; gap: 0; }
 .hv-strook { display: grid; grid-template-columns: 3fr 3fr 3fr 3fr 4fr; align-items: stretch; min-block-size: 0; }
 .hv-strook > section { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-content: space-between; gap: var(--ruimte-2); padding: var(--ruimte-5); border-inline-start: 1px solid var(--line); background: var(--panel); min-inline-size: 0; min-block-size: 0; overflow: hidden; }
-.hv-strook > section:first-child { border-inline-start: 0; background: transparent; grid-template-rows: auto minmax(0, 1fr); }
+/* колонка годинника лежить на тому самому папері, що й решта; небо — лише тонкий натяк угорі */
+.hv-strook > section:first-child { border-inline-start: 0; background: linear-gradient(180deg, color-mix(in srgb, var(--hv-hemel-boven) 55%, var(--panel)) 0, var(--panel) 88px); grid-template-rows: auto minmax(0, 1fr); }
+/* «з мережі»: підпис угорі, число й ціна — однією групою по центру висоти */
+.hv-strook__saldo { grid-template-rows: auto minmax(0, 1fr) auto auto minmax(0, 1fr) !important; row-gap: var(--ruimte-1) !important; }
+.hv-strook__saldo > .hv-strook__getal { grid-row: 3; align-self: end; }
+.hv-strook__saldo > .hv-strook__prijs { grid-row: 4; margin-block-start: var(--ruimte-2); }
 .hv-strook__tijd > p:last-child { align-self: end; }
 .hv-strook__klok { font-size: 88px; font-weight: 600; letter-spacing: -0.04em; line-height: 0.95; }
 .hv-strook__datum { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-2); margin-block-start: var(--ruimte-2); font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
@@ -55,7 +63,8 @@
 /* обране: чотири плитки 2×1 на всю ширину зони, одна під одною */
 .hv-strook__fav { display: grid !important; grid-template-columns: minmax(0, 1fr); grid-template-rows: none !important; grid-auto-rows: minmax(0, 1fr); gap: var(--ruimte-2) !important; align-content: stretch !important; padding-block: var(--ruimte-3) !important; }
 .hv-strook__fav .hv-tegel { min-block-size: 0; box-shadow: none; }
-.hv-profiel-strook .hv-dagstrook { background: var(--panel); border-block-start: 1px solid var(--line); padding: 4px var(--ruimte-5) 0; overflow: hidden; }
+/* шкала часу не торкається нижнього краю екрана: фізична рамка панелі її не зріже */
+.hv-profiel-strook .hv-dagstrook { background: var(--panel); border-block-start: 1px solid var(--line); padding: 4px var(--ruimte-5) var(--ruimte-3); overflow: hidden; }
 .hv-profiel-strook .hv-dagstrook .hv-grafiek__banen { padding-block: 18px 18px; gap: 4px; }
 .hv-profiel-strook .hv-dagstrook .hv-grafiek__wissel { display: none; }
 .hv-profiel-strook .hv-toosten { inset-block-end: 110px; }

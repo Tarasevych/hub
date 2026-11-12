@@ -221,6 +221,13 @@ button.hv-gzx-cam { cursor: pointer; }
 .hv-gzx-vk__acties { display: flex; gap: var(--ruimte-2); min-inline-size: 0; }
 .hv-gzx-vk__acties > .hv-knop { flex: 1 1 0; min-inline-size: 0; }
 .hv-gzx-vk__acties > .hv-segment { flex: 1 1 auto; }
+/* напис кнопки обличчя — завжди один рядок: ряд дій тримає спільну висоту; задовгий напис скорочується, а не ламається */
+.hv-gzx-vk__acties .hv-knop, .hv-gzx-rond__acties .hv-knop { white-space: nowrap; }
+.hv-gzx-vk__acties .hv-knop > span, .hv-gzx-rond__acties .hv-knop > span { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
+/* дії двома рядами на всю ширину: перемикач режиму, під ним кнопка (як дія на обличчі «Енергія»); лічильник трохи менший */
+.hv-gzx-vk--stapel .hv-gzx-vk__acties { flex-direction: column; }
+.hv-gzx-vk--stapel .hv-gzx-vk__acties > .hv-knop, .hv-gzx-vk--stapel .hv-gzx-vk__acties > .hv-segment { flex: none; }
+.hv-gzx-vk--stapel .hv-gzx-meter { inline-size: min(100%, 300px, calc(100cqh - 298px)); }
 .hv-profiel-vierkant .hv-gzx-vk .hv-gezicht__toestand { font-size: var(--tekst-basis); -webkit-line-clamp: 1; }
 .hv-gzx-meter { position: relative; display: grid; place-items: center; inline-size: min(100%, 300px, 44cqh); aspect-ratio: 1; }
 .hv-gzx-meter > svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
@@ -348,6 +355,11 @@ button.hv-gzx-tv__kaart { cursor: pointer; }
 .hv-gzx-tv__cams .hv-gzx-cam:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); transform: scale(1.02); }
 .hv-gzx-tv__hint { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
 .hv-profiel-tv .hv-gzx-tv button:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); }
+/* обличчя Дому на телевізорі: повне речення (перша частина великим, решта рядком нижче) і вищі плитки — екран заповнено, ритм 1 : 2 : 2 */
+.hv-gzx-tv__vol { font-size: 56px; max-inline-size: 20em; }
+.hv-gzx-tv__vol > span { display: block; }
+.hv-gzx-tv__vol > .hv-gzx-tv__rest { margin-block-start: var(--ruimte-3); font-size: 28px; letter-spacing: -0.01em; line-height: 1.25; text-wrap: balance; }
+.hv-gezicht--tv-thuis .hv-tv__kaart { min-block-size: 200px; padding-block: var(--ruimte-5); }
 
 /* ═════════════ Заставка, нічне затемнення, виклик із дверей (шар кіоску) ═════════════ */
 #hv-gzx-rustplek { display: contents; }

@@ -299,7 +299,7 @@
 .hv-gar-robotkop__sub { font-size: var(--tekst-klein); color: var(--muted); }
 .hv-gar-robotknoppen > .hv-knop { flex: 1 1 auto; }
 .hv-gar-robotknoppen > .hv-knop--stil { flex: 0 0 auto; }
-.hv-gar-robot > .hv-gar-planvlak, .hv-gar-robot > .hv-gar-kaartje, .hv-gar-robot > .hv-rijen { margin-block-start: var(--ruimte-2); }
+.hv-gar-robot > .hv-gar-planhouder, .hv-gar-robot > .hv-gar-kaartje, .hv-gar-robot > .hv-rijen { margin-block-start: var(--ruimte-2); }
 .hv-gar-voortgang { display: grid; gap: 2px; }
 .hv-gar-voortgang .hv-gar-balk { margin-block: var(--ruimte-1); }
 .hv-gar-voortgang__tekst { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
@@ -313,11 +313,29 @@
 .hv-gar-week__tijd { display: inline-flex; align-items: center; gap: 6px; margin-inline-start: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
 
 /* ── hv-plan пилососа ── */
-.hv-gar-planvlak { position: relative; inline-size: 100%; max-inline-size: 560px; aspect-ratio: 340 / 196; margin-block-end: var(--ruimte-2); }
+/* Поле плану має те саме відношення сторін, що й viewBox: кімнати не розтягуються. Підпис — один рядок, не ширший за
+   свою кімнату (max-inline-size ставить розмітка), слово не рветься. У вузькому полі (garplan < 300 px, де «Передпокій»
+   вже не вміщується) замість назв — номери в кружках і легенда під планом. */
+.hv-gar-planhouder { inline-size: 100%; max-inline-size: 560px; margin-block-end: var(--ruimte-2); container: garplan / inline-size; }
+.hv-gar-planvlak { position: relative; inline-size: 100%; aspect-ratio: 340 / 196; }
 .hv-gar-plan { position: absolute; inset: 0; display: block; inline-size: 100%; block-size: 100%; }
-.hv-gar-plan__label { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; max-inline-size: 30%; pointer-events: none; text-align: center; font-size: var(--tekst-mini); font-weight: 700; line-height: 1.15; color: var(--text); overflow-wrap: anywhere; }
+.hv-gar-plan__label { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; min-inline-size: 0; pointer-events: none; text-align: center; font-size: var(--tekst-mini); font-weight: 700; line-height: 1.15; color: var(--text); white-space: nowrap; overflow-wrap: normal; }
+.hv-gar-plan__naam { min-inline-size: 0; max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; }
+.hv-gar-plan__nr { display: none; place-items: center; min-inline-size: 24px; block-size: 24px; padding-inline: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--hv-omtrek); font-variant-numeric: tabular-nums; }
 .hv-gar-plan__label small { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
 .hv-gar-plan__label.is-gekozen { color: var(--text); }
+/* кімната, де пилосос зараз, залита --hv-aan-vlak: підпис і знак робота беруть --hv-op-aan (у темній темі --text і --hv-aan там не читаються) */
+.hv-gar-plan__label.is-nu, .hv-gar-plan__label.is-nu small { color: var(--hv-op-aan); }
+.hv-gar-plan__label.is-nu .hv-gar-plan__nr { color: var(--text); }
+.hv-gar-plan__legenda { display: none; flex-wrap: wrap; gap: var(--ruimte-1) var(--ruimte-3); margin: var(--ruimte-2) 0 0; padding: 0; list-style: none; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+.hv-gar-plan__legenda li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.hv-gar-plan__legenda li.is-uit { color: var(--muted); }
+.hv-gar-plan__legenda b { display: grid; place-items: center; min-inline-size: 20px; block-size: 20px; border-radius: 999px; background: var(--surface); border: 1px solid var(--hv-omtrek); color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+@container garplan (max-width: 299px) {
+  .hv-gar-plan__naam { display: none; }
+  .hv-gar-plan__nr { display: grid; }
+  .hv-gar-plan__legenda { display: flex; }
+}
 .hv-gar-plan__kamer rect { fill: var(--surface); stroke: var(--text); stroke-width: 2; transition: fill var(--hv-duur-1); }
 .hv-gar-plan__kamer { cursor: pointer; }
 .hv-gar-plan__kamer:hover rect { fill: var(--surface2); }
@@ -329,7 +347,7 @@
 .hv-gar-plan__kamer .hv-gar-kaart__tekst { stroke: var(--surface); }
 .hv-gar-plan__kamer.is-gekozen .hv-gar-kaart__tekst { fill: var(--text-on-vlak); stroke: var(--hv-aan-vlak); }
 .hv-gar-plan__basis { fill: var(--panel); stroke: var(--text); stroke-width: 2; }
-.hv-gar-plan__robot { fill: var(--hv-aan); stroke: var(--panel); stroke-width: 3; }
+.hv-gar-plan__robot { fill: var(--hv-op-aan); stroke: var(--panel); stroke-width: 3; }
 
 /* ───────────── Дозволи гаража ───────────── */
 .hv-gar-dozvoly { display: grid; gap: var(--ruimte-3); }
@@ -350,7 +368,12 @@
 .hv-gar-weiger__rijen > div:first-child dt > .hv-ic { color: var(--fout); }
 .hv-gar-weiger__rijen > div:last-child dt > .hv-ic { color: var(--ok); }
 
+/* «Розбудити» очікує відповіді авто: кнопка лишається на місці, знак обертається (слово «Будимо…» — головна ознака) */
+.hv-gar-wekt > .hv-ic { animation: hv-gar-draai 1.4s linear infinite; }
+@keyframes hv-gar-draai { to { transform: rotate(360deg); } }
+
 @media (prefers-reduced-motion: reduce) {
   .hv-gar-vkaart, .hv-gar-balk i, .hv-gar-plan__kamer rect { transition: none; }
+  .hv-gar-wekt > .hv-ic { animation: none; }
 }
 .hv-gar-plan * { vector-effect: non-scaling-stroke; }

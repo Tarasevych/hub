@@ -9,6 +9,8 @@
 .hv-lb-meta { font-size: var(--tekst-mini); font-weight: 500; line-height: var(--hv-regel-mini); color: var(--muted); }
 .hv-lb-noot { display: flex; gap: var(--ruimte-2); align-items: flex-start; font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); margin-block-start: var(--ruimte-2); }
 .hv-lb-noot > .hv-ic { flex: none; margin-block-start: 1px; }
+.hv-lb-noot--let-op { margin-block-start: 0; padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--warn-zacht); color: var(--text); font-weight: 500; }
+.hv-lb-noot--let-op > .hv-ic { color: var(--warn); }
 .hv-lb-slot { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
 .hv-lb-code { font-family: ui-monospace, monospace; font-size: var(--tekst-mini); color: var(--muted); }
 .hv-lb-teller { display: inline-grid; place-items: center; min-inline-size: 24px; block-size: 22px; padding-inline: 7px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 700; color: var(--text); }
@@ -113,7 +115,12 @@
 .hv-lb-m.is-ongelezen .hv-lb-m__wat { font-weight: 600; }
 .hv-lb-punt { display: inline-block; inline-size: 8px; block-size: 8px; margin-inline-end: 7px; border-radius: 50%; background: var(--accent); vertical-align: 2px; }
 .hv-lb-maal { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--surface2); font-size: var(--tekst-mini); font-weight: 700; color: var(--text); vertical-align: 1px; }
-.hv-lb-m__delta { font-size: var(--tekst-klein); font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* чип «було → стало»: старе приглушене, нове — основним кольором; значення не повторюється в назві запису */
+.hv-lb-wijziging { display: inline-flex; flex-wrap: wrap; align-items: center; justify-self: start; gap: 0 6px; max-inline-size: 100%; padding: 2px var(--ruimte-2); border-radius: var(--straal-s); background: var(--surface); border: 1px solid var(--line); font-size: var(--tekst-mini); line-height: var(--hv-regel-mini); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.hv-lb-wijziging__was { font-weight: 500; color: var(--muted); }
+.hv-lb-wijziging__werd { color: var(--text); }
+.hv-lb-wijziging > .hv-ic { flex: none; inline-size: 14px; block-size: 14px; color: var(--muted); }
+.hv-lb-m--alarm .hv-lb-wijziging, .hv-lb-m__kop:hover .hv-lb-wijziging { background: var(--panel); }
 .hv-lb-m__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--ruimte-1); font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
 .hv-lb-m__meta .hv-maker { color: var(--text); }
 .hv-lb-sim { color: var(--info); }
@@ -231,7 +238,9 @@
 .hv-tijdlijn__kaart { display: grid; gap: 4px; min-inline-size: 0; padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); text-align: start; color: var(--text); transition: background var(--hv-duur-1); }
 .hv-tijdlijn__kaart:hover { background: var(--surface); }
 .hv-tijdlijn__item.is-dichtbij .hv-tijdlijn__kaart { background: var(--surface2); box-shadow: inset 0 0 0 2px var(--text); }
+.hv-tijdlijn__kop { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--ruimte-2); min-inline-size: 0; }
 .hv-tijdlijn__wat { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); font-weight: 600; overflow-wrap: anywhere; }
+.hv-tijdlijn__kaart:hover .hv-lb-wijziging, .hv-tijdlijn__item.is-dichtbij .hv-lb-wijziging { background: var(--panel); }
 .hv-tijdlijn__keten { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
 .hv-tijdlijn__keten > span { padding: 1px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
 .hv-tijdlijn__keten > .hv-ic { inline-size: 14px; block-size: 14px; flex: none; }

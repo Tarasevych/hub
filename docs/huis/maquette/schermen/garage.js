@@ -319,6 +319,10 @@
   var app = function (id) { return HV.staat.w.apparaten[id] || null; };
   var vtg = function (id) { var l = HV.staat.w.voertuigen; for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; };
   var isTwee = function (a) { return TWEE.indexOf(a.soort) >= 0; };
+  /** Аркуш стоїть поруч зі сторінкою цього ж пристрою (від 900 px аркуш немодальний): головна дія вже має заливку на сторінці. */
+  var opEigenPagina = function (ctx, a) { var r = (ctx && ctx.route) || (HV.route ? HV.route() : null); return !!r && r.scherm === 'garage' && r.object === a.id && !!ctx.profiel && ctx.profiel.breedte >= 900; };
+  /** Чи триває «Розбудити»: команду надіслано, авто ще не відповіло. */
+  var wektNu = function (a) { return !!(a.wacht && a.wacht.mogelijkheid === 'signaal' && WEK.indexOf(a.wacht.waarde) >= 0); };
   var icoonVan = function (a) { return HV.paspoort.soorten[a.soort] ? HV.paspoort.soorten[a.soort].icoon : 'car'; };
   var kop = function (icoon, titel, extra, toon) {
     return '<header class="hv-gar-kop' + (toon ? ' hv-toon-' + toon : '') + '"><h3>' + HV.icoon(icoon, { maat: 's' }) + '<span>' + h(titel) + '</span></h3>' + (extra ? '<span class="hv-gar-kop__rechts">' + extra + '</span>' : '') + '</header>';
@@ -362,6 +366,7 @@
     if (a.st.stand === 'v-gestolen') return { woord: t('позначено викраденим', 'gemarkeerd als gestolen'), toon: 'alarm', icoon: 'siren' };
     if (a.id === 'ev' && w.apparaten.laadpaal.st.laadt) return { woord: HV.woord.laadt() + ' · ' + HV.maatTekst(w.apparaten.laadpaal.st.vermogen, t('кВт', 'kW'), 1), toon: 'auto', icoon: 'battery-charging' };
     if (isTwee(a) && a.st.laadt) return { woord: HV.woord.laadt() + t(' від розетки', ' via de stekker'), toon: 'batterij', icoon: 'battery-charging' };
+    if (wektNu(a)) return { woord: t('будимо · очікує відповіді', 'wordt gewekt · wacht op antwoord'), toon: null, icoon: 'loader' };
     if (a.beschikbaar === 'slaapt') return { woord: HV.woord.slaapt() + ' · ' + HV.oud(HV.kijk.leeftijd(a)), toon: null, icoon: 'moon' };
     var p = plekVan(v);
     if (p.rijdt) return { woord: t('у дорозі', 'onderweg'), toon: null, icoon: 'navigation' };
@@ -466,7 +471,7 @@
       else boven.push('<button type="button" class="hv-gar-merk is-knop' + (klas ? ' ' + klas : '') + '" style="' + plek(x, y) + '" aria-label="' + h(naam) + '" data-actie="' + (blad.indexOf(':') > 0 ? 'blad' : 'ga') + '" data-' + (blad.indexOf(':') > 0 ? 'blad' : 'naar') + '="' + h(blad) + '">' + binnen + '</button>');
     };
     if (op.schaal === 'perceel') {
-      titel = t('Схема ділянки: дім, гараж, сад, база дрона, межа польоту, зони косарки й поливу, транспорт', 'Schema van het perceel: huis, garage, tuin, dock van de drone, vlieggrens, zones van maaier en beregening, voertuigen');
+      titel = t('Схема ділянки: дім, гараж, сад, док дронів, межа польоту, зони косарки й поливу, транспорт', 'Schema van het perceel: huis, garage, tuin, dronedock, vlieggrens, zones van maaier en beregening, voertuigen');
       delen.push('<rect class="hv-gar-kaart__straat" x="0" y="216" width="360" height="24"/>');
       label(14, 228, 'Wilgenlaan', 'is-straat');
       delen.push('<rect class="hv-gar-kaart__vlieg" x="4" y="4" width="352" height="208" rx="10"/>');
@@ -487,8 +492,8 @@
       delen.push('<rect class="hv-gar-kaart__terras" x="228" y="20" width="76" height="56" rx="4"/>');
       label(266, 48, t('Город', 'Moestuin'), 'is-midden');
       delen.push('<rect class="hv-gar-kaart__dock" x="314" y="108" width="26" height="26" rx="5"/>');
-      merk(327, 121, 'drone', t('База дронів', 'Dronedock'), 'garage-drones', 'is-dock');
-      label(327, 150, t('база дронів', 'dronedock'), 'is-midden is-klein is-breed');
+      merk(327, 121, 'drone', t('Док дронів', 'Dronedock'), 'garage-drones', 'is-dock');
+      label(327, 150, t('док дронів', 'dronedock'), 'is-midden is-klein is-breed');
       if (lagen.robots) ZONES_MAAI.forEach(function (z) { label(z.x + 8, z.y + 11, HV.p(z.naam), 'is-klein is-zone'); });
       if (lagen.robots) {
         var mx = 34, my = 82;
@@ -585,6 +590,12 @@
       actie: 'schakel', gegevens: { doel: a.id, mogelijkheid: 'vergrendeld' }, aria: HV.p(a.naam) + ': ' + (a.st.vergrendeld ? t('замкнено', 'vergrendeld') : t('відімкнено', 'ontgrendeld')) });
   }
 
+  /** «Розбудити»: поки авто не відповіло — та сама кнопка каже «Будимо…» і не приймає другого дотику (фокус лишається на ній). */
+  function wekKnop(a, tekst, klein, k) {
+    var bezig = wektNu(a);
+    return o.knop({ tekst: bezig ? t('Будимо…', 'Wordt gewekt…') : tekst, icoon: bezig ? 'loader' : 'sun', klein: klein, actie: 'gar-wek', gegevens: { doel: a.id }, uit: bezig, klas: bezig ? 'hv-gar-wekt' : '', k: k });
+  }
+
   function telemetrieVan(ctx, a, metActie) {
     var w = ctx.staat, v = vtg(a.id), s = standVan(a, v), lp = w.apparaten.laadpaal.st;
     var getallen;
@@ -598,7 +609,7 @@
     }
     return o.telemetrie({ id: a.id, icoon: icoonVan(a), naam: HV.p(a.naam), stand: s.woord, lading: a.id === 'benzine' ? v.brandstof : v.lading, doel: a.id === 'ev' ? v.doel : (isTwee(a) ? a.st.positie : null),
       toon: s.toon === 'auto' ? 'auto' : a.id === 'benzine' ? 'neutraal' : 'batterij', bereik: km(v.bereik) + ' ' + h(t('запас', 'bereik')),
-      getallen: getallen, staat: a.beschikbaar !== 'ok' ? a.beschikbaar : null, actie: metActie ? 'ga' : null, gegevens: metActie ? { naar: 'garage-voertuigen-' + a.id } : null });
+      getallen: getallen, staat: wektNu(a) ? 'wacht' : a.beschikbaar !== 'ok' ? a.beschikbaar : null, actie: metActie ? 'ga' : null, gegevens: metActie ? { naar: 'garage-voertuigen-' + a.id } : null });
   }
 
   /** Картка транспорту для «Зараз» і списку: телеметрія (дотик — картка) + рядок дій. */
@@ -606,7 +617,7 @@
     var w = ctx.staat, v = vtg(a.id), s = standVan(a, v);
     var acties = [];
     if (a.id === 'ev') acties.push(o.knop({ tekst: a.st.bron === 'v-klimaat-aan' ? t('Клімат: вимкнути', 'Klimaat: uit') : t('Клімат', 'Klimaat'), icoon: 'thermometer', klein: true, actie: 'gar-klimaat', gegevens: { doel: 'ev' }, k: 'vk-klim-' + a.id }));
-    if (a.id === 'benzine' && a.beschikbaar === 'slaapt') acties.push(o.knop({ tekst: t('Розбудити', 'Wekken'), icoon: 'sun', klein: true, actie: 'gar-wek', gegevens: { doel: a.id }, k: 'vk-wek' }));
+    if (a.id === 'benzine' && a.beschikbaar === 'slaapt') acties.push(wekKnop(a, t('Розбудити', 'Wekken'), true, 'vk-wek'));
     if (isTwee(a)) acties.push(o.knop({ tekst: a.st.laadt ? t('Зупинити', 'Stoppen') : t('Зарядити', 'Laden'), icoon: a.st.laadt ? 'square' : 'plug-zap', klein: true, actie: 'gar-accu', gegevens: { doel: a.id }, k: 'vk-laad-' + a.id }));
     var chips = [];
     if (s.toon === 'alarm') chips.push(o.chip({ icoon: 'siren', toon: 'alarm', tekst: t('викрадено', 'gestolen') }));
@@ -649,7 +660,7 @@
         '<p class="hv-tekst hv-tekst--zacht">' + o.risico('gevaarlijk') + ' ' + h(t('вікна', 'ramen')) + ' · ' + o.risico('kritiek') + ' ' + h(t('багажник', 'kofferbak')) + '</p>');
     }
     var zoek = veld(t('Знайти', 'Zoeken'), '<div class="hv-knoppen">' + o.knop({ tekst: auto ? t('Блимнути фарами й сигналом', 'Lichten en claxon') : t('Короткий звук', 'Kort geluid'), icoon: 'scan-search', actie: 'gar-zoek', gegevens: { doel: a.id }, uit: dood, k: 'zoek-' + a.id }) +
-      (a.id === 'benzine' && a.beschikbaar === 'slaapt' ? o.knop({ tekst: t('Розбудити авто', 'Auto wekken'), icoon: 'sun', actie: 'gar-wek', gegevens: { doel: a.id }, k: 'wek-' + a.id }) : '') + '</div>');
+      (a.id === 'benzine' && a.beschikbaar === 'slaapt' ? wekKnop(a, t('Розбудити авто', 'Auto wekken'), false, 'wek-' + a.id) : '') + '</div>');
     var motor = auto ? veld(t('Двигун', 'Motor'), '<div class="hv-knoppen">' + o.knop({ tekst: t('Запустити двигун', 'Motor starten'), icoon: 'key-round', soort: 'stil', actie: 'gar-motor', gegevens: { doel: a.id }, k: 'motor-' + a.id }) + o.later(t('пізніше', 'later')) + '</div>' +
       '<p class="hv-tekst hv-tekst--zacht">' + HV.icoon('octagon-x', { maat: 's' }) + '<span>' + h(t('Хаб не запускає двигун: у гаражі накопичиться чадний газ. Дотик покаже чому й що можна натомість.', 'De hub start de motor niet: in de garage hoopt koolmonoxide zich op. Een tik laat zien waarom en wat wel kan.')) + '</span></p>') : '';
     return slot + alarm + extra + zoek + motor;
@@ -667,16 +678,17 @@
       o.rij({ icoon: a.st.stand === 'v-gestolen' ? 'siren' : 'flag', naam: a.st.stand === 'v-gestolen' ? t('Позначено викраденим', 'Gemarkeerd als gestolen') : t('Позначити викраденим', 'Markeren als gestolen'), sub: t('маячок щохвилини, запис слідів', 'baken elke minuut, sporen bewaard'), actie: 'blad', gegevens: { blad: 'gestolen:' + a.id }, k: 'gest-' + a.id }) + '</div>');
   }
 
-  function klimaatKaart(ctx, a) {
+  function klimaatKaart(ctx, a, nadruk) {
     var aan = gewenst(a, 'bron') === 'v-klimaat-aan', doel = Number(gewenst(a, 'doel'));
     return kaart('hv-gar-klimaat', kop('thermometer', t('Клімат салону', 'Klimaat in de auto'), o.gevolg(t('Що станеться: салон нагріється чи охолоне до цілі за 15–20 хв від зарядної станції або акумулятора. Пов’язано з: запас ходу зменшиться приблизно на 3 км. Як повернути: «Вимкнути» — один дотик; через 30 хв клімат вимкнеться сам.', 'Wat er gebeurt: het interieur warmt op of koelt af naar het doel in 15–20 min, via de laadpaal of de accu. Hangt samen met: het bereik daalt ongeveer 3 km. Terugdraaien: ‘Uitzetten’ — één tik; na 30 min gaat het vanzelf uit.'), { kop: t('Клімат салону', 'Voorklimatiseren') }), aan ? 'warm' : null) +
       '<div class="hv-gar-klimaat__rij">' + o.getal({ maat: 'l', label: t('У салоні', 'Binnen'), waarde: HV.maat(a.st.binnen, '°C', 1), sub: h(t('надворі ', 'buiten ') + HV.maatTekst(ctx.staat.weer.temp, '°C', 0)) }) +
       '<div class="hv-gar-klimaat__doel"><span class="hv-veld__label">' + h(t('Ціль', 'Doel')) + '</span>' + o.stapper({ actie: 'gar-klimdoel', gegevens: { doel: a.id }, stap: 0.5, label: t('Ціль салону', 'Doel in de auto'), waarde: HV.maat(doel, '°C', 1), k: 'klimdoel-' + a.id }) + '</div></div>' +
-      '<div class="hv-knoppen">' + o.knop({ tekst: aan ? t('Вимкнути клімат', 'Klimaat uitzetten') : t('Увімкнути клімат', 'Klimaat aanzetten'), icoon: aan ? 'square' : 'fan', soort: aan ? 'gewoon' : 'hoofd', actie: 'gar-klimaat', gegevens: { doel: a.id }, k: 'klim-' + a.id }) + '</div>' +
+      '<div class="hv-knoppen">' + o.knop({ tekst: aan ? t('Вимкнути клімат', 'Klimaat uitzetten') : t('Увімкнути клімат', 'Klimaat aanzetten'), icoon: aan ? 'square' : 'fan', soort: aan || !nadruk ? 'gewoon' : 'hoofd', actie: 'gar-klimaat', gegevens: { doel: a.id }, k: 'klim-' + a.id }) + '</div>' +
       '<p class="hv-tekst hv-tekst--zacht">' + o.risico('gevoelig') + ' ' + h(t('вмикається одразу, «Повернути» 10 с', 'gaat meteen aan, ‘Ongedaan maken’ 10 s')) + '</p>');
   }
 
-  function ladingKaart(ctx, a) {
+  function ladingKaart(ctx, a, nadruk) {
+    if (nadruk === undefined) nadruk = true;
     var w = ctx.staat, v = vtg(a.id), lp = w.apparaten.laadpaal;
     if (a.id === 'benzine') {
       return kaart('hv-gar-lading', kop('fuel', t('Пальне й запас ходу', 'Brandstof en bereik')) +
@@ -700,7 +712,7 @@
       '<div class="hv-gar-lading__groot">' + o.getal({ maat: 'xl', waarde: HV.maat(Math.round(v.lading), '%'), sub: km(v.bereik) + ' ' + h(t('запас · ', 'bereik · ') + HV.maatTekst(a.st.temp, '°C', 0)) }) + '</div>' +
       '<span class="hv-gar-balk hv-toon-batterij" aria-hidden="true"><i style="width:' + Math.round(v.lading) + '%"></i><b style="left:' + grens + '%"></b></span>' +
       veld(t('Заряджати до', 'Laden tot'), o.schuif({ label: t('Межа зарядки', 'Laadgrens'), waarde: grens, min: 50, max: 100, stap: 5, eenheid: '%', toon: 'batterij', actie: 'gar-laadtot', gegevens: { doel: a.id }, k: 'laadtot-' + a.id })) +
-      '<div class="hv-knoppen">' + o.knop({ tekst: laadtNu ? t('Зупинити зарядку', 'Laden stoppen') : t('Заряджати до ', 'Laden tot ') + grens + ' %' + (nacht ? '…' : ''), icoon: laadtNu ? 'square' : 'plug-zap', soort: laadtNu ? 'gewoon' : 'hoofd', actie: 'gar-accu', gegevens: { doel: a.id }, k: 'accu-' + a.id }) + '</div>' +
+      '<div class="hv-knoppen">' + o.knop({ tekst: laadtNu ? t('Зупинити зарядку', 'Laden stoppen') : t('Заряджати до ', 'Laden tot ') + grens + ' %' + (nacht ? '…' : ''), icoon: laadtNu ? 'square' : 'plug-zap', soort: laadtNu || !nadruk ? 'gewoon' : 'hoofd', actie: 'gar-accu', gegevens: { doel: a.id }, k: 'accu-' + a.id }) + '</div>' +
       '<p class="hv-tekst hv-tekst--zacht">' + o.risico(nacht ? 'gevaarlijk' : 'gevoelig') + ' ' + h(nacht ? t('уночі — рейка утримання', '’s nachts — houdrail') : t('удень — одразу, «Повернути» 10 с', 'overdag — meteen, ‘Ongedaan maken’ 10 s')) + '</p>' +
       '<p class="hv-tekst hv-tekst--zacht">' + HV.icoon('shield-alert', { maat: 's' }) + '<span>' + h(t('Через розумну розетку в гаражі. Хаб вимкне розетку за 45 °C, але це не пожежний захист: заряджайте на негорючій поверхні.', 'Via de slimme stekker in de garage. De hub zet de stekker uit bij 45 °C, maar dat is geen brandbeveiliging: laad op een onbrandbare ondergrond.')) + '</span></p>');
   }
@@ -756,13 +768,19 @@
     }
     return HV.p(ROBOT_WOORD[a.st.stand] || ROBOT_WOORD.dock);
   }
-  /** Кнопки ▶ ⏸ ⌂ і «Знайти»: три окремі органи з підписами, поточний стан — натиснутий. */
-  function robotKnoppen(a, klein) {
+  /**
+   * Кнопки ▶ ⏸ ⌂ і «Знайти»: три окремі органи з підписами, поточний стан — натиснутий.
+   * Заливка акценту — одна на видиму область: у повторюваних картках (список роботів, «Зараз») запуск — звичайна кнопка
+   * з іконкою; заливку має лише картка у фокусі (nadruk: сторінка робота, його аркуш) або перервана місія («Продовжити»).
+   * Коли пилосос застряг, головна дія — «Звільнено — продовжити» в поясненні помилки, тож тут заливки немає.
+   */
+  function robotKnoppen(a, klein, nadruk) {
     var stand = gewenst(a, 'robot');
     var dood = a.beschikbaar === 'onbereikbaar';
     var start = a.soort === 'maaier' ? t('Косити', 'Maaien') : t('Почати', 'Starten');
+    var hoofd = (nadruk || a.st.stand === 'pauze') && !a.st.fout && stand !== 'start';
     return '<div class="hv-knoppen hv-gar-robotknoppen">' +
-      o.knop({ tekst: a.st.stand === 'pauze' ? t('Продовжити', 'Verder') : start, icoon: 'play', soort: stand === 'start' ? 'gewoon' : 'hoofd', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'start' }, gedrukt: stand === 'start', uit: dood, k: 'rb-start-' + a.id }) +
+      o.knop({ tekst: a.st.stand === 'pauze' ? t('Продовжити', 'Verder') : start, icoon: 'play', soort: hoofd ? 'hoofd' : 'gewoon', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'start' }, gedrukt: stand === 'start', uit: dood, k: 'rb-start-' + a.id }) +
       o.knop({ tekst: t('Пауза', 'Pauze'), icoon: 'pause', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'pauze' }, gedrukt: stand === 'pauze', uit: dood || stand === 'dock', k: 'rb-pauze-' + a.id }) +
       o.knop({ tekst: t('На базу', 'Naar station'), icoon: 'house', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'dock' }, gedrukt: stand === 'dock', uit: dood, k: 'rb-dock-' + a.id }) +
       o.knop({ tekst: t('Знайти', 'Zoeken'), icoon: 'scan-search', soort: 'stil', klein: klein, actie: 'gar-zoek', gegevens: { doel: a.id }, uit: dood, k: 'rb-zoek-' + a.id }) + '</div>';
@@ -772,25 +790,34 @@
     return '<div class="hv-gar-voortgang" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(a.st.voortgang) + '" aria-label="' + h(t('Виконано', 'Gedaan')) + '"><span class="hv-gar-balk hv-toon-aan"><i style="width:' + Math.round(a.st.voortgang) + '%"></i></span><span class="hv-gar-voortgang__tekst">' + HV.maat(Math.round(a.st.voortgang), '%') + ' ' + h(t('виконано', 'gedaan')) + '</span></div>';
   }
 
-  /** hv-plan: перший поверх для пилососа; кімната-ціль ≥ 44 px, вибір дотиком або списком. */
-  var PLAN = { woonkamer: [6, 6, 192, 184], keuken: [204, 6, 130, 84], hal: [204, 96, 58, 94], bijkeuken: [268, 96, 66, 94] };
+  /**
+   * hv-plan: перший поверх для пилососа; кімната-ціль ≥ 44 px, вибір дотиком або списком.
+   * План малюється з пропорціями (xMidYMid meet, поле з тим самим відношенням сторін). Підпис — HTML-шар поверх SVG:
+   * один рядок без розриву слова, не ширший за свою кімнату. Найвужча кімната вміщує найдовшу назву, поки план не
+   * вужчий за 300 px; у вужчому полі (контейнер garplan) замість назв — номери, а під планом — легенда «номер · назва».
+   */
+  var PLAN = { woonkamer: [6, 6, 146, 184], keuken: [158, 6, 176, 84], hal: [158, 96, 92, 94], bijkeuken: [256, 96, 78, 94] };
   function stofPlan(ctx, a) {
-    var g = zorg(ctx.staat), nu = a.st.kamerNu, labels = [];
+    var g = zorg(ctx.staat), nu = a.st.kamerNu, labels = [], legenda = [];
     var pct = function (x, y) { return 'left:' + (x / 340 * 100).toFixed(2) + '%;top:' + (y / 196 * 100).toFixed(2) + '%'; };
-    var kamers = STOF_KAMERS.map(function (id) {
-      var r = PLAN[id], k = HV.staat.kamer(id), gekozen = g.stofKamers.indexOf(id) >= 0;
-      labels.push('<span class="hv-gar-plan__label' + (gekozen ? ' is-gekozen' : '') + '" style="' + pct(r[0] + r[2] / 2, r[1] + r[3] / 2) + '">' + h(HV.p(k.naam)) + (nu === id ? '<small>' + h(t('зараз тут', 'nu hier')) + '</small>' : '') + '</span>');
-      return '<g class="hv-gar-plan__kamer' + (gekozen ? ' is-gekozen' : '') + (nu === id ? ' is-nu' : '') + '" role="button" tabindex="0" aria-pressed="' + (gekozen ? 'true' : 'false') + '" aria-label="' + h(HV.p(k.naam) + (gekozen ? t(': прибрати', ': zuigen') : t(': пропустити', ': overslaan'))) + '" data-actie="gar-kamer" data-kamer="' + id + '">' +
+    var kamers = STOF_KAMERS.map(function (id, i) {
+      var r = PLAN[id], k = HV.staat.kamer(id), gekozen = g.stofKamers.indexOf(id) >= 0, naam = HV.p(k.naam);
+      labels.push('<span class="hv-gar-plan__label' + (gekozen ? ' is-gekozen' : '') + (nu === id ? ' is-nu' : '') + '" aria-hidden="true" style="' + pct(r[0] + r[2] / 2, r[1] + r[3] / 2) + ';max-inline-size:calc(' + (r[2] / 340 * 100).toFixed(2) + '% - 8px)">' +
+        '<span class="hv-gar-plan__naam">' + h(naam) + '</span><span class="hv-gar-plan__nr">' + (i + 1) + '</span>' + (nu === id ? '<small>' + h(t('зараз тут', 'nu hier')) + '</small>' : '') + '</span>');
+      legenda.push('<li' + (gekozen ? '' : ' class="is-uit"') + '><b>' + (i + 1) + '</b>' + h(naam) + '</li>');
+      return '<g class="hv-gar-plan__kamer' + (gekozen ? ' is-gekozen' : '') + (nu === id ? ' is-nu' : '') + '" role="button" tabindex="0" aria-pressed="' + (gekozen ? 'true' : 'false') + '" aria-label="' + h(naam + (gekozen ? t(': прибрати', ': zuigen') : t(': пропустити', ': overslaan')) + (nu === id ? t(', пилосос зараз тут', ', de stofzuiger is nu hier') : '')) + '" data-actie="gar-kamer" data-kamer="' + id + '">' +
         '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] + '" rx="3"/></g>';
     }).join('');
-    var basis = '<circle class="hv-gar-plan__basis" cx="236" cy="178" r="6"/>';
+    var basis = '<circle class="hv-gar-plan__basis" cx="238" cy="178" r="6"/>';
     var robot = '';
     if (nu && PLAN[nu]) { var r = PLAN[nu]; robot = '<circle class="hv-gar-plan__robot" cx="' + (r[0] + r[2] * 0.25 + (a.st.voortgang % 20) * r[2] * 0.025) + '" cy="' + (r[1] + r[3] * 0.78) + '" r="8"/>'; }
-    return '<div class="hv-gar-planvlak"><svg class="hv-gar-plan" viewBox="0 0 340 196" preserveAspectRatio="none" role="group" aria-label="' + h(t('План першого поверху: кімнати для прибирання', 'Plattegrond begane grond: kamers om te zuigen')) + '">' + kamers + basis + robot + '</svg>' + labels.join('') + '</div>';
+    return '<div class="hv-gar-planhouder"><div class="hv-gar-planvlak"><svg class="hv-gar-plan" viewBox="0 0 340 196" preserveAspectRatio="xMidYMid meet" role="group" aria-label="' + h(t('План першого поверху: кімнати для прибирання', 'Plattegrond begane grond: kamers om te zuigen')) + '">' + kamers + basis + robot + '</svg>' + labels.join('') + '</div>' +
+      '<ol class="hv-gar-plan__legenda" aria-hidden="true">' + legenda.join('') + '</ol></div>';
   }
 
-  function stofzuigerHtml(ctx, a, compact) {
+  function stofzuigerHtml(ctx, a, compact, nadruk) {
     var g = zorg(ctx.staat);
+    if (nadruk === undefined) nadruk = !compact;
     var kies = '<div class="hv-filter" role="group" aria-label="' + h(t('Кімнати', 'Kamers')) + '">' + STOF_KAMERS.map(function (id) {
       var gekozen = g.stofKamers.indexOf(id) >= 0;
       return o.chip({ filter: true, gekozen: gekozen, icoon: HV.staat.kamer(id).icoon, tekst: HV.p(HV.staat.kamer(id).naam), actie: 'gar-kamer', gegevens: { kamer: id }, k: 'stofk-' + id });
@@ -801,9 +828,9 @@
     var kopRij = '<div class="hv-gar-robotkop">' + o.schakel({ aan: a.st.stand === 'bezig', icoon: 'garage-stofzuiger', toon: 'aan', staat: a.wacht ? 'wacht' : null, aria: HV.p(a.naam) }) +
       '<div><p class="hv-gar-robotkop__woord">' + h(robotWoord(a)) + (a.st.kamerNu ? ' · ' + h(HV.p(HV.staat.kamer(a.st.kamerNu).waar)) : '') + '</p>' +
       '<p class="hv-gar-robotkop__sub">' + nb([HV.maat(Math.round(a.st.lading), '%'), h(t('кімнат ', 'kamers ') + g.stofKamers.length + t(' з ', ' van ') + STOF_KAMERS.length), a.st.klaar ? h(t('востаннє ', 'laatst ') + wanneer(a.st.klaar)) : '']) + '</p></div></div>';
-    if (compact) return kopRij + fout + voortgang(a) + robotKnoppen(a, true) + kies;
-    return kopRij + fout + voortgang(a) + robotKnoppen(a) +
-      veld(t('Кімнати: дотик на плані або списком', 'Kamers: tik op de plattegrond of in de lijst'), stofPlan(ctx, a) + kies) +
+    if (compact) return kopRij + fout + voortgang(a) + robotKnoppen(a, true, nadruk) + kies;
+    return kopRij + fout + voortgang(a) + robotKnoppen(a, false, nadruk) +
+      veld(t('Кімнати: дотик до плану або вибір зі списку', 'Kamers: tik op de plattegrond of in de lijst'), stofPlan(ctx, a) + kies) +
       veld(t('Сила', 'Zuigkracht'), o.segment({ label: t('Сила всмоктування', 'Zuigkracht'), waarde: gewenst(a, 'modus'), actie: 'doe', gegevens: { doel: a.id, mogelijkheid: 'modus' }, k: 'stof-modus', opties: [
         { id: 'z-stil', label: t('Тихо', 'Stil'), icoon: 'moon' }, { id: 'z-normaal', label: t('Звичайно', 'Normaal'), icoon: 'fan' }, { id: 'z-max', label: t('Максимум', 'Maximaal'), icoon: 'zap' }] }));
   }
@@ -830,28 +857,30 @@
     }).join('') + '<span class="hv-gar-week__tijd">' + HV.icoon('clock', { maat: 's' }) + h(g.roosterTijd[robot]) + '</span></div>';
   }
 
-  function maaierHtml(ctx, a, compact) {
+  function maaierHtml(ctx, a, compact, nadruk) {
     var g = zorg(ctx.staat), w = ctx.staat;
+    if (nadruk === undefined) nadruk = !compact;
     var heen = HV.gevaar.vind(a, 'robot', 'start');
     var kopRij = '<div class="hv-gar-robotkop">' + o.schakel({ aan: a.st.stand === 'bezig', icoon: 'garage-maaier', toon: 'aan', staat: a.wacht ? 'wacht' : null, aria: HV.p(a.naam) }) +
       '<div><p class="hv-gar-robotkop__woord">' + h(robotWoord(a)) + '</p><p class="hv-gar-robotkop__sub">' + nb([HV.maat(Math.round(a.st.lading), '%'), h(g.maaiZones.length + ' ' + HV.meervoud(g.maaiZones.length, ['зона', 'зони', 'зон'], ['zone', 'zones'])), h(t('ножі ', 'messen ') + a.st.messen + t(' год', ' u'))]) + '</p></div></div>';
     var start = '<p class="hv-tekst hv-tekst--zacht">' + o.risico(heen.niveau) + ' ' + h(heen.niveau === 'gevaarlijk' ? (isDonker() ? t('старт у темряві — рейка утримання', 'starten in het donker — houdrail') : t('у саду хтось є — рейка утримання', 'er is iemand in de tuin — houdrail')) : t('старт удень — одразу, «Повернути» 10 с', 'starten overdag — meteen, ‘Ongedaan maken’ 10 s')) + '</p>';
-    if (compact) return kopRij + voortgang(a) + robotKnoppen(a, true) + start + pauzeChips(ctx);
+    if (compact) return kopRij + voortgang(a) + robotKnoppen(a, true, nadruk) + start + pauzeChips(ctx);
     var simKnop = o.chip({ filter: true, gekozen: g.iemandInTuin, icoon: 'flask-conical', tekst: t('Симулювати: хтось у саду', 'Simuleren: iemand in de tuin'), actie: 'gar-iemand', k: 'sim-iemand' });
-    return kopRij + voortgang(a) + robotKnoppen(a) + start +
+    return kopRij + voortgang(a) + robotKnoppen(a, false, nadruk) + start +
       veld(t('Зони ділянки', 'Zones van het perceel'), maaierPerceel(ctx) + zonesChips(ctx, ZONES_MAAI, g.maaiZones, 'gar-maaizone', 'mz-')) +
-      veld(t('Пауза, коли…', 'Pauze als…'), pauzeChips(ctx) + '<div class="hv-filter">' + simKnop + '</div>', ' ' + o.gevolg(t('Що станеться: косарка сама стане на паузу, коли піде дощ, стемніє чи датчик побачить людину в саду, і продовжить, коли причина мине. Пов’язано з: правило діє і для розкладу, і для ручного старту. Як повернути: дотик на чипі вимикає правило.', 'Wat er gebeurt: de maaier pauzeert zelf bij regen, in het donker of als de sensor iemand in de tuin ziet, en gaat verder als de reden voorbij is. Hangt samen met: de regel geldt voor het rooster en voor een handmatige start. Terugdraaien: een tik op de chip zet de regel uit.'), { kop: t('Правила паузи', 'Pauzeregels') })) +
+      veld(t('Пауза, коли…', 'Pauze als…'), pauzeChips(ctx) + '<div class="hv-filter">' + simKnop + '</div>', ' ' + o.gevolg(t('Що станеться: косарка сама стане на паузу, коли піде дощ, стемніє чи датчик побачить людину в саду, і продовжить, коли причина мине. Пов’язано з: правило діє і для розкладу, і для ручного старту. Як повернути: дотик до чипа вимикає правило.', 'Wat er gebeurt: de maaier pauzeert zelf bij regen, in het donker of als de sensor iemand in de tuin ziet, en gaat verder als de reden voorbij is. Hangt samen met: de regel geldt voor het rooster en voor een handmatige start. Terugdraaien: een tik op de chip zet de regel uit.'), { kop: t('Правила паузи', 'Pauzeregels') })) +
       veld(t('Розклад', 'Rooster'), roosterHtml(ctx, 'maaier'));
     void w;
   }
 
-  function beregeningHtml(ctx, a, compact) {
+  function beregeningHtml(ctx, a, compact, nadruk) {
     var g = zorg(ctx.staat), w = ctx.staat, aan = gewenst(a, 'aan');
+    if (nadruk === undefined) nadruk = !compact;
     var regen = !!w.weer.neerslag;
     var kopRij = '<div class="hv-gar-robotkop">' + o.schakel({ aan: !!a.st.aan, icoon: 'sprout', toon: 'aan', staat: a.wacht ? 'wacht' : null, actie: 'gar-water', gegevens: { doel: a.id }, aria: HV.p(a.naam) }) +
       '<div><p class="hv-gar-robotkop__woord">' + h(o.beeld(a).woord) + (a.st.zoneNu ? ' · ' + h(HV.p(ZONES_WATER.filter(function (z) { return z.id === a.st.zoneNu; })[0].naam)) : '') + '</p>' +
       '<p class="hv-gar-robotkop__sub">' + nb([h(g.beregZones.length + ' ' + HV.meervoud(g.beregZones.length, ['зона', 'зони', 'зон'], ['zone', 'zones']) + ' × ' + g.beregDuur + ' ' + t('хв', 'min')), h(t('наступний ', 'volgende ') + g.roosterTijd.beregening)]) + '</p></div></div>';
-    var knop = '<div class="hv-knoppen">' + (aan ? o.knop({ tekst: t('Зупинити полив', 'Beregening stoppen'), icoon: 'square', actie: 'gar-water', gegevens: { doel: a.id }, klein: compact, k: 'water-stop' }) : o.knop({ tekst: t('Полити зараз', 'Nu sproeien'), icoon: 'play', soort: 'hoofd', actie: 'gar-water', gegevens: { doel: a.id }, klein: compact, k: 'water-start' })) + '</div>';
+    var knop = '<div class="hv-knoppen">' + (aan ? o.knop({ tekst: t('Зупинити полив', 'Beregening stoppen'), icoon: 'square', actie: 'gar-water', gegevens: { doel: a.id }, klein: compact, k: 'water-stop' }) : o.knop({ tekst: t('Полити зараз', 'Nu sproeien'), icoon: 'play', soort: nadruk ? 'hoofd' : 'gewoon', actie: 'gar-water', gegevens: { doel: a.id }, klein: compact, k: 'water-start' })) + '</div>';
     var winter = '<p class="hv-tekst hv-tekst--zacht">' + HV.icoon('snowflake', { maat: 's' }) + '<span>' + h(t('Листопад: перед першими морозами злийте воду з труб — це в «Обслуговуванні».', 'November: laat vóór de eerste vorst het water uit de leidingen lopen — staat in ‘Onderhoud’.')) + '</span></p>';
     if (compact) return kopRij + knop + (regen && g.regenStop ? '<p class="hv-tekst">' + HV.icoon('cloud-rain', { maat: 's' }) + h(t('Іде дощ — розклад пропустить полив.', 'Het regent — het rooster slaat de beregening over.')) + '</p>' : '');
     return kopRij + knop + '<p class="hv-tekst hv-tekst--zacht">' + o.risico('gevoelig') + ' ' + h(t('старт — одразу, «Повернути» 10 с; зупинка — звичайна', 'starten — meteen, ‘Ongedaan maken’ 10 s; stoppen — gewoon')) + '</p>' +
@@ -923,7 +952,7 @@
 
   function dronesHtml(ctx) {
     var w = ctx.staat, d = w.drones || [];
-    var STAND = { dock: ['у базі', 'in het dock'], vlucht: ['у польоті', 'in de lucht'], signaalkwijt: ['втрата сигналу', 'signaal kwijt'], terug: ['повертається', 'keert terug'] };
+    var STAND = { dock: ['у доку', 'in het dock'], vlucht: ['у польоті', 'in de lucht'], signaalkwijt: ['втрата сигналу', 'signaal kwijt'], terug: ['повертається', 'keert terug'] };
     return '<div class="hv-rijen">' + d.map(function (x) {
       return o.rij({ icoon: 'drone', naam: HV.p(x.naam), sub: HV.p(STAND[x.stand] || [x.stand, x.stand]), waarde: HV.maat(x.lading, '%'), actie: 'ga', gegevens: { naar: 'garage-drones' }, k: 'gar-dr-' + x.id });
     }).join('') + '</div><p class="hv-tekst hv-tekst--zacht">' + HV.icoon('flask-conical', { maat: 's' }) + '<span>' + h(t('Лише симуляція. Парк, перевірка перед зльотом і кабіна — на вкладці «Безпілотники».', 'Alleen simulatie. Vloot, controle vóór de vlucht en cockpit — op het tabblad ‘Drones’.')) + '</span></p>';
@@ -1067,8 +1096,8 @@
     var v = vtg(a.id), s = standVan(a, v);
     return kaart('', telemetrieVan(ctx, a, false) + '<p class="hv-gar-bladstand">' + HV.icoon(s.icoon, { maat: 's' }) + h(s.woord) + '</p>') +
       kaart('', slotOrganen(ctx, a)) +
-      (a.id === 'ev' ? klimaatKaart(ctx, a) : '') +
-      (isTwee(a) ? ladingKaart(ctx, a) : '') +
+      (a.id === 'ev' ? klimaatKaart(ctx, a, !opEigenPagina(ctx, a)) : '') +
+      (isTwee(a) ? ladingKaart(ctx, a, !opEigenPagina(ctx, a)) : '') +
       '<div class="hv-knoppen">' + o.knop({ tekst: t('Відкрити картку', 'Kaart openen'), icoon: 'chevron-right', soort: 'gewoon', actie: 'ga', gegevens: { naar: 'garage-voertuigen-' + a.id }, k: 'blad-kaart' }) + o.knop({ tekst: t('Мапа', 'Kaart'), icoon: 'map', soort: 'stil', actie: 'ga', gegevens: { naar: 'garage-kaart' } }) + '</div>';
   }
   VSOORTEN.forEach(function (soort) {
@@ -1076,7 +1105,7 @@
   });
   ROBOTS.forEach(function (soort) {
     HV.blad({ soort: soort, past: function (a) { return a.soort === soort; }, delen: { bediening: function (ctx, a) {
-      return kaart('', ROBOT_HTML[soort](ctx, a, true)) + '<div class="hv-knoppen">' + o.knop({ tekst: t('Відкрити сторінку', 'Pagina openen'), icoon: 'chevron-right', actie: 'ga', gegevens: { naar: 'garage-robots-' + a.id }, k: 'blad-robot' }) + '</div>';
+      return kaart('', ROBOT_HTML[soort](ctx, a, true, !opEigenPagina(ctx, a))) + '<div class="hv-knoppen">' + o.knop({ tekst: t('Відкрити сторінку', 'Pagina openen'), icoon: 'chevron-right', actie: 'ga', gegevens: { naar: 'garage-robots-' + a.id }, k: 'blad-robot' }) + '</div>';
     } } });
   });
 
@@ -1138,11 +1167,30 @@
     var a = app(g.doel);
     HV.doe({ doel: a.id, mogelijkheid: 'signaal', waarde: a.soort === 'auto' ? t('фари й сигнал', 'lichten en claxon') : t('короткий звук', 'kort geluid') });
   });
-  HV.actie('gar-wek', function (ctx, g) {
+  // «Розбудити»: стан очікування видно одразу (a.wacht → «будимо · очікує відповіді» на картці й на кнопці); сповіщення каже
+  // результат, а не назву команди; коли кнопка зникає, фокус переходить на картку авто (або сусідню дію), а не на BODY.
+  HV.actie('gar-wek', function (ctx, g, element) {
     var a = app(g.doel);
-    HV.doe({ doel: a.id, mogelijkheid: 'signaal', waarde: t('розбудити', 'wekken') }).then(function (r) {
+    if (!a || wektNu(a)) return;
+    var voorouders = [];
+    for (var el = element; el && el.nodeType === 1; el = el.parentElement) voorouders.push(el);
+    HV.doe({ doel: a.id, mogelijkheid: 'signaal', waarde: t('розбудити', 'wekken'), stil: true }).then(function (r) {
       if (!r || !r.ok) return;
       HV.staat.wijzig(function (w) { a.beschikbaar = 'ok'; a.gezien = w.tijd; zorg(w).wakkerTot = w.tijd + 10 * MIN; });
+      HV.meld({ maker: HV.mens(), icoon: 'car', titel: HV.p(a.naam) + ': ' + t('на зв’язку', 'wakker'), tekst: t('спало → на зв’язку · дані оновлено, знову засне за 10 хв', 'sliep → wakker · gegevens ververst, slaapt over 10 min weer') });
+      var naFocus = function () {
+        var actief = document.activeElement;
+        if (voorouders[0] && voorouders[0].isConnected) return; // кнопка лишилася на місці
+        if (actief && actief !== document.body && actief !== voorouders[0] && actief.isConnected) return; // людина вже перейшла далі
+        for (var i = 1; i < voorouders.length; i++) {
+          if (!voorouders[i].isConnected) continue;
+          var doel = voorouders[i].querySelector('.hv-telemetrie__lijf[data-actie], [data-k="zoek-' + a.id + '"]');
+          if (doel) { doel.focus({ preventScroll: true }); return; }
+          if (voorouders[i].classList.contains('hv-gar') || voorouders[i].classList.contains('hv-laag')) return;
+        }
+      };
+      var raf = window.requestAnimationFrame || function (f) { setTimeout(f, 16); };
+      raf(function () { raf(naFocus); });
     });
   });
   HV.actie('gar-motor', function (ctx, g) {

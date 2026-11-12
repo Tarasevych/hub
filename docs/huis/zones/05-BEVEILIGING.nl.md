@@ -104,7 +104,7 @@ Het niveau bepaalt alleen het teken `hv-risico` en het ritueel voor de mens; toe
 | kritiek `Octagon` | ontgrendelen; het alarm uitschakelen; een alarm afmelden; gas openen; openen tijdens een oproep; een gastcode uitgeven; rookmeldingen 10 min dempen; een beveiligingssensor of camera langer dan één cyclus uitschakelen | houdrail en een bevestiging van de aanmelding op het platform | houdrail en `hv-pincode` met de persoonlijke code van wie handelt | «Підтвердьте на телефоні / Bevestig op je telefoon» |
 
 - Poorten met het label `ingang` zijn kritiek. Rolrechten voor kritieke acties horen bij de zone Mensen; de eigenaar voert elke actie uit met het ritueel van het bijbehorende niveau.
-- **Een tegengestelde actie erft het niveau van haar eigen richting:** na vergrendelen, inschakelen, dichtdraaien of sluiten is er geen ‘Ongedaan maken’; «Повернути все / Alles ongedaan maken» zegt: «Пропущено 2 кроки: відімкнути двері, відкрити клапан — це окремі дії з підтвердженням / 2 stappen overgeslagen — aparte acties met bevestiging».
+- **Een tegengestelde actie erft het niveau van haar eigen richting:** na vergrendelen, inschakelen, dichtdraaien of sluiten is er geen ‘Ongedaan maken’; «Повернути все / Alles ongedaan maken» zegt: «Пропущено 2 кроки: відімкнути двері, відкрити клапан — це окремі дії з підтвердженням / 2 stappen overgeslagen: deur ontgrendelen, klep openen — dat zijn aparte acties met bevestiging».
 - **Verzwakt toezicht** (overbrugging, uitgeschakelde camera, dempen) krijgt de chip ‘bescherming verlaagd’; de termijn kiest de mens. **Meldingen op het apparaat** hebben alleen de knoppen «Замкнути / Vergrendelen», «Поставити на охорону / Inschakelen» en ‘Ik pak het op’; al het andere — «Відкрити / Openen».
 - **Bevestiging van de aanmelding.** In de huidige code: Google of TOTP, geldig 5 min per sessie (`STAP_OP_MS`); tot er een eenmalig mechanisme is (plan §7), zegt de dialoog «Підтвердження діє 5 хв для цього сеансу / Bevestiging geldt 5 min voor deze sessie». De maquette toont het doel van OT: elke keer opnieuw.
 - **Особистий код / Persoonlijke code** (`hv-pincode`, 4–8 cijfers, aanbevolen 6) identificeert de persoon; «Код панелі / Paneelcode» bevestigt geen enkele actie: ze ontgrendelt alleen de weergave van een doorgangsscherm of een scherm dat van buiten te zien is (schil §6). De controle gebeurt op de server; na 3 fouten gaat er een melding naar de volwassenen, na 5 volgt een pauze van 5 min, daarna 30 min, daarna een blokkering tot de eigenaar ingrijpt; beheer — `/instellingen/mensen/<persoon>/code`.
@@ -113,7 +113,7 @@ Het niveau bepaalt alleen het teken `hv-risico` en het ritueel voor de mens; toe
 
 Elke actie van de zone heeft een `hv-stand` «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», apart voor scènes, automatiseringen, de optimalisator en elke agent. Standaard ‘Uit’; de eigenaar kan voor elke actie elke stand kiezen; termijn, kamers, uren en budget zijn optionele kaders die alleen hij instelt. Een agent kan rechten verruimen noch inperken — niet die van zichzelf en niet die van anderen. Elke wijziging van een toestemming en elke actie op grond daarvan is een vermelding in het Logboek en een melding `huis.alarm` of `huis.toegang`; bij gevaarlijke en kritieke acties staat ‘!’, bij ‘Altijd’ een blijvende markering en ‘! N’ in de kop.
 
-- **Doorsnede van het register** `/instellingen/toestemmingen?filter=beveiliging`: de groepen ‘Alarm’, ‘Deuren en poorten’, ‘Kleppen’, ‘Camera's’, ‘Codes en gasten’ en ‘Sensoren’ met een groeps-`hv-stand` «Для всієї групи / Voor de hele groep»; het apparaatblad toont dezelfde `hv-stand` onder ‘Instellingen’ en «Показати в реєстрі / In register tonen».
+- **Uitsnede van het register** `/instellingen/toestemmingen?filter=beveiliging`: de groepen ‘Alarm’, ‘Deuren en poorten’, ‘Kleppen’, ‘Camera's’, ‘Codes en gasten’ en ‘Sensoren’ met een groeps-`hv-stand` «Для всієї групи / Voor de hele groep»; het apparaatblad toont dezelfde `hv-stand` onder ‘Instellingen’ en «Показати в реєстрі / In register tonen».
 - **Huisstand:** inschakelen, uitschakelen van het alarm en de sloten zijn aparte stappen met een eigen toestemming; bij ‘Uit’ doet de huisstand alleen een voorstel: «Усі пішли. Поставити на охорону? / Iedereen is weg. Inschakelen?». ‘Altijd’ voor uitschakelen op basis van aanwezigheid is mogelijk — met een blijvend ‘!’.
 - **Spraak** is de uitvoerder ‘externe dienst’ met een eigen `hv-stand`; het risico van een nagebootste stem wordt in het ‘!’ benoemd. **Een beeld dat aan een agent wordt doorgegeven,** is onbetrouwbare invoer: in `hv-voorstel` en `hv-verzoek` staat de beschrijving ervan tussen aanhalingstekens.
 - **Hulpmiddelen voor agenten** (groep `huis` van de connector): alarm, zones, sloten, sensoren, batterijen, cameragebeurtenissen en bezoekers lezen; het alarm in- en uitschakelen, een zone overbruggen, een alarm afmelden, de sirene testen; vergrendelen, ontgrendelen, poorten openen en sluiten; kleppen dichtdraaien en openen; gebeurtenissen, momentopname, video, clip, maskers; een gastcode uitgeven en intrekken; een oproep beantwoorden of de deur openen; een controle starten; rook dempen, een sensor uitschakelen; scenario's van de simulator. Elk hulpmiddel valt onder een eigen `hv-stand`; een hulpmiddel om toestemmingen te wijzigen bestaat niet.
@@ -121,13 +121,13 @@ Elke actie van de zone heeft een `hv-stand` «Вимкнено / Uit · Пита
 
 ## 7. Alarmbezorging / Доставка тривог
 
-Een filter van het Logboek, `/activiteit/regels?filter=alarm`; de inhoud bouwt deze zone: de keten ‘wie · na hoeveel tijd · via welk kanaal’, ключотримачі / sleutelhouders; «Я займаюся / Ik pak het op» stopt de escalatie.
+Een filter van het Logboek, `/activiteit/regels?filter=alarm`; deze zone levert de inhoud: de keten ‘wie · na hoeveel tijd · via welk kanaal’, ключотримачі / sleutelhouders; «Я займаюся / Ik pak het op» stopt de escalatie.
 
 | Kanaal (`hv-kanaal`) | Eerlijke stand van zaken |
 |---|---|
 | Open tabblad | fase 2; alleen zolang het tabblad open is |
 | Melding op het apparaat | fase 6; op de iPhone alleen met de geïnstalleerde app, komt niet door ‘Niet storen’ heen |
-| E-mail van het platform | fase 9; traag, maakt niet wakker |
+| E-mail van het platform | fase 9; traag, maakt je niet wakker |
 | Geluid van het paneel | fase 6; toestemming met een aanraking tijdens het koppelen; «Програти тестовий сигнал / Testtoon afspelen» |
 | Licht | actie van de alarmregel (100 %, knipperen tot 1 Hz) volgens haar eigen toestemming, standaard ‘Uit’ |
 | Trillen | alleen Android in de geopende app |
@@ -192,7 +192,7 @@ OEFENING · simulatie, --info-zacht
 
 ## 12. Privacy, AVG, controlespoor
 
-- De privacypagina's horen bij de zone Mensen; Beveiliging levert daarvoor «Хто дивився / Wie keek mee», het videopad voor «Куди йдуть дані / Waar gaan gegevens heen» en de standaardtermijnen (§17, punt 5); incidenten blijven bewaard tot de eigenaar ze verwijdert.
+- De privacypagina's horen bij de zone Mensen; Beveiliging levert daarvoor «Хто дивився / Wie keek mee», het videopad voor «Куди йдуть дані / Waar gegevens heen gaan» en de standaardtermijnen (§17, punt 5); incidenten blijven bewaard tot de eigenaar ze verwijdert.
 - **Аудит / Controlespoor** — `/activiteit/geschiedenis?filter=audit`, alleen toevoegen, 2 jaar (plan §4): ‘Claude vroeg de poort te openen — Taras weigerde’; zonder overbodige details over aanwezigheid; exporteren is een gevoelige actie met de waarschuwing «файл розкриває розпорядок родини / het bestand toont het dagritme van het gezin».
 
 ## 13. Hints en teksten
@@ -206,7 +206,7 @@ Gevoelige acties en alarmstanden hebben `hv-gevolg` (berekend door `/api/huis/ge
 
 ## 14. Overige schermen en scenario's
 
-Naast §3 en §12: ‘Alarmbezorging’ `/activiteit/regels?filter=alarm`; batterijen `/activiteit/onderhoud?filter=beveiliging`; de persoonlijke code `/instellingen/mensen/<persoon>/code`; een scherm koppelen met de stap «Увімкнути звук тривоги на цьому екрані / Alarmgeluid op dit scherm aanzetten» — `/instellingen/schermen?dialoog=koppelen`; de doorsnede van toestemmingen `/instellingen/toestemmingen?filter=beveiliging`; verzoeken van agenten — `/assistent/agenten`. In de maquette openen de noodlaag en de oproep via `?dialoog=nood`, `oefenalarm`, `oproep`.
+Naast §3 en §12: ‘Alarmbezorging’ `/activiteit/regels?filter=alarm`; batterijen `/activiteit/onderhoud?filter=beveiliging`; de persoonlijke code `/instellingen/mensen/<persoon>/code`; een scherm koppelen met de stap «Увімкнути звук тривоги на цьому екрані / Alarmgeluid op dit scherm aanzetten» — `/instellingen/schermen?dialoog=koppelen`; de uitsnede van de toestemmingen `/instellingen/toestemmingen?filter=beveiliging`; verzoeken van agenten — `/assistent/agenten`. In de maquette starten scenario's van het bedieningspaneel de noodlaag en de oproep («Дим на кухні / Rook in de keuken», «Протікання / Lekkage», «Дзвінок у двері / Er wordt aangebeld»); het oefenalarm start met de knoppen «Навчальна тривога: дим / Oefenalarm: rook» en «Навчальна тривога: вода / Oefenalarm: water» in het blok «Навчання й симуляція / Oefenen en simulatie» op het tabblad ‘Status’. Een eigen adres hebben de noodlaag en het oefenalarm niet; de oproep wordt opgenomen met «Відповісти / Opnemen».
 
 Scenario's van de simulator: «Нічне вторгнення / Nachtelijke inbraak», «Дим на кухні / Rook in de keuken», «Протікання під мийкою / Lekkage onder het aanrecht», «Кур'єр дзвонить / Bezorger belt aan», «Датчик замовк / Sensor zwijgt», «Замок заклинило / Slot klemt», «Агент просить відчинити ворота / Agent vraagt de poort te openen», «Сервер перезапущено під охороною / Server herstart tijdens alarm».
 

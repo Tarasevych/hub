@@ -119,19 +119,24 @@ Telefoon: wachtrij → kaarten `hv-agentkaart` → pagina van de agent; in ‘Ka
 
 De groep `huis` van de koppeling (fase 5); elke actie staat onder een eigen `hv-stand`, standaard ‘Uit’. De niveaus zijn voorbeelden uit de matrix `shared/huis-gevaar.ts` (fase 2).
 
+**De tabel is het enige register van de namen van hulpmiddelen**; de groepen zijn dezelfde als in `hv-gereedschaplijst`. De maquette toont alle namen, behalve die met de aanduiding ‘buiten de maquette’: die komen in hun eigen fase (§17). De zones [‘Garage’](06-GARAGE.nl.md) §10 en [‘Automatisering’](07-AUTOMATISERING.nl.md) §10 voegen de hulpmiddelen van hun eigen onderdeel toe; voor een actie die in deze tabel staat, geldt de naam uit deze tabel. In de koppeling krijgt de naam het achtervoegsel van de agent en het adres: `bedienen_licht_claude_huis_tarasevych_com_gebruiker`.
+
 | Groep | Hulpmiddelen | Niveaus van acties |
 |---|---|---|
-| Читання / Lezen | `tonen_huis`, `tonen_apparaten`, `tonen_toestand`, `tonen_geschiedenis`, `tonen_logboek`, `tonen_waarom`, `tonen_gevolg` (proefuitvoering) | gewoon |
-| Aanwezigheid en locatie | `tonen_aanwezigheid`, `tonen_aanwezigheid_personen`, `tonen_locatie_personen` | gevoelig |
-| Apparaten — alle klassen | `bedienen_apparaat`, `bedienen_groep`, `instellen_timer`, `instellen_voorkeuze`, `instellen_klimaat`, `bedienen_media`, `starten_apparaat` | van gewoon (licht) tot kritiek (gasklep openen) |
-| Huisstanden en scènes | `wisselen_huisstand`, `starten_scene`, `bewerken_scene` | gewoon — gevoelig |
-| Automatiseringen | `opstellen_regel`, `proefdraaien_regel`, `inschakelen_regel`, `uitschakelen_regel` | gewoon — gevaarlijk |
-| Energie | `instellen_laden`, `instellen_batterij`, `instellen_warmtepomp`, `begrenzen_teruglevering`, `voorstellen_dagplan` | gewoon — gevaarlijk |
-| Beveiliging | `instellen_alarm`, `overbruggen_zone`, `vergrendelen`, `ontgrendelen`, `bedienen_poort`, `bedienen_klep`, `testen_sirene`, `dempen_melder`, `uitschakelen_sensor`, `uitgeven_gastcode`, `beantwoorden_oproep` | gevoelig — kritiek |
-| Camera's | `tonen_camera_gebeurtenissen`, `maken_momentopname`, `tonen_livebeeld`, `opnemen_clip`, `instellen_maskers` | gevoelig — gevaarlijk |
-| Garage | de set van de zone [‘Garage’](06-GARAGE.nl.md) §10: vervoer, motor, drones, missies, robots | gewoon — kritiek |
-| Techniek en onderhoud | `tonen_ontdekt`, `toevoegen_apparaat`, `instellen_onderhoud`, `bijwerken_firmware` | gewoon — gevaarlijk |
-| Simulator | `instellen_simtijd`, `starten_scenario`, `instellen_wereld` | gewoon |
+| Читання / Lezen | `tonen_huis_overzicht`, `lezen_apparaat`, `zoeken_apparaten`, `lezen_geschiedenis`, `uitleggen_waarom`, `lezen_logboek`, `lezen_energie`, `lezen_weer`, `tonen_aanwezigheid`, `tonen_wie_thuis`; buiten de maquette: `tonen_gevolg` (proefuitvoering), `tonen_locatie_personen` | gewoon — gevoelig (aanwezigheid en locatie van personen) |
+| Світло / Licht | `bedienen_licht`, `schakelen_kamerlicht`, `uitzetten_alle_lampen`, `starten_stroboscoop` | gewoon — gevoelig |
+| Клімат і штори / Klimaat en zonwering | `instellen_kamerdoel`, `bedienen_klimaat`, `uitzetten_ventilatie`, `instellen_warmtepomp`, `uitzetten_warmtepomp`, `bedienen_boiler`, `bedienen_zonwering` | gewoon — gevaarlijk |
+| Медіа / Media | `bedienen_media`, `omroepen_bericht`, `zetten_volume_boven_plafond` | gewoon — gevoelig |
+| Техніка й роботи / Apparatuur en robots | `schakelen_stekker`, `starten_programma`, `bedienen_apparatuur`, `aanzetten_oven`, `zetten_koffie`, `uitzetten_computer`, `uitzetten_voeding`, `herstarten_router`, `uitzetten_alles`, `bedienen_robot`, `starten_maaier`, `starten_beregening`; buiten de maquette: `bedienen_groep`, `instellen_timer`, `instellen_voorkeuze`; robots verder — de zone ‘Garage’ §10 | gewoon — gevaarlijk |
+| Сцени й режими / Scènes en standen | `tonen_scenes`, `starten_scene`, `wijzigen_huisstand`, `maken_scene_concept`; verder — de zone ‘Automatisering’ §10 | gewoon — gevoelig |
+| Автоматизації / Automatiseringen | `tonen_automatiseringen`, `maken_regel_concept`, `proefdraaien_regel`, `aanzetten_regel`, `uitzetten_regel`; verder — de zone ‘Automatisering’ §10 | gewoon — gevaarlijk |
+| Енергія / Energie | `lezen_tarief`, `starten_laden`, `instellen_laadstand`, `instellen_laaddoel`, `instellen_batterij`, `begrenzen_teruglevering`; buiten de maquette: `voorstellen_dagplan` | gewoon — gevaarlijk |
+| Безпека й замки / Beveiliging en sloten | `vergrendelen_deur`, `ontgrendelen_deur`, `inschakelen_alarm`, `uitschakelen_alarm`, `openen_ingang`, `sluiten_ingang`, `lezen_melders`, `testen_melder`, `maken_gastcode`, `dempen_melder`; buiten de maquette: `overbruggen_zone`, `bedienen_klep`, `testen_sirene`, `uitschakelen_sensor`, `beantwoorden_oproep` | gewoon — kritiek |
+| Камери / Camera's | `lezen_camera_gebeurtenissen`, `maken_camerabeeld`, `starten_opname`, `bekijken_live`; buiten de maquette: `instellen_maskers` | gevoelig — kritiek (live meekijken) |
+| Транспорт / Voertuigen | `lezen_voertuigen`, `tonen_locatie_voertuig`, `instellen_klimaat_auto`, `vergrendelen_voertuig`, `ontgrendelen_voertuig`, `starten_voertuig`; verder — de zone ‘Garage’ §10 | gewoon — kritiek |
+| Безпілотники / Drones | `lezen_drones`, `lezen_vluchtlog`, `voorstellen_missie`, `opstijgen_drone`, `zweven_drone`, `terugkeren_drone`, `landen_drone`; verder — de zone ‘Garage’ §10 | gewoon — kritiek |
+| Симулятор / Simulator | `lezen_simulator`, `instellen_snelheid`, `starten_scenario`, `starten_noodscenario`; buiten de maquette: `instellen_wereld` | gewoon — gevaarlijk (noodscenario) |
+| Техніка й обслуговування / Techniek en onderhoud (buiten de maquette) | `tonen_ontdekt`, `toevoegen_apparaat`, `instellen_onderhoud`, `bijwerken_firmware` | gewoon — gevaarlijk |
 
 Er zijn geen hulpmiddelen voor toestemmingen, kaders, rollen, uitnodigingen, geheimen, verbindingen van agenten en audit: dat is beheer van rechten, niet van het huis.
 

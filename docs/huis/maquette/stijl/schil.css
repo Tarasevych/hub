@@ -49,7 +49,8 @@
 .is-venster .mq-schaal { border-radius: 16px; }
 
 /* ───────────── Полотно: шари ───────────── */
-.hv-inhoud { position: absolute; inset: 0; z-index: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding-block: var(--hv-kop-h) calc(var(--hv-onder-h) + var(--ruimte-5)); scrollbar-width: thin; scrollbar-color: var(--hv-omtrek) transparent; }
+/* елемент у фокусі не ховається під скляну шапку (з рядком hv-sim) чи нижню панель: прокручування лишає їм місце */
+.hv-inhoud { position: absolute; inset: 0; z-index: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: calc(var(--hv-kop-h) + var(--ruimte-2)) calc(var(--hv-onder-h) + var(--ruimte-2)); padding-block: var(--hv-kop-h) calc(var(--hv-onder-h) + var(--ruimte-5)); scrollbar-width: thin; scrollbar-color: var(--hv-omtrek) transparent; }
 .hv-pagina { inline-size: 100%; max-inline-size: 1560px; margin-inline: auto; padding: var(--ruimte-3) var(--hv-rand) var(--ruimte-5); display: grid; gap: var(--ruimte-4); align-content: start; min-inline-size: 0; }
 .hv-pagina__lijf { min-inline-size: 0; }
 .hv-spring { position: absolute; inset-block-start: 4px; inset-inline-start: 4px; z-index: 30; padding: var(--ruimte-2) var(--ruimte-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-s); font-weight: 600; font-size: var(--tekst-klein); transform: translateY(-200%); }
@@ -103,14 +104,14 @@
 
 /* ── Нижня панель телефона й кнопка «Команда» ── */
 .hv-onderbalk { position: absolute; inset-block-end: 0; inset-inline: 0; z-index: var(--hv-z-glas); background: var(--hv-glas); -webkit-backdrop-filter: var(--hv-glas-filter); backdrop-filter: var(--hv-glas-filter); border-block-start: 1px solid var(--hv-glas-rand); }
-.hv-onderbalk__rij { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; block-size: var(--hv-onder-h); }
-.hv-onderbalk__punt { position: relative; display: grid; justify-items: center; align-content: center; gap: 2px; color: var(--muted); font-size: var(--tekst-mini); font-weight: 600; line-height: 1.1; min-inline-size: 0; }
+.hv-onderbalk__rij { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); block-size: var(--hv-onder-h); }
+.hv-onderbalk__punt { position: relative; display: grid; grid-template-rows: 30px auto; justify-items: center; align-items: center; align-content: center; gap: 1px; padding-inline: 2px; color: var(--muted); font-size: var(--tekst-mini); font-weight: 600; line-height: 1.1; min-inline-size: var(--hv-tik); }
 .hv-onderbalk__punt.is-actief { color: var(--text); }
-.hv-onderbalk__punt > span { max-inline-size: 100%; padding-inline: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hv-onderbalk__punt > span { white-space: nowrap; }
 .hv-onderbalk__punt.is-actief::before { content: ""; position: absolute; inset-block-start: 0; inset-inline: 30%; block-size: 2px; border-radius: 0 0 2px 2px; background: var(--accent); }
 /* «Команда» — центральний пункт: знак у паперовій пігулці, щоб його було видно серед розділів */
 .hv-onderbalk__opdracht { color: var(--text); }
-.hv-onderbalk__opdracht > .hv-ic { box-sizing: content-box; padding: 3px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+.hv-onderbalk__opdracht > .hv-ic { box-sizing: content-box; padding: 2px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
 .hv-onderbalk__opdracht:active > .hv-ic { background: var(--surface2); }
 
 /* ── Заголовок сторінки й вкладки другого рівня (на небі: лише --text і --muted) ── */
@@ -120,6 +121,10 @@
 .hv-terug { display: inline-flex; align-items: center; gap: var(--ruimte-1); min-block-size: var(--hv-tik); padding-inline-end: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); border-radius: var(--straal-s); }
 .hv-tabs { display: flex; gap: var(--ruimte-1); min-inline-size: 0; max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--hv-rand) * -1); padding-inline: var(--hv-rand); }
 .hv-tabs::-webkit-scrollbar { display: none; }
+/* стрічка, що гортається (вкладки, чипи героя, сцени, сегменти-пігулки): край згасає там, де за ним є ще вміст */
+.hv-doek .is-meer-begin { -webkit-mask-image: linear-gradient(90deg, transparent 0, var(--text) 32px); mask-image: linear-gradient(90deg, transparent 0, var(--text) 32px); }
+.hv-doek .is-meer-eind { -webkit-mask-image: linear-gradient(270deg, transparent 0, var(--text) 32px); mask-image: linear-gradient(270deg, transparent 0, var(--text) 32px); }
+.hv-doek .is-meer-begin.is-meer-eind { -webkit-mask-image: linear-gradient(90deg, transparent 0, var(--text) 32px, var(--text) calc(100% - 32px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, var(--text) 32px, var(--text) calc(100% - 32px), transparent 100%); }
 .hv-tab { position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--hv-tik); min-inline-size: var(--hv-tik); padding-inline: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 500; color: var(--text); white-space: nowrap; flex: none; }
 .hv-tab.is-actief { font-weight: 600; }
 .hv-tab::before { content: ""; position: absolute; inset: calc((100% - var(--hv-chip-hoogte)) / 2) 0; z-index: -1; border-radius: 999px; transition: background var(--hv-duur-1); }
@@ -130,6 +135,39 @@
 .hv-verbinding { display: flex; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--panel); border: var(--hv-streep) dashed var(--hv-omtrek); font-size: var(--tekst-klein); font-weight: 600; }
 .hv-verbinding span { flex: 1 1 auto; min-inline-size: 0; }
 .hv-verbinding.is-gestopt { border-style: solid; border-color: var(--warn); }
+
+/* ── Бічні зони широких екранів (breed, ultrabreed): розмітку дає kern/schil.js, ширини — --hv-zij-l і --hv-zij-r ── */
+.hv-zij { display: none; }
+.hv-zijkaart { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-2); align-content: start; min-block-size: 0; padding: var(--ruimte-2) var(--ruimte-4) var(--ruimte-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1), 0 0 0 1px var(--hv-glas-rand); }
+.hv-zijkaart__kop { display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); min-inline-size: 0; }
+.hv-zijkaart__kop h2 { flex: 1 1 auto; min-inline-size: 0; font-size: var(--hv-tekst-kop); font-weight: var(--hv-gewicht-kop); letter-spacing: -0.01em; line-height: 1.2; }
+.hv-zijkaart__kop .hv-knop { margin-inline-end: calc(var(--ruimte-2) * -1); white-space: nowrap; }
+.hv-zijkaart__rol { overflow-y: auto; overscroll-behavior: contain; min-block-size: 0; scrollbar-width: thin; scrollbar-color: var(--hv-omtrek) transparent; margin-inline-end: calc(var(--ruimte-2) * -1); padding-inline-end: var(--ruimte-2); }
+.hv-zijkaart--plan { justify-items: center; }
+.hv-zijkaart--plan > .hv-zijkaart__kop { justify-self: stretch; }
+.hv-zijkaart--plan .hv-doorsnede { max-inline-size: 440px; }
+.hv-zijkaart--log, .hv-zijkaart--kamers { grid-template-rows: auto minmax(0, 1fr); }
+.hv-zij__greep { position: absolute; inset-block: 0; z-index: 1; inline-size: var(--ruimte-3); cursor: col-resize; touch-action: none; border-radius: 999px; }
+.hv-zij__greep::after { content: ""; position: absolute; inset-block: calc(50% - 28px); inset-inline: 4px; border-radius: 999px; background: var(--hv-omtrek); opacity: 0.5; transition: opacity var(--hv-duur-1), inset-block var(--hv-duur-2); }
+.hv-zij__greep.is-sleept::after, .hv-zij__greep:focus-visible::after { opacity: 1; inset-block: calc(50% - 48px); background: var(--text); }
+.hv-zij--rechts .hv-zij__greep { inset-inline-start: calc(var(--ruimte-3) * -1); }
+.hv-zij--links .hv-zij__greep { inset-inline-end: calc(var(--ruimte-3) * -1); }
+@container doek (min-width: 1800px) {
+  /* вміст | бічна зона 420–520 px: дім у розрізі й «Журнал наживо» постійно поруч */
+  .heeft-zij .hv-zij--rechts, .heeft-zij-links .hv-zij--links { position: absolute; z-index: 2; inset-block: calc(var(--hv-kop-h) + var(--ruimte-3)) var(--ruimte-3); display: flex; flex-direction: column; gap: var(--hv-kier); min-block-size: 0; }
+  .heeft-zij .hv-zij--rechts { inset-inline-end: var(--ruimte-3); inline-size: var(--hv-zij-r, 480px); }
+  .heeft-zij-links .hv-zij--links { inset-inline-start: var(--ruimte-3); inline-size: var(--hv-zij-l, 520px); }
+  .hv-zij > .hv-zijkaart--plan { flex: none; }
+  .hv-zij > .hv-zijkaart--log, .hv-zij > .hv-zijkaart--kamers { flex: 1 1 0; }
+  .heeft-zij .hv-inhoud { inset-inline-end: calc(var(--hv-zij-r, 480px) + var(--ruimte-3) * 2); }
+  /* шапка — на всю ширину полотна: назва дому стоїть на лівій лінії вмісту, дії — над правою зоною */
+  .heeft-zij .hv-kop__binnen { max-inline-size: none; }
+  /* від 2400 px — три зони: план | вміст | Журнал */
+  .heeft-zij-links .hv-inhoud { inset-inline-start: calc(var(--hv-zij-l, 520px) + var(--ruimte-3) * 2); }
+}
+@media (hover: hover) {
+  .hv-zij__greep:hover::after { opacity: 1; }
+}
 
 /* ── Заглушка «збирається» ── */
 .hv-stomp { display: grid; gap: var(--ruimte-3); max-inline-size: 760px; }

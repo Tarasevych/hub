@@ -15,47 +15,47 @@
   // gevolg — «Що станеться · Пов'язано з · Як повернути»; risico — «Що може статися · Хто зможе це запускати · Як вимкнути».
   var acties = [
     { sleutel: 'slot.ontgrendelen', soorten: ['slot'], mogelijkheid: 'vergrendeld', als: function (a, v) { return v === false; }, niveau: K,
-      naam: ['Відімкнути двері', 'Deur ontgrendelen'],
+      naam: ['Відімкнути двері', 'Deur ontgrendelen'], houd: ['Утримуйте, щоб відімкнути', 'Houd vast om te ontgrendelen'],
       gevolg: ['Що станеться: вхідні двері відімкнуться і їх зможе відчинити будь-хто. Пов’язано з: нічна охорона стежить за цими дверима. Як повернути: «Замкнути» — один дотик.', 'Wat er gebeurt: de voordeur gaat van het slot en iedereen kan haar openen. Hangt samen met: het nachtalarm bewaakt deze deur. Terugdraaien: ‘Vergrendelen’ — één tik.'],
       risico: ['Що може статися: двері відімкнуться, коли вдома нікого немає. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: de deur gaat van het slot terwijl er niemand thuis is. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'slot.vergrendelen', soorten: ['slot'], mogelijkheid: 'vergrendeld', als: function (a, v) { return v !== false; }, niveau: G, naam: ['Замкнути двері', 'Deur vergrendelen'] },
     { sleutel: 'ingang.openen', soorten: ['garagedeur', 'poort'], mogelijkheid: 'open', als: function (a, v) { return !!v; }, niveau: K,
-      naam: ['Відчинити ворота', 'Poort of garagedeur openen'],
+      naam: ['Відчинити ворота', 'Poort of garagedeur openen'], houd: ['Утримуйте, щоб відчинити', 'Houd vast om te openen'],
       gevolg: ['Що станеться: ворота відчиняться й лишаться відчиненими, доки їх не зачинять. Пов’язано з: у гаражі стоять велосипеди й зарядна станція. Як повернути: «Зачинити» — перед рухом буде відлік 5 с.', 'Wat er gebeurt: de poort gaat open en blijft open tot iemand haar sluit. Hangt samen met: in de garage staan de fietsen en de laadpaal. Terugdraaien: ‘Sluiten’ — vóór het bewegen telt het 5 s af.'],
       risico: ['Що може статися: ворота відчиняться, коли вдома нікого немає. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: de poort gaat open terwijl er niemand thuis is. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'ingang.sluiten', soorten: ['garagedeur', 'poort'], mogelijkheid: 'open', als: function (a, v) { return !v; }, niveau: V, naam: ['Зачинити ворота', 'Poort of garagedeur sluiten'] },
     { sleutel: 'alarm.uitzetten', soorten: ['alarmsysteem'], mogelijkheid: 'alarmstand', als: function (a, v) { return v === 'uit'; }, niveau: K,
-      naam: ['Зняти охорону', 'Alarm uitzetten'],
+      naam: ['Зняти охорону', 'Alarm uitzetten'], houd: ['Утримуйте, щоб зняти', 'Houd vast om uit te zetten'],
       gevolg: ['Що станеться: охорону буде знято, датчики дверей і руху перестануть піднімати тривогу. Пов’язано з: камери й далі показують кадри. Як повернути: поставте охорону знову — один дотик.', 'Wat er gebeurt: het alarm gaat uit; deur- en bewegingssensoren slaan geen alarm meer. Hangt samen met: de camera’s blijven beelden tonen. Terugdraaien: schakel het alarm weer in — één tik.'],
       risico: ['Що може статися: дім лишиться без охорони, поки нікого немає. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: het huis is onbewaakt terwijl er niemand is. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'alarm.inschakelen', soorten: ['alarmsysteem'], mogelijkheid: 'alarmstand', als: function (a, v) { return v !== 'uit'; }, niveau: V, naam: ['Поставити на охорону', 'Alarm inschakelen'] },
     { sleutel: 'oven.aan', soorten: ['oven'], mogelijkheid: 'aan', als: function (a, v) { return !!v; }, niveau: Z,
-      naam: ['Увімкнути духовку', 'Oven aanzetten'],
+      naam: ['Увімкнути духовку', 'Oven aanzetten'], houd: ['Утримуйте, щоб увімкнути', 'Houd vast om aan te zetten'],
       gevolg: ['Що станеться: духовка почне грітися до заданої температури. Пов’язано з: датчик диму на кухні. Як повернути: «Вимкнути» — один дотик; духовка холоне близько 30 хв.', 'Wat er gebeurt: de oven warmt op naar de ingestelde temperatuur. Hangt samen met: de rookmelder in de keuken. Terugdraaien: ‘Uitzetten’ — één tik; afkoelen duurt ongeveer 30 min.'],
       risico: ['Що може статися: духовка грітиметься без нагляду. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: de oven staat zonder toezicht aan. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'oven.uit', soorten: ['oven'], mogelijkheid: 'aan', als: function (a, v) { return !v; }, niveau: G, naam: ['Вимкнути духовку', 'Oven uitzetten'] },
     { sleutel: 'voeding.uit', soorten: ['nas', 'router'], mogelijkheid: 'aan', als: function (a, v) { return !v; }, niveau: Z,
-      naam: ['Вимкнути критичне живлення', 'Kritieke voeding uitzetten'],
+      naam: ['Вимкнути критичне живлення', 'Kritieke voeding uitzetten'], houd: ['Утримуйте, щоб вимкнути', 'Houd vast om uit te zetten'],
       gevolg: ['Що станеться: пристрій втратить живлення; нічна копія о 02:00 не відбудеться. Пов’язано з: три камери пишуть на це сховище. Як повернути: увімкніть знову — запуск триває 4 хв.', 'Wat er gebeurt: het apparaat verliest stroom; de nachtelijke kopie van 02:00 gaat niet door. Hangt samen met: drie camera’s schrijven naar deze opslag. Terugdraaien: zet het weer aan — opstarten duurt 4 min.'],
       risico: ['Що може статися: записи камер і копії зупиняться. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: camera-opnamen en kopieën stoppen. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'router.herstart', soorten: ['router'], mogelijkheid: 'herstart', niveau: Z,
-      naam: ['Перезапустити маршрутизатор', 'Router herstarten'],
+      naam: ['Перезапустити маршрутизатор', 'Router herstarten'], houd: ['Утримуйте, щоб перезапустити', 'Houd vast om te herstarten'],
       gevolg: ['Що станеться: мережа зникне приблизно на 3 хв, екрани покажуть «немає зв’язку». Пов’язано з: усі пристрої Wi-Fi і тунель до сайту. Як повернути: відкату немає — мережа повернеться сама.', 'Wat er gebeurt: het netwerk valt ongeveer 3 min weg, schermen tonen ‘geen verbinding’. Hangt samen met: alle wifi-apparaten en de tunnel naar de site. Terugdraaien: kan niet — het netwerk komt vanzelf terug.'],
       risico: ['Що може статися: дім лишиться без мережі в невдалий момент. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: het huis zit op een ongelukkig moment zonder netwerk. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'maaier.start', soorten: ['maaier'], mogelijkheid: 'robot', als: function (a, v) { return v === 'start'; }, niveau: Z,
-      naam: ['Запустити косарку', 'Robotmaaier starten'],
+      naam: ['Запустити косарку', 'Robotmaaier starten'], houd: ['Утримуйте, щоб запустити', 'Houd vast om te starten'],
       gevolg: ['Що станеться: косарка виїде з бази й косить близько 50 хв. Пов’язано з: полив саду відкладається до її повернення. Як повернути: «На базу» — один дотик.', 'Wat er gebeurt: de maaier rijdt van het station en maait ongeveer 50 min. Hangt samen met: de beregening wacht tot hij terug is. Terugdraaien: ‘Naar station’ — één tik.'],
       risico: ['Що може статися: косарка працюватиме, коли в саду діти чи тварини. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: de maaier rijdt terwijl er kinderen of dieren in de tuin zijn. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'warmtepomp.uit', soorten: ['warmtepomp'], mogelijkheid: 'modus', als: function (a, v) { return v === 'uit'; }, niveau: Z,
-      naam: ['Вимкнути тепловий насос', 'Warmtepomp uitzetten'],
+      naam: ['Вимкнути тепловий насос', 'Warmtepomp uitzetten'], houd: ['Утримуйте, щоб вимкнути', 'Houd vast om uit te zetten'],
       gevolg: ['Що станеться: опалення й гаряча вода зупиняться в усьому домі. Пов’язано з: термостат, тепла підлога, бойлер. Як повернути: оберіть режим «Обігрів»; дім нагрівається кілька годин.', 'Wat er gebeurt: verwarming en warm water stoppen in het hele huis. Hangt samen met: thermostaat, vloerverwarming, boiler. Terugdraaien: kies de stand ‘Verwarmen’; opwarmen duurt enkele uren.'],
       risico: ['Що може статися: дім вихолоне в мороз. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: het huis koelt af bij vorst. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'huis.allesuit', doel: 'alle', mogelijkheid: 'alles', niveau: Z,
-      naam: ['Вимкнути все в домі', 'Alles in huis uit'],
+      naam: ['Вимкнути все в домі', 'Alles in huis uit'], houd: ['Утримуйте, щоб вимкнути', 'Houd vast om uit te zetten'],
       gevolg: ['Що станеться: вимкнуться світло, медіа, розетки й техніка з програмою; холодильник, сховище й маршрутизатор лишаться. Пов’язано з: прання зупиниться посеред програми. Як повернути: «Повернути» протягом 10 с, далі — вручну.', 'Wat er gebeurt: licht, media, stekkers en apparaten met een programma gaan uit; koelkast, opslag en router blijven aan. Hangt samen met: de was stopt midden in het programma. Terugdraaien: ‘Ongedaan maken’ binnen 10 s, daarna handmatig.'],
       risico: ['Що може статися: техніка зупиниться посеред роботи. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: apparaten stoppen midden in hun werk. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'drone.opstijgen', doel: 'drone', mogelijkheid: 'vlucht', als: function (a, v) { return v === 'opstijgen'; }, niveau: K,
-      naam: ['Зліт дрона', 'Drone laten opstijgen'],
+      naam: ['Зліт дрона', 'Drone laten opstijgen'], houd: ['Утримуйте, щоб злетіти', 'Houd vast om op te stijgen'],
       gevolg: ['Що станеться: дрон злетить із бази й почне місію. Пов’язано з: зони польоту показано довідково, відповідальність — на пілоті. Як повернути: «Повернутися додому» або «Сісти зараз».', 'Wat er gebeurt: de drone stijgt op van het dock en begint de missie. Hangt samen met: vliegzones zijn ter informatie, de piloot blijft verantwoordelijk. Terugdraaien: ‘Naar huis’ of ‘Nu landen’.'],
       risico: ['Що може статися: дрон злетить без людини поруч. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: de drone stijgt op zonder iemand in de buurt. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     // ── чутливі ──
@@ -143,7 +143,8 @@
     /** Дозвіл виконавця для дії: 'uit' | 'vragen' | 'altijd'. */
     stand: function (uitvoerder, sleutel) { return (standen[uitvoerder] && standen[uitvoerder][sleutel]) || 'uit'; },
     standen: function () { return standen; },
-    herstelStanden: function () { standen = {}; },
+    /** Скинути дозволи (сценарій) або повернути їх до знімка (проба дії без зв'язку з домом). */
+    herstelStanden: function (foto) { standen = foto && typeof foto === 'object' ? foto : {}; },
     /** Лише для сценаріїв симулятора (початковий стан світу). */
     zetStandStil: function (uitvoerder, sleutel, waarde) { (standen[uitvoerder] = standen[uitvoerder] || {})[sleutel] = waarde; },
 
@@ -161,6 +162,8 @@
         return Promise.resolve({ ok: false, reden: 'rol' });
       }
       if (was === waarde) return Promise.resolve({ ok: true });
+      // без зв'язку з домом дозвіл не змінюється: показано останній знімок, лише перегляд
+      if (HV.zonderVerbinding && HV.zonderVerbinding()) { HV.meldZonderVerbinding(); return Promise.resolve({ ok: false, reden: 'verbinding' }); }
       var klaar = function () {
         (standen[uitvoerder] = standen[uitvoerder] || {})[sleutel] = waarde;
         var wie = HV.gevaar.uitvoerder(uitvoerder);

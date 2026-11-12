@@ -15,56 +15,18 @@
 }
 .hv-ast-tussenkop { font-size: var(--tekst-klein); font-weight: 700; color: var(--text); margin-block: var(--ruimte-4) var(--ruimte-2); }
 
-/* ───────────── Герой зони: папір із тихим сяйвом тону ───────────── */
-.hv-ast-held {
-  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3) var(--ruimte-4); align-items: start;
-  padding: var(--ruimte-5); border-radius: var(--straal-xl); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; overflow: hidden;
-  background:
-    radial-gradient(120% 160% at 0% 0%, var(--hv-aan-zacht) 0%, transparent 42%),
-    radial-gradient(90% 120% at 100% 0%, var(--info-zacht) 0%, transparent 48%),
-    linear-gradient(160deg, var(--surface2) 0%, var(--panel) 58%);
+/* ───────────── Герой зони: спільний o.zoneheld (папір без градієнта, лічильники однієї форми) ─────────────
+   Власного героя й власних форм лічильників зона не має. Тут лише ряд дій: у зони їх дві-три, тож вони стоять окремим
+   рядом під реченням і лічильниками, а не третьою колонкою (інакше на планшеті реченню не лишається місця). */
+.hv-ast-zoneheld .hv-zoneheld__acties { grid-column: 1 / -1; justify-content: flex-start; }
+@container zoneheld (min-width: 720px) {
+  .hv-ast-zoneheld .hv-zoneheld__raam { grid-template-columns: minmax(0, 1fr) auto; }
+  .hv-ast-zoneheld .hv-zoneheld__sub { max-inline-size: 72ch; text-wrap: pretty; }
 }
-.hv-ast-held--agenten {
-  background:
-    radial-gradient(110% 150% at 0% 0%, var(--info-zacht) 0%, transparent 46%),
-    radial-gradient(90% 120% at 100% 0%, var(--hv-warm-zacht) 0%, transparent 44%),
-    linear-gradient(160deg, var(--surface2) 0%, var(--panel) 58%);
-}
-.hv-ast-held__teken { grid-row: span 1; align-self: start; }
-.hv-ast-held__stapel { display: inline-flex; }
-.hv-ast-held__stapel .hv-ast-teken { box-shadow: 0 0 0 3px var(--panel); }
-.hv-ast-held__stapel .hv-ast-teken + .hv-ast-teken { margin-inline-start: -12px; }
-.hv-ast-held__tekst { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
-.hv-ast-held__boven { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-3); }
-.hv-ast-held__fijn { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
-.hv-ast-held__zin { font-size: clamp(22px, 2.2vw, 30px); line-height: 1.2; font-weight: 700; letter-spacing: -0.015em; color: var(--text); text-wrap: balance; }
-.hv-ast-held__sub { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); max-inline-size: 68ch; text-wrap: pretty; }
-.hv-ast-held__getallen { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: var(--ruimte-2); }
-.hv-ast-held__getallen .hv-getal { padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); }
-.hv-ast-held__knoppen { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
-@container ast (min-width: 860px) {
-  .hv-ast-held { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .hv-ast-held__getallen { grid-column: 3; grid-row: 1; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); min-inline-size: 300px; max-inline-size: 460px; }
-  .hv-ast-held__knoppen { grid-column: 2 / -1; }
-}
-/* телефон: герой компактний — знак і назва в рядок, числа однією смугою, дві кнопки поруч */
-@container ast (max-width: 599px) {
-  .hv-ast-held { padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); gap: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-l); align-items: center; }
-  .hv-ast-held__teken .hv-ast-teken--groot { inline-size: 48px; block-size: 48px; border-radius: var(--straal-s); font-size: 18px; }
-  .hv-ast-held__stapel .hv-ast-teken { inline-size: 32px; block-size: 32px; }
-  .hv-ast-held__tekst { gap: var(--ruimte-1); }
-  .hv-ast-held__zin { font-size: 20px; }
-  .hv-ast-held__fijn { display: none; }
-  .hv-ast-held__sub { font-size: var(--tekst-mini); line-height: 1.45; }
-  .hv-ast-held:not(.hv-ast-held--agenten) .hv-ast-held__sub { display: none; }
-  .hv-ast-held__getallen { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); overflow: hidden; }
-  .hv-ast-held--agenten .hv-ast-held__getallen { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .hv-ast-held__getallen .hv-getal { padding: var(--ruimte-2); border: 0; border-radius: 0; background: none; }
-  .hv-ast-held__getallen .hv-getal + .hv-getal { border-inline-start: 1px solid var(--line); }
-  .hv-ast-held__getallen .hv-getal__waarde { font-size: 22px; }
-  .hv-ast-held__getallen .hv-getal__label { font-size: var(--tekst-mini); }
-  .hv-ast-held__knoppen .hv-knop { flex: 1 1 140px; justify-content: center; }
-  .hv-ast-held__knoppen .hv-knop--stil { flex-basis: 100%; }
+/* телефон: дві дії з контуром ділять рядок навпіл, тиха дія — останнім рядком на всю ширину */
+@container zoneheld (max-width: 519px) {
+  .hv-ast-zoneheld .hv-zoneheld__acties .hv-knop { flex: 1 1 140px; justify-content: center; }
+  .hv-ast-zoneheld .hv-zoneheld__acties .hv-knop--stil { flex-basis: 100%; }
 }
 
 /* Пігулка стану (готовий · думає · призупинено…): тон — лише підкладка й іконка, слово — --text */
@@ -391,7 +353,7 @@ button.hv-ast-feiten__rij:active { background: var(--surface2); }
 }
 .hv-ast-agentkop {
   display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4) var(--ruimte-5) var(--ruimte-5); border-radius: var(--straal-xl); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0;
-  background: radial-gradient(120% 140% at 0% 0%, var(--surface2) 0%, transparent 50%), linear-gradient(170deg, var(--surface) 0%, var(--panel) 60%);
+  background: var(--panel);
 }
 .hv-ast-terug { justify-self: start; margin-inline-start: calc(-1 * var(--ruimte-2)); text-decoration: none; }
 .hv-ast-agentkop__hoofd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-4); align-items: center; }
@@ -399,16 +361,18 @@ button.hv-ast-feiten__rij:active { background: var(--surface2); }
 .hv-ast-agentkop__naam { font-size: clamp(24px, 2.4vw, 32px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; color: var(--text); }
 .hv-ast-agentkop__sub { font-size: var(--tekst-klein); color: var(--muted); overflow-wrap: anywhere; }
 .hv-ast-agentkop__chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); }
-.hv-ast-agentkop__getallen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ruimte-2); }
-.hv-ast-agentkop__getallen .hv-getal { padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); }
+/* лічильники агента — тієї самої форми, що в героя зони (класи hv-zoneheld__teller); тут лише розкладка ряду:
+   вузько — чотири рівні колонки, від 600 px — щільний ряд зліва, а не розтягнутий на всю ширину */
+.hv-ast-agentkop .hv-ast-agentkop__getallen { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-block: var(--ruimte-1); }
+@container ast (min-width: 600px) {
+  .hv-ast-agentkop .hv-ast-agentkop__getallen { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(104px, max-content); justify-content: start; }
+  .hv-ast-agentkop .hv-ast-agentkop__getallen .hv-zoneheld__teller { padding-inline: var(--ruimte-3) var(--ruimte-4); }
+  .hv-ast-agentkop .hv-ast-agentkop__getallen .hv-zoneheld__teller:first-child { padding-inline-start: 0; }
+}
 .hv-ast-van { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
 .hv-ast-agentkop__knoppen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
 @container ast (max-width: 599px) {
   .hv-ast-agentkop { padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); }
-  .hv-ast-agentkop__getallen { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); overflow: hidden; }
-  .hv-ast-agentkop__getallen .hv-getal { padding: var(--ruimte-2); border: 0; border-radius: 0; background: none; }
-  .hv-ast-agentkop__getallen .hv-getal + .hv-getal { border-inline-start: 1px solid var(--line); }
-  .hv-ast-agentkop__getallen .hv-getal__waarde { font-size: 22px; }
   .hv-ast-agentkop__knoppen .hv-knop:not(.hv-knop--stil) { flex: 1 1 150px; justify-content: center; }
   .hv-ast-agentkop__hoofd { gap: var(--ruimte-3); }
   .hv-ast-agentkop .hv-ast-teken--groot { inline-size: 52px; block-size: 52px; }

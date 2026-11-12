@@ -8,7 +8,7 @@ Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий �
 
 ## 0. Wat er is veranderd
 
-- **‘Levend huis’.** De pagina's staan op een stille hemel (OT §3); op de hemel staan alleen de energiezin, de datum en de huistijd en de bloktitels in `--text`. Stromen, prijzen, grafieken en tegels staan op papier `--panel`; glas is er voor de kop, de tabbladen, de onderbalk, de omhulling van het blad en Opdracht. Het verbod op glas, hemel en kleurverlopen is opgeheven; de zonne-opwek kleurt de hemel niet.
+- **‘Levend huis’.** De pagina's staan op een stille hemel (OT §3); op de hemel staan alleen de energiezin, de datum en de huistijd en de bloktitels in `--text`. Stromen, prijzen, grafieken en tegels staan op papier `--panel`; glas is er voor de kop, de onderbalk, de omhulling van het blad en Opdracht. Het verbod op glas, hemel en kleurverlopen is opgeheven; de zonne-opwek kleurt de hemel niet.
 - **Toestemmingen** (plan §3.8): elke actie heeft een `hv-stand` voor elke uitvoerder, standaard ‘Uit’, en alleen de eigenaar wijzigt die. Geschrapt zijn: het onbeschikbare ‘Slim’, ‘Altijd’ pas nadat een veilige toestand is vastgelegd, ‘agenten — nee’, ‘bewoner — alleen strenger’, een termijn van 30 dagen, de verzoektermijn 21:00 en de tabel met harde verboden. De maquette toont de bevestiging van de aanmelding volgens het doel van OT §10: elke keer opnieuw; de huidige 5 min per sessie beschrijven alleen de code tot het besluit van de eigenaar (hoofddocument, §13, punt 1).
 - **Opdracht van een mens:** ‘Slim’, door een mens gekozen, wordt precies zo uitgevoerd binnen diens methode, doel en tijd; toestemming voor de optimalisatie is alleen nodig buiten die grenzen (§5.3).
 - **Fasen** volgen de schaal 0–12 van plan §4 (§12). **Volledigheid:** een blad voor elke energieklasse (§5.6) en de volledige set hulpmiddelen voor agenten (§6).
@@ -52,7 +52,7 @@ Telefoon, ‘Nu’ (huistijd 9-11-2026, 12:40):
 │ Goedkoop uur: auto en batterij       │
 │ laden, van het net 3,0 kW.           │
 │ [▁▃ goedkoop] [○ 1,4 kW] [◐ 62 %] ›  │
-├ glas: Nu · Tarief · Zon · Laden ────›┤
+├ papier: [Nu] Tarief Zon Laden ──────›┤
 ├ Actuele stromen, kW ─────────────────┤
 │ ○ Zon 1,4 ───┐       ┌─▶ ✕ Auto 2,1  │
 │ ■ Net 3,0 ───┼▶ Huis ┼─▶ Pomp 0,9    │
@@ -128,7 +128,7 @@ Gemeenschappelijk (OT §9): tot 5 reeksen met een markering en een direct label;
 4. **Prijsstrook** `--prijs`: staven `--hv-net-in` per uur of kwartier; het goedkope venster — een ondergrond `--surface2` en een accolade met label; het duurste kwartier van de dag — een dikke streep `--text` en «дорого / duur»; een negatieve prijs — onder de as; ‘nu’ — `--accent` 2 px; morgen vóór de publicatie — arcering en «з'являться близько 13:00 / komen rond 13:00»; een voorspelling van 2–7 dagen — ‘≈’, standaard uit.
 5. **Dagindeling** `--plan`: banen voor zon, batterij, auto, water en apparatuur; uitgevoerd — vulling `-zacht` met rand, gepland — omtrek zonder vulling, verzoek — omtrek, `Hourglass` en «чекає / wacht»; het teken van de maker op het blok.
 6. **Prijsopbouw** `--waterval`: beurs → opslag → belasting → btw → vaste kosten → korting → teruglevering → totaal.
-7. **Bronnen per uur** `--spiegel`: staven rond nul; vergelijking — ‘spook’staven als omtrek `--hv-omtrek` en de chip «+12 % до минулого тижня / t.o.v. vorige week».
+7. **Bronnen per uur** `--spiegel`: staven rond nul; vergelijking — ‘spook’staven als omtrek `--hv-omtrek` en de chip «+12 % до минулого тижня / +12 % t.o.v. vorige week».
 8. **Stromen over een periode** `--sankey`; «невиміряне / niet gemeten» — een lijn `--faint` en het woord.
 9. **Verbruikers** `--staaf`, `--boom`: de tien grootste, kamers, de boom ‘stopcontact — groep — fase’, basisverbruik.
 10. **Gewoonten**: een warmtekaart 7×24 in de stappen `--hv-warmte-1…5`.
@@ -156,12 +156,11 @@ Gemeenschappelijk (OT §9): tot 5 reeksen met een markering en een direct label;
 |---|---|---|
 | ‘Pauze’; terug naar het plan; stroom verlagen; reserve verhogen; stromen, prijzen en rapporten lezen | gewoon | direct |
 | ‘Nu laden’, ‘Snel’; modus van batterij of water; warmte verschuiven; apparatuur starten; doel en vertrektijd; ‘Wie stuurt’; een tarief in de tarievenlijst; gedetailleerd verbruiksprofiel; export | gevoelig | ‘Ongedaan maken’ 10 s of een aftelling van 3 s |
-| teruglevering begrenzen of uitschakelen; ontladen onder de reserve of naar het net; de legionellaverwarming uitschakelen; doelen, begrenzingen en de lijst «Не чіпати / Niet aankomen» wijzigen | gevaarlijk | `hv-gevaar`: gevolg in kW en euro, rail |
-| een apparaat met het label `kritieke_voeding` spanningsloos maken om een fase te ontlasten | kritiek | rail en bevestiging van de aanmelding |
+| teruglevering begrenzen of uitschakelen; ontladen onder de reserve of naar het net; de legionellaverwarming uitschakelen; doelen, begrenzingen en de lijst «Не чіпати / Niet aankomen» wijzigen; een apparaat met het label `kritieke_voeding` spanningsloos maken om een fase te ontlasten (het niveau van het label: zone ‘Apparaten’, §6 en §8) | gevaarlijk | `hv-gevaar`: gevolg in kW en euro, rail |
 
 **5.6 Bladen per klasse** (alle hulpmiddelen): laadpunt — `hv-laadplan`, stroom, ‘1f / 3f’, sessies; batterij — modus, reserve, laden van het net, ontladen onder de reserve; omvormer — «Обмежити віддачу / Teruglevering begrenzen», uitschakelen; meter — fasen, spanning, tekencontrole, vervanging; warmtepomp en boiler — ‘Werkmodus’, warmte verschuiven, «Підігріти зараз / Nu opwarmen», legionellaverwarming; apparatuur — «Запустити в дешеву годину / In goedkoop uur starten»; gas en water — alleen lezen.
 
-**5.7 Doelen en begrenzingen** staan in ‘Automatisering → «Обмеження / Begrenzingen»’ (`hv-begrenzing`); hier staat een uitsnede: de minimale lading van de batterij, de compressorcyclus, de legionellaverwarming en de lijst ‘Niet aankomen’ (door de eigenaar ingesteld, standaard leeg). De fasestroom is een «ціль оптимізатора / doel van de optimalisatie»: die spreidt de belasting in de tijd. Een vaste regel: «Хаб не захищає запобіжник: показ лічильника надходить раз на 1–10 с, команда йде довше. Захищають автомат у щитку й межа струму станції / De hub beveiligt de hoofdzekering niet; dat doen de groepenkast en de stroomlimiet van de laadpaal».
+**5.7 Doelen en begrenzingen** staan in ‘Automatisering → «Обмеження / Begrenzingen»’ (`hv-begrenzing`); hier staat een uitsnede: de minimale lading van de batterij, de compressorcyclus, de legionellaverwarming en de lijst ‘Niet aankomen’ (door de eigenaar ingesteld, standaard leeg). De fasestroom is een «ціль оптимізатора / doel van de optimalisatie»: die spreidt de belasting in de tijd. Een vaste regel: «Хаб не захищає запобіжник: показ лічильника надходить раз на 1–10 с, команда йде довше. Захищають автомат у щитку й межа струму станції / De hub beveiligt de hoofdzekering niet: de meterstand komt eens per 1–10 s binnen en een opdracht doet er langer over. Dat doen de automaat in de groepenkast en de stroomlimiet van de laadpaal».
 
 **5.8 Overige.** `hv-regie`: «керує: оптимізатор до 15:00 / stuurt: optimalisatie tot 15:00»; bij een conflict met de app van de fabrikant of met de leverancier — «Хто керує / Wie stuurt» (teken `Cloud`). Handmatig ingrijpen geeft een aftelling `hv-aftel` met de prijs, waarna het plan terugkeert. ‘Nu belangrijk’ en ‘Advies’ (`hv-advies`: euro per jaar en één actie) — tot drie regels. Stoppen gaat via het gedeelde «Зупинити самостійні дії / Zelfstandige acties stoppen».
 
@@ -186,7 +185,7 @@ De volledige set hulpmiddelen (groep `huis` van de koppeling, fase 5), elk onder
 
 Statische teksten komen uit het register van bedieningselementen, berekende uit `/api/huis/gevolg`. Een toelichting hebben `hv-werkmodus`, ‘Nu laden’, ‘Wie stuurt’, de schakelaar ‘Volledige prijs │ Beurs’ en elke `hv-stand` van een gewone en gevoelige actie; een gevaarlijke actie heeft alleen ‘!’. Op `tv` is ‘i’ een apart focuselement, op de wand een doel van 56 px, op `horloge`, `strook` en `inkt` een bevestigingsstap.
 - **‘i’ naast ‘Slim’.** «Що станеться: авто заряджатиметься в найдешевші години до виїзду о 07:30; зараз зарядка зупиниться. Пов'язано з: план батареї зсунеться на 03:00, щоб не збігтися із зарядкою на L1. Як повернути: „Швидко“ на картці станції.» / «Wat er gebeurt: de auto laadt in de goedkoopste uren vóór vertrek om 07:30; het laden stopt nu. Hangt samen met: het batterijplan schuift naar 03:00 om niet samen te vallen met laden op L1. Terugdraaien: ‘Snel’ op de laadpaalkaart.»
-- **‘!’ naast ‘Altijd’ voor ‘Ontladen onder de reserve’ door de optimalisatie.** «Що може статися: за відключення мережі батарея буде порожня. Пов'язано з: резерв 20 %. Як повернути: „Підняти резерв“. Хто зможе це запускати: оптимізатор. Як вимкнути: „Вимкнено“ тут чи в реєстрі або „Зупинити самостійні дії“.» / «Wat er kan gebeuren: bij een stroomstoring is de batterij leeg. Hangt samen met: reserve 20 %. Terugdraaien: ‘Reserve verhogen’. Wie dit kan starten: de optimalisatie. Uitzetten: ‘Uit’ hier of in het register, of ‘Zelfstandige acties stoppen’.»
+- **‘!’ naast ‘Altijd’ voor ‘Ontladen onder de reserve’ door de optimalisatie.** «Що може статися: коли зникне мережа, батарея буде порожня. Пов'язано з: резерв 20 %. Як повернути: „Підняти резерв“. Хто зможе це запускати: оптимізатор. Як вимкнути: „Вимкнено“ тут чи в реєстрі або „Зупинити самостійні дії“.» / «Wat er kan gebeuren: bij een stroomstoring is de batterij leeg. Hangt samen met: reserve 20 %. Terugdraaien: ‘Reserve verhogen’. Wie dit kan starten: de optimalisatie. Uitzetten: ‘Uit’ hier of in het register, of ‘Zelfstandige acties stoppen’.»
 - **Weigering.** «Чому ні: станція — лише читання. Що перевірити: доступ до керування в „Інтеграціях“. Що можна натомість: застосунок виробника.» / «Waarom niet: de laadpaal is alleen-lezen. Wat te controleren: de bedieningsrechten bij ‘Integraties’. Wat wel kan: de app van de fabrikant.»
 
 ## 9. Andere schermen en gegevens

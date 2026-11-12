@@ -130,7 +130,7 @@ DAN ▾ 1 Licht 20 % · Altijd │ [Problemen 1] [Proef] [+ Stap]
 - **`hv-tegel--scene`** 2×1: de cirkel start (bij een gevaarlijke stap een teken met ritueel), het lichaam van de tegel leidt naar de scène; eenkleurige staafjes van de niveaus; de chips «діє / actief» en «змінено вручну: 2 / handmatig gewijzigd: 2» met ‘Opnieuw toepassen’. Op ‘Thuis’ staan pillen `hv-scene`. De echte kleur van een lamp verschijnt als staal `hv-kleur`, alleen in de stap.
 - **«Зберегти поточне / Huidige stand opslaan»** `?dialoog=nieuw`: vinkjes voor apparaten en eigenschappen; het verouderde en het veronderstelde zijn gearceerd — ‘toestand onbekend — wordt niet opgenomen’.
 - **«Перегляд наживо / Live proberen»** `/scenes/<id>`: ‘nu → straks’, de bedoeling op de plattegrond als streepje `--hv-wens`; zonder opslaan keert de vorige toestand terug. **Dagdeelscène** `/scenes/dagdeel`: nogmaals drukken bladert door de dagdelen.
-- **Na het starten:** één `hv-toost` «Сцена „Вечір“: 10 із 12 підтверджено / 10 van 12 bevestigd»; stappen met beweging tonen «виконується / bezig» tot de termijn van hun klasse (gordijnen 60 s, poort 90 s, slot 15 s); ‘Herhalen voor de rest’, ‘Ongedaan maken’ 10 s.
+- **Na het starten:** één `hv-toost` «Сцена „Вечір“: 10 із 12 підтверджено / Scène ‘Avond’: 10 van 12 bevestigd»; stappen met beweging tonen «виконується / bezig» tot de termijn van hun klasse (gordijnen 60 s, poort 90 s, slot 15 s); ‘Herhalen voor de rest’, ‘Ongedaan maken’ 10 s.
 - **Wie start.** Een mens: elke stap geldt als diens eigen actie, met diens rol en het ritueel van de hoogste stap; wat een mens kiest, wordt precies zo uitgevoerd. Een automatisering, de optimalisator, een agent, de agenda of een fysieke knop: de starter heeft toestemming nodig voor ‘Scène starten’, en elke stap volgt de toestemming in de kolom ‘Scènes’; bij ‘Uit’ wordt de stap overgeslagen: «5 із 7 кроків; 2 вимкнено дозволом / 5 van 7 stappen; 2 uit door toestemming».
 
 ## 9. Huisstanden `/scenes/standen`
@@ -168,11 +168,11 @@ Scène, stand, reeks en het aanzetten van een regel krijgen het niveau van de ho
 
 ## 11. Agenda `/automatiseringen/agenda`
 
-`hv-agenda` «Сьогодні й завтра / Vandaag en morgen»: geplande uitvoeringen met «Пропустити раз / Eén keer overslaan», de kalender, afval (‘Morgen papier — vóór 07:30’), onderhoud, goedkope uren; dezelfde uitvoeringen staan op de strook ‘makers’ van `hv-dagstrook`. Het weekschema van het klimaat: doorgaan naar `/klimaat/schema`. Feestdagen: «як у неділю / als zondag». Kalender en lijsten worden alleen gelezen uit de Hub.
+`hv-agenda` «Сьогодні й завтра / Vandaag en morgen»: geplande uitvoeringen met «Пропустити раз / Eén keer overslaan», de kalender, afval (‘Morgen papier — vóór 07:30’), onderhoud, goedkope uren; dezelfde uitvoeringen staan op de strook ‘makers’ van `hv-dagstrook`. Het weekschema van het klimaat: doorgaan naar `/klimaat/weekschema`. Feestdagen: «як у неділю / als zondag». Kalender en lijsten worden alleen gelezen uit de Hub.
 
 ## 12. Logboek `/activiteit`
 
-Elke toestandswijziging gaat door één schrijfmodule (maker, reden, soort `huis.*`, belang); de bouw controleert dat elke route, elke actie van de motor en elke periodieke taak die module aanroept. Vermeldingen worden alleen toegevoegd en niemand kan ze uitzetten; het Logboek wordt 400 dagen bewaard, de audit 2 jaar (plan §4).
+Elke toestandswijziging gaat door één schrijfmodule (maker, reden, soort `huis.*`, belang); de bouw controleert dat elke route, elke actie van de motor en elke periodieke taak die module aanroept. Vermeldingen worden alleen toegevoegd en niemand kan ze uitzetten; het Logboek wordt 400 dagen bewaard, de audit 2 jaar (plan §4). De soort legt het belang niet vast — dat bepaalt de gebeurtenis; de ene tabel ‘gebeurtenis → soort → belang’ voor alle zones staat in [‘Architectuur’](09-ARCHITECTUUR.nl.md) §10, hieronder staat de doorsnede voor deze zone.
 
 | Gebeurtenis | Melding in beeld | Belang | Soort |
 |---|---|---|---|
@@ -180,7 +180,8 @@ Elke toestandswijziging gaat door één schrijfmodule (maker, reden, soort `huis
 | uitvoering van een regel, van de optimalisator | één per uitvoering | ter informatie | `.automatisering`, `.energie` |
 | actie van een agent | ja | ter informatie; gevaarlijk — belangrijk | `.agent` |
 | verzoek ‘Vragen’ | blijft staan | belangrijk | `.automatisering`, `.agent` |
-| wijziging van toestemming, kader, begrenzing; pauze | ja | belangrijk | `.systeem` |
+| wijziging van een toestemming of kader | ja | ter informatie; ‘Altijd’ voor een gevaarlijke of kritieke actie — belangrijk | `.systeem` |
+| wijziging van een begrenzing; pauze van zelfstandige acties | ja | belangrijk | `.systeem` |
 | overgeslagen, tegengehouden, lus, quarantaine | samengevat | belangrijk | `.automatisering` |
 | rook, gas, water, inbraak | `hv-nood` | alarm | `.alarm` |
 

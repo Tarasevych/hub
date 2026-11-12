@@ -42,7 +42,7 @@ De adapter schrijft niet in de database en kent geen mensen. De enige ontvanger,
 
 **Twee klokken** (in een echt huis lopen ze gelijk). Echte tijd: «Повернути / Ongedaan maken» 10 s, wachten en de looptijd van de klasse, de schermbeveiliging na 2 min en de terugkeer naar ‘Thuis’ na 5 min, het vergrendelen van `deur` 30 s, de codepauze 5 min, sessies en elke termijn die de eigenaar heeft ingesteld (bij ×600 zou een termijn van 30 dagen in 72 minuten verlopen). Huistijd: schema's, tarieven, grafieken, stille uren, het dagoverzicht, de kaders ‘uren’ en ‘actiebudget’, escalatie, ritten en vluchten. Vanaf ×10 zwijgen de externe kanalen; een nieuwe `hv-verzoek` zet de snelheid op ×1 met een uitleg in `hv-sim`; ×600 pauzeert na 30 huisdagen.
 
-**Paspoort** (`paspoort.ts`): ‘Demowoning · Wilgenlaan 12’, Utrecht; het referentiemoment is maandag 9 november 2026, 14:30. 14 kamers, tuin, schuur; ongeveer 120 apparaten — een exemplaar van elk type, en telkens één ‘onbereikbaar’, ‘toestand aangenomen’, ‘verouderd’ en ‘niet uitgevoerd’; P1 op drie fasen, zon 4,2 kW, batterij 10 kWh, warmtepomp, tarief voor 48 uur; vier bewoners en een gast. Garage: elektrische auto, auto, twee elektrische fietsen, step, brommer, twee drones met basisstation, stofzuiger, grasmaaier. Camera's: 4, het beeld is een SVG van de server, elke 2 s. De maquette: 10 kamers, 48 apparaten, de garage volledig. **Scenario's** (`scenarios.ts`): 36 — achtergrond 3, energie 8, beveiliging 7, garage 11, agenten 3, systeem 4; de maquette gebruikt er 15.
+**Paspoort** (`paspoort.ts`): ‘Demowoning · Wilgenlaan 12’, Utrecht; het referentiemoment is maandag 9 november 2026, 14:30. 14 kamers, tuin, schuur; ongeveer 120 apparaten — een exemplaar van elk type, en telkens één ‘onbereikbaar’, ‘toestand verondersteld’, ‘verouderd’ en ‘niet uitgevoerd’; P1 op drie fasen, zon 4,2 kW, batterij 10 kWh, warmtepomp, tarief voor 48 uur; vier bewoners en een gast. Garage: elektrische auto, auto, twee elektrische fietsen, step, brommer, twee drones met basisstation, stofzuiger, grasmaaier. Camera's: 4, het beeld is een SVG van de server, elke 2 s. De maquette: 10 kamers, tuin en garage, 88 apparaten in 59 klassen, 104 bladen, 130 acties met een niveau (28 gevaarlijk of kritiek); de garage is volledig. Deze getallen drukt `node scripts/huis-maquette.mjs --controle` af. **Scenario's** (`scenarios.ts`): 36 — achtergrond 3, energie 8, beveiliging 7, garage 11, agenten 3, systeem 4; de maquette gebruikt er 15.
 
 ## 4. Register, risicomatrix, poorten
 
@@ -66,7 +66,7 @@ De adapter schrijft niet in de database en kent geen mensen. De enige ontvanger,
 
 - **Stroom** `POST /api/huis/stroom` (`fetch`, `ReadableStream`; de inhoud van het verzoek is de sessiecontext en `laatsteId`) — een aparte verwerker vóór de router, omdat die antwoorden buffert.
 - **Pakketten:** `momentopname` → `delta` → `opnieuw` → `rechten` → `afgemeld`; `spoed` (alarm, toestand van een opdracht, verzoek, pauze) gaat meteen, de rest elke 250 ms; levenssignaal elke 15 s; inhalen uit de ringbuffer (2000 pakketten of 5 min). De momentopname bevat de fase van de hemel, ‘! N’ en de pauze. Terugval: na drie mislukkingen of 45 s stilte wordt elke 30 s opgevraagd. Grenzen: 6 stromen per persoon, 1 per scherm, 24 schermen per woning.
-- **Toestanden van een opdracht** (OT §9): de servermachine (`verzonden → aangenomen → bevestigd | geweigerd | verlopen`) is intern; de interface toont «очікує / wacht» tot 10 s → voor klassen met looptijd «виконується / bezig» tot de tijd van de klasse (gordijnen 60 s, poort en garagedeur 90 s, klep 30 s, slot 15 s, overige 60 s) → waargenomen of «не виконано / niet uitgevoerd»; zonder terugkoppeling ‘toestand aangenomen’.
+- **Toestanden van een opdracht** (OT §9): de servermachine (`verzonden → aangenomen → bevestigd | geweigerd | verlopen`) is intern; de interface toont «очікує / wacht» tot 10 s → voor klassen met looptijd «виконується / bezig» tot de tijd van de klasse (gordijnen 60 s, poort en garagedeur 90 s, klep 30 s, slot 15 s, overige 60 s) → waargenomen of «не виконано / niet uitgevoerd»; zonder terugkoppeling ‘toestand verondersteld’.
 - **Verouderd na:** P1 60 s; slot, alarminstallatie 5 min; netwerkapparaten 15 min; sensoren op batterij twee meldintervallen; vervoer 2 min in beweging, 30 min geparkeerd; drone tijdens de vlucht 10 s.
 
 ## 7. Geschiedenis, Logboek, audit
@@ -123,7 +123,24 @@ De oude wortels `/integraties`, `/simulator`, `/schermen`, `/showroom` en `/plan
 
 ## 12. Register van entiteiten
 
-Entiteit — tabellen `huis_…` — fase: woning, apparaat, entiteit — woningen+, hardware, apparaten+ — 1 · logboek, audit, simulator, sporen — gebeurtenissen, handelingen, sim_stand, sim_sporen — 1–2 · scènes, huisstanden, groepen, timers, uitvoeringssporen; toestemmingen, kaders, pauze — scenes+, groepen, timers, runs; beleid, kaders, pauze — 2 · favorieten — voorkeuren — 1–3 · vervoer, ritten, zones, missies, vluchten — voertuigen, ritten, zones, missies, vluchten — 4 · automatiseringen, versies, hulpwaarden, goedkeuringen — automatiseringen+, versies, hulpwaarden, voorstellen+ — 5 · schermen, persoonlijke codes, plattegrondversies — schermen, codes, plan_versies — 6 · tarieven, contracten, plannen van de optimalisator — tarieven, contracten, plannen — 7 · mensen, uitnodigingen, instemmingen, meldregels — leden+, uitnodigingen, toestemmingen, meldregels — 8 · gastcodes, incidenten, camera's — codes, incidenten, camera_beleid — 9 · weekschema's — weekschemas — 10 · ontdekte apparaten, onderhoud — ontdekt, onderhoud — 11 · API-tokens — api_tokens — 12.
+De tabelnamen staan zonder het voorvoegsel `huis_`; ‘+’ betekent: de tabel bestaat al in de database en wordt uitgebreid.
+
+| Entiteiten | Tabellen `huis_…` | Fase |
+|---|---|---|
+| woning, apparaat, entiteit | `woningen`+, `hardware`, `apparaten`+ | 1 |
+| logboek, audit, simulator, sporen | `gebeurtenissen`, `handelingen`, `sim_stand`, `sim_sporen` | 1–2 |
+| scènes, huisstanden, groepen, timers, uitvoeringssporen | `scenes`+, `groepen`, `timers`, `runs` | 2 |
+| toestemmingen, kaders, pauze | `beleid`, `kaders`, `pauze` | 2 |
+| favorieten | `voorkeuren` | 1–3 |
+| vervoer, ritten, zones, missies, vluchten | `voertuigen`, `ritten`, `zones`, `missies`, `vluchten` | 4 |
+| automatiseringen, versies, hulpwaarden, goedkeuringen | `automatiseringen`+, `versies`, `hulpwaarden`, `voorstellen`+ | 5 |
+| schermen, persoonlijke codes, plattegrondversies | `schermen`, `codes`, `plan_versies` | 6 |
+| tarieven, contracten, plannen van de optimalisator | `tarieven`, `contracten`, `plannen` | 7 |
+| mensen, uitnodigingen, instemmingen, meldregels | `leden`+, `uitnodigingen`, `toestemmingen`, `meldregels` | 8 |
+| gastcodes, incidenten, camera's | `codes`, `incidenten`, `camera_beleid` | 9 |
+| weekschema's | `weekschemas` | 10 |
+| ontdekte apparaten, onderhoud | `ontdekt`, `onderhoud` | 11 |
+| API-tokens | `api_tokens` | 12 |
 
 Elke migratie heeft een controle in `rechten.sql` en een test ‘twee keer achter elkaar’ onder `mijnruimte_app`. Vlaggen: `huis-levend`, `huis-simulator`, `huis-stroom`, `huis-motor`, `huis-mcp`. Server: `backend/huis/{register,inname,bus,stroom,beleid,gevolg,zoek,historie,motor,schermen,mcp}.ts`.
 
@@ -131,13 +148,13 @@ Elke migratie heeft een controle in `rechten.sql` en een test ‘twee keer achte
 
 **Simulator, computer — `/instellingen/simulator`**
 ```
-┌ Simulator [Tijd en scenario's][Wereld][Sporen] kolf ×60 · huistijd ma 14:30 · echt 09:12 ┐
-│ [⏸][×1][×10][×60][×600] [Gelijkzetten met de klok]                                     │
+┌ Simulator [Tijd en scenario's][Wereld][Sporen]  kolf ×60 · huistijd ma 14:30 ┐
+│ [⏸][×1][×10][×60][×600] [Gelijkzetten met de klok]          echte tijd 09:12 │
 ├ SCENARIO'S ────────┬ STORINGEN ──────────────┬ HUIS ─────────────────────────┤
 │ ● Werkdag  06:10   │ Vertraging   [0 s −/+]  │ Demowoning · Wilgenlaan 12    │
 │ ○ Rook keuken   [▶]│ Geen antwoord      (○ ) │ Externe meldingen (○ ) i      │
 │ ○ Internet weg  [▶]│ Adapterstatus[in orde▾] │ [Simulatie terugzetten]       │
-└ STROOM  14:30:05 kolf keuken · beweging   14:30:07 ruit ‘Avond’ → 3 lampen ────┘
+└ STROOM  14:30:05 kolf keuken · beweging   14:30:07 ruit ‘Avond’ → 3 lampen ──┘
 ```
 **Wereld — `/instellingen/simulator/wereld`**
 ```
@@ -204,7 +221,7 @@ Fasen 1–11 samen: ongeveer 145 dagen. **Gevolgen van de volgorde:** ritten en 
 ## 18. Componenten
 
 - **Uit OT:** `hv-sim`, `hv-versheid`, `hv-stempel`, `hv-tegel`, `hv-toost`, `hv-meldingen`, `hv-bericht`, `hv-maker`, `hv-gevolg`, `hv-opdracht`, `hv-gevaar`, `hv-rail`, `hv-stand`, `hv-risico`, `hv-aftel`, `hv-grafiek`, `hv-dagstrook`, `hv-tabel`, `hv-blok`, `hv-chip`, `hv-leeg`, `hv-skelet`, `hv-pincode`, `hv-nood`.
-- **Nieuw in de zone** (voorstel voor OT §9): `hv-klok`, `hv-scenario`, `hv-simstoring`, `hv-wereld`, `hv-spoorrecorder`, `hv-nieuw-banner`, `hv-koppelwizard`, `hv-vervang`, `hv-systeemkaart`, `hv-opslagtabel`, `hv-stroomlog`, `hv-gezondheid`, `hv-lijst-virtueel`, `hv-verloop`, `hv-geen-verbinding`, `hv-verbindingsketen` (gedeeld met de schil).
+- **Nieuw in de zone** (voorstel voor OT §9): `hv-klok`, `hv-scenario`, `hv-simstoring`, `hv-wereld`, `hv-spoorrecorder`, `hv-nieuw-banner`, `hv-koppelwizard`, `hv-vervang`, `hv-systeemkaart`, `hv-opslagtabel`, `hv-stroomlog`, `hv-gezondheid`, `hv-lijst-virtueel`, `hv-verloop`. Gedeeld met de schil (schil §16): de strook ‘Geen verbinding’ `hv-verbinding` en `hv-verbindingsketen`.
 
 ## 19. Gedekt en uitgesteld
 

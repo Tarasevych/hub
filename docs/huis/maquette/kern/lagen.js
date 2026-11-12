@@ -37,9 +37,13 @@
       lijf = herbevestigLijf(t('Критична дія потребує підтвердження входу.', 'Een kritieke actie vraagt een bevestiging van je aanmelding.'));
     } else {
       var aftel = d.aftel != null;
-      lijf = '<div class="hv-rail hv-rail--' + a.niveau + '" role="button" tabindex="0" aria-label="' + h(t('Утримуйте 1,2 с: ', 'Houd 1,2 s vast: ') + HV.p(a.naam)) + '" data-k="rail"><span class="hv-rail__vulling" aria-hidden="true"></span><span class="hv-rail__tekst">' + h(t('Утримуйте: ', 'Houd vast: ') + HV.p(a.naam)) + '</span><span class="hv-rail__tel" aria-hidden="true"></span></div>' +
+      // знак бігунка — сам пристрій (замок, ворота), інакше знак рівня; напис — коротке дієслово дії одним рядком
+      var railIcoon = d.apparaat ? o.beeld(d.apparaat).icoon : (kritiek ? 'risico-kritiek' : 'risico-gevaarlijk');
+      var railTekst = a.houd ? HV.p(a.houd) : t('Утримуйте, щоб підтвердити', 'Houd vast om te bevestigen');
+      lijf = '<div class="hv-rail hv-rail--' + a.niveau + '" role="button" tabindex="0" aria-label="' + h(t('Утримуйте 1,2 с: ', 'Houd 1,2 s vast: ') + HV.p(a.naam)) + '" data-k="rail"><span class="hv-rail__vulling" aria-hidden="true"></span>' +
+        '<span class="hv-rail__knop" aria-hidden="true">' + HV.icoon(railIcoon, { maat: 's' }) + '</span><span class="hv-rail__tekst">' + h(railTekst) + '</span><span class="hv-rail__tel" aria-hidden="true">' + h(houdTekst(HOUD_MS)) + '</span></div>' +
         '<div class="hv-gevaar__knoppen">' + o.knop({ tekst: t('Скасувати', 'Annuleren'), actie: 'dialoog-annuleer', k: 'annuleer' }) +
-        '<button type="button" class="hv-knop hv-knop--gewoon' + (aftel ? ' is-aftel' : '') + '" data-actie="dialoog-aftel" data-k="aftel" aria-live="polite">' + h(aftel ? t('Виконається через ', 'Wordt uitgevoerd over ') + d.aftel + t(' с — зупинити', ' s — stoppen') : t('Підтвердити', 'Bevestigen')) + '</button></div>' +
+        '<button type="button" class="hv-knop hv-knop--gewoon hv-gevaar__bevestig' + (aftel ? ' is-aftel' : '') + '" data-actie="dialoog-aftel" data-k="aftel" aria-live="polite">' + h(aftel ? t('Виконається через ', 'Wordt uitgevoerd over ') + d.aftel + t(' с — зупинити', ' s — stoppen') : t('Підтвердити', 'Bevestigen')) + '</button></div>' +
         '<p class="hv-gevaar__noot">' + h(t('Утримання рейки й кнопка «Підтвердити» з відліком 3 с рівноправні. Клавіша Escape скасовує.', 'De rail vasthouden en de knop ‘Bevestigen’ met 3 s aftellen zijn gelijkwaardig. Escape annuleert.')) + '</p>';
     }
     return '<div class="hv-dek hv-dek--dialoog" data-actie="dialoog-annuleer" data-k="dek-dialoog"></div>' +
@@ -48,6 +52,7 @@
       '<div id="hv-gevaar-gevolg" class="hv-gevaar__gevolg">' + o.gevolgRijen(HV.p(a.gevolg)) + '</div>' +
       '<p class="hv-gevaar__doel"><span>' + h(t('Зачеплено', 'Geraakt')) + '</span> ' + h(betrokken) + (kritiek ? ' <span class="hv-punt" aria-hidden="true">·</span> ' + h(t('рейка й підтвердження входу', 'rail en bevestiging van aanmelding')) : '') + '</p>' + lijf + '</div>';
   }
+  function houdTekst(ms) { return HV.getal(Math.max(0, ms / 1000), 1) + ' ' + t('с', 's'); }
   function herbevestigLijf(tekst) {
     return '<div class="hv-herbevestig" data-k="herbevestig"><span class="hv-herbevestig__teken">' + HV.icoon('key-round', { maat: 'l' }) + '</span><div><p class="hv-herbevestig__tekst">' + h(tekst) + '</p>' +
       '<p class="hv-herbevestig__noot">' + h(t('Підтвердження діє 5 хв для цього сеансу. У макеті це імітація: справжній сайт попросить ключ доступу.', 'De bevestiging geldt 5 min voor deze sessie. In de maquette is dit nagebootst: de echte site vraagt je toegangssleutel.')) + '</p></div></div>' +
@@ -102,6 +107,7 @@
     if (d.gekozen) {
       var v = WERKWOORDEN.filter(function (x) { return x.id === d.gekozen; })[0];
       if (v.toon) lijf = '<div class="hv-opdracht__gevolg" data-k="toon"><h3>' + h(HV.p(v.naam)) + '</h3>' + v.toon() + '<div class="hv-knoppen">' + o.knop({ tekst: t('Назад', 'Terug'), actie: 'opdracht-kies', gegevens: { werkwoord: '' } }) + '</div></div>';
+      else if (HV.zonderVerbinding()) lijf = '<div class="hv-opdracht__gevolg" data-k="gevolg"><h3>' + h(HV.p(v.naam)) + '</h3><p class="hv-tekst">' + HV.icoon('wifi-off', { maat: 's' }) + ' ' + h(t('Немає зв’язку з домом: команда не виконається. Показано останній знімок, лише перегляд.', 'Geen verbinding met het huis: de opdracht wordt niet uitgevoerd. Je ziet de laatste momentopname, alleen bekijken.')) + '</p><div class="hv-knoppen">' + o.knop({ tekst: t('Назад', 'Terug'), actie: 'opdracht-kies', gegevens: { werkwoord: '' }, k: 'voer' }) + '</div></div>';
       else lijf = '<div class="hv-opdracht__gevolg" data-k="gevolg"><h3>' + h(HV.p(v.naam)) + '</h3>' + o.gevolgRijen(v.gevolg()) + '<div class="hv-knoppen">' + o.knop({ tekst: t('Назад', 'Terug'), actie: 'opdracht-kies', gegevens: { werkwoord: '' } }) + o.knop({ tekst: t('Виконати', 'Uitvoeren'), soort: 'hoofd', actie: 'opdracht-voer', gegevens: { werkwoord: v.id }, k: 'voer' }) + '</div></div>';
     } else if (zoek) {
       var w = HV.staat.w, rijen = [];
@@ -268,11 +274,11 @@
     var begin = Date.now(), tel = rail.querySelector('.hv-rail__tel');
     rail.setAttribute('data-bezig', '1'); // перерисовка не чіпає рейку, поки її тримають
     rail.classList.add('is-houdt');
-    var tik = setInterval(function () { if (tel) tel.textContent = HV.getal(Math.max(0, (HOUD_MS - (Date.now() - begin)) / 1000), 1) + ' ' + t('с', 's'); }, 100);
+    var tik = setInterval(function () { if (tel) tel.textContent = houdTekst(HOUD_MS - (Date.now() - begin)); }, 100);
     d.houdKlok = setTimeout(function () { clearInterval(tik); d.houdKlok = null; rail.classList.remove('is-houdt'); rail.removeAttribute('data-bezig'); naHoud(); }, HOUD_MS);
     var stop = function () {
       window.removeEventListener('pointerup', stop); window.removeEventListener('pointercancel', stop);
-      clearInterval(tik); if (tel) tel.textContent = '';
+      clearInterval(tik); if (tel) tel.textContent = houdTekst(HOUD_MS);
       rail.removeAttribute('data-bezig');
       if (d.houdKlok) { clearTimeout(d.houdKlok); d.houdKlok = null; rail.classList.remove('is-houdt'); }
     };
@@ -285,14 +291,33 @@
     escape: function () { if (uitleg) return sluitUitleg(); if (dlg) { sluit(false); return true; } return false; },
     railStart: railStart,
     railStop: function (rail) { if (rail._stop) rail._stop(); },
+    /** Мову змінено: підказка й сповіщення старою мовою закриваються (тривога лишається — її текст перемалюється). */
+    taalGewijzigd: function () {
+      uitleg = null;
+      HV.toosten.slice().forEach(function (x) { if (x.gewicht !== 'alarm') HV.toostWeg(x.id); });
+    },
     teken: function (ctx) {
       var html = '';
       if (dlg) html = dlg.soort === 'opdracht' ? opdrachtHtml(dlg) : dlg.soort === 'herbevestig' ? '<div class="hv-dek hv-dek--dialoog" data-actie="dialoog-annuleer" data-k="dek-dialoog"></div><div class="hv-gevaar hv-gevaar--herbevestig" role="alertdialog" aria-modal="true" aria-labelledby="hv-gevaar-titel" data-k="gevaar"><header class="hv-gevaar__kop"><h2 id="hv-gevaar-titel">' + h(dlg.titel) + '</h2></header>' + herbevestigLijf(dlg.tekst) + '</div>' : gevaarHtml(dlg);
       HV.zet(document.getElementById('hv-dialoogplek'), html);
       HV.zet(document.getElementById('hv-gevolgplek'), gevolgHtml());
       HV.zet(document.getElementById('hv-noodplek'), noodHtml(ctx.staat));
+      // аварійний шар — модальний: фокус одразу стає на «Бачу — приглушити сирену», після закриття повертається
+      var noodNu = !!(ctx.staat.nood && !ctx.staat.nood.bevestigd);
+      if (noodNu && !noodWas) {
+        noodFocus = document.activeElement;
+        setTimeout(function () { var k = document.querySelector('.hv-nood [data-actie="nood-zie"]'); if (k) { try { k.focus({ preventScroll: true }); } catch (e) { k.focus(); } } }, 30);
+      } else if (!noodNu && noodWas) {
+        var terug = noodFocus; noodFocus = null;
+        setTimeout(function () {
+          var doel = terug && terug !== document.body && document.contains(terug) ? terug : document.getElementById('hv-inhoud');
+          if (doel && !document.querySelector('.hv-gevaar, .hv-opdracht')) { try { doel.focus({ preventScroll: true }); } catch (e) { /* фокус лишається */ } }
+        }, 30);
+      }
+      noodWas = noodNu;
     }
   };
+  var noodWas = false, noodFocus = null;
 
   /** Діалог небезпечної дії. Promise<boolean>. На годиннику, стрічці й чорнилі — «Підтвердьте на телефоні». */
   HV.schil.gevaar = function (p) {
@@ -301,6 +326,7 @@
       HV.meld({ gewicht: 'belangrijk', icoon: 'smartphone', titel: t('Підтвердьте на телефоні', 'Bevestig op je telefoon'), tekst: HV.p(p.actie.naam) });
       return Promise.resolve(false);
     }
+    if (HV.zonderVerbinding()) { HV.meldZonderVerbinding(); return Promise.resolve(false); }
     return new Promise(function (los) {
       open({ soort: 'gevaar', actie: p.actie, apparaat: p.apparaat, naam: p.naam, stap: 'houd', aftel: null, los: los });
       setTimeout(function () { var k = document.querySelector('.hv-gevaar [data-k="annuleer"]'); if (k) k.focus(); }, 30);
@@ -308,13 +334,25 @@
   };
   /** Повторне підтвердження входу (імітація). Promise<boolean>. */
   HV.schil.herbevestig = function (p) {
+    if (HV.zonderVerbinding()) { HV.meldZonderVerbinding(); return Promise.resolve(false); }
     if (Date.now() < herbevestigdTot) return Promise.resolve(true);
     return new Promise(function (los) {
       open({ soort: 'herbevestig', titel: p.titel, tekst: p.tekst, los: los });
       setTimeout(function () { var k = document.querySelector('.hv-gevaar [data-k="annuleer"]'); if (k) k.focus(); }, 30);
     });
   };
-  HV.schil.tekenToosten = function () { HV.zet(document.getElementById('hv-toosten'), HV.toosten.map(o.toost).join('')); };
+  /** Одне сповіщення замість стосу: тривога — першою, інакше найновіше; решта чекає за лічильником «+N». */
+  HV.schil.tekenToosten = function () {
+    var plek = document.getElementById('hv-toosten'), lijst = HV.toosten;
+    if (!plek) return;
+    if (!lijst.length) { HV.zet(plek, ''); return; }
+    var boven = null;
+    for (var i = lijst.length - 1; i >= 0 && !boven; i--) if (lijst[i].gewicht === 'alarm') boven = lijst[i];
+    if (!boven) boven = lijst[lijst.length - 1];
+    var speciaal = HV.profiel && HV.profiel().speciaal;
+    HV.zet(plek, o.toost(boven, { meer: speciaal ? 0 : lijst.length - 1 }));
+  };
+  HV.actie('toost-meer', function () { HV.bladOpen('meldingen'); });
 
   // пошук у Команді: поле живе поза перерисовкою
   document.addEventListener('input', function (ev) {

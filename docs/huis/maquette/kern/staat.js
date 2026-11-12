@@ -18,6 +18,25 @@
     if (window.requestAnimationFrame) window.requestAnimationFrame(roep); else setTimeout(roep, 16);
   }
 
+  function kloon(x, gezien) {
+    if (x === null || typeof x !== 'object') return x;
+    if (gezien && gezien.has(x)) return gezien.get(x);
+    var uit;
+    if (Array.isArray(x)) {
+      uit = [];
+      if (gezien) gezien.set(x, uit);
+      for (var i = 0; i < x.length; i++) uit[i] = kloon(x[i], gezien);
+      return uit;
+    }
+    if (x instanceof Date) return new Date(x.getTime());
+    var proto = Object.getPrototypeOf(x);
+    if (proto !== Object.prototype && proto !== null) return x; // не простий об'єкт (вузол DOM тощо) — за посиланням
+    uit = {};
+    if (gezien) gezien.set(x, uit);
+    for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) uit[k] = kloon(x[k], gezien);
+    return uit;
+  }
+
   /** Детермінований генератор (mulberry32): те саме зерно — та сама доба. */
   function toeval() {
     w.zaad = (w.zaad + 0x6D2B79F5) | 0;
@@ -35,6 +54,10 @@
     /** Змінити світ: fn(w). Абоненти дізнаються на наступному кадрі. */
     wijzig: function (fn) { if (fn) fn(w); meld(); },
     abonneer: function (fn) { abonnees.push(fn); return function () { abonnees = abonnees.filter(function (x) { return x !== fn; }); }; },
+    /** Глибокий знімок світу (для проби дії без зв'язку з домом); спільні посилання всередині світу зберігаються. */
+    momentopname: function () { return kloon(w, typeof WeakMap === 'function' ? new WeakMap() : null); },
+    /** Повернути світ до знімка: усе, що дія встигла змінити, зникає. */
+    zetTerug: function (foto) { if (foto) { w = foto; meld(); } },
     toeval: toeval,
     /** Новий світ із паспорта (скидає все, крім швидкості та стану даних, якщо передано `houd`). */
     herstel: function (tijd, houd) {

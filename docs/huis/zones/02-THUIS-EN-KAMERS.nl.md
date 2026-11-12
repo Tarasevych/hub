@@ -4,7 +4,7 @@
 
 Taak HUIS-001 · fase 0 · 10.11.2026 · status: ter goedkeuring bij de eigenaar
 
-Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ДИЗАЙН-МОВА-ЖИВИЙ-ДІМ-20261110.uk.md). De zone omvat de secties 1, 3, 5, 14, 20 en 22 van de catalogus: het hoofdscherm, kamers en plattegrond, tegels, aanwezigheid, het Nederlandse huishouden en personalisatie. De bedieningselementen van elk type beschrijft de zone ‘Apparaten’; deze zone geeft elke functie een plek en een weg naar haar blad.
+Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md). De zone omvat de secties 1, 3, 5, 14, 20 en 22 van de catalogus: het hoofdscherm, kamers en plattegrond, tegels, aanwezigheid, het Nederlandse huishouden en personalisatie. De bedieningselementen van elk type beschrijft de zone ‘Apparaten’; deze zone geeft elke functie een plek en een weg naar haar blad.
 
 ## 1. Gemeenschappelijke regels
 
@@ -68,7 +68,7 @@ Computer, `bureau`, 12 kolommen:
 ┌ Scènes ────────┐┌ Favorieten ──────────┐ └───────────────────────┘
 │[Avond] [Film]  ││Vloerlamp · Deur [▣]  │ ┌ Energie 4×2 ──────────┐
 └────────────────┘└──────────────────────┘ └───────────────────────┘
-┌ Samenvatting · Dagstrook −18…+6 uur ┃nu ───────────────────────────┐
+┌ Samenvatting · Dagstrook −18…+6 uur ┃nu ────────────────────────────┐
 ```
 
 - **Volgorde op de telefoon:** kop → hemel met zin en chips → «Зараз важливо / Nu belangrijk» → «Сцени / Scènes» → «Обране / Favorieten» → «Дім у розрізі / Huis in doorsnede» → «Зведення / Samenvatting». ‘Kamers’ en «Стрічка доби / Dagstrook» zijn hier standaard verborgen en worden in ‘Mijn weergave’ ingeschakeld.
@@ -93,9 +93,9 @@ Computer, `bureau`, 12 kolommen:
 ### 2.3 Huisstand `hv-huisstand`
 
 - **Blad** `?blad=huisstand`: een knop die zich naar de situatie richt, «Йду / Ik ga weg» of «Я вдома / Ik ben thuis», daaronder vijf standen met `hv-gevolg`, na de keuze «Повернути / Ongedaan maken» gedurende 10 s. Hetzelfde staat in ‘Opdracht’ en op het scherm `deur`.
-- **Een stand is een reeks stappen**, net als een scène: licht, klimaat, media en, als de eigenaar dat zo heeft ingesteld, beveiliging en sloten. De regel «Охорона / Alarm» zegt wat de stand met de geldende toestemming zal doen: «Охорона: дім спитає, чи поставити / Alarm: het huis vraagt of het aan moet».
-- **De controle doorloopt degene die omschakelt.** Een mens doorloopt het ritueel van de hoogste stap: zitten er stappen tussen die de beveiliging uitschakelen of een slot openen (kritiek), dan volgt `hv-gevaar` met een opsomming, de houdrail en een bevestiging van de aanmelding, met daarnaast «Виконати без критичних кроків / Zonder kritieke stappen uitvoeren». Schakelt een automatisering, de optimalisator of een agent om, dan is diens toestemming voor ‘Huisstand wisselen’ nodig, en elke stap volgt de toestemming van de stand als uitvoerder in de groep «Сцени / Scènes». Bij ‘Uit’ wordt een stap overgeslagen: «5 із 7 кроків; 2 вимкнено дозволом / 5 van 7 stappen; 2 uit door toestemming».
-- **Automatisch wisselen op aanwezigheid** is een regel van ‘Automatisering’, standaard ‘Uit’: het huis wisselt niets en vraagt niets. ‘Vragen’ — een verzoek `hv-verzoek` «Усі пішли 10 хв тому. Перемкнути на „Не вдома“? / Iedereen is 10 min geleden vertrokken. Overschakelen naar ‘Afwezig’?»; ‘Altijd’ — het huis wisselt zelf, met een vermelding en ‘Ongedaan maken’ gedurende 10 s.
+- **Een stand is een reeks stappen**, net als een scène: licht, klimaat, media en, als de eigenaar dat zo heeft ingesteld, beveiliging en sloten. De regel «Охорона / Alarm» zegt wat de stand doet wanneer een mens omschakelt: «Охорона: режим поставить „периметр“ / Alarm: de stand schakelt ‘schil’ in», en als de stand geen beveiligingsstap heeft — «Охорона: режим не змінює / Alarm: de stand verandert het niet».
+- **De controle doorloopt degene die omschakelt.** Schakelt een mens om, dan zijn alle stappen diens eigen acties met het ritueel van de hoogste stap; toestemming van uitvoerders is niet nodig. Zitten er stappen tussen die de beveiliging uitschakelen of een slot openen (kritiek), dan volgt `hv-gevaar` met een opsomming, de houdrail en een bevestiging van de aanmelding, met daarnaast «Виконати без критичних кроків / Zonder kritieke stappen uitvoeren». Een uitvoerder — een automatisering, de optimalisator of een agent — schakelt om met zijn eigen toestemming voor ‘Huisstand wisselen’, en elke stap volgt de toestemming in de kolom «Сцени / Scènes»: ‘Uit’ — de stap wordt overgeslagen met een vermelding in het Logboek, zonder vraag («5 із 7 кроків; 2 вимкнено дозволом / 5 van 7 stappen; 2 uit door toestemming»); ‘Vragen’ — een verzoek `hv-verzoek`; ‘Altijd’ — uitgevoerd.
+- **Automatisch wisselen op aanwezigheid** is een regel van ‘Automatisering’, standaard ‘Uit’: het huis wisselt niets en vraagt niets. ‘Vragen’ — een verzoek `hv-verzoek` «Усі пішли 10 хв тому. Перемкнути на „Не вдома“? / Iedereen is 10 min geleden vertrokken. Overschakelen naar ‘Afwezig’?»; ‘Altijd’ — het huis wisselt zelf, met een vermelding en ‘Ongedaan maken’ gedurende 10 s. Ook dan volgen de stappen van de stand de toestemming in de kolom ‘Scènes’.
 
 ### 2.4 «Зараз важливо / Nu belangrijk» `hv-nu`
 
@@ -114,7 +114,7 @@ Eén lijst van de server; de blokken van ‘Energie’, ‘Beveiliging’ en ‘
 - **Vorm volgt inhoud:** schakelaar — 2×1 (in een kamer met zes of meer functies — 1×1); een element met een niveau in ‘Favorieten’ en in de kamer — «−» · `hv-schuif` · «+», 2×2 vanaf 224 px, anders 4×2; elders — 2×1 met een niveaubalk. De vulling toont het waargenomene, het streepje `--hv-wens` het gewenste.
 - **De cirkel schakelt, het lichaam opent** `?blad=apparaat:<id>&deel=bediening`. Een gevaarlijke of kritieke actie in de huidige richting heeft een vierkant teken met ritueel en een dubbele rand; een tik opent `hv-gevaar`. Een vergrendeld slot is een vierkant, een ontgrendeld slot een cirkel.
 - **Toestanden** — alle twaalf, waaronder «виконується / bezig» met het woord voor de richting en een percentage, en «не виконано / niet uitgevoerd» met een uitleg van de weigering.
-- **Aftellen `hv-aftel`:** «Вимкнути через 15 / 30 / 60 хв · о 23:00 / Uit over 15 / 30 / 60 min · om 23:00»; op de tegel een ring en «ще 14 хв / nog 14 min». Het auteursteken staat in de rechterbovenhoek, de vaste «!» linksboven. Het gevolg `hv-gevolg` berekent `POST /api/huis/gevolg` met dezelfde `droogloop()` als ‘Opdracht’.
+- **Aftellen `hv-aftel`:** «Вимкнути через 15 / 30 / 60 хв · о 23:00 / Uit over 15 / 30 / 60 min · om 23:00»; op de tegel een ring en «ще 14 хв / nog 14 min». Het auteursteken staat in de rechterbovenhoek, het blijvende ‘!’ linksboven. Het gevolg `hv-gevolg` berekent `POST /api/huis/gevolg` met dezelfde `droogloop()` als ‘Opdracht’.
 - **Volledigheid.** Elke functie van elke klasse heeft een tegel en een volledig blad; zonder kamer staat ze onder «Ще без кімнати / Nog zonder kamer».
 
 ## 4. Кімнати / Kamers — `/kamers`
@@ -129,7 +129,7 @@ Eén lijst van de server; de blokken van ‘Energie’, ‘Beveiliging’ en ‘
 
 De naam in het adres komt van de Nederlandse naam. Kop `hv-kamerkop`: ‘← Woonkamer · Begane grond · doel 21 °C’, een uitsnede van de plattegrond en chips van de belangrijkste sensoren. Blokken: Klimaat → Scènes (met «Зберегти поточний стан як сцену / Huidige stand als scène bewaren») → Licht ‘2 van 4’ en «Усе вимкнути / Alles uit» → Media → Overige → Sensoren (ingeklapt) → «Що тут діє само / Wat hier vanzelf gebeurt». Een leeg blok verdwijnt; een kamer zonder functies toont `hv-leeg`.
 
-**`hv-zelf`:** automatiseringen, scènes volgens schema en agenten die in de kamer handelen — laatste uitvoering, auteursteken, de toestemmingsstand in woorden. De eigenaar klapt op een persoonlijk apparaat `hv-stand` onder de vermelding uit; anderen zien «Змінює лише власник / Alleen de eigenaar kan dit wijzigen»; ‘Altijd’ voor een gevaarlijke actie geeft een vaste «!».
+**`hv-zelf`:** automatiseringen, scènes volgens schema en agenten die in de kamer handelen — laatste uitvoering, auteursteken, de toestemmingsstand in woorden. De eigenaar klapt op een persoonlijk apparaat `hv-stand` onder de vermelding uit; anderen zien «Змінює лише власник / Alleen de eigenaar kan dit wijzigen»; ‘Altijd’ voor een gevaarlijke of kritieke actie krijgt een blijvend ‘!’.
 
 ### 4.3 Snel blad en formulier
 
@@ -148,8 +148,8 @@ De toestand staat in het adres: `?verdieping=1&laag=klimaat&t=`. De plattegrond 
 │┌─────────────╥───────────┐ °C 16 ░▒▓█ 24   │Licht −/+ 60 % │
 ││ Woonkamer   ║ Keuken    │ ▨ niet gemeten  │( ) Vloerlamp  │
 ││ 21,5 °C ( ) ║ 20,0 °C   │ ┆ doel (schim)  │Thermostaat −/+│
-│├──◜──┬──────╨──┬────────┤ [−][+][Alles]    │[Openen]       │
-│└─[▣]─┴─Toilet ▨┴─Berging┘ kamerlijst       │[Plan bewerken]│
+│├──◜──┬───────╨──┬────────┤ [−][+][Alles]   │[Openen]       │
+│└─[▣]─┴─Toilet ▨─┴─Berging┘ kamerlijst      │[Plan bewerken]│
 │Dagstrook ◂ 14:00 ▸ [Terugblik]             │               │
 └────────────────────────────────────────────┴───────────────┘
 ```
@@ -179,7 +179,7 @@ De toestand staat in het adres: `?verdieping=1&laag=klimaat&t=`. De plattegrond 
 
 ## 9. Toestemmingen in de zone
 
-Elke actie van de zone heeft voor elke uitvoerder — scènes, automatiseringen, de optimalisator, elke agent — drie standen «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», standaard ‘Uit’. Alleen de eigenaar zet ze aan en uit; termijn, kamers, uren en een budget aan acties zijn optionele kaders die hij zelf instelt. Een agent kan rechten verruimen noch beperken — niet die van zichzelf en niet die van anderen. Elke wijziging van een toestemming en elke actie op grond daarvan levert een vermelding op in het Logboek en in het meldingencentrum. ‘Altijd’ voor een gevaarlijke of kritieke actie houdt een vaste «!».
+Elke actie van de zone heeft voor elke uitvoerder — scènes, automatiseringen, de optimalisator, elke agent — drie standen «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», standaard ‘Uit’. Alleen de eigenaar zet ze aan en uit; termijn, kamers, uren en een budget aan acties zijn optionele kaders die hij zelf instelt. Een agent kan rechten verruimen noch beperken — niet die van zichzelf en niet die van anderen. Elke wijziging van een toestemming en elke actie op grond daarvan levert een vermelding op in het Logboek en in het meldingencentrum. ‘Altijd’ voor een gevaarlijke of kritieke actie krijgt een blijvend ‘!’.
 
 | Actie in de zone | Niveau | Ritueel voor een mens |
 |---|---|---|
@@ -195,8 +195,8 @@ Elke actie van de zone heeft voor elke uitvoerder — scènes, automatiseringen,
 ## 10. Toestanden en teksten
 
 - Leeg huis — `hv-leeg`: «Дім ще порожній — додайте кімнати або запустіть симуляцію / Het huis is nog leeg — voeg kamers toe of start de simulatie». Verouderd — de zin in de verleden tijd, arcering en ouderdom op de tegels, de vulling van de laag weggehaald. «Немає зв'язку з домом з 18:31 / Geen verbinding met het huis sinds 18:31» — de bediening is uitgeschakeld, er is geen wachtrij. «Вдома: невідомо / Thuis: onbekend». Alarm — `hv-nood`.
-- **‘Ik ga weg’.** «Що станеться: світло й медіа вимкнуться, опалення знизиться до 16 °C. Пов'язано з: охорону режим поставить за дозволом „Питати“ — дім спитає; двері лишаться як є. Як повернути: „Я вдома“ або „Повернути“ протягом 10 с.» / «Wat er gebeurt: licht en media gaan uit, de verwarming zakt naar 16 °C. Hangt samen met: het alarm gaat aan volgens de toestemming ‘Vragen’ — het huis vraagt het; deuren blijven zoals ze zijn. Terugdraaien: ‘Ik ben thuis’ of ‘Ongedaan maken’ binnen 10 s.»
-- **«!» — de stand ‘Thuis’ schakelt de beveiliging uit bij ‘Altijd’.** «Що може статися: охорону буде знято, якщо дім помилково вирішить, що ви прийшли. Пов'язано з: присутність „певно“ від телефона в мережі. Як повернути: поставити охорону знову. Хто зможе це запускати: правило „Автоперемикання режиму“. Як вимкнути: „Вимкнено“ тут або „Зупинити самостійні дії“.» / «Wat er kan gebeuren: het alarm gaat uit als het huis ten onrechte denkt dat je thuiskomt. Hangt samen met: aanwezigheid ‘zeker’ via de telefoon in het netwerk. Terugdraaien: het alarm opnieuw inschakelen. Wie dit kan starten: de regel ‘Huisstand automatisch wisselen’. Uitzetten: ‘Uit’ hier of ‘Zelfstandige acties stoppen’.»
+- **‘Ik ga weg’.** «Що станеться: світло й медіа вимкнуться, опалення знизиться до 17 °C. Пов'язано з: охорону буде поставлено на „периметр“; двері лишаться як є. Як повернути: „Я вдома“ або „Повернути“ протягом 10 с.» / «Wat er gebeurt: licht en media gaan uit, de verwarming zakt naar 17 °C. Hangt samen met: het alarm gaat aan in de stand ‘schil’; deuren blijven zoals ze zijn. Terugdraaien: ‘Ik ben thuis’ of ‘Ongedaan maken’ binnen 10 s.»
+- **‘!’ — de stand ‘Thuis’ schakelt de beveiliging uit bij ‘Altijd’.** «Що може статися: охорону буде знято, якщо дім помилково вирішить, що ви прийшли. Пов'язано з: присутність „певно“ від телефона в мережі. Як повернути: поставити охорону знову. Хто зможе це запускати: правило „Автоперемикання режиму“. Як вимкнути: „Вимкнено“ тут або „Зупинити самостійні дії“.» / «Wat er kan gebeuren: het alarm gaat uit als het huis ten onrechte denkt dat je thuiskomt. Hangt samen met: aanwezigheid ‘zeker’ via de telefoon in het netwerk. Terugdraaien: het alarm opnieuw inschakelen. Wie dit kan starten: de regel ‘Huisstand automatisch wisselen’. Uitzetten: ‘Uit’ hier of ‘Zelfstandige acties stoppen’.»
 - **Weigering.** «Чому ні: дім не знає, чи хтось удома — останній сигнал 3 год тому. Що перевірити: джерела присутності. Що можна натомість: „Я вдома“ на дверному екрані.» / «Waarom niet: het huis weet niet of er iemand thuis is — laatste signaal 3 uur geleden. Wat te controleren: de aanwezigheidsbronnen. Wat wel kan: ‘Ik ben thuis’ op het deurscherm.»
 
 ## 11. Schermen en componenten

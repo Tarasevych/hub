@@ -480,3 +480,42 @@
 .hv-so-wachtrand { display: inline-block; border-radius: var(--straal-m); outline: 1.5px dashed var(--hv-omtrek); outline-offset: 3px; animation: hv-puls var(--hv-duur-puls) ease-in-out infinite; }
 .hv-so-vonk { display: block; inline-size: 120px; block-size: 32px; }
 .hv-so-vonk .hv-vonk { inline-size: 100%; block-size: 100%; }
+/* ── Складники: небо, шари ядра й зональні компоненти (план §3.9) ── */
+.hv-so-staal--vol { grid-column: 1 / -1; }
+.hv-so-staal__noot { font-size: var(--tekst-mini); line-height: var(--hv-regel-mini); color: var(--muted); text-wrap: pretty; }
+.hv-so-held__mist { font-size: var(--tekst-klein); color: var(--text); }
+.hv-so-zaalkaart__voet { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--hv-doel-kier); padding-block-start: var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-so-zaalkaart__bron { display: inline-flex; align-items: center; gap: var(--ruimte-1); min-inline-size: 0; margin-inline-end: auto; font-size: var(--tekst-mini); line-height: var(--hv-regel-mini); font-weight: 600; color: var(--muted); }
+.hv-so-zaalkaart__bron > .hv-ic { flex: none; }
+.hv-so-zaalkaart__bron code { font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+/* зональний зразок: на всю ширину свого вічка, але не ширший за читабельну колонку */
+.hv-so-zone { display: grid; gap: var(--ruimte-2); justify-self: stretch; inline-size: 100%; min-inline-size: 0; max-inline-size: 880px; }
+.hv-so-zone--midden { max-inline-size: 560px; }
+.hv-so-zone--smal { max-inline-size: 420px; }
+.hv-so-zone--pin { max-inline-size: 300px; }
+.hv-so-zone > * { min-inline-size: 0; max-inline-size: 100%; }
+/* розріз у вічку: вужчі поля картки, щоб кнопки кімнат лишалися не меншими за 44 px і на телефоні */
+.hv-so-zone > .hv-kaart--doorsnede { padding-inline: var(--ruimte-1); }
+.hv-so-staal__vak > .hv-rail, .hv-so-staal__vak > .hv-waarom, .hv-so-staal__vak > .hv-blok, .hv-so-staal__vak > .hv-so-hemelstaal, .hv-so-staal__vak > .hv-tabel__rol { justify-self: stretch; }
+.hv-so-staal__vak > .hv-blok { inline-size: 100%; }
+/* небо у вічку: змінні фази задає модифікатор; без нього — небо цього екрана */
+.hv-so-hemelstaal { --hv-hemel-einde: 100%; --hv-hemel-gloed-hoogte: 90%; position: relative; isolation: isolate; display: grid; align-content: end; inline-size: 100%; min-block-size: 96px; overflow: hidden; border-radius: var(--straal-m); border: 1px solid var(--line); }
+.hv-so-hemelstaal--nacht { --hv-hemel-boven: var(--hv-hemel-nacht-boven); --hv-hemel-onder: var(--hv-hemel-nacht-onder); --hv-hemel-gloed: var(--hv-hemel-nacht-gloed); --hv-hemel-gloed-dekking: 1; }
+.hv-so-hemelstaal--dageraad { --hv-hemel-boven: var(--hv-hemel-dageraad-boven); --hv-hemel-onder: var(--hv-hemel-dageraad-onder); --hv-hemel-gloed: var(--hv-hemel-dageraad-gloed); --hv-hemel-gloed-dekking: 1; }
+.hv-so-hemelstaal--dag { --hv-hemel-boven: var(--hv-hemel-dag-boven); --hv-hemel-onder: var(--hv-hemel-dag-onder); --hv-hemel-gloed: var(--hv-hemel-dag-gloed); --hv-hemel-gloed-dekking: 1; }
+.hv-so-hemelstaal--schemer { --hv-hemel-boven: var(--hv-hemel-schemer-boven); --hv-hemel-onder: var(--hv-hemel-schemer-onder); --hv-hemel-gloed: var(--hv-hemel-schemer-gloed); --hv-hemel-gloed-dekking: 1; }
+.hv-so-hemelstaal--held { min-block-size: 0; padding: var(--ruimte-4) var(--hv-rand); }
+.hv-doek:not(.is-speciaal) .hv-so-zaal .hv-so-hemelstaal > .hv-hemel { position: absolute; inset: 0; z-index: -1; block-size: auto; will-change: auto; background: linear-gradient(180deg, var(--hv-hemel-boven) 0, var(--hv-hemel-onder) var(--hv-hemel-einde)); }
+.hv-doek:not(.is-speciaal) .hv-so-zaal .hv-so-hemelstaal--stil > .hv-hemel { background: linear-gradient(180deg, color-mix(in srgb, var(--hv-hemel-boven) 55%, var(--bg)) 0, var(--bg) 100%); }
+.hv-doek .hv-so-zaal .hv-so-hemelstaal .hv-hemel__gloed { display: block; }
+.hv-doek .hv-so-zaal .hv-so-hemelstaal--stil .hv-hemel__gloed { display: none; }
+/* шари ядра під псевдонімом: ті самі правила, але у вічку довідника вони не плавають над сторінкою */
+.hv-so-zaal .hv-so-staal__vak .hv-so-laag, .hv-so-zaal .hv-so-staal__vak .hv-so-gevaar, .hv-so-zaal .hv-so-staal__vak .hv-so-opdracht, .hv-so-zaal .hv-so-staal__vak .hv-so-nood { position: relative; inset: auto; z-index: auto; transform: none; animation: none; inline-size: 100%; max-inline-size: 100%; }
+.hv-so-zaal .hv-so-staal__vak .hv-so-laag { block-size: auto; min-block-size: 0; max-block-size: 560px; border-block-end: 1px solid var(--hv-glas-rand); border-radius: var(--straal-xl); box-shadow: var(--schaduw-1); }
+.hv-so-zaal .hv-so-staal__vak .hv-so-gevaar, .hv-so-zaal .hv-so-staal__vak .hv-so-opdracht { max-block-size: none; box-shadow: var(--schaduw-1); }
+.hv-so-zaal .hv-so-staal__vak .hv-so-opdracht { grid-template-columns: minmax(0, 1fr); }
+.hv-so-zaal .hv-so-staal__vak .hv-so-nood { min-block-size: 0; border-radius: var(--straal-m); }
+/* рейка-зразок не перехоплює жест прокручування й не вдає з себе кнопку; «утримання» — половина заливки без руху */
+.hv-so-zaal .hv-rail { touch-action: auto; cursor: default; }
+.hv-so-zaal .hv-rail.is-houdt .hv-rail__vulling { transition: none; }
+.hv-so-zaal .hv-rail.hv-so-rail--half .hv-rail__vulling { inline-size: 55%; }

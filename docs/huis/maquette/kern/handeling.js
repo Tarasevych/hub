@@ -8,7 +8,8 @@
   'use strict';
 
   var VERTRAGING = { aangenomen: 160, bevestigd: 460, slaapt: 2600, mislukt: 3000 };
-  var TERUG_MS = 10000;
+  // Скільки висить сповіщення: з «Повернути» — 10 с (стільки діє відкат), важливе — 6 с, звичайне — 4 с; тривога — доки не закриють.
+  var TERUG_MS = 10000, BELANGRIJK_MS = 6000, GEWOON_MS = 4000;
 
   // ── Wie handelt ──
   HV.rol = function () { return HV.opslag.lees('rol', 'eigenaar'); };
@@ -23,8 +24,17 @@
   // ── Journaal ──
   HV.logboek = {
     /** Запис: { maker:{soort,naam}, wat:[uk,nl], waarom?, was?, werd?, toegestaan?, soort:'huis.*', gewicht?, doel? } */
+    /** Лічильники для проби дії без зв'язку: pogingen — скільки разів щось писало в Журнал, geweigerd — скільки команд відхилено через зв'язок. */
+    pogingen: 0, geweigerd: 0,
+    /** true лише на час дії пульта симулятора всередині продукту: він керує макетом, а не домом. */
+    vrij: false,
     voegToe: function (e) {
       var w = HV.staat.w;
+      HV.logboek.pogingen++;
+      // без зв'язку людина нічого не могла зробити в домі: запис не зберігається (світ повертає проба в schil.js)
+      if (w.gegevens === 'geen' && !HV.logboek.vrij && e.maker && e.maker.soort === 'mens') {
+        return { id: 'l-geen', tijd: w.tijd, maker: e.maker, wat: e.wat, waarom: e.waarom || null, was: e.was || null, werd: e.werd || null, soort: e.soort || 'huis.apparaat', gewicht: e.gewicht || 'info', doel: e.doel || null, gelezen: true, sim: true, nietBewaard: true };
+      }
       var regel = {
         id: 'l' + (++w.logTeller), tijd: w.tijd, maker: e.maker || { soort: 'simulator', naam: ['Симулятор', 'Simulator'] },
         wat: e.wat, waarom: e.waarom || null, was: e.was || null, werd: e.werd || null, toegestaan: e.toegestaan || null,
@@ -41,9 +51,24 @@
   // ── Spливні сповіщення (дані; малює schil.js) ──
   var toostTeller = 0;
   HV.toosten = [];
-  /** HV.meld({ titel, tekst, gewicht:'info'|'belangrijk'|'alarm', maker, icoon, terug: fn, hoe }) */
+  /**
+   * HV.meld({ titel, tekst, gewicht:'info'|'belangrijk'|'alarm', maker, icoon, terug: fn, hoe, duur })
+   * titel, tekst і hoe — рядок або пара [uk, nl]. Показується одне сповіщення (найновіше; тривога — першою) й лічильник
+   * «+N»; решта чекає за ним. Те саме сповіщення вдруге не додається — лише починає свій час спочатку.
+   */
   HV.meld = function (m) {
-    var toost = { id: 't' + (++toostTeller), titel: m.titel, tekst: m.tekst || '', gewicht: m.gewicht || 'info', maker: m.maker || null, icoon: m.icoon || null, terug: m.terug || null, hoe: m.hoe || null, sinds: Date.now(), duur: m.gewicht === 'alarm' ? 0 : TERUG_MS };
+    var gewicht = m.gewicht || 'info';
+    var duur = m.duur != null ? m.duur : gewicht === 'alarm' ? 0 : m.terug ? TERUG_MS : gewicht === 'belangrijk' ? BELANGRIJK_MS : GEWOON_MS;
+    var zelfde = m.terug ? null : HV.toosten.filter(function (x) { return !x.terug && x.gewicht === gewicht && HV.p(x.titel) === HV.p(m.titel) && HV.p(x.tekst) === HV.p(m.tekst || ''); })[0];
+    if (zelfde) {
+      if (zelfde.klok) clearTimeout(zelfde.klok);
+      zelfde.sinds = Date.now();
+      if (duur) zelfde.klok = setTimeout(function () { HV.toostWeg(zelfde.id); }, duur);
+      HV.toosten = HV.toosten.filter(function (x) { return x !== zelfde; }).concat([zelfde]);
+      if (HV.schil && HV.schil.tekenToosten) HV.schil.tekenToosten();
+      return zelfde;
+    }
+    var toost = { id: 't' + (++toostTeller), titel: m.titel, tekst: m.tekst || '', gewicht: gewicht, maker: m.maker || null, icoon: m.icoon || null, terug: m.terug || null, hoe: m.hoe || null, sinds: Date.now(), duur: duur };
     HV.toosten.push(toost);
     var max = (HV.bouw.gedrag && HV.bouw.gedrag.toostMax) || 3;
     while (HV.toosten.length > max) {
@@ -234,9 +259,21 @@
     return null;
   }
 
+  // ── Без зв'язку з домом ──
+  /** Чи діє «лише перегляд»: зв'язку немає (пульт симулятора всередині продукту — виняток на час своєї дії). */
+  HV.zonderVerbinding = function () { var w = HV.staat.w; return !!w && w.gegevens === 'geen' && !HV.logboek.vrij; };
+  /** Єдине сповіщення-відмова для всього, що без зв'язку не виконується. */
+  HV.meldZonderVerbinding = function () {
+    return HV.meld({ gewicht: 'belangrijk', icoon: 'wifi-off', titel: HV.t('Не виконано: немає зв’язку з домом', 'Niet uitgevoerd: geen verbinding met het huis'), tekst: HV.t('Показано останній знімок, лише перегляд. Черги команд немає.', 'Je ziet de laatste momentopname, alleen bekijken. Er is geen wachtrij.') });
+  };
+
   // ── Uitvoeren ──
   function weiger(reden, titel, tekst, door) {
-    if (!door || door.soort === 'mens') HV.meld({ gewicht: 'belangrijk', icoon: reden === 'rol' ? 'lock' : 'circle-x', titel: titel, tekst: tekst });
+    if (reden === 'verbinding') HV.logboek.geweigerd++;
+    if (!door || door.soort === 'mens') {
+      if (reden === 'verbinding') HV.meldZonderVerbinding();
+      else HV.meld({ gewicht: 'belangrijk', icoon: reden === 'rol' ? 'lock' : 'circle-x', titel: titel, tekst: tekst });
+    }
     return Promise.resolve({ ok: false, reden: reden });
   }
 
@@ -417,20 +454,48 @@
     return false;
   }
 
-  /** Рішення людини щодо запиту за режимом «Питати». */
+  // Чому схвалений запит не виконано — словами для сповіщення й Журналу.
+  var NIET = {
+    verbinding: ['немає зв’язку з домом', 'geen verbinding met het huis'],
+    onbereikbaar: ['пристрій недоступний', 'het apparaat is niet bereikbaar'],
+    gestopt: ['самостійні дії зупинено', 'zelfstandige acties zijn gestopt'],
+    onbekend: ['дім не прийняв команду', 'het huis nam de opdracht niet aan']
+  };
+  /**
+   * Рішення людини щодо запиту за режимом «Питати». Схвалений запит зникає з «Зараз важливо» лише після того, як дім
+   * підтвердив виконання; якщо дію не виконано (немає зв'язку, пристрій недоступний), запит чекає далі, людина бачить
+   * причину, а в Журналі з'являється «Не виконано: …».
+   */
   HV.verzoek = function (id, ja) {
     var w = HV.staat.w;
     var v = w.verzoeken.filter(function (x) { return x.id === id; })[0];
     if (!v || v.stand !== 'wacht') return Promise.resolve({ ok: false });
+    if (HV.zonderVerbinding()) { HV.logboek.geweigerd++; HV.meldZonderVerbinding(); return Promise.resolve({ ok: false, reden: 'verbinding' }); }
     var mens = HV.mens();
     var wie = HV.gevaar.uitvoerder(v.uitvoerder);
-    HV.staat.wijzig(function (x) { v.stand = ja ? 'goedgekeurd' : 'afgewezen'; x.nu = x.nu.filter(function (n) { return n.verzoek !== id; }); });
     if (!ja) {
+      HV.staat.wijzig(function (x) { v.stand = 'afgewezen'; x.nu = x.nu.filter(function (n) { return n.verzoek !== id; }); });
       HV.logboek.voegToe({ maker: mens, wat: ['Відхилено запит: ' + v.wat[0], 'Verzoek afgewezen: ' + v.wat[1]], waarom: [wie.naam[0], wie.naam[1]], soort: 'huis.agent' });
       HV.meld({ maker: mens, titel: HV.t('Запит відхилено', 'Verzoek afgewezen'), tekst: HV.p(v.wat) });
       return Promise.resolve({ ok: true });
     }
-    return HV.doe({ doel: v.doel, mogelijkheid: v.mogelijkheid, waarde: v.waarde, door: { soort: wie.soort, id: wie.id, naam: wie.naam }, goedgekeurd: true, waarom: v.waarom });
+    var door = { soort: wie.soort, id: wie.id, naam: wie.naam };
+    HV.staat.wijzig(function () { v.stand = 'bezig'; });
+    return HV.doe({ doel: v.doel, mogelijkheid: v.mogelijkheid, waarde: v.waarde, door: door, goedgekeurd: true, waarom: v.waarom }).then(function (uitkomst) {
+      if (uitkomst && uitkomst.ok) {
+        HV.staat.wijzig(function (x) { v.stand = 'goedgekeurd'; x.nu = x.nu.filter(function (n) { return n.verzoek !== id; }); });
+        return uitkomst;
+      }
+      var reden = uitkomst && uitkomst.reden;
+      HV.staat.wijzig(function () { v.stand = 'wacht'; });
+      // «не підтверджено» пристрій уже пояснив сам (сповіщення й запис «не виконано»); решту причин називаємо тут
+      if (reden !== 'niet-uitgevoerd') {
+        var waarom = NIET[reden] || NIET.onbekend;
+        HV.meld({ gewicht: 'belangrijk', icoon: reden === 'verbinding' ? 'wifi-off' : 'circle-x', maker: door, titel: HV.t('Не виконано: ', 'Niet uitgevoerd: ') + HV.p(v.wat), tekst: HV.t('Причина: ', 'Reden: ') + HV.p(waarom) + HV.t('. Запит чекає далі.', '. Het verzoek blijft wachten.') });
+        if (reden !== 'verbinding' && reden !== 'gestopt') HV.logboek.voegToe({ maker: door, wat: ['Не виконано: ' + v.wat[0], 'Niet uitgevoerd: ' + v.wat[1]], waarom: waarom, soort: 'huis.agent', gewicht: 'belangrijk' });
+      }
+      return uitkomst || { ok: false };
+    });
   };
 
   /** Зупинити чи відновити самостійні дії (автоматизації, агенти, оптимізація). */

@@ -316,8 +316,9 @@
 
   // ═════════════════════════ VIERKANT і ROND 480–720 ═════════════════════════
   // vierkант: папір на всю площу (як обличчя кімнати) — підпис, головне, стан, дії. rond: дуга по обідку, усе в колі 62 %.
-  function vierkant(ctx, label, midden, toestand, acties) {
-    return '<div class="hv-gezicht__binnen hv-gzx-vk">' + kop(ctx, h(label)) + '<div class="hv-gzx-vk__midden">' + midden + '</div><p class="hv-gezicht__toestand">' + h(toestand) + '</p><div class="hv-gzx-vk__acties">' + acties + '</div></div>';
+  // klas 'hv-gzx-vk--stapel': дії двома рядами на всю ширину (перемикач режиму, під ним кнопка) — напис кнопки не ламається.
+  function vierkant(ctx, label, midden, toestand, acties, klas) {
+    return '<div class="hv-gezicht__binnen hv-gzx-vk' + (klas ? ' ' + klas : '') + '">' + kop(ctx, h(label)) + '<div class="hv-gzx-vk__midden">' + midden + '</div><p class="hv-gezicht__toestand">' + h(toestand) + '</p><div class="hv-gzx-vk__acties">' + acties + '</div></div>';
   }
   function rond(ctx, deel, toon, label, midden, toestand, acties, klas) {
     return '<span class="hv-gzx-rond__papier" aria-hidden="true"></span>' + boogSvg(deel, toon, 'hv-gzx-boog--rand ' + (klas || '')) + '<div class="hv-gezicht__binnen hv-gzx-rond">' + kop(ctx, h(label)) + midden + '<p class="hv-gezicht__toestand">' + h(toestand) + '</p><div class="hv-gezicht__rij hv-gzx-rond__acties">' + acties + '</div></div>';
@@ -357,7 +358,7 @@
   gezicht({ id: 'vierkant-garage', profiel: 'vierkant', titel: ['Авто', 'Auto'], render: function (ctx) {
     var w = ctx.staat, s = auto(w);
     return vierkant(ctx, HV.p(s.ev.naam), '<div class="hv-gzx-meter">' + boogSvg(s.ev.lading / 100, 'auto', 'hv-gzx-boog--meter') + '<div class="hv-gzx-meter__midden"><span class="hv-gezicht__getal">' + HV.maat(Math.round(s.ev.lading), '%') + '</span><span class="hv-gzx-meter__sub">' + h(s.ev.bereik + t(' км', ' km')) + '</span></div></div>',
-      s.woord + ' · ' + s.eind, o.segment({ label: t('Режим зарядки', 'Laadstand'), waarde: s.modus, actie: 'gzx-laadmodus', opties: MODI().map(function (m) { return { id: m.id, label: m.tekst }; }), k: 'gzx-modus' }) + laadKnop(s));
+      s.woord + ' · ' + s.eind, o.segment({ label: t('Режим зарядки', 'Laadstand'), waarde: s.modus, actie: 'gzx-laadmodus', opties: MODI().map(function (m) { return { id: m.id, label: m.tekst }; }), k: 'gzx-modus' }) + laadKnop(s, { klas: 'hv-gzx-breed' }), 'hv-gzx-vk--stapel');
   } });
   gezicht({ id: 'rond-garage', profiel: 'rond', titel: ['Авто', 'Auto'], render: function (ctx) {
     var w = ctx.staat, s = auto(w);
@@ -457,7 +458,7 @@
   } });
 
   // ═════════════════════════ INKT: чорне й біле, кнопки-номери, оновлення не частіше разу на хвилину ═════════════════════════
-  var inktGeheugen = {}, inktVrijTot = 0;
+  var inktGeheugen = {}, inktVrijTot = 0, inktVerverst = null; // inktVerverst — час дому останнього ручного оновлення
   function inkt(ctx, id, bouwer) {
     var nu = Date.now(), sleutel = id + '|' + ctx.taal, x = inktGeheugen[sleutel];
     if (x && nu - x.echt < 60000 && nu > inktVrijTot) return x.html;
@@ -478,7 +479,7 @@
       return '<p class="hv-inkt__zin">' + h(x.zin) + '</p>' + inktGetallen([[x.woord, x.getal], [t('ціна зараз', 'prijs nu'), h(HV.euro(x.nu))], [t('найдешевше о ', 'goedkoopst om ') + HV.tijd(x.goed.tijd), h(HV.euro(x.goed.prijs))], [t('батарея', 'batterij'), HV.maat(Math.round(x.bat.lading), '%')], [t('сьогодні · приклад', 'vandaag · voorbeeld'), h(HV.euro(x.kosten))]]) +
         '<div class="hv-inkt__tegels">' + inktTegel(1, t('Авто ', 'Auto ') + Math.round(s.ev.lading) + ' %', s.vol && !s.laadt ? t('заряджено', 'vol genoeg') : s.laadt ? t('заряджається · зупинити', 'laadt · stoppen') : t('заряджати зараз', 'nu laden'), { actie: 'gzx-laden', aan: s.laadt, uit: s.vol && !s.laadt }) +
         inktTegel(2, t('Розумно', 'Slim'), t('заряджати за ціною', 'laden op prijs'), { actie: 'gzx-laadmodus', gegevens: { waarde: 'slim' }, aan: s.modus === 'slim' }) + inktTegel(3, t('Швидко', 'Snel'), t('11 кВт одразу', 'meteen 11 kW'), { actie: 'gzx-laadmodus', gegevens: { waarde: 'snel' }, aan: s.modus === 'snel' }) +
-        inktTegel(4, t('Оновити', 'Verversen'), t('екран зараз', 'scherm nu'), { actie: 'gzx-inkt-ververs' }) + '</div>';
+        inktTegel(4, t('Оновити', 'Verversen'), inktVerverst ? t('оновлено о ', 'ververst om ') + HV.tijd(inktVerverst) : t('екран зараз', 'scherm nu'), { actie: 'gzx-inkt-ververs' }) + '</div>';
     });
   } });
   gezicht({ id: 'inkt-beveiliging', profiel: 'inkt', titel: ['Безпека', 'Beveiliging'], render: function (ctx) {
@@ -521,7 +522,13 @@
         inktTegel(w.scenes.length + 1, t('Усе світло', 'Alle lampen'), t('вимкнути', 'uitzetten'), { actie: 'gzx-licht-uit' }) + '</div>';
     });
   } });
-  HV.actie('gzx-inkt-ververs', function () { inktGeheugen = {}; inktVrijTot = Date.now() + 1500; HV.teken(); });
+  /** «Оновити»: екран перемальовується одразу; відгук — підпис плитки «оновлено о ГГ:ХВ» і коротке сповіщення (лише перегляд). */
+  HV.actie('gzx-inkt-ververs', function () {
+    var w = HV.staat.w;
+    inktGeheugen = {}; inktVrijTot = Date.now() + 1500; inktVerverst = w.tijd;
+    HV.meld({ icoon: 'refresh-cw', titel: t('Екран оновлено о ', 'Scherm ververst om ') + HV.tijd(w.tijd), tekst: t('Далі — само, раз на хвилину.', 'Daarna vanzelf, eens per minuut.') });
+    HV.teken();
+  }, { kijk: true });
 
   // ═════════════════════════ TV 1920×1080 (логічно 1280×720, масштаб ×1,5): пульт, фокус-кільце ═════════════════════════
   function tv(ctx, zin, rij, extra) {
@@ -537,11 +544,12 @@
 
   gezicht({ id: 'tv-energie', profiel: 'tv', titel: ['Енергія', 'Energie'], render: function (ctx) {
     var w = ctx.staat, x = energie(w), s = auto(w);
-    return tv(ctx, x.zin, tvKaart({ icoon: 'zap', naam: hoofd(x.woord), waarde: x.getal, sub: t('дім ', 'huis ') + HV.maatTekst(x.e.huis, kW(), 1), klas: 'hv-toon-' + x.toon, k: 'tv-saldo', actie: 'gzx-inkt-ververs' }) +
-      tvKaart({ icoon: 'euro', naam: t('Ціна зараз', 'Prijs nu'), waarde: h(HV.euro(x.nu)), sub: x.niveauWoord, k: 'tv-prijs', actie: 'gzx-inkt-ververs' }) +
-      tvKaart({ icoon: 'battery-medium', naam: t('Батарея', 'Batterij'), waarde: HV.maat(Math.round(x.bat.lading), '%'), sub: x.batWoord, k: 'tv-bat', actie: 'gzx-inkt-ververs' }) +
+    // сальдо, ціна й батарея — лише показники (не кнопки): пульт стає одразу на дві дії зарядки
+    return tv(ctx, x.zin, tvKaart({ icoon: 'zap', naam: hoofd(x.woord), waarde: x.getal, sub: t('дім ', 'huis ') + HV.maatTekst(x.e.huis, kW(), 1), klas: 'hv-toon-' + x.toon, k: 'tv-saldo' }) +
+      tvKaart({ icoon: 'euro', naam: t('Ціна зараз', 'Prijs nu'), waarde: h(HV.euro(x.nu)), sub: x.niveauWoord, k: 'tv-prijs' }) +
+      tvKaart({ icoon: 'battery-medium', naam: t('Батарея', 'Batterij'), waarde: HV.maat(Math.round(x.bat.lading), '%'), sub: x.batWoord, k: 'tv-bat' }) +
       tvKaart({ icoon: s.laadt ? 'circle-stop' : 'plug-zap', naam: t('Авто · ', 'Auto · ') + Math.round(s.ev.lading) + ' %', waarde: '<span class="hv-tv__woord hv-gzx-tv__actiewoord">' + h(s.vol && !s.laadt ? t('готово', 'klaar') : s.laadt ? t('Зупинити', 'Stoppen') : t('Заряджати', 'Laden')) + '</span>', sub: s.eind, actie: s.vol && !s.laadt ? null : 'gzx-laden', k: 'tv-laden' }) +
-      tvKaart({ icoon: 'sparkles', naam: t('Режим зарядки', 'Laadstand'), waarde: '<span class="hv-tv__woord hv-gzx-tv__actiewoord">' + h(MODI().filter(function (m) { return m.id === s.modus; })[0].tekst) + '</span>', sub: t('OK — наступний режим', 'OK — volgende stand'), actie: 'gzx-laadmodus', gegevens: { waarde: s.modus === 'slim' ? 'snel' : s.modus === 'snel' ? 'pauze' : 'slim' }, k: 'tv-modus' }),
+      tvKaart({ icoon: 'sparkles', naam: t('Режим зарядки', 'Laadstand'), waarde: '<span class="hv-tv__woord hv-gzx-tv__actiewoord">' + h(MODI().filter(function (m) { return m.id === s.modus; })[0].tekst) + '</span>', sub: t('OK — змінити', 'OK — wisselen'), actie: 'gzx-laadmodus', gegevens: { waarde: s.modus === 'slim' ? 'snel' : s.modus === 'snel' ? 'pauze' : 'slim' }, k: 'tv-modus' }),
       '<div class="hv-gzx-tv__band">' + prijsBand(w, { uren: 24, hoogte: 36, elke: 3 }) + '</div>');
   } });
 
@@ -660,11 +668,11 @@
   // ═════════════════════════ PANEEL: кіоск /paneel/<profiel>/<id> ═════════════════════════
   var PROFIELEN = [
     { id: 'strook', icoon: 'rectangle-horizontal', naam: ['Стрічка', 'Strook'], uitleg: ['Час, сальдо, потоки, винятки й обране; стрічка доби внизу.', 'Tijd, saldo, stromen, uitzonderingen en favorieten; het etmaal onderaan.'] },
-    { id: 'vierkant', icoon: 'square', naam: ['Квадратний', 'Vierkant'], uitleg: ['Обличчя кімнати з диском і «−/+».', 'Wijzerplaat van de kamer met schijf en «−/+».'] },
+    { id: 'vierkant', icoon: 'square', naam: ['Квадратний', 'Vierkant'], uitleg: ['Обличчя кімнати з диском і «−/+».', 'Wijzerplaat van de kamer met schijf en ‘−/+’.'] },
     { id: 'rond', icoon: 'circle', naam: ['Круглий', 'Rond'], uitleg: ['Одне значення в колі, дуга по обідку.', 'Eén waarde in de cirkel, boog langs de rand.'] },
     { id: 'klein', icoon: 'tablet-smartphone', naam: ['Малий 800×480', 'Klein 800×480'], uitleg: ['Два обличчя поруч і до чотирьох кнопок.', 'Twee wijzerplaten naast elkaar en tot vier knoppen.'] },
     { id: 'deur', icoon: 'door-closed', naam: ['Дверна панель', 'Deurpaneel'], uitleg: ['До коду — час, погода, виклик; після коду — «Йду», «Я вдома», двері.', 'Vóór de code: tijd, weer, aanbellen; na de code: ‘Ik ga weg’, ‘Ik ben thuis’, de deur.'] },
-    { id: 'horloge', icoon: 'watch', naam: ['Годинник', 'Horloge'], uitleg: ['Одне слово чи число, одна дія, «‹ ›».', 'Eén woord of getal, één actie, «‹ ›».'] },
+    { id: 'horloge', icoon: 'watch', naam: ['Годинник', 'Horloge'], uitleg: ['Одне слово чи число, одна дія, «‹ ›».', 'Eén woord of getal, één actie, ‘‹ ›’.'] },
     { id: 'inkt', icoon: 'book-open-text', naam: ['Чорнило', 'Inkt'], uitleg: ['Чорне й біле, кнопки-номери, оновлення раз на хвилину.', 'Zwart en wit, cijferknoppen, eens per minuut ververst.'] },
     { id: 'tv', icoon: 'tv', naam: ['Телевізор', 'Televisie'], uitleg: ['Пульт: стрілки, OK, «Назад»; масштаб ×1,5.', 'Afstandsbediening: pijlen, OK, ‘Terug’; schaal ×1,5.'] }
   ];
@@ -932,6 +940,22 @@
     var eigen = HV.gezichten.filter(function (g) { return EIGEN[g.id]; }), ander = HV.gezichten.filter(function (g) { return !EIGEN[g.id]; });
     HV.gezichten.length = 0;
     ander.concat(eigen).forEach(function (g) { HV.gezichten.push(g); });
+    // обличчя Дому на телевізорі: місця вистачає на повне речення дому — перша частина великим, решта рядком нижче.
+    // Розмітки обличчя не повторюємо: міняємо лише заголовок із коротким реченням; якщо його там немає — лишаємо як є.
+    // Тривога лишається короткою: її читають здалеку.
+    var thuisTv = HV.gezichten.filter(function (g) { return g.id === 'tv-thuis'; })[0];
+    if (thuisTv && !thuisTv.gzxVol) {
+      var thuisRender = thuisTv.render;
+      thuisTv.gzxVol = true;
+      thuisTv.render = function (ctx) {
+        var html = thuisRender(ctx), z = HV.huiszin ? HV.huiszin(ctx) : null;
+        if (!z || !z.vol || z.toon === 'alarm') return html;
+        var kort = '<h1 class="hv-tv__zin">' + h(z.kort) + '</h1>', plek = html.indexOf(kort);
+        if (plek < 0) return html;
+        var vol = z.vol.replace(/<[^>]+>/g, ''), deel = /^(.+?[.!?])\s+(.+)$/.exec(vol);
+        return html.slice(0, plek) + '<h1 class="hv-tv__zin hv-gzx-tv__vol"><span>' + (deel ? deel[1] : vol) + '</span>' + (deel ? ' <span class="hv-gzx-tv__rest">' + deel[2] + '</span>' : '') + '</h1>' + html.slice(plek + kort.length);
+      };
+    }
     // картки телевізора на обличчі Дому відкривають відповідне обличчя зони (замість підказки)
     var naar = { energie: 'tv-energie', beveiliging: 'tv-beveiliging', kamers: 'tv-klimaat', garage: 'tv-garage', overzicht: 'tv-klimaat' };
     HV.actie('tv-kaart', function (ctx, g) {

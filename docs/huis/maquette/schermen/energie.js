@@ -53,6 +53,10 @@
   var kW = function () { return t('кВт', 'kW'); };
   var kWh = function () { return t('кВт·год', 'kWh'); };
   var isNl = function () { return HV.taal() === 'nl'; };
+  /** Нерозривний пробіл між числом і одиницею в суцільному тексті (HV.maat ставить його сам). */
+  var NB = ' ';
+  /** Неподільний шматок тексту (число з одиницею, проміжок часу): перенос рядка його не розриває. */
+  var vast = function (tekst) { return '<span class="hv-en-vast">' + h(tekst) + '</span>'; };
   /** Сума в євро зі словом «приклад» біля числа. */
   var euro = function (n, dec) { return '<span class="hv-en-euro">' + h(HV.euro(n, dec).replace(/ /g, '\u00a0')) + '<span class="hv-en-vb">' + h(t('приклад', 'voorbeeld')) + '</span></span>'; };
   /** Оцінене число: «≈» і пунктирне підкреслення. */
@@ -266,7 +270,7 @@
 
     var doelVeld = veld(t('Ціль заряду', 'Laaddoel'), o.schuif({ label: t('Ціль заряду', 'Laaddoel'), waarde: li.doel, min: 20, max: 100, stap: 5, eenheid: '%', toon: 'auto', actie: 'en-laaddoel', gegevens: { doel: 'laadpaal' }, k: 'lp-doel' }));
     var vertrekVeld = veld(t('Виїзд', 'Vertrek'), '<div class="hv-en-rij2">' + o.stapper({ actie: 'en-vertrek', stap: 30, label: t('Час виїзду', 'Vertrektijd'), waarde: h(li.vertrek), k: 'lp-vertrek' }) +
-      '<span class="hv-tekst hv-tekst--zacht">' + h(dagWoord(w, li.vertrekT) + ', ' + t('готово до ', 'klaar vóór ') + HV.tijd(li.vertrekT) + t(' на ', ' op ') + li.doel + ' %') + '</span></div>');
+      '<span class="hv-tekst hv-tekst--zacht">' + h(dagWoord(w, li.vertrekT) + ', ' + t('готово до ', 'klaar vóór ') + HV.tijd(li.vertrekT) + t(' на ', ' op ') + li.doel + NB + '%') + '</span></div>');
 
     var planRegel;
     if (li.nodig <= 0.01) planRegel = '<p class="hv-en-planregel">' + HV.icoon('circle-check-big', { maat: 's' }) + '<span>' + h(t('Ціль досягнуто — заряджати не треба.', 'Het doel is bereikt — laden is niet nodig.')) + '</span></p>';
@@ -368,16 +372,17 @@
     return [
       { id: 'zon', kant: 'l', y: 17, icoon: 'sun', toon: 'zon', naam: t('Сонце', 'Zon'), kw: s.zon, woord: s.zon > 0.05 ? t('виробляє', 'wekt op') : t('спить', 'rust'), blad: 'apparaat:zonnepanelen', terug: false },
       { id: 'net', kant: 'l', y: 50, icoon: 'utility-pole', toon: s.netUit > 0.05 ? 'net-uit' : 'net-in', naam: t('Мережа', 'Net'), kw: s.netIn > 0.05 ? s.netIn : s.netUit, woord: s.netIn > 0.05 ? t('беремо', 'afname') : s.netUit > 0.05 ? t('віддаємо', 'teruglevering') : t('у нулі', 'op nul'), blad: 'apparaat:p1meter', terug: s.netUit > 0.05 },
-      { id: 'batterij', kant: 'l', y: 83, icoon: s.batIn > 0.05 ? 'battery-charging' : 'battery-medium', toon: 'batterij', naam: t('Батарея', 'Batterij') + ' ' + Math.round(tb.lading) + ' %', kw: s.batIn > 0.05 ? s.batIn : s.batUit, woord: s.batIn > 0.05 ? t('заряджається', 'laadt') : s.batUit > 0.05 ? t('віддає', 'levert') : t('чекає', 'stand-by'), blad: 'apparaat:thuisbatterij', terug: s.batIn > 0.05 },
+      { id: 'batterij', kant: 'l', y: 83, icoon: s.batIn > 0.05 ? 'battery-charging' : 'battery-medium', toon: 'batterij', naam: t('Батарея', 'Batterij'), bij: Math.round(tb.lading) + NB + '%', kw: s.batIn > 0.05 ? s.batIn : s.batUit, woord: s.batIn > 0.05 ? t('заряджається', 'laadt') : s.batUit > 0.05 ? t('віддає', 'levert') : t('чекає', 'stand-by'), blad: 'apparaat:thuisbatterij', terug: s.batIn > 0.05 },
       { id: 'auto', kant: 'r', y: 17, icoon: 'car', toon: 'auto', naam: t('Авто', 'Auto'), kw: s.auto, woord: s.auto > 0.05 ? t('заряджається', 'laadt') : t('не заряджається', 'laadt niet'), blad: 'laadplan:oprit' },
       { id: 'warmtepomp', kant: 'r', y: 50, icoon: 'heater', toon: 'warm', naam: t('Тепловий насос', 'Warmtepomp'), kw: s.wp, woord: A.warmtepomp.st.verwarmt ? t('гріє', 'verwarmt') : t('чекає', 'stand-by'), blad: 'apparaat:warmtepomp' },
       { id: 'rest', kant: 'r', y: 83, icoon: 'house', toon: 'neutraal', naam: t('Решта дому', 'Rest van het huis'), kw: s.rest, woord: t('світло, техніка', 'licht, apparaten'), blad: 'fasen' }
     ];
   }
   function knoopHtml(k, oud) {
-    return '<button type="button" class="hv-en-knoop hv-en-knoop--' + k.kant + ' hv-toon-' + k.toon + (k.kw < 0.05 ? ' is-stil' : '') + (oud ? ' is-oud' : '') + '" style="top:' + k.y + '%" data-actie="blad" data-blad="' + h(k.blad) + '" data-k="knoop-' + k.id + '" aria-label="' + h(k.naam + ': ' + HV.getal(k.kw, 1) + ' ' + kW() + ', ' + k.woord) + '">' +
+    return '<button type="button" class="hv-en-knoop hv-en-knoop--' + k.kant + ' hv-toon-' + k.toon + (k.kw < 0.05 ? ' is-stil' : '') + (oud ? ' is-oud' : '') + '" style="top:' + k.y + '%" data-actie="blad" data-blad="' + h(k.blad) + '" data-k="knoop-' + k.id + '" aria-label="' + h(k.naam + (k.bij ? ' ' + k.bij : '') + ': ' + HV.getal(k.kw, 1) + ' ' + kW() + ', ' + k.woord) + '">' +
       '<span class="hv-en-knoop__teken">' + HV.icoon(k.icoon, { maat: 's' }) + '</span><span class="hv-en-knoop__tekst"><span class="hv-en-knoop__naam">' + h(k.naam) + '</span>' +
-      '<span class="hv-en-knoop__getal">' + HV.maat(k.kw, kW(), 1) + '</span><span class="hv-en-knoop__woord">' + h(k.woord) + '</span></span></button>';
+      // «bij» (заряд батареї) стоїть у рядку значення неподільною позначкою: у вузькому вузлі вона переходить на свій рядок цілою
+      '<span class="hv-en-knoop__getal' + (k.bij ? ' heeft-bij' : '') + '">' + HV.maat(k.kw, kW(), 1) + (k.bij ? '<span class="hv-en-knoop__bij">' + h(k.bij) + '</span>' : '') + '</span><span class="hv-en-knoop__woord">' + h(k.woord) + '</span></span></button>';
   }
   /** Потоки наживо: широко — схема «джерела → дім → споживачі», вузько — «нитка» Звідки / Куди. */
   function stroomHtml(ctx) {
@@ -454,7 +459,7 @@
     return kaart('hv-en-saldo hv-en-o3', kop('arrow-left-right', t('Сальдо', 'Saldo'), o.knop({ tekst: t('Лічильник', 'Meter'), soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'apparaat:p1meter' } })) +
       '<div class="hv-en-saldo__rij">' + boog({ deel: eigen, toon: 'zon', midden: HV.maat(Math.round(eigen * 100), '%'), label: t('власна енергія', 'eigen energie'), aria: t('Частка власної енергії зараз: ', 'Aandeel eigen energie nu: ') + Math.round(eigen * 100) + ' %' }) +
       '<div class="hv-en-saldo__getal hv-toon-' + (levert ? 'net-uit' : 'net-in') + '"><span class="hv-en-saldo__woord">' + HV.icoon(levert ? 'arrow-up-right' : neemt ? 'arrow-down-left' : 'minus', { maat: 's' }) + h(woord) + '</span>' +
-      '<span class="hv-en-saldo__waarde">' + HV.maat(Math.abs(e.net), kW(), 2) + '</span>' + o.stempel({ waarde: h(t('P1-лічильник', 'P1-meter')), leeftijd: HV.kijk.leeftijd(w.apparaten.p1meter) }) + '</div></div>' + lijn, 'en-saldo');
+      '<span class="hv-en-saldo__waarde">' + HV.maat(Math.abs(e.net), kW(), 2) + '</span>' + o.stempel({ waarde: h(t('Лічильник P1', 'P1-meter')), leeftijd: HV.kijk.leeftijd(w.apparaten.p1meter) }) + '</div></div>' + lijn, 'en-saldo');
   }
 
   var MAX_A = 25, DOEL_A = 20;
@@ -551,18 +556,19 @@
   // ───────────────────────── Teksten van «Nu» ─────────────────────────
   function zin(ctx) {
     var w = ctx.staat, e = w.energie, v = venster(w), q = kwartielen(v), p = HV.tarief.prijs(w.tijd), nv = NIVEAU[niveau(p, q)];
-    if (w.gegevens === 'geen') return t('Немає зв’язку з лічильником: показано останній знімок, потоки заштриховано.', 'Geen verbinding met de meter: je ziet de laatste momentopname, de stromen zijn gearceerd.');
-    if (w.gegevens === 'verouderd') return t('Лічильник мовчить: числа з віком, потоки заштриховано.', 'De meter zwijgt: getallen met hun leeftijd, de stromen zijn gearceerd.');
-    var nl = isNl();
-    var eerste = e.net >= 0.05 ? (nl ? 'We nemen ' + HV.getal(e.net, 1) + ' kW van het net' : 'Беремо з мережі ' + HV.getal(e.net, 1) + ' кВт')
-      : e.net <= -0.05 ? (nl ? 'We leveren ' + HV.getal(-e.net, 1) + ' kW terug' : 'Віддаємо в мережу ' + HV.getal(-e.net, 1) + ' кВт') : (nl ? 'Het net staat op nul' : 'Мережа в нулі');
+    if (w.gegevens === 'geen') return h(t('Немає зв’язку з лічильником: показано останній знімок, потоки заштриховано.', 'Geen verbinding met de meter: je ziet de laatste momentopname, de stromen zijn gearceerd.'));
+    if (w.gegevens === 'verouderd') return h(t('Лічильник мовчить: числа з віком, потоки заштриховано.', 'De meter zwijgt: getallen met hun leeftijd, de stromen zijn gearceerd.'));
+    // Речення — HTML: кожне число стоїть зі своєю одиницею в неподільному шматку («7,4 кВт», «€ 0,37», «01:00–05:00»).
+    var nl = isNl(), kw1 = function (n) { return vast(HV.getal(n, 1) + NB + kW()); };
+    var eerste = e.net >= 0.05 ? (nl ? 'We nemen ' + kw1(e.net) + ' van het net' : 'Беремо з мережі ' + kw1(e.net))
+      : e.net <= -0.05 ? (nl ? 'We leveren ' + kw1(-e.net) + ' terug' : 'Віддаємо в мережу ' + kw1(-e.net)) : (nl ? 'Het net staat op nul' : 'Мережа в нулі');
     var delen = [];
-    if (e.zon > 0.05) delen.push(nl ? 'de zon geeft ' + HV.getal(e.zon, 1) + ' kW' : 'сонце дає ' + HV.getal(e.zon, 1) + ' кВт');
-    if (e.auto > 0.05) delen.push(nl ? 'de auto laadt op ' + HV.getal(e.auto, 1) + ' kW' : 'авто заряджається на ' + HV.getal(e.auto, 1) + ' кВт');
+    if (e.zon > 0.05) delen.push((nl ? 'de zon geeft ' : 'сонце дає ') + kw1(e.zon));
+    if (e.auto > 0.05) delen.push((nl ? 'de auto laadt op ' : 'авто заряджається на ') + kw1(e.auto));
     if (e.batterij > 0.05) delen.push(nl ? 'de batterij laadt' : 'батарея заряджається');
-    else if (e.batterij < -0.05) delen.push(nl ? 'de batterij levert ' + HV.getal(-e.batterij, 1) + ' kW' : 'батарея віддає ' + HV.getal(-e.batterij, 1) + ' кВт');
+    else if (e.batterij < -0.05) delen.push((nl ? 'de batterij levert ' : 'батарея віддає ') + kw1(-e.batterij));
     var vv = volgendVenster(w, v, q);
-    var prijs = (nl ? 'De prijs is nu ' : 'Ціна зараз ') + HV.p(nv.zin) + ' — ' + HV.euro(p) + (vv && vv.van > nuIndex(w, v) ? (nl ? '; goedkoop venster ' : '; дешеве вікно ') + (dagWoord(w, v[vv.van].tijd) + ' ' + vensterTekst(v, vv)) : vv ? (nl ? '; dit is een goedkoop venster' : '; це дешеве вікно') : '') + '.';
+    var prijs = (nl ? 'De prijs is nu ' : 'Ціна зараз ') + h(HV.p(nv.zin)) + NB + '— ' + vast(HV.euro(p)) + (vv && vv.van > nuIndex(w, v) ? (nl ? '; goedkoop venster ' : '; дешеве вікно ') + h(dagWoord(w, v[vv.van].tijd)) + ' ' + vast(vensterTekst(v, vv)) : vv ? (nl ? '; dit is een goedkoop venster' : '; це дешеве вікно') : '') + '.';
     return eerste + (delen.length ? ': ' + delen.join(', ') : '') + '. ' + prijs;
   }
 
@@ -624,15 +630,19 @@
   function tabNu(ctx) {
     var w = ctx.staat;
     var nuItems = (w.nu || []).filter(function (n) { return n.maker === 'optimalisatie' || /^en-/.test(n.id); });
-    var stroom = kaart('hv-en-stroomkaart hv-en-o1', kop('activity', t('Потоки наживо', 'Stromen live'), '<span class="hv-en-eenheid">' + h(kW()) + '</span>' + o.versheid(w)) + stroomHtml(ctx) +
-      '<p class="hv-grafiek__zin">' + h(t('Товщина лінії — потужність у чотири сходинки; риски рухаються за напрямком потоку. Дотик до вузла відкриває пристрій.', 'De lijndikte is het vermogen in vier treden; de streepjes bewegen in de richting van de stroom. Tik op een knoop om het apparaat te openen.')) + '</p>', 'en-stroomkaart');
+    // «наживо» — лише коли дані справді наживо; застаріле й «немає зв’язку» — останній знімок (потоки заштриховано й не рухаються)
+    var live = w.gegevens === 'live';
+    var stroom = kaart('hv-en-stroomkaart hv-en-o1', kop('activity', live ? t('Потоки наживо', 'Stromen live') : t('Потоки · останній знімок', 'Stromen · laatste momentopname'), '<span class="hv-en-eenheid">' + h(kW()) + '</span>' + o.versheid(w)) + stroomHtml(ctx) +
+      '<p class="hv-grafiek__zin">' + h(live
+        ? t('Товщина лінії — потужність у чотири сходинки; риски рухаються за напрямком потоку. Дотик до вузла відкриває пристрій.', 'De lijndikte is het vermogen in vier treden; de streepjes bewegen in de richting van de stroom. Tik op een knoop om het apparaat te openen.')
+        : t('Товщина лінії — потужність у чотири сходинки на час останнього знімка; потоки заштриховано й не рухаються. Дотик до вузла відкриває пристрій.', 'De lijndikte is het vermogen in vier treden op het moment van de laatste momentopname; de stromen zijn gearceerd en bewegen niet. Tik op een knoop om het apparaat te openen.')) + '</p>', 'en-stroomkaart');
     var fasen = kaart('hv-en-fasenkaart hv-en-o5', kop('gauge', t('Фази L1–L3', 'Fasen L1–L3'), o.knop({ tekst: t('Докладно', 'Details'), soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'fasen' } })) + fasenHtml(w, false), 'en-fasenkaart');
     var belangrijk = nuItems.length ? o.blok({ id: 'en-nu', titel: t('Зараз важливо', 'Nu belangrijk'), teller: nuItems.length, inhoud: o.nu(nuItems), klas: 'hv-blok--nu' }) : '';
     var advies = o.blok({ id: 'en-advies', titel: t('Поради', 'Advies'), teller: adviezen(w).length, inhoud: adviesHtml(ctx),
       uitleg: t('Що станеться: порада лише показує оцінку в євро на рік і веде до місця, де це змінити. Пов’язано з: оцінки рахуються з цін і профілю дому за останні тижні. Як повернути: нічого не змінюється, доки ви не дієте самі.', 'Wat er gebeurt: een advies toont alleen een schatting in euro per jaar en brengt je naar de plek om het te wijzigen. Hangt samen met: schattingen komen uit de prijzen en het profiel van het huis van de afgelopen weken. Terugdraaien: er verandert niets tot je zelf iets doet.') });
     var dag = HV.dagstrook ? o.blok({ id: 'en-dagstrook', titel: t('Стрічка доби', 'Dagstrook'), inhoud: '<div class="hv-kaart">' + HV.dagstrook(ctx) + '</div>', dicht: false }) : '';
     return '<div class="hv-en" data-k="en-nu">' +
-      '<p class="hv-en-zin" data-k="en-zin">' + HV.icoon('zap', { maat: 's' }) + '<span>' + h(zin(ctx)) + '</span></p>' +
+      '<p class="hv-en-zin" data-k="en-zin">' + HV.icoon('zap', { maat: 's' }) + '<span>' + zin(ctx) + '</span></p>' +
       '<div class="hv-en-rooster hv-en-rooster--twee">' +
       '<div class="hv-en-kolom hv-en-kolom--mix">' + stroom + fasen + regieHtml(ctx) + '</div>' +
       '<div class="hv-en-kolom hv-en-kolom--mix">' + prijsNuHtml(ctx) + saldoHtml(ctx) + vandaagHtml(ctx) + '</div>' +
@@ -737,7 +747,7 @@
     var woord = st.vermogen > 0.02 ? t('заряджається', 'laadt') : st.vermogen < -0.02 ? t('віддає в дім', 'levert aan het huis') : t('чекає', 'stand-by');
     var balk = '<span class="hv-en-batbalk" aria-hidden="true"><span class="hv-en-batbalk__reserve" style="width:' + res + '%"></span><span class="hv-en-batbalk__vulling" style="width:' + klem(st.lading, 0, 100).toFixed(1) + '%"></span></span>';
     var kopHtml = '<div class="hv-en-bathoofd">' + o.getal({ maat: 'xl', waarde: HV.maat(Math.round(st.lading), '%'), toon: 'batterij', label: woord }) +
-      '<div class="hv-en-bathoofd__rechts">' + balk + '<p class="hv-en-tekst is-zacht">' + HV.maat(st.lading / 10, kWh(), 1) + ' ' + h(t('з 10', 'van 10')) + ' · ' + HV.maat(Math.abs(st.vermogen), kW(), 1) + ' · ' + h(t('резерв ', 'reserve ') + res + ' %') + '</p></div></div>';
+      '<div class="hv-en-bathoofd__rechts">' + balk + '<p class="hv-en-tekst is-zacht">' + HV.maat(st.lading / 10, kWh(), 1) + ' ' + h(t('з 10', 'van 10')) + ' · ' + HV.maat(Math.abs(st.vermogen), kW(), 1) + ' · ' + vast(t('резерв', 'reserve') + NB + res + NB + '%') + '</p></div></div>';
     var modusVeld = veld(t('Режим роботи', 'Werkmodus'), o.werkmodus({ waarde: modus === 'diep' ? null : modus, actie: 'doe', gegevens: { doel: 'thuisbatterij', mogelijkheid: 'modus' }, k: 'bat-modus' }) +
       (modus === 'diep' ? '<p class="hv-en-let">' + HV.icoon('triangle-alert', { maat: 's' }) + h(t('Зараз: розряд нижче резерву, до 12 %.', 'Nu: ontladen onder de reserve, tot 12 %.')) + '</p>' : ''),
       ' ' + o.gevolg(t('Що станеться: «Розумно» передає батарею оптимізаторові; «Швидко» — заряджати з мережі на 3 кВт зараз; «Пауза» — батарея не заряджається й не віддає. Пов’язано з: план зарядки авто, щоб не перевантажити фазу. Як повернути: оберіть інший режим — «Повернути» 10 с, далі з Журналу.', 'Wat er gebeurt: ‘Slim’ geeft de batterij aan de optimalisatie; ‘Snel’ — nu op 3 kW laden van het net; ‘Pauze’ — de batterij laadt noch levert. Hangt samen met: het laadplan van de auto, om een fase niet te overbelasten. Terugdraaien: kies een andere stand — ‘Ongedaan maken’ 10 s, daarna via het logboek.'), { kop: t('Режим батареї', 'Stand van de batterij') }));
@@ -766,6 +776,14 @@
       return { van: d0 - d * DAG + (1 + Math.round(ruis(i, 5) * 3)) * UUR, kwh: kwh, prijs: 0.16 + ruis(i, 9) * 0.06, zon: zon, modus: i === 2 ? 'snel' : 'slim' };
     });
   }
+  /** Короткі назви днів тижня (0 — неділя) для вузького запису сесії: дата лишається в одному рядку. */
+  var DAG_KORT = [['нд', 'zo'], ['пн', 'ma'], ['вт', 'di'], ['ср', 'wo'], ['чт', 'do'], ['пт', 'vr'], ['сб', 'za']];
+  /** Дата сесії: день тижня повністю (широко) і скорочено (вузько); «8 листопада» й час не розриваються. */
+  function sessieDatum(ms) {
+    var d = HV.datum(ms), i = d.indexOf(' '), dag = d.slice(0, i), komma = /,$/.test(dag) ? ',' : '';
+    return '<span class="hv-en-sessie__lang">' + h(dag) + '</span><span class="hv-en-sessie__kort">' + h(HV.p(DAG_KORT[new Date(ms).getUTCDay()]) + komma) + '</span> ' +
+      vast(d.slice(i + 1)) + ', ' + vast(HV.tijd(ms));
+  }
   function tabLaden(ctx) {
     var w = ctx.staat, ev = w.voertuigen[0], lp = w.apparaten.laadpaal, li = laadInfo(w);
     var station = kaart('hv-en-stationkaart hv-en-o1', kop('plug-zap', t('Станція «Під’їзд»', 'Laadpaal ‘Oprit’'), o.knop({ tekst: t('Аркуш', 'Blad'), soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'apparaat:laadpaal' } }), 'auto') + stationHtml(ctx) +
@@ -773,9 +791,14 @@
         getallen: [{ label: t('ціль', 'doel'), waarde: HV.maat(li.doel, '%') }, { label: t('потрібно', 'nodig'), waarde: HV.maat(li.nodig, kWh(), 1) }, { label: t('виїзд', 'vertrek'), waarde: h(li.vertrek) }], actie: 'ga', gegevens: { naar: 'garage-voertuigen' } }), 'en-station');
     var plan = kaart('hv-en-plankaart hv-en-o2', kop('calendar-clock', t('План зарядки', 'Laadplan'), o.knop({ tekst: t('Окремим аркушем', 'Als blad'), soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'laadplan:oprit' } }), 'auto') + o.laadplan(ctx), 'en-plan');
     var lijst = sessies(w);
-    var sess = kaart('hv-en-sessies hv-en-o3', kop('history', t('Сесії зарядки', 'Laadsessies')) + '<div class="hv-rijen">' + lijst.map(function (s, i) {
-      return o.rij({ icoon: s.modus === 'snel' ? 'zap' : 'sparkles', naam: HV.datum(s.van) + ', ' + HV.tijd(s.van), sub: HV.p(HV.waardeNaam[s.modus]) + ' · ' + t('сонце ', 'zon ') + s.zon + ' %', waarde: HV.maat(s.kwh, kWh(), 1) + ' · ' + euro(s.kwh * s.prijs), k: 'sessie-' + i });
-    }).join('') + '</div>' + '<p class="hv-tekst hv-tekst--zacht">' + h(t('Сесії від симулятора; сума — за ціною годин зарядки.', 'Sessies van de simulator; het bedrag volgt de prijs van de laaduren.')) + '</p>', 'en-sessies');
+    // Запис сесії — власна сітка: вузько — два ряди (дата й сума; спосіб і кВт·год), широко — дата зі способом ліворуч,
+    // кВт·год і сума праворуч в один рядок. Слово «приклад» стоїть один раз у заголовку картки, а не в кожному рядку.
+    var sess = kaart('hv-en-sessies hv-en-o3', kop('history', t('Сесії зарядки', 'Laadsessies'), '<span class="hv-en-vb hv-en-vb--los">' + h(t('приклад', 'voorbeeld')) + '</span>') + '<ul class="hv-en-sessielijst">' + lijst.map(function (s, i) {
+      return '<li class="hv-en-sessie" data-k="sessie-' + i + '"><span class="hv-en-sessie__teken">' + HV.icoon(s.modus === 'snel' ? 'zap' : 'sparkles', { maat: 's' }) + '</span>' +
+        '<span class="hv-en-sessie__datum">' + sessieDatum(s.van) + '</span>' +
+        '<span class="hv-en-sessie__sub">' + h(HV.p(HV.waardeNaam[s.modus])) + ' · ' + vast(t('сонце', 'zon') + NB + s.zon + NB + '%') + '</span>' +
+        '<span class="hv-en-sessie__kwh">' + HV.maat(s.kwh, kWh(), 1) + '</span><strong class="hv-en-sessie__euro">' + h(HV.euro(s.kwh * s.prijs)) + '</strong></li>';
+    }).join('') + '</ul>' + '<p class="hv-tekst hv-tekst--zacht">' + h(t('Сесії й суми — приклад від симулятора; сума — за ціною годин зарядки.', 'Sessies en bedragen zijn een voorbeeld uit de simulator; het bedrag volgt de prijs van de laaduren.')) + '</p>', 'en-sessies');
     return '<div class="hv-en" data-k="en-laden"><div class="hv-en-rooster hv-en-rooster--twee"><div class="hv-en-kolom hv-en-kolom--mix">' + plan + '</div><div class="hv-en-kolom hv-en-kolom--mix">' + station + sess + '</div></div></div>';
   }
 
@@ -970,7 +993,7 @@
 
   // ───────────────────────── Vrije bladen ─────────────────────────
   HV.blad({ soort: 'laadplan', vrij: true, icoon: 'calendar-clock', titel: ['План зарядки · станція «Під’їзд»', 'Laadplan · laadpaal ‘Oprit’'],
-    sub: function (ctx) { var li = laadInfo(ctx.staat); return laadStaat(ctx.staat, li).woord + ' · ' + Math.round(li.ev.lading) + ' % → ' + li.doel + ' %'; },
+    sub: function (ctx) { var li = laadInfo(ctx.staat); return laadStaat(ctx.staat, li).woord + ' · ' + Math.round(li.ev.lading) + NB + '% → ' + li.doel + NB + '%'; },
     render: function (ctx) { return o.kaart({ inhoud: o.laadplan(ctx) }); } });
 
   HV.blad({ soort: 'fasen', vrij: true, icoon: 'gauge', titel: ['Фази', 'Fasen'],

@@ -21,22 +21,25 @@
 
 /* ───────────── Підменю й постійний штамп ───────────── */
 .hv-drn-nav { display: flex; align-items: center; gap: var(--ruimte-3); min-inline-size: 0; flex-wrap: wrap; }
-.hv-drn-nav__rij { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); overflow-x: auto; scrollbar-width: none; max-inline-size: 100%; min-inline-size: 0; }
-.hv-drn-nav__rij::-webkit-scrollbar { display: none; }
-.hv-drn-nav__punt {
-  position: relative; display: inline-flex; align-items: center; gap: 6px; flex: none; min-block-size: var(--hv-tik); padding-inline: var(--ruimte-3) var(--ruimte-4);
-  border-radius: 999px; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); transition: background var(--hv-duur-1);
-}
-.hv-drn-nav__punt > .hv-ic { color: var(--muted); }
-.hv-drn-nav__punt:hover { background: var(--surface); }
-.hv-drn-nav__punt.is-gekozen { background: var(--text); color: var(--panel); }
-.hv-drn-nav__punt.is-gekozen > .hv-ic { color: var(--panel); }
-.hv-drn-nav__stip { margin-inline-start: 2px; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--hv-batterij); box-shadow: 0 0 0 3px var(--hv-batterij-zacht); animation: hv-drn-puls var(--hv-duur-puls) ease-in-out infinite; }
-.hv-drn-nav__punt.is-gekozen .hv-drn-nav__stip { box-shadow: 0 0 0 3px var(--panel); }
+/* Другий рівень — той самий сегмент, що й в інших зонах: розмітка несе класи ядра hv-segment / hv-segment__deel
+   (тло --surface, активна клітинка --panel з обвідкою). Тут лише розкладка: широко — клітинки за вмістом,
+   вузько — п'ять рівних клітинок без значків, усі розділи видно одразу (стрічка не гортається, активний пункт не ховається). */
+.hv-segment.hv-drn-nav__rij { grid-auto-columns: auto; max-inline-size: 100%; }
+.hv-drn-nav__punt { padding-inline: var(--ruimte-3); white-space: nowrap; }
+.hv-drn-nav__kort { display: none; }
+.hv-drn-nav__stip { flex: none; margin-inline-start: 2px; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--hv-batterij); box-shadow: 0 0 0 3px var(--hv-batterij-zacht); animation: hv-drn-puls var(--hv-duur-puls) ease-in-out infinite; }
 @keyframes hv-drn-puls { 50% { opacity: 0.35; } }
 .hv-drn-sim { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--info-zacht); color: var(--text); font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; margin-inline-start: auto; }
 .hv-drn-sim > .hv-ic { color: var(--info); }
-@container drn (max-width: 560px) { .hv-drn-sim { margin-inline-start: 0; } }
+@container drn (max-width: 620px) {
+  .hv-segment.hv-drn-nav__rij { flex: 1 1 100%; grid-auto-columns: minmax(0, 1fr); }
+  .hv-drn-nav__punt { padding-inline: var(--ruimte-1); gap: 4px; }
+  .hv-drn-nav__punt > .hv-ic, .hv-drn-nav__vol { display: none; }
+  .hv-drn-nav__kort { display: inline; }
+}
+/* поки штамп не вміщується поруч зі смугою розділів, він стає під нею ліворуч, а не висить сам біля правого краю */
+@container drn (max-width: 760px) { .hv-drn-sim { margin-inline-start: 0; } }
+@container drn (max-width: 420px) { .hv-drn-nav__punt { font-size: var(--tekst-mini); } }
 
 /* ───────────── Речення парку ───────────── */
 .hv-drn-zin {
@@ -321,15 +324,17 @@
 .hv-drn-video.is-kwijt .hv-drn-video__wereld { filter: grayscale(1) brightness(0.8); transition: none; }
 
 /* телеметрія */
-.hv-drn-tele { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); }
+.hv-drn-tele { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); container: drntele / inline-size; }
 .hv-drn-tele__cel { position: relative; display: grid; gap: 2px; align-content: start; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); min-inline-size: 0; }
 .hv-drn-tele__cel.is-hoogte { grid-column: 1 / -1; }
 .hv-drn-tele__cel .hv-drn-balk { margin-block-start: var(--ruimte-2); background: var(--panel); }
 .hv-drn-tele__cel.is-let-op { background: var(--warn-zacht); }
 .hv-drn-tele__cel.is-alarm { background: var(--fout-zacht); }
 .hv-drn-tele__label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
-.hv-drn-tele__waarde { font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.hv-drn-tele__waarde { font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hv-drn-tele__cel.is-hoogte .hv-drn-tele__waarde { font-size: var(--hv-getal-l); }
+/* число плитки — завжди один рядок: у вузькій колонці (плитка вужча за ≈ 150 px) кегль меншає, ряд плиток лишається рівним */
+@container drntele (max-width: 310px) { .hv-drn-tele__cel:not(.is-hoogte) .hv-drn-tele__waarde { font-size: var(--hv-tekst-kop); } }
 .hv-drn-tele__sub { font-size: var(--tekst-mini); color: var(--muted); }
 .hv-drn-tele__nee { color: var(--fout); }
 .hv-drn-tele.is-oud .hv-drn-tele__cel { background: repeating-linear-gradient(135deg, var(--surface) 0 8px, var(--panel) 8px 16px); }

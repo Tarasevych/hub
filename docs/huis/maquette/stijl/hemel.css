@@ -11,8 +11,12 @@
    «Дому» лежали на спокійному тлі, а не на насиченому кольорі фази. */
 .hv-hemel {
   position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(180deg, var(--hv-hemel-boven) 0, var(--hv-hemel-onder) var(--hv-hemel-einde), color-mix(in srgb, var(--hv-hemel-onder) 25%, var(--bg)) calc(var(--hv-hemel-einde) + 240px));
+  background: linear-gradient(180deg, var(--hv-hemel-boven) 0, var(--hv-hemel-onder) var(--hv-hemel-einde), color-mix(in srgb, var(--hv-hemel-onder) 25%, var(--bg)) calc(var(--hv-hemel-einde) + 240px), var(--bg) calc(var(--hv-hemel-einde) + 480px));
 }
+/* Небо йде разом із героєм: kern/schil.js зсуває шар на величину прокручування (transform), тому шар сягає нижче
+   героя й закінчується чистим папером --bg — під час прокручування «Зведення», «Обране» й «Стрічка доби» лежать
+   на папері, як на решті сторінок, а не на кольорі фази. */
+.hv-doek:not(.is-speciaal) .hv-hemel { inset-block-end: auto; block-size: max(100%, calc(var(--hv-hemel-einde) + 520px)); will-change: transform; }
 .hv-hemel__gloed { position: absolute; inset: 0; background: radial-gradient(120% var(--hv-hemel-gloed-hoogte) at 78% var(--hv-hemel-einde), var(--hv-hemel-gloed) 0%, transparent 60%); opacity: var(--hv-hemel-gloed-dekking, 1); }
 /* тихе небо інших сторінок: лише натяк фази вгорі, далі — папір */
 .hv-doek:not(.is-speciaal).hv-hemel--stil .hv-hemel { background: linear-gradient(180deg, color-mix(in srgb, var(--hv-hemel-boven) 55%, var(--bg)) 0, var(--bg) 320px); }
@@ -56,11 +60,14 @@
 /* посилання в реченні: тонка риска, повний акцент — лише під рукою чи фокусом */
 .hv-zinlink {
   display: inline; padding-block: 10px; font: inherit; letter-spacing: inherit; color: inherit; cursor: pointer; border-radius: 6px;
-  text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 6px; text-decoration-color: color-mix(in srgb, var(--text) 45%, transparent);
   transition: text-decoration-color var(--hv-duur-1);
 }
-.hv-zinlink:focus-visible { text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.hv-zinlink:focus-visible { text-decoration-style: solid; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
 .theme-inkt .hv-zinlink { text-decoration-style: dotted; text-decoration-thickness: 2px; text-decoration-color: var(--text); }
+@media (hover: hover) {
+  .hv-zinlink:hover { text-decoration-style: solid; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+}
 .hv-held__chips { display: flex; align-items: center; gap: var(--ruimte-2); overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--hv-rand) * -1); padding-inline: var(--hv-rand); }
 .hv-held__chips::-webkit-scrollbar { display: none; }
 .hv-held__chips > span { display: inline-flex; align-items: center; flex: none; }
@@ -157,15 +164,42 @@
 @container thuis (min-width: 1040px) {
   .hv-thuis__rooster { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); column-gap: var(--ruimte-5); }
   .hv-thuis__nu, .hv-thuis__breed { grid-column: 1 / -1; }
-  /* «Зараз важливо»: записи стовпцями з лінією між ними */
-  .hv-blok--nu .hv-nu { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); padding-inline: 0; }
+  /* «Зараз важливо»: записи двома стовпцями з лінією між ними; непарний останній запис — на всю ширину (без «сироти») */
+  .hv-blok--nu .hv-nu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: 0; }
   .hv-blok--nu .hv-nu__rij { border-block-start: 0; padding-inline: var(--ruimte-4); }
   .hv-blok--nu .hv-nu__rij:nth-child(even) { border-inline-start: 1px solid var(--line); }
   .hv-blok--nu .hv-nu__rij:nth-child(n+3), .hv-blok--nu .hv-nu__meer { border-block-start: 1px solid var(--line); }
+  .hv-blok--nu .hv-nu__rij:nth-child(odd):last-child { grid-column: 1 / -1; }
+  .hv-blok--nu .hv-nu__rij:nth-child(odd):has(+ .hv-nu__meer) { grid-column: 1 / -1; }
   .hv-blok--nu .hv-nu__meer { grid-column: 1 / -1; padding-inline: var(--ruimte-4); }
+  /* «Сцени» — рядком на всю ширину; під ними дві колонки однакової висоти: «Обране» і «Кімнати» */
+  .hv-thuis__rooster { align-items: stretch; }
+  .hv-thuis__rooster > .hv-thuis__links { display: contents; }
+  .hv-thuis__rooster .hv-blok--scenes { grid-column: 1 / -1; }
+  .hv-thuis__rooster .hv-blok--favorieten { grid-column: 1; grid-template-rows: auto minmax(0, 1fr); }
+  .hv-thuis__rooster > .hv-thuis__rechts { grid-column: 2; grid-template-rows: minmax(0, 1fr); align-content: stretch; }
+  .hv-blok--favorieten > .hv-blok__inhoud { grid-template-rows: minmax(0, 1fr); }
+  .hv-blok--favorieten .hv-tegels { align-content: stretch; }
+  .hv-thuis__rechts > .hv-blok--kamers { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
+  .hv-blok--kamers > .hv-blok__inhoud { grid-template-rows: auto minmax(0, 1fr); }
+  /* картки кімнат ділять зайву висоту порівну; картка без фактів лишається компактною */
+  .hv-blok--kamers .hv-kamers { align-content: stretch; }
+  .hv-blok--kamers .hv-kamerkaart.is-kort { align-self: start; }
 }
 @container thuis (min-width: 1700px) {
   .hv-thuis__rooster { grid-template-columns: minmax(0, 6fr) minmax(0, 6fr); }
+}
+/* «Обране»: ряди однакової висоти (за найвищою плиткою з керуванням); дві плитки-рядки стоять стосом у висоту однієї
+   плитки з керуванням — під ними не лишається діри */
+.hv-tegels__stapel { display: contents; }
+@container doek (min-width: 700px) {
+  .hv-blok--favorieten .hv-tegels { grid-auto-rows: minmax(var(--hv-rij), 1fr); }
+  .hv-tegels__stapel { display: grid; grid-row: span 2; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--hv-kier); min-inline-size: 0; }
+  .hv-tegels__stapel > .hv-tegel { min-block-size: 0; }
+  /* широкі екрани: розріз дому постійно стоїть у бічній зоні — у герої й блоком він не повторюється */
+  .heeft-zij .hv-held__beeld, .heeft-zij .hv-thuis__rooster > .hv-thuis__doorsnede { display: none; }
+  .heeft-zij .hv-held__raam { grid-template-columns: minmax(0, 1fr); }
+  .heeft-zij .hv-held__zin { max-inline-size: 30em; }
 }
 @container doek (min-width: 700px) {
   .hv-thuis { gap: var(--ruimte-5); }

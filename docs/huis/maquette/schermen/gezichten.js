@@ -12,6 +12,7 @@
     if (w.nood) return { woord: t('тривога', 'alarm'), toon: 'alarm' };
     if (w.gegevens === 'geen') return { woord: HV.woord.geenVerbinding(), toon: 'oud' };
     var z = HV.huiszin(ctx);
+    if (z.toon === 'alarm') return { woord: t('тривога', 'alarm'), toon: 'alarm' };
     return z.toon === 'aandacht' ? { woord: t('потрібна увага', 'aandacht nodig'), toon: 'let-op' } : { woord: t('спокійно', 'rustig'), toon: 'rust' };
   }
   function saldo(w) {
@@ -46,8 +47,16 @@
       '<p class="hv-gezicht__toestand">' + HV.euro(HV.tarief.prijs(ctx.staat.tijd)) + ' ' + h(t('за кВт·год', 'per kWh')) + '</p>';
   } });
   HV.gezicht({ id: 'horloge-meldingen', profiel: 'horloge', titel: ['Тривоги', 'Alarmen'], render: function (ctx) {
-    var nu = ctx.staat.nu;
-    return kop(ctx, h(t('Увага', 'Aandacht'))) + '<p class="hv-gezicht__getal">' + nu.length + '</p><p class="hv-gezicht__toestand">' + h(nu.length ? HV.p(nu[0].tekst) : t('нічого не чекає', 'niets wacht')) + '</p>';
+    var w = ctx.staat, nu = w.nu, z = HV.huiszin(ctx);
+    // на найменшому екрані — коротка форма, як у герої телефона («Спальня: вікно відчинено 42 хв»), а не повне речення
+    var volgorde = { alarm: 0, verzoek: 1, aandacht: 2, info: 3 };
+    var eerste = nu.slice().sort(function (a, b) { return volgorde[a.soort] - volgorde[b.soort]; })[0];
+    var open = HV.kijk.open().map(function (x) { return x.apparaat.id; });
+    var kort = !eerste ? t('нічого не чекає', 'niets wacht')
+      : eerste.kort ? HV.p(eerste.kort)
+      : (z.toon === 'alarm' && eerste.soort === 'alarm') || (z.toon === 'aandacht' && eerste.doel && open.indexOf(eerste.doel) >= 0) ? z.kort
+      : HV.p(eerste.tekst);
+    return kop(ctx, h(t('Увага', 'Aandacht'))) + '<p class="hv-gezicht__getal">' + nu.length + '</p><p class="hv-gezicht__toestand">' + h(kort) + '</p>';
   } });
 
   // ── strook 1920×480 / 1280×400: час │ сальдо й ціна │ потоки (кільце) │ винятки │ обране; стрічка доби внизу ──
@@ -152,7 +161,7 @@
       '<div class="hv-tv__rij">' +
       kaart('thermometer', t('Вітальня', 'Woonkamer'), HV.maat(th.temperatuur, '°C', 1), th.verwarmt ? HV.woord.verwarmt() : t('тримає', 'houdt vast'), 'kamers') +
       kaart('zap', t('Енергія', 'Energie'), s.getal, s.woord, 'energie') +
-      kaart('shield', t('Безпека', 'Beveiliging'), '<span class="hv-tv__woord">' + h(HV.p(HV.alarmWoord[w.apparaten.alarm.st.stand]).split(': ')[1]) + '</span>', w.apparaten.voordeurslot.st.vergrendeld ? t('двері замкнено', 'deuren op slot') : t('двері відімкнено', 'deur van het slot'), 'beveiliging') +
+      kaart('shield', t('Безпека', 'Beveiliging'), '<span class="hv-tv__woord">' + h(HV.p(HV.alarmWoord[w.apparaten.alarm.st.stand]).split(': ')[1]) + '</span>', w.apparaten.voordeurslot.st.vergrendeld ? t('двері замкнено', 'deur op slot') : t('двері відімкнено', 'deur van het slot'), 'beveiliging') +
       kaart('car', t('Авто', 'Auto'), HV.maat(Math.round(ev.lading), '%'), w.apparaten.laadpaal.st.laadt ? HV.woord.laadt() : HV.maatTekst(ev.bereik, t('км', 'km')), 'garage') +
       kaart(weer.icoon, t('Надворі', 'Buiten'), HV.maat(w.weer.temp, '°C'), weer.tekst.split(', ')[1] || '', 'overzicht') +
       '</div></div>';

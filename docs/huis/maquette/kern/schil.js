@@ -75,16 +75,31 @@
     if (r.blad) { delen.push('blad', r.blad.type); if (r.blad.id) { delen.push(r.blad.id); if (r.blad.deel) delen.push(r.blad.deel); } }
     return delen.join('-');
   }
+  // Крок «назад» після закриття аркуша виконується не одразу: поки він у дорозі, нова адреса чекає на нього,
+  // інакше браузер спершу додав би запис, а потім повернувся б з нього на щойно закритий аркуш.
+  var terugBezig = false, naTerug = null, terugKlok = null;
+  function terugKlaar() {
+    terugBezig = false;
+    if (terugKlok) { clearTimeout(terugKlok); terugKlok = null; }
+    var f = naTerug; naTerug = null;
+    if (f) f();
+  }
+  function schrijfHash(r, vervang) {
+    var hash = '#' + maakHash(r);
+    try {
+      if (window.location.hash === hash) return;
+      var st = geschiedenisStaat();
+      // перехід на іншу сторінку з відкритого аркуша: запис аркуша замінюється, «назад» веде на сторінку без аркуша
+      if (!vervang && st && st.hvBlad && !r.blad) vervang = true;
+      if (vervang && window.history && window.history.replaceState) window.history.replaceState(r.blad ? st : null, '', hash);
+      else window.location.hash = hash;
+    } catch (e) { /* без адреси маршрут живе в пам'яті */ }
+  }
   function zetRoute(r, vervang) {
     var vorige = route;
     route = r;
-    var hash = '#' + maakHash(r);
-    try {
-      if (window.location.hash !== hash) {
-        if (vervang && window.history && window.history.replaceState) window.history.replaceState(null, '', hash);
-        else window.location.hash = hash;
-      }
-    } catch (e) { /* без адреси маршрут живе в пам'яті */ }
+    if (terugBezig) { var eerder = naTerug; naTerug = function () { if (eerder && !vervang) eerder(); schrijfHash(r, vervang); }; }
+    else schrijfHash(r, vervang);
     if (vorige.scherm !== r.scherm || vorige.tab !== r.tab || vorige.object !== r.object) naPagina = true;
     HV.teken();
   }
@@ -92,11 +107,42 @@
   HV.route = function () { return route; };
   /** Перейти: 'kamers', 'energie-tarief', 'kamers-kamer-woonkamer'. Відкритий аркуш закривається. */
   HV.open = function (adres) { zetRoute(ontleed(adres)); };
+  // Запис історії браузера, який додав аркуш, позначено станом { hvBlad: true }: перед ним завжди стоїть та сама сторінка
+  // без аркуша. Тому закриття аркуша — це крок «назад», а не новий запис: кнопка «назад» після «×» не відкриває аркуш знову.
+  function geschiedenisStaat() { try { return window.history.state; } catch (e) { return null; } }
   /** Відкрити аркуш на поточній сторінці: 'apparaat:torsher', 'meldingen', 'kamer:woonkamer'; null — закрити. */
   HV.bladOpen = function (id, deel) {
     var r = { scherm: route.scherm, tab: route.tab, object: route.object, blad: null };
     if (id) { var p = String(id).split(':'); r.blad = { type: p[0], id: p[1] || null, deel: deel || null }; }
     if (id && !route.blad) opener = document.activeElement;
+    var hash = '#' + maakHash(r);
+    if (id && !route.blad) {
+      // новий аркуш із цієї сторінки — власний позначений запис історії
+      var duw = function () {
+        try {
+          if (window.history && window.history.pushState) { if (window.location.hash !== hash) window.history.pushState({ hvBlad: true }, '', hash); return; }
+        } catch (e) { /* без історії — звичайна адреса */ }
+        schrijfHash(r, false);
+      };
+      route = r;
+      if (terugBezig) naTerug = duw; else duw();
+      HV.teken();
+      return;
+    }
+    if (!id && route.blad) {
+      var st = geschiedenisStaat();
+      if (!terugBezig && st && st.hvBlad && window.location.hash === '#' + maakHash(route)) {
+        // сторінка без аркуша вже є в історії одразу перед цим записом: малюємо одразу й повертаємося на неї
+        route = r; HV.teken();
+        try {
+          terugBezig = true; terugKlok = setTimeout(terugKlaar, 500);
+          window.history.back();
+          return;
+        } catch (e) { terugBezig = false; clearTimeout(terugKlok); terugKlok = null; }
+      }
+      zetRoute(r, true); // аркуш відкрито прямим посиланням: його запис замінює сторінка
+      return;
+    }
     zetRoute(r, !!route.blad && !!id);
   };
   /** Адреса на справжньому сайті для поточного маршруту (граматика /розділ/вкладка?blad=…). */
@@ -262,7 +308,7 @@
   function strookHtml(ctx) {
     var w = ctx.staat;
     if (w.gegevens === 'geen') return '<div class="hv-verbinding is-geen" role="status" data-k="verbinding">' + HV.icoon('wifi-off', { maat: 's' }) + '<span>' + h(t('Немає зв’язку з домом з ', 'Geen verbinding met het huis sinds ') + HV.tijd(w.gegevensSinds || w.tijd) + t(' · показано останній знімок, лише перегляд', ' · laatste momentopname, alleen bekijken')) + '</span></div>';
-    if (w.gegevens === 'verouderd') return '<div class="hv-verbinding is-verouderd" role="status" data-k="verbinding">' + HV.icoon('refresh-cw', { maat: 's' }) + '<span>' + h(t('Потік мовчить: дані оновлюються раз на 30 с і можуть бути застарілі.', 'De stroom zwijgt: gegevens verversen elke 30 s en kunnen verouderd zijn.')) + '</span></div>';
+    if (w.gegevens === 'verouderd') return '<div class="hv-verbinding is-verouderd" role="status" data-k="verbinding">' + HV.icoon('refresh-cw', { maat: 's' }) + '<span>' + h(t('Потік мовчить: дані оновлюються раз на 30 с і можуть бути застарілі.', 'De gegevensstroom zwijgt: gegevens verversen elke 30 s en kunnen verouderd zijn.')) + '</span></div>';
     if (w.zelfGestopt) return '<div class="hv-verbinding is-gestopt" role="status" data-k="verbinding">' + HV.icoon('pause', { maat: 's' }) + '<span>' + h(t('Самостійні дії зупинено: автоматизації, агенти й оптимізація чекають.', 'Zelfstandige acties zijn gestopt: automatiseringen, agenten en optimalisatie wachten.')) + '</span>' + o.knop({ tekst: t('Відновити', 'Hervatten'), klein: true, actie: 'zelfstop', gegevens: { stop: '' } }) + '</div>';
     return '';
   }
@@ -309,6 +355,135 @@
     return '<div class="hv-gezicht hv-gezicht--' + h(g.id) + '" data-k="gezicht-' + h(g.id) + '">' + lijf + '</div>' + blader;
   }
 
+  // ───────────────────────── Бічні зони широких екранів (breed, ultrabreed) ─────────────────────────
+  // Від 1800 px полотна поруч зі сторінкою постійно стоять «дім у розрізі» й «Журнал наживо»; від 2400 px — три зони
+  // «план | вміст | Журнал». Межі зон пересуваються (ширини пам'ятає HV.opslag 'zone-breed').
+  var ZIJ = { breed: { r: [420, 480, 520] }, ultrabreed: { l: [420, 520, 640], r: [360, 440, 520] } };
+  HV.zijzones = {};
+  /** Власний вміст зони «план» для розділу: HV.zijzone('garage', function (ctx) { return html; }). Без нього — розріз дому. */
+  HV.zijzone = function (sectie, render) { HV.zijzones[sectie] = render; };
+  function zijBreedte(profielId, kant) {
+    var grens = (ZIJ[profielId] || {})[kant];
+    if (!grens) return 0;
+    var v = Number((HV.opslag.lees('zone-breed', {})[profielId] || {})[kant]);
+    return Math.max(grens[0], Math.min(grens[2], v || grens[1]));
+  }
+  function zijGreep(profielId, kant, naam) {
+    var grens = ZIJ[profielId][kant];
+    return '<div class="hv-zij__greep" role="separator" tabindex="0" aria-orientation="vertical" aria-label="' + h(t('Межа зони: ', 'Grens van de zone: ') + naam) + '" aria-valuemin="' + grens[0] + '" aria-valuemax="' + grens[2] + '" aria-valuenow="' + zijBreedte(profielId, kant) + '" data-zijgreep="' + kant + '" data-k="greep-' + kant + '"></div>';
+  }
+  function zijPlan(ctx) {
+    var s = HV.schermen[route.scherm], sectie = s ? s.sectie : 'thuis';
+    var eigen = HV.zijzones[sectie], lijf = '';
+    if (eigen) { try { lijf = eigen(ctx) || ''; } catch (e) { if (window.console) console.error('[maquette] zijzone ' + sectie + ': ' + (e && e.stack ? e.stack : e)); lijf = ''; } }
+    if (lijf) return lijf;
+    var naarKaart = sectie === 'garage';
+    return '<section class="hv-zijkaart hv-zijkaart--plan" data-k="zij-plan" aria-label="' + h(t('Дім у розрізі', 'Huis in doorsnede')) + '">' +
+      '<header class="hv-zijkaart__kop"><h2>' + h(t('Дім у розрізі', 'Huis in doorsnede')) + '</h2>' +
+      o.knop({ tekst: naarKaart ? t('Мапа', 'Kaart') : t('План', 'Plattegrond'), icoon: naarKaart ? 'map' : 'layout-grid', soort: 'stil', klein: true, actie: 'ga', gegevens: { naar: naarKaart ? 'garage-kaart' : 'kamers-plattegrond' }, aria: naarKaart ? t('Відкрити мапу ділянки й околиць', 'De kaart van perceel en buurt openen') : t('Відкрити план дому', 'De plattegrond van het huis openen') }) + '</header>' +
+      HV.hemel.doorsnede(ctx) + '</section>';
+  }
+  function zijKamers(ctx) {
+    var w = ctx.staat;
+    var rijen = w.kamers.map(function (k) {
+      var temp = HV.kijk.temperatuur(k.id), aan = HV.kijk.lampenAan(k.id).length, lampen = HV.kijk.lampen(k.id).length;
+      var sub = lampen ? (aan ? t('світло: ', 'licht: ') + aan + ' ' + t('з', 'van') + ' ' + lampen : t('світло вимкнено', 'licht uit')) : '';
+      return o.rij({ icoon: k.icoon, naam: HV.p(k.naam), sub: sub, waarde: temp ? HV.maat(temp.st.waarde, '°C', 1) : null, actie: 'ga', gegevens: { naar: 'kamers-kamer-' + k.id }, k: 'zij-kamer-' + k.id });
+    }).join('');
+    return '<section class="hv-zijkaart hv-zijkaart--kamers" data-k="zij-kamers" aria-label="' + h(t('Кімнати', 'Kamers')) + '"><header class="hv-zijkaart__kop"><h2>' + h(t('Кімнати', 'Kamers')) + '</h2><span class="hv-blok__teller">' + w.kamers.length + '</span></header>' +
+      '<div class="hv-zijkaart__rol"><div class="hv-rijen">' + rijen + '</div></div></section>';
+  }
+  function zijLog(ctx) {
+    var w = ctx.staat, live = w.gegevens === 'live';
+    var openId = HV.ui.lees('bericht', null);
+    var lijst = w.logboek.slice(0, 8);
+    return '<section class="hv-zijkaart hv-zijkaart--log" data-k="zij-log" aria-label="' + h(live ? t('Журнал наживо', 'Logboek live') : t('Журнал', 'Logboek')) + '">' +
+      '<header class="hv-zijkaart__kop"><h2>' + h(live ? t('Журнал наживо', 'Logboek live') : t('Журнал', 'Logboek')) + '</h2>' + o.versheid(w) +
+      o.knop({ tekst: t('Увесь', 'Alles'), icoon: 'bell', soort: 'stil', klein: true, actie: 'ga', gegevens: { naar: 'activiteit' }, aria: t('Відкрити Журнал', 'Het logboek openen') }) + '</header>' +
+      '<div class="hv-zijkaart__rol">' + (lijst.length ? '<ul class="hv-berichten">' + lijst.map(function (r) { return o.bericht(r, { open: openId === r.id, zonderSim: true }); }).join('') + '</ul>'
+        : o.leeg({ icoon: 'bell', titel: t('Записів ще немає', 'Nog geen regels') })) + '</div></section>';
+  }
+  /** Розмітка бічних зон для профілю: { links, rechts } або null. */
+  function zijHtml(ctx) {
+    var id = ctx.profiel.id;
+    if (!ZIJ[id] || ctx.profiel.speciaal) return null;
+    if (id === 'ultrabreed') return { links: zijPlan(ctx) + zijKamers(ctx) + zijGreep(id, 'l', t('план', 'plattegrond')), rechts: zijGreep(id, 'r', t('Журнал', 'logboek')) + zijLog(ctx) };
+    return { links: '', rechts: zijGreep(id, 'r', t('план і Журнал', 'plattegrond en logboek')) + zijPlan(ctx) + zijLog(ctx) };
+  }
+  function zijZet(doek, profielId) {
+    var l = zijBreedte(profielId, 'l'), r = zijBreedte(profielId, 'r');
+    if (doek.style.getPropertyValue('--hv-zij-l') !== l + 'px') doek.style.setProperty('--hv-zij-l', l + 'px');
+    if (doek.style.getPropertyValue('--hv-zij-r') !== r + 'px') doek.style.setProperty('--hv-zij-r', r + 'px');
+  }
+  function zijBewaar(profielId, kant, breedte) {
+    var alles = HV.opslag.lees('zone-breed', {});
+    var eigen = alles[profielId] || {};
+    eigen[kant] = breedte; alles[profielId] = eigen;
+    HV.opslag.schrijf('zone-breed', alles);
+  }
+  function zijSleep(ev, greep) {
+    var doek = document.getElementById('hv-doek'), profielId = HV.profiel().id, kant = greep.getAttribute('data-zijgreep');
+    var grens = (ZIJ[profielId] || {})[kant];
+    if (!grens) return;
+    ev.preventDefault();
+    var schaal = doek.getBoundingClientRect().width / doek.offsetWidth || 1;
+    var begin = ev.clientX, was = zijBreedte(profielId, kant), nu = was;
+    try { greep.setPointerCapture(ev.pointerId); } catch (e) { /* без захоплення теж працює */ }
+    greep.classList.add('is-sleept'); greep.setAttribute('data-bezig', '1'); HV.sleept = true;
+    var beweeg = function (e) {
+      var d = (e.clientX - begin) / schaal;
+      nu = Math.round(Math.max(grens[0], Math.min(grens[2], was + (kant === 'l' ? d : -d))));
+      doek.style.setProperty('--hv-zij-' + kant, nu + 'px');
+      greep.setAttribute('aria-valuenow', nu);
+    };
+    var los = function () {
+      greep.removeEventListener('pointermove', beweeg); greep.removeEventListener('pointerup', los); greep.removeEventListener('pointercancel', los);
+      greep.classList.remove('is-sleept'); greep.removeAttribute('data-bezig'); HV.sleept = false;
+      zijBewaar(profielId, kant, nu);
+      HV.teken();
+    };
+    greep.addEventListener('pointermove', beweeg); greep.addEventListener('pointerup', los); greep.addEventListener('pointercancel', los);
+    greep.focus();
+  }
+
+  // ───────────────────────── Небо, стрічки з гортанням, мова ─────────────────────────
+  /** Небо «Дому» йде разом із героєм: шар зсувається на величину прокручування, нижче лишається папір сторінки. */
+  function hemelRol(doek) {
+    var inhoud = document.getElementById('hv-inhoud'), hemel = doek.querySelector('.hv-hemel');
+    if (!inhoud || !hemel) return;
+    var vol = doek.classList.contains('hv-hemel--vol') && !doek.classList.contains('is-speciaal');
+    var y = vol ? Math.min(Math.round(inhoud.scrollTop), hemel.offsetHeight) : 0;
+    var tr = y ? 'translate3d(0,' + (-y) + 'px,0)' : '';
+    if (hemel.style.transform !== tr) hemel.style.transform = tr;
+  }
+  var ROL = '.hv-tabs, .hv-held__chips, .hv-scenes, .hv-segment--rol, .hv-kamerkop__chips';
+  /** Згасання країв стрічки, що гортається: видно, що за краєм є ще. */
+  function rolRanden(el) {
+    var meer = el.scrollWidth - el.clientWidth;
+    var begin = meer > 1 && el.scrollLeft > 1, eind = meer > 1 && el.scrollLeft < meer - 1;
+    if (el.classList.contains('is-meer-begin') !== begin) el.classList.toggle('is-meer-begin', begin);
+    if (el.classList.contains('is-meer-eind') !== eind) el.classList.toggle('is-meer-eind', eind);
+  }
+  /** Активна вкладка завжди в полі зору: після зміни вкладки стрічка стає так, щоб вона була посередині. */
+  function rolBij(doek) {
+    var lijst = doek.querySelectorAll(ROL);
+    for (var i = 0; i < lijst.length; i++) {
+      var el = lijst[i];
+      if (el.scrollWidth > el.clientWidth + 1) {
+        var actief = el.querySelector('.hv-tab.is-actief, .hv-segment__deel.is-gekozen');
+        var sleutel = actief ? route.scherm + '/' + (actief.id || actief.getAttribute('data-waarde') || actief.textContent) : '';
+        if (actief && el._actief !== sleutel) {
+          var re = el.getBoundingClientRect(), ra = actief.getBoundingClientRect();
+          var schaal = re.width / el.offsetWidth || 1;
+          el.scrollLeft = Math.max(0, (ra.left - re.left) / schaal + el.scrollLeft - (el.clientWidth - ra.width / schaal) / 2);
+        }
+        el._actief = sleutel;
+      } else el._actief = null;
+      rolRanden(el);
+    }
+  }
+  var vorigeTaal = null;
+
   function teken() {
     var doek = document.getElementById('hv-doek');
     if (!doek || !HV.staat.w) return;
@@ -316,11 +491,20 @@
     var ctx = HV.ctx(), w = ctx.staat, p = ctx.profiel;
     var thema = HV.thema();
     var s = HV.schermen[route.scherm];
+    // миттєва зміна мови: відкрита підказка й спливні сповіщення старою мовою закриваються; назва вкладки браузера — теж парою
+    if (vorigeTaal && vorigeTaal !== ctx.taal) {
+      if (HV.lagen && HV.lagen.taalGewijzigd) HV.lagen.taalGewijzigd();
+      if (!HV.bouw.artefact) { try { document.title = t('Макет «Живий дім»', 'Maquette ‘Levend huis’'); } catch (e) { /* назва лишається */ } }
+    }
+    vorigeTaal = ctx.taal;
+    var zij = zijHtml(ctx);
 
     // klassen op de wortel van het doek
     var klassen = ['hv-doek', thema === 'donker' ? 'theme-dark' : thema === 'inkt' ? 'theme-inkt' : 'theme-light', 'hv-dicht-' + ctx.dichtheid, 'hv-profiel-' + p.id, 'hv-rol-' + ctx.rol];
     if (p.speciaal) klassen.push('is-speciaal');
     else klassen.push('heeft-sim'); // макет завжди симульований: рядок hv-sim під шапкою телефона
+    if (zij) { klassen.push('heeft-zij'); if (zij.links) klassen.push('heeft-zij-links'); }
+    if (w.gegevens === 'geen') klassen.push('is-zonder-verbinding');
     if (w.nood && !w.nood.bevestigd) klassen.push('is-nood');
     if (route.blad && !p.speciaal) klassen.push('heeft-laag');
     if (HV.lagen && HV.lagen.dialoog()) klassen.push('heeft-dialoog');
@@ -337,17 +521,25 @@
     sprong = false;
 
     // schil
+    var spring = doek.querySelector('.hv-spring'), springTekst = t('Перейти до вмісту', 'Naar de inhoud');
+    if (spring && spring.textContent !== springTekst) spring.textContent = springTekst;
+    var onderbalk = document.getElementById('hv-onderbalk'), navNaam = t('Розділи', 'Onderdelen');
+    if (onderbalk.getAttribute('aria-label') !== navNaam) onderbalk.setAttribute('aria-label', navNaam);
     if (p.speciaal) {
       HV.zet(document.getElementById('hv-kop'), '');
-      HV.zet(document.getElementById('hv-onderbalk'), '');
+      HV.zet(onderbalk, '');
       HV.zet(document.getElementById('hv-pagina'), gezichtHtml(ctx));
     } else {
       HV.zet(document.getElementById('hv-kop'), kopHtml(ctx));
-      HV.zet(document.getElementById('hv-onderbalk'), onderbalkHtml(ctx));
+      HV.zet(onderbalk, onderbalkHtml(ctx));
       HV.zet(document.getElementById('hv-pagina'), strookHtml(ctx) + paginaHtml(ctx));
     }
+    if (zij) zijZet(doek, p.id);
+    HV.zet(document.getElementById('hv-zij-links'), zij && zij.links ? zij.links : '');
+    HV.zet(document.getElementById('hv-zij-rechts'), zij ? zij.rechts : '');
     var inhoud = document.getElementById('hv-inhoud');
     if (naPagina) { inhoud.scrollTop = 0; naPagina = false; doek.classList.remove('is-gerold'); }
+    hemelRol(doek);
 
     // blad
     var bladSleutel = route.blad ? route.blad.type + ':' + (route.blad.id || '') : null;
@@ -360,24 +552,61 @@
     }
 
     if (HV.lagen) HV.lagen.teken(ctx);
+    rolBij(doek);
     if (HV.pult && HV.pult.werkBij) HV.pult.werkBij(ctx);
-    if (s && document.title !== undefined && !HV.bouw.artefact) { /* назва вкладки браузера лишається сталою */ }
+    void s;
   }
 
   // ───────────────────────── Gebeurtenissen ─────────────────────────
   function gegevensVan(el) { var g = {}; for (var k in el.dataset) g[k] = el.dataset[k]; return g; }
+  function voer(naam, fn, g, el, ev) {
+    try { fn(HV.ctx(), g, el, ev); } catch (e) { if (window.console) console.error('[maquette] actie ' + naam + ': ' + (e && e.stack ? e.stack : e)); }
+  }
+  /**
+   * Без зв'язку з домом нічого не виконується й не пишеться в Журнал — не лише команди через HV.doe.
+   * Дія, про яку відомо, що вона змінює дім, не запускається зовсім. Невідома дія запускається «на пробу»: якщо вона
+   * спробувала записати щось у Журнал, світ і дозволи повертаються до знімка, її сповіщення зникають, а людина бачить
+   * «Не виконано: немає зв’язку з домом». Дії перегляду (фільтр, вкладка, масштаб) працюють як завжди.
+   */
+  function zonderVerbinding(naam, fn, g, el, ev) {
+    if (HV.actieMuteert(naam)) { HV.meldZonderVerbinding(); return; }
+    var foto = HV.staat.momentopname(), standen = JSON.stringify(HV.gevaar.standen());
+    var toosten = HV.toosten.map(function (x) { return x.id; });
+    var pogingen = HV.logboek.pogingen, geweigerd = HV.logboek.geweigerd;
+    voer(naam, fn, g, el, ev);
+    if (HV.logboek.pogingen !== pogingen) {
+      HV.staat.zetTerug(foto);
+      HV.gevaar.herstelStanden(JSON.parse(standen));
+      HV.toosten.slice().forEach(function (x) { if (toosten.indexOf(x.id) < 0) HV.toostWeg(x.id); });
+      HV.actieLeer(naam, 'muteert');
+      HV.meldZonderVerbinding();
+      HV.teken();
+    } else if (HV.logboek.geweigerd !== geweigerd) HV.actieLeer(naam, 'muteert'); // HV.doe відмовив: надалі орган малюється вимкненим
+  }
   function roep(naam, el, ev, extra) {
     var fn = HV.acties[naam];
     if (!fn) { if (window.console) console.error('[maquette] geen afhandeling voor data-actie="' + naam + '"'); return; }
     var g = gegevensVan(el);
     for (var k in extra || {}) g[k] = extra[k];
-    try { fn(HV.ctx(), g, el, ev); } catch (e) { if (window.console) console.error('[maquette] actie ' + naam + ': ' + (e && e.stack ? e.stack : e)); }
+    var w = HV.staat.w;
+    if (w && w.gegevens === 'geen') {
+      // сторінки макета всередині продукту (Система → Симулятор, Вітрина, Складники) керують самим макетом — вони працюють завжди
+      var lijf = el && el.closest ? el.closest('.hv-scherm-instellingen') : null;
+      var sim = !!lijf && Object.keys(HV.vrijeTabs).some(function (id) { return lijf.classList.contains('hv-tab-' + id); });
+      if (!sim && !HV.actieKijkt(naam) && g.fase !== 'sleep') { zonderVerbinding(naam, fn, g, el, ev); return; }
+      if (sim) { HV.logboek.vrij = true; try { voer(naam, fn, g, el, ev); } finally { HV.logboek.vrij = false; } return; }
+    }
+    voer(naam, fn, g, el, ev);
   }
 
   function klik(ev) {
     var el = ev.target.closest ? ev.target.closest('[data-actie]') : null;
     if (!el || !document.getElementById('hv-doek').contains(el)) return;
-    if (el.getAttribute('aria-disabled') === 'true') return;
+    if (el.getAttribute('aria-disabled') === 'true') {
+      // орган вимкнено через відсутність зв'язку: дотик пояснює чому
+      if (el.getAttribute('data-reden') === 'verbinding') HV.meldZonderVerbinding();
+      return;
+    }
     roep(el.getAttribute('data-actie'), el, ev);
   }
 
@@ -392,6 +621,12 @@
     baan.setAttribute('aria-valuetext', HV.maatTekst(v, baan.dataset.eenheid, Number(baan.dataset.decimalen)));
     var uit = wortel.querySelector('.hv-schuif__getal');
     if (uit) uit.innerHTML = HV.maat(v, baan.dataset.eenheid, Number(baan.dataset.decimalen));
+    // крок, що вже на межі, позначено вимкненим
+    var stappen = wortel.querySelectorAll('.hv-stap[data-actie="schuif-stap"]');
+    for (var i = 0; i < stappen.length; i++) {
+      var opGrens = Number(stappen[i].getAttribute('data-richting')) < 0 ? v <= min : v >= max;
+      if (opGrens) stappen[i].setAttribute('aria-disabled', 'true'); else if (stappen[i].getAttribute('data-reden') !== 'verbinding') stappen[i].removeAttribute('aria-disabled');
+    }
     roep(baan.dataset.schuif, baan, null, { waarde: v, fase: fase });
   }
   function rond(v, baan) {
@@ -400,7 +635,7 @@
     return Math.max(min, Math.min(max, Math.round(v * 100) / 100));
   }
   function schuifSleep(ev, baan) {
-    if (baan.getAttribute('aria-disabled') === 'true') return;
+    if (baan.getAttribute('aria-disabled') === 'true') { if (HV.zonderVerbinding() && HV.orgaanDood(baan.dataset.schuif)) HV.meldZonderVerbinding(); return; }
     ev.preventDefault();
     var wortel = baan.parentNode;
     var min = Number(baan.dataset.min), max = Number(baan.dataset.max);
@@ -434,6 +669,7 @@
     roep(schijf.dataset.wijzer, schijf, null, { waarde: v, fase: fase });
   }
   function wijzerSleep(ev, schijf) {
+    if (schijf.getAttribute('aria-disabled') === 'true') { if (HV.zonderVerbinding()) HV.meldZonderVerbinding(); return; }
     ev.preventDefault();
     var min = Number(schijf.dataset.min), max = Number(schijf.dataset.max), wortel = schijf.parentNode;
     var waarde = function (e) {
@@ -465,17 +701,35 @@
     var schijf = doel.closest('[data-wijzer]');
     if (schijf) { wijzerSleep(ev, schijf); return; }
     var rail = doel.closest('.hv-rail');
-    if (rail && HV.lagen) HV.lagen.railStart(rail, ev);
+    if (rail && HV.lagen) { HV.lagen.railStart(rail, ev); return; }
+    var greep = doel.closest('[data-zijgreep]');
+    if (greep) zijSleep(ev, greep);
   }
 
+  /** Те, на що справді стає фокус клавішею Tab: без <use href> іконок, без tabindex="-1", без прихованого. */
   function focusbaar(wortel) {
-    return Array.prototype.slice.call(wortel.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')).filter(function (e) { return !e.disabled && e.offsetParent !== null; });
+    return Array.prototype.slice.call(wortel.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')).filter(function (e) {
+      if (e.disabled || e.getAttribute('tabindex') === '-1' || e.nodeName.toLowerCase() === 'use') return false;
+      return e.getClientRects().length > 0 && window.getComputedStyle(e).visibility !== 'hidden';
+    });
   }
+  /** Верхній модальний шар: аварійний → підказка → небезпечна дія → Команда → аркуш (лише там, де під ним затемнення). */
+  function modaleLaag(doek) {
+    var dek = doek.querySelector('.hv-dek--laag');
+    return doek.querySelector('.hv-nood') || doek.querySelector('.hv-gevolg') || doek.querySelector('.hv-gevaar') || doek.querySelector('.hv-opdracht') ||
+      (route.blad && dek && window.getComputedStyle(dek).display !== 'none' ? doek.querySelector('.hv-laag') : null);
+  }
+  HV.schil = HV.schil || {};
+  HV.schil.focusbaar = focusbaar;
 
   function toets(ev) {
     var el = ev.target, doek = document.getElementById('hv-doek');
-    if (!doek || !doek.contains(el)) return;
+    if (!doek) return;
     var sleutelNaam = ev.key;
+    var buiten = !doek.contains(el);
+    // фокус поза полотном (сторінка щойно відкрита, шар з'явився сам): Tab і Escape однаково належать верхньому шару;
+    // пульт макета поза полотном лишається собі
+    if (buiten && !(el === document.body || el === document.documentElement)) return;
     // Escape: закриває верхній шар
     if (sleutelNaam === 'Escape') {
       if (HV.lagen && HV.lagen.escape()) { ev.preventDefault(); return; }
@@ -484,15 +738,28 @@
     }
     // утримання фокуса в модальному шарі
     if (sleutelNaam === 'Tab') {
-      var modaal = doek.querySelector('.hv-gevaar, .hv-opdracht, .hv-nood') || (route.blad && window.getComputedStyle(doek.querySelector('.hv-dek--laag') || doek).display !== 'none' && doek.querySelector('.hv-dek--laag') ? doek.querySelector('.hv-laag') : null);
+      var modaal = modaleLaag(doek);
       if (modaal) {
         var lijst = focusbaar(modaal);
-        if (!lijst.length) return;
+        if (!lijst.length) { ev.preventDefault(); return; }
         var eerste = lijst[0], laatste = lijst[lijst.length - 1];
-        if (!modaal.contains(el)) { ev.preventDefault(); eerste.focus(); }
-        else if (ev.shiftKey && el === eerste) { ev.preventDefault(); laatste.focus(); }
+        if (!modaal.contains(el)) { ev.preventDefault(); (ev.shiftKey ? laatste : eerste).focus(); }
+        else if (ev.shiftKey && (el === eerste || lijst.indexOf(el) < 0)) { ev.preventDefault(); laatste.focus(); }
         else if (!ev.shiftKey && el === laatste) { ev.preventDefault(); eerste.focus(); }
       }
+      return;
+    }
+    if (buiten) return;
+    // межа бічної зони: стрілки пересувають її на 16 px, Home і End — до країв
+    if (el.getAttribute && el.getAttribute('data-zijgreep')) {
+      var kant = el.getAttribute('data-zijgreep'), profielId = HV.profiel().id, grens = (ZIJ[profielId] || {})[kant];
+      var naar = null, breedte = zijBreedte(profielId, kant), zin = kant === 'l' ? 1 : -1;
+      if (!grens) return;
+      if (sleutelNaam === 'ArrowRight') naar = breedte + 16 * zin;
+      else if (sleutelNaam === 'ArrowLeft') naar = breedte - 16 * zin;
+      else if (sleutelNaam === 'Home') naar = grens[0];
+      else if (sleutelNaam === 'End') naar = grens[2];
+      if (naar != null) { ev.preventDefault(); zijBewaar(profielId, kant, Math.max(grens[0], Math.min(grens[2], naar))); HV.teken(); }
       return;
     }
     // schuif en wijzer
@@ -616,12 +883,15 @@
   HV.actie('schuif-stap', function (ctx, g, el) {
     var baan = el.parentNode.querySelector('[data-schuif]');
     if (!baan || baan.getAttribute('aria-disabled') === 'true') return;
-    var v = rond(Number(baan.getAttribute('aria-valuenow')) + Number(g.richting) * (Number(baan.dataset.stap) || 1) * (Number(baan.dataset.max) - Number(baan.dataset.min) > 50 ? 5 : 1), baan);
+    // «−/+» іде кроком повзунка; лише для дрібного кроку 1 на довгій шкалі — по 5, щоб не тиснути сто разів
+    var stap = Number(baan.dataset.stap) || 1;
+    var v = rond(Number(baan.getAttribute('aria-valuenow')) + Number(g.richting) * stap * (stap === 1 && Number(baan.dataset.max) - Number(baan.dataset.min) > 50 ? 5 : 1), baan);
     schuifZet(baan, v, 'klaar');
     HV.teken();
   });
   HV.actie('wijzer-stap', function (ctx, g, el) {
     var schijf = el.closest('.hv-wijzer').querySelector('[data-wijzer]');
+    if (schijf.getAttribute('aria-disabled') === 'true') return;
     wijzerZet(schijf, rond(Number(schijf.getAttribute('aria-valuenow')) + Number(g.richting) * (Number(schijf.dataset.stap) || 0.5), schijf), 'klaar');
     HV.teken();
   });
@@ -635,7 +905,7 @@
   });
 
   // ───────────────────────── Start ─────────────────────────
-  HV.schil = {};
+  HV.schil = HV.schil || {};
   HV.naScenario = function () { sprong = true; naPagina = true; HV.teken(); };
 
   HV.start = function () {
@@ -648,6 +918,7 @@
       '<button type="button" class="hv-spring" data-actie="spring">' + h(t('Перейти до вмісту', 'Naar de inhoud')) + '</button>' +
       '<header class="hv-kop" id="hv-kop"></header>' +
       '<main class="hv-inhoud" id="hv-inhoud" tabindex="-1"><div class="hv-pagina" id="hv-pagina"></div></main>' +
+      '<aside class="hv-zij hv-zij--links" id="hv-zij-links"></aside><aside class="hv-zij hv-zij--rechts" id="hv-zij-rechts"></aside>' +
       '<nav class="hv-onderbalk" id="hv-onderbalk" aria-label="' + h(t('Розділи', 'Onderdelen')) + '"></nav>' +
       '<div class="hv-lagen" id="hv-lagen"><div id="hv-laagplek"></div><div id="hv-gevolgplek"></div><div id="hv-dialoogplek"></div><div class="hv-toosten" id="hv-toosten" aria-live="polite" aria-relevant="additions"></div><div id="hv-noodplek"></div></div>';
 
@@ -664,11 +935,32 @@
     document.getElementById('hv-inhoud').addEventListener('scroll', function () {
       var rol = this.scrollTop > 72;
       if (doek.classList.contains('is-gerold') !== rol) doek.classList.toggle('is-gerold', rol);
+      hemelRol(doek);
     }, { passive: true });
-    window.addEventListener('hashchange', function () {
+    // гортання стрічок (вкладки, чипи, сцени): подія scroll не спливає, тому ловимо її на шляху вниз
+    doek.addEventListener('scroll', function (ev) { var el = ev.target; if (el && el.matches && el.matches(ROL)) rolRanden(el); }, { passive: true, capture: true });
+    var volgAdres = function () {
       var r = ontleed(window.location.hash);
       if (maakHash(r) !== maakHash(route)) { if (r.scherm !== route.scherm || r.tab !== route.tab || r.object !== route.object) naPagina = true; route = r; HV.teken(); }
-    });
+    };
+    var vooruitKlok = null;
+    var adresGewijzigd = function () {
+      if (terugBezig) terugKlaar();
+      var zelfde = maakHash(ontleed(window.location.hash)) === maakHash(route);
+      // поки адреса повертається «вперед» після закритого діалогу, проміжні події не міняють маршрут
+      if (vooruitKlok) { if (zelfde) { clearTimeout(vooruitKlok); vooruitKlok = null; } return; }
+      // «назад» під відкритим діалогом (небезпечна дія, Команда): діалог закривається, сторінка під ним лишається тією самою
+      if (HV.lagen && HV.lagen.dialoog() && !zelfde) {
+        HV.lagen.escape();
+        if (HV.lagen.dialoog()) HV.lagen.escape();
+        try { window.history.forward(); } catch (e) { /* адреса лишається попередньою */ }
+        vooruitKlok = setTimeout(function () { vooruitKlok = null; volgAdres(); }, 400);
+        return;
+      }
+      volgAdres();
+    };
+    window.addEventListener('hashchange', adresGewijzigd);
+    window.addEventListener('popstate', adresGewijzigd);
     window.addEventListener('resize', function () { if (HV.pult.pas) HV.pult.pas(); HV.teken(); });
     try {
       var mq = window.matchMedia('(prefers-color-scheme: dark)');

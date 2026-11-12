@@ -394,15 +394,28 @@
         uit += '<line class="hv-plan__deur" x1="' + R(x) + '" y1="' + R(y) + '" x2="' + R(x + d.zwaai * l) + '" y2="' + R(y) + '"/><path class="hv-plan__boog" d="M' + R(x) + ' ' + R(y + l) + 'A' + R(l) + ' ' + R(l) + ' 0 0 ' + (d.zwaai > 0 ? 0 : 1) + ' ' + R(x + d.zwaai * l) + ' ' + R(y) + '"/>';
       }
     });
-    // сходи: щаблі
+    // сходи: щаблі й лінія ходу — лише над майданчиком підпису, щоб риски не перекреслювали слово
     v.vlakken.forEach(function (f) {
       if (f.soort !== 'trap') return;
-      var n = Math.round((f.b > f.h ? f.b : f.h) / 0.28);
+      var tm = trapMaat(f, S), P = function (n) { return n.toFixed(1); };
+      var x0 = f.x * S, y0 = f.y * S, b = f.b * S, hoog = f.h * S - tm.band, y1 = y0 + hoog;
+      var staand = f.h >= f.b;
+      var n = Math.max(2, Math.round((staand ? hoog : b) / S / 0.28));
       for (var i = 1; i < n; i++) {
-        if (f.h >= f.b) uit += '<line class="hv-plan__trede" x1="' + R(f.x) + '" y1="' + R(f.y + i * f.h / n) + '" x2="' + R(f.x + f.b) + '" y2="' + R(f.y + i * f.h / n) + '"/>';
-        else uit += '<line class="hv-plan__trede" x1="' + R(f.x + i * f.b / n) + '" y1="' + R(f.y) + '" x2="' + R(f.x + i * f.b / n) + '" y2="' + R(f.y + f.h) + '"/>';
+        if (staand) uit += '<line class="hv-plan__trede" x1="' + P(x0) + '" y1="' + P(y0 + i * hoog / n) + '" x2="' + P(x0 + b) + '" y2="' + P(y0 + i * hoog / n) + '"/>';
+        else uit += '<line class="hv-plan__trede" x1="' + P(x0 + i * b / n) + '" y1="' + P(y0) + '" x2="' + P(x0 + i * b / n) + '" y2="' + P(y1) + '"/>';
       }
-      uit += '<path class="hv-plan__looplijn" d="M' + R(f.x + f.b / 2) + ' ' + R(f.y + f.h - 0.3) + 'L' + R(f.x + f.b / 2) + ' ' + R(f.y + 0.5) + 'm-6 8l6 -8l6 8"/>';
+      // край майданчика
+      if (tm.band) uit += '<line class="hv-plan__trede hv-plan__trede--rand" x1="' + P(x0) + '" y1="' + P(y1) + '" x2="' + P(x0 + b) + '" y2="' + P(y1) + '"/>';
+      // лінія ходу: кружок на початку, стрілка в кінці
+      var pijl = Math.min(6, Math.max(3.5, b / 8));
+      if (staand) {
+        var cx = x0 + b / 2, van = y1 - Math.min(0.3 * S, hoog * 0.12), tot = y0 + Math.min(0.5 * S, hoog * 0.2);
+        if (van - tot > 14) uit += '<circle class="hv-plan__loopstart" cx="' + P(cx) + '" cy="' + P(van) + '" r="2.2"/><path class="hv-plan__looplijn" d="M' + P(cx) + ' ' + P(van) + 'L' + P(cx) + ' ' + P(tot) + 'm-' + P(pijl) + ' ' + P(pijl * 1.35) + 'l' + P(pijl) + ' -' + P(pijl * 1.35) + 'l' + P(pijl) + ' ' + P(pijl * 1.35) + '"/>';
+      } else {
+        var cy = y0 + hoog / 2, vanX = x0 + Math.min(0.3 * S, b * 0.12), totX = x0 + b - Math.min(0.5 * S, b * 0.2);
+        if (totX - vanX > 14 && hoog > 12) uit += '<circle class="hv-plan__loopstart" cx="' + P(vanX) + '" cy="' + P(cy) + '" r="2.2"/><path class="hv-plan__looplijn" d="M' + P(vanX) + ' ' + P(cy) + 'L' + P(totX) + ' ' + P(cy) + 'm-' + P(pijl * 1.35) + ' -' + P(pijl) + 'l' + P(pijl * 1.35) + ' ' + P(pijl) + 'l-' + P(pijl * 1.35) + ' ' + P(pijl) + '"/>';
+      }
     });
     // схил даху на горищі
     if (v.schuin) v.schuin.forEach(function (y) { uit += '<line class="hv-plan__schuin" x1="0" y1="' + R(y) + '" x2="' + R(v.b) + '" y2="' + R(y) + '"/>'; });
@@ -417,6 +430,15 @@
     }
     return '<svg class="hv-plan__lijnen" width="' + R(v.b) + '" height="' + R(v.h) + '" viewBox="0 0 ' + R(v.b) + ' ' + R(v.h) + '" aria-hidden="true" focusable="false">' + uit + '</svg>';
   }
+  /** Сходи: висота майданчика під підпис (px) і чи вміщається слово (вузька клітинка — знак сходів замість слова). */
+  function trapMaat(f, S) {
+    var b = f.b * S, hoog = f.h * S;
+    var band = hoog >= 64 ? 22 : hoog >= 44 ? 18 : 0;
+    var naam = HV.p(f.naam || ['', '']);
+    return { band: band, icoon: b < 60 || naam.length * 9 + 12 > b };
+  }
+  // власний знак сходів (у lucide такого немає): три сходинки, колір — від тексту
+  var TRAP_TEKEN = '<svg class="hv-plan__trapteken" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M1.5 13.5h4v-3.5h3.5V6.5h3.5V3h2"/></svg>';
   var verdiepingVan = function (a) { var k = HV.staat.kamer(a.kamer); return k ? k.verdieping : null; };
   var opVerdieping = function (a, v) { return PLAN[verdiepingVan(a)] === v; };
 
@@ -490,7 +512,17 @@
     var vlakHtml = v.vlakken.map(function (f) {
       var st = 'left:' + (f.x * S).toFixed(1) + 'px;top:' + (f.y * S).toFixed(1) + 'px;width:' + (f.b * S).toFixed(1) + 'px;height:' + (f.h * S).toFixed(1) + 'px';
       if (f.naar) return '<button type="button" class="hv-plan__vlak hv-plan__vlak--' + f.soort + '" style="' + st + '" data-actie="plan-verdieping" data-waarde="' + f.naar + '" data-k="pv-' + f.soort + '" aria-label="' + h(HV.p(f.naam) + '. ' + t('Перейти на перший поверх', 'Naar de begane grond')) + '"><span class="hv-plan__naam">' + h(HV.p(f.naam)) + '</span><span class="hv-plan__sub">' + h(t('3 поверхи · відкрити план', '3 verdiepingen · plattegrond openen')) + '</span></button>';
+      // сходи: підпис живе окремо — над лініями креслення, на майданчику без щаблів (див. trapHtml)
+      if (f.soort === 'trap') return '<div class="hv-plan__vlak hv-plan__vlak--trap" style="' + st + '" aria-hidden="true"></div>';
       return '<div class="hv-plan__vlak hv-plan__vlak--' + f.soort + '" style="' + st + '" aria-hidden="true"><span class="hv-plan__naam">' + h(HV.p(f.naam)) + '</span></div>';
+    }).join('');
+    // підпис сходів: смуга-майданчик унизу клітинки, поверх ліній; вузька клітинка — знак сходів замість слова
+    var trapHtml = v.vlakken.map(function (f, i) {
+      if (f.soort !== 'trap') return '';
+      var tm = trapMaat(f, S);
+      if (!tm.band) return '';
+      return '<span class="hv-plan__traplabel" style="left:' + (f.x * S + 1.5).toFixed(1) + 'px;top:' + (f.y * S + f.h * S - tm.band + 1).toFixed(1) + 'px;width:' + (f.b * S - 3).toFixed(1) + 'px;height:' + (tm.band - 2.5).toFixed(1) + 'px" aria-hidden="true" data-k="pv-trap' + i + '" title="' + h(HV.p(f.naam)) + '">' +
+        (tm.icoon ? TRAP_TEKEN : '<span class="hv-plan__naam">' + h(HV.p(f.naam)) + '</span>') + '</span>';
     }).join('');
     // авто на під'їзді (веде в «Гараж»)
     if (vid === 'buiten') {
@@ -515,7 +547,7 @@
     var maatLinks = '<span class="hv-plan__maat hv-plan__maat--h" style="top:' + RAND.boven + 'px;height:' + (v.h * S).toFixed(1) + 'px" aria-hidden="true"><span>' + HV.getal(v.h, 2) + ' ' + h(t('м', 'm')) + '</span></span>';
     var raster = 'background-size:' + (S / 2).toFixed(2) + 'px ' + (S / 2).toFixed(2) + 'px;background-position:' + (links + RAND.links) + 'px ' + RAND.boven + 'px';
     var grond = '<div class="hv-plan__grond' + (vid === 'buiten' ? ' hv-plan__grond--kavel' : '') + '" style="left:' + RAND.links + 'px;top:' + RAND.boven + 'px;width:' + (v.b * S).toFixed(1) + 'px;height:' + (v.h * S).toFixed(1) + 'px;transform:' + transform + '" data-k="grond-' + vid + '">' +
-      vlakHtml + kamerHtml + lijnen(v, S, B, laag, veilig) + merkHtml + '</div>';
+      vlakHtml + kamerHtml + lijnen(v, S, B, laag, veilig) + trapHtml + merkHtml + '</div>';
     var vel = '<div class="hv-plan__vel' + (B.verleden ? ' is-terugblik' : '') + '" style="width:' + velB + 'px;height:' + velH + 'px;margin-inline-start:' + links + 'px" data-k="vel">' + maatBoven + maatLinks + grond +
       (B.verleden ? '<span class="hv-plan__terugbliklabel">' + HV.icoon('history', { maat: 's' }) + h(t('Перегляд минулого · ', 'Terugblik · ') + momentTekst(w, B.T)) + '</span>' : '') + '</div>';
     var venster = '<div class="hv-plan__venster' + (zoom > 1 ? ' is-zoom' : '') + (B.verleden ? ' is-terugblik' : '') + '" style="height:' + (zoom > 1 ? Math.min(velH, Math.max(basisH, Math.min(maxH, 520))) : velH) + 'px;' + raster + '"' + (centreerVolgende ? ' data-centreer="' + Math.round(velB / 2) + ',' + Math.round(velH / 2) + '"' : '') + ' role="group" aria-label="' + h(t('План: ', 'Plattegrond: ') + HV.p(verdNaam(vid)) + '. ' + t('Той самий зміст — у списку під планом.', 'Dezelfde inhoud staat in de lijst onder de plattegrond.')) + '" data-k="venster-' + vid + '">' + vel + '</div>';
@@ -1176,7 +1208,7 @@
     var f = filterNu(), l = bewaard(), naam = naamPaar(f);
     l.push({ id: 'w' + Date.now().toString(36), naam: naam, filter: JSON.parse(JSON.stringify(f)) });
     HV.opslag.schrijf('apparaten-weergaven', l.slice(-8));
-    HV.meld({ icoon: 'bookmark', titel: t('Вигляд збережено', 'Weergave bewaard'), tekst: HV.p(naam) + t(' — лише для вас, на цьому пристрої.', ' — alleen voor jou, op dit apparaat.') });
+    HV.meld({ icoon: 'bookmark', titel: t('Вигляд збережено', 'Weergave bewaard'), tekst: HV.p(naam) + t(' — лише для вас, на цьому пристрої.', ' — alleen voor jou, op dit toestel.') });
     HV.teken();
   });
   HV.actie('app-weergave-kies', function (ctx, g) {

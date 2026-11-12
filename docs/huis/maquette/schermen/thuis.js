@@ -28,7 +28,20 @@
     return f;
   }
 
-  /** Речення дому: { vol (HTML із посиланнями), kort (текст ≤ 36 знаків), toon:'rust'|'aandacht'|'oud' }. */
+  // Тривога в реченні дому: що й де, поки датчик не заспокоївся (також після «Бачу — приглушити сирену»).
+  var NOOD_WAT = { rook: ['Дим', 'Rook'], lek: ['Вода', 'Water'] };
+  function alarmZin(w, rest) {
+    var n = w.nood, melding = w.nu.filter(function (x) { return x.soort === 'alarm'; })[0];
+    if (!n && !melding) return null;
+    var kamer = n ? HV.staat.kamer(n.kamer) : null;
+    if (!n || !kamer) return { toon: 'alarm', vol: h(HV.p(melding.tekst)) + '.' + (rest ? ' ' + hoofdletter(rest) + '.' : ''), kort: HV.p(melding.tekst) };
+    var wat = HV.p(NOOD_WAT[n.soort] || NOOD_WAT.rook) + ' ' + HV.p(kamer.waar);
+    var stand = n.bevestigd ? t('сирену приглушено, датчик ще в тривозі', 'de sirene is gedempt, de melder staat nog in alarm') : t('датчик спрацював о ', 'de melder ging af om ') + HV.tijd(n.sinds);
+    return { toon: 'alarm', vol: link('kamers-kamer-' + kamer.id, wat) + h(': ' + stand) + '.' + (rest ? ' ' + hoofdletter(rest) + '.' : ''),
+      kort: wat + (n.bevestigd ? t(': сирену приглушено', ': sirene gedempt') : t(': тривога', ': alarm')) };
+  }
+
+  /** Речення дому: { vol (HTML із посиланнями), kort (текст ≤ 36 знаків), toon:'rust'|'aandacht'|'oud'|'alarm' }. */
   function huiszin(ctx) {
     var w = ctx.staat, f = feiten(w), nl = ctx.taal === 'nl';
     if (w.gegevens === 'geen') {
@@ -36,6 +49,9 @@
       return { toon: 'oud', vol: h(t('Немає зв’язку з домом з ' + sinds + '. Показано останній знімок.', 'Geen verbinding met het huis sinds ' + sinds + '. Je ziet de laatste momentopname.')), kort: t('Немає зв’язку з ' + sinds + '.', 'Geen verbinding sinds ' + sinds + '.') };
     }
     if (w.gegevens === 'verouderd') {
+      // «було спокійно» не кажемо, якщо останнім спостереженим була тривога
+      var oudAlarm = alarmZin(w, '');
+      if (oudAlarm) return oudAlarm;
       var om = HV.tijd(w.gegevensSinds || w.tijd);
       return { toon: 'oud', vol: h(t('О ' + om + ' було спокійно; частина даних застаріла.', 'Om ' + om + ' was het rustig; een deel van de gegevens is verouderd.')), kort: t('О ' + om + ' було спокійно.', 'Om ' + om + ' was het rustig.') };
     }
@@ -57,13 +73,17 @@
     // Посиланням стає лише іменна група («у трьох кімнатах», «двері», «авто»), а не ціле підрядне речення.
     var licht = f.kamers === 0 ? h(t('світло вимкнено', 'het licht is uit')) : h(t('світло ', 'licht aan ')) + link('kamers', f.kamers <= 10 ? (nl ? IN_KAMERS_NL : IN_KAMERS_UK)[f.kamers] : t('у багатьох кімнатах', 'in veel kamers'));
     // 3. двері й охорона
-    var deur = f.slot === true ? (nl ? link('beveiliging', 'deuren') + ' op slot' : link('beveiliging', 'двері') + ' замкнено')
+    var deur = f.slot === true ? (nl ? 'de ' + link('beveiliging', 'deur') + ' op slot' : link('beveiliging', 'двері') + ' замкнено')
       : f.slot === false ? (nl ? 'de ' + link('beveiliging', 'deur') + ' is van het slot' : link('beveiliging', 'двері') + ' відімкнено') : null;
     // 4. найближча подія
     var straks = null;
     if (f.laadtTot) straks = nl ? 'de ' + link('energie-laden', 'auto') + ' laadt tot ' + HV.tijd(f.laadtTot) : link('energie-laden', 'авто') + ' заряджається до ' + HV.tijd(f.laadtTot);
     else if (f.was) straks = h(HV.p(f.was.naam).toLowerCase() + t(' завершить за ', ' is klaar over ') + HV.duur(f.was.st.rest));
     else if (f.export) straks = nl ? 'de ' + link('energie', 'zon') + ' levert ' + HV.getal(f.export, 1) + ' kW aan het net' : link('energie', 'сонце') + ' віддає в мережу ' + HV.getal(f.export, 1) + ' кВт';
+
+    // 0. активна тривога стоїть першою: «спокійно» — лише коли жоден датчик не в тривозі
+    var alarm = alarmZin(w, [licht, deur].filter(Boolean).join(', '));
+    if (alarm) return alarm;
 
     var begin = f.thuis === 0 ? t('Удома нікого', 'Er is niemand thuis') : w.huisstand === 'nacht' ? t('Дім спить', 'Het huis slaapt') : t('Удома спокійно', 'Thuis is het rustig');
     if (uitzondering) {
@@ -73,7 +93,7 @@
     }
     delen = [licht, deur].filter(Boolean);
     var vol = h(begin) + ': ' + delen.join(', ') + '.' + (straks ? ' ' + hoofdletter(straks) + '.' : '');
-    kort = begin + (f.slot === true ? t(', двері замкнено.', ', deuren op slot.') : '.');
+    kort = begin + (f.slot === true ? t(', двері замкнено.', ', deur op slot.') : '.');
     return { toon: 'rust', vol: vol, kort: kort };
   }
   // Велика літера на початку рядка, що може починатися з кнопки-посилання.
@@ -89,7 +109,7 @@
    */
   HV.heldKort = function (ctx) {
     var w = ctx.staat, z = huiszin(ctx);
-    var woord = w.nood ? t('тривога', 'alarm') : z.toon === 'aandacht' ? t('увага', 'let op') : z.toon === 'oud' ? HV.woord.verouderd() : t('спокійно', 'rustig');
+    var woord = w.nood || z.toon === 'alarm' ? t('тривога', 'alarm') : z.toon === 'aandacht' ? t('увага', 'let op') : z.toon === 'oud' ? HV.woord.verouderd() : t('спокійно', 'rustig');
     var fase = HV.hemel.bereken(w, HV.thema()).fase;
     return '<span class="hv-kop__pil">' + HV.icoon(FASE_ICOON[fase] || 'sun', { maat: 's' }) + '<span class="hv-kop__fase">' + h(HV.p(DAGDEEL(HV.uur(w.tijd)))) + '</span>' +
       '<span class="hv-kop__woord"><span class="hv-punt">·</span>' + h(woord) + '</span><span class="hv-kop__tijd"><span class="hv-punt">·</span>' + HV.tijd(w.tijd) + '</span></span>';
@@ -192,6 +212,24 @@
       samenvatting: kort ? '' : t('Доба дому від −18 до +6 годин. Ціна: світліше — дешевше; майбутнє показано лише для неба й ціни.', 'Het etmaal van het huis van −18 tot +6 uur. Prijs: lichter is goedkoper; de toekomst is alleen voor hemel en prijs getekend.') }) + '</div>';
   };
 
+  /**
+   * Плитки «Обраного». Плитка з керуванням займає два ряди сітки; дві сусідні плитки-рядки стають стосом тієї самої
+   * висоти (hv-tegels__stapel), тож під ними не лишається діри. На телефоні стос розчиняється (display: contents).
+   */
+  function favorietenTegels(w) {
+    var uit = '', rij = [];
+    var sluit = function () { if (rij.length) { uit += rij.length > 1 ? '<div class="hv-tegels__stapel" data-k="stapel-' + h(rij[0].id) + '">' + rij.map(tegel).join('') + '</div>' : tegel(rij[0]); rij = []; } };
+    var tegel = function (a) { return o.tegel(a, { metKamer: true, bediening: true }); };
+    w.favorieten.forEach(function (id) {
+      var a = w.apparaten[id];
+      if (!a) return;
+      if (HV.tegelMetBediening(a)) { sluit(); uit += tegel(a); }
+      else { rij.push(a); if (rij.length === 2) sluit(); }
+    });
+    sluit();
+    return uit;
+  }
+
   function render(ctx) {
     var w = ctx.staat, z = huiszin(ctx);
     var datum = h(HV.datum(w.tijd)) + ' <span class="hv-punt">·</span> <span class="hv-held__tijd">' + HV.tijd(w.tijd) + '</span> <span class="hv-held__huistijd">' + HV.icoon('flask-conical', { maat: 'maker' }) + h(t('небо за часом дому', 'hemel volgt huistijd')) + '</span>';
@@ -212,7 +250,7 @@
       inhoud: '<div class="hv-scenes">' + w.scenes.map(function (s) { return o.scene(s, w.sceneActief === s.id); }).join('') + '</div>' });
 
     var favorieten = o.blok({ id: 'favorieten', titel: t('Обране', 'Favorieten'), klas: 'hv-blok--favorieten',
-      inhoud: w.favorieten.length ? '<div class="hv-tegels">' + w.favorieten.map(function (id) { return o.tegel(w.apparaten[id], { metKamer: true, bediening: true }); }).join('') + '</div>'
+      inhoud: w.favorieten.length ? '<div class="hv-tegels">' + favorietenTegels(w) + '</div>'
         : o.leeg({ icoon: 'lightbulb', titel: t('Обране ще порожнє', 'Nog geen favorieten'), tekst: t('Додайте головне світло, термостат і вхідні двері — вони будуть під рукою на кожному екрані.', 'Voeg de hoofdlamp, de thermostaat en de voordeur toe — ze staan dan op elk scherm bij de hand.'), actie: { tekst: t('Зібрати автоматично', 'Automatisch samenstellen'), actie: 'favorieten-auto' } }) });
 
     var verdieping = HV.ui.lees('verdieping', 'beneden');

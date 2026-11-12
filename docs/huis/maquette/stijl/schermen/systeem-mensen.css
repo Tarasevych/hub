@@ -47,7 +47,9 @@
 .hv-sm-kop__zin { font-size: var(--hv-tekst-kop); line-height: var(--hv-regel-kop); font-weight: var(--hv-gewicht-kop); letter-spacing: -0.015em; color: var(--text); text-wrap: balance; }
 .hv-sm-kop__sub { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); text-wrap: pretty; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
 .hv-sm-kop__sub strong { color: var(--text); }
-.hv-sm-kop__chips { grid-area: chips; display: flex; flex-wrap: wrap; gap: 0 var(--ruimte-2); min-inline-size: 0; }
+.hv-sm-kop__chips { grid-area: chips; display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-2); min-inline-size: 0; }
+.hv-sm-kop__rest { display: inline-flex; align-items: center; gap: 4px; padding-inline: var(--ruimte-1); font-size: var(--tekst-mini); color: var(--muted); }
+.hv-sm-kop__rest > .hv-ic { opacity: 0.7; }
 .hv-sm-kop__acties { grid-area: acties; display: flex; flex-wrap: wrap; align-items: center; gap: var(--hv-doel-kier); min-inline-size: 0; }
 .hv-sm-kop__acties .hv-segment { flex: 1 1 260px; }
 @container sm (min-width: 760px) {
@@ -298,29 +300,86 @@
 .hv-sm-stroom figcaption { font-size: var(--tekst-mini); color: var(--muted); }
 
 /* ───────────── Дозволи: реєстр ───────────── */
-.hv-sm-filters { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; }
-.hv-sm-filters__rij { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2); }
+.hv-sm-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-2); padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-sm-filters__rij { min-inline-size: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2); }
 .hv-sm-filters__rij > .hv-filter { flex: 1 1 320px; min-inline-size: 0; }
 .hv-sm-filters__rij > .hv-segment { flex: 0 1 300px; }
 .hv-sm-uitvoerders { padding-block-end: var(--ruimte-1); border-block-end: 1px solid var(--line); }
 @container sm (max-width: 699px) { .hv-sm-uitvoerders { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--ruimte-4) * -1); padding-inline: var(--ruimte-4); scroll-padding-inline: var(--ruimte-4); } .hv-sm-uitvoerders::-webkit-scrollbar { display: none; } }
+/* телефон: рівні — один рядок, що гортається (як виконавці), а не чотири рядки чипів */
+@container sm (max-width: 699px) { .hv-sm-filters__rij > .hv-sm-niveaus { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--ruimte-4) * -1); padding-inline: var(--ruimte-4); scroll-padding-inline: var(--ruimte-4); } .hv-sm-niveaus::-webkit-scrollbar { display: none; } }
 .hv-sm-scheiding { flex: none; align-self: center; inline-size: 1px; block-size: 24px; margin-inline: var(--ruimte-1); background: var(--hv-omtrek); }
 .hv-sm-chip--regel { font-weight: 500; }
 .hv-sm-chipmerk { display: inline-flex; align-items: center; gap: 2px; margin-inline-start: 4px; font-size: var(--tekst-mini); font-weight: 700; color: var(--warn); }
 .hv-sm-zwaar { display: grid; gap: var(--ruimte-1); }
-.hv-sm-zwaar li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: var(--ruimte-2); align-items: center; min-block-size: 48px; padding: 2px 0; border-block-end: 1px solid var(--line); }
+.hv-sm-zwaar li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-1); align-items: center; min-block-size: 48px; padding: 2px 0; border-block-end: 1px solid var(--line); }
+.hv-sm-zwaar li > .hv-uitleg { margin-inline-start: calc(var(--ruimte-2) * -1); }
+.hv-sm-zwaar li.is-kritiek > .hv-uitleg--vast { color: var(--fout-vlak); }
 .hv-sm-zwaar li:last-child { border-block-end: 0; }
-.hv-sm-zwaar__merk { display: grid; place-items: center; color: var(--warn-vlak); }
 .hv-sm-zwaar__wat { min-inline-size: 0; font-size: var(--tekst-klein); }
 .hv-sm-zwaar__sub { display: block; font-size: var(--tekst-mini); color: var(--muted); }
 .hv-sm-ogen .hv-segment__deel { white-space: nowrap; }
 
+/* ── Режими дозволу. Ієрархія: типовий «Вимкнено» — тиха риска без слова; «Питати» й «Завжди» — кольорова позначка зі словом;
+   небезпечне «Завжди» — позначка ризику. Тон ніколи не єдина ознака: поруч завжди знак і слово (або підпис для читача екрана). ── */
+.hv-sm-merk { position: relative; display: inline-flex; align-items: center; gap: 5px; min-block-size: 28px; padding-inline: 10px; border-radius: 999px; border: 1px solid transparent; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; }
+.hv-sm-merk.is-uit { padding-inline: 6px; color: var(--muted); }
+.hv-sm-merk.is-uit > .hv-ic { opacity: 0.7; }
+.hv-sm-merk.is-vragen { background: var(--info-zacht); border-color: var(--info); }
+.hv-sm-merk.is-vragen > .hv-ic { color: var(--info); }
+.hv-sm-merk.is-altijd { background: var(--ok-zacht); border-color: var(--ok); }
+.hv-sm-merk.is-altijd > .hv-ic { color: var(--ok); }
+.hv-sm-merk.is-zwaar { background: var(--warn-zacht); border-color: var(--warn); }
+.hv-sm-merk.is-zwaar > .hv-ic { color: var(--warn-vlak); }
+.hv-sm-merk.is-kritiek { background: var(--fout-zacht); border-color: var(--fout); }
+.hv-sm-merk.is-kritiek > .hv-ic { color: var(--fout-vlak); }
+
+/* компактний сегмент трьох режимів: три цілі по 44 px; вибраний типовий стан — ледь помітна рамка, винятки — кольорові */
+.hv-sm-keuzes { display: inline-grid; grid-auto-flow: column; grid-auto-columns: var(--hv-tik); flex: none; border-radius: 14px; background: var(--surface); }
+.hv-sm-keuze { position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-inline-size: var(--hv-tik); min-block-size: var(--hv-tik); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.hv-sm-keuze::before { content: ""; position: absolute; inset: 4px; z-index: -1; border-radius: 10px; border: 1px solid transparent; transition: background var(--hv-duur-1), border-color var(--hv-duur-1); }
+.hv-sm-keuze__woord { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.hv-sm-keuze.is-gekozen { color: var(--text); }
+.hv-sm-keuze.is-gekozen::before { background: var(--panel); }
+.hv-sm-keuze.is-gekozen.is-vragen::before { background: var(--info-zacht); border-color: var(--info); }
+.hv-sm-keuze.is-gekozen.is-vragen > .hv-ic { color: var(--info); }
+.hv-sm-keuze.is-gekozen.is-altijd::before { background: var(--ok-zacht); border-color: var(--ok); }
+.hv-sm-keuze.is-gekozen.is-altijd > .hv-ic { color: var(--ok); }
+.hv-sm-keuze.is-gekozen.is-zwaar::before { background: var(--warn-zacht); border-color: var(--warn); }
+.hv-sm-keuze.is-gekozen.is-zwaar > .hv-ic { color: var(--warn); }
+.hv-sm-keuze.is-gekozen.is-kritiek::before { background: var(--fout-zacht); border-color: var(--fout); }
+.hv-sm-keuze.is-gekozen.is-kritiek > .hv-ic { color: var(--fout); }
+.hv-sm-keuze.is-wacht::before { border: 2px dashed var(--text); animation: hv-puls var(--hv-duur-puls) ease-in-out infinite; }
+.hv-sm-keuze.is-fout::before { border: 2px solid var(--fout); }
+@container sm (min-width: 700px) {
+  .hv-sm-keuzes { grid-auto-columns: auto; }
+  .hv-sm-keuze { padding-inline: 14px; }
+  .hv-sm-keuze__woord { position: static; inline-size: auto; block-size: auto; overflow: visible; clip-path: none; }
+}
+
+/* гуртовий орган: тихий рядок «підпис · сегмент» */
+.hv-sm-bulk { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-1) var(--ruimte-3); min-inline-size: 0; }
+.hv-sm-bulk__label { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-sm-bulk > .hv-sm-keuzes { margin-inline-start: auto; }
+.hv-sm-kolombalk .hv-sm-bulk > .hv-sm-keuzes, .hv-sm-matrix__plak .hv-sm-bulk > .hv-sm-keuzes { margin-inline-start: 0; }
+.hv-sm-bulk__gemengd { font-weight: 500; }
+.hv-sm-bulk__gemengd::before { content: "· "; }
+
+/* лічильники групи */
+.hv-sm-som { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.hv-sm-teller.is-stil { min-inline-size: 0; padding-inline: 0; background: none; border-color: transparent; font-weight: 500; color: var(--muted); }
+.hv-sm-teller.is-vragen { background: var(--info-zacht); border-color: transparent; }
+.hv-sm-groepteken { flex: none; display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 8px; background: var(--surface); color: var(--text); }
+.hv-sm-groepteken.hv-risico--kritiek { color: var(--fout); }
+.hv-sm-groepteken.hv-risico--gevaarlijk { color: var(--warn); }
+
 /* таблиця «дія × виконавець» */
 .hv-sm-matrixvak { background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); }
-.hv-sm-matrix { inline-size: 100%; min-inline-size: calc(260px + var(--kolommen, 5) * 112px); border-collapse: separate; border-spacing: 0; font-size: var(--tekst-klein); }
-.hv-sm-matrix th, .hv-sm-matrix td { padding: 3px 4px; border-block-end: 1px solid var(--line); text-align: start; vertical-align: middle; background: var(--panel); }
+.hv-sm-matrix { inline-size: 100%; min-inline-size: calc(280px + var(--kolommen, 5) * 104px); border-collapse: separate; border-spacing: 0; font-size: var(--tekst-klein); }
+.hv-sm-matrix th, .hv-sm-matrix td { padding: 2px 4px; border-block-end: 1px solid var(--line); text-align: start; vertical-align: middle; background: var(--panel); }
+.hv-sm-matrix tbody tr:last-child > th, .hv-sm-matrix tbody tr:last-child > td { border-block-end: 0; }
 .hv-sm-matrix thead th { position: sticky; inset-block-start: 0; z-index: 2; padding-block: var(--ruimte-2); background: var(--panel); border-block-end: 1px solid var(--hv-omtrek); }
-.hv-sm-matrix tbody th[scope="row"], .hv-sm-matrix .hv-sm-matrix__actiekop { position: sticky; inset-inline-start: 0; z-index: 1; min-inline-size: 240px; max-inline-size: 320px; padding-inline: var(--ruimte-3) var(--ruimte-1); box-shadow: 1px 0 0 var(--line); }
+.hv-sm-matrix tbody th[scope="row"], .hv-sm-matrix .hv-sm-matrix__actiekop { position: sticky; inset-inline-start: 0; z-index: 1; min-inline-size: 260px; max-inline-size: 340px; padding-inline: var(--ruimte-3) var(--ruimte-1); box-shadow: 1px 0 0 var(--line); }
 .hv-sm-matrix .hv-sm-matrix__actiekop { z-index: 3; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
 .hv-sm-matrix tbody th[scope="row"] { display: table-cell; }
 .hv-sm-matrix__uknop { display: inline-flex; align-items: center; gap: 6px; inline-size: 100%; min-block-size: var(--hv-tik); padding-inline: var(--ruimte-2); border-radius: var(--straal-s); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); text-align: start; line-height: 1.2; }
@@ -329,60 +388,93 @@
 .hv-sm-matrix__pijl { flex: none; color: var(--muted); transition: transform var(--hv-duur-1); }
 [aria-expanded="true"] > .hv-sm-matrix__pijl { transform: rotate(180deg); }
 .hv-sm-matrix__kolombalk td { background: var(--surface); padding: var(--ruimte-2) var(--ruimte-3); }
-.hv-sm-kolombalk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); }
-.hv-sm-kolombalk > .hv-sm-groep { flex: 1 1 380px; }
-.hv-sm-matrix__groep th { padding: var(--ruimte-2) var(--ruimte-3); background: var(--surface); border-block-start: 1px solid var(--line); }
-.hv-sm-matrix__groepkop { position: sticky; inset-inline-start: var(--ruimte-3); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2) var(--ruimte-4); max-inline-size: calc(100cqw - 48px); }
-.hv-sm-matrix__groepknop { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); padding-inline-end: var(--ruimte-2); border-radius: var(--straal-s); font-weight: 600; color: var(--text); }
-.hv-sm-matrix__groepteken { display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 8px; background: var(--panel); color: var(--text); }
-.hv-sm-matrix__groepteken.hv-risico--kritiek { color: var(--fout); }
-.hv-sm-matrix__groepteken.hv-risico--gevaarlijk { color: var(--warn); }
-.hv-sm-matrix__groepnaam { font-size: var(--tekst-basis); font-weight: var(--hv-gewicht-kop); }
+.hv-sm-kolombalk { position: sticky; inset-inline-start: var(--ruimte-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-4); max-inline-size: calc(100cqw - 48px); }
+.hv-sm-kolombalk__wie { display: inline-flex; align-items: center; gap: 6px; }
+.hv-sm-kolombalk .hv-sm-bulk { justify-content: flex-start; }
+/* рядок групи: назва й лічильники ліворуч, зведення кожного стовпця — у його клітинці */
+.hv-sm-matrix .hv-sm-matrix__groep > th, .hv-sm-matrix .hv-sm-matrix__groep > td { background: var(--surface); }
+.hv-sm-matrix__groepknop { display: flex; align-items: center; gap: var(--ruimte-2); inline-size: 100%; min-block-size: 56px; padding-block: 4px; border-radius: var(--straal-s); color: var(--text); text-align: start; }
+.hv-sm-matrix__groepknop .hv-sm-groepteken { background: var(--panel); }
+.hv-sm-matrix__groeptekst { display: grid; gap: 3px; min-inline-size: 0; }
+.hv-sm-matrix__groepnaam { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-basis); font-weight: var(--hv-gewicht-kop); line-height: 1.2; }
 .hv-sm-matrix__groepknop[aria-expanded="false"] > .hv-sm-matrix__pijl { transform: rotate(-90deg); }
-.hv-sm-matrix__groepkop .hv-sm-groep { flex: 0 1 460px; }
+.hv-sm-matrix__groepknop[aria-expanded="true"] > .hv-sm-matrix__pijl { transform: none; }
+.hv-sm-kolomsom { position: relative; display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: 28px; padding-inline: var(--ruimte-2); font-size: var(--tekst-mini); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+.hv-sm-kolomsom.is-leeg { color: var(--muted); }
+.hv-sm-kolomsom.is-leeg > .hv-ic { opacity: 0.7; }
+.hv-sm-kolomsom__deel { display: inline-flex; align-items: center; gap: 3px; }
+.hv-sm-kolomsom__deel.is-altijd > .hv-ic { color: var(--ok); }
+.hv-sm-kolomsom__deel.is-zwaar > .hv-ic { color: var(--warn-vlak); }
+.hv-sm-kolomsom__deel.is-vragen > .hv-ic { color: var(--info); }
+.hv-sm-matrix__groepbalk > td { padding: var(--ruimte-1) var(--ruimte-3); }
+.hv-sm-matrix__plak { position: sticky; inset-inline-start: var(--ruimte-3); display: flex; max-inline-size: calc(100cqw - 48px); }
+.hv-sm-matrix__plak .hv-sm-bulk { justify-content: flex-start; }
+/* рядок дії */
 .hv-sm-matrix__th { display: flex; align-items: center; gap: var(--ruimte-1); min-inline-size: 0; }
-.hv-sm-matrix__actie { flex: 1 1 auto; display: grid; gap: 0; justify-items: start; min-inline-size: 0; min-block-size: var(--hv-tik); padding: 2px 0; text-align: start; }
+.hv-sm-matrix__actie { flex: 1 1 auto; display: grid; gap: 0; align-content: center; justify-items: start; min-inline-size: 0; min-block-size: var(--hv-tik); padding: 2px 0; text-align: start; }
 .hv-sm-matrix__th > .hv-uitleg { flex: none; }
 .hv-sm-matrix__actienaam { font-size: var(--tekst-klein); font-weight: 600; color: var(--text); line-height: 1.25; }
 .hv-sm-matrix__rij.is-open th, .hv-sm-matrix__rij.is-open td { background: var(--surface); border-block-end-color: transparent; }
-.hv-sm-cel { display: inline-flex; align-items: center; gap: 6px; inline-size: 100%; min-inline-size: 100px; min-block-size: var(--hv-tik); padding-inline: var(--ruimte-2); border-radius: var(--straal-s); font-size: var(--tekst-mini); font-weight: 600; white-space: nowrap; border: 1px solid transparent; transition: background var(--hv-duur-1), border-color var(--hv-duur-1); }
-.hv-sm-cel > span { flex: 1 1 auto; text-align: start; }
-.hv-sm-cel.is-uit { color: var(--muted); background: none; border-color: transparent; }
-.hv-sm-cel.is-uit > .hv-ic { opacity: 0.7; }
-.hv-sm-cel.is-vragen { color: var(--text); background: var(--info-zacht); }
-.hv-sm-cel.is-vragen > .hv-ic:first-child { color: var(--info); }
-.hv-sm-cel.is-altijd { color: var(--text); background: var(--ok-zacht); }
-.hv-sm-cel.is-altijd > .hv-ic:first-child { color: var(--ok); }
-.hv-sm-cel.is-zwaar { background: var(--warn-zacht); border-color: var(--warn); }
-.hv-sm-cel.is-zwaar > .hv-ic:first-child { color: var(--warn); }
-.hv-sm-cel--kritiek.is-zwaar { background: var(--fout-zacht); border-color: var(--fout); }
-.hv-sm-cel--kritiek.is-zwaar > .hv-ic:first-child { color: var(--fout); }
-.hv-sm-cel__merk { flex: none; inline-size: 16px; block-size: 16px; color: var(--warn-vlak); }
-.hv-sm-cel--kritiek .hv-sm-cel__merk { color: var(--fout-vlak); }
-.hv-sm-cel.is-gekozen { outline: 2px solid var(--text); outline-offset: 1px; }
+.hv-sm-cel { display: flex; align-items: center; inline-size: 100%; min-inline-size: 96px; min-block-size: var(--hv-tik); padding-inline: 2px; border-radius: var(--straal-s); border: 1px solid transparent; transition: background var(--hv-duur-1), border-color var(--hv-duur-1); }
+.hv-sm-cel.is-gekozen { background: var(--panel); outline: 2px solid var(--text); outline-offset: -2px; }
 .hv-sm-matrix__uitklap > td { padding: 0 var(--ruimte-3) var(--ruimte-4); background: var(--surface); }
-.hv-sm-uitklap { position: sticky; inset-inline-start: var(--ruimte-3); display: grid; gap: var(--ruimte-4); max-inline-size: calc(100cqw - 48px); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-2); animation: hv-sm-in var(--hv-duur-2) var(--hv-kromme-in); }
-@container sm (min-width: 1000px) { .hv-sm-uitklap { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr); } }
-.hv-sm-uitklap__links { display: grid; gap: var(--ruimte-3); align-content: start; }
+.hv-sm-uitklap { position: sticky; inset-inline-start: var(--ruimte-3); display: grid; gap: var(--ruimte-3); max-inline-size: calc(100cqw - 48px); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-2); animation: hv-sm-in var(--hv-duur-2) var(--hv-kromme-in); }
+.hv-sm-uitklap__links { display: grid; gap: var(--ruimte-3) var(--ruimte-5); align-items: start; }
+@container sm (min-width: 1000px) { .hv-sm-uitklap__links { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+.hv-sm-uitklap__wat, .hv-sm-uitklap__alle { display: grid; gap: var(--ruimte-2); align-content: start; min-inline-size: 0; }
+.hv-sm-uitklap__alle .hv-sm-noot { margin-block-start: 0; }
 .hv-sm-uitklap__kop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-basis); }
-.hv-sm-uitklap__rechts { display: grid; gap: 0 var(--ruimte-4); grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; }
+.hv-sm-rijen.hv-sm-uitklap__rechts { grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr)); column-gap: var(--ruimte-4); padding-block-start: var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-sm-uitklap__rechts > .hv-sm-rij { padding-inline: var(--ruimte-2); border-block-start: 0; border-radius: var(--straal-s); }
+.hv-sm-uitklap__rechts > .hv-sm-rij.is-gekozen { background: var(--surface); box-shadow: inset 0 0 0 2px var(--text); }
 
-/* hv-stand зони: стани «чекає підтвердження входу», «збережено», «не збережено» */
-.hv-sm-stand { min-inline-size: 0; }
-.hv-sm-stand.is-licht { opacity: 0.86; }
-.hv-sm-stand .hv-stand__segmenten { grid-template-columns: repeat(3, minmax(max-content, 1fr)); }
-.hv-sm-stand .hv-stand__deel { flex: 1 0 auto; }
-.hv-stand__deel.is-wacht { border: 2px dashed var(--text); animation: hv-puls var(--hv-duur-puls) ease-in-out infinite; }
-.hv-stand__deel.is-fout { border: 2px solid var(--fout); }
-.hv-sm-stand__wie { display: inline-flex; align-items: center; gap: 6px; }
-.hv-sm-stand__wie > .hv-ic { color: var(--muted); }
+/* рядок дозволу 56 px: назва (розкриває ризик і рамки) і сегмент режимів */
+.hv-sm-rijen { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: var(--ruimte-5); align-items: start; min-inline-size: 0; }
+.hv-sm-rij { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--ruimte-2); min-inline-size: 0; min-block-size: 56px; padding-block: 5px 6px; border-block-start: 1px solid var(--line); }
+.hv-sm-rijen > .hv-sm-rij:first-child { border-block-start-color: transparent; }
+@container sm (min-width: 1000px) {
+  .hv-sm-sectie .hv-sm-rijen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-sm-sectie .hv-sm-rijen > .hv-sm-rij:nth-child(2) { border-block-start-color: transparent; }
+}
+.hv-sm-rij__kop { display: grid; gap: 2px; align-content: center; justify-items: start; min-inline-size: 0; min-block-size: var(--hv-tik); border-radius: var(--straal-s); color: var(--text); text-align: start; }
+.hv-sm-rij__naam { display: inline-flex; align-items: center; gap: 4px; max-inline-size: 100%; font-size: var(--tekst-basis); font-weight: 600; line-height: 1.25; }
+.hv-sm-rij__naam > span { min-inline-size: 0; }
+.hv-sm-rij__pijl { flex: none; color: var(--muted); transition: transform var(--hv-duur-1); }
+.hv-sm-rij__kop[aria-expanded="true"] .hv-sm-rij__pijl { transform: rotate(180deg); }
+.hv-sm-rij__wie { display: inline-flex; align-items: center; gap: 6px; }
+.hv-sm-rij__wie > .hv-ic { flex: none; color: var(--muted); }
+.hv-sm-rij__sub { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--ruimte-2); font-size: var(--tekst-mini); line-height: var(--hv-regel-mini); }
+.hv-sm-rij__staat { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: var(--text); }
+.hv-sm-rij__staat::before { content: ""; flex: none; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--ok); }
+.hv-sm-rij__staat.is-vragen::before { background: var(--info); }
+.hv-sm-rij__staat.is-zwaar::before { display: none; }
+.hv-sm-rij__staat.is-zwaar > .hv-ic { color: var(--warn-vlak); }
+.hv-sm-rij__staat.is-kritiek > .hv-ic { color: var(--fout-vlak); }
+.hv-sm-rij__kader { color: var(--muted); }
+.hv-sm-rij__lees { display: inline-flex; align-items: center; min-block-size: var(--hv-tik); }
+.hv-sm-rij.is-zwaar { margin-inline: calc(var(--ruimte-2) * -1); padding-inline: var(--ruimte-2); border-radius: var(--straal-s); border-block-start-color: transparent; background: var(--warn-zacht); }
+.hv-sm-rij.is-zwaar.is-kritiek { background: var(--fout-zacht); }
+.hv-sm-rij.is-zwaar + .hv-sm-rij { border-block-start-color: transparent; }
+.hv-sm-uitklap__rechts > .hv-sm-rij.is-zwaar { margin-inline: 0; }
+@container sm (min-width: 700px) { .hv-sm-rij__staat:not(.is-zwaar) { display: none; } }
+.hv-sm-rij__meer { grid-column: 1 / -1; display: grid; gap: var(--ruimte-2); min-inline-size: 0; padding-block: var(--ruimte-1) var(--ruimte-2); animation: hv-sm-in var(--hv-duur-2) var(--hv-kromme-in); }
+.hv-sm-risicovak { display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); border: 1px solid var(--line); }
+.hv-sm-rij.is-zwaar .hv-sm-risicovak { background: var(--panel); border-color: var(--warn); }
+.hv-sm-rij.is-kritiek .hv-sm-risicovak { border-color: var(--fout); }
+.hv-sm-risicovak__kop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); }
+.hv-sm-risicovak__kop > .hv-ic { color: var(--warn-vlak); }
+.hv-sm-risicovak.is-kritiek > .hv-sm-risicovak__kop > .hv-ic { color: var(--fout-vlak); }
+.hv-sm-risicovak__teken { display: grid; place-items: center; inline-size: 24px; block-size: 24px; border: var(--hv-streep) solid var(--hv-omtrek); border-radius: 6px; color: var(--text); }
+.hv-sm-rij__gewoon { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-sm-rij__kaders { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-3); }
+.hv-sm-rij__kaders .hv-chip { font-weight: 500; }
+.hv-sm-rij__slot { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); color: var(--muted); }
 .hv-sm-standstatus { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
 .hv-sm-standstatus.is-ok { color: var(--ok); }
 .hv-sm-standstatus.is-fout { color: var(--fout); }
 .hv-sm-pauze { display: flex; align-items: center; gap: 6px; padding: 6px var(--ruimte-2); border-radius: var(--straal-s); background: var(--warn-zacht); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
-.hv-sm-standen { display: grid; padding: 0 var(--ruimte-4) var(--ruimte-2); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); }
-.hv-sm-standen > .hv-stand:first-child { border-block-start: 0; }
-.hv-sm-blokken { display: grid; gap: var(--ruimte-4); }
+
+/* один виконавець (телефон і вибір виконавця): картка виконавця й групи-картки, типово згорнуті */
 .hv-sm-lijst { display: grid; gap: var(--hv-kier); }
 .hv-sm-uitvkaart { display: grid; gap: var(--ruimte-3); }
 .hv-sm-uitvkop { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2) var(--ruimte-3); align-items: center; }
@@ -391,16 +483,23 @@
 .hv-sm-uitvkop__teken { display: grid; place-items: center; inline-size: 48px; block-size: 48px; border-radius: 14px; background: var(--surface); color: var(--text); }
 .hv-sm-uitvkop__tekst h2 { font-size: var(--tekst-basis); font-weight: var(--hv-gewicht-kop); }
 .hv-sm-uitvkop__tekst p { font-size: var(--tekst-mini); color: var(--muted); }
-
-/* груповий орган «Для всієї групи» */
-.hv-sm-groep { display: grid; gap: 4px; min-inline-size: 0; }
-.hv-sm-groep__label { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
-.hv-sm-groep__segmenten { grid-template-columns: repeat(3, minmax(max-content, 1fr)); }
-.hv-sm-groep__lees { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
-.hv-blok__extra .hv-sm-groep { min-inline-size: min(100%, 300px); }
-.hv-sm-lijst .hv-blok__kop { flex-wrap: wrap; row-gap: var(--ruimte-2); }
-.hv-sm-lijst .hv-blok__extra { flex: 1 1 100%; margin-inline-start: 0; }
-@container sm (min-width: 720px) { .hv-sm-lijst .hv-blok__extra { flex: 0 1 420px; margin-inline-start: auto; } }
+.hv-sm-uitvkaart > .hv-sm-bulk { padding-block-start: var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-sm-sleutel { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px var(--ruimte-3); margin-block-start: calc(var(--ruimte-1) * -1); font-size: var(--tekst-mini); color: var(--muted); }
+.hv-sm-sleutel > span { display: inline-flex; align-items: center; gap: 4px; }
+.hv-sm-sleutel > .is-vragen > .hv-ic { color: var(--info); }
+.hv-sm-sleutel > .is-altijd > .hv-ic { color: var(--ok); }
+@container sm (min-width: 700px) { .hv-sm-sleutel { display: none; } }
+.hv-sm-blokken { display: grid; gap: var(--ruimte-2); }
+.hv-sm-sectie { min-inline-size: 0; background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); }
+.hv-sm-sectie__kop { font-size: var(--tekst-basis); font-weight: var(--hv-gewicht-kop); }
+.hv-sm-sectie__knop { display: flex; align-items: center; gap: var(--ruimte-3); inline-size: 100%; min-block-size: 64px; padding: var(--ruimte-2) var(--ruimte-4); border-radius: var(--straal-l); color: var(--text); text-align: start; }
+.hv-sm-sectie__tekst { flex: 1 1 auto; display: grid; gap: 3px; justify-items: start; min-inline-size: 0; }
+.hv-sm-sectie__naam { display: inline-flex; align-items: center; gap: var(--ruimte-2); line-height: 1.2; }
+.hv-sm-sectie__pijl { flex: none; color: var(--muted); transition: transform var(--hv-duur-1); }
+.hv-sm-sectie__knop[aria-expanded="true"] > .hv-sm-sectie__pijl { transform: rotate(180deg); }
+@container sm (min-width: 700px) { .hv-sm-sectie__tekst { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2) var(--ruimte-4); } }
+.hv-sm-sectie__lijf { padding: 0 var(--ruimte-4) var(--ruimte-2); border-block-start: 1px solid var(--line); }
+.hv-sm-sectie__lijf > .hv-sm-bulk { padding-block: var(--ruimte-1); border-block-end: 1px solid var(--line); }
 
 .hv-sm-legenda { display: grid; gap: var(--ruimte-2); grid-template-columns: minmax(0, 1fr); }
 @container sm (min-width: 720px) { .hv-sm-legenda { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -408,6 +507,9 @@
 .hv-sm-legenda dt { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); font-weight: 600; }
 .hv-sm-legenda dd { font-size: var(--tekst-mini); color: var(--muted); line-height: var(--hv-regel-mini); }
 .hv-sm-legenda .hv-ic--risico { color: var(--warn-vlak); }
+.hv-sm-legenda dt > .hv-sm-merk { min-block-size: 0; padding-inline: 0; }
+.hv-sm-legenda__vragen { color: var(--info); }
+.hv-sm-legenda__altijd { color: var(--ok); }
 
 /* аркуш рамок */
 .hv-sm-kader + .hv-sm-kader { margin-block-start: var(--ruimte-2); padding-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); }
@@ -438,13 +540,17 @@
 .hv-sm-export .hv-ic { animation: hv-sm-draai 1s linear infinite; }
 .hv-sm-export.is-klaar .hv-ic { animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .hv-sm-test__rij.is-wacht strong .hv-ic, .hv-sm-export .hv-ic, .hv-stand__deel.is-wacht, .hv-sm-ok, .hv-sm-uitklap { animation: none; }
+  .hv-sm-test__rij.is-wacht strong .hv-ic, .hv-sm-export .hv-ic, .hv-sm-keuze.is-wacht::before, .hv-sm-ok, .hv-sm-uitklap, .hv-sm-rij__meer { animation: none; }
 }
 
 @media (hover: hover) {
   .hv-sm-kamer:hover { border-color: var(--hv-omtrek); background: var(--panel); }
   .hv-sm-mens:hover { background: var(--surface); }
   .hv-sm-cel:hover { border-color: var(--hv-omtrek); }
+  .hv-sm-cel.is-uit:hover .hv-sm-merk { color: var(--text); }
+  .hv-sm-keuze:hover:not(.is-gekozen) { color: var(--text); }
+  .hv-sm-keuze:hover:not(.is-gekozen)::before { background: var(--surface2); }
+  .hv-sm-rij__kop:hover .hv-sm-rij__naam > span, .hv-sm-sectie__knop:hover .hv-sm-sectie__naam > span:first-child, .hv-sm-matrix__groepknop:hover .hv-sm-matrix__groepnaam > span:first-child { text-decoration: underline; text-underline-offset: 3px; }
   .hv-sm-rcel:not(.is-vast):hover { border-color: var(--text); }
   .hv-sm-matrix__uknop:hover, .hv-sm-matrix__actie:hover .hv-sm-matrix__actienaam { text-decoration: underline; text-underline-offset: 3px; }
   .hv-sm-icoon:hover:not(.is-gekozen) { color: var(--text); background: var(--surface2); }

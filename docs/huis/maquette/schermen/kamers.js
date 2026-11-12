@@ -11,7 +11,19 @@
   function nu(ctx) {
     var w = ctx.staat;
     var metLicht = HV.kijk.kamersMetLicht().length, open = HV.kijk.open().length;
-    var kop = '<p class="hv-pagina__zin">' + h(metLicht ? t('Світло в кімнатах: ', 'Licht aan in kamers: ') + metLicht : t('Світло вимкнено всюди', 'Het licht is overal uit')) + ' <span class="hv-punt">·</span> ' + h(open ? t('відчинено вікон і дверей: ', 'ramen en deuren open: ') + open : t('вікна й двері зачинено', 'ramen en deuren dicht')) + '</p>';
+    // герой зони — спільний компонент o.zoneheld: речення, лічильники однієї форми, одна дія
+    var lampen = HV.kijk.lampenAan().length, weg = HV.kijk.alle(function (a) { return a.beschikbaar === 'onbereikbaar'; }).length;
+    var kop = o.zoneheld({
+      id: 'kamers', icoon: 'layout-grid', boven: t('Кімнати зараз', 'Kamers nu'),
+      zin: h((metLicht ? t('Світло горить у кімнатах: ', 'Het licht is aan in kamers: ') + metLicht : t('Світло вимкнено всюди', 'Het licht is overal uit')) + '; ' + (open ? t('відчинено вікон і дверей: ', 'ramen en deuren open: ') + open : t('вікна й двері зачинено', 'ramen en deuren dicht')) + '.'),
+      tellers: [
+        { waarde: String(w.kamers.length), label: t('кімнат', 'kamers') },
+        { waarde: String(lampen), label: t('ламп увімкнено', 'lampen aan'), toon: lampen ? 'aan' : null },
+        { waarde: String(open), label: t('відчинено', 'open'), toon: open ? 'let-op' : null },
+        { waarde: String(weg), label: t('недоступних', 'niet bereikbaar') }
+      ],
+      actie: lampen ? { tekst: t('Вимкнути все світло', 'Alle lampen uit'), icoon: 'lightbulb', soort: 'gewoon', actie: 'alles-licht-uit' } : null
+    });
     var blokken = ['beneden', 'boven', 'zolder', 'buiten'].map(function (id) { return w.verdiepingen.filter(function (v) { return v.id === id; })[0]; }).map(function (v) {
       var kamers = w.kamers.filter(function (k) { return k.verdieping === v.id; });
       // поверх із однією-двома кімнатами — короткий блок: на комп’ютері два такі стоять поруч в одному рядку

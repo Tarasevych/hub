@@ -71,8 +71,11 @@
 .hv-plan__vlak { position: absolute; z-index: 0; display: grid; place-content: center; text-align: center; gap: 2px; padding: 4px; color: var(--muted); }
 .hv-plan__vlak { overflow: hidden; }
 .hv-plan__vlak .hv-plan__naam { color: var(--muted); white-space: nowrap; overflow-wrap: normal; }
-.hv-plan__vlak--trap { background: var(--surface); box-shadow: inset 0 0 0 1px var(--text); place-content: end center; padding-block-end: 6px; }
-.hv-plan__vlak--trap .hv-plan__naam { background: var(--surface); padding-inline: 4px; }
+.hv-plan__vlak--trap { background: var(--surface); box-shadow: inset 0 0 0 1px var(--text); }
+/* підпис сходів: майданчик унизу клітинки, поверх ліній креслення (щаблі до нього не доходять) */
+.hv-plan__traplabel { position: absolute; z-index: 2; display: grid; place-items: center; overflow: hidden; background: var(--surface); color: var(--muted); }
+.hv-plan__traplabel .hv-plan__naam { white-space: nowrap; overflow-wrap: normal; line-height: 1; }
+.hv-plan__trapteken { display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .hv-plan__vlak--straat { background: var(--surface2); }
 .hv-plan__vlak--straat .hv-plan__naam { color: var(--text); }
 .hv-plan__vlak--oprit { background: repeating-linear-gradient(90deg, transparent 0 calc(var(--hv-arcering-stap) * 2 - 1px), color-mix(in srgb, var(--hv-arcering) 30%, transparent) calc(var(--hv-arcering-stap) * 2 - 1px) calc(var(--hv-arcering-stap) * 2)), var(--surface); outline: 1px dashed var(--hv-omtrek); outline-offset: -1px; place-content: start center; padding-block-start: 8px; }
@@ -92,7 +95,9 @@
 .hv-plan__deur--rol { stroke-dasharray: 6 3; stroke-width: 2.5; }
 .hv-plan__boog { stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 3 3; }
 .hv-plan__trede { stroke: var(--hv-omtrek); stroke-width: 1; }
+.hv-plan__trede--rand { stroke: var(--text); }
 .hv-plan__looplijn { stroke: var(--text); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; }
+.hv-plan__loopstart { fill: var(--surface); stroke: var(--text); stroke-width: 1.25; }
 .hv-plan__schuin { stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 10 4 2 4; }
 .hv-plan__kegel { fill: color-mix(in srgb, var(--text) 7%, transparent); stroke: var(--hv-omtrek); stroke-width: 1; stroke-dasharray: 4 3; }
 .hv-plan__kegel.is-dood { fill: none; }
@@ -233,9 +238,10 @@ button.hv-plan__merk:focus-visible { outline: var(--hv-focus-rand) solid var(--f
 .hv-gezond:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); }
 
 .hv-register__zoekrij { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hv-doel-kier); }
-.hv-zoekveld { flex: 1 1 240px; display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); padding-inline: var(--ruimte-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-m); color: var(--muted); min-inline-size: 0; }
+/* рамка поля — внутрішньою тінню, щоб саме поле введення мало повні 44 px цілі дотику */
+.hv-zoekveld { flex: 1 1 240px; display: flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); padding-inline: var(--ruimte-3); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--straal-m); color: var(--muted); min-inline-size: 0; }
 .hv-zoekveld:focus-within { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); color: var(--text); }
-.hv-zoekveld input { flex: 1 1 auto; min-inline-size: 0; block-size: calc(var(--hv-tik) - 2px); border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--tekst-basis); outline: none; }
+.hv-zoekveld input { flex: 1 1 auto; min-inline-size: 0; block-size: var(--hv-tik); min-block-size: var(--hv-tik); border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--tekst-basis); outline: none; }
 .hv-zoekveld input::placeholder { color: var(--muted); }
 .hv-zoekveld input::-webkit-search-cancel-button { display: none; }
 .hv-knop.is-open { background: var(--surface2); border-color: var(--text); }

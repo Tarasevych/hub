@@ -94,7 +94,8 @@
     gewoon: { icoon: 'circle', naam: ['Звичайні дії', 'Gewone acties'] }
   };
   var UITVOERDER_ICOON = { scene: 'sparkles', automatisering: 'diamond', optimalisatie: 'gauge', agent: 'bot' };
-  var STAND_ICOON = { uit: 'circle-slash', vragen: 'circle-help', altijd: 'circle-check' };
+  // Типовий стан — тиха риска (як «Немає» у правах ролей); винятки — знак у колі.
+  var STAND_ICOON = { uit: 'minus', vragen: 'circle-help', altijd: 'circle-check' };
 
   // ───────────────────────── Стан зони (живе у світі: сценарій починає зі свіжого) ─────────────────────────
   function kopie(x) { return JSON.parse(JSON.stringify(x)); }
@@ -304,6 +305,13 @@
     return dag0 + 7 * DAG;
   }
   var KAMER_ICONEN = ['sofa', 'bed', 'baby', 'bath', 'cooking-pot', 'briefcase', 'dumbbell', 'gamepad-2', 'shirt', 'flower-2'];
+  // Назви знаків для читача екрана й підказки (aria-label, title) — не технічні назви lucide.
+  var KAMER_ICOON_NAAM = {
+    sofa: ['Диван', 'Bank'], bed: ['Ліжко', 'Bed'], baby: ['Дитина', 'Kind'], bath: ['Ванна', 'Bad'], 'cooking-pot': ['Каструля', 'Kookpan'], briefcase: ['Портфель', 'Aktetas'],
+    dumbbell: ['Гантеля', 'Halter'], 'gamepad-2': ['Ігри', 'Spellen'], shirt: ['Одяг', 'Kleding'], 'flower-2': ['Квітка', 'Bloem'],
+    'door-closed': ['Двері', 'Deur'], 'washing-machine': ['Пральна машина', 'Wasmachine'], 'hard-drive': ['Сховище', 'Opslag'], luggage: ['Валіза', 'Koffer'], trees: ['Дерева', 'Bomen'], warehouse: ['Гараж', 'Garage']
+  };
+  function kamerIcoonNaam(ic) { return P(KAMER_ICOON_NAAM[ic] || ['Поточний знак', 'Huidig teken']); }
 
   function woning(ctx) {
     var w = ctx.staat, sm = S(w), wo = sm.woning;
@@ -408,7 +416,8 @@
         opties: ['zolder', 'boven', 'beneden', 'buiten'].map(function (vid) { var v = w.verdiepingen.filter(function (x) { return x.id === vid; })[0]; return { id: vid, label: P(v.naam) }; }) });
       var iconen = '<div class="hv-sm-iconen" role="radiogroup" aria-label="' + h(t('Знак кімнати', 'Teken van de kamer')) + '">' + KAMER_ICONEN.concat(KAMER_ICONEN.indexOf(k.icoon) < 0 ? [k.icoon] : []).map(function (ic) {
         var gek = ic === k.icoon;
-        return lezen ? (gek ? '<span class="hv-sm-icoon is-gekozen">' + HV.icoon(ic) + '</span>' : '') : '<button type="button" role="radio" aria-checked="' + gek + '" class="hv-sm-icoon' + (gek ? ' is-gekozen' : '') + '" data-actie="sm-kamer" data-kamer="' + h(k.id) + '" data-veld="icoon" data-waarde="' + h(ic) + '" aria-label="' + h(ic) + '">' + HV.icoon(ic) + '</button>';
+        var icNaam = kamerIcoonNaam(ic);
+        return lezen ? (gek ? '<span class="hv-sm-icoon is-gekozen" role="img" aria-label="' + h(icNaam) + '" title="' + h(icNaam) + '">' + HV.icoon(ic) + '</span>' : '') : '<button type="button" role="radio" aria-checked="' + gek + '" class="hv-sm-icoon' + (gek ? ' is-gekozen' : '') + '" data-actie="sm-kamer" data-kamer="' + h(k.id) + '" data-veld="icoon" data-waarde="' + h(ic) + '" aria-label="' + h(icNaam) + '" title="' + h(icNaam) + '">' + HV.icoon(ic) + '</button>';
       }).join('') + '</div>';
       var doelOrgaan = k.doel != null
         ? o.stapper({ actie: lezen ? null : 'sm-kamer-doel', gegevens: { kamer: k.id }, stap: 0.5, label: t('Ціль температури', 'Doeltemperatuur'), waarde: HV.maat(k.doel, '°C', 1), k: 'sm-doel-' + k.id })
@@ -680,7 +689,7 @@
     var held = kop({ id: 'privacy', icoon: 'shield-half', toon: aan.length ? 'let-op' : 'ok', boven: t('Система · Приватність', 'Systeem · Privacy'),
       zin: aan.length ? t('Увімкнено: ', 'Aan: ') + aan.map(function (d) { return P(d.naam).toLowerCase(); }).join(', ') : t('Камера, мікрофон і місце вимкнені', 'Camera, microfoon en locatie staan uit'),
       sub: h(t('Дані живуть на сервері вдома; сайт показує їх через захищений тунель. Хмарній моделі — лише узагальнено й за згодою кожного дорослого.', 'Gegevens leven op de server thuis; de site toont ze via een beveiligde tunnel. Een cloudmodel krijgt alleen iets algemeens en met toestemming van elke volwassene.')),
-      chips: o.chip({ icoon: 'eye-off', tekst: t('приватних кімнат: ', 'privékamers: ') + pr.prive.length }) + o.chip({ icoon: 'scale', tekst: t('AVG: права людини', 'AVG: rechten van de persoon') }) + o.chip({ icoon: 'history', tekst: t('аудит лише на додавання', 'controlespoor alleen toevoegen') }) });
+      chips: o.chip({ icoon: 'eye-off', tekst: t('приватних кімнат: ', 'privékamers: ') + pr.prive.length }) + o.chip({ icoon: 'scale', tekst: t('AVG: права особи щодо даних', 'AVG: rechten van de persoon') }) + o.chip({ icoon: 'history', tekst: t('аудит лише на додавання', 'controlespoor alleen toevoegen') }) });
 
     var drie = '<div class="hv-sm-drie" data-k="sm-drie">' + DRIE.map(function (d) {
       var isAan = !!pr[d.id];
@@ -778,16 +787,18 @@
     return basis;
   }
   function extraUitvoerders() { var n = HV.gevaar.uitvoerders().length; return uitvoerders().slice(n); }
+  function isUitvoerder(id) { return uitvoerders().some(function (u) { return u.id === id; }); }
   function tabelUitvoerders() { return uitvoerders(HV.ui.lees('sm-regels', false) ? true : false); }
   function alleActies() {
     return HV.gevaar.acties.slice().sort(function (a, b) { return (NIVEAU_RANG[a.niveau] - NIVEAU_RANG[b.niveau]) || (KLASSEN.map(function (k) { return k.id; }).indexOf(klasseVan(a)) - KLASSEN.map(function (k) { return k.id; }).indexOf(klasseVan(b))); });
   }
   function zichtbareActies() {
-    var niveau = HV.ui.lees('sm-niveau', 'alle'), alleenActief = HV.ui.lees('sm-actief', false), u = HV.ui.lees('sm-uitvoerder', null);
-    var lijst = uitvoerders().map(function (x) { return x.id; });
+    var niveau = HV.ui.lees('sm-niveau', 'alle'), alleenActief = HV.ui.lees('sm-actief', false), u = gekozenUitvoerder();
+    // «лише не «Вимкнено»» рахує саме тих виконавців, яких видно: вибраного або стовпці таблиці
+    var us = u !== 'alle' ? [u] : tabelUitvoerders().map(function (x) { return x.id; });
     return alleActies().filter(function (a) {
       if (niveau !== 'alle' && a.niveau !== niveau) return false;
-      if (alleenActief) { var us = u && u !== 'alle' ? [u] : lijst; if (!us.some(function (x) { return HV.gevaar.stand(x, a.sleutel) !== 'uit'; })) return false; }
+      if (alleenActief && !us.some(function (x) { return HV.gevaar.stand(x, a.sleutel) !== 'uit'; })) return false;
       return true;
     });
   }
@@ -831,58 +842,115 @@
     return c;
   }
 
-  /** hv-stand зони: усі три режими, «!», рамки, стани «чекає підтвердження входу», «збережено», «не збережено», «призупинено». */
-  function standHtml(u, actie, op) {
+  // ── Знаки режимів. Типовий «Вимкнено» — тиха риска без слова; «Питати» й «Завжди» — кольорова позначка зі словом. ──
+  function zwaarKlas(s, actie) { return s === 'altijd' && actie && HV.gevaar.isZwaar(actie) ? ' is-zwaar' + (actie.niveau === 'kritiek' ? ' is-kritiek' : '') : ''; }
+  function risicoTeken(actie, maat) { return HV.icoon(actie.niveau === 'kritiek' ? 'risico-kritiek' : 'risico-gevaarlijk', { maat: maat || 'risico' }); }
+  /** Пасивна позначка режиму: клітинка таблиці й рядок «лише читання». metWoord — слово «Вимкнено» для читача екрана. */
+  function standMerk(s, actie, metWoord) {
+    if (s === 'uit') return '<span class="hv-sm-merk is-uit">' + HV.icoon(STAND_ICOON.uit, { maat: 's' }) + (metWoord ? '<span class="hv-vo">' + h(P(HV.gevaar.standNamen.uit)) + '</span>' : '') + '</span>';
+    var zw = zwaarKlas(s, actie);
+    return '<span class="hv-sm-merk is-' + s + zw + '">' + (zw ? risicoTeken(actie) : HV.icoon(STAND_ICOON[s], { maat: 's' })) + '<span>' + h(P(HV.gevaar.standNamen[s])) + '</span></span>';
+  }
+  /**
+   * Компактний сегмент трьох режимів: три цілі по 44 px. У вузькій колонці — лише знаки (слово лишається для читача екрана,
+   * а для винятку стоїть під назвою дії); від 700 px — знак і слово. waarde === null — «змішано», жоден не вибрано.
+   * p: { label, waarde, actie, gegevens, voor (дія реєстру — для позначки небезпечного «Завжди»), wacht, fout }
+   */
+  function keuzes(p) {
+    return '<div class="hv-sm-keuzes" role="group" aria-label="' + h(p.label) + '">' + ['uit', 'vragen', 'altijd'].map(function (s) {
+      var gek = p.waarde === s;
+      var g = {}; for (var x in p.gegevens) g[x] = p.gegevens[x]; g.waarde = s;
+      return '<button type="button" class="hv-sm-keuze is-' + s + (gek ? ' is-gekozen' : '') + zwaarKlas(s, p.voor) + (p.wacht && s === 'altijd' ? ' is-wacht' : '') + (p.fout && s === 'altijd' ? ' is-fout' : '') + '" aria-pressed="' + gek + '" title="' + h(P(HV.gevaar.standNamen[s])) + '"' + HV.attrs(g) + ' data-actie="' + p.actie + '">' +
+        HV.icoon(STAND_ICOON[s], { maat: 's' }) + '<span class="hv-sm-keuze__woord">' + h(P(HV.gevaar.standNamen[s])) + '</span></button>';
+    }).join('') + '</div>';
+  }
+  /** Гуртовий орган («Для всієї групи», «Для всіх показаних дій», «Для всіх виконавців»): тихий рядок; змішано — жоден сегмент не вибрано. */
+  function bulk(p) {
+    if (!magWijzigen()) return '';
+    var waarden = p.paren.map(function (x) { return HV.gevaar.stand(x[0], x[1]); });
+    var een = waarden.length && waarden.every(function (v) { return v === waarden[0]; }) ? waarden[0] : null;
+    return '<div class="hv-sm-bulk" data-k="sm-groep-' + h(p.k) + '"><span class="hv-sm-bulk__label">' + h(p.label) + (een ? '' : '<span class="hv-sm-bulk__gemengd">' + h(t('змішано', 'gemengd')) + '</span>') + '</span>' +
+      keuzes({ label: p.label, waarde: een, actie: 'sm-groep', gegevens: p.gegevens }) + '</div>';
+  }
+  /** Лічильники групи: «Завжди: N» (нуль — тихо; небезпечне — з позначкою) і «Питати: N», коли є. */
+  function groepSom(c) {
+    return '<span class="hv-sm-som">' +
+      '<span class="hv-sm-teller' + (c.zwaar ? ' is-zwaar' : c.altijd ? ' is-altijd' : ' is-stil') + '">' + (c.zwaar ? HV.icoon('risico-gevaarlijk', { maat: 'maker' }) : '') + h(t('Завжди: ', 'Altijd: ') + c.altijd) + '</span>' +
+      (c.vragen ? '<span class="hv-sm-teller is-vragen">' + h(t('Питати: ', 'Vragen: ') + c.vragen) + '</span>' : '') + '</span>';
+  }
+  function groepTeken(g) { return '<span class="hv-sm-groepteken' + (g.niveau ? ' hv-risico--' + g.niveau : '') + '">' + HV.icoon(g.icoon, { maat: 's' }) + '</span>'; }
+  /** Групи типово згорнуті (видно лише лічильники); одна група чи фільтр «лише не «Вимкнено»» — розгорнуто. Вибір людини пам'ятається. */
+  function groepIsOpen(g, aantal) {
+    if (!HV.profielKanInklappen()) return true;
+    var v = HV.ui.lees('sm-g-' + g.id, null);
+    if (v === '1') return true;
+    if (v === '0') return false;
+    return aantal === 1 || !!HV.ui.lees('sm-actief', false);
+  }
+
+  /**
+   * Рядок дозволу 56 px: назва (дотик розкриває ризик, наслідок і рамки) і компактний сегмент режимів.
+   * Під назвою — лише те, що відрізняється від типового: «Питати», «Завжди», стан збереження; у групуванні за класом — рівень.
+   * op: { metUitvoerder (рядок називає виконавця, а не дію), vast (не розкривається), metNiveau, gekozen }
+   */
+  function standRij(u, actie, op) {
     op = op || {};
     var w = HV.staat.w, sm = S(w);
-    var waarde = HV.gevaar.stand(u, actie.sleutel), zwaar = HV.gevaar.isZwaar(actie);
+    var waarde = HV.gevaar.stand(u, actie.sleutel), zwaar = HV.gevaar.isZwaar(actie), zwaarAltijd = zwaar && waarde === 'altijd';
     var sk = u + '|' + actie.sleutel;
     var wacht = HV.ui.lees('sm-wacht', null) === sk;
     var mark = markering('stand-' + sk);
-    var wie = HV.gevaar.uitvoerder(u);
+    var wie = HV.gevaar.uitvoerder(u), k = sm.kaders[u];
     var lezen = !magWijzigen();
-    var naam = op.metUitvoerder ? '<span class="hv-stand__naam hv-sm-stand__wie">' + HV.icoon(UITVOERDER_ICOON[wie.soort] || 'bot', { maat: 's' }) + h(P(wie.naam)) + '</span>' : '<span class="hv-stand__naam">' + h(P(actie.naam)) + '</span>';
-    var kopHtml = '<div class="hv-stand__kop">' + naam + o.risico(actie.niveau) +
-      (zwaar ? o.gevolg(risicoTekst(actie, u), { soort: 'uitroep', vast: waarde === 'altijd' ? actie.niveau : null, kop: t('Ризик', 'Risico') + ': ' + P(actie.naam) + ' · ' + P(wie.naam) }) : (actie.gevolg ? o.gevolg(P(actie.gevolg), { kop: P(actie.naam) }) : '')) + '</div>';
-    var pauze = w.zelfGestopt && wie.soort !== 'scene' ? '<p class="hv-sm-pauze">' + HV.icoon('pause', { maat: 's' }) + '<span>' + h(t('Самостійні дії зупинено — режим збережено, але нічого не виконується', 'Zelfstandige acties gestopt — de stand blijft, maar er wordt niets uitgevoerd')) + '</span></p>' : '';
-    var lijf;
-    if (lezen) {
-      lijf = '<p class="hv-stand__lees">' + HV.icoon('lock', { maat: 's' }) + '<span><strong>' + h(P(HV.gevaar.standNamen[waarde])) + '</strong> · ' + h(t('Змінює лише власник', 'Alleen de eigenaar kan dit wijzigen')) + '</span></p>';
-    } else {
-      lijf = '<div class="hv-stand__segmenten" role="group" aria-label="' + h(t('Дозвіл', 'Toestemming') + ': ' + P(actie.naam) + ' · ' + P(wie.naam)) + '">' + ['uit', 'vragen', 'altijd'].map(function (s) {
-        var gek = s === waarde, isWacht = wacht && s === 'altijd';
-        return '<button type="button" class="hv-stand__deel' + (gek ? ' is-gekozen' : '') + (isWacht ? ' is-wacht' : '') + (mark === 'fout' && s === 'altijd' ? ' is-fout' : '') + '" aria-pressed="' + gek + '" data-actie="sm-stand" data-uitvoerder="' + h(u) + '" data-sleutel="' + h(actie.sleutel) + '" data-waarde="' + s + '">' + (gek ? HV.icoon('check', { maat: 's' }) : '') + '<span>' + h(P(HV.gevaar.standNamen[s])) + '</span></button>';
-      }).join('') + '</div>';
+    var open = !op.vast && HV.ui.lees('sm-rij', null) === sk;
+    var wieHtml = '<span class="hv-sm-rij__wie">' + HV.icoon(UITVOERDER_ICOON[wie.soort] || 'bot', { maat: 's' }) + '<span>' + h(P(wie.naam)) + '</span></span>';
+
+    var sub = '';
+    if (op.metNiveau && actie.niveau !== 'gewoon') sub += o.risico(actie.niveau);
+    // «лише читання»: слово стану вже стоїть у позначці праворуч — під назвою повторюємо тільки небезпечне «Завжди»
+    if (waarde !== 'uit' && (zwaarAltijd || !lezen)) sub += '<span class="hv-sm-rij__staat is-' + waarde + zwaarKlas(waarde, actie) + '">' + (zwaarAltijd ? risicoTeken(actie, 'maker') : '') + h(zwaarAltijd ? t('Завжди, без запиту', 'Altijd, zonder te vragen') : P(HV.gevaar.standNamen[waarde])) + '</span>';
+    if (op.vast && (heeftKaders(k) || (k && k.verlopen))) sub += '<span class="hv-sm-rij__kader">' + h(kadersTekst(k)) + '</span>';
+    if (wacht) sub += '<span class="hv-sm-standstatus">' + HV.icoon('key-round', { maat: 's' }) + h(t('чекає підтвердження входу', 'wacht op aanmelding')) + '</span>';
+    else if (mark === 'ok') sub += '<span class="hv-sm-standstatus is-ok">' + HV.icoon('check', { maat: 's' }) + h(t('збережено', 'opgeslagen')) + '</span>';
+    else if (mark === 'fout') sub += '<span class="hv-sm-standstatus is-fout">' + HV.icoon('circle-x', { maat: 's' }) + h(t('не збережено: підтвердження скасовано', 'niet opgeslagen: bevestiging geannuleerd')) + '</span>';
+
+    var naam = '<span class="hv-sm-rij__naam">' + (op.metUitvoerder ? wieHtml : '<span>' + h(P(actie.naam)) + '</span>') + (op.vast ? '' : HV.icoon('chevron-down', { maat: 's', klas: 'hv-sm-rij__pijl' })) + '</span>';
+    var binnen = naam + (sub ? '<span class="hv-sm-rij__sub">' + sub + '</span>' : '');
+    var kopHtml = op.vast ? '<div class="hv-sm-rij__kop">' + binnen + '</div>'
+      : '<button type="button" class="hv-sm-rij__kop" aria-expanded="' + open + '" data-actie="ui" data-naam="sm-rij" data-waarde="' + (open ? '' : h(sk)) + '">' + binnen + '</button>';
+
+    var orgaan = lezen ? '<span class="hv-sm-rij__lees">' + standMerk(waarde, actie, true) + '</span>'
+      : keuzes({ label: t('Дозвіл', 'Toestemming') + ': ' + P(actie.naam) + ' · ' + P(wie.naam), waarde: waarde, actie: 'sm-stand', gegevens: { uitvoerder: u, sleutel: actie.sleutel }, voor: actie, wacht: wacht, fout: mark === 'fout' });
+
+    var meer = '';
+    if (open) {
+      var pauze = w.zelfGestopt && wie.soort !== 'scene' ? '<p class="hv-sm-pauze">' + HV.icoon('pause', { maat: 's' }) + '<span>' + h(t('Самостійні дії зупинено — режим збережено, але нічого не виконується', 'Zelfstandige acties gestopt — de stand blijft, maar er wordt niets uitgevoerd')) + '</span></p>' : '';
+      var uitleg = zwaar
+        ? '<div class="hv-sm-risicovak' + (zwaarAltijd ? ' is-actief' + (actie.niveau === 'kritiek' ? ' is-kritiek' : '') : '') + '"><p class="hv-sm-risicovak__kop">' + (zwaarAltijd ? risicoTeken(actie) : '<span class="hv-sm-risicovak__teken">' + HV.icoon('uitroep', { maat: 's' }) + '</span>') + '<strong>' + h(t('Ризик', 'Risico')) + '</strong>' + o.risico(actie.niveau, { lang: true }) + '</p>' + o.gevolgRijen(risicoTekst(actie, u)) + '</div>'
+        : (actie.niveau !== 'gewoon' ? '<p class="hv-sm-rij__niveau">' + o.risico(actie.niveau, { lang: true }) + '</p>' : '') + (actie.gevolg ? o.gevolgRijen(P(actie.gevolg)) : '<p class="hv-sm-rij__gewoon">' + h(t('Звичайна дія: людина виконує одразу; «Повернути» — 10 с у сповіщенні.', 'Gewone actie: een mens voert meteen uit; ‘Ongedaan maken’ 10 s in de melding.')) + '</p>');
+      var kadersChip = lezen ? o.chip({ icoon: 'calendar-clock', tekst: t('Рамки: ', 'Kaders: ') + kadersTekst(k) })
+        : o.chip({ icoon: k && k.verlopen ? 'calendar-x' : 'calendar-clock', tekst: t('Рамки: ', 'Kaders: ') + kadersTekst(k), actie: 'blad', gegevens: { blad: 'smkaders:' + u }, toon: k && k.verlopen ? 'let-op' : null, aria: t('Рамки виконавця: ', 'Kaders van de uitvoerder: ') + kadersTekst(k) });
+      meer = '<div class="hv-sm-rij__meer">' + uitleg + pauze +
+        '<p class="hv-sm-rij__kaders">' + kadersChip + (lezen ? '<span class="hv-sm-rij__slot">' + HV.icoon('lock', { maat: 's' }) + h(t('Змінює лише власник', 'Alleen de eigenaar kan dit wijzigen')) + '</span>' : '') + '</p></div>';
     }
-    var status = wacht ? '<p class="hv-sm-standstatus">' + HV.icoon('key-round', { maat: 's' }) + h(t('чекає підтвердження входу', 'wacht op aanmelding')) + '</p>'
-      : mark === 'ok' ? '<p class="hv-sm-standstatus is-ok">' + HV.icoon('check', { maat: 's' }) + h(t('збережено', 'opgeslagen')) + '</p>'
-        : mark === 'fout' ? '<p class="hv-sm-standstatus is-fout">' + HV.icoon('circle-x', { maat: 's' }) + h(t('не збережено: підтвердження скасовано, режим не змінено', 'niet opgeslagen: bevestiging geannuleerd, stand ongewijzigd')) + '</p>' : '';
-    var k = sm.kaders[u];
-    var kadersChip = lezen ? o.chip({ icoon: 'calendar-clock', tekst: kadersTekst(k) })
-      : o.chip({ icoon: k && k.verlopen ? 'calendar-x' : 'calendar-clock', tekst: kadersTekst(k), actie: 'blad', gegevens: { blad: 'smkaders:' + u }, toon: k && k.verlopen ? 'let-op' : null, aria: t('Рамки виконавця: ', 'Kaders van de uitvoerder: ') + kadersTekst(k) });
-    return '<div class="hv-stand hv-sm-stand' + (zwaar && waarde === 'altijd' ? ' is-altijd-zwaar' : '') + (op.licht ? ' is-licht' : '') + '" data-k="sm-stand-' + h(u) + '-' + h(actie.sleutel) + '">' + kopHtml + pauze + lijf + status + '<p class="hv-stand__kaders">' + kadersChip + '</p></div>';
+    return '<div class="hv-sm-rij is-' + waarde + zwaarKlas(waarde, actie) + (open ? ' is-open' : '') + (op.gekozen ? ' is-gekozen' : '') + '" data-k="sm-stand-' + h(u) + '-' + h(actie.sleutel) + '">' + kopHtml + orgaan + meer + '</div>';
   }
 
-  /** Груповий орган «Для всієї групи»: змішано — жоден сегмент не вибрано. */
-  function groepStand(p) {
-    var waarden = [];
-    p.paren.forEach(function (x) { waarden.push(HV.gevaar.stand(x[0], x[1])); });
-    var een = waarden.length && waarden.every(function (v) { return v === waarden[0]; }) ? waarden[0] : null;
-    if (!magWijzigen()) return '<p class="hv-sm-groep__lees">' + HV.icoon('lock', { maat: 's' }) + h(een ? P(HV.gevaar.standNamen[een]) : t('змішано', 'gemengd')) + '</p>';
-    return '<div class="hv-sm-groep" data-k="sm-groep-' + h(p.k) + '"><span class="hv-sm-groep__label">' + h(p.label) + (een ? '' : ' · ' + t('змішано', 'gemengd')) + '</span><div class="hv-stand__segmenten hv-sm-groep__segmenten" role="group" aria-label="' + h(p.label) + '">' + ['uit', 'vragen', 'altijd'].map(function (s) {
-      var gek = een === s;
-      var g = {}; for (var x in p.gegevens) g[x] = p.gegevens[x]; g.waarde = s;
-      return '<button type="button" class="hv-stand__deel' + (gek ? ' is-gekozen' : '') + '" aria-pressed="' + gek + '"' + HV.attrs(g) + ' data-actie="sm-groep">' + (gek ? HV.icoon('check', { maat: 's' }) : '') + '<span>' + h(P(HV.gevaar.standNamen[s])) + '</span></button>';
-    }).join('') + '</div></div>';
+  function isBreed() { var id = HV.profiel ? HV.profiel().id : ''; return id === 'bureau' || id === 'breed' || id === 'ultrabreed'; }
+  /** Вибраний виконавець: від bureau типово «усі» (таблиця), у вужчих профілях — перший із переліку. */
+  function gekozenUitvoerder() {
+    var us = uitvoerders(), breed = isBreed();
+    var gekozen = HV.ui.lees('sm-uitvoerder', breed ? 'alle' : us[0].id);
+    if (!breed && gekozen === 'alle') gekozen = us[0].id;
+    if (gekozen !== 'alle' && !us.some(function (u) { return u.id === gekozen; })) gekozen = us[0].id;
+    return gekozen;
   }
 
   function risico(ctx) {
     var w = ctx.staat, sm = S(w);
     var us = uitvoerders();
-    var breed = ctx.profiel.id === 'bureau' || ctx.profiel.id === 'breed' || ctx.profiel.id === 'ultrabreed';
-    var gekozen = HV.ui.lees('sm-uitvoerder', breed ? 'alle' : us[0].id);
-    if (!breed && gekozen === 'alle') gekozen = us[0].id;
-    if (gekozen !== 'alle' && !us.some(function (u) { return u.id === gekozen; })) gekozen = us[0].id;
+    var breed = isBreed();
+    var gekozen = gekozenUitvoerder();
     var lezen = !magWijzigen();
     var acties = alleActies(), zicht = zichtbareActies();
     var c = telStanden(us.map(function (u) { return u.id; }), acties);
@@ -892,19 +960,24 @@
     var held = kop({ id: 'risico', icoon: zwaar.length ? (kritiekAltijd ? 'risico-kritiek' : 'risico-gevaarlijk') : 'shield-check', toon: zwaar.length ? (kritiekAltijd ? 'alarm' : 'let-op') : 'ok', boven: t('Система · Дозволи й небезпечні дії', 'Systeem · Toestemmingen en risicovolle acties'),
       zin: zwaar.length ? t('«Завжди» для небезпечних і критичних: ', '‘Altijd’ voor gevaarlijke en kritieke acties: ') + zwaar.length : c.altijd + c.vragen ? t('Небезпечне й критичне без вас не виконується', 'Gevaarlijk en kritiek gebeurt niet zonder jou') : t('Без вас дім нічого не робить', 'Zonder jou doet het huis niets'),
       sub: h(t(acties.length + ' дій × ' + us.length + ' виконавців. Типово всюди «Вимкнено». Змінює лише власник; агент дозволів не змінює — органа для цього немає.', acties.length + ' acties × ' + us.length + ' uitvoerders. Standaard overal ‘Uit’. Alleen de eigenaar wijzigt; een agent wijzigt geen toestemmingen — daar is geen orgaan voor.')),
-      chips: o.chip({ icoon: STAND_ICOON.altijd, tekst: t('Завжди: ', 'Altijd: ') + c.altijd }) + o.chip({ icoon: STAND_ICOON.vragen, tekst: t('Питати: ', 'Vragen: ') + c.vragen }) + o.chip({ icoon: STAND_ICOON.uit, tekst: t('Вимкнено: ', 'Uit: ') + c.uit }) +
+      chips: o.chip({ icoon: STAND_ICOON.altijd, tekst: t('Завжди: ', 'Altijd: ') + c.altijd }) + o.chip({ icoon: STAND_ICOON.vragen, tekst: t('Питати: ', 'Vragen: ') + c.vragen }) +
+        '<span class="hv-sm-kop__rest">' + h(t('решта ', 'de overige ') + c.uit + t(' — «Вимкнено»', ' staan ‘Uit’')) + '</span>' +
         (w.zelfGestopt ? o.chip({ icoon: 'pause', toon: 'let-op', tekst: t('Самостійні дії зупинено', 'Zelfstandige acties gestopt') }) : ''),
       acties: (w.zelfGestopt
         ? o.knop({ tekst: t('Відновити самостійні дії', 'Zelfstandige acties hervatten'), icoon: 'play', soort: 'hoofd', actie: lezen ? null : 'sm-zelf', gegevens: { stop: 'nee' }, uit: lezen })
         : o.knop({ tekst: t('Зупинити самостійні дії', 'Zelfstandige acties stoppen'), icoon: 'octagon-pause', soort: 'gewoon', actie: rol() === 'eigenaar' || rol() === 'bewoner' ? 'sm-zelf' : null, gegevens: { stop: 'ja' }, uit: !(rol() === 'eigenaar' || rol() === 'bewoner') })) +
         (isEigenaar() ? o.segment({ label: t('Перегляд очима', 'Bekijken als'), waarde: ogen(), actie: 'ui', gegevens: { naam: 'sm-ogen' }, klas: 'hv-sm-ogen', opties: [{ id: 'eigenaar', label: t('Власник', 'Eigenaar'), icoon: 'crown' }, { id: 'gast', label: t('Гість', 'Gast'), icoon: 'luggage' }, { id: 'agent', label: t('Агент', 'Agent'), icoon: 'bot' }] }) : '') });
 
+    // Самостійні дії зупинено: одне пояснення на всю сторінку (а не в кожному рядку)
+    var pauze = w.zelfGestopt ? '<p class="hv-sm-banner is-let-op" data-k="sm-pauze">' + HV.icoon('pause', { maat: 's' }) + '<span>' + h(t('Самостійні дії зупинено: режими збережено, але автоматизації, оптимізатор і агенти нічого не виконують. Сцени, які запускає людина, працюють.', 'Zelfstandige acties gestopt: de standen blijven, maar automatiseringen, optimalisatie en agenten voeren niets uit. Scènes die een mens start, werken.')) + '</span></p>' : '';
+
     // «!» зведення: де стоїть «Завжди» для небезпечного
     var zwaarLijst = zwaar.length ? kaart({ id: 'zwaar', icoon: 'risico-gevaarlijk', toon: 'let-op', klas: 'hv-sm-kaart--zwaar', titel: t('Тут стоїть «Завжди» для небезпечного', 'Hier staat ‘Altijd’ voor iets gevaarlijks'), teller: zwaar.length,
       inhoud: '<ul class="hv-sm-zwaar">' + zwaar.map(function (z, i) {
         var wie = HV.gevaar.uitvoerder(z.uitvoerder);
-        return '<li data-k="sm-zw-' + i + '"><span class="hv-sm-zwaar__merk">' + HV.icoon(z.actie.niveau === 'kritiek' ? 'risico-kritiek' : 'risico-gevaarlijk', { maat: 'risico' }) + '</span><span class="hv-sm-zwaar__wat"><strong>' + h(P(z.actie.naam)) + '</strong> · ' + h(P(wie.naam)) + '<span class="hv-sm-zwaar__sub">' + h(kadersTekst(sm.kaders[z.uitvoerder])) + '</span></span>' +
-          o.gevolg(risicoTekst(z.actie, z.uitvoerder), { soort: 'uitroep', vast: z.actie.niveau, kop: t('Ризик', 'Risico') + ': ' + P(z.actie.naam) }) +
+        // «!» — одна позначка на рядок: вона ж і відкриває пояснення ризику
+        return '<li class="' + (z.actie.niveau === 'kritiek' ? 'is-kritiek' : 'is-gevaarlijk') + '" data-k="sm-zw-' + i + '">' + o.gevolg(risicoTekst(z.actie, z.uitvoerder), { soort: 'uitroep', vast: z.actie.niveau, kop: t('Ризик', 'Risico') + ': ' + P(z.actie.naam) }) +
+          '<span class="hv-sm-zwaar__wat"><strong>' + h(P(z.actie.naam)) + '</strong> · ' + h(P(wie.naam)) + '<span class="hv-sm-zwaar__sub">' + h(kadersTekst(sm.kaders[z.uitvoerder])) + '</span></span>' +
           (lezen ? '' : o.knop({ tekst: t('Питати', 'Vragen'), klein: true, soort: 'stil', actie: 'sm-stand', gegevens: { uitvoerder: z.uitvoerder, sleutel: z.actie.sleutel, waarde: 'vragen' } })) + '</li>';
       }).join('') + '</ul>' }) : '';
 
@@ -918,7 +991,7 @@
       }).join('') + '</div>';
     var niveau = HV.ui.lees('sm-niveau', 'alle');
     var filters = '<div class="hv-sm-filters" data-k="sm-filters">' + pillen +
-      '<div class="hv-sm-filters__rij"><div class="hv-filter hv-sm-pillen" role="group" aria-label="' + h(t('Рівень ризику', 'Risiconiveau')) + '">' + [['alle', t('Усі рівні', 'Alle niveaus'), null], ['kritiek', t('критичні', 'kritiek'), 'octagon'], ['gevaarlijk', t('небезпечні', 'gevaarlijk'), 'triangle'], ['gevoelig', t('чутливі', 'gevoelig'), 'eye'], ['gewoon', t('звичайні', 'gewoon'), 'circle']].map(function (n) {
+      '<div class="hv-sm-filters__rij"><div class="hv-filter hv-sm-pillen hv-sm-niveaus" role="group" aria-label="' + h(t('Рівень ризику', 'Risiconiveau')) + '">' + [['alle', t('Усі рівні', 'Alle niveaus'), null], ['kritiek', t('критичні', 'kritiek'), 'octagon'], ['gevaarlijk', t('небезпечні', 'gevaarlijk'), 'triangle'], ['gevoelig', t('чутливі', 'gevoelig'), 'eye'], ['gewoon', t('звичайні', 'gewoon'), 'circle']].map(function (n) {
         return o.chip({ icoon: n[2], tekst: n[1], filter: true, gekozen: niveau === n[0], actie: 'ui', gegevens: { naam: 'sm-niveau', waarde: n[0] }, k: 'sm-n-' + n[0] });
       }).join('') + (extraUitvoerders().length ? o.chip({ icoon: 'columns-3', tekst: t('окремі правила: ', 'aparte regels: ') + extraUitvoerders().length, filter: true, gekozen: !!HV.ui.lees('sm-regels', false), actie: 'ui', gegevens: { naam: 'sm-regels', waarde: HV.ui.lees('sm-regels', false) ? '' : '1' }, k: 'sm-regels' }) : '') + o.chip({ icoon: 'filter', tekst: t('лише не «Вимкнено»', 'alleen niet ‘Uit’'), filter: true, gekozen: !!HV.ui.lees('sm-actief', false), actie: 'ui', gegevens: { naam: 'sm-actief', waarde: HV.ui.lees('sm-actief', false) ? '' : '1' }, k: 'sm-actief' }) + '</div>' +
       o.segment({ label: t('Групувати', 'Groeperen'), waarde: HV.ui.lees('sm-groep', 'niveau'), actie: 'ui', gegevens: { naam: 'sm-groep' }, klas: 'hv-sm-segment', opties: [{ id: 'niveau', label: t('за рівнем', 'per niveau') }, { id: 'klasse', label: t('за класом', 'per soort') }] }) + '</div></div>';
@@ -928,51 +1001,68 @@
 
     var uitleg = kaart({ id: 'wat', icoon: 'info', titel: t('Як читати реєстр', 'Zo lees je het register'),
       inhoud: '<dl class="hv-sm-legenda">' +
-        '<div><dt>' + HV.icoon(STAND_ICOON.uit, { maat: 's' }) + h(t('Вимкнено', 'Uit')) + '</dt><dd>' + h(t('виконавець не може цього зовсім; спроба — запис у Журналі', 'de uitvoerder kan dit helemaal niet; een poging komt in het logboek')) + '</dd></div>' +
-        '<div><dt>' + HV.icoon(STAND_ICOON.vragen, { maat: 's' }) + h(t('Питати', 'Vragen')) + '</dt><dd>' + h(t('запит у «Чекає на вас»; без схвалення за 5 хв — не виконано', 'een verzoek in ‘Wacht op jou’; zonder goedkeuring binnen 5 min — niet uitgevoerd')) + '</dd></div>' +
-        '<div><dt>' + HV.icoon(STAND_ICOON.altijd, { maat: 's' }) + h(t('Завжди', 'Altijd')) + '</dt><dd>' + h(t('виконується сам у межах рамок; кожна дія — у Журналі з «Повернути»', 'gebeurt zelf binnen de kaders; elke actie in het logboek met ‘Ongedaan maken’')) + '</dd></div>' +
+        '<div><dt>' + standMerk('uit') + h(t('Вимкнено', 'Uit')) + '</dt><dd>' + h(t('типовий стан: виконавець не може цього зовсім; спроба — запис у Журналі', 'de standaard: de uitvoerder kan dit helemaal niet; een poging komt in het logboek')) + '</dd></div>' +
+        '<div><dt>' + HV.icoon(STAND_ICOON.vragen, { maat: 's', klas: 'hv-sm-legenda__vragen' }) + h(t('Питати', 'Vragen')) + '</dt><dd>' + h(t('запит у «Чекає на вас»; без схвалення за 5 хв — не виконано', 'een verzoek in ‘Wacht op jou’; zonder goedkeuring binnen 5 min — niet uitgevoerd')) + '</dd></div>' +
+        '<div><dt>' + HV.icoon(STAND_ICOON.altijd, { maat: 's', klas: 'hv-sm-legenda__altijd' }) + h(t('Завжди', 'Altijd')) + '</dt><dd>' + h(t('виконується сам у межах рамок; кожна дія — у Журналі з «Повернути»', 'gebeurt zelf binnen de kaders; elke actie in het logboek met ‘Ongedaan maken’')) + '</dd></div>' +
         '<div><dt>' + HV.icoon('risico-gevaarlijk', { maat: 'risico' }) + h(t('Позначка', 'Markering')) + '</dt><dd>' + h(t('«Завжди» для небезпечного чи критичного; не закривається, доки діє', '‘Altijd’ voor iets gevaarlijks of kritieks; blijft staan zolang het geldt')) + '</dd></div></dl>' +
         '<p class="hv-sm-noot">' + HV.icoon('key-round', { maat: 's' }) + '<span>' + h(t('«Завжди» для небезпечної чи критичної дії вмикає лише власник після підтвердження входу (діє 5 хв для сеансу). Людина й далі проходить свій ритуал: рейку утримання й підтвердження входу.', '‘Altijd’ voor een gevaarlijke of kritieke actie zet alleen de eigenaar aan na bevestiging van aanmelding (5 min per sessie). Een mens doorloopt nog steeds het eigen ritueel: houdrail en bevestiging van aanmelding.')) + '</span></p>' });
 
-    return '<div class="hv-sm hv-sm-risico" data-k="sm-risico">' + leesBanner(ctx) + held + zwaarLijst + filters + (leeg || inhoud) + uitleg + '</div>';
+    return '<div class="hv-sm hv-sm-risico" data-k="sm-risico">' + leesBanner(ctx) + held + pauze + zwaarLijst + filters + (leeg || inhoud) + uitleg + '</div>';
   }
 
-  /** Від bureau: таблиця «дія × виконавець»; клітинка розгортає hv-stand рядком під собою. */
+  /** Зведення стовпця в рядку групи: усе «Вимкнено» — риска; інакше — скільки «Завжди» й «Питати». */
+  function kolomSom(c, u) {
+    if (!c.altijd && !c.vragen) return '<span class="hv-sm-kolomsom is-leeg">' + HV.icoon(STAND_ICOON.uit, { maat: 's' }) + '<span class="hv-vo">' + h(P(u.naam) + ': ' + t('усе «Вимкнено»', 'alles ‘Uit’')) + '</span></span>';
+    var woorden = (c.altijd ? t('Завжди: ', 'Altijd: ') + c.altijd : '') + (c.altijd && c.vragen ? ' · ' : '') + (c.vragen ? t('Питати: ', 'Vragen: ') + c.vragen : '');
+    return '<span class="hv-sm-kolomsom" title="' + h(P(u.naam) + ' — ' + woorden) + '"><span class="hv-vo">' + h(P(u.naam) + ' — ' + woorden) + '</span>' +
+      (c.altijd ? '<span class="hv-sm-kolomsom__deel is-altijd' + (c.zwaar ? ' is-zwaar' : '') + '" aria-hidden="true">' + HV.icoon(c.zwaar ? 'risico-gevaarlijk' : STAND_ICOON.altijd, { maat: c.zwaar ? 'maker' : 's' }) + c.altijd + '</span>' : '') +
+      (c.vragen ? '<span class="hv-sm-kolomsom__deel is-vragen" aria-hidden="true">' + HV.icoon(STAND_ICOON.vragen, { maat: 's' }) + c.vragen + '</span>' : '') + '</span>';
+  }
+
+  /**
+   * Від bureau: таблиця «дія × виконавець». Група згорнута — один рядок зі зведенням кожного стовпця; розгорнута — рядки дій:
+   * «Вимкнено» — тиха риска, «Питати» й «Завжди» — кольорові позначки зі словом. Клітинка розгортає рядок режимів під собою.
+   */
   function tabel(ctx, zicht, us) {
     var open = HV.ui.lees('sm-open', null), cel = HV.ui.lees('sm-cel', null), kolom = HV.ui.lees('sm-kolom', null);
-    var lezen = !magWijzigen();
-    var n = us.length + 1;
-    var kop = '<thead><tr><th scope="col" class="hv-sm-matrix__actiekop">' + h(t('Дія · рівень', 'Actie · niveau')) + '</th>' + us.map(function (u) {
+    var lezen = !magWijzigen(), kan = HV.profielKanInklappen();
+    var n = us.length + 1, ids = us.map(function (u) { return u.id; });
+    var metNiveau = HV.ui.lees('sm-groep', 'niveau') === 'klasse';
+    var kop = '<thead><tr><th scope="col" class="hv-sm-matrix__actiekop">' + h(t('Дія', 'Actie')) + '</th>' + us.map(function (u) {
       var aan = kolom === u.id;
       return '<th scope="col" class="hv-sm-matrix__uitv' + (aan ? ' is-open' : '') + '">' + (lezen ? '<span class="hv-sm-matrix__uknop">' : '<button type="button" class="hv-sm-matrix__uknop" aria-expanded="' + aan + '" data-actie="ui" data-naam="sm-kolom" data-waarde="' + (aan ? '' : u.id) + '" aria-label="' + h(t('Стовпець: ', 'Kolom: ') + P(u.naam)) + '">') +
         HV.icoon(UITVOERDER_ICOON[u.soort] || 'bot', { maat: 's' }) + '<span>' + h(P(u.naam)) + '</span>' + (lezen ? '</span>' : HV.icoon('chevron-down', { maat: 's', klas: 'hv-sm-matrix__pijl' }) + '</button>') + '</th>';
     }).join('') + '</tr>';
-    if (kolom && !lezen) {
+    if (kolom && !lezen && ids.indexOf(kolom) >= 0) {
       var ku = HV.gevaar.uitvoerder(kolom);
-      kop += '<tr class="hv-sm-matrix__kolombalk" data-k="sm-kolombalk"><td colspan="' + n + '"><div class="hv-sm-kolombalk">' + HV.icoon(UITVOERDER_ICOON[ku.soort] || 'bot', { maat: 's' }) + '<strong>' + h(P(ku.naam)) + '</strong>' +
-        groepStand({ k: 'kolom-' + kolom, label: t('Для всіх показаних дій', 'Voor alle getoonde acties'), paren: zicht.map(function (a) { return [kolom, a.sleutel]; }), gegevens: { bereik: 'kolom', uitvoerder: kolom } }) +
-        o.chip({ icoon: 'calendar-clock', tekst: kadersTekst(S().kaders[kolom]), actie: 'blad', gegevens: { blad: 'smkaders:' + kolom } }) + '</div></td></tr>';
+      kop += '<tr class="hv-sm-matrix__kolombalk" data-k="sm-kolombalk"><td colspan="' + n + '"><div class="hv-sm-kolombalk"><span class="hv-sm-kolombalk__wie">' + HV.icoon(UITVOERDER_ICOON[ku.soort] || 'bot', { maat: 's' }) + '<strong>' + h(P(ku.naam)) + '</strong></span>' +
+        bulk({ k: 'kolom-' + kolom, label: t('Для всіх показаних дій', 'Voor alle getoonde acties'), paren: zicht.map(function (a) { return [kolom, a.sleutel]; }), gegevens: { bereik: 'kolom', uitvoerder: kolom } }) +
+        o.chip({ icoon: 'calendar-clock', tekst: t('Рамки: ', 'Kaders: ') + kadersTekst(S().kaders[kolom]), actie: 'blad', gegevens: { blad: 'smkaders:' + kolom } }) + '</div></td></tr>';
     }
     kop += '</thead>';
-    var lijf = groepen(zicht).map(function (g) {
-      var paren = []; g.acties.forEach(function (a) { us.forEach(function (u) { paren.push([u.id, a.sleutel]); }); });
-      var c = telStanden(us.map(function (u) { return u.id; }), g.acties);
-      var groepOpen = HV.ui.lees('sm-dicht-' + g.id, false) !== '1';
-      var rijen = '<tr class="hv-sm-matrix__groep" data-k="sm-g-' + g.id + '"><th colspan="' + n + '" scope="colgroup"><div class="hv-sm-matrix__groepkop">' +
-        '<button type="button" class="hv-sm-matrix__groepknop" aria-expanded="' + groepOpen + '" data-actie="ui" data-naam="sm-dicht-' + g.id + '" data-waarde="' + (groepOpen ? '1' : '') + '">' + HV.icoon('chevron-down', { maat: 's', klas: 'hv-sm-matrix__pijl' }) +
-        '<span class="hv-sm-matrix__groepteken' + (g.niveau ? ' hv-risico--' + g.niveau : '') + '">' + HV.icoon(g.icoon, { maat: 's' }) + '</span>' + '<span class="hv-sm-matrix__groepnaam">' + h(P(g.naam)) + '</span><span class="hv-sm-teller">' + g.acties.length + '</span>' +
-        '<span class="hv-sm-teller' + (c.zwaar ? ' is-zwaar' : c.altijd ? ' is-altijd' : '') + '">' + (c.zwaar ? HV.icoon('risico-gevaarlijk', { maat: 'maker' }) : '') + h(t('Завжди: ', 'Altijd: ') + c.altijd) + '</span></button>' +
-        groepStand({ k: 'g-' + g.id, label: t('Для всієї групи', 'Voor de hele groep'), paren: paren, gegevens: { bereik: 'groep', groep: g.id, uitvoerder: 'alle' } }) + '</div></th></tr>';
+    var gr = groepen(zicht);
+    var lijf = gr.map(function (g) {
+      var c = telStanden(ids, g.acties);
+      var groepOpen = groepIsOpen(g, gr.length);
+      var binnen = (kan ? HV.icoon('chevron-down', { maat: 's', klas: 'hv-sm-matrix__pijl' }) : '') + groepTeken(g) +
+        '<span class="hv-sm-matrix__groeptekst"><span class="hv-sm-matrix__groepnaam"><span>' + h(P(g.naam)) + '</span><span class="hv-sm-teller">' + g.acties.length + '</span></span>' + groepSom(c) + '</span>';
+      var rijen = '<tr class="hv-sm-matrix__groep' + (groepOpen ? ' is-open' : '') + '" data-k="sm-g-' + g.id + '"><th scope="row">' +
+        (kan ? '<button type="button" class="hv-sm-matrix__groepknop" aria-expanded="' + groepOpen + '" data-actie="ui" data-naam="sm-g-' + g.id + '" data-waarde="' + (groepOpen ? '0' : '1') + '">' + binnen + '</button>' : '<div class="hv-sm-matrix__groepknop">' + binnen + '</div>') + '</th>' +
+        us.map(function (u) { return '<td>' + kolomSom(telStanden([u.id], g.acties), u) + '</td>'; }).join('') + '</tr>';
       if (!groepOpen) return rijen;
+      if (!lezen) {
+        var paren = []; g.acties.forEach(function (a) { ids.forEach(function (id) { paren.push([id, a.sleutel]); }); });
+        rijen += '<tr class="hv-sm-matrix__groepbalk" data-k="sm-gb-' + g.id + '"><td colspan="' + n + '"><div class="hv-sm-matrix__plak">' +
+          bulk({ k: 'g-' + g.id, label: t('Для всієї групи й усіх виконавців', 'Voor de hele groep en alle uitvoerders'), paren: paren, gegevens: { bereik: 'groep', groep: g.id, uitvoerder: 'alle' } }) + '</div></td></tr>';
+      }
       g.acties.forEach(function (a) {
         var zw = HV.gevaar.isZwaar(a), isOpen = open === a.sleutel;
         rijen += '<tr class="hv-sm-matrix__rij' + (isOpen ? ' is-open' : '') + '" data-k="sm-rij-' + h(a.sleutel) + '"><th scope="row"><div class="hv-sm-matrix__th"><button type="button" class="hv-sm-matrix__actie" aria-expanded="' + isOpen + '" data-actie="sm-open" data-sleutel="' + h(a.sleutel) + '" data-cel="">' +
-          '<span class="hv-sm-matrix__actienaam">' + h(P(a.naam)) + '</span><span class="hv-sm-matrix__actiesub">' + o.risico(a.niveau) + '</span></button>' + (zw ? o.gevolg(P(a.risico), { soort: 'uitroep', kop: t('Ризик', 'Risico') + ': ' + P(a.naam) }) : '') + '</div></th>' +
+          '<span class="hv-sm-matrix__actienaam">' + h(P(a.naam)) + '</span>' + (metNiveau && a.niveau !== 'gewoon' ? '<span class="hv-sm-matrix__actiesub">' + o.risico(a.niveau) + '</span>' : '') + '</button>' + (zw ? o.gevolg(P(a.risico), { soort: 'uitroep', kop: t('Ризик', 'Risico') + ': ' + P(a.naam) }) : '') + '</div></th>' +
           us.map(function (u) {
             var s = HV.gevaar.stand(u.id, a.sleutel), gek = isOpen && cel === u.id;
-            var merk = s === 'altijd' && zw ? HV.icoon(a.niveau === 'kritiek' ? 'risico-kritiek' : 'risico-gevaarlijk', { maat: 'maker', klas: 'hv-sm-cel__merk' }) : '';
-            var binnen = HV.icoon(STAND_ICOON[s], { maat: 's' }) + '<span>' + h(P(HV.gevaar.standNamen[s])) + '</span>' + merk;
-            return '<td>' + '<button type="button" class="hv-sm-cel is-' + s + (gek ? ' is-gekozen' : '') + (s === 'altijd' && zw ? ' is-zwaar hv-sm-cel--' + a.niveau : '') + '" aria-expanded="' + gek + '" data-actie="sm-open" data-sleutel="' + h(a.sleutel) + '" data-cel="' + h(u.id) + '" aria-label="' + h(P(a.naam) + ' · ' + P(u.naam) + ': ' + P(HV.gevaar.standNamen[s])) + '">' + binnen + '</button></td>';
+            var label = P(a.naam) + ' · ' + P(u.naam) + ': ' + P(HV.gevaar.standNamen[s]);
+            return '<td><button type="button" class="hv-sm-cel is-' + s + (gek ? ' is-gekozen' : '') + zwaarKlas(s, a) + '" aria-expanded="' + gek + '" data-actie="sm-open" data-sleutel="' + h(a.sleutel) + '" data-cel="' + h(u.id) + '" aria-label="' + h(label) + '" title="' + h(P(u.naam) + ': ' + P(HV.gevaar.standNamen[s])) + '">' + standMerk(s, a) + '</button></td>';
           }).join('') + '</tr>';
         if (isOpen) rijen += '<tr class="hv-sm-matrix__uitklap" data-k="sm-uk-' + h(a.sleutel) + '"><td colspan="' + n + '">' + uitklap(a, us, cel) + '</td></tr>';
       });
@@ -980,44 +1070,51 @@
     }).join('');
     return '<div class="hv-sm-tabelvak hv-sm-matrixvak" data-k="sm-matrixvak"><table class="hv-sm-matrix" style="--kolommen:' + us.length + '">' + kop + '<tbody>' + lijf + '</tbody></table></div>';
   }
-  /** Розгорнутий рядок дії: наслідок, «Для всіх виконавців» і hv-stand кожного виконавця. */
+  /** Розгорнутий рядок дії: наслідок і ризик, «Для всіх виконавців» і рядок режимів кожного виконавця (обраний — перший). */
   function uitklap(a, us, cel) {
     var zw = HV.gevaar.isZwaar(a);
     var gekozen = cel ? us.filter(function (u) { return u.id === cel; }) : [];
     var rest = us.filter(function (u) { return u.id !== cel; });
     return '<div class="hv-sm-uitklap" data-k="sm-uitklap">' +
-      '<div class="hv-sm-uitklap__links"><p class="hv-sm-uitklap__kop">' + o.risico(a.niveau, { lang: true }) + '<strong>' + h(P(a.naam)) + '</strong></p>' +
-      (a.gevolg ? o.gevolgRijen(P(a.gevolg)) : '<p class="hv-sm-noot">' + h(t('Звичайна дія: людина виконує одразу; «Повернути» — 10 с у сповіщенні.', 'Gewone actie: een mens voert meteen uit; ‘Ongedaan maken’ 10 s in de melding.')) + '</p>') +
-      groepStand({ k: 'rij-' + a.sleutel, label: t('Для всіх виконавців', 'Voor alle uitvoerders'), paren: us.map(function (u) { return [u.id, a.sleutel]; }), gegevens: { bereik: 'rij', sleutel: a.sleutel, uitvoerder: 'alle' } }) +
-      (zw ? '<p class="hv-sm-noot">' + HV.icoon('key-round', { maat: 's' }) + '<span>' + h(t('«Завжди» тут — після підтвердження входу; позначка «!» стоятиме біля дії й у шапці.', '‘Altijd’ hier — na bevestiging van aanmelding; de ‘!’ blijft bij de actie en in de kopregel staan.')) + '</span></p>' : '') + '</div>' +
-      '<div class="hv-sm-uitklap__rechts">' + gekozen.concat(rest).map(function (u) { return standHtml(u.id, a, { metUitvoerder: true, licht: u.id !== cel && !!cel }); }).join('') + '</div></div>';
+      '<div class="hv-sm-uitklap__links"><div class="hv-sm-uitklap__wat"><p class="hv-sm-uitklap__kop">' + o.risico(a.niveau, { lang: true }) + '<strong>' + h(P(a.naam)) + '</strong></p>' +
+      (a.gevolg ? o.gevolgRijen(P(a.gevolg)) : '<p class="hv-sm-rij__gewoon">' + h(t('Звичайна дія: людина виконує одразу; «Повернути» — 10 с у сповіщенні.', 'Gewone actie: een mens voert meteen uit; ‘Ongedaan maken’ 10 s in de melding.')) + '</p>') + '</div>' +
+      '<div class="hv-sm-uitklap__alle">' + bulk({ k: 'rij-' + a.sleutel, label: t('Для всіх виконавців', 'Voor alle uitvoerders'), paren: us.map(function (u) { return [u.id, a.sleutel]; }), gegevens: { bereik: 'rij', sleutel: a.sleutel, uitvoerder: 'alle' } }) +
+      (zw ? '<p class="hv-sm-noot">' + HV.icoon('key-round', { maat: 's' }) + '<span>' + h(t('«Завжди» тут — після підтвердження входу; позначка «!» стоятиме біля дії й у шапці.', '‘Altijd’ hier — na bevestiging van aanmelding; de ‘!’ blijft bij de actie en in de kopregel staan.')) + '</span></p>' : '') + '</div></div>' +
+      '<div class="hv-sm-uitklap__rechts hv-sm-rijen">' + gekozen.concat(rest).map(function (u) { return standRij(u.id, a, { metUitvoerder: true, vast: true, gekozen: u.id === cel }); }).join('') + '</div></div>';
   }
-  /** Телефон і один виконавець: блоки груп, у шапці — груповий орган, далі hv-stand кожної дії. */
+  /** Телефон і один виконавець: картка виконавця, далі групи (типово згорнуті, з лічильниками) з рядками дозволів по 56 px. */
   function lijst(ctx, zicht, u) {
     var wie = HV.gevaar.uitvoerder(u), sm = S();
-    var lezen = !magWijzigen();
+    var lezen = !magWijzigen(), kan = HV.profielKanInklappen();
     var k = sm.kaders[u], w = ctx.staat;
+    var metNiveau = HV.ui.lees('sm-groep', 'niveau') === 'klasse';
     var kopU = '<div class="hv-sm-uitvkop" data-k="sm-uitvkop-' + h(u) + '"><span class="hv-sm-uitvkop__teken">' + HV.icoon(UITVOERDER_ICOON[wie.soort] || 'bot') + '</span><div class="hv-sm-uitvkop__tekst"><h2>' + h(P(wie.naam)) + '</h2><p>' +
       h(({ scene: t('сцени виконують небезпечні кроки лише за «Завжди»', 'scènes voeren gevaarlijke stappen alleen uit bij ‘Altijd’'), automatisering: t('правила «Коли / Якщо / Тоді»', 'regels ‘Wanneer / Als / Dan’'), optimalisatie: t('зарядка, батарея й тепло за ціною', 'laden, batterij en warmte op prijs') })[wie.soort] || t('ШІ-агент через MCP; діє від імені власника, що його під’єднав', 'AI-agent via MCP; werkt namens de eigenaar die hem koppelde')) +
       ' · ' + h(t('сьогодні дій: ', 'acties vandaag: ') + gebruikt(u, w) + (k && k.budget ? ' / ' + k.budget : '')) + '</p></div>' +
-      (lezen ? o.chip({ icoon: 'calendar-clock', tekst: kadersTekst(k) }) : o.knop({ tekst: t('Рамки: ', 'Kaders: ') + kadersTekst(k), icoon: 'calendar-clock', klein: true, soort: 'stil', actie: 'blad', gegevens: { blad: 'smkaders:' + u } })) + '</div>' +
-      groepStand({ k: 'kolom-' + u, label: t('Для всіх показаних дій', 'Voor alle getoonde acties'), paren: zicht.map(function (a) { return [u, a.sleutel]; }), gegevens: { bereik: 'kolom', uitvoerder: u } });
-    var blokken = groepen(zicht).map(function (g) {
-      var c = telStanden([u], g.acties);
-      return o.blok({ id: 'sm-' + u + '-' + g.id, titel: P(g.naam), teller: t('Завжди: ', 'Altijd: ') + c.altijd + ' · ' + g.acties.length, dicht: g.niveau === 'gewoon' || g.niveau === 'gevoelig',
-        samenvatting: h(t('Вимкнено ', 'Uit ') + c.uit + ' · ' + t('Питати ', 'Vragen ') + c.vragen + ' · ' + t('Завжди ', 'Altijd ') + c.altijd),
-        extra: groepStand({ k: 'g-' + u + '-' + g.id, label: t('Для всієї групи', 'Voor de hele groep'), paren: g.acties.map(function (a) { return [u, a.sleutel]; }), gegevens: { bereik: 'groep', groep: g.id, uitvoerder: u } }),
-        inhoud: '<div class="hv-sm-standen">' + g.acties.map(function (a) { return standHtml(u, a); }).join('') + '</div>' });
+      (lezen ? o.chip({ icoon: 'calendar-clock', tekst: t('Рамки: ', 'Kaders: ') + kadersTekst(k) }) : o.knop({ tekst: t('Рамки: ', 'Kaders: ') + kadersTekst(k), icoon: 'calendar-clock', klein: true, soort: 'stil', actie: 'blad', gegevens: { blad: 'smkaders:' + u } })) + '</div>' +
+      bulk({ k: 'kolom-' + u, label: t('Для всіх показаних дій', 'Voor alle getoonde acties'), paren: zicht.map(function (a) { return [u, a.sleutel]; }), gegevens: { bereik: 'kolom', uitvoerder: u } });
+    // Ключ до знаків сегмента — лише там, де слова сховано (вузька колонка)
+    var sleutel = lezen ? '' : '<p class="hv-sm-sleutel" data-k="sm-sleutel">' + ['uit', 'vragen', 'altijd'].map(function (s) { return '<span class="is-' + s + '">' + HV.icoon(STAND_ICOON[s], { maat: 's' }) + h(P(HV.gevaar.standNamen[s])) + '</span>'; }).join('') + '</p>';
+    var gr = groepen(zicht);
+    var secties = gr.map(function (g) {
+      var c = telStanden([u], g.acties), open = groepIsOpen(g, gr.length);
+      var binnen = groepTeken(g) + '<span class="hv-sm-sectie__tekst"><span class="hv-sm-sectie__naam"><span>' + h(P(g.naam)) + '</span><span class="hv-sm-teller">' + g.acties.length + '</span></span>' + groepSom(c) + '</span>';
+      return '<section class="hv-sm-sectie' + (open ? ' is-open' : '') + '" data-k="sm-sec-' + h(u) + '-' + g.id + '"><h2 class="hv-sm-sectie__kop">' +
+        (kan ? '<button type="button" class="hv-sm-sectie__knop" aria-expanded="' + open + '" data-actie="ui" data-naam="sm-g-' + g.id + '" data-waarde="' + (open ? '0' : '1') + '">' + binnen + HV.icoon('chevron-down', { maat: 's', klas: 'hv-sm-sectie__pijl' }) + '</button>' : '<span class="hv-sm-sectie__knop">' + binnen + '</span>') + '</h2>' +
+        (open ? '<div class="hv-sm-sectie__lijf">' + bulk({ k: 'g-' + u + '-' + g.id, label: t('Для всієї групи', 'Voor de hele groep'), paren: g.acties.map(function (a) { return [u, a.sleutel]; }), gegevens: { bereik: 'groep', groep: g.id, uitvoerder: u } }) +
+          '<div class="hv-sm-rijen">' + g.acties.map(function (a) { return standRij(u, a, { metNiveau: metNiveau }); }).join('') + '</div></div>' : '') + '</section>';
     }).join('');
-    return '<div class="hv-sm-lijst" data-k="sm-lijst">' + o.kaart({ klas: 'hv-sm-uitvkaart', inhoud: kopU }) + '<div class="hv-sm-blokken">' + blokken + '</div></div>';
+    return '<div class="hv-sm-lijst" data-k="sm-lijst">' + o.kaart({ klas: 'hv-sm-uitvkaart', inhoud: kopU + sleutel }) + '<div class="hv-sm-blokken">' + secties + '</div></div>';
   }
 
   // Аркуш рамок виконавця
   HV.blad({
     soort: 'smkaders', vrij: true, icoon: 'calendar-clock',
-    titel: function (ctx, id) { return t('Рамки · ', 'Kaders · ') + P(HV.gevaar.uitvoerder(id).naam); },
-    sub: function (ctx, id) { return kadersTekst(S().kaders[id]); },
+    titel: function (ctx, id) { return isUitvoerder(id) ? t('Рамки · ', 'Kaders · ') + P(HV.gevaar.uitvoerder(id).naam) : t('Рамки', 'Kaders'); },
+    sub: function (ctx, id) { return isUitvoerder(id) ? kadersTekst(S().kaders[id]) : ''; },
     render: function (ctx, id) {
+      // Пряме посилання з ідентифікатором, якого немає в реєстрі: «Не знайдено» замість органів для заглушки
+      if (!isUitvoerder(id)) return o.leeg({ icoon: 'bot-off', titel: t('Такого виконавця немає', 'Deze uitvoerder bestaat niet'), tekst: t('Рамки задають для сцен, автоматизацій, оптимізатора й під’єднаних агентів із реєстру дозволів.', 'Kaders stel je in voor scènes, automatiseringen, de optimalisatie en gekoppelde agenten uit het register.'), actie: { tekst: t('До реєстру дозволів', 'Naar het register'), icoon: 'table-2', actie: 'ga', gegevens: { naar: 'instellingen-risico' } } });
       var w = ctx.staat, sm = S(w), k = sm.kaders[id] || {};
       var lezen = !magWijzigen();
       var termijn = k.tot ? Math.max(1, Math.round((k.tot - (k.sinds || w.tijd)) / DAG)) : 0;
@@ -1271,9 +1368,10 @@
     if (oud === waarde) return;
     var namen = { verdieping: ['Поверх кімнати «' + k.naam[0] + '»', 'Verdieping van ‘' + k.naam[1] + '’'], icoon: ['Знак кімнати «' + k.naam[0] + '»', 'Teken van ‘' + k.naam[1] + '’'] };
     var vn = function (id) { var v = HV.staat.w.verdiepingen.filter(function (x) { return x.id === id; })[0]; return v ? v.naam : [id, id]; };
+    var icn = function (ic) { return KAMER_ICOON_NAAM[ic] || ['інший знак', 'ander teken']; };
     if (!isEigenaar()) return weigerRol();
     HV.staat.wijzig(function () { k[veld] = waarde; });
-    HV.logboek.voegToe({ maker: HV.mens(), wat: namen[veld], was: veld === 'verdieping' ? vn(oud) : [oud, oud], werd: veld === 'verdieping' ? vn(waarde) : [waarde, waarde], soort: 'huis.systeem' });
+    HV.logboek.voegToe({ maker: HV.mens(), wat: namen[veld], was: veld === 'verdieping' ? vn(oud) : icn(oud), werd: veld === 'verdieping' ? vn(waarde) : icn(waarde), soort: 'huis.systeem' });
     markeer('kamer-' + veld + '-' + k.id, 'ok');
     HV.meld({ maker: HV.mens(), icoon: veld === 'icoon' ? waarde : 'layers', titel: P(namen[veld]), tekst: veld === 'verdieping' ? P(vn(oud)) + ' → ' + P(vn(waarde)) : '', terug: function () { HV.staat.wijzig(function () { k[veld] = oud; }); HV.logboek.voegToe({ maker: HV.mens(), wat: ['Повернуто: ' + namen[veld][0], 'Ongedaan gemaakt: ' + namen[veld][1]], soort: 'huis.systeem' }); } });
   });
@@ -1554,6 +1652,7 @@
   });
   HV.actie('sm-kader', function (ctx, g) {
     if (!isEigenaar()) return weigerRol();
+    if (!isUitvoerder(g.uitvoerder)) return;
     var w = HV.staat.w, sm = S(w), u = g.uitvoerder, oud = kopie(sm.kaders[u] || {}), k = kopie(oud);
     var wie = HV.gevaar.uitvoerder(u);
     if (g.veld === 'termijn') { var d = Number(g.waarde); k.verlopen = null; if (d) { k.sinds = w.tijd; k.tot = w.tijd + d * DAG; } else { k.tot = null; k.sinds = null; } }

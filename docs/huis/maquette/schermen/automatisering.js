@@ -5,7 +5,7 @@
 //
 // Рушій правил живе тут же: стан правил — розширення світу (w.auto), тож кожен сценарій симулятора починає з чистого
 // паспорта. Кожен крок правила йде через HV.doe від імені виконавця «правило» (власний hv-stand на кожну дію; типово
-// «Вимкнено», змінює лише власник). Тригери часу й сонця спрацьовують за часом дому, тригери стану — на фронті зміни.
+// «Вимкнено», змінює лише власник). Події запуску за часом і сонцем спрацьовують за часом дому, події стану — на фронті зміни.
 (function (HV) {
   'use strict';
   var t = HV.t, h = HV.h, o = HV.o;
@@ -403,7 +403,7 @@
   var BEGRENZINGEN = [
     { id: 'boiler', icoon: 'droplet', naam: ['Бойлер не гарячіше 65 °C', 'Boiler niet heter dan 65 °C'], sub: ['перевіряється на виході до пристрою', 'gecontroleerd vlak voor het apparaat'], aan: true },
     { id: 'klimaat', icoon: 'thermometer', naam: ['Ціль кімнат 15–24 °C', 'Kamerdoel 15–24 °C'], sub: ['правила й агенти не виходять за межі', 'regels en agenten blijven binnen de grenzen'], aan: true },
-    { id: 'volume', icoon: 'speaker', naam: ['Після 22:00 гучність до 30 %', 'Na 22:00 volume tot 30 %'], sub: ['стосується автоматики, не людей', 'geldt voor automatiek, niet voor mensen'], aan: true },
+    { id: 'volume', icoon: 'speaker', naam: ['Після 22:00 гучність до 30 %', 'Na 22:00 volume tot 30 %'], sub: ['стосується автоматики, не людей', 'geldt voor automatiseringen, niet voor mensen'], aan: true },
     { id: 'maaier', icoon: 'trees', naam: ['Косарка лише 09:00–20:00', 'Maaier alleen 09:00–20:00'], sub: ['поза вікном запуск спиняється', 'buiten het venster wordt de start gestopt'], aan: false }
   ];
   var OVERGANGEN = [
@@ -723,7 +723,7 @@
     if (tr.soort === 'zon') { var z = zon(d0); return d0 + (tr.wat === 'op' ? z.op : z.onder) * UUR + (tr.min || 0) * MIN; }
     return null;
   }
-  /** Стан тригера на фронт: true / false; null — не тригер стану. */
+  /** Стан події запуску на фронт: true / false; null — не подія стану. */
   function signaal(tr, w) {
     var a;
     switch (tr.soort) {
@@ -757,7 +757,7 @@
       vorigeTijd = tot;
       // 1. очікування в запущених завданнях
       X.lopend.slice().forEach(function (taak) { if (taak.tot && w.tijd >= taak.tot) { taak.tot = null; verder(taak); } });
-      // 2. тригери часу й сонця, що минули між двома кроками (не більше 6 год назад: стрибок сценарію не надолужується)
+      // 2. події запуску за часом і сонцем, що минули між двома кроками (не більше 6 год назад: стрибок сценарію не надолужується)
       if (tot > van && tot - van <= 6 * UUR) {
         X.regels.forEach(function (r) {
           r.wanneer.forEach(function (tr) {
@@ -777,7 +777,7 @@
         });
         if (X.wachtOvergang && w.tijd >= X.wachtOvergang.om) { var wo = X.wachtOvergang; X.wachtOvergang = null; if (HV.kijk.thuis().length === 0) overgang(wo.g, w, X); }
       }
-      // 3. тригери стану: на фронті false → true
+      // 3. події запуску за станом: на фронті false → true
       var nu = momentSignalen(w, X);
       X.regels.forEach(function (r) {
         r.wanneer.forEach(function (tr, i) {
@@ -809,7 +809,7 @@
   // ───────────────────────── Перевірка перед збереженням ─────────────────────────
   function problemen(r) {
     var v = werkVan(r), uit = [], rol = HV.rol();
-    if (!v.wanneer.length) uit.push({ zwaar: true, tekst: ['Немає тригера: правило не запуститься', 'Geen aanleiding: de regel start nooit'] });
+    if (!v.wanneer.length) uit.push({ zwaar: true, tekst: ['Немає події запуску: правило не запуститься', 'Geen aanleiding: de regel start nooit'] });
     if (!v.dan.filter(function (s) { return s.soort !== 'wacht'; }).length) uit.push({ zwaar: true, tekst: ['Немає жодної дії', 'Er is geen enkele actie'] });
     v.dan.forEach(function (s, i) {
       var nr = i + 1;
@@ -820,7 +820,7 @@
         var ac = actieVan(s);
         if (ac && !HV.gevaar.rolMag(rol, ac).mag) uit.push({ zwaar: true, recht: true, stap: 'd' + i, tekst: ['Крок ' + nr + ': понад ваші права (' + HV.p(HV.gevaar.niveaus[ac.niveau].naam) + ')', 'Stap ' + nr + ': gaat boven je rechten (' + HV.p(HV.gevaar.niveaus[ac.niveau].naam) + ')'] });
         if (ac && HV.gevaar.stand('regel-' + r.id, ac.sleutel) === 'uit') uit.push({ info: true, stap: 'd' + i, tekst: ['Крок ' + nr + ' пропуститься: дозвіл «Вимкнено»', 'Stap ' + nr + ' wordt overgeslagen: toestemming ‘Uit’'] });
-        v.wanneer.forEach(function (tr) { if (tr.doel === s.doel) uit.push({ zwaar: true, stap: 'd' + i, tekst: ['Петля: крок ' + nr + ' змінює власний тригер', 'Lus: stap ' + nr + ' verandert de eigen aanleiding'] }); });
+        v.wanneer.forEach(function (tr) { if (tr.doel === s.doel) uit.push({ zwaar: true, stap: 'd' + i, tekst: ['Петля: крок ' + nr + ' змінює власну подію запуску', 'Lus: stap ' + nr + ' verandert de eigen aanleiding'] }); });
       }
       if (s.soort === 'wacht' && s.grens == null) uit.push({ zwaar: true, stap: 'd' + i, tekst: ['Крок ' + nr + ': очікування без межі', 'Stap ' + nr + ': wachten zonder grens'] });
       if (s.soort === 'scene' && !sceneVan(s.scene)) uit.push({ zwaar: true, stap: 'd' + i, tekst: ['Крок ' + nr + ': сцену видалено', 'Stap ' + nr + ': scène verwijderd'] });
@@ -1028,7 +1028,7 @@
       return '<button type="button" class="hv-recept" data-actie="blad" data-blad="recept:' + x.id + '" data-k="recept-' + x.id + '"><span class="hv-recept__teken">' + HV.icoon(x.icoon) + '</span><span class="hv-recept__naam">' + h(HV.p(x.naam)) + '</span><span class="hv-recept__sub">' + h(x.vragen.length + ' ' + HV.meervoud(x.vragen.length, ['запитання', 'запитання', 'запитань'], ['vraag', 'vragen'])) + '</span></button>';
     }).join('') + '</div>' });
     var begrenzing = o.blok({ id: 'aut-begrenzingen', titel: t('Обмеження', 'Begrenzingen'), teller: X.begrenzingen.filter(function (b) { return b.aan; }).length,
-      uitleg: t('Що станеться: обмеження перевіряється на виході до пристрою й спиняє будь-яку команду автоматики чи агента поза межею. Пов’язано з: людина за пультом обмежень не має. Як повернути: вимкніть обмеження тут.', 'Wat er gebeurt: een begrenzing wordt vlak voor het apparaat gecontroleerd en stopt elk commando van automatiek of agent buiten de grens. Hangt samen met: een mens aan de bediening is niet begrensd. Terugdraaien: zet de begrenzing hier uit.'),
+      uitleg: t('Що станеться: обмеження перевіряється на виході до пристрою й спиняє будь-яку команду автоматики чи агента поза межею. Пов’язано з: людина за пультом обмежень не має. Як повернути: вимкніть обмеження тут.', 'Wat er gebeurt: een begrenzing wordt vlak voor het apparaat gecontroleerd en stopt elke opdracht van een automatisering of agent buiten de grens. Hangt samen met: een mens aan de bediening is niet begrensd. Terugdraaien: zet de begrenzing hier uit.'),
       inhoud: '<div class="hv-kaart">' + X.begrenzingen.map(function (b) {
         return '<div class="hv-begrenzing" data-k="grens-' + b.id + '">' + o.schakel({ aan: b.aan, icoon: b.icoon, toon: 'neutraal', actie: 'grens-schakel', gegevens: { grens: b.id }, aria: HV.p(b.naam) }) + '<div class="hv-begrenzing__tekst"><p class="hv-begrenzing__naam">' + h(HV.p(b.naam)) + '</p><p class="hv-begrenzing__sub">' + h(HV.p(b.sub)) + '</p></div></div>';
       }).join('') +
@@ -1056,7 +1056,7 @@
   }
 
   // ───────────────────────── Сторінка правила (редактор) ─────────────────────────
-  var SECTIES = [['wanneer', 'w', ['Коли', 'Wanneer'], ['Тригер', 'Aanleiding']], ['als', 'a', ['Якщо', 'Als'], ['Умова', 'Voorwaarde']], ['dan', 'd', ['Тоді', 'Dan'], ['Дія', 'Actie']]];
+  var SECTIES = [['wanneer', 'w', ['Коли', 'Wanneer'], ['Подія запуску', 'Aanleiding']], ['als', 'a', ['Якщо', 'Als'], ['Умова', 'Voorwaarde']], ['dan', 'd', ['Тоді', 'Dan'], ['Дія', 'Actie']]];
   function stapStaat(sectie, s, r, W) {
     if (sectie === 'als') return toets(s, W);
     if (sectie === 'wanneer') { var v = signaal(s, W.w); return v === null ? null : v ? 'waar' : 'onwaar'; }
@@ -1091,7 +1091,7 @@
           ? '<div class="hv-flow__knop">' + binnen + '</div>'
           : '<button type="button" class="hv-flow__knop" data-actie="blad" data-blad="regelstap:' + sleutel + '" aria-label="' + h(HV.p(sec[3]) + ' ' + (i + 1) + ': ' + sub) + '">' + binnen + HV.icoon('chevron-right', { maat: 's', klas: 'hv-flow__pijl' }) + '</button>') + '</li>';
       }).join('');
-      var leeg = !lijst.length ? '<li class="hv-flow__leeg">' + h(sec[0] === 'als' ? t('Без умов: правило діє щоразу, коли спрацьовує тригер.', 'Zonder voorwaarden: de regel werkt telkens als de aanleiding optreedt.') : t('Порожньо — додайте крок.', 'Leeg — voeg een stap toe.')) + '</li>' : '';
+      var leeg = !lijst.length ? '<li class="hv-flow__leeg">' + h(sec[0] === 'als' ? t('Без умов: правило діє щоразу, коли настає подія запуску.', 'Zonder voorwaarden: de regel werkt telkens als de aanleiding optreedt.') : t('Порожньо — додайте крок.', 'Leeg — voeg een stap toe.')) + '</li>' : '';
       var plus = lezen ? '' : '<li class="hv-flow__plus">' + o.knop({ tekst: t('Додати: ', 'Toevoegen: ') + HV.p(sec[3]).toLowerCase(), icoon: 'plus', klein: true, soort: 'stil', actie: 'blad', gegevens: { blad: 'regelstap:nieuw' + sec[1] } }) + '</li>';
       return '<section class="hv-flow__sectie hv-flow__sectie--' + sec[0] + '" data-k="sectie-' + sec[0] + '"><header class="hv-flow__label"><span class="hv-flow__woord">' + h(HV.p(sec[2])) + '</span></header>' +
         '<div class="hv-flow__inhoud">' + wijze + '<ol class="hv-flow__lijst">' + stappen + leeg + plus + '</ol></div></section>';
@@ -1147,8 +1147,11 @@
     // маркери — HTML поверх розтягнутого SVG, щоб кола лишалися колами за будь-якої ширини картки
     var merk = function (u, klas) { return '<span class="hv-zonboog__merk hv-zonboog__merk--' + klas + '" style="left:' + (X(u) / 320 * 100).toFixed(2) + '%;top:' + (Y(u) / 112 * 100).toFixed(2) + '%"></span>'; };
     var label = function (u, tekst, klas) { return '<span class="hv-zonboog__label' + (klas ? ' ' + klas : '') + '" style="left:' + (X(u) / 320 * 100).toFixed(1) + '%">' + tekst + '</span>'; };
-    var extraMerk = extra != null ? '<span class="hv-zonboog__doel" style="left:' + (X(extra) / 320 * 100).toFixed(2) + '%"><span>' + h(t('тригер ', 'aanleiding ') + uurTekst(extra)) + '</span></span>' : '';
-    return '<figure class="hv-zonboog" data-k="zonboog"><div class="hv-zonboog__veld"><div class="hv-zonboog__vlak"><svg viewBox="0 0 320 112" preserveAspectRatio="none" aria-hidden="true"><line class="hv-zonboog__horizon" x1="0" y1="92" x2="320" y2="92"/><path class="hv-zonboog__pad" d="' + pad + '"/></svg>' + extraMerk + merk(z.op, 'op') + merk(z.onder, 'onder') + merk(nu, 'nu') + '</div>' +
+    // позначка події запуску: лінія в полі й підпис окремим рядком під «зараз»; у правій половині підпис стоїть ліворуч від лінії,
+    // тож не виходить за край поля й не ховається під «зараз»
+    var doelPct = extra != null ? (X(Math.max(0, Math.min(24, extra))) / 320 * 100).toFixed(2) : '';
+    var extraMerk = extra != null ? '<span class="hv-zonboog__doel" style="left:' + doelPct + '%"></span><span class="hv-zonboog__doeltekst' + (+doelPct > 50 ? ' is-links' : '') + '" style="--hv-doel:' + doelPct + '%">' + h(t('подія запуску ', 'aanleiding ') + uurTekst(extra)) + '</span>' : '';
+    return '<figure class="hv-zonboog' + (extra != null ? ' heeft-doel' : '') + '" data-k="zonboog"><div class="hv-zonboog__veld"><div class="hv-zonboog__vlak"><svg viewBox="0 0 320 112" preserveAspectRatio="none" aria-hidden="true"><line class="hv-zonboog__horizon" x1="0" y1="92" x2="320" y2="92"/><path class="hv-zonboog__pad" d="' + pad + '"/></svg>' + extraMerk + merk(z.op, 'op') + merk(z.onder, 'onder') + merk(nu, 'nu') + '</div>' +
       label(z.op, HV.icoon('sunrise', { maat: 'maker' }) + uurTekst(z.op)) + label(z.onder, HV.icoon('sunset', { maat: 'maker' }) + uurTekst(z.onder)) + label(nu, h(t('зараз', 'nu')) + ' ' + HV.tijd(w.tijd), 'is-nu') + '</div>' +
       '<figcaption class="hv-zonboog__zin">' + h(t('Сьогодні схід о ', 'Vandaag komt de zon op om ') + uurTekst(z.op) + t(', захід о ', ', ondergang om ') + uurTekst(z.onder) + t('; темно — від заходу до сходу.', '; donker is van ondergang tot opkomst.')) + '</figcaption></figure>';
   }
@@ -1281,7 +1284,7 @@
       return '<button type="button" class="hv-runrij' + (run && x.id === run.id ? ' is-gekozen' : '') + '" aria-pressed="' + (run && x.id === run.id ? 'true' : 'false') + '" data-actie="ui" data-naam="aut-run" data-waarde="' + h(x.id) + '" data-k="run-' + h(x.id) + '">' +
         '<span class="hv-runrij__tijd">' + HV.tijd(x.tijd) + '</span><span class="hv-runrij__dag">' + h(dagWoord(x.tijd, w.tijd)) + '</span>' +
         '<span class="hv-runrij__uitkomst hv-toon-' + (u[3] || 'neutraal') + '">' + HV.icoon(u[2], { maat: 's' }) + '<span>' + h(HV.p([u[0], u[1]])) + '</span></span>' +
-        '<span class="hv-runrij__bron">' + h(x.bron === 'handmatig' ? t('вручну', 'handmatig') : t('за тригером', 'door aanleiding')) + '</span></button>';
+        '<span class="hv-runrij__bron">' + h(x.bron === 'handmatig' ? t('вручну', 'handmatig') : t('за подією запуску', 'door aanleiding')) + '</span></button>';
     }).join('');
     var meer = runs.length > aantal ? o.knop({ tekst: t('Показати ще', 'Meer tonen') + ' (' + (runs.length - aantal) + ')', klein: true, soort: 'stil', actie: 'ui', gegevens: { naam: 'aut-meer', waarde: aantal + 20 } }) : '';
     var detail = run ? o.kaart({ k: 'run-detail', titel: t('Запуск ', 'Start ') + wanneerTekst(run.tijd, w.tijd) + t(' · версія ', ' · versie ') + run.versie, inhoud:
@@ -1605,14 +1608,14 @@
     if (stand === 'vakantie') return ['усе світло й медіа вимкнуться; опалення 15 °C до повернення', 'alle lampen en media uit; verwarming 15 °C tot je terug bent'];
     if (stand === 'nacht') return ['світло внизу вимкнеться, нічники лишаться; опалення 17,5 °C', 'het licht beneden gaat uit, nachtlampjes blijven aan; verwarming 17,5 °C'];
     if (stand === 'gasten') return ['сцени й клімат як є; гостьовий код дверей діє', 'scènes en klimaat blijven; de gastcode van de deur werkt'];
-    return ['опалення 21 °C; автоматика за розкладом', 'verwarming 21 °C; automatiek volgens rooster'];
+    return ['опалення 21 °C; автоматика за розкладом', 'verwarming 21 °C; automatisering volgens rooster'];
   }
   function regieRij(w, X, zonderVast) {
     var vast = X.vast && X.vast.tot > w.tijd;
-    var knop = vast ? o.knop({ tekst: t('Повернути автоматику', 'Automatiek hervatten'), icoon: 'rotate-ccw', klein: true, actie: 'stand-vast', gegevens: { tot: '' } })
+    var knop = vast ? o.knop({ tekst: t('Відновити автоматику', 'Automatisering hervatten'), icoon: 'rotate-ccw', klein: true, actie: 'stand-vast', gegevens: { tot: '' } })
       : zonderVast ? '' : o.knop({ tekst: t('Зафіксувати до 22:00', 'Vastzetten tot 22:00'), icoon: 'hand', klein: true, actie: 'stand-vast', gegevens: { tot: '22' } });
-    return '<div class="hv-regie' + (vast ? ' is-vast' : '') + '" data-k="regie">' + HV.icoon(vast ? 'hand' : 'workflow', { maat: 's' }) + '<span class="hv-regie__tekst">' + h(vast ? t('Керує зараз: вручну до ', 'Stuurt nu: handmatig tot ') + HV.tijd(X.vast.tot) + ' · ' + HV.p(X.vast.wie) : t('Керує зараз: автоматика — переходи режимів', 'Stuurt nu: automatiek — overgangen van standen')) + '</span>' +
-      '<span class="hv-regie__acties">' + knop + o.gevolg(t('Що станеться: переходи режимів не змінюватимуть режим до вказаного часу. Пов’язано з: порядок — безпека > вручну > режим > комфорт > економія. Як повернути: «Повернути автоматику».', 'Wat er gebeurt: overgangen veranderen de stand niet tot het gekozen tijdstip. Hangt samen met: volgorde — veiligheid > handmatig > stand > comfort > besparing. Terugdraaien: ‘Automatiek hervatten’.')) + '</span></div>';
+    return '<div class="hv-regie' + (vast ? ' is-vast' : '') + '" data-k="regie">' + HV.icoon(vast ? 'hand' : 'workflow', { maat: 's' }) + '<span class="hv-regie__tekst">' + h(vast ? t('Керує зараз: вручну до ', 'Stuurt nu: handmatig tot ') + HV.tijd(X.vast.tot) + ' · ' + HV.p(X.vast.wie) : t('Керує зараз: автоматика — переходи режимів', 'Stuurt nu: automatisering — overgangen van standen')) + '</span>' +
+      '<span class="hv-regie__acties">' + knop + o.gevolg(t('Що станеться: переходи режимів не змінюватимуть режим до вказаного часу. Пов’язано з: порядок — безпека > вручну > режим > комфорт > економія. Як повернути: «Відновити автоматику».', 'Wat er gebeurt: overgangen veranderen de stand niet tot het gekozen tijdstip. Hangt samen met: volgorde — veiligheid > handmatig > stand > comfort > besparing. Terugdraaien: ‘Automatisering hervatten’.')) + '</span></div>';
   }
   function scenesPagina(ctx) {
     var w = ctx.staat, X = A(w);
@@ -1963,7 +1966,7 @@
     var mens = HV.mens(), was = r.uit, wasPauze = r.pauze;
     HV.staat.wijzig(function () { if (r.pauze) { r.pauze = null; r.uit = false; } else r.uit = !r.uit; });
     HV.logboek.voegToe({ maker: mens, wat: ['Правило «' + r.naam[0] + '»', 'Regel ‘' + r.naam[1] + '’'], was: was ? ['вимкнено', 'uit'] : wasPauze ? ['призупинено', 'gepauzeerd'] : ['працює', 'actief'], werd: r.uit ? ['вимкнено', 'uit'] : ['працює', 'actief'], soort: 'huis.automatisering' });
-    HV.meld({ maker: mens, icoon: r.uit ? 'circle-off' : 'circle-check', titel: HV.p(r.naam) + ': ' + (r.uit ? t('вимкнено', 'uit') : t('працює', 'actief')), tekst: r.uit ? t('Не спрацюватиме, доки не ввімкнете знову.', 'Gaat niet af tot je de regel weer aanzet.') : t('Спрацює за своїм тригером.', 'Gaat af op de eigen aanleiding.'),
+    HV.meld({ maker: mens, icoon: r.uit ? 'circle-off' : 'circle-check', titel: HV.p(r.naam) + ': ' + (r.uit ? t('вимкнено', 'uit') : t('працює', 'actief')), tekst: r.uit ? t('Не спрацюватиме, доки не ввімкнете знову.', 'Gaat niet af tot je de regel weer aanzet.') : t('Спрацює за своєю подією запуску.', 'Gaat af op de eigen aanleiding.'),
       terug: function () { HV.staat.wijzig(function () { r.uit = was; r.pauze = wasPauze; }); HV.logboek.voegToe({ maker: mens, wat: ['Повернуто: «' + r.naam[0] + '»', 'Ongedaan: ‘' + r.naam[1] + '’'], soort: 'huis.automatisering' }); } });
   });
   HV.actie('regel-fase', function (ctx, g) { var r = R(g); if (r) zetFase(r, g.waarde); });
@@ -1982,7 +1985,7 @@
     var r = R(g); if (!r) return;
     HV.staat.wijzig(function () { r.quarantaine = false; r.fouten = 0; });
     HV.logboek.voegToe({ maker: HV.mens(), wat: ['Карантин знято: «' + r.naam[0] + '»', 'Uit quarantaine: ‘' + r.naam[1] + '’'], soort: 'huis.automatisering' });
-    HV.meld({ maker: HV.mens(), icoon: 'circle-check', titel: t('Карантин знято', 'Uit quarantaine'), tekst: HV.p(r.naam) + t(' спрацює за наступним тригером.', ' gaat af bij de volgende aanleiding.'), terug: function () { HV.staat.wijzig(function () { r.quarantaine = true; r.fouten = 3; }); } });
+    HV.meld({ maker: HV.mens(), icoon: 'circle-check', titel: t('Карантин знято', 'Uit quarantaine'), tekst: HV.p(r.naam) + t(' спрацює за наступною подією запуску.', ' gaat af bij de volgende aanleiding.'), terug: function () { HV.staat.wijzig(function () { r.quarantaine = true; r.fouten = 3; }); } });
   });
   HV.actie('regel-verwijder', function (ctx, g) {
     var r = R(g); if (!r) return;
@@ -2232,8 +2235,8 @@
     var w = ctx.staat, X = A(w), mens = HV.mens(), was = X.vast;
     if (!g.tot) {
       HV.staat.wijzig(function () { X.vast = null; });
-      HV.logboek.voegToe({ maker: mens, wat: ['Автоматику режимів відновлено', 'Automatiek van de standen hervat'], soort: 'huis.automatisering' });
-      HV.meld({ maker: mens, icoon: 'rotate-ccw', titel: t('Автоматику відновлено', 'Automatiek hervat'), tekst: t('Переходи режимів знову діють.', 'Overgangen werken weer.'), terug: function () { HV.staat.wijzig(function () { X.vast = was; }); } });
+      HV.logboek.voegToe({ maker: mens, wat: ['Автоматику режимів відновлено', 'Automatisering van de standen hervat'], soort: 'huis.automatisering' });
+      HV.meld({ maker: mens, icoon: 'rotate-ccw', titel: t('Автоматику відновлено', 'Automatisering hervat'), tekst: t('Переходи режимів знову діють.', 'Overgangen werken weer.'), terug: function () { HV.staat.wijzig(function () { X.vast = was; }); } });
       return;
     }
     var d0 = dagBegin(w.tijd), u = Number(g.tot), tot = u === 1 ? w.tijd + UUR : d0 + u * UUR;

@@ -434,7 +434,7 @@
   };
   HV.soAdapterStand = ADAPTER_STAND;
 
-  function gezondheid(ctx, kort) {
+  function gezondheid(ctx, kort, inBlad) {
     var w = ctx.staat, st = ADAPTER_STAND[X.sim.adapter] || ADAPTER_STAND.goed;
     var apparaten = w.volgorde.length;
     var weg = HV.kijk.alle(function (a) { return a.beschikbaar === 'onbereikbaar'; }).length;
@@ -452,7 +452,8 @@
       knoppen(X.sim.adapter === 'goed'
         ? o.knop({ tekst: t('Перезапустити адаптер', 'Adapter herstarten'), icoon: 'rotate-ccw', klein: true, actie: 'so-adapter-herstart' })
         : o.knop({ tekst: t('Відновити зв’язок', 'Verbinding herstellen'), icoon: 'refresh-cw', soort: 'hoofd', klein: true, actie: 'so-adapter', gegevens: { waarde: 'goed' } }),
-        o.knop({ tekst: t('Аркуш адаптера', 'Blad van de adapter'), icoon: 'panel-right-open', soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'soadapter:simulator' } })) + '</div>';
+        // у самому аркуші адаптера посилання на цей аркуш не показуємо
+        inBlad ? '' : o.knop({ tekst: t('Аркуш адаптера', 'Blad van de adapter'), icoon: 'panel-right-open', soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'soadapter:simulator' } })) + '</div>';
   }
 
   function integratiesTab(ctx) {
@@ -476,7 +477,7 @@
         '<ol class="hv-so-stapbalk">' + WIZARD_STAPPEN.map(function (s, i) { return '<li><span>' + (i + 1) + '</span>' + h(HV.p(s)) + '</li>'; }).join('') + '</ol>' +
         knoppen(o.knop({ tekst: t('Відкрити майстер', 'Wizard openen'), icoon: 'wand-sparkles', actie: 'so-wizard-open' })) +
         noot('flask-conical', t('У демо-домі майстер працює із симулятором; справжні джерела — зі штампом «пізніше».', 'In de demowoning werkt de wizard met de simulator; echte bronnen dragen het stempel ‘later’.'))) + '</div></div>' +
-      o.blok({ id: 'so-catalogus', titel: t('Справжні джерела', 'Echte bronnen'), teller: CATALOGUS.length, inhoud: catalogus, uitleg: t('Що станеться: адаптер джерела підключиться до справжнього дому, не до демо. Пов’язано з: майстер «Перенести налаштування» переносить кімнати й сцени чернетками. Як повернути: аркуш адаптера → «Вимкнути».', 'Wat er gebeurt: de adapter van de bron koppelt aan het echte huis, niet aan de demo. Hangt samen met: de wizard ‘Instellingen overnemen’ neemt kamers en scènes over als concept. Terugdraaien: blad van de adapter → ‘Uitzetten’.') }) + '</div>';
+      o.blok({ id: 'so-catalogus', titel: t('Справжні джерела', 'Echte bronnen'), teller: CATALOGUS.length, inhoud: catalogus, uitleg: t('Що станеться: адаптер джерела під’єднається до справжнього дому, не до демо. Пов’язано з: майстер «Перенести налаштування» переносить кімнати й сцени чернетками. Як повернути: аркуш адаптера → «Вимкнути».', 'Wat er gebeurt: de adapter van de bron koppelt aan het echte huis, niet aan de demo. Hangt samen met: de wizard ‘Instellingen overnemen’ neemt kamers en scènes over als concept. Terugdraaien: blad van de adapter → ‘Uitzetten’.') }) + '</div>';
   }
 
   // аркуш адаптера: маніфест, справність, «що зникне, якщо вимкнути»
@@ -488,7 +489,7 @@
       var c = CATALOGUS.filter(function (x) { return x.id === id; })[0];
       if (!c) {
         var w = ctx.staat;
-        return '<div class="hv-so-blad">' + o.kaart({ inhoud: gezondheid(ctx) }) +
+        return '<div class="hv-so-blad">' + o.kaart({ inhoud: gezondheid(ctx, false, true) }) +
           o.kaart({ titel: t('Маніфест', 'Manifest'), inhoud: '<dl class="hv-so-feiten">' +
             [[t('Назва', 'Naam'), 'huis-sim'], [t('Походження', 'Herkomst'), t('симуляція', 'simulatie')], [t('Шлях', 'Pad'), t('у процесі сервера', 'in het serverproces')], [t('Строк підтвердження', 'Bevestigingstermijn'), '3 ' + t('с', 's')], [t('Зерно', 'Zaad'), String(w.zaad >>> 0).slice(0, 8)], [t('Спроб після збою', 'Pogingen na storing'), '3 · 5 ' + t('с', 's') + ' · 45 ' + t('с', 's')]]
               .map(function (f) { return '<div><dt>' + h(f[0]) + '</dt><dd>' + h(f[1]) + '</dd></div>'; }).join('') + '</dl>' }) +
@@ -498,7 +499,7 @@
       }
       var melden = !!X.integratie.melden[c.id];
       return '<div class="hv-so-blad">' + o.kaart({ inhoud: '<p class="hv-so-blad__zin">' + h(HV.p(c.wat)) + '</p>' + '<p>' + o.later(t('пізніше · етап ' + c.etap, 'later · fase ' + c.etap)) + '</p>' }) +
-        o.kaart({ titel: t('Як він підключатиметься', 'Hoe hij gaat koppelen'), inhoud: '<ol class="hv-stappen">' +
+        o.kaart({ titel: t('Як він під’єднуватиметься', 'Hoe hij gaat koppelen'), inhoud: '<ol class="hv-stappen">' +
           [t('Джерело в майстрі нового пристрою', 'Bron in de wizard voor een nieuw apparaat'), HV.p(c.pad), t('Що знайдено: рівень кожної дії', 'Wat er is gevonden: het niveau van elke actie'), t('Кімната й назви українською та нідерландською', 'Kamer en namen in het Oekraïens en Nederlands')].map(function (x) { return '<li>' + h(x) + '</li>'; }).join('') + '</ol>' +
           noot('shield-check', t('Нові пристрої приходять із дозволами «Вимкнено» для всіх виконавців.', 'Nieuwe apparaten komen binnen met toestemming ‘Uit’ voor alle uitvoerders.')) }) +
         o.kaart({ titel: t('Сповіщення', 'Melding'), inhoud: '<div class="hv-so-schakelrij">' + o.schakel({ aan: melden, icoon: 'bell-ring', toon: 'aan', actie: 'so-bron-melden', gegevens: { bron: c.id }, aria: t('Сповістити, коли буде готово', 'Melden als het klaar is') }) +
@@ -1524,7 +1525,20 @@
     HV.teken();
   });
   HV.actie('so-planner-keuze', function (ctx, g) { X.planner[g.sleutel] = g.waarde; HV.teken(); });
-  HV.actie('so-planner-demo', function () { var p = X.planner; p.zon = 4.2; p.batterij = 10; p.warmtepomp = 'ja'; p.verbruik = 3400; p.gas = 1100; p.prijs = 0.27; HV.teken(); });
+  // «Як у демо-домі»: кнопка завжди відповідає — або повертає значення (з «Повернути»), або каже, що вони вже такі.
+  var PLANNER_DEMO = { zon: 4.2, batterij: 10, warmtepomp: 'ja', verbruik: 3400, gas: 1100, prijs: 0.27, saldering: 'zonder' };
+  HV.actie('so-planner-demo', function () {
+    var p = X.planner, velden = Object.keys(PLANNER_DEMO), was = {};
+    var anders = velden.filter(function (k) { return p[k] !== PLANNER_DEMO[k]; });
+    if (!anders.length) {
+      HV.meld({ icoon: 'house', titel: t('Уже як у демо-домі', 'Al zoals de demowoning'), tekst: t('Змініть значення ліворуч, щоб порівняти інший варіант.', 'Wijzig een waarde links om een andere variant te vergelijken.') });
+      return;
+    }
+    velden.forEach(function (k) { was[k] = p[k]; p[k] = PLANNER_DEMO[k]; });
+    HV.meld({ icoon: 'house', titel: t('Значення демо-дому повернено', 'Waarden van de demowoning teruggezet'), tekst: t('Змінено полів: ', 'Gewijzigde velden: ') + anders.length + t('. Збережені варіанти лишилися.', '. Bewaarde varianten zijn gebleven.'),
+      terug: function () { velden.forEach(function (k) { p[k] = was[k]; }); HV.teken(); } });
+    HV.teken();
+  }, { kijk: true });
   HV.actie('so-planner-bewaar', function () {
     var p = X.planner; if (p.varianten.length >= 3) return;
     var kopie = { zon: p.zon, batterij: p.batterij, warmtepomp: p.warmtepomp, verbruik: p.verbruik, gas: p.gas, prijs: p.prijs, saldering: p.saldering };
@@ -1537,7 +1551,7 @@
   // ═════════════════════════ 10. Складники — живий довідник hv-* ═════════════════════════
   // Кожен зразок — справжній компонент ядра чи зони; його дії перенаправлено на «so-zaal»: довідник показує,
   // що спрацює в продукті, але нічого не змінює. Графіки, «i» і згортання лишаються справжніми.
-  var ZAAL_ECHT = ['grafiek-tabel', 'uitleg', 'uitleg-sluit', 'blok', 'bericht', 'so-zaal-kleur'];
+  var ZAAL_ECHT = ['grafiek-tabel', 'uitleg', 'uitleg-sluit', 'blok', 'bericht', 'so-zaal-kleur', 'so-zaal-echt', 'so-zaal-ga'];
   function zaal(html, onderdeel) {
     return String(html)
       .replace(/data-actie="([a-z0-9-]+)"/g, function (m, a) { return ZAAL_ECHT.indexOf(a) >= 0 ? m : 'data-actie="so-zaal" data-oorspr="' + a + '" data-onderdeel="' + h(onderdeel) + '"'; })
@@ -1555,18 +1569,310 @@
     if (wijzig) wijzig(a);
     return a;
   }
+  /** Зразок: staat — ключ зі STATEN або власна пара [uk, nl]; klas — 'hover' | 'focus' | 'druk' | 'uit' | 'vol' (на всю ширину картки). */
   function staal(staat, html, klas) {
-    return '<div class="hv-so-staal' + (klas ? ' hv-so-staal--' + klas : '') + '"><span class="hv-so-staal__label">' + h(HV.p(STATEN[staat] || [staat, staat])) + '</span><div class="hv-so-staal__vak">' + html + (klas === 'uit' ? '<span class="hv-so-staal__slot">' + ic('lock', { maat: 's' }) + h(t('немає доступу', 'geen toegang')) + '</span>' : '') + '</div></div>';
+    return '<div class="hv-so-staal' + (klas ? ' hv-so-staal--' + klas : '') + '"><span class="hv-so-staal__label">' + h(HV.p(Array.isArray(staat) ? staat : STATEN[staat] || [staat, staat])) + '</span><div class="hv-so-staal__vak">' + html + (klas === 'uit' ? '<span class="hv-so-staal__slot">' + ic('lock', { maat: 's' }) + h(t('немає доступу', 'geen toegang')) + '</span>' : '') + '</div></div>';
   }
-  function zaalKaart(id, naam, wat, stalen, breed) {
+  /**
+   * Картка складника. extra: { waar:[uk,nl] — де компонент живе в макеті, klas — його назва в зоні, naar — маршрут «Відкрити в розділі»,
+   * echt:{ tekst, wat } — кнопка, що відкриває справжній шар ядра поверх довідника }.
+   */
+  function zaalKaart(id, naam, wat, stalen, breed, extra) {
+    var voet = '';
+    if (extra) {
+      voet = '<footer class="hv-so-zaalkaart__voet">' +
+        (extra.waar ? '<p class="hv-so-zaalkaart__bron">' + ic('map-pin', { maat: 's' }) + '<span>' + h(HV.p(extra.waar)) + (extra.klas ? ' · <code>' + h(extra.klas) + '</code>' : '') + '</span></p>' : '') +
+        (extra.echt ? o.knop({ tekst: extra.echt.tekst, icoon: 'square-arrow-out-up-right', klein: true, actie: 'so-zaal-echt', gegevens: { wat: extra.echt.wat } }) : '') +
+        (extra.naar ? o.knop({ tekst: t('Відкрити в розділі', 'In het onderdeel openen'), icoon: 'arrow-right', soort: 'stil', klein: true, actie: 'so-zaal-ga', gegevens: { naar: extra.naar } }) : '') + '</footer>';
+    }
     return '<section class="hv-kaart hv-so-zaalkaart' + (breed ? ' is-breed' : '') + '" data-k="so-zaal-' + id + '" aria-labelledby="so-zaal-t-' + id + '"><header class="hv-so-zaalkaart__kop"><h3 id="so-zaal-t-' + id + '"><code>' + h(naam) + '</code></h3><p>' + h(wat) + '</p></header>' +
-      '<div class="hv-so-stalen' + (breed ? ' is-breed' : '') + '">' + stalen.join('') + '</div></section>';
+      '<div class="hv-so-stalen' + (breed ? ' is-breed' : '') + '">' + stalen.join('') + '</div>' + voet + '</section>';
   }
+
+  // ── 10a. Шари ядра в довіднику: псевдонім кореня зі справжніми правилами стилю ──
+  // Аркуш (hv-laag), діалог небезпечної дії (hv-gevaar), Команда (hv-opdracht) й аварійний шар (hv-nood) живуть у корені
+  // hv-lagen, і ядро шукає їх за кореневим класом (пастка фокуса, Escape, повернення фокуса). Зразок на сторінці не може
+  // носити той самий клас — клавіатура застрягла б у зразку. Тому корінь зразка має псевдонім hv-so-<назва>, а правила для
+  // псевдоніма виводяться зі справжніх правил ядра під час першого показу довідника: зразок малюють ті самі декларації
+  // (разом із контейнерними запитами), а не їхня копія. Дочірні класи (hv-gevaar__kop, hv-rail, hv-nood__knop…) — справжні.
+  var SCHIJN_RE = /\.hv-(laag|gevaar|opdracht|nood)(?![\w-])/;
+  var SCHIJN_ALLE = new RegExp(SCHIJN_RE.source, 'g');
+  var schijnKlaar = false;
+  function selectorDelen(s) { // коми верхнього рівня, поза дужками :is() і :not()
+    var uit = [], diep = 0, begin = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charAt(i);
+      if (c === '(') diep++; else if (c === ')') diep--;
+      else if (c === ',' && !diep) { uit.push(s.slice(begin, i)); begin = i + 1; }
+    }
+    uit.push(s.slice(begin));
+    return uit;
+  }
+  function schijnRegels(regels) {
+    var uit = [];
+    for (var i = 0; i < regels.length; i++) {
+      var r = regels[i];
+      if (r.selectorText != null && r.style) {
+        if (!SCHIJN_RE.test(r.selectorText)) continue;
+        // зі списку селекторів беремо лише ті, що стосуються шару: решта вже має своє правило й свій порядок каскаду
+        var sel = selectorDelen(r.selectorText).filter(function (x) { return SCHIJN_RE.test(x); }).map(function (x) { return x.replace(SCHIJN_ALLE, '.hv-so-$1').trim(); });
+        uit.push(sel.join(', ') + ' { ' + r.style.cssText + ' }');
+      } else if (r.cssRules && r.cssRules.length) {
+        var binnen = schijnRegels(r.cssRules), tekst = r.cssText || '';
+        if (binnen.length && tekst.indexOf('{') > 0) uit.push(tekst.slice(0, tekst.indexOf('{')) + '{\n' + binnen.join('\n') + '\n}');
+      }
+    }
+    return uit;
+  }
+  function zorgSchijn() {
+    if (schijnKlaar || typeof document === 'undefined') return;
+    schijnKlaar = true;
+    var regels = [];
+    for (var i = 0; i < document.styleSheets.length; i++) {
+      var lijst = null;
+      try { lijst = document.styleSheets[i].cssRules; } catch (e) { lijst = null; } // чужий аркуш стилів недоступний
+      if (lijst) regels = regels.concat(schijnRegels(lijst));
+    }
+    if (!regels.length) return;
+    var stijl = document.createElement('style');
+    stijl.setAttribute('data-hv-so-schijn', '');
+    stijl.textContent = regels.join('\n');
+    (document.head || document.documentElement).appendChild(stijl);
+  }
+
+  // ── 10b. Зональні компоненти: справжня розмітка з render() розділу, а не копія ──
+  // Компонент, що належить зоні (план, мапа, режим охорони, пропозиція помічника…), довідник не перемальовує: він викликає
+  // render() потрібної вкладки чи вільного аркуша, бере з результату вузол компонента й додає йому клас-псевдонім із назвою
+  // плану (hv-landkaart, hv-alarmstand…). Стан, якого зараз немає в домі (виклик із дверей, політ дрона), на час малювання
+  // підставляється у світ і одразу повертається; світ, Журнал і сповіщення при цьому не змінюються.
+  var zoneCache = { sleutel: '', gezien: 0, uit: {} };
+  function uitZone(naam, maak) {
+    if (naam in zoneCache.uit) return zoneCache.uit[naam];
+    var html = '';
+    try { html = maak() || ''; } catch (e) { html = ''; }
+    zoneCache.uit[naam] = html;
+    return html;
+  }
+  function kopieVan(x) { return JSON.parse(JSON.stringify(x)); }
+  /** Тимчасово замінює поля об'єкта на час fn() і повертає все, як було (також коли fn кидає помилку). */
+  function metTijdelijk(obj, velden, fn) {
+    var oud = {}, had = {};
+    Object.keys(velden).forEach(function (k) { had[k] = Object.prototype.hasOwnProperty.call(obj, k); oud[k] = obj[k]; obj[k] = velden[k]; });
+    try { return fn(); } finally { Object.keys(velden).forEach(function (k) { if (had[k]) obj[k] = oud[k]; else delete obj[k]; }); }
+  }
+  /** Те саме для цілого об'єкта: після fn() він точно такий, як був — і без полів, які дописала зона під час малювання. */
+  function metKopie(obj, velden, fn) {
+    var oud = kopieVan(obj);
+    Object.keys(velden).forEach(function (k) { obj[k] = velden[k]; });
+    try { return fn(); } finally { Object.keys(obj).forEach(function (k) { delete obj[k]; }); Object.keys(oud).forEach(function (k) { obj[k] = oud[k]; }); }
+  }
+  function zoneCtx(ctx, scherm, tab, object) {
+    var c = {};
+    Object.keys(ctx).forEach(function (k) { c[k] = ctx[k]; });
+    c.route = { scherm: scherm, tab: tab, object: object || null, blad: null };
+    return c;
+  }
+  function tabHtml(ctx, scherm, tab, object) {
+    var s = HV.schermen[scherm];
+    if (!s) return '';
+    var tb = (s.tabs || []).filter(function (x) { return x.id === tab; })[0] || s;
+    return tb.render ? tb.render(zoneCtx(ctx, scherm, tab, object)) : '';
+  }
+  function bladVrijHtml(ctx, soort, id) { var b = HV.bladVrij(soort); return b ? b.render(ctx, id) : ''; }
+  /** Вузли selector із розмітки. op: { alias — клас-псевдонім плану, aantal — скільки вузлів, snoei:{ selector: скільки лишити }, wikkel — клас батьківського списку }. */
+  function knip(html, selector, op) {
+    op = op || {};
+    if (!html || typeof document === 'undefined') return '';
+    var sjabloon = document.createElement('template');
+    sjabloon.innerHTML = html;
+    var lijst = Array.prototype.slice.call(sjabloon.content.querySelectorAll(selector), 0, op.aantal || 1);
+    var uit = lijst.map(function (el) {
+      if (op.alias) el.classList.add(op.alias);
+      Object.keys(op.snoei || {}).forEach(function (q) {
+        Array.prototype.slice.call(el.querySelectorAll(q), op.snoei[q]).forEach(function (x) { x.parentNode.removeChild(x); });
+      });
+      return el.outerHTML;
+    }).join('');
+    return uit && op.wikkel ? '<div class="' + op.wikkel + '">' + uit + '</div>' : uit;
+  }
+  /** Обгортка зонального зразка; порожній результат — чесний порожній стан із назвою місця, де компонент живе. */
+  function zone(html, maat, waar) {
+    if (!html) return o.leeg({ icoon: 'component', titel: t('Зараз цього стану в домі немає', 'Deze toestand is er nu niet in huis'), tekst: waar ? HV.p(waar) : '' });
+    return '<div class="hv-so-zone' + (maat ? ' hv-so-zone--' + maat : '') + '">' + html + '</div>';
+  }
+  // Дотик у довіднику міг змінити стан зони (розгорнутий запис, «Показати як таблицю») — знімки зон беруться наново.
+  if (typeof document !== 'undefined') document.addEventListener('click', function (ev) { if (ev.target && ev.target.closest && ev.target.closest('.hv-so-zaal')) zoneCache.uit = {}; }, true);
+
+  // План малюється в пікселях під ширину свого вікна (зона сама міряє .hv-plan__venster). Перший знімок зроблено ще без
+  // вічка в довіднику, тож після показу звіряємо ширину й за потреби беремо знімок наново — так само робить сама зона.
+  var planBreedte = null, planGepland = false, planPogingen = 0;
+  function planControle() {
+    if (planGepland || typeof window === 'undefined') return;
+    planGepland = true;
+    var stap = window.requestAnimationFrame || function (f) { return setTimeout(f, 16); };
+    stap(function () {
+      planGepland = false;
+      var el = document.querySelector('.hv-so-zaal .hv-plan__venster');
+      if (!el || !el.clientWidth) return;
+      if (planBreedte != null && Math.abs(el.clientWidth - planBreedte) <= 3) { planPogingen = 0; return; }
+      if (planPogingen++ >= 3) return; // ширина не встигає за знімком — не крутимо перерисовку
+      planBreedte = el.clientWidth;
+      delete zoneCache.uit.plan;
+      HV.teken();
+    });
+  }
+
+  // ── 10c. Зразки шарів ядра ──
+  function hemelStaal(fase, binnen) {
+    return '<div class="hv-so-hemelstaal' + (fase ? ' hv-so-hemelstaal--' + fase : '') + '"><div class="hv-hemel" aria-hidden="true"><div class="hv-hemel__gloed"></div></div>' + (binnen || '') + '</div>';
+  }
+  function laagStaal(ctx, id) {
+    return HV.bladHtml(ctx, { type: 'apparaat', id: id, deel: 'bediening' })
+      .replace('<aside class="hv-laag', '<aside class="hv-so-laag').replace(/role="dialog" aria-modal="(true|false)"/, 'role="group"')
+      .replace(/hv-laag-titel/g, 'so-zaal-laag-titel').replace(/laag-tab-/g, 'so-zaal-laag-tab-');
+  }
+  var houdSec = function (s) { return HV.getal(s, 1) + ' ' + t('с', 's'); };
+  /** Рейка утримання в одному зі станів: rust · houdt (половина) · klaar (заповнена) · terug (відпущено раніше). */
+  function railStaal(a, icoon, staat) {
+    var tekst = a.houd ? HV.p(a.houd) : t('Утримуйте, щоб підтвердити', 'Houd vast om te bevestigen');
+    var rest = staat === 'houdt' ? 0.5 : staat === 'klaar' ? 0 : 1.2;
+    var woord = HV.p({ rust: ['спокій', 'rust'], houdt: ['утримання', 'vasthouden'], klaar: ['виконано', 'uitgevoerd'], terug: ['скасовано', 'geannuleerd'] }[staat]);
+    return '<div class="hv-rail hv-rail--' + a.niveau + (staat === 'houdt' ? ' is-houdt hv-so-rail--half' : staat === 'klaar' ? ' is-houdt' : '') + '" role="img" aria-label="' + h(t('Рейка утримання, ', 'Houdrail, ') + woord + ': ' + tekst + ', ' + houdSec(rest)) + '">' +
+      '<span class="hv-rail__vulling" aria-hidden="true"></span><span class="hv-rail__knop" aria-hidden="true">' + ic(staat === 'klaar' ? 'check' : icoon, { maat: 's' }) + '</span>' +
+      '<span class="hv-rail__tekst" aria-hidden="true">' + h(tekst) + '</span><span class="hv-rail__tel" aria-hidden="true">' + h(houdSec(rest)) + '</span></div>';
+  }
+  /** Діалог небезпечної дії: stap — 'houd' (рейка й «Підтвердити») | 'aftel' (відлік 3 с) | 'herbevestig' (підтвердження входу). */
+  function gevaarStaal(sleutel, apparaatId, stap) {
+    var a = HV.gevaar.actie(sleutel), ap = HV.staat.w.apparaten[apparaatId];
+    if (!a || !ap) return '';
+    var kritiek = a.niveau === 'kritiek', lijf;
+    if (stap === 'herbevestig') {
+      lijf = '<div class="hv-herbevestig"><span class="hv-herbevestig__teken">' + ic('key-round', { maat: 'l' }) + '</span><div><p class="hv-herbevestig__tekst">' + h(t('Критична дія потребує підтвердження входу.', 'Een kritieke actie vraagt een bevestiging van je aanmelding.')) + '</p>' +
+        '<p class="hv-herbevestig__noot">' + h(t('Підтвердження діє 5 хв для цього сеансу.', 'De bevestiging geldt 5 min voor deze sessie.')) + '</p></div></div>' +
+        '<div class="hv-gevaar__knoppen">' + o.knop({ tekst: t('Скасувати', 'Annuleren'), actie: 'dialoog-annuleer' }) + o.knop({ tekst: t('Підтвердити вхід', 'Aanmelding bevestigen'), icoon: 'key-round', soort: 'hoofd', actie: 'dialoog-herbevestig' }) + '</div>';
+    } else {
+      lijf = railStaal(a, o.beeld(ap).icoon, 'rust') +
+        '<div class="hv-gevaar__knoppen">' + o.knop({ tekst: t('Скасувати', 'Annuleren'), actie: 'dialoog-annuleer' }) +
+        '<button type="button" class="hv-knop hv-knop--gewoon hv-gevaar__bevestig' + (stap === 'aftel' ? ' is-aftel' : '') + '" data-actie="dialoog-aftel">' + h(stap === 'aftel' ? t('Виконається через 2 с — зупинити', 'Wordt uitgevoerd over 2 s — stoppen') : t('Підтвердити', 'Bevestigen')) + '</button></div>';
+    }
+    return '<div class="hv-so-gevaar hv-gevaar--' + a.niveau + '" role="group" aria-label="' + h(t('Зразок діалогу: ', 'Voorbeeld van de dialoog: ') + HV.p(a.naam)) + '">' +
+      '<header class="hv-gevaar__kop">' + o.risico(a.niveau, { lang: true }) + '<h2>' + h(HV.p(a.naam)) + '</h2></header>' +
+      '<div class="hv-gevaar__gevolg">' + o.gevolgRijen(HV.p(a.gevolg)) + '</div>' +
+      '<p class="hv-gevaar__doel"><span>' + h(t('Зачеплено', 'Geraakt')) + '</span> ' + h(HV.p(ap.naam) + ' · ' + HV.p(HV.staat.kamer(ap.kamer).naam)) + (kritiek ? ' <span class="hv-punt" aria-hidden="true">·</span> ' + h(t('рейка й підтвердження входу', 'rail en bevestiging van aanmelding')) : '') + '</p>' + lijf + '</div>';
+  }
+  var NOOD_STAAL = {
+    rook: { icoon: 'alarm-smoke', kamer: 'keuken', titel: ['Дим: ', 'Rook: '], wat: ['Датчик диму спрацював', 'De rookmelder is afgegaan'], doe: ['Вимкнути духовку', 'Oven uitzetten'] },
+    lek: { icoon: 'droplet', kamer: 'bijkeuken', titel: ['Вода: ', 'Water: '], wat: ['Датчик протікання спрацював', 'De lekkagesensor is afgegaan'], doe: ['Зупинити пральну машину', 'Wasmachine stoppen'] }
+  };
+  function noodStaal(soort) {
+    var n = NOOD_STAAL[soort], w = HV.staat.w, thuis = HV.kijk.thuis().map(function (m) { return HV.p(m.naam); });
+    var titel = HV.p(n.titel) + HV.p(HV.staat.kamer(n.kamer).naam).toLowerCase();
+    var knop = function (tekst, hoofd) { return '<button type="button" class="hv-nood__knop' + (hoofd ? ' hv-nood__knop--hoofd' : '') + '" data-actie="' + (hoofd ? 'nood-zie' : 'nood-doe') + '">' + h(tekst) + '</button>'; };
+    return '<div class="hv-so-nood" role="group" aria-label="' + h(t('Зразок аварійного шару: ', 'Voorbeeld van de noodlaag: ') + titel) + '"><div class="hv-nood__binnen"><span class="hv-nood__teken">' + ic(n.icoon, { maat: 'xl' }) + '</span>' +
+      '<h2>' + h(titel) + '</h2><p class="hv-nood__wat">' + h(HV.p(n.wat) + t(' о ', ' om ') + HV.tijd(w.tijd - 120000) + ' · ' + HV.duur(2) + t(' тому', ' geleden')) + '</p>' +
+      '<p class="hv-nood__thuis">' + h(thuis.length ? t('Удома: ', 'Thuis: ') + thuis.join(', ') : t('Удома нікого немає.', 'Er is niemand thuis.')) + '</p>' +
+      '<div class="hv-nood__knoppen">' + knop(t('Бачу — приглушити сирену', 'Gezien — sirene dempen'), true) + knop(HV.p(n.doe)) + knop(t('Зупинити самостійні дії', 'Zelfstandige acties stoppen')) + '</div>' +
+      '<p class="hv-nood__sim">' + ic('flask-conical', { maat: 's' }) + h(t('Симуляція: жоден справжній пристрій не змінено.', 'Simulatie: er is geen echt apparaat veranderd.')) + '</p></div></div>';
+  }
+  var OPDRACHT_STAAL = [['lightbulb', ['Вимкнути все світло', 'Alle lampen uit']], ['moon', ['На добраніч', 'Welterusten']], ['log-out', ['Йду', 'Ik ga weg']], ['log-in', ['Я вдома', 'Ik ben thuis']], ['cctv', ['Камери', 'Camera’s']], ['door-open', ['Що відчинено?', 'Wat staat open?']]];
+  function opdrachtStaal(gevolg) {
+    var lijf = gevolg
+      ? '<div class="hv-opdracht__gevolg"><h3>' + h(HV.p(OPDRACHT_STAAL[1][1])) + '</h3>' + o.gevolgRijen(t('Що станеться: світло внизу й телевізор вимкнуться, двері замкнуться, опалення знизиться до 17,5 °C. Пов’язано з: охорону сцена не ставить і не знімає. Як повернути: «Повернути» протягом 10 с.', 'Wat er gebeurt: het licht beneden en de televisie gaan uit, de deuren gaan op slot, de verwarming zakt naar 17,5 °C. Hangt samen met: de scène schakelt het alarm niet in of uit. Terugdraaien: ‘Ongedaan maken’ binnen 10 s.')) +
+        '<div class="hv-knoppen">' + o.knop({ tekst: t('Назад', 'Terug'), actie: 'opdracht-kies' }) + o.knop({ tekst: t('Виконати', 'Uitvoeren'), soort: 'hoofd', actie: 'opdracht-voer' }) + '</div></div>'
+      : '<div class="hv-opdracht__werkwoorden">' + OPDRACHT_STAAL.map(function (x) { return '<button type="button" class="hv-opdracht__werkwoord" data-actie="opdracht-kies">' + ic(x[0], { maat: 'l' }) + '<span>' + h(HV.p(x[1])) + '</span></button>'; }).join('') + '</div>';
+    return '<div class="hv-so-opdracht" role="group" aria-label="' + h(t('Зразок Команди', 'Voorbeeld van Opdracht')) + '"><div class="hv-opdracht__zoek">' + ic('search') +
+      '<input type="text" readonly tabindex="-1" placeholder="' + h(t('Що зробити або знайти?', 'Wat wil je doen of vinden?')) + '" aria-label="' + h(t('Поле Команди — зразок', 'Veld van Opdracht — voorbeeld')) + '">' +
+      o.icoonknop({ icoon: 'x', aria: t('Закрити', 'Sluiten'), actie: 'dialoog-annuleer' }) + '</div><div class="hv-opdracht__lijf">' + lijf + '</div></div>';
+  }
+
+  // ── 10d. Зональні зразки зі станом, якого зараз може не бути в домі ──
+  function pincodeStaal(ctx, invoer, melding) {
+    var g = (HV.gezichten || []).filter(function (x) { return x.id === 'deur-toegang'; })[0];
+    if (!g) return '';
+    var d = HV.ui.lees('gzx-deur', null);
+    if (!d) { g.render(ctx); d = HV.ui.lees('gzx-deur', null); }
+    if (!d) return '';
+    return metKopie(d, { stap: 'code', invoer: invoer, melding: melding || null, fouten: melding ? 1 : 0, sos: 0, pauzeTot: 0 }, function () { return knip(g.render(ctx), '.hv-pincode'); });
+  }
+  function voorstelStaal(ctx) {
+    var w = ctx.staat;
+    if (!w.ast) tabHtml(ctx, 'automatiseringen', 'assistent');
+    var X = w.ast, a = w.apparaten.torsher;
+    if (!X || !X.voorstellen || !X.gesprek || !a) return '';
+    var v = { id: 'sozaal', titel: ['Вимкнути світло: вітальня', 'Licht uit: woonkamer'], sleutel: 'licht', niveau: 'gewoon', icoon: 'lightbulb', kop: ['1 лампа, 1 кімната', '1 lamp, 1 kamer'],
+      stappen: [{ doel: a.id, mogelijkheid: 'aan', waarde: false, naam: a.naam, kamer: HV.staat.kamer(a.kamer).naam, was: HV.beschrijf(a, 'aan', true), wordt: HV.beschrijf(a, 'aan', false), overslaan: null }],
+      samengesteld: null, begrepen: ['вітальня, світло — вимкнути', 'woonkamer, licht — uit'], bronnen: [a.id], stand: 'nieuw', tijd: w.tijd };
+    X.voorstellen.sozaal = v;
+    X.gesprek.push({ id: 'gsozaal', wie: 'assistent', tijd: w.tijd, kaart: { soort: 'voorstel', voorstel: 'sozaal', taal: ctx.taal } });
+    try { return knip(tabHtml(ctx, 'automatiseringen', 'assistent'), '.hv-ast-voorstel', { alias: 'hv-voorstel' }); }
+    finally { X.gesprek.pop(); delete X.voorstellen.sozaal; }
+  }
+  /** Ланцюжок «Чому?» зі справжнього аркуша; якщо Журнал ще порожній (перший запуск) — для одного зразкового запису. */
+  function waaromKeten(ctx, id) {
+    var w = ctx.staat, knipHet = function (x) { return knip(bladVrijHtml(ctx, 'waarom', x), '.hv-kaart'); };
+    if (id) return knipHet(id);
+    var proef = { id: 'sozaal', tijd: w.tijd - 600000, maker: { soort: 'knop', naam: ['Кнопка сцен', 'Scèneknop'] }, wat: ['Лампа над столом: увімкнено', 'Lamp boven de tafel: aan'], waarom: ['подвійний натиск', 'dubbel gedrukt'], soort: 'huis.apparaat', gewicht: 'info', gelezen: true, sim: true };
+    return metTijdelijk(w, { logboek: [proef] }, function () { return knipHet('sozaal'); });
+  }
+  function verzoekStaal(ctx) {
+    var w = ctx.staat, wacht = (w.verzoeken || []).some(function (v) { return v.stand === 'wacht'; });
+    var knipHet = function () { return knip(tabHtml(ctx, 'activiteit', 'meldingen'), '.hv-verzoek'); };
+    if (wacht || !w.verzoeken) return knipHet();
+    var proef = { id: 'sozaal', uitvoerder: 'claude', sleutel: 'laadpaal.laden', doel: 'laadpaal', mogelijkheid: 'laden', waarde: true, sinds: w.tijd - 60000, tot: w.tijd + 240000, stand: 'wacht',
+      wat: ['Зарядити авто о 02:00', 'De auto om 02:00 laden'], waarom: ['найдешевші години: 02:00–05:00', 'de goedkoopste uren: 02:00–05:00'], wordt: ['Авто: 64 % → 80 % до 05:10', 'Auto: 64 % → 80 % om 05:10'] };
+    return metTijdelijk(w, { verzoeken: w.verzoeken.concat([proef]) }, knipHet);
+  }
+  function vluchtbalkStaal(ctx, inLucht) {
+    var lijst = ctx.staat.drones || [], d = lijst[0];
+    if (!d) return '';
+    var vliegt = lijst.filter(function (x) { return x.stand === 'vlucht' || x.stand === 'signaalkwijt'; })[0];
+    var knipHet = function () { return knip(tabHtml(ctx, 'garage', 'drones', 'vlucht'), '.hv-vluchtbalk'); };
+    // кабіна показує дрон, що летить; іншого стану на час малювання надаємо самі й повертаємо об'єкт точно таким, як був
+    if (inLucht) {
+      if (vliegt) return knipHet();
+      // позиція задана явно: без неї зона вважала б політ початком сценарію й завела б запис польоту
+      return metKopie(d, { stand: 'vlucht', fase: 'opstijgen', link: true, x: 39, y: 21, h: 18, v: 3, kop: 305, vluchtS: 95, punt: 0, zweefRest: 0, missie: 'perceel', gps: 17, fotos: 3, signaal: 92, klaar: false, laagGemeld: false, kwijtS: 0, gezienEcht: REEL() }, knipHet);
+    }
+    return vliegt ? metKopie(vliegt, { stand: 'dock', link: true, fase: null }, knipHet) : knipHet();
+  }
+  function oproepStaal(ctx) {
+    // аркуш виклику цілком: кадр і стан (hv-bev-oproep) та картки швидкої відповіді й дій поруч із ним
+    var w = ctx.staat, knipHet = function () { var html = bladVrijHtml(ctx, 'oproep'); return html.indexOf('class="hv-bev-oproep"') >= 0 ? html.replace('class="hv-bev-oproep"', 'class="hv-bev-oproep hv-oproep"') : ''; };
+    return w.oproep ? knipHet() : metTijdelijk(w, { oproep: { sinds: w.tijd - 40000, stand: 'belt' } }, knipHet);
+  }
+  // Сорок дев'ять назв плану §3.9: довідник сам перевіряє, що кожна має картку.
+  var PLAN_39 = ('hv-hemel hv-held hv-doorsnede hv-tegel hv-kamerkaart hv-telemetrie hv-laag hv-blok hv-chip hv-nu hv-leeg hv-skelet ' +
+    'hv-dagstrook hv-grafiek hv-tabel hv-plan hv-landkaart hv-stempel hv-versheid hv-sim hv-maker hv-waarom ' +
+    'hv-schakel hv-schuif hv-wijzer hv-kleur hv-aftel hv-werkmodus hv-laadplan hv-scene hv-huisstand hv-alarmstand ' +
+    'hv-risico hv-stand hv-gevaar hv-rail hv-gevolg hv-nood hv-pincode ' +
+    'hv-toost hv-bericht hv-meldingen hv-opdracht hv-voorstel hv-verzoek hv-agentkaart hv-regel hv-vluchtbalk hv-oproep').split(' ');
+
   function onderdelenLijst(ctx) {
     var w = ctx.staat, nu = Date.now();
     zaalTeller = 0;
+    zorgSchijn();
+    // знімки зон живуть, доки не змінилися мова, роль, профіль, сценарій чи режим — і доки довідник лишається на екрані
+    var sleutel = [ctx.taal, ctx.rol, ctx.profiel.id, ctx.dichtheid, w.scenario, w.huisstand, w.gegevens].join('|');
+    if (sleutel !== zoneCache.sleutel || nu - zoneCache.gezien > 4000) zoneCache.uit = {};
+    zoneCache.sleutel = sleutel; zoneCache.gezien = nu;
     var tegel = function (a, vorm) { return '<div class="hv-tegels hv-so-staal__tegels">' + o.tegel(a, { vorm: vorm || '2x1' }) + '</div>'; };
     var fakeW = function (gegevens, pauze, snelheid) { return { gegevens: gegevens, pauze: !!pauze, snelheid: snelheid || 60, tijd: w.tijd }; };
+    var staalNoot = function (tekst) { return '<p class="hv-so-staal__noot">' + h(tekst) + '</p>'; };
+    // ── дані для нових груп ──
+    var hemelNu = HV.hemel.bereken(w, HV.thema ? HV.thema() : 'licht'), weer = HV.hemel.weer(w), zin = HV.huiszin(ctx);
+    var held = function () {
+      return o.held({ datum: h(HV.datum(w.tijd)) + ' <span class="hv-punt">·</span> <span class="hv-held__tijd">' + HV.tijd(w.tijd) + '</span>', zin: zin.vol, kort: h(zin.kort),
+        chips: o.chip({ icoon: weer.icoon, tekst: weer.tekst }) + o.chip({ icoon: 'users', tekst: t('удома: ', 'thuis: ') + HV.kijk.thuis().length }) + o.chip({ icoon: 'lightbulb', toon: 'aan', tekst: t('світло: ', 'licht: ') + HV.kijk.lampenAan().length }) })
+        .replace('<h1 ', '<p ').replace('</h1>', '</p>'); // у довіднику речення героя — не заголовок сторінки
+    };
+    var rijenBlok = '<div class="hv-rijen hv-rijen--kaart">' + o.rij({ icoon: 'lightbulb', naam: t('Світло', 'Licht'), waarde: h(String(HV.kijk.lampenAan().length)) }) + o.rij({ icoon: 'thermometer', naam: t('Вітальня', 'Woonkamer'), waarde: HV.maat((HV.kijk.temperatuur('woonkamer') || { st: {} }).st.waarde, '°C', 1) }) + '</div>';
+    var tabelKamers = HV.tabel([t('Кімната', 'Kamer'), t('Температура', 'Temperatuur'), t('Світло', 'Licht')], ['woonkamer', 'keuken', 'slaapkamer', 'werkkamer'].map(function (id) {
+      var tm = HV.kijk.temperatuur(id), v = HV.hemel.venster(id);
+      return [HV.p(HV.staat.kamer(id).naam), tm && tm.st.waarde != null ? HV.maat(tm.st.waarde, '°C', 1) : '—', h(v.woord || t('без світла', 'geen lampen'))];
+    }));
+    var ketenId = (w.logboek.filter(function (r) { return r.keten; })[0] || w.logboek[0] || {}).id;
+    var waaromRegel = function (woord, maker) { return '<p class="hv-waarom">' + h(woord) + o.maker(maker) + '</p>'; };
+    var slotActie = HV.gevaar.actie('slot.ontgrendelen'), ovenActie = HV.gevaar.actie('oven.aan');
     var groepen = [
       { id: 'basis', naam: ['Основа', 'Basis'], lijst: [
         ['hv-knop', t('Кнопка: одна основна дія на картку, звичайна, тиха; «натиснута» — поточний стан.', 'Knop: één hoofdactie per kaart, gewoon, stil; ‘ingedrukt’ — de huidige stand.'), [
@@ -1584,6 +1890,23 @@
         ['hv-werkmodus', t('Режим роботи «Пауза · Розумно · Швидко» для зарядки й батареї.', 'Werkmodus ‘Pauze · Slim · Snel’ voor laden en batterij.'), [staal('rust', o.werkmodus({ waarde: 'slim', actie: 'x' })), staal('uit', o.werkmodus({ waarde: 'pauze', actie: 'x', uit: true }), 'uit')], true],
         ['hv-stapper', t('«−/+» довкола числа: два органи з власними підписами.', '‘−/+’ rond een getal: twee organen met een eigen label.'), [staal('rust', o.stapper({ actie: 'x', label: t('Ціль', 'Doel'), waarde: HV.maat(21, '°C', 1) })), staal('focus', o.stapper({ actie: 'x', label: t('Ціль', 'Doel'), waarde: HV.maat(21, '°C', 1) }), 'focus')], true]
       ] },
+      { id: 'schil', naam: ['Небо й каркас', 'Hemel en schil'], lijst: [
+        ['hv-hemel', t('Небо за часом дому: чотири фази з м’яким переходом. На «Домі» воно повне, на решті сторінок — тихе; на небі — лише колір тексту.', 'Hemel volgens de huistijd: vier fasen met een zachte overgang. Op ‘Thuis’ vol, op de andere pagina’s stil; op de hemel alleen de tekstkleur.'), [
+          staal(['зараз · ' + hemelNu.naam[0], 'nu · ' + hemelNu.naam[1]], hemelStaal(''))].concat(HV.hemel.fasen.map(function (f) { return staal(HV.hemel.faseNaam[f], hemelStaal(f)); })).concat([
+          staal(['тихе небо сторінок', 'stille hemel van pagina’s'], hemelStaal('stil'))]), false, { waar: ['Дім', 'Thuis'], naar: 'overzicht' }],
+        ['hv-held', t('Герой: речення дому на небі, дата й час дому, паперові чипи. У вузькій колонці сам переходить на коротке речення.', 'Held: de zin van het huis op de hemel, datum en huistijd, papieren chips. In een smalle kolom schakelt hij zelf naar de korte zin.'), [
+          // на вузькому полотні обидва зразки були б однакові — лишається один, з коротким реченням
+          (ctx.profiel.breedte || 0) >= 700 ? staal(['широка колонка · повне речення', 'brede kolom · volledige zin'], hemelStaal('held', held()), 'vol') : '', staal(['вузька колонка · коротке речення', 'smalle kolom · korte zin'], hemelStaal('held', held()))], true, { waar: ['Дім', 'Thuis'], naar: 'overzicht' }],
+        ['hv-doorsnede', t('Дім у розрізі: поверх — рядок, кімната — кнопка; вікно світиться лише за підтвердженого світла.', 'Huis in doorsnede: een verdieping is een rij, een kamer een knop; een raam licht alleen op bij bevestigd licht.'), [
+          staal('rust', zone('<div class="hv-kaart hv-kaart--doorsnede">' + HV.hemel.doorsnede(ctx) + '</div>', 'midden'), 'vol')], true, { waar: ['Дім', 'Thuis'], naar: 'overzicht' }],
+        ['hv-laag', t('Аркуш керування: скляна оболонка, вміст на папері; три частини «Керування · Історія · Налаштування». На телефоні виїжджає знизу, на комп’ютері стоїть праворуч.', 'Bedieningsblad: glazen omhulsel, inhoud op papier; drie delen ‘Bediening · Geschiedenis · Instellingen’. Op de telefoon schuift het van onderen in, op de computer staat het rechts.'), [
+          staal('rust', zone(uitZone('laag', function () { return laagStaal(ctx, 'torsher'); }), 'midden'), 'vol')], true, { echt: { tekst: t('Відкрити справжній аркуш', 'Het echte blad openen'), wat: 'laag' } }],
+        ['hv-blok', t('Блок сторінки: назва, лічильник, «i» і згортання; згорнутий показує підсумок одним рядком.', 'Paginablok: naam, teller, ‘i’ en inklappen; ingeklapt toont het één regel samenvatting.'), [
+          staal(['розгорнутий', 'open'], o.blok({ id: 'so-zaal-blok-open', titel: t('Зведення', 'Overzicht'), teller: 2, inhoud: rijenBlok, samenvatting: h(t('світло й температура', 'licht en temperatuur')),
+            uitleg: t('Що станеться: блок згорнеться до одного рядка. Пов’язано з: вибір запам’ятовується на цьому пристрої. Як повернути: торкніться назви ще раз.', 'Wat er gebeurt: het blok klapt in tot één regel. Hangt samen met: de keuze wordt op dit toestel onthouden. Terugdraaien: tik nog een keer op de naam.') })),
+          staal(['згорнутий', 'ingeklapt'], o.blok({ id: 'so-zaal-blok-dicht', titel: t('Стрічка доби', 'Dagstrook'), teller: 5, dicht: true, inhoud: rijenBlok, samenvatting: h(t('останні 18 годин і наступні 6', 'de laatste 18 uur en de volgende 6')) })),
+          staal(['без згортання', 'niet inklapbaar'], o.blok({ id: 'so-zaal-blok-vast', titel: t('Зараз важливо', 'Nu belangrijk'), teller: 1, vast: true, inhoud: rijenBlok }))], true]
+      ] },
       { id: 'bediening', naam: ['Керування', 'Bediening'], lijst: [
         ['hv-schakel', t('Коло перемикає; квадрат із подвійною рамкою — дія з ритуалом.', 'Een cirkel schakelt; een vierkant met dubbele rand — een actie met ritueel.'), [
           staal('rust', o.schakel({ aan: false, icoon: 'lightbulb', actie: 'x', aria: 'uit' })), staal('aan', o.schakel({ aan: true, icoon: 'lightbulb', toon: 'aan', actie: 'x', aria: 'aan' })), staal('hover', o.schakel({ aan: false, icoon: 'lightbulb', actie: 'x', aria: 'uit' }), 'hover'), staal('focus', o.schakel({ aan: true, icoon: 'lightbulb', toon: 'aan', actie: 'x', aria: 'aan' }), 'focus'),
@@ -1596,8 +1919,12 @@
           staal('bezig', o.wijzer({ doel: 21, gemeten: 20.4, toon: 'warm', bezig: true, actie: 'x', k: 'zw1' })), staal('rust', o.wijzer({ doel: 19, gemeten: 22.1, toon: 'koud', actie: 'x', k: 'zw2' }))], true],
         ['hv-kleur', t('Колір трьома способами: готові, повзунки, коло.', 'Kleur op drie manieren: voorkeuze, schuiven, cirkel.'), [staal('rust', o.kleur({ tint: 32, verzadiging: 85, wijze: X.zaal.kleur, actie: 'x', wijzeActie: 'so-zaal-kleur' }))], true],
         ['hv-aftel', t('Кільце відліку довкола знака й «ще 14 хв».', 'Aftelring rond het teken en ‘nog 14 min’.'), [staal('bezig', o.aftel({ rest: 14, totaal: 40, icoon: 'timer' })), staal('rust', o.aftel({ rest: 0, totaal: 40, icoon: 'timer', klaar: true }))]],
-        ['hv-stand', t('Дозвіл «Вимкнено · Питати · Завжди» для одного виконавця й однієї дії; «!» біля небезпечних.', 'Toestemming ‘Uit · Vragen · Altijd’ voor één uitvoerder en één actie; ‘!’ bij gevaarlijke.'), [
-          staal('rust', o.stand({ uitvoerder: 'claude', actie: HV.gevaar.actie('laadpaal.laden'), rol: 'eigenaar' })), staal('ritueel', o.stand({ uitvoerder: 'claude', actie: HV.gevaar.actie('slot.ontgrendelen'), rol: 'eigenaar' })), staal('uit', o.stand({ uitvoerder: 'claude', actie: HV.gevaar.actie('slot.ontgrendelen'), rol: 'kind' }))], true]
+        ['hv-laadplan', t('План зарядки: режим роботи, ціль і виїзд, вікно над стрічкою цін, дозвіл оптимізатора.', 'Laadplan: werkmodus, doel en vertrek, venster boven de prijsstrook, toestemming van de optimalisatie.'), [
+          staal('rust', zone(uitZone('laadplan', function () { return o.laadplan ? o.laadplan(ctx).replace('class="hv-en-laadplan"', 'class="hv-en-laadplan hv-laadplan"') : ''; }), 'midden', ['Енергія → Зарядка', 'Energie → Laden']), 'vol')], true, { waar: ['Енергія → Зарядка', 'Energie → Laden'], klas: 'hv-en-laadplan', naar: 'energie-laden' }],
+        ['hv-huisstand', t('Режим дому: один із п’яти, поточний — з галочкою; «i» біля кожного каже, що зміниться.', 'Huisstand: één van vijf, de huidige met een vinkje; de ‘i’ bij elke stand zegt wat er verandert.'), [
+          staal(['поточний режим — з галочкою', 'huidige stand — met vinkje'], zone(uitZone('huisstand', function () { return knip(bladVrijHtml(ctx, 'huisstand'), '.hv-huisstand'); }), 'smal', ['Дім → Режим дому', 'Thuis → Huisstand']))], true, { waar: ['Дім → Режим дому', 'Thuis → Huisstand'], naar: 'overzicht' }],
+        ['hv-alarmstand', t('Режим охорони: чотири режими від «Знято» до «Повна»; причина «не готово» — словами. Зняття охорони — критична дія.', 'Alarmstand: vier standen van ‘Uit’ tot ‘Volledig’; de reden ‘niet gereed’ staat er in woorden. Uitzetten is een kritieke actie.'), [
+          staal(['поточний режим — з галочкою', 'huidige stand — met vinkje'], zone(uitZone('alarmstand', function () { return knip(tabHtml(ctx, 'beveiliging', 'stand'), '.hv-bev-standen', { alias: 'hv-alarmstand' }); }), 'smal', ['Безпека → Режим', 'Beveiliging → Stand']))], true, { waar: ['Безпека → Режим', 'Beveiliging → Stand'], klas: 'hv-bev-standen', naar: 'beveiliging' }]
       ] },
       { id: 'tegels', naam: ['Плитки й картки', 'Tegels en kaarten'], lijst: [
         ['hv-tegel', t('Плитка пристрою в усіх спільних станах: коло перемикає, тіло веде в аркуш.', 'Apparaattegel in alle gedeelde toestanden: de cirkel schakelt, het lijf opent het blad.'), [
@@ -1612,15 +1939,48 @@
         ['hv-telemetrie', t('Авто, дрон, робот: заряд, запас ходу, три числа й силует.', 'Auto, drone, robot: lading, bereik, drie getallen en silhouet.'), [staal('rust', o.telemetrie({ id: 'zaal-ev', icoon: 'car', naam: HV.p(w.voertuigen[0].naam), stand: t('заряджається', 'laadt'), lading: w.voertuigen[0].lading, doel: 80, bereik: HV.maat(w.voertuigen[0].bereik, t('км', 'km')), getallen: [{ label: t('Потужність', 'Vermogen'), waarde: HV.maat(7.4, t('кВт', 'kW'), 1) }, { label: t('До цілі', 'Tot doel'), waarde: HV.duur(95) }, { label: t('Ціна', 'Prijs'), waarde: HV.euro(0.18) }], actie: 'x' })), staal('verouderd', o.telemetrie({ id: 'zaal-drn', icoon: 'drone', naam: t('Дрон «Лелека»', 'Drone ‘Ooievaar’'), stand: t('у базі', 'in het dock'), lading: 92, staat: 'verouderd', getallen: [{ label: t('Сигнал', 'Signaal'), waarde: '100 %' }] }))], true],
         ['hv-scene', t('Кнопка сцени: дотик виконує; «діє» — коли сцена активна.', 'Scèneknop: een tik voert uit; ‘actief’ als de scène actief is.'), [staal('aan', '<div class="hv-scenes">' + o.scene(w.scenes[0], true) + '</div>'), staal('rust', '<div class="hv-scenes">' + o.scene(w.scenes[1], false) + '</div>'), staal('focus', '<div class="hv-scenes">' + o.scene(w.scenes[2], false) + '</div>', 'focus')]]
       ] },
+      { id: 'tijd', naam: ['Час і дані', 'Tijd en gegevens'], lijst: [
+        ['hv-dagstrook', t('Стрічка доби: −18…+6 годин; фази неба, присутність, двері, ціна, режим і автори.', 'Dagstrook: −18…+6 uur; hemelfasen, aanwezigheid, deuren, prijs, stand en makers.'), [
+          staal('rust', zone(HV.dagstrook ? HV.dagstrook(ctx, { makers: true }) : '', '', ['Дім → Стрічка доби', 'Thuis → Dagstrook']), 'vol')], true, { waar: ['Дім → Стрічка доби', 'Thuis → Dagstrook'], naar: 'overzicht' }],
+        ['hv-tabel', t('Таблиця: текстовий відповідник графіка й плану; перший стовпець — заголовок рядка.', 'Tabel: de tekstversie van een grafiek of plattegrond; de eerste kolom is de rijkop.'), [staal('rust', zone(tabelKamers, 'midden'), 'vol')], true],
+        ['hv-plan', t('План поверху: кімнати, пристрої на своїх місцях, шари й масштаб; текстовий відповідник — список під планом.', 'Plattegrond: kamers, apparaten op hun plek, lagen en schaal; de tekstversie is de lijst onder de plattegrond.'), [
+          staal('rust', zone(uitZone('plan', function () { var v = knip(tabHtml(ctx, 'kamers', 'plattegrond'), '.hv-plan__venster'); return v ? '<div class="hv-plan"><div class="hv-plan__links">' + v + '</div></div>' : ''; }), '', ['Кімнати → План', 'Kamers → Plattegrond']), 'vol')], true, { waar: ['Кімнати → План', 'Kamers → Plattegrond'], naar: 'kamers-plattegrond' }],
+        ['hv-landkaart', t('Мапа: ділянка, околиці й регіон; транспорт, геозони й досяжність. Схема — від сервера дому, без зовнішніх мап.', 'Kaart: perceel, omgeving en regio; voertuigen, geozones en bereik. Het schema komt van de server van het huis, zonder externe kaarten.'), [
+          staal('rust', zone(uitZone('landkaart', function () { return knip(tabHtml(ctx, 'garage', 'kaart'), '.hv-gar-kaartje', { alias: 'hv-landkaart' }); }), 'midden', ['Гараж → Мапа', 'Garage → Kaart']), 'vol')], true, { waar: ['Гараж → Мапа', 'Garage → Kaart'], klas: 'hv-gar-kaartje', naar: 'garage-kaart' }],
+        ['hv-waarom', t('«Чому?»: рядок «хто змінив» в аркуші пристрою й ланцюжок «що запустило · умова · дія» в Журналі.', '‘Waarom?’: de regel ‘wie het wijzigde’ in het apparaatblad en de keten ‘aanleiding · voorwaarde · actie’ in het logboek.'), [
+          staal(['людина', 'mens'], waaromRegel(t('Увімкнено: ', 'Aan: '), { soort: 'mens', naam: ['Олена', 'Olena'] })), staal(['автоматизація', 'automatisering'], waaromRegel(t('Змінено: ', 'Gewijzigd: '), 'automatisering')), staal(['агент', 'agent'], waaromRegel(t('Остання зміна: ', 'Laatste wijziging: '), { soort: 'agent', naam: ['Claude', 'Claude'] })),
+          staal(['ланцюжок', 'keten'], zone(uitZone('waarom', function () { return waaromKeten(ctx, ketenId); }), 'midden', ['Журнал → «Чому?»', 'Logboek → ‘Waarom?’']), 'vol')], true, { waar: ['Журнал → «Чому?»', 'Logboek → ‘Waarom?’'], naar: 'activiteit' }]
+      ] },
       { id: 'staat', naam: ['Стан і походження', 'Toestand en herkomst'], lijst: [
         ['hv-stempel', t('Штамп виміру: значення · вік · джерело.', 'Meetstempel: waarde · leeftijd · bron.'), [staal('rust', o.stempel({ waarde: '20,6 °C', leeftijd: 12000 })), staal('verouderd', o.stempel({ waarde: '15,4 °C', leeftijd: 4380000, staat: 'verouderd' })), staal('sim', o.stempel({ waarde: '640 ppm', leeftijd: 3000, bron: t('Симулятор', 'Simulator') }))]],
         ['hv-versheid', t('Актуальність і шлях даних — завжди зі словом.', 'Actualiteit en pad van de gegevens — altijd met een woord.'), [staal('aan', o.versheid(fakeW('live'))), staal('verouderd', o.versheid(fakeW('verouderd'))), staal('onbereikbaar', o.versheid(fakeW('geen')))]],
         ['hv-sim', t('Чип симуляції з колбою; веде до симулятора.', 'Simulatiechip met kolf; leidt naar de simulator.'), [staal('sim', o.sim(fakeW('live', false, 60))), staal('rust', o.sim(fakeW('live', true))), staal('focus', o.sim(fakeW('live', false, 600)), 'focus')]],
         ['hv-maker', t('Знак автора з іменем: вісім авторів.', 'Makerteken met naam: acht makers.'), ['mens', 'knop', 'automatisering', 'agent', 'simulator', 'dienst', 'optimalisatie', 'systeem'].map(function (m) { return staal('rust', o.maker(m === 'mens' ? { soort: 'mens', naam: ['Олена', 'Olena'] } : m === 'agent' ? { soort: 'agent', naam: ['Claude', 'Claude'] } : m)); }), true],
-        ['hv-risico', t('Знак рівня дії зі словом.', 'Teken van het actieniveau met een woord.'), ['gewoon', 'gevoelig', 'gevaarlijk', 'kritiek'].map(function (n) { return staal('rust', o.risico(n)); })],
-        ['hv-gevolg', t('Підказка-наслідок «i» і пояснення ризику «!» — відкриваються на папері.', 'Gevolguitleg ‘i’ en risico-uitleg ‘!’ — openen op papier.'), [staal('rust', o.gevolg(t('Що станеться: лампа ввімкнеться. Пов’язано з: сцена «Вечір». Як повернути: один дотик.', 'Wat er gebeurt: de lamp gaat aan. Hangt samen met: de scène ‘Avond’. Terugdraaien: één tik.'))), staal('ritueel', o.gevolg(HV.p(HV.gevaar.actie('slot.ontgrendelen').risico), { soort: 'uitroep', kop: t('Ризик', 'Risico') })), staal('aan', o.gevolg(HV.p(HV.gevaar.actie('slot.ontgrendelen').risico), { soort: 'uitroep', vast: 'kritiek' }))]],
         ['hv-getal', t('Велике число з малою одиницею й підписом.', 'Groot getal met een kleine eenheid en label.'), [staal('rust', o.getal({ maat: 'l', label: t('Зараз', 'Nu'), waarde: HV.euro(0.24), sub: h(t('за кВт·год', 'per kWh')) })), staal('rust', o.getal({ maat: 'm', label: t('Сонце', 'Zon'), waarde: HV.maat(2.1, t('кВт', 'kW'), 1), toon: 'zon' }))]],
         ['hv-later', t('Штамп «пізніше»: функцію показано чесно, з етапом.', 'Stempel ‘later’: de functie eerlijk getoond, met fase.'), [staal('rust', o.later(t('пізніше · етап 12', 'later · fase 12'))), staal('rust', o.later())]]
+      ] },
+      { id: 'risico', naam: ['Ризик', 'Risico'], lijst: [
+        ['hv-risico', t('Знак рівня дії зі словом.', 'Teken van het actieniveau met een woord.'), ['gewoon', 'gevoelig', 'gevaarlijk', 'kritiek'].map(function (n) { return staal('rust', o.risico(n)); })],
+        ['hv-stand', t('Дозвіл «Вимкнено · Питати · Завжди» для одного виконавця й однієї дії; «!» біля небезпечних.', 'Toestemming ‘Uit · Vragen · Altijd’ voor één uitvoerder en één actie; ‘!’ bij gevaarlijke.'), [
+          staal('rust', o.stand({ uitvoerder: 'claude', actie: HV.gevaar.actie('laadpaal.laden'), rol: 'eigenaar' })), staal('ritueel', o.stand({ uitvoerder: 'claude', actie: HV.gevaar.actie('slot.ontgrendelen'), rol: 'eigenaar' })), staal('uit', o.stand({ uitvoerder: 'claude', actie: HV.gevaar.actie('slot.ontgrendelen'), rol: 'kind' }))], true],
+        ['hv-gevolg', t('Підказка-наслідок «i» і пояснення ризику «!» — відкриваються на папері.', 'Gevolguitleg ‘i’ en risico-uitleg ‘!’ — openen op papier.'), [staal('rust', o.gevolg(t('Що станеться: лампа ввімкнеться. Пов’язано з: сцена «Вечір». Як повернути: один дотик.', 'Wat er gebeurt: de lamp gaat aan. Hangt samen met: de scène ‘Avond’. Terugdraaien: één tik.'))), staal('ritueel', o.gevolg(HV.p(HV.gevaar.actie('slot.ontgrendelen').risico), { soort: 'uitroep', kop: t('Ризик', 'Risico') })), staal('aan', o.gevolg(HV.p(HV.gevaar.actie('slot.ontgrendelen').risico), { soort: 'uitroep', vast: 'kritiek' }))]],
+        ['hv-gevaar', t('Діалог небезпечної дії на папері: рівень, наслідок, зачеплене; рейка утримання й «Підтвердити» з відліком 3 с рівноправні. Критична дія просить ще й підтвердження входу.', 'Dialoog voor een gevaarlijke actie op papier: niveau, gevolg, wat geraakt wordt; de houdrail en ‘Bevestigen’ met 3 s aftellen zijn gelijkwaardig. Een kritieke actie vraagt ook een bevestiging van je aanmelding.'), [
+          staal(['небезпечна', 'gevaarlijk'], zone(gevaarStaal('oven.aan', 'oven', 'houd'))), staal(['критична', 'kritiek'], zone(gevaarStaal('slot.ontgrendelen', 'voordeurslot', 'houd'))),
+          staal(['відлік «Підтвердити»', 'aftellen ‘Bevestigen’'], zone(gevaarStaal('oven.aan', 'oven', 'aftel'))), staal(['підтвердження входу', 'aanmelding bevestigen'], zone(gevaarStaal('slot.ontgrendelen', 'voordeurslot', 'herbevestig')))], true,
+          { echt: { tekst: t('Спробувати справжній діалог', 'De echte dialoog proberen'), wat: 'gevaarlijk' } }],
+        ['hv-rail', t('Рейка утримання 1,2 с: подвійна рамка — ознака ритуалу; заливка йде зліва направо, відпускання скасовує.', 'Houdrail van 1,2 s: de dubbele rand is het teken van het ritueel; de vulling loopt van links naar rechts, loslaten annuleert.'), [
+          staal(['спокій', 'rust'], railStaal(slotActie, 'lock-keyhole', 'rust') + staalNoot(t('Дотик нічого не виконує: рейку треба втримати.', 'Een tik voert niets uit: de rail moet je vasthouden.'))),
+          staal(['утримання', 'vasthouden'], railStaal(slotActie, 'lock-keyhole', 'houdt') + staalNoot(t('Заливка росте, відлік іде до нуля.', 'De vulling groeit, de teller loopt naar nul.'))),
+          staal(['виконано', 'uitgevoerd'], railStaal(slotActie, 'lock-keyhole', 'klaar') + staalNoot(t('Рейку заповнено: дія йде далі, діалог закривається.', 'De rail is vol: de actie gaat door, de dialoog sluit.'))),
+          staal(['скасовано', 'geannuleerd'], railStaal(slotActie, 'lock-keyhole', 'terug') + staalNoot(t('Відпущено раніше: заливка зникла, нічого не виконано.', 'Te vroeg losgelaten: de vulling is weg, er is niets uitgevoerd.'))),
+          staal(['небезпечна дія', 'gevaarlijke actie'], railStaal(ovenActie, 'microwave', 'rust') + staalNoot(t('Тон попередження замість тону помилки.', 'De waarschuwingstoon in plaats van de fouttoon.')))], true,
+          { echt: { tekst: t('Спробувати справжню рейку', 'De echte rail proberen'), wat: 'kritiek' } }],
+        ['hv-nood', t('Аварійний шар: суцільний, з рамкою 4 px, на всіх екранах; три дії й чесна позначка симуляції.', 'Noodlaag: volledig dekkend, met een rand van 4 px, op alle schermen; drie acties en een eerlijk simulatiemerk.'), [
+          staal(['дим', 'rook'], zone(noodStaal('rook')), 'vol'), staal(['вода', 'water'], zone(noodStaal('lek')), 'vol')], true, { waar: ['Система → Симулятор → сценарій «Дим»', 'Systeem → Simulator → scenario ‘Rook’'], naar: 'instellingen-simulator' }],
+        ['hv-pincode', t('Код на панелі біля дверей: чотири цифри, великі клавіші; п’ять помилок — пауза 5 хв.', 'Code op het paneel bij de deur: vier cijfers, grote toetsen; vijf fouten — 5 min pauze.'), [
+          staal(['порожньо', 'leeg'], zone(uitZone('pin0', function () { return pincodeStaal(ctx, ''); }), 'pin', ['Профіль «Двері» → Вхід', 'Profiel ‘Deur’ → Toegang'])),
+          staal(['дві цифри', 'twee cijfers'], zone(uitZone('pin2', function () { return pincodeStaal(ctx, '24'); }), 'pin', ['Профіль «Двері» → Вхід', 'Profiel ‘Deur’ → Toegang'])),
+          staal(['хибний код', 'onjuiste code'], zone(uitZone('pinfout', function () { return pincodeStaal(ctx, '', t('Хибний код · спроба 2 з 5', 'Onjuiste code · poging 2 van 5')); }), 'pin', ['Профіль «Двері» → Вхід', 'Profiel ‘Deur’ → Toegang']))], true, { waar: ['Профіль «Двері» → Вхід', 'Profiel ‘Deur’ → Toegang'] }]
       ] },
       { id: 'meldingen', naam: ['Повідомлення', 'Berichten'], lijst: [
         ['hv-toost', t('Спливне сповіщення на папері: автор, два рядки, «Повернути» 10 с.', 'Pop-upmelding op papier: maker, twee regels, ‘Ongedaan maken’ 10 s.'), [
@@ -1632,11 +1992,33 @@
         ['hv-leeg', t('Порожній стан: що тут буде й одна дія.', 'Lege toestand: wat hier komt en één actie.'), [staal('rust', o.leeg({ icoon: 'history', titel: t('Ще немає записів', 'Nog geen regels'), tekst: t('Кожна дія з’явиться тут.', 'Elke actie komt hier.'), actie: { tekst: t('До кімнат', 'Naar kamers'), actie: 'x' } }))]],
         ['hv-skelet', t('Скелет за формою вмісту без блиску.', 'Skelet in de vorm van de inhoud, zonder glans.'), [staal('wacht', o.skelet('tegels', 3)), staal('wacht', o.skelet('rijen', 2))], true]
       ] },
+      { id: 'ai', naam: ['Активність і ШІ', 'Activiteit en AI'], lijst: [
+        ['hv-meldingen', t('Центр сповіщень: один ряд ваги, решта фільтрів — за кнопкою; кожен запис розгортається.', 'Meldingencentrum: één rij voor gewicht, de overige filters achter de knop; elke regel klapt open.'), [
+          staal('rust', zone(uitZone('meldingen', function () { return knip(bladVrijHtml(ctx, 'meldingen'), '.hv-meldingen', { snoei: { '.hv-berichten > li': 3 } }); }), 'midden'), 'vol')], true, { echt: { tekst: t('Відкрити центр сповіщень', 'Het meldingencentrum openen'), wat: 'meldingen' } }],
+        ['hv-opdracht', t('Команда: поле пошуку й шість швидких дій; перед виконанням — картка наслідку.', 'Opdracht: een zoekveld en zes snelle acties; vóór het uitvoeren een kaart met het gevolg.'), [
+          staal(['швидкі дії', 'snelle acties'], zone(opdrachtStaal(false), 'midden'), 'vol'), staal(['наслідок перед виконанням', 'gevolg vóór het uitvoeren'], zone(opdrachtStaal(true), 'midden'), 'vol')], true, { echt: { tekst: t('Відкрити Команду', 'Opdracht openen'), wat: 'opdracht' } }],
+        ['hv-voorstel', t('Намір помічника: що зміниться «було → стане», рівень дії, дозвіл і «Виконати · Змінити · Відхилити».', 'Voornemen van de assistent: wat er verandert ‘was → wordt’, het actieniveau, de toestemming en ‘Uitvoeren · Wijzigen · Afwijzen’.'), [
+          staal('rust', zone(uitZone('voorstel', function () { return voorstelStaal(ctx); }), 'midden', ['Автоматика → Помічник', 'Automatisering → Assistent']), 'vol')], true, { waar: ['Автоматика → Помічник', 'Automatisering → Assistent'], klas: 'hv-ast-voorstel', naar: 'automatiseringen-assistent' }],
+        ['hv-verzoek', t('Запит «Питати»: хто просить, що зміниться й чому; «Схвалити раз» або «Відхилити».', 'Verzoek ‘Vragen’: wie het vraagt, wat er verandert en waarom; ‘Eén keer goedkeuren’ of ‘Afwijzen’.'), [
+          staal('wacht', zone(uitZone('verzoek', function () { return verzoekStaal(ctx); }), 'midden', ['Журнал → Сповіщення', 'Logboek → Meldingen']), 'vol')], true, { waar: ['Журнал → Сповіщення', 'Logboek → Meldingen'], naar: 'activiteit' }],
+        ['hv-agentkaart', t('Картка агента: стан, що йому дозволено й що він зробив сьогодні.', 'Agentkaart: de stand, wat hij mag en wat hij vandaag deed.'), [
+          staal('rust', zone(uitZone('agentkaart', function () { return knip(tabHtml(ctx, 'automatiseringen', 'agenten'), '.hv-ast-agentkaart', { alias: 'hv-agentkaart', aantal: 2, wikkel: 'hv-ast-agentkaarten' }); }), '', ['Автоматика → Агенти й погодження', 'Automatisering → Agenten en goedkeuringen']), 'vol')], true,
+          { waar: ['Автоматика → Агенти й погодження', 'Automatisering → Agenten en goedkeuringen'], klas: 'hv-ast-agentkaart', naar: 'automatiseringen-agenten' }],
+        ['hv-regel', t('Рядок правила: перемикач, речення «коли — то», стан і останній запуск.', 'Regel van een automatisering: schakelaar, de zin ‘als — dan’, de stand en de laatste run.'), [
+          staal('rust', zone(uitZone('regel', function () { var html = tabHtml(ctx, 'automatiseringen', 'regels'), rijen = ['is-actief', 'is-loopt', 'is-concept', 'is-quarantaine'].map(function (k) { return knip(html, '.hv-regel.' + k); }).join(''); return rijen ? '<div class="hv-regels">' + rijen + '</div>' : ''; }), '', ['Автоматика → Правила', 'Automatisering → Regels']), 'vol')], true, { waar: ['Автоматика → Правила', 'Automatisering → Regels'], naar: 'automatiseringen' }],
+        ['hv-vluchtbalk', t('Смуга польоту: стан дрона, заряд, сигнал і висота; у польоті — три дії безпеки.', 'Vluchtbalk: de stand van de drone, accu, signaal en hoogte; in de lucht — drie veiligheidsacties.'), [
+          staal(['у доку', 'in het dock'], zone(uitZone('vlucht0', function () { return vluchtbalkStaal(ctx, false); }), '', ['Гараж → Безпілотники → Кабіна', 'Garage → Drones → Cockpit']), 'vol'),
+          staal(['у польоті', 'in de lucht'], zone(uitZone('vlucht1', function () { return vluchtbalkStaal(ctx, true); }), '', ['Гараж → Безпілотники → Кабіна', 'Garage → Drones → Cockpit']), 'vol')], true, { waar: ['Гараж → Безпілотники → Кабіна', 'Garage → Drones → Cockpit'], naar: 'garage-drones-vlucht' }],
+        ['hv-oproep', t('Виклик із дверей: кадр камери, швидка відповідь, «Відчинити…» як критична дія й «Відхилити».', 'Oproep van de deur: camerabeeld, snel antwoord, ‘Openen…’ als kritieke actie en ‘Weigeren’.'), [
+          staal(['дзвонить', 'belt aan'], zone(uitZone('oproep', function () { return oproepStaal(ctx); }), 'midden', ['Безпека → Доступ', 'Beveiliging → Toegang']), 'vol')], true, { waar: ['Безпека → Доступ', 'Beveiliging → Toegang'], klas: 'hv-bev-oproep', naar: 'beveiliging-toegang' }]
+      ] },
       { id: 'grafieken', naam: ['Графіки', 'Grafieken'], lijst: [
         ['hv-grafiek · lijn', t('Лінія з маркерами й прямим підписом; «Показати як таблицю».', 'Lijn met markeringen en een direct label; ‘Als tabel tonen’.'), [staal('rust', HV.grafiek.lijn({ id: 'zaal-lijn', titel: t('Температура', 'Temperatuur'), eenheid: '°C', x: { min: 0, max: 6, tikken: [{ x: 0, label: '08:00' }, { x: 6, label: '14:00' }] }, reeksen: [{ naam: t('Вітальня', 'Woonkamer'), toon: 'warm', punten: [[0, 18.2], [1, 19], [2, 20.1], [3, 20.6], [4, 20.4], [5, 20.8], [6, 20.6]] }, { naam: t('Надворі', 'Buiten'), toon: 'koud', punten: [[0, 4], [1, 5], [2, 7], [3, 8], [4, 9], [5, 9], [6, 9]] }], samenvatting: t('Вітальня тримає ціль; надворі тепліє.', 'De woonkamer houdt het doel; buiten wordt het warmer.') }))], true],
         ['hv-grafiek · staven', t('Стовпці, також під нулем; найдешевший — з позначкою.', 'Staven, ook onder nul; de goedkoopste met een vinkje.'), [staal('rust', HV.grafiek.staven({ id: 'zaal-staven', titel: t('Ціна', 'Prijs'), eenheid: '€', decimalen: 2, tikken: 2, staven: [0.21, 0.14, 0.03, -0.02, 0.04, 0.21].map(function (p, i) { return { label: pad2(10 + i) + ':00', waarde: p, toon: 'net-in', vink: p < 0, nu: i === 2 }; }), samenvatting: t('О 13:00 ціна від’ємна.', 'Om 13:00 is de prijs negatief.') }))], true],
         ['hv-grafiek · toestanden', t('Смуги станів у часі.', 'Toestandsbanen in de tijd.'), [staal('rust', HV.grafiek.toestanden({ id: 'zaal-toest', titel: t('Світло', 'Licht'), van: 0, tot: 10, nu: 10, tikken: [{ x: 0, label: '04:00' }, { x: 10, label: '14:00' }], format: function (x) { return String(x); }, banen: [{ naam: t('Торшер', 'Staande lamp'), stukken: [{ van: 1, tot: 3, toon: 'aan', label: HV.woord.aan() }, { van: 6, tot: 9, toon: 'aan', label: HV.woord.aan() }] }] }))], true],
         ['hv-grafiek · ring', t('Кільце потоків, кожен сегмент підписано словом.', 'Ring van stromen, elk segment met een woord.'), [staal('rust', HV.grafiek.ring({ id: 'zaal-ring', titel: t('Куди йде енергія', 'Waar de energie heen gaat'), midden: { waarde: HV.maat(1.8, t('кВт', 'kW'), 1), label: t('дім', 'huis') }, delen: [{ naam: t('Сонце', 'Zon'), waarde: 1.1, tekst: '1,1', toon: 'zon' }, { naam: t('Мережа', 'Net'), waarde: 0.5, tekst: '0,5', toon: 'net-in' }, { naam: t('Батарея', 'Batterij'), waarde: 0.2, tekst: '0,2', toon: 'batterij' }], klein: true }))]],
+        ['hv-grafiek · vlak', t('Область під лінією — для потужності й накопичення.', 'Vlak onder de lijn — voor vermogen en opbouw.'), [staal('rust', HV.grafiek.lijn({ id: 'zaal-vlak', titel: t('Сонце', 'Zon'), eenheid: t('кВт', 'kW'), x: { min: 0, max: 6, tikken: [{ x: 0, label: '08:00' }, { x: 6, label: '14:00' }] }, reeksen: [{ naam: t('Вироблення', 'Opbrengst'), toon: 'zon', vlak: true, punten: [[0, 0.2], [1, 0.8], [2, 1.6], [3, 2.3], [4, 2.1], [5, 2.6], [6, 2.2]] }], samenvatting: t('До полудня вироблення росте.', 'Tot de middag groeit de opbrengst.') }))], true],
+        ['hv-grafiek · warmtekaart', t('Теплокарта: п’ять щаблів одного тону, число в кожній клітинці.', 'Warmtekaart: vijf treden van één toon, het getal in elk vak.'), [staal('rust', HV.grafiek.warmtekaart({ id: 'zaal-warmte', titel: t('Споживання, середнє за 6 год', 'Verbruik, gemiddeld per 6 u'), eenheid: t('кВт', 'kW'), decimalen: 1, rijen: [t('пн', 'ma'), t('вт', 'di'), t('ср', 'wo')], kolommen: ['00', '06', '12', '18'], waarden: [[0.3, 0.6, 0.9, 1.8], [0.3, 0.7, 0.5, 2.1], [0.4, 0.6, 1.2, null]], samenvatting: t('Темніша клітинка — більше значення; прочерк — проміжок ще не настав.', 'Een donkerder vak is een hogere waarde; een streep — dit blok is nog niet begonnen.') }))], true],
         ['hv-vonk', t('Мініграфік у рядку без осей.', 'Minigrafiek in een regel, zonder assen.'), [staal('rust', '<span class="hv-so-vonk">' + HV.grafiek.vonk([3, 5, 4, 7, 6, 9, 8], 'zon') + '</span>'), staal('rust', '<span class="hv-so-vonk">' + HV.grafiek.vonk([9, 7, 8, 5, 6, 3, 4], 'koud') + '</span>')]]
       ] },
       { id: 'systeem', naam: ['Система', 'Systeem'], lijst: [
@@ -1650,13 +2032,17 @@
         ['hv-profielminiatuur', t('Мініатюра профілю в справжніх пропорціях.', 'Profielminiatuur in echte verhoudingen.'), ['wand', 'tv', 'strook', 'rond', 'inkt'].map(function (p) { return staal('rust', '<span class="hv-so-staal__mini">' + miniatuur(p) + '</span>'); })]
       ] }
     ];
+    planControle();
     return groepen;
   }
   function onderdelenTab(ctx) {
     var filter = HV.ui.lees('so-ond', 'alle');
     var groepen = onderdelenLijst(ctx);
     var aantal = 0, stalen = 0;
-    groepen.forEach(function (g) { g.lijst.forEach(function (c) { aantal++; stalen += c[2].length; }); });
+    var namen = [];
+    groepen.forEach(function (g) { g.lijst.forEach(function (c) { aantal++; stalen += c[2].filter(Boolean).length; namen.push(c[0]); }); });
+    // назва плану має картку, якщо є картка з цією назвою або з її різновидом («hv-grafiek · lijn»)
+    var ontbreekt = PLAN_39.filter(function (n) { return !namen.some(function (x) { return x === n || x.indexOf(n + ' ') === 0; }); });
     var STATEN_TABEL = [['С', ['спокій', 'rust'], ['--panel, рамка 1 px --line', '--panel, rand 1 px --line']], ['Н', ['наведення', 'aanwijzen'], ['--surface, лише з вказівником', '--surface, alleen met aanwijzer']], ['Ф', ['фокус', 'focus'], ['кільце --focus 2 px, відступ 2', 'ring --focus 2 px, afstand 2']], ['Т', ['натиск', 'indrukken'], ['--surface2, 120 мс', '--surface2, 120 ms']],
       ['О', ['очікує', 'wacht'], ['пунктир 6/4, що пульсує, слово «очікує»', 'stippellijn 6/4 die pulseert, woord ‘wacht’']], ['Р', ['виконується', 'bezig'], ['суцільний контур, напрям і відсоток', 'doorlopende rand, richting en procent']], ['В', ['не виконано', 'niet uitgevoerd'], ['контур 2 px --fout і знак хрестика', 'rand 2 px --fout en kruisteken']],
       ['З', ['застаріле', 'verouderd'], ['значення --muted, вік жирним', 'waarde --muted, leeftijd vet']], ['Х', ['недоступне', 'niet bereikbaar'], ['пунктир 12/6 із розривом, вилка', 'stippellijn 12/6 met onderbreking, stekker']], ['П', ['стан припущено', 'toestand verondersteld'], ['кільце пунктиром 2/3 і слово', 'ring met stippels 2/3 en woord']], ['М', ['симуляція', 'simulatie'], ['позначка з колбою', 'merkteken met kolf']], ['Б', ['заблоковано', 'geblokkeerd'], ['--muted, замок і причина словами', '--muted, slot en reden in woorden']]];
@@ -1670,12 +2056,14 @@
       groepen.map(function (g) { return o.chip({ tekst: HV.p(g.naam) + ' · ' + g.lijst.length, filter: true, gekozen: filter === g.id, actie: 'ui', gegevens: { naam: 'so-ond', waarde: g.id } }); }).join('') + '</div>';
     var lijf = groepen.filter(function (g) { return filter === 'alle' || g.id === filter; }).map(function (g) {
       return '<section class="hv-so-zaalgroep" data-k="so-zg-' + g.id + '"><h2 class="hv-so-zaalgroep__kop">' + h(HV.p(g.naam)) + '</h2><div class="hv-so-zaalraster">' +
-        g.lijst.map(function (c) { return zaal(zaalKaart(c[0].replace(/[^a-z0-9]+/g, ''), c[0], c[1], c[2], c[3]), c[0]); }).join('') + '</div></section>';
+        g.lijst.map(function (c) { return zaal(zaalKaart(c[0].replace(/[^a-z0-9]+/g, ''), c[0], c[1], c[2], c[3], c[4]), c[0]); }).join('') + '</div></section>';
     }).join('');
     return '<div class="hv-so hv-so-zaal" data-k="so-onderdelen">' +
       '<section class="hv-so-held" data-k="so-held-zaal"><div class="hv-so-held__getal"><span class="hv-so-held__n">' + aantal + '</span><span class="hv-so-held__woord">' + h(HV.meervoud(aantal, ['складник', 'складники', 'складників'], ['onderdeel', 'onderdelen'])) + '</span></div>' +
       '<div class="hv-so-held__tekst"><p class="hv-so-held__zin">' + h(t('Живий довідник: ' + stalen + ' зразків у темі, мові й щільності цього екрана. Дотик до зразка показує, яку дію він виконав би.', 'Levend naslagwerk: ' + stalen + ' voorbeelden in het thema, de taal en de dichtheid van dit scherm. Een tik op een voorbeeld laat zien welke actie het zou uitvoeren.')) + '</p>' +
-      '<div class="hv-so-held__chips">' + o.chip({ icoon: 'component', tekst: t('компоненти ядра й зони', 'onderdelen van kern en zone') }) + o.chip({ icoon: 'palette', tekst: t('лише токени кольорів', 'alleen kleurtokens') }) + '</div></div></section>' +
+      '<div class="hv-so-held__chips">' + o.chip({ icoon: 'component', tekst: t('компоненти ядра й зони', 'onderdelen van kern en zone') }) + o.chip({ icoon: 'palette', tekst: t('лише токени кольорів', 'alleen kleurtokens') }) +
+      o.chip({ icoon: ontbreekt.length ? 'triangle-alert' : 'circle-check', toon: ontbreekt.length ? 'let-op' : 'ok', tekst: t('бібліотека плану: ', 'bibliotheek van het plan: ') + (PLAN_39.length - ontbreekt.length) + t(' із ', ' van ') + PLAN_39.length }) + '</div>' +
+      (ontbreekt.length ? '<p class="hv-so-held__mist">' + h(t('Ще без картки: ', 'Nog zonder kaart: ')) + '<code>' + h(ontbreekt.join(', ')) + '</code></p>' : '') + '</div></section>' +
       o.blok({ id: 'so-zaal-staten', titel: t('Дванадцять спільних станів', 'Twaalf gedeelde toestanden'), teller: 12, dicht: true, samenvatting: h(t('спокій, наведення, фокус, натиск, очікує, виконується…', 'rust, aanwijzen, focus, indrukken, wacht, bezig…')), inhoud: kaart('so-statenkaart', legenda) }) +
       o.blok({ id: 'so-zaal-probeer', titel: t('Спробуйте', 'Probeer'), inhoud: kaart('so-probeerkaart', probeer + noot('info', t('Ці чотири органи працюють по-справжньому, але керують лише собою.', 'Deze vier organen werken echt, maar bedienen alleen zichzelf.'))) }) +
       filters + lijf + '</div>';
@@ -1683,6 +2071,23 @@
   HV.actie('so-zaal', function (ctx, g) {
     HV.meld({ icoon: 'component', titel: t('Зразок: ', 'Voorbeeld: ') + (g.onderdeel || 'hv-*'), tekst: t('У продукті тут спрацює дія «' + (g.oorspr || '—') + '». У довіднику вона нічого не змінює.', 'In het product voert dit de actie ‘' + (g.oorspr || '—') + '’ uit. In het naslagwerk verandert er niets.') });
   });
+  HV.actie('so-zaal-ga', function (ctx, g) { ctx.open(g.naar); }, { kijk: true });
+  // «Справжній» шар поверх довідника: аркуш, центр сповіщень, Команда й діалог небезпечної дії з рейкою. Ритуал проходить
+  // по-справжньому, але сама дія не виконується — довідник нічого не змінює в домі.
+  HV.actie('so-zaal-echt', function (ctx, g) {
+    var w = ctx.staat;
+    if (g.wat === 'laag') ctx.blad('apparaat:torsher');
+    else if (g.wat === 'meldingen') ctx.blad('meldingen');
+    else if (g.wat === 'opdracht') HV.acties.opdracht(ctx, {});
+    else if (g.wat === 'gevaarlijk' || g.wat === 'kritiek') {
+      if (HV.zonderVerbinding()) { HV.meldZonderVerbinding(); return; }
+      var kritiek = g.wat === 'kritiek';
+      HV.schil.gevaar({ actie: HV.gevaar.actie(kritiek ? 'slot.ontgrendelen' : 'oven.aan'), apparaat: w.apparaten[kritiek ? 'voordeurslot' : 'oven'] }).then(function (ja) {
+        HV.meld({ icoon: 'component', titel: ja ? t('Ритуал пройдено', 'Ritueel doorlopen') : t('Скасовано', 'Geannuleerd'),
+          tekst: ja ? t('У довіднику сама дія не виконується: у домі нічого не змінилося.', 'In het naslagwerk wordt de actie zelf niet uitgevoerd: in huis is niets veranderd.') : t('Нічого не виконано.', 'Er is niets uitgevoerd.') });
+      });
+    }
+  }, { kijk: true });
   HV.actie('so-zaal-schuif', function (ctx, g) { if (g.fase === 'klaar') HV.meld({ icoon: 'component', titel: t('Зразок повзунка', 'Voorbeeld van een schuif'), tekst: t('Значення: ', 'Waarde: ') + g.waarde + t('. У продукті команда піде на відпусканні.', '. In het product gaat de opdracht bij loslaten.') }); });
   HV.actie('so-zaal-kleur', function (ctx, g) { X.zaal.kleur = g.waarde; HV.teken(); });
   HV.actie('so-zaal-live', function (ctx, g) {
