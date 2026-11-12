@@ -20,9 +20,9 @@ concurrency:
 
 env:
   TAAK: HUIS-001
-  # Відомі встановлені основи (версія=фіксація змін); обидві — предки цієї гілки. Робочий процес бере ту, що зараз на сервері.
-  # Bekende geïnstalleerde bases (versie=commit); beide zijn voorouders van deze tak. De workflow kiest de basis die nu op de server staat.
-  BEKENDE_BASISSEN: '20261111-220943=3e18d5b366173e602187a7264cc2b9fa326183c5 20261112-024707=f9db50747048f7dc7a6937fff65b0ae4c1058f72'
+  # Відомі встановлені основи (версія=фіксація змін); усі — предки цієї гілки. Робочий процес бере ту, що зараз на сервері.
+  # Bekende geïnstalleerde bases (versie=commit); alle zijn voorouders van deze tak. De workflow kiest de basis die nu op de server staat.
+  BEKENDE_BASISSEN: '20261111-220943=3e18d5b366173e602187a7264cc2b9fa326183c5 20261112-024707=f9db50747048f7dc7a6937fff65b0ae4c1058f72 20261112-043627=61cc2541e2deb54a902ac00eb5bcc16f54bc4d9b'
   INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
   MODEL_ID: 'claude-fable-5-2'
 
