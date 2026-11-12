@@ -134,7 +134,7 @@ function RepoDetail({ repo, tr }: { repo: string; tr: Tr }) {
       {info.data.license && <span>{info.data.license}</span>}{info.data.latestRelease && <span>🏷 {info.data.latestRelease.tag}</span>}
       {info.data.languages?.length > 0 && <span className="gh-langs">{info.data.languages.map((l: any) => <span key={l.name} className="gh-chip">{l.name} {l.percent}%</span>)}</span>}
     </div>}
-    <div className="gh-tabs" role="tablist">{([['issues', tr('Issues', 'Issues'), CircleDot], ['pulls', 'Pull requests', GitPullRequest], ['commits', 'Commits', GitCommit], ['actions', 'CI / Actions', PlayCircle]] as const).map(([id, label, Icon]) =>
+    <div className="gh-tabs" role="tablist" data-no-edge-swipe>{([['issues', tr('Issues', 'Issues'), CircleDot], ['pulls', 'Pull requests', GitPullRequest], ['commits', 'Commits', GitCommit], ['actions', 'CI / Actions', PlayCircle]] as const).map(([id, label, Icon]) =>
       <button key={id} role="tab" aria-selected={sub === id} className={sub === id ? 'is-on' : ''} onClick={() => setSub(id)}><Icon size={14} />{label}</button>)}
       {(sub === 'issues' || sub === 'pulls') && <select aria-label={tr('Стан', 'Status')} value={state} onChange={(e) => setState(e.target.value as 'open' | 'closed')}><option value="open">{tr('Відкриті', 'Open')}</option><option value="closed">{tr('Закриті', 'Gesloten')}</option></select>}
       {sub === 'issues' && <button className="gh-btn gh-primary" onClick={() => setComposer((v) => !v)}><Plus size={14} />{tr('Новий issue', 'Nieuw issue')}</button>}</div>
@@ -145,7 +145,7 @@ function RepoDetail({ repo, tr }: { repo: string; tr: Tr }) {
       <><p className="gh-sub">{list.data?.summary ? tr(`Усього запусків: ${list.data.summary.total}; серед останніх збійних: ${list.data.summary.failing}`, `Totaal runs: ${list.data.summary.total}; recent mislukt: ${list.data.summary.failing}`) : ''}</p>
         <ul className="gh-list">{(list.data?.runs ?? []).map((r: any) => <li key={r.id}><a href={r.url} target="_blank" rel="noopener noreferrer" className="gh-item">
           {r.conclusion === 'success' ? <CheckCircle2 size={16} className="gh-ok" /> : r.conclusion === 'failure' ? <XCircle size={16} className="gh-bad" /> : <PlayCircle size={16} className="gh-muted" />}
-          <span className="gh-item-main"><strong>{r.name}</strong><span className="gh-sub">{r.branch} · {r.event} · {r.sha} · {r.conclusion || r.status} · {ago(r.updatedAt, tr)}</span></span></a></li>)}</ul></>
+          <span className="gh-item-main"><strong>{r.name}</strong><span className="gh-sub">{r.branch} · {r.event} · {String(r.sha || '').slice(0, 7)} · {r.conclusion || r.status} · {ago(r.updatedAt, tr)}</span></span></a></li>)}</ul></>
     ) : <><ItemList items={list.data?.items ?? []} tr={tr} /></>}
   </section>;
 }
@@ -623,16 +623,6 @@ function RepoWerkbalk({
     }
   };
 
-  const snelTabs: Array<[string, string, typeof Github]> = [
-    ['overview', tr('Огляд', 'Overzicht'), FolderGit2],
-    ['code', tr('Код і редактор', 'Code en editor'), Code2],
-    ['issues', tr('Задачі', 'Vraagstukken'), CircleDot],
-    ['pulls', tr('Запити на злиття', 'Samenvoegingen'), GitPullRequest],
-    ['actions', tr('Конвеєри дій', 'Werkstromen'), PlayCircle],
-    ['releases', tr('Випуски й розгортання', 'Uitgaven en uitrol'), Package],
-    ['sync', tr('Двосторонній міст', 'Tweerichtingsspiegel'), Radio],
-  ];
-
   return <section className="gh-card gh-repo-balk" aria-label={tr('Активне сховище', 'Actieve opslagplaats')}>
     <div className="gh-werkbalk">
       <div className="gh-werkbalk-groep">
@@ -669,20 +659,7 @@ function RepoWerkbalk({
       </div>
     </div>
 
-    <nav className="gh-snel-nav" aria-label={tr('Розділи робочого простору GitHub', 'Onderdelen van de GitHub-werkruimte')}>
-      {snelTabs.map(([id, naam, Icoon]) => (
-        <button
-          key={id}
-          type="button"
-          className={`gh-snel-pil${tab === id ? ' is-actief' : ''}`}
-          aria-current={tab === id ? 'page' : undefined}
-          onClick={() => onGaNaarTab(id)}
-        >
-          <Icoon size={14} />
-          <span>{naam}</span>
-        </button>
-      ))}
-    </nav>
+    <GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={onGaNaarTab} />
 
     {fout && !nieuwOpen && !instelOpen ? <Notice kind="error">{fout}</Notice> : null}
 
@@ -764,6 +741,40 @@ function RepoWerkbalk({
   </section>;
 }
 
+function GhAfdelingNav({ tab, tr, onGaNaarTab }: { tab: string; tr: Tr; onGaNaarTab: (t: string) => void }) {
+  const alleAfdelingen: Array<[string, string, typeof Github]> = [
+    ['overview', tr('Огляд', 'Overzicht'), FolderGit2],
+    ['repositories', tr('Сховища', 'Opslagplaatsen'), Github],
+    ['code', tr('Код і редактор', 'Code en editor'), Code2],
+    ['issues', tr('Задачі', 'Vraagstukken'), CircleDot],
+    ['pulls', tr('Запити на злиття', 'Samenvoegingen'), GitPullRequest],
+    ['actions', tr('Конвеєри дій', 'Werkstromen'), PlayCircle],
+    ['releases', tr('Випуски й розгортання', 'Uitgaven en uitrol'), Package],
+    ['sync', tr('Двосторонній міст', 'Tweerichtingsspiegel'), Radio],
+    ['projects', tr('Проєкти', 'Projecten'), BookOpen],
+    ['documentation', tr('Документація', 'Documentatie'), BookOpen],
+    ['research', tr('Пошук', 'Zoeken'), Search],
+    ['activity', tr('Активність', 'Activiteit'), Clock],
+    ['accounts', tr('Підключення', 'Koppeling'), Plug],
+  ];
+  return (
+    <nav className="gh-snel-nav" data-no-edge-swipe aria-label={tr('Розділи робочого простору GitHub', 'Onderdelen van de GitHub-werkruimte')}>
+      {alleAfdelingen.map(([id, naam, Icoon]) => (
+        <button
+          key={id}
+          type="button"
+          className={`gh-snel-pil${tab === id ? ' is-actief' : ''}`}
+          aria-current={tab === id ? 'page' : undefined}
+          onClick={() => onGaNaarTab(id)}
+        >
+          <Icoon size={14} />
+          <span>{naam}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 const WERKRUIMTE_TABS = new Set(['overview', 'repositories', 'code', 'issues', 'pulls', 'actions', 'releases', 'sync', 'documentation']);
 
 export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
@@ -773,6 +784,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
   const koppeling = useCall<GithubKoppelingFeiten>('koppeling', tab === 'accounts' ? {} : null, tr, [tab]);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string>(() => { try { return sessionStorage.getItem('mr.gh.repo') || ''; } catch { return ''; } });
+  const [splitMobielPaneel, setSplitMobielPaneel] = useState<'lijst' | 'detail'>('lijst');
   const pick = useCallback((full: string) => { setSelected(full); try { sessionStorage.setItem('mr.gh.repo', full); } catch { /* geen opslag */ } }, []);
   const ruimteLang: 'uk' | 'nl' = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
   const gaNaarTab = useCallback((doelTab: string) => {
@@ -800,6 +812,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
   // Het tabblad «Облікові записи» is er juist voor het koppelen: het toont de kaart ook als er nog geen token is of GitHub hem weigerde.
   if (tab === 'accounts') return <div className="gh-root"><IntegratieStrook dienst='github' />
     <RuimteStrook feiten={koppeling.ruimte ?? null} lang={ruimteLang} />
+    <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
     {koppeling.gesloten ? <RuimteGeslotenVlak gesloten={koppeling.gesloten} lang={ruimteLang} /> : <>
       <EenklikKoppelPaneel tr={tr} gekoppeld={Boolean(koppeling.data?.connected)} login={koppeling.data?.login} eenklik={koppeling.data?.eenklik} onGekoppeld={koppeling.reload} />
       <KoppelKaart tr={tr} onHerlaad={koppeling.reload} ruimte={koppeling.ruimte ?? null} rate={koppeling.rate}
@@ -808,6 +821,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
   </div>;
   if (status.error) return <div className="gh-root"><Notice kind="error">{status.error}</Notice><div className="gh-actions">{status.code === 'SLEUTELKLUIS_GESLOTEN' ? <a className="gh-btn gh-primary" href={sleutelkluisOntgrendelAdres(window.location.origin)}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</a> : null}<button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div></div>;
   if (!connected) return <div className="gh-root">
+    <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
     <EenklikKoppelPaneel tr={tr} gekoppeld={false} eenklik={status.data?.eenklik} onGekoppeld={status.reload} />
     <section className="gh-card gh-connect">
       <Github size={38} /><h2>{tr('Підключіть GitHub', 'Koppel GitHub')}</h2>
@@ -826,7 +840,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
 
   const repoList = <>
     <label className="gh-search"><Search size={14} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr('Фільтр репозиторіїв…', 'Repositories filteren…')} aria-label={tr('Фільтр репозиторіїв', 'Repositories filteren')} /></label>
-    {repos.error ? <Notice kind="error">{repos.error}</Notice> : repos.loading && !repos.data ? <Busy tr={tr} /> : filtered.length ? <div className="gh-repos">{filtered.map((r) => <RepoRow key={r.fullName} r={r} active={selected === r.fullName} onPick={() => pick(r.fullName)} tr={tr} />)}</div> : <Empty>{tr('Репозиторіїв не знайдено.', 'Geen repositories gevonden.')}</Empty>}
+    {repos.error ? <Notice kind="error">{repos.error}</Notice> : repos.loading && !repos.data ? <Busy tr={tr} /> : filtered.length ? <div className="gh-repos">{filtered.map((r) => <RepoRow key={r.fullName} r={r} active={selected === r.fullName} onPick={() => { pick(r.fullName); setSplitMobielPaneel('detail'); }} tr={tr} />)}</div> : <Empty>{tr('Репозиторіїв не знайдено.', 'Geen repositories gevonden.')}</Empty>}
   </>;
 
   const geenRepoKaart = repos.loading && !repos.data
@@ -835,7 +849,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
 
   return <div className="gh-root">
     {Header}
-    {WERKRUIMTE_TABS.has(tab) && (
+    {WERKRUIMTE_TABS.has(tab) ? (
       <RepoWerkbalk
         repos={alleRepos}
         actieveRepo={selected}
@@ -845,20 +859,62 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
         onVernieuwRepos={repos.reload}
         onGaNaarTab={gaNaarTab}
       />
+    ) : (
+      <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
     )}
     {tab === 'overview' && <div className="gh-grid">
       <section className="gh-card"><h3>{tr('Останні репозиторії', 'Recente repositories')}</h3>{repos.loading && !repos.data ? <Busy tr={tr} /> : <div className="gh-repos">{alleRepos.slice(0, 6).map((r) => <RepoRow key={r.fullName} r={r} active={selected === r.fullName} onPick={() => pick(r.fullName)} tr={tr} />)}</div>}</section>
       <ActivityCard tr={tr} limit={6} />
       {selected && <section className="gh-card gh-wide"><RepoDetail repo={selected} tr={tr} /></section>}
     </div>}
-    {tab === 'repositories' && <div className="gh-split"><section className="gh-card">{repoList}</section><section className="gh-card">{selected ? <RepoDetail repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій зліва.', 'Kies links een repository.')}</Empty>}</section></div>}
+    {tab === 'repositories' && <>
+      <div className="gh-mobiel-wissel">
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'lijst' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('lijst')}>
+          <FolderGit2 size={14} /> {tr('Список сховищ', 'Opslagplaatsen')} ({filtered.length})
+        </button>
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'detail' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('detail')}>
+          <Github size={14} /> {selected ? selected.split('/').pop() : tr('Деталі сховища', 'Details')}
+        </button>
+      </div>
+      <div className="gh-split" data-mobiel-paneel={splitMobielPaneel}>
+        <section className={`gh-card gh-split-lijst${splitMobielPaneel !== 'lijst' ? ' is-verborgen-mobiel' : ''}`}>{repoList}</section>
+        <section className={`gh-card gh-split-detail${splitMobielPaneel !== 'detail' ? ' is-verborgen-mobiel' : ''}`}>
+          <div className="gh-mobiel-terug-rij">
+            <button type="button" className="gh-btn" onClick={() => setSplitMobielPaneel('lijst')}>
+              <FolderGit2 size={14} /> {tr('← До списку сховищ', '← Naar lijst van opslagplaatsen')}
+            </button>
+          </div>
+          {selected ? <RepoDetail repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій зліва.', 'Kies links een repository.')}</Empty>}
+        </section>
+      </div>
+    </>}
     {tab === 'code' && (selected ? <CodeEnEditorPaneel repo={selected} tr={tr} onOpenPulls={() => gaNaarTab('pulls')} /> : geenRepoKaart)}
     {(tab === 'issues' || tab === 'pulls') && (selected ? <ZakenEnSamenvoegingenPaneel tab={tab} repo={selected} tr={tr} /> : geenRepoKaart)}
     {(tab === 'actions' || tab === 'releases') && (selected ? <ActiesEnUitgavenPaneel tab={tab} repo={selected} tr={tr} /> : geenRepoKaart)}
     {tab === 'sync' && <SpiegelEnBrugPaneel repo={selected} tr={tr} onKiesRepo={pick} />}
     {tab === 'projects' && <ProjectsCard tr={tr} />}
-    {tab === 'documentation' && <div className="gh-split"><section className="gh-card">{repoList}</section><section className="gh-card">{selected ? <Readme repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій, щоб прочитати README.', 'Kies een repository om de README te lezen.')}</Empty>}</section></div>}
-    {tab === 'research' && <SearchCard tr={tr} onPick={pick} />}
+    {tab === 'documentation' && <>
+      <div className="gh-mobiel-wissel">
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'lijst' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('lijst')}>
+          <FolderGit2 size={14} /> {tr('Список сховищ', 'Opslagplaatsen')} ({filtered.length})
+        </button>
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'detail' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('detail')}>
+          <BookOpen size={14} /> {selected ? `${selected.split('/').pop()} · README` : 'README'}
+        </button>
+      </div>
+      <div className="gh-split" data-mobiel-paneel={splitMobielPaneel}>
+        <section className={`gh-card gh-split-lijst${splitMobielPaneel !== 'lijst' ? ' is-verborgen-mobiel' : ''}`}>{repoList}</section>
+        <section className={`gh-card gh-split-detail${splitMobielPaneel !== 'detail' ? ' is-verborgen-mobiel' : ''}`}>
+          <div className="gh-mobiel-terug-rij">
+            <button type="button" className="gh-btn" onClick={() => setSplitMobielPaneel('lijst')}>
+              <FolderGit2 size={14} /> {tr('← До списку сховищ', '← Naar lijst van opslagplaatsen')}
+            </button>
+          </div>
+          {selected ? <Readme repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій, щоб прочитати README.', 'Kies een repository om de README te lezen.')}</Empty>}
+        </section>
+      </div>
+    </>}
+    {tab === 'research' && <SearchCard tr={tr} onPick={(full) => { pick(full); gaNaarTab('overview'); }} />}
     {tab === 'activity' && <ActivityCard tr={tr} limit={30} />}
   </div>;
 }
@@ -876,7 +932,7 @@ function ProjectsCard({ tr }: { tr: Tr }) {
 
 function Readme({ repo, tr }: { repo: string; tr: Tr }) {
   const r = useCall<{ name: string; text: string; truncated: boolean; url: string }>('readme', { repo }, tr, [repo]);
-  return <section><header className="gh-detail-head"><h3>{repo} · README</h3>{r.data && <a href={r.data.url} className="gh-btn" target="_blank" rel="noopener noreferrer"><ExternalLink size={14} />GitHub</a>}</header>{r.error ? <Notice kind="error">{r.error}</Notice> : r.loading ? <Busy tr={tr} /> : <pre className="gh-readme">{r.data?.text}{r.data?.truncated ? `\n\n… ${tr('(скорочено)', '(ingekort)')}` : ''}</pre>}</section>;
+  return <section><header className="gh-detail-head"><h3>{repo} · README</h3>{r.data && <a href={r.data.url} className="gh-btn" target="_blank" rel="noopener noreferrer"><ExternalLink size={14} />GitHub</a>}</header>{r.error ? <Notice kind="error">{r.error}</Notice> : r.loading ? <Busy tr={tr} /> : <pre className="gh-readme" data-no-edge-swipe>{r.data?.text}{r.data?.truncated ? `\n\n… ${tr('(скорочено)', '(ingekort)')}` : ''}</pre>}</section>;
 }
 
 function SearchCard({ tr, onPick }: { tr: Tr; onPick: (full: string) => void }) {

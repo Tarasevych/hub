@@ -212,7 +212,7 @@ export default function EenklikKoppelPaneel({
         </div>
       ) : null}
 
-      <div className="gh-actions">
+      <div className="gh-eenklik-rij">
         <button type="button" className="gh-btn gh-primary gh-btn-groot" disabled={bezig} onClick={() => void startEenklik()}>
           {bezig ? <Loader2 size={16} className="gh-spin" /> : <Github size={16} />}
           {gekoppeld
@@ -242,14 +242,16 @@ export default function EenklikKoppelPaneel({
                 'Kopieer deze eenmalige code en vul hem in op de bevestigingspagina van GitHub (op deze computer of op uw telefoon). Zodra u bevestigt, wordt de koppeling automatisch voltooid.',
               )}
             </p>
-            <div className="gh-apparaatcode-waarde">
-              <code>{apparaatGegevens.userCode}</code>
+            <div className="gh-apparaatcode-rij">
+              <div className="gh-apparaatcode-waarde">
+                <code>{apparaatGegevens.userCode}</code>
+              </div>
               <button type="button" className="gh-btn" onClick={kopieerCode}>
                 {gekopieerd ? <Check size={15} /> : <Copy size={15} />}
                 {gekopieerd ? tr('Скопійовано', 'Gekopieerd') : tr('Копіювати код', 'Code kopiëren')}
               </button>
             </div>
-            <div className="gh-actions">
+            <div className="gh-eenklik-rij">
               <a
                 className="gh-btn gh-primary"
                 href={apparaatGegevens.verificationUri}

@@ -314,7 +314,7 @@ export default function ActiesEnUitgavenPaneel({
                 <p className="gh-sub">
                   @{rel.author} · {ghGeleden(rel.publishedAt || rel.createdAt, tr)}
                 </p>
-                {rel.body ? <pre className="gh-readme">{rel.body}</pre> : null}
+                {rel.body ? <pre className="gh-readme" data-no-edge-swipe>{rel.body}</pre> : null}
 
                 {rel.assets.length > 0 ? (
                   <div className="gh-koppel-blok">
@@ -700,7 +700,7 @@ export default function ActiesEnUitgavenPaneel({
             {logVraag.data.jobs.map((j) => (
               <div key={j.id} className="gh-koppel-blok">
                 <h4>{j.name}</h4>
-                <pre className="gh-logboek-vak">
+                <pre className="gh-logboek-vak" data-no-edge-swipe>
                   {j.log?.tail || tr('Вивід для цього кроку порожній або недоступний.', 'Geen uitvoer beschikbaar voor deze taak.')}
                 </pre>
               </div>
