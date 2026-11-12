@@ -1,7 +1,7 @@
 // «Сесії та пристрої» (RUNBOOK §13.11): de bestaande sessiekaarten van het account + de gastsessies uit toegangscodes, in ÉÉN overzicht.
 // Per sessie: aanmeldmethode (Google / passkey / toegangscode «naam»), apparaat/browser, gestart, laatst actief, duur; los intrekken of
 // «Завершити всі інші» (eigen andere sessies + alle gastsessies; deze sessie blijft). Alleen UA + NL.
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {LogOut,Ticket,Trash2} from 'lucide-react';
 import {api} from './platform/client';
 import {swrPost} from './lees-cache';
@@ -25,9 +25,10 @@ export default function SessiesOverzicht(p:Props){
   const[bevestig,setBevestig]=useState(false);
   // «Зберегти цей акаунт для наступних сесій» — de keuze van het aanmeldscherm, nu ook HIER zichtbaar en te wijzigen (per apparaat).
   const[onthouden,setOnthouden]=useState(leesAanmeldenOnthouden);
+  const eersteLading=useRef(false);
   // Fase B1: bewaarde lijst meteen, dan vers (alleen geheugen, per account); afbreken als de pagina verdwijnt.
   const laden=useCallback(async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<{beschikbaar?:boolean;sessies?:GastSessie[]}>('/api/owner/access/gast-sessies/lijst',context(),d=>setGasten(d.beschikbaar===false?null:(d.sessies||[])),o);}catch(e){if(foutCode(e)==='OWNER_REQUIRED')setGasten(null);}},[]);
-  useEffect(()=>{const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[laden]);
+  useEffect(()=>{if(!eersteLading.current){eersteLading.current=true;if(!p.sessions.length&&!p.loading)p.onRefresh();}const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[laden]);// eslint-disable-line react-hooks/exhaustive-deps
   const vernieuw=()=>{p.onRefresh();void laden();};
   const gastIntrekken=async(id:string)=>{setBezig(true);setMelding('');try{await api.post('/api/owner/access/gast-sessies/intrekken',{...context(),id});await laden();setMelding(tr('Гостьову сесію завершено.','De gastsessie is beëindigd.'));}catch{setMelding(tr('Не вдалося завершити гостьову сесію.','De gastsessie kon niet worden beëindigd.'));}finally{setBezig(false);}};
   const alleAndere=async()=>{setBezig(true);setMelding('');try{const r=(await api.post('/api/owner/identity/security/revoke-others',{...context(),gast:true})).data as {sessions:number;tabs:number;grants:number;gast:number};setBevestig(false);p.onRefresh();await laden();setMelding(tr(`Завершено інших входів: ${r.sessions+r.tabs}, забутих браузерів: ${r.grants}, гостьових сесій: ${r.gast}. Цей вхід залишився.`,`Andere aanmeldingen beëindigd: ${r.sessions+r.tabs}, vergeten browsers: ${r.grants}, gastsessies: ${r.gast}. Deze aanmelding blijft actief.`));}catch{setMelding(tr('Не вдалося завершити інші сесії. Дані не втрачено.','De andere sessies konden niet worden beëindigd. Er zijn geen gegevens verloren.'));}finally{setBezig(false);}};

@@ -24,10 +24,10 @@
 @media (prefers-reduced-motion:reduce){.tga-draai{animation:none;border-right-color:currentColor;opacity:.6}}
 .tga-rij{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.4rem 0}
 .tga-blok{display:grid;gap:.5rem;margin:.75rem 0}
-.tga-veld{display:grid;gap:.25rem;font-size:.9rem}.tga-veld input,.tga-veld select,.tga-blok input,.tga-blok select{min-height:36px;padding:.35rem .55rem;border-radius:8px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit}
+.tga-veld{display:grid;gap:.25rem;font-size:.9rem;min-width:0}.tga-veld input,.tga-veld select,.tga-blok input,.tga-blok select{width:100%;max-width:100%;min-width:0;min-height:36px;padding:.35rem .55rem;border-radius:8px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit}
 .tga-vinkje{display:flex;gap:.5rem;align-items:flex-start;font-size:.9rem}
 .tga-sectie{display:grid;gap:.6rem;padding:1rem;border-radius:16px;border:1px solid color-mix(in srgb,currentColor 12%,transparent);margin-top:1rem}
-.tga-sectie-kop{display:flex;gap:.75rem;align-items:center}.tga-sectie-kop h2{margin:0;font-size:1.15rem}.tga-sectie-kop p{margin:0;font-size:.85rem;opacity:.8}.tga-sectie-kop .tga-stand{margin-left:auto}
+.tga-sectie-kop{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}.tga-sectie-kop h2{margin:0;font-size:1.15rem}.tga-sectie-kop p{margin:0;font-size:.85rem;opacity:.8}.tga-sectie-kop .tga-stand{margin-left:auto}
 .tga-stand{font-size:.75rem;padding:.15rem .5rem;border-radius:999px;background:color-mix(in srgb,currentColor 10%,transparent)}
 .tga-stand-werkt,.tga-stand-actief{background:#2FB36B22;color:#1b7f45}.tga-stand-traag,.tga-stand-gepauzeerd{background:#F2B01E22;color:#8a6100}
 .tga-stand-storing,.tga-stand-geblokkeerd,.tga-stand-uitgeschakeld{background:#E5484D22;color:#b3262b}
@@ -57,7 +57,7 @@
 @media (max-width:640px){.tga-matrix td{max-width:100%;overflow:hidden}.tga-matrix select{max-width:100%}.tga-matrix table,.tga-matrix tbody,.tga-matrix tr,.tga-matrix td{display:block;width:100%}.tga-matrix thead{display:none}.tga-matrix td{border-bottom:0;padding:.2rem 0}.tga-matrix tr{padding:.45rem 0;border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent)}.tga-matrix select{min-width:0}}
 /* AANMELD-PLAATSING v1 — beheer van de plaats van de aanmeldmethoden + voorbeeld. */
 .tga-plaatsing-lijst{list-style:none;margin:.5rem 0;padding:0;display:grid;gap:.4rem}
-.tga-plaatsing-lijst li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,16rem) auto;gap:.5rem;align-items:center;padding:.45rem .55rem;border:1px solid color-mix(in srgb,currentColor 12%,transparent);border-radius:10px}
+.tga-plaatsing-lijst li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,21rem) auto;gap:.5rem;align-items:center;padding:.45rem .55rem;border:1px solid color-mix(in srgb,currentColor 12%,transparent);border-radius:10px}
 .tga-plaatsing-naam{display:flex;flex-direction:column;min-width:0}.tga-plaatsing-naam small{opacity:.75;font-size:.8rem;overflow-wrap:anywhere}
 .tga-plaatsing-lijst select{width:100%;max-width:100%;min-width:0;min-height:36px;padding:.35rem .55rem;border-radius:8px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit;font:inherit;font-size:.88rem}
 .tga-plaatsing-lijst select option{color:#17212b;background:#fff}
@@ -67,5 +67,4 @@
 .tga-voorbeeld-schakel{font-size:.88rem;opacity:.85}.tga-voorbeeld-andere ul{margin:.25rem 0 0;padding-left:1.1rem;font-size:.85rem}
 @media (max-width:640px){.tga-plaatsing-lijst li{grid-template-columns:minmax(0,1fr) auto}.tga-plaatsing-lijst select{grid-column:1/-1;grid-row:2}}
 /* Smalle schermen: niets mag breder worden dan het venster (lange adressen, sleutelmaskers, tabellen). */
-@media (max-width:640px){.tga-sectie{min-width:0;max-width:100%;box-sizing:border-box}.tga-sectie *{min-width:0}.tga-sectie .tga-mono,.tga-sectie dd,.tga-sectie td{overflow-wrap:anywhere}.tga-sectie table.tga-lijst{display:block;overflow-x:auto;max-width:100%}.tga-raster{grid-template-columns:minmax(0,1fr)!important}}
-.tga-plaatsing-lijst li{grid-template-columns:minmax(0,1fr) minmax(0,21rem) auto}
+@media (max-width:640px){.tga-sectie{min-width:0;max-width:100%;box-sizing:border-box}.tga-sectie *{min-width:0}.tga-sectie .tga-mono,.tga-sectie dd,.tga-sectie td{overflow-wrap:anywhere}.tga-sectie table.tga-lijst,.tga-sectie table.tga-verschil{display:block;overflow-x:auto;max-width:100%}.tga-raster{grid-template-columns:minmax(0,1fr)!important}.tga-identiteit{flex-wrap:wrap}.tga-knop,.tga-matrix select,.tga-veld input,.tga-veld select{min-height:42px}}

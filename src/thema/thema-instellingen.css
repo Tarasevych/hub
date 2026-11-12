@@ -43,3 +43,9 @@
 .settings-center .thema-interval .thema-veld{display:flex;align-items:center;gap:.45rem;white-space:nowrap}
 .settings-center .thema-interval input[type=time]{width:auto;min-width:8.5rem}
 .settings-center .thema-zon .thema-veld select{width:auto;min-width:12rem}
+@media (max-width:560px){
+  .thema-soort{grid-template-columns:1fr}
+  .thema-pauze,.thema-knop{min-height:var(--tik-hoogte,44px)}
+  .settings-center .thema-interval .thema-veld{flex-wrap:wrap;white-space:normal;width:100%}
+  .settings-center .thema-interval input[type=time],.settings-center .thema-zon .thema-veld select{width:100%;min-width:0}
+}

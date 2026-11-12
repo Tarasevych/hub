@@ -53,28 +53,30 @@
 .apb-code input:not([type=checkbox],[type=radio]){width:100%;box-sizing:border-box;padding:10px 12px;border-radius:9px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff));color:inherit;font-size:1.05rem;letter-spacing:.12em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
 /* Instellingen (gebruiker) en beheer: dezelfde opmaak als de andere kaarten in «Способи входу». */
-.apb-sectie,.apb-beheer{margin-top:16px;padding:16px;border-radius:14px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff))}
-.apb-sectie-kop{display:flex;align-items:center;gap:10px}
-.apb-sectie-kop h3,.apb-sectie-kop h2{margin:0;font-size:1.05rem}
-.apb-sectie-kop svg{width:22px;height:22px;color:var(--accent,var(--boot-accent,#2f6f73))}
+.apb-sectie,.apb-beheer{margin-top:16px;padding:16px;border-radius:14px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff));min-width:0;max-width:100%;box-sizing:border-box}
+.apb-sectie-kop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.apb-sectie-kop h3,.apb-sectie-kop h2{margin:0;font-size:1.05rem;min-width:0}
+.apb-sectie-kop svg{flex-shrink:0;width:22px;height:22px;color:var(--accent,var(--boot-accent,#2f6f73))}
 .apb-stand{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:600;border:1px solid var(--line,var(--boot-line,#dce1e6))}
 .apb-stand[data-stand='werkt']{color:var(--ok,#1d6b4a);border-color:color-mix(in srgb,var(--ok,#1d6b4a) 40%,transparent)}
 .apb-stand[data-stand='niet']{color:var(--waarschuwing,#b7791f);border-color:color-mix(in srgb,var(--waarschuwing,#b7791f) 40%,transparent)}
 .apb-stand[data-stand='uit']{color:var(--fout,#b3261e);border-color:color-mix(in srgb,var(--fout,#b3261e) 40%,transparent)}
-.apb-veld{display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.apb-veld{display:flex;flex-direction:column;gap:4px;font-size:.9rem;min-width:0}
 .apb-veld>span:first-child{font-weight:600}
-.apb-veld select,.apb-veld input[type=number]{max-width:320px;padding:7px 10px;border-radius:8px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff));color:inherit;font:inherit}
-.apb-vinkje{display:flex;align-items:flex-start;gap:8px;font-size:.9rem;line-height:1.35;cursor:pointer}
+.apb-veld select,.apb-veld input[type=number]{width:100%;max-width:min(100%,320px);min-width:0;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:var(--panel,var(--boot-panel,#fff));color:inherit;font:inherit}
+.apb-vinkje{display:flex;align-items:flex-start;gap:8px;font-size:.9rem;line-height:1.35;cursor:pointer;min-width:0}
 .apb-vinkje input{margin:3px 0 0;flex:0 0 auto;width:auto}
 .apb-vinkje span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
-.apb-raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px}
+.apb-raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px 18px}
 .apb-tabel{width:100%;border-collapse:collapse;font-size:.84rem}
 .apb-tabel th,.apb-tabel td{padding:6px 8px;border-bottom:1px solid var(--line,var(--boot-line,#dce1e6));text-align:left;vertical-align:top}
 .apb-tabel th{font-weight:600;color:var(--muted,var(--boot-muted,#5a6672))}
-.apb-tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.apb-tegels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));gap:10px}
 .apb-cijfer{padding:10px 12px;border-radius:10px;border:1px solid var(--line,var(--boot-line,#dce1e6));background:rgba(127,127,127,.04)}
 .apb-cijfer strong{display:block;font-size:1.4rem;font-variant-numeric:tabular-nums}
 .apb-cijfer span{font-size:.8rem;color:var(--muted,var(--boot-muted,#5a6672))}
 .apb-nood{padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--fout,#b3261e) 35%,transparent);background:color-mix(in srgb,var(--fout,#b3261e) 6%,transparent);font-size:.86rem}
 .apb-voorbeeld{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .apb-voorbeeld .apb-tegel{min-height:72px;min-width:72px;padding:6px}
+@media (max-width:700px){.apb-knop{min-height:42px}}
+@media (max-width:560px){.apb-sectie,.apb-beheer{padding:12px}.apb-tabel,.apb-tabel tbody,.apb-tabel tr,.apb-tabel td{display:block;width:100%;box-sizing:border-box}.apb-tabel thead{display:none}.apb-tabel tr{padding:8px 0;border-bottom:1px solid var(--line,var(--boot-line,#dce1e6))}.apb-tabel td{padding:2px 0;border-bottom:0;overflow-wrap:anywhere}}

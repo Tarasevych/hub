@@ -166,7 +166,7 @@
 @media(max-width:700px){
  .canonical-signed-out.mr-sign-in .mr-sign-in-optie{min-height:60px;grid-template-columns:34px minmax(0,1fr)}
  .canonical-signed-out.mr-sign-in .mr-sign-in-optie-stand{grid-column:2;justify-self:start}
- .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{top:22px;right:24px}
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-anchor{top:18px;right:16px}
  /* Zelfde selector als de hoofdregel (anders won die met zijn hogere specificiteit en bleef deze telefoonregel dood). */
  .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{--mr-login-rand:8px;padding:115px 22px 90px;border-radius:22px}
  .mr-sign-in h1{font-size:clamp(1.6rem,7vw,2.1rem)!important}
@@ -174,7 +174,7 @@
  .mr-sign-in-account{min-height:62px}
  .canonical-signed-out.mr-sign-in .mr-sign-in-main-button{min-height:54px}
  .canonical-signed-out.mr-sign-in .mr-sign-in-legal{left:16px;right:16px;bottom:22px;justify-content:center}
- .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-panel{position:absolute;top:50px;right:0;left:auto;max-height:calc(100dvh - 91px);width:min(370px,calc(100vw - 24px))}
+ .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'] .canonical-account-panel{position:absolute;top:50px;right:0;left:auto;max-height:calc(100dvh - 91px);width:min(370px,calc(100vw - 32px));padding:16px!important}
 }
 @media(prefers-reduced-motion:reduce){
  .mr-sign-in-content{transition:none}

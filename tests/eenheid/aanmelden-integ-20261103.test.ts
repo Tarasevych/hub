@@ -118,7 +118,7 @@ export async function main(): Promise<number> {
   check('1. de reserve van de zwevende stapel geeft op het aanmeldscherm geen extra hoogte', css.includes('.canonical-chrome:has(.mr-sign-in) .canonical-workspace::after{content:none!important;height:0!important}'));
   check('1. telefoonregel met dezelfde specificiteit als de hoofdregel (vroeger dood)', /@media\(max-width:700px\)\{[\s\S]*\.canonical-chrome\[data-surface-model='flat-content'\] \.canonical-content \.canonical-signed-out\.mr-sign-in\{--mr-login-rand:8px/.test(css));
   check('2. logo-verhouding: «G» 18 px op een witte plaat van 34 px, kolommen 34px · 1fr · 34px',
-    css.includes('.mr-sign-in-logo img{display:block;width:18px;height:18px') && css.includes('width:34px;height:34px;border-radius:50%;background:#fff') && css.includes('grid-template-columns:34px minmax(0,1fr) 34px'));
+    css.includes('.mr-sign-in-logo img{display:block;width:18px;height:18px') && /width:34px;height:34px;border-radius:50%;background:(var\(--papier\)|#fff)/.test(css) && css.includes('grid-template-columns:34px minmax(0,1fr) 34px'));
   check('4. optieknoppen winnen van de oude algemene regel «.canonical-signed-out button»', css.includes('.canonical-signed-out.mr-sign-in .mr-sign-in-optie{') && !/\n\.mr-sign-in-optie\{/.test(css));
 
   // ------------------------------------------------------------------ 4. andere aanmeldwegen

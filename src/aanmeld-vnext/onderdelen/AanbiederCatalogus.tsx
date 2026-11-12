@@ -17,7 +17,7 @@ export default function AanbiederCatalogus({ lang, context }: { lang: Lang; cont
   const [fout, setFout] = useState(false);
   const [melding, setMelding] = useState('');
   const laad = useCallback(async () => {
-    try { const r = await api.post('/api/owner/aanmeld/vnext/aanbieders', context); setLevend(((r.data as { aanbieders?: Levend[] })?.aanbieders) || []); setFout(false); }
+    try { const r = await api.post('/api/owner/aanmeld/vnext/aanbieders', context); const lijst = (r.data as { aanbieders?: Levend[] })?.aanbieders; setLevend(Array.isArray(lijst) ? lijst : []); setFout(false); }
     catch { setLevend(null); setFout(true); }
   }, [context]);
   useEffect(() => { void laad(); }, [laad]);
@@ -63,7 +63,7 @@ export default function AanbiederCatalogus({ lang, context }: { lang: Lang; cont
               {a.vereist?.length ? (
                 <ul className='amv-sleutels' aria-label={tr(lang, 'Потрібні ключі власника', 'Vereiste sleutels van de eigenaar')}>
                   {a.vereist.map((naam) => {
-                    const aanwezig = Boolean(live?.sleutels.find((s) => s.naam === naam)?.aanwezig);
+                    const aanwezig = Boolean(Array.isArray(live?.sleutels) && live.sleutels.find((s) => s.naam === naam)?.aanwezig);
                     return <li key={naam} data-amv-sleutel={naam} data-amv-aanwezig={aanwezig ? 'ja' : 'nee'}><i aria-hidden='true'>{aanwezig ? '✓' : '✗'}</i><code>{naam}</code></li>;
                   })}
                 </ul>
