@@ -222,8 +222,8 @@ function naarBuitenKoppeling(rij: DbRij, event: Record<string, unknown>): CloudD
     downloadsAantal: Number(rij.downloads_aantal || 0),
     uniekeBezoekers: Number(rij.unieke_bezoekers || 0),
     laatstBekekenOp: isoOfNull(rij.laatst_bekeken_op),
-    aangemaaktOp: isoOfNull(rij.created_at) || new Date().toISOString(),
-    bijgewerktOp: isoOfNull(rij.updated_at) || new Date().toISOString(),
+    aangemaaktOp: isoOfNull(rij.aangemaakt_op) || new Date().toISOString(),
+    bijgewerktOp: isoOfNull(rij.bijgewerkt_op) || new Date().toISOString(),
   };
 }
 
@@ -580,7 +580,8 @@ async function noteerGebeurtenis(
   const bezoekerHash = sha256Hex(`${str(rij.id)}|${ontvanger?.id || ip}|${ua.slice(0, 120)}`).slice(0, 40);
   const apparaat = kortApparaatLabel(ua).slice(0, 120);
   const email = str(ontvanger?.email).toLowerCase().slice(0, 200);
-  const userId = str(ontvanger?.id).slice(0, 160) || null;
+  const eigenaarUserId = str(rij.user_id);
+  const ruimte = str(rij.ruimte) === 'technisch' ? 'technisch' : 'prive';
   let nieuweBezoeker = false;
   if (soort === 'weergave') {
     const eerder = await deelSql(
@@ -592,9 +593,9 @@ async function noteerGebeurtenis(
   }
   await deelSql(
     `INSERT INTO app.cloud_deel_gebeurtenissen
-       (koppeling_id, eigenaar_user_id, soort, doel_pad, ontvanger_user_id, ontvanger_email, bezoeker_hash, apparaat)
+       (koppeling_id, user_id, ruimte, soort, doel_pad, bezoeker_hash, ontvanger_email, apparaat)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [rij.id, rij.user_id, soort, doelPad.slice(0, 300), userId, email, bezoekerHash, apparaat],
+    [rij.id, eigenaarUserId, ruimte, soort, doelPad.slice(0, 400), bezoekerHash, email, apparaat],
     { alsSysteem: true },
   ).catch(() => undefined);
   return { nieuweBezoeker };
@@ -643,7 +644,7 @@ export function bestandenDelenEigenaarRoutes(
   const overzicht: Run = async (ctx, auth, lade, d) => {
     const filterDoelId = idOfNull(d.doelId);
     const eigenRes = await deelSql(
-      `SELECT * FROM app.cloud_deel_koppelingen WHERE user_id = $1 AND ruimte = $2 ORDER BY created_at DESC LIMIT 500`,
+      `SELECT * FROM app.cloud_deel_koppelingen WHERE user_id = $1 AND ruimte = $2 ORDER BY aangemaakt_op DESC LIMIT 500`,
       [auth.user.id, lade.ruimte],
       { lezen: true },
     );
@@ -692,7 +693,7 @@ export function bestandenDelenEigenaarRoutes(
             AND NOT gepauzeerd
             AND (verloopt_op IS NULL OR verloopt_op > now())
             AND $2 = ANY(ontvanger_emails)
-          ORDER BY created_at DESC
+          ORDER BY aangemaakt_op DESC
           LIMIT 100`,
         [auth.user.id, mijnEmail],
         { lezen: true, alsSysteem: true },
@@ -718,7 +719,7 @@ export function bestandenDelenEigenaarRoutes(
           eigenaarNaam: eig.naam,
           eigenaarEmail: eig.email,
           verlooptOp: isoOfNull(r.verloopt_op),
-          aangemaaktOp: isoOfNull(r.created_at) || new Date().toISOString(),
+          aangemaaktOp: isoOfNull(r.aangemaakt_op) || new Date().toISOString(),
         });
       }
     }
@@ -821,7 +822,7 @@ export function bestandenDelenEigenaarRoutes(
 
     const wachtwoordRauw = str(d.wachtwoord);
     if (wachtwoordRauw && (wachtwoordRauw.length < 4 || wachtwoordRauw.length > 128)) fout('WACHTWOORD_ONGELDIG');
-    const wachtwoordHash = wachtwoordRauw ? maakWachtwoordHash(wachtwoordRauw) : null;
+    const wachtwoordHash = wachtwoordRauw ? maakWachtwoordHash(wachtwoordRauw) : '';
 
     const actiefVanaf = parseerTijdstip(d.actiefVanaf, 'ACTIEF_VANAF');
     const verlooptOp = parseerTijdstip(d.verlooptOp, 'VERLOOPT_OP');
@@ -911,9 +912,9 @@ export function bestandenDelenEigenaarRoutes(
       bereik = herkeurd.bereik;
     }
 
-    let wachtwoordHash: string | null = oud.wachtwoord_hash ? str(oud.wachtwoord_hash) : null;
+    let wachtwoordHash: string = oud.wachtwoord_hash ? str(oud.wachtwoord_hash) : '';
     if (d.wachtwoordWissen === true) {
-      wachtwoordHash = null;
+      wachtwoordHash = '';
     } else if (typeof d.wachtwoord === 'string' && d.wachtwoord.length > 0) {
       if (d.wachtwoord.length < 4 || d.wachtwoord.length > 128) fout('WACHTWOORD_ONGELDIG');
       wachtwoordHash = maakWachtwoordHash(d.wachtwoord);
@@ -932,7 +933,7 @@ export function bestandenDelenEigenaarRoutes(
           SET naam = $1, notitie = $2, doel_naam = $3, bereik = $4::jsonb,
               modus = $5, ontvangers = $6::jsonb, ontvanger_emails = $7::text[],
               rechten = $8, wachtwoord_hash = $9, actief_vanaf = $10, verloopt_op = $11,
-              max_weergaven = $12, max_downloads = $13, gepauzeerd = $14, updated_at = now()
+              max_weergaven = $12, max_downloads = $13, gepauzeerd = $14, bijgewerkt_op = now()
         WHERE id = $15 AND user_id = $16 AND ruimte = $17
         RETURNING *`,
       [
@@ -972,7 +973,7 @@ export function bestandenDelenEigenaarRoutes(
       const doelId = idOfNull(d.doelId) || fout('DOEL_ONGELDIG');
       const res = await deelSql(
         `UPDATE app.cloud_deel_koppelingen
-            SET ingetrokken_op = now(), updated_at = now()
+            SET ingetrokken_op = now(), bijgewerkt_op = now()
           WHERE user_id = $1 AND ruimte = $2 AND doel_id = $3 AND ingetrokken_op IS NULL`,
         [auth.user.id, lade.ruimte, doelId],
       );
@@ -989,7 +990,7 @@ export function bestandenDelenEigenaarRoutes(
     }
     const upd = await deelSql(
       `UPDATE app.cloud_deel_koppelingen
-          SET ingetrokken_op = COALESCE(ingetrokken_op, now()), updated_at = now()
+          SET ingetrokken_op = COALESCE(ingetrokken_op, now()), bijgewerkt_op = now()
         WHERE id = $1 AND user_id = $2 AND ruimte = $3
         RETURNING *`,
       [id, auth.user.id, lade.ruimte],
@@ -1009,25 +1010,26 @@ export function bestandenDelenEigenaarRoutes(
     const rij = kopRes.rows[0] ?? fout('KOPPELING_ONBEKEND');
     const [dagenRes, gebRes] = await Promise.all([
       deelSql(
-        `SELECT to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS dag,
+        `SELECT to_char(aangemaakt_op AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS dag,
                 COUNT(*) FILTER (WHERE soort = 'weergave')::int AS weergaven,
                 COUNT(*) FILTER (WHERE soort IN ('download', 'map_archief'))::int AS downloads
            FROM app.cloud_deel_gebeurtenissen
           WHERE koppeling_id = $1
-            AND eigenaar_user_id = $2
-            AND created_at >= now() - interval '14 days'
+            AND user_id = $2
+            AND ruimte = $3
+            AND aangemaakt_op >= now() - interval '14 days'
           GROUP BY 1
           ORDER BY 1 ASC`,
-        [id, auth.user.id],
+        [id, auth.user.id, lade.ruimte],
         { lezen: true },
       ),
       deelSql(
-        `SELECT id, soort, doel_pad, ontvanger_email, apparaat, created_at
+        `SELECT id, soort, doel_pad, ontvanger_email, apparaat, aangemaakt_op
            FROM app.cloud_deel_gebeurtenissen
-          WHERE koppeling_id = $1 AND eigenaar_user_id = $2
-          ORDER BY created_at DESC
+          WHERE koppeling_id = $1 AND user_id = $2 AND ruimte = $3
+          ORDER BY aangemaakt_op DESC
           LIMIT 100`,
-        [id, auth.user.id],
+        [id, auth.user.id, lade.ruimte],
         { lezen: true },
       ),
     ]);
@@ -1052,7 +1054,7 @@ export function bestandenDelenEigenaarRoutes(
       doelPad: str(g.doel_pad),
       ontvangerEmail: str(g.ontvanger_email),
       apparaat: str(g.apparaat),
-      aangemaaktOp: isoOfNull(g.created_at) || new Date().toISOString(),
+      aangemaaktOp: isoOfNull(g.aangemaakt_op) || new Date().toISOString(),
     }));
 
     return json({ koppeling: naarBuitenKoppeling(rij, ctx.event), perDag, gebeurtenissen });
@@ -1151,7 +1153,7 @@ async function controleerPubliekeKoppeling(
           SET weergaven_aantal = weergaven_aantal + 1,
               unieke_bezoekers = unieke_bezoekers + $2,
               laatst_bekeken_op = now(),
-              updated_at = now()
+              bijgewerkt_op = now()
         WHERE id = $1
           AND ingetrokken_op IS NULL
           AND NOT gepauzeerd
@@ -1441,7 +1443,7 @@ export function bestandenDelenPubliekeRoutes(leesOptioneleSessie: LeesOptioneleS
           `UPDATE app.cloud_deel_koppelingen
               SET downloads_aantal = downloads_aantal + 1,
                   laatst_bekeken_op = now(),
-                  updated_at = now()
+                  bijgewerkt_op = now()
             WHERE id = $1
               AND ingetrokken_op IS NULL
               AND NOT gepauzeerd
