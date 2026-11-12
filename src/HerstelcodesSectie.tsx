@@ -6,6 +6,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {Check,Copy,Download,Printer,RefreshCw,ShieldOff,X} from 'lucide-react';
 import {api} from './platform/client';
+import {leesVergeten,swrPost} from './lees-cache';
 import {metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
 import {foutCode} from './platform/webauthn';
 import {InfoTip} from './InfoTip';
@@ -38,8 +39,8 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
   const hervat=useRef(false);
   const notities=useNotities(context);
 
-  const laden=async()=>{try{setO((await api.post('/api/owner/access/recovery/overzicht',context)).data as Overzicht);}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
-  useEffect(()=>{void laden();setBewaard(false);},[codes.length]);// eslint-disable-line react-hooks/exhaustive-deps
+  const laden=async(alleenVers=false)=>{try{await swrPost<Overzicht>('/api/owner/access/recovery/overzicht',context,d=>{if(d&&typeof d==='object')setO(d);},{alleenVers});}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
+  useEffect(()=>{void laden(codes.length>0);setBewaard(false);},[codes.length]);// eslint-disable-line react-hooks/exhaustive-deps
 
   const tekstBestand=()=>[
     tr(lang,'Mijn Ruimte — коди відновлення','Mijn Ruimte — herstelcodes'),
@@ -53,21 +54,24 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
   };
   const kopieren=async()=>{try{await navigator.clipboard.writeText(codes.map(opmaak).join('\n'));setMelding({ok:true,tekst:tr(lang,'Коди скопійовано.','Codes gekopieerd.')});}catch{setMelding({ok:false,tekst:tr(lang,'Не вдалося скопіювати. Завантажте файл або виділіть коди вручну.','Kopiëren lukte niet. Download het bestand of selecteer de codes zelf.')});}};
   const afdrukken=()=>{document.body.classList.add('herstel-afdruk');const weg=()=>{document.body.classList.remove('herstel-afdruk');window.removeEventListener('afterprint',weg);};window.addEventListener('afterprint',weg);window.print();window.setTimeout(weg,1500);};
-  const klaar=async()=>{setBezig('klaar');await recoverySaved();setBezig('');await laden();};
+  const klaar=async()=>{setBezig('klaar');await recoverySaved();leesVergeten('/api/owner/access/recovery/overzicht');setBezig('');await laden(true);};
 
   const intrekken=async()=>{
     setIntrekVraag(false);setBezig('intrekken');setMelding(null);
     try{
       await metHervat({actie:'herstelcodes-intrekken'},()=>api.post('/api/owner/access/recovery/intrekken',context));
+      leesVergeten('/api/owner/access/recovery/overzicht');
+      leesVergeten('/api/owner/access/snapshot');
       setMelding({ok:true,tekst:tr(lang,'Усі коди відкликано. Жоден із них більше не діє.','Alle codes zijn ingetrokken. Geen enkele werkt nog.')});
-      await laden();onChange?.();
+      await laden(true);onChange?.();
     }catch(c){const code=foutCode(c);console.error('[herstelcodes] intrekken',code,c);setMelding({ok:false,tekst:foutTekst(lang,code)});}
     finally{setBezig('');}
   };
   useEffect(()=>{if(hervat.current)return;hervat.current=true;if(neemHervat('herstelcodes-intrekken'))void intrekken();},[]);// eslint-disable-line react-hooks/exhaustive-deps
 
   const nieuw=codes.length>0;
-  const heeft=!!o&&(o.totaal>0||o.resterend>0);
+  const codeRegels=Array.isArray(o?.codes)?o.codes:[];
+  const heeft=!!o&&((o.totaal||0)>0||(o.resterend||0)>0);
   const ingetrokken=!!o?.ingetrokkenOp;
   const status=!o?tr(lang,'Завантаження…','Laden…'):!heeft?tr(lang,'Резерв, якщо втратите телефон','Reserve voor als je je telefoon kwijt bent'):ingetrokken?tr(lang,`Відкликано ${datum(lang,o.ingetrokkenOp)}`,`Ingetrokken op ${datum(lang,o.ingetrokkenOp)}`):`${tr(lang,'Створено ','Gemaakt ')}${datum(lang,o.createdAt)}${o.bekekenOp?` · ${tr(lang,'збережено','bewaard')}`:''}`;
 
@@ -113,11 +117,13 @@ export function HerstelcodesSectie({lang,context,codes,busy,nieuweHerstelcodes,r
         </div>
       </div>}
 
-      {!nieuw&&heeft&&(o!.codes.length>0
-        ?<ul className='herstel-lijst' data-herstel-lijst>{o!.codes.map(r=><li key={r.nr} data-status={r.status} data-herstel-nr={r.nr}>
-          <span className='access-plane-mono herstel-code'>{masker(r.hint)}</span>
-          <small>{r.status==='ongebruikt'?tr(lang,'Не використано','Ongebruikt'):r.status==='gebruikt'?`${tr(lang,'Використано','Gebruikt')}${r.gebruiktOp?` ${datum(lang,r.gebruiktOp)}`:''}`:tr(lang,'Відкликано','Ingetrokken')}</small>
-          {r.sleutel&&<NotitieVeld lang={lang} soort='herstelcode' sleutel={r.sleutel} notities={notities} compact/>}
+      {!nieuw&&heeft&&(codeRegels.length>0
+        ?<ul className='herstel-lijst' data-herstel-lijst>{codeRegels.map(r=><li key={r.nr} data-status={r.status} data-herstel-nr={r.nr}>
+          <div className='herstel-rij-kop'>
+            <span className='access-plane-mono herstel-code'>{masker(r.hint)}</span>
+            <small>{r.status==='ongebruikt'?tr(lang,'Не використано','Ongebruikt'):r.status==='gebruikt'?`${tr(lang,'Використано','Gebruikt')}${r.gebruiktOp?` ${datum(lang,r.gebruiktOp)}`:''}`:tr(lang,'Відкликано','Ingetrokken')}</small>
+            {r.sleutel&&<NotitieVeld lang={lang} soort='herstelcode' sleutel={r.sleutel} notities={notities} compact/>}
+          </div>
           {r.sleutel&&r.gebruik&&r.gebruik.length>0&&<GebruikLijst lang={lang} gebruik={r.gebruik} id={r.sleutel}/>}
         </li>)}</ul>
         :<p className='access-plane-hint-line access-plane-subrow'>{tr(lang,'Це старий набір кодів без окремого списку. Створіть нові, щоб бачити стан кожного коду.','Dit is een oudere set zonder lijst per code. Maak nieuwe codes om de status van elke code te zien.')}</p>)}

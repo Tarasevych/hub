@@ -32,6 +32,8 @@ import { sluitAlleStromen, stroomVerzoek, stroomVerzoekMcp } from '../backend/co
 import { sluitAlleStromenApparaat, stroomVerzoekApparaat } from '../backend/apparaat-bevestiging/stroom'; /* APPARAAT-001: snelle stroom naar de tabbladen */
 import { opruimen as apparaatOpruimen } from '../backend/apparaat-bevestiging/kern';
 import { metVerzoek } from './platform/context';
+import { isMcpRpcPad, mcpOriginBesluit, ORIGIN_403 } from '../backend/mcp-origin';
+import { eenKeerPer, journaalSchrijf } from '../backend/beheer-journaal';
 import { googleSuiteSyncCron, mailMaintenanceCron } from '../backend/index';
 import { ACHTERGROND_INTERVAL_MS, sleutelkluisAchtergrondRonde } from '../backend/sleutelkluis-achtergrond';
 import { zoekIndexCron } from '../backend/zoek/bronnen';
@@ -318,6 +320,21 @@ export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders,
   return headers.cookie ? 'CSRF_ORIGIN_REQUIRED' : '';
 }
 
+/**
+ * MCP-001 R1: Origin-controle op MCP-eindpunten (backend/mcp-origin.ts). true = weigeren (403). Een geweigerde of — bij
+ * MCP_ORIGIN_MODUS=melden — alleen gemelde origin komt in het beheerlogboek (centrum voor meldingen), gedempt per origin.
+ */
+function mcpOriginGeweigerd(req: http.IncomingMessage): boolean {
+  const b = mcpOriginBesluit(req.headers.origin, ALLOWED_ORIGINS);
+  if (b.soort !== 'geweigerd') return false;
+  if (eenKeerPer(`mcp.origin:${b.origin}`, 10 * 60 * 1000)) {
+    void journaalSchrijf({ actie: 'owner.mcp.origin.denied', actor: null, eigenaar: null, resultaat: b.blokkeren ? 'denied' : 'warning', service: 'mcp',
+      reden: b.blokkeren ? 'Origin niet toegestaan (403)' : 'Origin niet toegestaan (alleen gemeld: MCP_ORIGIN_MODUS=melden)',
+      details: { origin: b.origin, pad: String(req.url || '').split('?')[0].slice(0, 120), ip: clientIp(req) } });
+  }
+  return b.blokkeren;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Rate limiting
 // ---------------------------------------------------------------------------------------------
@@ -375,6 +392,9 @@ const CONNECTOR_PADEN: Record<string, string> = {
   '/oauth2/.well-known/openid-configuration': '/api/mcp-connector/asm',
   '/oauth2/.well-known/oauth-authorization-server': '/api/mcp-connector/asm',
   '/.well-known/oauth-authorization-server': '/api/mcp-connector/asm',
+  '/.well-known/mcp.json': '/api/mcp-connector/server-card',
+  '/.well-known/mcp-server-card.json': '/api/mcp-connector/server-card',
+  '/server.json': '/api/mcp-connector/registry-server',
   '/oauth2/register': '/api/mcp-connector/register',
   '/oauth2/authorize': '/api/mcp-connector/authorize',
   '/oauth2/token': '/api/mcp-connector/token',
@@ -390,10 +410,10 @@ const CONNECTOR_PADEN: Record<string, string> = {
 //
 // Het OUDE pad /ai/<agent> blijft bereikbaar met 308 Permanent Redirect — niet 301/302: MCP praat over POST, en 301/302 mag een
 // client in een GET veranderen (RFC 9110 §15.4), waardoor elke bestaande koppeling zou breken. 308 houdt methode én body.
-const V2_KORT = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/;
-const V2_OUD = /^\/ai\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/;
+const V2_KORT = /^\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/;
+const V2_OUD = /^\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/;
 
 /** Oud connectoradres → het nieuwe, korte adres (of null). Alleen een pad: query en host blijven van het verzoek. */
 export function oudConnectorPad(pathname: string): string | null {
@@ -429,16 +449,28 @@ function strikteFactor(): number {
   if (!factorGemeld) { factorGemeld = true; console.warn('[rate-limit] E2E_LOKALE_LIMIETEN=1: strikte limieten ×20 (alleen lokale e2e-tests)'); }
   return 20;
 }
-export async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+const VLAG_LIMIT_PER_MIN = Math.max(30, Number(process.env.VLAG_RATE_LIMIT_PER_MIN || 240));
+export type RateLimitAfwijzing = { retryAfter: number; maxAttempts: number; windowSec: number };
+
+export async function rateLimitAfwijzingDetail(method: string, pathname: string, ip: string): Promise<RateLimitAfwijzing | null> {
+  if (pathname === '/api/flags' || pathname.startsWith('/api/ofrep/v1/evaluate/flags')) {
+    const vlagLimiet = geheugenLimiet(`vlag:${ip}`, VLAG_LIMIT_PER_MIN, 60_000);
+    return vlagLimiet.ok ? null : { retryAfter: vlagLimiet.retryAfter, maxAttempts: VLAG_LIMIT_PER_MIN, windowSec: 60 };
+  }
   const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
-  if (!algemeen.ok) return algemeen.retryAfter;
-  if (SAFE_METHODS.has(method) && !pathname.includes('/callback') && !/^\/api\/(mcp-connector\/authorize|auth\/|aanmeld\/koppel\/|owner\/agents\/ws-ticket)/.test(pathname)) return 0;
+  if (!algemeen.ok) return { retryAfter: algemeen.retryAfter, maxAttempts: API_LIMIT_PER_MIN, windowSec: 60 };
+  if (SAFE_METHODS.has(method) && !pathname.includes('/callback') && !/^\/api\/(mcp-connector\/authorize|auth\/|aanmeld\/koppel\/|owner\/agents\/ws-ticket)/.test(pathname)) return null;
   for (const [patroon, naam, max, failClosed] of STRIKTE_LIMIETEN) {
     if (!patroon.test(pathname)) continue;
-    const r = await rateLimit(`${naam}:${ip}`, max * strikteFactor(), 60, { failClosed });
-    return r.ok ? 0 : r.retryAfter;
+    const limiet = max * strikteFactor();
+    const r = await rateLimit(`${naam}:${ip}`, limiet, 60, { failClosed });
+    return r.ok ? null : { retryAfter: r.retryAfter, maxAttempts: limiet, windowSec: 60 };
   }
-  return 0;
+  return null;
+}
+
+export async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+  return (await rateLimitAfwijzingDetail(method, pathname, ip))?.retryAfter ?? 0;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -490,6 +522,7 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // notifications/tools/list_changed stuurt zodra de levende staat (technisch profiel, dienst «ai») de lijst verandert. De router
   // kan geen open verbinding vasthouden, dus hier, vóór de routering (backend/connector-v2-stroom.ts).
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
+    if (mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
     if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res); return; }
     const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
     if (m) { await stroomVerzoek(req, res, m[1]); return; }
@@ -514,10 +547,13 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const method = String(req.method || 'GET').toUpperCase();
     // De connector-eindpunten gebruiken geen cookies maar OAuth/PKCE of een Bearer-token. Een Origin-controle zou
     // verzoeken van Anthropic (server-naar-server) onterecht weigeren; CSRF is hier niet van toepassing.
+    // MCP-001 R1: CSRF geldt hier niet, maar de MCP-specificatie eist wél een Origin-controle (DNS-rebinding): 403 bij een
+    // aanwezige, niet-toegestane Origin op het JSON-RPC-eindpunt. Zonder Origin (server-naar-server) verandert niets.
+    if (connector && isMcpRpcPad(apiUrl.pathname) && mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
     const csrf = connector ? '' : csrfAfwijzing(method, req.headers, apiUrl.pathname);
     if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
-    const wacht = await rateLimitAfwijzing(method, apiUrl.pathname, ip);
-    if (wacht > 0) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(wacht) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: wacht }));
+    const afwijzing = await rateLimitAfwijzingDetail(method, apiUrl.pathname, ip);
+    if (afwijzing) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(afwijzing.retryAfter) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: afwijzing.retryAfter, maxAttempts: afwijzing.maxAttempts, windowSec: afwijzing.windowSec }));
     if (apiUrl.pathname === '/api/storing/tech-bundel' && method === 'POST') return sendJson(res, 200, techMeldingVerwerken(await readBody(req).catch(() => ''), host));
     let body = '';
     try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req); }

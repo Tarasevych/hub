@@ -26,6 +26,7 @@ import { promisify } from 'node:util';
 const run = promisify(execFile);
 import { bronCommit } from '../shared/bron-commit';
 import { GEHEIM_PATRONEN_STRIKT } from '../shared/geheim-patronen';
+import { beoordeelToegepasteMigraties } from '../shared/uitrol-vereisten';
 export type Niveau = 'ok' | 'waarschuwing' | 'fout';
 export type Controle = { id: string; niveau: Niveau; uk: string; nl: string; details?: string[] };
 export type PakketMeta = { auteur: string; agent: string; samenvatting: string; bestanden: number; bytesUitgepakt: number; commit: string; bovenmap: string;
@@ -215,11 +216,12 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
 
     // ---- 6. migraties
     const mig = alle.map((f) => f.replace(/\\/g, '/')).filter((f) => /^migrations\/[^/]+\.sql$/.test(f)).sort();
-    const migFout: string[] = []; const nummers = new Set<string>(); const nieuw: string[] = []; const risico: string[] = []; const nieuwSha = new Map<string, string>();
+    const migFout: string[] = []; const migNamen: string[] = []; const nummers = new Set<string>(); const nieuw: string[] = []; const risico: string[] = []; const nieuwSha = new Map<string, string>();
     for (const f of mig) {
       const naam = path.basename(f, '.sql');
       if (!/^\d{4}_[a-z0-9_]+$/.test(naam) && naam !== 'rechten') { if (naam !== 'rechten') migFout.push(`ongeldige naam: ${naam}`); continue; }
       if (naam === 'rechten') continue;
+      migNamen.push(naam);
       const nr = naam.slice(0, 4);
       if (nummers.has(nr)) migFout.push(`dubbel nummer ${nr}`); nummers.add(nr);
       const toegepast = opties.toegepasteMigraties;
@@ -231,6 +233,8 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
         for (const [re, , nl] of SQL_RISICO) if (re.test(sql)) risico.push(`${naam}: ${nl}`);
       }
     }
+    const { echtOntbrekend, historischHernoemd } = beoordeelToegepasteMigraties(migNamen, opties.toegepasteMigraties);
+    for (const ontbr of echtOntbrekend) migFout.push(`MIGRATIES_ONTBREKEN: ${ontbr}`);
     // ---- 6b. UITROL-001: binding met de proef vóór het uploaden. De browser las de SQL en root probeerde die op een kopie van het schema;
     // hier moet de SQL in het ÉCHT ontvangen archief byte voor byte dezelfde zijn (SHA-256 per migratie). Anders: fout → nooit goedkeurbaar.
     // Прив’язка до проби: SQL нових міграцій у завантаженому архіві має збігатися з перевіреним; інакше — відхилення.
@@ -245,9 +249,31 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
         else voeg('migratie-proef', 'ok', `Проба пройдена й прив’язана до цього архіву: SQL ${nieuw.length} нових міграцій збігається з перевіреним (SHA-256), проба ${proef.id.slice(0, 8)}.`, `Proef geslaagd en aan dit archief gebonden: de SQL van ${nieuw.length} nieuwe migraties is gelijk aan de gecontroleerde (SHA-256), proef ${proef.id.slice(0, 8)}.`);
       }
     }
-    if (migFout.length) voeg('migraties', 'fout', 'Міграції: помилка в нумерації/назвах.', 'Migraties: fout in nummering/namen.', migFout);
-    else if (risico.length) voeg('migraties', 'waarschuwing', `Нові міграції містять руйнівні команди (${risico.length}). Міграції при відкаті НЕ відкочуються — стара версія коду має працювати з новою схемою.`, `Nieuwe migraties bevatten ingrijpende opdrachten (${risico.length}). Migraties worden bij terugdraaien NIET teruggedraaid — de oude code moet met het nieuwe schema werken.`, risico);
-    else voeg('migraties', 'ok', opties.toegepasteMigraties ? `Міграції в порядку: ${mig.length} усього, ${nieuw.length} нових${nieuw.length ? ` (${nieuw.join(', ')})` : ''}; руйнівних команд немає.` : `Міграції в порядку: ${mig.length} файлів.`, opties.toegepasteMigraties ? `Migraties in orde: ${mig.length} in totaal, ${nieuw.length} nieuw${nieuw.length ? ` (${nieuw.join(', ')})` : ''}; geen ingrijpende opdrachten.` : `Migraties in orde: ${mig.length} bestanden.`);
+    if (migFout.length) {
+      const heeftOntbrekend = echtOntbrekend.length > 0;
+      voeg(
+        'migraties',
+        'fout',
+        heeftOntbrekend
+          ? `MIGRATIES_ONTBREKEN: в архіві відсутні вже застосовані на сервері міграції (${echtOntbrekend.slice(0, 4).join(', ')}) — пакунок відхилено для захисту від перезапису новіших змін.`
+          : 'Міграції: помилка в нумерації/назвах.',
+        heeftOntbrekend
+          ? `MIGRATIES_ONTBREKEN: al op de server toegepaste migraties ontbreken in het archief (${echtOntbrekend.slice(0, 4).join(', ')}) — pakket geweigerd om overschrijven van nieuwere wijzigingen te voorkomen.`
+          : 'Migraties: fout in nummering/namen.',
+        migFout,
+      );
+    } else if (risico.length) voeg('migraties', 'waarschuwing', `Нові міграції містять руйнівні команди (${risico.length}). Міграції при відкаті НЕ відкочуються — стара версія коду має працювати з новою схемою.`, `Nieuwe migraties bevatten ingrijpende opdrachten (${risico.length}). Migraties worden bij terugdraaien NIET teruggedraaid — de oude code moet met het nieuwe schema werken.`, risico);
+    else {
+      const hernoemdUk = historischHernoemd.length ? `; підтверджено історичні перейменування: ${historischHernoemd.length}` : '';
+      const hernoemdNl = historischHernoemd.length ? `; historische hernoemingen bevestigd: ${historischHernoemd.length}` : '';
+      voeg(
+        'migraties',
+        'ok',
+        opties.toegepasteMigraties ? `Міграції в порядку: ${mig.length} усього, ${nieuw.length} нових${nieuw.length ? ` (${nieuw.join(', ')})` : ''}${hernoemdUk}; руйнівних команд немає.` : `Міграції в порядку: ${mig.length} файлів.`,
+        opties.toegepasteMigraties ? `Migraties in orde: ${mig.length} in totaal, ${nieuw.length} nieuw${nieuw.length ? ` (${nieuw.join(', ')})` : ''}${hernoemdNl}; geen ingrijpende opdrachten.` : `Migraties in orde: ${mig.length} bestanden.`,
+        historischHernoemd.length ? historischHernoemd.map((h) => `${h.oud} → ${h.nieuw}`) : undefined,
+      );
+    }
 
     // ---- 7. geheimen (alleen namen)
     const gevonden: string[] = [];

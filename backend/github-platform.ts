@@ -13,7 +13,10 @@ import {
 import { githubTokenVoor, githubWeg, setPatLezer } from './github-toegang';
 import { oauthOntkoppelen, oauthStarten, oauthTerugkeer, oauthVernieuwen } from './github-oauth';
 import { appInstallaties, appOntkoppelen, appRepos, appTokenVernieuwen } from './github-app';
-import { appSleutel, oauthApp } from './github-koppeling-opslag';
+import { appSleutel, isGeslotenFout, isKoppelingKluisGesloten, oauthApp } from './github-koppeling-opslag';
+import { eenklikFeiten } from './github-eenklik';
+import { createGithubWerkruimteRoutes } from './github-werkruimte';
+import type { GithubEenklikFeiten } from '../shared/github-werkruimte';
 import { githubLade } from './ruimte-bord-github';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import type { PrVoorstel } from '../shared/github-pr';
@@ -25,7 +28,7 @@ import type { PrVoorstel } from '../shared/github-pr';
  * bestaande eenheidstests) ongewijzigd werken, en is er maar één plek die de lade kan vergroten — de poort.
  */
 export type GhWie = string | { userId: string; ruimte?: AiRuimte | null };
-const wieUit = (v: GhWie): { userId: string; ruimte: AiRuimte } =>
+export const wieUit = (v: GhWie): { userId: string; ruimte: AiRuimte } =>
   typeof v === 'string' ? { userId: v, ruimte: 'prive' } : { userId: String(v.userId || ''), ruimte: ruimteOf(v.ruimte ?? 'prive') };
 
 const API = 'https://api.github.com';
@@ -62,6 +65,10 @@ export const setGithubDeps = (deps: { fetch?: typeof fetch; token?: (userId: str
 };
 
 export type GhResult<T> = { ok: true; data: T; rate?: { remaining: number; reset: number } } | { ok: false; error: string; status: number };
+
+export async function ghAanroep(wie: GhWie, path: string, init: { method?: string; body?: unknown; graphql?: string } = {}): Promise<GhResult<any>> {
+  return gh(wie, path, init);
+}
 
 async function gh(wie: GhWie, path: string, init: { method?: string; body?: unknown; graphql?: string } = {}): Promise<GhResult<any>> {
   const { userId, ruimte } = wieUit(wie);
@@ -125,7 +132,16 @@ export const validRepo = (v: unknown): string => (typeof v === 'string' && REPO.
 // ---- bewerkingen (los van HTTP, dus testbaar en door MCP-hulpmiddelen te gebruiken) ----
 export async function ghStatus(wie: GhWie) {
   const me = await gh(wie, '/user');
-  if (!me.ok) return me.error === 'GITHUB_TOKEN_MISSING' ? ({ ok: true, data: { connected: false } } as GhResult<any>) : me;
+  if (!me.ok) {
+    if (me.error !== 'GITHUB_TOKEN_MISSING') return me;
+    const { userId, ruimte } = wieUit(wie);
+    if (await isKoppelingKluisGesloten(userId, ruimte)) {
+      const weg = await githubWeg(userId, ruimte).catch(() => null);
+      if (weg?.via) return { ok: false, error: 'SLEUTELKLUIS_GESLOTEN', status: 423 } as GhResult<any>;
+    }
+    const eenklik = await eenklikFeiten(userId, ruimte).catch(() => undefined);
+    return { ok: true, data: { connected: false, ...(eenklik ? { eenklik } : {}) } } as GhResult<any>;
+  }
   return { ok: true, data: { connected: true, login: s(me.data.login, 60), name: s(me.data.name, 100), avatar: s(me.data.avatar_url, 200), url: s(me.data.html_url, 200), publicRepos: n(me.data.public_repos), privateRepos: n(me.data.total_private_repos), followers: n(me.data.followers) }, rate: me.rate } as GhResult<any>;
 }
 /**
@@ -166,10 +182,15 @@ export async function ghKoppeling(wie: GhWie): Promise<GhResult<any>> {
  * token en geen client secret: alleen de client id en het App ID (publieke gegevens die ook in de adresbalk van GitHub staan),
  * de scopes, de termijn en langs welke weg de server nu praat.
  */
-async function koppelExtra(userId: string, ruimte: AiRuimte = 'prive'): Promise<{ verbinding: GithubVerbindingFeiten | null; oauthKlaar: boolean; oauthClientId: string; appKlaar: boolean; appId: string; instel: ReturnType<typeof githubInstelWaarden> }> {
+async function koppelExtra(userId: string, ruimte: AiRuimte = 'prive'): Promise<{ verbinding: GithubVerbindingFeiten | null; oauthKlaar: boolean; oauthClientId: string; appKlaar: boolean; appId: string; instel: ReturnType<typeof githubInstelWaarden>; eenklik?: GithubEenklikFeiten }> {
   const leeg = { verbinding: null, oauthKlaar: false, oauthClientId: '', appKlaar: false, appId: '', instel: githubInstelWaarden(SERVICE_HOSTS.github) };
   try {
-    const [weg, oauth, app] = await Promise.all([githubWeg(userId, ruimte).catch(() => null), oauthApp(userId).catch(() => null), appSleutel(userId).catch(() => null)]);
+    const [weg, oauth, app, eenklik] = await Promise.all([
+      githubWeg(userId, ruimte).catch(() => null),
+      oauthApp(userId, ruimte).catch(() => null),
+      appSleutel(userId, ruimte).catch(() => null),
+      eenklikFeiten(userId, ruimte).catch(() => undefined),
+    ]);
     return {
       ...leeg,
       verbinding: weg ? { via: weg.via, scopes: weg.scopes.map((x) => s(x, 40)), verlooptOp: n(weg.verlooptOp), vernieuwbaar: weg.via !== 'pat', installatie: n(weg.installatie), repos: weg.repos.map((x) => s(x, 140)), bijgewerktOp: n(weg.bijgewerktOp) } : null,
@@ -177,6 +198,7 @@ async function koppelExtra(userId: string, ruimte: AiRuimte = 'prive'): Promise<
       oauthClientId: oauth && oauth !== 'onleesbaar' ? s(oauth.clientId, 80) : '',
       appKlaar: !!app && app !== 'onleesbaar',
       appId: app && app !== 'onleesbaar' ? s(app.appId || app.clientId, 80) : '',
+      ...(eenklik ? { eenklik } : {}),
     };
   } catch { return leeg; }
 }
@@ -544,6 +566,7 @@ export function createGithubRoutes(deps: {
     // `bevestiging_id`: de stand van een eerder verzoek. Laat geladen: dev-mg-bevestiging.ts importeert dit bestand.
     'POST /api/owner/github/pr/voorstel': route('pr_voorstel', true, async (u, b) => (await import('./dev-mg-bevestiging')).prVoorstelRoute(u, b) as Promise<GhResult<any>>),
     ...koppelRoutes(deps),
+    ...createGithubWerkruimteRoutes(deps),
   };
 }
 
@@ -598,15 +621,19 @@ function koppelRoutes(deps: Parameters<typeof createGithubRoutes>[0]) {
       const host = hostVan(ctx.event);
       const veiligeHost = host === SERVICE_HOSTS.github ? host : SERVICE_HOSTS.github;
       if (host !== SERVICE_HOSTS.github) return omleiding(veiligeHost, 'GITHUB_OAUTH_HOST_ONJUIST');
-      const anker = deps.anchor ? await deps.anchor(ctx.event).catch(() => null) : null;
-      if (!anker?.user?.id) return omleiding(veiligeHost, 'OWNER_GITHUB_SESSION_REQUIRED');
-      if (!(await rateLimit(`github:oauth:cb:${anker.user.id}`, 20, 600, { failClosed: true })).ok) return omleiding(veiligeHost, 'RATE_LIMITED');
-      const uit = await oauthTerugkeer({
-        state: String(ctx.query?.state || ''), code: String(ctx.query?.code || ''), fout: String(ctx.query?.error || ''),
-        host, sessieToken: cookieVan(ctx.event, sessieCookie), userId: anker.user.id,
-      });
-      await deps.audit(anker.user.id, 'owner.github.oauth.callback', uit.ok ? 'success' : 'failure', { reason: uit.ok ? '' : uit.fout, login: uit.ok ? uit.data.login : '', ruimte: uit.ok ? uit.data.ruimte : '' });
-      return omleiding(veiligeHost, uit.ok ? 'ok' : uit.fout);
+      try {
+        const anker = deps.anchor ? await deps.anchor(ctx.event).catch(() => null) : null;
+        if (!anker?.user?.id) return omleiding(veiligeHost, 'OWNER_GITHUB_SESSION_REQUIRED');
+        if (!(await rateLimit(`github:oauth:cb:${anker.user.id}`, 20, 600, { failClosed: true })).ok) return omleiding(veiligeHost, 'RATE_LIMITED');
+        const uit = await oauthTerugkeer({
+          state: String(ctx.query?.state || ''), code: String(ctx.query?.code || ''), fout: String(ctx.query?.error || ''),
+          host, sessieToken: cookieVan(ctx.event, sessieCookie), userId: anker.user.id,
+        });
+        await deps.audit(anker.user.id, 'owner.github.oauth.callback', uit.ok ? 'success' : 'failure', { reason: uit.ok ? '' : uit.fout, login: uit.ok ? uit.data.login : '', ruimte: uit.ok ? uit.data.ruimte : '' }).catch(() => undefined);
+        return omleiding(veiligeHost, uit.ok ? 'ok' : uit.fout);
+      } catch (err) {
+        return omleiding(veiligeHost, isGeslotenFout(err) ? 'SLEUTELKLUIS_GESLOTEN' : 'GITHUB_KOPPELING_BEWAREN_MISLUKT');
+      }
     }],
 
     'POST /api/owner/github/oauth/vernieuwen': [async (ctx: any) => {
@@ -643,9 +670,9 @@ function koppelRoutes(deps: Parameters<typeof createGithubRoutes>[0]) {
       if (p.weigering) return p.weigering;
       const auth = p.auth;
       if (!(await rateLimit(`github:app:lijst:${auth.user.id}`, 60, 600, { failClosed: true })).ok) return error('RATE_LIMITED', 429);
-      const uit = await appInstallaties(auth.user.id);
+      const uit = await appInstallaties(auth.user.id, p.ruimte);
       if (!uit.ok) return error(uit.fout, uit.status);
-      const repos = await appRepos(auth.user.id);
+      const repos = await appRepos(auth.user.id, p.ruimte);
       return json({ ok: true, ...uit.data, repos: repos.ok ? repos.data.repos : [], doel: GITHUB_APP_DOEL });
     }],
 

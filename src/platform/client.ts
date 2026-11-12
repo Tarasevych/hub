@@ -46,21 +46,55 @@ async function ruimteWeigeringMelden(lichaam: unknown): Promise<void> {
 // ---------------------------------------------------------------------------------------------
 export type ApiResponse<T = any> = { data: T; status: number; headers: Headers };
 
-/** Fout met dezelfde velden die de app-code al uitleest (response.status/data, status, responseText). */
+/** Fout met dezelfde velden die de app-code al uitleest (response.status/data, status, retryAfter, responseText). */
 export class ApiError extends Error {
   status: number;
   statusCode: number;
+  readonly retryAfter: number;
+  readonly maxAttempts?: number;
+  readonly windowSec?: number;
   responseText: string;
   response: { status: number; statusText: string; data: any; responseText: string };
-  constructor(status: number, statusText: string, data: any, responseText: string) {
-    const code = data && typeof data === 'object' ? String((data as { error?: unknown }).error || (data as { reasonCode?: unknown }).reasonCode || '') : '';
+  constructor(
+    status: number,
+    statusText: string,
+    data: any,
+    responseText: string,
+    retryAfter = 0,
+    maxAttempts?: number,
+    windowSec?: number,
+  ) {
+    const obj = data && typeof data === 'object' ? (data as Record<string, unknown>) : null;
+    const code = obj ? String(obj.error || obj.reasonCode || '') : '';
     super(code || `HTTP_${status}`);
     this.name = 'ApiError';
     this.status = status;
     this.statusCode = status;
+    const uitBody = obj ? Number(obj.retryAfter) : 0;
+    this.retryAfter = retryAfter > 0 && Number.isFinite(retryAfter)
+      ? Math.min(86_400, Math.max(1, Math.ceil(retryAfter)))
+      : Number.isFinite(uitBody) && uitBody > 0
+        ? Math.min(86_400, Math.max(1, Math.ceil(uitBody)))
+        : 0;
+    const pogingen = maxAttempts !== undefined ? maxAttempts : obj ? Number(obj.maxAttempts) : NaN;
+    if (Number.isFinite(pogingen) && pogingen > 0) this.maxAttempts = Math.round(pogingen);
+    const venster = windowSec !== undefined ? windowSec : obj ? Number(obj.windowSec) : NaN;
+    if (Number.isFinite(venster) && venster > 0) this.windowSec = Math.round(venster);
     this.responseText = responseText;
     this.response = { status, statusText, data, responseText };
   }
+}
+
+function leesRetryAfter(kopWaarde: string | null, lichaamWaarde: unknown): number {
+  const uitLichaam = Number(lichaamWaarde);
+  if (Number.isFinite(uitLichaam) && uitLichaam > 0) return Math.min(86_400, Math.max(1, Math.ceil(uitLichaam)));
+  if (!kopWaarde) return 0;
+  const sec = Number(kopWaarde.trim());
+  if (Number.isFinite(sec) && sec > 0) return Math.min(86_400, Math.max(1, Math.ceil(sec)));
+  const datum = Date.parse(kopWaarde);
+  return Number.isFinite(datum) && datum > Date.now()
+    ? Math.min(86_400, Math.max(1, Math.ceil((datum - Date.now()) / 1000)))
+    : 0;
 }
 
 function withQuery(url: string, data: unknown): string {
@@ -226,7 +260,15 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
     try { window.dispatchEvent(new CustomEvent('mr-ruimte-antwoord', { detail: { status: response.status, ruimte: response.headers.get('X-Ruimte'), pad: target.split('?')[0], code: antwoordCode } })); } catch { /* geen venster */ }
   }
   if (!response.ok) {
-    const fout = new ApiError(response.status, response.statusText, parsed, text);
+    const parsedObj = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
+    const retryAfter = leesRetryAfter(
+      response.headers?.get?.('Retry-After') ?? response.headers?.get?.('retry-after') ?? null,
+      parsedObj ? parsedObj.retryAfter : undefined,
+    );
+    if (retryAfter > 0 && parsedObj && parsedObj.retryAfter === undefined) {
+      parsedObj.retryAfter = retryAfter;
+    }
+    const fout = new ApiError(response.status, response.statusText, parsed, text, retryAfter);
     if (fout.message === 'CODEWOORD_POORT' && typeof window !== 'undefined') void import('../geheim/codewoord-poort-brug').then((m) => m.zetCodewoordPoort(true));
     // KLACHT 3 VAN DE EIGENAAR (20.10.2026), het vangnet: weigert de poort van de gescheiden gegevensruimtes een dienst
     // (KEUZE_ONTBREEKT / DIENST_UIT / BEVROREN), dan hoort de mens de ECHTE reden te horen en de volgende stap te zien —
@@ -260,38 +302,73 @@ export const api = {
 // image
 // ---------------------------------------------------------------------------------------------
 export interface PreparedImage { data: string; mimeType: string; width: number; height: number; bytes: number; resized: boolean }
-export interface ImageResizeOptions { maxDimension?: number; maxPixels?: number; quality?: number; mimeType?: 'image/jpeg' | 'image/webp' | 'image/png' }
+export interface ImageResizeOptions {
+  maxDimension?: number;
+  maxPixels?: number;
+  quality?: number;
+  mimeType?: 'image/jpeg' | 'image/webp' | 'image/png';
+  square?: boolean;
+  maxBase64Length?: number;
+}
 
 // Lezen van de schijf gaat door shared/bestand-lezen.ts: `reader.error` is een DOMException van de File API (NotReadableError
 // bij een verplaatst bestand of een cloudmap «op aanvraag») en mag nooit rauw bij de gebruiker komen. Eigenaar 20.10.2026.
 const blobToBase64 = (blob: Blob) => leesBase64(blob);
 
 export const image = {
-  /** Verklein en hercodeer (standaard max 1600 px, max 2 MP, JPEG 0,82). */
+  /** Verklein en hercodeer (standaard max 1600 px, max 2 MP, JPEG 0,82; met square=true gecentreerd 1:1 voor profielfoto's). */
   async resizeIfNeeded(file: File | Blob, options: ImageResizeOptions = {}): Promise<PreparedImage> {
     const maxDimension = options.maxDimension ?? 1600;
     const maxPixels = options.maxPixels ?? 2_000_000;
     const quality = options.quality ?? 0.82;
     const mimeType = options.mimeType ?? 'image/jpeg';
+    const square = options.square === true;
+    const maxBase64Length = options.maxBase64Length ?? 0;
     // createImageBitmap leest het bestand ZELF van de schijf: ook dat is een leesbewerking (NotReadableError, InvalidStateError).
-    const bitmap = await metLeesfout(file, () => createImageBitmap(file));
+    let bitmap: ImageBitmap;
+    try {
+      bitmap = await metLeesfout(file, () => createImageBitmap(file, { imageOrientation: 'from-image' }));
+    } catch (err) {
+      if ((err as { oorzaak?: unknown })?.oorzaak instanceof TypeError) {
+        bitmap = await metLeesfout(file, () => createImageBitmap(file));
+      } else {
+        throw err;
+      }
+    }
     try {
       const { width, height } = bitmap;
-      const scale = Math.min(1, maxDimension / Math.max(width, height), Math.sqrt(maxPixels / Math.max(1, width * height)));
-      if (scale >= 1 && file.type === mimeType) {
-        return { data: await blobToBase64(file), mimeType, width, height, bytes: file.size, resized: false };
+      const bronBreedte = square ? Math.min(width, height) : width;
+      const bronHoogte = square ? Math.min(width, height) : height;
+      const bronX = square ? Math.floor((width - bronBreedte) / 2) : 0;
+      const bronY = square ? Math.floor((height - bronHoogte) / 2) : 0;
+      const scale = Math.min(1, maxDimension / Math.max(bronBreedte, bronHoogte), Math.sqrt(maxPixels / Math.max(1, bronBreedte * bronHoogte)));
+      if (scale >= 1 && file.type === mimeType && (!square || width === height)) {
+        const ongewijzigd = await blobToBase64(file);
+        if (!maxBase64Length || ongewijzigd.length <= maxBase64Length) {
+          return { data: ongewijzigd, mimeType, width: bronBreedte, height: bronHoogte, bytes: file.size, resized: false };
+        }
       }
-      const w = Math.max(1, Math.round(width * scale));
-      const h = Math.max(1, Math.round(height * scale));
+      const w = Math.max(1, Math.round(bronBreedte * scale));
+      const h = Math.max(1, Math.round(bronHoogte * scale));
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
       const context = canvas.getContext('2d');
       if (!context) throw new Error('IMAGE_CANVAS_UNAVAILABLE');
       if (mimeType === 'image/jpeg') { context.fillStyle = '#fff'; context.fillRect(0, 0, w, h); }
-      context.drawImage(bitmap, 0, 0, w, h);
-      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('IMAGE_ENCODE_FAILED'))), mimeType, quality));
-      return { data: await blobToBase64(blob), mimeType, width: w, height: h, bytes: blob.size, resized: true };
+      context.drawImage(bitmap, bronX, bronY, bronBreedte, bronHoogte, 0, 0, w, h);
+      const stappen = maxBase64Length && mimeType !== 'image/png'
+        ? Array.from(new Set([quality, Math.min(quality, 0.76), 0.64, 0.52]))
+        : [quality];
+      let laatsteBlob: Blob | null = null;
+      let laatsteData = '';
+      for (const q of stappen) {
+        laatsteBlob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('IMAGE_ENCODE_FAILED'))), mimeType, q));
+        laatsteData = await blobToBase64(laatsteBlob);
+        if (!maxBase64Length || laatsteData.length <= maxBase64Length) break;
+      }
+      if (!laatsteBlob) throw new Error('IMAGE_ENCODE_FAILED');
+      return { data: laatsteData, mimeType, width: w, height: h, bytes: laatsteBlob.size, resized: true };
     } finally {
       bitmap.close();
     }

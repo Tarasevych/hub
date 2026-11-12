@@ -19,12 +19,28 @@ export const MAX_RUIMTES = 120;
 export const MAX_SCENE_STAPPEN = 40;
 export const MAX_WONINGEN = 10;
 
+// HUIS-001 (10.11.2026): tot nu toe een vaste lijst van 7 tijdzones in de browser en een regex op de server die alleen
+// «Regio/Stad» doorliet — «UTC» uit die eigen lijst werd geweigerd (TIJDZONE_ONGELDIG), net als «America/Argentina/Buenos_Aires».
+// Nu één regel voor browser, server en tests: de vorm van een IANA-naam én de motor (Intl) moet de zone kennen.
+export const TIJDZONES_VAAK: readonly string[] = Object.freeze(['Europe/Amsterdam', 'Europe/Brussels', 'Europe/Kyiv', 'Europe/Warsaw', 'Europe/Berlin', 'Europe/London', 'UTC']);
+export function geldigeTijdzone(z: unknown): z is string {
+  if (typeof z !== 'string' || !/^[A-Za-z][A-Za-z0-9_+\-/]{0,63}$/.test(z)) return false;
+  try { new Intl.DateTimeFormat('en-GB', { timeZone: z }); return true; } catch { return false; }
+}
+/** Alle tijdzones die deze motor kent (gesorteerd); een oudere motor zonder Intl.supportedValuesOf geeft de vaak gebruikte. */
+export function alleTijdzones(): string[] {
+  const bron = (Intl as unknown as { supportedValuesOf?: (sleutel: string) => string[] }).supportedValuesOf;
+  let lijst: string[] = [];
+  try { lijst = typeof bron === 'function' ? bron.call(Intl, 'timeZone') : []; } catch { lijst = []; }
+  return [...new Set([...lijst, ...TIJDZONES_VAAK])].filter(geldigeTijdzone).sort((a, b) => a.localeCompare(b, 'en'));
+}
+
 export type HuisTab = 'overview' | 'rooms' | 'devices' | 'scenes' | 'automations' | 'security' | 'energy' | 'activity' | 'integrations' | 'assistant' | 'settings' | 'showroom' | 'planner';
 export const HUIS_TABS: readonly HuisTab[] = Object.freeze(['overview', 'rooms', 'devices', 'scenes', 'automations', 'security', 'energy', 'activity', 'integrations', 'assistant', 'settings', 'showroom', 'planner']);
 export const HUIS_TAB_LABEL: Record<HuisTab, Tweetalig> = Object.freeze({
   overview: ['Огляд', 'Overzicht'], rooms: ['Кімнати', 'Kamers'], devices: ['Пристрої', 'Apparaten'], scenes: ['Сцени', 'Scènes'], automations: ['Автоматизації', 'Automatiseringen'],
   security: ['Безпека', 'Beveiliging'], energy: ['Енергія', 'Energie'], activity: ['Події', 'Gebeurtenissen'], integrations: ['Інтеграції', 'Integraties'], assistant: ['ШІ-помічник', 'AI-assistent'],
-  settings: ['Налаштування', 'Instellingen'], showroom: ['Showroom', 'Showroom'], planner: ['Калькулятор', 'Planner'],
+  settings: ['Налаштування', 'Instellingen'], showroom: ['Вітрина', 'Toonzaal'], planner: ['Калькулятор', 'Planner'],
 });
 
 // ------------------------------------------------------------------------------- mogelijkheden (capabilities)

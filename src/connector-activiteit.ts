@@ -232,11 +232,12 @@ export function useConnectorActivity(scope: string, lang: Lang, toast: (notice: 
   useEffect(() => {
     const opOpslag = (ev: StorageEvent) => { if (ev.key === READ_KEY(scope)) setRead((current) => mergeRead(current, loadRead(scope))); };
     window.addEventListener('storage', opOpslag);
+    if (!scope || scope === 'anon') return () => { window.removeEventListener('storage', opOpslag); };
     const stop = abonneerGelezen((ids) => setRead((current) => { const next = mergeRead(current, ids); if (next.size === current.size) return current; saveRead(scope, next); return next; }));
     return () => { window.removeEventListener('storage', opOpslag); stop(); };
   }, [scope]);
-  const markRead = (id: string) => { stuurGelezen([id]); setRead((current) => { if (current.has(id)) return current; const next = new Set(current); next.add(id); return saveRead(scope, next); }); };
-  const markAllRead = () => { stuurGelezen(events.map((e) => e.id)); setRead((current) => { const next = new Set(current); for (const e of events) next.add(e.id); return saveRead(scope, next); }); };
+  const markRead = (id: string) => { if (scope && scope !== 'anon') stuurGelezen([id]); setRead((current) => { if (current.has(id)) return current; const next = new Set(current); next.add(id); return saveRead(scope, next); }); };
+  const markAllRead = () => { if (scope && scope !== 'anon') stuurGelezen(events.map((e) => e.id)); setRead((current) => { const next = new Set(current); for (const e of events) next.add(e.id); return saveRead(scope, next); }); };
   return { events, read, available, markRead, markAllRead, refresh: poll };
 }
 

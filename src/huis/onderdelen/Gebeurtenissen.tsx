@@ -19,7 +19,7 @@ export default function Gebeurtenissen({ lang, woningId, ov, toon }: OnderdeelPr
   const laad = async (voor?: string) => {
     setBezig(true);
     try { const d = await huisClient.gebeurtenissen(woningId, { soort: soort || undefined, voor }); setLijst((l) => (voor ? [...l, ...d.gebeurtenissen] : d.gebeurtenissen)); setVolgende(d.volgende); }
-    catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT')); } finally { setBezig(false); }
+    catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); } finally { setBezig(false); }
   };
   useEffect(() => { void laad(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [woningId, soort, ov.gebeurtenissen[0]?.id]);
   const naam = (id: string | null) => (id ? ov.apparaten.find((a) => a.id === id)?.naam ?? '' : '');

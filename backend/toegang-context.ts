@@ -97,8 +97,8 @@ export async function gebruikVoor(userId: string, soort: GebruikSoort, sleutels:
 export const NOTITIE_SOORTEN = ['passkey', 'herstelset', 'herstelcode', 'toegangscode'] as const;
 export type NotitieSoort = typeof NOTITIE_SOORTEN[number];
 export const NOTITIE_MAX = 500;
-export class ToegangFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
-const fout = (code: string, status = 400): never => { throw new ToegangFout(code, status); };
+export class ToegangFout extends Error { constructor(public code: string, public status = 400, public retryAfter?: number) { super(code); } }
+const fout = (code: string, status = 400, retryAfter?: number): never => { throw new ToegangFout(code, status, retryAfter); };
 /** Opschonen: geen stuurtekens (behalve regeleinde), witruimte aan de randen weg. */
 export const notitieTekst = (v: unknown) => String(v ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 export async function notitiesLijst(userId: string) {

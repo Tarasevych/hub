@@ -1,0 +1,276 @@
+name: GITHUB-012 · повна мобільна та адаптивна версія розділу GitHub у всіх 13 підрозділах і просторах
+
+# Ніколи не встановлює пакунок на сервер. Перед оприлюдненням звіряє живу встановлену основу (20261112-034214), макет HUIS-001, типи, міграції й контрольну суму.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis (20261112-034214), maquette HUIS-001, typen, migraties en controlesom.
+on:
+  push:
+    branches:
+      - 'fix/github-012-mobiele-weergave-20261112-041500'
+    paths:
+      - '.github/workflows/github-012-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/GITHUB-012.json'
+      - 'orchestratie/taken/GITHUB-012.json'
+      - 'shared/**'
+      - 'backend/**'
+      - 'src/**'
+      - 'tests/eenheid/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-012-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: GITHUB-012
+  BASIS_VERSIE: '20261112-034214'
+  BASIS_COMMIT: 'f2626def3d793e9170f4a6b36a616072f95c829f'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error(`Встановлена версія змінилася (${v.versie} @ ${v.bronCommit || v.commit}). Випуск зупинено для нового узгодження.`);
+          }
+          JS
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+      - name: Виконати модульні перевірки GitHub, мобільної геометрії, макета «Живий дім», меню та розміщення
+        run: |
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/huis-maquette.mjs --controle
+          node scripts/eenheidstests.mjs github-012-mobiele-weergave.test.ts
+          node scripts/eenheidstests.mjs mobiel-geometrie-20261021.test.ts
+          node scripts/eenheidstests.mjs github-011-oauth-sleutelkluis.test.ts
+          node scripts/eenheidstests.mjs github-volledige-werkruimte.test.ts
+          node scripts/eenheidstests.mjs github-oauth-20261020.test.ts
+          node scripts/eenheidstests.mjs github-koppelkaart-20261019.test.ts
+          node scripts/eenheidstests.mjs github-platform.test.ts
+          node scripts/eenheidstests.mjs huis-001-maquette-20261112.test.ts
+          node scripts/eenheidstests.mjs huis-001-oude-fouten-20261110.test.ts
+          node scripts/eenheidstests.mjs routes.test.ts
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
+          node scripts/eenheidstests.mjs zoek-ui-tabblad-20261105.test.ts
+          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts
+      - name: Перевірити типи та скласти застосунок разом із макетом
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          test -s dist/huis-maquette/index.html
+          test -s dist/huis-maquette/maquette.css
+          test -s dist/huis-maquette/maquette.js
+      - name: Перевірити подвійне застосування міграцій і наскрізні тести з PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs github-012-mobiele-weergave.test.ts
+          node scripts/eenheidstests.mjs github-011-oauth-sleutelkluis.test.ts
+          node scripts/eenheidstests.mjs github-oauth-20261020.test.ts
+          node scripts/eenheidstests.mjs site-hulpmiddelen.test.ts
+          node scripts/eenheidstests.mjs ruimte-bord-github-20261020.test.ts
+          node scripts/eenheidstests.mjs huis-vnext-20261028.test.ts
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Повна адаптація мобільної, планшетної та настільної версій розділу GitHub у всіх 13 підрозділах і просторах',
+            samenvatting: 'Повне адаптивне оновлення розділу https://github.tarasevych.com/ на основі встановленої версії 20261112-034214 (із повним збереженням GITHUB-011, GITHUB-010 та макета «Живий дім» HUIS-001): кожен із 13 підрозділів та обидва простори (приватний і технічний) адаптовано для смартфонів (320–430 px), фаблетів, планшетів, вікон із відкритою бічною панеллю та настільних екранів.',
+            wijzigingen: [
+              'Контейнерні запити (@container gh-root) і медіазапити (@media 860px / 700px / 420px) для всього розділу GitHub: інтерфейс автоматично перебудовується як на вузьких смартфонах, так і на планшетах чи ноутбуках із відкритою бічною панеллю.',
+              'Єдина горизонтально прокручувана панель швидкого переходу між усіма 13 підрозділами (Огляд, Сховища, Код і редактор, Задачі, Запити на злиття, Конвеєри дій, Випуски й розгортання, Двосторонній міст, Проєкти, Документація, Пошук, Активність, Підключення) із захистом від випадкового свайпу бічного меню (data-no-edge-swipe).',
+              'Повноцінне мобільне перемикання панелей («Дерево файлів» ↔ «Перегляд / Редактор» у вкладці «Код» та «Список сховищ» ↔ «Деталі / README» у вкладках «Сховища» і «Документація») разом із кнопкою повернення та перемикачем переносу довгих рядків коду.'
+            ],
+            fixes: [
+              'Захищено всі картки розділу GitHub (.gh-card, .gh-me, .gh-eenklik-held, .gh-uitgave-kaart, .gh-subkaart, .gh-stat-kaart, .gh-veld, .gh-pad) від глобального правила flat-content у canoniek-omlijsting.css, яке раніше зрізало бічні рамки й заокруглення кутів.',
+              'Усунено подвійну рамку та горизонтальне розпирання списку вибору сховища (.gh-select-wikkel select) при довгих назвах репозиторіїв.',
+              'Виправлено відображення мобільних панелей у провіднику коду (додано клас is-verborgen-mobiel), сітку деталей задач і запитів на злиття (.gh-zaak-inhoud), активні кнопки міток і кольорів (.is-actief), вирівнювання коду пристрою (.gh-apparaatcode-rij) та скорочення 40-символьного хешу SHA у списку запусків конвеєрів.'
+            ],
+            beperkingen: [
+              'Встановлення випуску на робочий сервер виконується виключно власником із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу та перевірте мобільну й настільну версії усіх розділів https://github.tarasevych.com/.'
+          };
+          const nl = {
+            titel: 'Volledige mobiele, tablet- en desktopaanpassing van de GitHub-werkruimte in alle 13 onderdelen en ruimtes',
+            samenvatting: 'Volledige responsieve bijwerking van https://github.tarasevych.com/ boven op de geïnstalleerde versie 20261112-034214 (met volledig behoud van GITHUB-011, GITHUB-010 en HUIS-001 «Живий дім»): alle 13 tabbladen en beide ruimtes (privé en technisch) zijn aangepast voor smartphones (320–430 px), tablets, schermen met geopende zijbalk en desktops.',
+            wijzigingen: [
+              'Container-queries (@container gh-root) en media-queries (@media 860px / 700px / 420px) voor de volledige GitHub-werkruimte: de opmaak past zich automatisch aan op zowel smalle telefoons als tablets en schermen met geopende zijbalk.',
+              'Eenduidige horizontaal schuifbare navigatiebalk voor alle 13 onderdelen (Overzicht, Opslagplaatsen, Code en editor, Vraagstukken, Samenvoegingen, Werkstromen, Uitgaven en uitrol, Tweerichtingsspiegel, Projecten, Documentatie, Zoeken, Activiteit, Koppeling) met bescherming tegen onbedoeld openen van de zijlade (data-no-edge-swipe).',
+              'Volledige mobiele paneelschakelaar («Bestandsboom» ↔ «Weergave / Editor» onder Code en «Opslagplaatsen» ↔ «Details / README» onder Opslagplaatsen en Documentatie) inclusief terugknop en schakelaar voor regelterugloop in code en verschillen.'
+            ],
+            fixes: [
+              'Alle kaarten in .gh-root (.gh-card, .gh-me, .gh-eenklik-held, .gh-uitgave-kaart, .gh-subkaart, .gh-stat-kaart, .gh-veld, .gh-pad) beschermd tegen de globale flat-content-regel in canoniek-omlijsting.css die voorheen zijranden en afrondingen wegnam.',
+              'Dubbele rand en horizontaal uitrekken van de keuzelijst voor opslagplaatsen (.gh-select-wikkel select) bij lange namen verholpen.',
+              'Mobiele paneelweergave in de codeverkenner (is-verborgen-mobiel), de opmaak van vraagstuk- en samenvoegingsdetails (.gh-zaak-inhoud), actieve label- en kleurknoppen (.is-actief), de apparaatcode-rij (.gh-apparaatcode-rij) en het inkorten van 40-teken SHA-waarden in de lijst met werkstroomuitvoeringen hersteld.'
+            ],
+            beperkingen: [
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer de mobiele en desktopweergave van alle onderdelen op https://github.tarasevych.com/.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 525,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено будівельні перевірки розміщення, пошукового каталогу (1437 елементів) та інтерактивного макета HUIS-001 (/huis-maquette/), модульні й наскрізні перевірки з PostgreSQL 16 для github-012-mobiele-weergave, mobiel-geometrie-20261021, github-011-oauth-sleutelkluis, github-oauth-20261020, github-koppelkaart-20261019, github-volledige-werkruimte, github-platform, huis-001-maquette-20261112, huis-001-oude-fouten-20261110, huis-vnext-20261028, routes, plaatsing-20261025, zoek-ui-tabblad-20261105, hulpmiddelen-tweetalig-20261020, site-hulpmiddelen, ruimte-bord-github-20261020 і походження TRACE-001, перевірку типів клієнта та сервера, повне виробниче складання застосунку разом із dist/huis-maquette/ та подвійне застосування всіх міграцій на чистій базі PostgreSQL 16.',
+              nl: 'Bouwcontroles van plaatsing, de UI-zoekcatalogus (1437 elementen) en de interactieve maquette HUIS-001 (/huis-maquette/) zijn geslaagd, evenals de eenheids- en PostgreSQL 16-integratietests voor github-012-mobiele-weergave, mobiel-geometrie-20261021, github-011-oauth-sleutelkluis, github-oauth-20261020, github-koppelkaart-20261019, github-volledige-werkruimte, github-platform, huis-001-maquette-20261112, huis-001-oude-fouten-20261110, huis-vnext-20261028, routes, plaatsing-20261025, zoek-ui-tabblad-20261105, hulpmiddelen-tweetalig-20261020, site-hulpmiddelen, ruimte-bord-github-20261020 en herkomst TRACE-001, plus typecontrole van client en server, volledige productiebouw inclusief dist/huis-maquette/ en dubbele uitvoering van alle migraties op een schone PostgreSQL 16-databank.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk 'Повна адаптація мобільної, планшетної та настільної версій розділу GitHub у всіх 13 підрозділах і просторах на основі версії 20261112-034214.' \
+            --samenvatting-nl 'Volledige mobiele, tablet- en desktopaanpassing van de GitHub-werkruimte in alle 13 onderdelen en ruimtes boven op versie 20261112-034214.' \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+          printf 'GITHUB-012 · Повна адаптація мобільної, планшетної та настільної версій розділу GitHub (https://github.tarasevych.com/) на основі живої версії 20261112-034214 (із повним збереженням GITHUB-011, GITHUB-010 та HUIS-001): усі 13 підрозділів і обидва простори (приватний та технічний) адаптовано для смартфонів, планшетів, відкритої бічної панелі та настільних екранів. Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "GITHUB-012 · повна мобільна та адаптивна версія розділу GitHub · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-012-controle
+          path: uitvoer/
+          if-no-files-found: ignore

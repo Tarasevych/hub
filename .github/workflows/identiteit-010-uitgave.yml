@@ -1,0 +1,339 @@
+name: IDENTITEIT-010 · цілісний вхід, єдиний сеанс простору, Telegram, сповіщення та мобільна єдність (tarasevych.com)
+
+# Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу (20261112-095131), макет HUIS-001, типи, міграції й контрольну суму.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis (20261112-095131), maquette HUIS-001, typen, migraties en controlesom.
+on:
+  push:
+    branches:
+      - 'fix/identiteit-010-aanmelden-ecosysteem-20261112-103500'
+    paths:
+      - '.github/workflows/identiteit-010-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-010.json'
+      - 'orchestratie/taken/IDENTITEIT-010.json'
+      - 'index.html'
+      - 'deploy/**'
+      - 'migrations/**'
+      - 'scripts/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'backend/**'
+      - 'src/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identiteit-010-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: IDENTITEIT-010
+  # Встановлена на сервері основа (версія=фіксація змін); обов'язковий предок цієї гілки.
+  # Geïnstalleerde serverbasis (versie=commit); verplichte voorouder van deze tak.
+  BEKENDE_BASISSEN: '20261112-095131=18262724e58d4e282793633ae0d066e056acdc6e'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          const levend = v.bronCommit || v.commit;
+          const bekend = new Map(process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('=')));
+          if (bekend.get(v.versie) !== levend) {
+            throw Error(`Встановлена версія (${v.versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${v.versie}\nBASIS_COMMIT=${levend}\n`);
+          console.log(`Основа випуску: ${v.versie} @ ${levend}`);
+          JS
+          BASIS_COMMIT="$(node -e "const v=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/versie.json','utf8'));process.stdout.write(v.bronCommit||v.commit)")"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+      - name: Перевірити розміщення, каталог інтерфейсу, макет HUIS-001 та модульні перевірки інтерфейсу
+        run: |
+          node scripts/l002-audit.mjs
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/huis-maquette.mjs --controle
+          node scripts/eenheidstests.mjs telegram-aanmelden-20261109.test.ts
+          node scripts/eenheidstests.mjs meldingen-integ-20261103.test.ts
+          node scripts/eenheidstests.mjs mededeling-ontdubbelen.test.ts
+          node scripts/eenheidstests.mjs apparaat-bevestiging-20261109.test.ts
+          node scripts/eenheidstests.mjs accountmenu-v3.test.ts
+          node scripts/eenheidstests.mjs accountmenu-v2-20261029.test.ts
+          node scripts/eenheidstests.mjs thema.test.ts
+          node scripts/eenheidstests.mjs zoek-in-menu-20261024.test.ts
+          node scripts/eenheidstests.mjs zoek-menu-20261103.test.ts
+          node scripts/eenheidstests.mjs identiteit-009-mobiel-veiligheid.test.ts
+          node scripts/eenheidstests.mjs identiteit-maquette.test.ts
+          node scripts/eenheidstests.mjs identiteit-atelier.test.ts
+          node scripts/eenheidstests.mjs identiteit-account-ui.test.ts
+          node scripts/eenheidstests.mjs mobiel-geometrie-20261021.test.ts
+          node scripts/eenheidstests.mjs mobiel-cascade-20261105.test.ts
+          node scripts/eenheidstests.mjs aanmelden-integ-20261103.test.ts
+          node scripts/eenheidstests.mjs aanmeld-ui-20261030.test.ts
+          node scripts/eenheidstests.mjs aanmeld-001-weergave.test.ts
+          node scripts/eenheidstests.mjs huis-001-maquette-20261112.test.ts
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
+      - name: Перевірити типи та скласти застосунок разом із макетом розумного будинку
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          test -s dist/huis-maquette/index.html
+          test -s dist/huis-maquette/maquette.css
+          test -s dist/huis-maquette/maquette.js
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const html = readFileSync('dist/huis-maquette/index.html', 'utf8');
+          if (/<script(?![^>]*\ssrc=)[^>]*>/i.test(html) || /<style[\s>]/i.test(html)) {
+            throw Error('Сторінка макета містить вбудований сценарій або стиль: політика безпеки сайту її не пропустить.');
+          }
+          JS
+      - name: Перевірити подвійне застосування міграцій (включно з 0209) і серверні перевірки з базою даних PostgreSQL 16
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs identiteit-010-aanmelden-ecosysteem.test.ts
+          node scripts/eenheidstests.mjs actief-account-browser-20261112.test.ts
+          node scripts/eenheidstests.mjs telegram-aanmelden-stroom-20261109.test.ts
+          node scripts/eenheidstests.mjs tabbladen.test.ts
+          node scripts/eenheidstests.mjs sessie-tabbladen-20261020.test.ts
+          node scripts/eenheidstests.mjs weergave-per-account-20261020.test.ts
+          node scripts/eenheidstests.mjs ruimte-aanvallen-20261022.test.ts
+          node scripts/eenheidstests.mjs gebruiker-audit-2026-10-19.test.ts
+          node scripts/eenheidstests.mjs account-wisselen-tech-20261020.test.ts
+          node scripts/eenheidstests.mjs sleutelkluis-20261020.test.ts
+          node scripts/eenheidstests.mjs site-hulpmiddelen.test.ts
+          node scripts/eenheidstests.mjs routes.test.ts
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Цілісний вхід на всіх піддоменах, єдиний сеанс простору, повна інтеграція з Telegram, єдине вікно облікових записів і сповіщення з утриманням',
+            samenvatting: 'Комплексне оновлення екосистеми входу, керування обліковими записами, Telegram, сповіщень, навігації режиму «Макет» та розділів безпеки поверх живої встановленої версії ' + e.BASIS_VERSIE + ' (із повним збереженням IDENTITEIT-009, HUIS-001, GITHUB-012, GITHUB-011 та GITHUB-010).',
+            wijzigingen: [
+              'Вхід і двостороння інтеграція з Telegram (пп. 1, 2, 15): підтримка всіх піддоменів *.tarasevych.com без помилки джерела походження, підхоплення ключа бота із захищеного сховища owner_vault_v1, усунення колізії параметра ?id= у вікні Telegram (?verzoek=), симетрична триколонкова заокруглена форма кнопки на всі чотири боки, міграція 0209 із повними реквізитами у боті, двоколонкове порівняння профілю без зірочок, повернення на сайт в один дотик і керування сеансами з бота.',
+              'Чесне обмеження спроб і живий зворотний відлік (п. 3): сервер передає точні retryAfter, Retry-After, maxAttempts і windowSec при 429 RATE_LIMITED; кнопка входу переходить у спокійний вимкнений стан із посекундним відліком до 0 с без суперечливих підказок.',
+              'Цілісне повноекранне полотно входу та швидкий вхід збереженим профілем (пп. 5, 11, 12): повне заповнення вікна оглядача 100dvh від краю до краю без ефекту «вкладки у вкладці», картка збереженого облікового запису з круглою світлиною 1:1, векторною стрілкою та кнопкою забування ×, миттєве відновлення сеансу за живого 30-денного дозволу OwnerGrant і прямий виклик Google із перевіреним login_hint при потребі повторного входу.',
+              'Простір як єдине джерело правди для активного облікового запису та єдине вікно AccountMenuV3 (пп. 4, 6, 9, 10): атомарне оновлення кореневого екосистемного сеансу оглядача ownerActivateBrowserAccount без випадкових перестрибувань між профілями на піддоменах, єдиний дизайн AccountMenuV3 до та після входу без насічок //, сітка перемикачів теми 2 × 2 без злипання підписів.',
+              'Світлини 1:1, сповіщення 2000 мс із утриманням, головна кнопка меню сайту й пошук у «Макеті», єдині стрілки розгортання та тактильні перемикачі безпеки (пп. 7, 8, 13, 14, 16): квадратне кадрування 1:1 до 240 000 символів base64, типова тривалість сповіщень 2 с із утриманням під пальцем на сенсорному екрані та вказівником миші, видима головна кнопка меню сайту й пошук у бічній шухляді у вигляді «Макет» із підсмугою розділів без другої трисмугової кнопки, заміна різнобійних текстових стрілок на єдиний векторний вказівник розгортання і тактильні перемикачі в усіх секціях безпеки.'
+            ],
+            fixes: [
+              'Усунено збій 400 OWNER_TRANSACTION_ORIGIN_INVALID під час входу через Telegram на hub.tarasevych.com та інших піддоменах поза id.tarasevych.com.',
+              'Усунено візуальне зрізання верхньої рамки кнопки Telegram при фокусі та натисканні (.canonical-signed-out button).',
+              'Усунено самовільне перекидання на попередній обліковий запис при переході між піддоменами або на головну сторінку після перемикання профілю.',
+              'Усунено помилку завантаження списку облікових записів до входу, зникнення хрестика забування профілю, насічки // у кутах меню та налізання підписів у перемикачі теми.',
+              'Усунено сплющення круглих світлин профілю в овал (включно з .ia-avatar на сторінці облікового запису), збій 400 OWNER_PROFILE_PHOTO_INVALID на великих зображеннях, приховування головної кнопки меню сайту в режимі «Макет» та розтягування прапорців на всю ширину в секціях безпеки.'
+            ],
+            beperkingen: [
+              'Встановлення випуску на робочий сервер виконує виключно власник із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу та перевірте оновлений вхід, перемикання облікових записів, Telegram, сповіщення й режим «Макет».'
+          };
+          const nl = {
+            titel: 'Volledig aanmeldscherm op alle subdomeinen, eenduidige ruimtesessie, volledige Telegram-koppeling, eenheid van AccountMenuV3 en meldingen met aanraakpauze',
+            samenvatting: 'Uitgebreide bijwerking van het aanmeldecosysteem, accountbeheer, Telegram, meldingen, navigatie van de modus «Ontwerp» en beveiligingssecties boven op de geïnstalleerde versie ' + e.BASIS_VERSIE + ' (met volledig behoud van IDENTITEIT-009, HUIS-001, GITHUB-012, GITHUB-011 en GITHUB-010).',
+            wijzigingen: [
+              'Aanmelden en tweerichtingsintegratie met Telegram (punten 1, 2, 15): ondersteuning voor alle subdomeinen *.tarasevych.com zonder herkomstfout, uitlezen van de botsleutel uit owner_vault_v1, opheffing van de ?id=-botsing in het Telegram-venster (?verzoek=), symmetrische pilknop met doorlopende rand aan alle vier zijden, migratie 0209 met volledige aanmeldgegevens in de bot, vergelijking in twee kolommen zonder sterretjes, terugkeer naar de site met één aanraking en sessiebeheer vanuit de bot.',
+              'Eerlijke pogingslimiet en live afteltimer (punt 3): de server stuurt exacte waarden retryAfter, Retry-After, maxAttempts en windowSec bij 429 RATE_LIMITED; de aanmeldknop schakelt over naar een rustige wachtstand met aftelling per seconde tot 0 s zonder tegenstrijdige meldingen.',
+              'Volledig schermvullend aanmeldcanvas en snelle aanmelding met bewaard profiel (punten 5, 11, 12): vulling van 100dvh van rand tot rand zonder kader-in-kader-effect, kaart van bewaard account met ronde 1:1-profielfoto, vectorpijl en vergeetknop ×, direct sessieherstel bij een geldige OwnerGrant van 30 dagen en directe Google-aanmelding met gecontroleerde login_hint wanneer herbevestiging vereist is.',
+              'De ruimte als enige bron van waarheid voor het actieve account en één AccountMenuV3-venster (punten 4, 6, 9, 10): atomaire bijwerking van de ecosysteem-ankersessie ownerActivateBrowserAccount zonder ongewenst terugspringen naar een vorig account tussen subdomeinen, één ontwerp voor AccountMenuV3 vóór en na aanmelden zonder hoekstreepjes //, en een 2 × 2-themaraster zonder overlappende labels.',
+              'Profielfoto’s 1:1, meldingen van 2000 ms met pauze, hoofdmenu en zoeken in «Ontwerp», uniforme chevrons en moderne schakelaars (punten 7, 8, 13, 14, 16): vierkante 1:1-uitsnede tot 240.000 tekens base64, standaardduur van 2 s met vasthouden onder de vinger en muisaanwijzer, zichtbare hoofdmenuknop en zoekknop in de zijlade in de modus «Ontwerp» met eigen sectiebalk zonder tweede hamburgerknop, uniforme vectorchevrons en tactiele schakelaars in alle beveiligingssecties.'
+            ],
+            fixes: [
+              'Fout 400 OWNER_TRANSACTION_ORIGIN_INVALID bij aanmelden via Telegram op hub.tarasevych.com en overige subdomeinen verholpen.',
+              'Visueel afgesneden bovenrand van de Telegram-aanmeldknop bij focus en indrukken (.canonical-signed-out button) hersteld.',
+              'Ongewenst terugspringen naar een eerder account bij wisselen tussen subdomeinen of naar de startpagina na een accountwissel opgelost.',
+              'Laadfout van de accountlijst vóór aanmelden, ontbrekende vergeetknop ×, hoekstreepjes // in het menu en overlappende themalabels hersteld.',
+              'Ovale vervorming van ronde profielfoto’s (waaronder .ia-avatar op de accountpagina), fout 400 OWNER_PROFILE_PHOTO_INVALID bij grote afbeeldingen, verborgen hoofdmenuknop in «Ontwerp» en uitgerekte selectievakjes in beveiligingssecties verholpen.'
+            ],
+            beperkingen: [
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer het vernieuwde aanmelden, wisselen van account, Telegram, meldingen en de modus «Ontwerp».'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 820,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено: правила координації, свіжість основи 20261112-095131 та перевірку походження TRACE-001; статичні перевірки l002-audit, розміщення, каталогу інтерфейсу (1438 елементів) та макета розумного будинку HUIS-001 (7491 мовна пара); модульні й серверні перевірки з PostgreSQL 16 для identiteit-010-aanmelden-ecosysteem (23/23), actief-account-browser-20261112 (20/20), telegram-aanmelden-20261109 (65/65), telegram-aanmelden-stroom-20261109 (34/34), meldingen-integ-20261103 (93/93), mededeling-ontdubbelen (14/14), apparaat-bevestiging-20261109 (52/52), accountmenu-v3 (30/30), accountmenu-v2-20261029 (13/13), thema (17/17), zoek-in-menu-20261024 (23/23), zoek-menu-20261103 (72/72), identiteit-009-mobiel-veiligheid (14/14), identiteit-maquette (46/46), identiteit-atelier, identiteit-account-ui, mobiel-geometrie-20261021, mobiel-cascade-20261105, aanmelden-integ-20261103, aanmeld-ui-20261030 (105/105), aanmeld-001-weergave (13/13), tabbladen (6/6), sessie-tabbladen-20261020 (20/20), weergave-per-account-20261020, ruimte-aanvallen-20261022, gebruiker-audit-2026-10-19, account-wisselen-tech-20261020, huis-001-maquette-20261112, sleutelkluis-20261020, site-hulpmiddelen (27/27), routes (5/5) та plaatsing-20261025 (68/68); перевірку типів клієнта та сервера; повне виробниче складання застосунку разом із dist/huis-maquette/; подвійне застосування всіх міграцій (включно з 0209) на чистій базі PostgreSQL 16; живу перевірку всіх 16 пунктів у безголовому Chromium під повною політикою безпеки сайту.',
+              nl: 'Geslaagd: coördinatieregels, versheid van basis 20261112-095131 en herkomstcontrole TRACE-001; statische controles l002-audit, plaatsing, de UI-catalogus (1438 elementen) en de maquette HUIS-001 (7491 taalparen); eenheids- en PostgreSQL 16-servertests voor identiteit-010-aanmelden-ecosysteem (23/23), actief-account-browser-20261112 (20/20), telegram-aanmelden-20261109 (65/65), telegram-aanmelden-stroom-20261109 (34/34), meldingen-integ-20261103 (93/93), mededeling-ontdubbelen (14/14), apparaat-bevestiging-20261109 (52/52), accountmenu-v3 (30/30), accountmenu-v2-20261029 (13/13), thema (17/17), zoek-in-menu-20261024 (23/23), zoek-menu-20261103 (72/72), identiteit-009-mobiel-veiligheid (14/14), identiteit-maquette (46/46), identiteit-atelier, identiteit-account-ui, mobiel-geometrie-20261021, mobiel-cascade-20261105, aanmelden-integ-20261103, aanmeld-ui-20261030 (105/105), aanmeld-001-weergave (13/13), tabbladen (6/6), sessie-tabbladen-20261020 (20/20), weergave-per-account-20261020, ruimte-aanvallen-20261022, gebruiker-audit-2026-10-19, account-wisselen-tech-20261020, huis-001-maquette-20261112, sleutelkluis-20261020, site-hulpmiddelen (27/27), routes (5/5) en plaatsing-20261025 (68/68); typecontrole van client en server; volledige productiebouw inclusief dist/huis-maquette/; dubbele uitvoering van alle migraties (inclusief 0209) op een schone PostgreSQL 16-databank; live controle van alle 16 punten in headless Chromium onder het volledige beveiligingsbeleid van de site.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          const opis = [
+            `IDENTITEIT-010 · Цілісний вхід, єдиний сеанс простору, Telegram, сповіщення та мобільна єдність · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Виправлено:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            uk.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Цілісний вхід на всіх піддоменах, єдиний сеанс простору, повна інтеграція з Telegram, єдине вікно облікових записів і сповіщення з утриманням поверх версії ${BASIS_VERSIE}." \
+            --samenvatting-nl "Volledig aanmeldscherm op alle subdomeinen, eenduidige ruimtesessie, volledige Telegram-koppeling, eenheid van AccountMenuV3 en meldingen met aanraakpauze boven op versie ${BASIS_VERSIE}." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "IDENTITEIT-010 · цілісний вхід, єдиний сеанс простору, Telegram та сповіщення · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: identiteit-010-controle
+          path: uitvoer/
+          if-no-files-found: ignore

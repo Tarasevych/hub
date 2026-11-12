@@ -26,6 +26,8 @@ import { callTool, listTools, resolveAlias, taalVanGebruiker, vertaal, type Tool
 import type { ToolTaal } from '../shared/hulpmiddel-teksten';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as st from './mcp-connector-opslag';
+import { CimdFoutmelding, cimdAan, cimdKlant, isCimdClientId } from './mcp-cimd';
+import { eenKeerPer } from './beheer-journaal';
 import { UITROL_TOOLS, UITROL_TOOL_NAMEN, UitrolFout, heeftVoorbereiderGrant, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from './uitrol-goedkeuring';
 import { BEHEER_ALLEEN_V2, BEHEER_TOOL_NAMEN, voerBeheerToolUit } from './ai-beheer-hulpmiddelen';
 import { DEV_MG_ALLEEN_V2, isDevMgTool } from '../shared/dev-media-github';
@@ -34,6 +36,8 @@ import { aiDienstStand, aiPoortNu } from './ai-ruimte-poort';
 import { listAgents } from './connectors-opslag';
 import { redirectPastBijAgent, slugUitResource, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/agenten';
 import { naUitgifte, type V2Keuze } from './connector-v2-opslag';
+import { MCP_MODERNE_VERSIE, bouwRegistryServerJson, bouwServerCard, controleerModerneMeta, omhulModernResultaat } from '../shared/mcp-protocol-2026-model';
+import { behandelMcpProtocolMethode, bouwCapabilitiesBlock } from './mcp-protocol-2026';
 
 export const BASE = `https://${SERVICE_HOSTS.mcp}`;
 export const RESOURCE = `${BASE}/mcp`;
@@ -102,9 +106,58 @@ export const authorizationServerMetadata = () => respond(200, {
   revocation_endpoint: `${ISSUER}/revoke`,
   revocation_endpoint_auth_methods_supported: ['none'],
   scopes_supported: [SCOPE],
+  // MCP-001 R1 · RFC 9207: elke terugkeer naar de klant (code én fout) draagt `iss`; de klant MOET het vergelijken (mix-up-aanvallen).
+  authorization_response_iss_parameter_supported: true,
+  // MCP-001 R1 · CIMD (SEP-991): client_id mag een https-adres van een metadatadocument zijn (zie backend/mcp-cimd.ts).
+  ...(cimdAan() ? { client_id_metadata_document_supported: true } : {}),
 });
 
+export const serverCardMetadata = () => respond(200, bouwServerCard(BASE));
+export const registryServerMetadata = () => respond(200, bouwRegistryServerJson(BASE));
+
 // ---------------- dynamische clientregistratie (RFC 7591) ----------------
+
+const eigenaarVanUri = (rawUri: string) => {
+  const u = parseUrl(rawUri);
+  if (!u) return undefined;
+  const schema = u.protocol.replace(/:$/, '');
+  const host = u.hostname.toLowerCase();
+  return V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
+};
+
+/**
+ * SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere
+ * aanbieder claimen. Gedeeld door DCR (registerClient) en CIMD (MCP-001 R1). null = goed.
+ */
+export function klantNaamFout(name: string, uris: string[]): string | null {
+  const beweerdeKlant = klantVan(name);
+  if (beweerdeKlant === 'overig') return null;
+  for (const rawUri of uris) {
+    const eigenaar = eigenaarVanUri(rawUri);
+    if (eigenaar && eigenaar.klant !== beweerdeKlant) return 'client_name past niet bij redirect_uris';
+  }
+  return null;
+}
+
+/**
+ * Klant bij een client_id: een mcpc_…-id uit DCR (database) of — MCP-001 R1 — een CIMD-adres (https://…): document ophalen,
+ * controleren (backend/mcp-cimd.ts) en in dezelfde tabel bewaren, zodat token, verversen, intrekken en de lijst van verbindingen
+ * precies zo werken als bij DCR. Een fout geeft { fout } (nooit een omleiding: de redirect_uri is dan niet gecontroleerd).
+ */
+export async function klantVoorId(clientId: string): Promise<{ client_id: string; client_name: string; redirect_uris: string[] } | { fout: string } | null> {
+  if (!clientId) return null;
+  if (!isCimdClientId(clientId)) return st.getClient(clientId);
+  try {
+    const k = await cimdKlant(clientId, { redirectToegestaan: redirectUriAllowed, naamFout: klantNaamFout });
+    await st.upsertClient(k.client_id, k.client_name, k.redirect_uris);
+    return k;
+  } catch (e) {
+    const code = e instanceof CimdFoutmelding ? e.code : 'CIMD_NETWERK';
+    // Gedempt per adres: een aanvaller die steeds hetzelfde slechte document aanbiedt, vult het logboek niet.
+    if (eenKeerPer(`mcp.cimd:${clientId.slice(0, 200)}:${code}`)) await auditToevoegen({ ownerId: null, actorId: null, action: 'owner.mcp.cimd.denied', type: 'ai', result: 'denied', service: 'mcp', details: { client: clientId.slice(0, 200), code, reden: String((e as Error).message).slice(0, 200) } }).catch(() => undefined);
+    return { fout: code };
+  }
+}
 
 export async function registerClient(rawBody: string): Promise<RouterResponse> {
   let body: any;
@@ -115,25 +168,12 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
   }
   const method = body?.token_endpoint_auth_method;
   if (method !== undefined && method !== 'none') return respond(400, { error: 'invalid_client_metadata', error_description: 'Alleen token_endpoint_auth_method "none"' });
-  const eigenaarVanUri = (rawUri: string) => {
-    const u = parseUrl(rawUri);
-    if (!u) return undefined;
-    const schema = u.protocol.replace(/:$/, '');
-    const host = u.hostname.toLowerCase();
-    return V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
-  };
   const eersteEigenaar = (uris as string[]).map(eigenaarVanUri).find(Boolean);
   const opgegevenNaam = typeof body?.client_name === 'string' && body.client_name.trim() ? body.client_name.trim() : '';
   const name = (opgegevenNaam || eersteEigenaar?.naam || 'Claude').slice(0, 80);
-  // SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere aanbieder claimen.
-  const beweerdeKlant = opgegevenNaam ? klantVan(name) : 'overig';
-  if (beweerdeKlant !== 'overig') {
-    for (const rawUri of uris as string[]) {
-      const eigenaar = eigenaarVanUri(rawUri);
-      if (eigenaar && eigenaar.klant !== beweerdeKlant) {
-        return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name past niet bij redirect_uris' });
-      }
-    }
+  if (opgegevenNaam) {
+    const nf = klantNaamFout(name, uris as string[]);
+    if (nf) return respond(400, { error: 'invalid_client_metadata', error_description: nf });
   }
 
   if ((await st.countClients()) >= st.LIMITS.maxClients) {
@@ -151,13 +191,15 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
 // ---------------- autorisatie: Claude stuurt de gebruiker hierheen ----------------
 
 export async function authorize(query: Record<string, string>): Promise<RouterResponse> {
-  const client = query.client_id ? await st.getClient(query.client_id) : null;
+  const gevonden = await klantVoorId(query.client_id || '');
   const redirectUri = query.redirect_uri || '';
   // Bij een onbekende client of ongeldige redirect nooit redirecten: dat zou een open redirect zijn.
+  if (gevonden && 'fout' in gevonden) return plain(400, `Unknown client (${gevonden.fout})`);
+  const client = gevonden;
   if (!client) return plain(400, 'Unknown client');
   if (!redirectUri || !redirectMatches(client.redirect_uris, redirectUri)) return plain(400, 'Invalid redirect_uri');
 
-  const fail = (error: string, description: string) => redirect(withRedirect(redirectUri, { error, error_description: description, state: query.state }));
+  const fail = (error: string, description: string) => redirect(withRedirect(redirectUri, { error, error_description: description, state: query.state, iss: ISSUER }));
   if (query.response_type !== 'code') return fail('unsupported_response_type', 'response_type=code verwacht');
   if (!query.code_challenge || query.code_challenge_method !== 'S256' || !/^[A-Za-z0-9\-_]{43}$/.test(query.code_challenge)) {
     return fail('invalid_request', 'PKCE met S256 is verplicht');
@@ -213,7 +255,7 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   if (approve && a.agent && !v2) return { error: 'EXPIRED' };
   if (!approve) {
     const done = await st.decideAuth(rid, userId, false, null);
-    return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state }) } : { error: 'EXPIRED' };
+    return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state, iss: ISSUER }) } : { error: 'EXPIRED' };
   }
   // Стеля сайту (0043): вимкнений агент або спосіб MCP не отримує приватний дозвіл. Технічний простір цим не ріжеться.
   if (ruimteOf(ruimte) === 'prive') {
@@ -225,7 +267,7 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   // Duur: de keuze in het venster, anders de instelling van de gebruiker voor deze AI-klant (standaard 1 uur).
   const gekozen = isDuurId(duur) ? duur : (await leesDuren(userId))[klantVan(a.client_name)];
   const done = await st.decideAuth(rid, userId, true, sha256(code), gekozen, ruimteOf(ruimte), a.agent ? v2 : null);
-  return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state }) } : { error: 'EXPIRED' };
+  return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state, iss: ISSUER }) } : { error: 'EXPIRED' };
 }
 
 // ---------------- token-eindpunt (RFC 6749) ----------------
@@ -366,7 +408,7 @@ export const unauthorized = (invalidToken = false): RouterResponse => respond(40
 // ---------------- MCP (JSON-RPC over Streamable HTTP) ----------------
 
 const rpcResult = (id: unknown, result: unknown) => ({ jsonrpc: '2.0', id, result });
-const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: '2.0', id: id ?? null, error: { code, message } });
+const rpcError = (id: unknown, code: number, message: string, data?: Record<string, unknown>) => ({ jsonrpc: '2.0', id: id ?? null, error: { code, message, ...(data ? { data } : {}) } });
 
 // Instructies per ruimte: shared/ai-ruimte.ts (RUIMTE_INSTRUCTIES). Eén tekst voor beide zou de AI hulpmiddelen beloven die zij niet ziet.
 const instructies = (ruimte: AiRuimte) => RUIMTE_INSTRUCTIES[ruimte];
@@ -573,36 +615,70 @@ async function ruimteFoutVoorMcp(userId: string, name: string, verbindingId?: st
   return JSON.stringify({ error: a.code, status: a.status, uitleg: a.uitleg, hulpmiddel: name.slice(0, 80), scope: hulpmiddelScope(name, BEHEER_TOOL_NAMEN) });
 }
 
-async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
+async function handleMessage(who: Wie, msg: any, protocolKop?: string): Promise<unknown | null> {
   if (!msg || typeof msg !== 'object' || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return rpcError(msg?.id, -32600, 'Invalid Request');
   const id = msg.id;
   if (id === undefined) return null; // notificatie (bijv. notifications/initialized): geen antwoord
+  const metaCheck = controleerModerneMeta(msg as Record<string, unknown>, protocolKop);
+  if (!metaCheck.ok) return rpcError(id, metaCheck.code, metaCheck.message, metaCheck.data);
+
   // Levende rechten: een technische koppeling waarvan het profiel nu uit staat toont NIETS en voert NIETS uit (roepTool weigert ook zelf).
   const techNuUit = !(await technischNuGeldig(who));
+  const effRuimte: AiRuimte = techNuUit ? 'prive' : who.ruimte;
+  const instr = techNuUit ? `${instructies(who.ruimte)} ${TECH_NU_UIT_INSTRUCTIE}` : instructies(who.ruimte);
 
   switch (msg.method) {
     case 'initialize': {
       const wanted = String(msg.params?.protocolVersion ?? '');
+      const gekozen = wanted === MCP_MODERNE_VERSIE
+        ? MCP_MODERNE_VERSIE
+        : (PROTOCOL_VERSIONS.includes(wanted) ? wanted : PROTOCOL_VERSIONS[0]);
       return rpcResult(id, {
-        protocolVersion: PROTOCOL_VERSIONS.includes(wanted) ? wanted : PROTOCOL_VERSIONS[0],
-        capabilities: { tools: { listChanged: true } },
+        protocolVersion: gekozen,
+        capabilities: bouwCapabilitiesBlock(),
         serverInfo: { name: 'mijn-ruimte', title: 'Mijn Ruimte', version: '1.0.0' },
-        instructions: techNuUit ? `${instructies(who.ruimte)} ${TECH_NU_UIT_INSTRUCTIE}` : instructies(who.ruimte),
+        instructions: instr,
       });
     }
-    case 'ping': return rpcResult(id, {});
-    case 'tools/list': return rpcResult(id, { tools: techNuUit ? [] : (await lijstTools(who)).map(toMcpTool) });
+    case 'ping': return rpcResult(id, omhulModernResultaat({}, metaCheck.modern));
+    case 'tools/list': {
+      const tools = techNuUit ? [] : (await lijstTools(who)).map(toMcpTool);
+      return rpcResult(id, omhulModernResultaat({ tools }, metaCheck.modern, { metCache: true, ttlMs: 60_000 }));
+    }
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
       const args: Record<string, unknown> = msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {};
-      return rpcResult(id, await roepTool(who, name, args));
+      const uit = await roepTool(who, name, args);
+      return rpcResult(id, omhulModernResultaat(uit as Record<string, unknown>, metaCheck.modern));
     }
-    default: return rpcError(id, -32601, 'Method not found');
+    default: {
+      const extra = await behandelMcpProtocolMethode({
+        userId: who.userId,
+        clientName: who.clientName,
+        ruimte: effRuimte,
+        instructions: instr,
+        modern: metaCheck.modern,
+      }, msg.method, msg.params);
+      if (extra?.soort === 'result') return rpcResult(id, extra.result);
+      if (extra?.soort === 'error') return rpcError(id, extra.code, extra.message, extra.data);
+      return rpcError(id, -32601, 'Method not found');
+    }
   }
 }
 
-export async function rpcPost(authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
+/**
+ * MCP-001 R1: JSON-RPC-batches bestaan alleen in protocol 2025-03-26; sinds 2025-06-18 zijn ze uit de specificatie. Een klant die
+ * met de kop MCP-Protocol-Version een nieuwere versie aankondigt en tóch een batch stuurt, krijgt -32600. Zonder kop (oude klanten)
+ * blijft het zoals het was — zo breekt niets dat nu werkt.
+ */
+export const batchToegestaan = (protocolKop: string | undefined): boolean => {
+  const v = String(protocolKop || '').trim();
+  return !v || v === '2025-03-26' || v === '2024-11-05';
+};
+export const BATCH_FOUT = (versie: string) => rpcError(null, -32600, `JSON-RPC batch is not part of MCP ${String(versie).slice(0, 20)} — send one message per request`);
+
+export async function rpcPost(authorization: string | undefined, rawBody: string, protocolKop?: string): Promise<RouterResponse> {
   const who = await authenticate(authorization);
   // Een v2-token (gebonden aan /<agent>) werkt niet op het oude /mcp: daar zouden de rechten per hulpmiddel niet gelden.
   if (!who || who.agent) return unauthorized(!!String(authorization || '').trim());
@@ -616,10 +692,11 @@ export async function rpcPost(authorization: string | undefined, rawBody: string
   try { parsed = JSON.parse(rawBody); } catch { return respond(400, rpcError(null, -32700, 'Parse error')); }
 
   if (Array.isArray(parsed)) { // JSON-RPC batch (specificatie 2025-03-26)
-    const out = (await Promise.all(parsed.map((m) => handleMessage(who, m)))).filter((r) => r !== null);
+    if (!batchToegestaan(protocolKop)) return respond(400, BATCH_FOUT(String(protocolKop)));
+    const out = (await Promise.all(parsed.map((m) => handleMessage(who, m, protocolKop)))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }
-  const out = await handleMessage(who, parsed);
+  const out = await handleMessage(who, parsed, protocolKop);
   return out === null ? respond(202, undefined) : respond(200, out);
 }
 
@@ -641,8 +718,8 @@ export const rpcOptions = (): RouterResponse => respond(204, undefined, {
   Allow: 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version',
-  'Access-Control-Expose-Headers': 'WWW-Authenticate, Mcp-Session-Id',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Mcp-Method, Mcp-Name',
+  'Access-Control-Expose-Headers': 'WWW-Authenticate, Mcp-Session-Id, MCP-Protocol-Version',
 });
 
 // ---------------- beheer door de gebruiker ----------------

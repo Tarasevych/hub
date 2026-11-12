@@ -20,7 +20,7 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
   const [laatste, setLaatste] = useState('');
   const mag = ov.lid.magSchrijven; const eigenaar = ov.lid.rol === 'eigenaar';
   const ha = useMemo(() => ov.integraties.filter((i) => i.soort === 'home-assistant'), [ov.integraties]);
-  const meld = (e: unknown) => { const c = e instanceof HuisFout ? e.code : 'FOUT'; setFout(foutTekst(lang, c)); toon(foutTekst(lang, c)); };
+  const meld = (e: unknown) => { const c = e instanceof HuisFout ? e.code : 'FOUT'; setFout(foutTekst(lang, c)); toon(foutTekst(lang, c), 'fout'); };
 
   const instellen = async () => {
     setBezig('instellen'); setFout('');

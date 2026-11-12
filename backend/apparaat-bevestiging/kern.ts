@@ -98,10 +98,13 @@ export async function aanvragen(auth: Auth, a: Aanvraag): Promise<VerzoekPubliek
   const actie = ACTIE_RE.test(String(a.actie || '')) ? String(a.actie) : 'stap-op';
   const label = ACTIE_RE.test(String(a.label || '')) && String(a.label) in ACTIES ? String(a.label) : '';
   const b = await beschikbaarheid(auth.user.id, auth.user.role, ankerVan(auth));
-  if (!b.ok) throw new Error(b.reden);
+  if (!b.ok) {
+    const restPauze = b.reden === 'METHODE_PAUZE' && b.pauzeTot ? Math.max(1, Math.ceil((Date.parse(b.pauzeTot) - Date.now()) / 1000)) : 0;
+    throw Object.assign(new Error(b.reden), restPauze > 0 ? { retryAfter: restPauze, pauzeTot: b.pauzeTot } : {});
+  }
   const inst = b.inst;
-  const [{ n }] = await sql<{ n: number }>("SELECT count(*)::int AS n FROM app.bevestigingen_apparaat WHERE user_id = $1 AND aangemaakt_op > now() - interval '10 minutes'", [auth.user.id]);
-  if (n >= inst.maxPerTienMinuten) throw new Error('RATE_LIMITED');
+  const [{ n, wacht }] = await sql<{ n: number; wacht: number | null }>("SELECT count(*)::int AS n, CEIL(EXTRACT(EPOCH FROM (min(aangemaakt_op) + interval '10 minutes' - now())))::int AS wacht FROM app.bevestigingen_apparaat WHERE user_id = $1 AND aangemaakt_op > now() - interval '10 minutes'", [auth.user.id]);
+  if (n >= inst.maxPerTienMinuten) throw Object.assign(new Error('RATE_LIMITED'), { retryAfter: Math.max(1, Number(wacht || 60)), maxAttempts: inst.maxPerTienMinuten, windowSec: 600 });
   // Een nieuw verzoek van hetzelfde tabblad voor dezelfde handeling vervangt het vorige: nooit twee kaarten voor één vraag.
   const vorige = await sql<{ id: string }>("UPDATE app.bevestigingen_apparaat SET stand = 'ingetrokken', reden = 'vervangen', afgerond_op = now() WHERE user_id = $1 AND sessie_a = $2 AND actie = $3 AND stand = 'wacht' RETURNING id", [auth.user.id, sessieA, actie]);
   for (const v of vorige) publiceer(auth.user.id, { soort: 'apparaat.afgerond', id: v.id, stand: 'ingetrokken' });
