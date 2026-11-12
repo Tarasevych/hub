@@ -127,6 +127,10 @@ export async function main(): Promise<number> {
 
   try {
     check('15/4 standaard beleid uit de database: «automatisch» (ook zonder rij)', await contactenScanBeleid(A) === 'automatisch');
+    for (const accountId of ['acc-1', 'acc-2']) {
+      const antwoord = await roep('contacten/scan/voorkeur', { accountId, voorkeur: { aan: true, werkwijze: 'handmatig' } });
+      check(`MAILSCAN-002: згода лише для ${accountId}`, antwoord.status === 200 && antwoord.b.scan?.gekoppeld?.find((x: any) => x.accountId === accountId)?.voorkeur.aan);
+    }
 
     // 4a. Dezelfde situatie als bij de eigenaar: pagina 2 van mailbox 1 geeft drie keer HTTP_502 en lukt dan.
     let keer = 0;
@@ -206,21 +210,17 @@ export async function main(): Promise<number> {
     const melding = lees('src/afzenders/ContactenScanMelding.tsx');
     const paneel = lees('src/afzenders/ScanPaneel.tsx');
     const css = lees('src/afzenders/contacten.css');
-    check('15/5 het venster hergebruikt de bestaande vensterbeheer (geen nieuwe): slepen, «Згорнути» naar het dok, één laag',
-      /import \{ Venster, useVensters, vensterBeheer \} from '\.\.\/platform\/vensters'/.test(melding) && /<Venster id=\{VENSTER_ID\}/.test(melding) && /modaal=\{false\}/.test(melding)
-      && /export const VENSTER_BASIS = 100_000/.test(lees('src/platform/vensters.tsx')) && /vensterBeheer\.minimaliseer/.test(lees('src/platform/vensters.tsx')));
+    check('MAILSCAN-002: жодного великого вікна перевірки', !melding.includes('<Venster') && melding.includes('ctv-scan-korte-melding'));
     check('15/5 reproductie: de zijbalklade staat op z-index 260 met een scrim op 250 — daar lag de oude melding (240) onder',
       /\.canonical-chrome\.sidebar-drawer-mode\.sidebar-drawer \.canonical-sidebar\{z-index:260/.test(lees('src/canoniek-omlijsting.css'))
       && /\.canonical-chrome\.sidebar-drawer-mode \.canonical-sidebar-scrim\.drawer\{z-index:250\}/.test(lees('src/canoniek-omlijsting.css')));
-    check('15/5 opgelost: op een smal scherm staat de strook op 270 (boven de lade) en begint ze naast de zijbalk',
-      /\.ctv-melding \{ position: fixed; z-index: 270;/.test(css) && css.includes('--canonical-command-inline-start') && !/z-index: 240/.test(css));
-    check('15/5 de strook is in te klappen (eigen knop met aria-expanded), de controle loopt door',
-      /data-ingeklapt=/.test(melding) && /aria-expanded=\{!ingeklapt\}/.test(melding) && /\{!ingeklapt && <Inhoud/.test(melding));
+    check('MAILSCAN-002: коротке повідомлення не перекриває дії та зникає за дві секунди',
+      /\.ctv-scan-korte-melding/.test(css) && /pointer-events:\s*none/.test(css) && /setTimeout\(\(\) => zetKort\(''\), 2000\)/.test(melding));
+    check('MAILSCAN-002: сповіщення зберігається в центрі', melding.includes('alleenPaneel: true') && melding.includes('emitCanonicalNotice'));
     check('15/5 de browser herhaalt zelf (geen 101 klikken): useScanActies plant een nieuwe poging met scanHerhaalPlan + setTimeout',
       /scanHerhaalPlan\(code, poging \+ 1, beleidRef\.current\)/.test(paneel) && /timer\.current = window\.setTimeout\(\(\) => \{ if \(levend\.current\) void doe\(f, plan\.poging\)/.test(paneel));
-    check('15/5 na het herladen van de pagina gaat een onderbroken controle zelf verder (useAutoHervatten), behalve bij «питати»',
-      /export function useAutoHervatten/.test(paneel) && /beleid === 'vragen'/.test(paneel) && /void a\.verderAuto\(\)\.finally\(hervattenKlaar\);/.test(paneel)
-      && /useAutoHervatten\(s, a, b\.beleid\)/.test(paneel) && /useAutoHervatten\(s, a, beleid\.beleid\)/.test(melding));
+    check('MAILSCAN-002: відновлення не обходить налаштувань конкретної скриньки',
+      !/useAutoHervatten\(magHerhalen/.test(paneel) && !/useAutoHervatten\(/.test(melding));
     check('15/5 «повторюю через N с, спроба X» komt uit de browser of uit de bewaarde serverstand',
       /export function ScanHerhaalRegel/.test(paneel) && /a\.herhaalZin \|\| scanServerHerhaal\(lang, s\)/.test(paneel) && /data-scan-herhaal/.test(paneel));
 
@@ -228,11 +228,11 @@ export async function main(): Promise<number> {
     const { default: ScanPaneel } = await import('../../src/afzenders/ScanPaneel');
     const stand = await contactenScanStand(A);
     const html = renderToString(createElement(ScanPaneel, { lang: 'uk', s: { ...stand, staat: 'fout' as const, loopt: false, beleid: 'automatisch' as const } }));
-    check('15/5 uitvoer: bij een fout staan nu ZOWEL «Продовжити» als «Пропустити проблемне» in het venster',
-      html.includes('Продовжити') && html.includes('Пропустити проблемне'), html.slice(0, 160));
+    check('MAILSCAN-002: для кожної скриньки є власна згода та ручний запуск',
+      html.includes('Перевірку дозволено') && html.includes('Перевірити цю скриньку зараз') && html.includes('ik@werk.example'), html.slice(0, 160));
     check('15/5 uitvoer: de drie bewaarde keuzes staan er, en precies één (de bewaarde) is aangevinkt',
       /data-scan-beleid="automatisch"/.test(html) && html.includes('Продовжувати автоматично') && html.includes('Пропускати проблемні') && html.includes('Питати щоразу')
-      && (html.match(/type="radio"/g) || []).length === 3 && (html.match(/checked=""/g) || []).length === 1,
+      && (html.match(/type="radio"/g) || []).length === 3 && (html.match(/<input type="radio"[^>]*checked=""/g) || []).length === 1,
       (/<input type="radio"[^>]*>/.exec(html) || [''])[0]);
     const bezigHtml = renderToString(createElement(ScanPaneel, {
       lang: 'uk',
@@ -240,8 +240,8 @@ export async function main(): Promise<number> {
     }));
     check('15/5 uitvoer: terwijl de server wacht, staat er «Повторюю через … с · спроба 3 з 12» (geen foutmelding, geen knop die wacht)',
       /data-scan-herhaal/.test(bezigHtml) && /Повторюю через \d+ с · спроба 3 з 12/.test(bezigHtml), (/Повторюю[^<]*/.exec(bezigHtml) || [''])[0]);
-    check('15/5 uitvoer: geen «undefined»/«NaN», nl-variant werkt ook',
-      !/undefined|NaN/.test(html) && renderToString(createElement(ScanPaneel, { lang: 'nl', s: { ...stand, staat: 'fout' as const, loopt: false } })).includes('Problematische overslaan'));
+    check('MAILSCAN-002: geen «undefined»/«NaN», nl-variant heeft instellingen per mailbox',
+      !/undefined|NaN/.test(html) && renderToString(createElement(ScanPaneel, { lang: 'nl', s: { ...stand, staat: 'fout' as const, loopt: false } })).includes('Deze mailbox nu controleren'));
   } finally {
     zetScanBron(null); zetScanPauze(250); zetDnsBron(null);
     for (const tbl of ['mail_afzenders', 'mail_domein_dns', 'mail_contacten_scan', 'mail_contacten_scan_beleid']) await sys.query(`DELETE FROM app.${tbl} WHERE user_id = $1`, [A]).catch(() => undefined);

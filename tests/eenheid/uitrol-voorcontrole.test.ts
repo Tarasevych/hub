@@ -97,6 +97,13 @@ export async function main(): Promise<number> {
     check('nieuwe migratie buiten de proef → migratie-proef fout, pakket geblokkeerd', !(await pakketVoorcontrole(maak({ extra: { 'migrations/0003_weg.sql': 'SELECT 1;' } }), opties)).resultaat.ok);
     check('nieuwe migratie met DROP COLUMN/TRUNCATE → waarschuwing, maar niet geblokkeerd', risico.resultaat.ok && niv(risico, 'migraties') === 'waarschuwing' && risico.resultaat.controles.find((c) => c.id === 'migraties')!.details!.length >= 2);
     check('oude (al toegepaste) migratie met DROP wordt niet gemeld', niv(await pakketVoorcontrole(maak({ extra: { 'migrations/0001_basis.sql': 'DROP TABLE a;' } }), opties), 'migraties') === 'ok');
+    const hernoemdOk = await pakketVoorcontrole(
+      maak({ extra: { 'migrations/0093_zoek_index.sql': 'SELECT 1;', 'migrations/0094_zoek_rls.sql': 'SELECT 1;' } }),
+      { ...opties, toegepasteMigraties: new Set(['0001_basis', '0093_globaal_zoeken_laatste', '0093_zoek_index', '0094_zoekindex', '0094_zoek_rls']) },
+    );
+    check('historisch hernoemde oktober-migraties met aanwezige opvolger → migraties ok', hernoemdOk.resultaat.ok && niv(hernoemdOk, 'migraties') === 'ok' && !!hernoemdOk.resultaat.controles.find((c) => c.id === 'migraties')?.details?.includes('0093_globaal_zoeken_laatste → 0093_zoek_index'));
+    const ontbreektToegepast = await pakketVoorcontrole(maak({ zonder: ['migrations/0001_basis.sql'] }), opties);
+    check('echt ontbrekende al toegepaste migratie → blokkerende fout MIGRATIES_ONTBREKEN', !ontbreektToegepast.resultaat.ok && niv(ontbreektToegepast, 'migraties') === 'fout' && /MIGRATIES_ONTBREKEN/.test(ontbreektToegepast.resultaat.controles.find((c) => c.id === 'migraties')?.uk || ''));
     const geheim = await pakketVoorcontrole(maak({ extra: { 'src/x.ts': '// -----BEGIN PRIVATE' + ' KEY-----\nabc', '.env': 'A=1' } }), opties);
     check('geheimen: privésleutel en .env → waarschuwing met alleen bestandsnamen, niet geblokkeerd', geheim.resultaat.ok && niv(geheim, 'geheimen') === 'waarschuwing' && !JSON.stringify(geheim.resultaat).includes('abc'));
     check('mislukte tests van de voorbereider → waarschuwing', niv(await pakketVoorcontrole(maak(), { ...opties, tests: { geslaagd: 10, mislukt: 2 } }), 'tests') === 'waarschuwing');

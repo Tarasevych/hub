@@ -232,8 +232,8 @@ export default function CanonicalNotificationCenter(p: Props) {
     const regel = meldingenV2Nu() ? geldendeRegel(regelsNu(), { dienst: dienstVan(notice.source || ''), categorie: String(notice.source || '').toLowerCase() }) : null;
     const regelStil = !!regel && (regel.modus === 'stil' || regel.modus === 'uit') && !isKritiekType(type);
     const dubbel = !notice.voorbeeld && isBronDuplicaat(recentePopups.current, { sectie, kind, transient: !!notice.transient }, nu);
-    const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil };
-    const geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil;
+    const voorkeur = { ...basis, opduiken: basis.opduiken && !dnd && !dubbel && !regelStil && !notice.alleenPaneel };
+    const geluid = (opties.geluid ?? voorkeur.geluid) && !dubbel && !regelStil && !notice.alleenPaneel;
     if (!voorkeur.tonen) {
       if (origin === 'prop') propsRef.current.onDismissNotice?.(tekst);
       return;
