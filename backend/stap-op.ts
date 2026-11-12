@@ -110,6 +110,22 @@ export async function passkeyStapOpVastleggen(auth: StapOpAuth): Promise<boolean
   await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: nu }, passkeySessies: { ...(r.passkeySessies || {}), [s.id]: nu }, sterkSessies: { ...(r.sterkSessies || {}), [s.id]: nu }, methodes: { ...(r.methodes || {}), [s.id]: 'passkey' } }));
   return true;
 }
+/**
+ * APPARAAT-001: step-up vastleggen voor een sessie die NIET het huidige verzoek doet — het vragende apparaat A, nadat op een ander
+ * apparaat B (methode 'apparaat') of in Telegram (methode 'telegram') is bevestigd. Daarom op sessie-id, niet op auth.
+ *  - 'telegram' telt nooit als «sterk» en nooit als passkey-step-up (punt D van TELEGRAM-001: gevoelig blijft lokale toegangssleutel);
+ *  - 'apparaat' telt als «sterk» alleen als B met zijn toegangssleutel bekrachtigde én de beheerder dat toestaat (sterkBijPasskey);
+ *  - passkeySessies wordt hier NOOIT gezet: de poort van TELEGRAM-001 leest passkeyStapOpGeldig als «lokale toegangssleutel».
+ */
+export async function stapOpVoorSessieVastleggen(userId: string, sessieId: string, methode: 'telegram' | 'apparaat', opties: { sterk?: boolean } = {}): Promise<boolean> {
+  if (!/^[A-Za-z0-9_-]{8,80}$/.test(String(userId || '')) && !/^[0-9a-f-]{36}$/i.test(String(userId || ''))) return false;
+  if (!sessieId || sessieId.length < 8 || sessieId.length > 80) return false;
+  const nu = Date.now();
+  const sterk = methode === 'apparaat' && opties.sterk === true;
+  await schrijf(userId, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [sessieId]: nu }, methodes: { ...(r.methodes || {}), [sessieId]: methode },
+    ...(sterk ? { sterkSessies: { ...(r.sterkSessies || {}), [sessieId]: nu } } : {}) }));
+  return true;
+}
 /** Is er op deze sessie binnen 5 minuten met een passkey bevestigd? (Strenger dan stapOpGeldig: Google telt hier niet.) */
 export async function passkeyStapOpGeldig(auth: StapOpAuth, nu = Date.now()): Promise<boolean> {
   const s = sessieVan(auth);

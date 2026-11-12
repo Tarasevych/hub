@@ -38,7 +38,7 @@ export async function main(): Promise<number> {
   const zwevend = bron('src/MailOpstelZwevend.tsx');
   // 21.10.2026: de FAB wordt niet meer gesleept (één vaste plaats, fabPlaats — tests/eenheid/meldingen-mobiel-20261021.test.ts); een tik opent altijd.
   check('M1 tik op «Написати» opent het venster (geen slepen meer: één vaste plaats naast de bel)', zwevend.includes('onClick={() => setComposeOpen(true)}') && !/onPointerMove|justDraggedRef/.test(zwevend));
-  check('M1 venster in portal (niet in de verborgen zijbalk)', /createPortal\(\s*<MailNewMessageDialog/.test(zwevend));
+  check('M1 venster in portal (niet in de verborgen zijbalk)', /createPortal\(\s*(<Suspense fallback=\{null\}>)?<MailNewMessageDialog/.test(zwevend));
   check('M1 zijbalk heeft geen eigen zwevende knop of venster meer (geen dubbel in de DOM)', !zijbalk.includes('createPortal(<MailNewMessageDialog') && !/mail-compose-float/.test(zijbalk.replace(/\/\/.*$/gm, '')));
   // M2 selectie op aanraakscherm
   for (const pad of ['src/MailBerichtRij.tsx', 'src/MailMinimumBerichtRij.tsx']) {

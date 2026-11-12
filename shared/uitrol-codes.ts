@@ -34,6 +34,9 @@ export const UITROL_CODES: Readonly<Record<string, UitrolCode>> = Object.freeze(
   RUN_STIL: { uk: 'Сервер не повідомив результат', nl: 'De server meldde geen uitkomst', doenUk: 'Сервер довго не писав нічого (можливо, вимкнення живлення або OOM). Див. «Діагностика».', doenNl: 'De server schreef lange tijd niets (mogelijk stroomuitval of OOM). Zie «Діагностика».' },
   GEEN_UITKOMST: { uk: 'Немає результату після схвалення', nl: 'Geen uitkomst na goedkeuring', doenUk: 'Сервер не підхопив пакет вчасно. Див. «Діагностика» (path-юніт, служба, блокування).', doenNl: 'De server pakte het pakket niet op tijd op. Zie «Діагностика» (path-unit, dienst, vergrendeling).' },
   VOORCONTROLE_MISLUKT: { uk: 'Попередня перевірка не пройдена', nl: 'Voorcontrole niet geslaagd', ...opnieuwPakket },
+  // UITROL-001: de eigenaar drukte op «Зупинити» (step-up passkey). Root honoreert dat alleen vóór het overschakelen (< 90 %).
+  GESTOPT: { uk: 'Зупинено власником', nl: 'Gestopt door de eigenaar', doenUk: 'Попередній випуск лишився активним; нічого не змінено. Щоб установити цей випуск пізніше, завантажте пакет ще раз.', doenNl: 'De vorige release blijft actief; er is niets gewijzigd. Upload het pakket opnieuw om deze release later alsnog te installeren.' },
+  STOP_TE_LAAT: { uk: 'Запит на зупинку надійшов запізно', nl: 'Stopverzoek kwam te laat', doenUk: 'Перемикання вже тривало, тому запит проігноровано: сайт не можна лишати напівперемкненим. Результат вирішать перевірка здоров’я та автоматичний відкат.', doenNl: 'Het overschakelen liep al, daarom is het verzoek genegeerd: de site mag niet half omgeschakeld achterblijven. Gezondheidscontrole en automatische terugdraai beslissen.' },
 
   // ---- pogingen die niet tot een installatie kwamen (migratie 0081, eigenaar 20.10.2026)
   // Eerlijk onbekend: de browser meldde niets meer. Dit mag nooit op een bekende oorzaak lijken.

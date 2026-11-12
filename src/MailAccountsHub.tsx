@@ -32,6 +32,7 @@ import { mailKoppelenOpenen } from './platform/VensterHerstel';
 import { MAIL_AANBIEDERS, mailAanbieder, mailAanbiederHeeftKnop, mailImapFoutTekst, type MailAanbieder, type MailImapKoppelingPubliek } from '../shared/mail-aanbieders';
 import { isMailMeldingNiveau, type MailMeldingNiveau } from '../shared/mail-melding-niveau';
 import MailMeldingBel from './mail/MailMeldingBel';
+import MailAchtergrond from './mail/MailAchtergrond';
 // Raster, tegels, uitlegkolom, accountbeheer en meldingsvenster van deze pagina (mobiel 21.10.2026). De import ontbrak sinds de
 // momentopname van 30.10: het bestand werd nergens geladen (oude fout, 05.11.2026; mobiel-geometrie-20261021 check 1).
 import './mail-accounts-hub.css';
@@ -373,6 +374,7 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
 
   return (
     <div className='mail-accounts-hub'>
+      <MailAchtergrond lang={lang} plaats='accounts' />
       <div className='mail-accounts-hoofd'>
         <div style={{ marginBottom: 24 }}>
           <div style={{ color: 'var(--muted,#64748b)', fontSize: 14 }}>{userName ? `${t('Вітаємо, ', 'Welkom, ')}${userName}!` : t('Вітаємо', 'Welkom')}</div>

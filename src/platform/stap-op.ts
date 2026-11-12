@@ -11,7 +11,9 @@
 import { foutCode, kanPasskey, passkeyBevestigen, type AssertieOpties } from './webauthn';
 import { actieVoorPad } from '../../shared/stap-op-acties';
 
-export type StapOpMethode = 'passkey' | 'totp' | 'herstelcode' | 'google' | 'codewoord';
+// APPARAAT-001: 'apparaat' (bevestigen vanaf een ander aangemeld apparaat) en 'telegram' (kaart in de bot) — kanalen zonder
+// toegangssleutel op DIT apparaat; de server legt de step-up vast via POST /api/owner/access/stap-op/poort (bevestigingstabel).
+export type StapOpMethode = 'passkey' | 'totp' | 'herstelcode' | 'google' | 'codewoord' | 'apparaat' | 'telegram';
 export type HervatIntentie = { actie: string; gegevens?: Record<string, string | number | boolean> };
 export type StapOpUitkomst = { ok: true; methode: StapOpMethode; code?: string } | { ok: false; reden?: string };
 type Post = (url: string, data: unknown) => Promise<unknown>;

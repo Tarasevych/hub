@@ -15,6 +15,18 @@ export function meldLink(v: unknown): string {
     return u.protocol === 'https:' && !u.username && !u.password && (u.hostname === 'tarasevych.com' || u.hostname.endsWith('.tarasevych.com')) ? u.toString() : '';
   } catch { return ''; }
 }
+/**
+ * UITROL-001: ongelezen meldingen van een soort sluiten (gelezen zetten) als ze over iets gaan dat al voorbij is — bv. «Оновлення X чекає
+ * схвалення» nadat X is geïnstalleerd, afgewezen of gestopt. Zoekt in de titel. index.ts registreert de uitvoering; zonder (tests) gebeurt er niets.
+ * Закриває застарілі сповіщення (наприклад, «чекає схвалення» після встановлення), щоб вони не з’являлися знову.
+ */
+type MeldingenSluiter = (kind: string, zoekInTitel: string) => Promise<number>;
+let sluiter: MeldingenSluiter | null = null;
+export function registreerMeldingenSluiter(fn: MeldingenSluiter): void { sluiter = fn; }
+export async function meldingenSluiten(kind: string, zoekInTitel: string): Promise<number> {
+  try { return sluiter ? await sluiter(kind, zoekInTitel) : 0; }
+  catch (err) { console.error('[melder] meldingen sluiten mislukt:', (err as Error).message); return 0; }
+}
 export async function meld(userId: string, kind: string, title: string, message: string, link?: string): Promise<void> {
   try { if (melder) await melder(userId, '', kind, title, message, meldLink(link) || undefined); }
   catch (err) { console.error('[melder] melding mislukt:', (err as Error).message); }

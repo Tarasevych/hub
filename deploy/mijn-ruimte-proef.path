@@ -1,0 +1,9 @@
+[Unit]
+Description=Mijn Ruimte: migratieproef zodra de site een verzoek legt (UITROL-001, vóór de upload)
+
+[Path]
+PathExistsGlob=/srv/mijn-ruimte/proef-inbox/proef-*.json
+Unit=mijn-ruimte-proef.service
+
+[Install]
+WantedBy=multi-user.target

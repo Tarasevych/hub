@@ -1,12 +1,14 @@
 // Kaart «Поточне розгортання»: leest elke ~1,5 s /api/owner/uitrol/live (database app.uitrol_runs + app.uitrol_run_regels, door de app gevuld uit de
 // bestanden die root schrijft) en toont fasen, deelstappen, voortgang, verstreken tijd en de echte terminaluitvoer — niet alleen een percentage.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CheckCircle2, CircleDashed, Clock, Loader2, ScrollText, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CircleDashed, Clock, Fingerprint, Link2, Loader2, OctagonX, ScrollText, ShieldCheck, XCircle } from 'lucide-react';
+import Conveyor from './Conveyor';
+import { conveyorStand } from './conveyor-stand';
 import { api } from '../platform/client';
 import Terminal from './Terminal';
 import { codeTekst } from './fouten';
 import Oorzaak from './Oorzaak';
-import { DEELSTAPPEN, FASEN, deelStanden, subTijden, duur, methodeTekst, runDuur, staatTekst, tijdKort, tr, type Fase, type Flow, type Lang, type LiveAntwoord, type Regel, type Run } from './types';
+import { DEELSTAPPEN, FASEN, deelStanden, duur, methodeTekst, runDuur, staatTekst, tijdKort, tr, type Fase, type Flow, type Lang, type LiveAntwoord, type Regel, type Run } from './types';
 
 export type WachtOpRoot = { id: string; versie: string; beslistOp: string };
 type Props = {
@@ -14,6 +16,9 @@ type Props = {
   openLog: (runId: string) => void; openDiagnose: () => void; onRunVerandert?: (run: Run | null) => void;
   /** Stand van de wizard «Нове оновлення»: bij een nieuw bestand beginnen de vier fases opnieuw, los van de vorige run. */
   flow?: Flow;
+  /** UITROL-001 «Зупинити встановлення»: step-up + reden; root honoreert tot vóór het overschakelen (< 90 %). */
+  stoppen?: (v: { id: string; versie: string; run: string; reden: string }) => void;
+  busy?: string;
 };
 const MAX_REGELS = 4000;
 /** Een afgeronde run (ook een mislukte) blijft zo lang zichtbaar; daarna maakt de kaart zich leeg en wacht op de volgende uitrol. De samenvatting staat in de lijst «Останні розгортання». */
@@ -39,12 +44,6 @@ export function faseStanden(run: Run | null, wachtend: number, goedgekeurd: numb
   return s;
 }
 
-function StapIcoon({ staat }: { staat: string }) {
-  if (staat === 'ok') return <CheckCircle2 aria-hidden='true' />;
-  if (staat === 'bezig' || staat === 'actief') return <Loader2 aria-hidden='true' className='ut-draai' />;
-  if (staat === 'fout') return <XCircle aria-hidden='true' />;
-  return <CircleDashed aria-hidden='true' />;
-}
 
 /**
  * Zolang een pakket is goedgekeurd maar root nog geen stap van DIT pakket schreef, is de nieuwste run in de database een oudere (bv. een SSH-installatie
@@ -56,8 +55,12 @@ export function isOudeRun(run: Run | null, goedgekeurd: WachtOpRoot[]): boolean 
   return Number.isFinite(eerst) && Date.parse(run.gestart) < eerst - 2000;
 }
 
-export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedgekeurd, openLog, openDiagnose, onRunVerandert, flow }: Props) {
+export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedgekeurd, openLog, openDiagnose, onRunVerandert, flow, stoppen, busy }: Props) {
   const [laatsteRun, setRun] = useState<Run | null>(null);
+  const [stopVeld, setStopVeld] = useState(false);
+  const [stopReden, setStopReden] = useState('');
+  // De wizard (stap 5) kan het stopveld openen: één plek voor de knop, bereikbaar vanuit beide kaarten.
+  useEffect(() => { const open = () => { setStopVeld(true); window.setTimeout(() => document.getElementById('ut-stop-reden')?.focus(), 350); }; window.addEventListener('ut-stop-open', open); return () => window.removeEventListener('ut-stop-open', open); }, []);
   const [regels, setRegels] = useState<Regel[]>([]);
   const [fout, setFout] = useState('');
   const [nu, setNu] = useState(Date.now());
@@ -108,10 +111,9 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
     ? { voorbereiding: flow!.fase === 'voorbereiding' ? 'actief' : 'ok', goedkeuring: flow!.fase === 'goedkeuring' ? 'actief' : 'wacht', controles: 'wacht', uitrol: 'wacht' }
     : faseStanden(run, wachtendOpGoedkeuring, goedgekeurd.length), [nieuweFlow, flow, run, wachtendOpGoedkeuring, goedgekeurd.length]);
   const delen = useMemo(() => deelStanden(run), [run]);
-  const subT = useMemo(() => subTijden(regels, run && run.staat !== 'bezig' ? run.geeindigd || run.bijgewerkt : undefined), [regels, run]);
+  const knopen = useMemo(() => conveyorStand({ run, regels, flow, nieuweFlow, wachtend: wachtendOpGoedkeuring, goedgekeurd: goedgekeurd.length, nu }), [run, regels, flow, nieuweFlow, wachtendOpGoedkeuring, goedgekeurd.length, nu]);
   const toon = !!run;
   const pct = run ? (run.staat === 'klaar' ? 100 : run.pct) : 0;
-  const detailVan = (id: string) => run?.stappen.find((s) => s.stap === id);
   // Onder de actieve fase staat welke deelstap nu loopt, zodat de vier blokjes bovenaan ook tijdens de lange installatie iets vertellen.
   const lopendeDeel = DEELSTAPPEN.find((d) => delen[d.id] === 'bezig');
   const faseSub = (f: Fase): string => {
@@ -133,19 +135,17 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
         {!nieuweFlow && run && toon && <p className='ut-sub'>{methodeTekst(lang, run.methode)}{run.wie ? ` · ${run.wie}` : ''}{run.adres ? ` · ${run.adres}` : ''} · {tr(lang, 'початок', 'start')} {tijdKort(lang, run.gestart)}</p>}
       </div>
       <div className='ut-kop-rechts'>
-        {!nieuweFlow && run && toon && <span className='ut-badge' data-staat={run.staat}>{staatTekst(lang, run.staat)}</span>}
+        {!nieuweFlow && run && toon && <span className='ut-badge' data-staat={run.code === 'GESTOPT' ? 'gestopt' : run.staat}>{run.code === 'GESTOPT' ? tr(lang, 'Зупинено', 'Gestopt') : staatTekst(lang, run.staat)}</span>}
         {!nieuweFlow && run && toon && <span className='ut-tijd' title={tr(lang, 'Минуло часу', 'Verstreken tijd')}><Clock aria-hidden='true' />{run.staat === 'bezig' ? duur(nu - Date.parse(run.gestart)) : runDuur(run)}</span>}
         {!nieuweFlow && run && toon && <button type='button' className='ut-knop' onClick={() => openLog(run.id)}><ScrollText aria-hidden='true' />{tr(lang, 'Переглянути журнал', 'Logboek bekijken')}</button>}
       </div>
     </header>
 
-    <ol className='ut-fasen' data-afgerond={(!nieuweFlow && !!run && run.staat !== 'bezig' && goedgekeurd.length === 0 && wachtendOpGoedkeuring === 0) || undefined} aria-label={tr(lang, 'Етапи розгортання', 'Fasen van de uitrol')}>
-      {FASEN.map((f, i) => <li key={f.id} data-stand={fasen[f.id]} aria-current={fasen[f.id] === 'actief' ? 'step' : undefined}>
-        <span className='ut-fase-bol'>{fasen[f.id] === 'ok' ? <CheckCircle2 aria-hidden='true' /> : fasen[f.id] === 'fout' ? <XCircle aria-hidden='true' /> : fasen[f.id] === 'actief' ? <Loader2 aria-hidden='true' className='ut-draai' /> : <span>{i + 1}</span>}</span>
-        <span className='ut-fase-tekst'>{tr(lang, f.uk, f.nl)}</span>
-        {faseSub(f.id) && <small className='ut-fase-sub'>{faseSub(f.id)}</small>}
-      </li>)}
-    </ol>
+    {/* UITROL-001: acht knopen (Вимоги → … → Здоров’я) i.p.v. de vier fasen; de oude indeling (faseStanden) blijft de bron voor de terminal- en stopregels hieronder. */}
+    <div data-afgerond={(!nieuweFlow && !!run && run.staat !== 'bezig' && goedgekeurd.length === 0 && wachtendOpGoedkeuring === 0) || undefined} className='ut-conv-houder'>
+      <Conveyor lang={lang} knopen={knopen} />
+      {FASEN.some((f) => faseSub(f.id)) && !run && <p className='ut-conv-nu' role='status'>{FASEN.map((f) => faseSub(f.id)).filter(Boolean)[0]}</p>}
+    </div>
 
     {!nieuweFlow && rootStil && <div className='ut-waarschuwing' role='alert'>
       <AlertTriangle aria-hidden='true' />
@@ -155,6 +155,29 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
     </div>}
     {!nieuweFlow && goedgekeurd.length > 0 && !rootStil && !(run && run.staat === 'bezig') && <p className='ut-wacht' role='status'><Loader2 aria-hidden='true' className='ut-draai' />{tr(lang, `Схвалено. Чекаємо, поки сервер підхопить пакет (${wachtSec} с)…`, `Goedgekeurd. Wachten tot de server het pakket oppakt (${wachtSec} s)…`)}</p>}
     {fout && <p className='ut-fout' role='status'>{fout}</p>}
+    {/* UITROL-001 «Зупинити встановлення»: zichtbaar zolang stoppen zin heeft — na goedkeuring (root pakt op) en tijdens de installatie tot het overschakelen (< 90 %). */}
+    {!nieuweFlow && stoppen && (() => {
+      const lopend = run && run.staat === 'bezig' && run.methode === 'passkey';
+      const kan = lopend || (goedgekeurd.length > 0 && !(run && run.staat === 'bezig'));
+      if (!kan) return null;
+      const pctNu = lopend ? run!.pct : 0;
+      const teLaat = lopend && pctNu >= 90;
+      const doel = { id: goedgekeurd[0]?.id || run?.voorstelId || '', versie: (lopend ? run!.versie : goedgekeurd[0]?.versie) || '', run: lopend ? run!.id : '' };
+      const stopBezig = !!busy && busy.startsWith('stop-');
+      return <div className='ut-stop' data-ut-stop data-te-laat={teLaat || undefined}>
+        {teLaat ? <p className='ut-hint ut-stop-te-laat'><ShieldCheck aria-hidden='true' />{tr(lang, 'Зупинити вже не можна: триває перемикання на новий випуск. Якщо перевірка здоров’я не пройде, сервер сам відкотиться на попередній.', 'Stoppen kan niet meer: het overschakelen naar de nieuwe release loopt. Slaagt de gezondheidscontrole niet, dan draait de server zelf terug.')}</p>
+          : !stopVeld ? <div className='ut-acties'><button type='button' className='ut-knop ut-knop-gevaar' disabled={stopBezig} onClick={() => setStopVeld(true)} title={tr(lang, 'Перервати встановлення цього пакета. Поточний випуск лишиться активним; незавершену теку сервер прибере сам. Потрібне підтвердження (passkey/step-up) і причина.', 'De installatie van dit pakket afbreken. De huidige release blijft actief; de onvolledige map ruimt de server zelf op. Vraagt een bevestiging (passkey/step-up) en een reden.')} data-ut-stop-knop><OctagonX aria-hidden='true' />{tr(lang, 'Зупинити встановлення', 'Installatie stoppen')}</button>
+              <small className='ut-stop-uitleg'>{tr(lang, 'Можна до етапу «Перемикання». Нічого не встановиться; попередній випуск лишиться.', 'Kan tot de fase «Overschakelen». Er wordt niets geïnstalleerd; de vorige release blijft.')}</small></div>
+          : <div className='ut-reden-veld' role='group' aria-labelledby='ut-stop-titel' data-ut-stop-veld>
+              <label id='ut-stop-titel' htmlFor='ut-stop-reden'>{tr(lang, 'Чому зупиняєте? (щонайменше 10 знаків — потрапить у журнал і в історію)', 'Waarom stopt u? (minstens 10 tekens — komt in het logboek en de geschiedenis)')}</label>
+              <textarea id='ut-stop-reden' rows={2} maxLength={300} value={stopReden} onChange={(e) => setStopReden(e.target.value)} disabled={stopBezig} placeholder={tr(lang, 'Наприклад: помилково схвалив стару збірку', 'Bijvoorbeeld: per ongeluk een oude build goedgekeurd')} />
+              <div className='ut-acties'>
+                <button type='button' className='ut-knop ut-knop-gevaar' disabled={stopBezig || [...stopReden.trim()].length < 10} onClick={() => { stoppen({ ...doel, reden: stopReden.trim().slice(0, 300) }); setStopVeld(false); setStopReden(''); }} data-ut-stop-bevestig><OctagonX aria-hidden='true' />{stopBezig ? tr(lang, 'Зупиняю…', 'Stoppen…') : tr(lang, 'Так, зупинити', 'Ja, stoppen')}</button>
+                <button type='button' className='ut-knop' disabled={stopBezig} onClick={() => { setStopVeld(false); setStopReden(''); }}>{tr(lang, 'Не зупиняти', 'Niet stoppen')}</button>
+              </div>
+              <small className='ut-stop-uitleg'>{tr(lang, `Пакет ${doel.versie}: сервер отримає запит і перерве встановлення до перемикання. Запит підтверджується passkey/step-up і фіксується в аудиті.`, `Pakket ${doel.versie}: de server krijgt het verzoek en breekt de installatie vóór het overschakelen af. Het verzoek wordt met passkey/step-up bevestigd en in de audit vastgelegd.`)}</small>
+            </div>}
+      </div>; })()}
 
     {nieuweFlow && run && toon && <p className='ut-vorige'><span><b>{tr(lang, 'Попереднє розгортання', 'Vorige uitrol')}</b> · <span className='ut-mono'>{run.versie || run.release || run.id}</span> · {staatTekst(lang, run.staat)} · {tijdKort(lang, run.gestart)}</span>
       <button type='button' className='ut-knop' onClick={() => openLog(run.id)}><ScrollText aria-hidden='true' />{tr(lang, 'Журнал', 'Logboek')}</button></p>}
@@ -164,23 +187,27 @@ export default function LiveKaart({ lang, context, wachtendOpGoedkeuring, goedge
       <div className='ut-voortgang' role='progressbar' aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={tr(lang, 'Загальний прогрес', 'Totale voortgang')} data-staat={run.staat}>
         <div className='ut-voortgang-balk'><i style={{ width: `${pct}%` }} /></div><b>{pct}%</b>
       </div>
-      {(run.staat === 'mislukt' || run.staat === 'geweigerd' || run.staat === 'afgebroken') && <div className='ut-uitkomst' data-staat={run.staat} role='alert'>
-        <XCircle aria-hidden='true' /><div><b>{staatTekst(lang, run.staat)}{run.code ? ` · ${codeTekst(lang, run.code)}` : ''}</b><p>{lang === 'uk' ? run.uk : run.nl}</p><Oorzaak lang={lang} run={run} /></div>
+      {(run.staat === 'mislukt' || run.staat === 'geweigerd' || run.staat === 'afgebroken') && <div className='ut-uitkomst' data-staat={run.code === 'GESTOPT' ? 'gestopt' : run.staat} role='alert'>
+        {run.code === 'GESTOPT' ? <OctagonX aria-hidden='true' /> : <XCircle aria-hidden='true' />}<div><b>{run.code === 'GESTOPT' ? tr(lang, 'Зупинено', 'Gestopt') : staatTekst(lang, run.staat)}{run.code ? ` · ${codeTekst(lang, run.code)}` : ''}</b>{(lang === 'uk' ? run.uk : run.nl) && (lang === 'uk' ? run.uk : run.nl) !== codeTekst(lang, run.code) ? <p>{lang === 'uk' ? run.uk : run.nl}</p> : null}<Oorzaak lang={lang} run={run} /></div>
       </div>}
+      {run.methode === 'passkey' && (() => { const sha = run.sha256 || run.pakket?.sha256 || ''; const kort = sha ? `${sha.slice(0, 8)}…${sha.slice(-6)}` : '';
+        const schakels: Array<[string, string, string, boolean]> = [
+          ['browser', tr(lang, 'SHA-256 пораховано в браузері', 'SHA-256 in de browser berekend'), tr(lang, 'Відбиток архіву рахується на вашому пристрої до завантаження; проба міграцій прив’язана до нього.', 'De vingerafdruk van het archief wordt op uw apparaat berekend vóór het uploaden; de migratieproef is eraan gebonden.'), true],
+          ['server', tr(lang, 'Сервер звірив після завантаження', 'Server vergeleek na de upload'), tr(lang, 'Сайт перерахував SHA-256 отриманого файлу; інший файл під тим самим описом неможливий.', 'De site berekende de SHA-256 van het ontvangen bestand opnieuw; een ander bestand onder dezelfde beschrijving kan niet.'), true],
+          ['passkey', tr(lang, 'Схвалення passkey прив’язане до sha256', 'Passkey-goedkeuring gebonden aan de sha256'), tr(lang, 'Підпис passkey містить ідентифікатор пропозиції, версію, sha256 і одноразовий nonce; діє 5 хвилин.', 'De passkey-handtekening bevat voorstel-id, versie, sha256 en een eenmalige nonce; geldig 5 minuten.'), true],
+          ['root', tr(lang, 'Root перевірив сам', 'Root controleerde zelf'), tr(lang, 'Root перерахував sha256 своєї копії й перевірив підпис passkey власним ключем — сайт нічого не може схвалити.', 'Root berekende de sha256 van zijn eigen kopie en controleerde de passkey met eigen sleutels — de site kan niets goedkeuren.'), run.stappen.some((s) => s.stap === 'echtheid' && s.staat === 'ok')],
+          ['terugdraai', tr(lang, 'Відкат напоготові', 'Terugdraai staat klaar'), tr(lang, 'Резервна копія бази й попередній випуск лишаються; збій перевірки здоров’я → автоматичний відкат.', 'Back-up van de database en de vorige release blijven; mislukt de gezondheidscontrole → automatische terugdraai.'), true],
+        ];
+        return <details className='ut-keten' data-ut-keten><summary><Link2 aria-hidden='true' />{tr(lang, 'Ланцюг довіри', 'Vertrouwensketen')}{kort ? <code className='ut-mono'>{kort}</code> : null}<small>{tr(lang, 'кожна ланка перевіряє попередню — підмінити пакет непомітно неможливо', 'elke schakel controleert de vorige — een pakket ongemerkt verwisselen kan niet')}</small></summary>
+          <ol>{schakels.map(([id, naam, uitleg, ok]) => <li key={id} data-ok={ok}>{id === 'passkey' ? <Fingerprint aria-hidden='true' /> : ok ? <CheckCircle2 aria-hidden='true' /> : <CircleDashed aria-hidden='true' />}<div><b>{naam}</b><p>{uitleg}</p></div></li>)}</ol>
+        </details>; })()}
       {run.staat === 'klaar' && <div className='ut-uitkomst' data-staat='klaar'><CheckCircle2 aria-hidden='true' /><div><b>{tr(lang, 'Розгортання завершено', 'Uitrol voltooid')}{run.release ? ` · ${run.release}` : ''}</b><p>{lang === 'uk' ? run.uk : run.nl}</p></div></div>}
 
-      {run.methode !== 'ssh' && <ul className='ut-delen' aria-label={tr(lang, 'Кроки встановлення', 'Installatiestappen')}>
-        {DEELSTAPPEN.map((d) => { const st = delen[d.id]; const info = !d.sub ? detailVan(d.stap) : undefined;
-          return <li key={d.id} data-stand={st}>
-            <StapIcoon staat={st} />
-            <span className='ut-deel-tekst'><b>{tr(lang, d.uk, d.nl)}</b><small>{info && (lang === 'uk' ? info.uk : info.nl) ? (lang === 'uk' ? info.uk : info.nl) : tr(lang, d.hulpUk, d.hulpNl)}</small></span>
-            <span className='ut-deel-stand'>{st === 'ok' ? tr(lang, 'готово', 'klaar') : st === 'bezig' ? tr(lang, 'виконується', 'bezig') : st === 'fout' ? tr(lang, 'помилка', 'fout') : tr(lang, 'очікує', 'wacht')}{info?.tijd && st !== 'wacht' ? ` · ${tijdKort(lang, info.tijd)}` : d.sub && subT[d.sub] && st !== 'wacht' ? ` · ${tijdKort(lang, subT[d.sub].tijd)}${subT[d.sub].duurMs !== null && st === 'ok' ? ` (${duur(subT[d.sub].duurMs as number)})` : ''}` : ''}</span>
-          </li>; })}
-      </ul>}
+      {/* UITROL-001: de lijst met negen deelstappen staat niet meer hier — de conveyor hierboven toont dezelfde onderdelen met echte tijdstippen en duur (uitklappen per knoop). */}
       {run.methode === 'ssh' && <p className='ut-hint'>{tr(lang, 'Це встановлення виконали вручну через SSH — сайт бачить лише результат, а не кожен крок.', 'Deze installatie is handmatig via SSH gedaan — de site ziet alleen de uitkomst, niet elke stap.')}</p>}
 
       {/* De terminal hoort bij de installatiefase: eerder (ontvangen/controles) is er niets te zien en verschijnt hij pas als root met installeren begint. */}
-      {run.methode !== 'ssh' && fasen.uitrol !== 'wacht' && regels.length > 0 && <Terminal lang={lang} regels={regels} live={run.staat === 'bezig'} bestandsnaam={`uitrol-${run.id}.log`} hoogte={280} />}
+      {run.methode !== 'ssh' && fasen.uitrol !== 'wacht' && regels.length > 0 && <Terminal lang={lang} regels={regels} live={run.staat === 'bezig'} bestandsnaam={`uitrol-${run.id}.log`} hoogte={320} />}
       {run.methode !== 'ssh' && fasen.uitrol === 'wacht' && run.staat === 'bezig' && <p className='ut-hint' data-ut-terminal-verborgen>{tr(lang, 'Термінал з’явиться тут, щойно сервер перейде до встановлення (після перевірок).', 'De terminal verschijnt hier zodra de server met installeren begint (na de controles).')}</p>}
     </>}
 

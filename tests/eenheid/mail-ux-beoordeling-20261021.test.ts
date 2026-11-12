@@ -75,13 +75,13 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ R4 «Перевірка всіх адрес»
   const r4 = mediaBlok(rev, '@media (max-width:559px)');
-  check('R4 ≤ 559 px: смуга між безпечними відступами (без ширини 100vw − 32 від лівого краю рейки), над FAB, прокрутка всередині', /html body \.ctv-melding \{\s*inset-inline:calc\(var\(--ruimte-2\) \+ var\(--veilig-links\)\) calc\(var\(--ruimte-2\) \+ var\(--veilig-rechts\)\) !important;\s*bottom:calc\(124px \+ var\(--veilig-onder\)\) !important; width:auto !important; max-width:none !important;\s*max-height:calc\(100dvh - 200px[^;]*\); overflow:auto;/.test(r4));
+  check('MAILSCAN-002: старі мобільні правила не змушують відкривати смугу', /html body \.ctv-melding/.test(r4));
   const ctvCss = zc(lees('src/afzenders/contacten.css'));
   // ДО: left = 52 + 12 = 64, ширина = min(360, vw − 32) → правий край 64 + 358 = 422 на 390 (за екраном на 32 px)
   check('R4 нагадування ДО: contacten.css ставить смугу від рейки (52 + 12 px) шириною 100vw − 32 → на 390 px правий край 422', /\.ctv-melding \{ position: fixed; z-index: 270; inset-inline-start: calc\(var\(--canonical-command-inline-start, 52px\) \+ 12px\); bottom: 16px; width: min\(360px, calc\(100vw - 32px\)\);/.test(ctvCss) && 64 + Math.min(360, 390 - 32) === 422);
   const ctv = lees('src/afzenders/ContactenScanMelding.tsx');
-  check('R4 на телефоні смуга починає згорнутою (лише заголовок; поріг той самий, що й у «широкого» вікна: 560 px)', ctv.includes("const ingeklapt = keuze ? keuze === 'klein' : !breed;") /* BUG-002: daarna de bewaarde keuze */ && ctv.includes('const BREED = () => typeof window !== \'undefined\' && window.innerWidth >= 560;'));
-  check('R4 кнопки смуги («⌄», «×») — дотикової висоти', /\.ctv-melding \.ctv-melding-weg \{ width:var\(--tik-hoogte\); height:var\(--tik-hoogte\); \}/.test(r4));
+  check('MAILSCAN-002: на телефоні більше немає розгорнутого вікна перевірки адрес', !ctv.includes('<Venster') && !ctv.includes('ctv-melding-inhoud'));
+  check('MAILSCAN-002: коротка звістка не перехоплює натискання', ctvCss.includes('.ctv-scan-korte-melding{position:fixed') && ctvCss.includes('pointer-events:none'));
 
   // ------------------------------------------------------------------ R5 вікно читання
   check('R5 ≤ 720 px (24.10, pakket 1: was ≤ 559 px hier; zweven kan pas vanaf 721 px, de regel staat nu in src/mail/lees-venster.css): «Зменшити вікно (перетягувати)» сховано (як «На весь екран» у «Новому листі»)', /@media \(max-width:720px\)\{\s*html body \.google-mail-reader \.mail-reader-venster\{display:none!important\}/.test(zc(lees('src/mail/lees-venster.css'))) && !/\.mail-reader-venster \{ display:none/.test(rev) && /@media\(max-width:560px\)\{\.mail-nm-venster-knoppen button\[data-nm-maximaliseer\]\{display:none\}\}/.test(zc(lees('src/mail-nieuw-bericht.css'))));

@@ -1,0 +1,191 @@
+name: IDENTITEIT-007 · перевірка та випуск вигляду «Макет» центру облікового запису
+
+# Цей процес нічого не встановлює. Власник окремо схвалює випуск ключем доступу.
+# Deze werkwijze installeert niets. De eigenaar keurt een uitgave afzonderlijk goed.
+on:
+  push:
+    branches:
+      - 'feature/identiteit-007-20261109-065225'
+    paths:
+      - '.github/workflows/identiteit-007-uitgave.yml'
+      - 'src/identiteit/**'
+      - 'src/VerenigdDienstApp.tsx'
+      - 'src/canoniek-omlijsting.css'
+      - 'shared/vlaggen.ts'
+      - 'scripts/identiteit-maquette/**'
+      - 'tests/eenheid/identiteit-maquette.test.ts'
+      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-007.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: identiteit-007-uitgave-3
+  cancel-in-progress: false
+
+env:
+  TAAK: IDENTITEIT-007
+  # Встановлена основа визначається з /api/version під час запуску; дозволені лише ці дві (обидві — предки цієї гілки).
+  # De geïnstalleerde basis wordt bij het draaien uit /api/version gelezen; alleen deze twee zijn toegestaan.
+  TOEGESTANE_BASES: '20261109-051901=8392ceb2fb4cec4ea6bbf1c30f1092fcba27fd91 20261109-060206=4d71a8180a3ec8ee17ea516652d235670e046ced'
+  # Модель ШІ задає власник змінною сховища (Settings → Variables → Actions), а не агент у коді.
+  # Het AI-model geeft de eigenaar op als repositoryvariabele, niet de agent in de code.
+  MODEL_ID: ${{ vars.IDENTITEIT_007_MODEL_ID || vars.IDENTITEIT_006_MODEL_ID }}
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Bronbestanden ophalen
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Node voorbereiden
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Afhankelijkheden installeren
+        run: npm ci --ignore-scripts
+      - name: Актуальна встановлена основа
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'feature/identiteit-007-20261109-065225'
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/actieve-versie.json"
+          node --input-type=module <<'JS'
+          import {readFileSync, appendFileSync} from 'node:fs';
+          const v=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/actieve-versie.json','utf8'));
+          const versie=String(v.versie||''), commit=String(v.bronCommit||v.commit||'');
+          const toegestaan=Object.fromEntries(process.env.TOEGESTANE_BASES.split(/\s+/).filter(Boolean).map(p=>p.split('=')));
+          if(toegestaan[versie]!==commit) throw new Error(`Встановлена основа ${versie} @ ${commit} не з дозволених; випуск зупинено.`);
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${commit}\n`);
+          console.log(`Встановлена основа: ${versie} @ ${commit}`);
+          JS
+      - name: Основа є предком гілки
+        run: git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+      - name: Модель ШІ від власника
+        shell: bash
+        run: |
+          if [ -z "${MODEL_ID:-}" ]; then
+            echo '::error::Задайте змінну сховища IDENTITEIT_007_MODEL_ID (або лишіть IDENTITEIT_006_MODEL_ID) у Settings → Secrets and variables → Actions → Variables і перезапустіть процес. Правила пакета вимагають справжню модель ШІ.'
+            exit 1
+          fi
+      - name: Правила і джерела
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/identiteit-maquette/bouw.mjs
+          git diff --exit-code -- src/identiteit/maquette
+          node scripts/eenheidstests.mjs identiteit-maquette
+          node scripts/eenheidstests.mjs identiteit-atelier
+          node scripts/eenheidstests.mjs mobiel-cascade-20261105
+          node scripts/eenheidstests.mjs mobiel-geometrie
+          node scripts/eenheidstests.mjs identiteit-account-ui
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
+          node scripts/eenheidstests.mjs uitrol-voorcontrole
+          node scripts/eenheidstests.mjs plaatsing-20261025
+          node scripts/plaatsing-controle.mjs
+      - name: Справжні вузькі екрани у браузері
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts playwright-core
+          CHROME="$(command -v google-chrome || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then
+            npx playwright-core install chromium
+            CHROME="$(node -p 'require("playwright-core").chromium.executablePath()')"
+          fi
+          test -x "$CHROME"
+          PLAYWRIGHT_CORE="$PWD/node_modules/playwright-core" CHROME="$CHROME" \
+            node scripts/e2e-lokaal.mjs identiteit-mobiel
+      - name: Типи і складання
+        run: |
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Підтвердити незмінність файлів
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Дані випуску
+        id: gegevens
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "versie=$VERSIE" >> "$GITHUB_OUTPUT"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Версія вже існує.' >&2
+            exit 1
+          fi
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          const e=process.env;
+          const uk={titel:'Вигляд «Макет» — дизайн власника в центрі облікового запису',samenvatting:'Сторінка облікового запису за макетом власника один в один: власна шапка та смуга сервісів, герой, картки чотирьох груп з елементами макета, якірне меню з будь-якого краю і швидкий пошук Ctrl+K. Справжні налаштування — у згортаному блоці «Чинні налаштування» кожного розділу.',wijzigingen:['Новий вигляд «Макет» за прапорцем identiteit-account-maquette: оболонка сайту на час вигляду схована, тема й мова беруться із сайту.','Смуга сервісів макета веде на справжні сервіси; аватар шапки відкриває перехід до розділу «Акаунт» і до меню облікового запису (інші акаунти, вихід).','У кожній картці та панелі — елементи макета плюс блок «Чинні налаштування» зі справжньою панеллю, правами й діями.','Перемикач вигляду («Макет», «Студія», класичний) у вікні налаштувань навігації та під підвалом.','«Макет» тепер завжди в списку виглядів: доки перемикач функції вимкнено або не створено, пункт неактивний із поясненням, де його ввімкнути.','Міграція створює перемикач функції identiteit-account-maquette (вимкнений) під час встановлення — його не треба додавати вручну.'],fixes:['Правило плаского вмісту оболонки більше не знімає радіуси й тіні з вкладених макетів.','У класичному вигляді перемикач виглядів тепер видно завжди: компактна кнопка «Вигляд» у липкому меню розділів і перемикач під розділами; зміна вигляду відкриває сторінку згори.'],beperkingen:['Сторінки поза центром облікового запису не змінювались; «Студія» і класичний вигляд лишаються.','Вигляд «Макет» вмикається перемикачем функції identiteit-account-maquette (потрібен також identiteit-account-atelier): технічний профіль → «Перемикачі функцій», спершу режим «Тільки я».'],instructies:'Установіть архів через admin.tarasevych.com із підтвердженням ключем доступу. Спершу ввімкніть вигляд лише для себе.'};
+          const nl={titel:'Weergave «Ontwerp» — het ontwerp van de eigenaar in het accountcentrum',samenvatting:'De accountpagina volgens het ontwerp van de eigenaar, één op één: eigen kopbalk en dienstenbalk, hero, kaarten in vier groepen met de onderdelen van het ontwerp, een ankermenu aan elke rand en snel zoeken met Ctrl+K. De echte instellingen staan in het inklapbare blok «Huidige instellingen» van elk onderdeel.',wijzigingen:['Nieuwe weergave «Ontwerp» achter de vlag identiteit-account-maquette: de site-omlijsting is tijdens de weergave verborgen, thema en taal komen van de site.','De dienstenbalk van het ontwerp leidt naar de echte diensten; de avatar opent de weg naar het onderdeel «Account» en naar het accountmenu (andere accounts, afmelden).','In elke kaart en elk paneel: de onderdelen van het ontwerp plus het blok «Huidige instellingen» met het echte paneel, rechten en handelingen.','Keuze van weergave («Ontwerp», «Studio», klassiek) in het navigatievenster en onder de voettekst.','«Ontwerp» staat nu altijd in de lijst van weergaven: zolang de functieschakelaar uit staat of ontbreekt, is de keuze inactief met uitleg waar hij aan te zetten is.','Een migratie maakt de functieschakelaar identiteit-account-maquette (uit) aan bij de installatie — handmatig toevoegen is niet meer nodig.'],fixes:['De regel voor platte inhoud van de omlijsting haalt geen hoeken en schaduwen meer weg uit ingebedde ontwerpen.','In de klassieke weergave is de weergavekiezer nu altijd zichtbaar: een compacte knop «Weergave» in het klevende menu en een kiezer onder de onderdelen; een andere weergave opent bovenaan.'],beperkingen:['Pagina’s buiten het accountcentrum zijn niet gewijzigd; «Studio» en de klassieke weergave blijven.','De weergave «Ontwerp» gaat aan met de functieschakelaar identiteit-account-maquette (ook identiteit-account-atelier is nodig): technisch profiel → «Functieschakelaars», eerst «Alleen ik».'],instructies:'Installeer het archief via admin.tarasevych.com met een passkey. Zet de weergave eerst alleen voor jezelf aan.'};
+          const m={schema:1,versie:e.VERSIE,aangemaakt:new Date().toISOString(),herkomst:`git: commit ${e.GITHUB_SHA} (basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,auteur:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',zonderAi:false,deelnemers:[{soort:'mens',naam:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',rollen:['auteur']},{soort:'ai',naam:'claude',platform:'Claude Code',tool:'Claude Code',model:{id:e.MODEL_ID,versie:null,bron:'auteur'},rollen:['ontwikkeling','controle','testen','verpakken']}],beschrijving:{uk,nl}};
+          writeFileSync(e.RUNNER_TEMP+'/UITROL-MANIFEST.json',JSON.stringify(m,null,2)+'\n');
+          const tests={geslaagd:288,mislukt:0,falend:[],uitleg:{uk:'Перевірки вигляду «Макет» (42), «Студії» (36), мобільного каскаду (22), геометрії (56), облікового запису (6), журналу розробки (16), передперевірки випуску (42) і розміщення (68), складання, перевірки типів і браузерні перевірки екранів пройдено в цьому запуску.',nl:'De tests van de weergave «Ontwerp» (42), de Studio (36), de mobiele cascade (22), geometrie (56), account (6), ontwikkeldossier (16), uitrolvoorcontrole (42) en plaatsing (68), de bouw, de typecontroles en de browserproeven voor schermen zijn in deze uitvoering geslaagd.'}};
+          writeFileSync(e.RUNNER_TEMP+'/TESTRESULTATEN.json',JSON.stringify(tests,null,2)+'\n');
+          writeFileSync('orchestratie/geinstalleerd.json',JSON.stringify({versie:e.BASIS_VERSIE,bronCommit:e.BASIS_COMMIT,bron:'geverifieerd_productie_api'},null,2)+'\n');
+          JS
+      - name: Архів та перевірка пакета
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent claude --platform 'Claude Code' \
+            --versie "$VERSIE" --uit uitvoer --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" \
+            --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+          printf 'IDENTITEIT-007 · Перевірена пропозиція (вигляд «Макет»). Встановлення лише власником через ключ доступу.\nBRON-COMMIT: %s\nОснова: %s @ %s\n' "$GITHUB_SHA" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Повторна перевірка чинного сервера
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/actuele-versie.json"
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const d=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/actuele-versie.json','utf8'));
+          if(d.versie!==process.env.BASIS_VERSIE||(d.bronCommit||d.commit)!==process.env.BASIS_COMMIT)throw Error('Встановлена основа змінилася; оприлюднення зупинено.');
+          JS
+      - name: Оприлюднити архів без встановлення
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "IDENTITEIT-007 · вигляд «Макет» · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/release.json"
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const e=process.env;
+          const p=`uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const hash=createHash('sha256').update(readFileSync(p)).digest('hex');
+          const r=JSON.parse(readFileSync(e.RUNNER_TEMP+'/release.json','utf8'));
+          const a=r.assets.find(x=>x.name===`mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if(r.draft||!a||a.state!=='uploaded'||a.digest!==`sha256:${hash}`)throw Error('Оприлюднений архів не збігається за контрольною сумою.');
+          JS
+      - name: У разі збою приховати непридатний випуск
+        if: failure() && steps.release.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти звіт виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: identiteit-007-controle
+          path: |
+            rapporten/identiteit-mobiel/
+            uitvoer/
+          if-no-files-found: ignore

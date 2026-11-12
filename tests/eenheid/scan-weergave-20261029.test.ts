@@ -71,10 +71,10 @@ export async function main(): Promise<number> {
 
   // 4. bron: de melding gebruikt de scheiding
   const melding = lees('src/afzenders/ContactenScanMelding.tsx'), paneel = lees('src/afzenders/ScanPaneel.tsx'), api = lees('src/afzenders/api.ts');
-  check('melding: «klein» wordt na (her)registratie teruggezet via vensterBeheer.minimaliseer', /if \(keuze === 'klein'\) vensterBeheer\.minimaliseer\(VENSTER_ID\)/.test(melding));
-  check('melding: Згорнути / terughalen uit het dok wordt bewaard (alleen een echte wissel)', /kies\(k \? 'klein' : 'open'\)/.test(melding) && /vorig === undefined/.test(melding));
-  check('melding: …/scan/auto via eenmaligAuto (niet per mount)', /eenmaligAuto\(\(\) => contactenApi\.scanAuto\(\)/.test(melding) && !/useEffect\(\(\) => \{ void contactenApi\.scanAuto\(\)/.test(melding));
-  check('melding: telefoonstrook volgt de bewaarde keuze', /onClick=\{\(\) => kies\(ingeklapt \? 'open' : 'klein'\)\}/.test(melding));
+  check('MAILSCAN-002: geen zwevend venster meer dat de mail afdekt', !melding.includes('<Venster') && !melding.includes('className=\'ctv-melding\''));
+  check('MAILSCAN-002: een korte melding verdwijnt vanzelf na twee seconden', melding.includes("window.setTimeout(() => zetKort(''), 2000)"));
+  check('MAILSCAN-002: …/scan/auto pas na toestemming per account en met begrenzing', melding.includes('zichtbareIds(s)') && melding.includes('eenmaligAuto(() => contactenApi.scanAuto(ids)'));
+  check('MAILSCAN-002: melding staat stil in het meldingenpaneel, zonder systeemvenster', melding.includes('alleenPaneel: true') && melding.includes("if (!kort) return null"));
   check('paneel: automatisch hervatten via reserveerHervatten, starten via eenStart', /if \(!reserveerHervatten\(\)\) return;/.test(paneel) && (paneel.match(/eenStart\(/g) || []).length >= 4);
   check('api: een mislukte statusvraag stopt het bijhouden niet meer (backoff, max 12)', /POLL_MAX_MISLUKT = 12/.test(api) && /plannenPoll\(Math\.min\(POLL_MAX_MS/.test(api) && !/scanStatus\(\)\.then\(zetScanStand\)\.catch\(\(\) => undefined\)/.test(api));
   return einde();

@@ -125,7 +125,8 @@ export async function main(): Promise<number> {
   const andere = await import('../../src/AanmeldAndereOpties');
   const ids = andere.AANMELD_INGANGEN.map((x) => x.id).join(',');
   check('4. volgorde van de eigenaar: GitHub, Apple, Microsoft, passkey — Google niet dubbel', ids === 'github,apple,microsoft,passkey');
-  check('4. passkey met de woorden van de eigenaar', andere.AANMELD_INGANGEN[3].titel[0] === 'Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено passkey');
+  // TELEGRAM-001 (09.11.2026): власник вимагає жодної англійської — «passkey» → «ключ доступу».
+  check('4. passkey met de woorden van de eigenaar (zonder Engels sinds 09.11)', andere.AANMELD_INGANGEN[3].titel[0] === 'Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу');
   // Eerlijkheid tegen de echte backend: zolang deze zinnen in de bron staan, kan geen van de vier een sessie geven.
   const koppel = lees('backend/aanmeld-koppel.ts'), sleutels = lees('backend/toegangssleutels.ts'), gh = lees('backend/github-oauth.ts');
   const backendKanGeenAndereAanmelding = koppel.includes('het geeft GEEN sessies uit') && sleutels.includes('Inloggen zonder Google met alleen een passkey kan (nog) NIET') && gh.includes('Echte OAuth-koppeling met GitHub');

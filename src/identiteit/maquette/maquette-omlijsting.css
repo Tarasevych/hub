@@ -1,0 +1,107 @@
+/* Оболонка вигляду «Макет» (IDENTITEIT-007): стик макета власника з оболонкою сайту. Ручні правила; згенеровані — у maquette-stijlen.css.
+   De aansluiting van het ontwerp op de omlijsting van de site: het ontwerp vult de hele werkruimte en brengt zijn eigen bovenbalk en dienstenbalk mee,
+   de omlijsting van de site is verborgen zolang de weergave open is. Чотири класи, як і в згенерованих стилях (0,4,0). */
+
+/* Поки вигляд відкритий, оболонка сайту захована: бічне меню, його край і кнопка «нагору» — зовсім; верхня смуга — невидима, але
+   меню облікового запису (інші акаунти, вихід) і сповіщення сайту з неї лишаються видимими, бо з макета немає іншого шляху до них. */
+html[data-identiteit-maquette='aan'] body .canonical-chrome .canonical-workspace{padding:0!important;scrollbar-gutter:auto} /* сильніше за mobiel-ux (html body …) */
+/* Прокручує робоча область сайту, а не html: правило html макета (плавна прокрутка, відступ 110px під липкою планкою) переносимо сюди. */
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{scroll-behavior:smooth;scroll-padding-top:110px}
+html[data-identiteit-maquette='aan'] .canonical-chrome :is(.canonical-sidebar,.canonical-sidebar-edge-zone,.canonical-scroll-top){display:none!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar{visibility:hidden;background:transparent;border:0;box-shadow:none;pointer-events:none}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar :is(.canonical-account-panel,.canonical-notification-toast){visibility:visible;pointer-events:auto}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-content{min-height:0}
+/* На телефоні меню облікового запису живе в шухляді бічного меню: поки шухляду відчинено на прохання з діалогу світлини, її видно. */
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical-sidebar{display:flex!important}
+
+/* Корінь займає всю робочу область сайту (її відступи, якщо є, знімаємо від'ємними полями, виміряними двигуном: --mq-site/-site-links/-rechts/-onder);
+   смугу сервісів макета враховує сам макет (.main-content{margin-left:var(--mq-links)}). */
+.mr-mq.mr-mq.mr-mq.mr-mq{
+  margin:calc(-1 * var(--mq-site,0px)) calc(-1 * var(--mq-rechts,0px)) calc(-1 * var(--mq-onder,0px)) calc(-1 * var(--mq-site-links,0px));
+  padding:var(--mq-site,0px) 0 0 var(--mq-site-links,0px);
+  min-height:100vh;
+  overflow-x:clip;
+  isolation:isolate;
+}
+/* Щит від правил сайту, що діставалися до елементів макета (список знято інструментами розробника: index.css, canoniek-omlijsting.css,
+   mobiel-ux.css…): там, де макет нічого не оголошує, повертаємо типові значення браузера (revert). Специфічність (0,4,0) через :where —
+   нижча за власні правила макета (класові 0,5,0 та елементні 0,4,1), тож вони лишаються головними; гнізда справжніх панелей не зачіпає.
+   Een schild tegen regels van de site: waar het ontwerp niets zegt, gelden weer de browserwaarden. */
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.hero):where(:not(.mq-echt *)){display:revert;margin:revert;padding:revert;gap:revert;align-items:revert;justify-content:revert;flex-direction:revert;border-radius:revert;box-shadow:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.hero p):where(:not(.mq-echt *)){max-width:revert;margin:revert;color:revert;line-height:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.topbar,.top-actions,.hero-actions):where(:not(.mq-echt *)){display:revert;align-items:revert;justify-content:revert;flex-wrap:revert;gap:revert;padding-bottom:revert;width:revert;min-width:revert;max-width:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.hero-actions > *):where(:not(.mq-echt *)){flex:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.hero-actions svg,.top-actions .secondary svg):where(:not(.mq-echt *)){width:revert;height:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.eyebrow):where(:not(.mq-echt *)){color:revert;font-size:revert;letter-spacing:revert;text-transform:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.section-card):where(:not(.mq-echt *)){display:revert;flex-direction:revert;min-width:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.setting-main):where(:not(.mq-echt *)){padding:revert;min-width:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.direct-settings):where(:not(.mq-echt *)){grid-template-columns:revert;padding:revert;gap:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.art):where(:not(.mq-echt *)){min-height:revert;height:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.section-inline-settings):where(:not(.mq-echt *)){padding-left:revert;padding-right:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(.avatar-mini):where(:not(.mq-echt *)){width:revert;height:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(h1,h2,h3,h4,h5,h6):where(:not(.mq-echt *)){font-size:revert;font-weight:revert;color:revert;overflow-wrap:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(small):where(:not(.mq-echt *)){font-size:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(summary):where(:not(.mq-echt *)){display:revert;min-height:revert;cursor:revert;align-items:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(button,[role='button'],select,input,textarea):where(:not(.mq-echt *)){min-height:revert;max-width:revert;min-width:revert;color:revert;font-size:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(button,a,summary):where(:has(> svg:only-child)):where(:not(.mq-echt *)){display:revert;align-items:revert;justify-items:revert;justify-content:revert;align-content:revert;line-height:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(button,a,summary) > :where(svg:only-child):where(:not(.mq-echt *)){display:revert;flex:revert;margin:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(code,kbd,samp,pre):where(:not(.mq-echt *)){font-family:revert;font-size:revert;font-feature-settings:revert;font-variation-settings:revert;overflow-wrap:revert;word-break:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(label):where(:not(.mq-echt *)){color:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(input[type='checkbox'],input[type='radio'],input[type='range']):where(:not(.mq-echt *)){accent-color:revert}
+/* Базові скидання сайту (preflight: межі, svg блоком і 1rem, поля абзаців і заголовків 0, кнопки без відступів і тла, strong bolder,
+   min-width:0 / max-width:100% на всіх блоках) — у макеті повертаємо типові значення браузера, на які він розрахований. */
+.mr-mq.mr-mq.mr-mq.mr-mq :where(*):where(:not(.mq-echt *)){border-style:revert;border-color:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(img,svg,video,canvas,audio,iframe,embed,object):where(:not(.mq-echt *)){display:revert;vertical-align:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(svg):where(:not(.mq-echt *)){width:revert;height:revert;stroke-width:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(b,strong):where(:not(.mq-echt *)){font-weight:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre):where(:not(.mq-echt *)){margin:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(button,input,optgroup,select,textarea):where(:not(.mq-echt *)){margin:revert;padding:revert;font-family:revert;font-size:revert;font-weight:revert;line-height:revert;letter-spacing:revert;color:revert;font-feature-settings:revert;font-variation-settings:revert;text-transform:revert;appearance:revert;background-color:revert;background-image:revert}
+.mr-mq.mr-mq.mr-mq.mr-mq :where(div,section,article,header,footer,main,nav,aside,form,fieldset,p,ul,ol,li,dl,dt,dd,label,table,pre,figure,details,summary,span,h1,h2,h3,h4,strong,em,small,kbd,a):where(:not(.mq-echt *)){min-width:revert;max-width:revert}
+/* Елементне правило footer сайту (ширина 80rem, центрування, дрібний шрифт, на телефоні стовпчик) не стосується підвалу макета. */
+.mr-mq.mr-mq.mr-mq.mr-mq :where(footer):where(:not(.mq-echt *)){position:revert;z-index:revert;width:revert;max-width:revert;margin:revert;padding:revert;display:revert;align-items:revert;justify-content:revert;flex-direction:revert;gap:revert;border-top:revert;color:revert;font-size:revert;line-height:revert}
+/* Заголовки сайту мають шрифт Georgia (index.css); у макеті вони успадковують Inter, курсив героя лишає свій Georgia (власне правило макета сильніше). */
+.mr-mq.mr-mq.mr-mq.mr-mq :where(h1,h2,h3,h4):not(.mq-echt *){font-family:inherit}
+/* Знак «Мій простір» у смузі сервісів: у макеті був посиланням, тут кнопка — без тла й рамки кнопки. */
+.mr-mq.mr-mq.mr-mq.mr-mq .brand-mark{background:transparent;padding:0;cursor:pointer;text-align:start}
+
+/* Монограма підвалу: у макеті grid розкладав «M», «·», «R» у три рядки (вада макета, видно й на оригінальних знімках); тут — в один рядок. */
+.mr-mq.mr-mq.mr-mq.mr-mq .footer-monogram{display:flex;align-items:center;justify-content:center;gap:1px}
+
+/* Діалог світлини: дві кнопки в стовпчик (до розділу «Акаунт» і до меню облікового запису). */
+.mr-mq.mr-mq.mr-mq.mr-mq .profile-photo-picker{display:block;width:100%;margin-top:10px}
+.mr-mq.mr-mq.mr-mq.mr-mq .profile-photo-account{background:rgba(var(--global-rgb),.14);color:var(--text);border:1px solid rgba(var(--global-rgb),.35)}
+
+/* Гніздо справжньої панелі: шрифти й кольори сайту всередині, щоб форми, кнопки та попередження виглядали як у решті застосунку. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt{display:block;min-width:0}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud{
+  --mq-paneel-bg:color-mix(in srgb,var(--surface) 86%,transparent);
+  font-family:'Trebuchet MS',Verdana,sans-serif;font-size:14px;line-height:1.35;color:var(--text);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud :where(h1,h2,h3){font-family:Georgia,'Times New Roman',serif}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud svg{width:1rem;height:1rem;stroke-width:1.9}
+/* Панель сайту всередині блоку без власної рамки: рамка й тло — від картки або розгорнутої панелі макета. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center{padding:0;margin:0;border:0;background:transparent;box-shadow:none}
+/* Блок «Чинні налаштування» у стилі «Можливостей для доопрацювання»; у вкладеній панелі він іде після робочої області. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok .future-section-flower{font-size:21px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok[open] .future-section-head{margin-bottom:0}
+
+/* Перемикач вигляду (макет / «Студія» / класичний) у вікні навігації та під підвалом — у стилі макета. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving{margin-top:14px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving-voet{display:flex;justify-content:center;padding:0 0 42px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;font-size:12px;color:var(--muted)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer .ia-vormgeving-label{margin-right:4px;letter-spacing:.06em;text-transform:uppercase;font-size:10px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button{
+  min-height:30px;padding:5px 11px;border-radius:999px;border:1px solid var(--card-border);background:var(--surface);color:var(--text);
+  font:inherit;font-size:12px;cursor:pointer;transition:background .2s,border-color .2s,color .2s!important;
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button:hover{border-color:rgba(var(--global-rgb),.55)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button.is-actief{background:rgba(var(--global-rgb),.18);border-color:rgba(var(--global-rgb),.6);color:var(--text)}
+
+/* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів. */
+@media(max-width:730px){
+  /* Вікно навігації на телефоні прив'язане знизу; з перемикачем вигляду воно вище за екран 844 px — тож прокручується всередині. */
+  .mr-mq.mr-mq.mr-mq.mr-mq.bp-max-730 .popover-panel{max-height:calc(100dvh - var(--mq-site,0px) - 97px);overflow:auto;overscroll-behavior:contain}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving-voet{padding:0 14px 110px}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer{justify-content:center}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button{min-height:var(--tik-hoogte,40px)}
+}

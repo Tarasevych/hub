@@ -23,6 +23,12 @@ export const TECH_BESTANDEN: readonly RegExp[] = [
   /^src\/UitrolMeester\.tsx$/,
 ];
 export const TECH_MARKERING = '// @tech-asset';
+// Bewust openbaar BINNEN een technische map: de integratiestrook staat op gewone pagina's (Пошта, Хмара, Дім, GitHub, API).
+// Tot PERF-001 (09.11.2026) zat ze toevallig in de ingangsbundel; sinds GitHub/API lui laden krijgt ze een eigen chunk, en die
+// werd «technisch» → zonder tech-cookie 403 op openbare pagina's. Відкритий смуговий блок інтеграцій потрібен звичайним сторінкам.
+export const TECH_OPENBAAR: readonly string[] = [
+  'src/integraties/IntegratieStrook.tsx', 'src/integraties/catalogus-vlag.ts', 'src/integraties/integraties.css',
+];
 
 /** Pad van een module (absoluut of relatief, met of zonder ?query) naar 'src/…' relatief aan de repo; '' als het geen eigen bron is. */
 export function bronPad(id: string, wortel = ''): string {
@@ -40,6 +46,7 @@ export function bronPad(id: string, wortel = ''): string {
 export function isTechModule(id: string, wortel = '', lees?: (pad: string) => string): boolean {
   const rel = bronPad(id, wortel);
   if (!rel) return false;
+  if (TECH_OPENBAAR.includes(rel)) return false;
   if (TECH_MAPPEN.some((m) => rel.startsWith(m))) return true;
   if (TECH_BESTANDEN.some((r) => r.test(rel))) return true;
   if (lees) { try { return lees(rel).trimStart().startsWith(TECH_MARKERING); } catch { return false; } }

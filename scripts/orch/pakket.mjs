@@ -25,6 +25,8 @@ export function basisVoorPakket(wortel, beleid) {
 
 const GENERIEKE_AUTEUR = /^(власник|eigenaar|owner|admin|administrator|адміністратор|user|користувач|gebruiker|автор|auteur|author|невідомо|onbekend|unknown)$/i;
 const ALLEEN_FAMILIE = /^(claude|grok|gpt|gemini|cursor|copilot|llama|mistral|ai|llm|onbekend|unknown|невідомо)$/i;
+// TRACE-001: dezelfde takvorm als de site en de rootcontrole; integratie is geen taak-tak.
+const ONTWIKKEL_TAK = /^(functie|herstel|controle|feature|fix|audit|release)\/[a-z0-9]+(?:-[a-z0-9]+)*-\d{8}-\d{6}$/;
 
 function bepaalAuteur(opgegeven, git) {
   const ruw = String(opgegeven ?? '').trim();
@@ -58,6 +60,11 @@ export function maakOverdrachtPakket(o) {
   const head = git('rev-parse', 'HEAD'); const tak = git('branch', '--show-current') || taak.tak;
   const versie = o.versie ?? versieNu(nu);
   if (!VERSIE.test(versie)) return { zaken: [fout('VERSIE_ONGELDIG', `версія ${versie}: РРРРММДД-ГГХХСС`, `versie ${versie}: JJJJMMDD-UUMMSS`)] };
+  if (versie >= '20261103-211555' && !ONTWIKKEL_TAK.test(tak)) {
+    return { zaken: [fout('ONTWIKKELARCHIEF_TAK_ONGELDIG',
+      `гілка ${tak} не є гілкою завдання TRACE-001 — створіть гілку functie/herstel/controle (або давню feature/fix/audit/release) від потрібної фіксації змін`,
+      `tak ${tak} is geen geldige TRACE-001-taaktak — maak een functie/herstel/controle-tak (of de oude feature/fix/audit/release) vanaf de juiste commit`)] };
+  }
   // Дві бази, свідомо різні: (1) ВСТАНОВЛЕНА (geinstalleerd.json/beleid.basis) → UITROL-BASIS у tar — її звіряє root-інсталятор;
   // (2) база ГІЛКИ задачі (taak.basisCommit — від чого агент відгалузився) → basisCommit в ORCH-OVERDRACHT — від неї inleveren відтворює
   // зміни й рахує коміти/файли. Twee bases: geïnstalleerde (voor de installer) en de basis van de taak-tak (voor inleveren).
@@ -88,6 +95,8 @@ export function maakOverdrachtPakket(o) {
       let dossier;
       try { dossier=JSON.parse(bytes.toString('utf8')); } catch { return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','неправильний JSON журналу','ongeldige JSON van dossier')] }; }
       if (dossier?.schema !== 1 || dossier?.taakId !== o.taakId ||
+          typeof dossier?.opdracht !== 'string' || dossier.opdracht.trim().length < 40 ||
+          dossier?.privacy?.geheimenUitgesloten !== true ||
           !['tijdlijn','keuzes','wijzigingen','controles','bronnen','beperkingen'].every((k)=>Array.isArray(dossier[k]) && dossier[k].length)) {
         return { zaken: [fout('ONTWIKKELARCHIEF_ONGELDIG','журнал без обов’язкових розділів','dossier mist verplichte rubrieken')] };
       }

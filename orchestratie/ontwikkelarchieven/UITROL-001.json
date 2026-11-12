@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "taakId": "UITROL-001",
+  "datum": "2026-11-09",
+  "taal": "uk",
+  "opdracht": "З'ясувати, чому сайт не виявив на власному етапі перевірки, що випуск 20261109-065647 містить міграцію 0200 з описом на 301 знак проти CHECK ≤ 300, а натомість завантажив архів і впав під час установлення; модернізувати Admin → Оновлення: видима перевірка вимог до завантаження, живий журнал реальних подій з часом і тривалістю, розгортані етапи, кнопка зупинки на кожному етапі, звіт про проблему для агента, сучасний адаптивний дизайн без послаблення безпеки.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "model": "onbekend",
+    "repo": "Tarasevych/hub",
+    "basisTak": "integratie",
+    "basisCommit": "4c9786c5d46b99e3d3bfa7be7fdb4279f75e8e57",
+    "integratieBasis": "4c9786c5d46b99e3d3bfa7be7fdb4279f75e8e57",
+    "geinstalleerdeVersie": "визначається процесом випуску з /api/version: 20261109-083614 @ b025c713, 20261109-060206 @ 4d71a818 або 20261109-065647 @ bc16016a",
+    "tak": "feature/uitrol-001-20261109-102608",
+    "prTak": "claude/project-thread-4pq3u6"
+  },
+  "bronnen": [
+    {
+      "soort": "запит власника",
+      "omschrijving": "Чому сайт не зловив зламану міграцію 0200 до завантаження; потрібні видимі перевірки вимог, живий журнал з мітками часу й тривалістю, розгортані етапи, кнопка звіту про проблему, сучасний дизайн, безпека без послаблень.",
+      "bewijzen": [
+        "Повідомлення власника від 09.11.2026 08:54 у треді проєкту"
+      ]
+    },
+    {
+      "soort": "запит власника",
+      "omschrijving": "Анімований інтерфейс без обрізаного тексту; термінал як вікно (розтягнути, згорнути, на весь екран, повернути); кольорові мітки; кирилиця/латиниця/emoji, мова термінала = мова сайту; сповіщення про оновлення не з'являється, якщо оновлення вже встановлено; кнопка зупинки на кожному етапі; жоден елемент не можна підробити.",
+      "bewijzen": [
+        "Повідомлення власника від 09.11.2026 09:33 у треді проєкту"
+      ]
+    },
+    {
+      "soort": "інцидент",
+      "omschrijving": "Встановлення 20261109-065647 впало на міграції 0200_identiteit_account_maquette: опис перемикача 301 знак, CHECK feature_flags_omschrijving_check ≤ 300; інсталятор відкотився, трафік змарновано. Обмеження існує лише в базі даних, тому статична передперевірка його не бачила.",
+      "bewijzen": [
+        "migrations/0200_identiteit_account_maquette.sql",
+        "backend/uitrol-voorcontrole.ts"
+      ]
+    },
+    {
+      "soort": "макет",
+      "omschrijving": "Макети телефон/ПК у двох темах погоджено власником («Погоджую з правками») до реалізації інтерфейсу.",
+      "bewijzen": [
+        "Картка рішення у треді від 09.11.2026"
+      ]
+    }
+  ],
+  "tijdlijn": [
+    {
+      "volgorde": 1,
+      "stap": "Аналіз: передперевірка пакета (pakketVoorcontrole) читає структуру, метадані, маніфест і список міграцій, але не виконує SQL; обмеження CHECK у таблиці feature_flags (міграція 0038) видно лише при виконанні. Рішення: проба міграцій на копії схеми до завантаження.",
+      "bewijzen": [
+        "backend/uitrol-voorcontrole.ts",
+        "migrations/0038_feature_flags.sql"
+      ]
+    },
+    {
+      "volgorde": 2,
+      "stap": "Root-скрипт mijn-ruimte-migratie-proef.sh: клонує схему (pg_dump --schema-only разом із app.schema_migrations) у тимчасову базу mijnruimte_proef_<штамп>, виконує нові міграції від імені користувача застосунку з роллю migrator через node (без psql, без postgres), видаляє базу. installeer-app.sh робить пробу першим кроком (proef 44).",
+      "bewijzen": [
+        "deploy/uitrol/mijn-ruimte-migratie-proef.sh",
+        "deploy/installeer-app.sh",
+        "server/migratie-proef.ts"
+      ]
+    },
+    {
+      "volgorde": 3,
+      "stap": "Маршрути власника /api/owner/uitrol/vereisten, /vereisten/proef, /vereisten/stand з обмеженням частоти й аудитом; браузер читає архів локально і надсилає лише опис і SQL нових міграцій (≤ 1 МБ). Картка «Перевірка вимог до встановлення», журнал з мілісекундами, звіт про проблему (копіювання, .md, маскування секретів).",
+      "bewijzen": [
+        "backend/uitrol-vereisten.ts",
+        "src/uitrol/Vereisten.tsx",
+        "src/uitrol/ProbleemRapport.tsx"
+      ]
+    },
+    {
+      "volgorde": 4,
+      "stap": "Зупинка власником: stop.json у passkey-inbox (перевірка версії/run, ≤ 1 год, лише звичайний файл). До старту → GESTOPT; під час установлення < 90 % → група процесів зупиняється (setsid), статус mislukt GESTOPT; ≥ 90 % → STOP_TE_LAAT. installeer-app.sh: trap TERM/INT/HUP, код 143. Сервер: POST /api/owner/uitrol/run/stoppen зі step-up і причиною; аудит uitrol_stop_aangevraagd.",
+      "bewijzen": [
+        "deploy/uitrol/mijn-ruimte-uitrol.sh",
+        "backend/uitrol-goedkeuring.ts",
+        "tests/eenheid/uitrol-goedkeuring.test.ts"
+      ]
+    },
+    {
+      "volgorde": 5,
+      "stap": "Прив'язка проби до архіву: сесія проби зберігає sha256 архіву й кожного SQL; контроль migratie-proef у передперевірці (без проби — попередження, інший SQL — помилка). Сповіщення «чекає схвалення» закриваються, коли пропозицію встановлено, відхилено чи зупинено.",
+      "bewijzen": [
+        "backend/uitrol-voorcontrole.ts",
+        "backend/melder.ts",
+        "tests/eenheid/uitrol-vereisten-001.test.ts"
+      ]
+    },
+    {
+      "volgorde": 6,
+      "stap": "Інтерфейс: конвеєр із 8 вузлів із тривалостями з рядків «[installeer] stap: …»; термінал-вікно (висота, згортання, на весь екран, повернення), кольорові мітки рядків, переклад увімкнено за замовчуванням; кнопки скасування в майстрі; «Ланцюг довіри». Знімки телефон/ПК у двох темах і з prefers-reduced-motion перевірено на переповнення.",
+      "bewijzen": [
+        "src/uitrol/Conveyor.tsx",
+        "src/uitrol/conveyor-stand.ts",
+        "src/uitrol/Terminal.tsx",
+        "shared/terminal-tags.ts",
+        "tests/eenheid/uitrol-conveyor.test.ts"
+      ]
+    },
+    {
+      "volgorde": 7,
+      "stap": "Гілка випуску від гілки PR #57 (основа integratie 4c9786c5) зі злиттям гілки випуску PERF-001 (b025c713), щоб усі можливі встановлені основи були предками; процес випуску читає встановлену основу з /api/version і проганяє всі міграції на чистій базі двічі.",
+      "bewijzen": [
+        ".github/workflows/uitrol-001-uitgave.yml",
+        "orchestratie/taken/UITROL-001.json"
+      ]
+    }
+  ],
+  "keuzes": [
+    {
+      "keuze": "Проба міграцій на копії схеми замість статичного розбору SQL",
+      "reden": "Обмеження CHECK, тригери й типи живуть лише в базі; тільки виконання на справжній схемі дає ту саму помилку, що й установлення.",
+      "alternatief": "Розбирати SQL і звіряти з переліком відомих обмежень (неповно, застаріває)."
+    },
+    {
+      "keuze": "Зупинка лише до перемикання (< 90 %), далі STOP_TE_LAAT",
+      "reden": "Після перемикання символьного посилання сайт не можна лишати напівперемкненим; у разі збою діє автоматичний відкат.",
+      "alternatief": "Дозволити зупинку завжди з ручним відкатом (ризик непослідовного стану)."
+    },
+    {
+      "keuze": "Запит на зупинку — файл stop.json у passkey-inbox, що його читає root",
+      "reden": "Сайт не має прав керувати процесами root; inbox уже є єдиним довіреним каналом із перевіркою вмісту (розмір, тип файлу, вік, версія).",
+      "alternatief": "Сигнал процесу через systemd із сайту (потребує нових прав)."
+    },
+    {
+      "keuze": "Проба прив'язана до sha256 архіву, передперевірка звіряє SQL із пробою",
+      "reden": "Інакше можна було б перевірити один SQL, а завантажити інший; тепер підміна дає помилку до схвалення passkey.",
+      "alternatief": "Довіряти клієнтському звіту про пробу."
+    },
+    {
+      "keuze": "Старий список дев'яти підетапів у живій картці прибрано",
+      "reden": "Конвеєр показує ті самі підетапи з реальними часом і тривалістю; старий список помилково показував «помилка» на міграціях при зупинці під час npm.",
+      "alternatief": "Лишити обидва списки."
+    },
+    {
+      "keuze": "Гілка випуску містить злиття гілки PERF-001",
+      "reden": "Випуск 20261109-083614 (PERF-001) оприлюднено й, імовірно, встановлено; випуск мусить бути надмножиною встановленого, інакше перевірка предка не пройде, а встановлення відкотило б прискорення.",
+      "alternatief": "Випуск лише з UITROL-001 від integratie (провалив би перевірку основи)."
+    }
+  ],
+  "wijzigingen": [
+    {
+      "pad": "deploy/uitrol/mijn-ruimte-migratie-proef.sh, deploy/mijn-ruimte-proef.path, deploy/mijn-ruimte-proef.service",
+      "omschrijving": "Root-проба нових міграцій на копії схеми в тимчасовій базі; запит через захищену теку."
+    },
+    {
+      "pad": "deploy/uitrol/mijn-ruimte-uitrol.sh, deploy/installeer-app.sh",
+      "omschrijving": "Зупинка власником (stop.json, GESTOPT, STOP_TE_LAAT, stap-pct), trap сигналів з назвою підетапу, проба першим кроком."
+    },
+    {
+      "pad": "backend/uitrol-vereisten.ts, backend/uitrol-voorcontrole.ts, backend/uitrol-goedkeuring.ts, backend/melder.ts, backend/index.ts",
+      "omschrijving": "Маршрути вимог і проби, прив'язка проби до sha256, маршрут зупинки, закриття сповіщень про схвалення."
+    },
+    {
+      "pad": "shared/uitrol-codes.ts, shared/terminal-taal.ts, shared/terminal-tags.ts, src/platform/tar-lezen.ts",
+      "omschrijving": "Коди GESTOPT/STOP_TE_LAAT, переклади нових рядків журналу, кольорові мітки рядків, читання міграцій з архіву в браузері."
+    },
+    {
+      "pad": "src/uitrol/Vereisten.tsx, ProbleemRapport.tsx, Conveyor.tsx, conveyor-stand.ts, Terminal.tsx, LiveKaart.tsx, Upload.tsx, uitrol.css, vereisten.css",
+      "omschrijving": "Картка вимог, звіт про проблему, конвеєр, термінал-вікно з мітками, кнопки скасування/зупинки, ланцюг довіри, адаптивні стилі."
+    },
+    {
+      "pad": "migrations/0200_identiteit_account_maquette.sql",
+      "omschrijving": "Виправлений опис перемикача (286 знаків) з гілки IDENTITEIT-007."
+    },
+    {
+      "pad": "tests/eenheid/uitrol-vereisten-001.test.ts, uitrol-conveyor.test.ts, uitrol-goedkeuring.test.ts, uitrol-weergave-v2.test.ts",
+      "omschrijving": "Проба на справжньому PostgreSQL 16, конвеєр і мітки, зупинка (root і маршрут), пошук python-блоку від початку блоку."
+    },
+    {
+      "pad": ".github/workflows/uitrol-001-uitgave.yml, orchestratie/taken/UITROL-001.json, orchestratie/ontwikkelarchieven/UITROL-001.json",
+      "omschrijving": "Процес випуску з перевіркою встановленої основи, задача та це досьє."
+    }
+  ],
+  "controles": [
+    {
+      "opdracht": "node scripts/eenheidstests.mjs uitrol-vereisten-001.test.ts",
+      "uitkomst": "56 із 56 успішно (справжній PostgreSQL 16; зламана 0200 дає 23514, рядок 7, 301 > 300)"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs uitrol-goedkeuring.test.ts",
+      "uitkomst": "206 із 207 (7 випадків зупинки root + маршрут; 1 збій лише середовища: роль mijnruimte_app без доступу до таблиць)"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs uitrol-conveyor.test.ts",
+      "uitkomst": "37 із 37 успішно"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs uitrol-deur / uitrol-runs / uitrol-codes / terminal-kleur / ui-audit-g / terminal-opdrachten-20261022",
+      "uitkomst": "126/126, 46/46, 17/17, 18/18, 59/59, 67/67"
+    },
+    {
+      "opdracht": "node scripts/eenheidstests.mjs mobiel-cascade-20261105 / mobiel-geometrie-20261021 / uitrol-weergave-v2 / uitrol-pogingen-20261020 / uitrol-kopieerknop-20261030 / tech-bundels",
+      "uitkomst": "22/22, 56/56, 29/29, 38/38, 19/19, 34/34"
+    },
+    {
+      "opdracht": "node scripts/plaatsing-controle.mjs; kaart-controle; hulp-vraagtekens-controle; kleur-contrast-controle",
+      "uitkomst": "усе в порядку (0 помилок)"
+    },
+    {
+      "opdracht": "npx tsc -p tsconfig.json --noEmit; npm run build (vite); npm run build:server",
+      "uitkomst": "без помилок (крім відомих помилок заглушки xlsx у хмарному середовищі)"
+    },
+    {
+      "opdracht": "Знімки Playwright 360/390/1100 px, світла й темна теми, prefers-reduced-motion, стани bezig/gestopt/klaar/stopveld/volledig/ingeklapt",
+      "uitkomst": "жоден елемент не виходить за межі viewport, помилок консолі немає"
+    }
+  ],
+  "beperkingen": [
+    "Живий сайт із хмари недоступний (проксі блокує *.tarasevych.com): кінцеву перевірку зупинки й конвеєра на справжньому сервері робить власник після встановлення.",
+    "Зупинка діє лише в режимі passkey (пакет з inbox); установлення через SSH чи підпис сайт зупинити не може.",
+    "Проба міграцій перевіряє SQL на копії схеми з порожніми даними: обмеження, що залежать від наявних рядків, виявляться лише під час установлення (з автоматичним відкатом).",
+    "Переклад рядків термінала покриває власні повідомлення root-скрипта й інсталятора; вивід сторонніх програм (npm, vite, psql) лишається мовою оригіналу."
+  ],
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Жодних паролів, ключів, cookie чи вмісту листів; тестова база з випадковим локальним паролем, значення не виводились; у звіті про проблему секрети й паролі в URL маскуються."
+  }
+}

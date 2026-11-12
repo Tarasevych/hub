@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "taakId": "MAILBG-001",
+  "agent": "codex",
+  "agentPlatform": "ChatGPT",
+  "model": { "id": "GPT-6", "versie": null, "bron": "omgeving" },
+  "basisCommit": "4c9786c5d46b99e3d3bfa7be7fdb4279f75e8e57",
+  "basisVersie": "20261105-061659",
+  "basisBron": "integratie",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "tak": "feature/mailbg-001-20261109-161500",
+  "kanaal": "github_pr",
+  "zonderGit": null,
+  "commits": [],
+  "bestanden": {
+    "gewijzigd": ["src/CanoniekOmlijsting.tsx", "src/MailAccountsHub.tsx", "src/mail/MailOrbitIntro.tsx"],
+    "toegevoegd": [
+      "src/mail/MailAchtergrond.tsx",
+      "src/mail/mail-achtergrond.css",
+      "tests/e2e/hulp/mail-achtergrond-voorbeeld.html",
+      "tests/e2e/hulp/mail-achtergrond-voorbeeld.tsx",
+      "tests/eenheid/mail-achtergrond-001.test.ts",
+      "orchestratie/taken/MAILBG-001.json"
+    ],
+    "verwijderd": []
+  },
+  "samenvatting": {
+    "uk": "Спільне рухоме тло сторінок входу до пошти та керування поштовими скриньками; права кнопка перемикає лінзу, налаштування зберігаються між сторінками, поштові дії залишаються незалежними.",
+    "nl": "Eén bewegende achtergrond voor aanmelden en e-mailaccounts; rechtermuisklik schakelt de vergrootlens in of uit, voorkeuren blijven bewaard en de bestaande e-mailhandelingen blijven onafhankelijk."
+  },
+  "tests": {
+    "geslaagd": 30,
+    "mislukt": 0,
+    "falend": [],
+    "uitleg": {
+      "uk": "12 перевірок нового тла й 15 перевірок наявного поштового блоку; складання клієнтської частини та перевірки типів клієнта й сервера успішні. Реальне випробування мишкою й на смартфоні не завершено через обмеження запуску локального браузера.",
+      "nl": "12 controles van de nieuwe achtergrond en 15 controles van de bestaande e-mailkeuze; bouw van de client en typecontroles van client en server geslaagd. Praktische muis- en telefooncontrole niet afgerond omdat de lokale browser niet kon starten."
+    }
+  },
+  "nietGedaan": {
+    "uk": "Не встановлено на робочий сервер; поточну встановлену версію та її фіксацію змін не звірено. Потрібні окрема перевірка в справжньому браузері та погоджене розгортання.",
+    "nl": "Niet op de werkserver geïnstalleerd; de werkelijk geïnstalleerde versie en wijzigingsvastlegging zijn niet vastgesteld. Een aparte browsertest en goedgekeurde uitrol blijven nodig."
+  },
+  "conflicten": [],
+  "aangemaakt": "2026-11-09T19:47:49.325Z"
+}

@@ -5,6 +5,7 @@ import { api } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
 import type { AfzenderBron, AfzenderStatus, BewijsRegel, DnsBewijs, VertrouwensNiveau } from '../../shared/mail-afzenders';
 import { normaliseerScanBeleid, type ScanBeleid } from '../../shared/mail-scan-beleid';
+import type { ScanVoorkeur } from '../../shared/contacten-scan-voorkeuren';
 
 export type AfzenderInfo = { adres: string; naam: string; domein: string; status: AfzenderStatus; bron: AfzenderBron | null; reden: string; merk: string; opgeslagen: boolean; bericht?: 'auth-mislukt' | ''; notitie?: string };
 export const mailContext = () => ({ service: 'mail', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
@@ -104,6 +105,7 @@ export type ScanStand = {
   tellers: { contacten: number; geverifieerd: number; verdacht: number; geschreven: number; officieel: number; dns: number };
   /** 0075: de bewaarde keuze «запам'ятати вибір» en hoeveel pogingen de server doet. */
   beleid?: ScanBeleid; maxPogingen?: number;
+  gekoppeld?: Array<{ accountId: string; email: string; voorkeur: ScanVoorkeur }>;
 };
 export const contactenApi = {
   lijst: (b: { zoek?: string; filter?: ContactFilter; sorteer?: ContactSortering; pagina?: number; perPagina?: number }) => api.post('/api/owner/mail/contacten/lijst', { ...mailContext(), ...b }).then((r) => r.data as ContactLijst),
@@ -111,8 +113,9 @@ export const contactenApi = {
   verdacht: (adres: string) => api.post('/api/owner/mail/contacten/verdacht', { ...mailContext(), adres, bevestig: true }).then((r) => r.data.afzender),
   contact: (adres: string, aan: boolean) => api.post('/api/owner/mail/contacten/contact', { ...mailContext(), adres, aan }).then((r) => r.data.afzender),
   scanStatus: () => api.post('/api/owner/mail/contacten/scan/status', mailContext()).then((r) => r.data.scan as ScanStand),
-  scanStart: (b: { opnieuw?: boolean; bijwerken?: boolean } = {}) => api.post('/api/owner/mail/contacten/scan/start', { ...mailContext(), ...b }).then((r) => r.data.scan as ScanStand),
-  scanAuto: () => api.post('/api/owner/mail/contacten/scan/auto', mailContext()).then((r) => r.data.scan as ScanStand),
+  scanStart: (b: { opnieuw?: boolean; bijwerken?: boolean; accountIds?: string[] } = {}) => api.post('/api/owner/mail/contacten/scan/start', { ...mailContext(), ...b }).then((r) => r.data.scan as ScanStand),
+  scanAuto: (accountIds?: string[]) => api.post('/api/owner/mail/contacten/scan/auto', { ...mailContext(), ...(accountIds ? { accountIds } : {}) }).then((r) => r.data.scan as ScanStand),
+  scanVoorkeur: (accountId: string, voorkeur: ScanVoorkeur) => api.post('/api/owner/mail/contacten/scan/voorkeur', { ...mailContext(), accountId, voorkeur }).then((r) => r.data.scan as ScanStand),
   scanPauze: () => api.post('/api/owner/mail/contacten/scan/pauze', mailContext()).then((r) => r.data.scan as ScanStand),
   scanStop: () => api.post('/api/owner/mail/contacten/scan/stop', mailContext()).then((r) => r.data.scan as ScanStand),
   taakStart: (soort: 'onbekend' | 'rest' | 'verdacht') => api.post('/api/owner/mail/contacten/taak/start', { ...mailContext(), soort }).then((r) => r.data.taak),

@@ -108,8 +108,9 @@ export async function main(): Promise<number> {
   // Punt 15 (19.10.2026): de lijst «welke fout is tijdelijk» staat niet meer als losse regex in de backend maar in
   // shared/mail-scan-beleid.ts (isTijdelijkeScanFout — dezelfde code in de browser en op de server). SCOPE_REQUIRED blijft er
   // apart bij staan, omdat één verzoek na een uur bewijst of die fout nog geldt. Zie contacten-hervatten-20261019.test.ts.
-  check('F2: contactenScanAuto hervat ook na een (vermeende) scope-fout ouder dan 1 u', /isTijdelijkeScanFout\(a\.fout\)/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
+  check('F2: automatisch hervatten na een tijdelijke fout vereist ook afzonderlijke toestemming', /isTijdelijkeScanFout\(st\.fout\)/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
     && /SCOPE_REQUIRED/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
+    && /!a\.voorkeur\.aan/.test(readFileSync('backend/mail-afzenders.ts', 'utf8'))
     && ['GOOGLE_MAIL_RATE_LIMITED', 'GOOGLE_MAIL_PROVIDER_UNAVAILABLE', 'SCAN_MISLUKT'].every((c) => isTijdelijkeScanFout(c)));
 
   // ================================================================ 2. DNS met nep-DNS
@@ -179,6 +180,14 @@ export async function main(): Promise<number> {
   const rij = async (adres: string, u = A) => (await sys.query('SELECT status, reden, aantal, verzonden, accounts, officieel, organisatie, vertrouwen, in_contacten FROM app.mail_afzenders WHERE user_id = $1 AND adres = $2', [u, adres])).rows[0];
   try {
     check('vóór de controle: stand «nooit», markeringen uit', (await roep('contacten/scan/status')).b.scan?.staat === 'nooit' && !(await markeringenAan(A)));
+    const zonderToestemming = await roep('contacten/scan/auto');
+    check('MAILSCAN-002: без згоди жодна скринька не перевіряється', zonderToestemming.status === 200 && !zonderToestemming.b.scan?.loopt
+      && zonderToestemming.b.scan?.gekoppeld?.every((x: any) => x.voorkeur.aan === false));
+    for (const accountId of ['acc-1', 'acc-2']) {
+      const toestemming = await roep('contacten/scan/voorkeur', { accountId, voorkeur: { aan: true, werkwijze: 'periodiek', intervalMinuten: 15 } });
+      check(`MAILSCAN-002: окрема згода ${accountId}`, toestemming.status === 200
+        && toestemming.b.scan?.gekoppeld?.find((x: any) => x.accountId === accountId)?.voorkeur.aan === true);
+    }
     // Pagina 2 van mailbox 1 faalt steeds (tijdelijke Gmail-limiet) → «fout» na de herhalingen; mailbox 2 loopt wel door.
     lijstFout = (acc, tok) => (acc === 'acc-1' && tok === 'p50' ? 'GOOGLE_MAIL_RATE_LIMITED' : null);
     const auto = await roep('contacten/scan/auto');
@@ -217,7 +226,7 @@ export async function main(): Promise<number> {
 
     // Pauze en stop tijdens het lopen.
     kopVertraging = 15;
-    await roep('contacten/scan/start', { opnieuw: true });
+    await roep('contacten/scan/start', { bijwerken: true });
     const pz = await roep('contacten/scan/pauze');
     check('pauze: tijdens het lopen → «gepauzeerd», hervatbaar; auto start hem niet vanzelf opnieuw', pz.b.scan?.staat === 'gepauzeerd' && pz.b.scan?.loopt === false && (await contactenScanAuto(A, Date.now() + 3600_000)).automatisch !== true, JSON.stringify(pz.b.scan?.accounts));
     const st = await roep('contacten/scan/stop');
@@ -301,7 +310,9 @@ export async function main(): Promise<number> {
     const leegHtml = renderToString(createElement(ContactenWeergave, { lang: 'uk', begin: { lijst: { ...lijstData, contacten: [], totaal: 0 }, zoek: 'zzz' } }));
     check('UI: lege zoekopdracht → «Нічого не знайдено.»; geen detailpaneel', leegHtml.includes('Нічого не знайдено.') && !leegHtml.includes('data-contact-detail'));
     const sp = renderToString(createElement(ScanPaneel, { lang: 'uk', s: { ...scanData, staat: 'gepauzeerd', loopt: false } }));
-    check('UI: gepauzeerd → «Продовжити» en «Перевірити все заново»', sp.includes('Продовжити') && sp.includes('Перевірити все заново') && !sp.includes('>Пауза<'));
+    check('UI: gepauzeerd → toestemming per mailbox, zonder gevaarlijke herstart of opdringerige knoppen',
+      sp.includes('Перевірка за вашою згодою') && sp.includes('Перевірку дозволено')
+      && sp.includes('Перевірити цю скриньку зараз') && !sp.includes('Перевірити все заново') && !sp.includes('>Пауза<'));
     const ab = renderToString(createElement(AfzendersBeheer, { lang: 'uk' }));
     check('UI: instellingen → Безпека → Відправники verwijst naar «Контакти й відправники»', ab.includes('id="mail-settings-senders"') && ab.includes('Відкрити «Контакти й відправники»'));
   } finally {

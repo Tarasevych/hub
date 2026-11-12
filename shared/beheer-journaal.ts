@@ -84,7 +84,7 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'owner.admin.user.updated': ['Змінено користувача', 'Gebruiker gewijzigd'],
   'owner.admin.user.deleted': ['Видалено користувача', 'Gebruiker verwijderd'],
   'owner.admin.user.recovered': ['Відновлено користувача', 'Gebruiker hersteld'],
-  'owner.admin.sso-policy.updated': ['Змінено політику SSO', 'SSO-beleid gewijzigd'],
+  'owner.admin.sso-policy.updated': ['Змінено політику єдиного входу', 'Beleid voor eenmalige aanmelding gewijzigd'],
   'owner.admin.oauth-policy.updated': ['Змінено політику OAuth', 'OAuth-beleid gewijzigd'],
   'owner.admin.directory-config.updated': ['Змінено налаштування каталогу', 'Directory-instelling gewijzigd'],
   'owner.admin.access-request.decided': ['Рішення щодо запиту на доступ', 'Besluit over toegangsverzoek'],

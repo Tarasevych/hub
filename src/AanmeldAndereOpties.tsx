@@ -13,7 +13,7 @@
 // aanmelding. Gaat een weg later echt werken, dan zet men `beschikbaar` op true en geeft men `onKies` mee — de weergave is klaar.
 // Logo's: GitHub en Apple uit het merkregister (simple-icons, CC0), Microsoft het officiële bestand (src/merk/officieel); voor
 // passkey bestaat in de open pakketten van de site geen merklogo — dan een neutraal pictogram (vingerafdruk), niets nagetekend.
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { ChevronDown, Fingerprint } from 'lucide-react';
 import Merk from './merk/Merk';
 
@@ -51,18 +51,26 @@ export const AANMELD_INGANGEN: readonly AanmeldIngang[] = Object.freeze([
   {
     id: 'passkey', merk: '',
     // Dezelfde woorden als de bevestigingsstap (src/platform/bevestig-toegang.tsx) en als de eigenaar ze vroeg.
-    titel: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено passkey', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de passkey staat'],
+    titel: ['Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу', 'Bevestig met vingerafdruk, gezicht, pincode of de telefoon waarop de toegangssleutel staat'],
     beschikbaar: false,
-    reden: ['Вхід лише з passkey ще не працює. Зараз passkey підтверджує важливі дії після входу через Google; додати його можна в «Способи входу».',
-      'Aanmelden met alleen een passkey werkt nog niet. Nu bevestigt een passkey belangrijke acties na het aanmelden met Google; toevoegen kan bij «Aanmeldmethoden».'],
+    reden: ['Вхід лише з ключем доступу ще не працює. Зараз ключ доступу підтверджує важливі дії після входу через Google; додати його можна в «Способи входу».',
+      'Aanmelden met alleen een toegangssleutel werkt nog niet. Nu bevestigt een toegangssleutel belangrijke acties na het aanmelden met Google; toevoegen kan bij «Aanmeldmethoden».'],
   },
 ]);
 
 /** standaardOpen: alleen voor een weergave die meteen uitgeklapt moet zijn (eenheidstest met react-dom/server). */
-export default function AanmeldAndereOpties({ lang, onKies, standaardOpen = false }: { lang: Lang; onKies?: (id: AanmeldIngang['id']) => void; standaardOpen?: boolean }) {
+/**
+ * AANMELD-PLAATSING v1: `ids` = welke methoden de beheerder hier zet, in zijn volgorde (zonder `ids`: alle vier, zoals vroeger);
+ * `extra` = werkende methoden die de beheerder naar deze lijst verplaatste (Google, Telegram) als kant-en-klare knop. Is de lijst
+ * leeg, dan verschijnt de knop «Інші способи входу» niet.
+ */
+export default function AanmeldAndereOpties({ lang, onKies, standaardOpen = false, ids, extra = {} }: { lang: Lang; onKies?: (id: AanmeldIngang['id']) => void; standaardOpen?: boolean; ids?: readonly string[]; extra?: Record<string, ReactNode> }) {
   const [open, setOpen] = useState(standaardOpen);
+  const volgorde: readonly string[] = ids ?? AANMELD_INGANGEN.map((o) => o.id);
+  const items = volgorde.filter((id) => extra[id] || AANMELD_INGANGEN.some((o) => o.id === id));
   const basis = `mr-andere-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const t = (p: T2) => (lang === 'uk' ? p[0] : p[1]);
+  if (!items.length) return null;
   return (
     <div className='mr-sign-in-andere'>
       <button type='button' className='mr-sign-in-alternative' aria-expanded={open} aria-controls={`${basis}-lijst`} onClick={() => setOpen((v) => !v)}>
@@ -71,7 +79,9 @@ export default function AanmeldAndereOpties({ lang, onKies, standaardOpen = fals
       </button>
       {open && (
         <ul id={`${basis}-lijst`} className='mr-sign-in-opties' aria-label={lang === 'uk' ? 'Інші способи входу' : 'Andere aanmeldmethoden'}>
-          {AANMELD_INGANGEN.map((o) => {
+          {items.map((id) => {
+            if (extra[id]) return <li key={id} data-aanmeld-ingang={id}>{extra[id]}</li>;
+            const o = AANMELD_INGANGEN.find((x) => x.id === id) as AanmeldIngang;
             const werkt = o.beschikbaar && !!onKies;
             return (
               <li key={o.id}>

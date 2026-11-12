@@ -119,6 +119,14 @@
  ],
  "toegestaan": [
   {
+   "sleutel": "src/afzenders/contacten.css :: .ctv-scan-korte-melding",
+   "reden": "MAILSCAN-002: bericht van hoogstens twee seconden na een uitdrukkelijk gekozen adrescontrole. Geen knop: pointer-events:none, raakvlakken blijven vrij en de vaste plaats verhindert dat de melding met de inhoud meeschuift."
+  },
+  {
+   "sleutel": "src/mail/mail-achtergrond.css :: .mail-achtergrond-instellingen-portaal",
+   "reden": "MAILSCAN-002: instellingenpaneel van de bewegende achtergrond, via document.body getoond. Geen zwevende knop: de bestaande knop blijft in de kop van de mailsectie, het paneel zelf krijgt een vaste plaats binnen de zichtbare schermranden en wordt niet door het smalle mobiele inhoudsvak afgesneden."
+  },
+  {
    "sleutel": "src/canoniek-meldingencentrum.css :: .cnc-pijl",
    "reden": "INTEG-001: pijltje van het meldingenpaneel/de pop-up naar de bel (deel van het venster, geen knop, pointer-events:none). Staat in hetzelfde kader als .canonical-notification-panel en -toast, die zelf al vast zijn; zonder position:fixed kan het niet aan de rand van dat venster hangen."
   },
@@ -257,6 +265,86 @@
   {
    "sleutel": "src/identiteit/identiteit-account.css :: .ia-dialoog-achtergrond",
    "reden": "IDENTITY-002: achtergrondlaag van de fotodialoog (venster, geen zwevende knop). Het venster moet boven de pagina en de instellingenkaarten staan; zonder position:fixed kan het niet het hele scherm bedekken. Sluit met Escape of klik op de achtergrond."
+  },
+  {
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-sluier",
+   "reden": "IDENTITEIT-006: verduisterende achtergrond onder het onderdeelblad en het zoekvenster van de accountstudio; geen knop. Een tik erop sluit het venster."
+  },
+  {
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-kiezer",
+   "reden": "IDENTITEIT-006: dialoogvenster «Розділи / Пошук» van de accountstudio (role=dialog); op de telefoon een onderblad. Venster, geen zwevende knop; sluit met Escape of de sluier."
+  },
+  {
+   "sleutel": "src/identiteit/identiteit-atelier.css :: .mr-at-popover",
+   "reden": "IDENTITEIT-006: keuzevenster voor de plaats en stijl van de navigatie; op de telefoon een onderblad. Venster, geen knop."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq:before",
+   "reden": "IDENTITEIT-007: сяйво тла макета власника (pointer-events:none, z-index:-1), як body:before у макеті; не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .scroll-progress",
+   "reden": "IDENTITEIT-007: тонка смуга поступу прокрутки макета під командною смугою сайту (top:var(--mq-site)); не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .app-rail",
+   "reden": "IDENTITEIT-007: смуга сервісів макета власника (знак «Мій простір», шість сервісів, аватар) уздовж лівого краю на всю висоту, як у макеті; оболонка сайту на час вигляду схована, на телефоні (≤730) смуга прихована."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .anchor-rail",
+   "reden": "IDENTITEIT-007: якірне меню макета, яке користувач закріплює ліворуч/праворуч/згори/знизу (перетягуванням або у вікні навігації); зсуви від бічного меню сайту через --mq-links/--mq-boven."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .search-overlay",
+   "reden": "IDENTITEIT-007: шар швидкого переходу Ctrl+K макета на весь екран; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .toast",
+   "reden": "IDENTITEIT-007: коротке повідомлення макета (role=status); не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .anchor-tooltip",
+   "reden": "IDENTITEIT-007: підказка якірного меню в згорнутому режимі (role=tooltip); не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .settings-drawer",
+   "reden": "IDENTITEIT-007: бічна шухляда макета (у версії сайту не відкривається — панелі розгортаються в картках), правило лишено для тотожності стилів."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq .horizontal-nav-popup",
+   "reden": "IDENTITEIT-007: випадний перелік групи для меню згори/знизу; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-smart-open .adaptive-nav-scrim:not([hidden])",
+   "reden": "IDENTITEIT-007: затемнення під розгорнутим адаптивним меню на телефоні; не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-pills.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-pills.rail-right .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:not(.rail-smart-open) .adaptive-nav-edge",
+   "reden": "IDENTITEIT-007: тонка зона біля краю екрана, яка розгортає адаптивне меню на телефоні; частина меню, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/identiteit/maquette/maquette-stijlen.css :: .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-left .popover-panel, .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-right .popover-panel",
+   "reden": "IDENTITEIT-007: вікно «Налаштування навігації» макета, прив’язане до якірного меню; панель, не кнопка."
+  },
+  {
+   "sleutel": "src/uitrol/uitrol.css :: .ut-terminal[data-volledig]",
+   "reden": "UITROL-001: de installatieterminal schermvullend (knop «На весь екран», Esc sluit) — een door de gebruiker geopend venster, geen vaste knop of balk; op de telefoon de hele viewport (100dvh)."
+  },
+  {
+   "sleutel": "src/uitrol/vereisten.css :: .ut-vr-scrim",
+   "reden": "UITROL-001: modale achtergrond van het venster «Звіт про проблему» (geen knop); zelfde patroon als .ut-modal-schaduw in voorbereiders.css. Op de telefoon een onderaan opgeschoven aanzicht."
+  },
+  {
+   "sleutel": "src/telegram-aanmelden/telegram.css :: .tga-scherm",
+   "reden": "TELEGRAM-AANMELDEN v1: achtergrondlaag van het bevestigingsvenster «Підтвердіть, що це ви» (Telegram/geheime code), modaal over het hele scherm zoals .bevestig-toegang-achter. Geen zwevende knop."
   }
  ],
  "kopReserves": [
