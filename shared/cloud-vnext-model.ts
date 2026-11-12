@@ -42,19 +42,57 @@ export const CLOUD_SOORT_LABEL: Record<CloudSoort, Tweetalig> = Object.freeze({
 });
 /** MIME → soort; samen met de bestandsnaam (extensie als MIME generiek is). Puur, geen I/O. */
 export function cloudSoort(mime: string, naam = ''): CloudSoort {
-  const m = String(mime || '').toLowerCase(); const ext = (String(naam).match(/\.([a-z0-9]{1,8})$/i)?.[1] || '').toLowerCase();
+  const m = String(mime || '').toLowerCase(); const lager = String(naam || '').toLowerCase();
+  const ext = (lager.match(/\.([a-z0-9]{1,8})$/i)?.[1] || '').toLowerCase();
   if (m.startsWith('image/')) return 'afbeelding';
   if (m.startsWith('video/')) return 'video';
   if (m.startsWith('audio/')) return 'audio';
-  if (m === 'application/pdf') return 'pdf';
+  if (m === 'application/pdf' || ext === 'pdf') return 'pdf';
   if (/spreadsheetml|oasis\.opendocument\.spreadsheet|ms-excel/.test(m) || ['xlsx', 'xls', 'ods', 'csv'].includes(ext)) return m === 'text/csv' || ext === 'csv' ? 'werkblad' : 'werkblad';
   if (/presentationml|oasis\.opendocument\.presentation|ms-powerpoint/.test(m) || ['pptx', 'ppt', 'odp'].includes(ext)) return 'presentatie';
   if (/wordprocessingml|oasis\.opendocument\.text|msword|rtf/.test(m) || ['docx', 'doc', 'odt', 'rtf'].includes(ext)) return 'document';
-  if (/zip|x-7z|x-rar|gzip|x-tar/.test(m) || ['zip', '7z', 'rar', 'gz', 'tar'].includes(ext)) return 'archief';
-  if (/javascript|typescript|json|xml|x-sh|x-python/.test(m) || ['js', 'ts', 'tsx', 'jsx', 'py', 'sh', 'json', 'xml', 'yml', 'yaml', 'sql', 'css', 'html'].includes(ext)) return 'code';
+  if (/zip|x-7z|x-rar|vnd\.rar|gzip|x-tar|x-bzip|x-xz|zstd/.test(m) || lager.endsWith('.tar.gz') || lager.endsWith('.tar.bz2') || lager.endsWith('.tar.xz') || ['zip', '7z', 'rar', 'gz', 'tgz', 'tar', 'bz2', 'tbz2', 'xz', 'txz', 'zst', 'iso'].includes(ext)) return 'archief';
+  if (/javascript|typescript|json|xml|x-sh|x-python/.test(m) || ['js', 'ts', 'tsx', 'jsx', 'mjs', 'cjs', 'py', 'sh', 'json', 'xml', 'yml', 'yaml', 'sql', 'css', 'html', 'toml', 'ini', 'go', 'rs', 'java', 'kt', 'c', 'cpp', 'h', 'cs', 'php', 'rb'].includes(ext)) return 'code';
   if (m === 'text/markdown' || ext === 'md') return 'tekst';
-  if (m.startsWith('text/')) return 'tekst';
+  if (m.startsWith('text/') || ['txt', 'log', 'env'].includes(ext)) return 'tekst';
   return 'overig';
+}
+
+const VEILIG_EXT_MIME: Readonly<Record<string, string>> = Object.freeze({
+  zip: 'application/zip', tar: 'application/x-tar', gz: 'application/gzip', tgz: 'application/gzip',
+  '7z': 'application/x-7z-compressed', rar: 'application/vnd.rar', bz2: 'application/x-bzip2',
+  tbz2: 'application/x-bzip2', xz: 'application/x-xz', txz: 'application/x-xz', zst: 'application/zstd',
+  pdf: 'application/pdf', json: 'application/json', xml: 'application/xml', md: 'text/markdown',
+  txt: 'text/plain', log: 'text/plain', csv: 'text/csv', yml: 'text/plain', yaml: 'text/plain',
+  toml: 'text/plain', ini: 'text/plain', sql: 'text/plain', py: 'text/plain', ts: 'text/plain',
+  tsx: 'text/plain', js: 'text/plain', jsx: 'text/plain', mjs: 'text/plain', cjs: 'text/plain',
+  css: 'text/css', html: 'text/plain', htm: 'text/plain', svg: 'text/plain', sh: 'text/plain',
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
+  mp4: 'video/mp4', webm: 'video/webm', mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+});
+const ONVEILIG_BROWSER_MIME = /^(text\/html|application\/xhtml\+xml|image\/svg\+xml|application\/(x-msdownload|x-msdos-program|x-sh|x-httpd-php|hta))$|javascript/;
+
+/**
+ * Maakt van elk door de browser gemeld bestandstype een veilige upload-MIME:
+ *   • ontbrekende MIME (veel mappen, archieven en codebestanden) krijgt een passend type op extensie of octet-stream;
+ *   • typen die een browser als actieve pagina of script zou uitvoeren (html, svg, js, sh, exe) worden opgeslagen als
+ *     onschadelijke tekst of ruwe bytes, zodat elke projectmap probleemloos geüpload kan worden zonder scriptuitvoering.
+ */
+export function veiligUploadMime(rawMime: unknown, naam = ''): string {
+  const m = String(rawMime || '').split(';')[0].trim().toLowerCase().slice(0, 160);
+  const lager = String(naam || '').toLowerCase();
+  if (lager.endsWith('.tar.gz')) return 'application/gzip';
+  const ext = (lager.match(/\.([a-z0-9]{1,10})$/i)?.[1] || '').toLowerCase();
+  if (!m || !/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(m)) {
+    return VEILIG_EXT_MIME[ext] || 'application/octet-stream';
+  }
+  if (ONVEILIG_BROWSER_MIME.test(m)) {
+    return ['exe', 'dll', 'msi', 'com', 'bin'].includes(ext) ? 'application/octet-stream' : 'text/plain';
+  }
+  return m;
 }
 
 // ------------------------------------------------------------------------------- mappen en bestanden (eigen opslag)
@@ -69,6 +107,109 @@ export type CloudBestand = {
 };
 export type CloudSortering = 'naam' | 'datum' | 'grootte' | 'soort';
 export const CLOUD_SORTERING: readonly CloudSortering[] = Object.freeze(['naam', 'datum', 'grootte', 'soort']);
+
+// ------------------------------------------------------------------------------- archieven & gedeelde koppelingen (CLOUD-001)
+export type CloudArchiefIngang = {
+  pad: string; naam: string; map: boolean; bytes: number; soort: CloudSoort; gewijzigdOp: string | null;
+};
+export type CloudDeelDoelSoort = 'bestand' | 'map' | 'selectie' | 'bestand_deel' | 'archief_pad';
+export type CloudDeelDeelSoort = 'regels' | 'paginas' | 'bytes';
+export type CloudDeelModus = 'link' | 'accounts';
+export type CloudDeelRechten = 'bekijken' | 'downloaden';
+export type CloudDeelStatus = 'actief' | 'gepland' | 'gepauzeerd' | 'verlopen' | 'limiet_bereikt' | 'ingetrokken';
+
+export type CloudDeelBereik = {
+  /** Voor map of selectie: lege lijst bij `doelSoort === 'map'` betekent de hele map inclusief alle submappen; anders alleen deze id's. */
+  bestandIds?: string[];
+  mapIds?: string[];
+  /** Voor `bestand_deel`: welk stuk van het bestand zichtbaar en downloadbaar is (niets erbuiten verlaat de server). */
+  deelSoort?: CloudDeelDeelSoort;
+  vanRegel?: number;
+  totRegel?: number;
+  vanPagina?: number;
+  totPagina?: number;
+  vanByte?: number;
+  totByte?: number;
+  /** Voor `archief_pad`: toegestane paden binnen het archief (.zip / .tar / .tar.gz). */
+  archiefPaden?: string[];
+};
+
+export type CloudDeelOntvanger = {
+  email: string;
+  userId?: string;
+  naam?: string;
+  geregistreerd: boolean;
+  toegevoegdOp: string;
+};
+
+export type CloudDeelKoppeling = {
+  id: string;
+  code: string;
+  url: string;
+  naam: string;
+  notitie: string;
+  doelSoort: CloudDeelDoelSoort;
+  doelId: string;
+  doelNaam: string;
+  bereik: CloudDeelBereik;
+  modus: CloudDeelModus;
+  ontvangers: CloudDeelOntvanger[];
+  rechten: CloudDeelRechten;
+  heeftWachtwoord: boolean;
+  actiefVanaf: string | null;
+  verlooptOp: string | null;
+  maxWeergaven: number | null;
+  maxDownloads: number | null;
+  gepauzeerd: boolean;
+  ingetrokkenOp: string | null;
+  status: CloudDeelStatus;
+  weergavenAantal: number;
+  downloadsAantal: number;
+  uniekeBezoekers: number;
+  laatstBekekenOp: string | null;
+  aangemaaktOp: string;
+  bijgewerktOp: string;
+};
+
+export type CloudDeelGebeurtenis = {
+  id: number;
+  soort: 'weergave' | 'inhoud' | 'download' | 'map_archief' | 'geweigerd';
+  doelPad: string;
+  ontvangerEmail: string;
+  apparaat: string;
+  aangemaaktOp: string;
+};
+
+export type CloudDeelDagStat = { dag: string; weergaven: number; downloads: number };
+
+export type CloudGedeeldMetMij = {
+  id: string;
+  code: string;
+  url: string;
+  naam: string;
+  notitie: string;
+  doelSoort: CloudDeelDoelSoort;
+  doelNaam: string;
+  rechten: CloudDeelRechten;
+  eigenaarNaam: string;
+  eigenaarEmail: string;
+  verlooptOp: string | null;
+  aangemaaktOp: string;
+};
+
+const KOPPELING_CODE_PATROON = /^[A-Za-z0-9_-]{16,96}$/;
+/** Haalt de gedeelde koppelingscode uit `/gedeeld/<code >` of `?koppeling=<code>`. Puur, geen DOM. */
+export function leesGedeeldKoppelingUitPadOfZoek(pathname: string, search: string): string {
+  const delen = String(pathname || '/').split('/').filter(Boolean).map((s) => {
+    try { return decodeURIComponent(s); } catch { return s; }
+  });
+  if ((delen[0] === 'gedeeld' || delen[0] === 'shared') && delen[1] && KOPPELING_CODE_PATROON.test(delen[1])) {
+    return delen[1];
+  }
+  const q = new URLSearchParams(String(search || ''));
+  const k = String(q.get('koppeling') || '').trim();
+  return KOPPELING_CODE_PATROON.test(k) ? k : '';
+}
 
 /** Naam schoonmaken zoals de server het doet: één regel, geen pad-tekens, 1..naamMax. '' = ongeldig. */
 export function schoneNaam(raw: unknown): string {

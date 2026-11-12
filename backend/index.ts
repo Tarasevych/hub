@@ -46,6 +46,7 @@ import { notitiesRoutes } from './notities-vnext'; /* notities vNext (0127), zel
 import { huisRoutes } from './huis-vnext'; /* huis vNext (0128): Huis Core, Home Assistant-adapter, step-up voor kritieke opdrachten */
 import { fotoDienstRoutes } from './foto-dienst'; /* UI-002: fotodienst (vlag foto-dienst, 0153) */
 import { cloudVnextBestandenRoutes } from './cloud-vnext-bestanden'; /* cloud vNext (0129): mappen, labels, prullenbak, versies, upload in stukken */
+import { bestandenDelenEigenaarRoutes, bestandenDelenPubliekeRoutes } from './bestanden-delen'; /* CLOUD-001 (0210): gedeelde koppelingen voor mappen, bestanden, archieven en bestandsdelen */
 import { cloudVnextIntegratiesRoutes } from './cloud-vnext-integraties';
 import { afstemmingKernRoutes } from './afstemming-kern'; /* UI-014 (0197): kaarten, revisies, gebeurtenissen, import */
 import { afstemmingKoppelRoutes } from './afstemming-koppel';
@@ -662,10 +663,23 @@ export const handler = router(metMailRuimte({
   ...huisRoutes(ownerRequireSession as never, { stepUp: stapOpVereist as never }),
   ...(ladePoort('cloud', ownerRequireSession as never, {
     ...cloudVnextBestandenRoutes(ownerRequireSession as never),
+    ...bestandenDelenEigenaarRoutes(ownerRequireSession as never, {
+      meldOntvanger: (id, email, titel, bericht, pad) => notify(id, email, 'workspace_share', titel, bericht, pad),
+    }),
     ...fotoDienstRoutes(ownerRequireSession as never, { vlagAan: async (u) => (await flagsBerekenen(u as never, ['foto-dienst']))[0]?.value === true }),
     ...cloudVnextIntegratiesRoutes(ownerRequireSession as never),
     ...cloudVnextTakenRoutes(ownerRequireSession as never),
   } as never) as unknown as Record<string, any>),
+  ...bestandenDelenPubliekeRoutes(async (event, body) => {
+    const auth = await ownerRequireSession(event as never, body as never);
+    if ('errorCode' in auth) return null;
+    if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return null;
+    return {
+      id: auth.user.id,
+      email: String(auth.user.email || ''),
+      displayName: String((auth.user as { displayName?: string }).displayName || ''),
+    };
+  }),
   ...afstemmingKernRoutes(ownerRequireSession as never),
   ...afstemmingKoppelRoutes(ownerRequireSession as never),
   ...aanmeldKoppelRoutes(ownerRequireSession as never),

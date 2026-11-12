@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "taakId": "CLOUD-001",
+  "titel": "Завантаження тек, архівів і будь-яких файлів у хмару, спільний доступ до папок, файлів і точних частин файла та керування посиланнями зі статистикою",
+  "opdracht": "Запровадити в розділі https://cloud.tarasevych.com/bestanden та новому розділі https://cloud.tarasevych.com/gedeeld можливість завантажувати теки (папки зі збереженням дерева підтек), архіви та будь-які файли (включно з порожніми файлами й файлами без початкового типу), переглядати й розпаковувати архіви, відкривати доступ до цілих тек, вибраних елементів у теці, окремих файлів, частин архіву або точних частин файла (діапазону рядків тексту/коду, діапазону сторінок PDF чи зрізу байтів без витоку жодного байта поза межами), створювати, іменувати й копіювати посилання в один дотик, ділитися за посиланням (із необов'язковим паролем) або з іншим зареєстрованим обліковим записом (зі сповіщенням та розділом «Відкриті для мене»), керувати термінами початку й завершення дії, межами переглядів і завантажень, миттєво призупиняти чи відкликати посилання та відстежувати докладну статистику переглядів і завантажень у сучасному дизайнерському виконанні поверх живої встановленої основи 20261112-135406.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "gemini",
+    "tak": "feature/cloud-001-delen-mappen-20261112-174242",
+    "basis": "2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f",
+    "geinstalleerdeBasis": "2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f",
+    "geinstalleerdeVersie": "20261112-135406",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, паролі посилань, вміст приватних файлів чи листів, сеанси оглядача та приховані міркування моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-12T17:42:43Z",
+      "stap": "Звірено живу встановлену версію на робочому сервері 20261112-135406 (2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f) та інтеграційну гілку (3219123ea8b00f27460922ae075ee3c7f32cecda); зареєстровано завдання CLOUD-001 на окремій робочій гілці feature/cloud-001-delen-mappen-20261112-174242."
+    },
+    {
+      "tijd": "2026-11-12T18:10:00Z",
+      "stap": "Створено міграцію 0210_bestanden_delen_koppelingen.sql та права у rechten.sql (таблиці app.cloud_deel_koppelingen і app.cloud_deel_gebeurtenissen із захистом на рівні рядків та індексом GIN для отримувачів), розширено спільний контракт shared/cloud-vnext-model.ts (безпечна нормалізація типів veiligUploadMime, типи спільного доступу, архівів і статистики) та реалізовано серверні маршрути backend/cloud-vnext-bestanden.ts (paden_zorg, nieuw_leeg, archief з синтезом проміжних тек) і backend/bestanden-delen.ts (6 маршрутів власника та 3 публічні маршрути із серверним вирізанням рядків, сторінок PDF через pdf-lib і зрізів байтів)."
+    },
+    {
+      "tijd": "2026-11-12T18:45:00Z",
+      "stap": "Оновлено канонічну маршрутизацію й меню для нової вкладки /gedeeld (shared), реалізовано рекурсивне завантаження тек кнопкою та перетягуванням (map-upload-hulp.ts), дизайнерське вікно створення й редагування посилань із QR-кодом (DeelVenster.tsx), центр керування посиланнями та 14-денною статистикою (Gedeeld.tsx), публічну сторінку перегляду дозволеного вмісту (GedeeldWeergave.tsx), вбудований переглядач архівів у DetailPaneel.tsx та адаптивну таблицю стилів cloud-vnext-delen.css виключно на змінних палітри без position:fixed."
+    },
+    {
+      "tijd": "2026-11-12T19:05:00Z",
+      "stap": "Оновлено пошуковий каталог інтерфейсу (1553 елементи), виправлено стару перевірку в cloud-migratie-volgorde.test.mjs, створено модульний тест контрактів cloud-001-ui-contract.test.ts (23/23) та повний серверний тест cloud-001-delen-mappen.test.ts для PostgreSQL 16, пройдено перевірку типів клієнта й сервера і повне виробниче складання застосунку."
+    }
+  ],
+  "keuzes": [
+    "Вирізати дозволену частину файла (діапазон рядків тексту, діапазон сторінок PDF через pdf-lib або зріз байтів через позиційне читання сховища) виключно на боці сервера у maakAfgesnedenBestandAntwoord, щоб отримувач ніколи не одержав жодного байта поза відкритим діапазоном.",
+    "Зберігати у базі даних криптографічний відбиток SHA-256 коду посилання (code_hash) для пошуку на публічних маршрутах і зашифровану печатку AES-256-GCM (code_zegel з прив'язкою до ідентифікатора власника) для миттєвого копіювання власного посилання без передавання таємниць стороннім.",
+    "Нормалізувати всі типи файлів під час завантаження через veiligUploadMime і додати окрему дію nieuw_leeg для 0-байтових файлів та ідемпотентне пакетне створення ієрархії підтек paden_zorg, щоб будь-яка тека проєкту, архів чи файл завантажувалися без відмов і без ризику виконання сценаріїв у оглядачі.",
+    "Підключити лінивий переглядач GedeeldWeergave на шляху /gedeeld/<код> у VerenigdDienstApp до перевірки обов'язкового входу власника, щоб запрошені отримувачі за відкритим посиланням бачили спільний вміст одразу, а в режимі зареєстрованих облікових записів отримували чіткий запит входу й бачили посилання у вкладці «Відкриті для мене»."
+  ],
+  "wijzigingen": [
+    ".github/workflows/cloud-001-uitgave.yml",
+    "backend/bestanden-delen.ts",
+    "backend/cloud-vnext-bestanden.ts",
+    "backend/index.ts",
+    "migrations/0210_bestanden_delen_koppelingen.sql",
+    "migrations/rechten.sql",
+    "orchestratie/ontwikkelarchieven/CLOUD-001.json",
+    "orchestratie/taken/CLOUD-001.json",
+    "public/canonical-service.js",
+    "scripts/zoek-ui-catalogus.mjs",
+    "server/platform/auth-poort.ts",
+    "shared/cloud-vnext-model.ts",
+    "shared/menu-model.ts",
+    "shared/werkblad-register.ts",
+    "shared/zoek-ui-knoppen.generated.ts",
+    "src/CloudVnextWissel.tsx",
+    "src/VerenigdDienstApp.tsx",
+    "src/canoniek-navigatie.ts",
+    "src/cloud-vnext/BestandKaart.tsx",
+    "src/cloud-vnext/CloudPagina.tsx",
+    "src/cloud-vnext/DeelVenster.tsx",
+    "src/cloud-vnext/DetailPaneel.tsx",
+    "src/cloud-vnext/GedeeldWeergave.tsx",
+    "src/cloud-vnext/cloud-client.ts",
+    "src/cloud-vnext/cloud-vnext-delen.css",
+    "src/cloud-vnext/map-upload-hulp.ts",
+    "src/cloud-vnext/onderdelen/Bestanden.tsx",
+    "src/cloud-vnext/onderdelen/Gedeeld.tsx",
+    "src/cloud-vnext/overdracht-beheer.ts",
+    "src/cloud-vnext/tekst.ts",
+    "src/dienst-tab-labels.ts",
+    "src/menu-voorkeuren.tsx",
+    "tests/eenheid/cloud-001-delen-mappen.test.ts",
+    "tests/eenheid/cloud-001-ui-contract.test.ts",
+    "tests/eenheid/cloud-migratie-volgorde.test.mjs"
+  ],
+  "controles": [
+    "Перевірка правил координації та свіжості основи на 2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f (20261112-135406): node scripts/orch.mjs controleer і versheid --taak CLOUD-001 --fase overdracht.",
+    "Перевірка походження журналу розробки: node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts.",
+    "Статичні перевірки якості, розміщення, контрасту, каталогу пошуку інтерфейсу (1553 елементи) та макета розумного будинку HUIS-001 (7491 мовна пара): node scripts/l002-audit.mjs, node scripts/plaatsing-controle.mjs, node scripts/zoek-ui-catalogus.mjs --controle та node scripts/huis-maquette.mjs --controle.",
+    "Модульні перевірки без бази даних: cloud-001-ui-contract.test.ts (23/23), cloud-vnext-ui-20261029.test.ts, cloud-vnext-catalogus-20261029.test.ts (84/84), cloud-vnext-zoek-20261029.test.ts (31/31), zoek-route-tabblad-20261105.test.ts, werkblad-register-20261027.test.ts (34/34), menu-v2.test.ts (35/35) та cloud-migratie-volgorde.test.mjs (3/3).",
+    "Серверні інтеграційні перевірки з живою базою даних PostgreSQL 16 та подвійним застосуванням міграцій (включно з 0210_bestanden_delen_koppelingen.sql і rechten.sql): cloud-001-delen-mappen.test.ts (дерева тек, 0-байтові файли, перегляд і розпакування .zip/.tar.gz, серверне вирізання рядків тексту, сторінок PDF через pdf-lib і зрізів байтів, поширення тек, вибірок і частин архіву, режим зареєстрованих облікових записів зі сповіщеннями та розділом «Відкриті для мене», захист паролем scrypt, відкладений початок, термін завершення, межі переглядів і завантажень, пауза, миттєве відкликання, 14-денна статистика й ізоляція просторів), cloud-vnext-backend-20261029.test.ts, cloud-vnext-overdracht-20261029.test.ts, zoek-bronnen-20261022.test.ts, meldingen-sferen-20261022.test.ts, tech-ruimte-pagina-20261020.test.ts та routes.test.ts.",
+    "Перевірка типів клієнта та сервера (npx tsc --noEmit і npm run typecheck:server), повне виробниче складання застосунку (npm run build), перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."
+  ],
+  "bronnen": [
+    "https://hub.tarasevych.com/api/version",
+    "https://cloud.tarasevych.com/bestanden",
+    "https://github.com/Tarasevych/hub/commit/2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f",
+    "https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "AGENTS.md, orchestratie/beleid.json, deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md"
+  ],
+  "beperkingen": [
+    "Вбудований перегляд і серверне розпакування підтримують формати .zip, .tar і .tar.gz (.tgz); архіви .7z, .rar, .xz, .bz2, .zst та .iso повністю підтримуються для завантаження, зберігання та поширення як цілі файли або зрізи байтів.",
+    "Пакунок випуску не встановлюється автоматично: завантаження та встановлення на робочий сервер виконує виключно власник із підтвердженням ключем доступу."
+  ]
+}

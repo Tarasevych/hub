@@ -1,0 +1,318 @@
+name: CLOUD-001 · завантаження тек і архівів, спільний доступ до папок і частин файлів та статистика посилань (cloud.tarasevych.com)
+
+# Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу (20261112-135406), типи, міграцію 0210, тести та контрольну суму SHA-256.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis (20261112-135406), typen, migratie 0210, eenheids- en servertests en controlesom.
+on:
+  push:
+    branches:
+      - 'feature/cloud-001-delen-mappen-20261112-174242'
+    paths:
+      - '.github/workflows/cloud-001-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/CLOUD-001.json'
+      - 'orchestratie/taken/CLOUD-001.json'
+      - 'public/**'
+      - 'migrations/**'
+      - 'scripts/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'backend/**'
+      - 'src/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cloud-001-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: CLOUD-001
+  # Встановлена на сервері основа (версія=фіксація змін); обов'язковий предок цієї гілки.
+  # Geïnstalleerde serverbasis (versie=commit); verplichte voorouder van deze tak.
+  BEKENDE_BASISSEN: '20261112-135406=2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          const levend = v.bronCommit || v.commit;
+          const bekend = new Map(process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('=')));
+          if (bekend.get(v.versie) !== levend) {
+            throw Error(`Встановлена версія (${v.versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${v.versie}\nBASIS_COMMIT=${levend}\n`);
+          console.log(`Основа випуску: ${v.versie} @ ${levend}`);
+          JS
+          BASIS_COMMIT="$(node -e "const v=JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP+'/versie.json','utf8'));process.stdout.write(v.bronCommit||v.commit)")"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
+          const d = JSON.parse(readFileSync('orchestratie/ontwikkelarchieven/CLOUD-001.json', 'utf8'));
+          const fouten = valideerOntwikkelDossier(d, 'CLOUD-001');
+          if (fouten.length) throw Error('Помилки журналу розробки: ' + fouten.join('; '));
+          JS
+      - name: Перевірити розміщення, каталог інтерфейсу, макет HUIS-001 та модульні перевірки хмари й меню
+        run: |
+          node scripts/l002-audit.mjs
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/huis-maquette.mjs --controle
+          node --test tests/eenheid/cloud-migratie-volgorde.test.mjs
+          node scripts/eenheidstests.mjs cloud-001-ui-contract.test.ts
+          node scripts/eenheidstests.mjs cloud-vnext-ui-20261029.test.ts
+          node scripts/eenheidstests.mjs cloud-vnext-catalogus-20261029.test.ts
+          node scripts/eenheidstests.mjs cloud-vnext-zoek-20261029.test.ts
+          node scripts/eenheidstests.mjs zoek-route-tabblad-20261105.test.ts
+          node scripts/eenheidstests.mjs werkblad-register-20261027.test.ts
+          node scripts/eenheidstests.mjs menu-v2.test.ts
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
+      - name: Перевірити типи та скласти застосунок разом із макетом розумного будинку
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          test -s dist/huis-maquette/index.html
+          test -s dist/huis-maquette/maquette.css
+          test -s dist/huis-maquette/maquette.js
+      - name: Перевірити подвійне застосування міграцій (включно з 0210) і серверні перевірки з базою даних PostgreSQL 16
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs cloud-001-delen-mappen.test.ts
+          node scripts/eenheidstests.mjs cloud-vnext-backend-20261029.test.ts
+          node scripts/eenheidstests.mjs cloud-vnext-overdracht-20261029.test.ts
+          node scripts/eenheidstests.mjs zoek-bronnen-20261022.test.ts
+          node scripts/eenheidstests.mjs meldingen-sferen-20261022.test.ts
+          node scripts/eenheidstests.mjs tech-ruimte-pagina-20261020.test.ts
+          node scripts/eenheidstests.mjs routes.test.ts
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Завантаження тек і архівів у хмару, гнучкий спільний доступ до папок, файлів і частин файла та керування посиланнями зі статистикою',
+            samenvatting: 'Повноцінне оновлення хмарного сховища https://cloud.tarasevych.com/bestanden і нового центру спільного доступу https://cloud.tarasevych.com/gedeeld поверх встановленої версії ' + e.BASIS_VERSIE + ': завантаження вкладених дерев тек, архівів і будь-яких файлів, перегляд і розпакування архівів, поширення тек, вибірок, частин архіву й точних фрагментів файла (рядків, сторінок PDF, байтів), іменовані посилання з режимами доступу, термінами, межами, миттєвим відкликанням і 14-денною статистикою.',
+            wijzigingen: [
+              'Завантаження тек, архівів і будь-яких файлів у /bestanden: вибір цілої теки кнопкою та перетягування вкладених дерев папок із пристрою з ідемпотентним створенням ієрархії підтек (paden_zorg), підтримка порожніх 0-байтових файлів (nieuw_leeg) і безпечна нормалізація типів (veiligUploadMime) для всіх архівів (.zip, .tar, .tar.gz, .7z, .rar, .xz, .bz2, .zst, .iso), коду та документів.',
+              'Вбудована робота з архівами: перегляд дерева вмісту .zip, .tar і .tar.gz у бічній панелі з автоматичним відтворенням батьківських тек, миттєве завантаження окремого файла з архіву або розпакування архіву (повністю чи вибраних елементів) у власну теку хмари із захистом від виходу за межі каталогу.',
+              'Гнучке відкриття доступу до папок, вибірок і точних частин файла: поширення цілої теки, вибраної підмножини підтек і файлів у теці, окремих елементів усередині архіву або точної частини файла — діапазону рядків тексту/коду з пронумерованим попереднім переглядом, діапазону сторінок PDF (вирізається на сервері через pdf-lib) чи зрізу байтів без передавання жодного байта поза дозволеними межами.',
+              'Іменовані посилання, режими поширення та керування термінами: створення й миттєве копіювання посилань з векторним QR-кодом, власна назва й нотатка для кожного посилання, режим доступу за посиланням (із необов’язковим паролем scrypt та вибором прав «лише перегляд» або «перегляд і завантаження») і режим для зареєстрованих облікових записів зі сповіщенням отримувача та вкладкою «Відкриті для мене», відкладений початок дії, гнучкі терміни завершення, межі переглядів і завантажень, пауза та миттєве відкликання.',
+              'Дизайнерський центр спільного доступу /gedeeld та докладна статистика: картки зведених показників, фільтрація й пошук за власними посиланнями, 14-денний стовпчиковий графік активності, лічильники переглядів, завантажень та унікальних відвідувачів, журнал подій із часом і типом пристрою та чиста публічна сторінка перегляду /gedeeld/<код> на будь-якому екрані.'
+            ],
+            fixes: [
+              'Усунено відмову завантаження для порожніх (0 байтів) файлів у вкладених теках та файлів без визначеного оглядачем типу вмісту.',
+              'Виправлено перевірку послідовності міграцій хмари в cloud-migratie-volgorde.test.mjs після додавання наступних хмарних міграцій.'
+            ],
+            beperkingen: [
+              'Вбудований перегляд і розпакування на сервері підтримують .zip, .tar та .tar.gz (.tgz); архіви .7z, .rar, .xz, .bz2, .zst та .iso зберігаються і поширюються повністю.',
+              'Встановлення випуску на робочий сервер виконує виключно власник із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу та перевірте завантаження папок і архівів на https://cloud.tarasevych.com/bestanden і керування посиланнями на https://cloud.tarasevych.com/gedeeld.'
+          };
+          const nl = {
+            titel: 'Mappen en archieven uploaden naar de cloud, verfijnd delen van mappen, bestanden en bestandsdelen en koppelingsbeheer met statistiek',
+            samenvatting: 'Uitgebreide vernieuwing van de cloudopslag https://cloud.tarasevych.com/bestanden en het nieuwe deelcentrum https://cloud.tarasevych.com/gedeeld boven op de geïnstalleerde versie ' + e.BASIS_VERSIE + ': geneste mappenbomen, archieven en alle bestandstypen uploaden, archieven bekijken en uitpakken, mappen, selecties, archiefonderdelen en exacte bestandsdelen (regels, PDF-pagina’s, bytes) delen, benoemde koppelingen met toegangsmodi, looptijden, limieten, directe intrekking en 14-daagse statistiek.',
+            wijzigingen: [
+              'Mappen, archieven en alle bestanden uploaden in /bestanden: mapkeuzeknop en slepen-en-neerzetten van geneste mappenbomen met idempotente opbouw van submappen (paden_zorg), ondersteuning voor lege 0-byte bestanden (nieuw_leeg) en veilige MIME-normalisatie (veiligUploadMime) voor alle archieven (.zip, .tar, .tar.gz, .7z, .rar, .xz, .bz2, .zst, .iso), code en documenten.',
+              'Ingebouwd archiefbeheer: boomweergave van .zip, .tar en .tar.gz in het zijpaneel met automatische oudermappen, direct downloaden van één bestand uit een archief of uitpakken naar een eigen cloudmap met bescherming tegen pad-ontsnapping.',
+              'Verfijnd delen van mappen, selecties en exacte bestandsdelen: delen van een volledige map, een gekozen selectie in een map, onderdelen van een archief of een exact deel van een bestand — regelbereik met genummerde voorvertoning, PDF-paginabereik (op de server uitgesneden via pdf-lib) of bytebereik zonder dat één enkele byte buiten het bereik de server verlaat.',
+              'Benoemde koppelingen, deelmodi en looptijdbeheer: aanmaken en met één klik kopiëren van koppelingen met vector-QR-code, eigen naam en notitie per koppeling, modus op koppeling (optioneel met scrypt-wachtwoord en keuze tussen alleen bekijken of bekijken en downloaden) en modus voor geregistreerde accounts met melding en het overzicht «Met mij gedeeld», starttijd, vervaltijd, weergave- en downloadlimieten, pauzeren en onmiddellijk intrekken.',
+              'Deelcentrum /gedeeld en gedetailleerde statistiek: overzichtskaarten, zoeken en filteren door eigen koppelingen, 14-daagse staafgrafiek, tellers voor weergaven, downloads en unieke bezoekers, gebeurtenissenlogboek en een schone publieke weergavepagina /gedeeld/<code> op elk schermformaat.'
+            ],
+            fixes: [
+              'Weigering bij het uploaden van lege 0-byte bestanden in geneste mappen en bestanden zonder door de browser opgegeven MIME-type opgelost.',
+              'Volgordecontrole van cloudmigraties in cloud-migratie-volgorde.test.mjs bijgewerkt voor latere cloudmigraties.'
+            ],
+            beperkingen: [
+              'Ingebouwde inhoudsweergave en uitpakken op de server ondersteunen .zip, .tar en .tar.gz (.tgz); archieven zoals .7z, .rar, .xz, .bz2, .zst en .iso worden volledig opgeslagen en gedeeld.',
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer het uploaden van mappen en archieven op https://cloud.tarasevych.com/bestanden en het koppelingsbeheer op https://cloud.tarasevych.com/gedeeld.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 420,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено: правила координації, свіжість основи 20261112-135406 та перевірку походження TRACE-001; статичні перевірки l002-audit, розміщення, контрасту кольорів, каталогу пошуку інтерфейсу (1553 елементи) та макета розумного будинку HUIS-001 (7491 мовна пара); модульні й серверні інтеграційні перевірки з PostgreSQL 16 для cloud-001-ui-contract (23/23), cloud-001-delen-mappen (22/22), cloud-vnext-backend-20261029, cloud-vnext-overdracht-20261029, cloud-vnext-ui-20261029, cloud-vnext-catalogus-20261029 (84/84), cloud-vnext-zoek-20261029 (31/31), cloud-migratie-volgorde (3/3), zoek-route-tabblad-20261105, zoek-bronnen-20261022, werkblad-register-20261027 (34/34), menu-v2 (35/35), meldingen-sferen-20261022, tech-ruimte-pagina-20261020, plaatsing-20261025 та routes; перевірку типів клієнта та сервера; повне виробниче складання застосунку; подвійне застосування всіх міграцій (включно з 0210_bestanden_delen_koppelingen.sql і rechten.sql) на чистій базі даних PostgreSQL 16.',
+              nl: 'Geslaagd: coördinatieregels, versheid van basis 20261112-135406 en herkomstcontrole TRACE-001; statische controles l002-audit, plaatsing, kleurcontrast, de UI-catalogus (1553 elementen) en de maquette HUIS-001 (7491 taalparen); eenheids- en PostgreSQL 16-servertests voor cloud-001-ui-contract (23/23), cloud-001-delen-mappen (22/22), cloud-vnext-backend-20261029, cloud-vnext-overdracht-20261029, cloud-vnext-ui-20261029, cloud-vnext-catalogus-20261029 (84/84), cloud-vnext-zoek-20261029 (31/31), cloud-migratie-volgorde (3/3), zoek-route-tabblad-20261105, zoek-bronnen-20261022, werkblad-register-20261027 (34/34), menu-v2 (35/35), meldingen-sferen-20261022, tech-ruimte-pagina-20261020, plaatsing-20261025 en routes; typecontrole van client en server; volledige productiebouw; dubbele uitvoering van alle migraties (inclusief 0210_bestanden_delen_koppelingen.sql en rechten.sql) op een schone PostgreSQL 16-databank.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          const opis = [
+            `CLOUD-001 · Завантаження тек і архівів, спільний доступ до папок і частин файлів та статистика посилань · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Виправлено:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            uk.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Завантаження тек, архівів і будь-яких файлів у хмару, спільний доступ до папок, вибірок і точних частин файла та керування посиланнями зі статистикою поверх версії ${BASIS_VERSIE}." \
+            --samenvatting-nl "Mappen, archieven en alle bestanden uploaden naar de cloud, delen van mappen, selecties en exacte bestandsdelen en koppelingsbeheer met statistiek boven op versie ${BASIS_VERSIE}." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "CLOUD-001 · завантаження тек і архівів, спільний доступ та статистика посилань · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-001-controle
+          path: uitvoer/
+          if-no-files-found: ignore

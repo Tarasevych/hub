@@ -11,7 +11,7 @@ test('elke genummerde migratie heeft een uniek nummer en een geldige naam',()=>{
 });
 test('werkbladmigratie blijft ongewijzigd en cloudmigraties volgen in de juiste volgorde',()=>{
  assert(all.includes('0116_werkblad_blokken.sql'));
- for(const file of ['0117_cloud_overdracht_jobs.sql','0118_cloud_move_proofs.sql','0119_cloud_share_receipts.sql','0120_cloud_multi_account_connections.sql','0121_cloud_provider_governance.sql','0122_cloud_m9_upload_checkpoints.sql','0130_cloud_vnext.sql'])assert(all.includes(file),`ontbreekt: ${file}`);
+ for(const file of ['0117_cloud_overdracht_jobs.sql','0118_cloud_move_proofs.sql','0119_cloud_share_receipts.sql','0120_cloud_multi_account_connections.sql','0121_cloud_provider_governance.sql','0122_cloud_m9_upload_checkpoints.sql','0130_cloud_vnext.sql','0210_bestanden_delen_koppelingen.sql'])assert(all.includes(file),`ontbreekt: ${file}`);
  const files=all.filter(x=>{const nr=Number(x.slice(0,4));return nr>=117&&nr<=122&&x.includes('cloud_');});
  assert.equal(files.length,6);
 });

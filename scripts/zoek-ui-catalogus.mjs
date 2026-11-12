@@ -26,6 +26,12 @@ export const PLEKKEN = [
   ['MailRijSnelleActieInstellingen', 'mail', 'settings', 'iedereen'], ['Mail', 'mail', 'inbox', 'iedereen'], ['GoogleMailWerkruimte', 'mail', 'inbox', 'iedereen'],
   ['agenda/', 'cloud', 'calendar', 'iedereen'], ['media/', 'cloud', 'photos', 'iedereen'], ['GoogleSuiteMediaWeergave', 'cloud', 'photos', 'iedereen'],
   ['DriveBrowser', 'cloud', 'accounts', 'iedereen'], ['CloudFunctioneelWeergave', 'cloud', 'overview', 'iedereen'],
+  // CLOUD-001: cloud-vnext tabbladen (GedeeldWeergave staat alleen op /gedeeld/<code> met een uitnodigingscode en hoort hier niet).
+  ['cloud-vnext/onderdelen/Gedeeld', 'cloud', 'shared', 'iedereen'],
+  ['cloud-vnext/onderdelen/Bestanden', 'cloud', 'files', 'iedereen'], ['cloud-vnext/DeelVenster', 'cloud', 'files', 'iedereen'], ['cloud-vnext/DetailPaneel', 'cloud', 'files', 'iedereen'],
+  ['cloud-vnext/onderdelen/Overzicht', 'cloud', 'overview', 'iedereen'], ['cloud-vnext/onderdelen/Integraties', 'cloud', 'accounts', 'iedereen'],
+  ['cloud-vnext/onderdelen/Zoeken', 'cloud', 'search', 'iedereen'], ['cloud-vnext/onderdelen/Recent', 'cloud', 'recent', 'iedereen'],
+  ['cloud-vnext/onderdelen/Werkruimtes', 'cloud', 'workspaces', 'iedereen'], ['cloud-vnext/onderdelen/Vastleggen', 'cloud', 'capture', 'iedereen'], ['cloud-vnext/onderdelen/PostvakIn', 'cloud', 'inbox', 'iedereen'],
   ['github/EenklikKoppelPaneel', 'github', 'accounts', 'iedereen'],
   ['github/CodeEnEditorPaneel', 'github', 'code', 'iedereen'],
   ['github/ZakenEnSamenvoegingenPaneel', 'github', 'issues', 'iedereen'],

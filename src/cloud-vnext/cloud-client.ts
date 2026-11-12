@@ -1,17 +1,30 @@
-// De browserkant van /api/owner/cloud/vnext/* (backend/cloud-vnext-bestanden.ts en -integraties.ts) plus de bestaande
-// cloudroutes die vNext hergebruikt (bootstrap, capture, Google Drive-browser). Elke aanroep draagt dienst + tabblad mee.
+// De browserkant van /api/owner/cloud/vnext/* (backend/cloud-vnext-bestanden.ts, -integraties.ts en bestanden-delen.ts)
+// plus de publieke gedeelde routes /api/cloud/gedeeld/* en de bestaande cloudroutes die vNext hergebruikt.
 // HET CONTRACT staat in shared/cloud-vnext-model.ts — wie hier iets wijzigt, wijzigt het dáár eerst.
 import { api, ApiError } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
 import { sessieDienst } from '../canoniek-navigatie';
-import type { CloudBestand, CloudMap, CloudSoort, CloudSortering, CloudVersie } from '../../shared/cloud-vnext-model';
+import type {
+  CloudArchiefIngang, CloudBestand, CloudDeelBereik, CloudDeelDagStat, CloudDeelDeelSoort,
+  CloudDeelDoelSoort, CloudDeelGebeurtenis, CloudDeelKoppeling, CloudDeelModus, CloudDeelOntvanger,
+  CloudDeelRechten, CloudGedeeldMetMij, CloudMap, CloudSoort, CloudSortering, CloudVersie,
+} from '../../shared/cloud-vnext-model';
 import type { CloudTaak, CloudTaakPunt, CloudTaakSoort } from '../../shared/cloud-overdracht-model';
 import { registreerVervoer, type Vervoer } from './overdracht-beheer';
 
 const body = (extra: Record<string, unknown> = {}) => ({ service: sessieDienst(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin, ...extra });
 export class CloudFout extends Error { constructor(public code: string, public status: number, public data: unknown) { super(code); this.name = 'CloudFout'; } }
+
 async function roep<T>(pad: string, data: Record<string, unknown> = {}): Promise<T> {
   try { const r = await api.post(pad, body(data)); return r.data as T; }
+  catch (e) {
+    if (e instanceof ApiError) throw new CloudFout(e.message || `HTTP_${e.status}`, e.status, e.response?.data);
+    throw new CloudFout(String((e as Error)?.message || 'FOUT'), 0, null);
+  }
+}
+
+async function roepPubliek<T>(pad: string, data: Record<string, unknown> = {}): Promise<T> {
+  try { const r = await api.post(pad, { ...data, sourceOrigin: location.origin, tabContext: ecosystemTabContext() }); return r.data as T; }
   catch (e) {
     if (e instanceof ApiError) throw new CloudFout(e.message || `HTTP_${e.status}`, e.status, e.response?.data);
     throw new CloudFout(String((e as Error)?.message || 'FOUT'), 0, null);
@@ -27,14 +40,114 @@ export type Lijst = { bestanden: CloudBestand[]; mappen: CloudMap[]; pad: CloudM
 export type LijstVraag = { id?: string; mapId?: string; zoek?: string; soort?: CloudSoort | ''; tag?: string; favoriet?: boolean; prullenbak?: boolean; workspaceId?: string; sorteer?: CloudSortering; oplopend?: boolean; token?: string };
 export type UploadBegin = { id: string; stukMax: number };
 
+export type DelenDoelSamenvatting = { actief: number; totaal: number; weergaven: number; downloads: number };
+export type DelenOverzichtUit = {
+  koppelingen: CloudDeelKoppeling[];
+  perDoel: Record<string, DelenDoelSamenvatting>;
+  samenvatting: { totaal: number; actief: number; weergaven: number; downloads: number; uniekeBezoekers: number };
+  gedeeldMetMij: CloudGedeeldMetMij[];
+};
+
+export type DelenVoorbereidenBestandUit = {
+  bestand: CloudBestand;
+  deelOpties: {
+    totaalBytes: number;
+    kanBytes: boolean;
+    tekstRegelsTotaal: number | null;
+    voorbeeldRegels: string[];
+    pdfPaginasTotaal: number | null;
+    archiefOndersteund: boolean;
+    archiefIngangen: CloudArchiefIngang[];
+  };
+};
+export type DelenVoorbereidenMapUit = { map: CloudMap; submappen: CloudMap[]; bestanden: CloudBestand[] };
+
+export type DelenNieuwIn = {
+  doelSoort: CloudDeelDoelSoort;
+  doelId?: string;
+  bereik?: CloudDeelBereik;
+  naam?: string;
+  notitie?: string;
+  modus?: CloudDeelModus;
+  rechten?: CloudDeelRechten;
+  ontvangers?: string[];
+  wachtwoord?: string;
+  actiefVanaf?: string | null;
+  verlooptOp?: string | null;
+  maxWeergaven?: number | null;
+  maxDownloads?: number | null;
+};
+
+export type DelenBijwerkenIn = {
+  id: string;
+  naam?: string;
+  notitie?: string;
+  bereik?: CloudDeelBereik;
+  modus?: CloudDeelModus;
+  rechten?: CloudDeelRechten;
+  ontvangers?: string[];
+  wachtwoord?: string;
+  wachtwoordWissen?: boolean;
+  actiefVanaf?: string | null;
+  verlooptOp?: string | null;
+  maxWeergaven?: number | null;
+  maxDownloads?: number | null;
+  gepauzeerd?: boolean;
+};
+
+export type GedeeldInfoUit = {
+  koppeling: {
+    naam: string;
+    notitie: string;
+    doelSoort: CloudDeelDoelSoort;
+    doelNaam: string;
+    rechten: CloudDeelRechten;
+    modus: CloudDeelModus;
+    eigenaarNaam: string;
+    verlooptOp: string | null;
+    weergavenAantal: number;
+    maxWeergaven: number | null;
+    downloadsAantal: number;
+    maxDownloads: number | null;
+  };
+  bestand: { id: string; naam: string; soort: CloudSoort; mime: string; bytes: number; kind: 'file' | 'note' | 'link'; url?: string } | null;
+  deelInfo: {
+    deelSoort?: CloudDeelDeelSoort;
+    vanRegel?: number;
+    totRegel?: number;
+    vanPagina?: number;
+    totPagina?: number;
+    vanByte?: number;
+    totByte?: number;
+  } | null;
+  mappen: Array<{ id: string; naam: string; ouderId: string | null }>;
+  bestanden: Array<{ id: string; naam: string; soort: CloudSoort; mime: string; bytes: number; mapId: string | null; pad: string }>;
+  archiefIngangen: CloudArchiefIngang[];
+};
+
+export type GedeeldInhoudUit = {
+  naam: string;
+  origineleNaam?: string;
+  soort: CloudSoort;
+  mime: string;
+  bytes: number;
+  sha256: string;
+  data: string;
+  url?: string;
+  tekst?: string;
+  deelMeta?: Record<string, unknown>;
+};
+
 export const cloudClient = {
   // ---- eigen opslag (vNext)
   overzicht: () => roep<Overzicht>('/api/owner/cloud/vnext/overzicht'),
   bestanden: (v: LijstVraag = {}) => roep<Lijst>('/api/owner/cloud/vnext/bestanden', v as Record<string, unknown>),
   mapNieuw: (naam: string, ouderId: string | null) => roep<{ map: CloudMap }>('/api/owner/cloud/vnext/map', { actie: 'nieuw', naam, ouderId }).then((d) => d.map),
+  mapPadenZorg: (ouderId: string | null, paden: string[][]) => roep<{ kaart: Record<string, string>; aangemaakt: number }>('/api/owner/cloud/vnext/map', { actie: 'paden_zorg', ouderId, paden }),
   mapHernoem: (id: string, naam: string) => roep<{ map: CloudMap }>('/api/owner/cloud/vnext/map', { actie: 'hernoem', id, naam }).then((d) => d.map),
   mapVerplaats: (id: string, ouderId: string | null) => roep<{ map: CloudMap }>('/api/owner/cloud/vnext/map', { actie: 'verplaats', id, ouderId }).then((d) => d.map),
   mapVerwijder: (id: string) => roep<{ aantal: number }>('/api/owner/cloud/vnext/map', { actie: 'verwijder', id }),
+  bestandNieuwLeeg: (naam: string, mime: string, mapId: string | null) => roep<{ bestand: CloudBestand }>('/api/owner/cloud/vnext/bestand', { actie: 'nieuw_leeg', naam, mime, mapId }).then((d) => d.bestand),
   bestandHernoem: (id: string, naam: string) => roep<{ bestand: CloudBestand }>('/api/owner/cloud/vnext/bestand', { actie: 'hernoem', id, naam }).then((d) => d.bestand),
   bestandVerplaats: (ids: string[], mapId: string | null) => roep<{ aantal: number }>('/api/owner/cloud/vnext/bestand', { actie: 'verplaats', ids, mapId }),
   bestandTags: (id: string, tags: string[]) => roep<{ bestand: CloudBestand }>('/api/owner/cloud/vnext/bestand', { actie: 'tags', id, tags }).then((d) => d.bestand),
@@ -53,6 +166,23 @@ export const cloudClient = {
   taken: (v: TakenVraag) => roep<{ taak?: CloudTaak; taken?: CloudTaak[]; ok?: boolean }>('/api/owner/cloud/vnext/taken', v as unknown as Record<string, unknown>),
   versies: (id: string) => roep<{ versies: CloudVersie[] }>('/api/owner/cloud/vnext/versies', { id }).then((d) => d.versies),
   versieHerstel: (id: string, versie: string) => roep<{ bestand: CloudBestand }>('/api/owner/cloud/vnext/versies', { id, actie: 'herstel', versie }).then((d) => d.bestand),
+  // ---- archieven (.zip / .tar / .tar.gz)
+  archiefInhoud: (id: string) => roep<{ ondersteund: boolean; reden?: string; ingangen: CloudArchiefIngang[]; totaalBytes: number }>('/api/owner/cloud/vnext/archief', { actie: 'inhoud', id }),
+  archiefBestand: (id: string, pad: string) => roep<{ naam: string; pad: string; mime: string; soort: CloudSoort; bytes: number; sha256: string; data: string }>('/api/owner/cloud/vnext/archief', { actie: 'bestand', id, pad }),
+  archiefUitpakken: (id: string, opties: { doelMapId?: string | null; paden?: string[]; inEigenMap?: boolean } = {}) => roep<{ mapId: string | null; uitgepakteBestanden: number; aangemaakteMappen: number }>('/api/owner/cloud/vnext/archief', { actie: 'uitpakken', id, ...opties }),
+  // ---- gedeelde koppelingen & statistiek (eigenaar)
+  delenOverzicht: (doelId?: string) => roep<DelenOverzichtUit>('/api/owner/cloud/vnext/delen/overzicht', doelId ? { doelId } : {}),
+  delenVoorbereidenBestand: (doelId: string) => roep<DelenVoorbereidenBestandUit>('/api/owner/cloud/vnext/delen/voorbereiden', { doelSoort: 'bestand', doelId }),
+  delenVoorbereidenMap: (doelId: string) => roep<DelenVoorbereidenMapUit>('/api/owner/cloud/vnext/delen/voorbereiden', { doelSoort: 'map', doelId }),
+  delenZoekAccounts: (emails: string[]) => roep<{ accounts: CloudDeelOntvanger[] }>('/api/owner/cloud/vnext/delen/voorbereiden', { zoekAccounts: emails }).then((d) => d.accounts),
+  delenNieuw: (v: DelenNieuwIn) => roep<{ koppeling: CloudDeelKoppeling }>('/api/owner/cloud/vnext/delen/nieuw', v as unknown as Record<string, unknown>).then((d) => d.koppeling),
+  delenBijwerken: (v: DelenBijwerkenIn) => roep<{ koppeling: CloudDeelKoppeling }>('/api/owner/cloud/vnext/delen/bijwerken', v as unknown as Record<string, unknown>).then((d) => d.koppeling),
+  delenIntrekken: (v: { id?: string; doelId?: string; allesVanDoel?: boolean; verwijder?: boolean }) => roep<{ ok: boolean; ingetrokkenAantal?: number; verwijderd?: boolean; koppeling?: CloudDeelKoppeling }>('/api/owner/cloud/vnext/delen/intrekken', v as Record<string, unknown>),
+  delenStatistiek: (id: string) => roep<{ koppeling: CloudDeelKoppeling; perDag: CloudDeelDagStat[]; gebeurtenissen: CloudDeelGebeurtenis[] }>('/api/owner/cloud/vnext/delen/statistiek', { id }),
+  // ---- publieke weergave van gedeelde koppelingen (/gedeeld/<code>)
+  gedeeldInfo: (code: string, opties: { wachtwoord?: string; telWeergave?: boolean } = {}) => roepPubliek<GedeeldInfoUit>('/api/cloud/gedeeld/info', { code, ...opties }),
+  gedeeldInhoud: (code: string, opties: { wachtwoord?: string; bestandId?: string; archiefPad?: string } = {}) => roepPubliek<GedeeldInhoudUit>('/api/cloud/gedeeld/inhoud', { code, ...opties }),
+  gedeeldDownload: (code: string, opties: { wachtwoord?: string; bestandId?: string; archiefPad?: string; allesZip?: boolean } = {}) => roepPubliek<{ naam: string; mime: string; bytes: number; sha256: string; data: string }>('/api/cloud/gedeeld/download', { code, ...opties }),
   // ---- integraties (vNext, backend/cloud-vnext-integraties.ts)
   integraties: () => roep<IntegratiesUit>('/api/owner/cloud/vnext/integraties'),
   // ---- bestaande routes die vNext hergebruikt

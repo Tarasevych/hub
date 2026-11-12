@@ -28,6 +28,7 @@ const LABELS: Record<string, Pair> = {
   rooms: ['Кімнати', 'Kamers'], scenes: ['Сцени', 'Scènes'], automations: ['Автоматизації', 'Automatiseringen'], energy: ['Енергія', 'Energie'],
   integrations: ['Інтеграції', 'Integraties'], assistant: ['ШІ-помічник', 'AI-assistent'], showroom: ['Вітрина', 'Toonzaal'], planner: ['Калькулятор', 'Planner'],
   files: ['Мої файли', 'Mijn bestanden'],
+  shared: ['Спільний доступ', 'Gedeeld'],
 };
 
 const titleCase = (id: string) => id.charAt(0).toUpperCase() + id.slice(1).replace(/[-_]+/g, ' ');

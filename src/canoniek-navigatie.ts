@@ -1,5 +1,6 @@
 import{canonicalServiceUrl,defaults,domains,idForTab,publicServiceIds,resolveCanonicalRoute,serviceForHostname,serviceIds,serviceTabs,tabSlug,type CanonicalLang,type CanonicalRoute,type CanonicalService,type PublicService,type ServiceId}from'./canoniek-dienst';
 import{lastPathForService,rememberedTabForPath,rememberServicePath}from'./gedeelde-voorkeuren';
+import{leesGedeeldKoppelingUitPadOfZoek}from'../shared/cloud-vnext-model';
 export type HubTabId='overview'|'recent'|'tasks'|'calendar'|'notes'|'zoek'|'photos';
 export type TargetService=CanonicalService;
 export type{CanonicalLang,PublicService,ServiceId};
@@ -16,7 +17,7 @@ export const routeLang=():CanonicalLang=>resolveCanonicalRoute().lang;
 export const tabFromLocation=(service:ServiceId)=>{const route=resolveCanonicalRoute();return route.service===service&&serviceTabs[service].includes(route.tab)?route.tab:defaults[service]};
 export const hubTabFromLocation=():HubTabId=>{const route=resolveCanonicalRoute();return route.service==='hub'&&hubTabs.includes(route.tab as HubTabId)?route.tab as HubTabId:'overview'};
 export const routeOnbekend=():boolean=>resolveCanonicalRoute().onbekend===true;
-export const normalizeCurrentRoute=(service:ServiceId,tab:string,_lang?:CanonicalLang)=>{const route=resolveCanonicalRoute();if(route.service!==service||route.onbekend)return;const url=new URL(location.href);clean(url);url.searchParams.delete('service');url.searchParams.delete('tab');url.searchParams.delete('lang');const validPath=location.pathname==='/'||idForTab(decodeURIComponent(location.pathname.slice(1)))===route.tab;if(!validPath)url.pathname=`/${encodeURIComponent(tabSlug(tab))}`;commit(url,'replace')};
+export const normalizeCurrentRoute=(service:ServiceId,tab:string,_lang?:CanonicalLang)=>{const route=resolveCanonicalRoute();if(route.service!==service||route.onbekend)return;const url=new URL(location.href);clean(url);url.searchParams.delete('service');url.searchParams.delete('tab');url.searchParams.delete('lang');const heeftGedeeldPad=service==='cloud'&&route.tab==='shared'&&Boolean(leesGedeeldKoppelingUitPadOfZoek(location.pathname,''));const validPath=location.pathname==='/'||heeftGedeeldPad||idForTab(decodeURIComponent(location.pathname.slice(1)))===route.tab;if(!validPath)url.pathname=`/${encodeURIComponent(tabSlug(tab))}`;commit(url,'replace')};
 export const canonicalNavigationUrl=(target:TargetService,targetTab='',lang:CanonicalLang='uk')=>canonicalServiceUrl(target,targetTab,lang,Boolean(targetTab)&&targetTab!==defaults[target]);
 export const rememberedTabForService=(target:TargetService,fallback='')=>{const path=lastPathForService(target);return path?rememberedTabForPath(target,path):(serviceTabs[target].includes(fallback)?fallback:defaults[target])};
 export const railNavigationUrl=(target:TargetService,_fallbackTab='',lang:CanonicalLang='uk')=>{const path=lastPathForService(target);return path?canonicalServiceUrl(target,rememberedTabForPath(target,path),lang,true):canonicalServiceUrl(target,'',lang,false)};
