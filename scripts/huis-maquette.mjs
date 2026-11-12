@@ -6,6 +6,8 @@
 // Gebruik:
 //   node scripts/huis-maquette.mjs                       → docs/huis/maquette/huis-maquette.html (volledig document)
 //   node scripts/huis-maquette.mjs --artefact <pad>      → variant «alleen inhoud» (zonder doctype/html/head/body)
+//   node scripts/huis-maquette.mjs --site <map>          → voor de site zelf: index.html + maquette.css + maquette.js ZONDER inline
+//                                                          <script>/<style> (CSP van de site: script-src 'self'; style-src 'self')
 //   node scripts/huis-maquette.mjs --controle            → statische controles zonder browser (exit 1 bij fouten)
 //
 // Geen afhankelijkheden buiten node en de map node_modules/lucide-react (alleen lezen).
@@ -13,6 +15,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';
 
 const WORTEL = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MAP = join(WORTEL, 'docs/huis/maquette');
@@ -150,7 +153,7 @@ function symbool(naam) {
 
 // ───────────────────────────── Samenstellen ─────────────────────────────
 
-export function bouw({ artefact = false } = {}) {
+export function bouw({ artefact = false, site = false } = {}) {
   const tokens = leesJson(join(MAP, 'stijl/hv-tokens.json'));
   const { stijl, script } = bronnen();
   const iconen = iconenUit(script);
@@ -165,6 +168,12 @@ export function bouw({ artefact = false } = {}) {
   const vooraf = `window.HV = window.HV || {}; HV.bouw = ${JSON.stringify({ artefact, iconen, profielen, hemel: { klok: tokens.maten.hemel.klok, bewolkingMax: tokens.maten.hemel.bewolkingMax, mist: tokens.maten.hemel.mist, afwezig: tokens.maten.hemel.afwezig, mengselMax: tokens.maten.hemel.mengselMax, nachtstandDonker: tokens.maten.hemel.nachtstandDonker, nachtstandLicht: tokens.maten.hemel.nachtstandLicht }, gedrag: { nuMax: tokens.maten.gedrag.nuMax, toostMax: tokens.maten.gedrag.toostMax, zinKortMax: tokens.maten.gedrag.zinKortMax, wachtPerKlasse: (tokens.maten.gedrag.wachtPerKlasse || {}).bezig || null, tegelBesturingMin: parseInt(tokens.maten.gedrag.tegelBesturingMin, 10) || 224 } })};`;
   const js = [vooraf, ...script.map((s) => `/* ${s.naam} */\n${s.inhoud}`), 'HV.start();'].join('\n').replace(/<\/script/gi, '<\\/script');
   const sprite = `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">${iconen.map(symbool).join('')}</svg>`;
+  if (site) {
+    // Для сайту: жодного вбудованого коду. Адреси файлів несуть короткий хеш вмісту — після оновлення браузер бере нові.
+    const kort = (inhoud) => createHash('sha256').update(inhoud).digest('hex').slice(0, 12);
+    const html = `<!doctype html>\n<html lang="uk">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<meta name="robots" content="noindex">\n<title>${TITEL}</title>\n<link rel="stylesheet" href="./maquette.css?v=${kort(css)}">\n</head>\n<body>\n${sprite}\n<div id="mq-wortel" class="mq-wortel"></div>\n<script src="./maquette.js?v=${kort(js)}"></script>\n</body>\n</html>\n`;
+    return { html, css, js };
+  }
   const lijf = `${sprite}\n<div id="mq-wortel" class="mq-wortel"></div>\n<script>\n${js}\n</script>`;
   if (artefact) {
     return `<title>${TITEL}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>\n${css}\n</style>\n${lijf}\n`;
@@ -416,6 +425,20 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     const c = cijfers;
     console.log(`[maquette] controle: ${paren} tekstparen · ${c.schermen ?? 0} schermen · ${c.tabbladen ?? 0} tabbladen (${c.voorlopig ?? 0} voorlopig) · ${c.bladen ?? 0} bladen · ${c.apparaten ?? 0} apparaten · ${c.acties ?? 0} acties (${c.zwaar ?? 0} gevaarlijk of kritiek) · ${c.scenarios ?? 0} scenario's · ${fouten.length} fout(en)`);
     process.exit(fouten.length ? 1 : 0);
+  }
+  const k = args.indexOf('--site');
+  if (k >= 0) {
+    if (!args[k + 1]) { console.error('[maquette] --site vraagt een map'); process.exit(1); }
+    const map = resolve(args[k + 1]);
+    mkdirSync(map, { recursive: true });
+    const { html, css, js } = bouw({ site: true });
+    if (/<script(?![^>]*\ssrc=)[^>]*>|<style[\s>]/i.test(html)) { console.error('[maquette] --site: index.html bevat inline script of stijl'); process.exit(1); }
+    writeFileSync(join(map, 'index.html'), html);
+    writeFileSync(join(map, 'maquette.css'), css);
+    writeFileSync(join(map, 'maquette.js'), js);
+    const kb = (x) => (Buffer.byteLength(x) / 1024).toFixed(0);
+    console.log(`[maquette] site: ${map} (index.html ${kb(html)} kB · maquette.css ${kb(css)} kB · maquette.js ${kb(js)} kB)`);
+    process.exit(0);
   }
   const i = args.indexOf('--artefact');
   if (i >= 0) {
