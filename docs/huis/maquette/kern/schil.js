@@ -482,12 +482,15 @@
       rolRanden(el);
     }
   }
-  var vorigeTaal = null;
+  var vorigeTaal = null, snoeit = false;
 
   function teken() {
     var doek = document.getElementById('hv-doek');
     if (!doek || !HV.staat.w) return;
     HV.zetTaal(HV.opslag.lees('taal', 'uk'));
+    // «Перший запуск»: дім без минулого. Модуль міг посіяти свою історію до малювання — прибираємо її тут; якщо він сіє
+    // під час малювання, прибираємо після й малюємо ще раз (один раз), щоб у кадрі не лишилося жодного запису з минулого.
+    HV.staat.snoeiLogboek();
     var ctx = HV.ctx(), w = ctx.staat, p = ctx.profiel;
     var thema = HV.thema();
     var s = HV.schermen[route.scherm];
@@ -555,6 +558,7 @@
     rolBij(doek);
     if (HV.pult && HV.pult.werkBij) HV.pult.werkBij(ctx);
     void s;
+    if (!snoeit && HV.staat.snoeiLogboek()) { snoeit = true; try { teken(); } finally { snoeit = false; } }
   }
 
   // ───────────────────────── Gebeurtenissen ─────────────────────────

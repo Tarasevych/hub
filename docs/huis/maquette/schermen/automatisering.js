@@ -972,13 +972,21 @@
     var vandaag = 0; X.regels.forEach(function (r) { r.runs.forEach(function (x) { if (x.tijd >= dagBegin(w.tijd) && x.uitkomst !== 'onwaar') vandaag++; }); });
     var volgende = volgendeRuns(w, X, 1)[0];
 
-    var held = '<section class="hv-aut-held" data-k="aut-held"><div class="hv-aut-held__tekst">' +
-      '<p class="hv-aut-held__zin">' + h(werkend + ' ' + HV.meervoud(werkend, ['правило працює', 'правила працюють', 'правил працюють'], ['regel is actief', 'regels zijn actief'])) +
-      (volgende ? h(t('. Далі — «', '. Hierna: ‘') + HV.p(volgende.naam) + t('» о ', '’ om ') + HV.tijd(volgende.tijd) + '.') : '.') + '</p>' +
-      '<p class="hv-aut-held__sub">' + h(t('Кожна дія правила — запис у Журналі зі знаком автоматизації; дозволи кожного правила — окремо.', 'Elke actie van een regel komt in het logboek met het teken van de automatisering; elke regel heeft eigen toestemmingen.')) + '</p></div>' +
-      '<div class="hv-aut-held__getallen">' + o.getal({ maat: 'm', label: t('працюють', 'actief'), waarde: String(werkend) }) + o.getal({ maat: 'm', label: t('спостереження', 'meekijken'), waarde: String(kijk) }) + o.getal({ maat: 'm', label: t('чернетки', 'concepten'), waarde: String(concept) }) + o.getal({ maat: 'm', label: t('запусків сьогодні', 'starts vandaag'), waarde: String(vandaag) }) + '</div>' +
-      '<div class="hv-aut-held__knoppen">' + o.knop({ tekst: t('Нове правило', 'Nieuwe regel'), icoon: 'plus', soort: 'hoofd', actie: 'blad', gegevens: { blad: 'regelnieuw' } }) +
-      o.knop({ tekst: t('Призупинити до…', 'Pauzeren tot…'), icoon: 'pause', actie: 'blad', gegevens: { blad: 'regelpauze' } }) + '</div></section>';
+    // герой зони — спільний o.zoneheld (посібник §4.2): папір без градієнта, лічильники однієї форми, одна головна дія й одна поруч
+    var held = o.zoneheld({
+      id: 'aut-regels', klas: 'hv-aut-zoneheld hv-aut-zoneheld--vier', icoon: 'diamond', boven: t('Правила зараз', 'Regels nu'),
+      zin: h(werkend + ' ' + HV.meervoud(werkend, ['правило працює', 'правила працюють', 'правил працюють'], ['regel is actief', 'regels zijn actief']) +
+        (volgende ? t('. Далі — «', '. Hierna: ‘') + HV.p(volgende.naam) + t('» о ', '’ om ') + HV.tijd(volgende.tijd) + '.' : '.')),
+      sub: h(t('Кожна дія правила — запис у Журналі зі знаком автоматизації; дозволи кожного правила — окремо.', 'Elke actie van een regel komt in het logboek met het teken van de automatisering; elke regel heeft eigen toestemmingen.')),
+      tellers: [
+        { waarde: String(werkend), label: t('працюють', 'actief') },
+        { waarde: String(kijk), label: t('спостереження', 'meekijken') },
+        { waarde: String(concept), label: t('чернетки', 'concepten') },
+        { waarde: String(vandaag), label: t('запусків сьогодні', 'starts vandaag') }
+      ],
+      extra: o.knop({ tekst: t('Призупинити до…', 'Pauzeren tot…'), icoon: 'pause', actie: 'blad', gegevens: { blad: 'regelpauze' } }),
+      actie: { tekst: t('Нове правило', 'Nieuwe regel'), icoon: 'plus', actie: 'blad', gegevens: { blad: 'regelnieuw' } }
+    });
 
     // «Зараз виконується»
     var loopt = X.lopend.map(function (taak) {
@@ -1004,8 +1012,8 @@
       var r = v.regel ? regel(v.regel) : null;
       return '<div class="hv-aut-voorstel" data-k="vs-' + h(v.id) + '"><div class="hv-aut-voorstel__kop">' + o.maker(v.maker) + '<span class="hv-aut-voorstel__tijd">' + h(wanneerTekst(v.tijd, w.tijd)) + '</span></div>' +
         '<p class="hv-aut-voorstel__wat">' + h(HV.p(v.wat)) + '</p>' + (r ? '<p class="hv-aut-voorstel__sub">' + h(t('Правило «', 'Regel ‘') + HV.p(r.naam) + t('» · стане чернеткою; увімкнена версія ', '’ · wordt een concept; de actieve versie ') + r.versie + t(' працює далі', ' blijft werken')) + '</p>' : '') +
-        '<div class="hv-knoppen">' + (v.soort === 'wijziging' ? o.knop({ tekst: t('Переглянути зміни', 'Wijzigingen bekijken'), icoon: 'git-compare', klein: true, actie: 'voorstel-bekijk', gegevens: { voorstel: v.id } }) : o.knop({ tekst: t('Створити чернетку', 'Concept maken'), icoon: 'pencil-line', klein: true, actie: 'voorstel-gewoonte', gegevens: { voorstel: v.id } })) +
-        o.knop({ tekst: t('Відхилити', 'Afwijzen'), soort: 'stil', klein: true, actie: 'voorstel-weg', gegevens: { voorstel: v.id } }) + '</div></div>';
+        '<div class="hv-knoppen">' + (v.soort === 'wijziging' ? o.knop({ tekst: t('Переглянути зміни', 'Wijzigingen bekijken'), aria: t('Переглянути зміни: ', 'Wijzigingen bekijken: ') + HV.p(v.wat), icoon: 'git-compare', klein: true, actie: 'voorstel-bekijk', gegevens: { voorstel: v.id } }) : o.knop({ tekst: t('Створити чернетку', 'Concept maken'), aria: t('Створити чернетку: ', 'Concept maken: ') + HV.p(v.wat), icoon: 'pencil-line', klein: true, actie: 'voorstel-gewoonte', gegevens: { voorstel: v.id } })) +
+        o.knop({ tekst: t('Відхилити', 'Afwijzen'), aria: t('Відхилити: ', 'Afwijzen: ') + HV.p(v.wat), soort: 'stil', klein: true, actie: 'voorstel-weg', gegevens: { voorstel: v.id } }) + '</div></div>';
     }).join('');
     var voorstelBlok = o.blok({ id: 'aut-voorstellen', titel: t('Пропозиції', 'Voorstellen'), teller: X.voorstellen.length || null, inhoud: voorstellen ? '<div class="hv-aut-voorstellen">' + voorstellen + '</div>' : '',
       uitleg: t('Що станеться: пропозиція агента чи звички стає чернеткою з порівнянням. Пов’язано з: увімкнена версія правила працює далі. Як повернути: «Відхилити» чи видалити чернетку.', 'Wat er gebeurt: een voorstel van een agent of een gewoonte wordt een concept met vergelijking. Hangt samen met: de actieve versie van de regel blijft werken. Terugdraaien: ‘Afwijzen’ of het concept verwijderen.') });
@@ -1623,10 +1631,18 @@
     var kamers = []; w.scenes.forEach(function (s) { s.stappen.forEach(function (st) { var a = app(st.doel); if (a && kamers.indexOf(a.kamer) < 0) kamers.push(a.kamer); }); });
     var lijst = w.scenes.filter(function (s) { return kf === 'alle' || s.stappen.some(function (st) { var a = app(st.doel); return a && a.kamer === kf; }); });
     var actief = sceneVan(w.sceneActief);
-    var kop = '<section class="hv-aut-held hv-aut-held--scenes" data-k="sc-held"><div class="hv-aut-held__tekst"><p class="hv-aut-held__zin">' + h(actief ? t('Діє сцена «', 'Actief: scène ‘') + HV.p(actief.naam) + t('»', '’') + (handmatig(actief) ? t(' · змінено вручну: ', ' · handmatig gewijzigd: ') + handmatig(actief) : '') + '. ' : '') + h(t('Режим дому: «', 'Huisstand: ‘') + HV.p(HV.huisstanden[w.huisstand]) + t('».', '’.')) + '</p>' +
-      regieRij(w, X) + '</div><div class="hv-aut-held__knoppen">' + o.knop({ tekst: t('Зберегти поточне', 'Huidige stand opslaan'), icoon: 'camera', soort: 'hoofd', actie: 'blad', gegevens: { blad: 'scenenieuw' } }) +
-      o.knop({ tekst: t('Вимкнути все світло', 'Alle lampen uit'), icoon: 'lightbulb-off', actie: 'aut-alles', gegevens: { wat: 'licht' } }) +
-      o.knop({ tekst: t('Вимкнути все в домі', 'Alles in huis uit'), icoon: 'power', actie: 'aut-alles', gegevens: { wat: 'alles' } }) + '</div></section>';
+    // герой зони — спільний o.zoneheld: речення про сцену й режим, лічильники однієї форми; рядок «Керує зараз» і дії — ряд під реченням
+    var kop = o.zoneheld({
+      id: 'aut-scenes', klas: 'hv-aut-zoneheld hv-aut-zoneheld--scenes', icoon: 'clapperboard', boven: t('Сцени й режими зараз', 'Scènes en standen nu'),
+      zin: h((actief ? t('Діє сцена «', 'Actief: scène ‘') + HV.p(actief.naam) + t('»', '’') + (handmatig(actief) ? t(' · змінено вручну: ', ' · handmatig gewijzigd: ') + handmatig(actief) : '') + '. ' : '') + t('Режим дому: «', 'Huisstand: ‘') + HV.p(HV.huisstanden[w.huisstand]) + t('».', '’.')),
+      tellers: [
+        { waarde: String(w.scenes.length), label: HV.meervoud(w.scenes.length, ['сцена', 'сцени', 'сцен'], ['scène', 'scènes']) },
+        { waarde: String(Object.keys(HV.huisstanden).length), label: HV.meervoud(Object.keys(HV.huisstanden).length, ['режим дому', 'режими дому', 'режимів дому'], ['huisstand', 'huisstanden']) }
+      ],
+      extra: regieRij(w, X) + o.knop({ tekst: t('Вимкнути все світло', 'Alle lampen uit'), icoon: 'lightbulb-off', actie: 'aut-alles', gegevens: { wat: 'licht' } }) +
+        o.knop({ tekst: t('Вимкнути все в домі', 'Alles in huis uit'), icoon: 'power', actie: 'aut-alles', gegevens: { wat: 'alles' } }),
+      actie: { tekst: t('Зберегти поточне', 'Huidige stand opslaan'), icoon: 'camera', actie: 'blad', gegevens: { blad: 'scenenieuw' } }
+    });
 
     var filter = o.segment({ label: t('Кімната', 'Kamer'), waarde: kf, actie: 'ui', gegevens: { naam: 'sc-kamer' }, klas: 'hv-segment--rol', k: 'sc-k', opties: [{ id: 'alle', label: t('Усі кімнати', 'Alle kamers') }].concat(kamers.map(function (k) { return { id: k, label: HV.p(kamer(k).naam) }; })) });
     var tegels = o.blok({ id: 'sc-tegels', titel: t('Сцени', 'Scènes'), teller: lijst.length, vast: true,
@@ -1648,7 +1664,7 @@
       return '<article class="hv-standkaart' + (nu ? ' is-nu' : '') + '" data-k="sk-' + s + '"><button type="button" class="hv-standkaart__lijf" data-actie="ga" data-naar="automatiseringen-stand-' + s + '">' +
         '<span class="hv-standkaart__teken">' + HV.icoon(STAND_ICOON[s], { maat: 'l' }) + '</span><span class="hv-standkaart__naam">' + h(HV.p(HV.huisstanden[s])) + (nu ? ' <span class="hv-standkaart__nu">' + h(t('зараз', 'nu')) + '</span>' : '') + '</span>' +
         '<span class="hv-standkaart__gevolg">' + h(groot(HV.p(standGevolg(s, w)))) + '</span><span class="hv-standkaart__meta">' + h(regels + ' ' + HV.meervoud(regels, ['правило діє', 'правила діють', 'правил діють'], ['regel werkt', 'regels werken'])) + '</span></button>' +
-        '<div class="hv-standkaart__voet">' + (nu ? o.knop({ gedrukt: true, tekst: t('Діє', 'Actief'), klein: true }) : o.knop({ tekst: s === 'vakantie' ? t('Їдемо…', 'We gaan…') : t('Перейти', 'Overschakelen'), klein: true, actie: s === 'vakantie' ? 'blad' : 'huisstand', gegevens: s === 'vakantie' ? { blad: 'vertrek' } : { waarde: s } })) + '</div></article>';
+        '<div class="hv-standkaart__voet">' + (nu ? o.knop({ gedrukt: true, tekst: t('Діє', 'Actief'), klein: true }) : o.knop({ tekst: s === 'vakantie' ? t('Їдемо…', 'We gaan…') : t('Перейти', 'Overschakelen'), aria: s === 'vakantie' ? null : t('Перейти в режим: ', 'Overschakelen naar: ') + HV.p(HV.huisstanden[s]), klein: true, actie: s === 'vakantie' ? 'blad' : 'huisstand', gegevens: s === 'vakantie' ? { blad: 'vertrek' } : { waarde: s } })) + '</div></article>';
     }).join('') + '</div>';
     var standBlok = o.blok({ id: 'sc-standen', titel: t('Режими дому', 'Huisstanden'), teller: 5,
       uitleg: t('Що станеться: режим змінює світло, клімат і те, які правила діють. Пов’язано з: режим ніколи не знімає охорону й не відмикає двері. Як повернути: «Повернути» протягом 10 с або оберіть інший режим.', 'Wat er gebeurt: de stand verandert licht, klimaat en welke regels werken. Hangt samen met: een stand zet nooit het alarm uit en ontgrendelt geen deuren. Terugdraaien: ‘Ongedaan maken’ binnen 10 s of kies een andere stand.'),
@@ -1671,7 +1687,7 @@
   function overgangRij(g) {
     return '<div class="hv-overgang" data-k="og-' + g.id + '">' + o.schakel({ aan: g.aan, icoon: g.icoon, toon: 'neutraal', actie: 'overgang-schakel', gegevens: { overgang: g.id }, aria: HV.p(overgangZin(g)) }) +
       '<p class="hv-overgang__zin">' + h(HV.p(overgangZin(g))) + '</p>' +
-      (g.min != null ? o.stapper({ label: t('Затримка', 'Vertraging'), waarde: HV.maat(g.min, t('хв', 'min')), actie: 'overgang-stap', gegevens: { overgang: g.id, veld: 'min' }, stap: 5 }) : g.uur != null ? o.stapper({ label: t('Година', 'Tijdstip'), waarde: uurTekst(g.uur), actie: 'overgang-stap', gegevens: { overgang: g.id, veld: 'uur' }, stap: 0.5 }) : '') + '</div>';
+      (g.min != null ? o.stapper({ label: t('Затримка', 'Vertraging'), waarde: HV.maat(g.min, t('хв', 'min')), actie: 'overgang-stap', gegevens: { overgang: g.id, veld: 'min' }, stap: 5 }) : g.uur != null ? o.stapper({ label: t('Година', 'Tijdstip') + ' (' + HV.p(overgangZin(g)).split(' → ').pop() + ')', waarde: uurTekst(g.uur), actie: 'overgang-stap', gegevens: { overgang: g.id, veld: 'uur' }, stap: 0.5 }) : '') + '</div>';
   }
 
   function scenePagina(ctx) {
@@ -1848,9 +1864,17 @@
     var komend = items.filter(function (x) { return x.tijd > nu; });
     var volgende = komend.filter(function (x) { return x.soort !== 'zon'; })[0];
 
-    var held = '<section class="hv-aut-held hv-aut-held--dagorde" data-k="ag-held"><div class="hv-aut-held__tekst"><p class="hv-aut-held__zin">' + h(volgende ? t('Далі, о ', 'Hierna, om ') + HV.tijd(volgende.tijd) + ' — ' + klein(HV.p(volgende.naam)) + '.' : t('Сьогодні більше нічого не заплановано.', 'Vandaag staat er niets meer gepland.')) + '</p>' +
-      '<p class="hv-aut-held__sub">' + h(t('Що дім зробить сам сьогодні й завтра: правила, переходи режимів, зарядка, сміття й догляд. Календар і списки читаються з Hub.', 'Wat het huis vandaag en morgen zelf doet: regels, overgangen, laden, afval en onderhoud. Agenda en lijsten komen uit Hub.')) + '</p></div>' +
-      '<div class="hv-aut-held__getallen">' + o.getal({ maat: 'm', label: t('ще сьогодні', 'nog vandaag'), waarde: String(komend.filter(function (x) { return x.tijd < d0 + DAG && x.soort !== 'zon'; }).length) }) + o.getal({ maat: 'm', label: t('завтра', 'morgen'), waarde: String(items.filter(function (x) { return x.tijd >= d0 + DAG && x.soort !== 'zon'; }).length) }) + o.getal({ maat: 'm', label: t('пропустити раз', 'overslaan'), waarde: String(Object.keys(X.overslaan).length) }) + '</div></section>';
+    // герой зони — спільний o.zoneheld: наступна подія, лічильники однієї форми; дій у героя немає
+    var held = o.zoneheld({
+      id: 'aut-dagorde', klas: 'hv-aut-zoneheld', icoon: 'calendar-clock', boven: t('Порядок дня', 'Dagorde'),
+      zin: h(volgende ? t('Далі, о ', 'Hierna, om ') + HV.tijd(volgende.tijd) + ' — ' + klein(HV.p(volgende.naam)) + '.' : t('Сьогодні більше нічого не заплановано.', 'Vandaag staat er niets meer gepland.')),
+      sub: h(t('Що дім зробить сам сьогодні й завтра: правила, переходи режимів, зарядка, сміття й догляд. Календар і списки читаються з Hub.', 'Wat het huis vandaag en morgen zelf doet: regels, overgangen, laden, afval en onderhoud. Agenda en lijsten komen uit Hub.')),
+      tellers: [
+        { waarde: String(komend.filter(function (x) { return x.tijd < d0 + DAG && x.soort !== 'zon'; }).length), label: t('ще сьогодні', 'nog vandaag') },
+        { waarde: String(items.filter(function (x) { return x.tijd >= d0 + DAG && x.soort !== 'zon'; }).length), label: t('завтра', 'morgen') },
+        { waarde: String(Object.keys(X.overslaan).length), label: t('пропустити раз', 'overslaan') }
+      ]
+    });
 
     // стрічка двох діб
     var fasen = [], prijs = [];
@@ -1913,7 +1937,7 @@
       else if (i.regel.standen.indexOf(w.huisstand) < 0) status = o.chip({ icoon: 'house', tekst: t('не в цьому режимі', 'niet in deze stand') });
     }
     var knop = '';
-    if (i.soort === 'regel' && !voorbij && !i.meekijken) knop = o.knop({ tekst: i.overslaan ? t('Не пропускати', 'Niet overslaan') : t('Пропустити раз', 'Eén keer overslaan'), icoon: i.overslaan ? 'rotate-ccw' : 'skip-forward', klein: true, soort: 'stil', actie: 'ag-overslaan', gegevens: { sleutel: i.sleutel } });
+    if (i.soort === 'regel' && !voorbij && !i.meekijken) knop = o.knop({ tekst: i.overslaan ? t('Не пропускати', 'Niet overslaan') : t('Пропустити раз', 'Eén keer overslaan'), aria: (i.overslaan ? t('Не пропускати', 'Niet overslaan') : t('Пропустити раз', 'Eén keer overslaan')) + ': ' + HV.p(i.naam) + ', ' + HV.datumKort(i.tijd) + ' ' + HV.tijd(i.tijd), icoon: i.overslaan ? 'rotate-ccw' : 'skip-forward', klein: true, soort: 'stil', actie: 'ag-overslaan', gegevens: { sleutel: i.sleutel } });
     var lijf = '<span class="hv-agenda__teken hv-agenda__teken--' + i.soort + '">' + HV.icoon(i.icoon, { maat: 's' }) + '</span><span class="hv-agenda__tekst"><span class="hv-agenda__naam">' + h(HV.p(i.naam)) + '</span>' + (i.sub ? '<span class="hv-agenda__sub">' + h(HV.p(AGENDA_SOORT[i.soort]) + ' · ' + HV.p(i.sub)) + '</span>' : '<span class="hv-agenda__sub">' + h(HV.p(AGENDA_SOORT[i.soort])) + '</span>') + (status ? '<span class="hv-agenda__status">' + status + '</span>' : '') + '</span>';
     var naar = i.soort === 'regel' ? 'automatiseringen-regel-' + i.regel.id : i.naar;
     return '<li class="hv-agenda__rij' + (voorbij ? ' is-voorbij' : '') + ' is-' + i.soort + '" data-k="ag-' + h(i.id) + '"><span class="hv-agenda__tijd">' + HV.tijd(i.tijd) + '</span><span class="hv-agenda__punt" aria-hidden="true"></span>' +

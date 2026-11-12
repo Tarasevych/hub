@@ -189,7 +189,7 @@
       { tijd: om(gister, 23, 5), maker: M.sys, wat: ['Копію налаштувань збережено', 'Kopie van de instellingen bewaard'], soort: 'huis.systeem' },
       { tijd: om(dag0, 2, 0), maker: M.sys, wat: ['Нічна копія на мережеве сховище: 1,2 ГБ', 'Nachtelijke kopie naar de netwerkopslag: 1,2 GB'], soort: 'huis.systeem', doel: 'nas' },
       { tijd: om(dag0, 3, 12), maker: M.sys, wat: ['Датчик температури на горищі мовчить', 'Temperatuursensor zolder zwijgt'], waarom: ['немає звіту понад 60 хв', 'al meer dan 60 min geen melding'], soort: 'huis.apparaat', gewicht: 'belangrijk', doel: 'tempzolder' },
-      { tijd: om(dag0, 5, 40), maker: M.sys, wat: ['Адаптер Zigbee перепідключено', 'Zigbee-adapter opnieuw verbonden'], waarom: ['зв’язок зник на 40 с', 'verbinding 40 s weg'], soort: 'huis.integratie', gewicht: 'belangrijk', dienst: 'integraties' },
+      { tijd: om(dag0, 5, 40), maker: M.sys, wat: ['Адаптер Zigbee під’єднано знову', 'Zigbee-adapter opnieuw verbonden'], waarom: ['зв’язок зник на 40 с', 'verbinding 40 s weg'], soort: 'huis.integratie', gewicht: 'belangrijk', dienst: 'integraties' },
       { tijd: om(dag0, 7, 5), maker: auto('«Ранок у будні»', '‘Werkdagochtend’'), wat: ['Сцена «Ранок»: 4 із 4 кроків', 'Scène ‘Ochtend’: 4 van 4 stappen'], waarom: ['будній день, 07:05 (схід сонця пізніший)', 'werkdag, 07:05 (zonsopgang later)'], toegestaan: ['дозвіл «Завжди»', 'toestemming ‘Altijd’'], soort: 'huis.automatisering',
         keten: [['07:05, будній день', '07:05, werkdag'], ['хтось удома', 'iemand thuis'], ['сцена «Ранок»', 'scène ‘Ochtend’']] },
       { tijd: om(dag0, 7, 6), maker: auto('«Ранок у будні»', '‘Werkdagochtend’'), wat: ['Кавоварка: увімкнено', 'Koffiemachine: aan'], soort: 'huis.automatisering', doel: 'koffie', via: ['Ранок', 'Ochtend'] },
@@ -387,10 +387,13 @@
       var a = x.apparaat;
       uit.push({ id: 'open-' + a.id, icoon: 'door-open', toon: 'let-op', tekst: P(HV.staat.kamer(a.kamer).naam) + ': ' + P(a.naam).toLowerCase() + ' ' + t('відчинене ', 'open sinds ') + HV.duur(x.minuten), sinds: a.st.sinds || w.tijd, acties: [{ tekst: t('Чому?', 'Waarom?'), actie: 'blad', gegevens: { blad: 'apparaat:' + a.id } }] });
     });
+    // Дім без минулого («Перший запуск», w.logboekVanaf — мить створення): того, що було до цієї миті, дім знати не може —
+    // без «з 14:02» і без віку, старшого за сам дім; тривалість рахується щонайраніше від створення дому.
+    var vanaf = w.logboekVanaf == null ? null : w.logboekVanaf, eerder = function (tijd) { return vanaf != null && tijd < vanaf; };
     w.volgorde.forEach(function (id) {
       var a = A[id];
-      if (a.beschikbaar === 'onbereikbaar') uit.push({ id: 'dood-' + a.id, icoon: 'unplug', toon: 'let-op', tekst: P(a.naam) + ': ' + HV.woord.onbereikbaar() + t(' з ', ' sinds ') + HV.tijd(a.gezien), sinds: a.gezien, acties: [{ tekst: t('Що перевірити', 'Wat te controleren'), actie: 'blad', gegevens: { blad: 'apparaat:' + a.id } }] });
-      else if (a.beschikbaar === 'verouderd') uit.push({ id: 'oud-' + a.id, icoon: 'history', toon: 'let-op', tekst: P(HV.staat.kamer(a.kamer).naam) + ': ' + P(a.naam).toLowerCase() + ' — ' + HV.woord.verouderd() + ' ' + HV.oud(HV.kijk.leeftijd(a)), sinds: a.gezien, acties: [{ tekst: t('Відкрити', 'Openen'), actie: 'blad', gegevens: { blad: 'apparaat:' + a.id } }] });
+      if (a.beschikbaar === 'onbereikbaar') uit.push({ id: 'dood-' + a.id, icoon: 'unplug', toon: 'let-op', tekst: P(a.naam) + ': ' + HV.woord.onbereikbaar() + (eerder(a.gezien) ? '' : t(' з ', ' sinds ') + HV.tijd(a.gezien)), sinds: a.gezien, acties: [{ tekst: t('Що перевірити', 'Wat te controleren'), actie: 'blad', gegevens: { blad: 'apparaat:' + a.id } }] });
+      else if (a.beschikbaar === 'verouderd') uit.push({ id: 'oud-' + a.id, icoon: 'history', toon: 'let-op', tekst: P(HV.staat.kamer(a.kamer).naam) + ': ' + P(a.naam).toLowerCase() + ' — ' + HV.woord.verouderd() + (eerder(a.gezien) ? '' : ' ' + HV.oud(HV.kijk.leeftijd(a))), sinds: a.gezien, acties: [{ tekst: t('Відкрити', 'Openen'), actie: 'blad', gegevens: { blad: 'apparaat:' + a.id } }] });
     });
     ['wasmachine', 'droger', 'vaatwasser'].forEach(function (id) {
       var a = A[id];
@@ -398,6 +401,7 @@
     });
     if (A.laadpaal && A.laadpaal.st.laadt) uit.push({ id: 'laadt', icoon: 'plug-zap', toon: 'auto', tekst: t('Авто заряджається: ', 'De auto laadt: ') + HV.maatTekst(A.laadpaal.st.vermogen, t('кВт', 'kW'), 1), sinds: w.tijd, acties: [{ tekst: t('План зарядки', 'Laadplan'), actie: 'ga', gegevens: { naar: 'energie-laden' } }] });
     if (isStil(X, w.tijd)) uit.push({ id: 'stil', icoon: 'moon', toon: 'neutraal', tekst: t('Тихі години до ', 'Stille uren tot ') + uurTekst(X.stil.tot) + t(': телефони без звуку, тривоги проходять', ': telefoons zonder geluid, alarmen komen door'), sinds: w.tijd, acties: [{ tekst: t('Правила', 'Regels'), actie: 'ga', gegevens: { naar: 'activiteit-regels' } }] });
+    if (vanaf != null) uit.forEach(function (x) { if (x.sinds == null || x.sinds < vanaf) x.sinds = vanaf; });
     return uit;
   }
 
@@ -411,19 +415,26 @@
   function verzoekKaart(v, w) {
     var wie = HV.gevaar.uitvoerder(v.uitvoerder), actie = HV.gevaar.actie(v.sleutel);
     var maker = { soort: wie.soort, naam: wie.naam };
-    var rest = v.tot ? Math.round((v.tot - w.tijd) / MIN) : null;
+    // «Чекає до» називає лише сам запит (ядро строку не ставить); коли цей час настає, ядро закриває запит як «минув»
+    var rest = v.tot ? Math.max(0, Math.round((v.tot - w.tijd) / MIN)) : null;
     // чинний дозвіл виконавця: запит має сенс лише за «Питати»; якщо власник тим часом поставив «Вимкнено» — схвалити не можна
     var stand = actie.sleutel === 'onbekend' ? null : HV.gevaar.stand(v.uitvoerder, v.sleutel), dicht = stand === 'uit';
+    // хто вирішує — правило ядра (HV.gevaar.magBeslissen); небезпечне й критичне власник схвалює ритуалом рівня (HV.verzoek)
+    var mag = HV.gevaar.magBeslissen(HV.rol(), actie), zwaar = HV.gevaar.isZwaar(actie);
     var rijen = [[t('Хто', 'Wie'), o.maker(maker)], [t('Що', 'Wat'), h(P(v.wat))]];
     if (v.waarom) rijen.push([t('Чому', 'Waarom'), h(P(v.waarom))]);
-    rijen.push([t('Чекає до', 'Wacht tot'), v.tot ? h(HV.tijd(v.tot) + (rest > 0 ? ' · ' + t('ще ', 'nog ') + HV.duur(rest) : ' · ' + t('час минув', 'tijd verstreken'))) : h(t('без строку', 'zonder termijn'))]);
+    if (v.om) rijen.push([t('Коли виконається', 'Wanneer het gebeurt'), h(t('о ', 'om ') + HV.tijd(v.om) + t(' — після схвалення, годинником дому', ' — na goedkeuring, op de huisklok'))]);
+    rijen.push([t('Чекає до', 'Wacht tot'), v.tot ? h(HV.tijd(v.tot) + ' · ' + t('ще ', 'nog ') + HV.duur(rest)) : h(t('без строку', 'zonder termijn'))]);
     rijen.push([t('Рівень дії', 'Niveau'), o.risico(actie.niveau)]);
+    if (zwaar) rijen.push([t('Хто вирішує', 'Wie beslist'), h(actie.niveau === 'kritiek' ? t('власник: рейка й підтвердження входу', 'de eigenaar: rail en bevestiging van aanmelding') : t('власник: рейка утримання', 'de eigenaar: de houdrail'))]);
     if (stand) rijen.push([t('Дозвіл зараз', 'Toestemming nu'), h(t('«', '‘') + P(HV.gevaar.standNamen[stand]) + t('»', '’') + ' · ' + t('змінює лише власник', 'alleen de eigenaar wijzigt dit'))]);
     return '<article class="hv-verzoek" data-k="vz-' + h(v.id) + '"><div class="hv-verzoek__kop">' + ic('circle-help', 'm') + '<h4>' + h(P(wie.naam) + t(' просить дозволу', ' vraagt toestemming')) + '</h4>' + o.chip({ icoon: 'hourglass', tekst: t('чекає', 'wacht'), toon: 'let-op' }) + '</div>' +
       '<dl class="hv-lb-dl">' + rijen.map(function (x) { return '<div><dt>' + h(x[0]) + '</dt><dd>' + x[1] + '</dd></div>'; }).join('') + '</dl>' +
-      (dicht ? '<p class="hv-lb-noot hv-lb-noot--let-op">' + ic('lock') + h(t('Дозвіл цього виконавця тепер «Вимкнено», тож ця дія йому недоступна. Відхиліть запит або поверніть «Питати» в дозволах.', 'De toestemming van deze uitvoerder staat nu op ‘Uit’, dus deze actie mag hij niet doen. Wijs het verzoek af of zet de toestemming terug op ‘Vragen’.')) + '</p>' : '') +
-      '<div class="hv-knoppen">' + o.knop({ tekst: t('Схвалити раз', 'Eén keer goedkeuren'), icoon: 'check', soort: dicht ? 'gewoon' : 'hoofd', actie: dicht ? null : 'verzoek-ja', gegevens: dicht ? null : { verzoek: v.id }, uit: dicht }) +
-      o.knop({ tekst: t('Відхилити', 'Afwijzen'), icoon: 'x', actie: 'verzoek-nee', gegevens: { verzoek: v.id } }) +
+      (dicht && mag ? '<p class="hv-lb-noot hv-lb-noot--let-op">' + ic('lock') + h(t('Дозвіл цього виконавця тепер «Вимкнено», тож ця дія йому недоступна. Відхиліть запит або поверніть «Питати» в дозволах.', 'De toestemming van deze uitvoerder staat nu op ‘Uit’, dus deze actie mag hij niet doen. Wijs het verzoek af of zet de toestemming terug op ‘Vragen’.')) + '</p>' : '') +
+      '<div class="hv-knoppen">' + (mag
+        ? o.knop({ tekst: t('Схвалити раз', 'Eén keer goedkeuren'), icoon: zwaar ? (actie.niveau === 'kritiek' ? 'octagon' : 'triangle') : 'check', soort: dicht ? 'gewoon' : 'hoofd', actie: dicht ? null : 'verzoek-ja', gegevens: dicht ? null : { verzoek: v.id }, uit: dicht }) +
+          o.knop({ tekst: t('Відхилити', 'Afwijzen'), icoon: 'x', actie: 'verzoek-nee', gegevens: { verzoek: v.id } })
+        : '<p class="hv-verzoek__slot">' + ic('lock') + '<span>' + h(t('Вирішує власник', 'De eigenaar beslist')) + '</span></p>') +
       o.knop({ tekst: t('Дозволи', 'Toestemmingen'), icoon: 'shield-check', soort: 'stil', actie: 'ga', gegevens: { naar: 'instellingen-risico' } }) +
       o.gevolg(t('Що станеться: «Схвалити раз» виконає саме цю дію один раз; дозвіл виконавця лишиться «Питати». Пов’язано з: дія й рішення — два записи в Журналі. Як повернути: після виконання — «Повернути» у сповіщенні.', 'Wat er gebeurt: ‘Eén keer goedkeuren’ voert precies deze actie één keer uit; de toestemming blijft ‘Vragen’. Hangt samen met: de actie en het besluit worden twee regels in het logboek. Terugdraaien: na het uitvoeren — ‘Ongedaan maken’ in de melding.')) + '</div></article>';
   }
@@ -454,6 +465,8 @@
     return '<span class="hv-lb-wijziging"><span class="hv-lb-wijziging__was"><span class="hv-vo">' + h(t('було', 'was')) + ' </span>' + h(d.was) + '</span>' + ic('arrow-right') +
       '<span class="hv-lb-wijziging__werd"><span class="hv-vo">' + h(t('стало', 'werd')) + ' </span>' + h(d.werd) + '</span></span>';
   }
+  /** Заголовок запису без повтору значення і чип «було → стало» — ті самі для інших стрічок подій (потік у Симуляторі). */
+  HV.logboekRegel = { kop: kopVan, wijziging: wijzigingVan, chip: deltaChip };
   function makerFilterPast(r, maker) {
     if (maker === 'alle') return true;
     var s = r.maker ? r.maker.soort : 'systeem';
@@ -519,7 +532,7 @@
     if (r.doel && w.apparaten[r.doel]) acties.push(o.knop({ tekst: t('Відкрити пристрій', 'Apparaat openen'), icoon: HV.paspoort.soorten[w.apparaten[r.doel].soort].icoon, actie: 'blad', gegevens: { blad: 'apparaat:' + r.doel } }));
     if (!inBlad) acties.push(o.knop({ tekst: t('Чому?', 'Waarom?'), icoon: 'circle-help', actie: 'blad', gegevens: { blad: 'waarom:' + r.id } }));
     acties.push(o.knop({ tekst: r.gelezen ? t('Непрочитане', 'Ongelezen') : t('Прочитане', 'Gelezen'), icoon: r.gelezen ? 'bell-dot' : 'check', soort: 'stil', actie: 'lb-gelezen', gegevens: { id: r.id } }));
-    acties.push(st.sluimer && st.sluimer > w.tijd ? o.knop({ tekst: t('Повернути зі сну', 'Weer tonen'), icoon: 'alarm-clock', soort: 'stil', actie: 'lb-wek', gegevens: { id: r.id } }) : o.knop({ tekst: t('Відкласти на 1 год', '1 uur uitstellen'), icoon: 'alarm-clock', soort: 'stil', actie: 'lb-sluimer', gegevens: { id: r.id } }));
+    acties.push(st.sluimer && st.sluimer > w.tijd ? o.knop({ tekst: t('Показати знову', 'Weer tonen'), icoon: 'alarm-clock', soort: 'stil', actie: 'lb-wek', gegevens: { id: r.id } }) : o.knop({ tekst: t('Відкласти на 1 год', '1 uur uitstellen'), icoon: 'alarm-clock', soort: 'stil', actie: 'lb-sluimer', gegevens: { id: r.id } }));
     acties.push(o.knop({ tekst: t('Сповіщення служби', 'Meldingen van de dienst'), icoon: 'sliders-horizontal', soort: 'stil', actie: 'lb-naar-regel', gegevens: { dienst: d.id } }));
     if (r.toegestaan) acties.push(o.knop({ tekst: t('Дозволи', 'Toestemmingen'), icoon: 'shield-check', soort: 'stil', actie: 'ga', gegevens: { naar: 'instellingen-risico' } }));
     return '<div class="hv-lb-m__details">' + delta + keten + '<dl class="hv-lb-dl">' + rijen.map(function (x) { return '<div><dt>' + h(x[0]) + '</dt><dd>' + x[1] + '</dd></div>'; }).join('') + '</dl>' +
@@ -621,7 +634,7 @@
       return '<section class="hv-lb-sectie" data-k="s-dag-' + i + '"><h3 class="hv-lb-sectie__kop">' + ic('calendar') + h(d.label) + '<span class="hv-lb-teller">' + n + '</span></h3><ul class="hv-lb-lijst">' + d.groepen.map(function (g) { return melding(g, X, w, openId); }).join('') + '</ul></section>';
     }).join('');
     if (rest.length > max) stroom += '<div class="hv-knoppen hv-lb-meer">' + o.knop({ tekst: t('Показати ще: ', 'Meer tonen: ') + Math.min(40, rest.length - max) + ' / ' + (rest.length - max), icoon: 'chevron-down', actie: 'ui', gegevens: { naam: 'lb-meer', waarde: max + 40 } }) + '</div>';
-    if (!lijst.length) stroom += o.leeg({ icoon: f.alleen === 'gesluimerd' ? 'alarm-clock' : 'bell', titel: f.alleen === 'gesluimerd' ? t('Відкладених немає', 'Niets uitgesteld') : t('За цим фільтром нічого немає', 'Niets gevonden met dit filter'), tekst: t('Сюди потрапляє кожна дія людини, сцени, автоматизації, оптимізатора, агента, кнопки й симуляції.', 'Hier komt elke actie van een mens, scène, automatisering, de optimalisatie, een agent, een knop en de simulatie.'), actie: filterLeeg ? null : { tekst: t('Скинути фільтри', 'Filters wissen'), actie: 'lb-filters-weg', icoon: 'x' } });
+    if (!lijst.length) stroom += o.leeg({ icoon: f.alleen === 'gesluimerd' ? 'alarm-clock' : 'bell', titel: f.alleen === 'gesluimerd' ? t('Відкладених немає', 'Niets uitgesteld') : filterLeeg ? t('Журнал порожній', 'Het logboek is leeg') : t('За цим фільтром нічого немає', 'Niets gevonden met dit filter'), tekst: t('Сюди потрапляє кожна дія людини, сцени, автоматизації, оптимізатора, агента, кнопки й симуляції.', 'Hier komt elke actie van een mens, scène, automatisering, de optimalisatie, een agent, een knop en de simulatie.'), actie: filterLeeg ? null : { tekst: t('Скинути фільтри', 'Filters wissen'), actie: 'lb-filters-weg', icoon: 'x' } });
 
     return '<div class="hv-lb" data-k="lb-meldingen">' + kop + '<div class="hv-lb-rooster">' + zij + '<div class="hv-lb-stroom">' + zicht + stroom + '</div></div></div>';
   }
@@ -921,7 +934,7 @@
       banenHtml + cursorKaart +
       '<div class="hv-knoppen hv-lb-asacties">' + o.knop({ tekst: t('Виправити значення', 'Waarde corrigeren'), icoon: 'pencil-line', actie: 'blad', gegevens: { blad: 'lbcorrectie:' + (ents[0] || 'tempwoon') }, uit: !ents.length }) +
       o.knop({ tekst: t('Експорт CSV', 'CSV exporteren'), icoon: 'file-down', actie: 'lb-export-reeksen', uit: !ents.length }) +
-      o.gevolg(t('Що станеться: на цьому пристрої буде створено файл CSV з обраними рядами за ' + P(per.naam) + ' (крок ' + HV.duur(per.stap / MIN) + '); у домі нічого не зміниться. Пов’язано з: файл може містити присутність людей — зберігайте його приватно; експорт записується в Журнал. Як повернути: видаліть файл самі; запис у Журналі лишається.', 'Wat er gebeurt: op dit apparaat ontstaat een CSV-bestand met de gekozen reeksen over ' + P(per.naam) + ' (stap ' + HV.duur(per.stap / MIN) + '); in huis verandert niets. Hangt samen met: het bestand kan aanwezigheid bevatten — bewaar het privé; de export komt in het logboek. Terugdraaien: verwijder het bestand zelf; de regel in het logboek blijft.'), { kop: t('Експорт історії', 'Geschiedenis exporteren') }) + '</div></section>';
+      o.gevolg(t('Що станеться: на цьому пристрої буде створено файл CSV з обраними рядами за ' + P(per.naam) + ' (крок ' + HV.duur(per.stap / MIN) + '); у домі нічого не зміниться. Пов’язано з: файл може містити присутність людей — зберігайте його приватно; експорт записується в Журнал. Як повернути: видаліть файл самі; запис у Журналі лишається.', 'Wat er gebeurt: op dit toestel ontstaat een CSV-bestand met de gekozen reeksen over ' + P(per.naam) + ' (stap ' + HV.duur(per.stap / MIN) + '); in huis verandert niets. Hangt samen met: het bestand kan aanwezigheid bevatten — bewaar het privé; de export komt in het logboek. Terugdraaien: verwijder het bestand zelf; de regel in het logboek blijft.'), { kop: t('Експорт історії', 'Geschiedenis exporteren') }) + '</div></section>';
 
     // теплова карта: 7 днів × 8 трьохгодинних проміжків
     var wId = HV.ui.lees('lb-warmte', ents[0] || 'verbruik');
@@ -965,7 +978,7 @@
       (rijen ? '<div class="hv-tabel__rol"><table class="hv-tabel hv-lb-audit__tabel"><caption class="hv-vo">' + h(t('Записи Журналу', 'Regels van het logboek')) + '</caption><thead><tr>' + kop.map(function (k) { return '<th scope="col">' + h(k) + '</th>'; }).join('') + '</tr></thead><tbody>' + rijen + '</tbody></table></div>' : o.leeg({ icoon: 'table-2', titel: t('Записів за цим фільтром немає', 'Geen regels met dit filter') })) +
       '<div class="hv-knoppen">' + (lijst.length > max ? o.knop({ tekst: t('Показати ще 30', 'Nog 30 tonen'), icoon: 'chevron-down', actie: 'ui', gegevens: { naam: 'lb-tabel-n', waarde: max + 30 } }) : '') +
       o.knop({ tekst: t('Експорт CSV · ', 'CSV exporteren · ') + lijst.length, icoon: 'file-down', actie: 'lb-export-audit' }) +
-      o.gevolg(t('Що станеться: на цьому пристрої буде створено файл CSV з усіма записами за поточним фільтром; Журнал не зміниться. Пов’язано з: у файлі — імена людей і дії агентів; експорт сам стає записом аудиту. Як повернути: видаліть файл самі.', 'Wat er gebeurt: op dit apparaat ontstaat een CSV-bestand met alle regels volgens het huidige filter; het logboek verandert niet. Hangt samen met: het bestand bevat namen en acties van agenten; de export wordt zelf een regel in het controlespoor. Terugdraaien: verwijder het bestand zelf.'), { kop: t('Експорт аудиту', 'Controlespoor exporteren') }) + '</div></section>';
+      o.gevolg(t('Що станеться: на цьому пристрої буде створено файл CSV з усіма записами за поточним фільтром; Журнал не зміниться. Пов’язано з: у файлі — імена людей і дії агентів; експорт сам стає записом аудиту. Як повернути: видаліть файл самі.', 'Wat er gebeurt: op dit toestel ontstaat een CSV-bestand met alle regels volgens het huidige filter; het logboek verandert niet. Hangt samen met: het bestand bevat namen en acties van agenten; de export wordt zelf een regel in het controlespoor. Terugdraaien: verwijder het bestand zelf.'), { kop: t('Експорт аудиту', 'Controlespoor exporteren') }) + '</div></section>';
   }
 
   // ───────────────────────── Вкладка «Обслуговування» ─────────────────────────

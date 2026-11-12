@@ -4,7 +4,7 @@
 
 Taak HUIS-001 · fase 0 · 10.11.2026 · status: ter goedkeuring bij de eigenaar
 
-Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ДИЗАЙН-МОВА-ЖИВИЙ-ДІМ-20261110.uk.md) (hierna: OT).
+Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md) (hierna: OT).
 
 ## 0. Wat er is veranderd
 
@@ -61,7 +61,7 @@ TELEFOON                         COMPUTER (bureau)
 ▸ Zonder stroom · Sluipverbruik [4] · Elektronica
 ```
 
-- **Працює зараз / Loopt nu** (`hv-cyclus`; «визначено за споживанням / afgeleid uit verbruik») · **Завершено / Klaar** (tot «Забрано / Opgeruimd» of 12 uur) · **Чекає дешевої години / Wacht op goedkoop uur**: het plan van de optimalisator, «Запустити зараз / Nu starten».
+- **Працює зараз / Loopt nu** (`hv-cyclus`; «визначено за споживанням / afgeleid uit verbruik») · **Завершено / Klaar** (tot «Забрано / Opgeruimd» of 12 uur) · **Чекає дешевої години / Wacht op goedkoop uur**: het plan van de optimalisatie, «Запустити зараз / Nu starten».
 - **Увімкнено надто довго / Te lang aan** (`hv-telang`; de drempel per klasse wijzigt de eigenaar; ‘Uitzetten’ met één tik) · **Без живлення / Zonder stroom** (`kritieke_voeding` op 0 W geeft ‘alarm’).
 - **Режим очікування / Sluipverbruik**: «Вимикати вночі / 's Nachts uit» maakt een automatisering aan met de toestemming ‘Uit’; de besparing staat er met het teken ‘≈’ bij · **Електроніка / Elektronica**.
 
@@ -84,7 +84,7 @@ LICHT                           THERMOSTAAT
 
 - **Керування / Bediening**: bedieningselementen uit primitieven, elk met ‘−/+’, een numeriek alternatief en een toetsenbordalternatief; vegen gaat over de niveaustreep (op `wand` over de hele tegel); een regel `hv-waarom`. Voorinstellingen van de thermostaat: «Комфорт / Comfort · Сон / Slaap · Економно / Eco · Посилено / Boost».
 - **Історія / Geschiedenis**: een daglint, een grafiek, vermeldingen met auteur. **Налаштування / Instellingen**: namen, kamer, labels, grenzen van instelwaarden, drempels, `hv-stand` van elke actie; de blokken «Де вживається / Waar gebruikt», «Діагностика / Diagnose», «Паспорт / Paspoort», «Для агентів / Voor agenten», «Небезпечна зона / Gevarenzone».
-- **Захист послаблено / Bescherming verzwakt.** Een beveiligingssensor, slot of sirene verbergen, in onderhoud zetten, uitschakelen, verwijderen of vervangen is een kritieke actie: de houdrail en een bevestiging van de aanmelding. De termijn kiest de eigenaar (‘2 uur · tot 16:00 · tot intrekking’); zolang die loopt, staat `hv-verzwakt` in de held, op de tegel en in het Logboek.
+- **Захист послаблено / Bescherming verlaagd.** Een beveiligingssensor, slot of sirene verbergen, in onderhoud zetten, uitschakelen, verwijderen of vervangen is een kritieke actie: de houdrail en een bevestiging van de aanmelding. De termijn kiest de eigenaar (‘2 uur · tot 16:00 · tot intrekking’); zolang die loopt, staat `hv-verzwakt` in de held, op de tegel en in het Logboek.
 
 ## 6. Klasse → tegel → blad
 
@@ -127,7 +127,7 @@ Het niveau geldt voor de mens en hangt af van de richting (OT §9–10); uitvoer
 
 ## 8. Toestemmingen in de zone
 
-Elke actie van elke klasse heeft een `hv-stand` «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», afzonderlijk voor de scène, de automatisering, de optimalisator en elke agent; standaard ‘Uit’, de eigenaar kan elke stand kiezen (OT §10). Termijn, kamers, uren en budget zijn optionele kaders van de eigenaar. Alleen de eigenaar wijzigt een toestemming; een agent kan rechten niet uitbreiden en niet inperken — niet de eigen en niet die van anderen. Elke wijziging van een toestemming en elke actie op grond daarvan levert een vermelding in het Logboek en een melding `huis.apparaat` op; naast gevaarlijke en kritieke acties staat een ‘!’ met uitleg, bij ‘Altijd’ een blijvende ‘!’.
+Elke actie van elke klasse heeft een `hv-stand` «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», afzonderlijk voor de scène, de automatisering, de optimalisatie en elke agent; standaard ‘Uit’, de eigenaar kan elke stand kiezen (OT §10). Termijn, kamers, uren en budget zijn optionele kaders van de eigenaar. Alleen de eigenaar wijzigt een toestemming; een agent kan rechten niet uitbreiden en niet inperken — niet de eigen en niet die van anderen. Elke wijziging van een toestemming en elke actie op grond daarvan levert een vermelding in het Logboek en een melding op: een actie met een apparaat van de zone heeft de soort `huis.apparaat`, een wijziging van een toestemming `huis.systeem`; het belang bepaalt de gebeurtenis, niet de soort — volgens de gezamenlijke tabel ‘gebeurtenis → soort → belang’ ([‘Architectuur’](09-ARCHITECTUUR.nl.md) §10). Naast gevaarlijke en kritieke acties staat een ‘!’ met uitleg, bij ‘Altijd’ een blijvende ‘!’.
 
 | Niveau | Acties van de zone | Ritueel voor de mens |
 |---|---|---|
@@ -179,7 +179,7 @@ Buiten de schaal: telefoon en computer als sensoren, samenvoegen van dubbele app
 
 ## 13. Besluiten voor de eigenaar
 
-1. **Bevestiging van de aanmelding** voor kritieke acties van de zone: de maquette toont het doel van OT §10 — elke keer opnieuw; de huidige code (`STAP_OP_MS`) houdt die 5 min per sessie vast — zo laten tot er een eenmalig mechanisme is, of daarop wachten (plan §7).
+1. **Bevestiging van de aanmelding** voor kritieke acties van de zone: het doel is een eenmalige bevestiging, een aparte voor elke kritieke actie en voor elke keer dat ‘Altijd’ voor een gevaarlijke of kritieke actie wordt aangezet; of die de huidige 5 min per sessie (`STAP_OP_MS`) vervangt, beslist de eigenaar (plan §7; hoofddocument, §13, punt 1). Tot dat besluit houdt de maquette, net als de code van het platform, de bevestiging 5 min per sessie vast (OT §10).
 2. **Het label `ingang`** tilt het openen van poort en garagedeur van gevaarlijk (OT §9) naar kritiek — goedkeuren.
 3. **Een kleurstaal van de lamp** op de tegel — een uitzondering op de regel ‘kleur alleen voor toestand en risico’.
 4. **Een tussenserver voor afbeeldingen** voor hoezen en het camerabeeld van de poort (`img-src 'self'`) — samen met de videobeelden van de camera's (plan §7).

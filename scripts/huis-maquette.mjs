@@ -254,10 +254,37 @@ function laadRegister(script) {
   vm.createContext(zandbak);
   const fouten = [];
   vm.runInContext('window.HV = window.HV || {}; HV.bouw = { artefact: false, iconen: [], profielen: [], hemel: { klok: { nacht: [22, 6], dageraad: [6, 9], dag: [9, 17], schemer: [17, 22], mengMinuten: 30 } }, gedrag: {} };', zandbak);
+  // «t() під час завантаження модуля»: текст, обчислений один раз при завантаженні, не перемикається з мовою (лишається
+  // українським у нідерландському режимі). Перехоплюємо всі мовозалежні функції kern/tekst.js на час виконання верхнього
+  // рівня кожного файлу; виклик у цей час — помилка з точним місцем (файл:рядок).
+  const laadtijd = [];
+  const HAAK = `(function (HV) { HV.__laad = { bezig: false, lijst: [] };
+    ['t', 'p', 'meervoud', 'telwoord', 'datum', 'datumKort'].forEach(function (naam) {
+      var echt = HV[naam];
+      if (typeof echt !== 'function') return;
+      HV[naam] = function () {
+        if (HV.__laad.bezig) { var a = arguments[0]; HV.__laad.lijst.push({ fn: naam, tekst: String(a && a.join ? a[0] : a).slice(0, 70), spoor: String(new Error('x').stack) }); }
+        return echt.apply(this, arguments);
+      };
+    });
+  })(window.HV);`;
   for (const s of script) {
-    try { vm.runInContext(s.inhoud, zandbak, { filename: s.naam }); } catch (e) { fouten.push(`${s.naam}: laadt niet zonder DOM — ${e.message}`); }
+    try {
+      if (zandbak.HV.__laad) { zandbak.HV.__laad.bezig = true; zandbak.HV.__laad.lijst.length = 0; }
+      vm.runInContext(s.inhoud, zandbak, { filename: s.naam });
+    } catch (e) { fouten.push(`${s.naam}: laadt niet zonder DOM — ${e.message}`); }
+    if (zandbak.HV.__laad) {
+      zandbak.HV.__laad.bezig = false;
+      for (const x of zandbak.HV.__laad.lijst) {
+        // місце виклику — найглибший кадр стека в самому файлі, що завантажується (а не в kern/tekst.js, де живе HV.woord)
+        const kaders = x.spoor.split('\n').slice(1).map((r) => r.match(/((?:kern|gegevens|schermen)\/[\w.-]+\.js):(\d+):\d+/)).filter(Boolean);
+        const kader = kaders.filter((k) => k[1] === s.naam)[0] || kaders[0];
+        laadtijd.push({ bestand: kader ? kader[1] : s.naam, regel: kader ? Number(kader[2]) : 0, fn: x.fn, tekst: x.tekst });
+      }
+    }
+    if (s.naam === 'kern/tekst.js') { try { vm.runInContext(HAAK, zandbak, { filename: 'controle-laadtijd' }); } catch (e) { fouten.push(`controle: laadtijdhaak — ${e.message}`); } }
   }
-  return { HV: zandbak.HV, fouten };
+  return { HV: zandbak.HV, fouten, laadtijd };
 }
 
 export function controleer() {
@@ -312,8 +339,18 @@ export function controleer() {
   for (const s of script) for (const [uk, nl, regel] of tParen(s.inhoud)) keurPaar(`${s.naam}:${regel}`, uk, nl);
 
   // 3. Register: schermen, tabbladen, bladen, navigatie, gevaarlijke acties, gegevensparen.
-  const { HV, fouten: laadFouten } = laadRegister(script);
+  const { HV, fouten: laadFouten, laadtijd } = laadRegister(script);
   laadFouten.forEach(meld);
+  // 3a. Geen taalafhankelijke tekst tijdens het laden van een module: zo'n tekst wisselt niet mee met de taal.
+  // Дозволені місця (якщо результат справді не зберігається) — taal-toegestaan.json → "laadtijdToegestaan": ["bestand:regel"].
+  const laadOk = new Set(leesJson(join(MAP, 'taal-toegestaan.json')).laadtijdToegestaan || []);
+  const laadGezien = new Set();
+  for (const x of laadtijd) {
+    const plek = `${x.bestand}:${x.regel}`;
+    if (laadOk.has(plek) || laadGezien.has(plek)) continue;
+    laadGezien.add(plek);
+    meld(`${plek}: ${x.fn}() tijdens het laden van de module — de tekst «${x.tekst}» wisselt niet mee met de taal; reken hem uit in render() of bewaar het paar [uk, nl]`);
+  }
   const gezien = new WeakSet();
   const loop = (waar, x, diepte) => {
     if (!x || typeof x !== 'object' || diepte > 9 || gezien.has(x)) return;

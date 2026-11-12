@@ -56,7 +56,7 @@
       risico: ['Що може статися: техніка зупиниться посеред роботи. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: apparaten stoppen midden in hun werk. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     { sleutel: 'drone.opstijgen', doel: 'drone', mogelijkheid: 'vlucht', als: function (a, v) { return v === 'opstijgen'; }, niveau: K,
       naam: ['Зліт дрона', 'Drone laten opstijgen'], houd: ['Утримуйте, щоб злетіти', 'Houd vast om op te stijgen'],
-      gevolg: ['Що станеться: дрон злетить із бази й почне місію. Пов’язано з: зони польоту показано довідково, відповідальність — на пілоті. Як повернути: «Повернутися додому» або «Сісти зараз».', 'Wat er gebeurt: de drone stijgt op van het dock en begint de missie. Hangt samen met: vliegzones zijn ter informatie, de piloot blijft verantwoordelijk. Terugdraaien: ‘Naar huis’ of ‘Nu landen’.'],
+      gevolg: ['Що станеться: дрон злетить із дока й почне місію. Пов’язано з: зони польоту показано довідково, відповідальність — на пілоті. Як повернути: «Повернутися додому» або «Сісти зараз».', 'Wat er gebeurt: de drone stijgt op van het dock en begint de missie. Hangt samen met: vliegzones zijn ter informatie, de piloot blijft verantwoordelijk. Terugdraaien: ‘Naar huis’ of ‘Nu landen’.'],
       risico: ['Що може статися: дрон злетить без людини поруч. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: de drone stijgt op zonder iemand in de buurt. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
     // ── чутливі ──
     { sleutel: 'huis.stand', doel: 'huis', mogelijkheid: 'stand', niveau: V, naam: ['Змінити режим дому', 'Huisstand wijzigen'] },
@@ -70,7 +70,9 @@
     { sleutel: 'koffie.aan', soorten: ['koffie'], mogelijkheid: 'aan', als: function (a, v) { return !!v; }, niveau: V, naam: ['Увімкнути кавоварку', 'Koffiemachine aanzetten'] },
     { sleutel: 'computer.uit', soorten: ['computer'], mogelijkheid: 'aan', als: function (a, v) { return !v; }, niveau: V, naam: ['Вимкнути комп’ютер', 'Computer uitzetten'] },
     { sleutel: 'thuisbatterij.modus', soorten: ['thuisbatterij'], mogelijkheid: 'modus', niveau: V, naam: ['Режим домашньої батареї', 'Stand van de thuisbatterij'] },
-    { sleutel: 'laadpaal.laden', soorten: ['laadpaal'], mogelijkheid: 'laden', niveau: V, naam: ['Зарядка авто', 'Auto laden'] },
+    { sleutel: 'laadpaal.laden', soorten: ['laadpaal'], mogelijkheid: 'laden', niveau: V, naam: ['Зарядка авто', 'Auto laden'],
+      // що саме станеться — словами для запиту «Питати»: старт і зупинка мають різні тексти
+      doen: function (a, v) { return v ? ['Почати зарядку авто', 'Het laden van de auto starten'] : ['Зупинити зарядку авто', 'Het laden van de auto stoppen']; } },
     { sleutel: 'licht.stroboscoop', soorten: ['licht'], mogelijkheid: 'effect', als: function (a, v) { return v === 'stroboscoop'; }, niveau: V, naam: ['Ефект «Стробоскоп»', 'Effect ‘Stroboscoop’'] },
     // ── звичайні ──
     { sleutel: 'scene.start', doel: 'scene', mogelijkheid: 'start', niveau: G, groep: true, naam: ['Запустити сцену', 'Scène starten'] },
@@ -88,10 +90,10 @@
   var ONBEKEND = { sleutel: 'onbekend', niveau: V, naam: ['Невідома дія', 'Onbekende actie'] };
 
   var niveaus = {
-    gewoon: { naam: ['звичайна', 'gewoon'], icoon: null },
-    gevoelig: { naam: ['чутлива', 'gevoelig'], icoon: 'eye' },
-    gevaarlijk: { naam: ['небезпечна', 'gevaarlijk'], icoon: 'triangle' },
-    kritiek: { naam: ['критична', 'kritiek'], icoon: 'octagon' }
+    gewoon: { naam: ['звичайна', 'gewoon'], lang: ['звичайна дія', 'gewone actie'], icoon: null },
+    gevoelig: { naam: ['чутлива', 'gevoelig'], lang: ['чутлива дія', 'gevoelige actie'], icoon: 'eye' },
+    gevaarlijk: { naam: ['небезпечна', 'gevaarlijk'], lang: ['небезпечна дія', 'gevaarlijke actie'], icoon: 'triangle' },
+    kritiek: { naam: ['критична', 'kritiek'], lang: ['критична дія', 'kritieke actie'], icoon: 'octagon' }
   };
   var standNamen = { uit: ['Вимкнено', 'Uit'], vragen: ['Питати', 'Vragen'], altijd: ['Завжди', 'Altijd'] };
 
@@ -139,6 +141,17 @@
       return { mag: false, reden: ['гість керує лише світлом, шторами й медіа', 'een gast bedient alleen licht, gordijnen en media'] };
     },
 
+    /**
+     * Хто вирішує запит за режимом «Питати»: небезпечні й критичні — лише власник; звичайні й чутливі — власник або
+     * мешканець; дитина й гість не схвалюють. niveau — рівень або сама дія матриці.
+     */
+    magBeslissen: function (rol, niveau) {
+      var n = niveau && typeof niveau === 'object' ? niveau.niveau : niveau;
+      if (rol === 'eigenaar') return true;
+      if (rol === 'bewoner') return n === G || n === V;
+      return false;
+    },
+
     standaardStand: function () { return 'uit'; },
     /** Дозвіл виконавця для дії: 'uit' | 'vragen' | 'altijd'. */
     stand: function (uitvoerder, sleutel) { return (standen[uitvoerder] && standen[uitvoerder][sleutel]) || 'uit'; },
@@ -174,10 +187,14 @@
         });
         HV.meld({ maker: HV.mens(), icoon: 'shield-check', titel: HV.p(e.wat), tekst: HV.p(standNamen[was]) + ' → ' + HV.p(standNamen[waarde]) });
         HV.staat.wijzig();
+        // запит існує лише за «Питати»: на «Вимкнено» запити, що чекають, знімаються; на «Завжди» — виконуються за новим дозволом
+        if (HV.verzoekenNaStand) HV.verzoekenNaStand(uitvoerder, sleutel, waarde);
         return { ok: true };
       };
       if (waarde === 'altijd' && HV.gevaar.isZwaar(actie) && HV.schil && HV.schil.herbevestig) {
-        return HV.schil.herbevestig({ titel: HV.t('Підтвердьте, що це ви', 'Bevestig dat jij het bent'), tekst: HV.t('«Завжди» для цієї дії вмикає лише власник.', '‘Altijd’ voor deze actie zet alleen de eigenaar aan.') })
+        // наслідок зміни видно до підтвердження: запити, що чекають на цю дію цього виконавця, «Завжди» виконає одразу
+        var wachtend = HV.verzoekenBijAltijd ? HV.verzoekenBijAltijd(uitvoerder, sleutel) : null;
+        return HV.schil.herbevestig({ titel: HV.t('Підтвердьте, що це ви', 'Bevestig dat jij het bent'), tekst: HV.t('«Завжди» для цієї дії вмикає лише власник.', '‘Altijd’ voor deze actie zet alleen de eigenaar aan.'), noot: wachtend, altijdOpnieuw: !!wachtend })
           .then(function (ja) { return ja ? klaar() : { ok: false, reden: 'geannuleerd' }; });
       }
       return Promise.resolve(klaar());

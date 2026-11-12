@@ -41,29 +41,12 @@
 @container drn (max-width: 760px) { .hv-drn-sim { margin-inline-start: 0; } }
 @container drn (max-width: 420px) { .hv-drn-nav__punt { font-size: var(--tekst-mini); } }
 
-/* ───────────── Речення парку ───────────── */
-.hv-drn-zin {
-  position: relative; overflow: hidden; display: flex; gap: var(--ruimte-4); align-items: flex-start; padding: var(--ruimte-5);
-  border-radius: var(--straal-xl); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
-  background: radial-gradient(120% 140% at 100% 0%, var(--hv-koud-zacht), transparent 55%), linear-gradient(160deg, var(--panel), var(--panel));
-}
-.hv-drn-zin::after {
-  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.7;
-  background: repeating-radial-gradient(circle at 100% 0%, transparent 0 46px, var(--line) 46px 47px);
-  -webkit-mask-image: radial-gradient(circle at 100% 0%, var(--text) 0, transparent 300px); mask-image: radial-gradient(circle at 100% 0%, var(--text) 0, transparent 300px);
-}
-.hv-drn-zin.is-lucht { background: radial-gradient(120% 140% at 100% 0%, var(--hv-batterij-zacht), transparent 60%), var(--panel); }
-.hv-drn-zin.is-alarm { border-color: var(--fout); box-shadow: 0 0 0 1px var(--fout), var(--schaduw-1); background: radial-gradient(120% 140% at 100% 0%, var(--fout-zacht), transparent 60%), var(--panel); }
-.hv-drn-zin__teken { position: relative; z-index: 1; flex: none; display: grid; place-items: center; inline-size: 56px; block-size: 56px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); color: var(--hv-koud); box-shadow: var(--schaduw-1); }
-.hv-drn-zin.is-lucht .hv-drn-zin__teken { color: var(--hv-batterij); }
-.hv-drn-zin.is-alarm .hv-drn-zin__teken { color: var(--fout); }
-.hv-drn-zin__tekst { position: relative; z-index: 1; display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
-.hv-drn-zin__vol, .hv-drn-zin__kort { font-size: var(--hv-tekst-kop); font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; text-wrap: pretty; color: var(--text); max-inline-size: 46ch; }
-.hv-drn-zin__kort { display: none; }
-@container drn (max-width: 520px) {
-  .hv-drn-zin { padding: var(--ruimte-4); gap: var(--ruimte-3); }
-  .hv-drn-zin__teken { inline-size: 44px; block-size: 44px; border-radius: 14px; }
-  .hv-drn-zin__vol { font-size: var(--tekst-basis); }
+/* ───────────── Герой зони: спільний o.zoneheld (папір без градієнта, лічильники однієї форми) ─────────────
+   Власного героя зона не має. Тут лише ряд під реченням: чип дока й головна дія «Відкрити кабіну» (тільки в польоті)
+   стоять окремим рядом ліворуч, а не третьою колонкою. */
+.hv-drn-zoneheld .hv-zoneheld__acties { grid-column: 1 / -1; justify-content: flex-start; }
+@container zoneheld (min-width: 720px) {
+  .hv-drn-zoneheld .hv-zoneheld__raam { grid-template-columns: minmax(0, 1fr) auto; }
 }
 
 /* ───────────── Кількість, смуга заряду ───────────── */

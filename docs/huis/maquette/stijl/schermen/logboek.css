@@ -198,6 +198,9 @@
 .hv-verzoek__kop > .hv-ic { color: var(--warn); }
 .hv-verzoek__kop h4 { flex: 1; min-inline-size: 0; font-size: var(--tekst-basis); font-weight: 700; }
 .hv-verzoek .hv-knoppen { margin-block-start: 0; align-items: center; }
+/* роль, що не вирішує запит: замість кнопок — рядок із замком */
+.hv-verzoek__slot { display: inline-flex; align-items: center; gap: 6px; min-block-size: var(--hv-tik); margin-inline-end: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-verzoek__slot > .hv-ic { flex: none; }
 .hv-lb-meer { justify-content: center; }
 
 /* ───────────── Історія ───────────── */

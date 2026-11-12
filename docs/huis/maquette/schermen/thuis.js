@@ -168,8 +168,11 @@
 
   function garageKaart(ctx) {
     var w = ctx.staat, ev = w.voertuigen[0], lp = w.apparaten.laadpaal.st, d = w.drones[0];
-    var evStand = ev.plek === 'onderweg' ? t('у дорозі', 'onderweg') : lp.laadt ? HV.woord.laadt() : t('на під’їзді', 'op de oprit');
-    var droneStand = ({ dock: ['у базі', 'in dock'], vlucht: ['у польоті', 'in vlucht'], signaalkwijt: ['втрата сигналу', 'signaal kwijt'] })[d.stand];
+    // під'єднане авто, що не заряджається в режимі «розумно», чекає дешевої години — тими самими словами, що й на інших екранах
+    var evStand = ev.plek === 'onderweg' ? t('у дорозі', 'onderweg') : lp.laadt ? HV.woord.laadt()
+      : lp.aangesloten && lp.modus === 'slim' && ev.lading < ev.doel - 0.5 ? t('чекає дешевої години', 'wacht op een goedkoop uur') : t('на під’їзді', 'op de oprit');
+    // слова — як у гаражі й безпілотниках: «у доку / in het dock», «у польоті / in de lucht»
+    var droneStand = ({ dock: ['у доку', 'in het dock'], vlucht: ['у польоті', 'in de lucht'], signaalkwijt: ['втрата сигналу', 'signaal kwijt'], terug: ['повертається', 'keert terug'] })[d.stand] || ['у доку', 'in het dock'];
     return '<article class="hv-som" data-k="som-garage"><header class="hv-som__kop"><h3>' + HV.icoon('car', { maat: 's' }) + h(t('Гараж', 'Garage')) + '</h3></header>' +
       o.telemetrie({ id: 'ev', icoon: 'car', naam: HV.p(ev.naam), stand: evStand, lading: ev.lading, doel: ev.doel, toon: lp.laadt ? 'auto' : 'batterij', bereik: HV.maat(ev.bereik, t('км', 'km')), actie: 'ga', gegevens: { naar: 'garage-voertuigen' },
         getallen: lp.laadt ? [{ label: t('ціль', 'doel'), waarde: HV.maat(ev.doel, '%') }, { label: t('потужність', 'vermogen'), waarde: HV.maat(lp.vermogen, t('кВт', 'kW'), 1) }] : [{ label: t('ціль', 'doel'), waarde: HV.maat(ev.doel, '%') }] }) +
@@ -287,7 +290,7 @@
   // ── Аркуш режиму дому (hv-huisstand) ──
   var GEVOLG = {
     thuis: ['Що станеться: режим дому стане «Вдома», опалення підніметься до 21 °C. Пов’язано з: охорону режим не знімає — це окрема дія. Як повернути: «Повернути» протягом 10 с.', 'Wat er gebeurt: de huisstand wordt ‘Thuis’, de verwarming gaat naar 21 °C. Hangt samen met: de stand zet het alarm niet uit — dat is een aparte actie. Terugdraaien: ‘Ongedaan maken’ binnen 10 s.'],
-    afwezig: ['Що станеться: світло й медіа вимкнуться, опалення знизиться до 17 °C. Пов’язано з: охорону дім лише запропонує поставити; двері лишаться як є. Як повернути: «Я вдома» або «Повернути» протягом 10 с.', 'Wat er gebeurt: licht en media gaan uit, de verwarming zakt naar 17 °C. Hangt samen met: het huis stelt alleen voor het alarm in te schakelen; deuren blijven zoals ze zijn. Terugdraaien: ‘Ik ben thuis’ of ‘Ongedaan maken’ binnen 10 s.'],
+    afwezig: ['Що станеться: світло й медіа вимкнуться, опалення знизиться до 17 °C. Пов’язано з: охорону режим не змінює; двері лишаться як є. Як повернути: «Я вдома» або «Повернути» протягом 10 с.', 'Wat er gebeurt: licht en media gaan uit, de verwarming zakt naar 17 °C. Hangt samen met: de stand verandert het alarm niet; deuren blijven zoals ze zijn. Terugdraaien: ‘Ik ben thuis’ of ‘Ongedaan maken’ binnen 10 s.'],
     nacht: ['Що станеться: світло внизу вимкнеться, опалення знизиться до 17,5 °C, небо стане нічним. Пов’язано з: нічники в спальнях лишаться. Як повернути: оберіть «Вдома».', 'Wat er gebeurt: het licht beneden gaat uit, de verwarming zakt naar 17,5 °C, de hemel wordt nacht. Hangt samen met: de nachtlampjes in de slaapkamers blijven aan. Terugdraaien: kies ‘Thuis’.'],
     vakantie: ['Що станеться: світло й медіа вимкнуться, опалення перейде на 15 °C до повернення. Пов’язано з: полив і косарка працюють за розкладом. Як повернути: оберіть «Вдома».', 'Wat er gebeurt: licht en media gaan uit, de verwarming gaat naar 15 °C tot je terug bent. Hangt samen met: beregening en maaier volgen hun rooster. Terugdraaien: kies ‘Thuis’.'],
     gasten: ['Що станеться: режим дому стане «Гості»; сцени й клімат лишаються як є. Пов’язано з: гостьовий код дверей діє лише в цьому режимі. Як повернути: оберіть «Вдома».', 'Wat er gebeurt: de huisstand wordt ‘Gasten’; scènes en klimaat blijven zoals ze zijn. Hangt samen met: de gastcode van de deur werkt alleen in deze stand. Terugdraaien: kies ‘Thuis’.']
@@ -303,7 +306,7 @@
         return '<div class="hv-huisstand__rij' + (gekozen ? ' is-gekozen' : '') + '" data-k="stand-' + id + '"><button type="button" class="hv-huisstand__knop" aria-pressed="' + (gekozen ? 'true' : 'false') + '" data-actie="huisstand" data-waarde="' + id + '">' + HV.icoon(STAND_ICOON[id]) + '<span>' + h(HV.p(HV.huisstanden[id])) + '</span>' + (gekozen ? HV.icoon('check', { maat: 's' }) : '') + '</button>' + o.gevolg(HV.p(GEVOLG[id]), { kop: HV.p(HV.huisstanden[id]) }) + '</div>';
       }).join('');
       return o.kaart({ inhoud: snel }) + o.kaart({ titel: t('Режими', 'Standen'), inhoud: '<div class="hv-huisstand">' + lijst + '</div>' }) +
-        o.kaart({ inhoud: '<p class="hv-tekst">' + HV.icoon('shield', { maat: 's' }) + ' ' + h(t('Охорона: дім лише запропонує поставити. Зняти охорону чи відімкнути двері режим не може.', 'Alarm: het huis stelt alleen voor het in te schakelen. Uitzetten of een deur ontgrendelen kan een stand niet.')) + '</p>' });
+        o.kaart({ inhoud: '<p class="hv-tekst">' + HV.icoon('shield', { maat: 's' }) + ' ' + h(t('Охорона: режим не змінює.', 'Alarm: de stand verandert het niet.')) + '</p>' });
     }
   });
 })(window.HV = window.HV || {});

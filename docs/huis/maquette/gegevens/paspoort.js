@@ -1,5 +1,6 @@
 // Paspoort van het demohuis «Wilgenlaan 12», Utrecht — джерело для всіх екранів макета.
-// 10 кімнат на трьох поверхах + сад і гараж; близько 70 пристроїв так, щоб кожен тип із §3.5 плану мав екземпляр.
+// 10 кімнат на трьох поверхах + сад і гараж; 75 пристроїв так, щоб кожен тип із §3.5 плану мав екземпляр
+// (у зібраному макеті їх 88: ще 13 додають модулі зон — безпека, гараж, безпілотники).
 // Еталонний момент — понеділок 9 листопада 2026, 14:30 (час дому). Усі моделі й імена вигадані.
 (function (HV) {
   'use strict';
@@ -197,7 +198,7 @@
     { id: 'benzine', soort: 'auto', icoon: 'car', naam: ['Бензинове авто', 'Benzineauto'], brandstof: 58, bereik: 520, plek: 'onderweg' },
     { id: 'fietsolena', soort: 'fiets', icoon: 'bike', naam: ['Електровелосипед Олени', 'E-bike van Olena'], lading: 82, bereik: 64, plek: 'garage' },
     { id: 'fietstaras', soort: 'fiets', icoon: 'bike', naam: ['Електровелосипед Тараса', 'E-bike van Taras'], lading: 37, bereik: 28, plek: 'garage' },
-    { id: 'step', soort: 'step', icoon: 'bike', naam: ['Самокат', 'Elektrische step'], lading: 55, bereik: 14, plek: 'garage' },
+    { id: 'step', soort: 'step', icoon: 'bike', naam: ['Електросамокат', 'Elektrische step'], lading: 55, bereik: 14, plek: 'garage' },
     { id: 'bromfiets', soort: 'bromfiets', icoon: 'bike', naam: ['Мопед', 'Bromfiets'], lading: 91, bereik: 60, plek: 'garage' }
   ];
   var drones = [

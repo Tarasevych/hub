@@ -30,12 +30,17 @@
       acties: [{ naam: 'nu-doe', hoofd: true, label: ['Знизити до 15 °C тут', 'Hier verlagen naar 15 °C'], gegevens: { doel: 'kamer:slaapkamer', mogelijkheid: 'doel', waarde: 15 } }]
     });
   };
+  // Запит агента з власним часом: схвалене дорівнює виконаному. «Схвалити раз» (чи дозвіл «Завжди») не починає зарядку
+  // в дорогу вечірню годину — ядро виконає дію о 02:00 годинником дому (поле om). «Чекає до» називає сам запит (tot —
+  // за 5 хв до дешевого вікна): без відповіді він «минув», а не висить до ранку. Числа — з таблиці тарифу (10.11: 02:00
+  // і 03:00 — € 0,18, 04:00 — € 0,19) і з кроку симуляції (16 % від 64 кВт·год на 7,4 кВт — близько 1 год 25 хв).
   var verzoekLaden = function (w) {
+    var om = D10(2, 0);
     w.verzoeken.push({
-      id: 'v1', uitvoerder: 'claude', sleutel: 'laadpaal.laden', doel: 'laadpaal', mogelijkheid: 'laden', waarde: true, sinds: w.tijd, tot: w.tijd + 5 * 60000, stand: 'wacht',
+      id: 'v1', uitvoerder: 'claude', sleutel: 'laadpaal.laden', doel: 'laadpaal', mogelijkheid: 'laden', waarde: true, sinds: w.tijd, om: om, tot: om - 5 * 60000, stand: 'wacht',
       wat: ['Зарядити авто о 02:00', 'De auto om 02:00 laden'],
-      waarom: ['найдешевші години: 02:00–05:00, € 0,18 за кВт·год', 'de goedkoopste uren: 02:00–05:00, € 0,18 per kWh'],
-      wordt: ['Авто: 64 % → 80 % до 05:10', 'Auto: 64 % → 80 % om 05:10']
+      waarom: ['найдешевші години ночі: 02:00–05:00, від € 0,18 за кВт·год', 'de goedkoopste uren van de nacht: 02:00–05:00, vanaf € 0,18 per kWh'],
+      wordt: ['Авто: 64 % → 80 %, зарядка 02:00–03:25', 'Auto: 64 % → 80 %, laden 02:00–03:25']
     });
     nu(w, {
       id: 'verzoek-v1', soort: 'verzoek', maker: 'agent', icoon: 'plug-zap', verzoek: 'v1',
@@ -82,9 +87,13 @@
         zet(w, 'gordijnwoon', { positie: 0 }); zet(w, 'jaloezieslaap', { positie: 0, kantel: 0 });
         zet(w, 'thermostaat', { doel: 21, temperatuur: 20.7, verwarmt: true }); zet(w, 'tempslaap', { waarde: 17.1 });
         zet(w, 'wasmachine', { loopt: false, rest: 0, vermogen: 0 }); zet(w, 'vaatwasser', { loopt: true, rest: 52, vermogen: 610 });
-        zet(w, 'laadpaal', { laadt: true, modus: 'slim', aangesloten: true }); w.voertuigen[0].lading = 64; w.voertuigen[1].plek = 'oprit';
+        // авто під'єднано й чекає дешевих годин (режим «розумно» у дорогу вечірню годину не заряджає) — тому агент і просить
+        // зарядити о 02:00 (схвалений запит виконується о 02:00, а не в мить схвалення); запит існує лише за «Питати»,
+        // тож дозвіл цієї дії для агента стоїть саме так
+        zet(w, 'laadpaal', { laadt: false, modus: 'slim', aangesloten: true, vermogen: 0 }); w.voertuigen[0].lading = 64; w.voertuigen[1].plek = 'oprit';
         zet(w, 'thuisbatterij', { lading: 48 }); zet(w, 'computer', { aan: false });
         w.sceneActief = 'avond';
+        HV.gevaar && HV.gevaar.zetStandStil('claude', 'laadpaal.laden', 'vragen');
         raamOpen(w, 42); verzoekLaden(w);
       }
     },
@@ -169,9 +178,12 @@
     {
       id: 'eerstestart', naam: ['Перший запуск', 'Eerste start'], tijd: D9(14, 30),
       wat: ['Дім щойно створено: перші кроки й порожній Журнал', 'Het huis is net aangemaakt: eerste stappen en een leeg logboek'],
+      // Журнал справді порожній: запуск сценарію не пише свого запису, а w.logboekVanaf — мить створення дому:
+      // записи, датовані раніше, ядро прибирає звідусіль (HV.staat.snoeiLogboek), хай який модуль їх посіяв
+      zonderRegel: true,
       pas: function (w) {
         weer(w, 9, 0.55); thuis(w, ['olena'], 5);
-        w.eersteStart = true; w.logboek = []; w.favorieten = [];
+        w.eersteStart = true; w.logboek = []; w.logboekVanaf = w.tijd; w.favorieten = [];
         licht(w, []);
       }
     },
@@ -192,7 +204,7 @@
         weer(w, 11, 0.2, null, 7); thuis(w, ['olena'], 300); licht(w, ['werklicht']);
         var d = w.drones[0]; d.stand = 'signaalkwijt'; d.lading = 58; d.signaal = 0; d.hoogte = 22; d.afstand = 61; d.sinds = w.tijd - 18 * 60000; d.kwijtSinds = w.tijd - 40000;
         zet(w, 'wasmachine', { loopt: false, rest: 0, vermogen: 0 });
-        nu(w, { id: 'signaal', soort: 'alarm', maker: 'simulator', icoon: 'wifi-off', tekst: ['Дрон «Лелека»: сигнал зник 40 с тому, повертається додому сам', 'Drone ‘Ooievaar’: signaal 40 s geleden weggevallen, keert zelf terug naar huis'], acties: [{ naam: 'ga', hoofd: true, label: ['Відкрити кабіну', 'Cockpit openen'], gegevens: { naar: 'garage-drones' } }] });
+        nu(w, { id: 'signaal', soort: 'aandacht', maker: 'simulator', icoon: 'wifi-off', tekst: ['Дрон «Лелека»: сигнал зник 40 с тому, повертається додому сам', 'Drone ‘Ooievaar’: signaal 40 s geleden weggevallen, keert zelf terug naar huis'], acties: [{ naam: 'ga', hoofd: true, label: ['Відкрити кабіну', 'Cockpit openen'], gegevens: { naar: 'garage-drones' } }] });
         w.logboek.unshift({ id: 'l' + (++w.logTeller), tijd: w.tijd - 40000, maker: SIM, wat: ['Дрон «Лелека»: втрата сигналу', 'Drone ‘Ooievaar’: signaal kwijt'], soort: 'huis.voertuig', gewicht: 'belangrijk', gelezen: false, sim: true });
       }
     },
@@ -220,6 +232,18 @@
     }
   ];
 
+  // Агент сам знімає свій запит, коли той втратив сенс: авто вже заряджене до цілі (наприклад, його раніше зарядило
+  // правило «Дешева зарядка» чи людина). Запит, що чекає, і схвалений, який ще чекає 02:00, зникають із записом
+  // «Запит знято: …» від імені агента. Випадок «зарядка вже йде» ядро закриває саме («уже так»).
+  if (HV.staat && HV.staat.abonneer) {
+    HV.staat.abonneer(function (w) {
+      if (!w || !w.verzoeken || !w.verzoeken.length || !HV.verzoekIntrekken || w.gegevens === 'geen') return;
+      var v = w.verzoeken.filter(function (x) { return x.id === 'v1'; })[0], ev = w.voertuigen && w.voertuigen[0];
+      if (!v || !ev || !(v.stand === 'wacht' || (v.stand === 'goedgekeurd' && v.gepland && !v.uitkomst))) return;
+      if (ev.lading >= ev.doel - 0.5) HV.verzoekIntrekken('v1', ['авто вже заряджене до ' + Math.round(ev.doel) + ' %', 'de auto is al geladen tot ' + Math.round(ev.doel) + ' %']);
+    });
+  }
+
   HV.scenarios = {
     lijst: lijst,
     vind: function (id) { for (var i = 0; i < lijst.length; i++) if (lijst[i].id === id) return lijst[i]; return null; },
@@ -233,7 +257,7 @@
       w.scenario = id;
       s.pas(w);
       HV.klok.stap(0);
-      if (!stil && HV.logboek) {
+      if (!stil && !s.zonderRegel && HV.logboek) {
         HV.logboek.voegToe({ maker: SIM, wat: ['Сценарій: ' + s.naam[0], 'Scenario: ' + s.naam[1]], waarom: s.wat, soort: 'huis.simulatie' });
       }
       if (HV.naScenario) HV.naScenario(s);

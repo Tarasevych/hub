@@ -557,7 +557,7 @@
       o.segment({ label: t('Поверх', 'Verdieping'), waarde: vid, actie: 'plan-verdieping', klas: 'hv-segment--rol hv-plan__verdiepingen', k: 'plan-verd', opties: VERDIEPINGEN.map(function (id) { return { id: id, label: HV.p(verdNaam(id)), icoon: id === 'buiten' ? 'trees' : 'layers' }; }) }) +
       '<div class="hv-filter hv-plan__lagen" role="group" aria-label="' + h(t('Шари плану', 'Lagen van de plattegrond')) + '">' + LAGEN.map(function (l) {
         var gekozen = l.id === 'beveiliging' ? veilig : l.id === laag;
-        return o.chip({ icoon: l.icoon, tekst: HV.p(l.naam), filter: true, gekozen: gekozen, actie: 'plan-laag', gegevens: { laag: l.id }, k: 'laag-' + l.id, aria: HV.p(l.naam) + (l.id === 'beveiliging' ? t(' — накладається на будь-який шар', ' — ligt over elke laag') : '') });
+        return o.chip({ icoon: l.icoon, tekst: HV.p(l.naam), filter: true, gekozen: gekozen, actie: 'plan-laag', gegevens: { laag: l.id }, k: 'laag-' + l.id, aria: t('Шар плану: ', 'Laag van de plattegrond: ') + HV.p(l.naam) + (l.id === 'beveiliging' ? t(' — накладається на будь-який шар', ' — ligt over elke laag') : '') });
       }).join('') + '</div></div>';
 
     var gereedschap = '<div class="hv-plan__gereedschap" data-k="plangereedschap">' +
@@ -596,7 +596,9 @@
     var klas = 'hv-plan__merk hv-toon-' + mb.toon + (mb.aan ? ' is-aan' : '') + (mb.staat ? ' is-' + mb.staat : '') + (HV.makerZichtbaar(a) && !B.verleden ? ' heeft-maker' : '');
     var st = 'left:' + m.x.toFixed(1) + 'px;top:' + m.y.toFixed(1) + 'px';
     var binnenHtml = '<span class="hv-plan__stip">' + HV.icoon(mb.icoon, { maat: 's' }) + '</span>' + (mb.staat === 'verouderd' || mb.staat === 'verondersteld' || mb.staat === 'slaapt' ? '<span class="hv-plan__staat" aria-hidden="true"></span>' : '');
-    var aria = naam + ': ' + mb.woord + (mb.waarde ? ', ' + mb.waarde : '') + (mb.staat && mb.staat !== 'onbereikbaar' && mb.staat !== 'wacht' ? ', ' + HV.woord[mb.staat]() : '');
+    // доступна назва: пристрій, кімната (однакових «Температура» чи «Дим» у домі кілька), далі стан — без порожнього «: .»
+    var mk = HV.staat.kamer(a.kamer), stand = [mb.woord, mb.waarde].filter(Boolean).join(', ');
+    var aria = naam + (mk ? ', ' + HV.p(mk.naam) : '') + (stand ? ': ' + stand : '') + (mb.staat && mb.staat !== 'onbereikbaar' && mb.staat !== 'wacht' ? ', ' + HV.woord[mb.staat]() : '');
     if (B.verleden) return '<span class="' + klas + '" style="' + st + '" role="img" aria-label="' + h(aria) + '" data-k="pm-' + h(a.id) + '">' + binnenHtml + '</span>';
     return '<button type="button" class="' + klas + '" style="' + st + '" data-actie="blad" data-blad="apparaat:' + h(a.id) + '" data-k="pm-' + h(a.id) + '" aria-label="' + h(aria + '. ' + t('Відкрити', 'Openen')) + '" title="' + h(naam) + '">' + binnenHtml + '</button>';
   }
@@ -1089,7 +1091,7 @@
       var staat = a.beschikbaar === 'onbereikbaar' ? HV.woord.onbereikbaar() : a.wacht ? HV.woord.wacht() : (b.woord || '') + (b.waarde ? (b.woord ? ' · ' : '') + b.waarde.replace(/<[^>]+>/g, '') : '');
       var cellen = [
         kiezen ? '<td class="hv-rt__kies"><button type="button" class="hv-rt__vink' + (gekozen[a.id] ? ' is-gekozen' : '') + '" aria-pressed="' + (gekozen[a.id] ? 'true' : 'false') + '" aria-label="' + h(t('Вибрати: ', 'Selecteren: ') + HV.p(a.naam)) + '" data-actie="app-kies" data-id="' + h(a.id) + '">' + (gekozen[a.id] ? HV.icoon('check', { maat: 's' }) : '') + '</button></td>' : null,
-        '<th scope="row" class="hv-rt__naam"><button type="button" class="hv-rt__open" data-actie="blad" data-blad="apparaat:' + h(a.id) + '"><span class="hv-rt__teken' + (b.aan && a.beschikbaar !== 'onbereikbaar' ? ' is-aan hv-toon-' + (b.toon || s.toon || 'neutraal') : '') + (a.beschikbaar !== 'ok' ? ' is-' + a.beschikbaar : '') + '">' + HV.icoon(a.beschikbaar === 'onbereikbaar' ? 'unplug' : b.icoon, { maat: 's' }) + '</span><span>' + h(HV.p(a.naam)) + '</span></button></th>',
+        '<th scope="row" class="hv-rt__naam"><button type="button" class="hv-rt__open" data-actie="blad" data-blad="apparaat:' + h(a.id) + '" aria-label="' + h(HV.p(a.naam) + (HV.staat.kamer(a.kamer) ? ', ' + HV.p(HV.staat.kamer(a.kamer).naam) : '')) + '"><span class="hv-rt__teken' + (b.aan && a.beschikbaar !== 'onbereikbaar' ? ' is-aan hv-toon-' + (b.toon || s.toon || 'neutraal') : '') + (a.beschikbaar !== 'ok' ? ' is-' + a.beschikbaar : '') + '">' + HV.icoon(a.beschikbaar === 'onbereikbaar' ? 'unplug' : b.icoon, { maat: 's' }) + '</span><span>' + h(HV.p(a.naam)) + '</span></button></th>',
         groepeer !== 'kamer' ? '<td data-kolom="kamer">' + h(HV.p(k.naam)) + '</td>' : null,
         groepeer !== 'klasse' ? '<td data-kolom="klasse">' + h(HV.p(s.naam)) + '</td>' : null,
         '<td data-kolom="staat">' + h(staat) + (STAAT_NAMEN[a.beschikbaar] && a.beschikbaar !== 'onbereikbaar' ? '<span class="hv-rt__eerlijk">' + h(HV.p(STAAT_NAMEN[a.beschikbaar])) + '</span>' : '') + '</td>',

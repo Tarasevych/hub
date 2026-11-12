@@ -36,21 +36,13 @@
 .hv-gar-lijst { display: grid; gap: var(--ruimte-2); padding-inline-start: 1.2em; font-size: var(--tekst-klein); line-height: 1.5; }
 .hv-gar-nu { margin-inline-start: 6px; padding: 0 6px; border-radius: 999px; background: var(--warn-zacht); color: var(--text); font-size: var(--tekst-mini); font-weight: 600; line-height: 1.6; }
 
-/* ───────────── Речення гаража ───────────── */
-.hv-gar-zin {
-  display: flex; gap: var(--ruimte-4); align-items: flex-start; padding: var(--ruimte-4) var(--ruimte-5);
-  border-radius: var(--straal-l); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
-  background: linear-gradient(118deg, var(--hv-auto-zacht), var(--panel) 58%);
-}
-.hv-gar-zin__teken { flex: none; display: grid; place-items: center; inline-size: 48px; block-size: 48px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); color: var(--hv-auto); }
-.hv-gar-zin__tekst { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
-.hv-gar-zin__vol, .hv-gar-zin__kort { font-size: var(--hv-tekst-kop); font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; text-wrap: pretty; color: var(--text); }
-.hv-gar-zin__kort { display: none; }
-.hv-gar-zin__chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); }
-@container gar (max-width: 479px) {
-  .hv-gar-zin { padding: var(--ruimte-4); gap: var(--ruimte-3); }
-  .hv-gar-zin__teken { inline-size: 40px; block-size: 40px; border-radius: 12px; }
-  .hv-gar-zin__vol { font-size: var(--tekst-basis); }
+/* ───────────── Герой зони: спільний o.zoneheld (папір без градієнта, лічильники однієї форми) ─────────────
+   Власного героя зона не має. Тут лише ряд чипів стану (ворота, станція, дрон у польоті): вони стоять окремим рядом
+   під реченням і лічильниками, а не третьою колонкою — інакше реченню не лишається місця. */
+.hv-gar-zoneheld .hv-zoneheld__acties { grid-column: 1 / -1; justify-content: flex-start; gap: var(--ruimte-2); }
+@container zoneheld (min-width: 720px) {
+  .hv-gar-zoneheld .hv-zoneheld__raam { grid-template-columns: minmax(0, 1fr) auto; }
+  .hv-gar-zoneheld .hv-zoneheld__sub { max-inline-size: 72ch; text-wrap: pretty; }
 }
 
 /* ───────────── Картка транспорту ───────────── */
@@ -241,6 +233,9 @@
 .hv-gar-kaart__label.is-klein { font-weight: 500; color: var(--muted); }
 .hv-gar-kaart__label.is-ring { color: var(--text); font-weight: 600; }
 .hv-gar-kaart__label.is-oud { font-weight: 600; }
+/* рядок-примітка мапи «Регіон»: притиснутий до нижнього краю, ліворуч від мірила; довга примітка стає у два рядки */
+.hv-gar-kaart__label.is-voet { inset-inline-start: 8px; inset-block-end: 3%; transform: none; white-space: normal; max-inline-size: calc(100% - 78px); }
+.hv-gar-kaart__noot { display: inline-block; white-space: nowrap; }
 .hv-gar-kaart__label.is-zone, .hv-gar-kaart__label.is-breed { display: none; }
 @container (min-width: 560px) { .hv-gar-kaart__label.is-zone, .hv-gar-kaart__label.is-breed { display: block; } }
 .hv-gar-kaart__label.is-zone { transform: none; margin-block-start: -7px; color: var(--text); opacity: 0.75; }

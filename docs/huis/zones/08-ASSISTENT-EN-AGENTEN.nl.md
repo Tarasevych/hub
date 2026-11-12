@@ -4,7 +4,7 @@
 
 Taak HUIS-001 · fase 0 · 10.11.2026 · status: ter goedkeuring bij de eigenaar
 
-Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ДИЗАЙН-МОВА-ЖИВИЙ-ДІМ-20261110.uk.md) (hierna: OT). Namen van tokens, componenten, toestanden en profielen komen uit OT; de grammatica van adressen komt uit de zone [‘Schil’](01-SCHIL.nl.md); de nieuwe componenten staan in §16.
+Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md) (hierna: OT). Namen van tokens, componenten, toestanden en profielen komen uit OT; de grammatica van adressen komt uit de zone [‘Schil’](01-SCHIL.nl.md); de nieuwe componenten staan in §16.
 
 ## 0. Wat er is veranderd
 
@@ -22,7 +22,7 @@ De zone beantwoordt: wat doet AI in huis, wie heeft dat toegestaan en hoe zet je
 - **Externe agenten** worden gekoppeld via de groep `huis` van de koppeling (MCP). De platformpagina `mcp.tarasevych.com/agenten` schakelt alleen de groep zelf in; de standen van de acties staan in de matrix van het huis en worden daar alleen-lezen getoond, met een link.
 - **Het gesprek omzeilt het ritueel niet.** Een actie die een mens met een knop in de kaart van de assistent heeft bevestigd, is een actie van de mens, met het ritueel van het niveau van die actie en de auteur `User`. De toestemming van de Assistent geldt alleen voor wat hij zelf doet.
 - **Grenzen.** De matrix `/instellingen/toestemmingen` en het register `/instellingen/risico` zijn gedeelde pagina's van Systeem; de zone levert er de kolommen van de agenten voor. De regeleditor hoort bij ‘Automatisering’; sleutels en sessies bij `id.tarasevych.com`.
-- **De bevestiging van de aanmelding** geldt nu 5 min per sessie (`STAP_OP_MS`). Zolang er geen eenmalige bevestiging is (plan §7), zeggen de dialoogvensters: «Підтвердження діє 5 хв для цього сеансу / Bevestiging geldt 5 min voor deze sessie».
+- **De bevestiging van de aanmelding** geldt nu 5 min per sessie (`STAP_OP_MS`). Zolang er geen eenmalige bevestiging is (plan §7), zeggen de dialoogvensters: «Підтвердження діє 5 хв для цього сеансу / De bevestiging geldt 5 min voor deze sessie».
 
 ## 2. Uiterlijk
 
@@ -40,8 +40,8 @@ De zone registreert de soorten bladen `agent`, `verzoek`, `waarom`, `assistent`,
 |---|---|
 | Помічник / Assistent: gesprek, overzicht, ‘Wacht op jou’, ‘Suggesties’, ‘Ongewoon’ | `/assistent`; vanuit Opdracht — `?blad=assistent` |
 | Instellingen: «Модель і бюджет / Model en budget · Правила дому / Huisregels · Що знає помічник / Wat de assistent weet · Не зрозумів / Niet begrepen · Голос / Spraak» | `/assistent/instellingen` |
-| Агенти й погодження / Agenten en goedkeuringen | `/assistent/agenten` |
-| Pagina van een agent: Інструменти / Gereedschap · Рамки / Kaders · Дії / Acties · Що бачить агент / Wat de agent ziet | `/assistent/agenten/<agent>?deel=…`; als blad — `?blad=agent:<id>&deel=…` |
+| Агенти й погодження / Agenten en goedkeuringen — een tabblad van de rubriek «Автоматика / Automatisering» | `/automatiseringen/agenten` |
+| Pagina van een agent: Інструменти / Hulpmiddelen · Рамки / Kaders · Дії / Acties · Що бачить агент / Wat de agent ziet | `/automatiseringen/agenten/<agent>?deel=…`; als blad — `?blad=agent:<id>&deel=…` |
 | Verzoek; «Чому це сталося / Waarom gebeurde dit»; «Що буде надіслано / Wat wordt verzonden» | `?blad=verzoek:<id>`, `waarom:<gebeurtenis>`, `verzending` |
 | Stappenplannen: «Додати агента / Agent toevoegen», «Перенести з симуляції / Overnemen uit simulatie»; ‘Zelfstandige acties stoppen’ | `?dialoog=agent-toevoegen`, `overnemen`, `stoppen` |
 | Люди й доступ / Mensen en toegang; uitnodiging | `/instellingen/mensen`, `/<persoon>`, `?dialoog=uitnodigen` |
@@ -81,12 +81,12 @@ Computer (`bureau`): links het gesprek `hv-gesprek` met bovenaan het dagoverzich
 - **Spraak** — het stempel «пізніше / later» tot het besluit over de microfoon (plan §7). Spraak is een actie van de mens: gevaarlijk en kritiek opent `hv-gevaar` op het scherm, want een houdrail kun je niet met je stem vasthouden.
 - **Toestanden:** «готовий / gereed · думає / denkt na · чекає вашого рішення / wacht op je besluit · бюджет вичерпано / budget op · недоступний / niet bereikbaar · лише перегляд / alleen bekijken». Een onbereikbare Assistent blokkeert niets: Opdracht, scènes en ‘Waarom gebeurde dit’ werken zonder hem.
 
-## 5. Agenten en goedkeuringen `/assistent/agenten`
+## 5. Agenten en goedkeuringen `/automatiseringen/agenten`
 
 ```
  hemel·Automatisering›Agenten  [Zelfstandige acties stoppen] [+ Agent toevoegen]
 ┌ Agenten ────────┐ ┌ ◩ Claude · actief · 14 acties vandaag          [Pauzeren] ┐
-│ ◩ Huisassistent │ │ Gereedschap · [Kaders] · Acties · Wat de agent ziet       │
+│ ◩ Huisassistent │ │ Hulpmiddelen · [Kaders] · Acties · Wat de agent ziet      │
 │ ◩ Claude     !  │ │ Kaders: zonder kaders                  [Kaders wijzigen]  │
 │ ◩ Gemini        │ │ ▾ Licht en stopcontacten · 31 acties · Altijd: 0          │
 │   gepauzeerd    │ │   Voor de hele groep             gemengd                  │
@@ -100,7 +100,7 @@ Computer (`bureau`): links het gesprek `hv-gesprek` met bovenaan het dagoverzich
 Telefoon: wachtrij → kaarten `hv-agentkaart` → pagina van de agent; in ‘Kaders’ staan de naam van de actie, `hv-risico` en ‘!’ op de eerste regel en `hv-stand` over de volle breedte op de tweede.
 
 - **`hv-agentkaart`:** teken, naam, toestand, actieteller, ‘!’ bij ‘Altijd’ voor een gevaarlijke of kritieke actie, «Призупинити / Pauzeren» ↔ «Відновити / Hervatten». Een bedieningselement om toestemmingen te wijzigen heeft de kaart niet.
-- **Gereedschap** (`hv-gereedschaplijst`) — de groepen van §7 met beschrijving, niveaus en de geldende stand in woorden. Een grijze regel ‘niet beschikbaar’ bestaat niet.
+- **Hulpmiddelen** (`hv-gereedschaplijst`) — de groepen van §7 met beschrijving, niveaus en de geldende stand in woorden. Een grijze regel ‘niet beschikbaar’ bestaat niet.
 - **Kaders** — zoals OT §10 voorschrijft, wijzigt de eigenaar hier de toestemmingen: de `hv-stand` van elke actie, het groepsbedieningselement «Для всієї групи / Voor de hele groep», de teller «Завжди: N / Altijd: N», en daarboven de kaders (§6). Andere rollen zien de stand als tekst en «Змінює лише власник / Alleen de eigenaar kan dit wijzigen».
 - **Acties** — `hv-bericht`: wat · woorden van de agent · «було → стало / was → werd» · «дозволено через / toegestaan via» · resultaat · model; «Повернути все / Alles ongedaan maken» voor een uitvoering die terug te draaien is.
 - **«Зараз працює / Nu bezig»** — `hv-agentstappen`: de stappen van een uitvoering met de toestanden van de opdracht en «Стоп / Stop» (stopt de uitvoering en verandert geen standen).
@@ -111,7 +111,7 @@ Telefoon: wachtrij → kaarten `hv-agentkaart` → pagina van de agent; in ‘Ka
 - **Een toestemming hoort bij een actie** (‘mogelijkheid × richting × apparaat of klasse’), niet bij een hulpmiddel: één aanroep met meerdere acties gaat voor elke actie afzonderlijk door de poorten.
 - **‘Uit’** — de actie wordt niet aan de agent aangeboden; een aanroep geeft «не виконано / niet uitgevoerd» met de naam van de poort. **‘Vragen’** — een verzoek `hv-verzoek` (§8). **‘Altijd’** — de actie wordt uitgevoerd binnen de kaders van de eigenaar, met auteursteken, `hv-toost` en een vermelding in het Logboek.
 - **Poorten op de server** (schil §7): bron («лише читання / alleen-lezen») → de rol van de mens namens wie de agent handelt (de eigenaar die hem heeft toegevoegd) → pauze → stand → kaders. Het risiconiveau houdt de agent niet tegen — het bepaalt alleen het ritueel voor de mens.
-- **Alleen de eigenaar wijzigt**, op een persoonlijk apparaat en met de bevestiging van de aanmelding van het platform voor ‘Altijd’ bij gevaarlijke en kritieke acties; op `/paneel/*` en `tv` staat de stand als tekst. Een agent kan rechten niet uitbreiden en niet inperken — niet de eigen en niet die van anderen.
+- **Alleen de eigenaar wijzigt**, op een persoonlijk toestel en met de bevestiging van de aanmelding van het platform voor ‘Altijd’ bij gevaarlijke en kritieke acties; op `/paneel/*` en `tv` staat de stand als tekst. Een agent kan rechten niet uitbreiden en niet inperken — niet de eigen en niet die van anderen.
 - **Kaders zijn optioneel, standaard «без рамок / zonder kaders»:** termijn, kamers, uren, actiebudget, en verder «Після чужого тексту — питати / Na vreemde tekst vragen», «Під час тривоги — лише читання / Tijdens alarm alleen lezen» en «Хто отримує запити / Wie krijgt verzoeken» (standaard alle eigenaren). Is de termijn verstreken, dan gaat de stand terug naar ‘Uit’ met de chip «строк минув / termijn verlopen».
 - **Het Logboek is verplicht:** elke wijziging van een toestemming en elke actie op grond daarvan levert een `hv-bericht` en een vermelding in `hv-meldingen` op; de audit kent alleen toevoegen; niemand kan dit uitzetten.
 
@@ -160,15 +160,15 @@ Er zijn geen hulpmiddelen voor toestemmingen, kaders, rollen, uitnodigingen, geh
 └──────────────────────────────┘
 ```
 
-- **Antwoorden:** «Схвалити раз / Eén keer goedkeuren» en «Відхилити / Afwijzen». Goedkeuren is een actie van de mens, met de rechten van diens rol en het ritueel van het niveau: gewoon — direct; gevoelig — met ‘Ongedaan maken’ gedurende 10 s; gevaarlijk — de houdrail; kritiek — de houdrail en de bevestiging van de aanmelding; op het paneel — de persoonlijke code. Een kind en een gast keuren niet goed.
-- **Wie ontvangt:** de mensen uit het kader ‘Wie krijgt verzoeken’. In een melding op het apparaat kun je gewone en gevoelige verzoeken direct goedkeuren, gevaarlijke en kritieke alleen «Відкрити / Openen». Een antwoord van een mens in het gesprek met de agent is geen goedkeuring: goedgekeurd wordt alleen in de hub.
+- **Antwoorden:** «Схвалити раз / Eén keer goedkeuren» en «Відхилити / Afwijzen». Goedkeuren is een actie van de mens, met de rechten van diens rol en het ritueel van het niveau: gewoon — direct; gevoelig — met ‘Ongedaan maken’ gedurende 10 s; gevaarlijk — de houdrail; kritiek — de houdrail en de bevestiging van de aanmelding; op het paneel — de persoonlijke code. Standaard keurt alleen de eigenaar gevaarlijke en kritieke verzoeken goed, gewone en gevoelige de eigenaar of een bewoner; die kring past de eigenaar aan met het kader ‘Wie krijgt verzoeken’. Een kind en een gast keuren niet goed: in plaats van knoppen zien zij een regel met een slot «Вирішує власник / De eigenaar beslist». De regel is dezelfde voor elke knop — ‘Nu belangrijk’, de kaart in het Logboek, de pagina met agenten; het besluit van de mens komt als eigen regel in het Logboek: «Схвалено раз / Eén keer goedgekeurd» of «Відхилено запит / Verzoek afgewezen».
+- **Wie ontvangt:** de mensen uit het kader ‘Wie krijgt verzoeken’. In een melding op het toestel kun je gewone en gevoelige verzoeken direct goedkeuren, gevaarlijke en kritieke alleen «Відкрити / Openen». Een antwoord van een mens in het gesprek met de agent is geen goedkeuring: goedgekeurd wordt alleen in de hub.
 - **Na 10 gelijke goedkeuringen** ziet de eigenaar de regel «Ви схвалили це 10 разів / Je hebt dit 10 keer goedgekeurd» met een link naar de `hv-stand` van deze actie — zonder aanwijzing welke stand hij moet kiezen.
-- **Toestanden:** «чекає / wacht · схвалено / goedgekeurd · відхилено / afgewezen · минув / verlopen · виконано / uitgevoerd · не виконано / niet uitgevoerd».
+- **Toestanden:** «чекає / wacht · схвалено / goedgekeurd · відхилено / afgewezen · минув / verlopen · виконано / uitgevoerd · не виконано / niet uitgevoerd»; daarnaast «схвалено · виконається о 02:00 / goedgekeurd · wordt om 02:00 uitgevoerd» (een verzoek met een eigen uitvoertijd: goedkeuren start de actie niet meteen, de klok van het huis voert haar uit) en «знято / vervallen» met de reden: «дозвіл вимкнено / toestemming uitgezet» (de eigenaar heeft de actie van deze uitvoerder op ‘Uit’ gezet; bij ‘Altijd’ wordt het wachtende verzoek met de nieuwe toestemming uitgevoerd — ontwerptaal, §10), «уже так / was al zo» (het apparaat staat al in die toestand) of in de woorden van de indiener, wanneer die het verzoek zelf intrekt omdat het geen zin meer heeft. ‘Verlopen’ komt alleen voor na een termijn die het verzoek zelf noemt. Eén actie van één uitvoerder heeft hooguit één wachtend verzoek; een actie die niets verandert, maakt geen verzoek aan, en de mens krijgt «Уже так / Is al zo» zonder regel in het Logboek.
 
 ## 9. Pauze, Logboek, meldingen
 
-- **«Зупинити самостійні дії / Zelfstandige acties stoppen»** (`?dialoog=stoppen`, noodlaag, Systeem) — vinkjes ‘automatiseringen · optimalisator · agenten’. Verandert geen standen; stoppen kan de eigenaar of een bewoner, op `hv-nood` iedereen; hervatten alleen de eigenaar. Een agent pauzeert en hervat zichzelf niet. Een ongewone frequentie van acties van een agent levert een melding op met de knop ‘Pauzeren’, geen eigenmachtige pauze.
-- **`huis.agent`** — elke actie van een agent en elk verzoek. **`huis.toegang`** («Доступ до дому / Toegang tot het huis», belang ‘belangrijk’, niet te dempen, voor alle eigenaren): een agent gekoppeld of kaders gewijzigd; een actie op ‘Altijd’ gezet; een nieuwe persoon, een gewijzigde rol, een gastcode; een overname uit de simulatie; zelfstandige acties hervat. Elke kaart heeft «Це не я / Dat was ik niet»: zelfstandige acties stoppen, de agent ontkoppelen, een uitnodiging of code intrekken, overal afmelden (`id.tarasevych.com`).
+- **«Зупинити самостійні дії / Zelfstandige acties stoppen»** (`?dialoog=stoppen`, noodlaag, Systeem) — vinkjes ‘automatiseringen · optimalisatie · agenten’. Verandert geen standen; stoppen kan de eigenaar of een bewoner, op `hv-nood` iedereen; hervatten alleen de eigenaar. Een agent pauzeert en hervat zichzelf niet. Een ongewone frequentie van acties van een agent levert een melding op met de knop ‘Pauzeren’, geen eigenmachtige pauze.
+- **`huis.agent`** — elke actie van een agent en elk verzoek. **`huis.toegang`** («Доступ до дому / Toegang tot het huis», belang ‘belangrijk’, niet te dempen, voor alle eigenaren): een agent gekoppeld of ontkoppeld, diens kaders gewijzigd, vreemde tekst gaat mee in de momentopname; een nieuwe persoon, een gewijzigde rol, een gastcode; een overname uit de simulatie. Een wijziging van een toestemming `hv-stand` is `huis.systeem`: ter informatie, en ‘Altijd’ voor een gevaarlijke of kritieke actie — belangrijk; pauze en hervatting van zelfstandige acties — `huis.systeem`, belangrijk. De gezamenlijke tabel ‘gebeurtenis → soort → belang’ staat in [‘Architectuur’](09-ARCHITECTUUR.nl.md) §10. Elke kaart `huis.toegang` en de kaart ‘Altijd’ voor een gevaarlijke of kritieke actie heeft «Це не я / Dat was ik niet»: zelfstandige acties stoppen, de agent ontkoppelen, een uitnodiging of code intrekken, overal afmelden (`id.tarasevych.com`).
 
 ## 10. Vreemde tekst en gegevens naar buiten
 
@@ -195,7 +195,7 @@ Toestemmingen, kaders en ingeschakelde automatiseringen horen bij een woning. De
 
 ## 13. Schermprofielen
 
-`wand` — de wachtrij en ‘Eén keer goedkeuren’ met de persoonlijke code; `tv` — de wachtrij om te bekijken, bij kritiek «Підтвердьте на телефоні / Bevestig op je telefoon»; `horloge` — de wijzerplaat `verzoek` met ‘Afwijzen’ en «Відкрити на телефоні / Openen op je telefoon»; `strook` — ‘N verzoeken van agenten’ in de uitzonderingszone; `inkt` — het dagoverzicht. Toestemmingen worden alleen op persoonlijke apparaten van de eigenaar gewijzigd.
+`wand` — de wachtrij en ‘Eén keer goedkeuren’ met de persoonlijke code; `tv` — de wachtrij om te bekijken, bij kritiek «Підтвердьте на телефоні / Bevestig op je telefoon»; `horloge` — de wijzerplaat `verzoek` met ‘Afwijzen’ en «Відкрити на телефоні / Openen op je telefoon»; `strook` — ‘N verzoeken van agenten’ in de uitzonderingszone; `inkt` — het dagoverzicht. Toestemmingen worden alleen op persoonlijke toestellen van de eigenaar gewijzigd.
 
 ## 14. Toelichtingen
 
@@ -223,7 +223,7 @@ De twaalf gedeelde toestanden (OT §9), de toestanden van `hv-stand` (tien), van
 | 2 | kolommen van agenten in de matrix, poorten, `huis.agent`, `huis.toegang`, audit |
 | 3 | gesprek vanuit Opdracht, ‘Ik begreep dit als…’, kaart uit de proefuitvoering |
 | 4 | regels van Garage in de lijst met hulpmiddelen en in de matrix |
-| 5 | `/assistent`, `/assistent/agenten`, wachtrij, stappenplan, pauze, ‘Waarom gebeurde dit’, suggesties, beschrijving → automatisering, volledige set hulpmiddelen |
+| 5 | `/assistent`, `/automatiseringen/agenten`, wachtrij, stappenplan, pauze, ‘Waarom gebeurde dit’, suggesties, beschrijving → automatisering, volledige set hulpmiddelen |
 | 6 | wijzerplaat `verzoek`, wachtrij op `wand`, `tv`, `strook`, `inkt` |
 | 7 | ‘Ongewoon’, dagoverzicht met geschiedenis en energie |
 | 8 | mensen, rollen, uitnodigingen, privacy, ‘Wat de agent ziet’ |
@@ -232,7 +232,7 @@ De twaalf gedeelde toestanden (OT §9), de toestanden van `hv-stand` (tien), van
 | 11 | hulpmiddelen voor techniek, herkenning en onderhoud |
 | 12 | echte agenten, overname, afstemming op de MCP-specificatie |
 
-**Uitgesteld:** spraak — tot het besluit over de microfoon; meldingen op het apparaat — samen met het platform.
+**Uitgesteld:** spraak — tot het besluit over de microfoon; meldingen op het toestel — samen met het platform.
 
 ## 18. Besluiten voor de eigenaar
 

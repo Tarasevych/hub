@@ -46,7 +46,7 @@
     ]],
     ['garage', 'garage', ['Гараж', 'Garage'], 'car', '/garage', ['Транспорт, безпілотники й роботи однією мовою.', 'Voertuigen, drones en robots in één taal.'], [
       ['nu', ['Зараз', 'Nu'], '/garage', ['Телеметричні картки: заряд, запас ходу, три числа, силует.', 'Telemetriekaarten: lading, bereik, drie getallen, silhouet.']],
-      ['voertuigen', ['Транспорт', 'Voertuigen'], '/garage/voertuigen', ['Електромобіль, бензинове авто, два електровелосипеди, самокат і мопед.', 'Elektrische auto, benzineauto, twee e-bikes, een step en een bromfiets.']],
+      ['voertuigen', ['Транспорт', 'Voertuigen'], '/garage/voertuigen', ['Електромобіль, бензинове авто, два електровелосипеди, електросамокат і мопед.', 'Elektrische auto, benzineauto, twee e-bikes, een elektrische step en een bromfiets.']],
       ['drones', ['Безпілотники', 'Drones'], '/garage/drones', ['Парк, батареї, перевірка перед зльотом, кабіна, місії та зони польоту (довідково).', 'Vloot, accu’s, controle vóór de start, cockpit, missies en vliegzones (ter informatie).']],
       ['robots', ['Роботи', 'Robots'], '/garage/robots', ['Пилосос і косарка: стан, карта, зони, розклад.', 'Robotstofzuiger en robotmaaier: toestand, kaart, zones, rooster.']],
       ['kaart', ['Мапа', 'Kaart'], '/garage/kaart', ['Схема ділянки: геозони, кільце досяжності, де що стоїть.', 'Schema van het perceel: geozones, bereikring, wat waar staat.']]

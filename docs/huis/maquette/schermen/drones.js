@@ -81,13 +81,13 @@
     var P = HV.paspoort;
     if (!P || !P.apparaten) return;
     if (!P.soorten.drone) P.soorten.drone = { icoon: 'drone', naam: ['Дрон', 'Drone'] };
-    if (!P.soorten.dronedock) P.soorten.dronedock = { icoon: 'drn-dock', naam: ['Док-станція дронів', 'Dronedock'] };
+    if (!P.soorten.dronedock) P.soorten.dronedock = { icoon: 'drn-dock', naam: ['Док дронів', 'Dronedock'] };
     var ids = P.apparaten.map(function (a) { return a.id; });
     // modus — команда польоту; effect — пропозиція місії від агента; bron — рішення «летіти попри вітер»
     [
       { id: 'ooievaar', soort: 'drone', naam: ['Дрон «Лелека»', 'Drone ‘Ooievaar’'], mog: ['modus', 'effect', 'bron'], st: { modus: 'd-grond', effect: 'd-geen', bron: 'd-wind-nee' } },
       { id: 'zwaluw', soort: 'drone', naam: ['Дрон «Ластівка»', 'Drone ‘Zwaluw’'], mog: ['modus', 'effect', 'bron'], st: { modus: 'd-grond', effect: 'd-geen', bron: 'd-wind-nee' } },
-      { id: 'dronedock', soort: 'dronedock', naam: ['Док-станція дронів', 'Dronedock'], mog: ['open', 'laden', 'modus'], st: { open: false, laadt: true, modus: 'd-dock-rust' } }
+      { id: 'dronedock', soort: 'dronedock', naam: ['Док дронів', 'Dronedock'], mog: ['open', 'laden', 'modus'], st: { open: false, laadt: true, modus: 'd-dock-rust' } }
     ].forEach(function (a) {
       if (ids.indexOf(a.id) >= 0) return;
       a.kamer = 'tuin';
@@ -719,7 +719,7 @@
   }
 
   // ───────────────────────── 10. Парк ─────────────────────────
-  function droneKaart(ctx, id) {
+  function droneKaart(ctx, id, nadruk) {
     var w = ctx.staat, d = drone(w, id), z = zorg(w), sp = SPEC[id], lucht = inLucht(d);
     var g = gereed(ctx, id), m = missie(w, z.gekozen[id]);
     var getallen = lucht
@@ -728,11 +728,12 @@
     var tele = o.telemetrie({ id: 'drn-' + id, icoon: 'drone', naam: HV.p(d.naam), stand: standWoord(d) + (lucht && m ? ' · ' + HV.p(missie(w, d.missie).naam).toLowerCase() : ''), lading: d.lading, toon: lucht ? 'batterij' : 'neutraal',
       bereik: t('≈ ', '≈ ') + minutenOver(d) + t(' хв польоту', ' min vliegen'), getallen: getallen, actie: 'ga', gegevens: { naar: 'garage-drones-' + id }, staat: d.link === false ? 'onbereikbaar' : null });
     var chip = lucht ? o.chip({ icoon: d.link === false ? 'wifi-off' : 'drone', toon: d.link === false ? 'alarm' : 'batterij', tekst: d.link === false ? t('втрата сигналу', 'signaal kwijt') : t('у польоті', 'in de lucht'), actie: 'ga', gegevens: { naar: 'garage-drones-vlucht' }, k: 'drn-gereed-' + id })
-      : g.ok ? o.chip({ icoon: 'circle-check', toon: 'ok', tekst: t('готовий: ', 'klaar: ') + HV.p(m.naam).toLowerCase(), actie: 'blad', gegevens: { blad: 'opstijgen:' + id }, k: 'drn-gereed-' + id })
-        : o.chip({ icoon: 'triangle-alert', toon: 'let-op', tekst: t('не готовий: ', 'niet klaar: ') + g.redenen.length + ' ' + HV.meervoud(g.redenen.length, ['причина', 'причини', 'причин'], ['reden', 'redenen']), actie: 'blad', gegevens: { blad: 'opstijgen:' + id }, k: 'drn-gereed-' + id });
+      : g.ok ? o.chip({ icoon: 'circle-check', toon: 'ok', tekst: t('готовий: ', 'klaar: ') + HV.p(m.naam).toLowerCase(), aria: kort(id) + ' — ' + t('готовий: ', 'klaar: ') + HV.p(m.naam).toLowerCase(), actie: 'blad', gegevens: { blad: 'opstijgen:' + id }, k: 'drn-gereed-' + id })
+        : o.chip({ icoon: 'triangle-alert', toon: 'let-op', tekst: t('не готовий: ', 'niet klaar: ') + g.redenen.length + ' ' + HV.meervoud(g.redenen.length, ['причина', 'причини', 'причин'], ['reden', 'redenen']), aria: kort(id) + ' — ' + t('не готовий: ', 'niet klaar: ') + g.redenen.length + ' ' + HV.meervoud(g.redenen.length, ['причина', 'причини', 'причин'], ['reden', 'redenen']), actie: 'blad', gegevens: { blad: 'opstijgen:' + id }, k: 'drn-gereed-' + id });
     var acties = lucht
-      ? o.knop({ tekst: t('Кабіна', 'Cockpit'), icoon: 'gamepad-2', soort: 'hoofd', klein: true, actie: 'drn-kabine', gegevens: { drone: id }, k: 'drn-kab-' + id }) + o.knop({ tekst: t('Додому', 'Naar huis'), icoon: 'house', klein: true, actie: 'drn-cmd', gegevens: { drone: id, cmd: 'd-naarhuis' }, uit: d.fase === 'terug' || d.fase === 'landen', k: 'drn-thuis-' + id })
-      : o.knop({ tekst: t('Перевірка перед зльотом', 'Controle vóór de vlucht'), icoon: 'plane-takeoff', soort: 'hoofd', klein: true, actie: 'blad', gegevens: { blad: 'opstijgen:' + id }, k: 'drn-check-' + id }) +
+      ? o.knop({ tekst: t('Кабіна', 'Cockpit'), icoon: 'gamepad-2', soort: nadruk ? 'hoofd' : 'gewoon', klein: true, actie: 'drn-kabine', gegevens: { drone: id }, k: 'drn-kab-' + id }) + o.knop({ tekst: t('Додому', 'Naar huis'), icoon: 'house', klein: true, actie: 'drn-cmd', gegevens: { drone: id, cmd: 'd-naarhuis' }, uit: d.fase === 'terug' || d.fase === 'landen', k: 'drn-thuis-' + id })
+      // у «Парку» таких карток дві: кнопка звичайна (заливка — лише коли картка одна на сторінці дрона чи в аркуші), а доступна назва містить дрон
+      : o.knop({ tekst: t('Перевірка перед зльотом', 'Controle vóór de vlucht'), aria: t('Перевірка перед зльотом: ', 'Controle vóór de vlucht: ') + kort(id), icoon: 'plane-takeoff', soort: nadruk ? 'hoofd' : 'gewoon', klein: true, actie: 'blad', gegevens: { blad: 'opstijgen:' + id }, k: 'drn-check-' + id }) +
         (d.stand === 'geland' ? o.knop({ tekst: t('Поставлено в док', 'Teruggezet in het dock'), icoon: 'drn-dock', klein: true, actie: 'drn-terugzetten', gegevens: { drone: id }, k: 'drn-terugzet-' + id }) : '');
     return '<article class="hv-drn-dkaart' + (lucht ? ' is-lucht' : '') + (d.link === false ? ' is-alarm' : '') + '" data-k="drn-dk-' + id + '">' + tele +
       '<div class="hv-drn-dkaart__voet">' + chip + '<span class="hv-drn-dkaart__acties">' + acties + '</span></div></article>';
@@ -757,7 +758,7 @@
       return o.knop({ tekst: t('Батарея ', 'Accu ') + kort(id) + (reserve ? ' → ' + Math.round(reserve.lading) + ' %' : ''), icoon: 'refresh-cw', klein: true, actie: kan ? 'drn-wissel' : 'drn-uitleg', gegevens: kan ? { drone: id } : { reden: d.stand !== 'dock' ? 'wissel-lucht' : 'wissel-vol', drone: id }, klas: kan ? null : 'is-uit', k: 'drn-wissel-' + id });
     }).join('');
     return '<div class="hv-kaart hv-drn-dock" data-k="drn-dock">' +
-      kop('drn-dock', t('Док-станція', 'Dronedock'), wacht + (groot ? '' : o.knop({ tekst: t('Детальніше', 'Meer'), soort: 'stil', klein: true, actie: 'ga', gegevens: { naar: 'garage-drones-dock' }, k: 'drn-dock-meer' }))) +
+      kop('drn-dock', t('Док дронів', 'Dronedock'), wacht + (groot ? '' : o.knop({ tekst: t('Детальніше', 'Meer'), soort: 'stil', klein: true, actie: 'ga', gegevens: { naar: 'garage-drones-dock' }, k: 'drn-dock-meer' }))) +
       '<div class="hv-drn-chips">' + o.chip({ icoon: klep ? 'package-open' : 'box', tekst: klep ? t('кришка відчинена', 'klep open') : t('кришка зачинена', 'klep dicht') }) +
       o.chip({ icoon: neerslag ? 'cloud-rain' : 'cloud', toon: neerslag ? 'let-op' : null, tekst: neerslag ? t('опади: так', 'neerslag: ja') : t('опадів немає', 'geen neerslag') }) + o.chip({ icoon: 'thermometer', tekst: HV.getal(w.weer.temp + 3, 0) + ' °C ' + t('усередині', 'binnen') }) + '</div>' +
       '<div class="hv-drn-vakken">' + vakken + '</div>' +
@@ -785,8 +786,8 @@
     return '<article class="hv-drn-mk" data-k="drn-mk-' + m.id + '">' + kaart(w, { k: 'mk-' + m.id, missie: m, klein: true, titel: HV.p(m.naam) }) +
       '<div class="hv-drn-mk__tekst"><h4>' + HV.icoon(m.icoon, { maat: 's' }) + '<span>' + h(HV.p(m.naam)) + '</span></h4><p>' + h(HV.p(m.doel)) + '</p>' +
       '<p class="hv-drn-mk__feiten"><span>' + h(HV.duur(pl.minuten)) + '</span><span>' + h(t('до ', 'tot ') + pl.maxH + t(' м', ' m')) + '</span><span>' + h(m.punten.length + ' ' + HV.meervoud(m.punten.length, ['точка', 'точки', 'точок'], ['punt', 'punten'])) + '</span><span class="' + (kan ? '' : 'is-te-laag') + '">' + h(t('треба ', 'nodig ') + nodig(m, id) + ' %') + '</span></p>' +
-      '<div class="hv-drn-mk__knoppen">' + o.knop({ tekst: t('Підготувати зліт', 'Start voorbereiden'), icoon: 'plane-takeoff', klein: true, actie: 'drn-bereid', gegevens: { drone: id, missie: m.id }, k: 'drn-mk-start-' + m.id }) +
-      o.knop({ tekst: t('Маршрут', 'Route'), icoon: 'route', soort: 'stil', klein: true, actie: 'drn-missie-open', gegevens: { missie: m.id }, k: 'drn-mk-route-' + m.id }) + '</div></div></article>';
+      '<div class="hv-drn-mk__knoppen">' + o.knop({ tekst: t('Підготувати зліт', 'Start voorbereiden'), aria: t('Підготувати зліт: ', 'Start voorbereiden: ') + HV.p(m.naam) + ' · ' + kort(id), icoon: 'plane-takeoff', klein: true, actie: 'drn-bereid', gegevens: { drone: id, missie: m.id }, k: 'drn-mk-start-' + m.id }) +
+      o.knop({ tekst: t('Маршрут', 'Route'), aria: t('Маршрут: ', 'Route: ') + HV.p(m.naam), icoon: 'route', soort: 'stil', klein: true, actie: 'drn-missie-open', gegevens: { missie: m.id }, k: 'drn-mk-route-' + m.id }) + '</div></div></article>';
   }
 
   function agentKaart(ctx) {
@@ -818,19 +819,27 @@
   function renderPark(ctx) {
     var w = ctx.staat, z = zorg(w), v = vliegend(w), wd = wind(w);
     var gereedLijst = DRONES.filter(function (id) { return gereed(ctx, id).ok; });
-    var zin, kortZin;
+    var zin, sub = '';
     if (v) {
-      zin = v.link === false ? t(kort(v.id) + ' без зв’язку ' + Math.round(v.kwijtS) + ' с і летить додому сам. Команди не доходять, доки сигнал не повернеться.', kort(v.id) + ' is ' + Math.round(v.kwijtS) + ' s zonder verbinding en vliegt zelf naar huis. Opdrachten komen niet aan tot het signaal terug is.')
-        : t(kort(v.id) + ' у повітрі: ' + HV.p(missie(w, v.missie).naam).toLowerCase() + ', ' + Math.round(v.lading) + ' %, сигнал ' + v.signaal + ' %.', kort(v.id) + ' is in de lucht: ' + HV.p(missie(w, v.missie).naam).toLowerCase() + ', ' + Math.round(v.lading) + ' %, signaal ' + v.signaal + ' %.');
-      kortZin = v.link === false ? t('Сигнал втрачено, дрон летить додому', 'Signaal kwijt, drone vliegt naar huis') : t(kort(v.id) + ' у польоті · ', kort(v.id) + ' vliegt · ') + Math.round(v.lading) + ' %';
-    } else if (gereedLijst.length === 2) { zin = t('Обидва дрони в доку й готові до польоту. Вітер ' + HV.getal(wd.v, 0) + ' м/с, пориви до ' + HV.getal(wd.vlaag, 0) + '.', 'Beide drones staan in het dock en zijn klaar om te vliegen. Wind ' + HV.getal(wd.v, 0) + ' m/s, vlagen tot ' + HV.getal(wd.vlaag, 0) + '.'); kortZin = t('Обидва дрони готові', 'Beide drones klaar'); }
-    else if (gereedLijst.length === 1) { var niet = DRONES.filter(function (id) { return gereedLijst.indexOf(id) < 0; })[0]; var r0 = gereed(ctx, niet).redenen[0]; zin = t(kort(gereedLijst[0]) + ' готовий до польоту; ' + kort(niet) + ' — ні: ', kort(gereedLijst[0]) + ' is klaar om te vliegen; ' + kort(niet) + ' niet: ') + (r0 ? r0.titel.toLowerCase() : '') + '.'; kortZin = t('Готовий один дрон із двох', 'Eén van de twee drones klaar'); }
-    else { zin = t('Жоден дрон зараз не готовий до польоту — відкрийте перевірку, щоб побачити причини.', 'Geen drone is nu klaar om te vliegen — open de controle om de redenen te zien.'); kortZin = t('Дрони не готові', 'Drones niet klaar'); }
-    var held = '<section class="hv-drn-zin' + (v ? (v.link === false ? ' is-alarm' : ' is-lucht') : '') + '" data-k="drn-zin"><span class="hv-drn-zin__teken">' + HV.icoon(v && v.link === false ? 'wifi-off' : 'drone', { maat: 'l' }) + '</span><div class="hv-drn-zin__tekst">' +
-      '<p class="hv-drn-zin__vol">' + h(zin) + '</p><p class="hv-drn-zin__kort">' + h(kortZin) + '</p><div class="hv-drn-chips">' +
-      (v ? o.chip({ icoon: 'gamepad-2', toon: v.link === false ? 'alarm' : 'batterij', tekst: t('Відкрити кабіну', 'Cockpit openen'), actie: 'drn-kabine', gegevens: { drone: v.id }, k: 'drn-zin-kab' }) : '') +
-      o.chip({ icoon: 'wind', toon: wd.vlaag > 10.7 ? 'let-op' : null, tekst: t('Вітер ', 'Wind ') + HV.getal(wd.v, 0) + t(', пориви ', ', vlagen ') + HV.getal(wd.vlaag, 0) + t(' м/с', ' m/s') }) +
-      o.chip({ icoon: 'drn-dock', tekst: t('Док: ', 'Dock: ') + (w.apparaten.dronedock.st.open ? t('відчинено', 'open') : t('зачинено', 'dicht')) + (w.apparaten.dronedock.st.laadt ? t(' · заряджає', ' · laadt') : ''), actie: 'ga', gegevens: { naar: 'garage-drones-dock' }, k: 'drn-zin-dock' }) + '</div></div></section>';
+      // число й одиниця в заголовку не розриваються (нерозривний пробіл)
+      zin = v.link === false ? t(kort(v.id) + ' без зв’язку ' + Math.round(v.kwijtS) + ' с і летить додому сам.', kort(v.id) + ' is ' + Math.round(v.kwijtS) + ' s zonder verbinding en vliegt zelf naar huis.')
+        : t(kort(v.id) + ' у повітрі: ' + HV.p(missie(w, v.missie).naam).toLowerCase() + ', ' + Math.round(v.lading) + ' %, сигнал ' + v.signaal + ' %.', kort(v.id) + ' is in de lucht: ' + HV.p(missie(w, v.missie).naam).toLowerCase() + ', ' + Math.round(v.lading) + ' %, signaal ' + v.signaal + ' %.');
+      if (v.link === false) sub = t('Команди не доходять, доки сигнал не повернеться.', 'Opdrachten komen niet aan tot het signaal terug is.');
+    } else if (gereedLijst.length === 2) zin = t('Обидва дрони в доку й готові до польоту.', 'Beide drones staan in het dock en zijn klaar om te vliegen.');
+    else if (gereedLijst.length === 1) { var niet = DRONES.filter(function (id) { return gereedLijst.indexOf(id) < 0; })[0]; var r0 = gereed(ctx, niet).redenen[0]; zin = t(kort(gereedLijst[0]) + ' готовий до польоту; ' + kort(niet) + ' — ні: ', kort(gereedLijst[0]) + ' is klaar om te vliegen; ' + kort(niet) + ' niet: ') + (r0 ? r0.titel.toLowerCase() : '') + '.'; }
+    else { zin = t('Жоден дрон зараз не готовий до польоту.', 'Geen drone is nu klaar om te vliegen.'); sub = t('Відкрийте перевірку, щоб побачити причини.', 'Open de controle om de redenen te zien.'); }
+    // герой зони — спільний o.zoneheld (посібник §4.2): папір без градієнта, лічильники однієї форми, одна головна дія (кабіна — лише в польоті)
+    var held = o.zoneheld({
+      id: 'drones', klas: 'hv-drn-zoneheld', icoon: v && v.link === false ? 'wifi-off' : 'drone', toon: v ? (v.link === false ? 'alarm' : 'batterij') : 'koud',
+      boven: t('Безпілотники зараз', 'Drones nu'), zin: h(zin), sub: sub ? h(sub) : '',
+      tellers: [
+        { waarde: String(gereedLijst.length), label: t('із ', 'van ') + DRONES.length + (gereedLijst.length === 1 ? t(' готовий', ' klaar') : t(' готові', ' klaar')), toon: gereedLijst.length || v ? null : 'let-op' },
+        { waarde: HV.maat(wd.v, t('м/с', 'm/s')), label: t('вітер', 'wind') },
+        { waarde: HV.maat(wd.vlaag, t('м/с', 'm/s')), label: t('пориви', 'vlagen'), toon: wd.vlaag > 10.7 ? 'let-op' : null }
+      ],
+      extra: o.chip({ icoon: 'drn-dock', tekst: t('Док: ', 'Dock: ') + (w.apparaten.dronedock.st.open ? t('відчинено', 'open') : t('зачинено', 'dicht')) + (w.apparaten.dronedock.st.laadt ? t(' · заряджає', ' · laadt') : ''), actie: 'ga', gegevens: { naar: 'garage-drones-dock' }, k: 'drn-zin-dock' }),
+      actie: v ? { tekst: t('Відкрити кабіну', 'Cockpit openen'), icoon: 'gamepad-2', klein: true, actie: 'drn-kabine', gegevens: { drone: v.id }, k: 'drn-zin-kab' } : null
+    });
     var nu = o.nu(w.nu.filter(function (n) { return /^drn-|^vlucht$|^signaal$/.test(n.id); }));
     var balk = v ? vluchtbalk(ctx, v, { naam: true }) : '';
     var vloot = '<div class="hv-drn-vloot">' + DRONES.map(function (id) { return droneKaart(ctx, id); }).join('') + '</div>';
@@ -944,7 +953,7 @@
     if (!lijst.length) rijen = o.leeg({ icoon: 'history', titel: t('Польотів ще немає', 'Nog geen vluchten'), tekst: t('Тут з’явиться кожен політ: пілот, місія, висота, заряд і події.', 'Hier verschijnt elke vlucht: piloot, missie, hoogte, accu en gebeurtenissen.') });
     var detail = r ? vluchtDetail(ctx, r) : '';
     return '<div class="hv-drn" data-k="drn-vluchtenpagina">' + navigatie(ctx) +
-      '<div class="hv-drn-rooster is-breed-rechts"><div class="hv-drn-kolom">' + o.blok({ id: 'drn-vl-lijst', titel: t('Журнал польотів', 'Vluchtlogboek'), teller: lijst.length, vast: true, extra: o.knop({ tekst: 'CSV', icoon: 'file-down', soort: 'stil', klein: true, actie: 'drn-csv', gegevens: { alle: '1' }, k: 'drn-csv-alle' }), inhoud: filters + rijen }) + '</div>' +
+      '<div class="hv-drn-rooster is-breed-rechts"><div class="hv-drn-kolom">' + o.blok({ id: 'drn-vl-lijst', titel: t('Журнал польотів', 'Vluchtlogboek'), teller: lijst.length, vast: true, extra: o.knop({ tekst: 'CSV', aria: t('CSV: усі польоти', 'CSV: alle vluchten'), icoon: 'file-down', soort: 'stil', klein: true, actie: 'drn-csv', gegevens: { alle: '1' }, k: 'drn-csv-alle' }), inhoud: filters + rijen }) + '</div>' +
       '<div class="hv-drn-kolom">' + detail + '</div></div></div>';
   }
   function vluchtDetail(ctx, r) {
@@ -966,7 +975,7 @@
     var dl = '<dl class="hv-drn-feiten">' + feiten.map(function (x) { return '<div><dt>' + h(x[0]) + '</dt><dd>' + (x[1].indexOf('<') === 0 ? x[1] : h(x[1])) + '</dd></div>'; }).join('') + '</dl>';
     var gebeurt = r.gebeurtenissen.length ? '<ul class="hv-drn-gebeurt">' + r.gebeurtenissen.map(function (g) { return '<li><span>' + h(HV.duur(g.tS / 60)) + '</span>' + h(HV.p(g.wat)) + '</li>'; }).join('') + '</ul>' : '';
     var vondsten = r.vondsten && r.vondsten.length ? '<div class="hv-drn-vondsten">' + kop('scan-eye', t('Знахідки', 'Bevindingen'), '', 'let-op') + '<ul>' + r.vondsten.map(function (x) { return '<li>' + HV.icoon('triangle-alert', { maat: 's' }) + '<span>' + h(HV.p(x)) + '</span></li>'; }).join('') + '</ul></div>' : '';
-    return '<div class="hv-kaart hv-drn-vluchtdetail" data-k="drn-vd-' + r.id + '">' + kop(m.icoon, HV.p(m.naam) + ' · ' + HV.datumKort(r.start), live ? '<span class="hv-drn-live">' + h(t('у повітрі', 'in de lucht')) + '</span>' : o.knop({ tekst: 'CSV', icoon: 'file-down', soort: 'stil', klein: true, actie: 'drn-csv', gegevens: { vlucht: r.id }, k: 'drn-csv-een' })) +
+    return '<div class="hv-kaart hv-drn-vluchtdetail" data-k="drn-vd-' + r.id + '">' + kop(m.icoon, HV.p(m.naam) + ' · ' + HV.datumKort(r.start), live ? '<span class="hv-drn-live">' + h(t('у повітрі', 'in de lucht')) + '</span>' : o.knop({ tekst: 'CSV', aria: t('CSV: цей політ', 'CSV: deze vlucht'), icoon: 'file-down', soort: 'stil', klein: true, actie: 'drn-csv', gegevens: { vlucht: r.id }, k: 'drn-csv-een' })) +
       kaart(w, { k: 'vd-' + r.id, missie: m, pad: r.pad, merk: q, drone: live ? d : null, vondst: r.missie === 'panelen', titel: t('Слід польоту на схемі ділянки', 'Vliegspoor op het schema van het perceel') }) +
       '<div class="hv-drn-afspeel">' + schuif + '<p class="hv-drn-afspeel__tekst" data-k="drn-afspeeltekst">' + h(HV.duur(q.t / 60) + ' · ' + HV.getal(q.h, 0) + t(' м · ', ' m · ') + q.l + ' %') + '</p></div>' +
       dl + gebeurt + vondsten + grafiek + '</div>';
@@ -1028,7 +1037,7 @@
     var hist = '<div class="hv-rijen hv-rijen--kaart">' + vl.slice(0, 5).map(function (r) { return vluchtRij(w, r); }).join('') + '</div>';
     return '<div class="hv-drn" data-k="drn-dronepagina-' + id + '">' + navigatie(ctx) +
       '<div class="hv-drn-terug">' + o.knop({ tekst: t('Парк', 'Vloot'), icoon: 'chevron-left', soort: 'stil', actie: 'ga', gegevens: { naar: 'garage-drones' }, k: 'drn-terug' }) + '</div>' +
-      droneKaart(ctx, id) + (lucht ? vluchtbalk(ctx, d) : '') +
+      droneKaart(ctx, id, true) + (lucht ? vluchtbalk(ctx, d) : '') +
       '<div class="hv-drn-rooster"><div class="hv-drn-kolom">' + check + accus + '</div><div class="hv-drn-kolom">' + cards + o.blok({ id: 'drn-d-vl-' + id, titel: t('Польоти цього дрона', 'Vluchten van deze drone'), teller: vl.length, inhoud: hist || o.leeg({ icoon: 'history', titel: t('Польотів ще немає', 'Nog geen vluchten') }) }) + '</div></div></div>';
   }
   function renderDock(ctx) {
@@ -1119,7 +1128,7 @@
     var w = ctx.staat, d = drone(w, a.id);
     if (!d) return '';
     // у польоті — смуга з діями безпеки; на землі дії вже є на картці (перевірка перед зльотом)
-    return droneKaart(ctx, a.id) + (inLucht(d) ? vluchtbalk(ctx, d) : '') +
+    return droneKaart(ctx, a.id, true) + (inLucht(d) ? vluchtbalk(ctx, d) : '') +
       '<div class="hv-knoppen">' + o.knop({ tekst: t('Картка дрона', 'Kaart van de drone'), soort: 'stil', actie: 'ga', gegevens: { naar: 'garage-drones-' + a.id } }) + o.knop({ tekst: t('Польоти', 'Vluchten'), soort: 'stil', actie: 'ga', gegevens: { naar: 'garage-drones-vluchten' } }) + '</div>';
   }
   function dockBlad(ctx) { return dockKaart(ctx, true); }
@@ -1311,10 +1320,10 @@
     HV.staat.wijzig(function (x) {
       kwijt(x, d, 0);
       x.nu = x.nu.filter(function (n) { return n.id !== 'drn-kwijt-' + d.id; });
-      x.nu.push({ id: 'drn-kwijt-' + d.id, soort: 'alarm', maker: 'simulator', icoon: 'wifi-off', sinds: x.tijd, tekst: [d.naam[0] + ': сигнал зник, повертається додому сам', d.naam[1] + ': signaal weggevallen, keert zelf terug naar huis'], acties: [{ naam: 'drn-kabine', hoofd: true, label: ['Відкрити кабіну', 'Cockpit openen'], gegevens: { drone: d.id } }] });
+      x.nu.push({ id: 'drn-kwijt-' + d.id, soort: 'aandacht', maker: 'simulator', icoon: 'wifi-off', sinds: x.tijd, tekst: [d.naam[0] + ': сигнал зник, повертається додому сам', d.naam[1] + ': signaal weggevallen, keert zelf terug naar huis'], acties: [{ naam: 'drn-kabine', hoofd: true, label: ['Відкрити кабіну', 'Cockpit openen'], gegevens: { drone: d.id } }] });
     });
     HV.logboek.voegToe({ maker: SIM, wat: [d.naam[0] + ': втрата сигналу', d.naam[1] + ': signaal kwijt'], waarom: ['перешкода в симуляторі', 'storing in de simulator'], soort: 'huis.voertuig', gewicht: 'belangrijk', doel: d.id });
-    HV.meld({ gewicht: 'alarm', icoon: 'wifi-off', maker: SIM, titel: HV.p(d.naam) + ': ' + t('втрата сигналу', 'signaal kwijt'), tekst: t('Команди не доходять. Дрон повертається додому сам на ', 'Opdrachten komen niet aan. De drone keert zelf terug op ') + zorg(w).inst.terugHoogte + t(' м.', ' m.') });
+    HV.meld({ gewicht: 'belangrijk', icoon: 'wifi-off', maker: SIM, titel: HV.p(d.naam) + ': ' + t('втрата сигналу', 'signaal kwijt'), tekst: t('Команди не доходять. Дрон повертається додому сам на ', 'Opdrachten komen niet aan. De drone keert zelf terug op ') + zorg(w).inst.terugHoogte + t(' м.', ' m.') });
   });
   HV.actie('drn-sim-wind', function () {
     var w = HV.staat.w, z = zorg(w);

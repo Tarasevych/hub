@@ -699,7 +699,8 @@
     zet(nieuw);
     var naam = KIOSK_NAAM[s], was = kioskWoord(s, oud), werd = kioskWoord(s, nieuw);
     HV.logboek.voegToe({ maker: HV.mens(), wat: ['Кіоск: ' + naam[0].toLowerCase(), 'Kiosk: ' + naam[1].toLowerCase()], was: was, werd: werd, soort: 'huis.systeem' });
-    HV.meld({ maker: HV.mens(), icoon: 'tablet-smartphone', titel: HV.p(naam) + ': ' + HV.p(werd), tekst: HV.p(was) + ' → ' + HV.p(werd), terug: function () { zet(oud); HV.logboek.voegToe({ maker: HV.mens(), wat: ['Повернуто: кіоск, ' + naam[0].toLowerCase(), 'Ongedaan gemaakt: kiosk, ' + naam[1].toLowerCase()], soort: 'huis.systeem' }); HV.teken(); } });
+    // назва без значення й один чип «було → стало» (HV.meld із was/werd), а не значення двічі
+    HV.meld({ maker: HV.mens(), icoon: 'tablet-smartphone', titel: [naam[0] + ': ' + werd[0], naam[1] + ': ' + werd[1]], was: was, werd: werd, terug: function () { zet(oud); HV.logboek.voegToe({ maker: HV.mens(), wat: ['Повернуто: кіоск, ' + naam[0].toLowerCase(), 'Ongedaan gemaakt: kiosk, ' + naam[1].toLowerCase()], soort: 'huis.systeem' }); HV.teken(); } });
     HV.teken();
   });
   HV.actie('gzx-kiosk-open', function (ctx, g) {
@@ -770,7 +771,7 @@
       var maat = HV.profielBeelden(p.id).map(function (b) { return b[0] + '×' + b[1]; }).join(' · ');
       return '<article class="hv-kaart hv-gzx-pk" data-k="gzx-pk-' + p.id + '"><header class="hv-gzx-pk__kop"><span class="hv-gzx-pk__teken">' + HV.icoon(p.icoon) + '</span><div><h3>' + h(HV.p(p.naam)) + '</h3><p>' + h(maat) + ' · /paneel/' + p.id + '/demo</p></div></header>' +
         '<p class="hv-gzx-pk__uitleg">' + h(HV.p(p.uitleg)) + '</p><div class="hv-gzx-pk__gezichten" role="list">' + lijst.map(function (g) { return o.chip({ tekst: HV.p(g.titel), actie: 'gzx-kiosk-open', gegevens: { profiel: p.id, gezicht: g.id }, klas: EIGEN[g.id] ? '' : 'is-thuis', aria: t('Відкрити кіоск: ', 'Kiosk openen: ') + HV.p(p.naam) + ' — ' + HV.p(g.titel) }); }).join('') + '</div>' +
-        o.knop({ tekst: huidig === p.id ? t('Відкрито', 'Geopend') : t('Відкрити кіоск', 'Kiosk openen'), icoon: 'maximize-2', soort: 'gewoon', klein: true, actie: 'gzx-kiosk-open', gegevens: { profiel: p.id, gezicht: lijst[0] ? lijst[0].id : '' }, k: 'gzx-open-' + p.id }) + '</article>';
+        o.knop({ tekst: huidig === p.id ? t('Відкрито', 'Geopend') : t('Відкрити кіоск', 'Kiosk openen'), aria: (huidig === p.id ? t('Відкрито: ', 'Geopend: ') : t('Відкрити кіоск: ', 'Kiosk openen: ')) + HV.p(p.naam), icoon: 'maximize-2', soort: 'gewoon', klein: true, actie: 'gzx-kiosk-open', gegevens: { profiel: p.id, gezicht: lijst[0] ? lijst[0].id : '' }, k: 'gzx-open-' + p.id }) + '</article>';
     }).join('');
     var aantal = HV.gezichten.length;
     return '<div class="hv-gzx-paneel">' +

@@ -25,8 +25,8 @@
       { sleutel: 'zonnepanelen.vrij', soorten: ['zonnepanelen'], mogelijkheid: 'modus', niveau: 'gewoon', naam: ['Зняти обмеження віддачі', 'Begrenzing opheffen'] },
       { sleutel: 'thuisbatterij.diep', soorten: ['thuisbatterij'], mogelijkheid: 'modus', als: function (a, v) { return v === 'diep'; }, niveau: 'gevaarlijk',
         naam: ['Розрядити нижче резерву', 'Onder de reserve ontladen'],
-        gevolg: ['Що станеться: батарея віддаватиме енергію в дім нижче резерву, до 12 %. Пов’язано з: за відключення електрики запасу на холодильник і маршрутизатор не лишиться. Як повернути: оберіть «Розумно» — резерв знову діє.', 'Wat er gebeurt: de batterij levert aan het huis tot onder de reserve, tot 12 %. Hangt samen met: bij een stroomstoring is er geen buffer meer voor koelkast en router. Terugdraaien: kies ‘Slim’ — de reserve geldt weer.'],
-        risico: ['Що може статися: дім лишиться без запасу саме тоді, коли зникне електрика. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: het huis heeft geen buffer meer precies als de stroom uitvalt. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
+        gevolg: ['Що станеться: батарея віддаватиме енергію в дім нижче резерву, до 12 %. Пов’язано з: коли зникне мережа, запасу на холодильник і маршрутизатор не лишиться. Як повернути: оберіть «Розумно» — резерв знову діє.', 'Wat er gebeurt: de batterij levert aan het huis tot onder de reserve, tot 12 %. Hangt samen met: bij een stroomstoring is er geen buffer meer voor koelkast en router. Terugdraaien: kies ‘Slim’ — de reserve geldt weer.'],
+        risico: ['Що може статися: коли зникне мережа, батарея буде порожня — дім лишиться без запасу. Хто зможе це запускати: цей виконавець, без запиту. Як вимкнути: оберіть тут «Питати» або «Вимкнено».', 'Wat er kan gebeuren: bij een stroomstoring is de batterij leeg — het huis heeft geen buffer meer. Wie dit kan starten: deze uitvoerder, zonder te vragen. Uitzetten: kies hier ‘Vragen’ of ‘Uit’.'] },
       { sleutel: 'thuisbatterij.bron', soorten: ['thuisbatterij'], mogelijkheid: 'bron', niveau: 'gevoelig', naam: ['Спосіб розумного режиму батареї', 'Werkwijze van de slimme batterij'] },
       { sleutel: 'thuisbatterij.reserve', soorten: ['thuisbatterij'], mogelijkheid: 'reserve', niveau: 'gewoon', naam: ['Резерв батареї', 'Reserve van de batterij'] },
       { sleutel: 'laadpaal.modus', soorten: ['laadpaal'], mogelijkheid: 'modus', niveau: 'gevoelig', naam: ['Режим зарядки', 'Laadstand'] },
@@ -163,6 +163,19 @@
       e.zon -= weg; e.net += weg; zp.vermogen = Math.round(e.zon * 100) / 100;
     }
   }
+  /**
+   * Чи вже чекає запит оптимізатора на цю саму дію (режим «Питати»): один запит на одну дію одного виконавця.
+   * Поки людина не вирішила (wacht) або дім ще виконує схвалене (bezig), нового запиту не створюємо.
+   */
+  function wachtAl(w, doel, mogelijkheid, waarde) {
+    var actie = HV.gevaar.vind(doel, mogelijkheid, waarde);
+    var sleutel = actie && actie.sleutel;
+    return (w.verzoeken || []).some(function (x) {
+      if (x.stand !== 'wacht' && x.stand !== 'bezig') return false;
+      if (x.uitvoerder !== OPT.id) return false;
+      return sleutel ? x.sleutel === sleutel : (x.doel === doel && x.mogelijkheid === mogelijkheid);
+    });
+  }
   /** Оптимізатор зарядки: на межі години діє за планом — лише якщо дозвіл не «Вимкнено» (ворота HV.doe вирішують решту). */
   function optimaliseer(w) {
     var uur = Math.floor(w.tijd / UUR);
@@ -171,11 +184,30 @@
     laatsteUur = uur;
     if (eerste || w.gegevens !== 'live') return;
     var lp = w.apparaten.laadpaal;
+    var li = laadInfo(w), binnen = li.plan && w.tijd >= li.plan.van && w.tijd < li.plan.tot;
+    // Оптимізатор сам знімає власний запит, що втратив сенс (HV.verzoekIntrekken — запис «Запит знято: …» із причиною):
+    // старт — коли зарядка вже йде, кабель від'єднано, режим уже не «Розумно» або план зсунувся й зараз не його вікно
+    // (кінець самого вікна запит називає полем tot — тоді ядро закриває його як «минув»);
+    // зупинку — коли зарядка вже стоїть або знову триває вікно плану.
+    (w.verzoeken || []).filter(function (x) { return x.stand === 'wacht' && x.uitvoerder === OPT.id && x.doel === 'laadpaal' && x.mogelijkheid === 'laden'; }).forEach(function (x) {
+      var reden = null;
+      if (x.waarde) {
+        if (lp.st.laadt) reden = ['зарядка вже йде', 'het laden loopt al'];
+        else if (!lp.st.aangesloten) reden = ['кабель від’єднано', 'de kabel is losgekoppeld'];
+        else if (lp.st.modus !== 'slim') reden = ['режим зарядки вже не «Розумно»', 'de laadstand is niet meer ‘Slim’'];
+        else if (x.tot && !binnen) reden = ['план зарядки змінився: зараз не його вікно', 'het laadplan is gewijzigd: dit is niet meer het venster'];
+      } else if (!lp.st.laadt) reden = ['зарядка вже стоїть', 'het laden staat al stil'];
+      else if (binnen) reden = ['знову триває вікно плану зарядки', 'het venster van het laadplan loopt weer'];
+      if (reden) HV.verzoekIntrekken(x.id, reden);
+    });
     if (lp.st.modus !== 'slim' || !lp.st.aangesloten || lp.wacht) return;
     if (HV.gevaar.stand('optimalisatie', 'laadpaal.laden') === 'uit') return;
-    var li = laadInfo(w), binnen = li.plan && w.tijd >= li.plan.van && w.tijd < li.plan.tot;
-    if (binnen && !lp.st.laadt && !w.verzoeken.some(function (x) { return x.stand === 'wacht' && x.doel === 'laadpaal'; })) {
-      setTimeout(function () { HV.doe({ doel: 'laadpaal', mogelijkheid: 'laden', waarde: true, door: OPT, waarom: ['дешеве вікно плану зарядки', 'goedkoop venster van het laadplan'] }); }, 0);
+    // і старт, і зупинка — одна дія «Зарядка авто» (laadpaal.laden): поки чекає попередній запит, новий не створюється
+    if (wachtAl(w, 'laadpaal', 'laden', true)) return;
+    if (binnen && !lp.st.laadt) {
+      // за «Питати» запит сам називає, доки він має сенс: до кінця цього вікна плану (tot) — далі ядро закриває його як «минув»
+      var venster = HV.tijd(li.plan.van) + '–' + HV.tijd(li.plan.tot), totVenster = li.plan.tot;
+      setTimeout(function () { HV.doe({ doel: 'laadpaal', mogelijkheid: 'laden', waarde: true, door: OPT, tot: totVenster, waarom: ['дешеве вікно плану зарядки: ' + venster, 'goedkoop venster van het laadplan: ' + venster] }); }, 0);
     } else if (!binnen && lp.st.laadt && lp.maker && lp.maker.soort === 'optimalisatie') {
       setTimeout(function () { HV.doe({ doel: 'laadpaal', mogelijkheid: 'laden', waarde: false, door: OPT, waarom: ['вікно плану зарядки минуло', 'venster van het laadplan voorbij'] }); }, 0);
     }
@@ -283,7 +315,7 @@
       : o.knop({ tekst: t('Зарядити зараз', 'Nu laden'), icoon: 'zap', soort: 'hoofd', actie: 'en-laad', gegevens: { aan: '1' }, uit: !st.aangesloten || li.nodig <= 0.01, k: 'lp-nu' });
     var meer = !st.laadt && li.plan && li.nodig > 0.01 ? '<span class="hv-en-meer">+ ' + euro(li.meer) + '<span class="hv-en-meer__sub">' + h(t('проти плану · ≈ ', 'tegenover het plan · ≈ ') + HV.duur(li.duurNu)) + '</span></span>' : '';
 
-    var grens = opties && opties.compact ? '' : '<p class="hv-tekst hv-tekst--zacht">' + HV.icoon('shield-check', { maat: 's' }) + '<span>' + h(t('Межа самої станції 16 А · без зв’язку з хабом 6 А. Хаб не захищає запобіжник — це роблять автомат у щитку й межа станції.', 'Grens van de laadpaal zelf 16 A · zonder verbinding met de hub 6 A. De hub beveiligt de hoofdzekering niet — dat doen de groepenkast en de grens van de laadpaal.')) + '</span></p>';
+    var grens = opties && opties.compact ? '' : '<p class="hv-tekst hv-tekst--zacht">' + HV.icoon('shield-check', { maat: 's' }) + '<span>' + h(t('Межа самої станції 16 А · без зв’язку з хабом 6 А. Хаб не захищає запобіжник — це роблять автомат у щитку й межа струму станції.', 'Grens van de laadpaal zelf 16 A · zonder verbinding met de hub 6 A. De hub beveiligt de hoofdzekering niet — dat doen de automaat in de groepenkast en de stroomlimiet van de laadpaal.')) + '</span></p>';
 
     var dozvil = veld(t('Дозвіл оптимізатора', 'Toestemming van de optimalisatie'), o.stand({ uitvoerder: 'optimalisatie', actie: HV.gevaar.actie('laadpaal.laden'), rol: ctx.rol }) +
       '<div class="hv-filter">' + o.chip({ filter: true, gekozen: schaduw, icoon: 'eye', tekst: t('Показувати, що зробив би', 'Schaduwplan tonen'), actie: 'ui', gegevens: { naam: 'en-schaduw', waarde: schaduw ? '' : '1' }, k: 'lp-schaduw' }) +
@@ -753,7 +785,7 @@
       ' ' + o.gevolg(t('Що станеться: «Розумно» передає батарею оптимізаторові; «Швидко» — заряджати з мережі на 3 кВт зараз; «Пауза» — батарея не заряджається й не віддає. Пов’язано з: план зарядки авто, щоб не перевантажити фазу. Як повернути: оберіть інший режим — «Повернути» 10 с, далі з Журналу.', 'Wat er gebeurt: ‘Slim’ geeft de batterij aan de optimalisatie; ‘Snel’ — nu op 3 kW laden van het net; ‘Pauze’ — de batterij laadt noch levert. Hangt samen met: het laadplan van de auto, om een fase niet te overbelasten. Terugdraaien: kies een andere stand — ‘Ongedaan maken’ 10 s, daarna via het logboek.'), { kop: t('Режим батареї', 'Stand van de batterij') }));
     var bronVeld = modus === 'slim' ? veld(t('Спосіб', 'Werkwijze'), o.segment({ label: t('Спосіб розумного режиму', 'Werkwijze van slim'), waarde: HV.gewenst(a, 'bron') || 'zon', actie: 'doe', gegevens: { doel: 'thuisbatterij', mogelijkheid: 'bron' }, klas: 'hv-segment--rol', k: 'bat-bron', opties: [
       { id: 'zon', label: t('Лише сонце', 'Alleen zon'), icoon: 'sun' }, { id: 'goedkoop', label: t('Дешеві години', 'Goedkope uren'), icoon: 'arrow-down' }, { id: 'nulmeter', label: t('Нуль на лічильнику', 'Nul op de meter'), icoon: 'gauge' }] })) : '';
-    var reserveVeld = veld(t('Резерв на відключення', 'Reserve voor een stroomstoring'), '<div class="hv-en-rij2">' + o.stapper({ actie: 'en-reserve', stap: 5, label: t('Резерв', 'Reserve'), waarde: HV.maat(res, '%'), k: 'bat-reserve' }) +
+    var reserveVeld = veld(t('Резерв на знеструмлення', 'Reserve voor een stroomstoring'), '<div class="hv-en-rij2">' + o.stapper({ actie: 'en-reserve', stap: 5, label: t('Резерв', 'Reserve'), waarde: HV.maat(res, '%'), k: 'bat-reserve' }) +
       '<span class="hv-tekst hv-tekst--zacht">' + h(t('Нижче резерву батарея не віддає — запас на холодильник і маршрутизатор.', 'Onder de reserve levert de batterij niet — buffer voor koelkast en router.')) + '</span></div>');
     var diep = '<div class="hv-knoppen">' + o.knop({ tekst: t('Розрядити нижче резерву', 'Onder de reserve ontladen'), icoon: 'battery-low', actie: 'doe', gegevens: { doel: 'thuisbatterij', mogelijkheid: 'modus', waarde: 'diep' }, gedrukt: modus === 'diep', k: 'bat-diep' }) + o.risico('gevaarlijk') + o.gevolg(HV.p(HV.gevaar.actie('thuisbatterij.diep').gevolg), { kop: t('Розрядити нижче резерву', 'Onder de reserve ontladen') }) + '</div>';
     var dozvil = veld(t('Дозвіл оптимізатора', 'Toestemming van de optimalisatie'), o.stand({ uitvoerder: 'optimalisatie', actie: HV.gevaar.actie('thuisbatterij.modus'), rol: ctx.rol }) + o.stand({ uitvoerder: 'optimalisatie', actie: HV.gevaar.actie('thuisbatterij.diep'), rol: ctx.rol }));
@@ -1000,7 +1032,7 @@
     sub: function (ctx) { return t('струм L1–L3 і напруга', 'stroom L1–L3 en spanning'); },
     render: function (ctx) {
       return o.kaart({ inhoud: fasenHtml(ctx.staat, true) }) +
-        o.kaart({ inhoud: '<p class="hv-tekst">' + HV.icoon('shield-check', { maat: 's' }) + '<span>' + h(t('Хаб не захищає запобіжник: показ лічильника надходить раз на 1–10 с, команда йде довше. Захищають автомат у щитку й обмеження струму на станції.', 'De hub beveiligt de hoofdzekering niet: de meter meldt elke 1–10 s, een opdracht duurt langer. Dat doen de groepenkast en de stroomgrens van de laadpaal.')) + '</span></p>' +
+        o.kaart({ inhoud: '<p class="hv-tekst">' + HV.icoon('shield-check', { maat: 's' }) + '<span>' + h(t('Хаб не захищає запобіжник: показ лічильника надходить раз на 1–10 с, команда йде довше. Захищають автомат у щитку й межа струму станції.', 'De hub beveiligt de hoofdzekering niet: de meterstand komt eens per 1–10 s binnen en een opdracht doet er langer over. Dat doen de automaat in de groepenkast en de stroomlimiet van de laadpaal.')) + '</span></p>' +
           '<p class="hv-tekst hv-tekst--zacht">' + h(t('Ціль оптимізатора 20 А розводить навантаження в часі; напруга в нормі 207–253 В.', 'Het doel van 20 A spreidt de belasting in de tijd; de spanning hoort tussen 207 en 253 V.')) + '</p>' }) +
         '<div class="hv-knoppen">' + o.knop({ tekst: t('Оптимізатор', 'Optimalisatie'), icoon: 'gauge', actie: 'blad', gegevens: { blad: 'optimalisatie' } }) + o.knop({ tekst: t('Лічильник', 'Meter'), icoon: 'cable', actie: 'blad', gegevens: { blad: 'apparaat:p1meter' } }) + '</div>';
     } });
@@ -1086,7 +1118,7 @@
         if (b.status === 'wacht') knoppen += o.knop({ tekst: t('Схвалити', 'Goedkeuren'), icoon: 'check', soort: 'hoofd', actie: 'en-blok', gegevens: { blok: b.id, wat: 'ja' } });
         knoppen += o.knop({ tekst: t('Скасувати запуск', 'Start annuleren'), icoon: 'x', soort: 'stil', actie: 'en-blok', gegevens: { blok: b.id, wat: 'nee' } });
       }
-      if (b.verschoven || b.geannuleerd) knoppen += o.knop({ tekst: t('Повернути план оптимізатора', 'Plan van de optimalisatie terugzetten'), icoon: 'undo-2', soort: 'stil', actie: 'en-blok', gegevens: { blok: b.id, wat: 'herstel' } });
+      if (b.verschoven || b.geannuleerd) knoppen += o.knop({ tekst: t('Повернутися до плану оптимізатора', 'Terug naar het plan van de optimalisatie'), icoon: 'rotate-ccw', soort: 'stil', actie: 'en-blok', gegevens: { blok: b.id, wat: 'herstel' } });
       var nu = b.status !== 'gedaan' && b.status !== 'bezig' ? '<div class="hv-knoppen">' + o.knop({ tekst: t('Запустити зараз', 'Nu starten'), icoon: 'play', actie: 'en-blok', gegevens: { blok: b.id, wat: 'nu' } }) + o.gevolg(t('Що станеться: пристрій почне зараз за поточною ціною, план цього блока знято. Пов’язано з: оптимізатор перерахує решту доби. Як повернути: «Повернути» протягом 10 с.', 'Wat er gebeurt: het apparaat start nu tegen de huidige prijs, het plan voor dit blok vervalt. Hangt samen met: de optimalisatie rekent de rest van de dag opnieuw. Terugdraaien: ‘Ongedaan maken’ binnen 10 s.'), { kop: t('Запустити зараз', 'Nu starten') }) + '</div>' : '';
       return o.kaart({ inhoud: info + status + (knoppen ? '<div class="hv-knoppen">' + knoppen + '</div>' : '') + nu }) +
         o.kaart({ titel: t('Дозвіл оптимізатора', 'Toestemming van de optimalisatie'), inhoud: o.stand({ uitvoerder: 'optimalisatie', actie: HV.gevaar.actie(baan.sleutel), rol: ctx.rol }) });
@@ -1126,7 +1158,7 @@
     var a = HV.staat.apparaat('thuisbatterij');
     var nu = reserveVan(a.wacht && a.wacht.mogelijkheid === 'reserve' ? { reserve: a.wacht.waarde } : a.st);
     var nieuw = klem(nu + Number(g.richting) * (Number(g.stap) || 5), 0, 60);
-    if (nieuw !== nu) HV.doe({ doel: 'thuisbatterij', mogelijkheid: 'reserve', waarde: nieuw + ' %', waarom: ['резерв на відключення', 'reserve voor een stroomstoring'] });
+    if (nieuw !== nu) HV.doe({ doel: 'thuisbatterij', mogelijkheid: 'reserve', waarde: nieuw + ' %', waarom: ['резерв на знеструмлення', 'reserve voor een stroomstoring'] });
   });
   HV.actie('en-legionella', function () {
     HV.doe({ doel: 'boiler', mogelijkheid: 'doel', waarde: 60, waarom: ['прогрів від легіонели', 'opwarmen tegen legionella'] });
@@ -1199,7 +1231,7 @@
       var x2 = voor || {}; x2.geannuleerd = true;
       zet(x2, ['Скасовано запуск: ' + b.wat[0], 'Start geannuleerd: ' + b.wat[1]], STATUS[b.status], STATUS.geannuleerd);
     } else if (g.wat === 'herstel') {
-      zet(null, ['Повернуто план оптимізатора: ' + b.wat[0], 'Plan van de optimalisatie terug: ' + b.wat[1]], null, null);
+      zet(null, ['Знову за планом оптимізатора: ' + b.wat[0], 'Weer volgens het plan van de optimalisatie: ' + b.wat[1]], null, null);
     } else if (g.wat === 'nu') {
       var cmd = { batterij: { doel: 'thuisbatterij', mogelijkheid: 'modus', waarde: b.kwh < 0 ? 'slim' : 'snel' }, auto: { doel: 'laadpaal', mogelijkheid: 'laden', waarde: true }, water: { doel: 'boiler', mogelijkheid: 'aan', waarde: true },
         techniek: { doel: b.apparaat || 'vaatwasser', mogelijkheid: 'programma', waarde: 'start' }, warmte: { doel: 'warmtepomp', mogelijkheid: 'modus', waarde: 'verwarmen' } }[b.baan];

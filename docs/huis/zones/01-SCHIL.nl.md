@@ -4,7 +4,7 @@
 
 Taak HUIS-001 · fase 0 · 10.11.2026 · status: ter goedkeuring bij de eigenaar
 
-De schil is alles wat de inhoud van de zones omringt: lagen, kop en navigatie, adressen, schermprofielen, wijzerplaten van kleine schermen, de gegevensstroom, de eerste start, de app en meldingen op het apparaat. De zones leveren inhoud aan in vakken; het aantal vakken, hun volgorde en hun gedrag horen bij de schil. Normatieve bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de ontwerptaal ‘Живий дім / Levend huis’ (hierna: OT).
+De schil is alles wat de inhoud van de zones omringt: lagen, kop en navigatie, adressen, schermprofielen, wijzerplaten van kleine schermen, de gegevensstroom, de eerste start, de app en meldingen op het toestel. De zones leveren inhoud aan in vakken; het aantal vakken, hun volgorde en hun gedrag horen bij de schil. Normatieve bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de ontwerptaal ‘Живий дім / Levend huis’ (hierna: OT).
 
 ## 0. Wat er is veranderd ten opzichte van de vorige versie
 
@@ -12,7 +12,7 @@ De schil is alles wat de inhoud van de zones omringt: lagen, kop en navigatie, a
 - Toestemmingen volgens het besluit van de eigenaar (plan §3.8): drie standen voor elke actie en elke uitvoerder, standaard ‘Uit’, alleen de eigenaar wijzigt ze; de schil voegt geen plafonds en geen termijnen toe.
 - De toestanden van een opdracht zijn afgestemd op de twaalf gedeelde toestanden van OT §9, de stroom op plan §4, de fasen op de schaal 0–12.
 
-**Houvast in de code.** `resolve()` in `public/canonical-service.js` leest het eerste segment en de parameter `tab`; `replaceLegacy()` leidt bij `tab`, `service` of `lang` om naar een adres met één segment, waardoor een dieper pad verloren gaat (oplossing — §18). De maquette toont een herbevestiging van de aanmelding volgens het doel van OT §10: elke keer opnieuw, zonder onthouden; hoe de huidige code werkt — §18, punt 1.
+**Houvast in de code.** `resolve()` in `public/canonical-service.js` leest het eerste segment en de parameter `tab`; `replaceLegacy()` leidt bij `tab`, `service` of `lang` om naar een adres met één segment, waardoor een dieper pad verloren gaat (oplossing — §18). De bevestiging van de aanmelding houdt de maquette, net als de huidige code van het platform (`STAP_OP_MS`), 5 min per sessie vast en schrijft dat in het dialoogvenster (OT §10); het doel en het besluit van de eigenaar — §18, punt 1.
 
 ## 1. Lagen van de schil
 
@@ -66,7 +66,7 @@ TELEFOON 390 px
 
 **Tweede niveau.** Het eerste tabblad is de huidige toestand van de sectie: «Зараз / Nu» (in Beveiliging «Стан / Status», in Automatisering «Правила / Regels»). Een derde niveau bestaat niet — daarvoor zijn er opgeslagen filters of een blad. Tabbladen met een eigen adres (`/apparaten`, `/klimaat`, `/media`, `/scenes`, `/assistent`) markeren hun eigen sectie.
 
-**Het blad «Стан дому / Status van het huis»** (`?blad=status`) opent via de chip ‘belangrijk’ op elke pagina behalve ‘Thuis’ (daar scrolt de chip naar ‘Nu belangrijk’): alle uitzonderingsregels in de volgorde van de ladder uit §3, elk met één actie («Повернутися додому / Naar huis», «Відкрити запит / Verzoek openen», «Показати в реєстрі / In register tonen»); «Зупинити самостійні дії / Zelfstandige acties stoppen» met de vinkjes ‘automatiseringen · optimalisator · agenten’; «Тривають / Lopend» en de verbindingsketen ‘browser — tunnel — server — bron’ (die ook opengaat met een tik op `hv-versheid`).
+**Het blad «Стан дому / Status van het huis»** (`?blad=status`) opent via de chip ‘belangrijk’ op elke pagina behalve ‘Thuis’ (daar scrolt de chip naar ‘Nu belangrijk’): alle uitzonderingsregels in de volgorde van de ladder uit §3, elk met één actie («Повернутися додому / Naar huis», «Відкрити запит / Verzoek openen», «Показати в реєстрі / In register tonen»); «Зупинити самостійні дії / Zelfstandige acties stoppen» met de vinkjes ‘automatiseringen · optimalisatie · agenten’; «Тривають / Lopend» en de verbindingsketen ‘browser — tunnel — server — bron’ (die ook opengaat met een tik op `hv-versheid`).
 
 ## 3. Uitzonderingsladder
 
@@ -121,7 +121,7 @@ Een gewoon adres kiest op basis van de breedte `telefoon` (320–699), `wand` (7
 
 - In fase 0 worden `horloge`, `rond`, `vierkant` en `inkt` alleen in een browservenster gecontroleerd, met de aanduiding ‘browser’ of ‘beeld van de server’; horloges krijgen alleen gegevens. `strook`: aantal cellen = breedte ÷ 320; onder 360 px hoogte zonder daglint.
 - `wand` op een gewoon adres: zes secties, gewone dichtheid; paneelcode, rustbeeld (na 2 min) en terugkeer naar ‘Thuis’ (na 5 min) alleen via `/paneel/wand/<id>`; de termijnen wijzigt de eigenaar in de registratie van het scherm.
-- **Televisie.** Ik raad een mediaspeler met Chromium vanaf versie 108 in kioskmodus aan (`/paneel/tv/<id>`). De ingebouwde browser (webOS, Tizen, vanaf Chromium 79) krijgt «Обмежений телевізійний режим / Beperkte tv-modus» (niet te verwarren met de ‘Zuinige weergave’ `.is-licht`): zonder plattegrond, live grafieken en camera's, peiling elke 30 s, een raster zonder `@container`. Toetsen: pijltoetsen, `OK` (13), ‘Terug’ (461 webOS, 10009 Tizen, `Escape`, `Backspace`) — sluit op het hoogste niveau de pagina niet; ‘Menu’ — `ContextMenu` of lang indrukken van `OK`. Rustbeeld na 10 min zonder afstandsbediening; op OLED geen stilstaande lichte stroken.
+- **Televisie.** Aanbevolen: een mediaspeler met Chromium vanaf versie 108 in kioskmodus (`/paneel/tv/<id>`). De ingebouwde browser (webOS, Tizen, vanaf Chromium 79) krijgt «Обмежений телевізійний режим / Beperkte tv-modus» (niet te verwarren met de ‘Zuinige weergave’ `.is-licht`): zonder plattegrond, live grafieken en camera's, peiling elke 30 s, een raster zonder `@container`. Toetsen: pijltoetsen, `OK` (13), ‘Terug’ (461 webOS, 10009 Tizen, `Escape`, `Backspace`) — sluit op het hoogste niveau de pagina niet; ‘Menu’ — `ContextMenu` of lang indrukken van `OK`. Rustbeeld na 10 min zonder afstandsbediening; op OLED geen stilstaande lichte stroken.
 - Controles van de maquette: de formaten uit plan §6 en daarnaast 3440×1440, 5120×1440, 1920×360 en 480×1920; drie thema's en twee talen.
 
 ## 6. Wijzerplaten en externe schermen als apparaten
@@ -139,11 +139,11 @@ Een gewoon adres kiest op basis van de breedte `telefoon` (320–699), `wand` (7
 
 Een scène met een gevaarlijke stap wordt op een klein scherm uitgevoerd met het ritueel van het profiel. Wijzerplaten kies je in `hv-indeling` met de knoppen «Вгору / Omhoog» en «Вниз / Omlaag»: horloge — 3, `vierkant` en `rond` — de kamer en 2, `strook` — 4 of 2, `klein` — 2.
 
-**Sessie ‘scherm’, geen rol.** Gekoppeld aan een rij in `huis_schermen`, geldt alleen voor de dienst huis en kan geen aanmelding bevestigen; de server houdt per profiel een lijst van routes bij en weigert alles daarbuiten; kamers en rollen zitten in het serverfilter en in de RLS-tests. De sessie verloopt niet vanzelf: ze geldt tot ‘Intrekken’ of tot een termijn die de eigenaar instelt.
+**Sessie ‘scherm’, geen rol.** Gekoppeld aan een rij in `huis_schermen`, geldt alleen voor de dienst huis en kan geen aanmelding bevestigen; de server houdt per profiel een lijst van routes bij en weigert alles daarbuiten; kamers en rollen zitten in het serverfilter en in de RLS-tests. De sessie verloopt niet vanzelf: ze geldt tot «Відкликати / Intrekken» of tot een termijn die de eigenaar instelt.
 
 **Aansluiting:** browser — `/paneel/…` en de stroom; afbeelding — `GET /api/huis/scherm/<id>/beeld` (dezelfde wijzerplaat, uit een SVG-sjabloon omgezet naar een rasterbeeld: 1 bit, 4 grijstinten of kleur, met ingebrande «Симуляція / Simulatie»); gegevens — `GET /api/huis/scherm/<id>/gezicht` (beknopte `JSON`: waarde, eenheid, toestand, ouderdom, actienummers) voor firmware zoals ESPHome. Een druk op een knop bij A en G is een ondertekend verzoek met een actienummer en een teller tegen herhaling; de auteur is «фізична кнопка / wandknop»; het ritueel is zoals op `inkt`.
 
-**Registratie van een scherm:** aansluiting, profiel, kamer, plaats (privé · doorgang · zichtbaar van buiten), wijzerplaten, dichtheid, thema, taal, nachtelijk dimmen, helderheid, «Полегшений вигляд / Zuinige weergave», termijnen voor rustbeeld en terugkeer, «Перезавантажити / Herstarten», «Показати текст / Tekst tonen», laatste contact en ‘Intrekken’. Koppelen gaat met een code van 6 cijfers en een QR-code op het scherm; de eigenaar bevestigt in `?dialoog=koppelen` met de aanmelding van het platform.
+**Registratie van een scherm:** aansluiting, profiel, kamer, plaats (privé · doorgang · zichtbaar van buiten), wijzerplaten, dichtheid, thema, taal, nachtelijk dimmen, helderheid, «Полегшений вигляд / Zuinige weergave», termijnen voor rustbeeld en terugkeer, «Перезавантажити / Herstarten», «Показати текст / Tekst tonen», laatste contact en «Відкликати / Intrekken». Koppelen gaat met een code van 6 cijfers en een QR-code op het scherm; de eigenaar bevestigt in `?dialoog=koppelen` met de aanmelding van het platform.
 
 **Codes op gedeelde schermen** (`hv-pincode`; na vijf fouten een pauze van 5 min en een vermelding in het Logboek). Het ritueel van een menselijke actie volgt OT §10: een code is alleen nodig waar de actie een bevestiging van de aanmelding vraagt of waar het Logboek moet weten ‘wie’. De paneelcode bevestigt geen enkele actie: ze ontgrendelt alleen de weergave op een doorgangsscherm of een scherm dat van buiten te zien is (zie ‘Privacy’).
 
@@ -154,7 +154,7 @@ Een scène met een gevaarlijke stap wordt op een klein scherm uitgevoerd met het
 | gevaarlijk | de houdrail; op `tv` `OK` vasthouden of een knop met aftelling, op `horloge`, `strook` en `inkt` een knop die 3 s aftelt |
 | kritiek | persoonlijke code als bevestiging van de aanmelding en de houdrail; op `tv`, `horloge`, `strook` en `inkt`: «Підтвердьте на телефоні / Bevestig op je telefoon» |
 | goedkeuring van een `hv-verzoek` | persoonlijke code en het ritueel van het niveau van de actie |
-| wijziging van `hv-stand` | alleen de eigenaar, op een persoonlijk apparaat |
+| wijziging van `hv-stand` | alleen de eigenaar, op een persoonlijk toestel |
 
 `deur` accepteert een persoonlijke code of een gastcode, geen paneelcode, en vergrendelt na 30 s.
 
@@ -165,8 +165,8 @@ Een scène met een gevaarlijke stap wordt op een klein scherm uitgevoerd met het
 ## 7. Toestemmingen in de schil
 
 Het model volgt plan §3.8 en OT §10; de schil geeft het een plaats en voegt geen beperkingen toe.
-- Elke actie heeft een `hv-stand` «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», afzonderlijk voor elke uitvoerder: scène, automatisering, optimalisator en elke agent. Standaard ‘Uit’; de eigenaar kan voor elke actie elke stand kiezen. De kaders ‘termijn · kamers · uren · actiebudget’ zijn optioneel en alleen de eigenaar stelt ze in.
-- Alleen de eigenaar wijzigt een toestemming, op een persoonlijk apparaat (`telefoon`, `bureau`, `breed`, `ultrabreed`, `wand` op een gewoon adres) en met bevestiging van de aanmelding van het platform; op `/paneel/*` en `tv` staan de stand als tekst en een aanduiding. Een agent kan rechten niet uitbreiden en niet inperken — niet de eigen en niet die van anderen: daarvoor bestaat geen bedieningselement en geen hulpmiddel.
+- Elke actie heeft een `hv-stand` «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», afzonderlijk voor elke uitvoerder: scène, automatisering, optimalisatie en elke agent. Standaard ‘Uit’; de eigenaar kan voor elke actie elke stand kiezen. De kaders ‘termijn · kamers · uren · actiebudget’ zijn optioneel en alleen de eigenaar stelt ze in.
+- Alleen de eigenaar wijzigt een toestemming, op een persoonlijk toestel (`telefoon`, `bureau`, `breed`, `ultrabreed`, `wand` op een gewoon adres); een bevestiging van de aanmelding op het platform is alleen nodig om ‘Altijd’ aan te zetten voor een gevaarlijke of kritieke actie (OT §10). Op `/paneel/*` en `tv` staan de stand als tekst en een aanduiding. Een agent kan rechten niet uitbreiden en niet inperken — niet de eigen en niet die van anderen: daarvoor bestaat geen bedieningselement en geen hulpmiddel.
 - ‘! N’ in de kop telt de geldende ‘Altijd’ voor gevaarlijke en kritieke acties, heeft de vorm van het hoogste niveau en leidt naar `/instellingen/risico`; sluiten kan niet. Naast elke zulke `hv-stand` staat een ‘!’ met vijf regels over het risico.
 - De pauze ‘Zelfstandige acties stoppen’ verandert geen standen; alleen de eigenaar hervat.
 - Poorten die een weigering noemt: bron («лише читання / alleen-lezen») → rol («немає доступу / geen toegang») → voor een uitvoerder: pauze → stand → kaders van de eigenaar. Het risiconiveau houdt een mens niet tegen — het bepaalt alleen het ritueel.
@@ -188,11 +188,11 @@ Eén palet: het platformbrede `ZoekGlobaal` met de aanbieder ‘Thuis’; in de 
 
 ## 11. Laden en eerste start
 
-Start: omhulling uit de cache → `hv-skelet` → momentopname met ouderdom → stroom; lege toestanden tonen `hv-leeg`. Eerste start `?dialoog=start`: (1) naam van het huis en «Відновити з копії / Herstellen uit back-up»; (2) «Де дім? / Waar staat het huis?» — in de simulatie «Утрехт (приклад) / Utrecht (voorbeeld)», voor een echt huis postcode en huisnummer, huistijd Europe/Amsterdam; (3) «Запустити симулятор / Simulator starten», als tweede keuze «Під'єднати джерело / Bron koppelen»; (4) «Що це за екран? / Welk scherm is dit?». Daarna volgt het blok «Перші кроки / Eerste stappen»: «Запросити мешканців / Bewoners uitnodigen» en «Увімкнути сповіщення на цьому пристрої / Meldingen op dit apparaat aanzetten».
+Start: omhulling uit de cache → `hv-skelet` → momentopname met ouderdom → stroom; lege toestanden tonen `hv-leeg`. Eerste start `?dialoog=start`: (1) naam van het huis en «Відновити з копії / Herstellen uit back-up»; (2) «Де дім? / Waar staat het huis?» — in de simulatie «Утрехт (приклад) / Utrecht (voorbeeld)», voor een echt huis postcode en huisnummer, huistijd Europe/Amsterdam; (3) «Запустити симулятор / Simulator starten», als tweede keuze «Під'єднати джерело / Bron koppelen»; (4) «Що це за екран? / Welk scherm is dit?». Daarna volgt het blok «Перші кроки / Eerste stappen»: «Запросити мешканців / Bewoners uitnodigen» en «Увімкнути сповіщення на цьому пристрої / Meldingen op dit toestel aanzetten».
 
-## 12. App en meldingen op het apparaat
+## 12. App en meldingen op het toestel
 
-Manifest van het knooppunt huis («Дім / Thuis»), een installatiebanner en een handleiding voor iOS. Meldingen op het apparaat komen van de eigen server, toestemming wordt na een tik gevraagd; controle: geïnstalleerd · toegestaan · testmelding aangekomen. Op het vergrendelscherm standaard zonder details: «Дім: потрібна ваша увага / Thuis: aandacht gevraagd». Knoppen alleen voor acties waarvan het ritueel daar mogelijk is (gewone en gevoelige: «Приглушити дзвінок / Bel dempen», «Замкнути / Vergrendelen», «Відхилити / Afwijzen»); bij gevaarlijke en kritieke acties alleen «Відкрити / Openen». Rook en lekkage hebben een reservekanaal nodig.
+Manifest van het knooppunt huis («Дім / Thuis»), een installatiebanner en een handleiding voor iOS. Meldingen op het toestel komen van de eigen server, toestemming wordt na een tik gevraagd; controle: geïnstalleerd · toegestaan · testmelding aangekomen. Op het vergrendelscherm standaard zonder details: «Дім: потрібна ваша увага / Thuis: aandacht gevraagd». Knoppen alleen voor acties waarvan het ritueel daar mogelijk is (gewone en gevoelige: «Приглушити дзвінок / Bel dempen», «Замкнути / Vergrendelen», «Відхилити / Afwijzen»); bij gevaarlijke en kritieke acties alleen «Відкрити / Openen». Rook en lekkage hebben een reservekanaal nodig.
 
 ## 13. Toegankelijkheid, taal, snelheid
 
@@ -231,7 +231,7 @@ Op `tv` is de ‘i’ een apart focuselement; op de wand een doel van 56 px; op 
 
 **Gedekt in fase 0** (specificatie en maquette): alles uit de hoofdstukken 1–16 van dit document.
 
-**Per fase:** 1 — `hv-schil`, kop, onderbalk, adressen, stroom, hemel, ‘Thuis’, ‘Kamers’, daglint; 2 — bladen voor alle klassen, `hv-stand`, het risicoregister en ‘! N’, pauze, meldingencentrum, audit, `hv-nood`; 3 — Opdracht en zoeken; 4 — `hv-vluchtbalk` in het ondervak; 5 — `hv-verzoek`, wijzerplaat `verzoek`, hulpmiddelen voor agenten; 6 — `/paneel/*`, kiosk, koppelen, app en meldingen op het apparaat, wijzerplaten, afbeelding en gegevens; 7 — ‘Terugblik’; 8 — rollen en privacy van gedeelde schermen; 9 — oproep van de deur, paniekknop, cameramaskers; 10 — minispeler; 11 — «Обслуговування / Onderhoud», ontdekken van apparaten; 12 — echte bronnen, controle van firmware en televisies.
+**Per fase:** 1 — `hv-schil`, kop, onderbalk, adressen, stroom, hemel, ‘Thuis’, ‘Kamers’, daglint; 2 — bladen voor alle klassen, `hv-stand`, het risicoregister en ‘! N’, pauze, meldingencentrum, audit, `hv-nood`; 3 — Opdracht en zoeken; 4 — `hv-vluchtbalk` in het ondervak; 5 — `hv-verzoek`, wijzerplaat `verzoek`, hulpmiddelen voor agenten; 6 — `/paneel/*`, kiosk, koppelen, app en meldingen op het toestel, wijzerplaten, afbeelding en gegevens; 7 — ‘Terugblik’; 8 — rollen en privacy van gedeelde schermen; 9 — oproep van de deur, paniekknop, cameramaskers; 10 — minispeler; 11 — «Обслуговування / Onderhoud», ontdekken van apparaten; 12 — echte bronnen, controle van firmware en televisies.
 
 **Later op de schaal:** spraak in Opdracht — fase 5, samen met de Huisassistent, na het besluit over de microfoon in de browser (§18, punt 5); tot dan neemt Opdracht tekst en aanraking aan.
 
@@ -239,7 +239,7 @@ Op `tv` is de ‘i’ een apart focuselement; op de wand een doel van 56 px; op 
 
 ## 18. Besluiten voor de eigenaar
 
-1. Bevestiging van de aanmelding: de huidige code houdt die 5 min per sessie vast (`STAP_OP_MS` in `backend/stap-op.ts`); zo laten of eenmalig maken per kritieke actie en per wijziging van een toestemming (plan §7). De maquette toont al het doel van OT: elke keer opnieuw.
+1. Bevestiging van de aanmelding: de huidige code houdt die 5 min per sessie vast (`STAP_OP_MS` in `backend/stap-op.ts`); zo laten of eenmalig maken — een aparte voor elke kritieke actie en voor elke keer dat ‘Altijd’ voor een gevaarlijke of kritieke actie wordt aangezet (plan §7; hoofddocument, §13, punt 1). Tot dat besluit houdt de maquette, net als de code van het platform, de bevestiging 5 min per sessie vast en schrijft dat in het dialoogvenster (OT §10).
 2. Wijzigingen in gedeelde platformcode in één goedkeuring: `canonicalUrl` en `replaceLegacy` behouden het pad; id's `garage`, `climate`, `media`, `panel`; modus `CanonicalChrome`; manifest van het knooppunt huis; sessie ‘scherm’.
 3. Schermen zonder browser: een nieuwe afhankelijkheid voor het omzetten van SVG naar rasterbeelden en een apparaatsleutel in plaats van een `cookie` in fase 6 — of alleen schermen met een actuele Chromium.
 4. Een lokaal pad zonder tunnel voor panelen (gesplitste DNS, lokaal certificaat).

@@ -83,7 +83,7 @@
     { id: 'licht', icoon: 'lightbulb', naam: ['Світло, штори й розетки', 'Licht, gordijnen en stekkers'] },
     { id: 'media', icoon: 'speaker', naam: ['Медіа', 'Media'] },
     { id: 'camera', icoon: 'cctv', naam: ['Камери', 'Camera’s'] },
-    { id: 'agent', icoon: 'bot', naam: ['Інструменти агентів', 'Gereedschap van agenten'] }
+    { id: 'agent', icoon: 'bot', naam: ['Інструменти агентів', 'Hulpmiddelen van agenten'] }
   ];
   function klasseVan(actie) { return gebiedVan(actie) || 'agent'; }
   var NIVEAU_RANG = { kritiek: 0, gevaarlijk: 1, gevoelig: 2, gewoon: 3 };
@@ -609,10 +609,10 @@
 
     var gevaar = kaart({ id: 'gevaar', icoon: 'triangle-alert', toon: 'alarm', klas: 'hv-sm-kaart--gevaar', titel: t('Доступ і сеанси', 'Toegang en sessies'),
       inhoud: '<div class="hv-sm-regels">' + regel({ k: 'sessies', icoon: 'monitor-smartphone', naam: t('Сеанси й ключі доступу', 'Sessies en toegangssleutels'), sub: h(t('керуються на id.tarasevych.com', 'beheer je op id.tarasevych.com')), orgaan: o.knop({ tekst: t('Відкрити', 'Openen'), icoon: 'external-link', klein: true, soort: 'stil', actie: 'sm-sessies', gegevens: { persoon: m.id } }) }) +
-        regel({ k: 'intrekken', icoon: x.ingetrokken ? 'user-check' : 'user-x', naam: x.ingetrokken ? t('Повернути доступ', 'Toegang teruggeven') : t('Відкликати доступ', 'Toegang intrekken'),
+        regel({ k: 'intrekken', icoon: x.ingetrokken ? 'user-check' : 'user-x', naam: x.ingetrokken ? t('Відновити доступ', 'Toegang herstellen') : t('Відкликати доступ', 'Toegang intrekken'),
           sub: h(laatsteEigenaar ? t('Останнього власника вилучити не можна.', 'De laatste eigenaar kan niet worden verwijderd.') : x.ingetrokken ? t('Історія збережена; людина знову зможе увійти.', 'De geschiedenis blijft; de persoon kan weer aanmelden.') : t('Критична дія: рейка й підтвердження входу. Історія лишається в Журналі.', 'Kritieke actie: rail en bevestiging van aanmelding. De geschiedenis blijft in het logboek.')),
           merk: x.ingetrokken ? '' : ' ' + o.risico('kritiek'),
-          orgaan: lezen || laatsteEigenaar || ik ? '' : o.knop({ tekst: x.ingetrokken ? t('Повернути', 'Teruggeven') : t('Відкликати…', 'Intrekken…'), icoon: x.ingetrokken ? 'undo-2' : 'user-x', klein: true, soort: x.ingetrokken ? 'gewoon' : 'gevaar', actie: 'sm-intrekken', gegevens: { persoon: m.id } }) }) + '</div>' });
+          orgaan: lezen || laatsteEigenaar || ik ? '' : o.knop({ tekst: x.ingetrokken ? t('Відновити', 'Herstellen') : t('Відкликати…', 'Intrekken…'), icoon: x.ingetrokken ? 'user-check' : 'user-x', klein: true, soort: x.ingetrokken ? 'gewoon' : 'gevaar', actie: 'sm-intrekken', gegevens: { persoon: m.id } }) }) + '</div>' });
 
     return '<div class="hv-sm hv-sm-persoon" data-k="sm-persoon-' + h(m.id) + '">' + leesBanner(ctx) + terug + held +
       '<div class="hv-sm-rooster"><div class="hv-sm-kolom">' + rolKaart + kamerKaart + termijn + ziet + '</div><div class="hv-sm-kolom">' + bronnen + toestemming + code + gevaar + '</div></div></div>';
@@ -1468,12 +1468,12 @@
     if (m.rol === 'eigenaar' && eigenaars().length <= 1) return weigerRol(t('Останнього власника вилучити не можна.', 'De laatste eigenaar kan niet worden verwijderd.'));
     if (x.ingetrokken) {
       HV.staat.wijzig(function () { x.ingetrokken = false; });
-      HV.logboek.voegToe({ maker: HV.mens(), wat: ['Доступ повернуто: ' + m.naam[0], 'Toegang teruggegeven: ' + m.naam[1]], soort: 'huis.toegang', gewicht: 'belangrijk' });
-      HV.meld({ maker: HV.mens(), icoon: 'user-check', gewicht: 'belangrijk', titel: t('Доступ повернуто', 'Toegang teruggegeven'), tekst: P(m.naam) });
+      HV.logboek.voegToe({ maker: HV.mens(), wat: ['Доступ відновлено: ' + m.naam[0], 'Toegang hersteld: ' + m.naam[1]], soort: 'huis.toegang', gewicht: 'belangrijk' });
+      HV.meld({ maker: HV.mens(), icoon: 'user-check', gewicht: 'belangrijk', titel: t('Доступ відновлено', 'Toegang hersteld'), tekst: P(m.naam) });
       return;
     }
     HV.schil.gevaar({ actie: { sleutel: 'persoon.verwijderen', niveau: 'kritiek', naam: ['Відкликати доступ: ' + m.naam[0], 'Toegang intrekken: ' + m.naam[1]],
-      gevolg: ['Що станеться: ' + m.naam[0] + ' вийде з усіх сеансів, особистий код і запрошення перестануть діяти. Пов’язано з: агенти, під’єднані цією людиною, призупиняться. Як повернути: «Повернути доступ» на цій сторінці.', 'Wat er gebeurt: ' + m.naam[1] + ' wordt overal afgemeld, de persoonlijke code en uitnodigingen werken niet meer. Hangt samen met: agenten die deze persoon koppelde, pauzeren. Terugdraaien: ‘Toegang teruggeven’ op deze pagina.'] }, naam: P(m.naam) }).then(function (ja) {
+      gevolg: ['Що станеться: ' + m.naam[0] + ' вийде з усіх сеансів, особистий код і запрошення перестануть діяти. Пов’язано з: агенти, під’єднані цією людиною, призупиняться. Як повернути: «Відновити доступ» на цій сторінці.', 'Wat er gebeurt: ' + m.naam[1] + ' wordt overal afgemeld, de persoonlijke code en uitnodigingen werken niet meer. Hangt samen met: agenten die deze persoon koppelde, pauzeren. Terugdraaien: ‘Toegang herstellen’ op deze pagina.'] }, naam: P(m.naam) }).then(function (ja) {
       if (!ja) return;
       HV.staat.wijzig(function () { x.ingetrokken = true; x.code = null; });
       HV.logboek.voegToe({ maker: HV.mens(), wat: ['Доступ відкликано: ' + m.naam[0], 'Toegang ingetrokken: ' + m.naam[1]], soort: 'huis.toegang', gewicht: 'belangrijk' });

@@ -36,7 +36,7 @@
 /* ───────────── Знак агента: монограма на підкладці тону ───────────── */
 .hv-ast-teken {
   flex: none; display: inline-grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-s);
-  background: linear-gradient(140deg, var(--toon-zacht, var(--surface2)) 0%, var(--panel) 120%); border: 1px solid var(--line);
+  background: var(--toon-zacht, var(--surface2)); border: 1px solid var(--line);
   color: var(--toon, var(--text)); font-size: var(--tekst-klein); font-weight: 700; letter-spacing: -0.02em;
 }
 .hv-ast-teken > span { color: var(--text); }
@@ -191,7 +191,7 @@ button.hv-ast-feiten__rij:active { background: var(--surface2); }
 /* ───────────── Підсумок дня ───────────── */
 .hv-ast-sam {
   display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-m); border: 1px solid var(--line); min-inline-size: 0;
-  background: linear-gradient(170deg, var(--hv-zon-zacht) 0%, var(--panel) 42%);
+  background: var(--panel); /* папір без градієнта: числа підсумку лежать на папері */
 }
 .hv-ast-sam__kop { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--ruimte-2); }
 .hv-ast-sam__soort { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
@@ -276,10 +276,15 @@ button.hv-ast-feiten__rij:active { background: var(--surface2); }
   .hv-ast-verzoek { padding: var(--ruimte-3) var(--ruimte-3) var(--ruimte-3) var(--ruimte-4); }
   .hv-ast-verzoek__kop { grid-template-columns: auto minmax(0, 1fr); }
   .hv-ast-verzoek__stand { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: center; gap: var(--ruimte-2); }
+  .hv-ast-verzoek__woord { white-space: normal; }
   .hv-ast-verzoek__feiten > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
 }
 /* аркуш праворуч вужчий за сторінку: факти запиту — стовпчиком */
 .hv-laag .hv-ast-verzoek__feiten > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+/* там само стан запиту («схвалено · виконається о 02:00», «знято: дозвіл вимкнено») — власним рядком під іменем, а не поруч */
+.hv-laag .hv-ast-verzoek__kop { grid-template-columns: auto minmax(0, 1fr); }
+.hv-laag .hv-ast-verzoek__stand { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: center; gap: var(--ruimte-2); }
+.hv-laag .hv-ast-verzoek__woord { white-space: normal; }
 .hv-ast-rust { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3); align-items: center; padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
 .hv-ast-rust__titel { font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
 .hv-ast-rust__tekst { font-size: var(--tekst-klein); color: var(--muted); }
@@ -418,6 +423,10 @@ button.hv-ast-feiten__rij:active { background: var(--surface2); }
 .hv-ast-stand .hv-stand__deel { padding-inline: var(--ruimte-2); white-space: nowrap; }
 .hv-ast-stand .hv-stand__lees { flex: 1 1 auto; }
 .hv-ast-stand .hv-uitleg { flex: none; }
+/* рядок «запитів, що чекають» — окремим рядком під сегментами; сегменти й «!» лишаються в одному ряду */
+.hv-ast-stand.heeft-wacht { flex-wrap: wrap; }
+.hv-ast-stand.heeft-wacht .hv-stand__segmenten { flex: 1 1 0; min-inline-size: 0; }
+.hv-ast-stand .hv-stand__wacht { flex: 1 0 100%; }
 .hv-ast-stand--kritiek.is-altijd-zwaar .hv-uitleg--vast { color: var(--fout-vlak); }
 .hv-ast-stand.is-altijd-zwaar .hv-stand__deel.is-gekozen { border-color: var(--warn); }
 .hv-ast-stand--kritiek.is-altijd-zwaar .hv-stand__deel.is-gekozen { border-color: var(--fout-vlak); }

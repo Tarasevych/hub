@@ -11,6 +11,19 @@
   var herbevestigdTot = 0;   // справжній час: підтвердження входу діє 5 хв для сеансу
   var HOUD_MS = 1200, AFTEL_S = 3;
 
+  // Фокус у щойно намальованому шарі ставиться ОДРАЗУ ПІСЛЯ малювання, а не за таймером: малювання йде в наступному
+  // кадрі, і коли кадр запізнюється (навантажений пристрій, фонова вкладка), таймер 30 мс спрацьовував раніше, ніж шар
+  // з'являвся в документі, — фокус лишався поза діалогом. Черга виконується наприкінці HV.lagen.teken.
+  var naTeken = [];
+  function straks(fn) { naTeken.push(fn); HV.teken(); }
+  function focusOp(selector, opties) {
+    straks(function () {
+      var k = typeof selector === 'function' ? selector() : document.querySelector(selector);
+      if (!k) return;
+      try { k.focus(opties || undefined); } catch (e) { /* фокус лишається */ }
+    });
+  }
+
   function open(nieuw) {
     if (!dlg) vorigeFocus = document.activeElement;
     dlg = nieuw;
@@ -53,8 +66,10 @@
       '<p class="hv-gevaar__doel"><span>' + h(t('Зачеплено', 'Geraakt')) + '</span> ' + h(betrokken) + (kritiek ? ' <span class="hv-punt" aria-hidden="true">·</span> ' + h(t('рейка й підтвердження входу', 'rail en bevestiging van aanmelding')) : '') + '</p>' + lijf + '</div>';
   }
   function houdTekst(ms) { return HV.getal(Math.max(0, ms / 1000), 1) + ' ' + t('с', 's'); }
-  function herbevestigLijf(tekst) {
-    return '<div class="hv-herbevestig" data-k="herbevestig"><span class="hv-herbevestig__teken">' + HV.icoon('key-round', { maat: 'l' }) + '</span><div><p class="hv-herbevestig__tekst">' + h(tekst) + '</p>' +
+  function herbevestigLijf(tekst, noot) {
+    // noot — що станеться одразу після підтвердження (наприклад, запити, що чекають, виконаються): рядок або пара [uk, nl]
+    return (noot ? '<p class="hv-herbevestig__let" data-k="herbevestig-let">' + HV.icoon('triangle-alert', { maat: 's' }) + '<span>' + h(HV.p(noot)) + '</span></p>' : '') +
+      '<div class="hv-herbevestig" data-k="herbevestig"><span class="hv-herbevestig__teken">' + HV.icoon('key-round', { maat: 'l' }) + '</span><div><p class="hv-herbevestig__tekst">' + h(tekst) + '</p>' +
       '<p class="hv-herbevestig__noot">' + h(t('Підтвердження діє 5 хв для цього сеансу. У макеті це імітація: справжній сайт попросить ключ доступу.', 'De bevestiging geldt 5 min voor deze sessie. In de maquette is dit nagebootst: de echte site vraagt je toegangssleutel.')) + '</p></div></div>' +
       '<div class="hv-gevaar__knoppen">' + o.knop({ tekst: t('Скасувати', 'Annuleren'), actie: 'dialoog-annuleer', k: 'annuleer' }) + o.knop({ tekst: t('Підтвердити вхід', 'Aanmelding bevestigen'), icoon: 'key-round', soort: 'hoofd', actie: 'dialoog-herbevestig', k: 'herbevestig-knop' }) + '</div>';
   }
@@ -62,7 +77,7 @@
     var d = dlg;
     if (!d || d.soort !== 'gevaar') return;
     if (d.klok) { clearInterval(d.klok); d.klok = null; d.aftel = null; }
-    if (d.actie.niveau === 'kritiek' && Date.now() > herbevestigdTot) { d.stap = 'herbevestig'; HV.teken(); setTimeout(function () { var k = document.querySelector('.hv-gevaar [data-actie="dialoog-herbevestig"]'); if (k) k.focus(); }, 30); return; }
+    if (d.actie.niveau === 'kritiek' && Date.now() > herbevestigdTot) { d.stap = 'herbevestig'; HV.teken(); focusOp('.hv-gevaar [data-actie="dialoog-herbevestig"]'); return; }
     sluit(true);
   }
 
@@ -89,7 +104,7 @@
     { id: 'welterusten', icoon: 'moon', naam: ['На добраніч', 'Welterusten'], voer: function () { return HV.doe({ doel: 'scene:welterusten', mogelijkheid: 'start', waarde: true }); },
       gevolg: function () { return t('Що станеться: світло внизу й телевізор вимкнуться, приліжкова лампа ввімкнеться, двері замкнуться, опалення знизиться до 17,5 °C. Пов’язано з: охорону сцена не ставить і не знімає. Як повернути: «Повернути» протягом 10 с.', 'Wat er gebeurt: het licht beneden en de tv gaan uit, de bedlamp gaat aan, de deur gaat op slot, de verwarming zakt naar 17,5 °C. Hangt samen met: de scène schakelt het alarm niet in en niet uit. Terugdraaien: ‘Ongedaan maken’ binnen 10 s.'); } },
     { id: 'weg', icoon: 'log-out', naam: ['Йду', 'Ik ga weg'], voer: function () { return HV.doe({ doel: 'huis', mogelijkheid: 'stand', waarde: 'afwezig' }); },
-      gevolg: function () { return t('Що станеться: світло й медіа вимкнуться, опалення знизиться до 17 °C. Пов’язано з: охорону дім лише запропонує поставити; двері лишаться як є. Як повернути: «Я вдома» або «Повернути» протягом 10 с.', 'Wat er gebeurt: licht en media gaan uit, de verwarming zakt naar 17 °C. Hangt samen met: het huis stelt alleen voor het alarm in te schakelen; deuren blijven zoals ze zijn. Terugdraaien: ‘Ik ben thuis’ of ‘Ongedaan maken’ binnen 10 s.'); } },
+      gevolg: function () { return t('Що станеться: світло й медіа вимкнуться, опалення знизиться до 17 °C. Пов’язано з: охорону режим не змінює; двері лишаться як є. Як повернути: «Я вдома» або «Повернути» протягом 10 с.', 'Wat er gebeurt: licht en media gaan uit, de verwarming zakt naar 17 °C. Hangt samen met: de stand verandert het alarm niet; deuren blijven zoals ze zijn. Terugdraaien: ‘Ik ben thuis’ of ‘Ongedaan maken’ binnen 10 s.'); } },
     { id: 'thuis', icoon: 'log-in', naam: ['Я вдома', 'Ik ben thuis'], voer: function () { return HV.doe({ doel: 'huis', mogelijkheid: 'stand', waarde: 'thuis' }); },
       gevolg: function () { return t('Що станеться: режим дому стане «Вдома», опалення підніметься до 21 °C. Пов’язано з: охорону режим не знімає — це окрема дія. Як повернути: «Повернути» протягом 10 с.', 'Wat er gebeurt: de huisstand wordt ‘Thuis’, de verwarming gaat naar 21 °C. Hangt samen met: de stand zet het alarm niet uit — dat is een aparte actie. Terugdraaien: ‘Ongedaan maken’ binnen 10 s.'); } },
     { id: 'cameras', icoon: 'cctv', naam: ['Камери', 'Camera’s'], ga: 'beveiliging-cameras' },
@@ -128,7 +143,7 @@
   }
   HV.actie('opdracht', function () {
     open({ soort: 'opdracht', zoek: '', gekozen: null });
-    setTimeout(function () { var v = document.getElementById('hv-opdracht-veld'); if (v) { v.value = ''; v.focus(); } }, 30);
+    straks(function () { var v = document.getElementById('hv-opdracht-veld'); if (v) { v.value = ''; v.focus(); } });
   });
   HV.actie('opdracht-kies', function (ctx, g) {
     if (!dlg) return;
@@ -136,7 +151,7 @@
     if (v && v.ga) { sluit(false); HV.open(v.ga); return; }
     dlg.gekozen = g.werkwoord || null;
     HV.teken();
-    setTimeout(function () { var k = document.querySelector('.hv-opdracht [data-k="voer"]') || document.getElementById('hv-opdracht-veld'); if (k) k.focus(); }, 30);
+    focusOp(function () { return document.querySelector('.hv-opdracht [data-k="voer"]') || document.getElementById('hv-opdracht-veld'); });
   });
   HV.actie('opdracht-voer', function (ctx, g) {
     var v = WERKWOORDEN.filter(function (x) { return x.id === g.werkwoord; })[0];
@@ -179,7 +194,7 @@
     uitleg = { tekst: g.tekst, kop: g.kop, anker: el };
     el.setAttribute('aria-expanded', 'true');
     HV.teken();
-    setTimeout(function () { var k = document.querySelector('.hv-gevolg__sluit'); if (k) k.focus(); }, 30);
+    focusOp('.hv-gevolg__sluit');
   });
   HV.actie('uitleg-sluit', function () { sluitUitleg(); });
 
@@ -298,15 +313,19 @@
     },
     teken: function (ctx) {
       var html = '';
-      if (dlg) html = dlg.soort === 'opdracht' ? opdrachtHtml(dlg) : dlg.soort === 'herbevestig' ? '<div class="hv-dek hv-dek--dialoog" data-actie="dialoog-annuleer" data-k="dek-dialoog"></div><div class="hv-gevaar hv-gevaar--herbevestig" role="alertdialog" aria-modal="true" aria-labelledby="hv-gevaar-titel" data-k="gevaar"><header class="hv-gevaar__kop"><h2 id="hv-gevaar-titel">' + h(dlg.titel) + '</h2></header>' + herbevestigLijf(dlg.tekst) + '</div>' : gevaarHtml(dlg);
+      if (dlg) html = dlg.soort === 'opdracht' ? opdrachtHtml(dlg) : dlg.soort === 'herbevestig' ? '<div class="hv-dek hv-dek--dialoog" data-actie="dialoog-annuleer" data-k="dek-dialoog"></div><div class="hv-gevaar hv-gevaar--herbevestig" role="alertdialog" aria-modal="true" aria-labelledby="hv-gevaar-titel" data-k="gevaar"><header class="hv-gevaar__kop"><h2 id="hv-gevaar-titel">' + h(dlg.titel) + '</h2></header>' + herbevestigLijf(dlg.tekst, dlg.noot) + '</div>' : gevaarHtml(dlg);
       HV.zet(document.getElementById('hv-dialoogplek'), html);
       HV.zet(document.getElementById('hv-gevolgplek'), gevolgHtml());
       HV.zet(document.getElementById('hv-noodplek'), noodHtml(ctx.staat));
       // аварійний шар — модальний: фокус одразу стає на «Бачу — приглушити сирену», після закриття повертається
       var noodNu = !!(ctx.staat.nood && !ctx.staat.nood.bevestigd);
+      // черга фокуса: шар уже в документі (небезпечна дія, Команда, підказка)
+      if (naTeken.length) { var rij = naTeken; naTeken = []; rij.forEach(function (fn) { try { fn(); } catch (e) { if (window.console) console.error(e); } }); }
       if (noodNu && !noodWas) {
         noodFocus = document.activeElement;
-        setTimeout(function () { var k = document.querySelector('.hv-nood [data-actie="nood-zie"]'); if (k) { try { k.focus({ preventScroll: true }); } catch (e) { k.focus(); } } }, 30);
+        // аварійний шар щойно намальовано цим самим викликом — фокус одразу
+        var noodKnop = document.querySelector('.hv-nood [data-actie="nood-zie"]');
+        if (noodKnop) { try { noodKnop.focus({ preventScroll: true }); } catch (e) { noodKnop.focus(); } }
       } else if (!noodNu && noodWas) {
         var terug = noodFocus; noodFocus = null;
         setTimeout(function () {
@@ -329,16 +348,20 @@
     if (HV.zonderVerbinding()) { HV.meldZonderVerbinding(); return Promise.resolve(false); }
     return new Promise(function (los) {
       open({ soort: 'gevaar', actie: p.actie, apparaat: p.apparaat, naam: p.naam, stap: 'houd', aftel: null, los: los });
-      setTimeout(function () { var k = document.querySelector('.hv-gevaar [data-k="annuleer"]'); if (k) k.focus(); }, 30);
+      focusOp('.hv-gevaar [data-k="annuleer"]');
     });
   };
-  /** Повторне підтвердження входу (імітація). Promise<boolean>. */
+  /**
+   * Повторне підтвердження входу (імітація). Promise<boolean>.
+   * p: { titel, tekst, noot?, altijdOpnieuw? } — noot (рядок або пара [uk, nl]) каже, що станеться одразу після
+   * підтвердження; altijdOpnieuw — діалог показується, навіть коли підтвердження входу ще чинне (щоб людина побачила noot).
+   */
   HV.schil.herbevestig = function (p) {
     if (HV.zonderVerbinding()) { HV.meldZonderVerbinding(); return Promise.resolve(false); }
-    if (Date.now() < herbevestigdTot) return Promise.resolve(true);
+    if (Date.now() < herbevestigdTot && !p.altijdOpnieuw) return Promise.resolve(true);
     return new Promise(function (los) {
-      open({ soort: 'herbevestig', titel: p.titel, tekst: p.tekst, los: los });
-      setTimeout(function () { var k = document.querySelector('.hv-gevaar [data-k="annuleer"]'); if (k) k.focus(); }, 30);
+      open({ soort: 'herbevestig', titel: p.titel, tekst: p.tekst, noot: p.noot || null, los: los });
+      focusOp('.hv-gevaar [data-k="annuleer"]');
     });
   };
   /** Одне сповіщення замість стосу: тривога — першою, інакше найновіше; решта чекає за лічильником «+N». */

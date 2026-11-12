@@ -65,7 +65,8 @@
     var kamer = HV.staat.kamer(a.kamer), soort = HV.paspoort.soorten[a.soort];
     var uitvoerder = HV.ui.lees('stand-uitvoerder', 'scene');
     var acties = HV.gevaar.acties.filter(function (x) { return x.soorten && x.soorten.indexOf(a.soort) >= 0; });
-    var rijen = o.rij({ naam: t('Назва українською', 'Naam in het Oekraïens'), waarde: h(a.naam[0]) }) + o.rij({ naam: t('Назва нідерландською', 'Naam in het Nederlands'), waarde: h(a.naam[1]) }) +
+    // обидві назви показано завжди — кожну своєю мовою, з позначкою lang
+    var rijen = o.rij({ naam: t('Назва українською', 'Naam in het Oekraïens'), waarde: '<span lang="uk">' + h(a.naam[0]) + '</span>' }) + o.rij({ naam: t('Назва нідерландською', 'Naam in het Nederlands'), waarde: '<span lang="nl">' + h(a.naam[1]) + '</span>' }) +
       o.rij({ naam: t('Кімната', 'Kamer'), waarde: h(HV.p(kamer.naam)) }) + o.rij({ naam: t('Тип', 'Soort'), waarde: h(HV.p(soort.naam)) }) +
       o.rij({ naam: t('Джерело', 'Bron'), waarde: HV.icoon('flask-conical', { maat: 's' }) + ' ' + h(t('Симулятор', 'Simulator')) }) +
       (a.batterij != null ? o.rij({ naam: t('Батарейка', 'Batterij'), waarde: HV.maat(a.batterij, '%') }) : '');

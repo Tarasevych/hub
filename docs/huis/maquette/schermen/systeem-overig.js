@@ -697,13 +697,15 @@
   function stroomBlok(ctx) {
     var w = ctx.staat, S = X.stroom;
     var bron = S.pauze || w.logboek;
+    var R = HV.logboekRegel; // kopVan / deltaChip із schermen/logboek.js
     var lijst = bron.filter(function (r) { return S.filter === 'alle' || (r.maker && r.maker.soort === S.filter); }).slice(0, 12);
     var filters = [['alle', ['Усі', 'Alle'], null], ['mens', ['Люди', 'Mensen'], 'user'], ['simulator', ['Симулятор', 'Simulator'], 'flask-conical'], ['automatisering', ['Автоматика', 'Automatisering'], 'diamond'], ['agent', ['Агенти', 'Agenten'], 'bot'], ['systeem', ['Система', 'Systeem'], 'cpu']];
     return o.blok({ id: 'so-stroom', titel: t('Потік подій', 'Stroom van gebeurtenissen'), teller: S.pauze ? t('пауза', 'pauze') : null, samenvatting: lijst[0] ? h(HV.tijd(lijst[0].tijd) + ' · ' + HV.p(lijst[0].wat)) : '',
       extra: o.chip({ icoon: S.pauze ? 'play' : 'pause', tekst: S.pauze ? t('Продовжити', 'Doorgaan') : t('Пауза', 'Pauze'), actie: 'so-stroom-pauze', k: 'so-stroom-pauze' }),
       inhoud: '<div class="hv-filter hv-so-filter" role="group" aria-label="' + h(t('Автор події', 'Maker van de gebeurtenis')) + '">' + filters.map(function (f) { return o.chip({ icoon: f[2], tekst: HV.p(f[1]), filter: true, gekozen: S.filter === f[0], actie: 'so-stroom-filter', gegevens: { waarde: f[0] } }); }).join('') + '</div>' +
         (lijst.length ? '<ol class="hv-so-stroom" data-k="so-stroomlijst" aria-live="off">' + lijst.map(function (r) {
-          return '<li class="hv-so-stroom__rij hv-so-stroom__rij--' + h(r.gewicht || 'info') + '" data-k="so-st-' + h(r.id) + '"><time>' + HV.tijd(r.tijd) + '</time>' + o.maker(r.maker, { alleenTeken: true }) + '<span class="hv-so-stroom__wat">' + h(HV.p(r.wat)) + '</span>' + (r.was && r.werd ? '<span class="hv-so-stroom__delta">' + h(HV.p(r.was) + ' → ' + HV.p(r.werd)) + '</span>' : '') + '</li>';
+          var kop = R ? R.kop(r) : { naam: HV.p(r.wat), delta: null }; // назва без повтору значення + один чип зміни, як у Журналі
+          return '<li class="hv-so-stroom__rij hv-so-stroom__rij--' + h(r.gewicht || 'info') + '" data-k="so-st-' + h(r.id) + '"><time>' + HV.tijd(r.tijd) + '</time>' + o.maker(r.maker, { alleenTeken: true }) + '<span class="hv-so-stroom__wat">' + h(kop.naam) + '</span>' + (kop.delta ? '<span class="hv-so-stroom__delta">' + R.chip(kop.delta) + '</span>' : '') + '</li>';
         }).join('') + '</ol>' : o.leeg({ icoon: 'list', titel: t('Подій немає', 'Geen gebeurtenissen'), tekst: t('Змініть фільтр або запустіть сценарій.', 'Wijzig het filter of start een scenario.') })) +
         knoppen(o.knop({ tekst: t('Увесь Журнал', 'Het hele logboek'), icoon: 'history', soort: 'stil', klein: true, actie: 'ga', gegevens: { naar: 'activiteit-geschiedenis' } })) });
   }
@@ -761,10 +763,10 @@
         o.knop({ tekst: t('Відкрити', 'Openen'), klein: true, soort: 'stil', actie: 'blad', gegevens: { blad: 'apparaat:' + a.id } }) + o.knop({ tekst: t('Вилучити', 'Verwijderen'), icoon: 'trash-2', klein: true, actie: 'so-virtueel-weg', gegevens: { doel: a.id } }) + '</div></div>';
     }).join('') : '';
     var kopHtml = '<div class="hv-so-wereldkop" data-k="so-wereldkop">' + o.knop({ tekst: t('Віртуальний пристрій', 'Virtueel apparaat'), icoon: 'plus', soort: 'hoofd', actie: 'blad', gegevens: { blad: 'sovirtueel' } }) +
-      o.knop({ tekst: t('Повернути до сценарію', 'Terug naar scenario'), icoon: 'undo-2', actie: 'so-w-terug', uit: !aantal }) +
+      o.knop({ tekst: t('Знову за сценарієм', 'Terug naar scenario'), icoon: 'rotate-ccw', actie: 'so-w-terug', uit: !aantal }) +
       o.chip({ icoon: 'hand', toon: aantal ? 'let-op' : null, tekst: t('ручних значень: ', 'handmatige waarden: ') + aantal }) + '</div>';
     var b = function (id, titel, icoon, inhoud, teller) { return o.blok({ id: id, titel: titel, teller: teller, inhoud: '<div class="hv-so-wereld">' + inhoud + '</div>' }); };
-    return kopHtml + noot('flask-conical', t('Ручне значення тримається до наступного кроку генератора або до «Повернути до сценарію»; автор у Журналі — «Симулятор · ручне».', 'Een handmatige waarde blijft staan tot de volgende stap van de generator of tot ‘Terug naar scenario’; maker in het logboek — ‘Simulator · handmatig’.')) +
+    return kopHtml + noot('flask-conical', t('Ручне значення тримається до наступного кроку генератора або до «Знову за сценарієм»; автор у Журналі — «Симулятор · ручне».', 'Een handmatige waarde blijft staan tot de volgende stap van de generator of tot ‘Terug naar scenario’; maker in het logboek — ‘Simulator · handmatig’.')) +
       '<div class="hv-so-raster">' + '<div class="hv-so-kolom">' + b('so-w-weer', t('Погода й ціна', 'Weer en prijs'), 'cloud-sun', weer) + b('so-w-mensen', t('Люди', 'Mensen'), 'users', mensen, HV.kijk.thuis().length + ' ' + t('вдома', 'thuis')) + b('so-w-auto', t('Авто', 'Auto'), 'car', auto) + '</div>' +
       '<div class="hv-so-kolom">' + b('so-w-ramen', t('Вікна й двері', 'Ramen en deuren'), 'door-open', contacten) + b('so-w-sensoren', t('Датчики', 'Sensoren'), 'gauge', sensoren) + b('so-w-alarm', t('Датчики безпеки', 'Veiligheidssensoren'), 'alarm-smoke', alarmen) + (virt ? b('so-w-virtueel', t('Віртуальні пристрої', 'Virtuele apparaten'), 'package-plus', virt, X.virtueel.length) : '') + '</div></div>';
   }
@@ -1015,9 +1017,9 @@
     var bewaard = X.wereld;
     Object.keys(bewaard).forEach(function (k) { bewaard[k].herstel(); });
     X.wereld = {};
-    HV.logboek.voegToe({ maker: SIM, wat: ['Світ повернуто до сценарію', 'Wereld terug naar het scenario'], waarom: ['ручних значень: ' + n, 'handmatige waarden: ' + n], soort: 'huis.simulatie' });
+    HV.logboek.voegToe({ maker: SIM, wat: ['Світ знову за сценарієм', 'Wereld terug naar het scenario'], waarom: ['ручних значень: ' + n, 'handmatige waarden: ' + n], soort: 'huis.simulatie' });
     HV.klok.stap(0);
-    HV.meld({ maker: SIM, icoon: 'undo-2', titel: t('Світ повернуто до сценарію', 'Wereld terug naar het scenario'), tekst: t('Скинуто ручних значень: ', 'Handmatige waarden gewist: ') + n });
+    HV.meld({ maker: SIM, icoon: 'rotate-ccw', titel: t('Світ знову за сценарієм', 'Wereld terug naar het scenario'), tekst: t('Скинуто ручних значень: ', 'Handmatige waarden gewist: ') + n });
   });
   HV.actie('so-virtueel-voeg', function (ctx, g) {
     var s = VIRTUEEL_SOORTEN.filter(function (x) { return x.soort === g.soort; })[0]; if (!s) return;
@@ -1112,7 +1114,7 @@
     { id: 'samen', icoon: 'layers', naam: ['Згортки: 5 хв / година / доба', 'Samenvattingen: 5 min / uur / dag'], echt: function () { return t('90 днів / 10 років / безстроково', '90 dagen / 10 jaar / onbeperkt'); }, demo: 500000, basis: 18420, per: 0.08, mb: 0.05 },
     { id: 'toestanden', icoon: 'toggle-right', naam: ['Історія станів', 'Toestandsgeschiedenis'], echt: function () { return X.bewaar.toestanden + ' ' + t('днів', 'dagen'); }, keuzes: [90, 180, 400], demo: 200000, basis: 22870, per: 0.21, mb: 0.09 },
     { id: 'gebeurtenissen', icoon: 'list', naam: ['Журнал подій', 'Logboek van gebeurtenissen'], echt: function () { return X.bewaar.gebeurtenissen + ' ' + t('днів', 'dagen'); }, keuzes: [90, 180, 400], demo: 50000, basis: 1240, logboek: true, mb: 0.4 },
-    { id: 'audit', icoon: 'shield-check', naam: ['Аудит дій (лише додається)', 'Audit van acties (alleen toevoegen)'], echt: function () { return t('2 роки', '2 jaar'); }, demo: 20000, basis: 486, audit: true, mb: 0.6 },
+    { id: 'audit', icoon: 'shield-check', naam: ['Аудит дій (лише додається)', 'Controlespoor van acties (alleen toevoegen)'], echt: function () { return t('2 роки', '2 jaar'); }, demo: 20000, basis: 486, audit: true, mb: 0.6 },
     { id: 'runs', icoon: 'workflow', naam: ['Сліди запусків', 'Sporen van runs'], echt: function () { return t('30 днів, не менше 20 на правило', '30 dagen, minstens 20 per regel'); }, demo: 20, demoTekst: ['20 останніх на правило', 'laatste 20 per regel'], basis: 14, mb: 0.2 },
     { id: 'routes', icoon: 'map-pin', naam: ['Маршрути й місце', 'Routes en locatie'], echt: function () { return X.bewaar.routes + ' ' + t('днів', 'dagen'); }, keuzes: [7, 14, 30], demo: 30, demoTekst: ['≤ 30 діб дому', '≤ 30 dagen huistijd'], basis: 3, mb: 0.02 }
   ];
@@ -1136,18 +1138,18 @@
     var mb = OPSLAG.map(function (r) { return opslagAantal(r, w) * r.mb / 1000; });
     var totaal = mb.reduce(function (a, b) { return a + b; }, 0);
     var ring = HV.grafiek.ring({ id: 'so-opslag-ring', titel: t('Обсяг бази демо-дому', 'Omvang van de database van de demowoning'), midden: { waarde: HV.maat(totaal, t('МБ', 'MB'), 1), label: t('усього', 'totaal') },
-      samenvatting: t('Найбільше займають аудит і журнал подій; сирі виміри понад ×10 не пишуться.', 'Audit en logboek nemen het meest in; ruwe metingen boven ×10 worden niet opgeslagen.'),
+      samenvatting: t('Найбільше займають аудит і журнал подій; сирі виміри понад ×10 не пишуться.', 'Controlespoor en logboek nemen het meest in; ruwe metingen boven ×10 worden niet opgeslagen.'),
       delen: [{ naam: t('Виміри й згортки', 'Metingen en samenvattingen'), waarde: mb[0] + mb[1], tekst: HV.maat(mb[0] + mb[1], t('МБ', 'MB'), 1), toon: 'net-in' }, { naam: t('Стани', 'Toestanden'), waarde: mb[2], tekst: HV.maat(mb[2], t('МБ', 'MB'), 1), toon: 'koud' },
-        { naam: t('Журнал і аудит', 'Logboek en audit'), waarde: mb[3] + mb[4], tekst: HV.maat(mb[3] + mb[4], t('МБ', 'MB'), 1), toon: 'warm' }, { naam: t('Сліди й місце', 'Sporen en locatie'), waarde: mb[5] + mb[6], tekst: HV.maat(mb[5] + mb[6], t('МБ', 'MB'), 2), toon: 'zon' }] });
+        { naam: t('Журнал і аудит', 'Logboek en controlespoor'), waarde: mb[3] + mb[4], tekst: HV.maat(mb[3] + mb[4], t('МБ', 'MB'), 1), toon: 'warm' }, { naam: t('Сліди й місце', 'Sporen en locatie'), waarde: mb[5] + mb[6], tekst: HV.maat(mb[5] + mb[6], t('МБ', 'MB'), 2), toon: 'zon' }] });
     var banner = nietOpgeslagen ? '<div class="hv-so-banner hv-so-banner--let-op" role="status" data-k="so-nietop">' + ic('database-zap') + '<div class="hv-so-banner__tekst"><p class="hv-so-banner__titel">' + h(t('Сирі виміри зараз не записуються', 'Ruwe metingen worden nu niet opgeslagen')) + '</p><p class="hv-so-banner__sub">' + h(t('Час дому йде ×' + w.snelheid + '; понад ×10 пишуться лише згортки, стани й Журнал.', 'De huistijd loopt ×' + w.snelheid + '; boven ×10 komen alleen samenvattingen, toestanden en het logboek erin.')) + '</p></div>' + o.knop({ tekst: t('Поставити ×1', 'Op ×1 zetten'), actie: 'so-snelheid', gegevens: { waarde: 1 } }) + '</div>' : '';
     return '<div class="hv-so" data-k="so-gegevens">' + banner +
       '<div class="hv-so-raster hv-so-raster--breed-links"><div class="hv-so-kolom">' +
       o.blok({ id: 'so-opslag', titel: t('Що зберігається й скільки', 'Wat er wordt bewaard en hoeveel'), teller: OPSLAG.length, inhoud: kaart('so-opslagkaart', tabel + noot('database', t('Справжній дім: близько 130 тис. рядків на добу, усталено менше 1,5 ГБ. Розділів таблиць немає — старе видаляється вночі пакетами.', 'Echt huis: ongeveer 130 duizend regels per dag, stabiel onder 1,5 GB. Geen tabelpartities — oud wordt ’s nachts in pakketten verwijderd.')) + slotRegel(3)),
-        uitleg: t('Що станеться: коротший строк — менше історії для графіків і «Перегляду минулого». Пов’язано з: аудит дій має сталий строк 2 роки й лише додається. Як повернути: оберіть попередній строк; уже видалене не повернеться.', 'Wat er gebeurt: een kortere termijn — minder geschiedenis voor grafieken en ‘Terugblik’. Hangt samen met: de audit van acties heeft een vaste termijn van 2 jaar en wordt alleen aangevuld. Terugdraaien: kies de vorige termijn; wat al is verwijderd komt niet terug.') }) + '</div>' +
+        uitleg: t('Що станеться: коротший строк — менше історії для графіків і «Перегляду минулого». Пов’язано з: аудит дій має сталий строк 2 роки й лише додається. Як повернути: оберіть попередній строк; уже видалене не повернеться.', 'Wat er gebeurt: een kortere termijn — minder geschiedenis voor grafieken en ‘Terugblik’. Hangt samen met: het controlespoor van acties heeft een vaste termijn van 2 jaar en wordt alleen aangevuld. Terugdraaien: kies de vorige termijn; wat al is verwijderd komt niet terug.') }) + '</div>' +
       '<div class="hv-so-kolom">' + kaart('so-omvang', ring) +
       kaart('so-export', kop('download', t('Вивантаження', 'Exporteren'), '', h(t('Файл huis-export.json: Журнал, налаштування системи й траси — без секретів.', 'Bestand huis-export.json: logboek, systeeminstellingen en sporen — zonder geheimen.'))) +
         knoppen(o.knop({ tekst: t('Вивантажити дані', 'Gegevens exporteren'), icoon: 'download', soort: 'hoofd', actie: 'so-export' }), o.knop({ tekst: t('Очистити історію демо-дому', 'Geschiedenis van de demowoning wissen'), icoon: 'eraser', soort: 'stil', actie: 'so-wis-historie' })) +
-        noot('lock', t('Аудит справжнього дому не очищується ніким: роль бази має лише право додавати.', 'De audit van een echt huis wist niemand: de databaserol mag alleen toevoegen.'))) + '</div></div></div>';
+        noot('lock', t('Аудит справжнього дому не очищується ніким: роль бази має лише право додавати.', 'Het controlespoor van een echt huis wist niemand: de databaserol mag alleen toevoegen.'))) + '</div></div></div>';
   }
   HV.actie('so-bewaar', function (ctx, g) {
     var r = OPSLAG.filter(function (x) { return x.id === g.reeks; })[0]; if (!r) return;
@@ -1174,7 +1176,7 @@
   HV.actie('so-wis-historie', function () {
     var bewaard = HV.staat.w.logboek.slice();
     var gevaar = { sleutel: 'gegevens.wissen', niveau: 'gevaarlijk', naam: ['Очистити історію демо-дому', 'Geschiedenis van de demowoning wissen'],
-      gevolg: ['Що станеться: Журнал демо-дому стане порожнім; графіки й «Перегляд минулого» почнуться з цієї хвилини. Пов’язано з: аудит справжнього дому це не зачіпає. Як повернути: «Повернути» протягом 10 с.', 'Wat er gebeurt: het logboek van de demowoning wordt leeg; grafieken en ‘Terugblik’ beginnen vanaf nu. Hangt samen met: de audit van een echt huis blijft onaangeroerd. Terugdraaien: ‘Ongedaan maken’ binnen 10 s.'] };
+      gevolg: ['Що станеться: Журнал демо-дому стане порожнім; графіки й «Перегляд минулого» почнуться з цієї хвилини. Пов’язано з: аудит справжнього дому це не зачіпає. Як повернути: «Повернути» протягом 10 с.', 'Wat er gebeurt: het logboek van de demowoning wordt leeg; grafieken en ‘Terugblik’ beginnen vanaf nu. Hangt samen met: het controlespoor van een echt huis blijft onaangeroerd. Terugdraaien: ‘Ongedaan maken’ binnen 10 s.'] };
     sysDoe({ min: 3, gevaar: gevaar, icoon: 'eraser', gewicht: 'belangrijk', wat: ['Історію демо-дому очищено', 'Geschiedenis van de demowoning gewist'], tekst: tel(bewaard.length, ['запис', 'записи', 'записів'], ['regel', 'regels']),
       pas: function () { HV.staat.w.logboek = []; }, terug: function () { HV.staat.w.logboek = bewaard.concat(HV.staat.w.logboek); } });
   });
@@ -1511,7 +1513,7 @@
       '<div class="hv-so-kolom">' + kaart('so-pl-uitkomst', '<div class="hv-so-cijfers">' +
         o.getal({ maat: 'l', label: t('Окупність', 'Terugverdientijd'), waarde: r.terugverdien != null ? HV.maat(r.terugverdien, t('р.', 'jr'), 1) : '—', toon: r.terugverdien != null && r.terugverdien < 10 ? 'zon' : null }) +
         o.getal({ maat: 'l', label: t('Щороку', 'Per jaar'), waarde: HV.euro(r.jaar, 0) }) +
-        o.getal({ maat: 'm', label: t('Вкладення', 'Investering'), waarde: HV.euro(r.investering, 0), sub: h(p.warmtepomp === 'ja' ? t('з дотацією 3000 € на насос', 'met 3000 € subsidie op de pomp') : '') }) +
+        o.getal({ maat: 'm', label: t('Вкладення', 'Investering'), waarde: HV.euro(r.investering, 0), sub: h(p.warmtepomp === 'ja' ? t('приклад: дотацію ', 'voorbeeld: ') + HV.euro(3000, 0).replace(' ', '\u00a0') + t(' на насос уже віднято', ' subsidie op de pomp is al afgetrokken') : '') }) +
         o.getal({ maat: 'm', label: t('Своє сонце', 'Eigen zon'), waarde: HV.procent(r.eigenDeel * 100), sub: h(HV.maatTekst(Math.round(r.eigen), t('кВт·год', 'kWh'), 0) + t(' з ', ' van ') + HV.maatTekst(Math.round(r.opbrengst), t('кВт·год', 'kWh'), 0)) }) + '</div>' + grafiek +
         knoppen(o.knop({ tekst: t('Зберегти варіант', 'Variant bewaren'), icoon: 'bookmark-plus', actie: 'so-planner-bewaar', uit: p.varianten.length >= 3 }), o.knop({ tekst: t('Як у демо-домі', 'Zoals de demowoning'), icoon: 'house', soort: 'stil', actie: 'so-planner-demo' })) +
         noot('info', t('Оцінка, не порада: ціни прикладні, вироблення 875 кВт·год на кВт, тепловий насос із COP 4.', 'Een schatting, geen advies: prijzen zijn voorbeelden, opbrengst 875 kWh per kW, warmtepomp met COP 4.'))) +
@@ -1819,7 +1821,7 @@
     var knipHet = function () { return knip(tabHtml(ctx, 'activiteit', 'meldingen'), '.hv-verzoek'); };
     if (wacht || !w.verzoeken) return knipHet();
     var proef = { id: 'sozaal', uitvoerder: 'claude', sleutel: 'laadpaal.laden', doel: 'laadpaal', mogelijkheid: 'laden', waarde: true, sinds: w.tijd - 60000, tot: w.tijd + 240000, stand: 'wacht',
-      wat: ['Зарядити авто о 02:00', 'De auto om 02:00 laden'], waarom: ['найдешевші години: 02:00–05:00', 'de goedkoopste uren: 02:00–05:00'], wordt: ['Авто: 64 % → 80 % до 05:10', 'Auto: 64 % → 80 % om 05:10'] };
+      wat: ['Зарядити авто о 02:00', 'De auto om 02:00 laden'], waarom: ['найдешевші години ночі: 02:00–05:00, від € 0,18 за кВт·год', 'de goedkoopste uren van de nacht: 02:00–05:00, vanaf € 0,18 per kWh'], wordt: ['Авто: 64 % → 80 %, зарядка 02:00–03:25', 'Auto: 64 % → 80 %, laden 02:00–03:25'] };
     return metTijdelijk(w, { verzoeken: w.verzoeken.concat([proef]) }, knipHet);
   }
   function vluchtbalkStaal(ctx, inLucht) {
@@ -1936,7 +1938,7 @@
           staal('ritueel', tegel(proef('voordeurslot', function (a) { a.st.vergrendeld = true; }))), staal('sim', tegel(proef('stekkermedia')) + o.stempel({ waarde: '46 ' + t('Вт', 'W'), leeftijd: 4000, bron: t('Симулятор', 'Simulator') })),
           staal('uit', tegel(proef('tv')), 'uit'), staal('rust', '<div class="hv-tegels hv-so-staal__tegels">' + o.tegel(proef('torsher', function (a) { a.st.aan = true; a.st.helderheid = 60; }), { vorm: '2x2', bediening: true }) + '</div>')], true],
         ['hv-kamerkaart', t('Кімната: назва, температура, знак світла, винятки й «−/+» цілі.', 'Kamer: naam, temperatuur, lichtteken, uitzonderingen en ‘−/+’ van het doel.'), [staal('rust', '<div class="hv-kamers hv-so-staal__kamers">' + o.kamerkaart(HV.staat.kamer('woonkamer')) + '</div>'), staal('hover', '<div class="hv-kamers hv-so-staal__kamers">' + o.kamerkaart(HV.staat.kamer('slaapkamer')) + '</div>', 'hover')], true],
-        ['hv-telemetrie', t('Авто, дрон, робот: заряд, запас ходу, три числа й силует.', 'Auto, drone, robot: lading, bereik, drie getallen en silhouet.'), [staal('rust', o.telemetrie({ id: 'zaal-ev', icoon: 'car', naam: HV.p(w.voertuigen[0].naam), stand: t('заряджається', 'laadt'), lading: w.voertuigen[0].lading, doel: 80, bereik: HV.maat(w.voertuigen[0].bereik, t('км', 'km')), getallen: [{ label: t('Потужність', 'Vermogen'), waarde: HV.maat(7.4, t('кВт', 'kW'), 1) }, { label: t('До цілі', 'Tot doel'), waarde: HV.duur(95) }, { label: t('Ціна', 'Prijs'), waarde: HV.euro(0.18) }], actie: 'x' })), staal('verouderd', o.telemetrie({ id: 'zaal-drn', icoon: 'drone', naam: t('Дрон «Лелека»', 'Drone ‘Ooievaar’'), stand: t('у базі', 'in het dock'), lading: 92, staat: 'verouderd', getallen: [{ label: t('Сигнал', 'Signaal'), waarde: '100 %' }] }))], true],
+        ['hv-telemetrie', t('Авто, дрон, робот: заряд, запас ходу, три числа й силует.', 'Auto, drone, robot: lading, bereik, drie getallen en silhouet.'), [staal('rust', o.telemetrie({ id: 'zaal-ev', icoon: 'car', naam: HV.p(w.voertuigen[0].naam), stand: t('заряджається', 'laadt'), lading: w.voertuigen[0].lading, doel: 80, bereik: HV.maat(w.voertuigen[0].bereik, t('км', 'km')), getallen: [{ label: t('Потужність', 'Vermogen'), waarde: HV.maat(7.4, t('кВт', 'kW'), 1) }, { label: t('До цілі', 'Tot doel'), waarde: HV.duur(95) }, { label: t('Ціна', 'Prijs'), waarde: HV.euro(0.18) }], actie: 'x' })), staal('verouderd', o.telemetrie({ id: 'zaal-drn', icoon: 'drone', naam: t('Дрон «Лелека»', 'Drone ‘Ooievaar’'), stand: t('у доку', 'in het dock'), lading: 92, staat: 'verouderd', getallen: [{ label: t('Сигнал', 'Signaal'), waarde: '100 %' }] }))], true],
         ['hv-scene', t('Кнопка сцени: дотик виконує; «діє» — коли сцена активна.', 'Scèneknop: een tik voert uit; ‘actief’ als de scène actief is.'), [staal('aan', '<div class="hv-scenes">' + o.scene(w.scenes[0], true) + '</div>'), staal('rust', '<div class="hv-scenes">' + o.scene(w.scenes[1], false) + '</div>'), staal('focus', '<div class="hv-scenes">' + o.scene(w.scenes[2], false) + '</div>', 'focus')]]
       ] },
       { id: 'tijd', naam: ['Час і дані', 'Tijd en gegevens'], lijst: [

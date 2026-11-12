@@ -278,7 +278,7 @@
 .hv-so-stroom__rij--belangrijk { box-shadow: inset 3px 0 0 var(--warn); }
 .hv-so-stroom__rij--alarm { box-shadow: inset 3px 0 0 var(--fout); background: var(--fout-zacht); }
 .hv-so-stroom__wat { min-inline-size: 0; overflow-wrap: anywhere; }
-.hv-so-stroom__delta { grid-column: 3; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-stroom__delta { grid-column: 3; justify-self: start; min-inline-size: 0; max-inline-size: 100%; }
 .hv-so-hand { display: inline-flex; align-items: center; gap: 4px; margin-inline-start: var(--ruimte-2); padding: 1px 8px; border-radius: 999px; background: var(--warn-zacht); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); vertical-align: middle; }
 .hv-so-wereldkop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hv-doel-kier); }
 .hv-so-wereld { display: grid; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); overflow: hidden; }

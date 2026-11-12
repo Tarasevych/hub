@@ -96,6 +96,9 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-stand__lees { display: flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); }
 .hv-stand__lees strong { color: var(--text); }
 .hv-stand__kaders .hv-chip { font-weight: 500; color: var(--muted); }
+/* запити, що чекають на цю дію цього виконавця: «Завжди» виконає їх одразу — видно до перемикання */
+.hv-stand__wacht { display: flex; align-items: flex-start; gap: var(--ruimte-2); font-size: var(--tekst-klein); line-height: 1.35; color: var(--text); }
+.hv-stand__wacht > .hv-ic { flex: none; margin-block-start: 1px; color: var(--info); }
 
 /* ── hv-schuif: доріжка 8 px, бігунок 24 px, «−/+» і число ── */
 .hv-schuif { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--ruimte-1); --niveau: var(--text); --toon: var(--text); --toon-zacht: var(--surface); }
@@ -324,6 +327,9 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-nu__tekst { font-weight: 600; line-height: 1.3; }
 .hv-nu__meta { display: flex; align-items: center; flex-wrap: wrap; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); margin-block-start: 2px; }
 .hv-nu__acties { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); justify-content: flex-end; }
+/* запит, якого ця роль не вирішує: замість кнопок — рядок із замком */
+.hv-nu__slot { display: inline-flex; align-items: center; gap: 6px; min-block-size: var(--hv-tik); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-nu__slot > .hv-ic { flex: none; }
 .hv-nu__meer { border-block-start: 1px solid var(--line); }
 
 /* ── hv-leeg, hv-skelet ── */
@@ -346,7 +352,11 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-bericht__tijd { grid-area: tijd; font-weight: 600; color: var(--muted); }
 .hv-bericht__wat { grid-area: wat; font-weight: 600; line-height: 1.3; }
 .hv-bericht.is-ongelezen .hv-bericht__wat::before { content: ""; display: inline-block; inline-size: 7px; block-size: 7px; margin-inline-end: 6px; border-radius: 50%; background: var(--accent); vertical-align: 1px; }
-.hv-bericht__delta { font-weight: 500; color: var(--muted); white-space: nowrap; }
+/* один чип зміни «було → стало»: старе приглушене, нове — основним кольором; довгі значення переносяться між частинами */
+.hv-bericht__delta { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 4px; max-inline-size: 100%; margin-inline-start: 2px; padding: 1px var(--ruimte-2); border: 1px solid var(--line); border-radius: var(--straal-s); background: var(--surface); font-size: var(--tekst-mini); font-weight: 600; font-variant-numeric: tabular-nums; vertical-align: 1px; }
+.hv-bericht__was { font-weight: 500; color: var(--muted); }
+.hv-bericht__werd { color: var(--text); }
+.hv-bericht__delta > .hv-ic { flex: none; color: var(--muted); }
 .hv-bericht__wie { grid-area: wie; display: flex; align-items: center; gap: var(--ruimte-2); }
 .hv-bericht__sim { color: var(--info); }
 .hv-bericht__pijl { grid-area: pijl; align-self: center; color: var(--muted); transition: transform var(--hv-duur-2); }

@@ -4,18 +4,18 @@
 
 Taak HUIS-001 · fase 0 · 10.11.2026 · status: ter goedkeuring bij de eigenaar
 
-Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ДИЗАЙН-МОВА-ЖИВИЙ-ДІМ-20261110.uk.md) (hierna: OT). Namen van tokens, componenten, toestanden en profielen komen uit OT; wat nieuw is, staat in §16.
+Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md) (hierna: OT). Namen van tokens, componenten, toestanden en profielen komen uit OT; wat nieuw is, staat in §16.
 
 ## 0. Wat er is veranderd
 
-- **‘Levend huis’.** De pagina's van de zone staan op een stille hemel (OT §3); op de hemel staan alleen de zin van de zone, de datum en de huistijd en de bloktitels in `--text`. Regels, stappen, scènes en vermeldingen staan op papier `--panel`; glas is er voor de kop, de subtabbladen, de onderbalk, de omhulling van de bladen en Opdracht. Het verbod van ‘Warme precisie’ op glas, hemel en kleurverlopen is opgeheven.
-- **Toestemmingen** (plan §3.8): elke actie van de zone heeft een `hv-stand` voor scènes, automatiseringen, de optimalisator en elke agent; standaard ‘Uit’; de eigenaar kan elke stand kiezen. Geschrapt zijn: ‘een stand schakelt het alarm nooit uit en ontgrendelt nooit’, ‘een bewoner alleen in strengere richting’, ‘„Altijd” alleen tegen de simulator’, harde verboden, ‘niemand’ voor het dempen van een rookmelding en de verplichte verzoektermijn van 10 min.
+- **‘Levend huis’.** De pagina's van de zone staan op een stille hemel (OT §3); op de hemel staan alleen de zin van de zone, de datum en de huistijd en de bloktitels in `--text`. Regels, stappen, scènes en vermeldingen staan op papier `--panel`; glas is er alleen voor de kop, de navigatie, de omhulling van de bladen en Opdracht. Het verbod van ‘Warme precisie’ op glas, hemel en kleurverlopen is opgeheven.
+- **Toestemmingen** (plan §3.8): elke actie van de zone heeft een `hv-stand` voor scènes, automatiseringen, de optimalisatie en elke agent; standaard ‘Uit’; de eigenaar kan elke stand kiezen. Geschrapt zijn: ‘een stand schakelt het alarm nooit uit en ontgrendelt nooit’, ‘een bewoner alleen in strengere richting’, ‘„Altijd” alleen tegen de simulator’, harde verboden, ‘niemand’ voor het dempen van een rookmelding en de verplichte verzoektermijn van 10 min.
 - **Namen uit OT:** `hv-risico` in plaats van `hv-gevaarniveau`, `hv-meldingen` in plaats van `hv-meldcentrum`, `hv-scene` en `hv-tegel--scene` in plaats van `hv-scenetegel`, `&deel=` in plaats van `&tab=`, ‘!’ — vijf regels, «до відома / ter informatie», de toestand «виконується / bezig».
 - **Fasen** volgen de schaal 0–12 van plan §4.
 
 ## 1. Opzet en grenzen
 
-De zone beantwoordt de vraag ‘wat doet het huis vanzelf, waarom en namens wie’. Het onderdeel ‘Automatisering’ (`automations`): automatiseringen, recepten, reeksen, begrenzingen, de agenda en «Сцени й режими / Scènes en standen». Het onderdeel ‘Logboek’ (`activity`): meldingen, geschiedenis, onderhoud en bezorgregels. Agenten en de wachtrij ‘Wacht op jou’ horen bij de zone ‘AI en agenten’; hier staan hun acties, hun wijzigingen in regels en hun verzoeken. De motor `backend/huis/motor.ts` handelt namens de persoon die de regel heeft aangezet en omzeilt RLS niet.
+De zone beantwoordt de vraag ‘wat doet het huis vanzelf, waarom en namens wie’. Het onderdeel ‘Automatisering’ (`automations`): automatiseringen, recepten, reeksen, begrenzingen, de agenda en «Сцени й режими / Scènes en standen». Het onderdeel ‘Logboek’ (`activity`): meldingen, geschiedenis, onderhoud en bezorgregels. Agenten en de wachtrij ‘Wacht op jou’ staan op het tabblad «Агенти й погодження / Agenten en goedkeuringen» `/automatiseringen/agenten` van dit onderdeel; de zone [‘Assistent en agenten’](08-ASSISTENT-EN-AGENTEN.nl.md) §5 beschrijft dat tabblad, en hier staan hun acties, hun wijzigingen in regels en hun verzoeken. De motor `backend/huis/motor.ts` handelt namens de persoon die de regel heeft aangezet en omzeilt RLS niet.
 
 ## 2. Weergave
 
@@ -23,11 +23,11 @@ De zone beantwoordt de vraag ‘wat doet het huis vanzelf, waarom en namens wie�
 - **Papier:** `hv-regel` (`--hv-rij`), de stapkaart, scènetegels, `hv-bericht`, `hv-verzoek`, `hv-gevaar`. Blokken zijn `hv-blok`; een leeg blok verdwijnt samen met zijn titel, alleen de pagina heeft `hv-leeg`.
 - **Glas:** de bladen van stap, stand en ‘Waarom?’, het meldingencentrum, Opdracht; de inhoud van een blad bestaat uit papieren blokken.
 - **Vorm:** een cirkel zet een regel aan of start een scène, een rechthoek leidt dieper; een gevaarlijke of kritieke actie in de huidige richting heeft een teken met ritueel (een vierkant met dubbele rand `--warn` / `--fout-vlak`); aanraken opent `hv-gevaar`.
-- **Makers** `hv-maker`: automatisering `Diamond`, agent — een vierkant met een afgesneden hoek, optimalisator `Gauge`, fysieke knop `Hand`, mens `User`, systeem `Cpu`. Een scène heeft geen teken: in `hv-bericht` staat «через сцену „Вечір“ / via scène ‘Avond’».
+- **Makers** `hv-maker`: automatisering `Diamond`, agent — een vierkant met een afgesneden hoek, optimalisatie `Gauge`, fysieke knop `Hand`, mens `User`, systeem `Cpu`. Een scène heeft geen teken: in `hv-bericht` staat «через сцену „Вечір“ / via scène ‘Avond’».
 
 ## 3. Adressen
 
-Blad — `?blad=<soort>:<id>&deel=`; dialoog — `?dialoog=`; moment — `?t=`; `van`, `tot`, `entiteit`, `filter`. Dienstwoorden (`bewerken`, `proef`, `verloop`, `versies`, `recepten`, `reeksen`, `agenda`, `feestdagen`, `begrenzingen`, `standen`, `dagdeel`, `nieuw`) zijn nooit identificatoren.
+Blad — `?blad=<soort>:<id>&deel=`; dialoog — `?dialoog=`; moment — `?t=`; `van`, `tot`, `entiteit`, `filter`. Dienstwoorden (`bewerken`, `proef`, `verloop`, `versies`, `recepten`, `reeksen`, `agenda`, `agenten`, `feestdagen`, `begrenzingen`, `standen`, `dagdeel`, `nieuw`) zijn nooit identificatoren.
 
 | Tabblad | Adres |
 |---|---|
@@ -44,7 +44,7 @@ Dialogen en bladen: `?dialoog=nieuw`, `conflict`, `starten`, `vertrek`, `corrige
 
 Blokken (lege verdwijnen): «Зараз виконується / Loopt nu» met «Зупинити / Stoppen» → «Несправні / Met problemen» → «Пропозиції / Voorstellen» (concepten van agenten en gewoonten met bewijs, hooguit drie) → alle regels.
 
-**Rij `hv-regel`:** een cirkel ‘aan / uit’ of een teken met ritueel (§10); een navertellende zin `hv-zin`; de laatste uitvoering met haar ouderdom; het teken van de maker; `hv-risico` van de hoogste stap met een woord; een toestandschip; een blijvende ‘!’ als een stap op ‘Altijd’ staat voor een gevaarlijke of kritieke actie.
+**Rij `hv-regel`:** een cirkel ‘aan / uit’ of een teken met ritueel (§10); een navertellende zin `hv-zin`; de laatste uitvoering met haar ouderdom; het auteursteken; `hv-risico` van de hoogste stap met een woord; een toestandschip; een blijvende ‘!’ als een stap op ‘Altijd’ staat voor een gevaarlijke of kritieke actie.
 
 **Toestand:** het pad uit OT «Чернетка / Concept · Спостереження / Meekijken · Увімкнено / Aan» (`simulatie` in de database wordt `meekijken`, fase 5). Een ingeschakelde regel heeft de chip `hv-chip--logica`: «працює / actief» · «призупинено до 07:00 · Олена / gepauzeerd tot 07:00 · Olena» · «працює неповно / werkt deels» met de reden · «на карантині / in quarantaine» (drie storingen op rij of een lus). Een uitgeschakelde cirkel: «вимкнено / uit».
 
@@ -78,10 +78,10 @@ TELEFOON · /automatiseringen
 - **Starten:** ‘niet vaker dan’, ‘stabiel gedurende’, «Після простою / Na uitval» (§6).
 - **«Проблеми / Problemen»:** leeg doel, verwijderd apparaat, wachten zonder grens, lus, een stap die verder gaat dan de rol van degene namens wie de regel werkt. Een stap met toestemming ‘Uit’ krijgt de waarschuwing «Крок буде пропущено, доки власник не змінить дозвіл / Stap wordt overgeslagen zolang de eigenaar de toestemming niet wijzigt». Een conflict opent `?dialoog=conflict`.
 
-**Stap en toestemming.** Op de stapkaart staan de chip met de stand van de uitvoerder ‘Automatiseringen’ voor deze actie en een ‘!’ bij een gevaarlijke of kritieke actie. De eigenaar klapt op een persoonlijk apparaat in het stapblad `hv-stand` open; de wijziging geldt voor alle automatiseringen, tenzij hij het kader «лише ці автоматизації / alleen deze automatiseringen» instelt (§16). Anderen zien een tekst met een slot: «Змінює лише власник / Alleen de eigenaar kan dit wijzigen».
+**Stap en toestemming.** Op de stapkaart staan de chip met de stand van de uitvoerder ‘Automatiseringen’ voor deze actie en een ‘!’ bij een gevaarlijke of kritieke actie. De eigenaar klapt op een persoonlijk toestel in het stapblad `hv-stand` open; de wijziging geldt voor alle automatiseringen, tenzij hij het kader «лише ці автоматизації / alleen deze automatiseringen» instelt (§16). Anderen zien een tekst met een slot: «Змінює лише власник / Alleen de eigenaar kan dit wijzigen».
 - **Uit:** de stap wordt overgeslagen, de uitvoering loopt door; chip ‘werkt deels’; vermelding ‘overgeslagen: toestemming „Uit”’.
 - **Vragen:** `hv-verzoek` aan degene namens wie de regel werkt; standaard wacht het verzoek zonder termijn — ‘Wacht tot’ staat er alleen als de stap zelf of een kader van de eigenaar een grens heeft. Doorsturen (‘na 2 min — naar de volwassenen thuis’) stelt de eigenaar in onder `/activiteit/regels`. Tijdens de stille uren zonder geluid. Goedkeuren doet een persoon wiens rol de actie toestaat, met het ritueel van het niveau van de actie.
-- **Altijd:** de stap wordt uitgevoerd; teken van de maker, `hv-toost`, vermelding; bij een gevaarlijke en kritieke actie een blijvende ‘!’ op de stap, in de rij en ‘! N’ in de kop.
+- **Altijd:** de stap wordt uitgevoerd; auteursteken, `hv-toost`, vermelding; bij een gevaarlijke en kritieke actie een blijvende ‘!’ op de stap, in de rij en ‘! N’ in de kop.
 
 **Rechten en versies.**
 1. Poorten van een stap: bron (‘alleen-lezen’) → rol van de persoon namens wie de regel werkt (‘geen toegang’) → pauze → toestemmingsstand → kaders van de eigenaar → begrenzingen (§6). Een weigering noemt de poort; het risiconiveau houdt de uitvoerder niet tegen.
@@ -115,7 +115,7 @@ DAN ▾ 1 Licht 20 % · Altijd │ [Problemen 1] [Proef] [+ Stap]
 - **Meekijken:** echte gebeurtenissen, acties alleen in het verloop: ‘zou 14 keer zijn afgegaan in 7 dagen’.
 - **Verloop** `…/verloop/<run>`: de editor alleen ter inzage; bij een stap ‘wacht · bezig · uitgevoerd · overgeslagen · niet uitgevoerd · gestopt door begrenzing’ en de waarden op het moment van de uitvoering; wordt 30 dagen bewaard.
 - **«Чому? / Waarom?»** `?blad=waarom:<vermelding>` — `hv-waarom` ‘Wat het startte → Voorwaarde → Actie’.
-- **Versies** `…/versies`: een tijdlijn met het teken van de maker, vergelijking per stap; «Відновити / Herstellen» maakt een nieuwe versie met controle van de rol.
+- **Versies** `…/versies`: een tijdlijn met het auteursteken, vergelijking per stap; «Відновити / Herstellen» maakt een nieuwe versie met controle van de rol.
 - **Begrenzingen** `hv-begrenzing` (‘boiler ≤ 65 °C’) stelt de eigenaar in; het systeem voegt er zelf geen toe. De controle gebeurt bij de uitgang naar de adapter, met een teller van wat is tegengehouden. Alleen de eigenaar wijzigt ze, net als de toestemmingen. Hier staan ook «Аварійні плани / Noodplannen» en «Навчальна тривога / Oefenalarm».
 - **Na uitval** — een keuze op de regel: «пропустити / overslaan» (standaard voor gevoelige en hogere stappen), «виконати із запізненням до N хв / tot N min te laat uitvoeren» (standaard voor gewone), «запитати / vragen»; de eigenaar kan alle drie kiezen voor elke regel.
 - **Een lus** zet de motor in quarantaine. «Де вживається / Waar gebruikt» is een tabblad van het apparaatblad `?blad=apparaat:<id>&deel=gebruik`.
@@ -131,12 +131,12 @@ DAN ▾ 1 Licht 20 % · Altijd │ [Problemen 1] [Proef] [+ Stap]
 - **«Зберегти поточне / Huidige stand opslaan»** `?dialoog=nieuw`: vinkjes voor apparaten en eigenschappen; het verouderde en het veronderstelde zijn gearceerd — ‘toestand onbekend — wordt niet opgenomen’.
 - **«Перегляд наживо / Live proberen»** `/scenes/<id>`: ‘nu → straks’, de bedoeling op de plattegrond als streepje `--hv-wens`; zonder opslaan keert de vorige toestand terug. **Dagdeelscène** `/scenes/dagdeel`: nogmaals drukken bladert door de dagdelen.
 - **Na het starten:** één `hv-toost` «Сцена „Вечір“: 10 із 12 підтверджено / Scène ‘Avond’: 10 van 12 bevestigd»; stappen met beweging tonen «виконується / bezig» tot de termijn van hun klasse (gordijnen 60 s, poort 90 s, slot 15 s); ‘Herhalen voor de rest’, ‘Ongedaan maken’ 10 s.
-- **Wie start.** Een mens: elke stap geldt als diens eigen actie, met diens rol en het ritueel van de hoogste stap; wat een mens kiest, wordt precies zo uitgevoerd. Een automatisering, de optimalisator, een agent, de agenda of een fysieke knop: de starter heeft toestemming nodig voor ‘Scène starten’, en elke stap volgt de toestemming in de kolom ‘Scènes’; bij ‘Uit’ wordt de stap overgeslagen: «5 із 7 кроків; 2 вимкнено дозволом / 5 van 7 stappen; 2 uit door toestemming».
+- **Wie start.** Een mens: elke stap geldt als diens eigen actie, met diens rol en het ritueel van de hoogste stap; wat een mens kiest, wordt precies zo uitgevoerd. Een automatisering, de optimalisatie, een agent, de agenda of een fysieke knop: de starter heeft toestemming nodig voor ‘Scène starten’, en elke stap volgt de toestemming in de kolom ‘Scènes’; bij ‘Uit’ wordt de stap overgeslagen: «5 із 7 кроків; 2 вимкнено дозволом / 5 van 7 stappen; 2 uit door toestemming».
 
 ## 9. Huisstanden `/scenes/standen`
 
 «Вдома / Thuis · Не вдома / Afwezig · Ніч / Nacht · Відпустка / Vakantie · Гості / Gasten»; de chip `hv-huisstand` opent `?blad=huisstand` met `hv-gevolg` voor elke stand.
-- **Een stand is een set stappen**, net als een scène: licht, klimaat, media en, als de eigenaar dat instelt, beveiliging (`hv-alarmstand`: «знято / uit · периметр / schil · нічна / nachtstand · повна / volledig») en sloten. Elke stap volgt zijn toestemming; bij ‘Uit’ stelt de stand de stap alleen voor, op een aparte regel.
+- **Een stand is een set stappen**, net als een scène: licht, klimaat, media en, als de eigenaar dat instelt, beveiliging (`hv-alarmstand`: «знято / uit · периметр / schil · нічна / nachtstand · повна / volledig») en sloten. Schakelt een mens om, dan zijn alle stappen diens eigen acties met het ritueel van de hoogste stap; toestemming van uitvoerders is niet nodig. Schakelt een uitvoerder om, dan volgt elke stap de toestemming in de kolom «Сцени / Scènes»: ‘Uit’ — de stap wordt overgeslagen met een vermelding in het Logboek, zonder vraag; ‘Vragen’ — een verzoek `hv-verzoek`; ‘Altijd’ — uitgevoerd ([‘Thuis en kamers’](02-THUIS-EN-KAMERS.nl.md) §2.3).
 - **Pagina van een stand:** `hv-matrix` ‘automatisering × stand’; «Переходи / Overgangen» in zinnen (‘iedereen weg → na 10 min „Afwezig”’ is een regel, standaard ‘Uit’); «Зафіксувати до… / Vastzetten tot…». «Їдемо у відпустку / We gaan op vakantie» (`?dialoog=vertrek`): data, beveiliging, aanwezigheidsimulatie, zuinig klimaat.
 - **`hv-regie`** «Керує зараз: вручну до 22:00 / Stuurt nu: handmatig tot 22:00», «Повернути автоматику / Automatiek hervatten». Rangorde: veiligheid > handmatig > stand > comfort > besparing.
 
@@ -145,7 +145,7 @@ TELEFOON · ?blad=huisstand        [glas, inhoud op papier]
 (●) Thuis ( ) Afwezig ( ) Nacht ( ) Vakantie… ( ) Gasten…
 Wat er verandert in ‘Afwezig’: 9 lampen en 3 contacten uit;
 4 regels gaan op pauze
-Schild · Beveiliging: uit → toestemming ‘Vragen’: huis vraagt i
+Schild · Alarm: de stand schakelt ‘schil’ in              i
 [Annuleren]                            [Naar ‘Afwezig’]
 ```
 
@@ -160,11 +160,11 @@ Het niveau bepaalt alleen het teken `hv-risico` en het ritueel van de mens (OT �
 | gevaarlijk `Triangle` | ‘Alles in huis uit’; een regel met het label ‘veiligheid’ uitzetten of pauzeren | `hv-gevaar`, rail |
 | kritiek `Octagon` | scène of stand met de stap ‘ontgrendelen’, ‘alarm uitschakelen’, ‘gas openen’ | rail en bevestiging van de aanmelding |
 
-Scène, stand, reeks en het aanzetten van een regel krijgen het niveau van de hoogste stap. De maquette toont de bevestiging van de aanmelding volgens het doel van OT §10: elke keer opnieuw; hoe de huidige code werkt — §18, punt 1.
+Scène, stand, reeks en het aanzetten van een regel krijgen het niveau van de hoogste stap. De bevestiging van de aanmelding: het doel is een eenmalige bevestiging voor elke kritieke actie (OT §10); tot het besluit van de eigenaar (§18, punt 1) houdt de maquette die, net als de huidige code van het platform, 5 min per sessie vast.
 
-**Toestemmingen.** Elke actie — voor scènes, automatiseringen, de optimalisator en elke agent — heeft «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», standaard ‘Uit’; alleen de eigenaar wijzigt dit, op een persoonlijk apparaat; termijn, kamers, uren en budget zijn optionele kaders van de eigenaar. Een agent kan rechten verruimen noch beperken — niet die van zichzelf en niet die van anderen; begrenzingen en de pauze van zelfstandige acties wijzigt ook alleen een mens. Elke wijziging van een toestemming en elke actie op grond daarvan wordt een vermelding in het Logboek en in `hv-meldingen`. Doorsnede van het register: `/instellingen/toestemmingen?filter=automatisering`, met de groepen ‘Scènes’, ‘Standen’, ‘Regels’, ‘Reeksen’ en ‘Logboek’ en een `hv-stand` per groep.
+**Toestemmingen.** Elke actie — voor scènes, automatiseringen, de optimalisatie en elke agent — heeft «Вимкнено / Uit · Питати / Vragen · Завжди / Altijd», standaard ‘Uit’; alleen de eigenaar wijzigt dit, op een persoonlijk toestel; termijn, kamers, uren en budget zijn optionele kaders van de eigenaar. Een agent kan rechten verruimen noch beperken — niet die van zichzelf en niet die van anderen; begrenzingen en de pauze van zelfstandige acties wijzigt ook alleen een mens. Elke wijziging van een toestemming en elke actie op grond daarvan wordt een vermelding in het Logboek en in `hv-meldingen`. Uitsnede van het register: `/instellingen/toestemmingen?filter=automatisering`, met de groepen ‘Scènes’, ‘Standen’, ‘Regels’, ‘Reeksen’ en ‘Logboek’ en een `hv-stand` per groep.
 
-**Hulpmiddelen voor agenten** (groep `huis`, fase 5), elk onder een eigen `hv-stand`: `tonen_automatiseringen`, `maken_automatisering`, `wijzigen_automatisering`, `aanzetten_automatisering`, `uitzetten_automatisering`, `pauzeren_automatisering`, `proefdraaien_automatisering`, `verwijderen_automatisering`, `tonen_verloop`; `tonen_scenes`, `starten_scene`, `opslaan_scene`, `wijzigen_scene`; `tonen_huisstand`, `wisselen_huisstand`, `vastzetten_huisstand`; `starten_reeks`, `wijzigen_reeks`; `tonen_agenda`, `overslaan_run`; `tonen_logboek`, `tonen_waarom`, `tonen_geschiedenis`, `corrigeren_waarde`, `exporteren_geschiedenis`; `tonen_onderhoud`, `afvinken_onderhoud`; `sturen_melding`; `tonen_begrenzingen`. Hulpmiddelen om toestemmingen, begrenzingen of de pauze te wijzigen zijn er niet.
+**Hulpmiddelen voor agenten** (groep `huis`, fase 5; het enige register van de namen staat in [‘Assistent en agenten’](08-ASSISTENT-EN-AGENTEN.nl.md) §7), elk onder een eigen `hv-stand`: `tonen_automatiseringen`, `maken_regel_concept`, `wijzigen_automatisering`, `aanzetten_regel`, `uitzetten_regel`, `pauzeren_automatisering`, `proefdraaien_regel`, `verwijderen_automatisering`, `tonen_verloop`; `tonen_scenes`, `starten_scene`, `maken_scene_concept`, `wijzigen_scene`; `tonen_huisstand`, `wijzigen_huisstand`, `vastzetten_huisstand`; `starten_reeks`, `wijzigen_reeks`; `tonen_agenda`, `overslaan_run`; `lezen_logboek`, `uitleggen_waarom`, `lezen_geschiedenis`, `corrigeren_waarde`, `exporteren_geschiedenis`; `tonen_onderhoud`, `afvinken_onderhoud`; `sturen_melding`; `tonen_begrenzingen`. Hulpmiddelen om toestemmingen, begrenzingen of de pauze te wijzigen zijn er niet.
 
 ## 11. Agenda `/automatiseringen/agenda`
 
@@ -172,17 +172,18 @@ Scène, stand, reeks en het aanzetten van een regel krijgen het niveau van de ho
 
 ## 12. Logboek `/activiteit`
 
-Elke toestandswijziging gaat door één schrijfmodule (maker, reden, soort `huis.*`, belang); de bouw controleert dat elke route, elke actie van de motor en elke periodieke taak die module aanroept. Vermeldingen worden alleen toegevoegd en niemand kan ze uitzetten; het Logboek wordt 400 dagen bewaard, de audit 2 jaar (plan §4). De soort legt het belang niet vast — dat bepaalt de gebeurtenis; de ene tabel ‘gebeurtenis → soort → belang’ voor alle zones staat in [‘Architectuur’](09-ARCHITECTUUR.nl.md) §10, hieronder staat de doorsnede voor deze zone.
+Elke toestandswijziging gaat door één schrijfmodule (maker, reden, soort `huis.*`, belang); de bouw controleert dat elke route, elke actie van de motor en elke periodieke taak die module aanroept. Vermeldingen worden alleen toegevoegd en niemand kan ze uitzetten; het Logboek wordt 400 dagen bewaard, de audit 2 jaar (plan §4). De soort legt het belang niet vast — dat bepaalt de gebeurtenis; de gezamenlijke tabel ‘gebeurtenis → soort → belang’ voor alle zones staat in [‘Architectuur’](09-ARCHITECTUUR.nl.md) §10, hieronder staat de uitsnede voor deze zone.
 
 | Gebeurtenis | Melding in beeld | Belang | Soort |
 |---|---|---|---|
-| scène, groep, stand door een mens | ja | ter informatie | volgens apparaat |
-| uitvoering van een regel, van de optimalisator | één per uitvoering | ter informatie | `.automatisering`, `.energie` |
+| scène, stand, groep door een mens | ja | ter informatie | scène — `.automatisering`; huisstand — `.systeem`; groep — volgens de klasse van het apparaat |
+| uitvoering van een regel, van de optimalisatie | één per uitvoering | ter informatie | `.automatisering`, `.energie` |
 | actie van een agent | ja | ter informatie; gevaarlijk — belangrijk | `.agent` |
 | verzoek ‘Vragen’ | blijft staan | belangrijk | `.automatisering`, `.agent` |
-| wijziging van een toestemming of kader | ja | ter informatie; ‘Altijd’ voor een gevaarlijke of kritieke actie — belangrijk | `.systeem` |
+| wijziging van een toestemming; wijziging van de kaders van scènes, automatiseringen, de optimalisatie | ja | ter informatie; ‘Altijd’ voor een gevaarlijke of kritieke actie — belangrijk | `.systeem` |
 | wijziging van een begrenzing; pauze van zelfstandige acties | ja | belangrijk | `.systeem` |
-| overgeslagen, tegengehouden, lus, quarantaine | samengevat | belangrijk | `.automatisering` |
+| mislukte uitvoering, tegengehouden door een begrenzing, lus, quarantaine | samengevat | belangrijk | `.automatisering` |
+| stap overgeslagen: toestemming ‘Uit’, buiten de kaders | samengevat | ter informatie | `.automatisering`, `.agent` |
 | rook, gas, water, inbraak | `hv-nood` | alarm | `.alarm` |
 
 De pagina: «Тривають / Lopend» → «Чекають рішення / Wachten op besluit» → dagen; gelijksoortige vermeldingen binnen 60 s worden samengevouwen. Filters: maker, belang, soort, «для мене / voor mij». `hv-bericht`: ‘Wie · Wat · Waarom · Was → werd · Toegestaan via’.
@@ -199,7 +200,7 @@ VANDAAG   ◆ 22:30 Scène ‘Nacht’ · 10 van 12 bevestigd       ▾
 
 ## 13. Bezorging, geschiedenis, onderhoud
 
-- **Eén bel.** De bezorging regelt het platform (`shared/meldingen-v2`) via `emitCanonicalNotice`; de module heeft geen eigen bel en geen eigen ‘gelezen’; op het knooppunt huis opent de bel `?blad=meldingen` met ‘voor mij’. Ter informatie → `stil`, belangrijk → `normaal`, alarm → de beveiligde `prioriteit`. `/activiteit/regels` is een doorsnede van de platformregels: `hv-escalatie` (‘0 min — wie thuis is → 2 min — volwassenen → 5 min — sleutelhouder’), stille uren, «Надіслати перевірку / Test versturen»; de alarmkanalen staan in ‘Beveiliging’ §7. ‘Simulatie naar externe kanalen’ staat standaard uit.
+- **Eén bel.** De bezorging regelt het platform (`shared/meldingen-v2`) via `emitCanonicalNotice`; de module heeft geen eigen bel en geen eigen ‘gelezen’; op het knooppunt huis opent de bel `?blad=meldingen` met ‘voor mij’. Ter informatie → `stil`, belangrijk → `normaal`, alarm → de beveiligde `prioriteit`. `/activiteit/regels` is een uitsnede van de platformregels: `hv-escalatie` (‘0 min — wie thuis is → 2 min — volwassenen → 5 min — sleutelhouder’), stille uren, «Надіслати перевірку / Test versturen»; de alarmkanalen staan in ‘Beveiliging’ §7. ‘Simulatie naar externe kanalen’ staat standaard uit.
 - **Geschiedenis** `/activiteit/geschiedenis`: ‘Tijdlijn | Grafieken | Tabel’; `?t=` is «Перегляд минулого / Terugblik»; `hv-grafiek` met hooguit vier reeksen, het geschatte als stippellijn 4/4 met ‘≈’, een gat gearceerd; «Виправити значення / Waarde corrigeren» met een reden; CSV; de audittabel `?filter=agent`.
 - **Onderhoud** `/activiteit/onderhoud`: ‘Nu’ (batterijen onder 15 %, onbereikbare apparaten, quarantaine) en ‘Binnenkort’ (filters, ketel, rookmelders) — `hv-onderhoud` met «Зроблено / Gedaan» en «Відкласти / Uitstellen».
 
@@ -219,7 +220,7 @@ Sjablonen staan in `tekst.ts`; berekende toelichtingen komen uit `/api/huis/gevo
 ## 16. Componenten
 
 **Uit OT:** `hv-hemel`, `hv-held`, `hv-blok`, `hv-chip`, `hv-leeg`, `hv-tegel`, `hv-schakel` en het teken met ritueel, `hv-scene`, `hv-huisstand`, `hv-alarmstand`, `hv-kleur`, `hv-dagstrook`, `hv-grafiek`, `hv-tabel`, `hv-plan`, `hv-versheid`, `hv-sim`, `hv-maker`, `hv-waarom`, `hv-laag`, `hv-risico`, `hv-stand`, `hv-gevaar`, `hv-rail`, `hv-gevolg`, `hv-nood`, `hv-pincode`, `hv-toost`, `hv-bericht`, `hv-meldingen`, `hv-verzoek`, `hv-voorstel`, `hv-regel`.
-**Nieuw:** `hv-zin`, `hv-traject`, `hv-namens`, `hv-stap`, `hv-doel`, `hv-kiezer`, `hv-formulier`, `hv-wasword`, `hv-verloop`, `hv-versies`, `hv-regie`, `hv-begrenzing` (`hv-grens` van ‘Energie’ is daar een doorsnede van), `hv-tegel--scene`, `hv-chip--logica`, `hv-matrix`, `hv-agenda`, `hv-escalatie`, `hv-tijdlijn`, `hv-onderhoud` (gedeeld met ‘Garage’); de schrijfmodule op de server.
+**Nieuw:** `hv-zin`, `hv-traject`, `hv-namens`, `hv-stap`, `hv-doel`, `hv-kiezer`, `hv-formulier`, `hv-wasword`, `hv-verloop`, `hv-versies`, `hv-regie`, `hv-begrenzing` (`hv-grens` van ‘Energie’ is daar een uitsnede van), `hv-tegel--scene`, `hv-chip--logica`, `hv-matrix`, `hv-agenda`, `hv-escalatie`, `hv-tijdlijn`, `hv-onderhoud` (gedeeld met ‘Garage’); de schrijfmodule op de server.
 **Voor OT:** het kader «лише ці автоматизації / сцени — alleen deze automatiseringen / scènes»; de toestanden «пропущено / overgeslagen» en «спинено обмеженням / gestopt door begrenzing». **Voor de schil:** de bladsoorten `stap` en `waarom`. De tabbladnaam «Обслуговування / Onderhoud» gebruikt de schil al (§17).
 
 ## 17. Gedekt en uitgesteld
@@ -232,7 +233,7 @@ Sjablonen staan in `tekst.ts`; berekende toelichtingen komen uit `/api/huis/gevo
 | 3 | in Opdracht: scènes, standen, ‘Regel pauzeren’, ‘Wat werkt vanzelf?’ |
 | 4 | vervoer en geozones als ‘Wanneer’ |
 | 5 | volledige editor, uitgebreide stappen, reeksen, versies, verloop, verzoeken, eigen standen, wijzigingen en hulpmiddelen van agenten |
-| 6 | `wand`, `tv`, `deur`, `inkt`, `horloge`; meldingsknoppen op het apparaat |
+| 6 | `wand`, `tv`, `deur`, `inkt`, `horloge`; meldingsknoppen op het toestel |
 | 7 | Geschiedenis, grafieken, ‘Waarde corrigeren’, CSV, gewoonten, prijs als ‘Wanneer’ |
 | 8 | wie de acties van anderen ziet, rollen voor de pauze, escalatie via mensen |
 | 9 | cameragebeurtenissen als ‘Wanneer’, noodplannen, oefenalarm |
@@ -244,7 +245,7 @@ Sjablonen staan in `tekst.ts`; berekende toelichtingen komen uit `/api/huis/gevo
 
 ## 18. Besluiten voor de eigenaar
 
-1. **Bevestiging van de aanmelding** (plan §7): de huidige code (`STAP_OP_MS`) houdt die 5 min per sessie vast — zo laten of eenmalig maken voor elke kritieke actie. De maquette toont al het doel van OT: elke keer opnieuw.
+1. **Bevestiging van de aanmelding** (plan §7): de huidige code (`STAP_OP_MS`) houdt die 5 min per sessie vast — zo laten of eenmalig maken voor elke kritieke actie (het doel van OT §10). Tot het besluit houdt de maquette dezelfde 5 min aan en schrijft dat in het dialoogvenster.
 2. **Wijzigingen in het platform:** geluid door ‘Niet storen’ heen voor `huis.alarm` en een schema voor stille uren in `shared/meldingen-v2`.
 3. **Externe ingangen:** beveiligde webhooks en het importeren van recepten via een adres vragen om een extern oppervlak via een tunnel.
 4. **Privacy** (fase 8, AVG): welke bewoners de acties van anderen zien; de termijnen van 400 dagen en 2 jaar.

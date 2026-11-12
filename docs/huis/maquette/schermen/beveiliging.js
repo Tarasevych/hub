@@ -791,7 +791,7 @@
     if (b.bekijkt !== cam) {
       b.bekijkt = cam;
       var m = HV.mens();
-      if (!camDicht(a)) b.gekeken.unshift({ wie: m.naam, soort: 'mens', cam: cam, tijd: w.tijd, duur: 0, via: ['цей пристрій', 'dit apparaat'], reden: ['відкрито сторінку камери', 'camerapagina geopend'] });
+      if (!camDicht(a)) b.gekeken.unshift({ wie: m.naam, soort: 'mens', cam: cam, tijd: w.tijd, duur: 0, via: ['цей пристрій', 'dit toestel'], reden: ['відкрито сторінку камери', 'camerapagina geopend'] });
     }
     var moment = HV.ui.lees('bev-moment', null), g = moment ? b.gebeurtenissen.filter(function (x) { return x.id === moment && x.cam === cam; })[0] : null;
     var bewerk = HV.ui.lees('bev-maskbewerk', false) === cam, dicht = camDicht(a);
@@ -1215,7 +1215,7 @@
       var lijst = leden(z).map(function (a) {
         var m = melderWoord(a);
         return '<div class="hv-bev-citem" data-k="zl-' + a.id + '"><span class="hv-bev-citem__teken">' + HV.icoon(melderIcoon(a), { maat: 's' }) + '</span><button type="button" class="hv-bev-citem__tekst hv-bev-citem__lijf" data-actie="blad" data-blad="apparaat:' + h(a.id) + '"><span>' + h(naamKamer(a)) + '</span><span>' + h(m.woord + ' · ' + (z.id === 'altijd' ? t('цілодобово', 'altijd') : overbrugd(a) ? t('обійдено', 'overbrugd') : bewaakt(a, stand) ? t('стежить', 'bewaakt') : t('не стежить', 'niet bewaakt'))) + '</span></button>' +
-          (z.id !== 'altijd' && a.mog.indexOf('modus') >= 0 ? o.knop({ tekst: overbrugd(a) ? t('Повернути', 'Terugzetten') : t('Обійти', 'Overbruggen'), klein: true, soort: 'stil', actie: 'bev-overbrug', gegevens: { doel: a.id, waarde: overbrugd(a) ? 'zone-actief' : 'zone-overbrugd' } }) : '') + '</div>';
+          (z.id !== 'altijd' && a.mog.indexOf('modus') >= 0 ? o.knop({ tekst: overbrugd(a) ? t('Під охорону', 'Weer bewaken') : t('Обійти', 'Overbruggen'), klein: true, soort: 'stil', actie: 'bev-overbrug', gegevens: { doel: a.id, waarde: overbrugd(a) ? 'zone-actief' : 'zone-overbrugd' } }) : '') + '</div>';
       }).join('');
       return o.kaart({ titel: t('Налаштування зони', 'Instellingen van de zone'), inhoud: (mag ? '' : '<p class="hv-stand__lees">' + HV.icoon('lock', { maat: 's' }) + '<span>' + h(t('немає доступу — змінюють власник і мешканець', 'geen toegang — eigenaar en bewoner wijzigen')) + '</span></p>') + instel }) +
         o.kaart({ titel: t('Датчики зони', 'Melders van de zone'), inhoud: '<div class="hv-bev-citems">' + lijst + '</div>' });
@@ -1405,7 +1405,7 @@
       if (!r || !r.ok) return;
       var w = w0(), b = zorg(w), m = HV.mens();
       b.meekijkenTot = w.tijd + 30 * MIN;
-      b.gekeken.unshift({ wie: m.naam, soort: 'mens', cam: a.id, tijd: w.tijd, duur: 30, via: ['цей пристрій', 'dit apparaat'], reden: ['тимчасовий перегляд', 'tijdelijk meekijken'] });
+      b.gekeken.unshift({ wie: m.naam, soort: 'mens', cam: a.id, tijd: w.tijd, duur: 30, via: ['цей пристрій', 'dit toestel'], reden: ['тимчасовий перегляд', 'tijdelijk meekijken'] });
       HV.meld({ maker: m, icoon: 'eye', titel: t('Вітальню бачать до ', 'De woonkamer wordt bekeken tot ') + HV.tijd(b.meekijkenTot), tekst: t('Удома на панелі й картці кімнати — позначка «вас зараз бачать».', 'Thuis staat op het paneel en de kamerkaart: ‘je wordt nu bekeken’.') });
       HV.staat.wijzig();
     });
@@ -1597,7 +1597,9 @@
       pas: function (w) {
         thuisAlleen(w, ['olena']);
         if (HV.gevaar.zetStandStil) HV.gevaar.zetStandStil('claude', 'ingang.openen', 'vragen');
-        w.verzoeken.push({ id: 'vpoort', uitvoerder: 'claude', sleutel: 'ingang.openen', doel: 'poort', mogelijkheid: 'open', waarde: true, sinds: w.tijd, tot: w.tijd + 10 * MIN, stand: 'wacht', wat: ['Відчинити ворота: Вхідні ворота', 'Poort openen: Toegangspoort'], waarom: ['кур’єр із великим пакунком біля воріт (подія камери)', 'bezorger met een groot pakket bij de poort (cameragebeurtenis)'] });
+        // без власного строку (tot): строк запиту ядро тепер виконує — «минув» за 10 хв часу дому закрив би сценарій
+        // за 10 с перегляду на швидкості ×60
+        w.verzoeken.push({ id: 'vpoort', uitvoerder: 'claude', sleutel: 'ingang.openen', doel: 'poort', mogelijkheid: 'open', waarde: true, sinds: w.tijd, stand: 'wacht', wat: ['Відчинити ворота: Вхідні ворота', 'Poort openen: Toegangspoort'], waarom: ['кур’єр із великим пакунком біля воріт (подія камери)', 'bezorger met een groot pakket bij de poort (cameragebeurtenis)'] });
         w.nu.push({ id: 'verzoek-vpoort', soort: 'verzoek', maker: 'agent', icoon: 'fence', verzoek: 'vpoort', doel: 'poort', sinds: w.tijd, tekst: ['Агент Claude просить відчинити ворота для кур’єра', 'Agent Claude vraagt de poort te openen voor de bezorger'],
           acties: [{ naam: 'verzoek-ja', hoofd: true, label: ['Схвалити раз', 'Eén keer goedkeuren'], gegevens: { verzoek: 'vpoort' } }, { naam: 'verzoek-nee', label: ['Відхилити', 'Afwijzen'], gegevens: { verzoek: 'vpoort' } }] });
         zorg(w).gebeurtenissen.unshift({ id: 'g-poort', cam: 'cameravoor', soort: 'pakket', tekst: ['Кур’єр із великим пакунком біля воріт', 'Bezorger met een groot pakket bij de poort'], tijd: w.tijd - 2 * MIN });

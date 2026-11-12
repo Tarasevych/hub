@@ -20,7 +20,7 @@
 
   function keuze(naam, waarde, opties, label) {
     return '<div class="mq-veld"><span class="mq-veld__label" id="mq-l-' + naam + '">' + h(label) + '</span><div class="mq-keuze mq-keuze--' + opties.length + '" role="group" aria-labelledby="mq-l-' + naam + '">' + opties.map(function (x) {
-      return '<button type="button" class="mq-keuze__knop' + (String(x[0]) === String(waarde) ? ' is-gekozen' : '') + '" aria-pressed="' + (String(x[0]) === String(waarde) ? 'true' : 'false') + '" data-pult="' + naam + '" data-waarde="' + h(x[0]) + '">' + h(x[1]) + '</button>';
+      return '<button type="button" class="mq-keuze__knop' + (String(x[0]) === String(waarde) ? ' is-gekozen' : '') + '" aria-pressed="' + (String(x[0]) === String(waarde) ? 'true' : 'false') + '" data-pult="' + naam + '" data-waarde="' + h(x[0]) + '"' + (x[2] ? ' lang="' + h(x[2]) + '"' : '') + '>' + h(x[1]) + '</button>';
     }).join('') + '</div></div>';
   }
   function lijst(naam, waarde, opties, label) {
@@ -36,7 +36,8 @@
     if (!d) {
       velden = '<div class="mq-pult__lijf">' +
         keuze('thema', pk === 'inkt' ? 'inkt' : HV.opslag.lees('thema', 'systeem'), [['systeem', t('Як у системі', 'Systeem')], ['licht', t('Світла', 'Licht')], ['donker', t('Темна', 'Donker')], ['inkt', t('Чорнило', 'Inkt')]], t('Тема', 'Thema')) +
-        keuze('taal', HV.taal(), [['uk', 'Українська'], ['nl', 'Nederlands']], t('Мова', 'Taal')) +
+        // назва мови — завжди самою цією мовою, з позначкою lang (зчитувач екрана; перевірка «кирилиця в nl-режимі» їх пропускає)
+        keuze('taal', HV.taal(), [['uk', 'Українська', 'uk'], ['nl', 'Nederlands', 'nl']], t('Мова', 'Taal')) +
         lijst('profiel', pk, VOLGORDE.map(function (id) { var b = id === 'venster' ? null : HV.profielBeelden(id)[0]; return [id, HV.p(PROFIEL_NAAM[id]) + (b ? ' · ' + b[0] + '×' + b[1] : '')]; }), t('Екран', 'Scherm')) +
         (beelden.length > 1 ? keuze('beeld', HV.opslag.lees('beeld-' + pk, 0), beelden.map(function (b, i) { return [i, b[0] + '×' + b[1]]; }), t('Розмір', 'Formaat')) : '') +
         keuze('dichtheid', HV.opslag.lees('dichtheid', 'auto'), [['auto', t('Від екрана', 'Van scherm')], ['compact', t('Компактна', 'Compact')], ['normaal', t('Звичайна', 'Normaal')], ['ruim', t('Простора', 'Ruim')]], t('Щільність', 'Dichtheid')) +
@@ -135,6 +136,11 @@
       if (a.textContent !== pad) a.textContent = pad;
       var label = t('адреса на справжньому сайті', 'adres op de echte site');
       if (l.textContent !== label) l.textContent = label;
+      // підписи каркаса пульта ставляться один раз у bouw(); з мовою їх оновлюємо тут, разом з усім іншим
+      var pultEl = document.getElementById('mq-pult'), pultNaam = t('Пульт макета', 'Bediening van de maquette');
+      if (pultEl && pultEl.getAttribute('aria-label') !== pultNaam) pultEl.setAttribute('aria-label', pultNaam);
+      var toneel = wortel.querySelector('.mq-toneel'), toneelNaam = t('Полотно продукту', 'Doek van het product');
+      if (toneel && toneel.getAttribute('aria-label') !== toneelNaam) toneel.setAttribute('aria-label', toneelNaam);
       var p = ctx.profiel, maat = p.venster ? HV.p(PROFIEL_NAAM[p.id]) + ' · ' + p.breedte + '×' + p.hoogte : p.echt[0] + '×' + p.echt[1] + (HV.pult.schaal < 0.995 ? ' · ' + Math.round(HV.pult.schaal * 100) + ' %' : '');
       if (m.textContent !== maat) m.textContent = maat;
       if (k) {

@@ -128,6 +128,9 @@
 .hv-herbevestig__teken { inline-size: 44px; block-size: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--line); flex: none; }
 .hv-herbevestig__tekst { font-weight: 600; }
 .hv-herbevestig__noot { font-size: var(--tekst-klein); color: var(--muted); margin-block-start: 2px; }
+/* що станеться одразу після підтвердження (запити, що чекають, виконаються) — над карткою підтвердження */
+.hv-herbevestig__let { display: flex; align-items: flex-start; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--warn-zacht); color: var(--text); font-size: var(--tekst-klein); font-weight: 600; line-height: 1.35; }
+.hv-herbevestig__let > .hv-ic { flex: none; margin-block-start: 1px; color: var(--warn); }
 
 /* ── hv-opdracht: скляний діалог, рядки на папері ── */
 .hv-opdracht { position: absolute; z-index: var(--hv-z-opdracht); inset-inline: var(--ruimte-2); inset-block: calc(var(--hv-kop-h) + var(--ruimte-2)) auto; max-block-size: calc(100cqh - var(--hv-kop-h) - var(--ruimte-4)); display: grid; grid-template-rows: auto minmax(0, auto); background: var(--hv-glas); -webkit-backdrop-filter: var(--hv-glas-filter); backdrop-filter: var(--hv-glas-filter); border: 1px solid var(--hv-glas-rand); border-radius: var(--straal-xl); box-shadow: var(--schaduw-3); overflow: hidden; animation: hv-laag-op var(--hv-duur-3) var(--hv-kromme-in); }

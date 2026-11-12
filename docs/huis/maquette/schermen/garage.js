@@ -329,7 +329,7 @@
   };
   var kaart = function (klas, inhoud, k) { return '<section class="hv-kaart hv-gar-kaart' + (klas ? ' ' + klas : '') + '"' + (k ? ' data-k="' + h(k) + '"' : '') + '>' + inhoud + '</section>'; };
   var veld = function (label, html, extra) { return '<div class="hv-veld"><span class="hv-veld__label">' + h(label) + (extra || '') + '</span>' + html + '</div>'; };
-  var naar = function (tekst, adres, icoon) { return o.knop({ tekst: tekst, icoon: icoon, soort: 'stil', klein: true, actie: 'ga', gegevens: { naar: adres } }); };
+  var naar = function (tekst, adres, icoon, aria) { return o.knop({ tekst: tekst, aria: aria, icoon: icoon, soort: 'stil', klein: true, actie: 'ga', gegevens: { naar: adres } }); };
   var nb = function (delen) { return delen.filter(Boolean).map(function (d) { return '<span class="hv-gar-stuk">' + d + '</span>'; }).join('<span class="hv-gar-punt" aria-hidden="true">·</span>'); };
   var km = function (n) { return HV.maat(n, t('км', 'km')); };
   var wanneer = function (ms) {
@@ -518,19 +518,53 @@
     delen.push('<rect class="hv-gar-kaart__land" x="0" y="0" width="' + M.b + '" height="' + M.h + '"/>');
     if (op.schaal === 'regio') {
       delen.push('<path class="hv-gar-kaart__zee" d="M0 0 H86 Q74 70 52 128 Q34 200 0 252 Z"/>');
-      STEDEN.forEach(function (s) { var p = P(s.x, s.y); delen.push('<circle class="hv-gar-kaart__stad" cx="' + p[0] + '" cy="' + p[1] + '" r="3"/>'); label(s.links ? p[0] - 6 : p[0] + 6, p[1], HV.p(s.naam), 'is-klein' + (s.links ? ' is-eind' : '')); });
+      // Підписи кілець шукають вільне місце самі: радіус кільця змінюється із зарядом, а міста стоять на місці.
+      // Зайняті клітинки рахуються для найвужчої мапи (320 px — 0,8 px на одиницю схеми): на ширшій підписи лише рідшають.
+      var K = 0.8, bezet = [];
+      var vak = function (x, y, s, anker) {
+        var b = (String(s).length * 7 + 8) / K, hg = 18 / K, x0 = anker === 'midden' ? x - b / 2 : anker === 'eind' ? x - b : x;
+        return [x0, y - hg / 2, x0 + b, y + hg / 2];
+      };
+      var vrij = function (v) { return v[0] >= 2 && v[1] >= 2 && v[2] <= M.b - 2 && v[3] <= M.h - 2 && !bezet.some(function (z) { return v[0] < z[2] && v[2] > z[0] && v[1] < z[3] && v[3] > z[1]; }); };
+      STEDEN.forEach(function (s) {
+        var p = P(s.x, s.y), lx = s.links ? p[0] - 6 : p[0] + 6;
+        delen.push('<circle class="hv-gar-kaart__stad" cx="' + p[0] + '" cy="' + p[1] + '" r="3"/>');
+        label(lx, p[1], HV.p(s.naam), 'is-klein' + (s.links ? ' is-eind' : ''));
+        bezet.push(vak(lx, p[1], HV.p(s.naam), s.links ? 'eind' : null));
+      });
+      bezet.push(vak(M.cx, M.cy - 14, t('дім', 'thuis'), 'midden'), [M.cx - 8, M.cy - 8, M.cx + 8, M.cy + 8]);
+      // мірило 50 км у правому нижньому куті й рядок-примітка в лівому: одна лінія на телефоні, дві — коли приміток більше
+      var voetZone = [0, M.h - 30, M.b - 70, M.h];
+      bezet.push([M.b - 70, M.h - 38, M.b, M.h], voetZone);
+      /** Підпис кільця радіуса r: згори чи знизу всередині кільця, далі — на лінії під кутом; без вільного місця повертає false. */
+      var ringLabel = function (r, s, klas) {
+        var HOEKEN = [270, 90, 225, 315, 135, 45, 240, 300, 120, 60, 210, 330, 150, 30, 180, 0];
+        for (var i = 0; i < HOEKEN.length; i++) {
+          var hoek = HOEKEN[i] * Math.PI / 180, rr = HOEKEN[i] === 270 || HOEKEN[i] === 90 ? r - 10 : r;
+          var x = Math.round(M.cx + Math.cos(hoek) * rr), y = Math.round(M.cy + Math.sin(hoek) * rr), v = vak(x, y, s, 'midden');
+          if (rr > 12 && vrij(v)) { bezet.push(v); label(x, y, s, 'is-midden ' + klas); return true; }
+        }
+        return false;
+      };
       if (lagen.bereik) {
-        var ev = vtg('ev');
-        delen.push('<circle class="hv-gar-kaart__ring is-auto" cx="' + M.cx + '" cy="' + M.cy + '" r="' + Math.round(ev.bereik * M.perKm) + '"/>');
-        delen.push('<circle class="hv-gar-kaart__ring is-auto is-heen" cx="' + M.cx + '" cy="' + M.cy + '" r="' + Math.round(ev.bereik / 2 * M.perKm) + '"/>');
-        var vo = vtg('fietsolena');
-        delen.push('<circle class="hv-gar-kaart__ring is-twee" cx="' + M.cx + '" cy="' + M.cy + '" r="' + Math.max(4, Math.round(vo.bereik * M.perKm)) + '"/>');
-        label(M.cx, M.cy - Math.round(ev.bereik / 2 * M.perKm) + 10, t('туди й назад ', 'heen en terug ') + Math.round(ev.bereik / 2) + t(' км', ' km'), 'is-midden is-ring');
-        label(M.cx, M.cy - Math.round(vo.bereik * M.perKm) + 10, t('велосипед ', 'e-bike ') + Math.round(vo.bereik) + t(' км', ' km'), 'is-midden is-klein');
-        label(8, M.h - 14, t('в один бік ', 'enkele reis ') + Math.round(ev.bereik) + t(' км — за краєм схеми', ' km — buiten het schema'), 'is-klein is-ring');
+        var ev = vtg('ev'), vo = vtg('fietsolena'), voet = [];
+        var rHeen = ev.bereik / 2 * M.perKm, rEnkel = ev.bereik * M.perKm, rFiets = Math.max(4, vo.bereik * M.perKm);
+        var buiten = rEnkel >= Math.hypot(M.cx, M.cy); // кільце «в один бік» повністю за краєм схеми
+        delen.push('<circle class="hv-gar-kaart__ring is-auto" cx="' + M.cx + '" cy="' + M.cy + '" r="' + Math.round(rEnkel) + '"/>');
+        delen.push('<circle class="hv-gar-kaart__ring is-auto is-heen" cx="' + M.cx + '" cy="' + M.cy + '" r="' + Math.round(rHeen) + '"/>');
+        delen.push('<circle class="hv-gar-kaart__ring is-twee" cx="' + M.cx + '" cy="' + M.cy + '" r="' + Math.round(rFiets) + '"/>');
+        var heenTekst = t('туди й назад ', 'heen en terug ') + Math.round(ev.bereik / 2) + t(' км', ' km');
+        var enkelTekst = t('в один бік ', 'enkele reis ') + Math.round(ev.bereik) + t(' км', ' km');
+        if (!ringLabel(rHeen, heenTekst, 'is-ring')) voet.push(heenTekst);
+        if (buiten) voet.push(enkelTekst + t(' — за краєм схеми', ' — buiten het schema'));
+        else if (!ringLabel(rEnkel, enkelTekst, 'is-ring')) voet.push(enkelTekst);
+        if (voet.length > 1) voetZone[1] = M.h - 48;
+        ringLabel(rFiets, t('велосипед ', 'e-bike ') + Math.round(vo.bereik) + t(' км', ' km'), 'is-klein');
+        // кожна примітка — неподільний шматок: рядок ламається лише між примітками
+        if (voet.length) boven.push('<span class="hv-gar-kaart__label is-voet is-klein is-ring">' + voet.map(function (s, i) { return '<span class="hv-gar-kaart__noot">' + h(s + (i < voet.length - 1 ? ' ·' : '')) + '</span>'; }).join(' ') + '</span>');
       }
-      delen.push('<rect class="hv-gar-kaart__schaal" x="' + (M.b - 112) + '" y="' + (M.h - 16) + '" width="' + Math.round(100 * M.perKm) + '" height="3"/>');
-      label(M.b - 112, M.h - 26, t('100 км', '100 km'), 'is-klein');
+      delen.push('<rect class="hv-gar-kaart__schaal" x="' + (M.b - 62) + '" y="' + (M.h - 16) + '" width="' + Math.round(50 * M.perKm) + '" height="3"/>');
+      label(M.b - 62, M.h - 26, t('50 км', '50 km'), 'is-klein');
     } else {
       [[[-10, 0], [10, 0]], [[0, -8], [0, 8]], [[-10, -5], [10, 6]], [[-6, 8], [7, -8]]].forEach(function (l) { var a = P(l[0][0], l[0][1]), b = P(l[1][0], l[1][1]); delen.push('<path class="hv-gar-kaart__weg" d="M' + a[0] + ' ' + a[1] + 'L' + b[0] + ' ' + b[1] + '"/>'); });
       delen.push('<path class="hv-gar-kaart__water" d="M0 ' + (M.h - 64) + ' Q120 ' + (M.h - 96) + ' 220 ' + (M.h - 44) + ' T400 ' + (M.h - 74) + '"/>');
@@ -618,7 +652,7 @@
     var acties = [];
     if (a.id === 'ev') acties.push(o.knop({ tekst: a.st.bron === 'v-klimaat-aan' ? t('Клімат: вимкнути', 'Klimaat: uit') : t('Клімат', 'Klimaat'), icoon: 'thermometer', klein: true, actie: 'gar-klimaat', gegevens: { doel: 'ev' }, k: 'vk-klim-' + a.id }));
     if (a.id === 'benzine' && a.beschikbaar === 'slaapt') acties.push(wekKnop(a, t('Розбудити', 'Wekken'), true, 'vk-wek'));
-    if (isTwee(a)) acties.push(o.knop({ tekst: a.st.laadt ? t('Зупинити', 'Stoppen') : t('Зарядити', 'Laden'), icoon: a.st.laadt ? 'square' : 'plug-zap', klein: true, actie: 'gar-accu', gegevens: { doel: a.id }, k: 'vk-laad-' + a.id }));
+    if (isTwee(a)) acties.push(o.knop({ tekst: a.st.laadt ? t('Зупинити', 'Stoppen') : t('Зарядити', 'Laden'), aria: (a.st.laadt ? t('Зупинити зарядку: ', 'Laden stoppen: ') : t('Зарядити: ', 'Laden: ')) + HV.p(a.naam), icoon: a.st.laadt ? 'square' : 'plug-zap', klein: true, actie: 'gar-accu', gegevens: { doel: a.id }, k: 'vk-laad-' + a.id }));
     var chips = [];
     if (s.toon === 'alarm') chips.push(o.chip({ icoon: 'siren', toon: 'alarm', tekst: t('викрадено', 'gestolen') }));
     if (a.st.modus === 'v-alarm-uit') chips.push(o.chip({ icoon: 'shield-off', toon: 'let-op', tekst: t('сигналізацію вимкнено', 'alarm uit') }));
@@ -780,10 +814,10 @@
     var start = a.soort === 'maaier' ? t('Косити', 'Maaien') : t('Почати', 'Starten');
     var hoofd = (nadruk || a.st.stand === 'pauze') && !a.st.fout && stand !== 'start';
     return '<div class="hv-knoppen hv-gar-robotknoppen">' +
-      o.knop({ tekst: a.st.stand === 'pauze' ? t('Продовжити', 'Verder') : start, icoon: 'play', soort: hoofd ? 'hoofd' : 'gewoon', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'start' }, gedrukt: stand === 'start', uit: dood, k: 'rb-start-' + a.id }) +
-      o.knop({ tekst: t('Пауза', 'Pauze'), icoon: 'pause', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'pauze' }, gedrukt: stand === 'pauze', uit: dood || stand === 'dock', k: 'rb-pauze-' + a.id }) +
-      o.knop({ tekst: t('На базу', 'Naar station'), icoon: 'house', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'dock' }, gedrukt: stand === 'dock', uit: dood, k: 'rb-dock-' + a.id }) +
-      o.knop({ tekst: t('Знайти', 'Zoeken'), icoon: 'scan-search', soort: 'stil', klein: klein, actie: 'gar-zoek', gegevens: { doel: a.id }, uit: dood, k: 'rb-zoek-' + a.id }) + '</div>';
+      o.knop({ tekst: a.st.stand === 'pauze' ? t('Продовжити', 'Verder') : start, aria: (a.st.stand === 'pauze' ? t('Продовжити', 'Verder') : start) + ': ' + HV.p(a.naam), icoon: 'play', soort: hoofd ? 'hoofd' : 'gewoon', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'start' }, gedrukt: stand === 'start', uit: dood, k: 'rb-start-' + a.id }) +
+      o.knop({ tekst: t('Пауза', 'Pauze'), aria: t('Пауза: ', 'Pauze: ') + HV.p(a.naam), icoon: 'pause', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'pauze' }, gedrukt: stand === 'pauze', uit: dood || stand === 'dock', k: 'rb-pauze-' + a.id }) +
+      o.knop({ tekst: t('На базу', 'Naar station'), aria: t('На базу: ', 'Naar station: ') + HV.p(a.naam), icoon: 'house', klein: klein, actie: 'gar-robot', gegevens: { doel: a.id, waarde: 'dock' }, gedrukt: stand === 'dock', uit: dood, k: 'rb-dock-' + a.id }) +
+      o.knop({ tekst: t('Знайти', 'Zoeken'), aria: t('Знайти: ', 'Zoeken: ') + HV.p(a.naam), icoon: 'scan-search', soort: 'stil', klein: klein, actie: 'gar-zoek', gegevens: { doel: a.id }, uit: dood, k: 'rb-zoek-' + a.id }) + '</div>';
   }
   function voortgang(a) {
     if (a.st.stand !== 'bezig' && a.st.stand !== 'pauze') return '';
@@ -853,7 +887,7 @@
   function roosterHtml(ctx, robot) {
     var g = zorg(ctx.staat), dagen = g.rooster[robot];
     return '<div class="hv-filter hv-gar-week" role="group" aria-label="' + h(t('Дні тижня', 'Dagen van de week')) + '">' + DAGEN.map(function (d) {
-      return o.chip({ filter: true, gekozen: dagen.indexOf(d[0]) >= 0, tekst: HV.p(d[1]), actie: 'gar-rooster', gegevens: { robot: robot, dag: d[0] }, k: 'rs-' + robot + '-' + d[0] });
+      return o.chip({ filter: true, gekozen: dagen.indexOf(d[0]) >= 0, tekst: HV.p(d[1]), aria: HV.p(d[1]) + ' · ' + HV.p(app(robot).naam), actie: 'gar-rooster', gegevens: { robot: robot, dag: d[0] }, k: 'rs-' + robot + '-' + d[0] });
     }).join('') + '<span class="hv-gar-week__tijd">' + HV.icoon('clock', { maat: 's' }) + h(g.roosterTijd[robot]) + '</span></div>';
   }
 
@@ -918,17 +952,21 @@
   function garageZin(ctx) {
     var w = ctx.staat, A = w.apparaten, ev = vtg('ev'), lp = A.laadpaal.st;
     var delen = [];
-    var evDeel = t('Електромобіль на під’їзді, ', 'De elektrische auto staat op de oprit, ') + Math.round(ev.lading) + ' %';
-    if (lp.laadt) evDeel += t(', заряджається до ', ', laadt tot ') + ev.doel + ' %';
-    else if (ev.lading < ev.doel) evDeel += t(' — готовий до ', ' — klaar vóór ') + (lp.vertrek || '07:30');
+    // число й «%» не розриваються під час перенесення заголовка (нерозривний пробіл)
+    var evDeel = t('Електромобіль на під’їзді, ', 'De elektrische auto staat op de oprit, ') + Math.round(ev.lading) + ' %';
+    if (lp.laadt) evDeel += t(', заряджається до ', ', laadt tot ') + ev.doel + ' %';
+    // авто ще не заряджене: не «готовий» (так читається «уже готовий»), а те саме, що каже «Дім», — чекає дешевої години
+    // й буде готовий до виїзду; без кабелю чи на паузі обіцянки немає — лише ціль
+    else if (ev.lading < ev.doel - 0.5 && lp.aangesloten && lp.modus === 'slim') evDeel += t(', чекає дешевої години — буде готовий до ', ', wacht op een goedkoop uur — klaar vóór ') + (lp.vertrek || '07:30');
+    else if (ev.lading < ev.doel - 0.5) evDeel += t(' — ціль заряду ', ' — laaddoel ') + ev.doel + ' %';
     delen.push(evDeel);
     var bz = A.benzine, pb = plekVan(vtg('benzine'));
     delen.push(bz.beschikbaar === 'slaapt' ? t('бензинове авто востаннє бачили ', 'de benzineauto is voor het laatst gezien ') + HV.p(PLEK_NAAM[pb.id]) + t(' о ', ' om ') + HV.tijd(bz.gezien) : t('бензинове авто ', 'de benzineauto staat ') + HV.p(PLEK_NAAM[pb.id]));
     var inGarage = VOERTUIGEN.filter(function (id) { return isTwee(A[id]) && vtg(id).plek === 'garage'; }).length;
     delen.push(inGarage + '\u00a0' + HV.meervoud(inGarage, ['двоколісний', 'двоколісні', 'двоколісних'], ['tweewieler staat', 'tweewielers staan']) + t(' у гаражі', ' in de garage'));
-    var zin = delen.map(function (d) { return d.replace(/^./, function (c) { return c.toUpperCase(); }); }).join('. ');
-    var kort = t('Електромобіль ', 'Elektrische auto ') + Math.round(ev.lading) + ' % · ' + km(ev.bereik);
-    return { zin: zin + '.', kort: kort };
+    var zinnen = delen.map(function (d) { return d.replace(/^./, function (c) { return c.toUpperCase(); }) + '.'; });
+    // перше речення — електромобіль (заголовок героя зони), решта — тихий другий рядок
+    return { kop: zinnen[0], rest: zinnen.slice(1).join(' ') };
   }
 
   function nuItems(ctx) {
@@ -940,14 +978,14 @@
     var ft = vtg('fietstaras');
     if (ft && ft.lading < 40 && !A.fietstaras.st.laadt) items.push({ id: 'gar-fiets', soort: 'info', icoon: 'battery-low', maker: 'systeem', sinds: w.tijd - 90 * MIN, tekst: ['Електровелосипед Тараса: ' + Math.round(ft.lading) + ' %, ≈ ' + ft.bereik + ' км', 'E-bike van Taras: ' + Math.round(ft.lading) + ' %, ≈ ' + ft.bereik + ' km'], acties: [{ naam: 'gar-accu', hoofd: true, label: ['Зарядити до 80 %', 'Laden tot 80 %'], gegevens: { doel: 'fietstaras' } }] });
     if (A.maaier && A.maaier.st.stand === 'pauze' && A.maaier.st.pauzeReden) items.push({ id: 'gar-maai', soort: 'info', icoon: PAUZE[A.maaier.st.pauzeReden].icoon, maker: 'systeem', sinds: w.tijd - 5 * MIN, tekst: ['Косарка на паузі: ' + PAUZE[A.maaier.st.pauzeReden].naam[0].toLowerCase(), 'Robotmaaier gepauzeerd: ' + PAUZE[A.maaier.st.pauzeReden].naam[1].toLowerCase()], acties: [{ naam: 'gar-robot', label: ['На базу', 'Naar station'], gegevens: { doel: 'maaier', waarde: 'dock' } }] });
-    items.push({ id: 'gar-winter', soort: 'info', icoon: 'snowflake', maker: 'systeem', sinds: w.tijd - 26 * UUR, tekst: ['Полив: злити воду з труб до перших морозів', 'Beregening: water uit de leidingen vóór de eerste vorst'], acties: [{ naam: 'ga', label: ['Обслуговування', 'Onderhoud'], gegevens: { naar: 'activiteit-onderhoud' } }] });
+    items.push({ id: 'gar-winter', soort: 'info', icoon: 'snowflake', maker: 'systeem', sinds: w.tijd - 26 * UUR, tekst: ['Полив: злити воду з труб до перших морозів', 'Beregening: water uit de leidingen vóór de eerste vorst'], acties: [{ naam: 'ga', label: ['До обслуговування', 'Naar onderhoud'], gegevens: { naar: 'activiteit-onderhoud' } }] });
     return items;
   }
 
   function robotMini(ctx, a, groot) {
     var html = ROBOT_HTML[a.soort](ctx, a, true);
     if (groot) html += a.soort === 'stofzuiger' ? stofPlan(ctx, a) : a.soort === 'maaier' ? maaierPerceel(ctx) : '<div class="hv-rijen">' + ZONES_WATER.map(function (z) { var g = zorg(ctx.staat), aan = g.beregZones.indexOf(z.id) >= 0; return o.rij({ icoon: 'droplets', naam: HV.p(z.naam), sub: aan ? g.beregDuur + ' ' + t('хв', 'min') : t('пропускається', 'overgeslagen'), waarde: a.st.zoneNu === z.id ? o.chip({ icoon: 'sprout', toon: 'aan', tekst: t('зараз', 'nu') }) : '', k: 'bz-' + z.id }); }).join('') + '</div>';
-    return '<article class="hv-gar-robot" data-k="rb-' + h(a.id) + '">' + kop(icoonVan(a), HV.p(a.naam), naar(t('Детальніше', 'Meer'), 'garage-robots-' + a.id, 'chevron-right'), a.st.stand === 'bezig' || a.st.aan ? 'aan' : null) + html + '</article>';
+    return '<article class="hv-gar-robot" data-k="rb-' + h(a.id) + '">' + kop(icoonVan(a), HV.p(a.naam), naar(t('Детальніше', 'Meer'), 'garage-robots-' + a.id, 'chevron-right', t('Детальніше: ', 'Meer: ') + HV.p(a.naam)), a.st.stand === 'bezig' || a.st.aan ? 'aan' : null) + html + '</article>';
   }
 
   function dronesHtml(ctx) {
@@ -965,8 +1003,20 @@
     var chips = [o.chip({ icoon: 'warehouse', tekst: t('Ворота гаража: ', 'Garagedeur: ') + (A.garagedeur.st.open ? HV.woord.open() : HV.woord.dicht()), actie: 'ga', gegevens: { naar: 'beveiliging-toegang' }, k: 'gar-chip-deur' }),
       o.chip({ icoon: 'plug-zap', toon: A.laadpaal.st.laadt ? 'auto' : null, tekst: t('Станція: ', 'Laadpaal: ') + o.beeld(A.laadpaal).woord, actie: 'ga', gegevens: { naar: 'energie-laden' }, k: 'gar-chip-lp' })];
     if (vliegt) chips.unshift(o.chip({ icoon: 'drone', toon: 'let-op', tekst: t('Дрон у польоті · ', 'Drone vliegt · ') + vliegt.lading + ' %', actie: 'ga', gegevens: { naar: 'garage-drones' }, k: 'gar-chip-drone' }));
-    var zin = '<section class="hv-gar-zin" data-k="gar-zin">' + '<span class="hv-gar-zin__teken">' + HV.icoon('car', { maat: 'l' }) + '</span><div class="hv-gar-zin__tekst"><p class="hv-gar-zin__vol">' + h(z.zin) + '</p><p class="hv-gar-zin__kort">' + h(z.kort) + '</p>' +
-      '<div class="hv-gar-zin__chips">' + chips.join('') + '</div></div></section>';
+    // герой зони — спільний o.zoneheld (посібник §4.2): папір без градієнта, лічильники однієї форми; чипи стану — ряд під реченням
+    var ev = vtg('ev');
+    var thuis = VOERTUIGEN.filter(function (id) { return thuisPlek(plekVan(vtg(id))); }).length;
+    // лічильників три: на телефоні «269 км» у чотирьох колонках виходило за свою клітинку
+    var zin = o.zoneheld({
+      id: 'garage', klas: 'hv-gar-zoneheld', icoon: 'car', toon: 'auto', boven: t('Гараж зараз', 'Garage nu'),
+      zin: h(z.kop), sub: h(z.rest),
+      tellers: [
+        { waarde: HV.maat(Math.round(ev.lading), '%'), label: t('електромобіль', 'elektrische auto'), aria: t('Електромобіль: заряд ', 'Elektrische auto: lading ') + Math.round(ev.lading) + ' %', toon: 'auto', actie: 'ga', gegevens: { naar: 'garage-voertuigen-ev' } },
+        { waarde: km(ev.bereik), label: t('запас ходу', 'bereik') },
+        { waarde: String(thuis), label: t('із ', 'van ') + VOERTUIGEN.length + t(' удома', ' thuis') }
+      ],
+      extra: chips.join('')
+    });
     var transport = '<div class="hv-gar-vlijst is-autos">' + VOERTUIGEN.filter(function (id) { return A[id].soort === 'auto'; }).map(function (id) { return voertuigKaart(ctx, A[id]); }).join('') + '</div>' +
       '<div class="hv-gar-twee">' + VOERTUIGEN.filter(function (id) { return isTwee(A[id]); }).map(function (id) { return tweeRij(ctx, A[id]); }).join('') + '</div>';
     var robots = '<div class="hv-gar-robots">' + ROBOTS.map(function (id) { return robotMini(ctx, A[id]); }).join('') + '</div>';
@@ -977,9 +1027,9 @@
     }).join('') + '</div>';
     return '<div class="hv-gar" data-k="gar-nu">' + zin +
       o.blok({ id: 'gar-belangrijk', titel: t('Зараз важливо', 'Nu belangrijk'), teller: Math.min(3, items.length), inhoud: o.nu(items) }) +
-      o.blok({ id: 'gar-transport', titel: t('Транспорт', 'Voertuigen'), teller: VOERTUIGEN.length, inhoud: transport, extra: naar(t('Усі', 'Alle'), 'garage-voertuigen', 'chevron-right') }) +
+      o.blok({ id: 'gar-transport', titel: t('Транспорт', 'Voertuigen'), teller: VOERTUIGEN.length, inhoud: transport, extra: naar(t('Усі', 'Alle'), 'garage-voertuigen', 'chevron-right', t('Увесь транспорт', 'Alle voertuigen')) }) +
       '<div class="hv-gar-rooster hv-gar-rooster--twee">' +
-      o.blok({ id: 'gar-robots', titel: t('Роботи й полив', 'Robots en beregening'), teller: ROBOTS.length, inhoud: robots, extra: naar(t('Усі', 'Alle'), 'garage-robots', 'chevron-right') }) +
+      o.blok({ id: 'gar-robots', titel: t('Роботи й полив', 'Robots en beregening'), teller: ROBOTS.length, inhoud: robots, extra: naar(t('Усі', 'Alle'), 'garage-robots', 'chevron-right', t('Усі роботи й полив', 'Alle robots en beregening')) }) +
       '<div class="hv-gar-kolom">' + o.blok({ id: 'gar-kaartje', titel: t('Ділянка', 'Perceel'), inhoud: kaart('hv-gar-kaartkaart', kaartje + '<p class="hv-tekst hv-tekst--zacht">' + HV.icoon('map', { maat: 's' }) + '<span>' + h(t('Дотик — мапа з околицями, геозонами й кільцем досяжності.', 'Tik — de kaart met omgeving, geozones en bereikring.')) + '</span></p>'), extra: naar(t('Мапа', 'Kaart'), 'garage-kaart', 'chevron-right') }) +
       o.blok({ id: 'gar-drones', titel: t('Безпілотники', 'Drones'), teller: (w.drones || []).length, inhoud: kaart('', dronesHtml(ctx)) }) +
       o.blok({ id: 'gar-onderhoud', titel: t('Обслуговування', 'Onderhoud'), inhoud: kaart('', onderhoud), extra: naar(t('Усі строки', 'Alle termijnen'), 'activiteit-onderhoud', 'chevron-right') }) + '</div></div>' +
@@ -1068,13 +1118,13 @@
     var schaalSeg = o.segment({ label: t('Масштаб', 'Schaal'), waarde: schaal, actie: 'ui', gegevens: { naam: 'gar-schaal' }, k: 'gar-schaal', opties: [
       { id: 'perceel', label: t('Ділянка', 'Perceel'), icoon: 'trees' }, { id: 'buurt', label: t('Околиці', 'Omgeving'), icoon: 'map' }, { id: 'regio', label: t('Регіон', 'Regio'), icoon: 'compass' }] });
     var lagenChips = '<div class="hv-filter" role="group" aria-label="' + h(t('Шари', 'Lagen')) + '">' + LAGEN.filter(function (l) { return schaal === 'perceel' ? ['voertuigen', 'robots'].indexOf(l[0]) >= 0 : l[0] !== 'robots'; }).map(function (l) {
-      return o.chip({ filter: true, gekozen: !!lagen[l[0]], icoon: l[2], tekst: HV.p(l[1]), actie: 'gar-laag', gegevens: { laag: l[0] }, k: 'laag-' + l[0] });
+      return o.chip({ filter: true, gekozen: !!lagen[l[0]], icoon: l[2], tekst: HV.p(l[1]), aria: t('Шар мапи: ', 'Kaartlaag: ') + HV.p(l[1]), actie: 'gar-laag', gegevens: { laag: l[0] }, k: 'laag-' + l[0] });
     }).join('') + '</div>';
     var tijdVeld = veld(t('Перегляд минулого', 'Terugblik'), o.schuif({ label: t('Годин тому', 'Uur geleden'), waarde: terug, min: 0, max: 24, stap: 1, eenheid: t('год', 'u'), toon: 'neutraal', actie: 'gar-terug', k: 'gar-terug-schuif' }) +
       '<p class="hv-tekst hv-tekst--zacht">' + HV.icoon('history', { maat: 's' }) + '<span>' + h(terug ? t('Показано стан о ', 'Toestand om ') + HV.tijd(tijd) + (dagBegin(tijd) < dagBegin(w.tijd) ? t(' учора', ' gisteren') : '') + t(' — місця з журналу маячків.', ' — locaties uit het bakenlogboek.') : t('Зараз. Потягніть, щоб побачити, де що стояло за останню добу.', 'Nu. Schuif om te zien waar alles stond in het laatste etmaal.')) + '</span></p>');
     var legenda = '<ul class="hv-gar-legenda">' + (schaal === 'perceel'
       ? [['is-gras', t('зона косарки', 'maaizone')], ['is-sproei', t('зона поливу', 'beregeningszone')], ['is-vlieg', t('межа польоту дрона', 'vlieggrens van de drone')]]
-      : schaal === 'regio' ? [['is-auto', t('досяжність електромобіля: суцільно — туди й назад, штрих — в один бік', 'bereik van de elektrische auto: doorgetrokken — heen en terug, streep — enkele reis')], ['is-twee', t('досяжність велосипеда', 'bereik van de e-bike')]]
+      : schaal === 'regio' ? [['is-auto', t('досяжність електромобіля: суцільно — туди й назад, штрих — в один бік', 'bereik van de elektrische auto: doorgetrokken — heen en terug, streep — enkele reis')], ['is-twee', t('досяжність велосипеда Олени: ', 'bereik van de e-bike van Olena: ') + HV.maatTekst(vtg('fietsolena').bereik, t('км', 'km'))]]
       : [['is-geozone', t('геозона', 'geozone')], ['is-twee', t('досяжність двоколісних туди й назад', 'bereik van de tweewielers heen en terug')], ['is-oud', t('застаріле місце — штрих і вік', 'verouderde locatie — streep en leeftijd')]]).map(function (x) { return '<li><span class="hv-gar-legenda__merk ' + x[0] + '" aria-hidden="true"></span>' + h(x[1]) + '</li>'; }).join('') + '</ul>';
     var noot = schaal === 'perceel' ? t('Зони польоту на сайті лише довідкові; перед польотом перевірте офіційну карту.', 'Vliegzones op de site zijn ter informatie; controleer vóór de vlucht de officiële kaart.') : t('Схема доріг — від сервера дому, без зовнішніх мап. Місце людини бачить лише той, кому дозволено.', 'Het wegenschema komt van de server van het huis, zonder externe kaarten. De locatie van een mens ziet alleen wie dat mag.');
     return '<div class="hv-gar" data-k="gar-kaart"><div class="hv-gar-rooster hv-gar-rooster--twee is-breed-links">' +

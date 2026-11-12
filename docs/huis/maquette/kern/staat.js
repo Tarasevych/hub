@@ -58,6 +58,17 @@
     momentopname: function () { return kloon(w, typeof WeakMap === 'function' ? new WeakMap() : null); },
     /** Повернути світ до знімка: усе, що дія встигла змінити, зникає. */
     zetTerug: function (foto) { if (foto) { w = foto; meld(); } },
+    /**
+     * Дім без минулого («Перший запуск»): сценарій ставить w.logboekVanaf — мить створення дому. Запис Журналу, датований
+     * раніше, існувати не може, хай який модуль його посіяв (історія агентів, вчорашні події): тут він прибирається.
+     * Викликає оболонка перед малюванням і після нього. Повертає true, якщо щось прибрано.
+     */
+    snoeiLogboek: function () {
+      if (!w || w.logboekVanaf == null || !w.logboek) return false;
+      var n = w.logboek.length;
+      for (var i = n - 1; i >= 0; i--) if (w.logboek[i].tijd < w.logboekVanaf) w.logboek.splice(i, 1);
+      return w.logboek.length !== n;
+    },
     toeval: toeval,
     /** Новий світ із паспорта (скидає все, крім швидкості та стану даних, якщо передано `houd`). */
     herstel: function (tijd, houd) {

@@ -384,11 +384,8 @@
   function isEigenaar(ctx) { return (ctx ? ctx.rol : HV.rol()) === 'eigenaar'; }
 
   /** Чи може людина з цією роллю вирішувати запит рівня niveau (§3 зони: звичайне й чутливе — власник і мешканець). */
-  function magBeslissen(rol, niveau) {
-    if (rol === 'eigenaar') return true;
-    if (rol === 'bewoner') return niveau === 'gewoon' || niveau === 'gevoelig';
-    return false;
-  }
+  // Правило одне на весь макет і живе в ядрі (HV.gevaar.magBeslissen): його ж перевіряє HV.verzoek, хай яка кнопка натиснута.
+  function magBeslissen(rol, niveau) { return HV.gevaar.magBeslissen(rol, niveau); }
 
   /**
    * hv-stand інструмента в рядку: ті самі сегменти й та сама дія ядра data-actie="stand" (HV.gevaar.zetStand: лише власник,
@@ -401,7 +398,7 @@
     var uitleg = zwaar
       ? o.gevolg(HV.p(actie.risico || ['Що може статися: дія виконається без людини поруч. Хто зможе це запускати: цей агент. Як вимкнути: «Питати» або «Вимкнено».', 'Wat er kan gebeuren: de actie gebeurt zonder iemand erbij. Wie dit kan starten: deze agent. Uitzetten: ‘Vragen’ of ‘Uit’.']), { soort: 'uitroep', vast: waarde === 'altijd' ? actie.niveau : null, kop: t('Ризик: ', 'Risico: ') + HV.p(actie.naam) })
       : o.gevolg(t('Що станеться: ', 'Wat er gebeurt: ') + naam + t(' зможе «', ' mag ‘') + klein(HV.p(tool.wat)) + t('» сам («Завжди») або після вашого «Схвалити раз» («Питати»). Пов’язано з: кожна дія — запис у Журналі з «Повернути»; рамки агента діють і тут. Як повернути: «Вимкнено» — діє одразу.', '’ zelf (‘Altijd’) of na jouw ‘Eén keer goedkeuren’ (‘Vragen’). Hangt samen met: elke actie staat in het logboek met ‘Ongedaan maken’; de kaders van de agent gelden ook hier. Terugdraaien: ‘Uit’ — werkt direct.'), { kop: HV.p(actie.naam) });
-    var lijf;
+    var lijf, wachtHtml = '';
     if (ctx.rol !== 'eigenaar') {
       lijf = '<p class="hv-stand__lees">' + HV.icoon('lock', { maat: 's' }) + '<span><strong>' + h(HV.p(HV.gevaar.standNamen[waarde])) + '</strong> · ' + h(t('Змінює лише власник', 'Alleen de eigenaar kan dit wijzigen')) + '</span></p>';
     } else {
@@ -409,8 +406,11 @@
         var gekozen = s === waarde;
         return '<button type="button" class="hv-stand__deel' + (gekozen ? ' is-gekozen' : '') + '" aria-pressed="' + (gekozen ? 'true' : 'false') + '" data-actie="stand" data-uitvoerder="' + h(agentId) + '" data-sleutel="' + h(actie.sleutel) + '" data-waarde="' + s + '">' + (gekozen ? HV.icoon('check', { maat: 's' }) : '') + '<span>' + h(HV.p(HV.gevaar.standNamen[s])) + '</span></button>';
       }).join('') + '</div>';
+      // запити, що чекають на цю дію цього агента: «Завжди» виконає їх одразу — видно до перемикання
+      var wachtend = waarde !== 'altijd' && HV.verzoekenBijAltijd ? HV.verzoekenBijAltijd(agentId, actie.sleutel) : null;
+      if (wachtend) wachtHtml = '<p class="hv-stand__wacht" data-k="stand-wacht">' + HV.icoon('circle-help', { maat: 's' }) + '<span>' + h(HV.p(wachtend)) + '</span></p>';
     }
-    return '<div class="hv-stand hv-ast-stand hv-ast-stand--' + actie.niveau + (zwaar && waarde === 'altijd' ? ' is-altijd-zwaar' : '') + '" data-k="stand-' + h(agentId) + '-' + h(actie.sleutel) + '">' + lijf + uitleg + '</div>';
+    return '<div class="hv-stand hv-ast-stand hv-ast-stand--' + actie.niveau + (zwaar && waarde === 'altijd' ? ' is-altijd-zwaar' : '') + (wachtHtml ? ' heeft-wacht' : '') + '" data-k="stand-' + h(agentId) + '-' + h(actie.sleutel) + '">' + lijf + uitleg + wachtHtml + '</div>';
   }
 
   /** Рамки й стан агента перед дією: { gaat:true } | { vraag:[uk,nl] } | { weiger:[uk,nl] }. */
@@ -466,6 +466,8 @@
     var s = stand(agentId, actie.sleutel);
     if (s === 'uit') return weiger(['дозвіл «Вимкнено»', 'toestemming ‘Uit’']);
     var dag = (S().dagGoed || []).filter(function (d) { return d.agent === agentId && d.sleutel === actie.sleutel && String(d.doel) === String(opdracht.doel) && d.tot > w.tijd; })[0];
+    // дім уже в цьому стані: питати нема про що (як у HV.doe — за «Питати» запит на «уже так» не створюється)
+    if (opdracht.mogelijkheid && HV.alZo && HV.alZo(opdracht.doel, opdracht.mogelijkheid, opdracht.waarde)) return Promise.resolve({ fase: 'bevestigd', reden: ['уже так', 'is al zo'] });
     if (!dag && (s === 'vragen' || toets.vraag)) {
       var id = vraagAan(agentId, tool, opdracht, toets.vraag || ['дозвіл «Питати»', 'toestemming ‘Vragen’'], extra);
       return Promise.resolve({ fase: 'wacht', reden: ['запит у черзі', 'verzoek in de wachtrij'], verzoek: id });
@@ -570,8 +572,9 @@
     }
     var mag = magBeslissen(ctx.rol, actie.niveau);
     var beslisser = actie.niveau === 'kritiek' ? t('Власник: рейка й підтвердження входу', 'De eigenaar: rail en bevestiging van aanmelding') : actie.niveau === 'gevaarlijk' ? t('Власник: рейка утримання', 'De eigenaar: de houdrail') : t('Власник або мешканець, якому доручено', 'De eigenaar of een bewoner met opdracht');
-    var standWoord = { wacht: ['чекає', 'wacht'], goedgekeurd: ['схвалено', 'goedgekeurd'], afgewezen: ['відхилено', 'afgewezen'], verlopen: ['минув', 'verlopen'] }[v.stand] || ['чекає', 'wacht'];
-    var uitkomst = v.uitkomst ? (v.uitkomst === 'uitgevoerd' ? t('виконано', 'uitgevoerd') : t('не виконано', 'niet uitgevoerd')) : '';
+    // стан одним висловом від ядра: знятий запит («дозвіл вимкнено», «уже так», знято автором) не «минув», а виконаний
+    // перемиканням на «Завжди» ніхто не «схвалював»; схвалений запит із власним часом — «виконається о …»
+    var standWoord = HV.verzoekWoord(v);
     var knoppen = '';
     if (wacht) {
       knoppen = mag
@@ -581,11 +584,13 @@
         : '<p class="hv-ast-verzoek__slot">' + HV.icoon('lock', { maat: 's' }) + h(t('Вирішує власник', 'De eigenaar beslist')) + '</p>';
       if (!op.blad) knoppen += o.knop({ tekst: t('Деталі', 'Details'), soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'verzoek:' + v.id } });
     }
-    var tot = v.tot && v.tot > w.tijd ? Math.round((v.tot - w.tijd) / MIN) : null;
+    // «Чекає до» є лише в запиту, що чекає: строк називає сам запит (ядро свого не ставить), після нього запит «минув»
+    var tot = wacht && v.tot && v.tot > w.tijd ? Math.round((v.tot - w.tijd) / MIN) : null;
+    var gepland = v.stand === 'goedgekeurd' && v.gepland && !v.uitkomst;
     return '<article class="hv-ast-verzoek hv-ast-verzoek--' + actie.niveau + ' is-' + v.stand + '" data-k="verzoek-' + h(v.id) + '">' +
       '<header class="hv-ast-verzoek__kop">' + (agentId ? agentTeken(agentId) : '<span class="hv-ast-teken hv-toon-neutraal" aria-hidden="true">' + HV.icoon('diamond') + '</span>') +
       '<div class="hv-ast-verzoek__wie"><span class="hv-ast-verzoek__naam">' + h(HV.p(wie.naam)) + '</span><span class="hv-ast-verzoek__sub">' + h(t('просить о ', 'vraagt om ') + HV.tijd(v.sinds)) + (tool && agentId ? ' · <code>' + h(tool.naam) + '</code>' : '') + '</span></div>' +
-      '<span class="hv-ast-verzoek__stand">' + o.risico(actie.niveau) + '<span class="hv-ast-verzoek__woord">' + h(HV.p(standWoord)) + (uitkomst ? ' · ' + h(uitkomst) : '') + '</span></span></header>' +
+      '<span class="hv-ast-verzoek__stand">' + o.risico(actie.niveau) + '<span class="hv-ast-verzoek__woord">' + h(HV.p(standWoord)) + '</span></span></header>' +
       '<h3 class="hv-ast-verzoek__wat">' + h(HV.p(v.wat)) + '</h3>' +
       (wordt ? '<p class="hv-ast-verzoek__wordt">' + HV.icoon('arrow-right-left', { maat: 's' }) + '<span>' + h(wordt) + '</span></p>' : '') +
       (zwaar && wacht ? '<p class="hv-ast-verzoek__gevolg">' + h(HV.p(actie.gevolg).split(/(?<=\.)\s/)[0]) + '</p>' : '') +
@@ -593,7 +598,8 @@
       (v.woorden ? '<div><dt>' + h(t('Слова агента', 'Woorden van de agent')) + '</dt><dd>' + o.chip({ icoon: 'shield-alert', tekst: t('чужий текст', 'onbetrouwde tekst'), klas: 'hv-ast-wantrouw' }) + ' <q>' + h(HV.p(v.woorden).replace(/^[«‘]|[»’]$/g, '')) + '</q></dd></div>' : '') +
       '<div><dt>' + h(t('Чому питає', 'Waarom het vraagt')) + '</dt><dd>' + h(HV.p(v.waarom || ['дозвіл «Питати»', 'toestemming ‘Vragen’'])) + '</dd></div>' +
       '<div><dt>' + h(t('Хто вирішує', 'Wie beslist')) + '</dt><dd>' + h(beslisser) + '</dd></div>' +
-      '<div><dt>' + h(t('Чекає до', 'Wacht tot')) + '</dt><dd>' + h(tot != null ? HV.tijd(v.tot) + ' · ' + t('ще ', 'nog ') + HV.duur(tot) : t('без строку — система свого не нав’язує', 'zonder termijn — het systeem legt er geen op')) + '</dd></div>' +
+      (v.om && (wacht || gepland) ? '<div><dt>' + h(t('Коли виконається', 'Wanneer het gebeurt')) + '</dt><dd>' + h(t('о ', 'om ') + HV.tijd(v.om) + (wacht ? t(' — після схвалення, годинником дому', ' — na goedkeuring, op de huisklok') : t(' — годинником дому', ' — op de huisklok'))) + '</dd></div>' : '') +
+      (wacht ? '<div><dt>' + h(t('Чекає до', 'Wacht tot')) + '</dt><dd>' + h(tot != null ? HV.tijd(v.tot) + ' · ' + t('ще ', 'nog ') + HV.duur(tot) : t('без строку — система свого не нав’язує', 'zonder termijn — het systeem legt er geen op')) + '</dd></div>' : '') +
       '</dl>' + (knoppen ? '<div class="hv-ast-verzoek__knoppen">' + knoppen + '</div>' : '') + '</article>';
   }
 
@@ -608,8 +614,8 @@
     if (beslist.length && !(opties && opties.kort)) {
       inhoud += '<div class="hv-ast-beslist"><h3 class="hv-ast-tussenkop">' + h(t('Вирішено нещодавно', 'Recent beslist')) + '</h3><div class="hv-rijen">' + beslist.map(function (v) {
         var wie = HV.gevaar.uitvoerder(v.uitvoerder);
-        var woord = { goedgekeurd: ['схвалено', 'goedgekeurd'], afgewezen: ['відхилено', 'afgewezen'], verlopen: ['минув', 'verlopen'] }[v.stand] || ['', ''];
-        return o.rij({ icoon: v.stand === 'goedgekeurd' ? 'circle-check' : 'circle-x', naam: HV.p(v.wat), sub: HV.p(wie.naam) + ' · ' + HV.tijd(v.sinds), waarde: h(HV.p(woord)), actie: 'blad', gegevens: { blad: 'verzoek:' + v.id }, k: 'beslist-' + v.id });
+        var woord = HV.verzoekWoord(v), gepland = v.stand === 'goedgekeurd' && v.gepland && !v.uitkomst;
+        return o.rij({ icoon: gepland ? 'calendar-clock' : v.stand === 'bezig' ? 'hourglass' : v.stand === 'goedgekeurd' && v.uitkomst !== 'niet' ? 'circle-check' : 'circle-x', naam: HV.p(v.wat), sub: HV.p(wie.naam) + ' · ' + HV.tijd(v.sinds), waarde: h(HV.p(woord)), actie: 'blad', gegevens: { blad: 'verzoek:' + v.id }, k: 'beslist-' + v.id });
       }).join('') + '</div></div>';
     }
     return o.blok({ id: id, titel: t('Чекає на вас', 'Wacht op jou'), teller: lijst.length || null, vast: !!lijst.length, inhoud: inhoud,
@@ -1221,12 +1227,12 @@
     var lijst = SUGGESTIES.filter(function (s) { var st = X.suggesties[s.id]; return !st || st === 'gemaakt'; });
     if (!lijst.length) return '';
     return o.blok({ id: 'ast-suggesties', titel: t('Пропозиції', 'Suggesties'), teller: lijst.filter(function (s) { return !X.suggesties[s.id]; }).length || null,
-      uitleg: t('Що станеться: «Створити» готує чернетку правила в розмові; без вашого збереження вона нічого не робить. Пов’язано з: пропозиції — з історії дому, не з моделі. Як повернути: «Ніколи» прибирає пропозицію назавжди.', 'Wat er gebeurt: ‘Maken’ zet een concept van een regel in het gesprek; zonder dat jij het bewaart, doet het niets. Hangt samen met: suggesties komen uit de geschiedenis van het huis, niet uit een model. Terugdraaien: ‘Nooit’ haalt de suggestie voorgoed weg.'),
+      uitleg: t('Що станеться: «Створити чернетку» готує чернетку правила в розмові; без вашого збереження вона нічого не робить. Пов’язано з: пропозиції — з історії дому, не з моделі. Як повернути: «Ніколи» прибирає пропозицію назавжди.', 'Wat er gebeurt: ‘Concept maken’ zet een concept van een regel in het gesprek; zonder dat jij het bewaart, doet het niets. Hangt samen met: suggesties komen uit de geschiedenis van het huis, niet uit een model. Terugdraaien: ‘Nooit’ haalt de suggestie voorgoed weg.'),
       inhoud: '<div class="hv-ast-kaarten">' + lijst.map(function (s) {
         var gemaakt = X.suggesties[s.id] === 'gemaakt';
         return '<article class="hv-ast-suggestie' + (gemaakt ? ' is-gemaakt' : '') + '" data-k="sug-' + s.id + '"><span class="hv-ast-suggestie__teken">' + HV.icoon(s.icoon) + '</span><div class="hv-ast-suggestie__tekst"><h3>' + h(HV.p(s.wat)) + '</h3><p>' + HV.icoon('chart-no-axes-column', { maat: 'maker' }) + h(HV.p(s.bewijs)) + '</p></div>' +
           '<div class="hv-ast-suggestie__knoppen">' + (gemaakt ? o.chip({ icoon: 'check', tekst: t('чернетку створено', 'concept gemaakt'), toon: 'ok' }) :
-            o.knop({ tekst: t('Створити', 'Maken'), icoon: 'plus', soort: 'hoofd', klein: true, actie: 'ast-sug', gegevens: { id: s.id, wat: 'maak' } }) + o.knop({ tekst: t('Не зараз', 'Niet nu'), klein: true, actie: 'ast-sug', gegevens: { id: s.id, wat: 'later' } }) + o.knop({ tekst: t('Ніколи', 'Nooit'), soort: 'stil', klein: true, actie: 'ast-sug', gegevens: { id: s.id, wat: 'nooit' } })) + '</div></article>';
+            o.knop({ tekst: t('Створити чернетку', 'Concept maken'), aria: t('Створити чернетку правила: ', 'Concept van een regel maken: ') + HV.p(s.wat), icoon: 'plus', klein: true, actie: 'ast-sug', gegevens: { id: s.id, wat: 'maak' } }) + o.knop({ tekst: t('Не зараз', 'Niet nu'), aria: t('Не зараз: ', 'Niet nu: ') + HV.p(s.wat), klein: true, actie: 'ast-sug', gegevens: { id: s.id, wat: 'later' } }) + o.knop({ tekst: t('Ніколи', 'Nooit'), aria: t('Ніколи: ', 'Nooit: ') + HV.p(s.wat), soort: 'stil', klein: true, actie: 'ast-sug', gegevens: { id: s.id, wat: 'nooit' } })) + '</div></article>';
       }).join('') + '</div>', samenvatting: h(HV.p(lijst[0].wat)) });
   }
 
@@ -1242,7 +1248,7 @@
           reeksen: [{ naam: HV.p(x.eenheid), toon: 'net-in', punten: x.reeks.map(function (v, j) { return [dagen[j], v]; }) }],
           samenvatting: HV.p(x.wat) + '. ' + t('Симуляція.', 'Simulatie.') });
         return '<article class="hv-ast-ongewoon" data-k="ong-' + x.id + '"><header class="hv-ast-ongewoon__kop"><span class="hv-ast-suggestie__teken hv-toon-let-op">' + HV.icoon(x.icoon) + '</span><div><h3>' + h(HV.p(x.wat)) + '</h3><p>' + h(HV.p(x.uitleg)) + '</p></div></header>' + graf +
-          '<div class="hv-knoppen">' + o.knop({ tekst: t('Це нормально', 'Dit is normaal'), icoon: 'check', klein: true, actie: 'ast-normaal', gegevens: { id: x.id } }) + o.knop({ tekst: t('Показати пристрій', 'Apparaat tonen'), icoon: 'arrow-right', soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'apparaat:' + x.doel } }) + '</div></article>';
+          '<div class="hv-knoppen">' + o.knop({ tekst: t('Це нормально', 'Dit is normaal'), aria: t('Це нормально: ', 'Dit is normaal: ') + HV.p(x.wat).split(' — ')[0], icoon: 'check', klein: true, actie: 'ast-normaal', gegevens: { id: x.id } }) + o.knop({ tekst: t('Показати пристрій', 'Apparaat tonen'), aria: t('Показати пристрій: ', 'Apparaat tonen: ') + HV.p(x.wat).split(' — ')[0], icoon: 'arrow-right', soort: 'stil', klein: true, actie: 'blad', gegevens: { blad: 'apparaat:' + x.doel } }) + '</div></article>';
       }).join('') + '</div>', samenvatting: h(HV.p(lijst[0].wat)), dicht: false });
   }
 
@@ -1347,8 +1353,8 @@
     var def = agentDef(id), A = ag(id), st = agentStatus(id), tel = telling(id);
     var w = ctx.staat, vandaag = vandaagActies(id);
     var verzoeken = wachtende().filter(function (v) { return v.uitvoerder === id; }).length;
-    var knop = !A.verbonden ? o.knop({ tekst: t('Під’єднати', 'Koppelen'), icoon: 'plug', klein: true, actie: 'ast-wizard', gegevens: { agent: id } })
-      : o.knop({ tekst: A.pauze ? t('Відновити', 'Hervatten') : t('Призупинити', 'Pauzeren'), icoon: A.pauze ? 'play' : 'pause', klein: true, actie: 'ast-pauze', gegevens: { agent: id } });
+    var knop = !A.verbonden ? o.knop({ tekst: t('Під’єднати', 'Koppelen'), aria: t('Під’єднати: ', 'Koppelen: ') + agentNaam(id), icoon: 'plug', klein: true, actie: 'ast-wizard', gegevens: { agent: id } })
+      : o.knop({ tekst: A.pauze ? t('Відновити', 'Hervatten') : t('Призупинити', 'Pauzeren'), aria: (A.pauze ? t('Відновити: ', 'Hervatten: ') : t('Призупинити: ', 'Pauzeren: ')) + agentNaam(id), icoon: A.pauze ? 'play' : 'pause', klein: true, actie: 'ast-pauze', gegevens: { agent: id } });
     return '<article class="hv-ast-agentkaart' + (A.verbonden ? '' : ' is-los') + (A.pauze ? ' is-pauze' : '') + '" data-k="agent-' + id + '">' +
       '<button type="button" class="hv-ast-agentkaart__lijf" data-actie="ga" data-naar="automatiseringen-agenten-' + id + '" aria-label="' + h(agentNaam(id) + ', ' + st.woord + '. ' + t('Відкрити сторінку агента', 'Agentpagina openen')) + '">' +
       agentTeken(id) + '<span class="hv-ast-agentkaart__naam">' + h(agentNaam(id)) + '<span class="hv-ast-agentkaart__weg">' + h(HV.p(def.weg)) + '</span></span>' +
@@ -1471,7 +1477,7 @@
     var sets = eigenaar ? '<div class="hv-ast-sets"><span class="hv-ast-sets__label">' + h(t('Набір для всіх інструментів:', 'Set voor alle hulpmiddelen:')) + '</span>' +
       o.knop({ tekst: t('Усе вимкнено', 'Alles uit'), icoon: 'circle-off', klein: true, actie: 'ast-set', gegevens: { agent: id, set: 'uit' } }) +
       o.knop({ tekst: t('Лише читання', 'Alleen lezen'), icoon: 'eye', klein: true, actie: 'ast-set', gegevens: { agent: id, set: 'lezen' } }) +
-      o.knop({ tekst: t('Помічник', 'Assistent'), icoon: 'sparkles', klein: true, actie: 'ast-set', gegevens: { agent: id, set: 'assistent' } }) +
+      o.knop({ tekst: t('Помічник', 'Assistent'), aria: t('Набір дозволів «Помічник»', 'Set toestemmingen ‘Assistent’'), icoon: 'sparkles', klein: true, actie: 'ast-set', gegevens: { agent: id, set: 'assistent' } }) +
       o.gevolg(t('Що станеться: «Лише читання» — читання «Завжди», решта «Вимкнено». «Помічник» — читання «Завжди», звичайне й чутливе «Питати», небезпечне й критичне «Вимкнено». Пов’язано з: кожна зміна — окремий запис у Журналі. Як повернути: «Усе вимкнено».', 'Wat er gebeurt: ‘Alleen lezen’ — lezen ‘Altijd’, de rest ‘Uit’. ‘Assistent’ — lezen ‘Altijd’, gewoon en gevoelig ‘Vragen’, gevaarlijk en kritiek ‘Uit’. Hangt samen met: elke wijziging is een eigen regel in het logboek. Terugdraaien: ‘Alles uit’.'), { kop: t('Набори', 'Sets') }) + '</div>' : '';
     var chips = '<div class="hv-filter hv-ast-groepfilter" role="group" aria-label="' + h(t('Групи інструментів', 'Groepen van hulpmiddelen')) + '">' +
       o.chip({ filter: true, gekozen: filter === 'alle', tekst: t('Усі', 'Alle') + ' · ' + GEREEDSCHAP.length, actie: 'ui', gegevens: { naam: 'ast-groep', waarde: 'alle' }, k: 'gf-alle' }) +
@@ -1779,44 +1785,20 @@
 
   // ── Черга ──
   function verzoekVan(id) { return (HV.staat.w.verzoeken || []).filter(function (v) { return v.id === id; })[0]; }
+  // Усі ворота рішення — в ядрі (HV.verzoek): хто вирішує, чинний дозвіл, ритуал рівня (рейка, для критичного —
+  // підтвердження входу), запис рішення, виконання й стан запиту. Тут лише власне цієї зони: «до кінця дня».
   function goedkeuren(v, ctx, dag) {
-    var actie = HV.gevaar.actie(v.sleutel);
-    if (!magBeslissen(ctx.rol, actie.niveau)) { HV.meld({ gewicht: 'belangrijk', icoon: 'lock', titel: t('Не схвалено', 'Niet goedgekeurd'), tekst: t('Цей рівень схвалює власник.', 'Dit niveau keurt de eigenaar goed.') }); return; }
-    var na = function () {
-      if (dag) {
-        var w = HV.staat.w, einde = dagBegin(w.tijd) + DAG - MIN;
-        S().dagGoed.push({ agent: v.uitvoerder, sleutel: v.sleutel, doel: v.doel, tot: einde });
-        HV.logboek.voegToe({ maker: HV.mens(), wat: ['Схвалено до кінця дня: ' + v.wat[0], 'Goedgekeurd tot einde dag: ' + v.wat[1]], waarom: HV.gevaar.uitvoerder(v.uitvoerder).naam, soort: 'huis.agent' });
-      }
-      if (v.mcp) {
-        HV.staat.wijzig(function (x) { v.stand = 'goedgekeurd'; v.uitkomst = 'uitgevoerd'; x.nu = x.nu.filter(function (n) { return n.verzoek !== v.id; }); });
-        var wie = HV.gevaar.uitvoerder(v.uitvoerder);
-        HV.logboek.voegToe({ maker: HV.mens(), wat: ['Схвалено раз: ' + v.wat[0], 'Eén keer goedgekeurd: ' + v.wat[1]], waarom: wie.naam, soort: 'huis.agent' });
-        HV.logboek.voegToe({ maker: agentDoor(v.uitvoerder), wat: v.wat, toegestaan: ['схвалено раз: ' + HV.mens().naam[0], 'één keer goedgekeurd: ' + HV.mens().naam[1]], soort: 'huis.agent' });
-        HV.meld({ maker: HV.mens(), icoon: 'check', titel: t('Схвалено раз', 'Eén keer goedgekeurd'), tekst: HV.p(v.wat) });
-        HV.staat.wijzig();
-        return;
-      }
-      HV.logboek.voegToe({ maker: HV.mens(), wat: ['Схвалено раз: ' + v.wat[0], 'Eén keer goedgekeurd: ' + v.wat[1]], waarom: HV.gevaar.uitvoerder(v.uitvoerder).naam, soort: 'huis.agent' });
-      HV.verzoek(v.id, true).then(function (r) { v.uitkomst = r && r.ok ? 'uitgevoerd' : 'niet'; HV.staat.wijzig(); });
-    };
-    if (HV.gevaar.isZwaar(actie) && HV.schil && HV.schil.gevaar) {
-      var a = typeof v.doel === 'string' ? HV.staat.w.apparaten[v.doel] : null;
-      HV.schil.gevaar({ actie: actie, apparaat: a, naam: HV.p(v.wat) }).then(function (ja) { if (ja) na(); });
-    } else na();
+    HV.verzoek(v.id, true, { naPoort: dag ? function () {
+      var w = HV.staat.w, einde = dagBegin(w.tijd) + DAG - MIN;
+      S().dagGoed.push({ agent: v.uitvoerder, sleutel: v.sleutel, doel: v.doel, tot: einde });
+      HV.logboek.voegToe({ maker: HV.mens(), wat: ['Схвалено до кінця дня: ' + v.wat[0], 'Goedgekeurd tot einde dag: ' + v.wat[1]], waarom: HV.gevaar.uitvoerder(v.uitvoerder).naam, soort: 'huis.agent' });
+    } : null }).then(function () { HV.staat.wijzig(); });
   }
   HV.actie('ast-ja', function (ctx, g) { var v = verzoekVan(g.verzoek); if (v && v.stand === 'wacht') goedkeuren(v, ctx, false); });
   HV.actie('ast-dag', function (ctx, g) { var v = verzoekVan(g.verzoek); if (v && v.stand === 'wacht') goedkeuren(v, ctx, true); });
   HV.actie('ast-nee', function (ctx, g) {
     var v = verzoekVan(g.verzoek);
     if (!v || v.stand !== 'wacht') return;
-    if (!magBeslissen(ctx.rol, HV.gevaar.actie(v.sleutel).niveau) && ctx.rol !== 'bewoner') { HV.meld({ icoon: 'lock', titel: t('Вирішує власник', 'De eigenaar beslist') }); return; }
-    if (v.mcp) {
-      HV.staat.wijzig(function (x) { v.stand = 'afgewezen'; x.nu = x.nu.filter(function (n) { return n.verzoek !== v.id; }); });
-      HV.logboek.voegToe({ maker: HV.mens(), wat: ['Відхилено запит: ' + v.wat[0], 'Verzoek afgewezen: ' + v.wat[1]], waarom: HV.gevaar.uitvoerder(v.uitvoerder).naam, soort: 'huis.agent' });
-      HV.meld({ maker: HV.mens(), titel: t('Запит відхилено', 'Verzoek afgewezen'), tekst: HV.p(v.wat) });
-      return;
-    }
     HV.verzoek(v.id, false);
   });
 

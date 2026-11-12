@@ -4,18 +4,18 @@
 
 Taak HUIS-001 · fase 0 · 10.11.2026 · status: ter goedkeuring bij de eigenaar
 
-De zone is de enige bron voor de getallen van de directe gegevens, de termijnen, de opslag, het paspoort van de demowoning, het register van scenario's en de volgorde van de fasen; ze beheert ook de sectie «Система / Systeem». Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ДИЗАЙН-МОВА-ЖИВИЙ-ДІМ-20261110.uk.md) (hierna: OT). De grammatica van de adressen komt uit de zone [‘Schil’](01-SCHIL.nl.md): blad `?blad=<soort>:<id>`, dialoog `?dialoog=`, moment `?t=`. De schaal van de fasen is 0–12 (§16).
+De zone is de enige bron voor de getallen van de directe gegevens, de termijnen, de opslag, het paspoort van de demowoning, het register van scenario's en de volgorde van de fasen; ze beheert ook de sectie «Система / Systeem». Bronnen: plan HUIS-001 (§1, §3, §3.8, §4) en de [ontwerptaal ‘Живий дім / Levend huis’](../ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md) (hierna: OT). De grammatica van de adressen komt uit de zone [‘Schil’](01-SCHIL.nl.md): blad `?blad=<soort>:<id>`, dialoog `?dialoog=`, moment `?t=`. De schaal van de fasen is 0–12 (§16).
 
 ## 0. Wat er is veranderd ten opzichte van de vorige versie
 
 - **‘Levend huis’** in plaats van ‘Warme precisie’: de verboden op glas, hemel en kleurverlopen zijn opgeheven. De pagina's van Systeem staan op een stille hemel, alles met getallen staat op papier `--panel`, glas `--hv-glas` is er alleen voor de kop, de navigatie, de omhulling van de bladen en «Команда / Opdracht».
 - **Toestemmingen** (plan §3.8): de matrix `shared/huis-gevaar.ts` bepaalt alleen het niveau van de actie en het ritueel voor de mens. Geschrapt zijn: plafonds, ‘de hoogste toestemming’, een uitgeschakeld ‘Altijd’ voor kritieke acties, ‘een stand schakelt het alarm nooit uit’, ‘kritiek op een paneel — alleen bekijken’ en de termijn van 30 dagen voor ‘Altijd’.
-- **Volgorde van de fasen** — plan §4; de verwijzingen zijn omgezet, de gevolgen staan in §16. **Alle bedieningsinstrumenten** staan in de schaal: bladen van alle klassen — fase 2, instrumenten van agenten — fase 5; de volledigheid controleert de bouwstap (§4).
-- **Afgestemd op OT:** `/paneel/<profiel>/<id>`; de toestanden ‘wacht → bezig → niet uitgevoerd’; looptijd per klasse; schakelaars van Systeem hebben een ‘i’, geen ‘!’; `?dialoog=stoppen`, `?dialoog=start`; de vlag `huis-levend`; de namen van de instrumenten komen uit de zone [‘Assistent en agenten’](08-ASSISTENT-EN-AGENTEN.nl.md).
+- **Volgorde van de fasen** — plan §4; de verwijzingen zijn omgezet, de gevolgen staan in §16. **Alle bedieningsinstrumenten** staan in de schaal: bladen van alle klassen — fase 2, hulpmiddelen van agenten — fase 5; de volledigheid controleert de bouwstap (§4).
+- **Afgestemd op OT:** `/paneel/<profiel>/<id>`; de toestanden ‘wacht → bezig → niet uitgevoerd’; looptijd per klasse; schakelaars van Systeem hebben een ‘i’, geen ‘!’; `?dialoog=stoppen`, `?dialoog=start`; de vlag `huis-levend`; de namen van de hulpmiddelen komen uit de zone [‘Assistent en agenten’](08-ASSISTENT-EN-AGENTEN.nl.md).
 
 ## 1. Weergave van de zone
 
-De sectie ‘Systeem’ opent met de kaart `hv-systeemkaart`: de groepstitels staan op de stille hemel (`--text`, 20/700), de groepen zijn papieren `hv-blok` die inklappen. Simulator, ‘Wereld’, diagnose en de tabellen met termijnen zijn papieren blokken. In de simulatie volgt de hemel de huistijd, met het onderschrift «небо за часом дому / hemel volgt huistijd»; een alarm (`.is-nood`) schakelt hemel en glas uit. Makerstekens komen uit het alfabet `hv-maker`: simulator `FlaskConical`, systeem `Cpu`, optimalisator `Gauge`.
+De sectie ‘Systeem’ opent met de kaart `hv-systeemkaart`: de groepstitels staan op de stille hemel (`--text`, 20/700), de groepen zijn papieren `hv-blok` die inklappen. Simulator, ‘Wereld’, diagnose en de tabellen met termijnen zijn papieren blokken. In de simulatie volgt de hemel de huistijd, met het onderschrift «небо за часом дому / hemel volgt huistijd»; een alarm (`.is-nood`) schakelt hemel en glas uit. Auteurstekens komen uit het alfabet `hv-maker`: simulator `FlaskConical`, systeem `Cpu`, optimalisatie `Gauge`.
 
 ## 2. Contract van de adapter (`shared/huis-adapter.ts`)
 
@@ -42,12 +42,12 @@ De adapter schrijft niet in de database en kent geen mensen. De enige ontvanger,
 
 **Twee klokken** (in een echt huis lopen ze gelijk). Echte tijd: «Повернути / Ongedaan maken» 10 s, wachten en de looptijd van de klasse, de schermbeveiliging na 2 min en de terugkeer naar ‘Thuis’ na 5 min, het vergrendelen van `deur` 30 s, de codepauze 5 min, sessies en elke termijn die de eigenaar heeft ingesteld (bij ×600 zou een termijn van 30 dagen in 72 minuten verlopen). Huistijd: schema's, tarieven, grafieken, stille uren, het dagoverzicht, de kaders ‘uren’ en ‘actiebudget’, escalatie, ritten en vluchten. Vanaf ×10 zwijgen de externe kanalen; een nieuwe `hv-verzoek` zet de snelheid op ×1 met een uitleg in `hv-sim`; ×600 pauzeert na 30 huisdagen.
 
-**Paspoort** (`paspoort.ts`): ‘Demowoning · Wilgenlaan 12’, Utrecht; het referentiemoment is maandag 9 november 2026, 14:30. 14 kamers, tuin, schuur; ongeveer 120 apparaten — een exemplaar van elk type, en telkens één ‘onbereikbaar’, ‘toestand verondersteld’, ‘verouderd’ en ‘niet uitgevoerd’; P1 op drie fasen, zon 4,2 kW, batterij 10 kWh, warmtepomp, tarief voor 48 uur; vier bewoners en een gast. Garage: elektrische auto, auto, twee elektrische fietsen, step, brommer, twee drones met basisstation, stofzuiger, grasmaaier. Camera's: 4, het beeld is een SVG van de server, elke 2 s. De maquette: 10 kamers, tuin en garage, 88 apparaten in 59 klassen, 104 bladen, 130 acties met een niveau (28 gevaarlijk of kritiek); de garage is volledig. Deze getallen drukt `node scripts/huis-maquette.mjs --controle` af. **Scenario's** (`scenarios.ts`): 36 — achtergrond 3, energie 8, beveiliging 7, garage 11, agenten 3, systeem 4; de maquette gebruikt er 15.
+**Paspoort** (`paspoort.ts`): ‘Demowoning · Wilgenlaan 12’, Utrecht; het referentiemoment is maandag 9 november 2026, 14:30. 14 kamers, tuin, schuur; ongeveer 120 apparaten — een exemplaar van elk type, en telkens één ‘onbereikbaar’, ‘toestand verondersteld’, ‘verouderd’ en ‘niet uitgevoerd’; P1 op drie fasen, zon 4,2 kW, batterij 10 kWh, warmtepomp, tarief voor 48 uur; vier bewoners en een gast. Garage: elektrische auto, auto, twee elektrische fietsen, step, brommer, twee drones met een dronedock, stofzuiger, grasmaaier. Camera's: 4, het beeld is een SVG van de server, elke 2 s. De maquette: 10 kamers, tuin en garage, 88 apparaten in 59 klassen, 104 bladen, 130 acties met een niveau (28 gevaarlijk of kritiek); de garage is volledig. Deze getallen drukt `node scripts/huis-maquette.mjs --controle` af. **Scenario's** (`scenarios.ts`): 36 — achtergrond 3, energie 8, beveiliging 7, garage 11, agenten 3, systeem 4; de maquette gebruikt er 15.
 
 ## 4. Register, risicomatrix, poorten
 
 - **Register.** `huis_apparaten` (0128) is de tabel van entiteiten en wordt niet hernoemd; daarboven komt de nieuwe `huis_hardware`. Toegevoegd worden `hardware_id`, `domein`, `klasse`, `naam_uk`, `naam_nl`, `aliassen`, `aangenomen`; aan `huis_toestanden` — `gewenst`, `oorzaak`. Migraties vanaf 0200, RLS alleen via `app.huis_is_lid()`.
-- **Volledigheid.** Het register van bladen `src/huis/bladen/`: klasse → «Керування / Bediening · Історія / Geschiedenis · Налаштування / Instellingen». De test faalt als een klasse geen blad heeft, een mogelijkheid geen regel in de matrix of een actie geen instrument in de connector.
+- **Volledigheid.** Het register van bladen `src/huis/bladen/`: klasse → «Керування / Bediening · Історія / Geschiedenis · Налаштування / Instellingen». De test faalt als een klasse geen blad heeft, een mogelijkheid geen regel in de matrix of een actie geen hulpmiddel in de connector.
 - **Risicomatrix** `shared/huis-gevaar.ts`: ‘mogelijkheid × richting → niveau → ritueel voor de mens’; vervangt `KRITIEKE_SOORTEN` en voedt het teken met ritueel, `hv-risico`, `hv-gevaar` en het register `/instellingen/risico`. Ze beperkt de toestemmingen niet. Het besluit komt in `orchestratie/BESLUITEN.md` met de code van fase 2.
 - **Toestemmingen** — `huis_beleid`: (actie × uitvoerder) → stand en optionele kaders van de eigenaar. Geen regel — ‘Uit’.
 - **Poorten** (interface, motor, Opdracht, connector): bron («лише читання / alleen-lezen») → rol («немає доступу / geen toegang») → voor een mens het ritueel van het niveau; voor een uitvoerder pauze → stand → kaders. Een weigering noemt de poort: «Не виконано: дію вимкнено для сцен / Niet uitgevoerd: actie staat uit voor scènes».
@@ -55,9 +55,9 @@ De adapter schrijft niet in de database en kent geen mensen. De enige ontvanger,
 
 ## 5. Toestemmingen op de server
 
-- **Standen** (OT §10): «Вимкнено / Uit» — wordt niet uitgevoerd en niet aan de agent aangeboden; «Питати / Vragen» — `hv-verzoek` zonder opgelegde termijn; «Завжди / Altijd» — wordt uitgevoerd binnen de kaders van de eigenaar, met makersteken en `hv-toost`. Apart voor scènes, automatiseringen, de optimalisator en elke agent; standaard ‘Uit’; de eigenaar kan voor elke actie elke stand kiezen.
-- **Alleen de eigenaar wijzigt**, op een persoonlijk apparaat; ‘Altijd’ voor een gevaarlijke of kritieke actie vraagt een bevestiging van de aanmelding bij het platform (een identiteitscontrole, geen beperking). Op `/paneel/*` en `tv` alleen lezen. Alleen deze functie schrijft in `huis_beleid`; de controle staat in `rechten.sql`.
-- **Een agent** heeft geen route of instrument dat toestemmingen, kaders, pauze, rollen of geheimen wijzigt — niet de eigen en niet die van anderen.
+- **Standen** (OT §10): «Вимкнено / Uit» — wordt niet uitgevoerd en niet aan de agent aangeboden; «Питати / Vragen» — `hv-verzoek` zonder opgelegde termijn; «Завжди / Altijd» — wordt uitgevoerd binnen de kaders van de eigenaar, met een auteursteken en `hv-toost`. Apart voor scènes, automatiseringen, de optimalisatie en elke agent; standaard ‘Uit’; de eigenaar kan voor elke actie elke stand kiezen.
+- **Alleen de eigenaar wijzigt**, op een persoonlijk toestel; ‘Altijd’ voor een gevaarlijke of kritieke actie vraagt een bevestiging van de aanmelding bij het platform (een identiteitscontrole, geen beperking). Op `/paneel/*` en `tv` alleen lezen. Alleen deze functie schrijft in `huis_beleid`; de controle staat in `rechten.sql`.
+- **Een agent** heeft geen route of hulpmiddel dat toestemmingen, kaders, pauze, rollen of geheimen wijzigt — niet de eigen en niet die van anderen.
 - **Logboek verplicht:** elke wijziging (bij een groepselement een vermelding per actie) en elke actie op grond van een toestemming — ‘wie · wat · waarom · was → werd · via welke toestemming’ in `huis_handelingen` en `emitCanonicalNotice`; alleen toevoegen.
 - **‘!’** bij `hv-stand` van een gevaarlijke of kritieke actie licht het risico toe; bij ‘Altijd’ staat een vaste markering die niet te sluiten is. **‘! N’** telt de server in de momentopname: de geldende ‘Altijd’ voor gevaarlijke en kritieke acties en het hoogste niveau. **Pauze** (`huis_pauze`, `?dialoog=stoppen`) wijzigt de standen niet; alleen de eigenaar heft haar op. **Een termijn van de eigenaar** verloopt in echte tijd — de stand wordt ‘Uit’, met een vermelding van de auteur ‘systeem’.
 - **Goedkeuring van een verzoek** is een menselijke actie met het ritueel van het niveau: bij kritiek een rail en een bevestiging van de aanmelding ter plaatse.
@@ -88,8 +88,8 @@ De bus staat in het geheugen; gebeurtenissen in `huis_gebeurtenissen` (opschonen
 - `backend/huis/motor.ts` draait in het serverproces; de kern (fase 2) bestaat uit de planner, `huis_timers`, de poorten, de sporen `huis_runs` en de quarantaine van lussen; bewerker en versies volgen in fase 5.
 - Een automatisering handelt namens de persoon die haar heeft aangezet (`alsGebruiker`, RLS wordt niet omzeild); verliest die persoon de toegang, dan pauzeert de regel. Elke stap gaat door `hv-stand` van de uitvoerder en door de kaders.
 - Een huisstand is een scène: de stap ‘alarm uitschakelen’ daarin wordt uitgevoerd op grond van de toestemming voor scènes (standaard ‘Uit’), net als elke andere stap.
-- De optimalisator is een aparte uitvoerder; tot fase 7 werkt hij in de schaduwstand (‘zou hebben gedaan’).
-- **Bevestiging van de aanmelding** geldt nu 300 s per sessie (`STAP_OP_MS`). Voorstel: eenmalig, gekoppeld aan de hash van de actie; tot het besluit zeggen de teksten «Підтвердження діє 5 хв для цього сеансу / Bevestiging geldt 5 min voor deze sessie».
+- De optimalisatie is een aparte uitvoerder; tot fase 7 werkt ze in de schaduwstand (‘zou hebben gedaan’).
+- **Bevestiging van de aanmelding** geldt nu 300 s per sessie (`STAP_OP_MS`). Voorstel: eenmalig, gekoppeld aan de hash van de actie; tot het besluit zeggen de teksten «Підтвердження діє 5 хв для цього сеансу / De bevestiging geldt 5 min voor deze sessie».
 
 ## 9. Schermen, koppeling, lokale route
 
@@ -100,10 +100,34 @@ De bus staat in het geheugen; gebeurtenissen in `huis_gebeurtenissen` (opschonen
 
 ## 10. Connector, meldingen, zoeken
 
-- **Connector:** `'huis'` in `Subdomein` en een groep in `shared/connector-v2/catalogus.ts`; naam `<essentie>_<agent>_huis_tarasevych_com_gebruiker`. De volledige set staat in de zone ‘Assistent en agenten’ §7 en in [‘Garage’](06-GARAGE.nl.md) §10: lezen, alle apparaatklassen, groepen, scènes, regels, energie, beveiliging, camera's, vervoer, drones, robots, apparatuur, simulator. Instrumenten voor toestemmingen, kaders, pauze, rollen, geheimen en audit bestaan niet.
+- **Connector:** `'huis'` in `Subdomein` en een groep in `shared/connector-v2/catalogus.ts`; naam `<essentie>_<agent>_huis_tarasevych_com_gebruiker`. De volledige set staat in de zone ‘Assistent en agenten’ §7 en in [‘Garage’](06-GARAGE.nl.md) §10: lezen, alle apparaatklassen, groepen, scènes, regels, energie, beveiliging, camera's, vervoer, drones, robots, apparatuur, simulator. Hulpmiddelen voor toestemmingen, kaders, pauze, rollen, geheimen en audit bestaan niet.
 - **Twee schakelaars, allebei van de eigenaar:** de groep `huis` op de pagina van de connector en `hv-stand` van de agent per actie. ‘Uit’ — de actie wordt niet aangeboden, een aanroep geeft ‘niet uitgevoerd’ met de naam van de poort. Apparaatnamen zijn onbetrouwbare gegevens.
-- **Meldingen** (`emitCanonicalNotice`): `huis.alarm` — alarm; `.toegang`, `.integratie`, `.automatisering`, `.agent` — belangrijk; `.apparaat`, `.energie`, `.voertuig`, `.systeem`, `.simulatie` — ter informatie.
+- **Meldingen** (`emitCanonicalNotice`): de soort `huis.*` zegt waarover de vermelding gaat en levert het filter van het Logboek; het belang legt ze niet vast — dat bepaalt de gebeurtenis. De gezamenlijke tabel voor alle zones staat hieronder; de zones tonen er alleen een uitsnede van.
 - **Zoeken** `POST /api/huis/zoek` met inachtneming van de rechten; weer, feestdagen en kaart zijn serverbronnen met een cache, in de demowoning levert de simulator ze.
+
+**Gebeurtenis → soort → belang.** Het belang is een van drie: «до відома / ter informatie · важливо / belangrijk · тривога / alarm». Gedeelde regels: een gevaarlijke of kritieke actie van welke auteur ook is belangrijk; ‘niet uitgevoerd’ door een apparaat is belangrijk; terugdraaien (‘Ongedaan gemaakt: …’) krijgt dezelfde soort, ter informatie. De bezorging per belang staat in de zone [‘Automatisering’](07-AUTOMATISERING.nl.md) §13.
+
+| Gebeurtenis | Soort | Belang |
+|---|---|---|
+| rook, gas, water, inbraak, noodknop | `huis.alarm` | alarm (`hv-nood`) |
+| alarmstand, overbrugging van een zone, maskers en privacy van camera's, sirenetest | `huis.alarm` | ter informatie; het einde van een alarm en een herstart van de server terwijl het alarm aan staat — belangrijk |
+| actie van een mens op een apparaat, een kamer, een groep | volgens de klasse van het apparaat: `.apparaat`, `.energie`, `.voertuig`, `.toegang` (sloten, deuren, poort), `.alarm` (beveiliging) | ter informatie; een gevaarlijke of kritieke actie en ‘niet uitgevoerd’ — belangrijk |
+| wijziging van de huisstand | `huis.systeem` | ter informatie |
+| uitvoering van een scène, een regel, een reeks; bewerking, pauze, versie van een regel of scène | `huis.automatisering` | ter informatie; een mislukte uitvoering, een stap tegengehouden door een begrenzing, een lus, quarantaine, een wijziging van ‘namens wie’ — belangrijk |
+| actie van de optimalisatie; laadplan, tarief, rapport | `huis.energie` | ter informatie |
+| vervoer en drones: rit, vlucht, missie, vlieggrenzen | `huis.voertuig` | ter informatie; signaalverlies, een bijna lege accu tijdens de vlucht, een afgebroken start, een oververhitte accu — belangrijk |
+| robots en apparatuur: klaar, pauze, vastgelopen | `huis.apparaat` | ter informatie; vastgelopen of vanzelf gestopt — belangrijk |
+| actie van een agent: lezen, concept, uitgevoerde actie, voorstel | `huis.agent` | ter informatie; een gevaarlijke of kritieke actie — belangrijk |
+| verzoek ‘Vragen’ (`hv-verzoek`); ‘niet uitgevoerd’ na goedkeuring | volgens de uitvoerder: `.agent` — een agent; `.automatisering` — een scène, een automatisering, de optimalisatie | belangrijk; goedgekeurd of afgewezen — ter informatie |
+| weigering door een poort voor een uitvoerder: toestemming ‘Uit’, buiten de kaders | volgens de uitvoerder, zoals in de regel hierboven | ter informatie |
+| een agent gepauzeerd of hervat | `huis.agent` | belangrijk |
+| wijziging van een toestemming `hv-stand`; wijziging van de kaders van scènes, automatiseringen, de optimalisatie; de termijn van de eigenaar is verlopen | `huis.systeem` | ter informatie; ‘Altijd’ voor een gevaarlijke of kritieke actie — belangrijk |
+| wijziging van een begrenzing; pauze en hervatting van zelfstandige acties; een scherm gekoppeld of de koppeling ingetrokken | `huis.systeem` | belangrijk |
+| instellingen van Systeem: kamers, meldingen, kiosk, model en budget van de assistent, export | `huis.systeem` | ter informatie; een cloudmodel voor de assistent, het wissen van de geschiedenis — belangrijk |
+| een agent gekoppeld of ontkoppeld; de kaders van een agent gewijzigd; vreemde tekst gaat mee in de momentopname van de agent | `huis.toegang` | belangrijk |
+| mensen en toegang: uitnodiging, rol, persoonlijke code of gastcode, toegang ingetrokken of hersteld; overname uit de simulatie; de deurbel; vijf onjuiste codes | `huis.toegang` | belangrijk |
+| adapter en bron: apparaten toegevoegd, herstart, toestand | `huis.integratie` | ter informatie; een andere toestand dan ‘in orde’ — belangrijk |
+| simulator: scenario, snelheid, ‘Wereld’, sporen, storingen | `huis.simulatie` | ter informatie; een oefenalarm, het wissen van de simulatie, het aanzetten van externe meldingen — belangrijk |
 
 ## 11. «Система / Systeem» — alles onder `/instellingen/…`
 
@@ -135,7 +159,7 @@ De tabelnamen staan zonder het voorvoegsel `huis_`; ‘+’ betekent: de tabel b
 | vervoer, ritten, zones, missies, vluchten | `voertuigen`, `ritten`, `zones`, `missies`, `vluchten` | 4 |
 | automatiseringen, versies, hulpwaarden, goedkeuringen | `automatiseringen`+, `versies`, `hulpwaarden`, `voorstellen`+ | 5 |
 | schermen, persoonlijke codes, plattegrondversies | `schermen`, `codes`, `plan_versies` | 6 |
-| tarieven, contracten, plannen van de optimalisator | `tarieven`, `contracten`, `plannen` | 7 |
+| tarieven, contracten, plannen van de optimalisatie | `tarieven`, `contracten`, `plannen` | 7 |
 | mensen, uitnodigingen, instemmingen, meldregels | `leden`+, `uitnodigingen`, `toestemmingen`, `meldregels` | 8 |
 | gastcodes, incidenten, camera's | `codes`, `incidenten`, `camera_beleid` | 9 |
 | weekschema's | `weekschemas` | 10 |
@@ -201,9 +225,9 @@ Systeem `/instellingen`; Woning `/instellingen/woning`, `?dialoog=overnemen`; To
 | 2 | Bediening — alle klassen | bladen van alle klassen, toestanden van een opdracht, `huis-gevaar.ts`, `huis_beleid`, poorten, `gevolg`, kern van de motor, scènes, huisstanden, pauze, meldingencentrum, audit, ‘Wereld’, ‘Sporen’ | 20 |
 | 3 | Opdracht en zoeken | `/api/huis/zoek`, `hv-opdracht` | 6 |
 | 4 | Garage | tabellen voor vervoer en vluchten, beeld van de server voor de cockpit | 12 |
-| 5 | Automatisering en AI-agenten | bewerker, versies, `hv-verzoek`, kolommen voor agenten, volledige set instrumenten | 18 |
+| 5 | Automatisering en AI-agenten | bewerker, versies, `hv-verzoek`, kolommen voor agenten, volledige set hulpmiddelen | 18 |
 | 6 | Schermen en panelen | `/paneel/*`, sessie ‘scherm’, persoonlijke codes, kiosk, lokale route, bewerker voor de indeling | 14 |
-| 7 | Geschiedenis en energie | tabellen uit §7, grafieken, ‘Terugblik’, optimalisator | 16 |
+| 7 | Geschiedenis en energie | tabellen uit §7, grafieken, ‘Terugblik’, optimalisatie | 16 |
 | 8 | Mensen, rollen, privacy | uitnodigingen, rollen, instemmingen, meldregels | 14 |
 | 9 | Beveiliging en camera's | alarminstallatie, gastcodes, camera's, echte `hv-nood`, alarmkanaal | 12 |
 | 10 | Klimaat en media | themapagina's, weekschema's | 7 |
@@ -214,7 +238,7 @@ Fasen 1–11 samen: ongeveer 145 dagen. **Gevolgen van de volgorde:** ritten en 
 
 ## 17. Tests en risico's
 
-- **Moduletests** (rol `mijnruimte_app`): hash van het spoor; volledigheid ‘klasse → blad → regel in de matrix → instrument’; de motor op een handmatige klok; twee klokken; verbod op `echt` in de demowoning; audit zonder UPDATE en DELETE; een agent zonder route naar `huis_beleid`; standaard ‘Uit’.
+- **Moduletests** (rol `mijnruimte_app`): hash van het spoor; volledigheid ‘klasse → blad → regel in de matrix → hulpmiddel’; de motor op een handmatige klok; twee klokken; verbod op `echt` in de demowoning; audit zonder UPDATE en DELETE; een agent zonder route naar `huis_beleid`; standaard ‘Uit’.
 - **Ketentests:** de profielen uit OT §7, tv met pijltjestoetsen, `theme-inkt`, beide thema's en beide talen; `hv-stand` schakelt alle drie de standen voor een kritieke actie; het contrast van de punten op de hemel; de dekking van de toelichtingen; fase 6 — een rookalarm bereikt het paneel zonder extern kanaal.
 - **Risico's:** de tunnel verbreekt de stroom; zonder lokale route zijn panelen blind zonder internet; 5 min bevestiging opent alle kritieke acties van de sessie; de motor deelt het proces met de site; de ontvanger omzeilt RLS; misleiding via apparaatnamen.
 
@@ -233,7 +257,7 @@ Fasen 1–11 samen: ongeveer 145 dagen. **Gevolgen van de volgorde:** ritten en 
 
 ## 20. Besluiten voor de eigenaar
 
-1. Een eenmalige bevestiging van de aanmelding, gekoppeld aan een actie of aan een wijziging van een toestemming, in plaats van 5 min per sessie.
+1. Een eenmalige bevestiging van de aanmelding — een aparte voor elke kritieke actie van een mens en voor elke keer dat ‘Altijd’ voor een gevaarlijke of kritieke actie wordt aangezet — in plaats van 5 min per sessie; andere wijzigingen van een toestemming vragen er niet om (hoofddocument, §13, punt 1).
 2. Wijzigingen in gedeelde code van het platform: de verwerker van de stroom in `server/start.ts`, de sessie ‘scherm’, de brugdienst op de VM (fase 12).
 3. Een lokale route zonder tunnel voor panelen.
 4. Welke bewoners routes en locatie zien; de termijnen uit §7.

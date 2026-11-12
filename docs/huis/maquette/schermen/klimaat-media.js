@@ -285,15 +285,28 @@
   // ───────────────────────── 3. Дія зони ─────────────────────────
   // Можливості, які ядро описує словами саме; для решти — тихе виконання й власне сповіщення з тими самими правилами «Повернути».
   var KERN_WOORD = { aan: 1, afspelen: 1, doel: 1, volume: 1, modus: 1, ventilator: 1, bron: 1, stand: 1, aftel: 1 };
+  // Разові команди: кожен натиск — нова дія, навіть із тим самим значенням (клавіша пульта, оголошення, калібрування,
+  // «фільтр замінено», прогрів, вибір треку) — «Уже так» для них не буває.
+  var EENMALIG = { toets: 1, omroep: 1, kalibreren: 1, filterwissel: 1, legionella: 1, nummer: 1 };
   function doe(a, mogelijkheid, waarde, opties) {
     var op = opties || {};
     var eigen = !KERN_WOORD[mogelijkheid] || (typeof waarde === 'string' && !HV.waardeNaam[waarde] && ['modus', 'ventilator', 'bron'].indexOf(mogelijkheid) >= 0);
     var was = HV.huidige(a, mogelijkheid);
+    // «Уже так» для власних можливостей зони (ядро знає напевно лише свої): значення те саме, пристрій на зв'язку й не
+    // виконує іншої команди — без команди, без запису Журналу й без «X → X». Пристрій, чий стан дім лише припускає чи
+    // не знає (без зворотного зв'язку, застаріло, спить), команду отримує завжди — як і в ядрі.
+    if (eigen && !EENMALIG[mogelijkheid] && was != null && String(was) === String(waarde) && !a.wacht && a.beschikbaar === 'ok') {
+      if (!op.stil) HV.meld({ icoon: 'check', titel: t('Уже так', 'Is al zo'), tekst: HV.p(a.naam) + ': ' + HV.p(woordVoor(waarde, a) || [String(waarde), String(waarde)]) });
+      return Promise.resolve({ ok: true, ongewijzigd: true });
+    }
     return HV.doe({ doel: a.id, mogelijkheid: mogelijkheid, waarde: waarde, stil: eigen || op.stil, waarom: op.waarom }).then(function (r) {
-      if (r && r.ok && eigen && !op.stil) {
+      if (r && r.ok && !r.ongewijzigd && eigen && !op.stil) {
         var werd = woordVoor(waarde, a) || [String(waarde), String(waarde)], wasW = was == null ? null : woordVoor(was, a);
         var actie = HV.gevaar.vind(a, mogelijkheid, waarde);
-        HV.meld({ maker: HV.mens(), icoon: HV.paspoort.soorten[a.soort].icoon, titel: HV.p(a.naam) + ': ' + HV.p(werd), tekst: wasW ? HV.p(wasW) + ' → ' + HV.p(werd) : '',
+        // «було → стало» — лише коли слова справді різні; ядро покаже назву без значення й один чип зміни
+        var metDelta = !!wasW && (wasW[0] !== werd[0] || wasW[1] !== werd[1]);
+        HV.meld({ maker: HV.mens(), icoon: HV.paspoort.soorten[a.soort].icoon, titel: [a.naam[0] + ': ' + werd[0], a.naam[1] + ': ' + werd[1]], was: metDelta ? wasW : null, werd: metDelta ? werd : null,
+          tekst: a.beschikbaar === 'verondersteld' ? ['Без зворотного зв’язку: стан припущено.', 'Zonder terugmelding: toestand verondersteld.'] : '',
           terug: actie.niveau !== 'gewoon' && was != null ? function () { HV.doe({ doel: a.id, mogelijkheid: mogelijkheid, waarde: was, stil: true, zonderRitueel: true, waarom: ['повернуто', 'ongedaan gemaakt'] }); } : null });
       }
       return r;
@@ -512,11 +525,13 @@
     var rijen = dag.map(function (b, i) {
       var tot = i + 1 < dag.length ? dag[i + 1].van : 1440;
       var g = function (veldNaam, richting) { return { dag: gekozen, i: i, veld: veldNaam, richting: richting, doel: a.id }; };
+      // доступна назва кожної кнопки рядка називає свій блок: рядків кілька, а підписи однакові
+      var blokNaam = t(' · блок ', ' · blok ') + minTekst(b.van) + '–' + minTekst(tot);
       return '<div class="hv-rooster__rij" data-k="rij-' + gekozen + '-' + i + '"><span class="hv-rooster__stip hv-km-t' + warmteTrede(b.temp) + '" aria-hidden="true"></span>' +
-        '<span class="hv-rooster__tijd">' + (i === 0 ? '<span class="hv-rooster__vast">00:00</span>' : '<span class="hv-km-mini">' + o.icoonknop({ icoon: 'minus', aria: t('Раніше на 30 хв', '30 min eerder'), actie: 'km-rooster', gegevens: g('van', -1) }) + '<output>' + minTekst(b.van) + '</output>' + o.icoonknop({ icoon: 'plus', aria: t('Пізніше на 30 хв', '30 min later'), actie: 'km-rooster', gegevens: g('van', 1) }) + '</span>') +
+        '<span class="hv-rooster__tijd">' + (i === 0 ? '<span class="hv-rooster__vast">00:00</span>' : '<span class="hv-km-mini">' + o.icoonknop({ icoon: 'minus', aria: t('Раніше на 30 хв', '30 min eerder') + blokNaam, actie: 'km-rooster', gegevens: g('van', -1) }) + '<output>' + minTekst(b.van) + '</output>' + o.icoonknop({ icoon: 'plus', aria: t('Пізніше на 30 хв', '30 min later') + blokNaam, actie: 'km-rooster', gegevens: g('van', 1) }) + '</span>') +
         '<span class="hv-rooster__tot">' + h(t('до ', 'tot ') + minTekst(tot)) + '</span></span>' +
-        '<span class="hv-km-mini hv-rooster__temp">' + o.icoonknop({ icoon: 'minus', aria: t('Холодніше на 0,5 °C', '0,5 °C kouder'), actie: 'km-rooster', gegevens: g('temp', -1) }) + '<output>' + h(HV.maatTekst(b.temp, '°C', 1)) + '</output>' + o.icoonknop({ icoon: 'plus', aria: t('Тепліше на 0,5 °C', '0,5 °C warmer'), actie: 'km-rooster', gegevens: g('temp', 1) }) + '</span>' +
-        (i > 0 ? o.icoonknop({ icoon: 'trash-2', aria: t('Видалити блок', 'Blok verwijderen'), actie: 'km-rooster', gegevens: { dag: gekozen, i: i, veld: 'weg', doel: a.id }, klas: 'hv-rooster__weg' }) : '<span class="hv-rooster__weg" aria-hidden="true"></span>') + '</div>';
+        '<span class="hv-km-mini hv-rooster__temp">' + o.icoonknop({ icoon: 'minus', aria: t('Холодніше на 0,5 °C', '0,5 °C kouder') + blokNaam, actie: 'km-rooster', gegevens: g('temp', -1) }) + '<output>' + h(HV.maatTekst(b.temp, '°C', 1)) + '</output>' + o.icoonknop({ icoon: 'plus', aria: t('Тепліше на 0,5 °C', '0,5 °C warmer') + blokNaam, actie: 'km-rooster', gegevens: g('temp', 1) }) + '</span>' +
+        (i > 0 ? o.icoonknop({ icoon: 'trash-2', aria: t('Видалити блок', 'Blok verwijderen') + ' ' + minTekst(b.van) + '–' + minTekst(tot), actie: 'km-rooster', gegevens: { dag: gekozen, i: i, veld: 'weg', doel: a.id }, klas: 'hv-rooster__weg' }) : '<span class="hv-rooster__weg" aria-hidden="true"></span>') + '</div>';
     }).join('');
     var kopie = '<div class="hv-filter hv-rooster__kopie">' + [['werkdagen', ['На всі будні', 'Naar alle werkdagen']], ['weekend', ['На вихідні', 'Naar het weekend']], ['volgende', ['На наступний день', 'Naar de volgende dag']], ['alle', ['На весь тиждень', 'Naar de hele week']]].map(function (x) {
       return o.chip({ icoon: 'copy', tekst: HV.p(x[1]), actie: 'km-rooster-kopie', gegevens: { dag: gekozen, naar: x[0], doel: a.id }, k: 'kopie-' + x[0] });
@@ -728,13 +743,13 @@
     var op = opties || {}, s = huidig(a), speelt = !!gewenst(a, 'afspelen'), vol = Number(gewenst(a, 'volume')) || 0, p = plafond();
     var leden = a.leden ? a.leden.map(ap).filter(Boolean) : null;
     var waar = leden ? leden.map(function (l) { return HV.p(HV.staat.kamer(l.kamer).naam); }).join(' + ') : HV.p(HV.staat.kamer(a.kamer).naam);
-    var transport = '<div class="hv-speler__knoppen">' + (a.st.wachtrij ? o.icoonknop({ icoon: 'skip-back', aria: t('Попередній трек', 'Vorig nummer'), actie: 'km-nummer', gegevens: { doel: a.id, richting: -1 } }) : '') +
-      '<button type="button" class="hv-speler__speel' + (speelt ? ' is-aan' : '') + '" data-actie="schakel" data-doel="' + h(a.id) + '" data-mogelijkheid="afspelen" aria-label="' + h(speelt ? t('Пауза', 'Pauze') : t('Грати', 'Afspelen')) + '"' + (a.wacht && a.wacht.mogelijkheid === 'afspelen' ? ' aria-busy="true"' : '') + '>' + HV.icoon(speelt ? 'pause' : 'play', { maat: 'm' }) + '</button>' +
-      (a.st.wachtrij ? o.icoonknop({ icoon: 'skip-forward', aria: t('Наступний трек', 'Volgend nummer'), actie: 'km-nummer', gegevens: { doel: a.id, richting: 1 } }) : '') + '</div>';
+    var transport = '<div class="hv-speler__knoppen">' + (a.st.wachtrij ? o.icoonknop({ icoon: 'skip-back', aria: t('Попередній трек: ', 'Vorig nummer: ') + HV.p(a.naam), actie: 'km-nummer', gegevens: { doel: a.id, richting: -1 } }) : '') +
+      '<button type="button" class="hv-speler__speel' + (speelt ? ' is-aan' : '') + '" data-actie="schakel" data-doel="' + h(a.id) + '" data-mogelijkheid="afspelen" aria-label="' + h((speelt ? t('Пауза: ', 'Pauze: ') : t('Грати: ', 'Afspelen: ')) + HV.p(a.naam)) + '"' + (a.wacht && a.wacht.mogelijkheid === 'afspelen' ? ' aria-busy="true"' : '') + '>' + HV.icoon(speelt ? 'pause' : 'play', { maat: 'm' }) + '</button>' +
+      (a.st.wachtrij ? o.icoonknop({ icoon: 'skip-forward', aria: t('Наступний трек: ', 'Volgend nummer: ') + HV.p(a.naam), actie: 'km-nummer', gegevens: { doel: a.id, richting: 1 } }) : '') + '</div>';
     var volume = plafondOm(o.schuif({ label: t('Гучність', 'Volume') + ' · ' + HV.p(a.naam), waarde: vol, min: 0, max: 100, stap: 2, toon: 'neutraal', actie: 'km-schuif', gegevens: { doel: a.id, mogelijkheid: 'volume' }, k: 'vol-' + a.id + (op.k || '') }));
     var chips = op.zonderChips ? '' : '<div class="hv-filter hv-speler__chips">' + o.chip({ icoon: 'map-pin', tekst: t('Де грає', 'Waar speelt het'), actie: 'blad', gegevens: { blad: 'media:waar' }, k: 'chip-waar' }) +
-      o.chip({ icoon: 'list-music', tekst: t('Черга', 'Wachtrij'), actie: 'blad', gegevens: { blad: 'apparaat:' + a.id }, k: 'chip-rij' }) +
-      o.chip({ icoon: 'moon', tekst: slaapTekst(ctx, a), actie: 'km-slaap', gegevens: { doel: a.id }, k: 'chip-slaap', gekozen: /^stil-om/.test(String(a.st.slaaptimer)), filter: true }) + '</div>';
+      o.chip({ icoon: 'list-music', tekst: t('Черга', 'Wachtrij'), aria: t('Черга: ', 'Wachtrij: ') + HV.p(a.naam), actie: 'blad', gegevens: { blad: 'apparaat:' + a.id }, k: 'chip-rij' }) +
+      o.chip({ icoon: 'moon', tekst: slaapTekst(ctx, a), aria: slaapTekst(ctx, a) + ': ' + HV.p(a.naam), actie: 'km-slaap', gegevens: { doel: a.id }, k: 'chip-slaap', gekozen: /^stil-om/.test(String(a.st.slaaptimer)), filter: true }) + '</div>';
     return '<div class="hv-speler' + (speelt ? ' is-speelt' : '') + (op.groot ? ' hv-speler--groot' : '') + '" data-k="speler-' + h(a.id) + (op.k || '') + '">' + hoes(s.zaad, a.st.bron === 'radio' ? 'radio' : a.st.bron === 'bluetooth' ? 'bluetooth' : 'music', op.groot ? 'groot' : null) +
       '<div class="hv-speler__lijf"><p class="hv-speler__waar">' + HV.icoon(a.leden ? 'speaker' : HV.paspoort.soorten[a.soort].icoon, { maat: 's' }) + '<span>' + h(waar) + '</span>' + (speelt ? '<span class="hv-speler__golf" aria-hidden="true"><i></i><i></i><i></i></span>' : '') + '</p>' +
       '<p class="hv-speler__titel">' + h(s.titel) + '</p><p class="hv-speler__wie">' + h([s.wie, s.bron].filter(Boolean).join(' · ')) + '</p>' + transport + volume + chips + '</div></div>';
