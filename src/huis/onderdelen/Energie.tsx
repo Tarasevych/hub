@@ -15,7 +15,7 @@ export default function Energie({ lang, woningId, ov, toon }: OnderdeelProps) {
   const [bezig, setBezig] = useState(false);
   useEffect(() => {
     let actief = true; setBezig(true);
-    huisClient.energie(woningId, uren).then((d) => { if (actief) setUit(d); }).catch((e) => { if (actief) toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT')); }).finally(() => { if (actief) setBezig(false); });
+    huisClient.energie(woningId, uren).then((d) => { if (actief) setUit(d); }).catch((e) => { if (actief) toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); }).finally(() => { if (actief) setBezig(false); });
     return () => { actief = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [woningId, uren, ov.apparaten.length]);

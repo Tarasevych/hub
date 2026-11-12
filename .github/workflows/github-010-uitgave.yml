@@ -1,0 +1,295 @@
+name: GITHUB-010 · повноцінне двостороннє робоче середовище GitHub та екосистемні мости
+
+# Ніколи не встановлює пакет на сервер. Перед оприлюдненням звіряє живу встановлену основу, джерела, міграції, типи й контрольну суму.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, broncode, migraties, typen en controlesom.
+on:
+  push:
+    branches:
+      - 'feature/github-010-volledige-omgeving-20261111-210000'
+    paths:
+      - '.github/workflows/github-010-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/GITHUB-010.json'
+      - 'orchestratie/taken/GITHUB-010.json'
+      - 'migrations/0208_github_spiegel_en_werkruimte.sql'
+      - 'migrations/rechten.sql'
+      - 'shared/**'
+      - 'backend/**'
+      - 'server/**'
+      - 'public/canonical-service.js'
+      - 'scripts/zoek-ui-catalogus.mjs'
+      - 'src/**'
+      - 'tests/eenheid/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-010-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: GITHUB-010
+  BASIS_VERSIE: '20261111-191818'
+  BASIS_COMMIT: '7734fc3b779b78cac79fc7bb3d55e03a4b183937'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/versie.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error(`Встановлена версія змінилася (${v.versie} @ ${v.bronCommit || v.commit}). Випуск зупинено для нового узгодження.`);
+          }
+          JS
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+      - name: Виконати одиничні перевірки середовища GitHub, меню, шлюзу та розміщення
+        run: |
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/eenheidstests.mjs github-volledige-werkruimte.test.ts
+          node scripts/eenheidstests.mjs github-oauth-20261020.test.ts
+          node scripts/eenheidstests.mjs github-koppelkaart-20261019.test.ts
+          node scripts/eenheidstests.mjs github-platform.test.ts
+          node scripts/eenheidstests.mjs dev-rechten-media-github-20261021.test.ts
+          node scripts/eenheidstests.mjs routes.test.ts
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
+          node scripts/eenheidstests.mjs zoek-ui-tabblad-20261105.test.ts
+          node scripts/eenheidstests.mjs connector-v2.test.ts
+          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts
+          node scripts/eenheidstests.mjs menu-v2.test.ts
+          node scripts/eenheidstests.mjs menu-indeling.test.ts
+          node scripts/eenheidstests.mjs werkblad-register-20261027.test.ts
+      - name: Перевірити типи та скласти застосунок
+        run: |
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Перевірити подвійне застосування міграцій і серверні тести з базою даних
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node --input-type=module <<'JS'
+          import pg from 'pg';
+          const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+          const tabellen = await pool.query(`
+            SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+             WHERE n.nspname = 'app'
+               AND c.relname IN (
+                 'github_spiegel_repos',
+                 'github_spiegel_gebeurtenissen',
+                 'github_bord_koppelingen',
+                 'github_eenklik_manifesten'
+               )
+          `);
+          await pool.end();
+          if (tabellen.rowCount !== 4 || tabellen.rows.some((t) => t.relrowsecurity !== true || t.relforcerowsecurity !== true)) {
+            throw Error('Таблиці середовища GitHub (міграція 0208) не створені або не мають примусового захисту RLS.');
+          }
+          JS
+          node scripts/eenheidstests.mjs site-hulpmiddelen.test.ts
+          node scripts/eenheidstests.mjs ruimte-bord-github-20261020.test.ts
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Повноцінне двостороннє робоче середовище GitHub (github.tarasevych.com), однонатискове підключення та екосистемні мости',
+            samenvatting: 'Масштабне оновлення розділу https://github.tarasevych.com/ на основі живої версії 20261111-191818: сучасне адаптивне оформлення всіх 13 вкладок підменю та спливних робочих вікон, провідник дерева файлів і вбудований вебредактор коду з різницею змін, задачі й запити на злиття з рецензіями та захищеним злиттям, керування конвеєрами дій і випусками, підключення GitHub в один натиск без ручного введення ключів, ізольоване двостороннє дзеркало з живим підписаним перехоплювачем подій, інтеграція з підключеними пристроями й екосистемою ШІ та майстер самостійного розгортання.',
+            wijzigingen: [
+              'Повне робоче середовище github.tarasevych.com (13 розділів підменю: Огляд, Сховища, Код і файли, Задачі, Запити на злиття, Дії та перевірки, Випуски, Дзеркало і міст, Проєкти, Документація, Пошук коду, Події, Доступ і ключі): єдина верхня панель активного сховища, створення й налаштування сховищ, відгалуження, позначення зірочкою та адаптивні спливні вікна <dialog> для комп’ютерів і смартфонів.',
+              'Провідник дерева файлів за гілками й мітками версій, створення та видалення робочих гілок із захистом типової гілки, вбудований вебредактор коду з по-рядковою різницею змін та збереженням прямо у гілку або у нову гілку з відкриттям запиту на злиття, а також по-рядкове порівняння гілок і перегляд фіксацій змін.',
+              'Робочі вікна задач, кольорових міток, запитів на злиття (змінені файли з різницею, перевірки конвеєра, рецензії схвалення або зауважень і захищене злиття з обов’язковим підтвердженням), конвеєрів дій (ручний запуск, перезапуск, скасування, журнали) та керування випусками.',
+              'Підключення GitHub в один натиск без потреби додавати додаткові ключі: прямий вхід через OAuth, офіційний потік маніфесту застосунку GitHub для свіжорозгорнутих серверів із автоматичним запечатуванням ключів AES-256-GCM та вхід за 8-значним кодом пристрою з автоопитуванням.',
+              'Ізольоване двостороннє дзеркало сховищ у межах приватного або технічного простору облікового запису (міграція 0208_github_spiegel_en_werkruimte.sql із примусовим захистом RLS), підписаний перехоплювач подій POST /api/github/webhook/:sleutel (HMAC-SHA256), двосторонній міст із Дошкою завдань, передача будови сховища до спільного контексту ШІ, 7 нових двомовних інструментів ШІ у каталозі v2 та майстер самостійного розгортання на власному чи серверному обладнанні.'
+            ],
+            fixes: [
+              'Кодування складених назв гілок із косою рискою (наприклад, feature/... або release/...) по сегментах у дереві файлів, порівнянні гілок та перегляді фіксацій змін, щоб запити до GitHub API працювали без збоїв для вкладених назв гілок.'
+            ],
+            beperkingen: [
+              'Злиття запиту на злиття вимагає явної позначки підтвердження користувача у робочому вікні перед виконанням дії на GitHub.',
+              'Команди клонування, синхронізації та розгортання на підключених пристроях подаються через захищену чергу підтвердження дій користувача.',
+              'Встановлення випуску на робочий сервер виконується виключно власником із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу та відкрийте https://github.tarasevych.com/ для перевірки оновленого підменю, однонатискового підключення, провідника коду з редактором, задач, запитів на злиття та розділу «Дзеркало і міст».'
+          };
+          const nl = {
+            titel: 'Volledige tweerichtings-GitHub-werkruimte (github.tarasevych.com), éénkliks koppeling en ecosysteembruggen',
+            samenvatting: 'Uitgebreide vernieuwing van https://github.tarasevych.com/ boven op de geïnstalleerde versie 20261111-191818: eigentijdse en mobielvriendelijke vormgeving van alle 13 submenutabbladen en dialoogvensters, bestandsboom en ingebouwde webeditor met regelverschil, vraagstukken en samenvoegingsverzoeken met beoordelingen en beschermd samenvoegen, beheer van CI-werkstromen en uitgaven, éénkliks koppeling zonder handmatig sleutels in te voeren, geïsoleerde tweerichtingsspiegel met ondertekende webhooks, samenwerking met gekoppelde apparaten en het AI-ecosysteem en een zelfstandige uitrolwizard.',
+            wijzigingen: [
+              'Volledige werkruimte op github.tarasevych.com (13 submenutabbladen: Overzicht, Opslagplaatsen, Code en bestanden, Vraagstukken, Samenvoegingsverzoeken, Acties en controles, Uitgaven, Spiegel en brug, Projecten, Documentatie, Code zoeken, Activiteit, Toegang en sleutels): centrale actieve-opslagplaatsbalk, aanmaken en bijwerken van opslagplaatsen, afsplitsen, stermarkering en mobielvriendelijke <dialog>-vensters.',
+              'Bestandsboom per tak en versiemarkering, aanmaken en verwijderen van werktakken met bescherming van de standaardtak, ingebouwde webeditor met regel-voor-regel verschilweergave en opslaan op de tak of via een nieuw samenvoegingsverzoek, plus takvergelijking en vastleggingsdetails.',
+              'Werkvensters voor vraagstukken, kleuretiketten, samenvoegingsverzoeken (gewijzigde bestanden met patch, CI-controles, beoordelingen en beschermd samenvoegen na bevestiging), CI-werkstromen (handmatig starten, herstarten, annuleren, logboeken) en beheer van uitgaven.',
+              'Eénkliks GitHub-koppeling zonder extra sleutels toe te voegen: directe OAuth-aanmelding, officiële GitHub App Manifest-stroom voor vers uitgerolde servers met automatische AES-256-GCM-verzegeling en aanmelding via een 8-cijferige apparaatcode.',
+              'Geïsoleerde tweerichtingsspiegel per privé- of technische ruimte (migratie 0208_github_spiegel_en_werkruimte.sql met verplichte FORCE ROW LEVEL SECURITY), ondertekende webhook-ontvanger POST /api/github/webhook/:sleutel (HMAC-SHA256), tweerichtingsbrug met het takenbord, overdracht naar gedeelde AI-context, 7 nieuwe tweetalige AI-hulpmiddelen in de v2-catalogus en een uitrolwizard voor eigen of gekoppelde apparatuur.'
+            ],
+            fixes: [
+              'Padcodering per segment voor samengestelde taknamen met schuine strepen (zoals feature/... of release/...) in de bestandsboom, takvergelijking en vastleggingsdetails.'
+            ],
+            beperkingen: [
+              'Het samenvoegen van een samenvoegingsverzoek vereist een uitdrukkelijk bevestigingsvinkje van de gebruiker in het werkvenster.',
+              'Kloon-, synchronisatie- en uitrolopdrachten op verbonden apparaten verlopen via de goedkeuringsrij van de gebruiker.',
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en open https://github.tarasevych.com/ om het vernieuwde submenu, de éénkliks koppeling, de bestandsboom met webeditor, vraagstukken, samenvoegingsverzoeken en «Spiegel en brug» te controleren.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 448,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено будівельні перевірки розміщення та пошукового каталогу (1428 елементів), одиничні випробування нового робочого середовища github-volledige-werkruimte (18/18), підключення github-oauth (17/17), картки github-koppelkaart (22/22), платформи github-platform (13/13), ізоляції просторів ruimte-bord-github, шлюзу повноважень на 1009 маршрутах (5/5), правил розміщення (68/68), прив’язки вкладок пошуку (46/46), каталогу connector-v2 і двомовних інструментів ШІ, меню (menu-v2, menu-indeling, werkblad-register), походження TRACE-001, перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій включно з 0208 на чистій базі PostgreSQL 16 із перевіркою примусового захисту RLS.',
+              nl: 'Bouwcontroles van plaatsing en de UI-zoekcatalogus (1428 elementen) zijn geslaagd, evenals de eenheidstests voor github-volledige-werkruimte (18/18), github-oauth (17/17), github-koppelkaart (22/22), github-platform (13/13), ruimte-isolatie ruimte-bord-github, de toegangspoort op alle 1009 routes (5/5), plaatsing (68/68), zoektabbladen (46/46), connector-v2 en tweetalige AI-hulpmiddelen, menu-opbouw (menu-v2, menu-indeling, werkblad-register) en herkomst TRACE-001, plus typecontrole van client en server, productiebouw en dubbele uitvoering van alle migraties inclusief 0208 op een schone PostgreSQL 16-databank met FORCE ROW LEVEL SECURITY-verificatie.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk 'Повноцінне двостороннє робоче середовище GitHub (github.tarasevych.com), однонатискове підключення та екосистемні мости.' \
+            --samenvatting-nl 'Volledige tweerichtings-GitHub-werkruimte (github.tarasevych.com), éénkliks koppeling en ecosysteembruggen.' \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+          printf 'GITHUB-010 · Повноцінне двостороннє робоче середовище GitHub (https://github.tarasevych.com/): 13 розділів підменю, адаптивні робочі та спливні вікна для комп’ютерів і смартфонів, дерево файлів і вебредактор коду з різницею змін, задачі, запити на злиття, конвеєри дій і випуски, підключення в один натиск без ручного введення ключів, ізольоване двостороннє дзеркало з живим підписаним перехоплювачем подій, мости до пристроїв та екосистеми ШІ й майстер самостійного розгортання. Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 'https://hub.tarasevych.com/api/version' > "$RUNNER_TEMP/pered-vypuskom.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+          if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+            throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "GITHUB-010 · повноцінне робоче середовище GitHub та екосистемні мости · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-010-controle
+          path: uitvoer/
+          if-no-files-found: ignore

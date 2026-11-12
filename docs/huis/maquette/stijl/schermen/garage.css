@@ -1,0 +1,356 @@
+/* garage.css — розділ «Гараж»: речення гаража, картки транспорту (hv-telemetrie + рядок дій), силует авто згори,
+   мапа «Ділянка · Околиці · Регіон» (hv-landkaart), план пилососа (hv-plan), картки роботів і зріз дозволів.
+   Числа лежать на папері; тон ніколи не єдина ознака (слово, форма, штрих). Невиміряне заштриховано.
+   Кольори — лише токени; адаптивність — контейнерні запити (gar — сторінка, garvlijst — список транспорту, garsil — силует). */
+
+/* ───────────── Сітка сторінки ───────────── */
+.hv-gar { display: grid; gap: var(--hv-kier); min-inline-size: 0; container: gar / inline-size; }
+.hv-gar .hv-blok { min-inline-size: 0; }
+.hv-gar-rooster { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); align-items: start; min-inline-size: 0; }
+.hv-gar-kolom { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+.hv-gar-kaart { position: relative; min-inline-size: 0; }
+.hv-gar-kaart > .hv-veld:first-of-type { border-block-start: 0; }
+@container gar (min-width: 760px) {
+  .hv-gar-rooster--twee { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-gar-rooster--twee.is-breed-links { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .hv-gar-rooster--drie { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-gar-rooster--drie > .hv-gar-kolom:last-child:nth-child(3) { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container gar (min-width: 1120px) {
+  .hv-gar-rooster--drie { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 1fr); }
+  .hv-gar-rooster--drie > .hv-gar-kolom:last-child:nth-child(3) { grid-column: auto; display: grid; grid-template-columns: minmax(0, 1fr); }
+  .hv-gar-rooster--drie.is-zonder-sil { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+/* ───────────── Заголовки карток, дрібниці ───────────── */
+.hv-gar-kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); min-block-size: 32px; margin-block-end: var(--ruimte-3); }
+.hv-gar-kop h3 { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-inline-size: 0; font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); color: var(--muted); }
+.hv-gar-kop h3 > .hv-ic { flex: none; inline-size: 28px; block-size: 28px; padding: 6px; border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-gar-kop.hv-toon-aan h3 > .hv-ic, .hv-gar-kop.hv-toon-auto h3 > .hv-ic, .hv-gar-kop.hv-toon-batterij h3 > .hv-ic, .hv-gar-kop.hv-toon-warm h3 > .hv-ic { background: var(--toon-zacht); color: var(--toon); }
+.hv-gar-kop__rechts { display: inline-flex; align-items: center; gap: var(--ruimte-2); flex: none; }
+.hv-gar-kop__rechts > .hv-knop { margin-block: -6px; margin-inline-end: calc(var(--ruimte-2) * -1); }
+.hv-gar-oud { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gar-sim { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--info-zacht); color: var(--text); font-size: var(--tekst-mini); font-weight: 600; }
+.hv-gar-sim > .hv-ic { color: var(--info); }
+.hv-gar-euro { margin-inline-start: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gar-lijst { display: grid; gap: var(--ruimte-2); padding-inline-start: 1.2em; font-size: var(--tekst-klein); line-height: 1.5; }
+.hv-gar-nu { margin-inline-start: 6px; padding: 0 6px; border-radius: 999px; background: var(--warn-zacht); color: var(--text); font-size: var(--tekst-mini); font-weight: 600; line-height: 1.6; }
+
+/* ───────────── Речення гаража ───────────── */
+.hv-gar-zin {
+  display: flex; gap: var(--ruimte-4); align-items: flex-start; padding: var(--ruimte-4) var(--ruimte-5);
+  border-radius: var(--straal-l); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
+  background: linear-gradient(118deg, var(--hv-auto-zacht), var(--panel) 58%);
+}
+.hv-gar-zin__teken { flex: none; display: grid; place-items: center; inline-size: 48px; block-size: 48px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); color: var(--hv-auto); }
+.hv-gar-zin__tekst { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-gar-zin__vol, .hv-gar-zin__kort { font-size: var(--hv-tekst-kop); font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; text-wrap: pretty; color: var(--text); }
+.hv-gar-zin__kort { display: none; }
+.hv-gar-zin__chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); }
+@container gar (max-width: 479px) {
+  .hv-gar-zin { padding: var(--ruimte-4); gap: var(--ruimte-3); }
+  .hv-gar-zin__teken { inline-size: 40px; block-size: 40px; border-radius: 12px; }
+  .hv-gar-zin__vol { font-size: var(--tekst-basis); }
+}
+
+/* ───────────── Картка транспорту ───────────── */
+.hv-gar-vlijst { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); container: garvlijst / inline-size; }
+@container gar (min-width: 640px) { .hv-gar-vlijst { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container gar (min-width: 1040px) { .hv-gar-vlijst { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.hv-gar-vkaart {
+  display: grid; align-content: start; min-inline-size: 0; padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-3);
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1);
+  transition: box-shadow var(--hv-duur-2), transform var(--hv-duur-2);
+}
+.hv-gar-vkaart:hover { box-shadow: var(--schaduw-2); }
+.hv-gar-vkaart.is-alarm { border-color: var(--fout); box-shadow: 0 0 0 1px var(--fout); }
+.hv-gar-vkaart .hv-telemetrie__lijf { padding-block: var(--ruimte-1) var(--ruimte-2); }
+.hv-gar-vkaart .hv-telemetrie__silhouet { inline-size: 56px; block-size: 56px; display: grid; place-items: center; border-radius: 18px; background: var(--toon-zacht); color: var(--toon); }
+.hv-gar-vkaart .hv-telemetrie.hv-toon-neutraal .hv-telemetrie__silhouet { background: var(--surface); color: var(--text); }
+.hv-gar-vkaart__voet { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); padding-block-start: var(--ruimte-3); margin-block-start: var(--ruimte-1); border-block-start: 1px solid var(--line); }
+.hv-gar-vkaart__slot { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-gar-vkaart__chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-1); }
+.hv-gar-vkaart__acties { display: flex; align-items: center; gap: var(--ruimte-1); margin-inline-start: auto; }
+.hv-gar-vkaart__acties > .hv-icoonknop { color: var(--muted); }
+
+/* бензиновий бак: тон без кольору, але не чорна смуга */
+.hv-gar-vkaart .hv-telemetrie.hv-toon-neutraal .hv-telemetrie__balk i { background: var(--muted); }
+.hv-gar-punt { margin-inline: 6px; color: var(--muted); }
+.hv-gar-stuk { display: inline; }
+.hv-gar-stuk .hv-ic { display: inline-block; vertical-align: -3px; margin-inline-end: 4px; }
+
+/* ── Двоколісні компактно ── */
+.hv-gar-vlijst.is-autos { margin-block-end: var(--hv-kier); }
+@container gar (min-width: 640px) { .hv-gar-vlijst.is-autos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hv-gar-twee { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ruimte-2); }
+@container gar (min-width: 640px) { .hv-gar-twee { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container gar (min-width: 1180px) { .hv-gar-twee { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.hv-gar-tweerij { display: flex; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3) var(--ruimte-2) var(--ruimte-2); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-gar-tweerij.is-alarm { border-color: var(--fout); }
+.hv-gar-tweerij__lijf { flex: 1; display: flex; align-items: center; gap: var(--ruimte-3); min-inline-size: 0; min-block-size: 48px; text-align: start; border-radius: var(--straal-m); }
+.hv-gar-tweerij__teken { flex: none; display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: 12px; background: var(--toon-zacht); color: var(--toon); }
+.hv-gar-tweerij__tekst { flex: 1; display: grid; min-inline-size: 0; }
+.hv-gar-tweerij__naam { font-size: var(--tekst-klein); font-weight: 600; line-height: 1.25; }
+.hv-gar-tweerij__sub { font-size: var(--tekst-mini); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hv-gar-tweerij__getal { flex: none; display: grid; justify-items: end; gap: 4px; inline-size: 64px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hv-gar-tweerij__getal .hv-gar-balk { inline-size: 100%; block-size: 6px; margin: 0; }
+.hv-gar-tweerij__getal .hv-gar-balk b { inset-block: -3px; }
+
+/* ───────────── Сторінка транспорту ───────────── */
+.hv-gar-terug { display: flex; }
+.hv-gar-terug > .hv-knop { margin-inline-start: calc(var(--ruimte-2) * -1); }
+.hv-gar-wissel { display: flex; gap: var(--ruimte-2); overflow-x: auto; scrollbar-width: none; padding-block: 2px; min-inline-size: 0; max-inline-size: 100%; }
+.hv-gar-wissel::-webkit-scrollbar { display: none; }
+.hv-gar-wissel__deel {
+  flex: none; display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: 44px; padding: 0 var(--ruimte-3);
+  border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-klein); font-weight: 600; color: var(--text);
+}
+.hv-gar-wissel__deel > .hv-ic { color: var(--muted); }
+.hv-gar-wissel__getal { font-size: var(--tekst-mini); color: var(--muted); font-variant-numeric: tabular-nums; }
+.hv-gar-wissel__deel.is-gekozen { background: var(--text); border-color: var(--text); color: var(--bg); }
+.hv-gar-wissel__deel.is-gekozen > .hv-ic, .hv-gar-wissel__deel.is-gekozen .hv-gar-wissel__getal { color: var(--bg); }
+
+.hv-gar-vkop { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3) var(--ruimte-4); align-items: center; padding: var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); }
+.hv-gar-vkop__teken { display: grid; place-items: center; inline-size: 64px; block-size: 64px; border-radius: 20px; background: var(--surface); color: var(--text); }
+.hv-gar-vkop__teken[class*="hv-toon-"] { background: var(--toon-zacht); color: var(--toon); }
+.hv-gar-vkop__tekst { display: grid; gap: 4px; min-inline-size: 0; }
+.hv-gar-vkop__tekst h2 { font-size: var(--hv-tekst-kop); font-weight: var(--hv-gewicht-kop); letter-spacing: -0.01em; line-height: 1.2; }
+.hv-gar-vkop__tekst > p:not(.hv-stempel) { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-gar-vkop__tekst .hv-nb .hv-ic { vertical-align: -3px; margin-inline-end: 4px; }
+.hv-gar-vkop__rechts { grid-column: 1 / -1; display: flex; }
+@container gar (min-width: 640px) {
+  .hv-gar-vkop { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .hv-gar-vkop__rechts { grid-column: auto; }
+}
+.hv-gar-deeltabs { inline-size: 100%; }
+@container gar (min-width: 640px) { .hv-gar-deeltabs { inline-size: auto; justify-self: start; } }
+@container gar (max-width: 559px) {
+  .hv-gar-deeltabs .hv-segment__deel { flex-direction: column; gap: 2px; padding-inline: 2px; font-size: var(--tekst-mini); }
+}
+.hv-gar-deel { display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+
+.hv-gar-balkje { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); }
+.hv-gar-balkje > .hv-filter { flex: 1 1 260px; }
+.hv-gar-balkje__feit { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-gar-balkje__feit > .hv-ic { color: var(--muted); }
+
+/* ── Заряд і запас ходу ── */
+.hv-gar-lading__groot .hv-getal__sub { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+.hv-gar-balk { position: relative; display: block; block-size: 10px; margin-block: var(--ruimte-3); border-radius: 999px; background: var(--toon-zacht); border: 1px solid var(--hv-omtrek); }
+.hv-gar-balk i { display: block; block-size: 100%; border-radius: 999px; background: var(--toon); transition: inline-size var(--hv-duur-3); }
+.hv-gar-balk b { position: absolute; inset-block: -5px; inline-size: 2px; border-radius: 1px; background: var(--text); }
+.hv-gar-lading__stuurt { display: flex; gap: var(--ruimte-2); align-items: flex-start; font-size: var(--tekst-klein); line-height: 1.45; }
+.hv-gar-lading__stuurt > .hv-ic { margin-block-start: 2px; flex: none; color: var(--muted); }
+.hv-gar-cijfers { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--ruimte-3); margin-block-start: var(--ruimte-3); padding-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+
+/* ── Замок ── */
+.hv-gar-slotrij { display: flex; align-items: center; gap: var(--ruimte-3); }
+.hv-gar-slotrij__tekst { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-gar-slotrij__woord { font-size: var(--tekst-basis); font-weight: 600; }
+.hv-gar-slotrij__sub { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: var(--tekst-mini); color: var(--muted); }
+
+/* ── Клімат ── */
+.hv-gar-klimaat__rij { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--ruimte-3); }
+.hv-gar-klimaat__doel { display: grid; gap: var(--ruimte-1); justify-items: start; }
+
+/* ───────────── Силует авто ───────────── */
+.hv-gar-sil {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 170px) minmax(0, 1fr); grid-template-areas: "lv svg rv" "la svg ra";
+  align-items: center; gap: var(--ruimte-2) var(--ruimte-3); max-inline-size: 420px; margin-inline: auto; container: garsil / inline-size;
+}
+.hv-gar-sil__svg { grid-area: svg; inline-size: 100%; block-size: auto; overflow: visible; }
+.hv-gar-sil__druk { display: grid; gap: 2px; font-size: var(--tekst-klein); font-weight: 600; font-variant-numeric: tabular-nums; }
+.hv-gar-sil__druk.is-lv { grid-area: lv; justify-items: end; text-align: end; align-self: start; margin-block-start: 18%; }
+.hv-gar-sil__druk.is-rv { grid-area: rv; align-self: start; margin-block-start: 18%; }
+.hv-gar-sil__druk.is-la { grid-area: la; justify-items: end; text-align: end; align-self: end; margin-block-end: 18%; }
+.hv-gar-sil__druk.is-ra { grid-area: ra; align-self: end; margin-block-end: 18%; }
+.hv-gar-sil__druk.is-laag { color: var(--text); }
+.hv-gar-sil__druk.is-laag .hv-maat { padding: 2px 8px; border-radius: 999px; background: var(--warn-zacht); box-shadow: inset 0 0 0 1px var(--warn); }
+.hv-gar-sil__norm { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gar-sil__druk.is-onbekend { color: var(--muted); }
+.hv-gar-sil__romp { fill: var(--surface); stroke: var(--text); stroke-width: 2; }
+.hv-gar-sil__dak { fill: var(--surface2); stroke: var(--hv-omtrek); stroke-width: 1.5; }
+.hv-gar-sil__ruit { fill: var(--hv-koud-zacht); stroke: var(--text); stroke-width: 1.5; }
+.hv-gar-sil__ruit.is-onbekend { fill: url(#hv-gar-arc); }
+.hv-gar-arc { stroke: var(--hv-arcering); stroke-width: 1.5; }
+.hv-gar-sil__zij { fill: none; stroke: var(--hv-omtrek); stroke-width: 3; stroke-linecap: round; }
+.hv-gar-sil__zij.is-open { stroke: var(--warn); stroke-dasharray: 6 5; }
+.hv-gar-sil__lijn { fill: none; stroke: var(--hv-omtrek); stroke-width: 1.5; stroke-linecap: round; }
+.hv-gar-sil__koffer { fill: none; stroke: var(--text); stroke-width: 2; stroke-linecap: round; }
+.hv-gar-sil__koffer.is-open { stroke: var(--warn); stroke-width: 3; }
+.hv-gar-sil__band { fill: var(--text); }
+.hv-gar-sil__band.is-laag { fill: var(--warn); }
+.hv-gar-sil__band.is-onbekend { fill: url(#hv-gar-arc); stroke: var(--hv-omtrek); }
+.hv-gar-sil__laad { fill: var(--hv-auto); stroke: var(--panel); stroke-width: 2; }
+.hv-gar-sil__slot { color: var(--text); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hv-gar-sil__slot.is-open { color: var(--warn); }
+.hv-gar-sil__legenda { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--ruimte-1) var(--ruimte-4); margin-block-start: var(--ruimte-3); padding: 0; list-style: none; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gar-sil__legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.hv-gar-sil__arcering { inline-size: 14px; block-size: 14px; border-radius: 3px; border: 1px solid var(--hv-omtrek); background: repeating-linear-gradient(var(--hv-arcering-hoek), var(--hv-arcering) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) 4px); }
+
+/* ───────────── Мапа (hv-landkaart) ───────────── */
+.hv-gar-kaartje { position: relative; overflow: hidden; border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--surface); }
+.hv-gar-kaartje.is-verleden { box-shadow: inset 0 0 0 2px var(--hv-wens-rand); }
+.hv-gar-kaartje__pauze { display: grid; justify-items: center; gap: var(--ruimte-2); padding: var(--ruimte-6) var(--ruimte-4); text-align: center; font-size: var(--tekst-klein); color: var(--muted); }
+.hv-gar-kaart__svg { display: block; inline-size: 100%; block-size: auto; }
+.hv-gar-kaart__land { fill: var(--surface); }
+.hv-gar-kaart__zee { fill: var(--hv-koud-zacht); }
+.hv-gar-kaart__water { fill: none; stroke: var(--hv-koud-zacht); stroke-width: 10; stroke-linecap: round; }
+.hv-gar-kaart__weg { fill: none; stroke: var(--surface2); stroke-width: 7; stroke-linecap: round; }
+.hv-gar-kaart__straat { fill: var(--surface2); }
+.hv-gar-kaart__perceel { fill: var(--panel); stroke: var(--hv-omtrek); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.hv-gar-kaart__vlieg { fill: none; stroke: var(--info); stroke-width: 1.2; stroke-dasharray: 2 4; }
+.hv-gar-kaart__gras { fill: var(--ok-zacht); stroke: var(--ok); stroke-width: 1; stroke-opacity: 0.35; }
+.hv-gar-kaart__gras.is-gekozen { stroke-opacity: 1; stroke-width: 1.5; }
+.hv-gar-kaart__gras.is-bezig { fill: var(--hv-aan-zacht); stroke: var(--hv-aan); }
+.hv-gar-kaart__sproei { fill: var(--hv-koud-zacht); stroke: var(--hv-koud); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.hv-gar-kaart__sproei.is-uit { stroke-opacity: 0.35; fill-opacity: 0.35; }
+.hv-gar-kaart__sproei.is-bezig { stroke-dasharray: none; stroke-width: 2; }
+.hv-gar-kaart__huis { fill: var(--surface2); stroke: var(--text); stroke-width: 2; }
+.hv-gar-kaart__oprit { fill: var(--surface2); stroke: var(--hv-omtrek); stroke-width: 1; }
+.hv-gar-kaart__terras { fill: var(--hv-zon-zacht); stroke: var(--hv-omtrek); stroke-width: 1; }
+.hv-gar-kaart__dock { fill: var(--panel); stroke: var(--info); stroke-width: 1.5; }
+.hv-gar-kaart__tekst { fill: var(--text); font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.hv-gar-kaart__tekst.is-midden { text-anchor: middle; }
+.hv-gar-kaart__tekst.is-eind { text-anchor: end; }
+.hv-gar-kaart__tekst.is-klein { font-size: 12px; font-weight: 500; fill: var(--muted); }
+.hv-gar-kaart__thuis { fill: var(--text); }
+.hv-gar-kaart__stad { fill: var(--muted); }
+.hv-gar-kaart__geozone { fill: var(--info-zacht); stroke: var(--info); stroke-width: 1.5; stroke-dasharray: 4 3; fill-opacity: 0.7; }
+.hv-gar-kaart__route { fill: none; stroke: var(--text); stroke-width: 2.5; stroke-dasharray: 1 6; stroke-linecap: round; }
+.hv-gar-kaart__ring { fill: none; stroke-width: 2; }
+.hv-gar-kaart__ring.is-auto { stroke: var(--hv-auto); fill: var(--hv-auto-zacht); fill-opacity: 0.35; }
+.hv-gar-kaart__ring.is-auto.is-heen { stroke-dasharray: none; fill-opacity: 0.5; }
+.hv-gar-kaart__ring.is-auto:not(.is-heen) { stroke-dasharray: 6 5; }
+.hv-gar-kaart__ring.is-twee { stroke: var(--hv-batterij); stroke-dasharray: 3 3; }
+.hv-gar-kaart__schaal { fill: var(--text); }
+.hv-gar-kaart__oud { fill: var(--surface2); fill-opacity: 0.4; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 3 3; }
+/* Підписи й маркери — HTML поверх SVG: розмір не залежить від масштабу мапи */
+.hv-gar-kaartvlak { position: relative; inline-size: 100%; container-type: inline-size; }
+.hv-gar-kaartvlak > .hv-gar-kaart__svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+.hv-gar-kaart__svg * { vector-effect: non-scaling-stroke; }
+.hv-gar-kaart__dockkruis { fill: none; stroke: var(--info); stroke-width: 1.2; }
+.hv-gar-kaart__label {
+  position: absolute; transform: translate(0, -50%); white-space: nowrap; pointer-events: none;
+  font-size: var(--tekst-mini); font-weight: 600; line-height: 1.2; color: var(--text);
+  text-shadow: 0 0 3px var(--panel), 0 0 3px var(--panel), 0 0 6px var(--panel);
+}
+.hv-gar-kaart__label.is-midden { transform: translate(-50%, -50%); }
+.hv-gar-kaart__label.is-eind { transform: translate(-100%, -50%); }
+.hv-gar-kaart__label.is-kop { font-size: var(--tekst-klein); font-weight: 700; }
+.hv-gar-kaart__label.is-klein { font-weight: 500; color: var(--muted); }
+.hv-gar-kaart__label.is-ring { color: var(--text); font-weight: 600; }
+.hv-gar-kaart__label.is-oud { font-weight: 600; }
+.hv-gar-kaart__label.is-zone, .hv-gar-kaart__label.is-breed { display: none; }
+@container (min-width: 560px) { .hv-gar-kaart__label.is-zone, .hv-gar-kaart__label.is-breed { display: block; } }
+.hv-gar-kaart__label.is-zone { transform: none; margin-block-start: -7px; color: var(--text); opacity: 0.75; }
+.hv-gar-kaart__label.is-pil { padding: 1px 7px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); text-shadow: none; font-variant-numeric: tabular-nums; }
+.hv-gar-merk.is-dock .hv-gar-merk__stip { border-color: var(--info); inline-size: 28px; block-size: 28px; box-shadow: none; }
+.hv-gar-kaart__label.is-straat { color: var(--muted); text-shadow: none; letter-spacing: 0.02em; }
+.hv-gar-merk {
+  position: absolute; display: grid; place-items: center; inline-size: 44px; block-size: 44px; margin: -22px 0 0 -22px; padding: 0;
+  border-radius: 50%; background: none; color: var(--text);
+}
+.hv-gar-merk__stip {
+  display: grid; place-items: center; inline-size: 32px; block-size: 32px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--text); box-shadow: var(--schaduw-2); transition: transform var(--hv-duur-1);
+}
+.hv-gar-merk__teller {
+  position: absolute; inset-block-start: 2px; inset-inline-end: 0; min-inline-size: 18px; block-size: 18px; padding-inline: 4px; display: grid; place-items: center;
+  border-radius: 999px; background: var(--text); color: var(--bg); font-size: var(--tekst-mini); font-weight: 700; line-height: 1;
+}
+.hv-gar-merk.is-knop { cursor: pointer; }
+.hv-gar-merk.is-knop:hover .hv-gar-merk__stip { transform: scale(1.08); }
+.hv-gar-merk.is-knop:focus-visible { outline: none; }
+.hv-gar-merk.is-knop:focus-visible .hv-gar-merk__stip { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: 2px; }
+.hv-gar-merk.is-nadruk .hv-gar-merk__stip { background: var(--hv-auto-zacht); border-color: var(--hv-auto); border-width: 3px; color: var(--text); }
+.hv-gar-merk.is-bezig .hv-gar-merk__stip { background: var(--hv-aan-vlak); border-color: var(--hv-aan); color: var(--text-on-vlak); }
+.hv-gar-merk.is-oud .hv-gar-merk__stip, .hv-gar-merk.is-verleden .hv-gar-merk__stip { border-style: dashed; border-color: var(--muted); box-shadow: none; }
+.hv-gar-kaartknop { display: block; position: relative; inline-size: 100%; padding: 0; border-radius: var(--straal-m); overflow: hidden; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.hv-gar-kaartknop:hover { box-shadow: var(--schaduw-2); }
+.hv-gar-kaartkaart { display: grid; gap: var(--ruimte-3); }
+.hv-gar-kaartbalk { display: flex; flex-wrap: wrap; gap: var(--ruimte-2); margin-block-end: var(--ruimte-3); }
+.hv-gar-grootkaart > .hv-filter { margin-block-end: var(--ruimte-3); }
+.hv-gar-legenda { display: flex; flex-wrap: wrap; gap: var(--ruimte-1) var(--ruimte-4); margin-block: var(--ruimte-3) 0; padding: 0; list-style: none; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gar-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.hv-gar-legenda__merk { inline-size: 16px; block-size: 10px; border-radius: 3px; border: 1.5px solid var(--hv-omtrek); }
+.hv-gar-legenda__merk.is-gras { background: var(--ok-zacht); border-color: var(--ok); }
+.hv-gar-legenda__merk.is-sproei { background: var(--hv-koud-zacht); border: 1.5px dashed var(--hv-koud); border-radius: 50%; inline-size: 12px; block-size: 12px; }
+.hv-gar-legenda__merk.is-vlieg { border: 1.5px dotted var(--info); }
+.hv-gar-legenda__merk.is-geozone { background: var(--info-zacht); border: 1.5px dashed var(--info); border-radius: 50%; inline-size: 12px; block-size: 12px; }
+.hv-gar-legenda__merk.is-auto { background: var(--hv-auto-zacht); border-color: var(--hv-auto); border-radius: 50%; inline-size: 12px; block-size: 12px; }
+.hv-gar-legenda__merk.is-twee { border: 1.5px dashed var(--hv-batterij); border-radius: 50%; inline-size: 12px; block-size: 12px; }
+.hv-gar-legenda__merk.is-oud { border: 1.5px dashed var(--muted); border-radius: 50%; inline-size: 12px; block-size: 12px; }
+
+/* ── Місце: мала мапа в картці ── */
+.hv-gar-plek__waar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-block-end: var(--ruimte-3); font-size: var(--tekst-klein); }
+.hv-gar-plek__waar > .hv-ic { color: var(--muted); }
+.hv-gar-plek .hv-rijen { margin-block-start: var(--ruimte-2); }
+
+/* ───────────── Роботи ───────────── */
+.hv-gar-robots { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); }
+@container gar (min-width: 900px) { .hv-gar-robots.is-groot { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.hv-gar-robot { display: grid; align-content: start; gap: var(--ruimte-2); padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-gar-robot > .hv-gar-kop { margin-block-end: 0; }
+.hv-gar-robot .hv-knoppen { margin-block-start: var(--ruimte-1); }
+.hv-gar-robot .hv-filter { margin-block-start: var(--ruimte-1); }
+.hv-gar-robotkop { display: flex; align-items: center; gap: var(--ruimte-3); }
+.hv-gar-robotkop__woord { font-size: var(--tekst-basis); font-weight: 600; }
+.hv-gar-robotkop__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-gar-robotknoppen > .hv-knop { flex: 1 1 auto; }
+.hv-gar-robotknoppen > .hv-knop--stil { flex: 0 0 auto; }
+.hv-gar-robot > .hv-gar-planvlak, .hv-gar-robot > .hv-gar-kaartje, .hv-gar-robot > .hv-rijen { margin-block-start: var(--ruimte-2); }
+.hv-gar-voortgang { display: grid; gap: 2px; }
+.hv-gar-voortgang .hv-gar-balk { margin-block: var(--ruimte-1); }
+.hv-gar-voortgang__tekst { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gar-fout { display: flex; gap: var(--ruimte-3); align-items: flex-start; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--warn-zacht); border: 1px solid var(--warn); }
+.hv-gar-fout > .hv-ic { color: var(--warn); flex: none; margin-block-start: 2px; }
+.hv-gar-fout > div { display: grid; gap: var(--ruimte-2); justify-items: start; }
+.hv-gar-fout__kop { font-weight: 600; }
+.hv-gar-fout__wat { font-size: var(--tekst-klein); line-height: 1.45; }
+.hv-gar-week { align-items: center; }
+.hv-gar-week .hv-chip { min-inline-size: 44px; justify-content: center; }
+.hv-gar-week__tijd { display: inline-flex; align-items: center; gap: 6px; margin-inline-start: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
+
+/* ── hv-plan пилососа ── */
+.hv-gar-planvlak { position: relative; inline-size: 100%; max-inline-size: 560px; aspect-ratio: 340 / 196; margin-block-end: var(--ruimte-2); }
+.hv-gar-plan { position: absolute; inset: 0; display: block; inline-size: 100%; block-size: 100%; }
+.hv-gar-plan__label { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; max-inline-size: 30%; pointer-events: none; text-align: center; font-size: var(--tekst-mini); font-weight: 700; line-height: 1.15; color: var(--text); overflow-wrap: anywhere; }
+.hv-gar-plan__label small { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gar-plan__label.is-gekozen { color: var(--text); }
+.hv-gar-plan__kamer rect { fill: var(--surface); stroke: var(--text); stroke-width: 2; transition: fill var(--hv-duur-1); }
+.hv-gar-plan__kamer { cursor: pointer; }
+.hv-gar-plan__kamer:hover rect { fill: var(--surface2); }
+.hv-gar-plan__kamer.is-gekozen rect { fill: var(--hv-aan-zacht); stroke: var(--hv-aan); }
+.hv-gar-plan__kamer.is-nu rect { fill: var(--hv-aan-vlak); }
+.hv-gar-plan__kamer.is-nu rect { stroke-width: 3; stroke-dasharray: 6 4; }
+.hv-gar-plan__kamer:focus-visible { outline: none; }
+.hv-gar-plan__kamer:focus-visible rect { stroke: var(--focus); stroke-width: 3; }
+.hv-gar-plan__kamer .hv-gar-kaart__tekst { stroke: var(--surface); }
+.hv-gar-plan__kamer.is-gekozen .hv-gar-kaart__tekst { fill: var(--text-on-vlak); stroke: var(--hv-aan-vlak); }
+.hv-gar-plan__basis { fill: var(--panel); stroke: var(--text); stroke-width: 2; }
+.hv-gar-plan__robot { fill: var(--hv-aan); stroke: var(--panel); stroke-width: 3; }
+
+/* ───────────── Дозволи гаража ───────────── */
+.hv-gar-dozvoly { display: grid; gap: var(--ruimte-3); }
+.hv-gar-groep { display: grid; gap: var(--ruimte-2); padding-block-start: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-gar-groep__naam { font-size: var(--tekst-klein); font-weight: 700; color: var(--text); }
+@container gar (min-width: 900px) {
+  .hv-gar-dozvoly { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--ruimte-5); }
+  .hv-gar-dozvoly > .hv-tekst, .hv-gar-dozvoly > .hv-veld, .hv-gar-dozvoly > .hv-knoppen { grid-column: 1 / -1; }
+}
+
+/* ───────────── Аркуші й діалоги ───────────── */
+.hv-gar-bladstand { display: flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); color: var(--muted); }
+.hv-gar-dialoog { display: grid; gap: var(--ruimte-3); justify-items: start; }
+.hv-gar-weiger__rijen { display: grid; gap: var(--ruimte-3); }
+.hv-gar-weiger__rijen > div { display: grid; gap: 4px; padding-block-end: var(--ruimte-3); border-block-end: 1px solid var(--line); }
+.hv-gar-weiger__rijen dt { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); font-weight: 700; }
+.hv-gar-weiger__rijen dd { margin: 0; font-size: var(--tekst-klein); line-height: 1.5; }
+.hv-gar-weiger__rijen > div:first-child dt > .hv-ic { color: var(--fout); }
+.hv-gar-weiger__rijen > div:last-child dt > .hv-ic { color: var(--ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hv-gar-vkaart, .hv-gar-balk i, .hv-gar-plan__kamer rect { transition: none; }
+}
+.hv-gar-plan * { vector-effect: non-scaling-stroke; }

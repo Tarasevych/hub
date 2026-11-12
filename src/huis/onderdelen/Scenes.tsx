@@ -28,7 +28,7 @@ export default function Scenes({ lang, smal, woningId, ov, vernieuw, toon }: Ond
   const magCmd = mag && ov.integraties.some((i) => i.schrijven);
   const bedienbaar = useMemo(() => ov.apparaten.filter((a) => !a.kritiek && a.mogelijkheden.some((m) => m.schrijven && SCHRIJFBAAR.includes(m.soort) && !KRITIEKE_SOORTEN.includes(m.soort))), [ov.apparaten]);
   const naam = (id: string) => ov.apparaten.find((a) => a.id === id)?.naam ?? '?';
-  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'));
+  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout');
 
   const run = async (s: Scene) => {
     setBezig(s.id);

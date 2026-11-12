@@ -125,6 +125,8 @@ vraagt ze niet). Staat de API uit, dan meldt de pagina dat eerlijk en blijft all
 | `PORT` | `8080` | Poort; moet gelijk zijn aan `deploy/cloudflared-config.yml`. |
 | `DIST_DIR` | `<release>/dist` | Gebouwde frontend. |
 | `DASHBOARD_DIR` | `/srv/mijn-ruimte/dashboard` | Statisch dashboard voor `dashboard.tarasevych.com`. |
+| `HUIS_VERTROUWDE_TOESTELLEN` | leeg | Onderdeel «Huis» (Huis vNext): lijst met vertrouwde adressen van Home Assistant-gateways in het thuisnetwerk, gescheiden door een komma, puntkomma of nieuwe regel, bijvoorbeeld `http://192.168.1.20:8123,ha.thuis.example`. Alleen voor deze adressen zijn privéadressen en `http:` toegestaan; al het andere in het lokale netwerk weigert de server. Zonder pad, zoekdeel, gebruikersnaam of sterretjes. De eigenaar kan ook op de site adressen toevoegen (met bevestiging van de aanmelding); beide lijsten gelden samen. |
+| `MR_BEHEERSUBNET` | `10.0.0.0/8` | Beheersubnet van de server in de vorm `adres/bits`. Adressen daaruit zijn voor gateways van «Huis» altijd verboden, ook als ze bij de vertrouwde adressen staan. Zonder geldige waarde geldt `10.0.0.0/8`: gebruikt het thuisnetwerk ook `10.x`, stel dan het exacte beheersubnet in, anders worden alle gateways thuis geweigerd. |
 | `UPLOADS_DIR` | `/srv/data/uploads` | Bestandsopslag (enige schrijfbare map voor de dienst). |
 | `MERK_EIGEN_MAP` | `/srv/mijn-ruimte/merk-eigen` | Officiële logo's die de beheerder zelf neerlegt (`<sleutel>.svg` of `.png`, ≤ 200 KB, SVG ontsmet) — zie `deploy/PROJECTOVERZICHT.nl.md`, «Eigen logo's». |
 | `MAX_BODY_BYTES` | `12582912` (12 MiB) | Maximale requestgrootte. |

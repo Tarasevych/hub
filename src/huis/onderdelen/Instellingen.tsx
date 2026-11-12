@@ -2,13 +2,14 @@
 // tijdelijk voor de laatste twee); nieuwe woning. Toegang en rollen zijn RLS-gedekt (migratie 0128); hier alleen de bediening.
 import { useEffect, useState } from 'react';
 import { Home, Plus, Trash2, Users } from 'lucide-react';
-import type { Verdieping } from '../../../shared/huis-model';
+import { TIJDZONES_VAAK, alleTijdzones, type Verdieping } from '../../../shared/huis-model';
 import type { OnderdeelProps } from '../HuisPagina';
 import { HuisFout, huisClient, kiesWoning, type LidUit } from '../huis-client';
 import { datumTekst, foutTekst, tr } from '../tekst';
 
 const ROL: Record<string, [string, string]> = { eigenaar: ['власник', 'eigenaar'], lid: ['мешканець (керує)', 'bewoner (bedient)'], gast: ['гість (лише перегляд)', 'gast (alleen kijken)'], installateur: ['інсталятор (тимчасово)', 'installateur (tijdelijk)'], ondersteuning: ['підтримка (тимчасово)', 'ondersteuning (tijdelijk)'] };
-const TIJDZONES = ['Europe/Brussels', 'Europe/Amsterdam', 'Europe/Kyiv', 'Europe/Warsaw', 'Europe/Berlin', 'Europe/London', 'UTC'];
+// HUIS-001: de volledige lijst van de browser (Intl), met de vaak gebruikte bovenaan — geen vaste lijst van 7 meer.
+const ALLE_TIJDZONES = alleTijdzones();
 
 export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWoningen }: OnderdeelProps & { onWoningen: () => Promise<void> }) {
   const [naam, setNaam] = useState(ov.woning.naam);
@@ -21,7 +22,7 @@ export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWon
   const [nieuweWoning, setNieuweWoning] = useState('');
   const [bezig, setBezig] = useState(false);
   const eigenaar = ov.lid.rol === 'eigenaar';
-  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'));
+  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout');
   const laadLeden = async () => { try { setLeden(await huisClient.leden(woningId)); } catch (e) { fout(e); setLeden([]); } };
   useEffect(() => { void laadLeden(); setNaam(ov.woning.naam); setTijdzone(ov.woning.tijdzone); setVerdiepingen(ov.woning.verdiepingen); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [woningId, ov.woning]);
   const doe = async (f: () => Promise<unknown>, ok?: string) => { setBezig(true); try { await f(); await vernieuw(); await onWoningen(); if (ok) toon(ok); } catch (e) { fout(e); } finally { setBezig(false); } };
@@ -32,7 +33,7 @@ export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWon
         <h3 id='hv-inst-woning'><Home aria-hidden='true' /> {tr(lang, 'Оселя', 'Woning')}</h3>
         <form onSubmit={(e) => { e.preventDefault(); if (eigenaar && veranderd) void doe(() => huisClient.woningWijzig(woningId, { naam: naam.trim(), tijdzone, verdiepingen }), tr(lang, 'Збережено.', 'Opgeslagen.')); }}>
           <label className='hv-veld'><span>{tr(lang, 'Назва', 'Naam')}</span><input value={naam} maxLength={80} disabled={!eigenaar} onChange={(e) => setNaam(e.target.value)} data-hv-inst-naam='1' /></label>
-          <label className='hv-veld'><span>{tr(lang, 'Часовий пояс', 'Tijdzone')}</span><select value={tijdzone} disabled={!eigenaar} onChange={(e) => setTijdzone(e.target.value)}>{[...new Set([tijdzone, ...TIJDZONES])].map((z) => <option key={z} value={z}>{z}</option>)}</select></label>
+          <label className='hv-veld'><span>{tr(lang, 'Часовий пояс', 'Tijdzone')}</span><select value={tijdzone} disabled={!eigenaar} onChange={(e) => setTijdzone(e.target.value)}>{ALLE_TIJDZONES.includes(tijdzone) ? null : <option value={tijdzone}>{tijdzone}</option>}<optgroup label={tr(lang, 'Часто вживані', 'Veelgebruikt')}>{TIJDZONES_VAAK.map((z) => <option key={`v:${z}`} value={z}>{z}</option>)}</optgroup><optgroup label={tr(lang, 'Усі часові пояси', 'Alle tijdzones')}>{ALLE_TIJDZONES.filter((z) => !TIJDZONES_VAAK.includes(z)).map((z) => <option key={z} value={z}>{z}</option>)}</optgroup></select></label>
           <h4 className='hv-sub'>{tr(lang, 'Поверхи', 'Verdiepingen')}</h4>
           <ul className='hv-lijst is-dicht'>
             {verdiepingen.map((v, i) => <li key={v.id}><input value={v.naam} maxLength={40} disabled={!eigenaar} aria-label={tr(lang, `Поверх ${i + 1}`, `Verdieping ${i + 1}`)} onChange={(e) => setVerdiepingen(verdiepingen.map((x, j) => (j === i ? { ...x, naam: e.target.value } : x)))} data-hv-verdieping-naam={v.id} />{eigenaar && verdiepingen.length > 1 ? <button type='button' className='hv-icoonknop is-gevaar' disabled={ov.ruimtes.some((r) => r.verdieping === v.id)} title={ov.ruimtes.some((r) => r.verdieping === v.id) ? tr(lang, 'На поверсі є кімнати', 'Er staan kamers op deze verdieping') : ''} onClick={() => setVerdiepingen(verdiepingen.filter((_, j) => j !== i))} aria-label={tr(lang, 'Прибрати поверх', 'Verdieping weghalen')}><Trash2 /></button> : null}</li>)}

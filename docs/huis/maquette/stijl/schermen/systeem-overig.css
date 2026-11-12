@@ -1,0 +1,482 @@
+/* systeem-overig.css — «Система»: екрани, інтеграції, симулятор, дані, секрети, діагностика, доступність, вітрина,
+   калькулятор і живий довідник «Складники». Усе з числами — на папері; заголовки блоків стоять на тихому небі (лише --text).
+   Кольори — лише токени; адаптивність — контейнерні запити (so — сторінка вкладки). */
+
+/* ───────────── Основа ───────────── */
+.hv-so { display: grid; gap: var(--hv-kier); min-inline-size: 0; container: so / inline-size; }
+.hv-so-raster { display: grid; gap: var(--hv-kier); min-inline-size: 0; align-items: start; }
+.hv-so-kolom { display: grid; gap: var(--hv-kier); min-inline-size: 0; align-content: start; }
+.hv-so-kolom > .hv-kaart + .hv-kaart, .hv-so .hv-kaart + .hv-kaart { margin-block-start: 0; }
+@container so (min-width: 900px) {
+  .hv-so-raster { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .hv-so-raster--breed-links { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+}
+.hv-so-kaart { display: grid; gap: var(--ruimte-3); align-content: start; }
+.hv-so-kaart > .hv-knoppen, .hv-so-kaart > .hv-so-noot { margin-block-start: 0; }
+.hv-so-kaartkop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2) var(--ruimte-3); min-inline-size: 0; }
+.hv-so-kaartkop__titel { display: flex; align-items: flex-start; gap: var(--ruimte-3); min-inline-size: 0; flex: 1 1 260px; }
+.hv-so-kaartkop__titel > .hv-ic { flex: none; inline-size: 36px; block-size: 36px; padding: 8px; border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-so-kaartkop__titel h3 { font-size: var(--tekst-basis); font-weight: var(--hv-gewicht-kop); line-height: 1.3; color: var(--text); margin-block-start: 6px; }
+.hv-so-kaartkop__titel p { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); margin-block-start: 2px; text-wrap: pretty; }
+.hv-so-kaartkop__rechts { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); }
+.hv-so-noot { display: flex; gap: var(--ruimte-2); align-items: flex-start; font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-so-noot > .hv-ic { flex: none; margin-block-start: 2px; }
+.hv-so > .hv-so-noot, .hv-so-simlijf > .hv-so-noot { padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); }
+.hv-so-knoppen { margin-block-start: 0; }
+/* ядро не дає кнопці мінімальної ширини: коротка «тиха» кнопка була б вужча за 44 px */
+.hv-so .hv-knop, .hv-so-blad .hv-knop { min-inline-size: var(--hv-tik); }
+.hv-so-veld { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-so-veld + .hv-so-veld { margin-block-start: var(--ruimte-3); }
+.hv-so-veld__label { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }
+.hv-so-slot { display: flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); }
+.hv-so-lijst { display: grid; gap: var(--ruimte-2); padding-inline-start: 1.2em; font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--text); list-style: disc; }
+.hv-so-feiten { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: var(--ruimte-2) var(--ruimte-4); }
+.hv-so-feiten > div { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-so-feiten dt { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-feiten dd { font-size: var(--tekst-klein); font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.hv-so code, .hv-laag code.hv-so, .hv-so-blad code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--tekst-mini); color: var(--muted); overflow-wrap: anywhere; }
+.hv-so-segment-breed { display: flex; flex-wrap: wrap; }
+.hv-so-segment-breed .hv-segment__deel { flex: 1 1 auto; min-inline-size: max-content; }
+.hv-so-segment-klein .hv-segment__deel { padding-inline: var(--ruimte-2); font-size: var(--tekst-mini); }
+.hv-so-draai { animation: hv-so-draai 1s linear infinite; }
+@keyframes hv-so-draai { to { transform: rotate(360deg); } }
+.hv-so-schakelrij { display: flex; align-items: center; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-so-schakelrij > div { min-inline-size: 0; }
+.hv-so-schakelrij__naam { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ruimte-1); font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
+.hv-so-schakelrij__sub { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-so-filter { gap: var(--ruimte-1) var(--hv-doel-kier); }
+.hv-so-tussenkop { font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); margin-block-start: var(--ruimte-3); }
+
+/* ───────────── Герой вкладки (на папері) ───────────── */
+.hv-so-held {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "getal tekst" "acties acties"; gap: var(--ruimte-3) var(--ruimte-4); align-items: center;
+  padding: var(--ruimte-4) var(--ruimte-5); border-radius: var(--straal-l); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
+  background: linear-gradient(125deg, var(--accent-soft), var(--panel) 64%);
+}
+.hv-so-held.is-let-op { background: linear-gradient(125deg, var(--warn-zacht), var(--panel) 64%); }
+.hv-so-held--toonzaal { background: linear-gradient(125deg, var(--info-zacht), var(--panel) 64%); }
+.hv-so-held__getal { grid-area: getal; display: grid; justify-items: center; align-content: center; min-inline-size: 72px; }
+.hv-so-held__n { font-size: var(--hv-getal-l); line-height: var(--hv-regel-getal-l); font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-held__n > .hv-ic { inline-size: 40px; block-size: 40px; }
+.hv-so-held__woord { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); text-align: center; }
+.hv-so-held__tekst { grid-area: tekst; display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-so-held__zin { font-size: var(--hv-tekst-kop); line-height: var(--hv-regel-kop); font-weight: 600; letter-spacing: -0.01em; text-wrap: pretty; color: var(--text); }
+.hv-so-held__chips { display: flex; flex-wrap: wrap; gap: var(--ruimte-1) var(--ruimte-2); }
+.hv-so-held__acties { grid-area: acties; display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); }
+@container so (min-width: 860px) {
+  .hv-so-held { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "getal tekst acties"; }
+  .hv-so-held__acties { justify-content: flex-end; max-inline-size: 360px; }
+}
+@container so (max-width: 420px) {
+  .hv-so-held { padding: var(--ruimte-4); grid-template-columns: minmax(0, 1fr); grid-template-areas: "getal" "tekst" "acties"; justify-items: start; }
+  .hv-so-held__getal { justify-items: start; grid-auto-flow: column; align-items: baseline; gap: var(--ruimte-2); }
+  .hv-so-held__zin { font-size: var(--tekst-basis); line-height: var(--hv-regel-basis); }
+}
+
+/* ───────────── Мініатюра профілю ───────────── */
+.hv-so-mini {
+  position: relative; display: grid; align-content: start; gap: 6%; padding: 7%; inline-size: 100%; max-block-size: 100%; overflow: hidden;
+  border-radius: 10%; border: 2px solid var(--hv-omtrek); background: linear-gradient(180deg, var(--accent-soft), var(--surface) 70%);
+}
+.hv-so-mini.is-rond { border-radius: 50%; align-content: center; justify-items: center; }
+.hv-so-mini--inkt { background: var(--panel); border-color: var(--text); }
+.hv-so-mini--tv { border-radius: 4%; border-block-end-width: 5px; }
+.hv-so-mini--strook { grid-auto-flow: column; grid-auto-columns: 1fr; align-content: stretch; border-radius: 12px; padding: 4%; }
+.hv-so-mini.is-uit { opacity: 0.55; background: repeating-linear-gradient(var(--hv-arcering-hoek), var(--hv-arcering) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)), var(--surface); }
+.hv-so-mini__kop { display: block; block-size: 6px; border-radius: 3px; background: var(--hv-omtrek); opacity: 0.6; }
+.hv-so-mini__hemel { display: block; block-size: 18%; min-block-size: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--hv-zon-zacht), var(--info-zacht)); }
+.hv-so-mini__rij { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6%; }
+.hv-so-mini__rij i { display: block; min-block-size: 10px; aspect-ratio: 2 / 1; border-radius: 3px; background: var(--panel); border: 1px solid var(--line); }
+.hv-so-mini__groot { display: block; block-size: 34%; min-block-size: 12px; border-radius: 4px; background: var(--hv-aan-zacht); border: 1px solid var(--hv-aan); }
+.hv-so-mini__cel { display: block; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); }
+.hv-so-mini__regel { display: block; block-size: 5px; border-radius: 3px; background: var(--text); opacity: 0.75; }
+.hv-so-mini__regel.is-kort { inline-size: 60%; }
+.hv-so-mini__wijzer { display: block; inline-size: 56%; aspect-ratio: 1; border-radius: 50%; border: 3px solid var(--hv-aan); border-inline-end-color: var(--line); border-block-end-color: var(--line); }
+
+/* ───────────── 1. Екрани ───────────── */
+.hv-so-schermen { display: grid; gap: var(--hv-kier); }
+.hv-so-scherm { position: relative; display: grid; gap: var(--ruimte-2); padding: var(--ruimte-3); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-scherm.is-uit { border-style: dashed; border-color: var(--hv-omtrek); }
+.hv-so-scherm__lijf { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-3); min-block-size: var(--hv-tik); text-align: start; color: var(--text); border-radius: var(--straal-m); }
+.hv-so-scherm__beeld { display: grid; place-items: center; inline-size: 72px; block-size: 72px; }
+.hv-so-scherm__beeld .hv-so-mini { max-inline-size: 72px; max-block-size: 72px; inline-size: auto; block-size: 100%; }
+.hv-so-scherm__beeld .hv-so-mini--strook, .hv-so-scherm__beeld .hv-so-mini--tv { inline-size: 100%; block-size: auto; }
+.hv-so-scherm__beeld { overflow: hidden; }
+.hv-so-scherm__tekst { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-so-scherm__naam { font-size: var(--tekst-basis); font-weight: 600; line-height: 1.3; }
+.hv-so-scherm__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-so-scherm__pad code { font-size: var(--tekst-mini); }
+.hv-so-scherm__pijl { color: var(--muted); }
+.hv-so-scherm__chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); padding-inline-start: calc(72px + var(--ruimte-3)); }
+.hv-so-scherm__oud { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); margin-inline-start: auto; }
+@media (hover: hover) { .hv-so-scherm__lijf:hover { background: var(--surface); } }
+@container so (max-width: 520px) { .hv-so-scherm__chips { padding-inline-start: 0; } .hv-so-scherm__lijf { grid-template-columns: 56px minmax(0, 1fr) auto; } .hv-so-scherm__beeld { inline-size: 56px; block-size: 56px; } }
+
+.hv-so-stappenrij { display: grid; gap: var(--ruimte-2); counter-reset: none; }
+.hv-so-stappenrij li { display: flex; align-items: center; gap: var(--ruimte-3); font-size: var(--tekst-klein); color: var(--text); overflow-wrap: anywhere; }
+.hv-so-stappenrij li span { flex: none; display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 700; }
+.hv-so-koppel.is-actief { border-color: var(--accent); box-shadow: var(--schaduw-2); }
+.hv-so-code { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--ruimte-2); padding-block: var(--ruimte-2); }
+.hv-so-code__cijfer { display: grid; place-items: center; inline-size: 48px; block-size: 64px; border-radius: var(--straal-m); background: var(--surface); border: 1px solid var(--line); box-shadow: inset 0 -3px 0 var(--line); font-size: var(--hv-getal-m); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-code__kier { inline-size: var(--ruimte-2); }
+@container so (max-width: 380px) { .hv-so-code__cijfer { inline-size: 38px; block-size: 52px; } }
+.hv-so-koppel__aftel { display: flex; align-items: center; justify-content: center; gap: var(--ruimte-3); }
+.hv-so-koppel__sec { font-size: var(--hv-getal-m); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-koppel__status { display: flex; align-items: center; justify-content: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); text-align: center; }
+.hv-so-koppel__status.is-verlopen { color: var(--text); }
+.hv-so-gevonden { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--ok-zacht); }
+.hv-so-gevonden__naam { font-weight: 600; color: var(--text); }
+.hv-so-gevonden__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-so-gevolg { display: flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); color: var(--muted); }
+
+.hv-so-profielen { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--ruimte-2); }
+.hv-so-profiel { display: grid; justify-items: center; align-content: start; gap: var(--ruimte-1); min-block-size: var(--hv-tik); padding: var(--ruimte-2); border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); text-align: center; }
+.hv-so-profiel .hv-so-mini { inline-size: auto; block-size: 44px; max-inline-size: 72px; }
+.hv-so-profiel .hv-so-mini--strook, .hv-so-profiel .hv-so-mini--tv { inline-size: 64px; block-size: auto; }
+.hv-so-profiel.is-gekozen { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+@media (hover: hover) { .hv-so-profiel:hover { background: var(--surface); } }
+.hv-so-voorbeeld { display: grid; gap: var(--ruimte-4); align-items: center; }
+.hv-so-voorbeeld__beeld { display: grid; place-items: center; padding: var(--ruimte-3); border-radius: var(--straal-l); background: var(--surface); min-block-size: 160px; }
+.hv-so-voorbeeld__beeld .hv-so-mini { inline-size: auto; block-size: 180px; max-inline-size: 100%; }
+.hv-so-voorbeeld__beeld .hv-so-mini--strook, .hv-so-voorbeeld__beeld .hv-so-mini--tv { inline-size: 100%; block-size: auto; }
+.hv-so-voorbeeld__tekst { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-so-voorbeeld__tekst > .hv-knoppen { margin-block-start: 0; }
+.hv-so-voorbeeld__zin { font-size: var(--tekst-basis); line-height: var(--hv-regel-basis); font-weight: 500; color: var(--text); text-wrap: pretty; }
+@container so (min-width: 1100px) { .hv-so-voorbeeld { grid-template-columns: 200px minmax(0, 1fr); } }
+.hv-so-blad { display: grid; gap: var(--hv-kier); }
+.hv-so-blad > .hv-knoppen { margin-block-start: 0; }
+.hv-so-blad__voorbeeld { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--ruimte-4); align-items: center; }
+.hv-so-blad__voorbeeld .hv-so-mini { inline-size: auto; block-size: 96px; max-inline-size: 96px; }
+.hv-so-blad__voorbeeld .hv-so-mini--strook, .hv-so-blad__voorbeeld .hv-so-mini--tv { inline-size: 96px; block-size: auto; }
+.hv-so-blad__zin { font-size: var(--tekst-basis); line-height: var(--hv-regel-basis); color: var(--text); text-wrap: pretty; }
+.hv-so-blad .hv-kaart > .hv-so-schakelrij { margin-block-start: var(--ruimte-3); }
+
+/* ───────────── 2. Інтеграції ───────────── */
+.hv-so-banner { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-3); padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-l); background: var(--info-zacht); border: 1px solid var(--info); box-shadow: var(--schaduw-1); color: var(--text); }
+.hv-so-banner > .hv-ic { flex: none; inline-size: 32px; block-size: 32px; color: var(--info); }
+.hv-so-banner--let-op { background: var(--warn-zacht); border-color: var(--warn); }
+.hv-so-banner--let-op > .hv-ic { color: var(--warn); }
+.hv-so-banner__tekst { flex: 1 1 220px; min-inline-size: 0; }
+.hv-so-banner__titel { font-weight: 600; }
+.hv-so-banner__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-so-gezond { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); border-inline-start: 4px solid var(--toon); }
+.hv-so-gezond__kop { display: flex; align-items: center; gap: var(--ruimte-3); }
+.hv-so-gezond__teken { display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 50%; background: var(--info-zacht); color: var(--info); flex: none; }
+.hv-so-gezond__naam { font-weight: 600; color: var(--text); }
+.hv-so-gezond__stand { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-so-gezond__stand .hv-ic { color: var(--toon); }
+.hv-so-gezond__zin { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--text); }
+.hv-so-gezond .hv-knoppen { margin-block-start: 0; }
+.hv-so-getallen { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 104px), 1fr)); gap: var(--ruimte-2); }
+.hv-so-getallen > div { display: grid; gap: 2px; padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--panel); border: 1px solid var(--line); }
+.hv-so-getallen dt { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-getallen dd { font-size: var(--hv-tekst-kop); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-catalogus { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: var(--hv-kier); }
+.hv-so-bronkaart { display: grid; grid-template-rows: 1fr auto; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); overflow: hidden; }
+.hv-so-bronkaart__lijf { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-1) var(--ruimte-3); align-content: start; padding: var(--ruimte-3); text-align: start; color: var(--text); min-block-size: var(--hv-tik); }
+.hv-so-bronkaart__teken { grid-row: span 2; display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-m); background: var(--surface); }
+.hv-so-bronkaart__naam { font-weight: 600; align-self: center; }
+.hv-so-bronkaart__wat { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-so-bronkaart__voet { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3); border-block-start: 1px solid var(--line); background: var(--surface); }
+@media (hover: hover) { .hv-so-bronkaart__lijf:hover { background: var(--surface); } }
+.hv-so-stapbalk { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 112px), 1fr)); gap: var(--ruimte-2); }
+.hv-so-stapbalk li { display: flex; align-items: center; gap: var(--ruimte-2); min-inline-size: 0; padding: var(--ruimte-2); border-radius: var(--straal-m); background: var(--surface); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-stapbalk li > span { flex: none; display: grid; place-items: center; inline-size: 26px; block-size: 26px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); color: var(--text); font-weight: 700; }
+.hv-so-stapbalk li.is-klaar { color: var(--text); }
+.hv-so-stapbalk li.is-klaar > span { background: var(--ok-zacht); border-color: var(--ok); color: var(--ok); }
+.hv-so-stapbalk li.is-nu { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent); }
+.hv-so-stapbalk li.is-nu > span { background: var(--accent); border-color: var(--accent); color: var(--text-on-vlak); }
+.hv-so-wizard__lijf { display: grid; gap: var(--ruimte-3); margin-block: var(--ruimte-4) var(--ruimte-2); }
+.hv-so-keuzes { display: grid; gap: var(--ruimte-2); }
+.hv-so-keuzes--rooster { grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); }
+.hv-so-keuze { display: flex; align-items: center; gap: var(--ruimte-3); min-block-size: var(--hv-rij); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); color: var(--text); text-align: start; }
+.hv-so-keuze > .hv-ic { flex: none; }
+.hv-so-keuze span { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-so-keuze small { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-so-keuze.is-gekozen { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.hv-so-keuze.is-later { border-style: dashed; }
+@media (hover: hover) { .hv-so-keuze:hover { background: var(--surface); } }
+.hv-so-aftelgroot { display: flex; align-items: center; gap: var(--ruimte-4); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-so-aftelgroot__tekst { font-size: var(--hv-tekst-kop); font-weight: 600; color: var(--text); }
+.hv-so-aftelgroot__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-so-gevonden-lijst, .hv-so-recepten { display: grid; gap: var(--ruimte-2); }
+.hv-so-gevonden-lijst li, .hv-so-recepten li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-m); border: 1px solid var(--line); background: var(--panel); font-size: var(--tekst-klein); color: var(--text); }
+.hv-so-gevonden-lijst li.is-later { border-style: dashed; background: var(--surface); }
+.hv-so-gevonden-lijst__teken { display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: 50%; background: var(--surface); }
+.hv-so-gevonden-lijst__tekst { display: grid; gap: 2px; flex: 1 1 160px; min-inline-size: 0; }
+.hv-so-gevonden-lijst__tekst small { color: var(--muted); }
+.hv-so-recepten li span { flex: 1 1 160px; }
+.hv-so-vinkje { flex: none; display: grid; place-items: center; inline-size: var(--hv-tik); block-size: var(--hv-tik); border-radius: var(--straal-s); border: 2px solid var(--hv-omtrek); background: var(--panel); color: var(--text-on-vlak); background-clip: padding-box; }
+.hv-so-vinkje.is-aan { background: var(--accent); border-color: var(--accent); }
+.hv-so-vinkje.is-uit { border-style: dashed; color: var(--muted); background: var(--surface); }
+.hv-so-naamrij { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3); align-items: start; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-so-naamrij > div { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-so-naamrij__naam { font-weight: 600; color: var(--text); }
+.hv-so-naamrij__nl { font-weight: 400; color: var(--muted); }
+.hv-so-gevolgkaart { padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); border: 1px solid var(--line); }
+.hv-so-vervang { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+
+/* ───────────── 3. Симулятор ───────────── */
+.hv-so-klok {
+  display: grid; gap: var(--ruimte-3) var(--ruimte-5); align-items: center; padding: var(--ruimte-4) var(--ruimte-5); border-radius: var(--straal-l);
+  background: linear-gradient(120deg, var(--info-zacht), var(--panel) 58%); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
+}
+.hv-so-klok.is-pauze { background: linear-gradient(120deg, var(--surface2), var(--panel) 58%); }
+.hv-so-klok__tijden { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--ruimte-3) var(--ruimte-6); }
+.hv-so-klok__huis, .hv-so-klok__echt { display: grid; gap: 2px; }
+.hv-so-klok__label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0.03em; color: var(--muted); }
+.hv-so-klok__getal { font-size: var(--hv-getal-xl); line-height: 1; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-klok__klein { font-size: var(--hv-getal-m); line-height: 1.1; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-klok__dag { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-so-klok__bediening { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-so-klok__bediening .hv-knoppen { margin-block-start: 0; }
+.hv-so-klok__noten { display: flex; flex-wrap: wrap; gap: var(--ruimte-1) var(--ruimte-2); grid-column: 1 / -1; }
+.hv-so-snelheid { display: flex; flex-wrap: wrap; }
+.hv-so-snelheid { flex-wrap: nowrap; }
+.hv-so-snelheid .hv-segment__deel { flex: 1 1 0; min-inline-size: 44px; padding-inline: var(--ruimte-1); font-variant-numeric: tabular-nums; }
+@container so (max-width: 420px) { .hv-so-snelheid .hv-segment__deel:first-child span { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+@container so (min-width: 900px) { .hv-so-klok { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
+@container so (max-width: 420px) { .hv-so-klok { padding: var(--ruimte-4); } .hv-so-klok__getal { font-size: var(--hv-getal-l); } .hv-so-klok__tijden { gap: var(--ruimte-3) var(--ruimte-4); } }
+.hv-so-subnav { display: flex; gap: var(--ruimte-1); padding: var(--ruimte-1); border-radius: 999px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); justify-self: start; max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; }
+.hv-so-subnav__punt { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); padding-inline: var(--ruimte-4); border-radius: 999px; font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.hv-so-subnav__punt.is-actief { background: var(--text); color: var(--panel); }
+@media (hover: hover) { .hv-so-subnav__punt:not(.is-actief):hover { background: var(--surface); color: var(--text); } }
+@container so (max-width: 420px) { .hv-so-subnav { justify-self: stretch; } .hv-so-subnav__punt { flex: 1 1 auto; justify-content: center; padding-inline: var(--ruimte-2); } }
+.hv-so-simlijf { display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-so-scenarios { display: grid; gap: var(--ruimte-2); }
+.hv-so-scenario { display: flex; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-1) var(--ruimte-2) var(--ruimte-1) var(--ruimte-1); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-scenario.is-actief { border-color: var(--info); box-shadow: inset 4px 0 0 var(--info), var(--schaduw-1); background: linear-gradient(90deg, var(--info-zacht), var(--panel) 45%); }
+.hv-so-scenario__lijf { flex: 1 1 auto; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-3); align-items: center; min-inline-size: 0; min-block-size: var(--hv-rij); padding: var(--ruimte-2); border-radius: var(--straal-m); text-align: start; color: var(--text); }
+.hv-so-scenario__teken { display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-so-scenario.is-actief .hv-so-scenario__teken { background: var(--info); color: var(--text-on-vlak); }
+.hv-so-scenario__tekst { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-so-scenario__naam { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); font-weight: 600; }
+.hv-so-scenario__loopt { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; background: var(--info-zacht); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); }
+.hv-so-scenario__loopt i { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--info); animation: hv-puls var(--hv-duur-puls) ease-in-out infinite; }
+.hv-so-scenario__wat { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-so-scenario__meta { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-scenario__start { flex: none; border-radius: 50%; background: var(--surface); }
+@media (hover: hover) { .hv-so-scenario__lijf:hover { background: var(--surface); } .hv-so-scenario__start:hover { background: var(--surface2); } }
+.hv-so-storingen { display: grid; gap: var(--ruimte-2); }
+.hv-so-storing { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-storing--breed { grid-template-columns: auto minmax(0, 1fr); }
+.hv-so-storing--breed > .hv-segment { grid-column: 1 / -1; }
+.hv-so-storing__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--surface); }
+.hv-so-storing__naam { font-weight: 600; color: var(--text); }
+.hv-so-storing__sub { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+@container so (max-width: 420px) { .hv-so-storing { grid-template-columns: auto minmax(0, 1fr); } .hv-so-storing > .hv-stapper, .hv-so-storing > .hv-schakel { grid-column: 1 / -1; justify-self: start; } }
+.hv-so-huis { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-huis .hv-knoppen { margin-block-start: 0; }
+.hv-so-huis__kop { display: flex; align-items: center; gap: var(--ruimte-3); }
+.hv-so-huis__kop > .hv-ic { flex: none; inline-size: 40px; block-size: 40px; padding: 9px; border-radius: 50%; background: var(--hv-aan-zacht); color: var(--text); }
+.hv-so-huis__naam { font-weight: 600; color: var(--text); }
+.hv-so-huis__sub { font-size: var(--tekst-klein); color: var(--muted); }
+.hv-so-stroom { display: grid; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); overflow: hidden; }
+.hv-so-stroom__rij { display: grid; grid-template-columns: 3.4em auto minmax(0, 1fr); align-items: baseline; gap: 2px var(--ruimte-2); padding: var(--ruimte-2) var(--ruimte-3); border-block-start: 1px solid var(--line); font-size: var(--tekst-klein); color: var(--text); animation: hv-op var(--hv-duur-2) var(--hv-kromme-in); }
+.hv-so-stroom__rij:first-child { border-block-start: 0; }
+.hv-so-stroom__rij time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+.hv-so-stroom__rij--belangrijk { box-shadow: inset 3px 0 0 var(--warn); }
+.hv-so-stroom__rij--alarm { box-shadow: inset 3px 0 0 var(--fout); background: var(--fout-zacht); }
+.hv-so-stroom__wat { min-inline-size: 0; overflow-wrap: anywhere; }
+.hv-so-stroom__delta { grid-column: 3; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-hand { display: inline-flex; align-items: center; gap: 4px; margin-inline-start: var(--ruimte-2); padding: 1px 8px; border-radius: 999px; background: var(--warn-zacht); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); vertical-align: middle; }
+.hv-so-wereldkop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--hv-doel-kier); }
+.hv-so-wereld { display: grid; border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); overflow: hidden; }
+.hv-so-wereldrij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding: var(--ruimte-3); border-block-start: 1px solid var(--line); min-inline-size: 0; }
+.hv-so-wereldrij:first-child { border-block-start: 0; }
+.hv-so-wereldrij__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--surface); }
+.hv-so-wereldrij__tekst { min-inline-size: 0; }
+.hv-so-wereldrij__naam { font-weight: 600; color: var(--text); }
+.hv-so-wereldrij__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-so-wereldrij__orgaan { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-so-wereldrij__orgaan > .hv-schuif { min-inline-size: 220px; }
+@container so (max-width: 640px) {
+  .hv-so-wereldrij { grid-template-columns: auto minmax(0, 1fr); }
+  .hv-so-wereldrij__orgaan { grid-column: 1 / -1; justify-content: flex-start; }
+  .hv-so-wereldrij__orgaan > .hv-schuif, .hv-so-wereldrij__orgaan > .hv-segment { flex: 1 1 100%; min-inline-size: 0; }
+}
+@container so (min-width: 900px) { .hv-so-wereldrij:has(.hv-schuif), .hv-so-wereldrij:has(.hv-so-segment-breed) { grid-template-columns: auto minmax(0, 1fr); } .hv-so-wereldrij:has(.hv-schuif) .hv-so-wereldrij__orgaan, .hv-so-wereldrij:has(.hv-so-segment-breed) .hv-so-wereldrij__orgaan { grid-column: 1 / -1; justify-content: stretch; } .hv-so-wereldrij__orgaan > .hv-schuif, .hv-so-wereldrij__orgaan > .hv-so-segment-breed { flex: 1 1 100%; } }
+
+.hv-so-recorder { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-3) var(--ruimte-4); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-recorder.is-opname { border-color: var(--fout); background: linear-gradient(120deg, var(--fout-zacht), var(--panel) 55%); }
+.hv-so-recorder__tekst { flex: 1 1 220px; min-inline-size: 0; }
+.hv-so-recorder__titel { font-size: var(--hv-tekst-kop); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-recorder__sub { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-so-rec { display: grid; place-items: center; inline-size: 56px; block-size: 56px; border-radius: 50%; background: var(--panel); border: 2px solid var(--hv-omtrek); }
+.hv-so-rec__stip { inline-size: 22px; block-size: 22px; border-radius: 50%; background: var(--fout); }
+.hv-so-rec.is-aan { background: var(--fout); border-color: var(--fout); color: var(--text-on-vlak); animation: hv-puls var(--hv-duur-puls) ease-in-out infinite; }
+.hv-so-rec.is-aan .hv-ic { fill: currentColor; }
+.hv-so-sporen { display: grid; gap: var(--ruimte-2); }
+.hv-so-spoor { display: grid; gap: var(--ruimte-3); padding: var(--ruimte-3) var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-spoor.is-speelt { border-color: var(--info); box-shadow: inset 4px 0 0 var(--info), var(--schaduw-1); }
+.hv-so-spoor .hv-knoppen { margin-block-start: 0; }
+.hv-so-spoor__kop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); }
+.hv-so-spoor__titel { flex: 1 1 220px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-3); min-block-size: var(--hv-tik); text-align: start; color: var(--text); border-radius: var(--straal-m); }
+.hv-so-spoor__titel span { display: grid; gap: 2px; min-inline-size: 0; }
+.hv-so-spoor__titel small { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-spoor__pijl { transition: transform var(--hv-duur-2); color: var(--muted); }
+.hv-so-spoor__titel[aria-expanded="true"] .hv-so-spoor__pijl { transform: rotate(180deg); }
+.hv-so-tijdlijn { position: relative; block-size: 20px; }
+.hv-so-tijdlijn__baan { position: absolute; inset-inline: 0; inset-block-start: 8px; block-size: 4px; border-radius: 2px; background: var(--surface2); }
+.hv-so-tijdlijn__vulling { position: absolute; inset-inline-start: 0; inset-block-start: 8px; block-size: 4px; border-radius: 2px; background: var(--info); }
+.hv-so-tijdlijn__punt { position: absolute; inset-block-start: 3px; inline-size: 14px; block-size: 14px; margin-inline-start: -7px; border-radius: 50%; background: var(--panel); border: 2px solid var(--hv-omtrek); }
+.hv-so-tijdlijn__punt.is-klaar { background: var(--info); border-color: var(--info); }
+.hv-so-spoor__stappen { display: grid; gap: 2px; }
+.hv-so-spoor__stappen li { display: grid; grid-template-columns: 4.2em minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-1) var(--ruimte-2); border-radius: var(--straal-s); font-size: var(--tekst-klein); color: var(--text); }
+.hv-so-spoor__stappen li:nth-child(odd) { background: var(--surface); }
+.hv-so-spoor__stappen time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+.hv-so-spoor__stappen li.is-klaar .hv-ic { color: var(--ok); }
+
+/* ───────────── 4. Дані ───────────── */
+.hv-so-opslag th, .hv-so-opslag td { vertical-align: middle; }
+.hv-so-opslag__naam { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-weight: 600; }
+.hv-so-opslag__vast { font-size: var(--tekst-klein); color: var(--text); }
+.hv-so-opslag__demo { font-size: var(--tekst-klein); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.hv-so-opslag__nu { display: grid; grid-template-columns: auto minmax(60px, 1fr) auto; align-items: center; gap: var(--ruimte-2); min-inline-size: 180px; }
+.hv-so-opslag__getal { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.hv-so-opslag__deel { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hv-so-balk { position: relative; display: block; block-size: 8px; border-radius: 4px; background: var(--surface2); overflow: hidden; }
+.hv-so-balk i { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 4px; background: var(--hv-net-in); }
+
+/* ───────────── 5. Секрети ───────────── */
+.hv-so-geheimen { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--hv-kier); }
+.hv-so-geheim { display: grid; gap: var(--ruimte-3); align-content: start; padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-geheim .hv-knoppen { margin-block-start: 0; }
+.hv-so-geheim__kop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); }
+.hv-so-geheim__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--straal-m); background: var(--surface); flex: none; }
+.hv-so-geheim__naam { flex: 1 1 160px; min-inline-size: 0; }
+.hv-so-geheim__naam p { font-weight: 600; color: var(--text); }
+.hv-so-geheim__feiten { display: grid; gap: var(--ruimte-2); }
+.hv-so-geheim__feiten > div { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: var(--ruimte-2); align-items: center; }
+.hv-so-geheim__feiten dt { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-geheim__feiten dd { font-size: var(--tekst-klein); color: var(--text); min-inline-size: 0; }
+.hv-so-geheim__waarde { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.hv-so-geheim__waarde > span[aria-hidden] { letter-spacing: 0.12em; font-weight: 700; color: var(--muted); }
+.hv-so-geheim__waar { display: flex; flex-wrap: wrap; gap: var(--ruimte-1); }
+@container so (max-width: 420px) { .hv-so-geheim__feiten > div { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+
+/* ───────────── 6. Діагностика ───────────── */
+.hv-so-keten { display: grid; gap: var(--ruimte-2); position: relative; }
+.hv-so-keten__schakel { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "teken naam ms" "teken woord stand"; align-items: center; gap: 2px var(--ruimte-3); padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); border-inline-start: 4px solid var(--ok); }
+.hv-so-keten__schakel + .hv-so-keten__schakel::before { content: ''; position: absolute; inset-inline-start: 31px; inset-block-start: calc(var(--ruimte-2) * -1 - 1px); block-size: calc(var(--ruimte-2) + 2px); inline-size: 2px; background: var(--hv-omtrek); }
+.hv-so-keten__schakel.is-traag { border-inline-start-color: var(--warn); }
+.hv-so-keten__schakel.is-fout { border-inline-start-color: var(--fout); background: var(--fout-zacht); }
+.hv-so-keten__schakel.is-bezig { box-shadow: inset 0 0 0 1px var(--info); }
+.hv-so-keten__teken { grid-area: teken; display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); }
+.hv-so-keten__naam { grid-area: naam; font-weight: 600; color: var(--text); min-inline-size: 0; }
+.hv-so-keten__woord { grid-area: woord; font-size: var(--tekst-klein); color: var(--muted); min-inline-size: 0; }
+.hv-so-keten__ms { grid-area: ms; font-size: var(--tekst-basis); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); text-align: end; }
+.hv-so-keten__stand { grid-area: stand; display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); text-align: end; }
+.hv-so-keten__schakel.is-goed .hv-so-keten__stand .hv-ic { color: var(--ok); }
+.hv-so-keten__schakel.is-traag .hv-so-keten__stand .hv-ic { color: var(--warn); }
+.hv-so-keten__schakel.is-fout .hv-so-keten__stand .hv-ic { color: var(--fout); }
+@container so (min-width: 1000px) {
+  .hv-so-keten { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ruimte-3); }
+  .hv-so-keten__schakel { grid-template-columns: minmax(0, 1fr); grid-template-areas: "teken" "naam" "woord" "ms" "stand"; justify-items: start; border-inline-start: 0; border-block-start: 4px solid var(--ok); gap: var(--ruimte-1); }
+  .hv-so-keten__schakel.is-traag { border-block-start-color: var(--warn); }
+  .hv-so-keten__schakel.is-fout { border-block-start-color: var(--fout); }
+  .hv-so-keten__schakel + .hv-so-keten__schakel::before { inset-inline-start: calc(var(--ruimte-3) * -1); inset-block-start: 31px; inline-size: var(--ruimte-3); block-size: 2px; }
+  .hv-so-keten__ms { font-size: var(--hv-tekst-kop); text-align: start; }
+  .hv-so-keten__stand { justify-content: flex-start; text-align: start; }
+}
+.hv-so-cijfers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: var(--ruimte-3); }
+.hv-so-cijfers > .hv-getal { padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); min-inline-size: 0; }
+.hv-so-cijfers .hv-getal__waarde { overflow-wrap: anywhere; }
+@container so (max-width: 520px) { .hv-so-cijfers .hv-getal--l .hv-getal__waarde { font-size: var(--hv-getal-m); } }
+.hv-so-diaglijf { margin-block-start: var(--ruimte-3); display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-so-opdrachten { display: grid; gap: 2px; }
+.hv-so-opdrachten li { display: grid; grid-template-columns: 3.4em auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-2); border-radius: var(--straal-s); font-size: var(--tekst-klein); color: var(--text); }
+.hv-so-opdrachten li:nth-child(odd) { background: var(--surface); }
+.hv-so-opdrachten time, .hv-so-opdrachten__ms { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+.hv-so-opdrachten__wat { min-inline-size: 0; overflow-wrap: anywhere; }
+@container so (max-width: 520px) { .hv-so-opdrachten li { grid-template-columns: 3.4em auto minmax(0, 1fr); } .hv-so-opdrachten li > .hv-chip, .hv-so-opdrachten__ms { grid-column: 3; justify-self: start; } }
+.hv-so-code-regel { margin-block-start: var(--ruimte-3); padding: var(--ruimte-2) var(--ruimte-3); border-radius: var(--straal-s); background: var(--surface); }
+.hv-so-kaart .hv-tabel__rol { margin-block-start: var(--ruimte-2); }
+
+/* ───────────── 7. Доступність ───────────── */
+.hv-so-toegrij { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2) var(--ruimte-3); align-items: center; padding-block: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-so-toegrij:first-child { border-block-start: 0; padding-block-start: 0; }
+.hv-so-toegrij > .hv-segment { grid-column: 1 / -1; }
+.hv-so-toegrij.is-later { opacity: 1; }
+.hv-so-toegrij__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--surface); }
+.hv-so-toegrij__naam { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); font-weight: 600; color: var(--text); }
+.hv-so-toegrij__sub { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-so-proef { display: grid; gap: var(--ruimte-3); }
+.hv-so-proef__kop { font-size: var(--hv-tekst-kop); font-weight: 600; color: var(--text); }
+.hv-so-proef__tekst { font-size: var(--tekst-klein); color: var(--muted); }
+/* налаштування доступності на корені полотна (атрибути ставить модуль; клас полотна перемальовує оболонка) */
+.hv-doek[data-so-tekst="115"] { --tekst-basis: 18px; --tekst-klein: 16px; --tekst-mini: 14px; --hv-tekst-kop: 23px; --hv-regel-basis: 1.5; }
+.hv-doek[data-so-tekst="130"] { --tekst-basis: 21px; --tekst-klein: 18px; --tekst-mini: 16px; --hv-tekst-kop: 26px; --hv-getal-m: 32px; --hv-regel-basis: 1.5; }
+.hv-doek[data-so-beweging="minder"] { --hv-duur-1: 0ms; --hv-duur-2: 0ms; --hv-duur-3: 0ms; --hv-duur-4: 0ms; --hv-duur-hemel: 0s; --hv-duur-puls: 0ms; }
+.hv-doek[data-so-beweging="minder"] *, .hv-doek[data-so-beweging="minder"] *::before, .hv-doek[data-so-beweging="minder"] *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+.hv-doek[data-so-contrast="hoog"] { --muted: var(--text); --faint: var(--text); --line: var(--hv-omtrek); --hv-glas: var(--panel); --hv-glas-rand: var(--hv-omtrek); --hv-glas-filter: none; }
+.hv-doek[data-so-contrast="hoog"] .hv-hemel { display: none; }
+.hv-doek[data-so-zuinig="aan"] { --hv-glas: var(--panel); --hv-glas-rand: var(--line); --hv-glas-filter: none; --hv-duur-hemel: 0s; }
+
+/* ───────────── 8. Вітрина ───────────── */
+.hv-so-tochten { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: var(--hv-kier); }
+.hv-so-tocht { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 1fr auto; gap: var(--ruimte-3); padding: var(--ruimte-4); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
+.hv-so-tocht.is-nu { border-color: var(--info); box-shadow: inset 0 0 0 1px var(--info), var(--schaduw-2); }
+.hv-so-tocht__teken { display: grid; place-items: center; inline-size: 52px; block-size: 52px; border-radius: var(--straal-l); background: linear-gradient(135deg, var(--accent-soft), var(--info-zacht)); color: var(--text); }
+.hv-so-tocht__tekst h3 { font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
+.hv-so-tocht__tekst p { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); }
+.hv-so-tocht > .hv-knop { grid-column: 1 / -1; justify-self: start; }
+.hv-so-gezichten { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--ruimte-2); }
+.hv-so-gezicht { display: grid; justify-items: center; align-content: end; gap: var(--ruimte-2); min-block-size: 120px; padding: var(--ruimte-3) var(--ruimte-2); border-radius: var(--straal-l); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); text-align: center; }
+.hv-so-gezicht .hv-so-mini { inline-size: auto; block-size: 64px; max-inline-size: 88px; }
+.hv-so-gezicht .hv-so-mini--strook, .hv-so-gezicht .hv-so-mini--tv { inline-size: 88px; block-size: auto; }
+@media (hover: hover) { .hv-so-gezicht:hover, .hv-so-tocht:hover { background: var(--surface); } }
+
+/* ───────────── 9. Калькулятор ───────────── */
+.hv-so-invoer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); padding-block: var(--ruimte-2); border-block-end: 1px solid var(--line); }
+.hv-so-invoer__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--surface); }
+.hv-so-invoer__tekst p { font-weight: 600; color: var(--text); }
+.hv-so-invoer__tekst small { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-so-invoer .hv-stapper__getal { min-inline-size: 5.4em; font-size: var(--tekst-basis); }
+@container so (max-width: 460px) { .hv-so-invoer { grid-template-columns: auto minmax(0, 1fr); } .hv-so-invoer > .hv-stapper { grid-column: 1 / -1; justify-self: end; } }
+.hv-so-kaart > .hv-so-veld { margin-block-start: var(--ruimte-2); }
+
+/* ───────────── 10. Складники ───────────── */
+.hv-so-staten { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: var(--ruimte-2); }
+.hv-so-staten__cel { display: flex; gap: var(--ruimte-2); align-items: flex-start; padding: var(--ruimte-2); border-radius: var(--straal-m); background: var(--surface); }
+.hv-so-staten__cel span:last-child { display: grid; gap: 2px; min-inline-size: 0; font-size: var(--tekst-klein); color: var(--text); }
+.hv-so-staten__cel small { font-size: var(--tekst-mini); color: var(--muted); }
+.hv-so-staten__letter { flex: none; display: grid; place-items: center; inline-size: 28px; block-size: 28px; border-radius: var(--straal-s); background: var(--panel); border: 1px solid var(--line); font-weight: 700; color: var(--text); }
+.hv-so-probeer { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--ruimte-3); align-items: end; }
+.hv-so-probeer__cel { display: grid; gap: var(--ruimte-2); justify-items: start; min-inline-size: 0; }
+.hv-so-probeer__cel > .hv-segment { justify-self: stretch; }
+.hv-so-probeer__cel--breed { grid-column: 1 / -1; justify-items: stretch; }
+.hv-so-zaalgroep { display: grid; gap: var(--hv-kier); min-inline-size: 0; }
+.hv-so-zaalgroep__kop { font-size: var(--hv-tekst-kop); font-weight: 600; color: var(--text); margin-block-start: var(--ruimte-3); }
+.hv-so-zaalraster { display: grid; gap: var(--hv-kier); grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); align-items: start; }
+.hv-so-zaalkaart { display: grid; gap: var(--ruimte-3); min-inline-size: 0; }
+.hv-so-zaalkaart.is-breed { grid-column: 1 / -1; }
+.hv-so-zaalkaart__kop { display: grid; gap: 2px; }
+.hv-so-zaalkaart__kop h3 code { font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
+.hv-so-zaalkaart__kop p { font-size: var(--tekst-klein); line-height: var(--hv-regel-klein); color: var(--muted); text-wrap: pretty; }
+.hv-so-stalen { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr)); gap: var(--ruimte-3); }
+.hv-so-stalen.is-breed { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.hv-so-staal { display: grid; gap: var(--ruimte-2); align-content: start; min-inline-size: 0; }
+.hv-so-staal__label { font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }
+.hv-so-staal__vak { position: relative; display: grid; gap: var(--ruimte-2); justify-items: start; align-content: start; min-inline-size: 0; padding: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); border: 1px dashed var(--line); }
+.hv-so-staal__vak > * { max-inline-size: 100%; }
+.hv-so-staal__vak { overflow-x: clip; }
+.hv-so-staal__vak > .hv-schuif, .hv-so-staal__vak > .hv-segment, .hv-so-staal__vak > .hv-stand, .hv-so-staal__vak > .hv-grafiek, .hv-so-staal__vak > .hv-kleur, .hv-so-staal__vak > .hv-so-tegelrij, .hv-so-staal__vak > .hv-tegels, .hv-so-staal__vak > ul, .hv-so-staal__vak > ol, .hv-so-staal__vak > .hv-so-klok, .hv-so-staal__vak > .hv-so-gezond, .hv-so-staal__vak > .hv-so-banner, .hv-so-staal__vak > .hv-so-staal__toost, .hv-so-staal__vak > .hv-leeg, .hv-so-staal__vak > .hv-skelet, .hv-so-staal__vak > .hv-telemetrie, .hv-so-staal__vak > .hv-kamers, .hv-so-staal__vak > .hv-so-code { justify-self: stretch; }
+.hv-so-staal__tegels { inline-size: 100%; grid-template-columns: minmax(0, 1fr); }
+.hv-so-staal__kamers { inline-size: 100%; grid-template-columns: minmax(0, 1fr); }
+.hv-so-staal__toost .hv-toost { position: static; inline-size: 100%; max-inline-size: 100%; animation: none; }
+.hv-so-staal__mini { display: grid; place-items: center; inline-size: 100%; block-size: 88px; }
+.hv-so-staal__mini .hv-so-mini { inline-size: auto; block-size: 80px; max-inline-size: 100%; }
+.hv-so-staal__mini .hv-so-mini--strook, .hv-so-staal__mini .hv-so-mini--tv { inline-size: 100%; block-size: auto; }
+.hv-so-staal__slot { display: inline-flex; align-items: center; gap: 4px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-so-staal--uit .hv-so-staal__vak > :not(.hv-so-staal__slot) { filter: saturate(0); }
+.hv-so-staal--uit .hv-tegel, .hv-so-staal--uit .hv-knop { color: var(--muted); }
+/* примусові стани: наведення, фокус, натиск — так, як їх малює ядро */
+.hv-so-staal--hover .hv-knop, .hv-so-staal--hover .hv-chip, .hv-so-staal--hover .hv-icoonknop, .hv-so-staal--hover .hv-tegel__lijf, .hv-so-staal--hover .hv-kamerkaart__lijf { background: var(--surface2); }
+.hv-so-staal--hover .hv-tegel, .hv-so-staal--hover .hv-kamerkaart { background: var(--surface2); }
+.hv-so-staal--hover .hv-schakel__teken { box-shadow: 0 0 0 4px var(--surface2); }
+.hv-so-staal--focus .hv-so-staal__vak > :first-child, .hv-so-staal--focus .hv-tegel { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); }
+.hv-so-staal--druk .hv-knop, .hv-so-staal--druk .hv-tegel { background: var(--surface2); box-shadow: inset 0 2px 0 var(--line); }
+.hv-so-wachtrand { display: inline-block; border-radius: var(--straal-m); outline: 1.5px dashed var(--hv-omtrek); outline-offset: 3px; animation: hv-puls var(--hv-duur-puls) ease-in-out infinite; }
+.hv-so-vonk { display: block; inline-size: 120px; block-size: 32px; }
+.hv-so-vonk .hv-vonk { inline-size: 100%; block-size: 100%; }

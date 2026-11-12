@@ -74,6 +74,47 @@ export const PROEF_MAX_MIGRATIES = 60;
 export const PROEF_MAX_BYTES = 1024 * 1024; // 1 MB SQL in totaal
 export const PROEF_DB_RE = /^mijnruimte_proef_[a-z0-9_]{1,40}$/;
 
+/**
+ * Задокументовані історичні перейменування міграцій жовтня 2026 року: у базах даних лишився запис зі старою назвою
+ * поруч із новою канонічною назвою. Якщо в архіві присутня канонічна міграція-спадкоємиця, такий запис вважається
+ * підтвердженим історичним перейменуванням. Відсутність будь-якої іншої застосованої міграції блокує встановлення (MIGRATIES_ONTBREKEN).
+ *
+ * Gedocumenteerde historische hernoemingen uit oktober 2026: alleen wanneer de canonieke opvolger in het archief staat,
+ * geldt dit als bevestigde historische hernoeming; elke echt ontbrekende toegepaste migratie blokkeert het pakket (MIGRATIES_ONTBREKEN).
+ */
+export const HISTORISCH_HERNOEMDE_MIGRATIES: Readonly<Record<string, string>> = Object.freeze({
+  '0093_globaal_zoeken_laatste': '0093_zoek_index',
+  '0094_zoekindex': '0094_zoek_rls',
+});
+
+export type ToegepasteMigratiesBeoordeling = {
+  echtOntbrekend: string[];
+  historischHernoemd: Array<{ oud: string; nieuw: string }>;
+};
+
+export function beoordeelToegepasteMigraties(
+  namenInArchief: Iterable<string>,
+  toegepast: Iterable<string> | null | undefined,
+): ToegepasteMigratiesBeoordeling {
+  if (!toegepast) return { echtOntbrekend: [], historischHernoemd: [] };
+  const aanwezig = new Set(namenInArchief);
+  const echtOntbrekend: string[] = [];
+  const historischHernoemd: Array<{ oud: string; nieuw: string }> = [];
+  for (const ruw of toegepast) {
+    const naam = String(ruw || '').trim();
+    if (!naam || naam === 'rechten' || aanwezig.has(naam)) continue;
+    const opvolger = HISTORISCH_HERNOEMDE_MIGRATIES[naam];
+    if (opvolger && aanwezig.has(opvolger)) {
+      historischHernoemd.push({ oud: naam, nieuw: opvolger });
+    } else {
+      echtOntbrekend.push(naam);
+    }
+  }
+  historischHernoemd.sort((a, b) => a.oud.localeCompare(b.oud));
+  echtOntbrekend.sort();
+  return { echtOntbrekend, historischHernoemd };
+}
+
 /** Regelnummer (1-gebaseerd) bij een PostgreSQL-«position» (1-gebaseerde tekenpositie in de verzonden SQL). */
 export function positieNaarRegel(sql: string, positie: number | string | undefined | null): number | null {
   const p = Number(positie);

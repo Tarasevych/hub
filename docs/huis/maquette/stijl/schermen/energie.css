@@ -1,0 +1,317 @@
+/* energie.css — розділ «Енергія»: потоки, сальдо, фази, стрічка цін із курсором, порядок доби, план зарядки, батарея,
+   тепло й звіти. Числа лежать на папері; тон ніколи не єдина ознака (маркер, слово, форма). Виміряне — суцільно,
+   оцінене — пунктир і «≈». Єдиний самочинний рух — потоки енергії (риски 4/8, 24 px/с); зменшений рух — нерухомо.
+   Кольори — лише токени; адаптивність — контейнерні запити (en — сторінка, enstroom — схема, enprijs — стрічка цін). */
+
+/* ───────────── Сітка сторінки ───────────── */
+.hv-en { display: grid; gap: var(--hv-kier); min-inline-size: 0; container: en / inline-size; }
+.hv-en .hv-kaart + .hv-kaart { margin-block-start: 0; }
+.hv-en-rooster { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--hv-kier); align-items: start; min-inline-size: 0; }
+.hv-en-kolom { display: grid; gap: var(--hv-kier); align-content: start; min-inline-size: 0; }
+.hv-en-breed { display: grid; min-inline-size: 0; }
+.hv-en-o1 { order: 1; } .hv-en-o2 { order: 2; } .hv-en-o3 { order: 3; } .hv-en-o4 { order: 4; } .hv-en-o5 { order: 5; } .hv-en-o6 { order: 6; }
+@container en (max-width: 859px) {
+  .hv-en-kolom--mix { display: contents; }
+}
+@container en (min-width: 860px) {
+  .hv-en-rooster--twee { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+  .hv-en-rooster--gelijk { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-en-rooster--gelijk > .hv-en-breed { grid-column: 1 / -1; }
+}
+
+/* ───────────── Речення, заголовки карток, дрібниці ───────────── */
+.hv-en-zin {
+  display: flex; text-wrap: pretty; gap: var(--ruimte-3); align-items: flex-start; padding: var(--ruimte-4) var(--ruimte-5);
+  border-radius: var(--straal-l); border: 1px solid var(--line); box-shadow: var(--schaduw-1);
+  background: linear-gradient(120deg, var(--hv-zon-zacht), var(--panel) 55%);
+  font-size: var(--hv-tekst-kop); font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; color: var(--text);
+}
+.hv-en-zin > .hv-ic { color: var(--hv-zon); margin-block-start: 5px; }
+.hv-en-kaart { position: relative; min-inline-size: 0; }
+.hv-en-kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); min-block-size: 32px; margin-block-end: var(--ruimte-3); }
+.hv-en-kop h3 { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-inline-size: 0; font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); color: var(--muted); }
+.hv-en-kop h3 > .hv-ic { flex: none; inline-size: 28px; block-size: 28px; padding: 6px; border-radius: 50%; background: var(--surface); color: var(--text); }
+.hv-en-kop.hv-toon-zon h3 > .hv-ic, .hv-en-kop.hv-toon-batterij h3 > .hv-ic, .hv-en-kop.hv-toon-auto h3 > .hv-ic, .hv-en-kop.hv-toon-warm h3 > .hv-ic { background: var(--toon-zacht); color: var(--toon); }
+.hv-en-kop__rechts { display: inline-flex; align-items: center; gap: var(--ruimte-2); flex: none; }
+.hv-en-kop__rechts > .hv-knop { margin-block: -6px; margin-inline-end: calc(var(--ruimte-2) * -1); }
+.hv-en-eenheid { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-en-euro { white-space: normal; }
+.hv-en-vb { display: inline-block; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; letter-spacing: 0; line-height: 1.4; color: var(--muted); vertical-align: middle; }
+.hv-en-vb--los { margin-inline-start: 0; }
+.hv-en-ong { white-space: normal; text-decoration: underline dashed var(--muted) 1px; text-underline-offset: 4px; }
+.hv-en-orig { font-size: 0.86em; font-weight: 500; color: var(--muted); }
+.hv-en-let { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-en-let > .hv-ic { color: var(--warn); }
+.hv-en-rij2 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-4); }
+.hv-en-planregel { display: flex; gap: var(--ruimte-2); align-items: flex-start; flex-wrap: wrap; font-size: var(--tekst-klein); line-height: 1.45; margin-block-start: var(--ruimte-2); }
+.hv-en-planregel > .hv-ic { margin-block-start: 3px; flex: none; }
+.hv-en-planregel > span { flex: 1 1 200px; min-inline-size: 0; }
+.hv-en-planregel.is-uit, .hv-en-planregel.is-schaduw { color: var(--muted); }
+.hv-en-tekst { font-size: var(--tekst-klein); line-height: 1.45; }
+.hv-en-tekst.is-zacht { color: var(--muted); }
+.hv-getallen--eerst { border-block-start: 0; padding-block-start: 0; }
+.hv-en-legenda { display: flex; flex-wrap: wrap; gap: var(--ruimte-1) var(--ruimte-4); font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); margin-block-start: var(--ruimte-2); }
+.hv-en-legenda li { display: inline-flex; align-items: center; gap: 6px; }
+.hv-en-legenda--kolom { display: grid; gap: var(--ruimte-1); margin-block-start: var(--ruimte-3); }
+.hv-en-legenda--kolom li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--ruimte-2); }
+
+/* ───────────── Потоки: схема й «нитка» ───────────── */
+.hv-en-stroom { container: enstroom / inline-size; min-inline-size: 0; }
+.hv-en-schema { display: none; position: relative; inline-size: 100%; aspect-ratio: var(--verhouding); margin-block: var(--ruimte-2); }
+.hv-en-schema > svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; }
+.hv-en-stroom__spoor { fill: none; stroke: var(--toon); stroke-opacity: 0.22; stroke-linecap: round; }
+.hv-en-stroom__vloei { fill: none; stroke: var(--toon); stroke-linecap: round; stroke-dasharray: 4 8; animation: hv-en-vloei 0.5s linear infinite; }
+.hv-en-stroom__vloei.is-terug { animation-direction: reverse; }
+.hv-en-stroom__stil { fill: none; stroke: var(--hv-omtrek); stroke-width: 1.5px; stroke-dasharray: 2 5; }
+@keyframes hv-en-vloei { to { stroke-dashoffset: -12; } }
+
+.hv-en-knoop {
+  position: absolute; z-index: 1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-2);
+  inline-size: 27%; min-block-size: 60px; padding: var(--ruimte-2) var(--ruimte-3); transform: translateY(-50%);
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-m); box-shadow: var(--schaduw-1); text-align: start; color: var(--text);
+  transition: border-color var(--hv-duur-1), box-shadow var(--hv-duur-1);
+}
+.hv-en-knoop--l { inset-inline-start: 0; }
+.hv-en-knoop--r { inset-inline-end: 0; }
+.hv-en-knoop__teken { display: grid; place-items: center; inline-size: 34px; block-size: 34px; border-radius: 50%; background: var(--toon-zacht); color: var(--toon); }
+.hv-en-knoop__tekst { display: grid; min-inline-size: 0; line-height: 1.2; }
+.hv-en-knoop__naam { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); overflow-wrap: anywhere; }
+.hv-en-knoop__getal { font-size: var(--hv-tekst-kop); font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.hv-en-knoop__woord { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-en-knoop.is-stil .hv-en-knoop__teken { background: var(--surface); color: var(--muted); }
+.hv-en-knoop.is-stil .hv-en-knoop__getal { color: var(--muted); }
+.hv-en-knoop--huis {
+  inset-inline-start: 50%; inset-block-start: 50%; transform: translate(-50%, -50%); inline-size: 18%; min-block-size: 112px;
+  grid-template-columns: minmax(0, 1fr); justify-items: center; align-content: center; gap: 2px; padding: var(--ruimte-3) var(--ruimte-2);
+  border: 2px solid var(--text); border-radius: var(--straal-l); text-align: center;
+  background: linear-gradient(180deg, var(--panel), var(--surface));
+}
+.hv-en-knoop--huis .hv-en-knoop__teken { background: var(--text); color: var(--panel); margin-block-end: 2px; }
+.hv-en-knoop--huis .hv-en-knoop__naam { font-size: var(--tekst-klein); color: var(--text); }
+.hv-en-knoop--huis .hv-en-knoop__getal { font-size: var(--hv-getal-m); line-height: 1.05; }
+.hv-en-knoop.is-oud, .hv-en-draad__balk.is-oud { background-image: repeating-linear-gradient(45deg, var(--hv-arcering) 0 1px, transparent 1px 10px); }
+
+.hv-en-draad { display: grid; gap: var(--ruimte-4); margin-block: var(--ruimte-2); }
+.hv-en-draad__groep { display: grid; gap: var(--ruimte-2); }
+.hv-en-draad__kop { font-size: var(--tekst-mini); font-weight: 700; letter-spacing: 0.02em; color: var(--muted); }
+.hv-en-draad__balk { display: flex; gap: 3px; block-size: 14px; border-radius: 999px; overflow: hidden; background: var(--surface); }
+.hv-en-draad__balk--groot { block-size: 22px; margin-block: var(--ruimte-2); }
+.hv-en-draad__balk i {
+  display: block; min-inline-size: 6px; background-color: var(--toon);
+  background-image: repeating-linear-gradient(90deg, transparent 0 8px, color-mix(in srgb, var(--panel) 38%, transparent) 8px 12px);
+  background-size: 24px 100%; animation: hv-en-draad 1s linear infinite;
+}
+.hv-en-draad__balk--groot i { animation: none; background-image: none; }
+@keyframes hv-en-draad { to { background-position: 24px 0; } }
+.hv-en-draad__rijen { display: grid; }
+.hv-en-draad__rij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); padding-inline: var(--ruimte-1); border-block-end: 1px solid var(--line); font-size: var(--tekst-klein); text-align: start; }
+.hv-en-draad__rij:last-child { border-block-end: 0; }
+.hv-en-draad__rij > .hv-ic { color: var(--toon); }
+.hv-en-draad__rij strong { font-weight: 600; white-space: nowrap; }
+@container enstroom (min-width: 520px) {
+  .hv-en-schema { display: block; }
+  .hv-en-draad { display: none; }
+}
+
+/* ───────────── Сальдо й дуга ───────────── */
+.hv-en-saldo__rij { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-3) var(--ruimte-5); margin-block-end: var(--ruimte-3); }
+.hv-en-saldo__getal { display: grid; gap: 4px; min-inline-size: 0; }
+.hv-en-saldo__woord { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-klein); font-weight: 700; color: var(--text); }
+.hv-en-saldo__woord > .hv-ic { color: var(--toon); }
+.hv-en-saldo__waarde { font-size: var(--hv-getal-xl); font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+.hv-en-boog { position: relative; display: grid; justify-items: center; gap: 2px; inline-size: 132px; flex: none; }
+.hv-en-boog > svg { inline-size: 132px; block-size: 132px; }
+.hv-en-boog__baan, .hv-en-boog__vulling, .hv-en-boog__schaduw { fill: none; stroke-width: 9; stroke-linecap: round; }
+.hv-en-boog__baan { stroke: var(--surface); }
+.hv-en-boog__schaduw { stroke: var(--toon-zacht); }
+.hv-en-boog__vulling { stroke: var(--toon); transition: d var(--hv-duur-2); }
+.hv-en-boog__streep { stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; }
+.hv-en-boog__midden { position: absolute; inset: 0 0 auto; block-size: 132px; display: grid; place-content: center; justify-items: center; text-align: center; padding-block-start: 4px; }
+.hv-en-boog__getal { font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+.hv-en-boog__label { max-inline-size: 140px; margin-block-start: -14px; text-align: center; font-size: var(--tekst-mini); font-weight: 600; line-height: 1.2; color: var(--muted); }
+.hv-en-ringen__rij { display: flex; flex-wrap: wrap; justify-content: space-around; gap: var(--ruimte-4); margin-block-end: var(--ruimte-3); }
+.hv-en-budget__tekst { display: grid; gap: var(--ruimte-2); flex: 1 1 170px; min-inline-size: 0; }
+
+/* ───────────── Ціна зараз і стрічка цін ───────────── */
+.hv-en-prijsnu__rij { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2) var(--ruimte-3); margin-block-end: var(--ruimte-2); }
+.hv-en-prijsnu__getal { font-size: var(--hv-getal-l); font-weight: 600; letter-spacing: -0.02em; line-height: 1; white-space: nowrap; }
+.hv-en-prijsnu__eenheid { font-size: var(--tekst-klein); font-weight: 500; letter-spacing: 0; color: var(--muted); }
+.hv-en-prijsnu__venster { display: flex; gap: var(--ruimte-2); align-items: flex-start; font-size: var(--tekst-klein); font-weight: 500; }
+.hv-en-prijsnu__venster > .hv-ic { margin-block-start: 3px; color: var(--ok); }
+.hv-en-tariefkop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2) var(--ruimte-3); margin-block-end: var(--ruimte-2); }
+.hv-en-tariefkop .hv-segment { flex: 0 1 auto; }
+.hv-en-tariefkop .hv-en-prijsnu__rij { margin-block-end: 0; }
+
+.hv-en-prijsfig { container: enprijs / inline-size; }
+.hv-en-prijs { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2); padding-block: 40px 44px; }
+.hv-en-prijs.is-klein { padding-block: 30px 22px; }
+.hv-en-prijs .hv-grafiek__as { min-inline-size: 34px; block-size: var(--hoogte); }
+.hv-en-prijs__doek { position: relative; block-size: var(--hoogte); min-inline-size: 0; }
+.hv-en-staaf { position: absolute; display: block; pointer-events: none; }
+.hv-en-staaf i { display: block; block-size: 100%; margin-inline: 12%; border-radius: 3px 3px 1px 1px; background: var(--hv-net-in); transition: opacity var(--hv-duur-1); }
+.hv-en-staaf.is-goedkoop i { background: var(--ok); }
+.hv-en-staaf.is-negatief i { background: var(--hv-net-uit); border-radius: 1px 1px 3px 3px; }
+.hv-en-staaf.is-duur::after { content: ""; position: absolute; inset-inline: 12%; inset-block-end: calc(100% + 3px); block-size: 3px; border-radius: 2px; background: var(--warn); }
+.hv-en-staaf.is-negatief.is-duur::after { display: none; }
+.hv-en-staaf.is-verleden i { opacity: 0.38; }
+.hv-en-staaf.is-nu i { opacity: 1; outline: 2px solid var(--accent); outline-offset: 1px; }
+.hv-en-staaf.is-gekozen i { opacity: 1; box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
+.hv-en-venster { position: absolute; inset-block-start: -22px; block-size: 14px; border: 1.5px solid var(--ok); border-block-end: 0; border-radius: 6px 6px 0 0; pointer-events: none; }
+.hv-en-venster > span { position: absolute; inset-block-end: calc(100% + 1px); inset-inline-start: 50%; transform: translateX(-50%); padding-inline: 4px; border-radius: 4px; background: var(--panel); font-size: var(--tekst-mini); font-weight: 600; line-height: 1.2; white-space: nowrap; color: var(--text); }
+.hv-en-venster__kort { display: none; }
+.hv-en-prijs.heeft-band .hv-en-venster { display: none; }
+.hv-en-dagscheiding { position: absolute; inset-block: -8px 0; border-inline-start: 1.5px dashed var(--hv-omtrek); pointer-events: none; }
+.hv-en-dagscheiding > span { position: absolute; inset-block-start: calc(100% + 26px); inset-inline-start: 0; transform: translateX(-50%); font-size: var(--tekst-mini); font-weight: 700; color: var(--text); white-space: nowrap; }
+.hv-en-prijs.is-klein .hv-en-dagscheiding > span { inset-block-start: 0; inset-inline-start: 4px; transform: none; padding-inline: 4px; background: var(--panel); border-radius: 4px; }
+.hv-en-prijs .hv-grafiek__nu { z-index: 2; }
+.hv-en-prijs .hv-grafiek__nu span { display: none; }
+.hv-en-band { position: absolute; inset-block: -24px 0; border-inline: 2px solid var(--hv-auto); border-radius: 8px 8px 0 0; background: color-mix(in srgb, var(--hv-auto-zacht) 70%, transparent); pointer-events: none; }
+.hv-en-band.is-schaduw { background: none; border: 2px dashed var(--hv-auto); border-block-end: 0; }
+.hv-en-band > span { position: absolute; inset-block-start: 3px; inset-inline-start: 50%; transform: translateX(-50%); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--hv-auto); background: var(--panel); font-size: var(--tekst-mini); font-weight: 600; white-space: nowrap; color: var(--text); }
+.hv-en-vertrek { position: absolute; inset-block: -6px 0; border-inline-start: 2px dashed var(--text); pointer-events: none; z-index: 1; }
+.hv-en-vertrek > span, .hv-en-vertrek > .hv-ic { position: absolute; }
+.hv-en-vertrek > .hv-ic { inset-block-start: -2px; inset-inline-start: 4px; }
+.hv-en-vertrek > span { inset-block-start: 12px; inset-inline-start: 4px; padding-inline: 3px; border-radius: 4px; background: var(--panel); font-size: var(--tekst-mini); font-weight: 700; }
+.hv-en-cursorbaan { position: absolute; inset-block: -8px -4px; z-index: 3; cursor: ew-resize; touch-action: none; border-radius: 6px; }
+.hv-en-cursorbaan .hv-schuif__vulling { display: none; }
+.hv-en-cursor__lijn { position: absolute; inset-block: 0; inline-size: 0; border-inline-start: 2px solid var(--text); transform: translateX(-1px); pointer-events: none; }
+.hv-en-cursor__lijn::before { content: ""; position: absolute; inset-block-start: -6px; inset-inline-start: -7px; inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 3px var(--panel); }
+.hv-en-cursorbaan:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: 2px; }
+.hv-en-cursor { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: var(--ruimte-2); padding: var(--ruimte-2); border-radius: var(--straal-m); background: var(--surface); }
+.hv-en-cursor > .hv-knop { grid-column: 1 / -1; justify-self: center; }
+.hv-en-cursor__tekst { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px var(--ruimte-3); text-align: center; min-inline-size: 0; }
+.hv-en-cursor__tijd { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-en-cursor__prijs { font-size: var(--hv-tekst-kop); font-weight: 700; letter-spacing: -0.01em; }
+.hv-en-staafje { display: inline-block; inline-size: 9px; block-size: 14px; border-radius: 2px; background: var(--hv-net-in); }
+.hv-en-staafje.is-goedkoop { background: var(--ok); }
+.hv-en-staafje.is-negatief { background: var(--hv-net-uit); }
+.hv-en-staafje.is-nu { background: var(--panel); outline: 2px solid var(--accent); outline-offset: -1px; }
+.hv-en-staafje.is-duur { box-shadow: 0 -5px 0 -2px var(--warn); margin-block-start: 5px; }
+@container enprijs (max-width: 620px) {
+  .hv-en-prijs .hv-grafiek__x.is-tussen { display: none; }
+  .hv-en-venster__lang { display: none; }
+  .hv-en-venster__kort { display: inline; }
+}
+@container en (min-width: 640px) {
+  .hv-en-cursor { grid-template-columns: 44px minmax(0, 1fr) 44px auto; }
+  .hv-en-cursor > .hv-knop { grid-column: auto; }
+}
+
+/* ───────────── Фази ───────────── */
+.hv-en-fasen { display: grid; gap: var(--ruimte-2); }
+.hv-en-fase { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(64px, auto); align-items: center; gap: var(--ruimte-2) var(--ruimte-3); }
+.hv-en-fase__naam { font-size: var(--tekst-klein); font-weight: 700; }
+.hv-en-fase__spoor { position: relative; block-size: 18px; border-radius: 4px; background: var(--surface); border-inline: 2px solid var(--text); }
+.hv-en-fase__balk { position: absolute; inset-block: 2px; border-radius: 3px; background: var(--toon); transition: width var(--hv-duur-2); }
+.hv-en-fase__doel { position: absolute; inset-block: -4px; border-inline-start: 1.5px dashed var(--text); }
+.hv-en-fase__nul { position: absolute; inset-block: -4px; inset-inline-start: 50%; border-inline-start: 1.5px solid var(--hv-omtrek); }
+.hv-en-fase__getal { display: grid; justify-items: end; font-weight: 600; white-space: nowrap; }
+.hv-en-fase__v { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-en-fase--as { margin-block-start: -2px; }
+.hv-en-fase__as { display: flex; justify-content: space-between; font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-en-fasen__legenda { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-2); font-size: var(--tekst-mini); color: var(--muted); }
+.hv-en-fasen__merk { display: inline-block; inline-size: 16px; block-size: 0; border-block-start: 2px dashed var(--text); }
+.hv-en-fasen__merk.is-zekering { inline-size: 0; block-size: 14px; border-block-start: 0; border-inline-start: 2px solid var(--text); margin-inline-start: var(--ruimte-2); }
+
+/* ───────────── Хто чим керує, поради ───────────── */
+.hv-en-regie__wie { display: inline-flex; align-items: center; gap: 6px; font-size: var(--tekst-mini); font-weight: 600; }
+.hv-en-advies { display: grid; gap: var(--hv-kier); }
+.hv-en-advies__rij { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-3); padding: var(--ruimte-3) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); }
+.hv-en-advies__teken { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--surface); }
+.hv-en-advies__tekst { display: grid; gap: 2px; font-size: var(--tekst-klein); line-height: 1.4; min-inline-size: 0; }
+.hv-en-advies__euro { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+@container en (max-width: 560px) {
+  .hv-en-advies__rij { grid-template-columns: 40px minmax(0, 1fr); }
+  .hv-en-advies__rij > .hv-knop { grid-column: 2; justify-self: start; }
+}
+
+/* ───────────── Порядок доби ───────────── */
+.hv-en-dagorde { display: grid; gap: var(--ruimte-3); --naam: 128px; }
+.hv-en-dagorde__veld { position: relative; display: grid; gap: 6px; padding-block: var(--ruimte-1) 42px; }
+.hv-en-baan { display: grid; grid-template-columns: var(--naam) minmax(0, 1fr); align-items: center; gap: var(--ruimte-2); }
+.hv-en-baan__naam { display: inline-flex; align-items: center; gap: 6px; min-inline-size: 0; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-en-baan__naam > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hv-en-baan__spoor { position: relative; block-size: 24px; border-radius: 6px; background: var(--surface); }
+.hv-en-baan--as .hv-en-baan__spoor { background: none; block-size: 0; }
+.hv-en-baan__zon { position: absolute; inset-block-end: 3px; block-size: calc((100% - 6px) * var(--deel)); padding-inline: 1px; background-clip: content-box; background-color: var(--hv-zon); border-radius: 2px 2px 0 0; }
+.hv-en-baan__zon.is-prognose { background-color: var(--hv-zon-zacht); box-shadow: inset 0 1.5px 0 var(--hv-zon); }
+.hv-en-blok { position: absolute; inset-block: 3px; display: grid; place-items: center; border-radius: 5px; background: var(--toon); color: var(--text); }
+.hv-en-legenda .hv-en-blok { position: relative; display: inline-block; inset: auto; inline-size: 24px; block-size: 12px; }
+.hv-en-blok.is-gepland, .hv-en-blok.is-schaduw { background: var(--toon-zacht); outline: 1.5px dashed var(--toon); outline-offset: -1.5px; }
+.hv-en-blok.is-schaduw { opacity: 0.6; }
+.hv-en-blok.is-wacht { background: var(--panel); box-shadow: inset 0 0 0 1.5px var(--toon); }
+.hv-en-blok.is-bezig { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--toon); }
+.hv-en-blok.is-geannuleerd { background: repeating-linear-gradient(45deg, var(--hv-arcering) 0 1px, transparent 1px 6px); box-shadow: inset 0 0 0 1px var(--hv-omtrek); }
+.hv-en-dagorde__dag { position: absolute; inset-block: 0 42px; inset-inline-start: calc(var(--naam) + var(--ruimte-2) + (100% - var(--naam) - var(--ruimte-2)) * var(--x)); border-inline-start: 1.5px dashed var(--hv-omtrek); pointer-events: none; }
+.hv-en-dagorde__dag > span { position: absolute; inset-block-start: calc(100% + 22px); inset-inline-start: 0; transform: translateX(-50%); font-size: var(--tekst-mini); font-weight: 700; white-space: nowrap; }
+.hv-en-dagorde__nu { position: absolute; inset-block: 0 42px; inline-size: 2px; margin-inline-start: -1px; background: var(--accent); inset-inline-start: calc(var(--naam) + var(--ruimte-2) + (100% - var(--naam) - var(--ruimte-2)) * var(--x)); z-index: 1; }
+.hv-en-planrijen { border-block-start: 1px solid var(--line); }
+.hv-en-planrij.is-gedaan, .hv-en-planrij.is-geannuleerd { opacity: 0.66; }
+@container en (max-width: 560px) {
+  .hv-en-dagorde { --naam: 28px; }
+  .hv-en-dagorde .hv-grafiek__x.is-tussen { display: none; }
+  .hv-en-baan__naam > span { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+
+/* ───────────── План зарядки, станція ───────────── */
+.hv-en-laadplan { display: grid; min-inline-size: 0; }
+.hv-en-laadplan > .hv-veld:first-of-type { border-block-start: 0; }
+.hv-en-laadkop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--ruimte-2) var(--ruimte-3); padding-block-end: var(--ruimte-3); }
+.hv-en-laadkop__ev { display: inline-flex; align-items: center; gap: 6px; font-size: var(--hv-tekst-kop); font-weight: 600; }
+.hv-en-laadacties { align-items: center; }
+.hv-en-meer { display: inline-grid; gap: 2px; font-size: var(--tekst-klein); font-weight: 700; }
+.hv-en-meer__sub { font-size: var(--tekst-mini); font-weight: 500; color: var(--muted); }
+.hv-en-station { padding-block-end: var(--ruimte-4); }
+.hv-en-stationkaart .hv-telemetrie { margin-block-start: var(--ruimte-2); }
+
+/* ───────────── Батарея ───────────── */
+.hv-en-bathoofd { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--ruimte-4); padding-block-end: var(--ruimte-3); }
+.hv-en-bathoofd__rechts { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-en-batbalk { position: relative; display: block; block-size: 20px; border-radius: 7px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.hv-en-batbalk__vulling { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 7px; background: linear-gradient(90deg, var(--hv-batterij-zacht), var(--hv-batterij) 40%); transition: width var(--hv-duur-2); }
+.hv-en-batbalk__reserve { position: absolute; inset-block: 0; inset-inline-start: 0; z-index: 1; border-inline-end: 2px solid var(--text); background: repeating-linear-gradient(45deg, var(--hv-arcering) 0 1px, transparent 1px 5px); }
+
+/* ───────────── Склад ціни (водоспад) ───────────── */
+.hv-en-waterval { display: grid; gap: var(--ruimte-2); margin-block: var(--ruimte-3); }
+.hv-en-waterval li { display: grid; grid-template-columns: minmax(0, 10em) minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); }
+.hv-en-waterval li strong { font-weight: 600; white-space: nowrap; }
+.hv-en-waterval li.is-totaal { padding-block-start: var(--ruimte-2); border-block-start: 1px solid var(--line); font-weight: 700; }
+.hv-en-waterval__spoor { position: relative; block-size: 14px; border-radius: 3px; background: var(--surface); }
+.hv-en-waterval__spoor i { position: absolute; inset-block: 0; border-radius: 3px; background: var(--hv-net-in); }
+.hv-en-waterval__spoor i.is-negatief { background: var(--hv-net-uit); }
+.hv-en-waterval__spoor i.is-totaal { background: var(--text); }
+
+/* ───────────── Звіти ───────────── */
+.hv-en-keuze { display: grid; gap: var(--ruimte-2); margin-block-end: var(--ruimte-3); min-inline-size: 0; }
+.hv-en-spiegel { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2); padding-block: var(--ruimte-2) 24px; }
+.hv-en-spiegel .hv-grafiek__as { block-size: 220px; min-inline-size: 30px; }
+.hv-en-spiegel__doek { position: relative; block-size: 220px; min-inline-size: 0; }
+.hv-en-spiegel__kolom { position: absolute; inset-block: 0; }
+.hv-en-spiegel__deel { position: absolute; inset-inline: max(16%, calc(50% - 22px)); background: var(--toon); }
+.hv-en-spiegel__deel.is-onder { background: var(--toon-zacht); box-shadow: inset 0 0 0 1.5px var(--toon); }
+.hv-en-spiegel__deel.is-laad { background: repeating-linear-gradient(45deg, var(--hv-batterij) 0 2px, var(--hv-batterij-zacht) 2px 5px); box-shadow: none; }
+.hv-en-spiegel__geest { position: absolute; inset-inline: max(4%, calc(50% - 30px)); border: 1px solid var(--hv-omtrek); border-block-end: 0; border-radius: 3px 3px 0 0; }
+.hv-en-geestmerk { display: inline-block; inline-size: 12px; block-size: 12px; border: 1px solid var(--hv-omtrek); border-radius: 2px; }
+.hv-en-balken { display: grid; gap: var(--ruimte-2); }
+.hv-en-balken li { display: grid; grid-template-columns: auto minmax(0, 9em) minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-2); min-block-size: 28px; font-size: var(--tekst-klein); }
+.hv-en-balken__naam { overflow-wrap: anywhere; line-height: 1.25; }
+.hv-en-balken__spoor { block-size: 10px; border-radius: 999px; background: var(--surface); overflow: hidden; }
+.hv-en-balken__spoor i { display: block; block-size: 100%; border-radius: 999px; background: var(--text); }
+.hv-en-balken strong { font-weight: 600; white-space: nowrap; }
+.hv-en-paar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: var(--ruimte-4); padding: var(--ruimte-3); margin-block: var(--ruimte-3); border-radius: var(--straal-m); background: var(--surface); }
+.hv-en-paar__kolom { display: grid; justify-items: center; align-content: end; gap: 4px; text-align: center; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-en-paar__kolom strong { font-size: var(--hv-tekst-kop); font-weight: 700; color: var(--text); }
+.hv-en-paar__balk { display: block; inline-size: 64px; border-radius: 10px 10px 3px 3px; background: var(--hv-net-in); transition: height var(--hv-duur-2); }
+.hv-en-paar__kolom.is-zonder .hv-en-paar__balk { background: repeating-linear-gradient(45deg, var(--hv-net-in) 0 3px, var(--hv-net-in-zacht) 3px 7px); box-shadow: inset 0 0 0 2px var(--hv-net-in); }
+
+/* ───────────── Рух і чорнило ───────────── */
+@media (prefers-reduced-motion: reduce) {
+  .hv-en-stroom__vloei, .hv-en-draad__balk i { animation: none; }
+}
+.theme-inkt .hv-en-stroom__vloei, .theme-inkt .hv-en-draad__balk i { animation: none; }
+.theme-inkt .hv-en-zin { background: var(--panel); }
+.theme-inkt .hv-en-staaf.is-goedkoop i { background: var(--panel); box-shadow: inset 0 0 0 1.5px var(--text); }
+@media (hover: hover) {
+  .hv-en-knoop:hover { border-color: var(--text); box-shadow: var(--schaduw-2, var(--schaduw-1)); }
+  .hv-en-draad__rij:hover { background: var(--surface); }
+}
