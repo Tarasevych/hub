@@ -1,10 +1,13 @@
 /* gezichten.css — «обличчя» спеціальних профілів (§7 дизайн-мови): horloge, strook, vierkant, rond, klein, deur, inkt, tv.
-   Без навігації й прокручування; небо тихе (градієнт без сяйва) або вимкнене; скла немає. */
+   Без навігації й прокручування; небо тихе (градієнт без сяйва) або вимкнене; скла немає. Обличчя лежать на папері;
+   текст просто на небі — лише --text. */
 
 .hv-gezicht { position: relative; block-size: 100%; inline-size: 100%; display: grid; align-content: center; gap: var(--ruimte-1); padding: var(--hv-gezicht-vulling); min-block-size: 0; overflow: hidden; }
-.hv-gezicht__kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); }
-.hv-gezicht__bijschrift { display: inline-flex; align-items: center; gap: var(--ruimte-1); font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
+.hv-gezicht__kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); min-inline-size: 0; }
+.hv-gezicht__bijschrift { display: inline-flex; align-items: center; gap: var(--ruimte-1); min-inline-size: 0; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hv-gezicht__bijschrift .hv-punt { color: var(--text); }
 .hv-gezicht__getal { font-size: var(--hv-getal-xl); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--text); }
+.hv-gezicht__woord { font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; color: var(--text); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .hv-gezicht__toestand { font-size: var(--tekst-klein); font-weight: 600; line-height: 1.25; color: var(--text); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .hv-gezicht__actie { inline-size: 100%; margin-block-start: var(--ruimte-1); }
 .hv-gezicht__rij { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); }
@@ -15,48 +18,68 @@
 .hv-gezicht__stippen i.is-actief { background: var(--text); }
 .is-speciaal .hv-versheid { padding: 2px var(--ruimte-2); }
 
-/* horloge 200–400 */
-.hv-profiel-horloge .hv-gezicht { padding: var(--ruimte-3) var(--ruimte-3) calc(var(--hv-tik) + var(--ruimte-1)); align-content: start; }
+/* horloge 200–400: папір на весь екран; підпис і hv-versheid · слово стану (до двох рядків) · рядок стану · дія · «‹ ● ○ ○ ›» */
+.hv-profiel-horloge .hv-gezicht { grid-template-rows: auto minmax(0, 1fr) auto auto; align-content: stretch; gap: var(--ruimte-1); padding: var(--ruimte-2) var(--ruimte-3) calc(var(--hv-tik) + 2px); background: var(--panel); }
+.hv-profiel-horloge .hv-gezicht__woord, .hv-profiel-horloge .hv-gezicht__getal { align-self: center; }
 .hv-profiel-horloge .hv-gezicht__getal { font-size: var(--hv-getal-l); }
-.hv-profiel-horloge .hv-gezicht__actie { min-block-size: var(--hv-tik); }
+.hv-profiel-horloge .hv-gezicht__actie { min-block-size: var(--hv-tik); margin: 0; }
+.hv-profiel-horloge .hv-versheid span:not(.hv-versheid__stip) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.hv-profiel-horloge .hv-versheid { padding: 6px; }
 .hv-profiel-horloge .hv-toosten { inset: var(--ruimte-1); inline-size: auto; align-content: start; }
 .hv-profiel-horloge .hv-toost { grid-template-columns: minmax(0, 1fr) auto; padding: var(--ruimte-1) var(--ruimte-1) var(--ruimte-1) var(--ruimte-2); }
 .hv-profiel-horloge .hv-toost__teken, .hv-profiel-horloge .hv-toost__maker, .hv-profiel-horloge .hv-toost__regel { display: none; }
 
-/* strook 1920×480 / 1280×400: п'ять зон і стрічка доби внизу */
+/* strook 1920×480 / 1280×400: п'ять зон на всю висоту, стрічка доби з годинною шкалою внизу; розміри — для погляду здалеку */
 .hv-profiel-strook .hv-gezicht { padding: 0; grid-template-rows: minmax(0, 1fr) auto; align-content: stretch; gap: 0; }
 .hv-strook { display: grid; grid-template-columns: 3fr 3fr 3fr 3fr 4fr; align-items: stretch; min-block-size: 0; }
-.hv-strook > section { display: grid; align-content: center; gap: var(--ruimte-1); padding: var(--ruimte-4) var(--ruimte-5); border-inline-start: 1px solid var(--line); background: var(--panel); min-inline-size: 0; min-block-size: 0; overflow: hidden; }
-.hv-strook > section:first-child { border-inline-start: 0; background: transparent; }
+.hv-strook > section { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; align-content: space-between; gap: var(--ruimte-2); padding: var(--ruimte-5); border-inline-start: 1px solid var(--line); background: var(--panel); min-inline-size: 0; min-block-size: 0; overflow: hidden; }
+.hv-strook > section:first-child { border-inline-start: 0; background: transparent; grid-template-rows: auto minmax(0, 1fr); }
+.hv-strook__tijd > p:last-child { align-self: end; }
 .hv-strook__klok { font-size: 88px; font-weight: 600; letter-spacing: -0.04em; line-height: 0.95; }
-.hv-strook__datum { display: flex; flex-wrap: wrap; gap: 0 var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
-.hv-strook__zin { font-size: var(--hv-tekst-kop); font-weight: 600; line-height: 1.2; text-wrap: balance; }
-.hv-strook__label { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
-.hv-strook__getal { font-size: var(--hv-getal-xl); font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
-.hv-strook__prijs { font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; }
-.hv-strook__prijs span { font-size: var(--tekst-mini); color: var(--muted); letter-spacing: 0; }
-.hv-strook__stromen ul, .hv-strook__uitz ul { display: grid; gap: var(--ruimte-2); }
-.hv-strook__stromen li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); border-inline-start: 3px solid var(--toon); padding-inline-start: var(--ruimte-2); }
-.hv-strook__stromen strong { font-size: var(--hv-tekst-kop); color: var(--text); }
-.hv-strook__uitz li { display: flex; gap: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 600; line-height: 1.3; }
+.hv-strook__datum { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-2); margin-block-start: var(--ruimte-2); font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
+.hv-strook__zin { font-size: var(--hv-zin); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+.hv-strook__label { font-size: var(--tekst-basis); font-weight: 600; color: var(--muted); }
+.hv-strook__getal { align-self: center; font-size: var(--hv-getal-xl); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--toon); }
+.hv-strook__prijs { font-size: var(--hv-getal-l); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
+.hv-strook__prijs span { display: block; font-size: var(--tekst-klein); color: var(--muted); letter-spacing: 0; }
+.hv-strook__stromen { grid-template-rows: minmax(0, 1fr) !important; align-content: center !important; }
+.hv-strook__stromen .hv-grafiek__kop { margin-block-end: var(--ruimte-1); }
+.hv-strook__stromen .hv-grafiek__titel { font-size: var(--tekst-basis); color: var(--muted); }
+.hv-strook__stromen .hv-grafiek__ringrij { flex-wrap: nowrap; gap: var(--ruimte-4); }
+.hv-strook__stromen .hv-grafiek__legenda { font-size: var(--tekst-basis); }
+.hv-strook__stromen .hv-grafiek__wissel { display: none; }
+.hv-strook__uitz ul { display: grid; gap: var(--ruimte-3); align-content: start; }
+.hv-strook__uitz li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2); align-items: start; font-size: var(--tekst-basis); font-weight: 600; line-height: 1.3; }
+.hv-strook__uitz li .hv-ic { inline-size: 24px; block-size: 24px; color: var(--warn); }
 .hv-strook__uitz li span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
-.hv-strook__fav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2) !important; align-content: center; }
-.hv-profiel-strook .hv-dagstrook { background: var(--panel); border-block-start: 1px solid var(--line); padding: 6px var(--ruimte-5) 0; block-size: var(--hv-dagstrook-strook, 76px); overflow: hidden; }
-.hv-profiel-strook .hv-dagstrook .hv-grafiek__banen { padding-block-start: 0; gap: 2px; }
-.hv-profiel-strook .hv-dagstrook .hv-grafiek__wissel, .hv-profiel-strook .hv-dagstrook .hv-grafiek__nu span { display: none; }
-.hv-profiel-strook .hv-toosten { inset-block-end: 88px; }
+/* обране: чотири плитки 2×1 на всю ширину зони, одна під одною */
+.hv-strook__fav { display: grid !important; grid-template-columns: minmax(0, 1fr); grid-template-rows: none !important; grid-auto-rows: minmax(0, 1fr); gap: var(--ruimte-2) !important; align-content: stretch !important; padding-block: var(--ruimte-3) !important; }
+.hv-strook__fav .hv-tegel { min-block-size: 0; box-shadow: none; }
+.hv-profiel-strook .hv-dagstrook { background: var(--panel); border-block-start: 1px solid var(--line); padding: 4px var(--ruimte-5) 0; overflow: hidden; }
+.hv-profiel-strook .hv-dagstrook .hv-grafiek__banen { padding-block: 18px 18px; gap: 4px; }
+.hv-profiel-strook .hv-dagstrook .hv-grafiek__wissel { display: none; }
+.hv-profiel-strook .hv-toosten { inset-block-end: 110px; }
 @container doek (max-width: 1599px) {
-  .hv-strook { grid-template-columns: 3fr 3fr 2fr 3fr 3fr; }
-  .hv-strook > section { padding: var(--ruimte-3) var(--ruimte-4); }
+  .hv-strook { grid-template-columns: 3fr 3fr 3fr 3fr 3fr; }
+  .hv-strook > section { padding: var(--ruimte-4); }
   .hv-strook__klok { font-size: 64px; }
-  .hv-strook__fav { grid-template-columns: minmax(0, 1fr); }
   .hv-strook__getal { font-size: var(--hv-getal-l); }
+  .hv-strook__prijs { font-size: var(--hv-getal-m); }
+  .hv-strook__stromen .hv-grafiek__legenda { display: none; }
+  .hv-strook__uitz li { font-size: var(--tekst-klein); }
 }
 
-/* vierkant і rond 480–720 */
+/* vierkant 480–720: обличчя на всю площу; підпис і hv-versheid · диск цілі з «−/+» · рядок стану · «‹ крапки ›» */
 .hv-profiel-vierkant .hv-gezicht, .hv-profiel-rond .hv-gezicht { padding: 0; place-items: center; }
 .hv-gezicht__binnen { display: grid; gap: var(--ruimte-2); inline-size: min(76%, 420px); }
-.hv-profiel-vierkant .hv-gezicht__binnen { inline-size: min(84%, 520px); padding: var(--ruimte-5); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-xl); box-shadow: var(--schaduw-1); }
+.hv-profiel-vierkant .hv-gezicht { --hv-wijzer: min(320px, 46cqh); }
+.hv-profiel-vierkant .hv-gezicht__binnen { position: absolute; inset: var(--hv-kier); inline-size: auto; grid-template-rows: auto minmax(0, 1fr) auto auto; align-content: stretch; justify-items: stretch; gap: var(--ruimte-1); padding: var(--ruimte-3) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-xl); box-shadow: var(--schaduw-1); }
+.hv-profiel-vierkant .hv-gezicht__kop { min-block-size: var(--hv-tik); }
+.hv-profiel-vierkant .hv-gezicht__bijschrift { font-size: var(--tekst-basis); flex: 1 1 auto; }
+.hv-profiel-vierkant .hv-wijzer { align-self: center; justify-self: center; }
+.hv-profiel-vierkant .hv-gezicht__toestand { text-align: center; }
+.hv-profiel-vierkant .hv-wijzer__doel .hv-stap { inline-size: var(--hv-tik); block-size: var(--hv-tik); }
+.hv-gezicht__kamers { display: flex; align-items: center; justify-content: space-between; }
 .hv-profiel-vierkant .hv-gezicht__getal, .hv-profiel-rond .hv-gezicht__getal { font-size: 80px; }
 .hv-profiel-rond .hv-gezicht__binnen { inline-size: 62%; text-align: center; justify-items: center; }
 .hv-profiel-rond .hv-gezicht__kop { justify-content: center; }
@@ -86,31 +109,39 @@
 .hv-deur__knoppen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ruimte-2); }
 .hv-deur__knoppen .hv-knop { min-block-size: 64px; font-size: var(--tekst-basis); }
 
-/* inkt: чорне й біле, кнопки-номери */
+/* inkt: чорне й біле, кнопки-номери; плитки займають усю вільну висоту, стан 14/600 */
 .hv-profiel-inkt .hv-gezicht { padding: var(--ruimte-5); align-content: stretch; }
 .hv-inkt { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: var(--ruimte-3); block-size: 100%; }
 .hv-inkt__zin { font-size: 36px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
 .hv-inkt__uitz { display: grid; gap: var(--ruimte-1); font-size: var(--tekst-basis); font-weight: 600; }
-.hv-inkt__uitz li { padding-inline-start: var(--ruimte-3); border-inline-start: 4px solid var(--text); }
-.hv-inkt__tegels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ruimte-2); align-content: end; }
+.hv-inkt__uitz li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2); align-items: start; }
+.hv-inkt__uitz li .hv-ic { inline-size: 20px; block-size: 20px; margin-block-start: 1px; }
+.hv-inkt__tegels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: var(--ruimte-2); align-content: stretch; min-block-size: 0; }
 .hv-inkt__tegel { position: relative; display: grid; gap: 2px; padding: var(--ruimte-2) var(--ruimte-3) var(--ruimte-2) calc(var(--hv-inkt-nummer) + var(--ruimte-4)); border: 1.5px solid var(--text); border-radius: var(--straal-s); min-block-size: 64px; align-content: center; }
 .hv-inkt__tegel.is-aan { background: var(--text); color: var(--panel); }
 .hv-inkt__nummer { position: absolute; inset-block-start: var(--ruimte-2); inset-inline-start: var(--ruimte-2); inline-size: var(--hv-inkt-nummer); block-size: var(--hv-inkt-nummer); display: grid; place-items: center; background: var(--text); color: var(--panel); font-size: var(--tekst-klein); font-weight: 700; border-radius: 4px; }
 .hv-inkt__tegel.is-aan .hv-inkt__nummer { background: var(--panel); color: var(--text); }
-.hv-inkt__naam { font-size: var(--tekst-klein); font-weight: 700; line-height: 1.15; }
-.hv-inkt__woord { font-size: var(--tekst-mini); font-weight: 600; }
+.hv-inkt__naam { font-size: var(--tekst-basis); font-weight: 700; line-height: 1.15; }
+.hv-inkt__woord { font-size: var(--tekst-klein); font-weight: 600; }
 .hv-inkt__voet { font-size: var(--tekst-mini); font-weight: 600; }
+/* е-папір: без ореолів і тіней, тоновий чип — із рамкою */
+.theme-inkt .hv-venster, .theme-inkt .hv-doorsnede__ding { box-shadow: none; filter: none; }
+.theme-inkt .hv-chip--toon::before { border: var(--hv-streep) solid var(--text); }
 
-/* tv 1920×1080 (логічно 1280×720, масштаб 1,5): небо на весь екран, ряд карток */
+/* tv 1920×1080 (логічно 1280×720, масштаб 1,5): небо на весь екран, ряд карток; керування пультом — фокус завжди видно */
 .hv-profiel-tv .hv-gezicht { padding: 5cqh 5cqw; align-content: stretch; }
 .hv-tv { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--ruimte-4); block-size: 100%; }
-.hv-tv__datum { display: flex; align-items: center; gap: var(--ruimte-3); font-size: var(--hv-tekst-kop); font-weight: 600; color: var(--muted); }
+.hv-tv__kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-4); }
+.hv-tv__datum { display: flex; align-items: center; gap: var(--ruimte-3); font-size: var(--hv-tekst-kop); font-weight: 600; color: var(--text); }
+.hv-tv__datum .hv-punt { color: var(--text); }
+.hv-tv__kop .hv-versheid { font-size: var(--tekst-klein); padding: 6px var(--ruimte-3); }
 .hv-tv__zin { align-self: center; font-size: 64px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.08; text-wrap: balance; max-inline-size: 16em; }
 .hv-tv__rij { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--ruimte-4); }
-.hv-tv__kaart { display: grid; gap: var(--ruimte-1); align-content: start; padding: var(--ruimte-4) var(--ruimte-5); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0; }
-.hv-tv__kaart:focus-visible { outline-width: 3px; outline-offset: 4px; }
+.hv-tv__kaart { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: var(--ruimte-1); align-content: start; padding: var(--ruimte-4) var(--ruimte-5); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-tv__kaart:focus-visible, .hv-tv__rij:not(:focus-within) .hv-tv__kaart:first-child { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); }
 .hv-tv__kaart .hv-ic { color: var(--muted); }
 .hv-tv__naam { font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); }
-.hv-tv__waarde { font-size: var(--hv-getal-l); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
-.hv-tv__woord { font-size: var(--hv-getal-m); }
+.hv-tv__waarde { align-self: end; font-size: var(--hv-getal-l); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
+.hv-tv__woord { font-size: var(--hv-getal-l); }
 .hv-tv__sub { font-size: var(--tekst-klein); font-weight: 600; }
+.hv-strook__tijd .hv-gezicht__sim, .hv-tv__datum .hv-gezicht__sim { color: var(--text); }

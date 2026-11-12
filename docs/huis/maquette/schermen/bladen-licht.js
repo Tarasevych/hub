@@ -12,6 +12,8 @@
   function hoofd(a, b, getal) {
     var sch = b.schakel;
     var aan = a.wacht && sch && a.wacht.mogelijkheid === sch.mogelijkheid ? a.wacht.waarde : b.aan;
+    // вимкнена лампа: число — тихе, з підписом «після ввімкнення»
+    if (getal && !aan) getal = '<span class="hv-bediening__na">' + getal + '<span>' + h(t('після ввімкнення', 'na inschakelen')) + '</span></span>';
     return '<div class="hv-bediening__hoofd" data-k="hoofd">' + o.schakel({ aan: aan, icoon: b.icoon, toon: b.toon, staat: a.wacht ? 'wacht' : (a.beschikbaar !== 'ok' ? a.beschikbaar : null), actie: 'schakel', gegevens: { doel: a.id, mogelijkheid: sch.mogelijkheid }, aria: HV.p(a.naam) }) +
       '<div><p class="hv-bediening__woord">' + h(a.wacht ? HV.woord.wacht() : (aan ? HV.woord.aan() : HV.woord.uit())) + '</p>' + (getal ? '<p class="hv-bediening__getal" id="blad-getal">' + getal + '</p>' : '') + '</div></div>';
   }
@@ -26,12 +28,13 @@
     var heeft = function (m) { return a.mog.indexOf(m) >= 0; };
     var uit = hoofd(a, b, heeft('helderheid') ? HV.maat(HV.gewenst(a, 'helderheid'), '%') : '');
     if (heeft('helderheid')) {
-      uit += veld(t('Яскравість', 'Helderheid'), o.schuif({ label: t('Яскравість', 'Helderheid'), waarde: HV.gewenst(a, 'helderheid'), min: 1, max: 100, stap: 1, toon: 'aan', actie: 'licht-schuif', gegevens: { doel: a.id, mogelijkheid: 'helderheid' }, gewenst: a.wacht && a.wacht.mogelijkheid === 'helderheid' ? st.helderheid : null }));
+      uit += veld(t('Яскравість', 'Helderheid'), o.schuif({ label: t('Яскравість', 'Helderheid'), waarde: HV.gewenst(a, 'helderheid'), min: 1, max: 100, stap: 1, toon: 'aan', actie: 'licht-schuif', gegevens: { doel: a.id, mogelijkheid: 'helderheid' }, gewenst: a.wacht && a.wacht.mogelijkheid === 'helderheid' ? st.helderheid : null, klas: 'hv-schuif--zonder-getal' }));
     }
     if (heeft('kleurtemp')) {
       var kt = HV.gewenst(a, 'kleurtemp');
       uit += veld(t('Температура світла', 'Lichttemperatuur'),
-        '<div class="hv-filter" role="group" aria-label="' + h(t('Заготовки температури світла', 'Voorkeuzes voor lichttemperatuur')) + '">' + TEMP.map(function (x) { return o.chip({ filter: true, gekozen: Math.abs(kt - x[0]) < 150 && !(st.verzadiging > 0), tekst: HV.p(x[1]), actie: 'doe', gegevens: { doel: a.id, mogelijkheid: 'kleurtemp', waarde: x[0] }, k: 'kt-' + x[0] }); }).join('') + '</div>' +
+        // чотири рівні частини замість чипів, що переносилися з «сиротою»
+        o.segment({ label: t('Заготовки температури світла', 'Voorkeuzes voor lichttemperatuur'), waarde: (TEMP.filter(function (x) { return Math.abs(kt - x[0]) < 150 && !(st.verzadiging > 0); })[0] || [null])[0], actie: 'doe', gegevens: { doel: a.id, mogelijkheid: 'kleurtemp' }, klas: 'hv-segment--vier', k: 'kt-segment', opties: TEMP.map(function (x) { return { id: x[0], label: HV.p(x[1]) }; }) }) +
         o.schuif({ label: t('Температура світла', 'Lichttemperatuur'), waarde: kt, min: 2200, max: 6500, stap: 100, eenheid: 'K', toon: 'neutraal', klas: 'hv-schuif--warmkoud', actie: 'licht-schuif', gegevens: { doel: a.id, mogelijkheid: 'kleurtemp' } }));
     }
     if (heeft('kleur')) {

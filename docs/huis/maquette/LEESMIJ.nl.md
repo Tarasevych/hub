@@ -52,15 +52,25 @@ HV.actie(naam, (ctx, gegevens, element, gebeurtenis) => …);            // dele
 
 ## 4. Onderdelen `HV.o.*` (geven HTML terug)
 
-`knop({tekst,icoon,actie,gegevens,soort:'hoofd'|'gewoon'|'stil',klein,uit})` · `icoonknop({icoon,aria,actie,gegevens,teller})` · `chip({icoon,tekst|html,toon,actie,gegevens,filter,gekozen})` ·
-`tegel(apparaat,{vorm:'2x1'|'2x2',metKamer})` · `beeld(apparaat)` · `kamerkaart(kamer)` · `telemetrie({id,icoon,naam,stand,lading,doel,bereik,getallen,actie})` · `scene(scene,actief)` ·
+`knop({tekst,icoon,actie,gegevens,soort:'hoofd'|'gewoon'|'stil',klein,uit,gedrukt})` · `icoonknop({icoon,aria,actie,gegevens,teller})` · `chip({icoon,tekst|html,toon,actie,gegevens,filter,gekozen})` ·
+`tegel(apparaat,{vorm:'1x1'|'2x1'|'2x2'|'4x2',metKamer,bediening})` · `beeld(apparaat)` · `kamerkaart(kamer)` · `telemetrie({id,icoon,naam,stand,lading,doel,bereik,getallen,actie})` · `scene(scene,actief)` ·
 `blok({id,titel,teller,inhoud,uitleg,extra,vast,samenvatting,dicht})` · `held({datum,zin,kort,chips,rechts})` · `nu(items)` · `leeg({icoon,titel,tekst,actie})` · `skelet(vorm,aantal)` ·
-`schakel({aan,icoon,toon,staat,kritiek,actie,gegevens,aria})` · `schuif({label,waarde,min,max,stap,eenheid,toon,actie,gegevens,gewenst,uit})` · `wijzer({doel,gemeten,toon,bezig,actie,gegevens})` ·
+`schakel({aan,icoon,toon,staat,ritueel,actie,gegevens,aria})` · `schuif({label,waarde,min,max,stap,eenheid,toon,actie,gegevens,gewenst,uit})` · `wijzer({doel,gemeten,toon,bezig,actie,gegevens})` ·
 `kleur({tint,verzadiging,wijze,actie,gegevens})` · `aftel({rest,totaal,icoon,klaar})` · `segment({label,opties:[{id,label,icoon}],waarde,actie,gegevens})` · `werkmodus({waarde,actie,gegevens})` · `stapper({actie,gegevens,stap,label,waarde})` ·
 `stand({uitvoerder,actie,rol})` · `risico(niveau)` · `gevolg(tekst,{soort:'i'|'uitroep',kop})` · `stempel({waarde,leeftijd,bron,staat})` · `versheid(w)` · `sim(w)` · `maker(maker)` ·
-`toost(x)` · `bericht(regel,{open})` · `rij({icoon,naam,sub,waarde,actie,gegevens})` · `kaart({titel,inhoud})` · `getal({maat,label,waarde,sub,toon})` · `later(tekst)`.
+`toost(x)` · `bericht(regel,{open,zonderSim})` · `rij({icoon,naam,sub,waarde,actie,gegevens})` · `kaart({titel,inhoud})` · `getal({maat,label,waarde,sub,toon})` · `later(tekst)`.
 
-Grafieken `HV.grafiek.*`: `lijn`, `staven`, `toestanden`, `warmtekaart`, `ring`, `vonk` (eigen SVG, merktekens, ‘Als tabel tonen’). Tekst en getallen: `HV.t(uk,nl)`, `HV.p([uk,nl])`, `HV.getal(n,dec)`, `HV.maat(n,eenheid,dec)`, `HV.euro`, `HV.tijd`, `HV.duur`, `HV.oud`, `HV.meervoud`. Tonen: de klasse `hv-toon-aan|warm|koud|zon|net-in|net-uit|batterij|auto|neutraal`.
+Grafieken `HV.grafiek.*`: `lijn`, `staven`, `toestanden` (een baan mag `rechts` hebben — HTML rechts in het spoor), `warmtekaart`, `ring`, `vonk` (eigen SVG, merktekens, ‘Als tabel tonen’; de buitenste labels van de X-as liggen tegen de rand). Tekst en getallen: `HV.t(uk,nl)`, `HV.p([uk,nl])`, `HV.getal(n,dec)`, `HV.maat(n,eenheid,dec)`, `HV.euro`, `HV.tijd`, `HV.duur`, `HV.oud`, `HV.meervoud`. Tonen: de klasse `hv-toon-aan|warm|koud|zon|net-in|net-uit|batterij|auto|neutraal`.
+
+### 4.1. Tegels, actieteken, toestanden (ronde 2)
+
+- **De inhoud bepaalt de vorm.** `o.tegel(a, { bediening: true })` — voor ‘Favorieten’ en de kamerpagina: een apparaat met een niveauorgaan (`HV.niveauOrgaan(a)`: helderheid, doeltemperatuur, gordijnen, volume) wordt een tegel met bediening «−» · `hv-schuif` · «+». Het rooster `hv-tegels` geeft haar de vorm 2×2 alleen als de kolom minstens 224 px breed is (vanaf een doek van 700 px zijn de kolommen dat altijd); op de telefoon beslaat ze de hele rij (4×2) en toont ze rechts het getal `--hv-getal-m` (container `tegel`, vanaf 300 px). `vorm:'2x2'` zonder niveauorgaan wordt 2×1 getekend — geen hoge lege tegel meer. `vorm:'4x2'` beslaat altijd de hele rij. De schuif van de tegel stuurt de opdracht bij `klaar` (actie `tegel-schuif`).
+- **De regel ‘waarde · leeftijd’** bestaat uit ondeelbare stukken (`.hv-nb`): de punt hoort bij het volgende stuk en verdwijnt aan het begin van een regel; de naam krijgt tot twee regels zonder puntjes. Voor eigen tegels: `HV.tegelWaardeRegel([{ html, klas }])`.
+- **Teken met ritueel.** `o.schakel({ ritueel:'gevaarlijk'|'kritiek', actie, … })` — een vierkant met dubbele rand in plaats van een cirkel; aanraken voert zelf niets uit: `HV.doe` opent `hv-gevaar`. Het niveau in de huidige richting geeft `HV.ritueelVan(a, beeld.schakel)` (verondersteld of verouderd — de vorm van het hoogste van beide richtingen). `o.tegel` doet dit zelf: een vergrendeld slot is een vierkant, een ontgrendeld een cirkel. Het oude `kritiek:true` met `actie` betekent `ritueel:'kritiek'`, zonder `actie` een passief teken (de achthoek bestaat niet meer).
+- **Toestanden.** `staat:'bezig'` — ‘bezig’: klassen met een slag (`HV.gangKlassen`: gordijnen, jaloezieën, poort, garagedeur, slot, klep) tonen na het eerste antwoord het richtingwoord en het waargenomen percentage (`a.wacht.fase==='bezig'`, `a.wacht.voortgang`); de tijd tot ‘niet uitgevoerd’ is `a.wacht.grens` per klasse (`maten.gedrag.wachtPerKlasse`). ‘Niet uitgevoerd’ — `HV.mislukt(a)` (rand 2 px `--fout`, `CircleX`, 60 s of tot de volgende actie).
+- **De held** is een eigen container `held`: tot 600 px de korte zin, 600–999 de volle zin in één kolom, vanaf 1000 px zin en doorsnede. Het doorsnedeblok van ‘Thuis’ verschijnt vanzelf als de held geen doorsnede toont (container `thuis`). Andere containers van de kern: `doorsnede`, `nurij` (regel van ‘Nu belangrijk’), `kamer`, `kamerlijst`, `tegel`.
+- **De hemel** is samengedrukt tot de held (`--hv-hemel-einde`) en vervaagt daaronder naar papier; op andere pagina's een stille hemel (een zweem van de fase bovenaan, daarna `--bg`). De neerslagarcering leeft in de held. Op de hemel alleen `--text` (de statische controle vangt `--muted` in hemelselectoren).
+- **Schil.** ‘Opdracht’ is het middelste punt van de onderbalk op de telefoon (geen zwevende knop meer). Op de telefoon staat onder de kop de rij `hv-sim` van 28 px; in de kop een papieren pil met de ingeklapte heldregel en de chip ‘belangrijk’ (actie `naar-nu`). `o.sim(w)` toont geen tijd meer. `HV.dagstrook(ctx, { kort, makers })` — de baan van makers alleen met `makers:true`.
 
 ## 5. Werkend voorbeeld
 
@@ -99,13 +109,13 @@ node scripts/huis-maquette.mjs --controle           # statische controles (exit 
 node scripts/huis-maquette-rook.mjs --uit <map>     # rookproef in de browser; --snel is de korte ronde
 ```
 
-Statisch: unieke `id`'s; elk navigatiepunt heeft een scherm; elk paar `t()` heeft beide talen; de taalwet; geen kleur in de CSS buiten het tokenblok en geen `@media` op breedte; elke gevaarlijke en kritieke actie heeft een gevolgtekst.
+Statisch: unieke `id`'s; elk navigatiepunt heeft een scherm; elk paar `t()` heeft beide talen; de taalwet; geen kleur in de CSS buiten het tokenblok en geen `@media` op breedte; `font-weight` alleen 400/500/600/700 of een token; geen tekst kleiner dan 12 px; geen `--muted`/`--faint` in hemelselectoren; elke gevaarlijke en kritieke actie heeft een gevolgtekst.
 Rookproef: alle routes × 6 profielen × 3 thema's × 2 talen — consolefouten, horizontaal scrollen, aanraakdoelen ≥ 44 px, afhandelingen van `data-actie`; een klikproef met lamp, schuif, scène, huisstand, scenario, houdrail en noodlaag.
 
 ## 8. Regels voor tekst en stijl
 
 - Interfaceteksten staan altijd als paar `t('українська', 'nederlands')`; in gegevens als `[uk, nl]`. In Oekraïense teksten mag alleen Latijn uit de toegestane lijst (`taal-toegestaan.json` vult de lijst uit `tests/eenheid/hulp/taalcontrole.ts` aan).
 - In de CSS alleen `var(--…)` en klassen `hv-`; responsief met `@container doek (…)`, niet met `@media`; gebruik `cqh` in plaats van `svh`.
-- Alles met getallen ligt op papier (`--panel`); glas is er alleen voor de kop, de navigatie, de schil van bladen en de Opdracht; op de hemel staan alleen `--text` en `--muted`.
+- Alles met getallen ligt op papier (`--panel`); glas is er alleen voor de kop, de navigatie, de schil van bladen en de Opdracht; op de hemel staat alleen `--text` (`--muted` alleen op glas en papier).
 - Een aanraakdoel is ≥ 44 px (`--hv-tik`); elke actie met een gevolg heeft de uitleg `o.gevolg(…)`: ‘Wat er gebeurt · Hangt samen met · Terugdraaien’.
 - Geen `alert/confirm/prompt`, geen externe adressen, `localStorage` alleen via `HV.opslag`.

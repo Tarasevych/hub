@@ -14,10 +14,11 @@
     var kop = '<p class="hv-pagina__zin">' + h(metLicht ? t('Світло в кімнатах: ', 'Licht aan in kamers: ') + metLicht : t('Світло вимкнено всюди', 'Het licht is overal uit')) + ' <span class="hv-punt">·</span> ' + h(open ? t('відчинено вікон і дверей: ', 'ramen en deuren open: ') + open : t('вікна й двері зачинено', 'ramen en deuren dicht')) + '</p>';
     var blokken = ['beneden', 'boven', 'zolder', 'buiten'].map(function (id) { return w.verdiepingen.filter(function (v) { return v.id === id; })[0]; }).map(function (v) {
       var kamers = w.kamers.filter(function (k) { return k.verdieping === v.id; });
-      return o.blok({ id: 'verd-' + v.id, titel: HV.p(v.naam), teller: kamers.length, inhoud: '<div class="hv-kamers">' + kamers.map(o.kamerkaart).join('') + '</div>',
+      // поверх із однією-двома кімнатами — короткий блок: на комп’ютері два такі стоять поруч в одному рядку
+      return o.blok({ id: 'verd-' + v.id, titel: HV.p(v.naam), teller: kamers.length, klas: kamers.length <= 2 ? 'hv-blok--kort' : '', inhoud: '<div class="hv-kamers">' + kamers.map(o.kamerkaart).join('') + '</div>',
         samenvatting: h(kamers.map(function (k) { return HV.p(k.naam); }).join(', ')) });
     }).join('');
-    return '<div class="hv-kamerlijst" data-k="kamerlijst">' + kop + blokken + '</div>';
+    return '<div class="hv-kamerlijst" data-k="kamerlijst">' + kop + '<div class="hv-verdiepingen">' + blokken + '</div></div>';
   }
 
   // «Що тут діє само»: приклади автоматизацій кімнати (повний редактор — розділ «Автоматика»).
@@ -47,9 +48,10 @@
     var kop = '<header class="hv-kamerkop" data-k="kamerkop"><span class="hv-kamerkop__teken">' + HV.icoon(k.icoon, { maat: 'l' }) + '</span><div><h1 class="hv-pagina__titel">' + h(HV.p(k.naam)) + '</h1><p class="hv-kamerkop__sub">' + h(HV.p(verd.naam)) + (k.doel != null ? ' · ' + h(t('ціль ', 'doel ') + HV.getal(k.doel, 1) + ' °C') : '') + '</p></div></header>' +
       (chips ? '<div class="hv-kamerkop__chips">' + chips + '</div>' : '');
 
-    var tegels = function (lijst, vorm) { return lijst.length ? '<div class="hv-tegels">' + lijst.map(function (a) { return o.tegel(a, vorm ? { vorm: vorm } : null); }).join('') + '</div>' : ''; };
+    // плитки сторінки кімнати: орган рівня (яскравість, ціль, штори, гучність) — плитка з керуванням (§7)
+    var tegels = function (lijst, vorm) { return lijst.length ? '<div class="hv-tegels">' + lijst.map(function (a) { return o.tegel(a, vorm ? { vorm: vorm } : { bediening: true }); }).join('') + '</div>' : ''; };
 
-    var klimaat = o.blok({ id: 'k-klimaat', titel: t('Клімат', 'Klimaat'), inhoud: tegels(van(KLIMAAT), '2x2') });
+    var klimaat = o.blok({ id: 'k-klimaat', titel: t('Клімат', 'Klimaat'), inhoud: tegels(van(KLIMAAT)) });
     var scenes = w.scenes.filter(function (s) { return s.stappen.some(function (st) { return w.apparaten[st.doel] && w.apparaten[st.doel].kamer === k.id; }); });
     var scenesBlok = o.blok({ id: 'k-scenes', titel: t('Сцени', 'Scènes'), inhoud: scenes.length ? '<div class="hv-scenes">' + scenes.map(function (s) { return o.scene(s, w.sceneActief === s.id); }).join('') + '</div>' : '' });
     var lampen = HV.kijk.lampen(k.id), aan = HV.kijk.lampenAan(k.id);
@@ -68,7 +70,9 @@
         return '<div class="hv-rij hv-regel" data-k="zelf-' + i + '"><span class="hv-rij__teken">' + HV.icoon('diamond', { maat: 's' }) + '</span><span class="hv-rij__naam">' + h(HV.p(z[0])) + '<span class="hv-rij__sub">' + h(HV.p(z[1])) + '</span></span><span class="hv-rij__waarde">' + o.chip({ tekst: HV.p(FASE[z[2]]), toon: z[2] === 'aan' ? 'ok' : null }) + '</span></div>';
       }).join('') + '</div>' : '' });
 
-    var inhoud = klimaat + scenesBlok + licht + media + restBlok + sensorBlok + zelfBlok;
+    // на комп’ютері — дві колонки: ліворуч клімат, датчики, сцени й правила; праворуч світло, медіа й решта
+    var links = klimaat + sensorBlok + scenesBlok + zelfBlok, rechts = licht + media + restBlok;
+    var inhoud = links || rechts ? '<div class="hv-kamer__kolommen"><div class="hv-kamer__kolom">' + links + '</div><div class="hv-kamer__kolom">' + rechts + '</div></div>' : '';
     return '<div class="hv-kamer" data-k="kamer-' + h(k.id) + '">' + kop + (inhoud || o.leeg({ icoon: k.icoon, titel: t('У цій кімнаті ще немає пристроїв', 'In deze kamer staan nog geen apparaten'), tekst: t('Додайте пристрій або перенесіть його сюди з іншої кімнати.', 'Voeg een apparaat toe of verplaats er een hierheen.') })) + '</div>';
   }
 

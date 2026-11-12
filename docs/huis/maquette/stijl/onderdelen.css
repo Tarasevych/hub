@@ -3,19 +3,22 @@
 
 /* ── hv-chip: паперова пігулка; ціль дотику 44, видима висота 36 ── */
 .hv-chip { position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 6px; min-block-size: var(--hv-chip-hoogte); padding-inline: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); white-space: nowrap; flex: none; }
-.hv-chip::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); transition: background var(--hv-duur-1); }
+/* видима пігулка завжди 36 px по центру — і в кнопки (ціль 44), і в чипа-span, навіть коли flex розтягує його */
+.hv-chip::before { content: ""; position: absolute; inset: max(0px, calc((100% - var(--hv-chip-hoogte)) / 2)) 0; z-index: -1; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); transition: background var(--hv-duur-1); }
 button.hv-chip { min-block-size: var(--hv-tik); }
-button.hv-chip::before { inset: calc((100% - var(--hv-chip-hoogte)) / 2) 0; }
 .hv-chip > .hv-ic { color: var(--muted); }
 .hv-chip--toon::before { background: var(--toon-zacht); border-color: transparent; }
 .hv-chip--toon > .hv-ic { color: var(--toon); }
 .hv-chip__sub { font-weight: 500; color: var(--muted); font-size: var(--tekst-mini); }
 .hv-chip--filter.is-gekozen::before { background: var(--surface2); border: 2px solid var(--text); }
-.hv-chip.is-verouderd::before { border-style: dashed; border-color: var(--hv-omtrek); }
+/* застарілий чип: суцільна рамка (пунктир — лише «очікує / припущено / недоступне / оцінене»), значення --muted, вік жирним */
+.hv-chip.is-verouderd::before { border-style: solid; border-color: var(--hv-omtrek); }
+.hv-chip.is-verouderd { color: var(--muted); }
+.hv-chip.is-verouderd .hv-chip__sub { color: var(--text); font-weight: 700; }
 button.hv-chip:active::before { background: var(--surface2); }
 .hv-filter { display: flex; flex-wrap: wrap; gap: 0 var(--hv-doel-kier); }
 .hv-personen { display: inline-flex; }
-.hv-persoon { inline-size: 22px; block-size: 22px; margin-inline-start: -6px; border-radius: 50%; display: grid; place-items: center; background: var(--surface2); border: 1.5px solid var(--panel); font-size: 11px; font-weight: 700; line-height: 1; }
+.hv-persoon { inline-size: 24px; block-size: 24px; margin-inline-start: -6px; border-radius: 50%; display: grid; place-items: center; background: var(--surface2); border: 1.5px solid var(--panel); font-size: var(--tekst-mini); font-weight: 700; line-height: 1; }
 .hv-persoon:first-child { margin-inline-start: 0; }
 .hv-persoon.is-waarschijnlijk { border: 1.5px dashed var(--hv-omtrek); }
 
@@ -37,7 +40,7 @@ button.hv-chip:active::before { background: var(--surface2); }
 .is-altijd-zwaar .hv-risico--kritiek ~ .hv-uitleg--vast { color: var(--fout-vlak); }
 .hv-gevolg { position: absolute; z-index: var(--hv-z-gevolg); inset-inline-start: var(--x); inset-block-start: var(--y); inline-size: min(var(--hv-gevolg-breedte), calc(100cqw - 32px)); padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-2); animation: hv-op var(--hv-duur-2) var(--hv-kromme-in); }
 .hv-gevolg__kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); margin-inline-end: calc(var(--ruimte-3) * -1); }
-.hv-gevolg__kop h3 { font-size: var(--tekst-klein); font-weight: 650; }
+.hv-gevolg__kop h3 { font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); }
 .hv-gevolg__rijen { display: grid; gap: var(--ruimte-2); font-size: var(--tekst-klein); }
 .hv-gevolg__rijen dt { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
 .hv-gevolg__rijen dd { line-height: 1.4; }
@@ -55,12 +58,15 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-schakel.is-verondersteld .hv-schakel__teken { border-style: dotted; border-width: 2px; }
 .hv-schakel.is-onbereikbaar .hv-schakel__teken { border: var(--hv-streep) dashed var(--hv-omtrek); background: transparent; color: var(--muted); }
 .hv-schakel.is-slaapt .hv-schakel__teken { border-style: dashed; }
-/* критичне — восьмикутник, не перемикач */
-.hv-schakel--kritiek .hv-schakel__teken { border: 0; border-radius: 0; background: var(--hv-omtrek); clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); color: var(--text); }
-.hv-schakel--kritiek .hv-schakel__teken::before { content: ""; position: absolute; inset: 1.5px; background: var(--panel); clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
-.hv-schakel--kritiek.is-aan .hv-schakel__teken { background: var(--warn); }
-.hv-schakel--kritiek .hv-schakel__ic { position: relative; }
+/* знак із ритуалом: квадрат --hv-teken із подвійною рамкою 2 + 2 + 2 (тон, проміжок --panel, тон) — форма рейки (§9);
+   тло --panel, іконка --text; усередині лишається 28 px (простора — 36). Дотик відкриває hv-gevaar. */
+.hv-schakel--ritueel { border-radius: var(--straal-s); --rail: var(--warn); }
+.hv-schakel--ritueel.hv-schakel--kritiek { --rail: var(--fout-vlak); }
+.hv-schakel--ritueel .hv-schakel__teken, .hv-schakel--ritueel.is-aan .hv-schakel__teken { border-radius: var(--hv-straal-rail); background: var(--panel); color: var(--text); border: var(--hv-rail-rand) solid var(--rail); box-shadow: inset 0 0 0 var(--hv-rail-rand) var(--panel), inset 0 0 0 calc(var(--hv-rail-rand) * 2) var(--rail); }
+.hv-schakel--ritueel.is-wacht .hv-schakel__teken, .hv-schakel--ritueel.is-bezig .hv-schakel__teken { border-style: solid; }
 @keyframes hv-puls { 50% { opacity: 0.45; } }
+/* «виконується»: суцільний контур без пульсу */
+.hv-schakel.is-bezig .hv-schakel__teken { border: var(--hv-streep) solid var(--hv-omtrek); animation: none; }
 .hv-aftel__ring { position: absolute; inset: -3px; inline-size: calc(100% + 6px); block-size: calc(100% + 6px); transform: rotate(-90deg); fill: none; stroke: var(--text); stroke-width: 2; pointer-events: none; }
 .hv-aftel { display: inline-flex; align-items: center; gap: var(--ruimte-2); }
 .hv-aftel__tekst { font-size: var(--tekst-klein); font-weight: 600; }
@@ -70,6 +76,8 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 /* ── hv-segment, hv-werkmodus, hv-stand ── */
 .hv-segment { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--ruimte-1); padding: var(--ruimte-1); border-radius: var(--straal-m); background: var(--surface); border: 1px solid var(--line); min-inline-size: 0; }
 .hv-segment__deel { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-block-size: var(--hv-tik); padding-inline: var(--ruimte-2); border-radius: var(--straal-s); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); text-align: center; line-height: 1.15; transition: background var(--hv-duur-1), color var(--hv-duur-1); }
+.hv-segment--vier { grid-auto-columns: minmax(0, 1fr); }
+.hv-segment--vier .hv-segment__deel { padding-inline: var(--ruimte-1); font-size: var(--tekst-mini); }
 .hv-segment__deel.is-gekozen { background: var(--panel); color: var(--text); box-shadow: var(--schaduw-1); outline: var(--hv-streep) solid var(--hv-omtrek); outline-offset: -1px; }
 .hv-segment__deel.is-gekozen:focus-visible { outline: var(--hv-focus-rand) solid var(--focus); outline-offset: var(--hv-focus-afstand); }
 .hv-segment--rol { display: flex; overflow-x: auto; scrollbar-width: none; background: none; border: 0; padding: 0; gap: var(--hv-doel-kier); }
@@ -98,6 +106,8 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-schuif__gewenst { position: absolute; inset-block-start: calc(50% - 10px); block-size: 20px; inline-size: 2px; margin-inline-start: -1px; background: var(--text); }
 .hv-schuif.is-sleept .hv-schuif__vulling, .hv-schuif.is-sleept .hv-schuif__knop { transition: none; }
 .hv-schuif.is-sleept .hv-schuif__knop { transform: scale(1.12); }
+.hv-schuif--zonder-getal { grid-template-columns: auto minmax(0, 1fr) auto; }
+.hv-schuif--zonder-getal .hv-schuif__getal { display: none; }
 .hv-schuif__getal { min-inline-size: 3.6em; text-align: end; font-weight: 600; font-size: var(--tekst-basis); }
 .hv-schuif.is-uit { color: var(--muted); }
 .hv-schuif.is-uit .hv-schuif__knop { border-color: var(--hv-omtrek); }
@@ -137,51 +147,89 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-schuif--tint .hv-schuif__spoor, .hv-schuif--verzadiging .hv-schuif__spoor { background: var(--hv-spoor, var(--surface)); }
 .hv-schuif--tint .hv-schuif__vulling, .hv-schuif--verzadiging .hv-schuif__vulling { background: transparent; border-inline-end-color: transparent; }
 
-/* ── hv-tegel ── */
+/* ── hv-tegel ──
+   Форми (§7): 2×1 «рядок» — знак, назва до двох рядків, «значення · вік»; плитка з керуванням — «−» · hv-schuif · «+»:
+   2×2, коли колонка сітки не вужча за 224 px (tegelBesturingMin), інакше на весь рядок (4×2) і з числом праворуч. */
 .hv-tegels { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); grid-auto-rows: minmax(var(--hv-rij), auto); grid-auto-flow: dense; gap: var(--hv-kier); }
-.hv-tegel { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--ruimte-1); min-block-size: var(--hv-rij); padding: var(--ruimte-1) var(--ruimte-3) var(--ruimte-1) var(--ruimte-1); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); overflow: hidden; --toon: var(--text); --toon-zacht: var(--surface); --niveau: var(--text); }
-.hv-tegel__lijf { display: grid; align-content: center; gap: 1px; min-block-size: var(--hv-tik); min-inline-size: 0; padding-block: var(--ruimte-1); border-radius: var(--straal-s); align-self: stretch; }
-.hv-tegel__naam { font-size: var(--tekst-basis); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.hv-tegel { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: calc(var(--hv-kier) - 4px); min-block-size: var(--hv-rij); min-inline-size: 0; padding: calc(var(--hv-kier) - 2px) var(--hv-kier) calc(var(--hv-kier) - 2px) calc(var(--hv-kier) - 2px); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1), 0 0 0 1px var(--hv-glas-rand); overflow: hidden; --toon: var(--text); --toon-zacht: var(--surface); --niveau: var(--text); }
+/* плитка всередині паперової картки чи аркуша — без тіні */
+.hv-kaart .hv-tegel, .hv-laag .hv-tegel, .hv-som .hv-tegel { box-shadow: none; }
+.hv-tegel__lijf { display: grid; align-content: center; gap: 2px; min-block-size: var(--hv-tik); min-inline-size: 0; padding-block: 2px; border-radius: var(--straal-s); align-self: stretch; }
+/* назва 16/600 до двох рядків без трьох крапок: плитка росте, а не обрізає (§7); слова не рвуться посередині */
+.hv-tegel__naam { font-size: var(--tekst-basis); font-weight: 600; line-height: 1.2; overflow-wrap: break-word; word-break: normal; -webkit-hyphens: auto; hyphens: auto; }
 .hv-tegel__kamer { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); line-height: 1.2; }
-.hv-tegel__waarde { display: flex; flex-wrap: wrap; align-items: baseline; font-size: var(--tekst-klein); color: var(--muted); line-height: 1.3; }
+/* рядок «значення · вік» із неподільних шматків: крапка належить наступному шматку й зникає на початку рядка */
+.hv-tegel__waarde { display: block; overflow: hidden; font-size: var(--tekst-klein); color: var(--muted); line-height: 1.3; }
+.hv-tegel__regel { display: flex; flex-wrap: wrap; align-items: baseline; margin-inline-start: -0.9em; }
+.hv-nb { position: relative; white-space: nowrap; padding-inline-start: 0.9em; }
+.hv-nb::before { content: "·"; position: absolute; inset-inline-start: 0; inline-size: 0.9em; text-align: center; color: var(--muted); }
+.hv-nb--pijl::before { content: none; }
+.hv-tegel__woord { color: var(--muted); }
 .hv-tegel__getal { color: var(--text); font-weight: 600; }
 .hv-tegel__staat, .hv-tegel__oud { font-weight: 600; color: var(--text); }
+.hv-tegel__mislukt { display: inline-flex; align-items: center; gap: 4px; color: var(--fout); font-size: var(--tekst-mini); font-weight: 600; }
 .hv-tegel__maker { position: absolute; inset-block-start: var(--ruimte-2); inset-inline-end: var(--ruimte-2); }
 .hv-tegel__altijd { position: absolute; inset-block-start: 2px; inset-inline-start: 2px; z-index: 1; color: var(--warn-vlak); }
 .hv-tegel__niveau { position: absolute; inset-inline: 0; inset-block-end: 0; block-size: var(--hv-tegel-niveau); background: var(--toon-zacht); }
 .hv-tegel__niveau i { display: block; block-size: 100%; background: var(--niveau); border-inline-end: 2px solid var(--toon); box-sizing: border-box; transition: inline-size var(--hv-duur-2); }
-.hv-tegel__niveau b { position: absolute; inset-block: -4px 0; inline-size: 2px; background: var(--text); }
-.hv-tegel--2x2 { grid-row: span 2; grid-template-rows: auto minmax(0, 1fr); align-items: start; padding-block: var(--ruimte-2) var(--ruimte-3); }
-.hv-tegel--2x2 .hv-tegel__lijf { align-content: start; padding-block-start: var(--ruimte-2); }
-.hv-tegel--2x2 .hv-stapper { grid-column: 1 / -1; justify-self: end; align-self: end; margin-inline-end: calc(var(--ruimte-2) * -1); }
-.hv-tegel--2x2 .hv-tegel__getal { font-size: var(--hv-tekst-kop); letter-spacing: -0.02em; line-height: 1.1; }
+.hv-tegel__niveau b { position: absolute; inset-block: -4px 0; inline-size: var(--hv-wens-dikte); background: var(--hv-wens); box-shadow: 0 0 0 var(--hv-wens-rand-dikte) var(--hv-wens-rand); }
+.hv-tegel--2x2, .hv-tegel--4x2 { grid-row: span 2; }
+.hv-tegel--4x2 { grid-column: 1 / -1; }
+/* плитка з керуванням: рядок 1 — знак, назва й «значення · вік» (і число на 4×2); рядок 2 — «−» · повзунок · «+» */
+.hv-tegel--bediening { container: tegel / inline-size; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: space-between; row-gap: var(--ruimte-2); }
+.hv-tegel--bediening .hv-tegel__lijf { align-self: center; }
+.hv-tegel__groot { display: none; grid-column: 3; grid-row: 1; align-self: center; padding-inline-start: var(--ruimte-2); font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; line-height: 1; white-space: nowrap; }
+.hv-tegel__orgaan { grid-column: 1 / -1; grid-row: 2; min-inline-size: 0; margin-inline-end: calc(var(--ruimte-1) * -1); }
+.hv-schuif--tegel { grid-template-columns: auto minmax(0, 1fr) auto; }
+.hv-schuif--tegel .hv-schuif__getal { display: none; }
+.hv-schuif--tegel .hv-schuif__baan { min-inline-size: 0; }
+.hv-tegel--bediening .hv-tegel__maker { inset-inline-end: var(--ruimte-1); }
+@container tegel (min-width: 300px) {
+  .hv-tegel__groot { display: block; }
+  .hv-tegel__getal.is-orgaan { display: none; }
+}
+/* 1×1 «знак»: знак і під ним назва 12/600 одним рядком */
+.hv-tegel--1x1 { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; padding: var(--ruimte-3) var(--ruimte-2); row-gap: 4px; }
+.hv-tegel--1x1 .hv-tegel__naam { font-size: var(--tekst-mini); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-inline-size: 100%; }
+.hv-tegel--1x1 .hv-tegel__waarde, .hv-tegel--1x1 .hv-tegel__kamer { display: none; }
+.hv-tegel--1x1 .hv-tegel__lijf { min-block-size: 0; }
+/* стани (§9): О очікує — пунктир; Р виконується — суцільний контур без пульсу; В не виконано — 2 px --fout */
 .hv-tegel.is-wacht { border: var(--hv-streep) dashed var(--text); }
-.hv-tegel.is-onbereikbaar { border: var(--hv-streep) dashed var(--hv-omtrek); background: var(--panel); }
+.hv-tegel.is-bezig { border: var(--hv-streep) solid var(--hv-omtrek); }
+.hv-tegel.is-mislukt { border: 2px solid var(--fout); }
+.hv-tegel.is-onbereikbaar { border: var(--hv-streep) dashed var(--hv-omtrek); background: var(--panel); box-shadow: none; }
 .hv-tegel.is-onbereikbaar .hv-tegel__naam { color: var(--muted); }
 .hv-tegel.is-verouderd .hv-tegel__getal, .hv-tegel.is-verouderd .hv-tegel__woord { color: var(--muted); font-weight: 400; }
 /* штрих застарілого — лише у вільній частині поля, ніколи під текстом */
 .hv-tegel.is-verouderd::after, .hv-kamerkaart__temp.is-verouderd::after { content: ""; position: absolute; inset-block: 0; inset-inline-end: 0; inline-size: 28%; pointer-events: none; background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 22%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)); -webkit-mask-image: linear-gradient(90deg, transparent, var(--text)); mask-image: linear-gradient(90deg, transparent, var(--text)); }
 .hv-tegel.is-verondersteld .hv-tegel__staat { font-weight: 600; }
-.hv-tegel--kritiek .hv-tegel__lijf { padding-inline-start: var(--ruimte-1); }
 .hv-tegel__lijf:active { background: var(--surface2); }
+@container doek (max-width: 699px) {
+  /* телефон: колонка сітки вужча за 224 px — плитка з керуванням займає весь рядок (4×2); довга назва — теж */
+  .hv-tegel--bediening, .hv-tegel--lang { grid-column: 1 / -1; }
+}
 
-/* ── hv-kamerkaart ── */
-.hv-kamers { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 228px), 1fr)); gap: var(--hv-kier); }
-.hv-kamerkaart { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--ruimte-2); align-items: start; padding: var(--ruimte-3) var(--ruimte-2) var(--ruimte-2) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); }
-.hv-kamerkaart__lijf { display: grid; gap: 2px; min-block-size: var(--hv-tik); min-inline-size: 0; border-radius: var(--straal-s); }
+/* ── hv-kamerkaart 2×2: назва й «значення · вік», знак світла праворуч; «−/+» цілі — лише коли є і ціль, і вимір ── */
+.hv-kamers { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 228px), 1fr)); gap: var(--hv-kier); align-items: stretch; }
+.hv-kamerkaart { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; column-gap: var(--ruimte-2); align-items: start; padding: var(--ruimte-3) var(--ruimte-2) var(--ruimte-2) var(--ruimte-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1), 0 0 0 1px var(--hv-glas-rand); }
+.hv-kamerkaart__lijf { display: grid; gap: 2px; align-content: start; min-block-size: var(--hv-tik); min-inline-size: 0; border-radius: var(--straal-s); grid-row: 1 / span 2; }
 .hv-kamerkaart__kop { display: flex; align-items: center; gap: var(--ruimte-2); color: var(--muted); }
 .hv-kamerkaart__naam { font-size: var(--tekst-basis); font-weight: 600; color: var(--text); }
 .hv-kamerkaart__temp { position: relative; font-size: var(--hv-getal-m); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
 .hv-kamerkaart__temp.is-verouderd { color: var(--muted); }
-.hv-kamerkaart__temp.is-leeg { color: var(--muted); }
-.hv-kamerkaart__sub { font-size: var(--tekst-klein); color: var(--muted); }
+/* без датчика температури головний факт — перший спостережений (світло, техніка) 16/600 */
+.hv-kamerkaart__feit { font-size: var(--tekst-basis); font-weight: 600; line-height: 1.3; margin-block-start: 2px; }
+.hv-kamerkaart__sub { display: block; overflow: hidden; font-size: var(--tekst-klein); color: var(--muted); }
 .hv-kamerkaart__chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--ruimte-1); margin-block-start: var(--ruimte-2); }
-.hv-kamerkaart__chips .hv-chip { white-space: normal; flex: 0 1 auto; max-inline-size: 100%; line-height: 1.2; padding-block: 5px; font-size: var(--tekst-mini); min-block-size: 28px; padding-inline: var(--ruimte-2); }
-.hv-kamerkaart__chips .hv-chip::before { border-radius: var(--straal-s); }
-.hv-kamerkaart__doel { grid-column: 2; grid-row: 2; align-self: end; }
+.hv-kamerkaart__chips .hv-chip { white-space: normal; flex: 0 1 auto; max-inline-size: 100%; line-height: 1.2; padding-block: 5px; font-size: var(--tekst-mini); min-block-size: var(--hv-chip-klein); padding-inline: var(--ruimte-2); }
+.hv-kamerkaart__chips .hv-chip::before { inset: 0; border-radius: var(--straal-s); }
+.hv-kamerkaart__doel { grid-column: 2; grid-row: 2; align-self: start; margin-block-start: var(--ruimte-1); }
 .hv-kamerkaart > .hv-schakel { grid-column: 2; grid-row: 1; }
-.hv-kamerkaart__lijf { grid-row: 1 / span 2; }
 .hv-kamerkaart__doel .hv-stapper { gap: 0; }
+/* картка без жодного факту — компактна однорядкова: назва й шеврон */
+.hv-kamerkaart.is-kort { grid-template-rows: auto; align-content: start; }
+.hv-kamerkaart.is-kort .hv-kamerkaart__lijf { grid-row: 1; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.hv-kamerkaart__pijl { color: var(--muted); }
 
 /* ── hv-telemetrie ── */
 .hv-telemetrie { --niveau: var(--toon); }
@@ -209,24 +257,24 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-scene:active .hv-scene__teken { transform: scale(0.93); background: var(--surface2); }
 .hv-scene.is-actief .hv-scene__teken { border: 2px solid var(--text); }
 .hv-scene__naam { font-size: var(--tekst-klein); font-weight: 600; text-align: center; line-height: 1.2; }
-.hv-scene__actief { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); line-height: 1; }
+.hv-scene__actief { font-size: var(--tekst-mini); font-weight: 600; color: var(--text); line-height: 1; }
 
 /* ── hv-blok: заголовок на небі, лічильник у паперовому чипі ── */
 .hv-blok { display: grid; gap: var(--ruimte-1); min-inline-size: 0; align-content: start; }
 .hv-blok__kop { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--ruimte-1); min-inline-size: 0; }
 .hv-blok__titel { display: inline-flex; align-items: center; gap: var(--ruimte-2); min-block-size: var(--hv-tik); border-radius: var(--straal-s); min-inline-size: 0; }
-.hv-blok__naam { font-size: var(--hv-tekst-kop); font-weight: 650; letter-spacing: -0.01em; line-height: 1.2; }
+.hv-blok__naam { font-size: var(--hv-tekst-kop); font-weight: var(--hv-gewicht-kop); letter-spacing: -0.01em; line-height: 1.2; }
 .hv-blok__teller { min-inline-size: 26px; padding: 2px var(--ruimte-2); border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; text-align: center; line-height: 1.5; white-space: nowrap; }
-.hv-blok__pijl { color: var(--muted); transition: transform var(--hv-duur-2); }
+.hv-blok__pijl { color: var(--text); transition: transform var(--hv-duur-2); }
 .hv-blok.is-dicht .hv-blok__pijl { transform: rotate(-90deg); }
 .hv-blok__extra { margin-inline-start: auto; display: inline-flex; align-items: center; }
 .hv-blok__extra .hv-knop { white-space: nowrap; }
 .hv-blok__inhoud { min-inline-size: 0; display: grid; gap: var(--hv-kier); animation: hv-op var(--hv-duur-2) var(--hv-kromme-in); }
-.hv-blok__samenvatting { font-size: var(--tekst-klein); color: var(--muted); font-weight: 500; padding-block-end: var(--ruimte-2); }
+.hv-blok__samenvatting { font-size: var(--tekst-klein); color: var(--text); font-weight: 500; padding-block-end: var(--ruimte-2); }
 
 /* ── hv-nu: «Зараз важливо» ── */
 .hv-nu { background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); padding-inline: var(--ruimte-3); }
-.hv-nu__rij { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-1) var(--ruimte-3); padding-block: var(--ruimte-3); border-block-start: 1px solid var(--line); }
+.hv-nu__rij { container: nurij / inline-size; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--ruimte-1) var(--ruimte-3); padding-block: var(--ruimte-3); border-block-start: 1px solid var(--line); }
 .hv-nu__rij:first-child { border-block-start: 0; }
 .hv-nu__teken { inline-size: var(--hv-teken); block-size: var(--hv-teken); border-radius: 50%; display: grid; place-items: center; border: var(--hv-streep) solid var(--hv-omtrek); color: var(--text); }
 .hv-nu__rij--aandacht .hv-nu__teken { border: 2px solid var(--warn); color: var(--warn); }
@@ -238,9 +286,9 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-nu__meer { border-block-start: 1px solid var(--line); }
 
 /* ── hv-leeg, hv-skelet ── */
-.hv-leeg { display: grid; justify-items: start; gap: var(--ruimte-2); padding: var(--ruimte-5); background: var(--panel); border: var(--hv-streep) dashed var(--hv-omtrek); border-radius: var(--straal-l); }
+.hv-leeg { display: grid; justify-items: start; gap: var(--ruimte-2); padding: var(--ruimte-5); background: var(--surface); border: 0; border-radius: var(--straal-l); }
 .hv-leeg__teken { inline-size: 48px; block-size: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--muted); }
-.hv-leeg__titel { font-size: var(--tekst-basis); font-weight: 650; }
+.hv-leeg__titel { font-size: var(--tekst-basis); font-weight: var(--hv-gewicht-sterk); }
 .hv-leeg__tekst { font-size: var(--tekst-klein); color: var(--muted); max-inline-size: 56ch; }
 .hv-skelet { display: grid; grid-template-columns: repeat(auto-fill, minmax(164px, 1fr)); gap: var(--hv-kier); }
 .hv-skelet__deel { block-size: var(--hv-rij); border-radius: var(--straal-l); background: var(--surface); border: 1px solid var(--line); }
@@ -268,12 +316,12 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-bericht__details dt { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
 
 /* ── hv-toost ── */
-.hv-toosten { position: absolute; z-index: var(--hv-z-toost); inset-inline: var(--hv-rand); inset-block-end: calc(var(--hv-onder-h) + var(--hv-opdracht-knop) + 2 * var(--hv-kier)); display: grid; gap: var(--ruimte-2); pointer-events: none; justify-items: end; }
+.hv-toosten { position: absolute; z-index: var(--hv-z-toost); inset-inline: var(--hv-rand); inset-block-end: calc(var(--hv-onder-h) + var(--hv-kier)); display: grid; gap: var(--ruimte-2); pointer-events: none; justify-items: end; }
 .hv-toost { pointer-events: auto; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: var(--ruimte-2); inline-size: min(100%, var(--hv-toost-breedte)); padding: var(--ruimte-2) var(--ruimte-1) var(--ruimte-2) var(--ruimte-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-2); animation: hv-op var(--hv-duur-3) var(--hv-kromme-in); }
 .hv-toost__teken { inline-size: 32px; block-size: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--text); }
 .hv-toost--belangrijk { border: 2px solid var(--warn); }
 .hv-toost--alarm { border: 2px solid var(--fout-vlak); background: var(--fout-zacht); }
-.hv-toost__titel { font-size: var(--tekst-klein); font-weight: 650; line-height: 1.25; }
+.hv-toost__titel { font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); line-height: 1.25; }
 .hv-toost__regel { font-size: var(--tekst-klein); color: var(--muted); line-height: 1.3; }
 .hv-toost__maker { margin-block-start: 2px; }
 .hv-toost__terug { position: relative; overflow: hidden; }
@@ -285,7 +333,7 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 /* ── hv-grafiek ── */
 .hv-grafiek { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
 .hv-grafiek__kop { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ruimte-2); }
-.hv-grafiek__titel { font-size: var(--tekst-klein); font-weight: 650; }
+.hv-grafiek__titel { font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); }
 .hv-grafiek__eenheid { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
 .hv-grafiek__veld { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ruimte-2); padding-block-end: 20px; }
 .hv-grafiek__as { position: relative; min-inline-size: 30px; }
@@ -300,6 +348,8 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-grafiek__naam { position: absolute; transform: translate(-50%, -50%); color: var(--toon); background: var(--panel); border-radius: 50%; padding: 2px; }
 .hv-grafiek__x { position: absolute; inset-block-start: calc(100% + 4px); transform: translateX(-50%); font-size: var(--tekst-mini); color: var(--muted); white-space: nowrap; }
 .hv-grafiek__xas { position: absolute; inset: 0; pointer-events: none; }
+.hv-grafiek__x.is-begin { transform: none; }
+.hv-grafiek__x.is-eind { transform: translateX(-100%); }
 .hv-grafiek__nu { position: absolute; inset-block: 0; inline-size: 2px; margin-inline-start: -1px; background: var(--accent); pointer-events: none; z-index: 1; }
 .hv-grafiek__nu span { position: absolute; inset-block-end: 100%; inset-inline-start: 50%; transform: translateX(-50%); padding: 0 4px; border-radius: 4px; background: var(--panel); font-size: var(--tekst-mini); font-weight: 600; white-space: nowrap; }
 .hv-grafiek__streep { position: absolute; inset-inline: 0; block-size: 1px; background: var(--line); }
@@ -333,15 +383,22 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-vonk path { fill: none; stroke: var(--toon); stroke-width: 2; vector-effect: non-scaling-stroke; }
 
 /* смуги станів і стрічка доби */
-.hv-grafiek__banen { display: grid; gap: 3px; padding-block-end: 20px; }
+.hv-grafiek__banen { display: grid; gap: 6px; padding-block-end: 20px; }
 .hv-baan, .hv-grafiek__banenas { display: grid; grid-template-columns: 56px minmax(0, 1fr); align-items: center; gap: var(--ruimte-2); }
-.hv-baan__naam { font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hv-baan__spoor { position: relative; block-size: var(--hv-dagstrook-baan); border-radius: 4px; background: var(--surface); }
+.hv-baan__naam { font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hv-baan__spoor { position: relative; block-size: 12px; border-radius: 3px; background: var(--surface); }
+/* ціна — три ступені з тонами стану; від’ємна — тон «у мережу» */
+.hv-baan__stuk.hv-prijs--goedkoop { background: var(--ok-zacht); }
+.hv-baan__stuk.hv-prijs--midden { background: var(--surface2); }
+.hv-baan__stuk.hv-prijs--duur { background: var(--warn-zacht); }
+.hv-baan__bereik { position: absolute; z-index: 1; inset-inline-end: 4px; inset-block-start: 50%; transform: translateY(-50%); font-size: var(--tekst-mini); font-weight: 600; line-height: 1; color: var(--text); white-space: nowrap; }
 .hv-baan__stuk { position: absolute; inset-block: 0; background: var(--toon, var(--text)); border-radius: 3px; }
 .hv-baan__stuk.hv-toon-neutraal { background: var(--muted); }
+/* смуга «увімкнено»: заливка --hv-aan-vlak із контуром 1 px --hv-aan, а не темний тон як заливка */
+.hv-baan__stuk.hv-toon-aan { background: var(--hv-aan-vlak); box-shadow: inset 0 0 0 1px var(--hv-aan); }
 .hv-baan__punt { position: absolute; inset-block-start: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; min-inline-size: 4px; min-block-size: 10px; color: var(--text); }
 .hv-baan__punt:empty { inline-size: 3px; block-size: 12px; border-radius: 2px; background: var(--text); }
-.hv-baan--fase .hv-baan__spoor { block-size: var(--hv-dagstrook-fase); overflow: hidden; border: 1px solid var(--line); border-radius: 6px; }
+.hv-baan--fase .hv-baan__spoor { block-size: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; }
 .hv-baan--fase .hv-baan__stuk, .hv-baan--prijs .hv-baan__stuk, .hv-baan--stand .hv-baan__stuk { border-radius: 0; }
 .hv-fase--nacht { background: var(--hv-hemel-nacht-onder); }
 .hv-fase--dageraad { background: var(--hv-hemel-dageraad-onder); }
@@ -355,7 +412,7 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-warmte--5 { background: var(--hv-warmte-5); }
 .hv-warmte--min { background: var(--hv-net-uit); }
 .hv-stand--thuis { background: var(--muted); }
-.hv-stand--afwezig { background: repeating-linear-gradient(90deg, var(--hv-omtrek) 0 2px, transparent 2px 6px); }
+.hv-stand--afwezig { background: var(--surface2); }
 .hv-stand--nacht { background: var(--text); }
 .hv-stand--vakantie, .hv-stand--gasten { background: var(--hv-omtrek); }
 .hv-grafiek__banenas .hv-baan__spoor { background: none; block-size: 0; }
@@ -367,10 +424,10 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 .hv-warmte--0 { background: repeating-linear-gradient(var(--hv-arcering-hoek), color-mix(in srgb, var(--hv-arcering) 30%, transparent) 0 var(--hv-arcering-dikte), transparent var(--hv-arcering-dikte) var(--hv-arcering-stap)); }
 
 /* ── Зведення на «Домі» ── */
-.hv-zomen { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: var(--hv-kier); align-items: start; }
-.hv-som { display: grid; gap: var(--ruimte-2); align-content: start; padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0; }
+.hv-zomen { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: var(--hv-kier); align-items: stretch; }
+.hv-som { display: grid; gap: var(--ruimte-2); align-content: start; grid-auto-rows: auto; padding: var(--ruimte-3) var(--ruimte-4) var(--ruimte-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--straal-l); box-shadow: var(--schaduw-1); min-inline-size: 0; }
 .hv-som__kop { display: flex; align-items: center; justify-content: space-between; gap: var(--ruimte-2); min-block-size: 32px; }
-.hv-som__kop h3 { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: 650; color: var(--muted); }
+.hv-som__kop h3 { display: inline-flex; align-items: center; gap: var(--ruimte-2); font-size: var(--tekst-klein); font-weight: var(--hv-gewicht-sterk); color: var(--muted); }
 .hv-som__kop .hv-knop { margin-block: -8px; margin-inline-end: calc(var(--ruimte-2) * -1); }
 .hv-som__voet { margin-block-start: calc(var(--ruimte-1) * -1); }
 
@@ -392,9 +449,11 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
 }
 
 /* ── Щільність і вузькі екрани ── */
+/* запис «Зараз важливо» — власний контейнер: у вузькому записі кнопки йдуть під текст, а не стискають його */
+@container nurij (max-width: 560px) {
+  .hv-nu__acties { grid-column: 2 / -1; justify-content: flex-start; }
+}
 @container doek (max-width: 699px) {
-  .hv-nu__rij { grid-template-columns: auto minmax(0, 1fr); }
-  .hv-nu__acties { grid-column: 2; justify-content: flex-start; }
   .hv-gevolg { inset-inline: var(--hv-rand); inset-block-start: auto; inset-block-end: calc(var(--hv-onder-h) + var(--hv-kier)); inline-size: auto; }
   .hv-kamers { grid-template-columns: minmax(0, 1fr); }
   .hv-bericht__details { padding-inline-start: 0; }
@@ -403,6 +462,7 @@ button.hv-schakel:active .hv-schakel__teken { transform: scale(0.93); }
   .hv-tegels { grid-template-columns: minmax(0, 1fr); }
 }
 @container doek (min-width: 700px) {
-  .hv-tegels { grid-template-columns: repeat(auto-fill, minmax(min(100%, 184px), 1fr)); }
+  /* колонка сітки — від 224 px: плитка з керуванням тут завжди 2×2 (tegelBesturingMin) */
+  .hv-tegels { grid-template-columns: repeat(auto-fill, minmax(min(100%, 224px), 1fr)); }
   .hv-toosten { inset-inline: auto var(--hv-rand); inset-block-end: var(--hv-rand); inline-size: var(--hv-toost-breedte); }
 }

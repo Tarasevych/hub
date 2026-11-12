@@ -22,10 +22,15 @@
   }
 
   var pct = function (x) { return Math.round(x * 1000) / 10 + '%'; };
-  function meng(punt, f, bewolkt, nachtDonker) {
+  /**
+   * Порядок складання (§3, maten.hemel.volgorde): фази → режим «Ніч» у світлій темі (низ і сяйво на 35 % до
+   * --hv-hemel-nacht-boven) → домішка --surface2 → домішка --bg (режим «Ніч», темна тема).
+   */
+  function meng(punt, f, bewolkt, nachtDonker, nachtLicht) {
     var kleur = f.deel > 0.001 && f.a !== f.b
       ? 'color-mix(in srgb, var(--hv-hemel-' + f.a + '-' + punt + ') ' + pct(1 - f.deel) + ', var(--hv-hemel-' + f.b + '-' + punt + '))'
       : 'var(--hv-hemel-' + f.a + '-' + punt + ')';
+    if (nachtLicht > 0 && punt !== 'boven') kleur = 'color-mix(in srgb, ' + kleur + ' ' + pct(1 - nachtLicht) + ', var(--hv-hemel-nacht-boven))';
     if (bewolkt > 0.005) kleur = 'color-mix(in srgb, ' + kleur + ' ' + pct(1 - bewolkt) + ', var(--surface2))';
     if (nachtDonker > 0) kleur = 'color-mix(in srgb, ' + kleur + ' ' + pct(1 - nachtDonker) + ', var(--bg))';
     return kleur;
@@ -45,10 +50,12 @@
       var wolk = weerOud ? 0 : (w.weer.mist ? (c.mist || 0.6) : (c.bewolkingMax || 0.4) * w.weer.bewolking);
       var bewolkt = Math.min(c.mengselMax || 0.75, wolk + (weg ? (c.afwezig || 0.55) : 0));
       var nachtDonker = w.huisstand === 'nacht' && thema === 'donker' ? (c.nachtstandDonker || 0.35) : 0;
+      // світла тема: «Ніч» темнішає в межах перевірених сумішей — до найтемнішої точки світлого неба
+      var nachtLicht = w.huisstand === 'nacht' && thema === 'licht' ? (c.nachtstandLicht || 0.35) : 0;
       var hoofd = f.deel >= 0.5 ? f.b : f.a;
       return {
         fase: hoofd, naam: FASE_NAAM[hoofd],
-        boven: meng('boven', f, bewolkt, nachtDonker), onder: meng('onder', f, bewolkt, nachtDonker), gloed: meng('gloed', f, bewolkt, nachtDonker),
+        boven: meng('boven', f, bewolkt, nachtDonker, nachtLicht), onder: meng('onder', f, bewolkt, nachtDonker, nachtLicht), gloed: meng('gloed', f, bewolkt, nachtDonker, nachtLicht),
         gloedDekking: w.weer.mist || weg || w.huisstand === 'nacht' || weerOud ? 0 : Math.max(0, 1 - w.weer.bewolking),
         neerslag: weerOud ? null : w.weer.neerslag
       };
@@ -126,15 +133,16 @@
       var ev = w.voertuigen[0], laadt = w.apparaten.laadpaal.st.laadt;
       var tuin = HV.staat.kamer('tuin'), garage = HV.staat.kamer('garage');
       var auto = ev.plek !== 'onderweg' ? { icoon: 'car', toon: laadt ? 'auto' : null, klas: laadt ? 'is-laadt' : '' } : { icoon: 'warehouse' };
+      // Одна сітка: поверхи — рядки, підпис поверху стоїть у тому самому рядку, тож завжди вирівняний із ним.
       return '<div class="hv-doorsnede" data-k="doorsnede" role="group" aria-label="' + h(t('Дім у розрізі', 'Huis in doorsnede')) + '">' +
         '<div class="hv-doorsnede__tekening">' +
-        '<div class="hv-doorsnede__huis">' +
         '<div class="hv-doorsnede__zolder"><svg class="hv-doorsnede__dak" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 100 50 4 100 100"/></svg><div class="hv-doorsnede__rij">' + laag('zolder').map(function (k) { return cel(k); }).join('') + '</div></div>' +
-        '<div class="hv-doorsnede__laag"><div class="hv-doorsnede__rij">' + laag('boven').map(function (k) { return cel(k); }).join('') + '</div></div>' +
-        '<div class="hv-doorsnede__laag"><div class="hv-doorsnede__rij">' + laag('beneden').map(function (k) { return cel(k); }).join('') + '</div></div>' +
-        '</div>' +
+        '<div class="hv-doorsnede__laag hv-doorsnede__laag--boven"><div class="hv-doorsnede__rij">' + laag('boven').map(function (k) { return cel(k); }).join('') + '</div></div>' +
+        '<div class="hv-doorsnede__laag hv-doorsnede__laag--beneden"><div class="hv-doorsnede__rij">' + laag('beneden').map(function (k) { return cel(k); }).join('') + '</div></div>' +
         '<div class="hv-doorsnede__erf"><div class="hv-doorsnede__garage">' + cel(garage, auto) + '</div><div class="hv-doorsnede__tuin">' + cel(tuin, { icoon: 'trees' }) + '</div></div>' +
-        '<div class="hv-doorsnede__labels" aria-hidden="true"><span>' + h(naam('zolder')) + '</span><span>' + h(naam('boven')) + '</span><span>' + h(naam('beneden')) + '</span></div>' +
+        '<span class="hv-doorsnede__label hv-doorsnede__label--zolder" aria-hidden="true">' + h(naam('zolder')) + '</span>' +
+        '<span class="hv-doorsnede__label hv-doorsnede__label--boven" aria-hidden="true">' + h(naam('boven')) + '</span>' +
+        '<span class="hv-doorsnede__label hv-doorsnede__label--beneden" aria-hidden="true">' + h(naam('beneden')) + '</span>' +
         '</div>' +
         '<button type="button" class="hv-link hv-doorsnede__wissel" data-actie="ui" data-naam="doorsnede-lijst" data-waarde="1">' + h(t('Показати списком', 'Als lijst tonen')) + '</button></div>';
     }

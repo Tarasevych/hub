@@ -3,7 +3,7 @@
 /* ───────────── Пульт і сцена (поза полотном; кольори --mq-*) ───────────── */
 .mq-wortel {
   display: grid;
-  grid-template-columns: 296px minmax(0, 1fr);
+  grid-template-columns: 264px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   gap: 16px;
   block-size: 100vh; block-size: 100dvh;
@@ -19,15 +19,20 @@
 .mq-pult__kop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .mq-pult__merk { display: grid; line-height: 1.2; }
 .is-pult-dicht .mq-pult__merk { display: flex; gap: 8px; align-items: baseline; }
-.mq-pult__merk strong { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+.mq-pult__merk strong { font-size: 16px; font-weight: var(--hv-gewicht-kop); letter-spacing: -0.01em; }
 .mq-pult__merk span { font-size: 12px; color: var(--mq-zacht); }
 .mq-pult__wissel { min-block-size: 36px; padding: 0 12px; border: 1px solid var(--mq-lijn); border-radius: 10px; background: var(--mq-bg); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .mq-pult__lijf { display: grid; gap: 12px; }
 .is-smal .mq-pult__lijf { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .mq-veld { display: grid; gap: 5px; min-inline-size: 0; }
 .mq-veld__label { font-size: 12px; font-weight: 600; color: var(--mq-zacht); }
-.mq-keuze { display: flex; flex-wrap: wrap; gap: 4px; }
-.mq-keuze__knop { flex: 1 1 auto; min-block-size: 34px; padding: 0 10px; border: 1px solid var(--mq-lijn); border-radius: 9px; background: var(--mq-bg); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.mq-keuze { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 4px; }
+/* рівні ряди без «сиріт»: чотири — 2 + 2, три — в ряд, швидкість — п’ять в ряд */
+.mq-keuze--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mq-keuze--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mq-keuze--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mq-keuze--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.mq-keuze__knop { min-inline-size: 0; min-block-size: 34px; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--mq-lijn); border-radius: 9px; background: var(--mq-bg); font-size: 13px; font-weight: 500; white-space: nowrap; }
 .mq-keuze__knop.is-gekozen { background: var(--mq-tekst); border-color: var(--mq-tekst); color: var(--mq-vlak); font-weight: 600; }
 .mq-lijst { inline-size: 100%; min-block-size: 36px; padding: 0 10px; border: 1px solid var(--mq-lijn); border-radius: 9px; background: var(--mq-bg); font-size: 13px; }
 .mq-pult__noot { margin: 0; font-size: 12px; line-height: 1.4; color: var(--mq-zacht); }
@@ -39,7 +44,7 @@
 .mq-adres__pad { flex: 1 1 auto; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--mq-tekst); }
 .mq-adres__maat { color: var(--mq-zacht); white-space: nowrap; flex: none; font-variant-numeric: tabular-nums; }
 .is-smal .mq-adres__label { display: none; }
-.mq-podium { display: grid; place-items: center; min-inline-size: 0; min-block-size: 0; overflow: hidden; }
+.mq-podium { display: grid; place-items: start center; min-inline-size: 0; min-block-size: 0; overflow: hidden; }
 .mq-schaal { position: relative; overflow: hidden; border-radius: 22px; box-shadow: var(--mq-schaduw); outline: 1px solid var(--mq-lijn); background: var(--mq-put); }
 .is-venster .mq-schaal { border-radius: 16px; }
 
@@ -51,13 +56,30 @@
 .hv-spring:focus-visible { transform: none; }
 
 /* ── Скляна шапка ── */
-.hv-kop { position: absolute; inset-block-start: 0; inset-inline: 0; z-index: var(--hv-z-glas); block-size: var(--hv-kop-h); background: var(--hv-glas); -webkit-backdrop-filter: var(--hv-glas-filter); backdrop-filter: var(--hv-glas-filter); border-block-end: 1px solid var(--hv-glas-rand); transition: box-shadow var(--hv-duur-2); }
+.hv-kop { position: absolute; inset-block-start: 0; inset-inline: 0; z-index: var(--hv-z-glas); block-size: var(--hv-kop-h); display: grid; grid-template-rows: minmax(0, 1fr) auto; background: var(--hv-glas); -webkit-backdrop-filter: var(--hv-glas-filter); backdrop-filter: var(--hv-glas-filter); border-block-end: 1px solid var(--hv-glas-rand); transition: box-shadow var(--hv-duur-2); }
 .is-gerold .hv-kop { box-shadow: var(--schaduw-2); }
-.hv-kop__binnen { block-size: 100%; max-inline-size: 1560px; margin-inline: auto; padding-inline: var(--hv-rand); display: flex; align-items: center; gap: var(--ruimte-2); }
+.hv-kop__binnen { block-size: 100%; min-block-size: 0; inline-size: 100%; max-inline-size: 1560px; margin-inline: auto; padding-inline: var(--hv-rand); display: flex; align-items: center; gap: var(--ruimte-2); }
 .hv-kop__huis { display: grid; align-content: center; min-block-size: var(--hv-tik); min-inline-size: 0; line-height: 1.15; flex: 0 1 auto; border-radius: var(--straal-s); }
-.hv-kop__naam { font-weight: 650; font-size: var(--tekst-basis); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hv-kop__naam { font-weight: var(--hv-gewicht-kop); font-size: var(--tekst-basis); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hv-kop__stand { display: inline-flex; align-items: center; gap: 2px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); }
-.hv-kop__zin { display: none; flex: 1 1 auto; min-inline-size: 0; font-size: var(--tekst-klein); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* стиснутий рядок героя — паперова пігулка; шматки неподільні, обрізається слово стану, а не час */
+.hv-kop__zin { display: none; flex: 0 1 auto; min-inline-size: 0; }
+.hv-kop__pil { display: inline-flex; align-items: center; gap: 4px; max-inline-size: 100%; block-size: var(--hv-chip-klein); padding: 0 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: var(--tekst-mini); font-weight: 600; white-space: nowrap; }
+.hv-kop__pil > .hv-ic { flex: none; }
+.hv-kop__fase, .hv-kop__tijd { flex: none; }
+.hv-kop__woord { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
+.hv-kop__pil .hv-punt { padding-inline: 0.3em; }
+.hv-kop__nu { display: none; align-items: center; justify-content: center; gap: 4px; min-block-size: var(--hv-tik); min-inline-size: var(--hv-tik); position: relative; isolation: isolate; font-size: var(--tekst-klein); font-weight: 600; color: var(--text); }
+.hv-kop__nu::before { content: ""; position: absolute; inset: calc((100% - var(--hv-chip-klein)) / 2) 0; z-index: -1; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+.hv-kop__nu .hv-ic { color: var(--warn); }
+/* рядок hv-sim під шапкою телефона: одна ціль, до 44 px її доповнює поле сторінки */
+/* видимий рядок 28 px; ціль добирає 16 px поля сторінки під ним (разом 44) */
+.hv-simrij { display: none; align-items: flex-start; gap: 6px; block-size: calc(var(--hv-sim-rij) + 16px); margin-block-end: -16px; padding: 7px var(--hv-rand) 0; border-block-start: 1px solid var(--hv-glas-rand); font-size: var(--tekst-mini); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; }
+.hv-simrij > .hv-ic { color: var(--info); flex: none; }
+.hv-simrij__sim { color: var(--info); flex: none; }
+.hv-simrij__hemel { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
+.hv-simrij__hemel::before, .hv-simrij__vers::before { content: "·"; color: var(--muted); padding-inline: 0.3em; }
+.hv-simrij__vers { margin-inline-start: auto; flex: none; color: var(--muted); }
 .hv-kop__nav { display: none; align-items: stretch; align-self: stretch; gap: var(--ruimte-1); margin-inline-start: var(--ruimte-4); min-inline-size: 0; }
 .hv-nav__punt { position: relative; display: inline-flex; align-items: center; gap: var(--ruimte-2); padding-inline: var(--ruimte-3); min-inline-size: var(--hv-tik); color: var(--muted); font-size: var(--tekst-klein); font-weight: 600; white-space: nowrap; border-radius: var(--straal-s); transition: color var(--hv-duur-1); }
 .hv-nav__punt.is-actief { color: var(--text); }
@@ -84,18 +106,22 @@
 .hv-onderbalk__rij { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; block-size: var(--hv-onder-h); }
 .hv-onderbalk__punt { position: relative; display: grid; justify-items: center; align-content: center; gap: 2px; color: var(--muted); font-size: var(--tekst-mini); font-weight: 600; line-height: 1.1; min-inline-size: 0; }
 .hv-onderbalk__punt.is-actief { color: var(--text); }
+.hv-onderbalk__punt > span { max-inline-size: 100%; padding-inline: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hv-onderbalk__punt.is-actief::before { content: ""; position: absolute; inset-block-start: 0; inset-inline: 30%; block-size: 2px; border-radius: 0 0 2px 2px; background: var(--accent); }
-.hv-opdrachtknop { position: absolute; inset-inline-end: var(--hv-rand); inset-block-end: calc(100% + var(--hv-kier)); inline-size: var(--hv-opdracht-knop); block-size: var(--hv-opdracht-knop); display: grid; place-items: center; border-radius: var(--straal-m); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-2); color: var(--text); transition: transform var(--hv-duur-1); }
-.hv-opdrachtknop:active { transform: scale(0.96); background: var(--surface2); }
+/* «Команда» — центральний пункт: знак у паперовій пігулці, щоб його було видно серед розділів */
+.hv-onderbalk__opdracht { color: var(--text); }
+.hv-onderbalk__opdracht > .hv-ic { box-sizing: content-box; padding: 3px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); }
+.hv-onderbalk__opdracht:active > .hv-ic { background: var(--surface2); }
 
 /* ── Заголовок сторінки й вкладки другого рівня (на небі: лише --text і --muted) ── */
 .hv-pagina__kop { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-1) var(--ruimte-5); min-inline-size: 0; }
-.hv-pagina__titel { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; }
-.hv-pagina__zin { font-size: var(--tekst-klein); color: var(--muted); font-weight: 500; }
-.hv-terug { display: inline-flex; align-items: center; gap: var(--ruimte-1); min-block-size: var(--hv-tik); padding-inline-end: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); border-radius: var(--straal-s); }
+.hv-pagina__titel { font-size: var(--hv-getal-m); font-weight: var(--hv-gewicht-kop); letter-spacing: -0.02em; line-height: 1.15; }
+.hv-pagina__zin { font-size: var(--tekst-klein); color: var(--text); font-weight: 500; }
+.hv-terug { display: inline-flex; align-items: center; gap: var(--ruimte-1); min-block-size: var(--hv-tik); padding-inline-end: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); border-radius: var(--straal-s); }
 .hv-tabs { display: flex; gap: var(--ruimte-1); min-inline-size: 0; max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--hv-rand) * -1); padding-inline: var(--hv-rand); }
 .hv-tabs::-webkit-scrollbar { display: none; }
-.hv-tab { position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--hv-tik); min-inline-size: var(--hv-tik); padding-inline: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 600; color: var(--muted); white-space: nowrap; flex: none; }
+.hv-tab { position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--hv-tik); min-inline-size: var(--hv-tik); padding-inline: var(--ruimte-3); font-size: var(--tekst-klein); font-weight: 500; color: var(--text); white-space: nowrap; flex: none; }
+.hv-tab.is-actief { font-weight: 600; }
 .hv-tab::before { content: ""; position: absolute; inset: calc((100% - var(--hv-chip-hoogte)) / 2) 0; z-index: -1; border-radius: 999px; transition: background var(--hv-duur-1); }
 .hv-tab.is-actief { color: var(--text); }
 .hv-tab.is-actief::before { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--schaduw-1); }
@@ -110,21 +136,32 @@
 .hv-stomp__kaart { display: flex; gap: var(--ruimte-4); padding: var(--ruimte-5); background: var(--panel); border: var(--hv-streep) dashed var(--hv-omtrek); border-radius: var(--straal-l); }
 .hv-stomp__teken { inline-size: 48px; block-size: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--muted); flex: none; }
 .hv-stomp__tekst { display: grid; gap: var(--ruimte-2); min-inline-size: 0; }
-.hv-stomp__tekst h2 { font-size: var(--hv-tekst-kop); font-weight: 650; display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); }
+.hv-stomp__tekst h2 { font-size: var(--hv-tekst-kop); font-weight: var(--hv-gewicht-kop); display: flex; flex-wrap: wrap; align-items: center; gap: var(--ruimte-2); }
 .hv-stomp__tekst p { color: var(--muted); max-inline-size: 60ch; }
 .hv-stomp__adres { font-size: var(--tekst-mini); }
 .hv-stomp__delen { list-style: disc; padding-inline-start: 1.2em; color: var(--muted); font-size: var(--tekst-klein); }
 
 /* ───────────── Адаптивність оболонки: контейнер, не вікно ───────────── */
-@container doek (max-width: 429px) {
-  /* вузький телефон: «крапка й колба»; слово лишається для зчитувача */
-  .hv-kop .hv-versheid span:not(.hv-versheid__stip) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
-  .hv-kop .hv-versheid { padding: 5px; }
-}
 @container doek (max-width: 699px) {
-  .hv-profiel-telefoon.is-gerold .hv-kop__zin, .hv-doek.is-gerold .hv-kop__zin { display: block; }
+  /* телефон: шапка 48 + рядок hv-sim 28; у шапці hv-versheid — лише іконка (слово стоїть у рядку hv-sim) */
+  .hv-doek.heeft-sim > * { --hv-kop-h: calc(var(--hv-kop-hoogte-telefoon) + var(--hv-sim-rij)); }
+  .hv-simrij { display: flex; }
+  .hv-kop .hv-sim { display: none; }
+  .hv-kop__nu { display: inline-flex; }
+  .hv-kop .hv-versheid span:not(.hv-versheid__stip) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+  .hv-kop .hv-versheid { padding: 0; inline-size: var(--hv-tik); block-size: var(--hv-tik); justify-content: center; background: none; border: 0; }
+  .hv-kop .hv-versheid.is-geen, .hv-kop .hv-versheid.is-verversing { color: var(--text); }
+  .hv-kop__rechts { gap: var(--ruimte-1); }
+  .hv-doek.is-gerold .hv-kop__zin { display: flex; }
   .is-gerold .hv-kop__huis { display: none; }
+  .hv-kop__woord { display: none; }
   .hv-stomp__kaart { flex-direction: column; padding: var(--ruimte-4); }
+}
+@container doek (max-width: 359px) {
+  /* до 359 px: знак фази й час */
+  .hv-kop__fase { display: none; }
+  .hv-kop__tijd .hv-punt { display: none; }
+  .hv-simrij__hemel { display: none; }
 }
 @container doek (min-width: 700px) {
   /* контейнер не може стилізувати сам себе: змінні отримують його діти */

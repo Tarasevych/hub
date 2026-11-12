@@ -19,7 +19,7 @@
   function profielKeuze() { return HV.opslag.lees('profiel', null) || 'venster'; }
 
   function keuze(naam, waarde, opties, label) {
-    return '<div class="mq-veld"><span class="mq-veld__label" id="mq-l-' + naam + '">' + h(label) + '</span><div class="mq-keuze" role="group" aria-labelledby="mq-l-' + naam + '">' + opties.map(function (x) {
+    return '<div class="mq-veld"><span class="mq-veld__label" id="mq-l-' + naam + '">' + h(label) + '</span><div class="mq-keuze mq-keuze--' + opties.length + '" role="group" aria-labelledby="mq-l-' + naam + '">' + opties.map(function (x) {
       return '<button type="button" class="mq-keuze__knop' + (String(x[0]) === String(waarde) ? ' is-gekozen' : '') + '" aria-pressed="' + (String(x[0]) === String(waarde) ? 'true' : 'false') + '" data-pult="' + naam + '" data-waarde="' + h(x[0]) + '">' + h(x[1]) + '</button>';
     }).join('') + '</div></div>';
   }

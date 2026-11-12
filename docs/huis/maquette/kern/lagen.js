@@ -233,7 +233,7 @@
   // ── hv-meldingen (центр сповіщень) ──
   HV.blad({
     soort: 'meldingen', vrij: true, icoon: 'bell', titel: ['Сповіщення', 'Meldingen'],
-    sub: function (ctx) { var n = HV.logboek.ongelezen(); return n ? n + ' ' + t('нових', 'nieuw') : t('усе прочитано', 'alles gelezen'); },
+    sub: function (ctx) { var n = HV.logboek.ongelezen(); return (n ? n + ' ' + t('нових', 'nieuw') : t('усе прочитано', 'alles gelezen')) + ' · ' + t('симуляція', 'simulatie'); },
     render: function (ctx) {
       var w = ctx.staat;
       var gewicht = HV.ui.lees('meld-gewicht', 'alle'), maker = HV.ui.lees('meld-maker', 'alle'), soort = HV.ui.lees('meld-soort', 'alle');
@@ -244,13 +244,19 @@
       var chips = function (naam, waarde, opties) { return '<div class="hv-filter" role="group" aria-label="' + h(opties.label) + '">' + opties.lijst.map(function (x) { return o.chip({ filter: true, gekozen: waarde === x[0], tekst: x[1], actie: 'ui', gegevens: { naam: naam, waarde: x[0] }, k: naam + '-' + x[0] }); }).join('') + '</div>'; };
       var soorten = [['alle', t('усі види', 'alle soorten')]].concat(Object.keys(HV.meldingSoorten).map(function (k) { return [k, HV.p(HV.meldingSoorten[k])]; }));
       var openId = HV.ui.lees('bericht', null);
+      // один ряд ваги; автори й види — за кнопкою «Фільтри», щоб службове не займало пів аркуша
+      var meer = HV.ui.lees('meld-meer', false) || maker !== 'alle' || soort !== 'alle';
+      var actief = (maker !== 'alle' ? 1 : 0) + (soort !== 'alle' ? 1 : 0);
+      var ongelezen = HV.logboek.ongelezen();
       return '<div class="hv-meldingen">' +
-        chips('meld-gewicht', gewicht, { label: t('Важливість', 'Gewicht'), lijst: [['alle', t('усе', 'alles')], ['belangrijk', t('важливо', 'belangrijk')], ['alarm', t('тривога', 'alarm')]] }) +
-        chips('meld-maker', maker, { label: t('Автор', 'Maker'), lijst: [['alle', t('усі автори', 'alle makers')], ['mens', t('люди', 'mensen')], ['zelf', t('автоматика', 'automatisch')], ['agent', t('агенти', 'agenten')], ['simulator', t('симулятор', 'simulator')]] }) +
-        chips('meld-soort', soort, { label: t('Вид', 'Soort'), lijst: soorten }) +
-        (lijst.length ? '<ul class="hv-berichten">' + lijst.slice(0, 60).map(function (r) { return o.bericht(r, { open: openId === r.id }); }).join('') + '</ul>'
+        '<div class="hv-meldingen__kop">' + chips('meld-gewicht', gewicht, { label: t('Важливість', 'Gewicht'), lijst: [['alle', t('усе', 'alles')], ['belangrijk', t('важливо', 'belangrijk')], ['alarm', t('тривога', 'alarm')]] }) +
+        '<button type="button" class="hv-chip hv-meldingen__filters' + (meer ? ' is-gekozen' : '') + '" aria-expanded="' + (meer ? 'true' : 'false') + '" data-actie="ui" data-naam="meld-meer" data-waarde="' + (meer ? '' : '1') + '">' + HV.icoon('sliders-horizontal', { maat: 's' }) + '<span>' + h(t('Фільтри', 'Filters')) + (actief ? ' · ' + actief : '') + '</span></button></div>' +
+        (meer ? '<div class="hv-meldingen__meer">' + chips('meld-maker', maker, { label: t('Автор', 'Maker'), lijst: [['alle', t('усі автори', 'alle makers')], ['mens', t('люди', 'mensen')], ['zelf', t('автоматика', 'automatisch')], ['agent', t('агенти', 'agenten')], ['simulator', t('симулятор', 'simulator')]] }) +
+          chips('meld-soort', soort, { label: t('Вид', 'Soort'), lijst: soorten }) + '</div>' : '') +
+        (lijst.length ? '<ul class="hv-berichten">' + lijst.slice(0, 60).map(function (r) { return o.bericht(r, { open: openId === r.id, zonderSim: true }); }).join('') + '</ul>'
           : o.leeg({ icoon: 'bell', titel: w.logboek.length ? t('За цим фільтром нічого немає', 'Niets gevonden met dit filter') : t('Сповіщень ще немає', 'Nog geen meldingen'), tekst: t('Сюди потрапляє кожна дія системи, сцени, автоматизації, оптимізатора й агента.', 'Hier komt elke actie van het systeem, een scène, een automatisering, de optimalisatie en een agent.') })) +
-        '<div class="hv-knoppen">' + o.knop({ tekst: t('Позначити все прочитаним', 'Alles als gelezen markeren'), icoon: 'check', actie: 'meld-gelezen' }) + o.knop({ tekst: t('Відкрити Журнал', 'Logboek openen'), actie: 'ga', gegevens: { naar: 'activiteit' } }) + '</div></div>';
+        '<div class="hv-meldingen__voet">' + (ongelezen ? o.knop({ tekst: t('Позначити все прочитаним', 'Alles als gelezen markeren') + ' · ' + ongelezen, icoon: 'check', soort: 'stil', actie: 'meld-gelezen' }) : '') +
+        o.knop({ tekst: t('Відкрити Журнал', 'Logboek openen'), soort: 'hoofd', klas: 'hv-knop--breed', actie: 'ga', gegevens: { naar: 'activiteit' } }) + '</div></div>';
     }
   });
   HV.actie('meld-gelezen', function () { HV.logboek.leesAlles(); });

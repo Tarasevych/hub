@@ -257,7 +257,11 @@ async function klikproef(profiel, taal) {
   await wacht(200);
   await verwacht('na het vasthouden volgt de herbevestiging', () => !!document.querySelector('.hv-gevaar .hv-herbevestig'));
   await page.locator('.hv-gevaar [data-actie="dialoog-herbevestig"]').click({ timeout: 3000 });
-  await wacht(800);
+  // замок — клас із ходом: після першої відповіді стан «виконується» зі словом напряму, потім підтвердження
+  await page.waitForFunction(() => { const a = HV.staat.w.apparaten.voordeurslot; return !!(a.wacht && a.wacht.fase === 'bezig'); }, null, { timeout: 3000 }).catch(() => {});
+  await verwacht('замок показує «виконується» з напрямом', () => { const a = HV.staat.w.apparaten.voordeurslot; return !!(a.wacht && a.wacht.fase === 'bezig' && a.wacht.grens === 15); });
+  await page.waitForFunction(() => HV.staat.w.apparaten.voordeurslot.st.vergrendeld === false, null, { timeout: 5000 }).catch(() => {});
+  await wacht(200);
   await verwacht('deur is ontgrendeld en staat in het journaal', () => HV.staat.w.apparaten.voordeurslot.st.vergrendeld === false && HV.staat.w.logboek.some((r) => r.doel === 'voordeurslot'));
 
   // toestemming: standaard «uit»; agent zonder toestemming voert niets uit

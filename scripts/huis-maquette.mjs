@@ -162,7 +162,7 @@ export function bouw({ artefact = false } = {}) {
     ...stijl.map((s) => `/* ${s.naam} */\n${s.inhoud}`),
   ].join('\n');
   const profielen = tokens.maten.profielen.map(({ id, beeld, dichtheid, hemel, glas, gevaar, uitleg, thema, logisch, viaAdres, breedte }) => ({ id, beeld, dichtheid, hemel, glas, gevaar, uitleg, thema, logisch, viaAdres, breedte }));
-  const vooraf = `window.HV = window.HV || {}; HV.bouw = ${JSON.stringify({ artefact, iconen, profielen, hemel: { klok: tokens.maten.hemel.klok, bewolkingMax: tokens.maten.hemel.bewolkingMax, mist: tokens.maten.hemel.mist, afwezig: tokens.maten.hemel.afwezig, mengselMax: tokens.maten.hemel.mengselMax, nachtstandDonker: tokens.maten.hemel.nachtstandDonker }, gedrag: { nuMax: tokens.maten.gedrag.nuMax, toostMax: tokens.maten.gedrag.toostMax, zinKortMax: tokens.maten.gedrag.zinKortMax } })};`;
+  const vooraf = `window.HV = window.HV || {}; HV.bouw = ${JSON.stringify({ artefact, iconen, profielen, hemel: { klok: tokens.maten.hemel.klok, bewolkingMax: tokens.maten.hemel.bewolkingMax, mist: tokens.maten.hemel.mist, afwezig: tokens.maten.hemel.afwezig, mengselMax: tokens.maten.hemel.mengselMax, nachtstandDonker: tokens.maten.hemel.nachtstandDonker, nachtstandLicht: tokens.maten.hemel.nachtstandLicht }, gedrag: { nuMax: tokens.maten.gedrag.nuMax, toostMax: tokens.maten.gedrag.toostMax, zinKortMax: tokens.maten.gedrag.zinKortMax, wachtPerKlasse: (tokens.maten.gedrag.wachtPerKlasse || {}).bezig || null, tegelBesturingMin: parseInt(tokens.maten.gedrag.tegelBesturingMin, 10) || 224 } })};`;
   const js = [vooraf, ...script.map((s) => `/* ${s.naam} */\n${s.inhoud}`), 'HV.start();'].join('\n').replace(/<\/script/gi, '<\\/script');
   const sprite = `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">${iconen.map(symbool).join('')}</svg>`;
   const lijf = `${sprite}\n<div id="mq-wortel" class="mq-wortel"></div>\n<script>\n${js}\n</script>`;
@@ -265,6 +265,18 @@ export function controleer() {
       if (fn) meld(`${s.naam}:${i + 1}: kleurfunctie ${fn[0]}…) buiten het tokenblok`);
     });
     if (/@media[^{]*\b(?:min|max)-(?:width|height)/.test(zonderCommentaar)) meld(`${s.naam}: @media op breedte of hoogte — gebruik @container`);
+    // Typografie (§5): gewichten alleen 400/500/600/700 (of een token); tekst nooit kleiner dan 12 px.
+    // Op de hemel alleen --text (§3): --muted en --faint zijn daar verboden.
+    const HEMEL = /\.hv-(?:held(?:__[a-z]+)?|doorsnede__(?:label|wissel)|blok__(?:samenvatting|pijl|naam)|pagina__(?:zin|titel)|kamerkop__sub|scene__(?:actief|naam)|terug|strook__datum|tv__datum|gezicht__bijschrift)\b(?![-\w])/;
+    for (const m of zonderCommentaar.matchAll(/([^{}@;]+)\{([^{}]*)\}/g)) {
+      const selector = m[1].trim(), lijf = m[2];
+      const regel = zonderCommentaar.slice(0, m.index).split('\n').length;
+      const gewicht = lijf.match(/font-weight:\s*([^;]+)/);
+      if (gewicht && !/^(?:400|500|600|700|normal|bold|inherit|var\(--[\w-]+\))$/.test(gewicht[1].trim())) meld(`${s.naam}:${regel}: font-weight ${gewicht[1].trim()} buiten 400/500/600/700 (§5)`);
+      const maat = lijf.match(/font-size:\s*(\d+(?:\.\d+)?)px/);
+      if (maat && Number(maat[1]) < 12 && !selector.startsWith('.mq-')) meld(`${s.naam}:${regel}: font-size ${maat[1]}px kleiner dan 12 px (§5)`);
+      if (/color:\s*var\(--(?:muted|faint)\)/.test(lijf.replace(/[\w-]*(?:background|border|outline|stroke|fill|decoration)[\w-]*-?color:[^;]+;?/g, '')) && selector.split(',').some((x) => HEMEL.test(x) && !/\.hv-(?:kaart|tegel|chip|laag|som|nu)\b/.test(x))) meld(`${s.naam}:${regel}: --muted op de hemel in «${selector.slice(0, 60)}» — alleen --text (§3)`);
+    }
   }
 
   // 2. Tekstparen: beide talen aanwezig, niet gelijk, taalwet.

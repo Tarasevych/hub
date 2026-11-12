@@ -70,7 +70,7 @@ body {
 .hv-tekst .hv-ic { margin-block-start: 2px; }
 .hv-tekst--zacht { color: var(--muted); }
 .hv-link { display: inline-flex; align-items: center; min-block-size: var(--hv-tik); font-size: var(--tekst-klein); font-weight: 600; color: var(--text); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
-.hv-later { display: inline-flex; align-items: center; gap: var(--ruimte-1); padding: 2px var(--ruimte-2); border: var(--hv-streep) dashed var(--hv-omtrek); border-radius: 999px; font-size: var(--tekst-mini); font-weight: 600; color: var(--muted); vertical-align: middle; white-space: nowrap; }
+.hv-later { display: inline-flex; align-items: center; gap: var(--ruimte-1); padding: 2px var(--ruimte-2); border: 1px solid var(--line); background: var(--surface); border-radius: 999px; font-size: var(--tekst-mini); font-weight: 600; color: var(--text); vertical-align: middle; white-space: nowrap; }
 
 /* ── Tonen: пара «тон / м'яка підкладка» для знака, рівня, чипа й ряду графіка ── */
 .hv-doek .hv-toon-aan { --toon: var(--hv-aan); --toon-zacht: var(--hv-aan-zacht); --teken-vlak: var(--hv-aan-vlak); --teken-icoon: var(--hv-op-aan); --niveau: var(--hv-aan-vlak); }
@@ -103,7 +103,9 @@ body {
 .hv-knop--breed { inline-size: 100%; }
 .hv-knop:active { transform: scale(0.98); background: var(--surface2); }
 .hv-knop--hoofd:active { background: var(--accent); }
-.hv-knop[aria-disabled="true"] { color: var(--muted); background: var(--surface); border-style: dashed; }
+.hv-knop[aria-disabled="true"] { color: var(--muted); background: var(--surface); }
+/* поточний стан (напр. «Замкнути», коли вже замкнено) — натиснута кнопка з галочкою, не пунктир */
+.hv-knop[aria-pressed="true"] { background: var(--surface2); border-color: var(--text); color: var(--text); cursor: default; }
 .hv-knop.is-aftel { border: 2px solid var(--text); }
 .hv-knoppen { display: flex; flex-wrap: wrap; gap: var(--hv-doel-kier); margin-block-start: var(--ruimte-3); }
 .hv-knoppen:first-child { margin-block-start: 0; }

@@ -139,11 +139,12 @@
     // за звичайною адресою настінна панель має звичайну щільність; у макеті показуємо її як панель — просторо
     return { id: p.id, breedte: Math.round(beeld[0] / schaal), hoogte: Math.round(beeld[1] / schaal), echt: beeld, speciaal: SPECIAAL.indexOf(p.id) >= 0, dichtheid: p.dichtheid || 'normaal', hemel: p.hemel || 'vol', glas: p.glas || 'ja', gevaar: p.gevaar || 'rail', thema: p.thema || null, schaal: schaal };
   };
-  /** Розміри профілю в справжніх пікселях (макет додає 1440×900 для bureau й 240×240 для horloge). */
+  /** Розміри профілю в справжніх пікселях (макет додає 1440×900 для bureau, 1024×768 для wand і 240×240 для horloge). */
   HV.profielBeelden = function (id) {
     var p = (HV.bouw.profielen || []).filter(function (x) { return x.id === id; })[0];
     var beelden = p ? p.beeld.slice() : [[390, 844]];
     if (id === 'bureau') beelden.unshift([1440, 900]);
+    if (id === 'wand') beelden.push([1024, 768]); // настінна панель горизонтально
     if (id === 'horloge') beelden.unshift([240, 240]);
     if (id === 'strook' || id === 'vierkant' || id === 'rond') beelden.sort(function (a, b) { return id === 'strook' ? b[0] - a[0] : a[0] - b[0]; });
     return beelden;
@@ -225,23 +226,36 @@
     var zwaar = HV.gevaar.altijdZwaar().length;
     var stand = HV.huisstanden[w.huisstand];
     var zin = HV.heldKort ? HV.heldKort(ctx) : '';
+    var nu = (w.nu || []).length;
+    var hemelNaam = HV.p(HV.hemel.bereken(w, HV.thema()).naam);
     return '<div class="hv-kop__binnen">' +
       '<button type="button" class="hv-kop__huis" data-actie="blad" data-blad="huisstand" aria-label="' + h(HV.paspoort.adres + ', ' + t('режим дому: ', 'huisstand: ') + HV.p(stand)) + '"><span class="hv-kop__naam">' + h(HV.paspoort.adres) + '</span><span class="hv-kop__stand">' + h(HV.p(stand)) + HV.icoon('chevron-down', { maat: 's' }) + '</span></button>' +
       '<p class="hv-kop__zin" aria-hidden="true">' + zin + '</p>' +
       '<nav class="hv-kop__nav" aria-label="' + h(t('Розділи', 'Onderdelen')) + '">' + hoofd.map(function (s) { return navPunt(s, 'hv-nav__punt'); }).join('') + '</nav>' +
       '<div class="hv-kop__rechts">' +
       '<button type="button" class="hv-kop__opdracht" data-actie="opdracht">' + HV.icoon('search', { maat: 's' }) + '<span>' + h(t('Команда', 'Opdracht')) + '</span></button>' +
+      // телефон: окремий паперовий чип важливого (трикутник і число) — веде до «Зараз важливо»
+      (nu ? '<button type="button" class="hv-kop__nu" data-actie="naar-nu" aria-label="' + h(t('Зараз важливо: ', 'Nu belangrijk: ') + nu) + '">' + HV.icoon('triangle-alert', { maat: 's' }) + '<span>' + nu + '</span></button>' : '') +
       (zwaar ? '<button type="button" class="hv-kop__risico" data-actie="ga" data-naar="instellingen-risico" aria-label="' + h(t('Дозволів «Завжди» для небезпечних дій: ', 'Toestemmingen ‘Altijd’ voor gevaarlijke acties: ') + zwaar) + '">' + HV.icoon('risico-gevaarlijk', { maat: 'risico' }) + '<span>' + zwaar + '</span></button>' : '') +
       o.sim(w, { kort: true }) + o.versheid(w) +
       o.icoonknop({ icoon: 'bell', aria: t('Сповіщення', 'Meldingen') + (ongelezen ? ': ' + ongelezen + ' ' + t('нових', 'nieuw') : ''), actie: 'blad', gegevens: { blad: 'meldingen' }, teller: ongelezen || null, klas: 'hv-kop__bel' }) +
       o.icoonknop({ icoon: 'settings', aria: t('Система', 'Systeem'), actie: 'ga', gegevens: { naar: 'instellingen' }, klas: 'hv-kop__tandwiel' + (HV.schermen[route.scherm] && HV.schermen[route.scherm].sectie === 'systeem' ? ' is-actief' : '') }) +
-      '</div></div>';
+      '</div></div>' +
+      // телефон: рядок hv-sim 28 px під шапкою — симуляція, підпис неба й слово актуальності (у шапці лише іконка)
+      '<button type="button" class="hv-simrij" data-actie="ga" data-naar="instellingen-simulator" data-k="simrij">' + HV.icoon('flask-conical', { maat: 'maker' }) +
+      '<span class="hv-simrij__sim">' + h(t('Симуляція', 'Simulatie') + ' · ' + (w.pauze ? t('пауза', 'pauze') : '×' + w.snelheid)) + '</span>' +
+      '<span class="hv-simrij__hemel" title="' + h(hemelNaam) + '">' + h(t('небо за часом дому', 'hemel volgt huistijd')) + '</span>' +
+      '<span class="hv-simrij__vers">' + h(w.gegevens === 'live' ? HV.woord.live() : w.gegevens === 'geen' ? HV.woord.geenVerbinding() : t('оновлення 30 с', 'ververst elke 30 s')) + '</span></button>';
   }
 
   function onderbalkHtml() {
-    var punten = HV.secties.filter(function (s) { return s.telefoon; }).map(function (s) { return navPunt(s, 'hv-onderbalk__punt'); }).join('');
+    var lijst = HV.secties.filter(function (s) { return s.telefoon; });
     var s = HV.schermen[route.scherm];
     var inMeer = s && HV.secties.some(function (x) { return x.id === s.sectie && !x.telefoon; });
+    // «Команда» — центральний пункт нижньої панелі: нічого не плаває над вмістом і не накриває органи
+    var midden = Math.ceil(lijst.length / 2);
+    var opdracht = '<button type="button" class="hv-onderbalk__punt hv-onderbalk__opdracht" data-actie="opdracht" data-k="nav-opdracht">' + HV.icoon('search') + '<span>' + h(t('Команда', 'Opdracht')) + '</span></button>';
+    var punten = lijst.map(function (x, i) { return (i === midden ? opdracht : '') + navPunt(x, 'hv-onderbalk__punt'); }).join('');
     return '<div class="hv-onderbalk__rij">' + punten + '<button type="button" class="hv-onderbalk__punt' + (inMeer ? ' is-actief' : '') + '" data-actie="blad" data-blad="meer" data-k="nav-meer">' + HV.icoon('ellipsis') + '<span>' + h(t('Ще', 'Meer')) + '</span></button></div>';
   }
 
@@ -306,6 +320,7 @@
     // klassen op de wortel van het doek
     var klassen = ['hv-doek', thema === 'donker' ? 'theme-dark' : thema === 'inkt' ? 'theme-inkt' : 'theme-light', 'hv-dicht-' + ctx.dichtheid, 'hv-profiel-' + p.id, 'hv-rol-' + ctx.rol];
     if (p.speciaal) klassen.push('is-speciaal');
+    else klassen.push('heeft-sim'); // макет завжди симульований: рядок hv-sim під шапкою телефона
     if (w.nood && !w.nood.bevestigd) klassen.push('is-nood');
     if (route.blad && !p.speciaal) klassen.push('heeft-laag');
     if (HV.lagen && HV.lagen.dialoog()) klassen.push('heeft-dialoog');
@@ -328,7 +343,7 @@
       HV.zet(document.getElementById('hv-pagina'), gezichtHtml(ctx));
     } else {
       HV.zet(document.getElementById('hv-kop'), kopHtml(ctx));
-      HV.zet(document.getElementById('hv-onderbalk'), onderbalkHtml(ctx) + '<button type="button" class="hv-opdrachtknop" data-actie="opdracht" aria-label="' + h(t('Команда', 'Opdracht')) + '">' + HV.icoon('search', { maat: 'l' }) + '</button>');
+      HV.zet(document.getElementById('hv-onderbalk'), onderbalkHtml(ctx));
       HV.zet(document.getElementById('hv-pagina'), strookHtml(ctx) + paginaHtml(ctx));
     }
     var inhoud = document.getElementById('hv-inhoud');
@@ -527,12 +542,38 @@
   HV.actie('blad-sluit', function () { HV.bladOpen(null); });
   HV.actie('blad-deel', function (ctx, g) { var b = route.blad; if (b) zetRoute({ scherm: route.scherm, tab: route.tab, object: route.object, blad: { type: b.type, id: b.id, deel: g.deel === 'bediening' ? null : g.deel } }, true); });
   HV.actie('spring', function () { var i = document.getElementById('hv-inhoud'); if (i) i.focus(); });
+  /** Чип важливого в шапці телефона: «Дім» → розгорнутий блок «Зараз важливо» у полі зору. */
+  HV.actie('naar-nu', function () {
+    var geheugen = HV.opslag.lees('blokken', {});
+    if (geheugen.nu === false) { geheugen.nu = true; HV.opslag.schrijf('blokken', geheugen); }
+    if (route.scherm !== 'overzicht') HV.open('overzicht'); else HV.teken();
+    setTimeout(function () {
+      var blok = document.querySelector('[data-k="blok-nu"]'), inhoud = document.getElementById('hv-inhoud');
+      if (!blok || !inhoud) return;
+      var kop = document.getElementById('hv-kop');
+      inhoud.scrollTop = Math.max(0, blok.offsetTop - (kop ? kop.offsetHeight : 0) - 8);
+      var titel = blok.querySelector('.hv-blok__titel');
+      if (titel) { try { titel.focus({ preventScroll: true }); } catch (e) { /* фокус лишається */ } }
+    }, 60);
+  });
 
   HV.actie('schakel', function (ctx, g) {
     var a = HV.staat.apparaat(g.doel), m = g.mogelijkheid;
     var nu = a.wacht && a.wacht.mogelijkheid === m ? a.wacht.waarde : HV.huidige(a, m);
-    var waarde = m === 'robot' ? (nu === 'start' ? (g.af || 'dock') : (g.op || 'start')) : !nu;
+    var waarde = m === 'robot' ? (nu === 'start' ? (g.af || 'dock') : (g.op || 'start')) : m === 'alarmstand' ? (nu === 'uit' ? (g.op || 'volledig') : 'uit') : !nu;
     HV.doe({ doel: a.id, mogelijkheid: m, waarde: waarde });
+  });
+  // Повзунок плитки з керуванням: під час руху — лише число плитки; команда — коли бігунок відпущено.
+  HV.actie('tegel-schuif', function (ctx, g, el) {
+    var tegel = el && el.closest ? el.closest('.hv-tegel') : null;
+    var a = HV.staat.apparaat(g.doel), org = a ? HV.niveauOrgaan(a) : null;
+    if (!a || !org) return;
+    var groot = tegel && tegel.querySelector('.hv-tegel__groot');
+    if (groot) groot.innerHTML = HV.maat(g.waarde, org.eenheid, org.decimalen || 0);
+    if (g.fase !== 'klaar') return;
+    var v = Number(g.waarde);
+    if (org.mogelijkheid === 'helderheid' && v <= 0) { if (HV.kijk.isAan(a)) HV.doe({ doel: a.id, mogelijkheid: 'aan', waarde: false }); return; }
+    if (v !== Number(HV.huidige(a, org.mogelijkheid)) || (org.mogelijkheid === 'helderheid' && !HV.kijk.isAan(a))) HV.doe({ doel: a.id, mogelijkheid: org.mogelijkheid, waarde: v });
   });
   HV.actie('tegel-stap', function (ctx, g) {
     var a = HV.staat.apparaat(g.doel), m = g.mogelijkheid, stap = Number(g.stap) || 10;

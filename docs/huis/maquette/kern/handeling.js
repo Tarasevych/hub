@@ -270,19 +270,23 @@
     var was = wasWaarde === undefined ? null : beschrijf(a, o.mogelijkheid, wasWaarde);
     var werd = beschrijf(a, o.mogelijkheid, v);
     var echt = Date.now();
-    HV.staat.wijzig(function () { a.wacht = { mogelijkheid: o.mogelijkheid, waarde: v, fase: 'verzonden', sinds: echt }; });
+    // клас із ходом: після першої відповіді — «виконується» зі словом напряму й спостереженим відсотком
+    var gang = GANG[a.soort] && GANG[a.soort].mogelijkheden.indexOf(o.mogelijkheid) >= 0 ? GANG[a.soort] : null;
+    var grensS = gang ? ((HV.bouw.gedrag && HV.bouw.gedrag.wachtPerKlasse && HV.bouw.gedrag.wachtPerKlasse[gang.klasse]) || 60) : 10;
+    HV.staat.wijzig(function () { a.wacht = { mogelijkheid: o.mogelijkheid, waarde: v, fase: 'verzonden', sinds: echt, grens: grensS }; a.mislukt = null; });
 
     return new Promise(function (klaar) {
       var slaapt = a.beschikbaar === 'slaapt';
       var mislukt = !!(w.sim && w.sim.geenBevestiging);
       setTimeout(function () { if (a.wacht && a.wacht.sinds === echt) HV.staat.wijzig(function () { a.wacht.fase = 'aangenomen'; }); }, VERTRAGING.aangenomen);
-      setTimeout(function () {
+      var bevestig = function () {
         if (!a.wacht || a.wacht.sinds !== echt) { klaar({ ok: true, vervangen: true }); return; } // нова команда замінила цю
         if (mislukt) {
-          HV.staat.wijzig(function () { a.wacht = null; });
-          HV.meld({ gewicht: 'belangrijk', icoon: 'circle-x', titel: HV.p(a.naam), tekst: HV.t('Не підтверджено за 3 с — стан повернуто.', 'Niet bevestigd binnen 3 s — teruggezet.') });
-          HV.logboek.voegToe({ maker: door, wat: [a.naam[0] + ': не підтверджено', a.naam[1] + ': niet bevestigd'], soort: 'huis.apparaat', gewicht: 'belangrijk', doel: a.id });
-          klaar({ ok: false, reden: 'niet-bevestigd' });
+          // «не виконано»: плитка повертає спостережене, контур --fout і рядок «Не виконано» — 60 с або до наступної дії
+          HV.staat.wijzig(function () { a.wacht = null; a.mislukt = { echt: Date.now(), tijd: HV.staat.w.tijd }; });
+          HV.meld({ gewicht: 'belangrijk', icoon: 'circle-x', titel: HV.p(a.naam) + ': ' + HV.t('не виконано', 'niet uitgevoerd'), tekst: gang ? HV.t('Пристрій не завершив хід за ' + grensS + ' с — показано спостережений стан.', 'Het apparaat kwam niet binnen ' + grensS + ' s op zijn plek — je ziet de waargenomen toestand.') : HV.t('Пристрій не відповів за 10 с — показано спостережений стан.', 'Het apparaat antwoordde niet binnen 10 s — je ziet de waargenomen toestand.') });
+          HV.logboek.voegToe({ maker: door, wat: [a.naam[0] + ': не виконано', a.naam[1] + ': niet uitgevoerd'], soort: 'huis.apparaat', gewicht: 'belangrijk', doel: a.id });
+          klaar({ ok: false, reden: 'niet-uitgevoerd' });
           return;
         }
         HV.staat.wijzig(function (x) {
@@ -304,9 +308,36 @@
           });
         }
         klaar({ ok: true });
-      }, mislukt ? VERTRAGING.mislukt : slaapt ? VERTRAGING.slaapt : VERTRAGING.bevestigd);
+      };
+      if (!gang) { setTimeout(bevestig, mislukt ? VERTRAGING.mislukt : slaapt ? VERTRAGING.slaapt : VERTRAGING.bevestigd); return; }
+      // Хід (макет): після першої відповіді спостережений відсоток росте кроками; підтвердження — коли хід завершено.
+      var van = o.mogelijkheid === 'positie' ? Number(wasWaarde) || 0 : 0;
+      var naar = o.mogelijkheid === 'positie' ? Number(v) : 100;
+      var duur = mislukt ? VERTRAGING.mislukt : gang.ms;
+      setTimeout(function () {
+        if (!a.wacht || a.wacht.sinds !== echt) { klaar({ ok: true, vervangen: true }); return; }
+        var begin = Date.now();
+        HV.staat.wijzig(function () { a.wacht.fase = 'bezig'; a.wacht.voortgang = van; });
+        var tik = setInterval(function () {
+          if (!a.wacht || a.wacht.sinds !== echt) { clearInterval(tik); return; }
+          var deel = Math.min(1, (Date.now() - begin) / duur);
+          // за збою хід зупиняється на півдорозі — так виглядає справжня відмова
+          HV.staat.wijzig(function () { a.wacht.voortgang = van + (naar - van) * (mislukt ? Math.min(deel, 0.4) : deel); });
+          if (deel >= 1) { clearInterval(tik); bevestig(); }
+        }, 250);
+      }, VERTRAGING.bevestigd);
     });
   }
+  // Класи з ходом і їхній час до «не виконано» (maten.gedrag.wachtPerKlasse); ms — тривалість ходу в макеті.
+  var GANG = {
+    gordijn: { klasse: 'gordijnen', mogelijkheden: ['positie'], ms: 2600 },
+    jaloezie: { klasse: 'jaloezie', mogelijkheden: ['positie', 'kantel'], ms: 2600 },
+    poort: { klasse: 'poort', mogelijkheden: ['open'], ms: 3200 },
+    garagedeur: { klasse: 'garagedeur', mogelijkheden: ['open'], ms: 3200 },
+    slot: { klasse: 'slot', mogelijkheden: ['vergrendeld'], ms: 1100 },
+    klep: { klasse: 'klep', mogelijkheden: ['open'], ms: 1600 }
+  };
+  HV.gangKlassen = GANG;
 
   /**
    * Виконати дію. Повертає Promise<{ ok, reden? }>.

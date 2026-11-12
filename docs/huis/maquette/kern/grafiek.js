@@ -19,6 +19,11 @@
     neutraal: { merk: 'merk-vierkant', streep: '' }
   };
   var merk = function (r) { return HV.icoon(r.merk || (TOON[r.toon] || TOON.neutraal).merk, { maat: 'merk' }); };
+  /** Підпис осі X: крайні підписи притиснуто до краю (перший — початком, останній — кінцем), щоб їх не обрізала картка. */
+  var xLabel = function (links, label) {
+    var klas = links < 6 ? ' is-begin' : links > 94 ? ' is-eind' : '';
+    return '<span class="hv-grafiek__x' + klas + '" style="left:' + links.toFixed(1) + '%">' + h(label) + '</span>';
+  };
 
   function tabel(kop, rijen) {
     return '<div class="hv-tabel__rol"><table class="hv-tabel"><thead><tr>' + kop.map(function (k) { return '<th scope="col">' + h(k) + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -79,7 +84,7 @@
       });
       var rooster = s.tikken.map(function (v) { return '<line class="hv-grafiek__' + (v === 0 ? 'nul' : 'raster') + '" x1="0" x2="100" y1="' + Y(v).toFixed(2) + '" y2="' + Y(v).toFixed(2) + '"/>'; }).join('');
       var yLabels = s.tikken.map(function (v) { return '<span class="hv-grafiek__y" style="top:' + Y(v).toFixed(1) + '%">' + HV.getal(v, s.decimalen) + '</span>'; }).join('');
-      var xLabels = (p.x.tikken || []).map(function (k) { return '<span class="hv-grafiek__x" style="left:' + X(k.x).toFixed(1) + '%">' + h(k.label) + '</span>'; }).join('');
+      var xLabels = (p.x.tikken || []).map(function (k) { return xLabel(X(k.x), k.label); }).join('');
       var nu = p.nu != null ? '<span class="hv-grafiek__nu" style="left:' + X(p.nu).toFixed(1) + '%"><span>' + h(t('зараз', 'nu')) + '</span></span>' : '';
       var veld = '<div class="hv-grafiek__veld" style="height:' + (p.hoogte || 160) + 'px" role="img" aria-label="' + h((p.titel || '') + '. ' + (p.samenvatting || '')) + '">' +
         '<div class="hv-grafiek__as">' + yLabels + '</div><div class="hv-grafiek__doek"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + rooster + paden + '</svg>' + namen + nu + '<div class="hv-grafiek__xas">' + xLabels + '</div></div></div>';
@@ -124,9 +129,9 @@
       var banen = p.banen.map(function (b) {
         var stukken = (b.stukken || []).map(function (s) { return '<span class="hv-baan__stuk' + (s.toon ? ' hv-toon-' + h(s.toon) : '') + (s.klas ? ' ' + h(s.klas) : '') + '" style="left:' + X(s.van).toFixed(2) + '%;width:' + Math.max(0.4, X(s.tot) - X(s.van)).toFixed(2) + '%" title="' + h(s.label || '') + '"></span>'; }).join('');
         var punten = (b.punten || []).map(function (q) { return '<span class="hv-baan__punt" style="left:' + X(q.x).toFixed(2) + '%" title="' + h(q.label || '') + '">' + (q.icoon ? HV.icoon(q.icoon, { maat: 'maker' }) : '') + '</span>'; }).join('');
-        return '<div class="hv-baan' + (b.klas ? ' ' + h(b.klas) : '') + '"><span class="hv-baan__naam">' + h(b.naam) + '</span><div class="hv-baan__spoor">' + stukken + punten + '</div></div>';
+        return '<div class="hv-baan' + (b.klas ? ' ' + h(b.klas) : '') + '"><span class="hv-baan__naam">' + h(b.naam) + '</span><div class="hv-baan__spoor">' + stukken + punten + (b.rechts ? '<span class="hv-baan__bereik">' + b.rechts + '</span>' : '') + '</div></div>';
       }).join('');
-      var xLabels = (p.tikken || []).map(function (k) { return '<span class="hv-grafiek__x" style="left:' + X(k.x).toFixed(1) + '%">' + h(k.label) + '</span>'; }).join('');
+      var xLabels = (p.tikken || []).map(function (k) { return xLabel(X(k.x), k.label); }).join('');
       var nu = p.nu != null ? '<span class="hv-grafiek__nu hv-grafiek__nu--banen" style="--x:' + (X(p.nu) / 100).toFixed(4) + '"><span>' + h(t('зараз', 'nu')) + '</span></span>' : '';
       var veld = '<div class="hv-grafiek__banen" role="img" aria-label="' + h((p.titel || '') + '. ' + (p.samenvatting || '')) + '">' + banen + '<div class="hv-grafiek__banenas"><span class="hv-baan__naam"></span><div class="hv-baan__spoor">' + xLabels + '</div></div>' + nu + '</div>';
       var rijen = [];

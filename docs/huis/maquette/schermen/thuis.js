@@ -4,6 +4,8 @@
   'use strict';
   var t = HV.t, h = HV.h, o = HV.o;
 
+  // знаки режимів дому (§6, maten.gedrag.huisstandTeken): «Ніч» — BedDouble, бо Moon — це фаза неба
+  var STAND_ICOON = { thuis: 'house', afwezig: 'log-out', nacht: 'bed-double', vakantie: 'luggage', gasten: 'users' };
   var IN_KAMERS_UK = ['', 'в одній кімнаті', 'у двох кімнатах', 'у трьох кімнатах', 'у чотирьох кімнатах', 'у п’яти кімнатах', 'у шести кімнатах', 'у семи кімнатах', 'у восьми кімнатах', 'у дев’яти кімнатах', 'у десяти кімнатах'];
   var IN_KAMERS_NL = ['', 'in één kamer', 'in twee kamers', 'in drie kamers', 'in vier kamers', 'in vijf kamers', 'in zes kamers', 'in zeven kamers', 'in acht kamers', 'in negen kamers', 'in tien kamers'];
   var link = function (naar, tekst, blad) { return '<span role="link" tabindex="0" class="hv-zinlink" data-actie="' + (blad ? 'blad' : 'ga') + '" ' + (blad ? 'data-blad="' : 'data-naar="') + h(naar) + '">' + h(tekst) + '</span>'; };
@@ -52,14 +54,16 @@
       kort = t('Ворота гаража відчинені.', 'De garagedeur staat open.');
     }
     // 2. світло
-    var licht = f.kamers === 0 ? h(t('світло вимкнено', 'het licht is uit')) : link('kamers', t('світло ', 'licht aan ') + (f.kamers <= 10 ? (nl ? IN_KAMERS_NL : IN_KAMERS_UK)[f.kamers] : t('у багатьох кімнатах', 'in veel kamers')));
+    // Посиланням стає лише іменна група («у трьох кімнатах», «двері», «авто»), а не ціле підрядне речення.
+    var licht = f.kamers === 0 ? h(t('світло вимкнено', 'het licht is uit')) : h(t('світло ', 'licht aan ')) + link('kamers', f.kamers <= 10 ? (nl ? IN_KAMERS_NL : IN_KAMERS_UK)[f.kamers] : t('у багатьох кімнатах', 'in veel kamers'));
     // 3. двері й охорона
-    var deur = f.slot === true ? link('beveiliging', t('двері замкнено', 'deuren op slot')) : f.slot === false ? link('beveiliging', t('двері відімкнено', 'de deur is van het slot')) : null;
+    var deur = f.slot === true ? (nl ? link('beveiliging', 'deuren') + ' op slot' : link('beveiliging', 'двері') + ' замкнено')
+      : f.slot === false ? (nl ? 'de ' + link('beveiliging', 'deur') + ' is van het slot' : link('beveiliging', 'двері') + ' відімкнено') : null;
     // 4. найближча подія
     var straks = null;
-    if (f.laadtTot) straks = link('energie-laden', t('авто заряджається до ', 'de auto laadt tot ') + HV.tijd(f.laadtTot));
+    if (f.laadtTot) straks = nl ? 'de ' + link('energie-laden', 'auto') + ' laadt tot ' + HV.tijd(f.laadtTot) : link('energie-laden', 'авто') + ' заряджається до ' + HV.tijd(f.laadtTot);
     else if (f.was) straks = h(HV.p(f.was.naam).toLowerCase() + t(' завершить за ', ' is klaar over ') + HV.duur(f.was.st.rest));
-    else if (f.export) straks = link('energie', t('сонце віддає в мережу ', 'de zon levert ') + HV.getal(f.export, 1) + t(' кВт', ' kW aan het net'));
+    else if (f.export) straks = nl ? 'de ' + link('energie', 'zon') + ' levert ' + HV.getal(f.export, 1) + ' kW aan het net' : link('energie', 'сонце') + ' віддає в мережу ' + HV.getal(f.export, 1) + ' кВт';
 
     var begin = f.thuis === 0 ? t('Удома нікого', 'Er is niemand thuis') : w.huisstand === 'nacht' ? t('Дім спить', 'Het huis slaapt') : t('Удома спокійно', 'Thuis is het rustig');
     if (uitzondering) {
@@ -78,18 +82,24 @@
   }
 
   var DAGDEEL = function (uur) { return uur >= 6 && uur < 12 ? ['Ранок', 'Ochtend'] : uur >= 12 && uur < 18 ? ['День', 'Middag'] : uur >= 18 && uur < 23 ? ['Вечір', 'Avond'] : ['Ніч', 'Nacht']; };
-  /** Рядок шапки телефона після прокручування: «Вечір · спокійно · 19:42». */
+  var FASE_ICOON = { nacht: 'moon', dageraad: 'sunrise', dag: 'sun', schemer: 'sunset' };
+  /**
+   * Стиснутий рядок героя в шапці телефона — паперова пігулка «Вечір · спокійно · 19:42». Шматки неподільні:
+   * час не обрізається ніколи; до 359 px — знак фази й час, 360–699 — «Вечір · 19:42» (стан несе чип важливого).
+   */
   HV.heldKort = function (ctx) {
     var w = ctx.staat, z = huiszin(ctx);
     var woord = w.nood ? t('тривога', 'alarm') : z.toon === 'aandacht' ? t('увага', 'let op') : z.toon === 'oud' ? HV.woord.verouderd() : t('спокійно', 'rustig');
-    return h(HV.p(DAGDEEL(HV.uur(w.tijd)))) + ' <span class="hv-punt">·</span> ' + h(woord) + ' <span class="hv-punt">·</span> ' + HV.tijd(w.tijd);
+    var fase = HV.hemel.bereken(w, HV.thema()).fase;
+    return '<span class="hv-kop__pil">' + HV.icoon(FASE_ICOON[fase] || 'sun', { maat: 's' }) + '<span class="hv-kop__fase">' + h(HV.p(DAGDEEL(HV.uur(w.tijd)))) + '</span>' +
+      '<span class="hv-kop__woord"><span class="hv-punt">·</span>' + h(woord) + '</span><span class="hv-kop__tijd"><span class="hv-punt">·</span>' + HV.tijd(w.tijd) + '</span></span>';
   };
   HV.huiszin = huiszin;
 
   function chips(ctx) {
     var w = ctx.staat, uit = [];
     var stand = HV.huisstanden[w.huisstand];
-    uit.push(o.chip({ icoon: w.huisstand === 'nacht' ? 'moon' : w.huisstand === 'thuis' ? 'house' : w.huisstand === 'gasten' ? 'users' : 'log-out', tekst: HV.p(stand), actie: 'blad', gegevens: { blad: 'huisstand' }, aria: t('Режим дому: ', 'Huisstand: ') + HV.p(stand), k: 'chip-stand' }));
+    uit.push(o.chip({ icoon: STAND_ICOON[w.huisstand] || 'house', tekst: HV.p(stand), actie: 'blad', gegevens: { blad: 'huisstand' }, aria: t('Режим дому: ', 'Huisstand: ') + HV.p(stand), k: 'chip-stand' }));
     var thuis = HV.kijk.thuis();
     var initialen = thuis.slice(0, 4).map(function (m) { return '<span class="hv-persoon' + (m.zeker !== 'zeker' ? ' is-' + h(m.zeker) : '') + '" aria-hidden="true">' + h(HV.p(m.naam).charAt(0)) + '</span>'; }).join('');
     uit.push(o.chip({ html: (initialen ? '<span class="hv-personen">' + initialen + '</span>' : HV.icoon('users', { maat: 's' })) + '<span>' + h(thuis.length ? thuis.length + ' ' + t('вдома', 'thuis') : t('нікого вдома', 'niemand thuis')) + '</span>', k: 'chip-thuis', aria: thuis.length ? t('Удома: ', 'Thuis: ') + thuis.map(function (m) { return HV.p(m.naam); }).join(', ') : t('Нікого вдома', 'Niemand thuis') }));
@@ -127,7 +137,12 @@
     var rijen = o.rij({ icoon: alarm === 'uit' ? 'shield' : 'shield-check', naam: HV.p(HV.alarmWoord[alarm]), actie: 'blad', gegevens: { blad: 'apparaat:alarm' }, k: 'bev-alarm' }) +
       o.rij({ icoon: slot ? 'lock-keyhole' : 'lock-keyhole-open', naam: t('Вхідні двері', 'Voordeur'), waarde: h(slot ? HV.woord.vergrendeld() : HV.woord.ontgrendeld()), actie: 'blad', gegevens: { blad: 'apparaat:voordeurslot' }, k: 'bev-slot' }) +
       o.rij({ icoon: open.length ? 'door-open' : 'door-closed', naam: t('Вікна й двері', 'Ramen en deuren'), waarde: h(open.length ? open.length + ' ' + t('відчинено', 'open') : t('усе зачинено', 'alles dicht')), actie: 'ga', gegevens: { naar: 'beveiliging-sensoren' }, k: 'bev-open' }) +
-      (A.deurbel.st.laatst ? o.rij({ icoon: 'bell-ring', naam: t('Дзвінок у двері', 'Deurbel'), waarde: HV.tijd(A.deurbel.st.laatst), actie: 'ga', gegevens: { naar: 'beveiliging-toegang' }, k: 'bev-bel' }) : '');
+      (A.deurbel.st.laatst ? o.rij({ icoon: 'bell-ring', naam: t('Дзвінок у двері', 'Deurbel'), waarde: HV.tijd(A.deurbel.st.laatst), actie: 'ga', gegevens: { naar: 'beveiliging-toegang' }, k: 'bev-bel' }) : '') +
+      (function () {
+        var melders = HV.kijk.alle(function (a) { return a.soort === 'rook' || a.soort === 'co' || a.soort === 'lek'; });
+        var alarm = melders.filter(function (a) { return a.st.alarm; }).length;
+        return o.rij({ icoon: 'alarm-smoke', naam: t('Датчики диму й води', 'Rook- en watermelders'), waarde: h(alarm ? alarm + ' ' + t('тривога', 'alarm') : t('спокійно', 'rustig') + ' · ' + melders.length), actie: 'ga', gegevens: { naar: 'beveiliging-sensoren' }, k: 'bev-melders' });
+      })();
     return '<article class="hv-som" data-k="som-beveiliging"><header class="hv-som__kop"><h3>' + HV.icoon('shield', { maat: 's' }) + h(t('Безпека', 'Beveiliging')) + '</h3></header><div class="hv-rijen">' + rijen + '</div></article>';
   }
 
@@ -151,8 +166,10 @@
       var f = HV.hemel.fase(HV.uur(x + 1800000));
       fasen.push({ van: Math.max(van, x), tot: Math.min(tot, x + 3600000), klas: 'hv-fase--' + (f.deel >= 0.5 ? f.b : f.a) });
       var p = HV.tarief.prijs(x);
-      prijs.push({ van: Math.max(van, x), tot: Math.min(tot, x + 3600000), klas: 'hv-warmte--' + (p < 0 ? 'min' : p < 0.2 ? 1 : p < 0.26 ? 2 : p < 0.31 ? 3 : p < 0.36 ? 4 : 5), label: HV.euro(p) });
+      // ціна — три ступені тонами стану (дешево · звичайно · дорого); від’ємна — тон «у мережу»
+      prijs.push({ van: Math.max(van, x), tot: Math.min(tot, x + 3600000), klas: p < 0 ? 'hv-warmte--min' : p < 0.22 ? 'hv-prijs--goedkoop' : p < 0.31 ? 'hv-prijs--midden' : 'hv-prijs--duur', label: HV.euro(p), p: p });
     }
+    var prijzen = prijs.map(function (x) { return x.p; });
     var perDag = function (fn) { for (var d0 = Math.floor(van / 86400000) * 86400000; d0 < tot; d0 += 86400000) fn(d0); };
     var aanwezig = [], stand = [], deuren = [], makers = [];
     perDag(function (d0) {
@@ -164,10 +181,13 @@
     w.logboek.slice(0, 12).forEach(function (r) { if (r.tijd > van && !r.sim0) makers.push({ x: r.tijd, label: HV.p(r.wat), icoon: ({ mens: 'user', automatisering: 'diamond', agent: 'agent', dienst: 'cloud', simulator: 'flask-conical', knop: 'hand', optimalisatie: 'gauge' })[r.maker.soort] || 'diamond' }); });
     var tikken = [];
     for (var u = Math.ceil(van / (6 * 3600000)) * 6 * 3600000; u < tot; u += 6 * 3600000) tikken.push({ x: u, label: HV.tijd(u) });
+    // Ієрархія рядів: небо 20 px; «удома» й «режим» — суцільні тони 12 px; двері — риски; ціна — три ступені з межами праворуч.
+    // Ряд авторів — лише на вимогу (opties.makers): на «Домі» знаки злипалися біля «зараз»; повна історія — у Журналі.
     var banen = [{ naam: t('небо', 'hemel'), klas: 'hv-baan--fase', stukken: fasen }, { naam: t('удома', 'thuis'), stukken: aanwezig }];
     if (!kort) banen.push({ naam: t('двері', 'deuren'), punten: deuren });
-    banen.push({ naam: t('ціна', 'prijs'), klas: 'hv-baan--prijs', stukken: prijs });
-    if (!kort) { banen.push({ naam: t('режим', 'stand'), klas: 'hv-baan--stand', stukken: stand }); banen.push({ naam: t('автори', 'makers'), punten: makers }); }
+    banen.push({ naam: t('ціна', 'prijs'), klas: 'hv-baan--prijs', stukken: prijs, rechts: kort ? '' : h(HV.euro(Math.min.apply(null, prijzen)) + ' – ' + HV.euro(Math.max.apply(null, prijzen))) });
+    if (!kort) banen.push({ naam: t('режим', 'stand'), klas: 'hv-baan--stand', stukken: stand });
+    if (opties && opties.makers) banen.push({ naam: t('автори', 'makers'), punten: makers });
     return '<div class="hv-dagstrook' + (kort ? ' hv-dagstrook--kort' : '') + '" data-k="dagstrook">' + HV.grafiek.toestanden({ id: 'dagstrook', van: van, tot: tot, nu: w.tijd, tikken: tikken, format: HV.tijd, banen: banen,
       samenvatting: kort ? '' : t('Доба дому від −18 до +6 годин. Ціна: світліше — дешевше; майбутнє показано лише для неба й ціни.', 'Het etmaal van het huis van −18 tot +6 uur. Prijs: lichter is goedkoper; de toekomst is alleen voor hemel en prijs getekend.') }) + '</div>';
   };
@@ -192,7 +212,7 @@
       inhoud: '<div class="hv-scenes">' + w.scenes.map(function (s) { return o.scene(s, w.sceneActief === s.id); }).join('') + '</div>' });
 
     var favorieten = o.blok({ id: 'favorieten', titel: t('Обране', 'Favorieten'), klas: 'hv-blok--favorieten',
-      inhoud: w.favorieten.length ? '<div class="hv-tegels">' + w.favorieten.map(function (id) { return o.tegel(w.apparaten[id], { metKamer: true }); }).join('') + '</div>'
+      inhoud: w.favorieten.length ? '<div class="hv-tegels">' + w.favorieten.map(function (id) { return o.tegel(w.apparaten[id], { metKamer: true, bediening: true }); }).join('') + '</div>'
         : o.leeg({ icoon: 'lightbulb', titel: t('Обране ще порожнє', 'Nog geen favorieten'), tekst: t('Додайте головне світло, термостат і вхідні двері — вони будуть під рукою на кожному екрані.', 'Voeg de hoofdlamp, de thermostaat en de voordeur toe — ze staan dan op elk scherm bij de hand.'), actie: { tekst: t('Зібрати автоматично', 'Automatisch samenstellen'), actie: 'favorieten-auto' } }) });
 
     var verdieping = HV.ui.lees('verdieping', 'beneden');
@@ -234,7 +254,6 @@
     vakantie: ['Що станеться: світло й медіа вимкнуться, опалення перейде на 15 °C до повернення. Пов’язано з: полив і косарка працюють за розкладом. Як повернути: оберіть «Вдома».', 'Wat er gebeurt: licht en media gaan uit, de verwarming gaat naar 15 °C tot je terug bent. Hangt samen met: beregening en maaier volgen hun rooster. Terugdraaien: kies ‘Thuis’.'],
     gasten: ['Що станеться: режим дому стане «Гості»; сцени й клімат лишаються як є. Пов’язано з: гостьовий код дверей діє лише в цьому режимі. Як повернути: оберіть «Вдома».', 'Wat er gebeurt: de huisstand wordt ‘Gasten’; scènes en klimaat blijven zoals ze zijn. Hangt samen met: de gastcode van de deur werkt alleen in deze stand. Terugdraaien: kies ‘Thuis’.']
   };
-  var STAND_ICOON = { thuis: 'house', afwezig: 'log-out', nacht: 'moon', vakantie: 'luggage', gasten: 'users' };
   HV.blad({
     soort: 'huisstand', vrij: true, icoon: 'house', titel: ['Режим дому', 'Huisstand'],
     sub: function (ctx) { return HV.p(HV.huisstanden[ctx.staat.huisstand]); },

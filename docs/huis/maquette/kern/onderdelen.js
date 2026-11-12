@@ -55,8 +55,12 @@
   var actieAttrs = function (actie, gegevens) { return actie ? ' data-actie="' + h(actie) + '"' + HV.attrs(gegevens) : ''; };
 
   // ── Kleine bouwstenen ──
-  /** Кнопка. soort: 'hoofd' (одна основна дія, акцент) | 'gewoon' | 'stil' | 'gevaar'. */
+  /**
+   * Кнопка. soort: 'hoofd' (одна основна дія, акцент) | 'gewoon' | 'stil' | 'gevaar'.
+   * gedrukt: true — поточний стан («Замкнути», коли вже замкнено): натиснута кнопка з галочкою, без дії; не пунктир.
+   */
   o.knop = function (p) {
+    if (p.gedrukt) return '<button type="button" class="hv-knop hv-knop--' + (p.soort || 'gewoon') + (p.klein ? ' hv-knop--klein' : '') + (p.klas ? ' ' + p.klas : '') + '" aria-pressed="true" aria-disabled="true"' + (p.k ? ' data-k="' + h(p.k) + '"' : '') + '>' + ic('check', { maat: 's' }) + (p.tekst ? '<span>' + h(p.tekst) + '</span>' : '') + '</button>';
     return '<button type="button" class="hv-knop hv-knop--' + (p.soort || 'gewoon') + (p.klein ? ' hv-knop--klein' : '') + (p.klas ? ' ' + p.klas : '') + '"' + actieAttrs(p.actie, p.gegevens) + (p.uit ? ' aria-disabled="true"' : '') + (p.aria ? ' aria-label="' + h(p.aria) + '"' : '') + (p.k ? ' data-k="' + h(p.k) + '"' : '') + '>' +
       (p.icoon ? ic(p.icoon, { maat: 's' }) : '') + (p.tekst ? '<span>' + h(p.tekst) + '</span>' : '') + '</button>';
   };
@@ -102,12 +106,12 @@
     return '<span class="hv-versheid is-live"><span class="hv-versheid__stip" aria-hidden="true"></span><span>' + h(HV.woord.live()) + '</span></span>';
   };
 
-  /** Чип симуляції з колбою: «Симуляція ×60 · 14:30». kort — лише швидкість і час. */
+  /** Чип симуляції з колбою: «Симуляція ×60» / «пауза». kort — лише швидкість. Час дому показує герой, а не чип. */
   o.sim = function (w, opties) {
     var snel = w.pauze ? t('пауза', 'pauze') : '×' + w.snelheid;
     var kort = opties && opties.kort;
     return '<button type="button" class="hv-sim" data-actie="ga" data-naar="instellingen-simulator" aria-label="' + h(t('Симуляція, швидкість ', 'Simulatie, snelheid ') + snel + t(', час дому ', ', huistijd ') + HV.tijd(w.tijd)) + '">' + ic('flask-conical', { maat: 's' }) +
-      '<span>' + (kort ? '' : h(t('Симуляція', 'Simulatie')) + ' ') + h(snel) + '</span><span class="hv-punt" aria-hidden="true">·</span><span class="hv-sim__tijd">' + HV.tijd(w.tijd) + '</span></button>';
+      '<span>' + (kort ? '' : h(t('Симуляція', 'Simulatie')) + ' ') + h(snel) + '</span></button>';
   };
 
   /** Знак рівня дії зі словом: чутлива — око, небезпечна — трикутник, критична — восьмикутник. Звичайна — лише слово. */
@@ -138,13 +142,19 @@
   };
 
   // ── Schakelaar, segment, stapper ──
-  /** Коло-перемикач 40 px із ціллю ≥ 44. staat: 'wacht'|'onbereikbaar'|'verondersteld'|'verouderd'|'slaapt'. Без actie — пасивний знак. */
+  /**
+   * Коло-перемикач 40 px із ціллю ≥ 44. staat: 'wacht'|'bezig'|'mislukt'|'onbereikbaar'|'verondersteld'|'verouderd'|'slaapt'. Без actie — пасивний знак.
+   * ritueel: 'gevaarlijk'|'kritiek' — дія в поточному напрямі небезпечна чи критична: замість кола квадрат із подвійною рамкою
+   * (та сама форма, що в рейки, §9); дотик нічого не виконує сам — відкриває hv-gevaar через HV.doe. kritiek: true з actie — те саме, що ritueel:'kritiek'.
+   */
   o.schakel = function (p) {
-    var klas = 'hv-schakel' + (p.aan ? ' is-aan' : '') + (p.toon ? ' hv-toon-' + p.toon : '') + (p.staat ? ' is-' + p.staat : '') + (p.kritiek ? ' hv-schakel--kritiek' : '') + (p.klein ? ' hv-schakel--klein' : '');
+    var ritueel = p.ritueel || (p.kritiek && p.actie ? 'kritiek' : null);
+    var klas = 'hv-schakel' + (p.aan ? ' is-aan' : '') + (p.toon ? ' hv-toon-' + p.toon : '') + (p.staat ? ' is-' + p.staat : '') + (ritueel ? ' hv-schakel--ritueel hv-schakel--' + ritueel : '') + (p.klein ? ' hv-schakel--klein' : '');
     var icoon = p.staat === 'onbereikbaar' ? 'unplug' : p.icoon;
-    var teken = '<span class="hv-schakel__teken">' + ic(icoon, { klas: 'hv-schakel__ic' }) + (p.aftel != null ? '<svg class="hv-aftel__ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="21" pathLength="100" stroke-dasharray="' + Math.round(p.aftel * 100) + ' 100"/></svg>' : '') + '</span>';
-    if (!p.actie || p.staat === 'onbereikbaar' || p.kritiek) return '<span class="' + klas + ' is-passief"' + (p.aria ? ' role="img" aria-label="' + h(p.aria) + '"' : ' aria-hidden="true"') + '>' + teken + '</span>';
-    return '<button type="button" class="' + klas + '" role="switch" aria-checked="' + (p.aan ? 'true' : 'false') + '" aria-label="' + h(p.aria || '') + '"' + (p.staat === 'wacht' ? ' aria-busy="true"' : '') + actieAttrs(p.actie, p.gegevens) + '>' + teken + '</button>';
+    var teken = '<span class="hv-schakel__teken">' + ic(icoon, { klas: 'hv-schakel__ic' }) + (p.aftel != null && !ritueel ? '<svg class="hv-aftel__ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="21" pathLength="100" stroke-dasharray="' + Math.round(p.aftel * 100) + ' 100"/></svg>' : '') + '</span>';
+    if (!p.actie || p.staat === 'onbereikbaar') return '<span class="' + klas + ' is-passief"' + (p.aria ? ' role="img" aria-label="' + h(p.aria) + '"' : ' aria-hidden="true"') + '>' + teken + '</span>';
+    if (ritueel) return '<button type="button" class="' + klas + '" aria-haspopup="dialog" aria-label="' + h((p.aria || '') + ' — ' + (ritueel === 'kritiek' ? t('критична дія, з підтвердженням', 'kritieke actie, met bevestiging') : t('небезпечна дія, з підтвердженням', 'gevaarlijke actie, met bevestiging'))) + '"' + actieAttrs(p.actie, p.gegevens) + '>' + teken + '</button>';
+    return '<button type="button" class="' + klas + '" role="switch" aria-checked="' + (p.aan ? 'true' : 'false') + '" aria-label="' + h(p.aria || '') + '"' + (p.staat === 'wacht' || p.staat === 'bezig' ? ' aria-busy="true"' : '') + actieAttrs(p.actie, p.gegevens) + '>' + teken + '</button>';
   };
 
   /** Сегмент (одна з кількох): opties [{ id, label, icoon? }]. role=radiogroup, стрілки перемикають. */
@@ -247,7 +257,7 @@
         '<circle role="button" tabindex="0" class="hv-kleur__sector hv-kleur__midden' + (wit ? ' is-gekozen' : '') + '" aria-label="' + h(t('Білий', 'Wit')) + '" aria-pressed="' + (wit ? 'true' : 'false') + '" cx="100" cy="100" r="40" style="fill:' + lichtKleur(40, 0) + '"' + actieAttrs(p.actie, g({ tint: 40, verzadiging: 0 })) + '/></svg>';
     }
     return '<div class="hv-kleur" data-k="kleur">' + o.segment({ label: t('Спосіб вибору кольору', 'Manier van kleur kiezen'), waarde: wijze, actie: p.wijzeActie || 'kleur-wijze', gegevens: p.gegevens, opties: [
-      { id: 'voorkeuzes', label: t('Заготовки', 'Voorkeuzes') }, { id: 'schuiven', label: t('Повзунки', 'Schuifregelaars') }, { id: 'cirkel', label: t('Коло', 'Kleurcirkel') }] }) + lijf + '</div>';
+      { id: 'voorkeuzes', label: t('Готові', 'Voorkeuze') }, { id: 'schuiven', label: t('Повзунки', 'Schuiven') }, { id: 'cirkel', label: t('Коло', 'Cirkel') }] }) + lijf + '</div>';
   };
 
   /** Відлік: кільце довкола знака й «ще 14 хв». p: { rest (хв), totaal (хв), icoon, klaar } */
@@ -302,12 +312,14 @@
         break;
       case 'stopcontact': b.aan = !!st.aan; b.woord = aanUit(b.aan); b.waarde = st.aan ? HV.maat(st.vermogen, t('Вт', 'W')) : ''; b.schakel = { mogelijkheid: 'aan' }; break;
       case 'gordijn': case 'jaloezie': b.aan = st.positie > 0; b.woord = st.positie === 0 ? HV.woord.dicht() : st.positie === 100 ? HV.woord.open() : t('відчинено на', 'open op'); b.waarde = st.positie > 0 && st.positie < 100 ? HV.maat(st.positie, '%') : ''; b.niveau = st.positie; b.passief = true; break;
-      case 'garagedeur': case 'poort': b.aan = !!st.open; b.woord = st.open ? HV.woord.open() : HV.woord.dicht(); b.kritiek = true; b.icoon = a.soort === 'poort' ? 'fence' : 'warehouse'; break;
-      case 'slot': b.aan = !st.vergrendeld; b.woord = st.vergrendeld ? HV.woord.vergrendeld() : HV.woord.ontgrendeld(); b.icoon = st.vergrendeld ? 'lock-keyhole' : 'lock-keyhole-open'; break;
-      case 'alarmsysteem': b.aan = st.stand !== 'uit'; b.woord = HV.p(alarmWoord[st.stand]); b.icoon = st.stand === 'uit' ? 'shield' : 'shield-check'; break;
+      // ворота, замок і охорона мають знак дії: рівень залежить від напряму (ритуал вирішує o.tegel через HV.gevaar.vind)
+      case 'garagedeur': case 'poort': b.aan = !!st.open; b.woord = st.open ? HV.woord.open() : HV.woord.dicht(); b.kritiek = true; b.icoon = a.soort === 'poort' ? 'fence' : 'warehouse'; b.schakel = { mogelijkheid: 'open' }; break;
+      case 'slot': b.aan = !st.vergrendeld; b.woord = st.vergrendeld ? HV.woord.vergrendeld() : HV.woord.ontgrendeld(); b.icoon = st.vergrendeld ? 'lock-keyhole' : 'lock-keyhole-open'; b.schakel = { mogelijkheid: 'vergrendeld' }; break;
+      case 'alarmsysteem': b.aan = st.stand !== 'uit'; b.woord = HV.p(alarmWoord[st.stand]); b.icoon = st.stand === 'uit' ? 'shield' : 'shield-check'; b.schakel = { mogelijkheid: 'alarmstand', op: 'volledig', af: 'uit' }; break;
       case 'thermostaat': case 'vloerverwarming': case 'radiatorkraan':
         b.aan = !!st.verwarmt; b.woord = st.verwarmt ? HV.woord.verwarmt() : (st.aan === false ? HV.woord.uit() : t('тримає', 'houdt vast'));
         b.waarde = HV.maat(st.temperatuur, '°C', 1) + ' <span class="hv-naar">→</span> ' + HV.maat(st.doel, '°C', 1); b.passief = true; b.stap = { mogelijkheid: 'doel', stap: 0.5 };
+        b.waardeDelen = [HV.maat(st.temperatuur, '°C', 1), '<span class="hv-naar">→</span> ' + HV.maat(HV.gewenst(a, 'doel'), '°C', 1)];
         if (a.soort === 'vloerverwarming') { b.passief = false; b.schakel = { mogelijkheid: 'aan' }; b.aan = !!st.aan; }
         break;
       case 'airco': b.aan = !!st.aan; b.woord = st.aan ? HV.woord.koelt() : HV.woord.uit(); b.waarde = st.aan ? HV.maat(st.doel, '°C', 1) : ''; b.schakel = { mogelijkheid: 'aan' }; break;
@@ -353,57 +365,142 @@
   /** Чи видно знак автора на пристрої (10 хв часу дому або пів хвилини справжнього). */
   HV.makerZichtbaar = function (a) { return !!a.maker && (HV.staat.w.tijd - a.maker.tijd < 600000 || Date.now() - a.maker.echt < 30000); };
 
+  // ── Орган рівня (§7): яскравість, ціль температури, штори, гучність. Клас → можливість, межі, крок і одиниця. ──
+  var ORGAAN = {
+    licht: { mogelijkheid: 'helderheid', min: 0, max: 100, stap: 1, eenheid: '%' },
+    lichtgroep: { mogelijkheid: 'helderheid', min: 0, max: 100, stap: 1, eenheid: '%' },
+    thermostaat: { mogelijkheid: 'doel', min: 5, max: 30, stap: 0.5, eenheid: '°C', decimalen: 1 },
+    vloerverwarming: { mogelijkheid: 'doel', min: 5, max: 30, stap: 0.5, eenheid: '°C', decimalen: 1 },
+    radiatorkraan: { mogelijkheid: 'doel', min: 5, max: 30, stap: 0.5, eenheid: '°C', decimalen: 1 },
+    gordijn: { mogelijkheid: 'positie', min: 0, max: 100, stap: 1, eenheid: '%' },
+    jaloezie: { mogelijkheid: 'positie', min: 0, max: 100, stap: 1, eenheid: '%' },
+    speaker: { mogelijkheid: 'volume', min: 0, max: 100, stap: 1, eenheid: '%' },
+    speakergroep: { mogelijkheid: 'volume', min: 0, max: 100, stap: 1, eenheid: '%' }
+  };
+  /** Орган рівня пристрою або null: { mogelijkheid, min, max, stap, eenheid, decimalen, waarde } (waarde — бажане під час очікування). */
+  HV.niveauOrgaan = function (a) {
+    var org = ORGAAN[a.soort];
+    if (!org || (a.mog.indexOf(org.mogelijkheid) < 0 && !(a.leden && org.mogelijkheid === 'helderheid'))) return null;
+    var uit = {}; for (var k in org) uit[k] = org[k];
+    var aanWacht = a.wacht && a.wacht.mogelijkheid === 'aan' ? a.wacht.waarde : null;
+    if (org.mogelijkheid === 'helderheid') uit.waarde = (aanWacht === false || (aanWacht == null && !HV.kijk.isAan(a))) ? 0 : Number(HV.gewenst(a, 'helderheid')) || 0;
+    else uit.waarde = Number(HV.gewenst(a, org.mogelijkheid)) || 0;
+    return uit;
+  };
+
+  /** Наступне значення знака плитки в поточному напрямі (те, що виконає дотик). */
+  function volgende(a, sch) {
+    var nu = a.wacht && a.wacht.mogelijkheid === sch.mogelijkheid ? a.wacht.waarde : HV.huidige(a, sch.mogelijkheid);
+    if (sch.mogelijkheid === 'robot') return nu === 'start' ? (sch.af || 'dock') : (sch.op || 'start');
+    if (sch.mogelijkheid === 'alarmstand') return nu === 'uit' ? (sch.op || 'volledig') : 'uit';
+    return !nu;
+  }
+  var NIVEAU_RANG = { gewoon: 0, gevoelig: 1, gevaarlijk: 2, kritiek: 3 };
+  /**
+   * Рівень знака плитки: 'gevaarlijk'|'kritiek' — квадрат із подвійною рамкою (ритуал), інакше null — коло.
+   * Якщо стан припущено, застарів чи невідомий — форма вищого з двох напрямів (§9, maten.gedrag.ritueelTeken).
+   */
+  HV.ritueelVan = function (a, sch) {
+    if (!sch || !HV.gevaar || !HV.gevaar.vind) return null;
+    var heen = HV.gevaar.vind(a, sch.mogelijkheid, volgende(a, sch));
+    var niveau = heen ? heen.niveau : 'gewoon';
+    if (a.beschikbaar !== 'ok' && a.beschikbaar !== 'slaapt' || (HV.staat.w && HV.staat.w.gegevens !== 'live')) {
+      var terug = HV.gevaar.vind(a, sch.mogelijkheid, HV.huidige(a, sch.mogelijkheid));
+      if (terug && NIVEAU_RANG[terug.niveau] > NIVEAU_RANG[niveau]) niveau = terug.niveau;
+    }
+    return niveau === 'gevaarlijk' || niveau === 'kritiek' ? niveau : null;
+  };
+
+  /** Слово напряму для класів із ходом (стан «виконується / bezig»). */
+  function richtingWoord(a) {
+    var x = a.wacht;
+    if (x.mogelijkheid === 'vergrendeld') return x.waarde ? t('замикається', 'vergrendelt') : t('відмикається', 'ontgrendelt');
+    if (x.mogelijkheid === 'positie') return Number(x.waarde) >= Number(a.st.positie) ? t('відчиняється', 'gaat open') : t('зачиняється', 'gaat dicht');
+    return x.waarde ? t('відчиняється', 'gaat open') : t('зачиняється', 'gaat dicht');
+  }
+  /** Чи показувати «не виконано» (60 с справжнього часу або до наступної дії). */
+  HV.mislukt = function (a) { return !!a.mislukt && Date.now() - a.mislukt.echt < 60000; };
+
+  /** Рядок «значення · вік» із неподільних шматків: крапка належить наступному шматку й ховається на початку рядка. */
+  function waardeRegel(delen) {
+    return '<span class="hv-tegel__waarde"><span class="hv-tegel__regel">' + delen.filter(Boolean).map(function (d) {
+      return '<span class="hv-nb' + (d.klas ? ' ' + d.klas : '') + '">' + d.html + '</span>';
+    }).join('') + '</span></span>';
+  }
+
   /**
    * Плитка пристрою: коло перемикає, тіло відкриває аркуш. Заливка рівня — спостережене, риска — бажане.
-   * opties: { vorm:'2x1'|'2x2'|'1x1', metKamer }
+   * opties: { vorm:'2x1'|'2x2'|'4x2'|'1x1', metKamer, bediening }
+   *   '2x2' / '4x2' для пристрою з органом рівня — плитка з керуванням: «−» · hv-schuif · «+» (§7). Форму 2×2 сітка
+   *   hv-tegels дає лише коли колонка не вужча за 224 px; інакше плитка займає весь рядок (4×2) і показує число.
+   *   bediening: true — обрати форму з керуванням саму, якщо орган рівня є (для «Обраного» й сторінки кімнати).
    */
   o.tegel = function (a, opties) {
     var op = opties || {}, w = HV.staat.w, b = o.beeld(a);
-    var vorm = op.vorm || (b.niveau != null && a.soort === 'licht' ? '2x2' : '2x1');
-    var staat = a.wacht ? 'wacht' : (a.beschikbaar !== 'ok' ? a.beschikbaar : (w.gegevens === 'verouderd' ? 'verouderd' : null));
+    var orgaan = HV.niveauOrgaan(a);
+    var vorm = op.vorm || (op.bediening && orgaan ? '2x2' : (b.niveau != null && a.soort === 'licht' ? '2x2' : '2x1'));
     var dood = a.beschikbaar === 'onbereikbaar';
+    var bediening = (vorm === '2x2' || vorm === '4x2') && orgaan && !dood && w.gegevens !== 'geen';
+    // форму задає вміст: без органа рівня висока плитка лишила б порожнечу — тоді «рядок» 2×1
+    if ((vorm === '2x2' || vorm === '4x2') && !bediening) vorm = '2x1';
+    var lang = HV.p(a.naam).split(/\s+/).some(function (x) { return x.length > 12; });
+    var bezig = a.wacht && a.wacht.fase === 'bezig';
+    var mislukt = !a.wacht && HV.mislukt(a);
+    var staat = bezig ? 'bezig' : a.wacht ? 'wacht' : mislukt ? 'mislukt' : (a.beschikbaar !== 'ok' ? a.beschikbaar : (w.gegevens === 'verouderd' ? 'verouderd' : null));
     // бажане значення під час очікування (риска)
     var gewenstAan = a.wacht && (a.wacht.mogelijkheid === 'aan' || a.wacht.mogelijkheid === 'afspelen' || a.wacht.mogelijkheid === 'laden') ? a.wacht.waarde : null;
     var gewenstNiveau = a.wacht && a.wacht.mogelijkheid === 'helderheid' ? a.wacht.waarde : null;
     var aan = dood ? false : (gewenstAan != null ? gewenstAan : b.aan);
     var naam = HV.p(a.naam);
     var kamer = op.metKamer ? HV.staat.kamer(a.kamer) : null;
-    var woord = dood ? HV.woord.onbereikbaar() : a.wacht ? HV.woord.wacht() : b.woord;
+    var woord = dood ? HV.woord.onbereikbaar() : bezig ? richtingWoord(a) : a.wacht ? HV.woord.wacht() : mislukt ? t('не виконано', 'niet uitgevoerd') : b.woord;
     var staatWoord = !dood && !a.wacht && STAAT_WOORD[a.beschikbaar] ? HV.woord[STAAT_WOORD[a.beschikbaar]]() : '';
     var leeftijd = HV.kijk.leeftijd(a);
-    var waardeRegel = [];
-    if (woord) waardeRegel.push('<span class="hv-tegel__woord">' + h(woord) + '</span>');
-    if (b.waarde && !dood) waardeRegel.push('<span class="hv-tegel__getal">' + b.waarde + '</span>');
-    if (staatWoord) waardeRegel.push('<span class="hv-tegel__staat">' + h(staatWoord) + '</span>');
-    if (dood) waardeRegel.push('<span class="hv-tegel__oud">' + h(t('востаннє ', 'laatst ') + HV.tijd(a.gezien)) + '</span>');
-    else if (a.beschikbaar === 'verouderd' || w.gegevens !== 'live') waardeRegel.push('<span class="hv-tegel__oud">' + h(HV.oud(leeftijd)) + '</span>');
+    var delen = [];
+    if (mislukt) delen.push({ html: ic('circle-x', { maat: 's' }) + h(woord), klas: 'hv-tegel__mislukt' });
+    else if (woord) delen.push({ html: h(woord), klas: 'hv-tegel__woord' });
+    if (bezig && a.wacht.voortgang != null) delen.push({ html: HV.maat(Math.round(a.wacht.voortgang), '%'), klas: 'hv-tegel__getal' });
+    else if (!dood && !mislukt) {
+      // «→ ціль» на 4×2 стоїть праворуч великим числом — у рядку значення його ховає CSS (is-orgaan)
+      if (b.waardeDelen) b.waardeDelen.forEach(function (x, i) { delen.push({ html: x, klas: 'hv-tegel__getal' + (i ? ' hv-nb--pijl' + (bediening ? ' is-orgaan' : '') : '') }); });
+      // на 4×2 те саме число стоїть праворуч великим — у рядку значення воно зайве (is-orgaan ховає CSS)
+      else if (b.waarde) delen.push({ html: b.waarde, klas: 'hv-tegel__getal' + (bediening && orgaan.mogelijkheid !== 'doel' ? ' is-orgaan' : '') });
+    }
+    if (staatWoord) delen.push({ html: h(staatWoord), klas: 'hv-tegel__staat' });
+    if (dood) delen.push({ html: h(t('востаннє ', 'laatst ') + HV.tijd(a.gezien)), klas: 'hv-tegel__oud' });
+    else if (a.beschikbaar === 'verouderd' || w.gegevens !== 'live') delen.push({ html: h(HV.oud(leeftijd)), klas: 'hv-tegel__oud' });
     var ariaLijf = naam + (kamer ? ', ' + HV.p(kamer.naam) : '') + ': ' + (woord || '') + (staatWoord ? ', ' + staatWoord : '') + '. ' + t('Відкрити', 'Openen');
     var sch = b.schakel;
+    var ritueel = sch && !dood ? HV.ritueelVan(a, sch) : null;
     var schakel = o.schakel({
-      aan: aan, icoon: b.icoon, toon: b.toon, staat: staat, kritiek: b.kritiek, aftel: a.st.uitOm ? Math.max(0, Math.min(1, (a.st.uitOm - w.tijd) / 3600000)) : b.aftel,
-      actie: sch && !b.kritiek ? 'schakel' : null, gegevens: sch ? { doel: a.id, mogelijkheid: sch.mogelijkheid, op: sch.op, af: sch.af } : null,
+      aan: aan, icoon: b.icoon, toon: b.toon, staat: staat === 'mislukt' ? null : staat, ritueel: ritueel, aftel: a.st.uitOm ? Math.max(0, Math.min(1, (a.st.uitOm - w.tijd) / 3600000)) : b.aftel,
+      actie: sch ? 'schakel' : null, gegevens: sch ? { doel: a.id, mogelijkheid: sch.mogelijkheid, op: sch.op, af: sch.af } : null,
       aria: naam + (kamer ? ', ' + HV.p(kamer.naam) : '') + (sch ? '' : ': ' + woord)
     });
     var niveau = '';
-    if (b.niveau != null && !dood) {
+    if (b.niveau != null && !dood && !bediening) {
       niveau = '<span class="hv-tegel__niveau' + (b.toonNiveau ? ' hv-toon-' + b.toonNiveau : '') + '" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, b.niveau)) + '%"></i>' + (gewenstNiveau != null ? '<b style="left:' + gewenstNiveau + '%"></b>' : '') + '</span>';
     }
-    var stap = '';
-    if (vorm === '2x2' && !dood && a.mog.indexOf('helderheid') >= 0) {
-      stap = o.stapper({ actie: 'tegel-stap', gegevens: { doel: a.id, mogelijkheid: 'helderheid' }, stap: 10, label: naam, k: 'stap-' + a.id });
-    } else if (vorm === '2x2' && !dood && b.stap) {
-      stap = o.stapper({ actie: 'tegel-stap', gegevens: { doel: a.id, mogelijkheid: b.stap.mogelijkheid }, stap: b.stap.stap, label: naam, k: 'stap-' + a.id });
+    var orgaanHtml = '', groot = '';
+    if (bediening) {
+      var gewenstOrgaan = a.wacht && a.wacht.mogelijkheid === orgaan.mogelijkheid ? Number(HV.huidige(a, orgaan.mogelijkheid)) : null;
+      orgaanHtml = '<div class="hv-tegel__orgaan">' + o.schuif({ label: naam, waarde: orgaan.waarde, min: orgaan.min, max: orgaan.max, stap: orgaan.stap, eenheid: orgaan.eenheid, decimalen: orgaan.decimalen,
+        toon: orgaan.mogelijkheid === 'doel' ? (b.aan ? 'warm' : 'neutraal') : orgaan.mogelijkheid === 'helderheid' ? 'aan' : 'neutraal', actie: 'tegel-schuif', gegevens: { doel: a.id, mogelijkheid: orgaan.mogelijkheid },
+        gewenst: gewenstOrgaan, klas: 'hv-schuif--tegel', k: 'tegelschuif-' + a.id }) + '</div>';
+      // вимкнена лампа: великого «0 %» немає — стан уже названо словом «вимкнено»
+      groot = '<output class="hv-tegel__groot" aria-hidden="true">' + (orgaan.mogelijkheid === 'helderheid' && !orgaan.waarde ? '' : HV.maat(orgaan.waarde, orgaan.eenheid, orgaan.decimalen || 0)) + '</output>';
     }
     var altijd = HV.gevaar.altijdZwaar().filter(function (x) { return x.actie.soorten && x.actie.soorten.indexOf(a.soort) >= 0; })[0];
-    return '<div class="hv-tegel hv-tegel--' + vorm + (aan ? ' is-aan' : '') + (staat ? ' is-' + staat : '') + (b.toon ? ' hv-toon-' + b.toon : '') + (b.kritiek ? ' hv-tegel--kritiek' : '') + '" data-k="tegel-' + h(a.id) + '">' +
+    return '<div class="hv-tegel hv-tegel--' + vorm + (bediening ? ' hv-tegel--bediening' : '') + (lang && vorm === '2x1' ? ' hv-tegel--lang' : '') + (aan ? ' is-aan' : '') + (staat ? ' is-' + staat : '') + (b.toon ? ' hv-toon-' + b.toon : '') + (ritueel ? ' hv-tegel--ritueel' : '') + '" data-k="tegel-' + h(a.id) + '">' +
       (altijd ? '<span class="hv-tegel__altijd">' + ic(altijd.actie.niveau === 'kritiek' ? 'risico-kritiek' : 'risico-gevaarlijk', { maat: 'risico', titel: t('Десь стоїть «Завжди» для цієї дії', 'Hier staat ergens ‘Altijd’ voor deze actie') }) + '</span>' : '') +
       schakel +
       '<button type="button" class="hv-tegel__lijf" data-actie="blad" data-blad="apparaat:' + h(a.id) + '" aria-label="' + h(ariaLijf) + '">' +
       '<span class="hv-tegel__naam">' + h(naam) + '</span>' + (kamer ? '<span class="hv-tegel__kamer">' + h(HV.p(kamer.naam)) + '</span>' : '') +
-      '<span class="hv-tegel__waarde">' + waardeRegel.join('<span class="hv-punt" aria-hidden="true">·</span>') + '</span></button>' +
+      waardeRegel(delen) + '</button>' + groot +
       (HV.makerZichtbaar(a) && !a.wacht ? '<span class="hv-tegel__maker">' + o.maker(a.maker, { alleenTeken: true }) + '</span>' : '') +
-      stap + niveau + '</div>';
+      orgaanHtml + niveau + '</div>';
   };
+  HV.tegelWaardeRegel = waardeRegel;
 
   /** Картка кімнати: назва, температура, знак світла з лічильником, до трьох чипів-винятків, «−/+» цілі. */
   o.kamerkaart = function (kamer) {
@@ -416,21 +513,43 @@
       if (a.soort === 'contact' && a.st.open && HV.kijk.isVers(a)) chips.push(o.chip({ icoon: 'door-open', toon: 'let-op', tekst: HV.p(a.naam) + ': ' + HV.woord.open() }));
       else if (a.beschikbaar === 'onbereikbaar') chips.push(o.chip({ icoon: 'unplug', tekst: HV.p(a.naam) + ': ' + HV.woord.onbereikbaar() }));
       else if ((a.soort === 'rook' || a.soort === 'lek' || a.soort === 'co') && a.st.alarm) chips.push(o.chip({ icoon: 'alarm-smoke', toon: 'alarm', tekst: HV.p(a.naam) + ': ' + t('тривога', 'alarm') }));
-      else if ((a.soort === 'wasmachine' || a.soort === 'vaatwasser' || a.soort === 'droger') && a.st.loopt) chips.push(o.chip({ icoon: HV.paspoort.soorten[a.soort].icoon, tekst: HV.p(a.naam) + ': ' + HV.duur(a.st.rest) }));
+      // без датчика температури техніка стає головним фактом картки — чип не повторює її
+      else if ((a.soort === 'wasmachine' || a.soort === 'vaatwasser' || a.soort === 'droger') && a.st.loopt && temp) chips.push(o.chip({ icoon: HV.paspoort.soorten[a.soort].icoon, tekst: HV.p(a.naam) + ': ' + HV.duur(a.st.rest) }));
       else if ((a.soort === 'tv' && a.st.aan) || (a.soort === 'speaker' && a.st.speelt)) chips.push(o.chip({ icoon: HV.paspoort.soorten[a.soort].icoon, tekst: a.soort === 'tv' ? t('телевізор увімкнено', 'tv aan') : t('грає музика', 'muziek speelt') }));
     });
-    var tempHtml = temp ? (temp.beschikbaar === 'verouderd' ? '<span class="hv-kamerkaart__temp is-verouderd">' + HV.maat(temp.st.waarde, '°C', 1) + '</span>' : '<span class="hv-kamerkaart__temp">' + HV.maat(temp.st.waarde, '°C', 1) + '</span>') : '<span class="hv-kamerkaart__temp is-leeg" aria-label="' + h(HV.woord.onbekend()) + '">—</span>';
-    var sub = [];
-    if (lampen.length) sub.push(aan.length ? aan.length + ' ' + t('з', 'van') + ' ' + lampen.length + ' ' + HV.meervoud(lampen.length, ['лампи', 'ламп', 'ламп'], ['lamp', 'lampen']) : t('світло вимкнено', 'licht uit'));
-    if (temp && temp.beschikbaar === 'verouderd') sub.push(HV.woord.verouderd() + ' ' + HV.oud(HV.kijk.leeftijd(temp)));
-    else if (kamer.doel != null) sub.push(t('ціль ', 'doel ') + HV.getal(kamer.doel, 1) + ' °C');
+    // Без датчика температури рядка числа немає зовсім: головним стає перший спостережений факт (техніка, світло) 16/600.
+    var lichtFeit = lampen.length ? (aan.length ? aan.length + ' ' + t('з', 'van') + ' ' + lampen.length + ' ' + HV.meervoud(lampen.length, ['лампи', 'ламп', 'ламп'], ['lamp', 'lampen']) : t('світло вимкнено', 'licht uit')) : '';
+    var apparaatFeit = '';
+    HV.kijk.inKamer(kamer.id).some(function (a) {
+      if ((a.soort === 'wasmachine' || a.soort === 'vaatwasser' || a.soort === 'droger') && a.st.loopt) { apparaatFeit = HV.p(a.naam) + ': ' + HV.duur(a.st.rest); return true; }
+      if (a.soort === 'vloerverwarming' && a.st.aan) { apparaatFeit = HV.p(a.naam) + ': ' + HV.maatTekst(a.st.temperatuur, '°C', 1); return true; }
+      return false;
+    });
+    var tempHtml = '', feit = '', sub = [];
+    if (temp) {
+      tempHtml = '<span class="hv-kamerkaart__temp' + (temp.beschikbaar === 'verouderd' ? ' is-verouderd' : '') + '">' + HV.maat(temp.st.waarde, '°C', 1) + '</span>';
+      if (lichtFeit) sub.push(lichtFeit);
+      if (temp.beschikbaar === 'verouderd') sub.push(HV.woord.verouderd() + ' ' + HV.oud(HV.kijk.leeftijd(temp)));
+      else if (kamer.doel != null) sub.push(t('ціль ', 'doel ') + HV.getal(kamer.doel, 1) + ' °C');
+    } else {
+      feit = apparaatFeit || lichtFeit;
+      if (apparaatFeit && lichtFeit) sub.push(lichtFeit);
+    }
+    var lijfAria = h(HV.p(kamer.naam) + '. ' + t('Відкрити кімнату', 'Kamer openen'));
+    var kop = '<span class="hv-kamerkaart__kop">' + ic(kamer.icoon, { maat: 's' }) + '<span class="hv-kamerkaart__naam">' + h(HV.p(kamer.naam)) + '</span></span>';
+    // картка без жодного факту — компактна однорядкова: назва й шеврон
+    if (!temp && !feit && !chips.length) {
+      return '<article class="hv-kamerkaart is-kort" data-k="kamer-' + h(kamer.id) + '"><button type="button" class="hv-kamerkaart__lijf" data-actie="ga" data-naar="kamers-kamer-' + h(kamer.id) + '" aria-label="' + lijfAria + '">' +
+        kop + ic('chevron-right', { maat: 's', klas: 'hv-kamerkaart__pijl' }) + '</button></article>';
+    }
     return '<article class="hv-kamerkaart' + (aan.length ? ' is-licht' : '') + '" data-k="kamer-' + h(kamer.id) + '">' +
-      '<button type="button" class="hv-kamerkaart__lijf" data-actie="ga" data-naar="kamers-kamer-' + h(kamer.id) + '" aria-label="' + h(HV.p(kamer.naam) + '. ' + t('Відкрити кімнату', 'Kamer openen')) + '">' +
-      '<span class="hv-kamerkaart__kop">' + ic(kamer.icoon, { maat: 's' }) + '<span class="hv-kamerkaart__naam">' + h(HV.p(kamer.naam)) + '</span></span>' + tempHtml +
-      '<span class="hv-kamerkaart__sub">' + h(sub.join(' · ')) + '</span></button>' +
+      '<button type="button" class="hv-kamerkaart__lijf" data-actie="ga" data-naar="kamers-kamer-' + h(kamer.id) + '" aria-label="' + lijfAria + '">' + kop + tempHtml +
+      (feit ? '<span class="hv-kamerkaart__feit">' + h(feit) + '</span>' : '') +
+      (sub.length ? '<span class="hv-kamerkaart__sub"><span class="hv-tegel__regel">' + sub.map(function (x) { return '<span class="hv-nb">' + h(x) + '</span>'; }).join('') + '</span></span>' : '') + '</button>' +
       (lampen.length ? o.schakel({ aan: aan.length > 0, icoon: 'lightbulb', toon: 'aan', actie: 'kamer-licht', gegevens: { kamer: kamer.id }, aria: t('Світло: ', 'Licht: ') + HV.p(kamer.naam) }) : '') +
       (chips.length ? '<div class="hv-kamerkaart__chips">' + chips.join('') + '</div>' : '') +
-      (kamer.doel != null && w.gegevens !== 'geen' ? '<div class="hv-kamerkaart__doel">' + o.stapper({ actie: 'kamer-doel', gegevens: { kamer: kamer.id }, stap: 0.5, label: t('Ціль температури: ', 'Doeltemperatuur: ') + HV.p(kamer.naam), k: 'doel-' + kamer.id }) + '</div>' : '') +
+      // «−/+» цілі — лише коли є і ціль, і вимір
+      (kamer.doel != null && temp && w.gegevens !== 'geen' ? '<div class="hv-kamerkaart__doel">' + o.stapper({ actie: 'kamer-doel', gegevens: { kamer: kamer.id }, stap: 0.5, label: t('Ціль температури: ', 'Doeltemperatuur: ') + HV.p(kamer.naam), k: 'doel-' + kamer.id }) + '</div>' : '') +
       '</article>';
   };
 
@@ -478,12 +597,15 @@
   HV.profielKanInklappen = function () { return ['tv', 'strook', 'horloge', 'inkt'].indexOf(HV.profiel ? HV.profiel().id : '') < 0; };
 
   /** Герой: речення дому на небі, дата й час дому, паперові чипи одним рядом; праворуч — розріз. */
+  // Герой — власний контейнер (container: held): у вузькій колонці (відкритий аркуш, wand) він сам переходить на коротке
+  // речення й ховає розріз; штрих опадів живе всередині героя й прокручується разом із ним (§3).
   o.held = function (p) {
-    return '<section class="hv-held" data-k="held" aria-label="' + h(t('Як зараз удома', 'Hoe het thuis is')) + '">' +
+    return '<section class="hv-held' + (p.rechts ? ' heeft-beeld' : '') + '" data-k="held" aria-label="' + h(t('Як зараз удома', 'Hoe het thuis is')) + '">' +
+      '<span class="hv-held__neerslag" aria-hidden="true"></span><div class="hv-held__raam">' +
       '<div class="hv-held__tekst">' + (p.datum ? '<p class="hv-held__datum">' + p.datum + '</p>' : '') +
       '<h1 class="hv-held__zin"><span class="hv-held__vol">' + p.zin + '</span><span class="hv-held__kort">' + (p.kort || p.zin) + '</span></h1>' +
       (p.chips ? '<div class="hv-held__chips" role="list">' + p.chips + '</div>' : '') + '</div>' +
-      (p.rechts ? '<div class="hv-held__beeld">' + p.rechts + '</div>' : '') + '</section>';
+      (p.rechts ? '<div class="hv-held__beeld">' + p.rechts + '</div>' : '') + '</div></section>';
   };
 
   /** «Зараз важливо»: до трьох рядків «знак · факт · дія»; четвертий рядок — «Ще N у Журналі». */
@@ -543,7 +665,7 @@
       '<button type="button" class="hv-bericht__kop" aria-expanded="' + (open ? 'true' : 'false') + '" data-actie="bericht" data-bericht="' + h(r.id) + '">' +
       '<span class="hv-bericht__tijd">' + HV.tijd(r.tijd) + '</span>' +
       '<span class="hv-bericht__wat">' + h(HV.p(r.wat)) + (r.was && r.werd && !open ? ' <span class="hv-bericht__delta">' + h(HV.p(r.was) + ' → ' + HV.p(r.werd)) + '</span>' : '') + '</span>' +
-      '<span class="hv-bericht__wie">' + o.maker(r.maker) + (r.sim ? ic('flask-conical', { maat: 'maker', klas: 'hv-bericht__sim', titel: t('симуляція', 'simulatie') }) : '') + '</span>' +
+      '<span class="hv-bericht__wie">' + o.maker(r.maker) + (r.sim && !(opties && opties.zonderSim) ? ic('flask-conical', { maat: 'maker', klas: 'hv-bericht__sim', titel: t('симуляція', 'simulatie') }) : '') + '</span>' +
       ic('chevron-down', { maat: 's', klas: 'hv-bericht__pijl' }) + '</button>' + details + '</li>';
   };
 
