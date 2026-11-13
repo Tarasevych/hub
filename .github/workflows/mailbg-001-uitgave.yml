@@ -13,7 +13,7 @@ on:
       - 'src/mail/MailAchtergrond.tsx'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: mailbg-001-uitgave
@@ -29,8 +29,6 @@ jobs:
   controle-en-uitgave:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      GH_TOKEN: ${{ github.token }}
     services:
       postgres:
         image: postgres:16
@@ -44,13 +42,14 @@ jobs:
           --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - name: Джерела
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Відновити назву гілки
         run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
       - name: Підготувати середовище
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -72,16 +71,18 @@ jobs:
           git merge-base --is-ancestor 6ebc0e5ffae1bdeeef12ffd2f2fca3caf54f618a HEAD
       - name: Перевірити правила та походження
         run: |
+          set -o pipefail
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
-          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Перевірити пошту й способи входу
         run: |
-          node scripts/eenheidstests.mjs mail-achtergrond-001.test.ts
-          node scripts/eenheidstests.mjs mail-orbit-001
-          node scripts/eenheidstests.mjs apparaat-bevestiging-20261109.test.ts
-          node scripts/eenheidstests.mjs telegram-aanmelden-20261109.test.ts
-          node scripts/eenheidstests.mjs aanmeld-plaatsing-20261109.test.ts
+          set -o pipefail
+          node scripts/eenheidstests.mjs mail-achtergrond-001.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs mail-orbit-001 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs apparaat-bevestiging-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs telegram-aanmelden-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs aanmeld-plaatsing-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Перевірити типи та скласти застосунок
         run: |
           npx tsc --noEmit
@@ -99,7 +100,7 @@ jobs:
           export OWNER_EMAIL='eigenaar@example.invalid'
           node dist-server/migrate.mjs
           node dist-server/migrate.mjs
-          node scripts/eenheidstests.mjs apparaat-bevestiging-stroom-20261109.test.ts
+          node scripts/eenheidstests.mjs apparaat-bevestiging-stroom-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Упевнитися, що перевірки не змінили джерел
         run: |
           git diff --exit-code
@@ -110,12 +111,8 @@ jobs:
           set -euo pipefail
           VERSIE="$(date -u +%Y%m%d-%H%M%S)"
           echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
-          if gh release view "$VERSIE" >/dev/null 2>&1; then
-            echo 'Випуск з таким позначенням уже існує.' >&2
-            exit 1
-          fi
           node --input-type=module <<'JS'
-          import { writeFileSync } from 'node:fs';
+          import { readFileSync, writeFileSync } from 'node:fs';
           const e = process.env;
           const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
           const uk = {
@@ -145,11 +142,16 @@ jobs:
             beschrijving: { uk, nl }
           };
           writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          // SEC-002: cijfers uit de echte uitvoer van scripts/eenheidstests.mjs («N/M geslaagd (…)» per testbestand), geen letterlijke getallen.
+          // Кількість перевірок береться з фактичного виводу тестів цього запуску, а не з наперед записаного числа.
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів тестів або є невдалі перевірки — випуск зупинено.');
           const tests = {
-            geslaagd: 80, mislukt: 0, falend: [],
+            geslaagd: gemeten.geslaagd, mislukt: gemeten.mislukt, falend: [],
             uitleg: {
-              uk: 'Щонайменше 13 перевірок тла, 52 перевірки входу з іншого пристрою та 15 перевірок наявного поштового вибору. Також перевірено типи, складання, правила, повторні міграції й двопристроєвий перебіг на випробувальній базі.',
-              nl: 'Minstens 13 achtergrondcontroles, 52 controles voor bevestiging vanaf een ander apparaat en 15 controles van de bestaande e-mailkeuze. Ook typen, bouw, regels, herhaalde migraties en de stroom op een proefdatabank zijn gecontroleerd.'
+              uk: 'Перевірки тла, входу з іншого пристрою та наявного поштового вибору пройдено. Також перевірено типи, складання, правила, повторні міграції й двопристроєвий перебіг на випробувальній базі.' + ' Виміряно в цьому запуску — файл тестів і пройдено з усього: ' + gemetenLijst + '.',
+              nl: 'De controles van de achtergrond, de bevestiging vanaf een ander apparaat en de bestaande e-mailkeuze zijn geslaagd. Ook typen, bouw, regels, herhaalde migraties en de stroom op een proefdatabank zijn gecontroleerd.' + ' Gemeten in deze uitvoering — testbestand en geslaagd van totaal: ' + gemetenLijst + '.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
@@ -168,6 +170,73 @@ jobs:
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-codex-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
           printf 'MAILBG-001 · Живе тло пошти з лінзою та налаштуваннями, зі збереженням установлених можливостей. Встановлення лише після окремого підтвердження.\nФіксація змін: %s\nОснова: %s @ %s\n' "$GITHUB_SHA" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mailbg-001-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти результати перевірок
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mailbg-001-controle
+          path: uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    # SEC-002: єдине завдання з правом запису у сховище. Воно нічого не встановлює через npm, не збирає й не тестує:
+    # отримує вже перевірені пакунки як артефакт, звіряє контрольну суму й лише тоді оприлюднює випуск.
+    # Enige taak met schrijfrecht. Installeert, bouwt en test niets: haalt de gecontroleerde pakketten als artefact op en publiceert.
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mailbg-001-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          # SEC-002 (g01-3): de basis komt uit het artefact van de bouwtaak (zonder schrijfrecht, maar met npm en tests) — alleen aanvaarden
+          # als ze in de vertrouwde env van deze werkstroom staat (vaste basis of lijst van toegestane bases).
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_VERSIE}=${BASIS_COMMIT:-}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту збірки не входить до довірених значень цього процесу — оприлюднення зупинено. · De basis uit het bouwartefact staat niet in de vertrouwde waarden van deze werkstroom — publicatie gestopt.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
       - name: Знову звірити робочий сайт
         shell: bash
         run: |
@@ -183,6 +252,9 @@ jobs:
       - name: Оприлюднити випуск без встановлення
         id: publicatie
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh release create "$VERSIE" \
@@ -207,11 +279,7 @@ jobs:
           JS
       - name: Приховати непридатний випуск
         if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
-      - name: Зберегти результати перевірок
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mailbg-001-controle
-          path: uitvoer/
-          if-no-files-found: ignore

@@ -243,19 +243,69 @@ export const hostsVoorRuimte = (ruimte) => (ruimte === 'technisch' ? ADMIN_HOSTS
 export const PRIVE_MAX_MINUTEN = 366 * 24 * 60;
 export const maxMinutenVoorRuimte = (ruimte) => (ruimte === 'technisch' ? MAX_MINUTEN : PRIVE_MAX_MINUTEN);
 
-/** Profiel van een tabblad uit <meta name="mjn-profiel" content="gebruiker|technisch">. Alles behalve exact 'technisch' = 'gebruiker'. */
+/**
+ * Profiel van een tabblad uit <meta name="mjn-profiel" content="gebruiker|technisch" data-zeker="1|0">.
+ * SEC-002 extensie-03/04 (12.11.2026): GESLOTEN bij twijfel. Vroeger was alles behalve exact 'technisch' meteen 'gebruiker' — een
+ * technisch tabblad dat nog laadde, waarvan de status niet opgehaald kon worden of waarvan het achtergrondproces de stand kwijt was,
+ * gold daardoor als gebruikerstabblad en de AI van de privéruimte mocht het lezen en bedienen. Nu zijn er drie uitkomsten:
+ *   'technisch'  exact die inhoud;
+ *   'gebruiker'  exact die inhoud, en de site zegt er NIET bij dat zij het nog niet weet: de site zet data-zeker="0" zolang het
+ *                eerste geldige antwoord van /tech/status er niet is (laden, netwerkfout) en data-zeker="1" daarna;
+ *   'onbekend'   al het andere (geen meta, andere inhoud, data-zeker="0") → geen enkel slot mag het tabblad raken.
+ * `zeker` = de ruwe waarde van data-zeker (of false). Weglaten = geen voorbehoud: de waarde is al door een brug beoordeeld (het
+ * achtergrondproces krijgt 'gebruiker' | 'technisch' | 'onbekend'), of de pagina komt van een site-versie zonder dit attribuut.
+ */
 export const PROFIELEN = Object.freeze(['gebruiker', 'technisch']);
-export function parseProfiel(content) {
-  return typeof content === 'string' && content.trim() === 'technisch' ? 'technisch' : 'gebruiker';
+export const PROFIEL_ONBEKEND = 'onbekend';
+export function parseProfiel(content, zeker) {
+  const c = typeof content === 'string' ? content.trim() : '';
+  if (c === 'technisch') return 'technisch';
+  if (c === 'gebruiker' && zeker !== false && zeker !== '0') return 'gebruiker';
+  return PROFIEL_ONBEKEND;
 }
 /**
  * Mag een opdracht van slot `ruimte` een tabblad met dit profiel raken?
  *  technisch → alleen een tabblad dat NU in de technische modus is (profiel 'technisch');
- *  prive     → nooit een technisch tabblad (de AI van de gebruiker ziet nooit wat het beheer in dat tabblad toont).
+ *  prive     → alleen een tabblad dat ZEKER een gebruikerstabblad is (profiel 'gebruiker'); nooit een technisch en nooit een
+ *              onbekend tabblad (de AI van de gebruiker ziet nooit wat het beheer in dat tabblad toont).
  */
 export function profielToegestaan(ruimte, profiel) {
-  return ruimte === 'technisch' ? profiel === 'technisch' : profiel !== 'technisch';
+  return ruimte === 'technisch' ? profiel === 'technisch' : profiel === 'gebruiker';
 }
+
+// ---- 12.11.2026 (SEC-002 extensie-02 / extensie-09): zones die de SITE zelf afschermt voor een AI ----
+/** Hier mag een AI niets bedienen: knoppen die een AI rechten of uitvoering geven (goedkeuren, toestemming, «Відкрити доступ», step-up). */
+export const AI_GEEN_ACTIE = 'data-ai-geen-actie';
+/** Dit mag een AI niet LEZEN: koppelcodes, zojuist gemaakte tokens, herstelcodes (tekst op de pagina, geen invoerveld). */
+export const AI_VERBORGEN = 'data-ai-verborgen';
+export const AI_GEEN_ACTIE_FOUT = 'Refused: this control decides what an AI may do; only the person at the screen can use it';
+/**
+ * Ook zonder attribuut afgeschermd: de beslisvensters zelf. Ze worden via een portal in <body> getekend (src/platform/vensters.tsx,
+ * data-venster=<id>), dus een attribuut op de omringende pagina bereikt ze niet: het OAuth-venster «Доступ для …» en de
+ * koppelwizard van connector v2 (beide 'mcp-toestemming') en «Підтвердіть доступ» (step-up).
+ * Na de toets (g10a-2): ook de andere plekken waar een AI zichzelf rechten of uitvoering zou kunnen geven, op hun vaste wortel-
+ * attributen (dus ook in schermen die zelf nog geen data-ai-geen-actie zetten): toestemmingen per apparaat en sets (data-ai-grants),
+ * de wachtrij «Запити ШІ на підтвердження» (bevestigen, weigeren, keuzes, Google-toegang), scopes van een verbinding (data-toegang),
+ * schakelaars van de site, AI verbinden/duur, het bord met rechten per klant en de schakelaar «browser voor AI».
+ */
+export const AI_GEEN_ACTIE_SELECTOR = [`[${AI_GEEN_ACTIE}]`, '[data-venster="mcp-toestemming"]', '[data-venster="bevestig-toegang"]', '#bevestig-toegang-wortel',
+  '[data-ai-grants]', '[data-ab-bevestig]', '[data-ab-weiger]', '.ab-keuzes', '[data-ab-google]', '[data-toegang]', '[data-site-schakelaars]',
+  '[data-ai-verbinden]', '[data-agent-bord]', '[data-browser-ai-schakelaar]'].join(', ');
+const binnen = (el, sel) => { try { return !!(el && typeof el.closest === 'function' && el.closest(sel)); } catch { return false; } };
+/** Staat dit element in (of is het zelf) een zone waar een AI niets mag bedienen? */
+export const inAiGeenActie = (el) => binnen(el, AI_GEEN_ACTIE_SELECTOR);
+/** Enter in een veld verstuurt het formulier: dat telt als bedienen van een afgeschermde knop als het formulier er een bevat. */
+export function formulierMetAiGeenActie(el) {
+  try { const f = el && el.form; return !!(f && (f.hasAttribute(AI_GEEN_ACTIE) || (typeof f.querySelector === 'function' && f.querySelector(AI_GEEN_ACTIE_SELECTOR)))); } catch { return false; }
+}
+/**
+ * Na de toets (g10a-3): niet alleen [data-ai-verborgen], ook de andere eenmalig getoonde geheimen op hun vaste attributen/klassen —
+ * token van een nieuwe MCP-verbinding (AiVerbinden), token van het bord (AgentBord), toegangscode (Toegangscodes), API-sleutel
+ * (ApiPlatformWeergave), TOTP-sleutel (toegangslaag, aanmeld-vnext), nieuwe herstelcodes en het tijdelijke wachtwoord.
+ */
+export const AI_VERBORGEN_SELECTOR = [`[${AI_VERBORGEN}]`, '[data-vers-token]', '[data-token-eenmaal]', '.toegangscode-code', '[data-api-plaintext-once]',
+  '.access-plane-secret', '.amv-geheim', '[data-herstel-nieuw]', '.herstel-raster', '.access-plane-recovery-codes'].join(', ');
+export const inAiVerborgen = (el) => binnen(el, AI_VERBORGEN_SELECTOR);
 /** Adres binnen een ontgrendeling van `ruimte`: exacte host ∈ domeinen én ∈ hosts van die ruimte (prive dus nooit admin.*). */
 export function adresInRuimte(ruimte, url, domeinen) {
   if (!hostToegestaan(url, domeinen)) return false;

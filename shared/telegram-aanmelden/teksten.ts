@@ -7,12 +7,13 @@ export const t = (x: BotTekst, taal: Taal | 'beide'): string => (taal === 'beide
 
 export const VOETREGEL: BotTekst = { uk: '🔒 Я ніколи не прошу паролів чи кодів.', nl: '🔒 Ik vraag nooit om wachtwoorden of codes.' };
 
-export const OPDRACHTEN = ['start', 'status', 'aanmeldingen', 'koppelen', 'ontkoppelen', 'taal', 'hulp'] as const;
+export const OPDRACHTEN = ['start', 'status', 'aanmeldingen', 'sessies', 'koppelen', 'ontkoppelen', 'taal', 'hulp'] as const;
 export type Opdracht = typeof OPDRACHTEN[number];
 export const OPDRACHT_OMSCHRIJVING: Record<Opdracht, BotTekst> = {
   start: { uk: 'Почати й обрати мову', nl: 'Beginnen en taal kiezen' },
   status: { uk: 'Мої прив’язки та їхній стан', nl: 'Mijn koppelingen en hun stand' },
   aanmeldingen: { uk: 'Останні входи на сайт', nl: 'Laatste aanmeldingen op de site' },
+  sessies: { uk: 'Активні сеанси й завершення', nl: 'Actieve sessies en beëindigen' },
   koppelen: { uk: 'Як прив’язати цей Telegram', nl: 'Hoe deze Telegram te koppelen' },
   ontkoppelen: { uk: 'Відв’язати цей Telegram', nl: 'Deze Telegram ontkoppelen' },
   taal: { uk: 'Змінити мову бота', nl: 'Taal van de bot wijzigen' },
@@ -27,8 +28,8 @@ export const TEKST = {
   },
   taalGekozen: { uk: '✅ Мову бота змінено на українську. Мова сайту не змінюється.', nl: '✅ De taal van de bot is nu Nederlands. De taal van de site verandert niet.' },
   welkom: {
-    uk: 'Вітаю! Це офіційний бот сайту «Мій простір» (id.tarasevych.com).\n\nЩо я вмію:\n• підтверджувати ваш вхід на сайт;\n• підтверджувати важливі дії;\n• показувати сповіщення про вхід і зміни.\n\nЩоб почати, прив’яжіть цей Telegram на сайті: «Налаштування» → «Способи входу» → «Прив’язати Telegram».',
-    nl: 'Welkom! Dit is de officiële bot van «Mijn Ruimte» (id.tarasevych.com).\n\nWat ik doe:\n• uw aanmelding op de site bevestigen;\n• belangrijke handelingen bevestigen;\n• meldingen over aanmeldingen en wijzigingen tonen.\n\nKoppel deze Telegram eerst op de site: «Instellingen» → «Aanmeldmethoden» → «Telegram koppelen».',
+    uk: 'Вітаю! Це офіційний бот сайту «Мій простір» (tarasevych.com).\n\nЩо я вмію:\n• підтверджувати ваш вхід на сайт;\n• підтверджувати важливі дії;\n• показувати сповіщення про вхід, активні сеанси й зміни.\n\nЩоб почати, прив’яжіть цей Telegram на сайті: «Налаштування» → «Способи входу» → «Прив’язати Telegram».',
+    nl: 'Welkom! Dit is de officiële bot van «Mijn Ruimte» (tarasevych.com).\n\nWat ik doe:\n• uw aanmelding op de site bevestigen;\n• belangrijke handelingen bevestigen;\n• meldingen over aanmeldingen, actieve sessies en wijzigingen tonen.\n\nKoppel deze Telegram eerst op de site: «Instellingen» → «Aanmeldmethoden» → «Telegram koppelen».',
   },
   koppelUitleg: {
     uk: 'Прив’язати Telegram можна лише з уже відкритого сайту, ніколи звідси. Відкрийте «Способи входу» на сайті й натисніть «Прив’язати Telegram». Так ніхто чужий не прив’яже свій Telegram до вашого облікового запису.',
@@ -49,18 +50,23 @@ export const TEKST = {
   gekoppeld: { uk: '✅ Telegram прив’язано до облікового запису «{account}».', nl: '✅ Telegram is gekoppeld aan het account «{account}».' },
   nietGekoppeld: { uk: 'Цей Telegram ще не прив’язано до жодного облікового запису. Команда /koppelen пояснить, як це зробити.', nl: 'Deze Telegram is nog aan geen enkel account gekoppeld. /koppelen legt uit hoe.' },
   welkAccount: { uk: 'До якого облікового запису увійти?', nl: 'Bij welk account aanmelden?' },
+  // SEC-002 (integraties-04): «новий» = цей оглядач ще ніколи не входив до облікового запису (власна cookie пристрою), а не лише інша назва оглядача.
+  inlogNieuwApparaat: {
+    uk: '⚠️ НОВИЙ пристрій: з цього оглядача ще ніколи не входили до вашого облікового запису. Якщо вхід почали не ви (наприклад, вам надіслали посилання й попросили «підтвердити»), натисніть «⛔ Це не я».',
+    nl: '⚠️ NIEUW apparaat: vanuit deze browser is nog nooit op uw account aangemeld. Bent u niet zelf begonnen met aanmelden (bijv. u kreeg een link met de vraag om te «bevestigen»), tik dan «⛔ Dit ben ik niet».',
+  },
   inlogVraag: {
-    uk: '🔐 Запит на вхід\n\nХто: {account}\nЩо: вхід на сайт «Мій простір»\nКоли: {tijd}\nЗвідки: {apparaat}\n\nЩо це означає: хтось (сподіваємось, ви) натиснув «Увійти через Telegram» на сайті.\nЩо далі: якщо це ви, натисніть «✅ Це я, увійти». Якщо ні, натисніть «⛔ Це не я», і вхід буде заблоковано.',
-    nl: '🔐 Aanmeldverzoek\n\nWie: {account}\nWat: aanmelden op «Mijn Ruimte»\nWanneer: {tijd}\nVanwaar: {apparaat}\n\nWat dit betekent: iemand (hopelijk u) koos «Aanmelden met Telegram» op de site.\nWat nu: bent u het, tik dan «✅ Ik ben het, aanmelden». Zo niet, tik «⛔ Dit ben ik niet» en de aanmelding wordt geblokkeerd.',
+    uk: '🔐 Запит на вхід у «Мій простір»\n\nХто: {account}\nTelegram: {telegram}\nСторінка: {dienst}\nПристрій: {apparaat}\nМережа: {netwerk}\nЗберегти обліковий запис: {onthouden}\nЧас (Брюссель): {tijd}\n\nЯкщо це ви — натисніть «✅ Це я, увійти». Якщо ні — натисніть «⛔ Це не я», і спробу буде заблоковано.',
+    nl: '🔐 Aanmeldverzoek voor «Mijn Ruimte»\n\nWie: {account}\nTelegram: {telegram}\nPagina: {dienst}\nApparaat: {apparaat}\nNetwerk: {netwerk}\nAccount onthouden: {onthouden}\nTijd (Brussel): {tijd}\n\nBent u dit zelf, tik dan «✅ Ik ben het, aanmelden». Zo niet, tik «⛔ Dit ben ik niet» en de poging wordt geblokkeerd.',
   },
   bevestigVraag: {
-    uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nКоли: {tijd}\n\nЩо це означає: на сайті потрібне ваше підтвердження цієї дії.\nЩо далі: якщо це ви, натисніть «✅ Підтвердити». Якщо ні, «⛔ Це не я».',
-    nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nWanneer: {tijd}\n\nWat dit betekent: de site vraagt uw bevestiging voor deze handeling.\nWat nu: bent u het, tik «✅ Bevestigen». Zo niet, «⛔ Dit ben ik niet».',
+    uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nПристрій: {apparaat}\nМережа: {netwerk}\nКоли: {tijd}\n\nНа сайті потрібне ваше підтвердження цієї дії.\nЯкщо це ви, натисніть «✅ Підтвердити». Якщо ні, «⛔ Це не я».',
+    nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nApparaat: {apparaat}\nNetwerk: {netwerk}\nWanneer: {tijd}\n\nDe site vraagt uw bevestiging voor deze handeling.\nBent u het, tik «✅ Bevestigen». Zo niet, «⛔ Dit ben ik niet».',
   },
   // APPARAAT-001: kaart met symbolen — op het scherm van de site is één van deze symbolen uitgelicht; dat tikt u hier.
   bevestigVraagSymbool: {
-    uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nКоли: {tijd}\nЗвідки: {apparaat}\n\nНа екрані сайту виділено один символ. Натисніть ТОЙ САМИЙ символ нижче. Є лише одна спроба: інший символ скасує дію.\nЯкщо це не ви — натисніть «⛔ Це не я».',
-    nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nWanneer: {tijd}\nVanwaar: {apparaat}\n\nOp het scherm van de site is één symbool uitgelicht. Tik HETZELFDE symbool hieronder. U hebt één poging: een ander symbool annuleert de handeling.\nBent u het niet, tik «⛔ Dit ben ik niet».',
+    uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nПристрій: {apparaat}\nМережа: {netwerk}\nКоли: {tijd}\n\nНа екрані сайту виділено один символ. Натисніть ТОЙ САМИЙ символ нижче. Є лише одна спроба: інший символ скасує дію.\nЯкщо це не ви — натисніть «⛔ Це не я».',
+    nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nApparaat: {apparaat}\nNetwerk: {netwerk}\nWanneer: {tijd}\n\nOp het scherm van de site is één symbool uitgelicht. Tik HETZELFDE symbool hieronder. U hebt één poging: een ander symbool annuleert de handeling.\nBent u het niet, tik «⛔ Dit ben ik niet».',
   },
   symboolFout: { uk: '⛔ Інший символ — дію скасовано. На сайті можна почати знову.', nl: '⛔ Een ander symbool — de handeling is geannuleerd. Op de site kunt u opnieuw beginnen.' },
   knopJaInloggen: { uk: '✅ Це я, увійти', nl: '✅ Ik ben het, aanmelden' },
@@ -68,6 +74,8 @@ export const TEKST = {
   knopNietIk: { uk: '⛔ Це не я', nl: '⛔ Dit ben ik niet' },
   knopWasIk: { uk: '✅ Це був я', nl: '✅ Dat was ik' },
   knopOpenSite: { uk: '🌐 Відкрити на сайті', nl: '🌐 Openen op de site' },
+  knopTerugSite: { uk: '↩️ Повернутися на сайт', nl: '↩️ Terug naar Mijn Ruimte' },
+  sessieBeeindigd: { uk: '🛑 Сеанс на цьому пристрої завершено.', nl: '🛑 De sessie op dit apparaat is beëindigd.' },
   knopOpnieuw: { uk: '🔄 Спробувати ще', nl: '🔄 Opnieuw proberen' },
   knopAnnuleren: { uk: '❌ Скасувати', nl: '❌ Annuleren' },
   knopOntkoppelBevestig: { uk: '⚠️ Так, відв’язати', nl: '⚠️ Ja, ontkoppelen' },
@@ -101,8 +109,8 @@ export const TEKST = {
   ontkoppeld: { uk: '✅ Відв’язано.', nl: '✅ Ontkoppeld.' },
   laatsteMethode: { uk: '⛔ Це ваш останній спосіб входу, тому його не можна відв’язати. Спершу додайте інший.', nl: '⛔ Dit is uw laatste aanmeldmethode en kan dus niet ontkoppeld worden. Voeg eerst een andere toe.' },
   hulp: {
-    uk: 'ℹ️ Довідка\n\n/status — мої прив’язки\n/aanmeldingen — останні входи\n/koppelen — як прив’язати\n/ontkoppelen — відв’язати\n/taal — мова бота\n\nБезпека: я ніколи не прошу паролів, кодів чи номерів карток. Таємний код вводиться лише на сайті. Посилання від мене ведуть тільки на id.tarasevych.com.',
-    nl: 'ℹ️ Hulp\n\n/status — mijn koppelingen\n/aanmeldingen — laatste aanmeldingen\n/koppelen — hoe koppelen\n/ontkoppelen — ontkoppelen\n/taal — taal van de bot\n\nVeiligheid: ik vraag nooit om wachtwoorden, codes of kaartnummers. De geheime code typt u alleen op de site. Mijn links gaan alleen naar id.tarasevych.com.',
+    uk: 'ℹ️ Довідка\n\n/status — мої прив’язки\n/aanmeldingen — останні входи\n/sessies — активні сеанси й завершення\n/koppelen — як прив’язати\n/ontkoppelen — відв’язати\n/taal — мова бота\n\nБезпека: я ніколи не прошу паролів, кодів чи номерів карток. Таємний код вводиться лише на сайті. Посилання від мене ведуть тільки на *.tarasevych.com.',
+    nl: 'ℹ️ Hulp\n\n/status — mijn koppelingen\n/aanmeldingen — laatste aanmeldingen\n/sessies — actieve sessies en beëindigen\n/koppelen — hoe koppelen\n/ontkoppelen — ontkoppelen\n/taal — taal van de bot\n\nVeiligheid: ik vraag nooit om wachtwoorden, codes of kaartnummers. De geheime code typt u alleen op de site. Mijn links gaan alleen naar *.tarasevych.com.',
   },
   onbekend: { uk: 'Я не розумію цього повідомлення. Команда /hulp покаже, що я вмію.', nl: 'Ik begrijp dit bericht niet. /hulp toont wat ik kan.' },
   testBericht: { uk: '✅ Пробне повідомлення: бот налаштовано й він працює.', nl: '✅ Testbericht: de bot is ingesteld en werkt.' },

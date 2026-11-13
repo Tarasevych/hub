@@ -2,6 +2,7 @@
 // Alleen lezen. De handtekening wordt getest met de officiële AWS-voorbeeldwaarden (tests/eenheid/verbinding-adapters-20261029.test.ts).
 import { createHash, createHmac } from 'node:crypto';
 import { alleenHttps, httpFout, type Haal, type Uitslag } from './gemeen';
+import { xmlBlokken } from '../../shared/xml-blokken';
 
 const sha = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 const hmac = (k: Buffer | string, s: string) => createHmac('sha256', k).update(s, 'utf8').digest();
@@ -37,6 +38,8 @@ export async function s3Lijst(haal: Haal, eindpunt: string, emmer: string, sleut
   const tekst = await r.text();
   if (r.status !== 200) { const code = /<Code>([^<]+)<\/Code>/.exec(tekst)?.[1]; return { ok: false, fout: code === 'NoSuchBucket' ? 'S3_EMMER_NIET_GEVONDEN' : code === 'SignatureDoesNotMatch' || code === 'InvalidAccessKeyId' ? 'S3_TOEGANG_GEWEIGERD' : httpFout('S3', r.status), detail: code }; }
   if (!/<ListBucketResult/.test(tekst)) return { ok: false, fout: 'S3_ANTWOORD_ONGELDIG' };
-  const objecten = (tekst.match(/<Contents>[\s\S]*?<\/Contents>/g) || []).map((b) => ({ sleutel: /<Key>([^<]*)<\/Key>/.exec(b)?.[1] || '', grootte: Number(/<Size>(\d+)<\/Size>/.exec(b)?.[1] || 0), gewijzigd: /<LastModified>([^<]*)</.exec(b)?.[1] || '' }));
+  // SEC-002 (integraties-11): lineair (shared/xml-blokken.ts) in plaats van `/<Contents>[\s\S]*?<\/Contents>/g`, dat kwadratisch
+  // was op een antwoord vol «<Contents>» zonder afsluitende tag; hoogstens 1000 objecten (de grens van max-keys).
+  const objecten = xmlBlokken(tekst, 'Contents', 1000).map((b) => ({ sleutel: /<Key>([^<]*)<\/Key>/.exec(b)?.[1] || '', grootte: Number(/<Size>(\d+)<\/Size>/.exec(b)?.[1] || 0), gewijzigd: /<LastModified>([^<]*)</.exec(b)?.[1] || '' }));
   return { ok: true, waarde: { objecten, afgekapt: /<IsTruncated>true<\/IsTruncated>/.test(tekst) } };
 }

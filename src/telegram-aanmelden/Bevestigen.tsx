@@ -9,6 +9,7 @@ import { BevestigingNodig, foutTekst, tgPost, type Ctx, type Nodig } from './api
 import TelegramLogo from './TelegramLogo';
 import { METHODE_NAMEN } from '../../shared/telegram-aanmelden/beleid';
 import { tekstIn } from '../../shared/telegram-aanmelden/model';
+import { aanmeldPauzeBericht, useAftelPauze } from '../aanmeld-pauze';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
@@ -70,7 +71,12 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
   const [info, setInfo] = useState('');
   const [code, setCode] = useState('');
   const [gedaan, setGedaan] = useState<string[]>([]);
+  const [telegramPoging, setTelegramPoging] = useState(0);
   const { bezig, doe } = useEenmalig();
+  const { actief: pauzeActief, resterend: pauzeRest, zojuistVrij: pauzeVrij, limiet: pauzeLimiet, startPauze, vangPauze, wis: wisPauze } = useAftelPauze();
+  const pauzeTekst = pauzeActief || pauzeVrij
+    ? aanmeldPauzeBericht(Math.max(1, pauzeRest), lang, 'bevestig', pauzeLimiet)
+    : null;
   const verzoek = useRef('');
   const rest = nodig.ontbreekt.filter((m) => !gedaan.includes(m));
 
@@ -108,21 +114,31 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
           t = window.setTimeout(kijk, 2000);
         };
         t = window.setTimeout(kijk, 1500);
-      } catch (e) { if (actief) setFout(foutTekst(lang, e)); }
+      } catch (e) {
+        if (actief) {
+          const p = vangPauze(e);
+          if (!p.isPauze) setFout(foutTekst(lang, e));
+        }
+      }
     })();
     return () => { actief = false; window.clearTimeout(t); };
-  }, [stap]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stap, telegramPoging, vangPauze]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const codeSturen = () => doe(async () => {
+    if (pauzeActief) return;
     setFout('');
     try {
       const r = await tgPost<{ ok: boolean; uitkomst: string }>(ctx, '/api/owner/telegram/bevestiging/code', { actie: nodig.actie, code });
       setCode('');
-      if (r.ok) { volgende('code'); return; }
-      setFout(r.uitkomst === 'pauze' ? tr(lang, 'Забагато невдалих спроб. Код тимчасово призупинено — спробуйте пізніше або іншим способом.', 'Te veel mislukte pogingen. De code is tijdelijk gepauzeerd — probeer later of op een andere manier.')
-        : r.uitkomst === 'uit' ? tr(lang, 'Код вимкнено після багатьох помилок. Відновіть його у «Способах входу» з ключем доступу.', 'De code is na te veel fouten uitgeschakeld. Herstel hem bij «Aanmeldmethoden» met uw toegangssleutel.')
-          : tr(lang, 'Код не підходить. Перевірте й спробуйте ще раз.', 'De code klopt niet. Controleer en probeer opnieuw.'));
-    } catch (e) { setFout(foutTekst(lang, e)); }
+      if (r.ok) { wisPauze(); volgende('code'); return; }
+      if (r.uitkomst === 'pauze') { startPauze(60); return; }
+      setFout(r.uitkomst === 'uit'
+        ? tr(lang, 'Код вимкнено після багатьох помилок. Відновіть його у «Способах входу» з ключем доступу.', 'De code is na te veel fouten uitgeschakeld. Herstel hem bij «Aanmeldmethoden» met uw toegangssleutel.')
+        : tr(lang, 'Код не підходить. Перевірте й спробуйте ще раз.', 'De code klopt niet. Controleer en probeer opnieuw.'));
+    } catch (e) {
+      const p = vangPauze(e);
+      if (!p.isPauze) setFout(foutTekst(lang, e));
+    }
   });
 
   const methoden = nodig.ontbreekt.map((m) => tekstIn(METHODE_NAMEN[m as keyof typeof METHODE_NAMEN] ?? [m, m], lang)).join(' + ');
@@ -135,7 +151,8 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
         `Voor deze handeling vragen uw instellingen: ${methoden}. Zo kan niemand anders dit namens u doen, ook niet met toegang tot deze browser.`)}</p>
       {stap === 'telegram' && <div className='tga-blok'>
         <p>{info || tr(lang, 'Надсилаємо запит у Telegram…', 'Verzoek naar Telegram sturen…')}</p>
-        {!fout && <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Чекаємо на вашу відповідь у Telegram…', 'Wachten op uw antwoord in Telegram…')}</p>}
+        {!fout && !pauzeActief && <p className='tga-wacht'><span className='tga-draai' aria-hidden='true' /> {tr(lang, 'Чекаємо на вашу відповідь у Telegram…', 'Wachten op uw antwoord in Telegram…')}</p>}
+        {(fout || pauzeActief || pauzeVrij) && !verzoek.current && <button type='button' className='tga-knop tga-knop-hoofd' disabled={pauzeActief} onClick={() => { if (!pauzeActief) { setFout(''); setTelegramPoging((n) => n + 1); } }}>{pauzeActief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Спробувати ще раз', 'Opnieuw proberen')}</button>}
         {nodig.ontbreekt.includes('code') && <p className='tga-klein'>{tr(lang, 'Потім ще попросимо ваш таємний код.', 'Daarna vragen we nog uw geheime code.')}</p>}
       </div>}
       {stap === 'apparaat' && <div className='tga-blok'>
@@ -151,9 +168,10 @@ function BevestigVenster({ ctx, lang, nodig, klaar }: { ctx: Ctx; lang: Lang; no
         <label htmlFor='tga-bev-code'>{tr(lang, 'Ваш таємний код', 'Uw geheime code')}</label>
         <input id='tga-bev-code' type='password' inputMode='text' autoComplete='off' value={code} onChange={(e) => setCode(e.target.value)} maxLength={64} autoFocus />
         <p className='tga-klein'>{tr(lang, 'Ніколи не надсилайте цей код у чат Telegram — бот його одразу видалить і вимкне код.', 'Stuur deze code nooit in de Telegram-chat — de bot verwijdert hem meteen en zet de code uit.')}</p>
-        <button type='submit' className='tga-knop tga-knop-hoofd' disabled={bezig || code.length < 4}>{tr(lang, 'Підтвердити', 'Bevestigen')}{bezig && <span className='tga-draai' aria-hidden='true' />}</button>
+        <button type='submit' className='tga-knop tga-knop-hoofd' disabled={bezig || pauzeActief || code.length < 4}>{pauzeActief && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Підтвердити', 'Bevestigen')}{bezig && <span className='tga-draai' aria-hidden='true' />}</button>
       </form>}
-      {fout && <p className='tga-fout' role='alert'>{fout}</p>}
+      {pauzeTekst && <p className={pauzeActief ? 'tga-fout' : 'tga-klein'} role='status' aria-live='polite'>{pauzeActief ? `${pauzeTekst.kop}. ${pauzeTekst.uitleg}` : pauzeTekst.vrij}</p>}
+      {fout && !pauzeActief && <p className='tga-fout' role='alert'>{fout}</p>}
       <div className='tga-rij'><button type='button' className='tga-knop' onClick={() => klaar(false)}>{tr(lang, 'Скасувати — нічого не змінювати', 'Annuleren — niets wijzigen')}</button></div>
     </div>
   </div>;

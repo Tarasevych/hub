@@ -1,6 +1,7 @@
 // WebDAV / Nextcloud (RFC 4918): verbindingscontrole en maplijst via PROPFIND Depth: 1. Alleen lezen.
 // Nextcloud: adres https://<host>/remote.php/dav/files/<gebruiker>/ met een app-wachtwoord (Login Flow v2 levert er een).
 import { alleenHttps, httpFout, type Haal, type Uitslag } from './gemeen';
+import { xmlBlokken, xmlInhoud } from '../../shared/xml-blokken';
 
 export type WebdavItem = { pad: string; map: boolean; grootte: number; gewijzigd: string };
 const PROPFIND = '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/><d:getcontentlength/><d:getlastmodified/></d:prop></d:propfind>';
@@ -8,9 +9,11 @@ const PROPFIND = '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV
 /** Minimale, defensieve ontleding van een 207 Multi-Status (namespace-prefix vrij). */
 export function ontleedMultistatus(xml: string): WebdavItem[] {
   const uit: WebdavItem[] = [];
-  const blokken = xml.match(/<(?:[a-z0-9]+:)?response\b[\s\S]*?<\/(?:[a-z0-9]+:)?response>/gi) || [];
-  for (const b of blokken.slice(0, 2000)) {
-    const href = /<(?:[a-z0-9]+:)?href>([\s\S]*?)<\/(?:[a-z0-9]+:)?href>/i.exec(b)?.[1]?.trim() || '';
+  // SEC-002 (integraties-11): lineair (shared/xml-blokken.ts). De vroegere uitdrukkingen met `[\s\S]*?` waren kwadratisch op een
+  // antwoord zonder afsluitende tags: een WebDAV-server van een derde zette er de hele site ongeveer een minuut mee stil.
+  const blokken = xmlBlokken(xml, 'response', 2000);
+  for (const b of blokken) {
+    const href = xmlInhoud(b, 'href').trim();
     if (!href) continue;
     let pad = href; try { pad = decodeURIComponent(href); } catch { /* laat staan */ }
     uit.push({

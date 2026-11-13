@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CalendarClock, CircleAlert, Clock, LoaderCircle, Trash2, X } from 'lucide-react';
-import { cancelScheduledRemote, composeErrorText, listScheduledRemote, schedulePresets, type Context, type Lang, type ScheduledItem } from './mail-opstel-api';
+import { cancelScheduledRemote, composeErrorText, listScheduledRemote, wachtrijFoutTekst, schedulePresets, type Context, type Lang, type ScheduledItem } from './mail-opstel-api';
 import './mail-planning-menu.css';
 
 type Props = { lang: Lang; context: Context; canSchedule: boolean; onSchedule: (at: number) => Promise<void>; busy: boolean };
@@ -66,7 +66,7 @@ export default function MailScheduleMenu({ lang, context, canSchedule, onSchedul
             <ul className='mail-sched-list'>
               {items.slice(0, 12).map((i) => (
                 <li key={i.id} className={`st-${i.status}`} data-scheduled={i.status}>
-                  <div><b>{i.subject || t('(без теми)', '(geen onderwerp)')}</b><small>{i.to}</small><small>{fmt(i.sendAt, lang)} · {statusText(i.status)}{i.status === 'failed' && i.lastError ? ` · ${i.lastError === 'MAIL_QUEUE_UNCERTAIN' ? t('невідомо, чи надіслано: перевірте «Надіслані»', 'onzeker of verzonden: controleer "Verzonden"') : t('помилка', 'fout')}` : ''}</small></div>
+                  <div><b>{i.subject || t('(без теми)', '(geen onderwerp)')}</b><small>{i.to}</small><small>{fmt(i.sendAt, lang)} · {statusText(i.status)}{(i.status === 'failed' || i.status === 'cancelled') && i.lastError ? ` · ${i.lastError === 'MAIL_QUEUE_UNCERTAIN' ? t('невідомо, чи надіслано: перевірте «Надіслані»', 'onzeker of verzonden: controleer "Verzonden"') : wachtrijFoutTekst(i.lastError, t)}` : ''}</small></div>
                   {i.status === 'scheduled' ? <button type='button' title={t('Скасувати відправлення', 'Verzending annuleren')} aria-label={t('Скасувати відправлення', 'Verzending annuleren')} onClick={() => void cancel(i.id)}><Trash2 /></button> : null}
                 </li>
               ))}

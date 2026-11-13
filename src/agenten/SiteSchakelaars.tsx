@@ -5,6 +5,8 @@ import { sessionBody } from '../agenten-gegevens';
 import { BORD_AGENTEN, PRIVE_CAPS, SITE_REGEL, type SiteStaat } from '../../shared/ai-agent-bord';
 import type { Tr } from '../mcp-ui';
 import { foutTekst } from './fouten';
+// SEC-002 extensie-02 (g10a-2): de sitebrede plafonds van de AI zet alleen de mens (zone + alleen een echte klik).
+import { alleenMens, geenAi } from '../menselijke-actie';
 
 type Rij = { sleutel: string; naam: string; groep: string; aan: boolean };
 
@@ -59,7 +61,7 @@ export default function SiteSchakelaars({ tr }: { tr: Tr }) {
 
   // INTEG-001 (agpag2, 03.11.2026): blok (.ag-blok) met naam en één zin; de sitebrede regel staat er meteen onder.
   return (
-    <section className='ag-blok ag-site' data-ag-blok='site-schakelaars' data-site-schakelaars='1' aria-labelledby='ag2-site-kop'>
+    <section className='ag-blok ag-site' data-ag-blok='site-schakelaars' data-site-schakelaars='1' aria-labelledby='ag2-site-kop' {...geenAi}>
       <header className='ag-blok-kop'>
         <h3 className='ag-blok-titel' id='ag2-site-kop'>{tr('Доступність для всіх на сайті', 'Beschikbaarheid voor iedereen op de site')}</h3>
         <p className='ag-blok-uitleg'>{tr('Ці перемикачі керують лише приватними підключеннями людей, а технічний простір сайту не закривають і не відкривають.', 'Deze schakelaars gelden alleen voor privéverbindingen van mensen en sluiten of openen de technische ruimte van de site niet.')}</p>
@@ -71,7 +73,7 @@ export default function SiteSchakelaars({ tr }: { tr: Tr }) {
           <legend>{tr(groep, GROEP_NL[groep] ?? groep)}</legend>
           {rijen.filter((r) => r.groep === groep).map((r) => (
             <label key={r.sleutel} className='ag-bord-cap' data-site-sleutel={r.sleutel}>
-              <input type='checkbox' checked={r.aan} disabled={staat === null || bezig === r.sleutel} onChange={(e) => zet(r.sleutel, e.target.checked)} />
+              <input type='checkbox' checked={r.aan} disabled={staat === null || bezig === r.sleutel} onChange={alleenMens((e: { target: { checked: boolean }; preventDefault: () => void }) => zet(r.sleutel, e.target.checked))} />
               <span>{tr(r.naam, NAAM_NL[r.naam] ?? r.naam)}</span>
             </label>
           ))}

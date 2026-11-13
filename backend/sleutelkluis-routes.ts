@@ -14,22 +14,31 @@ import { randomBytes } from 'node:crypto';
 import * as kern from '../deploy/goedkeuring/webauthn-kern.mjs';
 import { error, json } from '../server/platform';
 import { rateLimit } from '../server/platform/beveiliging';
+import { auditToevoegen } from '../server/platform/audit';
 import type { RouterMiddleware } from '../server/platform/router';
 import { alsGebruiker } from './ai-toestemmingen';
 import { PASSKEY_LIMIETEN, stapOpOrigins, passkeyRp, transportsVoorGet } from './toegangssleutels';
 import { gegevensRuimteVeilig } from './ruimte-scheiding';
-import { stapOpSessieId, type StapOpAuth } from './stap-op';
+import { stapOpSessieId, stapOpVerbruiken, type StapOpAuth } from './stap-op';
 import { KEK_INFO, KLUIS_TEKST, omslagAad } from '../shared/sleutelkluis';
 import {
-  SleutelkluisFout, dekVoorBrowser, herstelcodeVernieuwen, herversleutelen, inschakelen, ontgrendelMetHerstelcode, ontgrendelMetPasskey,
+  SleutelkluisFout, dekVoorBrowser, herversleutelen, inschakelen, ontgrendelMetPasskey,
   overzicht, passkeyOmslagOpslaan, passkeyOmslagWeg, passkeyOmslagen, sleutelSluitenVoorHouder, type KluisLade,
 } from './sleutelkluis';
+import {
+  herstelcodeBevestigen, herstelcodeVernieuwenVeilig, herstelcodeWacht, kluisZonderOmslag, ontgrendelMetHerstelcodeVeilig, weesKluisHerstellen,
+} from './sleutelkluis-herstel';
 
 type Gebruiker = { id: string; email?: string; name?: string; role?: string; status?: string };
 type Auth = StapOpAuth & { user: Gebruiker; service: string };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<Auth | { errorCode: string }>;
 type Resp = ReturnType<typeof json>;
-export type SleutelkluisRouteDeps = { requireSession: RequireSession; sterkeStapOp: (ctx: unknown, auth: Auth) => Promise<Resp | null> };
+export type SleutelkluisRouteDeps = {
+  requireSession: RequireSession; sterkeStapOp: (ctx: unknown, auth: Auth) => Promise<Resp | null>;
+  /** SEC-002 (g06): «sterke bevestiging controleren en verbruiken» als één ondeelbare stap rond de actie (backend/index.ts geeft
+   *  metStapOpEenmalig met sterkeStapOpGeldig). Zonder (tests met een eigen sterkeStapOp): actie en daarna verbruiken, zoals vroeger. */
+  stapOpEenmalig?: <T>(auth: Auth, actie: () => Promise<T>) => Promise<{ ok: true; uit: T } | { ok: false }>;
+};
 type Ctx = { event: Record<string, unknown>; body: unknown };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -91,11 +100,31 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
     try { return json(await run(auth, { userId: auth.user.id, ruimte }, b)); }
     catch (err) {
       if (err instanceof SleutelkluisFout) return error(err.code, err.status);
+      // SEC-002 (geheimen-02): de rij van de sleutelafleiding is vol — eerlijk «te druk», geen 500.
+      if ((err as { code?: string } | null)?.code === 'SLEUTELKLUIS_BEZET') return error('SLEUTELKLUIS_BEZET', 429);
       console.error('[sleutelkluis]', (err as Error).message);
       return error('SLEUTELKLUIS_FOUT', 500);
     }
   }) as RouterMiddleware;
   const houder = (auth: Auth) => { const id = stapOpSessieId(auth); if (!id) throw new SleutelkluisFout('SESSIE_VEREIST', 403); return { soort: 'sessie' as const, id }; };
+  // SEC-002 (geheimen-02): elke actie die een zware sleutelafleiding (scrypt, 64 MiB) of veel schrijfwerk start, heeft een eigen
+  // grens PER MENS. De algemene grens per IP (600/min) was hier de enige rem; daarmee was de hele site stil te leggen.
+  const begrens = async (a: Auth, naam: string, aantal: number, seconden: number) => {
+    const limiet = await rateLimit(`sleutelkluis-${naam}:${a.user.id}`, aantal, seconden, { failClosed: true });
+    if (!limiet.ok) {
+      // toets-g10b #7: de eerste weigering in het venster komt in het auditlogboek (één regel per venster, geen vloed).
+      if (limiet.hits === limiet.limit + 1) await auditToevoegen({ ownerId: a.user.id, actorId: a.user.id, action: 'sleutelkluis.te_vaak', type: 'beveiliging', result: 'denied', details: { actie: naam, limiet: aantal, seconden } }).catch(() => undefined);
+      throw new SleutelkluisFout('SLEUTELKLUIS_TE_VAAK', 429);
+    }
+  };
+  // Eén sterke bevestiging = één gevoelige actie (zoals de kluis van geheimen): de volgende vraagt opnieuw passkey of code.
+  const verbruik = (a: Auth) => stapOpVerbruiken(a).catch((e) => console.error('[sleutelkluis] bevestiging verbruiken mislukt:', (e as Error).message));
+  const eenmalig = async <T,>(a: Auth, actie: () => Promise<T>): Promise<T> => {
+    if (!deps.stapOpEenmalig) { const uit = await actie(); await verbruik(a); return uit; }
+    const stap = await deps.stapOpEenmalig(a, actie);
+    if (!stap.ok) throw new SleutelkluisFout('STEP_UP_STRONG_REQUIRED', 403);
+    return stap.uit;
+  };
   const P = '/api/owner/sleutelkluis';
   return {
     [`POST ${P}/stand`]: [route({}, async (a, lade) => {
@@ -103,21 +132,45 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       const rijen = await eigenPasskeys(a.user.id);
       // Per passkey van de mens: naam en of hij al een omslag van DEZE ruimte heeft (zo ziet de pagina wat nog te koppelen is).
       const passkeys = rijen.map((r) => ({ id: String(r.id), naam: r.naam, gekoppeld: o.omslagen.passkeys.some((p) => p.passkeyId === String(r.id)) }));
-      return { ...o, passkeys, teksten: KLUIS_TEKST };
+      // SEC-002 (geheimen-04): wacht er een nieuwe herstelcode op bevestiging, en is dit een kluis zonder één omslag?
+      const aan = o.stand !== 'uit';
+      return { ...o, passkeys, teksten: KLUIS_TEKST, herstelcodeWacht: aan ? await herstelcodeWacht(lade) : false, zonderOmslag: aan ? await kluisZonderOmslag(lade) : false };
     })],
     // Inschakelen: sterke step-up (passkey/TOTP/herstelcode). De herstelcode komt EENMALIG terug; de sleutel staat meteen open.
-    [`POST ${P}/inschakelen`]: [route({ sterk: true }, async (a, lade) => ({ ok: true, ...(await inschakelen(lade, houder(a))), eenmalig: true }))],
-    [`POST ${P}/herstelcode/vernieuwen`]: [route({ sterk: true }, async (_a, lade) => ({ ok: true, ...(await herstelcodeVernieuwen(lade)), eenmalig: true }))],
+    [`POST ${P}/inschakelen`]: [route({ sterk: true }, async (a, lade) => {
+      await begrens(a, 'aan', 5, 3600);
+      // De bevestiging blijft hier staan: direct na het inschakelen hoort de mens zijn passkey als sleutel te kunnen koppelen.
+      return { ok: true, ...(await inschakelen(lade, houder(a))), eenmalig: true };
+    })],
+    [`POST ${P}/herstelcode/vernieuwen`]: [route({ sterk: true }, async (a, lade) => {
+      await begrens(a, 'herstel-nieuw', 3, 3600);
+      const uit = await eenmalig(a, () => herstelcodeVernieuwenVeilig(lade));
+      return { ok: true, ...uit, eenmalig: true };
+    })],
     [`POST ${P}/ontgrendelen/herstelcode`]: [route({}, async (a, lade, b) => {
       const limiet = await rateLimit(`sleutelkluis-herstel:${a.user.id}`, 10, 600, { failClosed: true });
       if (!limiet.ok) throw new SleutelkluisFout('SLEUTELKLUIS_HERSTELCODE_GEBLOKKEERD', 429);
-      const uit = await ontgrendelMetHerstelcode(lade, b.code, houder(a));
-      // De gebruikte code is verbruikt; de nieuwe komt EENMALIG mee en moet opnieuw bewaard worden.
+      const uit = await ontgrendelMetHerstelcodeVeilig(lade, b.code, houder(a));
+      // SEC-002 (geheimen-04): de nieuwe code komt EENMALIG mee; de gebruikte blijft geldig tot de mens bevestigt dat hij de
+      // nieuwe bewaard heeft (herstelcode/bevestigen) of de nieuwe zelf gebruikt. Een verloren antwoord sluit zo niets af.
       return { ok: true, stand: 'open', ...uit, eenmalig: true };
+    })],
+    [`POST ${P}/herstelcode/bevestigen`]: [route({}, async (a, lade) => {
+      await begrens(a, 'herstel-bevestig', 20, 600);
+      return { ok: true, ...(await herstelcodeBevestigen(lade)) };
+    })],
+    // Kluis zonder één omslag (kon ontstaan door het vroegere inschakelen in twee stappen): terug naar «uit», zonder verlies.
+    [`POST ${P}/herstellen`]: [route({ sterk: true }, async (a, lade) => {
+      await begrens(a, 'herstellen', 5, 3600);
+      const uit = await eenmalig(a, () => weesKluisHerstellen(lade));
+      return { ok: true, ...uit };
     })],
     [`POST ${P}/vergrendelen`]: [route({}, async (a) => ({ ok: true, gesloten: sleutelSluitenVoorHouder('sessie', houder(a).id) }))],
     // Passkey koppelen: opties (+ de DEK om om te slaan, alleen hier en alleen na sterke step-up met open sleutel), dan opslaan.
     [`POST ${P}/passkey/koppelen/opties`]: [route({ sterk: true }, async (a, lade) => {
+      // SEC-002 (geheimen-07): dit antwoord bevat de gegevenssleutel zelf. Daarom begrensd per mens: een gekaapte sessie
+      // haalt de sleutel binnen de vijf minuten van de sterke bevestiging niet onbeperkt vaak op.
+      await begrens(a, 'dek-uitgifte', 10, 3600);
       const rijen = await eigenPasskeys(a.user.id);
       if (!rijen.length) throw new SleutelkluisFout('GEEN_PASSKEY', 409);
       const dek = dekVoorBrowser(lade);
@@ -150,6 +203,9 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       await ontgrendelMetPasskey(lade, String(rij.id), b.dek, houder(a));
       return { ok: true, stand: 'open' };
     })],
-    [`POST ${P}/herversleutelen`]: [route({ sterk: true }, async (_a, lade) => ({ ok: true, ...(await herversleutelen(lade)) }))],
+    [`POST ${P}/herversleutelen`]: [route({ sterk: true }, async (a, lade) => {
+      await begrens(a, 'herversleutelen', 6, 3600);
+      return { ok: true, ...(await herversleutelen(lade)) };
+    })],
   };
 }

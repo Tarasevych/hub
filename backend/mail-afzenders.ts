@@ -21,12 +21,13 @@ import { alsGebruiker } from './ai-toestemmingen';
 import { ladeVereist, mailboxenInLade, MailRuimteFout } from './mail-ruimte';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
+import { jsonbTekst } from '../shared/tekst-veilig';
 import {
   AFZENDER_STATUSSEN, adresVan, adressenVan, authGeslaagdVoor, bekendeDienstVoor, bewijsRegels, classificeer, geldigAdres, isGratisMailbox, naamSleutel, niveauVoor,
   normaliseerAdres, organisatieDomein, parseAuthResults, vertrouwenVan,
   type AfzenderBron, type AfzenderStatus, type AuthResultaten, type Classificatie, type ContactInvoer, type DnsBewijs,
 } from '../shared/mail-afzenders';
-import { authUitslag } from '../shared/mail-afzenders'; // звірка рядків доказу з AuthUitslag (стара помилка TS2322 у herbeoordeelUitBewijs, 31.10.2026)
+import { authUitslag, gmailOntvangstWeerlegd } from '../shared/mail-afzenders'; // звірка рядків доказу з AuthUitslag (стара помилка TS2322 у herbeoordeelUitBewijs, 31.10.2026)
 import { AFZENDER_REGELS_VERSIE, magAutomatischOverschrijven, magContactnaamOpheffen, NU_UITLEG } from '../shared/afzender-regels';
 import { DNS_GRENS, herhaalVerdacht } from '../shared/afzender-wachtrij';
 import { beperkt, DNS_GELIJKTIJDIG, domeinDns, fetchMetTijd, gmailFoutVan, gmailScanBron, tokenVoor, wisTokens, type ScanBron, type ScanKop } from './mail-afzender-bronnen';
@@ -58,14 +59,16 @@ const standaardBron: GmailBron = {
     if (!/^[A-Za-z0-9_-]{1,200}$/.test(messageId)) return null;
     const token = await tokenVoor(userId, accountId);
     const p = new URLSearchParams({ format: 'metadata', fields: 'id,internalDate,payload/headers' });
-    for (const naam of ['From', 'Date', 'Authentication-Results']) p.append('metadataHeaders', naam);
+    // SEC-002 (post-08): Received en X-Gmail-Fetch-Info erbij — alleen om te zien of Gmail het bericht zelf via SMTP aannam.
+    for (const naam of ['From', 'Date', 'Authentication-Results', 'Received', 'X-Gmail-Fetch-Info']) p.append('metadataHeaders', naam);
     const r = await fetchMetTijd(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}?${p}`, { headers: { Authorization: `Bearer ${token}` } });
     if (r.status === 404) return null;
     if (!r.ok) throw new Error(await gmailFoutVan(r));
     const d = await r.json() as { internalDate?: string; payload?: { headers?: Array<{ name?: string; value?: string }> } };
     const h = d.payload?.headers || [];
     const van = (naam: string) => h.filter((x) => String(x.name || '').toLowerCase() === naam.toLowerCase()).map((x) => String(x.value || ''));
-    return { from: van('From')[0] || '', auth: van('Authentication-Results'), tijd: Number(d.internalDate || 0) || Date.parse(van('Date')[0] || '') || 0 };
+    // Niet door Gmail zelf aangenomen (POP3-verzamelaar, import): de bovenste Authentication-Results is dan van de afzender → telt niet.
+    return { from: van('From')[0] || '', auth: gmailOntvangstWeerlegd(h) ? [] : van('Authentication-Results'), tijd: Number(d.internalDate || 0) || Date.parse(van('Date')[0] || '') || 0 };
   },
 };
 let bron: GmailBron = standaardBron;
@@ -127,7 +130,7 @@ async function leesDns(q: Q, lade: Lade, domeinen: string[]): Promise<Map<string
 }
 async function slaDnsOp(q: Q, lade: Lade, d: DnsBewijs) {
   await q(`INSERT INTO app.mail_domein_dns (user_id, ruimte, domein, gegevens, gecontroleerd_op) VALUES ($1, '${R(lade)}', $2, $3::jsonb, to_timestamp($4 / 1000.0))
-     ON CONFLICT (user_id, ruimte, domein) DO UPDATE SET gegevens = EXCLUDED.gegevens, gecontroleerd_op = EXCLUDED.gecontroleerd_op`, [lade.userId, d.domein, JSON.stringify(d), d.tijd]);
+     ON CONFLICT (user_id, ruimte, domein) DO UPDATE SET gegevens = EXCLUDED.gegevens, gecontroleerd_op = EXCLUDED.gecontroleerd_op`, [lade.userId, d.domein, jsonbTekst(d), d.tijd]);
 }
 const metHistorie = (h: Historie[], e: Historie) => [...h, e].slice(-50);
 
@@ -144,7 +147,7 @@ async function schrijfRij(q: Q, lade: Lade, r: AfzenderRij, dns?: DnsBewijs | nu
        aantal = EXCLUDED.aantal, notitie = EXCLUDED.notitie, historie = EXCLUDED.historie, geverifieerd_op = EXCLUDED.geverifieerd_op,
        geverifieerd_door = EXCLUDED.geverifieerd_door, bijgewerkt_op = now(), verzonden = EXCLUDED.verzonden, laatst_verzonden_op = EXCLUDED.laatst_verzonden_op,
        in_contacten = EXCLUDED.in_contacten, accounts = EXCLUDED.accounts, organisatie = EXCLUDED.organisatie, officieel = EXCLUDED.officieel, vertrouwen = EXCLUDED.vertrouwen`,
-  [lade.userId, r.adres, r.naam.slice(0, 200), r.domein, r.status, r.bron, r.reden, r.merk.slice(0, 80), JSON.stringify(r.bewijs), r.eersteOp, r.laatsteOp, r.aantal, r.notitie.slice(0, 500), JSON.stringify(r.historie.slice(-50)), r.geverifieerdOp, r.geverifieerdDoor,
+  [lade.userId, r.adres, r.naam.slice(0, 200), r.domein, r.status, r.bron, r.reden, r.merk.slice(0, 80), jsonbTekst(r.bewijs), r.eersteOp, r.laatsteOp, r.aantal, r.notitie.slice(0, 500), jsonbTekst(r.historie.slice(-50)), r.geverifieerdOp, r.geverifieerdDoor,
     r.verzonden || 0, r.laatstVerzondenOp || null, r.inContacten === true, (r.accounts || []).slice(0, 20), (r.organisatie || '').slice(0, 253), r.officieel === true, r.vertrouwen || 0]);
 }
 async function leesRijen(q: Q, lade: Lade, adressen: string[], voorUpdate = false): Promise<Map<string, AfzenderRij>> {
@@ -597,7 +600,7 @@ export async function contactenScanVoorkeurZetten(userId: string, accountId: unk
     const oud = normaliseerScanVoorkeur(oudRij?.voorkeur);
     await q(`INSERT INTO app.mail_contacten_scan_beleid (user_id, ruimte, beleid, voorkeuren) VALUES ($1, '${R(lade)}', $2, jsonb_build_object($3::text, $4::jsonb))
       ON CONFLICT (user_id, ruimte) DO UPDATE SET voorkeuren = app.mail_contacten_scan_beleid.voorkeuren || EXCLUDED.voorkeuren, bijgewerkt_op = now()`,
-      [userId, STANDAARD_SCAN_BELEID, id, JSON.stringify(voorkeur)]);
+      [userId, STANDAARD_SCAN_BELEID, id, jsonbTekst(voorkeur)]);
     if (!voorkeur.aan) await q(`UPDATE app.mail_contacten_scan SET staat = 'gestopt', bijgewerkt_op = now()
       WHERE ${W(lade)} AND account_id = $2 AND staat IN ('wacht', 'bezig', 'gepauzeerd', 'fout')`, [userId, id]);
     else if (!oud.aan && voorkeur.werkwijze !== 'handmatig') await q(`UPDATE app.mail_contacten_scan SET staat = 'wacht', bijgewerkt_op = now()

@@ -4,7 +4,10 @@ import { api } from './platform/client';
 import { emitCanonicalNotice } from './canoniek-meldingen';
 import { Help, IconButton, Logo, type LogoKind, type Tr } from './mcp-ui';
 import { textOf } from './mcp-teksten';
+import { ALGEMEEN_RISICO, bulkAltijdToegestaan, isGevaarlijk } from '../shared/mcp-hulpmiddel-gevaar'; // SEC-002 interface-03/04
 import { ago, sessionBody, type ToolCall } from './agenten-gegevens';
+import { AanvragerPill, GoedkeuringInhoud, MensKnop } from './GoedkeuringInhoud'; // SEC-002 interface-01/02, extensie-02
+import { geenAi } from './menselijke-actie';
 
 type Mode = 'always' | 'ask' | 'off';
 // Een groep die de server kent maar deze pagina nog niet (nieuwe hulpmiddelen) krijgt automatisch een eigen tabblad (zie groepMeta).
@@ -43,9 +46,9 @@ const MODE_META: Record<Mode, { icon: typeof Check; uk: string; nl: string }> = 
 
 function ModeSwitch({ value, disabled, onChange, label, tr }: { value: Mode; disabled: boolean; onChange: (m: Mode) => void; label: string; tr: Tr }) {
   const help: Record<Mode, string> = {
-    always: tr('Завжди: Claude викликає без запиту від сайту. Межі агента (теки, список команд) лишаються.', 'Altijd: Claude roept het aan zonder vraag van de site. De grenzen van de agent (mappen, lijst met commando\'s) blijven gelden.'),
+    always: tr('Завжди: підключений ШІ викликає без запиту від сайту. Межі агента (теки, список команд) лишаються.', 'Altijd: de gekoppelde AI roept het aan zonder vraag van de site. De grenzen van de agent (mappen, lijst met commando\'s) blijven gelden.'),
     ask: tr('Питати: кожен виклик чекає вашого «Дозволити».', 'Vragen: elke aanroep wacht op uw "Toestaan".'),
-    off: tr('Вимкнено: Claude не бачить цього інструмента й не може його викликати.', 'Uit: Claude ziet dit hulpmiddel niet en kan het niet aanroepen.'),
+    off: tr('Вимкнено: жоден підключений ШІ не бачить цього інструмента й не може його викликати.', 'Uit: geen enkele gekoppelde AI ziet dit hulpmiddel of kan het aanroepen.'),
   };
   return (
     <span className='hub-seg' role='radiogroup' aria-label={label}>
@@ -65,6 +68,7 @@ function ModeSwitch({ value, disabled, onChange, label, tr }: { value: Mode; dis
 export function ToolApprovals({ tr, calls, reload }: { tr: Tr; calls: ToolCall[]; reload: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [gezien, setGezien] = useState<Record<string, boolean>>({});
   const lang = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
 
   const decide = async (call: ToolCall, approve: boolean) => {
@@ -78,20 +82,20 @@ export function ToolApprovals({ tr, calls, reload }: { tr: Tr; calls: ToolCall[]
   const recent = calls.filter((c) => c.status !== 'pending_approval').slice(0, 6);
   const statusText = (s: string) => ({ succeeded: tr('виконано', 'uitgevoerd'), failed: tr('помилка', 'mislukt'), rejected: tr('відхилено', 'geweigerd'), timeout: tr('час вийшов', 'verlopen'), approved: tr('схвалено', 'goedgekeurd') } as Record<string, string>)[s] || s;
   return (
-    <div data-mcp-approvals={String(pending.length)} className='hub-feed'>
+    <div data-mcp-approvals={String(pending.length)} className='hub-feed' {...geenAi}>
       {pending.length ? pending.map((c) => (
         <div key={c.id} className='hub-feed-item' data-approval={c.id}>
           <Clock aria-hidden='true' />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className='hub-row start'><b>{nameOf(c.tool)}</b><span className='hub-pill warn'>Claude</span><small>{ago(c.createdAt, tr)}</small></div>
-            <code className='hub-code'>{JSON.stringify(c.args).slice(0, 240)}</code>
+            <div className='hub-row start'><b>{nameOf(c.tool)}</b><AanvragerPill tr={tr} aanvrager={c.aanvrager} /><small>{ago(c.createdAt, tr)}</small></div>
+            <GoedkeuringInhoud tr={tr} params={c.args} onGezien={(g) => setGezien((s) => (s[c.id] === g ? s : { ...s, [c.id]: g }))} />
             <div className='hub-actions' style={{ marginTop: 8 }}>
-              <IconButton tone='primary' icon={<Check />} disabled={busy} onClick={() => void decide(c, true)}>{tr('Дозволити', 'Toestaan')}</IconButton>
-              <IconButton icon={<X />} disabled={busy} onClick={() => void decide(c, false)}>{tr('Відхилити', 'Weigeren')}</IconButton>
+              <MensKnop tone='primary' icon={<Check />} disabled={busy || !gezien[c.id]} onKlik={() => void decide(c, true)}>{tr('Дозволити', 'Toestaan')}</MensKnop>
+              <MensKnop icon={<X />} disabled={busy} onKlik={() => void decide(c, false)}>{tr('Відхилити', 'Weigeren')}</MensKnop>
             </div>
           </div>
         </div>
-      )) : <div className='hub-empty'><ShieldCheck aria-hidden='true' /><span>{tr('Claude нічого не очікує від вас. Коли він викличе інструмент у режимі «Питати», запит з’явиться тут і в сповіщеннях.', 'Claude wacht op niets van u. Roept hij een hulpmiddel in de modus "Vragen" aan, dan verschijnt het hier en bij de meldingen.')}</span></div>}
+      )) : <div className='hub-empty'><ShieldCheck aria-hidden='true' /><span>{tr('Жоден підключений ШІ нічого не очікує від вас. Коли ШІ викличе інструмент у режимі «Питати», запит з’явиться тут і в сповіщеннях — із назвою клієнта, який просить.', 'Geen enkele gekoppelde AI wacht op iets van u. Roept een AI een hulpmiddel in de modus "Vragen" aan, dan verschijnt het hier en bij de meldingen — met de naam van de klant die het vraagt.')}</span></div>}
       {recent.length ? <small className='hub-meta'>{tr('Останні', 'Recent')}: {recent.map((c) => `${nameOf(c.tool)}: ${statusText(c.status)}`).join(' · ')}</small> : null}
       {notice ? <p role='status' className='hub-note warn'>{notice}</p> : null}
     </div>
@@ -105,6 +109,7 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
   const [notice, setNotice] = useState('');
   const [tab, setTab] = useState<Group>(() => { try { return (sessionStorage.getItem('mr.mcp.tools.tab') as Group) || 'devices'; } catch { return 'devices'; } });
   const [riskAsk, setRiskAsk] = useState<string | null>(null);
+  const [allesAsk, setAllesAsk] = useState(false); // SEC-002 interface-03: «Усі → Завжди» eerst bevestigen
   const lang = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
 
   const load = useCallback(async () => {
@@ -125,13 +130,18 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
     setBusy(false);
   };
   const choose = (tool: Tool, mode: Mode) => {
-    if (tool.risky && mode === 'always') { setRiskAsk(tool.name); return; }
+    // SEC-002 (interface-03/04): elk gevaarlijk hulpmiddel (ook schrijvende site-hulpmiddelen) vraagt bevestiging vóór «Завжди».
+    if (isGevaarlijk(tool) && mode === 'always' && tool.mode !== 'always') { setRiskAsk(tool.name); return; }
     setRiskAsk(null); void setMode(tool, mode);
   };
   const setAll = async (mode: Mode | 'default', group?: Group, inclusiefRiskant = false) => {
     setBusy(true); setNotice('');
-    try { const res = await api.post('/api/owner/mcp-connector/tools/set-all', { ...sessionBody(), mode, ...(group ? { group } : {}), ...(inclusiefRiskant ? { inclusiefRiskant: true } : {}) }); setTools(res.data?.tools ?? []); }
-    catch { setNotice(tr('Не вдалося змінити режим.', 'Modus wijzigen mislukt.')); }
+    try {
+      const res = await api.post('/api/owner/mcp-connector/tools/set-all', { ...sessionBody(), mode, ...(group ? { group } : {}), ...(inclusiefRiskant ? { inclusiefRiskant: true } : {}) }); setTools(res.data?.tools ?? []);
+      // SEC-002 (interface-03): ook een bulkwijziging komt in het meldingencentrum (zoals setMode).
+      const m = mode === 'default' ? { uk: 'типові режими', nl: 'standaardmodi' } : MODE_META[mode];
+      emitCanonicalNotice({ text: tr(`${group ? `Група «${groepMeta(group).uk}»` : 'Усі інструменти'}: ${m.uk}`, `${group ? `Groep «${groepMeta(group).nl}»` : 'Alle hulpmiddelen'}: ${m.nl}`), kind: mode === 'always' ? 'warning' : 'info', source: 'mcp' });
+    } catch { setNotice(tr('Не вдалося змінити режим.', 'Modus wijzigen mislukt.')); }
     setBusy(false);
   };
 
@@ -141,20 +151,33 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
   const current = alleGroepen.find((g) => g.id === tab && tools.some((t) => t.group === g.id)) ?? alleGroepen.find((g) => tools.some((t) => t.group === g.id)) ?? alleGroepen[0];
   const rows = tools.filter((t) => t.group === current.id);
   return (
-    <div className='hub-tools-wrap' data-mcp-tools-panel='true' data-mcp-tools={String(tools.length)}>
-      <p className='hub-note'>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити») або «Вимк.» (Claude його не бачить). Інструменти зі знаком «!» змінюють дані або показують приватне: вони вимкнені типово, але ви можете ввімкнути їх, коли це потрібно для задачі.', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen vraag van de site), "Vragen" (elke aanroep wacht op uw "Toestaan") of "Uit" (Claude ziet het niet). Hulpmiddelen met een "!" wijzigen gegevens of tonen iets privés: ze staan standaard uit, maar u kunt ze aanzetten wanneer een taak dat vraagt.')}</p>
+    <div className='hub-tools-wrap' data-mcp-tools-panel='true' data-mcp-tools={String(tools.length)} {...geenAi}>
+      <p className='hub-note'>{tr('Це той самий список, що бачить Claude. Для кожного інструмента оберіть: «Завжди» (без запиту від сайту), «Питати» (кожен виклик чекає вашого «Дозволити») або «Вимк.» (Claude його не бачить). Інструменти зі знаком «!» змінюють дані, надсилають, видаляють, діють у браузері чи на пристрої або показують приватне. Запис на сайті типово «Питати», ризиковані інструменти пристрою й браузера — «Вимк.». «Завжди» для будь-якого інструмента зі знаком «!» вмикається лише поодинці, з підтвердженням.', 'Dit is dezelfde lijst die Claude ziet. Kies per hulpmiddel: "Altijd" (geen vraag van de site), "Vragen" (elke aanroep wacht op uw "Toestaan") of "Uit" (Claude ziet het niet). Hulpmiddelen met een "!" wijzigen gegevens, verzenden, verwijderen, handelen in de browser of op een apparaat, of tonen iets privés. Schrijven op de site staat standaard op "Vragen", riskante hulpmiddelen van apparaat en browser op "Uit". "Altijd" zet u voor elk hulpmiddel met "!" alleen één voor één aan, met bevestiging.')}</p>
 
       <div className='hub-row' data-mcp-setall='true'>
         <span className='hub-row start'><b>{tr('Усі інструменти', 'Alle hulpmiddelen')}</b>
-          <Help tr={tr} content={{ title: tr('Усі інструменти одразу', 'Alle hulpmiddelen tegelijk'), what: tr('Змінює режим усіх інструментів в усіх вкладках.', 'Wijzigt de modus van alle hulpmiddelen op alle tabbladen.'), touches: tr('Інструменти зі знаком «!» не змінюються кнопками «Завжди» і «Питати»: їх вмикають окремо.', 'Hulpmiddelen met "!" worden door "Altijd" en "Vragen" niet gewijzigd: die zet u apart aan.'), on: tr('«Типово»: читання «Завжди», запис на сайті «Питати», небезпечні вимкнені.', '"Standaard": lezen "Altijd", schrijven op de site "Vragen", riskante uit.'), off: tr('«Вимк.»: Claude не бачить жодного інструмента, зокрема й безпечних.', '"Uit": Claude ziet geen enkel hulpmiddel, ook de veilige niet.') }} />
+          <Help tr={tr} content={{ title: tr('Усі інструменти одразу', 'Alle hulpmiddelen tegelijk'), what: tr('Змінює режим усіх інструментів в усіх вкладках.', 'Wijzigt de modus van alle hulpmiddelen op alle tabbladen.'), touches: tr('«Завжди» (після підтвердження) змінює лише інструменти читання; інструменти зі знаком «!» ним не вмикаються — лише поодинці. «Питати» переводить у «Питати» все, крім ризикованих інструментів пристрою й браузера (їх — окремо або кнопкою групи). «Вимк.» і «За замовч.» змінюють усі.', '"Altijd" (na bevestiging) wijzigt alleen leeshulpmiddelen; hulpmiddelen met "!" gaan er niet mee aan — alleen één voor één. "Vragen" zet alles op "Vragen", behalve de riskante hulpmiddelen van apparaat en browser (die apart of met de knop van de groep). "Uit" en "Standaard" wijzigen alles.'), on: tr('«Типово»: читання «Завжди», запис на сайті «Питати», небезпечні вимкнені.', '"Standaard": lezen "Altijd", schrijven op de site "Vragen", riskante uit.'), off: tr('«Вимк.»: Claude не бачить жодного інструмента, зокрема й безпечних.', '"Uit": Claude ziet geen enkel hulpmiddel, ook de veilige niet.') }} />
         </span>
         <span className='hub-seg' role='group' aria-label={tr('Усі інструменти', 'Alle hulpmiddelen')}>
-          <button type='button' disabled={busy} onClick={() => void setAll('always')}><CheckCheck aria-hidden='true' />{tr('Завжди', 'Altijd')}</button>
+          <button type='button' disabled={busy} onClick={() => setAllesAsk(true)}><CheckCheck aria-hidden='true' />{tr('Завжди', 'Altijd')}</button>
           <button type='button' disabled={busy} onClick={() => void setAll('ask')}><Hand aria-hidden='true' />{tr('Питати', 'Vragen')}</button>
           <button type='button' disabled={busy} onClick={() => void setAll('off')}><Ban aria-hidden='true' />{tr('Вимк.', 'Uit')}</button>
           <button type='button' disabled={busy} onClick={() => void setAll('default')}><RotateCcw aria-hidden='true' />{tr('За замовч.', 'Standaard')}</button>
         </span>
       </div>
+      {allesAsk ? (() => {
+        // SEC-002 (interface-03): eerst zeggen WELKE hulpmiddelen niet meer vragen; schrijvende en «!»-hulpmiddelen blijven zoals ze zijn.
+        const namen = tools.filter((t) => bulkAltijdToegestaan(t) && t.mode !== 'always').map((t) => textOf(t.name, lang)?.title || t.title || t.name);
+        return (
+          <span className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження', 'Bevestiging')} data-mcp-setall-bevestig='true'>
+            <span><b>{tr('Увімкнути «Завжди» для інструментів читання?', '«Altijd» aanzetten voor leeshulpmiddelen?')}</b> {namen.length
+              ? tr(`Перестануть питати (${namen.length}): ${namen.join(', ')}.`, `Vragen niet meer (${namen.length}): ${namen.join(', ')}.`)
+              : tr('Усі інструменти читання вже в режимі «Завжди».', 'Alle leeshulpmiddelen staan al op «Altijd».')} {tr('Інструменти, що змінюють дані, надсилають чи видаляють, і всі зі знаком «!» не зміняться: їх вмикають лише поодинці, з підтвердженням.', 'Hulpmiddelen die gegevens wijzigen, verzenden of verwijderen, en alle met «!», veranderen niet: die zet u alleen één voor één aan, met bevestiging.')}</span>
+            <MensKnop tone='danger' icon={<CheckCheck />} disabled={busy || !namen.length} onKlik={() => { setAllesAsk(false); void setAll('always'); }}>{tr('Так, завжди', 'Ja, altijd')}</MensKnop>
+            <IconButton icon={<X />} onClick={() => setAllesAsk(false)}>{tr('Скасувати', 'Annuleren')}</IconButton>
+          </span>
+        );
+      })() : null}
 
       <div className='hub-tabs' role='tablist' aria-label={tr('Джерела інструментів', 'Bronnen van hulpmiddelen')}>
         {alleGroepen.map((g) => {
@@ -187,21 +210,25 @@ export default function McpToolsPanel({ tr }: { tr: Tr }) {
 
       <div className='hub-tools' role='tabpanel'>
         {rows.map((x) => {
-          const text = textOf(x.name, lang);
+          // SEC-002 (interface-04): zonder eigen tekst de vertaalde titel/uitleg van de server (nooit een kale Engelse naam, nooit een
+          // dode knop); «!» en de risicotekst volgen uit isGevaarlijk, niet uit het bestaan van een tekst.
+          const text = textOf(x.name, lang) ?? { title: x.title || x.name, what: x.description || '', touches: '', on: '', off: '', risk: undefined as string | undefined };
+          const gevaar = isGevaarlijk(x);
+          const risico = text.risk || ALGEMEEN_RISICO[lang === 'uk' ? 0 : 1];
           return (
             <div key={x.name} className={`hub-tool${x.mode === 'off' ? ' is-off' : ''}`} data-tool={x.name} data-mode={x.mode}>
               <span className='hub-tool-name'>
                 <b>{text?.title || x.name}</b>
-                {x.risky && text ? <Help tone='warn' tr={tr} content={{ title: text.title, touches: text.touches, on: text.on, off: text.off, risk: text.risk }} />
-                  : text ? <Help tr={tr} content={{ title: text.title, touches: text.touches, on: text.on, off: text.off }} /> : null}
+                {gevaar ? <Help tone='warn' tr={tr} content={{ title: text.title, what: text.what, touches: text.touches, on: text.on, off: text.off, risk: risico }} />
+                  : <Help tr={tr} content={{ title: text.title, touches: text.touches, on: text.on, off: text.off }} />}
                 <code>{x.name}</code>
               </span>
               <span className='hub-tool-desc'>{text?.what || ''}</span>
               <ModeSwitch value={x.mode} disabled={busy} tr={tr} label={text?.title || x.name} onChange={(m) => choose(x, m)} />
-              {riskAsk === x.name && text ? (
+              {riskAsk === x.name ? (
                 <span className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження', 'Bevestiging')}>
-                  <span><b>{tr('Увімкнути «Завжди»?', 'Op "Altijd" zetten?')}</b> {text.risk || text.touches} {tr('Claude виконуватиме це без запиту на кожен виклик.', 'Claude voert dit uit zonder vraag per aanroep.')}</span>
-                  <IconButton tone='danger' icon={<CheckCheck />} disabled={busy} onClick={() => { setRiskAsk(null); void setMode(x, 'always'); }}>{tr('Так, завжди', 'Ja, altijd')}</IconButton>
+                  <span><b>{tr('Увімкнути «Завжди»?', 'Op "Altijd" zetten?')}</b> {risico}{' '}{tr('Кожен підключений ШІ виконуватиме це без запиту на кожен виклик.', 'Elke gekoppelde AI voert dit uit zonder vraag per aanroep.')}</span>
+                  <MensKnop tone='danger' icon={<CheckCheck />} disabled={busy} onKlik={() => { setRiskAsk(null); void setMode(x, 'always'); }}>{tr('Так, завжди', 'Ja, altijd')}</MensKnop>
                   <IconButton icon={<X />} onClick={() => setRiskAsk(null)}>{tr('Скасувати', 'Annuleren')}</IconButton>
                 </span>
               ) : null}

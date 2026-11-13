@@ -11,10 +11,12 @@
 //  (shared/beheer-journaal.ts), dus ook oude regels worden leesbaar; het scherm haalt zijn eigen pagina's met filters op.
 import { auditControle, auditToevoegen, oudeAudit, type OudeAudit } from '../server/platform/audit';
 import { getPool } from '../server/platform/pg';
+import { knipTekst } from '../server/platform/json-veilig';
 import {
   ACTIE_LABELS, ALLE_CATEGORIEEN, RUIS_PATROON, actieLabel, agentVan, categorieSql, categorieVan, csvCel, doelVan, isRuis, redenVan,
   resultaatKlasse, resultaatSql, wijzigingTekst, wijzigingVan, type CategorieId, type Doel, type JournaalFilter, type ResultaatKlasse, type Wijziging,
 } from '../shared/beheer-journaal';
+import { TECHNISCHE_ACTIE } from '../shared/meldingen-soorten';
 
 const GEHEIM_SLEUTEL = /(token|secret|cookie|proof|nonce|pkce|authorization|password|wachtwoord|private|apikey|api_key|bearer)/i;
 const MAX_TEKST = 400;
@@ -23,7 +25,7 @@ const MAX_JSON = 8000;
 /** Verwijder geheimen en kap af. Alles wat «geheim» heet, wordt nooit bewaard, ook niet verkort. */
 export function schoonDetails(v: unknown, diepte = 0): unknown {
   if (v === null || v === undefined) return v;
-  if (typeof v === 'string') return v.length > MAX_TEKST ? `${v.slice(0, MAX_TEKST)}…` : v;
+  if (typeof v === 'string') return v.length > MAX_TEKST ? `${knipTekst(v, MAX_TEKST)}…` : v; // knipTekst: nooit een halve emoji (SEC-002 privacy-logboek-02)
   if (typeof v === 'number' || typeof v === 'boolean') return v;
   if (diepte > 4) return '…';
   if (Array.isArray(v)) return v.slice(0, 40).map((x) => schoonDetails(x, diepte + 1));
@@ -32,7 +34,7 @@ export function schoonDetails(v: unknown, diepte = 0): unknown {
     for (const [k, w] of Object.entries(v as Record<string, unknown>).slice(0, 60)) { if (!GEHEIM_SLEUTEL.test(k)) uit[k] = schoonDetails(w, diepte + 1); }
     return uit;
   }
-  return String(v).slice(0, MAX_TEKST);
+  return knipTekst(String(v), MAX_TEKST);
 }
 
 export type JournaalSchrijf = {
@@ -51,8 +53,8 @@ export async function journaalSchrijf(g: JournaalSchrijf): Promise<{ id: string;
   const details: Record<string, unknown> = { ...(schoonDetails(g.details || {}) as Record<string, unknown>) };
   if (g.doel) details.doel = schoonDetails(g.doel);
   if (g.wijziging) details.wijziging = schoonDetails(g.wijziging);
-  if (g.reden) details.reden = String(g.reden).slice(0, 300);
-  if (g.agent) details.agent = String(g.agent).slice(0, 40);
+  if (g.reden) details.reden = knipTekst(String(g.reden), 300);
+  if (g.agent) details.agent = knipTekst(String(g.agent), 40);
   let tekst = JSON.stringify(details);
   if (tekst.length > MAX_JSON) { for (const k of Object.keys(details)) { if (!['doel', 'wijziging', 'reden', 'agent'].includes(k)) delete details[k]; } details.afgekapt = true; tekst = JSON.stringify(details); }
   try {
@@ -68,12 +70,19 @@ export async function journaalSchrijf(g: JournaalSchrijf): Promise<{ id: string;
 
 // ------------------------------------------------------------------------------------------------ demping van ruis
 const gezien = new Map<string, number>();
+export const DEMPING_MAX = 5000;
+export const _dempingGrootte = () => gezien.size;
 /** true = nu schrijven; daarna `ms` lang niet meer voor dezelfde sleutel (bijv. «owner.admin.bootstrap:<user>»). */
 export function eenKeerPer(sleutel: string, ms = 10 * 60 * 1000, nu = Date.now()): boolean {
   const vorige = gezien.get(sleutel) ?? Number.NEGATIVE_INFINITY;
   if (nu - vorige < ms) return false;
+  gezien.delete(sleutel);
   gezien.set(sleutel, nu);
   if (gezien.size > 2000) for (const [k, t] of gezien) if (nu - t > ms) gezien.delete(k);
+  // SEC-002 (slot m, NET-4): harde bovengrens. Sleutels die nog vers zijn (< ms) ruimt de regel hierboven niet op; bij een stroom unieke
+  // sleutels groeide de kaart zonder einde. De oudste eerst weg (een Map houdt de volgorde van invoegen; set() van een bestaande sleutel
+  // verplaatst haar niet, daarom eerst delete).
+  if (gezien.size > DEMPING_MAX) for (const k of gezien.keys()) { if (gezien.size <= DEMPING_MAX) break; gezien.delete(k); }
   return true;
 }
 export const _resetDemping = () => gezien.clear();
@@ -84,7 +93,72 @@ export type JournaalRij = {
   device: string | null; service: string | null; ipHash: string | null; seq: number; hash: string; prevHash: string; createdAt: number;
   categorie: CategorieId; resultaatKlasse: ResultaatKlasse; ruis: boolean; doel: Doel | null; wijziging: Wijziging | null; reden: string; agent: string;
 };
-export type ZoekOpties = { gebruikerIds?: string[]; /** extra: q als agent-/gebruikerszoekterm → ids van accounts */ eigenaarId?: string; /** alleen regels van dit account (owner_id), bv. het contour-journaal van de eigenaar */ };
+export type ZoekOpties = {
+  gebruikerIds?: string[]; /** extra: q als agent-/gebruikerszoekterm → ids van accounts */ eigenaarId?: string; /** alleen regels van dit account (owner_id), bv. het contour-journaal van de eigenaar */
+  /** SEC-002 (privacy-logboek-05): wie kijkt. Gezet = privéregels van ANDERE accounts worden gemaskeerd en hun details doen niet mee in de zoektekst. */
+  kijker?: Kijker;
+};
+
+// ------------------------------------------------------------------------------------------------ privésfeer van een ander account
+// SEC-002 (privacy-logboek-05). Het beheerlogboek toonde elke rol met audit.read (ook support_viewer en security_admin) de details
+// van PRIVÉ-acties van alle gebruikers: welk bestand hun AI op hun eigen pc las, welk commando zij uitvoerde, welke pagina zij opende.
+// Voor meldingen zijn «persoonlijk» en «technisch» al gescheiden (shared/meldingen-soorten.ts); hier geldt nu hetzelfde:
+//   - een regel uit de privésfeer van een ANDER account houdt actie, uitkomst, tijd, account, apparaat en een korte lijst
+//     niet-inhoudelijke velden (welk hulpmiddel, welke AI-verbinding, weigercode); pad, commando, adres en al het overige vervallen;
+//   - de eigen regels, alles uit de technische sfeer, beheeracties en aanmeldingen/sessies (nodig voor beveiligingsonderzoek, en
+//     zonder inhoud) blijven volledig;
+//   - de eigenaar (super_admin) ziet alles zoals voorheen.
+export type Kijker = { id: string; rol: string };
+/** Alleen de eigenaar (super_admin) ziet de details van privéacties van andere accounts. */
+export const zietPriveDetails = (rol: string): boolean => rol === 'super_admin';
+/** Categorieën (shared/beheer-journaal.ts) waarin een privéregel INHOUD van de gebruiker kan dragen. `toegang`, `sessie` en `beheer` niet. */
+const PRIVE_CATEGORIEEN: ReadonlySet<string> = new Set(['ai', 'mail', 'integraties', 'privacy', 'apparaten', 'overig']);
+const lijf = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {});
+/** Technische sfeer — zelfde regel als het SQL-voorfilter in server/platform/audit.ts (auditLijst, f.sfeer). */
+const isTechnischeRegel = (action: string, details: Record<string, unknown>): boolean => {
+  const profiel = lijf(details._ctx).profiel;
+  return TECHNISCHE_ACTIE.test(action) || (profiel !== undefined && profiel !== null) || details.ruimte === 'technisch' || details.lade === 'technisch'
+    || (typeof details.v2 === 'string' && /_beheer$/.test(details.v2));
+};
+export function isPriveVanAnder(r: { ownerId?: string | null; action: string; details?: unknown }, kijkerId: string): boolean {
+  if (!r.ownerId || r.ownerId === kijkerId) return false;
+  return !isTechnischeRegel(r.action, lijf(r.details)) && PRIVE_CATEGORIEEN.has(categorieVan(r.action));
+}
+/** Dezelfde vraag in SQL, voor het zoekfilter. `k` en `re` zijn plaatshouders ($n) voor het account van de kijker en TECHNISCHE_ACTIE.source. */
+const priveVanAnderSql = (k: string, re: string) => `(owner_id IS NOT NULL AND owner_id <> ${k}
+  AND NOT (action ~ ${re} OR ctx_profiel IS NOT NULL OR COALESCE(details->>'ruimte', '') = 'technisch' OR COALESCE(details->>'lade', '') = 'technisch' OR (jsonb_typeof(details->'v2') = 'string' AND details->>'v2' ~ '_beheer$'))
+  AND ${categorieSql('action')} IN (${[...PRIVE_CATEGORIEEN].map((c) => `'${c}'`).join(', ')}))`;
+/** Velden die van een privéregel van een ander overblijven: soort, verbinding, code — nooit pad, commando, adres, onderwerp of tekst. */
+const PRIVE_VELDEN = ['tool', 'soort', 'ruimte', 'lade', 'v2', 'client', 'clientName', 'agent', 'klant', 'grantId', 'actorType', 'fout', 'reden', 'reason', 'code', 'methode', 'platform', 'status', 'duur', 'cap', 'aan', 'afgekapt'] as const;
+/** Korte, niet-inhoudelijke waarde: geen schuine streep of backslash (dus geen pad of adres), hoogstens 80 tekens. */
+const PRIVE_WAARDE = /^[\p{L}\p{N} _.:()@+-]{1,80}$/u;
+export function maskeerPriveDetails(details: unknown): Record<string, unknown> {
+  const d = lijf(details); const uit: Record<string, unknown> = { _priveVerborgen: true };
+  for (const k of PRIVE_VELDEN) {
+    const v = d[k];
+    if (typeof v === 'boolean' || typeof v === 'number' || (typeof v === 'string' && PRIVE_WAARDE.test(v))) uit[k] = v;
+  }
+  if (d._ctx && typeof d._ctx === 'object') uit._ctx = d._ctx;
+  return uit;
+}
+/** Eén rij zoals DEZE kijker haar mag zien (zie boven). Afgeleide velden (doel, wijziging, reden, agent) volgen de gemaskeerde details. */
+export function maskeerVoorKijker(r: JournaalRij, kijker: Kijker | undefined): JournaalRij {
+  if (!kijker || zietPriveDetails(kijker.rol) || !isPriveVanAnder(r, kijker.id)) return r;
+  const details = maskeerPriveDetails(r.details);
+  return { ...r, details, doel: doelVan(details, r.action), wijziging: null, reden: redenVan(details), agent: agentVan(details) };
+}
+/** Voor lijsten in een andere vorm (auditVoorWeergave: userId i.p.v. ownerId): geeft de details zoals deze kijker ze mag zien. */
+export function maskeerDetailsVoorKijker(r: { userId?: unknown; ownerId?: unknown; action?: unknown; details?: unknown }, kijker: Kijker): unknown {
+  const ownerId = typeof r.ownerId === 'string' ? r.ownerId : typeof r.userId === 'string' ? r.userId : null;
+  if (zietPriveDetails(kijker.rol) || !isPriveVanAnder({ ownerId, action: String(r.action || ''), details: r.details }, kijker.id)) return r.details;
+  return maskeerPriveDetails(r.details);
+}
+/** Alles wat «geheim» heet eruit (zelfde sleutels als schoonDetails), zonder iets af te kappen — voor de export. */
+export function zonderGeheimeSleutels(v: unknown, diepte = 0): unknown {
+  if (Array.isArray(v)) return diepte > 12 ? [] : v.map((x) => zonderGeheimeSleutels(x, diepte + 1));
+  if (v && typeof v === 'object') return diepte > 12 ? {} : Object.fromEntries(Object.entries(v as Record<string, unknown>).filter(([k]) => !GEHEIM_SLEUTEL.test(k)).map(([k, w]) => [k, zonderGeheimeSleutels(w, diepte + 1)]));
+  return v;
+}
 
 const LIKE = (s: string) => `%${s.replace(/[%_\\]/g, '\\$&')}%`;
 const nummer = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
@@ -103,7 +177,11 @@ export function bouwWaar(f: JournaalFilter, opties: ZoekOpties = {}, metCursor =
   const q = String(f.q || '').trim().slice(0, 120);
   if (q) {
     const ors: string[] = []; p.push(LIKE(q)); const like = `$${p.length}`;
-    ors.push(`action ILIKE ${like}`, `result ILIKE ${like}`, `details::text ILIKE ${like}`, `COALESCE(actor_id,'') ILIKE ${like}`, `COALESCE(owner_id,'') ILIKE ${like}`);
+    // SEC-002 (privacy-logboek-05): de details van een privéregel van een ander account doen voor deze kijker niet mee in de zoektekst —
+    // anders verraadt het aantal treffers alsnog wat er in de verborgen velden staat.
+    let inDetails = `details::text ILIKE ${like}`;
+    if (opties.kijker && !zietPriveDetails(opties.kijker.rol)) { p.push(String(opties.kijker.id).slice(0, 200)); const k = `$${p.length}`; p.push(TECHNISCHE_ACTIE.source); inDetails = `(${inDetails} AND NOT ${priveVanAnderSql(k, `$${p.length}`)})`; }
+    ors.push(`action ILIKE ${like}`, `result ILIKE ${like}`, inDetails, `COALESCE(actor_id,'') ILIKE ${like}`, `COALESCE(owner_id,'') ILIKE ${like}`);
     const codes = actiesVoorTekst(q);
     if (codes.length) { p.push(codes); ors.push(`action = ANY($${p.length}::text[])`); }
     if (opties.gebruikerIds?.length) { p.push(opties.gebruikerIds.slice(0, 200)); ors.push(`actor_id = ANY($${p.length}::text[])`, `owner_id = ANY($${p.length}::text[])`); }
@@ -150,7 +228,7 @@ export async function journaalZoeken(f: JournaalFilter, opties: ZoekOpties = {})
   const rows = (await getPool('systeem').query(
     `SELECT id, owner_id, actor_id, action, type, result, details, ip_hash, device, service, seq, prev_hash, hash, (extract(epoch FROM created_at) * 1000)::bigint AS ms
        FROM app.audit ${waar} ORDER BY id ${f.volgorde === 'oud' ? 'ASC' : 'DESC'} LIMIT $${p.length}`, p)).rows;
-  const items = rows.slice(0, limiet).map((r) => rijVan(r));
+  const items = rows.slice(0, limiet).map((r) => maskeerVoorKijker(rijVan(r), opties.kijker));
   return rows.length > limiet ? { items, nextCursor: items[items.length - 1].id } : { items };
 }
 
@@ -162,6 +240,8 @@ export async function journaalOud(f: JournaalFilter, opties: ZoekOpties = {}): P
   const cats = lijstTekst(f.categorieen, 20); const res = lijstTekst(f.resultaten, 12);
   const codes = q ? actiesVoorTekst(q) : [];
   const ids = new Set(opties.gebruikerIds || []);
+  // SEC-002 (privacy-logboek-05): zelfde regel als in bouwWaar — verborgen details tellen niet mee in de zoektekst.
+  const verborgen = (o: OudeAudit) => !!opties.kijker && !zietPriveDetails(opties.kijker.rol) && isPriveVanAnder({ ownerId: o.userId, action: o.action, details: o.details }, opties.kijker.id);
   let lijst = alle.filter((o) => {
     if (f.van && o.createdAt < f.van) return false;
     if (f.tot && o.createdAt >= f.tot) return false;
@@ -171,13 +251,13 @@ export async function journaalOud(f: JournaalFilter, opties: ZoekOpties = {}): P
     if (res.length && !res.includes(resultaatKlasse(o.result))) return false;
     if (f.verbergRuis && isRuis(o.action)) return false;
     if (f.actie && !(f.actie.endsWith('*') ? o.action.startsWith(f.actie.slice(0, -1)) : o.action === f.actie)) return false;
-    if (q && !(o.action.toLowerCase().includes(q) || o.result.toLowerCase().includes(q) || JSON.stringify(o.details).toLowerCase().includes(q) || codes.includes(o.action) || ids.has(o.userId))) return false;
+    if (q && !(o.action.toLowerCase().includes(q) || o.result.toLowerCase().includes(q) || (!verborgen(o) && JSON.stringify(o.details).toLowerCase().includes(q)) || codes.includes(o.action) || ids.has(o.userId))) return false;
     return true;
   });
   if (f.volgorde === 'oud') lijst = [...lijst].reverse();
   const start = Math.max(0, Number(f.cursor) || 0);
   const stuk = lijst.slice(start, start + limiet);
-  const items = stuk.map((o) => rijVan({ id: `oud:${o.id}`, owner_id: o.userId, actor_id: o.userId, action: o.action, type: 'beveiliging', result: o.result, details: o.details, seq: 0, hash: o.eventHash, prev_hash: o.previousHash, ms: o.createdAt }, 'oud'));
+  const items = stuk.map((o) => rijVan({ id: `oud:${o.id}`, owner_id: o.userId, actor_id: o.userId, action: o.action, type: 'beveiliging', result: o.result, details: o.details, seq: 0, hash: o.eventHash, prev_hash: o.previousHash, ms: o.createdAt }, 'oud')).map((r) => maskeerVoorKijker(r, opties.kijker));
   return start + limiet < lijst.length ? { items, nextCursor: String(start + limiet) } : { items };
 }
 
@@ -229,7 +309,7 @@ export async function journaalExport(f: JournaalFilter, opties: ZoekOpties, pers
   const naam = (id: string | null | undefined) => (id ? (mensen.get(id)?.email || id) : '');
   const stempel = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   if (formaat === 'json') {
-    const uit = rijen.map((r) => ({ tijd: new Date(r.createdAt).toISOString(), categorie: r.categorie, actie: r.action, resultaat: r.result, actor: naam(r.actorId), account: naam(r.ownerId), doel: r.doel, wijziging: r.wijziging, reden: r.reden, dienst: r.service, apparaat: r.device, seq: r.seq, hash: r.hash, details: r.details }));
+    const uit = rijen.map((r) => ({ tijd: new Date(r.createdAt).toISOString(), categorie: r.categorie, actie: r.action, resultaat: r.result, actor: naam(r.actorId), account: naam(r.ownerId), doel: r.doel, wijziging: r.wijziging, reden: r.reden, dienst: r.service, apparaat: r.device, seq: r.seq, hash: r.hash, details: zonderGeheimeSleutels(r.details) })); // SEC-002: zelfde geheimfilter als het scherm (vroeger gingen details hier rauw mee)
     return { inhoud: JSON.stringify({ gemaakt: new Date().toISOString(), aantal: uit.length, afgekapt, items: uit }, null, 2), aantal: uit.length, afgekapt, bestandsnaam: `beheerlogboek-${stempel}.json` };
   }
   const kop = ['tijd', 'categorie', 'actie_code', 'actie', 'resultaat', 'actor', 'account', 'doel', 'wijziging', 'reden', 'dienst', 'apparaat', 'seq', 'hash'];

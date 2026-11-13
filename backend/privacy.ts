@@ -3,10 +3,10 @@
 //    alleen anonieme dagtellers per gebeurtenisnaam (geen user-id, IP of apparaat in de teller).
 //  * export: alle rijen van het account (app.records.owner_id = account) + bestandsmetadata, als JSON,
 //    met geheimen/hashes weggelaten.
-//  * verwijderen: zelf wissen én beheer zijn meteen (accountMeteenWissen, recoverableUntil 0, retiredAt).
-//    deleteRecoverably blijft alleen voor een oud zacht pad dat nieuwe routes niet meer aanroepen.
-//    De opruimjob rondt verlopen zachte verwijderingen af. Onomkeerbaar, daarom alleen
-//    met ACCOUNT_DEFINITIEF_WISSEN=1; zonder die vlag rapporteert de job alleen (droog).
+//  * verwijderen (INTEG-001, 03.11.2026): zelf wissen én beheer lopen via deleteRecoverably (status=deleted, 30 dagen
+//    herstelbaar). De opruimjob rondt verlopen verwijderingen af met het VOLLEDIGE wissen (accountMeteenWissen:
+//    alle tabellen met een accountkolom + records + bestanden; SEC-002 privacy-logboek-01). Onomkeerbaar; standaard
+//    aan, uitzetten met ACCOUNT_DEFINITIEF_WISSEN=0 — dan rapporteert de job alleen (droog).
 import { getPool } from '../server/platform/pg';
 import { storage } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
@@ -15,12 +15,19 @@ export const PRIVACY_TABEL = 'privacy_voorkeuren_v1';
 export const ANALYTICS_TABEL = 'analytics_tellers_v1';
 // Audit-fix 10: ruimer (liever een veld te veel weglaten dan een geheim exporteren): ook sleutels, API-keys,
 // credentials, refresh/access, sessies, OTP/TOTP/herstel, handtekeningen, JWT en versleutelde velden (…Enc).
-const GEHEIM_SLEUTEL = /(token|secret|hash|cookie|proof|nonce|pkce|pass(word|wd|phrase)?$|password|wachtwoord|cipher|encrypt|sealed|salt|verifier|codes?$|seed|private|key$|keys$|api[-_]?key|credential|authoriz|bearer|jwt|signature|otp|totp|recovery|herstel|session|refresh|grant|^iv$|^tag$|enc$|kid$|geheim|sleutel)/i;
+const GEHEIM_SLEUTEL = /(token|secret|hash|cookie|proof|nonce|pkce|pass(word|wd|phrase)?$|password|wachtwoord|cipher|encrypt|sealed|salt|verifier|codes?$|seed|private|key$|keys$|api[-_]?key|credential|authoriz|bearer|jwt|signature|otp|totp|recovery|herstel|session|refresh|grant|^iv$|^tag$|enc$|kid$|geheim|sleutel|envelop|omslag|zegel|hmac|(^|_)binding(_|$)|^binding|uitdaging|challenge)/i;
+// SEC-002 (privacy-logboek-08): sleutelmateriaal met een andere kolomnaam ging mee in de export — de omslag van de
+// gegevenssleutel (envelop + KDF-parameters), de controlewaarde, passkey-uitdagingen, HMAC-bindingen van technische sessies,
+// OAuth-challenge en zegels. De namen hierboven dekken die (algemene namen als «state» en «controle» alleen per tabel,
+// zodat een gewoon veld met die naam elders niet uit de kopie verdwijnt); tabellen die ALLEEN zulk kortlevend of sleutelmateriaal
+// bevatten gaan helemaal niet mee, en van de omslagtabel alleen de niet-geheime kolommen (wat, voor wie, wanneer).
+const NIET_IN_EXPORT = new Set(['passkey_uitdagingen']);
+const EXTRA_WEG: Record<string, string[]> = { sleutelkluis_omslag: ['parameters', 'envelop'], sleutelkluis: ['controle'], mcp_oauth_auth: ['state'] };
 const GEBEURTENIS = /^[a-z0-9][a-z0-9_.-]{0,59}$/;
 /** Kolommen waarmee een rij bij een account hoort: het account is dan het onderwerp van de rij (zelfde reikwijdte als het wissen). */
 const ACCOUNT_KOLOMMEN = ['user_id', 'owner_id', 'account_id', 'eigenaar_id'];
-/** Een versleutelde envelop (v1.iv.ct.tag of dek1.…) is een geheim en hoort niet in de kopie. */
-const VERSLEUTELD = /^(v1\.[^.\s]+\.[^.\s]+\.[^.\s]+|dek1\.)/;
+/** Een versleutelde envelop (v1.iv.ct.tag, dek1.… of een omslag van de gegevenssleutel omslag1.…) is een geheim en hoort niet in de kopie. */
+const VERSLEUTELD = /^(v[1-9]\.[^.\s]+\.[^.\s]+\.[^.\s]+|dek1\.|omslag1\.)/; // v2…v9: na rotatie van de serversleutel (geheimen-07)
 
 export async function privacyVoorkeur(userId: string): Promise<{ analyticsConsent: boolean; updatedAt: number }> {
   const r = await getPool().query("SELECT data FROM app.records WHERE tbl = $1 AND data->>'userId' = $2 ORDER BY seq DESC LIMIT 1", [PRIVACY_TABEL, userId]);
@@ -96,10 +103,13 @@ export async function persoonsgegevensExport(userId: string) {
   );
   const beveiligingslog: unknown[] = [];
   for (const t of tabellen.rows as Array<{ tabel: string; kolommen: string[] }>) {
+    if (NIET_IN_EXPORT.has(t.tabel)) continue;
+    const weg = EXTRA_WEG[t.tabel] || [];
+    const schoon = (r: Record<string, unknown>) => zonderGeheimen(weg.length ? Object.fromEntries(Object.entries(r).filter(([k]) => !weg.includes(k))) : r);
     const voorwaarde = t.kolommen.map((k) => `"${k}"::text = $1`).join(' OR ');
     const uit = await pool.query(`SELECT * FROM app."${t.tabel}" WHERE ${voorwaarde}`, [userId]);
-    if (t.tabel === 'audit') beveiligingslog.push(...uit.rows.map((r) => zonderGeheimen(r)));
-    else if (uit.rows.length) gegevens[`app.${t.tabel}`] = uit.rows.map((r) => zonderGeheimen(r));
+    if (t.tabel === 'audit') beveiligingslog.push(...uit.rows.map((r) => schoon(r)));
+    else if (uit.rows.length) gegevens[`app.${t.tabel}`] = uit.rows.map((r) => schoon(r));
   }
   const bestanden = await pool.query('SELECT path, content_type, size_bytes, created_at FROM app.storage_objects WHERE owner_id = $1 ORDER BY created_at', [userId]);
   return {
@@ -138,25 +148,65 @@ export async function wisRecordsVanAccount(userId: string, email: string, nu = D
   return { rijen: weg.rowCount || 0, bestanden: paden.length };
 }
 
-/** Afronden van verwijderingen waarvan de herstelperiode voorbij is (30 dagen). INTEG-001: standaard aan; uitzetten met ACCOUNT_DEFINITIEF_WISSEN=0. */
+/**
+ * SEC-002 (toets-g10b #4): een account dat niet gewist kan worden, valt niet meer stil weg. Teller en tijd op de grafsteen
+ * (de kandidatenlijst zet zulke accounts achteraan, zodat ze de rest niet blokkeren), een regel in het auditlogboek, en bij de
+ * eerste mislukking en daarna elke 10e een melding aan de eigenaar van de site. Alleen de foutcode, geen persoonsgegevens.
+ */
+async function afrondenMisluktVastleggen(userId: string, fout: string): Promise<void> {
+  try {
+    const r = await getPool().query(
+      `UPDATE app.records SET data = data || jsonb_build_object('afrondenMislukt', COALESCE((data->>'afrondenMislukt')::int, 0) + 1, 'afrondenLaatstePoging', $2::bigint)
+        WHERE tbl = 'users' AND id = $1 RETURNING (data->>'afrondenMislukt')::int AS n`, [userId, Date.now()]);
+    const n = Number(r.rows[0]?.n || 0);
+    await auditToevoegen({ ownerId: userId, actorId: 'systeem', action: 'privacy.afronden_mislukt', result: 'failure', details: { userId, fout: fout.slice(0, 120), pogingen: n } }).catch(() => undefined);
+    if (n === 1 || n % 10 === 0) {
+      const eigenaar = (await getPool().query(`SELECT id FROM app.records WHERE tbl = 'users' AND data->>'role' = 'owner' ORDER BY seq LIMIT 1`)).rows[0]?.id as string | undefined;
+      if (eigenaar) {
+        const { meld } = await import('./melder');
+        await meld(eigenaar, 'security', 'Остаточне стирання не вдалося / Definitief wissen mislukt',
+          `Обліковий запис ${userId} не вдалося остаточно стерти після 30 днів (спроба ${n}): ${fout.slice(0, 80)}. Дані лишаються в базі, доки причину не усунуто. / Account ${userId} kon na 30 dagen niet definitief gewist worden (poging ${n}): ${fout.slice(0, 80)}. De gegevens blijven staan tot de oorzaak is opgelost.`);
+      }
+    }
+  } catch (e) { console.error('[privacy] mislukking vastleggen mislukt:', String((e as Error)?.message || e).slice(0, 120)); }
+}
+
+/**
+ * Afronden van verwijderingen waarvan de herstelperiode voorbij is (30 dagen). INTEG-001: standaard aan; uitzetten met ACCOUNT_DEFINITIEF_WISSEN=0.
+ * SEC-002 (privacy-logboek-01): het afronden is het VOLLEDIGE wissen (accountMeteenWissen): ook alle relationele tabellen
+ * met een accountkolom (zoekindex, notities, concepten, passkeys, koppelingen …), niet alleen app.records en bestanden.
+ * Dynamische import: account-wissen.ts importeert dit bestand al statisch. Eén mislukt account houdt de andere niet tegen
+ * en blijft kandidaat (geen gewistAt) voor de volgende ronde.
+ */
 export async function verlopenVerwijderingenAfronden(nu = Date.now(), uitvoeren = process.env.ACCOUNT_DEFINITIEF_WISSEN !== '0') {
   const pool = getPool();
   const kandidaten = await pool.query(
     `SELECT id, data FROM app.records WHERE tbl = 'users' AND data->>'status' = 'deleted'
        AND jsonb_typeof(data->'recoverableUntil') = 'number' AND (data->>'recoverableUntil')::numeric > 0 AND (data->>'recoverableUntil')::numeric < $1
-       AND COALESCE(data->>'gewistAt', '') = '' AND COALESCE(data->>'role', '') <> 'owner' LIMIT 50`,
+       AND COALESCE(data->>'gewistAt', '') = '' AND COALESCE(data->>'role', '') <> 'owner'
+      ORDER BY COALESCE((data->>'afrondenMislukt')::int, 0), (data->>'recoverableUntil')::numeric LIMIT 50`, /* toets-g10b #4: wie steeds faalt, achteraan */
     [nu],
   );
-  const verslag: Array<{ id: string; rijen: number; bestanden: number }> = [];
+  const { accountMeteenWissen, accountWisTelling } = await import('./account-wissen');
+  const verslag: Array<{ id: string; rijen: number; bestanden: number; fout?: string }> = [];
   for (const k of kandidaten.rows as Array<{ id: string; data: Record<string, unknown> }>) {
     const email = String(k.data.email || '').toLowerCase();
-    if (!uitvoeren) {
-      const n = await pool.query('SELECT count(*)::int n FROM app.records WHERE owner_id = $1 AND tbl <> $2', [k.id, 'users']);
-      verslag.push({ id: k.id, rijen: n.rows[0].n, bestanden: 0 });
-      continue;
+    try {
+      if (!uitvoeren) {
+        const n = await pool.query('SELECT count(*)::int n FROM app.records WHERE owner_id = $1 AND tbl <> $2', [k.id, 'users']);
+        const b = await pool.query('SELECT count(*)::int n FROM app.storage_objects WHERE owner_id = $1', [k.id]);
+        const relationeel = await accountWisTelling(k.id);
+        verslag.push({ id: k.id, rijen: Number(n.rows[0].n) + relationeel.rijen, bestanden: Number(b.rows[0].n) });
+        continue;
+      }
+      const gewist = await accountMeteenWissen(k.id, email, nu);
+      verslag.push({ id: k.id, rijen: gewist.rijen, bestanden: gewist.bestanden });
+    } catch (e) {
+      const fout = String((e as Error)?.message || e).slice(0, 120);
+      console.error('[privacy] account afronden mislukt:', k.id, fout);
+      verslag.push({ id: k.id, rijen: 0, bestanden: 0, fout });
+      if (uitvoeren) await afrondenMisluktVastleggen(k.id, fout);
     }
-    const gewist = await wisRecordsVanAccount(k.id, email, nu);
-    verslag.push({ id: k.id, rijen: gewist.rijen, bestanden: gewist.bestanden });
   }
   return { uitgevoerd: uitvoeren, accounts: verslag };
 }

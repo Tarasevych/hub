@@ -60,15 +60,28 @@ export function schakelaarAan(data: unknown): boolean {
   return !!data && typeof data === 'object' && (data as { 'ssh-ca'?: unknown })['ssh-ca'] === true;
 }
 
+/** Root-schakelaar in mcp-rechten.json (SEC-002, server-uitrol-06): moet root voor ELK certificaat de passkey van de eigenaar zien? */
+export const SSH_CA_TEKEN_PASSKEY = 'ssh-ca-teken-passkey';
+/**
+ * Zelfde regel als het root-script (deploy/ssh-ca/mijn-ruimte-ssh-ca.sh, passkey_vereist): alleen exact `false` zet de controle
+ * uit; `true` zet haar altijd aan; anders geldt ze zodra het sleutelbestand van de root-passkeys bestaat (de installer maakt het
+ * altijd aan). De site gebruikt dit alleen om te weten of ze de eigenaar om zijn passkey moet vragen — root beslist zelf.
+ */
+export function tekenPasskeyVereist(rechten: unknown, sleutelbestandBestaat: boolean): boolean {
+  const modus = rechten && typeof rechten === 'object' ? (rechten as Record<string, unknown>)[SSH_CA_TEKEN_PASSKEY] : undefined;
+  if (modus === false) return false;
+  return modus === true || sleutelbestandBestaat;
+}
+
 export const HELP_SSH: HelpLagen = {
   wat: ['Короткоживучий сертифікат SSH (5–60 хв) для входу на цей сервер як beheer. Приватний ключ лишається на вашому комп’ютері: сюди вставляєте лише публічний рядок ssh-ed25519.',
     'Een kortlevend SSH-certificaat (5–60 min) om op deze server in te loggen als beheer. De privésleutel blijft op uw computer: hier plakt u alleen de publieke regel ssh-ed25519.'],
   gevolg: ['Сертифікат згасає сам після обраного терміну. Постійного ключа на сервері не з’являється. Лише термінал (permit-pty), без пересилання портів, агента чи екрана. Видачу видно в списку й журналі; її можна відкликати раніше.',
     'Het certificaat dooft zelf na de gekozen tijd. Er komt geen vaste sleutel op de server. Alleen een terminal (permit-pty), zonder poort-, agent- of schermdoorsturing. De uitgifte staat in de lijst en het logboek en kan eerder worden ingetrokken.'],
-  risico: ['Поки сертифікат дійсний і не відкликаний, ним можна відкрити сеанс SSH як beheer. Підпис відбувається лише якщо перемикач ssh-ca увімкнено (passkey, перевіряє root) і sshd довіряє CA.',
-    'Zolang het certificaat geldig en niet ingetrokken is, opent het een SSH-sessie als beheer. Ondertekenen gebeurt alleen als de schakelaar ssh-ca aan staat (passkey, gecontroleerd door root) en sshd de CA vertrouwt.'],
-  dev: ['Root-служба mijn-ruimte-ssh-ca (shared/ssh-ca.ts, backend/ssh-ca.ts). Прапорець ssh-certificaat лише ховає кнопку. Право — ssh.host (лише Власник) в активному технічному профілі + підтвердження входу. Principals за роллю: SSH_CA_PRINCIPALS_PER_ROL ∩ root-список toegestaan.json. Термін 5–60 хв: -V -5m:+Nm, -O clear -O permit-pty, серійний номер -z для KRL.',
-    'Root-dienst mijn-ruimte-ssh-ca (shared/ssh-ca.ts, backend/ssh-ca.ts). De vlag ssh-certificaat verbergt alleen de knop. Het recht is ssh.host (alleen eigenaar) in een actief technisch profiel + bevestiging van de aanmelding. Principals per rol: SSH_CA_PRINCIPALS_PER_ROL ∩ root-lijst toegestaan.json. Duur 5–60 min: -V -5m:+Nm, -O clear -O permit-pty, serienummer -z voor de KRL.'],
+  risico: ['Поки сертифікат дійсний і не відкликаний, ним можна відкрити сеанс SSH як beheer. Підпис відбувається лише якщо перемикач ssh-ca увімкнено (passkey, перевіряє root) і sshd довіряє CA. Кожен окремий сертифікат root підписує лише після вашого passkey саме для цього ключа; сам вхід через Google для цього не рахується.',
+    'Zolang het certificaat geldig en niet ingetrokken is, opent het een SSH-sessie als beheer. Ondertekenen gebeurt alleen als de schakelaar ssh-ca aan staat (passkey, gecontroleerd door root) en sshd de CA vertrouwt. Elk afzonderlijk certificaat tekent root pas na uw passkey voor precies deze sleutel; alleen aanmelden met Google telt daarvoor niet.'],
+  dev: ['Root-служба mijn-ruimte-ssh-ca (shared/ssh-ca.ts, backend/ssh-ca.ts). Прапорець ssh-certificaat лише ховає кнопку. Право — ssh.host (лише Власник) в активному технічному профілі + сильне підтвердження (passkey, код із застосунку або код відновлення; повторний вхід Google не рахується), одне підтвердження = один сертифікат. Root перед кожним підписом сам перевіряє passkey власника: виклик охоплює відбиток ключа, principals і термін (mijn-ruimte-passkey verifieer-ssh-ca … teken; nonce одноразовий). Вимкнути це може лише root: "ssh-ca-teken-passkey": false у mcp-rechten.json — тоді root знову підписує будь-який запит застосунку. Principals за роллю: SSH_CA_PRINCIPALS_PER_ROL ∩ root-список toegestaan.json. Термін 5–60 хв: -V -5m:+Nm, -O clear -O permit-pty, серійний номер -z для KRL.',
+    'Root-dienst mijn-ruimte-ssh-ca (shared/ssh-ca.ts, backend/ssh-ca.ts). De vlag ssh-certificaat verbergt alleen de knop. Het recht is ssh.host (alleen eigenaar) in een actief technisch profiel + sterke bevestiging (passkey, app-code of herstelcode; opnieuw aanmelden bij Google telt niet), één bevestiging = één certificaat. Root controleert vóór elke handtekening zelf de passkey van de eigenaar: de challenge omvat de vingerafdruk van de sleutel, de principals en de duur (mijn-ruimte-passkey verifieer-ssh-ca … teken; nonce eenmalig). Alleen root kan dit uitzetten: "ssh-ca-teken-passkey": false in mcp-rechten.json — dan tekent root weer elk verzoek van de app. Principals per rol: SSH_CA_PRINCIPALS_PER_ROL ∩ root-lijst toegestaan.json. Duur 5–60 min: -V -5m:+Nm, -O clear -O permit-pty, serienummer -z voor de KRL.'],
 };
 
 /** «?» bij elk onderdeel van de kaart «SSH-сертифікати» (src/ssh/SshBeheer.tsx). Ook in shared/hulp-register.ts opgenomen. */

@@ -58,7 +58,7 @@ export const isKritiekType = (t: MeldingType): boolean => (MELDING_TYPES[t] as M
  * zo'n oude `vast: true` zonder eigen keuze telt niet meer.
  */
 export type TypeVoorkeur = { geluid: boolean; opduiken: boolean; tonen: boolean; vast: boolean; seconden: number; vastGekozen?: boolean };
-/** 0 = automatisch: korter voor «готово», langer voor een fout, extra tijd voor een lange tekst. */
+/** 0 = standaard (2 s); wie langer wil lezen houdt de muis of vinger op de melding. */
 export const TOAST_SECONDEN_STANDAARD = 0;
 export const TOAST_SECONDEN_KEUZES = [3, 5, 7, 10, 14, 20, 30, 60] as const;
 export const standaardTypeVoorkeur = (_type?: MeldingType): TypeVoorkeur => ({
@@ -76,7 +76,7 @@ export function normaliseerTypeVoorkeuren(raw: unknown): Record<MeldingType, Typ
     uit[t] = {
       geluid: b(v.geluid), opduiken: b(v.opduiken), tonen: isKritiekType(t) ? true : b(v.tonen),
       vast, ...(vast ? { vastGekozen: true } : {}),
-      seconden: Number.isFinite(sec) && sec > 0 ? Math.min(60, Math.max(3, sec)) : TOAST_SECONDEN_STANDAARD,
+      seconden: Number.isFinite(sec) && sec > 0 ? Math.min(60, Math.max(2, sec)) : TOAST_SECONDEN_STANDAARD,
     };
   }
   return uit;

@@ -18,6 +18,7 @@ import {
   isWeigercode, weigerUitleg, type BrowserCap, type ExtensieAgentStatus, type ExtensieStaat,
 } from '../../shared/extensie-ontgrendeling';
 import { eindeWeergave } from '../../shared/extensie-matrix';
+import { weigeringZin } from '../../shared/weigering-tekst';
 import { extensieLive, restTekst, useExtensieLive, type ExtensieLive, type ExtensieLiveStore, type Slot } from './extensie-live';
 import './ExtensieOntgrendeling.css';
 
@@ -65,6 +66,9 @@ export function weigeringVan(e: unknown, ruimte?: 'prive' | 'technisch'): Weiger
   const actie = a && isTekst2(a) && eigenSite(a.url) ? { uk: a.uk.slice(0, 80), nl: a.nl.slice(0, 80), url: String(a.url) } : vast?.actie;
   if (uitleg) return { code, ...uitleg, ...(actie ? { actie } : {}) };
   if (code === 'NETWORK_ERROR') return { code, uk: 'Немає зв’язку із сервером. Перевірте мережу й спробуйте ще раз.', nl: 'Geen verbinding met de server. Controleer het netwerk en probeer opnieuw.' };
+  // SEC-002 (slot «u»): bekende weigeringen (rol «лише перегляд», server bezet …) — één tekst voor de hele site, shared/weigering-tekst.ts.
+  const bekendUk = weigeringZin('uk', code), bekendNl = weigeringZin('nl', code);
+  if (bekendUk && bekendNl) return { code, uk: bekendUk, nl: bekendNl };
   return { code, uk: `Не вдалося (${code}). Нічого не змінено.`, nl: `Mislukt (${code}). Er is niets gewijzigd.` };
 }
 

@@ -4,22 +4,27 @@ import { api } from './platform/client';
 import { agentLogo, Help, IconButton, Logo, Section, StatusDot, type Tr } from './mcp-ui';
 import { ago, commandLabel, sessionBody, statusLabel, type Agent, type LastCommand, type Pending } from './agenten-gegevens';
 import { foutTekst } from './agenten/fouten';
+import { AanvragerPill, GoedkeuringInhoud, MensKnop } from './GoedkeuringInhoud';
+import { alleenMens, geenAi } from './menselijke-actie';
 
 /** Welke opdrachten van een pc zonder klik mogen (de rest wacht altijd op uw "Toestaan"). */
 const MACHINE_AUTO: Array<{ type: string; uk: [string, string]; nl: [string, string]; help: { what: [string, string]; on: [string, string]; off: [string, string] } }> = [
-  { type: 'fs.read', uk: ['Читання файлів', 'Bestanden lezen'], nl: ['', ''], help: { what: ['Агент читає текстові файли з дозволених тек.', 'De agent leest tekstbestanden uit toegestane mappen.'], on: ['Claude читає ці файли без кліку; вміст бачить Anthropic.', 'Claude leest deze bestanden zonder klik; de inhoud wordt door Anthropic gezien.'], off: ['Кожне читання чекає вашого «Дозволити».', 'Elke leesactie wacht op uw "Toestaan".'] } },
-  { type: 'fs.list', uk: ['Перегляд тек', 'Mappen bekijken'], nl: ['', ''], help: { what: ['Агент показує імена файлів у дозволених теках.', 'De agent toont bestandsnamen in toegestane mappen.'], on: ['Claude бачить структуру тек без кліку.', 'Claude ziet de mapstructuur zonder klik.'], off: ['Кожен перегляд чекає «Дозволити».', 'Elk overzicht wacht op "Toestaan".'] } },
-  { type: 'sys.info', uk: ['Інформація про пристрій', 'Apparaatinformatie'], nl: ['', ''], help: { what: ['Система, дозволені теки й команди агента.', 'Systeem, toegestane mappen en commando\'s van de agent.'], on: ['Claude знає межі агента без кліку.', 'Claude kent de grenzen van de agent zonder klik.'], off: ['Кожен запит чекає «Дозволити».', 'Elke aanvraag wacht op "Toestaan".'] } },
-  { type: 'sys.metrics', uk: ['Метрики системи', 'Systeemmetrics'], nl: ['', ''], help: { what: ['Навантаження процесора, пам’ять, диски.', 'Processorbelasting, geheugen, schijven.'], on: ['Claude бачить стан ресурсів без кліку.', 'Claude ziet de toestand van resources zonder klik.'], off: ['Кожен запит метрик чекає «Дозволити».', 'Elke metrics-aanvraag wacht op "Toestaan".'] } },
-  { type: 'docker.ps', uk: ['Список контейнерів Docker', 'Lijst van Docker-containers'], nl: ['', ''], help: { what: ['Показує контейнери (лише перелік).', 'Toont containers (alleen de lijst).'], on: ['Claude бачить контейнери без кліку.', 'Claude ziet containers zonder klik.'], off: ['Кожен перегляд чекає «Дозволити».', 'Elk overzicht wacht op "Toestaan".'] } },
+  { type: 'fs.read', uk: ['Читання файлів', 'Bestanden lezen'], nl: ['', ''], help: { what: ['Агент читає текстові файли з дозволених тек.', 'De agent leest tekstbestanden uit toegestane mappen.'], on: ['Підключений ШІ читає ці файли без кліку; вміст бачить постачальник цього ШІ.', 'De gekoppelde AI leest deze bestanden zonder klik; de inhoud wordt gezien door de aanbieder van die AI.'], off: ['Кожне читання чекає вашого «Дозволити».', 'Elke leesactie wacht op uw "Toestaan".'] } },
+  { type: 'fs.list', uk: ['Перегляд тек', 'Mappen bekijken'], nl: ['', ''], help: { what: ['Агент показує імена файлів у дозволених теках.', 'De agent toont bestandsnamen in toegestane mappen.'], on: ['Підключений ШІ бачить структуру тек без кліку.', 'De gekoppelde AI ziet de mapstructuur zonder klik.'], off: ['Кожен перегляд чекає «Дозволити».', 'Elk overzicht wacht op "Toestaan".'] } },
+  { type: 'sys.info', uk: ['Інформація про пристрій', 'Apparaatinformatie'], nl: ['', ''], help: { what: ['Система, дозволені теки й команди агента.', 'Systeem, toegestane mappen en commando\'s van de agent.'], on: ['Підключений ШІ знає межі агента без кліку.', 'De gekoppelde AI kent de grenzen van de agent zonder klik.'], off: ['Кожен запит чекає «Дозволити».', 'Elke aanvraag wacht op "Toestaan".'] } },
+  { type: 'sys.metrics', uk: ['Метрики системи', 'Systeemmetrics'], nl: ['', ''], help: { what: ['Навантаження процесора, пам’ять, диски.', 'Processorbelasting, geheugen, schijven.'], on: ['Підключений ШІ бачить стан ресурсів без кліку.', 'De gekoppelde AI ziet de toestand van resources zonder klik.'], off: ['Кожен запит метрик чекає «Дозволити».', 'Elke metrics-aanvraag wacht op "Toestaan".'] } },
+  { type: 'docker.ps', uk: ['Список контейнерів Docker', 'Lijst van Docker-containers'], nl: ['', ''], help: { what: ['Показує контейнери (лише перелік).', 'Toont containers (alleen de lijst).'], on: ['Підключений ШІ бачить контейнери без кліку.', 'De gekoppelde AI ziet containers zonder klik.'], off: ['Кожен перегляд чекає «Дозволити».', 'Elk overzicht wacht op "Toestaan".'] } },
 ];
 
-const prettyParams = (value: unknown) => { try { return JSON.stringify(value, null, 2).slice(0, 1200); } catch { return ''; } };
-
-/** Wachtende acties met Toestaan / Weigeren; één lijst voor de hele pagina. */
+/**
+ * Wachtende acties met Toestaan / Weigeren; één lijst voor de hele pagina.
+ * SEC-002 interface-01: ook in «Огляд» (compact) staan ALLE parameters erbij — compact maakt alleen de kop kleiner, nooit de inhoud.
+ * Zonder volledige inhoud (lange waarden nog niet opengeklapt) staat «Дозволити» uit. interface-02: WIE vraagt staat bij elk verzoek.
+ */
 export function PendingList({ tr, pending, reload, compact = false }: { tr: Tr; pending: Pending[]; reload: () => Promise<void>; compact?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [gezien, setGezien] = useState<Record<string, boolean>>({});
   const decide = async (id: string, verdict: 'approve' | 'reject') => {
     setBusy(true); setNotice('');
     try { await api.post(`/api/owner/agents/commands/${id}/${verdict}`, sessionBody()); await reload(); setNotice(verdict === 'approve' ? tr('Дозволено: дію надіслано на пристрій.', 'Toegestaan: de actie is naar het apparaat gestuurd.') : tr('Відхилено: дію не буде виконано.', 'Geweigerd: de actie wordt niet uitgevoerd.')); }
@@ -30,17 +35,17 @@ export function PendingList({ tr, pending, reload, compact = false }: { tr: Tr; 
     <div className='hub-empty'><ShieldCheck aria-hidden='true' /><span>{tr('Нічого не чекає вашого рішення.', 'Er wacht niets op uw beslissing.')}</span></div>
   );
   return (
-    <div className='hub-feed' data-agents-pending={String(pending.length)}>
+    <div className='hub-feed' data-agents-pending={String(pending.length)} {...geenAi}>
       {pending.map((item) => (
         <div key={item.id} className='hub-feed-item'>
           <Clock aria-hidden='true' />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className='hub-row start'><b>{commandLabel(item.type, tr)}</b><span className='hub-pill warn'>{item.agentName}</span></div>
-            <small>{ago(item.createdAt, tr)}</small>
-            {!compact ? <code className='hub-code'>{prettyParams(item.params)}</code> : null}
+            <div className='hub-row start'><b>{commandLabel(item.type, tr)}</b><span className='hub-pill warn'>{item.agentName}</span><AanvragerPill tr={tr} aanvrager={item.aanvrager} /></div>
+            <small data-pending-compact={compact ? '1' : undefined}>{ago(item.createdAt, tr)}</small>
+            <GoedkeuringInhoud tr={tr} params={item.params} onGezien={(g) => setGezien((s) => (s[item.id] === g ? s : { ...s, [item.id]: g }))} />
             <div className='hub-actions' style={{ marginTop: 8 }}>
-              <IconButton tone='primary' icon={<Check />} disabled={busy} onClick={() => void decide(item.id, 'approve')}>{tr('Дозволити', 'Toestaan')}</IconButton>
-              <IconButton icon={<X />} disabled={busy} onClick={() => void decide(item.id, 'reject')}>{tr('Відхилити', 'Weigeren')}</IconButton>
+              <MensKnop tone='primary' icon={<Check />} disabled={busy || !gezien[item.id]} title={gezien[item.id] ? undefined : tr('Спершу розгорніть увесь текст запиту', 'Klap eerst de hele tekst van het verzoek open')} onKlik={() => void decide(item.id, 'approve')}>{tr('Дозволити', 'Toestaan')}</MensKnop>
+              <MensKnop icon={<X />} disabled={busy} onKlik={() => void decide(item.id, 'reject')}>{tr('Відхилити', 'Weigeren')}</MensKnop>
             </div>
           </div>
         </div>
@@ -102,7 +107,7 @@ export function DeviceDetail({ tr, agent, last, reload, compact = false }: { tr:
                   <b>{tr(item.uk[0], item.uk[1])} <Help tr={tr} content={{ title: tr(item.uk[0], item.uk[1]), what: tr(item.help.what[0], item.help.what[1]), touches: tr(`Лише цей пристрій: «${agent.name}»`, `Alleen dit apparaat: «${agent.name}»`), on: tr(item.help.on[0], item.help.on[1]), off: tr(item.help.off[0], item.help.off[1]) }} /></b>
                   <small>{on ? tr('Виконується без кліку', 'Wordt zonder klik uitgevoerd') : tr('Чекає вашого «Дозволити»', 'Wacht op uw "Toestaan"')}</small>
                 </span>
-                <button type='button' className='hub-toggle' role='switch' aria-checked={on} aria-label={tr(item.uk[0], item.uk[1])} disabled={busy} onClick={() => void toggle(item.type, !on)} />
+                <button type='button' className='hub-toggle' role='switch' aria-checked={on} aria-label={tr(item.uk[0], item.uk[1])} disabled={busy} {...geenAi} onClick={alleenMens(() => void toggle(item.type, !on))} />
               </div>
             );
           })}
@@ -116,7 +121,7 @@ export function DeviceDetail({ tr, agent, last, reload, compact = false }: { tr:
       </div>
       {confirm ? (
         <div className='hub-confirm' role='alertdialog' aria-label={tr('Підтвердження відключення', 'Bevestig loskoppelen')}>
-          <span>{tr(`Відключити «${agent.name}»? Його токен стане недійсним, Claude більше не бачитиме цей пристрій.`, `«${agent.name}» loskoppelen? Het token wordt ongeldig en Claude ziet dit apparaat niet meer.`)}</span>
+          <span>{tr(`Відключити «${agent.name}»? Його токен стане недійсним, жоден ШІ більше не бачитиме цей пристрій.`, `«${agent.name}» loskoppelen? Het token wordt ongeldig en geen enkele AI ziet dit apparaat nog.`)}</span>
           <IconButton tone='danger' icon={<Trash2 />} disabled={busy} onClick={() => void revoke()}>{tr('Так, відключити', 'Ja, loskoppelen')}</IconButton>
           <IconButton icon={<X />} onClick={() => setConfirm(false)}>{tr('Скасувати', 'Annuleren')}</IconButton>
         </div>

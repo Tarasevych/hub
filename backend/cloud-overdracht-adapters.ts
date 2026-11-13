@@ -23,6 +23,13 @@ export class CloudTransportError extends Error {
 const bounded=(value:string,max=400)=>typeof value==='string'&&value.length>0&&value.length<=max&&!/[\r\n\0]/.test(value);
 const safeName=(name:string)=>bounded(name,200)&&name!=='.'&&name!=='..'&&!/[\\/]/.test(name);
 const validId=(id:string)=>bounded(id,400)&&!/[?#]/.test(id);
+/**
+ * SEC-002 (aanv-ronde1-06): Dropbox-pad of -id, LINEAIR getoetst. De vroegere expressie /^\/(?:[^\r\n\\]+\/?){1,40}$/ had geneste
+ * kwantoren met «/» in de tekenklasse: «/aaaa…a\» (enkele tientallen tekens) liet de enige Node-thread eindeloos terugzoeken.
+ * Nu: «id:…» of een absoluut pad zonder \, CR, LF, NUL, hoogstens 1024 tekens, 1..40 segmenten van hoogstens 255 tekens,
+ * geen «.» of «..». / Лінійна перевірка шляху Dropbox замість виразу з вкладеними кванторами.
+ */
+export function isDropboxPad(waarde:unknown):boolean{if(typeof waarde!=='string'||!waarde.length||waarde.length>1024)return false;if(waarde.startsWith('id:'))return /^id:[A-Za-z0-9_-]{5,300}$/.test(waarde);if(waarde[0]!=='/'||/[\\\r\n\0]/.test(waarde))return false;const delen=waarde.split('/').filter(Boolean);return delen.length>=1&&delen.length<=40&&delen.every(deel=>deel.length<=255&&deel!=='.'&&deel!=='..')}
 const upstream=async(resp:Response,code:string,allowed=[200,201,202,204])=>{if(!allowed.includes(resp.status)){
   if(resp.status===401||resp.status===403)throw new CloudTransportError('CLOUD_PROVIDER_PERMISSION_DENIED',403);
   if(resp.status===404)throw new CloudTransportError('CLOUD_PROVIDER_RESOURCE_NOT_FOUND',404);
@@ -104,7 +111,7 @@ export class MicrosoftGraphTransport implements CloudTransport {
 export class DropboxTransport implements CloudTransport {
   readonly provider='dropbox' as const;
   constructor(private readonly token:CloudTokenResolver,private readonly request:Fetcher=fetch){}
-  private path(loc:RemoteLocation){assertSpace(loc,this.provider);if(!/^(id:[A-Za-z0-9_-]{5,300}|\/(?:[^\r\n\\]+\/?){1,40})$/.test(loc.fileId))throw new CloudTransportError('CLOUD_DROPBOX_PATH_INVALID',400);return loc.fileId;}
+  private path(loc:RemoteLocation){assertSpace(loc,this.provider);if(!isDropboxPad(loc.fileId))throw new CloudTransportError('CLOUD_DROPBOX_PATH_INVALID',400);return loc.fileId;}
   private async auth(loc:RemoteLocation,op:'read'|'write'){const t=await this.token(loc.context,op);if(!bounded(t,8192))throw new CloudTransportError('CLOUD_PROVIDER_GRANT_MISSING',403);return {Authorization:`Bearer ${t}`};}
   async stat(loc:RemoteLocation):Promise<RemoteFile>{
     if(loc.fileId==='root'){
@@ -124,7 +131,7 @@ export class DropboxTransport implements CloudTransport {
   }
   async upload(loc:RemoteLocation,name:string,data:Uint8Array,mime:string):Promise<RemoteUpload>{
     assertSpace(loc,this.provider);if(!safeName(name)||!validId(loc.parentId||''))throw new CloudTransportError('CLOUD_DROPBOX_TARGET_INVALID',400);
-    if(loc.parentId!=='root'&&!/^(id:[A-Za-z0-9_-]{5,300}|\/(?:[^\r\n\\]+\/?){1,40})$/.test(loc.parentId||''))
+    if(loc.parentId!=='root'&&!isDropboxPad(loc.parentId||''))
       throw new CloudTransportError('CLOUD_DROPBOX_FOLDER_PATH_INVALID',400);
     const auth=await this.auth(loc,'write');
     let folder='';

@@ -18,6 +18,7 @@ import {
 } from '../../shared/ai-bronnen';
 import { aiFoutVan, aiRun, useAiStaat, type AiFout } from './ai-staat';
 import { useLeesVenster } from './LeesVenster';
+import { adresVan } from '../../shared/mail-afzenders';
 import './ai-blok.css';
 
 export type WatNodigBrief = { id: string; from: string; receivedAt: number; tekst: string };
@@ -80,7 +81,8 @@ export function openBron(threadId: string, puntId: string) {
   window.dispatchEvent(new CustomEvent(BRON_GEBEURTENIS, { detail: { threadId, puntId } }));
 }
 
-const adres = (v: string) => (/<([^>]+)>/.exec(String(v || ''))?.[1] || String(v || '')).trim().toLocaleLowerCase();
+/* SEC-002 (g10c-toets-1): adres uit de LAATSTE hoekhaken (adresVan), niet de eerste «<…>» uit de weergavenaam */
+const adres = (v: string) => adresVan(v).adres || (String(v || '').includes('<') ? '' : String(v || '').trim().toLocaleLowerCase());
 
 /** Wat de agent voor een gesprek gaf, voor deze sessie (alleen in het geheugen van de pagina): de brief opnieuw openen toont het
  *  meteen weer, zonder nieuw verzoek. Sleutel = gesprek + laatste brief + aantal brieven; hoogstens 50 gesprekken. */

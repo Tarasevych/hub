@@ -19,6 +19,14 @@ const TOEGESTANE_ALG = new Set([-7, -8, -257]);
 const DOELEN = new Set(["goedkeuren", "sleutel-toevoegen", "sleutel-verwijderen", "ai-beleid", "ssh-ca", "eigenaar-besluit"]);
 /** SSH-CA (18.10.2026): alleen de handelingen die toegang GEVEN vragen een root-passkey; uitzetten en intrekken niet. */
 export const SSH_CA_ACTIES = Object.freeze(["inrichten", "aan"]);
+/**
+ * SEC-002 (server-uitrol-06): ook het TEKENEN van één certificaat vraagt een root-passkey. De challenge bindt precies wat
+ * getekend wordt: de publieke sleutel (sha256), de principals en de duur. Een assertie voor sleutel A geeft dus nooit een
+ * certificaat voor sleutel B, en de nonce is eenmalig: één bevestiging = één certificaat.
+ */
+export const SSH_CA_TEKEN = "teken";
+const SSH_PUBLIEK = /^ssh-ed25519 [A-Za-z0-9+/]{68}$/;
+const SSH_PRINCIPAL = /^[a-z_][a-z0-9_-]{0,31}$/;
 const B64U = /^[A-Za-z0-9_-]+$/;
 
 export const b64u = (buf) => Buffer.from(buf).toString("base64url");
@@ -150,6 +158,7 @@ export const vingerafdrukKort = (hex) => String(hex).slice(0, 32).replace(/(.{4}
  *   sleutel-verwijderen: vingerafdruk van de te verwijderen sleutel, nonce, verloopt
  *   ai-beleid:           sha256 van de canonieke nieuwe versie van het AI-beleid, nonce, verloopt
  *   ssh-ca:              de handeling (inrichten | aan), nonce, verloopt — de SSH-CA voorbereiden of het ondertekenen aanzetten
+ *   ssh-ca + teken:      «teken», sha256 van de publieke sleutel, principals, minuten, nonce, verloopt — één certificaat tekenen
  *   eigenaar-besluit:    sha256 van de canonieke inhoud van een besluit van de eigenaar (besluit-kern.mjs: terugdraaien naar een
  *                        release, witte lijst van externe MCP-hosts), nonce, verloopt — root voert het pas uit na eigen controle (§15)
  * Root rekent hem zelf uit (de sha256 van het pakket uit zijn eigen kopie) en vergelijkt met clientDataJSON.challenge.
@@ -165,6 +174,14 @@ export function uitdagingVoor(doel, velden) {
     // Het AI-beleid: de hash van precies de versie die de eigenaar op het scherm zag (ai-beleid-kern.mjs, beleidHash).
     if (!/^[0-9a-f]{64}$/.test(String(v.beleidHash || ""))) throw new Error("BELEIDHASH_ONGELDIG");
     delen = [v.beleidHash];
+  } else if (doel === "ssh-ca" && v.actie === SSH_CA_TEKEN) {
+    // Eén certificaat: precies deze sleutel, deze principals (gesorteerd), deze duur. Strikte typen: root (Python) en de
+    // site (Node) moeten uit hetzelfde verzoek exact dezelfde challenge rekenen.
+    if (!/^[0-9a-f]{64}$/.test(String(v.sleutelHash || ""))) throw new Error("SLEUTELHASH_ONGELDIG");
+    const toegang = Array.isArray(v.toegang) ? v.toegang : [];
+    if (!toegang.length || toegang.length > 8 || toegang.some((p) => typeof p !== "string" || !SSH_PRINCIPAL.test(p)) || new Set(toegang).size !== toegang.length) throw new Error("TOEGANG_ONGELDIG");
+    if (typeof v.minuten !== "number" || !Number.isInteger(v.minuten) || v.minuten < 5 || v.minuten > 60) throw new Error("MINUTEN_ONGELDIG");
+    delen = [SSH_CA_TEKEN, v.sleutelHash, [...toegang].sort().join(","), String(v.minuten)];
   } else if (doel === "ssh-ca") {
     if (!SSH_CA_ACTIES.includes(String(v.actie || ""))) throw new Error("ACTIE_ONGELDIG");
     delen = [String(v.actie)];
@@ -182,6 +199,12 @@ export function uitdagingVoor(doel, velden) {
     delen = [v.vingerafdruk];
   }
   return b64u(sha256(Buffer.from(["mijn-ruimte-goedkeuring/v1", doel, ...delen, nonce, String(verloopt)].join("\n"), "utf8")));
+}
+
+/** sha256 (hex) van de publieke SSH-sleutel zoals hij getekend wordt: exact «ssh-ed25519 <68 tekens base64>», niets erbij. */
+export function sshCaSleutelHash(publiek) {
+  if (typeof publiek !== "string" || !SSH_PUBLIEK.test(publiek)) throw new Error("SLEUTEL_ONGELDIG");
+  return sha256(Buffer.from(publiek, "utf8")).toString("hex");
 }
 
 /** Is `verloopt` (ms) nog geldig en niet verder dan 5 minuten (+ klokspeling) in de toekomst? */

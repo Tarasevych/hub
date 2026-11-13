@@ -12,6 +12,7 @@ import type { LookupAddress } from 'node:dns';
 import { isIP } from 'node:net';
 import { adresSoort, ipv4UitV6, ipv6Groepen } from '../shared/extern-bureaublad';
 import type { Mogelijkheid, MogelijkheidSoort, Toestand } from '../shared/huis-model';
+import { knipTekst, tekstVeilig } from '../server/platform/json-veilig';
 
 export type HaEntiteit = { entity_id: string; state: string; attributes: Record<string, unknown>; last_changed?: string; last_updated?: string };
 export type OntdektApparaat = { bronId: string; naam: string; soort: string; fabrikant: string; model: string; mogelijkheden: Mogelijkheid[]; kritiek: boolean; online: boolean; laatstGezien: string | null; toestanden: Omit<Toestand, 'ontvangenOp'>[] };
@@ -158,7 +159,12 @@ async function roep(adres: string, token: string, pad: string, init: { method?: 
     const v4 = ipv4UitV6(host);
     adressen = [isIP(host) !== 0 ? host : (v4 ?? canoniekIp(host))];
   } else {
-    try { adressen = await haDns(host); } catch { return { ok: false, fout: 'GEEN_ANTWOORD' }; }
+    // SEC-002: ook het opzoeken van de naam heeft een grens (een trage naamserver van de gebruiker hield het verzoek anders onbeperkt vast).
+    let dnsTimer: NodeJS.Timeout | undefined;
+    try { adressen = await Promise.race([haDns(host), new Promise<never>((_, weiger) => { dnsTimer = setTimeout(() => weiger(new Error('DNS_TIJD')), TIMEOUT_MS); })]); }
+    catch { return { ok: false, fout: 'GEEN_ANTWOORD' }; }
+    finally { clearTimeout(dnsTimer); }
+    if (!Array.isArray(adressen)) return { ok: false, fout: 'GEEN_ANTWOORD' };
   }
   if (!adressen.length) return { ok: false, fout: 'GEEN_ANTWOORD' };
   if (adressen.some((ip) => isIP(ip) === 0 && ipv6Groepen(ip) === null)) return { ok: false, fout: 'ADRES_GEWEIGERD' };
@@ -231,19 +237,48 @@ export async function haVerbinden(adres: string, token: string): Promise<{ ok: t
   const c = await roep(adres, token, '/api/config');
   const cfg = (c.ok && c.data && typeof c.data === 'object' ? c.data : {}) as Record<string, unknown>;
   const s = await roep(adres, token, '/api/states');
-  return { ok: true, versie: String(cfg.version ?? ''), locatie: String(cfg.location_name ?? ''), entiteiten: s.ok && Array.isArray(s.data) ? s.data.length : 0 };
+  return { ok: true, versie: tekst(cfg.version, 40), locatie: tekst(cfg.location_name, 120), entiteiten: s.ok && Array.isArray(s.data) ? s.data.length : 0 };
 }
 
 const getal = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : null);
 const kw = (state: string) => (state === 'unavailable' ? 'onbeschikbaar' : state === 'unknown' || state === '' ? 'onbekend' : 'gemeten') as Toestand['kwaliteit'];
+
+// SEC-002 (integraties-05): de bron is een server van de GEBRUIKER en dus niet te vertrouwen. Alles wat van daar in de databank
+// komt, is begrensd en vrij van stuurtekens (een NUL-teken of een tijd die geen tijd is liet de hele transactie mislukken), en
+// een antwoord dat geen entiteit is, wordt geweigerd in plaats van een uitzondering te geven.
+export const HA_GRENZEN = Object.freeze({ bronId: 255, naam: 120, eenheid: 40, klasse: 40, toestand: 200, entiteiten: 2000, reeksen: 200, punten: 2000 });
+/**
+ * Tekst van de bron: alleen tekst of getal, zonder stuurtekens, hoogstens `max` tekens. SEC-002 (na de toetsing): een eenzame
+ * surrogaat (van de bron zelf, of de helft van een emoji die `.slice` overliet) wordt U+FFFD en het afkappen breekt nooit een
+ * paar — jsonb weigert «\ud83d» en liet zo de hele synchronisatie of het nalezen van een opdracht mislukken (22P02, 500).
+ */
+function tekst(v: unknown, max: number): string {
+  const s = typeof v === 'string' ? v : typeof v === 'number' && Number.isFinite(v) ? String(v) : '';
+  return knipTekst(tekstVeilig(s.replace(/[\u0000-\u001f\u007f]/g, ' ')), max).trim();
+}
+/** Tijd van de bron → ISO, of null als het geen bruikbare tijd is (tussen 1970 en 3000). */
+function isoTijd(v: unknown): string | null {
+  if (typeof v !== 'string' || !v || v.length > 40) return null;
+  const ms = Date.parse(v);
+  return Number.isFinite(ms) && ms >= 0 && ms < 32_503_680_000_000 ? new Date(ms).toISOString() : null;
+}
+/** Een entiteit zoals HA ze geeft: een object met een entity_id «domein.naam» van redelijke lengte. */
+function isEntiteit(e: unknown): e is HaEntiteit {
+  if (!e || typeof e !== 'object' || Array.isArray(e)) return false;
+  const id = (e as { entity_id?: unknown }).entity_id;
+  return typeof id === 'string' && id.length <= HA_GRENZEN.bronId && /^[A-Za-z0-9_]+\.[A-Za-z0-9_.-]+$/.test(id);
+}
 /** Eén HA-entiteit → apparaat met mogelijkheden en waargenomen toestanden. Alleen wat het domein + de attributen echt zeggen. */
-export function vertaalEntiteit(e: HaEntiteit): OntdektApparaat | null {
+export function vertaalEntiteit(ruw: HaEntiteit): OntdektApparaat | null {
+  if (!isEntiteit(ruw)) return null;
+  // Genormaliseerde kopie: toestand als begrensde tekst, attributen altijd een object.
+  const e = { entity_id: ruw.entity_id, state: tekst(ruw.state, HA_GRENZEN.toestand) };
   const [domein] = e.entity_id.split('.');
-  const a = e.attributes || {};
-  const naam = String(a.friendly_name ?? e.entity_id).slice(0, 120);
-  const klasse = String(a.device_class ?? '');
-  const eenheid = String(a.unit_of_measurement ?? '');
-  const op = e.last_changed || e.last_updated || null;
+  const a = (ruw.attributes && typeof ruw.attributes === 'object' && !Array.isArray(ruw.attributes) ? ruw.attributes : {}) as Record<string, unknown>;
+  const naam = tekst(a.friendly_name, HA_GRENZEN.naam) || e.entity_id.slice(0, HA_GRENZEN.naam);
+  const klasse = tekst(a.device_class, HA_GRENZEN.klasse);
+  const eenheid = tekst(a.unit_of_measurement, HA_GRENZEN.eenheid);
+  const op = isoTijd(ruw.last_changed) ?? isoTijd(ruw.last_updated);
   const k = kw(e.state);
   const m: Mogelijkheid[] = []; const t: Omit<Toestand, 'ontvangenOp'>[] = [];
   const aanUit = (schrijven: boolean) => { m.push({ soort: 'aan_uit', lezen: true, schrijven }); t.push({ kenmerk: 'aan', waarde: k === 'gemeten' ? e.state === 'on' : null, eenheid: '', waargenomenOp: op, kwaliteit: k }); };
@@ -289,18 +324,39 @@ export function vertaalEntiteit(e: HaEntiteit): OntdektApparaat | null {
   if (getal(a.battery_level) !== null) { m.push({ soort: 'batterij', lezen: true, schrijven: false, eenheid: '%' }); t.push({ kenmerk: 'batterij', waarde: getal(a.battery_level), eenheid: '%', waargenomenOp: op, kwaliteit: k }); }
   return { bronId: e.entity_id, naam, soort: domein, fabrikant: '', model: '', mogelijkheden: m, kritiek: m.some((x) => x.kritiek), online: k !== 'onbeschikbaar', laatstGezien: op, toestanden: t };
 }
-export async function haOntdekken(adres: string, token: string): Promise<{ ok: true; apparaten: OntdektApparaat[]; overgeslagen: number } | { ok: false; fout: HaFout }> {
+/**
+ * Alle entiteiten van de bron → apparaten. Hoogstens HA_GRENZEN.entiteiten apparaten per antwoord (anders één import = tienduizenden
+ * rijen), maar SEC-002 (na de toetsing): de grens mag een apparaat dat de woning AL heeft (of dat uitdrukkelijk gekozen is) nooit
+ * wegdrukken — vroeger gold ze voor de eerste 2000 in de (wisselende) volgorde van de bron, en kreeg elk geïmporteerd apparaat
+ * daarna bij elke synchronisatie «offline/onbeschikbaar», ook rook- en gasmelders. Nu: eerst alles uit `altijd`, daarna de rest
+ * in vaste volgorde (entity_id). `afgekapt` = apparaten die alleen door de grens niet getoond zijn; `gezien` = elke geldige
+ * entity_id in het antwoord (een apparaat is pas «weg» als de bron het echt niet meer noemt).
+ */
+export async function haOntdekken(adres: string, token: string, opties: { altijd?: ReadonlySet<string> } = {}): Promise<{ ok: true; apparaten: OntdektApparaat[]; overgeslagen: number; afgekapt: number; gezien: ReadonlySet<string> } | { ok: false; fout: HaFout }> {
   const s = await roep(adres, token, '/api/states');
   if (!s.ok) return s;
   if (!Array.isArray(s.data)) return { ok: false, fout: 'ANTWOORD_ONGELDIG' };
-  const apparaten: OntdektApparaat[] = []; let overgeslagen = 0;
-  for (const e of s.data as HaEntiteit[]) { if (!e || typeof e.entity_id !== 'string') continue; const a = vertaalEntiteit(e); if (a) apparaten.push(a); else overgeslagen++; }
-  return { ok: true, apparaten, overgeslagen };
+  const gezien = new Set<string>(); const geldig: HaEntiteit[] = [];
+  for (const e of s.data as unknown[]) if (isEntiteit(e) && !gezien.has(e.entity_id)) { gezien.add(e.entity_id); geldig.push(e); }
+  geldig.sort((x, y) => (x.entity_id < y.entity_id ? -1 : x.entity_id > y.entity_id ? 1 : 0));
+  const altijd = opties.altijd ?? new Set<string>();
+  const apparaten: OntdektApparaat[] = []; let overgeslagen = 0, afgekapt = 0;
+  for (const e of geldig) { if (!altijd.has(e.entity_id)) continue; const a = vertaalEntiteit(e); if (a) apparaten.push(a); else overgeslagen++; }
+  for (const e of geldig) {
+    if (altijd.has(e.entity_id)) continue;
+    const a = vertaalEntiteit(e);
+    if (!a) { overgeslagen++; continue; }
+    if (apparaten.length < HA_GRENZEN.entiteiten) apparaten.push(a); else { overgeslagen++; afgekapt++; }
+  }
+  return { ok: true, apparaten, overgeslagen, afgekapt, gezien };
 }
 export async function haLezen(adres: string, token: string, entityId: string): Promise<OntdektApparaat | null | 'fout'> {
   const r = await roep(adres, token, `/api/states/${encodeURIComponent(entityId)}`);
   if (!r.ok) return r.fout === 'ANTWOORD_ONGELDIG' && r.status === 404 ? null : 'fout';
-  return vertaalEntiteit(r.data as HaEntiteit);
+  // SEC-002: «200 zonder inhoud», een lijst of een ANDERE entiteit is geen waarneming van deze entiteit → 'fout' (geen uitzondering,
+  // geen toestand van een ander apparaat onder dit apparaat).
+  if (!isEntiteit(r.data) || r.data.entity_id !== entityId) return 'fout';
+  return vertaalEntiteit(r.data) ?? 'fout';
 }
 /** Gewenste toestand → HA-dienst. Alleen voor schrijfbare mogelijkheden; kritieke komen hier alleen na step-up van een mens. */
 export function haDienstVoor(entityId: string, mogelijkheid: MogelijkheidSoort, waarde: Record<string, unknown>): { domein: string; dienst: string; data: Record<string, unknown> } | null {
@@ -341,10 +397,25 @@ export async function haGeschiedenis(adres: string, token: string, entityIds: st
   const r = await roep(adres, token, `/api/history/period/${encodeURIComponent(vanIso)}?filter_entity_id=${encodeURIComponent(entityIds.join(','))}&minimal_response&no_attributes`);
   if (!r.ok) return r;
   const reeksen: Record<string, Array<{ op: string; waarde: number }>> = {};
+  // SEC-002: alleen reeksen van gevraagde entiteiten, hoogstens HA_GRENZEN.reeksen; een punt dat geen object is of geen tijd heeft
+  // valt weg (vroeger gaf [null] een uitzondering en dus een 500).
+  const gevraagd = new Set(entityIds);
+  let aantal = 0;
   for (const reeks of Array.isArray(r.data) ? r.data : []) {
-    if (!Array.isArray(reeks) || !reeks.length) continue;
-    const id = String((reeks[0] as HaEntiteit).entity_id || '');
-    reeksen[id] = (reeks as HaEntiteit[]).map((x) => ({ op: String(x.last_changed || x.last_updated || ''), waarde: getal(x.state) ?? NaN })).filter((x) => Number.isFinite(x.waarde)).slice(0, 2000);
+    if (!Array.isArray(reeks) || !reeks.length || aantal >= HA_GRENZEN.reeksen) continue;
+    const eerste = reeks[0] as { entity_id?: unknown } | null;
+    const id = eerste && typeof eerste === 'object' && typeof eerste.entity_id === 'string' ? eerste.entity_id : '';
+    if (!id || !gevraagd.has(id) || reeksen[id]) continue;
+    const punten: Array<{ op: string; waarde: number }> = [];
+    for (const x of reeks as unknown[]) {
+      if (punten.length >= HA_GRENZEN.punten) break;
+      if (!x || typeof x !== 'object') continue;
+      const p = x as { state?: unknown; last_changed?: unknown; last_updated?: unknown };
+      const op = isoTijd(p.last_changed) ?? isoTijd(p.last_updated);
+      const waarde = getal(p.state);
+      if (op && waarde !== null) punten.push({ op, waarde });
+    }
+    reeksen[id] = punten; aantal++;
   }
   return { ok: true, reeksen };
 }

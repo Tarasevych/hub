@@ -6,6 +6,7 @@ import path from 'node:path';
 import { error, json } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
 import { getPool } from '../server/platform/pg';
+import { rateLimit } from '../server/platform/beveiliging';
 import { auditToevoegen } from '../server/platform/audit';
 import { CONTROLES, GRENS, oordeel, type ControleId, type Stand, type Uitslag } from '../shared/diagnose';
 import { heeftTechMogelijkheid, isEigenaar, TAB_RE } from './tech-profiel';
@@ -92,6 +93,20 @@ export function schoonUitslagen(raw: unknown): Uitslag[] {
   }
   return uit;
 }
+/**
+ * SEC-002 (privacy-logboek-07): de nieuwste verslagen voor de ondersteuning, hoogstens PER_GEBRUIKER per mens. Zonder die
+ * grens duwde één account met een lus de verslagen van alle anderen uit het venster van 100 rijen.
+ */
+export const MELDINGEN_PER_GEBRUIKER = 10;
+export async function recenteMeldingen(limiet = 100, perGebruiker = MELDINGEN_PER_GEBRUIKER) {
+  return (await sys().query(
+    `SELECT m.id, m.user_id, m.dienst, m.oordeel, m.uitslagen, m.beschrijving, m.browser, m.aangemaakt_op, m.gelezen_op, COALESCE(u.data->>'email', '') AS email
+       FROM (SELECT d.*, row_number() OVER (PARTITION BY d.user_id ORDER BY d.aangemaakt_op DESC, d.id) AS rang FROM app.diagnose_meldingen d) m
+       LEFT JOIN app.records u ON u.tbl = 'users' AND u.id = m.user_id
+      WHERE m.rang <= $2 ORDER BY m.aangemaakt_op DESC LIMIT $1`,
+    [Math.max(1, Math.min(500, limiet)), Math.max(1, Math.min(100, perGebruiker))])).rows;
+}
+
 const schoonBrowser = (s: unknown) => String(s ?? '').replace(/[^\w .,;:()/+-]/g, '').slice(0, 120);
 
 export function diagnoseRoutes(requireSession: RequireSession): Record<string, RouterMiddleware[]> {
@@ -107,13 +122,19 @@ export function diagnoseRoutes(requireSession: RequireSession): Record<string, R
     // Servercontroles + de bundel en tijd voor de browsercontroles «versie» en «klok». Een geslaagde aanroep = sessie in orde.
     'POST /api/diagnose/server': [gate(async () => json({ uitslagen: await serverControlesGecached(), bundel: await huidigeBundel(), nu: Date.now() }))],
     'POST /api/diagnose/melden': [gate(async (_ctx, auth, b) => {
+      // SEC-002 (privacy-logboek-07): een eigen grens per mens (de algemene grens per IP is 600/min). Faalt dicht: zonder teller geen verslag.
+      const kort = await rateLimit(`diagnose-melden:${auth.user.id}`, 5, 600, { failClosed: true });
+      const dag = kort.ok ? await rateLimit(`diagnose-melden-dag:${auth.user.id}`, 30, 86400, { failClosed: true }) : kort;
+      // toets-g10b #7: de EERSTE weigering in een venster komt in het auditlogboek (niet elke, anders vult een lus het logboek alsnog).
+      if ((!kort.ok && kort.hits === kort.limit + 1) || (kort.ok && !dag.ok && dag.hits === dag.limit + 1)) await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: 'owner.diagnose.melden_begrensd', type: 'beveiliging', result: 'denied', details: { venster: kort.ok ? 'dag' : '10min', limiet: kort.ok ? dag.limit : kort.limit } }).catch(() => undefined);
+      if (!kort.ok || !dag.ok) { const weiger = error('RATE_LIMITED', 429); return { ...weiger, headers: { ...weiger.headers, 'Retry-After': String(Math.max(kort.ok ? dag.retryAfter : kort.retryAfter, 1)) } }; }
       const browser = schoonUitslagen(b.uitslagen).filter((u) => CONTROLES[u.id].bereik === 'browser');
       const server = await serverControlesGecached();
       const alle = [...server, ...browser];
       const o = oordeel(alle).oordeel;
       const beschrijving = String(b.beschrijving ?? '').trim().slice(0, 500);
       const dienst = /^[a-z]{2,12}$/.test(auth.service) ? auth.service : 'onbekend';
-      await sys().query(`DELETE FROM app.diagnose_meldingen WHERE aangemaakt_op < now() - interval '90 days'`);
+      // Oude verslagen (90 dagen) ruimt de opruimjob op (backend/opruimen.ts), niet meer elk verzoek.
       const r = (await sys().query(`INSERT INTO app.diagnose_meldingen (user_id, dienst, oordeel, uitslagen, beschrijving, browser) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, aangemaakt_op`,
         [auth.user.id, dienst, o, JSON.stringify(alle), beschrijving, schoonBrowser(b.browser)])).rows[0];
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: 'owner.diagnose.gemeld', type: 'beveiliging', result: 'success', details: { id: r.id, oordeel: o, dienst } }).catch(() => undefined);
@@ -123,9 +144,7 @@ export function diagnoseRoutes(requireSession: RequireSession): Record<string, R
     'POST /api/diagnose/meldingen': [gate(async (_ctx, auth, b) => {
       const tab = String(b.tabContext || '');
       if (!TAB_RE.test(tab) || !(await heeftTechMogelijkheid(auth.user.id, tab, 'diagnose.lezen'))) return error('TECH_DIAGNOSE_VEREIST', 403);
-      const rows = (await sys().query(`SELECT m.id, m.dienst, m.oordeel, m.uitslagen, m.beschrijving, m.browser, m.aangemaakt_op, m.gelezen_op,
-          COALESCE(u.data->>'email', '') AS email FROM app.diagnose_meldingen m LEFT JOIN app.records u ON u.tbl = 'users' AND u.id = m.user_id
-          ORDER BY m.aangemaakt_op DESC LIMIT 100`)).rows;
+      const rows = await recenteMeldingen(100);
       // HUB-11: alleen een journaalregel als er echt verslagen zijn ingezien; een lege lijst is geen «bekeken» (ruis «(0)»).
       if (rows.length) await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: 'owner.diagnose.gelezen', type: 'beveiliging', result: 'success', details: { aantal: rows.length } }).catch(() => undefined);
       return json({ meldingen: rows.map((r) => ({ id: r.id, dienst: r.dienst, oordeel: r.oordeel, uitslagen: r.uitslagen, beschrijving: r.beschrijving, browser: r.browser, email: r.email, op: new Date(r.aangemaakt_op).getTime(), gelezen: !!r.gelezen_op })) });
