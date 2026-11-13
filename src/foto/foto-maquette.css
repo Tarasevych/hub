@@ -1,0 +1,831 @@
+/* Студійне оформлення простору «Фото» (FotoHubTab, FotoPagina, OudeFotos та повноекранний переглядач світлин)
+   у художній системі «Макет» (MAQUETTE-005, Група 4В).
+   Діє виключно за умови html.palet-maquette для нічної студії та світлого режиму «Ранковий туман».
+   Studio-opmaak voor de fotogalerij, albums, tijdlijn met glazen bijschriften en de beeldviewer onder html.palet-maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПРОКИДАННЯ СТУДІЙНИХ ЗМІННИХ ТА УЗГОДЖЕННЯ СВІТЛОГО РЕЖИМУ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(.foto, .foto-hint, .foto-viewer) {
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --focus: var(--mq-accent);
+  --papier: var(--mq-wit);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.foto, .foto-hint, .foto-viewer .foto-info),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.foto, .foto-hint) {
+  --mq-accent-op: var(--mq-wit);
+  --accentText: var(--mq-wit);
+  --text-on-accent: var(--mq-wit);
+}
+
+html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .foto-viewer .foto-info {
+  --mq-oppervlak: var(--panel);
+  --mq-oppervlak-2: var(--surface);
+  --mq-rand: var(--line);
+  --mq-rand-sterk: color-mix(in srgb, var(--line) 68%, var(--text) 32%);
+  --mq-tekst: var(--text);
+  --mq-gedempt: var(--muted);
+  --mq-stil: var(--faint);
+  --mq-popover-glas: color-mix(in srgb, var(--panel) 96%, transparent);
+}
+
+/* Захист скруглень та оправ студійних карток від глобального режиму плоского вмісту */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(.foto.foto-leeg, .foto-bron-groep):not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .foto.foto-leeg:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+  max-width: 680px;
+  margin-inline: auto;
+  border-color: var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-held);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .foto-album:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 22px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette :is(.foto, .foto-viewer) :focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ОБОЛОНКА ГАЛЕРЕЇ, ШАПКА, СЕГМЕНТНІ ПЕРЕМИКАЧІ ТА ПОЛЯ ВВОДУ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .foto {
+  gap: 18px;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto 28px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette p.foto-hint[data-foto-uit="true"],
+html.palet-maquette p.foto-hint[role="status"] {
+  max-width: 680px;
+  margin: 16px auto;
+  padding: 20px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-gedempt);
+  box-shadow: var(--mq-schaduw-zacht);
+  text-align: center;
+}
+
+/* Поля вводу зі збереженням вбудованого поля пошуку з піктограмою лупи */
+html.palet-maquette :is(.foto, .foto-viewer .foto-info) :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]), select, textarea) {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is(.foto, .foto-viewer .foto-info) :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]), select, textarea):hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette :is(.foto, .foto-viewer .foto-info) :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]), select, textarea):focus-visible {
+  border-color: color-mix(in srgb, var(--mq-accent) 68%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent) 18%, transparent);
+  outline: none;
+}
+
+html.palet-maquette .foto-kop {
+  padding: 18px 22px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(ellipse 64% 120% at 0% 0%, color-mix(in srgb, var(--mq-accent) 14%, transparent), transparent 70%),
+    linear-gradient(155deg, color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-accent) 6%), var(--mq-oppervlak));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .foto-kop h2 {
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-kop h2 svg {
+  width: 23px;
+  height: 23px;
+  color: var(--mq-accent);
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--mq-accent) 32%, transparent));
+}
+
+html.palet-maquette .foto-segment {
+  padding: 4px;
+  gap: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette .foto-segment button {
+  padding: 6px 16px;
+  min-height: 34px;
+  border-radius: 999px;
+  color: var(--mq-gedempt);
+  font-weight: 550;
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .foto-segment button:hover {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-segment button.is-actief {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-accent) 20%, var(--mq-oppervlak)), var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-weight: 650;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand-sterk)),
+    0 4px 12px color-mix(in srgb, var(--mq-bg) 22%, transparent);
+}
+
+/* Студійні кнопки розділу світлин */
+html.palet-maquette .foto .foto-knop {
+  min-height: 38px;
+  padding: 7px 14px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-weight: 550;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .foto .foto-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .foto .foto-knop.is-hoofd {
+  border-color: color-mix(in srgb, var(--mq-accent) 58%, transparent);
+  background: linear-gradient(145deg, var(--mq-accent), color-mix(in srgb, var(--mq-accent) 82%, var(--mq-accent-2) 18%));
+  color: var(--mq-accent-op);
+  font-weight: 650;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-accent) 24%, transparent);
+}
+
+html.palet-maquette .foto .foto-knop.is-hoofd:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--mq-accent) 32%, transparent);
+}
+
+html.palet-maquette .foto .foto-knop.is-aan {
+  border-color: color-mix(in srgb, var(--mq-accent) 52%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-accent) 13%, var(--mq-oppervlak));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .foto .foto-knop.is-ikoon {
+  width: 38px;
+  padding: 0;
+}
+
+/* Пошукова капсула з лупою, фільтри та статистика */
+html.palet-maquette .foto-zoekbalk {
+  gap: 10px;
+}
+
+html.palet-maquette .foto-zoek {
+  padding: 2px 14px;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-oppervlak-2));
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .foto-zoek:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .foto-zoek:focus-within {
+  outline: none;
+  border-color: color-mix(in srgb, var(--mq-accent) 68%, var(--mq-rand-sterk));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent) 18%, transparent);
+}
+
+html.palet-maquette .foto-zoek svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .foto .foto-zoek input {
+  border: 0;
+  background: transparent;
+  padding: 6px 4px 6px 0;
+  box-shadow: none;
+}
+
+html.palet-maquette .foto .foto-zoek input:focus-visible {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette .foto-chip {
+  padding: 4px 10px 4px 12px;
+  border-color: color-mix(in srgb, var(--mq-accent) 32%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 10%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-chip.is-leeg {
+  border-color: var(--mq-rand-sterk);
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .foto-filters {
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 22px;
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .foto [data-foto-stats="true"] {
+  justify-self: start;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 62%, var(--mq-oppervlak));
+  color: var(--mq-gedempt);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .foto-toost {
+  padding: 8px 16px;
+  border: 1px solid color-mix(in srgb, var(--ok) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 12%, var(--mq-oppervlak));
+  color: var(--ok);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .foto-melding.is-fout {
+  border: 1px solid color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 10%, var(--mq-oppervlak));
+  color: var(--fout);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. ХРОНОЛОГІЧНА ВІТРИНА СВІТЛИН ЗІ СКЛЯНИМИ ПІДПИСАМИ (.foto-tijdlijn)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .foto-tijdlijn {
+  gap: 24px;
+}
+
+html.palet-maquette .foto-maand h3 {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  margin: 0 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg) 82%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+
+html.palet-maquette .foto-raster {
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 12px;
+}
+
+html.palet-maquette .foto-raster.is-laden i {
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-rand));
+}
+
+html.palet-maquette .foto-tegel {
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+html.palet-maquette .foto-tegel:hover {
+  border-color: color-mix(in srgb, var(--mq-accent) 48%, var(--mq-rand-sterk));
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .foto-tegel .foto-mini {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-bg-2));
+}
+
+html.palet-maquette .foto-tegel .foto-mini img {
+  transition: transform 0.34s ease;
+}
+
+html.palet-maquette .foto-tegel:hover .foto-mini img {
+  transform: scale(1.04);
+}
+
+/* Скляний студійний підпис світлини через атрибут (не зачіпає інші палітри) */
+html.palet-maquette .foto-tegel > .foto-tegel-open[data-foto-bijschrift]::after {
+  content: attr(data-foto-bijschrift);
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 7px;
+  z-index: 2;
+  padding: 6px 9px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-bol-diep) 76%, transparent);
+  color: var(--mq-held-tekst);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  opacity: 0.9;
+  transition: opacity 0.18s ease, background-color 0.18s ease;
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  backdrop-filter: blur(12px) saturate(1.25);
+}
+
+html.palet-maquette .foto-tegel:hover > .foto-tegel-open[data-foto-bijschrift]::after,
+html.palet-maquette .foto-tegel:focus-within > .foto-tegel-open[data-foto-bijschrift]::after {
+  opacity: 1;
+  background: color-mix(in srgb, var(--mq-bol-diep) 88%, transparent);
+}
+
+/* Значки відео, обраного, недоступності та вибору у скляних капсулах у верхній зоні знімка */
+html.palet-maquette .foto-tegel-video,
+html.palet-maquette .foto-tegel-hart,
+html.palet-maquette .foto-tegel-weg {
+  z-index: 2;
+  padding: 5px;
+  border: 1px solid var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-bol-diep) 72%, transparent);
+  color: var(--mq-held-tekst);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+html.palet-maquette .foto-tegel-hart {
+  top: 8px;
+  right: 8px;
+  left: auto;
+  bottom: auto;
+  color: var(--mq-nacht-accent);
+}
+
+html.palet-maquette .foto-tegel-weg {
+  top: 8px;
+  right: 8px;
+}
+
+html.palet-maquette .foto-tegel:has(.foto-tegel-hart) .foto-tegel-weg {
+  right: 36px;
+}
+
+html.palet-maquette .foto-tegel-video {
+  top: 8px;
+  right: 8px;
+  bottom: auto;
+}
+
+html.palet-maquette .foto-tegel:is(:has(.foto-tegel-hart), :has(.foto-tegel-weg)) .foto-tegel-video {
+  right: 36px;
+}
+
+html.palet-maquette .foto-tegel:has(.foto-tegel-hart):has(.foto-tegel-weg) .foto-tegel-video {
+  right: 64px;
+}
+
+html.palet-maquette .foto-tegel-kies {
+  left: 8px;
+  top: 8px;
+  z-index: 3;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--mq-held-tekst);
+  background: color-mix(in srgb, var(--mq-bol-diep) 58%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.palet-maquette .foto-tegel.is-gekozen {
+  border-color: var(--mq-accent);
+  box-shadow:
+    inset 0 0 0 2px var(--mq-accent),
+    0 10px 26px color-mix(in srgb, var(--mq-accent) 20%, transparent);
+}
+
+html.palet-maquette .foto-tegel.is-gekozen .foto-tegel-kies {
+  background: var(--mq-accent);
+  border-color: var(--mq-accent);
+  color: var(--mq-accent-op);
+}
+
+/* Ширяльна скляна панель групових дій */
+html.palet-maquette .foto-selectie {
+  padding: 8px 12px;
+  gap: 8px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  backdrop-filter: blur(22px) saturate(1.3);
+}
+
+html.palet-maquette .foto-selectie strong {
+  color: var(--mq-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. СІТКА АЛЬБОМІВ, ДЖЕРЕЛА ІМПОРТУ, УПОРЯДКУВАННЯ ТА ВІТРИНА ДАВНІХ ФОТО
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .foto-album-raster {
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 16px;
+}
+
+html.palet-maquette .foto-album {
+  gap: 8px;
+  padding: 10px 10px 14px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 22px;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--mq-oppervlak-2) 52%, var(--mq-oppervlak)), var(--mq-oppervlak));
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+html.palet-maquette .foto-album:hover {
+  border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand-sterk));
+  box-shadow: var(--mq-schaduw);
+  transform: translateY(-2px);
+}
+
+html.palet-maquette .foto-album-open {
+  gap: 8px;
+}
+
+html.palet-maquette .foto-album-open .foto-mini {
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-bg-2));
+}
+
+html.palet-maquette .foto-album-open strong {
+  padding: 0 4px;
+  font-size: 14.5px;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-album-open small {
+  padding: 0 4px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .foto-album-meer {
+  top: 16px;
+  right: 16px;
+}
+
+html.palet-maquette .foto-album-meer summary {
+  border: 1px solid var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-bol-diep) 72%, transparent);
+  color: var(--mq-held-tekst);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+html.palet-maquette .foto-album-meer > div {
+  padding: 6px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 14px;
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+
+html.palet-maquette .foto-album-meer > div button {
+  border-radius: 9px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-album-meer > div button:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+/* Джерела імпорту та розділ упорядкування */
+html.palet-maquette .foto-bron-groep {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .foto-bron-groep h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-bron-groep > ul {
+  gap: 12px;
+}
+
+html.palet-maquette .foto-bron {
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, var(--mq-oppervlak));
+}
+
+html.palet-maquette .foto-bron-teller {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+html.palet-maquette .foto-voortgang {
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 40%, var(--mq-rand));
+  border-radius: 20px;
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .foto-orde-beelden .foto-tegel-open {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .foto-orde-beelden small {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--mq-bol-diep) 78%, transparent);
+  color: var(--mq-held-tekst);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* Порожній стан галереї та картка OudeFotos.tsx */
+html.palet-maquette .foto-leeg {
+  max-width: 680px;
+  width: 100%;
+  margin: 16px auto;
+  gap: 12px;
+  padding: 48px 28px;
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-held);
+  background:
+    radial-gradient(ellipse 75% 90% at 50% 0%, color-mix(in srgb, var(--mq-accent) 15%, transparent), transparent 72%),
+    var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .foto.foto-leeg[data-foto-oud="true"] {
+  border-style: solid;
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .foto-leeg > svg {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  box-sizing: content-box;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 14%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--mq-accent) 18%, transparent);
+}
+
+html.palet-maquette .foto-leeg h2,
+html.palet-maquette .foto-leeg h3 {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-leeg p {
+  color: var(--mq-gedempt);
+  line-height: 1.55;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ПОВНОЕКРАННИЙ СТУДІЙНИЙ ПЕРЕГЛЯДАЧ ЗНІМКІВ ТА ПАНЕЛЬ ВІДОМОСТЕЙ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .foto-viewer {
+  background:
+    radial-gradient(ellipse 75% 65% at 50% 48%, color-mix(in srgb, var(--mq-schild-diep) 78%, var(--mq-bol-diep)), var(--mq-bol-diep));
+  color: var(--mq-held-tekst);
+}
+
+html.palet-maquette .foto-viewer-balk {
+  gap: 6px;
+  padding: 10px 16px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-bol-diep) 76%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  backdrop-filter: blur(18px) saturate(1.25);
+}
+
+html.palet-maquette .foto-viewer-titel {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--mq-held-tekst);
+}
+
+html.palet-maquette .foto-viewer-balk .foto-knop {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mq-held-tekst);
+}
+
+html.palet-maquette .foto-viewer-balk .foto-knop:hover:not(:disabled) {
+  border-color: var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-held-tekst) 10%, transparent);
+}
+
+html.palet-maquette .foto-viewer-balk .foto-knop.is-aan {
+  border-color: color-mix(in srgb, var(--mq-nacht-accent) 48%, var(--mq-held-lijn));
+  background: color-mix(in srgb, var(--mq-nacht-accent) 18%, transparent);
+  color: var(--mq-nacht-accent);
+}
+
+html.palet-maquette .foto-viewer-beeld {
+  padding: 16px;
+}
+
+html.palet-maquette .foto-viewer-beeld img,
+html.palet-maquette .foto-viewer-beeld video {
+  border-radius: 10px;
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette .foto-pijl {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-bol-diep) 72%, transparent);
+  color: var(--mq-held-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+html.palet-maquette .foto-pijl:hover {
+  border-color: color-mix(in srgb, var(--mq-nacht-accent) 52%, var(--mq-held-lijn));
+  background: color-mix(in srgb, var(--mq-schild-diep) 88%, transparent);
+}
+
+html.palet-maquette .foto-spinner {
+  border-color: color-mix(in srgb, var(--mq-held-tekst) 22%, transparent);
+  border-top-color: var(--mq-nacht-accent);
+}
+
+/* Бічна панель відомостей про знімок */
+html.palet-maquette .foto-info {
+  gap: 16px;
+  padding: 18px 20px calc(18px + env(safe-area-inset-bottom));
+  border-left: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  -webkit-backdrop-filter: blur(26px) saturate(1.25);
+  backdrop-filter: blur(26px) saturate(1.25);
+}
+
+html.palet-maquette .foto-info dt {
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .foto-info dd {
+  color: var(--mq-tekst);
+  line-height: 1.45;
+}
+
+html.palet-maquette .foto-info a {
+  color: var(--mq-accent);
+  font-weight: 550;
+}
+
+html.palet-maquette .foto-info .foto-knop {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .foto-info .foto-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .foto-info .foto-knop.is-hoofd {
+  border-color: color-mix(in srgb, var(--mq-accent) 58%, transparent);
+  background: linear-gradient(145deg, var(--mq-accent), color-mix(in srgb, var(--mq-accent) 82%, var(--mq-accent-2) 18%));
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette .foto-info .foto-knop.is-gevaar {
+  border-color: color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  color: var(--fout);
+}
+
+html.palet-maquette .foto-bevestig {
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 10%, var(--mq-oppervlak));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. АДАПТИВНИЙ МОБІЛЬНИЙ ШАР (суворо наприкінці файла)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  html.palet-maquette .foto-info {
+    border-left: 0;
+    border-top: 1px solid var(--mq-rand-sterk);
+    border-radius: 22px 22px 0 0;
+  }
+}
+
+@media (max-width: 520px) {
+  html.palet-maquette .foto-kop {
+    padding: 14px 16px;
+  }
+
+  html.palet-maquette .foto-raster {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  html.palet-maquette .foto-tegel {
+    border-radius: 12px;
+  }
+
+  html.palet-maquette .foto-tegel > .foto-tegel-open[data-foto-bijschrift]::after {
+    display: none;
+  }
+}

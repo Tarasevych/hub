@@ -36,6 +36,8 @@ import { BIBLIOTHEEK_EVENT, BIBLIOTHEEK_MIME, leesSleepData, leesVerzoek, type B
 import { useWerkbladBlokken } from './blokken/useWerkbladBlokken';
 import { heeftBlok, SNEL_TOEGANG, SNEL_TOEGANG_ITEMS } from './blokken/koppeling';
 import './werkblad.css';
+import './werkblad-maquette.css';
+import { useIsMaquette } from '../thema/useThema';
 
 type Lagen = Partial<Record<ApparaatKlasse, LaagStand>>;
 const soortVan = (itemId: string) => (itemId.startsWith('wdg:') ? 'widget' : itemId.startsWith('map:') ? 'folder' : 'shortcut') as DesktopEntry['kind'];
@@ -88,6 +90,7 @@ function WidgetV3({ entry, lang, acties, basis, kolommen, bewerken, rctx, vak }:
 }
 
 export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, rechten, onHubTab, eerste }: WerkbladProps & { eerste: Extract<V3Antwoord, { aan: true }> }) {
+  const isMaquette = useIsMaquette();
   const tech = useTech();
   const techProfiel = profielVan(tech) === 'technisch';
   const profiel = techProfiel ? 'technisch' : 'gebruiker';
@@ -307,7 +310,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
 
   const stijl = achtergrond === 'eigen' && achtergrondEigen ? ({ '--wb-eigen': `url("${achtergrondEigen}")` } as CSSProperties) : undefined;
   return (
-    <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}`} style={stijl} data-werkblad='klaar' data-werkblad-versie='3'
+    <section className={`werkblad wb3 wb-achtergrond-${achtergrond}${bewerken ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad='klaar' data-werkblad-versie='3'
       data-wb-ruimte={ruimte} data-wb3-klasse={klasse || ''} data-wb3-status={status} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
         <h2 id='werkblad-kop' className='sr-only'>{tr(lang, 'Робочий стіл', 'Werkblad')}</h2>

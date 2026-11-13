@@ -12,6 +12,7 @@ import NotitieKaart from './NotitieKaart';
 import { NotitiesFout, notitiesClient, voorkeurenBewaren, voorkeurenLezen, type LijstAntwoord, type Voorkeuren } from './notities-client';
 import { SOORT_LABEL, foutTekst, inVeld, locale, tr, useSmal, type Lang } from './tekst';
 import './notities-vnext.css';
+import './notities-maquette.css';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
 const NotitieBewerker = lazy(() => import('./NotitieBewerker'));

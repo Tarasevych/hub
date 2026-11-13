@@ -10,6 +10,7 @@ import { publicServiceIds, sessieDienst, type CanonicalLang } from './canoniek-n
 import { canonicalServiceUrl, type CanonicalService } from './canoniek-dienst';
 import { lastPathForService, rememberedTabForPath } from './gedeelde-voorkeuren';
 import { activityLink, activityTitle, durationText, statusInfo, type ActivityEvent } from './connector-activiteit';
+import { useIsMaquette } from './thema/useThema';
 import './hub-recent.css';
 
 type Lang = CanonicalLang;
@@ -25,6 +26,7 @@ export function recenteDiensten(lees: (s: CanonicalService) => string = lastPath
 
 export default function HubRecent({ lang }: { lang: Lang }) {
   const uk = lang === 'uk';
+  const isMaquette = useIsMaquette();
   const diensten = recenteDiensten();
   const [events, setEvents] = useState<ActivityEvent[] | null | 'geen'>(null);
   useEffect(() => {
@@ -35,18 +37,18 @@ export default function HubRecent({ lang }: { lang: Lang }) {
     return () => { actief = false; };
   }, []);
   return (
-    <div className='hub-recent' data-hub-recent='1'>
-      <section className='hub-recent-kaart' aria-labelledby='hub-recent-diensten'>
+    <div className={`hub-recent${isMaquette ? ' is-maquette' : ''}`} data-hub-recent='1' data-mq-dienst={isMaquette ? 'hub' : undefined}>
+      <section className='hub-recent-kaart' data-hub-recent-sectie='diensten' aria-labelledby='hub-recent-diensten'>
         <h2 id='hub-recent-diensten'><Clock aria-hidden='true' /> {uk ? 'Останні відкриті розділи' : 'Laatst geopende onderdelen'}</h2>
         {diensten.length ? (
           <ul className='hub-recent-lijst' data-hub-recent-diensten={diensten.length}>
             {diensten.map((d) => (
-              <li key={d.service}><a href={canonicalServiceUrl(d.service, d.tab, lang, true)}><b>{NAAM[d.service] ? (uk ? NAAM[d.service][0] : NAAM[d.service][1]) : d.service}</b><small>{d.path}</small><ExternalLink size={14} aria-hidden='true' /></a></li>
+              <li key={d.service} data-recent-dienst={d.service}><a href={canonicalServiceUrl(d.service, d.tab, lang, true)}><b>{NAAM[d.service] ? (uk ? NAAM[d.service][0] : NAAM[d.service][1]) : d.service}</b><small>{d.path}</small><ExternalLink size={14} aria-hidden='true' /></a></li>
             ))}
           </ul>
         ) : <p className='hub-recent-leeg'>{uk ? 'Ви ще не відкривали інші розділи в цьому браузері. Оберіть розділ у меню ліворуч — він з’явиться тут.' : 'U hebt in deze browser nog geen andere onderdelen geopend. Kies een onderdeel in het menu links; het verschijnt dan hier.'}</p>}
       </section>
-      <section className='hub-recent-kaart' aria-labelledby='hub-recent-events'>
+      <section className='hub-recent-kaart' data-hub-recent-sectie='events' aria-labelledby='hub-recent-events'>
         <h2 id='hub-recent-events'><Activity aria-hidden='true' /> {uk ? 'Останні події' : 'Recente gebeurtenissen'}</h2>
         {events === null ? <p className='hub-recent-leeg'>{uk ? 'Завантаження…' : 'Laden…'}</p>
           : events === 'geen' ? <p className='hub-recent-leeg'>{uk ? 'Події недоступні (немає входу або прав).' : 'Gebeurtenissen niet beschikbaar (geen aanmelding of recht).'}</p>

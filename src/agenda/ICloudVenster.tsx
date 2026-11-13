@@ -41,40 +41,42 @@ export default function ICloudVenster({ lang, onSluit, onKlaar, foutTekst }: { l
     finally { setBezig(false); }
   };
   return (
-    <Venster id='agenda-icloud' titel={tr(lang, 'Підключити календар iCloud', 'iCloud-agenda koppelen')} breedte={520} modaal={false} onSluit={() => { setWachtwoord(''); onSluit(); }} lang={lang}>
-      <div style={{ padding: 16, display: 'grid', gap: 12 }} data-agenda-icloud='1'>
-        {klaar ? (
-          <div role='status' data-agenda-icloud-klaar={klaar.agendas} style={{ display: 'grid', gap: 8 }}>
-            <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center' }}><CalendarCheck size={18} aria-hidden='true' /><b>{tr(lang, `iCloud підключено: календарів знайдено — ${klaar.agendas}.`, `iCloud gekoppeld: ${klaar.agendas} agenda’s gevonden.`)}</b></p>
-            <p style={{ margin: 0 }}>{tr(lang, 'Події з’являться тут після першого оновлення. Щоб ШІ міг їх читати, увімкніть для нього дозвіл «Події з iCloud» (Підключення ШІ → потрібний ШІ → Дозволи). Змінювати події в iCloud ні сайт, ні ШІ не можуть.',
-              'De afspraken verschijnen hier na de eerste verversing. Wil een AI ze lezen, geef die AI dan het recht «Afspraken uit iCloud» (AI-verbindingen → die AI → Rechten). Afspraken in iCloud wijzigen kunnen de site en de AI niet.')}</p>
-            <button type='button' style={knop(true)} onClick={onSluit}>{tr(lang, 'Готово', 'Klaar')}</button>
-          </div>
-        ) : (
-          <>
-            <ol style={{ margin: 0, paddingLeft: 20, display: 'grid', gap: 6 }}>
-              <li>{tr(lang, 'Відкрийте appleid.apple.com → «Вхід і безпека» → «Паролі застосунків» і створіть пароль, наприклад «Мій простір».', 'Open appleid.apple.com → «Aanmelden en beveiliging» → «App-specifieke wachtwoorden» en maak er een, bijvoorbeeld «Mijn Ruimte».')}
-                {' '}<a href='https://appleid.apple.com/account/manage' target='_blank' rel='noopener noreferrer'>appleid.apple.com <ExternalLink size={12} aria-hidden='true' /></a></li>
-              <li>{tr(lang, 'Введіть нижче свій Apple ID (адресу пошти) і цей пароль застосунку — не основний пароль Apple.', 'Vul hieronder uw Apple ID (e-mailadres) en dat app-wachtwoord in — niet uw hoofdwachtwoord van Apple.')}</li>
-              <li>{tr(lang, 'Сайт перевірить вхід на caldav.icloud.com і знайде ваші календарі. Лише читання.', 'De site controleert het aanmelden bij caldav.icloud.com en zoekt uw agenda’s. Alleen lezen.')}</li>
-            </ol>
-            <label htmlFor={idVeld} style={{ display: 'grid', gap: 4 }}>{tr(lang, 'Apple ID', 'Apple ID')}
-              <input id={idVeld} type='email' value={appleId} autoComplete='username' style={veld} data-agenda-icloud-id='1' onChange={(e) => setAppleId(e.target.value)} placeholder='naam@icloud.com' />
-            </label>
-            <label htmlFor={wwVeld} style={{ display: 'grid', gap: 4 }}>{tr(lang, 'Пароль застосунку', 'App-wachtwoord')}
-              <GeheimInvoer lang={lang} id={wwVeld} value={wachtwoord} onChange={setWachtwoord} autoComplete='off' style={veld} placeholder='xxxx-xxxx-xxxx-xxxx' max={64} soort='icloud' data={{ 'agenda-icloud-wachtwoord': '1' }} />
-            </label>
-            <p style={{ margin: 0, display: 'flex', gap: 6, alignItems: 'flex-start', fontSize: '.9rem' }}><ShieldCheck size={16} aria-hidden='true' />{tr(lang, 'Пароль зберігається лише зашифрованим. Відкликати його можна будь-коли на appleid.apple.com.', 'Het wachtwoord wordt alleen versleuteld bewaard. U kunt het altijd intrekken op appleid.apple.com.')}</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button type='button' style={knop(true)} data-agenda-icloud-koppelen='1' disabled={bezig || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(appleId.trim()) || wachtwoord.replace(/\s+/g, '').length < 8} onClick={() => void koppel()}>
-                {bezig ? <Loader2 size={16} aria-hidden='true' /> : null}{tr(lang, 'Підключити iCloud', 'iCloud koppelen')}
-              </button>
-              <button type='button' style={knop(false)} onClick={() => { setWachtwoord(''); onSluit(); }}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
+    <div className='agenda-icloud-anker' style={{ display: 'contents' }} data-mq-laag-open='1'>
+      <Venster id='agenda-icloud' titel={tr(lang, 'Підключити календар iCloud', 'iCloud-agenda koppelen')} breedte={520} modaal={false} onSluit={() => { setWachtwoord(''); onSluit(); }} lang={lang}>
+        <div style={{ padding: 16, display: 'grid', gap: 12 }} data-agenda-icloud='1' data-mq-laag-open='1'>
+          {klaar ? (
+            <div role='status' data-agenda-icloud-klaar={klaar.agendas} style={{ display: 'grid', gap: 8 }}>
+              <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center' }}><CalendarCheck size={18} aria-hidden='true' /><b>{tr(lang, `iCloud підключено: календарів знайдено — ${klaar.agendas}.`, `iCloud gekoppeld: ${klaar.agendas} agenda’s gevonden.`)}</b></p>
+              <p style={{ margin: 0 }}>{tr(lang, 'Події з’являться тут після першого оновлення. Щоб ШІ міг їх читати, увімкніть для нього дозвіл «Події з iCloud» (Підключення ШІ → потрібний ШІ → Дозволи). Змінювати події в iCloud ні сайт, ні ШІ не можуть.',
+                'De afspraken verschijnen hier na de eerste verversing. Wil een AI ze lezen, geef die AI dan het recht «Afspraken uit iCloud» (AI-verbindingen → die AI → Rechten). Afspraken in iCloud wijzigen kunnen de site en de AI niet.')}</p>
+              <button type='button' style={knop(true)} onClick={onSluit}>{tr(lang, 'Готово', 'Klaar')}</button>
             </div>
-          </>
-        )}
-        {fout ? <p role='alert' data-agenda-icloud-fout={fout} style={{ margin: 0, color: 'var(--fout,#b42318)' }}>{foutTekst(fout, lang)}</p> : null}
-      </div>
-    </Venster>
+          ) : (
+            <>
+              <ol style={{ margin: 0, paddingLeft: 20, display: 'grid', gap: 6 }}>
+                <li>{tr(lang, 'Відкрийте appleid.apple.com → «Вхід і безпека» → «Паролі застосунків» і створіть пароль, наприклад «Мій простір».', 'Open appleid.apple.com → «Aanmelden en beveiliging» → «App-specifieke wachtwoorden» en maak er een, bijvoorbeeld «Mijn Ruimte».')}
+                  {' '}<a href='https://appleid.apple.com/account/manage' target='_blank' rel='noopener noreferrer'>appleid.apple.com <ExternalLink size={12} aria-hidden='true' /></a></li>
+                <li>{tr(lang, 'Введіть нижче свій Apple ID (адресу пошти) і цей пароль застосунку — не основний пароль Apple.', 'Vul hieronder uw Apple ID (e-mailadres) en dat app-wachtwoord in — niet uw hoofdwachtwoord van Apple.')}</li>
+                <li>{tr(lang, 'Сайт перевірить вхід на caldav.icloud.com і знайде ваші календарі. Лише читання.', 'De site controleert het aanmelden bij caldav.icloud.com en zoekt uw agenda’s. Alleen lezen.')}</li>
+              </ol>
+              <label htmlFor={idVeld} style={{ display: 'grid', gap: 4 }}>{tr(lang, 'Apple ID', 'Apple ID')}
+                <input id={idVeld} type='email' value={appleId} autoComplete='username' style={veld} data-agenda-icloud-id='1' onChange={(e) => setAppleId(e.target.value)} placeholder='naam@icloud.com' />
+              </label>
+              <label htmlFor={wwVeld} style={{ display: 'grid', gap: 4 }}>{tr(lang, 'Пароль застосунку', 'App-wachtwoord')}
+                <GeheimInvoer lang={lang} id={wwVeld} value={wachtwoord} onChange={setWachtwoord} autoComplete='off' style={veld} placeholder='xxxx-xxxx-xxxx-xxxx' max={64} soort='icloud' data={{ 'agenda-icloud-wachtwoord': '1' }} />
+              </label>
+              <p style={{ margin: 0, display: 'flex', gap: 6, alignItems: 'flex-start', fontSize: '.9rem' }}><ShieldCheck size={16} aria-hidden='true' />{tr(lang, 'Пароль зберігається лише зашифрованим. Відкликати його можна будь-коли на appleid.apple.com.', 'Het wachtwoord wordt alleen versleuteld bewaard. U kunt het altijd intrekken op appleid.apple.com.')}</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button type='button' style={knop(true)} data-agenda-icloud-koppelen='1' disabled={bezig || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(appleId.trim()) || wachtwoord.replace(/\s+/g, '').length < 8} onClick={() => void koppel()}>
+                  {bezig ? <Loader2 size={16} aria-hidden='true' /> : null}{tr(lang, 'Підключити iCloud', 'iCloud koppelen')}
+                </button>
+                <button type='button' style={knop(false)} onClick={() => { setWachtwoord(''); onSluit(); }}>{tr(lang, 'Скасувати', 'Annuleren')}</button>
+              </div>
+            </>
+          )}
+          {fout ? <p role='alert' data-agenda-icloud-fout={fout} style={{ margin: 0, color: 'var(--fout,#b42318)' }}>{foutTekst(fout, lang)}</p> : null}
+        </div>
+      </Venster>
+    </div>
   );
 }

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAQUETTE-005",
+  "agent": "antigravity",
+  "tak": "feature/maquette-005-20261113-212900",
+  "basisCommit": "ded48f5ac31bd7ef17924874eb74c89856d58ee4",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T21:28:57.396Z",
+  "bijgewerkt": "2026-11-13T21:28:57.396Z",
+  "omschrijving": "Хвиля 4 теми «Макет»: повне студійне перевтілення головного вузла hub.tarasevych.com / tarasevych.com (огляд, останні, задачі, робочий стіл, календар, нотатки, наскрізний пошук та фотогалерея).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

@@ -39,7 +39,7 @@ export default function Laag({ lang, soort, titel, onSluit, children, data = {},
   // Als portaal in <body>: de werkruimte van de chrome is een eigen stapelcontext (z-index 1), dus daarbinnen zou de laag
   // ONDER de bovenbalk en het accountmenu (z-index 220) blijven. De themaklasse staat ook op <html>, dus de kleuren kloppen.
   return createPortal(
-    <div className={`vn-laag is-${soort}`} onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
+    <div className={`vn-laag is-${soort}`} data-mq-laag-open='1' onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
       <div ref={vak} className='vn-laag-vak' role='dialog' aria-modal='true' aria-label={titel} tabIndex={-1} onKeyDown={toets} {...dataAttr}>
         <header className='vn-laag-kop'>
           <h2>{titel}</h2>

@@ -26,6 +26,7 @@ import { bewaarLaatste } from './zoek-laatste';
 import { MENU_MIN_TEKENS, bouwMenuRijen, keuzeActie, meldZoekPagina, menuToets, paginaDoel, uitkomstVoor } from './zoek-menu';
 import ZoekVeld, { type VeldSuggestie } from './ZoekVeld';
 import './zoek.css';
+import './zoek-maquette.css';
 
 export const PALET_EVENT = 'tsv:zoek-palet';
 export const openZoekPalet = () => window.dispatchEvent(new CustomEvent(PALET_EVENT));

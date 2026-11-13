@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-005",
+  "titel": "Хвиля 4 теми оформлення «Макет»: повне студійне перевтілення головного вузла hub.tarasevych.com та tarasevych.com",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх 7 канонічних вкладок і робочих поверхонь головного простору hub.tarasevych.com / tarasevych.com поруч з усіма чинними темами без видалення наявних можливостей. Охопити робочий стіл огляду (Werkblad v2 та вільне полотно WerkbladV3), стрічку недавніх дій, завдання, класичний календар та календар v3, класичні нотатки та простір нотаток vNext, наскрізний пошук екосистемою та фотогалерею в нічній студії й світлому режимі.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-005-20261113-212900",
+    "basis": "ded48f5ac31bd7ef17924874eb74c89856d58ee4",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі доступу, маркери сеансів, приватні нотатки, події календаря чи світлини користувачів, внутрішні мережеві адреси та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T21:28:57Z",
+      "stap": "Створено кумулятивну гілку feature/maquette-005-20261113-212900 поверх перевіреної Хвилі 3 (ded48f5ac31bd7ef17924874eb74c89856d58ee4) та зареєстровано завдання MAQUETTE-005."
+    },
+    {
+      "tijd": "2026-11-13T21:44:00Z",
+      "stap": "Оформлено наскрізний пошук (ZoekPagina, ZoekGlobaal, ZoekFilters, ZoekIndexVenster) та простір нотаток (NotitiesPagina, HubNotities, Laag) у src/zoek/zoek-maquette.css та src/notities/notities-maquette.css із захищеним відступом пошукових полів з лупою."
+    },
+    {
+      "tijd": "2026-11-13T21:51:00Z",
+      "stap": "Оформлено класичний календар і новий календар третьої версії (Agenda, AgendaPagina, AgendaVenster, ICloudVenster) та фотогалерею (FotoHubTab, FotoPagina, OudeFotos) у src/agenda/agenda-maquette.css та src/foto/foto-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T21:55:00Z",
+      "stap": "Вбудовано студійну оболонку .mq-schil.hub-maquette-wikkel, вітрину MaquetteHeld та якірну рейку MaquetteAnkerRail у HubApp (src/App.tsx) з автоматичним приховуванням на пошуку, полотні WerkbladV3, у режимі редагування та при відкритих діалогах; оформлено робочий стіл у src/hub-overzicht-maquette.css та src/werkblad/werkblad-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T22:05:00Z",
+      "stap": "Виконано повне виробниче складання, перевірку типів, модульні випробування головного вузла та живу візуальну перевірку всіх вкладок hub.tarasevych.com у безголовому Chromium у темному й світлому режимах."
+    }
+  ],
+  "keuzes": [
+    "У головному просторі вітрину MaquetteHeld застосовано в повному режимі на оглядових вкладках recent і tasks та в компактному режимі на робочих поверхнях overview, zoek, notes, calendar і photos для негайного доступу до віджетів і сіток.",
+    "Бічна рейка MaquetteAnkerRail автоматично вимикається на двоколонковій сторінці пошуку, на вільному полотні WerkbladV3, у режимі налаштування блоків та за наявності відкритих шарів або переглядача знімків.",
+    "Усі шість нових таблиць стилів побудовано виключно на змінних var(--mq-*) з бірюзово-смарагдовим акцентом --mq-accent-hub без жодного сирого кольору, !important чи нового position: fixed."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-005-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-005.json",
+    "orchestratie/taken/MAQUETTE-005.json",
+    "src/App.tsx",
+    "src/HubBlokWidget.tsx",
+    "src/HubNotities.tsx",
+    "src/HubRecent.tsx",
+    "src/WelkomKaart.tsx",
+    "src/agenda/Agenda.tsx",
+    "src/agenda/AgendaVenster.tsx",
+    "src/agenda/ICloudVenster.tsx",
+    "src/agenda/agenda-maquette.css",
+    "src/agenda/v3/AgendaPagina.tsx",
+    "src/agenda/v3/onderdelen/Laag.tsx",
+    "src/foto/FotoHubTab.tsx",
+    "src/foto/FotoPagina.tsx",
+    "src/foto/OudeFotos.tsx",
+    "src/foto/foto-maquette.css",
+    "src/hub-overzicht-maquette.css",
+    "src/notities/Laag.tsx",
+    "src/notities/NotitiesPagina.tsx",
+    "src/notities/notities-maquette.css",
+    "src/werkblad/Werkblad.tsx",
+    "src/werkblad/WerkbladV3.tsx",
+    "src/werkblad/werkblad-maquette.css",
+    "src/zoek/ZoekFilters.tsx",
+    "src/zoek/ZoekGlobaal.tsx",
+    "src/zoek/ZoekIndexVenster.tsx",
+    "src/zoek/ZoekPagina.tsx",
+    "src/zoek/zoek-maquette.css"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (kaart-controle, plaatsing-controle, hulp-vraagtekens-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, huis-maquette, tech-bundels-controle, bouw-extensie, build:server) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, schil-achtergrond-20261026, werkblad-indeling-20261022, werkblad-v3-normalisatie, werkblad-canvas-kern, werkblad-register-20261027, agenda-v3-20261028, hub-agenda-notities-20261019, zoek-diepe-link-20261105, zoek-in-menu-20261024, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка hub.tarasevych.com (/overzicht, /recent, /notities, /zoek, /agenda, /fotos, мобільний вигляд та контрольна палітра kleur) у безголовому оглядачі Chromium через локальний HTTPS у темному й світлому режимах на 1440x900 та 390x844."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/maquette-kern/index.ts",
+    "src/App.tsx",
+    "src/werkblad/Werkblad.tsx"
+  ],
+  "beperkingen": [
+    "Кумулятивний пакет Хвилі 4 (MAQUETTE-005) охоплює ядро теми, id.tarasevych.com, екрани входу, mail.tarasevych.com, cloud.tarasevych.com, github.tarasevych.com та головний простір hub.tarasevych.com / tarasevych.com; піддомени ai, huis, mcp, api та admin послідовно перевтілюються у Хвилях 5–9 (MAQUETTE-006 — MAQUETTE-010)."
+  ]
+}

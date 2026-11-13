@@ -1,0 +1,980 @@
+/* Студійне оформлення «Макет» для головного простору hub.tarasevych.com / tarasevych.com (MAQUETTE-005, Група 4А).
+   Охоплює обгортку HubApp, меню розділу, вітальну картку WelkomKaart, сітку блоків, віджети HubBlokWidget,
+   стрічку недавніх дій HubRecent та діалогові вікна простору у темному й світлому режимах.
+   Studio-uitvoering «Maquette» voor het hoofdoverzicht, welkomstkaart, blokken, widgets en recente activiteit. */
+
+/* ── 1. Локальні похідні змінні головного простору та узгодження світлого режиму «Ранковий туман» ── */
+
+html.palet-maquette .hub-maquette-wikkel,
+html.palet-maquette .hub-recent.is-maquette,
+html.palet-maquette .welkom-kaart.is-maquette,
+html.palet-maquette .hub-block-widget.is-maquette {
+  --mq-accent-hub: var(--mq-accent);
+  --mq-border-outer: color-mix(in srgb, var(--mq-tekst) 15%, var(--mq-rand));
+  --mq-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 84%, var(--mq-bg) 16%);
+  --mq-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 4%);
+  --mq-glas-glans: color-mix(in srgb, var(--mq-tekst) 9%, transparent);
+  --mq-hub-halo: color-mix(in srgb, var(--mq-accent-hub) 14%, transparent);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) .hub-maquette-wikkel[data-mq-dienst="hub"],
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .hub-maquette-wikkel[data-mq-dienst="hub"],
+html.palet-maquette:is(.theme-light, .theme-plum-light) .hub-recent.is-maquette[data-mq-dienst="hub"],
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .hub-recent.is-maquette[data-mq-dienst="hub"],
+html.palet-maquette:is(.theme-light, .theme-plum-light) .welkom-kaart.is-maquette[data-mq-dienst="hub"],
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .welkom-kaart.is-maquette[data-mq-dienst="hub"] {
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 76%, var(--mq-tekst) 24%);
+  --mq-accent-op: var(--mq-wit);
+  --mq-accent-hub: var(--mq-accent);
+  --mq-border-outer: color-mix(in srgb, var(--mq-tekst) 13%, var(--mq-rand));
+  --mq-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-bg) 6%);
+  --mq-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-accent-hub) 4%);
+  --mq-glas-glans: color-mix(in srgb, var(--mq-wit) 72%, transparent);
+  --mq-hub-halo: color-mix(in srgb, var(--mq-accent-hub) 10%, transparent);
+}
+
+/* Вітрина .mq-held завжди зберігає своє глибоке нічне склепіння та бірюзове світіння */
+html.palet-maquette .hub-maquette-wikkel .mq-held {
+  --mq-accent: var(--mq-nacht-accent);
+}
+
+/* ── 2. Розкладка головної обгортки та зняття плоского скидання оболонки ── */
+
+html.palet-maquette .hub-maquette-wikkel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  width: 100%;
+}
+
+html.palet-maquette .hub-maquette-inhoud {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+html.palet-maquette .hub-zoek-wikkel {
+  gap: 16px;
+}
+
+/* Відновлення студійних поверхонь поверх правила flat-content канонічної оболонки */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .hub-maquette-wikkel :where(.welkom-kaart, .hub-recent-kaart, .block, .hub-block-widget, .empty-workspace, .hidden-panel):not(.canonical-empty):not(.auth-card):not(.modal):not(.mail-compose-modal):not(.cloud-modal):not(.canonical-account-sheet):not(.canonical-notification-panel):not(.canonical-sidebar-editor-modal):not([role="dialog"]):not([aria-modal="true"]):not(.is-kaal):not(.wb-kaart):not(.wb-leeg-stol):not(.ag-leeg):not(.nt-kaart) {
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-hub-halo), transparent 54%),
+    linear-gradient(165deg, var(--mq-glas-verhoogd) 0%, var(--mq-glas-diep) 100%);
+  border: 1px solid var(--mq-border-outer);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow:
+    inset 0 1px 0 var(--mq-glas-glans),
+    var(--mq-schaduw-zacht);
+  padding: 20px 22px;
+}
+
+/* ── 3. Меню інших дій розділу «⋯» (як у вітрині MaquetteHeld, так і автономно) ── */
+
+html.palet-maquette .hub-sectie-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+html.palet-maquette .hub-sectie-menu-knop {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+html.palet-maquette .hub-sectie-menu-knop:hover,
+html.palet-maquette .hub-sectie-menu[data-hub-sectie-menu="open"] .hub-sectie-menu-knop {
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-hover));
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 46%, var(--mq-border-outer));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mq-held .hub-sectie-menu-knop {
+  border-color: var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-held-tekst) 8%, transparent);
+  color: var(--mq-knop-secundair-tekst);
+}
+
+html.palet-maquette .mq-held .hub-sectie-menu-knop:hover,
+html.palet-maquette .mq-held .hub-sectie-menu[data-hub-sectie-menu="open"] .hub-sectie-menu-knop {
+  background: color-mix(in srgb, var(--mq-nacht-accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--mq-nacht-accent) 52%, var(--mq-held-lijn));
+  color: var(--mq-held-tekst);
+}
+
+html.palet-maquette .hub-sectie-menu-lijst {
+  color-scheme: normal;
+  min-width: 236px;
+  padding: 7px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-popover-glas);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: var(--mq-schaduw);
+  z-index: 48;
+}
+
+html.palet-maquette .hub-sectie-menu-lijst button[role="menuitem"] {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+html.palet-maquette .hub-sectie-menu-lijst button[role="menuitem"] svg {
+  width: 16px;
+  height: 16px;
+  color: var(--mq-accent-hub);
+  flex-shrink: 0;
+}
+
+html.palet-maquette .hub-sectie-menu-lijst button[role="menuitem"]:hover,
+html.palet-maquette .hub-sectie-menu-lijst button[role="menuitem"]:focus-visible {
+  background: color-mix(in srgb, var(--mq-accent-hub) 12%, var(--mq-oppervlak-hover));
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 28%, transparent);
+  color: var(--mq-tekst);
+  outline: none;
+}
+
+/* ── 4. Студійна вітальна картка першого кроку (WelkomKaart) ── */
+
+html.palet-maquette .welkom-kaart,
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .hub-maquette-wikkel .welkom-kaart {
+  position: relative;
+  overflow: hidden;
+  padding: 24px 26px;
+  margin: 0;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 30%, var(--mq-border-outer));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--mq-accent-hub) 18%, transparent), transparent 48%),
+    radial-gradient(circle at 100% 100%, var(--mq-werk-gloed-b), transparent 56%),
+    linear-gradient(160deg, var(--mq-glas-verhoogd) 0%, var(--mq-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .welkom-kaart > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+html.palet-maquette .welkom-bovenregel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mq-accent-hub) 86%, var(--mq-tekst) 14%);
+}
+
+html.palet-maquette .welkom-kaart h2 {
+  margin: 0;
+  font-size: 1.24rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .welkom-kaart > header p {
+  margin: 6px 0 0;
+  max-width: 64ch;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .welkom-kaart > header .icon-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+html.palet-maquette .welkom-kaart > header .icon-button:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .welkom-kaart > ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+html.palet-maquette .welkom-kaart > ol > li {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-oppervlak-zacht));
+  box-shadow: inset 0 1px 0 var(--mq-glas-glans);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+html.palet-maquette .welkom-kaart > ol > li:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 42%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-hub-halo));
+}
+
+html.palet-maquette .welkom-kaart .welkom-icoon {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 32%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+}
+
+html.palet-maquette .welkom-kaart li strong {
+  display: block;
+  font-size: 0.96rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .welkom-kaart li p {
+  margin: 5px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .welkom-kaart li > button.secondary {
+  align-self: flex-start;
+  margin-top: auto;
+  min-height: 36px;
+  padding: 7px 14px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 38%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 84%, var(--mq-tekst) 16%);
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .welkom-kaart li > button.secondary:hover {
+  background: var(--mq-accent-hub);
+  border-color: var(--mq-accent-hub);
+  color: var(--mq-accent-op);
+}
+
+/* ── 5. Стрічка недавніх дій (HubRecent) ── */
+
+html.palet-maquette .hub-recent.is-maquette {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-kaart {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-hub-halo), transparent 52%),
+    linear-gradient(165deg, var(--mq-glas-verhoogd) 0%, var(--mq-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-kaart::before {
+  content: "";
+  position: absolute;
+  inset-inline: 24px;
+  top: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mq-accent-hub), transparent 82%);
+  opacity: 0.78;
+  pointer-events: none;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-kaart h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.02rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-kaart h2 svg {
+  width: 18px;
+  height: 18px;
+  padding: 6px;
+  box-sizing: content-box;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 32%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-leeg {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px dashed var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 68%, var(--mq-oppervlak-zacht));
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst > li:hover {
+  background: color-mix(in srgb, var(--mq-accent-hub) 9%, var(--mq-oppervlak-hover));
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 36%, var(--mq-border-outer));
+  transform: translateX(2px);
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst > li[data-recent-dienst] {
+  padding: 0;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst > li[data-recent-dienst] > a {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  color: var(--mq-tekst);
+  text-decoration: none;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst b {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst small {
+  font-size: 0.78rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst > li[data-recent-dienst] > a svg {
+  color: var(--mq-accent-hub);
+  opacity: 0.85;
+}
+
+html.palet-maquette .hub-recent.is-maquette .hub-recent-tekst {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+html.palet-maquette .hub-recent.is-maquette li[data-status-groep] {
+  border-inline-start-width: 3px;
+}
+
+html.palet-maquette .hub-recent.is-maquette li[data-status-groep="ok"] {
+  border-inline-start-color: var(--mq-accent-hub);
+}
+
+html.palet-maquette .hub-recent.is-maquette li[data-status-groep="active"] {
+  border-inline-start-color: color-mix(in srgb, var(--mq-accent-hub) 65%, var(--mq-tekst) 35%);
+}
+
+html.palet-maquette .hub-recent.is-maquette li[data-status-groep="warn"],
+html.palet-maquette .hub-recent.is-maquette li[data-status-groep="err"] {
+  border-inline-start-color: var(--mq-tech-markering);
+}
+
+html.palet-maquette .hub-recent.is-maquette li[data-status-groep] > a {
+  flex-shrink: 0;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 34%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 12%, transparent);
+  color: color-mix(in srgb, var(--mq-accent-hub) 86%, var(--mq-tekst) 14%);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .hub-recent.is-maquette li[data-status-groep] > a:hover {
+  background: var(--mq-accent-hub);
+  color: var(--mq-accent-op);
+}
+
+/* ── 6. Сітка блоків (.blocks), плитки (.block), стан порожньої вкладки та приховані блоки ── */
+
+html.palet-maquette .hub-maquette-wikkel .blocks {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+html.palet-maquette .hub-maquette-wikkel .blocks:empty {
+  display: none;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block {
+  grid-column: span 6;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-hub-halo), transparent 54%),
+    linear-gradient(165deg, var(--mq-glas-verhoogd) 0%, var(--mq-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-glas-glans),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block.size-small {
+  grid-column: span 4;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block.size-medium {
+  grid-column: span 6;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block.size-wide {
+  grid-column: span 12;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block.is-focused {
+  grid-column: 1 / -1;
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 54%, var(--mq-border-outer));
+  box-shadow:
+    inset 0 1px 0 var(--mq-glas-glans),
+    var(--mq-schaduw);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 38%, var(--mq-border-outer));
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 32%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-head-actions,
+html.palet-maquette .hub-maquette-wikkel .block-window-tools,
+html.palet-maquette .hub-maquette-wikkel .edit-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-head-actions button {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-head-actions button:hover {
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-hover));
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 36%, var(--mq-border-outer));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block > p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.52;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-maquette-wikkel .hub-focus-leeg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-accent-hub) 8%, var(--mq-oppervlak-zacht));
+}
+
+html.palet-maquette .hub-maquette-wikkel .hub-focus-leeg p {
+  margin: 0;
+  flex: 1 1 240px;
+  font-size: 0.86rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--mq-rand);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-footer a,
+html.palet-maquette .hub-maquette-wikkel .block-footer .block-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 36%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 13%, transparent);
+  color: color-mix(in srgb, var(--mq-accent-hub) 86%, var(--mq-tekst) 14%);
+  font-size: 0.83rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-footer a:hover,
+html.palet-maquette .hub-maquette-wikkel .block-footer .block-open:hover {
+  background: var(--mq-accent-hub);
+  border-color: var(--mq-accent-hub);
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-inline-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-inline-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-inline-editor :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea),
+html.palet-maquette .hub-maquette-wikkel .block-footer :where(select) {
+  padding: 8px 12px;
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+}
+
+html.palet-maquette .hub-maquette-wikkel .block-inline-editor :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--mq-accent-hub) 56%, transparent);
+  border-color: var(--mq-accent-hub);
+}
+
+html.palet-maquette .hub-maquette-wikkel .empty-workspace {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 38px 26px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-hub-halo), transparent 58%),
+    linear-gradient(165deg, var(--mq-glas-verhoogd) 0%, var(--mq-glas-diep) 100%);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hub-maquette-wikkel .empty-workspace > svg {
+  width: 24px;
+  height: 24px;
+  padding: 10px;
+  box-sizing: content-box;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 34%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-zacht));
+  color: var(--mq-accent-hub);
+}
+
+html.palet-maquette .hub-maquette-wikkel .empty-workspace h2 {
+  margin: 4px 0 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-maquette-wikkel .empty-workspace p,
+html.palet-maquette .hub-maquette-wikkel .empty-workspace span {
+  margin: 0;
+  max-width: 48ch;
+  font-size: 0.88rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-maquette-wikkel .empty-workspace > button {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-accent-hub);
+  background: var(--mq-accent-hub);
+  color: var(--mq-accent-op);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+html.palet-maquette .hub-maquette-wikkel .hidden-panel {
+  padding: 20px 22px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hub-maquette-wikkel .hidden-panel h3 {
+  margin: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.96rem;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-maquette-wikkel .hidden-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html.palet-maquette .hub-maquette-wikkel .hidden-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+/* ── 7. Функціональні віджети даних блоку (HubBlokWidget) ── */
+
+html.palet-maquette .hub-block-widget.is-maquette,
+html.palet-maquette .hub-maquette-wikkel .hub-block-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-oppervlak) 76%, var(--mq-oppervlak-zacht));
+  box-shadow: inset 0 1px 0 var(--mq-glas-glans);
+}
+
+html.palet-maquette .hub-block-widget > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+html.palet-maquette .hub-block-widget > header strong {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-block-widget > header small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.74rem;
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .hub-block-widget > header button {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .hub-block-widget > header button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-hover));
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 38%, var(--mq-border-outer));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-metrics {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-accent-hub) 8%, var(--mq-oppervlak-zacht));
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-metrics strong {
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-metrics span {
+  font-size: 0.78rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-feed > a,
+html.palet-maquette .hub-block-widget .hub-widget-feed > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-feed > a:hover {
+  background: color-mix(in srgb, var(--mq-accent-hub) 10%, var(--mq-oppervlak-hover));
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 34%, var(--mq-border-outer));
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-feed strong {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-feed small,
+html.palet-maquette .hub-block-widget .hub-widget-feed time {
+  font-size: 0.74rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-block-widget .hub-widget-empty {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1px dashed var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+/* ── 8. Діалогові вікна головного простору (додавання блоку, спільний доступ, керування профілем) ── */
+
+html.palet-maquette[data-presentation-service="hub"] .modal-backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html.palet-maquette[data-presentation-service="hub"] .modal-backdrop .modal {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid color-mix(in srgb, var(--mq-tekst) 16%, var(--mq-rand));
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-presentation-service="hub"] .modal-backdrop .modal :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+/* ── 9. Адаптивний каскад (суворо наприкінці файла за правилом mobiel-cascade-20261105) ── */
+
+@media (max-width: 960px) {
+  html.palet-maquette .hub-recent.is-maquette {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette .hub-maquette-wikkel .block,
+  html.palet-maquette .hub-maquette-wikkel .block.size-small,
+  html.palet-maquette .hub-maquette-wikkel .block.size-medium {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 700px) {
+  html.palet-maquette .hub-maquette-wikkel {
+    gap: 14px;
+  }
+
+  html.palet-maquette .welkom-kaart,
+  html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .hub-maquette-wikkel .welkom-kaart,
+  html.palet-maquette .hub-recent.is-maquette .hub-recent-kaart {
+    padding: 18px;
+  }
+
+  html.palet-maquette .hub-maquette-wikkel .blocks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette .hub-maquette-wikkel .block,
+  html.palet-maquette .hub-maquette-wikkel .block.size-small,
+  html.palet-maquette .hub-maquette-wikkel .block.size-medium,
+  html.palet-maquette .hub-maquette-wikkel .block.size-wide {
+    grid-column: 1 / -1;
+    padding: 18px;
+  }
+}
+
+@media (max-width: 560px) {
+  html.palet-maquette .welkom-kaart > ol {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst > li[data-recent-dienst] > a {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  html.palet-maquette .hub-recent.is-maquette .hub-recent-lijst > li[data-recent-dienst] > a small {
+    grid-column: 1 / -1;
+  }
+}

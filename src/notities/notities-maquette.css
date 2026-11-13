@@ -1,0 +1,999 @@
+/* Студійне оформлення простору нотаток у художній системі «Макет» (MAQUETTE-005, Група 4Б).
+   Охоплює студію NotitiesPagina, картки NotitieKaart, редактор NotitieBewerker, шари Laag/Import/Bronnen та класичний вид HubNotities.
+   Studio-opmaak voor Notities vNext, modale lagen en de klassieke notitieweergave onder html.palet-maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПРОКИДАННЯ ПАЛІТРИ «МАКЕТ», КОЛЬОРИ НОТАТОК ТА ПОРТАЛИ У СВІТЛОМУ РЕЖИМІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(.vn, .vn-laag, .hub-notes) {
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-tekst) 10%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: color-mix(in srgb, var(--mq-accent) 14%, transparent);
+  --focus: var(--mq-accent);
+
+  /* Шляхетні студійні відтінки 5 кольорових міток нотаток без жодного сирого кольору */
+  --vn-mq-geel: color-mix(in srgb, var(--mq-tech-markering) 76%, var(--warn) 24%);
+  --vn-mq-groen: color-mix(in srgb, var(--ok) 78%, var(--mq-accent) 22%);
+  --vn-mq-blauw: color-mix(in srgb, var(--info) 82%, var(--mq-accent) 18%);
+  --vn-mq-roze: color-mix(in srgb, var(--fout) 66%, var(--info) 34%);
+  --vn-mq-grijs: color-mix(in srgb, var(--mq-gedempt) 82%, var(--mq-stil) 18%);
+
+  color: var(--mq-tekst);
+}
+
+/* Синхронізація порталу .vn-laag у document.body, якщо світлу тему «Ранковий туман» увімкнено на .canonical-chrome */
+html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .vn-laag {
+  --mq-oppervlak: var(--mq-wit);
+  --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 94%, var(--mq-bg) 6%);
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bg) 5%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--mq-bg) 9%, transparent);
+  --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 97%, transparent);
+  --mq-rand: color-mix(in srgb, var(--mq-bg) 12%, transparent);
+  --mq-rand-sterk: color-mix(in srgb, var(--mq-bg) 22%, transparent);
+  --mq-tekst: color-mix(in srgb, var(--mq-bg) 90%, var(--mq-accent-2) 10%);
+  --mq-gedempt: color-mix(in srgb, var(--mq-bg) 62%, var(--mq-wit) 38%);
+  --mq-stil: color-mix(in srgb, var(--mq-bg) 46%, var(--mq-wit) 54%);
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 82%, var(--mq-bg) 18%);
+  --mq-accent-op: var(--mq-wit);
+}
+
+html.palet-maquette :is(.vn, .vn-laag, .hub-notes) :focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ПОЛЯ ВВОДУ ТА ПОШУКОВІ КАПСУЛИ З ПІКТОГРАМОЮ ЛУПИ (vn-zoekveld, hub-notes-zoekveld)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(.vn, .vn-laag, .hub-notes) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-bg) 12%);
+  color: var(--mq-tekst);
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette :is(.vn, .vn-laag, .hub-notes) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette :is(.vn, .vn-laag, .hub-notes) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):focus {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent) 18%, transparent);
+  outline: none;
+}
+
+/* Невидимі радіокнопки вибору виду та кольору в редакторі й класичній формі */
+html.palet-maquette .vn-laag :is(.vn-soorten label, .vn-kleurstip) input,
+html.palet-maquette .hub-notes .hub-notes-soorten label input {
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Капсула пошуку нотаток (.vn-zoekveld): піктограма лупи зліва, текст із явним відступом padding-left: 40px */
+html.palet-maquette .vn .vn-zoekveld {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px 0 0;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-bg) 12%) 0%,
+      color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-bg) 5%) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .vn .vn-zoekveld:hover {
+  border-color: color-mix(in srgb, var(--mq-accent) 36%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .vn .vn-zoekveld:focus-within {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--mq-accent) 20%, transparent),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .vn .vn-zoekveld > svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--mq-gedempt);
+  pointer-events: none;
+  transition: color 0.16s ease;
+}
+
+html.palet-maquette .vn .vn-zoekveld:focus-within > svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn .vn-zoekveld input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mq-tekst);
+  padding: 8px 10px 8px 40px;
+}
+
+html.palet-maquette .vn .vn-zoekveld input:hover,
+html.palet-maquette .vn .vn-zoekveld input:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette .vn .vn-zoekveld input::placeholder {
+  color: var(--mq-stil);
+}
+
+/* Поле пошуку в класичному поданні нотаток (.hub-notes-zoekveld): явний padding-left: 38px від лупи */
+html.palet-maquette .hub-notes .hub-notes-zoekveld {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+html.palet-maquette .hub-notes .hub-notes-zoekveld > svg {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--mq-gedempt);
+  pointer-events: none;
+  z-index: 1;
+}
+
+html.palet-maquette .hub-notes .hub-notes-zoekveld:focus-within > svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .hub-notes .hub-notes-zoekveld input {
+  width: 100%;
+  min-height: 40px;
+  padding: 7px 12px 7px 38px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. СТУДІЯ НОТАТОК (NotitiesPagina): ШАПКА, КНОПКИ, НАВІГАЦІЙНА РЕЙКА ТА ЧІПИ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .vn {
+  gap: 20px;
+}
+
+html.palet-maquette .vn kbd,
+html.palet-maquette .vn-laag kbd {
+  font-size: 12px;
+  padding: 2px 6px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 6px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* Студійна шапка-вітрина нотаток (.vn-kop) */
+html.palet-maquette .vn-kop {
+  padding: 24px 26px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 10% 16%, var(--mq-werk-gloed-a), transparent 56%),
+    radial-gradient(circle at 90% 20%, var(--mq-werk-gloed-b), transparent 54%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--mq-accent) 10%, var(--mq-oppervlak)) 0%,
+      var(--mq-oppervlak) 62%,
+      color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-bg) 6%) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .vn-kop h2 {
+  font-size: clamp(1.35rem, 1.9vw, 1.65rem);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-kop h2 svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-hint {
+  color: var(--mq-gedempt);
+  line-height: 1.56;
+}
+
+/* Кнопки студії (.vn-knop, .vn-icoonknop) */
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, transparent);
+  color: var(--mq-tekst);
+  font-weight: 600;
+  padding: 7px 14px;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.18s ease, color 0.16s ease;
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop.is-hoofd {
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  font-weight: 650;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-accent) 26%, transparent);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop.is-hoofd:hover {
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--mq-accent) 34%, transparent);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop.is-hoofd kbd {
+  background: color-mix(in srgb, var(--mq-accent-op) 16%, transparent);
+  color: var(--mq-accent-op);
+  border-color: transparent;
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop.is-stil:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop.is-klein {
+  border-radius: 999px;
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-knop.is-actief {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-icoonknop {
+  border-radius: 11px;
+  color: var(--mq-gedempt);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-icoonknop:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-icoonknop.is-actief {
+  border-color: color-mix(in srgb, var(--mq-accent) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+/* Повідомлення та спливне підтвердження (.vn-melding, .vn-toost) */
+html.palet-maquette :is(.vn, .vn-laag) .vn-melding {
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .vn .vn-toost {
+  border: 1px solid color-mix(in srgb, var(--ok) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 15%, var(--mq-oppervlak-2));
+  color: color-mix(in srgb, var(--ok) 84%, var(--mq-tekst) 16%);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Ліва студійна рейка розділів, тек і тегів (.vn-rail) */
+html.palet-maquette .vn-rail {
+  padding: 14px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-rail);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mq-oppervlak) 96%, var(--mq-accent) 4%) 0%,
+      var(--mq-oppervlak) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .vn-rail-lijst > li > button:first-child {
+  border-radius: 12px;
+  color: var(--mq-gedempt);
+  font-weight: 550;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+html.palet-maquette .vn-rail-lijst > li > button:first-child:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-rail-lijst > li > button.is-actief {
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-accent) 30%, transparent);
+  color: var(--mq-accent);
+  font-weight: 650;
+}
+
+html.palet-maquette .vn-rail-lijst > li > button.is-actief svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-telling {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .vn-rail-lijst > li > button.is-actief .vn-telling {
+  background: color-mix(in srgb, var(--mq-accent) 20%, transparent);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-rail-kop {
+  color: var(--mq-stil);
+  letter-spacing: 0.09em;
+}
+
+/* Кольорові цятки тек (.vn-stip) без сирих кольорів */
+html.palet-maquette .vn-stip { background: var(--mq-rand-sterk); }
+html.palet-maquette .vn-stip.kleur-geel { background: var(--vn-mq-geel); }
+html.palet-maquette .vn-stip.kleur-groen { background: var(--vn-mq-groen); }
+html.palet-maquette .vn-stip.kleur-blauw { background: var(--vn-mq-blauw); }
+html.palet-maquette .vn-stip.kleur-roze { background: var(--vn-mq-roze); }
+html.palet-maquette .vn-stip.kleur-grijs { background: var(--vn-mq-grijs); }
+
+/* Фільтрові чіпи та панель вигляду (.vn-chip, .vn-etiket) */
+html.palet-maquette .vn-chip {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, transparent);
+  color: var(--mq-gedempt);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+html.palet-maquette .vn-chip:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-chip.is-actief {
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--mq-accent) 24%, transparent);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-etiket {
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, transparent);
+  color: var(--mq-gedempt);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-etiket:hover {
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-etiket.is-actief {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. КАРТКИ НОТАТОК (NotitieKaart), СПИСКИ, КОД ТА ПРАВА КОЛОНКА «СЬОГОДНІ»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .vn-telling-regel {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-telling-regel small {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-rand);
+  color: var(--mq-gedempt);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .vn-kaart {
+  --vn-kaart-tint: var(--mq-accent);
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand);
+  border-top: 3px solid color-mix(in srgb, var(--mq-rand-sterk) 85%, var(--mq-accent) 15%);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      170deg,
+      color-mix(in srgb, var(--mq-oppervlak) 95%, var(--vn-kaart-tint) 5%) 0%,
+      color-mix(in srgb, var(--mq-oppervlak) 98%, var(--mq-bg) 2%) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.2s ease, box-shadow 0.22s ease, transform 0.2s ease;
+}
+
+html.palet-maquette .vn-kaart:hover,
+html.palet-maquette .vn-kaart:focus-within {
+  border-color: color-mix(in srgb, var(--vn-kaart-tint) 42%, var(--mq-rand-sterk));
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .vn-kaart.kleur-geel { --vn-kaart-tint: var(--vn-mq-geel); border-top-color: var(--vn-mq-geel); }
+html.palet-maquette .vn-kaart.kleur-groen { --vn-kaart-tint: var(--vn-mq-groen); border-top-color: var(--vn-mq-groen); }
+html.palet-maquette .vn-kaart.kleur-blauw { --vn-kaart-tint: var(--vn-mq-blauw); border-top-color: var(--vn-mq-blauw); }
+html.palet-maquette .vn-kaart.kleur-roze { --vn-kaart-tint: var(--vn-mq-roze); border-top-color: var(--vn-mq-roze); }
+html.palet-maquette .vn-kaart.kleur-grijs { --vn-kaart-tint: var(--vn-mq-grijs); border-top-color: var(--vn-mq-grijs); }
+
+html.palet-maquette .vn-raster.is-lijst .vn-kaart {
+  border-top-width: 1px;
+  border-top-color: var(--mq-rand);
+  border-left: 3px solid color-mix(in srgb, var(--mq-rand-sterk) 85%, var(--mq-accent) 15%);
+  padding: 14px 18px;
+}
+
+html.palet-maquette .vn-raster.is-lijst .vn-kaart.kleur-geel { border-left-color: var(--vn-mq-geel); }
+html.palet-maquette .vn-raster.is-lijst .vn-kaart.kleur-groen { border-left-color: var(--vn-mq-groen); }
+html.palet-maquette .vn-raster.is-lijst .vn-kaart.kleur-blauw { border-left-color: var(--vn-mq-blauw); }
+html.palet-maquette .vn-raster.is-lijst .vn-kaart.kleur-roze { border-left-color: var(--vn-mq-roze); }
+html.palet-maquette .vn-raster.is-lijst .vn-kaart.kleur-grijs { border-left-color: var(--vn-mq-grijs); }
+
+html.palet-maquette .vn-kaart.is-vast {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--vn-kaart-tint) 11%, var(--mq-oppervlak)) 0%,
+      var(--mq-oppervlak) 100%
+    );
+}
+
+html.palet-maquette .vn-kaart-vastteken {
+  color: var(--vn-mq-geel);
+}
+
+html.palet-maquette .vn-kaart-klik h3 {
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-kaart-koppelingen a,
+html.palet-maquette :is(.vn, .vn-laag) .vn-md a {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-code,
+html.palet-maquette :is(.vn, .vn-laag) .vn-md pre {
+  border: 1px solid var(--mq-rand);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mq-bg) 52%, var(--mq-oppervlak-2) 48%);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-md code {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-tekst) 8%);
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-md pre code {
+  background: transparent;
+}
+
+html.palet-maquette :is(.vn, .vn-laag) .vn-md blockquote {
+  border-left-color: var(--mq-accent);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .vn-voortgang {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-tekst) 8%);
+}
+
+html.palet-maquette .vn-voortgang > span {
+  background: linear-gradient(90deg, var(--mq-accent), var(--vn-mq-groen));
+}
+
+html.palet-maquette .vn-leeg {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-werk-gloed-a), transparent 64%),
+    var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .vn-leeg svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-leeg p {
+  color: var(--mq-tekst);
+}
+
+/* Права студійна колонка «Сьогодні»: мінікалендар та картки огляду (.vn-zijkolom) */
+html.palet-maquette .vn-zijblok,
+html.palet-maquette .vn-kalender {
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-accent) 5%) 0%,
+      var(--mq-oppervlak) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .vn-kalender-dag {
+  border-radius: 9px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-kalender-dag.is-vandaag {
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--mq-accent) 28%, transparent);
+}
+
+html.palet-maquette .vn-kalender-dag.heeft-notitie::after {
+  background: var(--mq-accent);
+}
+
+html.palet-maquette .vn-kalender-dag.is-vandaag.heeft-notitie::after {
+  background: var(--mq-accent-op);
+}
+
+/* Мобільна нижня панель навігації (.vn-onderbalk; position вже в notities-vnext.css) */
+html.palet-maquette .vn-onderbalk {
+  border-top: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-bovenbalk-glas);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .vn-onderbalk > button,
+html.palet-maquette .vn-onderbalk summary {
+  font-size: 12px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .vn-onderbalk > button.is-actief {
+  background: color-mix(in srgb, var(--mq-accent) 16%, transparent);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-onderbalk .vn-plus {
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-accent) 32%, transparent);
+}
+
+html.palet-maquette .vn-onderbalk-menu {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 18px;
+  background: var(--mq-popover-glas);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--mq-schaduw);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. МОДАЛЬНИЙ ШАР (Laag), РЕДАКТОР (NotitieBewerker), ІМПОРТ ТА ІНТЕГРАЦІЇ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .vn-laag {
+  background: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+html.palet-maquette .vn-laag-vak {
+  background: var(--mq-popover-glas);
+  backdrop-filter: blur(22px);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .vn-laag.is-paneel .vn-laag-vak {
+  border-left: 1px solid var(--mq-rand-sterk);
+}
+
+html.palet-maquette .vn-laag.is-venster .vn-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .vn-laag-kop {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 76%, transparent);
+}
+
+html.palet-maquette .vn-laag-kop h2 {
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-laag-inhoud {
+  padding: 20px;
+}
+
+html.palet-maquette .vn-laag-voet {
+  margin: 0 -20px -20px;
+  padding: 14px 20px calc(14px + var(--veilig-onder));
+  border-top: 1px solid var(--mq-rand);
+  background: var(--mq-popover-glas);
+  backdrop-filter: blur(16px);
+}
+
+/* Перемикачі виду та кольору в NotitieBewerker */
+html.palet-maquette .vn-soorten label {
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, transparent);
+  color: var(--mq-gedempt);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+html.palet-maquette .vn-soorten label:hover {
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-soorten label.is-actief {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-kleurstip {
+  border: 2px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-bg);
+  transition: transform 0.14s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html.palet-maquette .vn-kleurstip.kleur-geen { color: var(--mq-tekst); }
+html.palet-maquette .vn-kleurstip.kleur-geel { background: var(--vn-mq-geel); }
+html.palet-maquette .vn-kleurstip.kleur-groen { background: var(--vn-mq-groen); }
+html.palet-maquette .vn-kleurstip.kleur-blauw { background: var(--vn-mq-blauw); }
+html.palet-maquette .vn-kleurstip.kleur-roze { background: var(--vn-mq-roze); }
+html.palet-maquette .vn-kleurstip.kleur-grijs { background: var(--vn-mq-grijs); color: var(--mq-wit); }
+
+html.palet-maquette .vn-kleurstip:hover {
+  transform: scale(1.06);
+}
+
+html.palet-maquette .vn-kleurstip.is-actief {
+  border-color: var(--mq-tekst);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent) 26%, transparent);
+}
+
+html.palet-maquette .vn-werkbalk {
+  border: 1px solid var(--mq-rand);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-bg) 12%);
+  padding: 5px;
+}
+
+html.palet-maquette .vn-voorbeeld {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, transparent);
+  padding: 16px;
+}
+
+html.palet-maquette .vn-revisies li {
+  border: 1px solid var(--mq-rand);
+  border-radius: 14px;
+  background: var(--mq-oppervlak-zacht);
+  padding: 10px 12px;
+}
+
+/* Імпорт і експорт (NotitiesImport) */
+html.palet-maquette .vn-sleepvak {
+  border: 2px dashed var(--mq-rand-sterk);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-werk-gloed-a), transparent 65%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 76%, transparent);
+  color: var(--mq-gedempt);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .vn-sleepvak.is-sleep {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 14%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .vn-sleepvak svg,
+html.palet-maquette .vn-import h3 svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-import-lijst li {
+  border: 1px solid var(--mq-rand);
+  border-radius: 12px;
+  background: var(--mq-oppervlak-zacht);
+  padding: 8px 12px;
+}
+
+/* Джерела та інтеграції (NotitiesBronnen) */
+html.palet-maquette .vn-bronnen-lijst > li {
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-accent) 5%) 0%,
+      var(--mq-oppervlak) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: border-color 0.18s ease;
+}
+
+html.palet-maquette .vn-bronnen-lijst > li:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .vn-monogram {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 30%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .vn-bron-link {
+  color: var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. КЛАСИЧНЕ ПОДАННЯ НОТАТОК ГОЛОВНОГО ВУЗЛА (HubNotities.tsx / .hub-notes)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hub-notes {
+  gap: 16px;
+  padding: 24px 26px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 10% 10%, var(--mq-werk-gloed-a), transparent 56%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-accent) 5%) 0%,
+      var(--mq-oppervlak) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hub-notes-kop h2 {
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-notes-kop h2 svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .hub-notes-kop p {
+  color: var(--mq-gedempt);
+  line-height: 1.56;
+}
+
+html.palet-maquette .hub-notes button.primary {
+  min-height: 40px;
+  padding: 7px 15px;
+  border: 1px solid var(--mq-accent);
+  border-radius: var(--mq-straal-knop);
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  font-weight: 650;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--mq-accent) 24%, transparent);
+  cursor: pointer;
+}
+
+html.palet-maquette .hub-notes button.ghost {
+  min-height: 40px;
+  padding: 7px 14px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, transparent);
+  color: var(--mq-tekst);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+html.palet-maquette .hub-notes button.ghost:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .hub-notes .icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mq-gedempt);
+  cursor: pointer;
+}
+
+html.palet-maquette .hub-notes .icon-button:hover {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-notes-form,
+html.palet-maquette .hub-notes-zoek {
+  padding: 14px 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-bg) 16%);
+}
+
+html.palet-maquette .hub-notes-soorten label {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-notes-soorten label.is-actief {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .hub-notes-etiket {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+  font-size: 12px;
+}
+
+html.palet-maquette .hub-notes-etiket.is-actief {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .hub-notes-lijst > li {
+  padding: 14px 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 18px;
+  background: var(--mq-oppervlak-2);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: border-color 0.18s ease;
+}
+
+html.palet-maquette .hub-notes-lijst > li:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .hub-notes-lijst > li[data-hub-note-vast="1"] {
+  box-shadow: inset 3px 0 0 var(--vn-mq-geel), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hub-notes-lijst > li.kleur-geel { background: color-mix(in srgb, var(--vn-mq-geel) 14%, var(--mq-oppervlak-2)); }
+html.palet-maquette .hub-notes-lijst > li.kleur-groen { background: color-mix(in srgb, var(--vn-mq-groen) 14%, var(--mq-oppervlak-2)); }
+html.palet-maquette .hub-notes-lijst > li.kleur-blauw { background: color-mix(in srgb, var(--vn-mq-blauw) 14%, var(--mq-oppervlak-2)); }
+html.palet-maquette .hub-notes-lijst > li.kleur-roze { background: color-mix(in srgb, var(--vn-mq-roze) 14%, var(--mq-oppervlak-2)); }
+html.palet-maquette .hub-notes-lijst > li.kleur-grijs { background: color-mix(in srgb, var(--vn-mq-grijs) 16%, var(--mq-oppervlak-2)); }
+
+html.palet-maquette .hub-notes-code {
+  border-color: var(--mq-rand);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mq-bg) 52%, var(--mq-oppervlak-2) 48%);
+}
+
+html.palet-maquette .hub-notes-koppeling {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .hub-notes-apps-uitleg {
+  border-left-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-notes-apps-lijst > li {
+  border-color: var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette .hub-notes-app-monogram {
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 30%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .hub-notes-app-stand {
+  font-size: 12px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-notes-app-stand.is-beschikbaar {
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak));
+  color: var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. ПОВАГА ДО СКОРОЧЕНОГО РУХУ ТА МОБІЛЬНИЙ КАСКАД НАПРИКІНЦІ ФАЙЛА
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette :is(.vn, .vn-laag, .hub-notes) * {
+    transition: none;
+  }
+}
+
+@media (max-width: 760px) {
+  html.palet-maquette .vn-kop,
+  html.palet-maquette .hub-notes {
+    padding: 18px 16px;
+    border-radius: var(--mq-straal-kaart);
+  }
+
+  html.palet-maquette .vn-laag-inhoud {
+    padding: 16px;
+  }
+
+  html.palet-maquette .vn-laag-voet {
+    margin: 0 -16px -16px;
+    padding: 12px 16px calc(12px + var(--veilig-onder));
+  }
+}
+
+@media (max-width: 620px) {
+  html.palet-maquette .hub-notes-apps-lijst > li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}

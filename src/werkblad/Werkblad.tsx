@@ -30,6 +30,8 @@ import { tr, type Acties, type Dienst, type Lang, type WidgetProps } from './soo
 import { Ai, Begroeting, SnelToegang, SnelleActies, Tip } from './widgets/Start';
 import { Skelet } from './widgets/Vlak';
 import './werkblad.css';
+import './werkblad-maquette.css';
+import { useIsMaquette } from '../thema/useThema';
 import { laadV3, type V3Antwoord } from './api-v3';
 
 // Werkblad v3 (vrij canvas) achter de vlag `werkblad-v3` — een aparte chunk; met de vlag uit wordt hij nooit geladen.
@@ -134,6 +136,7 @@ const kolommenVan = () => (typeof matchMedia === 'undefined' ? 12 : matchMedia('
 export type WerkbladProps = { lang: Lang; ownerUserId: string; naam: string; magBewerken: boolean; rechten: AccountRechten; oudeBlokken: readonly OudBlok[]; onHubTab: (tab: HubTabId) => void };
 
 function WerkbladV2({ lang, ownerUserId, naam, magBewerken, rechten, oudeBlokken, onHubTab }: WerkbladProps) {
+  const isMaquette = useIsMaquette();
   const tech = useTech();
   const techProfiel = profielVan(tech) === 'technisch';
   const profiel = techProfiel ? 'technisch' : 'gebruiker';
@@ -372,7 +375,7 @@ function WerkbladV2({ lang, ownerUserId, naam, magBewerken, rechten, oudeBlokken
   }, [indeling.achtergrond, achtergrondEigen]);
 
   return (
-    <section className={`werkblad wb-achtergrond-${indeling.achtergrond}${instellen ? ' is-instellen' : ''}`} style={stijl} data-werkblad={geladen ? 'klaar' : 'laden'} data-wb-ruimte={ruimte} data-wb-kolommen={kolommen} data-wb-aantal={items.length} aria-labelledby='werkblad-kop'>
+    <section className={`werkblad wb-achtergrond-${indeling.achtergrond}${instellen ? ' is-instellen' : ''}${isMaquette ? ' is-maquette' : ''}`} style={stijl} data-mq-dienst={isMaquette ? 'hub' : undefined} data-werkblad={geladen ? 'klaar' : 'laden'} data-wb-ruimte={ruimte} data-wb-kolommen={kolommen} data-wb-aantal={items.length} aria-labelledby='werkblad-kop'>
       <div className='wb-balk'>
         {/* De paginakop (h1 «Робочий стіл» in App.tsx) staat er al; deze kop is er voor schermlezers en de regio-naam. */}
         <h2 id='werkblad-kop' className='sr-only'>{tr(lang, 'Віджети робочого столу', 'Widgets van het werkblad')}</h2>

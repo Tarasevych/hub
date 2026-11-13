@@ -29,6 +29,7 @@ import { gebruikGoogleKoppeling } from './haken/gebruikGoogleKoppeling';
 import Terugkoppeling from './onderdelen/Terugkoppeling';
 import { fmt, tr, type Lang } from './tekst';
 import './agenda-v3.css';
+import '../agenda-maquette.css';
 
 const VERBORGEN = 'mr-agenda-v3-verborgen';
 const leesVerborgen = () => { try { return new Set<string>(JSON.parse(localStorage.getItem(VERBORGEN) || '[]')); } catch { return new Set<string>(); } };

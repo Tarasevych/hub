@@ -92,7 +92,7 @@ export default function AgendaVenster(props: Props) {
   };
 
   return (
-    <div className='agenda-venster-laag' role='dialog' aria-modal='true' aria-label={bedoeling.nieuw ? tr(lang, 'Нова подія', 'Nieuwe afspraak') : tr(lang, 'Подія', 'Afspraak')} data-agenda-venster='1'>
+    <div className='agenda-venster-laag' role='dialog' aria-modal='true' aria-label={bedoeling.nieuw ? tr(lang, 'Нова подія', 'Nieuwe afspraak') : tr(lang, 'Подія', 'Afspraak')} data-agenda-venster='1' data-mq-laag-open='1'>
       <div className='agenda-venster'>
         <header className='agenda-venster-kop'>
           <h3><CalendarClock aria-hidden='true' />{bedoeling.nieuw ? tr(lang, 'Нова подія', 'Nieuwe afspraak') : tr(lang, 'Редагувати подію', 'Afspraak wijzigen')}</h3>

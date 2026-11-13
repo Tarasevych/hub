@@ -1,0 +1,737 @@
+/* Студійне оформлення «Макет» для робочого столу Werkblad (v2) та вільного полотна WerkbladV3 (MAQUETTE-005, Група 4А).
+   Глибоке матове скло, тонкі світові канти --mq-border-outer, бірюзово-смарагдовий акцент --mq-accent-hub
+   і бездоганний контраст у темному («Нічна студія») та світлому («Ранковий туман») режимах.
+   Studio-uitvoering «Maquette» voor Werkblad v2, vrij canvas WerkbladV3, live widgets, bibliotheek en eigenschappen. */
+
+/* ── 1. Похідні змінні робочого столу та узгодження світлого режиму «Ранковий туман» ── */
+
+html.palet-maquette .werkblad,
+html.palet-maquette .vn-laag:has(.wb-catalogus-venster),
+html.palet-maquette .eig-paneel {
+  --mq-accent-hub: var(--mq-accent);
+  --mq-border-outer: color-mix(in srgb, var(--mq-tekst) 15%, var(--mq-rand));
+  --mq-wb-glas: color-mix(in srgb, var(--mq-oppervlak) 84%, var(--mq-bg) 16%);
+  --mq-wb-glas-hoog: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 4%);
+  --mq-wb-glans: color-mix(in srgb, var(--mq-tekst) 9%, transparent);
+  --mq-wb-halo: color-mix(in srgb, var(--mq-accent-hub) 14%, transparent);
+  --wb-glas: var(--mq-wb-glas);
+  --wb-glas-rand: var(--mq-border-outer);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) .werkblad[data-mq-dienst="hub"],
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .werkblad[data-mq-dienst="hub"],
+html.palet-maquette:is(.theme-light, .theme-plum-light) .vn-laag:has(.wb-catalogus-venster),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .vn-laag:has(.wb-catalogus-venster),
+html.palet-maquette:is(.theme-light, .theme-plum-light) .eig-paneel,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .eig-paneel {
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 76%, var(--mq-tekst) 24%);
+  --mq-accent-op: var(--mq-wit);
+  --mq-accent-hub: var(--mq-accent);
+  --mq-border-outer: color-mix(in srgb, var(--mq-tekst) 13%, var(--mq-rand));
+  --mq-wb-glas: color-mix(in srgb, var(--mq-oppervlak) 93%, var(--mq-bg) 7%);
+  --mq-wb-glas-hoog: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-accent-hub) 4%);
+  --mq-wb-glans: color-mix(in srgb, var(--mq-wit) 76%, transparent);
+  --mq-wb-halo: color-mix(in srgb, var(--mq-accent-hub) 10%, transparent);
+  --wb-glas: var(--mq-wb-glas);
+  --wb-glas-rand: var(--mq-border-outer);
+}
+
+/* Зняття плоского скидання оболонки для секції робочого столу й панелей v3 */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .werkblad:not(.canonical-empty):not(.auth-card):not(.modal):not(.mail-compose-modal):not(.cloud-modal):not(.canonical-account-sheet):not(.canonical-notification-panel):not(.canonical-sidebar-editor-modal):not([role="dialog"]):not([aria-modal="true"]):not(.is-kaal):not(.wb-kaart):not(.wb-leeg-stol):not(.ag-leeg):not(.nt-kaart) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* ── 2. Верхня смуга керування столом (.wb-balk), індикатори та кнопки ── */
+
+html.palet-maquette .werkblad {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+html.palet-maquette .werkblad .wb-balk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-wb-glas) 84%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 var(--mq-wb-glans);
+}
+
+html.palet-maquette .werkblad .wb-balk:not(:has(.wb-ruimte-pil)) {
+  justify-content: flex-end;
+}
+
+html.palet-maquette .werkblad .wb-ruimte-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 44%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-tech-markering) 14%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+html.palet-maquette .werkblad .wb-balk-acties {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette .werkblad :where(.knop-primair, .knop-secundair, .knop-stil) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: var(--mq-straal-knop);
+  font-weight: 600;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+html.palet-maquette .werkblad .knop-primair {
+  border: 1px solid var(--mq-accent-hub);
+  background: var(--mq-accent-hub);
+  color: var(--mq-accent-op);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--mq-accent-hub) 24%, transparent);
+}
+
+html.palet-maquette .werkblad .knop-primair:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+}
+
+html.palet-maquette .werkblad .knop-secundair {
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .knop-secundair:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 44%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 12%, var(--mq-oppervlak-hover));
+}
+
+html.palet-maquette .werkblad .knop-stil {
+  border: 1px solid transparent;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .werkblad .knop-stil:hover:not(:disabled) {
+  border-color: var(--mq-border-outer);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-uitleg,
+html.palet-maquette .werkblad .wb-melding,
+html.palet-maquette .werkblad .wb3-melding {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 30%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 9%, var(--mq-wb-glas));
+  color: var(--mq-tekst);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .werkblad .wb-fout-balk {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 46%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-tech-markering) 13%, var(--mq-wb-glas));
+  color: var(--mq-tekst);
+}
+
+/* ── 3. Плитки віджетів (.wb-tegel.is-kaart та .wb-tegel.is-kaal) ── */
+
+html.palet-maquette .werkblad .wb-raster {
+  gap: 16px;
+}
+
+html.palet-maquette .werkblad .wb-tegel.is-kaart {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-wb-halo), transparent 56%),
+    linear-gradient(165deg, var(--mq-wb-glas-hoog) 0%, var(--mq-wb-glas) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    inset 0 1px 0 var(--mq-wb-glans),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+html.palet-maquette .werkblad .wb-tegel.is-kaart:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 38%, var(--mq-border-outer));
+}
+
+html.palet-maquette .werkblad .wb-tegel.is-instellen.is-kaart {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 52%, var(--mq-border-outer));
+}
+
+html.palet-maquette .werkblad .wb-tegel.is-sleept {
+  border-color: var(--mq-accent-hub);
+  box-shadow:
+    inset 0 1px 0 var(--mq-wb-glans),
+    var(--mq-schaduw);
+}
+
+html.palet-maquette .werkblad .wb-tegel-kop {
+  padding: 15px 18px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--mq-rand) 72%, transparent);
+  gap: 10px;
+}
+
+html.palet-maquette .werkblad .wb-tegel-kop.is-zwevend {
+  border-radius: 14px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-wb-glas);
+  padding: 8px 12px;
+}
+
+html.palet-maquette .werkblad .wb-tegel-icoon {
+  width: 17px;
+  height: 17px;
+  padding: 6px;
+  box-sizing: content-box;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 30%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 13%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+  flex-shrink: 0;
+}
+
+html.palet-maquette .werkblad .wb-greep {
+  color: var(--mq-accent-hub);
+}
+
+html.palet-maquette .werkblad .wb-tegel-titel {
+  font-size: 0.92rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-teller {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 36%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 16%, transparent);
+  color: color-mix(in srgb, var(--mq-accent-hub) 90%, var(--mq-tekst) 10%);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+html.palet-maquette .werkblad .wb-icoonknop {
+  border-radius: 9px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+html.palet-maquette .werkblad .wb-icoonknop:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 42%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-hover));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-icoonknop.is-gevaar:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mq-tech-markering) 55%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-tech-markering) 18%, var(--mq-oppervlak-hover));
+}
+
+html.palet-maquette .werkblad .wb-tegel-inhoud {
+  padding: 14px 18px 18px;
+}
+
+html.palet-maquette .werkblad .wb-tegel.is-kaal .wb-tegel-inhoud {
+  padding: 4px 2px;
+}
+
+html.palet-maquette .werkblad .wb-maat {
+  border-inline-end: 2px solid var(--mq-accent-hub);
+  border-block-end: 2px solid var(--mq-accent-hub);
+  opacity: 0.72;
+}
+
+/* ── 4. Типографіка та вміст живих віджетів робочого столу ── */
+
+/* Вітання та годинник */
+html.palet-maquette .werkblad .wb-begroeting {
+  padding: 18px 22px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-wb-halo), transparent 52%),
+    linear-gradient(155deg, color-mix(in srgb, var(--mq-wb-glas-hoog) 88%, transparent) 0%, color-mix(in srgb, var(--mq-wb-glas) 84%, transparent) 100%);
+  box-shadow: inset 0 1px 0 var(--mq-wb-glans);
+}
+
+html.palet-maquette .werkblad .wb-groet-tekst {
+  font-size: clamp(1.3rem, 2.2vw, 1.72rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-groet-sub {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .werkblad .wb-tijd {
+  font-size: clamp(1.65rem, 2.8vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--mq-accent-hub) 84%, var(--mq-tekst) 16%);
+}
+
+html.palet-maquette .werkblad .wb-datum {
+  color: var(--mq-gedempt);
+}
+
+/* Плитки швидкого доступу та швидких дій */
+html.palet-maquette .werkblad .wb-snel-tegel {
+  border-radius: 16px;
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-oppervlak) 72%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-wb-glans);
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+html.palet-maquette .werkblad .wb-snel-tegel:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 46%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 11%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .werkblad .wb-snel-icoon {
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 28%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+}
+
+html.palet-maquette .werkblad .wb-actie {
+  border-radius: 13px;
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+html.palet-maquette .werkblad .wb-actie:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 44%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 12%, var(--mq-oppervlak-hover));
+}
+
+/* Смуга порад */
+html.palet-maquette .werkblad .wb-tip {
+  padding: 13px 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 30%, var(--mq-border-outer));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--mq-accent-hub) 12%, transparent), transparent 64%),
+    var(--mq-wb-glas);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-wb-glans);
+}
+
+/* Перемикачі категорій (.wb-chips), лічильники (.wb-tellers) та списки (.wb-rijen) */
+html.palet-maquette .werkblad .wb-chips button,
+html.palet-maquette .vn-laag .wb-catalogus .wb-chips button {
+  border-radius: 999px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-weight: 550;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+html.palet-maquette .werkblad .wb-chips button:hover,
+html.palet-maquette .vn-laag .wb-catalogus .wb-chips button:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 36%, var(--mq-border-outer));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-chips button.is-actief,
+html.palet-maquette .vn-laag .wb-catalogus .wb-chips button.is-actief {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 52%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 18%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 90%, var(--mq-tekst) 10%);
+}
+
+html.palet-maquette .werkblad .wb-teller-blok,
+html.palet-maquette .werkblad .wb-taak-stand > div {
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-accent-hub) 7%, var(--mq-oppervlak-zacht));
+}
+
+html.palet-maquette .werkblad .wb-teller-blok strong,
+html.palet-maquette .werkblad .wb-taak-stand strong {
+  color: color-mix(in srgb, var(--mq-accent-hub) 88%, var(--mq-tekst) 12%);
+}
+
+html.palet-maquette .werkblad .wb-rijen > li > a,
+html.palet-maquette .werkblad .wb-rijen > li > button,
+html.palet-maquette .werkblad .wb-rijen > li > div,
+html.palet-maquette .werkblad .wb-notitie-rij,
+html.palet-maquette .werkblad .wb-agenda-lijst > li {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+html.palet-maquette .werkblad .wb-rijen > li > a:hover,
+html.palet-maquette .werkblad .wb-rijen > li > button:hover,
+html.palet-maquette .werkblad .wb-notitie-rij:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 36%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 10%, var(--mq-oppervlak-hover));
+}
+
+html.palet-maquette .werkblad .wb-post-stip,
+html.palet-maquette .werkblad .wb-agenda-stip {
+  background: var(--mq-accent-hub);
+}
+
+/* Міні-календар на столі */
+html.palet-maquette .werkblad .wb-maand button {
+  border-radius: 9px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-maand button.is-vandaag {
+  border: 1px solid color-mix(in srgb, var(--mq-accent-hub) 55%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 16%, transparent);
+  color: color-mix(in srgb, var(--mq-accent-hub) 90%, var(--mq-tekst) 10%);
+  font-weight: 700;
+}
+
+html.palet-maquette .werkblad .wb-maand button.is-gekozen {
+  background: var(--mq-accent-hub);
+  color: var(--mq-accent-op);
+}
+
+/* Сховище, система та поля введення віджетів */
+html.palet-maquette .werkblad .wb-voortgang {
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .werkblad .wb-voortgang > span {
+  background: linear-gradient(90deg, var(--mq-accent-2), var(--mq-accent-hub));
+}
+
+html.palet-maquette .werkblad :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--mq-accent-hub) 52%, transparent);
+  border-color: var(--mq-accent-hub);
+}
+
+/* Стан порожнього столу (.wb-leeg-stol) */
+html.palet-maquette .werkblad .wb-leeg-stol {
+  padding: 40px 26px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-wb-halo), transparent 58%),
+    linear-gradient(165deg, var(--mq-wb-glas-hoog) 0%, var(--mq-wb-glas) 100%);
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad .wb-leeg-stol > svg {
+  color: var(--mq-accent-hub);
+}
+
+/* ── 5. Каталог віджетів та вибір фону столу (портал Venster) ── */
+
+html.palet-maquette .vn-laag .wb-catalogus-venster {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .vn-laag .wb-catalogus-lijst > li {
+  border-radius: 16px;
+  border: 1px solid var(--mq-border-outer);
+  background: color-mix(in srgb, var(--mq-oppervlak) 78%, var(--mq-oppervlak-zacht));
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+html.palet-maquette .vn-laag .wb-catalogus-lijst > li:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 38%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 8%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .vn-laag .wb-catalogus-lijst > li > svg {
+  color: var(--mq-accent-hub);
+}
+
+html.palet-maquette .vn-laag .wb-achtergrond-tegel {
+  border-radius: 16px;
+  border: 1px solid var(--mq-border-outer);
+  overflow: hidden;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .vn-laag .wb-achtergrond-tegel.is-actief {
+  border-color: var(--mq-accent-hub);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mq-accent-hub) 46%, transparent);
+}
+
+html.palet-maquette .vn-laag .wb-bestand-keuze {
+  border-radius: 15px;
+  border: 1px dashed color-mix(in srgb, var(--mq-accent-hub) 42%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 8%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+}
+
+/* ── 6. Вільне полотно WerkbladV3 (.wb3, .wbc, бібліотека .bib-paneel, блоки .blk-*, властивості .eig-paneel) ── */
+
+html.palet-maquette .werkblad.wb3 .wb3-instellingen,
+html.palet-maquette .werkblad.wb3 .wb3-bibliotheek {
+  padding: 16px 18px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-wb-halo), transparent 56%),
+    linear-gradient(165deg, var(--mq-wb-glas-hoog) 0%, var(--mq-wb-glas) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-wb-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .werkblad.wb3 .wb3-bevestig {
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 45%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-tech-markering) 12%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc {
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc.wbc-bewerken {
+  border: 1px dashed color-mix(in srgb, var(--mq-accent-hub) 42%, var(--mq-border-outer));
+  background-color: color-mix(in srgb, var(--mq-wb-glas) 48%, transparent);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--mq-accent-hub) 34%, transparent) 1px, transparent 1.4px);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc-item.wbc-geselecteerd,
+html.palet-maquette .werkblad.wb3 .wbc-item.wbc-actief {
+  outline: 2px solid var(--mq-accent-hub);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc-item.wbc-doel {
+  outline: 2px dashed var(--mq-accent-hub);
+  background: color-mix(in srgb, var(--mq-accent-hub) 12%, transparent);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc-geest {
+  border-radius: var(--mq-straal-kaart);
+  border: 2px dashed var(--mq-accent-hub);
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, transparent);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc-greep::after {
+  border-color: var(--mq-accent-hub);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc-menu {
+  border-radius: 16px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-popover-glas);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--mq-schaduw);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc-menu button:hover,
+html.palet-maquette .werkblad.wb3 .wbc-menu button:focus-visible {
+  background: color-mix(in srgb, var(--mq-accent-hub) 14%, var(--mq-oppervlak-hover));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad.wb3 .wbc-status {
+  border-radius: 14px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-wb-glas);
+  color: var(--mq-tekst);
+}
+
+/* Ярлики, теки, блоки та бібліотека «Усе на сайті» */
+html.palet-maquette .werkblad.wb3 .wb3-map-blok,
+html.palet-maquette .werkblad.wb3 .bib-tegel,
+html.palet-maquette .werkblad.wb3 .blk-blok {
+  border-radius: 20px;
+  border: 1px solid var(--mq-border-outer);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-wb-halo), transparent 58%),
+    linear-gradient(165deg, var(--mq-wb-glas-hoog) 0%, var(--mq-wb-glas) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-wb-glans),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad.wb3 .bib-tegel:hover,
+html.palet-maquette .werkblad.wb3 .blk-tegel:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 44%, var(--mq-border-outer));
+}
+
+html.palet-maquette .werkblad.wb3 .bib-map-paneel,
+html.palet-maquette .werkblad.wb3 .bib-bewerk {
+  border-radius: 20px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad.wb3 .bib-zoek input {
+  padding-inline-start: 34px;
+}
+
+html.palet-maquette .werkblad.wb3 .bib-chip {
+  border-radius: 999px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .werkblad.wb3 .bib-chip[aria-pressed="true"],
+html.palet-maquette .werkblad.wb3 .bib-chip.is-actief {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 52%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 16%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 90%, var(--mq-tekst) 10%);
+}
+
+html.palet-maquette .werkblad.wb3 .bib-rij {
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .werkblad.wb3 .bib-rij:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-hub) 38%, var(--mq-border-outer));
+  background: color-mix(in srgb, var(--mq-accent-hub) 9%, var(--mq-oppervlak-hover));
+}
+
+/* Інспектор властивостей значків та блоків (.eig-paneel) */
+html.palet-maquette .eig-paneel {
+  border-inline-start: 1px solid var(--mq-border-outer);
+  background: var(--mq-popover-glas);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: var(--mq-schaduw);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .eig-paneel :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .eig-paneel .eig-knop {
+  border-radius: 11px;
+  border: 1px solid var(--mq-border-outer);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .eig-paneel .eig-knop[aria-pressed="true"] {
+  border-color: var(--mq-accent-hub);
+  background: color-mix(in srgb, var(--mq-accent-hub) 18%, var(--mq-oppervlak-zacht));
+  color: color-mix(in srgb, var(--mq-accent-hub) 90%, var(--mq-tekst) 10%);
+}
+
+/* ── 7. Адаптивний каскад (суворо наприкінці файла за правилом mobiel-cascade-20261105) ── */
+
+@media (max-width: 1100px) {
+  html.palet-maquette .werkblad .wb-raster {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 700px) {
+  html.palet-maquette .werkblad {
+    gap: 12px;
+  }
+
+  html.palet-maquette .werkblad .wb-balk {
+    padding: 9px 12px;
+  }
+
+  html.palet-maquette .werkblad .wb-begroeting {
+    padding: 15px 16px;
+  }
+
+  html.palet-maquette .werkblad .wb-tegel-kop {
+    padding: 13px 15px 9px;
+  }
+
+  html.palet-maquette .werkblad .wb-tegel-inhoud {
+    padding: 12px 15px 15px;
+  }
+}
+
+@media (max-width: 560px) {
+  html.palet-maquette .werkblad .wb-leeg-stol {
+    padding: 28px 18px;
+  }
+
+  html.palet-maquette .werkblad.wb3 .wb3-instellingen,
+  html.palet-maquette .werkblad.wb3 .wb3-bibliotheek {
+    padding: 13px 14px;
+  }
+}
+
+@media (pointer: coarse) {
+  html.palet-maquette .werkblad .wb-icoonknop {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}

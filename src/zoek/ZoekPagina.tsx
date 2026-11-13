@@ -38,7 +38,7 @@ const ZoekIndexVenster = lazy(() => import('./ZoekIndexVenster').catch(() => ({ 
 function IndexVensterNietGeladen({ lang, onSluit }: { lang: Lang; onSluit: () => void; onKlaar?: () => void }) {
   const t = T[lang];
   return <Venster id='zoek-index' titel={t.ivTitel} modaal={false} breedte={420} onSluit={onSluit} lang={lang}>
-    <div className='zk-iv-inhoud' data-zoek-index-venster='niet-geladen'><p className='melding melding-warn' role='alert'><AlertTriangle aria-hidden='true' /><span>{t.ivNietGeladen}</span></p>
+    <div className='zk-iv-inhoud' data-mq-laag-open='1' data-zoek-index-venster='niet-geladen'><p className='melding melding-warn' role='alert'><AlertTriangle aria-hidden='true' /><span>{t.ivNietGeladen}</span></p>
       <button type='button' className='knop knop-secundair' onClick={() => location.reload()}><RefreshCw aria-hidden='true' />{t.ivHerladen}</button></div>
   </Venster>;
 }
@@ -46,6 +46,7 @@ import ZoekVeld, { type VeldSuggestie } from './ZoekVeld';
 import ZoekKaart, { fmtDatum } from './ZoekKaart';
 import ZoekFilters from './ZoekFilters';
 import './zoek.css';
+import './zoek-maquette.css';
 
 export const DEBOUNCE_MS = 250;
 const GESCHIEDENIS_NA_MS = 1500;
