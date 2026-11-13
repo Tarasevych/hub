@@ -14,6 +14,7 @@ import {huidigeContext} from '../server/platform/context';
 import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStapOpFout} from './toegang-context';
 import {kritiekeActie} from '../shared/kritieke-acties';
 import {stapOpKanalen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
+import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
 
 const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
@@ -464,7 +465,8 @@ export function createAccessPlaneRoutes(deps:{
 }){
   const gate=async(event:Record<string,unknown>,body:unknown)=>{
     const auth=await deps.requireSession(event,body);
-    if('errorCode'in auth||auth.user.status!=='approved')return null;
+    /* IDENTITEIT-012: та сама умова, що в ключах доступу й сховищі ключів (shared/eigen-toegang.ts). */
+    if('errorCode'in auth||!magEigenToegang(auth.user))return null;
     return auth;
   };
   const ownerGate=async(event:Record<string,unknown>,body:unknown)=>{
@@ -591,6 +593,8 @@ export function createAccessPlaneRoutes(deps:{
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const password=String(deps.body(ctx.body).password||'');
       if(password.length<10)return deps.fail('ACCESS_PASSWORD_TOO_SHORT',400);
+      /* IDENTITEIT-012: верхня межа на сервері (раніше лише в інтерфейсі) — довгий рядок не йде в KDF. */
+      if(password.length>1024)return deps.fail('ACCESS_PASSWORD_TOO_LONG',400);
       const stap=await stapOp(auth,'aanmeldmethode');if(stap)return stap;
       const envelope=await hashPassword(password);
       const existing=await passwordRecordAny(auth.user.id);
@@ -680,16 +684,9 @@ export function createAccessPlaneRoutes(deps:{
     // De oude routes registreerden alleen een credentialId zonder enige cryptografische controle.
     'POST /api/owner/access/webauthn/options':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
     'POST /api/owner/access/webauthn/register':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
-    'POST /api/owner/access/webauthn/remove':[async(ctx: any)=>{
-      const auth=await gate(ctx.event,ctx.body);
-      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
-      const id=String(deps.body(ctx.body).id||'');
-      const row=(await webauthnFor(auth.user.id)).find(item=>item.id===id);
-      if(row)await db.delete(WEBAUTHN,[row.id]);
-      await deps.audit(auth.user.id,'access.webauthn.remove','success',{});
-      if(row)await meldBeveiligingsWijziging(auth.user.id,'passkey-weg');
-      return deps.respond({ok:true,...await accessSnapshot(auth.user)});
-    }],
+    /* IDENTITEIT-012: застарілий маршрут видаляв рядок без підтвердження доступу й писав «успіх», навіть коли рядка не було.
+       Жодна сторінка його не кличе; ключі доступу вилучаються лише через /api/owner/access/passkeys/verwijderen (з підтвердженням). */
+    'POST /api/owner/access/webauthn/remove':[async()=>deps.respond({ok:false,error:'LEGACY_ROUTE_GONE',reasonCode:'LEGACY_ROUTE_GONE'},410)],
     'POST /api/owner/access/totp/start':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);

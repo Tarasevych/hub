@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-012",
+  "agent": "claude",
+  "tak": "fix/identiteit-012-server-veiligheid-20261113-200208",
+  "basisCommit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T20:02:09.076Z",
+  "bijgewerkt": "2026-11-13T20:02:09.076Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
