@@ -10,7 +10,7 @@
     "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
     "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
     "geinstalleerdeVersie": "20261113-121403",
-    "integratieBasis": "f3f3fabb1f478d232da563f13070e829db8c6b27",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
     "regelsVersie": "1.4.14",
     "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
   },
@@ -47,6 +47,7 @@
     "У технічному просторі (data-oppervlak='technisch') збережено чіткий інженерний візуальний маркер, щоб адміністратор завжди відрізняв технічний контур від особистого простору користувача."
   ],
   "wijzigingen": [
+    ".github/workflows/maquette-001-uitgave.yml",
     "index.html",
     "orchestratie/ontwikkelarchieven/MAQUETTE-001.json",
     "orchestratie/taken/MAQUETTE-001.json",
