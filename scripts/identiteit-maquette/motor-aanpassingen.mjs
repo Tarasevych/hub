@@ -277,5 +277,35 @@ v(`  /** Розділ розгорнуто: сайт монтує справжн
   bijDienst: (id: string) => void;
   /** Діалог світлини: відкрити меню облікового запису сайту (інші акаунти, вихід). */
   bijAccountMenu: () => void;`);
+
+// IDENTITEIT-011. Жива карта: рядок «Працює · Відкрити» розгортає розділ і його «Чинні налаштування», чекає, доки застосунок
+// змонтує справжню панель, і веде до потрібного місця (розгортає вкладені <details>, прокручує, ставить фокус, коротко підсвічує).
+// De levende kaart: «Werkt · Openen» opent het onderdeel en de echte instellingen en gaat naar de juiste plek in het paneel.
+v(`  function gaNaar(id,open){`,
+`  function відкритиНаСайті(розділ,ціль){
+    const id=розділ==="identity"?"identities":розділ;
+    if(!sections.some(s=>s.id===id))return;
+    gaNaar(id,true);
+    opties.bijOpenen(id);
+    if(!ціль)return;
+    const рух=matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
+    let спроби=0;
+    const шукати=()=>{
+      const гніздо=root.querySelector('.mq-echt[data-echt="'+id+'"]');
+      let доціль=null;
+      try{доціль=гніздо?гніздо.querySelector(ціль):null;}catch{доціль=null;}
+      // Панель монтується асинхронно (портал React після bijOpenen): чекаємо до ~3 с.
+      if(!доціль){if(++спроби<50)setTimeout(шукати,60);return;}
+      for(let d=доціль.closest("details");d;d=d.parentElement?d.parentElement.closest("details"):null)if(!d.open)d.open=true;
+      доціль.scrollIntoView({behavior:рух,block:"start"});
+      const фокус=доціль.matches("summary,button,a,input,select,textarea")?доціль:(доціль.querySelector(":scope > summary")||доціль);
+      if(фокус===доціль&&!доціль.hasAttribute("tabindex")&&!доціль.matches("summary,button,a,input,select,textarea"))доціль.setAttribute("tabindex","-1");
+      try{фокус.focus({preventScroll:true});}catch{}
+      доціль.classList.add("mq-kaart-doel");
+      setTimeout(()=>доціль.classList.remove("mq-kaart-doel"),1800);
+    };
+    setTimeout(шукати,80);
+  }
+  function gaNaar(id,open){`);
 fs.writeFileSync(f, s);
 console.log('ok');
