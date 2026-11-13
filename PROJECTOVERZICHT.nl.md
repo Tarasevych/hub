@@ -613,3 +613,14 @@ node scripts/orch.mjs wachtrij toon|volgende|klaar|terugtrekken
   - [`docs/post/POST-PLATFORMARCHITECTUUR.nl.md`](docs/post/POST-PLATFORMARCHITECTUUR.nl.md) ([🇳🇱 NL](docs/post/POST-PLATFORMARCHITECTUUR.nl.md) ↔ [🇺🇦 UK](docs/post/АРХІТЕКТУРА-ПЛАТФОРМИ-ПОШТИ.uk.md)) · [`docs/wolk/WOLK-PLATFORMARCHITECTUUR.nl.md`](docs/wolk/WOLK-PLATFORMARCHITECTUUR.nl.md) ([🇳🇱 NL](docs/wolk/WOLK-PLATFORMARCHITECTUUR.nl.md) ↔ [🇺🇦 UK](docs/wolk/АРХІТЕКТУРА-ПЛАТФОРМИ-ХМАРИ.uk.md)) · [`docs/WOLK-M7-PRIVACY-ARCHITECTUUR.nl.md`](docs/WOLK-M7-PRIVACY-ARCHITECTUUR.nl.md) ↔ [🇺🇦 UK](docs/АРХІТЕКТУРА-ПРИВАТНОСТІ-ХМАРИ-М7.uk.md)
 - **Ruimte-isolatie en Werkblad:**
   - [`docs/ontwerp/RUIMTES-ISOLATIE.nl.md`](docs/ontwerp/RUIMTES-ISOLATIE.nl.md) ([🇳🇱 NL](docs/ontwerp/RUIMTES-ISOLATIE.nl.md) ↔ [🇺🇦 UK](docs/ontwerp/ІЗОЛЯЦІЯ-ПРОСТОРІВ.uk.md)) · [`docs/werkblad/WERKBLAD.nl.md`](docs/werkblad/WERKBLAD.nl.md) ([🇳🇱 NL](docs/werkblad/WERKBLAD.nl.md) ↔ [🇺🇦 UK](docs/werkblad/РОБОЧИЙ-АРКУШ.uk.md)) · [`deploy/DRAAIBOEK-WERKBLAD-V3-WERKVLAK.nl.md`](deploy/DRAAIBOEK-WERKBLAD-V3-WERKVLAK.nl.md) ([🇳🇱 NL](deploy/DRAAIBOEK-WERKBLAD-V3-WERKVLAK.nl.md) ↔ [🇺🇦 UK](deploy/ІНСТРУКЦІЯ-ПОЛОТНА-РОБОЧОГО-АРКУША-В3.uk.md))
+
+---
+
+<!-- HISTORIE-001:aanvulling-20261113 -->
+## Wat is er veranderd sinds 07-11-2026
+
+> Aanvulling HISTORIE-001 van 13-11-2026. De tekst hierboven is ongewijzigd.
+
+- Live versie: `20261113-121403` (SEC-002). De standaardtak `voornaamst` loopt 132 commits achter; alleen de eigenaar werkt hem bij.
+- Nieuw werk: accountcentrum en weergave «Ontwerp» (IDENTITEIT-003…010), Telegram en bevestigen vanaf een ander apparaat, GitHub-omgeving, delen in de cloud, MCP-001, «Levend huis» (HUIS-001), diepe audit SEC-002.
+- Kroniek van alle takken met voorganger en opvolger: [KRONIEK-TAKKEN](docs/hub/KRONIEK-TAKKEN.nl.md) · [Fase VII](docs/hub/GESCHIEDENIS.nl.md) · [PR #28–#76](docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md).
