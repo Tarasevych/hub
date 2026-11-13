@@ -1,0 +1,1695 @@
+/* Студійні поверхні керування розумною оселею «Макет» — Хвиля 6, Група 6В (MAQUETTE-007).
+   Охоплює розділи: Безпека, Енергія, Журнал подій, Інтеграції, Помічник, Налаштування та Запрошення.
+   Studio-oppervlakken voor huisbeheer in het «Maquette»-stelsel (donkere sfeer en lichte ochtendnevel). */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. СЕМАНТИЧНІ ЗМІННІ КОНТУРУ КЕРУВАННЯ ТА СПІЛЬНІ БУДІВЕЛЬНІ БЛОКИ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) {
+  --mq-hb-accent: var(--mq-accent-huis, var(--mq-accent));
+  --mq-hb-accent-diep: var(--mq-accent-2, var(--mq-hb-accent));
+  --mq-hb-mono: var(--mq-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  --mq-hb-kaart-bg: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 64%, var(--mq-oppervlak) 36%) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  --mq-hb-paneel-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-wit) 4%) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  --mq-hb-glans: color-mix(in srgb, var(--mq-wit) 14%, transparent);
+  --mq-hb-rand-zacht: color-mix(in srgb, var(--mq-rand) 86%, transparent);
+  --mq-hb-focus-ring: color-mix(in srgb, var(--mq-hb-accent) 26%, transparent);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) {
+  gap: 20px;
+}
+
+/* Студійні секційні блоки (.hv-blok) та порожні стани (.hv-leeg) */
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok,
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] {
+  --mq-lokaal-accent: var(--mq-kaart-accent, var(--mq-hb-accent));
+  position: relative;
+  overflow: hidden;
+  padding: 24px 26px;
+  gap: 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(ellipse 460px 220px at 96% -12%, color-mix(in srgb, var(--mq-lokaal-accent) 12%, transparent), transparent 72%),
+    var(--mq-hb-paneel-bg);
+  box-shadow:
+    inset 0 1px 0 var(--mq-hb-glans),
+    var(--mq-schaduw-zacht);
+  transition: border-color 0.22s ease, box-shadow 0.24s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok:hover,
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij]:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok > h3,
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] > h3 {
+  flex-wrap: wrap;
+  font-size: 17px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+  gap: 10px;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok > h3 svg,
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] > h3 svg {
+  width: 19px;
+  height: 19px;
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok > h3 small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 32%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-family: var(--mq-hb-mono);
+  font-size: 11.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) section.hv-leeg {
+  padding: 38px 28px;
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--mq-hb-accent) 12%, transparent), transparent 64%),
+    var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) section.hv-leeg > svg {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  box-sizing: content-box;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-hb-accent) 30%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-hb-accent) 12%, transparent);
+  color: var(--mq-hb-accent);
+}
+
+/* Поля введення, вибору та тексту за суворим канонічним селектором */
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-rand);
+  background-color: color-mix(in srgb, var(--mq-bg-2) 68%, var(--mq-oppervlak) 32%);
+  color: var(--mq-tekst);
+  padding: 8px 13px;
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--mq-bg) 36%, transparent);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--mq-hb-accent) 72%, var(--mq-wit) 28%);
+  box-shadow: 0 0 0 3px var(--mq-hb-focus-ring);
+}
+
+/* Кнопки та фільтрувальні капсули (.hv-knop, .hv-chip) */
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) .hv-knop {
+  border-radius: var(--mq-straal-knop);
+  border-color: var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 76%, transparent);
+  color: var(--mq-tekst);
+  font-weight: 580;
+  transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) .hv-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  transform: translateY(-1px);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) .hv-knop.is-hoofd {
+  border-color: color-mix(in srgb, var(--mq-hb-accent) 68%, var(--mq-wit) 32%);
+  background: linear-gradient(
+    135deg,
+    var(--mq-hb-accent) 0%,
+    color-mix(in srgb, var(--mq-hb-accent) 78%, var(--mq-hb-accent-diep) 22%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 660;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-hb-accent) 24%, transparent);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) .hv-knop.is-hoofd:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-hb-accent) 84%, var(--mq-wit) 16%) 0%,
+    var(--mq-hb-accent) 100%
+  );
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) .hv-knop.is-klein {
+  border-radius: 999px;
+  padding: 5px 13px;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) .hv-knop.is-stil {
+  background: transparent;
+  border-color: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) .hv-knop.is-stil:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties
+) .hv-chips[role="tablist"] {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 64%, var(--mq-oppervlak) 36%);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties
+) .hv-chip {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) .hv-chips[role="tablist"] .hv-chip {
+  border-color: transparent;
+  background: transparent;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) .hv-chips[role="tablist"] .hv-chip:hover {
+  color: var(--mq-tekst);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) .hv-chips[role="tablist"] .hv-chip.is-actief {
+  border-color: color-mix(in srgb, var(--mq-hb-accent) 46%, transparent);
+  background: color-mix(in srgb, var(--mq-hb-accent) 18%, var(--mq-oppervlak-2));
+  color: var(--mq-hb-accent);
+  box-shadow: inset 0 1px 0 var(--mq-hb-glans);
+}
+
+/* Повідомлення та попередження (.hv-melding, .hv-hint) */
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard]
+) .hv-melding {
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 36%, var(--mq-rand));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, var(--mq-oppervlak)) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  color: var(--mq-tekst);
+  line-height: 1.6;
+  box-shadow:
+    inset 0 1px 0 var(--mq-hb-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard]
+) .hv-melding svg {
+  width: 20px;
+  height: 20px;
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  flex: none;
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ontdekt]
+) .hv-hint {
+  color: var(--mq-gedempt);
+  line-height: 1.56;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. БЕЗПЕКА (Beveiliging.tsx) — СТУДІЙНІ ОХОРОННІ ЩИТИ, СВІЖІСТЬ І STEP-UP
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Студійний щит-банер чесного спостереження шлюзу та тривоги */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 16px;
+  padding: 20px 22px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 96% 0%, color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 20%, transparent), transparent 58%),
+    var(--mq-hb-kaart-bg);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop]::before {
+  content: attr(data-mq-schild-kop);
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 22px;
+  height: 22px;
+  padding: 13px 11px;
+  box-sizing: content-box;
+  clip-path: polygon(50% 0%, 96% 18%, 92% 64%, 76% 85%, 50% 100%, 24% 85%, 8% 64%, 4% 18%);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 36%, var(--mq-oppervlak-2)) 0%,
+    var(--mq-schild-diep, var(--mq-oppervlak-2)) 100%
+  );
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  margin-top: 0;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-banner="gevaar"] {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent) 62%, var(--mq-wit) 38%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--mq-kaart-accent) 26%, transparent),
+    var(--mq-schaduw);
+}
+
+/* Плашка обов'язкового підтвердження власником (step-up) у заголовку групи замків і охорони */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging section.hv-blok[data-mq-stepup-label] > h3::after {
+  content: attr(data-mq-stepup-label);
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 15%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-size: 11px;
+  font-weight: 660;
+  letter-spacing: 0.03em;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-raster {
+  grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+  gap: 14px;
+}
+
+/* Картки датчиків та замків з чіткою візуальною різницею станів свіжості */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 18px;
+  gap: 6px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  border-left: 4px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background: var(--mq-hb-kaart-bg);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart:hover {
+  transform: translateY(-2px);
+  border-color: var(--mq-rand-sterk);
+  border-left-color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+/* Елегантне попередження step-up на картці критичного замка / панелі охорони */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart[data-mq-stepup-pil]::before {
+  content: attr(data-mq-stepup-pil);
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 2px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 40%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Підтверджений свіжий стан (vers) — спокійне студійне сяйво живого сигналу */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart[data-mq-versheid="vers"] {
+  background:
+    radial-gradient(circle at 96% 8%, color-mix(in srgb, var(--mq-kaart-accent) 16%, transparent), transparent 56%),
+    var(--mq-hb-kaart-bg);
+}
+
+/* Застарілий стан (verouderd) — бурштиновий попереджувальний контур мовчання шлюзу */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart[data-mq-versheid="verouderd"] {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent) 40%, var(--mq-rand));
+  border-left-width: 4px;
+  border-left-color: var(--mq-kaart-accent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--mq-kaart-accent) 11%, var(--mq-oppervlak)), var(--mq-oppervlak));
+}
+
+/* Невідомий стан (onbekend) — діагональна студійна мікро-штриховка, щоб не плутати з нормою */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart[data-mq-versheid="onbekend"] {
+  border-color: var(--mq-rand-sterk);
+  border-left: 4px dashed var(--mq-stil);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--mq-stil) 9%, transparent) 0 8px,
+      transparent 8px 16px
+    ),
+    var(--mq-oppervlak);
+}
+
+/* Недоступний стан (onbeschikbaar) — кораловий пунктирний контур втрати зв'язку */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart[data-mq-versheid="onbeschikbaar"] {
+  opacity: 0.94;
+  border: 1px dashed color-mix(in srgb, var(--mq-kaart-accent) 54%, var(--mq-rand));
+  border-left: 4px solid var(--mq-kaart-accent);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--mq-kaart-accent) 9%, transparent) 0 9px,
+      transparent 9px 18px
+    ),
+    var(--mq-oppervlak);
+}
+
+/* Активна тривога датчика диму, газу або протікання води */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart[data-mq-alarm="actief"] {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent) 68%, var(--mq-wit) 32%);
+  border-left-width: 5px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--mq-kaart-accent) 30%, transparent),
+    0 18px 42px color-mix(in srgb, var(--mq-kaart-accent) 22%, transparent);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart small {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart.is-kritiek small {
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart strong {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart.is-kritiek strong::after {
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart .hv-waarde {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 2px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 30%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 13%, transparent);
+  color: var(--mq-tekst);
+  font-family: var(--mq-hb-mono);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart:is(.is-onbekend, .is-onbeschikbaar) .hv-waarde {
+  border-style: dashed;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging article.hv-kaart em {
+  margin-top: 2px;
+  font-family: var(--mq-hb-mono);
+  font-size: 11px;
+  color: var(--mq-stil);
+}
+
+/* Вбудована панель керування та підтвердження критичної дії (ApparaatBediening -> .hv-bevestig) */
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-bediening {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-bevestig {
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 54%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-tech-markering) 14%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. ЕНЕРГІЯ (Energie.tsx) — МОНОШИРИННІ ПОКАЗНИКИ, БУРШТИНОВІ ШКАЛИ ТА ГРАФІКИ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegels {
+  grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
+  gap: 16px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegel {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 22px;
+  gap: 6px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 30%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 92% 14%, color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 18%, transparent), transparent 58%),
+    var(--mq-hb-kaart-bg);
+  box-shadow:
+    inset 0 1px 0 var(--mq-hb-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegel[data-mq-boven]::before {
+  content: attr(data-mq-boven);
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegel[data-mq-kwh]::after {
+  content: attr(data-mq-kwh);
+  margin-top: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-hb-accent) 34%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-hb-accent) 13%, transparent);
+  color: var(--mq-hb-accent);
+  font-family: var(--mq-hb-mono);
+  font-size: 11.5px;
+  font-weight: 640;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegel svg {
+  width: 22px;
+  height: 22px;
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegel strong {
+  font-family: var(--mq-hb-mono);
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegel[data-hv-tegel="vermogen-nu"][data-mq-actief="ja"] strong {
+  color: var(--mq-hb-accent);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-tegel span {
+  font-size: 12.5px;
+  color: var(--mq-gedempt);
+}
+
+/* Картки окремих лічильників енергії (.hv-kaart[data-hv-meter]) */
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-raster {
+  grid-template-columns: repeat(auto-fill, minmax(264px, 1fr));
+  gap: 16px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie article.hv-kaart[data-hv-meter] {
+  padding: 18px 20px;
+  gap: 7px;
+  border-radius: 22px;
+  border: 1px solid var(--mq-rand);
+  border-left: 4px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background:
+    radial-gradient(circle at 96% 8%, color-mix(in srgb, var(--mq-hb-accent) 12%, transparent), transparent 56%),
+    var(--mq-hb-kaart-bg);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie article.hv-kaart[data-hv-meter]:hover {
+  transform: translateY(-2px);
+  border-color: var(--mq-rand-sterk);
+  border-left-color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie article.hv-kaart[data-hv-meter] small {
+  font-size: 12px;
+  font-weight: 640;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie article.hv-kaart[data-hv-meter] strong {
+  font-family: var(--mq-hb-mono);
+  font-size: 24px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  color: var(--mq-hb-accent);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie article.hv-kaart[data-hv-meter] .hv-waarde {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-hb-accent) 28%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-hb-accent) 12%, transparent);
+  font-family: var(--mq-hb-mono);
+  font-size: 12px;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie article.hv-kaart[data-hv-meter] em {
+  font-family: var(--mq-hb-mono);
+  font-size: 11px;
+  color: var(--mq-stil);
+}
+
+/* Студійна бурштинова шкала миттєвої потужності лічильника */
+html.palet-maquette:not([data-mq-uit]) .hv-energie article.hv-kaart[data-hv-meter][data-mq-schaal="ja"]::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--mq-hb-accent) 72%, var(--mq-hb-accent-diep) 28%) 0%,
+      var(--mq-hb-accent) 100%
+    ) 0 0 / var(--mq-meter-pct, 0%) 100% no-repeat,
+    color-mix(in srgb, var(--mq-stil) 20%, transparent);
+}
+
+/* Студійний графік лінії споживання */
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-lijn {
+  height: 72px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--mq-hb-accent) 10%, transparent), transparent),
+    color-mix(in srgb, var(--mq-bg-2) 60%, var(--mq-oppervlak) 40%);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-lijn path {
+  stroke: var(--mq-hb-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-lijn-tekst {
+  fill: var(--mq-gedempt);
+  font-family: var(--mq-hb-mono);
+  font-size: 9.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. ЖУРНАЛ ПОДІЙ (Gebeurtenissen.tsx) — ВЕРТИКАЛЬНА СТУДІЙНА ХРОНОЛОГІЯ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen {
+  position: relative;
+  gap: 10px;
+  padding-left: 24px;
+}
+
+/* Вертикальна вісь хронології */
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 8px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-hb-accent) 55%, var(--mq-rand-sterk)) 0%,
+    var(--mq-rand-sterk) 55%,
+    transparent 100%
+  );
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li {
+  position: relative;
+  grid-template-columns: 142px minmax(0, 1fr);
+  gap: 6px 16px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background: var(--mq-hb-kaart-bg);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li:hover {
+  border-color: var(--mq-rand-sterk);
+  border-left-color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+/* Ювелірний вузол події на осі хронології */
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before {
+  content: "";
+  position: absolute;
+  left: -23px;
+  top: 20px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background: var(--mq-bg);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 20%, transparent);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li.is-kritiek {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent) 48%, var(--mq-rand));
+  border-left-width: 4px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--mq-kaart-accent) 13%, var(--mq-oppervlak)), var(--mq-oppervlak));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li.is-kritiek::before {
+  background: var(--mq-kaart-accent);
+}
+
+/* Моноширинна мітка часу отримання події */
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li > span {
+  padding-top: 4px;
+  font-family: var(--mq-hb-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-stil);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-lijst-knop {
+  gap: 6px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-lijst-knop strong {
+  font-size: 14px;
+  font-weight: 630;
+  color: var(--mq-tekst);
+}
+
+/* Індикатор життєвого циклу команди (verzocht -> voltooid / geweigerd / offline) */
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina li[data-mq-cmd-stand] .hv-lijst-knop strong::after {
+  content: attr(data-mq-cmd-stand);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 16%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-family: var(--mq-hb-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Капсули джерела, виду події та рівня важливості */
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina :is(.mq-hb-pil-bron, .mq-hb-pil-soort, .mq-hb-pil-ernst) {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak-zacht);
+  font-family: var(--mq-hb-mono);
+  font-size: 11px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .mq-hb-pil-ernst {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 12%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-weight: 650;
+}
+
+/* Розгорнута картка кореляції та телеметрії події */
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li > .hv-details {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 72%, var(--mq-oppervlak) 28%);
+  gap: 6px 14px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-details code,
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-details pre {
+  font-family: var(--mq-hb-mono);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-details pre {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ІНТЕГРАЦІЇ (Integraties.tsx) — ШЛЮЗИ HOME ASSISTANT, ПУЛЬС, МАЙСТЕР ТА ІМПОРТ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-integratie {
+  padding: 20px 22px;
+  gap: 14px;
+  border-radius: 22px;
+  border: 1px solid var(--mq-rand);
+  border-left: 4px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background:
+    radial-gradient(circle at 98% 0%, color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, transparent), transparent 58%),
+    var(--mq-hb-kaart-bg);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-integratie > header {
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mq-hb-rand-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-integratie > header > svg {
+  width: 20px;
+  height: 20px;
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-integratie > header strong {
+  font-size: 16.5px;
+  font-weight: 650;
+  color: var(--mq-tekst);
+  margin-right: auto;
+}
+
+/* Індикатор пульсу з'єднання шлюзу */
+@keyframes mqHbHartslag {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--mq-kaart-accent) 46%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-chip[data-mq-pil="hartslag"] {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  gap: 7px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-chip[data-mq-pil="hartslag"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mq-kaart-accent, var(--mq-hb-accent));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-integratie.is-verbonden .hv-chip[data-mq-pil="hartslag"]::before {
+  animation: mqHbHartslag 2.6s ease-in-out infinite;
+}
+
+/* Жетон дозволу на запис / лише читання */
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-chip[data-mq-pil="schrijven-aan"] {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent) 40%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent) 16%, transparent);
+  color: var(--mq-kaart-accent);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-chip[data-mq-pil="alleen-lezen"] {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* Паспортна таблиця параметрів шлюзу */
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  border-radius: 15px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--mq-bg-2) 56%, var(--mq-oppervlak) 44%);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel th,
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--mq-hb-rand-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel tr:last-child th,
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel tr:last-child td {
+  border-bottom: 0;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel th {
+  width: 190px;
+  font-size: 12px;
+  color: var(--mq-gedempt);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel td code {
+  font-family: var(--mq-hb-mono);
+  padding: 2px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak);
+  color: var(--mq-hb-accent);
+}
+
+/* Чесний каталог сумісності інтеграцій */
+html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-raster {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-kaart.is-catalogus {
+  padding: 18px 20px;
+  gap: 8px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  border-left: 4px solid var(--mq-kaart-accent, var(--mq-stil));
+  background: var(--mq-hb-kaart-bg);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-kaart.is-catalogus > small.hv-chip {
+  width: fit-content;
+  border-color: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-stil)) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-stil)) 14%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-gedempt));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-integraties a.hv-link {
+  margin-top: 6px;
+  color: var(--mq-hb-accent);
+  font-weight: 620;
+}
+
+/* Студійні модальні вікна майстра Home Assistant та імпорту знайдених сутностей */
+html.palet-maquette:not([data-mq-uit]) :is(.hv-laag[data-hv-ha-wizard], .hv-laag[data-hv-ontdekt]) {
+  background: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(.hv-laag[data-hv-ha-wizard], .hv-laag[data-hv-ontdekt]) .hv-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 26px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(.hv-laag[data-hv-ha-wizard], .hv-laag[data-hv-ontdekt]) .hv-laag-kop {
+  padding: 16px 22px 14px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(.hv-laag[data-hv-ha-wizard], .hv-laag[data-hv-ontdekt]) .hv-laag-inhoud {
+  padding: 20px 22px 24px;
+  gap: 16px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ha-wizard] .mq-hb-wizard-vorm {
+  display: grid;
+  gap: 14px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ha-wizard] ol.hv-uitleg {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: mq-ha-stap;
+  gap: 10px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ha-wizard] ol.hv-uitleg > li {
+  counter-increment: mq-ha-stap;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak-zacht);
+  line-height: 1.5;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ha-wizard] ol.hv-uitleg > li::before {
+  content: counter(mq-ha-stap);
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--mq-hb-accent) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-hb-accent) 16%, transparent);
+  color: var(--mq-hb-accent);
+  font-family: var(--mq-hb-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* Попередження про відсічені сутності при великому скануванні ([data-hv-ontdekt-afgekapt]) */
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ontdekt] p[data-hv-ontdekt-afgekapt] {
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-tech-markering) 12%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+}
+
+/* Список знайдених сутностей та їхнього вибору для імпорту */
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ontdekt] ul[data-hv-ontdekt-lijst="1"] {
+  gap: 6px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ontdekt] ul[data-hv-ontdekt-lijst="1"] > li {
+  padding: 9px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak-zacht);
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ontdekt] ul[data-hv-ontdekt-lijst="1"] > li.mq-is-gekozen {
+  border-color: color-mix(in srgb, var(--mq-hb-accent) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-hb-accent) 11%, var(--mq-oppervlak));
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ontdekt] .hv-keuze input[type="checkbox"] {
+  accent-color: var(--mq-hb-accent);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-laag[data-hv-ontdekt] ul[data-hv-ontdekt-lijst="1"] code {
+  font-family: var(--mq-hb-mono);
+  font-size: 11.5px;
+  color: var(--mq-hb-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ПОМІЧНИК (Assistent.tsx) — ЛИШЕ ПРОПОЗИЦІЇ, ЛЮДСЬКИЙ КОНТРОЛЬ КРИТИЧНИХ ДІЙ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-uit]) .hv-assistent section.hv-blok[data-mq-handvest-kop]::before {
+  content: attr(data-mq-handvest-kop);
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-assistent ol.hv-uitleg {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: mq-ai-stap;
+  gap: 10px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-assistent ol.hv-uitleg > li {
+  counter-increment: mq-ai-stap;
+  position: relative;
+  padding: 12px 15px 12px 46px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak-zacht);
+  line-height: 1.56;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-assistent ol.hv-uitleg > li::before {
+  content: counter(mq-ai-stap);
+  position: absolute;
+  left: 13px;
+  top: 12px;
+  width: 23px;
+  height: 23px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-family: var(--mq-hb-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* Прозоре розмежування: критичні пристрої керуються виключно людиною */
+html.palet-maquette:not([data-mq-uit]) .hv-assistent ol.hv-uitleg > li[data-mq-mens-grens="1"] {
+  border-color: color-mix(in srgb, var(--mq-kaart-accent) 46%, var(--mq-rand));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-kaart-accent) 14%, var(--mq-oppervlak)) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  color: var(--mq-tekst);
+  font-weight: 560;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-assistent ol.hv-uitleg > li[data-mq-mens-grens="1"] svg {
+  color: var(--mq-kaart-accent);
+}
+
+/* Діалогові картки пропозицій помічника у списку очікування та історії */
+html.palet-maquette:not([data-mq-uit]) .hv-assistent .hv-lijst > li[data-hv-voorstel] {
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  border-left: 4px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background: var(--mq-hb-kaart-bg);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-assistent .hv-lijst > li[data-hv-voorstel] strong {
+  font-size: 14.5px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-assistent .hv-lijst > li[data-hv-voorstel] small {
+  font-family: var(--mq-hb-mono);
+  font-size: 11.5px;
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. НАЛАШТУВАННЯ ТА ЗАПРОШЕННЯ (Instellingen.tsx, UitnodigingenVoorMij.tsx)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen .mq-hb-woning-vorm {
+  display: grid;
+  gap: 14px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen .hv-veld > span {
+  font-size: 11.5px;
+  font-weight: 680;
+  letter-spacing: 0.04em;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen optgroup {
+  font-weight: 700;
+  color: var(--mq-hb-accent);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen option {
+  color: var(--mq-tekst);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen .hv-sub {
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 720;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mq-gedempt);
+}
+
+/* Поверхи оселі */
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen ul[data-mq-verdiepingen="1"] {
+  counter-reset: mq-verdieping;
+  gap: 8px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen ul[data-mq-verdiepingen="1"] > li {
+  counter-increment: mq-verdieping;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen ul[data-mq-verdiepingen="1"] > li::before {
+  content: counter(mq-verdieping);
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--mq-hb-accent) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-hb-accent) 14%, transparent);
+  color: var(--mq-hb-accent);
+  font-family: var(--mq-hb-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen ul[data-mq-verdiepingen="1"] > li > :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  flex: 1 1 200px;
+}
+
+/* Учасники оселі та ролі (eigenaar / bewoner / gast / installateur / ondersteuning) */
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen ul[data-hv-leden] {
+  gap: 8px;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen ul[data-hv-leden] > li,
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen ul[data-hv-uitnodigingen] > li {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  border-left: 4px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background: var(--mq-hb-kaart-bg);
+}
+
+html.palet-maquette:not([data-mq-uit]) :is(.hv-instellingen, [data-hv-uitnodigingen-mij]) .mq-hb-rol-pil {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 14%, transparent);
+  color: var(--mq-kaart-accent, var(--mq-hb-accent));
+  font-size: 11px;
+  font-weight: 660;
+}
+
+html.palet-maquette:not([data-mq-uit]) .hv-instellingen form[data-mq-uitnodig-vorm="1"] {
+  margin-top: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-hb-rand-zacht);
+  background: var(--mq-oppervlak-zacht);
+}
+
+/* Вхідні запрошення «Запрошення для вас» (UitnodigingenVoorMij.tsx) */
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] {
+  border-color: color-mix(in srgb, var(--mq-hb-accent) 44%, var(--mq-rand));
+  background:
+    radial-gradient(ellipse 520px 240px at 12% 0%, color-mix(in srgb, var(--mq-hb-accent) 18%, transparent), transparent 68%),
+    var(--mq-hb-paneel-bg);
+}
+
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] .hv-lijst {
+  gap: 10px;
+}
+
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] .hv-lijst > li {
+  padding: 15px 18px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 36%, var(--mq-rand));
+  border-left: 4px solid var(--mq-kaart-accent, var(--mq-hb-accent));
+  background: var(--mq-hb-kaart-bg);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] .hv-lijst > li strong {
+  font-size: 15.5px;
+  color: var(--mq-tekst);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН» (html.palet-maquette[data-theme="light"])
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+),
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+),
+html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij]
+) {
+  --mq-hb-kaart-bg: linear-gradient(
+    165deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-oppervlak-2) 26%) 100%
+  );
+  --mq-hb-paneel-bg: linear-gradient(
+    180deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 86%, var(--mq-oppervlak-2) 14%) 100%
+  );
+  --mq-hb-glans: color-mix(in srgb, var(--mq-wit) 72%, transparent);
+  --mq-hb-rand-zacht: color-mix(in srgb, var(--mq-rand) 92%, transparent);
+  --mq-hb-focus-ring: color-mix(in srgb, var(--mq-hb-accent) 22%, transparent);
+}
+
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  background-color: var(--mq-oppervlak);
+  border-color: var(--mq-rand-sterk);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--mq-tekst) 5%, transparent);
+}
+
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg,
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg,
+html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 22%, var(--mq-oppervlak)) 0%,
+    color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 10%, var(--mq-oppervlak-2)) 100%
+  );
+  color: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 80%, var(--mq-tekst) 20%);
+}
+
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]) .hv-energie .hv-lijn,
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) .hv-energie .hv-lijn,
+html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-energie .hv-lijn {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--mq-hb-accent) 10%, transparent), transparent),
+    var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before,
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before,
+html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before {
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
+  .hv-beveiliging .hv-melding[data-mq-schild-kop]::before,
+  .hv-beveiliging section.hv-blok[data-mq-stepup-label] > h3::after,
+  .hv-beveiliging article.hv-kaart[data-mq-stepup-pil]::before,
+  .hv-energie .hv-tegel[data-mq-boven]::before,
+  .hv-gebeurtenissen-pagina .mq-hb-pil-ernst,
+  .hv-integraties .hv-chip[data-mq-pil="hartslag"],
+  .hv-integraties .hv-chip[data-mq-pil="schrijven-aan"],
+  .hv-assistent section.hv-blok[data-mq-handvest-kop]::before,
+  .hv-instellingen .mq-hb-rol-pil,
+  [data-hv-uitnodigingen-mij] .mq-hb-rol-pil
+),
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
+  .hv-beveiliging .hv-melding[data-mq-schild-kop]::before,
+  .hv-beveiliging section.hv-blok[data-mq-stepup-label] > h3::after,
+  .hv-beveiliging article.hv-kaart[data-mq-stepup-pil]::before,
+  .hv-energie .hv-tegel[data-mq-boven]::before,
+  .hv-gebeurtenissen-pagina .mq-hb-pil-ernst,
+  .hv-integraties .hv-chip[data-mq-pil="hartslag"],
+  .hv-integraties .hv-chip[data-mq-pil="schrijven-aan"],
+  .hv-assistent section.hv-blok[data-mq-handvest-kop]::before,
+  .hv-instellingen .mq-hb-rol-pil,
+  [data-hv-uitnodigingen-mij] .mq-hb-rol-pil
+) {
+  color: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 78%, var(--mq-tekst) 22%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 920px) {
+  html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel th {
+    width: 140px;
+  }
+}
+
+@media (max-width: 640px) {
+  html.palet-maquette:not([data-mq-uit]) :is(
+    .hv-beveiliging,
+    .hv-energie,
+    .hv-gebeurtenissen-pagina,
+    .hv-integraties,
+    .hv-assistent,
+    .hv-instellingen
+  ) section.hv-blok,
+  html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] {
+    padding: 18px 16px;
+    border-radius: 20px;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop]::before,
+  html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-beveiliging section.hv-blok[data-mq-stepup-label] > h3::after {
+    margin-left: 0;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-energie .hv-chips[role="tablist"],
+  html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-chips[role="tablist"] {
+    border-radius: 18px;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen {
+    padding-left: 18px;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen::before {
+    left: 5px;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before {
+    left: -19px;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel th,
+  html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel td {
+    display: block;
+    width: 100%;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) :is(.hv-laag[data-hv-ha-wizard], .hv-laag[data-hv-ontdekt]).is-scherm .hv-laag-vak {
+    border-radius: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  html.palet-maquette:not([data-mq-uit]) :is(
+    .hv-beveiliging,
+    .hv-energie,
+    .hv-gebeurtenissen-pagina,
+    .hv-integraties,
+    .hv-assistent,
+    .hv-instellingen,
+    [data-hv-uitnodigingen-mij],
+    .hv-laag[data-hv-ha-wizard],
+    .hv-laag[data-hv-ontdekt]
+  ) .hv-knop {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette:not([data-mq-uit]) .hv-integraties article.hv-integratie.is-verbonden .hv-chip[data-mq-pil="hartslag"]::before {
+    animation: none;
+  }
+
+  html.palet-maquette:not([data-mq-uit]) :is(
+    .hv-beveiliging article.hv-kaart,
+    .hv-energie article.hv-kaart[data-hv-meter],
+    .hv-knop
+  ) {
+    transition: none;
+  }
+}

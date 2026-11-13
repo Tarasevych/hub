@@ -1,0 +1,317 @@
+/* Студійне оформлення класичної сторінки розумної оселі (DomoticaWeergave) у системі «Макет» (MAQUETTE-007).
+   Підтримує нічну студію та світлий режим «Ранковий туман» без сирих кольорів і без зміни поведінки поза палітрою.
+   Studio-opmaak voor de klassieke pagina van het slimme huis binnen het «Maquette»-ontwerpstelsel. */
+
+html.palet-maquette .domotica-maquette-wikkel {
+  --mq-font-serif: "Cormorant Garamond", "Fraunces", Georgia, "Times New Roman", serif;
+  --mq-font-sans: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mq-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --domotica-mq-serif: var(--mq-font-serif);
+  --domotica-mq-sans: var(--mq-font-sans);
+  --domotica-mq-mono: var(--mq-font-mono);
+  --mq-accent-huis: var(--mq-accent);
+  --mq-accent-huis-diep: var(--mq-accent-2);
+  --mq-accent-huis-op: var(--mq-accent-op);
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 24px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  font-family: var(--domotica-mq-sans);
+  color: var(--mq-tekst);
+}
+
+/* Підтримка світлого режиму через data-theme="light" на кореневому елементі або оболонці */
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .domotica-maquette-wikkel {
+  --mq-bg: color-mix(in srgb, var(--mq-wit) 93%, var(--mq-bol-diep));
+  --mq-bg-2: var(--mq-wit);
+  --mq-oppervlak: var(--mq-wit);
+  --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 96%, var(--mq-bol-diep));
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bol-diep) 4%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--mq-bol-diep) 8%, transparent);
+  --mq-rand: color-mix(in srgb, var(--mq-bol-diep) 12%, transparent);
+  --mq-rand-sterk: color-mix(in srgb, var(--mq-bol-diep) 24%, transparent);
+  --mq-tekst: var(--mq-bol-diep);
+  --mq-gedempt: color-mix(in srgb, var(--mq-bol-diep) 68%, var(--mq-wit));
+  --mq-stil: color-mix(in srgb, var(--mq-bol-diep) 50%, var(--mq-wit));
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 76%, var(--mq-bol-diep) 24%);
+  --mq-accent-op: var(--mq-wit);
+  --mq-accent-huis: var(--mq-accent);
+  --mq-accent-huis-op: var(--mq-wit);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) .domotica-maquette-wikkel[data-mq-dienst="huis"],
+html.palet-maquette .canonical-chrome:is([data-theme="light"], .theme-light, .theme-plum-light) .domotica-maquette-wikkel[data-mq-dienst="huis"] {
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 76%, var(--mq-tekst) 24%);
+  --mq-accent-op: var(--mq-wit);
+  --mq-accent-huis: var(--mq-accent);
+  --mq-accent-huis-op: var(--mq-wit);
+}
+
+/* Недоторканність нічного склепіння студійної вітрини .mq-held у світлому режимі */
+html.palet-maquette .domotica-maquette-wikkel > .mq-held {
+  color-scheme: dark;
+  --mq-accent: var(--mq-nacht-accent);
+  --mq-accent-rgb: var(--mq-nacht-accent-rgb);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: 22px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 30px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 92% 14%, color-mix(in srgb, var(--mq-accent) 14%, transparent), transparent 52%),
+    linear-gradient(160deg, color-mix(in srgb, var(--mq-oppervlak-2) 58%, var(--mq-oppervlak)), var(--mq-oppervlak));
+  box-shadow: var(--mq-schaduw-zacht);
+  align-items: center;
+  gap: 20px;
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-mark {
+  flex: 0 0 54px;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 34%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 14%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 14%, transparent);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-hero small {
+  font-family: var(--domotica-mq-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mq-accent);
+  margin-bottom: 6px;
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home h1 {
+  font-family: var(--domotica-mq-serif);
+  font-size: clamp(1.85rem, 3.2vw, 2.55rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-hero p {
+  margin-top: 8px;
+  max-width: 68ch;
+  font-size: 14px;
+  line-height: 1.68;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-status {
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 16px;
+  padding: 24px 28px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-status > svg {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 10px;
+  box-sizing: content-box;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 26%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 12%, var(--mq-oppervlak-zacht));
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-status.smart-home-maquette {
+  border-color: color-mix(in srgb, var(--mq-accent) 34%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--mq-accent) 18%, transparent), transparent 48%),
+    linear-gradient(145deg, color-mix(in srgb, var(--mq-accent) 9%, var(--mq-oppervlak-2)), var(--mq-oppervlak));
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-status h2,
+html.palet-maquette .domotica-maquette-wikkel .smart-home-next h2 {
+  font-family: var(--domotica-mq-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-status p,
+html.palet-maquette .domotica-maquette-wikkel .smart-home-next p {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-maquette-link {
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 45%, transparent);
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--mq-accent) 24%, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-maquette-link:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--mq-accent) 34%, transparent);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-sections {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  background: transparent;
+  border-block: 0;
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-sections article {
+  --sectie-accent: var(--mq-kaart-accent, var(--mq-accent));
+  position: relative;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 14px;
+  padding: 24px 22px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 95% 8%, color-mix(in srgb, var(--sectie-accent) 12%, transparent), transparent 52%),
+    linear-gradient(170deg, color-mix(in srgb, var(--mq-oppervlak-2) 52%, var(--mq-oppervlak)), var(--mq-oppervlak));
+  box-shadow: var(--mq-schaduw-zacht);
+  scroll-margin-top: 96px;
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-sections article:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--sectie-accent) 42%, var(--mq-rand-sterk));
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-sections article > span {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--sectie-accent) 30%, var(--mq-rand));
+  background: color-mix(in srgb, var(--sectie-accent) 14%, var(--mq-oppervlak-zacht));
+  color: var(--sectie-accent);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-sections h2 {
+  font-family: var(--domotica-mq-sans);
+  font-size: 1.06rem;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-sections p {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.62;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-sections small {
+  margin-top: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-stil);
+  font-family: var(--domotica-mq-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+html.palet-maquette .domotica-maquette-wikkel .smart-home-next {
+  padding: 24px 28px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: linear-gradient(125deg, color-mix(in srgb, var(--mq-accent) 7%, var(--mq-oppervlak)), var(--mq-oppervlak-zacht));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Світле шліфування поверхонь «Ранковий туман» */
+html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) .domotica-maquette-wikkel :is(.smart-home-hero, .smart-home-status, .smart-home-sections article, .smart-home-next),
+html.palet-maquette .canonical-chrome:is([data-theme="light"], .theme-light, .theme-plum-light) .domotica-maquette-wikkel :is(.smart-home-hero, .smart-home-status, .smart-home-sections article, .smart-home-next) {
+  background-color: var(--mq-oppervlak);
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) .domotica-maquette-wikkel .smart-home-status.smart-home-maquette,
+html.palet-maquette .canonical-chrome:is([data-theme="light"], .theme-light, .theme-plum-light) .domotica-maquette-wikkel .smart-home-status.smart-home-maquette {
+  border-color: color-mix(in srgb, var(--mq-accent) 32%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--mq-accent) 12%, transparent), transparent 50%),
+    linear-gradient(145deg, color-mix(in srgb, var(--mq-accent) 6%, var(--mq-oppervlak)), var(--mq-oppervlak-2));
+}
+
+/* ── Адаптивні та рухові правила — суворо наприкінці файла ── */
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-maquette-link,
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-sections article {
+    transition: none;
+  }
+}
+
+@media (max-width: 960px) {
+  html.palet-maquette .domotica-maquette-wikkel {
+    padding: 10px 14px 44px;
+    gap: 20px;
+  }
+
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-sections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  html.palet-maquette .domotica-maquette-wikkel {
+    padding: 8px 6px 36px;
+    gap: 16px;
+  }
+
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-hero,
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-status,
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-next {
+    padding: 18px 16px;
+  }
+
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-sections {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  html.palet-maquette .domotica-maquette-wikkel .smart-home-sections article {
+    padding: 18px 16px;
+  }
+}

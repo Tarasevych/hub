@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-007",
+  "titel": "Хвиля 6 теми оформлення «Макет»: повне студійне перевтілення розумної оселі huis.tarasevych.com",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх 13 канонічних вкладок розумної оселі huis.tarasevych.com (огляд, кімнати та інтерактивний план поверху, пристрої та керування, сцени, автоматизації, безпека, енергія, події, інтеграції, ШІ-помічник, налаштування, вітрина й калькулятор) та класичного інформаційного вигляду DomoticaWeergave поруч з усіма чинними темами без видалення можливостей.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-007-20261113-224251",
+    "basis": "eba4d0f7b3724732cb36cf843f11943f6d700fab",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі шлюзів Home Assistant, домашні мережеві адреси користувачів, показники справжніх датчиків та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T22:42:51Z",
+      "stap": "Створено кумулятивну гілку feature/maquette-007-20261113-224251 поверх перевіреної Хвилі 5 (eba4d0f7b3724732cb36cf843f11943f6d700fab) та зареєстровано завдання MAQUETTE-007."
+    },
+    {
+      "tijd": "2026-11-13T23:05:50Z",
+      "stap": "Оформлено простори, архітектурне креслення плану поверху Plattegrond, пристрої, тактильні перемикачі й повзунки ApparaatBediening, сцени та правила автоматизацій у src/huis/huis-ruimtes-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T23:06:45Z",
+      "stap": "Вбудовано студійну оболонку .mq-schil, бурштиново-золоту вітрину MaquetteHeld (dienst='huis') та якірну навігацію MaquetteAnkerRail як у новий простір HuisPagina, так і в класичний вигляд DomoticaWeergave; створено domotica-maquette.css та huis-kern-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T23:08:20Z",
+      "stap": "Оформлено контур безпеки, енергію, хронологію журналу подій, інтеграції Home Assistant, ШІ-помічника, налаштування оселі та вхідні запрошення у src/huis/huis-beheer-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T23:12:08Z",
+      "stap": "Виконано повне виробниче складання, перевірку типів, модульні випробування розумної оселі та живу візуальну перевірку 9 режимів huis.tarasevych.com у безголовому Chromium у нічному й світлому режимах (0 винятків під час виконання)."
+    }
+  ],
+  "keuzes": [
+    "Студійну палітру «Макет» впроваджено одночасно для класичного режиму DomoticaWeergave (коли прапорець huis-vnext вимкнено) та для всіх 13 розділів HuisPagina (коли прапорець huis-vnext увімкнено).",
+    "Вітрину MaquetteHeld застосовано в повному режимі на огляді оселі, вітрині, початковому екрані створення оселі й класичному екрані та в компактному режимі на робочих вкладках кімнат, пристроїв, сцен, безпеки, енергії й налаштувань; на мобільному екрані MaquetteAnkerRail вимикається на користь рідної нижньої панелі .hv-onderbalk.",
+    "Усі чотири нові таблиці стилів розумної оселі побудовано виключно на змінних var(--mq-*) із бурштиново-золотим акцентом --mq-accent-huis без жодного сирого кольору, !important чи нового position: fixed."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-007-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-007.json",
+    "orchestratie/taken/MAQUETTE-007.json",
+    "src/DomoticaWeergave.tsx",
+    "src/huis/ApparaatBediening.tsx",
+    "src/huis/HuisLaag.tsx",
+    "src/huis/HuisPagina.tsx",
+    "src/huis/domotica-maquette.css",
+    "src/huis/huis-beheer-maquette.css",
+    "src/huis/huis-kern-maquette.css",
+    "src/huis/huis-ruimtes-maquette.css",
+    "src/huis/onderdelen/Apparaten.tsx",
+    "src/huis/onderdelen/Assistent.tsx",
+    "src/huis/onderdelen/Automatiseringen.tsx",
+    "src/huis/onderdelen/Beveiliging.tsx",
+    "src/huis/onderdelen/Energie.tsx",
+    "src/huis/onderdelen/Gebeurtenissen.tsx",
+    "src/huis/onderdelen/Instellingen.tsx",
+    "src/huis/onderdelen/Integraties.tsx",
+    "src/huis/onderdelen/Kamers.tsx",
+    "src/huis/onderdelen/Overzicht.tsx",
+    "src/huis/onderdelen/Planner.tsx",
+    "src/huis/onderdelen/Plattegrond.tsx",
+    "src/huis/onderdelen/Scenes.tsx",
+    "src/huis/onderdelen/Showroom.tsx",
+    "src/huis/onderdelen/UitnodigingenVoorMij.tsx"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (включно з huis-maquette та tech-bundels-controle) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, huis-001-oude-fouten-20261110, huis-001-maquette-20261112, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка huis.tarasevych.com (класичний вигляд, /overzicht у темному й світлому режимах, /kamers, /apparaten, /beveiliging, /energie, мобільний 390x844 та контрольна палітра kleur) у безголовому Chromium через локальний HTTPS — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/maquette-kern/index.ts",
+    "src/DomoticaWeergave.tsx",
+    "src/huis/HuisPagina.tsx"
+  ],
+  "beperkingen": [
+    "Кумулятивний пакет Хвилі 6 (MAQUETTE-007) охоплює ядро теми, id, mail, cloud, github, hub, ai та huis.tarasevych.com; піддомени mcp, api та admin послідовно перевтілюються у Хвилях 7–9 (MAQUETTE-008 — MAQUETTE-010)."
+  ]
+}

@@ -7,10 +7,18 @@ import type { OnderdeelProps } from '../HuisPagina';
 import { HuisFout, huisClient, kiesWoning, type LidUit, type Uitnodiging } from '../huis-client';
 import { datumTekst, foutTekst, tr } from '../tekst';
 import UitnodigingenVoorMij from './UitnodigingenVoorMij';
+import '../huis-beheer-maquette.css';
 
 const ROL: Record<string, [string, string]> = { eigenaar: ['власник', 'eigenaar'], lid: ['мешканець (керує)', 'bewoner (bedient)'], gast: ['гість (лише перегляд)', 'gast (alleen kijken)'], installateur: ['інсталятор (тимчасово)', 'installateur (tijdelijk)'], ondersteuning: ['підтримка (тимчасово)', 'ondersteuning (tijdelijk)'] };
 // HUIS-001: de volledige lijst van de browser (Intl), met de vaak gebruikte bovenaan — geen vaste lijst van 7 meer.
 const ALLE_TIJDZONES = alleTijdzones();
+
+function rolAccent(rol: string): string {
+  if (rol === 'eigenaar') return 'mq-accent-amber';
+  if (rol === 'lid') return 'mq-accent-emerald';
+  if (rol === 'gast') return 'mq-accent-blue';
+  return 'mq-accent-violet';
+}
 
 export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWoningen }: OnderdeelProps & { onWoningen: () => Promise<void> }) {
   const [naam, setNaam] = useState(ov.woning.naam);
@@ -30,14 +38,14 @@ export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWon
   const doe = async (f: () => Promise<unknown>, ok?: string) => { setBezig(true); try { await f(); await vernieuw(); await onWoningen(); if (ok) toon(ok); } catch (e) { fout(e); } finally { setBezig(false); } };
   const veranderd = naam.trim() !== ov.woning.naam || tijdzone !== ov.woning.tijdzone || JSON.stringify(verdiepingen) !== JSON.stringify(ov.woning.verdiepingen);
   return (
-    <div className='hv-instellingen'>
-      <section className='hv-blok' aria-labelledby='hv-inst-woning'>
+    <div className='hv-instellingen' data-mq-beheer='instellingen'>
+      <section className='hv-blok mq-accent-amber' aria-labelledby='hv-inst-woning' data-mq-inst-blok='woning'>
         <h3 id='hv-inst-woning'><Home aria-hidden='true' /> {tr(lang, 'Оселя', 'Woning')}</h3>
-        <form onSubmit={(e) => { e.preventDefault(); if (eigenaar && veranderd) void doe(() => huisClient.woningWijzig(woningId, { naam: naam.trim(), tijdzone, verdiepingen }), tr(lang, 'Збережено.', 'Opgeslagen.')); }}>
+        <form className='mq-hb-woning-vorm' onSubmit={(e) => { e.preventDefault(); if (eigenaar && veranderd) void doe(() => huisClient.woningWijzig(woningId, { naam: naam.trim(), tijdzone, verdiepingen }), tr(lang, 'Збережено.', 'Opgeslagen.')); }}>
           <label className='hv-veld'><span>{tr(lang, 'Назва', 'Naam')}</span><input value={naam} maxLength={80} disabled={!eigenaar} onChange={(e) => setNaam(e.target.value)} data-hv-inst-naam='1' /></label>
           <label className='hv-veld'><span>{tr(lang, 'Часовий пояс', 'Tijdzone')}</span><select value={tijdzone} disabled={!eigenaar} onChange={(e) => setTijdzone(e.target.value)}>{ALLE_TIJDZONES.includes(tijdzone) ? null : <option value={tijdzone}>{tijdzone}</option>}<optgroup label={tr(lang, 'Часто вживані', 'Veelgebruikt')}>{TIJDZONES_VAAK.map((z) => <option key={`v:${z}`} value={z}>{z}</option>)}</optgroup><optgroup label={tr(lang, 'Усі часові пояси', 'Alle tijdzones')}>{ALLE_TIJDZONES.filter((z) => !TIJDZONES_VAAK.includes(z)).map((z) => <option key={z} value={z}>{z}</option>)}</optgroup></select></label>
           <h4 className='hv-sub'>{tr(lang, 'Поверхи', 'Verdiepingen')}</h4>
-          <ul className='hv-lijst is-dicht'>
+          <ul className='hv-lijst is-dicht' data-mq-verdiepingen='1'>
             {verdiepingen.map((v, i) => <li key={v.id}><input value={v.naam} maxLength={40} disabled={!eigenaar} aria-label={tr(lang, `Поверх ${i + 1}`, `Verdieping ${i + 1}`)} onChange={(e) => setVerdiepingen(verdiepingen.map((x, j) => (j === i ? { ...x, naam: e.target.value } : x)))} data-hv-verdieping-naam={v.id} />{eigenaar && verdiepingen.length > 1 ? <button type='button' className='hv-icoonknop is-gevaar' disabled={ov.ruimtes.some((r) => r.verdieping === v.id)} title={ov.ruimtes.some((r) => r.verdieping === v.id) ? tr(lang, 'На поверсі є кімнати', 'Er staan kamers op deze verdieping') : ''} onClick={() => setVerdiepingen(verdiepingen.filter((_, j) => j !== i))} aria-label={tr(lang, 'Прибрати поверх', 'Verdieping weghalen')}><Trash2 /></button> : null}</li>)}
           </ul>
           {eigenaar ? <div className='hv-knoppen'>
@@ -47,21 +55,21 @@ export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWon
         </form>
       </section>
 
-      <section className='hv-blok' aria-labelledby='hv-inst-leden'>
+      <section className='hv-blok mq-accent-cyan' aria-labelledby='hv-inst-leden' data-mq-inst-blok='leden'>
         <h3 id='hv-inst-leden'><Users aria-hidden='true' /> {tr(lang, 'Учасники', 'Leden')}</h3>
         <ul className='hv-lijst is-dicht' data-hv-leden={leden?.length ?? 0}>
-          {(leden ?? []).map((l) => <li key={l.userId} data-hv-lid={l.userId}><span><strong>{l.naam || l.email || l.userId}</strong> <small>{l.email} · {tr(lang, ROL[l.rol]?.[0] ?? l.rol, ROL[l.rol]?.[1] ?? l.rol)}{l.geldigTot ? ` · ${tr(lang, 'до', 'tot')} ${datumTekst(lang, l.geldigTot, false)}` : ''}</small></span>{eigenaar && l.userId !== ov.lid.userId ? <button type='button' className='hv-icoonknop is-gevaar' disabled={bezig} title={tr(lang, 'Учасник одразу втратить доступ до пристроїв і подій цієї оселі.', 'Het lid verliest meteen de toegang tot de apparaten en gebeurtenissen van deze woning.')} onClick={() => { if (window.confirm(tr(lang, 'Прибрати учасника? Він одразу втратить доступ до пристроїв і подій цієї оселі.', 'Lid weghalen? Het verliest meteen de toegang tot de apparaten en gebeurtenissen van deze woning.'))) void doe(async () => { await huisClient.lidVerwijder(woningId, l.userId); await laadLeden(); }, tr(lang, 'Учасника прибрано.', 'Lid weggehaald.')); }} aria-label={tr(lang, 'Прибрати', 'Weghalen')}><Trash2 /></button> : null}</li>)}
+          {(leden ?? []).map((l) => <li key={l.userId} className={rolAccent(l.rol)} data-hv-lid={l.userId} data-mq-rol={l.rol}><span><strong>{l.naam || l.email || l.userId}</strong> <small>{l.email} · <span className='mq-hb-rol-pil'>{tr(lang, ROL[l.rol]?.[0] ?? l.rol, ROL[l.rol]?.[1] ?? l.rol)}</span>{l.geldigTot ? ` · ${tr(lang, 'до', 'tot')} ${datumTekst(lang, l.geldigTot, false)}` : ''}</small></span>{eigenaar && l.userId !== ov.lid.userId ? <button type='button' className='hv-icoonknop is-gevaar' disabled={bezig} title={tr(lang, 'Учасник одразу втратить доступ до пристроїв і подій цієї оселі.', 'Het lid verliest meteen de toegang tot de apparaten en gebeurtenissen van deze woning.')} onClick={() => { if (window.confirm(tr(lang, 'Прибрати учасника? Він одразу втратить доступ до пристроїв і подій цієї оселі.', 'Lid weghalen? Het verliest meteen de toegang tot de apparaten en gebeurtenissen van deze woning.'))) void doe(async () => { await huisClient.lidVerwijder(woningId, l.userId); await laadLeden(); }, tr(lang, 'Учасника прибрано.', 'Lid weggehaald.')); }} aria-label={tr(lang, 'Прибрати', 'Weghalen')}><Trash2 /></button> : null}</li>)}
         </ul>
         {eigenaar && uitnodigingen.length ? (
           <>
             <h4 className='hv-sub'>{tr(lang, 'Надіслані запрошення (ще не прийняті)', 'Verstuurde uitnodigingen (nog niet aanvaard)')}</h4>
             <ul className='hv-lijst is-dicht' data-hv-uitnodigingen={uitnodigingen.length}>
-              {uitnodigingen.map((u) => <li key={u.id} data-hv-uitnodiging={u.id}><span><strong>{u.email}</strong> <small>{tr(lang, ROL[u.rol]?.[0] ?? u.rol, ROL[u.rol]?.[1] ?? u.rol)} · {tr(lang, 'очікує на прийняття до', 'wacht op aanvaarding tot')} {datumTekst(lang, u.verlooptOp, false)}</small></span><button type='button' className='hv-knop is-klein' disabled={bezig} title={tr(lang, 'Відкликане запрошення вже не можна прийняти. Людині про це окремо не повідомляємо.', 'Een ingetrokken uitnodiging kan niet meer aanvaard worden. De persoon krijgt daar geen apart bericht over.')} onClick={() => { if (window.confirm(tr(lang, `Відкликати запрошення для ${u.email}? Прийняти його вже буде неможливо.`, `De uitnodiging voor ${u.email} intrekken? Ze kan daarna niet meer aanvaard worden.`))) void doe(async () => { await huisClient.uitnodigingIntrekken(woningId, u.id); await laadLeden(); }, tr(lang, 'Запрошення відкликано.', 'Uitnodiging ingetrokken.')); }} data-hv-uitnodiging-intrek={u.id}><X aria-hidden='true' />{tr(lang, 'Відкликати', 'Intrekken')}</button></li>)}
+              {uitnodigingen.map((u) => <li key={u.id} className={rolAccent(u.rol)} data-hv-uitnodiging={u.id} data-mq-rol={u.rol}><span><strong>{u.email}</strong> <small><span className='mq-hb-rol-pil'>{tr(lang, ROL[u.rol]?.[0] ?? u.rol, ROL[u.rol]?.[1] ?? u.rol)}</span> · {tr(lang, 'очікує на прийняття до', 'wacht op aanvaarding tot')} {datumTekst(lang, u.verlooptOp, false)}</small></span><button type='button' className='hv-knop is-klein' disabled={bezig} title={tr(lang, 'Відкликане запрошення вже не можна прийняти. Людині про це окремо не повідомляємо.', 'Een ingetrokken uitnodiging kan niet meer aanvaard worden. De persoon krijgt daar geen apart bericht over.')} onClick={() => { if (window.confirm(tr(lang, `Відкликати запрошення для ${u.email}? Прийняти його вже буде неможливо.`, `De uitnodiging voor ${u.email} intrekken? Ze kan daarna niet meer aanvaard worden.`))) void doe(async () => { await huisClient.uitnodigingIntrekken(woningId, u.id); await laadLeden(); }, tr(lang, 'Запрошення відкликано.', 'Uitnodiging ingetrokken.')); }} data-hv-uitnodiging-intrek={u.id}><X aria-hidden='true' />{tr(lang, 'Відкликати', 'Intrekken')}</button></li>)}
             </ul>
           </>
         ) : null}
         {eigenaar ? (
-          <form className='hv-rij is-wrap' onSubmit={(e) => { e.preventDefault(); if (email.trim()) void doe(async () => { await huisClient.lidUitnodigen(woningId, email.trim(), rol, dagen); setEmail(''); await laadLeden(); }, tr(lang, HUIS_UITLEG.UITNODIGING_VERSTUURD[0], HUIS_UITLEG.UITNODIGING_VERSTUURD[1])); }}>
+          <form className='hv-rij is-wrap' data-mq-uitnodig-vorm='1' onSubmit={(e) => { e.preventDefault(); if (email.trim()) void doe(async () => { await huisClient.lidUitnodigen(woningId, email.trim(), rol, dagen); setEmail(''); await laadLeden(); }, tr(lang, HUIS_UITLEG.UITNODIGING_VERSTUURD[0], HUIS_UITLEG.UITNODIGING_VERSTUURD[1])); }}>
             <input type='email' value={email} maxLength={254} placeholder={tr(lang, 'e-mail людини, яку запрошуєте', 'e-mailadres van wie u uitnodigt')} aria-label={tr(lang, 'Електронна адреса', 'E-mailadres')} onChange={(e) => setEmail(e.target.value)} data-hv-lid-email='1' />
             <select value={rol} aria-label={tr(lang, 'Роль', 'Rol')} onChange={(e) => setRol(e.target.value)} data-hv-lid-rol='1'>{['lid', 'gast', 'installateur', 'ondersteuning'].map((r) => <option key={r} value={r}>{tr(lang, ROL[r][0], ROL[r][1])}</option>)}</select>
             {rol === 'installateur' || rol === 'ondersteuning' ? <label className='hv-veld is-rij'><span>{tr(lang, 'днів', 'dagen')}</span><input type='number' min={1} max={90} value={dagen} onChange={(e) => setDagen(Number(e.target.value))} /></label> : null}
@@ -78,7 +86,7 @@ export default function Instellingen({ lang, woningId, ov, vernieuw, toon, onWon
 
       <UitnodigingenVoorMij lang={lang} toon={toon} naAanvaarden={async (id) => { await onWoningen(); kiesWoning(id); }} />
 
-      <section className='hv-blok' aria-labelledby='hv-inst-nieuw'>
+      <section className='hv-blok mq-accent-mint' aria-labelledby='hv-inst-nieuw' data-mq-inst-blok='nieuw'>
         <h3 id='hv-inst-nieuw'>{tr(lang, 'Ще одна оселя', 'Nog een woning')}</h3>
         <form className='hv-rij' onSubmit={(e) => { e.preventDefault(); const n = nieuweWoning.trim(); if (n) void doe(async () => { const w = await huisClient.woningNieuw(n, lang); kiesWoning(w.id); setNieuweWoning(''); }, tr(lang, 'Оселю створено — виберіть її у заголовку.', 'Woning aangemaakt — kies ze in de kop.')); }}>
           <input value={nieuweWoning} maxLength={80} placeholder={tr(lang, 'Назва', 'Naam')} aria-label={tr(lang, 'Назва нової оселі', 'Naam van de nieuwe woning')} onChange={(e) => setNieuweWoning(e.target.value)} />

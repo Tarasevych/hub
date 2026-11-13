@@ -8,13 +8,14 @@ import type { OnderdeelProps } from '../HuisPagina';
 import ApparaatBediening from '../ApparaatBediening';
 import { HuisFout, huisClient } from '../huis-client';
 import { datumTekst, foutTekst, hoofdTekst, soortTekst, toestandVan, tr } from '../tekst';
+import '../huis-beheer-maquette.css';
 
 type Uit = Awaited<ReturnType<typeof huisClient.beveiliging>>;
-const GROEPEN: Array<{ id: string; soorten: string[]; naam: [string, string] }> = [
-  { id: 'alarm', soorten: ['alarm', 'vergrendeld'], naam: ['Охорона й замки (лише людина, з підтвердженням)', 'Alarm en sloten (alleen een mens, met bevestiging)'] },
-  { id: 'gevaar', soorten: ['rook', 'gas', 'water'], naam: ['Дим, газ, вода', 'Rook, gas, water'] },
-  { id: 'toegang', soorten: ['contact', 'beweging'], naam: ['Двері, вікна, рух', 'Deuren, ramen, beweging'] },
-  { id: 'aanwezig', soorten: ['aanwezigheid'], naam: ['Присутність', 'Aanwezigheid'] },
+const GROEPEN: Array<{ id: string; soorten: string[]; naam: [string, string]; accent: string }> = [
+  { id: 'alarm', soorten: ['alarm', 'vergrendeld'], naam: ['Охорона й замки (лише людина, з підтвердженням)', 'Alarm en sloten (alleen een mens, met bevestiging)'], accent: 'mq-accent-violet' },
+  { id: 'gevaar', soorten: ['rook', 'gas', 'water'], naam: ['Дим, газ, вода', 'Rook, gas, water'], accent: 'mq-accent-coral' },
+  { id: 'toegang', soorten: ['contact', 'beweging'], naam: ['Двері, вікна, рух', 'Deuren, ramen, beweging'], accent: 'mq-accent-amber' },
+  { id: 'aanwezig', soorten: ['aanwezigheid'], naam: ['Присутність', 'Aanwezigheid'], accent: 'mq-accent-cyan' },
 ];
 
 export default function Beveiliging({ lang, woningId, ov, vernieuw, toon }: OnderdeelProps) {
@@ -25,12 +26,12 @@ export default function Beveiliging({ lang, woningId, ov, vernieuw, toon }: Onde
   const apparaten = uit?.apparaten ?? [];
   const alarmen = apparaten.filter((a) => ['rook', 'gas', 'water'].some((k) => toestandVan(a, k)?.waarde === true && versheid(toestandVan(a, k)) === 'vers'));
   return (
-    <div className='hv-beveiliging'>
-      <p className='hv-melding is-info' data-hv-gecertificeerd={String(uit?.gecertificeerd ?? false)}><ShieldAlert aria-hidden='true' />{tr(lang, 'Ця сторінка — не охоронна система. Вона лише показує, що бачить шлюз, і не замінює сертифіковану сигналізацію з власним застосунком. ШІ, сцени та правила ніколи не керують охороною, замками чи сиренами.', 'Deze pagina is geen alarmsysteem. Ze toont alleen wat de gateway waarneemt en vervangt geen gecertificeerd alarm met eigen app. AI, scènes en regels bedienen nooit alarm, sloten of sirenes.')}</p>
-      {alarmen.length ? <p className='hv-melding is-fout' role='alert' data-hv-gevaar={alarmen.length}><AlertTriangle aria-hidden='true' />{tr(lang, `Датчик повідомляє про небезпеку: ${alarmen.map((a) => a.naam).join(', ')}. Перевірте на місці.`, `Een sensor meldt gevaar: ${alarmen.map((a) => a.naam).join(', ')}. Controleer ter plaatse.`)}</p> : null}
+    <div className='hv-beveiliging' data-mq-beheer='beveiliging'>
+      <p className='hv-melding is-info mq-accent-amber' data-hv-gecertificeerd={String(uit?.gecertificeerd ?? false)} data-mq-schild-banner='waarneming' data-mq-schild-kop={tr(lang, 'КОНТУР СПОСТЕРЕЖЕННЯ ШЛЮЗУ · ПІДТВЕРДЖЕННЯ ОСОБИ', 'DOORGANGSWAARNEMING · IDENTITEITSBEVESTIGING')}><ShieldAlert aria-hidden='true' />{tr(lang, 'Ця сторінка — не охоронна система. Вона лише показує, що бачить шлюз, і не замінює сертифіковану сигналізацію з власним застосунком. ШІ, сцени та правила ніколи не керують охороною, замками чи сиренами.', 'Deze pagina is geen alarmsysteem. Ze toont alleen wat de gateway waarneemt en vervangt geen gecertificeerd alarm met eigen app. AI, scènes en regels bedienen nooit alarm, sloten of sirenes.')}</p>
+      {alarmen.length ? <p className='hv-melding is-fout mq-accent-coral' role='alert' data-hv-gevaar={alarmen.length} data-mq-schild-banner='gevaar' data-mq-schild-kop={tr(lang, 'ТРИВОГА ДАТЧИКА НЕБЕЗПЕКИ', 'GEVAARSENSOR ALARM')}><AlertTriangle aria-hidden='true' />{tr(lang, `Датчик повідомляє про небезпеку: ${alarmen.map((a) => a.naam).join(', ')}. Перевірте на місці.`, `Een sensor meldt gevaar: ${alarmen.map((a) => a.naam).join(', ')}. Controleer ter plaatse.`)}</p> : null}
       {uit && !apparaten.length ? <section className='hv-leeg'><ShieldCheck aria-hidden='true' /><h3>{tr(lang, 'Немає датчиків безпеки', 'Geen beveiligingssensoren')}</h3><p>{tr(lang, 'Після імпорту з Home Assistant тут з’являться контактні датчики, датчики руху, диму, газу й протікання, замки та панель охорони — з реальним станом і часом.', 'Na import uit Home Assistant verschijnen hier contact-, bewegings-, rook-, gas- en lekdetectoren, sloten en het alarmpaneel — met echte toestand en tijd.')}</p></section> : null}
       {GROEPEN.map((g) => { const lijst = apparaten.filter((a) => a.mogelijkheden.some((m) => g.soorten.includes(m.soort))); if (!lijst.length) return null; return (
-        <section key={g.id} className='hv-blok' aria-labelledby={`hv-bev-${g.id}`} data-hv-bev-groep={g.id}>
+        <section key={g.id} className={`hv-blok ${g.accent}`} aria-labelledby={`hv-bev-${g.id}`} data-hv-bev-groep={g.id} data-mq-bev-groep={g.id} data-mq-stepup-label={g.id === 'alarm' ? tr(lang, 'Підтвердження особи власника', 'Identiteitsbevestiging eigenaar') : undefined}>
           <h3 id={`hv-bev-${g.id}`}>{tr(lang, g.naam[0], g.naam[1])} <small>{lijst.length}</small></h3>
           <div className='hv-raster'>
             {lijst.map((a) => <Kaart key={a.id} lang={lang} a={a} woningId={woningId} magCmd={magCmd && g.id === 'alarm'} onVernieuw={() => { void vernieuw(); void laad(); }} />)}
@@ -44,13 +45,16 @@ export default function Beveiliging({ lang, woningId, ov, vernieuw, toon }: Onde
 
 function Kaart({ lang, a, woningId, magCmd, onVernieuw }: { lang: 'uk' | 'nl'; a: Apparaat; woningId: string; magCmd: boolean; onVernieuw: () => void }) {
   const h = hoofdTekst(lang, a); const t = a.toestanden[0];
+  const inGevaar = ['rook', 'gas', 'water'].some((k) => toestandVan(a, k)?.waarde === true && h.vers === 'vers');
+  const heeftStepUp = a.kritiek && a.mogelijkheden.some((m) => m.schrijven);
+  const accent = inGevaar || h.vers === 'onbeschikbaar' ? 'mq-accent-coral' : h.vers === 'verouderd' ? 'mq-accent-amber' : h.vers === 'onbekend' ? 'mq-accent-blue' : a.kritiek ? 'mq-accent-violet' : 'mq-accent-emerald';
   return (
-    <article className={`hv-kaart is-${h.vers}${a.kritiek ? ' is-kritiek' : ''}`} data-hv-bev-kaart={a.id} data-hv-versheid={h.vers}>
+    <article className={`hv-kaart is-${h.vers}${a.kritiek ? ' is-kritiek' : ''} ${accent}`} data-hv-bev-kaart={a.id} data-hv-versheid={h.vers} data-mq-versheid={h.vers} data-mq-soort={a.soort} data-mq-kritiek={a.kritiek ? 'ja' : 'nee'} data-mq-alarm={inGevaar ? 'actief' : undefined} data-mq-stepup-pil={heeftStepUp ? tr(lang, 'Підтвердження входу', 'Aanmeldbevestiging') : undefined}>
       <small>{soortTekst(lang, a.soort)}{a.kritiek ? ` · ${tr(lang, 'критично', 'kritiek')}` : ''}</small>
       <strong>{a.naam}</strong>
       <span className='hv-waarde'>{h.tekst}</span>
       <em>{tr(lang, VERSHEID_LABEL[h.vers][0], VERSHEID_LABEL[h.vers][1])} · {datumTekst(lang, t?.waargenomenOp || t?.ontvangenOp || null)}</em>
-      {a.kritiek && a.mogelijkheden.some((m) => m.schrijven) ? <ApparaatBediening lang={lang} woningId={woningId} apparaat={a} magSchrijven={magCmd} compact onVernieuw={onVernieuw} /> : null}
+      {heeftStepUp ? <ApparaatBediening lang={lang} woningId={woningId} apparaat={a} magSchrijven={magCmd} compact onVernieuw={onVernieuw} /> : null}
     </article>
   );
 }

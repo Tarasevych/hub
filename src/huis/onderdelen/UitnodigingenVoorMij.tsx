@@ -6,8 +6,15 @@ import { Check, MailOpen, X } from 'lucide-react';
 import { HUIS_ROL_LABEL, HUIS_UITLEG, type UitnodigingVoorMij } from '../../../shared/huis-model';
 import { HuisFout, huisClient } from '../huis-client';
 import { datumTekst, foutTekst, tr, type Lang } from '../tekst';
+import '../huis-beheer-maquette.css';
 
 type Props = { lang: Lang; toon: (t: string, soort?: 'ok' | 'fout') => void; naAanvaarden?: (woningId: string) => Promise<void> | void };
+
+function uitnodigingAccent(rol: string): string {
+  if (rol === 'lid') return 'mq-accent-emerald';
+  if (rol === 'gast') return 'mq-accent-blue';
+  return 'mq-accent-violet';
+}
 
 export default function UitnodigingenVoorMij({ lang, toon, naAanvaarden }: Props) {
   const [lijst, setLijst] = useState<UitnodigingVoorMij[] | null>(null);
@@ -33,15 +40,15 @@ export default function UitnodigingenVoorMij({ lang, toon, naAanvaarden }: Props
   };
   if (!lijst || !lijst.length) return null; // niets uitgenodigd: geen leeg blok
   return (
-    <section className='hv-blok' aria-labelledby='hv-uitn-mij' data-hv-uitnodigingen-mij={lijst.length}>
+    <section className='hv-blok mq-accent-amber' aria-labelledby='hv-uitn-mij' data-hv-uitnodigingen-mij={lijst.length} data-mq-uitnodigingen-mij='1'>
       <h3 id='hv-uitn-mij'><MailOpen aria-hidden='true' /> {tr(lang, 'Запрошення для вас', 'Uitnodigingen voor u')}</h3>
       <ul className='hv-lijst is-dicht'>
         {lijst.map((u) => (
-          <li key={u.id} data-hv-uitnodiging-mij={u.id}>
+          <li key={u.id} className={uitnodigingAccent(u.rol)} data-hv-uitnodiging-mij={u.id} data-mq-rol={u.rol}>
             <span>
               <strong>{u.woningNaam}</strong>{' '}
               <small>
-                {tr(lang, 'запрошує', 'uitgenodigd door')} {u.doorNaam ? `${u.doorNaam} (${u.doorEmail})` : u.doorEmail} · {rolTekst(u.rol)}
+                {tr(lang, 'запрошує', 'uitgenodigd door')} {u.doorNaam ? `${u.doorNaam} (${u.doorEmail})` : u.doorEmail} · <span className='mq-hb-rol-pil'>{rolTekst(u.rol)}</span>
                 {u.lidGeldigTot ? ` · ${tr(lang, 'доступ до', 'toegang tot')} ${datumTekst(lang, u.lidGeldigTot, false)}` : ''}
                 {` · ${tr(lang, 'запрошення діє до', 'uitnodiging geldig tot')} ${datumTekst(lang, u.verlooptOp, false)}`}
               </small>

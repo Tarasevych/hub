@@ -1,5 +1,5 @@
-// Scènes: lijst + bewerker (naam, stappen per apparaat/mogelijkheid/waarde) + uitvoeren met per-stap uitkomst (ACK per opdracht).
-// Kritieke apparaten (slot/alarm/sirene) zijn in de bewerker niet eens kiesbaar; de server weigert ze ook.
+// Сцени: перелік карток «одним дотиком», редактор кроків та виконання з покроковим підтвердженням від кожного пристрою.
+// Scènes: lijst, bewerker per apparaat/mogelijkheid/waarde en uitvoeren met bevestiging per stap; kritieke apparaten uitgesloten.
 import { useMemo, useState } from 'react';
 import { Check, AlertCircle, Pencil, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { KRITIEKE_SOORTEN, MOGELIJKHEID_LABEL, OPDRACHT_LABEL, type Apparaat, type MogelijkheidSoort, type OpdrachtStand, type Scene, type SceneStap } from '../../../shared/huis-model';
@@ -7,6 +7,7 @@ import type { OnderdeelProps } from '../HuisPagina';
 import HuisLaag from '../HuisLaag';
 import { HuisFout, huisClient, idem } from '../huis-client';
 import { datumTekst, foutTekst, tr, type Lang } from '../tekst';
+import '../huis-ruimtes-maquette.css';
 
 type Uitkomst = Awaited<ReturnType<typeof huisClient.sceneUitvoeren>>;
 export const SCHRIJFBAAR: readonly MogelijkheidSoort[] = Object.freeze(['aan_uit', 'helderheid', 'kleurtemperatuur', 'doeltemperatuur', 'open_dicht', 'positie']);
@@ -50,23 +51,35 @@ export default function Scenes({ lang, smal, woningId, ov, vernieuw, toon }: Ond
   const zetStap = (i: number, s: SceneStap) => setOpen((o) => o && { ...o, stappen: o.stappen.map((x, j) => (j === i ? s : x)) });
 
   return (
-    <div className='hv-scenes'>
+    <div className='hv-scenes' data-mq-sectie='scenes'>
       <p className='hv-hint'>{tr(lang, 'Сцена — набір команд, що виконуються разом. Кожна команда чекає на підтвердження від пристрою; результат показується по кроках. Замки, охорона й сирени до сцен не входять.', 'Een scène is een reeks opdrachten die samen worden uitgevoerd. Elke opdracht wacht op bevestiging van het apparaat; de uitkomst staat per stap. Sloten, alarm en sirenes horen niet in een scène.')}</p>
       {mag ? <div className='hv-werkbalk'><button type='button' className='hv-knop is-hoofd' disabled={!bedienbaar.length} onClick={() => setOpen({ id: null, naam: '', stappen: nieuweStap() ? [nieuweStap()!] : [] })} data-hv-scene-nieuw='1'><Plus aria-hidden='true' />{tr(lang, 'Нова сцена', 'Nieuwe scène')}</button>{!bedienbaar.length ? <span className='hv-hint'>{tr(lang, 'Немає керованих пристроїв — спершу імпортуйте їх з інтеграції.', 'Geen bedienbare apparaten — importeer ze eerst uit een integratie.')}</span> : null}</div> : null}
       {!ov.scenes.length ? <section className='hv-leeg'><Sparkles aria-hidden='true' /><h3>{tr(lang, 'Сцен ще немає', 'Nog geen scènes')}</h3><p>{tr(lang, 'Наприклад «Вечір»: приглушити світло у вітальні та опустити ролети.', 'Bijvoorbeeld «Avond»: licht in de woonkamer dimmen en de rolluiken sluiten.')}</p></section> : null}
       <div className='hv-raster'>
-        {ov.scenes.map((s) => { const lr = s.laatsteRun as { uitkomst?: string; op?: string } | undefined; return (
-          <article key={s.id} className='hv-kaart is-scene' data-hv-scene-kaart={s.id}>
-            <small>{s.stappen.length} {tr(lang, 'дій', 'stappen')}</small>
-            <strong>{s.naam}</strong>
-            <span className='hv-waarde'>{lr?.uitkomst ? `${tr(lang, 'останній запуск', 'laatste run')}: ${lr.uitkomst} · ${datumTekst(lang, lr.op ?? null)}` : tr(lang, 'ще не запускалась', 'nog niet uitgevoerd')}</span>
-            <div className='hv-knoppen'>
-              <button type='button' className='hv-knop is-klein is-hoofd' disabled={Boolean(bezig) || !magCmd} onClick={() => void run(s)} data-hv-scene-run={s.id}><Play aria-hidden='true' />{tr(lang, 'Виконати', 'Uitvoeren')}</button>
-              {mag ? <button type='button' className='hv-icoonknop' disabled={Boolean(bezig)} onClick={() => setOpen({ id: s.id, naam: s.naam, stappen: s.stappen })} aria-label={tr(lang, 'Редагувати', 'Bewerken')}><Pencil /></button> : null}
-              {mag ? <button type='button' className='hv-icoonknop is-gevaar' disabled={Boolean(bezig)} onClick={() => void verwijder(s)} aria-label={tr(lang, 'Видалити', 'Verwijderen')}><Trash2 /></button> : null}
-            </div>
-          </article>
-        ); })}
+        {ov.scenes.map((s) => {
+          const lr = s.laatsteRun as { uitkomst?: string; op?: string } | undefined;
+          const sceneStand = bezig === s.id ? 'bezig' : lr?.uitkomst ?? 'nieuw';
+          return (
+            <article key={s.id} className='hv-kaart is-scene' data-hv-scene-kaart={s.id} data-mq-scene-stand={sceneStand}>
+              <small>{s.stappen.length} {tr(lang, 'дій', 'stappen')}</small>
+              <strong>{s.naam}</strong>
+              {s.stappen.length ? (
+                <ul className='hv-chips' data-mq-scene-stappen='1' aria-label={tr(lang, 'Кроки сцени', 'Stappen van de scène')}>
+                  {s.stappen.slice(0, 3).map((st, si) => (
+                    <li key={si} className='hv-chip is-passief'>{naam(st.apparaatId)} · {tr(lang, MOGELIJKHEID_LABEL[st.mogelijkheid]?.[0] ?? st.mogelijkheid, MOGELIJKHEID_LABEL[st.mogelijkheid]?.[1] ?? st.mogelijkheid)}</li>
+                  ))}
+                  {s.stappen.length > 3 ? <li className='hv-chip is-passief'>+{s.stappen.length - 3}</li> : null}
+                </ul>
+              ) : null}
+              <span className='hv-waarde'>{lr?.uitkomst ? `${tr(lang, 'останній запуск', 'laatste run')}: ${lr.uitkomst} · ${datumTekst(lang, lr.op ?? null)}` : tr(lang, 'ще не запускалась', 'nog niet uitgevoerd')}</span>
+              <div className='hv-knoppen'>
+                <button type='button' className='hv-knop is-klein is-hoofd' disabled={Boolean(bezig) || !magCmd} onClick={() => void run(s)} data-hv-scene-run={s.id}><Play aria-hidden='true' />{tr(lang, 'Виконати', 'Uitvoeren')}</button>
+                {mag ? <button type='button' className='hv-icoonknop' disabled={Boolean(bezig)} onClick={() => setOpen({ id: s.id, naam: s.naam, stappen: s.stappen })} aria-label={tr(lang, 'Редагувати', 'Bewerken')}><Pencil /></button> : null}
+                {mag ? <button type='button' className='hv-icoonknop is-gevaar' disabled={Boolean(bezig)} onClick={() => void verwijder(s)} aria-label={tr(lang, 'Видалити', 'Verwijderen')}><Trash2 /></button> : null}
+              </div>
+            </article>
+          );
+        })}
       </div>
       {open ? (
         <HuisLaag lang={lang} soort={smal ? 'scherm' : 'venster'} titel={open.id ? tr(lang, 'Редагувати сцену', 'Scène bewerken') : tr(lang, 'Нова сцена', 'Nieuwe scène')} onSluit={() => setOpen(null)} data={{ 'hv-scene-bewerker': '1' }}>

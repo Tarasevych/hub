@@ -1,0 +1,1646 @@
+/* Студійне оформлення просторів оселі в художній системі «Макет» (MAQUETTE-007, Група 6Б).
+   Охоплює кімнати (Kamers), архітектурне креслення плану поверху (Plattegrond), каталог пристроїв (Apparaten),
+   тактильне керування пристроєм з очікуванням підтвердження (ApparaatBediening), сцени (Scenes) та автоматизації (Automatiseringen).
+   Діє виключно за умови html.palet-maquette для глибокої ночі та світлого режиму «Ранковий туман».
+   Studio-opmaak voor kamers, plattegrond, apparaten, apparaatbediening, scènes en automatiseringen onder html.palet-maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. СТУДІЙНІ ЗМІННІ ОСЕЛІ, АКЦЕНТ --mq-accent-huis ТА СВІТЛИЙ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-plan,
+  .hv-scenes-rij,
+  [data-hv-voorstel],
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) {
+  --mq-accent-huis: var(--mq-accent);
+  --mq-huis-koper: var(--mq-accent-2, var(--mq-accent));
+  --mq-huis-gloed: color-mix(in srgb, var(--mq-accent-huis) 22%, transparent);
+  --mq-huis-zacht: color-mix(in srgb, var(--mq-accent-huis) 14%, transparent);
+  --mq-huis-rand-goud: color-mix(in srgb, var(--mq-accent-huis) 42%, var(--mq-rand-sterk));
+
+  --mq-huis-ok: color-mix(in srgb, var(--mq-tekst) 12%, var(--ok));
+  --mq-huis-ok-zacht: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--ok) 18%);
+  --mq-huis-warn: color-mix(in srgb, var(--mq-accent-huis) 58%, var(--warn) 42%);
+  --mq-huis-warn-zacht: color-mix(in srgb, var(--mq-oppervlak) 80%, var(--mq-accent-huis) 20%);
+  --mq-huis-fout: color-mix(in srgb, var(--mq-tekst) 10%, var(--fout));
+  --mq-huis-fout-zacht: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--fout) 18%);
+  --mq-huis-info: color-mix(in srgb, var(--mq-tekst) 14%, var(--info));
+  --mq-huis-info-zacht: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--info) 18%);
+
+  --mq-huis-glas: linear-gradient(
+    164deg,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-accent-huis) 8%) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 97%, var(--mq-bg) 3%) 100%
+  );
+  --mq-huis-kaart: linear-gradient(
+    158deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 68%, var(--mq-oppervlak) 32%) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-bg) 5%) 100%
+  );
+  --mq-huis-invoer: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-bg) 24%);
+  --mq-huis-glans: color-mix(in srgb, var(--mq-tekst) 8%, transparent);
+
+  --mq-huis-plan-vlak: color-mix(in srgb, var(--mq-bg) 58%, var(--mq-oppervlak) 42%);
+  --mq-huis-plan-lijn: color-mix(in srgb, var(--mq-tekst) 7%, transparent);
+  --mq-huis-plan-kamer: color-mix(in srgb, var(--mq-oppervlak-2) 80%, var(--mq-oppervlak) 20%);
+  --mq-huis-plan-rand: color-mix(in srgb, var(--mq-rand-sterk) 88%, var(--mq-tekst) 12%);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent-huis);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: var(--mq-huis-zacht);
+  --focus: var(--mq-accent-huis);
+  color: var(--mq-tekst);
+}
+
+/* Автономна підтримка атрибута html.palet-maquette[data-theme="light"], коли класи .theme-light відсутні */
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-plan,
+  .hv-scenes-rij,
+  [data-hv-voorstel],
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) {
+  --mq-oppervlak: var(--mq-wit);
+  --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 93%, var(--mq-bg) 7%);
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bg) 5%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--mq-bg) 9%, transparent);
+  --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 96%, transparent);
+  --mq-rand: color-mix(in srgb, var(--mq-bg) 12%, transparent);
+  --mq-rand-sterk: color-mix(in srgb, var(--mq-bg) 24%, transparent);
+  --mq-tekst: color-mix(in srgb, var(--mq-bg) 90%, var(--mq-accent-2) 10%);
+  --mq-gedempt: color-mix(in srgb, var(--mq-bg) 64%, var(--mq-wit) 36%);
+  --mq-stil: color-mix(in srgb, var(--mq-bg) 48%, var(--mq-wit) 52%);
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 80%, var(--mq-bg) 20%);
+  --mq-accent-op: var(--mq-wit);
+}
+
+/* Узгодження виносного шару .hv-laag у document.body, коли світлу тему ввімкнено на .canonical-chrome */
+html.palet-maquette:not([data-theme="light"]):not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light))
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) {
+  --mq-oppervlak: var(--panel);
+  --mq-oppervlak-2: var(--surface);
+  --mq-rand: var(--line);
+  --mq-rand-sterk: color-mix(in srgb, var(--line) 68%, var(--text) 32%);
+  --mq-tekst: var(--text);
+  --mq-gedempt: var(--muted);
+  --mq-stil: var(--faint);
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--text) 4%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--text) 8%, transparent);
+  --mq-popover-glas: color-mix(in srgb, var(--panel) 96%, transparent);
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 82%, var(--text) 18%);
+  --mq-accent-op: var(--mq-wit);
+}
+
+/* Світлий режим «Ранковий туман» — калібровані відтінки полотна, карток та архітектурного плану */
+html.palet-maquette[data-theme="light"] :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-plan,
+  .hv-scenes-rij,
+  [data-hv-voorstel],
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+),
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-plan,
+  .hv-scenes-rij,
+  [data-hv-voorstel],
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-plan,
+  .hv-scenes-rij,
+  [data-hv-voorstel]
+),
+html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light))
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) {
+  --mq-accent-huis: var(--mq-accent);
+  --mq-accent-op: var(--mq-wit);
+  --accentText: var(--mq-wit);
+  --mq-huis-gloed: color-mix(in srgb, var(--mq-accent-huis) 12%, transparent);
+  --mq-huis-zacht: color-mix(in srgb, var(--mq-accent-huis) 11%, transparent);
+  --mq-huis-rand-goud: color-mix(in srgb, var(--mq-accent-huis) 36%, var(--mq-rand-sterk));
+
+  --mq-huis-ok: var(--ok);
+  --mq-huis-ok-zacht: color-mix(in srgb, var(--mq-oppervlak) 86%, var(--ok) 14%);
+  --mq-huis-warn: color-mix(in srgb, var(--mq-accent-huis) 72%, var(--warn) 28%);
+  --mq-huis-warn-zacht: color-mix(in srgb, var(--mq-oppervlak) 84%, var(--mq-accent-huis) 16%);
+  --mq-huis-fout: var(--fout);
+  --mq-huis-fout-zacht: color-mix(in srgb, var(--mq-oppervlak) 87%, var(--fout) 13%);
+  --mq-huis-info: var(--info);
+  --mq-huis-info-zacht: color-mix(in srgb, var(--mq-oppervlak) 86%, var(--info) 14%);
+
+  --mq-huis-glas: linear-gradient(
+    164deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 93%, var(--mq-oppervlak-2) 7%) 100%
+  );
+  --mq-huis-kaart: linear-gradient(
+    158deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak-2) 58%, var(--mq-oppervlak) 42%) 100%
+  );
+  --mq-huis-invoer: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak) 18%);
+  --mq-huis-glans: color-mix(in srgb, var(--mq-wit) 72%, transparent);
+
+  --mq-huis-plan-vlak: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak) 16%);
+  --mq-huis-plan-lijn: color-mix(in srgb, var(--mq-tekst) 8%, transparent);
+  --mq-huis-plan-kamer: var(--mq-oppervlak);
+  --mq-huis-plan-rand: color-mix(in srgb, var(--mq-rand-sterk) 82%, var(--mq-tekst) 18%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ЗАХИСТ СТУДІЙНИХ ОПРАВ І СКРУГЛЕНЬ ВІД РЕЖИМУ ПЛОСКОГО ВМІСТУ ОБОЛОНКИ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .canonical-content .hv :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen),
+html.palet-maquette :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) {
+  gap: 18px;
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .hv :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-blok,
+html.palet-maquette .canonical-content .hv :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-blok,
+html.palet-maquette :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-blok,
+html.palet-maquette .hv-laag:has([data-hv-auto-bewerker]) section.hv-blok {
+  padding: 20px 22px;
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--mq-huis-glas);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-huis-glans);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .hv :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-leeg,
+html.palet-maquette .canonical-content .hv :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-leeg,
+html.palet-maquette :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-leeg {
+  gap: 10px;
+  padding: 36px 24px;
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-huis-gloed), transparent 68%),
+    var(--mq-huis-glas);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-leeg > svg {
+  width: 34px;
+  height: 34px;
+  color: var(--mq-accent-huis);
+  filter: drop-shadow(0 0 14px var(--mq-huis-gloed));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. СПІЛЬНІ ІНСТРУМЕНТАЛЬНІ ПАНЕЛІ, ПОЛЯ ФОРМ, ПОШУК І КНОПКИ В РОЗДІЛАХ 6Б
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) :focus-visible {
+  outline: 2px solid var(--mq-accent-huis);
+  outline-offset: 2px;
+}
+
+/* Уніфіковані поля вводу за правилом нульової специфічності без порушення відступу лупи */
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  min-height: 40px;
+  padding: 7px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-huis-invoer);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea)::placeholder {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  border-color: var(--mq-huis-rand-goud);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px var(--mq-huis-zacht);
+  outline: none;
+}
+
+/* Панель інструментів та пошукова капсула з гарантованим відступом під піктограму лупи */
+html.palet-maquette :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) .hv-werkbalk {
+  padding: 12px 14px;
+  gap: 10px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse 56% 120% at 0% 0%, var(--mq-huis-zacht), transparent 70%),
+    var(--mq-huis-glas);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hv-apparaten .hv-zoekveld {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 40px;
+  padding: 0;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-huis-invoer);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .hv-apparaten .hv-zoekveld:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .hv-apparaten .hv-zoekveld:focus-within {
+  border-color: var(--mq-huis-rand-goud);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px var(--mq-huis-zacht);
+  outline: none;
+}
+
+html.palet-maquette .hv-apparaten .hv-zoekveld > svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--mq-gedempt);
+  pointer-events: none;
+  transition: color 0.18s ease;
+}
+
+html.palet-maquette .hv-apparaten .hv-zoekveld:focus-within > svg {
+  color: var(--mq-accent-huis);
+}
+
+html.palet-maquette .hv-apparaten .hv-zoekveld > input {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 12px 7px 38px;
+  border: 0;
+  border-radius: var(--mq-straal-veld);
+  background: transparent;
+  box-shadow: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hv-apparaten .hv-zoekveld > input:focus-visible {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Студійні кнопки, піктограмні дії та мітки відбору */
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%);
+  color: var(--mq-tekst);
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 var(--mq-huis-glans);
+  transition: transform 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop:hover:not(:disabled) {
+  border-color: var(--mq-huis-rand-goud);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 70%, var(--mq-accent-huis) 14%);
+  transform: translateY(-1px);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop.is-klein {
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop.is-hoofd {
+  border-color: color-mix(in srgb, var(--mq-accent-huis) 74%, transparent);
+  background: linear-gradient(
+    138deg,
+    var(--mq-accent-huis) 0%,
+    color-mix(in srgb, var(--mq-accent-huis) 78%, var(--mq-huis-koper) 22%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 650;
+  box-shadow: 0 10px 24px var(--mq-huis-gloed);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop.is-hoofd:hover:not(:disabled) {
+  background: linear-gradient(
+    138deg,
+    color-mix(in srgb, var(--mq-accent-huis) 88%, var(--mq-wit) 12%) 0%,
+    var(--mq-accent-huis) 100%
+  );
+  box-shadow: 0 14px 30px var(--mq-huis-gloed);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop.is-stil:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  transform: none;
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-knop.is-actief {
+  border-color: var(--mq-huis-rand-goud);
+  background: var(--mq-huis-zacht);
+  color: var(--mq-accent-huis);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-icoonknop {
+  border-radius: 11px;
+  border: 1px solid transparent;
+  color: var(--mq-gedempt);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-icoonknop:hover:not(:disabled) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-bediening,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-icoonknop.is-gevaar:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 42%, var(--mq-rand));
+  background: var(--mq-huis-fout-zacht);
+  color: var(--mq-huis-fout);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-chip {
+  padding: 5px 13px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%);
+  color: var(--mq-gedempt);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) button.hv-chip:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-chip.is-actief {
+  border-color: var(--mq-huis-rand-goud);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--mq-accent-huis) 22%, var(--mq-oppervlak)) 0%,
+    color-mix(in srgb, var(--mq-accent-huis) 12%, var(--mq-oppervlak-2)) 100%
+  );
+  color: var(--mq-accent-huis);
+  box-shadow: 0 6px 16px var(--mq-huis-zacht);
+}
+
+html.palet-maquette :is(
+  .hv-kamers,
+  .hv-apparaten,
+  .hv-scenes,
+  .hv-automatiseringen,
+  .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker])
+) .hv-chip.is-kritiek {
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 40%, var(--mq-rand));
+  background: var(--mq-huis-fout-zacht);
+  color: var(--mq-huis-fout);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. ПЛАН ПОВЕРХУ (Plattegrond.tsx) ТА АРХІТЕКТУРНІ КАРТКИ КІМНАТ (Kamers.tsx)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hv-kamers section.hv-blok[data-mq-blok="plattegrond"] {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border-color: color-mix(in srgb, var(--mq-accent-huis) 24%, var(--mq-rand));
+  background:
+    radial-gradient(ellipse 70% 80% at 15% 0%, var(--mq-huis-zacht), transparent 68%),
+    var(--mq-huis-glas);
+}
+
+html.palet-maquette svg.hv-plan {
+  width: 100%;
+  max-height: 440px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand-sterk);
+  background-color: var(--mq-huis-plan-vlak);
+  background-image:
+    linear-gradient(90deg, var(--mq-huis-plan-lijn) 1px, transparent 1px),
+    linear-gradient(180deg, var(--mq-huis-plan-lijn) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, var(--mq-huis-zacht), transparent 76%);
+  background-size: 24px 24px, 24px 24px, 100% 100%;
+  box-shadow: inset 0 2px 14px color-mix(in srgb, var(--mq-bg) 42%, transparent);
+}
+
+html.palet-maquette svg.hv-plan.is-compact {
+  max-height: 248px;
+  padding: 6px;
+  border-radius: 14px;
+}
+
+/* Векторні координатні лінії та архітектурні кутики креслення */
+html.palet-maquette svg.hv-plan .hv-plan-aslijnen {
+  opacity: 1;
+  pointer-events: none;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-aslijn {
+  stroke: var(--mq-huis-plan-lijn);
+  stroke-width: 0.75;
+  stroke-dasharray: 2 3;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-hoek {
+  stroke: color-mix(in srgb, var(--mq-accent-huis) 52%, var(--mq-rand-sterk));
+  stroke-width: 1.4;
+  fill: none;
+}
+
+/* Контури кімнат на архітектурному кресленні */
+html.palet-maquette svg.hv-plan .hv-plan-kamer {
+  cursor: pointer;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-kamer rect {
+  fill: var(--mq-huis-plan-kamer);
+  stroke: var(--mq-huis-plan-rand);
+  stroke-width: 1.5;
+  transition: fill 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-kamer .hv-plan-binnenrand {
+  opacity: 0.55;
+  stroke: var(--mq-huis-glans);
+  stroke-width: 0.85;
+  fill: none;
+  pointer-events: none;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-kamer.heeft-licht rect {
+  fill: color-mix(in srgb, var(--mq-huis-plan-kamer) 76%, var(--mq-accent-huis) 24%);
+  stroke: color-mix(in srgb, var(--mq-accent-huis) 64%, var(--mq-huis-plan-rand));
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-kamer:hover rect {
+  fill: color-mix(in srgb, var(--mq-huis-plan-kamer) 84%, var(--mq-accent-huis) 16%);
+  stroke: var(--mq-accent-huis);
+  stroke-width: 2;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-kamer.is-gekozen rect {
+  fill: color-mix(in srgb, var(--mq-huis-plan-kamer) 70%, var(--mq-accent-huis) 30%);
+  stroke: var(--mq-accent-huis);
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 10px var(--mq-huis-gloed));
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-kamer:focus-visible rect {
+  stroke: var(--mq-accent-huis);
+  stroke-width: 3;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-lichtgloed {
+  opacity: 1;
+  fill: color-mix(in srgb, var(--mq-accent-huis) 28%, transparent);
+  pointer-events: none;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-lichtpunt {
+  opacity: 1;
+  fill: var(--mq-accent-huis);
+  stroke: color-mix(in srgb, var(--mq-wit) 65%, var(--mq-accent-huis));
+  stroke-width: 0.8;
+  pointer-events: none;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-naam {
+  fill: var(--mq-tekst);
+  font-size: 11.5px;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-info {
+  fill: var(--mq-gedempt);
+  font-size: 9.6px;
+  font-weight: 540;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette svg.hv-plan .hv-plan-kamer.is-gekozen .hv-plan-info,
+html.palet-maquette svg.hv-plan .hv-plan-kamer.heeft-licht .hv-plan-info {
+  fill: color-mix(in srgb, var(--mq-tekst) 82%, var(--mq-accent-huis) 18%);
+}
+
+/* Архітектурні картки кімнат у списку Kamers.tsx */
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(264px, 1fr));
+  gap: 14px;
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] > li {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 10px;
+  align-content: space-between;
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 20px;
+  background: var(--mq-huis-kaart);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-huis-glans);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--mq-accent-huis), transparent 82%);
+  opacity: 0.48;
+  pointer-events: none;
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] > li[data-mq-heeft-licht="ja"] {
+  border-color: color-mix(in srgb, var(--mq-accent-huis) 38%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-huis-zacht), transparent 62%),
+    var(--mq-huis-kaart);
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] > li[data-mq-heeft-licht="ja"]::before,
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] > li[data-mq-kamer-kaart="actief"]::before {
+  opacity: 1;
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] > li[data-mq-kamer-kaart="actief"] {
+  border-color: var(--mq-accent-huis);
+  box-shadow: 0 16px 38px var(--mq-huis-zacht), inset 0 0 0 1px var(--mq-huis-zacht);
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] > li:hover {
+  transform: translateY(-2px);
+  border-color: var(--mq-huis-rand-goud);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] .hv-lijst-knop {
+  gap: 6px;
+  padding: 0;
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] .hv-lijst-knop strong {
+  font-size: 16px;
+  font-weight: 660;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"] .hv-lijst-knop small {
+  color: var(--mq-gedempt);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .hv-kamers .hv-plan-knoppen {
+  padding-top: 8px;
+  border-top: 1px solid var(--mq-rand);
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+/* Форма додавання нової кімнати */
+html.palet-maquette .hv-kamers > form.hv-rij {
+  padding: 12px 14px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 18px;
+  background: var(--mq-huis-glas);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. КАРТКИ ПРИСТРОЇВ (Apparaten.tsx) З ІНДИКАТОРАМИ ЗВ'ЯЗКУ ТА КРИТИЧНОСТІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hv-apparaten .hv-raster {
+  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+  gap: 14px;
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart] {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 7px;
+  align-content: space-between;
+  padding: 16px 18px 15px 20px;
+  border: 1px solid var(--mq-rand);
+  border-left-width: 4px;
+  border-left-color: var(--mq-stil);
+  border-radius: 20px;
+  background: var(--mq-huis-kaart);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-huis-glans);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart]:hover {
+  transform: translateY(-2px);
+  border-color: var(--mq-huis-rand-goud);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart].is-vers {
+  border-left-color: var(--mq-huis-ok);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart].is-verouderd {
+  border-left-color: var(--mq-huis-warn);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart].is-onbeschikbaar {
+  border-left-color: var(--mq-huis-fout);
+  opacity: 0.92;
+}
+
+/* Індикатор зв'язку online / onbeschikbaar / onbekend у верхньому правому куті картки */
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart]::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--mq-stil);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-stil) 20%, transparent);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-mq-verbinding="online"]::after {
+  background: var(--mq-huis-ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-huis-ok) 22%, transparent);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-mq-verbinding="onbeschikbaar"]::after {
+  background: var(--mq-huis-fout);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-huis-fout) 22%, transparent);
+}
+
+/* Ознака критичного пристрою (замок, охорона, сирена, дим/газ) */
+html.palet-maquette .hv-apparaten button.hv-kaart[data-mq-kritiek="ja"] {
+  background:
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--mq-huis-fout) 12%, transparent), transparent 58%),
+    var(--mq-huis-kaart);
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 30%, var(--mq-rand));
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart] small {
+  padding-right: 18px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart] strong {
+  font-size: 15.5px;
+  font-weight: 660;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart] .hv-waarde {
+  margin-top: 2px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-accent-huis);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart]:is(.is-onbekend, .is-onbeschikbaar) .hv-waarde {
+  color: var(--mq-gedempt);
+  font-size: 14.5px;
+  font-weight: 560;
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-hv-apparaat-kaart] em {
+  margin-top: 2px;
+  padding-top: 7px;
+  border-top: 1px solid var(--mq-rand);
+  font-size: 11.5px;
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .hv-apparaten button.hv-kaart[data-mq-kritiek="ja"] em {
+  color: var(--mq-huis-fout);
+  font-weight: 600;
+}
+
+/* Картка пристрою всередині панелі кімнати */
+html.palet-maquette .hv-laag [data-hv-kamer-paneel] article.hv-apparaat {
+  gap: 12px;
+  padding: 15px 16px;
+  border: 1px solid var(--mq-rand);
+  border-left-width: 4px;
+  border-left-color: var(--mq-stil);
+  border-radius: 18px;
+  background: var(--mq-huis-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hv-laag [data-hv-kamer-paneel] article.hv-apparaat.is-vers {
+  border-left-color: var(--mq-huis-ok);
+}
+
+html.palet-maquette .hv-laag [data-hv-kamer-paneel] article.hv-apparaat.is-verouderd {
+  border-left-color: var(--mq-huis-warn);
+}
+
+html.palet-maquette .hv-laag [data-hv-kamer-paneel] article.hv-apparaat.is-onbeschikbaar {
+  border-left-color: var(--mq-huis-fout);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ТАКТИЛЬНЕ КЕРУВАННЯ ПРИСТРОЄМ (ApparaatBediening.tsx) ЗІ СТАНОМ ОЧІКУВАННЯ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hv-bediening {
+  gap: 10px;
+}
+
+html.palet-maquette .hv-bediening .hv-regelaar {
+  padding: 12px 14px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 66%, var(--mq-oppervlak) 34%);
+  box-shadow: inset 0 1px 0 var(--mq-huis-glans);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .hv-bediening.is-compact .hv-regelaar {
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+html.palet-maquette .hv-bediening[data-mq-bediening="wacht"] .hv-regelaar {
+  border-color: color-mix(in srgb, var(--mq-accent-huis) 48%, var(--mq-rand));
+}
+
+html.palet-maquette .hv-bediening .hv-regelaar[data-mq-kritiek="ja"] {
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 36%, var(--mq-rand));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--mq-huis-fout) 9%, transparent), transparent 44%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 66%, var(--mq-oppervlak) 34%);
+}
+
+html.palet-maquette .hv-bediening .hv-regelaar-naam {
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 640;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hv-bediening .hv-regelaar-naam > svg {
+  color: var(--mq-accent-huis);
+}
+
+html.palet-maquette .hv-bediening .hv-regelaar-naam small {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-accent-huis);
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .hv-bediening .hv-kritiek {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-huis-fout) 42%, transparent);
+  background: var(--mq-huis-fout-zacht);
+  color: var(--mq-huis-fout);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Тактильний студійний перемикач aan_uit / vergrendeld / alarm */
+html.palet-maquette .hv-bediening .hv-schakelaar {
+  width: 54px;
+  height: 30px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 999px;
+  background: var(--mq-huis-invoer);
+  box-shadow: inset 0 2px 6px color-mix(in srgb, var(--mq-bg) 45%, transparent);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .hv-bediening .hv-schakelaar-knop {
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(160deg, var(--mq-wit), color-mix(in srgb, var(--mq-wit) 82%, var(--mq-gedempt) 18%));
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--mq-bg) 52%, transparent);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease;
+}
+
+html.palet-maquette .hv-bediening .hv-schakelaar.is-aan {
+  border-color: color-mix(in srgb, var(--mq-accent-huis) 78%, var(--mq-huis-ok));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent-huis) 74%, var(--mq-huis-ok) 26%) 0%,
+    color-mix(in srgb, var(--mq-huis-koper) 68%, var(--mq-huis-ok) 32%) 100%
+  );
+  box-shadow: 0 0 18px var(--mq-huis-gloed);
+}
+
+html.palet-maquette .hv-bediening .hv-schakelaar.is-aan .hv-schakelaar-knop {
+  transform: translateX(24px);
+  background: var(--mq-wit);
+}
+
+html.palet-maquette .hv-bediening .hv-schakelaar.is-onbekend {
+  border-style: dashed;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--mq-huis-invoer) 0 6px,
+    color-mix(in srgb, var(--mq-rand-sterk) 55%, var(--mq-huis-invoer)) 6px 9px
+  );
+}
+
+html.palet-maquette .hv-bediening .hv-schakelaar.is-onbekend .hv-schakelaar-knop {
+  transform: translateX(12px);
+}
+
+/* Студійні повзунки яскравості, колірної температури, термостата й ролет */
+html.palet-maquette .hv-bediening .hv-regelaar.is-schuif {
+  gap: 10px;
+}
+
+html.palet-maquette .hv-bediening .hv-schuif {
+  gap: 10px;
+}
+
+html.palet-maquette .hv-bediening .hv-schuif .hv-icoonknop {
+  width: 34px;
+  min-height: 34px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 10px;
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette .hv-bediening input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-bg) 18%) 0%,
+    color-mix(in srgb, var(--mq-accent-huis) 78%, var(--mq-oppervlak)) 100%
+  );
+  accent-color: var(--mq-accent-huis);
+  cursor: pointer;
+}
+
+/* Спектр колірної температури: від теплого свічкового бурштину до холодного денного неба */
+html.palet-maquette .hv-bediening input[type="range"][data-hv-schuif="kleurtemperatuur"] {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--mq-accent-huis) 88%, var(--mq-huis-koper) 12%) 0%,
+    color-mix(in srgb, var(--mq-wit) 82%, var(--mq-accent-huis) 18%) 52%,
+    color-mix(in srgb, var(--mq-huis-info) 66%, var(--mq-wit) 34%) 100%
+  );
+}
+
+/* Шкала цільової температури термостата */
+html.palet-maquette .hv-bediening input[type="range"][data-hv-schuif="doeltemperatuur"] {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--mq-huis-info) 58%, var(--mq-oppervlak-2) 42%) 0%,
+    color-mix(in srgb, var(--mq-accent-huis) 72%, var(--mq-oppervlak) 28%) 68%,
+    color-mix(in srgb, var(--mq-huis-fout) 58%, var(--mq-accent-huis) 42%) 100%
+  );
+}
+
+html.palet-maquette .hv-bediening input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--mq-accent-huis);
+  background: var(--mq-wit);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--mq-bg) 52%, transparent), 0 0 0 3px var(--mq-huis-zacht);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+html.palet-maquette .hv-bediening input[type="range"]:hover:not(:disabled)::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+
+html.palet-maquette .hv-bediening input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--mq-accent-huis);
+  background: var(--mq-wit);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--mq-bg) 52%, transparent), 0 0 0 3px var(--mq-huis-zacht);
+}
+
+/* Сегментована планка ролет (Відкрити / Стоп / Закрити) */
+html.palet-maquette .hv-bediening .hv-regelaar[data-mq-regelaar="open_dicht"] .hv-knoppen {
+  padding: 3px;
+  gap: 4px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-huis-invoer);
+}
+
+/* Смуга стану виконання та очікування підтвердження від пристрою */
+html.palet-maquette .hv-bediening .hv-opdracht-stand {
+  padding: 9px 13px;
+  border: 1px solid var(--mq-huis-rand-goud);
+  border-radius: 14px;
+  background: var(--mq-huis-warn-zacht);
+  color: var(--mq-tekst);
+  font-size: 12.5px;
+  font-weight: 560;
+}
+
+html.palet-maquette .hv-bediening .hv-opdracht-stand.is-voltooid {
+  border-color: color-mix(in srgb, var(--mq-huis-ok) 46%, var(--mq-rand));
+  background: var(--mq-huis-ok-zacht);
+  color: var(--mq-huis-ok);
+}
+
+html.palet-maquette .hv-bediening .hv-opdracht-stand:is(.is-geweigerd, .is-mislukt, .is-verlopen, .is-offline) {
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 46%, var(--mq-rand));
+  background: var(--mq-huis-fout-zacht);
+  color: var(--mq-huis-fout);
+}
+
+html.palet-maquette .hv-bediening .hv-opdracht-stand.is-gedeeltelijk {
+  border-color: color-mix(in srgb, var(--mq-huis-warn) 48%, var(--mq-rand));
+  background: var(--mq-huis-warn-zacht);
+  color: var(--mq-huis-warn);
+}
+
+html.palet-maquette .hv-bediening .hv-spin {
+  width: 14px;
+  height: 14px;
+  border-color: color-mix(in srgb, var(--mq-accent-huis) 26%, transparent);
+  border-top-color: var(--mq-accent-huis);
+}
+
+/* Охоронне вікно додаткового підтвердження критичної дії */
+html.palet-maquette .hv-bediening .hv-bevestig {
+  gap: 12px;
+  padding: 15px 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-huis-fout) 52%, var(--mq-rand-sterk));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--mq-huis-fout) 16%, transparent), transparent 64%),
+    var(--mq-huis-fout-zacht);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hv-bediening .hv-bevestig p > svg {
+  color: var(--mq-huis-fout);
+  flex: none;
+  margin-top: 2px;
+}
+
+html.palet-maquette .hv-bediening .hv-bevestig .hv-knop.is-hoofd {
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 72%, transparent);
+  background: linear-gradient(
+    138deg,
+    var(--mq-huis-fout) 0%,
+    color-mix(in srgb, var(--mq-huis-fout) 78%, var(--mq-bg) 22%) 100%
+  );
+  color: var(--mq-wit);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--mq-huis-fout) 26%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. СЦЕНИ ОДНИМ ДОТИКОМ (Scenes.tsx) ТА ШВИДКІ КАРТКИ СЦЕН
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hv-scenes .hv-raster {
+  grid-template-columns: repeat(auto-fill, minmax(276px, 1fr));
+  gap: 16px;
+}
+
+html.palet-maquette .canonical-content .hv .hv-scenes article.hv-kaart.is-scene,
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 9px;
+  align-content: space-between;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-huis) 26%, var(--mq-rand));
+  border-left: 4px solid var(--mq-accent-huis);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-huis-zacht), transparent 58%),
+    var(--mq-huis-kaart);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-huis-glans);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene:hover {
+  transform: translateY(-2px);
+  border-color: var(--mq-huis-rand-goud);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene[data-mq-scene-stand="voltooid"] {
+  border-left-color: var(--mq-huis-ok);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene[data-mq-scene-stand="gedeeltelijk"] {
+  border-left-color: var(--mq-huis-warn);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene[data-mq-scene-stand="mislukt"] {
+  border-left-color: var(--mq-huis-fout);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene > small {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mq-accent-huis);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene > strong {
+  font-size: 18px;
+  font-weight: 670;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene ul.hv-chips[data-mq-scene-stappen="1"] {
+  gap: 5px;
+  margin-top: 2px;
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene ul.hv-chips[data-mq-scene-stappen="1"] > li.hv-chip {
+  min-height: 26px;
+  padding: 2px 10px;
+  font-size: 11.5px;
+  font-weight: 560;
+  background: color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-bg) 26%);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene > .hv-waarde {
+  font-size: 12.5px;
+  font-weight: 540;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hv-scenes article.hv-kaart.is-scene > .hv-knoppen {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--mq-rand);
+}
+
+/* Швидкі картки сцен одним дотиком (.hv-scene-kaart) */
+html.palet-maquette .hv-scenes-rij .hv-scene-kaart {
+  gap: 5px;
+  padding: 13px 15px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-huis-zacht), transparent 64%),
+    var(--mq-huis-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .hv-scenes-rij .hv-scene-kaart:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--mq-huis-rand-goud);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .hv-scenes-rij .hv-scene-kaart > svg {
+  color: var(--mq-accent-huis);
+}
+
+/* Рядки покрокового звіту виконання сцени */
+html.palet-maquette .hv-laag [data-hv-scene-uitkomst] tr[data-hv-stap-stand="voltooid"] td:last-child {
+  color: var(--mq-huis-ok);
+  font-weight: 640;
+}
+
+html.palet-maquette .hv-laag [data-hv-scene-uitkomst] tr[data-hv-stap-stand="gedeeltelijk"] td:last-child {
+  color: var(--mq-huis-warn);
+  font-weight: 640;
+}
+
+html.palet-maquette .hv-laag [data-hv-scene-uitkomst] tr:is([data-hv-stap-stand="geweigerd"], [data-hv-stap-stand="mislukt"], [data-hv-stap-stand="verlopen"], [data-hv-stap-stand="offline"]) td:last-child {
+  color: var(--mq-huis-fout);
+  font-weight: 640;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. АВТОМАТИЗАЦІЇ (Automatiseringen.tsx), ПРОБНИЙ ПРОГІН І ПРОПОЗИЦІЇ ШІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hv-automatiseringen > .hv-melding.is-info,
+html.palet-maquette .hv-laag:has([data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-melding {
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-huis) 34%, var(--mq-rand));
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse 60% 100% at 0% 0%, var(--mq-huis-zacht), transparent 68%),
+    var(--mq-huis-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hv-automatiseringen > .hv-melding.is-info > svg {
+  color: var(--mq-accent-huis);
+  flex: none;
+  margin-top: 2px;
+}
+
+html.palet-maquette .hv-laag:has([data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-melding.is-ok {
+  border-color: color-mix(in srgb, var(--mq-huis-ok) 44%, var(--mq-rand));
+  background: var(--mq-huis-ok-zacht);
+  color: var(--mq-huis-ok);
+}
+
+html.palet-maquette .hv-laag:has([data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-melding.is-fout {
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 46%, var(--mq-rand));
+  background: var(--mq-huis-fout-zacht);
+  color: var(--mq-huis-fout);
+}
+
+/* Список правил автоматизацій та пропозицій ШІ-помічника */
+html.palet-maquette .hv-automatiseringen ul.hv-lijst[data-mq-regels-lijst="1"] {
+  gap: 12px;
+}
+
+html.palet-maquette .hv-automatiseringen ul.hv-lijst[data-mq-regels-lijst="1"] > li,
+html.palet-maquette li[data-hv-voorstel] {
+  padding: 15px 18px;
+  border: 1px solid var(--mq-rand);
+  border-left: 4px solid var(--mq-accent-huis);
+  border-radius: 18px;
+  background: var(--mq-huis-kaart);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-huis-glans);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+html.palet-maquette .hv-automatiseringen ul.hv-lijst[data-mq-regels-lijst="1"] > li:hover,
+html.palet-maquette li[data-hv-voorstel]:hover {
+  border-color: var(--mq-huis-rand-goud);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .hv-automatiseringen ul.hv-lijst[data-mq-regels-lijst="1"] > li[data-mq-auto-stand="simulatie"] {
+  border-left-color: var(--mq-huis-info);
+}
+
+html.palet-maquette .hv-automatiseringen ul.hv-lijst[data-mq-regels-lijst="1"] > li[data-mq-auto-stand="aan"],
+html.palet-maquette li[data-hv-voorstel][data-hv-voorstel-stand="goedgekeurd"] {
+  border-left-color: var(--mq-huis-ok);
+}
+
+html.palet-maquette .hv-automatiseringen ul.hv-lijst[data-mq-regels-lijst="1"] > li[data-mq-auto-stand="fout"],
+html.palet-maquette li[data-hv-voorstel][data-hv-voorstel-stand="afgewezen"] {
+  border-left-color: var(--mq-huis-fout);
+}
+
+html.palet-maquette li[data-hv-voorstel][data-hv-voorstel-stand="wacht"] {
+  border-left-color: var(--mq-accent-huis);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-huis-zacht), transparent 62%),
+    var(--mq-huis-kaart);
+}
+
+/* Конструктор логічних блоків Коли / Якщо / Тоді та покрокові списки */
+html.palet-maquette .hv-laag section.hv-blok.is-regel {
+  gap: 12px;
+  padding: 16px 18px;
+  border-left-width: 4px;
+  border-radius: 20px;
+}
+
+html.palet-maquette .hv-laag section.hv-blok.is-regel[data-hv-regelblok="wanneer"] {
+  border-left-color: var(--mq-accent-huis);
+}
+
+html.palet-maquette .hv-laag section.hv-blok.is-regel[data-hv-regelblok="als"] {
+  border-left-color: var(--mq-huis-info);
+}
+
+html.palet-maquette .hv-laag section.hv-blok.is-regel[data-hv-regelblok="dan"] {
+  border-left-color: var(--mq-huis-ok);
+}
+
+html.palet-maquette .hv-laag .hv-stappen .hv-stap {
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-bg) 28%);
+}
+
+html.palet-maquette .hv-laag .hv-stappen .hv-stap::before {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--mq-huis-rand-goud);
+  background: var(--mq-huis-zacht);
+  color: var(--mq-accent-huis);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* Приладова панель запобіжників правила */
+html.palet-maquette .hv-laag [data-mq-veiligheidsmarges="1"] {
+  padding: 14px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, var(--mq-oppervlak) 44%);
+}
+
+/* Картка пробного прогону (droogloop) */
+html.palet-maquette .hv-laag section.hv-droogloop,
+html.palet-maquette .canonical-content .hv section.hv-droogloop {
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-left: 4px solid var(--mq-gedempt);
+  border-radius: 18px;
+  background: var(--mq-huis-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hv-laag section.hv-droogloop.is-ok,
+html.palet-maquette .canonical-content .hv section.hv-droogloop.is-ok {
+  border-color: color-mix(in srgb, var(--mq-huis-ok) 44%, var(--mq-rand));
+  border-left-color: var(--mq-huis-ok);
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--mq-huis-ok) 14%, transparent), transparent 64%),
+    var(--mq-huis-kaart);
+}
+
+html.palet-maquette .hv-laag section.hv-droogloop ul.hv-lijst.is-dicht > li {
+  padding: 8px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--mq-bg) 18%);
+}
+
+html.palet-maquette .hv-laag section.hv-droogloop ul.hv-lijst.is-dicht > li.is-kritiek {
+  border-color: color-mix(in srgb, var(--mq-huis-fout) 46%, var(--mq-rand));
+  background: var(--mq-huis-fout-zacht);
+  color: var(--mq-huis-fout);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. ВИНОСНІ ВІКНА Й БІЧНІ ПАНЕЛІ (HuisLaag) ДЛЯ РОЗДІЛІВ ГРУПИ 6Б
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) {
+  background: color-mix(in srgb, var(--mq-bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.palet-maquette .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(24px) saturate(1.2);
+}
+
+html.palet-maquette .hv-laag.is-venster:has([data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-laag-vak {
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-laag-kop {
+  padding: 15px 20px 13px;
+  border-bottom: 1px solid var(--mq-rand);
+  background:
+    linear-gradient(90deg, var(--mq-huis-zacht), transparent 56%),
+    transparent;
+}
+
+html.palet-maquette .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-laag-kop h2 {
+  font-size: 18px;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-laag-inhoud {
+  padding: 18px 20px 22px;
+  gap: 14px;
+}
+
+html.palet-maquette .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-sub {
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mq-accent-huis);
+}
+
+html.palet-maquette .hv-laag:has([data-hv-inspector], [data-hv-scene-uitkomst]) table.hv-tabel {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--mq-rand);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 60%, var(--mq-oppervlak) 40%);
+  overflow: hidden;
+}
+
+html.palet-maquette .hv-laag:has([data-hv-inspector], [data-hv-scene-uitkomst]) table.hv-tabel :is(th, td) {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .hv-laag:has([data-hv-inspector], [data-hv-scene-uitkomst]) table.hv-tabel tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+html.palet-maquette .hv-laag:has([data-hv-inspector], [data-hv-scene-uitkomst]) table.hv-tabel th {
+  color: var(--mq-gedempt);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. ПРАВИЛА ДЛЯ ВУЗЬКИХ ЕКРАНІВ І РУХУ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette :is(
+    .hv-kamers,
+    .hv-apparaten,
+    .hv-scenes,
+    .hv-automatiseringen,
+    .hv-bediening,
+    .hv-plan,
+    .hv-scenes-rij,
+    .hv-laag
+  ) * {
+    transition: none;
+  }
+}
+
+@media (pointer: coarse) {
+  html.palet-maquette .hv-bediening .hv-schakelaar {
+    width: 60px;
+    height: 34px;
+  }
+
+  html.palet-maquette .hv-bediening .hv-schakelaar-knop {
+    width: 26px;
+    height: 26px;
+  }
+
+  html.palet-maquette .hv-bediening .hv-schakelaar.is-aan .hv-schakelaar-knop {
+    transform: translateX(26px);
+  }
+
+  html.palet-maquette .hv-bediening .hv-schakelaar.is-onbekend .hv-schakelaar-knop {
+    transform: translateX(13px);
+  }
+
+  html.palet-maquette .hv-bediening input[type="range"]::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  html.palet-maquette .hv-bediening input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 920px) {
+  html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"],
+  html.palet-maquette .hv-scenes .hv-raster {
+    grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .hv :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-blok,
+  html.palet-maquette .canonical-content .hv :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-blok,
+  html.palet-maquette :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) section.hv-blok,
+  html.palet-maquette .hv-kamers section.hv-blok[data-mq-blok="plattegrond"] {
+    padding: 15px 14px;
+    border-radius: 20px;
+  }
+
+  html.palet-maquette .hv-kamers ul.hv-lijst[data-mq-kamer-raster="1"],
+  html.palet-maquette .hv-apparaten .hv-raster,
+  html.palet-maquette .hv-scenes .hv-raster {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  html.palet-maquette :is(.hv-kamers, .hv-apparaten, .hv-scenes, .hv-automatiseringen) .hv-werkbalk {
+    padding: 10px 11px;
+    border-radius: 15px;
+  }
+
+  html.palet-maquette .hv-apparaten .hv-zoekveld {
+    flex-basis: 100%;
+  }
+
+  html.palet-maquette .hv-laag:has([data-hv-kamer-paneel], [data-hv-inspector], [data-hv-scene-bewerker], [data-hv-scene-uitkomst], [data-hv-auto-bewerker]) .hv-laag-inhoud {
+    padding: 14px 14px calc(18px + var(--veilig-onder));
+  }
+}

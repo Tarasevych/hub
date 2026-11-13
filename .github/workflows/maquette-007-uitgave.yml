@@ -1,0 +1,349 @@
+name: MAQUETTE-007 · Хвиля 6 теми оформлення «Макет» (huis.tarasevych.com)
+
+# Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу (20261113-121403),
+# правила координації, типи, модульні випробування розумної оселі, повне складання та контрольну суму SHA-256.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis (20261113-121403), coördinatieregels, typen, tests, bouw en controlesom.
+on:
+  push:
+    branches:
+      - 'feature/maquette-007-20261113-224251'
+    paths:
+      - '.github/workflows/maquette-007-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/MAQUETTE-007.json'
+      - 'orchestratie/taken/MAQUETTE-007.json'
+      - 'shared/**'
+      - 'src/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maquette-007-uitgave
+  cancel-in-progress: false
+
+env:
+  TAAK: MAQUETTE-007
+  BEKENDE_BASISSEN: '20261113-121403=5f2325d788e29c5126f9ede6975afbbac7e5aae2'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'claude-opus-4-6'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Дозволити запуск лише з гілки завдання · alleen vanaf de taaktak
+        run: |
+          if [ "$GITHUB_REF_NAME" != "feature/maquette-007-20261113-224251" ]; then
+            echo "Випуск MAQUETTE-007 можна запускати лише з гілки feature/maquette-007-20261113-224251." >&2
+            exit 1
+          fi
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="000"
+          for poging in 1 2 3 4; do
+            HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/versie.json" -w '%{http_code}' 'https://mcp.tarasevych.com/api/version' || echo '000')"
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const bekendLijst = process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('='));
+          const bekend = new Map(bekendLijst);
+          const code = process.env.HTTP_CODE || '000';
+          let versie = '';
+          let levend = '';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+            versie = v.versie;
+            levend = v.bronCommit || v.commit;
+            if (bekend.get(versie) !== levend) {
+              throw Error(`Встановлена версія (${versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+            }
+            console.log(`Жива основа випуску з сервера: ${versie} @ ${levend}`);
+          } else if (code === '530' || code === '502' || code === '504' || code === '000') {
+            [versie, levend] = bekendLijst[bekendLijst.length - 1];
+            console.log(`Тунель тимчасово недоступний (HTTP ${code}); використано попередньо звірену основу ${versie} @ ${levend}`);
+          } else {
+            throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${levend}\n`);
+          JS
+          BASIS_COMMIT="$(grep '^BASIS_COMMIT=' "$GITHUB_ENV" | tail -n 1 | cut -d= -f2)"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+      - name: Перевірити статичні правила та модульні випробування Хвилі 6
+        run: |
+          set -euo pipefail
+          node scripts/kaart-controle.mjs --stil
+          node scripts/plaatsing-controle.mjs --stil
+          node scripts/l002-audit.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          for t in thema maquette-001-kern mobiel-cascade-20261105 mobiel-geometrie-20261021 plaatsing-20261025 huis-001-oude-fouten-20261110 huis-001-maquette-20261112 sec-002-afwerking-b-20261112 sec-002-g01-20261112 zoek-ui-tabblad-20261105; do
+            node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          done
+      - name: Перевірити типи та скласти застосунок
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'MAQUETTE-007 · Хвиля 6 теми оформлення «Макет»: повне студійне перевтілення розумної оселі huis.tarasevych.com',
+            samenvatting: 'Поширено наскрізну тему оформлення «Макет» (palet: maquette) на всі 13 канонічних вкладок розумної оселі huis.tarasevych.com та класичний інформаційний вигляд DomoticaWeergave поверх встановленої версії ' + e.BASIS_VERSIE + ' та Хвиль 0–5 поруч з усіма чинними темами.',
+            wijzigingen: [
+              'Вбудовано студійну оболонку .mq-schil, бурштиново-золоту вітрину MaquetteHeld та якірну навігацію MaquetteAnkerRail як у простір HuisPagina, так і в класичний вигляд DomoticaWeergave.',
+              'Створено чотири студійні таблиці стилів розумної оселі (domotica-maquette.css, huis-kern-maquette.css, huis-ruimtes-maquette.css та huis-beheer-maquette.css) виключно на змінних var(--mq-*) для нічної студії та світлого режиму «ранковий туман».',
+              'Оформлено живий огляд оселі, кімнати й архітектурне креслення плану поверху, картки та повзунки пристроїв, сцени, автоматизації, контур безпеки, енергію, події, шлюзи Home Assistant, ШІ-помічника, налаштування, вітрину й калькулятор.'
+            ],
+            fixes: [
+              'Збережено всі чесні індикатори свіжості показань шлюзу, захисний відступ полів пошуку з лупою та вимоги підтвердження критичних дій людиною.'
+            ],
+            beperkingen: [
+              'Кумулятивний пакет охоплює ядро теми, id, mail, cloud, github, hub, ai та huis.tarasevych.com; піддомени mcp, api та admin перевтілюються у Хвилях 7–9.'
+            ],
+            instructies: 'Проміжний пакет mijn-ruimte-<VERSIE>.tar.gz зібрано поверх встановленої версії ' + e.BASIS_VERSIE + '. Встановлення виконується виключно власником через майстер оновлень із підтвердженням ключем доступу.'
+          };
+          const nl = {
+            titel: 'MAQUETTE-007 · Golf 6 van het thema «Ontwerp»: volledige studiovernieuwing van huis.tarasevych.com',
+            samenvatting: 'Het platformbrede thema «Ontwerp» (palet: maquette) is uitgebreid naar alle 13 canonieke tabbladen van huis.tarasevych.com en de klassieke weergave DomoticaWeergave boven op de geïnstalleerde basis ' + e.BASIS_VERSIE + ' en Golven 0–5, naast alle bestaande thema’s.',
+            wijzigingen: [
+              'Studioschil .mq-schil, amberkleurige etalage MaquetteHeld en versleepbare ankernavigatie MaquetteAnkerRail ingebouwd in zowel HuisPagina als DomoticaWeergave.',
+              'Vier studiostijlbladen voor het slimme huis (domotica-maquette.css, huis-kern-maquette.css, huis-ruimtes-maquette.css en huis-beheer-maquette.css) opgebouwd op var(--mq-*) voor nachtstudio en lichte ochtendnevel.',
+              'Woningoverzicht, kamers en plattegrond, apparaatbediening, scènes, automatiseringen, beveiliging, energie, gebeurtenissen, Home Assistant-koppelingen, AI-assistent, instellingen, toonzaal en planner vormgegeven.'
+            ],
+            fixes: [
+              'Eerlijke versheidsmarkeringen, beschermde binnenmarge voor zoekvelden en verplichte menselijke bevestiging bij kritieke handelingen behouden.'
+            ],
+            beperkingen: [
+              'Dit cumulatieve pakket omvat de themakern, id, mail, cloud, github, hub, ai en huis.tarasevych.com; de subdomeinen mcp, api en admin volgen in Golven 7 t/m 9.'
+            ],
+            instructies: 'Dit tussentijdse pakket mijn-ruimte-<VERSIE>.tar.gz is gebouwd boven op de geïnstalleerde versie ' + e.BASIS_VERSIE + '. Installatie verloopt uitsluitend door de eigenaar via de updatewizard met passkey-bevestiging.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'antigravity',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: '4.6', bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів випробувань або є невдалі перевірки — випуск зупинено.');
+          const tests = {
+            geslaagd: gemeten.geslaagd,
+            mislukt: gemeten.mislukt,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено правила координації, свіжість основи та перевірку походження, статичні перевірки карти файлів і розміщення, перевірку типів клієнта та сервера, повне виробниче складання та модульні випробування розумної оселі. Виміряно в цьому запуску: ' + gemetenLijst + '.',
+              nl: 'Geslaagd: coördinatieregels, versheid van de basis en herkomstcontrole, statische controles van bestandskaart en plaatsing, typecontrole van client en server, volledige productiebouw en eenheidstests van het slimme huis. Gemeten in deze uitvoering: ' + gemetenLijst + '.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          const opis = [
+            `MAQUETTE-007 · Хвиля 6 теми оформлення «Макет» (huis.tarasevych.com) · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Виправлено:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            uk.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent antigravity --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-versie '4.6' --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Хвиля 6 теми «Макет» (MAQUETTE-007): повне студійне перевтілення розумної оселі huis.tarasevych.com поверх версії ${BASIS_VERSIE}." \
+            --samenvatting-nl "Golf 6 van het thema «Ontwerp» (MAQUETTE-007): volledige studiovernieuwing van huis.tarasevych.com boven op versie ${BASIS_VERSIE}." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maquette-007-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maquette-007-controle
+          path: uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: maquette-007-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_COMMIT:+${BASIS_VERSIE}=${BASIS_COMMIT}}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту складання не входить до довірених значень цього процесу — оприлюднення зупинено.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/pered-vypuskom.json" -w '%{http_code}' 'https://mcp.tarasevych.com/api/version' || echo '000')"
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const code = process.env.HTTP_CODE || '000';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+            if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+              throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+            }
+          } else if (code !== '530' && code !== '502' && code !== '504' && code !== '000') {
+            throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-antigravity-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "MAQUETTE-007 · Хвиля 6 теми оформлення «Макет» (huis) · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'

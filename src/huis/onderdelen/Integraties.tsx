@@ -8,6 +8,13 @@ import type { OnderdeelProps } from '../HuisPagina';
 import HuisLaag from '../HuisLaag';
 import { HuisFout, huisClient, type OntdektApparaatUit } from '../huis-client';
 import { datumTekst, foutTekst, geledenTekst, soortTekst, tr } from '../tekst';
+import '../huis-beheer-maquette.css';
+
+function integratieAccent(stand: string): string {
+  if (stand === 'verbonden' || stand === 'beschikbaar') return 'mq-accent-emerald';
+  if (stand === 'geweigerd' || stand === 'niet_ondersteund') return 'mq-accent-coral';
+  return 'mq-accent-amber';
+}
 
 export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }: OnderdeelProps) {
   const [wizard, setWizard] = useState(false);
@@ -56,13 +63,13 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
   };
 
   return (
-    <div className='hv-integraties'>
-      <section className='hv-blok' aria-labelledby='hv-int-actief'>
+    <div className='hv-integraties' data-mq-beheer='integraties'>
+      <section className='hv-blok mq-accent-amber' aria-labelledby='hv-int-actief' data-mq-int-sectie='gateways'>
         <h3 id='hv-int-actief'>{tr(lang, 'Підключені шлюзи', 'Gekoppelde gateways')}</h3>
         {!ha.length ? <p className='hv-hint' data-hv-leeg='geen-integratie'>{tr(lang, 'Ще нічого не підключено. Єдиний доступний адаптер у цьому випуску — Home Assistant (локально, через вихідне з’єднання з сервера).', 'Nog niets gekoppeld. De enige beschikbare adapter in deze release is Home Assistant (lokaal, via een uitgaande verbinding vanaf de server).')}</p> : null}
         {ha.map((i) => (
-          <article key={i.id} className={`hv-integratie is-${i.stand}`} data-hv-integratie={i.id} data-hv-integratie-stand={i.stand}>
-            <header><Plug aria-hidden='true' /><strong>{i.naam}</strong><span className={`hv-chip is-passief is-${i.stand}`}>{tr(lang, INTEGRATIE_STAND_TEKST[i.stand][0], INTEGRATIE_STAND_TEKST[i.stand][1])}</span>{i.schrijven ? <span className='hv-chip is-passief is-schrijven'><ShieldCheck aria-hidden='true' />{tr(lang, 'команди дозволено', 'opdrachten toegestaan')}</span> : <span className='hv-chip is-passief'>{tr(lang, 'лише читання', 'alleen lezen')}</span>}</header>
+          <article key={i.id} className={`hv-integratie is-${i.stand} ${integratieAccent(i.stand)}`} data-hv-integratie={i.id} data-hv-integratie-stand={i.stand} data-mq-hartslag={i.hartslag ? 'ja' : 'nee'} data-mq-schrijven={i.schrijven ? 'aan' : 'uit'}>
+            <header><Plug aria-hidden='true' /><strong>{i.naam}</strong><span className={`hv-chip is-passief is-${i.stand}`} data-mq-pil='hartslag'>{tr(lang, INTEGRATIE_STAND_TEKST[i.stand][0], INTEGRATIE_STAND_TEKST[i.stand][1])}</span>{i.schrijven ? <span className='hv-chip is-passief is-schrijven mq-accent-emerald' data-mq-pil='schrijven-aan'><ShieldCheck aria-hidden='true' />{tr(lang, 'команди дозволено', 'opdrachten toegestaan')}</span> : <span className='hv-chip is-passief' data-mq-pil='alleen-lezen'>{tr(lang, 'лише читання', 'alleen lezen')}</span>}</header>
             <table className='hv-tabel'><tbody>
               <tr><th scope='row'>{tr(lang, 'Адреса', 'Adres')}</th><td><code>{i.adres}</code></td></tr>
               <tr><th scope='row'>{tr(lang, 'Версія / локація', 'Versie / locatie')}</th><td>{String(i.info.versie ?? '—')} · {String(i.info.locatie ?? '—')}</td></tr>
@@ -85,12 +92,12 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
         {mag && ha.length ? <button type='button' className='hv-knop is-klein is-stil' onClick={() => { setWizard(true); setFout(''); }}>{tr(lang, 'Ще один Home Assistant', 'Nog een Home Assistant')}</button> : null}
       </section>
 
-      <section className='hv-blok' aria-labelledby='hv-int-cat'>
+      <section className='hv-blok' aria-labelledby='hv-int-cat' data-mq-int-sectie='catalogus'>
         <h3 id='hv-int-cat'>{tr(lang, 'Що підтримується — чесно', 'Wat ondersteund is — eerlijk')}</h3>
         <p className='hv-hint'>{tr(lang, 'Сумісність визначається моделлю пристрою та його можливостями, а не брендом. Статуси нижче — те, що реально є в коді цього випуску.', 'Compatibiliteit hangt af van het model en zijn mogelijkheden, niet van het merk. De standen hieronder zijn wat er echt in de code van deze release zit.')}</p>
         <div className='hv-raster'>
           {INTEGRATIE_CATALOGUS.map((k) => (
-            <article key={k.id} className={`hv-kaart is-catalogus is-${k.stand}`} data-hv-catalogus={k.id} data-hv-catalogus-stand={k.stand}>
+            <article key={k.id} className={`hv-kaart is-catalogus is-${k.stand} ${integratieAccent(k.stand)}`} data-hv-catalogus={k.id} data-hv-catalogus-stand={k.stand}>
               <small className={`hv-chip is-passief is-${k.stand}`}>{tr(lang, INTEGRATIE_STAND_LABEL[k.stand][0], INTEGRATIE_STAND_LABEL[k.stand][1])}</small>
               <strong>{k.naam}</strong>
               <span className='hv-waarde'>{huisTekst(k.wat, lang)}</span>
@@ -112,11 +119,11 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
             <li>{tr(lang, 'Адреса має бути доступною з сервера сайту (LAN або VPN), напр. http://homeassistant.local:8123. Не відкривайте порт в інтернет.', 'Het adres moet bereikbaar zijn vanaf de server van de site (LAN of VPN), bv. http://homeassistant.local:8123. Zet geen poort open naar internet.')}</li>
             <li>{tr(lang, 'Токен шифрується на сервері й більше не показується. Спочатку — лише читання; команди вмикаються окремо.', 'Het token wordt op de server versleuteld en nooit meer getoond. Eerst alleen lezen; opdrachten zet u apart aan.')}</li>
           </ol>
-          <form onSubmit={(e) => { e.preventDefault(); void instellen(); }}>
+          <form className='mq-hb-wizard-vorm' onSubmit={(e) => { e.preventDefault(); void instellen(); }}>
             <label className='hv-veld'><span>{tr(lang, 'Назва (необов’язково)', 'Naam (optioneel)')}</span><input value={naam} maxLength={80} onChange={(e) => setNaam(e.target.value)} placeholder='Home Assistant' data-hv-eerste='1' /></label>
             <label className='hv-veld'><span>{tr(lang, 'Адреса', 'Adres')}</span><input value={adres} inputMode='url' autoComplete='off' placeholder='http://192.168.1.10:8123' required onChange={(e) => setAdres(e.target.value)} data-hv-ha-adres='1' /></label>
             <label className='hv-veld'><span>{tr(lang, 'Довгостроковий токен', 'Langlevend token')}</span><input type='password' value={token} autoComplete='off' required onChange={(e) => setToken(e.target.value)} data-hv-ha-token='1' /></label>
-            {fout ? <p className='hv-melding is-fout' role='alert'><AlertCircle aria-hidden='true' />{fout}</p> : null}
+            {fout ? <p className='hv-melding is-fout mq-accent-coral' role='alert'><AlertCircle aria-hidden='true' />{fout}</p> : null}
             <div className='hv-knoppen'><button type='submit' className='hv-knop is-hoofd' disabled={bezig === 'instellen' || !adres.trim() || !token.trim()} data-hv-ha-opslaan='1'>{bezig === 'instellen' ? tr(lang, 'Перевіряю…', 'Testen…') : tr(lang, 'Перевірити та зберегти', 'Testen en opslaan')}</button></div>
           </form>
         </HuisLaag>
@@ -132,7 +139,7 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
           </div>
           <ul className='hv-lijst is-dicht' data-hv-ontdekt-lijst='1'>
             {ontdekt.lijst.map((a) => (
-              <li key={a.bronId}>
+              <li key={a.bronId} className={ontdekt.keuze.has(a.bronId) ? 'mq-is-gekozen' : undefined} data-mq-kritiek={a.kritiek ? 'ja' : 'nee'} data-mq-online={a.online ? 'ja' : 'nee'}>
                 <label className='hv-keuze'><input type='checkbox' checked={ontdekt.keuze.has(a.bronId)} onChange={(e) => { const k = new Set(ontdekt.keuze); if (e.target.checked) k.add(a.bronId); else k.delete(a.bronId); setOntdekt({ ...ontdekt, keuze: k }); }} data-hv-ontdekt-keuze={a.bronId} /><span><strong>{a.naam}</strong> <small>{soortTekst(lang, a.soort)} · <code>{a.bronId}</code>{a.kritiek ? ` · ${tr(lang, 'критично', 'kritiek')}` : ''}{a.bestaat ? ` · ${tr(lang, 'уже на сайті', 'al op de site')}` : ''}{!a.online ? ` · ${tr(lang, 'офлайн', 'offline')}` : ''}</small></span></label>
               </li>
             ))}
