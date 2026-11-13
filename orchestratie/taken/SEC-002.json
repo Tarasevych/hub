@@ -3,13 +3,13 @@
   "id": "SEC-002",
   "agent": "claude",
   "tak": "fix/sec-002-20261112-121623",
-  "basisCommit": "11e0aad8b641b62412d2efcf1382d117339d251f",
-  "basisVersie": "20261112-192752",
+  "basisCommit": "1f101224e2e896d78485c79edf615b47d7c2d373",
+  "basisVersie": "20261112-215622",
   "regelsVersie": "1.4.14",
   "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
   "staat": "in_progress",
   "gestart": "2026-11-12T12:16:24.045Z",
-  "bijgewerkt": "2026-11-13T09:43:16.605Z",
+  "bijgewerkt": "2026-11-13T11:31:22.957Z",
   "omschrijving": "Глибокий захисний аудит безпеки всього сховища й виправлення всіх знайдених вразливостей одним випуском",
   "kanaal": "github_pr",
   "overdrachten": [],
@@ -20,6 +20,13 @@
       "naar": "11e0aad8b641b62412d2efcf1382d117339d251f",
       "naarVersie": "20261112-192752",
       "op": "2026-11-13T09:43:16.605Z"
+    },
+    {
+      "van": "11e0aad8b641b62412d2efcf1382d117339d251f",
+      "vanVersie": "20261112-192752",
+      "naar": "1f101224e2e896d78485c79edf615b47d7c2d373",
+      "naarVersie": "20261112-215622",
+      "op": "2026-11-13T11:31:22.957Z"
     }
   ]
 }

@@ -27,7 +27,8 @@ export const IMPERSONATIE_ALTIJD_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/access\//,                     // aanmeldmethoden, passkeys, TOTP, herstelcodes, rollen, beleid
   /^[A-Z]+ \/api\/(owner\/)?admin\//,                   // beheer en rollen
   /^[A-Z]+ \/api\/([^ ]*\/)?(admin|beheer|security)(\/|$)/, // ook /api/service/admin, /api/beheer, /journaal/beheer, /api/security
-  /^[A-Z]+ \/api\/owner\/(tech|tech-ruimtes|uitrol|orch|agent-namens|ai-beleid|geheimen|sleutelkluis|google-contour|connector-v2|mcp-connector|agents|apps|aanmeld|besluit|codewoord)(\/|$)/,
+  // SEC-002 (slot m, MR-6): mcp-inspector (studio) toont dezelfde koppelingsgegevens als connector-v2/mcp-connector en voert hulpmiddelen uit.
+  /^[A-Z]+ \/api\/owner\/(tech|tech-ruimtes|uitrol|orch|agent-namens|ai-beleid|geheimen|sleutelkluis|google-contour|connector-v2|mcp-connector|mcp-inspector|agents|apps|aanmeld|besluit|codewoord)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/api-platform\//,               // sleutels en kluis
   /^[A-Z]+ \/api\/owner\/audit\/beheer(\/|$)/,
   /^[A-Z]+ \/api\/owner\/agents\/[^/]+\/(policy|revoke)(\/|$)/,

@@ -2,7 +2,7 @@
 
 # Beveiligingsrapport SEC-002 (12-11-2026): gevonden kwetsbaarheden en hun herstel
 
-Dit rapport beschrijft openlijk de kwetsbaarheden die bij een diepe beveiligingsaudit van de hele repository «Mijn Ruimte» (taak SEC-002) zijn gevonden, en hoe ze zijn hersteld. De beschrijving verschijnt tegelijk met de patches en het releasearchief, zodat iedereen die het project zelf draait van het gevaar weet en bijwerkt. Er staan geen waarden van geheimen, geen privégegevens en geen stapsgewijze aanvalsrecepten in: alleen de kern van elke fout, wie die kon misbruiken, het gevolg en wat er is veranderd. Aantal vermeldingen: **249**.
+Dit rapport beschrijft openlijk de kwetsbaarheden die bij een diepe beveiligingsaudit van de hele repository «Mijn Ruimte» (taak SEC-002) zijn gevonden, en hoe ze zijn hersteld. De beschrijving verschijnt tegelijk met de patches en het releasearchief, zodat iedereen die het project zelf draait van het gevaar weet en bijwerkt. Er staan geen waarden van geheimen, geen privégegevens en geen stapsgewijze aanvalsrecepten in: alleen de kern van elke fout, wie die kon misbruiken, het gevolg en wat er is veranderd. Aantal vermeldingen: **258**.
 
 Dit document is gemaakt door het script `scripts/sec-002-verslag.mjs` uit het gegevensbestand [`sec-002-gegevens.json`](sec-002-gegevens.json); bewerk het niet met de hand.
 
@@ -33,8 +33,8 @@ Bijwerken is vooral belangrijk als:
 | — gedeeltelijk opgelost | 2 |
 | — weerlegd | 0 |
 | — uitgesteld | 0 |
-| Nieuwe fouten die onafhankelijke controleurs in patches en naburige code vonden | 105 (waarvan regressies door patches zonder direct beveiligingsgevolg: 22; oude fouten uit de basis zonder beveiligingsgevolg: 1) |
-| — nieuwe fouten: opgelost | 104 |
+| Nieuwe fouten die onafhankelijke controleurs in patches en naburige code vonden | 114 (waarvan regressies door patches zonder direct beveiligingsgevolg: 22; oude fouten uit de basis zonder beveiligingsgevolg: 1) |
+| — nieuwe fouten: opgelost | 113 |
 | — nieuwe fouten: gedeeltelijk opgelost | 1 |
 | — nieuwe fouten: weerlegd | 0 |
 | — nieuwe fouten: uitgesteld | 0 |
@@ -46,10 +46,10 @@ Een deel van de bevindingen beschrijft dezelfde grondoorzaak vanuit verschillend
 | Gebied | Bevindingen | Hoog | Middel | Laag | Opgelost | Gedeeltelijk | Uitgesteld | Nieuwe fouten van controleurs |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Aanmelden en sessies | 10 | 2 | 5 | 3 | 10 | 0 | 0 | 5 |
-| Rechten en RLS | 11 | 2 | 6 | 3 | 11 | 0 | 0 | 10 |
-| HTTP-grens | 10 | 2 | 5 | 3 | 10 | 0 | 0 | 6 |
+| Rechten en RLS | 11 | 2 | 6 | 3 | 11 | 0 | 0 | 11 |
+| HTTP-grens | 10 | 2 | 5 | 3 | 10 | 0 | 0 | 9 |
 | Geheimen | 8 | 0 | 4 | 4 | 7 | 1 | 0 | 2 |
-| AI-agenten en MCP | 14 | 3 | 8 | 3 | 13 | 1 | 0 | 4 |
+| AI-agenten en MCP | 14 | 3 | 8 | 3 | 13 | 1 | 0 | 8 |
 | Terminal en uitrol | 11 | 2 | 5 | 4 | 11 | 0 | 0 | 11 |
 | E-mail | 16 | 3 | 7 | 6 | 16 | 0 | 0 | 5 |
 | Cloudopslag | 15 | 1 | 5 | 9 | 15 | 0 | 0 | 16 |
@@ -57,8 +57,8 @@ Een deel van de bevindingen beschrijft dezelfde grondoorzaak vanuit verschillend
 | Gebruikersinterface | 9 | 1 | 3 | 5 | 9 | 0 | 0 | 5 |
 | Browserextensie | 9 | 2 | 5 | 2 | 9 | 0 | 0 | 5 |
 | Toeleveringsketen en configuratie | 8 | 2 | 3 | 3 | 8 | 0 | 0 | 8 |
-| Privacy en logboeken | 9 | 2 | 3 | 4 | 9 | 0 | 0 | 16 |
-| **Totaal** | **144** | **26** | **63** | **55** | **142** | **2** | **0** | **105** |
+| Privacy en logboeken | 9 | 2 | 3 | 4 | 9 | 0 | 0 | 17 |
+| **Totaal** | **144** | **26** | **63** | **55** | **142** | **2** | **0** | **114** |
 
 ## Belangrijkste herstelwerk (alles met ernst hoog)
 
@@ -1518,6 +1518,16 @@ _Ernst: middel · Status: opgelost · Regressie door de patch_
 - **Hoort bij:** eind-2
 - **Test:** [`sec-002-slot-v-20261113.test.ts`](../../tests/eenheid/sec-002-slot-v-20261113.test.ts)
 
+#### eind-25 · De inspectiestudio kon worden geopend in de modus «meekijken als gebruiker»
+
+_Ernst: laag · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 stonden de routes van de inspectiestudio niet op de lijst van verboden routes bij meekijken als gebruiker. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een beheerder zag in die modus welke AI-agenten iemand had gekoppeld en welke hulpmiddelen ze hadden.
+- **Wat is veranderd.** De inspectiestudio is verboden bij meekijken als gebruiker en voor agentacties namens de persoon.
+- **Hoort bij:** aanmelden-06
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
 #### toets-g03-2 · De rol «alleen bekijken» kon via een andere weg in de cloud schrijven
 
 _Ernst: laag · Status: opgelost_
@@ -1600,6 +1610,24 @@ _Ernst: hoog · Status: opgelost · Regressie door de patch_
 - **Hoort bij:** http-rand-06
 - **Test:** [`sec-002-g10e-20261112.test.ts`](../../tests/eenheid/sec-002-g10e-20261112.test.ts)
 
+#### eind-22 · Het ophalen van de beschrijving van een AI-cliënt had geen algemene grens op tijd en gelijktijdigheid
+
+_Ernst: middel · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 had het ophalen van het beschrijvingsdocument van een cliënt alleen een time-out bij inactiviteit van de verbinding, zonder grens voor het hele verzoek, zonder begrenzing van gelijktijdige ophaalacties en zonder cache van mislukkingen. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een externe server kon verbindingen en verwerkers van de server urenlang bezet houden.
+- **Wat is veranderd.** Er geldt een harde tijdgrens voor het hele verzoek, gelijke verzoeken worden samengevoegd, het aantal gelijktijdige ophaalacties is in totaal en per adres begrensd, en mislukkingen worden een minuut gecachet. Is de algemene grens vol, dan antwoordt de server met een aparte tweetalige uitleg «server bezet», en een al bekende cliënt krijgt een recente gecontroleerde kopie van zijn beschrijving.
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
+#### eind-23 · De SSRF-bescherming bij het ophalen van de beschrijving van een AI-cliënt werkte niet voor IP-adressen
+
+_Ernst: middel · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 werkte de controle dat de server geen interne adressen benadert alleen voor domeinnamen, en een adres dat direct als IP was geschreven, omzeilde die. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een anonieme bezoeker kon de server een verzoek naar het interne netwerk of naar diensten van de server zelf laten sturen.
+- **Wat is veranderd.** IP-adressen in het adres van de beschrijving worden al vóór het verzoek en nogmaals vóór het verbinden geweigerd, en het herkennen van niet-openbare adressen gebruikt de gedeelde controle, die ook bijzondere IPv6-vormen dekt.
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
 #### toets-g10e-2 · Een nepcookie hief de anonieme grenzen op verzoekgrootte op
 
 _Ernst: middel · Status: opgelost_
@@ -1640,6 +1668,15 @@ _Ernst: laag · Status: opgelost_
 - **Hoort bij:** toets-zekering
 - **Test:** [`sec-002-slot-s-20261112.test.ts`](../../tests/eenheid/sec-002-slot-s-20261112.test.ts)
 
+#### eind-27 · Foutantwoorden van het protocol herhaalden niet-ingekorte tekst van de cliënt
+
+_Ernst: laag · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 gaven nieuwe foutantwoorden van het protocol waarden van de cliënt terug zonder inkorten en opschonen. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Antwoorden en logboeken konden opzwellen door lange waarden van de cliënt.
+- **Wat is veranderd.** Waarden van de cliënt in foutmeldingen worden ingekort en opgeschoond tot een korte veilige lengte.
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
 ### Geheimen
 
 #### toets-g10b-1 · Sleutelrotatie brak het opslaan van e-mail- en agendawachtwoorden en AI-bevestigingen
@@ -1664,6 +1701,35 @@ _Ernst: middel · Status: opgelost_
 
 ### AI-agenten en MCP
 
+#### eind-19 · Een gekoppelde AI kreeg het accountprofiel zonder het recht «Wie ben ik»
+
+_Ernst: middel · Status: opgelost_
+
+- **Wat er mis was.** In de code van de nieuwe geïnstalleerde versie MCP-001 gaven nieuwe protocolmethoden elke gekoppelde AI het e-mailadres, de naam en de rol van het account, zonder het aparte recht daarvoor en de actuele schakelaars te controleren; op de oude weg zelfs bij een uitgeschakeld technisch profiel. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een AI die het profiel niet mocht zien, kon het lezen.
+- **Wat is veranderd.** Profiel- en statusbronnen worden alleen met het recht «Wie ben ik» en bij een geldige koppeling geleverd; zonder dat recht staan ze niet in de lijst, wordt lezen met een tweetalige uitleg geweigerd en gelogd.
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
+#### eind-20 · Via de nieuwe automatische koppeling kon een AI-cliënt een gereserveerde naam aannemen
+
+_Ernst: middel · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 paste de nieuwe registratie van een cliënt via een beschrijvingsdocument (CIMD) het verbod op gereserveerde namen van de gewone registratie niet toe. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een AI-cliënt kon in goedkeuringsverzoeken verschijnen als een handeling van de persoon zelf of van de site.
+- **Wat is veranderd.** De controle op gereserveerde namen staat op één gedeelde plek en geldt voor beide manieren van registreren en voor het tonen van de aanvrager; vóór de controle wordt de naam genormaliseerd en worden onzichtbare tekens en overtollige spaties verwijderd.
+- **Hoort bij:** toets-g10a-4
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
+#### eind-21 · Automatisch koppelen van een AI omzeilde de grenzen voor cliëntregistratie
+
+_Ernst: middel · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 maakte elk nieuw adres van een beschrijvingsdocument een cliëntrecord aan zonder de daggrens per adres en het algemene plafond van de gewone registratie. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een anonieme bezoeker kon het register van cliënten opnieuw vullen en het koppelen van nieuwe AI's voor iedereen blokkeren (hetzelfde als hersteld in ai-mcp-10).
+- **Wat is veranderd.** Voor een nieuwe cliënt gelden vóór het ophalen van de beschrijving het met de registratie gedeelde dagquotum en het algemene plafond, en de grens op gelijktijdige ophaalacties per adres wordt in één stap gecontroleerd en geteld, zodat gelijktijdige verzoeken die niet omzeilen; het record wordt alleen bij gewijzigde gegevens bijgewerkt, en weigeringen worden tweetalig uitgelegd en gedempt gelogd.
+- **Hoort bij:** ai-mcp-10
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
 #### toets-g10i-1 · Een legitiem agentresultaat met een emoji op de inkortgrens verbrak de verbinding
 
 _Ernst: middel · Status: opgelost_
@@ -1673,6 +1739,16 @@ _Ernst: middel · Status: opgelost_
 - **Wat is veranderd.** Tekst wordt ingekort zonder tekens te breken en vóór het opslaan opgeschoond.
 - **Hoort bij:** keten-config-03
 - **Test:** [`sec-002-g10i-20261112.test.ts`](../../tests/eenheid/sec-002-g10i-20261112.test.ts)
+
+#### eind-24 · Hulpmiddelaanroepen uit de inspectiestudio omzeilden de MCP-grens
+
+_Ernst: laag · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 telden aanroepen van AI-hulpmiddelen uit de inspectiestudio niet mee voor de frequentiegrens van koppelingen. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een sessie kon externe diensten van het account vaker belasten dan de grens toestaat.
+- **Wat is veranderd.** De studio telt mee in dezelfde aanroepgrens, en overschrijding geeft een weigering met wachttijd.
+- **Hoort bij:** ai-mcp-08
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
 
 #### toets-g05-1 · Asynchroon lezen van de repositorystatus kon coördinatieschrijfacties laten mislukken
 
@@ -2355,6 +2431,15 @@ _Ernst: middel · Status: opgelost_
 - **Hoort bij:** privacy-logboek-01
 - **Test:** [`account-wissen-db-20261113.test.ts`](../../tests/eenheid/account-wissen-db-20261113.test.ts), [`account-wissen-20261026.test.ts`](../../tests/eenheid/account-wissen-20261026.test.ts)
 
+#### eind-26 · Weigeringen op herkomst telden niet mee voor de grens en schreven het ruwe IP-adres in het logboek
+
+_Ernst: middel · Status: opgelost_
+
+- **Wat er mis was.** In de code van MCP-001 stond de controle van de herkomst van verzoeken naar AI-koppelpunten vóór de frequentiegrens, voegde elke nieuwe herkomstwaarde een regel aan het beheerlogboek toe, en kwam het ruwe IP-adres in die regel. Hersteld binnen SEC-002.
+- **Wie het kon misbruiken en het gevolg.** Een anonieme bezoeker kon het beheerlogboek vervuilen en geheugen innemen, en het logboek bewaarde IP-adressen tegen de regel van hashen in.
+- **Wat is veranderd.** De herkomstcontrole staat na de frequentiegrens, regels worden per netwerk van het adres gedempt, in het logboek komt alleen een hash van het IP, en het geheugen voor dempen heeft een harde grens.
+- **Test:** [`sec-002-slot-m-20261113.test.ts`](../../tests/eenheid/sec-002-slot-m-20261113.test.ts)
+
 #### toets-g02-6 · Weigeringen en wijzigingen in woningdeelnemers lieten geen spoor achter
 
 _Ernst: middel · Status: opgelost_
@@ -2544,7 +2629,7 @@ _Ernst: middel · Status: gedeeltelijk opgelost_
 - Elke groep is onafhankelijk nagekeken door een aparte controleur: die toonde fouten opnieuw aan, zocht omwegen om patches heen en dezelfde fout in naburige code. Zijn opmerkingen (87 als fout erkend) bevestigde de engineer met een nieuwe test, herstelde ze en liet ze opnieuw controleren.
 - Tot slot rondden 3 afrondingsstappen uitgesteld werk af dat meerdere groepen raakte (server en beveiliging, interface en teksten, toeleveringsketen en documentatie), met eigen tests en een volledige typecontrole.
 - Daarna controleerden 3 overkoepelende controleurs de hele release samen (omzeiling en volledigheid, regressies in legitiem gebruik, interface en taal); wat zij vonden (vermeldingen eind-…) is vóór de release hersteld en met tests aangetoond.
-- De tests die het herstel aantonen staan in de map `tests/eenheid/` (aantal testbestanden genoemd in de vermeldingen: 35); u kunt ze zelf uitvoeren. Eén herstel wordt apart aangetoond door een controlescript tijdens de build (`scripts/mail-slimme-inbox-audit.mjs`).
+- De tests die het herstel aantonen staan in de map `tests/eenheid/` (aantal testbestanden genoemd in de vermeldingen: 36); u kunt ze zelf uitvoeren. Eén herstel wordt apart aangetoond door een controlescript tijdens de build (`scripts/mail-slimme-inbox-audit.mjs`).
 - Een deel van het interfaceherstel (vermeldingen gemarkeerd met «aangetoond met een codecontrole»: 1) is aangetoond met een controle van de code en statische controles, niet met een test die vóór de patch faalt.
 
 ## Wat er verandert voor legitieme gebruikers

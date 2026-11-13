@@ -7,9 +7,9 @@
   "eigenaar": "Павло Тарасевич",
   "agent": "claude",
   "tak": "fix/sec-002-20261112-121623",
-  "basis": "11e0aad8b641b62412d2efcf1382d117339d251f",
-  "geinstalleerdeBasis": "11e0aad8b641b62412d2efcf1382d117339d251f",
-  "geinstalleerdeVersie": "20261112-192752",
+  "basis": "1f101224e2e896d78485c79edf615b47d7c2d373",
+  "geinstalleerdeBasis": "1f101224e2e896d78485c79edf615b47d7c2d373",
+  "geinstalleerdeVersie": "20261112-215622",
   "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
   "regelsVersie": "1.4.14",
   "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
@@ -48,13 +48,21 @@
    "stap": "Повний прогін усіх модульних тестів у чистій базі та поодинокий прогін червоних на нашому дереві й на основі; регресії виправлено, тести, що закріплювали старі вади, оновлено з поясненням."
   },
   {
+   "tijd": "2026-11-13T09:51:00Z",
+   "stap": "Перша спроба випуску правильно зупинилася: на сервері встановлено новішу версію 20261112-215622 (MCP-001, 1f101224); її злито як нову основу, конфлікти в чотирьох файлах MCP розв'язано зі збереженням захистів SEC-002 і нового коду MCP-001."
+  },
+  {
    "tijd": "2026-11-13T11:00:00Z",
-   "stap": "Багатоагентна перевірка готовності випуску (точність опису, безпечність розкриття, процес випуску, секрети) зі змагальним спростуванням кожної знахідки; підтверджене виправлено. Публічний опис: 249 записів, 246 виправлено, 3 частково."
+   "stap": "Новий код MCP-001 перевірено на обхід захистів SEC-002 (три виміри, змагальне спростування): 18 вад (CIMD, профіль без права, студія-інспектор, Origin) виправлено з тестом sec-002-slot-m і незалежно перевірено."
+  },
+  {
+   "tijd": "2026-11-13T11:30:00Z",
+   "stap": "Багатоагентна перевірка готовності випуску (точність опису, безпечність розкриття, процес випуску, секрети) зі змагальним спростуванням кожної знахідки; підтверджене виправлено. Публічний опис: 258 записів, 255 виправлено, 3 частково."
   }
  ],
  "keuzes": [
   "Сховище публічне за рішенням власника, тому патчі, двомовний опис вразливостей і архів випуску публікуються одним кроком; до готовності випуску у віддалене сховище нічого не відправлялося.",
-  "Усі знахідки виправлено одним випуском поверх встановленої версії 20261112-192752, а не частинами: власник обрав «усі одразу».",
+  "Усі знахідки виправлено одним випуском поверх свіжої встановленої версії (зрештою 20261112-215622, MCP-001), а не частинами: власник обрав «усі одразу».",
   "Небезпечні нові можливості й рішення власника мають безпечні типові значення: «запам'ятати» для згоди вимкнено, логотипи невідомих відправників — «Вимкнено» з можливістю «Завжди», підтвердження для дій ШІ середнього ризику ввімкнено.",
   "Запобіжник захистів вимикає захист автоматично лише за сигналами самого захисту (401 на кількох різних маршрутах), а загальний сплеск помилок дає власникові пропозицію перевірити, а не вимкнення.",
   "Роль «лише перегляд» читає законні сторінки й відкликає лише власні доступи; створення, зміна й вплив на інших учасників відхиляються двомовною відмовою з аудитом і сповіщенням.",
@@ -126,6 +134,7 @@
   ".gitignore",
   "BEVEILIGINGSNOTITIES.nl.md",
   "OMGEVINGSVARIABELEN.nl.md",
+  "ORCH-OVERDRACHT.json",
   "backend/account-wissen.ts",
   "backend/agenda-caldav.ts",
   "backend/agenda-ics.ts",
@@ -215,16 +224,19 @@
   "backend/mail-zoek-duurzaam.ts",
   "backend/mail-zoek-relevantie.ts",
   "backend/mail-zoek.ts",
+  "backend/mcp-cimd.ts",
   "backend/mcp-connector-opslag.ts",
   "backend/mcp-connector-routes.ts",
   "backend/mcp-connector.ts",
   "backend/mcp-console-fout.ts",
   "backend/mcp-console.ts",
   "backend/mcp-deur-brug.ts",
+  "backend/mcp-inspector-routes.ts",
   "backend/mcp-klant/vervoer.ts",
   "backend/mcp-namens.ts",
   "backend/mcp-oauth-binding.ts",
   "backend/mcp-pakket.ts",
+  "backend/mcp-protocol-2026.ts",
   "backend/merk-bron.ts",
   "backend/merk-eigen.ts",
   "backend/nieuw-apparaat.ts",
@@ -362,6 +374,7 @@
   "shared/agenda-caldav-model.ts",
   "shared/ai-agent-bord.ts",
   "shared/ai-bronnen.ts",
+  "shared/ai-verbinding.ts",
   "shared/ai-vertaling.ts",
   "shared/beheer-journaal.ts",
   "shared/bord-herkomst.ts",
@@ -379,6 +392,7 @@
   "shared/mcp-acties.ts",
   "shared/mcp-hulpmiddel-gevaar.ts",
   "shared/mcp-klant-model.ts",
+  "shared/mcp-protocol-2026-model.ts",
   "shared/melding-soorten.ts",
   "shared/meldingen-soorten.ts",
   "shared/meldingen-v2/uitleg-register.ts",
@@ -560,6 +574,7 @@
   "tests/eenheid/sec-002-g10h-20261112.test.ts",
   "tests/eenheid/sec-002-g10i-20261112.test.ts",
   "tests/eenheid/sec-002-g11-20261112.test.ts",
+  "tests/eenheid/sec-002-slot-m-20261113.test.ts",
   "tests/eenheid/sec-002-slot-s-20261112.test.ts",
   "tests/eenheid/sec-002-slot-t-20261112.test.ts",
   "tests/eenheid/sec-002-slot-u-20261112.test.ts",
@@ -572,7 +587,7 @@
   "tests/eenheid/zoek-ui-bereik-20261105.test.ts"
  ],
  "controles": [
-  "Перевірка правил координації: node scripts/orch.mjs controleer і versheid --taak SEC-002 --fase overdracht на основі 11e0aad8b641b62412d2efcf1382d117339d251f (20261112-192752).",
+  "Перевірка правил координації: node scripts/orch.mjs controleer і versheid --taak SEC-002 --fase overdracht на основі 1f101224e2e896d78485c79edf615b47d7c2d373 (20261112-215622).",
   "Перевірка типів сервера (npm run typecheck:server) та інтерфейсу (npx tsc --noEmit) — без помилок.",
   "Повне збирання npm run build разом із аудитами каталогу інтерфейсу, мовного закону, розміщення, контрасту й класифікатора пошти — успішне.",
   "Міграції застосовано двічі поспіль у чистій базі PostgreSQL 16 — ідемпотентні.",

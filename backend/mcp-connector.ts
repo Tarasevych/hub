@@ -10,7 +10,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { grantOpenen, grantRoteren, grantSluiten, grantVerzegelen } from './sleutelkluis';
 import { getPool } from '../server/platform/pg';
 import { sessieGeverifieerd, zetGebruiker } from '../server/platform/context';
-import { isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId } from '../shared/ai-verbinding';
+import { gereserveerdeKlantNaam, isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId } from '../shared/ai-verbinding';
 import { connectGeweigerd, toolGeweigerd, verbindingGeweigerd, type WeigerCode } from '../shared/ai-agent-bord';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
 import { extraRedirects, leesDuren } from './ai-verbinding-instellingen';
@@ -28,6 +28,8 @@ import { callTool, listTools, resolveAlias, taalVanGebruiker, V2_ALLEEN, vertaal
 import type { ToolTaal } from '../shared/hulpmiddel-teksten';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as st from './mcp-connector-opslag';
+import { CimdFoutmelding, cimdAan, cimdKlant, isCimdClientId, type Ophaler } from './mcp-cimd';
+import { eenKeerPer } from './beheer-journaal';
 import { UITROL_TOOLS, UITROL_TOOL_NAMEN, UitrolFout, heeftVoorbereiderGrant, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from './uitrol-goedkeuring';
 import { BEHEER_ALLEEN_V2, BEHEER_TOOL_NAMEN, voerBeheerToolUit } from './ai-beheer-hulpmiddelen';
 import { DEV_MG_ALLEEN_V2, isDevMgTool } from '../shared/dev-media-github';
@@ -37,6 +39,8 @@ import { listAgents } from './connectors-opslag';
 import { redirectPastBijAgent, slugUitResource, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/agenten';
 import { naUitgifte, type V2Keuze } from './connector-v2-opslag';
 import { pakketToegestaan, pakketUitvoeren } from './mcp-pakket'; // SEC-002 (ai-mcp-08)
+import { MCP_MODERNE_VERSIE, bouwRegistryServerJson, bouwServerCard, controleerModerneMeta, omhulModernResultaat } from '../shared/mcp-protocol-2026-model';
+import { behandelMcpProtocolMethode, bouwCapabilitiesBlock } from './mcp-protocol-2026';
 
 export const BASE = `https://${SERVICE_HOSTS.mcp}`;
 export const RESOURCE = `${BASE}/mcp`;
@@ -105,9 +109,103 @@ export const authorizationServerMetadata = () => respond(200, {
   revocation_endpoint: `${ISSUER}/revoke`,
   revocation_endpoint_auth_methods_supported: ['none'],
   scopes_supported: [SCOPE],
+  // MCP-001 R1 · RFC 9207: elke terugkeer naar de klant (code én fout) draagt `iss`; de klant MOET het vergelijken (mix-up-aanvallen).
+  authorization_response_iss_parameter_supported: true,
+  // MCP-001 R1 · CIMD (SEP-991): client_id mag een https-adres van een metadatadocument zijn (zie backend/mcp-cimd.ts).
+  ...(cimdAan() ? { client_id_metadata_document_supported: true } : {}),
 });
 
+export const serverCardMetadata = () => respond(200, bouwServerCard(BASE));
+export const registryServerMetadata = () => respond(200, bouwRegistryServerJson(BASE));
+
 // ---------------- dynamische clientregistratie (RFC 7591) ----------------
+
+const eigenaarVanUri = (rawUri: string) => {
+  const u = parseUrl(rawUri);
+  if (!u) return undefined;
+  const schema = u.protocol.replace(/:$/, '');
+  const host = u.hostname.toLowerCase();
+  return V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
+};
+
+// SEC-002 (slot m): gereserveerde namen (g10a-4) — één plek in shared/ai-verbinding.ts voor DCR, CIMD en aanvragerNu.
+export { GERESERVEERDE_NAAM, gereserveerdeKlantNaam } from '../shared/ai-verbinding';
+
+/**
+ * SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere
+ * aanbieder claimen. Gedeeld door DCR (registerClient) en CIMD (MCP-001 R1). null = goed.
+ */
+export function klantNaamFout(name: string, uris: string[]): string | null {
+  // SEC-002 (slot m, MR-2/MRG-01): de gereserveerde namen (g10a-4) gelden ook voor CIMD — valideerCimd gebruikt deze functie als naamFout.
+  if (gereserveerdeKlantNaam(name)) return 'client_name is gereserveerd';
+  const beweerdeKlant = klantVan(name);
+  if (beweerdeKlant === 'overig') return null;
+  for (const rawUri of uris) {
+    const eigenaar = eigenaarVanUri(rawUri);
+    if (eigenaar && eigenaar.klant !== beweerdeKlant) return 'client_name past niet bij redirect_uris';
+  }
+  return null;
+}
+
+// SEC-002 (slot m, MR-4): hoogstens zoveel CIMD-ophalingen tegelijk per IP (/64); het procesbrede plafond staat in mcp-cimd.ts.
+const CIMD_PER_IP_TEGELIJK = 2;
+const cimdPerIp = new Map<string, number>();
+
+/**
+ * Klant bij een client_id: een mcpc_…-id uit DCR (database) of — MCP-001 R1 — een CIMD-adres (https://…): document ophalen,
+ * controleren (backend/mcp-cimd.ts) en in dezelfde tabel bewaren, zodat token, verversen, intrekken en de lijst van verbindingen
+ * precies zo werken als bij DCR. Een fout geeft { fout } (nooit een omleiding: de redirect_uri is dan niet gecontroleerd).
+ */
+export async function klantVoorId(clientId: string, ip = '', ophaler?: Ophaler): Promise<{ client_id: string; client_name: string; redirect_uris: string[] } | { fout: string } | null> {
+  if (!clientId) return null;
+  if (!isCimdClientId(clientId)) return st.getClient(clientId);
+  const ipSleutel = ip ? limietSleutel(ip) : '';
+  let geteld = false;
+  try {
+    // SEC-002 (slot m, MR-3/MRG-02/NET-3): een NIEUW documentadres is een nieuwe rij in app.mcp_oauth_clients — dezelfde grenzen als
+    // DCR (registerClient): plafond per IP (/64) per etmaal en het totale plafond maxClients (eerst verdringen, dan pas weigeren).
+    // Dit gebeurt VÓÓR het ophalen, zodat ook het uitgaande verkeer begrensd is. Een bestaande rij (al eens goedgekeurd) telt niet.
+    const bestaand = await st.getClient(clientId);
+    // SEC-002 (slot m2, MR-4): controle én ophogen van de teller per IP in één synchrone stap (geen await ertussen), vóór de
+    // eerste await van de grenscontroles (daglimiet, maxClients) en vóór het ophalen. Anders komen
+    // gelijktijdige authorize-verzoeken van één IP allemaal langs de controle voordat er één de teller verhoogt (wedloop).
+    // De finally hieronder verlaagt de teller weer, ook bij een weigering door de daglimiet of maxClients.
+    if (ipSleutel) {
+      if (!bestaand && (cimdPerIp.get(ipSleutel) ?? 0) >= CIMD_PER_IP_TEGELIJK) throw new CimdFoutmelding('CIMD_LIMIET', 'te veel gelijktijdige ophalingen vanaf dit adres');
+      cimdPerIp.set(ipSleutel, (cimdPerIp.get(ipSleutel) ?? 0) + 1); geteld = true;
+    }
+    if (!bestaand) {
+      if (ipSleutel) {
+        const dag = await rateLimit(`mcp-register-dag:${ipSleutel}`, st.LIMITS.maxRegistratiesPerIpPerDag, 86400, { failClosed: true });
+        if (!dag.ok) throw new CimdFoutmelding('CIMD_LIMIET', 'te veel registraties vanaf dit adres');
+      }
+      if ((await st.countClients()) >= st.LIMITS.maxClients) {
+        await st.purgeStale({ vol: true });
+        if ((await st.countClients()) >= st.LIMITS.maxClients) throw new CimdFoutmelding('CIMD_VOL');
+      }
+    }
+    // SEC-002 (slot m2): een bekende klant (rij in de tabel) valt bij een vol procesplafond terug op een verlopen cachewaarde
+    // (zie CimdRegels.verouderdBijDrukte); een nieuwe klant krijgt dan CIMD_BEZET. Gebruik van zo'n waarde gaat naar het logboek.
+    let verouderd = false;
+    const k = await cimdKlant(clientId, { redirectToegestaan: redirectUriAllowed, naamFout: klantNaamFout, verouderdBijDrukte: !!bestaand, bijVerouderd: () => { verouderd = true; } }, ophaler);
+    if (verouderd && eenKeerPer(`mcp.cimd:verouderd:${clientId.slice(0, 200)}`)) {
+      await auditToevoegen({ ownerId: null, actorId: null, action: 'owner.mcp.cimd.verouderd', type: 'ai', result: 'success', service: 'mcp', details: { client: clientId.slice(0, 200), reden: 'plafond vol: verlopen cachewaarde van een bekende klant gebruikt' } }).catch(() => undefined);
+    }
+    // Alleen schrijven als er iets veranderd is (niet bij elke authorize een UPDATE).
+    const zelfde = bestaand && bestaand.client_name === k.client_name && JSON.stringify(bestaand.redirect_uris ?? []) === JSON.stringify(k.redirect_uris);
+    if (!zelfde) await st.upsertClient(k.client_id, k.client_name, k.redirect_uris);
+    return k;
+  } catch (e) {
+    const code = e instanceof CimdFoutmelding ? e.code : 'CIMD_NETWERK';
+    // Gedempt per adres: een aanvaller die steeds hetzelfde slechte document aanbiedt, vult het logboek niet.
+    // Grensweigeringen gedempt per IP (/64) — anders schrijft elk nieuw adres van een aanvaller een eigen regel.
+    const dempSleutel = code === 'CIMD_LIMIET' || code === 'CIMD_BEZET' || code === 'CIMD_VOL' ?`mcp.cimd:${code}:${ipSleutel || '-'}` : `mcp.cimd:${clientId.slice(0, 200)}:${code}`;
+    if (eenKeerPer(dempSleutel)) await auditToevoegen({ ownerId: null, actorId: null, action: 'owner.mcp.cimd.denied', type: 'ai', result: 'denied', service: 'mcp', details: { client: clientId.slice(0, 200), code, reden: String((e as Error).message).slice(0, 200) } }).catch(() => undefined);
+    return { fout: code };
+  } finally {
+    if (geteld) { const n = (cimdPerIp.get(ipSleutel) ?? 1) - 1; if (n <= 0) cimdPerIp.delete(ipSleutel); else cimdPerIp.set(ipSleutel, n); }
+  }
+}
 
 export async function registerClient(rawBody: string, ip = ''): Promise<RouterResponse> {
   let body: any;
@@ -118,30 +216,17 @@ export async function registerClient(rawBody: string, ip = ''): Promise<RouterRe
   }
   const method = body?.token_endpoint_auth_method;
   if (method !== undefined && method !== 'none') return respond(400, { error: 'invalid_client_metadata', error_description: 'Alleen token_endpoint_auth_method "none"' });
-  const eigenaarVanUri = (rawUri: string) => {
-    const u = parseUrl(rawUri);
-    if (!u) return undefined;
-    const schema = u.protocol.replace(/:$/, '');
-    const host = u.hostname.toLowerCase();
-    return V2_AGENTEN.find((a) => (schema === 'https' && a.webHosts.some((w) => host === w || host.endsWith(`.${w}`))) || a.appSchemas.includes(schema));
-  };
   const eersteEigenaar = (uris as string[]).map(eigenaarVanUri).find(Boolean);
   const opgegevenNaam = typeof body?.client_name === 'string' && body.client_name.trim() ? body.client_name.trim() : '';
   // SEC-002 (g10a-4, afwerking A): gereserveerde namen — «site:…» (zo heet de site zelf als aanvrager), «?» (onbekende klant) en
   // namen die zich als de site of de gebruiker voordoen — al bij de registratie weigeren (aanvragerNu neutraliseert ze ook nog).
-  if (opgegevenNaam && /^(?:\s*site\s*:|\?+$|(?:ви|you|u|jij)\s*\(\s*(?:з сайту|сайт|site|van de site)\s*\))/iu.test(opgegevenNaam.normalize('NFKC'))) {
+  if (opgegevenNaam && gereserveerdeKlantNaam(opgegevenNaam)) {
     return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name is gereserveerd' });
   }
   const name = (opgegevenNaam || eersteEigenaar?.naam || 'Claude').slice(0, 80);
-  // SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere aanbieder claimen.
-  const beweerdeKlant = opgegevenNaam ? klantVan(name) : 'overig';
-  if (beweerdeKlant !== 'overig') {
-    for (const rawUri of uris as string[]) {
-      const eigenaar = eigenaarVanUri(rawUri);
-      if (eigenaar && eigenaar.klant !== beweerdeKlant) {
-        return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name past niet bij redirect_uris' });
-      }
-    }
+  if (opgegevenNaam) {
+    const nf = klantNaamFout(name, uris as string[]);
+    if (nf) return respond(400, { error: 'invalid_client_metadata', error_description: nf });
   }
 
   // SEC-002 (ai-mcp-10): naast 20/min ook een plafond per IP (/64) per etmaal, en bij een vol plafond verdringen we de oudste
@@ -164,14 +249,21 @@ export async function registerClient(rawBody: string, ip = ''): Promise<RouterRe
 
 // ---------------- autorisatie: Claude stuurt de gebruiker hierheen ----------------
 
-export async function authorize(query: Record<string, string>): Promise<RouterResponse> {
-  const client = query.client_id ? await st.getClient(query.client_id) : null;
+export async function authorize(query: Record<string, string>, ip = ''): Promise<RouterResponse> {
+  const gevonden = await klantVoorId(query.client_id || '', ip);
   const redirectUri = query.redirect_uri || '';
   // Bij een onbekende client of ongeldige redirect nooit redirecten: dat zou een open redirect zijn.
+  // SEC-002 (slot m): grensweigeringen eerlijk benoemen (tweetalig, met wat te doen), net als DCR (429/503).
+  if (gevonden && 'fout' in gevonden && gevonden.fout === 'CIMD_LIMIET') return plain(429, 'Забагато нових підключень ШІ з цієї адреси. Спробуйте пізніше. · Te veel nieuwe AI-koppelingen vanaf dit adres. Probeer het later opnieuw. (CIMD_LIMIET)');
+  // SEC-002 (slot m2): het procesbrede plafond is geen grens van «dit adres» — de server zelf is bezet.
+  if (gevonden && 'fout' in gevonden && gevonden.fout === 'CIMD_BEZET') return plain(503, 'Сервер зараз зайнятий: забагато одночасних перевірок підключень ШІ. Спробуйте ще раз за хвилину. · De server is nu bezet: te veel AI-koppelingen tegelijk in controle. Probeer het over een minuut opnieuw. (CIMD_BEZET)');
+  if (gevonden && 'fout' in gevonden && gevonden.fout === 'CIMD_VOL') return plain(503, 'Зараз забагато зареєстрованих клієнтів ШІ. Спробуйте за кілька хвилин. · Er zijn nu te veel geregistreerde AI-klanten. Probeer het over een paar minuten opnieuw. (CIMD_VOL)');
+  if (gevonden && 'fout' in gevonden) return plain(400, `Unknown client (${gevonden.fout})`);
+  const client = gevonden;
   if (!client) return plain(400, 'Unknown client');
   if (!redirectUri || !redirectMatches(client.redirect_uris, redirectUri)) return plain(400, 'Invalid redirect_uri');
 
-  const fail = (error: string, description: string) => redirect(withRedirect(redirectUri, { error, error_description: description, state: query.state }));
+  const fail = (error: string, description: string) => redirect(withRedirect(redirectUri, { error, error_description: description, state: query.state, iss: ISSUER }));
   if (query.response_type !== 'code') return fail('unsupported_response_type', 'response_type=code verwacht');
   if (!query.code_challenge || query.code_challenge_method !== 'S256' || !/^[A-Za-z0-9\-_]{43}$/.test(query.code_challenge)) {
     return fail('invalid_request', 'PKCE met S256 is verplicht');
@@ -240,7 +332,7 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   if (approve && a.agent && !v2) return { error: 'EXPIRED' };
   if (!approve) {
     const done = await st.decideAuth(rid, userId, false, null);
-    return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state }) } : { error: 'EXPIRED' };
+    return done ? { redirect: withRedirect(a.redirect_uri, { error: 'access_denied', state: a.state, iss: ISSUER }) } : { error: 'EXPIRED' };
   }
   // Стеля сайту (0043): вимкнений агент або спосіб MCP не отримує приватний дозвіл. Технічний простір цим не ріжеться.
   if (ruimteOf(ruimte) === 'prive') {
@@ -252,7 +344,7 @@ export async function consentDecide(userId: string, rid: string, approve: boolea
   // Duur: de keuze in het venster, anders de instelling van de gebruiker voor deze AI-klant (standaard 1 uur).
   const gekozen = isDuurId(duur) ? duur : (await leesDuren(userId))[klantVan(a.client_name)];
   const done = await st.decideAuth(rid, userId, true, sha256(code), gekozen, ruimteOf(ruimte), a.agent ? v2 : null);
-  return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state }) } : { error: 'EXPIRED' };
+  return done ? { redirect: withRedirect(a.redirect_uri, { code, state: a.state, iss: ISSUER }) } : { error: 'EXPIRED' };
 }
 
 // ---------------- token-eindpunt (RFC 6749) ----------------
@@ -393,7 +485,7 @@ export const unauthorized = (invalidToken = false): RouterResponse => respond(40
 // ---------------- MCP (JSON-RPC over Streamable HTTP) ----------------
 
 const rpcResult = (id: unknown, result: unknown) => ({ jsonrpc: '2.0', id, result });
-const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: '2.0', id: id ?? null, error: { code, message } });
+const rpcError = (id: unknown, code: number, message: string, data?: Record<string, unknown>) => ({ jsonrpc: '2.0', id: id ?? null, error: { code, message, ...(data ? { data } : {}) } });
 
 // Instructies per ruimte: shared/ai-ruimte.ts (RUIMTE_INSTRUCTIES). Eén tekst voor beide zou de AI hulpmiddelen beloven die zij niet ziet.
 const instructies = (ruimte: AiRuimte) => RUIMTE_INSTRUCTIES[ruimte];
@@ -427,6 +519,18 @@ const verbindingStop = (staat: Awaited<ReturnType<typeof leesStaat>>, who: Wie) 
   ruimte: who.ruimte, klant: klantVan(who.clientName), methode: who.agentTokenId ? 'token' : 'mcp',
   agentKlant: who.agent ? V2_AGENTEN.find((a) => a.slug === who.agent)?.klant ?? null : null,
 });
+/**
+ * SEC-002 (slot m, MR-1/MRG-06): mag deze verbinding NU de bronnen met accountgegevens lezen (mr://identiteit/profiel)? Alleen als geen
+ * sitebrede schakelaar («agent uit», «manier uit») de verbinding stopt. Onleesbare stand = nee (zoals ai-mcp-13). Het recht zelf
+ * (v2_whoami) controleert de aanroeper: connector v2 kent het per verbinding.
+ */
+export async function profielNietGestopt(who: Wie): Promise<boolean> {
+  try { return verbindingStop(await leesStaat(), who) === null; } catch { return false; }
+}
+/** Weigering van een bron met accountgegevens in het logboek, zoals een geweigerde tools/call (owner.mcp.tool, reden recht-uit). */
+export async function meldBronGeweigerd(who: Wie, uri: string, agent?: AgentSlug): Promise<void> {
+  await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { tool: 'resources/read', bron: uri.slice(0, 80), client: who.clientName.slice(0, 80), grantId: grantVan(who) ?? null, ...(agent ? { agent } : {}), reden: 'recht-uit' } }).catch(() => undefined);
+}
 const namensVan = (who: Wie, viaV2 = false) => ({ client: who.clientName, grantId: grantVan(who), ruimte: who.ruimte, lade: who.lade ?? who.ruimte, ...(who.agent ? { agent: who.agent } : {}), ...(viaV2 ? { v2: true } : {}) });
 /** Connector v2: de naam die de AI gebruikte (…_grok_mail_gmail_tarasevych_com_gebruiker) en de agent, naast de interne naam. */
 export type V2Context = { naam: string; agent: AgentSlug };
@@ -624,36 +728,79 @@ async function ruimteFoutVoorMcp(userId: string, name: string, verbindingId?: st
   return JSON.stringify({ error: a.code, status: a.status, uitleg: a.uitleg, hulpmiddel: name.slice(0, 80), scope: hulpmiddelScope(name, BEHEER_TOOL_NAMEN) });
 }
 
-async function handleMessage(who: Wie, msg: any): Promise<unknown | null> {
+async function handleMessage(who: Wie, msg: any, protocolKop?: string): Promise<unknown | null> {
   if (!msg || typeof msg !== 'object' || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return rpcError(msg?.id, -32600, 'Invalid Request');
   const id = msg.id;
   if (id === undefined) return null; // notificatie (bijv. notifications/initialized): geen antwoord
+  const metaCheck = controleerModerneMeta(msg as Record<string, unknown>, protocolKop);
+  if (!metaCheck.ok) return rpcError(id, metaCheck.code, metaCheck.message, metaCheck.data);
+
   // Levende rechten: een technische koppeling waarvan het profiel nu uit staat toont NIETS en voert NIETS uit (roepTool weigert ook zelf).
   const techNuUit = !(await technischNuGeldig(who));
+  const effRuimte: AiRuimte = techNuUit ? 'prive' : who.ruimte;
+  const instr = techNuUit ? `${instructies(who.ruimte)} ${TECH_NU_UIT_INSTRUCTIE}` : instructies(who.ruimte);
 
   switch (msg.method) {
     case 'initialize': {
       const wanted = String(msg.params?.protocolVersion ?? '');
+      const gekozen = wanted === MCP_MODERNE_VERSIE
+        ? MCP_MODERNE_VERSIE
+        : (PROTOCOL_VERSIONS.includes(wanted) ? wanted : PROTOCOL_VERSIONS[0]);
       return rpcResult(id, {
-        protocolVersion: PROTOCOL_VERSIONS.includes(wanted) ? wanted : PROTOCOL_VERSIONS[0],
-        capabilities: { tools: { listChanged: true } },
+        protocolVersion: gekozen,
+        capabilities: bouwCapabilitiesBlock(),
         serverInfo: { name: 'mijn-ruimte', title: 'Mijn Ruimte', version: '1.0.0' },
-        instructions: techNuUit ? `${instructies(who.ruimte)} ${TECH_NU_UIT_INSTRUCTIE}` : instructies(who.ruimte),
+        instructions: instr,
       });
     }
-    case 'ping': return rpcResult(id, {});
-    case 'tools/list': return rpcResult(id, { tools: techNuUit ? [] : (await lijstTools(who)).map(toMcpTool) });
+    case 'ping': return rpcResult(id, omhulModernResultaat({}, metaCheck.modern));
+    case 'tools/list': {
+      const tools = techNuUit ? [] : (await lijstTools(who)).map(toMcpTool);
+      return rpcResult(id, omhulModernResultaat({ tools }, metaCheck.modern, { metCache: true, ttlMs: 60_000 }));
+    }
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
       const args: Record<string, unknown> = msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {};
-      return rpcResult(id, await roepTool(who, name, args));
+      const uit = await roepTool(who, name, args);
+      return rpcResult(id, omhulModernResultaat(uit as Record<string, unknown>, metaCheck.modern));
     }
-    default: return rpcError(id, -32601, 'Method not found');
+    default: {
+      // SEC-002 (slot m, MRG-06): technische koppeling met profiel uit toont NIETS — ook geen bronnen of prompts (zoals tools/list).
+      if (techNuUit && (msg.method === 'resources/list' || msg.method === 'resources/templates/list' || msg.method === 'prompts/list')) {
+        const sleutel = msg.method === 'resources/list' ? 'resources' : msg.method === 'prompts/list' ? 'prompts' : 'resourceTemplates';
+        return rpcResult(id, omhulModernResultaat({ [sleutel]: [] }, metaCheck.modern));
+      }
+      // Het oude /mcp kent geen recht per hulpmiddel; accountgegevens alleen als de koppeling nu leeft en geen schakelaar haar stopt.
+      const magProfiel = !techNuUit && await profielNietGestopt(who);
+      const extra = await behandelMcpProtocolMethode({
+        userId: who.userId,
+        clientName: who.clientName,
+        ruimte: effRuimte,
+        magProfiel,
+        meldWeigering: (uri) => meldBronGeweigerd(who, uri),
+        instructions: instr,
+        modern: metaCheck.modern,
+      }, msg.method, msg.params);
+      if (extra?.soort === 'result') return rpcResult(id, extra.result);
+      if (extra?.soort === 'error') return rpcError(id, extra.code, extra.message, extra.data);
+      return rpcError(id, -32601, 'Method not found');
+    }
   }
 }
 
-export async function rpcPost(authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
+/**
+ * MCP-001 R1: JSON-RPC-batches bestaan alleen in protocol 2025-03-26; sinds 2025-06-18 zijn ze uit de specificatie. Een klant die
+ * met de kop MCP-Protocol-Version een nieuwere versie aankondigt en tóch een batch stuurt, krijgt -32600. Zonder kop (oude klanten)
+ * blijft het zoals het was — zo breekt niets dat nu werkt.
+ */
+export const batchToegestaan = (protocolKop: string | undefined): boolean => {
+  const v = String(protocolKop || '').trim();
+  return !v || v === '2025-03-26' || v === '2024-11-05';
+};
+export const BATCH_FOUT = (versie: string) => rpcError(null, -32600, `JSON-RPC batch is not part of MCP ${String(versie).slice(0, 20)} — send one message per request`);
+
+export async function rpcPost(authorization: string | undefined, rawBody: string, protocolKop?: string): Promise<RouterResponse> {
   const who = await authenticate(authorization);
   // Een v2-token (gebonden aan /<agent>) werkt niet op het oude /mcp: daar zouden de rechten per hulpmiddel niet gelden.
   if (!who || who.agent) return unauthorized(!!String(authorization || '').trim());
@@ -667,13 +814,14 @@ export async function rpcPost(authorization: string | undefined, rawBody: string
   try { parsed = JSON.parse(rawBody); } catch { return respond(400, rpcError(null, -32700, 'Parse error')); }
 
   if (Array.isArray(parsed)) { // JSON-RPC batch (specificatie 2025-03-26)
+    if (!batchToegestaan(protocolKop)) return respond(400, BATCH_FOUT(String(protocolKop)));
     // SEC-002 (ai-mcp-08): pakket begrensd, elk bericht telt in de limiet, kleine parallelliteit (zie backend/mcp-pakket.ts).
     const besluit = await pakketToegestaan(`mcp-rpc:${who.limietSleutel}`, parsed.length, RPC_PER_MINUTE);
     if (!besluit.ok) return respond(besluit.status, rpcError(null, besluit.code, besluit.bericht), besluit.retryAfter ? { 'Retry-After': String(besluit.retryAfter) } : undefined);
-    const out = (await pakketUitvoeren(parsed, (m) => handleMessage(who, m))).filter((r) => r !== null);
+    const out = (await pakketUitvoeren(parsed, (m) => handleMessage(who, m, protocolKop))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }
-  const out = await handleMessage(who, parsed);
+  const out = await handleMessage(who, parsed, protocolKop);
   return out === null ? respond(202, undefined) : respond(200, out);
 }
 
@@ -695,8 +843,8 @@ export const rpcOptions = (): RouterResponse => respond(204, undefined, {
   Allow: 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version',
-  'Access-Control-Expose-Headers': 'WWW-Authenticate, Mcp-Session-Id',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Mcp-Method, Mcp-Name',
+  'Access-Control-Expose-Headers': 'WWW-Authenticate, Mcp-Session-Id, MCP-Protocol-Version',
 });
 
 // ---------------- beheer door de gebruiker ----------------

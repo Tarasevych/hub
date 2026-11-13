@@ -8,11 +8,11 @@
     "versie": null,
     "bron": "onbekend"
   },
-  "basisCommit": "11e0aad8b641b62412d2efcf1382d117339d251f",
-  "basisVersie": "20261112-192752",
+  "basisCommit": "1f101224e2e896d78485c79edf615b47d7c2d373",
+  "basisVersie": "20261112-215622",
   "installatie": {
-    "versie": "20261112-192752",
-    "commit": "11e0aad8b641b62412d2efcf1382d117339d251f",
+    "versie": "20261112-215622",
+    "commit": "1f101224e2e896d78485c79edf615b47d7c2d373",
     "bron": "/api/version · перевіряє процес випуску"
   },
   "regelsVersie": "1.4.14",
@@ -52,6 +52,7 @@
       ".gitignore",
       "BEVEILIGINGSNOTITIES.nl.md",
       "OMGEVINGSVARIABELEN.nl.md",
+      "ORCH-OVERDRACHT.json",
       "backend/account-wissen.ts",
       "backend/agenda-caldav.ts",
       "backend/agenda-ics.ts",
@@ -131,13 +132,16 @@
       "backend/mail-zoek-duurzaam.ts",
       "backend/mail-zoek-relevantie.ts",
       "backend/mail-zoek.ts",
+      "backend/mcp-cimd.ts",
       "backend/mcp-connector-opslag.ts",
       "backend/mcp-connector-routes.ts",
       "backend/mcp-connector.ts",
       "backend/mcp-console.ts",
       "backend/mcp-deur-brug.ts",
+      "backend/mcp-inspector-routes.ts",
       "backend/mcp-klant/vervoer.ts",
       "backend/mcp-namens.ts",
+      "backend/mcp-protocol-2026.ts",
       "backend/merk-bron.ts",
       "backend/merk-eigen.ts",
       "backend/nieuw-apparaat.ts",
@@ -268,6 +272,7 @@
       "shared/agenda-caldav-model.ts",
       "shared/ai-agent-bord.ts",
       "shared/ai-bronnen.ts",
+      "shared/ai-verbinding.ts",
       "shared/ai-vertaling.ts",
       "shared/beheer-journaal.ts",
       "shared/cloud-vnext-model.ts",
@@ -282,6 +287,7 @@
       "shared/mail-slimme-inbox.ts",
       "shared/mcp-acties.ts",
       "shared/mcp-klant-model.ts",
+      "shared/mcp-protocol-2026-model.ts",
       "shared/melding-soorten.ts",
       "shared/meldingen-soorten.ts",
       "shared/meldingen-v2/uitleg-register.ts",
@@ -426,8 +432,7 @@
       "\"\\320\\227\\320\\234\\320\\206\\320\\235\\320\\235\\320\\206-\\320\\241\\320\\225\\320\\240\\320\\225\\320\\224\\320\\236\\320\\222\\320\\230\\320\\251\\320\\220.md\"",
       "\"\\320\\227\\320\\234\\320\\206\\320\\235\\320\\235\\320\\206-\\320\\241\\320\\225\\320\\240\\320\\225\\320\\224\\320\\236\\320\\222\\320\\230\\320\\251\\320\\220.uk.md\"",
       "\"\\320\\235\\320\\236\\320\\242\\320\\220\\320\\242\\320\\232\\320\\230-\\320\\221\\320\\225\\320\\227\\320\\237\\320\\225\\320\\232\\320\\230.md\"",
-      "\"\\320\\235\\320\\236\\320\\242\\320\\220\\320\\242\\320\\232\\320\\230-\\320\\221\\320\\225\\320\\227\\320\\237\\320\\225\\320\\232\\320\\230.uk.md\"",
-      "ORCH-OVERDRACHT.json"
+      "\"\\320\\235\\320\\236\\320\\242\\320\\220\\320\\242\\320\\232\\320\\230-\\320\\221\\320\\225\\320\\227\\320\\237\\320\\225\\320\\232\\320\\230.uk.md\""
     ],
     "toegevoegd": [
       ".claude/skills/beveiligingsaudit/SKILL.md",
@@ -523,6 +528,7 @@
       "tests/eenheid/sec-002-g10h-20261112.test.ts",
       "tests/eenheid/sec-002-g10i-20261112.test.ts",
       "tests/eenheid/sec-002-g11-20261112.test.ts",
+      "tests/eenheid/sec-002-slot-m-20261113.test.ts",
       "tests/eenheid/sec-002-slot-s-20261112.test.ts",
       "tests/eenheid/sec-002-slot-t-20261112.test.ts",
       "tests/eenheid/sec-002-slot-u-20261112.test.ts",
@@ -542,7 +548,7 @@
     "nl": "Diepe beveiligingsaudit van de hele repository (13 gebieden) en herstel van alle gevonden kwetsbaarheden in één release boven op de geïnstalleerde versie 20261112-192752; elke patchgroep en de hele boom zijn onafhankelijk nagekeken; tweetalige openbare beschrijving in docs/beveiliging/."
   },
   "tests": {
-    "geslaagd": 61,
+    "geslaagd": 66,
     "mislukt": 0,
     "falend": [],
     "uitleg": {
@@ -555,5 +561,5 @@
     "nl": "Drie bevindingen zijn gedeeltelijk opgelost (zie «Gedeeltelijk opgelost» in het openbare rapport); beslissingen van de eigenaar staan op veilige standaardwaarden; sleutel V1 is niet verwijderd vóór het opnieuw verzegelen van oude rijen."
   },
   "conflicten": [],
-  "aangemaakt": "2026-11-13T09:43:16.605Z"
+  "aangemaakt": "2026-11-13T11:31:22.957Z"
 }

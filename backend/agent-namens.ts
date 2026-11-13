@@ -58,6 +58,7 @@ export const AGENT_VERBODEN: readonly RegExp[] = Object.freeze([
   /^[A-Z]+ \/api\/owner\/mcp-connector\/(grants|approvals|consent)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/mcp\/consent(\/|$)/,
   /^[A-Z]+ \/api\/owner\/connector-v2\//,
+  /^[A-Z]+ \/api\/owner\/mcp-inspector\//,             // SEC-002 (slot m, MR-6): MCP-studio voert hulpmiddelen uit en toont koppelingen: alleen een mens
   /^[A-Z]+ \/api\/owner\/agents\/[^/]+\/(policy|revoke)(\/|$)/,
   /^[A-Z]+ \/api\/owner\/agents\/(ontgrendeling|extensie-status|extensie-beheer|register|ws-ticket|block|unblock)(\/|$)/, // browserextensie ontgrendelen/intrekken/status (0.5), beheer/beleid (0.6) en agentregistratie: alleen een mens
   /^[A-Z]+ \/api\/owner\/tech\//,                       // technisch profiel activeren/verlengen

@@ -46,6 +46,11 @@ export async function countClients(): Promise<number> {
 export async function insertClient(clientId: string, name: string, redirectUris: string[]): Promise<void> {
   await q('INSERT INTO app.mcp_oauth_clients (client_id, client_name, redirect_uris) VALUES ($1, $2, $3)', [clientId, name, redirectUris]);
 }
+/** MCP-001 R1 · CIMD: de klant bij een documentadres bijwerken of aanmaken (naam en terugkeeradressen volgen het document). */
+export async function upsertClient(clientId: string, name: string, redirectUris: string[]): Promise<void> {
+  await q(`INSERT INTO app.mcp_oauth_clients (client_id, client_name, redirect_uris) VALUES ($1, $2, $3)
+           ON CONFLICT (client_id) DO UPDATE SET client_name = EXCLUDED.client_name, redirect_uris = EXCLUDED.redirect_uris`, [clientId, name, redirectUris]);
+}
 export async function getClient(clientId: string): Promise<{ client_id: string; client_name: string; redirect_uris: string[] } | null> {
   const { rows } = await q('SELECT client_id, client_name, redirect_uris FROM app.mcp_oauth_clients WHERE client_id = $1', [clientId]);
   return rows[0] ?? null;

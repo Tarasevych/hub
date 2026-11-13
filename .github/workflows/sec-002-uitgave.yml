@@ -26,7 +26,7 @@ env:
   # Встановлена на сервері основа (версія=фіксація змін); обов'язковий предок цієї гілки.
   # Geïnstalleerde serverbasis (versie=commit); verplichte voorouder van deze tak.
   # Остання в переліку — запасна, якщо тунель тимчасово недоступний. · De laatste is de reserve bij een tijdelijk onbereikbare tunnel.
-  BEKENDE_BASISSEN: '20261112-135406=2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f 20261112-192752=11e0aad8b641b62412d2efcf1382d117339d251f'
+  BEKENDE_BASISSEN: '20261112-135406=2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f 20261112-192752=11e0aad8b641b62412d2efcf1382d117339d251f 20261112-215622=1f101224e2e896d78485c79edf615b47d7c2d373'
   INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
   # Ідентифікатор моделі ШІ задає власник змінною сховища (у файлах сховища його не пишемо).
   # De model-id zet de eigenaar als repository-variabele (niet in bestanden van de repository).
@@ -167,7 +167,7 @@ jobs:
           done
           # Змінені патчами тести модулів, зелені в послідовному прогоні в чистій базі. mcp-scherm-lokale-controle-20261031
           # залежить від стану, який лишають попередні тести, тож його перевірено поодинці в чистій базі (17/17), а не тут.
-          for t in account-wissen-20261026 account-wissen-db-20261113 afstemming-kern-20261030 ai-agent-bord ai-kluis-een-plek-20261101 ai-mail-assistent audit-toegang browser-extensie connector-beide-kanten-20261020 extensie-offscreen-20261106 extensie-opties extensie-profielen extensie-vergrendeling extern-bureaublad github-webhook-na-ontkoppelen-20261112 github-werkruimte-tak-20261112 huis-vnext-20261028 lezer-context-20261024 mail-ux-beoordeling-20261021 mcp-console-c2 mcp-klant-stabiliteit-20261112 meldingen-sferen-20261022 merk-bron-20261021 merk-bron-redos-20261112 notities-vnext-20261028 ruimte-cloud-agenda-20261020 ruimte-mail-20261020 ruimtes-gescheiden-20261101 telegram-inlog-apparaat-20261112 terminal-opdrachten-20261022 toegangssleutels zoek-kern-20261022 zoek-ui-bereik-20261105; do
+          for t in account-wissen-20261026 account-wissen-db-20261113 afstemming-kern-20261030 ai-agent-bord ai-kluis-een-plek-20261101 ai-mail-assistent audit-toegang browser-extensie connector-beide-kanten-20261020 connector-v2 devtools-schema-tekst-20261112 extensie-offscreen-20261106 extensie-opties extensie-profielen extensie-vergrendeling extern-bureaublad github-webhook-na-ontkoppelen-20261112 github-werkruimte-tak-20261112 huis-vnext-20261028 lezer-context-20261024 mail-ux-beoordeling-20261021 mcp-2026-07-28-studio mcp-console-c2 mcp-klant-stabiliteit-20261112 mcp-r1-beveiliging-20261112 meldingen-sferen-20261022 merk-bron-20261021 merk-bron-redos-20261112 notities-vnext-20261028 ruimte-cloud-agenda-20261020 ruimte-mail-20261020 ruimtes-gescheiden-20261101 telegram-inlog-apparaat-20261112 terminal-opdrachten-20261022 toegangssleutels zoek-kern-20261022 zoek-ui-bereik-20261105; do
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
       - name: Упевнитися в незмінності робочого дерева

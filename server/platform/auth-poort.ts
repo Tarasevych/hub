@@ -56,6 +56,8 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   // (OAuth-client + PKCE + eenmalige code, of Bearer-token bij /rpc). Zie backend/mcp-connector.ts.
   'GET /api/mcp-connector/prm': 'OAuth protected resource metadata (RFC 9728), openbaar',
   'GET /api/mcp-connector/asm': 'OAuth authorization server metadata (RFC 8414), openbaar',
+  'GET /api/mcp-connector/server-card': 'MCP Server Card (ext-server-card, /.well-known/mcp.json), openbaar',
+  'GET /api/mcp-connector/registry-server': 'MCP Registry-manifest (/server.json), openbaar',
   'POST /api/mcp-connector/register': 'dynamische clientregistratie (RFC 7591); alleen de callback van Claude is toegestaan',
   'GET /api/mcp-connector/authorize': 'autorisatieverzoek van Claude; redirect naar het toestemmingsscherm, geeft zelf geen toegang',
   'POST /api/mcp-connector/token': 'tokenuitgifte: eenmalige code + PKCE-verifier, of roterend refresh-token',

@@ -105,3 +105,14 @@ export function redirectPast(geregistreerd: readonly string[], gevraagd: string)
 
 /** Eigen terugkeeradres van de site voor «Підключити автоматично» in de browser (PKCE in de pagina zelf). */
 export const SITE_TERUG_PAD = '/oauth-terug';
+
+/**
+ * SEC-002 (g10a-4, afwerking A; slot m): gereserveerde namen van een AI-klant — «site:…» (zo heet de site zelf als aanvrager), «?»
+ * (onbekende klant) en namen die zich als de site of de gebruiker voordoen («Ви (з сайту)», «You (site)», «Jij (van de site)»), ook na
+ * NFKC-vereenvoudiging (volle breedte, ligaturen). Gedeeld door DCR, CIMD (backend/mcp-connector.ts) en aanvragerNu (connectors-opslag).
+ */
+export const GERESERVEERDE_NAAM = /^(?:\s*site\s*:|\s*\?+\s*$|\s*(?:ви|you|u|jij)\s*\(\s*(?:з сайту|сайт|site|van de site)\s*\))/iu;
+// SEC-002 (slot m2): vóór de controle onzichtbare opmaaktekens (\p{Cf}: nulbreedte, richtingstekens, woordverbinder) weghalen en
+// witruimte samenpersen — anders glippen «Ви<U+200B> (з сайту)» en «Ви (з  сайту)» erdoor. Geldt voor DCR, CIMD en aanvragerNu.
+export const naamVoorControle = (naam: string): string => String(naam ?? '').normalize('NFKC').replace(/\p{Cf}/gu, '').replace(/\s+/gu, ' ');
+export const gereserveerdeKlantNaam = (naam: string): boolean => GERESERVEERDE_NAAM.test(naamVoorControle(naam));

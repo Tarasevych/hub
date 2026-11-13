@@ -29,14 +29,14 @@ import { ontleed, toolNaam } from '../shared/connector-v2/namen';
 import { TECH_PROFIEL_UIT } from '../shared/ai-ruimte';
 import { breidtUit, isKant, schoon, STANDAARD } from '../shared/connector-v2/rechten';
 import { basisVan, berekenMassa, type MassaInvoer, type MassaUitkomst } from '../shared/connector-v2/massa';
-import { authenticate, ISSUER, lijstTools, PROTOCOL_VERSIONS, revokeUserGrant, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
+import { authenticate, BATCH_FOUT, batchToegestaan, ISSUER, lijstTools, meldBronGeweigerd, profielNietGestopt, PROTOCOL_VERSIONS, revokeUserGrant, roepTool, SCOPE, werkDetails, type Wie } from './mcp-connector';
 import { zetToegang } from './ai-toegang';
 import { meldLijstGewijzigd, sluitStromenVan } from './connector-v2-stroom';
 import { aiPoortNu } from './ai-ruimte-poort';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { taalVanGebruiker, vertaal, type ToolDef } from './connectors-hulpmiddelen';
 import { BEHEER_TOOLS } from './ai-beheer-hulpmiddeldefinities';
-import { tekstVanOptie, v2Staart, type ToolTaal } from '../shared/hulpmiddel-teksten';
+import { tekstVanOptie, v2Staart, vertaalSchema, type ToolTaal } from '../shared/hulpmiddel-teksten';
 import * as v2st from './connector-v2-opslag';
 import { erfenisUit, erfenisVoor, oudeGrantsVoor, rechtenVoorOudToken, type OudeGrant } from './connector-v2-erfenis';
 // Zone E (22.10.2026): chrome-devtools-mcp-namen als aliassen + «devtools-namen» in tools/list (matrix «Браузер і агенти»).
@@ -45,6 +45,15 @@ import { instellingenVan as matrixInstellingen } from './extensie-matrix';
 import { veiligeExterneDiagnose, type AgentToegangDiagnose, type ToegangWeigerCode } from '../shared/ai-toegang-diagnose';
 import { bouwGebruikerDiagnoseContext, diagnoseVoorAgent, diagnoseVoorAgentMetContext, meldGeblokkeerdeAiPoging } from './ai-toegang-diagnose';
 import { pakketToegestaan, pakketUitvoeren } from './mcp-pakket'; // SEC-002 (ai-mcp-08)
+import {
+  GROEP_ICONEN,
+  MCP_MODERNE_VERSIE,
+  WHOAMI_OUTPUT_SCHEMA,
+  controleerModerneMeta,
+  omhulModernResultaat,
+  verrijkToolAnnotaties,
+} from '../shared/mcp-protocol-2026-model';
+import { behandelMcpProtocolMethode, bouwCapabilitiesBlock } from './mcp-protocol-2026';
 
 const RPC_PER_MINUTE = 120;
 const MAX_RPC_BYTES = 6 * 1024 * 1024;
@@ -55,7 +64,11 @@ const respond = (status: number, data: unknown, headers: Record<string, string> 
   body: data === undefined ? '' : JSON.stringify(data),
 });
 const rpcResult = (id: unknown, result: unknown) => ({ jsonrpc: '2.0', id, result });
-const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: '2.0', id: id ?? null, error: { code, message } });
+const rpcError = (id: unknown, code: number, message: string, data?: Record<string, unknown>) => ({
+  jsonrpc: '2.0',
+  id: id ?? null,
+  error: { code, message, ...(data ? { data } : {}) },
+});
 const tekst = (t: string, isError = false) => ({ content: [{ type: 'text' as const, text: t }], ...(isError ? { isError: true } : {}) });
 
 // ---------------------------------------------------------------- metadata per agent (RFC 9728)
@@ -119,15 +132,18 @@ type Koppeling = Wie & { tokenId: string; agent: AgentSlug; limietSleutel: strin
  * lijstTools (zelfde mechanisme als het oude /mcp, met de beheerteksten voor de kant 'beheer'); v2_whoami heeft geen interne
  * tegenhanger en neemt de catalogustekst rechtstreeks. Het staartje zegt in welke ruimte en groep het hulpmiddel leeft.
  */
-const v2Tool = (o: V2Optie, slug: AgentSlug, taal: ToolTaal, basis?: ToolDef): ToolDef => {
+const v2Tool = (o: V2Optie, slug: AgentSlug, taal: ToolTaal, basis?: ToolDef): ToolDef & { icons?: unknown; outputSchema?: unknown } => {
   const eigen = tekstVanOptie(o);
+  const icoon = GROEP_ICONEN[o.groep];
   return {
     name: toolNaam(o, slug),
     title: basis?.title ?? eigen.titel[taal],
     description: `${basis?.description ?? eigen.uitleg[taal]} ${v2Staart(o, taal)}`,
     inputSchema: basis?.inputSchema ?? { type: 'object', properties: {}, additionalProperties: false },
-    annotations: { ...(basis?.annotations ?? {}), readOnlyHint: o.soort === 'lezen', ...(o.soort === 'wissen' ? { destructiveHint: true } : {}) },
-  } as ToolDef;
+    ...(o.intern === WHOAMI ? { outputSchema: WHOAMI_OUTPUT_SCHEMA } : {}),
+    ...(icoon ? { icons: [icoon] } : {}),
+    annotations: verrijkToolAnnotaties(o.groep, o.soort, basis?.annotations as Record<string, unknown> | undefined),
+  } as ToolDef & { icons?: unknown; outputSchema?: unknown };
 };
 
 /** Ruimte van een aanroep = de kant van de naam (nooit die van de koppeling als geheel). */
@@ -176,7 +192,7 @@ export async function v2Lijst(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: Ai
       // Alleen voor hulpmiddelen die deze koppeling aan DEZE kant echt heeft (recht + bestaat nu): een alias geeft nooit meer.
       const toegestaanIntern = new Set(V2_OPTIES.filter((o) => o.kant === kant && o.status === 'actief' && toegestaan.has(o.key) && o.intern && intern.has(o.intern)).map((o) => o.intern as string));
       const al = new Set(uit.map((t) => t.name));
-      for (const d of devtoolsDefinities(toegestaanIntern)) if (!al.has(d.name)) { uit.push(d); al.add(d.name); }
+      for (const d of devtoolsDefinities(toegestaanIntern, taal, kant)) if (!al.has(d.name)) { uit.push(d); al.add(d.name); }
     }
   }
   return uit;
@@ -279,7 +295,7 @@ async function whoami(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: AiRuimte, 
   const nu = ruimte ?? await levendeRuimte(who);
   const diag = await diagnoseVanKoppeling(who, rechten, nu).catch(() => null);
   if (diag) meldAlsBeperkt(who, diag, 'whoami');
-  return tekst(JSON.stringify({
+  const payload = {
     account: { email: u.email ?? null, name: u.name ?? null, role: u.role ?? null },
     // `granted` = wat de mens deze connector ooit toestond; `activeNow` = wat op dit moment echt bestaat (levende rechten).
     connection: {
@@ -289,39 +305,79 @@ async function whoami(who: Koppeling, rechten: v2st.V2Keuze, ruimte?: AiRuimte, 
       technicalProfileActive: nu === 'technisch',
       ...(diag ? { diagnostics: veiligeExterneDiagnose(diag, agentPaginaUrl(who.agent)) } : {}),
     },
-  }));
+  };
+  return { ...tekst(JSON.stringify(payload)), structuredContent: payload };
 }
 
-async function bericht(who: Koppeling, rechten: v2st.V2Keuze, msg: any, ruimte: AiRuimte, via: 'v2' | 'mcp' = 'v2'): Promise<unknown | null> {
+async function bericht(who: Koppeling, rechten: v2st.V2Keuze, msg: any, ruimte: AiRuimte, via: 'v2' | 'mcp' = 'v2', protocolKop?: string): Promise<unknown | null> {
   if (!msg || typeof msg !== 'object' || msg.jsonrpc !== '2.0' || typeof msg.method !== 'string') return rpcError(msg?.id, -32600, 'Invalid Request');
   const id = msg.id;
   if (id === undefined) return null;
+  const metaCheck = controleerModerneMeta(msg as Record<string, unknown>, protocolKop);
+  if (!metaCheck.ok) return rpcError(id, metaCheck.code, metaCheck.message, metaCheck.data);
+
   switch (msg.method) {
     case 'initialize': {
       const wanted = String(msg.params?.protocolVersion ?? '');
+      const gekozen = wanted === MCP_MODERNE_VERSIE
+        ? MCP_MODERNE_VERSIE
+        : (PROTOCOL_VERSIONS.includes(wanted) ? wanted : PROTOCOL_VERSIONS[0]);
       return rpcResult(id, {
-        protocolVersion: PROTOCOL_VERSIONS.includes(wanted) ? wanted : PROTOCOL_VERSIONS[0],
+        protocolVersion: gekozen,
         // list_changed: de server meldt over de GET-stroom (backend/connector-v2-stroom.ts) wanneer de levende staat de lijst verandert.
-        capabilities: { tools: { listChanged: true } },
+        capabilities: bouwCapabilitiesBlock(),
         serverInfo: { name: `mijn-ruimte-${who.agent}`, title: `Mijn Ruimte · ${v2Agent(who.agent).naam}`, version: '2.0.0' },
         instructions: instructies(who.agent, rechten.kanten, ruimte),
       });
     }
-    case 'ping': return rpcResult(id, {});
+    case 'ping': return rpcResult(id, omhulModernResultaat({}, metaCheck.modern));
     case 'tools/list': {
       const lijst = await v2Lijst(who, rechten, ruimte);
       if ((rechten.kanten.includes('beheer') && ruimte !== 'technisch') || (lijst.length <= 1 && rechten.sleutels.length > 1)) {
         void diagnoseVanKoppeling(who, rechten, ruimte).then((d) => meldAlsBeperkt(who, d, 'tools/list')).catch(() => undefined);
       }
-      return rpcResult(id, { tools: lijst.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: t.annotations })) });
+      // Vangnet (MCP-R0): elke `description` in een schema MOET een string zijn, anders laat de klant het hulpmiddel weg.
+      const taal = await taalVanGebruiker(who.userId);
+      const tools = lijst.map((t) => {
+        const x = t as ToolDef & { icons?: unknown; outputSchema?: unknown };
+        return {
+          name: x.name,
+          title: x.title,
+          description: x.description,
+          inputSchema: vertaalSchema(x.inputSchema, taal),
+          ...(x.outputSchema ? { outputSchema: x.outputSchema } : {}),
+          ...(x.icons ? { icons: x.icons } : {}),
+          annotations: x.annotations,
+        };
+      });
+      return rpcResult(id, omhulModernResultaat({ tools }, metaCheck.modern, { metCache: true, ttlMs: 60_000 }));
     }
     case 'tools/call': {
       const name = msg.params?.name;
       if (typeof name !== 'string' || !name) return rpcError(id, -32602, 'name ontbreekt');
       const args: Record<string, unknown> = msg.params?.arguments && typeof msg.params.arguments === 'object' ? msg.params.arguments : {};
-      return rpcResult(id, await v2Roep(who, rechten, name, args, ruimte, via));
+      const uit = await v2Roep(who, rechten, name, args, ruimte, via);
+      return rpcResult(id, omhulModernResultaat(uit as Record<string, unknown>, metaCheck.modern));
     }
-    default: return rpcError(id, -32601, 'Method not found');
+    default: {
+      const extra = await behandelMcpProtocolMethode({
+        userId: who.userId,
+        clientName: who.clientName,
+        ruimte,
+        agent: who.agent,
+        kanten: rechten.kanten,
+        sleutelsAantal: rechten.sleutels.length,
+        // SEC-002 (slot m, MR-1/MRG-06): profielbronnen alleen met het recht v2_whoami (zoals tools/call van tonen_mijn_account) en zonder
+        // sitebrede stop van deze verbinding.
+        magProfiel: rechten.sleutels.includes('v2_whoami:gebruiker') && await profielNietGestopt(wieVoorKant(who, 'gebruiker')),
+        meldWeigering: (uri) => meldBronGeweigerd(who, uri, who.agent),
+        instructions: instructies(who.agent, rechten.kanten, ruimte),
+        modern: metaCheck.modern,
+      }, msg.method, msg.params);
+      if (extra?.soort === 'result') return rpcResult(id, extra.result);
+      if (extra?.soort === 'error') return rpcError(id, extra.code, extra.message, extra.data);
+      return rpcError(id, -32601, 'Method not found');
+    }
   }
 }
 
@@ -348,7 +404,7 @@ export async function koppelingVan(slug: AgentSlug, authorization: string | unde
   return { koppeling, rechten, via: 'v2' };
 }
 
-export async function rpc(slug: string, authorization: string | undefined, rawBody: string): Promise<RouterResponse> {
+export async function rpc(slug: string, authorization: string | undefined, rawBody: string, protocolKop?: string): Promise<RouterResponse> {
   if (!isAgentSlug(slug)) return respond(404, { error: 'unknown_agent' });
   const toegang = await koppelingVan(slug, authorization);
   if ('statusCode' in toegang) return toegang;
@@ -365,13 +421,14 @@ export async function rpc(slug: string, authorization: string | undefined, rawBo
   // een andere waarheid zien dan de andere helft). Elke tools/call controleert hem daarna in roepTool nog eens.
   const ruimte = await levendeRuimte(koppeling);
   if (Array.isArray(parsed)) {
+    if (!batchToegestaan(protocolKop)) return respond(400, BATCH_FOUT(String(protocolKop)));
     // SEC-002 (ai-mcp-08): pakket begrensd, elk bericht telt in de limiet, kleine parallelliteit (zie backend/mcp-pakket.ts).
     const besluit = await pakketToegestaan(`mcp-rpc:${who.limietSleutel}`, parsed.length, RPC_PER_MINUTE);
     if (!besluit.ok) return respond(besluit.status, rpcError(null, besluit.code, besluit.bericht), besluit.retryAfter ? { 'Retry-After': String(besluit.retryAfter) } : undefined);
-    const out = (await pakketUitvoeren(parsed, (m) => bericht(koppeling, rechten, m, ruimte, via))).filter((r) => r !== null);
+    const out = (await pakketUitvoeren(parsed, (m) => bericht(koppeling, rechten, m, ruimte, via, protocolKop))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }
-  const out = await bericht(koppeling, rechten, parsed, ruimte, via);
+  const out = await bericht(koppeling, rechten, parsed, ruimte, via, protocolKop);
   return out === null ? respond(202, undefined) : respond(200, out);
 }
 

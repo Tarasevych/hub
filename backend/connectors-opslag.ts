@@ -11,6 +11,7 @@ import { jsonbVeilig, tekstVeilig } from '../shared/tekst-veilig';
 import { enabledTypes } from './browser-mogelijkheden';
 import { gebruikerVanContext, huidigeContext } from '../server/platform/context';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
+import { gereserveerdeKlantNaam } from '../shared/ai-verbinding';
 import { huidigeNamens } from './mcp-namens';
 
 type QueryResult = { rows: any[]; rowCount: number | null };
@@ -175,7 +176,8 @@ export function aanvragerNu(): Aanvrager {
   // «Ви (з сайту)». Zo'n naam krijgt een zichtbaar voorvoegsel; '?' (geen naam in mcp-namens) blijft eerlijk leeg = onbekend.
   let client = schoon(n?.client, 80);
   if (client === '?') client = '';
-  else if (/^site:/i.test(client)) client = `ШІ «${client}»`.slice(0, 80);
+  // SEC-002 (slot m, MR-2): ook «Ви (з сайту)», «You (site)», «Jij (van de site)» en NFKC-vormen (zelfde regel als DCR/CIMD) krijgen het voorvoegsel.
+  else if (/^site:/i.test(client) || gereserveerdeKlantNaam(client)) client = `ШІ «${client}»`.slice(0, 80);
   return { client, grant: schoon(n?.grantId, 120), agent: /^[a-z0-9-]{1,40}$/.test(agent) ? agent : '' };
 }
 /** Voor het scherm (wachtende opdrachten en aanroepen): klantnaam, agent, een kort stuk van het verbindings-id, en of het de mens zelf was. */

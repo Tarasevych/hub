@@ -1,7 +1,7 @@
 {
  "uk": {
   "titel": "Виправлення вразливостей за аудитом безпеки",
-  "samenvatting": "Випуск SEC-002 поверх встановленої версії <BASIS> виправляє вразливості, знайдені глибоким аудитом безпеки всього сховища. Аудит знайшов 144 вразливості (26 з високою вагою): 142 виправлено повністю, 2 частково, жодну не спростовано. Незалежні перевіряльники груп і три наскрізні перевіряльники знайшли в патчах і суміжному коді ще 105 вад: 104 виправлено до випуску, 1 частково. Майже кожне виправлення доведено тестом, що відтворює ваду до патча; одне інтерфейсне виправлення доведено перевіркою коду, одне — сценарієм перевірки під час збирання (у звіті їх позначено). Повний відкритий опис — у звіті безпеки SEC-002.",
+  "samenvatting": "Випуск SEC-002 поверх встановленої версії <BASIS> виправляє вразливості, знайдені глибоким аудитом безпеки всього сховища. Аудит знайшов 144 вразливості (26 з високою вагою): 142 виправлено повністю, 2 частково, жодну не спростовано. Незалежні перевіряльники груп і три наскрізні перевіряльники знайшли в патчах і суміжному коді ще 114 вад: 113 виправлено до випуску, 1 частково; серед них 18 вад у коді нової встановленої версії MCP-001, зведених у 9 записів, — усі виправлено. Майже кожне виправлення доведено тестом, що відтворює ваду до патча; одне інтерфейсне виправлення доведено перевіркою коду, одне — сценарієм перевірки під час збирання (у звіті їх позначено). Повний відкритий опис — у звіті безпеки SEC-002.",
   "wijzigingen": [
    "Процес сайту більше не зупиняється від спеціально побудованих листів, файлів (зокрема документів і таблиць для пошуку), повідомлень агентів чи запитів: небезпечні регулярні вирази замінено лінійним розбором, вхідні дані обмежено.",
    "Відкликання сеансів, ключів API й «запам'ятованого оглядача» більше не скасовується одночасними запитами, а блокування облікового запису не можна обійти.",
@@ -11,7 +11,8 @@
    "Розгортання: ізольована збірка без сценаріїв залежностей, root не йде за посиланнями в теках застосунку, проба міграцій під одноразовою роллю, закріплена версія cloudflared, обмеження служб systemd.",
    "Пошта: попередній перегляд питає перед показом зовнішніх зображень, перевірка відправника стійка до підробки, вкладення не відкриваються як сторінки сайту.",
    "Приватність: остаточне стирання облікового запису справді стирає всі дані, журнал адміністрування маскує чужі приватні дії, нові відмови й критичні дії лишають слід і сповіщення.",
-   "Запобіжник захистів більше не вимикає захист входу через оновлення власного сеансу; аварійний вимикач підтверджень має форму зі строком до 24 годин, а стара безстрокова форма видна в журналі й «Захисті»."
+   "Запобіжник захистів більше не вимикає захист входу через оновлення власного сеансу; аварійний вимикач підтверджень має форму зі строком до 24 годин, а стара безстрокова форма видна в журналі й «Захисті».",
+   "Код нової встановленої версії MCP-001: профіль облікового запису лише з правом «Хто я», автоматичне підключення ШІ-клієнтів з тими самими лімітами, забороною зарезервованих назв, захистом від SSRF і межею часу, студія-інспектор у ліміті й без доступу під час перегляду від імені користувача, хешування IP у журналі."
   ],
   "fixes": [
    "Попередня перевірка пакета оновлення більше не читає файли сервера поза архівом.",
@@ -30,7 +31,7 @@
  },
  "nl": {
   "titel": "Herstel van kwetsbaarheden uit de beveiligingsaudit",
-  "samenvatting": "Release SEC-002 boven op de geïnstalleerde versie <BASIS> herstelt kwetsbaarheden uit een diepe beveiligingsaudit van de hele repository. De audit vond 144 kwetsbaarheden (26 met ernst hoog): 142 volledig opgelost, 2 gedeeltelijk, geen enkele weerlegd. Onafhankelijke groepscontroleurs en drie overkoepelende controleurs vonden in de patches en naburige code nog 105 fouten: 104 vóór de release opgelost, 1 gedeeltelijk. Bijna elk herstel is aangetoond met een test die de fout vóór de patch laat zien; één interfaceherstel is aangetoond met een codecontrole en één met een controlescript tijdens de build (in het rapport gemarkeerd). De volledige openbare beschrijving staat in het beveiligingsrapport SEC-002.",
+  "samenvatting": "Release SEC-002 boven op de geïnstalleerde versie <BASIS> herstelt kwetsbaarheden uit een diepe beveiligingsaudit van de hele repository. De audit vond 144 kwetsbaarheden (26 met ernst hoog): 142 volledig opgelost, 2 gedeeltelijk, geen enkele weerlegd. Onafhankelijke groepscontroleurs en drie overkoepelende controleurs vonden in de patches en naburige code nog 114 fouten: 113 vóór de release opgelost, 1 gedeeltelijk; daaronder 18 fouten in de code van de nieuwe geïnstalleerde versie MCP-001, samengebracht in 9 vermeldingen — alle opgelost. Bijna elk herstel is aangetoond met een test die de fout vóór de patch laat zien; één interfaceherstel is aangetoond met een codecontrole en één met een controlescript tijdens de build (in het rapport gemarkeerd). De volledige openbare beschrijving staat in het beveiligingsrapport SEC-002.",
   "wijzigingen": [
    "Het siteproces stopt niet meer door speciaal opgebouwde e-mails, bestanden (ook documenten en tabellen voor zoeken), agentberichten of verzoeken: gevaarlijke reguliere expressies zijn vervangen door lineaire verwerking, invoer is begrensd.",
    "Het intrekken van sessies, API-sleutels en de «onthouden browser» wordt niet meer door gelijktijdige verzoeken ongedaan gemaakt, en een accountblokkade is niet te omzeilen.",
@@ -40,7 +41,8 @@
    "Uitrol: afgeschermde build zonder installatiescripts van afhankelijkheden, root volgt geen koppelingen in applicatiemappen, migratieproef onder een eenmalige rol, vastgezette cloudflared-versie, beperkingen voor systemd-diensten.",
    "E-mail: het voorbeeld vraagt eerst voordat externe afbeeldingen worden getoond, de afzendercontrole is bestand tegen vervalsing, bijlagen openen niet als pagina's van de site.",
    "Privacy: het definitief wissen van een account wist echt alle gegevens, het beheerlogboek maskeert andermans privéacties, nieuwe weigeringen en kritieke acties laten een spoor en een melding achter.",
-   "De zekering schakelt de aanmeldbeveiliging niet meer uit door het vernieuwen van de eigen sessie; de noodschakelaar voor bevestigingen heeft een vorm met een termijn van hoogstens 24 uur, en de oude onbeperkte vorm is zichtbaar in het logboek en bij «Beveiliging»."
+   "De zekering schakelt de aanmeldbeveiliging niet meer uit door het vernieuwen van de eigen sessie; de noodschakelaar voor bevestigingen heeft een vorm met een termijn van hoogstens 24 uur, en de oude onbeperkte vorm is zichtbaar in het logboek en bij «Beveiliging».",
+   "Code van de nieuwe geïnstalleerde versie MCP-001: accountprofiel alleen met het recht «Wie ben ik», automatisch koppelen van AI-cliënten met dezelfde grenzen, verbod op gereserveerde namen, SSRF-bescherming en tijdgrens, inspectiestudio binnen de grens en niet toegankelijk bij meekijken als gebruiker, IP alleen gehasht in het logboek."
   ],
   "fixes": [
    "De voorcontrole van een updatepakket leest geen serverbestanden buiten het archief meer.",

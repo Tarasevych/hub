@@ -70,12 +70,19 @@ export async function journaalSchrijf(g: JournaalSchrijf): Promise<{ id: string;
 
 // ------------------------------------------------------------------------------------------------ demping van ruis
 const gezien = new Map<string, number>();
+export const DEMPING_MAX = 5000;
+export const _dempingGrootte = () => gezien.size;
 /** true = nu schrijven; daarna `ms` lang niet meer voor dezelfde sleutel (bijv. «owner.admin.bootstrap:<user>»). */
 export function eenKeerPer(sleutel: string, ms = 10 * 60 * 1000, nu = Date.now()): boolean {
   const vorige = gezien.get(sleutel) ?? Number.NEGATIVE_INFINITY;
   if (nu - vorige < ms) return false;
+  gezien.delete(sleutel);
   gezien.set(sleutel, nu);
   if (gezien.size > 2000) for (const [k, t] of gezien) if (nu - t > ms) gezien.delete(k);
+  // SEC-002 (slot m, NET-4): harde bovengrens. Sleutels die nog vers zijn (< ms) ruimt de regel hierboven niet op; bij een stroom unieke
+  // sleutels groeide de kaart zonder einde. De oudste eerst weg (een Map houdt de volgorde van invoegen; set() van een bestaande sleutel
+  // verplaatst haar niet, daarom eerst delete).
+  if (gezien.size > DEMPING_MAX) for (const k of gezien.keys()) { if (gezien.size <= DEMPING_MAX) break; gezien.delete(k); }
   return true;
 }
 export const _resetDemping = () => gezien.clear();

@@ -4178,6 +4178,150 @@
    }
   },
   {
+   "id": "eind-19",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "ai-mcp",
+   "ernst": "midden",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": null,
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Підключений ШІ отримував профіль облікового запису без права «Хто я»",
+    "wat": "У коді нової встановленої версії MCP-001 нові методи протоколу віддавали будь-якому підключеному ШІ електронну адресу, ім'я й роль облікового запису, не перевіряючи окремого права на це й живих вимикачів; на старому шляху — навіть за вимкненого технічного профілю. Виправлено в межах SEC-002.",
+    "gevolg": "ШІ, якому людина не дозволяла бачити свій профіль, міг його прочитати.",
+    "herstel": "Ресурси профілю й стану видаються лише з увімкненим правом «Хто я» й за чинного підключення; без нього їх немає в переліку, читання відхиляється двомовним поясненням і пишеться в журнал."
+   },
+   "nl": {
+    "titel": "Een gekoppelde AI kreeg het accountprofiel zonder het recht «Wie ben ik»",
+    "wat": "In de code van de nieuwe geïnstalleerde versie MCP-001 gaven nieuwe protocolmethoden elke gekoppelde AI het e-mailadres, de naam en de rol van het account, zonder het aparte recht daarvoor en de actuele schakelaars te controleren; op de oude weg zelfs bij een uitgeschakeld technisch profiel. Hersteld binnen SEC-002.",
+    "gevolg": "Een AI die het profiel niet mocht zien, kon het lezen.",
+    "herstel": "Profiel- en statusbronnen worden alleen met het recht «Wie ben ik» en bij een geldige koppeling geleverd; zonder dat recht staan ze niet in de lijst, wordt lezen met een tweetalige uitleg geweigerd en gelogd."
+   }
+  },
+  {
+   "id": "eind-20",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "ai-mcp",
+   "ernst": "midden",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": "toets-g10a-4",
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Через нове автоматичне підключення ШІ-клієнт міг узяти зарезервовану назву",
+    "wat": "У коді MCP-001 новий спосіб реєстрації клієнта за документом-описом (CIMD) не застосовував заборону зарезервованих назв, що діє для звичайної реєстрації. Виправлено в межах SEC-002.",
+    "gevolg": "ШІ-клієнт міг показуватися в запитах на схвалення як дія самої людини чи сайту.",
+    "herstel": "Перевірку зарезервованих назв винесено в одне спільне місце й застосовано до обох способів реєстрації та до показу ініціатора запиту; перед перевіркою назва нормалізується, а невидимі символи й зайві пробіли прибираються."
+   },
+   "nl": {
+    "titel": "Via de nieuwe automatische koppeling kon een AI-cliënt een gereserveerde naam aannemen",
+    "wat": "In de code van MCP-001 paste de nieuwe registratie van een cliënt via een beschrijvingsdocument (CIMD) het verbod op gereserveerde namen van de gewone registratie niet toe. Hersteld binnen SEC-002.",
+    "gevolg": "Een AI-cliënt kon in goedkeuringsverzoeken verschijnen als een handeling van de persoon zelf of van de site.",
+    "herstel": "De controle op gereserveerde namen staat op één gedeelde plek en geldt voor beide manieren van registreren en voor het tonen van de aanvrager; vóór de controle wordt de naam genormaliseerd en worden onzichtbare tekens en overtollige spaties verwijderd."
+   }
+  },
+  {
+   "id": "eind-21",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "ai-mcp",
+   "ernst": "midden",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": "ai-mcp-10",
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Автоматичне підключення ШІ обходило ліміти реєстрації клієнтів",
+    "wat": "У коді MCP-001 кожна нова адреса документа-опису клієнта створювала запис клієнта без денного ліміту на адресу й без загальної стелі, що діють для звичайної реєстрації. Виправлено в межах SEC-002.",
+    "gevolg": "Анонім міг знову заповнити реєстр клієнтів і заблокувати підключення нових ШІ для всіх (те саме, що виправлено в ai-mcp-10).",
+    "herstel": "Для нового клієнта до завантаження опису діють спільна з реєстрацією денна квота й загальна стеля, а обмеження одночасних завантажень з однієї адреси перевіряється й зараховується одним кроком, тож паралельні запити його не оминають; запис оновлюється лише за зміни даних, а відмови пояснюються двома мовами й демпфовано пишуться в журнал."
+   },
+   "nl": {
+    "titel": "Automatisch koppelen van een AI omzeilde de grenzen voor cliëntregistratie",
+    "wat": "In de code van MCP-001 maakte elk nieuw adres van een beschrijvingsdocument een cliëntrecord aan zonder de daggrens per adres en het algemene plafond van de gewone registratie. Hersteld binnen SEC-002.",
+    "gevolg": "Een anonieme bezoeker kon het register van cliënten opnieuw vullen en het koppelen van nieuwe AI's voor iedereen blokkeren (hetzelfde als hersteld in ai-mcp-10).",
+    "herstel": "Voor een nieuwe cliënt gelden vóór het ophalen van de beschrijving het met de registratie gedeelde dagquotum en het algemene plafond, en de grens op gelijktijdige ophaalacties per adres wordt in één stap gecontroleerd en geteld, zodat gelijktijdige verzoeken die niet omzeilen; het record wordt alleen bij gewijzigde gegevens bijgewerkt, en weigeringen worden tweetalig uitgelegd en gedempt gelogd."
+   }
+  },
+  {
+   "id": "eind-22",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "http-rand",
+   "ernst": "midden",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": null,
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Завантаження опису ШІ-клієнта не мало загальної межі часу й паралельності",
+    "wat": "У коді MCP-001 завантаження документа-опису клієнта мало лише тайм-аут простою з'єднання, без межі на весь запит, без обмеження одночасних завантажень і без кешу невдач. Виправлено в межах SEC-002.",
+    "gevolg": "Сторонній сервер міг годинами тримати з'єднання й обробники сервера зайнятими.",
+    "herstel": "Діє жорстка межа часу на весь запит, однакові запити об'єднуються, кількість одночасних завантажень обмежено загалом і на адресу, а невдачі кешуються на хвилину. Коли загальна межа заповнена, сервер відповідає окремим двомовним поясненням «сервер зайнятий», а вже відомий клієнт отримує недавню перевірену копію свого опису."
+   },
+   "nl": {
+    "titel": "Het ophalen van de beschrijving van een AI-cliënt had geen algemene grens op tijd en gelijktijdigheid",
+    "wat": "In de code van MCP-001 had het ophalen van het beschrijvingsdocument van een cliënt alleen een time-out bij inactiviteit van de verbinding, zonder grens voor het hele verzoek, zonder begrenzing van gelijktijdige ophaalacties en zonder cache van mislukkingen. Hersteld binnen SEC-002.",
+    "gevolg": "Een externe server kon verbindingen en verwerkers van de server urenlang bezet houden.",
+    "herstel": "Er geldt een harde tijdgrens voor het hele verzoek, gelijke verzoeken worden samengevoegd, het aantal gelijktijdige ophaalacties is in totaal en per adres begrensd, en mislukkingen worden een minuut gecachet. Is de algemene grens vol, dan antwoordt de server met een aparte tweetalige uitleg «server bezet», en een al bekende cliënt krijgt een recente gecontroleerde kopie van zijn beschrijving."
+   }
+  },
+  {
+   "id": "eind-23",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "http-rand",
+   "ernst": "midden",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": null,
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Захист від SSRF під час завантаження опису ШІ-клієнта не діяв для IP-адрес",
+    "wat": "У коді MCP-001 перевірка, що сервер не звертається до внутрішніх адрес, спрацьовувала лише для доменних імен, а адреса, записана безпосередньо як IP, її оминала. Виправлено в межах SEC-002.",
+    "gevolg": "Анонім міг змусити сервер надіслати запит у внутрішню мережу чи до служб самого сервера.",
+    "herstel": "IP-адреси в адресі опису відхиляються ще до запиту й ще раз перед з'єднанням, а визначення непублічних адрес бере спільну перевірку, що охоплює й особливі форми IPv6."
+   },
+   "nl": {
+    "titel": "De SSRF-bescherming bij het ophalen van de beschrijving van een AI-cliënt werkte niet voor IP-adressen",
+    "wat": "In de code van MCP-001 werkte de controle dat de server geen interne adressen benadert alleen voor domeinnamen, en een adres dat direct als IP was geschreven, omzeilde die. Hersteld binnen SEC-002.",
+    "gevolg": "Een anonieme bezoeker kon de server een verzoek naar het interne netwerk of naar diensten van de server zelf laten sturen.",
+    "herstel": "IP-adressen in het adres van de beschrijving worden al vóór het verzoek en nogmaals vóór het verbinden geweigerd, en het herkennen van niet-openbare adressen gebruikt de gedeelde controle, die ook bijzondere IPv6-vormen dekt."
+   }
+  },
+  {
+   "id": "eind-26",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "privacy-logboek",
+   "ernst": "midden",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": null,
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Відмови за походженням запиту не рахувалися в ліміті й писали сиру IP-адресу в журнал",
+    "wat": "У коді MCP-001 перевірка походження запиту до точок підключення ШІ стояла до обмеження частоти, кожне нове значення походження додавало запис у журнал керування, а в запис потрапляла сира IP-адреса. Виправлено в межах SEC-002.",
+    "gevolg": "Анонім міг засмічувати журнал керування й займати пам'ять, а журнал зберігав IP-адреси всупереч правилу хешування.",
+    "herstel": "Перевірка походження стоїть після обмеження частоти, записи демпфуються за мережею адреси, у журнал іде лише хеш IP, а пам'ять для демпфування має жорстку межу."
+   },
+   "nl": {
+    "titel": "Weigeringen op herkomst telden niet mee voor de grens en schreven het ruwe IP-adres in het logboek",
+    "wat": "In de code van MCP-001 stond de controle van de herkomst van verzoeken naar AI-koppelpunten vóór de frequentiegrens, voegde elke nieuwe herkomstwaarde een regel aan het beheerlogboek toe, en kwam het ruwe IP-adres in die regel. Hersteld binnen SEC-002.",
+    "gevolg": "Een anonieme bezoeker kon het beheerlogboek vervuilen en geheugen innemen, en het logboek bewaarde IP-adressen tegen de regel van hashen in.",
+    "herstel": "De herkomstcontrole staat na de frequentiegrens, regels worden per netwerk van het adres gedempt, in het logboek komt alleen een hash van het IP, en het geheugen voor dempen heeft een harde grens."
+   }
+  },
+  {
    "id": "toets-g01-1",
    "bron": "toets",
    "groep": "g01",
@@ -5143,6 +5287,78 @@
     "wat": "Na het verwijderen van een account bleef de id van de persoon in het gebeurtenissenlogboek van een woning waar die deelnemer was, en in de instellingen van een gedeelde functievlag; de fout zat al in de basis.",
     "gevolg": "Een achtergebleven id van de verwijderde persoon bleef in gegevens van anderen bewaard.",
     "herstel": "De gebeurtenis in het woninglogboek blijft bestaan, maar de id van de persoon wordt eruit en uit de gedeelde vlag verwijderd. Bewust ongewijzigd blijven het beveiligingsauditlogboek, het logboek van toegangswijzigingen en de vrije tekst van meldingen aan de site-eigenaar: die zijn nodig voor onderzoek en hebben een eigen bewaartermijn."
+   }
+  },
+  {
+   "id": "eind-24",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "ai-mcp",
+   "ernst": "laag",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": "ai-mcp-08",
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Виклики інструментів зі студії-інспектора оминали ліміт MCP",
+    "wat": "У коді MCP-001 виклики інструментів ШІ зі студії-інспектора не рахувалися в ліміті швидкості, що діє для підключень. Виправлено в межах SEC-002.",
+    "gevolg": "Сеанс людини міг навантажувати зовнішні служби облікового запису частіше, ніж дозволяє ліміт.",
+    "herstel": "Студія рахується в тому самому ліміті викликів, а перевищення дає відмову з часом очікування."
+   },
+   "nl": {
+    "titel": "Hulpmiddelaanroepen uit de inspectiestudio omzeilden de MCP-grens",
+    "wat": "In de code van MCP-001 telden aanroepen van AI-hulpmiddelen uit de inspectiestudio niet mee voor de frequentiegrens van koppelingen. Hersteld binnen SEC-002.",
+    "gevolg": "Een sessie kon externe diensten van het account vaker belasten dan de grens toestaat.",
+    "herstel": "De studio telt mee in dezelfde aanroepgrens, en overschrijding geeft een weigering met wachttijd."
+   }
+  },
+  {
+   "id": "eind-25",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "autorisatie",
+   "ernst": "laag",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": "aanmelden-06",
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Студію-інспектор можна було відкрити в режимі «подивитися як користувач»",
+    "wat": "У коді MCP-001 маршрути студії-інспектора не входили до переліку заборонених під час перегляду від імені користувача. Виправлено в межах SEC-002.",
+    "gevolg": "Адміністратор у цьому режимі бачив, які ШІ-агенти підключені в людини і які інструменти їм надано.",
+    "herstel": "Студію-інспектор заборонено в режимі перегляду від імені користувача й для дій агентів від імені людини."
+   },
+   "nl": {
+    "titel": "De inspectiestudio kon worden geopend in de modus «meekijken als gebruiker»",
+    "wat": "In de code van MCP-001 stonden de routes van de inspectiestudio niet op de lijst van verboden routes bij meekijken als gebruiker. Hersteld binnen SEC-002.",
+    "gevolg": "Een beheerder zag in die modus welke AI-agenten iemand had gekoppeld en welke hulpmiddelen ze hadden.",
+    "herstel": "De inspectiestudio is verboden bij meekijken als gebruiker en voor agentacties namens de persoon."
+   }
+  },
+  {
+   "id": "eind-27",
+   "bron": "toets",
+   "groep": "eind",
+   "gebied": "http-rand",
+   "ernst": "laag",
+   "stand": "opgelost",
+   "aard": "beveiliging",
+   "bij": null,
+   "zie": [],
+   "test": "tests/eenheid/sec-002-slot-m-20261113.test.ts",
+   "uk": {
+    "titel": "Відповіді про помилки протоколу повторювали необрізаний текст клієнта",
+    "wat": "У коді MCP-001 нові відповіді про помилки протоколу повертали значення від клієнта без обрізання й без очищення. Виправлено в межах SEC-002.",
+    "gevolg": "Відповіді й журнали могли роздуватися довгими значеннями клієнта.",
+    "herstel": "Значення від клієнта в повідомленнях про помилки обрізаються й очищуються до короткої безпечної довжини."
+   },
+   "nl": {
+    "titel": "Foutantwoorden van het protocol herhaalden niet-ingekorte tekst van de cliënt",
+    "wat": "In de code van MCP-001 gaven nieuwe foutantwoorden van het protocol waarden van de cliënt terug zonder inkorten en opschonen. Hersteld binnen SEC-002.",
+    "gevolg": "Antwoorden en logboeken konden opzwellen door lange waarden van de cliënt.",
+    "herstel": "Waarden van de cliënt in foutmeldingen worden ingekort en opgeschoond tot een korte veilige lengte."
    }
   },
   {

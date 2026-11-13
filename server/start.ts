@@ -32,6 +32,8 @@ import { sluitAlleStromen, stroomVerzoek, stroomVerzoekMcp } from '../backend/co
 import { sluitAlleStromenApparaat, stroomVerzoekApparaat } from '../backend/apparaat-bevestiging/stroom'; /* APPARAAT-001: snelle stroom naar de tabbladen */
 import { opruimen as apparaatOpruimen } from '../backend/apparaat-bevestiging/kern';
 import { metVerzoek } from './platform/context';
+import { isMcpRpcPad, mcpOriginBesluit, ORIGIN_403 } from '../backend/mcp-origin';
+import { eenKeerPer, journaalSchrijf } from '../backend/beheer-journaal';
 import { googleSuiteSyncCron, mailMaintenanceCron } from '../backend/index';
 import { ACHTERGROND_INTERVAL_MS, sleutelkluisAchtergrondRonde } from '../backend/sleutelkluis-achtergrond';
 import { omslagenOpruimen } from '../backend/sleutelkluis-opruimen';
@@ -40,7 +42,7 @@ import { zoekIndexCron } from '../backend/zoek/bronnen';
 import { TECH_ASSET_PREFIX } from '../shared/tech-bundels';
 import { closePool, getPool } from './platform/pg';
 import { ownerEmail, rateLimit } from './platform/beveiliging';
-import { auditIpPepperGeldig } from './platform/audit';
+import { auditIpPepperGeldig, ipHash } from './platform/audit';
 import { isCanoniekPad, type LambdaEvent, type RouterResponse } from './platform/router';
 import { schakelaarsVerversen } from './platform/schakelaars';
 import { procesVangnetInstellen } from './platform/proces-vangnet';
@@ -328,6 +330,24 @@ export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders,
   return headers.cookie ? 'CSRF_ORIGIN_REQUIRED' : '';
 }
 
+/**
+ * MCP-001 R1: Origin-controle op MCP-eindpunten (backend/mcp-origin.ts). true = weigeren (403). Een geweigerde of — bij
+ * MCP_ORIGIN_MODUS=melden — alleen gemelde origin komt in het beheerlogboek (centrum voor meldingen), gedempt per IP (/64).
+ */
+function mcpOriginGeweigerd(req: http.IncomingMessage): boolean {
+  const b = mcpOriginBesluit(req.headers.origin, ALLOWED_ORIGINS);
+  if (b.soort !== 'geweigerd') return false;
+  // SEC-002 (slot m, NET-4/MRG-05/MRG-07): gedempt per IP (/64), niet per vrij gekozen Origin (anders één logregel en één sleutel per
+  // verzonnen Origin), en het IP alleen als HMAC (ipHash, zoals server/platform/audit.ts) — nooit leesbaar in details.
+  const ip = clientIp(req);
+  if (eenKeerPer(`mcp.origin:${limietSleutel(ip)}`, 10 * 60 * 1000)) {
+    void journaalSchrijf({ actie: 'owner.mcp.origin.denied', actor: null, eigenaar: null, resultaat: b.blokkeren ? 'denied' : 'warning', service: 'mcp',
+      reden: b.blokkeren ? 'Origin niet toegestaan (403)' : 'Origin niet toegestaan (alleen gemeld: MCP_ORIGIN_MODUS=melden)',
+      details: { origin: String(b.origin).slice(0, 120), pad: String(req.url || '').split('?')[0].slice(0, 120), ipHash: ipHash(ip) } });
+  }
+  return b.blokkeren;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Rate limiting
 // ---------------------------------------------------------------------------------------------
@@ -414,6 +434,9 @@ const CONNECTOR_PADEN: Record<string, string> = {
   '/oauth2/.well-known/openid-configuration': '/api/mcp-connector/asm',
   '/oauth2/.well-known/oauth-authorization-server': '/api/mcp-connector/asm',
   '/.well-known/oauth-authorization-server': '/api/mcp-connector/asm',
+  '/.well-known/mcp.json': '/api/mcp-connector/server-card',
+  '/.well-known/mcp-server-card.json': '/api/mcp-connector/server-card',
+  '/server.json': '/api/mcp-connector/registry-server',
   '/oauth2/register': '/api/mcp-connector/register',
   '/oauth2/authorize': '/api/mcp-connector/authorize',
   '/oauth2/token': '/api/mcp-connector/token',
@@ -429,10 +452,10 @@ const CONNECTOR_PADEN: Record<string, string> = {
 //
 // Het OUDE pad /ai/<agent> blijft bereikbaar met 308 Permanent Redirect — niet 301/302: MCP praat over POST, en 301/302 mag een
 // client in een GET veranderen (RFC 9110 §15.4), waardoor elke bestaande koppeling zou breken. 308 houdt methode én body.
-const V2_KORT = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/;
-const V2_OUD = /^\/ai\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)(\/\.well-known\/oauth-protected-resource)?\/?$/;
-const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|grok|gemini|copilot|cursor|antigravity)\/?$/;
+const V2_KORT = /^\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_KORT_PRM = /^\/\.well-known\/oauth-protected-resource\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/;
+const V2_OUD = /^\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)(\/\.well-known\/oauth-protected-resource)?\/?$/;
+const V2_OUD_PRM = /^\/\.well-known\/oauth-protected-resource\/ai\/(claude|gpt|codex|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/;
 
 /** Oud connectoradres → het nieuwe, korte adres (of null). Alleen een pad: query en host blijven van het verzoek. */
 export function oudConnectorPad(pathname: string): string | null {
@@ -553,6 +576,8 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
     // SEC-002 (http-rand-07): ook deze ingangen (elk een tokenopzoeking in de database) tellen in de algemene emmer per IP.
     if ((url.pathname === '/mcp' || url.pathname === '/mcp/' || /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.test(url.pathname)) && vroegGeweigerd(res, clientIp(req))) return;
+    // MCP-001: Origin-controle (DNS-rebinding) vóór elke stroom.
+    if (mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
     if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res, clientIp(req)); return; }
     const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
     if (m) { await stroomVerzoek(req, res, m[1], clientIp(req)); return; }
@@ -578,10 +603,15 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     const method = String(req.method || 'GET').toUpperCase();
     // De connector-eindpunten gebruiken geen cookies maar OAuth/PKCE of een Bearer-token. Een Origin-controle zou
     // verzoeken van Anthropic (server-naar-server) onterecht weigeren; CSRF is hier niet van toepassing.
+    // MCP-001 R1: CSRF geldt hier niet, maar de MCP-specificatie eist wél een Origin-controle (DNS-rebinding): 403 bij een
+    // aanwezige, niet-toegestane Origin op het JSON-RPC-eindpunt. Zonder Origin (server-naar-server) verandert niets.
     const csrf = connector ? '' : csrfAfwijzing(method, req.headers, apiUrl.pathname);
     if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
     const afwijzing = await rateLimitAfwijzingDetail(method, apiUrl.pathname, ip);
     if (afwijzing) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(afwijzing.retryAfter) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: afwijzing.retryAfter, maxAttempts: afwijzing.maxAttempts, windowSec: afwijzing.windowSec }));
+    // SEC-002 (slot m, NET-4/MRG-05): de Origin-controle NA de limiet per IP — anders telt een geweigerde Origin nergens mee en kan elke
+    // verzonnen Origin vrij een logregel schrijven. Het antwoord (403) blijft hetzelfde.
+    if (connector && isMcpRpcPad(apiUrl.pathname) && mcpOriginGeweigerd(req)) return sendJson(res, 403, ORIGIN_403);
     if (apiUrl.pathname === '/api/storing/tech-bundel' && method === 'POST') return sendJson(res, 200, techMeldingVerwerken(await readBody(req, apiUrl.pathname, ip).catch(() => ''), host));
     let body = '';
     try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req, apiUrl.pathname, ip); }
