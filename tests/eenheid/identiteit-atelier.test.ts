@@ -57,12 +57,15 @@ export async function main(): Promise<number> {
   check('verminderde beweging wordt gerespecteerd', stijl.includes('prefers-reduced-motion:reduce'));
   check('de nieuwe accountvorm scheidt de toegangsfuncties van het oude formulier',
     atelier.includes('<AtelierInhoud.Provider value={true}>') && toegangWeergave.includes('useContext(AtelierInhoud)') && toegangWeergave.includes('alleen={alleen}'));
-  check('aanmelden bevat alleen de aanmeldmethoden en tijdelijke toegangscodes',
-    toegang.includes("p.alleen==='methods'") && toegang.includes('{toonMethoden&&<Toegangscodes') && toegang.includes('{toonMethoden&&<section'));
+  // IDENTITEIT-011: passkeys en toegangscodes voor anderen horen bij «Beveiliging» (ontwikkelkaart); «Aanmelden» verwijst ernaar.
+  check('aanmelden bevat alleen de aanmeldmethoden; passkeys en toegangscodes staan bij beveiliging',
+    toegang.includes("p.alleen==='methods'") && toegang.includes('{toonMethoden&&<section') && toegang.includes('{toonBeveiliging&&<Toegangscodes') && toegang.includes("id='aanmeldmethoden-sleutels'") && toegang.includes('data-passkeys-verwijzing'));
+  check('beveiliging toont herstelcodes alleen eenmalig na het instellen van de authenticator',
+    toegang.includes('(toonHerstel||(toonBeveiliging&&recovery.length>0))&&<HerstelcodesSectie'));
   check('beveiliging bevat authenticator en sleutelkluis, niet de herstelcodes',
     toegang.includes("p.alleen==='security'") && toegang.includes('{toonBeveiliging&&<SleutelkluisSectie') && toegang.includes('{toonBeveiliging&&<section'));
   check('herstel toont herstelcodes en tijdelijke wachtwoorden precies één keer',
-    toegang.includes("p.alleen==='recovery'") && toegang.includes('{toonHerstel&&<HerstelcodesSectie') && toegang.includes('{toonHerstel&&p.tempPassword'));
+    toegang.includes("p.alleen==='recovery'") && toegang.includes('{(toonHerstel||(toonBeveiliging&&recovery.length>0))&&<HerstelcodesSectie') && (toegang.match(/<HerstelcodesSectie/g) || []).length === 1 && toegang.includes('{toonHerstel&&p.tempPassword'));
   check('een tweede aanmeldweergave toont geen beveiligings- of herstelkaarten in het atelier',
     aanmeldWeergave.includes("['google', 'password', 'passkey', 'guest-code'].includes(k.id)") && aanmeldWeergave.includes('!p.alleen&&<Hero') && aanmeldWeergave.includes("['alles', 'inloggen', 'passkey', 'delegatie']"));
   const basis = {
