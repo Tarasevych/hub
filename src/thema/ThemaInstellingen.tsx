@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react';
 import type { ThemePreference } from '../gedeelde-voorkeuren';
 import { leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type AutoInstelling, type Palet } from './kern';
 import { hervatAuto, pauzeerAuto, useAutoStatus, zetAuto, zetPalet } from './useThema';
-import { kleurWaarden, PUUR, SECTIES, type Sectie } from './paletten';
+import { kleurWaarden, MAQUETTE, PUUR, SECTIES, type Sectie } from './paletten';
 import './thema-instellingen.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -51,6 +51,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
   ];
   const kleuren: Array<[Palet, string, string, Mini, Mini]> = [
     ['kleur', tr('Кольоровий', 'Kleurrijk'), tr('Кожен розділ у своєму кольорі, як у меню', 'Elk onderdeel in zijn eigen kleur, zoals in het menu'), { ...kleurWaarden(sectie).licht }, { ...kleurWaarden(sectie).donker }],
+    ['maquette', tr('Макет', 'Ontwerp'), tr('Студійний вигляд: нічні вітрини, скло та якірна навігація', 'Studio-uiterlijk: nachtvitrines, glas en ankernavigatie'), MAQUETTE.licht, MAQUETTE.donker],
     ['grifel', tr('Грифельний', 'Grafiet'), tr('Спокійний темно-грифельний (#2f4f4f)', 'Rustig donker leisteen (#2f4f4f)'), GRIFEL.licht, GRIFEL.donker],
     ['puur', tr('Чистий', 'Puur'), tr('Чистий білий удень, чистий чорний (QLED) уночі', 'Zuiver wit overdag, zuiver zwart (QLED) ’s nachts'), PUUR.licht, PUUR.donker],
     ...(violetToegestaan ? [['violet', tr('Фіолетовий', 'Violet'), tr('Один фіолетовий; тон — за режимом', 'Eén violet; de toon volgt de modus'), VIOLET.licht, VIOLET.donker] as [Palet, string, string, Mini, Mini]] : []),

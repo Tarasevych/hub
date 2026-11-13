@@ -9,12 +9,12 @@
 // beeld zonder flits; een eenheidstest vergelijkt beide.
 
 export type Modus = 'light' | 'dark' | 'device' | 'auto';
-export type Palet = 'grifel' | 'puur' | 'violet' | 'kleur';
+export type Palet = 'grifel' | 'puur' | 'violet' | 'kleur' | 'maquette';
 export type AutoSoort = 'interval' | 'zon';
 export type AutoInstelling = { soort: AutoSoort; van: string; tot: string; lat?: number; lon?: number; plaats?: string; pauzeTot?: number; pauzeModus?: 'light' | 'dark' };
 export type Presentatie = 'light' | 'dark' | 'plum-light' | 'plum-dark';
 
-export const PALETTEN: readonly Palet[] = ['kleur', 'grifel', 'puur', 'violet'];
+export const PALETTEN: readonly Palet[] = ['kleur', 'maquette', 'grifel', 'puur', 'violet'];
 /** Standaard: de kleur van de sectie (zoals het menu), gevraagd door de eigenaar. */
 export const STANDAARD_PALET: Palet = 'kleur';
 export const STANDAARD_AUTO: AutoInstelling = { soort: 'zon', van: '20:00', tot: '07:00' };
@@ -23,7 +23,7 @@ export const STANDAARD_PLAATS = { lat: 50.8, lon: 4.4, plaats: 'Brussel' };
 
 const UUR = /^([01]\d|2[0-3]):([0-5]\d)$/;
 export const isModus = (v: unknown): v is Modus => v === 'light' || v === 'dark' || v === 'device' || v === 'auto';
-export const isPalet = (v: unknown): v is Palet => v === 'grifel' || v === 'puur' || v === 'violet' || v === 'kleur';
+export const isPalet = (v: unknown): v is Palet => v === 'grifel' || v === 'puur' || v === 'violet' || v === 'kleur' || v === 'maquette';
 const getal = (v: unknown, min: number, max: number) => { const n = Number(v); return Number.isFinite(n) && n >= min && n <= max ? Math.round(n * 10) / 10 : undefined; };
 
 export function normaalAuto(raw: unknown): AutoInstelling {

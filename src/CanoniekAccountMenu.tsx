@@ -43,7 +43,8 @@ const RuimteWissel = lazy(() => import('./tech/ruimtes/RuimteWissel'));
 const UITLOG_GEBEURTENIS = 'mr-ruimtes-uitloggen';
 import { weergaveGebruiker } from './weergave/weergave-opslag';
 import { openDiagnose } from './diagnose/open';
-import { hervatAuto, pauzeerAuto, useAutoStatus } from './thema/useThema';
+import { leesKeuze } from './thema/kern';
+import { hervatAuto, pauzeerAuto, useAutoStatus, zetPalet } from './thema/useThema';
 import {
   forgetAccountPreviewHistory,
   readAccountPreviewHistory,
@@ -144,6 +145,9 @@ const copy = {
     pauze: 'Скасувати автоперемикання на сьогодні',
     hervat: 'Повернути автоперемикання',
     kleuren: 'Кольори теми…',
+    maquette: 'Вигляд: Макет',
+    maquetteAan: 'Вигляд: Макет ✓',
+    maquetteHint: 'Увімкнути або вимкнути студійну палітру «Макет»',
     privacy: 'Конфіденційність',
     terms: 'Умови',
     loading: 'Оновлюємо список…',
@@ -189,6 +193,9 @@ const copy = {
     pauze: 'Automatisch wisselen vandaag annuleren',
     hervat: 'Automatisch wisselen hervatten',
     kleuren: 'Themakleuren…',
+    maquette: 'Uiterlijk: Ontwerp',
+    maquetteAan: 'Uiterlijk: Ontwerp ✓',
+    maquetteHint: 'Studiopalet «Ontwerp» in- of uitschakelen',
     privacy: 'Privacy',
     terms: 'Voorwaarden',
     loading: 'Accountlijst bijwerken…',
@@ -575,6 +582,13 @@ export default function CanonicalAccountMenu({
   const device = theme === 'device';
   const auto = theme === 'auto';
   const autoStatus = useAutoStatus(theme);
+  const huidigPalet = leesKeuze(theme, autoStatus.palet).palet;
+  const wisselMaquette = () => {
+    zetPalet(huidigPalet === 'maquette' ? 'kleur' : 'maquette');
+    if (theme === 'plum-light' || theme === 'plum-dark') {
+      onTheme(theme === 'plum-dark' ? 'dark' : 'light');
+    }
+  };
   const showLogoutAll = Boolean(onLogoutAll) && model.shouldShowLogoutAll;
   const visibleRows = displayUser ? model.visibleExpandedAccounts : model.knownAccounts;
 
@@ -667,7 +681,16 @@ export default function CanonicalAccountMenu({
           </button>
         </div>
       )}
-      <div className='canonical-thema-kleuren-link'>
+      <div className='canonical-thema-kleuren-link' style={{ justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'maquette'}
+          title={t.maquetteHint}
+          onClick={wisselMaquette}
+          data-thema-maquette={huidigPalet === 'maquette' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'maquette' ? t.maquetteAan : t.maquette}
+        </button>
         <button type='button' onClick={() => { close(); onThemeColors?.(); }} data-thema-kleuren>{t.kleuren}</button>
       </div>
     </div>
@@ -711,6 +734,20 @@ export default function CanonicalAccountMenu({
           <Settings />
         </button>
       </div>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'maquette'}
+        title={t.maquetteHint}
+        onClick={wisselMaquette}
+        data-thema-maquette={huidigPalet === 'maquette' ? 'aan' : 'uit'}
+      >
+        <Palette aria-hidden='true' />
+        <span>{t.maquette}</span>
+        <em className={`am2-stand${huidigPalet === 'maquette' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'maquette' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
     </div>
   );
 

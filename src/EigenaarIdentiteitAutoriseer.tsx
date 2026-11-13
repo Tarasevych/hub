@@ -32,5 +32,5 @@ export default function OwnerIdentityAuthorize({lang}:{lang:OwnerLang}){
     return()=>window.removeEventListener('message',receive);
   },[lang,opener]);
 
-  return <main aria-hidden='true' style={{minHeight:'100vh',background:'transparent'}}/>;
+  return <main aria-hidden='true' style={{minHeight:'100vh',background:'var(--boot-bg, transparent)'}}/>;
 }

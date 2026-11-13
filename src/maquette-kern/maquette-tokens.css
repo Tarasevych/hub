@@ -1,0 +1,512 @@
+/* Змінні художньої системи «Макет» (MAQUETTE-001).
+   Визначає студійні кольори, тіні, скруглення та індивідуальні шляхетні палітри для всіх 10 піддоменів.
+   Ontwerpvariabelen van het «Maquette»-stelsel voor donkere en lichte sfeer plus alle 10 subdomeinen. */
+
+html.palet-maquette {
+  --mq-bg: #090e1b;
+  --mq-bg-2: #101728;
+  --mq-oppervlak: #141d30;
+  --mq-oppervlak-2: #1b263a;
+  --mq-oppervlak-zacht: rgba(159, 174, 218, 0.045);
+  --mq-oppervlak-hover: rgba(159, 174, 224, 0.095);
+  --mq-rand: rgba(197, 212, 239, 0.12);
+  --mq-rand-sterk: rgba(197, 212, 239, 0.24);
+  --mq-tekst: #eff4ff;
+  --mq-gedempt: #98a7bf;
+  --mq-stil: #74849f;
+  --mq-wit: #ffffff;
+
+  --mq-straal-kaart: 26px;
+  --mq-straal-held: 30px;
+  --mq-straal-rail: 22px;
+  --mq-straal-veld: 13px;
+  --mq-straal-knop: 13px;
+
+  --mq-schaduw: 0 30px 80px rgba(0, 0, 0, 0.28);
+  --mq-schaduw-held: 0 40px 92px rgba(5, 7, 20, 0.36);
+  --mq-schaduw-zacht: 0 18px 46px rgba(4, 8, 22, 0.22);
+
+  --mq-zijbalk-glas: rgba(10, 16, 30, 0.88);
+  --mq-bovenbalk-glas: rgba(9, 14, 27, 0.80);
+  --mq-rail-glas: rgba(25, 33, 53, 0.86);
+  --mq-popover-glas: rgba(24, 33, 54, 0.96);
+
+  /* Типова палітра («Ідентичність» — фіалково-ірисове склепіння еталона власника) */
+  --mq-accent: #b3a0ff;
+  --mq-accent-rgb: 179, 160, 255;
+  --mq-accent-2: #6e68bf;
+  --mq-accent-op: #11182c;
+  --mq-nacht-accent: #b3a0ff;
+  --mq-nacht-accent-rgb: 179, 160, 255;
+  --mq-held-bg: linear-gradient(116deg, #282644 0%, #2f3255 41%, #1a3851 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #242748 0%, #131c2e 100%);
+  --mq-gloed: rgba(162, 138, 252, 0.28);
+  --mq-held-gloed-a: rgba(125, 209, 233, 0.22);
+  --mq-held-gloed-b: rgba(142, 110, 232, 0.34);
+  --mq-cursief-grad: linear-gradient(105deg, #f7dce9 0%, #b9d5ff 82%);
+  --mq-werk-gloed-a: rgba(82, 66, 158, 0.18);
+  --mq-werk-gloed-b: rgba(42, 108, 150, 0.10);
+
+  /* Ознаки технічного контуру (за замовчуванням вимкнені) */
+  --mq-tech-lijn: transparent;
+  --mq-tech-markering: #f5b864;
+  --mq-tech-markering-rgb: 245, 184, 100;
+
+  /* Постійні відтінки нічної вітрини .mq-held і рами мистецтва .mq-kunst-raam */
+  --mq-held-tekst: #eff4ff;
+  --mq-held-gedempt: #c6cce6;
+  --mq-held-stil: #9aa6c4;
+  --mq-held-lijn: rgba(226, 232, 255, 0.14);
+  --mq-held-boven: #ddd4ff;
+  --mq-knop-primair-bg: #f4f0ff;
+  --mq-knop-primair-tekst: #262246;
+  --mq-knop-secundair-tekst: #ebeef9;
+  --mq-held-wissel-tekst: #dce3f8;
+  --mq-held-voet-tekst: #d4daf0;
+  --mq-held-pil-tekst: #d4dcf2;
+  --mq-bol-diep: #16233b;
+  --mq-schild-diep: #1a2946;
+  --mq-satelliet-tekst: #eaf4ff;
+  --mq-venster-tekst: #f3f6ff;
+  --mq-vonk-kleur: #efe6ff;
+
+  /* Типові локальні акценти карток та виміряні межі ядра */
+  --mq-kaart-accent: var(--mq-accent);
+  --mq-kaart-accent-rgb: var(--mq-accent-rgb);
+  --mq-kern-links: 60px;
+  --mq-kern-rechts: 0px;
+  --mq-kern-boven: 68px;
+  --mq-kern-onder: 0px;
+}
+
+/* ── Індивідуальні шляхетні палітри для 10 піддоменів (темний та вітринний шари) ── */
+
+html.palet-maquette[data-presentation-service="hub"],
+html.palet-maquette [data-mq-dienst="hub"] {
+  --mq-accent: #66dfd4;
+  --mq-accent-rgb: 102, 223, 212;
+  --mq-accent-2: #2c8a8e;
+  --mq-nacht-accent: #66dfd4;
+  --mq-nacht-accent-rgb: 102, 223, 212;
+  --mq-held-bg: linear-gradient(116deg, #162c3c 0%, #1d3c4e 43%, #1b2c4c 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #173846 0%, #111c2e 100%);
+  --mq-gloed: rgba(94, 224, 212, 0.26);
+  --mq-held-gloed-a: rgba(104, 226, 214, 0.25);
+  --mq-held-gloed-b: rgba(88, 142, 232, 0.28);
+  --mq-cursief-grad: linear-gradient(105deg, #d8fff6 0%, #a9d9ff 82%);
+  --mq-werk-gloed-a: rgba(34, 118, 122, 0.17);
+  --mq-werk-gloed-b: rgba(52, 98, 168, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="ai"],
+html.palet-maquette [data-mq-dienst="ai"] {
+  --mq-accent: #d3a6ff;
+  --mq-accent-rgb: 211, 166, 255;
+  --mq-accent-2: #8a5ccf;
+  --mq-nacht-accent: #d3a6ff;
+  --mq-nacht-accent-rgb: 211, 166, 255;
+  --mq-held-bg: linear-gradient(116deg, #2d2147 0%, #3a295c 43%, #212e52 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #32234f 0%, #141b30 100%);
+  --mq-gloed: rgba(203, 145, 255, 0.28);
+  --mq-held-gloed-a: rgba(248, 168, 212, 0.24);
+  --mq-held-gloed-b: rgba(164, 116, 244, 0.34);
+  --mq-cursief-grad: linear-gradient(105deg, #ffe1f3 0%, #d4beff 82%);
+  --mq-werk-gloed-a: rgba(114, 68, 172, 0.18);
+  --mq-werk-gloed-b: rgba(156, 76, 138, 0.09);
+}
+
+html.palet-maquette[data-presentation-service="mail"],
+html.palet-maquette [data-mq-dienst="mail"] {
+  --mq-accent: #8eb9ff;
+  --mq-accent-rgb: 142, 185, 255;
+  --mq-accent-2: #4471be;
+  --mq-nacht-accent: #8eb9ff;
+  --mq-nacht-accent-rgb: 142, 185, 255;
+  --mq-held-bg: linear-gradient(116deg, #192949 0%, #233963 43%, #193250 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #1f3559 0%, #121c2f 100%);
+  --mq-gloed: rgba(122, 174, 255, 0.27);
+  --mq-held-gloed-a: rgba(132, 212, 255, 0.24);
+  --mq-held-gloed-b: rgba(96, 138, 238, 0.32);
+  --mq-cursief-grad: linear-gradient(105deg, #e2f1ff 0%, #aecbff 82%);
+  --mq-werk-gloed-a: rgba(54, 96, 178, 0.18);
+  --mq-werk-gloed-b: rgba(46, 122, 174, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="cloud"],
+html.palet-maquette [data-mq-dienst="cloud"] {
+  --mq-accent: #72def5;
+  --mq-accent-rgb: 114, 222, 245;
+  --mq-accent-2: #2b82a6;
+  --mq-nacht-accent: #72def5;
+  --mq-nacht-accent-rgb: 114, 222, 245;
+  --mq-held-bg: linear-gradient(116deg, #162d43 0%, #1d3e59 43%, #1a2d4a 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #18384e 0%, #111c2e 100%);
+  --mq-gloed: rgba(102, 214, 242, 0.26);
+  --mq-held-gloed-a: rgba(136, 234, 255, 0.25);
+  --mq-held-gloed-b: rgba(74, 156, 222, 0.30);
+  --mq-cursief-grad: linear-gradient(105deg, #dffaff 0%, #a8dcff 82%);
+  --mq-werk-gloed-a: rgba(38, 114, 156, 0.18);
+  --mq-werk-gloed-b: rgba(52, 98, 168, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="github"],
+html.palet-maquette [data-mq-dienst="github"] {
+  --mq-accent: #c5d4ee;
+  --mq-accent-rgb: 197, 212, 238;
+  --mq-accent-2: #647899;
+  --mq-nacht-accent: #c5d4ee;
+  --mq-nacht-accent-rgb: 197, 212, 238;
+  --mq-held-bg: linear-gradient(116deg, #1b2234 0%, #252f46 43%, #1a293e 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #222c42 0%, #111827 100%);
+  --mq-gloed: rgba(182, 202, 238, 0.23);
+  --mq-held-gloed-a: rgba(188, 214, 255, 0.20);
+  --mq-held-gloed-b: rgba(124, 144, 198, 0.26);
+  --mq-cursief-grad: linear-gradient(105deg, #f3f7ff 0%, #bfd2f2 82%);
+  --mq-werk-gloed-a: rgba(84, 102, 144, 0.16);
+  --mq-werk-gloed-b: rgba(58, 86, 128, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="huis"],
+html.palet-maquette [data-mq-dienst="huis"] {
+  --mq-accent: #ffca8a;
+  --mq-accent-rgb: 255, 202, 138;
+  --mq-accent-2: #b98246;
+  --mq-nacht-accent: #ffca8a;
+  --mq-nacht-accent-rgb: 255, 202, 138;
+  --mq-held-bg: linear-gradient(116deg, #352726 0%, #403237 43%, #232d44 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #433328 0%, #161d2e 100%);
+  --mq-gloed: rgba(250, 190, 112, 0.25);
+  --mq-held-gloed-a: rgba(255, 208, 142, 0.24);
+  --mq-held-gloed-b: rgba(196, 128, 86, 0.28);
+  --mq-cursief-grad: linear-gradient(105deg, #fff1d8 0%, #ffd0a4 82%);
+  --mq-werk-gloed-a: rgba(148, 98, 52, 0.16);
+  --mq-werk-gloed-b: rgba(74, 88, 138, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="identity"],
+html.palet-maquette [data-mq-dienst="identity"] {
+  --mq-accent: #b3a0ff;
+  --mq-accent-rgb: 179, 160, 255;
+  --mq-accent-2: #6e68bf;
+  --mq-nacht-accent: #b3a0ff;
+  --mq-nacht-accent-rgb: 179, 160, 255;
+  --mq-held-bg: linear-gradient(116deg, #282644 0%, #2f3255 41%, #1a3851 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #242748 0%, #131c2e 100%);
+  --mq-gloed: rgba(162, 138, 252, 0.28);
+  --mq-held-gloed-a: rgba(125, 209, 233, 0.22);
+  --mq-held-gloed-b: rgba(142, 110, 232, 0.34);
+  --mq-cursief-grad: linear-gradient(105deg, #f7dce9 0%, #b9d5ff 82%);
+  --mq-werk-gloed-a: rgba(82, 66, 158, 0.18);
+  --mq-werk-gloed-b: rgba(42, 108, 150, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="api"],
+html.palet-maquette [data-mq-dienst="api"] {
+  --mq-accent: #ffa4c8;
+  --mq-accent-rgb: 255, 164, 200;
+  --mq-accent-2: #b5608e;
+  --mq-nacht-accent: #ffa4c8;
+  --mq-nacht-accent-rgb: 255, 164, 200;
+  --mq-held-bg: linear-gradient(116deg, #35213b 0%, #42294b 43%, #202d48 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #422848 0%, #151c2e 100%);
+  --mq-gloed: rgba(244, 138, 190, 0.26);
+  --mq-held-gloed-a: rgba(255, 174, 212, 0.24);
+  --mq-held-gloed-b: rgba(178, 102, 172, 0.30);
+  --mq-cursief-grad: linear-gradient(105deg, #ffe3ef 0%, #f7b8dc 82%);
+  --mq-werk-gloed-a: rgba(142, 62, 114, 0.17);
+  --mq-werk-gloed-b: rgba(62, 86, 146, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="admin"],
+html.palet-maquette [data-mq-dienst="admin"] {
+  --mq-accent: #ff9fa6;
+  --mq-accent-rgb: 255, 159, 166;
+  --mq-accent-2: #b85866;
+  --mq-nacht-accent: #ff9fa6;
+  --mq-nacht-accent-rgb: 255, 159, 166;
+  --mq-held-bg: linear-gradient(116deg, #37222d 0%, #442a3a 43%, #202b44 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #432833 0%, #151c2d 100%);
+  --mq-gloed: rgba(246, 136, 148, 0.25);
+  --mq-held-gloed-a: rgba(255, 176, 168, 0.23);
+  --mq-held-gloed-b: rgba(188, 92, 116, 0.29);
+  --mq-cursief-grad: linear-gradient(105deg, #ffe6e6 0%, #ffb8c6 82%);
+  --mq-werk-gloed-a: rgba(146, 58, 76, 0.17);
+  --mq-werk-gloed-b: rgba(60, 82, 138, 0.10);
+}
+
+html.palet-maquette[data-presentation-service="mcp"],
+html.palet-maquette [data-mq-dienst="mcp"] {
+  --mq-accent: #7be3b5;
+  --mq-accent-rgb: 123, 227, 181;
+  --mq-accent-2: #2f8b6d;
+  --mq-nacht-accent: #7be3b5;
+  --mq-nacht-accent-rgb: 123, 227, 181;
+  --mq-held-bg: linear-gradient(116deg, #17312f 0%, #1f403f 43%, #1a2e46 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #1d4039 0%, #121c2d 100%);
+  --mq-gloed: rgba(110, 224, 176, 0.25);
+  --mq-held-gloed-a: rgba(134, 240, 196, 0.24);
+  --mq-held-gloed-b: rgba(68, 166, 148, 0.29);
+  --mq-cursief-grad: linear-gradient(105deg, #e0fff0 0%, #a8f0d8 82%);
+  --mq-werk-gloed-a: rgba(42, 122, 98, 0.17);
+  --mq-werk-gloed-b: rgba(48, 92, 148, 0.10);
+}
+
+/* Додаткові сцени для вітрин входу, гостя та невідомого маршруту */
+html.palet-maquette [data-mq-dienst="aanmelden"] {
+  --mq-nacht-accent: #c4b2ff;
+  --mq-nacht-accent-rgb: 196, 178, 255;
+  --mq-held-bg: linear-gradient(116deg, #242142 0%, #302c58 44%, #193550 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #28264e 0%, #121b2e 100%);
+  --mq-gloed: rgba(178, 152, 255, 0.28);
+}
+
+html.palet-maquette [data-mq-dienst="gast"] {
+  --mq-nacht-accent: #7ce3da;
+  --mq-nacht-accent-rgb: 124, 227, 218;
+  --mq-held-bg: linear-gradient(116deg, #172e3d 0%, #214050 44%, #1c2e4a 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #1b3b49 0%, #121c2e 100%);
+  --mq-gloed: rgba(110, 226, 216, 0.25);
+}
+
+html.palet-maquette [data-mq-dienst="niet-gevonden"] {
+  --mq-nacht-accent: #a8bfff;
+  --mq-nacht-accent-rgb: 168, 191, 255;
+  --mq-held-bg: linear-gradient(116deg, #191f36 0%, #242c4c 44%, #16263d 100%);
+  --mq-kunst-bg: linear-gradient(145deg, #1f2744 0%, #0f1626 100%);
+  --mq-gloed: rgba(146, 174, 248, 0.24);
+}
+
+/* ── Світлий режим «Ранковий туман» (вітрини .mq-held і рами .mq-kunst-raam зберігають темне склепіння!) ── */
+
+html.palet-maquette.theme-light,
+html.palet-maquette.theme-plum-light,
+html.palet-maquette .canonical-chrome.theme-light,
+html.palet-maquette .canonical-chrome.theme-plum-light {
+  --mq-bg: #edf0f6;
+  --mq-bg-2: #ffffff;
+  --mq-oppervlak: #ffffff;
+  --mq-oppervlak-2: #f4f7fd;
+  --mq-oppervlak-zacht: rgba(40, 63, 104, 0.04);
+  --mq-oppervlak-hover: rgba(40, 63, 104, 0.08);
+  --mq-rand: rgba(40, 63, 104, 0.11);
+  --mq-rand-sterk: rgba(40, 63, 104, 0.22);
+  --mq-tekst: #192640;
+  --mq-gedempt: #56657f;
+  --mq-stil: #75839d;
+  --mq-schaduw: 0 28px 70px rgba(58, 74, 116, 0.09);
+  --mq-schaduw-zacht: 0 14px 36px rgba(52, 68, 108, 0.075);
+
+  --mq-zijbalk-glas: rgba(248, 250, 255, 0.90);
+  --mq-bovenbalk-glas: rgba(237, 240, 246, 0.84);
+  --mq-rail-glas: rgba(255, 255, 255, 0.92);
+  --mq-popover-glas: rgba(255, 255, 255, 0.98);
+
+  --mq-accent: #5c47a8;
+  --mq-accent-rgb: 92, 71, 168;
+  --mq-accent-op: #ffffff;
+  --mq-werk-gloed-a: rgba(114, 96, 198, 0.09);
+  --mq-werk-gloed-b: rgba(58, 134, 182, 0.065);
+  --mq-tech-markering: #b4620e;
+  --mq-tech-markering-rgb: 180, 98, 14;
+}
+
+html.palet-maquette.theme-light[data-presentation-service="hub"],
+html.palet-maquette.theme-plum-light[data-presentation-service="hub"],
+html.palet-maquette[data-presentation-service="hub"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #0f7270;
+  --mq-accent-rgb: 15, 114, 112;
+  --mq-werk-gloed-a: rgba(22, 136, 134, 0.085);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="ai"],
+html.palet-maquette.theme-plum-light[data-presentation-service="ai"],
+html.palet-maquette[data-presentation-service="ai"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #743bc4;
+  --mq-accent-rgb: 116, 59, 196;
+  --mq-werk-gloed-a: rgba(132, 74, 212, 0.09);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="mail"],
+html.palet-maquette.theme-plum-light[data-presentation-service="mail"],
+html.palet-maquette[data-presentation-service="mail"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #2257b8;
+  --mq-accent-rgb: 34, 87, 184;
+  --mq-werk-gloed-a: rgba(46, 104, 206, 0.09);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="cloud"],
+html.palet-maquette.theme-plum-light[data-presentation-service="cloud"],
+html.palet-maquette[data-presentation-service="cloud"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #0c6c90;
+  --mq-accent-rgb: 12, 108, 144;
+  --mq-werk-gloed-a: rgba(22, 132, 174, 0.085);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="github"],
+html.palet-maquette.theme-plum-light[data-presentation-service="github"],
+html.palet-maquette[data-presentation-service="github"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #314666;
+  --mq-accent-rgb: 49, 70, 102;
+  --mq-werk-gloed-a: rgba(72, 94, 134, 0.085);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="huis"],
+html.palet-maquette.theme-plum-light[data-presentation-service="huis"],
+html.palet-maquette[data-presentation-service="huis"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #9a5912;
+  --mq-accent-rgb: 154, 89, 18;
+  --mq-werk-gloed-a: rgba(188, 118, 38, 0.085);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="identity"],
+html.palet-maquette.theme-plum-light[data-presentation-service="identity"],
+html.palet-maquette[data-presentation-service="identity"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #5c47a8;
+  --mq-accent-rgb: 92, 71, 168;
+}
+
+html.palet-maquette.theme-light[data-presentation-service="api"],
+html.palet-maquette.theme-plum-light[data-presentation-service="api"],
+html.palet-maquette[data-presentation-service="api"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #a92864;
+  --mq-accent-rgb: 169, 40, 100;
+  --mq-werk-gloed-a: rgba(186, 58, 118, 0.085);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="admin"],
+html.palet-maquette.theme-plum-light[data-presentation-service="admin"],
+html.palet-maquette[data-presentation-service="admin"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #b2293b;
+  --mq-accent-rgb: 178, 41, 59;
+  --mq-werk-gloed-a: rgba(192, 56, 74, 0.085);
+}
+
+html.palet-maquette.theme-light[data-presentation-service="mcp"],
+html.palet-maquette.theme-plum-light[data-presentation-service="mcp"],
+html.palet-maquette[data-presentation-service="mcp"] .canonical-chrome:is(.theme-light, .theme-plum-light) {
+  --mq-accent: #137552;
+  --mq-accent-rgb: 19, 117, 82;
+  --mq-werk-gloed-a: rgba(28, 144, 104, 0.085);
+}
+
+/* Прокидання студійної палітри у канонічну оболонку (крім режиму власного двигуна id.tarasevych.com) */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome {
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.14);
+}
+
+/* Вітрини .mq-held і рами мистецтва .mq-kunst-raam ЗАВЖДИ зберігають нічне студійне склепіння навіть у світлому режимі */
+html.palet-maquette .mq-held,
+html.palet-maquette .mq-kunst-raam {
+  color-scheme: dark;
+  --mq-held-tekst: #eff4ff;
+  --mq-held-gedempt: #c5cbe6;
+  --mq-held-stil: #9aa6c4;
+  --mq-held-lijn: rgba(226, 232, 255, 0.14);
+}
+
+/* Індивідуальні акцентні модифікатори для секційних карток (як у еталоні власника) */
+html.palet-maquette .mq-accent-violet {
+  --mq-kaart-accent: #b3a3ff;
+  --mq-kaart-accent-rgb: 179, 163, 255;
+  --mq-kunst-bg: linear-gradient(145deg, #242748 0%, #131c2e 100%);
+  --mq-gloed: rgba(138, 112, 234, 0.25);
+}
+html.palet-maquette .mq-accent-cyan {
+  --mq-kaart-accent: #6ed8e5;
+  --mq-kaart-accent-rgb: 110, 216, 229;
+  --mq-kunst-bg: linear-gradient(145deg, #173647 0%, #131c2e 100%);
+  --mq-gloed: rgba(71, 204, 225, 0.22);
+}
+html.palet-maquette .mq-accent-pink {
+  --mq-kaart-accent: #ffabc4;
+  --mq-kaart-accent-rgb: 255, 171, 196;
+  --mq-kunst-bg: linear-gradient(145deg, #452d4e 0%, #131c2e 100%);
+  --mq-gloed: rgba(230, 130, 190, 0.21);
+}
+html.palet-maquette .mq-accent-mint {
+  --mq-kaart-accent: #80e3c6;
+  --mq-kaart-accent-rgb: 128, 227, 198;
+  --mq-kunst-bg: linear-gradient(145deg, #20443e 0%, #131c2e 100%);
+  --mq-gloed: rgba(105, 221, 187, 0.20);
+}
+html.palet-maquette .mq-accent-amber {
+  --mq-kaart-accent: #ffd19b;
+  --mq-kaart-accent-rgb: 255, 209, 155;
+  --mq-kunst-bg: linear-gradient(145deg, #483829 0%, #131c2e 100%);
+  --mq-gloed: rgba(244, 185, 99, 0.22);
+}
+html.palet-maquette .mq-accent-blue {
+  --mq-kaart-accent: #9bbfff;
+  --mq-kaart-accent-rgb: 155, 191, 255;
+  --mq-kunst-bg: linear-gradient(145deg, #253856 0%, #131c2e 100%);
+  --mq-gloed: rgba(104, 162, 249, 0.20);
+}
+html.palet-maquette .mq-accent-emerald {
+  --mq-kaart-accent: #7be3b5;
+  --mq-kaart-accent-rgb: 123, 227, 181;
+  --mq-kunst-bg: linear-gradient(145deg, #1d4039 0%, #131c2e 100%);
+  --mq-gloed: rgba(110, 224, 176, 0.22);
+}
+html.palet-maquette .mq-accent-coral {
+  --mq-kaart-accent: #ff9fa6;
+  --mq-kaart-accent-rgb: 255, 159, 166;
+  --mq-kunst-bg: linear-gradient(145deg, #432833 0%, #131c2e 100%);
+  --mq-gloed: rgba(246, 136, 148, 0.22);
+}
+
+html.palet-maquette.theme-light .mq-accent-violet,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-violet { --mq-kaart-accent: #6550aa; --mq-kaart-accent-rgb: 101, 80, 170; }
+html.palet-maquette.theme-light .mq-accent-cyan,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-cyan { --mq-kaart-accent: #117b8d; --mq-kaart-accent-rgb: 17, 123, 141; }
+html.palet-maquette.theme-light .mq-accent-pink,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-pink { --mq-kaart-accent: #b74471; --mq-kaart-accent-rgb: 183, 68, 113; }
+html.palet-maquette.theme-light .mq-accent-mint,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-mint { --mq-kaart-accent: #167f64; --mq-kaart-accent-rgb: 22, 127, 100; }
+html.palet-maquette.theme-light .mq-accent-amber,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-amber { --mq-kaart-accent: #9b6319; --mq-kaart-accent-rgb: 155, 99, 25; }
+html.palet-maquette.theme-light .mq-accent-blue,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-blue { --mq-kaart-accent: #3868b0; --mq-kaart-accent-rgb: 56, 104, 176; }
+html.palet-maquette.theme-light .mq-accent-emerald,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-emerald { --mq-kaart-accent: #137552; --mq-kaart-accent-rgb: 19, 117, 82; }
+html.palet-maquette.theme-light .mq-accent-coral,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .mq-accent-coral { --mq-kaart-accent: #b2293b; --mq-kaart-accent-rgb: 178, 41, 59; }
+
+/* ── Виразний візуальний маркер технічного контуру (data-oppervlak="technisch") ── */
+html.palet-maquette .canonical-chrome[data-oppervlak="technisch"] {
+  --mq-tech-lijn: rgba(var(--mq-tech-markering-rgb), 0.44);
+  --mq-rand: color-mix(in srgb, rgba(var(--mq-tech-markering-rgb), 0.28) 42%, rgba(197, 212, 239, 0.14));
+  --mq-werk-gloed-b: rgba(var(--mq-tech-markering-rgb), 0.11);
+}
+
+html.palet-maquette.theme-light .canonical-chrome[data-oppervlak="technisch"],
+html.palet-maquette .canonical-chrome.theme-light[data-oppervlak="technisch"],
+html.palet-maquette .canonical-chrome.theme-plum-light[data-oppervlak="technisch"] {
+  --mq-tech-lijn: rgba(var(--mq-tech-markering-rgb), 0.38);
+  --mq-rand: color-mix(in srgb, rgba(var(--mq-tech-markering-rgb), 0.26) 38%, rgba(40, 63, 104, 0.12));
+  --mq-werk-gloed-b: rgba(var(--mq-tech-markering-rgb), 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette {
+    --mq-beweging-duur: 0s;
+  }
+}
+
+/* Мобільний шар — суворо наприкінці файла (правило mobiel-cascade-20261105) */
+@media (max-width: 760px) {
+  html.palet-maquette {
+    --mq-straal-kaart: 22px;
+    --mq-straal-held: 24px;
+    --mq-straal-rail: 18px;
+  }
+}

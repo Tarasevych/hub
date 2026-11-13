@@ -1,0 +1,893 @@
+/* Студійні поверхні входу, відсутньої адреси (404) та гостьового залу для загальносайтової палітри «Макет» (MAQUETTE-001).
+   Усі декоративні сфери та орбіти розташовано абсолютно всередині відносного контейнера з прихованим переповненням.
+   Studiosfeer voor aanmelden, niet-gevonden (404) en gasttoegang onder html.palet-maquette in donkere en lichte stand. */
+
+html.palet-maquette {
+  --mq-am-bg: #090e1b;
+  --mq-am-bg-diep: #101728;
+  --mq-am-oppervlak: #141d30;
+  --mq-am-oppervlak-2: #1b263a;
+  --mq-am-kaart: rgba(20, 29, 48, 0.78);
+  --mq-am-kaart-zweef: rgba(27, 38, 58, 0.92);
+  --mq-am-kaart-actief: rgba(16, 24, 40, 0.96);
+  --mq-am-rand: rgba(197, 212, 239, 0.14);
+  --mq-am-rand-sterk: rgba(197, 212, 239, 0.30);
+  --mq-am-glans: rgba(226, 216, 255, 0.30);
+  --mq-am-tekst: #eff4ff;
+  --mq-am-gedempt: #98a7bf;
+  --mq-am-stil: #65748e;
+  --mq-am-accent: #b3a0ff;
+  --mq-am-accent-tekst: #17122b;
+  --mq-am-accent-2: #5adad4;
+  --mq-am-accent-3: #ffc785;
+  --mq-am-knop-bg: #f4efff;
+  --mq-am-knop-tekst: #2a244d;
+  --mq-am-hoofdknop-kern: #161f33;
+  --mq-am-hoofdknop-tekst: #f7f9ff;
+  --mq-am-orb-1: #bfdcf0;
+  --mq-am-orb-2: #8f9fd7;
+  --mq-am-orb-3: #665ca5;
+  --mq-am-orb-4: #444787;
+  --mq-am-orb-5: #16253c;
+  --mq-am-baan-1: rgba(223, 221, 255, 0.24);
+  --mq-am-baan-2: rgba(164, 226, 242, 0.16);
+  --mq-am-gloed-a: rgba(124, 96, 230, 0.24);
+  --mq-am-gloed-b: rgba(64, 176, 208, 0.14);
+  --mq-am-schaduw: 0 34px 86px rgba(3, 6, 18, 0.48);
+  --mq-am-banner: rgba(28, 35, 58, 0.84);
+  --mq-am-banner-rand: rgba(183, 164, 255, 0.28);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) {
+  --mq-am-bg: #edf0f6;
+  --mq-am-bg-diep: #f7f9fd;
+  --mq-am-oppervlak: #ffffff;
+  --mq-am-oppervlak-2: #eef2fb;
+  --mq-am-kaart: rgba(255, 255, 255, 0.84);
+  --mq-am-kaart-zweef: rgba(255, 255, 255, 0.96);
+  --mq-am-kaart-actief: rgba(235, 240, 250, 0.96);
+  --mq-am-rand: rgba(40, 63, 104, 0.13);
+  --mq-am-rand-sterk: rgba(92, 76, 168, 0.32);
+  --mq-am-glans: rgba(112, 92, 198, 0.22);
+  --mq-am-tekst: #192640;
+  --mq-am-gedempt: #566581;
+  --mq-am-stil: #76839b;
+  --mq-am-accent: #6550aa;
+  --mq-am-accent-tekst: #ffffff;
+  --mq-am-accent-2: #117b8d;
+  --mq-am-accent-3: #9b6319;
+  --mq-am-knop-bg: #2a254f;
+  --mq-am-knop-tekst: #f8f6ff;
+  --mq-am-hoofdknop-kern: #1e2740;
+  --mq-am-hoofdknop-tekst: #f8faff;
+  --mq-am-orb-1: #ffffff;
+  --mq-am-orb-2: #c6d7f4;
+  --mq-am-orb-3: #988ce0;
+  --mq-am-orb-4: #6a63b6;
+  --mq-am-orb-5: #384974;
+  --mq-am-baan-1: rgba(101, 80, 170, 0.20);
+  --mq-am-baan-2: rgba(17, 123, 141, 0.16);
+  --mq-am-gloed-a: rgba(132, 110, 226, 0.15);
+  --mq-am-gloed-b: rgba(72, 174, 204, 0.12);
+  --mq-am-schaduw: 0 28px 72px rgba(42, 58, 102, 0.12);
+  --mq-am-banner: rgba(255, 255, 255, 0.88);
+  --mq-am-banner-rand: rgba(101, 80, 170, 0.24);
+}
+
+/* ── 1. Екран єдиного входу (.canonical-signed-out.mr-sign-in) ─────────────────────────────────────────────── */
+
+html.palet-maquette:has(.canonical-chrome .mr-sign-in),
+html.palet-maquette:has(.canonical-chrome .mr-sign-in) body {
+  background: var(--mq-am-bg);
+}
+
+html.palet-maquette .canonical-chrome:has(.mr-sign-in) {
+  --mr-login-ink: var(--mq-am-tekst);
+  --mr-login-muted: var(--mq-am-gedempt);
+  --mr-login-border: var(--mq-am-rand);
+  --mr-login-sheet: var(--mq-am-bg);
+  --mr-login-card: var(--mq-am-kaart);
+  --mr-login-sec-bg: var(--mq-am-kaart);
+  --mr-login-sec-bg-hover: var(--mq-am-kaart-zweef);
+  --mr-login-sec-bg-active: var(--mq-am-kaart-actief);
+  --mr-login-sec-border: var(--mq-am-rand);
+  --mr-login-sec-border-hover: var(--mq-am-rand-sterk);
+  --mr-login-sec-ring: color-mix(in srgb, var(--mq-am-accent) 18%, transparent);
+  background: var(--mq-am-bg);
+  color: var(--mq-am-tekst);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 78% 56% at 16% 8%, var(--mq-am-gloed-a), transparent 70%),
+    radial-gradient(ellipse 68% 54% at 86% 90%, var(--mq-am-gloed-b), transparent 72%),
+    linear-gradient(180deg, var(--mq-am-bg-diep) 0%, var(--mq-am-bg) 100%);
+  color: var(--mq-am-tekst);
+}
+
+/* Декоративна нічна світлова сфера з орбітами позаду картки входу */
+.mq-aanmeld-sfeer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.mq-aanmeld-halo {
+  position: absolute;
+  width: min(520px, 88vw);
+  height: min(520px, 88vw);
+  top: 50%;
+  left: 50%;
+  transform: translate(-32%, -54%);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--mq-am-gloed-a) 0%, var(--mq-am-gloed-b) 42%, transparent 72%);
+  filter: blur(28px);
+}
+
+.mq-aanmeld-orb {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  top: 50%;
+  left: 50%;
+  transform: translate(42%, -78%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 26% 19%, rgba(255, 255, 255, 0.92), transparent 13%),
+    radial-gradient(circle at 31% 26%, var(--mq-am-orb-1) 0%, var(--mq-am-orb-2) 22%, var(--mq-am-orb-3) 46%, var(--mq-am-orb-4) 68%, var(--mq-am-orb-5) 100%);
+  box-shadow:
+    inset -30px -24px 56px rgba(7, 12, 39, 0.56),
+    inset 14px 10px 20px rgba(240, 239, 255, 0.26),
+    0 32px 72px rgba(8, 10, 34, 0.36);
+  opacity: 0.76;
+  animation: mqAanmeldZweef 11s ease-in-out infinite;
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) .mq-aanmeld-orb {
+  opacity: 0.52;
+  box-shadow:
+    inset -24px -20px 48px rgba(48, 56, 104, 0.28),
+    inset 14px 10px 20px rgba(255, 255, 255, 0.72),
+    0 24px 56px rgba(52, 66, 118, 0.18);
+}
+
+.mq-aanmeld-baan {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1px solid var(--mq-am-baan-1);
+}
+
+.mq-aanmeld-baan-1 {
+  width: min(460px, 88vw);
+  height: 290px;
+  transform: translate(-36%, -56%) rotate(-24deg);
+}
+
+.mq-aanmeld-baan-2 {
+  width: 268px;
+  height: 348px;
+  border-color: var(--mq-am-baan-2);
+  transform: translate(18%, -62%) rotate(34deg);
+}
+
+.mq-aanmeld-ster {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: var(--mq-am-accent);
+  opacity: 0.72;
+  font-size: 1.15rem;
+  line-height: 1;
+  text-shadow: 0 0 16px var(--mq-am-gloed-a);
+}
+
+.mq-aanmeld-ster-1 {
+  transform: translate(-220px, -196px);
+}
+
+.mq-aanmeld-ster-2 {
+  font-size: 1.45rem;
+  transform: translate(218px, 138px);
+}
+
+@keyframes mqAanmeldZweef {
+  0%, 100% {
+    transform: translate(42%, -78%) rotate(0deg);
+  }
+  50% {
+    transform: translate(42%, calc(-78% - 14px)) rotate(6deg);
+  }
+}
+
+/* Скляна студійна картка входу з тонкою верхньою світловою каймою */
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content {
+  position: relative;
+  z-index: 2;
+  width: min(468px, 100%);
+  box-sizing: border-box;
+  padding: 36px 34px 30px;
+  border-radius: 28px;
+  border: 1px solid var(--mq-am-rand);
+  background: var(--mq-am-kaart);
+  box-shadow: var(--mq-am-schaduw);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 26px;
+  right: 26px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--mq-am-glans), transparent);
+  pointer-events: none;
+}
+
+.mq-aanmeld-bovenregel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  color: var(--mq-am-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.mq-aanmeld-lijn {
+  width: 18px;
+  height: 1px;
+  flex: none;
+  background: color-mix(in srgb, var(--mq-am-accent) 56%, transparent);
+}
+
+html.palet-maquette .mr-sign-in h1 {
+  letter-spacing: -0.045em;
+  font-weight: 600 !important;
+  color: var(--mq-am-tekst) !important;
+}
+
+html.palet-maquette .mr-sign-in-subtitle {
+  color: var(--mq-am-gedempt);
+  margin: 12px 0 26px !important;
+}
+
+/* Збережені облікові записи та головна кнопка Google у студійній оправі */
+html.palet-maquette .mr-sign-in-account-row {
+  border-color: var(--mq-am-rand);
+  background: color-mix(in srgb, var(--mq-am-oppervlak-2) 74%, transparent);
+  transition: border-color 0.2s ease, background-color 0.2s ease !important;
+}
+
+html.palet-maquette .mr-sign-in-account-row:has(.mr-sign-in-account:hover:not(:disabled)),
+html.palet-maquette .mr-sign-in-account-row:focus-within {
+  border-color: var(--mq-am-rand-sterk);
+  background: var(--mq-am-kaart-zweef);
+}
+
+html.palet-maquette .mr-sign-in-initials {
+  border-color: var(--mq-am-rand-sterk);
+  background: color-mix(in srgb, var(--mq-am-accent) 16%, var(--mq-am-oppervlak-2));
+  color: var(--mq-am-tekst);
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-activated='true']):not([data-pauze='true']) {
+  border-color: transparent !important;
+  background:
+    linear-gradient(var(--mq-am-hoofdknop-kern), var(--mq-am-hoofdknop-kern)) padding-box,
+    linear-gradient(96deg, var(--mq-am-accent), var(--mq-am-accent-2), var(--mq-am-accent-3)) border-box !important;
+  color: var(--mq-am-hoofdknop-tekst) !important;
+  box-shadow: 0 14px 32px rgba(5, 8, 22, 0.24) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-activated='true']):not([data-pauze='true']):hover,
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button:not([data-activated='true']):not([data-pauze='true']):focus-visible {
+  transform: translateY(-1px);
+  box-shadow:
+    0 18px 36px rgba(5, 8, 22, 0.30),
+    0 0 0 3px color-mix(in srgb, var(--mq-am-accent) 22%, transparent) !important;
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button[data-activated='true'] {
+  background:
+    linear-gradient(var(--mq-am-hoofdknop-kern), var(--mq-am-hoofdknop-kern)) padding-box,
+    conic-gradient(from var(--mr-ring-angle), var(--mq-am-accent-2), var(--mq-am-accent), var(--mq-am-accent-3), var(--mq-am-accent-2)) border-box !important;
+}
+
+html.palet-maquette .mr-sign-in-remember input {
+  accent-color: var(--mq-am-accent);
+}
+
+html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-legal {
+  position: relative;
+  z-index: 2;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-am-rand);
+  background: color-mix(in srgb, var(--mq-am-kaart) 72%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--mq-am-gedempt);
+}
+
+/* ── 2. Студійна вітрина 404 (.niet-gevonden) ──────────────────────────────────────────────────────────────── */
+
+html.palet-maquette .canonical-chrome[data-surface-model='flat-content'] .canonical-content section.niet-gevonden,
+html.palet-maquette section.niet-gevonden {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  max-width: 620px;
+  margin: clamp(32px, 7vh, 76px) auto;
+  padding: 44px 36px 40px;
+  border: 1px solid var(--mq-am-rand);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 84% 16%, var(--mq-am-gloed-b), transparent 46%),
+    radial-gradient(circle at 18% 92%, var(--mq-am-gloed-a), transparent 52%),
+    var(--mq-am-oppervlak);
+  color: var(--mq-am-tekst);
+  box-shadow: var(--mq-am-schaduw);
+}
+
+.mq-niet-gevonden-sfeer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mq-niet-gevonden-halo {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  top: -80px;
+  right: -60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--mq-am-gloed-a), transparent 68%);
+  filter: blur(18px);
+}
+
+.mq-niet-gevonden-raster {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background-image: radial-gradient(var(--mq-am-gedempt) 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), transparent 78%);
+}
+
+.mq-niet-gevonden-bovenregel {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mq-am-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.mq-niet-gevonden-lijn {
+  width: 18px;
+  height: 1px;
+  background: color-mix(in srgb, var(--mq-am-accent) 55%, transparent);
+}
+
+.mq-niet-gevonden-vitrine {
+  position: relative;
+  z-index: 1;
+  width: 128px;
+  height: 128px;
+  margin: 6px 0 2px;
+  display: grid;
+  place-items: center;
+}
+
+.mq-niet-gevonden-baan {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--mq-am-baan-1);
+}
+
+.mq-niet-gevonden-baan-1 {
+  width: 124px;
+  height: 84px;
+  transform: rotate(-24deg);
+}
+
+.mq-niet-gevonden-baan-2 {
+  width: 86px;
+  height: 122px;
+  border-color: var(--mq-am-baan-2);
+  transform: rotate(32deg);
+}
+
+.mq-niet-gevonden-orb {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.88), transparent 18%),
+    radial-gradient(circle at 34% 30%, var(--mq-am-orb-2) 0%, var(--mq-am-orb-3) 54%, var(--mq-am-orb-5) 100%);
+  color: var(--mq-am-hoofdknop-tekst);
+  box-shadow: 0 16px 36px rgba(9, 12, 34, 0.34);
+}
+
+.mq-niet-gevonden-orb svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.75;
+}
+
+html.palet-maquette .niet-gevonden-code {
+  position: relative;
+  z-index: 1;
+  margin: 2px 0 0;
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  font-weight: 560;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--mq-am-tekst);
+}
+
+html.palet-maquette .niet-gevonden-code em {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  padding: 0 2px;
+  color: var(--mq-am-accent);
+}
+
+html.palet-maquette .niet-gevonden h1 {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(1.45rem, 2.4vw, 1.85rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  color: var(--mq-am-tekst);
+}
+
+html.palet-maquette .niet-gevonden p.mq-niet-gevonden-uitleg {
+  position: relative;
+  z-index: 1;
+  max-width: 460px;
+  color: var(--mq-am-gedempt);
+  line-height: 1.6;
+}
+
+html.palet-maquette .niet-gevonden code {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--mq-am-rand);
+  background: var(--mq-am-oppervlak-2);
+  color: var(--mq-am-tekst);
+  font-size: 0.86em;
+}
+
+html.palet-maquette .niet-gevonden-acties {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  gap: 12px;
+}
+
+html.palet-maquette .niet-gevonden-acties a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-am-rand-sterk);
+  background: color-mix(in srgb, var(--mq-am-oppervlak-2) 72%, transparent);
+  color: var(--mq-am-tekst);
+  font-size: 0.88rem;
+  font-weight: 650;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+html.palet-maquette .niet-gevonden-acties a:hover,
+html.palet-maquette .niet-gevonden-acties a:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--mq-am-accent);
+  background: var(--mq-am-kaart-zweef);
+}
+
+html.palet-maquette .niet-gevonden-acties a.primary {
+  border-color: transparent;
+  background: var(--mq-am-knop-bg);
+  color: var(--mq-am-knop-tekst);
+  box-shadow: 0 14px 28px rgba(5, 8, 22, 0.20);
+}
+
+html.palet-maquette .niet-gevonden-acties a.primary:hover,
+html.palet-maquette .niet-gevonden-acties a.primary:focus-visible {
+  background: color-mix(in srgb, var(--mq-am-knop-bg) 88%, var(--mq-am-accent));
+  box-shadow: 0 18px 34px rgba(5, 8, 22, 0.28);
+}
+
+/* ── 3. Гостьова сторінка та читальний зал (.gast) ─────────────────────────────────────────────────────────── */
+
+html.palet-maquette,
+html.palet-maquette body:has(> #root > .gast) {
+  background: var(--mq-am-bg);
+}
+
+html.palet-maquette .gast {
+  --g-bg: var(--mq-am-bg);
+  --g-fg: var(--mq-am-tekst);
+  --g-muted: var(--mq-am-gedempt);
+  --g-card: var(--mq-am-oppervlak);
+  --g-line: var(--mq-am-rand);
+  --g-acc: var(--mq-am-accent);
+  --g-acc-tekst: var(--mq-am-accent-tekst);
+  --g-banner: var(--mq-am-banner);
+  --g-banner-line: var(--mq-am-banner-rand);
+  position: relative;
+  overflow-x: hidden;
+  isolation: isolate;
+  padding: 28px 18px 56px;
+  background:
+    radial-gradient(ellipse 75% 50% at 14% 6%, var(--mq-am-gloed-a), transparent 70%),
+    radial-gradient(ellipse 65% 48% at 88% 92%, var(--mq-am-gloed-b), transparent 72%),
+    linear-gradient(180deg, var(--mq-am-bg-diep) 0%, var(--mq-am-bg) 100%);
+  color: var(--mq-am-tekst);
+}
+
+.mq-gast-sfeer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mq-gast-halo {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  top: -70px;
+  right: max(-60px, calc(50% - 480px));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--mq-am-gloed-a), transparent 70%);
+  filter: blur(24px);
+}
+
+.mq-gast-orb {
+  position: absolute;
+  width: 164px;
+  height: 164px;
+  top: 28px;
+  right: max(-32px, calc(50% - 410px));
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.88), transparent 14%),
+    radial-gradient(circle at 32% 28%, var(--mq-am-orb-1) 0%, var(--mq-am-orb-2) 24%, var(--mq-am-orb-3) 52%, var(--mq-am-orb-5) 100%);
+  opacity: 0.56;
+  box-shadow: 0 24px 54px rgba(7, 10, 30, 0.30);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) .mq-gast-orb {
+  opacity: 0.38;
+}
+
+.mq-gast-baan {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--mq-am-baan-1);
+}
+
+.mq-gast-baan-1 {
+  width: 260px;
+  height: 168px;
+  top: 24px;
+  right: max(-76px, calc(50% - 458px));
+  transform: rotate(-22deg);
+}
+
+.mq-gast-baan-2 {
+  width: 176px;
+  height: 244px;
+  top: -12px;
+  right: max(-36px, calc(50% - 418px));
+  border-color: var(--mq-am-baan-2);
+  transform: rotate(32deg);
+}
+
+.mq-gast-bovenregel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mq-am-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.mq-gast-lijn {
+  width: 18px;
+  height: 1px;
+  background: color-mix(in srgb, var(--mq-am-accent) 56%, transparent);
+}
+
+html.palet-maquette .gast-kaart {
+  position: relative;
+  z-index: 1;
+  max-width: 484px;
+  margin: 7vh auto 0;
+  padding: 32px 30px;
+  gap: 14px;
+  border-radius: 26px;
+  border: 1px solid var(--mq-am-rand);
+  background: var(--mq-am-kaart);
+  box-shadow: var(--mq-am-schaduw);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+html.palet-maquette .gast-kaart h1 {
+  font-size: 1.48rem;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+
+html.palet-maquette .gast input {
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-am-rand-sterk);
+  background: color-mix(in srgb, var(--mq-am-oppervlak-2) 78%, transparent);
+  color: var(--mq-am-tekst);
+}
+
+html.palet-maquette .gast input:focus-visible {
+  outline: 2px solid var(--mq-am-accent);
+  outline-offset: 2px;
+}
+
+html.palet-maquette .gast form button[type='submit'] {
+  min-height: 48px;
+  border-radius: 13px;
+  border-color: transparent;
+  background: var(--mq-am-knop-bg);
+  color: var(--mq-am-knop-tekst);
+  font-weight: 650;
+  box-shadow: 0 12px 26px rgba(5, 8, 22, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+html.palet-maquette .gast form button[type='submit']:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(5, 8, 22, 0.24);
+}
+
+html.palet-maquette .gast .gast-taal,
+html.palet-maquette .gast .gast-uit {
+  min-height: 38px;
+  border-radius: 999px;
+  border-color: var(--mq-am-rand-sterk);
+  background: color-mix(in srgb, var(--mq-am-oppervlak-2) 68%, transparent);
+  color: var(--mq-am-tekst);
+  padding: 6px 13px;
+}
+
+html.palet-maquette .gast .gast-taal:hover,
+html.palet-maquette .gast .gast-uit:hover {
+  border-color: var(--mq-am-accent);
+  background: var(--mq-am-kaart-zweef);
+}
+
+html.palet-maquette .gast-banner {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  border-radius: 20px;
+  padding: 13px 18px;
+  border: 1px solid var(--mq-am-banner-rand);
+  background: var(--mq-am-banner);
+  box-shadow: 0 16px 38px rgba(5, 8, 22, 0.18);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+html.palet-maquette .gast-banner > svg {
+  color: var(--mq-am-accent-2);
+}
+
+html.palet-maquette .gast-tabs {
+  position: relative;
+  z-index: 1;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+html.palet-maquette .gast-tabs button {
+  min-height: 42px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-am-rand);
+  background: color-mix(in srgb, var(--mq-am-oppervlak) 78%, transparent);
+  color: var(--mq-am-gedempt);
+  font-weight: 600;
+}
+
+html.palet-maquette .gast-tabs button:hover {
+  color: var(--mq-am-tekst);
+  border-color: var(--mq-am-rand-sterk);
+}
+
+html.palet-maquette .gast-tabs button[aria-selected='true'] {
+  border-color: color-mix(in srgb, var(--mq-am-accent) 48%, transparent);
+  background: color-mix(in srgb, var(--mq-am-accent) 20%, var(--mq-am-oppervlak-2));
+  color: var(--mq-am-tekst);
+}
+
+html.palet-maquette .gast-inhoud {
+  position: relative;
+  z-index: 1;
+  padding: 24px 26px;
+  border-radius: 24px;
+  border: 1px solid var(--mq-am-rand);
+  background: var(--mq-am-kaart);
+  box-shadow: var(--mq-am-schaduw);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+html.palet-maquette .gast-lijst li {
+  padding: 12px 2px;
+  border-bottom-color: var(--mq-am-rand);
+}
+
+html.palet-maquette .gast-voet,
+html.palet-maquette .gast-laden {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mq-aanmeld-orb {
+    animation: none;
+  }
+  html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-main-button,
+  html.palet-maquette .niet-gevonden-acties a,
+  html.palet-maquette .gast form button[type='submit'],
+  html.palet-maquette .mr-sign-in-account-row {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* ── Мобільна адаптація (суворо наприкінці файла) ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content {
+    padding: 26px 20px 22px;
+    border-radius: 24px;
+  }
+
+  .mq-aanmeld-orb {
+    width: 168px;
+    height: 168px;
+    transform: translate(34%, -92%);
+  }
+
+  .mq-aanmeld-baan-1 {
+    width: min(340px, 92vw);
+    height: 216px;
+  }
+
+  .mq-aanmeld-baan-2 {
+    width: 204px;
+    height: 264px;
+  }
+
+  .mq-aanmeld-ster-1,
+  .mq-aanmeld-ster-2 {
+    display: none;
+  }
+
+  html.palet-maquette .canonical-chrome[data-surface-model='flat-content'] .canonical-content section.niet-gevonden,
+  html.palet-maquette section.niet-gevonden {
+    margin: 20px 12px;
+    padding: 32px 20px 28px;
+    border-radius: 22px;
+  }
+
+  .mq-niet-gevonden-vitrine {
+    width: 108px;
+    height: 108px;
+  }
+
+  .mq-niet-gevonden-baan-1 {
+    width: 104px;
+    height: 70px;
+  }
+
+  .mq-niet-gevonden-baan-2 {
+    width: 72px;
+    height: 102px;
+  }
+
+  .mq-niet-gevonden-orb {
+    width: 58px;
+    height: 58px;
+  }
+
+  html.palet-maquette .niet-gevonden-acties {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  html.palet-maquette .niet-gevonden-acties a {
+    width: 100%;
+  }
+
+  html.palet-maquette .gast {
+    padding: 18px 12px 40px;
+  }
+
+  html.palet-maquette .gast-kaart {
+    margin-top: 3vh;
+    padding: 24px 18px;
+    border-radius: 22px;
+  }
+
+  html.palet-maquette .gast-banner {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette .gast-inhoud {
+    padding: 18px 16px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content {
+    padding: 22px 15px 18px;
+    border-radius: 20px;
+  }
+
+  .mq-aanmeld-bovenregel,
+  .mq-niet-gevonden-bovenregel,
+  .mq-gast-bovenregel {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+  }
+
+  .mq-aanmeld-lijn,
+  .mq-niet-gevonden-lijn,
+  .mq-gast-lijn {
+    display: none;
+  }
+}

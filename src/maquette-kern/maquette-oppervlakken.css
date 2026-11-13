@@ -1,0 +1,2054 @@
+/* Студійні поверхні та примітиви художньої системи «Макет» (MAQUETTE-001).
+   Оформлює канонічну оболонку та спільні компоненти під html.palet-maquette без утручання у власний двигун id.tarasevych.com (.mr-mq).
+   Studio-oppervlakken en bouwstenen van het «Maquette»-ontwerpstelsel. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. КАНОНІЧНА ОБОЛОНКА: РОБОЧА ОБЛАСТЬ, БІЧНЕ МЕНЮ (4 СТОРОНИ + ШУХЛЯДА), ВЕРХНЯ СМУГА
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-workspace {
+  background-color: var(--mq-bg);
+  background-image:
+    radial-gradient(ellipse 900px 520px at 16% -8%, var(--mq-werk-gloed-a), transparent 72%),
+    radial-gradient(ellipse 620px 520px at 96% 68%, var(--mq-werk-gloed-b), transparent 82%);
+  color: var(--mq-tekst);
+  scroll-behavior: smooth;
+  scrollbar-color: rgba(132, 148, 186, 0.34) transparent;
+}
+
+/* Виразний візуальний маркер технічного контуру: інженерний світловий кант і креслярська мікро-сітка */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome[data-oppervlak="technisch"] .canonical-workspace {
+  background-image:
+    linear-gradient(90deg, rgba(var(--mq-tech-markering-rgb), 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(var(--mq-tech-markering-rgb), 0.045) 1px, transparent 1px),
+    radial-gradient(ellipse 880px 460px at 18% -6%, rgba(var(--mq-tech-markering-rgb), 0.14), transparent 70%),
+    radial-gradient(ellipse 620px 520px at 96% 68%, var(--mq-werk-gloed-a), transparent 82%);
+  background-size: 28px 28px, 28px 28px, 100% 100%, 100% 100%;
+  box-shadow: inset 0 2px 0 var(--mq-tech-lijn);
+}
+
+/* Бічне меню: матове студійне скло для лівої та правої сторін (крім згорнутого кутика мобільної шухляди) */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome:not(.sidebar-drawer-mode):not([data-dock="boven"]):not([data-dock="onder"]) .canonical-sidebar {
+  background: var(--mq-zijbalk-glas);
+  border-right-color: var(--mq-rand);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome[data-dock="rechts"]:not(.sidebar-drawer-mode) .canonical-sidebar {
+  border-right-color: transparent;
+  border-left: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome:not(.sidebar-drawer-mode).sidebar-hover .canonical-sidebar {
+  box-shadow: 22px 0 56px rgba(3, 6, 18, 0.34);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome[data-dock="rechts"]:not(.sidebar-drawer-mode).sidebar-hover .canonical-sidebar {
+  box-shadow: -22px 0 56px rgba(3, 6, 18, 0.34);
+}
+
+/* Верхній та нижній доки головного меню: ширяльна скляна капсула */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome:is([data-dock="boven"], [data-dock="onder"]):not(.sidebar-drawer-mode) .canonical-sidebar {
+  background: var(--mq-zijbalk-glas) !important;
+  border-color: var(--mq-rand-sterk) !important;
+  border-radius: 24px;
+  box-shadow: var(--mq-schaduw-zacht) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  backdrop-filter: blur(26px) saturate(1.35);
+}
+
+/* Відкрита мобільна шухляда головного меню */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome.sidebar-drawer .canonical-sidebar {
+  background: var(--mq-popover-glas);
+  border-right-color: var(--mq-rand-sterk);
+  box-shadow: 24px 0 64px rgba(3, 6, 18, 0.42);
+  -webkit-backdrop-filter: blur(28px) saturate(1.3);
+  backdrop-filter: blur(28px) saturate(1.3);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-sidebar-scrim.drawer {
+  background: rgba(6, 10, 22, 0.46);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* Активний пункт бічного меню у студійному сяйві */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-service-group.active > .canonical-service-main-row > .canonical-service-button {
+  background: linear-gradient(148deg, rgba(var(--mq-accent-rgb), 0.20), rgba(var(--mq-accent-rgb), 0.07));
+  box-shadow: inset 0 0 0 1px rgba(var(--mq-accent-rgb), 0.24);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-local-page-button.active {
+  background: rgba(var(--mq-accent-rgb), 0.15);
+  box-shadow: inset 0 0 0 1px rgba(var(--mq-accent-rgb), 0.20);
+}
+
+/* Інженерна позначка на бічному меню у технічному контурі */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome[data-oppervlak="technisch"]:not(.sidebar-drawer-mode):not([data-dock="boven"]):not([data-dock="onder"]) .canonical-sidebar {
+  box-shadow: inset -2px 0 0 var(--mq-tech-lijn);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome[data-oppervlak="technisch"][data-dock="rechts"]:not(.sidebar-drawer-mode) .canonical-sidebar {
+  box-shadow: inset 2px 0 0 var(--mq-tech-lijn);
+}
+
+/* Верхня смуга: делікатна скляна оправа капсули дій без створення блоку утримання на самому header.canonical-topbar */
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-topbar .canonical-account-anchor:not(.mr-guest-mobile-account),
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-topbar .canonical-account-anchor.mr-guest-mobile-account > .canonical-account-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-bovenbalk-glas);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-topbar .canonical-account-anchor:not(.mr-guest-mobile-account) {
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-topbar .canonical-account-anchor.mr-guest-mobile-account > .canonical-account-menu {
+  margin-left: auto;
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome[data-oppervlak="technisch"] .canonical-topbar .canonical-account-anchor:not(.mr-guest-mobile-account),
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome[data-oppervlak="technisch"] .canonical-topbar .canonical-account-anchor.mr-guest-mobile-account > .canonical-account-menu {
+  border-color: var(--mq-tech-lijn);
+  box-shadow: 0 0 0 1px rgba(var(--mq-tech-markering-rgb), 0.14), var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. СТУДІЙНІ ПРИМІТИВИ: ОБОЛОНКА (.mq-schil), ВІТРИНА (.mq-held), РАМА МИСТЕЦТВА (.mq-kunst-raam)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: padding 0.3s ease;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="rechts"] {
+  padding-right: 248px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="rechts"][data-mq-rail-compact="ja"] {
+  padding-right: 96px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="links"] {
+  padding-left: 248px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="links"][data-mq-rail-compact="ja"] {
+  padding-left: 96px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="boven"] {
+  padding-top: 82px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="onder"] {
+  padding-bottom: 92px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-overzicht-wikkel {
+  max-width: 1520px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 28px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Повна та компактна студійна вітрина піддомену (.mq-held) */
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--mq-straal-held);
+  border: 1px solid rgba(226, 232, 255, 0.13);
+  background: var(--mq-held-bg);
+  color: var(--mq-held-tekst);
+  box-shadow: var(--mq-schaduw-held);
+  box-sizing: border-box;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 28%, var(--mq-held-gloed-a), transparent 38%),
+    radial-gradient(circle at 34% 112%, var(--mq-held-gloed-b), transparent 52%);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.42) 0.7px, transparent 0.7px);
+  background-size: 20px 20px;
+  -webkit-mask-image: linear-gradient(to left, rgb(0 0 0), transparent 72%);
+  mask-image: linear-gradient(to left, rgb(0 0 0), transparent 72%);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held:not(.is-compact) {
+  min-height: 396px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(290px, 0.84fr);
+  align-items: stretch;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-tekstvak {
+  position: relative;
+  z-index: 3;
+  padding: 48px 20px 92px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held.zonder-voet .mq-held-tekstvak {
+  padding-bottom: 48px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-koprij {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-bovenregel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--mq-held-boven);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-lijn {
+  width: 20px;
+  height: 1px;
+  background: rgba(232, 226, 255, 0.58);
+  flex: none;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-titel {
+  margin: 22px 0 16px;
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: clamp(34px, 4.3vw, 60px);
+  font-weight: 530;
+  letter-spacing: -0.055em;
+  line-height: 1.06;
+  color: var(--mq-wit);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-titel em {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  background: var(--mq-cursief-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-beschrijving {
+  margin: 0;
+  max-width: 490px;
+  font-size: 14px;
+  line-height: 1.76;
+  color: var(--mq-held-gedempt);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-acties {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-primair,
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-secundair,
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-wissel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 19px;
+  border-radius: var(--mq-straal-knop);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease !important;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-primair {
+  border: 0;
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: 0 14px 26px rgba(3, 4, 14, 0.22);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-primair:hover {
+  transform: translateY(-2px);
+  background: var(--mq-wit);
+  box-shadow: 0 18px 32px rgba(3, 4, 14, 0.32);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-secundair {
+  border: 1px solid rgba(231, 236, 255, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mq-knop-secundair-tekst);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-secundair:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(231, 236, 255, 0.38);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-wissel {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(231, 236, 255, 0.22);
+  background: rgba(12, 18, 36, 0.36);
+  color: var(--mq-held-wissel-tekst);
+  font-size: 11.5px;
+  font-weight: 600;
+  gap: 7px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-wissel:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--mq-wit);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-kunstvak {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 26px 74px 0;
+  min-height: 320px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held.zonder-voet .mq-held-kunstvak {
+  padding-bottom: 20px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-voet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  min-height: 56px;
+  padding: 8px 38px;
+  border-top: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(10, 15, 32, 0.24);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  font-size: 11.5px;
+  color: var(--mq-held-voet-tekst);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-stat b {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--mq-wit);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-scheiding {
+  width: 1px;
+  height: 13px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Камерна компактна смуга вітрини (.mq-held.is-compact, ~68px) */
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held.is-compact {
+  min-height: 68px;
+  padding: 10px 18px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  box-shadow: 0 18px 46px rgba(5, 8, 22, 0.22);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-compact-links {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-mini-bol {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.9), rgba(var(--mq-nacht-accent-rgb), 0.55) 34%, rgba(22, 32, 58, 0.92) 85%);
+  box-shadow: inset -8px -8px 18px rgba(7, 11, 28, 0.55), 0 8px 22px rgba(5, 8, 22, 0.35);
+  display: grid;
+  place-items: center;
+  color: var(--mq-wit);
+  font-size: 16px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-compact-kop {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-compact-boven {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(224, 218, 255, 0.84);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held.is-compact .mq-held-titel {
+  margin: 0;
+  font-size: clamp(17px, 1.55vw, 21px);
+  line-height: 1.18;
+  letter-spacing: -0.03em;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-compact-stats {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-stat-pil {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 18, 36, 0.34);
+  font-size: 11px;
+  color: var(--mq-held-pil-tekst);
+  white-space: nowrap;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-stat-pil b {
+  color: var(--mq-wit);
+  font-weight: 650;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-compact-acties {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held.is-compact :is(.mq-knop-primair, .mq-knop-secundair) {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 11px;
+  font-size: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. НІЧНА РАМА МИСТЕЦТВА (.mq-kunst-raam) ТА БАГАТОШАРОВІ СЦЕНИ (13 ВИДІВ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kunst-raam,
+.mq-kunst-raam {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  width: 100%;
+  min-height: 310px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 47%, var(--mq-gloed, rgba(162, 138, 252, 0.28)), transparent 66%),
+    var(--mq-kunst-bg);
+  color: var(--mq-held-tekst);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kunst-raam::before,
+.mq-kunst-raam::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.17;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.28) 0.65px, transparent 0.65px);
+  background-size: 18px 18px;
+  -webkit-mask-image: linear-gradient(to top, rgb(0 0 0), transparent 85%);
+  mask-image: linear-gradient(to top, rgb(0 0 0), transparent 85%);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kunst-raam::after,
+.mq-kunst-raam::after {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+/* Усередині вітрини .mq-held сцена інтегрується в єдине склепіння без зайвої внутрішньої стінки */
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held .mq-kunst-raam.is-held {
+  background: transparent;
+  min-height: 290px;
+  overflow: visible;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-held .mq-kunst-raam.is-held::before {
+  display: none;
+}
+
+.mq-kunst-toneel {
+  position: relative;
+  width: 310px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* Об'ємна внутрішньо освітлена сфера з відблиском */
+.mq-kunst-bol {
+  position: relative;
+  width: 196px;
+  height: 196px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 26% 20%, rgba(255, 255, 255, 0.94), transparent 14%),
+    radial-gradient(circle at 32% 28%, rgba(226, 240, 255, 0.88) 0%, rgba(var(--mq-nacht-accent-rgb, 179, 160, 255), 0.72) 26%, rgba(76, 82, 148, 0.86) 58%, var(--mq-bol-diep) 88%);
+  box-shadow:
+    inset -30px -26px 56px rgba(6, 10, 34, 0.64),
+    inset 15px 11px 22px rgba(245, 244, 255, 0.30),
+    0 30px 68px rgba(8, 10, 36, 0.48);
+  animation: mqBolZweef 10s ease-in-out infinite;
+}
+
+.mq-kunst-bol.klein {
+  width: 142px;
+  height: 142px;
+}
+
+.mq-kunst-bol::after {
+  content: "";
+  position: absolute;
+  width: 136px;
+  height: 34px;
+  bottom: 24px;
+  left: 34px;
+  transform: rotate(-28deg);
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent);
+  filter: blur(8px);
+}
+
+/* Еліптичні та колові пунктирні орбіти */
+.mq-kunst-baan {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(226, 234, 255, 0.24);
+  pointer-events: none;
+}
+
+.mq-kunst-baan.stippel {
+  border-style: dashed;
+  border-color: rgba(var(--mq-nacht-accent-rgb, 179, 160, 255), 0.42);
+  animation: mqLangzaamDraai 38s linear infinite;
+}
+
+.mq-kunst-baan.elips-a {
+  width: 288px;
+  height: 196px;
+  transform: rotate(-23deg);
+}
+
+.mq-kunst-baan.elips-b {
+  width: 204px;
+  height: 266px;
+  transform: rotate(32deg);
+  border-color: rgba(216, 238, 255, 0.15);
+}
+
+.mq-kunst-baan.kring-groot {
+  width: 246px;
+  height: 246px;
+}
+
+.mq-kunst-baan.kring-middel {
+  width: 192px;
+  height: 192px;
+}
+
+/* Супутники на обертовій орбіті */
+.mq-baan-satelliet {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  border: 1px solid rgba(228, 240, 255, 0.34);
+  background: rgba(20, 34, 58, 0.86);
+  box-shadow: 0 10px 26px rgba(4, 8, 24, 0.38);
+  color: var(--mq-satelliet-tekst);
+  display: grid;
+  place-items: center;
+  animation: mqTegenDraai 38s linear infinite;
+}
+
+.mq-baan-satelliet svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* Нахилені скляні картки (floating-window еталона) */
+.mq-zwevend-venster,
+.floating-window {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.23);
+  background: linear-gradient(145deg, rgba(244, 246, 255, 0.17), rgba(152, 164, 224, 0.06));
+  box-shadow: 0 26px 58px rgba(3, 5, 22, 0.34);
+  -webkit-backdrop-filter: blur(13px);
+  backdrop-filter: blur(13px);
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: var(--mq-venster-tekst);
+  box-sizing: border-box;
+}
+
+.mq-venster-stippen {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.mq-venster-stippen i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.54);
+  display: block;
+}
+
+.mq-venster-rij {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 9px 0;
+}
+
+.mq-venster-icoon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 8px;
+  background: rgba(var(--mq-nacht-accent-rgb, 179, 160, 255), 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: grid;
+  place-items: center;
+  color: var(--mq-wit);
+}
+
+.mq-venster-icoon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mq-venster-balk {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.30);
+  display: block;
+}
+
+.mq-venster-cursief {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--mq-wit);
+  display: block;
+}
+
+.mq-venster-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: rgba(232, 238, 255, 0.82);
+  display: block;
+}
+
+/* Зірки-іскри та мікро-штампи */
+.mq-kunst-vonk {
+  position: absolute;
+  color: var(--mq-vonk-kleur);
+  text-shadow: 0 0 16px rgba(var(--mq-nacht-accent-rgb, 179, 160, 255), 0.85);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.mq-kunst-stempel {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 16, 32, 0.46);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(226, 235, 255, 0.86);
+  white-space: nowrap;
+}
+
+.mq-kunst-schild {
+  position: relative;
+  width: 144px;
+  height: 166px;
+  clip-path: polygon(50% 0%, 95% 18%, 91% 63%, 77% 84%, 50% 100%, 23% 84%, 9% 63%, 5% 18%);
+  background: linear-gradient(135deg, rgba(var(--mq-nacht-accent-rgb, 179, 160, 255), 0.78), rgba(44, 68, 112, 0.92) 60%, var(--mq-schild-diep));
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 28px rgba(255, 255, 255, 0.45);
+  filter: drop-shadow(0 18px 28px rgba(6, 10, 28, 0.5));
+}
+
+.mq-kunst-schild svg {
+  width: 48px;
+  height: 48px;
+  color: var(--mq-wit);
+}
+
+@keyframes mqBolZweef {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(5deg); }
+}
+
+@keyframes mqLangzaamDraai {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes mqTegenDraai {
+  to { transform: rotate(-360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. РОЗДІЛЮВАЧ ГРУПИ (.mq-sectie-kop), КАРТКА РОЗДІЛУ (.mq-kaart), СІТКА ДЕТАЛЕЙ, ПЕРЕБИВКА, ПІДВАЛ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-sectie-kop {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 34px 0 6px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-sectie-kop-index {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--mq-accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-sectie-kop-tekst {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.23em;
+  text-transform: uppercase;
+  color: var(--mq-gedempt);
+  white-space: nowrap;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-sectie-kop-lijn {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--mq-rand-sterk), transparent);
+}
+
+/* Студійна двоколонкова картка розділу (.mq-kaart) */
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart {
+  --mq-lokaal-accent: var(--mq-kaart-accent, var(--mq-accent));
+  --mq-lokaal-accent-rgb: var(--mq-kaart-accent-rgb, var(--mq-accent-rgb));
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw);
+  scroll-margin-top: 96px;
+  transition: border-color 0.22s ease, box-shadow 0.25s ease !important;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-paar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  min-height: 320px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-hoofd {
+  padding: 34px 28px 34px 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-bovenlijn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-index {
+  color: var(--mq-lokaal-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-streep {
+  width: 22px;
+  height: 1px;
+  background: var(--mq-stil);
+  opacity: 0.55;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-symbool {
+  margin: 26px 0 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(var(--mq-lokaal-accent-rgb), 0.12);
+  border: 1px solid rgba(var(--mq-lokaal-accent-rgb), 0.24);
+  color: var(--mq-lokaal-accent);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-symbool svg {
+  width: 20px;
+  height: 20px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-hoofd h2 {
+  margin: 0 0 12px;
+  max-width: 560px;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(23px, 2.25vw, 33px);
+  font-weight: 520;
+  letter-spacing: -0.045em;
+  line-height: 1.16;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-hoofd p {
+  margin: 0;
+  max-width: 510px;
+  font-size: 13px;
+  line-height: 1.72;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-tekst-koppeling {
+  margin-top: auto;
+  padding: 22px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--mq-lokaal-accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-tekst-koppeling span {
+  font-size: 17px;
+  line-height: 1;
+  transition: transform 0.2s ease !important;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-tekst-koppeling:hover span {
+  transform: translate(3px, -3px);
+}
+
+/* Триколонкова сітка деталей (.mq-detail-raster) та гніздо живих панелей (.mq-kaart-inhoud) */
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-onder {
+  padding: 22px 34px 28px;
+  border-top: 1px solid var(--mq-rand);
+  background: linear-gradient(180deg, var(--mq-oppervlak-zacht), transparent);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-raster {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-item {
+  min-width: 0;
+  border: 1px solid var(--mq-rand);
+  border-radius: 15px;
+  padding: 14px 13px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) div.mq-detail-item {
+  cursor: default;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) button.mq-detail-item:hover {
+  transform: translateY(-2px);
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-icoon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  background: rgba(var(--mq-lokaal-accent-rgb, var(--mq-accent-rgb)), 0.12);
+  color: var(--mq-lokaal-accent, var(--mq-accent));
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-tekst {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-tekst strong {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-tekst small {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-pijl {
+  margin-left: auto;
+  color: var(--mq-stil);
+  font-size: 14px;
+}
+
+/* Поетична перебивка (.mq-intermezzo) */
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-intermezzo {
+  margin-top: 18px;
+  padding: 38px 44px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background:
+    radial-gradient(circle at 86% 14%, rgba(var(--mq-accent-rgb), 0.16), transparent 46%),
+    linear-gradient(120deg, rgba(var(--mq-accent-rgb), 0.08), var(--mq-oppervlak-zacht));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-intermezzo-tekst {
+  max-width: 660px;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-intermezzo-ster {
+  font-size: 30px;
+  line-height: 1;
+  color: var(--mq-accent);
+  display: block;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-intermezzo p {
+  margin: 14px 0 0;
+  font-size: clamp(21px, 2.5vw, 32px);
+  font-weight: 450;
+  letter-spacing: -0.038em;
+  line-height: 1.28;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-intermezzo em {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-intermezzo-nummer {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  color: var(--mq-stil);
+  white-space: nowrap;
+}
+
+/* Студійний підвал (.mq-voet) */
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-voet {
+  margin-top: 38px;
+  padding: 32px 0 28px;
+  border-top: 1px solid var(--mq-rand);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-voet-monogram {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 12px;
+  background: var(--mq-oppervlak-zacht);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-voet-monogram span {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-voet-kopie {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-voet-kopie strong {
+  font-size: 13px;
+  font-weight: 620;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-voet-kopie span {
+  font-size: 11.5px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven {
+  margin-left: auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease !important;
+}
+
+html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven:hover {
+  background: rgba(var(--mq-accent-rgb), 0.14);
+  border-color: rgba(var(--mq-accent-rgb), 0.36);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ЯКІРНА НАВІГАЦІЯ (.mq-anker-rail), ВІКНО ПОЛОЖЕННЯ (.mq-rail-popover) ТА ШВИДКИЙ ПЕРЕХІД (.mq-snel-naar)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.mq-anker-onderbalk {
+  display: none;
+}
+
+.mq-anker-rail {
+  position: fixed;
+  z-index: 90;
+  width: 224px;
+  top: calc(var(--mq-kern-boven, 68px) + 14px);
+  right: calc(var(--mq-kern-rechts, 0px) + 18px);
+  bottom: calc(var(--mq-kern-onder, 0px) + 18px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--mq-rand-sterk, rgba(197, 212, 239, 0.18));
+  border-radius: var(--mq-straal-rail, 22px);
+  background: var(--mq-rail-glas, rgba(25, 33, 53, 0.88));
+  -webkit-backdrop-filter: blur(25px) saturate(1.25);
+  backdrop-filter: blur(25px) saturate(1.25);
+  box-shadow: var(--mq-schaduw, 0 25px 75px rgba(0, 0, 0, 0.24));
+  color: var(--mq-tekst);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: width 0.28s ease, top 0.28s ease, right 0.28s ease, bottom 0.28s ease, left 0.28s ease !important;
+}
+
+.mq-anker-rail[data-zijde="links"] {
+  left: calc(var(--mq-kern-links, 60px) + 16px);
+  right: auto;
+}
+
+.mq-anker-rail[data-zijde="rechts"] {
+  right: calc(var(--mq-kern-rechts, 0px) + 18px);
+  left: auto;
+}
+
+.mq-anker-rail[data-zijde="boven"],
+.mq-anker-rail[data-zijde="onder"] {
+  width: auto;
+  height: 62px;
+  left: calc(var(--mq-kern-links, 60px) + 28px);
+  right: calc(var(--mq-kern-rechts, 0px) + 28px);
+  flex-direction: row;
+  align-items: center;
+}
+
+.mq-anker-rail[data-zijde="boven"] {
+  top: calc(var(--mq-kern-boven, 68px) + 10px);
+  bottom: auto;
+}
+
+.mq-anker-rail[data-zijde="onder"] {
+  top: auto;
+  bottom: calc(var(--mq-kern-onder, 0px) + 16px);
+}
+
+.mq-anker-rail[data-compact="ja"]:is([data-zijde="links"], [data-zijde="rechts"]) {
+  width: 72px;
+}
+
+.mq-rail-kop {
+  min-height: 68px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--mq-rand);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.mq-anker-rail[data-sleept="ja"] .mq-rail-kop {
+  cursor: grabbing;
+  background: rgba(var(--mq-accent-rgb), 0.14);
+}
+
+.mq-anker-rail:is([data-zijde="boven"], [data-zijde="onder"]) .mq-rail-kop {
+  min-height: 60px;
+  height: 60px;
+  padding: 8px 12px;
+  border-bottom: 0;
+  border-right: 1px solid var(--mq-rand);
+}
+
+.mq-rail-kop-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mq-rail-compact-knop {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 10px;
+  border: 0;
+  background: rgba(var(--mq-accent-rgb), 0.14);
+  color: var(--mq-accent);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.mq-rail-compact-knop svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mq-rail-titels {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mq-rail-titels strong {
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mq-tekst);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mq-rail-titels small {
+  font-size: 10px;
+  color: var(--mq-gedempt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mq-rail-tandwiel {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 9px;
+  border: 0;
+  background: transparent;
+  color: var(--mq-gedempt);
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.mq-rail-tandwiel:hover {
+  background: rgba(var(--mq-accent-rgb), 0.14);
+  color: var(--mq-accent);
+}
+
+.mq-rail-lijst {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  scrollbar-width: none;
+}
+
+.mq-rail-lijst::-webkit-scrollbar {
+  display: none;
+}
+
+.mq-anker-rail:is([data-zijde="boven"], [data-zijde="onder"]) .mq-rail-lijst {
+  flex-direction: row;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 8px;
+  gap: 5px;
+}
+
+.mq-anker-knop {
+  position: relative;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--mq-gedempt);
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+
+.mq-anker-knop:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+.mq-anker-knop.is-actief {
+  background: rgba(var(--mq-accent-rgb), 0.15);
+  color: var(--mq-tekst);
+}
+
+.mq-anker-nummer {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--mq-stil);
+  font-variant-numeric: tabular-nums;
+}
+
+.mq-anker-knop.is-actief .mq-anker-nummer {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: rgba(var(--mq-accent-rgb), 0.12);
+  color: var(--mq-accent);
+}
+
+.mq-anker-naam {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 560;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mq-anker-badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: var(--mq-accent);
+  font-size: 10.5px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+}
+
+.mq-rail-voet {
+  padding: 12px 14px;
+  border-top: 1px solid var(--mq-rand);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mq-rail-voortgang-wikkel {
+  flex: 1;
+  min-width: 0;
+}
+
+.mq-rail-voortgang-kop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: var(--mq-gedempt);
+  margin-bottom: 6px;
+}
+
+.mq-rail-voortgang-kop strong {
+  color: var(--mq-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.mq-rail-voortgang-spoor {
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(140, 152, 184, 0.22);
+  overflow: hidden;
+}
+
+.mq-rail-voortgang-spoor span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--mq-accent);
+  transition: width 0.14s ease-out;
+}
+
+/* Компактна та горизонтальна видозміна вмісту рейки */
+.mq-anker-rail[data-compact="ja"]:is([data-zijde="links"], [data-zijde="rechts"]) :is(.mq-rail-titels, .mq-anker-naam, .mq-anker-badge, .mq-rail-voet),
+.mq-anker-rail:is([data-zijde="boven"], [data-zijde="onder"]) :is(.mq-rail-titels, .mq-anker-nummer, .mq-rail-voet) {
+  display: none;
+}
+
+.mq-anker-rail[data-compact="ja"]:is([data-zijde="links"], [data-zijde="rechts"]) .mq-rail-kop {
+  flex-direction: column;
+  padding: 10px 6px;
+  min-height: 84px;
+}
+
+.mq-anker-rail[data-compact="ja"]:is([data-zijde="links"], [data-zijde="rechts"]) .mq-anker-knop {
+  justify-content: center;
+  padding: 6px;
+}
+
+/* Підсвічування краю під час перетягування якірної рейки */
+.mq-sleep-rand-wijzer {
+  position: fixed;
+  z-index: 460;
+  pointer-events: none;
+  border: 2px dashed rgba(var(--mq-accent-rgb), 0.72);
+  background: rgba(var(--mq-accent-rgb), 0.12);
+  border-radius: 18px;
+  transition: all 0.14s ease;
+}
+
+.mq-sleep-rand-wijzer[data-doel="rechts"] {
+  top: 76px;
+  right: 14px;
+  bottom: 18px;
+  width: 84px;
+}
+
+.mq-sleep-rand-wijzer[data-doel="links"] {
+  top: 76px;
+  left: 72px;
+  bottom: 18px;
+  width: 84px;
+}
+
+.mq-sleep-rand-wijzer[data-doel="boven"] {
+  top: 74px;
+  left: 84px;
+  right: 28px;
+  height: 58px;
+}
+
+.mq-sleep-rand-wijzer[data-doel="onder"] {
+  bottom: 16px;
+  left: 84px;
+  right: 28px;
+  height: 58px;
+}
+
+/* Спливне вікно налаштування положення якірної рейки (.mq-rail-popover) */
+.mq-rail-popover {
+  position: fixed;
+  z-index: 470;
+  top: calc(var(--mq-kern-boven, 68px) + 16px);
+  right: calc(var(--mq-kern-rechts, 0px) + 22px);
+  width: min(316px, calc(100vw - 28px));
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.30);
+  background: var(--mq-popover-glas, rgba(24, 33, 54, 0.96));
+  -webkit-backdrop-filter: blur(26px);
+  backdrop-filter: blur(26px);
+  box-shadow: 0 26px 84px rgba(0, 0, 0, 0.38);
+  color: var(--mq-tekst);
+  box-sizing: border-box;
+}
+
+.mq-rail-popover[data-anker-zijde="links"] {
+  left: calc(var(--mq-kern-links, 60px) + 20px);
+  right: auto;
+}
+
+.mq-popover-kop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mq-popover-kop small {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 720;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mq-accent);
+  margin-bottom: 4px;
+}
+
+.mq-popover-kop strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 620;
+}
+
+.mq-popover-sluit {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 0;
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-gedempt);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.mq-zijde-kiezer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.mq-zijde-knop {
+  min-height: 44px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.mq-zijde-knop.is-gekozen {
+  border-color: rgba(var(--mq-accent-rgb), 0.55);
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: var(--mq-tekst);
+}
+
+.mq-popover-rij {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--mq-rand);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.mq-popover-schakelaar {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mq-popover-schakelaar[aria-pressed="true"] {
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  border-color: transparent;
+}
+
+.mq-popover-tip {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--mq-gedempt);
+}
+
+/* Завіса під мобільним переліком розділів */
+.mq-anker-sluier {
+  position: fixed;
+  inset: 0;
+  z-index: 88;
+  border: 0;
+  padding: 0;
+  background: rgba(6, 10, 22, 0.42);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+/* Модальне вікно швидкого переходу за розділами (.mq-snel-naar-laag) */
+.mq-snel-naar-laag {
+  position: fixed;
+  inset: 0;
+  z-index: 920;
+  padding: 72px 16px 24px;
+  background: rgba(6, 10, 22, 0.58);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.mq-snel-naar-venster {
+  width: min(580px, 100%);
+  max-height: min(540px, calc(100dvh - 96px));
+  border-radius: 24px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  box-shadow: 0 32px 96px rgba(0, 0, 0, 0.46);
+  color: var(--mq-tekst);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mq-snel-naar-invoerrij {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+.mq-snel-naar-invoerrij span {
+  color: var(--mq-accent);
+  font-size: 18px;
+}
+
+.mq-snel-naar-veld {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--mq-tekst);
+  font: inherit;
+  font-size: 14.5px;
+  outline: none;
+  box-shadow: none !important;
+}
+
+.mq-snel-naar-invoerrij kbd {
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  font-size: 10.5px;
+  color: var(--mq-stil);
+}
+
+.mq-snel-naar-rubriek {
+  margin: 0;
+  padding: 10px 18px 4px;
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mq-stil);
+}
+
+.mq-snel-naar-lijst {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mq-snel-naar-optie {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--mq-tekst);
+  font: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mq-snel-naar-optie:hover,
+.mq-snel-naar-optie.is-gefocust {
+  background: rgba(var(--mq-accent-rgb), 0.15);
+}
+
+.mq-snel-naar-optie-tekst {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mq-snel-naar-optie-tekst strong {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.mq-snel-naar-optie-tekst small {
+  font-size: 11.5px;
+  color: var(--mq-gedempt);
+}
+
+.mq-snel-naar-leeg {
+  margin: 0;
+  padding: 22px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--mq-gedempt);
+}
+
+.mq-snel-naar-voet {
+  padding: 10px 16px;
+  border-top: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--mq-gedempt);
+}
+
+.mq-snel-naar-globaal {
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.34);
+  background: rgba(var(--mq-accent-rgb), 0.12);
+  color: var(--mq-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 620;
+  cursor: pointer;
+}
+
+.mq-snel-naar-globaal:hover {
+  background: rgba(var(--mq-accent-rgb), 0.22);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ДЕЛІКАТНЕ ОБЛАГОРОДЖЕННЯ СТАНДАРТНИХ КАРТОК, ТАБЛИЦЬ, ДІАЛОГІВ І ПОЛІВ УВЕДЕННЯ
+      ВСЕРЕДИНІ .canonical-content:not(:has(.mr-mq))
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome:not(#_mq) .canonical-content:not(:has(.mr-mq)) :where(.block, .card, .stat-card, .hub-card, .settings-card, [class$="-card"]):not(.auth-card):not([role="dialog"]):not(.google-mail-workspace *):not(.mq-kaart *) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 20px;
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-content:not(:has(.mr-mq)) table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-content:not(:has(.mr-mq)) th {
+  color: var(--mq-gedempt);
+  border-bottom-color: var(--mq-rand-sterk);
+  font-weight: 650;
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-content:not(:has(.mr-mq)) td {
+  border-bottom-color: var(--mq-rand);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-content:not(:has(.mr-mq)) tbody tr:hover {
+  background-color: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome :is(dialog[open], .canonical-content:not(:has(.mr-mq)) [role="dialog"]) {
+  border-color: var(--mq-rand-sterk);
+  border-radius: 22px;
+  background-color: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-content:not(:has(.mr-mq)) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), textarea, select) {
+  border-radius: var(--mq-straal-veld);
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette:not([data-identiteit-maquette="aan"]) .canonical-chrome .canonical-content:not(:has(.mr-mq)) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), textarea, select):focus-visible {
+  border-color: rgba(var(--mq-accent-rgb), 0.65);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mq-kunst-bol,
+  .mq-kunst-baan.stippel,
+  .mq-baan-satelliet {
+    animation: none !important;
+  }
+  html.palet-maquette .canonical-chrome:not(#_mq) :is(.mq-schil, .mq-knop-primair, .mq-knop-secundair, .mq-held-wissel, .mq-kaart, .mq-detail-item, .mq-naar-boven),
+  .mq-anker-rail,
+  .mq-anker-knop,
+  .mq-rail-voortgang-spoor span {
+    transition: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО В КІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 960px) {
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="rechts"],
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="rechts"][data-mq-rail-compact="ja"],
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="links"],
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="links"][data-mq-rail-compact="ja"],
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="boven"],
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-schil[data-mq-rail-zijde="onder"] {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-held:not(.is-compact) {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-tekstvak {
+    padding: 32px 24px 24px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-kunstvak {
+    padding: 4px 18px 76px;
+    min-height: 240px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-paar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-detail-raster {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* На вузьких екранах (<= 960px) якірна рейка стає липкою підсмугою з розкривним переліком */
+  .mq-anker-onderbalk {
+    position: sticky;
+    top: 0;
+    z-index: 95;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 0 14px;
+    padding: 8px 12px;
+    border-radius: 16px;
+    border: 1px solid var(--mq-rand-sterk);
+    background: var(--mq-bovenbalk-glas);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+    box-shadow: var(--mq-schaduw-zacht);
+  }
+
+  .mq-onderbalk-trekker {
+    min-height: 42px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--mq-accent-rgb), 0.34);
+    background: rgba(var(--mq-accent-rgb), 0.14);
+    color: var(--mq-tekst);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 620;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    cursor: pointer;
+  }
+
+  .mq-onderbalk-trekker span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mq-onderbalk-rechts {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+  }
+
+  .mq-onderbalk-procent {
+    font-size: 11.5px;
+    font-weight: 650;
+    color: var(--mq-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mq-onderbalk-knop {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--mq-rand);
+    background: var(--mq-oppervlak-zacht);
+    color: var(--mq-gedempt);
+    font-size: 16px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .mq-anker-rail {
+    display: none;
+  }
+
+  .mq-anker-rail[data-mobiel-open="ja"] {
+    display: flex;
+    flex-direction: column;
+    left: 14px;
+    right: 14px;
+    top: calc(var(--mq-kern-boven, 68px) + 58px);
+    bottom: auto;
+    width: auto;
+    height: auto;
+    max-height: min(68dvh, 460px);
+    z-index: 96;
+  }
+
+  .mq-anker-rail[data-mobiel-open="ja"]:is([data-zijde="boven"], [data-zijde="onder"]) {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+  }
+
+  .mq-anker-rail[data-mobiel-open="ja"] .mq-rail-lijst {
+    flex-direction: column;
+    align-items: stretch;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .mq-anker-rail[data-mobiel-open="ja"] :is(.mq-rail-titels, .mq-anker-naam, .mq-anker-nummer) {
+    display: flex;
+  }
+}
+
+@media (max-width: 700px) {
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-overzicht-wikkel {
+    padding: 8px 6px 64px;
+    gap: 18px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-tekstvak {
+    padding: 24px 18px 20px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-voet {
+    padding: 8px 18px;
+    gap: 12px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-hoofd {
+    padding: 24px 18px 24px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-kaart-onder {
+    padding: 18px;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-intermezzo {
+    padding: 26px 22px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-primair,
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-knop-secundair,
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-held-wissel,
+  html.palet-maquette .canonical-chrome:not(#_mq) .mq-naar-boven {
+    min-height: var(--tik-hoogte, 44px);
+  }
+
+  .mq-anker-knop,
+  .mq-snel-naar-optie,
+  .mq-snel-naar-globaal {
+    min-height: var(--tik-hoogte, 44px);
+  }
+}

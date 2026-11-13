@@ -11,6 +11,9 @@ import { startImpersonatieModus } from './impersonatie/modus'; // «Подиви
 import './index.css';
 import './ontwerp/fundament.css'; // фундамент дизайну 20.10.2026: токени → примітиви → мобільна верстка (після preflight)
 import './mobiel-ux.css';
+import './maquette-kern/maquette-tokens.css';
+import './maquette-kern/maquette-oppervlakken.css';
+import './maquette-kern/maquette-aanmelden.css';
 import './platform/sluitknop.css'; // gecentreerde sluitknoppen (specificiteit 0)
 import './afdruk.css'; // afdrukken (Ctrl+P): de hele pagina op papier, schil weg (zoekronde 02.11.2026; herzien INTEG-001 print)
 import { installeerAfdruk } from './platform/afdruk'; // vlak vóór het afdrukken: vaste/afgeknipte vakken vrijmaken, knoppen sorteren (INTEG-001 print)

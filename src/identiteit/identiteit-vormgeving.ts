@@ -2,6 +2,8 @@
 // Keuze van de weergave van het accountcentrum: alleen het uiterlijk wisselt, gegevens, handelingen en rechten blijven gelijk.
 import { useEffect, useState } from 'react';
 import { useVlag } from '../functievlag-lezen';
+import { leesKeuze } from '../thema/kern';
+import { useThemaStand } from '../thema/useThema';
 
 /** Прапорець вигляду «Макет» (IDENTITEIT-007). Zonder deze vlag blijven alleen de Studio en de klassieke weergave over. */
 export const VLAG_MAQUETTE = 'identiteit-account-maquette';
@@ -44,10 +46,12 @@ export function leesVormgeving(beschikbaar: readonly Vormgeving[] = VORMGEVINGEN
   return beschikbaar[0] ?? 'studio';
 }
 
-/** Доступні вигляди за прапорцем «Макет». */
+/** Доступні вигляди за прапорцем «Макет» або загальносайтовою палітрою «Макет». */
 export function useBeschikbareVormgevingen(): readonly Vormgeving[] {
   const maquette = useVlag(VLAG_MAQUETTE, false);
-  return maquette ? VORMGEVINGEN : VORMGEVINGEN.filter((v) => v !== 'maquette');
+  const stand = useThemaStand();
+  const isThemaMaquette = (leesKeuze(stand.theme, stand.palet).palet as string) === 'maquette';
+  return maquette || isThemaMaquette ? VORMGEVINGEN : VORMGEVINGEN.filter((v) => v !== 'maquette');
 }
 
 export function bewaarVormgeving(v: Vormgeving) {
@@ -58,6 +62,7 @@ export function bewaarVormgeving(v: Vormgeving) {
 /** Поточний вибір; оновлюється одразу в усіх відкритих частинах сторінки й інших вкладках. */
 export function useVormgeving(): [Vormgeving, (v: Vormgeving) => void] {
   const beschikbaar = useBeschikbareVormgevingen();
+  const stand = useThemaStand();
   const [waarde, setWaarde] = useState<Vormgeving>(() => leesVormgeving(beschikbaar));
   useEffect(() => {
     const opnieuw = () => setWaarde(leesVormgeving(beschikbaar));
@@ -66,6 +71,6 @@ export function useVormgeving(): [Vormgeving, (v: Vormgeving) => void] {
     window.addEventListener(melding, opnieuw);
     window.addEventListener('storage', opslag);
     return () => { window.removeEventListener(melding, opnieuw); window.removeEventListener('storage', opslag); };
-  }, [beschikbaar.length]);
+  }, [beschikbaar.length, stand.palet]);
   return [waarde, bewaarVormgeving];
 }

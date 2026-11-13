@@ -37,7 +37,7 @@ export const UITERLIJK_MODI = ['light', 'dark', 'device', 'auto'] as const;
 export const UITERLIJK_MODI_OUD = ['plum', 'plum-light', 'plum-dark'] as const;
 export type UiterlijkModus = typeof UITERLIJK_MODI[number] | typeof UITERLIJK_MODI_OUD[number];
 /** Paletten (zelfde lijst als src/thema/kern.ts en public/canonical-service.js; de eenheidstest vergelijkt ze). */
-export const UITERLIJK_PALETTEN = ['grifel', 'puur', 'violet', 'kleur'] as const;
+export const UITERLIJK_PALETTEN = ['grifel', 'puur', 'violet', 'kleur', 'maquette'] as const;
 export type UiterlijkPalet = typeof UITERLIJK_PALETTEN[number];
 /** Gecachte «leegte» van een route, zodat het eerste beeld geen skelet toont dat er toch niet komt. */
 export const UITERLIJK_ROUTEBEELDEN = ['signed-out', 'mail-empty', 'github-empty', 'api-empty'] as const;

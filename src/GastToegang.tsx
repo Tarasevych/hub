@@ -8,8 +8,14 @@ import './gast.css';
 import MoviPrapor, { MOVA_NAAM } from './MoviPrapor';
 import { aanmeldPauzeBericht, useAftelPauze } from './aanmeld-pauze';
 import { weigeringZin } from '../shared/weigering-tekst';
+import { readSharedPreferences, watchSharedPreferences } from './gedeelde-voorkeuren';
+import { resolveer } from './thema/kern';
 
 type Lang='uk'|'nl';
+type PresentatieHint={uiterlijk?:{modus?:unknown;palet?:unknown;auto?:unknown};theme?:string};
+const PALET_KLASSEN=['palet-grifel','palet-puur','palet-violet','palet-kleur','palet-maquette'] as const;
+const THEMA_KLASSEN=['theme-light','theme-dark','theme-plum-light','theme-plum-dark'] as const;
+const leesGastMaquette=():boolean=>typeof document!=='undefined'&&document.documentElement.classList.contains('palet-maquette');
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
 type Sessie={eigenaar:string;code:string;scopes:string[];sinds?:string;tot:string};
 type Apparaat={naam:string;platform:string;laatstGezien:string|null;actief:boolean;sinds:string|null};
@@ -42,6 +48,7 @@ const SOORT:Record<string,[string,string]>={ai:['Підключення ШІ','A
 
 export default function GastToegang(){
   const[lang,setLang]=useState<Lang>(taalVan);
+  const[isMaquette,setIsMaquette]=useState<boolean>(leesGastMaquette);
   const[sessie,setSessie]=useState<Sessie|null>(null);
   const[laden,setLaden]=useState(true);
   const[code,setCode]=useState('');
@@ -54,6 +61,38 @@ export default function GastToegang(){
   const pauze=useAftelPauze();
   const pauzeTekst=pauze.actief||pauze.zojuistVrij?aanmeldPauzeBericht(Math.max(1,pauze.resterend),lang,'gast',pauze.limiet):null;
   useEffect(()=>{document.documentElement.lang=lang==='uk'?'uk':'nl';document.title=tr(lang,'Гостьовий доступ — Mijn Ruimte','Gasttoegang — Mijn Ruimte');},[lang]);
+  useEffect(()=>{
+    // На /toegang немає кореневої оболонки застосунку: синхронізуємо тему й палітру зі стартовим станом __TSV_PRESENTATION__ та спільними налаштуваннями.
+    const pasToe=()=>{
+      const root=document.documentElement;
+      const pres=(window as Window&{__TSV_PRESENTATION__?:PresentatieHint}).__TSV_PRESENTATION__;
+      const prefs=readSharedPreferences();
+      const ruwPalet=prefs.palet??pres?.uiterlijk?.palet;
+      const ruwModus=prefs.theme??pres?.uiterlijk?.modus;
+      const ruwAuto=prefs.auto??pres?.uiterlijk?.auto;
+      const apparaatDonker=typeof matchMedia==='function'&&matchMedia('(prefers-color-scheme: dark)').matches;
+      const r=resolveer({theme:ruwModus,palet:ruwPalet,auto:ruwAuto,apparaatDonker,nu:Date.now()});
+      const palet=String(ruwPalet||'')==='maquette'?'maquette':ruwPalet?String(r.palet):(root.classList.contains('palet-maquette')?'maquette':String(r.palet));
+      if(!root.classList.contains(`palet-${palet}`)){root.classList.remove(...PALET_KLASSEN);root.classList.add(`palet-${palet}`);}
+      if(!root.classList.contains(`theme-${r.presentatie}`)){root.classList.remove(...THEMA_KLASSEN);root.classList.add(`theme-${r.presentatie}`);}
+      root.style.colorScheme=r.donker?'dark':'light';
+      setIsMaquette(palet==='maquette');
+    };
+    pasToe();
+    const stopVoorkeuren=watchSharedPreferences(()=>pasToe());
+    const media=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme: dark)'):null;
+    const bijMedia=()=>pasToe();
+    const bijZicht=()=>{if(document.visibilityState==='visible')pasToe();};
+    media?.addEventListener?.('change',bijMedia);
+    document.addEventListener('visibilitychange',bijZicht);
+    window.addEventListener('focus',pasToe);
+    return()=>{
+      stopVoorkeuren();
+      media?.removeEventListener?.('change',bijMedia);
+      document.removeEventListener('visibilitychange',bijZicht);
+      window.removeEventListener('focus',pasToe);
+    };
+  },[]);
   useEffect(()=>{
     // Deellink: #code=… invullen en meteen uit de adresbalk (en geschiedenis) halen.
     const m=/^#code=([0-9A-Za-z-]{16,24})$/.exec(location.hash||'');
@@ -80,9 +119,17 @@ export default function GastToegang(){
   };
   const uitloggen=async()=>{await post('/api/gast/uitloggen').catch(()=>undefined);setSessie(null);setInhoud({});setActief('');};
   const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(lang==='uk'?'nl':'uk')} aria-label={tr(lang,'Мова: українська. Перемкнути на нідерландську','Taal: Nederlands. Wissel naar Oekraïens')}><MoviPrapor taal={lang==='uk'?'nl':'uk'}/><span>{MOVA_NAAM[lang==='uk'?'nl':'uk']}</span></button>;
-  if(laden)return <main className='gast'><p className='gast-laden'>{tr(lang,'Завантаження…','Laden…')}</p></main>;
+  const gastSfeer=isMaquette?<div className='mq-gast-sfeer' aria-hidden='true'>
+    <span className='mq-gast-halo'/>
+    <span className='mq-gast-orb'/>
+    <span className='mq-gast-baan mq-gast-baan-1'/>
+    <span className='mq-gast-baan mq-gast-baan-2'/>
+  </div>:null;
+  if(laden)return <main className='gast'>{gastSfeer}<p className='gast-laden'>{tr(lang,'Завантаження…','Laden…')}</p></main>;
   if(!sessie)return <main className='gast'>
+    {gastSfeer}
     <section className='gast-kaart' data-gast-inwisselen>
+      {isMaquette&&<div className='mq-gast-bovenregel'><span className='mq-gast-lijn' aria-hidden='true'/><span>{tr(lang,'МІЙ ПРОСТІР · ГОСТЬОВИЙ ДОСТУП','MIJN RUIMTE · GASTTOEGANG')}</span></div>}
       <header><KeyRound aria-hidden='true'/><h1>{tr(lang,'Гостьовий доступ','Gasttoegang')}</h1>{taalKnop}</header>
       <p>{tr(lang,'Введіть код доступу, який вам дав власник. Ви отримаєте окрему гостьову сесію лише для перегляду — це не вхід у чужий акаунт.','Voer de toegangscode in die u van de eigenaar kreeg. U krijgt een aparte gastsessie, alleen om te bekijken — u logt niet in op iemands account.')}</p>
       {weg&&<p className='gast-melding' role='status'>{tr(lang,'Гостьову сесію завершено: код відкликано або строк дії минув.','De gastsessie is beëindigd: de code is ingetrokken of verlopen.')}</p>}
@@ -99,6 +146,7 @@ export default function GastToegang(){
   const data=inhoud[actief] as Record<string,any>|undefined;
   const profielFoto=actief==='profiel.lezen'&&data?.foto?String(data.foto):'';
   return <main className='gast'>
+    {gastSfeer}
     <div className='gast-banner' role='status' data-gast-banner>
       <ShieldCheck aria-hidden='true'/>
       <span><strong>{tr(lang,`Гостьовий доступ від ${sessie.eigenaar} до ${tijd(lang,sessie.tot)}`,`Gasttoegang van ${sessie.eigenaar} tot ${tijd(lang,sessie.tot)}`)}</strong>

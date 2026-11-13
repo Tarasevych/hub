@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-001",
+  "titel": "Хвиля 0 теми оформлення «Макет»: ядро палітри, спільна художня система та центр ідентичності id.tarasevych.com",
+  "opdracht": "Запровадити студійний вигляд «Макет» як окрему наскрізну тему оформлення платформи Mijn Ruimte поруч з усіма чинними темами, нічого не видаляючи. У Хвилі 0 (MAQUETTE-001) збудувати ядро палітри maquette для темного й світлого режимів з миттєвим першим кадром без миготіння, спільну художню систему src/maquette-kern/ (змінні дизайну для всіх десяти піддоменів, 13 тривимірних композицій MaquetteKunst, вітрину MaquetteHeld у повному й компактному режимах, перетягувану на чотири сторони якірну навігацію MaquetteAnkerRail, картку MaquetteSectieKaart, швидкий перехід MaquetteSnelNaar та підвал MaquetteVoet), підключити перемикач палітри до живого центру ідентичності id.tarasevych.com і перевтілити екрани входу, гостьовий зал та сторінку 404.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-001-20261113-174500",
+    "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "f3f3fabb1f478d232da563f13070e829db8c6b27",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі доступу, маркери сеансів, вміст приватних листів і файлів, внутрішні мережеві адреси, службові шляхи середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T17:43:58Z",
+      "stap": "Звірено живу встановлену версію на сервері (20261113-121403, фіксація 5f2325d788e29c5126f9ede6975afbbac7e5aae2), створено окрему гілку feature/maquette-001-20261113-174500 та зареєстровано завдання MAQUETTE-001."
+    },
+    {
+      "tijd": "2026-11-13T17:55:00Z",
+      "stap": "Розроблено ядро теми palet: 'maquette' у shared/uiterlijk.ts, src/thema/*, public/canonical-service.js, index.html та перемикачі в Налаштування → Теми й обох меню облікового запису (AccountMenuV3 і CanoniekAccountMenu)."
+    },
+    {
+      "tijd": "2026-11-13T18:10:00Z",
+      "stap": "Створено спільну художню систему src/maquette-kern/ (maquette-tokens.css з акцентами 10 піддоменів і маркером технічного простору, maquette-oppervlakken.css, MaquetteKunst, MaquetteHeld, MaquetteAnkerRail із перетягуванням на 4 сторони, MaquetteSectieKaart, MaquetteSnelNaar, MaquetteVoet) і внесено дозволені фіксовані шари до scripts/plaatsing-vaste-elementen.json."
+    },
+    {
+      "tijd": "2026-11-13T18:25:00Z",
+      "stap": "Узгоджено центр ідентичності id.tarasevych.com із наскрізним перемикачем палітри maquette та оформлено студійний вигляд для екранів входу (SignedOutCenter), підтвердження власника (EigenaarIdentiteitAutoriseer), гостьового залу (GastToegang) і сторінки 404 (NietGevonden)."
+    },
+    {
+      "tijd": "2026-11-13T18:48:00Z",
+      "stap": "Проведено повне складання проєкту з усіма автоматичними перевірками, модульні випробування та візуальну перевірку в безголовому оглядачі Chromium у темному й світлому режимах на широкому екрані, планшеті й телефоні; удосконалено компактну мобільну капсулу верхньої смуги на екрані входу."
+    }
+  ],
+  "keuzes": [
+    "Тему «Макет» додано як п'яту канонічну палітру (palet: 'maquette') поруч із kleur, grifel, puur та violet без жодного втручання у наявні теми та вигляди studio і klassiek.",
+    "Підтримано обидва світлові стани «Макета» (нічну студію #090e1b та світлий «ранковий туман» #edf0f6 зі збереженням глибоких нічних вітрин .mq-held і 3D-композицій .mq-kunst-raam), а також режими за пристроєм і за сонцем.",
+    "На id.tarasevych.com збережено наявний еталонний рушій IdentiteitMaquette (.mr-mq), який тепер автоматично вмикається разом із наскрізною палітрою maquette і не конфліктує зі стилями спільної канонічної оболонки завдяки селектору :not([data-identiteit-maquette='aan']).",
+    "У технічному просторі (data-oppervlak='technisch') збережено чіткий інженерний візуальний маркер, щоб адміністратор завжди відрізняв технічний контур від особистого простору користувача."
+  ],
+  "wijzigingen": [
+    "index.html",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-001.json",
+    "orchestratie/taken/MAQUETTE-001.json",
+    "public/canonical-service.js",
+    "scripts/plaatsing-vaste-elementen.json",
+    "shared/uiterlijk.ts",
+    "shared/zoek-ui-knoppen.generated.ts",
+    "src/CanoniekAccountMenu.tsx",
+    "src/CanoniekOmlijsting.tsx",
+    "src/EigenaarIdentiteitAutoriseer.tsx",
+    "src/GastToegang.tsx",
+    "src/NietGevonden.tsx",
+    "src/accountmenu-v3/accountmenu-v3-voorkeuren.ts",
+    "src/identiteit/IdentiteitAccountPagina.tsx",
+    "src/identiteit/identiteit-vormgeving.ts",
+    "src/main.tsx",
+    "src/maquette-kern/MaquetteAnkerRail.tsx",
+    "src/maquette-kern/MaquetteHeld.tsx",
+    "src/maquette-kern/MaquetteKunst.tsx",
+    "src/maquette-kern/MaquetteSectieKaart.tsx",
+    "src/maquette-kern/MaquetteSnelNaar.tsx",
+    "src/maquette-kern/MaquetteVoet.tsx",
+    "src/maquette-kern/index.ts",
+    "src/maquette-kern/maquette-aanmelden.css",
+    "src/maquette-kern/maquette-oppervlakken.css",
+    "src/maquette-kern/maquette-tokens.css",
+    "src/thema/ThemaInstellingen.tsx",
+    "src/thema/kern.ts",
+    "src/thema/paletten.css",
+    "src/thema/paletten.ts",
+    "src/thema/useThema.ts",
+    "tests/eenheid/maquette-001-kern.test.ts",
+    "tests/eenheid/thema.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak MAQUETTE-001 --fase overdracht — успішно.",
+    "Перевірка типів сервера: npm run typecheck:server — код 0.",
+    "Повне складання npm run build (kaart-controle, plaatsing-controle, hulp-vraagtekens-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, huis-maquette, tech-bundels-controle, bouw-extensie, build:server) — код 0.",
+    "Модульні випробування: thema (18/18, 8640 комбінацій), maquette-001-kern (10/10), identiteit-maquette (46/46), identiteit-atelier (36/36), identiteit-010-aanmelden-ecosysteem (20/20), identiteit-009-mobiel-veiligheid (14/14), schil-achtergrond-20261026 (10/10), plaatsing-20261025 (68/68), mobiel-cascade-20261105 (22/22), trace-001-ontwikkelarchief (16/16).",
+    "Жива візуальна перевірка в безголовому оглядачі Chromium через локальний HTTPS для id.tarasevych.com та hub.tarasevych.com у темному й світлому режимах на роздільностях 1440x900, 820x1180 та 390x844 — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md",
+    "src/identiteit/maquette/IdentiteitMaquette.tsx"
+  ],
+  "beperkingen": [
+    "Хвиля 0 (MAQUETTE-001) охоплює наскрізне ядро палітри maquette, спільну оболонку платформи, екрани входу та піддомен id.tarasevych.com; внутрішні робочі екрани решти дев'яти піддоменів (mail, cloud, github, hub, ai, huis, mcp, api, admin) послідовно перевтілюються у Хвилях 1–9 (MAQUETTE-002 — MAQUETTE-010)."
+  ]
+}

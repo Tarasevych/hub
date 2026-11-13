@@ -349,6 +349,26 @@
   {
    "sleutel": "src/accountmenu-v3/accountmenu-v3.css :: [data-account-menu-v3].am3-mobiel-laag",
    "reden": "IDENTITEIT-008: onafhankelijk mobiel bovenvenster van AccountMenuV3 (<= 700 px), geportaleerd naar .canonical-chrome zodat het menu niet in de smalle zijlade (270 px) wordt samengedrukt maar over de hele breedte van de telefoon verschijnt. De profielfotoknop blijft op haar vaste plek; dit is een vensterlaag met achtergrondsluier, geen zwevende knop."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-anker-rail",
+   "reden": "MAQUETTE-001: спільна якірна панель розділів піддомену, яку користувач закріплює на будь-якому з чотирьох країв робочої області; враховує виміряні межі бічного меню та верхньої смуги; панель навігації, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-sleep-rand-wijzer",
+   "reden": "MAQUETTE-001: тимчасова пунктирна рамка цільового краю лише під час перетягування якірної панелі розділів; не перехоплює натискань і не є кнопкою."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-rail-popover",
+   "reden": "MAQUETTE-001: спливне діалогове вікно налаштування сторони та компактності якірної панелі розділів, прив'язане до виміряних меж робочої області; вікно налаштувань, не кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-anker-sluier",
+   "reden": "MAQUETTE-001: напівпрозора завіса під розкритим переліком розділів на вузькому екрані для закриття списку дотиком поза ним; тло списку, не окрема кнопка."
+  },
+  {
+   "sleutel": "src/maquette-kern/maquette-oppervlakken.css :: .mq-snel-naar-laag",
+   "reden": "MAQUETTE-001: повноекранний модальний шар діалогового вікна швидкого переходу за розділами піддомену (закривається клавішею Escape або дотиком до тла); модальне вікно, не кнопка."
   }
  ],
  "kopReserves": [

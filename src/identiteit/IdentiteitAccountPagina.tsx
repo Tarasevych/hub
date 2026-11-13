@@ -9,6 +9,8 @@ import { AtelierInhoud } from './atelier-inhoud';
 import { useVormgeving } from './identiteit-vormgeving';
 import { VormgevingKiezer } from './VormgevingKiezer';
 import { IdentiteitMaquette, type MaquetteGebruiker } from './maquette/IdentiteitMaquette';
+import { leesKeuze } from '../thema/kern';
+import { useThemaStand } from '../thema/useThema';
 
 export type IdentiteitSectie = { id: string; titel: string; inhoud: ReactNode };
 
@@ -39,8 +41,11 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   const [inBeeld, setInBeeld] = useState(actief);
   const tocRef = useRef<HTMLElement>(null);
   // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
-  const atelier = useVlag('identiteit-account-atelier', false);
-  // Прапорець відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag: altijd de klassieke weergave.
+  const atelierVlag = useVlag('identiteit-account-atelier', false);
+  const themaStand = useThemaStand();
+  const isThemaMaquette = (leesKeuze(themaStand.theme, themaStand.palet).palet as string) === 'maquette';
+  const atelier = atelierVlag || isThemaMaquette;
+  // Прапорець або палітра «Макет» відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag of maquette-palet: altijd de klassieke weergave.
   const [vormgeving] = useVormgeving();
   // Зміна вигляду користувачем: робоча область прокручується вгору, інакше новий вигляд відкривається на випадковій глибині
   // попереднього (і перемикач класичної сторінки лишається поза екраном). Bij een andere weergave begint de pagina bovenaan.

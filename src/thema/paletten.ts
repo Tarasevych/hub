@@ -21,6 +21,11 @@ export const PUUR: { licht: Waarden; donker: Waarden } = {
   donker: { bg: '#000000', panel: '#000000', surface: '#0d0d0d', surface2: '#1a1a1a', line: '#333333', text: '#ffffff', muted: '#c2c2c2', faint: '#8f8f8f', accent: '#ffffff', accentText: '#000000', accentSoft: '#1f1f1f' },
 };
 
+export const MAQUETTE: { licht: Waarden; donker: Waarden } = {
+  licht: { bg: '#edf0f6', panel: '#ffffff', surface: '#f5f7fc', surface2: '#e9eef9', line: '#d3dce9', text: '#192640', muted: '#56657f', faint: '#6d7b94', accent: '#5c46a3', accentText: '#ffffff', accentSoft: '#efeafd' },
+  donker: { bg: '#090e1b', panel: '#101728', surface: '#141d30', surface2: '#1b263a', line: '#28354f', text: '#eff4ff', muted: '#98a7bf', faint: '#74849f', accent: '#b3a0ff', accentText: '#100d24', accentSoft: '#1a1f38' },
+};
+
 export function kleurWaarden(s: Sectie): { licht: Waarden; donker: Waarden } {
   const k = ACCENT_KLEUREN[DIENST_ACCENT[s]];
   const L = k.licht.hoofd, D = k.donker.hoofd;
@@ -43,6 +48,8 @@ export function paletCss(): string {
   const r: string[] = ['/* GEGENEREERD door scripts/thema-css.mjs uit src/thema/paletten.ts — niet met de hand wijzigen. */'];
   r.push(`html.palet-puur.theme-light,html.palet-puur .theme-light{${vars(PUUR.licht)};--shadow:rgba(0,0,0,.08)}`);
   r.push(`html.palet-puur.theme-dark,html.palet-puur .theme-dark{${vars(PUUR.donker)};--shadow:rgba(255,255,255,.06)}`);
+  r.push(`html.palet-maquette.theme-light,html.palet-maquette .theme-light{${vars(MAQUETTE.licht)};--shadow:rgba(40,63,104,.09)}`);
+  r.push(`html.palet-maquette.theme-dark,html.palet-maquette .theme-dark{${vars(MAQUETTE.donker)};--shadow:rgba(0,0,0,.28)}`);
   for (const s of SECTIES) {
     const w = kleurWaarden(s), sel = `html.palet-kleur[data-presentation-service="${s}"]`;
     r.push(`${sel}.theme-light,${sel} .theme-light{${vars(w.licht)}}`);
@@ -52,7 +59,12 @@ export function paletCss(): string {
 }
 /** Regels voor het opstartscherm (index.html), zodat het eerste beeld al het juiste palet heeft. */
 export function bootCss(): string {
-  const r = [`html.palet-puur.theme-light{${boot(PUUR.licht)}}`, `html.palet-puur.theme-dark{${boot(PUUR.donker)}}`];
+  const r = [
+    `html.palet-puur.theme-light{${boot(PUUR.licht)}}`,
+    `html.palet-puur.theme-dark{${boot(PUUR.donker)}}`,
+    `html.palet-maquette.theme-light{${boot(MAQUETTE.licht)}}`,
+    `html.palet-maquette.theme-dark{${boot(MAQUETTE.donker)}}`,
+  ];
   for (const s of SECTIES) { const w = kleurWaarden(s), sel = `html.palet-kleur[data-presentation-service="${s}"]`; r.push(`${sel}.theme-light{${boot(w.licht)}}`, `${sel}.theme-dark{${boot(w.donker)}}`); }
   return r.join('');
 }

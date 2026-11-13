@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { autoNu, leesKeuze, normaalAuto, pauzeer, resolveer, zonTijden } from '../../src/thema/kern';
-import { bootCss, contrast, kleurWaarden, paletCss, PUUR, SECTIES } from '../../src/thema/paletten';
+import { bootCss, contrast, kleurWaarden, MAQUETTE, paletCss, PUUR, SECTIES } from '../../src/thema/paletten';
 import { checker } from './hulp/nep-google';
 
 export async function main(): Promise<number> {
@@ -34,6 +34,7 @@ export async function main(): Promise<number> {
   // keuzes en oude waarden
   check('oud «plum-dark» → violet + donker', JSON.stringify(leesKeuze('plum-dark', undefined)) === '{"modus":"dark","palet":"violet"}');
   check('standaard: palet «kleur», modus «device»', JSON.stringify(leesKeuze(undefined, undefined)) === '{"modus":"device","palet":"kleur"}');
+  check('palet «maquette» + modus «dark»', JSON.stringify(leesKeuze('dark', 'maquette')) === '{"modus":"dark","palet":"maquette"}');
   const r = resolveer({ theme: 'dark', palet: 'violet', auto: undefined, apparaatDonker: false, nu: 0, violetToegestaan: false });
   check('violet zonder recht → grifel (opgeslagen keuze blijft)', r.palet === 'grifel' && r.presentatie === 'dark');
   check('normaalAuto: rommel → standaard, coördinaten afgerond op 0,1°', JSON.stringify(normaalAuto({ soort: 'x', van: '25:00', lat: 50.84567, lon: 4.35678 })) === '{"soort":"zon","van":"20:00","tot":"07:00","lat":50.8,"lon":4.4}');
@@ -47,14 +48,14 @@ export async function main(): Promise<number> {
   check('canonical-service.js heeft runtime.thema', typeof rt?.thema === 'function');
   let verschil = '';
   const themes = ['light', 'dark', 'device', 'auto', 'plum-dark', 'plum-light', undefined, 'onzin'];
-  const paletten = ['grifel', 'puur', 'violet', 'kleur', undefined];
+  const paletten = ['grifel', 'puur', 'violet', 'kleur', 'maquette', undefined];
   const autos = [undefined, { soort: 'zon' }, { soort: 'zon', lat: 50.5, lon: 30.5 }, { soort: 'interval', van: '21:30', tot: '06:15' }, { soort: 'interval', van: '08:00', tot: '08:00' }, pauzeer(a, t('2026-10-10T07:30'))];
   for (const theme of themes) for (const palet of paletten) for (const auto of autos) for (const nu of [t('2026-10-10T03:00'), t('2026-10-10T12:00'), t('2026-10-10T19:40'), t('2026-12-21T16:00'), t('2026-06-21T22:50')]) for (const apparaatDonker of [true, false]) for (const violetToegestaan of [true, false, undefined]) {
     const o = { theme, palet, auto, apparaatDonker, nu, violetToegestaan };
     const x = JSON.stringify(resolveer(o)), y = JSON.stringify(rt?.thema?.(o));
     if (x !== y && !verschil) verschil = `${JSON.stringify(o)}\n  ts: ${x}\n  js: ${y}`;
   }
-  check('opstart (JS) en app (TS) beslissen identiek over 7200 combinaties', !verschil, verschil);
+  check('opstart (JS) en app (TS) beslissen identiek over 8640 combinaties', !verschil, verschil);
 
   // gegenereerde bestanden actueel
   check('src/thema/paletten.css actueel (node scripts/thema-css.mjs)', readFileSync('src/thema/paletten.css', 'utf8') === paletCss());
@@ -69,7 +70,8 @@ export async function main(): Promise<number> {
     }
   };
   meet('puur licht', PUUR.licht); meet('puur donker', PUUR.donker);
+  meet('maquette licht', MAQUETTE.licht); meet('maquette donker', MAQUETTE.donker);
   for (const s of SECTIES) { const k = kleurWaarden(s); meet(`${s} licht`, k.licht); meet(`${s} donker`, k.donker); }
-  check('contrast ≥ 4,5:1 in «Чистий» en «Кольоровий» (alle secties, licht en donker)', fouten.length === 0, fouten.join(', '));
+  check('contrast ≥ 4,5:1 in «Чистий», «Макет» en «Кольоровий» (alle secties, licht en donker)', fouten.length === 0, fouten.join(', '));
   return einde();
 }

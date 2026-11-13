@@ -55,6 +55,8 @@ import { aanmeldIndeling } from '../shared/aanmeld-plaatsing/plaatsing';
 import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
 import { accountIdentityKey, resolveAccountPhoto, type AccountMenuUser, type RememberedAccount } from './canoniek-account-menu-model';
 import { aanmeldPauzeBericht, useAanmeldPauze } from './aanmeld-pauze';
+import { leesKeuze } from './thema/kern';
+import { useThemaStand } from './thema/useThema';
 export const AANMELD_BEZIG_SLEUTEL='mr-aanmelden-bezig';
 export const AANMELD_BEZIG_MS=5*60_000;
 const MAX_ZICHTBARE_OPGESLAGEN=3;
@@ -97,6 +99,8 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  const[forgettingGrant,setForgettingGrant]=useState('');
  const aanmeldCfg=useAanmeldConfig(); /* AANMELD-PLAATSING v1: hook vóór elke vroege return */
  const pauze=useAanmeldPauze();
+ const themaStand=useThemaStand();
+ const isMaquette=(leesKeuze(themaStand.theme,themaStand.palet).palet as string)==='maquette';
  // Terug van Google: alleen bij de EERSTE weergave in 'checking' gelezen (daarna zegt de app zelf of het profiel open is).
  const[terugVanAanmelden]=useState(()=>checking&&aanmeldenBezig());
  const vertrekt=useRef(false);
@@ -157,7 +161,16 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  );
  return <section className={`canonical-signed-out mr-sign-in${checking?' is-controle':''}`} data-login-design='LOGIN-001' aria-busy={bezet?'true':'false'} aria-live={checking?'polite':undefined}>
   {postdienst&&<Suspense fallback={null}><MailAchtergrond lang={lang} plaats='aanmelden'/></Suspense>}
+  {isMaquette&&<div className='mq-aanmeld-sfeer' aria-hidden='true'>
+   <span className='mq-aanmeld-halo'/>
+   <span className='mq-aanmeld-orb'/>
+   <span className='mq-aanmeld-baan mq-aanmeld-baan-1'/>
+   <span className='mq-aanmeld-baan mq-aanmeld-baan-2'/>
+   <span className='mq-aanmeld-ster mq-aanmeld-ster-1'>✦</span>
+   <span className='mq-aanmeld-ster mq-aanmeld-ster-2'>✧</span>
+  </div>}
   <div className='mr-sign-in-content'>
+   {isMaquette&&<div className='mq-aanmeld-bovenregel'><span className='mq-aanmeld-lijn' aria-hidden='true'/><span>{uk?'МІЙ ПРОСТІР · ЄДИНИЙ ВХІД':'MIJN RUIMTE · ÉÉN AANMELDING'}</span><span className='mq-aanmeld-lijn' aria-hidden='true'/></div>}
    <h1>{uk?'Увійдіть у Мій простір':'Meld u aan bij Mijn Ruimte'}</h1>
    <p className='mr-sign-in-subtitle'>{uk?'Єдиний обліковий запис для вашої роботи, файлів і сервісів.':'Eén account voor uw werk, bestanden en diensten.'}</p>
    {zichtbareOpgeslagen.length>0&&<div className='mr-sign-in-accounts' role={zichtbareOpgeslagen.length>1?'list':undefined} aria-label={zichtbareOpgeslagen.length>1?(uk?'Збережені облікові записи':'Opgeslagen accounts'):undefined}>
@@ -392,7 +405,7 @@ export default function CanonicalChrome({lang,theme,current,items,tabs,activeTab
  const menuTeller=touchMode&&!drawerOpen&&plaatsInd.plek.bel&&IN_LADE.includes(plaatsInd.plek.bel)?belTeller:0,menuZone=plaatsInd.zones.zijbalk.lijst.length>0||plaatsS.sleep!==null||bewerken;
  const scrollToWorkspaceTop=()=>{const workspace=workspaceRef.current;if(!workspace)return;const reduceMotion=window.matchMedia('(prefers-reduced-motion:reduce)').matches;workspace.scrollTo({top:0,behavior:reduceMotion?'auto':'smooth'})};
  const toggleLabel=touchMode?(drawerOpen?(lang==='uk'?'Закрити бічну панель':'Zijbalk sluiten'):(lang==='uk'?'Відкрити бічну панель':'Zijbalk openen')):pinned?(lang==='uk'?'Відкріпити бічну панель':'Zijbalk losmaken'):(lang==='uk'?'Зафіксувати бічну панель':'Zijbalk vastzetten'),toggleAction=touchMode?(drawerOpen?'close-drawer':'open-drawer'):(pinned?'unpin':'pin'),mode=drawer?'drawer':pinned?'pinned':hoverOpen?'hover-expanded':'collapsed',layout=!touchMode&&pinned?'reflow':expanded?'overlay':'collapsed',edgeLabel=lang==='uk'?'Наведіть і затримайте курсор, щоб відкрити меню':'Houd de aanwijzer even stil om het menu te openen';
- return <main className={`canonical-chrome schil-achtergrond ecosystem-v04 theme-${theme}${touchMode?' sidebar-drawer-mode':''}${expanded?' sidebar-expanded':''}${!touchMode&&pinned?' sidebar-pinned':''}${transient?' sidebar-hover':''}${drawer?' sidebar-drawer':''}`} data-surface-model='flat-content' data-scroll-top={scrollTopVisible?'1':undefined} data-sidebar-state={mode} data-sidebar-mode='safe-hover-pinned' data-sidebar-source={drawer?'touch':pinned?'hamburger':hoverSource} data-sidebar-pointer-inside={pointerInside.current?'true':'false'} data-layout-mode={layout} data-active-service={current} data-focus-mode={focusMode?'mail':'none'} data-sidebar-submenu-model='manual-persistent-safe-hover' data-active-submenu={activeSubmenuId||'none'} data-viewport-tooltips='true' data-icoon-stijl={zijbalk.icoonStijl} data-zijbalk-modus={modus} data-dock={dockPos} data-menu-bewerken={bewerken?'ja':'nee'} data-dock-vergroting={horizontaal&&zijbalk.dock.vergroting?'ja':'nee'} data-plaats-boven-n={bovenN>0?bovenN:undefined} data-plaats-stapel={stapelN>0?'ja':undefined} data-plaats-iframe={iframe?'ja':undefined} style={{...(horizontaal?{['--dock-dekking' as string]:`${100-zijbalk.dock.transparantie}%`}:{}),['--plaats-boven-n' as string]:bovenN,['--plaats-stapel-ruimte' as string]:`${stapelRuimte}px`}} ref={mainRef} onPointerDown={rememberSwipe} onPointerUp={finishSwipe}>
+ return <main className={`canonical-chrome schil-achtergrond ecosystem-v04 theme-${theme}${touchMode?' sidebar-drawer-mode':''}${expanded?' sidebar-expanded':''}${!touchMode&&pinned?' sidebar-pinned':''}${transient?' sidebar-hover':''}${drawer?' sidebar-drawer':''}`} data-oppervlak={oppervlak} data-surface-model='flat-content' data-scroll-top={scrollTopVisible?'1':undefined} data-sidebar-state={mode} data-sidebar-mode='safe-hover-pinned' data-sidebar-source={drawer?'touch':pinned?'hamburger':hoverSource} data-sidebar-pointer-inside={pointerInside.current?'true':'false'} data-layout-mode={layout} data-active-service={current} data-focus-mode={focusMode?'mail':'none'} data-sidebar-submenu-model='manual-persistent-safe-hover' data-active-submenu={activeSubmenuId||'none'} data-viewport-tooltips='true' data-icoon-stijl={zijbalk.icoonStijl} data-zijbalk-modus={modus} data-dock={dockPos} data-menu-bewerken={bewerken?'ja':'nee'} data-dock-vergroting={horizontaal&&zijbalk.dock.vergroting?'ja':'nee'} data-plaats-boven-n={bovenN>0?bovenN:undefined} data-plaats-stapel={stapelN>0?'ja':undefined} data-plaats-iframe={iframe?'ja':undefined} style={{...(horizontaal?{['--dock-dekking' as string]:`${100-zijbalk.dock.transparantie}%`}:{}),['--plaats-boven-n' as string]:bovenN,['--plaats-stapel-ruimte' as string]:`${stapelRuimte}px`}} ref={mainRef} onPointerDown={rememberSwipe} onPointerUp={finishSwipe}>
   {goedgekeurd&&!signedOut&&<Suspense fallback={null}><ApparaatLuisteraar lang={lang} service={current}/></Suspense>}
   {!expanded&&!touchMode&&effModus!=='dicht'&&!bewerken&&<div className='canonical-sidebar-edge-zone' data-sidebar-edge-zone='safe-hover' aria-label={edgeLabel} onPointerEnter={event=>queueTransient('edge',event)} onPointerLeave={leaveTransient}/>} 
   {(transient||drawer)&&<div className={`canonical-sidebar-scrim${drawer?' drawer':''}`} aria-hidden='true' onClick={drawer?()=>closeDrawer():undefined}/>} 
