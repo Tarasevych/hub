@@ -10,7 +10,9 @@
 //  7/8. Overige serverpunten (registratie MCP, orch asynchroon, sleutels, geheugenplafond, SSE, regex, step-ups, Telegram-symbool, 0243).
 //  10. toetsen/g10d.md №5: oude weg «openen» (veiligeMime, db.patch) en de vlag cloud-vnext voor de eigenaarsroutes van delen.
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { checker } from './hulp/nep-google';
 import { getPool } from '../../server/platform/pg';
 import { router } from '../../server/platform/router';
@@ -359,6 +361,8 @@ export async function main(): Promise<number> {
 
   // ---------------------------------------------------------------- 10. toetsen/g10d.md №5 (a, b)
   {
+    // Власна тимчасова тека сховища: у CI немає прав на типову /srv/data (EACCES). Opslag leest UPLOADS_DIR per aanroep.
+    if (!process.env.UPLOADS_DIR) process.env.UPLOADS_DIR = mkdtempSync(join(tmpdir(), 'sec-002-afwerking-a-'));
     const U = randomUUID();
     await sys.query(`INSERT INTO app.records (tbl,id,data) VALUES ('users',$1,$2)`, [U, { email: `wolk-${sfx}@test.invalid`, role: 'member', status: 'approved', accessLevel: 'full' }]);
     const gebruiker = { id: U, email: `wolk-${sfx}@test.invalid`, role: 'member', status: 'approved', accessLevel: 'full' };

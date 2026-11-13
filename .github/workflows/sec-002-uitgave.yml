@@ -158,13 +158,24 @@ jobs:
           export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
           export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
           export SESSION_SECRET="$(head -c32 /dev/urandom | base64)"
+          # Сховище файлів тестів — тимчасова тека виконавця (типова /srv/data для користувача runner недоступна).
+          export UPLOADS_DIR="$RUNNER_TEMP/uploads"
+          mkdir -p "$UPLOADS_DIR"
           export OWNER_EMAIL='eigenaar@example.invalid'
           node dist-server/migrate.mjs
           node dist-server/migrate.mjs
           # Усі тести SEC-002 (групи, доопрацювання) і наявні тести безпеки та модулів, які змінили патчі.
+          # g09 і g10f перевіряють справжні сценарії root (chown, підпис SSH-сертифіката від root, скидання прав до nobody),
+          # тож виконуються через sudo зі збереженням оточення; решта — від звичайного користувача виконавця.
           for f in tests/eenheid/sec-002-*.test.ts; do
-            node scripts/eenheidstests.mjs "$(basename "$f")" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+            t="$(basename "$f")"
+            case "$t" in
+              sec-002-g09-*|sec-002-g10f-*) sudo -E env "PATH=$PATH" node scripts/eenheidstests.mjs "$t" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log" ;;
+              *) node scripts/eenheidstests.mjs "$t" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log" ;;
+            esac
           done
+          # Робочі теки, створені тестами від root, повертаються користувачеві виконавця.
+          sudo chown -R "$(id -u):$(id -g)" rapporten "$UPLOADS_DIR" 2>/dev/null || true
           # Змінені патчами тести модулів, зелені в послідовному прогоні в чистій базі. mcp-scherm-lokale-controle-20261031
           # залежить від стану, який лишають попередні тести, тож його перевірено поодинці в чистій базі (17/17), а не тут.
           for t in account-wissen-20261026 account-wissen-db-20261113 afstemming-kern-20261030 ai-agent-bord ai-kluis-een-plek-20261101 ai-mail-assistent audit-toegang browser-extensie connector-beide-kanten-20261020 connector-v2 devtools-schema-tekst-20261112 extensie-offscreen-20261106 extensie-opties extensie-profielen extensie-vergrendeling extern-bureaublad github-webhook-na-ontkoppelen-20261112 github-werkruimte-tak-20261112 huis-vnext-20261028 lezer-context-20261024 mail-ux-beoordeling-20261021 mcp-2026-07-28-studio mcp-console-c2 mcp-klant-stabiliteit-20261112 mcp-r1-beveiliging-20261112 meldingen-sferen-20261022 merk-bron-20261021 merk-bron-redos-20261112 notities-vnext-20261028 ruimte-cloud-agenda-20261020 ruimte-mail-20261020 ruimtes-gescheiden-20261101 telegram-inlog-apparaat-20261112 terminal-opdrachten-20261022 toegangssleutels zoek-kern-20261022 zoek-ui-bereik-20261105; do
