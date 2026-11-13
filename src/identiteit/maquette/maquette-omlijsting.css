@@ -209,7 +209,13 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 /* Ціль переходу: коротке підсвічування, щоб людина бачила, куди її привело (без руху, якщо рух вимкнено). */
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{outline:2px solid rgba(var(--global-rgb),.7);outline-offset:4px;border-radius:12px;transition:outline-color 1.6s ease}
 @media (prefers-reduced-motion:reduce){.mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{transition:none}}
-@media (max-width:520px){
-  .mr-mq.mr-mq.mr-mq.mr-mq .future-option-go{flex-wrap:wrap}
-  .mr-mq.mr-mq.mr-mq.mr-mq .future-option-go .future-option-status{margin-left:51px}
-}
+/* Вузька робоча область: макет переносить мітку на другий рядок на всю ширину (100% + відступ виходив за картку).
+   Тут мітка займає лише свою ширину, а «Відкрити» стає праворуч у тому самому рядку. */
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option{flex-wrap:wrap}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option-status[class*=future-stand-]{flex:0 1 auto;max-width:calc(100% - 51px - 88px);margin:0 0 0 51px;text-align:left}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option-go .future-option-open{margin-left:auto}
+/* IDENTITEIT-011: макетний елемент у розділах облікового запису — позначка «Приклад вигляду» й кнопка до справжнього налаштування. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-label{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:50px;font-size:9.5px;font-weight:700;vertical-align:middle;color:var(--muted,#7a7f8c);border:1px dashed rgba(var(--global-rgb),.35)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{cursor:pointer;background:transparent;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+@media (max-width:520px){.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-eerlijk .drawer-control-top{flex-wrap:wrap}.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{margin-left:auto}}
