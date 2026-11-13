@@ -165,6 +165,11 @@ jobs:
           node dist-server/migrate.mjs
           node dist-server/migrate.mjs
           # Усі тести SEC-002 (групи, доопрацювання) і наявні тести безпеки та модулів, які змінили патчі.
+          # Справжній Chrome для перевірок інтерфейсу (g10g): закріплений playwright-core без запису в package.json, системний Chrome.
+          npm install --no-save --package-lock=false --ignore-scripts playwright-core@1.56.1
+          export PLAYWRIGHT_CORE="$PWD/node_modules/playwright-core"
+          export CHROME_PAD=/usr/bin/google-chrome
+          test -x "$CHROME_PAD"
           # g09 і g10f перевіряють справжні сценарії root (chown, підпис SSH-сертифіката від root, скидання прав до nobody),
           # тож виконуються через sudo зі збереженням оточення; решта — від звичайного користувача виконавця.
           for f in tests/eenheid/sec-002-*.test.ts; do

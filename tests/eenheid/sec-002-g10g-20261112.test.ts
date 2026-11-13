@@ -532,7 +532,10 @@ export async function clientDeel(check: Check, o: ClientOpties = {}): Promise<vo
     } catch (e) { check('interface-06/post-05: перевірка в node виконалася', false, String((e as Error)?.stack || e).slice(0, 600)); }
 
     // ============================================================== post-05 + post-07 in een echte Chrome
-    const PW = join(process.env.PLAYWRIGHT_CORE || '/opt/node-tools/node_modules/playwright-core', 'index.mjs');
+    // playwright-core: eerst PLAYWRIGHT_CORE, dan node_modules van de repository (in CI met --no-save geïnstalleerd), dan /opt/node-tools.
+    // Спершу змінна PLAYWRIGHT_CORE, потім node_modules сховища (у CI встановлюється з --no-save), потім /opt/node-tools.
+    const PW = [process.env.PLAYWRIGHT_CORE, join(process.cwd(), 'node_modules', 'playwright-core'), '/opt/node-tools/node_modules/playwright-core']
+      .filter((p): p is string => Boolean(p)).map((p) => join(p, 'index.mjs')).find((p) => existsSync(p)) || join(process.cwd(), 'node_modules', 'playwright-core', 'index.mjs');
     const CHROME = process.env.CHROME_PAD || '/usr/bin/google-chrome';
     if (!existsSync(PW) || !existsSync(CHROME)) { check('post-05/post-07: Chrome і playwright-core доступні (CHROME_PAD, PLAYWRIGHT_CORE)', false, `${PW} ${CHROME}`); return; }
     try {
