@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAQUETTE-002",
+  "agent": "antigravity",
+  "tak": "feature/maquette-002-20261113-190800",
+  "basisCommit": "86b38455d17d8a77655e977be1a58e6fd226465a",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T19:07:53.326Z",
+  "bijgewerkt": "2026-11-13T19:07:53.326Z",
+  "omschrijving": "Хвиля 1 теми «Макет»: повне студійне перевтілення поштового простору mail.tarasevych.com (усі 18 канонічних вкладок, розумна скринька, читач листів, переглядач вкладень, вікно написання та хаб облікових записів).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

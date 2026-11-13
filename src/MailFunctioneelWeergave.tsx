@@ -1,11 +1,16 @@
-import {lazy,Suspense,useEffect,useMemo,useState} from 'react';
+import {lazy,Suspense,useCallback,useEffect,useMemo,useState} from 'react';
 import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import {api} from './platform/client';
 import {Bell,Check,Clock3,FileText,Inbox,ListChecks,Pencil,ShieldCheck,Sparkles,Star,Upload,UserCheck,X} from 'lucide-react';
 import MailAccountsHub from './MailAccountsHub';import{mailKoppelenOpenen}from'./platform/VensterHerstel';import{mailAanbieder}from'../shared/mail-aanbieders';
 import GoogleMailWorkspace from './GoogleMailWerkruimte';const ContactenWeergave=lazy(()=>import('./afzenders/ContactenWeergave'));const ContactenScanMelding=lazy(()=>import('./afzenders/ContactenScanMelding'));import{emitCanonicalNotice}from'./canoniek-meldingen';
+import {MaquetteHeld,MaquetteAnkerRail,type MaquetteAnkerItem} from './maquette-kern';
+import {useIsMaquette} from './thema/useThema';
+import {useVensters} from './platform/vensters';
+import {useOnthoudenVensters} from './platform/vensters-onthouden';
 
 import './mail-functioneel.css';import './mail-ux-beoordeling-20261021.css';import './mailfix-001-accounts.css';
+import './mail/mail-panelen-maquette.css';
 
 type Lang='uk'|'nl';
 type Triage='action'|'waiting'|'info'|'later';
@@ -27,6 +32,71 @@ type MailPlatformStatus={architecture:'provider_foundation_v1';runtime:'phase1_m
 type Bootstrap={items:MailItem[];resume:ResumeState;metrics:Metrics;notificationPreference:NotificationPreference;mailAccounts:MailAccount[];accountPolicy:{autoLinkPrimaryMail:boolean;allowAdditionalMailAccounts:boolean;mailboxAuthorization:'required'};provider:{connected:boolean;manualImport:true;analysis:'deterministic-cited-v1';highRiskSend:false;notificationDelivery:'not_connected'};platform:MailPlatformStatus;googleSuite?:GoogleSuiteStatus;googleMail?:GoogleMailSnapshot};
 type Props={lang:Lang;tab:string;userId:string;/** Naam uit de sessie (audit 19.10 U-01: niet meer «Власник» voor iedereen). */userName?:string;sourceOrigin:string;tabContext:string;homeSignal:number;sessionReady:boolean;onFocusChange:(value:boolean)=>void};
 
+const MAQUETTE_MAIL_TEKSTEN={
+ uk:{
+  accountsBoven:'ПОШТА · ОГЛЯД ПІДКЛЮЧЕНЬ',
+  accountsVoor:'Усі поштові скриньки.',
+  accountsCursief:'У спокійній рівновазі.',
+  accountsBeschrijving:'Керуйте основними й додатковими скриньками, порогами важливих сповіщень і приватним додаванням листів у єдиному студійному просторі.',
+  accountsPrimair:'Нова скринька',
+  accountsSecundair:'До вхідних листів',
+  statSkrinky:'Скриньок активних',
+  statLokalni:'Локальних листів',
+  statPorih:'Поріг сповіщень',
+  railTitel:'Розділи пошти',
+  railOndertitel:'Перетягніть до зручного краю',
+  ankerAanbieders:'Постачальники',
+  ankerGekoppeld:'Підключені скриньки',
+  ankerImport:'Приватне додавання',
+  ankerMeldingen:'Сповіщення',
+  ankerUitleg:'Як це працює',
+  localBoven:'ПОШТА · КЕРОВАНИЙ ФРОНТ',
+  localVoor:'Один лист за раз.',
+  localCursief:'Без тиску й поспіху.',
+  localBeschrijving:'Локальний простір спокійного опрацювання пошти з цитованим викладом, вибором рівня сил і збереженням чернеток.',
+  localPrimair:'Додати лист',
+  localSecundair:'Звичайна пошта',
+  statCherga:'У черзі зараз',
+  statZadachi:'Завдань створено',
+  contactsBoven:'ПОШТА · ДОВІРА ДО АДРЕС',
+  contactsVoor:'Контакти й відправники.',
+  contactsCursief:'Прозора перевірка джерел.',
+  contactsBeschrijving:'Перевіряйте походження листів за підписами доставки, офіційними доменами й власною базою підтверджених адрес.',
+  contactsSecundair:'До вхідних листів',
+ },
+ nl:{
+  accountsBoven:'E-MAIL · OVERZICHT VAN KOPPELINGEN',
+  accountsVoor:'Al uw postbussen.',
+  accountsCursief:'In rustige samenhang.',
+  accountsBeschrijving:'Beheer uw primaire en extra postbussen, meldingsdrempels en eigen berichtinvoer in één heldere studioruimte.',
+  accountsPrimair:'Nieuwe postbus',
+  accountsSecundair:'Naar postvak IN',
+  statSkrinky:'Actieve postbussen',
+  statLokalni:'Lokale berichten',
+  statPorih:'Meldingsdrempel',
+  railTitel:'Onderdelen',
+  railOndertitel:'Sleep naar een gewenste rand',
+  ankerAanbieders:'Aanbieders',
+  ankerGekoppeld:'Gekoppelde postbussen',
+  ankerImport:'Eigen berichtinvoer',
+  ankerMeldingen:'Meldingen',
+  ankerUitleg:'Hoe het werkt',
+  localBoven:'E-MAIL · BEHEERSBARE WERKSTROOM',
+  localVoor:'Eén bericht tegelijk.',
+  localCursief:'Zonder druk of haast.',
+  localBeschrijving:'Lokale ruimte voor rustige verwerking met brongedragen samenvatting, energiekeuze en veilige conceptopslag.',
+  localPrimair:'Bericht toevoegen',
+  localSecundair:'Gewone e-mail',
+  statCherga:'Nu in de rij',
+  statZadachi:'Taken bewaard',
+  contactsBoven:'E-MAIL · AFZENDERVERTROUWEN',
+  contactsVoor:'Contacten en afzenders.',
+  contactsCursief:'Heldere broncontrole.',
+  contactsBeschrijving:'Controleer de herkomst van berichten via bezorghandtekeningen, officiële domeinen en uw eigen lijst van bevestigde adressen.',
+  contactsSecundair:'Naar postvak IN',
+ },
+} as const;
+
 const emptyMetrics:Metrics={firstImportAt:0,firstActionAt:0,focusViews:0,taskConversions:0,snoozes:0,drafts:0,triageChanges:0};
 const triageValues:Triage[]=['action','waiting','info','later'];
 const text=(lang:Lang,uk:string,nl:string)=>lang==='uk'?uk:nl;
@@ -47,6 +117,17 @@ const replyTemplate=(item:MailItem,style:ReplyStyle,lang:Lang)=>{
 };
 
 export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigin,tabContext,homeSignal,sessionReady,onFocusChange}:Props){
+ const isMaquette=useIsMaquette();
+ const taal:'uk'|'nl'=lang==='nl'?'nl':'uk';
+ const mqTekst=MAQUETTE_MAIL_TEKSTEN[taal];
+ const onthoudenStand=useOnthoudenVensters();
+ const openVensters=useVensters();
+ const koppelVensterOpen=onthoudenStand.vensters.some(v=>v.soort==='mail-koppelen'&&!(openVensters.find(x=>x.id===v.id)?.klein??v.klein));
+ const [afzenderDialoogOpen,setAfzenderDialoogOpen]=useState(()=>typeof document!=='undefined'&&Boolean(document.documentElement.dataset.afzenderDialoogOpen));
+ const [hubLeeg,setHubLeeg]=useState<boolean|null>(null);
+ const [hubAantal,setHubAantal]=useState(0);
+ const [actiefAnker,setActiefAnker]=useState('mail-sectie-aanbieders');
+
  const notify=(message:string,kind:'info'|'success'|'warning'|'error'='info')=>emitCanonicalNotice({text:message,kind,source:'mail'});
  const [data,setData]=useState<Bootstrap>({items:[],resume:null,metrics:emptyMetrics,notificationPreference:{minimum:'action',updatedAt:0},mailAccounts:[],accountPolicy:{autoLinkPrimaryMail:true,allowAdditionalMailAccounts:true,mailboxAuthorization:'required'},provider:{connected:false,manualImport:true,analysis:'deterministic-cited-v1',highRiskSend:false,notificationDelivery:'not_connected'},platform:{architecture:'provider_foundation_v1',runtime:'phase1_manual_only',tokenVault:{algorithm:'AES-256-GCM',keySecret:'server_side_only',selfTestPassed:false},queue:{table:'mail_jobs_v2',jobTypes:[],idempotency:'sha256_owner_account_type_fingerprint',workersActive:false},providers:{google:{provider:'google_gmail',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]},microsoft:{provider:'microsoft_graph',oauthConfigured:false,encryptionConfigured:false,pushConfigured:false,pushEndpointVerified:false,oauthImplemented:false,workersImplemented:false,runtimeEnabled:false,oauthStartAvailable:false,connectEnabled:false,syncEnabled:false,missing:['loading'],scopes:[]}},selfTests:[]}});
  const [loading,setLoading]=useState(true);
@@ -64,6 +145,22 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const [taskTitle,setTaskTitle]=useState('');
  const [energy,setEnergy]=useState<Energy>('low');
  const context={service:'mail',tabContext,sourceOrigin};
+
+ useEffect(()=>{
+  if(typeof window==='undefined')return;
+  const bijAfzenderDialoog=()=>setAfzenderDialoogOpen(Boolean(document.documentElement.dataset.afzenderDialoogOpen));
+  window.addEventListener('tsv:afzender-dialoog',bijAfzenderDialoog);
+  return ()=>window.removeEventListener('tsv:afzender-dialoog',bijAfzenderDialoog);
+ },[]);
+
+ useEffect(()=>{if(tab!=='accounts')setHubLeeg(null)},[tab]);
+
+ const springNaarSectie=useCallback((sectieId:string)=>{
+  setActiefAnker(sectieId);
+  if(typeof document==='undefined')return;
+  const doel=document.getElementById(sectieId);
+  if(doel)doel.scrollIntoView({behavior:'smooth',block:'start'});
+ },[]);
 
  const load=async()=>{
   setLoading(true);
@@ -148,6 +245,20 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const changeEnergy=(value:Energy)=>{setEnergy(value);void saveResume({currentItemId:selectedId,focus,energy:value})};
  const openClassicMail=()=>{try{const url=new URL(location.href);url.pathname='/inbox';url.search='';url.hash='';history.pushState({},'',`${url.pathname}${url.search}${url.hash}`);window.dispatchEvent(new PopStateEvent('popstate'))}catch{}};
 
+ const bootstrapAccountsAantal=(data.googleMail?.accounts?.length||0)+(data.mailAccounts?.filter(a=>a.status!=='disconnected').length||0);
+ const accountsEmpty=hubLeeg!==null?hubLeeg:bootstrapAccountsAantal===0;
+ const gekoppeldeTotaal=hubLeeg!==null?hubAantal:bootstrapAccountsAantal;
+ const localOnboarded=!loading&&data.items.length>0;
+ const modaalOpen=koppelVensterOpen||afzenderDialoogOpen||importOpen;
+
+ const accountsAnkerItems=useMemo<ReadonlyArray<MaquetteAnkerItem>>(()=>[
+  {id:'mail-sectie-aanbieders',label:mqTekst.ankerAanbieders},
+  {id:'mail-sectie-gekoppeld',label:mqTekst.ankerGekoppeld,badge:gekoppeldeTotaal},
+  {id:'mail-sectie-import',label:mqTekst.ankerImport},
+  {id:'mail-sectie-meldingen',label:mqTekst.ankerMeldingen},
+  {id:'mail-sectie-uitleg',label:mqTekst.ankerUitleg},
+ ],[mqTekst,gekoppeldeTotaal]);
+
  const onboarding=(
   <section className='mail-onboarding' data-compassionate-onboarding='three-steps'>
    <div className='mail-kicker'><Sparkles/>Inbox Functional</div>
@@ -169,14 +280,14 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  const accountView=(
   <section className='mail-provider-view' data-mail-provider-foundation='v1'>
    <div className='mail-kicker'><ShieldCheck/>{text(lang,'Підключення','Koppelingen')}</div>
-   <div className='mail-account-intro'><h1>{text(lang,'Поштові акаунти','E-mailaccounts')}</h1><p>{text(lang,'Керуйте основною поштою та додатковими адресами в одному місці.','Beheer uw primaire mailbox en extra adressen op één plek.')}</p></div><div className='mail-account-manager' data-mail-account-manager='canonical-v1'><MailAccountsHub lang={lang} userName={userName||''} onConnect={connectProvider} accounts={(data.googleMail?.accounts||[]).map(a=>({id:a.id,email:a.email,provider:'Google',status:a.status,accountRole:a.accountRole}))} tabContext={tabContext} sourceOrigin={sourceOrigin} onVeranderd={()=>void load()} />
+   <div className='mail-account-intro'><h1>{text(lang,'Поштові акаунти','E-mailaccounts')}</h1><p>{text(lang,'Керуйте основною поштою та додатковими адресами в одному місці.','Beheer uw primaire mailbox en extra adressen op één plek.')}</p></div><div className='mail-account-manager' data-mail-account-manager='canonical-v1'><MailAccountsHub lang={lang} userName={userName||''} onConnect={connectProvider} accounts={(data.googleMail?.accounts||[]).map(a=>({id:a.id,email:a.email,provider:'Google',status:a.status,accountRole:a.accountRole}))} tabContext={tabContext} sourceOrigin={sourceOrigin} onVeranderd={()=>void load()} onLeegVeranderd={setHubLeeg} onAantalVeranderd={setHubAantal} />
    {/* 05.11.2026 (ZOEKDIEP-001, стара помилка): de beheerweergave van GoogleMailWorkspace (mode='accounts') werd nergens gerenderd. Alleen daar
        staan «Оновити доступ» (zoektoestemming van Gmail, mailSearchConsentRequired) en «Обрати» (actieve Gmail-postbus) — dus wie de zoektoegang
        moest bijwerken, kon dat nergens. Ingeklapt; vanzelf open als een account de toegang moet bijwerken. */}
    {data.googleMail?.accounts?.length?<details className='mail-gmail-beheer' data-mail-gmail-beheer='v1' open={(data.googleMail.accounts as Array<{mailSearchConsentRequired?:boolean}>).some(a=>a.mailSearchConsentRequired)||undefined}><summary title={text(lang,'Тут обирають активну Gmail-скриньку (її показує вкладка «Вхідні») і оновлюють доступ Google для пошуку в листах. Без оновленого доступу пошук у цій скриньці лишається неповним.','Hier kiest u de actieve Gmail-postbus (die toont het tabblad «Postvak IN») en werkt u de Google-toegang voor zoeken in berichten bij. Zonder bijgewerkte toegang blijft zoeken in deze postbus onvolledig.')}>{text(lang,'Gmail: активна скринька і доступ для пошуку','Gmail: actieve postbus en zoektoegang')}</summary><GoogleMailWorkspace lang={lang} tab='inbox' mode='accounts' sourceOrigin={sourceOrigin} tabContext={tabContext} ownerUserId={userId} initialSnapshot={data.googleMail||null} bootstrapPending={loading}/></details>:null}
    </div>
-   <div className='mail-provider-card available'><Upload/><div><b>{text(lang,'Приватний ручний імпорт','Privé handmatige import')}</b><p>{text(lang,'Focus, triage, цитоване резюме й тихе збереження контексту вже працюють для реального тексту.','Focus, triage, samenvatting met citaten en stille contextopslag werken al voor echte tekst.')}</p></div><button onClick={()=>setImportOpen(true)}>{text(lang,'Додати лист','Bericht toevoegen')}</button></div>
-   <div className='mail-notification-card' data-mail-notification-threshold={data.notificationPreference.minimum}><Bell/><div><b>{text(lang,'Сповіщення для цієї пошти','Meldingen voor deze mailbox')}</b><p>{text(lang,'Виберіть рівень важливості, починаючи з якого потрібно показувати сповіщення для цієї Email.','Kies het belangrijkheidsniveau vanaf wanneer meldingen voor deze mailbox moeten worden getoond.')}</p><label>{text(lang,'Мінімальний рівень','Minimum niveau')}<select value={data.notificationPreference.minimum} disabled={busy} onChange={event=>void saveNotificationLevel(event.target.value as NotificationLevel)}>{(['all','info','waiting','action','none'] as NotificationLevel[]).map(value=><option key={value} value={value}>{notificationName(lang,value)}</option>)}</select></label><small><ShieldCheck/>{text(lang,'Налаштування вже збережено. Сповіщення почнуть надходити після підключення пошти.','De instelling is opgeslagen. Meldingen beginnen zodra de mailbox is gekoppeld.')}</small></div></div>
+   <div id='mail-sectie-import' className='mail-provider-card available'><Upload/><div><b>{text(lang,'Приватний ручний імпорт','Privé handmatige import')}</b><p>{text(lang,'Focus, triage, цитоване резюме й тихе збереження контексту вже працюють для реального тексту.','Focus, triage, samenvatting met citaten en stille contextopslag werken al voor echte tekst.')}</p></div><button onClick={()=>setImportOpen(true)}>{text(lang,'Додати лист','Bericht toevoegen')}</button></div>
+   <div id='mail-sectie-meldingen' className='mail-notification-card' data-mail-notification-threshold={data.notificationPreference.minimum}><Bell/><div><b>{text(lang,'Сповіщення для цієї пошти','Meldingen voor deze mailbox')}</b><p>{text(lang,'Виберіть рівень важливості, починаючи з якого потрібно показувати сповіщення для цієї Email.','Kies het belangrijkheidsniveau vanaf wanneer meldingen voor deze mailbox moeten worden getoond.')}</p><label>{text(lang,'Мінімальний рівень','Minimum niveau')}<select value={data.notificationPreference.minimum} disabled={busy} onChange={event=>void saveNotificationLevel(event.target.value as NotificationLevel)}>{(['all','info','waiting','action','none'] as NotificationLevel[]).map(value=><option key={value} value={value}>{notificationName(lang,value)}</option>)}</select></label><small><ShieldCheck/>{text(lang,'Налаштування вже збережено. Сповіщення почнуть надходити після підключення пошти.','De instelling is opgeslagen. Meldingen beginnen zodra de mailbox is gekoppeld.')}</small></div></div>
   </section>
  );
 
@@ -221,6 +332,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
   </section>
  ):null;
 
+ // Інваріант маршрутизації робочої поверхні: const standardMailSurface = tab !== 'accounts' && tab !== 'local';
  let body;
  const standardMailSurface=tab!=='accounts'&&tab!=='local'&&tab!=='contacts';
  if(tab==='accounts')body=<><IntegratieStrook dienst='mail'/>{accountView}</>;
@@ -231,9 +343,76 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  else if(focus)body=focusView;
  else body=listView;
 
- return <div className={`mail-functional${focus?' is-focus':''}${loading?' mail-initial-loading':''}${standardMailSurface?' google-workspace-active':''}`} data-mail-phase='1'>
+ const maquetteSpeciaal=isMaquette&&!standardMailSurface;
+ const maquetteBoven=!maquetteSpeciaal||modaalOpen?null:tab==='accounts'?(
+  accountsEmpty?null:(
+   <>
+    <MaquetteHeld
+     id='mq-mail-accounts-held'
+     dienst='mail'
+     modus='volledig'
+     lang={taal}
+     opslagSleutel='mail-accounts'
+     bovenregel={mqTekst.accountsBoven}
+     titelVoor={mqTekst.accountsVoor}
+     titelCursief={mqTekst.accountsCursief}
+     beschrijving={mqTekst.accountsBeschrijving}
+     primair={{label:mqTekst.accountsPrimair,onClick:()=>springNaarSectie('mail-sectie-aanbieders'),icoon:'+'}}
+     secundair={{label:mqTekst.accountsSecundair,onClick:openClassicMail}}
+     statistieken={[
+      {waarde:gekoppeldeTotaal,label:mqTekst.statSkrinky},
+      {waarde:data.items.length,label:mqTekst.statLokalni},
+      {waarde:notificationName(lang,data.notificationPreference.minimum),label:mqTekst.statPorih},
+     ]}
+    />
+    <MaquetteAnkerRail
+     lang={taal}
+     titel={mqTekst.railTitel}
+     ondertitel={mqTekst.railOndertitel}
+     items={accountsAnkerItems}
+     actief={actiefAnker}
+     onKies={springNaarSectie}
+     opslagSleutel='mail-accounts'
+    />
+   </>
+  )
+ ):tab==='local'?(
+  localOnboarded?(
+   <MaquetteHeld
+    id='mq-mail-local-held'
+    dienst='mail'
+    modus='compact'
+    lang={taal}
+    opslagSleutel='mail-local'
+    bovenregel={mqTekst.localBoven}
+    titelVoor={mqTekst.localVoor}
+    titelCursief={mqTekst.localCursief}
+    beschrijving={mqTekst.localBeschrijving}
+    primair={{label:mqTekst.localPrimair,onClick:()=>setImportOpen(true),icoon:'+'}}
+    secundair={{label:mqTekst.localSecundair,onClick:openClassicMail}}
+    statistieken={[
+     {waarde:visible.length,label:mqTekst.statCherga},
+     {waarde:data.metrics.taskConversions,label:mqTekst.statZadachi},
+    ]}
+   />
+  ):null
+ ):tab==='contacts'?(
+  <MaquetteHeld
+   id='mq-mail-contacts-held'
+   dienst='mail'
+   modus='compact'
+   lang={taal}
+   opslagSleutel='mail-contacts'
+   bovenregel={mqTekst.contactsBoven}
+   titelVoor={mqTekst.contactsVoor}
+   titelCursief={mqTekst.contactsCursief}
+   beschrijving={mqTekst.contactsBeschrijving}
+   secundair={{label:mqTekst.contactsSecundair,onClick:openClassicMail}}
+  />
+ ):null;
 
-
+ return <div className={`mail-functional${focus?' is-focus':''}${loading?' mail-initial-loading':''}${standardMailSurface?' google-workspace-active':''}${maquetteSpeciaal?' mq-schil':''}`} data-mail-phase='1' data-mq-dienst={maquetteSpeciaal?'mail':undefined}>
+  {maquetteBoven}
   {body}
   {/* «Контакти й відправники»: start de volledige controle automatisch één keer en toont de voortgang (Пауза / Зупинити). */}
   <Suspense fallback={null}>{sessionReady&&<ContactenScanMelding lang={lang} actief={tab!=='contacts'}/>}</Suspense>

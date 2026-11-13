@@ -1,0 +1,1270 @@
+/* Художнє оформлення «Макет» (MAQUETTE-002, Група 1Б) для поштового простору mail.tarasevych.com.
+   Охоплює бічну навігацію пошти, рядки списку листів зі швидкими діями, читач бесіди з панеллю дій,
+   перекладом і підсумком ШІ, смугу й переглядач вкладень, згорнуту док-панель, а також вікно написання
+   та планування листа. Працює як у нічній студії, так і у світлому режимі «Ранковий туман» виключно через var(--mq-*).
+   Stijlblad «Maquette» voor zijbalknavigatie, berichtenrijen, leesvenster, bijlagen en opstelvenster van e-mail. */
+
+/* ── 1. Узгодження студійних змінних для робочої зони та портальних поверхонь у body ── */
+
+html.palet-maquette body :is(
+  .google-mail-workspace,
+  .mail-sidebar-navigation,
+  .mail-zijbalk-navigatie,
+  .google-mail-reader-backdrop,
+  .google-mail-attachment-backdrop,
+  .mail-new-message-backdrop,
+  .mail-opstel-zwevend,
+  .mail-compose-zwevend,
+  .mail-compose-floating-formatting,
+  .mail-row-action-popover,
+  .mail-reader-search-dock,
+  .mail-sched-pop,
+  .mail-planning-menu,
+  .mail-label-editor,
+  .mail-navigation-editor,
+  .mail-minimized-viewer,
+  .mail-geminimaliseerde-viewer,
+  .mail-save-dialog
+) {
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --mail-line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.14);
+  --nav-hover: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .google-mail-workspace:not([data-mail-unread-custom='true']) {
+  --mail-unread-surface: color-mix(
+    in srgb,
+    rgba(var(--mq-tech-markering-rgb), 0.12) 48%,
+    color-mix(in srgb, var(--mq-accent) 7%, var(--mq-oppervlak))
+  );
+  --mail-read-surface: color-mix(in srgb, var(--mq-oppervlak) 76%, var(--mq-bg) 24%);
+  --mail-row-secondary: color-mix(in srgb, var(--mq-gedempt) 82%, var(--mq-tekst));
+}
+
+/* ── 2. Бічна навігація пошти — студійна рейка, активна тека, пігулки лічильників та кнопка написання ── */
+
+html.palet-maquette body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) {
+  gap: 3px;
+}
+
+html.palet-maquette body .mail-compose-pill {
+  height: 42px;
+  margin: 4px 0 10px;
+  padding: 0 14px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.38);
+  border-radius: var(--mq-straal-knop);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.34),
+    0 10px 26px var(--mq-gloed);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+html.palet-maquette body .mail-compose-pill:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.46),
+    0 14px 32px var(--mq-gloed);
+}
+
+html.palet-maquette body .mail-compose-pill:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+html.palet-maquette body .mail-compose-pill:focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+html.palet-maquette body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(.mail-sidebar-nav-button, .mail-sidebar-label-main) {
+  border-radius: 12px;
+  border: 1px solid transparent;
+  color: color-mix(in srgb, var(--mq-tekst) 88%, var(--mq-gedempt));
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(.mail-sidebar-nav-button, .mail-sidebar-label-main):hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(.mail-sidebar-nav-button, .mail-sidebar-label-main):focus-visible {
+  background: var(--mq-oppervlak-hover);
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+html.palet-maquette body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(
+  .mail-sidebar-nav-button.active,
+  .mail-sidebar-nav-button[aria-current='page'],
+  .mail-sidebar-label-main.active
+) {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--mq-accent-rgb), 0.18) 0%,
+    rgba(var(--mq-accent-rgb), 0.06) 100%
+  );
+  border-color: rgba(var(--mq-accent-rgb), 0.28);
+  color: var(--mq-tekst);
+  font-weight: 650;
+  box-shadow:
+    inset 3px 0 0 var(--mq-accent),
+    0 6px 18px rgba(var(--mq-accent-rgb), 0.10);
+}
+
+html.palet-maquette body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(
+  .mail-sidebar-nav-button.active,
+  .mail-sidebar-nav-button[aria-current='page']
+) .mail-sidebar-icon-state > svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .mail-sidebar-edit-menu {
+  border: 1px dashed rgba(var(--mq-accent-rgb), 0.28);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette body .mail-sidebar-activity-dot {
+  border-color: var(--mq-oppervlak);
+  background: var(--mq-tech-markering);
+  box-shadow: 0 0 8px rgba(var(--mq-tech-markering-rgb), 0.45);
+}
+
+html.palet-maquette body .mail-sidebar-unread-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--mq-tech-markering-rgb), 0.34);
+  background: color-mix(
+    in srgb,
+    rgba(var(--mq-tech-markering-rgb), 0.16) 58%,
+    rgba(var(--mq-accent-rgb), 0.14)
+  );
+  color: var(--mq-tekst);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+html.palet-maquette body :is(.mail-sidebar-new-count, .mail-sidebar-parent-update) {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.34);
+  background: rgba(var(--mq-accent-rgb), 0.15);
+  color: var(--mq-accent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+html.palet-maquette body .mail-sidebar-divider {
+  margin: 7px 12px;
+  background: linear-gradient(90deg, transparent 0%, var(--mq-rand-sterk) 50%, transparent 100%);
+}
+
+html.palet-maquette body .mail-sidebar-section-head {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .mail-sidebar-section-head strong {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--mq-stil);
+}
+
+html.palet-maquette body .mail-sidebar-section-head button:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-sidebar-section-head button:focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+html.palet-maquette body .mail-label-icon-circle {
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+}
+
+html.palet-maquette body :is(.mail-label-editor-backdrop, .mail-navigation-editor-backdrop) {
+  background: color-mix(in srgb, var(--mq-bg) 58%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+html.palet-maquette body :is(.mail-label-editor, .mail-navigation-editor) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 20px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body :is(.mail-label-editor, .mail-navigation-editor) :is(input, select) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.mail-label-editor-actions, .mail-navigation-editor > footer) button.primary {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 700;
+  box-shadow: 0 8px 20px var(--mq-gloed);
+}
+
+/* ── 3. Рядки списку листів — бурштиново-золотий акцент непрочитаних, скляне наведення та капсула швидких дій ── */
+
+html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row, .mail-minimum-row) {
+  border-bottom-color: var(--mq-rand);
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row).read:not([data-mail-custom-tone='true']) {
+  background: var(--mail-read-surface);
+}
+
+html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row).unread:not([data-mail-custom-tone='true']) {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, rgba(var(--mq-tech-markering-rgb), 0.14) 55%, var(--mail-unread-surface)) 0%,
+    var(--mail-unread-surface) 38%,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, rgba(var(--mq-accent-rgb), 0.08)) 100%
+  );
+}
+
+html.palet-maquette body .google-mail-workspace .google-mail-row.unread::before {
+  background: linear-gradient(180deg, var(--mq-tech-markering) 0%, var(--mq-accent) 100%);
+  box-shadow: 0 0 12px rgba(var(--mq-tech-markering-rgb), 0.36);
+}
+
+html.palet-maquette body .google-mail-workspace .google-mail-row > .mail-row-unread-dot {
+  background: var(--mq-tech-markering);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--mail-unread-surface) 86%, transparent),
+    0 0 10px rgba(var(--mq-tech-markering-rgb), 0.44);
+}
+
+html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row):hover:not(.selected) {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 84%, rgba(var(--mq-accent-rgb), 0.16)) 0%,
+    var(--mq-oppervlak-2) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.14),
+    0 8px 22px rgba(var(--mq-accent-rgb), 0.06);
+}
+
+html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row).selected {
+  background: color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.20) 64%, var(--mq-oppervlak-2));
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row).last-viewed:not(.selected) {
+  box-shadow: inset 0 0 0 1px rgba(var(--mq-accent-rgb), 0.26);
+}
+
+html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row):is(.snoozed, .provider-snoozed) {
+  box-shadow: inset 3px 0 0 var(--mq-tech-markering);
+}
+
+html.palet-maquette body .google-mail-workspace :is(
+  .mail-row-sender-copy > strong,
+  .mail-minimum-sender > strong
+) {
+  color: var(--mq-tekst);
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette body .google-mail-workspace :is(
+  .mail-row-subject-block > strong,
+  .mail-minimum-subject
+) {
+  color: var(--mq-tekst);
+  letter-spacing: -0.008em;
+}
+
+html.palet-maquette body .google-mail-workspace .google-mail-row.unread :is(
+  .mail-row-date-block time,
+  .mail-minimum-date time
+) {
+  color: color-mix(in srgb, var(--mq-tech-markering) 62%, var(--mq-tekst));
+}
+
+html.palet-maquette body .google-mail-workspace :is(.mail-row-avatar, .mail-minimum-avatar) {
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .google-mail-workspace :is(.mail-row-select-box, .mail-minimum-select > span) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette body .google-mail-workspace :is(
+  .mail-row-avatar.selected,
+  .mail-minimum-select[aria-checked='true'] > span
+) {
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  border-color: var(--mq-accent);
+}
+
+html.palet-maquette body .google-mail-workspace :is(
+  .mail-minimum-labels em,
+  .mail-minimum-account,
+  .mail-row-account
+) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 12px;
+}
+
+html.palet-maquette body .google-mail-workspace .mail-search-hit {
+  padding-inline: 3px;
+  border-radius: 5px;
+  background: rgba(var(--mq-tech-markering-rgb), 0.24);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .google-mail-workspace .mail-search-relevance-score {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  border-radius: 999px;
+  background: rgba(var(--mq-accent-rgb), 0.12);
+  color: var(--mq-accent);
+  font-size: 12px;
+}
+
+html.palet-maquette body .google-mail-workspace :is(.mail-row-hover-actions, .mail-row-quick-actions) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 999px;
+  background: var(--mq-rail-glas);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .google-mail-workspace :is(.mail-row-hover-actions, .mail-row-quick-actions) button:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-row-action-popover {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .mail-row-action-popover .mail-row-action-menu-item {
+  border-radius: 10px;
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+}
+
+html.palet-maquette body .mail-row-action-popover .mail-row-action-menu-item:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-row-action-popover .mail-row-action-menu-item:focus-visible {
+  background: var(--mq-oppervlak-hover);
+  outline: 2px solid var(--mq-accent);
+  outline-offset: -2px;
+}
+
+html.palet-maquette body .google-mail-workspace :is(
+  .mail-unread-focus-group > header,
+  .mail-unread-subgroup > header,
+  .mail-classification-strip
+) {
+  border-color: var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-bg));
+  color: var(--mq-gedempt);
+}
+
+/* ── 4. Читач листа — редакційний аркуш, шапка теми, картки повідомлень, панель дій, переклад та ШІ ── */
+
+html.palet-maquette body .google-mail-reader-backdrop:not(.reader-inline):not(.reader-minimized) {
+  background: color-mix(in srgb, var(--mq-bg) 56%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+html.palet-maquette body .google-mail-reader {
+  border-color: var(--mq-rand-sterk);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-oppervlak) 95%, rgba(var(--mq-accent-rgb), 0.05)) 0%,
+    var(--mq-bg-2) 100%
+  );
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .google-mail-reader > header {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-bovenbalk-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+  box-shadow: 0 10px 28px rgba(var(--mq-accent-rgb), 0.05);
+}
+
+html.palet-maquette body .google-mail-reader > header :is(h2, h3, strong) {
+  color: var(--mq-tekst);
+  letter-spacing: -0.016em;
+}
+
+html.palet-maquette body :is(.mail-reader-toolbar, .mail-lezer-werkbalk) :is(
+  .mail-reader-action-button,
+  .mail-reader-icon-action,
+  .google-mail-reader-more > summary
+) {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+html.palet-maquette body :is(.mail-reader-toolbar, .mail-lezer-werkbalk) :is(
+  .mail-reader-action-button,
+  .mail-reader-icon-action,
+  .google-mail-reader-more > summary
+):hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body :is(.mail-reader-toolbar, .mail-lezer-werkbalk) .mail-reader-primair-antwoord {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.42);
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 750;
+  box-shadow: 0 8px 22px var(--mq-gloed);
+}
+
+html.palet-maquette body :is(.mail-reader-toolbar, .mail-lezer-werkbalk) .mail-reader-primair-antwoord:hover:not(:disabled) {
+  filter: brightness(1.04);
+  box-shadow: 0 10px 26px var(--mq-gloed);
+}
+
+html.palet-maquette body .mail-reader-navigatie {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette body .mail-reader-navigatie-plaats {
+  color: var(--mq-gedempt);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette body :is(
+  .mail-reader-overflow-panel,
+  .lz-weergave-paneel,
+  .lz-hulp
+) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 18px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .mail-reader-overflow-groep {
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette body .mail-reader-overflow-groep-kop {
+  color: var(--mq-stil);
+  font-size: 12px;
+}
+
+html.palet-maquette body .mail-reader-onderbalk {
+  border-top: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-rail-glas);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+html.palet-maquette body .mail-reader-onderbalk .mail-reader-onderbalk-knop.primair {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette body .mail-thread-label {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  border-radius: 999px;
+  background: rgba(var(--mq-accent-rgb), 0.12);
+  color: var(--mq-tekst);
+  font-size: 12px;
+}
+
+html.palet-maquette body .mail-thread-eerdere {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .mail-thread-eerdere:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.mail-thread-message, .mail-message-card) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 18px;
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body :is(.mail-thread-message, .mail-message-card):is(.expanded, .latest) {
+  border-color: var(--mq-rand-sterk);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.18),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .mail-thread-message-head {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, var(--mq-oppervlak));
+  border-bottom-color: var(--mq-rand);
+}
+
+html.palet-maquette body .mail-thread-message-details-popover {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .mail-thread-afspraak {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.26);
+  border-radius: 14px;
+  background: color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.08) 65%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette body .mail-beelden-strook {
+  border: 1px solid rgba(var(--mq-tech-markering-rgb), 0.36);
+  border-radius: 12px;
+  background: color-mix(in srgb, rgba(var(--mq-tech-markering-rgb), 0.11) 60%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-thread-reply {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 18px;
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .mail-thread-reply > footer button.primary {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.42);
+  border-radius: var(--mq-straal-knop);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 700;
+  box-shadow: 0 8px 20px var(--mq-gloed);
+}
+
+/* ШІ-резюме та смуга перекладу (геометрія кнопок .mra-bar не змінюється) */
+html.palet-maquette body :is(.mra, .mail-lezer-ai, .ai-blok) {
+  border-color: rgba(var(--mq-accent-rgb), 0.24);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.11) 62%, var(--mq-oppervlak)) 0%,
+    var(--mq-oppervlak-2) 100%
+  );
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.mra-veld, .mra-result, .bron-blad) {
+  border-color: var(--mq-rand-sterk);
+  border-radius: 14px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body :is(
+  .mail-translation-bar,
+  .mail-vertaling-balk,
+  .ai-vertaling-balk,
+  .vertaal-strook
+) {
+  border-color: rgba(var(--mq-accent-rgb), 0.22);
+  background: color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.08) 60%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(
+  .mail-translation-bar,
+  .mail-vertaling-balk,
+  .ai-vertaling-balk,
+  .vertaal-strook
+) :is(select, button) {
+  border-color: var(--mq-rand-sterk);
+  border-radius: 10px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-reader-search-dock {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .mail-reader-search-input {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-devops-preview.mail-message-preview {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 18px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .mail-devops-preview.mail-message-preview :is(.mail-devops-safety, .mail-devops-warning) {
+  border: 1px solid rgba(var(--mq-tech-markering-rgb), 0.34);
+  border-radius: 12px;
+  background: color-mix(in srgb, rgba(var(--mq-tech-markering-rgb), 0.10) 60%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-devops-preview.mail-message-preview :is(.mail-devops-details, .mail-devops-table-wrap) {
+  border-color: var(--mq-rand);
+  border-radius: 12px;
+  background: var(--mq-oppervlak-2);
+}
+
+/* ── 5. Смуга вкладень, картки файлів, верстат перегляду та згорнута док-панель ── */
+
+html.palet-maquette body :is(.google-mail-row-attachments, .mail-bijlage-strook) {
+  gap: 6px;
+}
+
+html.palet-maquette body :is(.mail-attachment, .mail-bijlage-kaart) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+html.palet-maquette body :is(.mail-attachment, .mail-bijlage-kaart):hover {
+  border-color: rgba(var(--mq-accent-rgb), 0.38);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: 0 8px 20px rgba(var(--mq-accent-rgb), 0.10);
+}
+
+html.palet-maquette body .mail-attachment-card {
+  border: 1px solid var(--mq-rand);
+  border-radius: 15px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+html.palet-maquette body .mail-attachment-card:hover {
+  border-color: rgba(var(--mq-accent-rgb), 0.40);
+  transform: translateY(-1px);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .mail-attachment-card-preview {
+  border-bottom-color: var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 72%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .mail-minimum-large-tray {
+  border-top: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .google-mail-attachment-backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 72%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html.palet-maquette body .google-mail-attachment-preview {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 22px;
+  background: var(--mq-bg-2);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette body .google-mail-attachment-preview > header {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-bovenbalk-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+}
+
+html.palet-maquette body :is(
+  .mail-viewer-nav,
+  .mail-viewer-tools,
+  .mail-pdf-controls
+) {
+  border-color: var(--mq-rand);
+  background: var(--mq-rail-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+}
+
+html.palet-maquette body :is(
+  .mail-viewer-nav,
+  .mail-viewer-tools,
+  .mail-pdf-controls
+) button {
+  border-color: var(--mq-rand);
+  border-radius: 10px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(
+  .mail-viewer-nav,
+  .mail-viewer-tools,
+  .mail-pdf-controls
+) button:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-viewer-stage {
+  background: var(--mq-bg);
+}
+
+html.palet-maquette body :is(.mail-specialist-explorer, .mail-specialist-verkenner) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.mail-minimized-viewer, .mail-geminimaliseerde-viewer) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 18px;
+  background: var(--mq-rail-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .mail-minimized-copy strong {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-minimized-copy small {
+  color: var(--mq-gedempt);
+  font-size: 12px;
+}
+
+html.palet-maquette body .mail-minimized-actions button {
+  border: 1px solid var(--mq-rand);
+  border-radius: 10px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-minimized-actions button:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-minimized-entry-list {
+  border-top: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, transparent);
+}
+
+html.palet-maquette body .mail-minimized-entry-list > div.active {
+  background: rgba(var(--mq-accent-rgb), 0.14);
+}
+
+/* ── 6. Написання та планування листа — студійне вікно, поля Кому/Тема, редактор і меню розкладу ── */
+
+html.palet-maquette body :is(.mail-compose-float, .mail-compose-fab) {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.44);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.36),
+    0 14px 34px var(--mq-gloed);
+}
+
+html.palet-maquette body :is(.mail-compose-float, .mail-compose-fab):hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.48),
+    0 18px 40px var(--mq-gloed);
+}
+
+html.palet-maquette body .mail-compose-float:focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 3px;
+}
+
+html.palet-maquette body:has(.mq-anker-rail[data-zijde='rechts'][data-compact='nee']) :is(.mail-compose-float, .mail-compose-fab) {
+  right: 288px;
+}
+
+html.palet-maquette body:has(.mq-anker-rail[data-zijde='rechts'][data-compact='ja']) :is(.mail-compose-float, .mail-compose-fab) {
+  right: 88px;
+}
+
+html.palet-maquette body:has(.mq-anker-rail[data-zijde='onder']) :is(.mail-compose-float, .mail-compose-fab) {
+  bottom: 88px;
+}
+
+html.palet-maquette body .mail-new-message-backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 44%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+html.palet-maquette body :is(.mail-new-message, .mail-opstel-zwevend) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-oppervlak) 95%, rgba(var(--mq-accent-rgb), 0.05)) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  color: var(--mq-tekst);
+  box-shadow:
+    var(--mq-schaduw-held),
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.14);
+}
+
+html.palet-maquette body :is(.mail-new-message, .mail-opstel-zwevend) > header {
+  border-bottom: 1px solid var(--mq-rand);
+  background: transparent;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.mail-new-message, .mail-opstel-zwevend) > header strong {
+  color: var(--mq-tekst);
+  letter-spacing: -0.015em;
+}
+
+html.palet-maquette body :is(.mail-new-message, .mail-opstel-zwevend) > header > svg:first-child {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .mail-new-message > header .mail-nm-venster-knoppen > button {
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+html.palet-maquette body .mail-new-message > header .mail-nm-venster-knoppen > button:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-new-message > header .mail-nm-venster-knoppen > button[data-nm-sluit]:hover {
+  background: color-mix(in srgb, var(--fout, var(--mq-tech-markering)) 86%, var(--mq-oppervlak));
+  color: var(--mq-wit);
+}
+
+html.palet-maquette body .mail-new-message-field {
+  border-bottom: 1px solid var(--mq-rand);
+  transition: border-color 0.16s ease;
+}
+
+html.palet-maquette body .mail-new-message-field:focus-within {
+  border-bottom-color: var(--mq-accent);
+}
+
+html.palet-maquette body .mail-new-message-field > :is(label, span) {
+  color: var(--mq-gedempt);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+html.palet-maquette body .mail-new-message-field input {
+  color: var(--mq-tekst);
+  caret-color: var(--mq-accent);
+}
+
+html.palet-maquette body .mail-new-message-field input::placeholder {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette body .mail-new-message-cc-toggle {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(var(--mq-accent-rgb), 0.10);
+  color: var(--mq-accent);
+  font-size: 0.80rem;
+  font-weight: 650;
+}
+
+html.palet-maquette body .mail-new-message-cc-toggle:hover {
+  background: rgba(var(--mq-accent-rgb), 0.18);
+}
+
+html.palet-maquette body :is(.mail-nm-kop-kort, .mail-nm-cc-kort) {
+  border-bottom: 1px solid var(--mq-rand);
+  border-radius: 10px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.mail-nm-kop-kort, .mail-nm-cc-kort):hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+/* Редактор форматування листа (.mail-compose-editor) та портальні меню */
+html.palet-maquette body :is(.mail-compose-editor, .mail-opstel-bewerker) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-bg-2) 72%, var(--mq-oppervlak));
+  box-shadow: inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.06);
+}
+
+html.palet-maquette body .mail-compose-editor .mail-compose-balk {
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-compose-editor .mail-compose-balk .mail-compose-ribbon-group + .mail-compose-ribbon-group {
+  border-left-color: var(--mq-rand);
+}
+
+html.palet-maquette body .mail-compose-editor .mail-compose-balk .mail-compose-ribbon-group > button,
+html.palet-maquette body .mail-compose-editor .mail-compose-balk .mail-compose-more > button {
+  color: var(--mq-gedempt);
+  transition:
+    background-color 0.14s ease,
+    color 0.14s ease;
+}
+
+html.palet-maquette body .mail-compose-editor .mail-compose-balk .mail-compose-ribbon-group > button:hover,
+html.palet-maquette body .mail-compose-editor .mail-compose-balk .mail-compose-more > button:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-compose-editor .mail-compose-balk .mail-compose-more > button,
+html.palet-maquette body .mail-compose-editor .mail-compose-balk .mail-compose-dropdown-trigger {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-compose-editor .mail-compose-balk button[aria-pressed='true'] {
+  background: rgba(var(--mq-accent-rgb), 0.18);
+  color: var(--mq-accent);
+  box-shadow: inset 0 0 0 1px rgba(var(--mq-accent-rgb), 0.34);
+}
+
+html.palet-maquette body .mail-compose-canvas {
+  background: transparent;
+  color: var(--mq-tekst);
+  caret-color: var(--mq-accent);
+}
+
+html.palet-maquette body .mail-compose-canvas:focus-within {
+  box-shadow: inset 0 0 0 1px rgba(var(--mq-accent-rgb), 0.24);
+}
+
+html.palet-maquette body .mail-nm-hoek {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 10px;
+  background: var(--mq-rail-glas);
+  color: var(--mq-gedempt);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .mail-nm-hoek[aria-pressed='true'] {
+  border-color: var(--mq-accent);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body :is(.mail-compose-zwevend, .mail-compose-floating-formatting) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 15px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body :is(.mail-compose-zwevend, .mail-compose-floating-formatting) button:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-nm-bijlagen li {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-new-message > footer > button.mail-nm-bijlage-knop,
+html.palet-maquette body .mail-new-message > footer .mail-disk > button.mail-disk-knop,
+html.palet-maquette body .mail-new-message > footer :is(.mail-ai-trigger, .mail-nm-hulpen, .mail-nm-wis) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-new-message > footer :is(
+  button.mail-nm-bijlage-knop,
+  .mail-disk > button.mail-disk-knop,
+  .mail-ai-trigger,
+  .mail-nm-hulpen
+):hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-new-message > footer .mail-nm-hulpen[aria-expanded='true'] {
+  border-color: rgba(var(--mq-accent-rgb), 0.38);
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .mail-new-message > footer button.primary {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.44);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 750;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.34),
+    0 10px 24px var(--mq-gloed);
+}
+
+html.palet-maquette body .mail-new-message > footer button.primary:hover:not(:disabled) {
+  filter: brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.46),
+    0 14px 30px var(--mq-gloed);
+}
+
+html.palet-maquette body .mail-new-message-sync {
+  color: var(--mq-gedempt);
+  font-size: 0.80rem;
+}
+
+/* Меню відкладеного надсилання (.mail-sched / .mail-planning-menu) */
+html.palet-maquette body :is(.mail-sched-trigger, .mail-planning-menu > button) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-sched-trigger:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-sched-trigger[aria-expanded='true'] {
+  border-color: rgba(var(--mq-accent-rgb), 0.40);
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .mail-sched-pop {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 18px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .mail-sched-presets button {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-sched-presets button:hover:not(:disabled) {
+  border-color: rgba(var(--mq-accent-rgb), 0.36);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .mail-sched-presets button small {
+  color: var(--mq-gedempt);
+  font-size: 12px;
+}
+
+html.palet-maquette body .mail-sched-custom {
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette body .mail-sched-custom input {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 10px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .mail-sched-custom button {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.42);
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 700;
+}
+
+html.palet-maquette body .mail-sched-list li {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+}
+
+/* ── 7. Зменшення руху та мобільний шар (суворо наприкінці файла) ── */
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette body .mail-compose-pill,
+  html.palet-maquette body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(.mail-sidebar-nav-button, .mail-sidebar-label-main),
+  html.palet-maquette body .google-mail-workspace :is(.google-mail-row, .mail-message-row, .mail-minimum-row),
+  html.palet-maquette body :is(.mail-thread-message, .mail-message-card),
+  html.palet-maquette body :is(.mail-attachment, .mail-bijlage-kaart, .mail-attachment-card) {
+    transition: none;
+  }
+
+  html.palet-maquette body .mail-compose-pill:hover:not(:disabled),
+  html.palet-maquette body .mail-attachment-card:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 960px) {
+  html.palet-maquette body:has(.mq-anker-rail[data-zijde='rechts'][data-compact='nee']) :is(.mail-compose-float, .mail-compose-fab),
+  html.palet-maquette body:has(.mq-anker-rail[data-zijde='rechts'][data-compact='ja']) :is(.mail-compose-float, .mail-compose-fab),
+  html.palet-maquette body:has(.mq-anker-rail[data-zijde='onder']) :is(.mail-compose-float, .mail-compose-fab) {
+    right: 20px;
+    bottom: 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  html.palet-maquette body :is(.mail-thread-message, .mail-message-card),
+  html.palet-maquette body .mail-thread-reply {
+    border-radius: 15px;
+  }
+
+  html.palet-maquette body .google-mail-attachment-preview {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  html.palet-maquette body :is(.mail-new-message, .mail-opstel-zwevend) {
+    border-radius: 20px 20px 0 0;
+  }
+
+  html.palet-maquette body .google-mail-attachment-preview {
+    border-radius: 0;
+  }
+}

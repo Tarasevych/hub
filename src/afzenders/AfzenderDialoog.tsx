@@ -26,6 +26,18 @@ export default function AfzenderDialoog({ lang, from, info, messageId, accountId
   const vak = useRef<HTMLDivElement | null>(null), eerste = useRef<HTMLInputElement | null>(null);
   const verdacht = info.status === 'verdacht';
   useEffect(() => {
+    const wortel = document.documentElement;
+    const huidig = Number(wortel.dataset.afzenderDialoogOpen || '0') || 0;
+    wortel.dataset.afzenderDialoogOpen = String(huidig + 1);
+    window.dispatchEvent(new Event('tsv:afzender-dialoog'));
+    return () => {
+      const nu = Math.max(0, (Number(wortel.dataset.afzenderDialoogOpen || '1') || 1) - 1);
+      if (nu > 0) wortel.dataset.afzenderDialoogOpen = String(nu);
+      else delete wortel.dataset.afzenderDialoogOpen;
+      window.dispatchEvent(new Event('tsv:afzender-dialoog'));
+    };
+  }, []);
+  useEffect(() => {
     eerste.current?.focus();
     if (!messageId) { setAuth(bekendeAuth ?? null); return; }
     let weg = false;

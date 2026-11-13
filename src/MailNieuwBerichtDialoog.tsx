@@ -14,6 +14,8 @@ import MailComposeEditor, { type MailComposeEditorHandle } from './MailOpstelBew
 import MailInputTools from './MailInvoerHulpmiddelen';
 import { registerZone, queueRecompute } from './zwevend-ontwijking';
 import './mail-nieuw-bericht.css';
+import './mail/mail-lezer-opstel-maquette.css';
+import { useIsMaquette } from './thema/useThema';
 import { isLeesfout, leesBase64 } from '../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../shared/foutuitleg';
 import { conceptScope, conceptStatusTekst, heeftInhoud as conceptHeeftInhoud, leesConcept, nieuwConceptId, schrijfConcept, wisConcept, type LokaalConcept } from './mail-concept-lokaal';
@@ -38,6 +40,7 @@ export const NIEUW_BERICHT_VENSTER = 'mail-nieuw-bericht';
 const smalScherm = () => typeof window !== 'undefined' && window.innerWidth <= 560;
 
 export default function MailNewMessageDialog({ lang, open, accountId, context, onClose, onSent, onOpen }: Props) {
+  const isMaquette = useIsMaquette();
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   // 21.10.2026 (мобільний браузер вивантажив вкладку → текст пропав): локальна копія на цьому пристрої, per account+ruimte
   // (src/mail-concept-lokaal.ts). Bij het monteren komt het concept meteen terug in de velden — niet pas na een effect.
@@ -635,7 +638,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
   return (
     // Laag uit de stapel; een klik op de achtergrond boven een ánder venster haalt dát venster naar voren (en laat de brief open),
     // alleen een klik op de lege pagina minimaliseert de brief zoals voorheen.
-    <div className="mail-new-message-backdrop" data-venster={NIEUW_BERICHT_VENSTER} style={{ zIndex: zIndexVan(NIEUW_BERICHT_VENSTER) }}
+    <div className="mail-new-message-backdrop" data-maquette={isMaquette ? 'ja' : undefined} data-venster={NIEUW_BERICHT_VENSTER} style={{ zIndex: zIndexVan(NIEUW_BERICHT_VENSTER) }}
       onClick={(event) => {
         const eronder = document.elementsFromPoint(event.clientX, event.clientY).find((el) => el !== event.currentTarget && !event.currentTarget.contains(el) && el.closest('.venster[data-venster]'));
         const id = eronder?.closest<HTMLElement>('.venster[data-venster]')?.dataset.venster;
@@ -644,6 +647,7 @@ export default function MailNewMessageDialog({ lang, open, accountId, context, o
       }}>
       <section
         className={`mail-new-message${groot ? ' groot' : ''}${heelTekst ? ' heel-tekst' : ''}${klavier ? ' klavier-open' : ''}`}
+        data-maquette={isMaquette ? 'ja' : undefined}
         data-klavier={klavier ? 'open' : undefined}
         role="dialog"
         aria-modal={ikBoven && !bedekt ? 'true' : undefined}

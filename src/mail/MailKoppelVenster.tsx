@@ -29,6 +29,7 @@ import { api } from '../platform/client';
 import { geldigMailAdres, mailAanbieder, mailImapFoutTekst } from '../../shared/mail-aanbieders';
 import type { VensterStap } from '../../shared/vensters-onthouden-model';
 import { googleRolVoor, googleStartFoutTekst, googleStartLichaam, huidigTabblad, mailAccountsAdres, sleutelkluisAdres, type GoogleRol } from './mail-koppel-model';
+import { useIsMaquette } from '../thema/useThema';
 
 type Lang = 'uk' | 'nl';
 type Props = {
@@ -62,6 +63,7 @@ const codeVan = (gevangen: unknown) => {
 type GoogleStand = { accounts: Array<{ email: string; accountRole: string }>; sessionEmail: string; connectEnabled: boolean } | null;
 
 export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, klein, onStap, onSluit, huidigeDienst }: Props) {
+  const isMaquette = useIsMaquette();
   const dienst = mailAanbieder(aanbieder);
   const [adresIn, setAdresIn] = useState(adres);
   // Opnieuw geopend met een ander adres («Перепідключити» van een IMAP-koppeling): dat adres overnemen.
@@ -188,9 +190,9 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
   };
 
   const adresRegel = (
-    <label style={{ display: 'grid', gap: 4 }}>
-      <span style={{ fontWeight: 600, fontSize: '.9rem' }}>{tr(lang, 'Адреса пошти', 'E-mailadres')}</span>
-      <input style={veld} type='email' autoComplete='email' inputMode='email' value={adresIn} data-mail-koppel-adres
+    <label className='mail-koppel-veld-label' style={isMaquette ? undefined : { display: 'grid', gap: 4 }}>
+      <span className='mail-koppel-veld-titel' style={isMaquette ? undefined : { fontWeight: 600, fontSize: '.9rem' }}>{tr(lang, 'Адреса пошти', 'E-mailadres')}</span>
+      <input className='mail-koppel-veld' style={isMaquette ? undefined : veld} type='email' autoComplete='email' inputMode='email' value={adresIn} data-mail-koppel-adres
         onChange={(e) => { setAdresIn(e.target.value); setAlGekoppeld(false); onStap(stap === 'klaar' ? 'adres' : stap, e.target.value); }} />
     </label>
   );
@@ -198,15 +200,15 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
   const inhoud = () => {
     if (dienst.wijze === 'nog-niet') {
       return (
-        <div style={{ display: 'grid', gap: 12 }}>
-          <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <div className='mail-koppel-nog-niet' style={isMaquette ? undefined : { display: 'grid', gap: 12 }}>
+          <p className='mail-koppel-nog-niet-kop' style={isMaquette ? undefined : { margin: 0, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             <ShieldAlert aria-hidden='true' style={{ flex: 'none' }} />
             <strong>{tr(lang, 'Цей сервіс ще не підключається — і ось чого бракує:', 'Deze dienst wordt nog niet gekoppeld — en dit ontbreekt er:')}</strong>
           </p>
-          <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.5 }}>
+          <ul className='mail-koppel-nog-niet-lijst' style={isMaquette ? undefined : { margin: 0, paddingLeft: 20, lineHeight: 1.5 }}>
             {(dienst.ontbreekt || []).map((rij, i) => <li key={i}>{tr(lang, rij[0], rij[1])}</li>)}
           </ul>
-          <p style={{ margin: 0, color: 'var(--muted,#4b5563)', fontSize: '.9rem' }}>
+          <p className='mail-koppel-gedempt' style={isMaquette ? undefined : { margin: 0, color: 'var(--muted,#4b5563)', fontSize: '.9rem' }}>
             {tr(lang, 'Кнопки тут немає навмисно: вона б нічого не зробила.', 'Er staat hier bewust geen knop: die zou niets doen.')}
           </p>
         </div>
@@ -216,9 +218,9 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
       if (!opMail) {
         // Het venster reist mee naar hub/cloud (het dok), maar koppelen kan alleen met een mailsessie: dan een eerlijke link, geen knop die 403 geeft.
         return (
-          <div style={{ display: 'grid', gap: 12 }}>
+          <div className='mail-koppel-elders' style={isMaquette ? undefined : { display: 'grid', gap: 12 }}>
             <p style={{ margin: 0 }}>{googleStartFoutTekst('OWNER_MAIL_SESSION_REQUIRED', lang)}</p>
-            <a href={mailAccountsAdres(location.origin)} onClick={(e) => { e.preventDefault(); void import('../canoniek-dienst').then((m) => location.assign(m.canonicalServiceUrl('mail', 'accounts', lang))).catch(() => location.assign(mailAccountsAdres(location.origin))); }} style={{ ...knop(true), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{tr(lang, 'Відкрити «Поштові акаунти»', '«E-mailaccounts» openen')}</a>
+            <a className='mail-koppel-actie-knop is-hoofd' href={mailAccountsAdres(location.origin)} onClick={(e) => { e.preventDefault(); void import('../canoniek-dienst').then((m) => location.assign(m.canonicalServiceUrl('mail', 'accounts', lang))).catch(() => location.assign(mailAccountsAdres(location.origin))); }} style={isMaquette ? undefined : { ...knop(true), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{tr(lang, 'Відкрити «Поштові акаунти»', '«E-mailaccounts» openen')}</a>
           </div>
         );
       }
@@ -290,43 +292,43 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
     }
     if (klaar) {
       return (
-        <div style={{ display: 'grid', gap: 10 }} ref={klaarRef} tabIndex={-1} role='status'>
-          <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center' }}><MailCheck aria-hidden='true' /><strong>{tr(lang, 'Скриньку підключено', 'Mailbox gekoppeld')}</strong></p>
+        <div className='mail-koppel-klaar' style={isMaquette ? undefined : { display: 'grid', gap: 10 }} ref={klaarRef} tabIndex={-1} role='status'>
+          <p className='mail-koppel-klaar-kop' style={isMaquette ? undefined : { margin: 0, display: 'flex', gap: 8, alignItems: 'center' }}><MailCheck aria-hidden='true' /><strong>{tr(lang, 'Скриньку підключено', 'Mailbox gekoppeld')}</strong></p>
           <p style={{ margin: 0 }}>{tr(lang, 'Сервер справді увійшов у скриньку й побачив тек:', 'De server heeft zich echt aangemeld en zag mappen:')} <strong>{klaar.mappen}</strong></p>
           <p style={{ margin: 0 }}>{klaar.smtpGoed
             ? tr(lang, 'Надсилання (SMTP) також прийняло пароль застосунку.', 'Verzenden (SMTP) accepteerde het app-wachtwoord ook.')
             : tr(lang, 'Надсилання (SMTP) пароль не прийняло — читати пошту можна, надсилати поки ні.', 'Verzenden (SMTP) accepteerde het wachtwoord niet — lezen kan, verzenden nog niet.')}</p>
-          <button type='button' style={knop(false)} onClick={onSluit}>{tr(lang, 'Закрити', 'Sluiten')}</button>
+          <button type='button' className='mail-koppel-actie-knop' style={isMaquette ? undefined : knop(false)} onClick={onSluit}>{tr(lang, 'Закрити', 'Sluiten')}</button>
         </div>
       );
     }
     return (
-      <div style={{ display: 'grid', gap: 12 }}>
+      <div className='mail-koppel-imap-vak' style={isMaquette ? undefined : { display: 'grid', gap: 12 }}>
         <p style={{ margin: 0 }}>{tr(lang, dienst.hulp?.[0] || '', dienst.hulp?.[1] || '')}</p>
         {dienst.hulpAdres ? (
-          <a href={dienst.hulpAdres} target='_blank' rel='noreferrer noopener' style={{ display: 'inline-flex', gap: 6, alignItems: 'center', minHeight: 'var(--tik-hoogte)' /* 21.10: was 16 px hoog — tikvlak 44 px op de telefoon */ }}>
+          <a className='mail-koppel-hulp-link' href={dienst.hulpAdres} target='_blank' rel='noreferrer noopener' style={isMaquette ? undefined : { display: 'inline-flex', gap: 6, alignItems: 'center', minHeight: 'var(--tik-hoogte)' /* 21.10: was 16 px hoog — tikvlak 44 px op de telefoon */ }}>
             <ExternalLink aria-hidden='true' /> {tr(lang, 'Де створити пароль застосунку', 'Waar u het app-wachtwoord maakt')}
           </a>
         ) : null}
         {adresRegel}
-        <label style={{ display: 'grid', gap: 4 }}>
-          <span style={{ fontWeight: 600, fontSize: '.9rem' }} id={`${veldId}-naam`}>{tr(lang, 'Пароль застосунку', 'App-wachtwoord')}</span>
-          <GeheimInvoer lang={lang} style={veld} value={wachtwoord} autoComplete='off' ariaLabelledBy={`${veldId}-naam`} ariaDescribedBy={`${veldId}-uitleg`} max={1024} soort='imap' data={{ 'mail-koppel-wachtwoord': '' }}
+        <label className='mail-koppel-veld-label' style={isMaquette ? undefined : { display: 'grid', gap: 4 }}>
+          <span className='mail-koppel-veld-titel' style={isMaquette ? undefined : { fontWeight: 600, fontSize: '.9rem' }} id={`${veldId}-naam`}>{tr(lang, 'Пароль застосунку', 'App-wachtwoord')}</span>
+          <GeheimInvoer lang={lang} style={isMaquette ? undefined : veld} value={wachtwoord} autoComplete='off' ariaLabelledBy={`${veldId}-naam`} ariaDescribedBy={`${veldId}-uitleg`} max={1024} soort='imap' data={{ 'mail-koppel-wachtwoord': '' }}
             onChange={(volgende) => { setWachtwoord(volgende); onStap('wachtwoord', adresIn); }} />
-          <small style={{ color: 'var(--muted,#4b5563)' }} id={`${veldId}-uitleg`}>
+          <small className='mail-koppel-gedempt' style={isMaquette ? undefined : { color: 'var(--muted,#4b5563)' }} id={`${veldId}-uitleg`}>
             {opnieuwNodig
               ? tr(lang, 'Вікно було згорнуте, тому пароль стерто — введіть пароль ще раз.', 'Het venster was geminimaliseerd, dus het wachtwoord is gewist — vul het opnieuw in.')
               : tr(lang, 'Пароль ніколи не зберігається у вікні: він іде одним запитом на сервер і лежить там лише зашифрованим.', 'Het wachtwoord wordt nooit in het venster bewaard: het gaat in één verzoek naar de server en staat daar alleen versleuteld.')}
           </small>
         </label>
-        <p style={{ margin: 0, fontSize: '.85rem', color: 'var(--muted,#4b5563)' }}>
+        <p className='mail-koppel-server-regel' style={isMaquette ? undefined : { margin: 0, fontSize: '.85rem', color: 'var(--muted,#4b5563)' }}>
           IMAP {dienst.imap?.host}:{dienst.imap?.poort} · SMTP {dienst.smtp?.host}:{dienst.smtp?.poort}
         </p>
-        <button type='button' style={knop(true)} disabled={bezig} onClick={() => void imapKoppelen(alGekoppeld)} data-mail-koppel-start>
+        <button type='button' className='mail-koppel-actie-knop is-hoofd' style={isMaquette ? undefined : knop(true)} disabled={bezig} onClick={() => void imapKoppelen(alGekoppeld)} data-mail-koppel-start>
           {bezig ? tr(lang, 'Перевіряємо на сервері…', 'We controleren het op de server…')
             : alGekoppeld ? tr(lang, 'Оновити пароль застосунку', 'App-wachtwoord vervangen') : tr(lang, 'Підключити', 'Koppelen')}
         </button>
-        {alGekoppeld ? <small style={{ color: 'var(--muted,#4b5563)' }}>{tr(lang,
+        {alGekoppeld ? <small className='mail-koppel-gedempt' style={isMaquette ? undefined : { color: 'var(--muted,#4b5563)' }}>{tr(lang,
           'Ця скринька вже підключена. Якщо ви створили новий пароль застосунку, сервер спершу перевірить його, а тоді замінить старий.',
           'Deze mailbox is al gekoppeld. Maakte u een nieuw app-wachtwoord, dan controleert de server het eerst en vervangt pas dan het oude.')}</small> : null}
       </div>
@@ -351,8 +353,9 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
             <span>{fout}</span>
             {foutCode === 'SLEUTELKLUIS_GESLOTEN' ? (
               <a
+                className='mail-koppel-actie-knop is-hoofd'
                 href={sleutelkluisAdres(location.origin)}
-                style={{ ...knop(true), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
+                style={isMaquette ? undefined : { ...knop(true), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
               >
                 <LockKeyhole size={17} aria-hidden='true' />
                 <span>{tr(lang, 'Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</span>
