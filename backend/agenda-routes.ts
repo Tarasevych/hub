@@ -7,7 +7,9 @@
 //   • `If-Match` met de bekende etag (een wijziging in Google wordt nooit stil overschreven).
 // De AI gebruikt precies dezelfde routes; haar bevestiging regelt backend/connectors-hulpmiddelen.ts via `write: true`
 // in backend/site-hulpmiddelen.ts. Er is geen aparte, zachtere weg voor de AI.
-import { error, json } from '../server/platform';
+import { error, json, rateLimit } from '../server/platform';
+import { auditToevoegen } from '../server/platform/audit';
+import { meld } from './melder';
 import { denyMutation, rejectForeignOwnerUserId } from './rbac';
 import { AGENDA_FOUT, geldigeTijdzone } from '../shared/agenda-model';
 import { AGENDA_CALDAV_SCHRIJVEN_ONTBREEKT } from '../shared/agenda-caldav-model';
@@ -51,6 +53,58 @@ const ctxVan = (gebruiker: AuthSuccess): AgendaContext => ({ ownerUserId: gebrui
  */
 const mutatieGeweigerd = (gebruiker: AuthSuccess, body: unknown) =>
   rejectForeignOwnerUserId(gebruiker.user, body) || denyMutation(gebruiker.user, 'calendar.write');
+
+/**
+ * SEC-002 (integraties-02, integraties-07): een grens op de FREQUENTIE van alles wat een vreemde server laat ophalen.
+ * Eén verzoek naar deze routes kan tientallen megabytes binnenhalen en duizenden rijen schrijven (10 CalDAV-accounts ×
+ * 25 agenda's); zonder teller kon één goedgekeurde gebruiker dat in een lus blijven doen. De planner houdt zich al aan
+ * het interval van het abonnement (minstens 15 minuten); dit is dezelfde rem voor de knoppen en voor de AI, die precies
+ * deze routes gebruikt. Per gebruiker, per soort, in een venster van tien minuten. De getallen zijn ruim voor een mens
+ * (een paar keer op «Оновити» drukken, een verkeerd getikt app-wachtwoord verbeteren) en krap voor een lus.
+ * Het hek van de rol (mutatieGeweigerd) staat er altijd VÓÓR: wie niet mag schrijven, komt niet eens bij de teller.
+ */
+const TEMPO_VENSTER_SECONDEN = 600;
+const TEMPO = Object.freeze({
+  caldavKoppelen: { emmer: 'agenda-caldav-koppelen', max: 10 },
+  caldavVernieuwen: { emmer: 'agenda-caldav-vernieuwen', max: 12 },
+  icsToevoegen: { emmer: 'agenda-ics-toevoegen', max: 30 },
+  icsVernieuwen: { emmer: 'agenda-ics-vernieuwen', max: 12 },
+  // «Nu synchroniseren» met forceren doet ALLES opnieuw (elke ICS, elk CalDAV-account); zonder forceren slaat de ronde
+  // over wat nog niet aan de beurt is en is ze dus goedkoop.
+  synchroniserenGedwongen: { emmer: 'agenda-synchroniseren-gedwongen', max: 6 },
+  synchroniseren: { emmer: 'agenda-synchroniseren', max: 30 },
+});
+/**
+ * Nacontrole g08-3: een weigering laat een spoor na, maar niet één per geweigerd verzoek — een AI in een lus zou anders zelf
+ * de audit en het meldingencentrum overspoelen. Per soort komt alleen de EERSTE weigering in het venster in de audit
+ * (`hits === max + 1`, en de teller telt atomair, dus precies één verzoek ziet die waarde); de mens krijgt per venster
+ * hoogstens één melding, hoeveel soorten er ook geweigerd worden.
+ */
+const tempoGeweigerdMelden = async (soort: keyof typeof TEMPO, userId: string, retryAfter: number) => {
+  await auditToevoegen({
+    ownerId: userId, actorId: userId, action: 'agenda.tempo.geweigerd', type: 'beveiliging', result: 'geweigerd',
+    details: { soort, max: TEMPO[soort].max, vensterSeconden: TEMPO_VENSTER_SECONDEN, retryAfter },
+  }).catch(() => undefined);
+  const eenMelding = await rateLimit(`agenda-tempo-melding:${userId}`, 1, TEMPO_VENSTER_SECONDEN);
+  if (!eenMelding.ok || eenMelding.hits !== 1) return;
+  const minuten = Math.max(1, Math.ceil(retryAfter / 60));
+  await meld(userId, 'agenda',
+    'Забагато оновлень календаря / Te veel agenda-verversingen',
+    `Оновлення календаря вручну тимчасово призупинено: забагато запитів за 10 хвилин. Можна знову приблизно через ${minuten} хв. `
+    + 'Автоматична синхронізація за розкладом працює далі, тож нові події все одно з’являться. '
+    + `/ Handmatig verversen van de agenda is tijdelijk gepauzeerd: te veel verzoeken in 10 minuten. Het kan weer over ongeveer ${minuten} min. `
+    + 'De geplande synchronisatie loopt gewoon door, dus nieuwe afspraken komen er toch bij.',
+    '/agenda');
+};
+/** `null` als het mag; anders het 429-antwoord, met een stabiele code en wanneer het weer mag (Retry-After). */
+const teVaak = async (soort: keyof typeof TEMPO, userId: string) => {
+  const { emmer, max } = TEMPO[soort];
+  const limiet = await rateLimit(`${emmer}:${userId}`, max, TEMPO_VENSTER_SECONDEN);
+  if (limiet.ok) return null;
+  if (limiet.hits === max + 1) await tempoGeweigerdMelden(soort, userId, limiet.retryAfter);
+  const antwoord = json({ ok: false, error: 'RATE_LIMITED', fout: 'AGENDA_TE_VAAK', retryAfter: limiet.retryAfter }, 429);
+  return { ...antwoord, headers: { ...antwoord.headers, 'Retry-After': String(limiet.retryAfter) } };
+};
 
 /** Elke schrijfroute begint hier: zonder geldige sleutel schrijven we niets (idempotentie is niet optioneel). */
 const sleutelVan = (body: Record<string, unknown>) => geldigeSleutel(body.idempotentieSleutel ?? body.idempotency_key ?? body.sleutel);
@@ -159,6 +213,8 @@ export const createAgendaRoutes = (authorize: Authorize) => ladePoort('agenda', 
     const gebruiker = await auth(authorize, ctx);
     if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
     const body = lichaamVan(ctx.body), forceren = body.forceren === true;
+    const rem = await teVaak(forceren ? 'synchroniserenGedwongen' : 'synchroniseren', gebruiker.user.id);
+    if (rem) return rem;
     const google = await synchroniseerAgendaVoorEigenaar(gebruiker.user.id).catch((caught: unknown) => ({ fout: caught instanceof Error ? caught.message : 'AGENDA_SYNC_MISLUKT' }));
     const [ics, caldav] = await Promise.all([
       icsRondeVoorEigenaar(gebruiker.user.id, forceren).catch(() => []),
@@ -277,6 +333,8 @@ export const createAgendaRoutes = (authorize: Authorize) => ladePoort('agenda', 
     if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
     const geweigerd = mutatieGeweigerd(gebruiker, ctx.body);
     if (geweigerd) return geweigerd;
+    const rem = await teVaak('icsToevoegen', gebruiker.user.id);
+    if (rem) return rem;
     const body = lichaamVan(ctx.body);
     const uitslag = await icsToevoegen(gebruiker.user.id, { adres: body.adres, naam: body.naam, intervalMinuten: body.intervalMinuten });
     if (!uitslag.ok) return json(uitslag, 400);
@@ -289,6 +347,8 @@ export const createAgendaRoutes = (authorize: Authorize) => ladePoort('agenda', 
     if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
     const geweigerd = mutatieGeweigerd(gebruiker, ctx.body);
     if (geweigerd) return geweigerd;
+    const rem = await teVaak('icsVernieuwen', gebruiker.user.id);
+    if (rem) return rem;
     const id = kort(lichaamVan(ctx.body).id, 120);
     if (id) return json({ ok: true, haal: await icsOphalen(gebruiker.user.id, id) });
     return json({ ok: true, ronde: await icsRondeVoorEigenaar(gebruiker.user.id, true) });
@@ -317,6 +377,8 @@ export const createAgendaRoutes = (authorize: Authorize) => ladePoort('agenda', 
     if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
     const geweigerd = mutatieGeweigerd(gebruiker, ctx.body);
     if (geweigerd) return geweigerd;
+    const rem = await teVaak('caldavKoppelen', gebruiker.user.id);
+    if (rem) return rem;
     const body = lichaamVan(ctx.body);
     const uitslag = await caldavKoppelen(gebruiker.user.id, {
       adres: body.adres, gebruikersnaam: body.gebruikersnaam, wachtwoord: body.wachtwoord,
@@ -331,6 +393,8 @@ export const createAgendaRoutes = (authorize: Authorize) => ladePoort('agenda', 
     if (!gebruiker) return error('OWNER_AGENDA_SESSIE_VEREIST', 403);
     const geweigerd = mutatieGeweigerd(gebruiker, ctx.body);
     if (geweigerd) return geweigerd;
+    const rem = await teVaak('caldavVernieuwen', gebruiker.user.id);
+    if (rem) return rem;
     const id = kort(lichaamVan(ctx.body).id, 120);
     if (id) return json({ ok: true, haal: await caldavOphalen(gebruiker.user.id, id) });
     return json({ ok: true, ronde: await caldavRondeVoorEigenaar(gebruiker.user.id, true) });

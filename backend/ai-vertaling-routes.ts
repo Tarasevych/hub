@@ -35,6 +35,7 @@ import {
   normalizeAiVertalingTaal,
   STANDAARD_AI_VERTALING_INSTELLINGEN,
   stripTrackingAndSecrets,
+  zonderTagsLineair,
   taalLabelUk,
   motorenMetStand,
   vertaalMotorVan,
@@ -138,8 +139,9 @@ async function defaultLoadPolicyCeiling(userId: string, clientName: string): Pro
   try {
     const [beheerUit, staat, gebruikerCaps] = await Promise.all([
       leesBeheerUit().catch(() => [] as string[]),
-      leesStaat().catch(() => null),
-      leesGebruikerCaps(userId).catch(() => ({} as Record<string, Record<string, boolean>>)),
+      // SEC-002 (ai-mcp-13): onleesbare schakelaars (CAP_ONBEKEND) = lezen uit, niet «alles aan».
+      leesStaat().catch(() => { mailCapAllowed = false; filesCapAllowed = false; return null; }),
+      leesGebruikerCaps(userId).catch(() => { mailCapAllowed = false; filesCapAllowed = false; return {} as Record<string, Record<string, boolean>>; }),
     ]);
     if (beheerUit.includes('mail.read')) mailCapAllowed = false;
     if (beheerUit.includes('files.read')) filesCapAllowed = false;
@@ -486,8 +488,9 @@ function extractDatesFromText(text: string): string[] {
 function extractSumsFromText(text: string): string[] {
   const matches = new Set<string>();
   const regexes = [
-    /(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн)\s?\d[\d\s.,]*(?:\b|$)/gi,
-    /\b\d[\d\s.,]*\s?(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн|євро|доларів)\b/gi,
+    // SEC-002 (aanv-gat-b-01): [\d\s.,]{0,40} in plaats van * — vroeger zocht elke cijferpositie in «1 1 1 …» tot het einde (kwadratisch).
+    /(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн)\s?\d[\d\s.,]{0,40}(?:\b|$)/gi,
+    /\b\d[\d\s.,]{0,40}\s?(?:€|\$|£|₴|EUR|USD|UAH|GBP|грн|євро|доларів)\b/gi,
   ];
   for (const r of regexes) {
     for (const m of text.matchAll(r)) {
@@ -499,8 +502,8 @@ function extractSumsFromText(text: string): string[] {
 }
 
 function splitSentences(text: string): string[] {
-  return String(text || '')
-    .replace(/<[^>]*>/g, ' ')
+  // SEC-002 (aanv-ronde1-03): tags lineair weg (zonderTagsLineair), invoer begrensd.
+  return zonderTagsLineair(String(text || '').slice(0, 400_000))
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!?।])\s+/)
     .map(s => s.trim())
@@ -631,7 +634,7 @@ const UNTRUSTED_GUARD_SYSTEM = [
 
 function wrapUntrusted(raw: string, maxLen = 18_000): string {
   const plain = mailHtmlToPlainText(normalizeOutboundMailHtml(raw, 300_000), 50_000)
-    .replace(/<\s*\/?\s*untrusted_data\s*>/gi, '[marker]')
+    .replace(/<\s*(?:\/\s*)?untrusted_data\s*>/gi, '[marker]')
     .slice(0, maxLen);
   return `<untrusted_data>\n${plain}\n</untrusted_data>`;
 }
@@ -713,7 +716,8 @@ function actiesBron(berichten: AiVertalingBronBericht[] | undefined, bodyText: s
  * letterlijk citaat meer. Alleen een <untrusted_data>-tag in de brief zelf (ook met attributen) wordt onschadelijk gemaakt.
  */
 function wrapAlineas(tekst: string, maxLen = ACTIES_MAX_TEKENS): string {
-  const veilig = tekst.replace(/<\s*\/?\s*untrusted_data\b[^>]*>/gi, '[marker]').slice(0, maxLen);
+  // SEC-002 (aanv-gat-b-01): eerst begrenzen, dan lineair (tot de laatste «>», geen twee aangrenzende \s*).
+  const veilig = (() => { const t = String(tekst ?? '').slice(0, maxLen * 2), g = t.lastIndexOf('>') + 1; return (t.slice(0, g).replace(/<\s*(?:\/\s*)?untrusted_data\b[^>]*>/gi, '[marker]') + t.slice(g)).slice(0, maxLen); })();
   return `<untrusted_data>\n${veilig}\n</untrusted_data>`;
 }
 
@@ -784,9 +788,41 @@ export type ExecuteAiVertalingInput = {
   bronBerichten?: AiVertalingBronBericht[];
 };
 
+/**
+ * SEC-002 (aanv-gat-b-01, aanv-ronde1-03, keten-config-04): alle tekstvelden begrensd VÓÓR elke bewerking. bodyText en subject
+ * kwamen onbeperkt (tot 12 MB) binnen en gingen door reguliere expressies in de hoofdthread (stripTrackingAndSecrets,
+ * splitSentences, extractSumsFromText …) — één verzoek legde de hele server minuten tot uren stil, en de onderwerpregel
+ * ging in de cachesleutel (geheugen). Geldt ook voor andere aanroepers dan de route.
+ */
+export const AI_VERTALING_MAX = { body: 200_000, subject: 1_000, adres: 320, adressen: 50, id: 200, threadTekst: 6_000, threadVeld: 300 } as const;
+export function begrensAiVertalingInvoer(input: ExecuteAiVertalingInput): ExecuteAiVertalingInput {
+  const M = AI_VERTALING_MAX;
+  const tekst = (v: unknown, max: number) => (v === undefined || v === null ? undefined : String(v).slice(0, max));
+  const lijst = (v: unknown) => (Array.isArray(v) ? v.slice(0, M.adressen).map((x) => String(x ?? '').slice(0, M.adres)) : undefined);
+  return {
+    ...input,
+    userId: String(input.userId ?? '').slice(0, M.id),
+    mode: String(input.mode ?? '').slice(0, 40) as AiVertalingMode,
+    targetLang: String(input.targetLang ?? '').slice(0, 20),
+    agentId: tekst(input.agentId, M.id),
+    accountId: tekst(input.accountId, M.id),
+    messageId: String(input.messageId ?? '').slice(0, M.id),
+    threadId: tekst(input.threadId, M.id),
+    subject: tekst(input.subject, M.subject),
+    from: tekst(input.from, M.adres),
+    to: lijst(input.to),
+    cc: lijst(input.cc),
+    bodyText: tekst(input.bodyText, M.body),
+    segments: Array.isArray(input.segments) ? input.segments.slice(0, 600).map((s) => ({ id: String(s?.id ?? '').slice(0, 80), text: String(s?.text ?? '').slice(0, 4000) })) : undefined,
+    attachments: Array.isArray(input.attachments) ? input.attachments.slice(0, 20).map((a) => ({ ...a, filename: String(a?.filename ?? 'file').slice(0, 200), contentType: tekst(a?.contentType, 120), textExcerpt: tekst(a?.textExcerpt, 4000) })) : undefined,
+    threadMessages: Array.isArray(input.threadMessages) ? input.threadMessages.slice(0, 30).map((m) => ({ id: String(m?.id ?? '').slice(0, M.threadVeld), from: String(m?.from ?? '').slice(0, M.threadVeld), subject: tekst(m?.subject, M.threadVeld), receivedAt: Number(m?.receivedAt || 0), plainText: String(m?.plainText ?? '').slice(0, M.threadTekst) })) : undefined,
+  };
+}
+
 export async function executeAiVertalingRun(
-  input: ExecuteAiVertalingInput,
+  invoer: ExecuteAiVertalingInput,
 ): Promise<{ status: 200; body: AiVertalingRunResponse } | { status: number; body: Record<string, unknown> }> {
+  const input = begrensAiVertalingInvoer(invoer);
   const userId = String(input.userId || '').trim();
   if (!userId) {
     return { status: 401, body: { ok: false, error: 'OWNER_SESSION_REQUIRED' } };
@@ -877,12 +913,14 @@ export async function executeAiVertalingRun(
   const actiesInvoer = mode === 'acties' ? actiesBron(input.bronBerichten, rawBody) : null;
   const payloadSig = actiesInvoer
     ? `acties:${actiesInvoer.sleutel}`
-    : JSON.stringify({
+    : // SEC-002 (aanv-gat-b-01): vaste lengte (sha256) over het hele begrensde bericht — vroeger het volle onderwerp in de sleutel
+      // (geheugen) en alleen de eerste 500 tekens van de tekst (twee verschillende brieven met hetzelfde begin deelden een antwoord).
+      createHash('sha256').update(JSON.stringify({
         s: input.subject || '',
-        b: rawBody.slice(0, 500),
-        segLen: segments.length,
+        b: rawBody,
+        seg: segments.map(s => [s.id, s.text]),
         attLen: hasAttachmentsToAnalyze ? (input.attachments || []).map(a => a.filename).join(',') : '',
-      });
+      })).digest('hex');
 
   const cacheKey = buildAiVertalingCacheKey({
     userId,
@@ -1497,3 +1535,6 @@ export function createAiVertalingRoutes(deps: { requireSession: RequireSession; 
     ],
   };
 }
+
+/** Alleen voor tests/eenheid (SEC-002 aanv-gat-b-01, aanv-ronde1-03): interne tekstbewerkingen met een tijdsbudget. */
+export const _vertalingIntern = { splitSentences, extractSumsFromText, extractDatesFromText, wrapUntrusted, wrapAlineas };

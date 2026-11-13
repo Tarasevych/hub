@@ -7,6 +7,7 @@
 // passkeys ook als bevestiging tellen. De paginakop zelf komt van SettingsCenterView (geen tweede kop hier).
 // Bevestigen (step-up) gebeurt in het venster «Підтвердіть доступ» (src/platform/bevestig-toegang.tsx), nooit met prompt/alert.
 import {useEffect} from 'react';
+import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import {Check,ExternalLink,Fingerprint,KeyRound,Mail,Pencil,Plus,Smartphone,Trash2,X} from 'lucide-react';
 import {InfoTip} from './InfoTip';
 import {useState} from 'react';
@@ -130,6 +131,14 @@ export function AccessPlanePanels(p:Props){
             <button type='button' className='secondary' onClick={()=>setWachtwoordOpen(v=>!v)}>{wachtwoordOpen?<X/>:<Pencil/>}{wachtwoordOpen?tr(lang,'Закрити','Sluiten'):tr(lang,'Керувати','Beheren')}</button>
           </div>
         </div>}
+      </div>
+      {/* IDENTITEIT-011: ключі доступу живуть у «Безпеці» (як у карті розвитку); тут лише перехід, щоб їх не дублювати. */}
+      {!toonBeveiliging&&<p className='access-plane-hint-line' data-passkeys-verwijzing><Fingerprint/>{tr(lang,'Ключі доступу (passkey) — у розділі «Безпека».','Toegangssleutels (passkeys) staan bij «Beveiliging».')}</p>}
+    </section>}
+
+    {toonBeveiliging&&<section className='access-plane-section' id='aanmeldmethoden-sleutels' data-access-section='sleutels' tabIndex={-1}>
+      <header className='access-plane-section-head'><h2>{tr(lang,'Ключі доступу','Toegangssleutels')}</h2></header>
+      <div className='access-plane-box'>
         <PasskeysSection key={vernieuw} lang={lang} context={p.context} onChange={()=>void p.load()}/>
       </div>
     </section>}
@@ -153,7 +162,7 @@ export function AccessPlanePanels(p:Props){
         </div>}
         {p.otpauth&&!totp?.enrolled&&<div className='access-plane-subrow access-plane-totp-setup'>
           <strong>{tr(lang,'Додайте ключ у застосунок-автентифікатор і введіть код','Voeg de sleutel toe in de authenticator-app en voer de code in')}</strong>
-          <code className='access-plane-mono access-plane-secret'>{p.secret}</code>
+          <code className='access-plane-mono access-plane-secret' {...verborgenVoorAi}>{p.secret}</code>
           <small>{tr(lang,'Ключ показано один раз.','De sleutel wordt eenmalig getoond.')}</small>
           <div className='access-plane-inline-form'>
             {codeVeld}
@@ -163,9 +172,10 @@ export function AccessPlanePanels(p:Props){
       </div>
     </section>}
 
-    {toonHerstel&&<HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>}
+    {/* IDENTITEIT-011: нові коди після налаштування автентифікатора видно й у «Безпеці» — раніше вони губилися, бо там немає розділу відновлення. */}
+    {(toonHerstel||(toonBeveiliging&&recovery.length>0))&&<HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>}
     {toonBeveiliging&&<SleutelkluisSectie lang={lang} context={p.context}/>}
-    {toonMethoden&&<Toegangscodes lang={lang} context={p.context}/>}
-    {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
+    {toonBeveiliging&&<Toegangscodes lang={lang} context={p.context}/>}
+    {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes' {...verborgenVoorAi}><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
   </div>;
 }

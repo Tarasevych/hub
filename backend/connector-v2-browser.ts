@@ -24,6 +24,7 @@ import { V2_OPTIES, type Kant, type V2Optie } from '../shared/connector-v2/catal
 import { toolNaam } from '../shared/connector-v2/namen';
 import { BROWSER_BEHEER_PAD_EN } from '../shared/extensie-matrix';
 import { DEVTOOLS_ALIASES, resolveAlias, type ToolDef } from './connectors-hulpmiddelen';
+import { vertaalHulpmiddel, vertaalSchema, type ToolTaal } from '../shared/hulpmiddel-teksten';
 
 /** Namen van chrome-devtools-mcp die wij NIET aanbieden, met de reden en het alternatief. */
 export const DEVTOOLS_NIET: Readonly<Record<string, string>> = Object.freeze({
@@ -134,11 +135,20 @@ export function slotHint(kant: Kant): string {
 }
 
 /** Tooldefinities van de ondersteunde devtools-namen (kale naam, één keer) voor tools/list als de mens «devtools-namen» aanzette. */
-export function devtoolsDefinities(zichtbaarIntern: ReadonlySet<string>): ToolDef[] {
+// 12.11.2026 (MCP-R0): de aliasdefinities kwamen ONvertaald in tools/list — `description` van parameters (browserProp, uidProp …)
+// was een object {uk, nl} (p(…)). Claude weigert zo'n schema («properties/browser/description must be string») en liet 15
+// hulpmiddelen (click, fill, take_snapshot …) weg. Nu gaat elke definitie door vertaalHulpmiddel/vertaalSchema in de taal van de mens.
+const DEVTOOLS_NOOT: Readonly<Record<ToolTaal, string>> = Object.freeze({
+  uk: '(назва як у chrome-devtools-mcp; той самий інструмент і ті самі межі, що й у Mijn Ruimte. Необов\'язково "slot": "prive" | "technisch".)',
+  nl: '(naam zoals in chrome-devtools-mcp; hetzelfde hulpmiddel met dezelfde grenzen als in Mijn Ruimte. Optioneel "slot": "prive" | "technisch".)',
+});
+
+export function devtoolsDefinities(zichtbaarIntern: ReadonlySet<string>, taal: ToolTaal = 'uk', kant: Kant = 'gebruiker'): ToolDef[] {
   const uit: ToolDef[] = [];
-  for (const [alias, a] of Object.entries(DEVTOOLS_ALIASES)) {
+  for (const [, a] of Object.entries(DEVTOOLS_ALIASES)) {
     if (!zichtbaarIntern.has(a.target)) continue;
-    uit.push({ ...a.def, description: `${a.def.description} (chrome-devtools-mcp name; same tool and limits as the Mijn Ruimte one. Optional "slot": "prive" | "technisch".)`, annotations: a.ann } as ToolDef);
+    const v = vertaalHulpmiddel(a.def, taal, { kant });
+    uit.push({ ...v, inputSchema: vertaalSchema(v.inputSchema, taal), description: `${v.description} ${DEVTOOLS_NOOT[taal]}`, annotations: a.ann } as ToolDef);
   }
   for (const [alias, e] of Object.entries(EXTRA)) {
     if (!zichtbaarIntern.has(e.target)) continue;

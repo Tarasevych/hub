@@ -27,7 +27,24 @@ export const ABONNEMENT_FOUT: Record<string, [string, string]> = {
   CALDAV_SLEUTEL_ONTBREEKT: ['На сервері немає ключа для шифрування пароля (AGENDA_ABONNEMENT_SLEUTEL_V1).', 'Op de server ontbreekt de sleutel om het wachtwoord te versleutelen (AGENDA_ABONNEMENT_SLEUTEL_V1).'],
   CALDAV_TIJD_OVERSCHREDEN: ['Сервер не відповів у відведений час.', 'De server antwoordde niet binnen de tijd.'],
   CALDAV_ADRES_GEWEIGERD: ['Адреса вказує на внутрішню мережу — відмовлено.', 'Het adres wijst naar een intern netwerk — geweigerd.'],
+  // SEC-002 (g08): nieuwe codes van de server — zonder tekst toonde de pagina «Не вдалося (CODE)».
+  CALDAV_AFGEKAPT: ['Календар завеликий: збережено не всі події (не більше 2000 на календар і 10 000 на обліковий запис). Приховайте або вилучіть зайві календарі, щоб бачити решту.', 'De agenda is te groot: niet alle afspraken zijn bewaard (hoogstens 2000 per agenda en 10 000 per account). Verberg of verwijder overbodige agenda’s om de rest te zien.'],
+  AGENDA_TE_VAAK: ['Забагато оновлень календаря поспіль. Нічого не змінено — спробуйте ще раз за кілька хвилин.', 'Te veel agenda-verversingen na elkaar. Er is niets gewijzigd — probeer het over enkele minuten opnieuw.'],
+  RATE_LIMITED: ['Забагато оновлень календаря поспіль. Нічого не змінено — спробуйте ще раз за кілька хвилин.', 'Te veel agenda-verversingen na elkaar. Er is niets gewijzigd — probeer het over enkele minuten opnieuw.'],
+  CALDAV_AL_BEZIG: ['Цей обліковий запис саме оновлюється. Зачекайте хвилину й оновіть сторінку.', 'Dit account wordt nu al ververst. Wacht een minuut en ververs de pagina.'],
+  CALDAV_AANBIEDER_FOUT: ['Сервер календаря відповів помилкою. Перевірте адресу або спробуйте пізніше; якщо так і лишиться — зверніться до постачальника календаря.', 'De agendaserver antwoordde met een fout. Controleer het adres of probeer het later; blijft het zo, neem dan contact op met de aanbieder van de agenda.'],
+  ICS_AANBIEDER_FOUT: ['Сервер календаря відповів помилкою. Перевірте посилання .ics або спробуйте пізніше.', 'De agendaserver antwoordde met een fout. Controleer de .ics-link of probeer het later.'],
 };
+/**
+ * Code uit een mislukte aanroep: eerst het eigen veld `fout` van de agenda-API (bv. 429 → error RATE_LIMITED, fout AGENDA_TE_VAAK),
+ * dan de foutcode zelf. Zo ziet de mens de agendatekst in plaats van een algemene.
+ */
+export function agendaFoutCode(e: unknown, standaard = 'FOUT'): string {
+  const data = (e as { response?: { data?: unknown } } | null)?.response?.data as { fout?: unknown } | undefined;
+  if (data && typeof data === 'object' && typeof data.fout === 'string' && data.fout) return data.fout;
+  const m = String((e as Error | null)?.message || '');
+  return m || standaard;
+}
 export function foutCodeTekst(code: string, lang: Lang): string {
   const paar = ABONNEMENT_FOUT[code];
   return paar ? (lang === 'uk' ? paar[0] : paar[1]) : foutTekst(code, lang);

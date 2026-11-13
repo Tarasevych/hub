@@ -12,6 +12,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { isOwnerEmail } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
+import { isEmailAdres } from '../shared/adres-controle';
 import { getPool } from '../server/platform/pg';
 import { BAND_KLEUREN, isBandKleur, isBandPatroon, isTechRol, maxMinutenVoor, mogelijkhedenVan, openEindeToegestaan, STANDAARD_BAND, type TechMogelijkheid, type TechRol } from '../shared/tech-rollen';
 
@@ -410,7 +411,7 @@ async function gever(u: Gebruiker, tabContext: string): Promise<Activatie> {
 }
 async function doelGebruiker(email: string): Promise<Gebruiker> {
   const e = String(email || '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 200) fout('EMAIL_ONGELDIG');
+  if (!isEmailAdres(e, 200)) /* SEC-002 (aanv-gat-c-02): lengte eerst, lineair */ fout('EMAIL_ONGELDIG');
   const r = (await sys().query(`SELECT id, data->>'email' AS email, data->>'role' AS role, data->>'status' AS status FROM app.records
      WHERE tbl = 'users' AND lower(data->>'email') = $1 AND COALESCE((data->>'deletedAt')::numeric, 0) = 0 AND COALESCE((data->>'retiredAt')::numeric, 0) = 0 LIMIT 2`, [e])).rows;
   // Audit-fix 18.10.2026: gepensioneerde accounts tellen niet mee; twee actieve accounts met hetzelfde adres (ander Google-subject) → eigen code, geen misleidend 404.

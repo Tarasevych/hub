@@ -6,6 +6,8 @@ import {useEffect,useState,type ReactElement} from 'react';
 import {Clock,Cpu,History,KeyRound,LogOut,ShieldCheck,User} from 'lucide-react';
 import './gast.css';
 import MoviPrapor, { MOVA_NAAM } from './MoviPrapor';
+import { aanmeldPauzeBericht, useAftelPauze } from './aanmeld-pauze';
+import { weigeringZin } from '../shared/weigering-tekst';
 
 type Lang='uk'|'nl';
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
@@ -21,7 +23,9 @@ const taal=Number(v.versie)===3?(v.accounts||{})[account]?.taal:v.lang;if(taal==
 async function post(pad:string,body:unknown={}){
   const r=await fetch(pad,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   let data:Record<string,any>={};try{data=await r.json();}catch{/* leeg */}
-  return{status:r.status,data};
+  const retryHeader=Number(r.headers.get('retry-after')||0);
+  if(retryHeader>0&&!data.retryAfter)data.retryAfter=Math.ceil(retryHeader);
+  return{status:r.status,data,headers:r.headers};
 }
 const FOUT:Record<string,[string,string]>={
   CODE_ONGELDIG:['Код недійсний, уже використаний, відкликаний або строк його дії минув.','De code is ongeldig, al gebruikt, ingetrokken of verlopen.'],
@@ -46,6 +50,9 @@ export default function GastToegang(){
   const[actief,setActief]=useState('');
   const[inhoud,setInhoud]=useState<Record<string,unknown>>({});
   const[weg,setWeg]=useState(false);
+  const[fotoStuk,setFotoStuk]=useState(false);
+  const pauze=useAftelPauze();
+  const pauzeTekst=pauze.actief||pauze.zojuistVrij?aanmeldPauzeBericht(Math.max(1,pauze.resterend),lang,'gast',pauze.limiet):null;
   useEffect(()=>{document.documentElement.lang=lang==='uk'?'uk':'nl';document.title=tr(lang,'Гостьовий доступ — Mijn Ruimte','Gasttoegang — Mijn Ruimte');},[lang]);
   useEffect(()=>{
     // Deellink: #code=… invullen en meteen uit de adresbalk (en geschiedenis) halen.
@@ -58,14 +65,18 @@ export default function GastToegang(){
   useEffect(()=>{if(!sessie)return;const kijk=async()=>{const r=await post('/api/gast/sessie').catch(()=>({status:0,data:{}}));if(r.status===401){setSessie(null);setInhoud({});setActief('');setWeg(true);}};
     const t=window.setInterval(()=>{void kijk();},20000);const z=()=>{if(document.visibilityState==='visible')void kijk();};document.addEventListener('visibilitychange',z);
     return()=>{window.clearInterval(t);document.removeEventListener('visibilitychange',z);};},[!!sessie]);// eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(()=>{if(!sessie||!actief||inhoud[actief])return;void(async()=>{const r=await post('/api/gast/bekijk',{scope:actief});if(r.status===200)setInhoud(i=>({...i,[actief]:r.data.data}));else if(r.status===401){setSessie(null);setInhoud({});setActief('');setWeg(true);}else setFout(foutTekst(String(r.data.error||'')));})();},[sessie,actief]);// eslint-disable-line react-hooks/exhaustive-deps
-  const foutTekst=(c:string)=>FOUT[c]?tr(lang,FOUT[c][0],FOUT[c][1]):tr(lang,`Не вдалося (${c||'немає зв’язку'}).`,`Mislukt (${c||'geen verbinding'}).`);
+  useEffect(()=>{if(!sessie||!actief||inhoud[actief])return;void(async()=>{const r=await post('/api/gast/bekijk',{scope:actief});if(r.status===200)setInhoud(i=>({...i,[actief]:r.data.data}));else if(r.status===401){setSessie(null);setInhoud({});setActief('');setWeg(true);}else{const p=pauze.vangPauze({status:r.status,data:r.data,headers:r.headers});if(!p.isPauze)setFout(foutTekst(String(r.data.error||'')));}})();},[sessie,actief]);// eslint-disable-line react-hooks/exhaustive-deps
+  const foutTekst=(c:string)=>FOUT[c]?tr(lang,FOUT[c][0],FOUT[c][1]):weigeringZin(lang,c)??tr(lang,`Не вдалося (${c||'немає зв’язку'}).`,`Mislukt (${c||'geen verbinding'}).`);
   const inwisselen=async()=>{
+    if(pauze.actief)return;
     setBezig(true);setFout('');setWeg(false);
-    const r=await post('/api/gast/inwisselen',{code}).catch(()=>({status:0,data:{}}));
+    const r=await post('/api/gast/inwisselen',{code}).catch(()=>({status:0,data:{},headers:undefined}));
     setBezig(false);
-    if(r.status===200){setCode('');setInhoud({});setActief('');const s=await post('/api/gast/sessie');if(s.status===200)setSessie(s.data as Sessie);}
-    else setFout(foutTekst(String((r.data as Record<string,unknown>).error||(r.status===429?'RATE_LIMITED':''))));
+    if(r.status===200){pauze.wis();setCode('');setInhoud({});setActief('');const s=await post('/api/gast/sessie');if(s.status===200)setSessie(s.data as Sessie);}
+    else{
+      const p=pauze.vangPauze({status:r.status,data:r.data,headers:r.headers});
+      if(!p.isPauze)setFout(foutTekst(String((r.data as Record<string,unknown>).error||(r.status===429?'RATE_LIMITED':''))));
+    }
   };
   const uitloggen=async()=>{await post('/api/gast/uitloggen').catch(()=>undefined);setSessie(null);setInhoud({});setActief('');};
   const taalKnop=<button type='button' className='gast-taal' onClick={()=>setLang(lang==='uk'?'nl':'uk')} aria-label={tr(lang,'Мова: українська. Перемкнути на нідерландську','Taal: Nederlands. Wissel naar Oekraïens')}><MoviPrapor taal={lang==='uk'?'nl':'uk'}/><span>{MOVA_NAAM[lang==='uk'?'nl':'uk']}</span></button>;
@@ -78,13 +89,15 @@ export default function GastToegang(){
       <form onSubmit={e=>{e.preventDefault();void inwisselen();}}>
         <label htmlFor='gast-code'>{tr(lang,'Код доступу','Toegangscode')}</label>
         <input id='gast-code' autoFocus autoComplete='off' autoCapitalize='characters' spellCheck={false} inputMode='text' maxLength={24} placeholder='XXXX-XXXX-XXXX-XXXX' value={code} onChange={e=>setCode(e.target.value.toUpperCase())}/>
-        <button type='submit' disabled={bezig||code.replace(/[\s-]/g,'').length<16}>{bezig?tr(lang,'Перевірка…','Controleren…'):tr(lang,'Увійти як гість','Doorgaan als gast')}</button>
+        <button type='submit' disabled={bezig||pauze.actief||code.replace(/[\s-]/g,'').length<16}>{bezig?tr(lang,'Перевірка…','Controleren…'):pauze.actief&&pauzeTekst?pauzeTekst.knop:tr(lang,'Увійти як гість','Doorgaan als gast')}</button>
       </form>
-      {fout&&<p className='gast-fout' role='alert'>{fout}</p>}
+      {pauzeTekst&&<p className={pauze.actief?'gast-fout':'gast-melding'} role='status' aria-live='polite'>{pauze.actief?`${pauzeTekst.kop}. ${pauzeTekst.uitleg}`:pauzeTekst.vrij}</p>}
+      {fout&&!pauze.actief&&<p className='gast-fout' role='alert'>{fout}</p>}
       <small>{tr(lang,'Кількість спроб обмежено. Код показують лише один раз — попросіть новий, якщо цей не працює.','Het aantal pogingen is beperkt. Een code wordt maar één keer getoond — vraag een nieuwe als deze niet werkt.')}</small>
     </section>
   </main>;
   const data=inhoud[actief] as Record<string,any>|undefined;
+  const profielFoto=actief==='profiel.lezen'&&data?.foto?String(data.foto):'';
   return <main className='gast'>
     <div className='gast-banner' role='status' data-gast-banner>
       <ShieldCheck aria-hidden='true'/>
@@ -96,10 +109,11 @@ export default function GastToegang(){
     <nav className='gast-tabs' role='tablist'>
       {sessie.scopes.map(s=><button key={s} type='button' role='tab' aria-selected={actief===s} data-gast-tab={s} onClick={()=>{setFout('');setActief(s);}}>{SCOPE[s]?.icoon}{SCOPE[s]?tr(lang,SCOPE[s].uk,SCOPE[s].nl):s}</button>)}
     </nav>
-    {fout&&<p className='gast-fout' role='alert'>{fout}</p>}
+    {pauzeTekst&&<p className={pauze.actief?'gast-fout':'gast-melding'} role='status' aria-live='polite'>{pauze.actief?`${pauzeTekst.kop}. ${pauzeTekst.uitleg}`:pauzeTekst.vrij}</p>}
+    {fout&&!pauze.actief&&<p className='gast-fout' role='alert'>{fout}</p>}
     <section className='gast-inhoud' data-gast-inhoud={actief}>
       {!data?<p className='gast-laden'>{tr(lang,'Завантаження…','Laden…')}</p>
-      :actief==='profiel.lezen'?<div className='gast-profiel'>{data.foto?<img src={String(data.foto)} alt='' referrerPolicy='no-referrer'/>:<User aria-hidden='true'/>}<strong>{String(data.naam||sessie.eigenaar)}</strong></div>
+      :actief==='profiel.lezen'?<div className='gast-profiel'>{profielFoto&&!fotoStuk?<img key={profielFoto} src={profielFoto} alt='' referrerPolicy='no-referrer' onError={()=>setFotoStuk(true)}/>:<User aria-hidden='true'/>}<strong>{String(data.naam||sessie.eigenaar)}</strong></div>
       :actief==='apparaten.lezen'?(data.apparaten?.length?<ul className='gast-lijst'>{(data.apparaten as Apparaat[]).map((a,i)=><li key={i}><Cpu aria-hidden='true'/><span><strong>{a.naam||'—'}</strong><small>{a.platform} · {a.actief?tr(lang,'активний','actief'):tr(lang,'неактивний','niet actief')} · {tr(lang,'остання активність ','laatst actief ')}{tijd(lang,a.laatstGezien)}</small></span></li>)}</ul>:<p>{tr(lang,'Немає підключених пристроїв.','Geen gekoppelde apparaten.')}</p>)
       :actief==='journaal.lezen'?(data.items?.length?<ol className='gast-lijst'>{(data.items as JItem[]).map((j,i)=><li key={i}><Clock aria-hidden='true'/><span><strong>{SOORT[j.soort]?tr(lang,SOORT[j.soort][0],SOORT[j.soort][1]):j.soort}{j.naam?` · ${j.naam}`:''}</strong><small>{tijd(lang,j.op)} · {j.actie}</small></span></li>)}</ol>:<p>{tr(lang,'Журнал порожній.','Het journaal is leeg.')}</p>)
       :null}

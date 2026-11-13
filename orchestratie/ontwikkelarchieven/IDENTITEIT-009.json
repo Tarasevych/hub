@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-009",
+  "titel": "Повна мобільна адаптація всіх трьох режимів відображення розділу Ідентичність (https://id.tarasevych.com/) та усунення недоліків безпеки, швидкодії, працездатності й зручності",
+  "opdracht": "Пройти всі три режими відображення розділу https://id.tarasevych.com/ («Макет», «Студія», «Класичний») і неавторизований екран входу, адаптувати кожен підрозділ, меню, спливне вікно й опцію для мобільних пристроїв та всіх розмірів екрана, перевірити розділ на безпеку, швидкодію, працездатність і зручність, усунути всі знайдені недоліки та випустити оновлення поверх щойно встановленої на сервері версії 20261112-090824.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "gemini",
+    "tak": "fix/identiteit-009-mobiel-veiligheid-20261112-080000",
+    "basis": "fd772f575b85a81c43195f4dba840db3c60a87b1",
+    "geinstalleerdeBasis": "fd772f575b85a81c43195f4dba840db3c60a87b1",
+    "geinstalleerdeVersie": "20261112-090824",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, одноразові коди та стани входу, вміст поштових листів, сеанси оглядача та приховані міркування моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-12T08:00:00Z",
+      "stap": "Проведено повний огляд усіх трьох режимів відображення https://id.tarasevych.com/ («Макет», «Студія», «Класичний»), усіх 12 підрозділів (Персоналізація, Меню, Теми, Мови, Блоки, Доступ, Ідентичність, Обліковий запис, Сесії, Способи входу, Безпека, Відновлення) та неавторизованого екрана входу .mr-sign-in."
+    },
+    {
+      "tijd": "2026-11-12T08:30:00Z",
+      "stap": "Усунено всі виявлені недоліки мобільної геометрії (320–1280 px): захищено картки в .mr-at та .ia-account від правила flat-content у canoniek-omlijsting.css; додано кнопку налаштувань вигляду й навігації в мобільну смугу Студії (.mr-at-balk) та обмежено висоту спливної панелі .mr-at-popover; у режимі Макет сховано фонову бічну шухляду позаду мобільного меню облікового запису (.am3-mobiel-laag) із автоматичним зачиненням шухляди після закриття меню; у Класичному режимі перетворено багаторядковий список змісту .ia-toc на компактну горизонтальну стрічку з підсвічуванням і автоцентруванням активного розділу та захистом від жесту бічного меню (data-no-edge-swipe); вирівняно сітки, списки вибору й сенсорні зони у всіх вкладених секціях та симетричні відступи екрана входу на 320 px."
+    },
+    {
+      "tijd": "2026-11-12T08:55:00Z",
+      "stap": "Усунено недоліки безпеки, швидкодії, працездатності та клієнтської стійкості: реалізовано справжнє скидання власної світлини профілю до зображення постачальника на сервері й клієнті із записом події owner.profile.photo.reset у журнал аудиту; додано обмеження часу очікування (10 с), заголовок без передавання джерела переходу (no-referrer) та ліміти обсягу (8 МБ для завантаження за посиланням, 12 МБ з пристрою) у Profielfoto.tsx; усунено потрійне дублювання секцій доступу й повторюваних ідентифікаторів у Класичному режимі через передавання контексту AtelierInhoud; впроваджено об'єднання одночасних однакових запитів читання у swrPost (lees-cache.ts); забезпечено автопідвантаження сесій у SessiesOverzicht.tsx, запобігання самовільному перестрибуванню прокрутки в AanmeldVnextPanelen.tsx та перевірку структури мережевих відповідей у Luisteraar.tsx, ToegangssleutelsSectie.tsx, TelegramSectie.tsx, SleutelkluisSectie.tsx, HerstelcodesSectie.tsx, Toegangscodes.tsx, InstellingenSectie.tsx та AanbiederCatalogus.tsx."
+    },
+    {
+      "tijd": "2026-11-12T09:20:00Z",
+      "stap": "За повідомленням власника про оновлення робочого сервера до версії 20261112-090824 (fd772f575b85a81c43195f4dba840db3c60a87b1, випуск HUIS-001) гілку завдання швидко просунуто без жодного конфлікту на нову встановлену основу; перескладено весь проєкт разом із dist/huis-maquette/ та виконано живу перевірку всіх трьох режимів і екрана входу у безголовому оглядачі Chromium під повною політикою безпеки сайту (32/32 перевірки геометрії на 320–1280 px, 0 помилок виконання)."
+    }
+  ],
+  "keuzes": [
+    "Зібрати випуск строго поверх живої встановленої версії сервера 20261112-090824 (fd772f575b85a81c43195f4dba840db3c60a87b1), щоб повністю зберегти всі попередні оновлення розумного будинку HUIS-001 та розділу GitHub.",
+    "Огорнути Класичний режим відображення у провайдер AtelierInhoud.Provider (true), завдяки чому секції ToegangssleutelsSectie, SleutelkluisSectie, TelegramSectie та InstellingenSectie відмальовуються по одному разу у власному змістовому підрозділі замість потрійного повторення у вкладках Способи входу, Безпека та Відновлення.",
+    "Об'єднати одночасні однакові запити читання безпосередньо в swrPost (src/lees-cache.ts) через мапу активних обіцянок із негайним очищенням при зміні облікового запису або інвалідації даних після запису.",
+    "Під час зміни світлини профілю зберігати первинне зображення постачальника входу (providerPicture) у полі стану користувача, щоб дія скидання власної світлини відновлювала початкове зображення (або очищувала поле за його відсутності) з обов'язковою фіксацією події owner.profile.photo.reset у журналі аудиту."
+  ],
+  "wijzigingen": [
+    "backend/index.ts",
+    "src/App.tsx",
+    "src/VerenigdDienstApp.tsx",
+    "src/IdentiteitBeheerWeergave.tsx",
+    "src/InstellingencentrumWeergave.tsx",
+    "src/identiteit/Profielfoto.tsx",
+    "src/lees-cache.ts",
+    "src/ToegangslaagWeergave.tsx",
+    "src/SleutelkluisSectie.tsx",
+    "src/HerstelcodesSectie.tsx",
+    "src/ToegangssleutelsSectie.tsx",
+    "src/Toegangscodes.tsx",
+    "src/SessiesOverzicht.tsx",
+    "src/aanmeld-vnext/AanmeldVnextPanelen.tsx",
+    "src/aanmeld-vnext/onderdelen/AanbiederCatalogus.tsx",
+    "src/accountmenu-v3/AccountMenuV3Instellingen.tsx",
+    "src/canoniek-omlijsting.css",
+    "src/identiteit/IdentiteitAccountPagina.tsx",
+    "src/identiteit/identiteit-account.css",
+    "src/identiteit/IdentiteitAtelier.tsx",
+    "src/identiteit/identiteit-atelier.css",
+    "src/identiteit/maquette/IdentiteitMaquette.tsx",
+    "src/identiteit/maquette/maquette-omlijsting.css",
+    "src/instellingencentrum.css",
+    "src/thema/thema-instellingen.css",
+    "src/menu-v2.css",
+    "src/toegangslaag.css",
+    "src/aanmeld-vnext/aanmeld-vnext.css",
+    "src/aanmeld-herontwerp.css",
+    "src/telegram-aanmelden/TelegramSectie.tsx",
+    "src/telegram-aanmelden/telegram.css",
+    "src/apparaat-bevestiging/Luisteraar.tsx",
+    "src/apparaat-bevestiging/InstellingenSectie.tsx",
+    "src/apparaat-bevestiging/apparaat.css",
+    "tests/eenheid/aanmelden-integ-20261103.test.ts",
+    "tests/eenheid/identiteit-009-mobiel-veiligheid.test.ts",
+    "orchestratie/taken/IDENTITEIT-009.json",
+    "orchestratie/ontwikkelarchieven/IDENTITEIT-009.json",
+    ".github/workflows/identiteit-009-uitgave.yml"
+  ],
+  "controles": [
+    "Перевірка правил координації та свіжості основи на fd772f575b85a81c43195f4dba840db3c60a87b1 (20261112-090824): node scripts/orch.mjs controleer і versheid --taak IDENTITEIT-009 --fase overdracht.",
+    "Перевірка походження журналу розробки: node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts.",
+    "Статичні перевірки розміщення, пошукового каталогу інтерфейсу (1437 елементів) та інтерактивного макета розумного будинку (7491 мовна пара): node scripts/plaatsing-controle.mjs, node scripts/zoek-ui-catalogus.mjs --controle та node scripts/huis-maquette.mjs --controle.",
+    "Модульні та серверні перевірки з базою даних PostgreSQL 16: identiteit-009-mobiel-veiligheid.test.ts (14/14), identiteit-maquette.test.ts, identiteit-atelier.test.ts, identiteit-account-ui.test.ts, mobiel-geometrie-20261021.test.ts, mobiel-cascade-20261105.test.ts, aanmelden-integ-20261103.test.ts, aanmeld-ui-20261030.test.ts, aanmeld-001-weergave.test.ts, accountmenu-v3.test.ts, lees-venster-20261024.test.ts, contrast-knoppen-logos-20261021.test.ts, menu-per-profiel-20261019.test.ts, sleutelkluis-20261020.test.ts, site-hulpmiddelen.test.ts, routes.test.ts та plaatsing-20261025.test.ts.",
+    "Жива перевірка всіх трьох режимів (Макет, Студія, Класичний), усіх 12 підрозділів і неавторизованого екрана входу у безголовому Chromium під повною політикою безпеки вмісту сайту на ширинах 320, 375, 412, 768 та 1280 px: 32/32 без переповнення, 0 дубльованих ідентифікаторів, 0 помилок виконання.",
+    "Перевірка типів клієнта та сервера (npx tsc --noEmit і npm run typecheck:server), виробниче складання застосунку разом із dist/huis-maquette/ (npm run build), перевірка пакунка передачі (orch pakket-controleer) і точного збігу контрольної суми SHA-256 оприлюдненого архіву mijn-ruimte-<VERSIE>.tar.gz на GitHub Releases."
+  ],
+  "bronnen": [
+    "https://hub.tarasevych.com/api/version",
+    "https://id.tarasevych.com/",
+    "https://github.com/Tarasevych/hub/commit/fd772f575b85a81c43195f4dba840db3c60a87b1",
+    "https://github.com/Tarasevych/hub/commit/3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "AGENTS.md, orchestratie/beleid.json, deploy/ПРАВИЛА-ПАКЕТА-РОЗГОРТАННЯ.md"
+  ],
+  "beperkingen": [
+    "Пакунок випуску не встановлюється автоматично: завантаження та встановлення на робочий сервер виконує виключно власник із підтвердженням ключем доступу."
+  ]
+}

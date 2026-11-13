@@ -9,7 +9,7 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { huidigeContext } from '../server/platform/context';
 import { gegevensRuimteVeilig } from './ruimte-scheiding';
 import { gedelegeerdeSessie } from './site-aanroep';
-import { sterkeStapOpGeldig, stapOpMethode, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, sterkeStapOpGeldig, stapOpMethode, type StapOpAuth } from './stap-op';
 import * as ab from './ai-bevestiging';
 import { stapOpNodig, type BevestigRuimte } from '../shared/ai-bevestiging';
 import { kritiekeActie } from '../shared/kritieke-acties';
@@ -18,7 +18,11 @@ type SessionOk = StapOpAuth & { user: { id: string; email?: string; role?: strin
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 type Resp = ReturnType<typeof json>;
-export type AiBevestigingRouteDeps = { requireSession: RequireSession; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
+export type AiBevestigingRouteDeps = {
+  requireSession: RequireSession; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>;
+  /** SEC-002 (g10a-2 п.3, afwerking A): gewone bevestiging (ook «onthouden browser») voor risico «midden». Zonder: geen eis (tests). */
+  stapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>;
+};
 
 const lichaam = (b: unknown): Record<string, unknown> => (b && typeof b === 'object' && !Array.isArray(b) ? b as Record<string, unknown> : {});
 type Vooraf = { auth: SessionOk; b: Record<string, unknown>; ruimte: BevestigRuimte; ctx: Ctx };
@@ -63,6 +67,13 @@ export function aiBevestigingRoutes(deps: AiBevestigingRouteDeps): Record<string
       // Eerst weten of DIT verzoek een sterke bevestiging vraagt (de server rekent het risico straks opnieuw na).
       const item = (await ab.lijstVoorMens(v.auth.user.id, v.ruimte, { ookAfgerond: true }).catch(() => [])).find((x) => x.id === id);
       let stapOp = false, methode = '';
+      // Risico «midden» (bv. een bericht namens de mens versturen): een gewone bevestiging van de mens — een onthouden browser telt,
+      // dus weinig wrijving; een AI die de knop in de browser van de mens indrukt, komt zo niet zonder mens door. Ризик «midden» —
+      // звичайне підтвердження входу (запам'ятаний браузер теж рахується).
+      if (item && item.status === 'wacht' && item.risico === 'midden' && deps.stapOp) {
+        const su = await deps.stapOp(v.ctx, v.auth);
+        if (su) return su;
+      }
       if (item && item.status === 'wacht' && stapOpNodig(item.risico) && kritiekeActie('ai-hoog')) {
         if (!deps.sterkeStapOp) return error('STEP_UP_STRONG_REQUIRED', 403);
         const su = await deps.sterkeStapOp(v.ctx, v.auth);
@@ -71,10 +82,13 @@ export function aiBevestigingRoutes(deps: AiBevestigingRouteDeps): Record<string
         methode = stapOp ? await stapOpMethode(v.auth) : '';
       }
       const tabContext = typeof v.b.tabContext === 'string' ? v.b.tabContext : '';
+      const bevestig = () => ab.bevestig({ userId: v.auth.user.id, id, ruimte: v.ruimte, hash: String(v.b.hash || ''), stapOp, keuze: lichaam(v.b.keuze), bevestiger: { tabContext, ...(methode ? { stapOpMethode: methode } : {}) } });
       return metFouten(async () => {
-        const uit = await ab.bevestig({ userId: v.auth.user.id, id, ruimte: v.ruimte, hash: String(v.b.hash || ''), stapOp, keuze: lichaam(v.b.keuze), bevestiger: { tabContext, ...(methode ? { stapOpMethode: methode } : {}) } });
-        if (stapOp) await stapOpVerbruiken(v.auth);
-        return { item: uit };
+        if (!stapOp) return { item: await bevestig() };
+        // SEC-002 (g06): één sterke bevestiging = één goedkeuring — controleren en verbruiken ondeelbaar, bij een fout teruggezet.
+        const stap = await metStapOpEenmalig(v.auth, sterkeStapOpGeldig, bevestig);
+        if (!stap.ok) throw new ab.BevestigFout('STEP_UP_STRONG_REQUIRED', 403);
+        return { item: stap.uit };
       });
     }) as RouterMiddleware],
     'POST /api/owner/ai-bevestiging/weigeren': [(async (raw) => {

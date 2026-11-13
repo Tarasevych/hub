@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Activity, Bot, Sparkles, Workflow } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import ProductEmptyState from './ProductLegeToestand';
 import { canonicalNavigationUrl, routeLang } from './canoniek-navigatie';
 import { RichtingBand } from './weergave/Weergave';
@@ -11,6 +11,7 @@ import './agenten/agenten.css';
 
 /** Werkgebied «ШІ для вас» (punt 13, 19.10.2026): startstaat uit echte feiten, chat, startvragen, alle hulpmiddelen. */
 const AiWerkruimte = lazy(() => import('./AiWerkruimte'));
+const AiEcosysteemPaneel = lazy(() => import('./ai-ecosysteem/AiEcosysteemPaneel'));
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tab: string; tr: Tr; userName: string; workspaceName: string; /** AI-02: alleen de eigenaar beheert de sleutelkluis (api.*); anderen gaan naar de hub. */ eigenaar?: boolean };
@@ -46,20 +47,13 @@ function NaarHub({ tr }: { tr: Tr }) {
   return <p className='ai-naar-hub' data-naar-hub={doel}><a href={doel}>{tr('Підключення ШІ тепер в одному місці — відкрити', 'AI-koppelingen staan nu op één plek — openen')}</a></p>;
 }
 
-/** AI-02: de tabbladen agents/runs/workflows zijn geen kopie van het werkgebied meer — elk heeft eigen inhoud met de weg naar de hub. */
+/** Volwaardige schermen voor agents / runs / workflows binnen het open AI-ecosysteem (11.11.2026). */
 function AiOnderdeel({ tab, tr }: { tab: 'agents' | 'runs' | 'workflows'; tr: Tr }) {
   const uk = routeLang() !== 'nl';
-  const info = {
-    agents: { icon: Sparkles, titel: tr('Агенти', 'Agenten'), tekst: tr('Підключені ШІ (Claude, ChatGPT, Grok…), їхні права та відкликання — у хабі «Підключення ШІ».', 'Verbonden AI (Claude, ChatGPT, Grok…), hun rechten en intrekken staan in de hub «AI-koppelingen».'), knop: tr('Відкрити підключені ШІ', 'Verbonden AI openen'), doel: hubUrl('ai') },
-    runs: { icon: Activity, titel: tr('Процеси', 'Processen'), tekst: tr('Що саме робив кожен ШІ (робочі сесії, дії, відмови) — у журналі хаба.', 'Wat elke AI precies deed (werksessies, acties, weigeringen) staat in het logboek van de hub.'), knop: tr('Відкрити журнал', 'Logboek openen'), doel: hubUrl('journaal') },
-    workflows: { icon: Workflow, titel: tr('Сценарії', 'Werkstromen'), tekst: tr('Сценарії (ланцюжки дій ШІ за розкладом) ще не доступні в цій версії. Поки що ШІ діє через конектори й розширення браузера.', 'Werkstromen (geplande ketens van AI-acties) zijn in deze versie nog niet beschikbaar. Voorlopig werkt de AI via connectors en de browserextensie.'), knop: tr('Способи підключення', 'Manieren van koppelen'), doel: hubUrl('connectors') },
-  }[tab];
+  const band = <div className='ai-richting'><RichtingBand richting='ai' uk={uk} /></div>;
   return (
     <>
-      <div className='ai-richting'><RichtingBand richting='ai' uk={uk} /></div>
-      <ProductEmptyState icon={info.icon} title={info.titel} description={info.tekst} actionLabel={info.knop} onAction={() => location.assign(info.doel)} />
-      {/* 20.10.2026 («якщо користувач шукає щось про ШІ — він шукає в розділі ШІ»): vanaf ai.* rechtstreeks naar de plek van één AI
-          in de hub (#agent/<slug>): grote koppelknop, stappen voor die client, rechten, ware stand, journaal. */}
+      {band}
       {tab === 'agents' ? (
         <section className='ag ag-ai-ingangen' data-ai-agent-ingangen='1' aria-label={tr('Підключити окремий ШІ', 'Eén AI koppelen')}>
           <ul className='ag-agent-ingangen'>
@@ -71,6 +65,9 @@ function AiOnderdeel({ tab, tr }: { tab: 'agents' | 'runs' | 'workflows'; tr: Tr
           </ul>
         </section>
       ) : null}
+      <Suspense fallback={null}>
+        <AiEcosysteemPaneel modus={tab} tr={tr} band={null} hubUrl={hubUrl} />
+      </Suspense>
     </>
   );
 }

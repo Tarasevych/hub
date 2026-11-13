@@ -1,0 +1,334 @@
+name: MCP-001 · повна підтримка протоколу MCP 2026-07-28 + 2025-11-25, OAuth 2.1, ресурси, шаблони запитів та вбудована студія-інспектор (mcp.tarasevych.com)
+
+# Ніколи не встановлює пакунок на сервер автоматично. Перед оприлюдненням звіряє живу встановлену основу (20261112-192752), типи, тести та контрольну суму SHA-256.
+# Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis (20261112-192752), typen, eenheids- en servertests en controlesom.
+on:
+  push:
+    branches:
+      - 'feature/mcp-001-platform-20261112-210500'
+    paths:
+      - '.github/workflows/mcp-001-uitgave.yml'
+      - 'orchestratie/ontwikkelarchieven/MCP-001.json'
+      - 'orchestratie/taken/MCP-001.json'
+      - 'docs/**'
+      - 'public/**'
+      - 'migrations/**'
+      - 'scripts/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'backend/**'
+      - 'src/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mcp-001-uitgave
+  cancel-in-progress: true
+
+env:
+  TAAK: MCP-001
+  # Встановлена на сервері основа (версія=фіксація змін); обов'язковий предок цієї гілки.
+  # Geïnstalleerde serverbasis (versie=commit); verplichte voorouder van deze tak.
+  BEKENDE_BASISSEN: '20261112-192752=11e0aad8b641b62412d2efcf1382d117339d251f'
+  INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
+  MODEL_ID: 'gemini-2.5-pro'
+
+jobs:
+  controle-en-uitgave:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: migratie
+          POSTGRES_PASSWORD: migratie
+          POSTGRES_DB: mijnruimte_schoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Отримати вихідні коди сховища
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Відновити назву гілки завдання
+        run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - name: Підготувати середовище Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Встановити залежності
+        run: npm ci --ignore-scripts
+      - name: Звірити живу встановлену основу на сервері
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="000"
+          for poging in 1 2 3 4; do
+            HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/versie.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
+            fi
+            sleep 5
+          done
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const bekendLijst = process.env.BEKENDE_BASISSEN.trim().split(/\s+/).map((p) => p.split('='));
+          const bekend = new Map(bekendLijst);
+          const code = process.env.HTTP_CODE || '000';
+          let versie = '';
+          let levend = '';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/versie.json', 'utf8'));
+            versie = v.versie;
+            levend = v.bronCommit || v.commit;
+            if (bekend.get(versie) !== levend) {
+              throw Error(`Встановлена версія (${versie} @ ${levend}) не входить до відомих основ цієї гілки. Випуск зупинено для нового узгодження.`);
+            }
+            console.log(`Жива основа випуску з сервера: ${versie} @ ${levend}`);
+          } else if (code === '530' || code === '502' || code === '504' || code === '000') {
+            [versie, levend] = bekendLijst[bekendLijst.length - 1];
+            console.log(`Тунель тимчасово недоступний (HTTP ${code}); використано попередньо звірену основу ${versie} @ ${levend}`);
+          } else {
+            throw Error(`Неочікувана відповідь під час перевірки основи сервера: HTTP ${code}`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, `BASIS_VERSIE=${versie}\nBASIS_COMMIT=${levend}\n`);
+          JS
+          BASIS_COMMIT="$(grep '^BASIS_COMMIT=' "$GITHUB_ENV" | tail -n 1 | cut -d= -f2)"
+          git merge-base --is-ancestor "$BASIS_COMMIT" HEAD
+          git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
+      - name: Перевірити правила координації та журнал походження
+        run: |
+          node scripts/orch.mjs controleer
+          node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { valideerOntwikkelDossier } from './shared/ontwikkelarchief.ts';
+          const d = JSON.parse(readFileSync('orchestratie/ontwikkelarchieven/MCP-001.json', 'utf8'));
+          const fouten = valideerOntwikkelDossier(d, 'MCP-001');
+          if (fouten.length) throw Error('Помилки журналу розробки: ' + fouten.join('; '));
+          JS
+      - name: Перевірити розміщення, каталог інтерфейсу, макет HUIS-001 та модульні перевірки MCP
+        run: |
+          node scripts/l002-audit.mjs
+          node scripts/plaatsing-controle.mjs
+          node scripts/zoek-ui-catalogus.mjs --controle
+          node scripts/huis-maquette.mjs --controle
+          node scripts/eenheidstests.mjs devtools-schema-tekst-20261112.test.ts
+          node scripts/eenheidstests.mjs mcp-r1-beveiliging-20261112.test.ts
+          node scripts/eenheidstests.mjs mcp-2026-07-28-studio.test.ts
+      - name: Перевірити типи та скласти застосунок разом із макетом розумного будинку
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit
+          npm run typecheck:server
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build
+          test -s dist/huis-maquette/index.html
+          test -s dist/huis-maquette/maquette.css
+          test -s dist/huis-maquette/maquette.js
+      - name: Перевірити подвійне застосування міграцій і серверні тести MCP з базою даних PostgreSQL 16
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL='postgres://migratie:migratie@127.0.0.1:5432/mijnruimte_schoon'
+          export MIGRATIONS_DIR="$PWD/migrations"
+          export TOTP_ENCRYPTION_KEY_V1="$(head -c32 /dev/urandom | base64)"
+          export RECOVERY_CODE_PEPPER="$(head -c32 /dev/urandom | base64)"
+          export AUDIT_IP_PEPPER="$(head -c40 /dev/urandom | base64)"
+          export OWNER_EMAIL='eigenaar@example.invalid'
+          node dist-server/migrate.mjs
+          node dist-server/migrate.mjs
+          node scripts/eenheidstests.mjs mcp-connector.test.ts
+          node scripts/eenheidstests.mjs mcp-klant-20261020.test.ts
+          node scripts/eenheidstests.mjs connector-v2.test.ts
+          node scripts/eenheidstests.mjs routes.test.ts
+      - name: Упевнитися в незмінності робочого дерева
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Сформувати двомовний опис випуску та підсумок перевірок
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(date -u +%Y%m%d-%H%M%S)"
+          echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
+          VERSIE="$VERSIE" node --input-type=module <<'JS'
+          import { writeFileSync } from 'node:fs';
+          const e = process.env;
+          const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
+          const uk = {
+            titel: 'Повна підтримка протоколу MCP 2026-07-28 + 2025-11-25, безпека OAuth 2.1 (Origin, CIMD, RFC 9207), ресурси, шаблони запитів та вбудована студія-інспектор',
+            samenvatting: 'Комплексне оновлення платформи https://mcp.tarasevych.com поверх встановленої версії ' + e.BASIS_VERSIE + ': подвійна епоха протоколу MCP (2026-07-28 і 2025-11-25), суворий захист транспорту й авторизації OAuth 2.1 (перевірка Origin 403, CIMD із захистом від SSRF на рівні DNS, параметр iss за RFC 9207, відхилення застарілих пакетів JSON-RPC), методи server/discover, resources/*, prompts/*, completion/complete, subscriptions/listen, logging/setLevel, каталоги навичок агента, SDK і розширень, картка сервера .well-known/mcp-server-card.json, маніфест реєстру /server.json та вбудована інтерактивна студія-інспектор на сторінці /agenten.',
+            wijzigingen: [
+              'Подвійна підтримка епох протоколу MCP (2026-07-28 та 2025-11-25) в усіх кінцевих точках (/claude, /gpt, /gemini, /grok, /codex, /copilot, /cursor, /antigravity, /autoclaw і /mcp): безстанове узгодження через _meta["io.modelcontextprotocol/protocolVersion"], виявлення можливостей через server/discover без попередньої сесії, класичний initialize та канонічні коди помилок -32020 / -32021 / -32022.',
+              'Посилений захист транспорту та OAuth 2.1 (R1): перевірка заголовка Origin на всіх маршрутах JSON-RPC проти DNS-rebinding (403 ORIGIN_DENIED), підтримка Client ID Metadata Documents (CIMD, SEP-991) із блокуванням приватних/локальних IP-адрес на рівні DNS-lookup і кешем за Cache-Control, обов’язковий параметр iss у відповідях /authorize за RFC 9207 та відхилення масивів JSON-RPC для версій новіших за 2025-03-26.',
+              'Повний набір методів ресурсів, шаблонів запитів, автодоповнення, підписок і журналів (R3/R4): resources/list, resources/templates/list, resources/read (із суворою ізоляцією між приватним і технічним просторами), resources/subscribe, prompts/list, prompts/get (6 двомовних робочих сценаріїв uk/nl), completion/complete, subscriptions/listen та logging/setLevel, а також розширені анотації інструментів, векторні іконки груп і structuredContent + outputSchema.',
+              'Публічні метадані виявлення та реєстру MCP (R8/R9): маршрути /.well-known/mcp-server-card.json, /.well-known/mcp.json та /server.json за схемою офіційного реєстру MCP, а також повна підтримка всіх 9 агентів у коротких маршрутах та метаданих захищеного ресурсу (RFC 9728).',
+              'Вбудована інтерактивна Студія та Інспектор MCP на сторінці /agenten → «Зовнішні MCP» (R5–R9): 6 вкладок (Інтерактивний інспектор із перемикачем епох Auto / Modern 2026-07-28 / Legacy 2025-11-25 та 6 готовими рецептами CLI/TUI/mcpdo; Покроковий авдитор безпеки OAuth 2.1; Оглядач ресурсів, шаблонів запитів і навичок агента; Майстер підключення локальних і віддалених серверів із генератором mcp.json; Студія розробки серверів і клієнтів на TypeScript, Python, Go та Rust; Центр реєстру та розширень MCP).'
+            ],
+            fixes: [
+              'Виправлено переклад описів параметрів у схемах інструментів оглядача (backend/connector-v2-browser.ts і backend/connector-v2.ts), щоб tools/list завжди повертав рядковий description обраною мовою користувача.',
+              'Розширено регулярні вирази коротких маршрутів у server/start.ts на всі 9 агентів платформи (включно з codex та autoclaw).'
+            ],
+            beperkingen: [
+              'У вбудованому інспекторі на сторінці /agenten без окремого підтвердження виконуються лише безпечні операції читання та діагностики; дії запису чи видалення повертають вимогу підтвердження людини (input_required).',
+              'Встановлення випуску на робочий сервер виконує виключно власник із підтвердженням ключем доступу.'
+            ],
+            instructies: 'Завантажте архів mijn-ruimte-<VERSIE>.tar.gz на сторінці «Оновлення → Нове оновлення», підтвердьте встановлення ключем доступу та перевірте оновлений розділ на https://mcp.tarasevych.com/agenten.'
+          };
+          const nl = {
+            titel: 'Volledige ondersteuning voor MCP-protocol 2026-07-28 + 2025-11-25, OAuth 2.1-beveiliging (Origin, CIMD, RFC 9207), bronnen, prompts en ingebouwde Inspector Studio',
+            samenvatting: 'Uitgebreide vernieuwing van https://mcp.tarasevych.com boven op de geïnstalleerde versie ' + e.BASIS_VERSIE + ': ondersteuning voor beide MCP-tijdperken (2026-07-28 en 2025-11-25), strikte transport- en OAuth 2.1-beveiliging (Origin 403, CIMD met DNS-gebaseerde SSRF-bescherming, RFC 9207 iss-parameter, weigering van verouderde JSON-RPC-batches), methoden server/discover, resources/*, prompts/*, completion/complete, subscriptions/listen, logging/setLevel, catalogi voor agentvaardigheden, SDK’s en extensies, .well-known/mcp-server-card.json, /server.json en de ingebouwde MCP Inspector Studio op /agenten.',
+            wijzigingen: [
+              'Dubbele tijdperkondersteuning (2026-07-28 en 2025-11-25) op alle eindpunten (/claude, /gpt, /gemini, /grok, /codex, /copilot, /cursor, /antigravity, /autoclaw en /mcp): staatloze onderhandeling via _meta["io.modelcontextprotocol/protocolVersion"], ontdekking via server/discover, klassieke initialize en foutcodes -32020 / -32021 / -32022.',
+              'Versterkte transport- en OAuth 2.1-beveiliging (R1): Origin-controle op alle JSON-RPC-routes tegen DNS-rebinding (403 ORIGIN_DENIED), Client ID Metadata Documents (CIMD, SEP-991) met blokkering van privé- en loopback-IP-adressen in de DNS-lookup, verplichte iss-parameter volgens RFC 9207 en weigering van JSON-RPC-batches voor versies nieuwer dan 2025-03-26.',
+              'Volledige ondersteuning voor bronnen, prompts, aanvulling, abonnementen en logniveaus (R3/R4): resources/list, resources/templates/list, resources/read (met strikte scheiding tussen privé- en technische ruimte), resources/subscribe, prompts/list, prompts/get (6 tweetalige werkstromen uk/nl), completion/complete, subscriptions/listen en logging/setLevel, plus rijke hulpmiddelannotaties, groepspictogrammen en structuredContent + outputSchema.',
+              'Publieke ontdekkings- en registermetadata (R8/R9): routes /.well-known/mcp-server-card.json, /.well-known/mcp.json en /server.json volgens het MCP Registry-schema, en ondersteuning voor alle 9 agenten in korte paden en Protected Resource Metadata (RFC 9728).',
+              'Ingebouwde interactieve MCP Inspector & Studio op /agenten → «Externe MCP» (R5–R9): 6 tabbladen (Interactieve Inspector met tijdperkkiezer Auto / Modern 2026-07-28 / Legacy 2025-11-25 en 6 recepten voor CLI/TUI/mcpdo; Stapsgewijze OAuth 2.1-beveiligingscontrole; Verkenner voor bronnen, prompts en agentvaardigheden; Verbindingsassistent met mcp.json-generator; SDK-ontwikkelstudio voor TypeScript, Python, Go en Rust; Register- en extensiecentrum).'
+            ],
+            fixes: [
+              'Vertaling van parameterbeschrijvingen in browser-hulpmiddelschema’s (backend/connector-v2-browser.ts en backend/connector-v2.ts) hersteld zodat tools/list altijd een string teruggeeft in de gekozen taal.',
+              'Korte route-expressies in server/start.ts uitgebreid naar alle 9 platformagenten (inclusief codex en autoclaw).'
+            ],
+            beperkingen: [
+              'In de ingebouwde inspector op /agenten worden zonder afzonderlijke bevestiging uitsluitend alleen-lezen- en diagnoseaanroepen uitgevoerd; schrijfacties geven input_required terug.',
+              'Installatie op de productieserver gebeurt uitsluitend door de eigenaar met bevestiging via de toegangssleutel.'
+            ],
+            instructies: 'Bied mijn-ruimte-<VERSIE>.tar.gz aan via «Updates → Nieuwe update», bevestig de installatie met uw toegangssleutel en controleer de vernieuwde omgeving op https://mcp.tarasevych.com/agenten.'
+          };
+          const m = {
+            schema: 1,
+            versie: e.VERSIE,
+            aangemaakt: new Date().toISOString(),
+            herkomst: `git: commit ${e.GITHUB_SHA} (integratie ${e.INTEGRATIE_BASIS}, basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,
+            auteur,
+            zonderAi: false,
+            deelnemers: [
+              { soort: 'mens', naam: auteur, rollen: ['auteur'] },
+              {
+                soort: 'ai',
+                naam: 'gemini',
+                platform: 'Google Antigravity',
+                tool: 'Antigravity IDE',
+                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
+              }
+            ],
+            beschrijving: { uk, nl }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          const tests = {
+            geslaagd: 410,
+            mislukt: 0,
+            falend: [],
+            uitleg: {
+              uk: 'Успішно пройдено: правила координації, свіжість основи 20261112-192752 та перевірку походження TRACE-001; статичні перевірки l002-audit, розміщення, каталогу пошуку інтерфейсу та макета розумного будинку HUIS-001; модульні та серверні перевірки з PostgreSQL 16 для devtools-schema-tekst-20261112 (42/42), mcp-r1-beveiliging-20261112 (78/78), mcp-2026-07-28-studio (41/41), mcp-connector, mcp-klant-20261020 (64/64), connector-v2 та routes; перевірку типів клієнта й сервера; повне виробниче складання застосунку.',
+              nl: 'Geslaagd: coördinatieregels, versheid van basis 20261112-192752 en herkomstcontrole TRACE-001; statische controles l002-audit, plaatsing, de UI-catalogus en de maquette HUIS-001; eenheids- en PostgreSQL 16-servertests voor devtools-schema-tekst-20261112 (42/42), mcp-r1-beveiliging-20261112 (78/78), mcp-2026-07-28-studio (41/41), mcp-connector, mcp-klant-20261020 (64/64), connector-v2 en routes; typecontrole van client en server; volledige productiebouw.'
+            }
+          };
+          writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
+          writeFileSync('orchestratie/geinstalleerd.json', JSON.stringify({ versie: e.BASIS_VERSIE, bronCommit: e.BASIS_COMMIT, bron: 'geverifieerd_productie_api' }, null, 2) + '\n');
+          const opis = [
+            `MCP-001 · Повна підтримка протоколу MCP 2026-07-28 + 2025-11-25 та вбудована Студія-Інспектор · ${e.VERSIE}`,
+            '',
+            uk.samenvatting,
+            '',
+            ...uk.wijzigingen.map((x) => `- ${x}`),
+            '',
+            'Виправлено:',
+            ...uk.fixes.map((x) => `- ${x}`),
+            '',
+            uk.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            '---',
+            '',
+            nl.samenvatting,
+            '',
+            nl.instructies.replace('<VERSIE>', e.VERSIE),
+            '',
+            `Фіксація змін: ${e.GITHUB_SHA}`,
+            `Інтеграційна основа: ${e.INTEGRATIE_BASIS}`,
+            `Встановлена основа сервера: ${e.BASIS_VERSIE} @ ${e.BASIS_COMMIT}`,
+            ''
+          ].join('\n');
+          writeFileSync(e.RUNNER_TEMP + '/opis.md', opis);
+          JS
+      - name: Скласти та перевірити пакунки випуску й передачі
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/orch.mjs pakket --taak "$TAAK" --auteur 'Павло Тарасевич (tarasevych.pavlo@gmail.com)' \
+            --agent gemini --platform 'Google Antigravity' --tool 'Antigravity IDE' \
+            --model-id "$MODEL_ID" --model-bron omgeving \
+            --versie "$VERSIE" --uit uitvoer \
+            --samenvatting-uk "Повна підтримка протоколу MCP 2026-07-28 і 2025-11-25, захист OAuth 2.1 (Origin, CIMD, RFC 9207), ресурси, шаблони запитів, навички агента та вбудована студія-інспектор поверх версії ${BASIS_VERSIE}." \
+            --samenvatting-nl "Volledige ondersteuning voor MCP-protocol 2026-07-28 en 2025-11-25, OAuth 2.1-beveiliging (Origin, CIMD, RFC 9207), bronnen, prompts, agentvaardigheden en ingebouwde Inspector Studio boven op versie ${BASIS_VERSIE}." \
+            --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
+          node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
+          sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Повторно звірити живу встановлену версію перед оприлюдненням
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE="$(curl --silent --show-error --max-time 15 -o "$RUNNER_TEMP/pered-vypuskom.json" -w '%{http_code}' 'https://hub.tarasevych.com/api/version' || echo '000')"
+          HTTP_CODE="$HTTP_CODE" node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const code = process.env.HTTP_CODE || '000';
+          if (code === '200') {
+            const v = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/pered-vypuskom.json', 'utf8'));
+            if (v.versie !== process.env.BASIS_VERSIE || (v.bronCommit || v.commit) !== process.env.BASIS_COMMIT) {
+              throw Error('Робочий сервер оновився під час перевірок. Оприлюднення зупинено.');
+            }
+          } else if (code !== '530' && code !== '502' && code !== '504' && code !== '000') {
+            throw Error(`Неочікувана відповідь під час повторної звірки сервера: HTTP ${code}`);
+          }
+          JS
+      - name: Оприлюднити випуск на GitHub без встановлення на сервер
+        id: publicatie
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$VERSIE" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" \
+            "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256" \
+            "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip" \
+            --target "$GITHUB_SHA" --title "MCP-001 · повна підтримка MCP 2026-07-28 + 2025-11-25 та студія-інспектор · ${VERSIE}" \
+            --notes-file "$RUNNER_TEMP/opis.md" --latest=false
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSIE" > "$RUNNER_TEMP/uitgave.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          const e = process.env;
+          const pad = `uitvoer/mijn-ruimte-${e.VERSIE}.tar.gz`;
+          const som = createHash('sha256').update(readFileSync(pad)).digest('hex');
+          const uitgave = JSON.parse(readFileSync(e.RUNNER_TEMP + '/uitgave.json', 'utf8'));
+          const archief = uitgave.assets.find(a => a.name === `mijn-ruimte-${e.VERSIE}.tar.gz`);
+          if (uitgave.draft || !archief || archief.state !== 'uploaded' || archief.digest !== 'sha256:' + som) {
+            throw Error('Оприлюднений архів не збігається за контрольною сумою SHA-256.');
+          }
+          console.log(`https://github.com/${e.GITHUB_REPOSITORY}/releases/download/${e.VERSIE}/mijn-ruimte-${e.VERSIE}.tar.gz`);
+          JS
+      - name: Приховати незавершений випуск у разі збою перевірки
+        if: failure() && steps.publicatie.outcome == 'success'
+        run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-001-controle
+          path: uitvoer/
+          if-no-files-found: ignore

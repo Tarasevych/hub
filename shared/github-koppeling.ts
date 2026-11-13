@@ -60,8 +60,16 @@ export const GITHUB_OAUTH_CALLBACK_PAD = '/api/owner/github/oauth/callback';
 export const githubOauthScopes = (): readonly string[] => GITHUB_RECHTEN.map((recht) => recht.code);
 export const githubOauthScopeTekst = (): string => githubOauthScopes().join(' ');
 /** Heeft de toegekende scope alles wat verplicht is? GitHub geeft de scope van de token terug als «a,b,c». */
-export function scopeVoldoet(toegekend: unknown): { ok: boolean; mist: string[]; scopes: string[] } {
+export function scopeVoldoet(
+  toegekend: unknown,
+  opties?: { githubAppUserToken?: boolean },
+): { ok: boolean; mist: string[]; scopes: string[] } {
   const scopes = String(toegekend ?? '').split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
+  // Een gebruikerstoken van een GitHub App (Iv1… / Iv23… / ghu_…) draagt fijne rechten op de app zelf en krijgt van GitHub
+  // een lege `scope`-string terug; in dat geval gelden de rechten van de app en niet de klassieke OAuth-lijst.
+  if (opties?.githubAppUserToken && scopes.length === 0) {
+    return { ok: true, mist: [], scopes: ['repo'] };
+  }
   const heeft = (code: string) => scopes.includes(code) || (code.startsWith('read:') && scopes.includes(code.slice(5)));
   const mist = GITHUB_RECHTEN.filter((recht) => recht.verplicht && !heeft(recht.code)).map((recht) => recht.code);
   return { ok: mist.length === 0, mist, scopes };
@@ -273,6 +281,14 @@ export type GithubKoppelingFeiten = GithubStatusFeiten & {
   appId?: string;
   /** Wat de eigenaar bij GitHub moet invullen, gerekend uit het domein van DEZE installatie. */
   instel?: GithubInstelWaarden;
+  /** Feiten over éénkliks koppelen zonder handmatig sleutels te kopiëren (platform-OAuth, App-manifest, apparaatcode). */
+  eenklik?: {
+    modus: 'platform-oauth' | 'eigen-oauth' | 'eigen-app' | 'manifest';
+    directKlaar: boolean;
+    platformOauthKlaar: boolean;
+    apparaatCodeKlaar: boolean;
+    eigenAppKlaar: boolean;
+  };
 };
 
 export type KaartInvoer = { laden: boolean; fout: string; feiten: GithubKoppelingFeiten | null };
@@ -291,7 +307,7 @@ export type KaartStaat = {
   dagenOver: number | null;
   /** Mag «Підключити» / «Замінити токен» nu iets doen? */
   kanVerbinden: boolean;
-  /** Is er een sleutel die ontkoppeld kan worden? */
+  /** Is er een sleutel die ontkoppelen kan worden? */
   kanOntkoppelen: boolean;
   /** Langs welke weg de server nu praat (voor «Підключено як @user через …»). */
   via: GithubVia;
@@ -345,8 +361,8 @@ export function koppelKaartStaat(invoer: KaartInvoer): KaartStaat {
  * documentatie van GitHub of uit een eigen controle; de kaart zet er woorden bij in plaats van «не вдалося».
  */
 export const GITHUB_OAUTH_FOUTEN: Record<string, Tekst> = {
-  GITHUB_OAUTH_APP_ONTBREEKT: ['У сховищі немає OAuth-застосунку (призначення «github-oauth»). Зареєструйте застосунок на GitHub і покладіть client id + client secret у сховище.',
-    'In de kluis staat geen OAuth-app (doel «github-oauth»). Registreer de app op GitHub en zet client id + client secret in de kluis.'],
+  GITHUB_OAUTH_APP_ONTBREEKT: ['У сховищі немає OAuth-застосунку (призначення «github-oauth»). Скористайтеся кнопкою одноклікового підключення або додайте власний застосунок.',
+    'In de kluis staat geen OAuth-app (doel «github-oauth»). Gebruik de éénkliks koppelknop of voeg uw eigen app toe.'],
   GITHUB_OAUTH_APP_ONLEESBAAR: ['Значення ключа «github-oauth» не розпізнано. Потрібні два рядки: «client_id: …» і «client_secret: …».',
     'De waarde van de sleutel «github-oauth» is niet herkend. Nodig zijn twee regels: «client_id: …» en «client_secret: …».'],
   GITHUB_OAUTH_STATE_ONBEKEND: ['Повернення не збіглося з початком потоку (state невідомий, уже використаний або прострочений). Почніть підключення заново.',
@@ -375,8 +391,30 @@ export const GITHUB_OAUTH_FOUTEN: Record<string, Tekst> = {
     'De GitHub-App-sleutel is niet herkend: nodig zijn een regel «app_id: …» en een blok «-----BEGIN PRIVATE' + ' KEY-----».'],
   GITHUB_APP_SLEUTEL_ONGELDIG: ['GitHub не прийняв підпис застосунку. Перевірте App ID і те, що приватний ключ належить саме цьому застосунку.',
     'GitHub accepteerde de ondertekening van de app niet. Controleer het App ID en of de sleutel bij déze app hoort.'],
-  GITHUB_APP_GEEN_INSTALLATIE: ['Застосунок ще не встановлений ні в одному акаунті. Відкрийте його сторінку на GitHub і натисніть «Install».',
-    'De app is nog nergens geïnstalleerd. Open zijn pagina op GitHub en klik op «Install».'],
-  GITHUB_OAUTH_ONTKOPPELEN_MISLUKT: ['Відкликати токен на GitHub не вдалося; локальний запис усе одно видалено. Перевірте дозволи на github.com/settings/applications.',
+  GITHUB_APP_GEEN_INSTALLATIE: ['Застосунок ще не встановлений ні в одному обліковому записі. Натисніть «Встановити застосунок на GitHub» на картці нижче.',
+    'De app is nog nergens geïnstalleerd. Klik hieronder op «App op GitHub installeren».'],
+  GITHUB_OAUTH_ONTKOPPELEN_MISLUKT: ['Відкликати маркер на GitHub не вдалося; локальний запис усе одно видалено. Перевірте дозволи на github.com/settings/applications.',
     'De token intrekken bij GitHub lukte niet; het record hier is wel verwijderd. Controleer github.com/settings/applications.'],
+  GITHUB_MANIFEST_MISLUKT: ['Обмін одноразового коду маніфесту GitHub App не вдався або код прострочено. Почніть одноклікове підключення ще раз.',
+    'Het inwisselen van de eenmalige GitHub-App-manifestcode lukte niet of de code is verlopen. Start het éénkliks koppelen opnieuw.'],
+  GITHUB_DEVICE_VERLOPEN: ['Час очікування коду підтвердження пристрою сплив. Запустіть новий код одним натиском.',
+    'De wachttijd voor de apparaatcode is verstreken. Start met één klik een nieuwe code.'],
+  SLEUTELKLUIS_GESLOTEN: ['Особисте сховище ключів закрите після входу або перезапуску сервера. Відкрийте сховище ключів ключем доступу чи кодом відновлення та повторіть підключення.',
+    'De persoonlijke sleutelkluis is gesloten na aanmelden of herstart van de server. Ontgrendel eerst de sleutelkluis met uw toegangssleutel of herstelcode en koppel opnieuw.'],
+  GITHUB_KOPPELING_BEWAREN_MISLUKT: ['Не вдалося безпечно зберегти підключення на сервері. Перевірте стан сховища ключів і повторіть спробу.',
+    'De koppeling kon niet veilig op de server worden opgeslagen. Controleer de staat van de sleutelkluis en probeer het opnieuw.'],
 };
+
+/** Adres van «Способи входу → Шифрування» op het id-subdomein van DEZE installatie (zonder vaste domeinnaam). */
+export function sleutelkluisOntgrendelAdres(origin: string): string {
+  try {
+    const u = new URL(origin);
+    const delen = u.hostname.split('.');
+    if (delen.length >= 2) {
+      if (delen.length > 2) delen[0] = 'id';
+      else delen.unshift('id');
+      return `${u.protocol}//${delen.join('.')}${u.port ? `:${u.port}` : ''}/aanmeldmethoden#aanmeldmethoden-sleutelkluis`;
+    }
+  } catch { /* terugval op relatief pad */ }
+  return '/aanmeldmethoden#aanmeldmethoden-sleutelkluis';
+}

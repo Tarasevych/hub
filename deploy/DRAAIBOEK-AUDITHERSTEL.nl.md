@@ -180,8 +180,11 @@ Volgorde is belangrijk: **eerst de omgeving samenvoegen, dan de app.** De vorige
 
 ## 10. Noodgevallen
 
-- **Step-up blokkeert iets dringends:** `echo 'STAP_OP_UIT=1' >> /etc/mijn-ruimte/geheimen.env && systemctl restart mijn-ruimte`;
-  daarna de regel weer weghalen (`sed -i '/^STAP_OP_UIT=/d' /etc/mijn-ruimte/geheimen.env`) en herstarten.
+- **Step-up blokkeert iets dringends:** zet de noodschakelaar met een EINDE (hoogstens 24 uur; daarna gaat de step-up vanzelf weer aan):
+  `echo "STAP_OP_UIT_TOT=$(date -u -d '+2 hours' +%Y-%m-%dT%H:%M:%SZ)" >> /etc/mijn-ruimte/geheimen.env && systemctl restart mijn-ruimte`;
+  daarna de regel weer weghalen (`sed -i '/^STAP_OP_UIT/d' /etc/mijn-ruimte/geheimen.env`) en herstarten. Zolang de schakelaar aan staat,
+  meldt de server dat bij de start en elke 24 uur (logboek, beheerjournaal, melding aan de eigenaar), in «Захист» en in de diepe
+  gezondheidscontrole (SEC-002). De oude vorm `STAP_OP_UIT=1` werkt nog, maar heeft geen einde: niet meer gebruiken.
 - **Google-step-up werkt niet omdat Google geen `auth_time` stuurt** en TOTP is niet ingesteld: tijdelijk
   `STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1` (zelfde manier; zwakker: telt een expliciete `prompt=login`-ronde binnen
   5 minuten). Liever: Sessie age claims aanzetten (§0).

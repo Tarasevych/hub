@@ -28,17 +28,24 @@ function versheid(authDate: number, nuSec: number): boolean {
   return Number.isFinite(authDate) && authDate > 0 && authDate <= nuSec + SPELING_SECONDEN && nuSec - authDate <= VERS_SECONDEN;
 }
 
+const EIGEN_ROUTE_VELDEN: ReadonlySet<string> = new Set(['hash', 'i', 'verzoek', 'state', 'taal']);
+
 /** aanmeldvenster (https://core.telegram.org/widgets/login#checking-authorization). */
 export function widgetControle(velden: Record<string, unknown>, botToken: string, nuSec = Math.floor(Date.now() / 1000)): ControleUitkomst {
-  const hash = String(velden.hash ?? '');
-  if (!botToken || !/^[0-9a-f]{64}$/.test(hash)) return { ok: false, vers: false, reden: 'VELDEN_ONGELDIG', handtekeningHash: '' };
-  const toegestaan = ['auth_date', 'first_name', 'id', 'last_name', 'photo_url', 'username'];
-  const paren = Object.entries(velden).filter(([k, v]) => k !== 'hash' && toegestaan.includes(k) && v !== undefined && v !== null && String(v) !== '')
-    .map(([k, v]) => `${k}=${String(v)}`).sort();
+  const hash = String(velden.hash ?? '').toLowerCase();
+  const telegramId = String(velden.id ?? '');
+  const authDate = Number(velden.auth_date);
+  if (!botToken || !/^[0-9a-f]{64}$/.test(hash) || !/^[0-9]{1,20}$/.test(telegramId) || !Number.isFinite(authDate) || authDate <= 0) {
+    return { ok: false, vers: false, reden: 'VELDEN_ONGELDIG', handtekeningHash: '' };
+  }
+  const paren = Object.entries(velden)
+    .filter(([k, v]) => !EIGEN_ROUTE_VELDEN.has(k) && v !== undefined && v !== null && String(v) !== '')
+    .map(([k, v]) => `${k}=${String(v)}`)
+    .sort();
   const sleutel = createHash('sha256').update(botToken).digest();
   const verwacht = createHmac('sha256', sleutel).update(paren.join('\n')).digest('hex');
   const ok = gelijk(verwacht, hash);
-  const vers = versheid(Number(velden.auth_date), nuSec);
+  const vers = versheid(authDate, nuSec);
   return { ok, vers, reden: !ok ? 'HANDTEKENING_ONGELDIG' : !vers ? 'VERLOPEN' : '', handtekeningHash: sha256hex(`widget:${hash}`) };
 }
 
@@ -63,7 +70,7 @@ export function initDataControle(initData: string, botToken: string, nuSec = Mat
 // Vorm (≤ 64 bytes): «<a>.<id>.<sig>»  a = één letter van de handeling, id = 12 tekens base64url (verzoek/token-id),
 // sig = 16 tekens base64url van HMAC(sleutel, a|id|telegramId|vervaltijd). De vervaltijd en de binding zitten ook in de
 // databaserij (app.tg_knoppen); de handtekening voorkomt dat iemand willekeurige id's probeert.
-export const KNOP_ACTIES = { i: 'inloggen', n: 'weigeren', b: 'bevestigen', w: 'wijziging-gezien', x: 'wijziging-nee', o: 'ontkoppelen', t: 'taal-uk', l: 'taal-nl', a: 'account-kiezen', r: 'opnieuw', c: 'annuleren', s: 'symbool' /* APPARAAT-001: één van de symbolen van de kaart */ } as const;
+export const KNOP_ACTIES = { i: 'inloggen', n: 'weigeren', b: 'bevestigen', w: 'wijziging-gezien', x: 'wijziging-nee', o: 'ontkoppelen', t: 'taal-uk', l: 'taal-nl', a: 'account-kiezen', r: 'opnieuw', c: 'annuleren', s: 'symbool' /* APPARAAT-001: één van de symbolen van de kaart */, z: 'sessie-intrekken' } as const;
 export type KnopLetter = keyof typeof KNOP_ACTIES;
 export const isKnopLetter = (v: string): v is KnopLetter => Object.prototype.hasOwnProperty.call(KNOP_ACTIES, v);
 
@@ -118,3 +125,44 @@ export function codeKlopt(code: string, peper: string, opgeslagen: string): bool
 
 /** Webhookgeheim (X-Telegram-Bot-Api-Secret-Token): 1–256 tekens A-Z a-z 0-9 _ -. */
 export const WEBHOOK_GEHEIM_RE = /^[A-Za-z0-9_-]{32,256}$/;
+
+// ------------------------------------------------------------------------------------------------ geheime code, asynchroon
+// SEC-002 (aanv-gat-a-03): codeHashen/codeKlopt hierboven rekenen SYNCHROON (scrypt N=2^15 ≈ 100 ms, Argon2id 19 MiB × 2) in de enige
+// hoofdthread: één chatbericht van vijf woorden = tien hashes ≈ 1–2 s waarin de hele site niemand antwoordt. De server gebruikt nu
+// deze asynchrone vorm (libuv-threadpool) met hoogstens HASH_PARALLEL tegelijk, zodat een vloed ook de threadpool en het geheugen
+// niet opeist. Zelfde formaat en zelfde uitkomst als de synchrone functies (die blijven voor bestaande aanroepers en tests).
+type Argon2Async = (algo: string, p: Record<string, unknown>, cb: (err: Error | null, h: Buffer) => void) => void;
+const argon2Async = (nodeCrypto as unknown as { argon2?: Argon2Async }).argon2;
+const HASH_PARALLEL = 2;
+let hashBezig = 0;
+const hashWachtrij: Array<() => void> = [];
+async function metHashPlaats<T>(fn: () => Promise<T>): Promise<T> {
+  if (hashBezig >= HASH_PARALLEL) await new Promise<void>((r) => hashWachtrij.push(r));
+  hashBezig += 1;
+  try { return await fn(); } finally { hashBezig -= 1; hashWachtrij.shift()?.(); }
+}
+const scryptAsync = (invoer: Buffer, zout: Buffer) => new Promise<Buffer>((ok, nee) =>
+  nodeCrypto.scrypt(invoer, zout, 32, { N: 1 << 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }, (e, h) => (e ? nee(e) : ok(h))));
+const argon2Hash = (invoer: Buffer, zout: Buffer) => new Promise<Buffer>((ok, nee) => {
+  const p = { message: invoer, nonce: zout, parallelism: 1, tagLength: 32, memory: 19456, passes: 2 };
+  if (typeof argon2Async === 'function') argon2Async('argon2id', p, (e, h) => (e ? nee(e) : ok(h)));
+  else if (ARGON2_BESCHIKBAAR) { try { ok(argon2Sync!('argon2id', p)); } catch (e) { nee(e); } } // alleen als er geen asynchrone vorm is
+  else nee(new Error('ARGON2_ONTBREEKT'));
+});
+/** Asynchrone codeHashen (zelfde formaat). */
+export function codeHashenAsync(code: string, peper: string, zout = randomBytes(16)): Promise<string> {
+  const invoer = Buffer.from(`${code.normalize('NFC')}\u0000${peper}`, 'utf8');
+  return metHashPlaats(async () => (ARGON2_BESCHIKBAAR
+    ? `argon2id$${zout.toString('base64url')}$${(await argon2Hash(invoer, zout)).toString('base64url')}`
+    : `scrypt$${zout.toString('base64url')}$${(await scryptAsync(invoer, zout)).toString('base64url')}`));
+}
+/** Asynchrone codeKlopt (zelfde uitkomst). */
+export function codeKloptAsync(code: string, peper: string, opgeslagen: string): Promise<boolean> {
+  const [soort, zoutB64, hashB64] = String(opgeslagen || '').split('$');
+  if (!zoutB64 || !hashB64) return Promise.resolve(false);
+  if (soort !== 'argon2id' && soort !== 'scrypt') return Promise.resolve(false);
+  if (soort === 'argon2id' && !ARGON2_BESCHIKBAAR) return Promise.resolve(false);
+  const zout = Buffer.from(zoutB64, 'base64url');
+  const invoer = Buffer.from(`${String(code ?? '').normalize('NFC')}\u0000${peper}`, 'utf8');
+  return metHashPlaats(async () => gelijk(soort === 'argon2id' ? await argon2Hash(invoer, zout) : await scryptAsync(invoer, zout), Buffer.from(hashB64, 'base64url')));
+}

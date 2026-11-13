@@ -19,6 +19,7 @@ import {
 } from '../../shared/werkblad-register';
 import { bewaarV3, draaiV3Terug, laadV3, schrijfCacheV3, wisCacheV3, WerkbladV3Verouderd, type LaagStand, type V3Antwoord } from './api-v3';
 import { haalWerkblad } from './api';
+import { weigeringZinUitFout } from '../../shared/weigering-tekst';
 import { pasPaginaAchtergrondToe } from './pagina-achtergrond';
 import { useZichtbaar } from './gegevens';
 import { tr, type Acties, type Dienst, type Lang } from './soorten';
@@ -300,7 +301,7 @@ export default function WerkbladV3({ lang, ownerUserId, naam, magBewerken, recht
       zetMelding(r.hersteld
         ? tr(lang, `Розкладку v2 відновлено (версія ${r.v2Versie}). Щоб бачити старий стіл, вимкніть прапорець «werkblad-v3». Дані v3 збережено.`, `De v2-indeling is hersteld (versie ${r.v2Versie}). Zet de vlag «werkblad-v3» uit om het oude werkblad te zien. De v3-gegevens blijven bewaard.`)
         : tr(lang, 'Резервної копії v2 немає — нічого відновлювати.', 'Er is geen v2-back-up — niets te herstellen.'));
-    } catch (e) { zetMelding(tr(lang, `Не вдалося (${String((e as Error)?.message || e)}).`, `Mislukt (${String((e as Error)?.message || e)}).`)); }
+    } catch (e) { zetMelding(weigeringZinUitFout(lang, e) ?? tr(lang, `Не вдалося (${String((e as Error)?.message || e)}).`, `Mislukt (${String((e as Error)?.message || e)}).`)); }
   };
   const kiesAchtergrond = (nieuw: string) => { const a = klasseRef.current; const l = a && lagenRef.current[a]?.layout; if (a && l) bewaar(a, l, { achtergrond: nieuw }); zetAchtergrond(nieuw); };
 

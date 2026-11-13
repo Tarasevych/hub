@@ -26,6 +26,7 @@ import type { RouterMiddleware } from '../server/platform/router';
 import { schoonHostLijst } from '../shared/mcp-klant-model';
 import { BESLUIT_CODES, BESLUIT_LIMIETEN, BESLUIT_SOORTEN, type BesluitInhoud, type BesluitSoort, type BesluitStaat, type BesluitStand, type BesluitUit } from '../shared/eigenaar-besluit';
 import { UitrolFout, assertieOpties, assertieUit, leesSleutels, uitdagingMaken, uitdagingVerbruiken } from './uitrol-goedkeuring';
+import { jsonbTekst } from '../shared/tekst-veilig';
 // ORCH-001 етап 3 (31.10.2026): besluit «orch-regels» — het ontwerp van de regels komt uit backend/orch-opslag.ts (werkkopie ORCH_WORTEL).
 import { OrchFout, rootBevestigingen, voorstelVoorBesluit } from './orch-opslag';
 
@@ -137,7 +138,7 @@ export async function uitkomstOpnemen(r: Record<string, unknown>): Promise<Recor
     if (typeof st.actief === 'string') uitkomst.actief = tekst(st.actief, 20);
     for (const k of ['toegevoegd', 'verwijderd', 'hosts'] as const) if (Array.isArray(st[k])) uitkomst[k] = (st[k] as unknown[]).map((h) => tekst(h, 300)).slice(0, 50);
     const { rows } = await sys().query(`UPDATE app.eigenaar_besluiten SET staat = $2, code = $3, uitkomst = $4::jsonb, passkey = $5, afgerond_op = now()
-      WHERE id = $1 AND staat IN ('ontwerp', 'ondertekend') RETURNING *`, [String(r.id), nieuw, code, JSON.stringify(uitkomst), /^[0-9a-f]{0,16}$/.test(String(st.passkey || '')) ? String(st.passkey || '') : '']);
+      WHERE id = $1 AND staat IN ('ontwerp', 'ondertekend') RETURNING *`, [String(r.id), nieuw, code, jsonbTekst(uitkomst), /^[0-9a-f]{0,16}$/.test(String(st.passkey || '')) ? String(st.passkey || '') : '']);
     if (rows[0]) { if (nieuw === 'klaar' && String(r.soort) === 'externe-hosts') { try { (await import('./mcp-klant/klant')).vergeetHostCache(); } catch { /* cache vernieuwt zichzelf op mtime */ } } return rows[0]; }
     return r;
   }
@@ -148,7 +149,7 @@ export async function uitkomstOpnemen(r: Record<string, unknown>): Promise<Recor
     const uitkomst = staat === 'ondertekend'
       ? { uk: 'Root не відповів протягом 15 хв; подивіться journalctl -u mijn-ruimte-besluit або «Діагностика».', nl: 'Root antwoordde niet binnen 15 min; zie journalctl -u mijn-ruimte-besluit of «Діагностика».', tijd: new Date().toISOString() }
       : { uk: 'Чернетку не підписано протягом 5 хв.', nl: 'Het ontwerp is niet binnen 5 min ondertekend.', tijd: new Date().toISOString() };
-    const { rows } = await sys().query(`UPDATE app.eigenaar_besluiten SET staat = 'verlopen', code = $2, uitkomst = $3::jsonb, afgerond_op = now() WHERE id = $1 AND staat = $4 RETURNING *`, [String(r.id), code, JSON.stringify(uitkomst), staat]);
+    const { rows } = await sys().query(`UPDATE app.eigenaar_besluiten SET staat = 'verlopen', code = $2, uitkomst = $3::jsonb, afgerond_op = now() WHERE id = $1 AND staat = $4 RETURNING *`, [String(r.id), code, jsonbTekst(uitkomst), staat]);
     return rows[0] || r;
   }
   return r;
@@ -193,7 +194,7 @@ export async function starten(e: Eigenaar, input: { soort?: unknown; inhoud?: un
   const hash = bk.besluitHash(soort, inhoud!);
   const u = await uitdagingMaken(e.id, 'eigenaar-besluit', id, { besluitHash: hash });
   await sys().query(`INSERT INTO app.eigenaar_besluiten (id, user_id, soort, inhoud, hash, nonce, verloopt_ms, uitdaging_id, door) VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)`,
-    [id, e.id, soort, JSON.stringify(inhoud!), hash, u.nonce, u.verloopt, u.id, tekst(e.email || e.id, 200)]);
+    [id, e.id, soort, jsonbTekst(inhoud!), hash, u.nonce, u.verloopt, u.id, tekst(e.email || e.id, 200)]);
   await audit(e, 'eigenaar_besluit_gestart', 'success', { besluit: id, soort, inhoud: inhoud!, hash: hash.slice(0, 16) });
   return { id, soort, inhoud: inhoud!, hash, uitdagingId: u.id, verloopt: u.verloopt, publicKey: assertieOpties(u.uitdaging, b), stand: { actief: s.actief, vorige: s.vorige, hosts: s.hosts } };
 }
@@ -254,7 +255,7 @@ export async function ondertekenen(e: Eigenaar, input: { id?: unknown; uitdaging
   const v = kern.verifieerAssertie({ assertie, verwachteUitdaging: verwacht, rpId: b.rpId, origins, sleutels: b.sleutels });
   if (!v.ok) {
     await sys().query(`UPDATE app.eigenaar_besluiten SET staat = 'geweigerd', code = $2, uitkomst = $3::jsonb, afgerond_op = now() WHERE id = $1 AND staat = 'ontwerp'`,
-      [String(r.id), `PASSKEY_${v.code}`.slice(0, 60), JSON.stringify({ uk: 'Сайт не прийняв підпис passkey (попередня перевірка).', nl: 'De site accepteerde de passkey-handtekening niet (voorcontrole).', tijd: new Date().toISOString() })]);
+      [String(r.id), `PASSKEY_${v.code}`.slice(0, 60), jsonbTekst({ uk: 'Сайт не прийняв підпис passkey (попередня перевірка).', nl: 'De site accepteerde de passkey-handtekening niet (voorcontrole).', tijd: new Date().toISOString() })]);
     await audit(e, 'eigenaar_besluit_geweigerd', 'denied', { besluit: String(r.id), soort, code: v.code, waar: 'app' });
     fout(`PASSKEY_${v.code}`, 403);
   }
@@ -267,7 +268,7 @@ export async function ondertekenen(e: Eigenaar, input: { id?: unknown; uitdaging
     const f = inboxFout(err);
     console.error(`[eigenaar-besluit] inbox ${inbox()}: ${f.code} (${f.detail})`);
     await sys().query(`UPDATE app.eigenaar_besluiten SET staat = 'mislukt', code = $2, uitkomst = $3::jsonb, afgerond_op = now() WHERE id = $1 AND staat = 'ontwerp'`,
-      [String(r.id), f.code, JSON.stringify({ uk: `${BESLUIT_CODES[f.code]?.[0] || f.code} (${f.detail})`, nl: `${BESLUIT_CODES[f.code]?.[1] || f.code} (${f.detail})`, tijd: new Date().toISOString() })]);
+      [String(r.id), f.code, jsonbTekst({ uk: `${BESLUIT_CODES[f.code]?.[0] || f.code} (${f.detail})`, nl: `${BESLUIT_CODES[f.code]?.[1] || f.code} (${f.detail})`, tijd: new Date().toISOString() })]);
     await audit(e, 'eigenaar_besluit_mislukt', 'failure', { besluit: String(r.id), soort, code: f.code, detail: f.detail, waar: 'app-inbox' });
     fout(f.code, 500);
   }

@@ -24,7 +24,7 @@ import { formatMailAttachmentSize, type MailAttachment } from '../MailBijlageVoo
 import type { MailThreadMessage } from '../MailGesprekInhoud';
 import { useLeesVenster } from './LeesVenster';
 import { TOON_ALINEA } from './alinea-aanwijzen';
-import { useBeeldenAltijd, zetBeeldenAltijd } from './beelden-toestemming';
+import { beeldenInstelling as beeldenInstellingVan, useBeeldenAltijd, zetBeeldenAltijd } from './beelden-toestemming';
 import {
   adresVan, afzenderControle, beeldenTellen, bijlageVersies, contactKleur, naamVan, onderwerpWoorden, tijdlijn, verwanteBrieven,
   type AfzenderControle, type Kandidaat, type VersieGroep, type VerwantBericht,
@@ -364,7 +364,9 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
   }, { extern: 0, pixels: 0, onveilig: 0 }), [p.thread]);
   const tls = afzenderBrief?.details?.transport?.status === 'encrypted_observed';
   // externe beelden: «Вигляд → Зовнішні зображення» (standaard «Питати») of «altijd» voor deze afzender (op dit apparaat)
-  const beeldenInstelling = useLeesVenster()?.weergave.beelden || 'altijd', afzenderAltijd = useBeeldenAltijd(afzenderBrief?.from || '');
+  // SEC-002 (interface-06/post-05): «altijd» per account + mailbox (bron.cacheAccountId), niet voor de hele browser; zonder kader «vragen».
+  const beeldenBereik = p.bron.cacheAccountId || '';
+  const beeldenInstelling = beeldenInstellingVan(useLeesVenster()?.weergave), afzenderAltijd = useBeeldenAltijd(afzenderBrief?.from || '', beeldenBereik);
   const beeldenGetoond = beeldenInstelling === 'altijd' || afzenderAltijd;
   const veiligSectie = (
     <section className='ctx-sectie' aria-labelledby={`${id}-vl`} key='veilig'>
@@ -378,7 +380,8 @@ function Paneel(p: Props & { vorm: 'kolom' | 'blad'; sluit: () => void }) {
               ? t(`Зовнішні зображення: ${beelden.extern}. Їх завантажує ваш сервер, а не браузер: відправник бачить адресу сервера, а не вашу; сервер їх не зберігає.`, `Externe afbeeldingen: ${beelden.extern}. Uw server haalt ze op, niet de browser: de afzender ziet het adres van de server, niet het uwe; de server bewaart ze niet.`)
               : t(`Зовнішні зображення: ${beelden.extern} — приховано, доки ви їх не покажете (смуга над листом). Показані завантажує ваш сервер, а не браузер.`, `Externe afbeeldingen: ${beelden.extern} — verborgen tot u ze toont (strook boven het bericht). Getoond haalt uw server ze op, niet de browser.`)}
             {beelden.extern > 0 && afzenderBrief && beeldenInstelling !== 'altijd' && (
-              <button type='button' className='ctx-knop ctx-knop-klein' onClick={() => zetBeeldenAltijd(afzenderBrief.from, !afzenderAltijd)}>
+              <button type='button' className='ctx-knop ctx-knop-klein' onClick={() => zetBeeldenAltijd(afzenderBrief.from, !afzenderAltijd, beeldenBereik)}
+                title={afzenderAltijd ? t('Зовнішні зображення від цього відправника знову будуть приховані, доки ви їх не покажете.', 'Externe afbeeldingen van deze afzender blijven weer verborgen tot u ze toont.') : t('! Зображення від цього відправника завантажуватимуться одразу (через ваш сервер): відправник зможе дізнатися, що лист відкрито й коли. Діє лише для цього облікового запису й цієї скриньки на цьому пристрої.', '! Afbeeldingen van deze afzender worden dan meteen geladen (via uw server): de afzender kan zien dat en wanneer het bericht geopend is. Geldt alleen voor dit account en deze mailbox op dit apparaat.')}>
                 {afzenderAltijd ? t('Більше не показувати автоматично', 'Niet meer automatisch tonen') : t('Завжди від цього відправника', 'Altijd van deze afzender')}
               </button>
             )}</span></li>

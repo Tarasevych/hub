@@ -18,6 +18,7 @@ import { ecosystemTabContext } from './tab-context';
 import { canonicalNavigationUrl, routeLang } from './canoniek-navigatie';
 import { foutCode, foutTekst, isRechtFout, RECHT_UITLEG } from './agenten/fouten';
 import AiWerkruimteChat from './AiWerkruimteChat';
+import { AiWerkruimteEcosysteemBalk } from './ai-ecosysteem/AiEcosysteemPaneel';
 import {
   LEGE_FEITEN, startStaat, VRAAG_GROEPEN, vragenMetStand,
   type Feiten, type Middel, type MiddelStaat, type Startstaat, type Tweetalig,
@@ -51,6 +52,8 @@ const adresVan = (m: Middel) => {
   return m.waar.hash ? `${basis.replace(/#.*$/, '')}#${m.waar.hash}` : basis;
 };
 
+const mcpHubUrl = (hubTab: string) => `${canonicalNavigationUrl('mcp', 'agents', routeLang()).replace(/#.*$/, '')}#${hubTab}`;
+
 function MiddelRij({ m, tr }: { m: Middel; tr: Tr }) {
   const naam = STAAT_NAAM[m.staat];
   return (
@@ -72,6 +75,8 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
   const [laden, setLaden] = useState<Laden>({ fase: 'laden' });
   const [weergave, setWeergave] = useState<'werk' | 'middelen'>('werk');
   const [invoer, setInvoer] = useState('');
+  const [actieveWerkruimteId, setActieveWerkruimteId] = useState('');
+  const [gekozenContextSleutels, setGekozenContextSleutels] = useState<string[]>([]);
 
   const lees = useCallback(async () => {
     try {
@@ -182,6 +187,16 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
 
         {weergave === 'werk' ? (
           <>
+            <AiWerkruimteEcosysteemBalk
+              tr={tr}
+              actieveWerkruimteId={actieveWerkruimteId}
+              onWerkruimteId={setActieveWerkruimteId}
+              gekozenContextSleutels={gekozenContextSleutels}
+              onContextSleutels={setGekozenContextSleutels}
+              onKiesStartVraag={(v) => setInvoer(v)}
+              hubUrl={mcpHubUrl}
+            />
+
             <article className='aiw-kaart' data-aiw-vragen='1'>
               <h2>{tr('З чого почати', 'Waarmee u begint')}</h2>
               <p>{stand.kanChatten
@@ -215,7 +230,16 @@ export default function AiWerkruimte({ tr, eigenaar, geenSleutel, band }: Props)
                 : null}
             </article>
 
-            <AiWerkruimteChat tr={tr} feiten={feiten} stand={stand} invoer={invoer} onInvoer={setInvoer} blokkadeUitleg={blokkadeUitleg} />
+            <AiWerkruimteChat
+              tr={tr}
+              feiten={feiten}
+              stand={stand}
+              invoer={invoer}
+              onInvoer={setInvoer}
+              blokkadeUitleg={blokkadeUitleg}
+              werkruimteId={actieveWerkruimteId}
+              contextSleutels={gekozenContextSleutels}
+            />
           </>
         ) : (
           <>

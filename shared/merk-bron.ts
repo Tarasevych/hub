@@ -26,6 +26,14 @@ export const MERK_BEELD_TIMEOUT_MS = 5000;
 export const MERK_BEELD_MAX_OMLEIDINGEN = 3;
 export const MERK_BEELD_MIN_PX = 128;
 export const MERK_HTML_MAX_BYTES = 256 * 1024;
+/** SEC-002 (12.11.2026): een SVG van een VREEMDE (BIMI, pictogram van de site van een afzender) mag veel kleiner zijn dan een
+ *  logo dat de beheerder zelf oplaadt (200 KB): BIMI raadt ≤ 32 KB aan, en hoe kleiner het vreemde bestand, hoe minder werk
+ *  een onbekende de server kan laten doen. */
+export const MERK_EXTERN_SVG_MAX_BYTES = 64 * 1024;
+/** Eén <link …>-tag in de <head> is nooit langer dan dit; een langere «tag» is geen tag maar rommel (of een aanval). */
+export const MERK_LINK_TAG_MAX = 4000;
+/** Zoveel <link>-iconen van één pagina bekijken we hooguit (de server haalt er daarna toch maar 5 op). */
+export const MERK_LINK_ICONEN_MAX = 100;
 export const AFZENDER_BEELDEN_MAX = 50;
 /** Zelfde domein niet vaker dan dit opnieuw proberen (ook als de cache leeg is: na een fout, na een herstart). */
 export const MERK_DOMEIN_INTERVAL_MS = 10 * 60 * 1000;
@@ -49,6 +57,20 @@ export function domeinKandidaten(domein: string): string[] {
   if (!d) return [];
   const org = merkDomeinVan(organisatieDomein(d));
   return org && org !== d ? [d, org] : [d];
+}
+/**
+ * SEC-002 / post-06 (12.11.2026): het domein dat de server ZELF mag benaderen voor het logo van een AFZENDER. Het adres in
+ * «From» kiest de afzender: met `x@u-<kenmerk van de ontvanger>.volger.example` liet hij de server naar precies DAT subdomein
+ * gaan (DNS + HTTPS) zodra de lijst van de post het bericht toonde — een leesbevestiging per ontvanger, nog vóór het bericht
+ * geopend is en langs «зовнішні зображення: питати» heen. Daarom: alleen een domein uit de eigen lijsten (`bekend`) wordt
+ * letterlijk benaderd; van elk ander adres uitsluitend het organisatiedomein (dat voor alle ontvangers hetzelfde is en maar
+ * één keer voor de hele site wordt opgehaald).
+ */
+export function ophaalDomein(domein: string, bekend: (d: string) => boolean = () => false): string {
+  const d = merkDomeinVan(domein);
+  if (!d) return '';
+  if (bekend(d)) return d;
+  return merkDomeinVan(organisatieDomein(d));
 }
 /** Een adres van een gratis mailbox (gmail.com, ukr.net …) krijgt NOOIT het logo van die dienst als «foto»: dat zou de afzender
  *  voor de dienst zelf laten doorgaan. Daar alleen een echte foto (Google-contact, Gravatar) of de beginletters. */
@@ -107,7 +129,12 @@ export function probeToegestaan(url: string, eigenDomeinen: readonly string[] = 
 export type IcoonKandidaat = { url: string; px: number; soort: 'icon' | 'apple-touch-icon' | 'manifest'; type: string };
 const attrs = (tag: string): Record<string, string> => {
   const uit: Record<string, string> = {};
-  for (const m of tag.matchAll(/([a-zA-Z:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/g)) uit[m[1].toLowerCase()] = (m[2] ?? m[3] ?? m[4] ?? '').trim();
+  // SEC-002 (12.11.2026): de waarde is optioneel in de uitdrukking, zodat een lange naam zonder «=» in ÉÉN keer gelezen wordt
+  // (vroeger begon de zoektocht bij elke letter van die naam opnieuw: kwadratisch). Alleen een naam MET waarde telt, als voorheen.
+  for (const m of tag.matchAll(/([a-zA-Z:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g)) {
+    const waarde = m[2] ?? m[3] ?? m[4];
+    if (waarde !== undefined) uit[m[1].toLowerCase()] = waarde.trim();
+  }
   return uit;
 };
 const grootte = (sizes: string, type: string, url: string): number => {
@@ -127,7 +154,10 @@ export function iconenUitHtml(html: string, paginaUrl: string): { iconen: IcoonK
   const kop = String(html || '').slice(0, MERK_HTML_MAX_BYTES).split(/<\/head\s*>/i)[0];
   const iconen: IcoonKandidaat[] = [];
   let manifest = '';
-  for (const m of kop.matchAll(/<link\b[^>]*>/gi)) {
+  // SEC-002 / integraties-01 (12.11.2026): `<link\b[^>]*>` las bij «<link <link <link …» (geen «>») vanaf ELKE «<link» tot het
+  // einde van de pagina — 256 KB hield de server bijna 5 seconden vast. Een tag bevat geen «<» en is begrensd in lengte.
+  for (const m of kop.matchAll(new RegExp(`<link\\b[^<>]{0,${MERK_LINK_TAG_MAX}}>`, 'gi'))) {
+    if (iconen.length >= MERK_LINK_ICONEN_MAX) break;
     const a = attrs(m[0]);
     const rel = (a.rel || '').toLowerCase().split(/\s+/);
     const href = ontsnap(a.href || '');
@@ -197,6 +227,7 @@ export function controleerBeeld(b: Buffer, alleen?: readonly MerkMime[]): BeeldU
   if (!mime) return { ok: false, reden: 'GEEN_BEELD' };
   if (alleen && !alleen.includes(mime)) return { ok: false, reden: 'VERKEERD_FORMAAT' };
   if (mime === 'image/svg+xml') {
+    if (b.length > MERK_EXTERN_SVG_MAX_BYTES) return { ok: false, reden: 'SVG_TE_GROOT' };
     const u = ontsmetSvg(b);
     if (!u.ok) return { ok: false, reden: `SVG_${u.reden}` };
     return { ok: true, mime, inhoud: u.inhoud };

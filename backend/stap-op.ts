@@ -9,14 +9,17 @@
 //   c) een geldige passkey-assertie (UV) van een eigen passkey via POST /api/owner/access/stap-op/passkey (backend/toegangssleutels.ts).
 // Opt-in noodpad: STAP_OP_GOOGLE_ZONDER_AUTH_TIME=1 laat een expliciete step-up-transactie (prompt=login) zonder
 // auth_time-claim tellen als het OAuth-verloop binnen 5 minuten na de start is afgerond. Standaard uit.
-// Noodschakelaar: STAP_OP_UIT=1 (alles mag weer zonder step-up, zoals vóór fase 3).
+// Noodschakelaar: STAP_OP_UIT_TOT=<ISO-tijdstip> (hoogstens 24 uur) of — oude vorm, zonder einde — STAP_OP_UIT=1 (alles mag weer
+// zonder step-up, zoals vóór fase 3). Nooit stil: zie stapOpUitStand hieronder en backend/stap-op-noodschakelaar.ts.
 // Opslag: één record per account in owner_step_up_v1 (eigen rij → werkt onder RLS).
 //
 // «Запам'ятати цей браузер (не питати знову до виходу)»: na een geslaagde bevestiging mag de gebruiker die bevestiging laten
 // onthouden voor DEZE browser en DIT account (POST /api/owner/access/stap-op/onthouden, toegangslaag.ts). Dat is één rij
 // (sessie-id → tijdstip) in hetzelfde record: hoogstens STAP_OP_ONTHOUD_MS geldig, onbereikbaar na uitloggen (het sessie-id
 // kan dan niet meer aanmelden), per account apart, en NOOIT genoeg voor «sterke» acties of voor de acties in NOOIT_ONTHOUDEN.
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { db } from '../server/platform';
+import { getPool } from '../server/platform/pg';
 import { actieVoorPad } from '../shared/stap-op-acties';
 export { actieVoorPad } from '../shared/stap-op-acties';
 
@@ -29,17 +32,58 @@ const TOEKOMST_SPELING_MS = 60 * 1000;
 export type StapOpSessie = { id: string; createdAt: number; userId?: string };
 export type StapOpAuth = { user: { id: string }; session?: StapOpSessie | null; tabSession?: StapOpSessie | null };
 
-export const stapOpUit = () => process.env.STAP_OP_UIT === '1';
-const sessieVan = (auth: StapOpAuth): StapOpSessie | null => auth.tabSession || auth.session || null;
+/**
+ * SEC-002 (aanv-gat-a-04): de noodschakelaar. Twee vormen:
+ *   STAP_OP_UIT_TOT=<ISO-tijdstip>  — aanbevolen: geldt alleen tot dat tijdstip en hoogstens 24 uur vooruit; daarna vanzelf weer aan.
+ *                                     Een verlopen, ongeldig of te ver tijdstip zet NIETS uit (de bevestiging blijft gevraagd).
+ *   STAP_OP_UIT=1                   — oude vorm, zonder einde. Blijft werken, maar is nooit meer stil: zie backend/stap-op-noodschakelaar.ts
+ *                                     (waarschuwing bij de start, journaalregel, dagelijkse melding aan de eigenaar, «Захист», diepe controle).
+ * Pure functie (geen database): de stand wordt bij elke controle opnieuw berekend, zodat het einde zonder herstart ingaat.
+ */
+export const STAP_OP_UIT_MAX_MS = 24 * 60 * 60 * 1000;
+export type StapOpUitStand = { uit: boolean; bron: '' | 'STAP_OP_UIT' | 'STAP_OP_UIT_TOT'; tot: number; fout: '' | 'ONGELDIG' | 'VERLOPEN' | 'TE_LANG' };
+/**
+ * g07-toets-1: de 24 uur tellen vanaf de EERSTE keer dat dit proces deze waarde zag, niet vanaf «nu» bij elke controle. Anders werd een
+ * te ver tijdstip (bij de start oranje: «bevestiging staat aan») uren later stil geldig — en ging de bevestiging uit zonder nieuwe melding.
+ * Een te ver tijdstip blijft dus ongeldig tot de waarde verandert (herstart met een correcte regel).
+ */
+const eersteGezien = new Map<string, number>();
+export function stapOpUitStand(nu = Date.now(), env: Record<string, string | undefined> = process.env): StapOpUitStand {
+  const totRuw = String(env.STAP_OP_UIT_TOT || '').trim();
+  if (totRuw) {
+    // Alleen een volledig tijdstip met datum en tijd (geen los getal: «1» of «24» zou als jaartal of tijdzone gelezen kunnen worden).
+    const tot = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(totRuw) ? Date.parse(totRuw) : NaN;
+    if (eersteGezien.size > 100 && !eersteGezien.has(totRuw)) eersteGezien.clear(); // begrensd (in de praktijk één waarde per proces)
+    const vanaf = Math.min(eersteGezien.get(totRuw) ?? nu, nu);
+    eersteGezien.set(totRuw, vanaf);
+    const fout = !Number.isFinite(tot) ? 'ONGELDIG' : tot <= nu ? 'VERLOPEN' : tot - vanaf > STAP_OP_UIT_MAX_MS ? 'TE_LANG' : '';
+    if (!fout) return { uit: true, bron: 'STAP_OP_UIT_TOT', tot, fout: '' };
+    // Een mislukte tijdgrens valt NIET terug op een onbeperkte STAP_OP_UIT=1 ernaast: wie een einde opgaf, bedoelde een einde.
+    return { uit: false, bron: 'STAP_OP_UIT_TOT', tot: Number.isFinite(tot) ? tot : 0, fout };
+  }
+  if (env.STAP_OP_UIT === '1') return { uit: true, bron: 'STAP_OP_UIT', tot: 0, fout: '' };
+  return { uit: false, bron: '', tot: 0, fout: '' };
+}
+export const stapOpUit = () => stapOpUitStand().uit;
+/**
+ * SEC-002 (aanmelden-06): een gedelegeerde aanroep (MCP-hulpmiddel, namens-sessie, «Подивитися як користувач») loopt met de
+ * pseudo-sessie 'mcp-gedelegeerd:<userId>' (ownerDelegatedSession, backend/index.ts). Dat is geen browser van de gebruiker en
+ * ze is voor ALLE gedelegeerde aanroepen van dat account dezelfde: een bevestiging daarop zou gelden voor elke agent en elke
+ * beheerder tegelijk. Daarom wordt er voor zo'n sessie nooit een bevestiging vastgelegd, geteld of onthouden.
+ */
+export const GEDELEGEERDE_SESSIE_PREFIX = 'mcp-gedelegeerd:';
+export const isGedelegeerdeSessieId = (id: unknown): boolean => typeof id === 'string' && id.startsWith(GEDELEGEERDE_SESSIE_PREFIX);
+const echteSessie = (s: StapOpSessie | null | undefined): StapOpSessie | null => (s && !isGedelegeerdeSessieId(s.id) ? s : null);
+const sessieVan = (auth: StapOpAuth): StapOpSessie | null => echteSessie(auth.tabSession) || echteSessie(auth.session);
 /**
  * Waaraan een onthouden bevestiging hangt: de browser-sessie (anker), zodat elk tabblad van DEZE browser meeprofiteert.
  * Hoort het anker bij een ANDER account (een tabblad met een tweede account bovenop), dan hangt het onthouden aan het
  * tabblad zelf: zo haalt «onthouden» in het ene account nooit de vraag weg in het andere.
  */
 export function onthoudSessie(auth: StapOpAuth): StapOpSessie | null {
-  const s = auth.session;
+  const s = echteSessie(auth.session);
   if (s && (!s.userId || s.userId === auth.user.id)) return s;
-  return auth.tabSession || null;
+  return echteSessie(auth.tabSession);
 }
 export const onthoudSessieId = (auth: StapOpAuth): string => onthoudSessie(auth)?.id || '';
 
@@ -47,15 +91,60 @@ async function recordVan(userId: string): Promise<StapOpRecord | null> {
   const rows = await db.list<Omit<StapOpRecord, 'id'>>(STAP_OP_TABEL, { filter: { userId }, limit: 1 });
   return (rows.items[0] as StapOpRecord | undefined) || null;
 }
+/**
+ * SEC-002 (g06 «Після перевірки», afwerking A): één slot per account rond ELKE lees-wijzig-schrijf van het step-up-record en rond
+ * «controleren en verbruiken». Binnen het proces een wachtrij per account (wie wacht, houdt geen databaseverbinding vast); tussen
+ * processen (oude en nieuwe dienst tijdens een uitrol) pg_advisory_xact_lock op 'owner_step_up_v1:<userId>' in een eigen transactie.
+ * Herintredend: wie het slot al heeft (geneste aanroep), wacht niet op zichzelf.
+ * Один замок на обліковий запис для кожного «прочитати-змінити-записати» і для «перевірити й спожити» підтвердження.
+ */
+const slotHouder = new AsyncLocalStorage<ReadonlySet<string>>();
+const slotRij = new Map<string, Promise<void>>();
+export async function metStapOpSlot<T>(userId: string, fn: () => Promise<T>): Promise<T> {
+  const gehouden = slotHouder.getStore();
+  if (gehouden?.has(userId)) return fn();
+  const sleutel = `${STAP_OP_TABEL}:${userId}`;
+  const vorige = slotRij.get(sleutel) ?? Promise.resolve();
+  let klaar!: () => void;
+  const deze = new Promise<void>((r) => { klaar = r; });
+  const staart = vorige.then(() => deze);
+  slotRij.set(sleutel, staart);
+  await vorige;
+  try {
+    return await slotHouder.run(new Set([...(gehouden || []), userId]), async () => {
+      if (!process.env.DATABASE_URL_SYSTEM && !process.env.DATABASE_URL) return fn(); // geen database (zuivere tests): alleen het procesSlot
+      const client = await getPool('systeem').connect();
+      let open = false, kapot = false;
+      try {
+        await client.query('BEGIN'); open = true;
+        await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [sleutel]);
+        const uit = await fn();
+        await client.query('COMMIT'); open = false;
+        return uit;
+      } finally {
+        if (open) await client.query('ROLLBACK').catch(() => { kapot = true; });
+        client.release(kapot);
+      }
+    });
+  } finally {
+    klaar();
+    if (slotRij.get(sleutel) === staart) slotRij.delete(sleutel);
+  }
+}
+
 async function schrijf(userId: string, wijzig: (r: Omit<StapOpRecord, 'id'>) => Omit<StapOpRecord, 'id'>) {
+  return metStapOpSlot(userId, () => schrijfOnderSlot(userId, wijzig));
+}
+async function schrijfOnderSlot(userId: string, wijzig: (r: Omit<StapOpRecord, 'id'>) => Omit<StapOpRecord, 'id'>) {
   const bestaand = await recordVan(userId);
   const nu = Date.now();
   const basis: Omit<StapOpRecord, 'id'> = bestaand ? (({ id: _id, ...rest }) => rest)(bestaand) : { userId, sessies: {}, updatedAt: nu };
-  const vers = (m?: Record<string, number>) => Object.fromEntries(Object.entries(m || {}).filter(([, at]) => nu - at < STAP_OP_MS));
+  // SEC-002 (aanmelden-06): rijen op een gedelegeerde pseudo-sessie (van vóór de patch) verdwijnen bij elke schrijfactie.
+  const vers = (m?: Record<string, number>) => Object.fromEntries(Object.entries(m || {}).filter(([id, at]) => nu - at < STAP_OP_MS && !isGedelegeerdeSessieId(id)));
   // Onthouden browsers hebben hun eigen (langere, maar eindige) termijn; verlopen rijen verdwijnen bij elke schrijfactie.
-  const versOnthoud = (m?: Record<string, number>) => Object.fromEntries(Object.entries(m || {}).filter(([, at]) => nu - at < STAP_OP_ONTHOUD_MS).slice(-50));
+  const versOnthoud = (m?: Record<string, number>) => Object.fromEntries(Object.entries(m || {}).filter(([id, at]) => nu - at < STAP_OP_ONTHOUD_MS && !isGedelegeerdeSessieId(id)).slice(-50));
   const volgend = wijzig({ ...basis, sessies: vers(basis.sessies), passkeySessies: vers(basis.passkeySessies), sterkSessies: vers(basis.sterkSessies), onthoudSessies: versOnthoud(basis.onthoudSessies),
-    methodes: Object.fromEntries(Object.entries(basis.methodes || {}).filter(([id]) => (basis.sessies || {})[id] && nu - Number((basis.sessies || {})[id]) < STAP_OP_MS)), updatedAt: nu });
+    methodes: Object.fromEntries(Object.entries(basis.methodes || {}).filter(([id]) => !isGedelegeerdeSessieId(id) && (basis.sessies || {})[id] && nu - Number((basis.sessies || {})[id]) < STAP_OP_MS)), updatedAt: nu });
   if (bestaand) await db.update(STAP_OP_TABEL, [{ id: bestaand.id, record: volgend }]);
   else await db.add(STAP_OP_TABEL, [volgend]);
 }
@@ -80,7 +169,7 @@ export function googleUitgifteVoorStapOpVers(iatMs: number, txStartMs: number, n
  * alleen als auth_time vers is. Tijdstip = auth_time (dus de 5 minuten lopen vanaf de echte aanmelding).
  */
 export async function googleStapOpVastleggen(userId: string, sessieIds: Array<string | null | undefined>, authTimeMs: number): Promise<boolean> {
-  const ids = sessieIds.filter((id): id is string => typeof id === 'string' && id.length > 0);
+  const ids = sessieIds.filter((id): id is string => typeof id === 'string' && id.length > 0 && !isGedelegeerdeSessieId(id));
   if (!ids.length || !googleAuthTijdVers(authTimeMs)) return false;
   const at = Math.min(authTimeMs, Date.now());
   await schrijf(userId, (r) => { const { googleAt: _oud, ...rest } = r; return { ...rest, sessies: { ...(r.sessies || {}), ...Object.fromEntries(ids.map((id) => [id, at])) }, methodes: { ...(r.methodes || {}), ...Object.fromEntries(ids.map((id) => [id, 'google'])) } }; });
@@ -120,6 +209,7 @@ export async function passkeyStapOpVastleggen(auth: StapOpAuth): Promise<boolean
 export async function stapOpVoorSessieVastleggen(userId: string, sessieId: string, methode: 'telegram' | 'apparaat', opties: { sterk?: boolean } = {}): Promise<boolean> {
   if (!/^[A-Za-z0-9_-]{8,80}$/.test(String(userId || '')) && !/^[0-9a-f-]{36}$/i.test(String(userId || ''))) return false;
   if (!sessieId || sessieId.length < 8 || sessieId.length > 80) return false;
+  if (isGedelegeerdeSessieId(sessieId)) return false; // SEC-002 (aanmelden-06): nooit voor een gedelegeerde pseudo-sessie
   const nu = Date.now();
   const sterk = methode === 'apparaat' && opties.sterk === true;
   await schrijf(userId, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [sessieId]: nu }, methodes: { ...(r.methodes || {}), [sessieId]: methode },
@@ -160,6 +250,45 @@ export async function stapOpVerbruiken(auth: StapOpAuth): Promise<void> {
   const zonder = (m?: Record<string, number>) => Object.fromEntries(Object.entries(m || {}).filter(([id]) => id !== s.id));
   await schrijf(auth.user.id, (basis) => ({ ...basis, sessies: zonder(basis.sessies), passkeySessies: zonder(basis.passkeySessies), sterkSessies: zonder(basis.sterkSessies),
     methodes: Object.fromEntries(Object.entries(basis.methodes || {}).filter(([id]) => id !== s.id)) }));
+}
+type StapOpBuit = { sessie: string; sessies?: number; passkey?: number; sterk?: number; methode?: string };
+/** Haalt de bevestiging van deze sessie weg en geeft terug wat er stond (om bij een mislukte actie terug te zetten). Onder het slot. */
+async function verbruikOnderSlot(auth: StapOpAuth): Promise<StapOpBuit | null> {
+  const s = sessieVan(auth);
+  if (!s || stapOpUit()) return null;
+  const r = await recordVan(auth.user.id);
+  if (!r) return null;
+  const buit: StapOpBuit = { sessie: s.id, sessies: r.sessies?.[s.id], passkey: r.passkeySessies?.[s.id], sterk: r.sterkSessies?.[s.id], methode: r.methodes?.[s.id] };
+  await stapOpVerbruiken(auth);
+  return buit;
+}
+/**
+ * SEC-002 (g06, afwerking A): «controleren en verbruiken» als één ondeelbare stap per account. `eis` (bv. passkeyStapOpGeldig,
+ * sterkeStapOpGeldig) wordt onder het slot gecontroleerd en de bevestiging meteen verbruikt — een tweede, gelijktijdig verzoek op
+ * dezelfde bevestiging ziet haar al weg. Daarna `actie` (buiten het slot). Gooit de actie een fout (bv. een ongeldige invoer), dan
+ * wordt precies die bevestiging teruggezet (als er intussen geen nieuwere is): een tikfout kost geen nieuwe passkey.
+ * `eis` null = geen bevestiging nodig, alleen de actie. Geeft { ok: false } als de bevestiging ontbreekt (actie niet uitgevoerd).
+ * Атомарне «перевірити й спожити» підтвердження; якщо дія впала — підтвердження повертається.
+ */
+export async function metStapOpEenmalig<T>(auth: StapOpAuth, eis: ((a: StapOpAuth) => Promise<boolean>) | null, actie: () => Promise<T>): Promise<{ ok: true; uit: T } | { ok: false }> {
+  if (!eis) return { ok: true, uit: await actie() };
+  const stap = await metStapOpSlot(auth.user.id, async () => ((await eis(auth)) ? { buit: await verbruikOnderSlot(auth) } : null));
+  if (!stap) return { ok: false };
+  try {
+    return { ok: true, uit: await actie() };
+  } catch (e) {
+    const b = stap.buit;
+    if (b) {
+      const terug = (m: Record<string, number> | undefined, v: number | undefined) => (v && !(m || {})[b.sessie] ? { ...(m || {}), [b.sessie]: v } : m || {});
+      await schrijf(auth.user.id, (r) => ({ ...r, sessies: terug(r.sessies, b.sessies), passkeySessies: terug(r.passkeySessies, b.passkey), sterkSessies: terug(r.sterkSessies, b.sterk),
+        methodes: b.methode && b.sessies && !(r.methodes || {})[b.sessie] ? { ...(r.methodes || {}), [b.sessie]: b.methode } : r.methodes || {} })).catch(() => undefined);
+    }
+    throw e;
+  }
+}
+/** Ondeelbaar «controleren en verbruiken» zonder terugzetten (voor modules die zelf «spenderen vóór de actie» willen). */
+export async function stapOpVerbruikIndienGeldig(auth: StapOpAuth, eis: (a: StapOpAuth) => Promise<boolean>): Promise<boolean> {
+  return metStapOpSlot(auth.user.id, async () => { if (!(await eis(auth))) return false; await verbruikOnderSlot(auth); return true; });
 }
 /** Waarmee is deze sessie het laatst bevestigd ('passkey' | 'totp' | 'herstelcode' | 'google' | '')? Alleen voor de audit. */
 export async function stapOpMethode(auth: StapOpAuth): Promise<string> {
@@ -228,7 +357,7 @@ export async function onthoudAllesVergeten(userId: string): Promise<number> {
 export async function onthoudenSessies(userId: string, nu = Date.now()): Promise<Record<string, number>> {
   const r = await recordVan(userId);
   return Object.fromEntries(Object.entries(r?.onthoudSessies || {})
-    .filter(([, at]) => Number(at) > 0 && nu - Number(at) < STAP_OP_ONTHOUD_MS)
+    .filter(([id, at]) => Number(at) > 0 && nu - Number(at) < STAP_OP_ONTHOUD_MS && !isGedelegeerdeSessieId(id))
     .map(([id, at]) => [id, Number(at) + STAP_OP_ONTHOUD_MS]));
 }
 /** Is deze browser onthouden (en nog binnen de termijn)? Nooit genoeg voor sterke acties — die vragen altijd. */

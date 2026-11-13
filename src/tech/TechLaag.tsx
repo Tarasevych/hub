@@ -22,6 +22,8 @@ import { useRemoteAantal } from '../extern/extern-opslag';
 const VlaggenVenster = lazyTech(() => import('../vlaggen/Vlaggen'));
 // Kaart «SSH-сертифікати» (18.10.2026): stand, voorbereiden/aan/uit, uitgeven 5–60 min, lijst en intrekken. Vervangt het losse venster.
 const SshCertificaat = lazyTech(() => import('../ssh/SshBeheer'));
+/** SEC-002 (g10f): alleen hier aanvaardt root de passkey voor een SSH-certificaat (zelfde lijst als SSH_PASSKEY_ADRESSEN in SshBeheer). */
+const SSH_HIER = (() => { try { return ['https://admin.tarasevych.com', 'https://id.tarasevych.com'].includes(location.origin); } catch { return true; } })();
 import './tech.css';
 import HulpVraag from '../hulp/HulpVraag';
 import { TechMeldingenKnop } from '../meldingen/TechMeldingen';
@@ -267,7 +269,9 @@ export default function TechLaag() {
     groep('hulpmiddelen', uk ? 'Інструменти' : 'Hulpmiddelen', [
       (techMag('terminal.test', t) || techMag('terminal.servers', t)) && { k: 'terminal', icoon: <SquareTerminal aria-hidden='true' />, naam: uk ? 'Термінал' : 'Terminal', uitleg: uk ? 'Командний рядок із записом' : 'Opdrachtregel met opname', doe: () => kies('terminal') },
       techMag('terminal.servers', t) && { k: 'remote', icoon: <MonitorUp aria-hidden='true' />, naam: uk ? 'Віддалений стіл' : 'Extern bureaublad', uitleg: uk ? 'Екран сервера в браузері' : 'Scherm van de server in de browser', doe: () => kies('remote') },
-      sshZichtbaar && techMag('ssh.host', t) && { k: 'ssh', icoon: <KeyRound aria-hidden='true' />, naam: uk ? 'SSH-сертифікати' : 'SSH-certificaten', uitleg: uk ? 'Короткі сертифікати 5–60 хв' : 'Korte certificaten 5–60 min', doe: () => kies('ssh') },
+      sshZichtbaar && techMag('ssh.host', t) && { k: 'ssh', icoon: <KeyRound aria-hidden='true' />, naam: uk ? 'SSH-сертифікати' : 'SSH-certificaten',
+        // SEC-002 (g10f): uitgeven met passkey kan alleen op admin.* en id.*; elders blijft de kaart (bekijken, intrekken) bereikbaar, met die uitleg.
+        uitleg: SSH_HIER ? (uk ? 'Короткі сертифікати 5–60 хв' : 'Korte certificaten 5–60 min') : (uk ? 'Перегляд і відкликання; видача — на admin.tarasevych.com' : 'Bekijken en intrekken; uitgeven op admin.tarasevych.com'), doe: () => kies('ssh') },
       (techMag('flags.test', t) || techMag('diensten.beheren', t)) && { k: 'vlaggen', icoon: <Flag aria-hidden='true' />, naam: uk ? 'Перемикачі функцій' : 'Functieschakelaars', uitleg: uk ? 'Нові можливості: спробувати для себе' : 'Nieuwe mogelijkheden voor uzelf proberen', doe: () => kies('vlaggen') },
     ]),
     groep('mensen', uk ? 'Люди й підтримка' : 'Mensen en ondersteuning', [

@@ -31,9 +31,10 @@ export type RuimteWeigering = 'RUIMTE_ONGELDIG' | 'OWNER_REQUIRED' | 'TECH_PROFI
  * handelingen die alleen in de technische ruimte LEVEN (de serverdeur, de lijst met deurverbindingen) en die de eigenaar
  * ook moet kunnen opruimen terwijl zijn dienst «ai» uit staat. Wie een NIEUWE AI-verbinding koppelt — een apparaat, een
  * grant van het oude /mcp, een vreemde MCP-server — gebruikt `aiVerbindingRuimte` onderaan dit bestand.
- * Het agenttoken van de MCP-console (backend/mcp-console.ts) gebruikt nog deze functie; dat is geen gat, want de ruimte
- * van dat token wordt bij elk gebruik opnieuw aan de stand getoetst (`technischNuGeldig` → aiPoortNu): een technisch token
- * zonder aangezette dienst krijgt geen enkel technisch hulpmiddel.
+ * Het agenttoken van de MCP-console (backend/mcp-console.ts) gebruikt nog deze functie, bij het UITGEVEN. Bij elk GEBRUIK wordt
+ * een technisch token opnieuw getoetst: op /mcp via `technischNuGeldig` → aiPoortNu, en op POST /api/mcp/agent sinds
+ * SEC-002 (ai-mcp-06, 12.11.2026) rechtstreeks met aiPoortNu (vóór die datum NIET — daar telde alleen de kolom ruimte van het
+ * token). Geen lopend technisch profiel of dienst «ai» niet aan in de technische ruimte → TECH_PROFILE_OFF, niets uitgevoerd.
  */
 export async function ruimteUitVerzoek(user: Gebruiker, body: Record<string, unknown>): Promise<{ ruimte: AiRuimte } | { fout: RuimteWeigering; status: 400 | 403 }> {
   const gevraagd = body.ruimte === undefined || body.ruimte === null || body.ruimte === '' ? 'prive' : body.ruimte;

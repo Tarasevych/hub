@@ -23,10 +23,16 @@ export async function main(): Promise<number> {
     const oId = await idRij(eigenaar);
 
     // ---- fix 2: TOTP vervangen ----
+    // SEC-002 (aanmelden-01, 12.11.2026): ook de EERSTE inschrijving vraagt step-up. Vroeger stond hier «werkt (zonder step-up)»:
+    // daarmee gaf een gestolen sessie zichzelf TOTP + herstelcodes en dus een «sterke» bevestiging voor alle gevoelige acties.
+    const s0 = await id('/api/owner/access/totp/start');
+    const rij0 = (await pool.query("select 1 from app.records where tbl='identity_totp_v1' and data->>'userId'=$1", [oId])).rowCount;
+    check('TOTP eerste keer instellen ZONDER step-up → 403 STEP_UP_REQUIRED, geen geheim uitgegeven of opgeslagen', s0.status === 403 && s0.data.error === 'STEP_UP_REQUIRED' && !s0.data.secret && !rij0, `${s0.status} ${s0.data.error} rij=${rij0}`);
+    await O.aanmelden(`sub-o-${T}`, eigenaar, { intent: 'step-up' });
     const s1 = await id('/api/owner/access/totp/start');
     const c1 = await id('/api/owner/access/totp/confirm', { code: totpCode(s1.data.secret, stap - 1) });
     const herstelcodes: string[] = c1.data.recoveryCodes || [];
-    check('TOTP eerste keer instellen werkt (zonder step-up)', s1.status === 200 && c1.status === 200 && herstelcodes.length > 0, `${s1.status} ${c1.status} ${c1.body.slice(0, 100)}`);
+    check('TOTP eerste keer instellen werkt ná step-up (verse Google-aanmelding)', s1.status === 200 && c1.status === 200 && herstelcodes.length > 0, `${s1.status} ${c1.status} ${c1.body.slice(0, 100)}`);
     const totpRij = async () => (await pool.query("select data from app.records where tbl='identity_totp_v1' and data->>'userId'=$1", [oId])).rows[0]?.data as Record<string, any>;
     const geheimVoor = (await totpRij()).secretEnc;
     const s2zonder = await id('/api/owner/access/totp/start');
@@ -80,7 +86,11 @@ export async function main(): Promise<number> {
     const goedZonderTotp = await login(eigenaar, `Wachtwoord-${T}`, '198.51.100.1');
     const foutZonderTotp = await login(eigenaar, 'fout-wachtwoord', '198.51.100.1');
     const goedFouteTotp = await login(eigenaar, `Wachtwoord-${T}`, '198.51.100.1', '000000');
-    check('geen MFA-orakel: met TOTP-account geeft goed én fout wachtwoord zonder code hetzelfde antwoord; foute code → algemeen ongeldig', goedZonderTotp.status === foutZonderTotp.status && goedZonderTotp.data.status === 'mfa' && foutZonderTotp.data.status === 'mfa' && goedFouteTotp.status === 401 && goedFouteTotp.data.error === 'ACCESS_CREDENTIALS_INVALID', `${goedZonderTotp.status}/${goedZonderTotp.data.status} ${foutZonderTotp.status}/${foutZonderTotp.data.status} ${goedFouteTotp.status} ${goedFouteTotp.data.error}`);
+    // SEC-002 (aanmelden-08, 12.11.2026): geen tussenstand 'mfa' meer (die verried welke adressen een account met TOTP hebben);
+    // goed én fout wachtwoord zonder code, en een onbekend adres, geven alle drie dezelfde algemene weigering.
+    const onbekendAdres = await login(`tg-niemand-${T}@example.test`, 'fout-wachtwoord', '198.51.100.2');
+    const zelfde = (r: { status: number; data: Record<string, any> }) => r.status === 401 && r.data.error === 'ACCESS_CREDENTIALS_INVALID' && !r.data.status && !r.data.mfaRequired;
+    check('geen MFA-orakel en geen adres-orakel: goed en fout wachtwoord zonder code én een onbekend adres geven hetzelfde antwoord; foute code → algemeen ongeldig', zelfde(goedZonderTotp) && zelfde(foutZonderTotp) && zelfde(onbekendAdres) && goedFouteTotp.status === 401 && goedFouteTotp.data.error === 'ACCESS_CREDENTIALS_INVALID', `${goedZonderTotp.status}/${goedZonderTotp.data.error} ${foutZonderTotp.status}/${foutZonderTotp.data.error} ${onbekendAdres.status}/${onbekendAdres.data.error} ${goedFouteTotp.status} ${goedFouteTotp.data.error}`);
     const fouten = []; for (let i = 0; i < 6; i++) fouten.push((await login(uMail, 'fout', '198.51.100.7')).status);
     const zelfdeIp = await login(uMail, `Gebruiker-${T}`, '198.51.100.7');
     const anderIp = await login(uMail, `Gebruiker-${T}`, '198.51.100.8');

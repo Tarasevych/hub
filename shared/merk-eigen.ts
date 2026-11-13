@@ -65,10 +65,37 @@ export function cssOntsnappingenOplossen(v: string): string {
 }
 /** Laadt deze CSS (stijlblok, style- of presentatie-attribuut) iets van buiten of voert ze iets uit? Gelezen zoals de browser haar leest. */
 export function cssLaadtIets(ruw: string): boolean {
-  const css = cssOntsnappingenOplossen(xmlEntiteitenOplossen(ruw)).replace(/\/\*[\s\S]*?\*\//g, ' ');
+  // Een commentaar zonder einde blijft staan (en wordt dus gewoon meegecontroleerd): liever te streng dan iets overslaan.
+  const css = knipBlokken(cssOntsnappingenOplossen(xmlEntiteitenOplossen(ruw)), /\/\*/g, /\*\//g, ' ', true) ?? '';
   // Een CSS-functie is «naam(» zonder spatie ertussen; image-set/image/cross-fade/element/src/paint kunnen zonder url() laden.
+  // SEC-002 (12.11.2026): `url\s*\(\s*(?!['"]?\s*#)` liep bij «url(» + veel spaties + «#» kwadratisch terug; de vooruitblik
+  // hieronder leest de witruimte één keer (zelfde uitkomst: alleen een verwijzing die met # begint is binnen het bestand).
   return /@import|expression\s*\(|behavior\s*:|-moz-binding|(?:^|[^a-z0-9_-])(?:-webkit-)?image-set\(|(?:^|[^a-z0-9_-])(?:image|cross-fade|element|src|paint)\(/i.test(css)
-    || /url\s*\(\s*(?!['"]?\s*#)/i.test(css);
+    || /url\s*\((?!\s*(?:['"]\s*)?#)/i.test(css);
+}
+
+// SEC-002 / integraties-01 (12.11.2026): een logo van het domein van een AFZENDER is een bestand van een vreemde. De oude
+// uitdrukkingen (`<!--[\s\S]*?-->`, `<metadata…>`, en een tag-uitdrukking waarin een attribuutnaam «<» mocht bevatten) begonnen
+// bij elke «<!--» / «<g » opnieuw tot het einde van het bestand te lezen: 200 KB «<g <g <g …» hield de hele server bijna een
+// minuut vast (één draad: geen enkel verzoek van geen enkele gebruiker werd nog bediend). Alles hieronder leest het bestand in
+// één doorloop.
+/**
+ * Knipt elk blok «begin … einde» uit de tekst in ÉÉN doorloop (lineair; `begin` en `einde` moeten de vlag g hebben). Een begin
+ * zonder einde: null (de aanroeper weigert het bestand) of, met `restLaten`, de rest blijft ongewijzigd staan.
+ */
+function knipBlokken(s: string, begin: RegExp, einde: RegExp, vervang = '', restLaten = false): string | null {
+  let uit = '';
+  let pos = 0;
+  for (;;) {
+    begin.lastIndex = pos;
+    const b = begin.exec(s);
+    if (!b) return pos ? uit + s.slice(pos) : s;
+    einde.lastIndex = b.index + b[0].length;
+    const e = einde.exec(s);
+    if (!e) return restLaten ? uit + s.slice(pos) : null;
+    uit += s.slice(pos, b.index) + vervang;
+    pos = e.index + e[0].length;
+  }
 }
 
 /** Ontsmet een SVG of weiger hem met een reden. Puur tekstueel en streng: alleen bekende elementen en veilige attributen. */
@@ -80,14 +107,26 @@ export function ontsmetSvg(ruw: Buffer | string): MerkEigenUitslag {
   s = s.replace(/^﻿/, '');
   if (/<!DOCTYPE|<!ENTITY|<!\[CDATA\[/i.test(s)) return { ok: false, reden: 'DOCTYPE_OF_ENTITY' };
   if (/<\?xml-stylesheet/i.test(s)) return { ok: false, reden: 'EXTERNE_STIJL' };
-  s = s.replace(/<\?xml[^?]*\?>/gi, '').replace(/<!--[\s\S]*?-->/g, '').replace(/<metadata\b[\s\S]*?<\/metadata\s*>/gi, '').replace(/<sodipodi:namedview\b[\s\S]*?(\/>|<\/sodipodi:namedview\s*>)/gi, '').trim();
+  // Commentaar, <metadata> en <sodipodi:namedview> eruit, elk in één doorloop; een blok zonder einde is geen leesbare SVG.
+  let geknipt: string | null = s.replace(/<\?xml[^?]*\?>/gi, '');
+  for (const [begin, einde] of [
+    [/<!--/g, /-->/g],
+    [/<metadata\b/gi, /<\/metadata\s*>/gi],
+    [/<sodipodi:namedview\b/gi, /\/>|<\/sodipodi:namedview\s*>/gi],
+  ] as const) {
+    geknipt = knipBlokken(geknipt, begin, einde);
+    if (geknipt === null) return { ok: false, reden: 'ONLEESBARE_OPMAAK' };
+  }
+  s = geknipt.trim();
   if (!/^<svg[\s>]/i.test(s) || !/<\/svg\s*>$/i.test(s)) return { ok: false, reden: 'GEEN_SVG' };
   if (/javascript:|vbscript:|data:text\/html/i.test(s) || /javascript:|vbscript:|data:text\/html/i.test(xmlEntiteitenOplossen(s))) return { ok: false, reden: 'SCRIPT_URL' };
 
   let uit = '';
   let pos = 0;
   let inStijl = false;
-  const tag = /<(\/?)([A-Za-z][\w:.-]*)((?:\s+[^\s=/>]+(?:\s*=\s*(?:"[^"]*"|'[^']*'))?)*)\s*(\/?)>/g;
+  // Geen «<» in een attribuutnaam of -waarde (in XML is een ruwe «<» in een waarde toch al ongeldig): zo leest één poging nooit
+  // verder dan tot de volgende «<», en is het hele bestand één doorloop in plaats van één doorloop PER «<».
+  const tag = /<(\/?)([A-Za-z][\w:.-]*)((?:\s+[^\s=/<>]+(?:\s*=\s*(?:"[^"<]*"|'[^'<]*'))?)*)\s*(\/?)>/g;
   let m: RegExpExecArray | null;
   while ((m = tag.exec(s))) {
     const tussen = s.slice(pos, m.index);
@@ -105,7 +144,7 @@ export function ontsmetSvg(ruw: Buffer | string): MerkEigenUitslag {
     if (naam === 'style') inStijl = !sluit && !zelf;
     if (sluit) { uit += `</${ruweNaam}>`; continue; }
     let schoon = '';
-    const attr = /([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))?/g;
+    const attr = /([^\s=/<>]+)(?:\s*=\s*(?:"([^"<]*)"|'([^'<]*)'))?/g;
     let a: RegExpExecArray | null;
     while ((a = attr.exec(attrs))) {
       const an = a[1].toLowerCase();

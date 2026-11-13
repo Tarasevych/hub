@@ -49,8 +49,8 @@
 .aiz-bulk-algemeen{border:1px solid var(--aib-rand);border-radius:12px;background:var(--aib-vlak)}
 .aiz-bulk-algemeen>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 14px;font-weight:650;cursor:pointer;list-style:none}
 .aiz-bulk-algemeen>summary::-webkit-details-marker{display:none}
-.aiz-bulk-algemeen>summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s}
-.aiz-bulk-algemeen[open]>summary::after{transform:rotate(-135deg)}
+.aiz-bulk-algemeen>summary::after{content:"";flex:0 0 16px;width:16px;height:16px;margin-left:auto;color:var(--aib-zacht,currentColor);background-color:currentColor;-webkit-mask:var(--icoon-pijl-omlaag) center/contain no-repeat;mask:var(--icoon-pijl-omlaag) center/contain no-repeat;transition:transform .18s ease}
+.aiz-bulk-algemeen[open]>summary::after{transform:rotate(180deg)}
 .aiz-bulk-algemeen>*:not(summary){margin:0 14px 12px}
 .aiz-bulk-algemeen:focus-within{border-color:var(--aib-hoofd)}
 .aiz-bulk-rij,.aiz-formrij{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}

@@ -1,62 +1,79 @@
 {
   "schema": 1,
-  "taakId": "DESIGN-003",
-  "agent": "codex",
-  "agentPlatform": "ChatGPT Codex",
+  "taakId": "IDENTITEIT-011",
+  "agent": "claude",
+  "agentPlatform": "Claude Code",
   "model": {
     "id": null,
     "versie": null,
     "bron": "onbekend"
   },
-  "basisCommit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
-  "basisVersie": "20261106-141500",
+  "basisCommit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+  "basisVersie": "20261113-121403",
   "installatie": {
-    "versie": "20261106-141500",
-    "commit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
-    "bron": "/api/version · 2026-11-06"
+    "versie": "20261113-121403",
+    "commit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "bron": "/api/version"
   },
-  "regelsVersie": "1.4.10",
-  "regelsHash": "beb437706865e56735ee15f56f75422968d3b133221148282986b23645078847",
-  "tak": "feature/design-003-20261106-103743",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "tak": "feature/identiteit-011-maquette-kaart-20261113-193722",
   "kanaal": "github_pr",
   "zonderGit": null,
   "commits": [
-    "6f4af07eaa151eba445a124ba7d02083ba226653"
+    "c0fd44480757a4fbbf84a9f6e3a28489cf3511d3",
+    "8f85d179d2023678b26bfa42724bd844a512c492",
+    "81a712ec2bc4a8ee0b1bf4f7e9b8666972828745",
+    "6ac91d2e134b2f8d2fb22514090a469521996893",
+    "1c81503a7629b66f778532570a4a63662f942d5c"
   ],
   "bestanden": {
     "gewijzigd": [
-      "src/agenten/AgentBord.tsx",
-      "src/agenten/agenten.css",
-      "ORCH-OVERDRACHT.json"
+      "\"docs/ontwerp/identiteit-account/maquette-bron/\\321\\200\\320\\265\\321\\224\\321\\201\\321\\202\\321\\200.js\"",
+      "scripts/identiteit-maquette/motor-aanpassingen.mjs",
+      "shared/zoek-ui-knoppen.generated.ts",
+      "src/identiteit/maquette/IdentiteitMaquette.tsx",
+      "src/identiteit/maquette/maquette-motor.ts",
+      "src/identiteit/maquette/maquette-omlijsting.css",
+      "src/toegangslaag-panelen.tsx",
+      "tests/eenheid/identiteit-atelier.test.ts",
+      "tests/eenheid/identiteit-maquette.test.ts"
     ],
     "toegevoegd": [
-      "orchestratie/taken/DESIGN-003.json",
-      "tests/visueel/design-003-agenten.html",
-      "tests/visueel/design-003-agenten.tsx",
-      "tests/visueel/design-003-controle.mjs",
-      "orchestratie/ontwikkelarchieven/DESIGN-003.json",
-      ".github/workflows/design-003-release.yml",
-      "tests/uitrol/design-003-pakket.py"
+      "\"docs/ontwerp/identiteit-account/\\320\\237\\320\\233\\320\\220\\320\\235-\\320\\234\\320\\220\\320\\232\\320\\225\\320\\242-\\320\\224\\320\\236\\320\\236\\320\\237\\320\\240\\320\\220\\320\\246\\320\\256\\320\\222\\320\\220\\320\\235\\320\\235\\320\\257.uk.md\"",
+      "orchestratie/taken/IDENTITEIT-011.json",
+      "tests/e2e/hulp/identiteit-maquette-stand/stand.tsx",
+      "tests/e2e/identiteit-maquette-kaart.e2e.ts",
+      "orchestratie/ontwikkelarchieven/IDENTITEIT-011.json"
     ],
     "verwijderd": []
   },
   "samenvatting": {
-    "uk": "Панель агента розгортається під усім вибраним рядком. Записи CLI, кнопки й чотири канали Antigravity підлаштовуються під ширину профілю.",
-    "nl": "Het agentpaneel opent onder de gekozen rij. CLI-opdrachten, knoppen en de vier Antigravity-kanalen passen zich aan de profielbreedte aan."
+    "uk": "«Макет»: жива карта розвитку замість «Можливостей для доопрацювання» (чесні стани й переходи до справжніх налаштувань), межі розділів, сталі контейнери порталів, коди після TOTP, ключі доступу в «Безпеці».",
+    "nl": "«Ontwerp»: levende ontwikkelkaart met eerlijke status en sprongen naar de echte instellingen, grenzen per onderdeel, vaste portaalhouders, herstelcodes na TOTP, passkeys onder «Beveiliging»."
   },
   "tests": {
-    "geslaagd": 5,
+    "geslaagd": 195,
     "mislukt": 0,
     "falend": [],
     "uitleg": {
-      "uk": "Браузерний стенд пройшов сценарій дошки й чотири розміри профілю з перемиканням усіх каналів (320–1280 px). Повні результати збірки додаються в TESTRESULTATEN.",
-      "nl": "De bordproef en vier profielbreedten met alle kanalen zijn in Chromium geslaagd (320–1280 px). De bouw levert de verdere controles in TESTRESULTATEN."
+      "uk": "identiteit 133/133, e2e 62/62, tsc і typecheck:server без помилок, build успішний.",
+      "nl": "identiteit 133/133, e2e 62/62, tsc en typecheck:server zonder fouten, build geslaagd."
     }
   },
   "nietGedaan": {
-    "uk": "Перевірки підключень виконано з тестовими відповідями. Робочі облікові записи й особисті дані власника не використовувалися.",
-    "nl": "De verbindingen zijn met testantwoorden gecontroleerd. Er zijn geen productieaccounts of privégegevens gebruikt."
+    "uk": "Фази 1–5 — окремі завдання. Пряме з’єднання перемикача теми не зроблено через паралельну MAQUETTE-001.",
+    "nl": "Fasen 1–5 zijn aparte taken. Geen directe themakoppeling wegens het parallelle MAQUETTE-001."
   },
-  "conflicten": [],
-  "aangemaakt": "2026-11-06T14:26:04.381Z"
+  "conflicten": [
+    {
+      "tak": "feature/maquette-001-20261113-174500",
+      "bestanden": [
+        "src/identiteit/IdentiteitAccountPagina.tsx",
+        "src/thema/*"
+      ],
+      "toelichting": "geen gedeelde bestanden in deze taak; bij integratie nakijken"
+    }
+  ],
+  "aangemaakt": "2026-11-13T19:55:26.578Z"
 }

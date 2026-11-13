@@ -9,7 +9,7 @@ import { db, error, json } from '../server/platform';
  * connector. Nu gaat elke bron door dezelfde poort als haar dienst (backend/ruimte-projecties.ts); een gesloten dienst
  * levert GEEN resultaten en wordt met tweetalige uitleg gemeld in `gesloten`.
  *
- * ZOEKKERN v2 (Z1, 22.10.2026). Eén kern voor alles (backend/zoek-index.ts, contract scratchpad/zoek-API.md):
+ * ZOEKKERN v2 (Z1, 22.10.2026). Eén kern voor alles (backend/zoek-index.ts, contract docs/zoek/ZOEKEN.nl.md §4):
  *  • POST /api/owner/zoek            — ZoekVraag → ZoekAntwoord (facets, pagina's, uitleg, percent 0–100, fragment met posities);
  *  • POST /api/owner/zoek/suggesties — autoaanvulling/correcties uit de EIGEN lade;
  *  • POST /api/owner/zoek/stand      — echte stand per bron (geteld, niet beweerd);

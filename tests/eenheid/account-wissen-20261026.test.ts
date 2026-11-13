@@ -2,7 +2,7 @@
 // Postgres у цьому середовищі немає — реєстр звіряється з міграціями, не з живою базою.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { dekking, wisOpdrachten } from '../../shared/account-wissen';
+import { ACCOUNT_KOLOM, dekking, GEEN_ACCOUNT_KOLOM, ONTKOPPELEN, wisOpdrachten } from '../../shared/account-wissen';
 import { googleAlleenVolstaat, KRITIEKE_ACTIES } from '../../shared/kritieke-acties';
 
 const lees = (p: string) => readFileSync(p, 'utf8');
@@ -111,6 +111,13 @@ export async function main() {
   check('обидва маршрути йдуть через матрицю account-verwijderen', zelf.includes("kritiekStapOp") && zelf.includes("'account-verwijderen'") && ident.includes('kritiekStapOp') && ident.includes("'account-verwijderen'"));
   const beheerd = index.match(/async function deleteManagedUser\([\s\S]*?return publicUser\(next\); \}/)?.[0] || '';
   check('beheerder verwijderen loopt ook via deleteRecoverably (30 dagen, alleen de beheerder zet terug)', beheerd.includes('deleteRecoverably') && beheerd.includes('admin') && !beheerd.includes('accountMeteenWissen'));
+  // SEC-002 (privacy-logboek-01): na de 30 dagen rondt de opruimjob af met het VOLLEDIGE wissen (alle tabellen met een accountkolom),
+  // niet alleen app.records: verlopenVerwijderingenAfronden roept accountMeteenWissen aan, droog telt met hetzelfde plan.
+  const privacyBron = lees('backend/privacy.ts');
+  const afronden = privacyBron.slice(privacyBron.indexOf('export async function verlopenVerwijderingenAfronden'));
+  check('na 30 dagen: afronden via accountMeteenWissen (volledig), droog via accountWisTelling, één fout stopt de rest niet',
+    afronden.includes('accountMeteenWissen(k.id, email, nu)') && afronden.includes('accountWisTelling(k.id)') && afronden.includes('catch (e)')
+    && !/await wisRecordsVanAccount\(/.test(afronden) && lees('backend/opruimen.ts').includes('verlopenVerwijderingenAfronden()'));
   check('deleteRecoverably: 3 aanroepen (zelf, identiteit, beheerder)', (index.match(/await deleteRecoverably\(/g) || []).length === 3);
   check('ворота кодового слова не знято', index.includes('CODEWOORD_POORT'));
   check('зворотний Google імпортує googleSuiteStateParts', index.includes("from './google-suite-inrichting'") && index.includes('googleSuiteStateParts') && index.includes('googleSuiteCallbackPost'));
@@ -159,11 +166,64 @@ export async function main() {
     const lijst = [...cols];
     const stand = dekking(tabel, lijst);
     if (stand === 'open') open.push(`${sleutel} [${lijst.filter((c) => /id|door|owner|user|account|eigenaar|created_by/.test(c)).join(',')}]`);
-    for (const c of lijst) if (verdacht.test(c) && !nietInRegister.has(c) && stand === 'geen') onbekend.push(`${sleutel}.${c}`);
+    // SEC-002 (slot-z): ook in een tabel die al gewist wordt, mag geen verdachte kolom buiten het register vallen
+    // (vroeger alleen bij stand 'geen': door_user_id van app.huis_uitnodigingen bleef zo onopgemerkt staan na het wissen).
+    for (const c of lijst) if (verdacht.test(c) && !nietInRegister.has(c) && (stand === 'geen' || !ACCOUNT_KOLOM.test(c))) onbekend.push(`${sleutel}.${c}`);
   }
   check(`реєстр покриває CREATE TABLE з колонкою акаунта (${tabellen.size} таблиць)`, open.length === 0 && onbekend.length === 0 && tabellen.has('app.invites') && tabellen.has('app.records') && dekking('invites', ['created_by']) === 'wissen' && dekking('records', ['owner_id']) === 'uitzondering' && dekking('uitrol_runs', ['goedgekeurd_door']) === 'uitzondering' && dekking('audit', ['owner_id', 'actor_id']) === 'uitzondering');
   if (open.length) console.log('OPEN ' + open.join(' | '));
   if (onbekend.length) console.log('ONBEKEND ' + onbekend.join(' | '));
+
+  // SEC-002 (slot-z, 13.11.2026): стара вада приватності (є й в основі 11e0aad8) — таблиці, яких реєстр не покривав.
+  // 1) app.cloud_deel_koppelingen (0210): doel_id тут — id файла/теки, НЕ людини; рядки власника посилання стираються за user_id,
+  //    а в чужих посиланнях із ним як одержувачем із JSON ontvangers прибирається його id та ім’я (адреса лишається власнику посилання).
+  // 2) app.huis_uitnodigingen (0212, нова таблиця SEC-002): запрошення ВІД нього — DELETE за door_user_id; запрошення ДО нього в
+  //    чужу оселю — не DELETE (власник оселі побачив би, що за адресою був обліковий запис), а user_id = NULL, як «адреса без акаунта».
+  check('cloud_deel_koppelingen і huis_uitnodigingen — у міграціях і покриті реєстром; doel_id ondersteuning/impersonatie лишився',
+    tabellen.get('app.cloud_deel_koppelingen')?.has('doel_id') === true && tabellen.get('app.huis_uitnodigingen')?.has('door_user_id') === true
+    && dekking('cloud_deel_koppelingen', [...(tabellen.get('app.cloud_deel_koppelingen') || [])]) === 'wissen'
+    && dekking('huis_uitnodigingen', [...(tabellen.get('app.huis_uitnodigingen') || [])]) === 'wissen'
+    && dekking('ondersteuning_verzoeken', ['aanvrager_id', 'doel_id']) === 'wissen' && dekking('impersonatie_sessies', ['beheerder_id', 'doel_id', 'beeindigd_door']) === 'wissen'
+    && Boolean(GEEN_ACCOUNT_KOLOM.cloud_deel_koppelingen?.doel_id) && !GEEN_ACCOUNT_KOLOM.ondersteuning_verzoeken);
+  const plan2 = wisOpdrachten([
+    { schema: 'app', tabel: 'cloud_deel_koppelingen', kolommen: ['id', 'user_id', 'doel_id'] },
+    { schema: 'app', tabel: 'huis_uitnodigingen', kolommen: ['user_id', 'door_user_id'] },
+    { schema: 'app', tabel: 'ondersteuning_verzoeken', kolommen: ['aanvrager_id', 'doel_id'] },
+  ], 'gebruiker-2');
+  const sql2 = plan2.map((o) => o.sql);
+  check('план: cloud_deel_koppelingen — DELETE лише за user_id (без doel_id), чужі посилання — UPDATE ontvangers без його рядків',
+    sql2.includes('DELETE FROM app.cloud_deel_koppelingen WHERE user_id = $1')
+    && plan2.some((o) => o.sql.startsWith('UPDATE app.cloud_deel_koppelingen SET ontvangers = ') && o.sql.includes("WHERE user_id <> $1 AND ontvangers @>") && o.tel === "SELECT count(*)::int AS n FROM app.cloud_deel_koppelingen WHERE user_id <> $1 AND ontvangers @> jsonb_build_array(jsonb_build_object('userId', $1::text))")
+    && !sql2.some((s) => /cloud_deel_koppelingen.*doel_id/.test(s)));
+  check('план: huis_uitnodigingen — DELETE за door_user_id, адресату лише відв’язування (user_id = NULL), без DELETE за user_id',
+    sql2.includes('DELETE FROM app.huis_uitnodigingen WHERE door_user_id = $1')
+    && sql2.includes('UPDATE app.huis_uitnodigingen SET user_id = NULL, afgewezen_op = NULL, gemeld_op = NULL WHERE user_id = $1')
+    && !sql2.some((s) => s.startsWith('DELETE FROM app.huis_uitnodigingen') && s.includes('user_id = $1') && !s.includes('door_user_id'))
+    && sql2.includes('DELETE FROM app.ondersteuning_verzoeken WHERE aanvrager_id = $1 OR doel_id = $1'));
+  check('план: кожен UPDATE має WHERE з $1 і власний підрахунок, параметр — лише id того, кого стирають',
+    plan2.every((o) => o.params.length === 1 && o.params[0] === 'gebruiker-2' && /WHERE [\s\S]*\$1/.test(o.sql))
+    && plan2.filter((o) => o.sql.startsWith('UPDATE ')).every((o) => (o.tel || '').startsWith('SELECT count(*)::int AS n FROM app.') && (o.tel || '').includes('$1'))
+    && ONTKOPPELEN.every((o) => o.reden.length > 10 && o.waar.includes('$1')));
+  check('сухий підрахунок рахує й UPDATE-відв’язування (o.tel)', wissenBron.includes('o.tel ||'));
+
+  // SEC-002 (slot-z, продовження): журнал чужої оселі (huis_gebeurtenissen.gegevens.userId) і адресний список прапорця
+  // (feature_flags.gebruikers) — таблиці БЕЗ колонки облікового запису. Подія/прапорець лишаються; лише UPDATE з $1, без DELETE.
+  // Tabellen zonder accountkolom: alleen loskoppelen (UPDATE met $1), nooit DELETE; het plan vindt ze via `veld`.
+  const plan3 = wisOpdrachten([
+    { schema: 'app', tabel: 'huis_gebeurtenissen', kolommen: ['gegevens'] },
+    { schema: 'app', tabel: 'feature_flags', kolommen: ['gebruikers'] },
+  ], 'gebruiker-3');
+  check('план: huis_gebeurtenissen — лише UPDATE gegevens з умовою на $1, без DELETE',
+    plan3.some((o) => o.sql === "UPDATE app.huis_gebeurtenissen SET gegevens = gegevens - ARRAY['userId', 'naam', 'email'] WHERE gegevens->>'userId' = $1")
+    && !plan3.some((o) => o.sql.startsWith('DELETE')));
+  check('план: feature_flags — лише array_remove з gebruikers з умовою на $1',
+    plan3.some((o) => o.sql === 'UPDATE app.feature_flags SET gebruikers = array_remove(gebruikers, $1::text) WHERE $1::text = ANY(gebruikers)')
+    && plan3.every((o) => o.params.length === 1 && o.params[0] === 'gebruiker-3' && (o.tel || '').includes('$1')));
+  check('ONTKOPPELEN: кожен запис має veld (так backend знаходить таблицю), backend бере veld у запит колонок',
+    ONTKOPPELEN.every((o) => /^[a-z_][a-z0-9_]*$/.test(o.veld)) && ONTKOPPELEN.some((o) => o.tabel === 'huis_gebeurtenissen' && o.veld === 'gegevens')
+    && wissenBron.includes('ONTKOPPELEN.filter((o) => o.veld)')
+    && tabellen.get('app.huis_gebeurtenissen')?.has('gegevens') === true && tabellen.get('app.feature_flags')?.has('gebruikers') === true
+    && dekking('huis_gebeurtenissen', [...(tabellen.get('app.huis_gebeurtenissen') || [])]) === 'geen');
 
   const mis = resultaten.filter((r) => !r.ok);
   console.log(`${resultaten.length - mis.length}/${resultaten.length} geslaagd (account-wissen-20261026)`);

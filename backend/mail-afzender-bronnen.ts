@@ -6,7 +6,7 @@
 //    terugval op het organisatiedomein) en default._bimi. Elke vraag met een time-out; gelijktijdigheid begrensd; resultaat 24 u
 //    in het geheugen (gedeeld, alleen publieke DNS-gegevens) en per gebruiker in app.mail_domein_dns (backend/mail-afzenders.ts).
 import { Resolver } from 'node:dns/promises';
-import { organisatieDomein, parseBimi, parseDmarc, parseSpf, type DnsBewijs } from '../shared/mail-afzenders';
+import { gmailOntvangstWeerlegd, organisatieDomein, parseBimi, parseDmarc, parseSpf, type DnsBewijs } from '../shared/mail-afzenders';
 
 // ------------------------------------------------------------------------------------------------ Gmail (token + verzoeken)
 export const fetchMetTijd = async (url: string, init: RequestInit, ms = 15000) => {
@@ -96,14 +96,17 @@ export const gmailScanBron: ScanBron = {
     if (!GELDIG_ID.test(messageId)) return null;
     const token = await tokenVoor(userId, accountId);
     const p = new URLSearchParams({ format: 'metadata', fields: 'id,internalDate,labelIds,payload/headers' });
-    for (const naam of ['From', 'To', 'Cc', 'Bcc', 'Date', 'Authentication-Results']) p.append('metadataHeaders', naam);
+    // SEC-002 (post-08): Received en X-Gmail-Fetch-Info erbij — alleen om te zien of Gmail het bericht zelf via SMTP aannam.
+    for (const naam of ['From', 'To', 'Cc', 'Bcc', 'Date', 'Authentication-Results', 'Received', 'X-Gmail-Fetch-Info']) p.append('metadataHeaders', naam);
     const r = await fetchMetTijd(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}?${p}`, { headers: { Authorization: `Bearer ${token}` } });
     if (r.status === 404) return null;
     if (!r.ok) throw new Error(await gmailFoutVan(r));
     const d = await r.json() as { internalDate?: string; labelIds?: string[]; payload?: { headers?: Array<{ name?: string; value?: string }> } };
     const h = d.payload?.headers || [];
     const van = (naam: string) => h.filter((x) => String(x.name || '').toLowerCase() === naam.toLowerCase()).map((x) => String(x.value || ''));
-    return { from: van('From')[0] || '', to: van('To').join(', '), cc: van('Cc').join(', '), bcc: van('Bcc').join(', '), auth: van('Authentication-Results'),
+    return { from: van('From')[0] || '', to: van('To').join(', '), cc: van('Cc').join(', '), bcc: van('Bcc').join(', '),
+      // Niet door Gmail zelf aangenomen (POP3-verzamelaar, import): de bovenste Authentication-Results is dan van de afzender → telt niet.
+      auth: gmailOntvangstWeerlegd(h) ? [] : van('Authentication-Results'),
       tijd: Number(d.internalDate || 0) || Date.parse(van('Date')[0] || '') || 0, labels: (d.labelIds || []).map(String).slice(0, 50) };
   },
 };

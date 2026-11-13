@@ -16,6 +16,8 @@ import { foutTekst } from './fouten';
 import AiToegangTab from './AiToegangTab';
 import { Knop } from './ui';
 import './agenten.css';
+// SEC-002 extensie-02/-09 (g10a-2/-3): toegang en tokens van het bord geeft alleen de mens; een vers token leest de AI niet.
+import { alleenMens, geenAi, verborgenVoorAi } from '../menselijke-actie';
 
 type CapRij = { id: string; group: string; label: string; hint: string; aanSite: boolean };
 type AgentRij = BordAgent & { aan: boolean; tabs: TabId[] };
@@ -142,7 +144,7 @@ export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: b
   }, [bord.caps]);
 
   return (
-    <section className='ag ag-bord-wrap' data-agent-bord='1' data-ingebed={ingebed ? '1' : undefined}>
+    <section className='ag ag-bord-wrap' data-agent-bord='1' data-ingebed={ingebed ? '1' : undefined} {...geenAi}>
       {ingebed ? (
         <p className='ag-blok-uitleg'>{tr('Оберіть ШІ. Картка розгорнеться під блоком: що він вміє, як підключити і який доступ отримає. Лише ваш простір.', 'Kies een AI. De kaart opent eronder: wat hij kan, hoe u koppelt en welke toegang hij krijgt. Alleen uw ruimte.')}</p>
       ) : (
@@ -201,8 +203,8 @@ export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: b
                 {tab === 'token' ? (
                   <div className='ag-bord-blad' data-blad='token'>
                     <p>{gekozen.tokenUk}</p>
-                    <Knop toon='primary' data='token' bezig={bezig === 'token'} onClick={maakToken}>{tr('Випустити токен', 'Token uitgeven')}</Knop>
-                    {token ? <p className='ag-bord-url'><code data-token-eenmaal='1'>{token}</code></p> : null}
+                    <Knop toon='primary' data='token' bezig={bezig === 'token'} onClick={alleenMens(() => maakToken())}>{tr('Випустити токен', 'Token uitgeven')}</Knop>
+                    {token ? <p className='ag-bord-url' {...verborgenVoorAi}><code data-token-eenmaal='1'>{token}</code></p> : null}
                     {token ? <Kopieer tekst={token} tr={tr} /> : null}
                   </div>
                 ) : null}
@@ -230,7 +232,7 @@ export default function AgentBord({ tr, ingebed = false }: { tr: Tr; ingebed?: b
                           const aan = c.aanSite && persoonlijk !== false;
                           return (
                             <label key={c.id} className='ag-bord-cap' data-cap={c.id} data-cap-uit={c.aanSite ? '0' : '1'}>
-                              <input type='checkbox' checked={aan} disabled={!c.aanSite || plafond || bezig === c.id} onChange={(e) => zetCap(c.id, e.target.checked)} />
+                              <input type='checkbox' checked={aan} disabled={!c.aanSite || plafond || bezig === c.id} onChange={alleenMens((e: { target: { checked: boolean }; preventDefault: () => void }) => zetCap(c.id, e.target.checked))} />
                               <span><b>{c.label}</b><small>{c.aanSite ? c.hint : tr('Вимкнено для всіх на сайті', 'Uit voor iedereen op de site')}</small></span>
                             </label>
                           );

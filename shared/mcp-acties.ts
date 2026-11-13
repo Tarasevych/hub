@@ -59,7 +59,9 @@ const TOOL_SOORT: Readonly<Record<string, ActieSoort>> = {
   calendar_delete_event: 'agenda', calendar_event_attendees: 'agenda', calendar_rsvp_event: 'agenda',
   github_ci_status: 'github', github_list_commits: 'github', github_list_issues: 'github', github_list_repos: 'github', github_my_activity: 'github',
   github_read_readme: 'github', github_repo_overview: 'github', github_search: 'github', github_status: 'github', github_comment_issue: 'github',
-  github_create_issue: 'github', github_get: 'github',
+  github_create_issue: 'github', github_get: 'github', github_ci_logs: 'github', github_pr: 'github',
+  github_list_branches: 'github', github_list_tree: 'github', github_read_file: 'github', github_compare: 'github',
+  github_list_releases: 'github', github_save_file: 'github', github_sync_mirror: 'github',
   mcp_board_list: 'bord', mcp_board_add: 'bord', search_board: 'bord', create_task: 'bord', update_task_status: 'bord',
   update_board_item: 'bord', delete_board_item: 'bord', manage_hub_notes: 'bord', draft_calendar_event: 'agenda',
   get_live_release: 'uitrol', list_releases: 'uitrol', read_release_file: 'server', get_system_health: 'server', get_admin_view: 'server',
@@ -81,7 +83,9 @@ const PAAR = /\b(token|secret|password|passwd|pwd|api[_-]?key|apikey|cookie|wach
 const TOKENACHTIG = /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}|[A-Fa-f0-9]{32,}|[A-Za-z0-9_-]{40,})\b/g;
 /** Haalt alles wat op een geheim lijkt uit een tekst: het journaal mag zelf geen lek worden. */
 export const verberg = (t: string) => t.replace(AUTH, '$1=…').replace(DRAGER, '$1 …').replace(PAAR, '$1=…').replace(TOKENACHTIG, '…');
-const kort = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, n - 1)}…`);
+// SEC-002 (privacy-logboek-02): nooit midden in een emoji afkappen — de halve (eenzame surrogaat) werd door jsonb geweigerd,
+// waardoor de regel van precies die actie niet in het journaal kwam.
+const kort = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, (t.charCodeAt(n - 2) & 0xFC00) === 0xD800 ? n - 2 : n - 1)}…`);
 const tekst = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().replace(/[\u0000-\u001f\u007f]/g, ' ') : undefined);
 /** Alleen host + pad, zonder query en fragment (daar staan vaak codes en zoektermen). */
 export function veiligeUrl(raw: unknown): string | undefined {
@@ -158,6 +162,13 @@ const Z: Readonly<Record<string, [string, string]>> = {
   github_list_commits: ['Переглянув коміти', 'Bekeek commits'], github_list_issues: ['Переглянув задачі', 'Bekeek issues'], github_ci_status: ['Перевірив CI', 'Controleerde CI'],
   github_search: ['Шукав у GitHub', 'Zocht in GitHub'], github_my_activity: ['Переглянув вашу активність у GitHub', 'Bekeek uw GitHub-activiteit'],
   github_create_issue: ['Створив задачу в GitHub', 'Maakte een issue in GitHub'], github_comment_issue: ['Прокоментував задачу в GitHub', 'Reageerde op een issue in GitHub'],
+  github_list_branches: ['Переглянув гілки й мітки у GitHub', 'Bekeek takken en tags in GitHub'],
+  github_list_tree: ['Переглянув дерево файлів у GitHub', 'Bekeek de bestandsboom in GitHub'],
+  github_read_file: ['Прочитав файл у сховищі GitHub', 'Las een bestand in een GitHub-repository'],
+  github_compare: ['Порівняв гілки у GitHub', 'Vergeleek takken in GitHub'],
+  github_list_releases: ['Переглянув випуски у GitHub', 'Bekeek uitgaven in GitHub'],
+  github_save_file: ['Зберіг файл у сховищі GitHub', 'Sloeg een bestand op in een GitHub-repository'],
+  github_sync_mirror: ['Синхронізував дзеркало GitHub', 'Synchroniseerde de GitHub-spiegel'],
   mcp_board_list: ['Переглянув дошку завдань', 'Bekeek het takenbord'], mcp_board_add: ['Додав завдання на дошку', 'Voegde een taak toe aan het bord'],
   search_board: ['Шукав на дошці', 'Zocht op het bord'], create_task: ['Створив завдання', 'Maakte een taak'],
   update_task_status: ['Змінив статус завдання', 'Wijzigde de status van een taak'], update_board_item: ['Виправив запис на дошці', 'Corrigeerde een borditem'],
