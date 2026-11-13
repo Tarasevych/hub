@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: github-010-uitgave
@@ -39,8 +39,6 @@ jobs:
   controle-en-uitgave:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      GH_TOKEN: ${{ github.token }}
     services:
       postgres:
         image: postgres:16
@@ -54,13 +52,14 @@ jobs:
           --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - name: Отримати вихідні коди сховища
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Відновити назву гілки завдання
         run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
       - name: Підготувати середовище Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -82,26 +81,28 @@ jobs:
           git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
       - name: Перевірити правила координації та журнал походження
         run: |
+          set -o pipefail
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
-          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Виконати одиничні перевірки середовища GitHub, меню, шлюзу та розміщення
         run: |
+          set -o pipefail
           node scripts/plaatsing-controle.mjs
           node scripts/zoek-ui-catalogus.mjs --controle
-          node scripts/eenheidstests.mjs github-volledige-werkruimte.test.ts
-          node scripts/eenheidstests.mjs github-oauth-20261020.test.ts
-          node scripts/eenheidstests.mjs github-koppelkaart-20261019.test.ts
-          node scripts/eenheidstests.mjs github-platform.test.ts
-          node scripts/eenheidstests.mjs dev-rechten-media-github-20261021.test.ts
-          node scripts/eenheidstests.mjs routes.test.ts
-          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
-          node scripts/eenheidstests.mjs zoek-ui-tabblad-20261105.test.ts
-          node scripts/eenheidstests.mjs connector-v2.test.ts
-          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts
-          node scripts/eenheidstests.mjs menu-v2.test.ts
-          node scripts/eenheidstests.mjs menu-indeling.test.ts
-          node scripts/eenheidstests.mjs werkblad-register-20261027.test.ts
+          node scripts/eenheidstests.mjs github-volledige-werkruimte.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs github-oauth-20261020.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs github-koppelkaart-20261019.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs github-platform.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs dev-rechten-media-github-20261021.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs routes.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs zoek-ui-tabblad-20261105.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs connector-v2.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs menu-v2.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs menu-indeling.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs werkblad-register-20261027.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Перевірити типи та скласти застосунок
         run: |
           npx tsc --noEmit
@@ -139,8 +140,8 @@ jobs:
             throw Error('Таблиці середовища GitHub (міграція 0208) не створені або не мають примусового захисту RLS.');
           }
           JS
-          node scripts/eenheidstests.mjs site-hulpmiddelen.test.ts
-          node scripts/eenheidstests.mjs ruimte-bord-github-20261020.test.ts
+          node scripts/eenheidstests.mjs site-hulpmiddelen.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs ruimte-bord-github-20261020.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Упевнитися в незмінності робочого дерева
         run: |
           git diff --exit-code
@@ -151,12 +152,8 @@ jobs:
           set -euo pipefail
           VERSIE="$(date -u +%Y%m%d-%H%M%S)"
           echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
-          if gh release view "$VERSIE" >/dev/null 2>&1; then
-            echo 'Випуск з таким позначенням уже існує.' >&2
-            exit 1
-          fi
           node --input-type=module <<'JS'
-          import { writeFileSync } from 'node:fs';
+          import { readFileSync, writeFileSync } from 'node:fs';
           const e = process.env;
           const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
           const uk = {
@@ -220,13 +217,18 @@ jobs:
             beschrijving: { uk, nl }
           };
           writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          // SEC-002: cijfers uit de echte uitvoer van scripts/eenheidstests.mjs («N/M geslaagd (…)» per testbestand), geen letterlijke getallen.
+          // Кількість перевірок береться з фактичного виводу тестів цього запуску, а не з наперед записаного числа.
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів тестів або є невдалі перевірки — випуск зупинено.');
           const tests = {
-            geslaagd: 448,
-            mislukt: 0,
+            geslaagd: gemeten.geslaagd,
+            mislukt: gemeten.mislukt,
             falend: [],
             uitleg: {
-              uk: 'Успішно пройдено будівельні перевірки розміщення та пошукового каталогу (1428 елементів), одиничні випробування нового робочого середовища github-volledige-werkruimte (18/18), підключення github-oauth (17/17), картки github-koppelkaart (22/22), платформи github-platform (13/13), ізоляції просторів ruimte-bord-github, шлюзу повноважень на 1009 маршрутах (5/5), правил розміщення (68/68), прив’язки вкладок пошуку (46/46), каталогу connector-v2 і двомовних інструментів ШІ, меню (menu-v2, menu-indeling, werkblad-register), походження TRACE-001, перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій включно з 0208 на чистій базі PostgreSQL 16 із перевіркою примусового захисту RLS.',
-              nl: 'Bouwcontroles van plaatsing en de UI-zoekcatalogus (1428 elementen) zijn geslaagd, evenals de eenheidstests voor github-volledige-werkruimte (18/18), github-oauth (17/17), github-koppelkaart (22/22), github-platform (13/13), ruimte-isolatie ruimte-bord-github, de toegangspoort op alle 1009 routes (5/5), plaatsing (68/68), zoektabbladen (46/46), connector-v2 en tweetalige AI-hulpmiddelen, menu-opbouw (menu-v2, menu-indeling, werkblad-register) en herkomst TRACE-001, plus typecontrole van client en server, productiebouw en dubbele uitvoering van alle migraties inclusief 0208 op een schone PostgreSQL 16-databank met FORCE ROW LEVEL SECURITY-verificatie.'
+              uk: 'Успішно пройдено будівельні перевірки розміщення та пошукового каталогу, одиничні випробування нового робочого середовища github-volledige-werkruimte, підключення github-oauth, картки github-koppelkaart, платформи github-platform, ізоляції просторів ruimte-bord-github, шлюзу повноважень на всіх маршрутах, правил розміщення, прив’язки вкладок пошуку, каталогу connector-v2 і двомовних інструментів ШІ, меню (menu-v2, menu-indeling, werkblad-register), походження TRACE-001, перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій включно з 0208 на чистій базі PostgreSQL 16 із перевіркою примусового захисту RLS.' + ' Виміряно в цьому запуску — файл тестів і пройдено з усього: ' + gemetenLijst + '.',
+              nl: 'Bouwcontroles van plaatsing en de UI-zoekcatalogus zijn geslaagd, evenals de eenheidstests voor github-volledige-werkruimte, github-oauth, github-koppelkaart, github-platform, ruimte-isolatie ruimte-bord-github, de toegangspoort op alle routes, plaatsing, zoektabbladen, connector-v2 en tweetalige AI-hulpmiddelen, menu-opbouw (menu-v2, menu-indeling, werkblad-register) en herkomst TRACE-001, plus typecontrole van client en server, productiebouw en dubbele uitvoering van alle migraties inclusief 0208 op een schone PostgreSQL 16-databank met FORCE ROW LEVEL SECURITY-verificatie.' + ' Gemeten in deze uitvoering — testbestand en geslaagd van totaal: ' + gemetenLijst + '.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
@@ -246,6 +248,73 @@ jobs:
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
           printf 'GITHUB-010 · Повноцінне двостороннє робоче середовище GitHub (https://github.tarasevych.com/): 13 розділів підменю, адаптивні робочі та спливні вікна для комп’ютерів і смартфонів, дерево файлів і вебредактор коду з різницею змін, задачі, запити на злиття, конвеєри дій і випуски, підключення в один натиск без ручного введення ключів, ізольоване двостороннє дзеркало з живим підписаним перехоплювачем подій, мости до пристроїв та екосистеми ШІ й майстер самостійного розгортання. Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: github-010-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: github-010-controle
+          path: uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    # SEC-002: єдине завдання з правом запису у сховище. Воно нічого не встановлює через npm, не збирає й не тестує:
+    # отримує вже перевірені пакунки як артефакт, звіряє контрольну суму й лише тоді оприлюднює випуск.
+    # Enige taak met schrijfrecht. Installeert, bouwt en test niets: haalt de gecontroleerde pakketten als artefact op en publiceert.
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: github-010-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          # SEC-002 (g01-3): de basis komt uit het artefact van de bouwtaak (zonder schrijfrecht, maar met npm en tests) — alleen aanvaarden
+          # als ze in de vertrouwde env van deze werkstroom staat (vaste basis of lijst van toegestane bases).
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_VERSIE}=${BASIS_COMMIT:-}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту збірки не входить до довірених значень цього процесу — оприлюднення зупинено. · De basis uit het bouwartefact staat niet in de vertrouwde waarden van deze werkstroom — publicatie gestopt.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
       - name: Повторно звірити живу встановлену версію перед оприлюдненням
         shell: bash
         run: |
@@ -261,6 +330,9 @@ jobs:
       - name: Оприлюднити випуск на GitHub без встановлення на сервер
         id: publicatie
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh release create "$VERSIE" \
@@ -285,11 +357,7 @@ jobs:
           JS
       - name: Приховати незавершений випуск у разі збою перевірки
         if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
-      - name: Зберегти пакунки перевірки у сховищі виконання
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: github-010-controle
-          path: uitvoer/
-          if-no-files-found: ignore

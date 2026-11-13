@@ -83,7 +83,9 @@ const PAAR = /\b(token|secret|password|passwd|pwd|api[_-]?key|apikey|cookie|wach
 const TOKENACHTIG = /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}|[A-Fa-f0-9]{32,}|[A-Za-z0-9_-]{40,})\b/g;
 /** Haalt alles wat op een geheim lijkt uit een tekst: het journaal mag zelf geen lek worden. */
 export const verberg = (t: string) => t.replace(AUTH, '$1=…').replace(DRAGER, '$1 …').replace(PAAR, '$1=…').replace(TOKENACHTIG, '…');
-const kort = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, n - 1)}…`);
+// SEC-002 (privacy-logboek-02): nooit midden in een emoji afkappen — de halve (eenzame surrogaat) werd door jsonb geweigerd,
+// waardoor de regel van precies die actie niet in het journaal kwam.
+const kort = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, (t.charCodeAt(n - 2) & 0xFC00) === 0xD800 ? n - 2 : n - 1)}…`);
 const tekst = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().replace(/[\u0000-\u001f\u007f]/g, ' ') : undefined);
 /** Alleen host + pad, zonder query en fragment (daar staan vaak codes en zoektermen). */
 export function veiligeUrl(raw: unknown): string | undefined {

@@ -15,6 +15,7 @@ import { eindeWeergave } from '../../shared/extensie-matrix';
 import { restTekst, useExtensieLive } from './extensie-live';
 import { CAP_TEKST, intrekken, ontgrendelenPrive, type Weigering } from './ExtensieOntgrendeling';
 import './ExtensieOntgrendeling.css';
+import { alleenMens, geenAi } from '../menselijke-actie'; // SEC-002 extensie-02
 
 type Tr = (uk: string, nl: string) => string;
 const staatVan = (s: ExtensieStaat | 'onbekend'): ExtensieStaat => (s === 'onbekend' ? 'vergrendeld' : s);
@@ -102,7 +103,7 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
   const rest = o ? Math.max(0, o.eind - nuServer) : 0;
 
   return (
-    <section className='eo' id={live.agentId ? `extensie-ontgrendeling-${live.agentId}` : 'extensie-prive'} data-eo-slot='prive' data-eo-staat={staat} data-eo-bron={live.bron} aria-labelledby={kopId}>
+    <section className='eo' id={live.agentId ? `extensie-ontgrendeling-${live.agentId}` : 'extensie-prive'} data-eo-slot='prive' data-eo-staat={staat} data-eo-bron={live.bron} aria-labelledby={kopId} {...geenAi}>
       <h3 id={kopId} tabIndex={-1}>{tr('Доступ ШІ як користувач', 'AI-toegang als gebruiker')} <HulpVraag k='extensie.prive.ontgrendeling' uk={uk} label={tr('Доступ як користувач', 'Toegang als gebruiker')} /></h3>
       <div className={`eo-kaart is-${staat}`} role='status' aria-live='polite' aria-atomic='true' data-eo-kaart='prive'>
         <span className='eo-icoon' aria-hidden='true'>{staat === 'agent' ? <Bot /> : open ? <LockOpen /> : <Lock />}</span>
@@ -126,7 +127,7 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
         </div>
       ) : null}
 
-      <form className='eo-form' onSubmit={(e) => { e.preventDefault(); void doeOpen(); }} data-eo-form='prive'>
+      <form className='eo-form' onSubmit={(e) => { e.preventDefault(); alleenMens(() => void doeOpen())(e); }} data-eo-form='prive'>
         <p className='eo-lead'>{open ? tr('Нове відкриття замінить поточне.', 'Een nieuwe toegang vervangt de huidige.') : recht?.stapOpGeldig ? tr('Вхід у цій вкладці вже підтверджено — додатковий запит не потрібен.', 'De aanmelding in dit tabblad is al bevestigd — er is geen extra vraag nodig.') : tr('Перед відкриттям сайт попросить підтвердити доступ (passkey, код із додатка або Google).', 'Vóór het openen vraagt de site de toegang te bevestigen (passkey, code uit de app of Google).')}</p>
         {blok ? uitleg(blok, 'note') : null}
         <p className='eo-meta' data-eo-caps-nu='1'>{capsNu.length ? <>{tr('У цьому слоті діятиме: ', 'In dit slot geldt: ')}{capsNu.map((c) => (uk ? CAP_TEKST[c]?.[0] : CAP_TEKST[c]?.[1]) ?? c).join(', ')}{tr(' — ваші дозволи («Що може ШІ») у межах політики власника; строк і можливості нижче — єдине джерело для розширення.', ' — uw toestemmingen («Wat mag de AI») binnen het beleid van de eigenaar; termijn en mogelijkheden hieronder zijn de enige bron voor de extensie.')}</> : tr('Ще немає жодного дозволу для ШІ в цьому браузері.', 'Nog geen enkele toestemming voor de AI in deze browser.')}</p>
@@ -153,7 +154,7 @@ export default function ExtensiePrive({ tr, agentId }: { tr: Tr; agentId?: strin
           </label>
         ) : null}
         <div className='eo-knoppen'>
-          <button type='submit' className='eo-knop is-hoofd' disabled={knopUit} aria-busy={bezig === 'open' || undefined} data-eo-knop='prive-open'>
+          <button type='submit' className='eo-knop is-hoofd' disabled={knopUit} aria-busy={bezig === 'open' || undefined} data-eo-knop='prive-open' onClick={alleenMens(() => undefined)}>
             <KeyRound aria-hidden='true' />{bezig === 'open' ? tr('Підтвердження…', 'Bevestigen…') : tr('Підтвердити й відкрити доступ', 'Bevestigen en toegang openen')}
           </button>
         </div>

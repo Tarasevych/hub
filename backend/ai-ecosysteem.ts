@@ -14,6 +14,7 @@ import type { Lade } from '../shared/ruimte-scheiding';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { AI_AANBIEDERS } from '../shared/ai-aanbieders';
 import { V2_AGENTEN } from '../shared/connector-v2/agenten';
+import { jsonbTekst } from '../shared/tekst-veilig';
 import {
   bouwZelfHostPakket,
   normaliseerBronnen,
@@ -162,7 +163,7 @@ export const pgEcosysteemOpslag: EcosysteemOpslag = {
               SET naam = $4, beschrijving = $5, agenten = $6::text[], modellen = $7::text[], omgevingen = $8::jsonb, bronnen = $9::jsonb, actief = $10, bijgewerkt_op = now()
             WHERE user_id = $1 AND ruimte = $2 AND id = $3::uuid
             RETURNING ${WK_KOL}`,
-          [lade.userId, lade.ruimte, id, naam, beschrijving, agenten, modellen, JSON.stringify(omgevingen), JSON.stringify(bronnen), actief],
+          [lade.userId, lade.ruimte, id, naam, beschrijving, agenten, modellen, jsonbTekst(omgevingen), jsonbTekst(bronnen), actief],
         )).rows[0];
         if (!r) return { ok: false, code: 'ECOSYSTEEM_NIET_GEVONDEN' };
         return { ok: true, werkruimte: rijNaarWerkruimte(r) };
@@ -173,7 +174,7 @@ export const pgEcosysteemOpslag: EcosysteemOpslag = {
         `INSERT INTO app.ai_agent_werkruimtes (user_id, ruimte, naam, beschrijving, agenten, modellen, omgevingen, bronnen, actief)
          VALUES ($1, $2, $3, $4, $5::text[], $6::text[], $7::jsonb, $8::jsonb, $9)
          RETURNING ${WK_KOL}`,
-        [lade.userId, lade.ruimte, naam, beschrijving, agenten, modellen, JSON.stringify(omgevingen), JSON.stringify(bronnen), actief],
+        [lade.userId, lade.ruimte, naam, beschrijving, agenten, modellen, jsonbTekst(omgevingen), jsonbTekst(bronnen), actief],
       )).rows[0];
       return { ok: true, werkruimte: rijNaarWerkruimte(r) };
     });
@@ -213,7 +214,7 @@ export const pgEcosysteemOpslag: EcosysteemOpslag = {
                bijgewerkt_op = now()
          WHERE app.ai_gedeelde_context.user_id = $1 AND app.ai_gedeelde_context.ruimte = $2
          RETURNING ${CTX_KOL}`,
-        [lade.userId, lade.ruimte, geldigeWk, sleutel, titel, inhoud, bronDienst, agent, JSON.stringify(koppelingen)],
+        [lade.userId, lade.ruimte, geldigeWk, sleutel, titel, inhoud, bronDienst, agent, jsonbTekst(koppelingen)],
       )).rows[0];
       return { ok: true, item: rijNaarContext(r) };
     });
@@ -313,7 +314,7 @@ export const pgEcosysteemOpslag: EcosysteemOpslag = {
                bijgewerkt_op = now()
          WHERE app.ai_ruimte_uitbreidingen.user_id = $1 AND app.ai_ruimte_uitbreidingen.ruimte = $2
          RETURNING ${UIT_KOL}`,
-        [lade.userId, lade.ruimte, slug, naam, beschrijving, soort, doelDiensten, omgevingen, JSON.stringify(config), gemaaktDoorAgent, actief],
+        [lade.userId, lade.ruimte, slug, naam, beschrijving, soort, doelDiensten, omgevingen, jsonbTekst(config), gemaaktDoorAgent, actief],
       )).rows[0];
       return { ok: true, uitbreiding: rijNaarUitbreiding(r) };
     });

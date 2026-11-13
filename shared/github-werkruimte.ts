@@ -235,7 +235,12 @@ export function veiligBestandPad(invoer: unknown): string {
 /** Valideert een tak- of tagnaam volgens Git-regels. */
 export function veiligTakNaam(invoer: unknown): string {
   const s = String(invoer ?? '').trim();
-  return VEILIG_TAK.test(s) ? s : '';
+  if (!VEILIG_TAK.test(s)) return '';
+  // SEC-002 (integraties-10): de naam komt ook in een git-opdracht op het apparaat van de gebruiker. Een naam die met «-» begint
+  // werd daar een optie (`git push origin --mirror` wist alle takken op GitHub). Zoals geldigeBranch (shared/github-pr.ts):
+  // niet met «-» beginnen, geen deel dat met «.» begint, niet eindigen op «/», niet «HEAD».
+  if (s.startsWith('-') || s.endsWith('/') || s === 'HEAD' || s.split('/').some((d) => !d || d.startsWith('.'))) return '';
+  return s;
 }
 
 /** Valideert een nieuwe opslagplaatsnaam (zonder eigenaar-voorvoegsel). */

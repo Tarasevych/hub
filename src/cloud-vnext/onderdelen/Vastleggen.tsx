@@ -10,6 +10,7 @@ import { OVERDRACHT_GRENZEN } from '../../../shared/cloud-overdracht-model';
 import { CloudFout, cloudClient } from '../cloud-client';
 import type { OnderdeelProps } from '../CloudPagina';
 import { bytesTekst, tr, type Lang } from '../tekst';
+import { weigeringZin } from '../../../shared/weigering-tekst';
 
 const CAPTURE_MAX = 6 * 1024 * 1024;      // backend/cloud-platform.ts: MAX_FILE_BYTES
 const NOTITIE_MAX = 50_000;               // backend/cloud-platform.ts: MAX_NOTE_CHARS
@@ -29,7 +30,7 @@ function foutNaarTekst(lang: Lang, e: unknown): string {
     CLOUD_WORKSPACE_NOT_FOUND: ['Такого простору немає.', 'Die werkruimte bestaat niet.'],
   };
   const p = t[code]; if (p) return tr(lang, p[0], p[1]);
-  return tr(lang, `Не вдалося (${code}).`, `Mislukt (${code}).`);
+  return weigeringZin(lang, code) ?? tr(lang, `Не вдалося (${code}).`, `Mislukt (${code}).`);
 }
 
 export default function Vastleggen({ lang, ov, vernieuw, toon, naarTab }: OnderdeelProps) {

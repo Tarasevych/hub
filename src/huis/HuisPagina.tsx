@@ -9,6 +9,8 @@ import { HuisFout, gekozenWoning, huisClient, kiesWoning, type Overzicht as Over
 import { foutTekst, geledenTekst, serverFout, tr, useSmal, type Lang } from './tekst';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
 import './huis.css';
+// SEC-002 (g02): wie zelf nog geen woning heeft, ziet de uitnodigingen al op het startscherm (anders pas onder «Налаштування»).
+import UitnodigingenVoorMij from './onderdelen/UitnodigingenVoorMij';
 
 const Overzicht = lazy(() => import('./onderdelen/Overzicht'));
 const Kamers = lazy(() => import('./onderdelen/Kamers'));
@@ -135,6 +137,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
             <h3 id='hv-start-kop'>{tr(lang, 'Ваш розумний будинок — в одному місці', 'Uw slimme huis — op één plek')}</h3>
             <p>{tr(lang, 'Кімнати, пристрої, сцени й події. Показуємо лише те, що справді повідомив ваш шлюз, — без вигаданих станів.', 'Kamers, apparaten, scènes en gebeurtenissen. We tonen alleen wat uw gateway echt meldt — geen verzonnen toestanden.')}</p>
           </div>
+          <UitnodigingenVoorMij lang={lang} toon={toon} naAanvaarden={async (id) => { kiesWoning(id); setWoningId(id); await laadWoningen(); }} />
           <div className='hv-start-acties'>
             <div className='hv-start-actie is-hoofd' data-hv-actie='woning'>
               <span className='hv-start-icoon' aria-hidden='true'><Home /></span>

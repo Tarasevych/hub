@@ -38,7 +38,7 @@ import { externeBeschrijving, externeToolNaam, ontleedExterneToolNaam } from '..
 import { p, toolTaal, vertaalHulpmiddel, type ToolTaal } from '../shared/hulpmiddel-teksten';
 import type { Kant } from '../shared/connector-v2/catalogus';
 import { getPool } from '../server/platform/pg';
-import { DEV_MG_SET } from '../shared/dev-media-github';
+import { DEV_MG_ALLEEN_V2, DEV_MG_SET } from '../shared/dev-media-github';
 import { ECOSYSTEEM_TOOL_NAMEN } from '../shared/ai-ecosysteem';
 import { GITHUB_WERKRUIMTE_TOOL_NAMEN } from '../shared/github-werkruimte';
 /** Alleen via connector v2 (/<agent>): de zeven van 21.10, browser_script (0110, zone E), ecosysteem- en nieuwe GitHub-werkruimtehulpmiddelen. */
@@ -572,9 +572,14 @@ export const DEVTOOLS_ALIASES: Record<string, Alias> = {
 };
 /** Alias → intern hulpmiddel + omgezette argumenten. Onbekende naam: ongewijzigd. */
 export function resolveAlias(name: string, args: any): { name: string; args: any } {
-  const a = DEVTOOLS_ALIASES[name];
+  // SEC-002 (ai-mcp-01): alleen EIGEN sleutels van de tabel zijn een alias («constructor», «toString» … uit Object.prototype niet),
+  // en `__target` is uitsluitend een intern signaal van een `map` hierboven (navigate_page → browser_history). Uit de argumenten
+  // van de klant wordt het nooit gelezen: anders koos de AI zelf het echte hulpmiddel, voorbij alle poorten die de ruwe naam zien.
+  const a = Object.prototype.hasOwnProperty.call(DEVTOOLS_ALIASES, name) ? DEVTOOLS_ALIASES[name] : undefined;
   if (!a) return { name, args };
-  const mapped = a.map ? a.map(args ?? {}) : (args ?? {});
+  const vanKlant: Record<string, unknown> = args && typeof args === 'object' && !Array.isArray(args) ? { ...args } : {};
+  delete vanKlant.__target;
+  const mapped = a.map ? a.map(vanKlant) : vanKlant;
   const target = typeof mapped?.__target === 'string' ? mapped.__target : a.target;
   if (mapped && '__target' in mapped) delete mapped.__target;
   for (const k of Object.keys(mapped)) if (mapped[k] === undefined) delete mapped[k];
@@ -1046,6 +1051,12 @@ export const KNOWN_TOOL_NAMES: readonly string[] = [...MACHINE_TOOLS, ...APP_TOO
  */
 export async function callTool(userId: string, rawName: string, rawArgs: any = {}, opties: { eigenaarZelf?: boolean } = {}): Promise<ToolResult> {
   const { name, args } = resolveAlias(rawName, rawArgs);
+  // SEC-002 (ai-mcp-01): een naam uit Object.prototype («constructor», «toString») is nooit een hulpmiddel; de gewone objecten
+  // hieronder (TOOL_TO_COMMAND[name], modes[name]) zouden er anders een «treffer» in zien en het opdrachtpad ingaan.
+  if (typeof name !== 'string' || Object.prototype.hasOwnProperty.call(Object.prototype, name)) return text(`Unknown tool: ${String(rawName).slice(0, 80)}`, true);
+  // SEC-002 (ai-mcp-01): alleen-v2-hulpmiddelen bestaan uitsluitend via connector v2 (mcp-connector.roepTool zet `v2` in mcp-namens).
+  // Tot nu toe verborg alleen tools/list ze; een aanroep met de interne naam (oude /mcp, chat, zijpaneel) ging gewoon door.
+  if (V2_ALLEEN.has(name) && !opties.eigenaarZelf && !huidigeNamens()?.v2) return text(DEV_MG_ALLEEN_V2(name.slice(0, 80)), true);
   if (BUITEN_BEREIK.has(name)) return text(BUITEN_TEKST, true);
   try {
     // Het ondertekende AI-beleid van de eigenaar (§13.12) is een plafond: de strengste van «instelling op de site» en «beleid» wint.

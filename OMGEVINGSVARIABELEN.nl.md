@@ -49,6 +49,32 @@ Ontbreekt zo'n sleutel, dan gebruikt de code `TOTP_ENCRYPTION_KEY_V1`. **Daarom 
 een bestaande installatie NIET automatisch aan** (er kunnen al gegevens onder de TOTP-sleutel staan; een nieuwe eigen sleutel
 zou die onleesbaar maken). Op een nieuw, leeg `geheimen.env` worden ze wel aangemaakt; later bewust: `… geheimen --ook-optioneel`.
 
+### Rotatie van envelopsleutels: `<NAAM>_V2` … `<NAAM>_V9` (SEC-002, geheimen-07)
+
+Geldt voor de sleutels waarmee de server enveloppen verzegelt via `sealWithEnvKey`: `TOTP_ENCRYPTION_KEY_V1`, `MAIL_APP_WACHTWOORD_SLEUTEL_V1`,
+`AGENDA_ABONNEMENT_SLEUTEL_V1`, `GITHUB_KOPPELING_SLEUTEL_V1`, `AGENT_SLEUTEL_V1`, `AI_ARCHIEF_SLEUTEL_V1`, `HUIS_ADAPTER_SLEUTEL_V1`.
+Elke envelop draagt de versie van de sleutel (`v1.…`, `v2.…`). Volgorde na een vermoed lek of volgens schema:
+
+1. Controleer dat migratie `0253_serverenvelop_versies` is toegepast: pas dan aanvaardt de database enveloppen `v2.` … `v9.`
+   (IMAP-mail, CalDAV-agenda, AI-bevestigingen). **Niet roteren vóór 0253** — anders falen mail- en agendakoppelingen en elke
+   AI-bevestiging.
+2. Zet een nieuwe sleutel `<NAAM>_V2` (32 willekeurige bytes: `openssl rand -base64 32`) in `/etc/mijn-ruimte/geheimen.env` en herstart
+   de dienst (`systemctl restart mijn-ruimte`). Een volgende rotatie: `_V3`, enzovoort tot `_V9`.
+3. Vanaf dan schrijft de server elke nieuwe of gewijzigde envelop onder de nieuwste sleutel (`v2.…`); oude `v1.…`-enveloppen blijven
+   leesbaar met V1.
+4. **De sleutel `…_V1` NIET verwijderen**, ook niet als er geen `v1.…`-rijen meer lijken te zijn: bestaande `v1.…`-enveloppen zijn alleen
+   daarmee te lezen. De vier modules met terugval op de TOTP-sleutel — `AGENT_SLEUTEL_V1` (`backend/connectors-crypto.ts`),
+   `GITHUB_KOPPELING_SLEUTEL_V1` (`backend/github-koppeling-opslag.ts`), `AI_ARCHIEF_SLEUTEL_V1` (`backend/browser-diag-archief.ts`),
+   `HUIS_ADAPTER_SLEUTEL_V1` (`backend/huis-vnext.ts`) — zien hun eigen sleutel in elke versie (`envSleutelBeschikbaar`), dus met `_V2`
+   vallen ze niet stil terug op `TOTP_ENCRYPTION_KEY_V1`. V1 mag pas weg nadat alle rijen onder de nieuwe sleutel opnieuw zijn verzegeld.
+5. Wat rotatie nu oplevert: nieuwe gegevens onder de nieuwe sleutel; een gelekte V1 opent alleen nog oude rijen. Het massaal
+   opnieuw verzegelen `v1` → `v2`, een teller op «Geheimen en sleutels» en het vervangen van de gegevenssleutel (DEK) van de
+   sleutelkluis zijn nog niet gedaan.
+
+Niet via deze weg: `GOOGLE_OAUTH_GRANT_ENCRYPTION_KEY_V1`, `OWNER_VAULT_ENCRYPTION_KEY_V1`, `MAIL_TOKEN_ENCRYPTION_KEY_V1` (eigen
+envelopformaat) en de peppers (`RECOVERY_CODE_PEPPER`, `AUDIT_IP_PEPPER`, `SLEUTELKLUIS_SLEUTEL_V1`): daar geldt nog «niet roteren».
+Zie ook `deploy/GEHEIMEN-REGISTER.nl.md`, «Rotatie van een envelopsleutel».
+
 
 ### Databaserollen (beveiliging fase 2, optioneel)
 Worden alleen door `deploy/db-rollen-instellen.sh instellen` geschreven (nooit met de hand nodig). Ontbreekt een
@@ -75,7 +101,8 @@ zelf uitzetten. Schakelen: `db-rollen-instellen.sh rls-aan|rls-uit`.
 | Naam | Standaard | Doel |
 |---|---|---|
 | `AUTH_POORT_AFDWINGEN` | uit | `1` = de vangrail in de router antwoordt **401** op elke anonieme 2xx-respons van een route die niet in `PUBLIEKE_ROUTES` staat (`server/platform/auth-poort.ts`). Zonder: alleen loggen (`[auth-poort]`) en tellen in `app.rls_audit` (actie `anoniem-2xx`). Zie `deploy/DRAAIBOEK-FASE-2-3.nl.md`. |
-| `STAP_OP_UIT` | uit | Noodschakelaar: `1` zet de step-up-eis (`STEP_UP_REQUIRED`) voor gevoelige acties uit. Alleen tijdelijk gebruiken, bv. als de frontend de step-up nog niet afhandelt en een beheeractie dringend is. |
+| `STAP_OP_UIT_TOT` | uit | Noodschakelaar voor de step-up-eis (`STEP_UP_REQUIRED`) **met een einde** (SEC-002): `STAP_OP_UIT_TOT=<ISO-tijdstip>`, bv. `2026-11-12T18:00:00Z`, hoogstens 24 uur vooruit (gerekend vanaf de eerste keer dat de server precies deze waarde zag). Tot dat tijdstip staat de step-up uit, daarna vanzelf weer aan, zonder herstart. Een verlopen, ongeldige (ook een kaal getal) of te verre waarde **zet niets uit**. Zolang de schakelaar geldt, meldt de server dat elke 24 uur: dienstlogboek, beheerjournaal (`admin.beveiliging.uit`), melding aan de eigenaar, rode balk in «Захист» en een waarschuwing in de diepe gezondheidscontrole. Alleen voor dringende gevallen; daarna de regel weghalen. |
+| `STAP_OP_UIT` | uit | **Oude vorm, niet meer gebruiken.** `1` zet de step-up-eis voor gevoelige acties uit **zonder einde** — tot iemand de regel weghaalt. Werkt nog voor bestaande installaties, maar de server meldt hem nu net als `STAP_OP_UIT_TOT`. Gebruik `STAP_OP_UIT_TOT`. Besluit van de eigenaar: deze vorm helemaal afschaffen of niet. |
 | `STAP_OP_GOOGLE_ZONDER_AUTH_TIME` | uit | Opt-in noodpad (audit-fix 5): `1` = een expliciete step-up-aanmelding bij Google (`prompt=login`, `max_age=0`) telt ook zonder `auth_time`-claim in het id_token, mits het OAuth-verloop binnen 5 minuten na de start is afgerond. Standaard telt Google-step-up alleen met `auth_time` (zet in de Google Cloud Console bij de OAuth-client **"sessie age claims"** aan). TOTP-step-up werkt altijd. |
 | `ACCOUNT_DEFINITIEF_WISSEN` | uit | `1` = de opruimjob wist accounts **definitief** (inhoud, identiteiten, bestanden; grafsteen zonder persoonsgegevens) zodra de herstelperiode van 30 dagen voorbij is. Zonder: alleen een droog verslag in het cron-log. **Onomkeerbaar** — pas aanzetten na een geslaagde back-up/hersteltest. |
 
@@ -129,10 +156,23 @@ vraagt ze niet). Staat de API uit, dan meldt de pagina dat eerlijk en blijft all
 | `MR_BEHEERSUBNET` | `10.0.0.0/8` | Beheersubnet van de server in de vorm `adres/bits`. Adressen daaruit zijn voor gateways van «Huis» altijd verboden, ook als ze bij de vertrouwde adressen staan. Zonder geldige waarde geldt `10.0.0.0/8`: gebruikt het thuisnetwerk ook `10.x`, stel dan het exacte beheersubnet in, anders worden alle gateways thuis geweigerd. |
 | `UPLOADS_DIR` | `/srv/data/uploads` | Bestandsopslag (enige schrijfbare map voor de dienst). |
 | `MERK_EIGEN_MAP` | `/srv/mijn-ruimte/merk-eigen` | Officiële logo's die de beheerder zelf neerlegt (`<sleutel>.svg` of `.png`, ≤ 200 KB, SVG ontsmet) — zie `deploy/PROJECTOVERZICHT.nl.md`, «Eigen logo's». |
-| `MAX_BODY_BYTES` | `12582912` (12 MiB) | Maximale requestgrootte. |
+| `MAX_BODY_BYTES` | `12582912` (12 MiB) | Maximale grootte van een requestlichaam met `Cookie` of `Authorization`. Grotere `Content-Length` → meteen 413, zonder te lezen. |
+| `MAX_BODY_ANONIEM_BYTES` | `262144` (256 KiB) | SEC-002: requestlichaam **zonder** `Cookie` en `Authorization` (aanmelden, OAuth, koppelen, webhooks). Uitzondering: de ondertekende GitHub-webhook. |
+| `MAX_BODY_PER_IP` | `8` | SEC-002: zoveel anonieme lichamen tegelijk per IP (IPv6: per /64-net); meer → 429. |
+| `MAX_BODY_PER_IP_AANGEMELD` | `64` | SEC-002: zoveel lichamen met `Cookie`/`Authorization` tegelijk per IP (een map uploaden naar de cloud gaat in veel stukken). Telt pas na een snelle controle dat de sessie of het token echt bestaat. |
+| `MAX_BODY_PER_IP_BYTES` | `100663296` (96 MiB) | SEC-002: zoveel bytes aan lichamen tegelijk in het geheugen per IP — één adres neemt nooit het hele budget. |
+| `MAX_BODY_BUDGET_BYTES` | `268435456` (256 MiB) | SEC-002: gezamenlijk geheugenbudget voor alle lichamen die nu worden gelezen; op → 503 met `Retry-After`. Verlagen beschermt de kleine VM (2 GB), maar grote uploads moeten dan vaker wachten. |
+| `MAX_BODY_KLEIN_BYTES` | `65536` (64 KiB) | SEC-002: lichamen tot deze grootte tellen niet mee voor het budget en het bytesplafond per IP (gewone verzoeken lopen onder belasting niet vast). |
+| `BODY_TIMEOUT_ANONIEM_MS` | `15000` | SEC-002: binnen zoveel milliseconden moet een anoniem lichaam volledig binnen zijn; anders gaat de verbinding dicht (een traag half lichaam houdt geen geheugen vast). |
+| `AGENT_WS_VOORAUTH_TOTAAL` / `AGENT_WS_VOORAUTH_PER_IP` / `AGENT_WS_VOORAUTH_MAX_BYTES` | `200` / `10` / `65536` | SEC-002: WebSocket-verbindingen van agenten (`/agent/ws`) **vóór** de aanmelding van de agent: hoeveel tegelijk in totaal, hoeveel per IP (meer → 503) en het grootste bericht vóór de aanmelding (64 KiB; daarna de gewone grens). |
+| `CLOUD_EIGEN_QUOTA_BYTES` | (leeg — geen quota) | SEC-002: quota van de eigen cloudopslag per mens in bytes (bewaard + versies + aangekondigd in open uploads). Geldt niet voor de eigenaar van de server. Zonder waarde: zoals voorheen, alleen de grens van de vrije schijfruimte. |
 | `PG_POOL_MAX` | `10` | Maximaal aantal Postgres-verbindingen. |
+| `PG_STATEMENT_TIMEOUT_MS` | `120000` (2 min) | SEC-002: langste duur van één SQL-opdracht van de toepassing (de pools van de toepassing en het systeem), in milliseconden; een langere opdracht stopt Postgres en de verbinding gaat terug naar de pool. `0` = uit. Geldt niet voor migraties. |
+| `PG_IDLE_IN_TRANSACTION_TIMEOUT_MS` | `60000` (1 min) | SEC-002: zoveel milliseconden mag een transactie openstaan zonder opdracht; daarna sluit Postgres haar (één «hangende» transactie houdt geen poolverbinding meer vast). `0` = uit. Geldt niet voor migraties. |
 | `MIGRATIONS_DIR` | `<release>/migrations` | Map met SQL-migraties. |
 | `API_RATE_LIMIT_PER_MIN` | `600` | Algemene limiet per IP per minuut voor `/api/*` (in het geheugen). Strengere limieten voor login/MFA/handoff staan vast in `server/start.ts`. |
+| `API_LIMIT_GEHEUGEN_MAX` | `100000` (minstens `1000`) | SEC-002: hoeveel tellers van de algemene verzoeklimiet (per IP) in het geheugen blijven. Is de kaart vol, dan gaan eerst de verlopen weg en daarna de oudste — het geheugen groeit niet onbegrensd bij een vloed van veel adressen. Alleen verlagen op een heel kleine VM. |
+| `VLAG_RATE_LIMIT_PER_MIN` | `240` (minstens `30`) | Limiet per IP (IPv6: per /64-net) per minuut voor de verzoeken naar de stand van de functievlaggen: `/api/flags` en `/api/ofrep/v1/evaluate/flags…`. Overschreden → 429 met `Retry-After`. |
 | `NODE_ENV` | `production` | Gezet in de systemd-unit. |
 | `ZOEK_DEBUG` | (leeg) | /zoek kern: `aan` logt per zoekopdracht alleen de SQL-duur en het aantal rijen naar stderr (nooit de vraag of inhoud). De index zelf staat altijd aan; de vroegere vlag `ZOEK_INDEX=aan` bestaat niet meer (0100): zonder rijen in de index voor deze lade zoekt `/api/owner/global-search` in het geheugen en meldt `index:false`. |
 | `ZOEK_TEKST_MAX_BYTES` | `26214400` (25 MiB) | /zoek: maximale grootte van één bestand/bijlage voor tekstextractie (groter → status `te_groot`, alleen de naam wordt geïndexeerd). |
@@ -148,6 +188,19 @@ vraagt ze niet). Staat de API uit, dan meldt de pagina dat eerlijk en blijft all
 | `ZOEK_BEHEER_RUN_MS` / `ZOEK_BEHEER_ITEMS` | `600000` / `2000` | /zoek, handmatige indexatie vanuit het technisch profiel (zone D, 22.10.2026; `POST /api/owner/zoek/index/starten`, venster «Індексація» op /zoek): tijdsbudget en wachtrij-items per handmatige run. De run pakt alleen items van de eigen laden, onder dezelfde advisory lock als de cron (`cron:zoek-index`); daarna stopt hij netjes (status `tijd`/`limiet`) en pakt de cron de rest. Zie docs/zoek/ZOEK-BEHEER.nl.md §5. |
 | `ROOK_CHROMIUM` | (zoekt `/srv/mijn-ruimte/browser/chrome-headless-shell`, `/usr/bin/chromium`…) | Rendercontrole (22.10.2026): pad naar de headless browser die de installer gebruikt; de app leest alleen OF hij bestaat («Діагностика» → «Відмальовування сторінок», knop «Перевірити відмальовування»). De app start zelf nooit een browser; de uitslag komt van root via `/var/lib/mijn-ruimte-uitrol-status/rook-controle.json`. Installeren: `sudo mijn-ruimte-installeer browser-controle`. |
 | `ZOEK_INDEX_INHOUD_MAX_MB` / `ZOEK_INDEX_SLEUTEL_WACHT_MIN` | `25` / `10` | /zoek: grootste bijlage/bestand waarvan de inhoud gelezen wordt; hoe lang een item wacht als de sleutelkluis (0092) dicht is (geen fout: stand «очікує входу»). |
+
+### Alleen voor uitrolscripts en tests (niet in `geheimen.env` zetten)
+
+Deze variabelen lezen scripts in `deploy/`. Als root worden de meeste bewust gewist (ze werken alleen in tests):
+
+| Naam | Waar | Doel |
+|---|---|---|
+| `PROEF_DATABASE_URL` | `server/migratie-proef.ts` | Verbinding van de migratieproef met een eenmalige rol; zet het script `deploy/uitrol/mijn-ruimte-migratie-proef.sh` zelf. Andere URL's leest de proef bewust niet. |
+| `PROEF_MAX_GROEI_MB` | `deploy/uitrol/mijn-ruimte-migratie-proef.sh` | Groeigrens van de wegwerpdatabase tijdens de proef (standaard `1024`); alleen voor tests. |
+| `PAKKET_KLAAR_ROOT` | `deploy/installeer-app.sh` | Eigen root-map (`0700`) voor de gecontroleerde kopie van het pakket (standaard `/var/lib/mijn-ruimte-uitrol`); alleen voor tests. |
+| `UITROL_ACTIEF_LINK` | `deploy/uitrol/mijn-ruimte-uitrol.sh` | Koppeling naar de actieve release (standaard `/srv/mijn-ruimte/current`); alleen voor tests. |
+| `MIJN_RUIMTE_SSH_CA_SLEUTELS` | `deploy/ssh-ca/mijn-ruimte-ssh-ca.sh` | Bestand met toegangssleutels voor het goedkeuren van SSH-certificaten (standaard `/etc/mijn-ruimte/goedkeur-passkeys.json`); alleen voor tests. |
+| `HERSTEL_TEST_BRON` | `deploy/archief-herstellen.sh` | Nagebootste downloadbron (`file://…`) voor de hersteltest; `sudo` geeft hem niet door. |
 
 ## Alleen bij het bouwen
 

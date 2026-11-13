@@ -1,7 +1,7 @@
 // Overzicht: kanaal, eerlijke lege toestand, kerncijfers ALLEEN uit waarnemingen (temperatuur met bron/tijd, licht aan als ACK'd,
 // energie gemeten, beveiliging «onbekend» zonder officiële status), scènes, kleine plattegrond, drie recente gebeurtenissen.
-import { useMemo, useState } from 'react';
-import { AlertCircle, ArrowRight, Gauge, Lightbulb, Plug, ShieldCheck, Sparkles, Thermometer } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, ArrowRight, Gauge, Lightbulb, MailOpen, Plug, ShieldCheck, Sparkles, Thermometer } from 'lucide-react';
 import { VERSHEID_LABEL, versheid, type Apparaat } from '../../../shared/huis-model';
 import type { OnderdeelProps } from '../HuisPagina';
 import { HuisFout, huisClient, idem } from '../huis-client';
@@ -24,9 +24,18 @@ export default function Overzicht({ lang, smal, woningId, ov, vernieuw, toon, na
     try { const r = await huisClient.sceneUitvoeren(woningId, id, idem('scene')); toon(r.uitkomst === 'voltooid' ? tr(lang, 'Сцену виконано й підтверджено.', 'Scène uitgevoerd en bevestigd.') : r.uitkomst === 'gedeeltelijk' ? tr(lang, 'Сцену виконано частково — див. Сцени.', 'Scène gedeeltelijk — zie Scènes.') : tr(lang, 'Сцена не виконана — див. Сцени.', 'Scène mislukt — zie Scènes.')); await vernieuw(); }
     catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); } finally { setBezig(''); }
   };
+  // SEC-002 (g02, opm. 12): een open uitnodiging voor een ANDERE woning staat alleen onder «Налаштування» — hier een herinnering.
+  const [uitnodigingen, setUitnodigingen] = useState(0);
+  useEffect(() => { let actief = true; huisClient.uitnodigingenVoorMij().then((l) => { if (actief) setUitnodigingen(l.length); }).catch(() => undefined); return () => { actief = false; }; }, [woningId]);
   const geenIntegratie = !ov.integraties.length;
   return (
     <div className='hv-overzicht'>
+      {uitnodigingen > 0 ? (
+        <p className='hv-hint' role='status' data-hv-uitnodigingen-herinnering={uitnodigingen}>
+          <MailOpen aria-hidden='true' /> {tr(lang, `Для вас є запрошення до іншої оселі (${uitnodigingen}). Прийняти чи відхилити можна в «Налаштування» → «Запрошення для вас»; доти ви не учасник.`, `Er ${uitnodigingen === 1 ? 'is een uitnodiging' : 'zijn uitnodigingen'} voor een andere woning voor u (${uitnodigingen}). Aanvaarden of afwijzen kan bij «Instellingen» → «Uitnodigingen voor u»; tot dan bent u geen lid.`)}
+          {' '}<button type='button' className='hv-knop' onClick={() => naarTab('settings')} data-hv-uitnodigingen-open='1'><ArrowRight aria-hidden='true' />{tr(lang, 'Відкрити налаштування', 'Instellingen openen')}</button>
+        </p>
+      ) : null}
       {geenIntegratie ? (
         <section className='hv-leeg' data-hv-leeg='geen-integratie'>
           <Plug aria-hidden='true' />

@@ -96,6 +96,11 @@ const EXTRA_FOUTEN: Record<string, [string, string]> = {
     'Пошуковий запит занадто короткий.',
     'De zoekopdracht is te kort.',
   ],
+  // SEC-002 (integraties-10): een opgegeven maar ongeldige tak valt niet meer stil terug op main.
+  GITHUB_TAK_ONGELDIG: [
+    'Назва гілки неприпустима (наприклад, починається з «-» або містить пробіли). Нічого не запущено — виправте назву гілки або залиште поле порожнім для main.',
+    'De naam van de tak is ongeldig (bijvoorbeeld begint met «-» of bevat spaties). Er is niets gestart — verbeter de naam of laat het veld leeg voor main.',
+  ],
   GITHUB_REPO_INVALID: [
     'Неправильний формат назви сховища (очікується власник/назва).',
     'Ongeldige naam van de opslagplaats (verwacht eigenaar/naam).',

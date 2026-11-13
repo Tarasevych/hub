@@ -1,0 +1,60 @@
+{
+ "uk": {
+  "titel": "Виправлення вразливостей за аудитом безпеки",
+  "samenvatting": "Випуск SEC-002 поверх встановленої версії <BASIS> виправляє вразливості, знайдені глибоким аудитом безпеки всього сховища. Аудит знайшов 144 вразливості (26 з високою вагою): 142 виправлено повністю, 2 частково, жодну не спростовано. Незалежні перевіряльники груп і три наскрізні перевіряльники знайшли в патчах і суміжному коді ще 105 вад: 104 виправлено до випуску, 1 частково. Майже кожне виправлення доведено тестом, що відтворює ваду до патча; одне інтерфейсне виправлення доведено перевіркою коду, одне — сценарієм перевірки під час збирання (у звіті їх позначено). Повний відкритий опис — у звіті безпеки SEC-002.",
+  "wijzigingen": [
+   "Процес сайту більше не зупиняється від спеціально побудованих листів, файлів (зокрема документів і таблиць для пошуку), повідомлень агентів чи запитів: небезпечні регулярні вирази замінено лінійним розбором, вхідні дані обмежено.",
+   "Відкликання сеансів, ключів API й «запам'ятованого оглядача» більше не скасовується одночасними запитами, а блокування облікового запису не можна обійти.",
+   "Роль «лише перегляд» тепер означає лише читання на всіх маршрутах: власні доступи можна відкликати й зі спільного простору можна вийти, але вилучати інших учасників чи відкликати чужі посилання не можна.",
+   "Свіжі підтвердження входу для чутливих дій: налаштування автентифікатора, рішення щодо доступу, видача SSH-сертифікатів (з перевіркою passkey від root), видача прав ШІ; одне підтвердження — одна дія.",
+   "ШІ-агенти не можуть самі натискати кнопки дозволу, бачити секрети на сторінках, обходити вимкнені інструменти чи жити довше обраного строку підключення.",
+   "Розгортання: ізольована збірка без сценаріїв залежностей, root не йде за посиланнями в теках застосунку, проба міграцій під одноразовою роллю, закріплена версія cloudflared, обмеження служб systemd.",
+   "Пошта: попередній перегляд питає перед показом зовнішніх зображень, перевірка відправника стійка до підробки, вкладення не відкриваються як сторінки сайту.",
+   "Приватність: остаточне стирання облікового запису справді стирає всі дані, журнал адміністрування маскує чужі приватні дії, нові відмови й критичні дії лишають слід і сповіщення.",
+   "Запобіжник захистів більше не вимикає захист входу через оновлення власного сеансу; аварійний вимикач підтверджень має форму зі строком до 24 годин, а стара безстрокова форма видна в журналі й «Захисті»."
+  ],
+  "fixes": [
+   "Попередня перевірка пакета оновлення більше не читає файли сервера поза архівом.",
+   "Root не перезаписує системні файли через теку випусків застосунку.",
+   "Автентифікатор не можна ввімкнути без підтвердження; завершення сеансу відкликає «запам'ятований оглядач».",
+   "Службовий аргумент більше не дозволяє ШІ викликати вимкнений інструмент; правило PowerShell не обходиться іншою назвою.",
+   "Один лист чи кадр від агента більше не зупиняє сервер.",
+   "Запобіжник захистів не вимикає захист через помилки, які може викликати звичайний користувач."
+  ],
+  "beperkingen": [
+   "Масове перезапечатування старих записів новою версією ключа й заміна ключа даних користувача ще не зроблені; після додавання нової версії ключа не видаляйте старі.",
+   "Перелік адрес повернення для відомих ШІ-клієнтів поки ширший за необхідний; підтверджуйте підключення ШІ лише тоді, коли самі щойно його почали.",
+   "Членство в робочому просторі лише після прийняття — рішення власника; до наступного випуску список учасників може показувати, чи є в людини обліковий запис, перебір обмежено 20 адресами на годину."
+  ],
+  "instructies": "Встановлення версії <VERSIE> виконує власник сервера за звичайною процедурою: спершу резервна копія, потім перевірка пакета й перевірка того, що пакет зібрано на чинній основі й він не перезапише новіших змін; міграції бази застосовуються автоматично. Після встановлення: перший вхід через Telegram на кожному пристрої один раз попросить ключ доступу (passkey) або вхід через Google. Нові типові значення безпечні: згоду ШІ «запам'ятати» вимкнено, логотипи невідомих відправників — «Вимкнено» з можливістю вибрати «Завжди», підтвердження для дій ШІ середнього ризику ввімкнено. Оновіть розширення браузера до 0.9.3, перегляньте «Сесії» й підключення ШІ. Повний опис: docs/beveiliging/ЗВІТ-БЕЗПЕКИ-SEC-002-20261112.uk.md (українською) і docs/beveiliging/BEVEILIGINGSRAPPORT-SEC-002-20261112.nl.md (нідерландською)."
+ },
+ "nl": {
+  "titel": "Herstel van kwetsbaarheden uit de beveiligingsaudit",
+  "samenvatting": "Release SEC-002 boven op de geïnstalleerde versie <BASIS> herstelt kwetsbaarheden uit een diepe beveiligingsaudit van de hele repository. De audit vond 144 kwetsbaarheden (26 met ernst hoog): 142 volledig opgelost, 2 gedeeltelijk, geen enkele weerlegd. Onafhankelijke groepscontroleurs en drie overkoepelende controleurs vonden in de patches en naburige code nog 105 fouten: 104 vóór de release opgelost, 1 gedeeltelijk. Bijna elk herstel is aangetoond met een test die de fout vóór de patch laat zien; één interfaceherstel is aangetoond met een codecontrole en één met een controlescript tijdens de build (in het rapport gemarkeerd). De volledige openbare beschrijving staat in het beveiligingsrapport SEC-002.",
+  "wijzigingen": [
+   "Het siteproces stopt niet meer door speciaal opgebouwde e-mails, bestanden (ook documenten en tabellen voor zoeken), agentberichten of verzoeken: gevaarlijke reguliere expressies zijn vervangen door lineaire verwerking, invoer is begrensd.",
+   "Het intrekken van sessies, API-sleutels en de «onthouden browser» wordt niet meer door gelijktijdige verzoeken ongedaan gemaakt, en een accountblokkade is niet te omzeilen.",
+   "De rol «alleen bekijken» betekent nu alleen lezen op alle routes: eigen toegang kan worden ingetrokken en een gedeelde ruimte kan worden verlaten, maar andere deelnemers verwijderen of links van anderen intrekken kan niet.",
+   "Verse aanmeldbevestigingen voor gevoelige acties: instellen van een verificatie-app, besluiten over toegang, uitgifte van SSH-certificaten (met passkeycontrole door root), toekennen van AI-rechten; één bevestiging geldt voor één actie.",
+   "AI-agenten kunnen niet zelf toestemmingsknoppen indrukken, geheimen op pagina's zien, uitgeschakelde hulpmiddelen omzeilen of langer blijven dan de gekozen koppeltermijn.",
+   "Uitrol: afgeschermde build zonder installatiescripts van afhankelijkheden, root volgt geen koppelingen in applicatiemappen, migratieproef onder een eenmalige rol, vastgezette cloudflared-versie, beperkingen voor systemd-diensten.",
+   "E-mail: het voorbeeld vraagt eerst voordat externe afbeeldingen worden getoond, de afzendercontrole is bestand tegen vervalsing, bijlagen openen niet als pagina's van de site.",
+   "Privacy: het definitief wissen van een account wist echt alle gegevens, het beheerlogboek maskeert andermans privéacties, nieuwe weigeringen en kritieke acties laten een spoor en een melding achter.",
+   "De zekering schakelt de aanmeldbeveiliging niet meer uit door het vernieuwen van de eigen sessie; de noodschakelaar voor bevestigingen heeft een vorm met een termijn van hoogstens 24 uur, en de oude onbeperkte vorm is zichtbaar in het logboek en bij «Beveiliging»."
+  ],
+  "fixes": [
+   "De voorcontrole van een updatepakket leest geen serverbestanden buiten het archief meer.",
+   "Root overschrijft geen systeembestanden via de releasemap van de applicatie.",
+   "Een verificatie-app kan niet zonder bevestiging worden ingeschakeld; een sessie beëindigen trekt de «onthouden browser» in.",
+   "Een dienstargument laat de AI geen uitgeschakeld hulpmiddel meer aanroepen; de PowerShell-regel is niet met een andere naam te omzeilen.",
+   "Eén e-mail of agentbericht legt de server niet meer stil.",
+   "De zekering schakelt beveiliging niet uit door fouten die een gewone gebruiker kan veroorzaken."
+  ],
+  "beperkingen": [
+   "Het massaal opnieuw verzegelen van oude records met een nieuwe sleutelversie en het vervangen van de gegevenssleutel van gebruikers zijn nog niet gedaan; verwijder na het toevoegen van een nieuwe sleutelversie geen oude.",
+   "De lijst terugkeeradressen voor bekende AI-cliënten is nog ruimer dan nodig; bevestig een AI-koppeling alleen als u die zelf net bent begonnen.",
+   "Lidmaatschap van een werkruimte pas na aanvaarding vraagt een besluit van de eigenaar; tot de volgende release kan de deelnemerslijst laten zien of iemand een account heeft, raden is begrensd tot 20 adressen per uur."
+  ],
+  "instructies": "De installatie van versie <VERSIE> voert de eigenaar van de server uit volgens de gewone procedure: eerst een back-up, dan de controle van het pakket en de controle dat het pakket op de huidige basis is gebouwd en geen nieuwere wijzigingen overschrijft; databasemigraties worden automatisch toegepast. Na de installatie vraagt de eerste aanmelding via Telegram op elk apparaat één keer om een passkey of een aanmelding via Google. De nieuwe standaardwaarden zijn veilig: «onthouden» bij AI-toestemming staat uit, logo's van onbekende afzenders staan op «Uit» met de keuze «Altijd», en bevestiging voor AI-acties met middelgroot risico staat aan. Werk de browserextensie bij naar 0.9.3 en bekijk «Sessies» en de AI-koppelingen. Volledige beschrijving: docs/beveiliging/ЗВІТ-БЕЗПЕКИ-SEC-002-20261112.uk.md (Oekraïens) en docs/beveiliging/BEVEILIGINGSRAPPORT-SEC-002-20261112.nl.md (Nederlands)."
+ }
+}

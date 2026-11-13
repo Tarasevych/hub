@@ -20,6 +20,9 @@ const RULES: Array<[RegExp, string]> = [
   [/^owner\.mail\./, 'mail:google'], [/^owner\.cloud\./, 'cloud:google'], [/^owner\.calendar\./, 'calendar:google'], [/^owner\.github\./, 'github'],
   [/^owner\.ai\.|^owner\.chat\./, 'ai:anthropic'], [/^owner\.(agent|agents)\./, 'agent'], [/^owner\.mcp\./, 'claude'], [/^owner\.browser\./, 'browser'],
   [/^owner\.api\.|^owner\.vault\./, 'api'], [/^owner\.admin\./, 'admin'], [/^owner\.(identity|privacy|profile|session|step_up|auth|access)\./, 'identity'], [/^account\./, 'identity'],
+  // SEC-002 (privacy-logboek-03): veiligheidskritieke acties ZONDER «owner.»-voorvoegsel vielen hier stil weg (sourceOfAudit → null):
+  // een wachtwoord erbij, TOTP uit, passkey weg, sleutelkluis, een AI-token of een namens-sessie — de eigenaar zag niets in de stroom.
+  [/^access\.|^aanmeld\.|^sleutelkluis\.|^(toegangscode|gast)_/, 'identity'], [/^agent\.|^ai_/, 'agent'], [/^mcp_console_/, 'agent'],
 ];
 /** Sectie (en dienst) voor een auditactie, of null als de actie geen melding verdient. */
 export function sourceOfAudit(action: string): string | null {

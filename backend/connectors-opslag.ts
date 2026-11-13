@@ -7,9 +7,11 @@
 //     (token-hash), het inwisselen van een koppelcode en het resetten van statussen bij het opstarten.
 // Elke query filtert daarnaast zelf op user_id; RLS is de tweede laag, niet de enige.
 import { appRolActief, getPool } from '../server/platform/pg';
+import { jsonbVeilig, tekstVeilig } from '../shared/tekst-veilig';
 import { enabledTypes } from './browser-mogelijkheden';
 import { gebruikerVanContext, huidigeContext } from '../server/platform/context';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
+import { huidigeNamens } from './mcp-namens';
 
 type QueryResult = { rows: any[]; rowCount: number | null };
 
@@ -155,13 +157,41 @@ export async function journaalNamen(userId: string): Promise<{ agents: Map<strin
 }
 
 
+/**
+ * SEC-002 interface-02 (migratie 0250): WIE vroeg dit — de naam van de MCP-klant, het id van zijn verbinding en (connector v2) de
+ * agent waaraan het token gebonden is. Komt uit de geauthenticeerde MCP-laag (backend/mcp-namens.ts, AsyncLocalStorage), nooit uit
+ * het verzoek zelf. Vroeger werd dit niet bewaard en schreef het scherm bij elk verzoek hard «Claude». Leeg = geen AI-context
+ * (het scherm zegt dan eerlijk dat de vrager onbekend is); AANVRAGER_SITE = de mens zelf vanaf de site (test, formulier).
+ */
+export type Aanvrager = { client: string; grant: string; agent: string };
+export const AANVRAGER_SITE = 'site:eigenaar';
+export function aanvragerNu(): Aanvrager {
+  const n = huidigeNamens();
+  // eslint-disable-next-line no-control-regex
+  const schoon = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
+  const agent = String(n?.agent ?? '');
+  // Na de toets (g10a-4): de naam komt van de AI-klant zelf (DCR client_name, vrij te kiezen). Een naam die op het teken van de mens
+  // lijkt («site:…», ook met spaties of hoofdletters) mag NOOIT als AANVRAGER_SITE eindigen — anders verschijnt een AI-verzoek als
+  // «Ви (з сайту)». Zo'n naam krijgt een zichtbaar voorvoegsel; '?' (geen naam in mcp-namens) blijft eerlijk leeg = onbekend.
+  let client = schoon(n?.client, 80);
+  if (client === '?') client = '';
+  else if (/^site:/i.test(client)) client = `ШІ «${client}»`.slice(0, 80);
+  return { client, grant: schoon(n?.grantId, 120), agent: /^[a-z0-9-]{1,40}$/.test(agent) ? agent : '' };
+}
+/** Voor het scherm (wachtende opdrachten en aanroepen): klantnaam, agent, een kort stuk van het verbindings-id, en of het de mens zelf was. */
+export const aanvragerVoorScherm = (r: { aanvrager_client?: unknown; aanvrager_grant?: unknown; aanvrager_agent?: unknown }) => ({
+  client: String(r.aanvrager_client ?? '').slice(0, 80), agent: String(r.aanvrager_agent ?? '').slice(0, 40),
+  verbinding: String(r.aanvrager_grant ?? '').slice(0, 8), site: r.aanvrager_client === AANVRAGER_SITE,
+});
+
 export async function createCommand(
   agentId: string, userId: string, type: string, params: object, status: CommandStatus, grantId: string | null = null,
+  aanvrager: Aanvrager = aanvragerNu(),
 ) {
   const { rows } = await gebruiker(
-    `INSERT INTO app.agent_commands (agent_id, user_id, type, params, status, decided_at, grant_id)
-     VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 = 'approved' THEN now() END, $6) RETURNING *`,
-    [agentId, userId, type, JSON.stringify(params), status, grantId]);
+    `INSERT INTO app.agent_commands (agent_id, user_id, type, params, status, decided_at, grant_id, aanvrager_client, aanvrager_grant, aanvrager_agent)
+     VALUES ($1, $2, $3, $4, $5, CASE WHEN $5 = 'approved' THEN now() END, $6, $7, $8, $9) RETURNING *`,
+    [agentId, userId, type, jsonbTekst(params), status, grantId, aanvrager.client, aanvrager.grant, aanvrager.agent]);
   return rows[0];
 }
 
@@ -370,10 +400,18 @@ export async function setDisabledTools(userId: string, disabled: string[]): Prom
 export type ToolCallStatus = 'pending_approval' | 'approved' | 'rejected' | 'succeeded' | 'failed' | 'timeout';
 export const TOOL_CALL_TTL_MIN = 10;
 
-export async function createToolCall(userId: string, tool: string, args: object) {
+export async function createToolCall(userId: string, tool: string, args: object, aanvrager: Aanvrager = aanvragerNu()) {
   const { rows } = await systeem(
-    'INSERT INTO app.connector_tool_calls (user_id, tool, args) VALUES ($1, $2, $3::jsonb) RETURNING *', [userId, tool, JSON.stringify(args)]);
+    `INSERT INTO app.connector_tool_calls (user_id, tool, args, aanvrager_client, aanvrager_grant, aanvrager_agent)
+     VALUES ($1, $2, $3::jsonb, $4, $5, $6) RETURNING *`, [userId, tool, jsonbTekst(args), aanvrager.client, aanvrager.grant, aanvrager.agent]);
   return rows[0];
+}
+/** SEC-002 ai-mcp-12: noodstop/blokkeren — alles wat nog op een klik wacht wordt afgewezen (de AI krijgt «rejected»). */
+export async function rejectAllPendingToolCalls(userId: string): Promise<number> {
+  const r = await systeem(
+    `UPDATE app.connector_tool_calls SET status = 'rejected', decided_at = now(), finished_at = now()
+      WHERE user_id = $1 AND status = 'pending_approval'`, [userId]);
+  return r.rowCount ?? 0;
 }
 /** Wachtende aanroepen die te lang liggen vervallen (niemand wacht er nog op). */
 export async function expireToolCalls(userId: string): Promise<void> {
@@ -388,7 +426,7 @@ export async function getToolCall(userId: string, id: string) {
 export async function listToolCalls(userId: string, limit = 20) {
   await expireToolCalls(userId);
   const { rows } = await systeem(
-    `SELECT id, tool, args, status, result, created_at, decided_at, finished_at FROM app.connector_tool_calls
+    `SELECT id, tool, args, status, result, created_at, decided_at, finished_at, aanvrager_client, aanvrager_grant, aanvrager_agent FROM app.connector_tool_calls
       WHERE user_id = $1 ORDER BY (status = 'pending_approval') DESC, created_at DESC LIMIT $2`, [userId, limit]);
   return rows;
 }
@@ -398,12 +436,16 @@ export async function countPendingToolCalls(userId: string): Promise<number> {
 }
 /** Statusovergang alleen vanuit een verwachte stand en alleen voor de eigen gebruiker (beschermt tegen dubbel goedkeuren). */
 export async function transitionToolCall(id: string, userId: string, from: ToolCallStatus[], to: ToolCallStatus, result?: unknown) {
+  if (!isOpdrachtId(id)) return null;
+  // SEC-002 ai-mcp-12: GOEDKEUREN kan alleen binnen TOOL_CALL_TTL_MIN na het ontstaan. Vroeger verliep een aanroep alleen als iemand
+  // de lijst opvroeg (expireToolCalls in listToolCalls); een rechtstreekse goedkeuring van een oud verzoek ging dus nog door.
   const { rows } = await systeem(
     `UPDATE app.connector_tool_calls SET status = $4, result = COALESCE($5::jsonb, result),
         decided_at = CASE WHEN $4 IN ('approved', 'rejected') THEN now() ELSE decided_at END,
         finished_at = CASE WHEN $4 IN ('succeeded', 'failed', 'timeout', 'rejected') THEN now() ELSE finished_at END
-      WHERE id = $1 AND user_id = $2 AND status = ANY($3) RETURNING *`,
-    [id, userId, from, to, result === undefined ? null : JSON.stringify(result)]);
+      WHERE id = $1 AND user_id = $2 AND status = ANY($3)
+        AND ($4 <> 'approved' OR status <> 'pending_approval' OR created_at >= now() - make_interval(mins => $6)) RETURNING *`,
+    [id, userId, from, to, result === undefined ? null : jsonbTekst(result), TOOL_CALL_TTL_MIN]);
   return rows[0] ?? null;
 }
 
@@ -451,14 +493,40 @@ export async function markAllAgentsDisconnected() {
 export async function transitionCommand(
   id: string, from: CommandStatus[], to: CommandStatus, result?: unknown, userId?: string, agentId?: string,
 ) {
+  // SEC-002 http-rand-03: een id dat geen uuid is kan geen opdracht zijn; zonder deze controle gaf PostgreSQL 22P02.
+  if (!isOpdrachtId(id)) return null;
   // agentId (audit M3): een resultaat via de WebSocket sluit alleen een opdracht af die naar DEZE agent ging.
   const { rows } = await systeem(
     `UPDATE app.agent_commands SET status = $3, result = COALESCE($4::jsonb, result),
         decided_at = CASE WHEN $3 IN ('approved', 'rejected') THEN now() ELSE decided_at END,
         finished_at = CASE WHEN $3 IN ('succeeded', 'failed', 'timeout') THEN now() ELSE finished_at END
       WHERE id = $1 AND status = ANY($2) AND ($5::text IS NULL OR user_id = $5) AND ($6::uuid IS NULL OR agent_id = $6) RETURNING *`,
-    [id, from, to, result === undefined ? null : JSON.stringify(result), userId ?? null, agentId ?? null]);
+    [id, from, to, result === undefined ? null : jsonbTekst(result), userId ?? null, agentId ?? null]);
   return rows[0] ?? null;
+}
+
+/** Een opdracht-id is altijd een uuid (kolom id uuid). Alles wat van buiten komt (agent, route) eerst hierlangs. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isOpdrachtId = (v: unknown): v is string => typeof v === 'string' && UUID_RE.test(v);
+/**
+ * JSON voor een jsonb-kolom. PostgreSQL weigert U+0000 in jsonb («unsupported Unicode escape sequence»); een agent kon daarmee
+ * (bestandsinhoud met een NUL-byte, of opzettelijk) een onafgehandelde fout in de gateway veroorzaken. NUL wordt U+FFFD, in
+ * waarden én sleutels. Een waarde die niet te serialiseren is (kringverwijzing) wordt een foutobject in plaats van een worp.
+ */
+export function jsonbTekst(waarde: unknown): string {
+  // SEC-002 (g10i, afwerking A): ook eenzame surrogaten (halve emoji na afkappen door een agent) → U+FFFD, in waarden én sleutels;
+  // daarna nog jsonbVeilig op de hele tekst (vangnet). Vroeger alleen U+0000: een halve emoji gaf 22P02 en de opdracht bleef hangen.
+  const zonderNul = (s: string) => tekstVeilig(s);
+  try {
+    const tekst = JSON.stringify(waarde, (_k, v) => {
+      if (typeof v === 'string') return zonderNul(v);
+      if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).some((k) => k.includes('\u0000'))) {
+        return Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([k, w]) => [zonderNul(k), w]));
+      }
+      return v;
+    });
+    return tekst === undefined ? 'null' : jsonbVeilig(tekst);
+  } catch { return '{"error":"result could not be stored"}'; }
 }
 
 /** Een wachtende opdracht die ouder is dan `minutes` kan niet meer worden goedgekeurd (verse goedkeuring). */

@@ -9,7 +9,7 @@
 //  3. BYOS: er staat geen enkele gedeelde client id of sleutel in de code. Alles komt uit de kluis van de eigenaar zelf.
 import { createHash, randomBytes } from 'node:crypto';
 import { db } from '../server/platform';
-import { envKey32, openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
+import { envKey32, envSleutelBeschikbaar, openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
 import { apiPlatformVaultItems, readOwnerVaultPlaintext } from './api-platform-kluis';
 import { GITHUB_APP_DOEL, GITHUB_OAUTH_DOEL, leesAppSleutel, leesOauthApp, type AppSleutel, type OauthApp } from '../shared/github-koppeling';
 import { hoortBij, type Lade } from '../shared/ruimte-scheiding';
@@ -26,7 +26,7 @@ export const STATE_GELDIG_MS = 10 * 60 * 1000;
 /** Zoveel vóór het verlopen wordt een token al vernieuwd, zodat een verzoek er niet tussenin valt. */
 export const VERNIEUW_MARGE_MS = 5 * 60 * 1000;
 
-const SLEUTEL_NAAM = () => (envKey32('GITHUB_KOPPELING_SLEUTEL_V1') ? 'GITHUB_KOPPELING_SLEUTEL_V1' : 'TOTP_ENCRYPTION_KEY_V1');
+/* SEC-002 (g10b #2, afwerking A): eigen sleutel in ELKE versie (_V1…_V9), niet alleen _V1 — anders viel een installatie met alleen _V2 stil terug op de TOTP-sleutel. */const SLEUTEL_NAAM = () => (envSleutelBeschikbaar('GITHUB_KOPPELING_SLEUTEL_V1') ? 'GITHUB_KOPPELING_SLEUTEL_V1' : 'TOTP_ENCRYPTION_KEY_V1');
 /**
  * Waaraan een zegel vastzit. De RUIMTE hoort erbij: zo gaat een zegel van de TECHNISCHE lade nooit open als zegel van de
  * persoonlijke lade (en omgekeerd), ook niet als iemand de rij in de database van vlag verwisselt. Voor 'prive' blijft het

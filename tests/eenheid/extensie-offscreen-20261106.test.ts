@@ -35,8 +35,8 @@ export async function main(): Promise<number> {
   {
     const m = JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8'));
     const html = readFileSync(join(EXT, 'offscreen.html'), 'utf8');
-    check('manifest 0.9.2: recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
-      m.version === '0.9.2' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
+    check('manifest 0.9.3 (SEC-002; offscreen sinds 0.9.2): recht «offscreen» (hasDocument sinds Chrome 116 = minimum_chrome_version), zonder debugger',
+      m.version === '0.9.3' && m.permissions.includes('offscreen') && !m.permissions.includes('debugger') && m.minimum_chrome_version === '116');
     const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
     check('offscreen.html: lokale-ai.js vóór offscreen.js, geen inline code (CSP)', scripts.length === 2 && /src="lokale-ai\.js"/.test(scripts[0][1]) && /src="offscreen\.js"/.test(scripts[1][1]) && scripts.every((x) => x[2].trim() === ''));
   }

@@ -11,16 +11,18 @@ import { ecosystemTabContext } from './tab-context';
 import { foutCode, foutTekst } from './agenten/fouten';
 import { WERKRUIMTE_FOUTEN, type Feiten, type Startstaat } from '../shared/ai-werkruimte';
 import { AI_AANBIEDER_BIJ_ID, aanbiederUitModel } from '../shared/ai-aanbieders';
+import { AanvragerPill, GoedkeuringInhoud, MensKnop } from './GoedkeuringInhoud';
+import { commandLabel, type Aanvrager } from './agenten-gegevens';
+import { geenAi } from './menselijke-actie';
 import './chat-paneel.css';
 import './ai-werkruimte.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Bericht = { rol: 'user' | 'assistant'; tekst: string; onvolledig?: boolean };
 type Stap = { tool: string; isError: boolean };
-type Wachtend = { id: string; agentName: string; type: string; params: unknown };
+type Wachtend = { id: string; agentName: string; type: string; params: unknown; aanvrager?: Aanvrager };
 
 const sessieLichaam = () => ({ service: 'ai', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
-const kort = (waarde: unknown) => JSON.stringify(waarde, null, 2).slice(0, 800);
 
 /** Eén zin met de echte reden. Onze eigen codes eerst; de rest gaat naar de bestaande uitleg van de hub (fouten.ts). */
 export function werkruimteFout(e: unknown, tr: Tr, modelId?: string): string {
@@ -62,6 +64,8 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
   const [fout, setFout] = useState('');
   const [melding, setMelding] = useState('');
   const [wachtend, setWachtend] = useState<Wachtend[]>([]);
+  // SEC-002 interface-01: «Дозволити» pas als de mens ALLE parameters kon zien (geen slice(0, 800) meer).
+  const [gezien, setGezien] = useState<Record<string, boolean>>({});
   const [model, setModel] = useState(stand.model);
   const afbreker = useRef<AbortController | null>(null);
   const einde = useRef<HTMLDivElement | null>(null);
@@ -165,15 +169,15 @@ export default function AiWerkruimteChat({ tr, feiten, stand, invoer, onInvoer, 
       </div>
 
       {wachtend.length ? (
-        <div className='chat-approvals' data-aiw-goedkeuringen={String(wachtend.length)}>
+        <div className='chat-approvals' data-aiw-goedkeuringen={String(wachtend.length)} {...geenAi}>
           <b>{tr('Потрібне ваше підтвердження', 'Uw goedkeuring is nodig')}</b>
           {wachtend.map((item) => (
             <div key={item.id} className='chat-approval'>
-              <span>{item.agentName}: <code>{item.type}</code></span>
-              <pre>{kort(item.params)}</pre>
+              <span>{item.agentName}: <b>{commandLabel(item.type, tr)}</b> <code>{item.type}</code> <AanvragerPill tr={tr} aanvrager={item.aanvrager} /></span>
+              <GoedkeuringInhoud tr={tr} params={item.params} onGezien={(g) => setGezien((v) => (v[item.id] === g ? v : { ...v, [item.id]: g }))} />
               <div className='chat-approval-actions'>
-                <button type='button' onClick={() => void beslis(item.id, 'approve')}>{tr('Дозволити', 'Toestaan')}</button>
-                <button type='button' className='chat-secondary' onClick={() => void beslis(item.id, 'reject')}>{tr('Відхилити', 'Weigeren')}</button>
+                <MensKnop className='' disabled={!gezien[item.id]} onKlik={() => void beslis(item.id, 'approve')}>{tr('Дозволити', 'Toestaan')}</MensKnop>
+                <MensKnop className='chat-secondary' onKlik={() => void beslis(item.id, 'reject')}>{tr('Відхилити', 'Weigeren')}</MensKnop>
               </div>
             </div>
           ))}

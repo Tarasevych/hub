@@ -20,6 +20,7 @@ import { rateLimit } from '../server/platform/beveiliging';
 import type { RouterMiddleware } from '../server/platform/router';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import { alsGebruiker } from './ai-toestemmingen';
+import { passkeyOmslagenWeg } from './sleutelkluis-opruimen';
 import { meld } from './melder';
 import { onthoudMagVoorActie, onthoudVastleggen, passkeyStapOpVastleggen, stapOpSessieId, type StapOpAuth } from './stap-op';
 import { ToegangFout, gebruikVastleggen, gebruikVoor, redenVan, sessieInfo, sterkeStapOpFout, viaAppIngetrokken, wijzigingVastleggen, wijzigingenVoor, type Gebruik, type WijzigingRij } from './toegang-context';
@@ -85,8 +86,8 @@ export function passkeySoort(aaguid: string, transports: string[] = [], synchron
  */
 export const transportsVoorGet = (opgeslagen: string[] | null | undefined) => (opgeslagen?.length ? [...new Set([...opgeslagen, 'hybrid'])] : undefined);
 
-export class PasskeyFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
-function fout(code: string, status = 400): never { throw new PasskeyFout(code, status); }
+export class PasskeyFout extends Error { constructor(public code: string, public status = 400, public retryAfter?: number) { super(code); } }
+function fout(code: string, status = 400, retryAfter?: number): never { throw new PasskeyFout(code, status, retryAfter); }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const B64U = /^[A-Za-z0-9_-]+$/;
 const TRANSPORTS = new Set(['usb', 'nfc', 'ble', 'internal', 'hybrid', 'smart-card']);
@@ -286,6 +287,8 @@ export async function verwijderen(auth: PasskeyAuth, input: Record<string, unkno
     await aanmeldingIntrekken({ id: auth.user.id, email: auth.user.email }, rij.vingerafdruk).catch(() => undefined);
   }
   await alsGebruiker(auth.user.id, (q) => q('DELETE FROM app.passkeys WHERE id = $1 AND user_id = $2', [rij.id, auth.user.id]));
+  // SEC-002 geheimen-05: een verwijderde passkey mag de gegevenssleutel niet meer kunnen openen — zijn omslag in beide ruimtes weg.
+  await passkeyOmslagenWeg(auth.user.id, String(rij.id));
   await auditeer(auth.user.id, wijziging ? 'goedkeur_passkey_verwijderd' : 'passkey_verwijderd', 'success', { vingerafdruk: rij.vingerafdruk.slice(0, 16), label: rij.naam, ...(wijziging ? { wijziging, reden: String(input.reden || '').slice(0, 500), sessie: sessieInfo(auth).sessieId.slice(0, 8) } : {}) }, auth.service);
   if (wijziging) await meldWasDitU(auth, wijziging, rij.naam, 'verwijderd');
   else await meld(auth.user.id, 'security', 'Passkey видалено / Passkey verwijderd', `«${rij.naam}» більше не є способом входу. / «${rij.naam}» is geen aanmeldmethode meer.`);
@@ -354,7 +357,7 @@ export async function stapOpOpties(auth: PasskeyAuth) {
 
 export async function stapOp(auth: PasskeyAuth, input: Record<string, unknown>) {
   const limiet = await rateLimit(`passkey-stap-op:${auth.user.id}`, 20, 600);
-  if (!limiet.ok) fout('RATE_LIMITED', 429);
+  if (!limiet.ok) fout('RATE_LIMITED', 429, limiet.retryAfter);
   const uitdaging = await uitdagingVerbruiken(auth, input.uitdagingId, 'stap-op');
   const a = (input.assertie && typeof input.assertie === 'object' ? input.assertie : {}) as Record<string, unknown>;
   const assertie: kern.Assertie = {
@@ -404,7 +407,7 @@ export async function goedkeuringUitdaging(auth: PasskeyAuth, input: Record<stri
 }
 export async function goedkeuringVerzoek(auth: PasskeyAuth, input: Record<string, unknown>, doel: 'sleutel-toevoegen' | 'sleutel-verwijderen') {
   const limiet = await rateLimit(`passkey-root:${auth.user.id}`, 10, 600);
-  if (!limiet.ok) fout('RATE_LIMITED', 429);
+  if (!limiet.ok) fout('RATE_LIMITED', 429, limiet.retryAfter);
   return sleutelVerzoek({ id: auth.user.id, email: auth.user.email }, doel, input);
 }
 
@@ -444,7 +447,8 @@ export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMidd
     }
     try { return json(await run(auth, lichaam(ctx.body))); }
     catch (err) {
-      if (err instanceof PasskeyFout || err instanceof UitrolFout || err instanceof ToegangFout) return error(err.code, err.status);
+      if (err instanceof PasskeyFout || err instanceof ToegangFout) return error(err.code, err.status, err.retryAfter ? { retryAfter: err.retryAfter } : undefined);
+      if (err instanceof UitrolFout) return error(err.code, err.status);
       console.error('[passkeys]', (err as Error).message);
       return error('PASSKEY_FOUT', 500);
     }

@@ -14,7 +14,6 @@ import { ladeBediening } from './plaatsing/plaatsing-staat';
 import {
   Camera,
   ChevronDown,
-  ChevronUp,
   FileText,
   KeyRound,
   LifeBuoy,
@@ -127,7 +126,7 @@ const copy = {
     firstLoginHint: 'Увійдіть, щоб відкрити свій простір',
     none: 'Відомих облікових записів немає.',
     add: 'Додати інший обліковий запис',
-    firstLogin: 'Увійти в обліковий запис через',
+    firstLogin: 'Увійти в обліковий запис через Google',
     manage: 'Керування обліковим записом',
     show: 'Показати інші облікові записи',
     hide: 'Сховати інші облікові записи',
@@ -172,7 +171,7 @@ const copy = {
     firstLoginHint: 'Meld u aan om uw ruimte te openen',
     none: 'Er zijn geen bekende accounts.',
     add: 'Ander account toevoegen',
-    firstLogin: 'Aanmelden bij een account via',
+    firstLogin: 'Aanmelden bij een account via Google',
     manage: 'Account beheren',
     show: 'Andere accounts tonen',
     hide: 'Andere accounts verbergen',
@@ -253,14 +252,10 @@ export const accountWisselMelding = (lang: 'uk' | 'nl', stand: AccountWisselStan
 };
 
 export const rememberedAccountStatusLabel = (status: AccountPresenceStatus, lang: 'uk' | 'nl') => {
-  const t = copy[lang];
-  return status === 'active'
-    ? t.active
-    : status === 'signed_in'
-      ? t.signedIn
-      : status === 'registration'
-        ? t.registration
-        : t.reauth;
+  if (status === 'active') return lang === 'uk' ? 'Активний' : 'Actief';
+  if (status === 'signed_in') return lang === 'uk' ? 'Готовий до входу' : 'Klaar om te openen';
+  if (status === 'registration') return lang === 'uk' ? 'Завершити реєстрацію' : 'Registratie voltooien';
+  return lang === 'uk' ? 'Увійти через Google' : 'Aanmelden met Google';
 };
 
 function Avatar({ user, size = 'regular' }: { user: AccountMenuUser; size?: 'profile' | 'hero' | 'regular' | 'mini' }) {
@@ -428,8 +423,15 @@ export default function CanonicalAccountMenu({
     setLoadFailed(false);
     try {
       applySnapshot(normalizeAccountMenuSnapshot(await onLoadAccounts()));
-    } catch {
-      setLoadFailed(true);
+    } catch (caught) {
+      const status = Number(
+        (caught as { status?: number; response?: { status?: number } })?.status ??
+          (caught as { response?: { status?: number } })?.response?.status ??
+          0,
+      );
+      if (user && status !== 401 && status !== 403) {
+        setLoadFailed(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -446,7 +448,8 @@ export default function CanonicalAccountMenu({
   useEffect(() => {
     setProfileOverride(null);
     setPhotoError(false);
-  }, [user?.id, user?.accountId, user?.email]);
+    setLoadFailed(false);
+  }, [user?.id, user?.accountId, user?.email, user?.picture, user?.customPicture, user?.customPhoto, user?.providerPicture]);
 
   const displayUser = profileOverride && user && isSameAccount(profileOverride, user) ? profileOverride : user;
 
@@ -597,7 +600,11 @@ export default function CanonicalAccountMenu({
                 <strong>{item.user.name || item.user.email}</strong>
                 <small>{item.user.email}</small>
                 <span className='canonical-account-statuses'>
-                  <em>{rememberedAccountStatusLabel(status, lang)}</em>
+                  <em>
+                    {selecting === item.grantId
+                      ? (lang === 'uk' ? 'Переходимо до входу…' : 'Doorsturen naar aanmelding…')
+                      : rememberedAccountStatusLabel(status, lang)}
+                  </em>
                 </span>
               </span>
               {selecting === item.grantId
@@ -715,6 +722,18 @@ export default function CanonicalAccountMenu({
     </div>
   );
 
+  const wisselMeldingData = gewisseld
+    ? {
+        email: gewisseld.email,
+        ...accountWisselMelding(lang, {
+          techBeeindigd: gewisseld.techBeeindigd,
+          heeftTechProfiel: !!tech.profiel,
+          techActief: techActief(tech),
+          techGeladen: tech.geladen,
+        }),
+      }
+    : null;
+
   return (
     <div
       className='canonical-account-menu'
@@ -761,7 +780,7 @@ export default function CanonicalAccountMenu({
             : <span className='canonical-account-avatar avatar-hero'><UserRound /></span>}
       </button>
 
-      {open && am3 && displayUser && mobielVenster && typeof document !== 'undefined'
+      {open && am3 && mobielVenster && typeof document !== 'undefined'
         ? createPortal(
             <div
               ref={portaalRef}
@@ -785,7 +804,7 @@ export default function CanonicalAccountMenu({
                   visibleRows={visibleRows}
                   shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
                   expanded={expanded}
-                  onToggleExpanded={() => setExpanded((value) => !value)}
+                  onToggleExpanded={() => { setExpanded((value) => !value); }}
                   busy={busy}
                   selecting={selecting}
                   forgetting={forgetting}
@@ -801,9 +820,9 @@ export default function CanonicalAccountMenu({
                   privacyLabel={t.privacy}
                   termsLabel={t.terms}
                   showLogoutAll={showLogoutAll}
-                  wisselMelding={gewisseld ? { email: gewisseld.email, ...accountWisselMelding(lang, { techBeeindigd: gewisseld.techBeeindigd, heeftTechProfiel: !!tech.profiel, techActief: techActief(tech), techGeladen: tech.geladen }) } : null}
+                  wisselMelding={wisselMeldingData}
                   v2Ruimtes={v2}
-                  onChangePhoto={changePhoto}
+                  onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
                   onSelectAccount={select}
                   onForgetAccount={onForgetAccount ? forget : undefined}
                   onAddAccount={add}
@@ -825,9 +844,9 @@ export default function CanonicalAccountMenu({
           )
         : null}
 
-      {open && !(am3 && displayUser && mobielVenster && typeof document !== 'undefined') && (
+      {open && !(am3 && mobielVenster && typeof document !== 'undefined') && (
         <section className='canonical-account-panel' role='dialog' aria-label={t.accounts}>
-          {am3 && displayUser ? (
+          {am3 ? (
             <AccountMenuV3
               lang={lang}
               theme={theme}
@@ -835,7 +854,7 @@ export default function CanonicalAccountMenu({
               visibleRows={visibleRows}
               shouldShowOtherAccountsToggle={model.shouldShowOtherAccountsToggle}
               expanded={expanded}
-              onToggleExpanded={() => setExpanded((value) => !value)}
+              onToggleExpanded={() => { setExpanded((value) => !value); }}
               busy={busy}
               selecting={selecting}
               forgetting={forgetting}
@@ -851,9 +870,9 @@ export default function CanonicalAccountMenu({
               privacyLabel={t.privacy}
               termsLabel={t.terms}
               showLogoutAll={showLogoutAll}
-              wisselMelding={gewisseld ? { email: gewisseld.email, ...accountWisselMelding(lang, { techBeeindigd: gewisseld.techBeeindigd, heeftTechProfiel: !!tech.profiel, techActief: techActief(tech), techGeladen: tech.geladen }) } : null}
+              wisselMelding={wisselMeldingData}
               v2Ruimtes={v2}
-              onChangePhoto={changePhoto}
+              onChangePhoto={onProfilePhotoChange ? changePhoto : undefined}
               onSelectAccount={select}
               onForgetAccount={onForgetAccount ? forget : undefined}
               onAddAccount={add}
@@ -955,7 +974,7 @@ export default function CanonicalAccountMenu({
                         <IllustrativePreviews items={model.collapsedSwitchPreviewAccounts} mode='quick' />
                       )}
                       <span className='canonical-other-toggle-pijl' aria-hidden='true'>
-                        {expanded ? <ChevronUp /> : <ChevronDown />}
+                        <ChevronDown />
                       </span>
                     </button>
                   </div>

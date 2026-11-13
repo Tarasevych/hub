@@ -13,7 +13,7 @@ import type { LambdaEvent, RouterContext, RouterMiddleware, RouterResponse } fro
 import { error } from './router';
 import { isSessieGeverifieerd, sessieGeverifieerd } from './context';
 import { schakelaarAan } from './schakelaars';
-import { tel } from './antwoord-teller';
+import { telPoort401 } from './antwoord-teller';
 
 /** Routes die zonder sessie mogen slagen (patroon zoals in de routetabel) → reden. */
 export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
@@ -86,6 +86,10 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   // strikt per IP begrensd + blokkade). Uitloggen is idempotent. De overige /api/gast/*-routes eisen de gastcookie.
   'POST /api/gast/inwisselen': 'toegangscode inwisselen voor een beperkte gastsessie (code in de body, gehasht opgezocht)',
   'POST /api/gast/uitloggen': 'gastsessie beëindigen (idempotent; zonder sessie niets te doen)',
+  // Gedeelde cloudkoppelingen (CLOUD-001, backend/bestanden-delen.ts): referentie is de gehashte 192-bits koppelingscode (+ optioneel scrypt-wachtwoord of accountcontrole + rateLimit per IP).
+  'POST /api/cloud/gedeeld/info': 'metadata en toegestane boom van een gedeelde cloudkoppeling (gehashte code + IP-limiet)',
+  'POST /api/cloud/gedeeld/inhoud': 'inhoud of afgesneden deel van een gedeelde cloudkoppeling (gehashte code + strikt bereik)',
+  'POST /api/cloud/gedeeld/download': 'download van een gedeeld bestand, deel of map-zip (gehashte code + rechten- en limietcontrole)',
   'POST /api/owner/access/webauthn/options': 'passkey-opties (uitgeschakeld: 503)',
   'POST /api/owner/access/webauthn/register': 'passkey registreren (uitgeschakeld: 503)',
 };
@@ -117,7 +121,7 @@ export function poortNaVerzoek(patroon: string, event: LambdaEvent, antwoord: Ro
   }
   try { melder?.(patroon); } catch { /* melden mag nooit het verzoek breken */ }
   if (!poortAfdwingen()) return antwoord;
-  tel('poort401'); // zekering: piek in 401 van het vangnet na het aanzetten → automatisch uit
+  telPoort401(patroon); // zekering: piek in 401 van het vangnet over VERSCHILLENDE routes na het aanzetten → automatisch uit
   return error('AUTH_REQUIRED', 401);
 }
 

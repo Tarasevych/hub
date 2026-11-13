@@ -85,14 +85,14 @@ export async function main() {
     const cbB = await rondAf(sB, `sub-b-${tijd}`, mailB);
     const rootNaB = [...jar].find(([k]) => k.startsWith('__Secure-tsv_ecosystem_'))?.[1] || '';
     check('parallel: beide aanmeldingen ronden af in dezelfde browser; alleen de eigen bindingscookie wordt gewist', cbA.data.ok === true && cbB.data.ok === true && naA.length === 1 && [...jar.keys()].filter(k => k.startsWith('__Secure-tsv_aanmeld_binding_')).length === 0, `A ${cbA.data.reasonCode}, B ${cbB.data.reasonCode}, na A nog ${naA.length} binding`);
-    check('tab-isolatie: de tweede aanmelding vervangt de rootcookie niet (alleen een tab-overlay)', !!rootNaA && rootNaA === rootNaB && cbB.data.replaceScope === 'tab', `root gelijk ${rootNaA === rootNaB}, scope ${cbB.data.replaceScope}`);
+    check('één actief account per browser: de tweede aanmelding roteert het browseranker (replaceScope=browser)', !!rootNaA && !!rootNaB && rootNaA !== rootNaB && cbB.data.replaceScope === 'browser', `roteert ${rootNaA !== rootNaB}, scope ${cbB.data.replaceScope}`);
     const a1 = await wieIn(tabA), b1 = await wieIn(tabB);
-    check('tab-isolatie: tab A blijft op account A, tab B op account B', a1.email === mailA && b1.email === mailB, `A=${a1.state}/${a1.email === mailA ? 'A' : a1.email}, B=${b1.state}/${b1.email === mailB ? 'B' : b1.email}`);
-    // Een derde tabblad dat later met intent 'login' afrondt, schakelt A en B ook niet om.
+    check('één actief account per browser: tab A en tab B volgen beide het nieuw aangemelde account B', a1.email === mailB && b1.email === mailB, `A=${a1.state}/${a1.email}, B=${b1.state}/${b1.email}`);
+    // Een derde tabblad dat later afrondt, schakelt de hele browser door naar account C.
     const sC = await start(tabC);
     const cbC = await rondAf(sC, `sub-c-${tijd}`, mailC);
     const a2 = await wieIn(tabA), b2 = await wieIn(tabB), c2 = await wieIn(tabC);
-    check('tab-isolatie: derde aanmelding (tab C) laat A en B op hun eigen account', cbC.data.ok === true && a2.email === mailA && b2.email === mailB && c2.email === mailC, `A ${a2.email === mailA}, B ${b2.email === mailB}, C ${c2.email === mailC}`);
+    check('één actief account per browser: derde aanmelding (tab C) zet A, B en C op account C', cbC.data.ok === true && a2.email === mailC && b2.email === mailC && c2.email === mailC, `A ${a2.email === mailC}, B ${b2.email === mailC}, C ${c2.email === mailC}`);
     // Bindingscookie van transactie D werkt niet voor transactie E (andere naam, tab en transactie).
     const sD = await start(tab());
     const dNaam = [...jar.keys()].find(k => k.startsWith('__Secure-tsv_aanmeld_binding_'))!;

@@ -87,7 +87,9 @@ const dataWaarde = (v: string) => (/^[^\u0000-\u001f<>]{0,500}$/.test(v) ? v : '
 
 const attrs = (raw: string, tag: string) => {
   const values: string[] = [];
-  for (const match of raw.matchAll(/([A-Za-z][A-Za-z0-9:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g)) {
+  // SEC-002 (post-02): de naam begint aan het begin van een naamreeks (lookbehind). Zonder die grens probeerde de uitdrukking
+  // bij «<p aaaa…>» elke letter opnieuw als begin: kwadratisch op één lange attribuutnaam.
+  for (const match of raw.matchAll(/(?<![A-Za-z0-9:-])([A-Za-z][A-Za-z0-9:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g)) {
     const name = match[1].toLowerCase(), value = match[2] ?? match[3] ?? match[4] ?? '';
     if (name === 'style') { const style = safeStyle(value); if (style) values.push(`style="${escapeAttr(style)}"`); continue; }
     if (DATA.test(name)) { const v = dataWaarde(decode(value, { level: 'html5', scope: 'attribute' })); if (v || name === 'data-mail-block') values.push(`${name}="${escapeAttr(v)}"`); continue; }
@@ -100,16 +102,54 @@ const attrs = (raw: string, tag: string) => {
 };
 
 export const normalizeOutboundMailHtml = (value: unknown, max = 250000) => {
-  const source = String(value || '').replace(/\u0000/g, '').replace(/​/g, '')
-    .replace(/<!--\[if mso\]>[\s\S]*?<!\[endif\]-->/gi, '')
-    .replace(/<(script|style|template|iframe|object|svg|math)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
-    .slice(0, max);
-  const tokens = source.match(/<[^>]*>|[^<]+/g) || [];
+  const ruw = String(value || '').slice(0, Math.max(max, VOORAF_MAX)).replace(/\u0000/g, '').replace(/​/g, '');
+  return naarToegestaneHtml(zonderBlokken(zonderBlokken(ruw, MSO_OPEN, () => /<!\[endif\]-->/gi, false), BLOK_OPEN, (soort) => new RegExp(`</${soort}\\s*>`, 'gi'), true).slice(0, max));
+};
+
+// SEC-002 (post-02, keten-config-04): de drie stappen hieronder deden vroeger hetzelfde met luie reguliere expressies
+// (/<!--\[if mso\]>[\s\S]*?<!\[endif\]-->/, /<(script|…)\b[^>]*>[\s\S]*?<\/\1\s*>/ en /<[^>]*>|[^<]+/) op de VOLLEDIGE invoer
+// (tot 12 MB) vóór het afkappen. Elke «<» of «<script>» zonder sluiting zocht vergeefs tot het einde: kwadratisch, en omdat het
+// synchroon is stond de hele server stil (250 000 × «<» ≈ 25 s, 12 MB «<script>» ≈ 50 min). Nu lineair, met dezelfde uitkomst.
+/** Bovengrens vóór elke bewerking: meer dan dit wordt niet eens bekeken (begrensd werk, ook als de aanroeper niets afkapt). */
+const VOORAF_MAX = 4_000_000;
+const MSO_OPEN = /<!--\[if mso\]>/gi;
+const BLOK_OPEN = /<(script|style|template|iframe|object|svg|math)\b/gi;
+/**
+ * Verwijdert elk blok «begin … eerstvolgende sluiting» in één gang van links naar rechts. Een begin zonder sluiting blijft staan
+ * (de tag zelf valt later weg omdat hij niet op de lijst staat). Voor een soort waarvan de sluiting één keer niet gevonden is,
+ * wordt niet opnieuw tot het einde gezocht; ontbreekt de «>» van een begintag, dan kan ook geen latere begintag nog sluiten.
+ */
+function zonderBlokken(bron: string, open: RegExp, sluiting: (soort: string) => RegExp, metTagEinde: boolean): string {
+  const begin = new RegExp(open.source, 'gi'), zonderSluiting = new Set<string>();
+  let uit = '', pos = 0;
+  for (let m = begin.exec(bron); m; m = begin.exec(bron)) {
+    const soort = String(m[1] || '').toLowerCase();
+    if (zonderSluiting.has(soort)) continue;
+    let vanaf = begin.lastIndex;
+    if (metTagEinde) { const gt = bron.indexOf('>', vanaf); if (gt < 0) break; vanaf = gt + 1; }
+    const einde = sluiting(soort); einde.lastIndex = vanaf;
+    if (!einde.exec(bron)) { zonderSluiting.add(soort); continue; }
+    uit += bron.slice(pos, m.index); pos = einde.lastIndex; begin.lastIndex = pos;
+  }
+  return uit + bron.slice(pos);
+}
+/**
+ * Splitst in tags en tekst zoals /<[^>]*>|[^<]+/g. Na de laatste «>» kan geen tag meer passen: daar levert alleen tekst nog iets op
+ * (een losse «<» valt weg, zoals altijd). Tot en met de laatste «>» slaagt elke «<» en schuift de zoekpositie mee: lineair.
+ */
+function inTokens(bron: string): string[] {
+  const grens = bron.lastIndexOf('>') + 1;
+  return [...(bron.slice(0, grens).match(/<[^>]*>|[^<]+/g) || []), ...(bron.slice(grens).match(/[^<]+/g) || [])];
+}
+
+function naarToegestaneHtml(source: string): string {
+  const tokens = inTokens(source);
   let output = '';
   for (const token of tokens) {
     if (!token.startsWith('<')) { output += escapeText(decode(token, { level: 'html5', scope: 'body' })); continue; }
     if (/^<!/.test(token)) continue; // commentaar, doctype, conditionele opmerkingen
-    const closing = /^<\s*\//.test(token), match = /^<\s*\/?\s*([A-Za-z0-9]+)/.exec(token), tag = String(match?.[1] || '').toLowerCase();
+    // (?:\/\s*)? in plaats van \/?\s*: zelfde taal, maar geen twee aangrenzende \s* meer (kwadratisch op «<» + duizenden spaties).
+    const closing = /^<\s*\//.test(token), match = /^<\s*(?:\/\s*)?([A-Za-z0-9]+)/.exec(token), tag = String(match?.[1] || '').toLowerCase();
     if (!ALLOWED.has(tag)) continue;
     if (closing) { if (!VOID.has(tag)) output += `</${tag}>`; continue; }
     if (tag === 'img') { const a = attrs(token, tag); if (/\ssrc="/.test(a)) output += `<img${a}>`; continue; }
@@ -117,12 +157,17 @@ export const normalizeOutboundMailHtml = (value: unknown, max = 250000) => {
   }
   const plain = mailHtmlToPlainText(output);
   return plain.trim() || /<img\s/.test(output) ? output : '';
-};
+}
 
-export const mailHtmlToPlainText = (html: string, max = 100000) => decode(String(html || '')
-  .replace(/<br\s*\/?\s*>/gi, '\n')
+/** Past een «<…>»-vervanging toe tot en met de laatste «>»; daarna kan niets meer passen (anders zoekt elke «<» vergeefs tot het einde). */
+const totLaatsteGt = (tekst: string, vervang: (kop: string) => string) => { const grens = tekst.lastIndexOf('>') + 1; return vervang(tekst.slice(0, grens)) + tekst.slice(grens); };
+
+// SEC-002 (post-02, keten-config-04): zelfde uitkomst als voorheen, maar lineair — <br\s*\/?\s*> had twee aangrenzende \s*,
+// <li…> en <[^>]+> zochten zonder «>» per «<» tot het einde, en [ \t]+\n probeerde elke spatie van een lange reeks opnieuw.
+export const mailHtmlToPlainText = (html: string, max = 100000) => decode(totLaatsteGt(totLaatsteGt(String(html || '')
+  .replace(/<br\s*(?:\/\s*)?>/gi, '\n')
   .replace(/<\/(?:p|div|blockquote|li|h1|h2|h3|h4|tr|table)>/gi, '\n')
-  .replace(/<\/t[dh]>/gi, '\t')
-  .replace(/<li(?:\s[^>]*)?>/gi, '• ')
-  .replace(/<[^>]+>/g, ''), { level: 'html5', scope: 'body' })
-  .replace(/​/g, '').replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
+  .replace(/<\/t[dh]>/gi, '\t'),
+  (kop) => kop.replace(/<li(?:\s[^>]*)?>/gi, '• ')),
+  (kop) => kop.replace(/<[^>]+>/g, '')), { level: 'html5', scope: 'body' })
+  .replace(/​/g, '').replace(/ /g, ' ').replace(/(?<![ \t])[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);

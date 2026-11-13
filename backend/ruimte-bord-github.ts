@@ -127,6 +127,10 @@ const bezig = new Set<string>();
 export async function githubTechnischIntrekken(userId: string, reden = 'rol-weg'): Promise<{ oauth: boolean; app: boolean; flows: number }> {
   if (!userId) return { oauth: false, app: false, flows: 0 };
   let oauth = false, app = false, flows = 0;
+  // SEC-002 (integraties-13): eerst de webhooks van de technische lade, zolang de token nog werkt; sleutel en geheim gaan hier
+  // in elk geval weg, zodat een haak die bij GitHub blijft staan niets meer in spiegel of bord schrijft.
+  try { await (await import('./github-werkruimte')).ghWebhooksOpruimen({ userId, ruimte: 'technisch' }); }
+  catch (err) { console.error('[ruimte-bord-github] technische webhooks opruimen mislukt:', (err as Error).message); }
   try { const u = await oauthOntkoppelen(userId, 'technisch'); oauth = u.ok ? u.data.ingetrokken : false; }
   catch (err) { console.error('[ruimte-bord-github] technische OAuth-koppeling intrekken mislukt:', (err as Error).message); }
   try { const u = await appOntkoppelen(userId, 'technisch'); app = u.ok ? u.data.verwijderd : false; }

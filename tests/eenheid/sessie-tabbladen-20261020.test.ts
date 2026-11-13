@@ -56,33 +56,35 @@ export async function main(): Promise<number> {
     };
     const aA = await b.aanmelden(`sub-a-${T}`, mailA, { tabContext: tabA, remember: true });
     const aB = await b.aanmelden(`sub-b-${T}`, mailB, { tabContext: tabB, remember: true });
-    check('voorwaarde: twee accounts aangemeld in één browser (tabblad A = A, tabblad B = B)',
-      aA.cb.data.ok === true && aB.cb.data.ok === true && (await wieIn(tabA)).email === mailA && (await wieIn(tabB)).email === mailB,
+    check('voorwaarde: twee accounts aangemeld in één browser; het laatst aangemelde account B is het actieve browseranker',
+      aA.cb.data.ok === true && aB.cb.data.ok === true && (await wieIn(tabA)).email === mailB && (await wieIn(tabB)).email === mailB,
       `${aA.cb.data.reasonCode || 'ok'} / ${aB.cb.data.reasonCode || 'ok'}`);
 
     const nieuwTabblad = await wieIn(tabC);
-    check('(A) nieuw tabblad bij levende sessie: GEEN aanmeldscherm, het ankeraccount van de browser',
-      !nieuwTabblad.afgemeld && nieuwTabblad.email === mailA, `afgemeld=${nieuwTabblad.afgemeld} / ${nieuwTabblad.email || 'leeg'}`);
-    check('(A) B-005 blijft: het nieuwe tabblad krijgt nooit het account van een ANDER tabblad',
-      nieuwTabblad.email !== mailB, nieuwTabblad.email);
+    check('(A) nieuw tabblad bij levende sessie: GEEN aanmeldscherm, het huidige ankeraccount B van de browser',
+      !nieuwTabblad.afgemeld && nieuwTabblad.email === mailB, `afgemeld=${nieuwTabblad.afgemeld} / ${nieuwTabblad.email || 'leeg'}`);
     const nogmaals = await wieIn(tabC);
     check('(A) het nieuwe tabblad houdt zijn account bij het volgende verzoek (eigen rij gebonden aan het anker)',
-      !nogmaals.afgemeld && nogmaals.email === mailA, `afgemeld=${nogmaals.afgemeld} / ${nogmaals.email || 'leeg'}`);
-    check('(A) tabblad B is door het nieuwe tabblad niet veranderd', (await wieIn(tabB)).email === mailB);
+      !nogmaals.afgemeld && nogmaals.email === mailB, `afgemeld=${nogmaals.afgemeld} / ${nogmaals.email || 'leeg'}`);
+    check('(A) tabblad B blijft op hetzelfde actieve account B', (await wieIn(tabB)).email === mailB);
 
-    const uit = await b.verzoek('hub.tarasevych.com', '/api/owner/session/logout-account-browser', { service: 'hub', tabContext: tabA });
-    const naA = await wieIn(tabA), naC = await wieIn(tabC), naB = await wieIn(tabB);
-    const lijst = (uit.data.accounts || []) as Array<{ user?: { email?: string } }>;
-    check('(B) afmelden van A geldt in ALLE tabbladen van A (het eigen tabblad en het nieuwe tabblad)',
-      uit.status === 200 && naA.afgemeld && naC.afgemeld && !naA.email && !naC.email, `${uit.status} ${naA.afgemeld}/${naC.afgemeld}`);
-    check('(B) afmelden van A raakt account B NIET (sessie van B leeft verder in zijn tabblad)',
-      !naB.afgemeld && naB.email === mailB && uit.data.otherAccountsPreserved === true, `afgemeld=${naB.afgemeld}/${naB.email || 'leeg'}, bewaard=${uit.data.otherAccountsPreserved}`);
-    check('(B) de onthouden-hint van B blijft in de accountlijst staan na het afmelden van A',
-      lijst.some(item => item.user?.email === mailB), lijst.map(item => item.user?.email || '?').join(','));
-    const naLogoutNieuw = await wieIn(tabD);
-    check('(B) een nieuw tabblad na het afmelden van A komt bij B (het nieuwe anker), niet op het aanmeldscherm',
-      !naLogoutNieuw.afgemeld && naLogoutNieuw.email === mailB, `afgemeld=${naLogoutNieuw.afgemeld} / ${naLogoutNieuw.email || 'leeg'}`);
-    check('(3) de server meldt «onthouden browser» voor een aanmelding met remember=true', naB.onthouden === true, String(naB.onthouden));
+    // Afmelden van het huidige actieve account B schakelt het anker automatisch terug naar het bewaarde aangemelde profiel A.
+    const uitB = await b.verzoek('hub.tarasevych.com', '/api/owner/session/logout-account-browser', { service: 'hub', tabContext: tabB });
+    const naUitB_A = await wieIn(tabA), naUitB_B = await wieIn(tabB), naUitB_D = await wieIn(tabD);
+    const lijst = (uitB.data.accounts || []) as Array<{ user?: { email?: string }; hintOnly?: boolean; silentAllowed?: boolean }>;
+    check('(B) afmelden van B raakt het andere aangemelde account A NIET: de browser schakelt over op het nieuwe anker A',
+      uitB.status === 200 && uitB.data.otherAccountsPreserved === true && !naUitB_A.afgemeld && naUitB_A.email === mailA && naUitB_B.email === mailA,
+      `${uitB.status} bewaard=${uitB.data.otherAccountsPreserved} A=${naUitB_A.email}`);
+    check('(B) in de accountlijst blijft A direct beschikbaar en staat het afgemelde B op reauth (hintOnly)',
+      lijst.some(item => item.user?.email === mailA && item.silentAllowed === true) && lijst.some(item => item.user?.email === mailB && item.hintOnly === true),
+      lijst.map(item => `${item.user?.email || '?'}:${item.silentAllowed}/${item.hintOnly}`).join(','));
+    check('(B) een nieuw tabblad na het afmelden van B komt bij A (het nieuwe anker), niet op het aanmeldscherm',
+      !naUitB_D.afgemeld && naUitB_D.email === mailA, `afgemeld=${naUitB_D.afgemeld} / ${naUitB_D.email || 'leeg'}`);
+    check('(3) de server meldt «onthouden browser» voor een aanmelding met remember=true', naUitB_A.onthouden === true, String(naUitB_A.onthouden));
+    const uitA = await b.verzoek('hub.tarasevych.com', '/api/owner/session/logout-account-browser', { service: 'hub', tabContext: tabA });
+    const leegA = await wieIn(tabA), leegC = await wieIn(tabC);
+    check('(B) na het afmelden van het laatste actieve account zijn ALLE tabbladen afgemeld',
+      uitA.status === 200 && leegA.afgemeld && leegC.afgemeld && !leegA.email && !leegC.email, `${uitA.status} ${leegA.afgemeld}/${leegC.afgemeld}`);
 
     // ------------------------------------------------------------------ DEEL 2: browserkant
     const g = globalThis as Record<string, unknown>;

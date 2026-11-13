@@ -44,6 +44,7 @@ import { devtoolsBeslissing, devtoolsDefinities, slotHint } from './connector-v2
 import { instellingenVan as matrixInstellingen } from './extensie-matrix';
 import { veiligeExterneDiagnose, type AgentToegangDiagnose, type ToegangWeigerCode } from '../shared/ai-toegang-diagnose';
 import { bouwGebruikerDiagnoseContext, diagnoseVoorAgent, diagnoseVoorAgentMetContext, meldGeblokkeerdeAiPoging } from './ai-toegang-diagnose';
+import { pakketToegestaan, pakketUitvoeren } from './mcp-pakket'; // SEC-002 (ai-mcp-08)
 
 const RPC_PER_MINUTE = 120;
 const MAX_RPC_BYTES = 6 * 1024 * 1024;
@@ -364,7 +365,10 @@ export async function rpc(slug: string, authorization: string | undefined, rawBo
   // een andere waarheid zien dan de andere helft). Elke tools/call controleert hem daarna in roepTool nog eens.
   const ruimte = await levendeRuimte(koppeling);
   if (Array.isArray(parsed)) {
-    const out = (await Promise.all(parsed.map((m) => bericht(koppeling, rechten, m, ruimte, via)))).filter((r) => r !== null);
+    // SEC-002 (ai-mcp-08): pakket begrensd, elk bericht telt in de limiet, kleine parallelliteit (zie backend/mcp-pakket.ts).
+    const besluit = await pakketToegestaan(`mcp-rpc:${who.limietSleutel}`, parsed.length, RPC_PER_MINUTE);
+    if (!besluit.ok) return respond(besluit.status, rpcError(null, besluit.code, besluit.bericht), besluit.retryAfter ? { 'Retry-After': String(besluit.retryAfter) } : undefined);
+    const out = (await pakketUitvoeren(parsed, (m) => bericht(koppeling, rechten, m, ruimte, via))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }
   const out = await bericht(koppeling, rechten, parsed, ruimte, via);

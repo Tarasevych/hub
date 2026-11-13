@@ -33,8 +33,28 @@ export const pinnedLookup=(hostname:string,options:{all?:boolean}|number|undefin
 };
 
 /**
+ * SEC-002 (http-rand-02, integraties-03): een statuscode die een WHATWG-Response niet aanneemt. De http-ontleder van Node
+ * laat 101 (zonder Upgrade-kop) en 600–999 gewoon door; `new Response(…, {status})` gooit daarvoor een RangeError. Dat
+ * gebeurde in de luisteraar van 'end', dus BUITEN de belofte: geen enkele try/catch van een aanroeper ving het, het werd
+ * een uncaughtException en het hele proces stopte — op verzoek van een vreemde server (een afbeelding in een mail, een
+ * ICS-abonnement, een CalDAV-account, een externe MCP-server).
+ */
+const statusGeldig=(status:number):boolean=>Number.isInteger(status)&&status>=200&&status<=599;
+/** De koppen van het antwoord; een kop die Headers weigert (ongeldige naam of waarde) wordt overgeslagen in plaats van alles te laten vallen. */
+const koppenVan=(ruw:Record<string,string|string[]|undefined>):Headers=>{
+  const headers=new Headers();
+  for(const[key,value]of Object.entries(ruw)){
+    if(value===undefined)continue;
+    for(const item of Array.isArray(value)?value:[value]){try{headers.append(key,String(item))}catch{/* ongeldige kop van de vreemde server: overslaan */}}
+  }
+  return headers;
+};
+
+/**
  * HTTPS-verzoek met DNS-pinning, zonder automatische redirects, met time-out en maximale grootte.
  * Geeft een WHATWG-Response terug (body gebufferd), zodat bestaande aanroepers ongewijzigd blijven.
+ * Een statuscode buiten 200–599 wordt een afwijzing met REMOTE_STATUS_INVALID. Alles in de luisteraars staat in een
+ * try/catch die AFWIJST: een fout in een gebeurtenis-luisteraar mag nooit buiten de belofte vallen.
  */
 export function pinnedFetch(url:string,init:{method?:string;headers?:Record<string,string>;body?:string}={},timeoutMs=15000,maxBytes=8*1024*1024,tooLargeCode='REMOTE_RESPONSE_TOO_LARGE'):Promise<Response>{
   return new Promise((resolve,reject)=>{
@@ -45,18 +65,26 @@ export function pinnedFetch(url:string,init:{method?:string;headers?:Record<stri
     const literal=target.hostname.replace(/^\[|\]$/g,'');
     if(isIpLiteral(literal)&&privateAddress(literal))return reject(new Error('SSRF_ADRES_GEWEIGERD'));
     const req=https.request(target,{method:init.method||'GET',headers:{'User-Agent':'mijn-ruimte/1',...(init.headers||{})},lookup:pinnedLookup as never,timeout:timeoutMs},res=>{
-      const declared=Number(res.headers['content-length']||0);
-      if(declared>maxBytes){res.destroy();return reject(new Error(tooLargeCode))}
-      const chunks:Buffer[]=[];let total=0;
-      res.on('data',(chunk:Buffer)=>{total+=chunk.length;if(total>maxBytes){res.destroy();reject(new Error(tooLargeCode));return}chunks.push(chunk)});
-      res.on('error',reject);
-      res.on('end',()=>{
-        const headers=new Headers();
-        for(const[key,value]of Object.entries(res.headers)){if(value===undefined)continue;for(const item of Array.isArray(value)?value:[value])headers.append(key,String(item))}
+      try{
         const status=res.statusCode||502;
-        const nullBody=status===204||status===205||status===304;
-        resolve(new Response(nullBody?null:Buffer.concat(chunks),{status,headers}));
-      });
+        // Vóór er één byte van het lichaam gelezen wordt: een status die geen geldig eindantwoord is, breken we meteen af.
+        if(!statusGeldig(status)){res.destroy();return reject(new Error('REMOTE_STATUS_INVALID'))}
+        const declared=Number(res.headers['content-length']||0);
+        if(declared>maxBytes){res.destroy();return reject(new Error(tooLargeCode))}
+        const chunks:Buffer[]=[];let total=0;
+        res.on('data',(chunk:Buffer)=>{
+          try{total+=chunk.length;if(total>maxBytes){res.destroy();reject(new Error(tooLargeCode));return}chunks.push(chunk)}
+          catch(err){res.destroy();reject(err)}
+        });
+        res.on('error',reject);
+        res.on('end',()=>{
+          try{
+            const headers=koppenVan(res.headers);
+            const nullBody=status===204||status===205||status===304;
+            resolve(new Response(nullBody?null:Buffer.concat(chunks),{status,headers}));
+          }catch(err){reject(err)}
+        });
+      }catch(err){res.destroy();reject(err)}
     });
     const timer=setTimeout(()=>req.destroy(new Error('REMOTE_TIMEOUT')),timeoutMs);
     req.on('close',()=>clearTimeout(timer));
@@ -94,9 +122,14 @@ export function pinnedStream(url:string,opties:{
     let gestopt=false,klaar=false,bytes=0;
     let stilte:NodeJS.Timeout|undefined;
     const req=https.request(target,{method:opties.method||'GET',headers:{'User-Agent':'mijn-ruimte/1',...(opties.headers||{})},lookup:pinnedLookup as never,timeout:stilteMs},res=>{
-      const headers=new Headers();
-      for(const[key,value]of Object.entries(res.headers)){if(value===undefined)continue;for(const item of Array.isArray(value)?value:[value])headers.append(key,String(item))}
+      // SEC-002: dezelfde twee regels als in pinnedFetch — ongeldige koppen overslaan, en een status buiten 200–599 is een
+      // afwijzing (de aanroepers rekenen op een geldige HTTP-status en bouwen er soms zelf een antwoord mee).
+      const headers=koppenVan(res.headers);
       const status=res.statusCode||502;
+      if(!statusGeldig(status)){
+        klaar=true;clearTimeout(hard);res.destroy();req.destroy();
+        return reject(new Error('REMOTE_STATUS_INVALID'));
+      }
       try{opties.onKop?.(status,headers)}catch{/* de aanroeper faalt niet onze stroom */}
       const af=(reden?:Error)=>{
         if(klaar)return;klaar=true;
@@ -119,7 +152,8 @@ export function pinnedStream(url:string,opties:{
       res.on('error',err=>af(err as Error));
       res.on('end',()=>af());
       res.on('close',()=>af());
-      opties.onStart?.(()=>{gestopt=true;af()});
+      // Een fout in de haak van de aanroeper mag niet buiten de belofte vallen (deze code loopt in een gebeurtenis-luisteraar).
+      try{opties.onStart?.(()=>{gestopt=true;af()})}catch(err){af(err instanceof Error?err:new Error('REMOTE_STREAM_FAILED'))}
     });
     const hard=setTimeout(()=>{if(!klaar){klaar=true;req.destroy();reject(new Error('REMOTE_TIMEOUT'))}},maxTotaalMs);
     req.on('timeout',()=>req.destroy(new Error('REMOTE_TIMEOUT')));

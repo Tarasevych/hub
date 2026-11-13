@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from 'react';
+import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import {api} from './platform/client';
 import {API_PLATFORM_VERSION,apiPlatformContractPayload,type ApiPlatformCapability} from './api-platform-contract';
@@ -78,7 +79,7 @@ export default function ApiPlatformView({tab,tr}:{tab:string;tr:Tr}){
         <span>{tr('Видається лише identity.me.read','Alleen identity.me.read wordt uitgegeven')}</span>
       </div>
       <button type='button' onClick={()=>void create()} disabled={busy} data-api-create-token-button='enabled'>{tr('Створити ключ','Sleutel maken')}</button>
-      {plaintext?<div className='api-platform-secret' data-api-plaintext-once='true'>
+      {plaintext?<div className='api-platform-secret' data-api-plaintext-once='true' {...verborgenVoorAi}>
         <code>{plaintext}</code>
         <div className='api-platform-secret-actions'>
           <button type='button' onClick={()=>void navigator.clipboard?.writeText(plaintext)}>{tr('Скопіювати','Kopiëren')}</button>

@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: identiteit-008-uitgave
@@ -39,8 +39,6 @@ jobs:
   controle-en-uitgave:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      GH_TOKEN: ${{ github.token }}
     services:
       postgres:
         image: postgres:16
@@ -54,13 +52,14 @@ jobs:
           --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - name: Отримати вихідні коди сховища
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Відновити назву гілки завдання
         run: git switch -C "$GITHUB_REF_NAME" "$GITHUB_SHA"
       - name: Підготувати середовище Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -82,28 +81,30 @@ jobs:
           git merge-base --is-ancestor "$INTEGRATIE_BASIS" HEAD
       - name: Перевірити правила координації та журнал походження
         run: |
+          set -o pipefail
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
-          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Виконати одиничні перевірки меню, пошти, екосистеми ШІ, розміщення та розгортання
         run: |
+          set -o pipefail
           node scripts/plaatsing-controle.mjs
-          node scripts/eenheidstests.mjs accountmenu-v3.test.ts
-          node scripts/eenheidstests.mjs ai-ecosysteem-en-google-herstel.test.ts
-          node scripts/eenheidstests.mjs ai-werkruimte-20261019.test.ts
-          node scripts/eenheidstests.mjs agent-verbinden-20261020.test.ts
-          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts
-          node scripts/eenheidstests.mjs connector-v2.test.ts
-          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts
-          node scripts/eenheidstests.mjs ui-audit-g.test.ts
-          node scripts/eenheidstests.mjs uitrol-vereisten-001.test.ts
-          node scripts/eenheidstests.mjs uitrol-voorcontrole.test.ts
-          node scripts/eenheidstests.mjs uitrol-codes.test.ts
-          node scripts/eenheidstests.mjs accountmenu-v2-20261029.test.ts
-          node scripts/eenheidstests.mjs menu-taal-prapor-20261103.test.ts
-          node scripts/eenheidstests.mjs aanmeld-001-weergave.test.ts
-          node scripts/eenheidstests.mjs identiteit-atelier.test.ts
-          node scripts/eenheidstests.mjs thema.test.ts
+          node scripts/eenheidstests.mjs accountmenu-v3.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs ai-ecosysteem-en-google-herstel.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs ai-werkruimte-20261019.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs agent-verbinden-20261020.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs hulpmiddelen-tweetalig-20261020.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs connector-v2.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs plaatsing-20261025.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs ui-audit-g.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs uitrol-vereisten-001.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs uitrol-voorcontrole.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs uitrol-codes.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs accountmenu-v2-20261029.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs menu-taal-prapor-20261103.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs aanmeld-001-weergave.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs identiteit-atelier.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs thema.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Перевірити типи та скласти застосунок
         run: |
           npx tsc --noEmit
@@ -150,12 +151,8 @@ jobs:
           set -euo pipefail
           VERSIE="$(date -u +%Y%m%d-%H%M%S)"
           echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
-          if gh release view "$VERSIE" >/dev/null 2>&1; then
-            echo 'Випуск з таким позначенням уже існує.' >&2
-            exit 1
-          fi
           node --input-type=module <<'JS'
-          import { writeFileSync } from 'node:fs';
+          import { readFileSync, writeFileSync } from 'node:fs';
           const e = process.env;
           const auteur = 'Павло Тарасевич (tarasevych.pavlo@gmail.com)';
           const uk = {
@@ -219,13 +216,18 @@ jobs:
             beschrijving: { uk, nl }
           };
           writeFileSync(e.RUNNER_TEMP + '/UITROL-MANIFEST.json', JSON.stringify(m, null, 2) + '\n');
+          // SEC-002: cijfers uit de echte uitvoer van scripts/eenheidstests.mjs («N/M geslaagd (…)» per testbestand), geen letterlijke getallen.
+          // Кількість перевірок береться з фактичного виводу тестів цього запуску, а не з наперед записаного числа.
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів тестів або є невдалі перевірки — випуск зупинено.');
           const tests = {
-            geslaagd: 416,
-            mislukt: 0,
+            geslaagd: gemeten.geslaagd,
+            mislukt: gemeten.mislukt,
             falend: [],
             uitleg: {
-              uk: 'Успішно пройдено будівельні перевірки розміщення, підказок, контрасту та технічних пакунків, одиничні випробування accountmenu-v3 (24/24), відкритої екосистеми ШІ та відновлення входу пошти Google (ai-ecosysteem-en-google-herstel), робочого простору ШІ (ai-werkruimte-20261019), підключення агентів включно з Codex (agent-verbinden-20261020), двомовного каталогу інструментів (hulpmiddelen-tweetalig-20261020) та з’єднувача v2 (connector-v2), походження TRACE-001, вимог до розгортання, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій (включно з 0206 і 0207 з перевіркою RLS) на чистій базі PostgreSQL 16.',
-              nl: 'Bouwcontroles van plaatsing, hulpteksten, contrast en technische bundels zijn geslaagd, evenals de eenheidstests voor accountmenu-v3 (24/24), het open AI-ecosysteem en herstel van de Google-mailkoppeling (ai-ecosysteem-en-google-herstel), de AI-werkruimte (ai-werkruimte-20261019), agentkoppelingen inclusief Codex (agent-verbinden-20261020), de tweetalige hulpmiddelencatalogus (hulpmiddelen-tweetalig-20261020), connector-v2, herkomst TRACE-001 en uitrolbewaking, plus typecontrole, productiebouw en dubbele uitvoering van alle migraties (inclusief 0206 en 0207 met RLS-verificatie) op een schone PostgreSQL 16-databank.'
+              uk: 'Успішно пройдено будівельні перевірки розміщення, підказок, контрасту та технічних пакунків, одиничні випробування accountmenu-v3, відкритої екосистеми ШІ та відновлення входу пошти Google (ai-ecosysteem-en-google-herstel), робочого простору ШІ (ai-werkruimte-20261019), підключення агентів включно з Codex (agent-verbinden-20261020), двомовного каталогу інструментів (hulpmiddelen-tweetalig-20261020) та з’єднувача v2 (connector-v2), походження TRACE-001, вимог до розгортання, а також перевірку типів клієнта і сервера, виробниче складання та подвійне застосування всіх міграцій (включно з 0206 і 0207 з перевіркою RLS) на чистій базі PostgreSQL 16.' + ' Виміряно в цьому запуску — файл тестів і пройдено з усього: ' + gemetenLijst + '.',
+              nl: 'Bouwcontroles van plaatsing, hulpteksten, contrast en technische bundels zijn geslaagd, evenals de eenheidstests voor accountmenu-v3, het open AI-ecosysteem en herstel van de Google-mailkoppeling (ai-ecosysteem-en-google-herstel), de AI-werkruimte (ai-werkruimte-20261019), agentkoppelingen inclusief Codex (agent-verbinden-20261020), de tweetalige hulpmiddelencatalogus (hulpmiddelen-tweetalig-20261020), connector-v2, herkomst TRACE-001 en uitrolbewaking, plus typecontrole, productiebouw en dubbele uitvoering van alle migraties (inclusief 0206 en 0207 met RLS-verificatie) op een schone PostgreSQL 16-databank.' + ' Gemeten in deze uitvoering — testbestand en geslaagd van totaal: ' + gemetenLijst + '.'
             }
           };
           writeFileSync(e.RUNNER_TEMP + '/TESTRESULTATEN.json', JSON.stringify(tests, null, 2) + '\n');
@@ -245,6 +247,73 @@ jobs:
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-gemini-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
           printf 'IDENTITEIT-008 · Виправлення входу пошти Google (SLEUTELKLUIS_GESLOTEN), палітри кольорів і дотикових зон у спадному меню облікового запису (v3) та відкрита агентна екосистема розділу ШІ (ізольовані робочі простори агентів, спільний контекст між завданнями, взаємодія між агентами, підтримка OpenAI Codex і Anthropic Claude, самостійне розгортання на власному обладнанні). Встановлення виконується виключно власником із підтвердженням ключем доступу.\nФіксація змін: %s\nІнтеграційна основа: %s\nВстановлена основа сервера: %s @ %s\n' "$GITHUB_SHA" "$INTEGRATIE_BASIS" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: identiteit-008-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти пакунки перевірки у сховищі виконання
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: identiteit-008-controle
+          path: uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    # SEC-002: єдине завдання з правом запису у сховище. Воно нічого не встановлює через npm, не збирає й не тестує:
+    # отримує вже перевірені пакунки як артефакт, звіряє контрольну суму й лише тоді оприлюднює випуск.
+    # Enige taak met schrijfrecht. Installeert, bouwt en test niets: haalt de gecontroleerde pakketten als artefact op en publiceert.
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: identiteit-008-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          # SEC-002 (g01-3): de basis komt uit het artefact van de bouwtaak (zonder schrijfrecht, maar met npm en tests) — alleen aanvaarden
+          # als ze in de vertrouwde env van deze werkstroom staat (vaste basis of lijst van toegestane bases).
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_VERSIE}=${BASIS_COMMIT:-}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту збірки не входить до довірених значень цього процесу — оприлюднення зупинено. · De basis uit het bouwartefact staat niet in de vertrouwde waarden van deze werkstroom — publicatie gestopt.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
       - name: Повторно звірити живу встановлену версію перед оприлюдненням
         shell: bash
         run: |
@@ -260,6 +329,9 @@ jobs:
       - name: Оприлюднити випуск на GitHub без встановлення на сервер
         id: publicatie
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh release create "$VERSIE" \
@@ -284,11 +356,7 @@ jobs:
           JS
       - name: Приховати незавершений випуск у разі збою перевірки
         if: failure() && steps.publicatie.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
-      - name: Зберегти пакунки перевірки у сховищі виконання
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: identiteit-008-controle
-          path: uitvoer/
-          if-no-files-found: ignore

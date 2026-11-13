@@ -359,6 +359,6 @@ registreerHerversleutelaar('app.mail_imap_koppeling', async (lade, dek) => {
 });
 /** Welke koppelingen staan nog onder de serversleutel (voor de pagina)? */
 export async function mailImapNogServerSleutel(userId: string, ruimte: AiRuimte): Promise<string[]> {
-  const rijen = await sys().query(`SELECT id FROM app.mail_imap_koppeling WHERE user_id = $1 AND ruimte = $2 AND geheim LIKE 'v1.%'`, [userId, ruimte]);
+  const rijen = await sys().query(`SELECT id FROM app.mail_imap_koppeling WHERE user_id = $1 AND ruimte = $2 AND geheim ~ '^v[1-9]\\.'`, [userId, ruimte]); // SEC-002 (geheimen-07): ook v2…v9 (na rotatie) is de serversleutel
   return (rijen.rows as Array<{ id: string }>).map((r) => r.id);
 }

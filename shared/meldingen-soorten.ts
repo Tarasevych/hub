@@ -40,6 +40,13 @@ export const SFEER_PER_SOORT: Readonly<Record<string, MeldingSfeer>> = Object.fr
   access_recovery_revoked: 'prive', access_totp_enrolled: 'prive', access_totp_replaced: 'prive',
   account_email_conflict: 'prive', owner_identity_mismatch: 'prive',
   access_decision: 'prive', workspace_share: 'prive', impersonatie: 'prive', ondersteuning: 'prive', ai_bevestiging: 'prive',
+  // SEC-002 (g10c): geplande brieven geweigerd/geannuleerd — na 0107 toegevoegd; zie NA_0107_VIA_VOORVOEGSEL.
+  mail_queue_refused: 'prive', mail_queue_cancelled: 'prive',
+  // SEC-002 (g03, afwerking A): schrijven in de hmara geweigerd voor «лише перегляд» — na 0107, sfeer volgens het voorvoegsel «cloud».
+  cloud_alleen_lezen: 'prive',
+  // SEC-002 (slot «u»): dezelfde weigering buiten de hmara (voorvoegsel «toegang_» → prive) en de agenda (voorvoegsel «agenda» → prive),
+  // beide na 0107 en dus in NA_0107_VIA_VOORVOEGSEL.
+  toegang_alleen_lezen: 'prive', agenda: 'prive',
   // ------------------------------------------------------------ technisch: de site en de server
   access_request: 'technisch', google_login_config: 'technisch', mcp_app_secret: 'technisch', vault_key_expiring: 'technisch',
   vault_key_expired: 'technisch', 'beveiliging.zekering': 'technisch', 'impersonatie.beheerder': 'technisch',
@@ -99,7 +106,9 @@ export function meldingenVanSfeer<T extends object>(items: readonly T[] | null |
  */
 // 23.10 (integratie): ook de matrix «Браузер і агенти» (zone E: owner.extensie.matrix, .modi) — wie welk browserslot mag gebruiken is
 // beheer van AI-toegang; in de stand stonden ze als «Дія на сайті: extensie matrix» in de bel van de mens (precies de klacht van 22.10).
-export const TECHNISCHE_ACTIE = /^(uitrol[._]|owner\.uitrol\.|goedkeur_|owner\.admin\.|admin[._]|owner\.tech\.|owner\.ruimte\.|owner\.flags\.|owner\.ondersteuning\.|owner\.impersonatie\.|impersonatie\.|secret\.|vault|google-contour|owner\.app\.|owner\.api\.|api-platform|mcp_(console|backup|archive)|owner\.mcp\.(server|deur|duur)|owner\.terminal\.|owner\.ssh-ca\.|owner\.remote\.|diag[._]|owner\.diagnose|owner\.siem|siem[._]|owner\.system\.|owner\.server\.|rook[._]|besluit[._]|owner\.besluit|beheer\.|owner\.rls|owner\.audit|owner\.role\.|owner\.rol\.|owner_role|integration\.|tech[._]|owner\.extensie\.(beheer|matrix)|owner\.security\.emergency)/;
+// SEC-002 (зауваження 4): mcp_console_token_* is een PRIVÉ AI-token van de mens zelf — niet technisch op naam (zijn token in de
+// technische lade blijft technisch via details.ruimte). Postgres-regex (ARE) kent (?!…) ook: deze bron gaat ook naar de SQL-filter.
+export const TECHNISCHE_ACTIE = /^(uitrol[._]|owner\.uitrol\.|goedkeur_|owner\.admin\.|admin[._]|owner\.tech\.|owner\.ruimte\.|owner\.flags\.|owner\.ondersteuning\.|owner\.impersonatie\.|impersonatie\.|secret\.|vault|google-contour|owner\.app\.|owner\.api\.|api-platform|mcp_(console_(?!token_)|backup|archive)|owner\.mcp\.(server|deur|duur)|owner\.terminal\.|owner\.ssh-ca\.|owner\.remote\.|diag[._]|owner\.diagnose|owner\.siem|siem[._]|owner\.system\.|owner\.server\.|rook[._]|besluit[._]|owner\.besluit|beheer\.|owner\.rls|owner\.audit|owner\.role\.|owner\.rol\.|owner_role|integration\.|tech[._]|owner\.extensie\.(beheer|matrix)|owner\.security\.emergency)/;
 /** Ruis/eigen leesacties die nooit een melding zijn (zelfde idee als backend/site-activiteit.ts SKIP); hier alleen voor de sfeer-vraag. */
 export type ActiviteitVoorSfeer = {
   kind?: unknown; type?: unknown; source?: unknown; ruimte?: unknown; sfeer?: unknown;
@@ -146,8 +155,21 @@ export function activiteitenVanSfeer<T extends ActiviteitVoorSfeer>(items: reado
   return (Array.isArray(items) ? items : []).filter((e) => sfeerVanActiviteit(e) === sfeer);
 }
 
+/**
+ * Soorten die NA migratie 0107 in het register kwamen en waarvan de sfeer al volgt uit de voorvoegsels van 0107 (PRIVE_VOORVOEGSEL_BRON /
+ * TECHNISCH_VOORVOEGSEL_BRON, letterlijk ook in app.melding_sfeer). Ze staan niet in de letterlijke lijsten van 0107 (een toegepaste
+ * migratie verandert niet), en een nieuwe migratie is niet nodig: de database geeft via het voorvoegsel dezelfde sfeer. De test
+ * (meldingen-sferen) eist dat de voorvoegselregel voor elk van hen precies de geregistreerde sfeer geeft.
+ */
+export const NA_0107_VIA_VOORVOEGSEL: ReadonlySet<string> = new Set(['mail_queue_refused', 'mail_queue_cancelled', 'cloud_alleen_lezen', 'toegang_alleen_lezen', 'agenda']);
+/** Sfeer volgens alleen de voorvoegsels (de regel van 0107 voor een soort die niet in haar lijsten staat). */
+export const sfeerVolgensVoorvoegsel = (kind: unknown): MeldingSfeer => {
+  const k = String(kind || '').toLowerCase().slice(0, 80);
+  if (TECHNISCH_VOORVOEGSEL.test(k)) return 'technisch';
+  return PRIVE_VOORVOEGSEL.test(k) ? 'prive' : 'technisch';
+};
 /** Soorten per sfeer als gesorteerde lijsten voor migratie 0107 (de test vergelijkt de migratietekst letterlijk met dit register). */
-export const TECHNISCHE_SOORTEN = Object.freeze(Object.keys(SFEER_PER_SOORT).filter((k) => SFEER_PER_SOORT[k] === 'technisch').sort());
-export const PRIVE_SOORTEN = Object.freeze(Object.keys(SFEER_PER_SOORT).filter((k) => SFEER_PER_SOORT[k] === 'prive').sort());
+export const TECHNISCHE_SOORTEN = Object.freeze(Object.keys(SFEER_PER_SOORT).filter((k) => SFEER_PER_SOORT[k] === 'technisch' && !NA_0107_VIA_VOORVOEGSEL.has(k)).sort());
+export const PRIVE_SOORTEN = Object.freeze(Object.keys(SFEER_PER_SOORT).filter((k) => SFEER_PER_SOORT[k] === 'prive' && !NA_0107_VIA_VOORVOEGSEL.has(k)).sort());
 /** De SQL-lijst zoals 0107 haar schrijft: 'a', 'b', … */
 export const sqlLijst = (soorten: readonly string[]) => soorten.map((k) => `'${k.replace(/'/g, "''")}'`).join(', ');

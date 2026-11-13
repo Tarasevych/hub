@@ -43,7 +43,7 @@ export function AccountMenuV3Instellingen({ lang }: { lang: 'uk' | 'nl' }) {
       <div
         role='group'
         aria-label={uk ? 'Режим списку облікових записів' : 'Weergavemodus voor de accountlijst'}
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '8px' }}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))', gap: '8px' }}
       >
         <button
           type='button'
@@ -96,8 +96,8 @@ export function AccountMenuV3Instellingen({ lang }: { lang: 'uk' | 'nl' }) {
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '0.78rem' }}>
-        <span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px', fontSize: '0.78rem' }}>
+        <span style={{ minWidth: 0 }}>
           {uk
             ? `Масштаб вікна меню: ${Math.round(voorkeuren.schaal * 100)}% (змінюється розтягуванням за нижній кутик)`
             : `Vensterschaal: ${Math.round(voorkeuren.schaal * 100)}% (aanpasbaar via de onderste hoek)`}
@@ -108,12 +108,13 @@ export function AccountMenuV3Instellingen({ lang }: { lang: 'uk' | 'nl' }) {
             data-am3-herstel-schaal='1'
             onClick={() => herstelAccountmenuV3Schaal()}
             style={{
-              padding: '4px 10px',
+              minHeight: 'var(--tik-hoogte, 40px)',
+              padding: '6px 12px',
               borderRadius: '8px',
               border: '1px solid var(--canonical-line, #dce2ea)',
               background: 'var(--canonical-panel, #ffffff)',
               color: 'var(--canonical-text, #16202a)',
-              fontSize: '0.74rem',
+              fontSize: '0.76rem',
               fontWeight: 700,
               cursor: 'pointer',
             }}

@@ -17,6 +17,8 @@ const PATH_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_.\-]*(\/[A-Za-z0-9][A-Za-z0-9_.\-]*
 // waardoor de geaccepteerde verzameling exact dezelfde blijft (alleen '=' aan het einde, hooguit twee).
 const BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
 const TEXT_TYPES = /^(text\/|application\/(json|xml|javascript)\b)/i;
+/** SEC-002 (aanv-ronde1-04): bovengrens van storage.read — base64 van meer dan ~400 MiB past niet in één V8-string (± 2^29 tekens). */
+export const LEES_PLAFOND_BYTES = 384 * 1024 * 1024;
 
 /** Strikte padcontrole: relatief, geen '..', geen dubbele of afsluitende '/', binnen de root. */
 export function resolveStoragePath(relative: string): string {
@@ -125,16 +127,30 @@ export const storage = {
    * Met `opties.eigenaar` (de aanroeper weet van wie het bestand moet zijn): bestanden waarvan de bekende
    * eigenaar (kolom owner_id of padconventie) afwijkt, worden geweigerd (content null + log).
    */
-  async read(paths: string[], opties: { eigenaar?: string } = {}): Promise<Array<{ path: string; content: string | null }>> {
+  /*
+   * SEC-002 (aanv-ronde1-04, 12.11.2026): eerst `stat`, dan pas lezen. Een bestand groter dan `opties.maxBytes` (of, zonder die
+   * optie, groter dan LEES_PLAFOND_BYTES — daarboven kan het base64-antwoord in V8 toch nooit bestaan) wordt NIET in het geheugen
+   * gelezen: content null en `teGroot: true`. Vroeger las readFile eerst het hele bestand (tot gigabytes, vNext staat tot 32 GiB
+   * toe) en faalde pas daarna; enkele gelijktijdige verzoeken konden zo het geheugen van de server uitputten. Grote bestanden
+   * lees je in stukken met leesDeel.
+   */
+  async read(paths: string[], opties: { eigenaar?: string; maxBytes?: number } = {}): Promise<Array<{ path: string; content: string | null; teGroot?: true; grootte?: number }>> {
     const list = (paths || []).map(String);
     const valid = list.filter((p) => { try { resolveStoragePath(p); return true; } catch { return false; } });
     const meta = await eigenarenVan(valid);
-    const out: Array<{ path: string; content: string | null }> = [];
+    const grens = Number.isFinite(opties.maxBytes) && Number(opties.maxBytes) >= 0 ? Math.min(Number(opties.maxBytes), LEES_PLAFOND_BYTES) : LEES_PLAFOND_BYTES;
+    const out: Array<{ path: string; content: string | null; teGroot?: true; grootte?: number }> = [];
     for (const p of list) {
       try {
         if (eigenaarWijktAf(p, opties.eigenaar, meta.get(p)?.owner)) {
           console.warn('[storage.read] geweigerd: eigenaar wijkt af');
           out.push({ path: p, content: null });
+          continue;
+        }
+        const grootte = (await stat(resolveStoragePath(p))).size;
+        if (grootte > grens) {
+          console.warn(`[storage.read] niet gelezen: ${grootte} bytes > grens ${grens}`);
+          out.push({ path: p, content: null, teGroot: true, grootte }); // grootte: voor de audit van de aanroeper
           continue;
         }
         const bytes = await readFile(resolveStoragePath(p));
@@ -196,7 +212,86 @@ export const storage = {
   async leesDeel(p: string, offset: number, lengte: number, opties: { eigenaar?: string } = {}): Promise<{ data: Buffer; totaal: number } | null> {
     return storageLeesDeel(p, offset, lengte, opties);
   },
+  // Additief (SEC-002 aanv-ronde1-08): een bestand verplaatsen zonder het in het geheugen te lezen.
+  async verplaats(van: string, naar: string, opties: { ownerId?: string } = {}): Promise<VerplaatsUitkomst> {
+    return storageVerplaats(van, naar, opties);
+  },
 };
+
+/**
+ * Uitkomst van storage.verplaats:
+ *  - 'verplaatst'  : het bestand stond op `van` en staat nu op `naar` (metadata mee);
+ *  - 'al-verplaatst': `van` bestaat niet meer en `naar` wel (een eerdere poging kwam al zo ver) — idempotent;
+ *  - 'ontbreekt'   : noch `van` noch `naar` bestaat.
+ * Elke andere toestand (ongeldig pad, `naar` bestaat al naast `van`, afwijkende eigenaar, schijffout) is een uitzondering.
+ */
+export type VerplaatsUitkomst = 'verplaatst' | 'al-verplaatst' | 'ontbreekt';
+const bestaatBestand = async (full: string): Promise<boolean> => {
+  try { return (await stat(full)).isFile(); } catch (err) { if ((err as NodeJS.ErrnoException)?.code === 'ENOENT') return false; throw err; }
+};
+
+/**
+ * SEC-002 (aanv-ronde1-08): verplaats één opgeslagen bestand binnen UPLOADS_DIR, met zijn rij in app.storage_objects
+ * (pad en eigenaar). Vroeger kon dat alleen via read (heel bestand → base64 in het geheugen, niets boven ~384 MiB) + write +
+ * delete; het overdragen van een technische hmara-lade sloeg grote bestanden daardoor stil over. Hier: rename op dezelfde
+ * schijf (atomisch, geen bytes in het geheugen), over schijven heen (EXDEV) stromend kopiëren naar een tijdelijk bestand
+ * en dan rename. Een bestaand doel wordt NOOIT overschreven. Faalt het bijwerken van de metadata, dan gaat het bestand terug.
+ * Переміщення файла без читання в пам'ять (rename; між дисками — потокове копіювання), разом із рядком метаданих.
+ */
+export async function storageVerplaats(van: string, naar: string, opties: { ownerId?: string } = {}): Promise<VerplaatsUitkomst> {
+  const vanVol = resolveStoragePath(van);
+  const naarVol = resolveStoragePath(naar);
+  if (vanVol === naarVol) throw new Error('STORAGE_MOVE_SAME_PATH');
+  const ownerId = opties.ownerId ? String(opties.ownerId) : null;
+  if (ownerId) {
+    const bekend = await eigenarenVan([naar]);
+    if (eigenaarWijktAf(naar, ownerId, bekend.get(naar)?.owner)) throw new Error('STORAGE_OWNER_MISMATCH');
+  }
+  const vanEr = await bestaatBestand(vanVol);
+  const naarEr = await bestaatBestand(naarVol);
+  if (!vanEr) return naarEr ? 'al-verplaatst' : 'ontbreekt';
+  if (naarEr) throw new Error('STORAGE_MOVE_TARGET_EXISTS');
+  await verplaatsBestand(vanVol, naarVol);
+  try {
+    const pool = getPool();
+    await pool.query('DELETE FROM app.storage_objects WHERE path = $1', [naar]);
+    const r = await pool.query('UPDATE app.storage_objects SET path = $2, owner_id = COALESCE($3, owner_id) WHERE path = $1', [van, naar, ownerId]);
+    if (!r.rowCount) {
+      // Geen metadata-rij (oud bestand): maak er een, met stromende sha256, zodat read/leesDeel het bestand kennen.
+      const { createReadStream } = await import('node:fs');
+      const hash = createHash('sha256');
+      await new Promise<void>((klaar, mis) => { const s = createReadStream(naarVol); s.on('data', (d) => hash.update(d)); s.on('end', () => klaar()); s.on('error', mis); });
+      await saveMeta(naar, 'application/octet-stream', (await stat(naarVol)).size, hash.digest('hex'), 'base64', ownerId);
+    }
+  } catch (err) {
+    // Geen half werk: het bestand terug naar waar de (ongewijzigde) metadata het verwacht — ook over schijven heen
+    // (toets-g11 №2: vroeger een kale rename die bij EXDEV stil faalde). Lukt ook dat niet, dan een eigen fout.
+    try { await verplaatsBestand(naarVol, vanVol); } catch (terugFout) {
+      console.error('[storage.verplaats] terugzetten na metadatafout mislukt:', (terugFout as Error).message);
+      throw new Error('STORAGE_MOVE_ROLLBACK_FAILED');
+    }
+    throw err;
+  }
+  return 'verplaatst';
+}
+
+/** rename; over schijven heen (EXDEV) stromend kopiëren via een tijdelijk bestand, rename, en dan de bron weg. */
+async function verplaatsBestand(van: string, naar: string): Promise<void> {
+  await mkdir(path.dirname(naar), { recursive: true, mode: 0o750 });
+  try {
+    await rename(van, naar);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException)?.code !== 'EXDEV') throw err;
+    const { createReadStream, createWriteStream } = await import('node:fs');
+    const { pipeline } = await import('node:stream/promises');
+    const tmp = path.join(path.dirname(naar), `.tmp-${randomBytes(8).toString('hex')}`);
+    try {
+      await pipeline(createReadStream(van), createWriteStream(tmp, { flags: 'wx', mode: 0o640 }));
+      await rename(tmp, naar);
+    } catch (fout) { await unlink(tmp).catch(() => undefined); throw fout; }
+    await unlink(van);
+  }
+}
 
 // ---------------------------------------------------------------------------------------------- additief (29.10.2026)
 // Twee nieuwe, puur TOEGEVOEGDE functies voor grote bestanden (cloud vNext): schrijven vanaf een pad op schijf (nooit de

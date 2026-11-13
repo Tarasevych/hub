@@ -195,6 +195,11 @@ BEGIN
     IF to_regclass('app.github_spiegel_repos') IS NOT NULL THEN
       GRANT SELECT, INSERT, UPDATE, DELETE ON app.github_spiegel_repos, app.github_spiegel_gebeurtenissen, app.github_bord_koppelingen, app.github_eenklik_manifesten TO mijnruimte_app;
     END IF;
+    -- 0210: gedeelde koppelingen en weergave-/downloadlogboek van Cloud vNext onder RLS per eigenaar en ruimte.
+    IF to_regclass('app.cloud_deel_koppelingen') IS NOT NULL THEN
+      GRANT SELECT, INSERT, UPDATE, DELETE ON app.cloud_deel_koppelingen, app.cloud_deel_gebeurtenissen TO mijnruimte_app;
+      GRANT USAGE, SELECT ON SEQUENCE app.cloud_deel_gebeurtenissen_id_seq TO mijnruimte_app;
+    END IF;
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA app TO mijnruimte_app;
     IF to_regclass('app.rls_instellingen') IS NOT NULL THEN GRANT SELECT ON app.rls_instellingen, app.rls_gedeelde_tabellen TO mijnruimte_app; END IF;
     -- 0033: RLS-groepen: de app leest, schakelen doet alleen root (db-rollen-instellen.sh rls-groep).

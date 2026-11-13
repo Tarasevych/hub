@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "CLOUD-001",
+  "agent": "gemini",
+  "tak": "feature/cloud-001-delen-mappen-20261112-174242",
+  "basisCommit": "2ee0cc3ec1e15c86835dc9f952096a3aef89ab5f",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-12T17:42:43.062Z",
+  "bijgewerkt": "2026-11-12T17:42:43.063Z",
+  "omschrijving": "Завантаження тек, архівів і будь-яких файлів у хмару, спільний доступ до папок, файлів і точних частин файла та керування посиланнями зі статистикою",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

@@ -3,6 +3,7 @@
 // De routes voor toestemming en beheer vragen een sessie (service mcp) en het recht 'api-platform'.
 import { GEEN_RECHT, heeftApiRecht, weigerCode } from './api-recht';
 import * as c from './mcp-connector';
+import { bindingKlopt } from './mcp-oauth-binding';
 import { approveToolCall, describeTools, KNOWN_TOOL_NAMES, rejectToolCall, RISKY_TOOLS } from './connectors-hulpmiddelen';
 import * as agentStore from './connectors-opslag';
 import { DeurFout, deurBesluit, deurIntrekken, deurVerbindingen, deurVerzoek, internSleutel, isDeurRid, vanDeur } from './mcp-deur-brug';
@@ -14,14 +15,16 @@ import { bordOnderwerp, geefStandaard, isPriveOudeGrant, leesBeheerUit, leesToeg
 import { meldLijstGewijzigd } from './connector-v2-stroom';
 import { agentTokenVanGebruiker, issuePriveToken } from './mcp-console';
 import { sessieGeverifieerd } from '../server/platform/context';
+import { meldBeveiligingsWijzigingBeperkt } from './beveiliging-meldingen';
 import * as v2 from './connector-v2';
 import { v2Routes } from './connector-v2-routes';
 import { sterkeMethoden, sterkeStapOpFout } from './toegang-context';
 import { leesInstellingen } from './connector-v2-opslag';
-import { aiVerbindingRuimte, technischeRuimte } from './ai-ruimte-poort';
+import { aiPoortNu, aiVerbindingRuimte, technischeRuimte } from './ai-ruimte-poort';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 import { isEigenaar } from './tech-profiel';
 import { leesStand } from './ai-beleid';
+import { bulkAltijdToegestaan } from '../shared/mcp-hulpmiddel-gevaar'; // SEC-002 interface-03
 import { leesGebruikerCaps, leesStaat, zetGebruikerCap, zetStaat } from './ai-site-schakelaars';
 import {
   BORD_AGENTEN, MCP_URL, PRIVE_CAPS, SITE_REGEL, SITE_UMOVY, agentAan, connectGeweigerd, isBordKlant, isPriveCap, isSiteSleutel, methodeAan, tabsVoor,
@@ -115,7 +118,7 @@ export function createMcpConnectorRoutes(deps: Deps) {
     // ---- publiek (zie PUBLIEKE_ROUTES): Claude praat hier rechtstreeks mee, zonder sessie ----
     'GET /api/mcp-connector/prm': [async () => c.protectedResourceMetadata()],
     'GET /api/mcp-connector/asm': [async () => c.authorizationServerMetadata()],
-    'POST /api/mcp-connector/register': [async (ctx: any) => c.registerClient(String(ctx.event.body || ''))],
+    'POST /api/mcp-connector/register': [async (ctx: any) => c.registerClient(String(ctx.event.body || ''), String(ctx.event?.requestContext?.http?.sourceIp || ''))],
     'GET /api/mcp-connector/authorize': [async (ctx: any) => c.authorize(ctx.query)],
     'POST /api/mcp-connector/token': [async (ctx: any) => c.token(String(ctx.event.body || ''))],
     'POST /api/mcp-connector/revoke': [async (ctx: any) => c.revoke(String(ctx.event.body || ''))],
@@ -140,10 +143,19 @@ export function createMcpConnectorRoutes(deps: Deps) {
         try {
           const v = await deurVerzoek(rid);
           if (!v) return deps.fail('CONSENT_EXPIRED', 404);
+          // SEC-002 (ai-mcp-14, toets g10e-toets-5): ook de deur alleen vanuit de browser die de autorisatie begon.
+          if (!bindingKlopt(rid, v.bindingHash, header(ctx.event, 'cookie'))) { await deps.audit(auth.user.id, 'owner.mcp.deur.binding', 'denied', { reden: 'andere-browser' }).catch(() => undefined); await meldBeveiligingsWijzigingBeperkt(auth.user.id, 'consent-andere-browser').catch(() => undefined); return deps.fail('CONSENT_ANDERE_BROWSER', 409); }
           const klant = klantVan(v.clientName);
           // De serverdeur is technisch: het venster toont dat, en «Дозволити» werkt alleen vanuit de technische ruimte (zie consent).
-          return deps.respond({ ...v, soort: 'deur', ruimte: 'technisch', klant, loopback: v.redirectSoort === 'loopback', duur: (await leesDuren(auth.user.id))[klant], handmatigUrl: `${c.BASE}/oauth/authorize?verzoek=${encodeURIComponent(rid)}` });
+          return deps.respond({ ...v, bindingHash: undefined, soort: 'deur', ruimte: 'technisch', klant, loopback: v.redirectSoort === 'loopback', duur: (await leesDuren(auth.user.id))[klant], handmatigUrl: `${c.BASE}/oauth/authorize?verzoek=${encodeURIComponent(rid)}` });
         } catch (err) { return deurFout(err); }
+      }
+      // SEC-002 (ai-mcp-14): alleen de browser die de autorisatie begon (bindingscookie van /oauth2/authorize).
+      if (!(await c.consentBindingKlopt(rid, header(ctx.event, 'cookie')))) {
+        // SEC-002 (slot s, eind-interface 4): ook het OPENEN in een andere browser laat een spoor na (journaal + melding, één per uur).
+        await deps.audit(auth.user.id, 'owner.mcp.grant.binding', 'denied', { reden: 'andere-browser', stap: 'openen' }).catch(() => undefined);
+        await meldBeveiligingsWijzigingBeperkt(auth.user.id, 'consent-andere-browser').catch(() => undefined);
+        return deps.fail('CONSENT_ANDERE_BROWSER', 409);
       }
       const info = await c.consentInfo(rid, auth.user.id);
       if (!info) return deps.fail('CONSENT_EXPIRED', 404);
@@ -174,6 +186,12 @@ export function createMcpConnectorRoutes(deps: Deps) {
       // daarom geen actief technisch profiel meer — wie technische hulpmiddelen aanvinkt, geeft ze «voor zolang mijn technische profiel
       // actief is», en de server kijkt bij elke tools/list en tools/call opnieuw (backend/ai-ruimte-poort.ts → effectieveRuimte,
       // backend/connector-v2.ts). De EIGENAARSEIS blijft wél staan op dit moment: niemand anders kan _beheer-rechten geven.
+      // SEC-002 (ai-mcp-14): ook toestemming en weigering alleen vanuit de browser die de autorisatie begon.
+      if (!isDeurRid(rid) && !(await c.consentBindingKlopt(rid, header(ctx.event, 'cookie')))) {
+        await deps.audit(auth.user.id, 'owner.mcp.grant.binding', 'denied', { reden: 'andere-browser', stap: 'besluit' }).catch(() => undefined);
+        await meldBeveiligingsWijzigingBeperkt(auth.user.id, 'consent-andere-browser').catch(() => undefined);
+        return deps.fail('CONSENT_ANDERE_BROWSER', 409);
+      }
       const v2Info = !isDeurRid(rid) ? await c.consentInfo(rid) : null;
       const v2Keuze = v2Info?.agent && approve ? v2.keuzeUitVenster(body) : null;
       const poort = approve
@@ -204,6 +222,8 @@ export function createMcpConnectorRoutes(deps: Deps) {
         try {
           const v = await deurVerzoek(rid);
           if (!v) return deps.fail('CONSENT_EXPIRED', 404);
+          // SEC-002 (ai-mcp-14, toets g10e-toets-5): ook de deur alleen vanuit de browser die de autorisatie begon.
+          if (!bindingKlopt(rid, v.bindingHash, header(ctx.event, 'cookie'))) { await deps.audit(auth.user.id, 'owner.mcp.deur.binding', 'denied', { reden: 'andere-browser' }).catch(() => undefined); await meldBeveiligingsWijzigingBeperkt(auth.user.id, 'consent-andere-browser').catch(() => undefined); return deps.fail('CONSENT_ANDERE_BROWSER', 409); }
           const duur = gekozen ?? (await leesDuren(auth.user.id))[klantVan(v.clientName)];
           const out = await deurBesluit(rid, approve, duur, { id: auth.user.id, email: auth.user.email });
           if (!out) return deps.fail('CONSENT_EXPIRED', 404);
@@ -273,6 +293,12 @@ export function createMcpConnectorRoutes(deps: Deps) {
       sessieGeverifieerd();
       const tok = await c.agentToken(String(deps.body(ctx.body).token ?? ''));
       if (!tok || tok.role !== 'owner') return deps.respond({ ok: false });
+      // SEC-002 (ai-mcp-07): de deur is TECHNISCH (serverbrede hulpmiddelen). Een privétoken (dashboard-token is altijd 'prive') gaat
+      // er nooit door, en een technisch token alleen zolang het technische profiel en de dienst «ai» nu leven (aiPoortNu).
+      if (ruimteOf(tok.ruimte) !== 'technisch' || (await aiPoortNu(tok.user_id).catch(() => ({ ruimte: 'prive' as const }))).ruimte !== 'technisch') {
+        await deps.audit(tok.user_id, 'owner.mcp.deur.token', 'denied', { reden: ruimteOf(tok.ruimte) !== 'technisch' ? 'prive-token' : 'technisch-profiel-uit', token: String(tok.id).slice(0, 60) }).catch(() => undefined);
+        return deps.respond({ ok: false });
+      }
       return deps.respond({ ok: true, id: tok.id, naam: tok.name });
     }],
 
@@ -323,7 +349,9 @@ export function createMcpConnectorRoutes(deps: Deps) {
         if (group && t.group !== group) continue;
         // Een bulkactie "Altijd"/"Vragen" laat riskante hulpmiddelen ongemoeid: die zet de gebruiker bewust één voor één.
         // Uitzondering: «Питати щоразу» voor één groep met inclusiefRiskant (bv. «Додатки» aanzetten): elke aanroep wacht dan nog op een klik.
-        if (t.risky && body.mode === 'always') continue;
+        // SEC-002 (interface-03): «Altijd» in bulk alleen voor hulpmiddelen die lezen of navigeren — niet meer ook voor alles wat
+        // schrijft, verwijdert of namens de mens handelt (mail naar prullenbak, GitHub-issues, afspraken …): die één voor één.
+        if (body.mode === 'always' && !bulkAltijdToegestaan(t)) continue;
         if (t.risky && body.mode === 'ask' && !(group && body.inclusiefRiskant === true)) continue;
         changes[t.name] = body.mode === 'default' ? null : (body.mode as 'always' | 'ask' | 'off');
       }
@@ -342,6 +370,7 @@ export function createMcpConnectorRoutes(deps: Deps) {
         calls: rows.map((r: any) => ({
           id: r.id, tool: r.tool, args: r.args, status: r.status, createdAt: new Date(r.created_at).getTime(),
           preview: r.result?.content?.[0]?.text ? String(r.result.content[0].text).slice(0, 400) : '',
+          aanvrager: agentStore.aanvragerVoorScherm(r), // SEC-002 interface-02: WIE vroeg dit (geen vaste «Claude» meer op het scherm)
         })),
       });
     }],
@@ -494,6 +523,9 @@ export function createMcpConnectorRoutes(deps: Deps) {
       if (scopes.filter((s) => toegangScope(s)?.gevoelig && !oud.includes(s)).length && body.bevestigd !== true) {
         return deps.fail('TOEGANG_BEVESTIGING_VEREIST', 409);
       }
+      // SEC-002 (g10a-2 п.2, afwerking A): rechten van een AI UITBREIDEN (een scope die er nog niet was) vraagt een bevestiging van de
+      // mens (step-up); intrekken niet. Розширення прав ШІ — лише з підтвердженням входу людини.
+      if (scopes.some((s) => !oud.includes(s))) { const su = await stepUp(ctx, auth); if (su) return su; }
       const bewaard = await zetToegang(auth.user.id, onderwerp, scopes);
       const ruweId = String(body.id ?? '');
       if (body.soort === 'oauth' && ruweId.startsWith('bord:')) {

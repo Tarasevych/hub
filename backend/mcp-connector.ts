@@ -11,10 +11,12 @@ import { grantOpenen, grantRoteren, grantSluiten, grantVerzegelen } from './sleu
 import { getPool } from '../server/platform/pg';
 import { sessieGeverifieerd, zetGebruiker } from '../server/platform/context';
 import { isDuurId, klantVan, redirectPast, redirectSoort, SITE_TERUG_PAD, type DuurId } from '../shared/ai-verbinding';
-import { connectGeweigerd, toolGeweigerd, type WeigerCode } from '../shared/ai-agent-bord';
+import { connectGeweigerd, toolGeweigerd, verbindingGeweigerd, type WeigerCode } from '../shared/ai-agent-bord';
 import { leesGebruikerCaps, leesStaat } from './ai-site-schakelaars';
 import { extraRedirects, leesDuren } from './ai-verbinding-instellingen';
 import { rateLimit, type RouterResponse } from '../server/platform';
+import { limietSleutel } from '../shared/ip-limiet';
+import { bindingKlopt, nieuweBinding } from './mcp-oauth-binding';
 import { auditToevoegen } from '../server/platform/audit';
 import { actieDoel, actieSoort, foutCodeUit } from '../shared/mcp-acties';
 import { metNamens } from './mcp-namens';
@@ -22,7 +24,7 @@ import { uitrolWeigering } from './ai-beleid';
 import { randomToken, sha256 } from './connectors-crypto';
 import { geefVoorNieuweKoppeling } from './ai-toegang';
 import { meldLijstGewijzigd, sluitStromenVan } from './connector-v2-stroom';
-import { callTool, listTools, resolveAlias, taalVanGebruiker, vertaal, type ToolDef } from './connectors-hulpmiddelen';
+import { callTool, listTools, resolveAlias, taalVanGebruiker, V2_ALLEEN, vertaal, type ToolDef } from './connectors-hulpmiddelen';
 import type { ToolTaal } from '../shared/hulpmiddel-teksten';
 import { SERVICE_HOSTS } from './deployment-identiteit';
 import * as st from './mcp-connector-opslag';
@@ -34,6 +36,7 @@ import { aiDienstStand, aiPoortNu } from './ai-ruimte-poort';
 import { listAgents } from './connectors-opslag';
 import { redirectPastBijAgent, slugUitResource, V2_AGENTEN, type AgentSlug } from '../shared/connector-v2/agenten';
 import { naUitgifte, type V2Keuze } from './connector-v2-opslag';
+import { pakketToegestaan, pakketUitvoeren } from './mcp-pakket'; // SEC-002 (ai-mcp-08)
 
 export const BASE = `https://${SERVICE_HOSTS.mcp}`;
 export const RESOURCE = `${BASE}/mcp`;
@@ -106,7 +109,7 @@ export const authorizationServerMetadata = () => respond(200, {
 
 // ---------------- dynamische clientregistratie (RFC 7591) ----------------
 
-export async function registerClient(rawBody: string): Promise<RouterResponse> {
+export async function registerClient(rawBody: string, ip = ''): Promise<RouterResponse> {
   let body: any;
   try { body = JSON.parse(rawBody || '{}'); } catch { return respond(400, { error: 'invalid_client_metadata', error_description: 'JSON verwacht' }); }
   const uris: unknown = body?.redirect_uris;
@@ -124,6 +127,11 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
   };
   const eersteEigenaar = (uris as string[]).map(eigenaarVanUri).find(Boolean);
   const opgegevenNaam = typeof body?.client_name === 'string' && body.client_name.trim() ? body.client_name.trim() : '';
+  // SEC-002 (g10a-4, afwerking A): gereserveerde namen — «site:…» (zo heet de site zelf als aanvrager), «?» (onbekende klant) en
+  // namen die zich als de site of de gebruiker voordoen — al bij de registratie weigeren (aanvragerNu neutraliseert ze ook nog).
+  if (opgegevenNaam && /^(?:\s*site\s*:|\?+$|(?:ви|you|u|jij)\s*\(\s*(?:з сайту|сайт|site|van de site)\s*\))/iu.test(opgegevenNaam.normalize('NFKC'))) {
+    return respond(400, { error: 'invalid_client_metadata', error_description: 'client_name is gereserveerd' });
+  }
   const name = (opgegevenNaam || eersteEigenaar?.naam || 'Claude').slice(0, 80);
   // SEC-001-10: als een redirect_uri bij een specifieke AI-aanbieder hoort (bv. grok.com of cursor://), mag client_name geen andere aanbieder claimen.
   const beweerdeKlant = opgegevenNaam ? klantVan(name) : 'overig';
@@ -136,8 +144,14 @@ export async function registerClient(rawBody: string): Promise<RouterResponse> {
     }
   }
 
+  // SEC-002 (ai-mcp-10): naast 20/min ook een plafond per IP (/64) per etmaal, en bij een vol plafond verdringen we de oudste
+  // registraties zonder verbinding en zonder lopend verzoek (st.purgeStale({ vol: true })) in plaats van iedereen 503 te geven.
+  if (ip) {
+    const dag = await rateLimit(`mcp-register-dag:${limietSleutel(ip)}`, st.LIMITS.maxRegistratiesPerIpPerDag, 86400, { failClosed: true });
+    if (!dag.ok) return respond(429, { error: 'temporarily_unavailable', error_description: 'Te veel registraties vanaf dit adres' }, { 'Retry-After': String(dag.retryAfter) });
+  }
   if ((await st.countClients()) >= st.LIMITS.maxClients) {
-    await st.purgeStale();
+    await st.purgeStale({ vol: true });
     if ((await st.countClients()) >= st.LIMITS.maxClients) return respond(503, { error: 'temporarily_unavailable' });
   }
   const clientId = `mcpc_${randomToken(18)}`;
@@ -172,9 +186,11 @@ export async function authorize(query: Record<string, string>): Promise<RouterRe
   }
 
   const id = randomToken(24);
+  // SEC-002 (ai-mcp-14): het verzoek hoort bij DEZE browser (cookie; backend/mcp-oauth-binding.ts). Zie consentBindingKlopt.
+  const binding = nieuweBinding(id);
   await st.insertAuthRequest({
     id, clientId: client.client_id, redirectUri, codeChallenge: query.code_challenge,
-    state: query.state ? query.state.slice(0, 512) : null, scope: SCOPE, resource: query.resource || null, agent,
+    state: query.state ? query.state.slice(0, 512) : null, scope: SCOPE, resource: query.resource || null, agent, bindingHash: binding.hash,
   });
   if (Math.random() < 0.05) st.purgeStale().catch(() => undefined);
   // De toestemming gebeurt in de site (bestaande aanmelding): één adres, de hub «Підключення ШІ» op mcp.*/agents.
@@ -182,10 +198,20 @@ export async function authorize(query: Record<string, string>): Promise<RouterRe
   // pagina meer (het is de tab «Технічне»); daardoor liep het toestemmingsvenster rond. Het venster zelf kent de technische
   // ruimte nu uit de LEVENDE staat van het technische profiel (src/McpToestemmingVenster.tsx), en de consent-route controleert ze
   // opnieuw op de server (eigenaar + actieve activering). Een hint in de query van de AI-klant is daar niet meer voor nodig.
-  return redirect(`${BASE}/agents?consent=${encodeURIComponent(id)}`);
+  const naar = redirect(`${BASE}/agents?consent=${encodeURIComponent(id)}`);
+  return { ...naar, headers: { ...naar.headers, 'Set-Cookie': binding.setCookie } };
 }
 
 // ---------------- toestemming (door de ingelogde gebruiker, via de UI) ----------------
+
+/**
+ * SEC-002 (ai-mcp-14): komt «Дозволити» uit de browser die de autorisatie begon? Onbekend/verlopen verzoek → true (de gewone
+ * routes geven daar zelf CONSENT_EXPIRED); verzoek zonder binding (van vóór migratie 0262) → true.
+ */
+export async function consentBindingKlopt(rid: string, cookieKop: unknown): Promise<boolean> {
+  const a = await st.getPendingAuth(rid);
+  return !a || bindingKlopt(rid, a.binding_hash ?? null, cookieKop);
+}
 
 export async function consentInfo(rid: string, userId?: string) {
   const a = await st.getPendingAuth(rid);
@@ -193,7 +219,8 @@ export async function consentInfo(rid: string, userId?: string) {
   const u = parseUrl(a.redirect_uri);
   const klant = klantVan(a.client_name);
   return {
-    clientName: a.client_name ?? 'Claude', redirectHost: u ? (u.host || u.protocol) : '', loopback: !!u && isLoopback(u),
+    // SEC-002 (ai-mcp-14): ook het VOLLEDIGE terugkeeradres, zodat het venster meer kan tonen dan alleen de host.
+    clientName: a.client_name ?? 'Claude', redirectHost: u ? (u.host || u.protocol) : '', redirectAdres: String(a.redirect_uri || '').slice(0, 300), loopback: !!u && isLoopback(u),
     redirectSoort: redirectSoort(a.redirect_uri, [`${BASE}${SITE_TERUG_PAD}`, ...extraRedirects()]),
     scope: a.scope, expiresAt: new Date(a.expires_at).getTime(), soort: 'connector' as const, klant, agent: (a.agent ?? null) as AgentSlug | null,
     duur: userId ? (await leesDuren(userId))[klant] : '1u',
@@ -392,13 +419,23 @@ export type Wie = {
   lade?: AiRuimte;
 };
 const grantVan = (who: Wie) => who.grantId ?? who.tokenId;
-const namensVan = (who: Wie) => ({ client: who.clientName, grantId: grantVan(who), ruimte: who.ruimte, lade: who.lade ?? who.ruimte, ...(who.agent ? { agent: who.agent } : {}) });
+/**
+ * SEC-002 (ai-mcp-05): de sitebrede schakelaars «agent uit» / «manier uit» gelden ook voor een BESTAANDE privéverbinding, bij elke
+ * tools/list en tools/call (shared/ai-agent-bord.ts → verbindingGeweigerd). Manier: agenttoken tvh_ = 'token', OAuth-grant = 'mcp'.
+ */
+const verbindingStop = (staat: Awaited<ReturnType<typeof leesStaat>>, who: Wie) => verbindingGeweigerd(staat, {
+  ruimte: who.ruimte, klant: klantVan(who.clientName), methode: who.agentTokenId ? 'token' : 'mcp',
+  agentKlant: who.agent ? V2_AGENTEN.find((a) => a.slug === who.agent)?.klant ?? null : null,
+});
+const namensVan = (who: Wie, viaV2 = false) => ({ client: who.clientName, grantId: grantVan(who), ruimte: who.ruimte, lade: who.lade ?? who.ruimte, ...(who.agent ? { agent: who.agent } : {}), ...(viaV2 ? { v2: true } : {}) });
 /** Connector v2: de naam die de AI gebruikte (…_grok_mail_gmail_tarasevych_com_gebruiker) en de agent, naast de interne naam. */
 export type V2Context = { naam: string; agent: AgentSlug };
 export const werkDetails = (who: Wie, name: string, args: Record<string, unknown>, v2?: V2Context) => {
   const doel = actieDoel(name, args);
   const grantId = grantVan(who);
-  return { tool: name.slice(0, 80), client: String(who.clientName || '').slice(0, 80), ...(grantId ? { grantId: String(grantId) } : {}), ruimte: who.ruimte, soort: actieSoort(name), ...(doel ? { doel } : {}), ...(v2 ? { v2: v2.naam.slice(0, 80), agent: v2.agent } : {}) };
+  // SEC-002 (ai-mcp-01): bij een devtools-alias (list_pages, click …) ook de INTERNE naam in het journaal — de alias mag de echte daad niet verbergen.
+  const intern = resolveAlias(name, args).name;
+  return { tool: name.slice(0, 80), ...(typeof intern === 'string' && intern !== name ? { intern: intern.slice(0, 80) } : {}), client: String(who.clientName || '').slice(0, 80), ...(grantId ? { grantId: String(grantId) } : {}), ruimte: who.ruimte, soort: actieSoort(name), ...(doel ? { doel } : {}), ...(v2 ? { v2: v2.naam.slice(0, 80), agent: v2.agent } : {}) };
 };
 
 /** Onderwerpen voor de grant "updates voorbereiden": eerst deze MCP-koppeling, dan het account. */
@@ -458,10 +495,13 @@ export async function lijstTools(who: Wie, opts: { aliassen?: boolean; taal?: To
   // `aliassen: false` = de interne browser_*-namen houden (connector v2 zoekt daarop; het oude /mcp wil de devtools-namen).
   let listed = (await metNamens(namensVan(who), () => listTools(who.userId, { alwaysMachine: true, taal, ...(opts.aliassen === false ? { aliassen: false } : {}), ...(opts.v2 ? { v2: true } : {}) }))).filter((t) => toolInRuimte(t.name, who.ruimte));
   if (who.ruimte === 'prive') {
-    const staat = await leesStaat();
+    // SEC-002 (ai-mcp-13): onleesbare stand = geen hulpmiddelen tonen (niet «alles aan»).
+    const caps = await Promise.all([leesStaat(), leesGebruikerCaps(who.userId)]).catch(() => null);
+    if (!caps) { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tools.list', result: 'denied', details: { reden: 'CAP_ONBEKEND', klant: who.clientName } }).catch(() => undefined); return []; } // g10c-toets-3
+    const [staat, alleCaps] = caps;
     const klant = klantVan(who.clientName);
-    const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
-    listed = listed.filter((t) => !toolGeweigerd(staat, { ruimte: 'prive', tool: t.name, klant, gebruiker }));
+    const gebruiker = klant === 'overig' ? undefined : alleCaps[klant];
+    listed = verbindingStop(staat, who) ? [] : listed.filter((t) => !toolGeweigerd(staat, { ruimte: 'prive', tool: t.name, klant, gebruiker }));
   }
   // Extensie 0.6: browserhulpmiddelen volgen de ruimte van het apparaat (shared/ai-ruimte.ts). Een technische verbinding ziet ze alleen
   // als dit account een browser in het TECHNISCHE slot gekoppeld heeft; de agentkeuze (connectors-tools apparatenInRuimte) kiest nooit kruislings.
@@ -508,16 +548,26 @@ export async function roepTool(who: Wie, name: string, args: Record<string, unkn
   }
   // Buiten de eigen ruimte: nooit uitvoeren, wel in het journaal (de AI probeerde iets wat de mens niet voor haar bedoelde).
   // Goedkeurpogingen vallen eronder: die krijgen hun eigen, eerlijke weigering hieronder (ALLEEN_EIGENAAR_MET_PASSKEY).
-  if (!toolInRuimte(name, who.ruimte) && !isGoedkeurPoging(name)) {
+  // SEC-002 (ai-mcp-01): de poorten hieronder beoordelen de ruwe naam ÉN het interne hulpmiddel waar een devtools-alias naar wijst
+  // (list_pages → browser_list_tabs); de strengste wint. Zo kan een alias nooit iets bereiken wat de directe naam niet mag.
+  const intern = resolveAlias(name, args).name;
+  if ((!toolInRuimte(name, who.ruimte) || !toolInRuimte(intern, who.ruimte)) && !isGoedkeurPoging(name)) {
     const uit = { content: [{ type: 'text' as const, text: RUIMTE_GESCHEIDEN(who.ruimte, name.slice(0, 80)) }], isError: true };
     try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args, v2), reden: 'ruimte' } }); } catch { /* audit mag niet breken */ }
     return uit;
   }
   if (who.ruimte === 'prive') {
-    const staat = await leesStaat();
+    // SEC-002 (ai-mcp-13): onleesbare stand (anders dan «tabel ontbreekt») = weigeren, niet «alles aan».
+    const caps = await Promise.all([leesStaat(), leesGebruikerCaps(who.userId)]).catch(() => null);
+    if (!caps) {
+      // g10c-toets-3: ook deze weigering in de auditlog, zoals de andere weigeringen hierboven en hieronder.
+      try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args, v2), reden: 'CAP_ONBEKEND' } }); } catch { /* audit mag niet breken */ }
+      return { content: [{ type: 'text' as const, text: `SITE_CAP: CAP_ONBEKEND. The availability switches for "${name.slice(0, 80)}" could not be read right now, so the call is refused. Try again later.` }], isError: true };
+    }
+    const [staat, alleCaps] = caps;
     const klant = klantVan(who.clientName);
-    const gebruiker = klant === 'overig' ? undefined : (await leesGebruikerCaps(who.userId))[klant];
-    const w = toolGeweigerd(staat, { ruimte: 'prive', tool: name, klant, gebruiker });
+    const gebruiker = klant === 'overig' ? undefined : alleCaps[klant];
+    const w = verbindingStop(staat, who) ?? toolGeweigerd(staat, { ruimte: 'prive', tool: name, klant, gebruiker }) ?? (intern !== name ? toolGeweigerd(staat, { ruimte: 'prive', tool: intern, klant, gebruiker }) : null);
     if (w) {
       const tekst = `SITE_CAP: ${w.code}. This private connection cannot use "${name.slice(0, 80)}". An administrator switch or this user's own setting blocks it. Do not try another way.`;
       try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args, v2), reden: w.code } }); } catch { /* audit mag niet breken */ }
@@ -530,7 +580,8 @@ export async function roepTool(who: Wie, name: string, args: Record<string, unkn
   // 21.10.2026 (shared/dev-media-github.ts): zeven hulpmiddelen (PR, CI-logboeken, eigen domein, beeld, schema, ontwerpcontext, Stripe)
   // bestaan ALLEEN via connector v2 — het recht staat per hulpmiddel in connector_v2_rechten. Het oude /mcp weigert de interne naam.
   // Zone E: browser_script (ook onder de devtools-naam evaluate_script) bestaat eveneens alleen via connector v2.
-  if ((isDevMgTool(name) || resolveAlias(name, {}).name === 'browser_script') && !v2) {
+  // SEC-002 (ai-mcp-01): de hele lijst V2_ALLEEN (ook ecosysteem- en GitHub-werkruimtehulpmiddelen), op de interne naam.
+  if ((isDevMgTool(name) || V2_ALLEEN.has(name) || V2_ALLEEN.has(intern)) && !v2) {
     const uit: ToolUit = { content: [{ type: 'text', text: DEV_MG_ALLEEN_V2(name.slice(0, 80)) }], isError: true };
     try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: 'denied', details: { ...werkDetails(who, name, args, v2), reden: 'alleen-v2' } }); } catch { /* audit mag niet breken */ }
     return uit;
@@ -552,7 +603,7 @@ export async function roepTool(who: Wie, name: string, args: Record<string, unkn
     try { await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: uit.isError ? 'failure' : 'success', details: { ...werkDetails(who, name, args, v2), ...foutDetail(uit) } }); } catch { /* audit mag niet breken */ }
     return uit;
   }
-  const result = await metNamens(namensVan(who), () => callTool(who.userId, name, args));
+  const result = await metNamens(namensVan(who, !!v2), () => callTool(who.userId, name, args));
   try {
     await auditToevoegen({ ownerId: who.userId, actorId: who.userId, action: 'owner.mcp.tool', result: result.isError ? 'failure' : 'success', details: { ...werkDetails(who, name, args, v2), ...foutDetail(result as ToolUit) } });
   } catch { /* auditfout mag het hulpmiddel niet breken */ }
@@ -616,7 +667,10 @@ export async function rpcPost(authorization: string | undefined, rawBody: string
   try { parsed = JSON.parse(rawBody); } catch { return respond(400, rpcError(null, -32700, 'Parse error')); }
 
   if (Array.isArray(parsed)) { // JSON-RPC batch (specificatie 2025-03-26)
-    const out = (await Promise.all(parsed.map((m) => handleMessage(who, m)))).filter((r) => r !== null);
+    // SEC-002 (ai-mcp-08): pakket begrensd, elk bericht telt in de limiet, kleine parallelliteit (zie backend/mcp-pakket.ts).
+    const besluit = await pakketToegestaan(`mcp-rpc:${who.limietSleutel}`, parsed.length, RPC_PER_MINUTE);
+    if (!besluit.ok) return respond(besluit.status, rpcError(null, besluit.code, besluit.bericht), besluit.retryAfter ? { 'Retry-After': String(besluit.retryAfter) } : undefined);
+    const out = (await pakketUitvoeren(parsed, (m) => handleMessage(who, m))).filter((r) => r !== null);
     return out.length ? respond(200, out) : respond(202, undefined);
   }
   const out = await handleMessage(who, parsed);

@@ -20,7 +20,7 @@ on:
       - 'index.html'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: apparaat-001-uitgave
@@ -38,8 +38,6 @@ jobs:
   controle-en-uitgave:
     runs-on: ubuntu-latest
     timeout-minutes: 50
-    env:
-      GH_TOKEN: ${{ github.token }}
     services:
       postgres:
         image: postgres:16
@@ -53,11 +51,12 @@ jobs:
           --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - name: Bronbestanden ophalen
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Node voorbereiden
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -89,13 +88,14 @@ jobs:
           fi
       - name: Правила і джерела
         run: |
+          set -o pipefail
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
-          node scripts/eenheidstests.mjs apparaat-bevestiging-20261109.test.ts
-          node scripts/eenheidstests.mjs telegram-aanmelden-20261109.test.ts
-          node scripts/eenheidstests.mjs aanmeld-plaatsing-20261109.test.ts
-          node scripts/eenheidstests.mjs bevestig-toegang-opmaak-20261025.test.ts
-          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
+          node scripts/eenheidstests.mjs apparaat-bevestiging-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs telegram-aanmelden-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs aanmeld-plaatsing-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs bevestig-toegang-opmaak-20261025.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           node scripts/kleur-contrast-controle.mjs
           node scripts/hulp-vraagtekens-controle.mjs
           node scripts/plaatsing-controle.mjs
@@ -115,7 +115,7 @@ jobs:
           # Повторний прогін нічого не змінює (ON CONFLICT / IF NOT EXISTS). Tweede keer: niets te doen.
           node dist-server/migrate.mjs | tail -1
           # Увесь перебіг «Це ви?» і символьна кнопка Telegram проти справжньої бази (44 перевірки).
-          node scripts/eenheidstests.mjs apparaat-bevestiging-stroom-20261109.test.ts
+          node scripts/eenheidstests.mjs apparaat-bevestiging-stroom-20261109.test.ts 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
       - name: Підтвердити незмінність файлів
         run: |
           git diff --exit-code
@@ -128,18 +128,19 @@ jobs:
           VERSIE="$(date -u +%Y%m%d-%H%M%S)"
           echo "versie=$VERSIE" >> "$GITHUB_OUTPUT"
           echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
-          if gh release view "$VERSIE" >/dev/null 2>&1; then
-            echo 'Версія вже існує.' >&2
-            exit 1
-          fi
           node --input-type=module <<'JS'
-          import {writeFileSync} from 'node:fs';
+          import { readFileSync, writeFileSync } from 'node:fs';
           const e=process.env;
           const uk={"titel":"Підтвердження з іншого пристрою: ті самі символи на обох екранах, одна спроба, «Це не я» перемагає","samenvatting":"Коли на пристрої немає ключа доступу, вікно «Підтвердіть доступ» пропонує «Інший пристрій» і «У Telegram». На іншому увійденому пристрої вискакує плаваюче вікно «Це ви?» з тими самими трьома символами (піктограми з назвою, цифри або літери); на запитувачі один виділено. Натискання виділеного символу й підтвердження ключем доступу там — і дія тут продовжується сама. Одна спроба, відлік, «Це не я» завжди перемагає. Налаштування користувача й адміністратора; та сама таблиця підтверджень, що й у Telegram.","wijzigingen":["Вкладки «Інший пристрій» і «У Telegram» у вікні «Підтвердіть доступ» (без ключа на цьому пристрої: код автентифікатора → інший пристрій → Telegram → кодове слово → Google).","Плаваюче вікно «Це ви?» на кожному іншому увійденому пристрої: дія, пристрій, регіон, час, ті самі символи, відлік, «Це не я», «Пізніше»; пересувається, змінює розмір, згортається в док, на телефоні — знизу.","Символи: 24 піктограми з назвою (у Telegram — емодзі з тією самою назвою), цифри 2–9, латинські літери без кириличних двійників або щоразу інший вид; 3–5 на вибір адміністратора.","Четвертий метод «інший пристрій» у таблиці підтверджень і дія «підтвердження доступу без ключа» з мінімумом «Telegram або інший пристрій»; один поріг для класичного step-up.","Telegram як спосіб класичного step-up і символьні кнопки в картці Telegram замість однієї «Так, це я».","Швидкий потік до вкладок (та сама перевірка сеансу) з опитуванням як запасним шляхом.","Налаштування користувача у «Способах входу» (вид символів, вікно чи лише сповіщення, звук, код автентифікатора на іншому пристрої, відновлення після помилок) і адміністратора в «Єдиний вхід» (аварійний вимикач без ключа, усі межі, скасування останньої зміни, цифри).","Сповіщення й тривога адміністратору при «Це не я» та при вимкненні після помилок; аудит кожного кроку."],"fixes":[],"beperkingen":["Не перевірено на двох фізичних пристроях у браузері (лише збірка, типи й 44 перевірки проти бази з двома змодельованими сеансами).","Справжній Telegram не перевірявся (ключ бота не запитувався); символьну кнопку перевірено на рівні модуля.","Web Push при закритому сайті, тост через ПК-агента й варіант входу без сесії — не в цьому випуску."],"instructies":"Установіть архів через admin.tarasevych.com із підтвердженням ключем доступу. Міграція 0204 виконається сама; прапорець apparaat-bevestiging-v1 типово увімкнено. Перевірка: увійдіть на телефоні, на комп’ютері почніть дію з підтвердженням і виберіть «Інший пристрій». Покрокова інструкція: docs/apparaat-bevestiging/ІНСТРУКЦІЯ-ІНШИЙ-ПРИСТРІЙ.md."};
           const nl={"titel":"Bevestigen vanaf een ander apparaat: dezelfde symbolen op beide schermen, één poging, «Dit ben ik niet» wint","samenvatting":"Heeft een apparaat geen toegangssleutel, dan biedt het venster «Toegang bevestigen» «Ander apparaat» en «In Telegram». Op een ander aangemeld apparaat verschijnt een zwevend venster «Bent u het?» met dezelfde drie symbolen (pictogrammen met naam, cijfers of letters); op het vragende apparaat is er één uitgelicht. Dat symbool tikken en daar met de toegangssleutel bevestigen — en de handeling hier gaat vanzelf verder. Eén poging, aftelling, «Dit ben ik niet» wint altijd. Instellingen voor gebruiker en beheerder; dezelfde bevestigingstabel als Telegram.","wijzigingen":["Tabbladen «Ander apparaat» en «In Telegram» in «Toegang bevestigen» (zonder sleutel op dit apparaat: authenticator-code → ander apparaat → Telegram → codewoord → Google).","Zwevend venster «Bent u het?» op elk ander aangemeld apparaat: handeling, apparaat, regio, tijd, dezelfde symbolen, aftelling, «Dit ben ik niet», «Later»; verplaatsbaar, in grootte te wijzigen, naar het dok, op de telefoon onderaan.","Symbolen: 24 pictogrammen met naam (in Telegram emoji met dezelfde naam), cijfers 2–9, Latijnse letters zonder Cyrillische dubbelganger, of elke keer een andere soort; 3–5 naar keuze van de beheerder.","Vierde methode «ander apparaat» in de bevestigingstabel en de handeling «toegang bevestigen zonder sleutel» met minimum «Telegram of een ander apparaat»; één poort voor de klassieke step-up.","Telegram als methode voor de klassieke step-up en symboolknoppen in de Telegram-kaart in plaats van één «Ja, dit ben ik».","Snelle stroom naar de tabbladen (zelfde sessiecontrole) met navraag als terugval.","Instellingen van de gebruiker bij «Aanmeldmethoden» (soort symbolen, venster of alleen melding, geluid, authenticator-code op het andere apparaat, herstel na fouten) en van de beheerder bij «Eenmalige aanmelding» (noodschakelaar zonder sleutel, alle grenzen, ongedaan maken, cijfers).","Meldingen en alarm voor de beheerder bij «Dit ben ik niet» en bij uitschakeling na fouten; audit van elke stap."],"fixes":[],"beperkingen":["Niet getest op twee fysieke apparaten in de browser (alleen bouw, typen en 44 controles tegen de database met twee gesimuleerde sessies).","Echte Telegram niet getest (botsleutel niet gevraagd); de symboolknop is op moduleniveau getest.","Web Push bij gesloten site, tost via de PC-agent en de aanmeldvariant zonder sessie zitten niet in deze uitgave."],"instructies":"Installeer het archief via admin.tarasevych.com met een toegangssleutel. Migratie 0204 loopt vanzelf; de vlag apparaat-bevestiging-v1 staat standaard aan. Controle: meld u aan op de telefoon, start op de computer een handeling met bevestiging en kies «Ander apparaat». Stap-voor-stap: docs/apparaat-bevestiging/ІНСТРУКЦІЯ-ІНШИЙ-ПРИСТРІЙ.md."};
           const m={schema:1,versie:e.VERSIE,aangemaakt:new Date().toISOString(),herkomst:`git: commit ${e.GITHUB_SHA} (basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,auteur:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',zonderAi:false,deelnemers:[{soort:'mens',naam:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',rollen:['auteur']},{soort:'ai',naam:'claude',platform:'Claude Code',tool:'Claude Code',model:{id:e.MODEL_ID,versie:null,bron:'auteur'},rollen:['ontwikkeling','controle','testen','verpakken']}],beschrijving:{uk,nl}};
           writeFileSync(e.RUNNER_TEMP+'/UITROL-MANIFEST.json',JSON.stringify(m,null,2)+'\n');
-          const tests={"geslaagd":204,"mislukt":0,"falend":[],"uitleg":{"uk":"Чисті перевірки підтвердження з іншого пристрою (52), увесь перебіг проти бази з двома сеансами й символьною кнопкою Telegram (44), таблиця підтверджень і маршрути Telegram (60), розміщення способів входу (29), опмаак вікна підтвердження (19), журнал розробки, усі міграції на чистій базі (двічі), складання й перевірки типів пройдено в цьому запуску.","nl":"De pure controles van bevestigen vanaf een ander apparaat (52), de hele stroom tegen de database met twee sessies en de Telegram-symboolknop (44), bevestigingstabel en Telegram-routes (60), plaatsing van aanmeldmethoden (29), opmaak van het bevestigingsvenster (19), ontwikkeldossier, alle migraties op een schone database (tweemaal), de bouw en de typecontroles zijn in deze uitvoering geslaagd."}};
+          // SEC-002: cijfers uit de echte uitvoer van scripts/eenheidstests.mjs («N/M geslaagd (…)» per testbestand), geen letterlijke getallen.
+          // Кількість перевірок береться з фактичного виводу тестів цього запуску, а не з наперед записаного числа.
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів тестів або є невдалі перевірки — випуск зупинено.');
+          const tests={"geslaagd": gemeten.geslaagd,"mislukt": gemeten.mislukt,"falend":[],"uitleg":{"uk":"Чисті перевірки підтвердження з іншого пристрою, увесь перебіг проти бази з двома сеансами й символьною кнопкою Telegram, таблиця підтверджень і маршрути Telegram, розміщення способів входу, оформлення вікна підтвердження, журнал розробки, усі міграції на чистій базі (двічі), складання й перевірки типів пройдено в цьому запуску." + " Виміряно в цьому запуску — файл тестів і пройдено з усього: " + gemetenLijst + ".","nl":"De pure controles van bevestigen vanaf een ander apparaat, de hele stroom tegen de database met twee sessies en de Telegram-symboolknop, bevestigingstabel en Telegram-routes, plaatsing van aanmeldmethoden, opmaak van het bevestigingsvenster, ontwikkeldossier, alle migraties op een schone database (tweemaal), de bouw en de typecontroles zijn in deze uitvoering geslaagd." + " Gemeten in deze uitvoering — testbestand en geslaagd van totaal: " + gemetenLijst + "."}};
           writeFileSync(e.RUNNER_TEMP+'/TESTRESULTATEN.json',JSON.stringify(tests,null,2)+'\n');
           writeFileSync('orchestratie/geinstalleerd.json',JSON.stringify({versie:e.BASIS_VERSIE,bronCommit:e.BASIS_COMMIT,bron:'geverifieerd_productie_api'},null,2)+'\n');
           JS
@@ -154,6 +155,73 @@ jobs:
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
           printf 'APPARAAT-001 · Підтвердження з іншого пристрою: вкладки «Інший пристрій» і «У Telegram» у вікні «Підтвердіть доступ»; плаваюче вікно «Це ви?» з тими самими символами на іншому увійденому пристрої (одна спроба, відлік, «Це не я» перемагає); четвертий метод у таблиці підтверджень і один поріг; символи в картці Telegram; налаштування користувача й адміністратора; прапорець apparaat-bevestiging-v1 типово увімкнено. Нічого не встановлено — власник схвалює окремо ключем доступу.\nBRON-COMMIT: %s\nОснова: %s @ %s\nІнструкція: docs/apparaat-bevestiging/ІНСТРУКЦІЯ-ІНШИЙ-ПРИСТРІЙ.md · Безпека: docs/apparaat-bevestiging/BEVEILIGING-APPARAAT.nl.md\n' "$GITHUB_SHA" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: apparaat-001-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти звіт виконання
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: apparaat-001-controle
+          path: uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    # SEC-002: єдине завдання з правом запису у сховище. Воно нічого не встановлює через npm, не збирає й не тестує:
+    # отримує вже перевірені пакунки як артефакт, звіряє контрольну суму й лише тоді оприлюднює випуск.
+    # Enige taak met schrijfrecht. Installeert, bouwt en test niets: haalt de gecontroleerde pakketten als artefact op en publiceert.
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: apparaat-001-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          # SEC-002 (g01-3): de basis komt uit het artefact van de bouwtaak (zonder schrijfrecht, maar met npm en tests) — alleen aanvaarden
+          # als ze in de vertrouwde env van deze werkstroom staat (vaste basis of lijst van toegestane bases).
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_VERSIE}=${BASIS_COMMIT:-}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту збірки не входить до довірених значень цього процесу — оприлюднення зупинено. · De basis uit het bouwartefact staat niet in de vertrouwde waarden van deze werkstroom — publicatie gestopt.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
       - name: Повторна перевірка чинного сервера
         shell: bash
         run: |
@@ -167,6 +235,9 @@ jobs:
       - name: Оприлюднити архів без встановлення
         id: release
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh release create "$VERSIE" \
@@ -189,11 +260,7 @@ jobs:
           JS
       - name: У разі збою приховати непридатний випуск
         if: failure() && steps.release.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
-      - name: Зберегти звіт виконання
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: apparaat-001-controle
-          path: uitvoer/
-          if-no-files-found: ignore

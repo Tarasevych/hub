@@ -5,6 +5,7 @@ import './identiteit-account.css';
 import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag, vlaggenBekend } from '../functievlag-lezen';
 import { IdentiteitAtelier } from './IdentiteitAtelier';
+import { AtelierInhoud } from './atelier-inhoud';
 import { useVormgeving } from './identiteit-vormgeving';
 import { VormgevingKiezer } from './VormgevingKiezer';
 import { IdentiteitMaquette, type MaquetteGebruiker } from './maquette/IdentiteitMaquette';
@@ -36,6 +37,7 @@ class MaquetteGrens extends Component<{ terugval: ReactNode; children: ReactNode
 
 export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
+  const tocRef = useRef<HTMLElement>(null);
   // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
   const atelier = useVlag('identiteit-account-atelier', false);
   // Прапорець відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag: altijd de klassieke weergave.
@@ -80,6 +82,17 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
     return () => waarnemer.disconnect();
   }, [secties]);
 
+  // На вузьких екранах липка смуга розділів прокручується горизонтально: тримаємо активну пігулку видимою по центру.
+  useEffect(() => {
+    const toc = tocRef.current;
+    if (!toc || toc.scrollWidth <= toc.clientWidth + 2 || typeof toc.scrollTo !== 'function') return;
+    const knop = toc.querySelector<HTMLElement>('.ia-toc-knop.actief');
+    if (!knop) return;
+    const doelLinks = Math.max(0, knop.offsetLeft - (toc.clientWidth - knop.offsetWidth) / 2);
+    const zonderBeweging = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    toc.scrollTo({ left: doelLinks, behavior: zonderBeweging ? 'auto' : 'smooth' });
+  }, [inBeeld]);
+
   const kies = (id: string) => {
     setInBeeld(id);
     onKies(id);
@@ -95,10 +108,11 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   if (atelier && vormgeving === 'studio') return <IdentiteitAtelier lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} />;
 
   const klassiek = (
+    <AtelierInhoud.Provider value={true}>
     <div className='ia-account'>
       {atelier && <VormgevingKiezer lang={lang} />}
       {kop}
-      <nav className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
+      <nav ref={tocRef} data-no-edge-swipe='1' className='ia-toc' aria-label={lang === 'uk' ? 'Розділи облікового запису' : 'Accountonderdelen'}>
         {IDENTITEIT_TABS.map((tab, index) => (
           <button
             key={tab.id}
@@ -131,6 +145,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
       {/* Під розділами теж, як у «Студії» та «Макеті»: дочитавши сторінку, можна одразу обрати інший вигляд. */}
       {atelier && <div className='ia-vormgeving-voet'><VormgevingKiezer lang={lang} /></div>}
     </div>
+    </AtelierInhoud.Provider>
   );
   // Типовий вигляд — макет власника (IDENTITEIT-007); «Студія» і класичний лишаються на вибір. Збій макета повертає класичну сторінку.
   if (atelier && vormgeving === 'maquette') {

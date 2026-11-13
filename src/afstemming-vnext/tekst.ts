@@ -1,6 +1,7 @@
 // Afstemming vNext — teksthulpjes (uk/nl), zelfde stijl als src/cloud-vnext/tekst.ts. Eén plek voor foutteksten zodat elke
 // servercode een MENSELIJKE uitleg krijgt; onbekende codes tonen de code zelf (eerlijk, nooit een verzonnen succes).
 import { useEffect, useState } from 'react';
+import { weigeringZin } from '../../shared/weigering-tekst';
 
 export type Lang = 'uk' | 'nl';
 export const tr = (lang: Lang, uk: string, nl: string): string => (lang === 'uk' ? uk : nl);
@@ -28,7 +29,7 @@ const FOUT: Record<string, [string, string]> = {
   ACCOUNT_NOT_APPROVED: ['Обліковий запис ще не схвалено.', 'Dit account is nog niet goedgekeurd.'],
   NOG_NIET_GEBOUWD: ['Цей розділ ще будується.', 'Dit onderdeel is nog in aanbouw.'],
 };
-export const foutTekst = (lang: Lang, code: string): string => { const f = FOUT[code]; return f ? tr(lang, f[0], f[1]) : tr(lang, `Не вдалося (${code}).`, `Mislukt (${code}).`); };
+export const foutTekst = (lang: Lang, code: string): string => { const f = FOUT[code]; return f ? tr(lang, f[0], f[1]) : weigeringZin(lang, code) ?? tr(lang, `Не вдалося (${code}).`, `Mislukt (${code}).`); };
 
 export const datumTekst = (lang: Lang, iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
 export function geledenTekst(lang: Lang, iso: string): string {

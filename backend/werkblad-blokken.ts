@@ -18,6 +18,7 @@ import { overzetten } from './werkblad-v3';
 import type { Lade } from '../shared/ruimte-scheiding';
 import { APPARATEN, apparaatOf, type V3Context } from '../shared/werkblad-v3';
 import type { ApparaatKlasse, ItemSoort, WerkbladRuimte } from '../shared/werkblad-v3-types';
+import { jsonbTekst } from '../shared/tekst-veilig';
 import {
   BLOKKEN_OPSLAG, PLEK_ID_RE, WERKBLAD_BLOKKEN_VLAG,
   type BlokInhoud, type BlokkenBackup, type BlokkenLaag, type BlokkenMomentopname, type BlokkenStand, type PlekStand,
@@ -72,7 +73,7 @@ async function backupSchrijven(q: Q, lade: Lade, voor: BlokkenMomentopname | nul
   let b: BlokkenBackup = { op: Date.now(), voor: isLeeg(voor) ? null : voor, na: isLeeg(na) ? null : na };
   if (JSON.stringify(b).length > BLOKKEN_OPSLAG.maxBytesBackup) b = { ...b, voor: null };
   if (JSON.stringify(b).length > BLOKKEN_OPSLAG.maxBytesBackup) return; // te groot: liever de oude backup houden dan een halve
-  await q(`UPDATE app.werkblad_v3_lade SET blokken_backup = $3::jsonb WHERE user_id = $1 AND ruimte = $2`, [lade.userId, lade.ruimte, JSON.stringify(b)]);
+  await q(`UPDATE app.werkblad_v3_lade SET blokken_backup = $3::jsonb WHERE user_id = $1 AND ruimte = $2`, [lade.userId, lade.ruimte, jsonbTekst(b)]);
 }
 async function backupInfo(q: Q, lade: Lade): Promise<BlokkenStand['backup']> {
   const r = (await q(`SELECT blokken_backup AS b FROM app.werkblad_v3_lade WHERE user_id = $1 AND ruimte = $2`, [lade.userId, lade.ruimte])).rows[0]?.b;
@@ -93,7 +94,7 @@ export async function blokkenNaSchrijven(q: Q, lade: Lade, layoutId: string, b: 
   await q(
     `UPDATE app.werkblad_items i SET blok = r.blok FROM jsonb_to_recordset($4::jsonb) AS r("instanceId" text, kind text, "itemId" text, blok jsonb)
      WHERE i.layout_id = $1 AND i.user_id = $2 AND i.ruimte = $3 AND i.instance_id = r."instanceId" AND i.kind = r.kind AND i.item_id = r."itemId"`,
-    [layoutId, lade.userId, lade.ruimte, JSON.stringify(b.rijen)]);
+    [layoutId, lade.userId, lade.ruimte, jsonbTekst(b.rijen)]);
   await backupSchrijven(q, lade, b.voor);
 }
 
@@ -136,7 +137,7 @@ export async function blokBewaren(lade: Lade, ctx: BlokkenContext, apparaat: App
       if (dubbel.length) return { ok: false as const, status: 400 as const, code: 'WERKBLAD_BLOKKEN_ONGELDIG', fouten: dubbel.slice(0, 10).map((i) => `dubbele-id:${i}`) };
     }
     const voor = await momentopname(q, lade);
-    await q(`UPDATE app.werkblad_items SET blok = $5::jsonb WHERE layout_id = $1 AND user_id = $2 AND ruimte = $3 AND instance_id = $4`, [laag.id, lade.userId, lade.ruimte, instanceId, blok ? JSON.stringify(blok) : null]);
+    await q(`UPDATE app.werkblad_items SET blok = $5::jsonb WHERE layout_id = $1 AND user_id = $2 AND ruimte = $3 AND instance_id = $4`, [laag.id, lade.userId, lade.ruimte, instanceId, blok ? jsonbTekst(blok) : null]);
     await q(`UPDATE app.werkblad_layout SET versie = versie + 1, bijgewerkt_op = now() WHERE id = $1 AND user_id = $2 AND ruimte = $3`, [laag.id, lade.userId, lade.ruimte]);
     await backupSchrijven(q, lade, voor);
     const na = (await laagBlokken(q, lade, apparaat, ctx))!;
@@ -177,7 +178,7 @@ export async function plekBewaren(lade: Lade, ctx: BlokkenContext, invoer: { ple
     else await q(
       `INSERT INTO app.werkblad_plekken (user_id, ruimte, plek_id, blok) VALUES ($1, $2, $3, $4::jsonb)
        ON CONFLICT (user_id, ruimte, plek_id) DO UPDATE SET blok = EXCLUDED.blok, versie = app.werkblad_plekken.versie + 1, bijgewerkt_op = now()
-       WHERE app.werkblad_plekken.user_id = $1 AND app.werkblad_plekken.ruimte = $2`, [lade.userId, lade.ruimte, plekId, JSON.stringify(blok)]);
+       WHERE app.werkblad_plekken.user_id = $1 AND app.werkblad_plekken.ruimte = $2`, [lade.userId, lade.ruimte, plekId, jsonbTekst(blok)]);
     await backupSchrijven(q, lade, voor);
     const na = (await q(`SELECT plek_id, blok, versie, bijgewerkt_op FROM app.werkblad_plekken WHERE user_id = $1 AND ruimte = $2 AND plek_id = $3`, [lade.userId, lade.ruimte, plekId])).rows[0];
     return { ok: true as const, plekId, plek: stand(na) };
@@ -204,7 +205,7 @@ export async function blokkenHerstellen(lade: Lade, welke: 'voor' | 'na' = 'na')
       const wis = await q(`UPDATE app.werkblad_items SET blok = NULL WHERE layout_id = $1 AND user_id = $2 AND ruimte = $3 AND blok IS NOT NULL AND NOT (instance_id = ANY($4))`, [l.id, lade.userId, lade.ruimte, Object.keys(gewenst)]);
       let n = 0;
       for (const [inst, blok] of Object.entries(gewenst)) {
-        const r = await q(`UPDATE app.werkblad_items SET blok = $5::jsonb WHERE layout_id = $1 AND user_id = $2 AND ruimte = $3 AND instance_id = $4 AND kind IN ('widget', 'folder')`, [l.id, lade.userId, lade.ruimte, inst, JSON.stringify(blok)]);
+        const r = await q(`UPDATE app.werkblad_items SET blok = $5::jsonb WHERE layout_id = $1 AND user_id = $2 AND ruimte = $3 AND instance_id = $4 AND kind IN ('widget', 'folder')`, [l.id, lade.userId, lade.ruimte, inst, jsonbTekst(blok)]);
         if (r.rowCount) n++; else overgeslagen++;
       }
       hersteld += n;
@@ -213,7 +214,7 @@ export async function blokkenHerstellen(lade: Lade, welke: 'voor' | 'na' = 'na')
     await q(`DELETE FROM app.werkblad_plekken WHERE user_id = $1 AND ruimte = $2 AND NOT (plek_id = ANY($3))`, [lade.userId, lade.ruimte, Object.keys(doel.plekken)]);
     for (const [pid, blok] of Object.entries(doel.plekken)) {
       await q(`INSERT INTO app.werkblad_plekken (user_id, ruimte, plek_id, blok) VALUES ($1, $2, $3, $4::jsonb)
-        ON CONFLICT (user_id, ruimte, plek_id) DO UPDATE SET blok = EXCLUDED.blok, versie = app.werkblad_plekken.versie + 1, bijgewerkt_op = now()`, [lade.userId, lade.ruimte, pid, JSON.stringify(blok)]);
+        ON CONFLICT (user_id, ruimte, plek_id) DO UPDATE SET blok = EXCLUDED.blok, versie = app.werkblad_plekken.versie + 1, bijgewerkt_op = now()`, [lade.userId, lade.ruimte, pid, jsonbTekst(blok)]);
     }
     await backupSchrijven(q, lade, voor);
     return { ok: true, hersteld, overgeslagen, plekken: Object.keys(doel.plekken).length };

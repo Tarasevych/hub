@@ -14,6 +14,7 @@ import { ecosystemTabContext } from '../tab-context';
 import { Venster, vensterBeheer } from '../platform/vensters';
 import { bevestigToegang } from '../platform/stap-op';
 import { startPrimaryRedirectLogin } from '../aanmeld-omleiding';
+import { aanmeldPauzeBericht, aanmeldStartFoutTekst, useAftelPauze } from '../aanmeld-pauze';
 import { clearPendingConsent } from '../mcp-toestemming-opslag';
 import { useTech, techActief } from '../tech/tech-opslag';
 import { v2Agent, type AgentSlug } from '../../shared/connector-v2/agenten';
@@ -58,6 +59,10 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
   const [bevestigd, setBevestigd] = useState(false);
   const [bezig, setBezig] = useState(false);
   const [melding, setMelding] = useState('');
+  const pauze = useAftelPauze();
+  const pauzeTekst = pauze.actief || pauze.zojuistVrij
+    ? aanmeldPauzeBericht(Math.max(1, pauze.resterend), uk ? 'uk' : 'nl', 'koppel', pauze.limiet)
+    : null;
   const [over, setOver] = useState(Math.max(0, info.expiresAt - Date.now()));
   useEffect(() => { const t = window.setInterval(() => setOver(Math.max(0, info.expiresAt - Date.now())), 1000); return () => window.clearInterval(t); }, [info.expiresAt]);
   useEffect(() => { setSleutels((s) => schoon(s, kanten)); }, [kanten]);
@@ -69,30 +74,42 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
   const terug = () => setStap(stappen[Math.max(0, i - 1)]);
 
   const beslis = useCallback(async (approve: boolean) => {
+    if (pauze.actief) return;
     setBezig(true); setMelding('');
     vensterBeheer.wacht('mcp-toestemming', true);
     try {
       const res = await api.post('/api/owner/mcp-connector/consent', { ...body(), rid, approve, ...(approve ? { kanten, sleutels: gekozen } : {}) });
+      pauze.wis();
       clearPendingConsent();
       location.assign(String(res.data.redirect));
     } catch (e) {
-      const code = String((e as Error)?.message ?? '');
-      const status = Number((e as { status?: number })?.status ?? 0);
-      setMelding(status === 404 ? tr('Запит застарів. Почніть підключення в клієнті ШІ знову.', 'Het verzoek is verlopen. Begin de koppeling opnieuw in de AI-client.')
-        : code === 'OWNER_REQUIRED' || code === 'TECH_PROFIEL_VEREIST' ? tr('Технічні інструменти може дозволити лише власник сайту. Залиште лише приватний простір.', 'Technische hulpmiddelen kan alleen de eigenaar van de site toestaan. Kies alleen de privéruimte.')
-        : code.startsWith('STEP_UP') ? tr('Вхід не підтверджено. Натисніть «Дозволити» ще раз і підтвердіть.', 'Aanmelding niet bevestigd. Klik nogmaals op «Toestaan» en bevestig.')
-        : code === 'MCP_GRANT_LIMIT_REACHED' ? tr('Досягнуто ліміт активних підключень (10). Відкличте непотрібні у вкладці «Конектори».', 'Limiet van actieve koppelingen bereikt (10). Trek oude in op het tabblad «Connectors».')
-        : tr(`Не вдалося зберегти рішення (${code || status || 'немає зв’язку'}).`, `De beslissing kon niet worden opgeslagen (${code || status || 'geen verbinding'}).`));
+      const p = pauze.vangPauze(e);
+      if (!p.isPauze) {
+        const code = String((e as Error)?.message ?? '');
+        const status = Number((e as { status?: number })?.status ?? 0);
+        setMelding(status === 404 ? tr('Запит застарів. Почніть підключення в клієнті ШІ знову.', 'Het verzoek is verlopen. Begin de koppeling opnieuw in de AI-client.')
+          : code === 'OWNER_REQUIRED' || code === 'TECH_PROFIEL_VEREIST' ? tr('Технічні інструменти може дозволити лише власник сайту. Залиште лише приватний простір.', 'Technische hulpmiddelen kan alleen de eigenaar van de site toestaan. Kies alleen de privéruimte.')
+          : code.startsWith('STEP_UP') ? tr('Вхід не підтверджено. Натисніть «Дозволити» ще раз і підтвердіть.', 'Aanmelding niet bevestigd. Klik nogmaals op «Toestaan» en bevestig.')
+          : code === 'MCP_GRANT_LIMIT_REACHED' ? tr('Досягнуто ліміт активних підключень (10). Відкличте непотрібні у вкладці «Конектори».', 'Limiet van actieve koppelingen bereikt (10). Trek oude in op het tabblad «Connectors».')
+          : tr(`Не вдалося зберегти рішення (${code || status || 'немає зв’язку'}).`, `De beslissing kon niet worden opgeslagen (${code || status || 'geen verbinding'}).`));
+      }
       setBezig(false);
     } finally { vensterBeheer.wacht('mcp-toestemming', false); }
-  }, [rid, kanten, gekozen, tr]);
+  }, [rid, kanten, gekozen, tr, pauze]);
 
   const bevestigNu = async () => {
     setMelding('');
     const uit = await bevestigToegang({ service: 'mcp', tabContext: ecosystemTabContext(), post: (u, d) => api.post(u, d), sterk: true });
     if (uit.ok) { setBevestigd(true); volgende(); } else setMelding(tr('Підтвердження не завершено.', 'Bevestiging niet afgerond.'));
   };
-  const anderAccount = () => { void startPrimaryRedirectLogin({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin, locale: uk ? 'uk' : 'nl', intent: 'replace-tab' }).catch(() => setMelding(tr('Не вдалося почати вхід.', 'Aanmelden kon niet starten.'))); };
+  const anderAccount = () => {
+    if (pauze.actief) return;
+    setMelding('');
+    void startPrimaryRedirectLogin({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin, locale: uk ? 'uk' : 'nl', intent: 'replace-tab' }).catch((e: unknown) => {
+      const p = pauze.vangPauze(e);
+      if (!p.isPauze) setMelding(aanmeldStartFoutTekst(e, uk ? 'uk' : 'nl'));
+    });
+  };
   const zetKant = (k: Kant, aan: boolean) => setKanten((huidig) => { const n = aan ? [...new Set([...huidig, k])] : huidig.filter((x) => x !== k); return (n.length ? n : ['gebruiker']).sort() as Kant[]; });
 
   const stapNaam: Record<Stap, string> = {
@@ -134,7 +151,7 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
         {stap === 'account' ? (
           <section className='v2-wizard-deel'>
             <div className='v2-account'><UserRound size={22} aria-hidden='true' /><div><b>{v.account.email}</b><small>{v.account.eigenaar ? tr('власник сайту', 'eigenaar van de site') : tr('ваш обліковий запис', 'uw account')}</small></div><span className='v2-chip is-nieuw'><Check size={12} />{tr('вибрано', 'gekozen')}</span></div>
-            <button type='button' className='mcp-consent-secondary' onClick={anderAccount}><LogIn size={16} />{tr('Підключити інший обліковий запис', 'Ander account koppelen')}</button>
+            <button type='button' className='mcp-consent-secondary' disabled={pauze.actief} onClick={anderAccount}><LogIn size={16} />{pauze.actief && pauzeTekst ? pauzeTekst.knop : tr('Підключити інший обліковий запис', 'Ander account koppelen')}</button>
             <p className='v2-uitleg'>{tr('Запит збережеться: після входу вікно відкриється знову. Також можна перемкнути обліковий запис у меню вгорі праворуч.', 'Het verzoek blijft bewaard: na het aanmelden opent dit venster opnieuw. U kunt ook van account wisselen in het menu rechtsboven.')}</p>
             {!v.methoden.passkey && !v.methoden.totp ? (
               <p className='v2-let' role='note'><ShieldQuestion size={16} aria-hidden='true' />{tr('У вас немає ні passkey, ні застосунку-автентифікатора. Ми радимо додати їх у «Налаштування → Безпека» і ввімкнути «Додаткове підтвердження підключень» у вкладці «Конектори»: тоді навіть викрадена сесія не зможе непомітно підключити ШІ до вашого простору.', 'U hebt geen passkey en geen authenticator-app. We raden aan ze toe te voegen onder «Instellingen → Beveiliging» en «Extra bevestiging van koppelingen» aan te zetten op het tabblad «Connectors»: dan kan zelfs een gestolen sessie niet ongemerkt een AI aan uw ruimte koppelen.')}</p>
@@ -178,17 +195,18 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
           </section>
         ) : null}
 
-        {melding ? <p className='mcp-consent-msg' role='alert'>{melding}</p> : null}
+        {pauzeTekst ? <p className='mcp-consent-msg' role='status' aria-live='polite'>{pauze.actief ? `${pauzeTekst.kop}. ${pauzeTekst.uitleg}` : pauzeTekst.vrij}</p> : null}
+        {melding && !pauze.actief ? <p className='mcp-consent-msg' role='alert'>{melding}</p> : null}
 
         {/* Vaste onderste rij (koppel-wizard-plaats.css: sticky): «Далі/Дозволити», «Назад», «Заборонити», «Пізніше» altijd in beeld;
             de stap erboven scrolt. Op de telefoon twee rijen: [Назад][Далі] / [Заборонити][Пізніше]. */}
         <footer className={`mcp-consent-actions v2-wizard-acties${i > 0 ? ' met-terug' : ''}`}>
-          <button type='button' className='mcp-consent-secondary' data-v2-actie='weigeren' disabled={bezig} onClick={() => void beslis(false)}>{tr('Заборонити', 'Weigeren')}</button>
+          <button type='button' className='mcp-consent-secondary' data-v2-actie='weigeren' disabled={bezig || pauze.actief} onClick={() => void beslis(false)}>{tr('Заборонити', 'Weigeren')}</button>
           <span className='v2-ruimte-vul' />
           {i > 0 ? <button type='button' className='mcp-consent-secondary' data-v2-actie='terug' disabled={bezig} onClick={terug}><ArrowLeft size={16} />{tr('Назад', 'Terug')}</button> : null}
           {stap !== 'rechten'
             ? <button type='button' className='mcp-consent-primary' data-v2-actie='verder' disabled={bezig || (stap === 'beveiliging' && !bevestigd)} onClick={volgende}>{tr('Далі', 'Volgende')}<ArrowRight size={16} /></button>
-            : <button type='button' className={`mcp-consent-primary risico-${risico}`} data-v2-actie='toestaan' disabled={bezig} onClick={() => void beslis(true)} data-v2-toestaan='1'><Check size={16} />{tr('Дозволити', 'Toestaan')}</button>}
+            : <button type='button' className={`mcp-consent-primary risico-${risico}`} data-v2-actie='toestaan' disabled={bezig || pauze.actief} onClick={() => void beslis(true)} data-v2-toestaan='1'><Check size={16} />{pauze.actief && pauzeTekst ? pauzeTekst.knop : tr('Дозволити', 'Toestaan')}</button>}
           <button type='button' className='v2-link' data-v2-actie='later' onClick={onKlaar}>{tr('Пізніше', 'Later')}</button>
         </footer>
       </div>

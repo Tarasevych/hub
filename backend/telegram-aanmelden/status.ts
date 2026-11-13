@@ -5,7 +5,7 @@
 // Bij een overgang naar storing of terug: melding aan de beheerder. Daarnaast: verlopen wijzigingen afhandelen en opruimen.
 import { botAanroep, BotFout, type BotMij } from './bot-api';
 import { botSleutel } from './sleutels';
-import { instellingen, sql, vlagHoofdschakelaar } from './opslag';
+import { instellingen, instellingenCacheWissen, sql, vlagHoofdschakelaar } from './opslag';
 import { beheerAlarm } from './meldingen';
 import { verlopenWijzigingenAfhandelen } from './wijzigingen';
 
@@ -67,7 +67,21 @@ export async function controleNu(): Promise<{ stand: StatusStand; soort: Storing
   try {
     const bot = await botAanroep<BotMij>(sleutel, 'getMe', {}, { tijdslimietMs: 8_000 });
     const duurMs = Date.now() - t0;
-    const verwacht = (await instellingen()).botGebruikersnaam.toLowerCase();
+    let inst = await instellingen();
+    if (bot.is_bot && bot.username && bot.username.toLowerCase() !== inst.botGebruikersnaam.toLowerCase()) {
+      const [handmatig] = await sql<{ door: string }>("SELECT door FROM app.tg_instellingen WHERE id = 'actief'");
+      if (!handmatig || !handmatig.door) {
+        const bijgewerkt = { ...inst, botGebruikersnaam: bot.username };
+        await sql(
+          `INSERT INTO app.tg_instellingen (id, waarde, door, gewijzigd_op) VALUES ('actief', $1::jsonb, '', now())
+           ON CONFLICT (id) DO UPDATE SET waarde = EXCLUDED.waarde, gewijzigd_op = now()`,
+          [JSON.stringify(bijgewerkt)],
+        );
+        instellingenCacheWissen();
+        inst = bijgewerkt;
+      }
+    }
+    const verwacht = inst.botGebruikersnaam.toLowerCase();
     const oorzaak = bot.username?.toLowerCase() === verwacht ? '' : `ANDERE_BOT:${bot.username}`;
     await vastleggen({ ok: true, duurMs }, oorzaak);
     return { ...(await huidig()), oorzaak, duurMs, bot };

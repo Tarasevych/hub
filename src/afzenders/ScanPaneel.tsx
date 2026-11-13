@@ -12,6 +12,7 @@ import {
 import { SCAN_INTERVAL_MINUTEN, type ScanVoorkeur } from '../../shared/contacten-scan-voorkeuren';
 import { contactenApi, foutCode, zetScanStand, type ScanStand } from './api';
 import { eenStart, hervattenKlaar, hervattenTerug, reserveerHervatten } from './scan-weergave';
+import { weigeringZin } from '../../shared/weigering-tekst';
 import './contacten.css';
 
 type Lang = 'uk' | 'nl';
@@ -30,7 +31,7 @@ const FOUT: Record<string, [string, string]> = {
   HTTP_503: ['Власний сервер зараз перезавантажується (503). Перевірка продовжиться з місця зупинки.', 'De eigen server herstart nu (503). De controle gaat verder waar hij stopte.'],
   HTTP_504: ['Шлюз не дочекався відповіді (504). Перевірка продовжиться з місця зупинки.', 'De gateway wachtte te lang (504). De controle gaat verder waar hij stopte.'],
 };
-export const scanFoutTekst = (lang: Lang, code: string) => (FOUT[code] || [`Не вдалося (${code}).`, `Mislukt (${code}).`])[lang === 'uk' ? 0 : 1];
+export const scanFoutTekst = (lang: Lang, code: string) => (FOUT[code] || [weigeringZin('uk', code) ?? `Не вдалося (${code}).`, weigeringZin('nl', code) ?? `Mislukt (${code}).`])[lang === 'uk' ? 0 : 1];
 export const scanProcent = (s: ScanStand | null) => (s && s.schatting > 0 ? Math.min(100, Math.round((s.verwerkt / s.schatting) * 100)) : s?.staat === 'klaar' ? 100 : 0);
 
 /** «Перевірених N з M. Решта — не підтверджені.» — решта не «неперевірені» в оманливому сенсі. */

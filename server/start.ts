@@ -34,6 +34,8 @@ import { opruimen as apparaatOpruimen } from '../backend/apparaat-bevestiging/ke
 import { metVerzoek } from './platform/context';
 import { googleSuiteSyncCron, mailMaintenanceCron } from '../backend/index';
 import { ACHTERGROND_INTERVAL_MS, sleutelkluisAchtergrondRonde } from '../backend/sleutelkluis-achtergrond';
+import { omslagenOpruimen } from '../backend/sleutelkluis-opruimen';
+import { stapOpUitBewaken } from '../backend/stap-op-noodschakelaar';
 import { zoekIndexCron } from '../backend/zoek/bronnen';
 import { TECH_ASSET_PREFIX } from '../shared/tech-bundels';
 import { closePool, getPool } from './platform/pg';
@@ -41,6 +43,13 @@ import { ownerEmail, rateLimit } from './platform/beveiliging';
 import { auditIpPepperGeldig } from './platform/audit';
 import { isCanoniekPad, type LambdaEvent, type RouterResponse } from './platform/router';
 import { schakelaarsVerversen } from './platform/schakelaars';
+import { procesVangnetInstellen } from './platform/proces-vangnet';
+import { statischDoel } from './platform/statisch-pad'; /* SEC-002 http-rand-04 */
+import { limietSleutel } from '../shared/ip-limiet';
+import { leesBodyBegrensd, zetAanmeldControle } from './platform/body-budget';
+import { aanmeldingEcht } from './platform/body-aanmelding';
+// SEC-002 (toets g10e-toets-2): ruimere grenzen voor lichamen alleen bij een ECHTE sessie of een echt token (niet «Cookie: x=1»).
+zetAanmeldControle(aanmeldingEcht);
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.HOST || '127.0.0.1';
@@ -52,7 +61,6 @@ const DASHBOARD_DIR = path.resolve(process.env.DASHBOARD_DIR || '/srv/mijn-ruimt
 /** 'beheer' (standaard): doorsturen naar admin-host /diagnostics; 'static': de oude losse pagina's tonen. */
 const DASHBOARD_MODE = process.env.DASHBOARD_MODE === 'static' ? 'static' : 'beheer';
 const DASHBOARD_NAAR = `https://${SERVICE_HOSTS.mcp}/dashboard`;
-const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 12 * 1024 * 1024);
 
 const APP_HOSTS = new Set<string>(Object.values(SERVICE_HOSTS));
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
@@ -136,15 +144,18 @@ const sendText = (res: http.ServerResponse, status: number, text: string) =>
 const sendJson = (res: http.ServerResponse, status: number, data: unknown) =>
   send(res, status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, JSON.stringify(data));
 
-async function readBody(req: http.IncomingMessage): Promise<string> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of req) {
-    size += (chunk as Buffer).length;
-    if (size > MAX_BODY_BYTES) throw Object.assign(new Error('BODY_TOO_LARGE'), { status: 413 });
-    chunks.push(chunk as Buffer);
-  }
-  return Buffer.concat(chunks).toString('utf8');
+// SEC-002 (http-rand-06, keten-config-05): Content-Length vooraf, 256 KB zonder Cookie/Authorization, budget voor alle lichamen
+// samen, lichamen per IP en een korte termijn voor anonieme lichamen — server/platform/body-budget.ts. MAX_BODY_BYTES blijft de bovengrens.
+async function readBody(req: http.IncomingMessage, pad = '', ip = clientIp(req)): Promise<string> {
+  return leesBodyBegrensd(req, pad, ip);
+}
+/** Antwoord op een geweigerd lichaam: de verbinding sluiten (het ongelezen deel blijft niet in de socket hangen). */
+function bodyWeigeren(req: http.IncomingMessage, res: http.ServerResponse, err: unknown) {
+  const f = err as { status?: number; code?: string; retryAfter?: number };
+  const status = f.status || 400;
+  req.resume();
+  return send(res, status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'close', ...(f.retryAfter ? { 'Retry-After': String(f.retryAfter) } : {}) },
+    JSON.stringify({ error: status === 413 ? 'BODY_TOO_LARGE' : (f.code || 'BODY_TOO_LARGE'), reasonCode: f.code || 'BODY_TOO_LARGE' }));
 }
 
 /** Bouw het Lambda-achtige event dat de bestaande backend verwacht. */
@@ -208,14 +219,8 @@ async function writeRouterResponse(res: http.ServerResponse, response: RouterRes
   send(res, response.statusCode || 200, headers, response.body ?? "");
 }
 
-/** Pad binnen een root oplossen; null bij traversal of ongeldige codering. */
-function safeJoin(root: string, urlPath: string): string | null {
-  let decoded: string;
-  try { decoded = decodeURIComponent(urlPath); } catch { return null; }
-  if (decoded.includes('\0')) return null;
-  const full = path.resolve(root, '.' + path.posix.normalize('/' + decoded));
-  return full === root || full.startsWith(root + path.sep) ? full : null;
-}
+// Pad binnen een root oplossen: statischDoel (server/platform/statisch-pad.ts, SEC-002 http-rand-04) — één decodering voor
+// de beslissingen én het bestand (de vroegere safeJoin decodeerde los van de poort).
 
 async function fileStat(p: string) {
   try { const s = await stat(p); return s.isFile() ? s : null; } catch { return null; }
@@ -273,27 +278,30 @@ async function serveFile(req: http.IncomingMessage, res: http.ServerResponse, fi
 
 const JURIDISCHE_PADEN = new Set(['/privacy', '/terms']);
 
-// Nooit publiceren, ook niet als ze per ongeluk in de build belanden: audit-uitvoer, sourcemaps, dotfiles.
-const VERBORGEN_PAD = /(^|\/)(l002-diagnostic\.json|[^/]*\.map|\.[^/]*)$/i;
+// Nooit publiceren, ook niet als ze per ongeluk in de build belanden: audit-uitvoer, sourcemaps, dotfiles — en sinds SEC-002
+// (http-rand-04) ook verborgen MAPPEN, op het gedecodeerde pad: VERBORGEN_STATISCH in server/platform/statisch-pad.ts.
 
 async function serveStatic(req: http.IncomingMessage, res: http.ServerResponse, url: URL, root: string, spa: boolean, csp: string) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
-  if (VERBORGEN_PAD.test(url.pathname)) return sendText(res, 404, 'Niet gevonden');
+  // SEC-002 (http-rand-04): ÉÉN keer decoderen en normaliseren (server/platform/statisch-pad.ts); elke beslissing hieronder én het
+  // bestand zelf komen uit dat ene resultaat — vroeger besliste de poort op het ruwe pad («/assets/%74ech/…» was geen techbundel).
+  const doel = statischDoel(root, url.pathname, TECH_ASSET_PREFIX);
+  if (!doel) return sendText(res, 400, 'Ongeldig pad');
+  if (doel.verborgen) return sendText(res, 404, 'Niet gevonden');
   const rootStat = await stat(root).catch(() => null);
   if (!rootStat?.isDirectory()) return sendText(res, 404, 'Niet gevonden');
-  const file = safeJoin(root, url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname);
-  if (!file) return sendText(res, 400, 'Ongeldig pad');
-  const immutable = spa && url.pathname.startsWith('/assets/');
+  const file = doel.file;
+  const immutable = spa && doel.pad.startsWith('/assets/') && !doel.tech;
   // Technische bundels (shared/tech-bundels.ts, backend/tech-bundels.ts): alleen met een geldige toegangscookie van een actieve
   // technische activering; anders 404 (niet 403: het bestaan blijft verborgen). Nooit in een gedeelde cache, Vary: Cookie.
-  if (url.pathname.startsWith(TECH_ASSET_PREFIX)) {
+  if (doel.tech) {
     if (!(await assetToegestaan(req.headers.cookie))) return send(res, 404, { 'Content-Type': 'text/plain; charset=utf-8', ...TECH_ASSET_KOPPEN }, 'Niet gevonden');
     if (await serveFile(req, res, file, csp, false, TECH_ASSET_KOPPEN)) return;
     return send(res, 404, { 'Content-Type': 'text/plain; charset=utf-8', ...TECH_ASSET_KOPPEN }, 'Niet gevonden');
   }
   if (await serveFile(req, res, file, csp, immutable)) return;
   // SPA-fallback: alleen voor "pagina"-paden zonder extensie (tabpaden zoals /inbox).
-  if (spa && !path.posix.extname(url.pathname)) {
+  if (spa && !path.posix.extname(doel.pad)) {
     if (await serveFile(req, res, path.join(root, 'index.html'), csp, false)) return;
   }
   return sendText(res, 404, 'Niet gevonden');
@@ -309,7 +317,9 @@ const ALLOWED_ORIGINS = new Set<string>([...APP_HOSTS].map((h) => `https://${h}`
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 // De service worker van de extensie (0.4) stuurt bij POST altijd Origin chrome-extension://<id>. Alleen voor deze eindpunten,
 // die met een eenmalige koppelcode of het agenttoken werken (geen cookie, dus geen CSRF-risico), en alleen ZONDER Cookie-header.
-const EXTENSIE_PADEN = new Set(['/api/owner/agents/pair', '/api/owner/agents/diagnostics/archive', '/api/owner/agents/extensie/chat']);
+// SEC-002 extensie-08: ook de HTTP-terugval van «Відкликати/Стоп» (agenttoken, kan alleen vergrendelen) — anders kwam een intrekking
+// tijdens een verbroken WebSocket nooit aan (403 CSRF_ORIGIN_DENIED) en bleef de toegang op de server geldig.
+const EXTENSIE_PADEN = new Set(['/api/owner/agents/pair', '/api/owner/agents/diagnostics/archive', '/api/owner/agents/extensie/chat', '/api/owner/agents/ontgrendeling/intrekken-extensie']);
 export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders, pad = ''): string {
   if (SAFE_METHODS.has(method)) return '';
   const origin = String(headers.origin || '').trim().toLowerCase();
@@ -325,14 +335,38 @@ export function csrfAfwijzing(method: string, headers: http.IncomingHttpHeaders,
 // 2) Strikt, in Postgres (overleeft herstart): gevoelige paden per IP per minuut.
 const API_LIMIT_PER_MIN = Math.max(10, Number(process.env.API_RATE_LIMIT_PER_MIN || 600));
 const geheugen = new Map<string, { start: number; hits: number }>();
+export const GEHEUGEN_MAX = Math.max(1000, Number(process.env.API_LIMIT_GEHEUGEN_MAX || 100_000));
+export const _geheugenGrootte = () => geheugen.size;
+export const _geheugenLimiet = (key: string, limit: number, windowMs: number) => geheugenLimiet(key, limit, windowMs);
 function geheugenLimiet(key: string, limit: number, windowMs: number) {
   const now = Date.now();
   const slot = geheugen.get(key);
-  if (!slot || now - slot.start >= windowMs) { geheugen.set(key, { start: now, hits: 1 }); return { ok: true, retryAfter: 0 }; }
+  if (!slot || now - slot.start >= windowMs) {
+    // SEC-002 (keten-config-05, afwerking A): stelling op de kaart — bij een vloed van verschillende adressen eerst de verlopen sloten
+    // weg, daarna de oudste (invoegvolgorde). Zo groeit het geheugen nooit onbegrensd tussen twee opruimrondes.
+    if (!slot && geheugen.size >= GEHEUGEN_MAX) {
+      for (const [k, v] of geheugen) if (now - v.start > 120_000) geheugen.delete(k);
+      for (const k of geheugen.keys()) { if (geheugen.size < GEHEUGEN_MAX) break; geheugen.delete(k); }
+    }
+    geheugen.set(key, { start: now, hits: 1 }); return { ok: true, retryAfter: 0 };
+  }
   slot.hits += 1;
   return { ok: slot.hits <= limit, retryAfter: Math.max(1, Math.ceil((slot.start + windowMs - now) / 1000)) };
 }
 setInterval(() => { const now = Date.now(); for (const [k, v] of geheugen) if (now - v.start > 120_000) geheugen.delete(k); }, 60_000).unref();
+/**
+ * SEC-002 (http-rand-07): limiet voor de paden die vóór de /api-tak worden afgehandeld (/__gezondheid, SSE-ingangen). Loopback zonder
+ * tunnelkop (systemd, monitoring op de server zelf) telt niet. true = er is al een 429 verstuurd.
+ */
+function vroegGeweigerd(res: http.ServerResponse, ip: string, emmer = 'api', max = API_LIMIT_PER_MIN): boolean {
+  if (LOOPBACK_SOCKET.has(ip)) return false;
+  const l = geheugenLimiet(`${emmer}:${limietSleutel(ip)}`, max, 60_000);
+  if (l.ok) return false;
+  send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(l.retryAfter) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: l.retryAfter }));
+  return true;
+}
+/** SEC-002 (http-rand-07): laatste uitkomst van de databasecontrole van /__gezondheid (3 s geldig). */
+let gezondheidCache: { tot: number; status: number; inhoud: Record<string, boolean> } | null = null;
 
 // [patroon, bucketnaam, max per minuut per IP, faalt dicht bij DB-fout]
 // Alle strikte buckets zijn aanmeld-/MFA-paden: bij een databasestoring liever even "probeer later"
@@ -342,6 +376,9 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   // Audit-fix 7: stap-op (TOTP-step-up) zit in dezelfde strikte MFA-bucket als totp/recovery.
   // Het gemaskeerde overzicht van herstelcodes is geen MFA-poging (alleen lezen); dat telt niet mee.
   [/^\/api\/owner\/access\/((totp|recovery)\/(?!overzicht$)|stap-op$)/, 'mfa', 10, true],
+  // SEC-002 (aanmelden-03): codewoord raden (tweede aanmeldstap, step-up, controleren/zetten) viel onder de algemene 600/min:
+  // nu een eigen strikte bucket per IP voor alle vier de paden samen, faalt dicht. De teller per account staat in backend/codewoord.ts.
+  [/^\/api\/owner\/(session\/codewoord|access\/stap-op\/codewoord|identity\/codewoord\/(controleren|zetten))$/, 'codewoord', 10, true],
   [/^\/api\/auth\/google\/start$/, 'google-start', 10, true],
   // Agent koppelen: onbeveiligde route met een code als geheim. Strikt per IP (cf-connecting-ip), faalt dicht.
   [/^\/api\/owner\/agents\/pair$/, 'agent-koppelen', 10, true],
@@ -357,6 +394,8 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   // TELEGRAM-AANMELDEN v1: starten, code en inwisselen strikt per IP (de webhook en het pollen vallen onder de algemene limiet).
   [/^\/api\/aanmelden\/telegram\/start$/, 'telegram-start', 20, true],
   [/^\/api\/aanmelden\/telegram\/(code|voltooien|widget-terug)$/, 'telegram-code', 30, true],
+  // SEC-002 (aanmelden-09): de geheime code bij het bevestigen van een actie (met sessie) viel alleen onder de algemene 600/min.
+  [/^\/api\/owner\/telegram\/bevestiging\/code$/, 'telegram-bevestig-code', 20, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],
   [/^\/api\/(auth|owner\/auth|ecosystem\/auth|owner\/identity|service-handoff|ecosystem\/handoff|owner\/session\/handoff|share\/join)(\/|$)/, 'aanmelden', 120, true],
 ];
@@ -429,16 +468,32 @@ function strikteFactor(): number {
   if (!factorGemeld) { factorGemeld = true; console.warn('[rate-limit] E2E_LOKALE_LIMIETEN=1: strikte limieten ×20 (alleen lokale e2e-tests)'); }
   return 20;
 }
-export async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+const VLAG_LIMIT_PER_MIN = Math.max(30, Number(process.env.VLAG_RATE_LIMIT_PER_MIN || 240));
+export type RateLimitAfwijzing = { retryAfter: number; maxAttempts: number; windowSec: number };
+
+export async function rateLimitAfwijzingDetail(method: string, pathname: string, echtIp: string): Promise<RateLimitAfwijzing | null> {
+  // SEC-002 (http-rand-05): bij IPv6 telt het /64-net, niet het losse adres (shared/ip-limiet.ts) — anders is elk volgend adres
+  // uit het eigen net van de aanvaller een verse emmer. IPv4 blijft per adres.
+  const ip = limietSleutel(echtIp);
+  if (pathname === '/api/flags' || pathname.startsWith('/api/ofrep/v1/evaluate/flags')) {
+    const vlagLimiet = geheugenLimiet(`vlag:${ip}`, VLAG_LIMIT_PER_MIN, 60_000);
+    return vlagLimiet.ok ? null : { retryAfter: vlagLimiet.retryAfter, maxAttempts: VLAG_LIMIT_PER_MIN, windowSec: 60 };
+  }
   const algemeen = geheugenLimiet(`api:${ip}`, API_LIMIT_PER_MIN, 60_000);
-  if (!algemeen.ok) return algemeen.retryAfter;
-  if (SAFE_METHODS.has(method) && !pathname.includes('/callback') && !/^\/api\/(mcp-connector\/authorize|auth\/|aanmeld\/koppel\/|owner\/agents\/ws-ticket)/.test(pathname)) return 0;
+  if (!algemeen.ok) return { retryAfter: algemeen.retryAfter, maxAttempts: API_LIMIT_PER_MIN, windowSec: 60 };
+  // (aanmelden/telegram/widget-terug is een GET die een aanmelding afrondt: hij stond al in STRIKTE_LIMIETEN, maar kwam er als GET nooit.)
+  if (SAFE_METHODS.has(method) && !pathname.includes('/callback') && !/^\/api\/(mcp-connector\/authorize|auth\/|aanmeld\/koppel\/|owner\/agents\/ws-ticket|aanmelden\/telegram\/widget-terug$)/.test(pathname)) return null;
   for (const [patroon, naam, max, failClosed] of STRIKTE_LIMIETEN) {
     if (!patroon.test(pathname)) continue;
-    const r = await rateLimit(`${naam}:${ip}`, max * strikteFactor(), 60, { failClosed });
-    return r.ok ? 0 : r.retryAfter;
+    const limiet = max * strikteFactor();
+    const r = await rateLimit(`${naam}:${ip}`, limiet, 60, { failClosed });
+    return r.ok ? null : { retryAfter: r.retryAfter, maxAttempts: limiet, windowSec: 60 };
   }
-  return 0;
+  return null;
+}
+
+export async function rateLimitAfwijzing(method: string, pathname: string, ip: string): Promise<number> {
+  return (await rateLimitAfwijzingDetail(method, pathname, ip))?.retryAfter ?? 0;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -450,9 +505,15 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
 
   // Gezondheidscontrole voor systemd/monitoring, los van de Host-allow-list.
   if (url.pathname === '/__gezondheid') {
+    // SEC-002 (http-rand-07): van buiten (via de tunnel) een eigen emmer per IP, en de databasecontrole hoogstens eens per 3 s —
+    // vroeger kostte elk anoniem verzoek een verbinding uit de systeempool. systemd/monitoring op loopback blijft onbeperkt.
+    if (vroegGeweigerd(res, clientIp(req), 'gezondheid', 120)) return;
     if (url.searchParams.get('diep') === '1') { const d = await diepAntwoord(req, DIST_DIR); return sendJson(res, d.status, d.inhoud); }
-    try { await getPool().query('SELECT 1'); return sendJson(res, 200, { ok: true, db: true }); }
-    catch { return sendJson(res, 503, { ok: false, db: false }); }
+    if (gezondheidCache && gezondheidCache.tot > Date.now()) return sendJson(res, gezondheidCache.status, gezondheidCache.inhoud);
+    let status = 200, inhoud: Record<string, boolean> = { ok: true, db: true };
+    try { await getPool().query('SELECT 1'); } catch { status = 503; inhoud = { ok: false, db: false }; }
+    gezondheidCache = { tot: Date.now() + 3_000, status, inhoud };
+    return sendJson(res, status, inhoud);
   }
 
   if (host === DASHBOARD_HOST) {
@@ -490,15 +551,18 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
   // notifications/tools/list_changed stuurt zodra de levende staat (technisch profiel, dienst «ai») de lijst verandert. De router
   // kan geen open verbinding vasthouden, dus hier, vóór de routering (backend/connector-v2-stroom.ts).
   if (host === SERVICE_HOSTS.mcp && req.method === 'GET' && /text\/event-stream/i.test(String(req.headers.accept || ''))) {
-    if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res); return; }
+    // SEC-002 (http-rand-07): ook deze ingangen (elk een tokenopzoeking in de database) tellen in de algemene emmer per IP.
+    if ((url.pathname === '/mcp' || url.pathname === '/mcp/' || /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.test(url.pathname)) && vroegGeweigerd(res, clientIp(req))) return;
+    if (url.pathname === '/mcp' || url.pathname === '/mcp/') { await stroomVerzoekMcp(req, res, clientIp(req)); return; }
     const m = /^\/(claude|gpt|grok|gemini|copilot|cursor|antigravity|autoclaw)\/?$/.exec(url.pathname);
-    if (m) { await stroomVerzoek(req, res, m[1]); return; }
+    if (m) { await stroomVerzoek(req, res, m[1], clientIp(req)); return; }
   }
   // APPARAAT-001: de snelle stroom van de site zelf (GET /api/owner/stroom, Accept: text/event-stream) — het venster «Це ви?» op het
   // andere apparaat binnen een seconde. Zelfde sessiecontrole als elke route (via backend/apparaat-bevestiging/routes.ts), dezelfde
   // verzoekcontext als de router (metVerzoek), maar buiten de router omdat die geen open verbinding kan vasthouden.
   if (req.method === 'GET' && url.pathname === '/api/owner/stroom' && /text\/event-stream/i.test(String(req.headers.accept || '')) && host !== SERVICE_HOSTS.mcp) {
     const ip = clientIp(req);
+    if (vroegGeweigerd(res, ip)) return; // SEC-002 (http-rand-07): sessiecontrole buiten de router telt ook in de emmer per IP
     const ev = buildEvent(req, url, '', ip);
     const body = { service: url.searchParams.get('service') || '', tabContext: url.searchParams.get('tabContext') || '' };
     await metVerzoek('GET /api/owner/stroom', () => stroomVerzoekApparaat(req, res, ev as unknown as Record<string, unknown>, body), { ip, ua: String(req.headers['user-agent'] || '') });
@@ -516,19 +580,22 @@ async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
     // verzoeken van Anthropic (server-naar-server) onterecht weigeren; CSRF is hier niet van toepassing.
     const csrf = connector ? '' : csrfAfwijzing(method, req.headers, apiUrl.pathname);
     if (csrf) return sendJson(res, 403, { error: csrf, reasonCode: csrf });
-    const wacht = await rateLimitAfwijzing(method, apiUrl.pathname, ip);
-    if (wacht > 0) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(wacht) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: wacht }));
-    if (apiUrl.pathname === '/api/storing/tech-bundel' && method === 'POST') return sendJson(res, 200, techMeldingVerwerken(await readBody(req).catch(() => ''), host));
+    const afwijzing = await rateLimitAfwijzingDetail(method, apiUrl.pathname, ip);
+    if (afwijzing) return send(res, 429, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Retry-After': String(afwijzing.retryAfter) }, JSON.stringify({ error: 'RATE_LIMITED', reasonCode: 'RATE_LIMITED', retryAfter: afwijzing.retryAfter, maxAttempts: afwijzing.maxAttempts, windowSec: afwijzing.windowSec }));
+    if (apiUrl.pathname === '/api/storing/tech-bundel' && method === 'POST') return sendJson(res, 200, techMeldingVerwerken(await readBody(req, apiUrl.pathname, ip).catch(() => ''), host));
     let body = '';
-    try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req); }
-    catch (err) { return sendJson(res, (err as { status?: number }).status || 400, { error: 'BODY_TOO_LARGE' }); }
+    try { body = req.method === 'GET' || req.method === 'HEAD' ? '' : await readBody(req, apiUrl.pathname, ip); }
+    catch (err) { return bodyWeigeren(req, res, err); }
     const t0 = performance.now();
     const response = await handler(buildEvent(req, apiUrl, body, ip) as never) as RouterResponse;
     // PERF-001: hoe lang de server zelf over dit verzoek deed (zichtbaar in DevTools → Network → Timing en voor de paginacontrole
     // van de extensie). Alleen de duur in ms, niets over de inhoud; zo is «traag door de server» te onderscheiden van «traag door
     // de tunnel/het netwerk».
     const duur = Math.max(0, performance.now() - t0).toFixed(1);
-    return writeRouterResponse(res, { ...response, headers: { 'Server-Timing': `app;dur=${duur}`, ...(response.headers || {}) } });
+    // SEC-002 (http-rand-09): niet bij een weigering (4xx/5xx) en niet op aanmeld-/codepaden (STRIKTE_LIMIETEN): daar was de duur
+    // tot op 0,1 ms een orakel («bestaat dit adres met een wachtwoord?» — wel/geen scrypt-ronde), zonder netwerkruis.
+    const timingMag = Number(response.statusCode) < 400 && !STRIKTE_LIMIETEN.some(([patroon]) => patroon.test(apiUrl.pathname));
+    return writeRouterResponse(res, { ...response, headers: { ...(timingMag ? { 'Server-Timing': `app;dur=${duur}` } : {}), ...(response.headers || {}) } });
   }
   return serveStatic(req, res, url, DIST_DIR, true, APP_CSP);
 }
@@ -566,6 +633,11 @@ if (isMain) {
   if (!ownerEmail()) { console.error('OWNER_EMAIL ontbreekt (zie ENV-VARS.md)'); process.exit(1); }
   // Audit-fix 10: zonder eigen IP-pepper niet starten (vroeger stil terugvallen op RECOVERY_CODE_PEPPER).
   if (!auditIpPepperGeldig()) { console.error('AUDIT_IP_PEPPER ontbreekt of is korter dan 32 tekens: voer deploy/geheimen-aanvullen.sh uit (zie ENV-VARS.md)'); process.exit(1); }
+  // SEC-002 (http-rand-01): één onopgevangen fout in één verzoek mag niet het hele proces (en alle open sleutels) meenemen.
+  procesVangnetInstellen();
+  // SEC-002 (aanv-gat-a-04): staat de noodschakelaar van de step-up aan (STAP_OP_UIT / STAP_OP_UIT_TOT), dan nooit stil:
+  // waarschuwing in het logboek, journaalregel en melding aan de eigenaar — elke 24 uur opnieuw (backend/stap-op-noodschakelaar.ts).
+  stapOpUitBewaken();
   const server = createServer();
   attachAgentGateway(server, APP_HOSTS); // Local Machine Connector: WSS /agent/ws (agent belt zelf naar buiten)
   server.requestTimeout = 120_000;
@@ -621,6 +693,11 @@ if (isMain) {
     .catch((err) => console.error('[sleutelkluis] achtergrondronde mislukt:', (err as Error).message)));
   setTimeout(kluisRonde, 90_000).unref();
   setInterval(kluisRonde, ACHTERGROND_INTERVAL_MS).unref();
+  // SEC-002 geheimen-05: omslagen van de gegevenssleutel van ingetrokken/verlopen AI-verbindingen en verwijderde passkeys weg —
+  // onafhankelijk van welke sleutels open staan (de belofte «intrekken of verlopen = dicht» van backend/sleutelkluis.ts).
+  const omslagRonde = () => omslagenOpruimen().then((u) => { if (u.grant || u.passkey) console.log(`[sleutelkluis] omslagen opgeruimd: verbindingen=${u.grant} passkeys=${u.passkey}`); }).catch(() => undefined);
+  setTimeout(omslagRonde, 120_000).unref();
+  setInterval(omslagRonde, 15 * 60_000).unref();
   // Etap E: journaal naar uw eigen SIEM (bestand en/of Loki op loopback). Uit tenzij /etc/mijn-ruimte/siem.env het aanzet.
   const siem = siemConfig();
   if (siem.lokiGeweigerd) console.error('[siem] SIEM_LOKI_URL geweigerd: alleen http://127.0.0.1, localhost of [::1] (deploy/SIEM.md)');

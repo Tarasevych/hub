@@ -3,6 +3,9 @@
 // Waarom: de goedkeuring met passkey is de enige weg om de site op afstand bij te werken. Dan moet de eigenaar vooraf weten of dit pakket de
 // site kan breken. Deze module pakt het pakket in een tijdelijke map uit en voert alleen STATISCHE controles uit (nooit code uit het pakket):
 //   structuur   één bovenmap, gewone bestanden en mappen, geen links/apparaten/paden buiten de map, redelijke omvang
+//               (SEC-002: drie lagen — de inhoudslijst moet VOLLEDIG te ontleden zijn; na het uitpakken wordt de map zelf nagelopen;
+//               elk bestand uit het pakket wordt zonder het volgen van links gelezen; een map zonder rwx of een bestand zonder r voor
+//               de eigenaar wordt geweigerd, en het opruimen van de werkmap hangt niet af van de rechten in het pakket)
 //   versie      UITROL-VERSIE klopt met het voorstel en is nieuwer dan de actieve versie
 //   metadata    AUTEUR, AGENT en SAMENVATTING (≥ 20 tekens) — dezelfde regels als root (deploy/uitrol/mijn-ruimte-uitrol.sh)
 //   commit      BRON-COMMIT = 40-hex git-commit (ok) of «zonder-git:<reden>» (waarschuwing); anders fout GEEN_BRON_COMMIT (regel 3)
@@ -18,7 +21,8 @@ import { ONTWIKKELARCHIEF_BESTAND, ONTWIKKELARCHIEF_MAX, ontwikkelArchiefVerplic
 import { controleerOntwikkelArchiefOnline, sha256VanBestand, type ArchiefControle } from './uitrol-ontwikkelarchief';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { constants as FS } from 'node:fs';
+import { chmod, lstat, mkdtemp, open, readdir, realpath, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -42,20 +46,127 @@ const TAR = ['/usr/bin/tar', '/bin/tar'];
 const BASH = ['/usr/bin/bash', '/bin/bash'];
 const eerste = async (kandidaten: string[]) => { for (const k of kandidaten) { try { await stat(k); return k; } catch { /* volgende */ } } return kandidaten[0]; };
 
-type Regel = { type: string; bytes: number; naam: string };
-async function lijst(pakket: string): Promise<Regel[]> {
+type Regel = { type: string; rechten: string; bytes: number; naam: string };
+type Lijst = { regels: Regel[]; onleesbaar: number; voorbeelden: string[] };
+const zichtbaar = (s: string) => s.replace(/[\u0000-\u001f\u007f]/g, '?');
+/**
+ * Inhoudslijst van het archief (`tar --list --verbose`), één post per regel.
+ * SEC-002 (server-uitrol-01): een regel die NIET te ontleden is, wordt geteld en niet meer stil overgeslagen. Vroeger viel een post
+ * met een eigenaarsnaam met een spatie («a b/root»), een datum buiten vier jaarcijfers of een bestandsnaam met een regeleinde buiten
+ * de typecontrole: zo kwam een symbolische link ongezien in de uitgepakte map en las de voorcontrole een bestand BUITEN het archief
+ * (bv. /proc/self/environ) in SAMENVATTING. `--numeric-owner` haalt de vrije tekst van eigenaar en groep uit de regel.
+ * Список вмісту архіву: рядок, який не вдалося розібрати, тепер рахується і блокує пакет (раніше його мовчки пропускали).
+ */
+async function lijst(pakket: string): Promise<Lijst> {
   const tar = await eerste(TAR);
-  const { stdout } = await run(tar, ['--list', '--verbose', '--gzip', '--quoting-style=literal', '--file', pakket], { maxBuffer: 64 * 1024 * 1024, timeout: 60_000, env: { LC_ALL: 'C', PATH: '/usr/bin:/bin' } });
-  const uit: Regel[] = [];
-  for (const r of stdout.split('\n')) {
-    const m = /^(.)\S{9}\s+\S+\s+(\d+)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?\s(.*)$/.exec(r);
-    if (m) uit.push({ type: m[1], bytes: Number(m[2]), naam: m[1] === 'l' || m[1] === 'h' ? m[3].replace(/ (?:->|link to) .*$/, '') : m[3] });
+  const { stdout } = await run(tar, ['--list', '--verbose', '--numeric-owner', '--gzip', '--quoting-style=literal', '--file', pakket], { maxBuffer: 64 * 1024 * 1024, timeout: 60_000, env: { LC_ALL: 'C', PATH: '/usr/bin:/bin' } });
+  const uit: Lijst = { regels: [], onleesbaar: 0, voorbeelden: [] };
+  const ruw = stdout.split('\n');
+  if (ruw[ruw.length - 1] === '') ruw.pop(); // alleen het regeleinde na de laatste post
+  for (const r of ruw) {
+    const m = /^(.)(\S{9})\s+\S+\s+(\d+)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?\s(.*)$/.exec(r);
+    if (m) uit.regels.push({ type: m[1], rechten: m[2], bytes: Number(m[3]), naam: m[1] === 'l' || m[1] === 'h' ? m[4].replace(/ (?:->|link to) .*$/, '') : m[4] });
+    else { uit.onleesbaar += 1; if (uit.voorbeelden.length < 4) uit.voorbeelden.push(zichtbaar(r).slice(0, 80)); }
   }
   return uit;
 }
 
 const kaal = (s: string) => s.replace(/\r/g, '').replace(/\0/g, '').trim();
-const leesMeta = async (dir: string, naam: string, max: number) => { try { return kaal((await readFile(path.join(dir, naam))).subarray(0, max).toString('utf8')); } catch { return ''; } };
+
+/**
+ * SEC-002 (na de controle, g01-5): de uitkomst van de voorcontrole gaat via voorstelKlaar/voorstelStatus naar de voorbereider (een agent).
+ * Teksten van uitzonderingen bevatten interne paden (uploadmap, tijdelijke werkmap) en volledige opdrachtregels: die gaan alleen naar het
+ * logboek van de dienst, nooit in `details`.
+ * Внутрішні шляхи й рядки команд — лише в журнал служби, не в подробиці, які бачить підготовник.
+ */
+function logIntern(waar: string, e: unknown) {
+  console.error(`[uitrol-voorcontrole] ${waar}: ${String((e as Error)?.message ?? e).replace(/\s+/g, ' ').slice(0, 400)}`);
+}
+/** Een melding van bash over een script in de werkmap: het absolute pad → de naam binnen het pakket; overige werkmap-paden weg. */
+function zonderWerkpad(tekst: string, werk: string, bron: string, rel: string): string {
+  let t = tekst.split(path.join(bron, rel)).join(rel);
+  if (werk) t = t.split(werk + path.sep).join('').split(werk).join('');
+  return t.replace(/\/\S*uitrol-voorcontrole-[^\s/:]*\/?/g, '');
+}
+
+/**
+ * SEC-002, tweede laag: de uitgepakte map nalopen VÓÓR er iets uit gelezen wordt. Alleen gewone bestanden en mappen mogen bestaan;
+ * een symbolische link, harde link, FIFO, socket of apparaat blokkeert het pakket — ongeacht wat de inhoudslijst liet zien.
+ * Другий шар: після розпакування й до першого читання — лише звичайні файли й теки; будь-яке посилання блокує пакет.
+ */
+export async function _controleerUitgepakt(wortel: string): Promise<string[]> {
+  const slecht: string[] = []; const rij: string[] = [wortel]; let geteld = 0;
+  // g01-5: deze regels ziet de (Oekraïenstalige) eigenaar in src/uitrol/Voorcontrole.tsx — daarom elk detail als paar uk · nl.
+  const soort = (st: import('node:fs').Stats) => st.isSymbolicLink() ? 'символьне посилання · symbolische link' : st.isFIFO() ? 'FIFO' : st.isSocket() ? 'сокет · socket' : st.isBlockDevice() || st.isCharacterDevice() ? 'пристрій · apparaat' : 'невідомий тип · onbekend';
+  while (rij.length) {
+    const dir = rij.pop()!;
+    for (const naam of await readdir(dir)) {
+      const p = path.join(dir, naam); const rel = zichtbaar(path.relative(wortel, p)).slice(0, 80);
+      const st = await lstat(p);
+      // g01-1: een map die de eigenaar niet kan lezen/betreden/legen wordt gemeld en NIET betreden (als root zou readdir gewoon slagen,
+      // als dienstgebruiker gooit het EACCES); een bestand zonder leesrecht voor de eigenaar is evenmin een gewoon pakketbestand.
+      if (st.isDirectory()) { if ((st.mode & 0o700) !== 0o700) slecht.push(`тека без прав для власника · map zonder rechten voor de eigenaar: ${rel}`); else rij.push(p); }
+      else if (!st.isFile()) slecht.push(`не звичайний файл · geen gewoon bestand (${soort(st)}): ${rel}`);
+      else if (st.nlink > 1) slecht.push(`жорстке посилання · harde link: ${rel}`);
+      else if (!(st.mode & 0o400)) slecht.push(`файл недоступний власникові для читання · bestand niet leesbaar voor de eigenaar: ${rel}`);
+      if (++geteld > MAX_BESTANDEN * 3) { slecht.push('забагато записів у розпакованій теці · te veel posten in de uitgepakte map'); return slecht; }
+      if (slecht.length >= 12) return slecht;
+    }
+  }
+  return slecht;
+}
+
+/**
+ * SEC-002 (na de controle, g01-1): de werkmap van de voorcontrole verwijderen, ONAFHANKELIJK van de rechten binnen die map.
+ * Vroeger: `rm(...).catch(() => undefined)` — een map zonder rechten (modus 000 of zonder schrijfrecht) kon de dienst (geen root) niet
+ * in of niet legen; de fout werd stil ingeslikt en tot 1,5 GB per poging bleef in de tijdelijke map van de dienst staan.
+ * Nu: lukt het verwijderen niet, dan krijgt de eigenaar op elke MAP weer rwx (nalopen met lstat: een link wordt nooit gevolgd en
+ * nooit van rechten veranderd) en wordt het opnieuw geprobeerd. Lukt het dan nog niet → één regel in het logboek van de dienst.
+ * Прибирання тимчасової теки не залежить від прав усередині неї; невдача більше не замовчується (рядок у журналі служби).
+ */
+export async function _ruimWerkmapOp(werk: string): Promise<boolean> {
+  const weg = () => rm(werk, { recursive: true, force: true });
+  try { await weg(); return true; } catch { /* rechten herstellen en opnieuw */ }
+  const rij: string[] = [werk]; let geteld = 0;
+  while (rij.length && geteld < MAX_BESTANDEN * 6) {
+    const dir = rij.pop()!;
+    try {
+      if (!(await lstat(dir)).isDirectory()) continue; // nooit een link volgen: chmod werkt op het DOEL van een link
+      await chmod(dir, 0o700);
+      for (const naam of await readdir(dir)) {
+        geteld += 1; const p = path.join(dir, naam);
+        if ((await lstat(p)).isDirectory()) rij.push(p);
+      }
+    } catch { /* verder met de rest; de tweede poging hieronder beslist */ }
+  }
+  try { await weg(); return true; } catch (e) {
+    console.error(`[uitrol-voorcontrole] OPRUIMEN MISLUKT: tijdelijke map ${werk} is niet verwijderd (${String((e as NodeJS.ErrnoException).code || 'fout')}) — handmatig verwijderen`);
+    return false;
+  }
+}
+
+/**
+ * SEC-002, derde laag: hoogstens `max` bytes van een GEWOON bestand binnen `wortel` lezen, zonder ooit een link te volgen:
+ * het echte pad moet letterlijk wortel/rel zijn (geen link in enig tussenliggend deel), openen met O_NOFOLLOW (en O_NONBLOCK, zodat
+ * een FIFO niet blijft hangen) en daarna fstat().isFile() op de geopende descriptor. null = niet (veilig) leesbaar.
+ * Третій шар: читання без переходу за посиланнями; null, якщо це не звичайний файл усередині теки пакета.
+ */
+export async function _leesVeilig(wortel: string, rel: string, max: number): Promise<Buffer | null> {
+  let fh: import('node:fs/promises').FileHandle | null = null;
+  try {
+    const echteWortel = await realpath(wortel);
+    const doel = path.resolve(echteWortel, rel);
+    if (doel !== echteWortel && !doel.startsWith(echteWortel + path.sep)) return null;
+    if ((await realpath(doel)) !== doel) return null;
+    fh = await open(doel, FS.O_RDONLY | (FS.O_NOFOLLOW ?? 0) | (FS.O_NONBLOCK ?? 0));
+    const st = await fh.stat();
+    if (!st.isFile()) return null;
+    const buf = Buffer.alloc(Math.max(0, Math.min(max, st.size)));
+    let gelezen = 0;
+    while (gelezen < buf.length) { const { bytesRead } = await fh.read(buf, gelezen, buf.length - gelezen, gelezen); if (!bytesRead) break; gelezen += bytesRead; }
+    return buf.subarray(0, gelezen);
+  } catch { return null; } finally { await fh?.close().catch(() => undefined); }
+}
 async function alleBestanden(dir: string, basis = dir, uit: string[] = []): Promise<string[]> {
   for (const e of await readdir(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
@@ -85,17 +196,27 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
   let werk = '';
   try {
     // ---- 1. structuur (lijst, nog niet uitpakken)
-    let regels: Regel[] = [];
-    try { regels = await lijst(pakket); } catch (e) {
-      voeg('structuur', 'fout', 'Архів не читається як tar.gz.', 'Het archief is niet te lezen als tar.gz.', [String((e as Error).message).slice(0, 200)]);
+    let regels: Regel[] = []; let onleesbaar = 0; let voorbeelden: string[] = [];
+    try { ({ regels, onleesbaar, voorbeelden } = await lijst(pakket)); } catch (e) {
+      // g01-5: de foutmelding van tar bevat de volledige opdrachtregel met het pad van de uploadmap — alleen naar het logboek van de
+      // dienst; de voorbereider (agent) ziet een neutrale tekst.
+      logIntern('inhoudslijst', e);
+      voeg('structuur', 'fout', 'Архів не читається як tar.gz.', 'Het archief is niet te lezen als tar.gz.', ['tar не зміг прочитати список вмісту (пошкоджений або не gzip-архів) · tar kon de inhoudslijst niet lezen (beschadigd of geen gzip-archief)']);
       return afronden(controles, meta);
     }
     const slecht: string[] = []; const toppen = new Set<string>(); let wortelBestand = false; let bytes = 0;
+    // SEC-002: fail closed — één post die we niet kunnen lezen, kan een link of apparaat zijn.
+    if (onleesbaar) slecht.push(`рядків списку вмісту, які не вдалося розібрати (незвична дата, тип або ім’я з переведенням рядка): ${onleesbaar} · ${onleesbaar} regel(s) van de inhoudslijst niet te ontleden (ongewone datum, soort of bestandsnaam met een regeleinde): ${voorbeelden.join(' | ')}`);
     for (const r of regels) {
       const naam = r.naam.replace(/^\.\//, '');
       const delen = naam.split('/').filter((d) => d && d !== '.');
       if (naam.startsWith('/') || delen.includes('..') || naam.includes('\\')) slecht.push(`onveilig pad: ${naam.slice(0, 80)}`);
       if (!['-', 'd', '0'].includes(r.type)) slecht.push(`niet-toegestaan type '${r.type}': ${naam.slice(0, 80)}`);
+      // SEC-002 (na de controle, g01-1): tar maakt een map met modus 000 precies zo aan. De dienst is geen root: het nalopen faalde dan
+      // met EACCES en het opruimen kon de map niet meer in. De eigenaar moet elke map kunnen lezen, betreden en legen (rwx; «s» = x met
+      // setuid) en elk bestand kunnen lezen — anders weigeren we het pakket hier, vóór het uitpakken.
+      // Тека без rwx для власника або файл без r — відхиляємо ще за списком, до розпакування.
+      else if (r.type === 'd' ? !/^rw[xs]/.test(r.rechten) : !r.rechten.startsWith('r')) slecht.push(`${r.type === 'd' ? 'тека' : 'файл'} без прав для власника · ${r.type === 'd' ? 'map' : 'bestand'} zonder rechten voor de eigenaar (${r.rechten}): ${naam.slice(0, 80)}`);
       if (delen.length === 1 && r.type !== 'd') wortelBestand = true; else if (delen.length) toppen.add(delen[0]);
       bytes += r.bytes;
     }
@@ -104,18 +225,25 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     if (!regels.length) slecht.push('het archief is leeg');
     if (bytes > MAX_UITGEPAKT || meta.bestanden > MAX_BESTANDEN) slecht.push(`te groot na uitpakken (${Math.round(bytes / 1048576)} MB, ${meta.bestanden} bestanden)`);
     if (slecht.length) { voeg('structuur', 'fout', 'Структура архіву небезпечна або некоректна.', 'De structuur van het archief is onveilig of onjuist.', slecht); return afronden(controles, meta); }
-    voeg('structuur', 'ok', `Структура в порядку: одна тека, ${meta.bestanden} файлів, ${Math.round(bytes / 1048576)} МБ після розпакування.`, `Structuur in orde: één map, ${meta.bestanden} bestanden, ${Math.round(bytes / 1048576)} MB uitgepakt.`);
 
     // ---- uitpakken (alleen bestanden; geen uitvoering)
     werk = await mkdtemp(path.join(tmpdir(), 'uitrol-voorcontrole-'));
     await run(await eerste(TAR), ['--extract', '--gzip', '--no-same-owner', '--no-same-permissions', '--file', pakket, '-C', werk], { timeout: 90_000, maxBuffer: 8 * 1024 * 1024, env: { LC_ALL: 'C', PATH: '/usr/bin:/bin' } });
+    // SEC-002: de map zelf nalopen vóór het eerste lezen — wat er werkelijk staat, telt; niet wat de lijst beweerde.
+    const vreemd = await _controleerUitgepakt(werk);
+    if (vreemd.length) { voeg('structuur', 'fout', 'Після розпакування в пакеті знайдено посилання, особливі файли або записи без прав доступу для власника — пакет відхилено, нічого з нього не прочитано.', 'Na het uitpakken staan er links, bijzondere bestanden of posten zonder rechten voor de eigenaar in het pakket — pakket geweigerd, er is niets uit gelezen.', vreemd); return afronden(controles, meta); }
+    voeg('structuur', 'ok', `Структура в порядку: одна тека, ${meta.bestanden} файлів, ${Math.round(bytes / 1048576)} МБ після розпакування.`, `Structuur in orde: één map, ${meta.bestanden} bestanden, ${Math.round(bytes / 1048576)} MB uitgepakt.`);
     let bron = werk;
-    if (!(await stat(path.join(werk, 'UITROL-VERSIE')).catch(() => null))) {
+    if (!(await lstat(path.join(werk, 'UITROL-VERSIE')).catch(() => null))?.isFile()) {
       const top = await readdir(werk);
       if (top.length === 1) bron = path.join(werk, top[0]);
       meta.bovenmap = top.length === 1 ? top[0] : '';
     }
-    const bestaat = async (p: string) => !!(await stat(path.join(bron, p)).catch(() => null));
+    // Alles uit het pakket wordt via _leesVeilig gelezen (binnen `werk`, geen links); `bestaat` = een gewoon bestand, zonder een link te volgen.
+    const relBron = path.relative(werk, bron);
+    const lees = (rel: string, max: number) => _leesVeilig(werk, path.join(relBron, rel), max);
+    const leesMeta = async (_dir: string, naam: string, max: number) => { const b = await lees(naam, max); return b ? kaal(b.toString('utf8')) : ''; };
+    const bestaat = async (p: string) => !!(await lstat(path.join(bron, p)).catch(() => null))?.isFile();
 
     // ---- 2. versie
     const inhoudVersie = await leesMeta(bron, 'UITROL-VERSIE', 64).then((v) => v.replace(/\s+/g, ''));
@@ -140,7 +268,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
 
     // ---- 3a. UI-010: UITROL-MANIFEST.json (tweetalige beschrijving + deelnemers). Zelfde regels als de browser (shared/uitrol-manifest.ts).
     {
-      const ruw = (await stat(path.join(bron, MANIFEST_BESTAND)).catch(() => null)) ? await leesMeta(bron, MANIFEST_BESTAND, MANIFEST_MAX) : null;
+      const ruw = (await bestaat(MANIFEST_BESTAND)) ? await leesMeta(bron, MANIFEST_BESTAND, MANIFEST_MAX) : null;
       if (ruw != null) {
         const r = valideerManifest(ruw, inhoudVersie);
         if (r.fouten.length) voeg('manifest', 'fout', `MANIFEST_ONGELDIG: у ${MANIFEST_BESTAND} бракує або неправильні поля (${r.fouten.length}). Виправте їх і зберіть пакет знову.`, `MANIFEST_ONGELDIG: ${MANIFEST_BESTAND} heeft ontbrekende of ongeldige velden (${r.fouten.length}). Herstel ze en bouw het pakket opnieuw.`, r.fouten.map((f) => `${f.veld}: ${f.uk} · ${f.nl}`));
@@ -196,7 +324,8 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     const kapot: string[] = [];
     for (const s of scripts.slice(0, 120)) {
       try { await run(await eerste(BASH), ['-n', path.join(bron, s)], { timeout: 10_000, env: { PATH: '/usr/bin:/bin' } }); }
-      catch (e) { kapot.push(`${s}: ${String((e as { stderr?: string }).stderr || (e as Error).message).split('\n')[0].slice(0, 120)}`); }
+      // g01-5: bash noemt het volledige pad in de tijdelijke werkmap — dat pad vervangen door de naam binnen het pakket.
+      catch (e) { kapot.push(`${s}: ${zonderWerkpad(String((e as { stderr?: string }).stderr || (e as Error).message).split('\n')[0], werk, bron, s).slice(0, 120)}`); }
     }
     if (!(await bestaat('deploy/installeer-app.sh'))) voeg('scripts', 'fout', 'Немає deploy/installeer-app.sh.', 'deploy/installeer-app.sh ontbreekt.');
     else if (kapot.length) voeg('scripts', 'fout', `У ${kapot.length} скриптах синтаксична помилка — вони виконуються від root.`, `${kapot.length} script(s) hebben een syntaxisfout — ze draaien als root.`, kapot);
@@ -205,7 +334,7 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     // ---- 5. bouwen
     const bouw: string[] = []; const bouwWaarschuwing: string[] = [];
     let pkg: { scripts?: Record<string, string>; dependencies?: Record<string, string> } | null = null;
-    try { pkg = JSON.parse(await readFile(path.join(bron, 'package.json'), 'utf8')); } catch { bouw.push('package.json ontbreekt of is geen geldige JSON'); }
+    try { const b = await lees('package.json', 8 * 1024 * 1024); if (!b) throw new Error('ontbreekt'); pkg = JSON.parse(b.toString('utf8')); } catch { bouw.push('package.json ontbreekt of is geen geldige JSON'); }
     if (pkg && !pkg.scripts?.build) bouw.push('package.json heeft geen "build"-script');
     if (!(await bestaat('package-lock.json'))) bouw.push('package-lock.json ontbreekt (npm ci faalt)');
     for (const f of ['index.html', 'server/migrate.ts', 'scripts/build-server.mjs', 'backend/index.ts']) if (!(await bestaat(f))) bouw.push(`${f} ontbreekt`);
@@ -227,7 +356,9 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
       const toegepast = opties.toegepasteMigraties;
       if (toegepast && !toegepast.has(naam)) {
         nieuw.push(naam);
-        const ruw = await readFile(path.join(bron, f), 'utf8');
+        const inhoud = await lees(f, 64 * 1024 * 1024);
+        if (!inhoud) { migFout.push(`niet leesbaar als gewoon bestand: ${naam}`); continue; }
+        const ruw = inhoud.toString('utf8');
         nieuwSha.set(naam, createHash('sha256').update(ruw, 'utf8').digest('hex'));
         const sql = ruw.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
         for (const [re, , nl] of SQL_RISICO) if (re.test(sql)) risico.push(`${naam}: ${nl}`);
@@ -284,8 +415,8 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     }
     for (const f of alle.filter((x) => /\.(ts|tsx|js|mjs|json|sh|md|txt|ya?ml|env|sql)$/i.test(x) && !/(^|\/)package-lock\.json$/.test(x)).slice(0, 4000)) {
       if (gevonden.length > 20) break;
-      const st = await stat(path.join(bron, f)).catch(() => null); if (!st || st.size > 2 * 1024 * 1024) continue;
-      const t = await readFile(path.join(bron, f), 'utf8').catch(() => '');
+      const st = await lstat(path.join(bron, f)).catch(() => null); if (!st || !st.isFile() || st.size > 2 * 1024 * 1024) continue;
+      const t = (await lees(f, 2 * 1024 * 1024))?.toString('utf8') ?? '';
       for (const [re, soort] of GEHEIM_PATRONEN) if (re.test(t)) { gevonden.push(`${f.replace(/\\/g, '/')}: ${soort}`); break; }
     }
     if (gevonden.length) voeg('geheimen', 'waarschuwing', 'Схоже, у пакеті є секрети (ключі/токени/.env). Перевірте перед схваленням.', 'Het pakket lijkt geheimen te bevatten (sleutels/tokens/.env). Controleer vóór het goedkeuren.', gevonden);
@@ -313,9 +444,13 @@ export async function pakketVoorcontrole(pakket: string, opties: { versie: strin
     else if (tests && tests.geslaagd != null && tests.geslaagd > 0) voeg('tests', 'ok', `Підготовник повідомив: ${tests.geslaagd} тестів пройдено${bronTekst[0]}.`, `De voorbereider meldde: ${tests.geslaagd} tests geslaagd${bronTekst[1]}.`);
     else voeg('tests', 'waarschuwing', 'Підготовник не повідомив результатів тестів (ані в пропозиції, ані файлом TESTRESULTATEN у пакеті).', 'De voorbereider meldde geen testresultaten (niet in het voorstel en niet via TESTRESULTATEN in het pakket).');
   } catch (e) {
-    voeg('voorcontrole', 'fout', 'Перевірку пакета не вдалося виконати.', 'De voorcontrole kon niet worden uitgevoerd.', [String((e as Error).message).slice(0, 200)]);
+    // g01-5: de tekst van de uitzondering (paden in de tijdelijke map, opdrachtregels) alleen naar het logboek van de dienst.
+    logIntern('voorcontrole', e);
+    const code = /^[A-Z][A-Z0-9_]{1,31}$/.test(String((e as NodeJS.ErrnoException)?.code ?? '')) ? String((e as NodeJS.ErrnoException).code) : 'ONBEKEND';
+    voeg('voorcontrole', 'fout', 'Перевірку пакета не вдалося виконати.', 'De voorcontrole kon niet worden uitgevoerd.', [`внутрішня помилка перевірки (код ${code}) · interne fout van de controle (code ${code})`]);
   } finally {
-    if (werk) await rm(werk, { recursive: true, force: true }).catch(() => undefined);
+    // g01-1: opruimen dat niet afhangt van de rechten in het pakket en een mislukking niet meer stil inslikt.
+    if (werk) await _ruimWerkmapOp(werk);
   }
   return afronden(controles, meta);
 }

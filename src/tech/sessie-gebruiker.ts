@@ -4,11 +4,12 @@
 // iemand het menu opende. Gevonden met tests/e2e/vlaggen.e2e.ts (14.10.2026). Dubbel aanroepen is onschuldig (de stores kijken of er
 // iets veranderde).
 import { useEffect } from 'react';
+import { vlaggenGebruiker } from '../functievlag-lezen';
 import { techGebruiker } from './tech-opslag';
 import { weergaveGebruiker } from '../weergave/weergave-opslag';
 import { zetZoekGebruiker } from '../zoek/zoek-recent';
 
 /** undefined = nog onbekend (niets doen); null = niet aangemeld; anders de gebruikers-id. */
 export function useSessieGebruiker(userId: string | null | undefined): void {
-  useEffect(() => { if (userId !== undefined) { techGebruiker(userId); weergaveGebruiker(userId); zetZoekGebruiker(userId); } }, [userId]);
+  useEffect(() => { if (userId !== undefined) { techGebruiker(userId); weergaveGebruiker(userId); zetZoekGebruiker(userId); vlaggenGebruiker(userId); } }, [userId]);
 }

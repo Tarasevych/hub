@@ -45,7 +45,8 @@ async function deur(method: 'GET' | 'POST', pad: string, body?: unknown): Promis
   return { status: res.status, data };
 }
 
-export type DeurVerzoek = { clientName: string; redirectHost: string; redirectSoort: 'web' | 'loopback' | 'app' | null; deur: string; resource: string; expiresAt: number; scope: string };
+/** bindingHash (SEC-002 ai-mcp-14 / toets g10e-toets-5): SHA-256 van het bindingscookie van de browser die de autorisatie bij de deur begon; null = oude deur. */
+export type DeurVerzoek = { clientName: string; redirectHost: string; redirectSoort: 'web' | 'loopback' | 'app' | null; deur: string; resource: string; expiresAt: number; scope: string; bindingHash: string | null };
 export async function deurVerzoek(rid: string): Promise<DeurVerzoek | null> {
   if (!isDeurRid(rid)) return null;
   const r = await deur('GET', `/intern/verzoek?rid=${encodeURIComponent(rid)}`);
@@ -55,6 +56,7 @@ export async function deurVerzoek(rid: string): Promise<DeurVerzoek | null> {
     clientName: String(r.data.clientName || 'MCP-client').slice(0, 80), redirectHost: String(r.data.redirectHost || '').slice(0, 200),
     redirectSoort: ['web', 'loopback', 'app'].includes(r.data.redirectSoort) ? r.data.redirectSoort : null,
     deur: String(r.data.deur || '').slice(0, 40), resource: String(r.data.resource || '').slice(0, 200), expiresAt: Number(r.data.expiresAt) || 0, scope: 'read',
+    bindingHash: typeof r.data.bindingHash === 'string' && /^[0-9a-f]{64}$/.test(r.data.bindingHash) ? r.data.bindingHash : null,
   };
 }
 export async function deurBesluit(rid: string, approve: boolean, duur: DuurId, wie: { id: string; email?: string }): Promise<{ redirect: string } | null> {

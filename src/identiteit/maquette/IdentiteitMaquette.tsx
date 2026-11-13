@@ -46,9 +46,25 @@ const openAccountMenu = () => {
   if (boven) { druk(boven); return; }
   const lade = document.querySelector<HTMLButtonElement>('.canonical-chrome .canonical-menu-toggle');
   if (!lade) return;
-  if (!document.querySelector('.canonical-chrome.sidebar-drawer')) lade.click();
-  // Шухляда малює свою шапку з аватаром після відкриття; тиснемо на нього наступним кадром.
-  requestAnimationFrame(() => druk(document.querySelector<HTMLButtonElement>('.canonical-drawer-account .canonical-avatar-trigger')));
+  const alOpen = Boolean(document.querySelector('.canonical-chrome.sidebar-drawer'));
+  if (!alOpen) lade.click();
+  // Шухляда малює свою шапку з аватаром після відкриття; тиснемо на нього наступним кадром і прибираємо шухляду після закриття меню.
+  requestAnimationFrame(() => {
+    const trekker = document.querySelector<HTMLButtonElement>('.canonical-drawer-account .canonical-avatar-trigger');
+    druk(trekker);
+    if (alOpen || typeof MutationObserver !== 'function') return;
+    let gezien = false;
+    const w = new MutationObserver(() => {
+      const open = Boolean(document.querySelector('.am3-mobiel-laag')) || trekker?.getAttribute('aria-expanded') === 'true';
+      if (open) { gezien = true; return; }
+      if (!gezien) return;
+      w.disconnect();
+      if (document.documentElement.dataset.identiteitMaquette !== 'aan') return;
+      document.querySelector<HTMLElement>('.canonical-drawer-close, .canonical-sidebar-scrim.drawer')?.click();
+    });
+    w.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] });
+    window.setTimeout(() => w.disconnect(), 60_000);
+  });
 };
 
 export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }: Props) {

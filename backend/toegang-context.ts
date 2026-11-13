@@ -17,6 +17,7 @@ import { huidigeContext } from '../server/platform/context';
 import { getPool } from '../server/platform/pg';
 import { alsGebruiker } from './ai-toestemmingen';
 import { stapOpGeldig, stapOpMethode, stapOpSessieId, stapOpUit, sterkeStapOpGeldig, type StapOpAuth } from './stap-op';
+import { jsonbTekst } from '../shared/tekst-veilig';
 
 // ------------------------------------------------------------------------------------------------ acties (vaste lijst)
 /** Waarvoor een sleutel gebruikt is. Sleutel = wat de client mag sturen; waarde = [uk, nl]. Onbekend → 'onbekend'. */
@@ -97,8 +98,8 @@ export async function gebruikVoor(userId: string, soort: GebruikSoort, sleutels:
 export const NOTITIE_SOORTEN = ['passkey', 'herstelset', 'herstelcode', 'toegangscode'] as const;
 export type NotitieSoort = typeof NOTITIE_SOORTEN[number];
 export const NOTITIE_MAX = 500;
-export class ToegangFout extends Error { constructor(public code: string, public status = 400) { super(code); } }
-const fout = (code: string, status = 400): never => { throw new ToegangFout(code, status); };
+export class ToegangFout extends Error { constructor(public code: string, public status = 400, public retryAfter?: number) { super(code); } }
+const fout = (code: string, status = 400, retryAfter?: number): never => { throw new ToegangFout(code, status, retryAfter); };
 /** Opschonen: geen stuurtekens (behalve regeleinde), witruimte aan de randen weg. */
 export const notitieTekst = (v: unknown) => String(v ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 export async function notitiesLijst(userId: string) {
@@ -177,8 +178,8 @@ export async function wijzigingVastleggen(w: WijzigingInvoer): Promise<string> {
   const { rows } = await sys().query(`INSERT INTO app.toegang_wijzigingen (user_id, actor_id, actor_email, soort, sleutel, vingerafdruk, label, reden, sessie_id, sessies, stap_op, host, apparaat, ip_hash, herstel)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15::jsonb) RETURNING id`,
   [w.userId, w.actor.id, String(w.actor.email || '').slice(0, 200), w.soort, String(w.sleutel || '').slice(0, 120), w.vingerafdruk || '', String(w.label || '').slice(0, 120), w.reden ?? null,
-    s.sessieId, JSON.stringify({ tab: s.tab, anker: s.anker, grant: s.grant }), methode, hostVoorDienst(w.auth?.service || c?.service), apparaat(c?.ua), ipHash(c?.ip),
-    w.herstel ? JSON.stringify(w.herstel) : null]);
+    s.sessieId, jsonbTekst({ tab: s.tab, anker: s.anker, grant: s.grant }), methode, hostVoorDienst(w.auth?.service || c?.service), apparaat(c?.ua), ipHash(c?.ip),
+    w.herstel ? jsonbTekst(w.herstel) : null]);
   return String(rows[0].id);
 }
 export type WijzigingRij = {

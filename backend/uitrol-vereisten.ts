@@ -249,6 +249,11 @@ export async function vereistenStarten(eigenaar: string, invoer: Record<string, 
   return ant;
 }
 
+/** SEC-002: vingerafdruk van de SQL die naar de proef gaat (voor de audit): naam, grootte en SHA-256 — nooit de tekst. Puur. */
+export function proefSqlVingerafdrukken(migraties: Array<{ naam: string; sql: string }>): Array<{ naam: string; bytes: number; sha256: string }> {
+  return migraties.map((m) => ({ naam: m.naam, bytes: Buffer.byteLength(m.sql), sha256: createHash('sha256').update(m.sql, 'utf8').digest('hex') }));
+}
+
 export async function proefAanvragen(eigenaar: string, invoer: Record<string, unknown>): Promise<VereistenAntwoord> {
   const s = sessie(invoer.id, eigenaar);
   if (s.antwoord.proef.status !== 'wacht-op-sql') return s.antwoord;
@@ -262,6 +267,12 @@ export async function proefAanvragen(eigenaar: string, invoer: Record<string, un
     migraties.push({ naam, sql }); s.sql.set(naam, sql);
   }
   if (migraties.length !== verwacht.size) throw new VereistenFout('PROEF_SQL_ONVOLLEDIG');
+  // SEC-002 (server-uitrol-04): de tekst van de SQL bereikte vroeger geen enkel logboek (alleen de uitslag). Vóór het verzoek naar
+  // root gaat, komt per migratie de SHA-256 en de grootte in de audit — nooit de SQL zelf. Zo is achteraf te bewijzen wélke SQL op
+  // verzoek van wie is geprobeerd (en te vergelijken met de migratie in het archief, zie proefVoorArchief).
+  // У журнал аудиту — лише SHA-256 і розмір кожного SQL (не сам текст): видно, який саме SQL і хто просив виконати.
+  await auditToevoegen({ ownerId: eigenaar, actorId: eigenaar, action: 'uitrol_migratieproef_aangevraagd', type: 'beveiliging', result: 'ok', service: 'admin',
+    details: { id: s.antwoord.id, archiefSha256: s.sha256, sqlBytes: bytes, migraties: proefSqlVingerafdrukken(migraties) } }).catch(() => undefined);
   const doel = path.join(proefInbox(), `proef-${s.antwoord.id}.json`);
   const tmp = path.join(proefInbox(), `.proef-${s.antwoord.id}.tmp`);
   await writeFile(tmp, JSON.stringify({ id: s.antwoord.id, versie: s.antwoord.vereisten.find((x) => x.id === 'versie')?.waardeNl?.split(' ')[0] || '', migraties }), { mode: 0o640 });

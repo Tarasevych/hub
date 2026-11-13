@@ -13,6 +13,7 @@ import {
   type AgendaVorm, type Antwoord, type Frequentie, type Herinnering, type Weekdag,
 } from '../../shared/agenda-model';
 import type { AgendaKop, SchrijfUitslag } from './agenda-client';
+import { weigeringZin } from '../../shared/weigering-tekst';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
@@ -33,7 +34,8 @@ export const FOUT_TEKST: Record<string, [string, string]> = {
 };
 export const foutTekst = (code: string, lang: Lang) => {
   const paar = FOUT_TEKST[code];
-  return paar ? tr(lang, paar[0], paar[1]) : tr(lang, `Не вдалося (${code}).`, `Het lukte niet (${code}).`);
+  /* SEC-002 (slot «u»): bekende weigeringen (rol «лише перегляд», server bezet …) — één tekst voor de hele site, shared/weigering-tekst.ts. */
+  return paar ? tr(lang, paar[0], paar[1]) : weigeringZin(lang, code) ?? tr(lang, `Не вдалося (${code}).`, `Het lukte niet (${code}).`);
 };
 
 const tweeCijfers = (n: number) => String(n).padStart(2, '0');

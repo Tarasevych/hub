@@ -260,3 +260,34 @@ export function plannerStructuur(i: PlannerInvoer) {
   return { m2, zones: Math.max(1, Math.round(m2 / 18)), apparaten, totaal, hub: functies.some((f) => f.hub), complexiteit };
 }
 export const huisTekst = (p: Tweetalig, lang: 'uk' | 'nl') => (lang === 'uk' ? p[0] : p[1]);
+
+// ------------------------------------------------------------------------------- leden en uitnodigingen (SEC-002, migratie 0212)
+// Lid van een woning wordt men ALLEEN door zelf een uitnodiging te aanvaarden. De uitnodiger krijgt voor elk adres hetzelfde
+// antwoord (ook als er geen account met dat adres bestaat) en ziet een afwijzing niet: zo is «toevoegen» geen middel om te
+// raden wie een account heeft, en verschijnt een woning van een vreemde nooit ongevraagd in iemands lijst.
+export const HUIS_ROLLEN_UITNODIGBAAR: readonly string[] = Object.freeze(['lid', 'gast', 'installateur', 'ondersteuning']);
+export const HUIS_ROL_LABEL: Record<string, Tweetalig> = Object.freeze({
+  eigenaar: ['власник', 'eigenaar'], lid: ['мешканець (керує)', 'bewoner (bedient)'], gast: ['гість (лише перегляд)', 'gast (alleen kijken)'],
+  installateur: ['інсталятор (тимчасово)', 'installateur (tijdelijk)'], ondersteuning: ['підтримка (тимчасово)', 'ondersteuning (tijdelijk)'],
+});
+export const HUIS_UITNODIGING = Object.freeze({ geldigDagen: 14, openPerWoning: 20, herhaalMeldingUren: 24, perUur: 10 });
+/** Een openstaande uitnodiging zoals de EIGENAAR ze ziet: nooit of er een account achter het adres zit, nooit een afwijzing. */
+export type Uitnodiging = { id: string; woningId: string; email: string; rol: string; lidGeldigTot: string | null; stand: 'uitgenodigd'; verlooptOp: string; aangemaaktOp: string };
+/** Een uitnodiging zoals de GENODIGDE ze ziet: welke woning, welke rol en wie uitnodigt (het adres van het account, niet te vervalsen). */
+export type UitnodigingVoorMij = { id: string; woningNaam: string; rol: string; lidGeldigTot: string | null; doorEmail: string; doorNaam: string; verlooptOp: string; aangemaaktOp: string };
+/** Teksten (uk/nl) bij de codes en stappen die SEC-002 toevoegde — voor de interface en voor de melding aan de genodigde. */
+export const HUIS_UITLEG: Record<string, Tweetalig> = Object.freeze({
+  RATE_LIMITED: ['Забагато запитів за короткий час. Зачекайте кілька хвилин — нічого не втрачено.', 'Te veel verzoeken in korte tijd. Wacht enkele minuten — er is niets verloren.'],
+  HUIS_BEZET: ['Джерело цієї оселі зараз зайняте іншими запитами. Команду не надіслано — спробуйте ще раз за кілька секунд.', 'De bron van deze woning is nu bezet met andere verzoeken. De opdracht is niet verstuurd — probeer het over enkele seconden opnieuw.'],
+  VERZENDING_ONDERBROKEN: ['Надсилання перервалося, і невідомо, чи дійшла команда до пристрою. Перевірте стан пристрою, перш ніж повторювати.', 'Het versturen werd onderbroken; het is onbekend of de opdracht het apparaat bereikte. Controleer de toestand van het apparaat voordat u het opnieuw probeert.'],
+  TE_VEEL_INTEGRATIES: ['До однієї оселі можна підключити щонайбільше п’ять джерел. Від’єднайте зайве, щоб додати нове.', 'Aan één woning kunnen hoogstens vijf bronnen gekoppeld worden. Koppel er één los om een nieuwe toe te voegen.'],
+  TE_VEEL_UITNODIGINGEN: ['Забагато відкритих запрошень для цієї оселі. Відкличте зайві або дочекайтеся, поки вони спливуть.', 'Te veel openstaande uitnodigingen voor deze woning. Trek er enkele in of wacht tot ze verlopen.'],
+  EMAIL_ONGELDIG: ['Вкажіть повну електронну адресу.', 'Geef een volledig e-mailadres op.'],
+  UITNODIGING_VERSTUURD: ['Запрошення записано. Людина стане учасником лише після того, як сама його прийме. Якщо облікового запису з цією адресою немає, запрошення просто спливе за 14 днів.', 'De uitnodiging is vastgelegd. De persoon wordt pas lid nadat hij of zij ze zelf aanvaardt. Bestaat er geen account met dit adres, dan verloopt de uitnodiging vanzelf na 14 dagen.'],
+  UITNODIGING_AANVAARDEN: ['Прийнявши запрошення, ви побачите пристрої та події цієї оселі, а її власник побачить ваше ім’я й адресу. Приймайте лише від людей, яких знаєте. Вийти з оселі можна будь-коли: «Налаштування» → «Вийти з оселі».', 'Als u aanvaardt, ziet u de apparaten en gebeurtenissen van deze woning en ziet de eigenaar uw naam en adres. Aanvaard alleen van mensen die u kent. U kunt de woning altijd verlaten: «Instellingen» → «Woning verlaten».'],
+  LID_VERLATEN: ['Ви одразу втратите доступ до пристроїв, подій і пропозицій цієї оселі. Повернутися можна лише за новим запрошенням від власника.', 'U verliest meteen de toegang tot de apparaten, gebeurtenissen en voorstellen van deze woning. Terugkomen kan alleen met een nieuwe uitnodiging van de eigenaar.'],
+  EIGENAAR_KAN_NIET_VERTREKKEN: ['Власник не може вийти зі своєї оселі.', 'De eigenaar kan zijn eigen woning niet verlaten.'],
+  UITNODIGING_AFWIJZEN: ['Відхилення нічого не повідомляє тому, хто запросив: для нього запрошення просто спливе.', 'Afwijzen meldt niets aan wie uitnodigde: voor die persoon verloopt de uitnodiging gewoon.'],
+  UITNODIGING_MELDING_TITEL: ['Запрошення до оселі', 'Uitnodiging voor een woning'],
+  UITNODIGING_AANVAARD_TITEL: ['Запрошення до оселі прийнято', 'Uitnodiging voor de woning aanvaard'],
+});

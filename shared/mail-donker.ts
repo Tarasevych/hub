@@ -165,12 +165,104 @@ export function verzamelDonkereRegels(doc: Document): Regel[] {
   }
   return uit;
 }
-/** Past de verzamelde donkere regels toe als inline stijl (zij winnen, zoals de media-query in een mailprogramma). */
+// ---------------------------------------------------------------------------------------- SEC-002 (post-07): veilige stijlwaarden
+// De brief mag met CSS NIETS laten ophalen: elk beeld gaat via de eigen server en het beleid «Зовнішні зображення». Het filter in
+// src/MailBerichtTekst.tsx zocht letterlijk «url(» in de RUWE stijltekst; `\75 rl(https://…)` (CSS-escape voor «u») zag het niet,
+// terwijl de browser dat gewoon als url() leest. Daarom hier een tweede laag op de ONTLEDE waarde (getPropertyValue: de browser
+// heeft de escapes dan al weggehaald), gebruikt voor de inline stijl én voor de regels uit `@media (prefers-color-scheme: dark)`.
+const LAADT_BRON = /(?:^|[^a-z0-9_-])(?:url|src|image-set|-webkit-image-set|image|cross-fade|-webkit-cross-fade|element|-moz-element|paint)\s*\(/i;
+/** Kan deze (ontlede) stijlwaarde de browser iets laten ophalen of tekenen van buiten de brief? */
+export function stijlWaardeLaadtBron(waarde: string): boolean {
+  return LAADT_BRON.test(String(waarde || ''));
+}
+/** Het eerste adres uit `url("…")` in een ontlede waarde ('' als er geen is). Voor de achtergrond die via de server mag (cid:/https:). */
+export function stijlUrl(waarde: string): string {
+  const m = /(?:^|[^a-z0-9_-])url\(\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|([^)\s]*))\s*\)/i.exec(String(waarde || ''));
+  return m ? String(m[1] ?? m[2] ?? m[3] ?? '').replace(/\\(.)/g, '$1').trim() : '';
+}
+/**
+ * Mag deze eigenschap met deze (ontlede) waarde in de brief blijven? Geeft de waarde terug (eventueel aangepast) of null = weglaten.
+ *  - alles wat een bron laadt (url(), image-set(), image(), cross-fade(), element(), src(), paint()) → weg;
+ *  - eigen eigenschappen (`--x`) en elke waarde met var()/env()/attr() → weg (na controle g10g-T2; ook met CSS-escapes);
+ *  - `position: fixed|sticky` → `relative` (de brief mag niets over de pagina heen leggen);
+ *  - verouderde uitvoerbare eigenschappen (behavior, -moz-binding, expression(), javascript:) → weg.
+ */
+export function veiligeStijlWaarde(eigenschap: string, waarde: string): string | null {
+  const p = String(eigenschap || '').trim().toLowerCase(), w = String(waarde || ''), d = zonderCssEscapes(w);
+  if (!p) return null;
+  // Na controle (g10g-T2): GEEN eigen eigenschappen en GEEN var()/env()/attr() meer in een brief. Een shorthand met var() houdt de
+  // browser als «pending substitution» (alle longhands leeg), zodat de ruwe tekst — met escapes — ongezien bleef staan.
+  if (p.startsWith('--')) return null;
+  if (stijlWaardeLaadtBron(w) || stijlWaardeLaadtBron(d) || VERVANGING.test(d)) return null;
+  if (p === 'behavior' || p === '-moz-binding') return null;
+  if (/expression\s*\(|javascript\s*:/i.test(d)) return null;
+  if (p === 'position' && /^(?:fixed|sticky|-webkit-sticky)$/i.test(w.trim())) return 'relative';
+  return w;
+}
+/**
+ * Loopt de ONTLEDE inline stijl van één element na (browser-DOM): onveilige eigenschappen weg, vaste positie → relatief.
+ * Geeft het adres terug van een achtergrond die daarbij is weggehaald (cid:/https:, anders ''), zodat de aanroeper die via de
+ * eigen server kan laten laden — net als een gewone achtergrond.
+ */
+export function maakInlineStijlVeilig(el: { style?: CSSStyleDeclaration | null }): string {
+  const st = el.style;
+  if (!st) return '';
+  let achtergrond = '';
+  for (const p of Array.from(st)) {
+    const w = st.getPropertyValue(p), veilig = veiligeStijlWaarde(p, w);
+    if (veilig === null) {
+      if (!achtergrond && /^background(?:-image)?$/i.test(p)) { const u = stijlUrl(w); if (/^(?:cid|https):/i.test(u)) achtergrond = u; }
+      st.removeProperty(p);
+    } else if (veilig !== w) st.setProperty(p, veilig, st.getPropertyPriority(p));
+  }
+  // Na controle (g10g-T2): ook de SHORTHANDS zoals de browser ze serialiseert (cssText). Een shorthand met var() heeft lege
+  // longhands en ontsnapte dus aan de lus hierboven; hier wordt zijn eigen tekst (zonder CSS-escapes) gekeurd en zo nodig weggehaald.
+  for (const [naam, waarde] of declaraties(st.cssText || '')) if (veiligeStijlWaarde(naam, waarde) === null) st.removeProperty(naam);
+  // Vangnet: blijft er toch iets dat een bron laadt of iets invult, dan gaat de hele inline stijl weg (liever kaal dan een lek).
+  const rest = zonderCssEscapes(st.cssText || '');
+  if (stijlWaardeLaadtBron(rest) || VERVANGING.test(rest) || /(?:^|;)\s*--/.test(rest)) st.cssText = '';
+  return achtergrond;
+}
+
+/** var(), env() en attr() vullen een waarde pas later in (uit een eigen eigenschap, de omgeving of een attribuut): in een brief nooit. */
+const VERVANGING = /(?:^|[^a-z0-9_-])(?:var|env|attr)\s*\(/i;
+/** CSS-escapes weghalen zoals de tokenizer van de browser dat doet: «\\69 mage-set(» → «image-set(», «v\\61r(» → «var(». */
+export function zonderCssEscapes(tekst: string): string {
+  return String(tekst || '').replace(/\\(?:([0-9a-f]{1,6})[ \t\n\r\f]?|([^\n\r\f0-9a-f]))/gi, (_m, hex: string | undefined, teken: string | undefined) => {
+    if (hex) { const c = parseInt(hex, 16); return c > 0 && c <= 0x10ffff && (c < 0xd800 || c > 0xdfff) ? String.fromCodePoint(c) : '\ufffd'; }
+    return teken || '';
+  });
+}
+/** Declaraties uit een cssText («naam: waarde; …»), met respect voor aanhalingstekens en haakjes. */
+function declaraties(css: string): Array<[string, string]> {
+  const uit: Array<[string, string]> = [];
+  let begin = 0, diepte = 0, quote = '';
+  const neem = (eind: number) => { const d = css.slice(begin, eind), i = d.indexOf(':'); if (i > 0) uit.push([d.slice(0, i).trim(), d.slice(i + 1).replace(/!\s*important\s*$/i, '').trim()]); begin = eind + 1; };
+  for (let i = 0; i < css.length; i += 1) {
+    const t = css[i];
+    if (t === '\\') { i += 1; continue; }
+    if (quote) { if (t === quote) quote = ''; continue; }
+    if (t === '"' || t === "'") quote = t;
+    else if (t === '(') diepte += 1;
+    else if (t === ')') diepte = Math.max(0, diepte - 1);
+    else if (t === ';' && !diepte) neem(i);
+  }
+  neem(css.length);
+  return uit;
+}
+
+/**
+ * Past de verzamelde donkere regels toe als inline stijl (zij winnen, zoals de media-query in een mailprogramma).
+ * SEC-002 (post-07): deze regels werden vóór het opschonen verzameld en erna toegepast, met ELKE eigenschap — ook
+ * `background-image:url(https://…)` of `position:fixed`. Nu gaat elke waarde eerst door veiligeStijlWaarde.
+ */
 export function pasDonkereRegelsToe(doc: Document, regels: Regel[]) {
   for (const r of regels) {
     let knopen: NodeListOf<HTMLElement>;
     try { knopen = doc.querySelectorAll<HTMLElement>(r.selector); } catch { continue; }
-    knopen.forEach((el) => { for (const [p, w, prio] of r.eigenschappen) el.style.setProperty(p, w, prio); });
+    knopen.forEach((el) => {
+      for (const [p, w, prio] of r.eigenschappen) { const veilig = veiligeStijlWaarde(p, w); if (veilig !== null) el.style.setProperty(p, veilig, prio); }
+    });
   }
 }
 

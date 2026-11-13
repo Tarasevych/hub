@@ -17,7 +17,7 @@ export const MENU_PAGINAS: Record<string, readonly string[]> = {
   hub: ['overview', 'recent', 'tasks', 'calendar', 'notes', 'zoek', 'photos'], // photos: UI-002 (vlag foto-dienst / menu-kalender-foto-eigen; verborgen in het menu zolang beide UIT)
   ai: ['workspace', 'agents', 'runs', 'workflows', 'verbindingen'],
   mail: ['inbox', 'starred', 'snoozed', 'sent', 'drafts', 'archive', 'labels', 'accounts', 'local', 'unread', 'all', 'important', 'spam', 'trash', 'subscriptions', 'scheduled', 'settings', 'contacts'],
-  cloud: ['overview', 'files', 'workspaces', 'capture', 'inbox', 'search', 'recent', 'calendar', 'photos', 'accounts', 'google', 'onedrive', 'dropbox'],
+  cloud: ['overview', 'files', 'shared', 'workspaces', 'capture', 'inbox', 'search', 'recent', 'calendar', 'photos', 'accounts', 'google', 'onedrive', 'dropbox'],
   github: ['overview', 'repositories', 'code', 'issues', 'pulls', 'actions', 'releases', 'sync', 'projects', 'documentation', 'research', 'activity', 'accounts'],
   huis: ['overview', 'rooms', 'devices', 'scenes', 'automations', 'security', 'energy', 'activity', 'integrations', 'assistant', 'settings', 'showroom', 'planner'], // huis vNext (0128)
   identity: ['personalization', 'menu', 'themes', 'languages', 'widgets', 'sharing', 'identity', 'account', 'sessions', 'methods', 'security', 'recovery'],

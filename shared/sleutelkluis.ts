@@ -20,7 +20,8 @@
 export const DEK_ENVELOP = 'dek1';
 export const SERVER_ENVELOP = 'v1';
 export const isDekEnvelop = (v: unknown): boolean => typeof v === 'string' && v.startsWith(`${DEK_ENVELOP}.`);
-export const isServerEnvelop = (v: unknown): boolean => typeof v === 'string' && v.startsWith(`${SERVER_ENVELOP}.`);
+/** SEC-002 (geheimen-07): ook 'v2.' … 'v9.' (dezelfde serversleutel na rotatie, server/platform/beveiliging.ts) is de serverweg. */
+export const isServerEnvelop = (v: unknown): boolean => typeof v === 'string' && /^v[1-9]\./.test(v);
 
 /** HKDF-info (en PRF-salt-label) voor de KEK uit een passkey: browser en test rekenen exact hetzelfde. */
 export const KEK_INFO = 'mijn-ruimte-sleutelkluis-kek-v1';
@@ -107,6 +108,20 @@ export const KLUIS_TEKST = Object.freeze({
     uk: 'Цей passkey не підтримує PRF (старіший пристрій або браузер). Розблокувати можна кодом відновлення; додайте passkey на новішому пристрої, щоб не вводити код.',
     nl: 'Deze passkey ondersteunt geen PRF (ouder apparaat of browser). Ontgrendelen kan met de herstelcode; voeg een passkey toe op een nieuwer apparaat om de code niet te hoeven typen.',
   },
+  // SEC-002 (geheimen-04): de nieuwe herstelcode wacht op bevestiging; tot dan werkt de vorige nog.
+  codeWacht: {
+    uk: 'Новий код відновлення ще не підтверджено. Доки ви не підтвердите, що зберегли його, попередній код теж відкриває ключ. Після підтвердження попередній код перестане діяти назавжди.',
+    nl: 'De nieuwe herstelcode is nog niet bevestigd. Tot u bevestigt dat u hem bewaard hebt, opent ook de vorige code de sleutel. Na bevestiging werkt de vorige code nooit meer.',
+  },
+  codeWachtZonderCode: {
+    uk: 'Якщо ви не встигли зберегти новий код — не підтверджуйте: натисніть «Новий код», щоб отримати інший (усі попередні коди тоді перестануть діяти).',
+    nl: 'Hebt u de nieuwe code niet kunnen bewaren, bevestig dan niet: kies «Nieuwe code» voor een andere (alle eerdere codes werken dan niet meer).',
+  },
+  // SEC-002 (geheimen-04): kluis «aan» zonder één omslag — niets te openen; opruimen is zonder verlies.
+  zonderOmslag: {
+    uk: 'Шифрування позначене як увімкнене, але ключ не має жодного способу відкриття (збій під час увімкнення). Під цим ключем ще немає даних, тож нічого не втрачається: скиньте цей стан і ввімкніть шифрування заново. Доки цього не зроблено, нові підключення пошти, календаря й хмари в цьому просторі не зберігаються.',
+    nl: 'Versleuteling staat als ingeschakeld, maar de sleutel heeft geen enkele manier om open te gaan (storing tijdens het inschakelen). Onder deze sleutel staan nog geen gegevens, dus er gaat niets verloren: zet deze toestand terug en schakel de versleuteling opnieuw in. Tot dan worden nieuwe koppelingen van post, agenda en cloud in deze ruimte niet bewaard.',
+  },
 });
 export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = Object.freeze({
   SLEUTELKLUIS_GESLOTEN: { uk: 'Ключ даних закритий. Розблокуйте його passkey або кодом відновлення.', nl: 'De gegevenssleutel is gesloten. Ontgrendel hem met een passkey of de herstelcode.' },
@@ -117,6 +132,9 @@ export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = 
   SLEUTELKLUIS_DEK_ONGELDIG: { uk: 'Розгорнутий ключ не відповідає контрольному значенню.', nl: 'De aangeboden sleutel komt niet overeen met de controlewaarde.' },
   SLEUTELKLUIS_PASSKEY_GEEN_OMSLAG: { uk: 'Для цього passkey ще немає обгортки ключа.', nl: 'Voor deze passkey bestaat nog geen omslag van de sleutel.' },
   SLEUTELKLUIS_PEPPER_ONTBREEKT: { uk: 'На сервері немає перцю для обгорток ШІ-підключень (SLEUTELKLUIS_SLEUTEL_V1).', nl: 'De server mist de pepper voor omslagen van AI-verbindingen (SLEUTELKLUIS_SLEUTEL_V1).' },
+  SLEUTELKLUIS_TE_VAAK: { uk: 'Цю дію виконано забагато разів за короткий час. Спробуйте пізніше.', nl: 'Deze actie is te vaak uitgevoerd in korte tijd. Probeer het later opnieuw.' },
+  SLEUTELKLUIS_BEZET: { uk: 'Сервер зараз зайнятий обчисленням ключів. Спробуйте за хвилину.', nl: 'De server is nu bezet met het berekenen van sleutels. Probeer het over een minuut opnieuw.' },
+  SLEUTELKLUIS_HEEFT_OMSLAGEN: { uk: 'Скинути можна лише ключ без жодного способу відкриття. У цього ключа вони є — розблокуйте його passkey або кодом відновлення.', nl: 'Terugzetten kan alleen voor een sleutel zonder enige manier om hem te openen. Deze sleutel heeft die wel — ontgrendel hem met een passkey of de herstelcode.' },
   STEP_UP_REQUIRED: { uk: '', nl: '' },
   STEP_UP_STRONG_REQUIRED: { uk: '', nl: '' },
 });

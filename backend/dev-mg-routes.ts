@@ -25,7 +25,8 @@ import { ontwerpContext } from './ontwerp-context';
 import { stripeLijst } from './betalingen-stripe';
 import { huidigeRuimte } from './mcp-namens';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
-import { passkeyStapOpGeldig, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, passkeyStapOpGeldig, type StapOpAuth } from './stap-op';
+import { denyMutation } from './rbac';
 import { isEigenaar } from './tech-profiel';
 
 type Gebruiker = { id: string; email: string; role?: string; status: string };
@@ -53,6 +54,8 @@ export function devMgRoutes(deps: { requireSession: RequireSession }): Record<st
   const hmara = ladePoort('cloud', deps.requireSession as never, ({
     'POST /api/owner/media/afbeelding': [mens(['cloud'], 'beeld', 20, async (auth, b) => {
       if (typeof b.job_id === 'string' && b.job_id) return json(opdrachtStand(auth.user.id, b.job_id.slice(0, 40)));
+      // SEC-002 (g03, afwerking A): schrijfrecht op de hmara VÓÓR het (dure) genereren weigeren, niet pas bij het opslaan.
+      { const geweigerd = denyMutation(auth.user as never, 'cloud.write'); if (geweigerd) return geweigerd; }
       const inst = await leesGeneratorInstelling();
       if (!inst.url) return error('MEDIA_GENERATOR_NIET_INGESTELD', 409);
       if (!inst.aan) return error('MEDIA_GENERATOR_UIT', 409);
@@ -74,6 +77,7 @@ export function devMgRoutes(deps: { requireSession: RequireSession }): Record<st
       return json(stand);
     })],
     'POST /api/owner/media/diagram': [mens(['cloud'], 'schema', 60, async (auth, b) => {
+      { const geweigerd = denyMutation(auth.user as never, 'cloud.write'); if (geweigerd) return geweigerd; }
       const o = controleerMermaid(b.code);
       if (!o.ok) return json({ error: o.code, regel: o.regel, uitleg: o.uitleg }, 400);
       const titel = (typeof b.title === 'string' && b.title.trim() ? b.title.trim() : o.titel || `Mermaid ${o.type}`).slice(0, 120);
@@ -123,11 +127,11 @@ function beheer(deps: { requireSession: RequireSession }, passkey: boolean, run:
     if ('errorCode' in auth) return error(auth.errorCode, 401);
     if (auth.service !== 'admin') return error('ADMIN_SERVICE_REQUIRED', 403);
     if (!isEigenaar(auth.user as never)) return error('OWNER_REQUIRED', 403);
-    if (passkey && !(await passkeyStapOpGeldig(auth))) return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
     try {
-      const uit = await run(auth, lijf(ctx.body));
-      if (passkey) await stapOpVerbruiken(auth);
-      return json(uit);
+      // SEC-002 (g06): controleren en verbruiken ondeelbaar; bij een fout van run() teruggezet.
+      const stap = await metStapOpEenmalig(auth, passkey ? passkeyStapOpGeldig : null, () => run(auth, lijf(ctx.body)));
+      if (!stap.ok) return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
+      return json(stap.uit);
     } catch (e) {
       const c = (e as Error).message || '';
       if (/^[A-Z][A-Z0-9_]{2,60}$/.test(c)) return error(c, 400);

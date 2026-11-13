@@ -658,8 +658,14 @@ function koppelRoutes(deps: Parameters<typeof createGithubRoutes>[0]) {
       const weg = String(bodyOf(ctx.body).weg || 'oauth');
       // Ontkoppelen raakt ALLEEN de lade waarin deze mens nu staat: wie technisch ontkoppelt, verliest zijn persoonlijke
       // koppeling niet, en wie persoonlijk ontkoppelt, laat de technische staan.
+      // SEC-002 (integraties-13): eerst de webhooks van deze lade weg (bij GitHub zolang de token nog werkt, hier altijd),
+      // anders blijven issues van vreemden na het ontkoppelen in spiegel en bord binnenkomen.
+      // Geen console in dit bestand (hier komt de token langs): een mislukte opruiming staat als vaste code in de auditregel.
+      // Без console у цьому файлі (тут проходить токен): невдале прибирання — сталий код у записі аудиту.
+      const haken = await import('./github-werkruimte').then((m) => m.ghWebhooksOpruimen({ userId: auth.user.id, ruimte: p.ruimte }))
+        .catch(() => null);
       const uit = weg === 'app' ? await appOntkoppelen(auth.user.id, p.ruimte) : await oauthOntkoppelen(auth.user.id, p.ruimte);
-      await deps.audit(auth.user.id, 'owner.github.ontkoppelen', uit.ok ? 'success' : 'failure', { weg, reason: uit.ok ? '' : uit.fout, ruimte: p.ruimte });
+      await deps.audit(auth.user.id, 'owner.github.ontkoppelen', uit.ok ? 'success' : 'failure', { weg, reason: uit.ok ? '' : uit.fout, ruimte: p.ruimte, webhooks: haken?.rijen ?? null, ...(haken ? {} : { webhooksFout: 'WEBHOOKS_OPRUIMEN_MISLUKT' }) });
       return uit.ok ? json({ ok: true, ...uit.data }) : error(uit.fout, uit.status);
     }],
 

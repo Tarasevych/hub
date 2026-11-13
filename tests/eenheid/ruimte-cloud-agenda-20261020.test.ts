@@ -33,11 +33,11 @@ export async function main(): Promise<number> {
   const { getPool } = await import('../../server/platform/pg');
   const { db, storage } = await import('../../server/platform');
   const { padHoortBijAnder } = await import('../../server/platform/opslag');
-  const { hoortBij, ladeVelden } = await import('../../shared/ruimte-scheiding');
+  const { hoortBij, ladeFilter, ladeVelden } = await import('../../shared/ruimte-scheiding');
   const rs = await import('../../backend/ruimte-scheiding');
   const rca = await import('../../backend/ruimte-cloud-agenda');
   const { tabHash } = await import('../../backend/tech-profiel');
-  const { createCloudRoutes } = await import('../../backend/cloud-platform');
+  const { createCloudRoutes, cloudImportExternalMedia } = await import('../../backend/cloud-platform');
   const { createAgendaRoutes } = await import('../../backend/agenda-routes');
   const { createGoogleSuiteBrowserRoutes } = await import('../../backend/google-suite-browser');
   const { createGoogleSuiteCalendarPhotosRoutes } = await import('../../backend/google-suite-agenda-fotos');
@@ -228,6 +228,25 @@ export async function main(): Promise<number> {
     check('de twee mappen bestaan naast elkaar en bevatten elk alleen hun eigen bestand',
       (await readdir(join(uploads, voorT))).length === 1 && (await readdir(join(uploads, voorP))).length === 1);
 
+    // ------------------------------------------------------------------ SEC-002 (wolk-07, 12.11.2026): de import uit Google Photos volgt de lade
+    // De route «photos/import» (backend/google-suite-agenda-fotos.ts) loopt door ladePoort('cloud') en roept cloudImportExternalMedia aan.
+    // Tot nu kreeg die rij géén `ruimte` (= persoonlijk), terwijl de bytes in de technische boom kwamen: naam, grootte en werkruimte
+    // verschenen in de PERSOONLIJKE hmara, het bestand was in geen van beide ruimtes te openen, en na «видалити» bleef een lege rij achter.
+    const foto = await rca.metLade(tech(eigId), 'cloud', () => cloudImportExternalMedia(eigId, { filename: `foto-${sfx}.png`, mimeType: 'image/png', bytes: Buffer.from('verzonnen-beeld-voor-de-eenheidstest'), sourceLabel: 'Google Photos' }));
+    const fotoRij = (await db.get<Record<string, unknown>>('cloud_items_v1', [String(foto.id)]))[0];
+    check('een import uit Google Photos in de TECHNISCHE lade krijgt ruimte «technisch»: rij en bytes liggen in dezelfde lade',
+      fotoRij?.ruimte === 'technisch' && hoortBij(fotoRij, tech(eigId)) && !hoortBij(fotoRij, prive(eigId))
+      && rca.padInLade(fotoRij?.storagePath, tech(eigId)) && !rca.padInLade(fotoRij?.storagePath, prive(eigId)), `ruimte=${String(fotoRij?.ruimte)}`);
+    const techMetFoto = await roep(alleRoutes, 'POST /api/owner/cloud/bootstrap');
+    const fotoOpen = await alleRoutes['POST /api/owner/cloud/items/:id/open'][0]({ event: {}, body: lichaam, params: { id: String(foto.id) } });
+    check('de technische hmara toont dat beeld en kan het openen (door de echte poort, met het technische tabblad)',
+      techMetFoto.status === 200 && (techMetFoto.data.ruimte as { ruimte?: string })?.ruimte === 'technisch'
+      && (techMetFoto.data.items as Array<{ id?: string }>).some((i) => i.id === foto.id)
+      && fotoOpen.statusCode === 200 && JSON.parse(fotoOpen.body || '{}').kind === 'file', `${techMetFoto.status} | ${fotoOpen.statusCode}:${String(fotoOpen.body).slice(0, 60)}`);
+    check('de PERSOONLIJKE lade kent dat beeld niet — geen naam, geen grootte en geen werkruimte van de technische ruimte lekt erheen',
+      !(await rca.metLade(prive(eigId), 'cloud', async () => ((await db.list<Record<string, unknown>>('cloud_items_v1', { filter: ladeFilter(prive(eigId)) })).items as Array<Record<string, unknown>>)
+        .filter((i) => hoortBij(i, prive(eigId))))).some((i) => i.id === foto.id));
+
     // ------------------------------------------------------------------ punt 4: «спільно» laat het persoonlijke zien
     await rs.dienstZetten(eigId, 'cloud', 'ontkoppel');
     await rs.dienstZetten(eigId, 'cloud', 'verbind-gedeeld', { stapOpGedaan: true });
@@ -336,6 +355,9 @@ export async function main(): Promise<number> {
       bestondNog && !nogDaar && wissen.verslag?.volledig === true
       && wissen.verslag.regels.some((r) => r.tabel === 'opslag/bestanden' && r.rijen >= 1),
       JSON.stringify(wissen.verslag?.regels?.filter((r) => r.rijen) ?? []).slice(0, 200));
+    check('SEC-002 (wolk-07): ook het geïmporteerde beeld is met de technische lade verdwenen — rij ÉN bestand, geen wees die in de persoonlijke hmara achterblijft',
+      (await db.get('cloud_items_v1', [String(foto.id)]))[0] === null
+      && !(await stat(join(uploads, String(fotoRij?.storagePath || 'ontbreekt'))).then(() => true).catch(() => false)));
     check('het PERSOONLIJKE bestand van diezelfde mens staat er nog — het wissen van de ene boom raakt de andere niet',
       await stat(join(uploads, oudPad)).then(() => true).catch(() => false)
       && (await pool.query(`SELECT count(*)::int AS n FROM app.records WHERE tbl='cloud_items_v1' AND data->>'ownerUserId'=$1 AND COALESCE(data->>'ruimte','prive')='prive'`, [eigId])).rows[0].n >= 1);
