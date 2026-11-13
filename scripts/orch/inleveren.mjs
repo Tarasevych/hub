@@ -20,6 +20,15 @@ const waarsch = (code, uk, nl, extra = {}) => ({ code, ernst: 'waarschuwing', uk
 function gitIn(cwd) {
   return (...a) => { try { return execFileSync('git', a, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim(); } catch (e) { return null; } };
 }
+// Хвіст виводу перевірки для запису передавання: останні 6 рядків плюс усі рядки «FOUT …» вище, щоб причина відмови
+// (наприклад REGELS_NIET_VERGRENDELD) не витіснялася попередженнями LET OP. HISTORIE-001: давнє падіння тесту K3.
+// Staart van de controle-uitvoer: laatste 6 regels plus alle eerdere «FOUT …»-regels, zodat de reden van weigering bewaard blijft.
+export const staartMetFouten = (tekst, n = 6, maxFouten = 10) => {
+  const regels = String(tekst || '').trim().split('\n');
+  const staart = regels.slice(-n);
+  const fouten = regels.slice(0, Math.max(0, regels.length - n)).filter((r) => /^FOUT [A-Z_]+:/.test(r)).slice(0, maxFouten);
+  return [...fouten, ...staart].join('\n');
+};
 const sha256Bestand = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
 
 /** Усі файли теки (відносні шляхи), без службових. */
@@ -236,7 +245,7 @@ export function inleveren(o) {
         ? spawnSync(process.execPath, [join(o.wortel, 'scripts/orch.mjs'), 'controleer', '--wortel', map], { cwd: map, env, encoding: 'utf8', timeout: 120_000 })
         : spawnSync('sh', ['-c', cmd], { cwd: map, env, encoding: 'utf8', timeout: 600_000 });
       const ok = r.status === 0; record.tests[ok ? 'geslaagd' : 'mislukt']++;
-      record.tests.uitvoer.push({ cmd, vertrouwd: isVeilig(cmd), status: r.status, laatste: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').slice(-6).join('\n') });
+      record.tests.uitvoer.push({ cmd, vertrouwd: isVeilig(cmd), status: r.status, laatste: staartMetFouten(`${r.stdout ?? ''}${r.stderr ?? ''}`) });
       if (!ok) z.push(fout('TESTS_MISLUKT', isVeilig(cmd) ? `перевірка правил (довірений controleer) «${cmd}» не пройшла (код ${r.status})` : `тест «${cmd}» впав (код ${r.status})`, `${isVeilig(cmd) ? 'regelcontrole (vertrouwde controleer)' : 'test'} «${cmd}» faalde (code ${r.status})`));
     }
     if (z.some((x) => x.ernst === 'fout')) return record;
