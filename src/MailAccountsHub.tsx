@@ -449,8 +449,8 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
         </div>
       </div>
 
-      <aside id='mail-sectie-uitleg' className='mail-accounts-kant'>
-        <div className='mail-accounts-kaart mail-accounts-kant-info' style={isMaquette ? undefined : { ...kaart, background: 'var(--info-zacht)', color: 'var(--text)' }}>
+      <aside className='mail-accounts-kant'>
+        <div id='mail-sectie-uitleg' className='mail-accounts-kaart mail-accounts-kant-info' style={isMaquette ? undefined : { ...kaart, background: 'var(--info-zacht)', color: 'var(--text)' }}>
           <div className='mail-accounts-kant-titel' style={isMaquette ? undefined : { fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{t('Вікна, які не губляться', 'Vensters die niet verdwijnen')}</div>
           <p style={isMaquette ? undefined : { fontSize: 13, margin: 0 }}>{t(
             'Згорнуте вікно підключення лишається в доку праворуч знизу — і залишається там, коли ви переходите на хаб, пошту чи хмару та після перезавантаження сторінки. Пароль при згортанні стирається навмисно.',

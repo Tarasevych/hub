@@ -1,0 +1,1325 @@
+/* Художнє оформлення провідника вихідного коду, інженерного вебредактора, полотна порівняння змін,
+   історії фіксацій змін та спільного діалогового вікна GitHub у системі «Макет» (MAQUETTE-004, Група 3Б).
+   Працює виключно за умови html.palet-maquette у нічній студії та у світлому режимі «Ранковий туман».
+   Studio-opmaak voor codeverkenner, webeditor, verschilweergave, vastleggingsgeschiedenis en GhDialoog. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПРИХОВУВАННЯ ЯКІРНОЇ РЕЙКИ ЗА ВІДКРИТОГО ДІАЛОГОВОГО ВІКНА GITHUB
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-gh-dialoog-open="1"] :is(
+  .mq-anker-rail,
+  .mq-anker-onderbalk,
+  .mq-rail-popover,
+  .mq-anker-sluier
+),
+html.palet-maquette:has(dialog[data-gh-dialoog-open="1"]) :is(
+  .mq-anker-rail,
+  .mq-anker-onderbalk,
+  .mq-rail-popover,
+  .mq-anker-sluier
+) {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. СТУДІЙНІ ЗМІННІ ОФОРМЛЕННЯ, МОНОШИРИННИЙ ШРИФТ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialoog, .gh-diff-wikkel, .gh-diff-bestand) {
+  --mq-font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --gh-mq-indigo: color-mix(in srgb, var(--mq-accent) 70%, var(--mq-held-boven, var(--mq-accent)) 30%);
+  --gh-mq-code-bg: color-mix(in srgb, var(--mq-bg) 70%, var(--mq-oppervlak) 30%);
+  --gh-mq-goot-bg: color-mix(in srgb, var(--mq-bg) 82%, var(--mq-oppervlak-2) 18%);
+  --gh-mq-kop-gloed: radial-gradient(circle at 10% 0%, rgba(var(--mq-accent-rgb), 0.14), transparent 58%);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --soft: var(--mq-oppervlak-zacht);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --ink: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--gh-mq-indigo);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.14);
+  color: var(--mq-tekst);
+}
+
+/* У світлому режимі «Ранковий туман» локальний атрибут data-mq-dienst="github" зберігає насичений індигово-сталевий акцент
+   і світлі інженерні поверхні як у вбудованих панелях, так і в діалогових вікнах верхнього шару */
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialoog, .gh-diff-wikkel, .gh-diff-bestand)[data-mq-dienst="github"],
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialoog, .gh-diff-wikkel, .gh-diff-bestand)[data-mq-dienst="github"],
+html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light)) dialog.gh-dialoog[data-mq-dienst="github"] {
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 52%, var(--mq-tekst) 48%);
+  --mq-accent-rgb: 54, 74, 122;
+  --mq-accent-op: var(--mq-wit);
+  --mq-werk-gloed-a: rgba(54, 74, 122, 0.085);
+  --gh-mq-indigo: var(--mq-accent);
+  --gh-mq-code-bg: color-mix(in srgb, var(--mq-oppervlak-2) 62%, var(--mq-oppervlak) 38%);
+  --gh-mq-goot-bg: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-tekst) 4%);
+  --gh-mq-kop-gloed: radial-gradient(circle at 10% 0%, rgba(var(--mq-accent-rgb), 0.09), transparent 58%);
+  --accent: var(--mq-accent);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.12);
+}
+
+/* Передавання світлих студійних поверхонь на діалогове вікно у разі, коли світлий клас стоїть лише на .canonical-chrome */
+html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) dialog.gh-dialoog {
+  --mq-bg: var(--bg, var(--mq-oppervlak));
+  --mq-oppervlak: color-mix(in srgb, var(--mq-wit) 96%, var(--mq-accent-2) 4%);
+  --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 91%, var(--mq-accent-2) 9%);
+  --mq-oppervlak-zacht: rgba(40, 63, 104, 0.045);
+  --mq-oppervlak-hover: rgba(40, 63, 104, 0.085);
+  --mq-rand: rgba(40, 63, 104, 0.12);
+  --mq-rand-sterk: rgba(40, 63, 104, 0.22);
+  --mq-popover-glas: rgba(255, 255, 255, 0.97);
+  --mq-tekst: color-mix(in srgb, var(--mq-bol-diep) 88%, var(--mq-accent-2) 12%);
+  --mq-gedempt: color-mix(in srgb, var(--mq-bol-diep) 58%, var(--mq-wit) 42%);
+  --mq-stil: color-mix(in srgb, var(--mq-bol-diep) 44%, var(--mq-wit) 56%);
+  --mq-schaduw: 0 28px 70px rgba(36, 52, 88, 0.14);
+  --mq-schaduw-held: 0 34px 84px rgba(28, 42, 76, 0.18);
+  --mq-schaduw-zacht: 0 14px 36px rgba(36, 52, 88, 0.08);
+}
+
+/* Також для .gh-diff-wikkel і .gh-diff-bestand без власного data-mq-dienst у світлому режимі */
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.gh-diff-wikkel, .gh-diff-bestand),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gh-diff-wikkel, .gh-diff-bestand) {
+  --gh-mq-code-bg: color-mix(in srgb, var(--mq-oppervlak-2) 62%, var(--mq-oppervlak) 38%);
+  --gh-mq-goot-bg: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-tekst) 4%);
+}
+
+html.palet-maquette .gh-werkruimte-code {
+  gap: 16px;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :focus-visible {
+  outline: 2px solid var(--gh-mq-indigo);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. КАРТКИ ПРОВІДНИКА ТА ЗАХИСТ ВІД ПРАВИЛА ВИСОКОЇ СПЕЦИФІЧНОСТІ flat-content
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) :is(.gh-werkruimte-code .gh-card, .gh-code-leeg-repo.gh-card) {
+  padding: 18px 20px;
+  gap: 13px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 22px;
+  background:
+    var(--gh-mq-kop-gloed),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mq-oppervlak) 95%, rgba(var(--mq-accent-rgb), 0.06)) 0%,
+      color-mix(in srgb, var(--mq-oppervlak) 98%, var(--mq-bg) 2%) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-tekst) 7%, transparent),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .gh-code-leeg-repo .gh-empty,
+html.palet-maquette .gh-werkruimte-code .gh-empty {
+  padding: 20px 16px;
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 52%, transparent);
+  color: var(--mq-gedempt);
+  font-size: 0.88rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. ВЕРХНЯ ІНЖЕНЕРНА ПАНЕЛЬ КЕРУВАННЯ ГІЛКАМИ, РЕЖИМАМИ ТА ДІЯМИ (.gh-werkbalk)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) .gh-werkruimte-code > .gh-card.gh-werkbalk {
+  padding: 13px 16px;
+  gap: 12px;
+  border-color: var(--mq-rand-sterk);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 6% 50%, rgba(var(--mq-accent-rgb), 0.13), transparent 44%),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%) 0%,
+      var(--mq-oppervlak) 100%
+    );
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-werkbalk-groep {
+  gap: 9px;
+}
+
+/* Студійна капсула вибору активної гілки чи мітки версії (без подвійної рамки на <select>) */
+html.palet-maquette .gh-werkruimte-code .gh-select-wikkel {
+  min-height: 38px;
+  padding: 0 12px;
+  gap: 8px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mq-oppervlak) 78%, var(--mq-bg) 22%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-select-wikkel:hover {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 46%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak) 14%);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-select-wikkel:focus-within {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 68%, var(--mq-rand-sterk));
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-select-wikkel > svg {
+  color: var(--gh-mq-indigo);
+}
+
+html.palet-maquette .canonical-chrome .gh-root .gh-werkruimte-code .gh-select-wikkel select:not([multiple]):not([size]),
+html.palet-maquette .gh-werkruimte-code .gh-select-wikkel select {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  min-height: 36px;
+  padding-inline: 2px 20px;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-select-wikkel select option,
+html.palet-maquette .gh-werkruimte-code .gh-select-wikkel select optgroup {
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+/* Сегментований перемикач вкладок (Файли й редактор / Історія фіксацій, Редактор / Різниця змін) */
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment {
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--mq-bg) 52%, var(--mq-oppervlak-2) 48%);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button {
+  min-height: 33px;
+  padding: 5px 13px;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mq-gedempt);
+  font-size: 0.81rem;
+  font-weight: 580;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button:hover:not(.is-on):not([aria-selected="true"]) {
+  color: var(--mq-tekst);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button:is(.is-on, [aria-selected="true"]) {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 38%, var(--mq-rand-sterk));
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--mq-oppervlak) 84%, rgba(var(--mq-accent-rgb), 0.22)) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  color: var(--mq-tekst);
+  font-weight: 660;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 10%, transparent);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button:is(.is-on, [aria-selected="true"]) svg {
+  color: var(--gh-mq-indigo);
+}
+
+/* Студійні кнопки дій (.gh-btn, .gh-primary, .gh-icon) та інформаційні капсули (.gh-chip) */
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn {
+  min-height: 36px;
+  padding: 6px 13px;
+  gap: 7px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%);
+  color: var(--mq-tekst);
+  font-size: 0.83rem;
+  font-weight: 580;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition:
+    transform 0.16s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn > svg {
+  color: var(--gh-mq-indigo);
+  flex-shrink: 0;
+  transition: color 0.18s ease;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn.gh-primary {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 72%, var(--mq-rand-sterk));
+  background: linear-gradient(
+    140deg,
+    var(--gh-mq-indigo) 0%,
+    color-mix(in srgb, var(--gh-mq-indigo) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 660;
+  box-shadow:
+    0 10px 24px rgba(var(--mq-accent-rgb), 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn.gh-primary > svg {
+  color: currentColor;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn.gh-primary:hover:not(:disabled) {
+  border-color: var(--gh-mq-indigo);
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--gh-mq-indigo) 88%, var(--mq-wit) 12%) 0%,
+    var(--gh-mq-indigo) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow:
+    0 14px 28px rgba(var(--mq-accent-rgb), 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-icon {
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mq-gedempt);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-icon:hover:not(:disabled) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+/* М'який застережний відтінок при наведенні на кнопки видалення з піктограмою кошика */
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :is(.gh-btn, .gh-icon):has(svg.lucide-trash-2):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--fout) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout-zacht) 68%, var(--mq-oppervlak));
+  color: var(--fout);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :is(.gh-btn, .gh-icon):has(svg.lucide-trash-2):hover:not(:disabled) svg {
+  color: var(--fout);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-chip {
+  padding: 3px 10px;
+  gap: 5px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--gh-mq-indigo) 26%, var(--mq-rand));
+  background: color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.12) 70%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-chip > svg {
+  color: var(--gh-mq-indigo);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-chip.gh-chip-warn {
+  border-color: color-mix(in srgb, var(--warn) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn-zacht) 65%, var(--mq-oppervlak));
+  color: var(--warn);
+}
+
+/* Повідомлення про стан чи помилку (.gh-notice) та індикатор завантаження (.gh-busy) */
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-notice,
+html.palet-maquette .gh-notice[data-mq-dienst="github"] {
+  padding: 12px 15px;
+  gap: 10px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-notice.gh-error,
+html.palet-maquette .gh-notice.gh-error[data-mq-dienst="github"] {
+  border-color: color-mix(in srgb, var(--fout) 46%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout-zacht) 64%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-notice.gh-error > svg,
+html.palet-maquette .gh-notice.gh-error[data-mq-dienst="github"] > svg {
+  color: var(--fout);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-notice.gh-ok,
+html.palet-maquette .gh-notice.gh-ok[data-mq-dienst="github"] {
+  border-color: color-mix(in srgb, var(--ok) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok-zacht) 64%, var(--mq-oppervlak));
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-notice.gh-ok > svg,
+html.palet-maquette .gh-notice.gh-ok[data-mq-dienst="github"] > svg {
+  color: var(--ok);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-busy {
+  padding: 12px 14px;
+  border-radius: 13px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-busy > svg {
+  color: var(--gh-mq-indigo);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ПОЛЯ ВВЕДЕННЯ ТА СУВОРИЙ ЗАХИСТ ПОЛІВ ПОШУКУ З ЛУПОЮ (.gh-search)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Загальне оформлення полів форм із явним виключенням .gh-search input і .gh-select-wikkel select,
+   щоб жодне загальне правило ніколи не створювало подвійну рамку і не збивало лівий відступ біля лупи */
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.gh-search input),
+  textarea,
+  select:not(.gh-select-wikkel select)
+) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 80%, var(--mq-bg) 20%);
+  color: var(--mq-tekst);
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.gh-search input),
+  textarea,
+  select:not(.gh-select-wikkel select)
+)::placeholder {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.gh-search input),
+  textarea,
+  select:not(.gh-select-wikkel select)
+):hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.gh-search input),
+  textarea,
+  select:not(.gh-select-wikkel select)
+):focus {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 68%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+  outline: none;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--gh-mq-indigo);
+}
+
+/* Спеціалізоване високоспецифічне правило для студійного поля швидкого пошуку з лупою (.gh-search) */
+html.palet-maquette .canonical-chrome .gh-werkruimte-code label.gh-search,
+html.palet-maquette .gh-werkruimte-code label.gh-search,
+html.palet-maquette dialog.gh-dialoog label.gh-search {
+  min-height: 38px;
+  padding: 0 12px;
+  gap: 9px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-bg) 24%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .canonical-chrome .gh-werkruimte-code label.gh-search:hover,
+html.palet-maquette .gh-werkruimte-code label.gh-search:hover,
+html.palet-maquette dialog.gh-dialoog label.gh-search:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .canonical-chrome .gh-werkruimte-code label.gh-search:focus-within,
+html.palet-maquette .gh-werkruimte-code label.gh-search:focus-within,
+html.palet-maquette dialog.gh-dialoog label.gh-search:focus-within {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 68%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) label.gh-search > svg {
+  color: var(--gh-mq-indigo);
+  flex-shrink: 0;
+}
+
+html.palet-maquette .canonical-chrome .canonical-content .gh-werkruimte-code label.gh-search > input,
+html.palet-maquette .gh-werkruimte-code label.gh-search > input,
+html.palet-maquette dialog.gh-dialoog label.gh-search > input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 6px 2px 6px 2px;
+  min-height: 34px;
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  outline: none;
+}
+
+html.palet-maquette .gh-werkruimte-code label.gh-search > input::placeholder,
+html.palet-maquette dialog.gh-dialoog label.gh-search > input::placeholder {
+  color: var(--mq-stil);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ДВОКОЛОНКОВЕ ПОЛОТНО КОДУ: СТУДІЙНЕ ДЕРЕВО КАТАЛОГІВ І ХЛІБНІ КРИХТИ ШЛЯХУ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-werkruimte-code .gh-code-split {
+  grid-template-columns: minmax(248px, 316px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Хлібні крихти шляху файла у вигляді витончених студійних капсул */
+html.palet-maquette .gh-werkruimte-code .gh-kruimels {
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, transparent);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-kruimel-stap {
+  gap: 5px;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-kruimel-stap > svg {
+  color: var(--mq-stil);
+  flex-shrink: 0;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-kruimel {
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mq-gedempt);
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+  font-weight: 580;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-kruimel:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-kruimel.is-actief {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 42%, var(--mq-rand-sterk));
+  background: rgba(var(--mq-accent-rgb), 0.15);
+  color: var(--mq-tekst);
+  font-weight: 660;
+}
+
+/* Дерево тек і файлів з виразними піктограмами, м'яким наведенням та індикатором активного файла */
+html.palet-maquette .gh-werkruimte-code .gh-boom-lijst {
+  gap: 3px;
+  max-height: 640px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-rij {
+  padding: 8px 10px;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-rij:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-rij.is-actief {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 48%, var(--mq-rand-sterk));
+  background: linear-gradient(
+    90deg,
+    rgba(var(--mq-accent-rgb), 0.20) 0%,
+    rgba(var(--mq-accent-rgb), 0.06) 100%
+  );
+  box-shadow: inset 3px 0 0 var(--gh-mq-indigo);
+  font-weight: 640;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-rij .gh-map-icoon {
+  color: var(--gh-mq-indigo);
+  filter: drop-shadow(0 2px 6px rgba(var(--mq-accent-rgb), 0.22));
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-rij .gh-muted {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-rij.is-actief .gh-muted {
+  color: var(--gh-mq-indigo);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-naam {
+  font-family: var(--mq-font-mono);
+  font-size: 0.8rem;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-boom-maat {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-stil);
+  font-family: var(--mq-font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. ІНЖЕНЕРНЕ ВІКНО ПЕРЕГЛЯДУ КОДУ (.gh-code-tabel-wikkel) ТА ОГЛЯД README
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-werkruimte-code .gh-detail-head {
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-detail-head h3 {
+  font-size: 1rem;
+  font-weight: 640;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-bestand-lezer > .gh-detail-head h3 {
+  font-family: var(--mq-font-mono);
+  font-size: 0.92rem;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :is(.gh-sub, .gh-detail-head) code {
+  padding: 2px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, transparent);
+  color: var(--gh-mq-indigo);
+  font-family: var(--mq-font-mono);
+  font-size: 0.77rem;
+}
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) .gh-werkruimte-code .gh-code-tabel-wikkel {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--gh-mq-code-bg);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--mq-tekst) 4%, transparent);
+  overflow: auto;
+  max-width: 100%;
+  min-width: 0;
+  max-height: 680px;
+  scrollbar-width: thin;
+}
+
+html.palet-maquette .canonical-chrome .canonical-content .gh-werkruimte-code table.gh-code-tabel,
+html.palet-maquette .gh-werkruimte-code table.gh-code-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mq-font-mono);
+  font-size: 0.81rem;
+  line-height: 1.58;
+}
+
+html.palet-maquette .canonical-chrome .canonical-content .gh-werkruimte-code table.gh-code-tabel td,
+html.palet-maquette .gh-werkruimte-code table.gh-code-tabel td {
+  border-bottom: 0;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-code-tabel tbody tr:first-child td {
+  padding-top: 8px;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-code-tabel tbody tr:last-child td {
+  padding-bottom: 8px;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-code-nr {
+  min-width: 44px;
+  padding: 1px 12px;
+  background: var(--gh-mq-goot-bg);
+  border-right: 1px solid var(--mq-rand);
+  color: var(--mq-stil);
+  font-family: var(--mq-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-code-regel {
+  padding: 1px 16px;
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  white-space: pre;
+  tab-size: 2;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-code-tabel.is-terugloop .gh-code-regel {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+html.palet-maquette .canonical-chrome .canonical-content .gh-werkruimte-code .gh-code-tabel tbody tr:hover,
+html.palet-maquette .gh-werkruimte-code .gh-code-tabel tbody tr:hover {
+  background-color: rgba(var(--mq-accent-rgb), 0.065);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-code-tabel tbody tr:hover .gh-code-nr {
+  color: var(--gh-mq-indigo);
+}
+
+/* Студійне полотно документації README */
+html.palet-maquette .gh-werkruimte-code .gh-readme {
+  margin-top: 10px;
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--gh-mq-code-bg);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.83rem;
+  line-height: 1.62;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. ВЕБРЕДАКТОР КОДУ ТА ПАНЕЛЬ ФІКСАЦІЇ ЗМІН (.gh-editor-doos, .gh-vastleg-kaart)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-werkruimte-code .gh-editor-doos {
+  gap: 14px;
+}
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) .gh-werkruimte-code .gh-veld {
+  padding: 12px 14px;
+  gap: 7px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, transparent);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-veld > label {
+  color: var(--mq-gedempt);
+  font-size: 0.81rem;
+  font-weight: 620;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-editor-doos .gh-veld input {
+  font-family: var(--mq-font-mono);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-editor-veld-wikkel {
+  gap: 0;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--gh-mq-code-bg);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-editor-veld-wikkel:focus-within {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 68%, var(--mq-rand-sterk));
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+}
+
+html.palet-maquette .canonical-chrome .canonical-content .gh-werkruimte-code textarea.gh-code-invoer,
+html.palet-maquette .gh-werkruimte-code textarea.gh-code-invoer {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.83rem;
+  line-height: 1.58;
+  padding: 14px 16px;
+  min-height: 380px;
+}
+
+html.palet-maquette .canonical-chrome .canonical-content .gh-werkruimte-code textarea.gh-code-invoer:focus,
+html.palet-maquette .gh-werkruimte-code textarea.gh-code-invoer:focus {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) .gh-werkruimte-code .gh-editor-voet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 0;
+  border-top: 1px solid var(--mq-rand);
+  border-radius: 0;
+  background: var(--gh-mq-goot-bg);
+  color: var(--mq-gedempt);
+  font-family: var(--mq-font-mono);
+  font-size: 0.77rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Студійна картка параметрів фіксації змін та створення запиту на злиття */
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) .gh-werkruimte-code .gh-vastleg-kaart {
+  padding: 16px 18px;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--gh-mq-indigo) 30%, var(--mq-rand-sterk));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(var(--mq-accent-rgb), 0.12), transparent 52%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-vastleg-kaart > h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-keuze-rij {
+  gap: 10px;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio {
+  padding: 7px 11px;
+  gap: 8px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--mq-oppervlak) 68%, transparent);
+  color: var(--mq-tekst);
+  font-size: 0.83rem;
+  line-height: 1.4;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio:has(input:checked) {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 50%, var(--mq-rand-sterk));
+  background: rgba(var(--mq-accent-rgb), 0.12);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio svg {
+  color: var(--gh-mq-indigo);
+  vertical-align: text-bottom;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. ПОЛОТНО ПОРІВНЯННЯ ЗМІН (.gh-diff-wikkel, .gh-diff-bestand) — НІЧ І РАНКОВИЙ ТУМАН
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]):not([data-mq-s10]) .gh-diff-bestand {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--gh-mq-code-bg, color-mix(in srgb, var(--mq-oppervlak-2) 60%, var(--mq-oppervlak) 40%));
+  overflow: hidden;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .gh-diff-bestand > summary {
+  padding: 10px 14px;
+  gap: 10px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak) 16%);
+  color: var(--mq-tekst);
+  font-size: 0.83rem;
+  transition: background-color 0.16s ease;
+}
+
+html.palet-maquette .gh-diff-bestand > summary:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .gh-diff-bestand > summary strong,
+html.palet-maquette .gh-diff-bestand > summary code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.81rem;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-diff-bestand > summary .gh-sub {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-family: var(--mq-font-mono);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]):not([data-mq-s10]) .gh-diff-wikkel {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 15px;
+  background: var(--gh-mq-code-bg, color-mix(in srgb, var(--mq-bg) 70%, var(--mq-oppervlak) 30%));
+  overflow: auto;
+  max-width: 100%;
+  min-width: 0;
+  max-height: 560px;
+  scrollbar-width: thin;
+}
+
+html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]):not([data-mq-s10]) .gh-diff-bestand .gh-diff-wikkel {
+  border: 0;
+  border-top: 1px solid var(--mq-rand);
+  border-radius: 0;
+}
+
+html.palet-maquette .canonical-chrome .canonical-content table.gh-diff-tabel,
+html.palet-maquette table.gh-diff-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mq-font-mono);
+  font-size: 0.8rem;
+  line-height: 1.54;
+}
+
+html.palet-maquette .canonical-chrome .canonical-content table.gh-diff-tabel td,
+html.palet-maquette table.gh-diff-tabel td {
+  border-bottom: 0;
+}
+
+html.palet-maquette .gh-diff-nr {
+  min-width: 38px;
+  padding: 1px 9px;
+  background: var(--gh-mq-goot-bg, color-mix(in srgb, var(--mq-oppervlak-2) 60%, transparent));
+  border-right: 1px solid var(--mq-rand);
+  color: var(--mq-stil);
+  font-family: var(--mq-font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+html.palet-maquette .gh-diff-teken {
+  width: 24px;
+  padding: 1px 4px;
+  font-family: var(--mq-font-mono);
+  font-weight: 700;
+  text-align: center;
+  user-select: none;
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .gh-diff-tekst {
+  padding: 1px 12px;
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  white-space: pre;
+  tab-size: 2;
+}
+
+html.palet-maquette .gh-diff-tabel.is-terugloop .gh-diff-tekst {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Додані рядки — м'яке семантичне змішування var(--ok) та var(--ok-zacht), виразне у темній і світлій темах */
+html.palet-maquette .canonical-chrome .canonical-content table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd),
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) {
+  background-color: color-mix(in srgb, var(--ok-zacht) 56%, transparent);
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-nr {
+  background-color: color-mix(in srgb, var(--ok-zacht) 78%, transparent);
+  border-right-color: color-mix(in srgb, var(--ok) 28%, var(--mq-rand));
+  color: var(--ok);
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-nr:first-child {
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-teken {
+  color: var(--ok);
+}
+
+/* Видалені рядки — м'яке семантичне змішування var(--fout) та var(--fout-zacht), виразне у темній і світлій темах */
+html.palet-maquette .canonical-chrome .canonical-content table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd),
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) {
+  background-color: color-mix(in srgb, var(--fout-zacht) 54%, transparent);
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr {
+  background-color: color-mix(in srgb, var(--fout-zacht) 76%, transparent);
+  border-right-color: color-mix(in srgb, var(--fout) 28%, var(--mq-rand));
+  color: var(--fout);
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr:first-child {
+  box-shadow: inset 3px 0 0 var(--fout);
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-teken {
+  color: var(--fout);
+}
+
+/* Заголовки уривків змін (@@ ... @@) */
+html.palet-maquette .canonical-chrome .canonical-content table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-kop, .is-hunk),
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-kop, .is-hunk) {
+  background-color: color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.16) 72%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-kop, .is-hunk) .gh-diff-nr {
+  background-color: color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.22) 72%, var(--mq-oppervlak-2));
+  color: var(--gh-mq-indigo, var(--mq-accent));
+}
+
+html.palet-maquette table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-kop, .is-hunk) :is(.gh-diff-teken, .gh-diff-tekst) {
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. ЖУРНАЛ ФІКСАЦІЙ ЗМІН І ПОВІДОМЛЕННЯ ФІКСАЦІЇ (.gh-list, .gh-commit-bericht)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-werkruimte-code .gh-list {
+  gap: 8px;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-item {
+  padding: 11px 13px;
+  gap: 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 52%, transparent);
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.16s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-item-knop:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 44%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak-hover);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-item-knop:hover .gh-chip {
+  border-color: color-mix(in srgb, var(--gh-mq-indigo) 54%, var(--mq-rand-sterk));
+  background: rgba(var(--mq-accent-rgb), 0.20);
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-item > svg.gh-ok {
+  color: var(--ok);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-item-main strong {
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  font-weight: 630;
+  line-height: 1.38;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-sub {
+  color: var(--mq-gedempt);
+  font-size: 0.79rem;
+}
+
+html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-commit-bericht {
+  padding: 12px 15px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--gh-mq-indigo);
+  border-radius: 13px;
+  background: var(--gh-mq-code-bg);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.82rem;
+  line-height: 1.56;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   11. СПІЛЬНЕ ДІАЛОГОВЕ ВІКНО GITHUB (dialog.gh-dialoog — ВЕРХНІЙ ШАР ОГЛЯДАЧА БЕЗ position:fixed)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette dialog.gh-dialoog {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 24px;
+  padding: 0;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(var(--mq-accent-rgb), 0.14), transparent 52%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mq-popover-glas) 96%, rgba(var(--mq-accent-rgb), 0.08)) 0%,
+      var(--mq-oppervlak) 100%
+    );
+  color: var(--mq-tekst);
+  box-shadow:
+    0 0 0 1px rgba(var(--mq-accent-rgb), 0.12),
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 14%, transparent),
+    var(--mq-schaduw-held);
+  -webkit-backdrop-filter: blur(26px) saturate(1.3);
+  backdrop-filter: blur(26px) saturate(1.3);
+}
+
+html.palet-maquette dialog.gh-dialoog::backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(1.18);
+  backdrop-filter: blur(10px) saturate(1.18);
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-dialoog-kop {
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 72%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-dialoog-kop h3 {
+  color: var(--mq-tekst);
+  font-size: 1.02rem;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-dialoog-lijf {
+  padding: 18px 20px;
+  gap: 14px;
+  scrollbar-width: thin;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-form {
+  gap: 10px;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-form h4,
+html.palet-maquette dialog.gh-dialoog .gh-koppel-blok h4 {
+  margin: 0;
+  color: var(--mq-tekst);
+  font-size: 0.92rem;
+  font-weight: 640;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-koppel-blok {
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-vergelijk-kop {
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, transparent);
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-veld-inline {
+  gap: 8px;
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-facts {
+  gap: 8px;
+  color: var(--mq-gedempt);
+}
+
+/* Вміст специфічних діалогів інших вкладок GitHub: код пристрою, журнали конвеєрів та палітра міток */
+html.palet-maquette dialog.gh-dialoog .gh-apparaatcode-doos {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--gh-mq-indigo) 56%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.08) 70%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-apparaatcode-waarde {
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--gh-mq-code-bg);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-logboek-vak {
+  padding: 14px 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 14px;
+  background: var(--gh-mq-code-bg);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.79rem;
+  line-height: 1.54;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-kleur-knop:is(.is-on, .is-actief) {
+  border-color: var(--mq-tekst);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.28);
+}
+
+/* Мобільний перемикач між деревом файлів та редактором (базовий стиль, видимість задається у @container/@media) */
+html.palet-maquette .gh-werkruimte-code .gh-mobiel-wissel {
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-oppervlak-2));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .gh-werkruimte-code .gh-mobiel-terug-rij {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :is(
+    .gh-btn,
+    .gh-icon,
+    .gh-segment > button,
+    .gh-boom-rij,
+    .gh-kruimel,
+    .gh-item,
+    .gh-select-wikkel,
+    label.gh-search
+  ) {
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12. АДАПТИВНІ ТА МОБІЛЬНІ ПРАВИЛА — СУВОРО НАПРИКІНЦІ ЗА СПАДАННЯМ ШИРИНИ
+       (правило mobiel-cascade-20261105.test.ts)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 860px) {
+  html.palet-maquette .gh-werkruimte-code .gh-code-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) :is(.gh-werkruimte-code .gh-card, .gh-code-leeg-repo.gh-card) {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  html.palet-maquette:not([data-mq-s0]):not([data-mq-s1]):not([data-mq-s2]):not([data-mq-s3]):not([data-mq-s4]):not([data-mq-s5]):not([data-mq-s6]):not([data-mq-s7]):not([data-mq-s8]):not([data-mq-s9]) .gh-werkruimte-code > .gh-card.gh-werkbalk {
+    padding: 12px 14px;
+    border-radius: 18px;
+  }
+
+  html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn,
+  html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button,
+  html.palet-maquette .gh-werkruimte-code .gh-boom-rij,
+  html.palet-maquette .gh-werkruimte-code .gh-kruimel,
+  html.palet-maquette .gh-werkruimte-code .gh-select-wikkel,
+  html.palet-maquette .gh-werkruimte-code .gh-select-wikkel select,
+  html.palet-maquette .gh-werkruimte-code label.gh-search {
+    min-height: var(--tik-hoogte, 44px);
+  }
+
+  html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-icon {
+    width: var(--tik-hoogte, 44px);
+    height: var(--tik-hoogte, 44px);
+  }
+
+  html.palet-maquette dialog.gh-dialoog {
+    border-radius: 18px;
+  }
+
+  html.palet-maquette dialog.gh-dialoog .gh-dialoog-kop {
+    padding: 12px 14px;
+  }
+
+  html.palet-maquette dialog.gh-dialoog .gh-dialoog-lijf {
+    padding: 14px;
+  }
+
+  html.palet-maquette .canonical-chrome .canonical-content .gh-werkruimte-code textarea.gh-code-invoer,
+  html.palet-maquette .gh-werkruimte-code textarea.gh-code-invoer {
+    min-height: 260px;
+    padding: 12px;
+  }
+
+  html.palet-maquette .gh-werkruimte-code .gh-code-nr,
+  html.palet-maquette .gh-diff-nr {
+    min-width: 32px;
+    padding: 1px 7px;
+  }
+
+  html.palet-maquette .gh-werkruimte-code .gh-code-regel,
+  html.palet-maquette .gh-diff-tekst {
+    padding: 1px 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio {
+    width: 100%;
+  }
+}

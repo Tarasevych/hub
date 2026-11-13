@@ -1,0 +1,1704 @@
+/* Студійне оформлення робочих поверхонь задач, запитів на злиття, конвеєрів дій, випусків
+   і двостороннього мосту синхронізації в художній системі «Макет» (MAQUETTE-004, Група 3В).
+   Працює виключно за умови html.palet-maquette у нічній студії та у світлому режимі «Ранковий туман».
+   Studio-opmaak voor vraagstukken, samenvoegingsverzoeken, werkstromen, uitgaven en tweerichtingsspiegel. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. СТУДІЙНІ ЗМІННІ ПАНЕЛЕЙ РОБОЧОГО ПОТОКУ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(
+  [data-mq-paneel="zaken"],
+  [data-mq-paneel="acties"],
+  [data-mq-paneel="spiegel"],
+  dialog.gh-dialoog
+) {
+  --mq-font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --gh-wk-indigo: color-mix(in srgb, var(--mq-accent) 66%, var(--mq-held-boven, var(--mq-accent)) 34%);
+  --gh-wk-merge: color-mix(in srgb, var(--mq-nacht-accent) 42%, var(--mq-held-boven, var(--mq-accent)) 58%);
+  --gh-wk-oppervlak-kaart: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-oppervlak-2) 8%) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  --gh-wk-invoer-bg: color-mix(in srgb, var(--mq-bg) 56%, var(--mq-oppervlak-2) 44%);
+  --gh-wk-console-bg: color-mix(in srgb, var(--mq-bg) 82%, var(--mq-oppervlak) 18%);
+  --gh-wk-console-kop: color-mix(in srgb, var(--mq-bg) 62%, var(--mq-oppervlak-2) 38%);
+  --gh-wk-console-rand: color-mix(in srgb, var(--mq-rand-sterk) 72%, rgba(var(--mq-accent-rgb), 0.24));
+  --gh-wk-console-tekst: var(--mq-tekst);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
+  [data-mq-paneel="zaken"],
+  [data-mq-paneel="acties"],
+  [data-mq-paneel="spiegel"],
+  dialog.gh-dialoog
+),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+  [data-mq-paneel="zaken"],
+  [data-mq-paneel="acties"],
+  [data-mq-paneel="spiegel"],
+  dialog.gh-dialoog
+),
+html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light)) dialog.gh-dialoog {
+  --gh-wk-indigo: color-mix(in srgb, var(--mq-accent) 78%, var(--mq-tekst) 22%);
+  --gh-wk-merge: color-mix(in srgb, var(--mq-accent-2, var(--mq-accent)) 64%, var(--mq-tekst) 36%);
+  --gh-wk-oppervlak-kaart: linear-gradient(
+    165deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-oppervlak-2) 12%) 100%
+  );
+  --gh-wk-invoer-bg: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-oppervlak) 24%);
+  --gh-wk-console-bg: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-tekst) 5%);
+  --gh-wk-console-kop: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-tekst) 9%);
+  --gh-wk-console-rand: color-mix(in srgb, var(--mq-rand-sterk) 84%, rgba(var(--mq-accent-rgb), 0.20));
+  --gh-wk-console-tekst: var(--mq-tekst);
+}
+
+/* Узгодження рамок і скруглень з режимом плоского вмісту оболонки без порушення ієрархії специфічності */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-root :is(
+  [data-mq-paneel="zaken"],
+  [data-mq-paneel="acties"],
+  [data-mq-paneel="spiegel"]
+) :is(.gh-card, .gh-uitgave-kaart, .gh-stat-kaart):not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-root :is(
+  [data-mq-paneel="zaken"],
+  [data-mq-paneel="acties"],
+  [data-mq-paneel="spiegel"]
+) :is(.gh-subkaart, .gh-vastleg-kaart, .gh-reactie, .gh-diff-bestand, .gh-logboek-vak):not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-root [data-mq-paneel="spiegel"] .gh-mq-spiegel-held:not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border: 1px solid color-mix(in srgb, var(--gh-wk-indigo) 38%, var(--mq-rand));
+  border-radius: var(--mq-straal-kaart);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. СПІЛЬНІ ПРИМІТИВИ В МЕЖАХ ТРЬОХ РОБОЧИХ ПОВЕРХОНЬ (КАРТКИ, ПАНЕЛІ, КНОПКИ, ФОРМИ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(.gh-werkruimte-zaken, .gh-werkruimte-uitgaven, .gh-werkruimte-acties, .gh-werkruimte-spiegel) {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]).gh-card,
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-card {
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--gh-wk-oppervlak-kaart);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+  min-width: 0;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-card h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-werkbalk {
+  padding: 13px 16px;
+  gap: 12px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(var(--mq-accent-rgb), 0.08), transparent 48%),
+    var(--gh-wk-oppervlak-kaart);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border-radius: calc(var(--mq-straal-knop) + 2px);
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-segment > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--mq-straal-knop) - 2px);
+  background: transparent;
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+  font-weight: 600;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-segment > button:hover {
+  color: var(--mq-tekst);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-segment > button.is-on {
+  color: var(--mq-tekst);
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, rgba(var(--mq-accent-rgb), 0.22));
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 38%, var(--mq-rand-sterk));
+  box-shadow: 0 4px 12px rgba(var(--mq-accent-rgb), 0.12);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  min-height: 38px;
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  color: var(--mq-gedempt);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-search:focus-within {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 62%, var(--mq-rand-sterk));
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.14);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-search input {
+  border: 0;
+  background: transparent;
+  color: var(--mq-tekst);
+  outline: none;
+  font-size: 0.86rem;
+}
+
+/* Тактильні студійні кнопки та піктограми */
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 13px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak) 18%);
+  color: var(--mq-tekst);
+  font-size: 0.83rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 66%, rgba(var(--mq-accent-rgb), 0.20));
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 46%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-btn.gh-primary {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 72%, transparent);
+  background: linear-gradient(
+    135deg,
+    var(--gh-wk-indigo) 0%,
+    color-mix(in srgb, var(--gh-wk-indigo) 78%, var(--mq-accent-2, var(--mq-accent)) 22%) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow: 0 8px 22px rgba(var(--mq-accent-rgb), 0.20);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-btn.gh-primary:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--gh-wk-indigo) 90%, var(--mq-wit) 10%) 0%,
+    var(--gh-wk-indigo) 100%
+  );
+  box-shadow: 0 10px 26px rgba(var(--mq-accent-rgb), 0.28);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  color: var(--mq-gedempt);
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-icon:hover {
+  color: var(--mq-tekst);
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+/* Поля введення, списки вибору та вкладені секції */
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  color: var(--mq-tekst);
+  padding: 9px 12px;
+  font-size: 0.87rem;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 64%, var(--mq-rand-sterk));
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.14);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-subkaart {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"], dialog.gh-dialoog) .gh-koppel-blok {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--mq-rand);
+  min-width: 0;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"], dialog.gh-dialoog) .gh-koppel-blok > h4 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+/* Капсули станів, моноширинні лічильники та колірні позначки */
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"], dialog.gh-dialoog) .gh-mq-mono-pil {
+  font-family: var(--mq-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 80%, rgba(var(--mq-accent-rgb), 0.10));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-mq-auteur-pil {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  font-family: var(--mq-font-mono);
+  font-size: 0.77rem;
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-mq-accent-icoon {
+  color: var(--gh-wk-indigo);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-mq-chip-ok {
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 13%, var(--mq-oppervlak-2));
+  color: var(--ok);
+  font-weight: 600;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-mq-chip-actief {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 46%, var(--mq-rand));
+  background: color-mix(in srgb, var(--gh-wk-indigo) 15%, var(--mq-oppervlak-2));
+  color: var(--gh-wk-indigo);
+  font-weight: 600;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-mq-chip-fout {
+  border-color: color-mix(in srgb, var(--fout) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 13%, var(--mq-oppervlak-2));
+  color: var(--fout);
+  font-weight: 600;
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-staat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  border: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-staat.tone-ok {
+  border-color: color-mix(in srgb, var(--ok) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 14%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-staat.tone-waarschuwing {
+  border-color: color-mix(in srgb, var(--warn) 46%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn) 15%, var(--mq-oppervlak-2));
+  color: var(--warn);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-staat.tone-neutraal {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-staat.gh-mq-staat-samengevoegd {
+  border-color: color-mix(in srgb, var(--gh-wk-merge) 54%, var(--mq-rand));
+  background: color-mix(in srgb, var(--gh-wk-merge) 18%, var(--mq-oppervlak-2));
+  color: var(--gh-wk-merge);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. ЗАДАЧІ ТА ЗАПИТИ НА ЗЛИТТЯ (ZakenEnSamenvoegingenPaneel)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-split.gh-mq-zaken-split {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.88fr) minmax(0, 1.44fr);
+  gap: 16px;
+  align-items: start;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-lijst-kolom {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-kolom-kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-kolom-titel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-zaken-lijst {
+  display: grid;
+  gap: 8px;
+  max-height: min(72dvh, 760px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-zaak-rij {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 13px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, var(--mq-oppervlak) 36%);
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-zaak-rij:hover {
+  border-color: var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, rgba(var(--mq-accent-rgb), 0.12));
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-zaak-rij.is-actief {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 54%, var(--mq-rand-sterk));
+  background:
+    linear-gradient(90deg, rgba(var(--mq-accent-rgb), 0.14) 0%, transparent 64%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-oppervlak) 12%);
+  box-shadow:
+    inset 3px 0 0 var(--gh-wk-indigo),
+    0 10px 26px rgba(var(--mq-accent-rgb), 0.11);
+}
+
+/* Виразні індикатори станів задачі або запиту на злиття */
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-staat-teken {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-staat-teken.is-open {
+  border-color: color-mix(in srgb, var(--ok) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 13%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-staat-teken.is-gesloten {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-staat-teken.is-concept {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--warn) 48%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-staat-teken.is-samengevoegd {
+  border-color: color-mix(in srgb, var(--gh-wk-merge) 48%, var(--mq-rand));
+  background: color-mix(in srgb, var(--gh-wk-merge) 16%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-merge-kleur {
+  color: var(--gh-wk-merge);
+}
+
+html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="spiegel"]) .gh-mq-rij-boven {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-rij-boven strong {
+  font-size: 0.9rem;
+  font-weight: 640;
+  line-height: 1.35;
+  color: var(--mq-tekst);
+  overflow-wrap: anywhere;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-nr {
+  font-family: var(--mq-font-mono);
+  font-size: 0.77rem;
+  font-weight: 600;
+  color: var(--gh-wk-indigo);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-concept-pil {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--warn) 48%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  color: var(--warn);
+  font-size: 0.72rem;
+}
+
+/* Мітки сховища у рядках списку, картці обговорення та діалозі міток */
+html.palet-maquette :is([data-mq-paneel="zaken"], dialog.gh-dialoog) .gh-label,
+html.palet-maquette [data-mq-paneel="zaken"] .gh-label-knop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border-width: 1px;
+  border-style: solid;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak) 14%);
+  color: var(--mq-tekst);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-label-knop {
+  cursor: pointer;
+  opacity: 0.74;
+  transition: opacity 0.15s ease, transform 0.14s ease, box-shadow 0.15s ease;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-label-knop:hover:not(:disabled) {
+  opacity: 0.95;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-label-knop.is-actief {
+  opacity: 1;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, rgba(var(--mq-accent-rgb), 0.24));
+  box-shadow: 0 3px 10px rgba(var(--mq-accent-rgb), 0.16);
+}
+
+/* Права колонка: глибока картка обговорення, гілок, рецензій та злиття */
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-gesprek-kaart {
+  padding: 20px 22px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--mq-accent-rgb), 0.08), transparent 46%),
+    var(--gh-wk-oppervlak-kaart);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-leeg-detail {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 40px 20px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-leeg-icoon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--gh-wk-indigo) 36%, var(--mq-rand));
+  background: radial-gradient(circle at 30% 25%, rgba(var(--mq-accent-rgb), 0.22), var(--mq-oppervlak-zacht));
+  color: var(--gh-wk-indigo);
+  box-shadow: 0 12px 28px rgba(var(--mq-accent-rgb), 0.14);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-leeg-detail h4 {
+  margin: 4px 0 0;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-leeg-detail > .gh-sub {
+  max-width: 46ch;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-zaak-inhoud {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-detail-bovenbalk {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-kop-anker {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-kop-nr {
+  font-family: var(--mq-font-mono);
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 3px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  color: var(--gh-wk-indigo);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-zaak-kop {
+  display: grid;
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-zaak-titelrij h3 {
+  font-size: 1.22rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-bord-chip {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 12%, var(--mq-oppervlak-2));
+  color: var(--ok);
+  font-weight: 600;
+}
+
+/* Потік гілок джерела → призначення у капсулах */
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tak-stroom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tak-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--gh-wk-indigo) 34%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, rgba(var(--mq-accent-rgb), 0.14));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tak-capsule.is-doel {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 11%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tak-capsule code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tak-pijl {
+  color: var(--mq-stil);
+  flex: none;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-diff-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  font-family: var(--mq-font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-beschrijving-kaart {
+  display: grid;
+  gap: 12px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, var(--mq-oppervlak) 36%);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-readme {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--mq-tekst);
+}
+
+/* Панель підсумку та списку перевірок стану конвеєра */
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-controle-samenvatting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 15px;
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--gh-wk-indigo) 32%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, rgba(var(--mq-accent-rgb), 0.08));
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-controle-kop {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.87rem;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-controles-lijst {
+  display: grid;
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-controle-rij {
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 70%, var(--mq-oppervlak) 30%);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-controle-rij[data-controle-staat="ok"] {
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-controle-rij[data-controle-staat="fout"] {
+  border-color: color-mix(in srgb, var(--fout) 36%, var(--mq-rand));
+  box-shadow: inset 3px 0 0 var(--fout);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-controle-rij[data-controle-staat="bezig"] {
+  box-shadow: inset 3px 0 0 var(--gh-wk-indigo);
+}
+
+/* Хронологічна стрічка коментарів і рецензій */
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding-left: 18px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gh-wk-indigo) 46%, transparent) 0%,
+    var(--mq-rand) 100%
+  );
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn > .gh-reactie {
+  position: relative;
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%);
+  display: grid;
+  gap: 9px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn > .gh-reactie::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 19px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gh-wk-indigo);
+  box-shadow: 0 0 0 3px var(--mq-oppervlak);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn > .gh-reactie[data-review-toon="ok"] {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--mq-rand));
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn > .gh-reactie[data-review-toon="ok"]::before {
+  background: var(--ok);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn > .gh-reactie[data-review-toon="fout"] {
+  border-color: color-mix(in srgb, var(--fout) 40%, var(--mq-rand));
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn > .gh-reactie[data-review-toon="fout"]::before {
+  background: var(--fout);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn > .gh-reactie > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-reactie-auteur {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-monogram {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mq-font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(var(--mq-accent-rgb), 0.28), rgba(var(--mq-accent-rgb), 0.10));
+  border: 1px solid color-mix(in srgb, var(--gh-wk-indigo) 38%, var(--mq-rand));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-beoordeling-pil.is-ok {
+  border-color: color-mix(in srgb, var(--ok) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+  font-weight: 650;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-beoordeling-pil.is-fout {
+  border-color: color-mix(in srgb, var(--fout) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 14%, transparent);
+  color: var(--fout);
+  font-weight: 650;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-beoordeling-pil.is-warn {
+  border-color: color-mix(in srgb, var(--warn) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+  font-weight: 650;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-beoordeling-pil.is-neutraal {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* Форма коментування, картки вибору рецензії та студійний блок захищеного злиття */
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-reactie-formulier {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, var(--mq-oppervlak) 44%);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-review-keuzes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-keuze-kaart {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-keuze-kaart.is-gekozen {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 56%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 74%, rgba(var(--mq-accent-rgb), 0.18));
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-samenvoeg-paneel {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ok) 38%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--ok) 11%, transparent), transparent 52%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 80%, var(--mq-oppervlak) 20%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-samenvoeg-paneel[data-mergebaar="conflict"] {
+  border-color: color-mix(in srgb, var(--fout) 46%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--fout) 12%, transparent), transparent 52%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 80%, var(--mq-oppervlak) 20%);
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-samenvoeg-paneel h4 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 680;
+}
+
+html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-bevestig-rij {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--gh-wk-indigo) 42%, var(--mq-rand-sterk));
+  background: var(--gh-wk-invoer-bg);
+  font-size: 0.84rem;
+  font-weight: 550;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. КОНВЕЄРИ ДІЙ, ТЕРМІНАЛЬНІ ЖУРНАЛИ ТА ВІТРИННІ ВИПУСКИ (ActiesEnUitgavenPaneel)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-werkstroom-kaarten {
+  display: grid;
+  gap: 10px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-werkstroom-rij {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-werkstroom-rij:hover {
+  border-color: var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, rgba(var(--mq-accent-rgb), 0.08));
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-wf-hoofd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-wf-tegel {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--gh-wk-indigo) 34%, var(--mq-rand));
+  background: radial-gradient(circle at 30% 25%, rgba(var(--mq-accent-rgb), 0.22), var(--mq-oppervlak-zacht));
+  color: var(--gh-wk-indigo);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-wf-tekst {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-wf-titelrij {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-wf-tekst code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.77rem;
+  color: var(--mq-gedempt);
+}
+
+/* Список запусків конвеєрів з чіткими станами успіху, збою або виконання */
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-statistiek {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-runs-lijst {
+  display: grid;
+  gap: 10px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-run-rij {
+  display: grid;
+  gap: 12px;
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 70%, var(--mq-oppervlak) 30%);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-run-rij[data-run-staat="ok"] {
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-run-rij[data-run-staat="fout"] {
+  border-color: color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  box-shadow: inset 3px 0 0 var(--fout);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-run-rij[data-run-staat="bezig"] {
+  border-color: color-mix(in srgb, var(--mq-accent) 42%, var(--mq-rand));
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-run-rij.is-uitgevouwen {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 48%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak) 16%);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-boven {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-icoon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-icoon.is-ok {
+  border-color: color-mix(in srgb, var(--ok) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 13%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-icoon.is-fout {
+  border-color: color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 13%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-icoon.is-bezig {
+  border-color: color-mix(in srgb, var(--mq-accent) 40%, var(--mq-rand));
+  background: rgba(var(--mq-accent-rgb), 0.14);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 9px;
+  margin-top: 3px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-tak-pil-klein,
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-sha-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  font-family: var(--mq-font-mono);
+  font-size: 0.74rem;
+  color: var(--mq-tekst);
+}
+
+/* Розгортання етапів конвеєра та інженерна термінальна консоль журналів (.gh-logboek-vak) */
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-uitvouwing {
+  padding-top: 12px;
+  border-top: 1px solid var(--mq-rand);
+  min-width: 0;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-stappen-blok {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-taak-kiezer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-taak-knop[data-run-staat="ok"]:not(.gh-primary) {
+  border-color: color-mix(in srgb, var(--ok) 36%, var(--mq-rand));
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-taak-knop[data-run-staat="fout"]:not(.gh-primary) {
+  border-color: color-mix(in srgb, var(--fout) 42%, var(--mq-rand));
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-taak-staat {
+  font-family: var(--mq-font-mono);
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-doos {
+  border-radius: 16px;
+  border: 1px solid var(--gh-wk-console-rand);
+  background: var(--gh-wk-console-bg);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  min-width: 0;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--gh-wk-console-kop);
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-stippen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-stippen > i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--mq-stil);
+  opacity: 0.65;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-stippen > i:nth-child(1) {
+  background: var(--fout);
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-stippen > i:nth-child(2) {
+  background: var(--warn);
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-stippen > i:nth-child(3) {
+  background: var(--ok);
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-titel {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--mq-font-mono);
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+  overflow-wrap: anywhere;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-knop {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 0.77rem;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-logboek-vak {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--gh-wk-console-rand);
+  background: var(--gh-wk-console-bg);
+  color: var(--gh-wk-console-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.79rem;
+  line-height: 1.56;
+  max-height: 440px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mq-rand-sterk) transparent;
+}
+
+html.palet-maquette :is([data-mq-paneel="acties"], dialog.gh-dialoog) .gh-mq-terminal-doos > .gh-logboek-vak {
+  border: 0;
+  border-radius: 0;
+}
+
+html.palet-maquette dialog.gh-dialoog.gh-dialoog-breed .gh-mq-terminal-doos > .gh-logboek-vak {
+  max-height: min(64dvh, 620px);
+}
+
+/* Вітринні картки випусків з мітками версій, нотатками, архівами та відбитками SHA-256 */
+html.palet-maquette [data-mq-paneel="acties"] .gh-uitgaven-lijst {
+  display: grid;
+  gap: 14px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-uitgave-kaart {
+  display: grid;
+  gap: 14px;
+  padding: 20px 22px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-oppervlak-kaart);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-uitgave-kaart.is-nieuwste {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--ok) 10%, transparent), transparent 48%),
+    radial-gradient(circle at 100% 0%, rgba(var(--mq-accent-rgb), 0.10), transparent 48%),
+    var(--gh-wk-oppervlak-kaart);
+  box-shadow:
+    inset 0 2px 0 color-mix(in srgb, var(--ok) 46%, transparent),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-uitgave-kop .gh-zaak-titelrij {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-tag-pil {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ok) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 12%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-tag-pil code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-uitgave-notities {
+  padding: 13px 15px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 66%, var(--mq-oppervlak) 34%);
+  font-size: 0.85rem;
+  line-height: 1.58;
+  max-height: 320px;
+  overflow: auto;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-lijst {
+  display: grid;
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-rij {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-oppervlak) 26%);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-rij:hover {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 42%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, rgba(var(--mq-accent-rgb), 0.10));
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-link {
+  flex: 1 1 240px;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  text-decoration: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-link strong {
+  font-family: var(--mq-font-mono);
+  font-size: 0.84rem;
+  font-weight: 640;
+  overflow-wrap: anywhere;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: 3px;
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-maat-badge,
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-soort-badge {
+  font-family: var(--mq-font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-soort-badge {
+  color: var(--gh-wk-indigo);
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-hash-knop {
+  font-family: var(--mq-font-mono);
+  font-size: 0.75rem;
+  border-color: color-mix(in srgb, var(--ok) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 10%, var(--gh-wk-invoer-bg));
+}
+
+html.palet-maquette [data-mq-paneel="acties"] .gh-mq-hash-knop code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.74rem;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-mq-hash-hulprij {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+html.palet-maquette dialog.gh-dialoog .gh-mq-bestand-etiket {
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ДВОСТОРОННІЙ МІСТ СИНХРОНІЗАЦІЇ ТА ДОШКА ЗАВДАНЬ (SpiegelEnBrugPaneel)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-spiegel-held {
+  display: grid;
+  gap: 18px;
+  padding: 22px 24px;
+  border: 1px solid color-mix(in srgb, var(--gh-wk-indigo) 38%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 0% 0%, rgba(var(--mq-accent-rgb), 0.16), transparent 52%),
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--ok) 10%, transparent), transparent 48%),
+    var(--gh-wk-oppervlak-kaart);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-spiegel-koptekst {
+  display: grid;
+  gap: 6px;
+  max-width: 72ch;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-stat-strook {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-stat-kaart {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%);
+  box-shadow: inset 0 2px 0 rgba(var(--mq-accent-rgb), 0.28);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-stat-kaart strong {
+  font-family: var(--mq-font-mono);
+  font-size: 1.42rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+/* Картка перехоплювачів подій SHA-256 та параметрів обраного сховища */
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-webhook-kaart {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-webhook-doos {
+  display: grid;
+  gap: 10px;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-webhook-kaart[data-webhook-actief="ja"] .gh-mq-webhook-doos {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--ok) 10%, transparent), transparent 55%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-oppervlak) 26%);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-webhook-kop {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-webhook-titelrij {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-endpoint-rij {
+  padding: 8px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--mq-rand);
+  background: var(--gh-wk-invoer-bg);
+  overflow-x: auto;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-endpoint-rij code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.76rem;
+  color: var(--mq-tekst);
+  overflow-wrap: anywhere;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-optie-kaart {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 60%, var(--mq-oppervlak) 40%);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-optie-kaart:hover {
+  border-color: var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, rgba(var(--mq-accent-rgb), 0.10));
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-mono-veld {
+  font-family: var(--mq-font-mono);
+  font-size: 0.82rem;
+}
+
+/* Архітектурне зіставлення стовпців Дошки завдань і захисний бар'єр для карток сторонніх авторів */
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-bord-kaart {
+  display: grid;
+  gap: 16px;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-koppeling {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-tegel {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-tegel.is-inkomend {
+  border-color: color-mix(in srgb, var(--warn) 40%, var(--mq-rand));
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--warn) 52%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-tegel.is-actief {
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--mq-rand));
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--ok) 52%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-tegel.is-afgerond {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: inset 0 2px 0 var(--gh-wk-indigo);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-stroom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-stroom > code.gh-chip {
+  font-family: var(--mq-font-mono);
+  font-size: 0.75rem;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-derden-waarschuwing {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, var(--mq-rand));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--warn) 12%, transparent) 0%, transparent 65%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-derden-waarschuwing > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--warn);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-derden-waarschuwing strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.89rem;
+  font-weight: 660;
+  color: var(--mq-tekst);
+}
+
+/* Список віддзеркалених сховищ та живий журнал обміну подіями */
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-spiegel-lijst,
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-gebeurtenis-lijst {
+  display: grid;
+  gap: 8px;
+  max-height: 440px;
+  overflow: auto;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-spiegel-rij,
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-gebeurtenis-rij {
+  padding: 11px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 66%, var(--mq-oppervlak) 34%);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-spiegel-rij.is-actief {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 52%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, rgba(var(--mq-accent-rgb), 0.14));
+  box-shadow: inset 3px 0 0 var(--gh-wk-indigo);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-spiegel-rij .gh-sub code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.75rem;
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-richting-icoon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-richting-icoon.is-inkomend {
+  border-color: color-mix(in srgb, var(--ok) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+
+html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-richting-icoon.is-uitgaand {
+  border-color: color-mix(in srgb, var(--gh-wk-indigo) 38%, var(--mq-rand));
+  background: rgba(var(--mq-accent-rgb), 0.13);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. КОНТЕЙНЕРНІ ЗАПИТИ ВУЗЬКОЇ РОБОЧОЇ ОБЛАСТІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@container gh-root (max-width: 820px) {
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split.gh-mq-zaken-split {
+    grid-template-columns: 1fr;
+  }
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split-lijst.is-verborgen-mobiel,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split-detail.is-verborgen-mobiel,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split[data-mobiel-paneel="detail"] > .gh-split-lijst,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split[data-mobiel-paneel="lijst"] > .gh-split-detail {
+    display: none;
+  }
+  html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-koppeling,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-review-keuzes {
+    grid-template-columns: 1fr;
+  }
+  html.palet-maquette [data-mq-paneel="spiegel"] .gh-stat-strook {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. МОБІЛЬНИЙ КАСКАД — СУВОРО НАПРИКІНЦІ ФАЙЛА ЗА СПАДАННЯМ ШИРИНИ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 860px) {
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split.gh-mq-zaken-split {
+    grid-template-columns: 1fr;
+  }
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split-lijst.is-verborgen-mobiel,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split-detail.is-verborgen-mobiel,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split[data-mobiel-paneel="detail"] > .gh-split-lijst,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-split[data-mobiel-paneel="lijst"] > .gh-split-detail {
+    display: none;
+  }
+  html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-kolom-koppeling {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]).gh-card,
+  html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-card,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-gesprek-kaart,
+  html.palet-maquette [data-mq-paneel="acties"] .gh-uitgave-kaart,
+  html.palet-maquette [data-mq-paneel="spiegel"] .gh-mq-spiegel-held {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-btn,
+  html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-segment > button,
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-label-knop {
+    min-height: var(--tik-hoogte);
+  }
+
+  html.palet-maquette :is([data-mq-paneel="zaken"], [data-mq-paneel="acties"], [data-mq-paneel="spiegel"]) .gh-icon {
+    width: var(--tik-hoogte);
+    height: var(--tik-hoogte);
+  }
+
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-review-keuzes {
+    grid-template-columns: 1fr;
+  }
+
+  html.palet-maquette [data-mq-paneel="zaken"] .gh-mq-tijdlijn {
+    padding-left: 14px;
+  }
+
+  html.palet-maquette [data-mq-paneel="acties"] .gh-mq-run-boven,
+  html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-rij {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  html.palet-maquette [data-mq-paneel="acties"] .gh-mq-archief-link {
+    flex: 1 1 auto;
+  }
+
+  html.palet-maquette [data-mq-paneel="spiegel"] .gh-stat-strook {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  html.palet-maquette [data-mq-paneel="spiegel"] .gh-stat-strook {
+    grid-template-columns: 1fr;
+  }
+}

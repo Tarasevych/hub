@@ -18,6 +18,8 @@ import {
 import {
   DiffWeergave, GhBezig, GhDialoog, GhMelding, ghFoutTekst, ghGeleden, ghGrootte, ghPost, useGhVraag, type Tr,
 } from './github-client';
+import { useIsMaquette } from '../thema/useThema';
+import './github-brontekst-maquette.css';
 
 export default function CodeEnEditorPaneel({
   repo,
@@ -28,6 +30,7 @@ export default function CodeEnEditorPaneel({
   tr: Tr;
   onOpenPulls?: () => void;
 }) {
+  const isMaquette = useIsMaquette();
   const takkenVraag = useGhVraag<{ defaultBranch: string; branches: GithubTakInfo[]; tags: GithubTagInfo[] }>(
     'branches',
     repo ? { repo } : null,
@@ -318,7 +321,7 @@ export default function CodeEnEditorPaneel({
 
   if (!repo) {
     return (
-      <section className="gh-card">
+      <section className="gh-card gh-code-leeg-repo" data-mq-dienst={isMaquette ? 'github' : undefined}>
         <p className="gh-empty">{tr('Оберіть сховище вгорі сторінки, щоб переглядати дерево файлів, гілки та редагувати код.', 'Kies bovenaan een opslagplaats om de bestandsboom, takken en webeditor te openen.')}</p>
       </section>
     );
@@ -328,7 +331,12 @@ export default function CodeEnEditorPaneel({
   const tags = takkenVraag.data?.tags ?? [];
 
   return (
-    <div className="gh-werkruimte-code">
+    <div
+      className={`gh-werkruimte-code${isMaquette ? ' gh-mq-brontekst' : ''}`}
+      data-mq-dienst={isMaquette ? 'github' : undefined}
+      data-hoofd-modus={hoofdModus}
+      data-bewerk-modus={bewerkModus}
+    >
       {/* Werkbalk voor takken, weergavemodus, nieuw bestand en vergelijken */}
       <section className="gh-card gh-werkbalk">
         <div className="gh-werkbalk-groep">

@@ -1,0 +1,1251 @@
+/* Студійне оформлення простору GitHub та панелі швидкого приєднання в художній системі «Макет» (MAQUETTE-004, Група 3А).
+   Працює виключно за умови html.palet-maquette для нічної студії та світлого режиму «Ранковий туман».
+   Studio-opmaak voor het GitHub-overzicht, de koppelkaart en het éénkliks koppelpaneel onder html.palet-maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ЗОВНІШНЯ ОБОЛОНКА (.gh-maquette-wikkel), ІНЖЕНЕРНИЙ АКЦЕНТ ТА СВІТЛИЙ РЕЖИМ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel {
+  --mq-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  /* Фіолетово-індиговий інженерний відтінок на перетині сталевого GitHub і студійного склепіння */
+  --mq-gh-indigo: color-mix(in srgb, var(--mq-accent) 58%, var(--mq-held-boven) 42%);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-gh-indigo);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.15);
+  --focus: var(--mq-gh-indigo);
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  color: var(--mq-tekst);
+}
+
+/* Світлий режим «Ранковий туман»: висококонтрастний індигово-фіолетовий акцент на світлих поверхнях;
+   вітрина .mq-held має власний атрибут data-mq-dienst="github" і зберігає своє глибоке нічне склепіння */
+html.palet-maquette:is(.theme-light, .theme-plum-light) .gh-maquette-wikkel[data-mq-dienst="github"],
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .gh-maquette-wikkel[data-mq-dienst="github"] {
+  --mq-gh-indigo: color-mix(in srgb, var(--mq-knop-primair-tekst) 80%, var(--mq-held-boven) 20%);
+  --mq-accent: var(--mq-gh-indigo);
+  --mq-accent-rgb: 75, 70, 107;
+  --mq-accent-op: var(--mq-wit);
+  --mq-werk-gloed-a: rgba(var(--mq-accent-rgb), 0.09);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-gh-indigo);
+  --accentText: var(--mq-wit);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.12);
+  --focus: var(--mq-gh-indigo);
+}
+
+/* Недоторканність нічного склепіння студійної вітрини .mq-held у будь-якій темі */
+html.palet-maquette .gh-maquette-wikkel > .mq-held {
+  color-scheme: dark;
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette .gh-maquette-wikkel > .mq-held.is-compact {
+  border-color: var(--mq-held-lijn);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel > .gh-root {
+  max-width: none;
+  margin: 0;
+  padding: 0 0 28px;
+  gap: 18px;
+}
+
+html.palet-maquette .gh-maquette-wikkel :focus-visible {
+  outline: 2px solid var(--mq-gh-indigo);
+  outline-offset: 2px;
+}
+
+/* Узгодження з глобальним режимом flat-content без порушення ієрархії специфічності */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-maquette-wikkel .gh-root :is(.gh-card, .gh-me, .gh-uitgave-kaart, .gh-stat-kaart):not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-maquette-wikkel .gh-root :is(.gh-subkaart, .gh-veld, .gh-pad, .gh-vastleg-kaart, .gh-editor-voet, .gh-reactie, .gh-diff-bestand, .gh-code-tabel-wikkel, .gh-diff-wikkel, .gh-logboek-vak, .gh-pijler, .gh-zaak-tekst):not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-maquette-wikkel .gh-root .gh-eenklik-held:not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border: 1px solid color-mix(in srgb, var(--mq-gh-indigo) 38%, var(--mq-rand));
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-maquette-wikkel .gh-root .gh-apparaatcode-doos:not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border: 1px dashed color-mix(in srgb, var(--mq-gh-indigo) 64%, var(--mq-rand-sterk));
+  border-radius: 18px;
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .gh-maquette-wikkel .gh-root .gh-pad.is-uit:not([role="dialog"]):not(.auth-card):not([data-gh-a]):not([data-gh-b]):not([data-gh-c]):not([data-gh-d]) {
+  border-style: dashed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. КАРТКА ПРОФІЛЮ РОЗРОБНИКА (.gh-me) З ФІОЛЕТОВО-ІНДИГОВИМ ОРЕОЛОМ І ЛІЧИЛЬНИКОМ API
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel .gh-me {
+  gap: 15px;
+  padding: 14px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 0% 50%, color-mix(in srgb, var(--mq-gh-indigo) 14%, transparent), transparent 44%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-oppervlak-2) 8%) 0%,
+      var(--mq-oppervlak) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-me > img,
+html.palet-maquette .gh-maquette-wikkel .gh-me > svg {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--mq-gh-indigo), color-mix(in srgb, var(--mq-accent-2) 72%, var(--mq-oppervlak) 28%));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--mq-gh-indigo) 18%, transparent),
+    0 8px 22px var(--mq-gloed);
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-me > div {
+  gap: 2px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-me > div strong {
+  font-size: 1rem;
+  font-weight: 640;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-gh-indigo) 32%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, rgba(var(--mq-accent-rgb), 0.14));
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-rate::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 65%, transparent);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. КОМАНДНА СМУГА СХОВИЩА (.gh-repo-balk, RepoWerkbalk) І ПІГУЛКИ 13 РОЗДІЛІВ (.gh-snel-nav)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo-balk {
+  gap: 13px;
+  padding: 16px 20px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background:
+    linear-gradient(
+      168deg,
+      color-mix(in srgb, var(--mq-oppervlak) 90%, rgba(var(--mq-accent-rgb), 0.08)) 0%,
+      color-mix(in srgb, var(--mq-oppervlak) 97%, var(--mq-bg) 3%) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-werkbalk {
+  gap: 12px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-select-wikkel {
+  min-height: 40px;
+  padding: 0 13px;
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak) 14%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-select-wikkel:hover {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 46%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-select-wikkel:focus-within {
+  border-color: var(--mq-gh-indigo);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-select-wikkel > svg {
+  color: var(--mq-gh-indigo);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-select-wikkel select {
+  color: var(--mq-tekst);
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-snel-nav {
+  gap: 7px;
+  padding: 4px 2px 6px;
+  scrollbar-color: var(--mq-rand-sterk) transparent;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-snel-pil {
+  min-height: 36px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 66%, transparent);
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  font-weight: 560;
+  letter-spacing: -0.005em;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-snel-pil > svg {
+  color: var(--mq-stil);
+  transition: color 0.18s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-snel-pil:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  transform: translateY(-1px);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-snel-pil:hover > svg {
+  color: var(--mq-gh-indigo);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-snel-pil.is-actief {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 58%, var(--mq-rand-sterk));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--mq-gh-indigo) 22%, var(--mq-oppervlak-2)) 0%,
+    color-mix(in srgb, var(--mq-gh-indigo) 11%, var(--mq-oppervlak)) 100%
+  );
+  color: var(--mq-tekst);
+  font-weight: 660;
+  box-shadow:
+    0 6px 18px color-mix(in srgb, var(--mq-gh-indigo) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 16%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-snel-pil.is-actief > svg {
+  color: var(--mq-gh-indigo);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. СТУДІЙНІ КАРТКИ (.gh-card), СІТКИ (.gh-grid, .gh-split), КНОПКИ Й ЖЕТОНИ (.gh-chip)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel .gh-card {
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mq-oppervlak) 93%, rgba(var(--mq-accent-rgb), 0.06)) 0%,
+      color-mix(in srgb, var(--mq-oppervlak) 98%, var(--mq-bg) 2%) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-card > h3,
+html.palet-maquette .gh-maquette-wikkel .gh-detail h3 {
+  font-size: 1.04rem;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-card > h3 > svg,
+html.palet-maquette .gh-maquette-wikkel .gh-detail h3 > svg {
+  color: var(--mq-gh-indigo);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-grid {
+  gap: 18px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-split {
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: 18px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-btn {
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak) 18%);
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  font-weight: 560;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-btn:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  transform: translateY(-1px);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-btn.gh-primary {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 68%, var(--mq-rand-sterk));
+  background: linear-gradient(
+    142deg,
+    var(--mq-gh-indigo) 0%,
+    color-mix(in srgb, var(--mq-gh-indigo) 78%, var(--mq-accent-2) 22%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 650;
+  box-shadow:
+    0 10px 24px color-mix(in srgb, var(--mq-gh-indigo) 24%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 24%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-btn.gh-primary:hover:not(:disabled) {
+  border-color: var(--mq-gh-indigo);
+  background: linear-gradient(
+    142deg,
+    color-mix(in srgb, var(--mq-gh-indigo) 90%, var(--mq-wit) 10%) 0%,
+    var(--mq-gh-indigo) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, var(--mq-gh-indigo) 32%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 32%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-icon {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--mq-gedempt);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-icon:hover {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-chip {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, transparent);
+  color: var(--mq-tekst);
+  font-size: 0.75rem;
+  font-weight: 560;
+}
+
+html.palet-maquette .gh-maquette-wikkel code.gh-chip {
+  font-family: var(--mq-font-mono);
+  font-size: 0.74rem;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-chip-warn {
+  border-color: color-mix(in srgb, var(--warn) 46%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn-zacht) 22%, var(--mq-oppervlak-2));
+  color: var(--warn);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. КАРТКИ СХОВИЩ (.gh-repos, .gh-repo) І ДЕТАЛІ СХОВИЩА (.gh-detail, .gh-facts, .gh-tabs)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel .gh-repos {
+  gap: 8px;
+  padding-right: 2px;
+  scrollbar-color: var(--mq-rand-sterk) transparent;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo {
+  position: relative;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, var(--mq-oppervlak) 36%);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.2s ease,
+    transform 0.16s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo:hover {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 44%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 88%, rgba(var(--mq-accent-rgb), 0.08));
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: translateY(-1px);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo.is-active {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 62%, var(--mq-rand-sterk));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-gh-indigo) 17%, var(--mq-oppervlak-2)) 0%,
+    color-mix(in srgb, var(--mq-gh-indigo) 6%, var(--mq-oppervlak)) 100%
+  );
+  box-shadow:
+    inset 3.5px 0 0 var(--mq-gh-indigo),
+    0 10px 24px color-mix(in srgb, var(--mq-gh-indigo) 14%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo-name {
+  gap: 7px;
+  font-size: 0.91rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo-name > svg {
+  color: var(--mq-gh-indigo);
+  flex-shrink: 0;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo-desc {
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  line-height: 1.46;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo-meta {
+  gap: 12px;
+  padding-top: 2px;
+  color: var(--mq-stil);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-repo-meta svg {
+  color: var(--mq-gh-indigo);
+  opacity: 0.85;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-detail {
+  gap: 14px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-detail-head {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  align-items: center;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-facts {
+  gap: 10px 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, transparent);
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-facts > span > svg {
+  color: var(--mq-gh-indigo);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-langs {
+  gap: 6px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-tabs {
+  gap: 7px;
+  padding: 4px 0;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-tabs > button:not(.gh-btn) {
+  min-height: 34px;
+  padding: 4px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, transparent);
+  color: var(--mq-gedempt);
+  font-size: 0.81rem;
+  font-weight: 560;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-tabs > button:not(.gh-btn):hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-tabs > button.is-on {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 56%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-gh-indigo) 18%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  font-weight: 660;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 14%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-tabs > button.is-on > svg {
+  color: var(--mq-gh-indigo);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. СПИСКИ (.gh-list, .gh-item, .gh-label), ФОРМИ (.gh-form), ПОШУК (.gh-search) І README
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel .gh-list {
+  gap: 6px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-item {
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 42%, transparent);
+  color: var(--mq-tekst);
+  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.14s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel a.gh-item:hover {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, rgba(var(--mq-accent-rgb), 0.08));
+  transform: translateY(-1px);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-item-main strong {
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  font-weight: 620;
+  line-height: 1.38;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-sub {
+  color: var(--mq-gedempt);
+  font-size: 0.8rem;
+  line-height: 1.48;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-sub.gh-bad {
+  color: var(--fout);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-labels {
+  gap: 5px;
+  padding-top: 2px;
+}
+
+/* Не перезаписуємо border-color, щоб індивідуальний колір мітки з GitHub залишався чинним */
+html.palet-maquette .gh-maquette-wikkel .gh-label {
+  padding: 1px 9px;
+  border-radius: 999px;
+  border-width: 1.5px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, transparent);
+  color: var(--mq-tekst);
+  font-size: 0.75rem;
+  font-weight: 560;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-empty {
+  padding: 16px 14px;
+  border-radius: 14px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 48%, transparent);
+  color: var(--mq-gedempt);
+  text-align: center;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-notice {
+  gap: 10px;
+  padding: 12px 15px;
+  border-radius: 15px;
+  font-size: 0.86rem;
+  line-height: 1.48;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-notice.gh-error {
+  border: 1px solid color-mix(in srgb, var(--fout) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout-zacht) 26%, var(--mq-oppervlak));
+  color: var(--fout);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-notice.gh-info {
+  border: 1px solid color-mix(in srgb, var(--mq-gh-indigo) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak) 86%, rgba(var(--mq-accent-rgb), 0.12));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-notice.gh-ok {
+  border: 1px solid color-mix(in srgb, var(--ok) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok-zacht) 24%, var(--mq-oppervlak));
+  color: var(--ok);
+}
+
+/* Поля форм та вибору (виключаємо внутрішнє поле .gh-search input і .gh-select-wikkel select) */
+html.palet-maquette .gh-maquette-wikkel .gh-form {
+  gap: 10px;
+}
+
+html.palet-maquette .gh-maquette-wikkel :is(.gh-form input:not([type="checkbox"]):not([type="radio"]), .gh-form textarea, .gh-form select, .gh-card > select, .gh-searchbar > select, .gh-tabs > select, .gh-veld-inline select, .gh-veld-inline input) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-veld);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak) 14%);
+  color: var(--mq-tekst);
+  padding: 8px 12px;
+  font-size: 0.86rem;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel :is(.gh-form input:not([type="checkbox"]):not([type="radio"]), .gh-form textarea, .gh-form select, .gh-card > select, .gh-searchbar > select, .gh-tabs > select, .gh-veld-inline select, .gh-veld-inline input):focus {
+  border-color: var(--mq-gh-indigo);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+  outline: none;
+}
+
+html.palet-maquette .gh-maquette-wikkel :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--mq-gh-indigo);
+}
+
+/* Поле пошуку .gh-search: піктограма лупи стоїть у власному flex-блоці й ніколи не перекривається текстом */
+html.palet-maquette .gh-maquette-wikkel .gh-searchbar {
+  gap: 10px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-veld);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak) 14%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.2s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-search:hover {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 46%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-search:focus-within {
+  border-color: var(--mq-gh-indigo);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-search > svg {
+  position: static;
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  color: var(--mq-gh-indigo);
+  pointer-events: none;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-search > input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 7px 0 7px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--mq-tekst);
+  font-size: 0.87rem;
+  outline: none;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-search > input::placeholder {
+  color: var(--mq-stil);
+}
+
+/* Студійне читання документації README (.gh-readme) */
+html.palet-maquette .gh-maquette-wikkel .gh-readme {
+  margin-top: 12px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%) 0%,
+      color-mix(in srgb, var(--mq-oppervlak-2) 48%, var(--mq-oppervlak) 52%) 100%
+    );
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  line-height: 1.68;
+  letter-spacing: 0.004em;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  scrollbar-color: var(--mq-rand-sterk) transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. ШВИДКЕ ПРИЄДНАННЯ (EenklikKoppelPaneel), КАРТКА ПІДКЛЮЧЕННЯ (KoppelKaart) І .gh-connect
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel .gh-eenklik-held {
+  gap: 16px;
+  padding: 24px 26px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid color-mix(in srgb, var(--mq-gh-indigo) 40%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--mq-gh-indigo) 18%, transparent), transparent 54%),
+    radial-gradient(circle at 92% 100%, var(--mq-werk-gloed-a), transparent 58%),
+    linear-gradient(
+      152deg,
+      color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-oppervlak-2) 12%) 0%,
+      var(--mq-oppervlak) 100%
+    );
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-eenklik-tegel {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-gh-indigo) 42%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--mq-gh-indigo) 32%, transparent), transparent 72%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak) 14%);
+  color: var(--mq-gh-indigo);
+  box-shadow: 0 10px 24px var(--mq-gloed), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-eenklik-tekst h3 {
+  font-size: 1.14rem;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-eenklik-pijlers {
+  gap: 12px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pijler {
+  gap: 11px;
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, var(--mq-oppervlak) 32%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pijler > svg {
+  color: var(--mq-gh-indigo);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pijler strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--mq-tekst);
+  font-size: 0.87rem;
+  font-weight: 630;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-btn-groot {
+  min-height: 42px;
+  padding: 8px 18px;
+  border-radius: var(--mq-straal-knop);
+  font-size: 0.9rem;
+  font-weight: 660;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-apparaatcode-doos {
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--mq-gh-indigo) 62%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--mq-gh-indigo) 14%, transparent), transparent 65%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-apparaatcode-waarde {
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--mq-gh-indigo) 44%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+/* Картка запрошення до підключення .gh-connect (екран !connected) */
+html.palet-maquette .gh-maquette-wikkel .gh-connect {
+  max-width: 760px;
+  gap: 14px;
+  padding: 28px 30px;
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 34%, var(--mq-rand));
+  background:
+    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--mq-gh-indigo) 14%, transparent), transparent 52%),
+    var(--mq-oppervlak);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-connect > svg {
+  padding: 10px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--mq-gh-indigo) 38%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-gh-indigo) 14%, var(--mq-oppervlak-2));
+  color: var(--mq-gh-indigo);
+  box-shadow: 0 10px 24px var(--mq-gloed);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-connect > h2 {
+  margin: 0;
+  font-size: 1.32rem;
+  font-weight: 660;
+  letter-spacing: -0.025em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-connect > p {
+  margin: 0;
+  color: var(--mq-gedempt);
+  line-height: 1.6;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-connect > ol {
+  gap: 6px;
+  color: var(--mq-tekst);
+  font-size: 0.88rem;
+  line-height: 1.52;
+}
+
+/* Повна картка керування з’єднанням KoppelKaart (.gh-koppel) */
+html.palet-maquette .gh-maquette-wikkel .gh-koppel {
+  max-width: 960px;
+  gap: 18px;
+  padding: 24px 26px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-kop {
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--mq-rand);
+  align-items: center;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-titels strong {
+  font-size: 1.12rem;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-staat {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 80%, transparent);
+  color: var(--mq-tekst);
+  font-size: 0.8rem;
+  font-weight: 620;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-staat.tone-ok {
+  border-color: color-mix(in srgb, var(--ok) 48%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok-zacht) 22%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-staat.tone-waarschuwing {
+  border-color: color-mix(in srgb, var(--warn) 48%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn-zacht) 22%, var(--mq-oppervlak-2));
+  color: var(--warn);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-staat.tone-fout {
+  border-color: color-mix(in srgb, var(--fout) 48%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout-zacht) 22%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-wie {
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-wie img {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mq-gh-indigo) 46%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-wie a {
+  color: var(--mq-gh-indigo);
+  font-family: var(--mq-font-mono);
+  font-weight: 640;
+  text-decoration: none;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-wie a:hover {
+  text-decoration: underline;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-feiten {
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-feiten > div {
+  padding: 4px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--mq-rand) 55%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-feiten > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-feiten dt {
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  font-weight: 550;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-feiten dd {
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-leeg {
+  gap: 8px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-leeg ul {
+  gap: 5px;
+  color: var(--mq-gedempt);
+  line-height: 1.5;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-blok {
+  gap: 11px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-blok h4 {
+  font-size: 0.96rem;
+  font-weight: 640;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-koppel-blok h4 > svg {
+  color: var(--mq-gh-indigo);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-stappen {
+  gap: 6px;
+  color: var(--mq-gedempt);
+  line-height: 1.52;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-veld {
+  gap: 8px;
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 62%, var(--mq-oppervlak) 38%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-veld > label {
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  font-weight: 620;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-veld > label > svg {
+  color: var(--mq-gh-indigo);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-veld-rij input,
+html.palet-maquette .gh-maquette-wikkel .gh-veld-rij select {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.82rem;
+  padding: 8px 12px;
+  transition: border-color 0.18s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-veld-rij input[readonly] {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-veld-rij input:focus,
+html.palet-maquette .gh-maquette-wikkel .gh-veld-rij select:focus {
+  border-color: var(--mq-gh-indigo);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+  outline: none;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-veld-rij input[aria-invalid="true"] {
+  border-color: var(--fout);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-rechten {
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 48%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-rechten code {
+  padding: 2px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-gh-indigo);
+  font-family: var(--mq-font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Три робочі шляхи підключення та позначений зовнішній MCP-шлях (.gh-paden, .gh-pad) */
+html.palet-maquette .gh-maquette-wikkel .gh-paden {
+  gap: 10px;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pad {
+  gap: 6px;
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 60%, var(--mq-oppervlak) 40%);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pad:not(.is-uit):hover {
+  border-color: color-mix(in srgb, var(--mq-gh-indigo) 42%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, rgba(var(--mq-accent-rgb), 0.06));
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pad.is-uit {
+  border-style: dashed;
+  border-color: var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 38%, transparent);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pad-kop strong {
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  font-weight: 630;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-pad-mist {
+  color: var(--warn);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. ВБУДОВАНІ МОДАЛЬНІ ДІАЛОГИ <dialog class="gh-dialoog"> У ВЕРХНЬОМУ ШАРІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .gh-maquette-wikkel .gh-dialoog {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-dialoog::backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-dialoog-kop {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, var(--mq-oppervlak) 36%);
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-dialoog-kop h3 {
+  color: var(--mq-tekst);
+  font-size: 1.02rem;
+  font-weight: 640;
+}
+
+html.palet-maquette .gh-maquette-wikkel .gh-dialoog-lijf {
+  padding: 18px 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. МОБІЛЬНИЙ КАСКАД — СУВОРО В САМОМУ КІНЦІ ФАЙЛА ЗА СПАДАННЯМ ШИРИНИ
+      (960px → 760px → 480px, згідно з mobiel-cascade-20261105.test.ts)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 960px) {
+  html.palet-maquette .gh-maquette-wikkel {
+    gap: 15px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel > .gh-root {
+    gap: 15px;
+    padding-bottom: 22px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  html.palet-maquette .gh-maquette-wikkel {
+    gap: 12px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel > .gh-root {
+    gap: 12px;
+    padding-bottom: 18px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-card,
+  html.palet-maquette .gh-maquette-wikkel .gh-koppel,
+  html.palet-maquette .gh-maquette-wikkel .gh-eenklik-held,
+  html.palet-maquette .gh-maquette-wikkel .gh-connect {
+    padding: 15px 16px;
+    gap: 12px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-repo-balk {
+    padding: 13px 14px;
+    gap: 10px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-me {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-btn,
+  html.palet-maquette .gh-maquette-wikkel .gh-snel-pil,
+  html.palet-maquette .gh-maquette-wikkel .gh-tabs > button:not(.gh-btn),
+  html.palet-maquette .gh-maquette-wikkel .gh-select-wikkel,
+  html.palet-maquette .gh-maquette-wikkel .gh-search {
+    min-height: var(--tik-hoogte);
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-readme {
+    padding: 14px 15px;
+    font-size: 0.86rem;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-dialoog-kop {
+    padding: 12px 14px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-dialoog-lijf {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  html.palet-maquette .gh-maquette-wikkel .gh-card,
+  html.palet-maquette .gh-maquette-wikkel .gh-koppel,
+  html.palet-maquette .gh-maquette-wikkel .gh-eenklik-held,
+  html.palet-maquette .gh-maquette-wikkel .gh-connect {
+    padding: 13px 14px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-eenklik-tegel {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-facts {
+    padding: 9px 11px;
+    gap: 8px 10px;
+  }
+
+  html.palet-maquette .gh-maquette-wikkel .gh-feiten,
+  html.palet-maquette .gh-maquette-wikkel .gh-koppel-leeg {
+    padding: 12px 13px;
+  }
+}

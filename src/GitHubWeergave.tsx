@@ -17,6 +17,8 @@ import { isVaultDoel, type VaultDoel } from '../shared/geheimen';
 import { GeheimVenster } from './geheimen/GeheimFormulier';
 import { RuimteGeslotenVlak, RuimteStrook } from './RuimteStrook';
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from '../shared/ruimte-weergave';
+import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from './maquette-kern';
+import { useIsMaquette } from './thema/useThema';
 import { GhDialoog, ghFoutTekst, ghPost } from './github/github-client';
 import EenklikKoppelPaneel from './github/EenklikKoppelPaneel';
 import CodeEnEditorPaneel from './github/CodeEnEditorPaneel';
@@ -24,6 +26,7 @@ import ZakenEnSamenvoegingenPaneel from './github/ZakenEnSamenvoegingenPaneel';
 import ActiesEnUitgavenPaneel from './github/ActiesEnUitgavenPaneel';
 import SpiegelEnBrugPaneel from './github/SpiegelEnBrugPaneel';
 import './github-weergave.css';
+import './github/github-overzicht-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Repo = { fullName: string; name: string; description: string; language: string; stars: number; forks: number; openIssues: number; private: boolean; archived: boolean; pushedAt: string; url: string; defaultBranch: string; fork: boolean; homepage?: string; topics?: string[] };
@@ -363,7 +366,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
   };
   const Teken = staat.toon === 'ok' ? CheckCircle2 : staat.toon === 'waarschuwing' ? Clock : staat.toon === 'fout' ? XCircle : Loader2;
   const kluisDicht = staat.reden === 'SLEUTELKLUIS_GESLOTEN' || terugkeer === 'SLEUTELKLUIS_GESLOTEN' || actieFoutCode === 'SLEUTELKLUIS_GESLOTEN';
-  return <section className='gh-card gh-koppel' aria-label='GitHub'>
+  return <section className='gh-card gh-koppel' aria-label='GitHub' data-gh-dialoog-open={kluisDoel ? '1' : undefined}>
     <header className='gh-koppel-kop'>
       <Merk merk='github' naam='GitHub' maat={40} titel='GitHub' vorm='tegel' />
       <div className='gh-koppel-titels'>
@@ -623,7 +626,7 @@ function RepoWerkbalk({
     }
   };
 
-  return <section className="gh-card gh-repo-balk" aria-label={tr('Активне сховище', 'Actieve opslagplaats')}>
+  return <section className="gh-card gh-repo-balk" aria-label={tr('Активне сховище', 'Actieve opslagplaats')} data-gh-dialoog-open={nieuwOpen || instelOpen ? '1' : undefined}>
     <div className="gh-werkbalk">
       <div className="gh-werkbalk-groep">
         <label className="gh-select-wikkel" aria-label={tr('Активне сховище', 'Actieve opslagplaats')}>
@@ -638,7 +641,7 @@ function RepoWerkbalk({
       </div>
 
       <div className="gh-werkbalk-groep">
-        <button type="button" className="gh-btn gh-primary" onClick={() => { setFout(''); setNieuwOpen(true); }}>
+        <button type="button" className="gh-btn gh-primary" data-gh-nieuw-repo="1" onClick={() => { setFout(''); setNieuwOpen(true); }}>
           <Plus size={14} /> {tr('Нове сховище', 'Nieuwe opslagplaats')}
         </button>
         {actieveRepo ? <>
@@ -776,21 +779,258 @@ function GhAfdelingNav({ tab, tr, onGaNaarTab }: { tab: string; tr: Tr; onGaNaar
 }
 
 const WERKRUIMTE_TABS = new Set(['overview', 'repositories', 'code', 'issues', 'pulls', 'actions', 'releases', 'sync', 'documentation']);
+const VOLLEDIG_MAQUETTE_TABS: ReadonlySet<string> = new Set(['overview', 'repositories', 'accounts']);
+const GH_MODAAL_SELECTOR = '.geheim-venster-laag, [data-gh-dialoog-open], [role="dialog"][aria-modal="true"], dialog.gh-dialoog[open], .gm-venster';
+
+type GhHeldInhoud = {
+  boven: readonly [string, string];
+  voor: readonly [string, string];
+  cursief: readonly [string, string];
+  beschrijving: readonly [string, string];
+};
+
+const GH_MAQUETTE_TEKST: Record<string, GhHeldInhoud> = {
+  overview: {
+    boven: ['ПРОСТІР КОДУ · ОГЛЯД', 'CODERUIMTE · OVERZICHT'],
+    voor: ['Ваші сховища й розробка в', 'Uw opslagplaatsen en code in'],
+    cursief: ['інженерному ладі', 'heldere samenhang'],
+    beschrijving: [
+      'Живий зріз вашого простору розробки: останні сховища, відкриті задачі, хід конвеєрів перевірки та події без зайвих переходів.',
+      'Actueel overzicht van uw ontwikkelruimte: recente opslagplaatsen, openstaande vraagstukken, werkstromen en gebeurtenissen op één plek.',
+    ],
+  },
+  repositories: {
+    boven: ['ПРОСТІР КОДУ · СХОВИЩА', 'CODERUIMTE · OPSLAGPLAATSEN'],
+    voor: ['Публічні та закриті', 'Openbare en besloten'],
+    cursief: ['сховища коду', 'opslagplaatsen'],
+    beschrijving: [
+      'Миттєвий відбір за назвою й мовою, створення нових сховищ, відгалуження, гілки та зведення стану кожного проєкту.',
+      'Direct filteren op naam en taal, nieuwe opslagplaatsen aanmaken, afsplitsen, takken beheren en projectfeiten inzien.',
+    ],
+  },
+  code: {
+    boven: ['ПРОСТІР КОДУ · РЕДАКТОР', 'CODERUIMTE · CODE EN EDITOR'],
+    voor: ['Дерево файлів і чисте', 'Bestandsboom en zuiver'],
+    cursief: ['редагування коду', 'codewerk'],
+    beschrijving: [
+      'Перегляд гілок, читання й редагування вихідного коду та охайна фіксація змін просто з вашого робочого простору.',
+      'Takken verkennen, broncode lezen en bewerken en wijzigingen rechtstreeks vanuit uw werkruimte vastleggen.',
+    ],
+  },
+  issues: {
+    boven: ['ПРОСТІР КОДУ · ЗАДАЧІ', 'CODERUIMTE · VRAAGSTUKKEN'],
+    voor: ['Відкриті задачі та', 'Openstaande vraagstukken en'],
+    cursief: ['ясні пріоритети', 'heldere prioriteiten'],
+    beschrijving: [
+      'Ведіть облік задач і обговорень обраного сховища, відбирайте за мітками й станом та створюйте нові звернення.',
+      'Volg vraagstukken en besprekingen van de gekozen opslagplaats, filter op labels en status en maak nieuwe meldingen aan.',
+    ],
+  },
+  pulls: {
+    boven: ['ПРОСТІР КОДУ · ЗЛИТТЯ', 'CODERUIMTE · SAMENVOEGINGEN'],
+    voor: ['Запити на злиття та', 'Samenvoegingsverzoeken en'],
+    cursief: ['зважений перегляд', 'zorgvuldige beoordeling'],
+    beschrijving: [
+      'Переглядайте запропоновані зміни між гілками, порівнюйте різницю рядків і проводьте перевірку перед злиттям.',
+      'Bekijk voorgestelde wijzigingen tussen takken, vergelijk regelverschillen en voer controles uit vóór het samenvoegen.',
+    ],
+  },
+  actions: {
+    boven: ['ПРОСТІР КОДУ · КОНВЕЄРИ', 'CODERUIMTE · WERKSTROMEN'],
+    voor: ['Автоматичні перевірки й', 'Automatische controles en'],
+    cursief: ['хід складань', 'actuele doorlopen'],
+    beschrijving: [
+      'Спостерігайте за виконанням конвеєрів дій, станом перевірок і журналами кроків для кожної гілки сховища.',
+      'Volg de uitvoering van werkstromen, controlestatussen en stapverslagen voor elke tak van de opslagplaats.',
+    ],
+  },
+  releases: {
+    boven: ['ПРОСТІР КОДУ · ВИПУСКИ', 'CODERUIMTE · UITGAVEN'],
+    voor: ['Випуски версій та', 'Versie-uitgaven en'],
+    cursief: ['контроль розгортання', 'geordende uitrol'],
+    beschrijving: [
+      'Перелік опублікованих версій, супровідних пакунків і середовищ розгортання обраного сховища.',
+      'Overzicht van gepubliceerde versies, bijbehorende pakketten en uitrolomgevingen van de gekozen opslagplaats.',
+    ],
+  },
+  sync: {
+    boven: ['ПРОСТІР КОДУ · МІСТ', 'CODERUIMTE · TWEERICHTINGSSPIEGEL'],
+    voor: ['Двосторонній міст і', 'Tweerichtingsspiegel en'],
+    cursief: ['живе дзеркало', 'levende synchronisatie'],
+    beschrijving: [
+      'Узгоджена робота власного сервера з віддаленими сховищами в ізольованому просторі без втрати контролю.',
+      'Afgestemde werking tussen uw eigen server en externe opslagplaatsen binnen een geïsoleerde ruimte.',
+    ],
+  },
+  projects: {
+    boven: ['ПРОСТІР КОДУ · ПРОЄКТИ', 'CODERUIMTE · PROJECTEN'],
+    voor: ['Дошки планування та', 'Planningsborden en'],
+    cursief: ['спільний поступ', 'gezamenlijke voortgang'],
+    beschrijving: [
+      'Огляд проєктних дощок вашого облікового запису з кількістю елементів, станом і швидким переходом.',
+      'Overzicht van de projectborden van uw account met aantallen onderdelen, status en directe doorgang.',
+    ],
+  },
+  documentation: {
+    boven: ['ПРОСТІР КОДУ · ДОКУМЕНТАЦІЯ', 'CODERUIMTE · DOCUMENTATIE'],
+    voor: ['Описи сховищ і чисте', 'Projectbeschrijvingen en rustig'],
+    cursief: ['читання настанов', 'naslagwerk lezen'],
+    beschrijving: [
+      'Спокійне студійне читання головних сторінок документації кожного вашого сховища без візуального шуму.',
+      'Rustige studio-weergave van de hoofddocumentatie van elke opslagplaats zonder visuele ruis.',
+    ],
+  },
+  research: {
+    boven: ['ПРОСТІР КОДУ · ПОШУК', 'CODERUIMTE · ZOEKEN'],
+    voor: ['Глибокий пошук серед', 'Gericht zoeken door'],
+    cursief: ['сховищ і коду', 'opslagplaatsen en code'],
+    beschrijving: [
+      'Шукайте потрібні сховища, обговорення задач і фрагменти вихідного коду в одному узгодженому вікні.',
+      'Doorzoek opslagplaatsen, vraagstukken en broncodefragmenten vanuit één overzichtelijk venster.',
+    ],
+  },
+  activity: {
+    boven: ['ПРОСТІР КОДУ · ПОДІЇ', 'CODERUIMTE · ACTIVITEIT'],
+    voor: ['Хроніка змін і живий', 'Tijdslijn van wijzigingen en'],
+    cursief: ['ритм розробки', 'ontwikkelritme'],
+    beschrijving: [
+      'Послідовний літопис останніх дій у ваших сховищах: фіксації змін, гілки, випуски та обговорення.',
+      'Chronologisch overzicht van recente handelingen in uw opslagplaatsen: vastleggingen, takken, uitgaven en besprekingen.',
+    ],
+  },
+  accounts: {
+    boven: ['ПРОСТІР КОДУ · З’ЄДНАННЯ', 'CODERUIMTE · KOPPELING'],
+    voor: ['Захищений міст під', 'Beschermde koppeling onder'],
+    cursief: ['вашим контролем', 'uw eigen beheer'],
+    beschrijving: [
+      'Швидке приєднання в один натиск або через захищене сховище ключів: ключі доступу зашифровані на сервері й ніколи не передаються назовні.',
+      'Snel koppelen in één klik of via de versleutelde sleutelkluis: toegangssleutels blijven op de server en verlaten uw ruimte nooit.',
+    ],
+  },
+  nietGekoppeld: {
+    boven: ['ПРОСТІР КОДУ · ПРИЄДНАННЯ', 'CODERUIMTE · VERBINDEN'],
+    voor: ['Приєднайте сховища в', 'Verbind uw opslagplaatsen in'],
+    cursief: ['один натиск', 'één bevestiging'],
+    beschrijving: [
+      'Відкрийте доступ до ваших сховищ, коду, задач і конвеєрів перевірки в ізольованому шифрованому контурі без ручного копіювання ключів.',
+      'Open toegang tot uw opslagplaatsen, broncode, vraagstukken en werkstromen in een geïsoleerde versleutelde omgeving zonder handmatige sleutels.',
+    ],
+  },
+};
+
+const GH_ANKER_AFDELINGEN: ReadonlyArray<readonly [string, string, string]> = [
+  ['overview', 'Огляд', 'Overzicht'],
+  ['repositories', 'Сховища', 'Opslagplaatsen'],
+  ['code', 'Код і редактор', 'Code en editor'],
+  ['issues', 'Задачі', 'Vraagstukken'],
+  ['pulls', 'Запити на злиття', 'Samenvoegingen'],
+  ['actions', 'Конвеєри дій', 'Werkstromen'],
+  ['releases', 'Випуски й розгортання', 'Uitgaven en uitrol'],
+  ['sync', 'Двосторонній міст', 'Tweerichtingsspiegel'],
+  ['projects', 'Проєкти', 'Projecten'],
+  ['documentation', 'Документація', 'Documentatie'],
+  ['research', 'Пошук', 'Zoeken'],
+  ['activity', 'Активність', 'Activiteit'],
+  ['accounts', 'Підключення', 'Koppeling'],
+];
+
+const GH_STAT_LABEL = {
+  openbaar: ['публічних сховищ', 'openbare opslag'] as const,
+  besloten: ['приватних сховищ', 'besloten opslag'] as const,
+  openZaken: ['відкритих задач', 'open vraagstukken'] as const,
+  aanvragen: ['залишок запитів', 'resterende aanvragen'] as const,
+  verbinding: ['стан з’єднання', 'verbindingsstatus'] as const,
+  gekoppeld: ['Підключено', 'Gekoppeld'] as const,
+  nietGekoppeld: ['Очікує', 'Wacht'] as const,
+  koppelwegen: ['захищені шляхи', 'veilige koppelwegen'] as const,
+  sleutelkluis: ['сховище ключів', 'sleutelkluis'] as const,
+  geisoleerd: ['Ізольовано', 'Geïsoleerd'] as const,
+  railTitel: ['Розділи простору', 'Onderdelen'],
+  railOndertitel: ['13 розділів коду', '13 code-onderdelen'],
+  naarCode: ['До коду й редактора', 'Naar code en editor'],
+  nieuwRepo: ['Нове сховище', 'Nieuwe opslagplaats'],
+  openCode: ['Відкрити код', 'Code openen'],
+  naarPulls: ['Запити на злиття', 'Samenvoegingen'],
+  alleRepos: ['Усі сховища', 'Alle opslagplaatsen'],
+  naarOverzicht: ['До огляду сховищ', 'Naar overzicht'],
+  controleerStaat: ['Перевірити стан', 'Status controleren'],
+  eenklikKoppelen: ['Приєднати в 1 натиск', 'In 1 klik koppelen'],
+  openSleutelkluis: ['Сховище ключів', 'Sleutelkluis'],
+  koppelkaart: ['Картка підключення', 'Koppelkaart'],
+} as const;
+
+function GhMaquetteSchil({
+  actief,
+  voor,
+  children,
+}: {
+  actief: boolean;
+  voor?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  if (!actief) return <>{children}</>;
+  return (
+    <div className="mq-schil gh-maquette-wikkel" data-mq-dienst="github">
+      {voor}
+      {children}
+    </div>
+  );
+}
 
 export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
   // Koppelkaart: één verzoek met de staat én de gegevens van de sleutel in de kluis (zonder waarde). Daar is `status` dus niet
   // nodig: `koppeling` geeft dezelfde velden terug, plus de sleutel — zo blijft het bij één verzoek per tabblad.
+  const isMaquette = useIsMaquette();
   const status = useCall<Status>('status', tab === 'accounts' ? null : {}, tr, [tab]);
   const koppeling = useCall<GithubKoppelingFeiten>('koppeling', tab === 'accounts' ? {} : null, tr, [tab]);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string>(() => { try { return sessionStorage.getItem('mr.gh.repo') || ''; } catch { return ''; } });
   const [splitMobielPaneel, setSplitMobielPaneel] = useState<'lijst' | 'detail'>('lijst');
+  const [dialoogOpen, setDialoogOpen] = useState(false);
   const pick = useCallback((full: string) => { setSelected(full); try { sessionStorage.setItem('mr.gh.repo', full); } catch { /* geen opslag */ } }, []);
   const ruimteLang: 'uk' | 'nl' = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
+  const taalIdx: 0 | 1 = ruimteLang === 'uk' ? 0 : 1;
   const gaNaarTab = useCallback((doelTab: string) => {
     writeLocalTab('github', doelTab, ruimteLang);
     window.dispatchEvent(new PopStateEvent('popstate'));
   }, [ruimteLang]);
+
+  const openNieuwRepoDialoog = useCallback(() => {
+    const knop = document.querySelector<HTMLButtonElement>('[data-gh-nieuw-repo="1"]');
+    if (knop) {
+      knop.click();
+      return;
+    }
+    gaNaarTab('repositories');
+  }, [gaNaarTab]);
+
+  const startSnelleKoppeling = useCallback(() => {
+    const knop = document.querySelector<HTMLButtonElement>('[data-gh-eenklik-start="1"]');
+    if (knop && !knop.disabled) {
+      knop.click();
+      return;
+    }
+    gaNaarTab('accounts');
+  }, [gaNaarTab]);
+
+  useEffect(() => {
+    if (!isMaquette || typeof document === 'undefined') {
+      setDialoogOpen(false);
+      return;
+    }
+    const controleer = () => {
+      setDialoogOpen(Boolean(document.querySelector(GH_MODAAL_SELECTOR)));
+    };
+    controleer();
+    const waarnemer = new MutationObserver(controleer);
+    waarnemer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['open', 'hidden', 'class', 'aria-modal', 'data-gh-dialoog-open'],
+    });
+    return () => waarnemer.disconnect();
+  }, [isMaquette, tab]);
 
   const connected = !!status.data?.connected;
   const needRepos = connected && WERKRUIMTE_TABS.has(tab);
@@ -806,11 +1046,192 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
 
   const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return alleRepos.filter((r) => !q || `${r.fullName} ${r.description} ${r.language}`.toLowerCase().includes(q)); }, [alleRepos, query]);
 
-  if (status.loading && !status.data) return <div className="gh-root"><Busy tr={tr} /></div>;
+  const totaalOpenZaken = useMemo(
+    () => alleRepos.reduce((som, r) => som + (r.openIssues || 0), 0),
+    [alleRepos],
+  );
+
+  const bekendAantalRepos = useMemo(() => {
+    if (alleRepos.length > 0) return alleRepos.length;
+    const somStatus = (status.data?.publicRepos ?? 0) + (status.data?.privateRepos ?? 0);
+    if (somStatus > 0) return somStatus;
+    return (koppeling.data?.publicRepos ?? 0) + (koppeling.data?.privateRepos ?? 0);
+  }, [alleRepos.length, status.data?.publicRepos, status.data?.privateRepos, koppeling.data?.publicRepos, koppeling.data?.privateRepos]);
+
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(
+    () =>
+      GH_ANKER_AFDELINGEN.map(([id, ukNaam, nlNaam]) => ({
+        id,
+        label: taalIdx === 0 ? ukNaam : nlNaam,
+        badge:
+          id === 'repositories' && bekendAantalRepos > 0
+            ? bekendAantalRepos
+            : id === 'issues' && repos.data && totaalOpenZaken > 0
+              ? totaalOpenZaken
+              : undefined,
+      })),
+    [taalIdx, bekendAantalRepos, repos.data, totaalOpenZaken],
+  );
+
+  const werkruimteStatistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(() => {
+    const d = status.data;
+    if (!d?.connected) return [];
+    const lijst: MaquetteHeldStatistiek[] = [
+      { waarde: d.publicRepos ?? 0, label: GH_STAT_LABEL.openbaar[taalIdx] },
+      { waarde: d.privateRepos ?? 0, label: GH_STAT_LABEL.besloten[taalIdx] },
+    ];
+    if (repos.data) {
+      lijst.push({ waarde: totaalOpenZaken, label: GH_STAT_LABEL.openZaken[taalIdx] });
+    }
+    if (status.rate) {
+      lijst.push({ waarde: status.rate.remaining, label: GH_STAT_LABEL.aanvragen[taalIdx] });
+    }
+    lijst.push({
+      waarde: d.login ? `@${d.login}` : GH_STAT_LABEL.gekoppeld[taalIdx],
+      label: GH_STAT_LABEL.verbinding[taalIdx],
+    });
+    return lijst;
+  }, [status.data, status.rate, repos.data, totaalOpenZaken, taalIdx]);
+
+  const accountsStatistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(() => {
+    const kd = koppeling.data;
+    if (kd?.connected) {
+      const lijst: MaquetteHeldStatistiek[] = [
+        { waarde: kd.publicRepos ?? 0, label: GH_STAT_LABEL.openbaar[taalIdx] },
+        { waarde: kd.privateRepos ?? 0, label: GH_STAT_LABEL.besloten[taalIdx] },
+      ];
+      if (koppeling.rate) {
+        lijst.push({ waarde: koppeling.rate.remaining, label: GH_STAT_LABEL.aanvragen[taalIdx] });
+      }
+      lijst.push({
+        waarde: kd.login ? `@${kd.login}` : GH_STAT_LABEL.gekoppeld[taalIdx],
+        label: GH_STAT_LABEL.verbinding[taalIdx],
+      });
+      return lijst;
+    }
+    return [
+      {
+        waarde: koppeling.loading && !kd ? '…' : GH_STAT_LABEL.nietGekoppeld[taalIdx],
+        label: GH_STAT_LABEL.verbinding[taalIdx],
+      },
+      { waarde: 3, label: GH_STAT_LABEL.koppelwegen[taalIdx] },
+      { waarde: GH_STAT_LABEL.geisoleerd[taalIdx], label: GH_STAT_LABEL.sleutelkluis[taalIdx] },
+    ];
+  }, [koppeling.data, koppeling.loading, koppeling.rate, taalIdx]);
+
+  const nietGekoppeldStatistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(
+    () => [
+      { waarde: GH_STAT_LABEL.nietGekoppeld[taalIdx], label: GH_STAT_LABEL.verbinding[taalIdx] },
+      { waarde: 3, label: GH_STAT_LABEL.koppelwegen[taalIdx] },
+      { waarde: GH_STAT_LABEL.geisoleerd[taalIdx], label: GH_STAT_LABEL.sleutelkluis[taalIdx] },
+    ],
+    [taalIdx],
+  );
+
+  const verbergAnkerRail =
+    !isMaquette ||
+    tab === 'code' ||
+    !connected ||
+    Boolean(status.gesloten) ||
+    (status.loading && !status.data) ||
+    Boolean(status.error) ||
+    dialoogOpen;
+
+  const heldInhoud = GH_MAQUETTE_TEKST[tab] ?? GH_MAQUETTE_TEKST.overview;
+  const accountsHeldInhoud = GH_MAQUETTE_TEKST.accounts;
+  const nietGekoppeldInhoud = GH_MAQUETTE_TEKST.nietGekoppeld;
+
+  const accountsHeldNode = isMaquette && !koppeling.gesloten ? (
+    <MaquetteHeld
+      key="gh-held-accounts"
+      id="gh-maquette-held"
+      dienst="github"
+      lang={ruimteLang}
+      modus="volledig"
+      opslagSleutel="github-accounts"
+      bovenregel={accountsHeldInhoud.boven[taalIdx]}
+      titelVoor={accountsHeldInhoud.voor[taalIdx]}
+      titelCursief={accountsHeldInhoud.cursief[taalIdx]}
+      beschrijving={accountsHeldInhoud.beschrijving[taalIdx]}
+      statistieken={accountsStatistieken}
+      primair={
+        koppeling.data?.connected
+          ? { label: GH_STAT_LABEL.naarOverzicht[taalIdx], onClick: () => gaNaarTab('overview') }
+          : { label: GH_STAT_LABEL.eenklikKoppelen[taalIdx], onClick: startSnelleKoppeling }
+      }
+      secundair={
+        koppeling.data?.connected
+          ? { label: GH_STAT_LABEL.controleerStaat[taalIdx], onClick: koppeling.reload }
+          : { label: GH_STAT_LABEL.openSleutelkluis[taalIdx], onClick: openVault }
+      }
+    />
+  ) : null;
+
+  const nietGekoppeldHeldNode = isMaquette ? (
+    <MaquetteHeld
+      key="gh-held-connect"
+      id="gh-maquette-held"
+      dienst="github"
+      lang={ruimteLang}
+      modus="volledig"
+      opslagSleutel="github-connect"
+      bovenregel={nietGekoppeldInhoud.boven[taalIdx]}
+      titelVoor={nietGekoppeldInhoud.voor[taalIdx]}
+      titelCursief={nietGekoppeldInhoud.cursief[taalIdx]}
+      beschrijving={nietGekoppeldInhoud.beschrijving[taalIdx]}
+      statistieken={nietGekoppeldStatistieken}
+      primair={{ label: GH_STAT_LABEL.eenklikKoppelen[taalIdx], onClick: startSnelleKoppeling }}
+      secundair={{ label: GH_STAT_LABEL.koppelkaart[taalIdx], onClick: () => gaNaarTab('accounts') }}
+    />
+  ) : null;
+
+  const werkruimteHeldNode = isMaquette ? (
+    <MaquetteHeld
+      key={`gh-held-${tab}`}
+      id="gh-maquette-held"
+      dienst="github"
+      lang={ruimteLang}
+      modus={VOLLEDIG_MAQUETTE_TABS.has(tab) ? 'volledig' : 'compact'}
+      opslagSleutel={'github-' + tab}
+      bovenregel={heldInhoud.boven[taalIdx]}
+      titelVoor={heldInhoud.voor[taalIdx]}
+      titelCursief={heldInhoud.cursief[taalIdx]}
+      beschrijving={heldInhoud.beschrijving[taalIdx]}
+      statistieken={werkruimteStatistieken}
+      primair={
+        tab === 'repositories'
+          ? { label: GH_STAT_LABEL.nieuwRepo[taalIdx], icoon: '+', onClick: openNieuwRepoDialoog }
+          : tab === 'code'
+            ? { label: GH_STAT_LABEL.naarPulls[taalIdx], onClick: () => gaNaarTab('pulls') }
+            : { label: GH_STAT_LABEL.naarCode[taalIdx], onClick: () => gaNaarTab('code') }
+      }
+      secundair={
+        tab === 'overview'
+          ? { label: GH_STAT_LABEL.nieuwRepo[taalIdx], onClick: openNieuwRepoDialoog }
+          : tab === 'repositories'
+            ? { label: GH_STAT_LABEL.openCode[taalIdx], onClick: () => gaNaarTab('code') }
+            : { label: GH_STAT_LABEL.alleRepos[taalIdx], onClick: () => gaNaarTab('repositories') }
+      }
+    />
+  ) : null;
+
+  const ankerRailNode = !verbergAnkerRail ? (
+    <MaquetteAnkerRail
+      lang={ruimteLang}
+      opslagSleutel="github-anker"
+      titel={GH_STAT_LABEL.railTitel[taalIdx]}
+      ondertitel={selected || GH_STAT_LABEL.railOndertitel[taalIdx]}
+      items={ankerItems}
+      actief={GH_ANKER_AFDELINGEN.some(([id]) => id === tab) ? tab : 'overview'}
+      onKies={gaNaarTab}
+    />
+  ) : null;
+
+  if (status.loading && !status.data) return <GhMaquetteSchil actief={isMaquette}><div className="gh-root"><Busy tr={tr} /></div></GhMaquetteSchil>;
   // Poort dicht: geen «koppel GitHub»-uitnodiging (die zou liegen), maar de echte reden uit de kern.
-  if (status.gesloten) return <div className="gh-root"><RuimteGeslotenVlak gesloten={status.gesloten} lang={ruimteLang} /></div>;
+  if (status.gesloten) return <GhMaquetteSchil actief={isMaquette}><div className="gh-root"><RuimteGeslotenVlak gesloten={status.gesloten} lang={ruimteLang} /></div></GhMaquetteSchil>;
   // Het tabblad «Облікові записи» is er juist voor het koppelen: het toont de kaart ook als er nog geen token is of GitHub hem weigerde.
-  if (tab === 'accounts') return <div className="gh-root"><IntegratieStrook dienst='github' />
+  if (tab === 'accounts') return <GhMaquetteSchil actief={isMaquette} voor={accountsHeldNode}><div className="gh-root"><IntegratieStrook dienst='github' />
     <RuimteStrook feiten={koppeling.ruimte ?? null} lang={ruimteLang} />
     <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
     {koppeling.gesloten ? <RuimteGeslotenVlak gesloten={koppeling.gesloten} lang={ruimteLang} /> : <>
@@ -818,9 +1239,9 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
       <KoppelKaart tr={tr} onHerlaad={koppeling.reload} ruimte={koppeling.ruimte ?? null} rate={koppeling.rate}
         invoer={{ laden: koppeling.loading && !koppeling.data, fout: koppeling.code, feiten: koppeling.data }} />
     </>}
-  </div>;
-  if (status.error) return <div className="gh-root"><Notice kind="error">{status.error}</Notice><div className="gh-actions">{status.code === 'SLEUTELKLUIS_GESLOTEN' ? <a className="gh-btn gh-primary" href={sleutelkluisOntgrendelAdres(window.location.origin)}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</a> : null}<button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div></div>;
-  if (!connected) return <div className="gh-root">
+  </div></GhMaquetteSchil>;
+  if (status.error) return <GhMaquetteSchil actief={isMaquette}><div className="gh-root"><Notice kind="error">{status.error}</Notice><div className="gh-actions">{status.code === 'SLEUTELKLUIS_GESLOTEN' ? <a className="gh-btn gh-primary" href={sleutelkluisOntgrendelAdres(window.location.origin)}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</a> : null}<button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div></div></GhMaquetteSchil>;
+  if (!connected) return <GhMaquetteSchil actief={isMaquette} voor={nietGekoppeldHeldNode}><div className="gh-root">
     <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
     <EenklikKoppelPaneel tr={tr} gekoppeld={false} eenklik={status.data?.eenklik} onGekoppeld={status.reload} />
     <section className="gh-card gh-connect">
@@ -832,7 +1253,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
       <div className="gh-actions"><button className="gh-btn gh-primary" onClick={openVault}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis openen')}</button><button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Перевірити', 'Controleren')}</button>
         <a className="gh-btn" href={canonicalNavigationUrl('github', 'accounts', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')}><Plug size={14} />{tr('Картка підключення', 'Koppelkaart')}</a></div>
     </section>
-  </div>;
+  </div></GhMaquetteSchil>;
 
   const s = status.data as Status;
   const Header = <header className="gh-me">{s.avatar ? <img src={s.avatar} alt="" width={40} height={40} /> : <Github size={40} />}<div><strong>{s.name || s.login}</strong><span className="gh-sub">@{s.login} · {s.publicRepos} {tr('публічних', 'publiek')} · {s.privateRepos} {tr('приватних', 'privé')}</span></div>
@@ -847,7 +1268,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
     ? <section className="gh-card"><Busy tr={tr} /></section>
     : <section className="gh-card"><Empty>{tr('Оберіть сховище у верхній панелі або створіть перше натиском на «Нове сховище».', 'Kies een opslagplaats in de bovenbalk of maak uw eerste aan met «Nieuwe opslagplaats».')}</Empty></section>;
 
-  return <div className="gh-root">
+  return <GhMaquetteSchil actief={isMaquette} voor={isMaquette ? <>{werkruimteHeldNode}{ankerRailNode}</> : null}><div className="gh-root">
     {Header}
     {WERKRUIMTE_TABS.has(tab) ? (
       <RepoWerkbalk
@@ -916,7 +1337,7 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
     </>}
     {tab === 'research' && <SearchCard tr={tr} onPick={(full) => { pick(full); gaNaarTab('overview'); }} />}
     {tab === 'activity' && <ActivityCard tr={tr} limit={30} />}
-  </div>;
+  </div></GhMaquetteSchil>;
 }
 
 function ActivityCard({ tr, limit }: { tr: Tr; limit: number }) {

@@ -1,11 +1,14 @@
-// Werkvensters voor CI-werkstromen (Actions: starten, herstarten, annuleren en ingebouwde logboeken)
-// en Uitgaven & éénkliks zelfstandige uitrol vanuit de opslagplaats (Releases + Docker Compose / verbonden apparaat).
-import { useEffect, useState } from 'react';
+// Робочі поверхні конвеєрів дій (запуск, перезапуск, зупинка, етапи та вбудована термінальна консоль журналів)
+// і випусків зі швидким автономним розгортанням зі сховища (випуски, контрольні суми SHA-256 та підключені пристрої).
+// Werkvensters voor CI-werkstromen en uitgaven met ingebouwd logboekvenster en controlegetallen.
+import { useEffect, useState, type ChangeEvent } from 'react';
 import {
-  Check, CheckCircle2, Copy, Download, ExternalLink, FileTerminal, GitBranch, Loader2,
-  Package, Play, PlayCircle, Plus, RefreshCw, Rocket, RotateCcw, Server, Square, Tag, XCircle,
+  Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Download, ExternalLink, FileTerminal, GitBranch,
+  Loader2, Maximize2, Package, Play, PlayCircle, Plus, RefreshCw, Rocket, RotateCcw, Server, ShieldCheck,
+  Square, Tag, XCircle,
 } from 'lucide-react';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
+import { useIsMaquette } from '../thema/useThema';
 import {
   bouwGithubUitrolRecept,
   type GithubTakInfo,
@@ -15,6 +18,39 @@ import {
 import {
   GhBezig, GhDialoog, GhMelding, ghFoutTekst, ghGeleden, ghGrootte, ghPost, useGhVraag, type Tr,
 } from './github-client';
+import './github-werkstroom-maquette.css';
+
+/** Шукає 64-символьний шістнадцятковий відбиток SHA-256 для конкретного пакунка у нотатках випуску. */
+function vindPakketSha256(notities: string, pakketNaam: string): string {
+  if (!notities) return '';
+  const regels = notities.split(/\r?\n/);
+  for (const r of regels) {
+    if (pakketNaam && r.includes(pakketNaam)) {
+      const m = r.match(/\b([a-fA-F0-9]{64})\b/);
+      if (m) return m[1].toLowerCase();
+    }
+  }
+  return '';
+}
+
+function archiefSoortLabel(naam: string): string {
+  const n = naam.toLowerCase();
+  if (n.endsWith('.tar.gz') || n.endsWith('.tgz')) return 'TAR.GZ';
+  if (n.endsWith('.tar.xz')) return 'TAR.XZ';
+  if (n.endsWith('.zip')) return 'ZIP';
+  if (n.endsWith('.sha256') || n.endsWith('.sig')) return 'SHA-256';
+  if (n.endsWith('.deb')) return 'DEB';
+  if (n.endsWith('.rpm')) return 'RPM';
+  const ext = naam.includes('.') ? naam.split('.').pop() || '' : '';
+  return ext ? ext.slice(0, 8).toUpperCase() : 'BIN';
+}
+
+function runStaatSoort(status: string, conclusion: string | null): 'ok' | 'fout' | 'bezig' | 'neutraal' {
+  if (status !== 'completed') return 'bezig';
+  if (conclusion === 'success') return 'ok';
+  if (conclusion === 'failure' || conclusion === 'timed_out' || conclusion === 'action_required') return 'fout';
+  return 'neutraal';
+}
 
 export default function ActiesEnUitgavenPaneel({
   tab,
@@ -25,17 +61,19 @@ export default function ActiesEnUitgavenPaneel({
   repo: string;
   tr: Tr;
 }) {
+  const isMaquette = useIsMaquette();
   const [actieFout, setActieFout] = useState('');
   const [actieBezig, setActieBezig] = useState(false);
 
-  // Staten voor CI-werkstromen
+  // Стан конвеєрів дій та перегляду журналів виконання
   const [startWerkstroom, setStartWerkstroom] = useState<GithubWerkstroom | null>(null);
   const [startRef, setStartRef] = useState('main');
   const [startInvoerTekst, setStartInvoerTekst] = useState('');
   const [logRunId, setLogRunId] = useState<number | null>(null);
   const [logJobId, setLogJobId] = useState<number | null>(null);
+  const [logDialoogOpen, setLogDialoogOpen] = useState(false);
 
-  // Staten voor Uitgaven & Uitrol
+  // Стан створення випусків, контрольних сум та розгортання
   const [uitgaveOpen, setUitgaveOpen] = useState(false);
   const [tagNaam, setTagNaam] = useState('');
   const [uitgaveTitel, setUitgaveTitel] = useState('');
@@ -44,6 +82,7 @@ export default function ActiesEnUitgavenPaneel({
   const [uitgaveConcept, setUitgaveConcept] = useState(false);
   const [uitgaveVooraf, setUitgaveVooraf] = useState(false);
   const [uitgaveAutoNotities, setUitgaveAutoNotities] = useState(true);
+  const [hashBezig, setHashBezig] = useState(false);
 
   const [uitrolOpen, setUitrolOpen] = useState(false);
   const [uitrolTak, setUitrolTak] = useState('main');
@@ -55,6 +94,7 @@ export default function ActiesEnUitgavenPaneel({
     setActieFout('');
     setLogRunId(null);
     setLogJobId(null);
+    setLogDialoogOpen(false);
   }, [repo, tab]);
 
   const takkenVraag = useGhVraag<{ defaultBranch: string; branches: GithubTakInfo[] }>(
@@ -204,6 +244,26 @@ export default function ActiesEnUitgavenPaneel({
     }
   };
 
+  const berekenBestandSha256 = async (ev: ChangeEvent<HTMLInputElement>) => {
+    const bestand = ev.target.files?.[0];
+    ev.target.value = '';
+    if (!bestand || !globalThis.crypto?.subtle) return;
+    setHashBezig(true);
+    try {
+      const buf = await bestand.arrayBuffer();
+      const digest = await globalThis.crypto.subtle.digest('SHA-256', buf);
+      const hex = Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+      const regel = `${hex}  ${bestand.name}`;
+      setUitgaveTekst((vorige) => (vorige.trim() ? `${vorige.trim()}\n${regel}` : `### SHA-256\n${regel}`));
+    } catch {
+      setActieFout(tr('Не вдалося обчислити контрольну суму обраного файла.', 'Controlegetal van het gekozen bestand kon niet worden berekend.'));
+    } finally {
+      setHashBezig(false);
+    }
+  };
+
   const startUitrolOpApparaat = async () => {
     if (!uitrolApparaatId) return;
     setActieBezig(true);
@@ -238,7 +298,7 @@ export default function ActiesEnUitgavenPaneel({
 
   if (!repo) {
     return (
-      <section className="gh-card">
+      <section className={`gh-card${isMaquette ? ' is-maquette' : ''}`} data-mq-paneel="acties">
         <p className="gh-empty">
           {tab === 'releases'
             ? tr('Оберіть сховище вгорі сторінки, щоб керувати випусками та розгортанням.', 'Kies bovenaan een opslagplaats om uitgaven en uitrol te beheren.')
@@ -249,7 +309,7 @@ export default function ActiesEnUitgavenPaneel({
   }
 
   // ========================================================================
-  // WEERGAVE 1: UITGAVEN & ZELFSTANDIGE UITROL (tab === 'releases')
+  // ПОДАННЯ 1: ВИПУСКИ, ПАКУНКИ З КОНТРОЛЬНИМИ СУМАМИ ТА РОЗГОРТАННЯ (releases)
   // ========================================================================
   if (tab === 'releases') {
     const recept = bouwGithubUitrolRecept({
@@ -263,11 +323,11 @@ export default function ActiesEnUitgavenPaneel({
     const apparaten = spiegelApparatenVraag.data?.apparaten ?? [];
 
     return (
-      <div className="gh-werkruimte-uitgaven">
+      <div className={`gh-werkruimte-uitgaven${isMaquette ? ' is-maquette' : ''}`} data-mq-paneel="acties" data-mq-afdeling="uitgaven">
         <section className="gh-card gh-werkbalk">
           <div className="gh-werkbalk-groep">
             <h3><Package size={17} /> {tr('Випуски та розгортання', 'Uitgaven en uitrol')}</h3>
-            <span className="gh-chip">{uitgaven.length} {tr('випусків', 'uitgaven')}</span>
+            <span className="gh-chip gh-mq-mono-pil">{uitgaven.length} {tr('випусків', 'uitgaven')}</span>
           </div>
           <div className="gh-werkbalk-groep">
             <button type="button" className="gh-btn" onClick={() => setUitrolOpen(true)}>
@@ -294,54 +354,84 @@ export default function ActiesEnUitgavenPaneel({
           </section>
         ) : (
           <div className="gh-uitgaven-lijst">
-            {uitgaven.map((rel, idx) => (
-              <article key={rel.id} className="gh-card gh-uitgave-kaart">
-                <header className="gh-detail-head">
-                  <div className="gh-zaak-titelrij">
-                    <Tag size={16} className="gh-ok" />
-                    <h3>{rel.name || rel.tagName}</h3>
-                    <code className="gh-chip">{rel.tagName}</code>
-                    {idx === 0 && !rel.draft && !rel.prerelease ? (
-                      <span className="gh-staat tone-ok">{tr('Найновіший', 'Nieuwste')}</span>
-                    ) : null}
-                    {rel.prerelease ? <span className="gh-chip gh-chip-warn">{tr('Попередній випуск', 'Vooruitgave')}</span> : null}
-                    {rel.draft ? <span className="gh-chip">{tr('Чернетка', 'Concept')}</span> : null}
-                  </div>
-                  <a className="gh-btn" href={rel.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink size={14} /> GitHub
-                  </a>
-                </header>
-                <p className="gh-sub">
-                  @{rel.author} · {ghGeleden(rel.publishedAt || rel.createdAt, tr)}
-                </p>
-                {rel.body ? <pre className="gh-readme" data-no-edge-swipe>{rel.body}</pre> : null}
+            {uitgaven.map((rel, idx) => {
+              const isNieuwste = idx === 0 && !rel.draft && !rel.prerelease;
+              return (
+                <article
+                  key={rel.id}
+                  className={`gh-card gh-uitgave-kaart${isNieuwste ? ' is-nieuwste' : ''}`}
+                  data-uitgave-staat={rel.draft ? 'concept' : rel.prerelease ? 'vooraf' : 'stabiel'}
+                >
+                  <header className="gh-detail-head gh-mq-uitgave-kop">
+                    <div className="gh-zaak-titelrij">
+                      <span className="gh-mq-tag-pil">
+                        <Tag size={14} className="gh-ok" />
+                        <code>{rel.tagName}</code>
+                      </span>
+                      <h3>{rel.name || rel.tagName}</h3>
+                      {isNieuwste ? (
+                        <span className="gh-staat tone-ok">{tr('Найновіший', 'Nieuwste')}</span>
+                      ) : null}
+                      {rel.prerelease ? <span className="gh-chip gh-chip-warn">{tr('Попередній випуск', 'Vooruitgave')}</span> : null}
+                      {rel.draft ? <span className="gh-chip">{tr('Чернетка', 'Concept')}</span> : null}
+                    </div>
+                    <a className="gh-btn" href={rel.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink size={14} /> GitHub
+                    </a>
+                  </header>
 
-                {rel.assets.length > 0 ? (
-                  <div className="gh-koppel-blok">
-                    <h4>{tr('Прикріплені пакунки випуску', 'Bijgevoegde pakketten')} ({rel.assets.length})</h4>
-                    <ul className="gh-list">
-                      {rel.assets.map((a) => (
-                        <li key={a.id}>
-                          <a className="gh-item" href={a.downloadUrl} target="_blank" rel="noopener noreferrer">
-                            <Download size={15} className="gh-ok" />
-                            <span className="gh-item-main">
-                              <strong>{a.name}</strong>
-                              <span className="gh-sub">
-                                {ghGrootte(a.size, tr)} · {tr(`завантажень: ${a.downloadCount}`, `downloads: ${a.downloadCount}`)}
-                              </span>
-                            </span>
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="gh-facts">
+                    <span className="gh-mq-auteur-pil">@{rel.author}</span>
+                    <span>{ghGeleden(rel.publishedAt || rel.createdAt, tr)}</span>
+                    <span className="gh-chip gh-mq-mono-pil">{rel.assets.length} {tr('архівів', 'archieven')}</span>
                   </div>
-                ) : null}
-              </article>
-            ))}
+
+                  {rel.body ? <pre className="gh-readme gh-mq-uitgave-notities" data-no-edge-swipe>{rel.body}</pre> : null}
+
+                  {rel.assets.length > 0 ? (
+                    <div className="gh-koppel-blok">
+                      <h4><Package size={14} /> {tr('Прикріплені пакунки випуску', 'Bijgevoegde pakketten')} ({rel.assets.length})</h4>
+                      <ul className="gh-list gh-mq-archief-lijst">
+                        {rel.assets.map((a) => {
+                          const sha256 = vindPakketSha256(rel.body, a.name);
+                          const sleutelHash = `asset-${a.id}`;
+                          return (
+                            <li key={a.id} className="gh-mq-archief-rij">
+                              <a className="gh-item gh-mq-archief-link" href={a.downloadUrl} target="_blank" rel="noopener noreferrer">
+                                <Download size={15} className="gh-ok" />
+                                <span className="gh-item-main">
+                                  <strong>{a.name}</strong>
+                                  <span className="gh-sub gh-mq-archief-meta">
+                                    <code className="gh-mq-maat-badge">{ghGrootte(a.size, tr)}</code>
+                                    <code className="gh-mq-soort-badge">{archiefSoortLabel(a.name)}</code>
+                                    <span>{tr(`завантажень: ${a.downloadCount}`, `gedownload: ${a.downloadCount}`)}</span>
+                                  </span>
+                                </span>
+                              </a>
+                              {sha256 ? (
+                                <button
+                                  type="button"
+                                  className="gh-btn gh-mq-hash-knop"
+                                  onClick={() => kopieerTekst(sleutelHash, sha256)}
+                                  title={`SHA-256: ${sha256}`}
+                                >
+                                  {gekopieerdVeld === sleutelHash ? <Check size={13} /> : <ShieldCheck size={13} />}
+                                  <code>sha256:{sha256.slice(0, 8)}…{sha256.slice(-6)}</code>
+                                </button>
+                              ) : null}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
         )}
 
-        {/* Dialoog: Nieuwe uitgave aanmaken */}
+        {/* Діалог: створення нового випуску з контрольною сумою SHA-256 */}
         <GhDialoog
           open={uitgaveOpen}
           titel={tr(`Новий випуск у ${repo}`, `Nieuwe uitgave in ${repo}`)}
@@ -374,9 +464,19 @@ export default function ActiesEnUitgavenPaneel({
               rows={5}
               value={uitgaveTekst}
               onChange={(e) => setUitgaveTekst(e.target.value)}
-              placeholder={tr('Опис ключових змін випуску…', 'Toelichting bij de wijzigingen in deze uitgave…')}
+              placeholder={tr('Опис ключових змін та контрольні суми SHA-256…', 'Toelichting bij de wijzigingen en SHA-256-controlegetallen…')}
               aria-label={tr('Опис випуску', 'Beschrijving van de uitgave')}
             />
+            <div className="gh-mq-hash-hulprij">
+              <label className="gh-btn gh-mq-bestand-etiket">
+                {hashBezig ? <Loader2 size={14} className="gh-spin" /> : <ShieldCheck size={14} />}
+                <span>{tr('Додати SHA-256 локального пакунка', 'SHA-256 van lokaal pakket toevoegen')}</span>
+                <input type="file" hidden disabled={hashBezig} onChange={(e) => void berekenBestandSha256(e)} />
+              </label>
+              <span className="gh-sub">
+                {tr('Обчислюється локально в оглядачі без відправлення файла', 'Lokaal berekend in uw bladeraar')}
+              </span>
+            </div>
             <label className="gh-radio">
               <input type="checkbox" checked={uitgaveAutoNotities} onChange={(e) => setUitgaveAutoNotities(e.target.checked)} />
               <span>{tr('Автоматично додати перелік змін із фіксацій на GitHub', 'Automatisch wijzigingsoverzicht uit vastleggingen toevoegen')}</span>
@@ -403,7 +503,7 @@ export default function ActiesEnUitgavenPaneel({
           </div>
         </GhDialoog>
 
-        {/* Dialoog: Zelfstandig of via verbonden apparaat uitrollen */}
+        {/* Діалог: розгортання служби зі сховища */}
         <GhDialoog
           open={uitrolOpen}
           breed
@@ -490,14 +590,98 @@ export default function ActiesEnUitgavenPaneel({
   }
 
   // ========================================================================
-  // WEERGAVE 2: CI-WERKSTROMEN & LOGBOEKEN (tab === 'actions')
+  // ПОДАННЯ 2: КОНВЕЄРИ ДІЙ, ЕТАПИ ВИКОНАННЯ ТА ТЕРМІНАЛЬНІ ЖУРНАЛИ (actions)
   // ========================================================================
   const werkstromen = werkstromenVraag.data?.workflows ?? [];
   const runs = runsVraag.data?.runs ?? [];
   const takken = takkenVraag.data?.branches ?? [];
+  const aantalGeslaagd = runs.filter((r) => r.conclusion === 'success').length;
+  const aantalBezig = runs.filter((r) => r.status !== 'completed').length;
+  const aantalMislukt = runs.filter((r) => r.conclusion === 'failure').length;
+
+  const renderLogboekInhoud = (runId: number) => {
+    if (logVraag.fout) return <GhMelding soort="error">{logVraag.fout}</GhMelding>;
+    if (logVraag.laden || !logVraag.data) return <GhBezig tr={tr} />;
+    const alleTaken = logVraag.data.jobs.concat(logVraag.data.otherJobs as any);
+
+    return (
+      <div className="gh-vergelijk-inhoud gh-mq-stappen-blok">
+        {alleTaken.length > 0 ? (
+          <div className="gh-actions gh-mq-taak-kiezer">
+            {alleTaken.map((j) => {
+              const jStaat = runStaatSoort(j.status, j.conclusion);
+              const isGekozen = logJobId === j.id || (!logJobId && logVraag.data?.jobs[0]?.id === j.id);
+              return (
+                <button
+                  key={j.id}
+                  type="button"
+                  className={`gh-btn gh-mq-taak-knop${isGekozen ? ' gh-primary' : ''}`}
+                  data-run-staat={jStaat}
+                  onClick={() => setLogJobId(j.id)}
+                >
+                  {jStaat === 'ok' ? (
+                    <CheckCircle2 size={13} />
+                  ) : jStaat === 'fout' ? (
+                    <XCircle size={13} />
+                  ) : jStaat === 'bezig' ? (
+                    <Loader2 size={13} className="gh-spin" />
+                  ) : (
+                    <PlayCircle size={13} />
+                  )}
+                  <span>{j.name}</span>
+                  <code className="gh-mq-taak-staat">{j.conclusion || j.status}</code>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {logVraag.data.jobs.map((j) => {
+          const logTekst = j.log?.tail || tr('Вивід для цього кроку порожній або недоступний.', 'Geen uitvoer beschikbaar voor deze taak.');
+          const kopieSleutel = `log-${runId}-${j.id}`;
+          return (
+            <div key={j.id} className="gh-mq-terminal-doos">
+              <header className="gh-mq-terminal-kop">
+                <span className="gh-mq-terminal-stippen" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <strong className="gh-mq-terminal-titel">{j.name}</strong>
+                <div className="gh-actions">
+                  {j.log?.tail ? (
+                    <button
+                      type="button"
+                      className="gh-btn gh-mq-terminal-knop"
+                      onClick={() => kopieerTekst(kopieSleutel, j.log?.tail || '')}
+                    >
+                      {gekopieerdVeld === kopieSleutel ? <Check size={13} /> : <Copy size={13} />}
+                      {gekopieerdVeld === kopieSleutel ? tr('Скопійовано', 'Gekopieerd') : tr('Копіювати вивід', 'Uitvoer kopiëren')}
+                    </button>
+                  ) : null}
+                  {!logDialoogOpen ? (
+                    <button
+                      type="button"
+                      className="gh-btn gh-mq-terminal-knop"
+                      onClick={() => setLogDialoogOpen(true)}
+                    >
+                      <Maximize2 size={13} /> {tr('Широке вікно', 'Groot venster')}
+                    </button>
+                  ) : null}
+                </div>
+              </header>
+              <pre className="gh-logboek-vak" data-no-edge-swipe>
+                {logTekst}
+              </pre>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
-    <div className="gh-werkruimte-acties">
+    <div className={`gh-werkruimte-acties${isMaquette ? ' is-maquette' : ''}`} data-mq-paneel="acties" data-mq-afdeling="werkstromen">
       <section className="gh-card">
         <header className="gh-detail-head">
           <h3><PlayCircle size={17} /> {tr('Конвеєри дій сховища', 'Werkstromen van de opslagplaats')} ({werkstromen.length})</h3>
@@ -522,10 +706,20 @@ export default function ActiesEnUitgavenPaneel({
         ) : (
           <div className="gh-werkstroom-kaarten">
             {werkstromen.map((wf) => (
-              <div key={wf.id} className="gh-subkaart gh-werkstroom-rij">
-                <div>
-                  <strong>{wf.name}</strong>
-                  <div className="gh-sub"><code>{wf.path}</code></div>
+              <div key={wf.id} className="gh-subkaart gh-werkstroom-rij" data-wf-staat={wf.state}>
+                <div className="gh-mq-wf-hoofd">
+                  <span className="gh-mq-wf-tegel" aria-hidden="true">
+                    <PlayCircle size={18} />
+                  </span>
+                  <div className="gh-mq-wf-tekst">
+                    <div className="gh-mq-wf-titelrij">
+                      <strong>{wf.name}</strong>
+                      <span className={`gh-chip ${wf.state === 'active' ? 'gh-mq-chip-ok' : ''}`}>
+                        {wf.state === 'active' ? tr('активний', 'actief') : wf.state}
+                      </span>
+                    </div>
+                    <div className="gh-sub"><code>{wf.path}</code></div>
+                  </div>
                 </div>
                 <div className="gh-actions">
                   <button type="button" className="gh-btn gh-primary" onClick={() => setStartWerkstroom(wf)}>
@@ -548,14 +742,24 @@ export default function ActiesEnUitgavenPaneel({
       <section className="gh-card">
         <header className="gh-detail-head">
           <h3>{tr('Останні виконання конвеєрів', 'Recente uitvoeringen')}</h3>
-          {runsVraag.data?.summary ? (
-            <span className="gh-sub">
-              {tr(
-                `Усього: ${runsVraag.data.summary.total} · збійних серед останніх: ${runsVraag.data.summary.failing}`,
-                `Totaal: ${runsVraag.data.summary.total} · recent mislukt: ${runsVraag.data.summary.failing}`,
-              )}
-            </span>
-          ) : null}
+          <div className="gh-mq-run-statistiek">
+            {runsVraag.data?.summary ? (
+              <span className="gh-chip gh-mq-mono-pil">
+                {tr(`Усього: ${runsVraag.data.summary.total}`, `Totaal: ${runsVraag.data.summary.total}`)}
+              </span>
+            ) : null}
+            {runs.length > 0 ? (
+              <>
+                <span className="gh-chip gh-mq-chip-ok">{tr(`Успішно: ${aantalGeslaagd}`, `Geslaagd: ${aantalGeslaagd}`)}</span>
+                {aantalBezig > 0 ? (
+                  <span className="gh-chip gh-mq-chip-actief">{tr(`Виконується: ${aantalBezig}`, `Bezig: ${aantalBezig}`)}</span>
+                ) : null}
+                {aantalMislukt > 0 ? (
+                  <span className="gh-chip gh-mq-chip-fout">{tr(`Збоїв: ${aantalMislukt}`, `Mislukt: ${aantalMislukt}`)}</span>
+                ) : null}
+              </>
+            ) : null}
+          </div>
         </header>
 
         {runsVraag.fout ? (
@@ -565,73 +769,100 @@ export default function ActiesEnUitgavenPaneel({
         ) : runs.length === 0 ? (
           <p className="gh-empty">{tr('Запусків конвеєрів ще не було.', 'Nog geen uitvoeringen gevonden.')}</p>
         ) : (
-          <ul className="gh-list">
-            {runs.map((r) => (
-              <li key={r.id} className="gh-item gh-run-rij">
-                {r.conclusion === 'success' ? (
-                  <CheckCircle2 size={17} className="gh-ok" />
-                ) : r.conclusion === 'failure' ? (
-                  <XCircle size={17} className="gh-bad" />
-                ) : (
-                  <PlayCircle size={17} className="gh-muted" />
-                )}
-                <span className="gh-item-main">
-                  <strong>{r.name}</strong>
-                  <span className="gh-sub">
-                    <code>{r.branch}</code> · {r.event} · <code>{String(r.sha || '').slice(0, 7)}</code> ·{' '}
-                    {r.conclusion || r.status} · {ghGeleden(r.updatedAt, tr)}
-                  </span>
-                </span>
-                <div className="gh-actions">
-                  <button
-                    type="button"
-                    className="gh-btn"
-                    onClick={() => {
-                      setLogJobId(null);
-                      setLogRunId(r.id);
-                    }}
-                  >
-                    <FileTerminal size={14} /> {tr('Журнал', 'Logboek')}
-                  </button>
-                  {r.status !== 'completed' ? (
-                    <button
-                      type="button"
-                      className="gh-btn"
-                      disabled={actieBezig}
-                      onClick={() => void beheerRun(r.id, 'cancel')}
-                    >
-                      <Square size={13} /> {tr('Зупинити', 'Stoppen')}
-                    </button>
-                  ) : (
-                    <>
+          <ul className="gh-list gh-mq-runs-lijst">
+            {runs.map((r) => {
+              const staat = runStaatSoort(r.status, r.conclusion);
+              const isUitgevouwen = logRunId === r.id && !logDialoogOpen;
+              return (
+                <li key={r.id} className={`gh-item gh-run-rij${isUitgevouwen ? ' is-uitgevouwen' : ''}`} data-run-staat={staat}>
+                  <div className="gh-mq-run-boven">
+                    <span className={`gh-mq-run-icoon is-${staat}`}>
+                      {staat === 'ok' ? (
+                        <CheckCircle2 size={18} className="gh-ok" />
+                      ) : staat === 'fout' ? (
+                        <XCircle size={18} className="gh-bad" />
+                      ) : staat === 'bezig' ? (
+                        <Loader2 size={18} className="gh-spin gh-mq-accent-icoon" />
+                      ) : (
+                        <PlayCircle size={18} className="gh-muted" />
+                      )}
+                    </span>
+                    <span className="gh-item-main">
+                      <strong>{r.name}</strong>
+                      <span className="gh-sub gh-mq-run-meta">
+                        <code className="gh-mq-tak-pil-klein"><GitBranch size={11} /> {r.branch}</code>
+                        <span>{r.event}</span>
+                        <code className="gh-mq-sha-pil">{String(r.sha || '').slice(0, 7)}</code>
+                        <span>{r.conclusion || r.status}</span>
+                        <span>{ghGeleden(r.updatedAt, tr)}</span>
+                      </span>
+                    </span>
+                    <div className="gh-actions">
                       <button
                         type="button"
-                        className="gh-btn"
-                        disabled={actieBezig}
-                        onClick={() => void beheerRun(r.id, 'rerun')}
+                        className={`gh-btn${isUitgevouwen ? ' gh-primary' : ''}`}
+                        aria-expanded={isUitgevouwen}
+                        onClick={() => {
+                          if (isUitgevouwen) {
+                            setLogRunId(null);
+                            setLogJobId(null);
+                          } else {
+                            setLogDialoogOpen(false);
+                            setLogJobId(null);
+                            setLogRunId(r.id);
+                          }
+                        }}
                       >
-                        <RotateCcw size={13} /> {tr('Перезапустити', 'Herstarten')}
+                        <FileTerminal size={14} /> {tr('Журнал', 'Logboek')}
+                        {isUitgevouwen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                       </button>
-                      {r.conclusion === 'failure' ? (
+                      {r.status !== 'completed' ? (
                         <button
                           type="button"
                           className="gh-btn"
                           disabled={actieBezig}
-                          onClick={() => void beheerRun(r.id, 'rerun-failed')}
+                          onClick={() => void beheerRun(r.id, 'cancel')}
                         >
-                          <RotateCcw size={13} /> {tr('Лише збійні', 'Alleen mislukte')}
+                          <Square size={13} /> {tr('Зупинити', 'Stoppen')}
                         </button>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              </li>
-            ))}
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="gh-btn"
+                            disabled={actieBezig}
+                            onClick={() => void beheerRun(r.id, 'rerun')}
+                          >
+                            <RotateCcw size={13} /> {tr('Перезапустити', 'Herstarten')}
+                          </button>
+                          {r.conclusion === 'failure' ? (
+                            <button
+                              type="button"
+                              className="gh-btn"
+                              disabled={actieBezig}
+                              onClick={() => void beheerRun(r.id, 'rerun-failed')}
+                            >
+                              <RotateCcw size={13} /> {tr('Лише збійні', 'Alleen mislukte')}
+                            </button>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {isUitgevouwen ? (
+                    <div className="gh-mq-run-uitvouwing">
+                      {renderLogboekInhoud(r.id)}
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
 
-      {/* Dialoog: Handmatig werkstroom starten */}
+      {/* Діалог: ручний запуск конвеєра */}
       <GhDialoog
         open={Boolean(startWerkstroom)}
         titel={startWerkstroom ? tr(`Запуск конвеєра «${startWerkstroom.name}»`, `Werkstroom «${startWerkstroom.name}» starten`) : ''}
@@ -671,42 +902,15 @@ export default function ActiesEnUitgavenPaneel({
         </div>
       </GhDialoog>
 
-      {/* Dialoog: CI-logboek lezen */}
+      {/* Діалог: широке термінальне вікно перегляду журналу конвеєра */}
       <GhDialoog
-        open={Boolean(logRunId)}
+        open={Boolean(logRunId && logDialoogOpen)}
         breed
         titel={tr(`Журнал виконання конвеєра #${logRunId ?? ''}`, `Uitvoeringslogboek #${logRunId ?? ''}`)}
-        onSluit={() => setLogRunId(null)}
+        onSluit={() => setLogDialoogOpen(false)}
         tr={tr}
       >
-        {logVraag.fout ? (
-          <GhMelding soort="error">{logVraag.fout}</GhMelding>
-        ) : logVraag.laden || !logVraag.data ? (
-          <GhBezig tr={tr} />
-        ) : (
-          <div className="gh-vergelijk-inhoud">
-            <div className="gh-actions">
-              {logVraag.data.jobs.concat(logVraag.data.otherJobs as any).map((j) => (
-                <button
-                  key={j.id}
-                  type="button"
-                  className={`gh-btn${logJobId === j.id ? ' gh-primary' : ''}`}
-                  onClick={() => setLogJobId(j.id)}
-                >
-                  {j.name} ({j.conclusion || j.status})
-                </button>
-              ))}
-            </div>
-            {logVraag.data.jobs.map((j) => (
-              <div key={j.id} className="gh-koppel-blok">
-                <h4>{j.name}</h4>
-                <pre className="gh-logboek-vak" data-no-edge-swipe>
-                  {j.log?.tail || tr('Вивід для цього кроку порожній або недоступний.', 'Geen uitvoer beschikbaar voor deze taak.')}
-                </pre>
-              </div>
-            ))}
-          </div>
-        )}
+        {logRunId ? renderLogboekInhoud(logRunId) : null}
       </GhDialoog>
     </div>
   );
