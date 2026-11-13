@@ -83,7 +83,12 @@ function verzamelTaken(takken) {
     if (!eerder || (bron === d.tak && eerder.bron !== d.tak)) taken.set(d.id, { ...d, bron });
   };
   const map = path.join(WORTEL, 'orchestratie/taken');
-  for (const f of fs.existsSync(map) ? fs.readdirSync(map) : []) if (f.endsWith('.json')) neem(leesJson(fs.readFileSync(path.join(map, f), 'utf8')), 'werkboom');
+  // Робота поточної гілки: запис у робочому дереві новіший за опублікований (агент його щойно оновив).
+  const huidig = gitMag(['rev-parse', '--abbrev-ref', 'HEAD']);
+  for (const f of fs.existsSync(map) ? fs.readdirSync(map) : []) if (f.endsWith('.json')) {
+    const d = leesJson(fs.readFileSync(path.join(map, f), 'utf8'));
+    neem(d, d?.tak && d.tak === huidig ? d.tak : 'werkboom');
+  }
   for (const t of takken.values()) {
     const lijst = gitMag(['ls-tree', '--name-only', t.sha, 'orchestratie/taken/']);
     for (const p of (lijst || '').split('\n').filter((x) => x.endsWith('.json'))) {
@@ -202,7 +207,7 @@ const T = {
     zonderTekst: 'Гілки агентів (`claude/*`), оновлення залежностей і гілки, для яких немає `orchestratie/taken/<ID>.json`. Показано лише факти з git.',
     grafiekKop: 'Схема спадкоємності', tak: 'Гілка', top: 'вершина', geenTak: 'гілки на GitHub немає (видалена або не опублікована)',
     voorganger: '← Попередник', basis: 'основа', versie: 'версія', vorigeWerk: 'попередня робота', exact: 'точно на її вершині', bevat: 'містить її вершину',
-    opvolger: '→ Наступник', inIntegratie: 'влито в `integratie`', nietIntegratie: 'ще не в `integratie`', inLive: 'є в живій версії', inVoornaamst: 'є в `voornaamst`',
+    opvolger: '→ Наступник', inIntegratie: 'влито в `integratie`', nietIntegratie: 'ще не в `integratie`', deelsIntegratie: 'частково в `integratie` (PR влито, але вершина гілки пішла далі)', inLive: 'є в живій версії', inVoornaamst: 'є в `voornaamst`',
     eersteUitgave: 'перший випуск, що її містить', volgendeWerken: 'наступні роботи', geen: 'немає',
     pr: 'PR', samengevoegd: 'влито', open: 'відкритий', gesloten: 'закритий без злиття', staat: 'стан у записі', agent: 'агент',
     kolommen: '| Гілка | Вершина | Основа в `integratie` | У `integratie` | У живій версії | PR |', ja: 'так', nee: 'ні',
@@ -225,7 +230,7 @@ const T = {
     zonderTekst: 'Agenttakken (`claude/*`), afhankelijkheidsupdates en takken zonder `orchestratie/taken/<ID>.json`. Alleen feiten uit git.',
     grafiekKop: 'Opvolgingsschema', tak: 'Tak', top: 'top', geenTak: 'tak niet op GitHub (verwijderd of niet gepubliceerd)',
     voorganger: '← Voorganger', basis: 'basis', versie: 'versie', vorigeWerk: 'vorige taak', exact: 'precies op haar top', bevat: 'bevat haar top',
-    opvolger: '→ Opvolger', inIntegratie: 'samengevoegd in `integratie`', nietIntegratie: 'nog niet in `integratie`', inLive: 'zit in de live versie', inVoornaamst: 'zit in `voornaamst`',
+    opvolger: '→ Opvolger', inIntegratie: 'samengevoegd in `integratie`', nietIntegratie: 'nog niet in `integratie`', deelsIntegratie: 'deels in `integratie` (PR samengevoegd, maar de tak liep verder)', inLive: 'zit in de live versie', inVoornaamst: 'zit in `voornaamst`',
     eersteUitgave: 'eerste release die haar bevat', volgendeWerken: 'volgende taken', geen: 'geen',
     pr: 'PR', samengevoegd: 'samengevoegd', open: 'open', gesloten: 'gesloten zonder samenvoegen', staat: 'status in record', agent: 'agent',
     kolommen: '| Tak | Top | Basis in `integratie` | In `integratie` | In live versie | PR |', ja: 'ja', nee: 'nee',
@@ -260,7 +265,9 @@ function werkBlok(t, w, bestaandeAnkers) {
   r.push(`- **${t.voorganger}:** ${voor.join(' · ')}`);
   const na = [];
   if (w.in) {
-    na.push(w.in.integratie ? t.inIntegratie : t.nietIntegratie);
+    // Вершина гілки могла піти далі після злиття PR: тоді чесно кажемо «частково».
+    const prIn = w.prs.some((p) => p.samengevoegd && p.basis === 'integratie');
+    na.push(w.in.integratie ? t.inIntegratie : prIn ? t.deelsIntegratie : t.nietIntegratie);
     if (w.in.live) na.push(t.inLive);
     if (w.in.voornaamst) na.push(t.inVoornaamst);
   }

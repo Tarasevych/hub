@@ -86,3 +86,23 @@ flowchart LR
 ---
 
 > 🔗 **Lees verder:** [1. Architectuur](./ARCHITECTUUR.nl.md) · [3. Takken, PR's & Releases](./TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md) · [4. Mapstructuur](./MAP-STRUCTUUR.nl.md) · [5. Omgevingsvariabelen](./OMGEVINGSVARIABELEN.nl.md) · [6. Orchestratie & Uitrol](./ORCHESTRATIE-EN-UITROL.nl.md)
+
+---
+
+<!-- HISTORIE-001:aanvulling-20261113 -->
+## Fase VII. Accountcentrum, «Ontwerp», beveiliging SEC-002 en MCP (5–13 november 2026)
+
+> Aanvulling van 13-11-2026 (HISTORIE-001). Eerdere fasen hierboven zijn ongewijzigd. Volledige kroniek met voorganger en opvolger per tak: [KRONIEK-TAKKEN](./KRONIEK-TAKKEN.nl.md).
+
+- **IDENTITEIT-003…007, MOBIEL-001 (07–09.11):** accountcentrum: vormgeving met veilige terugkeer, versie 49, «Studio», weergave «Ontwerp» naar het ontwerp van de eigenaar, aanpassing aan smartphones.
+- **TRACE-002, UITROL-001, PERF-001 (08–09.11):** beschermde herkomst van pakketten, vernieuwde update met proefmigraties, snellere paginastart.
+- **APPARAAT-001, TELEGRAM-001 (09.11):** bevestigen vanaf een ander apparaat, aanmelden en bevestigen via Telegram, plaatsing van aanmeldmethoden.
+- **MAILBG-001, MAILSCAN-002 (09–10.11):** bewegende mailachtergrond met lens, vrijwillige adrescontrole.
+- **HUIS-001 (10–12.11):** slim huis «Levend huis»: specificatie en klikbaar ontwerp.
+- **IDENTITEIT-008…010 (11–12.11):** accountmenu v3, mobiele aanpassing van drie weergaven, samenhangend aanmelden op alle subdomeinen.
+- **GITHUB-010…012, CLOUD-001 (11–12.11):** tweerichtings-GitHub-omgeving en aanpassing, mappen uploaden en delen in de cloud.
+- **MCP-001 (12.11):** ondersteuning van MCP 2026-07-28 en 2025-11-25, OAuth 2.1-beveiliging.
+- **SEC-002 (12–13.11):** diepe beveiligingsaudit; release 20261113-121403 is de huidige live versie.
+- **MAQUETTE-001, HISTORIE-001, IDENTITEIT-011 (13.11):** in uitvoering: thema «Ontwerp» (Golf 0), kroniek van takken, plan voor het «Ontwerp» (PR #76).
+
+Live versie op 13-11-2026: `20261113-121403` (commit [`5f2325d`](https://github.com/Tarasevych/hub/commit/5f2325d788e29c5126f9ede6975afbbac7e5aae2)). De tak `voornaamst` bevat die nog niet — zie «Achterstand» in de kroniek.

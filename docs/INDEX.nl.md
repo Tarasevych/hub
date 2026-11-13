@@ -205,3 +205,13 @@ Alle artikelen, specificaties, wijzigingslogboeken (wijzigingen), uitrolhandleid
 | **Zoeken `/zoek`: Bronnen uitbreiden (`zoek/ZOEK-UITBREIDEN`)** | [🇳🇱 `.nl.md`](./zoek/ZOEK-UITBREIDEN.nl.md) | [🇺🇦 `.uk.md`](zoek/РОЗШИРЕННЯ-ПОШУКУ.uk.md) | [`ZOEK-UITBREIDEN.md`](zoek/РОЗШИРЕННЯ-ПОШУКУ.md) |
 | **Universal Bestand Workspace-kern v0.2 (`integrations/.../README`)** | [🇳🇱 `.nl.md`](../integrations/universal-file-workspace-core-v0.2/LEESMIJ.nl.md) | [🇺🇦 `.uk.md`](../ОГЛЯД-ПРОЄКТУ.uk.md) | [`README.md`](../integrations/universal-file-workspace-core-v0.2/LEESMIJ.nl.md) |
 | **Lokale Playwright-browsertests (`scripts/lokaal-e2e/LEESMIJ`)** | [🇳🇱 `.nl.md`](../scripts/lokaal-e2e/LEESMIJ.nl.md) | [🇺🇦 `.uk.md`](../scripts/lokaal-e2e/ОГЛЯД-НАСКРІЗНИХ-ТЕСТІВ.uk.md) | [`LEESMIJ.md`](../scripts/lokaal-e2e/LEESMIJ.nl.md) |
+
+---
+
+<!-- HISTORIE-001:aanvulling-20261113 -->
+## Aanvulling 13-11-2026
+
+| Artikel | Omschrijving | 🇳🇱 Nederlands | 🇺🇦 Oekraïens |
+|---|---|---|---|
+| **Kroniek van takken en taken (HISTORIE-001)** | Elke tak met voorganger en opvolger, achterstand `voornaamst` ↔ live versie; wordt alleen aangevuld | [🇳🇱 `KRONIEK-TAKKEN.nl.md`](./hub/KRONIEK-TAKKEN.nl.md) | [🇺🇦 `ХРОНОЛОГІЯ-ГІЛОК.uk.md`](./hub/ХРОНОЛОГІЯ-ГІЛОК.uk.md) |
+| **Plan «Ontwerp»-weergave (IDENTITEIT-011…020)** | Vergelijking van de ontwikkelkaart met de code en plan voor fasen 0–5 | — | [🇺🇦 `ПЛАН-МАКЕТ-ДООПРАЦЮВАННЯ.uk.md`](https://github.com/Tarasevych/hub/blob/claude/optimistic-mayer-exvf2p/docs/ontwerp/identiteit-account/%D0%9F%D0%9B%D0%90%D0%9D-%D0%9C%D0%90%D0%9A%D0%95%D0%A2-%D0%94%D0%9E%D0%9E%D0%9F%D0%A0%D0%90%D0%A6%D0%AE%D0%92%D0%90%D0%9D%D0%9D%D0%AF.uk.md) (PR #76) |
