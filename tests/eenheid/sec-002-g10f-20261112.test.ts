@@ -28,8 +28,14 @@ type Check = (naam: string, ok: boolean, info?: string) => void;
 // ====================================================================================================================
 async function sshCaRoot(check: Check) {
   const BRON = resolve(process.env.SEC002_SSH_CA_SCRIPT || 'deploy/ssh-ca/mijn-ruimte-ssh-ca.sh');
-  const HULP = resolve('deploy/goedkeuring/goedkeur-hulp.mjs');
   const w = mkdtempSync(join(tmpdir(), 'sec002-ssh-ca-'));
+  // Ook de passkey-hulp (met haar relatieve modules) als kopie in de testmap: die draait als nobody, en op GitHub Actions staat
+  // de werkmap onder /home/runner (rechten 0750) — nobody komt daar niet bij. Помічник passkey теж копіюється в тимчасову теку:
+  // він працює від nobody, а /home/runner на GitHub Actions має права 0750.
+  const hulpMap = join(w, 'goedkeuring');
+  mkdirSync(hulpMap);
+  for (const f of readdirSync(resolve('deploy/goedkeuring')).filter((n) => n.endsWith('.mjs'))) writeFileSync(join(hulpMap, f), lees(resolve('deploy/goedkeuring', f)));
+  const HULP = join(hulpMap, 'goedkeur-hulp.mjs');
   const p = { ca: join(w, 'ca'), inbox: join(w, 'inbox'), werk: join(w, 'werk'), uit: join(w, 'uit'), status: join(w, 'status'), goed: join(w, 'goed'), rechten: join(w, 'rechten.json') };
   for (const d of [p.ca, p.inbox, p.werk, p.uit, p.status, p.goed, join(p.goed, 'staat')]) mkdirSync(d, { recursive: true });
   const sleutels = join(p.goed, 'goedkeur-passkeys.json');
