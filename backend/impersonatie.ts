@@ -15,7 +15,8 @@
 import { getPool } from '../server/platform/pg';
 import { auditToevoegen } from '../server/platform/audit';
 import { actieveActivatie, isEigenaar, tabHash, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
-import { sterkeStapOpGeldig, stapOpMethode, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, sterkeStapOpGeldig, stapOpMethode, type StapOpAuth } from './stap-op';
+import { isEmailAdres } from '../shared/adres-controle';
 import { IMPERSONATIE_ANTWOORD_MIN, IMPERSONATIE_MAX, IMPERSONATIE_MIN, IMPERSONATIE_STANDAARD, IMPERSONATIE_ZICHTBAAR, isImpersonatieDienst, isLeesRoute, routeOordeel } from '../shared/impersonatie';
 
 const sys = () => getPool('systeem');
@@ -43,7 +44,7 @@ async function vereisTech(u: Gebruiker, tab: string) {
 
 async function gebruikerOpEmail(email: string) {
   const e = String(email || '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 200) fout('EMAIL_ONGELDIG');
+  if (!isEmailAdres(e, 200)) /* SEC-002 (aanv-gat-c-02): lengte eerst, lineair */ fout('EMAIL_ONGELDIG');
   const r = (await sys().query(`SELECT id, data->>'email' AS email, COALESCE(data->>'name', '') AS naam, data->>'role' AS role, data->>'status' AS status FROM app.records
      WHERE tbl = 'users' AND lower(data->>'email') = $1 AND COALESCE((data->>'deletedAt')::numeric, 0) = 0 LIMIT 2`, [e])).rows;
   if (r.length !== 1) fout('GEBRUIKER_NIET_GEVONDEN', 404);
@@ -130,12 +131,17 @@ export async function toestaan(auth: StapOpAuth & { user: Gebruiker }, id: strin
   await opruimen();
   const v = (await sys().query(`SELECT * FROM app.impersonatie_sessies WHERE id = $1 AND doel_id = $2`, [id, u.id])).rows[0];
   if (!v || v.status !== 'wacht') fout('VERZOEK_NIET_OPEN', 404);
-  if (!(await sterkeStapOpGeldig(auth))) fout('STEP_UP_STRONG_REQUIRED', 403);
   const methode = (await stapOpMethode(auth)) || 'sterk';
-  const r = (await sys().query(`UPDATE app.impersonatie_sessies SET status = 'actief', besloten_op = now(), eind_op = now() + make_interval(mins => minuten), met_acties = $3, stap_op_methode = $4
-     WHERE id = $1 AND doel_id = $2 AND status = 'wacht' RETURNING *`, [id, u.id, metActies === true, methode])).rows[0];
-  if (!r) fout('VERZOEK_NIET_OPEN', 404);
-  await stapOpVerbruiken(auth);
+  // SEC-002 (g06): één sterke bevestiging = één toestemming — controleren en verbruiken ondeelbaar (twee verzoeken tegelijk op één
+  // bevestiging gaven anders allebei toegang); mislukt de wijziging, dan wordt de bevestiging teruggezet.
+  const stap = await metStapOpEenmalig(auth, sterkeStapOpGeldig, async () => {
+    const rij = (await sys().query(`UPDATE app.impersonatie_sessies SET status = 'actief', besloten_op = now(), eind_op = now() + make_interval(mins => minuten), met_acties = $3, stap_op_methode = $4
+       WHERE id = $1 AND doel_id = $2 AND status = 'wacht' RETURNING *`, [id, u.id, metActies === true, methode])).rows[0];
+    if (!rij) fout('VERZOEK_NIET_OPEN', 404);
+    return rij;
+  });
+  if (!stap.ok) fout('STEP_UP_STRONG_REQUIRED', 403);
+  const r = (stap as { uit: Record<string, any> }).uit;
   await journaal(u.id, u.id, 'owner.impersonatie.toegestaan', id, { metActies: !!r.met_acties, minuten: r.minuten, stapOp: methode, aan: r.beheerder_id });
   await eigenJournaal(r.beheerder_id, 'owner.impersonatie.toegestaan', id, { door: u.email || u.id, metActies: !!r.met_acties });
   await meld(r.beheerder_id, '', 'impersonatie.beheerder', 'Користувач дозволив перегляд', `${u.email || 'Користувач'} дозволив(ла) ${r.minuten} хв ${r.met_acties ? 'з правом дій' : 'лише перегляду'} до ${tijd(ms(r.eind_op)!)}.`).catch(() => undefined);

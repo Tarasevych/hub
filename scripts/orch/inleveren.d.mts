@@ -17,4 +17,7 @@ export function inleveren(o: {
   /** Хто фактично доставив (власник / MCP-підключення з grant-id) — у записі передачі. */ door?: string | null;
   /** Межа розпакованого обсягу на архів (типово 1 ГіБ). */ maxUitgepaktBytes?: number;
 }): InleverRecord;
+/** SEC-002 (ai-mcp-09): dezelfde pijplijn in een eigen Node-proces (niet-blokkerend voor de server), met tijdslimiet. */
+export function inleverenA(o: Parameters<typeof inleveren>[0], opties?: { tijdslimietMs?: number }): Promise<InleverRecord>;
+export function inleverScript(wortel?: string): string;
 export function registreerInlevering(wortel: string, record: InleverRecord): { recordPad: string; taakBijgewerkt: boolean; wachtrij: unknown };

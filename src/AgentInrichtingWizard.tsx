@@ -7,6 +7,7 @@ import { sessionBody, type Agent } from './agenten-gegevens';
 import { buildAgentCommands, buildRunnerScript, looksLikePlaceholder, type Os, type Shell } from './agent-opdrachten';
 import { guessArch, nodeInstallMethods, type Arch } from './installeer-opdrachten';
 import './extensie-wizard.css';
+import { alleenMens, geenAi, verborgenVoorAi } from './menselijke-actie';
 
 const ALLOW_CHOICES = ['git', 'node', 'npm', 'python', 'docker'];
 
@@ -154,14 +155,14 @@ export function PairCard({ tr, reload, agents }: { tr: Tr; reload: () => Promise
             {!pairing || expired ? (
               <>
                 <p>{expired ? tr('Код прострочено. Створіть новий.', 'De code is verlopen. Maak een nieuwe.') : tr('Код одноразовий і діє 5 хвилин. Створюйте його, коли вже готові вставити команди.', 'De code werkt één keer en 5 minuten. Maak hem pas als u klaar bent om de commando\'s te plakken.')}</p>
-                <button type='button' className='wiz-primary' disabled={busy || !!rootProblem} onClick={() => void createCode()}><Plug aria-hidden='true' />{tr('Створити код підключення', 'Koppelcode maken')}</button>
+                <button type='button' className='wiz-primary' disabled={busy || !!rootProblem} {...geenAi} onClick={alleenMens(() => void createCode())}><Plug aria-hidden='true' />{tr('Створити код підключення', 'Koppelcode maken')}</button>
                 {rootProblem ? <p className='wiz-note'>{tr('Спершу заповніть крок 3.', 'Vul eerst stap 3 in.')}</p> : null}
               </>
             ) : (
               <>
                 <p>{tr(`Відкрийте термінал у теці з agent.mjs і вставте по черзі (код діє ще ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}):`, `Open een terminal in de map met agent.mjs en plak na elkaar (de code werkt nog ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}):`)}</p>
                 {commands.map((c, i) => (
-                  <div key={i} className='wiz-copy'><b>{i + 1}.</b><code>{c}</code><button type='button' onClick={() => void copy(`c${i}`, c)}>{copied === `c${i}` ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>
+                  <div key={i} className='wiz-copy'><b>{i + 1}.</b>{/* SEC-002 extensie-09: de koppelcode leest/fotografeert de browserextensie niet */}<code {...verborgenVoorAi}>{c}</code><button type='button' onClick={() => void copy(`c${i}`, c)}>{copied === `c${i}` ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{tr('Копіювати', 'Kopiëren')}</button></div>
                 ))}
                 <p className='wiz-note'>{tr('Перша команда з’єднує агента з вашим акаунтом, друга запускає його (вікно термінала має лишатися відкритим).', 'Het eerste commando koppelt de agent aan uw account, het tweede start hem (laat het terminalvenster open).')}</p>
                 {os === 'windows' ? <p className='wiz-note' role='status'>{tr('Готовий файл запуску (.cmd) для Windows 11 із «Захистом смарт-програм» блокується без можливості дозволити, тому тут лише команди для вставки в термінал.', 'Een kant-en-klaar startbestand (.cmd) wordt op Windows 11 met "Smart App Control" geblokkeerd zonder optie om het toe te staan; daarom hier alleen commando\'s om in de terminal te plakken.')}</p> : <button type='button' className='wiz-primary' onClick={download}><FileDown aria-hidden='true' />{tr(`Або завантажте готовий файл запуску (.sh)`, `Of download een kant-en-klaar startbestand (.sh)`)}</button>}

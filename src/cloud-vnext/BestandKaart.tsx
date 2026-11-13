@@ -1,16 +1,19 @@
 // Eén bestand in «Mijn bestanden»: als kaart (raster) en als rij (lijst-tabel). Zelfde gegevens, zelfde handelingen:
 // klik = openen (met Shift = reeks kiezen; in keuzestand = aan/uit), Enter = openen, spatie = kiezen, ster = favoriet,
-// ⋯ = contextmenu. Slepen draagt {ids} als text/plain-JSON — de doelen (map, kruimel) lezen dat in Bestanden.tsx.
-import { EllipsisVertical, Star } from 'lucide-react';
+// deelknop = direct koppeling maken/beheren, ⋯ = contextmenu. Slepen draagt {ids} als text/plain-JSON.
+import { EllipsisVertical, Eye, Link2, Share2, Star } from 'lucide-react';
 import type { CloudBestand } from '../../shared/cloud-vnext-model';
+import type { DelenDoelSamenvatting } from './cloud-client';
 import { SOORT_ICOON } from './hulp';
 import { bytesTekst, datumTekst, soortTekst, tr, type Lang } from './tekst';
 
 export type BestandActies = {
   lang: Lang; b: CloudBestand; gekozen: boolean; keuzestand: boolean; prullenbak: boolean;
+  deelInfo?: DelenDoelSamenvatting;
   onOpen: (b: CloudBestand) => void;
   onKies: (b: CloudBestand, metShift: boolean) => void;
   onFavoriet: (b: CloudBestand) => void;
+  onDeel?: (b: CloudBestand) => void;
   onMeer: (b: CloudBestand, e: React.MouseEvent) => void;
   sleepIds: (b: CloudBestand) => string[];
 };
@@ -40,6 +43,16 @@ const Ster = (p: BestandActies) => (
     <Star aria-hidden='true' />
   </button>
 );
+const DeelKnop = (p: BestandActies) => (
+  !p.prullenbak && p.onDeel ? (
+    <button type='button' className={`cvn-icoonknop cvn-deelknop${p.deelInfo?.actief ? ' is-actief' : ''}`} data-cvn-deel={p.b.id}
+      aria-label={tr(p.lang, `Поділитися ${p.b.naam}`, `${p.b.naam} delen`)}
+      title={tr(p.lang, 'Поділитися або керувати посиланнями', 'Delen of koppelingen beheren')}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); p.onDeel!(p.b); }}>
+      <Share2 aria-hidden='true' />
+    </button>
+  ) : null
+);
 const Meer = (p: BestandActies) => (
   <button type='button' className='cvn-icoonknop' data-cvn-meer={p.b.id} aria-haspopup='menu'
     aria-label={tr(p.lang, `Дії з ${p.b.naam}`, `Acties voor ${p.b.naam}`)}
@@ -57,7 +70,7 @@ export default function BestandKaart(p: BestandActies) {
       onClick={klik(p)} onDoubleClick={() => p.onOpen(p.b)} onKeyDown={toets(p)} onDragStart={sleep(p)}
       onContextMenu={(e) => { e.preventDefault(); p.onMeer(p.b, e); }}>
       <span className='cvn-kaart-kies'>{Kies(p)}</span>
-      <span className='cvn-kaart-acties'>{Ster(p)}{Meer(p)}</span>
+      <span className='cvn-kaart-acties'>{DeelKnop(p)}{Ster(p)}{Meer(p)}</span>
       <span className='cvn-kaart-icoon' aria-hidden='true'><Icoon /></span>
       <span className='cvn-kaart-naam'>{p.b.naam}</span>
       <span className='cvn-kaart-meta'>
@@ -65,6 +78,12 @@ export default function BestandKaart(p: BestandActies) {
         <span>{datumTekst(p.lang, p.b.bijgewerktOp, false) || datumTekst(p.lang, p.b.bijgewerktOp)}</span>
         {p.b.versies > 0 ? <span>{tr(p.lang, `в. ${p.b.versies + 1}`, `v. ${p.b.versies + 1}`)}</span> : null}
       </span>
+      {p.deelInfo && p.deelInfo.actief > 0 ? (
+        <span className='cvn-kaart-deelpil' onClick={(e) => { if (p.onDeel) { e.stopPropagation(); p.onDeel(p.b); } }}>
+          <Link2 aria-hidden='true' />{p.deelInfo.actief}
+          <Eye aria-hidden='true' />{p.deelInfo.weergaven}
+        </span>
+      ) : null}
       {p.b.tags.length ? <span className='cvn-kaart-tags'>{p.b.tags.slice(0, 2).map((t) => <i key={t}>#{t}</i>)}{p.b.tags.length > 2 ? <i>+{p.b.tags.length - 2}</i> : null}</span> : null}
     </article>
   );
@@ -79,11 +98,19 @@ export function BestandRij(p: BestandActies) {
       onClick={klik(p)} onDoubleClick={() => p.onOpen(p.b)} onKeyDown={toets(p)} onDragStart={sleep(p)}
       onContextMenu={(e) => { e.preventDefault(); p.onMeer(p.b, e); }}>
       <td className='cvn-cel-kies'>{Kies(p)}</td>
-      <td className='cvn-cel-naam'><Icoon aria-hidden='true' /><span>{p.b.naam}</span></td>
+      <td className='cvn-cel-naam'>
+        <Icoon aria-hidden='true' />
+        <span>{p.b.naam}</span>
+        {p.deelInfo && p.deelInfo.actief > 0 ? (
+          <span className='cvn-kaart-deelpil is-rij' title={tr(p.lang, `Активних посилань: ${p.deelInfo.actief}, переглядів: ${p.deelInfo.weergaven}`, `Actieve koppelingen: ${p.deelInfo.actief}, weergaven: ${p.deelInfo.weergaven}`)}>
+            <Link2 aria-hidden='true' />{p.deelInfo.actief} · <Eye aria-hidden='true' />{p.deelInfo.weergaven}
+          </span>
+        ) : null}
+      </td>
       <td className='cvn-verberg-smal'>{soortTekst(p.lang, p.b.soort)}</td>
       <td>{bytesTekst(p.lang, p.b.bytes)}</td>
       <td className='cvn-verberg-smal'>{datumTekst(p.lang, p.b.bijgewerktOp)}</td>
-      <td className='cvn-cel-acties'>{Ster(p)}{Meer(p)}</td>
+      <td className='cvn-cel-acties'>{DeelKnop(p)}{Ster(p)}{Meer(p)}</td>
     </tr>
   );
 }

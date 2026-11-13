@@ -1,6 +1,7 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
 import {GEEN_RECHT,heeftApiRecht,weigerCode} from './api-recht';
 import {db,error,json} from '../server/platform';
+import {getPool} from '../server/platform/pg';
 import {sessieGeverifieerd,zetGebruiker} from '../server/platform/context';
 import {apiPlatformContractPayload} from './api-platform-contract';
 import {apiPlatformVaultCount,vaultEncryptionReady} from './api-platform-kluis';
@@ -33,6 +34,34 @@ function normalizeScopes(input:unknown){const requested=[...new Set((Array.isArr
 
 async function findByHash(tokenHash:string){const rows=await db.list<Omit<PatRecord,'id'>>(API_MACHINE_TOKEN_TABLE,{filter:{tokenHash},limit:5});return(rows.items as PatRecord[])[0]||null}
 
+// SEC-002 / autorisatie-03 (12.11.2026): elk gebruik van een sleutel schreef het HELE record terug uit een eerder gelezen
+// momentopname. (1) Viel «відкликати ключ» tussen dat lezen en schrijven, dan stond revokedAt daarna weer op 0: wie een gelekte
+// sleutel in een lus bleef gebruiken, maakte de intrekking zelf ongedaan. (2) Gelijktijdige verzoeken lazen dezelfde teller en
+// schreven elk «+1»: de grens van 60 per minuut gold niet. Nu één opdracht: alleen de drie gebruiksvelden, alleen als de sleutel
+// op dat moment niet ingetrokken is, en de teller wordt in de database zelf verhoogd (de rij is dan vergrendeld).
+type GebruikGeteld={lastUsedAt:number;rateWindowStart:number;rateCount:number};
+async function telGebruik(id:string,now:number):Promise<GebruikGeteld|'ingetrokken'|'limiet'|null>{
+  const pool=getPool('systeem');
+  const r=await pool.query(
+    `UPDATE app.records SET updated_at = now(), data = data || jsonb_build_object(
+        'lastUsedAt', $3::bigint,
+        'rateWindowStart', CASE WHEN jsonb_typeof(data->'rateWindowStart') = 'number' AND (data->>'rateWindowStart')::numeric > 0 AND $3::numeric - (data->>'rateWindowStart')::numeric < $4::numeric
+                                THEN (data->>'rateWindowStart')::numeric ELSE $3::numeric END,
+        'rateCount', CASE WHEN jsonb_typeof(data->'rateWindowStart') = 'number' AND (data->>'rateWindowStart')::numeric > 0 AND $3::numeric - (data->>'rateWindowStart')::numeric < $4::numeric
+                          THEN (CASE WHEN jsonb_typeof(data->'rateCount') = 'number' THEN (data->>'rateCount')::numeric ELSE 0 END) + 1 ELSE 1 END)
+      WHERE tbl = $1 AND id = $2
+        AND (jsonb_typeof(data->'revokedAt') = 'number' AND (data->>'revokedAt')::numeric > 0) IS NOT TRUE
+        AND (jsonb_typeof(data->'rateWindowStart') = 'number' AND (data->>'rateWindowStart')::numeric > 0 AND $3::numeric - (data->>'rateWindowStart')::numeric < $4::numeric
+                 AND (CASE WHEN jsonb_typeof(data->'rateCount') = 'number' THEN (data->>'rateCount')::numeric ELSE 0 END) >= $5::numeric) IS NOT TRUE
+      RETURNING (data->>'lastUsedAt')::float8 AS gebruikt, (data->>'rateWindowStart')::float8 AS venster, (data->>'rateCount')::float8 AS aantal`,
+    [API_MACHINE_TOKEN_TABLE,id,now,RATE_WINDOW_MS,RATE_MAX]);
+  if(r.rows[0])return{lastUsedAt:Number(r.rows[0].gebruikt),rateWindowStart:Number(r.rows[0].venster),rateCount:Number(r.rows[0].aantal)};
+  // Niets bijgewerkt: ingetrokken, de grens bereikt, of de sleutel bestaat niet meer.
+  const nu=await pool.query(`SELECT (jsonb_typeof(data->'revokedAt') = 'number' AND (data->>'revokedAt')::numeric > 0) IS TRUE AS ingetrokken FROM app.records WHERE tbl = $1 AND id = $2`,[API_MACHINE_TOKEN_TABLE,id]);
+  if(!nu.rows[0])return null;
+  return nu.rows[0].ingetrokken===true?'ingetrokken':'limiet';
+}
+
 export async function resolveApiMachineToken(event:Record<string,unknown>,query:Record<string,string>={}){
   const token=bearerToken(event);
   if(!token)return{errorCode:'API_TOKEN_REQUIRED',status:401} as const;
@@ -43,17 +72,18 @@ export async function resolveApiMachineToken(event:Record<string,unknown>,query:
   if(record.expiresAt<=now)return{errorCode:'API_TOKEN_EXPIRED',status:401} as const;
   // Fase 3: token werkt alleen zolang de maker goedgekeurd is, nog recht op het API-platform heeft en niet geblokkeerd of gewist is.
   {const[maker]=await db.get<{role?:string;email?:string;status?:string;retiredAt?:number;entitlements?:unknown}>('users',[record.ownerUserId]);if(!maker||maker.status!=='approved'||Number(maker.retiredAt||0)>0||!heeftApiRecht(maker))return{errorCode:'API_TOKEN_ENTITLEMENT_REVOKED',status:403} as const;}
-  const windowStart=record.rateWindowStart&&now-record.rateWindowStart<RATE_WINDOW_MS?record.rateWindowStart:now;
-  const rateCount=windowStart===record.rateWindowStart?record.rateCount+1:1;
-  if(rateCount>RATE_MAX)return{errorCode:'API_TOKEN_RATE_LIMITED',status:429} as const;
+  // SEC-002 (autorisatie-03): het gebruik wordt in ÉÉN atomische opdracht geteld, en alleen als de sleutel op DAT moment niet
+  // ingetrokken is (zie telGebruik). Vroeger werd hier het hele record uit de momentopname van hierboven teruggeschreven.
+  const geteld=await telGebruik(record.id,now);
+  if(geteld==='ingetrokken')return{errorCode:'API_TOKEN_REVOKED',status:401} as const;
+  if(geteld==='limiet')return{errorCode:'API_TOKEN_RATE_LIMITED',status:429} as const;
+  if(!geteld)return{errorCode:'API_TOKEN_INVALID',status:401} as const;
   const workspaceId=String(query.workspaceId||'');
   if(workspaceId){
     const[workspace]=await db.get<{ownerUserId?:string}>('workspaces',[workspaceId]);
     if(!workspace||workspace.ownerUserId!==record.ownerUserId)return{errorCode:'API_TOKEN_FOREIGN_WORKSPACE',status:403} as const;
   }
-  const next={...record,lastUsedAt:now,rateWindowStart:windowStart,rateCount};
-  const{id,...stored}=next;
-  await db.update(API_MACHINE_TOKEN_TABLE,[{id,record:stored}]);
+  const next={...record,...geteld};
   zetGebruiker(record.ownerUserId,'api',undefined,`pat:${record.id}`);
   sessieGeverifieerd();// audit-fix 8: geldig API-token = gecontroleerde referentie voor het vangnet
   return{token:next} as const;

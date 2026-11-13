@@ -16,11 +16,11 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
   const [naam, setNaam] = useState('');
   const [fout, setFout] = useState('');
   const [bezig, setBezig] = useState('');
-  const [ontdekt, setOntdekt] = useState<{ integratie: Integratie; lijst: OntdektApparaatUit[]; overgeslagen: number; keuze: Set<string> } | null>(null);
+  const [ontdekt, setOntdekt] = useState<{ integratie: Integratie; lijst: OntdektApparaatUit[]; overgeslagen: number; afgekapt?: number; keuze: Set<string> } | null>(null);
   const [laatste, setLaatste] = useState('');
   const mag = ov.lid.magSchrijven; const eigenaar = ov.lid.rol === 'eigenaar';
   const ha = useMemo(() => ov.integraties.filter((i) => i.soort === 'home-assistant'), [ov.integraties]);
-  const meld = (e: unknown) => { const c = e instanceof HuisFout ? e.code : 'FOUT'; setFout(foutTekst(lang, c)); toon(foutTekst(lang, c)); };
+  const meld = (e: unknown) => { const c = e instanceof HuisFout ? e.code : 'FOUT'; setFout(foutTekst(lang, c)); toon(foutTekst(lang, c), 'fout'); };
 
   const instellen = async () => {
     setBezig('instellen'); setFout('');
@@ -29,7 +29,7 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
   };
   const ontdekken = async (i: Integratie) => {
     setBezig(i.id); setFout('');
-    try { const d = await huisClient.integratieOntdekken(woningId, i.id); setOntdekt({ integratie: i, lijst: d.apparaten, overgeslagen: d.overgeslagen, keuze: new Set(d.apparaten.filter((a) => !a.bestaat).map((a) => a.bronId)) }); }
+    try { const d = await huisClient.integratieOntdekken(woningId, i.id); setOntdekt({ integratie: i, lijst: d.apparaten, overgeslagen: d.overgeslagen, afgekapt: Number(d.afgekapt) || 0, keuze: new Set(d.apparaten.filter((a) => !a.bestaat).map((a) => a.bronId)) }); }
     catch (e) { meld(e); } finally { setBezig(''); }
   };
   const importeren = async () => {
@@ -125,6 +125,7 @@ export default function Integraties({ lang, smal, woningId, ov, vernieuw, toon }
       {ontdekt ? (
         <HuisLaag lang={lang} soort={smal ? 'scherm' : 'venster'} titel={tr(lang, `Знайдено: ${ontdekt.lijst.length}`, `Gevonden: ${ontdekt.lijst.length}`)} onSluit={() => setOntdekt(null)} data={{ 'hv-ontdekt': String(ontdekt.lijst.length) }}>
           <p className='hv-hint'>{tr(lang, `Пропущено ${ontdekt.overgeslagen} сутностей без корисної моделі (автоматизації, сонце, скрипти…). Позначте, що імпортувати; вже наявні на сайті оновляться.`, `${ontdekt.overgeslagen} entiteiten zonder bruikbaar model overgeslagen (automatiseringen, zon, scripts…). Vink aan wat u importeert; wat al op de site staat wordt bijgewerkt.`)}</p>
+          {ontdekt.afgekapt ? <p className='hv-hint' role='status' data-hv-ontdekt-afgekapt={ontdekt.afgekapt}>{tr(lang, `Показано перші ${ontdekt.lijst.length} за абеткою; ще ${ontdekt.afgekapt} пристроїв не показано (межа захищає сервер). Щоб побачити решту, приховайте зайві сутності в Home Assistant і пошукайте знову.`, `De eerste ${ontdekt.lijst.length} op alfabet worden getoond; nog ${ontdekt.afgekapt} apparaten niet (de grens beschermt de server). Verberg overbodige entiteiten in Home Assistant en zoek opnieuw om de rest te zien.`)}</p> : null}
           <div className='hv-knoppen'>
             <button type='button' className='hv-knop is-klein is-stil' onClick={() => setOntdekt({ ...ontdekt, keuze: new Set(ontdekt.lijst.map((a) => a.bronId)) })}>{tr(lang, 'Усі', 'Alle')}</button>
             <button type='button' className='hv-knop is-klein is-stil' onClick={() => setOntdekt({ ...ontdekt, keuze: new Set() })}>{tr(lang, 'Жодного', 'Geen')}</button>

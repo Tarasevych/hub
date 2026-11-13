@@ -21,7 +21,7 @@ export default function Automatiseringen({ lang, smal, woningId, ov, toon }: Ond
   const [tijd, setTijd] = useState('');
   const [bezig, setBezig] = useState(false);
   const mag = ov.lid.magSchrijven;
-  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'));
+  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout');
   const laad = async () => { try { setLijst(await huisClient.automatiseringen(woningId)); } catch (e) { fout(e); setLijst([]); } };
   useEffect(() => { void laad(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [woningId]);
   const bedienbaar = useMemo(() => ov.apparaten.filter((a) => !a.kritiek && a.mogelijkheden.some((m) => m.schrijven && SCHRIJFBAAR.includes(m.soort) && !KRITIEKE_SOORTEN.includes(m.soort))), [ov.apparaten]);

@@ -60,6 +60,37 @@ export async function assetToegestaan(cookie: string | undefined | null, nu = Da
 }
 
 /**
+ * SEC-002 (slot x, NAUWK-01): dezelfde herkenning van de eigen browser als de tunnel van het externe bureaublad (slot t), nu ook voor
+ * de terminal (backend/terminal.ts). Geldige sleutel (lopende activering of technische ruimtesessie) → user-id, anders null.
+ * Розпізнавання браузера власника за tech-cookie — для термінала так само, як для тунелю віддаленого стола.
+ */
+export async function gebruikerVanSleutel(sleutel: string): Promise<string | null> {
+  if (!SLEUTEL_RE.test(sleutel)) return null;
+  try {
+    const r = (await sys().query(
+      `SELECT t.user_id
+         FROM app.tech_asset_toegang t
+         LEFT JOIN app.tech_activaties a ON a.id = t.activatie_id AND a.beeindigd_op IS NULL AND a.eind_op > now()
+         LEFT JOIN app.tech_ruimte_sessies v ON v.id = t.ruimte_sessie_id AND v.beeindigd_op IS NULL AND v.grens_op > now() AND (v.modus <> 'tijd' OR v.eind_op > now())
+        WHERE t.sleutel_hash = $1 AND t.verloopt_op > now() AND (a.id IS NOT NULL OR v.id IS NOT NULL)`, [hash(sleutel)])).rows[0];
+    return r ? String(r.user_id) : null;
+  } catch { return null; }
+}
+
+/** De geldige sleutels (SHA-256) van één gebruiker met hun einde — om de eigen browser zonder databasevraag te herkennen. */
+export async function geldigeSleutelsVan(userId: string): Promise<Array<{ hash: string; tot: number }>> {
+  const rows = (await sys().query(
+    `SELECT t.sleutel_hash AS hash,
+            LEAST(t.verloopt_op, COALESCE(a.eind_op, CASE WHEN v.modus = 'tijd' THEN LEAST(v.eind_op, v.grens_op) ELSE v.grens_op END)) AS tot
+       FROM app.tech_asset_toegang t
+       LEFT JOIN app.tech_activaties a ON a.id = t.activatie_id AND a.beeindigd_op IS NULL AND a.eind_op > now()
+       LEFT JOIN app.tech_ruimte_sessies v ON v.id = t.ruimte_sessie_id AND v.beeindigd_op IS NULL AND v.grens_op > now() AND (v.modus <> 'tijd' OR v.eind_op > now())
+      WHERE t.user_id = $1 AND t.verloopt_op > now() AND (a.id IS NOT NULL OR v.id IS NOT NULL)
+      ORDER BY t.verloopt_op DESC LIMIT 32`, [userId])).rows;
+  return rows.map((r) => ({ hash: String(r.hash), tot: new Date(r.tot).getTime() }));
+}
+
+/**
  * Set-Cookie voor de antwoorden van /api/owner/tech/status|activeren|beeindigen:
  *  - actieve activering en (nog) geen geldige sleutel voor DEZE activering → nieuwe sleutel (rij + cookie tot het einde van de activering);
  *  - actieve activering en de browser heeft al een geldige sleutel ervoor → niets (geen nieuwe rij bij elke status-ophaling);

@@ -7,6 +7,7 @@
 // passkeys ook als bevestiging tellen. De paginakop zelf komt van SettingsCenterView (geen tweede kop hier).
 // Bevestigen (step-up) gebeurt in het venster «Підтвердіть доступ» (src/platform/bevestig-toegang.tsx), nooit met prompt/alert.
 import {useEffect} from 'react';
+import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import {Check,ExternalLink,Fingerprint,KeyRound,Mail,Pencil,Plus,Smartphone,Trash2,X} from 'lucide-react';
 import {InfoTip} from './InfoTip';
 import {useState} from 'react';
@@ -153,7 +154,7 @@ export function AccessPlanePanels(p:Props){
         </div>}
         {p.otpauth&&!totp?.enrolled&&<div className='access-plane-subrow access-plane-totp-setup'>
           <strong>{tr(lang,'Додайте ключ у застосунок-автентифікатор і введіть код','Voeg de sleutel toe in de authenticator-app en voer de code in')}</strong>
-          <code className='access-plane-mono access-plane-secret'>{p.secret}</code>
+          <code className='access-plane-mono access-plane-secret' {...verborgenVoorAi}>{p.secret}</code>
           <small>{tr(lang,'Ключ показано один раз.','De sleutel wordt eenmalig getoond.')}</small>
           <div className='access-plane-inline-form'>
             {codeVeld}
@@ -166,6 +167,6 @@ export function AccessPlanePanels(p:Props){
     {toonHerstel&&<HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>}
     {toonBeveiliging&&<SleutelkluisSectie lang={lang} context={p.context}/>}
     {toonMethoden&&<Toegangscodes lang={lang} context={p.context}/>}
-    {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes'><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
+    {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes' {...verborgenVoorAi}><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}
   </div>;
 }

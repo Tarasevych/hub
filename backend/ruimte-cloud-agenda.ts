@@ -349,10 +349,11 @@ const RECORD_TABELLEN_GOOGLE = [
 ] as const;
 
 /** Rijen in app.records (schemaloos) van één lade: verplaatsen naar de persoonlijke lade van `naarUserId`. */
-async function recordsOverdragen(tabellen: readonly string[], vanUserId: string, naarUserId: string): Promise<LadeRegel[]> {
+type Uitvoerder = { query: (sql: string, params?: unknown[]) => Promise<{ rowCount: number | null; rows: any[] }> };
+async function recordsOverdragen(tabellen: readonly string[], vanUserId: string, naarUserId: string, uitvoerder: Uitvoerder = sys()): Promise<LadeRegel[]> {
   const uit: LadeRegel[] = [];
   for (const tbl of tabellen) {
-    const n = (await sys().query(
+    const n = (await uitvoerder.query(
       `UPDATE app.records SET data = jsonb_set(jsonb_set(data, '{ownerUserId}', to_jsonb($3::text)), '{ruimte}', '"prive"')
          WHERE tbl = $1 AND data->>'ownerUserId' = $2 AND data->>'ruimte' = 'technisch'`,
       [tbl, vanUserId, naarUserId],
@@ -373,41 +374,115 @@ async function recordsWissen(tabellen: readonly string[], userId: string): Promi
   return uit;
 }
 
-/** De paden van de technische hmara-lade: uit de rijen zelf, zodat we nooit iets wissen wat er niet bij hoort. */
+/**
+ * De paden van de technische hmara-lade: uit de rijen zelf, zodat we nooit iets wissen wat er niet bij hoort.
+ * SEC-002 (aanv-ronde1-08): ook de paden van de vorige versies (versies[].pad, backend/cloud-vnext-bestanden.ts), die vroeger
+ * buiten beeld bleven — bij «overdragen» bleven ze in de oude boom achter, zonder record dat er nog naar wees.
+ */
 async function technischePaden(userId: string): Promise<string[]> {
   const lade: Lade = { userId, ruimte: 'technisch' };
   const rijen = (await sys().query(
     `SELECT data->>'storagePath' AS pad FROM app.records
-       WHERE tbl IN ('cloud_items_v1', 'foto_media_v1') AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' AND COALESCE(data->>'storagePath','') <> ''`,
+       WHERE tbl IN ('cloud_items_v1', 'foto_media_v1') AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' AND COALESCE(data->>'storagePath','') <> ''
+     UNION
+     SELECT v->>'pad' AS pad FROM app.records r, jsonb_array_elements(CASE WHEN jsonb_typeof(r.data->'versies') = 'array' THEN r.data->'versies' ELSE '[]'::jsonb END) v
+       WHERE r.tbl IN ('cloud_items_v1', 'foto_media_v1') AND r.data->>'ownerUserId' = $1 AND r.data->>'ruimte' = 'technisch' AND COALESCE(v->>'pad','') <> ''`,
     [userId],
   )).rows as Array<{ pad: string }>;
   // Dubbel hek: alleen paden die werkelijk in DEZE lade liggen (padInLade), nooit een pad uit de persoonlijke boom.
   return [...new Set(rijen.map((r) => String(r.pad || '')).filter((p) => padInLade(p, lade)))];
 }
 
+/**
+ * SEC-002 (aanv-ronde1-08): de technische hmara-lade overdragen aan `naarUserId`.
+ * Vroeger: storage.read (heel bestand → base64 in het geheugen) + write + delete per pad; een bestand boven de leesgrens
+ * (~384 MiB) gaf content null en werd als «al weg» overgeslagen, de vorige versies kwamen niet eens in de lijst — en daarna
+ * werden ALLE rijen toch aan de nieuwe eigenaar gegeven, met paden buiten zijn lade. Nu:
+ *  1. alle paden (huidige inhoud + versies) worden VERPLAATST (storage.verplaats: rename, nooit in het geheugen);
+ *  2. faalt één verplaatsing, dan gaan de al verplaatste bestanden terug en volgt een fout VÓÓR enige rij verandert;
+ *  3. pas dan krijgen de rijen hun nieuwe storagePath én versies[].pad, en daarna de nieuwe eigenaar en ruimte.
+ * Переносимо файли без читання в пам'ять, разом із версіями; при збої — відкат і помилка до зміни записів.
+ */
+export async function cloudLadeOverdragen(vanUserId: string, naarUserId: string): Promise<LadeRegel[]> {
+  const vanLade: Lade = { userId: vanUserId, ruimte: 'technisch' };
+  const naarLade: Lade = { userId: naarUserId, ruimte: 'prive' };
+  const paden = await technischePaden(vanUserId);
+  const kaart = new Map<string, string>();
+  for (const oud of paden) kaart.set(oud, `${cloudVoorvoegsel(naarLade)}/${oud.split('/').pop()}`);
+  // 1 + 2: bestanden, alles of niets. `terug` = alles wat nu in de nieuwe lade staat en bij een fout terug moet
+  // (ook «al-verplaatst» van een eerder afgebroken poging: de rijen wijzen dan nog naar het oude pad).
+  const terug: Array<[string, string]> = [];
+  let verplaatstAantal = 0, ontbrekend = 0;
+  const terugzetten = async () => {
+    let mislukt = 0;
+    for (const [oud, nieuwPad] of [...terug].reverse()) {
+      await storage.verplaats(nieuwPad, oud, { ownerId: vanUserId }).catch((e) => { mislukt += 1; console.error('[ruimte-cloud-agenda] terugzetten mislukt:', (e as Error).message); });
+    }
+    if (mislukt) console.error(`[ruimte-cloud-agenda] ${mislukt} bestand(en) konden niet terug; een nieuwe poging «overdragen» maakt het af`);
+  };
+  try {
+    for (const [oud, nieuwPad] of kaart) {
+      const uitkomst = await storage.verplaats(oud, nieuwPad, { ownerId: naarUserId });
+      if (uitkomst === 'verplaatst') { terug.push([oud, nieuwPad]); verplaatstAantal += 1; }
+      else if (uitkomst === 'al-verplaatst') terug.push([oud, nieuwPad]);
+      else { ontbrekend += 1; kaart.delete(oud); }   // echt weg: het record houdt zijn (dode) pad
+    }
+  } catch (err) {
+    await terugzetten();
+    console.error('[ruimte-cloud-agenda] overdragen afgebroken:', (err as Error).message);
+    throw new Error('CLOUD_LADE_BESTAND_OVERDRACHT_MISLUKT');
+  }
+  // 3a + 3b in ÉÉN transactie (toets-g11 №2): eerst de paden in de rijen (huidige inhoud en versies), dan eigenaar en ruimte.
+  // Faalt er iets, dan ROLLBACK (geen enkele rij veranderd) en gaan de bestanden terug naar de oude lade.
+  // Шляхи й власника змінюємо в одній транзакції; при збої — ROLLBACK і повернення файлів.
+  const client = await sys().connect();
+  let padRijen = 0;
+  let regels: LadeRegel[];
+  try {
+    await client.query('BEGIN');
+    const rijen = (await client.query(
+      `SELECT tbl, id, data FROM app.records
+         WHERE tbl IN ('cloud_items_v1', 'foto_media_v1') AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' FOR UPDATE`,
+      [vanUserId],
+    )).rows as Array<{ tbl: string; id: string; data: Record<string, unknown> }>;
+    for (const rij of rijen) {
+      const data = { ...(rij.data || {}) };
+      let gewijzigd = false;
+      const pad = String(data.storagePath || '');
+      if (kaart.has(pad)) { data.storagePath = kaart.get(pad); gewijzigd = true; }
+      if (Array.isArray(data.versies)) {
+        data.versies = (data.versies as unknown[]).map((v) => {
+          const versie = v && typeof v === 'object' ? v as Record<string, unknown> : null;
+          const vPad = String(versie?.pad || '');
+          if (!versie || !kaart.has(vPad)) return v;
+          gewijzigd = true;
+          return { ...versie, pad: kaart.get(vPad) };
+        });
+      }
+      if (!gewijzigd) continue;
+      await client.query(`UPDATE app.records SET data = $3::jsonb WHERE tbl = $1 AND id = $2`, [rij.tbl, rij.id, JSON.stringify(data)]);
+      padRijen += 1;
+    }
+    regels = await recordsOverdragen([...RECORD_TABELLEN_CLOUD, ...RECORD_TABELLEN_GOOGLE], vanUserId, naarUserId, client as unknown as Uitvoerder);
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    await terugzetten();
+    console.error('[ruimte-cloud-agenda] rijen overdragen mislukt, teruggedraaid:', (err as Error).message);
+    throw new Error('CLOUD_LADE_BESTAND_OVERDRACHT_MISLUKT');
+  } finally {
+    client.release();
+  }
+  return [...regels, {
+    tabel: 'opslag/bestanden', rijen: verplaatstAantal,
+    opmerking: `${cloudVoorvoegsel(vanLade)} → ${cloudVoorvoegsel(naarLade)} (${kaart.size} pad(en) incl. versies, ${padRijen} rij(en) bijgewerkt${ontbrekend ? `, ${ontbrekend} ontbrak(en) al` : ''})`,
+  }];
+}
+
 registreerLadeUitvoerder({
   dienst: 'cloud', naam: 'cloud-platform',
   async overdragen({ vanUserId, naarUserId }) {
-    const naarLade: Lade = { userId: naarUserId, ruimte: 'prive' };
-    const paden = await technischePaden(vanUserId);
-    // Eerst de bestanden (het risico), dan de rijen: faalt een bestand, dan is er nog niets van stand veranderd.
-    let bestanden = 0;
-    for (const oud of paden) {
-      const nieuw = `${cloudVoorvoegsel(naarLade)}/${oud.split('/').pop()}`;
-      const [gelezen] = await storage.read([oud]);
-      if (gelezen?.content == null) continue;             // al weg: idempotent, geen fout
-      const [geschreven] = await storage.write([{ path: nieuw, content: gelezen.content, contentType: 'application/octet-stream', ownerId: naarUserId }]);
-      if (!geschreven) throw new Error('CLOUD_LADE_BESTAND_OVERDRACHT_MISLUKT');
-      await sys().query(
-        `UPDATE app.records SET data = jsonb_set(data, '{storagePath}', to_jsonb($3::text))
-           WHERE tbl IN ('cloud_items_v1', 'foto_media_v1') AND data->>'ownerUserId' = $1 AND data->>'ruimte' = 'technisch' AND data->>'storagePath' = $2`,
-        [vanUserId, oud, nieuw],
-      );
-      await storage.delete([oud]);
-      bestanden += 1;
-    }
-    const regels = await recordsOverdragen([...RECORD_TABELLEN_CLOUD, ...RECORD_TABELLEN_GOOGLE], vanUserId, naarUserId);
-    return [...regels, { tabel: 'opslag/bestanden', rijen: bestanden, opmerking: `${cloudVoorvoegsel({ userId: vanUserId, ruimte: 'technisch' })} → ${cloudVoorvoegsel(naarLade)}` }];
+    return cloudLadeOverdragen(vanUserId, naarUserId);
   },
   async verwijderen({ userId }) {
     const lade: Lade = { userId, ruimte: 'technisch' };

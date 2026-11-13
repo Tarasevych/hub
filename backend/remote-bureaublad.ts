@@ -10,7 +10,7 @@
 //  - Einde: zelf, 15 min zonder invoer, eind van de geplande tijd, het technisch profiel stopt (uitloggen, intrekken, verlopen —
 //    elke 20 s gecontroleerd én meteen via de haak van tech-profiel), of de browser/guacd valt weg. Alles in app.remote_sessies + audit.
 //  - Een AI kan dit niet: geen MCP-tool, en /api/owner/remote/* staat in AGENT_VERBODEN (backend/agent-namens.ts).
-import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { lookup as dnsLookup } from 'node:dns/promises';
 import { readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
@@ -22,6 +22,8 @@ import { getPool } from '../server/platform/pg';
 import { auditToevoegen } from '../server/platform/audit';
 import { actieveActivatie, bijTechEinde, isEigenaar, TAB_RE, TechFout, type Gebruiker, type Sessie as TechSessie } from './tech-profiel';
 import { ownerVaultBewarenIntern, ownerVaultVerwijderenIntern, readOwnerVaultPlaintext, vaultEncryptionReady } from './api-platform-kluis';
+import { sleutelUitCookie } from './tech-bundels';
+import { meld } from './melder';
 import {
   ACTIVITEIT_OPCODES, BESTAND_OPCODES, REMOTE_INACTIEF_MS, REMOTE_MAX_MINUTEN, REMOTE_MAX_SESSIES, REMOTE_PROTOCOLLEN, REMOTE_TICKET_MS, STANDAARD_POORT,
   adresSoort, adresToegestaan, connectWaarden, guacInstructie, guacOntleed, hostGeldig, instellingenNormaliseren, type RemoteInstellingen, type RemoteProtocol,
@@ -96,12 +98,45 @@ const sessies = new Map<string, Sessie>();
 export const _sessies = sessies;
 export const actieveSessies = (userId: string) => [...sessies.values()].filter((s) => s.userId === userId && s.open);
 
+/**
+ * SEC-002 (slot t, toets-g01-6 «oracle»): de tech-cookies van een eigenaar met een open sessie staan IN HET GEHEUGEN (SHA-256 →
+ * eigenaar), geladen bij het openen en zolang een sessie op haar ticket wacht om de 20 s ververst. Zo herkent upgrade() de browser
+ * van de eigenaar zonder databasevraag en zonder de gedeelde opzoekplaatsen: een anoniem kan die plaatsen vullen, maar de eigenaar
+ * staat daar niet in de rij. Tech-cookies власника з відкритим сеансом — у пам'яті; власник не стоїть у черзі пошуків разом з анонімами.
+ */
+type CookieLader = (userId: string) => Promise<Array<{ hash: string; tot: number }>>;
+const cookieLaderDb: CookieLader = async (userId) => {
+  const rows = (await sys().query(
+    `SELECT t.sleutel_hash AS hash,
+            LEAST(t.verloopt_op, COALESCE(a.eind_op, CASE WHEN v.modus = 'tijd' THEN LEAST(v.eind_op, v.grens_op) ELSE v.grens_op END)) AS tot
+       FROM app.tech_asset_toegang t
+       LEFT JOIN app.tech_activaties a ON a.id = t.activatie_id AND a.beeindigd_op IS NULL AND a.eind_op > now()
+       LEFT JOIN app.tech_ruimte_sessies v ON v.id = t.ruimte_sessie_id AND v.beeindigd_op IS NULL AND v.grens_op > now() AND (v.modus <> 'tijd' OR v.eind_op > now())
+      WHERE t.user_id = $1 AND t.verloopt_op > now() AND (a.id IS NOT NULL OR v.id IS NOT NULL)
+      ORDER BY t.verloopt_op DESC LIMIT 32`, [userId])).rows;
+  return rows.map((r) => ({ hash: String(r.hash), tot: new Date(r.tot).getTime() }));
+};
+let cookieLader: CookieLader = cookieLaderDb;
+export function _zetCookieLader(f: CookieLader | null) { cookieLader = f ?? cookieLaderDb; }
+const bekendeCookies = new Map<string, { userId: string; tot: number }>();
+function vergeetEigenCookies(userId: string) { for (const [h, c] of bekendeCookies) if (c.userId === userId) bekendeCookies.delete(h); }
+/** De geldige tech-cookies van deze eigenaar (opnieuw) in het geheugen zetten; een fout laat de vorige stand staan. */
+async function eigenCookiesLaden(userId: string): Promise<void> {
+  let lijst: Array<{ hash: string; tot: number }>;
+  try { lijst = await cookieLader(userId); } catch { return; }
+  if (!sessies.size || ![...sessies.values()].some((x) => x.open && x.userId === userId)) return; // intussen dicht: niets onthouden
+  vergeetEigenCookies(userId);
+  for (const c of lijst) if (/^[0-9a-f]{64}$/.test(c.hash) && c.tot > Date.now()) bekendeCookies.set(c.hash, { userId, tot: c.tot });
+}
+export const _eigenCookiesLaden = eigenCookiesLaden;
+
 function afsluiten(s: Sessie, reden: string, statusCode = 0x020B) {
   if (!s.open) return;
   s.open = false;
   s.geheim = null;
   if (s.timer) clearInterval(s.timer);
   sessies.delete(s.sid);
+  if (!actieveSessies(s.userId).length) vergeetEigenCookies(s.userId); // laatste sessie dicht: de cookies gelden hier niet meer
   const g = s.guacd;
   try { g?.end(guacInstructie('disconnect')); } catch { /* al dicht */ }
   if (g) setTimeout(() => { try { g.destroy(); } catch { /* al dicht */ } }, 2_000).unref?.();
@@ -125,6 +160,7 @@ async function controleren(s: Sessie) {
   if (s.klaar && nu - s.laatsteInvoer >= REMOTE_INACTIEF_MS) return afsluiten(s, 'inactief', 0x020A);
   // Strikt: dezelfde activering als bij het openen (opnieuw activeren of vervangen = opnieuw bevestigen).
   try { const a = await actieveActivatie(s.userId, s.tab, s.techSessie); if (!a || a.id !== s.activatieId) afsluiten(s, 'tech-uit'); } catch { /* db even weg: volgende ronde */ }
+  if (s.open && !s.ws) await eigenCookiesLaden(s.userId); // wacht nog op het ticket: de bekende cookies vers houden
 }
 /** Meteen controleren (haak van tech-profiel na uitloggen, intrekken, zelf beëindigen). */
 export function herControleren(userId: string): Promise<void[]> {
@@ -253,6 +289,7 @@ export async function openen(u: Gebruiker, tab: string, techSessie: TechSessie |
   await sys().query(`INSERT INTO app.remote_sessies (id, user_id, verbinding_id, naam, protocol, host, ip, poort, begin_op, eind_gepland, opname, activatie_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,to_timestamp($9 / 1000.0),to_timestamp($10 / 1000.0),$11,$12)`,
     [sid, u.id, r.id, r.naam, r.protocol, r.host, ip, r.poort, begin, eind, inst.opnemen ? `${opnamePad()}/${sid}` : '', act.id]);
   sessies.set(sid, s);
+  await eigenCookiesLaden(u.id); // SEC-002 (slot t): de browser van de eigenaar herkennen zonder databasevraag in upgrade()
   s.timer = setInterval(() => { void controleren(s); }, CONTROLE_MS());
   s.timer.unref?.();
   // Ticket niet gebruikt binnen 60 s: sessie dicht (geen half open toegang).
@@ -317,27 +354,132 @@ function naarGuacd(s: Sessie): Promise<void> {
 }
 
 const wss = new WebSocketServer({ noServer: true, maxPayload: 4 * 1024 * 1024, handleProtocols: (p) => (p.has('guacamole') ? 'guacamole' : false) });
-export function tunnelVerbinding(ws: WebSocket) {
+// SEC-002 (server-uitrol-03): grenzen VÓÓR de aanmelding. Wie nog geen ticket toonde, is een onbekende: het ticket is hoogstens
+// 300 tekens en Guacamole.Client stuurt vooraf alleen nop/sync/size/ping (tientallen bytes). Vroeger groeide de buffer onbeperkt
+// (berichten tot 4 MiB) en werd hij bij elk bericht opnieuw van voren ontleed; één anonieme client kon zo de hele server laten haperen.
+// Межі до входу: невідомий клієнт не може накопичувати дані; порушення → з’єднання обривається одразу (terminate), а не «колись».
+const VOOR_AUTH_MAX_BYTES = 8 * 1024;       // één bericht én de hele wachtende buffer
+const VOOR_AUTH_MAX_BERICHTEN = 100;        // WebSocket-berichten vóór «mr-auth»
+const VOOR_AUTH_MAX_INSTRUCTIES = 50;       // nop/sync/size/ping vóór «mr-auth»
+const VOOR_AUTH_ONTLEDEN = { maxInstructie: 2 * 1024, maxElementen: 16 } as const;
+const NA_AUTH_MAX_ELEMENT = 256 * 1024;
+const MAX_ONAANGEMELD = 8;                  // gelijktijdige verbindingen die nog geen geldig ticket toonden
+const WACHTRIJ_MAX_BYTES = 1024 * 1024;    // invoer die wacht tot guacd klaar is (hoogstens 10 s): klein houden
+const MAX_EIGENAAR_WACHTEND = 8;            // verbindingen van de eigen browser (tech-cookie) die nog geen ticket toonden — eigen pool
+let onaangemeld = 0, eigenaarWachtend = 0;
+export const _onaangemeld = () => onaangemeld;
+// Eén regel per minuut in het serverlogboek als onaangemelde verbindingen op een grens stuiten (geen logboekvloed bij een aanval).
+let afgebrokenTeller = 0, afgebrokenGemeld = 0;
+function meldAfgebroken(waarom: string) {
+  afgebrokenTeller += 1;
+  const nu = Date.now();
+  if (nu - afgebrokenGemeld < 60_000) return;
+  afgebrokenGemeld = nu;
+  console.warn(`[extern-bureaublad] tunnel: ${afgebrokenTeller} onaangemelde verbinding(en) geweigerd of afgebroken (laatste reden: ${waarom})`);
+  afgebrokenTeller = 0;
+}
+
+/**
+ * SEC-002 (na de controle, g01-4): een weigering of afbraak van een verbinding ZONDER geldig ticket laat ook een auditregel en een
+ * beveiligingsmelding achter — voor elke eigenaar met een open sessie (alleen dan bestaat de tunnel voor een buitenstaander). Gebundeld:
+ * hoogstens één auditregel + één melding per minuut per eigenaar, met het aantal en de redenen sinds de vorige.
+ * Відмова або обрив з’єднання без чинного квитка — запис аудиту й сповіщення власникові відкритого сеансу (не частіше разу на хвилину).
+ */
+const weigeringen = new Map<string, { aantal: number; redenen: Set<string>; laatste: number }>();
+export const _weigeringenLeeg = () => weigeringen.clear();
+function meldGeweigerd(waarom: string) {
+  meldAfgebroken(waarom);
+  const nu = Date.now();
+  const eigenaars = new Set<string>();
+  for (const x of sessies.values()) if (x.open) eigenaars.add(x.userId);
+  for (const uid of eigenaars) {
+    const st = weigeringen.get(uid) ?? { aantal: 0, redenen: new Set<string>(), laatste: 0 };
+    weigeringen.set(uid, st);
+    st.aantal += 1;
+    if (st.redenen.size < 8) st.redenen.add(waarom);
+    if (nu - st.laatste < 60_000) continue;
+    const aantal = st.aantal, reden = [...st.redenen].join('; ');
+    st.laatste = nu; st.aantal = 0; st.redenen.clear();
+    void audit(uid, 'owner.remote.tunnel.geweigerd', { aantal, reden }, 'denied');
+    void meld(uid, 'security',
+      'Віддалений стіл: відхилено з’єднання без входу / Extern bureaublad: verbinding zonder aanmelding geweigerd',
+      `Хтось без чинного квитка намагався під’єднатися до тунелю віддаленого столу, поки у вас відкритий сеанс (спроб: ${aantal}). З’єднання відхилено. Якщо це були не ви — закрийте сеанс і перевірте пристрої. / `
+      + `Iemand zonder geldig ticket probeerde verbinding te maken met de tunnel van het externe bureaublad terwijl u een sessie open hebt (pogingen: ${aantal}). De verbinding is geweigerd. Was u dit niet, sluit dan de sessie en controleer uw apparaten.`,
+    ).catch(() => undefined);
+  }
+}
+
+/**
+ * SEC-002 (na de controle, g01-2): wie is de eigenaar van deze browser? Via de HttpOnly tech-cookie (SameSite=Strict, alleen geldig zolang
+ * een technische activering of ruimtesessie loopt — dezelfde regel als /assets/tech/*, backend/tech-bundels.ts). Een anoniem kan die cookie
+ * niet maken; zo kan hij met onaangemelde verbindingen de eigenaar niet meer buitensluiten. Vervangbaar in tests.
+ */
+type CookieEigenaar = (cookie: string | undefined) => Promise<string | null>;
+const eigenaarUitCookieDb: CookieEigenaar = async (cookie) => {
+  const sleutel = sleutelUitCookie(cookie);
+  if (!sleutel) return null;
+  try {
+    const r = (await sys().query(
+      `SELECT t.user_id
+         FROM app.tech_asset_toegang t
+         LEFT JOIN app.tech_activaties a ON a.id = t.activatie_id AND a.beeindigd_op IS NULL AND a.eind_op > now()
+         LEFT JOIN app.tech_ruimte_sessies v ON v.id = t.ruimte_sessie_id AND v.beeindigd_op IS NULL AND v.grens_op > now() AND (v.modus <> 'tijd' OR v.eind_op > now())
+        WHERE t.sleutel_hash = $1 AND t.verloopt_op > now() AND (a.id IS NOT NULL OR v.id IS NOT NULL)`,
+      [createHash('sha256').update(sleutel).digest('hex')])).rows[0];
+    return r ? String(r.user_id) : null;
+  } catch { return null; }
+};
+let eigenaarUitCookie: CookieEigenaar = eigenaarUitCookieDb;
+export function _zetCookieEigenaar(f: CookieEigenaar | null) { eigenaarUitCookie = f ?? eigenaarUitCookieDb; }
+const wachtOpTicket = (userId?: string) => { for (const x of sessies.values()) if (x.open && !x.ws && (!userId || x.userId === userId)) return true; return false; };
+const berichtLengte = (raw: unknown): number => (Array.isArray(raw) ? raw.reduce((n: number, b: Buffer) => n + b.length, 0) : (raw as { byteLength?: number; length?: number })?.byteLength ?? (raw as { length?: number })?.length ?? 0);
+
+/** `eigenaar`: user-id uit de tech-cookie (g01-2) — telt in een eigen pool en mag alleen een ticket van een EIGEN sessie gebruiken. */
+export function tunnelVerbinding(ws: WebSocket, eigenaar?: string) {
   let s: Sessie | null = null;
   let buf = '';
-  const wachtrij: string[] = [];
-  let voorAuth = 0;
-  const t = setTimeout(() => { if (!s) ws.close(4401, String(0x0301)); }, 5_000);
+  const wachtrij: string[] = []; let wachtrijBytes = 0;
+  let voorAuth = 0, berichten = 0;
+  let dicht = false;   // na het begin van sluiten wordt geen enkel bericht meer verwerkt
+  let geteld = true;
+  if (eigenaar) eigenaarWachtend += 1; else onaangemeld += 1;
+  const vrij = () => { if (geteld) { geteld = false; if (eigenaar) eigenaarWachtend -= 1; else onaangemeld -= 1; } };
+  /** g01-4: weigeringen van onbekenden ook in audit + melding; die van de eigen browser niet (dat is de eigenaar zelf). */
+  const meldAnoniem = (waarom: string) => { if (eigenaar) meldAfgebroken(waarom); else meldGeweigerd(waarom); };
+  /** Hard afbreken (geen sluit-handdruk afwachten): voor schendingen van de grenzen. */
+  const breek = () => { dicht = true; buf = ''; try { ws.terminate(); } catch { /* al dicht */ } };
+  /** Net sluiten (de browser ziet de code), maar niets meer verwerken en na 1 s hoe dan ook afbreken. */
+  const sluit = (code: number, status: number) => {
+    if (dicht) return;
+    dicht = true; buf = '';
+    try { ws.close(code, String(status)); } catch { /* al dicht */ }
+    setTimeout(() => { try { ws.terminate(); } catch { /* al dicht */ } }, 1_000).unref?.();
+  };
+  const t = setTimeout(() => { if (!s) { meldAnoniem('geen ticket binnen 5 s'); sluit(4401, 0x0301); } }, 5_000);
   ws.send(guacInstructie('', randomUUID())); // tunnel-UUID: de client gaat naar OPEN en mag daarna «mr-auth» sturen
   ws.on('message', (raw) => {
+    if (dicht || (s && !s.open)) return; // ook na het einde van de sessie (tijd, inactiviteit, tech-uit) niets meer verwerken
+    if (!s) {
+      berichten += 1;
+      if (berichten > VOOR_AUTH_MAX_BERICHTEN || berichtLengte(raw) > VOOR_AUTH_MAX_BYTES || buf.length + berichtLengte(raw) > VOOR_AUTH_MAX_BYTES) { meldAnoniem('te veel of te grote berichten vóór de aanmelding'); breek(); return; }
+    }
     buf += raw.toString();
     let ontleed;
-    try { ontleed = guacOntleed(buf, 256 * 1024); } catch { ws.close(4400, String(0x0300)); if (s) afsluiten(s, 'browser-protocol'); return; }
+    try { ontleed = s ? guacOntleed(buf, NA_AUTH_MAX_ELEMENT) : guacOntleed(buf, VOOR_AUTH_MAX_BYTES, VOOR_AUTH_ONTLEDEN); }
+    catch { if (s) { sluit(4400, 0x0300); afsluiten(s, 'browser-protocol'); } else { meldAnoniem('ongeldige of te grote instructie vóór de aanmelding'); breek(); } return; }
     buf = ontleed.rest;
     for (const ins of ontleed.instructies) {
+      if (dicht) return;
+      if (!s && ++voorAuth > VOOR_AUTH_MAX_INSTRUCTIES) { meldAnoniem('te veel instructies vóór de aanmelding'); sluit(4401, 0x0301); return; }
       if (ins.opcode === '') { if (ins.args[0] === 'ping') ws.send(ins.tekst); continue; } // interne ping terugsturen
       if (!s) {
         // Guacamole.Client kan vóór de aanmelding al nop/sync/size sturen: negeren (begrensd); alles wordt pas na «mr-auth» doorgegeven.
-        if (ins.opcode !== 'mr-auth') { if (++voorAuth > 50) { ws.close(4401, String(0x0301)); return; } continue; }
+        if (ins.opcode !== 'mr-auth') continue;
         const tk = ticketLezen(ins.args[0]);
         const x = tk ? sessies.get(tk.sid) : undefined;
-        if (!tk || !x || !x.open || x.ws || x.nonce !== tk.nonce || x.ticketExp < Date.now()) { ws.close(4403, String(0x0303)); return; }
+        if (!tk || !x || !x.open || x.ws || x.nonce !== tk.nonce || x.ticketExp < Date.now() || (eigenaar && x.userId !== eigenaar)) { meldAnoniem('ongeldig of al gebruikt ticket'); sluit(4403, 0x0303); return; }
         clearTimeout(t);
+        vrij();
         x.nonce = ''; // eenmalig
         x.ws = ws; s = x;
         naarGuacd(x).then(() => {
@@ -353,21 +495,80 @@ export function tunnelVerbinding(ws: WebSocket) {
       if (ins.opcode === 'mr-auth') continue;
       if (!s.instellingen.bestanden && BESTAND_OPCODES.has(ins.opcode)) continue;
       if (!s.instellingen.klembord && ins.opcode === 'clipboard') continue;
-      if (ins.opcode === 'disconnect') { afsluiten(s, 'gesloten', 0); return; }
+      if (ins.opcode === 'disconnect') { dicht = true; afsluiten(s, 'gesloten', 0); return; }
       if (ACTIVITEIT_OPCODES.has(ins.opcode)) s.laatsteInvoer = Date.now();
       s.bytesIn += ins.tekst.length;
-      if (s.klaar && s.guacd) s.guacd.write(ins.tekst); else if (wachtrij.length < 200) wachtrij.push(ins.tekst);
+      if (s.klaar && s.guacd) s.guacd.write(ins.tekst);
+      else if (wachtrij.length < 200 && wachtrijBytes + ins.tekst.length <= WACHTRIJ_MAX_BYTES) { wachtrij.push(ins.tekst); wachtrijBytes += ins.tekst.length; }
     }
   });
-  ws.on('close', () => { clearTimeout(t); if (s && s.open) afsluiten(s, 'browser-weg'); });
+  ws.on('close', () => { dicht = true; clearTimeout(t); vrij(); if (s && s.open) afsluiten(s, 'browser-weg'); });
   ws.on('error', () => undefined);
 }
 
-/** WS-upgrade (aangeroepen door de gateway voor REMOTE_WS_PATH): alleen vanaf de eigen site (Origin = Host). */
+/**
+ * WS-upgrade (aangeroepen door de gateway voor REMOTE_WS_PATH): alleen vanaf de eigen site (Origin = Host).
+ * SEC-002 (server-uitrol-03): Origin is voor een niet-browser vrij te kiezen, dus dat alleen is geen poort. Daarom ook:
+ *  - zonder één open sessie van de eigenaar (geopend met passkey in een technisch profiel) heeft niemand hier iets te zoeken → 403
+ *    nog vóór de WebSocket-handdruk; de schakelaar «guacamole» uit betekent dus ook: geen tunnel voor onbekenden;
+ *  - hoogstens MAX_ONAANGEMELD verbindingen tegelijk die nog geen geldig ticket toonden → 503.
+ * Na de controle (g01-2): die gedeelde grens kon een anoniem helemaal vullen, en dan kreeg de eigenaar met een geldig ticket ook 503.
+ * Nu krijgt de browser van de eigenaar — herkend aan de HttpOnly tech-cookie van een lopende technische activering, terwijl een sessie
+ * van DIEZELFDE eigenaar op haar ticket wacht — een eigen pool (MAX_EIGENAAR_WACHTEND) die anoniemen niet kunnen vullen. Elke weigering
+ * van een onbekende → audit + melding (g01-4).
+ * SEC-002 (afwerking A, g01-2 «оракул»): de anonieme weg is weg. ELKE verbinding moet de tech-cookie van de eigenaar tonen van wie op
+ * dat moment een sessie op haar ticket wacht; anders 403 — ook als er wél een open sessie is.
+ * SEC-002 (slot t, toets-g01-6): de rest van het «oracle» is ook dicht. Vroeger keek upgrade() EERST naar de stand (open sessie? wacht
+ * er een op haar ticket?) en zocht pas dan de cookie op: zonder sessie meteen 403, met een wachtende sessie 403 ná een databasevraag
+ * (meetbaar) of 503 als 16 opzoekingen liepen; en wie die 16 plaatsen bezet hield, sloot de eigenaar met 503 buiten. Nu:
+ *  - de stand wordt pas gelezen NA de cookie; elke verbinding met een cookie van de juiste vorm kost dus precies één opzoeking,
+ *    met of zonder sessie — zelfde werk, zelfde tijd;
+ *  - wie zich niet als eigenaar toont krijgt altijd EXACT hetzelfde antwoord (403, zelfde bytes) — ook als de opzoekplaatsen vol
+ *    zijn (geen 503 meer voor onbekenden); audit + melding (g01-4) pas NA het antwoord, zodat ook dat de tijd niet beïnvloedt;
+ *  - de cookies van een eigenaar met een open sessie staan in het geheugen (bekendeCookies): zijn browser gaat zonder opzoeking
+ *    en buiten de gedeelde opzoekplaatsen door. Een 503 bestaat alleen nog voor de eigenaar zelf (eigen pool vol).
+ * Тепер: стан сеансу читається лише ПІСЛЯ cookie; анонім завжди отримує той самий 403 за той самий час; власник (cookie в пам'яті)
+ * має окремі місця й не стоїть у черзі пошуків, яку може заповнити анонім.
+ */
+const MAX_COOKIE_OPZOEKINGEN = 16; // gelijktijdige databasevragen voor cookies die (nog) niet als die van de eigenaar bekend zijn
+let cookieOpzoekingen = 0;
+const WEIGER_403 = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n';
 export function upgrade(req: IncomingMessage, socket: Duplex, head: Buffer) {
+  const weiger = (regel: string) => { socket.write(`HTTP/1.1 ${regel}\r\nConnection: close\r\n\r\n`); socket.destroy(); };
+  /** Elke weigering van wie zich niet als eigenaar toonde: dezelfde bytes; audit + melding pas na het antwoord. */
+  const onbekend = (waarom: string) => {
+    if (socket.destroyed) return;
+    socket.write(WEIGER_403); socket.destroy();
+    setImmediate(() => meldGeweigerd(waarom));
+  };
+  const eigenaarDoor = (uid: string) => {
+    if (eigenaarWachtend >= MAX_EIGENAAR_WACHTEND) { meldAfgebroken('te veel wachtende verbindingen van de eigenaar'); weiger('503 Service Unavailable'); return; }
+    wss.handleUpgrade(req, socket, head, (ws) => tunnelVerbinding(ws, uid));
+  };
   const host = String(req.headers.host || '').toLowerCase();
   let origin = '';
   try { origin = new URL(String(req.headers.origin || '')).host.toLowerCase(); } catch { origin = ''; }
-  if (!origin || origin !== host) { socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); socket.destroy(); return; }
-  wss.handleUpgrade(req, socket, head, tunnelVerbinding);
+  if (!origin || origin !== host) { socket.write(WEIGER_403); socket.destroy(); return; }
+  const cookie = typeof req.headers.cookie === 'string' ? req.headers.cookie : undefined;
+  const sleutel = sleutelUitCookie(cookie);
+  if (!sleutel) { onbekend('geen geldige tech-cookie'); return; }
+  const hash = createHash('sha256').update(sleutel).digest('hex');
+  // De eigen browser van een eigenaar met een open sessie: geen opzoeking, niet in de gedeelde rij.
+  const bekend = bekendeCookies.get(hash);
+  if (bekend && bekend.tot <= Date.now()) bekendeCookies.delete(hash);
+  else if (bekend && wachtOpTicket(bekend.userId)) { eigenaarDoor(bekend.userId); return; }
+  // Alle andere cookies van de juiste vorm: altijd één opzoeking, wat de stand ook is (geen tijdsverschil met/zonder sessie).
+  if (cookieOpzoekingen >= MAX_COOKIE_OPZOEKINGEN) { meldAfgebroken('te veel cookie-opzoekingen tegelijk'); onbekend('te veel cookie-opzoekingen tegelijk'); return; }
+  // De http-server heeft zijn foutafhandeling van deze socket al weggenomen: tijdens het opzoeken een stille afhandelaar, anders
+  // laat een verbroken verbinding het proces vallen.
+  socket.on('error', () => undefined);
+  cookieOpzoekingen += 1;
+  void eigenaarUitCookie(cookie).catch(() => null).then((uid) => {
+    cookieOpzoekingen -= 1;
+    if (socket.destroyed) return;
+    if (!uid || !wachtOpTicket(uid)) { onbekend('tech-cookie zonder eigen wachtende sessie'); return; }
+    // Onthouden tot de volgende verversing (controleren) of tot de laatste sessie van deze eigenaar sluit.
+    bekendeCookies.set(hash, { userId: uid, tot: Date.now() + REMOTE_TICKET_MS });
+    eigenaarDoor(uid);
+  });
 }

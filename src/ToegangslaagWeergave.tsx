@@ -1,5 +1,6 @@
 import {useContext,useEffect,useRef,useState} from 'react';
 import {api} from './platform/client';
+import {leesVergeten,swrPost} from './lees-cache';
 import {ecosystemTabContext} from './tab-context';
 import './toegangslaag.css';
 
@@ -14,6 +15,7 @@ const ApparaatSectie=lazy(()=>import('./apparaat-bevestiging/InstellingenSectie'
 import {useTelegramVlag} from './telegram-aanmelden/vlag';
 import {useApparaatVlag} from './apparaat-bevestiging/vlag'; /* APPARAAT-001 */
 import {bevestigToegang,metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
+import {aanmeldPauzeBericht,leesAanmeldPauze} from './aanmeld-pauze';
 type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
 type Binding={id:string;method:string;email:string;status:string;providerSubject?:string};
@@ -84,15 +86,29 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
   const[recovery,setRecovery]=useState<string[]>([]);
   const[tempPassword,setTempPassword]=useState('');
 
-  const load=async()=>{
+  const actiefRef=useRef(true);
+  useEffect(()=>{actiefRef.current=true;return()=>{actiefRef.current=false;};},[]);
+
+  const load=async(alleenVers=false)=>{
     try{
+      if(mode==='identity'){
+        await swrPost<Partial<Snapshot>>(
+          '/api/owner/access/snapshot',
+          sessionBody(),
+          vers=>{if(actiefRef.current&&vers){setData({...blank(),...vers});setNotice('');}},
+          {alleenVers}
+        );
+        return;
+      }
       const[snap,contour]=await Promise.all([
         api.post('/api/owner/access/snapshot',sessionBody()),
-        mode==='admin'?api.post('/api/owner/google-contour',sessionBody()).catch(()=>null):Promise.resolve(null)
+        api.post('/api/owner/google-contour',sessionBody()).catch(()=>null)
       ]);
+      if(!actiefRef.current)return;
       if(snap?.data)setData({...blank(),...snap.data,contour:contour?.data?.contour||snap.data.contour});
       setNotice('');
     }catch{
+      if(!actiefRef.current)return;
       setData(current=>current.methods.some(item=>item.status==='loading')?blank():current);
       setNotice(t(lang,'t13'));
     }
@@ -109,19 +125,25 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
       if(Array.isArray(response?.data?.recoveryCodes))setRecovery(response.data.recoveryCodes);
       if(response?.data?.temporaryPassword)setTempPassword(String(response.data.temporaryPassword));
       if(response?.data?.methods||response?.data?.contour)setData(current=>({...current,...response.data,contour:response.data.contour||current.contour}));
-      await load();
+      leesVergeten('/api/owner/access/snapshot');
+      leesVergeten('/api/owner/access/recovery/overzicht');
+      await load(true);
       setPassword('');
       setCode('');
     }catch(caught){
-      const message=String((caught as{response?:{data?:{error?:string}}})?.response?.data?.error||'');
-      setNotice(
-        message==='LAST_LOGIN_METHOD_PROTECTED'?t(lang,'t14'):
-        message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
-        /TOTP|CODE/.test(message)?t(lang,'t20'):
-        message==='RATE_LIMITED'||message==='LOGIN_RATE_LIMITED'?t(lang,'t21'):
-        message==='STEP_UP_REQUIRED'?stapOpUitleg():
-        t(lang,'t16')
-      );
+      const pauze=leesAanmeldPauze(caught);
+      if(pauze.isPauze){
+        setNotice(aanmeldPauzeBericht(pauze.seconden,lang,'bevestig',{maxAttempts:pauze.maxAttempts,windowSec:pauze.windowSec}).melding);
+      }else{
+        const message=String((caught as{response?:{data?:{error?:string}}})?.response?.data?.error||'');
+        setNotice(
+          message==='LAST_LOGIN_METHOD_PROTECTED'?t(lang,'t14'):
+          message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
+          /TOTP|CODE/.test(message)?t(lang,'t20'):
+          message==='STEP_UP_REQUIRED'?stapOpUitleg():
+          t(lang,'t16')
+        );
+      }
     }
     setBusy(false);
   };

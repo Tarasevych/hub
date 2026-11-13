@@ -39,6 +39,9 @@ export async function opruimen(now=Date.now()){
   if(lo.rowCount)resultaat['app.login_lockouts']=lo.rowCount;
   const cr=await pool.query(`DELETE FROM app.cron_runs WHERE started_at < now() - interval '30 days'`);
   if(cr.rowCount)resultaat['app.cron_runs']=cr.rowCount;
+  // SEC-002 (privacy-logboek-07): verslagen «Повідомити про проблему» ouder dan 90 dagen (stond vroeger in elk meldverzoek).
+  const dm=await pool.query(`DELETE FROM app.diagnose_meldingen WHERE aangemaakt_op < now() - interval '90 days'`).catch(()=>({rowCount:0}));
+  if(dm.rowCount)resultaat['app.diagnose_meldingen']=dm.rowCount;
   // 0081: een upload die niemand afmaakte wordt 'afgebroken' (met reden) en laat een spoor na, ook als niemand de pagina
   // «Оновлення» opent; de afbrekingsregels zelf hebben een bewaartermijn en een maximum per account. Nooit fataal voor het opruimen.
   try{
@@ -55,8 +58,9 @@ export async function opruimCron(){
   console.log('[opruimen] verwijderd:',JSON.stringify(verwijderd));
   // Beheeroverzicht: uur-/dagmomentopname (alleen tellers); een fout hier mag het opruimen nooit stoppen.
   try{await (await import('./beheer-overzicht')).momentopnameCron()}catch(e){console.error('[opruimen] momentopname mislukt:',String((e as Error)?.message||e))}
-  // Fase 3: accounts na 30 dagen herstelperiode definitief wissen (alleen met ACCOUNT_DEFINITIEF_WISSEN=1).
+  // Fase 3: accounts na 30 dagen herstelperiode definitief en VOLLEDIG wissen (SEC-002 privacy-logboek-01: alle tabellen
+  // met een accountkolom, records en bestanden). Standaard aan; ACCOUNT_DEFINITIEF_WISSEN=0 = alleen tellen (droog).
   let accounts:Awaited<ReturnType<typeof verlopenVerwijderingenAfronden>>|{fout:string};
-  try{accounts=await verlopenVerwijderingenAfronden();if(accounts.accounts.length)console.log(`[opruimen] verlopen accountverwijderingen (${accounts.uitgevoerd?'gewist':'droog, ACCOUNT_DEFINITIEF_WISSEN≠1'}):`,JSON.stringify(accounts.accounts))}catch(e){accounts={fout:String((e as Error)?.message||e)};console.error('[opruimen] accounts afronden mislukt:',accounts.fout)}
+  try{accounts=await verlopenVerwijderingenAfronden();if(accounts.accounts.length)console.log(`[opruimen] verlopen accountverwijderingen (${accounts.uitgevoerd?'gewist':'droog, ACCOUNT_DEFINITIEF_WISSEN=0'}):`,JSON.stringify(accounts.accounts))}catch(e){accounts={fout:String((e as Error)?.message||e)};console.error('[opruimen] accounts afronden mislukt:',accounts.fout)}
   return{statusCode:200,body:JSON.stringify({ok:true,verwijderd,accounts})};
 }

@@ -43,6 +43,14 @@ architectuur (`installeer-app.sh`) en wacht op de gezondheidscontrole. Nog niet 
 getest op de productie-VM. De tweegeneratieregeling, de harde link en het herstel van de git-opslagplaatsen zijn nog niet op de VM getest.
 De handmatige stappen hieronder blijven de bewezen weg.
 
+**Downloads tijdens het herstel (SEC-002):** het Node-archief wordt vóór het uitpakken gecontroleerd met de SHA-256 uit de officiële
+`SHASUMS256.txt` van precies die uitgave (of met `--node-sha256 HEX`); klopt de som niet, dan stopt het herstel. cloudflared wordt alleen
+nog in een vastgezette versie met SHA-256 geïnstalleerd: meegeleverd in het script is 2026.10.7 (amd64 en arm64, nagekeken op 12.11.2026).
+Andere versie: `--cloudflared-versie V --cloudflared-sha256 HEX`. **!** `--tunnel-ongecontroleerd` haalt de nieuwste cloudflared
+ZONDER controle en installeert die als root, op de machine waar net alle geheimen zijn teruggezet — alleen als u die bron bewust
+vertrouwt. Zonder vastgezette versie (en zonder die keuze) installeert het script cloudflared niet: de site draait dan lokaal en de
+tunnel koppelt u later zelf. Alle opties: `sudo bash vidnovyty.sh --help`.
+
 Git-opslagplaatsen (`kod/repos/*.bundle`, met `INDEX.tsv`) worden teruggezet op hun eigen pad onder `/srv/mijn-ruimte`, alleen als dat pad nog
 niet bestaat. Oude, onversleutelde archieven (`mijn-ruimte-*-volledig.tar`, `*.tar.gz`) in `/srv/data/uploads/mcp-archives` verwijdert de
 installer **niet**; hij meldt ze alleen. Controleer ze en verwijder ze zelf.

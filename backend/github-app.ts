@@ -11,7 +11,7 @@
 //   .../generating-an-installation-access-token-for-a-github-app
 //     — GET /app/installations, POST /app/installations/{id}/access_tokens, token verloopt na 1 uur.
 import { createSign } from 'node:crypto';
-import { appSleutel, bijnaVerlopen, koppelingBewaren, koppelingLezen, koppelingToken, koppelingWissen, verzegelVoor, zegelPad, type KoppelingRecord } from './github-koppeling-opslag';
+import { appSleutel, bijnaVerlopen, isGeslotenFout, isKoppelingKluisGesloten, koppelingBewaren, koppelingLezen, koppelingToken, koppelingWissen, verzegelVoor, zegelPad, type KoppelingRecord } from './github-koppeling-opslag';
 import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
 
 const API = 'https://api.github.com';
@@ -45,9 +45,13 @@ async function vraag(pad: string, koppen: Kop, methode = 'GET'): Promise<{ statu
 }
 
 /** De app-JWT van deze eigenaar, of de reden waarom er geen is. */
-async function jwtVan(userId: string): Promise<AppUitkomst<{ jwt: string; iss: string }>> {
-  const sleutel = await appSleutel(userId);
-  if (sleutel === null) return mis('GITHUB_APP_SLEUTEL_ONTBREEKT', 409);
+async function jwtVan(userId: string, ruimteIn: AiRuimte = 'prive'): Promise<AppUitkomst<{ jwt: string; iss: string }>> {
+  const ruimte = ruimteOf(ruimteIn);
+  const sleutel = await appSleutel(userId, ruimte);
+  if (sleutel === null) {
+    if (await isKoppelingKluisGesloten(userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
+    return mis('GITHUB_APP_SLEUTEL_ONTBREEKT', 409);
+  }
   if (sleutel === 'onleesbaar') return mis('GITHUB_APP_SLEUTEL_ONLEESBAAR', 409);
   const iss = sleutel.appId || sleutel.clientId;
   if (!iss) return mis('GITHUB_APP_SLEUTEL_ONLEESBAAR', 409);
@@ -58,8 +62,8 @@ async function jwtVan(userId: string): Promise<AppUitkomst<{ jwt: string; iss: s
 export type Installatie = { id: number; account: string; soort: string; repoKeuze: string };
 
 /** Waar de app van de eigenaar is geïnstalleerd. Dit is wat de kaart toont zodra hij een sleutel heeft opgeslagen. */
-export async function appInstallaties(userId: string): Promise<AppUitkomst<{ installaties: Installatie[]; appId: string }>> {
-  const jwt = await jwtVan(userId);
+export async function appInstallaties(userId: string, ruimteIn: AiRuimte = 'prive'): Promise<AppUitkomst<{ installaties: Installatie[]; appId: string }>> {
+  const jwt = await jwtVan(userId, ruimteIn);
   if (!jwt.ok) return jwt;
   const uit = await vraag('/app/installations?per_page=30', jwtKoppen(jwt.data.jwt));
   if (!uit) return mis('GITHUB_UNREACHABLE', 502);
@@ -75,8 +79,8 @@ export async function appInstallaties(userId: string): Promise<AppUitkomst<{ ins
 }
 
 /** De repositories waar een installatietoken bij mag. Alleen namen — dit is wat de kaart laat zien. */
-export async function appRepos(userId: string): Promise<AppUitkomst<{ repos: string[] }>> {
-  const token = await appToken(userId);
+export async function appRepos(userId: string, ruimteIn: AiRuimte = 'prive'): Promise<AppUitkomst<{ repos: string[] }>> {
+  const token = await appToken(userId, ruimteIn);
   if (!token) return mis('GITHUB_TOKEN_MISSING', 409);
   const uit = await vraag('/installation/repositories?per_page=100', { Authorization: `Bearer ${token.token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'mijn-ruimte', 'X-GitHub-Api-Version': '2022-11-28' });
   if (!uit) return mis('GITHUB_UNREACHABLE', 502);
@@ -93,7 +97,8 @@ export async function appTokenVernieuwen(userId: string, installatie = 0, ruimte
   // De LADE waar dit installatietoken in komt (migratie 0086). De route heeft haar al door de poort gehaald
   // (gegevensLade, dienst 'github'); hier wordt alleen in de juiste lade gelezen en bewaard.
   const ruimte = ruimteOf(ruimteIn);
-  const jwt = await jwtVan(userId);
+  if (await isKoppelingKluisGesloten(userId, ruimte)) return mis('SLEUTELKLUIS_GESLOTEN', 423);
+  const jwt = await jwtVan(userId, ruimte);
   if (!jwt.ok) return jwt;
   let id = Number(installatie) || 0;
   let account = '';
@@ -102,7 +107,7 @@ export async function appTokenVernieuwen(userId: string, installatie = 0, ruimte
     id = bestaand?.installatie || 0;
   }
   if (!id) {
-    const lijst = await appInstallaties(userId);
+    const lijst = await appInstallaties(userId, ruimte);
     if (!lijst.ok) return lijst;
     if (!lijst.data.installaties.length) return mis('GITHUB_APP_GEEN_INSTALLATIE', 409);
     id = lijst.data.installaties[0].id;
@@ -116,11 +121,15 @@ export async function appTokenVernieuwen(userId: string, installatie = 0, ruimte
 
   const verlooptOp = Date.parse(String(uit.data.expires_at || '')) || Date.now() + 55 * 60 * 1000;
   const repos = Array.isArray(uit.data.repositories) ? (uit.data.repositories as any[]).map((r) => String(r?.full_name || '').slice(0, 140)).filter(Boolean).slice(0, 100) : undefined;
-  await koppelingBewaren(userId, 'app', {
-    installatie: id, verlooptOp, tokenZegel: await verzegelVoor(String(uit.data.token), userId, zegelPad('app', ruimte), ruimte),
-    ...(account ? { login: account } : {}), ...(repos ? { repos } : {}),
-    scopes: Object.keys(uit.data.permissions || {}).slice(0, 30),
-  }, ruimte);
+  try {
+    await koppelingBewaren(userId, 'app', {
+      installatie: id, verlooptOp, tokenZegel: await verzegelVoor(String(uit.data.token), userId, zegelPad('app', ruimte), ruimte),
+      ...(account ? { login: account } : {}), ...(repos ? { repos } : {}),
+      scopes: Object.keys(uit.data.permissions || {}).slice(0, 30),
+    }, ruimte);
+  } catch (err) {
+    return isGeslotenFout(err) ? mis('SLEUTELKLUIS_GESLOTEN', 423) : mis('GITHUB_KOPPELING_BEWAREN_MISLUKT', 500);
+  }
   return { ok: true, data: { token: String(uit.data.token), verlooptOp, installatie: id } };
 }
 
@@ -131,10 +140,10 @@ export async function appTokenVernieuwen(userId: string, installatie = 0, ruimte
 export async function appToken(userId: string, ruimteIn: AiRuimte = 'prive'): Promise<{ token: string; record: KoppelingRecord } | null> {
   const ruimte = ruimteOf(ruimteIn);
   const record = await koppelingLezen(userId, 'app', ruimte);
-  const bewaarde = record ? await koppelingToken(record, userId) : null;
+  const bewaarde = record ? await koppelingToken(record, userId).catch(() => null) : null;
   if (record && bewaarde && !bijnaVerlopen(record)) return { token: bewaarde, record };
   // Geen bewaarde weg én geen sleutel in de kluis: deze weg bestaat niet voor deze eigenaar.
-  const sleutel = await appSleutel(userId);
+  const sleutel = await appSleutel(userId, ruimte);
   if (!sleutel || sleutel === 'onleesbaar') return null;
   const nieuw = await appTokenVernieuwen(userId, record?.installatie || 0, ruimte);
   if (!nieuw.ok) return null;

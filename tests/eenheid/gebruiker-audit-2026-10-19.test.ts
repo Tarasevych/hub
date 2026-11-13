@@ -170,8 +170,8 @@ export async function main(): Promise<number> {
   // ---------------------------------------------------------------- R-05: technisch profiel bij accountwissel
   {
     const idx = bron('backend/index.ts');
-    const i1 = idx.indexOf('const techBeeindigd=vorigeUserId&&vorigeUserId!==grant.userId?await techBeeindigenBijUitloggen(vorigeUserId,anchor.tab):0;'), i2 = idx.indexOf('const overlay=await ownerUpsertTabSession(anchor.session,user,anchor.service,sourceOrigin,anchor.tab,grantId', i1);
-    check('R-05 replace-tab-remembered beëindigt de activering van het vorige account in dit tabblad vóór de wissel en meldt techBeeindigd', i1 > 0 && i2 > i1 && idx.includes("return ownerResponse({ok:true,replaceScope:'tab',techBeeindigd,"));
+    const i1 = idx.indexOf('techBeeindigenBijUitloggen(vorigeUserId,tab)'), i2 = idx.indexOf('db.add(OWNER_SESSION_TABLE,[sessionRecord])', i1);
+    check('R-05 replace-tab-remembered beëindigt via ownerActivateBrowserAccount de activering van het vorige account vóór de nieuwe sessie en meldt techBeeindigd', i1 > 0 && i2 > i1 && idx.includes("const activated=await ownerActivateBrowserAccount(anchor.session,user,service,sourceOrigin,tab,grantId,ctx.event,") && idx.includes("return ownerCookieResponse({ok:true,replaceScope:'browser',techBeeindigd,"));
     check('R-05 front toont de melding en haalt de technische status opnieuw', bron('src/App.tsx').includes('Технічний профіль попереднього акаунта завершено') && bron('src/VerenigdDienstApp.tsx').includes('Технічний профіль попереднього акаунта завершено') && bron('src/VerenigdDienstApp.tsx').includes('void techVernieuwen()'));
     if (process.env.DATABASE_URL || process.env.DATABASE_URL_SYSTEM) {
       // de bouwsteen zelf: beëindigen per (gebruiker, tabblad) raakt een ander tabblad en een andere gebruiker niet

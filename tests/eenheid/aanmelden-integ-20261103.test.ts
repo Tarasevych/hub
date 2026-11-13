@@ -113,12 +113,15 @@ export async function main(): Promise<number> {
   check('3. hover/focus: alleen een rustige rand, geen animatie of conic-gradient', hover.length > 0 && !/animation|conic-gradient/.test(hover));
   check('3. de rotatie (conic-gradient + animatie) zit uitsluitend op [data-activated=\'true\']',
     (css.match(/animation:mr-login-ring/g) || []).length === 1 && regel(".canonical-signed-out.mr-sign-in .mr-sign-in-main-button[data-activated='true']").includes('animation:mr-login-ring'));
-  check('1. het blad: width:auto en hoogte = venster min tweemaal dezelfde marge (geen schuifbalk, niet uit het midden)',
-    css.includes('--mr-login-rand:clamp(10px,3.5vw,56px)') && css.includes('width:auto;max-width:none;min-height:calc(100dvh - 2 * var(--mr-login-rand))') && css.includes('margin:var(--mr-login-rand)!important'));
+  check('1. het aanmeldscherm vult 100% van het venster zonder buitenmarge, zonder binnenkader en zonder werkblad-achtergrond',
+    css.includes('width:100%;max-width:none;min-height:100vh;min-height:100dvh') && css.includes('margin:0!important') && css.includes('border:0!important;border-radius:0!important;box-shadow:none!important')
+    && css.includes('.canonical-chrome.schil-achtergrond:has(.mr-sign-in)::before{content:none!important') && css.includes('html body main.canonical-chrome:has(.mr-sign-in) .canonical-workspace'));
   check('1. de reserve van de zwevende stapel geeft op het aanmeldscherm geen extra hoogte', css.includes('.canonical-chrome:has(.mr-sign-in) .canonical-workspace::after{content:none!important;height:0!important}'));
-  check('1. telefoonregel met dezelfde specificiteit als de hoofdregel (vroeger dood)', /@media\(max-width:700px\)\{[\s\S]*\.canonical-chrome\[data-surface-model='flat-content'\] \.canonical-content \.canonical-signed-out\.mr-sign-in\{--mr-login-rand:8px/.test(css));
+  check('1. telefoonregel met dezelfde specificiteit als de hoofdregel houdt 0 px marge en een ronde avatarknop (38×38 px)',
+    /@media\(max-width:700px\)\{[\s\S]*\.canonical-chrome\[data-surface-model='flat-content'\] \.canonical-content \.canonical-signed-out\.mr-sign-in\{\s*--mr-login-rand:0px/.test(css)
+    && css.includes('button.canonical-avatar-trigger') && css.includes('min-height:38px'));
   check('2. logo-verhouding: «G» 18 px op een witte plaat van 34 px, kolommen 34px · 1fr · 34px',
-    css.includes('.mr-sign-in-logo img{display:block;width:18px;height:18px') && css.includes('width:34px;height:34px;border-radius:50%;background:#fff') && css.includes('grid-template-columns:34px minmax(0,1fr) 34px'));
+    css.includes('.mr-sign-in-logo img{display:block;width:18px;height:18px') && /width:34px;height:34px;border-radius:50%;background:(var\(--papier\)|#fff)/.test(css) && css.includes('grid-template-columns:34px minmax(0,1fr) 34px'));
   check('4. optieknoppen winnen van de oude algemene regel «.canonical-signed-out button»', css.includes('.canonical-signed-out.mr-sign-in .mr-sign-in-optie{') && !/\n\.mr-sign-in-optie\{/.test(css));
 
   // ------------------------------------------------------------------ 4. andere aanmeldwegen

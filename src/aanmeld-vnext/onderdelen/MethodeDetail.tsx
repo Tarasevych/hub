@@ -3,6 +3,7 @@
 // worden hier ongewijzigd gerenderd; dit paneel is alleen de omlijsting (zijpaneel op breed, volledig scherm op smal).
 // Geheimen (TOTP-sleutel, herstelcodes) verschijnen uitsluitend hier, nooit op de kaart of in het overzicht.
 import { Check, ExternalLink, Plus, Trash2, X } from 'lucide-react';
+import {verborgenVoorAi} from '../../menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
 import { STAAT_LABEL, aanmeldTekst, type MethodeUi } from '../../../shared/aanmeld-vnext-model';
@@ -62,7 +63,7 @@ export default function MethodeDetail({ lang, kaart: k, p, smal, onSluit }: Prop
           {p.otpauth && !totp?.enrolled ? (
             <div className='amv-totp-setup'>
               <strong>{tr(lang, 'Додайте ключ у застосунок і введіть код', 'Voeg de sleutel toe in de app en voer de code in')}</strong>
-              <code className='amv-geheim'>{p.secret}</code>
+              <code className='amv-geheim' {...verborgenVoorAi}>{p.secret}</code>
               <small>{tr(lang, 'Ключ показано один раз.', 'De sleutel wordt eenmalig getoond.')}</small>
               <div className='amv-rij'>
                 <input inputMode='numeric' autoComplete='one-time-code' autoFocus value={p.code} maxLength={6}

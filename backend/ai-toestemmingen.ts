@@ -15,6 +15,7 @@ import { appRolActief, getPool } from '../server/platform/pg';
 import { huidigeContext } from '../server/platform/context';
 import { auditToevoegen } from '../server/platform/audit';
 import { rateLimit } from '../server/platform/beveiliging';
+import { grantsSluitenVoorGebruiker } from './sleutelkluis-opruimen';
 
 export const CAPABILITIES = [
   // 0110 (zone E): 'browser.console' (console + netwerk, tot dan onder browser.read) en 'browser.script' (evaluate_script via de debugger).
@@ -365,6 +366,9 @@ export async function blockUser(userId: string, actorId: string, reason: string)
     const grants = await q('UPDATE app.ai_grants SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     await q(`UPDATE app.agent_commands SET status = 'rejected', decided_at = now(), finished_at = now(), result = '{"error":"user blocked"}'::jsonb
               WHERE user_id = $1 AND status IN ('pending_approval', 'approved')`, [userId]);
+    // SEC-002 ai-mcp-12: ook de wachtrij «Питати» (hulpmiddelen van de site en van externe MCP-servers) — zie stopAll.
+    await q(`UPDATE app.connector_tool_calls SET status = 'rejected', decided_at = now(), finished_at = now()
+              WHERE user_id = $1 AND status = 'pending_approval'`, [userId]);
     await q(`INSERT INTO app.user_ai_settings (user_id, blocked_at, blocked_reason) VALUES ($1, now(), $2)
              ON CONFLICT (user_id) DO UPDATE SET blocked_at = now(), blocked_reason = EXCLUDED.blocked_reason`, [userId, reason.slice(0, 200)]);
     // M4: ook de OAuth-tokens van de MCP-connector (Claude) en de tvh_-tokens van de MCP-console intrekken.
@@ -373,6 +377,10 @@ export async function blockUser(userId: string, actorId: string, reason: string)
     const epoch = await bumpEpoch(q, userId);
     return { epoch, agents: agents.rows.map((r) => r.id as string), grants: grants.rowCount ?? 0, mcpTokens: (oauth.rowCount ?? 0) + (tvh.rowCount ?? 0) };
   }, { systeem: true });
+  // SEC-002 ai-mcp-12 + geheimen-05: wat bij de noodstop eindigt (open bevestigingen, ontgrendelingen van de extensie), eindigt ook
+  // bij blokkeren; en de omslagen van de zojuist ingetrokken verbindingen gaan weg (sleutelkluis: «intrekken = dicht»).
+  for (const f of noodstopLuisteraars) { try { f(userId, actorId); } catch { /* luisteraar faalt: het blokkeren zelf gaat door */ } }
+  await grantsSluitenVoorGebruiker(userId);
   pusher.close(userId, null, 4403, 'blocked');
   await auditToevoegen({ ownerId: userId, actorId, action: 'ai_user_blocked', type: 'ai', result: 'ok', details: { reason, agents: out.agents.length, grants: out.grants, mcpTokens: out.mcpTokens } }).catch(() => undefined);
   return out;
@@ -402,11 +410,17 @@ export async function stopAll(userId: string, actorId: string) {
     const cmds = await q(`UPDATE app.agent_commands SET status = 'rejected', decided_at = now(), finished_at = now(), result = '{"error":"stopped by user"}'::jsonb
                            WHERE user_id = $1 AND status IN ('pending_approval', 'approved') RETURNING id`, [userId]);
     await q(`UPDATE app.agents SET browser_enabled = false, armed_until = NULL WHERE user_id = $1 AND platform = 'browser' AND revoked_at IS NULL`, [userId]);
+    // SEC-002 ai-mcp-12: «Стоп» liet de wachtrij «Питати» staan (mail versturen, agenda, delen, externe MCP): wie daarna nog op
+    // «Дозволити» klikte, voerde de actie alsnog uit. Nu wordt alles wat op een klik wacht in dezelfde transactie afgewezen.
+    const calls = await q(`UPDATE app.connector_tool_calls SET status = 'rejected', decided_at = now(), finished_at = now()
+                            WHERE user_id = $1 AND status = 'pending_approval'`, [userId]);
     const oauth = await q('UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const tvh = await q('UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
     const epoch = await bumpEpoch(q, userId);
-    return { epoch, grants: grants.rowCount ?? 0, commands: cmds.rowCount ?? 0, connectors: oauth.rowCount ?? 0, tokens: tvh.rowCount ?? 0 };
+    return { epoch, grants: grants.rowCount ?? 0, commands: (cmds.rowCount ?? 0) + (calls.rowCount ?? 0), connectors: oauth.rowCount ?? 0, tokens: tvh.rowCount ?? 0 };
   }, { systeem: true });
+  // SEC-002 geheimen-05: de omslagen van de gegevenssleutel van de zojuist ingetrokken verbindingen weg (database én geheugen).
+  await grantsSluitenVoorGebruiker(userId);
   pusher.push(userId, null, { t: 'stop', type: 'stop', epoch: out.epoch, detach: true });
   for (const f of noodstopLuisteraars) { try { f(userId, actorId); } catch { /* luisteraar faalt: de stop zelf gaat door */ } }
   pusher.close(userId, null, 4410, 'stopped by user');

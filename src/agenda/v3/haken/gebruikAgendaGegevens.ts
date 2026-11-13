@@ -3,6 +3,7 @@
 // geslaagde verversing en «Повторити».
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as client from '../../agenda-client';
+import { agendaFoutCode } from '../../abonnement-fouten';
 
 export type AgendaGegevens = {
   data: client.AgendaOverzicht | null; laden: boolean; fout: string; laatstGelukt: number | null;
@@ -28,7 +29,7 @@ export function gebruikAgendaGegevens(eigenaar: string): AgendaGegevens {
   const synchroniseer = useCallback(async () => {
     setSync(true); setSyncFout('');
     try { await client.synchroniseer(true); }
-    catch (e) { setSyncFout(String((e as Error)?.message || 'SYNC_MISLUKT')); }
+    catch (e) { setSyncFout(agendaFoutCode(e, 'SYNC_MISLUKT')); }
     finally { setSync(false); await verversen(); }
   }, [verversen]);
   useEffect(() => { void verversen(); }, [eigenaar, verversen]);

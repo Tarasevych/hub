@@ -13,6 +13,12 @@ export const ACTIE_PER_PAD: ReadonlyArray<readonly [RegExp, string]> = [
   [/\/(verwijderen|verwijder|delete|intrekken|revoke|wissen)\b/, 'onbekend'],
   [/\/(ssh|ssh-ca|terminal|impersonatie|ondersteuning|tech-ruimtes|remote|bureaublad|ontgrendel|ontgrendeling)\b/, 'onbekend'],
   [/\/tech\/activeren\b/, 'bevestigen'],
+  // SEC-002 extensie-02 (12.11.2026): wat een AI zelf rechten of uitvoering geeft, wordt NOOIT onthouden — een opdracht of aanroep
+  // goedkeuren, een browser voor AI aanzetten, het beleid «zonder klik», een koppelcode voor een nieuw apparaat en de modus van een
+  // hulpmiddel. Met «Запам'ятати цей браузер» (12 uur) kon een AI met «Клік і введення» deze knoppen anders zelf indrukken zonder dat
+  // er nog één keer om een passkey of code werd gevraagd. (`/mcp-connector/consent` staat hier bewust nog NIET: de bestaande test
+  // mailmob-001 legt vast dat die onthouden mag worden — zie het verslag van SEC-002 g10a, «відкладено».)
+  [/\/(approve|browser-enabled|policy|pairing-code)$/, 'onbekend'], [/\/mcp-connector\/tools\/set(-all)?$/, 'onbekend'],
   [/\/(agents|connectors|mcp-connector|mcp)\b/, 'agenten'],
 ];
 export function actieVoorPad(pad: string): string {

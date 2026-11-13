@@ -17,6 +17,9 @@ import {
   BEVESTIG_FOUT, RISICO_TEKST, STATUS_TEKST, type BevestigKeuze, type BevestigingWeergave,
 } from '../../shared/ai-bevestiging';
 import './bevestigingen.css';
+// SEC-002 extensie-02 (g10a-2): bevestigen of weigeren doet alleen de mens (zone voor de extensie + alleen een echte klik).
+import { alleenMens, geenAi } from '../menselijke-actie';
+import { weigeringZinUitFout } from '../../shared/weigering-tekst';
 
 type Tr = (uk: string, nl: string) => string;
 type Lijst = { ruimte: 'prive' | 'technisch'; items: BevestigingWeergave[]; open: number };
@@ -28,7 +31,7 @@ const uitlegVan = (e: unknown, uk: boolean): string => {
   if (data?.uitleg && typeof data.uitleg === 'object') return String((uk ? data.uitleg.uk : data.uitleg.nl) || '');
   const c = codeVan(e);
   const t = BEVESTIG_FOUT[c];
-  return t ? (uk ? t.uk : t.nl) : (uk ? `Не вдалося (${c || 'немає зв’язку'}).` : `Mislukt (${c || 'geen verbinding'}).`);
+  return t ? (uk ? t.uk : t.nl) : weigeringZinUitFout(uk ? 'uk' : 'nl', e) ?? (uk ? `Не вдалося (${c || 'немає зв’язку'}).` : `Mislukt (${c || 'geen verbinding'}).`);
 };
 /** ?bevestiging=<id> en ?google-toegang=<dienst> uit de hash (#agent/claude?bevestiging=…). */
 function hashVraag(): URLSearchParams {
@@ -208,12 +211,12 @@ export default function BevestigingenPaneel({ tr, agent }: { tr: Tr; agent?: str
                 </>
               ) : null}
               {item.status === 'wacht' ? (
-                <div className='ab-acties'>
-                  <button type='button' className={`ab-knop ab-knop-hoofd risico-${item.risico}`} data-ab-bevestig={item.id} disabled={!!bezig || item.gesloten || !b || !keuzeKlaar} onClick={() => void besluit(item, true)}>
+                <div className='ab-acties' {...geenAi}>
+                  <button type='button' className={`ab-knop ab-knop-hoofd risico-${item.risico}`} data-ab-bevestig={item.id} disabled={!!bezig || item.gesloten || !b || !keuzeKlaar} onClick={alleenMens(() => void besluit(item, true))}>
                     {bezig === item.id ? <Loader2 size={16} className='spin' aria-hidden='true' /> : item.stapOp ? <KeyRound size={16} aria-hidden='true' /> : <Check size={16} aria-hidden='true' />}
                     {item.stapOp ? tr('Підтвердити з passkey', 'Bevestigen met passkey') : tr('Підтвердити', 'Bevestigen')}
                   </button>
-                  <button type='button' className='ab-knop' data-ab-weiger={item.id} disabled={!!bezig} onClick={() => void besluit(item, false)}><X size={16} aria-hidden='true' />{tr('Відхилити', 'Weigeren')}</button>
+                  <button type='button' className='ab-knop' data-ab-weiger={item.id} disabled={!!bezig} onClick={alleenMens(() => void besluit(item, false))}><X size={16} aria-hidden='true' />{tr('Відхилити', 'Weigeren')}</button>
                 </div>
               ) : <p className='ab-stand'><Loader2 size={14} className='spin' aria-hidden='true' />{uk ? STATUS_TEKST[item.status].uk : STATUS_TEKST[item.status].nl}</p>}
               {melding[item.id] ? <p className='ab-melding' role='status'>{melding[item.id]}</p> : null}

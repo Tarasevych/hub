@@ -68,6 +68,7 @@ Alle artikelen, specificaties, wijzigingslogboeken (wijzigingen), uitrolhandleid
 | **Één connectoradres per AI (`CONNECTOR-EEN-PAD`)** | [🇳🇱 `CONNECTOR-EEN-PAD.nl.md`](../deploy/VERBINDER-EEN-PAD.nl.md) | [🇺🇦 `CONNECTOR-EEN-PAD.uk.md`](../deploy/ЄДИНИЙ-ШЛЯХ-ЗЄДНУВАЧА.uk.md) | [`deploy/VERBINDER-EEN-PAD.nl.md`](../deploy/VERBINDER-EEN-PAD.nl.md) |
 | **AI-connectors v2 (`CONNECTOR-V2`)** | [🇳🇱 `CONNECTOR-V2.nl.md`](../deploy/VERBINDER-V2.nl.md) | [🇺🇦 `CONNECTOR-V2.uk.md`](../deploy/ЗЄДНУВАЧ-В2.uk.md) | [`deploy/VERBINDER-V2.nl.md`](../deploy/VERBINDER-V2.nl.md) |
 | **MCP-connector voor Claude (`MCP-CONNECTOR`)** | [🇳🇱 `MCP-CONNECTOR.nl.md`](../deploy/MCP-VERBINDER.nl.md) | [🇺🇦 `MCP-CONNECTOR.uk.md`](../deploy/ЗЄДНУВАЧ-ПРОТОКОЛУ-КОНТЕКСТУ.uk.md) | [`deploy/MCP-VERBINDER.nl.md`](../deploy/MCP-VERBINDER.nl.md) |
+| **Plan MCP 2026-07-28 en tussentijdse uitgaven (`MCP-001`)** | [🇳🇱 `PLAN-MCP-2026-07-28.nl.md`](mcp/PLAN-MCP-2026-07-28.nl.md) | [🇺🇦 `ПЛАН-MCP-2026-07-28.uk.md`](mcp/ПЛАН-MCP-2026-07-28.uk.md) | [`docs/mcp/PLAN-MCP-2026-07-28.nl.md`](mcp/PLAN-MCP-2026-07-28.nl.md) |
 | **Rapport D: Accountveiligheid (`D-account-veiligheid`)** | [🇳🇱 `D-account-veiligheid.nl.md`](../deploy/D-account-veiligheid.nl.md) | [🇺🇦 `D-account-veiligheid.uk.md`](../deploy/Д-безпека-облікового-запису.uk.md) | [`deploy/D-account-veiligheid.nl.md`](../deploy/D-account-veiligheid.nl.md) |
 | **Rapport G: Editors (`G-editors`)** | [🇳🇱 `G-editors.nl.md`](../deploy/G-bewerkers.nl.md) | [🇺🇦 `G-editors.uk.md`](../deploy/Г-редактори.uk.md) | [`deploy/G-bewerkers.nl.md`](../deploy/G-bewerkers.nl.md) |
 | **Audit van de mailclient (`MAIL-AUDIT-20261007`)** | [🇳🇱 `MAIL-AUDIT-20261007.nl.md`](../deploy/POST-AUDIT-20261007.nl.md) | [🇺🇦 `MAIL-AUDIT-20261007.uk.md`](../deploy/АУДИТ-ПОШТИ-20261007.uk.md) | [`deploy/POST-AUDIT-20261007.nl.md`](../deploy/POST-AUDIT-20261007.nl.md) |
@@ -110,6 +111,9 @@ Alle artikelen, specificaties, wijzigingslogboeken (wijzigingen), uitrolhandleid
 | **Blok 1 snelle fixes (`WIJZIGINGEN-20261026-BLOK1`)** | [🇳🇱 `.nl.md`](../deploy/WIJZIGINGEN-20261026-BLOK1.nl.md) | [🇺🇦 `.uk.md`](../deploy/ЗМІНИ-20261026-БЛОК1.uk.md) | [`WIJZIGINGEN-20261026-BLOK1.md`](../deploy/WIJZIGINGEN-20261026-BLOK1.nl.md) |
 | **Blokken 2, 3 en 6 (`WIJZIGINGEN-20261026-BLOK2-6`)** | [🇳🇱 `.nl.md`](../deploy/WIJZIGINGEN-20261026-BLOK2-6.nl.md) | [🇺🇦 `.uk.md`](../deploy/ЗМІНИ-20261026-БЛОК2-6.uk.md) | [`WIJZIGINGEN-20261026-BLOK2-6.md`](../deploy/WIJZIGINGEN-20261026-BLOK2-6.nl.md) |
 | **Slim huis Huis vNext (`WIJZIGINGEN-20261028-HUIS-VNEXT`)** | [🇳🇱 `.nl.md`](../deploy/WIJZIGINGEN-20261028-HUIS-VERVOLG.nl.md) | [🇺🇦 `.uk.md`](../deploy/ЗМІНИ-20261028-ДІМ-ОНОВЛЕННЯ.uk.md) | [`WIJZIGINGEN-20261028-HUIS-VNEXT.md`](../deploy/WIJZIGINGEN-20261028-HUIS-VERVOLG.nl.md) |
+| **Slim huis: ontwerp «Levend huis» — hoofddocument (`HUIS-001`)** | [🇳🇱 `.nl.md`](huis/ONTWERP-HUIS-20261110.nl.md) | [🇺🇦 `.uk.md`](huis/ДИЗАЙН-ДІМ-20261110.uk.md) | [tien zones](huis/zones/) |
+| **Slim huis: ontwerptaal «Levend huis» (`HUIS-001`)** | [🇳🇱 `.nl.md`](huis/ONTWERPTAAL-LEVEND-HUIS-20261110.nl.md) | [🇺🇦 `.uk.md`](huis/ДИЗАЙН-МОВА-ЖИВИЙ-ДІМ-20261110.uk.md) | [tokens](huis/maquette/stijl/hv-tokens.json) |
+| **Slim huis: klikbare maquette — handleiding (`HUIS-001`)** | [🇳🇱 `.nl.md`](huis/maquette/LEESMIJ.nl.md) | [🇺🇦 `.uk.md`](huis/maquette/ЧИТАЙ.uk.md) | [`huis-maquette.html`](huis/maquette/huis-maquette.html) |
 | **Notities vNext (`WIJZIGINGEN-20261028-NOTITIES-VNEXT`)** | [🇳🇱 `.nl.md`](../deploy/WIJZIGINGEN-20261028-NOTITIES-VERVOLG.nl.md) | [🇺🇦 `.uk.md`](../deploy/ЗМІНИ-20261028-НОТАТКИ-ОНОВЛЕННЯ.uk.md) | [`WIJZIGINGEN-20261028-NOTITIES-VNEXT.md`](../deploy/WIJZIGINGEN-20261028-NOTITIES-VERVOLG.nl.md) |
 | **Agenda koppelen en pakket (`WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET`)** | [🇳🇱 `.nl.md`](../deploy/WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET.nl.md) | [🇺🇦 `.uk.md`](../deploy/ЗМІНИ-20261029-КАЛЕНДАР-І-ПАКЕТ.uk.md) | [`WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET.md`](../deploy/WIJZIGINGEN-20261029-AGENDA-KOPPELEN-EN-PAKKET.nl.md) |
 | **Clouddienst Cloud vNext (`WIJZIGINGEN-20261029-CLOUD-VNEXT`)** | [🇳🇱 `.nl.md`](../deploy/WIJZIGINGEN-20261029-WOLK-VERVOLG.nl.md) | [🇺🇦 `.uk.md`](../deploy/ЗМІНИ-20261029-ХМАРА-ОНОВЛЕННЯ.uk.md) | [`WIJZIGINGEN-20261029-CLOUD-VNEXT.md`](../deploy/WIJZIGINGEN-20261029-WOLK-VERVOLG.nl.md) |
@@ -201,3 +205,13 @@ Alle artikelen, specificaties, wijzigingslogboeken (wijzigingen), uitrolhandleid
 | **Zoeken `/zoek`: Bronnen uitbreiden (`zoek/ZOEK-UITBREIDEN`)** | [🇳🇱 `.nl.md`](./zoek/ZOEK-UITBREIDEN.nl.md) | [🇺🇦 `.uk.md`](zoek/РОЗШИРЕННЯ-ПОШУКУ.uk.md) | [`ZOEK-UITBREIDEN.md`](zoek/РОЗШИРЕННЯ-ПОШУКУ.md) |
 | **Universal Bestand Workspace-kern v0.2 (`integrations/.../README`)** | [🇳🇱 `.nl.md`](../integrations/universal-file-workspace-core-v0.2/LEESMIJ.nl.md) | [🇺🇦 `.uk.md`](../ОГЛЯД-ПРОЄКТУ.uk.md) | [`README.md`](../integrations/universal-file-workspace-core-v0.2/LEESMIJ.nl.md) |
 | **Lokale Playwright-browsertests (`scripts/lokaal-e2e/LEESMIJ`)** | [🇳🇱 `.nl.md`](../scripts/lokaal-e2e/LEESMIJ.nl.md) | [🇺🇦 `.uk.md`](../scripts/lokaal-e2e/ОГЛЯД-НАСКРІЗНИХ-ТЕСТІВ.uk.md) | [`LEESMIJ.md`](../scripts/lokaal-e2e/LEESMIJ.nl.md) |
+
+---
+
+<!-- HISTORIE-001:aanvulling-20261113 -->
+## Aanvulling 13-11-2026
+
+| Artikel | Omschrijving | 🇳🇱 Nederlands | 🇺🇦 Oekraïens |
+|---|---|---|---|
+| **Kroniek van takken en taken (HISTORIE-001)** | Elke tak met voorganger en opvolger, achterstand `voornaamst` ↔ live versie; wordt alleen aangevuld | [🇳🇱 `KRONIEK-TAKKEN.nl.md`](./hub/KRONIEK-TAKKEN.nl.md) | [🇺🇦 `ХРОНОЛОГІЯ-ГІЛОК.uk.md`](./hub/ХРОНОЛОГІЯ-ГІЛОК.uk.md) |
+| **Plan «Ontwerp»-weergave (IDENTITEIT-011…020)** | Vergelijking van de ontwikkelkaart met de code en plan voor fasen 0–5 | — | [🇺🇦 `ПЛАН-МАКЕТ-ДООПРАЦЮВАННЯ.uk.md`](https://github.com/Tarasevych/hub/blob/claude/optimistic-mayer-exvf2p/docs/ontwerp/identiteit-account/%D0%9F%D0%9B%D0%90%D0%9D-%D0%9C%D0%90%D0%9A%D0%95%D0%A2-%D0%94%D0%9E%D0%9E%D0%9F%D0%A0%D0%90%D0%A6%D0%AE%D0%92%D0%90%D0%9D%D0%9D%D0%AF.uk.md) (PR #76) |

@@ -49,6 +49,11 @@ export async function main(): Promise<number> {
   const misLez = LEZ.filter((r) => L(r) !== 'lezend'), misWijz = WIJZ.filter((r) => L(r) !== 'wijzigend');
   check(`lezend (${LEZ.length}): ls, cat, df, journalctl -u/-o, git status/log/diff/reflog, systemctl status, npm ls/version, node -v, podman ps, tar -tzf, find zonder -exec, sort zonder -o, ss, ip a, date, hostname, dmesg -T, tree, file`, misLez.length === 0, misLez.join(' | '));
   check(`wijzigend (${WIJZ.length}): git pull/push, systemctl restart, npm install/version patch, node script.js, tar -x, sed (altijd: e/w-commando’s), find -exec/-delete, sort -o/--compress-program, uniq a b, tar -I/--checkpoint-action, ss -K, ip link set / netns exec, date -s, hostname NAAM, dmesg -C, file -C, tree -o, git reflog expire, git diff --output`, misWijz.length === 0, misWijz.join(' | '));
+  // SEC-002 server-uitrol-09 (12.11.2026): vlaggen die een bestand schrijven, instellingen wijzigen of naar een andere machine gaan.
+  const SEC002_WIJZ = ['tar -tf a.tar --index-file=x', 'tar -tf a.tar --one-top-level=x', 'journalctl --cursor-file=x', 'ss -D x', 'git branch --set-upstream-to=origin/x', 'git branch --edit-description', 'git branch --unset-upstream', 'systemctl status -H u@h', 'systemctl status --machine=x', 'ip -batch x'];
+  const SEC002_LEZ = ['git branch --show-current', 'git branch --contains HEAD', 'git branch -vv', 'ip -br a', 'tar -tvf a.tar'];
+  check('SEC-002 server-uitrol-09: tar --index-file, journalctl --cursor-file, ss -D, git branch --set-upstream-to/--edit-description, systemctl -H, ip -batch → wijzigend; kijk-vlaggen blijven lezend',
+    SEC002_WIJZ.every((r) => L(r) === 'wijzigend') && SEC002_LEZ.every((r) => L(r) === 'lezend'), [...SEC002_WIJZ.filter((r) => L(r) !== 'wijzigend'), ...SEC002_LEZ.filter((r) => L(r) !== 'lezend')].join(' | '));
   check('onbekend programma op de allow-lijst (niet in de tabel) → wijzigend (liever één klik te veel)', opdrachtSoort('mijnscript', []) === 'wijzigend' && opdrachtSoort('powershell', ['Get-Date']) === 'wijzigend');
   check('bevestigingNodig: wijzigend altijd; lezend alleen bij stand «alles»', bevestigingNodig(ontleed('git pull', server), 'wijzigend') && !bevestigingNodig(ontleed('git status', server), 'wijzigend') && bevestigingNodig(ontleed('git status', server), 'alles'));
   check('autodoploen: programma’s en lezende werkwoorden', aanvullingen('sys', server.allow).includes('systemctl') && aanvullingen('git st', server.allow).includes('git status') && aanvullingen('git pu', server.allow).length === 0);
@@ -241,6 +246,14 @@ export async function main(): Promise<number> {
     check('AI-weg: met een «altijd»-grant voor machine.exec gaat `git` automatisch, maar `powershell` (ook PowerShell.EXE met pad) wacht op bevestiging op de site',
       psAi.auto === false && psAi.command.status === 'pending_approval' && psAi2.auto === false && psAi2.command.status === 'pending_approval' && gitAi.auto === true,
       JSON.stringify({ ps: [psAi.auto, psAi.command.status], ps2: [psAi2.auto, psAi2.command.status], git: gitAi.auto }));
+    // SEC-002 ai-mcp-02 (12.11.2026): site en agent normaliseren de naam gelijk — wat de agent als PowerShell ziet, ziet de site ook zo.
+    const psNamen = ['powershell', 'pwsh', 'powershell.exe', 'PWSH.EXE', 'powershell.cmd', 'PWSH.BAT', 'pwsh.cmd', 'PowerShell.Bat', 'powershell.exe.cmd', 'powershell.', ' pwsh ', 'C:\\x\\pwsh.CMD'];
+    const psAi3 = await cmds.submitCommand(rijAi, aiU.id, 'exec', { command: 'powershell.cmd', args: ['Remove-Item', 'x'], cwd: '.' });
+    check('SEC-002 ai-mcp-02: powershell.cmd / PWSH.BAT (cmd/bat/hoofdletters) tellen op de site als PowerShell en wachten ook met een «altijd»-grant op een klik; de agent start alleen de exacte naam',
+      psNamen.every((c) => cmds.isPowershellOpdracht({ command: c })) && psNamen.every((c) => agent.powershellSoort(c) === 'nee' || cmds.isPowershellOpdracht({ command: c }))
+      && agent.powershellSoort('powershell.cmd') === 'vermomd' && agent.powershellSoort('PWSH.BAT') === 'vermomd' && agent.powershellSoort('pwsh') === 'ja'
+      && psAi3.auto === false && psAi3.command.status === 'pending_approval'
+      && await weigert(() => handlers.exec(pcfg, { command: 'powershell.cmd', args: ['Get-Date'], cwd: '.' }), /exact name/));
     check('isPowershellOpdracht: powershell, pwsh, .exe, pad, hoofdletters ja; git, powershell-x, leeg nee', cmds.isPowershellOpdracht({ command: 'pwsh' }) && cmds.isPowershellOpdracht({ command: 'POWERSHELL.exe' }) && cmds.isPowershellOpdracht({ command: '/usr/bin/pwsh' }) && !cmds.isPowershellOpdracht({ command: 'git' }) && !cmds.isPowershellOpdracht({ command: 'powershell-x' }) && !cmds.isPowershellOpdracht({}) && !cmds.isPowershellOpdracht(null));
   } finally {
     if (oudLegacy !== undefined) process.env.AGENT_WS_TOKEN_AUTH_LEGACY = oudLegacy;

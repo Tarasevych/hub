@@ -2,11 +2,11 @@
 // De extensie houdt zelf hoogstens 200 items (console/netwerk, zonder query-strings, bodies of headers) met een TTL; een vol of oud
 // buffer gaat hierheen. Opslag alleen versleuteld (AES-256-GCM via sealWithEnvKey, AAD gebonden aan gebruiker + agent) en per
 // gebruiker onder strikte RLS; na 90 dagen weg. Lezen gebeurt alleen door de eigen gebruiker (en wordt als onbetrouwbaar behandeld).
-import { envKey32, openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
+import { envKey32, envSleutelBeschikbaar, openWithEnvKey, sealWithEnvKey } from '../server/platform/beveiliging';
 import { alsGebruiker } from './ai-toestemmingen';
 
 export const DIAG_LIMITS = Object.freeze({ maxEntries: 200, maxEntryChars: 2000, retentionDays: 90, maxArchivesPerAgent: 500 });
-const keyName = () => (envKey32('AI_ARCHIEF_SLEUTEL_V1') ? 'AI_ARCHIEF_SLEUTEL_V1' : 'TOTP_ENCRYPTION_KEY_V1');
+/* SEC-002 (g10b #2, afwerking A): eigen sleutel in ELKE versie (_V1…_V9), niet alleen _V1 — anders viel een installatie met alleen _V2 stil terug op de TOTP-sleutel. */const keyName = () => (envSleutelBeschikbaar('AI_ARCHIEF_SLEUTEL_V1') ? 'AI_ARCHIEF_SLEUTEL_V1' : 'TOTP_ENCRYPTION_KEY_V1');
 const aad = (userId: string, agentId: string) => `diag:${userId}:${agentId}`;
 
 type Entry = { t: number; kind: string; level?: string; text?: string; url?: string; status?: number; ms?: number };

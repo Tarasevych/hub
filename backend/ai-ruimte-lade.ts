@@ -28,6 +28,7 @@
 import { getPool } from '../server/platform/pg';
 import { sqlLadeWaar, type Lade } from '../shared/ruimte-scheiding';
 import { registreerLadeUitvoerder, type LadeRegel } from './ruimte-scheiding';
+import { grantsSluitenVoorGebruiker } from './sleutelkluis-opruimen';
 
 const sys = () => getPool('systeem');
 const q = (sql: string, params: unknown[]) => sys().query(sql, params);
@@ -57,6 +58,8 @@ async function rechtenEraf(lade: Lade, apparaten: string[]): Promise<LadeRegel[]
   }
   uit.push({ tabel: 'app.mcp_oauth_tokens', rijen: n(await q(`UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE ${sqlLadeWaar('ruimte', lade, 1)} AND revoked_at IS NULL`, [lade.userId])), opmerking: 'ingetrokken' });
   uit.push({ tabel: 'app.mcp_console_tokens', rijen: n(await q(`UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE ${sqlLadeWaar('ruimte', lade, 1)} AND revoked_at IS NULL`, [lade.userId])), opmerking: 'ingetrokken' });
+  // SEC-002 geheimen-05: met de verbindingen gaan ook hun omslagen van de gegevenssleutel weg (database én geheugen).
+  uit.push({ tabel: 'app.sleutelkluis_omslag', rijen: await grantsSluitenVoorGebruiker(lade.userId, lade.ruimte), opmerking: 'omslagen van ingetrokken verbindingen verwijderd' });
   return uit;
 }
 
@@ -118,6 +121,8 @@ registreerLadeUitvoerder({
     regels.push({ tabel: 'app.mcp_oauth_auth', rijen: n(await q(`DELETE FROM app.mcp_oauth_auth WHERE ${sqlLadeWaar('ruimte', lade, 1)}`, [userId])) });
     regels.push({ tabel: 'app.mcp_oauth_tokens', rijen: n(await q(`DELETE FROM app.mcp_oauth_tokens WHERE ${sqlLadeWaar('ruimte', lade, 1)}`, [userId])) });
     regels.push({ tabel: 'app.mcp_console_tokens', rijen: n(await q(`DELETE FROM app.mcp_console_tokens WHERE ${sqlLadeWaar('ruimte', lade, 1)}`, [userId])) });
+    // SEC-002 geheimen-05: de verbindingen bestaan niet meer; hun omslagen van de gegevenssleutel mogen niet achterblijven.
+    regels.push({ tabel: 'app.sleutelkluis_omslag', rijen: await grantsSluitenVoorGebruiker(userId, lade.ruimte), opmerking: 'omslagen van verwijderde verbindingen' });
     return regels;
   },
 });

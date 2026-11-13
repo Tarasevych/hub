@@ -1,62 +1,74 @@
 {
   "schema": 1,
-  "taakId": "DESIGN-003",
-  "agent": "codex",
-  "agentPlatform": "ChatGPT Codex",
+  "taakId": "HISTORIE-001",
+  "agent": "claude",
+  "agentPlatform": "Claude Code",
   "model": {
     "id": null,
     "versie": null,
     "bron": "onbekend"
   },
-  "basisCommit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
-  "basisVersie": "20261106-141500",
+  "basisCommit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+  "basisVersie": "20261113-121403",
   "installatie": {
-    "versie": "20261106-141500",
-    "commit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
-    "bron": "/api/version · 2026-11-06"
+    "versie": "20261113-121403",
+    "commit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "bron": "/api/version"
   },
-  "regelsVersie": "1.4.10",
-  "regelsHash": "beb437706865e56735ee15f56f75422968d3b133221148282986b23645078847",
-  "tak": "feature/design-003-20261106-103743",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "tak": "feature/historie-001-kroniek-20261113-191947",
   "kanaal": "github_pr",
   "zonderGit": null,
   "commits": [
-    "6f4af07eaa151eba445a124ba7d02083ba226653"
+    "44a7c2117ada656c2933b3da672368404b56e1b8",
+    "b6e9817041dfb81c91860857ba3714c85fd05f13",
+    "c4f7c3187f40eefb972fffdf0880991feb3a2b65"
   ],
   "bestanden": {
     "gewijzigd": [
-      "src/agenten/AgentBord.tsx",
-      "src/agenten/agenten.css",
-      "ORCH-OVERDRACHT.json"
+      "PROJECTOVERZICHT.nl.md",
+      "docs/INDEX.nl.md",
+      "docs/hub/GESCHIEDENIS.nl.md",
+      "docs/hub/TAKKEN-EN-SAMENVOEGVERZOEKEN.nl.md",
+      "\"docs/hub/\\320\\206\\320\\241\\320\\242\\320\\236\\320\\240\\320\\206\\320\\257-\\320\\240\\320\\236\\320\\227\\320\\222\\320\\230\\320\\242\\320\\232\\320\\243.md\"",
+      "\"docs/hub/\\320\\206\\320\\241\\320\\242\\320\\236\\320\\240\\320\\206\\320\\257-\\320\\240\\320\\236\\320\\227\\320\\222\\320\\230\\320\\242\\320\\232\\320\\243.uk.md\"",
+      "\"docs/hub/\\320\\223\\320\\206\\320\\233\\320\\232\\320\\230-\\320\\242\\320\\220-\\320\\227\\320\\220\\320\\237\\320\\230\\320\\242\\320\\230-\\320\\235\\320\\220-\\320\\227\\320\\233\\320\\230\\320\\242\\320\\242\\320\\257.md\"",
+      "\"docs/hub/\\320\\223\\320\\206\\320\\233\\320\\232\\320\\230-\\320\\242\\320\\220-\\320\\227\\320\\220\\320\\237\\320\\230\\320\\242\\320\\230-\\320\\235\\320\\220-\\320\\227\\320\\233\\320\\230\\320\\242\\320\\242\\320\\257.uk.md\"",
+      "\"docs/\\320\\237\\320\\236\\320\\232\\320\\220\\320\\226\\320\\247\\320\\230\\320\\232-\\320\\224\\320\\236\\320\\232\\320\\243\\320\\234\\320\\225\\320\\235\\320\\242\\320\\220\\320\\246\\320\\206\\320\\207.md\"",
+      "\"docs/\\320\\237\\320\\236\\320\\232\\320\\220\\320\\226\\320\\247\\320\\230\\320\\232-\\320\\224\\320\\236\\320\\232\\320\\243\\320\\234\\320\\225\\320\\235\\320\\242\\320\\220\\320\\246\\320\\206\\320\\207.uk.md\"",
+      "scripts/orch/inleveren.mjs",
+      "\"\\320\\236\\320\\223\\320\\233\\320\\257\\320\\224-\\320\\237\\320\\240\\320\\236\\320\\204\\320\\232\\320\\242\\320\\243.uk.md\""
     ],
     "toegevoegd": [
-      "orchestratie/taken/DESIGN-003.json",
-      "tests/visueel/design-003-agenten.html",
-      "tests/visueel/design-003-agenten.tsx",
-      "tests/visueel/design-003-controle.mjs",
-      "orchestratie/ontwikkelarchieven/DESIGN-003.json",
-      ".github/workflows/design-003-release.yml",
-      "tests/uitrol/design-003-pakket.py"
+      "docs/hub/KRONIEK-TAKKEN.nl.md",
+      "\"docs/hub/\\320\\245\\320\\240\\320\\236\\320\\235\\320\\236\\320\\233\\320\\236\\320\\223\\320\\206\\320\\257-\\320\\223\\320\\206\\320\\233\\320\\236\\320\\232.uk.md\"",
+      "orchestratie/taken/HISTORIE-001.json",
+      "scripts/geschiedenis/aanvulling-20261113.mjs",
+      "scripts/geschiedenis/kroniek.mjs",
+      "scripts/geschiedenis/samenvoegverzoeken.json",
+      "tests/eenheid/historie-kroniek.test.ts",
+      "orchestratie/ontwikkelarchieven/HISTORIE-001.json"
     ],
     "verwijderd": []
   },
   "samenvatting": {
-    "uk": "Панель агента розгортається під усім вибраним рядком. Записи CLI, кнопки й чотири канали Antigravity підлаштовуються під ширину профілю.",
-    "nl": "Het agentpaneel opent onder de gekozen rij. CLI-opdrachten, knoppen en de vier Antigravity-kanalen passen zich aan de profielbreedte aan."
+    "uk": "Хронологія гілок і робіт із попередником і наступником (48 робіт, 122 гілки), розрив voornaamst ↔ жива версія, етап VII історії та доповнення оглядів; виправлено збереження причини відмови в orch inleveren.",
+    "nl": "Kroniek van takken en taken met voorganger en opvolger (48 taken, 122 takken), achterstand voornaamst ↔ live versie, fase VII en aanvullingen van overzichten; reden van weigering in orch inleveren blijft bewaard."
   },
   "tests": {
-    "geslaagd": 5,
+    "geslaagd": 423,
     "mislukt": 0,
     "falend": [],
     "uitleg": {
-      "uk": "Браузерний стенд пройшов сценарій дошки й чотири розміри профілю з перемиканням усіх каналів (320–1280 px). Повні результати збірки додаються в TESTRESULTATEN.",
-      "nl": "De bordproef en vier profielbreedten met alle kanalen zijn in Chromium geslaagd (320–1280 px). De bouw levert de verdere controles in TESTRESULTATEN."
+      "uk": "historie-kroniek 18/18, orch 405/405, tsc без помилок.",
+      "nl": "historie-kroniek 18/18, orch 405/405, tsc zonder fouten."
     }
   },
   "nietGedaan": {
-    "uk": "Перевірки підключень виконано з тестовими відповідями. Робочі облікові записи й особисті дані власника не використовувалися.",
-    "nl": "De verbindingen zijn met testantwoorden gecontroleerd. Er zijn geen productieaccounts of privégegevens gebruikt."
+    "uk": "voornaamst не оновлено — це рішення власника. Автоматичний запуск генератора в CI не додано, щоб не змінювати процеси випуску без погодження.",
+    "nl": "voornaamst niet bijgewerkt — besluit van de eigenaar. Geen automatische generatorstap in CI, om releaseprocessen niet zonder akkoord te wijzigen."
   },
   "conflicten": [],
-  "aangemaakt": "2026-11-06T14:26:04.381Z"
+  "aangemaakt": "2026-11-13T19:36:50.073Z"
 }

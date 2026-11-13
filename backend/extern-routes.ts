@@ -5,7 +5,7 @@ import { error, json } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
 import * as rb from './remote-bureaublad';
 import { isEigenaar, TechFout, type Sessie } from './tech-profiel';
-import { passkeyStapOpGeldig, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, passkeyStapOpGeldig, stapOpVerbruiken, type StapOpAuth } from './stap-op';
 import { registreerWsPad } from './connectors-gateway';
 
 registreerWsPad(rb.REMOTE_WS_PATH, rb.upgrade);
@@ -19,13 +19,22 @@ export type RemoteDeps = { passkeyGeldig?: (auth: StapOpAuth) => Promise<boolean
 
 export function remoteRoutes(requireSession: RequireSession, deps: RemoteDeps = {}): Record<string, RouterMiddleware[]> {
   const geldig = deps.passkeyGeldig ?? passkeyStapOpGeldig, verbruik = deps.passkeyVerbruiken ?? stapOpVerbruiken;
+  // SEC-002 (g06): met de echte step-up controleren en verbruiken in één ondeelbare stap (bij een fout teruggezet); tests mogen eigen
+  // functies injecteren en houden dan de oude volgorde.
+  const echt = !deps.passkeyGeldig && !deps.passkeyVerbruiken;
   const gate = (opts: { passkey?: boolean }, run: (b: Record<string, unknown>, auth: SessionOk) => Promise<unknown> | unknown) => (async (raw) => {
     const ctx = raw as unknown as Ctx;
     const auth = await requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, 401);
     if (!isEigenaar(auth.user)) return error('REMOTE_ALLEEN_EIGENAAR', 403);
-    if (opts.passkey && !(await geldig(auth as StapOpAuth))) return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
     const b = ctx.body && typeof ctx.body === 'object' ? ctx.body as Record<string, unknown> : {};
+    if (opts.passkey && echt) {
+      try {
+        const stap = await metStapOpEenmalig(auth as StapOpAuth, passkeyStapOpGeldig, async () => run(b, auth));
+        return stap.ok ? json(stap.uit) : json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
+      } catch (e) { if (e instanceof TechFout) return error(e.code, e.status); throw e; }
+    }
+    if (opts.passkey && !(await geldig(auth as StapOpAuth))) return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
     try {
       const uit = await run(b, auth);
       if (opts.passkey) await verbruik(auth as StapOpAuth);

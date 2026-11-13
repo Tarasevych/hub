@@ -74,7 +74,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
 
   const laad = useCallback(async (): Promise<IntegratiesUit | null> => {
     try { const vers = await cloudClient.integraties(); setData(vers); setFout(''); return vers; }
-    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); return null; }
+    catch (e) { setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); return null; }
     finally { setLaden(false); }
   }, [lang]);
   useEffect(() => { void laad(); }, [laad]);
@@ -104,7 +104,7 @@ export default function Integraties({ lang, naarTab }: OnderdeelProps) {
       const r = await cloudClient.googleStart(rol);
       if (r.authUrl) { if (venster) venster.location.href = r.authUrl; else location.assign(r.authUrl); startPoll(); }
       else { venster?.close(); await laad(); }
-    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT')); }
+    } catch (e) { venster?.close(); setFout(foutTekst(lang, e instanceof CloudFout ? e.code : 'FOUT', e instanceof CloudFout ? e.data : undefined)); }
     finally { setBezig(false); }
   };
 

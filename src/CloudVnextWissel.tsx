@@ -19,7 +19,7 @@ export default function CloudVnextWissel(props: Props) {
   if (v2 && props.tab === 'accounts') { // «Керувати» gaat naar 'google': daar blijft het bestaande beheer (kiezen, loskoppelen)
     return <Suspense fallback={wachten}><Verbindingen lang={props.lang} naarTab={props.onNavigateTab} /></Suspense>;
   }
-  if (vnext) {
+  if (vnext || props.tab === 'files' || props.tab === 'shared') {
     return (
       <Suspense fallback={wachten}>
         <Nieuw lang={props.lang} tab={props.tab} userEmail={props.userEmail} sourceOrigin={props.sourceOrigin} tabContext={props.tabContext} onNavigateTab={props.onNavigateTab} />
@@ -28,7 +28,7 @@ export default function CloudVnextWissel(props: Props) {
   }
   return (
     <Suspense fallback={wachten}>
-      <Oud {...props} tab={props.tab === 'files' ? 'overview' : props.tab} />
+      <Oud {...props} tab={props.tab === 'files' || props.tab === 'shared' ? 'overview' : props.tab} />
     </Suspense>
   );
 }

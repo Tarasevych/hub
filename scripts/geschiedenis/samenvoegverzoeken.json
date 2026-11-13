@@ -1,0 +1,691 @@
+{
+ "schema": 1,
+ "bron": "GitHub-lijst van samenvoegverzoeken (momentopname)",
+ "momentopname": "2026-11-13",
+ "verzoeken": [
+  {
+   "nummer": 1,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-13",
+   "kop": "cursor/terminal-etap-c-8d4d",
+   "basis": "claude/tech-profiel-2026-10-13",
+   "titel": "Etap C: термінал у браузері (xterm), вимкнений за замовчуванням"
+  },
+  {
+   "nummer": 2,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-13",
+   "kop": "cursor/ssh-uitrol-audit-8d4d",
+   "basis": "cursor/terminal-etap-c-8d4d",
+   "titel": "SSH-встановлення з’являється в історії й аудиті"
+  },
+  {
+   "nummer": 3,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-14",
+   "kop": "cursor/mcp-spiegel-tools-8d4d",
+   "basis": "claude/tech-profiel-2026-10-13",
+   "titel": "MCP-конектор: відображення дверей (випуск, дошка, карта сервісів)"
+  },
+  {
+   "nummer": 4,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-14",
+   "kop": "cursor/mcp-spiegel-na-b-8d4d",
+   "basis": "claude/tech-profiel-2026-10-13",
+   "titel": "Дві веб-простори: обліковий запис без управління, технічний профіль без користувацького"
+  },
+  {
+   "nummer": 5,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-14",
+   "kop": "cursor/ai-vertaling-context-8d4d",
+   "basis": "cursor/mcp-spiegel-na-b-8d4d",
+   "titel": "ШІ-переклад на місці, вижимка та міжскриньковий контекст листів і документів"
+  },
+  {
+   "nummer": 6,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-14",
+   "kop": "cursor/ai-agent-board-8d4d",
+   "basis": "cursor/mcp-spiegel-na-b-8d4d",
+   "titel": "Дошка ШІ-агентів, гранулярні дозволи Доступ ШІ та розумний переклад і контекст листів"
+  },
+  {
+   "nummer": 7,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-14",
+   "kop": "cursor/ai-agent-scopes-8d4d",
+   "basis": "cursor/mcp-spiegel-na-b-8d4d",
+   "titel": "Гранулярні дозволи Доступ ШІ для підключених агентів та чутливих даних"
+  },
+  {
+   "nummer": 8,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-15",
+   "kop": "cursor/connector-integraties-8d4d",
+   "basis": "claude/connector-v2-2026-10-15",
+   "titel": "Окремі адреси конекторів ШІ, нідерландські назви та крокове підключення з грантами"
+  },
+  {
+   "nummer": 9,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-15",
+   "kop": "cursor/connector-uitvoeren-8d4d",
+   "basis": "claude/connector-v2-2026-10-15",
+   "titel": "Реальні дії конектора: лист, Диск, календар, дошка, пошук, GitHub"
+  },
+  {
+   "nummer": 10,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-15",
+   "kop": "cursor/connector-functies-8d4d",
+   "basis": "claude/connector-v2-2026-10-15",
+   "titel": "Повний каталог конектора як справжні дії без позначки у розробці"
+  },
+  {
+   "nummer": 11,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-31",
+   "kop": "feature/orch-001-20261031-112355",
+   "basis": "release/sec-001-20261031-084138",
+   "titel": "ORCH-001 етапи 0–4 + незалежна й адверсарна перевірка: єдині правила, один конвеєр приймання, універсальні випуски, керування з сайту/MCP, правила з passkey, приймальні тести, виправлення безпеки"
+  },
+  {
+   "nummer": 12,
+   "staat": "closed",
+   "samengevoegd": "2026-11-04T11:42:45",
+   "aangemaakt": "2026-10-31",
+   "kop": "release/sec-001-20261031-084138",
+   "basis": "voornaamst",
+   "titel": "Add comprehensive backend modules and deployment documentation"
+  },
+  {
+   "nummer": 13,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-31",
+   "kop": "fix/orch-001-audit-20261031-170250",
+   "basis": "feature/orch-001-20261031-112355",
+   "titel": "[DRAFT] Security review ORCH-001: untrusted test execution + upload ownership"
+  },
+  {
+   "nummer": 14,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-31",
+   "kop": "fix/mcp-tools-catalog-20261031-192004",
+   "basis": "release/sec-001-20261031-084138",
+   "titel": "MCP-001: відновлення каталогу MCP-інструментів для Cursor Cloud / GitHub OAuth / Streamable HTTP"
+  },
+  {
+   "nummer": 15,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-10-31",
+   "kop": "fix/mcp-deur-uitrol-20261031-204604",
+   "basis": "release/sec-001-20261031-084138",
+   "titel": "MCP-DEUR: синхронізація deploy/mcp/server.mjs та перезапуск служби порту 8091 під час встановлення і відкату"
+  },
+  {
+   "nummer": 16,
+   "staat": "closed",
+   "samengevoegd": "2026-11-01T06:35:56",
+   "aangemaakt": "2026-10-31",
+   "kop": "release/orch-001-mcp-20261031",
+   "basis": "release/sec-001-20261031-084138",
+   "titel": "INTEGRATIE: спільний кандидат ORCH-001 (PR #11 + PR #13) + MCP-001 (PR #14) + MCP-DEUR 8091 (PR #15)"
+  },
+  {
+   "nummer": 17,
+   "staat": "closed",
+   "samengevoegd": "2026-11-01T17:54:07",
+   "aangemaakt": "2026-11-01",
+   "kop": "claude/project-thread-99x4j9",
+   "basis": "release/sec-001-20261031-084138",
+   "titel": "ORCH-001 після злиття PR #16: чужу задачу не здати, агенту без passkey/besluit, подія при збої дверей 8091; розділені простори «Доступу ШІ»"
+  },
+  {
+   "nummer": 18,
+   "staat": "closed",
+   "samengevoegd": "2026-11-01T17:54:06",
+   "aangemaakt": "2026-11-01",
+   "kop": "fix/mcp-access-001-20261101-125530",
+   "basis": "release/sec-001-20261031-084138",
+   "titel": "MCP-ACCESS-001: точна серверна діагностика доступу ШІ, ізоляція за підключенням, прямі дії в 1 клік та живе оновлення дозволів"
+  },
+  {
+   "nummer": 19,
+   "staat": "closed",
+   "samengevoegd": "2026-11-01T17:54:06",
+   "aangemaakt": "2026-11-01",
+   "kop": "release/ux-ai-vault-001-20261101-160600",
+   "basis": "release/sec-001-20261031-084138",
+   "titel": "UX-AI-VAULT-001 + PR #17: керування ШІ-агентом в 1 місці з Passkey на місці та єдине адаптивне Сховище секретів"
+  },
+  {
+   "nummer": 20,
+   "staat": "closed",
+   "samengevoegd": "2026-11-04T11:42:40",
+   "aangemaakt": "2026-11-01",
+   "kop": "feature/login-001-20261101-184800-chatgpt",
+   "basis": "integratie",
+   "titel": "[DRAFT] LOGIN-001: minimalistische meertalige aanmeldweergave zonder logo"
+  },
+  {
+   "nummer": 21,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-01",
+   "kop": "feature/login-001-20261101-195230",
+   "basis": "integratie",
+   "titel": "[DRAFT] LOGIN-001: minimalistische aanmeldweergave (ORCH-conforme release-kandidaat)"
+  },
+  {
+   "nummer": 22,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-03",
+   "kop": "feature/mailorbit-001-20261103-205354",
+   "basis": "feature/integ-001-zvedennia-20261103-102243",
+   "titel": "MAILORBIT-001: інтерактивні поштові сервіси на порожній сторінці"
+  },
+  {
+   "nummer": 23,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-03",
+   "kop": "feature/trace-001-20261103-214810",
+   "basis": "feature/mailorbit-001-20261103-205354",
+   "titel": "TRACE-001: обов'язковий GitHub-журнал і SHA-256 кожного пакета"
+  },
+  {
+   "nummer": 24,
+   "staat": "closed",
+   "samengevoegd": "2026-11-07T08:22:36",
+   "aangemaakt": "2026-11-04",
+   "kop": "feature/mailmob-001-20261104-073200",
+   "basis": "feature/trace-001-20261103-214810",
+   "titel": "MAILMOB-001: жива мобільна пошта й виправлення «Не питати знову»"
+  },
+  {
+   "nummer": 25,
+   "staat": "closed",
+   "samengevoegd": "2026-11-07T08:22:36",
+   "aangemaakt": "2026-11-04",
+   "kop": "feature/mailpolish-001-20261104-084133",
+   "basis": "feature/mailmob-001-20261104-073200",
+   "titel": "MAILPOLISH-001: відтворити дизайнерську концепцію в реальній мобільній пошті"
+  },
+  {
+   "nummer": 26,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-04",
+   "kop": "fix/mailfix-001-20261104-095000",
+   "basis": "feature/mailpolish-001-20261104-084133",
+   "titel": "MAILFIX-001 — mobile width, remove duplicate service strip, diagnose broken Gmail OAuth"
+  },
+  {
+   "nummer": 27,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-04",
+   "kop": "fix/mailfit-001-20261104-110700",
+   "basis": "fix/mailfix-001-20261104-095000",
+   "titel": "MAILFIT-001 — centered responsive empty Mail onboarding"
+  },
+  {
+   "nummer": 28,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-05",
+   "kop": "feature/design-001-20261105-140000",
+   "basis": "feature/identity-account-ui-20261104-180000",
+   "titel": "DESIGN-001: оновити спільний дизайн і робочий стіл"
+  },
+  {
+   "nummer": 29,
+   "staat": "closed",
+   "samengevoegd": "2026-11-05T15:38:00",
+   "aangemaakt": "2026-11-05",
+   "kop": "feature/design-002-20261105-134500",
+   "basis": "integratie",
+   "titel": "DESIGN-002: продовження адаптивного оновлення інтерфейсу"
+  },
+  {
+   "nummer": 30,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T06:45:52",
+   "aangemaakt": "2026-11-05",
+   "kop": "claude/project-thread-99x4j9",
+   "basis": "integratie",
+   "titel": "ORCH-001: закриття задачі після PR #16/#17 і старі помилки пошуку, контрасту, мобільної верстки й тестів"
+  },
+  {
+   "nummer": 31,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T14:05:08",
+   "aangemaakt": "2026-11-05",
+   "kop": "integratie",
+   "basis": "voornaamst",
+   "titel": "DESIGN-002: Адаптивні поверхні й узгоджені порожні стани"
+  },
+  {
+   "nummer": 32,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T07:20:23",
+   "aangemaakt": "2026-11-05",
+   "kop": "claude/project-thread-ocqmeu",
+   "basis": "integratie",
+   "titel": "ZOEKDIEP-001: глибокі посилання пошуку, підрозділи хабу й доступ у каталозі"
+  },
+  {
+   "nummer": 33,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T07:37:57",
+   "aangemaakt": "2026-11-06",
+   "kop": "claude/project-thread-99x4j9",
+   "basis": "integratie",
+   "titel": "ORCH-001: старі помилки з перевірки перед злиттям PR #30 (тести, права тек, CSS-токени)"
+  },
+  {
+   "nummer": 34,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T07:38:06",
+   "aangemaakt": "2026-11-06",
+   "kop": "claude/project-thread-ocqmeu",
+   "basis": "integratie",
+   "titel": "ZOEKDIEP-001: стара хмара відкриває елемент з пошуку й поза bootstrap"
+  },
+  {
+   "nummer": 35,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T08:09:31",
+   "aangemaakt": "2026-11-06",
+   "kop": "claude/project-thread-ocqmeu",
+   "basis": "integratie",
+   "titel": "ZOEKDIEP-001: стара хмара більше не затирає resume після діплінка поза bootstrap"
+  },
+  {
+   "nummer": 36,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T08:10:56",
+   "aangemaakt": "2026-11-06",
+   "kop": "claude/project-thread-99x4j9",
+   "basis": "integratie",
+   "titel": "ORCH-001: Chrome-перевірка «Координація агентів» бере версію правил із beleid.json"
+  },
+  {
+   "nummer": 37,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-06",
+   "kop": "feature/uitgave-001-20261106-081134",
+   "basis": "integratie",
+   "titel": "UITGAVE-001: випуск 20261106-081134 з integratie (задача, журнал TRACE-001, workflow)"
+  },
+  {
+   "nummer": 38,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T09:25:31",
+   "aangemaakt": "2026-11-06",
+   "kop": "claude/project-thread-99x4j9",
+   "basis": "integratie",
+   "titel": "UITGAVE-001: пакувальник більше не ріже кириличний список змін посеред символу"
+  },
+  {
+   "nummer": 39,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T14:04:47",
+   "aangemaakt": "2026-11-06",
+   "kop": "feature/uitgave-001-20261106-092612",
+   "basis": "integratie",
+   "titel": "UITGAVE-001: випуск 20261106-092612 з integratie (друга спроба: задача, журнал TRACE-001, workflow)"
+  },
+  {
+   "nummer": 40,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T09:46:22",
+   "aangemaakt": "2026-11-06",
+   "kop": "claude/project-thread-3fl2lm",
+   "basis": "integratie",
+   "titel": "UITROL-UTF8-001: інсталятор обрізає AUTEUR/SAMENVATTING по цілому символу UTF-8"
+  },
+  {
+   "nummer": 41,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T19:07:08",
+   "aangemaakt": "2026-11-06",
+   "kop": "feature/design-003-20261106-103743",
+   "basis": "integratie",
+   "titel": "DESIGN-003 · адаптивна дошка підключень ШІ та чотири канали Antigravity"
+  },
+  {
+   "nummer": 42,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-06",
+   "kop": "feature/ext090-001-20261106-142448",
+   "basis": "integratie",
+   "titel": "EXT090-001 (замінено #43): розширення 0.9.2 і підтримка на сайті"
+  },
+  {
+   "nummer": 43,
+   "staat": "closed",
+   "samengevoegd": "2026-11-06T19:07:07",
+   "aangemaakt": "2026-11-06",
+   "kop": "feature/ext090-001-20261106-163840",
+   "basis": "integratie",
+   "titel": "EXT090-001: розширення 0.9.2 і підтримка на сайті (перезбірка на встановленій 20261106-142434)"
+  },
+  {
+   "nummer": 44,
+   "staat": "closed",
+   "samengevoegd": "2026-11-07T20:27:28",
+   "aangemaakt": "2026-11-07",
+   "kop": "feature/identiteit-003-account-atelier-20261107-190805",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-003 · Оформлення облікового запису з безпечним поверненням"
+  },
+  {
+   "nummer": 45,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-08",
+   "kop": "feature/identiteit-atelier-v49-nieuwste-20261108",
+   "basis": "integratie",
+   "titel": "Замінено запитом №46 · перенесення оформлення версії 49"
+  },
+  {
+   "nummer": 46,
+   "staat": "closed",
+   "samengevoegd": "2026-11-08T08:12:48",
+   "aangemaakt": "2026-11-08",
+   "kop": "feature/identiteit-atelier-v49-20261108-071906",
+   "basis": "integratie",
+   "titel": "ІДЕНТИЧНІСТЬ-004 · точне оформлення версії 49 без повторення засобів доступу"
+  },
+  {
+   "nummer": 47,
+   "staat": "closed",
+   "samengevoegd": "2026-11-08T08:37:52",
+   "aangemaakt": "2026-11-08",
+   "kop": "fix/identiteit-005-20261108-083100",
+   "basis": "integratie",
+   "titel": "ІДЕНТИЧНІСТЬ-005 · завершити оформлення версії 49 для випуску"
+  },
+  {
+   "nummer": 48,
+   "staat": "closed",
+   "samengevoegd": "2026-11-08T09:10:50",
+   "aangemaakt": "2026-11-08",
+   "kop": "fix/trace-002-20261108-090548",
+   "basis": "integratie",
+   "titel": "TRACE-002 · усунути помилку перевірки походження випуску"
+  },
+  {
+   "nummer": 49,
+   "staat": "closed",
+   "samengevoegd": "2026-11-08T11:20:11",
+   "aangemaakt": "2026-11-08",
+   "kop": "fix/mobiel-001-20261108-100838",
+   "basis": "integratie",
+   "titel": "MOBIEL-001 · відновити охайне оформлення центру налаштувань на смартфонах"
+  },
+  {
+   "nummer": 50,
+   "staat": "closed",
+   "samengevoegd": "2026-11-09T07:03:49",
+   "aangemaakt": "2026-11-08",
+   "kop": "claude/project-thread-3y80yu",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-006/007 · «Студія» та вигляд «Макет» за дизайном власника для центру облікового запису"
+  },
+  {
+   "nummer": 51,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-08",
+   "kop": "feature/identiteit-006-20261108-162906",
+   "basis": "voornaamst",
+   "titel": "ІДЕНТИЧНІСТЬ-004: відтворено оформлення версії 49 з чинними діями та перемикачем"
+  },
+  {
+   "nummer": 52,
+   "staat": "closed",
+   "samengevoegd": "2026-11-09T07:03:14",
+   "aangemaakt": "2026-11-09",
+   "kop": "feature/identiteit-007-20261109-051209",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-007 · гілка випуску вигляду «Макет» центру облікового запису"
+  },
+  {
+   "nummer": 53,
+   "staat": "closed",
+   "samengevoegd": "2026-11-09T07:03:25",
+   "aangemaakt": "2026-11-09",
+   "kop": "feature/identiteit-007-20261109-055709",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-007 · друга гілка випуску: перемикач вигляду видно з класичної сторінки"
+  },
+  {
+   "nummer": 54,
+   "staat": "closed",
+   "samengevoegd": "2026-11-09T07:03:37",
+   "aangemaakt": "2026-11-09",
+   "kop": "feature/identiteit-007-20261109-065225",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-007 · третій випуск: «Макет» завжди в списку виглядів, перемикач функції з міграції"
+  },
+  {
+   "nummer": 55,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-09",
+   "kop": "claude/project-thread-qtn620",
+   "basis": "integratie",
+   "titel": "PERF-001 · швидший старт сторінок: менший бандл, менше запитів, стиснення"
+  },
+  {
+   "nummer": 56,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-09",
+   "kop": "claude/project-thread-3y80yu",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-007 · міграція 0200: опис перемикача вкладається в межу CHECK (≤ 300 знаків)"
+  },
+  {
+   "nummer": 57,
+   "staat": "closed",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-09",
+   "kop": "claude/project-thread-4pq3u6",
+   "basis": "integratie",
+   "titel": "UITROL-001 · Модернізація оновлення: перевірка вимог, проба міграцій, конвеєр, термінал-вікно, зупинка власником"
+  },
+  {
+   "nummer": 58,
+   "staat": "closed",
+   "samengevoegd": "2026-11-09T21:08:30",
+   "aangemaakt": "2026-11-09",
+   "kop": "feature/uitrol-001-20261109-102608",
+   "basis": "integratie",
+   "titel": "UITROL-001 · гілка випуску: модернізоване оновлення + PERF-001"
+  },
+  {
+   "nummer": 59,
+   "staat": "closed",
+   "samengevoegd": "2026-11-09T20:36:18",
+   "aangemaakt": "2026-11-09",
+   "kop": "feature/mailbg-001-20261109-161500",
+   "basis": "integratie",
+   "titel": "MAILBG-001 · живе тло пошти з лінзою та налаштуваннями"
+  },
+  {
+   "nummer": 60,
+   "staat": "closed",
+   "samengevoegd": "2026-11-09T21:08:28",
+   "aangemaakt": "2026-11-09",
+   "kop": "release/mailbg-001-samenvoegen-20261109-215500",
+   "basis": "integratie",
+   "titel": "MAILBG-001 · узгодити встановлену версію та випустити тло пошти"
+  },
+  {
+   "nummer": 61,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-10",
+   "kop": "feature/huis-001-20261110-072933",
+   "basis": "integratie",
+   "titel": "HUIS-001 · Розумний будинок «Живий дім»: клікабельний макет на сайті, специфікація дизайну, виправлення розділу «Дім» (етап 0)"
+  },
+  {
+   "nummer": 62,
+   "staat": "closed",
+   "samengevoegd": "2026-11-10T11:03:08",
+   "aangemaakt": "2026-11-10",
+   "kop": "fix/mailscan-002-20261110-082557",
+   "basis": "integratie",
+   "titel": "MAILSCAN-002 · добровільна перевірка адрес і живе рідинне тло пошти"
+  },
+  {
+   "nummer": 63,
+   "staat": "closed",
+   "samengevoegd": "2026-11-10T11:23:11",
+   "aangemaakt": "2026-11-10",
+   "kop": "feature/mailbg-001-aanraking-20261110",
+   "basis": "integratie",
+   "titel": "MAILBG-001 · зберегти лінзу після дотику та узгодити перевірки"
+  },
+  {
+   "nummer": 64,
+   "staat": "closed",
+   "samengevoegd": "2026-11-10T14:12:16",
+   "aangemaakt": "2026-11-10",
+   "kop": "integratie",
+   "basis": "feature/mailscan-002-uitgave-20261110-120000",
+   "titel": "MAILSCAN-002 · додати найновіші інтегровані зміни до випуску"
+  },
+  {
+   "nummer": 65,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-11",
+   "kop": "feature/identiteit-008-accountmenu-v3-20261111-142500",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-008: меню облікового запису v3, виправлення пошти Google та відкрита агентна екосистема ШІ"
+  },
+  {
+   "nummer": 66,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-11",
+   "kop": "feature/github-010-volledige-omgeving-20261111-210000",
+   "basis": "integratie",
+   "titel": "GITHUB-010: повноцінне двостороннє робоче середовище GitHub та екосистемні мости · volledige tweerichtings-GitHub-werkruimte"
+  },
+  {
+   "nummer": 67,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "fix/github-011-oauth-sleutelkluis-20261112-032000",
+   "basis": "integratie",
+   "titel": "GITHUB-011: виправити зворотний виклик OAuth та однонатискове підключення GitHub при закритому сховищі ключів"
+  },
+  {
+   "nummer": 68,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "fix/github-012-mobiele-weergave-20261112-041500",
+   "basis": "integratie",
+   "titel": "GITHUB-012: повна адаптація мобільної, планшетної та настільної версій розділу GitHub у всіх 13 підрозділах і просторах"
+  },
+  {
+   "nummer": 69,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "dependabot/npm_and_yarn/npm_and_yarn-78234950ac",
+   "basis": "voornaamst",
+   "titel": "Bump fast-xml-parser from 5.11.2 to 5.12.0 in the npm_and_yarn group across 1 directory"
+  },
+  {
+   "nummer": 70,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "fix/identiteit-009-mobiel-veiligheid-20261112-080000",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-009 · повна мобільна адаптація всіх трьох режимів id.tarasevych.com та зміцнення безпеки й швидкодії"
+  },
+  {
+   "nummer": 71,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "fix/identiteit-010-aanmelden-ecosysteem-20261112-103500",
+   "basis": "integratie",
+   "titel": "IDENTITEIT-010 · цілісний вхід на всіх піддоменах, єдиний сеанс простору, Telegram і сповіщення"
+  },
+  {
+   "nummer": 72,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "feature/cloud-001-delen-mappen-20261112-174242",
+   "basis": "integratie",
+   "titel": "CLOUD-001: завантаження тек і архівів у хмару, спільний доступ до папок і частин файлів та статистика посилань"
+  },
+  {
+   "nummer": 73,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "claude/admiring-wozniak-gahlxr",
+   "basis": "integratie",
+   "titel": "MCP-001 · R0+R1: схеми браузерних інструментів, Origin, CIMD, iss, план до MCP 2026-07-28"
+  },
+  {
+   "nummer": 74,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-12",
+   "kop": "feature/mcp-001-platform-20261112-210500",
+   "basis": "integratie",
+   "titel": "MCP-001 · Повна підтримка протоколу MCP 2026-07-28 + 2025-11-25, безпека OAuth 2.1 та вбудована Студія-Інспектор (mcp.tarasevych.com)"
+  },
+  {
+   "nummer": 75,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-13",
+   "kop": "fix/sec-002-20261112-121623",
+   "basis": "integratie",
+   "titel": "SEC-002 · виправлення вразливостей за глибоким аудитом безпеки поверх версії 20261112-192752"
+  },
+  {
+   "nummer": 76,
+   "staat": "open",
+   "samengevoegd": "",
+   "aangemaakt": "2026-11-13",
+   "kop": "claude/optimistic-mayer-exvf2p",
+   "basis": "voornaamst",
+   "titel": "IDENTITEIT-011: план доопрацювання вигляду «Макет» центру облікового запису"
+  }
+ ]
+}
