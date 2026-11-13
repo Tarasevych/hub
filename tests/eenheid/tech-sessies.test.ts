@@ -5,6 +5,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { getPool } from '../../server/platform/pg';
 import * as tp from '../../backend/tech-profiel';
 import { checker } from './hulp/nep-google';
+import { googleStapOpVastleggen } from '../../backend/stap-op'; // IDENTITEIT-012
 
 const sha = (v: string) => createHash('sha256').update(v).digest('hex');
 const tab = () => randomBytes(24).toString('hex');
@@ -86,10 +87,16 @@ export async function main(): Promise<number> {
     // revoke-others → alles behalve de aanroepende sessie
     const aA2 = await actief(tA, sA);
     const aC2 = await tp.activeren(eig, tC, 30, 'opnieuw in C', { id: sC.id, createdAt: sC.createdAt });
+    // IDENTITEIT-012: «Завершити всі інші входи» та «Вийти всюди» вимагають підтвердження доступу (тут — свіжий вхід Google).
+    const zonderStap = await roep('/api/owner/identity/security/revoke-others', sA);
+    check('IDENTITEIT-012: revoke-others без підтвердження → 403 STEP_UP_*, нічого не завершено', zonderStap.status === 403 && /STEP_UP/.test(String(zonderStap.data.reasonCode || zonderStap.data.error)) && !!(await actief(tC, sC)), JSON.stringify(zonderStap.data));
+    await googleStapOpVastleggen(uid, [sA.id], Date.now());
     const ro = await roep('/api/owner/identity/security/revoke-others', sA);
     check('revoke-others beëindigt de technische profielen van de andere sessies, niet van deze', ro.status === 200 && ro.data.tech === 1 && (await actief(tC, sC)) === null && !!(await actief(tA, sA)) && (await redenVan(aC2.id)) === 'revoke-others' && aA2?.id === aA.id, JSON.stringify(ro.data));
 
     // revoke-all → alles, ook deze sessie; daarna opnieuw aanmelden in HETZELFDE tabblad → niets actief, activeren vraagt stap-op
+    const raZonder = await roep('/api/owner/identity/security/revoke-all', await sessie()); // свіжа сесія без підтвердження
+    check('IDENTITEIT-012: revoke-all без підтвердження → 403 STEP_UP_*, профіль лишається', raZonder.status === 403 && !!(await actief(tA)), JSON.stringify(raZonder.data));
     const ra = await roep('/api/owner/identity/security/revoke-all', sA);
     check('revoke-all beëindigt alle technische profielen (reden revoke-all)', ra.status === 200 && ra.data.tech === 1 && (await actief(tA)) === null && (await redenVan(aA.id)) === 'revoke-all', JSON.stringify(ra.data));
     const sNa = await sessie();
