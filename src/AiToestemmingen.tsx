@@ -9,6 +9,7 @@ import { Help, IconButton, type Tr } from './mcp-ui';
 import { foutTekst } from './agenten/fouten';
 // SEC-002 extensie-02 (g10a-2): rechten geven mag alleen de mens — zone voor de brug van de extensie + alleen een echte klik.
 import { alleenMens, geenAi } from './menselijke-actie';
+import './ai-bevestiging/ai-bevestigingen-maquette.css';
 
 type Capability = 'browser.read' | 'browser.navigate' | 'browser.interact' | 'browser.screenshot' | 'browser.console' | 'browser.debug' | 'browser.script' | 'machine.read' | 'machine.write' | 'machine.exec' | 'machine.docker';
 type Grant = { id: string; agentId: string; capability: Capability; domains: string[]; always: boolean; preset: string | null; grantedAt: number; expiresAt: number; revokedAt: number | null };

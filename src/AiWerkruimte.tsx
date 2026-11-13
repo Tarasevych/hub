@@ -24,6 +24,7 @@ import {
   type Feiten, type Middel, type MiddelStaat, type Startstaat, type Tweetalig,
 } from '../shared/ai-werkruimte';
 import './ai-werkruimte.css';
+import './ai-werkruimte-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Props = {

@@ -5,7 +5,7 @@
 //   • modus === 'workflows' : aanpassing en uitbreiding van het eigen deel van de site binnen de accountruimte
 //                             + volledig open pakket voor zelfstandige uitrol op eigen apparatuur.
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ArrowRightLeft, Blocks, Copy, Cpu, FolderLock, Globe, Layers, Server, ShieldAlert } from 'lucide-react';
+import { ArrowRightLeft, Blocks, Copy, Cpu, FolderLock, Globe, Layers, Server, ShieldAlert, Terminal, Workflow } from 'lucide-react';
 import ProductEmptyState from '../ProductLegeToestand';
 import { api } from '../platform/client';
 import { ecosystemTabContext } from '../tab-context';
@@ -28,6 +28,7 @@ import {
 } from '../../shared/ai-ecosysteem';
 import AgentLogo from '../agenten/AgentLogo';
 import './ai-ecosysteem.css';
+import './ai-ecosysteem-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 
@@ -122,8 +123,8 @@ export function AiWerkruimteEcosysteemBalk({
   };
 
   return (
-    <section className='aie-chat-koppeling' data-aie-werkgebied-balk='1' data-aie-ruimte={data.ruimte}>
-      <div className='aie-item-kop'>
+    <section className='aie-chat-koppeling aie-mq-chat-balk' data-aie-werkgebied-balk='1' data-aie-ruimte={data.ruimte}>
+      <div className='aie-item-kop aie-mq-balk-kop'>
         <b>
           <Layers size={16} aria-hidden='true' />{' '}
           {tr('Єдина екосистема вашого простору', 'Verenigd ecosysteem van uw ruimte')}
@@ -154,14 +155,14 @@ export function AiWerkruimteEcosysteemBalk({
 
         <div className='aie-veld'>
           <span>{tr('Швидкі переходи до агентних служб', 'Snelle ingangen naar agentdiensten')}</span>
-          <div className='aie-knoppen'>
-            <a className='aie-knop-tweede' href={hubUrl('agent/codex')}>
+          <div className='aie-knoppen aie-mq-snel-agenten'>
+            <a className='aie-knop-tweede aie-mq-koppeling-pil' href={hubUrl('agent/codex')}>
               <AgentLogo agent='codex' naam='Codex' size={18} /> Codex
             </a>
-            <a className='aie-knop-tweede' href={hubUrl('agent/claude')}>
+            <a className='aie-knop-tweede aie-mq-koppeling-pil' href={hubUrl('agent/claude')}>
               <AgentLogo agent='claude' naam='Claude' size={18} /> Claude
             </a>
-            <a className='aie-knop-tweede' href={hubUrl('ai')}>
+            <a className='aie-knop-tweede aie-mq-koppeling-pil' href={hubUrl('ai')}>
               {tr('Усі підключені агенти', 'Alle gekoppelde agenten')}
             </a>
           </div>
@@ -169,7 +170,7 @@ export function AiWerkruimteEcosysteemBalk({
       </div>
 
       {data.contextItems.length > 0 ? (
-        <div className='aie-veld' data-aie-context-keuze='1'>
+        <div className='aie-veld aie-mq-context-strook' data-aie-context-keuze='1'>
           <span>{tr('Прикріпити спільний контекст між завданнями', 'Gedeelde werkcontext tussen taken meesturen')}</span>
           <div className='aie-keuzerij'>
             {data.contextItems.slice(0, 10).map((c) => (
@@ -194,7 +195,7 @@ export function AiWerkruimteEcosysteemBalk({
               <button
                 key={u.id}
                 type='button'
-                className='aie-knop-tweede'
+                className='aie-knop-tweede aie-mq-uitbreiding-knop'
                 onClick={() => u.config.startVraag && onKiesStartVraag(u.config.startVraag)}
               >
                 <Blocks size={15} aria-hidden='true' /> {u.naam}
@@ -465,7 +466,7 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
     return (
       <>
         {band}
-        <p className='aiw-nog-niet' aria-busy='true'>{tr('Читаємо налаштування вашої екосистеми ШІ…', 'De instellingen van uw AI-ecosysteem worden gelezen…')}</p>
+        <p className='aiw-nog-niet aie-mq-laden' aria-busy='true' data-aie-laden='1'>{tr('Читаємо налаштування вашої екосистеми ШІ…', 'De instellingen van uw AI-ecosysteem worden gelezen…')}</p>
       </>
     );
   }
@@ -474,7 +475,7 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
     return (
       <>
         {band}
-        <section className='aie-container'>
+        <section className='aie-container aie-mq-fout-container' data-aie-fout='1'>
           <ProductEmptyState
             icon={ShieldAlert}
             title={fout.recht ? tr('Розділ ШІ для цього облікового запису ще не ввімкнено', 'Het AI-onderdeel staat voor dit account nog niet aan') : tr('Не вдалося завантажити екосистему ШІ', 'Het AI-ecosysteem kon niet geladen worden')}
@@ -489,28 +490,34 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
 
   const ruimteTitel = RUIMTE_NAAM[data.ruimte] ?? RUIMTE_NAAM.prive;
   const sjablonen = STANDAARD_WERKRUIMTE_SJABLONEN.filter((s) => s.ruimte === 'beide' || s.ruimte === data.ruimte);
+  const serverOmgevingActief = data.ruimte === 'technisch' && wkServerAan;
 
   return (
     <>
       {band}
-      <div className='aie-container' data-aie-modus={modus} data-aie-ruimte={data.ruimte}>
+      <div className='aie-container aie-mq-container' data-aie-modus={modus} data-aie-ruimte={data.ruimte}>
         {meldingOk ? <p className='aie-melding-ok' role='status'>{meldingOk}</p> : null}
         {actieFout ? <p className='aie-melding-fout' role='alert'>{actieFout}</p> : null}
 
         {modus === 'agents' ? (
           <>
-            <header className='aie-kop'>
-              <div>
+            <header className='aie-kop aie-mq-held-kop' data-aie-kop='agents'>
+              <div className='aie-mq-kop-tekst'>
+                <span className='aie-mq-bovenregel'>{tr('ЕКОСИСТЕМА АГЕНТІВ ШІ · МЕЖІ ДОСТУПУ', 'AI-AGENT-ECOSYSTEEM · TOEGANGSGRENZEN')}</span>
                 <h1>{tr('Агенти та ізольовані робочі простори', 'Agenten en geïsoleerde werkruimtes')}</h1>
                 <p>{tr(
                   'Кожен агент ШІ працює в межах вибраного вами простору: ви самі визначаєте доступ до комп’ютера, оглядача й сервера, дозволені теки файлів та підключені служби.',
                   'Elke AI-agent werkt binnen een door u gekozen werkruimte: u bepaalt zelf de toegang tot computer, browser en server, de toegestane bestandsmappen en de aangesloten diensten.',
                 )}</p>
               </div>
-              <span className='aie-ruimte-pil'>{tr(ruimteTitel.uk, ruimteTitel.nl)}</span>
+              <div className='aie-knoppen aie-mq-kop-meta'>
+                <span className='aie-badge aie-mq-stat-pil'>{tr('Просторів', 'Werkruimtes')}: <b>{data.werkruimtes.length}</b></span>
+                <span className='aie-badge aie-mq-stat-pil'>{tr('З’єднувачів', 'Koppelingen')}: <b>{V2_AGENTEN.length}</b></span>
+                <span className='aie-ruimte-pil'>{tr(ruimteTitel.uk, ruimteTitel.nl)}</span>
+              </div>
             </header>
 
-            <article className='aie-kaart'>
+            <article className='aie-kaart aie-mq-kaart-agenten'>
               <h2><Cpu size={18} aria-hidden='true' /> {tr('Інструменти програмування ШІ (Codex, Claude та інші)', 'AI-programmeerhulpmiddelen (Codex, Claude en andere)')}</h2>
               <p className='aie-subtekst'>
                 {tr(
@@ -519,9 +526,15 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                 )}
               </p>
               <div className='aie-grid-2'>
-                <div className='aie-omgeving-vak'>
-                  <b>OpenAI Codex (<code>/codex</code>)</b>
-                  <pre className='aie-codeblok'>codex mcp add mijn-ruimte --url https://mcp.tarasevych.com/codex</pre>
+                <div className='aie-omgeving-vak aie-mq-terminal-vak'>
+                  <div className='aie-item-kop aie-mq-terminal-kop'>
+                    <span className='aie-mq-agent-titel'>
+                      <AgentLogo agent='codex' naam='Codex' size={20} />
+                      <b>OpenAI Codex (<code>/codex</code>)</b>
+                    </span>
+                    <span className='aie-badge aie-mq-kanaal-pil'>MCP · /codex</span>
+                  </div>
+                  <pre className='aie-codeblok aie-mq-codeblok' data-aie-terminal='codex'>codex mcp add mijn-ruimte --url https://mcp.tarasevych.com/codex</pre>
                   <div className='aie-knoppen'>
                     <button type='button' className='aie-knop-tweede' onClick={() => void kopieerTekst('codex mcp add mijn-ruimte --url https://mcp.tarasevych.com/codex', 'команду Codex', 'Codex-opdracht')}>
                       <Copy size={14} aria-hidden='true' /> {tr('Скопіювати команду', 'Opdracht kopiëren')}
@@ -529,9 +542,15 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                     <a className='aie-knop-tweede' href={hubUrl('agent/codex')}>{tr('Налаштувати права Codex', 'Rechten van Codex instellen')}</a>
                   </div>
                 </div>
-                <div className='aie-omgeving-vak'>
-                  <b>Anthropic Claude (<code>/claude</code>)</b>
-                  <pre className='aie-codeblok'>claude mcp add --transport http mijn-ruimte https://mcp.tarasevych.com/claude</pre>
+                <div className='aie-omgeving-vak aie-mq-terminal-vak'>
+                  <div className='aie-item-kop aie-mq-terminal-kop'>
+                    <span className='aie-mq-agent-titel'>
+                      <AgentLogo agent='claude' naam='Claude' size={20} />
+                      <b>Anthropic Claude (<code>/claude</code>)</b>
+                    </span>
+                    <span className='aie-badge aie-mq-kanaal-pil'>MCP · /claude</span>
+                  </div>
+                  <pre className='aie-codeblok aie-mq-codeblok' data-aie-terminal='claude'>claude mcp add --transport http mijn-ruimte https://mcp.tarasevych.com/claude</pre>
                   <div className='aie-knoppen'>
                     <button type='button' className='aie-knop-tweede' onClick={() => void kopieerTekst('claude mcp add --transport http mijn-ruimte https://mcp.tarasevych.com/claude', 'команду Claude', 'Claude-opdracht')}>
                       <Copy size={14} aria-hidden='true' /> {tr('Скопіювати команду', 'Opdracht kopiëren')}
@@ -540,9 +559,40 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                   </div>
                 </div>
               </div>
+
+              <div className='aie-veld aie-mq-onafhankelijke-sectie'>
+                <span>{tr('Незалежні агенти платформи та стан прикріплення до просторів', 'Onafhankelijke platformagenten en koppelstatus in werkruimtes')}</span>
+                <div className='aie-grid-3 aie-mq-agent-kaarten' data-aie-agent-overzicht='1'>
+                  {V2_AGENTEN.map((a) => {
+                    const gekoppeldAantal = data.werkruimtes.filter((w) => w.actief && w.agenten.includes(a.slug)).length;
+                    return (
+                      <a
+                        key={a.slug}
+                        className='aie-omgeving-vak aie-mq-agent-kaart'
+                        href={hubUrl(`agent/${a.slug}`)}
+                        data-aie-agent-kaart={a.slug}
+                        data-aie-gekoppeld={gekoppeldAantal > 0 ? '1' : '0'}
+                      >
+                        <div className='aie-item-kop'>
+                          <span className='aie-mq-agent-titel'>
+                            <AgentLogo agent={a.slug} naam={a.naam} size={20} />
+                            <b>{a.naam}</b>
+                          </span>
+                          <code className='aie-badge aie-mq-eindpunt-pil'>/{a.slug}</code>
+                        </div>
+                        <span className='aie-subtekst aie-mq-verbinding-status'>
+                          {gekoppeldAantal > 0
+                            ? tr(`Активний у просторах: ${gekoppeldAantal}`, `Actief in werkruimtes: ${gekoppeldAantal}`)
+                            : tr('Окремий ізольований з’єднувач', 'Afzonderlijke geïsoleerde koppeling')}
+                        </span>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
             </article>
 
-            <article className='aie-kaart' data-aie-werkruimtes-sectie='1'>
+            <article className='aie-kaart aie-mq-kaart-werkruimtes' data-aie-werkruimtes-sectie='1'>
               <h2><FolderLock size={18} aria-hidden='true' /> {tr('Ізольовані робочі простори агентів ШІ', 'Geïsoleerde werkruimtes voor AI-agenten')}</h2>
               <p className='aie-subtekst'>
                 {tr(
@@ -550,15 +600,15 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                   'Kant-en-klare sjablonen voor een snelle start — klik om de instellingen voor begrensde toegang in te vullen:',
                 )}
               </p>
-              <div className='aie-knoppen'>
+              <div className='aie-knoppen aie-mq-sjablonen-rij'>
                 {sjablonen.map((s) => (
-                  <button key={s.id} type='button' className='aie-knop-tweede' onClick={() => pasSjabloonToe(s)}>
+                  <button key={s.id} type='button' className='aie-knop-tweede aie-mq-sjabloon-knop' onClick={() => pasSjabloonToe(s)}>
                     {tr(s.naamUk, s.naamNl)}
                   </button>
                 ))}
               </div>
 
-              <form onSubmit={(e) => void bewaarWerkruimte(e)} className='aie-lijst'>
+              <form onSubmit={(e) => void bewaarWerkruimte(e)} className='aie-lijst aie-mq-formulier'>
                 <div className='aie-grid-2'>
                   <label className='aie-veld'>
                     <span>{tr('Назва ізольованого простору', 'Naam van de geïsoleerde werkruimte')}</span>
@@ -573,7 +623,7 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                 </div>
 
                 <div className='aie-grid-3'>
-                  <div className='aie-omgeving-vak'>
+                  <div className='aie-omgeving-vak aie-mq-omgeving-kaart' data-aie-omgeving='pc' data-aie-actief={wkPcAan ? '1' : '0'}>
                     <b><Cpu size={15} aria-hidden='true' /> {tr('1. Локальний комп’ютер (agent.mjs)', '1. Lokale computer (agent.mjs)')}</b>
                     <label className='aie-vink'>
                       <input type='checkbox' checked={wkPcAan} onChange={(e) => setWkPcAan(e.target.checked)} />
@@ -589,7 +639,7 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                     </label>
                   </div>
 
-                  <div className='aie-omgeving-vak'>
+                  <div className='aie-omgeving-vak aie-mq-omgeving-kaart' data-aie-omgeving='browser' data-aie-actief={wkBrowserAan ? '1' : '0'}>
                     <b><Globe size={15} aria-hidden='true' /> {tr('2. Оглядач (розширення)', '2. Browser (extensie)')}</b>
                     <label className='aie-vink'>
                       <input type='checkbox' checked={wkBrowserAan} onChange={(e) => setWkBrowserAan(e.target.checked)} />
@@ -601,7 +651,7 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                     </label>
                   </div>
 
-                  <div className='aie-omgeving-vak'>
+                  <div className='aie-omgeving-vak aie-mq-omgeving-kaart' data-aie-omgeving='server' data-aie-actief={serverOmgevingActief ? '1' : '0'}>
                     <b><Server size={15} aria-hidden='true' /> {tr('3. Сервер і випуски', '3. Server en uitgaven')}</b>
                     {data.ruimte === 'technisch' ? (
                       <>
@@ -642,12 +692,13 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                   <span>{tr('Прикріплені агенти ШІ', 'Gekoppelde AI-agenten')}</span>
                   <div className='aie-keuzerij'>
                     {V2_AGENTEN.map((a) => (
-                      <label key={a.slug} className='aie-vink'>
+                      <label key={a.slug} className='aie-vink aie-mq-agent-vink'>
                         <input
                           type='checkbox'
                           checked={wkAgenten.includes(a.slug)}
                           onChange={(e) => setWkAgenten(e.target.checked ? [...wkAgenten, a.slug] : wkAgenten.filter((x) => x !== a.slug))}
                         />
+                        <AgentLogo agent={a.slug} naam={a.naam} size={15} />
                         <span>{a.naam}</span>
                       </label>
                     ))}
@@ -660,9 +711,9 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
               </form>
 
               {data.werkruimtes.length > 0 ? (
-                <ul className='aie-lijst'>
+                <ul className='aie-lijst aie-mq-werkruimte-lijst'>
                   {data.werkruimtes.map((w) => (
-                    <li key={w.id} className='aie-item' data-aie-werkruimte-kaart={w.id}>
+                    <li key={w.id} className='aie-item aie-mq-werkruimte-item' data-aie-werkruimte-kaart={w.id}>
                       <div className='aie-item-kop'>
                         <b>{w.naam}</b>
                         <button type='button' className='aie-knop-gevaar' onClick={() => void verwijderWerkruimte(w.id)}>
@@ -671,16 +722,23 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                       </div>
                       {w.beschrijving ? <p className='aie-subtekst'>{w.beschrijving}</p> : null}
                       <div className='aie-badges'>
-                        {w.omgevingen.pc.aan ? <span className='aie-badge'>{tr('Комп’ютер', 'Computer')}: {w.omgevingen.pc.schrijven ? tr('читання+запис', 'lezen+schrijven') : tr('лише читання', 'alleen lezen')}{w.omgevingen.pc.mappen.length ? ` (${w.omgevingen.pc.mappen.join(', ')})` : ''}</span> : null}
-                        {w.omgevingen.browser.aan ? <span className='aie-badge'>{tr('Оглядач', 'Browser')}{w.omgevingen.browser.domeinen.length ? `: ${w.omgevingen.browser.domeinen.join(', ')}` : ''}</span> : null}
-                        {w.omgevingen.server.aan ? <span className='aie-badge'>{tr('Сервер', 'Server')}</span> : null}
-                        {w.agenten.map((ag) => <span key={ag} className='aie-badge'>{ag}</span>)}
+                        {w.omgevingen.pc.aan ? <span className='aie-badge aie-mq-omgeving-pil'>{tr('Комп’ютер', 'Computer')}: {w.omgevingen.pc.schrijven ? tr('читання+запис', 'lezen+schrijven') : tr('лише читання', 'alleen lezen')}{w.omgevingen.pc.mappen.length ? ` (${w.omgevingen.pc.mappen.join(', ')})` : ''}</span> : null}
+                        {w.omgevingen.browser.aan ? <span className='aie-badge aie-mq-omgeving-pil'>{tr('Оглядач', 'Browser')}{w.omgevingen.browser.domeinen.length ? `: ${w.omgevingen.browser.domeinen.join(', ')}` : ''}</span> : null}
+                        {w.omgevingen.server.aan ? <span className='aie-badge aie-mq-omgeving-pil'>{tr('Сервер', 'Server')}</span> : null}
+                        {w.agenten.map((ag) => (
+                          <span key={ag} className='aie-badge aie-mq-agent-pil'>
+                            <AgentLogo agent={ag} naam={ag} size={13} /> {ag}
+                          </span>
+                        ))}
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className='aie-subtekst'>{tr('Поки немає жодного створеного ізольованого простору — оберіть шаблон вище або збережіть власний.', 'Nog geen geïsoleerde werkruimte aangemaakt — kies hierboven een sjabloon of bewaar uw eigen ruimte.')}</p>
+                <div className='aie-omgeving-vak aie-mq-leeg' data-aie-leeg='werkruimtes'>
+                  <FolderLock size={20} aria-hidden='true' />
+                  <p className='aie-subtekst'>{tr('Поки немає жодного створеного ізольованого простору — оберіть шаблон вище або збережіть власний.', 'Nog geen geïsoleerde werkruimte aangemaakt — kies hierboven een sjabloon of bewaar uw eigen ruimte.')}</p>
+                </div>
               )}
             </article>
           </>
@@ -688,23 +746,26 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
 
         {modus === 'runs' ? (
           <>
-            <header className='aie-kop'>
-              <div>
+            <header className='aie-kop aie-mq-held-kop' data-aie-kop='runs'>
+              <div className='aie-mq-kop-tekst'>
+                <span className='aie-mq-bovenregel'>{tr('СПІЛЬНИЙ КОНТЕКСТ · ЖУРНАЛ ЗАПУСКІВ І ПЕРЕДАЧ', 'GEDEELDE CONTEXT · UITVOERINGEN EN OVERDRACHTEN')}</span>
                 <h1>{tr('Спільний контекст і взаємодія агентів', 'Gedeelde werkcontext en samenwerking tussen agenten')}</h1>
                 <p>{tr(
                   'Зберігайте контекст між завданнями й підключеними застосунками та передавайте роботу від одного агента ШІ іншому за вашим розпорядженням.',
                   'Bewaar context tussen taken en aangesloten toepassingen en draag werk in uw opdracht over van de ene AI-agent naar de andere.',
                 )}</p>
               </div>
-              <div className='aie-knoppen'>
+              <div className='aie-knoppen aie-mq-kop-meta'>
+                <span className='aie-badge aie-mq-stat-pil'>{tr('Контекст', 'Context')}: <b>{data.contextItems.length}</b></span>
+                <span className='aie-badge aie-mq-stat-pil'>{tr('Передач', 'Overdrachten')}: <b>{data.overdrachten.length}</b></span>
                 <span className='aie-ruimte-pil'>{tr(ruimteTitel.uk, ruimteTitel.nl)}</span>
                 <a className='aie-knop-tweede' href={hubUrl('journaal')}>{tr('Відкрити журнал дій', 'Actielogboek openen')}</a>
               </div>
             </header>
 
-            <article className='aie-kaart' data-aie-context-sectie='1'>
+            <article className='aie-kaart aie-mq-kaart-context' data-aie-context-sectie='1'>
               <h2><Layers size={18} aria-hidden='true' /> {tr('Спільний контекст між завданнями та застосунками', 'Gedeelde werkcontext tussen taken en toepassingen')}</h2>
-              <form onSubmit={(e) => void bewaarContext(e)} className='aie-lijst'>
+              <form onSubmit={(e) => void bewaarContext(e)} className='aie-lijst aie-mq-formulier'>
                 <div className='aie-grid-3'>
                   <label className='aie-veld'>
                     <span>{tr('Ключ контексту', 'Contextsleutel')}</span>
@@ -745,9 +806,9 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
               </form>
 
               {data.contextItems.length > 0 ? (
-                <ul className='aie-lijst'>
+                <ul className='aie-lijst aie-mq-context-lijst'>
                   {data.contextItems.map((c) => (
-                    <li key={c.id} className='aie-item' data-aie-context-kaart={c.sleutel}>
+                    <li key={c.id} className='aie-item aie-mq-context-item' data-aie-context-kaart={c.sleutel}>
                       <div className='aie-item-kop'>
                         <b>{c.titel} <code>[{c.sleutel}]</code></b>
                         <button type='button' className='aie-knop-gevaar' onClick={() => void verwijderContext(c.sleutel)}>
@@ -755,21 +816,24 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                         </button>
                       </div>
                       <div className='aie-badges'>
-                        <span className='aie-badge'>{tr('Джерело', 'Bron')}: {c.bronDienst}{c.bronAgent ? ` · ${c.bronAgent}` : ''}</span>
+                        <span className='aie-badge aie-mq-bron-pil'>{tr('Джерело', 'Bron')}: {c.bronDienst}{c.bronAgent ? ` · ${c.bronAgent}` : ''}</span>
                       </div>
-                      <pre className='aie-codeblok'>{c.inhoud}</pre>
+                      <pre className='aie-codeblok aie-mq-codeblok aie-mq-terminal-uitvoer' data-aie-uitvoer='context'>{c.inhoud}</pre>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className='aie-subtekst'>{tr('Записів спільного контексту ще немає — додайте перший запис вище або збережіть його через підключеного агента ШІ.', 'Nog geen gedeelde contextitems — voeg hierboven een eerste item toe of bewaar het via een gekoppelde AI-agent.')}</p>
+                <div className='aie-omgeving-vak aie-mq-leeg' data-aie-leeg='context'>
+                  <Layers size={20} aria-hidden='true' />
+                  <p className='aie-subtekst'>{tr('Записів спільного контексту ще немає — додайте перший запис вище або збережіть його через підключеного агента ШІ.', 'Nog geen gedeelde contextitems — voeg hierboven een eerste item toe of bewaar het via een gekoppelde AI-agent.')}</p>
+                </div>
               )}
             </article>
 
-            <article className='aie-kaart' data-aie-overdrachten-sectie='1'>
+            <article className='aie-kaart aie-mq-kaart-runs' data-aie-overdrachten-sectie='1'>
               <h2><ArrowRightLeft size={18} aria-hidden='true' /> {tr('Передача завдань між агентами та службами за розпорядженням користувача', 'Taakoverdracht tussen agenten en diensten in opdracht van de gebruiker')}</h2>
-              <form onSubmit={(e) => void maakOverdracht(e)} className='aie-lijst'>
-                <div className='aie-grid-3'>
+              <form onSubmit={(e) => void maakOverdracht(e)} className='aie-lijst aie-mq-formulier'>
+                <div className='aie-grid-3 aie-mq-route-grid'>
                   <label className='aie-veld'>
                     <span>{tr('Від кого', 'Van wie')}</span>
                     <select value={ovVan} onChange={(e) => setOvVan(e.target.value)}>
@@ -821,19 +885,31 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
               </form>
 
               {data.overdrachten.length > 0 ? (
-                <ul className='aie-lijst'>
+                <ul className='aie-lijst aie-mq-runs-lijst'>
                   {data.overdrachten.map((o) => {
                     const st = STATUS_LABELS[o.status] ?? STATUS_LABELS.open;
                     return (
-                      <li key={o.id} className='aie-item'>
+                      <li key={o.id} className='aie-item aie-mq-run-item' data-aie-overdracht-kaart={o.id} data-aie-status={o.status}>
                         <div className='aie-item-kop'>
-                          <b>{o.vanAgent} → {o.naarAgent} ({o.doelDienst})</b>
-                          <span className='aie-badge'>{tr(st.uk, st.nl)}</span>
+                          <span className='aie-mq-keten-kop'>
+                            <AgentLogo agent={o.vanAgent} naam={o.vanAgent} size={17} />
+                            <b>{o.vanAgent} → {o.naarAgent} ({o.doelDienst})</b>
+                            <AgentLogo agent={o.naarAgent} naam={o.naarAgent} size={17} />
+                          </span>
+                          <span className='aie-badge aie-mq-status-pil' data-aie-status={o.status}>{tr(st.uk, st.nl)}</span>
                         </div>
-                        <p className='aie-subtekst'>{o.opdracht}</p>
+                        <p className='aie-subtekst aie-mq-opdracht'>{o.opdracht}</p>
+                        {o.resultaat ? (
+                          <div className='aie-mq-console-wikkel'>
+                            <span className='aie-mq-console-kop'>
+                              <Terminal size={13} aria-hidden='true' /> {tr('Термінальний вивід виконання', 'Uitvoerresultaat')}
+                            </span>
+                            <pre className='aie-codeblok aie-mq-codeblok aie-mq-terminal-uitvoer' data-aie-uitvoer='overdracht'>{o.resultaat}</pre>
+                          </div>
+                        ) : null}
                         {o.contextSleutels.length > 0 ? (
                           <div className='aie-badges'>
-                            {o.contextSleutels.map((k) => <span key={k} className='aie-badge'>{tr('Контекст', 'Context')}: {k}</span>)}
+                            {o.contextSleutels.map((k) => <span key={k} className='aie-badge aie-mq-context-pil'>{tr('Контекст', 'Context')}: {k}</span>)}
                           </div>
                         ) : null}
                         <div className='aie-knoppen'>
@@ -852,7 +928,10 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                   })}
                 </ul>
               ) : (
-                <p className='aie-subtekst'>{tr('Активних передач між агентами ще немає.', 'Nog geen actieve taakoverdrachten tussen agenten.')}</p>
+                <div className='aie-omgeving-vak aie-mq-leeg' data-aie-leeg='overdrachten'>
+                  <ArrowRightLeft size={20} aria-hidden='true' />
+                  <p className='aie-subtekst'>{tr('Активних передач між агентами ще немає.', 'Nog geen actieve taakoverdrachten tussen agenten.')}</p>
+                </div>
               )}
             </article>
           </>
@@ -860,20 +939,24 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
 
         {modus === 'workflows' ? (
           <>
-            <header className='aie-kop'>
-              <div>
+            <header className='aie-kop aie-mq-held-kop' data-aie-kop='workflows'>
+              <div className='aie-mq-kop-tekst'>
+                <span className='aie-mq-bovenregel'>{tr('РОБОЧІ ПРОЦЕСИ · РОЗШИРЕННЯ ТА ВЛАСНЕ ОБЛАДНАННЯ', 'WERKSTROMEN · UITBREIDINGEN EN EIGEN APPARATUUR')}</span>
                 <h1>{tr('Розширення вашого простору та самостійне розгортання', 'Uitbreiding van uw ruimte en zelfstandige uitrol')}</h1>
                 <p>{tr(
                   'Адаптуйте та розширюйте свою частину вебзастосунку за допомогою Codex, Claude та власних системних мостів — або розгорніть усю відкриту платформу на своєму обладнанні без залежності від одного сайту.',
                   'Pas uw deel van de webtoepassing aan en breid het uit met Codex, Claude en eigen systeembruggen — of rol het volledige open platform uit op uw eigen apparatuur zonder afhankelijkheid van één site.',
                 )}</p>
               </div>
-              <span className='aie-ruimte-pil'>{tr(ruimteTitel.uk, ruimteTitel.nl)}</span>
+              <div className='aie-knoppen aie-mq-kop-meta'>
+                <span className='aie-badge aie-mq-stat-pil'>{tr('Розширень', 'Uitbreidingen')}: <b>{data.uitbreidingen.length}</b></span>
+                <span className='aie-ruimte-pil'>{tr(ruimteTitel.uk, ruimteTitel.nl)}</span>
+              </div>
             </header>
 
-            <article className='aie-kaart' data-aie-uitbreidingen-sectie='1'>
+            <article className='aie-kaart aie-mq-kaart-workflows' data-aie-uitbreidingen-sectie='1'>
               <h2><Blocks size={18} aria-hidden='true' /> {tr('Адаптація та розширення в межах простору облікового запису', 'Aanpassing en uitbreiding binnen uw accountruimte')}</h2>
-              <form onSubmit={(e) => void bewaarUitbreiding(e)} className='aie-lijst'>
+              <form onSubmit={(e) => void bewaarUitbreiding(e)} className='aie-lijst aie-mq-formulier'>
                 <div className='aie-grid-3'>
                   <label className='aie-veld'>
                     <span>{tr('Назва розширення', 'Naam van de uitbreiding')}</span>
@@ -961,30 +1044,52 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
               </form>
 
               {data.uitbreidingen.length > 0 ? (
-                <ul className='aie-lijst'>
-                  {data.uitbreidingen.map((u) => (
-                    <li key={u.id} className='aie-item' data-aie-uitbreiding-kaart={u.slug}>
-                      <div className='aie-item-kop'>
-                        <b>{u.naam} <code>({u.slug})</code></b>
-                        <button type='button' className='aie-knop-gevaar' onClick={() => void verwijderUitbreiding(u.slug)}>
-                          {tr('Видалити', 'Verwijderen')}
-                        </button>
-                      </div>
-                      {u.beschrijving ? <p className='aie-subtekst'>{u.beschrijving}</p> : null}
-                      <div className='aie-badges'>
-                        <span className='aie-badge'>{tr(SOORT_LABELS[u.soort].uk, SOORT_LABELS[u.soort].nl)}</span>
-                        {u.gemaaktDoorAgent ? <span className='aie-badge'>{tr('Створено через', 'Gemaakt met')}: {u.gemaaktDoorAgent}</span> : null}
-                        {u.doelDiensten.map((d) => <span key={d} className='aie-badge'>{d}</span>)}
-                      </div>
-                    </li>
-                  ))}
+                <ul className='aie-lijst aie-mq-workflows-lijst'>
+                  {data.uitbreidingen.map((u) => {
+                    const stapsTekst = [u.config.startVraag, u.config.instructie].filter(Boolean).join('\n\n');
+                    return (
+                      <li key={u.id} className='aie-item aie-mq-workflow-item' data-aie-uitbreiding-kaart={u.slug} data-aie-soort={u.soort}>
+                        <div className='aie-item-kop'>
+                          <span className='aie-mq-keten-kop'>
+                            <Workflow size={16} aria-hidden='true' />
+                            <b>{u.naam} <code>({u.slug})</code></b>
+                          </span>
+                          <button type='button' className='aie-knop-gevaar' onClick={() => void verwijderUitbreiding(u.slug)}>
+                            {tr('Видалити', 'Verwijderen')}
+                          </button>
+                        </div>
+                        {u.beschrijving ? <p className='aie-subtekst'>{u.beschrijving}</p> : null}
+                        <div className='aie-badges aie-mq-keten-badges'>
+                          <span className='aie-badge aie-mq-soort-pil'>{tr(SOORT_LABELS[u.soort].uk, SOORT_LABELS[u.soort].nl)}</span>
+                          {u.gemaaktDoorAgent ? (
+                            <span className='aie-badge aie-mq-agent-pil'>
+                              <AgentLogo agent={u.gemaaktDoorAgent} naam={u.gemaaktDoorAgent} size={13} />
+                              {tr('Створено через', 'Gemaakt met')}: {u.gemaaktDoorAgent}
+                            </span>
+                          ) : null}
+                          {u.omgevingen.map((omg) => (
+                            <span key={omg} className='aie-badge aie-mq-omgeving-pil'>
+                              {omg === 'pc' ? tr('Комп’ютер', 'Computer') : omg === 'browser' ? tr('Оглядач', 'Browser') : tr('Сервер', 'Server')}
+                            </span>
+                          ))}
+                          {u.doelDiensten.map((d) => <span key={d} className='aie-badge aie-mq-dienst-pil'>{d}</span>)}
+                        </div>
+                        {stapsTekst ? (
+                          <pre className='aie-codeblok aie-mq-codeblok aie-mq-terminal-uitvoer' data-aie-uitvoer='workflow'>{stapsTekst}</pre>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
-                <p className='aie-subtekst'>{tr('У цьому просторі ще немає збережених розширень — додайте перше вище або зареєструйте його через Codex чи Claude.', 'Nog geen opgeslagen uitbreidingen in deze ruimte — voeg er hierboven een toe of registreer haar via Codex of Claude.')}</p>
+                <div className='aie-omgeving-vak aie-mq-leeg' data-aie-leeg='uitbreidingen'>
+                  <Blocks size={20} aria-hidden='true' />
+                  <p className='aie-subtekst'>{tr('У цьому просторі ще немає збережених розширень — додайте перше вище або зареєструйте його через Codex чи Claude.', 'Nog geen opgeslagen uitbreidingen in deze ruimte — voeg er hierboven een toe of registreer haar via Codex of Claude.')}</p>
+                </div>
               )}
             </article>
 
-            <article className='aie-kaart' data-aie-zelf-host-sectie='1'>
+            <article className='aie-kaart aie-mq-kaart-zelfhost' data-aie-zelf-host-sectie='1'>
               <h2><Server size={18} aria-hidden='true' /> {tr('Відкрита платформа на власному обладнанні (без залежності від одного сайту)', 'Open platform op eigen apparatuur (zonder afhankelijkheid van één site)')}</h2>
               <p className='aie-subtekst'>
                 {tr(
@@ -1023,16 +1128,20 @@ export default function AiEcosysteemPaneel({ modus, tr, band, hubUrl }: PaneelPr
                 </button>
               </div>
 
-              <div className='aie-grid-2'>
-                <div className='aie-veld'>
-                  <span>docker-compose.yml</span>
-                  <pre className='aie-codeblok'>{zhPakket.dockerCompose}</pre>
+              <div className='aie-grid-2 aie-mq-zelfhost-grid'>
+                <div className='aie-veld aie-mq-console-wikkel'>
+                  <span className='aie-mq-console-kop'><Terminal size={13} aria-hidden='true' /> docker-compose.yml</span>
+                  <pre className='aie-codeblok aie-mq-codeblok aie-mq-terminal-uitvoer' data-aie-terminal='compose'>{zhPakket.dockerCompose}</pre>
                 </div>
-                <div className='aie-veld'>
-                  <span>.env ({tr('приклад налаштувань', 'voorbeeldinstellingen')})</span>
-                  <pre className='aie-codeblok'>{zhPakket.envVoorbeeld}</pre>
-                  <span>{tr('Підключення локального комп’ютера, Codex і Claude до вашого вузла', 'Koppeling van lokale computer, Codex en Claude aan uw eigen knooppunt')}</span>
-                  <pre className='aie-codeblok'>{`${zhPakket.lokaleAgentOpdracht}\n${zhPakket.codexKoppelOpdracht}\n${zhPakket.claudeKoppelOpdracht}`}</pre>
+                <div className='aie-veld aie-mq-console-stapel'>
+                  <div className='aie-mq-console-wikkel'>
+                    <span className='aie-mq-console-kop'><Terminal size={13} aria-hidden='true' /> .env ({tr('приклад налаштувань', 'voorbeeldinstellingen')})</span>
+                    <pre className='aie-codeblok aie-mq-codeblok aie-mq-terminal-uitvoer' data-aie-terminal='env'>{zhPakket.envVoorbeeld}</pre>
+                  </div>
+                  <div className='aie-mq-console-wikkel'>
+                    <span className='aie-mq-console-kop'><Terminal size={13} aria-hidden='true' /> {tr('Підключення локального комп’ютера, Codex і Claude до вашого вузла', 'Koppeling van lokale computer, Codex en Claude aan uw eigen knooppunt')}</span>
+                    <pre className='aie-codeblok aie-mq-codeblok aie-mq-terminal-uitvoer' data-aie-terminal='koppeling'>{`${zhPakket.lokaleAgentOpdracht}\n${zhPakket.codexKoppelOpdracht}\n${zhPakket.claudeKoppelOpdracht}`}</pre>
+                  </div>
                 </div>
               </div>
             </article>

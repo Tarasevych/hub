@@ -1,0 +1,1351 @@
+/* Студійне оформлення дозволів та ручних підтверджень дій ШІ простору ai.tarasevych.com
+   у художній системі «Макет» (MAQUETTE-006, Група 5В).
+   Охоплює панель очікуваних рішень власника (BevestigingenPaneel), матрицю, перемикачі й аварійну зупинку дозволів (AiToestemmingen)
+   та оглядовий блок параметрів і кнопок людської дії (GoedkeuringInhoud).
+   Діє виключно за умови html.palet-maquette у нічній студії та у світлому режимі «Ранковий туман».
+   Studio-opmaak voor AI-toestemmingen, risicolabels en handmatige bevestigingen onder html.palet-maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПОХІДНІ СТУДІЙНІ ЗМІННІ ТА УЗГОДЖЕННЯ СВІТЛОГО РЕЖИМУ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(
+  .ab-paneel,
+  .ai-grants,
+  .ai-stop,
+  .hub-goedkeuring,
+  .hub-pill[data-aanvrager],
+  button.hub-btn[data-ai-geen-actie],
+  .hub-feed-item:has(.hub-goedkeuring),
+  .chat-approvals:has(.hub-goedkeuring),
+  .hub-confirm:has(button[data-ai-geen-actie])
+) {
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: color-mix(in srgb, var(--mq-accent) 14%, transparent);
+  --focus: var(--mq-accent);
+
+  --mq-ab-glas: linear-gradient(
+    162deg,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-oppervlak-2) 8%) 0%,
+    var(--mq-oppervlak) 100%
+  );
+  --mq-ab-glas-kaart: linear-gradient(
+    158deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-bg) 6%) 100%
+  );
+  --mq-ab-glans: color-mix(in srgb, var(--mq-tekst) 8%, transparent);
+  --mq-ab-invoer: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-bg) 26%);
+  --mq-ab-code-vlak: color-mix(in srgb, var(--mq-bg) 52%, var(--mq-oppervlak) 48%);
+  --mq-ab-waarschuwing: color-mix(in srgb, var(--warn) 76%, var(--mq-tech-markering) 24%);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
+  .ab-paneel,
+  .ai-grants,
+  .ai-stop,
+  .hub-goedkeuring,
+  .hub-pill[data-aanvrager],
+  button.hub-btn[data-ai-geen-actie],
+  .hub-feed-item:has(.hub-goedkeuring),
+  .chat-approvals:has(.hub-goedkeuring),
+  .hub-confirm:has(button[data-ai-geen-actie])
+),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+  .ab-paneel,
+  .ai-grants,
+  .ai-stop,
+  .hub-goedkeuring,
+  .hub-pill[data-aanvrager],
+  button.hub-btn[data-ai-geen-actie],
+  .hub-feed-item:has(.hub-goedkeuring),
+  .chat-approvals:has(.hub-goedkeuring),
+  .hub-confirm:has(button[data-ai-geen-actie])
+) {
+  --mq-accent-op: var(--mq-wit);
+  --accentText: var(--mq-wit);
+  --text-on-accent: var(--mq-wit);
+  --accent-soft: color-mix(in srgb, var(--mq-accent) 11%, transparent);
+
+  --mq-ab-glas: linear-gradient(
+    162deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-oppervlak-2) 10%) 100%
+  );
+  --mq-ab-glas-kaart: linear-gradient(
+    158deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-oppervlak) 24%) 100%
+  );
+  --mq-ab-glans: color-mix(in srgb, var(--mq-wit) 78%, transparent);
+  --mq-ab-invoer: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%);
+  --mq-ab-code-vlak: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-tekst) 4%);
+}
+
+/* Захист скруглень та оправ студійних секцій від глобального правила плоского вмісту оболонки */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(section.ab-paneel, section.ab-google):not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.ab-google:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+  border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand-sterk));
+  border-radius: 20px;
+}
+
+html.palet-maquette :is(.ab-paneel, .ai-grants, .ai-stop, .hub-goedkeuring) :focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* Єдине студійне оформлення текстових полів і списків вибору без впливу на прапорці чи файли */
+html.palet-maquette :is(.ab-paneel, .ai-grants) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea) {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-ab-invoer);
+  color: var(--mq-tekst);
+  font: inherit;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is(.ab-paneel, .ai-grants) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette :is(.ab-paneel, .ai-grants) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--mq-accent) 68%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent) 18%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ПАНЕЛЬ ОЧІКУВАНИХ РІШЕНЬ ВЛАСНИКА (BevestigingenPaneel.tsx)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette section.ab-paneel {
+  gap: 16px;
+  padding: 22px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background:
+    radial-gradient(ellipse 68% 110% at 0% 0%, color-mix(in srgb, var(--mq-accent) 12%, transparent), transparent 68%),
+    var(--mq-ab-glas);
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans), var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+  -webkit-backdrop-filter: blur(18px) saturate(1.18);
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+
+html.palet-maquette section.ab-paneel:not([data-ab-open="0"]) {
+  border-color: color-mix(in srgb, var(--mq-accent) 38%, var(--mq-rand-sterk));
+  box-shadow:
+    inset 0 1px 0 var(--mq-ab-glans),
+    0 0 0 1px color-mix(in srgb, var(--mq-accent) 14%, transparent),
+    var(--mq-schaduw);
+}
+
+html.palet-maquette .ab-paneel > .ag-kaart-kop {
+  gap: 10px 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .ab-paneel > .ag-kaart-kop h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ab-paneel > .ag-kaart-kop h3 svg {
+  flex: none;
+  color: var(--mq-accent);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--mq-accent) 34%, transparent));
+}
+
+html.palet-maquette .ab-paneel > .ag-kaart-kop > small.hub-meta {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.76rem;
+  font-weight: 640;
+  letter-spacing: 0.02em;
+}
+
+html.palet-maquette .canonical-chrome[data-oppervlak="technisch"] .ab-paneel > .ag-kaart-kop > small.hub-meta {
+  border-color: color-mix(in srgb, var(--mq-tech-markering) 46%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-tech-markering) 13%, var(--mq-oppervlak-zacht));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ab-paneel .ab-uitleg {
+  color: var(--mq-gedempt);
+  font-size: 0.89rem;
+  line-height: 1.6;
+  max-width: 78ch;
+}
+
+html.palet-maquette .ab-paneel > .ag-leeg {
+  padding: 22px 18px;
+  border-radius: 18px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 52%, var(--mq-oppervlak));
+  color: var(--mq-gedempt);
+  font-size: 0.89rem;
+}
+
+/* Картки окремих запитів ШІ та запиту на розширення доступу Google */
+html.palet-maquette .ab-paneel .ab-lijst {
+  gap: 14px;
+}
+
+html.palet-maquette .ab-paneel .ab-kaart {
+  gap: 11px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-ab-glas-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans), var(--mq-schaduw-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.16s ease;
+}
+
+html.palet-maquette .ab-paneel .ab-kaart.risico-laag {
+  border-left: 4px solid color-mix(in srgb, var(--ok) 74%, var(--mq-accent) 26%);
+}
+
+html.palet-maquette .ab-paneel .ab-kaart.risico-midden {
+  border-color: color-mix(in srgb, var(--mq-ab-waarschuwing) 32%, var(--mq-rand-sterk));
+  border-left: 4px solid var(--mq-ab-waarschuwing);
+  background:
+    radial-gradient(ellipse 60% 90% at 0% 0%, color-mix(in srgb, var(--warn) 9%, transparent), transparent 68%),
+    var(--mq-ab-glas-kaart);
+}
+
+html.palet-maquette .ab-paneel .ab-kaart.risico-hoog,
+html.palet-maquette .ab-paneel .ab-kaart.risico-kritiek {
+  border-color: color-mix(in srgb, var(--fout) 40%, var(--mq-rand-sterk));
+  border-left: 4px solid var(--fout);
+  background:
+    radial-gradient(ellipse 64% 95% at 0% 0%, color-mix(in srgb, var(--fout) 11%, transparent), transparent 70%),
+    var(--mq-ab-glas-kaart);
+}
+
+html.palet-maquette .ab-paneel .ab-kaart.is-uitgelicht {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 3px;
+  box-shadow:
+    inset 0 1px 0 var(--mq-ab-glans),
+    0 0 0 4px color-mix(in srgb, var(--mq-accent) 18%, transparent),
+    var(--mq-schaduw);
+}
+
+html.palet-maquette .ab-paneel .ab-kaart.ab-google {
+  border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(ellipse 70% 100% at 0% 0%, color-mix(in srgb, var(--mq-accent) 14%, transparent), transparent 66%),
+    var(--mq-ab-glas-kaart);
+}
+
+html.palet-maquette .ab-paneel .ab-google h4 {
+  gap: 8px;
+  font-size: 0.98rem;
+  font-weight: 660;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ab-paneel .ab-google h4 svg {
+  flex: none;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .ab-paneel .ab-google p {
+  color: var(--mq-gedempt);
+  font-size: 0.88rem;
+  line-height: 1.58;
+}
+
+/* Шапка запиту та студійні позначки ризику й часу дії */
+html.palet-maquette .ab-paneel .ab-kop {
+  gap: 8px 10px;
+}
+
+html.palet-maquette .ab-paneel .ab-kop b {
+  font-size: 1.02rem;
+  font-weight: 660;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+  margin-right: auto;
+}
+
+html.palet-maquette .ab-paneel .ab-chip {
+  gap: 5px;
+  padding: 4px 11px;
+  max-width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-bg) 16%);
+  color: var(--mq-gedempt);
+  font-size: 0.76rem;
+  font-weight: 640;
+  font-variant-numeric: tabular-nums;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+html.palet-maquette .ab-paneel .ab-chip svg {
+  flex: none;
+}
+
+html.palet-maquette .ab-paneel .ab-chip.risico-laag {
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 13%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette .ab-paneel .ab-chip.risico-midden {
+  border-color: color-mix(in srgb, var(--warn) 46%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn) 14%, var(--mq-oppervlak-2));
+  color: var(--warn);
+}
+
+html.palet-maquette .ab-paneel .ab-chip.risico-hoog,
+html.palet-maquette .ab-paneel .ab-chip.risico-kritiek {
+  border-color: color-mix(in srgb, var(--fout) 50%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 15%, var(--mq-oppervlak-2));
+  color: var(--fout);
+  font-weight: 700;
+}
+
+html.palet-maquette .ab-paneel .ab-kaart > small.hub-meta {
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+}
+
+html.palet-maquette .ab-paneel .ab-samenvatting {
+  color: var(--mq-tekst);
+  font-size: 0.92rem;
+  line-height: 1.56;
+}
+
+/* Інспекторська сітка незмінних параметрів запиту */
+html.palet-maquette .ab-paneel .ab-details {
+  gap: 6px 14px;
+  grid-template-columns: minmax(124px, max-content) minmax(0, 1fr);
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-ab-code-vlak);
+}
+
+html.palet-maquette .ab-paneel .ab-details dt {
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  font-weight: 560;
+}
+
+html.palet-maquette .ab-paneel .ab-details dd {
+  color: var(--mq-tekst);
+  font-size: 0.87rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .ab-paneel .ab-details .is-nadruk dd {
+  font-weight: 680;
+  color: var(--mq-accent);
+}
+
+/* Застереження, помилки та явні вибори людини */
+html.palet-maquette .ab-paneel .ab-let,
+html.palet-maquette .ab-paneel .ab-fout {
+  padding: 10px 13px;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  border-left: 3px solid var(--fout);
+  background: color-mix(in srgb, var(--fout) 11%, var(--mq-oppervlak-2));
+  color: var(--fout);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .ab-paneel .ab-let svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+html.palet-maquette .ab-paneel .ab-keuzes {
+  gap: 10px;
+}
+
+html.palet-maquette .ab-paneel .ab-vinkje {
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--warn) 52%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--warn) 8%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .ab-paneel .ab-vinkje:has(input:checked) {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--mq-accent) 56%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-accent) 12%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .ab-paneel .ab-vinkje input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--mq-accent);
+}
+
+html.palet-maquette .ab-paneel .ab-vinkje span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html.palet-maquette .ab-paneel .ab-vinkje small {
+  margin-top: 2px;
+  color: var(--mq-gedempt);
+  line-height: 1.45;
+}
+
+html.palet-maquette .ab-paneel .ab-fotos small {
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* Контрастні кнопки схвалення та відхилення в BevestigingenPaneel */
+html.palet-maquette .ab-paneel .ab-acties {
+  gap: 10px;
+  padding-top: 4px;
+}
+
+html.palet-maquette .ab-paneel .ab-knop {
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 18px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak) 16%);
+  color: var(--mq-tekst);
+  font-size: 0.88rem;
+  font-weight: 640;
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+html.palet-maquette .ab-paneel .ab-knop:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mq-accent) 42%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .ab-paneel .ab-knop[data-ab-weiger]:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--fout) 54%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 13%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette .ab-paneel .ab-knop-hoofd {
+  border-color: color-mix(in srgb, var(--mq-accent) 56%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 94%, var(--mq-wit) 6%) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 680;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 26%, transparent),
+    0 10px 24px var(--mq-gloed);
+}
+
+html.palet-maquette .ab-paneel .ab-knop-hoofd:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--mq-accent) 72%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 88%, var(--mq-wit) 12%) 0%,
+    var(--mq-accent) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 34%, transparent),
+    0 14px 28px var(--mq-gloed);
+}
+
+html.palet-maquette .ab-paneel .ab-knop-hoofd.risico-hoog,
+html.palet-maquette .ab-paneel .ab-knop-hoofd.risico-kritiek {
+  border-color: color-mix(in srgb, var(--fout) 62%, transparent);
+  background: var(--fout-vlak);
+  color: var(--text-on-vlak);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--fout) 24%, transparent);
+}
+
+html.palet-maquette .ab-paneel .ab-knop-hoofd.risico-hoog:hover:not(:disabled),
+html.palet-maquette .ab-paneel .ab-knop-hoofd.risico-kritiek:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--fout);
+  background: color-mix(in srgb, var(--fout-vlak) 90%, var(--mq-tekst) 10%);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--fout) 32%, transparent);
+}
+
+html.palet-maquette .ab-paneel .ab-melding,
+html.palet-maquette .ab-paneel .ab-stand {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  font-size: 0.85rem;
+}
+
+/* Розкривний перелік нещодавно вирішених запитів */
+html.palet-maquette .ab-paneel .ab-afgerond {
+  padding-top: 12px;
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+  font-weight: 600;
+  transition: color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond > summary:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  gap: 6px;
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond li {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 60%, var(--mq-oppervlak));
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+  line-height: 1.48;
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond li b {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond li[data-ab-afgerond="uitgevoerd"] {
+  border-left: 3px solid var(--ok);
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond li[data-ab-afgerond="geweigerd"] {
+  border-left: 3px solid var(--fout);
+}
+
+html.palet-maquette .ab-paneel .ab-afgerond li[data-ab-afgerond="verlopen"] {
+  border-left: 3px solid var(--warn);
+}
+
+/* Позначка у вікні вибору прав підключення ШІ */
+html.palet-maquette .v2-chip.is-bevestiging {
+  border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 12%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. МАТРИЦЯ, ПЕРЕМИКАЧІ НАБОРІВ ТА АВАРІЙНА ЗУПИНКА ДОЗВОЛІВ (AiToestemmingen.tsx)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Аварійна кнопка «Стоп» (.ai-stop) */
+html.palet-maquette .ai-stop {
+  gap: 8px;
+}
+
+html.palet-maquette .ai-stop .ag-bevestig {
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--fout) 46%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 10%, var(--mq-popover-glas));
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+html.palet-maquette .ai-stop .ag-bevestig-vraag {
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  line-height: 1.48;
+}
+
+/* Спільні студійні кнопки в межах AiToestemmingen та AiStopKnop */
+html.palet-maquette :is(.ai-grants, .ai-stop) .hub-btn {
+  min-height: 38px;
+  padding: 7px 14px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak) 18%);
+  color: var(--mq-tekst);
+  font-size: 0.85rem;
+  font-weight: 640;
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+html.palet-maquette :is(.ai-grants, .ai-stop) .hub-btn:hover:not([disabled]) {
+  border-color: color-mix(in srgb, var(--mq-accent) 42%, var(--mq-rand-sterk));
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette :is(.ai-grants, .ai-stop) .hub-btn.tone-primary {
+  border-color: color-mix(in srgb, var(--mq-accent) 56%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 94%, var(--mq-wit) 6%) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 680;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 24%, transparent),
+    0 8px 20px var(--mq-gloed);
+}
+
+html.palet-maquette :is(.ai-grants, .ai-stop) .hub-btn.tone-primary:hover:not([disabled]) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--mq-accent) 72%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 88%, var(--mq-wit) 12%) 0%,
+    var(--mq-accent) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 32%, transparent),
+    0 12px 24px var(--mq-gloed);
+}
+
+html.palet-maquette :is(.ai-grants, .ai-stop) .hub-btn.tone-danger {
+  border-color: color-mix(in srgb, var(--fout) 48%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 10%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette :is(.ai-grants, .ai-stop) .hub-btn.tone-danger:hover:not([disabled]) {
+  border-color: var(--fout-vlak);
+  background: var(--fout-vlak);
+  color: var(--text-on-vlak);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--fout) 24%, transparent);
+}
+
+/* Контейнер дозволів і три студійні скляні блоки */
+html.palet-maquette .ai-grants {
+  gap: 16px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ai-grants > .hub-note.is-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 15px;
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--fout) 44%, var(--mq-rand));
+  border-left: 4px solid var(--fout);
+  background: color-mix(in srgb, var(--fout) 12%, var(--mq-oppervlak-2));
+  color: var(--fout);
+  font-weight: 600;
+}
+
+html.palet-maquette .ai-grants .ai-blok {
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-ab-glas);
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .ai-grants .ai-blok-kop {
+  align-items: center;
+  gap: 8px 14px;
+}
+
+html.palet-maquette .ai-grants .ai-blok-kop h4 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 660;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ai-grants .ai-blok-kop .ag-teller {
+  min-width: 24px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Сегментні перемикачі наборів дозволів (Спостерігач / Помічник / Разово) */
+html.palet-maquette .ai-grants .ag-segment.ai-presets {
+  gap: 6px;
+  padding: 5px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-ab-invoer);
+  overflow: visible;
+}
+
+html.palet-maquette .ai-grants .ai-presets .ag-segment-optie {
+  gap: 3px;
+  padding: 2px 6px 2px 2px;
+  border-left: 0;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .ai-grants .ai-presets .ag-segment-optie:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .ai-grants .ai-presets .ag-segment-optie:has(button[role="radio"][aria-checked="true"]) {
+  border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-accent) 14%, var(--mq-oppervlak));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--mq-accent) 14%, transparent);
+}
+
+html.palet-maquette .ai-grants .ai-presets button[role="radio"] {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+  font-weight: 620;
+  white-space: normal;
+  text-align: left;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .ai-grants .ai-presets button[role="radio"] svg {
+  flex: none;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .ai-grants .ai-presets button[role="radio"][aria-checked="true"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 94%, var(--mq-wit) 6%) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 680;
+  box-shadow: 0 6px 16px var(--mq-gloed);
+}
+
+html.palet-maquette .ai-grants .ai-presets button[role="radio"][aria-checked="true"] svg {
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette .ai-grants .hub-help-btn {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .ai-grants .hub-help-btn:hover,
+html.palet-maquette .ai-grants .hub-help-btn:focus-visible {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ai-grants .hub-help-pop {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+}
+
+/* Матриця чинних дозволів (table.ai-tabel) */
+html.palet-maquette .ai-grants .ai-tabel {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 54%, var(--mq-oppervlak));
+  overflow: hidden;
+}
+
+html.palet-maquette .ai-grants .ai-tabel thead th {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-bg) 14%);
+  color: var(--mq-gedempt);
+  font-size: 0.75rem;
+  font-weight: 680;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+html.palet-maquette .ai-grants .ai-tabel tbody td {
+  padding: 11px 14px;
+  border-top: 1px solid var(--mq-rand);
+  color: var(--mq-tekst);
+  font-size: 0.87rem;
+}
+
+html.palet-maquette .ai-grants .ai-tabel tbody tr:first-child td {
+  border-top: 0;
+}
+
+html.palet-maquette .ai-grants .ai-tabel tbody tr:hover td {
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .ai-grants .ai-tabel tbody td.hub-meta {
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+  line-height: 1.48;
+}
+
+html.palet-maquette .ai-grants .ai-tabel time {
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .ai-grants .ai-tabel .ag-badge.ag-warn {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--warn) 48%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn) 14%, var(--mq-oppervlak-2));
+  color: var(--warn);
+  font-size: 0.74rem;
+  font-weight: 680;
+  white-space: normal;
+}
+
+/* Форма додавання окремого дозволу та перемикач режиму «завжди» */
+html.palet-maquette .ai-grants .ai-grant-form {
+  gap: 10px 12px;
+}
+
+html.palet-maquette .ai-grants .ai-veld > span:first-child {
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+  font-weight: 620;
+}
+
+html.palet-maquette .ai-grants .ai-veld-uitleg {
+  color: var(--mq-gedempt);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .ai-grants .ai-always {
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--warn) 48%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--warn) 8%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  line-height: 1.48;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .ai-grants .ai-always:has(input:checked) {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--warn) 64%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--warn) 13%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .ai-grants .ai-always input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--mq-accent);
+}
+
+/* Сповіщення про виконання в AiToestemmingen та AiStopKnop */
+html.palet-maquette :is(.ai-grants, .ai-stop) .ag-melding {
+  padding: 10px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-rand);
+  border-left-width: 4px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.ai-grants, .ai-stop) .ag-melding-ok {
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--mq-rand));
+  border-left-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 11%, var(--mq-oppervlak));
+}
+
+html.palet-maquette :is(.ai-grants, .ai-stop) .ag-melding-fout {
+  border-color: color-mix(in srgb, var(--fout) 42%, var(--mq-rand));
+  border-left-color: var(--fout);
+  background: color-mix(in srgb, var(--fout) 11%, var(--mq-oppervlak));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. БЛОК РУЧНОГО ПІДТВЕРДЖЕННЯ ТА ПІГУЛКА ЗАПИТУВАЧА (GoedkeuringInhoud.tsx)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Студійна пігулка походження запиту (AanvragerPill) */
+html.palet-maquette span.hub-pill[data-aanvrager] {
+  gap: 6px;
+  padding: 3px 11px;
+  max-width: 100%;
+  border-radius: 999px;
+  font-size: 0.77rem;
+  font-weight: 660;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+html.palet-maquette span.hub-pill[data-aanvrager] svg {
+  flex: none;
+}
+
+html.palet-maquette span.hub-pill[data-aanvrager="site"] {
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--mq-rand));
+  background: color-mix(in srgb, var(--ok) 12%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette span.hub-pill[data-aanvrager="ai"] {
+  border-color: color-mix(in srgb, var(--warn) 46%, var(--mq-rand));
+  background: color-mix(in srgb, var(--warn) 13%, var(--mq-oppervlak-2));
+  color: var(--warn);
+}
+
+html.palet-maquette span.hub-pill[data-aanvrager="onbekend"] {
+  border-color: color-mix(in srgb, var(--fout) 50%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 14%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+/* Оглядова картка всіх параметрів одного запиту (.hub-goedkeuring) */
+html.palet-maquette .hub-goedkeuring {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-ab-glas-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-goedkeuring:not([data-goedkeuring-verborgen="0"]) {
+  border-color: color-mix(in srgb, var(--warn) 46%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .hub-goedkeuring [data-goedkeuring-kern="1"] {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 28%, var(--mq-rand));
+  border-left: 3px solid var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 10%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 0.87rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .hub-goedkeuring [data-goedkeuring-veld] dt {
+  margin-bottom: 4px;
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+}
+
+html.palet-maquette .hub-goedkeuring [data-goedkeuring-veld] dt small.hub-meta {
+  color: var(--mq-gedempt);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .hub-goedkeuring pre.hub-code {
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-ab-code-vlak);
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+html.palet-maquette .hub-goedkeuring [data-goedkeuring-getoond] {
+  color: var(--mq-gedempt);
+  font-size: 0.79rem;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .hub-goedkeuring .hub-btn {
+  min-height: 34px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 40%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-accent) 13%, var(--mq-oppervlak-2));
+  color: var(--mq-accent);
+  font-size: 0.8rem;
+  font-weight: 640;
+}
+
+html.palet-maquette .hub-goedkeuring .hub-btn:hover:not([disabled]) {
+  border-color: color-mix(in srgb, var(--mq-accent) 62%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-accent) 22%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-goedkeuring .hub-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 13px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .hub-goedkeuring .hub-note svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+html.palet-maquette .hub-goedkeuring .hub-note[data-goedkeuring-onzichtbaar] {
+  border: 1px solid color-mix(in srgb, var(--fout) 46%, var(--mq-rand));
+  border-left: 4px solid var(--fout);
+  background: color-mix(in srgb, var(--fout) 12%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette .hub-goedkeuring .hub-note[data-goedkeuring-eerst-lezen] {
+  border: 1px solid color-mix(in srgb, var(--warn) 44%, var(--mq-rand));
+  border-left: 4px solid var(--warn);
+  background: color-mix(in srgb, var(--warn) 11%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+/* Оправи карток схвалення в стрічці пристроїв/інструментів і бесіді з ШІ */
+html.palet-maquette .hub-feed-item:has(.hub-goedkeuring) {
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 32%, var(--mq-rand-sterk));
+  background: var(--mq-ab-glas);
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hub-feed-item:has(.hub-goedkeuring) > svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .hub-confirm:has(button[data-ai-geen-actie]) {
+  padding: 12px 15px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--fout) 48%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 10%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .chat-approvals:has(.hub-goedkeuring) {
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--warn) 44%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(ellipse 64% 95% at 0% 0%, color-mix(in srgb, var(--warn) 10%, transparent), transparent 70%),
+    var(--mq-ab-glas);
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval {
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 58%, var(--mq-oppervlak));
+}
+
+/* Кнопки виключно людського рішення MensKnop (button[data-ai-geen-actie]) */
+html.palet-maquette button.hub-btn[data-ai-geen-actie] {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak) 16%);
+  color: var(--mq-tekst);
+  font-size: 0.87rem;
+  font-weight: 640;
+  box-shadow: inset 0 1px 0 var(--mq-ab-glans);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.14s ease;
+}
+
+html.palet-maquette button.hub-btn.tone-default[data-ai-geen-actie]:hover:not([disabled]) {
+  border-color: color-mix(in srgb, var(--fout) 50%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 12%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette button.hub-btn.tone-primary[data-ai-geen-actie] {
+  border-color: color-mix(in srgb, var(--mq-accent) 56%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 94%, var(--mq-wit) 6%) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 680;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 26%, transparent),
+    0 10px 22px var(--mq-gloed);
+}
+
+html.palet-maquette button.hub-btn.tone-primary[data-ai-geen-actie]:hover:not([disabled]) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--mq-accent) 72%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 88%, var(--mq-wit) 12%) 0%,
+    var(--mq-accent) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 34%, transparent),
+    0 14px 26px var(--mq-gloed);
+}
+
+html.palet-maquette button.hub-btn.tone-danger[data-ai-geen-actie] {
+  border-color: color-mix(in srgb, var(--fout) 58%, transparent);
+  background: var(--fout-vlak);
+  color: var(--text-on-vlak);
+  font-weight: 680;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--fout) 22%, transparent);
+}
+
+html.palet-maquette button.hub-btn.tone-danger[data-ai-geen-actie]:hover:not([disabled]) {
+  transform: translateY(-1px);
+  border-color: var(--fout);
+  background: color-mix(in srgb, var(--fout-vlak) 90%, var(--mq-tekst) 10%);
+}
+
+/* Варіант MensKnop у бесіді з ШІ (.chat-approval-actions) */
+html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button[data-ai-geen-actie] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: var(--mq-straal-knop);
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 660;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button[data-ai-geen-actie]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button[data-ai-geen-actie]:not(.chat-secondary) {
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 56%, transparent);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 94%, var(--mq-wit) 6%) 0%,
+    color-mix(in srgb, var(--mq-accent) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow: 0 8px 20px var(--mq-gloed);
+}
+
+html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button.chat-secondary[data-ai-geen-actie] {
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak) 16%);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button.chat-secondary[data-ai-geen-actie]:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--fout) 50%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 12%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ПОВАГА ДО СКОРОЧЕННЯ РУХУ ТА МОБІЛЬНІ ШАРИ — СУВОРО В КІНЦІ ФАЙЛА
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette :is(
+    .ab-paneel .ab-kaart,
+    .ab-paneel .ab-knop,
+    .ab-paneel .ab-vinkje,
+    .ab-paneel .ab-afgerond > summary,
+    .ai-grants .hub-btn,
+    .ai-stop .hub-btn,
+    .ai-grants .ai-presets .ag-segment-optie,
+    .ai-grants .ai-presets button[role="radio"],
+    .ai-grants .ai-always,
+    button.hub-btn[data-ai-geen-actie],
+    .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button[data-ai-geen-actie]
+  ),
+  html.palet-maquette :is(.ab-paneel, .ai-grants) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea) {
+    transition: none;
+  }
+}
+
+@media (max-width: 720px) {
+  html.palet-maquette section.ab-paneel {
+    padding: 18px 16px;
+  }
+
+  html.palet-maquette .ai-grants .ai-blok {
+    padding: 16px;
+  }
+
+  html.palet-maquette .ab-paneel .ab-knop,
+  html.palet-maquette :is(.ai-grants, .ai-stop) .hub-btn,
+  html.palet-maquette .ai-grants .ai-presets button[role="radio"],
+  html.palet-maquette .hub-goedkeuring .hub-btn,
+  html.palet-maquette button.hub-btn[data-ai-geen-actie],
+  html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button[data-ai-geen-actie] {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 560px) {
+  html.palet-maquette .ab-paneel .ab-kaart {
+    padding: 15px 14px;
+  }
+
+  html.palet-maquette .ab-paneel .ab-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  html.palet-maquette .ab-paneel .ab-acties .ab-knop {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  html.palet-maquette .ai-grants .ag-segment.ai-presets {
+    display: grid;
+    width: 100%;
+  }
+
+  html.palet-maquette .ai-grants .ai-presets .ag-segment-optie {
+    justify-content: space-between;
+  }
+
+  html.palet-maquette .ai-grants .ai-presets button[role="radio"] {
+    flex: 1 1 auto;
+  }
+
+  html.palet-maquette .ai-grants .ai-tabel,
+  html.palet-maquette .ai-grants .ai-tabel tbody {
+    display: grid;
+    gap: 8px;
+  }
+
+  html.palet-maquette .ai-grants .ai-tabel {
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  html.palet-maquette .ai-grants .ai-tabel thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    border: 0;
+  }
+
+  html.palet-maquette .ai-grants .ai-tabel tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--mq-rand);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, var(--mq-oppervlak));
+  }
+
+  html.palet-maquette .ai-grants .ai-tabel tbody td {
+    padding: 0;
+    border-top: 0;
+    grid-column: 1;
+  }
+
+  html.palet-maquette .ai-grants .ai-tabel tbody td.ai-tabel-actie {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+    width: auto;
+  }
+
+  html.palet-maquette .hub-feed-item:has(.hub-goedkeuring) {
+    padding: 14px;
+  }
+
+  html.palet-maquette .hub-feed-item:has(.hub-goedkeuring) .hub-actions .hub-btn,
+  html.palet-maquette .chat-approvals:has(.hub-goedkeuring) .chat-approval-actions > button[data-ai-geen-actie] {
+    flex: 1 1 100%;
+  }
+}

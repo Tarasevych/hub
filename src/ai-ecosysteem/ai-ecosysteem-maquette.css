@@ -1,0 +1,1011 @@
+/* Студійне оформлення відкритої екосистеми агентів ШІ, спільного контексту, журналу передач
+   та робочих процесів простору ai.tarasevych.com у художній системі «Макет» (MAQUETTE-006, Група 5Б).
+   Працює виключно за умови html.palet-maquette у нічній студії та у світлому режимі «Ранковий туман».
+   Studio-opmaak voor onafhankelijke AI-agenten, geïsoleerde werkruimtes, gedeelde werkcontext,
+   uitvoerlogboeken en ruimte-uitbreidingen onder html.palet-maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. СТУДІЙНІ ЗМІННІ ЕКОСИСТЕМИ ШІ ТА УЗГОДЖЕННЯ РЕЖИМУ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling, .aiw-nog-niet.aie-mq-laden) {
+  --mq-accent-ai: var(--mq-accent);
+  --mq-aie-rand: color-mix(in srgb, var(--mq-tekst) 14%, var(--mq-rand));
+  --mq-aie-rand-sterk: color-mix(in srgb, var(--mq-tekst) 22%, var(--mq-rand-sterk));
+  --mq-aie-rand-accent: color-mix(in srgb, var(--mq-accent-ai) 44%, var(--mq-rand-sterk));
+  --mq-aie-glas: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg) 12%);
+  --mq-aie-glas-hoog: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-tekst) 5%);
+  --mq-aie-invoer: color-mix(in srgb, var(--mq-bg) 52%, var(--mq-oppervlak-2) 48%);
+  --mq-aie-glans: color-mix(in srgb, var(--mq-tekst) 9%, transparent);
+  --mq-aie-gloed: color-mix(in srgb, var(--mq-accent-ai) 18%, transparent);
+  --mq-aie-gloed-zacht: color-mix(in srgb, var(--mq-accent-ai) 9%, transparent);
+  --mq-aie-console-bg: color-mix(in srgb, var(--mq-bg) 84%, var(--mq-bol-diep) 16%);
+  --mq-aie-console-kop: color-mix(in srgb, var(--mq-bg) 60%, var(--mq-oppervlak-2) 40%);
+  --mq-aie-console-rand: color-mix(in srgb, var(--mq-accent-ai) 26%, var(--mq-rand-sterk));
+  --mq-aie-console-tekst: var(--mq-held-tekst);
+  --mq-aie-ok: color-mix(in srgb, var(--mq-accent-ai) 64%, var(--mq-held-boven) 36%);
+  --mq-aie-actief: var(--mq-tech-markering);
+  --mq-aie-gevaar: color-mix(in srgb, var(--mq-tech-markering) 62%, var(--mq-accent-ai) 38%);
+  --mq-aie-font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --line: var(--mq-aie-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent-ai);
+  --text-on-accent: var(--mq-accent-op);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.aie-container, .aie-chat-koppeling, .aiw-nog-niet.aie-mq-laden),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.aie-container, .aie-chat-koppeling, .aiw-nog-niet.aie-mq-laden) {
+  --mq-accent-op: var(--mq-wit);
+  --mq-accent-ai: var(--mq-accent);
+  --mq-aie-rand: color-mix(in srgb, var(--mq-tekst) 12%, var(--mq-rand));
+  --mq-aie-rand-sterk: color-mix(in srgb, var(--mq-tekst) 20%, var(--mq-rand-sterk));
+  --mq-aie-rand-accent: color-mix(in srgb, var(--mq-accent-ai) 40%, var(--mq-rand-sterk));
+  --mq-aie-glas: color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-bg) 5%);
+  --mq-aie-glas-hoog: color-mix(in srgb, var(--mq-oppervlak-2) 90%, var(--mq-accent-ai) 5%);
+  --mq-aie-invoer: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-oppervlak) 24%);
+  --mq-aie-glans: color-mix(in srgb, var(--mq-wit) 84%, transparent);
+  --mq-aie-gloed: color-mix(in srgb, var(--mq-accent-ai) 11%, transparent);
+  --mq-aie-gloed-zacht: color-mix(in srgb, var(--mq-accent-ai) 6%, transparent);
+  --mq-aie-console-bg: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 6%);
+  --mq-aie-console-kop: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-tekst) 10%);
+  --mq-aie-console-rand: color-mix(in srgb, var(--mq-accent-ai) 28%, var(--mq-rand-sterk));
+  --mq-aie-console-tekst: var(--mq-tekst);
+  --mq-aie-ok: color-mix(in srgb, var(--mq-accent-ai) 76%, var(--mq-tekst) 24%);
+  --mq-aie-actief: var(--mq-tech-markering);
+  --mq-aie-gevaar: color-mix(in srgb, var(--mq-tech-markering) 68%, var(--mq-tekst) 32%);
+  --text-on-accent: var(--mq-wit);
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) :focus-visible {
+  outline: 2px solid var(--mq-accent-ai);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ЗАХИСТ СТУДІЙНИХ ОПРАВ І ПРОПОРЦІЙ У РЕЖИМІ ПЛОСКОГО ВМІСТУ ОБОЛОНКИ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content > .aie-container:not([role="dialog"]):not(.auth-card) {
+  max-width: 1180px;
+  margin-inline: auto;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
+  article.aie-kaart,
+  section.aie-chat-koppeling,
+  .aie-container section.product-empty-state
+):not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+  border: 1px solid var(--mq-aie-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. КОНТЕЙНЕР ПАНЕЛІ, СТАН ОЧІКУВАННЯ, СТАН ПОМИЛКИ ТА ПОВІДОМЛЕННЯ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .aie-container {
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto 32px;
+  padding: clamp(14px, 2.6vw, 28px);
+  box-sizing: border-box;
+}
+
+html.palet-maquette p.aiw-nog-niet.aie-mq-laden {
+  max-width: 620px;
+  margin: 28px auto;
+  padding: 20px 26px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-aie-rand-accent);
+  background:
+    radial-gradient(circle at 18% 0%, var(--mq-aie-gloed), transparent 62%),
+    var(--mq-aie-glas);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+  font-size: 0.94rem;
+  font-weight: 550;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette .aie-container .product-empty-state {
+  max-width: 640px;
+  margin: 18px auto;
+  padding: 36px 28px;
+  border-radius: var(--mq-straal-held);
+  border: 1px solid var(--mq-aie-rand-accent);
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-aie-gloed), transparent 64%),
+    linear-gradient(165deg, var(--mq-aie-glas-hoog) 0%, var(--mq-aie-glas) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw);
+  text-align: center;
+}
+
+html.palet-maquette .aie-container .product-empty-state .product-empty-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-aie-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-ai) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent-ai);
+  box-shadow: 0 12px 28px var(--mq-aie-gloed);
+}
+
+html.palet-maquette .aie-container .product-empty-state :is(h1, h2) {
+  color: var(--mq-tekst);
+  letter-spacing: -0.025em;
+}
+
+html.palet-maquette .aie-container .product-empty-state p {
+  color: var(--mq-gedempt);
+  line-height: 1.6;
+}
+
+html.palet-maquette .aie-container .product-empty-state button {
+  min-height: 42px;
+  padding: 9px 20px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid color-mix(in srgb, var(--mq-accent-ai) 72%, transparent);
+  background: linear-gradient(
+    135deg,
+    var(--mq-accent-ai) 0%,
+    color-mix(in srgb, var(--mq-accent-ai) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 10px 24px var(--mq-aie-gloed);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+html.palet-maquette .aie-container .product-empty-state button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--mq-accent-ai) 28%, transparent);
+}
+
+html.palet-maquette .aie-container .aie-melding-ok {
+  padding: 12px 16px;
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--mq-aie-ok) 46%, var(--mq-aie-rand));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--mq-accent-ai) 15%, transparent) 0%, transparent 72%),
+    var(--mq-aie-glas-hoog);
+  box-shadow:
+    inset 3px 0 0 var(--mq-accent-ai),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+  font-weight: 550;
+}
+
+html.palet-maquette .aie-container .aie-melding-fout {
+  padding: 12px 16px;
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--mq-aie-gevaar) 52%, var(--mq-aie-rand));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--mq-aie-gevaar) 16%, transparent) 0%, transparent 72%),
+    var(--mq-aie-glas-hoog);
+  box-shadow:
+    inset 3px 0 0 var(--mq-aie-gevaar),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+  font-weight: 550;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. ВІТРИННА ШАПКА РЕЖИМУ (.aie-kop) ТА МАРКЕРИ ПРОСТОРУ (ПРИВАТНИЙ / ТЕХНІЧНИЙ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .aie-container .aie-kop {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(20px, 2.8vw, 30px) clamp(20px, 3vw, 32px);
+  border-radius: var(--mq-straal-held);
+  border: 1px solid var(--mq-aie-rand-accent);
+  background:
+    radial-gradient(ellipse 520px 260px at 92% -10%, var(--mq-aie-gloed), transparent 68%),
+    radial-gradient(ellipse 420px 220px at 8% 115%, var(--mq-werk-gloed-a), transparent 72%),
+    linear-gradient(155deg, var(--mq-aie-glas-hoog) 0%, var(--mq-aie-glas) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw);
+  align-items: flex-start;
+  gap: 16px;
+}
+
+html.palet-maquette .aie-container[data-aie-ruimte="technisch"] .aie-kop {
+  border-color: color-mix(in srgb, var(--mq-tech-markering) 46%, var(--mq-aie-rand-accent));
+  box-shadow:
+    inset 0 2px 0 color-mix(in srgb, var(--mq-tech-markering) 54%, transparent),
+    var(--mq-schaduw);
+}
+
+html.palet-maquette .aie-container .aie-mq-kop-tekst {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+html.palet-maquette .aie-container .aie-mq-bovenregel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mq-accent-ai);
+}
+
+html.palet-maquette .aie-container .aie-mq-bovenregel::before {
+  content: "";
+  width: 18px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: var(--mq-accent-ai);
+  flex: none;
+}
+
+html.palet-maquette .aie-container .aie-kop h1 {
+  margin: 0;
+  font-size: clamp(1.42rem, 2.4vw, 1.92rem);
+  font-weight: 620;
+  line-height: 1.16;
+  letter-spacing: -0.035em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .aie-container .aie-kop p {
+  margin: 2px 0 0;
+  max-width: 70ch;
+  font-size: 0.92rem;
+  line-height: 1.62;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .aie-container .aie-mq-kop-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-ruimte-pil {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-aie-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-ai) 14%, var(--mq-aie-glas-hoog));
+  color: var(--mq-tekst);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 var(--mq-aie-glans);
+}
+
+html.palet-maquette :is(.aie-container[data-aie-ruimte="technisch"], .aie-chat-koppeling[data-aie-ruimte="technisch"]) .aie-ruimte-pil {
+  border-color: color-mix(in srgb, var(--mq-tech-markering) 52%, var(--mq-aie-rand));
+  background: color-mix(in srgb, var(--mq-tech-markering) 16%, var(--mq-aie-glas-hoog));
+}
+
+html.palet-maquette .aie-container .aie-badge.aie-mq-stat-pil {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-aie-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak-zacht));
+  color: var(--mq-gedempt);
+  font-size: 0.79rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .aie-container .aie-badge.aie-mq-stat-pil b {
+  color: var(--mq-tekst);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. КАРТКИ (.aie-kaart), ФОРМИ, ТАКТИЛЬНІ КНОПКИ, КАПСУЛИ ВИБОРУ ТА КОНСОЛІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .aie-container .aie-kaart {
+  position: relative;
+  gap: 16px;
+  padding: clamp(18px, 2.4vw, 26px);
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-aie-rand);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-aie-gloed-zacht), transparent 54%),
+    linear-gradient(168deg, var(--mq-aie-glas-hoog) 0%, var(--mq-aie-glas) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw-zacht);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .aie-container .aie-kaart:hover {
+  border-color: color-mix(in srgb, var(--mq-accent-ai) 26%, var(--mq-aie-rand-sterk));
+}
+
+html.palet-maquette .aie-container .aie-kaart h2 {
+  gap: 10px;
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .aie-container .aie-kaart h2 > svg {
+  flex: none;
+  color: var(--mq-accent-ai);
+  filter: drop-shadow(0 0 10px var(--mq-aie-gloed));
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-subtekst {
+  color: var(--mq-gedempt);
+  font-size: 0.9rem;
+  line-height: 1.58;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld {
+  gap: 7px;
+  min-width: 0;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld > span {
+  font-size: 0.83rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--mq-tekst);
+}
+
+/* Загальні поля введення — суворо загорнуті у :where(...) згідно з інженерним правилом */
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld :where(input:not([type="checkbox"]):not([type="file"]), select, textarea) {
+  min-height: 42px;
+  padding: 9px 13px;
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-aie-rand);
+  background: var(--mq-aie-invoer);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld :where(input:not([type="checkbox"]):not([type="file"]), select, textarea)::placeholder {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):hover:not(:disabled) {
+  border-color: var(--mq-aie-rand-sterk);
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):focus {
+  outline: none;
+  border-color: var(--mq-accent-ai);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent-ai) 20%, transparent);
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):disabled {
+  opacity: 0.54;
+  cursor: not-allowed;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-veld :where(textarea) {
+  min-height: 96px;
+  line-height: 1.55;
+}
+
+/* Інтерактивні капсули прапорців (.aie-vink) */
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-vink {
+  min-height: 38px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-aie-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-oppervlak) 24%);
+  color: var(--mq-gedempt);
+  font-size: 0.85rem;
+  font-weight: 550;
+  transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-vink:hover {
+  border-color: var(--mq-aie-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-vink input[type="checkbox"] {
+  accent-color: var(--mq-accent-ai);
+  width: 15px;
+  height: 15px;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-vink:has(input:checked) {
+  border-color: var(--mq-aie-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-ai) 16%, var(--mq-aie-glas-hoog));
+  color: var(--mq-tekst);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--mq-accent-ai) 14%, transparent);
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-vink:has(input:disabled) {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-vink code {
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.78rem;
+  color: var(--mq-accent-ai);
+}
+
+/* Студійні кнопки (.aie-knop-hoofd, .aie-knop-tweede, .aie-knop-gevaar) */
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-knop-hoofd {
+  min-height: 43px;
+  padding: 10px 20px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid color-mix(in srgb, var(--mq-accent-ai) 74%, transparent);
+  background: linear-gradient(
+    135deg,
+    var(--mq-accent-ai) 0%,
+    color-mix(in srgb, var(--mq-accent-ai) 80%, var(--mq-accent-2) 20%) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 680;
+  letter-spacing: -0.01em;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 26%, transparent),
+    0 10px 26px var(--mq-aie-gloed);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-knop-hoofd:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent-ai) 90%, var(--mq-wit) 10%) 0%,
+    var(--mq-accent-ai) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 34%, transparent),
+    0 14px 32px color-mix(in srgb, var(--mq-accent-ai) 28%, transparent);
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-knop-tweede {
+  min-height: 40px;
+  padding: 8px 15px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-aie-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%);
+  color: var(--mq-tekst);
+  font-weight: 600;
+  font-size: 0.86rem;
+  box-shadow: inset 0 1px 0 var(--mq-aie-glans);
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-knop-tweede:hover:not(:disabled) {
+  border-color: var(--mq-aie-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-ai) 14%, var(--mq-oppervlak-2));
+  box-shadow: 0 6px 18px var(--mq-aie-gloed-zacht);
+}
+
+html.palet-maquette .aie-container .aie-knop-gevaar {
+  min-height: 36px;
+  padding: 6px 13px;
+  border-radius: calc(var(--mq-straal-knop) - 2px);
+  border: 1px solid color-mix(in srgb, var(--mq-aie-gevaar) 48%, var(--mq-aie-rand));
+  background: color-mix(in srgb, var(--mq-aie-gevaar) 10%, transparent);
+  color: var(--mq-aie-gevaar);
+  font-weight: 620;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .aie-container .aie-knop-gevaar:hover:not(:disabled) {
+  border-color: var(--mq-aie-gevaar);
+  background: color-mix(in srgb, var(--mq-aie-gevaar) 20%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+/* Уніфіковані термінальні консолі та блоки коду (.aie-codeblok) */
+html.palet-maquette .aie-container .aie-mq-console-stapel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+html.palet-maquette .aie-container .aie-mq-console-wikkel {
+  display: grid;
+  gap: 0;
+  border-radius: 14px;
+  border: 1px solid var(--mq-aie-console-rand);
+  background: var(--mq-aie-console-bg);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .aie-container .aie-mq-console-kop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-bottom: 1px solid var(--mq-aie-rand);
+  background: var(--mq-aie-console-kop);
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .aie-container .aie-mq-console-kop > svg {
+  color: var(--mq-accent-ai);
+  flex: none;
+}
+
+html.palet-maquette .aie-container .aie-codeblok {
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-aie-console-rand);
+  background: var(--mq-aie-console-bg);
+  color: var(--mq-aie-console-tekst);
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.81rem;
+  line-height: 1.54;
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .aie-container .aie-mq-console-wikkel > .aie-codeblok {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. КОМПАКТНА СМУГА ЕКОСИСТЕМИ НАД БЕСІДОЮ (.aie-chat-koppeling)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .aie-chat-koppeling {
+  gap: 13px;
+  padding: 16px 18px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-aie-rand-accent);
+  background:
+    radial-gradient(circle at 96% 0%, var(--mq-aie-gloed), transparent 56%),
+    linear-gradient(162deg, var(--mq-aie-glas-hoog) 0%, var(--mq-aie-glas) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .aie-chat-koppeling .aie-mq-balk-kop b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.96rem;
+  font-weight: 660;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .aie-chat-koppeling .aie-mq-balk-kop b > svg {
+  color: var(--mq-accent-ai);
+}
+
+html.palet-maquette .aie-chat-koppeling .aie-mq-koppeling-pil {
+  border-radius: 999px;
+  padding-inline: 14px;
+}
+
+html.palet-maquette .aie-chat-koppeling .aie-mq-context-strook {
+  padding-top: 10px;
+  border-top: 1px solid var(--mq-aie-rand);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. РЕЖИМ «AGENTS»: КАРТКИ НЕЗАЛЕЖНИХ АГЕНТІВ, ТЕРМІНАЛИ ТА СЕРЕДОВИЩА
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .aie-container .aie-omgeving-vak {
+  gap: 10px;
+  padding: 15px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-aie-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%);
+  box-shadow: inset 0 1px 0 var(--mq-aie-glans);
+  transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+html.palet-maquette .aie-container .aie-mq-terminal-vak {
+  border-color: var(--mq-aie-rand-accent);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-aie-gloed-zacht), transparent 60%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-bg) 18%);
+}
+
+html.palet-maquette .aie-container .aie-mq-agent-titel {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .aie-container .aie-mq-agent-titel code {
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.8rem;
+  color: var(--mq-accent-ai);
+}
+
+html.palet-maquette .aie-container .aie-mq-kanaal-pil {
+  border-color: var(--mq-aie-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-ai) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent-ai);
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+}
+
+html.palet-maquette .aie-container .aie-mq-onafhankelijke-sectie {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mq-aie-rand);
+  gap: 11px;
+}
+
+html.palet-maquette .aie-container .aie-mq-agent-kaarten {
+  gap: 12px;
+}
+
+html.palet-maquette .aie-container a.aie-mq-agent-kaart {
+  text-decoration: none;
+  color: var(--mq-tekst);
+  cursor: pointer;
+  align-content: space-between;
+}
+
+html.palet-maquette .aie-container a.aie-mq-agent-kaart:hover {
+  transform: translateY(-2px);
+  border-color: var(--mq-aie-rand-accent);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-aie-gloed), transparent 64%),
+    var(--mq-aie-glas-hoog);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    0 12px 28px var(--mq-aie-gloed-zacht);
+}
+
+html.palet-maquette .aie-container a.aie-mq-agent-kaart[data-aie-gekoppeld="1"] {
+  border-color: var(--mq-aie-rand-accent);
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--mq-accent-ai) 12%, var(--mq-oppervlak-2)) 0%, var(--mq-aie-glas) 100%);
+  box-shadow:
+    inset 3px 0 0 var(--mq-accent-ai),
+    inset 0 1px 0 var(--mq-aie-glans);
+}
+
+html.palet-maquette .aie-container .aie-mq-eindpunt-pil {
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.74rem;
+  border-color: var(--mq-aie-rand);
+  background: var(--mq-aie-invoer);
+  color: var(--mq-accent-ai);
+}
+
+html.palet-maquette .aie-container .aie-mq-verbinding-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 560;
+}
+
+html.palet-maquette .aie-container .aie-mq-verbinding-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--mq-stil);
+}
+
+html.palet-maquette .aie-container a.aie-mq-agent-kaart[data-aie-gekoppeld="1"] .aie-mq-verbinding-status {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .aie-container a.aie-mq-agent-kaart[data-aie-gekoppeld="1"] .aie-mq-verbinding-status::before {
+  background: var(--mq-accent-ai);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent-ai) 24%, transparent);
+}
+
+/* Три контури середовищ (комп'ютер, оглядач, сервер) */
+html.palet-maquette .aie-container .aie-mq-omgeving-kaart > b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .aie-container .aie-mq-omgeving-kaart > b > svg {
+  color: var(--mq-accent-ai);
+  flex: none;
+}
+
+html.palet-maquette .aie-container .aie-mq-omgeving-kaart[data-aie-actief="1"] {
+  border-color: var(--mq-aie-rand-accent);
+  background:
+    radial-gradient(circle at 50% -20%, var(--mq-aie-gloed-zacht), transparent 64%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak) 18%);
+  box-shadow:
+    inset 0 2px 0 var(--mq-accent-ai),
+    inset 0 1px 0 var(--mq-aie-glans);
+}
+
+html.palet-maquette .aie-container .aie-mq-omgeving-kaart[data-aie-actief="0"] {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-bg) 26%);
+}
+
+html.palet-maquette .aie-container .aie-mq-sjabloon-knop {
+  border-radius: 999px;
+  border-color: color-mix(in srgb, var(--mq-accent-ai) 32%, var(--mq-aie-rand));
+  background: color-mix(in srgb, var(--mq-accent-ai) 8%, var(--mq-oppervlak-2));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. СПИСКИ ПРОСТОРІВ, РЕЖИМ «RUNS» ТА РЕЖИМ «WORKFLOWS»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .aie-container .aie-lijst {
+  gap: 12px;
+}
+
+html.palet-maquette .aie-container .aie-item {
+  gap: 10px;
+  padding: 15px 18px;
+  border-radius: 17px;
+  border: 1px solid var(--mq-aie-rand);
+  background:
+    linear-gradient(165deg, color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%) 0%, var(--mq-aie-glas) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw-zacht);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette .aie-container .aie-item:hover {
+  border-color: var(--mq-aie-rand-sterk);
+}
+
+html.palet-maquette .aie-container .aie-mq-werkruimte-item {
+  box-shadow:
+    inset 3px 0 0 var(--mq-accent-ai),
+    inset 0 1px 0 var(--mq-aie-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .aie-container .aie-item-kop b {
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .aie-container .aie-item-kop code {
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.79rem;
+  font-weight: 600;
+  color: var(--mq-accent-ai);
+}
+
+html.palet-maquette .aie-container .aie-mq-keten-kop {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+html.palet-maquette .aie-container .aie-mq-keten-kop > svg {
+  color: var(--mq-accent-ai);
+  flex: none;
+}
+
+/* Капсули середовищ, агентів, служб і видів потоків */
+html.palet-maquette .aie-container .aie-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-aie-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-bg) 16%);
+  color: var(--mq-tekst);
+  font-size: 0.77rem;
+  font-weight: 600;
+}
+
+html.palet-maquette .aie-container .aie-badge.aie-mq-agent-pil {
+  border-color: color-mix(in srgb, var(--mq-accent-ai) 36%, var(--mq-aie-rand));
+  background: color-mix(in srgb, var(--mq-accent-ai) 12%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .aie-container .aie-badge.aie-mq-soort-pil {
+  border-color: var(--mq-aie-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-ai) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent-ai);
+}
+
+html.palet-maquette .aie-container .aie-badge.aie-mq-dienst-pil {
+  font-family: var(--mq-aie-font-mono);
+  font-size: 0.74rem;
+  color: var(--mq-gedempt);
+}
+
+/* Градація станів запусків і передач у режимі runs (open / bezig / voltooid / geannuleerd) */
+html.palet-maquette .aie-container .aie-mq-run-item[data-aie-status="open"] {
+  border-color: color-mix(in srgb, var(--mq-accent-ai) 36%, var(--mq-aie-rand));
+  box-shadow:
+    inset 3px 0 0 var(--mq-accent-ai),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .aie-container .aie-mq-run-item[data-aie-status="bezig"] {
+  border-color: color-mix(in srgb, var(--mq-aie-actief) 44%, var(--mq-aie-rand));
+  box-shadow:
+    inset 3px 0 0 var(--mq-aie-actief),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .aie-container .aie-mq-run-item[data-aie-status="voltooid"] {
+  border-color: color-mix(in srgb, var(--mq-aie-ok) 40%, var(--mq-aie-rand));
+  box-shadow:
+    inset 3px 0 0 var(--mq-aie-ok),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .aie-container .aie-mq-run-item[data-aie-status="geannuleerd"] {
+  opacity: 0.78;
+  box-shadow: inset 3px 0 0 var(--mq-stil);
+}
+
+html.palet-maquette .aie-container .aie-mq-status-pil[data-aie-status="open"] {
+  border-color: var(--mq-aie-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-ai) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-accent-ai);
+}
+
+html.palet-maquette .aie-container .aie-mq-status-pil[data-aie-status="bezig"] {
+  border-color: color-mix(in srgb, var(--mq-aie-actief) 52%, var(--mq-aie-rand));
+  background: color-mix(in srgb, var(--mq-aie-actief) 18%, var(--mq-oppervlak-2));
+  color: var(--mq-aie-actief);
+}
+
+html.palet-maquette .aie-container .aie-mq-status-pil[data-aie-status="voltooid"] {
+  border-color: color-mix(in srgb, var(--mq-aie-ok) 48%, var(--mq-aie-rand));
+  background: color-mix(in srgb, var(--mq-aie-ok) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-aie-ok);
+}
+
+html.palet-maquette .aie-container .aie-mq-status-pil[data-aie-status="geannuleerd"] {
+  border-color: var(--mq-aie-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* Картки робочих потоків і розширень у режимі workflows */
+html.palet-maquette .aie-container .aie-mq-workflow-item[data-aie-soort="werkstroom"] {
+  box-shadow:
+    inset 3px 0 0 var(--mq-accent-ai),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .aie-container .aie-mq-workflow-item[data-aie-soort="systeem_brug"] {
+  box-shadow:
+    inset 3px 0 0 var(--mq-aie-actief),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .aie-container .aie-mq-workflow-item[data-aie-soort="paneel_actie"] {
+  box-shadow:
+    inset 3px 0 0 var(--mq-aie-ok),
+    var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. СТУДІЙНІ СТАНИ ПОРОЖНЕЧІ (.aie-mq-leeg)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .aie-container .aie-omgeving-vak.aie-mq-leeg {
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 28px 22px;
+  border: 1px dashed var(--mq-aie-rand-accent);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-aie-gloed-zacht), transparent 68%),
+    color-mix(in srgb, var(--mq-oppervlak) 82%, var(--mq-bg) 18%);
+}
+
+html.palet-maquette .aie-container .aie-omgeving-vak.aie-mq-leeg > svg {
+  color: var(--mq-accent-ai);
+  opacity: 0.9;
+  filter: drop-shadow(0 6px 16px var(--mq-aie-gloed));
+}
+
+html.palet-maquette .aie-container .aie-omgeving-vak.aie-mq-leeg > .aie-subtekst {
+  max-width: 58ch;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. АДАПТИВНІСТЬ ТА ПОВАГА ДО РУХУ — СУВОРО НАПРИКІНЦІ ФАЙЛА (@media)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette :is(.aie-container, .aie-chat-koppeling) *,
+  html.palet-maquette :is(.aie-container, .aie-chat-koppeling) *::before,
+  html.palet-maquette :is(.aie-container, .aie-chat-koppeling) *::after {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}
+
+@media (max-width: 980px) {
+  html.palet-maquette .aie-container .aie-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  html.palet-maquette .aie-container {
+    gap: 16px;
+    padding: 12px;
+  }
+
+  html.palet-maquette .aie-container .aie-kop {
+    padding: 18px 16px;
+    border-radius: var(--mq-straal-kaart);
+  }
+
+  html.palet-maquette .aie-container .aie-mq-kop-meta {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  html.palet-maquette .aie-container .aie-kaart {
+    padding: 16px;
+  }
+
+  html.palet-maquette .aie-container .aie-grid-2,
+  html.palet-maquette .aie-container .aie-grid-3,
+  html.palet-maquette .aie-chat-koppeling .aie-grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-knop-hoofd,
+  html.palet-maquette :is(.aie-container, .aie-chat-koppeling) .aie-knop-tweede {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  html.palet-maquette .aie-container .aie-knop-gevaar {
+    min-height: 44px;
+  }
+}

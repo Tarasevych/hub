@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { aanvragerTekst, beschrijfParams, kernVan, LANG_VANAF, type Aanvrager } from './goedkeuring-beschrijving';
 import { alleenMens, geenAi } from './menselijke-actie';
+import './ai-bevestiging/ai-bevestigingen-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 

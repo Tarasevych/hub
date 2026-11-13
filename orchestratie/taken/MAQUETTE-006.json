@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAQUETTE-006",
+  "agent": "antigravity",
+  "tak": "feature/maquette-006-20261113-221000",
+  "basisCommit": "32d52aa10fe99b6ee727272084c2906c0d69aed2",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T22:10:21.921Z",
+  "bijgewerkt": "2026-11-13T22:10:21.921Z",
+  "omschrijving": "Хвиля 5 теми «Макет»: повне студійне перевтілення простору штучного інтелекту ai.tarasevych.com (робочий чат, екосистема агентів, запуски, робочі процеси та ручні підтвердження дій).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
