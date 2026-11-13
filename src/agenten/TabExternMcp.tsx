@@ -23,6 +23,7 @@ import { Badge, exact, GevaarKnop, Knop, Melding, Rij, Tech, useActies } from '.
 import { foutTekst } from './fouten';
 import ExterneHosts from '../besluit/ExterneHosts'; // witte lijst beheren met een passkey-besluit (zone B 22.10.2026, RUNBOOK §15)
 import GeheimInvoer from '../geheim/GeheimInvoer';
+import McpInspectorStudio from './McpInspectorStudio';
 
 type Hulpmiddel = {
   naam: string; titel: string; beschrijving: string; alleenLezen: boolean; destructief: boolean; aan: boolean;
@@ -294,6 +295,8 @@ export default function TabExternMcp({ tr }: { tr: Tr }) {
           ]} />
         ) : null}
       </details>
+
+      <McpInspectorStudio tr={tr} />
     </div>
   );
 }

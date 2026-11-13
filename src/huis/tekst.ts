@@ -1,12 +1,13 @@
 // Teksten en hulpjes van de huis-pagina (uk/nl).
 import { useEffect, useState } from 'react';
-import { VERSHEID_LABEL, versheid, type Apparaat, type Toestand } from '../../shared/huis-model';
+import { HUIS_UITLEG, VERSHEID_LABEL, versheid, type Apparaat, type Toestand } from '../../shared/huis-model';
+import { weigeringZin } from '../../shared/weigering-tekst';
 
 export type Lang = 'uk' | 'nl';
 export const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
 export const locale = (lang: Lang) => (lang === 'uk' ? 'uk-UA' : 'nl-NL');
 export function foutTekst(lang: Lang, code: string): string {
-  const t: Record<string, [string, string]> = {
+  const t: Record<string, readonly [string, string]> = {
     HUIS_MIGRATIE_ONTBREEKT: ['На сервері ще не застосовано міграцію 0128.', 'Op de server is migratie 0128 nog niet uitgevoerd.'],
     GEEN_TOEGANG: ['Немає доступу до цієї оселі.', 'Geen toegang tot deze woning.'], ALLEEN_EIGENAAR: ['Це може лише власник оселі.', 'Alleen de eigenaar van de woning kan dit.'],
     ROL_ALLEEN_LEZEN: ['Ваша роль дозволяє лише переглядати.', 'Uw rol mag alleen kijken.'], STEP_UP_VEREIST: ['Критична дія: потрібне підтвердження входу.', 'Kritieke actie: bevestiging van de aanmelding nodig.'], STEP_UP_REQUIRED: ['Потрібне підтвердження входу.', 'Bevestiging van de aanmelding nodig.'],
@@ -15,7 +16,12 @@ export function foutTekst(lang: Lang, code: string): string {
     WAARDE_BUITEN_BEREIK: ['Значення поза межами.', 'Waarde buiten het bereik.'], IDEMPOTENTIE_ONGELDIG: ['Внутрішня помилка ключа.', 'Interne sleutelfout.'],
     TOKEN_GEWEIGERD: ['Home Assistant відхилив токен.', 'Home Assistant weigerde het token.'], GEEN_ANTWOORD: ['Немає відповіді від адреси (мережа, VPN, вимкнено?).', 'Geen antwoord van het adres (netwerk, VPN, uit?).'], ADRES_ONGELDIG: ['Адреса має бути http(s)://хост[:порт] без параметрів.', 'Adres moet http(s)://host[:poort] zijn, zonder parameters.'], ADRES_GEWEIGERD: ['Локальні адреси сервера (localhost/127.x) не дозволені.', 'Loopback-adressen van de server (localhost/127.x) zijn niet toegestaan.'],
     ANTWOORD_ONGELDIG: ['Відповідь не схожа на Home Assistant.', 'Het antwoord lijkt niet op Home Assistant.'], TOKEN_ONGELDIG: ['Вставте довгостроковий токен доступу (без пробілів).', 'Plak een langlevend toegangstoken (zonder spaties).'], SLEUTEL_ONTBREEKT: ['На сервері немає ключа шифрування для токена.', 'De server mist de versleutelsleutel voor het token.'],
-    NOG_NIET_UITVOERBAAR: ['У цьому випуску сайт ще не виконує правила — лише чернетка й симуляція.', 'In deze release voert de site regels nog niet uit — alleen concept en simulatie.'], NAAM_ONGELDIG: ['Потрібна назва (до 80 символів).', 'Een naam is nodig (hoogstens 80 tekens).'], GEBRUIKER_ONBEKEND: ['Такого підтвердженого користувача немає.', 'Zo’n goedgekeurde gebruiker is er niet.'],
+    NOG_NIET_UITVOERBAAR: ['У цьому випуску сайт ще не виконує правила — лише чернетка й симуляція.', 'In deze release voert de site regels nog niet uit — alleen concept en simulatie.'], NAAM_ONGELDIG: ['Потрібна назва (до 80 символів).', 'Een naam is nodig (hoogstens 80 tekens).'],
+    // SEC-002: de nieuwe weigeringen (tempo, bezette bron, onderbroken verzending, grenzen, uitnodigingen) — dezelfde zinnen als de server.
+    ...Object.fromEntries((['RATE_LIMITED', 'HUIS_BEZET', 'VERZENDING_ONDERBROKEN', 'TE_VEEL_INTEGRATIES', 'TE_VEEL_UITNODIGINGEN', 'EMAIL_ONGELDIG', 'EIGENAAR_KAN_NIET_VERTREKKEN'] as const).map((k) => [k, HUIS_UITLEG[k]])),
+    NIET_GEVONDEN: ['Не знайдено: запис уже прибрано або строк його дії минув. Оновіть сторінку.', 'Niet gevonden: het is al weggehaald of verlopen. Vernieuw de pagina.'],
+    IMPERSONATIE_ALLEEN_LEZEN: ['У режимі перегляду «лише читання» змінювати нічого не можна.', 'In de weergave «alleen lezen» kan niets gewijzigd worden.'],
+    ID_ONGELDIG: ['Запис не розпізнано. Оновіть сторінку й спробуйте ще раз.', 'Dit item is niet herkend. Vernieuw de pagina en probeer het opnieuw.'],
     STAP_KRITIEK_NIET_TOEGESTAAN: ['Критичні пристрої не можна додавати до сцен.', 'Kritieke apparaten horen niet in een scène.'], DAN_KRITIEK_NIET_TOEGESTAAN: ['Критичні пристрої не можна вмикати автоматизацією.', 'Kritieke apparaten mogen niet door een automatisering bediend worden.'],
     WANNEER_VEREIST: ['Додайте хоча б одну умову «Коли».', 'Voeg minstens één «Wanneer» toe.'], DAN_VEREIST: ['Додайте хоча б одну дію «Тоді».', 'Voeg minstens één «Dan» toe.'],
     SERVER: ['Сервер тимчасово не впорався із запитом.', 'De server kon het verzoek even niet afhandelen.'], NETWERK: ['Немає зв’язку із сервером. Перевірте інтернет.', 'Geen verbinding met de server. Controleer het internet.'],
@@ -23,6 +29,8 @@ export function foutTekst(lang: Lang, code: string): string {
     HUIS_SERVICE_REQUIRED: ['Доступно лише після входу.', 'Alleen na aanmelden.'], ACCOUNT_NOT_APPROVED: ['Обліковий запис ще не підтверджено.', 'Het account is nog niet goedgekeurd.'],
   };
   const p = t[code]; if (p) return tr(lang, p[0], p[1]);
+  // SEC-002 (slot «u»): bekende weigeringen (rol «лише перегляд», server bezet …) — één tekst voor de hele site, shared/weigering-tekst.ts.
+  const w = weigeringZin(lang, code); if (w) return w;
   if (/SESSION|401|403/.test(code)) return tr(lang, 'Доступно лише після входу.', 'Alleen na aanmelden.');
   // UI-005: nooit een ruwe servertekst («Internal server error», HTTP_500…) tonen; alleen bekende codes hierboven of een rustige zin.
   if (!/^[A-Z][A-Z0-9_]{2,40}$/.test(code) || /^HTTP_5/.test(code)) return tr(lang, 'Не вдалося. Спробуйте ще раз трохи згодом.', 'Mislukt. Probeer het straks opnieuw.');

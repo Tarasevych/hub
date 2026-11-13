@@ -68,8 +68,33 @@ export function controleer(wortel = '.', alles = false) {
   return { fouten, waarschuwingen };
 }
 
+/**
+ * SEC-002 (interface-04): elk riskant hulpmiddel (RISKY_TOOLS in backend/connectors-hulpmiddelen.ts) heeft in src/mcp-teksten.ts
+ * een eigen tekst MET risico (zesde argument van T(…)). Zonder tekst toonde het paneel een kale Engelse naam, geen «!» en een dode
+ * knop «Завжди». Statisch: alleen de bronteksten worden gelezen. Geeft [] als alles klopt.
+ */
+export function controleerToolTeksten(wortel = '.') {
+  const backend = readFileSync(join(wortel, 'backend/connectors-hulpmiddelen.ts'), 'utf8');
+  const teksten = readFileSync(join(wortel, 'src/mcp-teksten.ts'), 'utf8');
+  const begin = backend.indexOf('export const RISKY_TOOLS');
+  if (begin < 0) return ['backend/connectors-hulpmiddelen.ts: RISKY_TOOLS niet gevonden'];
+  const risky = [...backend.slice(begin, backend.indexOf(']);', begin)).matchAll(/'([a-z][a-z0-9_]+)'/g)].map((m) => m[1]);
+  const fouten = [];
+  for (const naam of risky) {
+    const m = new RegExp(`^\\s{2}${naam}:\\s*T\\(`, 'm').exec(teksten);
+    if (!m) { fouten.push(`src/mcp-teksten.ts: geen tekst voor riskant hulpmiddel ${naam}`); continue; }
+    const rest = teksten.slice(m.index + m[0].length);
+    const volgende = rest.search(/^\s{2}[a-z][a-z0-9_]+:\s*T\(|^};/m);
+    const blok = volgende < 0 ? rest : rest.slice(0, volgende);
+    // T(title, what, touches, on, off, risk): zes paren [uk, nl] → minstens zes keer «['» of «["» aan het begin van een paar.
+    if ((blok.match(/\[\s*(['"`])/g) || []).length < 6) fouten.push(`src/mcp-teksten.ts: riskant hulpmiddel ${naam} heeft geen risicotekst (zesde argument van T)`);
+  }
+  return fouten;
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { fouten, waarschuwingen } = controleer('.', process.argv.includes('--alles-streng'));
+  fouten.push(...controleerToolTeksten('.'));
   if (!process.argv.includes('--stil') || fouten.length) for (const w of waarschuwingen) console.warn(`waarschuwing (?): ${w}`);
   for (const f of fouten) console.error(`FOUT (?): ${f}`);
   console.log(`hulp-vraagtekens: ${fouten.length} fout(en), ${waarschuwingen.length} waarschuwing(en)`);

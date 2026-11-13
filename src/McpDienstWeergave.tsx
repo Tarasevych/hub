@@ -26,13 +26,20 @@ import "./mcp-domein.css";
 type Lang = "uk" | "nl";
 type Props = { lang: Lang; tab: string };
 type Probe = { id: string; url: string; ok: boolean; status: number; ms: number; error?: string };
-type Task = { id: string; title: string; body: string; status: string };
+type Task = { id: string; title: string; body: string; status: string; thirdParty?: boolean; source?: string };
 type Note = { id: string; title: string; body: string; author: string; updatedAt: string };
 type LogRow = { id: string; at: string; method: string; detail: string; transport: string; agent: string; ok: boolean; ms: number };
 type Tone = "ok" | "wait" | "bad" | "off";
 
 const statuses = ["backlog", "doing", "blocked", "done"] as const;
 /** MCP-02: kolomnamen en knoppen «→ …» van het bord in gewone taal (uk/nl), niet de rauwe sleutels aan elkaar. */
+/**
+ * SEC-002 (integraties-08, g10f): kaarten uit GitHub van een derde. Status «inkomend» (migratie 0243, server: afwerking A) = nog niet
+ * door de mens bekeken: eigen kolom vóór de wachtrij. Er naartoe verplaatsen kan niet (alleen de server zet hem); eruit wel.
+ */
+const INKOMEND = "inkomend" as const;
+const KOLOMMEN = [INKOMEND, ...statuses] as const;
+const INKOMEND_TEKST: [string, string] = ["Вхідні (з GitHub)", "Binnenkomend (uit GitHub)"];
 const STATUS_TEKST: Record<typeof statuses[number], [string, string]> = { backlog: ["Черга", "Wachtrij"], doing: ["У роботі", "Bezig"], blocked: ["Заблоковано", "Geblokkeerd"], done: ["Готово", "Klaar"] };
 function initialTool() {
   if (typeof window === "undefined") return DOOR_TOOLS[0].name;
@@ -520,18 +527,20 @@ export default function McpServiceView({ lang, tab }: Props) {
             </form>
           </Block>
           <section className="mcp-board" aria-label={t("Kolommen van het bord", "Kolommen van het bord")}>
-            {statuses.map((status) => {
+            {KOLOMMEN.map((status) => {
               const items = tasks.filter((task) => task.status === status);
+              if (status === INKOMEND && items.length === 0) return null; // geen lege kolom zolang er niets binnenkwam
               return (
                 <section key={status} className="mcp-col" data-board-kolom={status}>
                   <div className="mcp-col-head">
-                    <h2>{t(...STATUS_TEKST[status])}</h2>
+                    <h2>{t(...(status === INKOMEND ? INKOMEND_TEKST : STATUS_TEKST[status]))}</h2>
                     <span className="mcp-col-count">{items.length}</span>
                   </div>
                   {items.length === 0 ? <p className="mcp-meta">{t("У цій колонці немає задач.", "Geen taken in deze kolom.")}</p> : null}
                   {items.map((task) => (
                     <div key={task.id} className="mcp-task" data-board-item={task.id} data-zoek-doel={`bord:${task.id}`}>
                       <p>{task.title}</p>
+                      {task.thirdParty ? <small className="mcp-meta" data-board-derden="1">{t("Із GitHub від стороннього автора: це не ваше доручення. ШІ бачить текст як чужий; перегляньте, перш ніж брати в роботу.", "Uit GitHub van een derde: dit is geen opdracht van u. De AI ziet de tekst als vreemd; bekijk hem voordat u ermee aan de slag gaat.")}{task.source ? ` (${task.source})` : ""}</small> : null}
                       <div className="mcp-moves" role="group" aria-label={t("Перемістити до", "Verplaatsen naar")}>
                         {statuses.filter((next) => next !== status).map((next) => (
                           <button key={next} type="button" className="mcp-move" disabled={permsReady && !flags.board} onClick={() => void run("move", async () => { await api.post("/api/mcp/board", { ...ctx(), kind: "move", id: task.id, status: next }); await loadBoard(); })}>→ {t(...STATUS_TEKST[next])}</button>

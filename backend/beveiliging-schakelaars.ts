@@ -11,8 +11,11 @@
 //    reden, en alleen als alle blokkerende controles op dat moment slagen (de server controleert opnieuw, de browser beslist niets);
 //  - uitzetten: de eigenaar, meteen, zonder passkey en zonder technisch profiel (een noodrem moet altijd werken). Deze routes hangen
 //    daarom NIET achter afdwingAdmin: ook als OPA stuk is, kan de eigenaar het afdwingen uitzetten;
-//  - zekering: 10 minuten na het aanzetten kijkt de bewaker (hoogstens elke 15 s, na een antwoord) naar pieken in 5xx, 401 van de poort,
-//    «OPA onbereikbaar», 403 of RLS-fouten en zet de bescherming dan zelf uit, met journaalregel en melding aan de eigenaar;
+//  - zekering: 10 minuten na het aanzetten kijkt de bewaker (hoogstens elke 15 s, na een antwoord) naar fouten van de bescherming ZELF
+//    (401 van de poort, «OPA onbereikbaar», 403 van het afdwingen, RLS-fouten 42501) en zet de bescherming dan zelf uit, met journaalregel
+//    en melding aan de eigenaar. SEC-002 (afwerking A): een algemene piek in 5xx of 403 kan elke ingelogde gebruiker met eigen invoer
+//    maken (bv. diep geneste JSON → 500) — die zet NIETS uit, maar levert één voorstel (journaal + melding) aan de eigenaar op:
+//    het gevaarlijke besluit (bescherming uit) neemt de eigenaar;
 //  - omgeving gaat voor (AUTH_POORT_AFDWINGEN / OPA_AFDWINGEN = 1|0) en het root-bestand voor OPA ("beheer-alleen-tech": true);
 //    de kaart toont dat als «примусово»;
 //  - alles in het beheerjournaal met reden; geen geheimen in antwoorden of logboek;
@@ -25,13 +28,15 @@ import { randomUUID } from 'node:crypto';
 import { error, json } from '../server/platform';
 import type { RouterMiddleware } from '../server/platform/router';
 import { appRolActief, getPool } from '../server/platform/pg';
+import { knipTekst } from '../server/platform/json-veilig';
 import { isPubliek, poortMelderActief } from '../server/platform/auth-poort';
 import { envGeforceerd, isSchakelaar, schakelaarLokaal, schakelaarsVerversen, schakelaarTabel, type SchakelaarSleutel, SCHAKELAARS } from '../server/platform/schakelaars';
 import { registreerBewaker, som } from '../server/platform/antwoord-teller';
 import { afdwingenBron, DOEL_TECH, schaduwAan } from './beleid';
 import { schrijfBeheerAudit } from './audit-gebeurtenis';
 import { meld } from './melder';
-import { passkeyStapOpGeldig, stapOpVerbruiken, type StapOpAuth } from './stap-op';
+import { metStapOpEenmalig, passkeyStapOpGeldig, type StapOpAuth } from './stap-op';
+import { stapOpUitKaart } from './stap-op-noodschakelaar';
 import { actieveActivatie, heeftTechMogelijkheid, isEigenaar, TAB_RE } from './tech-profiel';
 
 const sys = () => getPool('systeem');
@@ -120,15 +125,36 @@ export function rlsControles(a: {
   ];
 }
 
-/** Zekering: reden om automatisch uit te zetten, of null. `recent` = laatste 2 min, `basis` = 10 min vóór het aanzetten. Puur. */
-export function zekeringOordeel(sleutel: SchakelaarSleutel, recent: Record<string, number>, basis: Record<string, number> = {}): string | null {
+/** Piek van een soort in `recent` (laatste 2 min) t.o.v. `basis` (10 min vóór het aanzetten). Puur. */
+const piekVan = (recent: Record<string, number>, basis: Record<string, number>, soort: string, minAantal: number, minAandeel: number) => {
   const tot = Math.max(1, recent.totaal || 0), btot = Math.max(1, basis.totaal || 0);
-  const piek = (soort: string, minAantal: number, minAandeel: number) => (recent[soort] || 0) >= minAantal && (recent[soort] || 0) / tot > Math.max(minAandeel, 3 * ((basis[soort] || 0) / btot));
-  if (sleutel === 'auth-poort' && (recent.poort401 || 0) >= 5) return 'poort-401-piek';
+  return (recent[soort] || 0) >= minAantal && (recent[soort] || 0) / tot > Math.max(minAandeel, 3 * ((basis[soort] || 0) / btot));
+};
+/**
+ * Zekering: reden om automatisch uit te zetten, of null. Alleen signalen die de bescherming ZELF afgeeft (poort401, opa, opa403, rls):
+ * een gewone gebruiker kan die niet met eigen invoer maken. `recent` = laatste 2 min, `basis` = 10 min vóór het aanzetten. Puur.
+ * Запобіжник: автоматичне вимкнення — лише за сигналами самого захисту, не за будь-якою 500 від вводу користувача.
+ */
+export function zekeringOordeel(sleutel: SchakelaarSleutel, recent: Record<string, number>, basis: Record<string, number> = {}): string | null {
+  // SEC-002 (eind-omzeiling 1): 401 van het vangnet op minstens DRIE verschillende routepatronen. Eén route die steeds 401 krijgt
+  // (een vergeten sessiecontrole, of een gebruiker die zijn eigen sessie ververst) is geen fout van de poort maar van die route:
+  // daarvoor alleen een voorstel aan de eigenaar (zekeringVoorstel), nooit automatisch uit — anders zet elke gebruiker de poort uit.
+  // Щонайменше три РІЗНІ маршрути з 401 від шлюзу; один маршрут — лише пропозиція власникові.
+  if (sleutel === 'auth-poort' && (recent.poort401 || 0) >= 5 && (recent.poort401routes || 0) >= 3) return 'poort-401-piek';
   if (sleutel === 'opa-afdwingen' && (recent.opa || 0) >= 3) return 'opa-onbereikbaar';
-  if (sleutel === 'opa-afdwingen' && piek('403', 10, 0.10)) return '403-piek';
+  if (sleutel === 'opa-afdwingen' && piekVan(recent, basis, 'opa403', 10, 0.10)) return '403-piek';
   if (sleutel === 'rls' && (recent.rls || 0) >= 3) return 'rls-fouten';
-  if (piek('5xx', 10, 0.05)) return '5xx-piek';
+  return null;
+}
+/**
+ * Voorstel aan de eigenaar (NOOIT zelf uitzetten): een algemene piek in 5xx (of, bij OPA, in 403) na het aanzetten. Kan door de
+ * bescherming komen, maar ook door één gebruiker met slechte invoer — daarom beslist de eigenaar. Puur.
+ * Пропозиція власникові: загальний сплеск 5xx/403 після увімкнення; вимикати чи ні — вирішує власник.
+ */
+export function zekeringVoorstel(sleutel: SchakelaarSleutel, recent: Record<string, number>, basis: Record<string, number> = {}): string | null {
+  if (piekVan(recent, basis, '5xx', 10, 0.05)) return '5xx-piek';
+  if (sleutel === 'auth-poort' && (recent.poort401 || 0) >= 5) return 'poort-401-een-route';
+  if (sleutel === 'opa-afdwingen' && piekVan(recent, basis, '403', 10, 0.10)) return '403-piek-algemeen';
   return null;
 }
 const ZEKERING_TEKST: Record<string, [string, string]> = {
@@ -137,6 +163,8 @@ const ZEKERING_TEKST: Record<string, [string, string]> = {
   '403-piek': ['сплеск відмов 403', 'piek in 403-weigeringen'],
   'rls-fouten': ['помилки RLS у запитах', 'RLS-fouten in verzoeken'],
   '5xx-piek': ['сплеск помилок 5xx', 'piek in 5xx-fouten'],
+  'poort-401-een-route': ['повторні 401 від шлюзу на одному-двох маршрутах (імовірно, маршрут без позначки перевіреного сеансу)', 'herhaalde 401 van de poort op één of twee routes (waarschijnlijk een route zonder markering van een gecontroleerde sessie)'],
+  '403-piek-algemeen': ['сплеск відмов 403', 'piek in 403-weigeringen'],
 };
 
 // ------------------------------------------------------------------------------------------------ gegevens van de echte dienst
@@ -282,7 +310,7 @@ export async function kaart(sleutel: SchakelaarSleutel, opties: { uren?: number;
 }
 
 // ------------------------------------------------------------------------------------------------ schakelen + zekering
-const bewaakt = new Map<SchakelaarSleutel, { tot: number; basis: Record<string, number>; doorId: string }>();
+const bewaakt = new Map<SchakelaarSleutel, { tot: number; basis: Record<string, number>; doorId: string; voorgesteld?: boolean }>();
 let bewakingGeladen = false;
 
 async function zetStand(sleutel: SchakelaarSleutel, aan: boolean, door: { id: string | null; email: string }, reden: string, extra: { bewakingTot?: number | null; basis?: Record<string, number>; automatisch?: string } = {}) {
@@ -309,10 +337,19 @@ export async function aanzetten(sleutel: SchakelaarSleutel, door: { id: string; 
 }
 export async function uitzetten(sleutel: SchakelaarSleutel, door: { id: string | null; email: string }, reden: string, automatisch = '') {
   await zetStand(sleutel, false, door, reden, { automatisch });
-  await schrijfBeheerAudit({ actor: door.id ? { id: door.id, email: door.email } : null, doel: { soort: 'beveiliging', naam: sleutel }, actie: automatisch ? 'admin.beveiliging.zekering' : 'admin.beveiliging.uit', resultaat: 'success', reden, voor: { stand: 'aan' }, na: { stand: 'uit', ...(automatisch ? { automatisch } : {}) } });
+  const regel = await schrijfBeheerAudit({ actor: door.id ? { id: door.id, email: door.email } : null, doel: { soort: 'beveiliging', naam: sleutel }, actie: automatisch ? 'admin.beveiliging.zekering' : 'admin.beveiliging.uit', resultaat: 'success', reden, voor: { stand: 'aan' }, na: { stand: 'uit', ...(automatisch ? { automatisch } : {}) } });
+  // SEC-002 (privacy-logboek-02): uitzetten is ook de NOODWEG terug (zekering, een bescherming die de site breekt) en mag daarom niet
+  // afhangen van het logboek. Maar een uitgezette bescherming zonder journaalregel blijft niet stil: de mens die het deed krijgt een melding.
+  if (!regel && door.id && !automatisch) await meld(door.id, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» вимкнено, але запис у журнал не вдався`, `Перемикач змінено, проте рядок у журналі адміністрування не збережено (збій бази даних). Якщо це були не ви — увімкніть захист знову й перевірте «Діагностика → Захист». / ${NAAM[sleutel][1]} is uitgezet, maar de regel in het beheerlogboek kon niet worden geschreven (databasefout). Was u dit niet: zet de bescherming weer aan en controleer «Diagnostiek → Bescherming».`, '/diagnostiek');
 }
 
-/** De bewaker: zet een bescherming in haar eerste 10 minuten terug uit bij een piek. Exporteert de uitkomst voor tests. */
+/** Wie krijgt de melding: wie het aanzette, anders de eigenaar (OWNER_EMAIL) — nooit stil. */
+async function meldingOntvanger(doorId: string): Promise<string> {
+  if (doorId) return doorId;
+  try { return await (await import('./integraties-kluis')).eigenaarUserId(); } catch { return ''; }
+}
+
+/** De bewaker: zet een bescherming in haar eerste 10 minuten terug uit bij een fout van de bescherming zelf. Exporteert de uitkomst voor tests. */
 export async function zekeringControleren(nu = Date.now()): Promise<Array<{ sleutel: SchakelaarSleutel; reden: string }>> {
   if (!bewakingGeladen) {
     bewakingGeladen = true;
@@ -323,14 +360,27 @@ export async function zekeringControleren(nu = Date.now()): Promise<Array<{ sleu
   const uit: Array<{ sleutel: SchakelaarSleutel; reden: string }> = [];
   for (const [sleutel, b] of [...bewaakt.entries()]) {
     if (b.tot <= nu) { bewaakt.delete(sleutel); continue; }
-    const reden = zekeringOordeel(sleutel, som(nu - 120_000, nu), b.basis);
-    if (!reden) continue;
+    const recent = som(nu - 120_000, nu);
+    const reden = zekeringOordeel(sleutel, recent, b.basis);
+    if (!reden) {
+      // SEC-002 (afwerking A): algemene piek → één voorstel per aanzetten (journaal + melding), de bescherming blijft aan.
+      const voorstel = b.voorgesteld ? null : zekeringVoorstel(sleutel, recent, b.basis);
+      if (!voorstel) continue;
+      b.voorgesteld = true;
+      const [vuk, vnl] = ZEKERING_TEKST[voorstel] || [voorstel, voorstel];
+      await schrijfBeheerAudit({ actor: null, doel: { soort: 'beveiliging', naam: sleutel }, actie: 'admin.beveiliging.zekering-voorstel', resultaat: 'success', reden: `voorstel: ${vnl}`, details: { voorstel, recent: { totaal: recent.totaal, '5xx': recent['5xx'], '403': recent['403'], poort401: recent.poort401, poort401routes: recent.poort401routes } } }).catch(() => null);
+      const aan = await meldingOntvanger(b.doorId);
+      if (aan) await meld(aan, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» увімкнено, але є ${vuk}`, `Протягом 10 хв після увімкнення: ${vuk}. Захист НЕ вимкнено автоматично: такі помилки може спричинити й звичайний користувач некоректним запитом. Перевірте «Діагностика → Захист»; якщо помилки через захист — вимкніть його (вимкнення діє одразу, без passkey). / ${NAAM[sleutel][1]} staat aan, maar er is een ${vnl}. De bescherming is NIET automatisch uitgezet: zulke fouten kan ook een gewone gebruiker met een fout verzoek veroorzaken. Controleer «Diagnostiek → Bescherming»; komen de fouten door de bescherming, zet haar dan uit (meteen, zonder passkey).`, '/diagnostiek');
+      console.warn(`[beveiliging] zekering: voorstel voor ${sleutel} (${voorstel}), bescherming blijft aan`);
+      continue;
+    }
     const [uk, nl] = ZEKERING_TEKST[reden] || [reden, reden];
     try {
       await uitzetten(sleutel, { id: null, email: 'zekering' }, `automatisch: ${nl}`, reden);
       uit.push({ sleutel, reden });
       console.warn(`[beveiliging] zekering: ${sleutel} automatisch uitgezet (${reden})`);
-      if (b.doorId) await meld(b.doorId, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» автоматично вимкнено`, `Протягом 10 хв після увімкнення: ${uk}. Сайт повернувся до попереднього стану. Перевірте «Діагностика → Захист». / ${NAAM[sleutel][1]} automatisch uitgezet: ${nl}.`, '/diagnostiek');
+      const aan = await meldingOntvanger(b.doorId);
+      if (aan) await meld(aan, 'beveiliging.zekering', `Захист «${NAAM[sleutel][0]}» автоматично вимкнено`, `Протягом 10 хв після увімкнення: ${uk}. Сайт повернувся до попереднього стану. Перевірте «Діагностика → Захист». / ${NAAM[sleutel][1]} automatisch uitgezet: ${nl}.`, '/diagnostiek');
     } catch (e) { console.error('[beveiliging] zekering kon niet uitzetten:', (e as Error).message); }
   }
   return uit;
@@ -352,7 +402,8 @@ type SessionOk = { user: { id: string; email?: string; role?: string; status?: s
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
 const lijf = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
-const redenVan = (v: unknown) => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 300);
+// SEC-002 (privacy-logboek-02): knipTekst kapt nooit midden in een emoji af (een halve liet de journaalregel van het uitzetten mislukken).
+const redenVan = (v: unknown) => knipTekst(String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim(), 300);
 
 export function beveiligingRoutes(deps: { requireSession: RequireSession }): Record<string, RouterMiddleware[]> {
   registreerBewaker((nu) => zekeringControleren(nu));
@@ -380,14 +431,14 @@ export function beveiligingRoutes(deps: { requireSession: RequireSession }): Rec
       await schrijfBeheerAudit({ actor, doel: { soort: 'beveiliging', naam: sleutel }, actie: 'admin.beveiliging.geweigerd', resultaat: 'denied', reden: 'TECH_PROFIEL_VEREIST' });
       return error('TECH_PROFIEL_VEREIST', 403);
     }
-    if (o.passkey && !(await passkeyStapOpGeldig(auth as StapOpAuth))) {
-      await schrijfBeheerAudit({ actor, doel: { soort: 'beveiliging', naam: sleutel }, actie: 'admin.beveiliging.geweigerd', resultaat: 'denied', reden: 'STEP_UP_REQUIRED' });
-      return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
-    }
     try {
-      const uit = await run(auth, b, tech);
-      if (o.passkey) await stapOpVerbruiken(auth as StapOpAuth); // één bevestiging = één schakeling
-      return json(uit);
+      // één bevestiging = één schakeling: controleren en verbruiken ondeelbaar (SEC-002 g06); bij een fout van run() teruggezet.
+      const stap = await metStapOpEenmalig(auth as StapOpAuth, o.passkey ? passkeyStapOpGeldig : null, () => run(auth, b, tech));
+      if (!stap.ok) {
+        await schrijfBeheerAudit({ actor, doel: { soort: 'beveiliging', naam: sleutel }, actie: 'admin.beveiliging.geweigerd', resultaat: 'denied', reden: 'STEP_UP_REQUIRED' });
+        return json({ error: 'STEP_UP_REQUIRED', reasonCode: 'STEP_UP_REQUIRED', methods: ['passkey'], maxAgeSeconds: 300 }, 403);
+      }
+      return json(stap.uit);
     } catch (e) {
       const code = (e as Error).message || 'BEVEILIGING_FOUT';
       if (code.startsWith('NIET_KLAAR:')) return json({ error: 'NIET_KLAAR', mislukt: code.slice(11).split(',') }, 409);
@@ -399,6 +450,8 @@ export function beveiligingRoutes(deps: { requireSession: RequireSession }): Rec
   return {
     'POST /api/owner/beveiliging/stand': [poort({ lezen: true }, async (_a, b, tech) => ({
       ok: true, kaarten: await Promise.all(SCHAKELAARS.map((s) => kaart(s, { uren: b.uren as number, tech }))), bewakingMinuten: BEWAKING_MS / 60000,
+      // SEC-002 (aanv-gat-a-04): de noodschakelaar van de step-up (uit = rood, ingesteld maar genegeerd = oranje, anders ernst '').
+      stapOp: stapOpUitKaart(),
     }))],
     'POST /api/owner/beveiliging/aanzetten': [poort({ tech: true, passkey: true }, async (auth, b, tech) => {
       if (!isSchakelaar(b.sleutel)) throw new Error('SCHAKELAAR_ONBEKEND');

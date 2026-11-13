@@ -50,3 +50,6 @@ BRON-COMMIT
 
 # тимчасові робочі файли агента
 .tmp-*
+
+# Випадковий вивід тестів із Windows-шляхом у назві (SEC-002: прибрано з відстеження, на диску лишаються).
+/C*UserstAppDataLocalTemp*aanroepen.txt

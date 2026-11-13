@@ -31,7 +31,11 @@ import { auditToevoegen } from '../server/platform/audit';
 import { getPool } from '../server/platform/pg';
 import type { RouterContext, RouterMiddleware, RouterResponse } from '../server/platform/router';
 import { AANMELD_AANBIEDERS, aanmeldAanbieder, type AanmeldAanbieder } from '../shared/aanmeld-vnext-model';
+import { magEigenToegang } from '../shared/eigen-toegang';
+import { meldBeveiligingsWijziging } from './beveiliging-meldingen';
 import { koppelBindingKlopt, koppelBindingVoorAanmaken, koppelBindingWissen, metBindingCookie } from './koppel-binding';
+import { botSleutel as kluisBotSleutel } from './telegram-aanmelden/sleutels';
+import { instellingen as tgInstellingen, koppelingenVanGebruiker as tgKoppelingenVan, vlagHoofdschakelaar as tgVlagAan } from './telegram-aanmelden/opslag';
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type SessionFail = { errorCode: string };
@@ -56,10 +60,33 @@ const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 const nu = (): string => new Date().toISOString();
 const sha256hex = (v: string): string => createHash('sha256').update(v).digest('hex');
 const b64url = (b: Buffer): string => b.toString('base64url');
-const fout = (code: string): never => { throw new Error(code); };
+const fout = (code: string, retryAfter = 0): never => {
+  throw retryAfter > 0 ? Object.assign(new Error(code), { retryAfter }) : new Error(code);
+};
 const env = (naam: string): string => String(process.env[naam] ?? '').trim();
 const sleutelAanwezig = (naam: string): boolean => env(naam).length > 0;
 const sleutelsOntbreken = (a: AanmeldAanbieder): string[] => (a.vereist ?? []).filter((naam) => !sleutelAanwezig(naam));
+
+async function telegramEffectieveSleutels(): Promise<{ token: string; naam: string; uitKluis: boolean }> {
+  const envToken = env('AANMELD_TELEGRAM_BOT_TOKEN');
+  const envNaam = env('AANMELD_TELEGRAM_BOT_NAAM');
+  if (envToken || envNaam) return { token: envToken, naam: envNaam, uitKluis: false };
+  if (!(await tgVlagAan().catch(() => false))) return { token: '', naam: '', uitKluis: false };
+  const token = await kluisBotSleutel().catch(() => '');
+  if (!token) return { token: '', naam: '', uitKluis: false };
+  const inst = await tgInstellingen().catch(() => null);
+  return { token, naam: inst?.botGebruikersnaam || 'MijnRuimte_Bot', uitKluis: true };
+}
+async function sleutelsOntbrekenVoor(a: AanmeldAanbieder): Promise<string[]> {
+  if (a.id === 'telegram') {
+    const tg = await telegramEffectieveSleutels();
+    const weg: string[] = [];
+    if (!tg.token) weg.push('AANMELD_TELEGRAM_BOT_TOKEN');
+    if (!tg.naam) weg.push('AANMELD_TELEGRAM_BOT_NAAM');
+    return weg;
+  }
+  return sleutelsOntbreken(a);
+}
 
 /** Label maskeren vóór opslag: nooit het volledige adres/de volledige naam bewaren of tonen. */
 export function maskLabel(ruw: string): string {
@@ -202,7 +229,7 @@ async function zelftestBewaar(aanbieder: string, uit: Omit<ZelftestRecord, 'aanb
  *  Er gaat nooit een gebruikersgegeven of geheim de deur uit; de details noemen alleen sleutelNAMEN en bevindingen. */
 export async function zelftestUitvoeren(a: AanmeldAanbieder): Promise<{ zelftest: 'ok' | 'fout'; details: string[] }> {
   const details: string[] = [];
-  const weg = sleutelsOntbreken(a);
+  const weg = await sleutelsOntbrekenVoor(a);
   if (weg.length) return { zelftest: 'fout', details: [`відсутні ключі: ${weg.join(', ')}`] };
   const ping = async (url: string, verwacht: (status: number) => boolean, naam: string) => {
     const r = await fetch(url, { headers: { accept: 'application/json' } }).catch(() => null);
@@ -211,9 +238,10 @@ export async function zelftestUitvoeren(a: AanmeldAanbieder): Promise<{ zelftest
   };
   try {
     if (a.id === 'telegram') {
-      if (!/^\d+:[A-Za-z0-9_-]{30,}$/.test(env('AANMELD_TELEGRAM_BOT_TOKEN'))) return { zelftest: 'fout', details: ['AANMELD_TELEGRAM_BOT_TOKEN: не схожий на токен бота (123456:…)'] };
-      if (!/^[A-Za-z0-9_]{4,32}$/.test(env('AANMELD_TELEGRAM_BOT_NAAM'))) return { zelftest: 'fout', details: ['AANMELD_TELEGRAM_BOT_NAAM: 4–32 літер/цифр/_'] };
-      details.push('форма токена і назви бота — гаразд; підпис перевіряється HMAC-SHA256(sha256(token))');
+      const tg = await telegramEffectieveSleutels();
+      if (!/^\d+:[A-Za-z0-9_-]{30,}$/.test(tg.token)) return { zelftest: 'fout', details: ['AANMELD_TELEGRAM_BOT_TOKEN: не схожий на ключ бота (123456:…)'] };
+      if (!/^[A-Za-z0-9_]{4,32}$/.test(tg.naam)) return { zelftest: 'fout', details: ['AANMELD_TELEGRAM_BOT_NAAM: 4–32 літер/цифр/_'] };
+      details.push('форма ключа і назви бота — гаразд; підпис перевіряється HMAC-SHA256(sha256(sleutel))');
     } else if (a.id === 'apple') {
       const geheim = appleClientSecret();
       const { kop, getekend, handtekening } = jwtLezen(geheim);
@@ -246,13 +274,14 @@ export async function zelftestUitvoeren(a: AanmeldAanbieder): Promise<{ zelftest
 // ------------------------------------------------------------------------------------------------ eenvoudige rate-limit (in-geheugen)
 const START_LIMIET = 10;                      // per gebruiker per aanbieder per uur — koppelen is geen bulkactie
 const startTellingen = new Map<string, { vanaf: number; n: number }>();
-function startToegestaan(userId: string, aanbieder: string): boolean {
+function startToegestaan(userId: string, aanbieder: string): { ok: boolean; retryAfter: number } {
   const sleutel = `${userId}:${aanbieder}`;
   const slot = startTellingen.get(sleutel);
   const nuMs = Date.now();
-  if (!slot || nuMs - slot.vanaf > 60 * 60 * 1000) { startTellingen.set(sleutel, { vanaf: nuMs, n: 1 }); return true; }
+  if (!slot || nuMs - slot.vanaf > 60 * 60 * 1000) { startTellingen.set(sleutel, { vanaf: nuMs, n: 1 }); return { ok: true, retryAfter: 0 }; }
   slot.n += 1;
-  return slot.n <= START_LIMIET;
+  const retryAfter = Math.max(1, Math.ceil((slot.vanaf + 3_600_000 - nuMs) / 1000));
+  return { ok: slot.n <= START_LIMIET, retryAfter };
 }
 
 // ------------------------------------------------------------------------------------------------ telegram-handtekening
@@ -304,31 +333,45 @@ async function oauthTerug(id: 'microsoft' | 'discord' | 'apple', query: Record<s
 }
 
 // ------------------------------------------------------------------------------------------------ routes
-export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<string, RouterMiddleware[]> {
+/** IDENTITEIT-012: stepUp — повторне підтвердження доступу (у сайті stapOpVereist); без нього прив'язка й відв'язка відмовляють. */
+export type KoppelOpties = { stepUp?: (ctx: unknown, auth: unknown) => Promise<Resp | null> };
+export function aanmeldKoppelRoutes(requireSession: RequireSession, opties: KoppelOpties = {}): Record<string, RouterMiddleware[]> {
+  const stapOp = async (c: Ctx, auth: SessionOk): Promise<Resp | null> => (opties.stepUp ? opties.stepUp(c, auth) : error('STEP_UP_REQUIRED', 403));
   const route = (run: (ctx: Ctx, auth: SessionOk, d: Record<string, unknown>) => Promise<Resp>): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as unknown as Ctx;
     const auth = await requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (!(DIENSTEN as readonly string[]).includes(auth.service)) return error('OWNER_CLOUD_SESSION_REQUIRED', 403);
-    if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
+    if (!magEigenToegang(auth.user)) return error('ACCOUNT_NOT_APPROVED', 403);
     try { return await run(ctx, auth, (ctx.body && typeof ctx.body === 'object' ? ctx.body : {}) as Record<string, unknown>); }
     catch (err) {
       const code = String((err as Error)?.message || 'AANMELD_FOUT').slice(0, 80);
       const status = code === 'AANBIEDER_ONBEKEND' || code === 'KOPPELING_ONBEKEND' ? 404 : code === 'RATE_LIMITED' ? 429 : code === 'AANMELD_FOUT' ? 500 : 400;
-      return error(code, status);
+      const retryAfter = Number((err as { retryAfter?: unknown })?.retryAfter);
+      return error(code, status, status === 429 && retryAfter > 0 ? { retryAfter } : undefined);
     }
   }) as unknown as RouterMiddleware];
 
   const statusVan = async (a: AanmeldAanbieder, userId: string) => {
-    const sleutels = (a.vereist ?? []).map((naam) => ({ naam, aanwezig: sleutelAanwezig(naam) }));
+    const tg = a.id === 'telegram' ? await telegramEffectieveSleutels() : null;
+    const sleutels = (a.vereist ?? []).map((naam) => ({
+      naam,
+      aanwezig: tg ? (naam === 'AANMELD_TELEGRAM_BOT_TOKEN' ? !!tg.token : naam === 'AANMELD_TELEGRAM_BOT_NAAM' ? !!tg.naam : sleutelAanwezig(naam)) : sleutelAanwezig(naam),
+    }));
     const test = a.stand === 'sleutels-nodig' ? await zelftestLaatste(a.id) : null;
     const koppeling = await koppelingVan(userId, a.id);
+    const tgActief = !koppeling && tg?.uitKluis ? (await tgKoppelingenVan(userId).catch(() => []))[0] ?? null : null;
+    const zelftestStand = test?.zelftest ?? (tg?.uitKluis && tg.token && tg.naam ? 'ok' : 'niet-uitgevoerd');
     return {
       id: a.id, stand: a.stand, sleutels,
-      zelftest: (test?.zelftest ?? 'niet-uitgevoerd') as 'ok' | 'fout' | 'niet-uitgevoerd',
+      zelftest: zelftestStand as 'ok' | 'fout' | 'niet-uitgevoerd',
       ...(test ? { zelftestOp: test.op, zelftestDetails: test.details.slice(0, 8) } : {}),
-      klaarVoorKoppeling: a.stand === 'sleutels-nodig' && sleutels.length > 0 && sleutels.every((s) => s.aanwezig) && test?.zelftest === 'ok',
-      gekoppeld: koppeling ? { label: koppeling.label, op: koppeling.op } : null,
+      klaarVoorKoppeling: a.stand === 'sleutels-nodig' && sleutels.length > 0 && sleutels.every((s) => s.aanwezig) && zelftestStand === 'ok',
+      gekoppeld: koppeling
+        ? { label: koppeling.label, op: koppeling.op }
+        : tgActief
+          ? { label: tgActief.gebruikersnaam ? `@${tgActief.gebruikersnaam}` : tgActief.telefoon || tgActief.telegram_id, op: new Date(tgActief.aangemaakt_op).toISOString() }
+          : null,
     };
   };
 
@@ -346,10 +389,11 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       if (str(q.error)) fout('TOKEN_ONGELDIG');                                   // de aanbieder weigerde; geen geheimen herhalen
       const rij = await stateInnemen(id, str(q.state), rc.event as unknown as Record<string, unknown>); // eenmalig, 10 min, browsergebonden
       geclaimdeStateHash = rij.stateHash;
-      if (sleutelsOntbreken(a).length) fout('SLEUTELS_ONTBREKEN');
+      if ((await sleutelsOntbrekenVoor(a)).length) fout('SLEUTELS_ONTBREKEN');
       let uit: TerugUit;
       if (id === 'telegram') {
-        const c = telegramControle(q as Record<string, string>, env('AANMELD_TELEGRAM_BOT_TOKEN'));
+        const tg = await telegramEffectieveSleutels();
+        const c = telegramControle(q as Record<string, string>, tg.token);
         if (!c.ok) fout('HANDTEKENING_ONGELDIG');
         if (!c.vers) fout('VERLOPEN');
         uit = { subject: str(q.id), label: maskLabel(str(q.username) ? `@${str(q.username)}` : str(q.id)) };
@@ -364,6 +408,7 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       const record: KoppelRecord = { ownerUserId: rij.ownerUserId, aanbieder: id, subject: uit.subject, label: uit.label, op: nu() };
       await db.add(KOPPELINGEN, [record as unknown as Record<string, unknown>]);
       await auditToevoegen({ ownerId: rij.ownerUserId, actorId: rij.ownerUserId, action: 'aanmeld.koppeling', type: 'identity', result: 'ok', details: { aanbieder: id, label: uit.label } }).catch(() => undefined);
+      await meldBeveiligingsWijziging(rij.ownerUserId, 'aanmeldmethode-gekoppeld', { aanbieder: id, label: uit.label });
       return stuurTerug(paginaUrl(`${id}-ok`));
     } catch (err) {
       const code = String((err as Error)?.message || 'AANMELD_FOUT').replace(/[^A-Z_]/g, '').slice(0, 40) || 'AANMELD_FOUT';
@@ -379,6 +424,8 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
     })),
     // -------------------------------------------------------------- zelftest van de eigen contour (read-only + audit)
     'POST /api/owner/aanmeld/vnext/zelftest': route(async (_c, auth, d) => {
+      // IDENTITEIT-012: результат самоперевірки спільний для всіх (вмикає чи вимикає провайдера), тож запускати її може лише власник або адміністратор.
+      if (auth.user.role !== 'owner' && auth.user.role !== 'admin') return error('ZELFTEST_ALLEEN_BEHEER', 403);
       const a = aanmeldAanbieder(str(d.id)) ?? fout('AANBIEDER_ONBEKEND');
       if (a.stand !== 'sleutels-nodig') fout('AANBIEDER_ONBEKEND');
       const uit = await zelftestUitvoeren(a);
@@ -387,18 +434,22 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       return json({ id: a.id, ...uit });
     }),
     // -------------------------------------------------------------- start: geauthenticeerd, geeft de authorize-URL terug
-    'POST /api/owner/aanmeld/vnext/start': route(async (_c, auth, d) => {
+    'POST /api/owner/aanmeld/vnext/start': route(async (c, auth, d) => {
       const a = aanmeldAanbieder(str(d.id)) ?? fout('AANBIEDER_ONBEKEND');
+      // IDENTITEIT-012: прив'язка чужої особи до облікового запису — лише після повторного підтвердження доступу.
+      { const stap = await stapOp(c, auth); if (stap) return stap; }
       if (a.stand !== 'sleutels-nodig') fout('AANBIEDER_ONBEKEND');
-      if (sleutelsOntbreken(a).length) fout('SLEUTELS_ONTBREKEN');
+      if ((await sleutelsOntbrekenVoor(a)).length) fout('SLEUTELS_ONTBREKEN');
+      const tg = a.id === 'telegram' ? await telegramEffectieveSleutels() : null;
       const test = await zelftestLaatste(a.id);
-      if (test?.zelftest !== 'ok') fout('ZELFTEST_VEREIST');
-      if (!startToegestaan(auth.user.id, a.id)) fout('RATE_LIMITED');
+      if (test?.zelftest !== 'ok' && !tg?.uitKluis) fout('ZELFTEST_VEREIST');
+      const limiet = startToegestaan(auth.user.id, a.id);
+      if (!limiet.ok) fout('RATE_LIMITED', limiet.retryAfter);
       const { state, verifier, nonce, setCookie } = await stateNieuw(auth.user.id, a.id);
       const challenge = b64url(createHash('sha256').update(verifier).digest());
       if (a.id === 'telegram') {
         // Het officiële widget stuurt zijn velden naar data-auth-url; onze state reist als eigen queryparameter mee.
-        return metBindingCookie(json({ id: a.id, widget: { bot: env('AANMELD_TELEGRAM_BOT_NAAM'), authUrl: `${callbackUrl('telegram')}?state=${encodeURIComponent(state)}` } }), setCookie);
+        return metBindingCookie(json({ id: a.id, widget: { bot: tg?.naam || env('AANMELD_TELEGRAM_BOT_NAAM'), authUrl: `${callbackUrl('telegram')}?state=${encodeURIComponent(state)}` } }), setCookie);
       }
       const basis: Record<string, string> = { response_type: 'code', client_id: env(`AANMELD_${a.id.toUpperCase()}_CLIENT_ID`), redirect_uri: callbackUrl(a.id), state, code_challenge: challenge, code_challenge_method: 'S256' };
       const url = a.id === 'microsoft' ? `${MS().authorize}?${new URLSearchParams({ ...basis, scope: 'openid profile email', nonce, response_mode: 'query' })}`
@@ -407,11 +458,13 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       return metBindingCookie(json({ id: a.id, url }), setCookie);
     }),
     // -------------------------------------------------------------- ontkoppelen (eigen koppeling; dit is nooit de laatste aanmeldweg)
-    'POST /api/owner/aanmeld/vnext/ontkoppel': route(async (_c, auth, d) => {
+    'POST /api/owner/aanmeld/vnext/ontkoppel': route(async (c, auth, d) => {
       const a = aanmeldAanbieder(str(d.id)) ?? fout('AANBIEDER_ONBEKEND');
       const koppeling = (await koppelingVan(auth.user.id, a.id)) ?? fout('KOPPELING_ONBEKEND');
+      { const stap = await stapOp(c, auth); if (stap) return stap; }
       await db.delete(KOPPELINGEN, [koppeling.id]);
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: 'aanmeld.ontkoppeling', type: 'identity', result: 'ok', details: { aanbieder: a.id, label: koppeling.label } }).catch(() => undefined);
+      await meldBeveiligingsWijziging(auth.user.id, 'aanmeldmethode-ontkoppeld', { aanbieder: a.naam || a.id });
       return json({ ok: true });
     }),
     // -------------------------------------------------------------- de publieke callback (GET; state = de enige sleutel)

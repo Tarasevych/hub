@@ -19,6 +19,7 @@ import { combineer, slotVan, useExtensieLiveToestand, type Slot } from './extens
 // 0.6: slot «як користувач» (step-up, geen technisch profiel nodig).
 import ExtensiePrive, { toestemmingId } from './extensie/ExtensiePrive';
 import './agenten-paneel.css';
+import { alleenMens, geenAi } from './menselijke-actie'; // SEC-002 extensie-02 (g10a-2)
 
 type Tr = (uk: string, nl: string) => string;
 type BrowserAgent = {
@@ -271,15 +272,15 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
           <span className={`hub-pill ${state === 'on' ? 'ok' : state === 'wait' ? 'warn' : 'off'}`} data-browser-state={state}>{stateText}</span>
         </div>}
 
-        {ruimteBekend ? null : <div className='hub-switch'>
+        {ruimteBekend ? null : <div className='hub-switch' data-browser-ai-schakelaar='1' {...geenAi}>
           <span className='hub-switch-text'>
             <b>{tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')}
               <Help tr={tr} content={{ title: tr('Головний вимикач браузера', 'Hoofdschakelaar van de browser'), what: tr('Вмикає або вимикає весь доступ ШІ до цього браузера.', 'Zet alle toegang van de AI tot deze browser aan of uit.'), touches: tr(`Лише браузер «${a.name}», не інші браузери й не пристрої.`, `Alleen de browser «${a.name}», niet andere browsers of apparaten.`), on: tr('ШІ може лише те, що ви дозволили нижче, і стільки часу, скільки ви обрали в «Як довго».', 'De AI kan alleen wat u hieronder toestaat, en zo lang als u bij «Hoe lang» kiest.'), off: tr('Розширення нічого не виконує, навіть якщо окремі можливості нижче ввімкнені.', 'De extensie voert niets uit, ook niet als losse mogelijkheden hieronder aan staan.') }} /></b>
             <small>{tr('Діє стільки, скільки ви оберете нижче (типово — доки ви самі не вимкнете). Вимкнути можна будь-коли тут або кнопкою «Стоп».', 'Geldt zo lang als u hieronder kiest (standaard tot u het zelf uitzet). Uitzetten kan altijd hier of met de knop «Stop».')}</small>
           </span>
-          <button type='button' className='hub-toggle' role='switch' aria-checked={a.enabled} aria-label={tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')} disabled={busy} onClick={() => void setEnabled(a, !a.enabled)} />
+          <button type='button' className='hub-toggle' role='switch' aria-checked={a.enabled} aria-label={tr('Дозволити ШІ користуватися цим браузером', 'AI mag deze browser gebruiken')} disabled={busy} onClick={alleenMens(() => void setEnabled(a, !a.enabled))} />
         </div>}
-        {ruimteBekend ? null : <label className='hub-row start' style={{ gap: 8, flexWrap: 'wrap' }} data-browser-duur=''>
+        {ruimteBekend ? null : <label className='hub-row start' style={{ gap: 8, flexWrap: 'wrap' }} data-browser-duur='' data-browser-ai-schakelaar='1' {...geenAi}>
           <span>{tr('Як довго:', 'Hoe lang:')}</span>
           <select value={duur} disabled={busy} onChange={(e) => { setDuur(e.target.value); if (a.enabled) void setEnabled(a, true, e.target.value); }}>
             {DUREN.map(([v, uk, nl]) => <option key={v} value={v}>{tr(uk, nl)}</option>)}
@@ -302,7 +303,7 @@ export default function BrowserExtensionPanel({ tr, part = 'all', agentId, agent
           const btn: Partial<Record<ExtAction, ReactNode>> = {
             test: <IconButton key='test' icon={<FlaskConical />} disabled={busy || !local} title={local ? '' : tr('Тест працює в тому браузері, де встановлено це розширення', 'De test werkt in de browser waarin deze extensie zit')} onClick={() => void runTest()}>{tr('Тест', 'Test')}</IconButton>,
             stop: <AiStopKnop key='stop' tr={tr} onDone={() => void load()} />,
-            enable: <IconButton key='enable' icon={<Power />} disabled={busy} onClick={() => void setEnabled(a, true)}>{tr('Увімкнути браузер', 'Browser aanzetten')}</IconButton>,
+            enable: <IconButton key='enable' icon={<Power />} disabled={busy} onClick={() => { if ((navigator as unknown as { userActivation?: { isActive?: boolean } }).userActivation?.isActive === false) return; void setEnabled(a, true); }}>{tr('Увімкнути браузер', 'Browser aanzetten')}</IconButton>,
             repair: <IconButton key='repair' icon={<RefreshCw />} disabled={busy} onClick={() => void connect()}>{tr('Підключити знову', 'Opnieuw koppelen')}</IconButton>,
             relogin: <IconButton key='relogin' icon={<RefreshCw />} onClick={() => location.reload()}>{tr('Оновити сторінку після входу', 'Pagina verversen na aanmelden')}</IconButton>,
             unlock: <IconButton key='unlock' icon={<KeyRound />} disabled={busy} onClick={naarOntgrendelen}>{slotVan(a.ruimte) === 'technisch' || !ruimteBekend ? tr('Розблокувати з Passkey', 'Ontgrendelen met passkey') : tr('Відкрити доступ', 'Toegang openen')}</IconButton>,

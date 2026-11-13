@@ -13,13 +13,16 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { db, error, json, storage } from '../server/platform';
+import { alsSysteem, buitenVerzoek } from '../server/platform/context';
 import type { RouterMiddleware } from '../server/platform/router';
 import { denyMutation } from './rbac';
 import { OVERDRACHT_GRENZEN, overdrachtGrens, type CloudTaak, type CloudTaakPunt, type CloudTaakSoort, type CloudTaakStand } from '../shared/cloud-overdracht-model';
 import { hoortBij, ladeFilter, ladeVelden, type Lade } from '../shared/ruimte-scheiding';
-import { cloudVoorvoegsel, ladeOf, padInLade } from './ruimte-cloud-agenda';
+import { cloudVoorvoegsel, ladeNogGeldig, ladeOf, metLade, padInLade } from './ruimte-cloud-agenda';
 import { googleSuiteDriveProviderSnapshot, googleSuitePrincipalAccessToken } from './google-suite-inrichting';
-import { schoneNaam } from '../shared/cloud-vnext-model';
+import { schoneNaam, veiligeMime } from '../shared/cloud-vnext-model';
+import { vnextFoutAntwoord } from './cloud-vnext-fout';
+import { eigenQuotaWeigering } from './cloud-vnext-bestanden';
 
 const TAKEN = 'cloud_taken_v1';
 const ITEMS = 'cloud_items_v1';
@@ -62,6 +65,8 @@ const UITLEG: Record<string, Tweetalig> = {
   GOOGLE_WEIGERT: ['Google Drive відхилив запит (доступ міг збігти — перепідключіть акаунт у центрі інтеграцій).', 'Google Drive weigerde het verzoek (de toegang kan verlopen zijn — koppel het account opnieuw in het integratiecentrum).'],
   OPSLAAN_MISLUKT: ['Не вдалося записати байти у ваше сховище.', 'De bytes konden niet in uw opslag worden geschreven.'],
   GEANNULEERD: ['Зупинено на ваше прохання.', 'Op uw verzoek gestopt.'],
+  LADE_GESLOTEN: ['Технічний простір цього завдання закритий (профіль вимкнено або служба «Хмара» не на власних даних) — передачу не виконано.', 'De technische ruimte van deze taak is gesloten (profiel uit of dienst «Хмара» niet op eigen gegevens) — de overdracht is niet uitgevoerd.'],
+  QUOTA_BEREIKT: ['Досягнуто квоти вашого сховища, яку встановив власник сервера.', 'Het quotum van uw opslag (ingesteld door de eigenaar van de server) is bereikt.'],
 };
 const grensFout = (code: 'DOEL_LIMIET' | 'BRON_LIMIET', dienst: string): { code: string; uitleg: Tweetalig; suggestie?: Tweetalig } => {
   const g = overdrachtGrens(dienst);
@@ -144,12 +149,18 @@ async function eigenItem(lade: Lade, id: string | null): Promise<MetId<ItemRecor
 }
 
 // ---------------------------------------------------------------- de werker: één taak tegelijk, hartslag in het record
+// SEC-002 (wolk-03, 12.11.2026): de klok startte vroeger in de EERSTE route-aanroep en erfde zo (AsyncLocalStorage) voorgoed de
+// context van die bezoeker: RLS als die mens (de taken van anderen bleven eeuwig «wacht»), diens lade voor de Google-accounts,
+// en bij «als gebruiker kijken» de impersonatie en «alleen lezen» (dan stond alles stil). Nu: de klok start buiten elke
+// verzoekcontext (buitenVerzoek) bij het bouwen van de routes; elke tik draait bewust als systeem (de werker werkt over alle
+// mensen), en elke taak in de lade uit haar EIGEN record (metLade) — een technische lade alleen zolang die nog open is.
 let klok: ReturnType<typeof setInterval> | null = null;
 let klokAan = true;
 let bezigNu = false;
+const tikAlsSysteem = (): Promise<void> => buitenVerzoek(() => alsSysteem(() => tik()));
 function startKlok(): void {
   if (!klokAan || klok) return;
-  klok = setInterval(() => { void tik().catch(() => undefined); }, TIK_MS);
+  klok = buitenVerzoek(() => setInterval(() => { void tikAlsSysteem().catch(() => undefined); }, TIK_MS));
   (klok as unknown as { unref?: () => void }).unref?.();
 }
 async function tik(): Promise<void> {
@@ -181,6 +192,11 @@ async function geannuleerd(id: string): Promise<boolean> {
 }
 async function voer(t: MetId<TaakRecord>): Promise<void> {
   const lade: Lade = { userId: str(t.ownerUserId), ruimte: t.ruimte === 'technisch' ? 'technisch' : 'prive' };
+  // Een technische lade alleen zolang ze open is (profiel en dienst «Хмара» op eigen gegevens) — anders niets aanraken.
+  if (!(await ladeNogGeldig(lade.userId, lade.ruimte, 'cloud'))) fout('LADE_GESLOTEN');
+  return metLade(lade, 'cloud', () => voerInLade(t, lade));
+}
+async function voerInLade(t: MetId<TaakRecord>, lade: Lade): Promise<void> {
   const bron = t.bron as CloudTaakPunt, doel = t.doel as CloudTaakPunt;
   if (bron.dienst === 'eigen' && doel.dienst === 'google-drive') {
     const item = await eigenItem(lade, idOfNull(bron.id)) ?? fout('BRON_ONBEKEND');
@@ -190,7 +206,10 @@ async function voer(t: MetId<TaakRecord>): Promise<void> {
     const g = OVERDRACHT_GRENZEN['google-drive'];
     if (g.uploadMaxBytes !== null && num(item.sizeBytes) > g.uploadMaxBytes) fout('DOEL_LIMIET');
     const toegang = await driveToegang(lade.userId, str(doel.account)) ?? fout('DOEL_NIET_GEKOPPELD');
-    const [gelezen] = await storage.read([pad], { eigenaar: str(item.ownerUserId) || undefined });
+    // SEC-002 (slot t, omzeiling-6): de grens van Drive ook bij het lezen — een verouderde sizeBytes las vroeger tot 384 MB in het
+    // geheugen en stuurde dat naar Google. Te groot → DOEL_LIMIET met de uitleg en suggestie van de grens (uk/nl), niets verstuurd.
+    const [gelezen] = await storage.read([pad], { eigenaar: str(item.ownerUserId) || undefined, maxBytes: g.uploadMaxBytes ?? undefined });
+    if (gelezen?.teGroot) fout('DOEL_LIMIET');
     if (!gelezen?.content) fout('BRON_ONBEKEND');
     const bytes = Buffer.from(gelezen!.content as string, 'base64');
     if (await geannuleerd(t.id)) return;
@@ -212,6 +231,11 @@ async function voer(t: MetId<TaakRecord>): Promise<void> {
     if (g.downloadMaxBytes !== null && info!.bytes > g.downloadMaxBytes) fout('BRON_LIMIET');
     const vrij = await vrijeBytes();
     if (vrij !== null && vrij < info!.bytes + SCHIJF_RESERVE) fout('SCHIJF_VOL');
+    // SEC-002 (wolk-04): ook Drive → eigen telt voor de quota per mens (de rol uit het account: de eigenaar valt erbuiten).
+    const [mens] = await db.get<{ role?: string }>('users', [lade.userId]).catch(() => [null]);
+    if (await eigenQuotaWeigering(lade.userId, str(mens?.role) || undefined, info!.bytes)) fout('QUOTA_BEREIKT');
+    // SEC-002 (wolk-09): het type van Google gaat door dezelfde keuring als een upload (html/svg → octet-stream, XML → text/plain).
+    const mime = veiligeMime(info!.mime);
     const buf = await driveAfhalen(toegang!.token, str(bron.id), g.downloadMaxBytes ?? Number.MAX_SAFE_INTEGER) ?? fout('GOOGLE_WEIGERT');
     if (await geannuleerd(t.id)) return;
     await taakBijwerken(t, { voortgangBytes: buf!.length, totaalBytes: buf!.length });
@@ -229,11 +253,11 @@ async function voer(t: MetId<TaakRecord>): Promise<void> {
       for (let n = 2; bezet.has(eind) && n < 100; n++) { const punt = naam.lastIndexOf('.'); eind = punt > 0 ? `${naam.slice(0, punt)} (${n})${naam.slice(punt)}` : `${naam} (${n})`; }
       const nu = Date.now();
       const storagePath = `${cloudVoorvoegsel(lade)}/${nu}-${randomBytes(10).toString('hex')}${extensie(eind)}`;
-      const [geschreven] = await storage.writeVanPad([{ path: storagePath, vanPad: tmpPad, contentType: info!.mime, ownerId: lade.userId }]);
+      const [geschreven] = await storage.writeVanPad([{ path: storagePath, vanPad: tmpPad, contentType: mime, ownerId: lade.userId }]);
       if (!geschreven) fout('OPSLAAN_MISLUKT');
       const record = {
         ...ladeVelden(lade), workspaceId: '', suggestedWorkspaceId: '', kind: 'file', title: eind, originalName: eind,
-        description: '', textContent: '', sourceUrl: '', mimeType: info!.mime, sizeBytes: buf!.length, storagePath,
+        description: '', textContent: '', sourceUrl: '', mimeType: mime, sizeBytes: buf!.length, storagePath,
         tags: [], people: [], status: 'captured', aiState: 'fallback', aiConfidence: 0, createdAt: nu, updatedAt: nu, openedAt: 0,
         mapId: doelMap, favoriet: false, verwijderdOp: null, versies: [], sha256: '', bron: 'google-drive',
       };
@@ -249,8 +273,8 @@ async function voer(t: MetId<TaakRecord>): Promise<void> {
 
 /** Alleen voor tests: de klok uit, één tik met de hand, en de toegangs-/schijfmetingen vervangen. */
 export const cloudVnextTakenProef = {
-  zetKlok: (aan: boolean) => { klokAan = aan; if (!aan && klok) { clearInterval(klok); klok = null; } },
-  tikProef: () => tik(),
+  zetKlok: (aan: boolean) => { klokAan = aan; if (!aan && klok) { clearInterval(klok); klok = null; } if (aan) startKlok(); },
+  tikProef: () => tikAlsSysteem(),
   zetDriveToegang: (fn: ((userId: string, accountId: string) => Promise<DriveToegang | null>) | null) => { if (fn) driveToegang = fn; },
   zetVrijeBytes: (fn: (() => Promise<number | null>) | null) => { if (fn) vrijeBytes = fn; },
 };
@@ -264,6 +288,7 @@ type Resp = ReturnType<typeof json>;
 const bodyOf = (b: unknown): Record<string, unknown> => (b && typeof b === 'object' ? (b as Record<string, unknown>) : {});
 const DIENSTEN = ['cloud', 'hub'] as const;
 const CODE_PATROON = /^[A-Z][A-Z_]{2,39}$/;
+type Vlag = (u: SessionOk['user']) => Promise<boolean>;
 
 const puntVan = (v: unknown): CloudTaakPunt | null => {
   if (!v || typeof v !== 'object') return null;
@@ -273,19 +298,30 @@ const puntVan = (v: unknown): CloudTaakPunt | null => {
   return null;
 };
 
-export function cloudVnextTakenRoutes(requireSession: RequireSession): Record<string, RouterMiddleware[]> {
+/**
+ * SEC-002 (wolk-05): `vlagAan` = vlag cloud-vnext voor deze mens — nodig voor alles wat iets aanmaakt of wijzigt;
+ * `vlagLezen` = mag de LIJST ook zonder cloud-vnext (het verbindingencentrum, vlag verbindingen-centrum-v2, toont de geschiedenis).
+ * Zonder vlag 404 CLOUD_VNEXT_UIT; kan een vlag niet bepaald worden, dan telt ze als «uit». Zonder opties open (eenheidstests).
+ */
+export function cloudVnextTakenRoutes(requireSession: RequireSession, opties: { vlagAan?: Vlag; vlagLezen?: Vlag } = {}): Record<string, RouterMiddleware[]> {
+  // De werker start hier, bij het bouwen van de routes (opstarten van de server) — nooit in een verzoek (wolk-03).
+  startKlok();
   const route = (run: (ctx: Ctx, auth: SessionOk, lade: Lade, d: Record<string, unknown>) => Promise<Resp>): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as unknown as Ctx;
     const auth = await requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (!(DIENSTEN as readonly string[]).includes(auth.service)) return error('OWNER_CLOUD_SESSION_REQUIRED', 403);
     if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
-    try { startKlok(); return await run(ctx, auth, ladeOf(auth.user.id), bodyOf(ctx.body)); }
+    if (opties.vlagAan) {
+      const aan = await opties.vlagAan(auth.user).catch(() => false);
+      const alleenLijst = str(bodyOf(ctx.body).actie) === 'lijst';
+      if (!aan && !(alleenLijst && opties.vlagLezen && await opties.vlagLezen(auth.user).catch(() => false))) return error('CLOUD_VNEXT_UIT', 404);
+    }
+    try { return await run(ctx, auth, ladeOf(auth.user.id), bodyOf(ctx.body)); }
     catch (err) {
       const code = String((err as Error)?.message || '');
       if (CODE_PATROON.test(code) && !code.startsWith('CLOUD_') && !code.startsWith('DB_')) return error(code, code === 'TAAK_ONBEKEND' ? 404 : 400);
-      console.error('[cloud-vnext-taken]', code);
-      return error(code.slice(0, 80) || 'CLOUD_VNEXT_FOUT', 500);
+      return vnextFoutAntwoord('cloud-vnext-taken', err); // wolk-10: geen ruwe fouttekst naar buiten
     }
   }) as unknown as RouterMiddleware];
 
@@ -324,6 +360,8 @@ export function cloudVnextTakenRoutes(requireSession: RequireSession): Record<st
         if (g.downloadMaxBytes !== null && totaal > g.downloadMaxBytes) return json({ error: 'BRON_LIMIET', grens: g, bytes: totaal }, 400);
         const vrij = await vrijeBytes();
         if (vrij !== null && vrij < totaal + SCHIJF_RESERVE) return json({ error: 'SCHIJF_VOL', vrijBytes: vrij, nodigBytes: totaal + SCHIJF_RESERVE }, 400);
+        const quota = await eigenQuotaWeigering(auth.user.id, auth.user.role, totaal); // wolk-04
+        if (quota) return json({ error: 'QUOTA_BEREIKT', ...quota }, 400);
       } else fout('ACTIE_ONGELDIG');
       // Dezelfde actieve taak niet dubbel: geef de bestaande terug. Veldsgewijs vergelijken — Postgres (jsonb)
       // sorteert objectsleutels, dus JSON.stringify is hier geen gelijkheid.

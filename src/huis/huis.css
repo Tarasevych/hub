@@ -65,7 +65,6 @@
 .hv-melding.is-fout { background: var(--fout-zacht); color: var(--fout); }
 .hv-melding.is-info { background: var(--info-zacht); color: var(--info); }
 .hv-melding.is-ok { background: var(--ok-zacht); color: var(--ok); }
-.hv-toost { margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ok-zacht); color: var(--ok); font-size: var(--tekst-klein); justify-self: start; }
 .hv-fout-tekst { color: var(--fout); }
 
 /* ---- bouwstenen ---- */
@@ -311,3 +310,7 @@ button.hv-tegel:hover { background: var(--surface); }
 .hv-foutkaart p { margin: 0; color: var(--muted); }
 .hv-foutkaart > .hv-knop { grid-column: 2; justify-self: start; }
 @media (max-width: 520px) { .hv-start-vorm { flex-direction: column; } .hv-start-vorm .hv-knop { width: 100%; } }
+
+/* HUIS-001: кнопка-посилання на макет «Живий дім» у вітрині / knop-link naar de maquette in de toonzaal */
+a.hv-knop { text-decoration: none; }
+.hv-maquette-kaart .hv-knop svg { width: 18px; height: 18px; }

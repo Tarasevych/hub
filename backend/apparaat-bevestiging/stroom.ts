@@ -9,12 +9,18 @@
 // geen voorwaarde.
 import type http from 'node:http';
 import type { StroomGebeurtenis } from '../../shared/apparaat-bevestiging/model';
+import { metVerzoek } from '../../server/platform/context';
 
 const HARTSLAG_MS = 25_000;
 const MAX_STROMEN = 300;
 const MAX_PER_GEBRUIKER = 8;
+/**
+ * SEC-002 (http-rand-08): hoogste leeftijd van één stroom. Daarna sluit de server hem; de browser verbindt vanzelf opnieuw
+ * (src/apparaat-bevestiging/stroom.ts) en krijgt dan een verse sessiecontrole. Zo leeft geen stroom eindeloos door.
+ */
+export const STROOM_MAX_LEEFTIJD_MS = 15 * 60_000;
 
-type Stroom = { userId: string; anker: string; res: http.ServerResponse; geopend: number; sluit: () => void };
+type Stroom = { userId: string; anker: string; res: http.ServerResponse; geopend: number; sluit: () => void; event: Record<string, unknown>; body: unknown; bezig: boolean };
 const stromen = new Set<Stroom>();
 
 export type StroomAuth = (event: Record<string, unknown>, body: unknown) => Promise<{ userId: string; anker: string } | { fout: string }>;
@@ -37,6 +43,42 @@ export function publiceer(userId: string, g: StroomGebeurtenis, o: { behalveAnke
 }
 export const openStromen = (userId?: string): number => [...stromen].filter((s) => !userId || s.userId === userId).length;
 export function sluitAlleStromenApparaat(): void { for (const s of [...stromen]) s.sluit(); }
+/**
+ * SEC-002 (http-rand-08): sluit meteen de stromen van één gebruiker (optioneel alleen die van één anker = één browser).
+ * Aan te roepen waar sessies worden ingetrokken (één sessie, «overal afmelden», blokkeren); geeft het aantal gesloten stromen.
+ */
+export function sluitStromenVan(userId: string, anker?: string): number {
+  let n = 0;
+  for (const s of [...stromen]) { if (s.userId !== userId || (anker && s.anker !== anker)) continue; s.sluit(); n++; }
+  return n;
+}
+
+/**
+ * SEC-002 (http-rand-08): de sessie werd alleen bij het openen gecontroleerd; wie daarna afmeldde, «overal afmelden» koos of
+ * geblokkeerd werd, bleef gebeurtenissen («Це ви?») ontvangen. Nu bij elke hartslag opnieuw dezelfde sessiecontrole (in een
+ * eigen verzoekcontext, zoals server/start.ts dat bij het openen doet). Faalt die, kan zij niet draaien of hoort de sessie
+ * intussen bij een ander account/anker: stroom dicht. true = gesloten.
+ */
+async function controleer(s: Stroom, nu: number): Promise<boolean> {
+  if (!stromen.has(s)) return false;
+  if (nu - s.geopend >= STROOM_MAX_LEEFTIJD_MS) { s.sluit(); return true; }
+  if (s.bezig) return false;
+  const auth = authenticeer;
+  if (!auth) { s.sluit(); return true; }
+  s.bezig = true;
+  try {
+    const bron = ((s.event.requestContext || {}) as { http?: { sourceIp?: string; userAgent?: string } }).http || {};
+    const a = await metVerzoek('GET /api/owner/stroom', () => auth(s.event, s.body), { ip: bron.sourceIp, ua: bron.userAgent });
+    if ('fout' in a || a.userId !== s.userId || a.anker !== s.anker) { s.sluit(); return true; }
+    return false;
+  } catch { s.sluit(); return true; } finally { s.bezig = false; }
+}
+/** Alleen voor tests: de controle van de hartslag nu uitvoeren voor alle open stromen (`nu` om de leeftijdsgrens te toetsen). */
+export async function _controleerStromen(nu = Date.now()): Promise<number> {
+  let n = 0;
+  for (const s of [...stromen]) if (await controleer(s, nu)) n++;
+  return n;
+}
 
 /** Het verzoek zelf (server/start.ts): controleert de sessie, zet koppen, houdt de verbinding open, ruimt op bij sluiten. */
 export async function stroomVerzoekApparaat(req: http.IncomingMessage, res: http.ServerResponse, event: Record<string, unknown>, body: unknown): Promise<void> {
@@ -48,8 +90,11 @@ export async function stroomVerzoekApparaat(req: http.IncomingMessage, res: http
   if (stromen.size >= MAX_STROMEN || openStromen(auth.userId) >= MAX_PER_GEBRUIKER) return weiger(429, 'TE_VEEL_STROMEN');
   res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
   res.write(': stroom open\n\n');
-  const s: Stroom = { userId: auth.userId, anker: auth.anker, res, geopend: Date.now(), sluit: () => { stromen.delete(s); clearInterval(hart); try { res.end(); } catch { /* al dicht */ } } };
-  const hart = setInterval(() => { if (!schrijf(s, `: hartslag ${new Date().toISOString()}\n\n`)) s.sluit(); }, HARTSLAG_MS);
+  const s: Stroom = { userId: auth.userId, anker: auth.anker, res, geopend: Date.now(), event, body, bezig: false, sluit: () => { stromen.delete(s); clearInterval(hart); try { res.end(); } catch { /* al dicht */ } } };
+  const hart = setInterval(() => {
+    if (!schrijf(s, `: hartslag ${new Date().toISOString()}\n\n`)) { s.sluit(); return; }
+    void controleer(s, Date.now()); // SEC-002 (http-rand-08): sessie opnieuw controleren + leeftijdsgrens
+  }, HARTSLAG_MS);
   (hart as { unref?: () => void }).unref?.();
   stromen.add(s);
   req.on('close', s.sluit);

@@ -16,6 +16,8 @@ import { agentVoorKlant, oudAgentUrl, OUD_GEDEELD_URL } from '../../shared/conne
 import { aiLogo } from './gegevens';
 import { adressen, EenKlikFout, verbindInEenKlik, type Doel } from './een-klik';
 import { Knop, Melding, Segment, useActies } from './ui';
+// SEC-002 extensie-02/-09 (g10a-2/-3): een AI geeft zichzelf geen token (zone + alleen een echte klik) en leest het verse token niet.
+import { alleenMens, geenAi, verborgenVoorAi } from '../menselijke-actie';
 
 type Resultaat = { soort: 'oauth' | 'token'; token: string; refresh?: string; verloopt: number | null; endpoint: string; naam: string };
 
@@ -108,7 +110,7 @@ export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', 
   // INTEG-001 (agpag2, 03.11.2026): een eigen blok (.ag-blok, contract van agenten-pagina.css) met naam, één zin en daaronder de
   // ruimte. Het id van de kop is uniek per exemplaar: «Токени» (privé) en «Технічне» (technisch) staan op dezelfde lange pagina.
   return (
-    <section className='ag-blok ag-verbind' data-ag-blok='ai-verbinden' data-ai-verbinden='1' data-ruimte={ruimte} aria-labelledby={titelId}>
+    <section className='ag-blok ag-verbind' data-ag-blok='ai-verbinden' data-ai-verbinden='1' data-ruimte={ruimte} aria-labelledby={titelId} {...geenAi}>
       <header className='ag-blok-kop'>
         <h3 className='ag-blok-titel' id={titelId}><Link2 aria-hidden='true' /> {vastKlant
           ? (technisch ? tr(`Підключити ${k.naam} до технічного простору`, `${k.naam} koppelen aan de technische ruimte`) : tr(`Підключити ${k.naam} до вашого простору`, `${k.naam} koppelen aan uw ruimte`))
@@ -133,7 +135,7 @@ export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', 
         ) : null}
         <label className='ag-veld'>
           <span>{tr(`Термін доступу для ${k.naam}`, `Toegangsduur voor ${k.naam}`)}</span>
-          <select value={gekozenDuur} disabled={!duren || acties.bezig === 'duur'} onChange={(e) => void zetDuur(e.target.value as DuurId)} data-duur-keuze={klant}>
+          <select value={gekozenDuur} disabled={!duren || acties.bezig === 'duur'} onChange={alleenMens((e: { target: { value: string }; preventDefault: () => void }) => void zetDuur(e.target.value as DuurId))} data-duur-keuze={klant}>
             {DUREN.map((d) => <option key={d.id} value={d.id}>{tr(d.uk, d.nl)}</option>)}
           </select>
         </label>
@@ -169,7 +171,7 @@ export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', 
             <li>{tr(`Готово: доступ діє ${duurVan(gekozenDuur).uk.toLowerCase()} і з'явиться нижче в списку.`, `Klaar: de toegang geldt ${duurVan(gekozenDuur).nl.toLowerCase()} en verschijnt hieronder in de lijst.`)}</li>
           </ol>
           <div className='ag-knoppen'>
-            <Knop toon='primary' icoon={<Link2 />} bezig={acties.bezig === 'auto'} onClick={eenKlik} data='een-klik'>{tr('Отримати токен зараз (вікно підтвердження)', 'Nu een token ophalen (bevestigingsvenster)')}</Knop>
+            <Knop toon='primary' icoon={<Link2 />} bezig={acties.bezig === 'auto'} onClick={alleenMens(eenKlik)} data='een-klik'>{tr('Отримати токен зараз (вікно підтвердження)', 'Nu een token ophalen (bevestigingsvenster)')}</Knop>
             <small className='hub-meta'>{tr('Для клієнтів, що не вміють самі відкривати вхід: сайт сам пройде OAuth із PKCE і покаже токен.', 'Voor clients die zelf geen aanmelding openen: de site doet OAuth met PKCE en toont het token.')}</small>
           </div>
         </div>
@@ -184,7 +186,7 @@ export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', 
             <input type='text' maxLength={80} value={tokenNaam} onChange={(e) => setTokenNaam(e.target.value)} placeholder={k.id === 'overig' ? tr('напр. ноутбук Олени', 'bv. laptop van Olena') : k.naam} data-token-naam='1' />
           </label>
           <div className='ag-knoppen'>
-            <Knop toon='primary' icoon={<KeyRound />} bezig={acties.bezig === 'handmatig'} disabled={!magTokens} onClick={() => void handmatig()} data='token-nieuw'>{tr('Випустити токен', 'Token uitgeven')}</Knop>
+            <Knop toon='primary' icoon={<KeyRound />} bezig={acties.bezig === 'handmatig'} disabled={!magTokens} onClick={alleenMens(() => void handmatig())} data='token-nieuw'>{tr('Випустити токен', 'Token uitgeven')}</Knop>
             {!magTokens ? <small className='hub-meta'>{tr('Випуск токенів вимкнено у файлі дозволів сервера.', 'Tokens uitgeven staat uit in het rechtenbestand van de server.')}</small> : null}
           </div>
         </div>
@@ -193,7 +195,7 @@ export default function AiVerbinden({ tr, magTokens, naActie, ruimte = 'prive', 
       <Melding uitkomst={acties.uitkomst} tr={tr} onSluit={() => acties.setUitkomst(null)} />
 
       {res ? (
-        <div className='ag-kaart ag-vers' data-vers-token='1'>
+        <div className='ag-kaart ag-vers' data-vers-token='1' {...verborgenVoorAi}>
           <b>{tr(`Токен для ${res.naam} — видно лише зараз`, `Token voor ${res.naam} — alleen nu zichtbaar`)}</b>
           <span className='ag-verbind-adres'><code className='hub-code' data-token='1'>{res.token}</code><Kopieer tekst={res.token} tr={tr} data='token-kopieer' /></span>
           <small className='hub-meta'>{res.verloopt && res.verloopt - Date.now() < 50 * 365 * 86_400_000 ? tr(`Діє до ${new Date(res.verloopt).toLocaleString()}`, `Geldig tot ${new Date(res.verloopt).toLocaleString()}`) : tr('Діє до відкликання', 'Geldig tot intrekken')}{res.refresh ? tr(' · клієнт із OAuth поновлює його сам (refresh-токен не показуємо)', ' · een client met OAuth vernieuwt het zelf (het refresh-token tonen we niet)') : ''}</small>

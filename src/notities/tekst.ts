@@ -1,6 +1,7 @@
 // Teksten en kleine hulpjes van de notitiepagina (uk/nl), op één plek.
 import { useEffect, useState } from 'react';
 import type { NotitieKleur, NotitieSoort } from '../../shared/notities-vnext-model';
+import { weigeringZin } from '../../shared/weigering-tekst';
 
 export type Lang = 'uk' | 'nl';
 export const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
@@ -26,9 +27,13 @@ export function foutTekst(lang: Lang, code: string): string {
     ACCOUNT_NOT_APPROVED: ['Обліковий запис ще не підтверджено.', 'Het account is nog niet goedgekeurd.'],
     LEEG: ['порожній файл', 'leeg bestand'], TE_GROOT: ['файл завеликий', 'bestand te groot'], ONBEKEND_FORMAAT: ['невідомий формат (лише .md, .txt, .json)', 'onbekend formaat (alleen .md, .txt, .json)'],
     JSON_ONGELDIG: ['JSON не читається', 'JSON onleesbaar'],
+    // SEC-002 (g04): de zoekvraag liep tegen de tijdgrens van 5 s aan; de lijst zelf werkt gewoon.
+    ZOEKEN_TE_ZWAAR: ['Пошук зайняв забагато часу й був зупинений. Уточніть запит: коротші слова або менше слів.', 'Het zoeken duurde te lang en is gestopt. Maak de vraag preciezer: kortere of minder woorden.'],
   };
   const p = t[code];
   if (p) return tr(lang, p[0], p[1]);
+  // SEC-002 (slot «u»): bekende weigeringen (rol «лише перегляд», server bezet …) — één tekst voor de hele site, shared/weigering-tekst.ts.
+  const w = weigeringZin(lang, code); if (w) return w;
   if (/SESSION|401|403/.test(code)) return tr(lang, 'Нотатки доступні лише після входу.', 'Notities zijn alleen beschikbaar na aanmelden.');
   return tr(lang, `Не вдалося (${code}).`, `Mislukt (${code}).`);
 }

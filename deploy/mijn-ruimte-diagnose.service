@@ -10,3 +10,16 @@ PrivateTmp=yes
 ProtectHome=yes
 Nice=10
 TimeoutStartSec=60
+# SEC-002 (server-uitrol-11): minimale rechten. Het script leest bestandsnamen uit een map die de app kan schrijven
+# (goedkeur-inbox) en schrijft zelf alleen diagnose.json; een fout daarin mag als root nergens anders kunnen schrijven.
+# Het hele bestandssysteem is alleen-lezen, behalve de statusmap. Lezen blijft werken: systemctl show (socket van systemd),
+# journalctl (journaalbestanden), lslocks (/proc/locks), statvfs. Geen netwerk nodig: alleen AF_UNIX.
+# «-» voor het pad: ontbreekt de map (nog geen installatie), dan start de unit toch en stopt het script zelf stil.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=-/var/lib/mijn-ruimte-uitrol-status
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX

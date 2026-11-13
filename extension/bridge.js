@@ -24,6 +24,42 @@
   // 0.7.0 (zone E): uid per bedieningselement (zoals chrome-devtools-mcp); een oudere shared.js zonder deze functies → alleen op naam.
   const kiesElement = shared.kiesElement || ((items, params, filter) => pickByName(filter ? items.filter(filter) : items, params && params.name));
   const uidVan = shared.uidVan || null;
+  // 12.11.2026 (SEC-002 extensie-02/09): zones die de site afschermt — niets bedienen ([data-ai-geen-actie]) en niet lezen ([data-ai-verborgen]).
+  const { inAiGeenActie, formulierMetAiGeenActie, inAiVerborgen, AI_GEEN_ACTIE_FOUT, AI_VERBORGEN } = shared;
+  // g10a-3: één selector voor alles wat de AI niet mag lezen (ook tokens, toegangscodes, TOTP-sleutels, herstelcodes).
+  const AI_VERBORGEN_SELECTOR = shared.AI_VERBORGEN_SELECTOR || `[${AI_VERBORGEN}]`;
+  const weigerGeenActie = (el) => { if (inAiGeenActie(el)) throw new Error(AI_GEEN_ACTIE_FOUT); };
+  /**
+   * Leest tekst van de pagina ZONDER wat de site voor een AI verbergt (koppelcodes, zojuist gemaakte tokens, herstelcodes). innerText
+   * volgt de opmaak: een element met visibility:hidden telt niet mee. Verbergen, lezen en terugzetten gebeuren in dezelfde taak, dus er
+   * wordt tussendoor niets getekend en de mens ziet geen flikkering. Voor een schermafbeelding blijft het verbergen even staan (zie
+   * verbergGeheim hieronder).
+   */
+  const geheimElementen = () => { try { return [...document.querySelectorAll(AI_VERBORGEN_SELECTOR)]; } catch { return []; } };
+  function zonderVerborgen(lees) {
+    const els = geheimVerborgen ? [] : geheimElementen();
+    const oud = els.map((el) => [el.style.getPropertyValue('visibility'), el.style.getPropertyPriority('visibility')]);
+    for (const el of els) el.style.setProperty('visibility', 'hidden', 'important');
+    try { return lees(); }
+    finally { els.forEach((el, i) => { if (oud[i][0]) el.style.setProperty('visibility', oud[i][0], oud[i][1]); else el.style.removeProperty('visibility'); }); }
+  }
+  const paginaTekst = () => zonderVerborgen(() => String(document.body.innerText || ''));
+  // Schermafbeelding: het achtergrondproces stuurt 'markering-verberg' vlak vóór captureVisibleTab en 'markering-toon' erna.
+  let geheimVerborgen = null; let geheimTimer = null;
+  function toonGeheim() {
+    clearTimeout(geheimTimer); geheimTimer = null;
+    const lijst = geheimVerborgen; geheimVerborgen = null;
+    if (lijst) for (const [el, w, pr] of lijst) { try { if (w) el.style.setProperty('visibility', w, pr); else el.style.removeProperty('visibility'); } catch { /* element weg */ } }
+    return lijst ? lijst.length : 0;
+  }
+  function verbergGeheim(ms) {
+    if (geheimVerborgen) toonGeheim();
+    const els = geheimElementen();
+    geheimVerborgen = els.map((el) => [el, el.style.getPropertyValue('visibility'), el.style.getPropertyPriority('visibility')]);
+    for (const el of els) el.style.setProperty('visibility', 'hidden', 'important');
+    geheimTimer = setTimeout(toonGeheim, Math.min(5000, Math.max(200, Number(ms) || 1500)));
+    return els.length;
+  }
   // 0.6.1 (punt 8): de zichtbare markering zit in een eigen module met een eigen shadow DOM; faalt het laden, dan werkt de rest gewoon.
   const mark = await import(chrome.runtime.getURL('markering.js')).catch(() => null);
   // 0.6.2: WIE leest nu, en in welke kleur? Zuivere regels, gedeeld met de server en de tests (shared/markering-agenten.ts).
@@ -39,7 +75,10 @@
   let lastClaim = null;
   let lastProfiel = null;
   const metaInhoud = (naam) => { const el = document.querySelector(`meta[name="${naam}"]`); return el ? String(el.getAttribute('content') || '') : ''; };
-  const huidigProfiel = () => parseProfiel(metaInhoud('mjn-profiel'));
+  // SEC-002 extensie-04 (12.11.2026): zolang de site zelf nog niet weet of dit tabblad technisch is (data-zeker="0": de status laadt
+  // nog of kon niet worden opgehaald) is het profiel 'onbekend' en raakt geen slot de pagina. Zonder meta: ook 'onbekend'.
+  const metaZeker = (naam) => { const el = document.querySelector(`meta[name="${naam}"]`); return el ? el.getAttribute('data-zeker') : false; };
+  const huidigProfiel = () => parseProfiel(metaInhoud('mjn-profiel'), metaZeker('mjn-profiel'));
   const readClaim = () => {
     const raw = metaInhoud('mjn-account');
     const profiel = huidigProfiel();
@@ -231,7 +270,7 @@
     try { document.dispatchEvent(new CustomEvent('mr-diag-modus', { detail: diagModus ? 'aan' : 'uit' })); } catch { /* nooit de pagina breken */ }
   }
   readClaim();
-  new MutationObserver(readClaim).observe(document.head || document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['content', 'name'] });
+  new MutationObserver(readClaim).observe(document.head || document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['content', 'name', 'data-zeker'] });
   chrome.runtime.sendMessage({ op: 'diag-modus?' })
     .then((r) => { if (!modusGezet) zetDiagModus(!!(r && r.aan === true), r && r.ruimte); })
     .catch(() => { if (!modusGezet) zetDiagModus(false, null); });
@@ -270,7 +309,8 @@
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
   };
-  const textOf = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+  // innerText (volgt de opmaak) eerst; textContent alleen als het element zelf geen verborgen zone bevat (textContent negeert opmaak).
+  const textOf = (el) => (el.innerText || (el.querySelector && el.querySelector(AI_VERBORGEN_SELECTOR) ? '' : el.textContent) || '').replace(/\s+/g, ' ').trim();
   const nameOf = (el) => {
     const aria = el.getAttribute('aria-label');
     if (aria && aria.trim()) return aria.trim();
@@ -284,7 +324,8 @@
   };
   const roleOf = (el) => el.getAttribute('role') || (el.tagName === 'A' ? 'link' : el.tagName === 'BUTTON' ? 'button' : el.tagName === 'SELECT' ? 'select' : el.tagName === 'TEXTAREA' ? 'textbox'
     : el.tagName === 'INPUT' ? (/^(checkbox|radio)$/i.test(el.type) ? el.type.toLowerCase() : /^(button|submit|reset)$/i.test(el.type) ? 'button' : 'textbox') : 'control');
-  const controls = () => [...document.querySelectorAll(SELECTOR)].filter(visible).map((el) => ({ el, name: nameOf(el), role: roleOf(el) })).filter((c) => c.name);
+  // Namen worden gelezen terwijl de verborgen zones onzichtbaar zijn: een knop die een koppelcode OMVAT krijgt die code niet in zijn naam.
+  const controls = () => zonderVerborgen(() => [...document.querySelectorAll(SELECTOR)].filter(visible).filter((el) => !inAiVerborgen(el)).map((el) => ({ el, name: nameOf(el), role: roleOf(el) })).filter((c) => c.name));
 
   // De site biedt acties aan via window.postMessage (src/ai-site-acties.ts); een andere pagina antwoordt niet.
   const askPage = (message, ms = 8000) => new Promise((resolve) => {
@@ -299,20 +340,24 @@
     window.postMessage({ ...message, mrAiId: id }, location.origin);
   });
 
-  async function snapshot() {
+  const PROFIEL_WEG = 'EXTENSIE_PROFIEL: the profile of this tab changed while the command was running; nothing was returned';
+  async function snapshot(nogGoed = () => true) {
     const list = controls().slice(0, 200).map(({ el, name, role }, i) => {
       const item = { ...(uidVan ? { uid: uidVan(i, name) } : {}), role, name: name.slice(0, 120) };
       if (el.disabled || el.getAttribute('aria-disabled') === 'true') item.disabled = true;
       if (isSensitiveField(el)) item.sensitive = true;
+      if (inAiGeenActie(el)) item.blocked = true; // alleen de mens mag dit bedienen (goedkeuren, toestemming, rechten)
       if (el.getAttribute('aria-expanded')) item.expanded = el.getAttribute('aria-expanded') === 'true';
       if (/^(checkbox|switch|radio)$/.test(role)) item.checked = el.checked === true || el.getAttribute('aria-checked') === 'true';
       return item;
     });
     const actions = await askPage({ mrAi: 'list' });
+    // SEC-002 extensie-04: na het wachten op de pagina opnieuw kijken — de tekst wordt pas HIERNA gelezen.
+    if (!nogGoed()) throw new Error(PROFIEL_WEG);
     return {
       url: location.origin + location.pathname, title: document.title,
-      headings: [...document.querySelectorAll('h1,h2,h3')].filter(visible).slice(0, 30).map((h) => textOf(h).slice(0, 120)),
-      text: (document.body.innerText || '').replace(/\n{3,}/g, '\n\n').slice(0, 15000),
+      headings: [...document.querySelectorAll('h1,h2,h3')].filter(visible).filter((h) => !inAiVerborgen(h)).slice(0, 30).map((h) => zonderVerborgen(() => textOf(h)).slice(0, 120)),
+      text: paginaTekst().replace(/\n{3,}/g, '\n\n').slice(0, 15000),
       controls: list,
       actions: actions && Array.isArray(actions.actions) ? actions.actions : [],
     };
@@ -332,6 +377,7 @@
     const { el, name, role } = picked.item;
     if (isSensitiveField(el)) throw new Error('Refused: this is a password or payment field');
     if (el.closest && el.closest('[data-scherm-toetsenbord]')) throw new Error('Refused: on-screen keyboard is not an automation target');
+    weigerGeenActie(el);
     if (el.disabled || el.getAttribute('aria-disabled') === 'true') throw new Error(`"${name}" is disabled`);
     el.scrollIntoView({ block: 'center' });
     el.click();
@@ -343,6 +389,7 @@
     if (picked.error) throw new Error(picked.error);
     const { el, name } = picked.item;
     if (isSensitiveField(el)) throw new Error('Refused: this is a password or payment field');
+    weigerGeenActie(el);
     if (el.disabled || el.readOnly) throw new Error(`"${name}" cannot be edited`);
     el.focus();
     const text = String(params.text ?? '').slice(0, 2000);
@@ -368,13 +415,16 @@
     return { scrollY: Math.round(window.scrollY), maxScrollY: Math.round(max), atTop: window.scrollY <= 0, atBottom: window.scrollY >= max - 2 };
   }
 
-  async function waitForText(params) {
+  async function waitForText(params, nogGoed = () => true) {
     const wanted = String(params.text || '').trim().toLowerCase();
     if (!wanted) throw new Error('empty text');
     const limit = Math.min(15, Math.max(1, Number(params.timeout_seconds) || 10)) * 1000;
     const start = Date.now();
     while (Date.now() - start < limit) {
-      if ((document.body.innerText || '').toLowerCase().includes(wanted)) return { found: true, waitedMs: Date.now() - start };
+      // SEC-002 extensie-04: het profiel kan TIJDENS het wachten wisselen (tot 15 s); dan stopt het wachten zonder iets te melden.
+      if (!nogGoed()) throw new Error(PROFIEL_WEG);
+      // extensie-09: verborgen zones tellen niet mee — anders is «wacht op tekst» een orakel om een koppelcode teken voor teken te raden.
+      if (paginaTekst().toLowerCase().includes(wanted)) return { found: true, waitedMs: Date.now() - start };
       await new Promise((r) => setTimeout(r, 300));
     }
     return { found: false, waitedMs: Date.now() - start };
@@ -396,6 +446,7 @@
     const picked = kiesElement(controls(), params);
     if (picked.error) throw new Error(picked.error);
     const { el, name } = picked.item;
+    weigerGeenActie(el);
     el.scrollIntoView({ block: 'center' });
     for (const t of ['pointerover', 'pointerenter', 'mouseover', 'mouseenter', 'pointermove', 'mousemove']) el.dispatchEvent(new MouseEvent(t, { bubbles: t !== 'mouseenter' && t !== 'pointerenter' }));
     return { hovered: name };
@@ -416,6 +467,7 @@
     if (picked.error) throw new Error(picked.error);
     const { el, name } = picked.item;
     if (isSensitiveField(el)) throw new Error('Refused: this is a password or payment field'); // 0.5: bv. autocomplete="cc-exp-month"
+    weigerGeenActie(el);
     if (el.disabled) throw new Error(`"${name}" is disabled`);
     const wanted = String(params.option || '').trim().toLowerCase();
     const options = [...el.options].map((o) => ({ o, label: (o.label || o.textContent || '').trim(), value: String(o.value) }));
@@ -433,6 +485,9 @@
     if (!ALLOWED_KEYS.includes(key)) throw new Error('Key not allowed');
     const el = document.activeElement && document.activeElement !== document.body ? document.activeElement : document.body;
     if (isSensitiveField(el)) throw new Error('Refused: the focused field is a password or payment field');
+    // SEC-002 extensie-02: geen toets op een afgeschermde knop, en geen Enter die een formulier met zo'n knop verstuurt.
+    weigerGeenActie(el);
+    if (key === 'Enter' && formulierMetAiGeenActie(el)) throw new Error(AI_GEEN_ACTIE_FOUT);
     const init = { key, code: key, bubbles: true, cancelable: true };
     el.dispatchEvent(new KeyboardEvent('keydown', init));
     // Door de pagina gegenereerde toetsen activeren zelf niets; de gebruikelijke gevolgen doen we hier bewust na.
@@ -675,8 +730,8 @@
           return sendResponse({ ok: true, data: { lezers: model ? model.lezers.length : 0, extra: model ? model.extra : 0 } });
         }
         // Vlak vóór chrome.tabs.captureVisibleTab: de markering mag niet óp de momentopname staan (zij komt daarna terug).
-        if (message.op === 'markering-verberg') { let uit = false; try { uit = mark ? mark.verberg(message.ms) : false; } catch { uit = false; } return sendResponse({ ok: true, data: { verborgen: uit } }); }
-        if (message.op === 'markering-toon') { let uit = false; try { uit = mark ? mark.toon() : false; } catch { uit = false; } return sendResponse({ ok: true, data: { zichtbaar: uit } }); }
+        if (message.op === 'markering-verberg') { let uit = false; try { uit = mark ? mark.verberg(message.ms) : false; } catch { uit = false; } let geheim = 0; try { geheim = verbergGeheim(message.ms); } catch { geheim = -1; } return sendResponse({ ok: true, data: { verborgen: uit, geheim } }); }
+        if (message.op === 'markering-toon') { let uit = false; try { uit = mark ? mark.toon() : false; } catch { uit = false; } try { toonGeheim(); } catch { /* niets */ } return sendResponse({ ok: true, data: { zichtbaar: uit } }); }
         // Alles hieronder leest of bedient de pagina: alleen met een slot, en alleen als het profiel van de pagina NU bij dat slot past.
         if (!isRuimte(message.ruimte)) return sendResponse({ ok: false, error: 'EXTENSIE_PROFIEL: no slot given' });
         if (!profielToegestaan(message.ruimte, huidigProfiel())) {
@@ -684,14 +739,17 @@
             ? 'EXTENSIE_PROFIEL: the tab is no longer in technical mode'
             : 'EXTENSIE_PROFIEL: the tab is in technical mode; a user-space AI never reads it' });
         }
+        // SEC-002 extensie-04: het profiel wordt ook NA elke wachtende bewerking opnieuw bekeken; is het gewisseld, dan gaan er geen gegevens terug.
+        const nogGoed = () => profielToegestaan(message.ruimte, huidigProfiel());
+        const klaar = (data) => (nogGoed() ? sendResponse({ ok: true, data }) : sendResponse({ ok: false, error: PROFIEL_WEG }));
         if (message.op === 'scroll') return sendResponse({ ok: true, data: scroll(message) });
-        if (message.op === 'wait') return sendResponse({ ok: true, data: await waitForText(message) });
+        if (message.op === 'wait') return klaar(await waitForText(message, nogGoed));
         if (message.op === 'select') return sendResponse({ ok: true, data: selectOption(message) });
         if (message.op === 'key') return sendResponse({ ok: true, data: pressKey(message) });
-        if (message.op === 'snapshot') return sendResponse({ ok: true, data: await snapshot() });
-        if (message.op === 'audit') return sendResponse({ ok: true, data: await audit(message) });
-        if (message.op === 'invoke') return sendResponse({ ok: true, data: await invoke(message) });
-        if (message.op === 'diagnostics') return sendResponse({ ok: true, data: await invoke({ action: 'get_diagnostics' }) });
+        if (message.op === 'snapshot') return klaar(await snapshot(nogGoed));
+        if (message.op === 'audit') return klaar(await audit(message));
+        if (message.op === 'invoke') return klaar(await invoke(message));
+        if (message.op === 'diagnostics') return klaar(await invoke({ action: 'get_diagnostics' }));
         if (message.op === 'click') return sendResponse({ ok: true, data: click(message) });
         if (message.op === 'type') return sendResponse({ ok: true, data: type(message) });
         if (message.op === 'console') return sendResponse({ ok: true, data: consoleMessages(message) });

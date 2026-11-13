@@ -12,11 +12,14 @@ import { ruimteOf, type AiRuimte } from '../shared/ai-ruimte';
  * geschreven wordt. Ze lopen alleen uiteen bij de stand 'gedeeld' van een dienst: dan is de gereedschapskist technisch en
  * zijn de gegevens persoonlijk (de bewuste samenvoeging van de eigenaar). Ontbreekt `lade`, dan geldt `ruimte` — zo
  * verandert er niets voor code die de lade niet kent.
+ * `v2` (SEC-002, ai-mcp-01): de aanroep komt via connector v2 (/<agent>), waar het recht per hulpmiddel in de koppeling staat.
+ * Alleen backend/mcp-connector.ts → roepTool zet hem (uit zijn eigen V2Context, nooit uit iets van de klant); callTool weigert
+ * zonder deze vlag elk hulpmiddel dat alleen via connector v2 bestaat (V2_ALLEEN).
  */
-export type Namens = { client: string; grantId?: string; ruimte?: AiRuimte; lade?: AiRuimte; /** Connector v2: de agent (slug) waaraan het token is gebonden; komt uit de geauthenticeerde koppeling, niet van de client. */ agent?: string };
+export type Namens = { client: string; grantId?: string; ruimte?: AiRuimte; lade?: AiRuimte; /** Connector v2: de agent (slug) waaraan het token is gebonden; komt uit de geauthenticeerde koppeling, niet van de client. */ agent?: string; v2?: boolean };
 const opslag = new AsyncLocalStorage<Namens>();
 
-export const metNamens = <T>(namens: Namens, fn: () => Promise<T>): Promise<T> => opslag.run({ client: String(namens.client || '?').slice(0, 80), ...(namens.grantId ? { grantId: String(namens.grantId) } : {}), ...(namens.ruimte ? { ruimte: ruimteOf(namens.ruimte) } : {}), ...(namens.lade ? { lade: ruimteOf(namens.lade) } : {}), ...(namens.agent ? { agent: String(namens.agent).slice(0, 40) } : {}) }, fn);
+export const metNamens = <T>(namens: Namens, fn: () => Promise<T>): Promise<T> => opslag.run({ client: String(namens.client || '?').slice(0, 80), ...(namens.grantId ? { grantId: String(namens.grantId) } : {}), ...(namens.ruimte ? { ruimte: ruimteOf(namens.ruimte) } : {}), ...(namens.lade ? { lade: ruimteOf(namens.lade) } : {}), ...(namens.agent ? { agent: String(namens.agent).slice(0, 40) } : {}), ...(namens.v2 === true ? { v2: true } : {}) }, fn);
 export const huidigeNamens = (): Namens | undefined => opslag.getStore();
 /** De ruimte waarin de huidige aanroep loopt: die van de AI-verbinding, anders de privéruimte (minste rechten). */
 export const huidigeRuimte = (): AiRuimte => ruimteOf(opslag.getStore()?.ruimte);

@@ -14,6 +14,7 @@ import { JOURNAAL_ACTIES } from './connectors-routes';
 import { meld } from './melder';
 import { codeAnderApparaat } from './nieuw-apparaat';
 import { ToegangFout, notitieTekst, redenVan } from './toegang-context';
+import { jsonbTekst } from '../shared/tekst-veilig';
 
 const fout = (code: string, status = 400): never => { throw new ToegangFout(code, status); };
 const sys = () => getPool('systeem');
@@ -115,7 +116,7 @@ async function log(codeId: string, userId: string, soort: LogSoort, detail: Reco
   const c = huidigeContext();
   try {
     await sys().query('INSERT INTO app.toegangscode_log (code_id, user_id, sessie_id, soort, detail, apparaat, ip_hash) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)',
-      [codeId, userId, sessieId, soort, JSON.stringify(detail), apparaat(c?.ua), ipHash(c?.ip)]);
+      [codeId, userId, sessieId, soort, jsonbTekst(detail), apparaat(c?.ua), ipHash(c?.ip)]);
   } catch (err) { console.error('[toegangscodes] log mislukt:', (err as Error).message); }
 }
 const auditStil = (g: Parameters<typeof auditToevoegen>[0]) => auditToevoegen(g).catch((err) => console.error('[toegangscodes] audit mislukt:', (err as Error).message));
@@ -255,7 +256,7 @@ export async function inwisselen(input: { code?: unknown }): Promise<{ token: st
     return fout('CODE_ONGELDIG');
   }
   const eig = (await sys().query("SELECT data FROM app.records WHERE tbl = 'users' AND id = $1", [r.user_id])).rows[0]?.data || null;
-  if (!eig || eig.status === 'blocked' || Number(eig.retiredAt || 0) > 0) { await log(r.id, r.user_id, 'geweigerd', { reden: 'eigenaar-geblokkeerd', bij: 'inwisselen' }); fout('CODE_ONGELDIG'); }
+  if (!eig || eig.status === 'blocked' || eig.status === 'deleted' || Number(eig.retiredAt || 0) > 0) { await log(r.id, r.user_id, 'geweigerd', { reden: 'eigenaar-geblokkeerd', bij: 'inwisselen' }); fout('CODE_ONGELDIG'); }
   const nu = Date.now();
   const eind = Math.min(r.verloopt_op ? new Date(r.verloopt_op).getTime() : Infinity, nu + GAST_SESSIE_MAX_MS);
   const token = randomBytes(32).toString('base64url');
@@ -271,6 +272,7 @@ export async function inwisselen(input: { code?: unknown }): Promise<{ token: st
   return { token: `${s.id}.${token}`, eerste, gast: { sessieId: String(s.id), codeId: String(r.id), eigenaarId: r.user_id, codeNaam: r.naam, scopes: (r.scopes || []).filter(isGastScope), verlooptOp: eind, gestartOp: new Date(s.gestart_op).getTime() } };
 }
 /** Cookie → geldige gastsessie (sessie, code en eigenaar opnieuw gecontroleerd), of null. */
+/* SEC-002 (toets-g10b #6): ook een VERWIJDERD account (binnen de 30 dagen, al dan niet eerst geblokkeerd) deelt niets meer via gastcodes. */
 export async function gastVanCookie(waarde: string): Promise<Gast | null> {
   const i = waarde.indexOf('.');
   const id = i > 0 ? waarde.slice(0, i) : '', token = i > 0 ? waarde.slice(i + 1) : '';
@@ -282,7 +284,7 @@ export async function gastVanCookie(waarde: string): Promise<Gast | null> {
   const nu = Date.now();
   if (r.ingetrokken_op || new Date(r.verloopt_op).getTime() <= nu || r.code_ingetrokken || (r.code_verloopt && new Date(r.code_verloopt).getTime() <= nu)) return null;
   const eig = (await sys().query("SELECT data FROM app.records WHERE tbl = 'users' AND id = $1", [r.user_id])).rows[0]?.data || null;
-  if (!eig || eig.status === 'blocked' || Number(eig.retiredAt || 0) > 0) return null;
+  if (!eig || eig.status === 'blocked' || eig.status === 'deleted' || Number(eig.retiredAt || 0) > 0) return null;
   if (nu - new Date(r.laatst_actief_op).getTime() > 60_000) await sys().query('UPDATE app.gast_sessies SET laatst_actief_op = now() WHERE id = $1', [id]).catch(() => undefined);
   return { sessieId: id, codeId: String(r.code_id), eigenaarId: r.user_id, codeNaam: r.naam, scopes: (r.scopes || []).filter(isGastScope), verlooptOp: new Date(r.verloopt_op).getTime(), gestartOp: new Date(r.gestart_op).getTime() };
 }

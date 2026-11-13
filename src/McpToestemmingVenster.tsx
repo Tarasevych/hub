@@ -9,11 +9,12 @@ import './mcp-toestemming-venster.css';
 import { DUREN, duur as duurVan, isDuurId, type DuurId } from '../shared/ai-verbinding';
 import { RUIMTE_NAAM, RUIMTE_UITLEG, type AiRuimte } from '../shared/ai-ruimte';
 import KoppelWizard, { type V2ConsentInfo } from './connector-v2/KoppelWizard';
+import { alleenMens, geenAi } from './menselijke-actie';
 
 type Tr = (uk: string, nl: string) => string;
 // soort 'deur': verzoek van de MCP-deur (/Grok, /claude, …; rid mrd_…), anders de connector /mcp.
-type Info = { agent?: string | null; v2?: unknown; clientName: string; redirectHost: string; loopback: boolean; scope: string; expiresAt: number; soort?: 'deur' | 'connector'; deur?: string; duur?: string; redirectSoort?: 'web' | 'loopback' | 'app' | null; handmatigUrl?: string };
-type Phase = 'loading' | 'ready' | 'deciding' | 'redirecting' | 'gone' | 'forbidden' | 'limit' | 'error';
+type Info = { agent?: string | null; v2?: unknown; clientName: string; redirectHost: string; redirectAdres?: string; loopback: boolean; scope: string; expiresAt: number; soort?: 'deur' | 'connector'; deur?: string; duur?: string; redirectSoort?: 'web' | 'loopback' | 'app' | null; handmatigUrl?: string };
+type Phase = 'loading' | 'ready' | 'deciding' | 'redirecting' | 'gone' | 'forbidden' | 'limit' | 'elders' | 'error';
 
 const sessionBody = () => ({ service: 'mcp', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 const statusOf = (e: unknown): number => Number((e as { status?: number })?.status ?? 0);
@@ -133,7 +134,9 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
       .catch((e) => {
         if (!active) return;
         const status = statusOf(e);
-        if (status === 404) { clearPendingConsent(); setPhase('gone'); } else if (status === 403) setPhase('forbidden'); else setPhase('error');
+        // SEC-002 ai-mcp-14: 409 CONSENT_ANDERE_BROWSER = dit verzoek is in een ANDERE browser begonnen (cookie-binding ontbreekt).
+        if (codeOf(e) === 'CONSENT_ANDERE_BROWSER') setPhase('elders');
+        else if (status === 404) { clearPendingConsent(); setPhase('gone'); } else if (status === 403) setPhase('forbidden'); else setPhase('error');
       });
     return () => { active = false; };
   }, [rid]);
@@ -170,7 +173,9 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
     } catch (e) {
       const status = statusOf(e);
       const code = codeOf(e);
-      if (status === 409 || code.includes('GRANT_LIMIT')) setPhase('limit');
+      // Eerst de browserbinding (ook 409): anders zou de mens «limiet bereikt» lezen terwijl het verzoek elders begon.
+      if (code === 'CONSENT_ANDERE_BROWSER') setPhase('elders');
+      else if (status === 409 || code.includes('GRANT_LIMIT')) setPhase('limit');
       else if (status === 404) { clearPendingConsent(); setPhase('gone'); }
       else {
         // Nooit stil terug naar «klaar»: zeggen wat er gebeurde.
@@ -240,7 +245,8 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
 
   return (
     <Venster id='mcp-toestemming' titel={tr(`Доступ для ${name}`, `Toegang voor ${name}`)} breedte={560} labelledBy='mcp-consent-title' describedBy='mcp-consent-desc' className='mcp-consent-venster'>
-      <div className='mcp-consent-dialog' data-mcp-consent-modal='true'>
+      {/* SEC-002 extensie-02: alleen de mens beslist hier (de browserextensie bedient deze zone niet; «Дозволити» telt alleen een echte klik). */}
+      <div className='mcp-consent-dialog' data-mcp-consent-modal='true' {...geenAi}>
         <div className='mcp-consent-head'>
           <span className='mcp-consent-icon' aria-hidden='true'>{isDeur ? <DoorOpen size={26} /> : technisch ? <Wrench size={26} /> : <ShieldCheck size={26} />}</span>
           <div>
@@ -253,7 +259,7 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
             </h2>
             <p id='mcp-consent-desc' className='mcp-consent-sub'>
               {phase === 'ready' || busy
-                ? tr('Після вашого рішення ви повернетеся на', 'Na uw keuze keert u terug naar') + ` ${info?.redirectHost ?? ''}`
+                ? <>{tr('Після вашого рішення ви повернетеся на', 'Na uw keuze keert u terug naar') + ` ${info?.redirectHost ?? ''}`}{info?.redirectAdres ? <><br /><small className='mcp-consent-adres' data-consent-redirect-adres='1'>{tr('Повна адреса повернення: ', 'Volledig terugkeeradres: ')}<code>{info.redirectAdres}</code></small></> : null}</>
                 : tr('Запит на підключення конектора Mijn Ruimte', 'Verzoek om de Mijn Ruimte-connector te koppelen')}
             </p>
           </div>
@@ -282,6 +288,13 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
               <button type='button' className='mcp-consent-secondary' onClick={close}>{tr('Закрити', 'Sluiten')}</button>
               <button type='button' className='mcp-consent-primary' onClick={() => { setRid(null); window.setTimeout(() => setRid(getPendingConsent()), 0); }}>{tr('Спробувати ще раз', 'Opnieuw proberen')}</button>
             </div>
+          </>
+        ) : null}
+
+        {phase === 'elders' ? (
+          <>
+            <p className='mcp-consent-msg' role='alert' data-consent-elders='1'>{tr('Цей запит на підключення почато в іншому браузері. Відкрийте посилання в тому браузері, де ви почали підключення ШІ. Якщо ви нічого не починали — просто закрийте це вікно: доступ не буде видано.', 'Dit koppelverzoek is in een andere browser gestart. Open de link in de browser waarin u de AI-koppeling begon. Begon u niets, sluit dit venster dan gewoon: er wordt geen toegang gegeven.')}</p>
+            <div className='mcp-consent-actions'><button type='button' className='mcp-consent-secondary' onClick={done}>{tr('Закрити', 'Sluiten')}</button></div>
           </>
         ) : null}
 
@@ -349,7 +362,7 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
             {phase === 'deciding' ? <p className='mcp-consent-meta' role='status'>{tr('Якщо з’явилося вікно «Підтвердіть доступ» — підтвердіть там; воно завжди поверх цього вікна.', 'Verschijnt het venster «Toegang bevestigen», bevestig daar; het staat altijd boven dit venster.')}</p> : null}
             <div className='mcp-consent-actions'>
               <button type='button' className='mcp-consent-secondary' disabled={busy} onClick={() => void decide(false)}>{tr('Заборонити', 'Weigeren')}</button>
-              <button type='button' className='mcp-consent-primary' disabled={busy} onClick={() => void decide(true)}>
+              <button type='button' className='mcp-consent-primary' disabled={busy} onClick={alleenMens(() => void decide(true))}>
                 {phase === 'redirecting' ? tr(`Повертаємо в ${name}…`, `Terug naar ${name}…`) : phase === 'deciding' ? tr('Зачекайте…', 'Even geduld…') : tr('Дозволити', 'Toestaan')}
               </button>
             </div>

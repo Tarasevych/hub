@@ -22,9 +22,10 @@ import { getPool } from "../server/platform/pg";
 import type { RouterMiddleware } from "../server/platform/router";
 import { alsGebruiker } from "./ai-toestemmingen";
 import { huidigeNamens, metNamens } from "./mcp-namens";
-import { ruimteUitVerzoek } from "./ai-ruimte-poort";
+import { aiPoortNu, ruimteUitVerzoek } from "./ai-ruimte-poort";
+import { veiligeToolFout } from "./mcp-console-fout"; /* SEC-002 toets-g10d №5 */
 import { leesStaat } from "./ai-site-schakelaars";
-import { connectGeweigerd, klantUit } from "../shared/ai-agent-bord";
+import { connectGeweigerd, klantUit, verbindingGeweigerd } from "../shared/ai-agent-bord";
 import { geefStandaard, isOntbrekendeTabel, magTool, verwijderToegang } from "./ai-toegang";
 import { RUIMTE_GESCHEIDEN, ruimteOf, toolInRuimte, type AiRuimte } from "../shared/ai-ruimte";
 import { scopeVoorTool } from "../shared/ai-toegang";
@@ -34,6 +35,8 @@ import { OPDRACHT_STANDAARD, OPDRACHT_WERKWOORDEN, isWerkwoord, leesOpdrachtResu
 import { UITROL_TOOL_NAMEN, UitrolFout, isGoedkeurPoging, voerUitrolToolUit, type Onderwerp } from "./uitrol-goedkeuring";
 import { liveStand as liveStandBron } from "./uitrol-bron";
 import { sqlLadeWaar, type Lade } from "../shared/ruimte-scheiding";
+import { bordHerkomst, derdenVoorAi } from "../shared/bord-herkomst"; /* SEC-002 integraties-08, зауваження 3 */
+import { meldBeveiligingsWijziging } from "./beveiliging-meldingen"; /* SEC-002 privacy-logboek-03 */
 import { bordLade, ladeVoorTool } from "./ruimte-bord-github";
 // Notities vNext (0127): hub-notities (kind 'note', etiket 'hub') leven in app.notities; het bord blijft de spiegel. Elke schrijfweg
 // hier voor zo'n notitie gaat via backend/notities-vnext.ts, dat de spiegel bijwerkt. `null` = tabel ontbreekt of geen vNext-rij →
@@ -49,7 +52,8 @@ type Resp = ReturnType<typeof json>;
 export type McpConsoleDeps = { stepUp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
 
 const BLOCK = /(^|\/)(\.env|geheimen\.env|.*\.(age|pem|key)|id_rsa|id_ed25519|credentials.*\.json|.*\.token|.*\.secret)$/i;
-const STATUSES = new Set(["backlog", "doing", "blocked", "done"]);
+// SEC-002 (afwerking A, migratie 0243): «inkomend» = kaart van buiten (GitHub-issue van een derde), kolom «Вхідні».
+const STATUSES = new Set(["inkomend", "backlog", "doing", "blocked", "done"]);
 const HOSTS = [
   ["hub", "https://hub.tarasevych.com/overview"],
   ["id", "https://id.tarasevych.com/personalization"],
@@ -148,8 +152,9 @@ async function logCall(userId: string, row: { method: string; detail: string; tr
   }).catch(() => undefined);
 }
 const iso = (v: unknown) => (v ? new Date(v as string).toISOString() : "");
-const taskOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, status: r.status, tags: r.tags || [], service: "mcp", author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
-const noteOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, tags: r.tags || [], author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at) });
+// SEC-002 (integraties-08): kaarten van derden (bv. een GitHub-issue) dragen thirdParty + source (shared/bord-herkomst.ts).
+const taskOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, status: r.status, tags: r.tags || [], service: "mcp", author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at), ...bordHerkomst(r) });
+const noteOut = (r: any) => ({ id: r.id, title: r.title, body: r.body, tags: r.tags || [], author: r.author, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at), ...bordHerkomst(r) });
 const tokenOut = (r: any) => ({ id: r.id, name: r.name, prefix: r.prefix, scopes: r.scopes, createdAt: iso(r.created_at), expiresAt: iso(r.expires_at), revokedAt: iso(r.revoked_at), calls: Number(r.calls || 0), lastSeenAt: iso(r.last_seen_at), ruimte: ruimteOf(r.ruimte) });
 
 /** Приватний токен з дошки ШІ. Завжди ruimte=prive. Секрет повертається один раз; списки його не містять. */
@@ -277,7 +282,7 @@ const REMOVED_TOOLS = new Set(["write_staging", "list_staging", "read_staging", 
  */
 export const VERWIJDERDE_SESSIE_TOOLS: ReadonlySet<string> = new Set(["issue_session_token", "exchange_session", "auto_session"]);
 
-async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string, agentTokenId?: string, ruimte: AiRuimte = 'prive', tabContext = '') {
+export async function runTool(userId: string, owner: boolean, name: string, args: Record<string, unknown>, author: string, agentTokenId?: string, ruimte: AiRuimte = 'prive', tabContext = '') {
   // Gedetailleerde toegang per agenttoken (0043, shared/ai-toegang.ts): default-deny per scope, vóór uitvoering.
   // Zonder tokenId belt de mens zelf via de console — dan geldt dit niet (wel het AI-beleid en de vlaggen).
   // Alleen instrumenten uit de catalogus vallen onder scopes; de rest houdt zijn eigen poorten
@@ -321,9 +326,12 @@ async function runTool(userId: string, owner: boolean, name: string, args: Recor
       return addItem(lade, kind, String(args.title || (kind === "note" ? "Нотатка" : "Задача")), String(args.body || ""), String(args.status || ""), author);
     }
     const b = await board(lade);
-    if (name === "list_notes") return { notes: b.notes };
+    // SEC-002 (зауваження 3): voor een agent(token) titel en tekst van derden tussen markeringen (zoals mcp_board_list); de mens zelf
+    // («operator» in de console) ziet de kaart ongewijzigd.
+    const voorAi = <T extends { title?: unknown; body?: unknown; tags?: unknown }>(x: T): T => (author === "operator" ? x : derdenVoorAi(x));
+    if (name === "list_notes") return { notes: b.notes.map(voorAi) };
     const q = String(args.q || "").toLowerCase();
-    return { tasks: q ? b.tasks.filter((t) => `${t.title} ${t.body}`.toLowerCase().includes(q)) : b.tasks };
+    return { tasks: (q ? b.tasks.filter((t) => `${t.title} ${t.body}`.toLowerCase().includes(q)) : b.tasks).map(voorAi) };
   }
   if (!OWNER_TOOLS.has(name)) throw new Error("TOOL_NOT_ON_DOOR");
   if (!owner) throw new Error("OWNER_ONLY");
@@ -739,7 +747,18 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       // Gedetailleerde toegang (0043): een nieuw token krijgt de niet-gevoelige standaardscopes.
       await geefStandaard(auth.user.id, { soort: 'agenttoken', id: String(row.id) }, poort.ruimte).catch(() => undefined);
       await logCall(auth.user.id, { method: "token.issue", detail: name, ...wie(ctx, auth), ok: true, ms: 0 });
-      await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name, ruimte: poort.ruimte } }).catch(() => undefined);
+      // SEC-002 (privacy-logboek-02): een langlevend AI-token zonder regel in het journaal bestaat niet. Lukt de regel niet, dan wordt
+      // het token meteen ingetrokken en nooit getoond (vroeger: .catch(() => undefined) — het token werkte, het journaal zweeg).
+      try { await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_issued", type: "ai", result: "ok", details: { tokenId: row.id, name, ruimte: poort.ruimte } }); }
+      catch (err) {
+        console.error("[mcp-console] token niet uitgegeven, journaalregel mislukt:", String((err as Error)?.message || err).slice(0, 200));
+        await alsGebruiker(auth.user.id, async (q) => q("UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE id::text = $2 AND user_id = $1", [auth.user.id, String(row.id)])).catch(() => undefined);
+        await verwijderToegang({ soort: 'agenttoken', id: String(row.id) }).catch(() => undefined);
+        // SEC-002 (slot s, eind-interface 2): eigen code + Retry-After — de dienst draait, alleen het journaal weigert even. De klant leest
+        // de code (shared/weigering-tekst.ts), niet de kale 503 («проксі…»). / Власний код і Retry-After: сервіс працює, недоступний лише журнал.
+        return error("JOURNAAL_NIET_BESCHIKBAAR", 503, { retryAfter: 60 });
+      }
+      await meldBeveiligingsWijziging(auth.user.id, "ai-token", { naam: name }); /* SEC-002 privacy-logboek-03: ook in de bel */
       return json({ token: { ...tokenOut(row), token: raw } });
     })],
     "POST /api/mcp/tokens/revoke": [gate("member", {}, async (ctx, auth) => {
@@ -747,6 +766,7 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       if (!weg) return error("TOKEN_NOT_FOUND", 404);
       await verwijderToegang({ soort: 'agenttoken', id: String(bodyOf(ctx.body).id || "") }).catch(() => undefined);
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: "mcp_console_token_revoked", type: "ai", result: "ok", details: { tokenId: String(bodyOf(ctx.body).id || ""), name: String(weg.name || ""), prefix: String(weg.prefix || "") } }).catch(() => undefined);
+      await meldBeveiligingsWijziging(auth.user.id, "ai-token-ingetrokken", { naam: String(weg.name || "") }); /* SEC-002 privacy-logboek-03 */
       return json({ ok: true });
     })],
     "POST /api/mcp/call": [gate("member", {}, async (ctx, auth) => {
@@ -759,9 +779,10 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
         await logCall(auth.user.id, { method: "tools/call", detail: name, ...wie(ctx, auth), ok: true, ms: Date.now() - started });
         return json({ ok: true, result });
       } catch (err) {
-        const message = err instanceof Error ? err.message : "TOOL_FAILED";
-        await logCall(auth.user.id, { method: "tools/call", detail: `${name} ${message}`, ...wie(ctx, auth), ok: false, ms: Date.now() - started });
-        return json({ ok: false, error: message }, 400);
+        // SEC-002 (toets-g10d №5): geen ruwe fouttekst (paden, SQL) naar buiten — vaste code of TOOL_FAILED + incidentnummer.
+        const fout = veiligeToolFout(err, "mcp-console");
+        await logCall(auth.user.id, { method: "tools/call", detail: `${name} ${fout.error}${fout.incident ? ` #${fout.incident}` : ""}`, ...wie(ctx, auth), ok: false, ms: Date.now() - started });
+        return json({ ok: false, ...fout }, 400);
       }
     })],
     "POST /api/mcp/permissions": [gate("member", {}, async (ctx) => {
@@ -873,6 +894,27 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
       const started = Date.now();
       // Ruimte van het token (0042) vóór alles: een privétoken raakt nooit de server, een technisch token nooit de privé-inhoud.
       const ruimte = ruimteOf(tok.ruimte);
+      // SEC-002 (ai-mcp-05): de sitebrede schakelaars (agent uit / manier «token» uit) gelden ook voor een BESTAAND privétoken, bij elke aanroep.
+      const siteStop = verbindingGeweigerd(await leesStaat(), { ruimte, klant: klantUit(null, String(tok.name)), methode: "token" });
+      if (siteStop) {
+        await logCall(tok.user_id, { method: "tools/call", detail: `${name} SITE_CAP:${siteStop.code}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
+        // SEC-002 (toets-g10i №2): zoals roepTool — de weigering ook in het journaal met hash-keten (beheerlogboek, SIEM), niet alleen in de consolelog.
+        try { await auditToevoegen({ ownerId: String(tok.user_id), actorId: String(tok.user_id), action: "owner.mcp.tool", type: "ai", result: "denied", details: { tool: name.slice(0, 80), client: String(tok.name || "").slice(0, 80), grantId: `token:${String(tok.id)}`, ruimte, transport: "agent", reden: siteStop.code } }); } catch { /* audit mag de weigering niet breken */ }
+        return json({ ok: false, error: `SITE_CAP:${siteStop.code}`, message: `SITE_CAP: ${siteStop.code}. An administrator switched this connection off for the whole site. Do not try another way.` }, 403);
+      }
+      // SEC-002 (ai-mcp-06): levende rechten, zoals /mcp (technischNuGeldig): een TECHNISCH token werkt alleen zolang de eigenaar
+      // nu in zijn technische profiel zit én de dienst «Підключення ШІ» in de technische ruimte aan staat. Vroeger telde alleen de
+      // kolom ruimte van het token — na het verlaten van het profiel bleven code, serverstand en uitrolvoorstellen 30 dagen open.
+      if (ruimte === "technisch") {
+        const poort = await aiPoortNu(String(tok.user_id), { rol: tok.role ? String(tok.role) : null, verbindingId: `token:${tok.id}` });
+        if (poort.ruimte !== "technisch") {
+          await logCall(tok.user_id, { method: "tools/call", detail: `${name} TECH_PROFILE_OFF${poort.code ? `:${poort.code}` : ""}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
+          // toets-g10d №3: ook in het journaal (hash-keten), zoals roepTool in mcp-connector.ts — de eigenaar/SIEM ziet zo dat een
+          // technisch token na het verlaten van het profiel nog gebruikt wordt.
+          try { await auditToevoegen({ ownerId: String(tok.user_id), actorId: String(tok.user_id), action: "owner.mcp.tool", type: "ai", result: "denied", details: { tool: name.slice(0, 80), client: String(tok.name).slice(0, 80), grantId: `token:${tok.id}`, ruimte, transport: "agent", reden: "tech-profiel", ...(poort.code ? { code: poort.code } : {}) } }); } catch { /* het journaal mag de weigering niet breken */ }
+          return json({ ok: false, error: "TECH_PROFILE_OFF", message: "TECH_PROFILE_OFF: the owner's technical profile is not active, or the service «AI connections» is off in the technical space. This is normal, not a malfunction. Do not try another way." }, 403);
+        }
+      }
       if (!toolInRuimte(name, ruimte) && !isGoedkeurPoging(name)) {
         await logCall(tok.user_id, { method: "tools/call", detail: `${name} SPACE_SEPARATED:${ruimte}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
         return json({ ok: false, error: "SPACE_SEPARATED", message: RUIMTE_GESCHEIDEN(ruimte, name.slice(0, 80)) }, 403);
@@ -889,9 +931,10 @@ export function mcpConsoleRoutes(requireSession: RequireSession, deps: McpConsol
         await logCall(tok.user_id, { method: "tools/call", detail: name, transport: "agent", agent: tok.name, ok: true, ms: Date.now() - started });
         return json({ ok: true, result: text(result) });
       } catch (err) {
-        const message = err instanceof Error ? err.message : "TOOL_FAILED";
-        await logCall(tok.user_id, { method: "tools/call", detail: `${name} ${message}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
-        return json({ ok: false, error: message }, 400);
+        // SEC-002 (toets-g10d №5): geen ruwe fouttekst (paden, SQL) naar buiten — vaste code of TOOL_FAILED + incidentnummer.
+        const fout = veiligeToolFout(err, "mcp-console/agent");
+        await logCall(tok.user_id, { method: "tools/call", detail: `${name} ${fout.error}${fout.incident ? ` #${fout.incident}` : ""}`, transport: "agent", agent: tok.name, ok: false, ms: Date.now() - started });
+        return json({ ok: false, ...fout }, 400);
       }
     }],
   };

@@ -24,6 +24,12 @@ function foutTekst(lang: Lang, e: unknown) {
   const m: Record<string, [string, string]> = {
     FOTO_DIENST_UIT: ['Розділ «Фото» вимкнено.', 'Het onderdeel «Foto’s» staat uit.'], BRON_NIET_BESCHIKBAAR: ['Оригінал зараз недоступний у джерелі.', 'Het origineel is nu niet beschikbaar in de bron.'],
     TE_GROOT_VOOR_WEERGAVE: ['Файл завеликий для перегляду тут.', 'Bestand te groot om hier te tonen.'], EIGEN_KOPIE_GEBRUIK_WISSEN: ['Це єдина копія. Щоб прибрати, видаліть копію.', 'Dit is de enige kopie. Gebruik «Kopie verwijderen».'],
+    // SEC-002 (g10d, g03): grenzen en weigeringen van de fotodienst — «Спробуйте ще раз» zou hier niets oplossen.
+    UPLOAD_TE_VEEL: ['Забагато одночасних завантажень. Дочекайтеся завершення інших (або скасуйте їх) і спробуйте знову.', 'Te veel gelijktijdige uploads. Wacht tot andere klaar zijn (of annuleer ze) en probeer het opnieuw.'],
+    SCHIJF_VOL: ['На сервері закінчується місце — фото не збережено. Спробуйте пізніше або повідомте власника сайту.', 'De server heeft bijna geen ruimte meer — de foto is niet bewaard. Probeer het later of meld het aan de eigenaar van de site.'],
+    BEZIG: ['Упорядкування вже триває. Зачекайте, доки воно завершиться.', 'Ordenen loopt al. Wacht tot het klaar is.'],
+    RBAC_FORBIDDEN: ['Ваша роль — лише перегляд: змінювати фото тут не можна. Нічого не змінено.', 'Uw rol is alleen-lezen: hier kunt u geen foto’s wijzigen. Er is niets gewijzigd.'],
+    RBAC_PENDING_CANNOT_MUTATE: ['Ваш обліковий запис ще чекає на схвалення: до того змінювати нічого не можна.', 'Uw account wacht nog op goedkeuring: tot dan kunt u niets wijzigen.'],
   };
   return (m[c] || ['Не вдалося. Спробуйте ще раз.', 'Mislukt. Probeer het opnieuw.'])[lang === 'uk' ? 0 : 1];
 }

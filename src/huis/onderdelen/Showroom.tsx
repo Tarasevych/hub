@@ -2,7 +2,7 @@
 // een demoplattegrond en drie scenario's («Avond», «Ochtend», «Water») als stapsgewijze tekst-playback: welke sensor, welke
 // actie, welk resultaat. Eerlijk gelabeld als voorbeeld — nooit als «uw huis».
 import { useEffect, useState } from 'react';
-import { Calculator, Pause, Play, RotateCcw, Sparkles } from 'lucide-react';
+import { Calculator, ExternalLink, Pause, Play, RotateCcw, Sparkles } from 'lucide-react';
 import type { HuisTab } from '../../../shared/huis-model';
 import { tr, type Lang } from '../tekst';
 
@@ -44,6 +44,15 @@ export default function Showroom({ lang, naarTab }: { lang: Lang; smal: boolean;
   return (
     <div className='hv-showroom' data-hv-showroom={sc.id}>
       <p className='hv-melding is-info' data-hv-demo='1'><Sparkles aria-hidden='true' />{tr(lang, 'Демонстрація на вигаданих даних. Це не ваша оселя, тут немає реальних пристроїв, команд чи токенів. Показуємо, як виглядає чесний ланцюжок: датчик → правило/людина → команда → підтвердження.', 'Demonstratie met verzonnen gegevens. Dit is niet uw woning; er zijn geen echte apparaten, opdrachten of tokens. We tonen hoe de eerlijke keten eruitziet: sensor → regel/mens → opdracht → bevestiging.')}</p>
+      {/* HUIS-001 (етап 0): клікабельний макет майбутнього хабу «Живий дім» — окрема статична сторінка сайту (dist/huis-maquette/,
+          складає scripts/huis-maquette.mjs --site). Вигадані дані вбудованого симулятора, жодного зв’язку з пристроями. */}
+      <section className='hv-blok hv-maquette-kaart' data-hv-maquette='1'>
+        <h3>{tr(lang, 'Макет «Живий дім» — яким стане розумний будинок', 'Maquette «Levend huis» — zo wordt het slimme huis')}</h3>
+        <p className='hv-hint'>{tr(lang, 'Повний клікабельний макет нового хабу: дім із небом за часом доби, кімнати й план, аркуші керування для кожного типу пристрою, енергія, безпека, гараж із транспортом і безпілотниками, автоматика, ШІ-агенти з дозволами та 13 видів екранів — від годинника до телевізора. Усе працює на вбудованому симуляторі з вигаданими даними.', 'De volledige klikbare maquette van de nieuwe hub: het huis met een hemel naar het tijdstip, kamers en plattegrond, bedieningsbladen voor elk soort apparaat, energie, beveiliging, de garage met voertuigen en drones, automatisering, AI-agenten met toestemmingen en 13 soorten schermen — van horloge tot televisie. Alles draait op de ingebouwde simulator met verzonnen gegevens.')}</p>
+        <div className='hv-knoppen'>
+          <a className='hv-knop is-hoofd' href='/huis-maquette/' target='_blank' rel='noopener' data-hv-maquette-open='1' title={tr(lang, 'Відкриється в новій вкладці. Макет нічим не керує: жодна дія в ньому не доходить до ваших пристроїв і не змінює вашу оселю.', 'Opent in een nieuw tabblad. De maquette bedient niets: geen enkele actie daarin bereikt uw apparaten of verandert uw woning.')}><ExternalLink aria-hidden='true' />{tr(lang, 'Відкрити макет', 'Maquette openen')}</a>
+        </div>
+      </section>
       <div className='hv-kolommen'>
         <section className='hv-blok'>
           <h3>{tr(lang, 'Демо-план', 'Demoplattegrond')}</h3>

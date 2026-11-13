@@ -30,9 +30,14 @@ export const MELDING_SOORTEN: Readonly<Record<string, SoortInfo>> = Object.freez
   owner_identity_mismatch: { type: 'beveiliging', ernst: 'kritiek' },
   access_decision: { type: 'toegang', ernst: 'belangrijk' },               // mijn eigen toegangsverzoek is beslist
   workspace_share: { type: 'delen', ernst: 'info' },
+  cloud_alleen_lezen: { type: 'cloud', ernst: 'info' },                     // SEC-002 (g03, afwerking A): schrijven geweigerd — rol «лише перегляд»
+  toegang_alleen_lezen: { type: 'toegang', ernst: 'info' },               // SEC-002 (slot «u»): schrijven buiten de hmara geweigerd — rol «лише перегляд»
+  agenda: { type: 'agenda', ernst: 'info' },                             // agenda: grens bereikt, CalDAV afgekapt (backend/agenda-routes.ts, agenda-caldav.ts) — nu expliciet
   impersonatie: { type: 'inzage', ernst: 'kritiek' },                      // een beheerder vraagt mijn account in te zien
   ondersteuning: { type: 'inzage', ernst: 'belangrijk' },                  // ondersteuning vraagt een overzicht
   ai_bevestiging: { type: 'ai', ernst: 'belangrijk' },                    // een AI vraagt uw bevestiging op de site (backend/ai-bevestiging.ts)
+  mail_queue_refused: { type: 'post', ernst: 'belangrijk' },               // SEC-002 (g10c): gepland bericht niet verzonden (ruimte mocht niet meer verzenden)
+  mail_queue_cancelled: { type: 'post', ernst: 'info' },                   // SEC-002 (g10c): geplande berichten geannuleerd
   // ------------------------------------------------------------ technisch: beheer van de site
   access_request: { type: 'tech.toegang', ernst: 'belangrijk', vereist: 'users.manage' },
   google_login_config: { type: 'tech.integraties', ernst: 'kritiek', vereist: 'diensten.beheren' },

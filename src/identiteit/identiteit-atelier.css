@@ -12,7 +12,7 @@
   --r-xl:27px;--r-l:20px;--r-m:14px;--r-s:10px;
   --glas:rgba(16,23,40,.72);--glas-rand:rgba(197,212,239,.14);
   --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
-  --mr-boven:0px;
+  --mr-boven:70px;
   --a:#b3a3ff;--a2:#6e68bf;--a-ink:#c9bcff;
   container-type:inline-size;container-name:mr-at;
   position:relative;color:var(--text);
@@ -59,7 +59,7 @@
 .mr-at.iconen-kleur .mr-at-glief,.mr-at .is-actief .mr-at-glief,.mr-at-kop .mr-at-glief,.mr-at-balk-kies .mr-at-glief,.mr-at-tegel .mr-at-glief,.mr-at-treffer .mr-at-glief{color:var(--a-ink);background:color-mix(in srgb,var(--a) 15%,transparent);border-color:color-mix(in srgb,var(--a) 28%,transparent)}
 
 /* ── Компактна смуга (телефон і планшет) ─────────────────────────────────── */
-.mr-at-balk{position:sticky;top:6px;z-index:30;display:flex;align-items:center;gap:8px;padding:6px;border-radius:18px;
+.mr-at-balk{position:sticky;top:calc(var(--mr-boven,62px) + 4px);z-index:30;display:flex;align-items:center;gap:8px;padding:6px;border-radius:18px;
   background:var(--glas);border:1px solid var(--glas-rand);box-shadow:var(--shadow-s);-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3)}
 .mr-at-balk-kies{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 10px 4px 4px;border:0;border-radius:13px;background:transparent;text-align:left}
 .mr-at-balk-kies:hover{background:var(--surface2)}
@@ -67,7 +67,8 @@
 .mr-at-balk-tekst{min-width:0;display:flex;flex-direction:column;line-height:1.2}
 .mr-at-balk-tekst small{font-size:11px;letter-spacing:.04em;color:var(--quiet);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mr-at-balk-tekst strong{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mr-at-balk-kies .mr-at-pijl{margin-left:auto;color:var(--quiet);flex:none}
+.mr-at-balk-kies .mr-at-pijl{margin-left:auto;color:var(--quiet);flex:0 0 18px;width:18px;height:18px}
+.mr-at-balk-kies[aria-expanded='true'] .mr-at-pijl{transform:rotate(180deg);color:var(--text)}
 .mr-at-balk .mr-at-rond{width:44px;height:44px}
 .mr-at-balk .mr-at-voortgang{position:absolute;left:18px;right:18px;bottom:-1px}
 
@@ -79,7 +80,7 @@
 /* ── Вступ (Персоналізація = огляд усього простору) ───────────────────────── */
 .mr-at-held{position:relative;overflow:hidden;border-radius:30px;padding:28px 22px 0;display:grid;gap:22px;color:#fff;
   background:radial-gradient(ellipse 70% 60% at 100% 0%,rgba(185,213,255,.13),transparent 70%),linear-gradient(116deg,#282644 0%,#2f3255 41%,#1a3851 100%);
-  border:1px solid rgba(226,228,255,.11);box-shadow:var(--shadow);scroll-margin-top:80px}
+  border:1px solid rgba(226,228,255,.11);box-shadow:var(--shadow);scroll-margin-top:calc(var(--mr-boven,62px) + 74px)}
 .mr-at-held::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.22) .6px,transparent .6px);background-size:20px 20px;opacity:.12;mask-image:linear-gradient(160deg,#000,transparent 60%)}
 .mr-at-held-tekst{position:relative;z-index:1;min-width:0}
 .mr-at-wenkbrauw{display:inline-flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:650;color:#d9d2ff}
@@ -109,7 +110,7 @@
 
 /* ── Заголовок розділу ───────────────────────────────────────────────────── */
 .mr-at-kop{display:flex;flex-direction:column-reverse;border-radius:var(--r-xl);overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);
-  scroll-margin-top:80px;animation:mrAtVerschijn .45s cubic-bezier(.2,.7,.2,1) both}
+  scroll-margin-top:calc(var(--mr-boven,62px) + 74px);animation:mrAtVerschijn .45s cubic-bezier(.2,.7,.2,1) both}
 .mr-at-kop-kunst{height:min(240px,62cqi)}
 .mr-at-kop-tekst{padding:20px 20px 22px;min-width:0}
 .mr-at-kop-lijn{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--quiet);font-weight:600;min-width:0}
@@ -148,8 +149,8 @@
 .mr-at-toekomst-tekst{min-width:0;display:flex;flex-direction:column;line-height:1.35}
 .mr-at-toekomst-tekst strong{font-size:14px;font-weight:620}
 .mr-at-toekomst-tekst small{font-size:12px;color:var(--muted)}
-.mr-at-pijl{transition:transform .25s}
-.mr-at-toekomst>summary .mr-at-pijl{margin-left:auto;flex:none;color:var(--quiet)}
+.mr-at-pijl{flex:0 0 18px;width:18px;height:18px;transition:transform .2s ease,color .2s ease}
+.mr-at-toekomst>summary .mr-at-pijl{margin-left:auto;flex:0 0 18px;color:var(--quiet)}
 .mr-at-toekomst[open]>summary .mr-at-pijl{transform:rotate(180deg)}
 .mr-at-toekomst-inhoud{display:grid;gap:10px;padding:0 12px 14px}
 .mr-at-plan{padding:14px;border-radius:var(--r-m);background:var(--surface);border:1px solid var(--line);min-width:0}
@@ -316,7 +317,7 @@
   .mr-at-raster{display:grid;grid-template-columns:248px minmax(0,1fr);gap:28px;align-items:start}
   .mr-at.plaats-right .mr-at-raster{grid-template-columns:minmax(0,1fr) 248px}
   .mr-at.plaats-right .mr-at-gids{order:2}
-  .mr-at-gids{display:flex;flex-direction:column;gap:14px;position:sticky;top:12px;max-height:calc(100dvh - var(--mr-boven) - 28px);
+  .mr-at-gids{display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(var(--mr-boven,70px) + 8px);max-height:calc(100dvh - var(--mr-boven) - 28px);
     padding:14px 10px 12px;border-radius:24px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-s)}
   .mr-at.stijl-pills .mr-at-gids{background:transparent;border-color:transparent;box-shadow:none;padding-inline:0}
   .mr-at-balk{display:none}
@@ -346,6 +347,10 @@
   .mr-at-held-noot{margin:0 -48px;padding:12px 48px}
   .mr-at-kop-tekst{padding:36px 40px 32px}
 }
+@container mr-at (max-width:440px){
+  .mr-at-buren{grid-template-columns:1fr}
+  .mr-at-buren button.is-volgende{justify-content:space-between;text-align:left}
+}
 
 @media (prefers-reduced-motion:reduce){
   .mr-at *,.mr-at *::before,.mr-at *::after,.mr-kunst *{animation:none!important;transition:none!important}
@@ -358,10 +363,13 @@
   .mr-at-greep{display:block;width:40px;height:4px;border-radius:4px;background:var(--line2);margin:8px auto 0;flex:none}
   .mr-at-kiezer-veld{padding:6px 10px 10px 16px}
   .mr-at-kiezer-voet{display:none}
+  .mr-at-kiezer-raster{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
   .mr-at-kiezer-raster .mr-at-item{min-height:48px}
   /* Загальне правило :where([role=dialog]) обмежує вікна до 100vw − 16px; аркуш знизу має бути на всю ширину. */
   .mr-at-kiezer,.mr-at-popover{max-width:none}
-  .mr-at-popover{top:auto;bottom:0;left:0;right:0;transform:none;width:auto;border-radius:24px 24px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .mr-at-popover{top:auto;bottom:0;left:0;right:0;transform:none;width:auto;max-height:min(86dvh,calc(100dvh - 24px));overflow-y:auto;overscroll-behavior:contain;border-radius:24px 24px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
   .mr-at-plaatsen{grid-template-columns:repeat(2,1fr)}
+  .mr-at-tussen{flex-direction:column;padding:20px 18px;gap:10px}
+  .mr-at .mr-at-voet{flex-wrap:wrap}
 }
 @keyframes mrAtBlad{from{transform:translateY(100%)}to{transform:none}}

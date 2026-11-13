@@ -1,4 +1,4 @@
-// ZOEKEN — TEKSTEXTRACTIE: DE ENE INGANG VOOR Z2 (bronnen/indexering). Contract: scratchpad/zoek-tekst-API.md.
+// ZOEKEN — TEKSTEXTRACTIE: DE ENE INGANG VOOR Z2 (bronnen/indexering). Contract: de functies hieronder (uitleg: docs/zoek/ZOEKEN.nl.md).
 //
 //   tekstUit(invoer)        → tekst + pagina's + onderdelen (archief/e-mail) + OCR-plan, ZONDER OCR te draaien
 //   ocrPlan(invoer)         → alleen het plan (welke pagina's een scan zijn, is er een engine, welke talen)

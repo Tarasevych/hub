@@ -1,62 +1,69 @@
 {
   "schema": 1,
-  "taakId": "DESIGN-003",
-  "agent": "codex",
-  "agentPlatform": "ChatGPT Codex",
+  "taakId": "IDENTITEIT-012",
+  "agent": "claude",
+  "agentPlatform": "Claude Code",
   "model": {
     "id": null,
     "versie": null,
     "bron": "onbekend"
   },
-  "basisCommit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
-  "basisVersie": "20261106-141500",
+  "basisCommit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+  "basisVersie": "20261113-121403",
   "installatie": {
-    "versie": "20261106-141500",
-    "commit": "b14a59e3c4b259b57d413be498281d49f1e6969c",
-    "bron": "/api/version · 2026-11-06"
+    "versie": "20261113-121403",
+    "commit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "bron": "/api/version"
   },
-  "regelsVersie": "1.4.10",
-  "regelsHash": "beb437706865e56735ee15f56f75422968d3b133221148282986b23645078847",
-  "tak": "feature/design-003-20261106-103743",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "tak": "fix/identiteit-012-server-veiligheid-20261113-200208",
   "kanaal": "github_pr",
   "zonderGit": null,
   "commits": [
-    "6f4af07eaa151eba445a124ba7d02083ba226653"
+    "4618fbdfd05c1850f926d4d81a591827fafa8c2c",
+    "70517491af14a66e0325c6fd67e8530d936d6857",
+    "46ed83f19e767bdaccda634418e4cd8b906a80f7"
   ],
   "bestanden": {
     "gewijzigd": [
-      "src/agenten/AgentBord.tsx",
-      "src/agenten/agenten.css",
-      "ORCH-OVERDRACHT.json"
+      "backend/aanmeld-koppel.ts",
+      "backend/beveiliging-meldingen.ts",
+      "backend/index.ts",
+      "backend/sleutelkluis-routes.ts",
+      "backend/toegangslaag.ts",
+      "backend/toegangssleutels.ts",
+      "src/BeveiligingSessiesPaneel.tsx",
+      "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+      "tests/eenheid/sleutelkluis-20261020.test.ts",
+      "tests/eenheid/tech-sessies.test.ts"
     ],
     "toegevoegd": [
-      "orchestratie/taken/DESIGN-003.json",
-      "tests/visueel/design-003-agenten.html",
-      "tests/visueel/design-003-agenten.tsx",
-      "tests/visueel/design-003-controle.mjs",
-      "orchestratie/ontwikkelarchieven/DESIGN-003.json",
-      ".github/workflows/design-003-release.yml",
-      "tests/uitrol/design-003-pakket.py"
+      "orchestratie/taken/IDENTITEIT-012.json",
+      "shared/blok-invoer.ts",
+      "shared/eigen-toegang.ts",
+      "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
+      "orchestratie/ontwikkelarchieven/IDENTITEIT-012.json"
     ],
     "verwijderd": []
   },
   "samenvatting": {
-    "uk": "Панель агента розгортається під усім вибраним рядком. Записи CLI, кнопки й чотири канали Antigravity підлаштовуються під ширину профілю.",
-    "nl": "Het agentpaneel opent onder de gekozen rij. CLI-opdrachten, knoppen en de vier Antigravity-kanalen passen zich aan de profielbreedte aan."
+    "uk": "11 виправлень безпеки сервера: гостьові входи під час «Вийти всюди», самоперевірка лише для власника/адміна, підтвердження прив’язки зовнішнього входу, застарілі маршрути, перевірка посилань блоків, межа пароля, меню, підтвердження перейменування ключа й завершення входів, одна умова доступу.",
+    "nl": "11 herstellingen van serverbeveiliging: gastsessies bij «Overal uitloggen», zelftest alleen voor eigenaar/beheer, bevestiging bij externe aanmeldkoppeling, verouderde routes, controle van bloklinks, wachtwoordgrens, menu, bevestiging bij hernoemen en sessies beëindigen, één toegangsvoorwaarde."
   },
   "tests": {
-    "geslaagd": 5,
+    "geslaagd": 21,
     "mislukt": 0,
     "falend": [],
     "uitleg": {
-      "uk": "Браузерний стенд пройшов сценарій дошки й чотири розміри профілю з перемиканням усіх каналів (320–1280 px). Повні результати збірки додаються в TESTRESULTATEN.",
-      "nl": "De bordproef en vier profielbreedten met alle kanalen zijn in Chromium geslaagd (320–1280 px). De bouw levert de verdere controles in TESTRESULTATEN."
+      "uk": "Новий тест 21/21 (5/21 на основі); усі зачеплені набори зелені; build успішний.",
+      "nl": "Nieuwe test 21/21 (5/21 op de basis); alle geraakte suites groen; build geslaagd."
     }
   },
   "nietGedaan": {
-    "uk": "Перевірки підключень виконано з тестовими відповідями. Робочі облікові записи й особисті дані власника не використовувалися.",
-    "nl": "De verbindingen zijn met testantwoorden gecontroleerd. Er zijn geen productieaccounts of privégegevens gebruikt."
+    "uk": "Фази 2–5 — окремі завдання. Встановлення не виконувалося.",
+    "nl": "Fasen 2–5 zijn aparte taken. Niet geïnstalleerd."
   },
   "conflicten": [],
-  "aangemaakt": "2026-11-06T14:26:04.381Z"
+  "aangemaakt": "2026-11-13T20:20:13.953Z"
 }

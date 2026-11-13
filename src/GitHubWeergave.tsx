@@ -1,27 +1,34 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import IntegratieStrook from './integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
-import { AlertTriangle, BookOpen, Check, CheckCircle2, CircleDot, Clock, Copy, ExternalLink, GitBranch, GitCommit, GitPullRequest, Github, KeyRound, Loader2, MessageSquarePlus, PlayCircle, Plug, Plus, RefreshCw, Search, ServerCog, Settings, ShieldCheck, Star, Unplug, XCircle } from 'lucide-react';
+import { AlertTriangle, BookOpen, Check, CheckCircle2, CircleDot, Clock, Code2, Copy, ExternalLink, FolderGit2, GitBranch, GitCommit, GitFork, GitPullRequest, Github, KeyRound, Loader2, MessageSquarePlus, Package, PlayCircle, Plug, Plus, Radio, RefreshCw, Search, ServerCog, Settings, ShieldCheck, Star, Unplug, XCircle } from 'lucide-react';
 import { api, ApiError } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import { emitCanonicalNotice } from './canoniek-meldingen';
 import { openVault } from './AIDienstWeergave';
-import { canonicalNavigationUrl } from './canoniek-navigatie';
+import { canonicalNavigationUrl, writeLocalTab } from './canoniek-navigatie';
 import Merk from './merk/Merk';
 import {
-  GITHUB_MCP_URL, GITHUB_OAUTH_FOUTEN, GITHUB_RECHTEN, KOPPEL_PADEN, VIA_NAAM, geldigeMcpUrl, koppelPad, koppelKaartStaat, padKnopActief,
+  GITHUB_MCP_URL, GITHUB_OAUTH_FOUTEN, GITHUB_RECHTEN, KOPPEL_PADEN, VIA_NAAM, geldigeMcpUrl, koppelPad, koppelKaartStaat, padKnopActief, sleutelkluisOntgrendelAdres,
   type GithubKoppelingFeiten, type KaartInvoer, type KoppelPad,
 } from '../shared/github-koppeling';
+import type { GithubEenklikFeiten } from '../shared/github-werkruimte';
 import { staatTekst } from '../shared/kluis-meta';
 import { isVaultDoel, type VaultDoel } from '../shared/geheimen';
 import { GeheimVenster } from './geheimen/GeheimFormulier';
 import { RuimteGeslotenVlak, RuimteStrook } from './RuimteStrook';
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from '../shared/ruimte-weergave';
+import { GhDialoog, ghFoutTekst, ghPost } from './github/github-client';
+import EenklikKoppelPaneel from './github/EenklikKoppelPaneel';
+import CodeEnEditorPaneel from './github/CodeEnEditorPaneel';
+import ZakenEnSamenvoegingenPaneel from './github/ZakenEnSamenvoegingenPaneel';
+import ActiesEnUitgavenPaneel from './github/ActiesEnUitgavenPaneel';
+import SpiegelEnBrugPaneel from './github/SpiegelEnBrugPaneel';
 import './github-weergave.css';
 
 type Tr = (uk: string, nl: string) => string;
-type Repo = { fullName: string; name: string; description: string; language: string; stars: number; forks: number; openIssues: number; private: boolean; archived: boolean; pushedAt: string; url: string; defaultBranch: string; fork: boolean };
+type Repo = { fullName: string; name: string; description: string; language: string; stars: number; forks: number; openIssues: number; private: boolean; archived: boolean; pushedAt: string; url: string; defaultBranch: string; fork: boolean; homepage?: string; topics?: string[] };
 type Item = { number: number; title: string; state: string; isPull: boolean; draft: boolean; author: string; comments: number; labels: { name: string; color: string }[]; updatedAt: string; url: string; body: string };
-type Status = { connected: boolean; login?: string; name?: string; avatar?: string; url?: string; publicRepos?: number; privateRepos?: number; followers?: number };
+type Status = { connected: boolean; login?: string; name?: string; avatar?: string; url?: string; publicRepos?: number; privateRepos?: number; followers?: number; eenklik?: GithubEenklikFeiten };
 type Rate = { remaining: number; reset: number } | undefined;
 
 const ctx = () => ({ service: 'github', tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
@@ -127,7 +134,7 @@ function RepoDetail({ repo, tr }: { repo: string; tr: Tr }) {
       {info.data.license && <span>{info.data.license}</span>}{info.data.latestRelease && <span>🏷 {info.data.latestRelease.tag}</span>}
       {info.data.languages?.length > 0 && <span className="gh-langs">{info.data.languages.map((l: any) => <span key={l.name} className="gh-chip">{l.name} {l.percent}%</span>)}</span>}
     </div>}
-    <div className="gh-tabs" role="tablist">{([['issues', tr('Issues', 'Issues'), CircleDot], ['pulls', 'Pull requests', GitPullRequest], ['commits', 'Commits', GitCommit], ['actions', 'CI / Actions', PlayCircle]] as const).map(([id, label, Icon]) =>
+    <div className="gh-tabs" role="tablist" data-no-edge-swipe>{([['issues', tr('Issues', 'Issues'), CircleDot], ['pulls', 'Pull requests', GitPullRequest], ['commits', 'Commits', GitCommit], ['actions', 'CI / Actions', PlayCircle]] as const).map(([id, label, Icon]) =>
       <button key={id} role="tab" aria-selected={sub === id} className={sub === id ? 'is-on' : ''} onClick={() => setSub(id)}><Icon size={14} />{label}</button>)}
       {(sub === 'issues' || sub === 'pulls') && <select aria-label={tr('Стан', 'Status')} value={state} onChange={(e) => setState(e.target.value as 'open' | 'closed')}><option value="open">{tr('Відкриті', 'Open')}</option><option value="closed">{tr('Закриті', 'Gesloten')}</option></select>}
       {sub === 'issues' && <button className="gh-btn gh-primary" onClick={() => setComposer((v) => !v)}><Plus size={14} />{tr('Новий issue', 'Nieuw issue')}</button>}</div>
@@ -138,7 +145,7 @@ function RepoDetail({ repo, tr }: { repo: string; tr: Tr }) {
       <><p className="gh-sub">{list.data?.summary ? tr(`Усього запусків: ${list.data.summary.total}; серед останніх збійних: ${list.data.summary.failing}`, `Totaal runs: ${list.data.summary.total}; recent mislukt: ${list.data.summary.failing}`) : ''}</p>
         <ul className="gh-list">{(list.data?.runs ?? []).map((r: any) => <li key={r.id}><a href={r.url} target="_blank" rel="noopener noreferrer" className="gh-item">
           {r.conclusion === 'success' ? <CheckCircle2 size={16} className="gh-ok" /> : r.conclusion === 'failure' ? <XCircle size={16} className="gh-bad" /> : <PlayCircle size={16} className="gh-muted" />}
-          <span className="gh-item-main"><strong>{r.name}</strong><span className="gh-sub">{r.branch} · {r.event} · {r.sha} · {r.conclusion || r.status} · {ago(r.updatedAt, tr)}</span></span></a></li>)}</ul></>
+          <span className="gh-item-main"><strong>{r.name}</strong><span className="gh-sub">{r.branch} · {r.event} · {String(r.sha || '').slice(0, 7)} · {r.conclusion || r.status} · {ago(r.updatedAt, tr)}</span></span></a></li>)}</ul></>
     ) : <><ItemList items={list.data?.items ?? []} tr={tr} /></>}
   </section>;
 }
@@ -290,6 +297,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
   const sleutel = feiten?.sleutel ?? null;
   const [bezig, setBezig] = useState('');
   const [actieFout, setActieFout] = useState('');
+  const [actieFoutCode, setActieFoutCode] = useState('');
   const [kluisDoel, setKluisDoel] = useState<VaultDoel | null>(null);
   // Resultaat van de terugkeer van GitHub: de server zette alleen een CODE in de adresbalk (nooit een token of een code van
   // GitHub). Die lezen we één keer en halen we daarna uit de URL weg.
@@ -309,7 +317,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
 
   /** Een weg echt starten. De server antwoordt met het adres van GitHub; daar gaat de browser naartoe. */
   const start = async (pad: KoppelPad) => {
-    setBezig(pad.id); setActieFout('');
+    setBezig(pad.id); setActieFout(''); setActieFoutCode('');
     try {
       if (pad.actie === 'oauth') {
         const uit = await call('oauth/start');
@@ -319,7 +327,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
         return;
       }
       if (pad.actie === 'app') { await call('app/verbinden', {}); onHerlaad(); }
-    } catch (e) { setActieFout(errorText(e, tr)); } finally { setBezig(''); }
+    } catch (e) { setActieFoutCode(foutCode(e)); setActieFout(errorText(e, tr)); } finally { setBezig(''); }
   };
 
   /** Ontkoppelen: de server trekt de token bij GitHub in (OAuth) en verwijdert het record. */
@@ -327,13 +335,13 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
     const weg = staat.via === 'app' ? 'app' : 'oauth';
     if (staat.via === 'pat' || !staat.via) { openVault(); return; }
     if (!window.confirm(tr('Відключити GitHub і відкликати токен на GitHub?', 'GitHub ontkoppelen en de token bij GitHub intrekken?'))) return;
-    setBezig('ontkoppel'); setActieFout('');
-    try { await call('ontkoppelen', { weg }); onHerlaad(); } catch (e) { setActieFout(errorText(e, tr)); } finally { setBezig(''); }
+    setBezig('ontkoppel'); setActieFout(''); setActieFoutCode('');
+    try { await call('ontkoppelen', { weg }); onHerlaad(); } catch (e) { setActieFoutCode(foutCode(e)); setActieFout(errorText(e, tr)); } finally { setBezig(''); }
   };
 
   const vernieuw = async () => {
-    setBezig('vernieuw'); setActieFout('');
-    try { await call('oauth/vernieuwen'); onHerlaad(); } catch (e) { setActieFout(errorText(e, tr)); } finally { setBezig(''); }
+    setBezig('vernieuw'); setActieFout(''); setActieFoutCode('');
+    try { await call('oauth/vernieuwen'); onHerlaad(); } catch (e) { setActieFoutCode(foutCode(e)); setActieFout(errorText(e, tr)); } finally { setBezig(''); }
   };
 
   const termijnTekst = (ms: number) => {
@@ -354,6 +362,7 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
     fout: tr('Не вдалося перевірити підключення', 'Koppeling kon niet worden gecontroleerd'),
   };
   const Teken = staat.toon === 'ok' ? CheckCircle2 : staat.toon === 'waarschuwing' ? Clock : staat.toon === 'fout' ? XCircle : Loader2;
+  const kluisDicht = staat.reden === 'SLEUTELKLUIS_GESLOTEN' || terugkeer === 'SLEUTELKLUIS_GESLOTEN' || actieFoutCode === 'SLEUTELKLUIS_GESLOTEN';
   return <section className='gh-card gh-koppel' aria-label='GitHub'>
     <header className='gh-koppel-kop'>
       <Merk merk='github' naam='GitHub' maat={40} titel='GitHub' vorm='tegel' />
@@ -375,6 +384,9 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
     {staat.reden ? <Notice kind='error'>{codeTekst(staat.reden, tr)}</Notice> : null}
     {terugkeer && terugkeer !== 'ok' ? <Notice kind='error'>{codeTekst(terugkeer, tr)}</Notice> : null}
     {actieFout ? <Notice kind='error'>{actieFout}</Notice> : null}
+    {kluisDicht ? <div className='gh-actions'>
+      <a className='gh-btn gh-primary' href={sleutelkluisOntgrendelAdres(window.location.origin)}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</a>
+    </div> : null}
 
     {/* De weg waarlangs de server nu echt praat, met termijn en toegekende права — allemaal feiten van de server. */}
     {feiten?.verbinding?.via ? <dl className='gh-feiten'>
@@ -465,6 +477,306 @@ function KoppelKaart({ tr, invoer, onHerlaad, ruimte, rate }: { tr: Tr; invoer: 
   </section>;
 }
 
+function RepoWerkbalk({
+  repos,
+  actieveRepo,
+  tab,
+  tr,
+  onKiesRepo,
+  onVernieuwRepos,
+  onGaNaarTab,
+}: {
+  repos: Repo[];
+  actieveRepo: string;
+  tab: string;
+  tr: Tr;
+  onKiesRepo: (fullName: string) => void;
+  onVernieuwRepos: () => void;
+  onGaNaarTab: (doelTab: string) => void;
+}) {
+  const huidig = useMemo(() => repos.find((r) => r.fullName === actieveRepo) ?? null, [repos, actieveRepo]);
+  const [nieuwOpen, setNieuwOpen] = useState(false);
+  const [nieuwNaam, setNieuwNaam] = useState('');
+  const [nieuwOmschrijving, setNieuwOmschrijving] = useState('');
+  const [nieuwPrive, setNieuwPrive] = useState(true);
+  const [nieuwInit, setNieuwInit] = useState(true);
+  const [nieuwGitignore, setNieuwGitignore] = useState('');
+  const [nieuwLicentie, setNieuwLicentie] = useState('');
+
+  const [instelOpen, setInstelOpen] = useState(false);
+  const [instelOmschrijving, setInstelOmschrijving] = useState('');
+  const [instelStartpagina, setInstelStartpagina] = useState('');
+  const [instelStandaardTak, setInstelStandaardTak] = useState('');
+  const [instelOnderwerpen, setInstelOnderwerpen] = useState('');
+  const [instelArchief, setInstelArchief] = useState(false);
+
+  const [gesterd, setGesterd] = useState(false);
+  const [bezigActie, setBezigActie] = useState('');
+  const [fout, setFout] = useState('');
+
+  const openInstellingen = () => {
+    if (!huidig) return;
+    setInstelOmschrijving(huidig.description || '');
+    setInstelStartpagina(huidig.homepage || '');
+    setInstelStandaardTak(huidig.defaultBranch || 'main');
+    setInstelOnderwerpen((huidig.topics ?? []).join(', '));
+    setInstelArchief(Boolean(huidig.archived));
+    setFout('');
+    setInstelOpen(true);
+  };
+
+  const maakRepo = async () => {
+    setBezigActie('maken');
+    setFout('');
+    try {
+      const uit = await ghPost<{ repo: Repo }>('repo/create', {
+        name: nieuwNaam.trim(),
+        description: nieuwOmschrijving.trim(),
+        private: nieuwPrive,
+        autoInit: nieuwInit,
+        gitignoreTemplate: nieuwGitignore || undefined,
+        licenseTemplate: nieuwLicentie || undefined,
+      });
+      setNieuwOpen(false);
+      setNieuwNaam('');
+      setNieuwOmschrijving('');
+      onVernieuwRepos();
+      if (uit.repo?.fullName) onKiesRepo(uit.repo.fullName);
+      emitCanonicalNotice({
+        text: tr(`Сховище ${uit.repo?.fullName || ''} створено`, `Opslagplaats ${uit.repo?.fullName || ''} aangemaakt`),
+        kind: 'success',
+        source: 'github',
+        retain: true,
+      });
+    } catch (e) {
+      setFout(ghFoutTekst(e, tr));
+    } finally {
+      setBezigActie('');
+    }
+  };
+
+  const bewaarInstellingen = async () => {
+    if (!actieveRepo) return;
+    setBezigActie('instellen');
+    setFout('');
+    try {
+      const onderwerpen = instelOnderwerpen
+        .split(',')
+        .map((x) => x.trim().toLowerCase())
+        .filter(Boolean);
+      await ghPost('repo/update', {
+        repo: actieveRepo,
+        description: instelOmschrijving,
+        homepage: instelStartpagina,
+        defaultBranch: instelStandaardTak || undefined,
+        topics: onderwerpen,
+        archived: instelArchief,
+      });
+      setInstelOpen(false);
+      onVernieuwRepos();
+      emitCanonicalNotice({
+        text: tr(`Налаштування ${actieveRepo} збережено`, `Instellingen van ${actieveRepo} opgeslagen`),
+        kind: 'success',
+        source: 'github',
+      });
+    } catch (e) {
+      setFout(ghFoutTekst(e, tr));
+    } finally {
+      setBezigActie('');
+    }
+  };
+
+  const wisselSter = async () => {
+    if (!actieveRepo) return;
+    setBezigActie('ster');
+    setFout('');
+    try {
+      const doel = !gesterd;
+      await ghPost('repo/star', { repo: actieveRepo, starred: doel });
+      setGesterd(doel);
+    } catch (e) {
+      setFout(ghFoutTekst(e, tr));
+    } finally {
+      setBezigActie('');
+    }
+  };
+
+  const splitsRepoAf = async () => {
+    if (!actieveRepo) return;
+    if (!window.confirm(tr(`Створити власне відгалуження сховища ${actieveRepo}?`, `Een eigen afsplitsing maken van ${actieveRepo}?`))) return;
+    setBezigActie('fork');
+    setFout('');
+    try {
+      const uit = await ghPost<{ repo: Repo }>('repo/fork', { repo: actieveRepo });
+      onVernieuwRepos();
+      if (uit.repo?.fullName) onKiesRepo(uit.repo.fullName);
+      emitCanonicalNotice({
+        text: tr(`Створено відгалуження ${uit.repo?.fullName || ''}`, `Afsplitsing ${uit.repo?.fullName || ''} aangemaakt`),
+        kind: 'success',
+        source: 'github',
+        retain: true,
+      });
+    } catch (e) {
+      setFout(ghFoutTekst(e, tr));
+    } finally {
+      setBezigActie('');
+    }
+  };
+
+  return <section className="gh-card gh-repo-balk" aria-label={tr('Активне сховище', 'Actieve opslagplaats')}>
+    <div className="gh-werkbalk">
+      <div className="gh-werkbalk-groep">
+        <label className="gh-select-wikkel" aria-label={tr('Активне сховище', 'Actieve opslagplaats')}>
+          <FolderGit2 size={15} />
+          <select value={actieveRepo} onChange={(e) => onKiesRepo(e.target.value)} disabled={repos.length === 0}>
+            {repos.length === 0 ? <option value="">{tr('Немає сховищ', 'Geen opslagplaatsen')}</option> : null}
+            {repos.map((r) => <option key={r.fullName} value={r.fullName}>{r.fullName}{r.private ? ' · 🔒' : ''}</option>)}
+          </select>
+        </label>
+        {huidig ? <span className={huidig.private ? 'gh-chip gh-chip-warn' : 'gh-chip'}>{huidig.private ? tr('приватне', 'besloten') : tr('публічне', 'openbaar')}</span> : null}
+        {huidig?.defaultBranch ? <span className="gh-chip"><GitBranch size={12} /> {huidig.defaultBranch}</span> : null}
+      </div>
+
+      <div className="gh-werkbalk-groep">
+        <button type="button" className="gh-btn gh-primary" onClick={() => { setFout(''); setNieuwOpen(true); }}>
+          <Plus size={14} /> {tr('Нове сховище', 'Nieuwe opslagplaats')}
+        </button>
+        {actieveRepo ? <>
+          <button type="button" className="gh-btn" disabled={Boolean(bezigActie)} onClick={() => void wisselSter()}>
+            <Star size={14} className={gesterd ? 'gh-ok' : ''} /> {gesterd ? tr('Відзначено', 'Gemarkeerd') : tr('Зірочка', 'Ster')}
+          </button>
+          <button type="button" className="gh-btn" disabled={Boolean(bezigActie)} onClick={() => void splitsRepoAf()}>
+            {bezigActie === 'fork' ? <Loader2 size={14} className="gh-spin" /> : <GitFork size={14} />}
+            {tr('Відгалужити', 'Afsplitsen')}
+          </button>
+          <button type="button" className="gh-btn" onClick={openInstellingen}>
+            <Settings size={14} /> {tr('Налаштування сховища', 'Opslagplaatsinstellingen')}
+          </button>
+          <a className="gh-btn" href={`https://github.com/${actieveRepo}`} target="_blank" rel="noopener noreferrer">
+            <ExternalLink size={14} /> GitHub
+          </a>
+        </> : null}
+      </div>
+    </div>
+
+    <GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={onGaNaarTab} />
+
+    {fout && !nieuwOpen && !instelOpen ? <Notice kind="error">{fout}</Notice> : null}
+
+    <GhDialoog open={nieuwOpen} titel={tr('Створити нове сховище на GitHub', 'Nieuwe opslagplaats op GitHub aanmaken')} onSluit={() => setNieuwOpen(false)} tr={tr}>
+      <div className="gh-form">
+        {fout ? <Notice kind="error">{fout}</Notice> : null}
+        <label className="gh-sub" htmlFor="gh-nieuw-repo-naam">{tr('Назва сховища (латинські літери, цифри, дефіс):', 'Naam van de opslagplaats (letters, cijfers, koppelteken):')}</label>
+        <input id="gh-nieuw-repo-naam" value={nieuwNaam} onChange={(e) => setNieuwNaam(e.target.value)} placeholder="mijn-project" spellCheck={false} />
+        <label className="gh-sub" htmlFor="gh-nieuw-repo-omschr">{tr('Короткий опис (необов’язково):', 'Korte beschrijving (optioneel):')}</label>
+        <input id="gh-nieuw-repo-omschr" value={nieuwOmschrijving} onChange={(e) => setNieuwOmschrijving(e.target.value)} placeholder={tr('Призначення сховища', 'Doel van de opslagplaats')} />
+        <div className="gh-keuze-rij">
+          <label className="gh-radio">
+            <input type="radio" checked={nieuwPrive} onChange={() => setNieuwPrive(true)} />
+            <span>{tr('Приватне (лише у вашому ізольованому просторі)', 'Besloten (alleen zichtbaar voor u)')}</span>
+          </label>
+          <label className="gh-radio">
+            <input type="radio" checked={!nieuwPrive} onChange={() => setNieuwPrive(false)} />
+            <span>{tr('Публічне (відкрите всім)', 'Openbaar (voor iedereen leesbaar)')}</span>
+          </label>
+        </div>
+        <label className="gh-radio">
+          <input type="checkbox" checked={nieuwInit} onChange={(e) => setNieuwInit(e.target.checked)} />
+          <span>{tr('Одразу додати початковий файл README.md', 'Direct een startbestand README.md aanmaken')}</span>
+        </label>
+        <div className="gh-werkbalk">
+          <label className="gh-veld-inline">
+            <span>.gitignore:</span>
+            <select value={nieuwGitignore} onChange={(e) => setNieuwGitignore(e.target.value)}>
+              <option value="">{tr('Без шаблону', 'Geen sjabloon')}</option>
+              <option value="Node">Node</option>
+              <option value="Python">Python</option>
+              <option value="Go">Go</option>
+              <option value="Rust">Rust</option>
+            </select>
+          </label>
+          <label className="gh-veld-inline">
+            <span>{tr('Ліцензія:', 'Licentie:')}</span>
+            <select value={nieuwLicentie} onChange={(e) => setNieuwLicentie(e.target.value)}>
+              <option value="">{tr('Без ліцензії', 'Geen licentie')}</option>
+              <option value="mit">MIT</option>
+              <option value="apache-2.0">Apache 2.0</option>
+              <option value="gpl-3.0">GPL 3.0</option>
+              <option value="bsd-3-clause">BSD 3-Clause</option>
+            </select>
+          </label>
+        </div>
+        <div className="gh-actions">
+          <button type="button" className="gh-btn gh-primary" disabled={bezigActie === 'maken' || !nieuwNaam.trim()} onClick={() => void maakRepo()}>
+            {bezigActie === 'maken' ? <Loader2 size={14} className="gh-spin" /> : <Plus size={14} />}
+            {tr('Створити сховище', 'Opslagplaats aanmaken')}
+          </button>
+        </div>
+      </div>
+    </GhDialoog>
+
+    <GhDialoog open={instelOpen} titel={tr(`Налаштування сховища ${actieveRepo}`, `Instellingen van ${actieveRepo}`)} onSluit={() => setInstelOpen(false)} tr={tr}>
+      <div className="gh-form">
+        {fout ? <Notice kind="error">{fout}</Notice> : null}
+        <label className="gh-sub" htmlFor="gh-instel-omschr">{tr('Опис сховища:', 'Beschrijving van de opslagplaats:')}</label>
+        <input id="gh-instel-omschr" value={instelOmschrijving} onChange={(e) => setInstelOmschrijving(e.target.value)} />
+        <label className="gh-sub" htmlFor="gh-instel-url">{tr('Адреса сайту проєкту:', 'Website van het project:')}</label>
+        <input id="gh-instel-url" value={instelStartpagina} onChange={(e) => setInstelStartpagina(e.target.value)} placeholder="https://" spellCheck={false} />
+        <label className="gh-sub" htmlFor="gh-instel-tak">{tr('Типова гілка:', 'Standaardtak:')}</label>
+        <input id="gh-instel-tak" value={instelStandaardTak} onChange={(e) => setInstelStandaardTak(e.target.value)} spellCheck={false} />
+        <label className="gh-sub" htmlFor="gh-instel-topics">{tr('Теми сховища (через кому):', 'Onderwerpen (gescheiden door komma):')}</label>
+        <input id="gh-instel-topics" value={instelOnderwerpen} onChange={(e) => setInstelOnderwerpen(e.target.value)} placeholder="mijn-ruimte, zelfhostend" spellCheck={false} />
+        <label className="gh-radio">
+          <input type="checkbox" checked={instelArchief} onChange={(e) => setInstelArchief(e.target.checked)} />
+          <span>{tr('Перевести сховище в архівний режим (лише для читання)', 'Opslagplaats archiveren (alleen-lezen)')}</span>
+        </label>
+        <div className="gh-actions">
+          <button type="button" className="gh-btn gh-primary" disabled={bezigActie === 'instellen'} onClick={() => void bewaarInstellingen()}>
+            {bezigActie === 'instellen' ? <Loader2 size={14} className="gh-spin" /> : <Check size={14} />}
+            {tr('Зберегти зміни', 'Wijzigingen opslaan')}
+          </button>
+        </div>
+      </div>
+    </GhDialoog>
+  </section>;
+}
+
+function GhAfdelingNav({ tab, tr, onGaNaarTab }: { tab: string; tr: Tr; onGaNaarTab: (t: string) => void }) {
+  const alleAfdelingen: Array<[string, string, typeof Github]> = [
+    ['overview', tr('Огляд', 'Overzicht'), FolderGit2],
+    ['repositories', tr('Сховища', 'Opslagplaatsen'), Github],
+    ['code', tr('Код і редактор', 'Code en editor'), Code2],
+    ['issues', tr('Задачі', 'Vraagstukken'), CircleDot],
+    ['pulls', tr('Запити на злиття', 'Samenvoegingen'), GitPullRequest],
+    ['actions', tr('Конвеєри дій', 'Werkstromen'), PlayCircle],
+    ['releases', tr('Випуски й розгортання', 'Uitgaven en uitrol'), Package],
+    ['sync', tr('Двосторонній міст', 'Tweerichtingsspiegel'), Radio],
+    ['projects', tr('Проєкти', 'Projecten'), BookOpen],
+    ['documentation', tr('Документація', 'Documentatie'), BookOpen],
+    ['research', tr('Пошук', 'Zoeken'), Search],
+    ['activity', tr('Активність', 'Activiteit'), Clock],
+    ['accounts', tr('Підключення', 'Koppeling'), Plug],
+  ];
+  return (
+    <nav className="gh-snel-nav" data-no-edge-swipe aria-label={tr('Розділи робочого простору GitHub', 'Onderdelen van de GitHub-werkruimte')}>
+      {alleAfdelingen.map(([id, naam, Icoon]) => (
+        <button
+          key={id}
+          type="button"
+          className={`gh-snel-pil${tab === id ? ' is-actief' : ''}`}
+          aria-current={tab === id ? 'page' : undefined}
+          onClick={() => onGaNaarTab(id)}
+        >
+          <Icoon size={14} />
+          <span>{naam}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+const WERKRUIMTE_TABS = new Set(['overview', 'repositories', 'code', 'issues', 'pulls', 'actions', 'releases', 'sync', 'documentation']);
+
 export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
   // Koppelkaart: één verzoek met de staat én de gegevens van de sleutel in de kluis (zonder waarde). Daar is `status` dus niet
   // nodig: `koppeling` geeft dezelfde velden terug, plus de sleutel — zo blijft het bij één verzoek per tabblad.
@@ -472,33 +784,55 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
   const koppeling = useCall<GithubKoppelingFeiten>('koppeling', tab === 'accounts' ? {} : null, tr, [tab]);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string>(() => { try { return sessionStorage.getItem('mr.gh.repo') || ''; } catch { return ''; } });
+  const [splitMobielPaneel, setSplitMobielPaneel] = useState<'lijst' | 'detail'>('lijst');
   const pick = useCallback((full: string) => { setSelected(full); try { sessionStorage.setItem('mr.gh.repo', full); } catch { /* geen opslag */ } }, []);
-  const connected = !!status.data?.connected;
-  const needRepos = connected && ['overview', 'repositories', 'documentation'].includes(tab);
-  const repos = useCall<{ repos: Repo[]; hasMore: boolean }>('repos', needRepos ? {} : null, tr, [tab, connected]);
-  const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return (repos.data?.repos ?? []).filter((r) => !q || `${r.fullName} ${r.description} ${r.language}`.toLowerCase().includes(q)); }, [repos.data, query]);
-
   const ruimteLang: 'uk' | 'nl' = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
+  const gaNaarTab = useCallback((doelTab: string) => {
+    writeLocalTab('github', doelTab, ruimteLang);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, [ruimteLang]);
+
+  const connected = !!status.data?.connected;
+  const needRepos = connected && WERKRUIMTE_TABS.has(tab);
+  const repos = useCall<{ repos: Repo[]; hasMore: boolean }>('repos', needRepos ? {} : null, tr, [tab, connected]);
+  const alleRepos = repos.data?.repos ?? [];
+
+  useEffect(() => {
+    if (!connected || alleRepos.length === 0) return;
+    if (!selected || !alleRepos.some((r) => r.fullName === selected)) {
+      pick(alleRepos[0].fullName);
+    }
+  }, [connected, alleRepos, selected, pick]);
+
+  const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return alleRepos.filter((r) => !q || `${r.fullName} ${r.description} ${r.language}`.toLowerCase().includes(q)); }, [alleRepos, query]);
+
   if (status.loading && !status.data) return <div className="gh-root"><Busy tr={tr} /></div>;
   // Poort dicht: geen «koppel GitHub»-uitnodiging (die zou liegen), maar de echte reden uit de kern.
   if (status.gesloten) return <div className="gh-root"><RuimteGeslotenVlak gesloten={status.gesloten} lang={ruimteLang} /></div>;
   // Het tabblad «Облікові записи» is er juist voor het koppelen: het toont de kaart ook als er nog geen token is of GitHub hem weigerde.
   if (tab === 'accounts') return <div className="gh-root"><IntegratieStrook dienst='github' />
     <RuimteStrook feiten={koppeling.ruimte ?? null} lang={ruimteLang} />
-    {koppeling.gesloten ? <RuimteGeslotenVlak gesloten={koppeling.gesloten} lang={ruimteLang} /> : null}
-    <KoppelKaart tr={tr} onHerlaad={koppeling.reload} ruimte={koppeling.ruimte ?? null} rate={koppeling.rate}
-      invoer={{ laden: koppeling.loading && !koppeling.data, fout: koppeling.code, feiten: koppeling.data }} />
+    <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
+    {koppeling.gesloten ? <RuimteGeslotenVlak gesloten={koppeling.gesloten} lang={ruimteLang} /> : <>
+      <EenklikKoppelPaneel tr={tr} gekoppeld={Boolean(koppeling.data?.connected)} login={koppeling.data?.login} eenklik={koppeling.data?.eenklik} onGekoppeld={koppeling.reload} />
+      <KoppelKaart tr={tr} onHerlaad={koppeling.reload} ruimte={koppeling.ruimte ?? null} rate={koppeling.rate}
+        invoer={{ laden: koppeling.loading && !koppeling.data, fout: koppeling.code, feiten: koppeling.data }} />
+    </>}
   </div>;
-  if (status.error) return <div className="gh-root"><Notice kind="error">{status.error}</Notice><button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div>;
-  if (!connected) return <div className="gh-root"><section className="gh-card gh-connect">
-    <Github size={38} /><h2>{tr('Підключіть GitHub', 'Koppel GitHub')}</h2>
-    <p>{tr('Токен зберігається лише в зашифрованому сховищі ключів і ніколи не потрапляє в браузер чи в ШІ. Створіть персональний токен (classic: repo, read:project; або fine-grained з доступом до потрібних репозиторіїв) і додайте його.', 'De token staat alleen in de versleutelde sleutelkluis en komt nooit in de browser of bij de AI. Maak een persoonlijke token (classic: repo, read:project; of fine-grained met toegang tot de gewenste repositories) en voeg hem toe.')}</p>
-    <ol><li>{tr('Відкрийте github.com → Settings → Developer settings → Personal access tokens.', 'Open github.com → Settings → Developer settings → Personal access tokens.')}</li><li>{tr('Кабінет → API-платформа → Сховище ключів → призначення «github».', 'Account → API-platform → Sleutelkluis → doel "github".')}</li><li>{tr('Поверніться сюди й натисніть «Перевірити».', 'Kom terug en klik op "Controleren".')}</li></ol>
-    {/* G1 (audit 19.10.2026): één tokenbron — deze pagina én de GitHub-instrumenten van de AI-koppelingen lezen dezelfde kluissleutel (doel «github»). */}
-    <p className="gh-sub">{tr('Той самий ключ використовують і інструменти GitHub у підключеннях ШІ (мій простір → Підключені ШІ): окремого токена для них немає.', 'Dezelfde sleutel gebruiken ook de GitHub-instrumenten van de AI-koppelingen: er is geen aparte token voor.')}</p>
-    <div className="gh-actions"><button className="gh-btn gh-primary" onClick={openVault}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis openen')}</button><button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Перевірити', 'Controleren')}</button>
-      <a className="gh-btn" href={canonicalNavigationUrl('github', 'accounts', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')}><Plug size={14} />{tr('Картка підключення', 'Koppelkaart')}</a></div>
-  </section></div>;
+  if (status.error) return <div className="gh-root"><Notice kind="error">{status.error}</Notice><div className="gh-actions">{status.code === 'SLEUTELKLUIS_GESLOTEN' ? <a className="gh-btn gh-primary" href={sleutelkluisOntgrendelAdres(window.location.origin)}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</a> : null}<button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Повторити', 'Opnieuw')}</button></div></div>;
+  if (!connected) return <div className="gh-root">
+    <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
+    <EenklikKoppelPaneel tr={tr} gekoppeld={false} eenklik={status.data?.eenklik} onGekoppeld={status.reload} />
+    <section className="gh-card gh-connect">
+      <Github size={38} /><h2>{tr('Підключіть GitHub', 'Koppel GitHub')}</h2>
+      <p>{tr('Токен зберігається лише в зашифрованому сховищі ключів і ніколи не потрапляє в браузер чи в ШІ. Створіть персональний токен (classic: repo, read:project; або fine-grained з доступом до потрібних репозиторіїв) і додайте його.', 'De token staat alleen in de versleutelde sleutelkluis en komt nooit in de browser of bij de AI. Maak een persoonlijke token (classic: repo, read:project; of fine-grained met toegang tot de gewenste repositories) en voeg hem toe.')}</p>
+      <ol><li>{tr('Відкрийте github.com → Settings → Developer settings → Personal access tokens.', 'Open github.com → Settings → Developer settings → Personal access tokens.')}</li><li>{tr('Кабінет → API-платформа → Сховище ключів → призначення «github».', 'Account → API-platform → Sleutelkluis → doel "github".')}</li><li>{tr('Поверніться сюди й натисніть «Перевірити».', 'Kom terug en klik op "Controleren".')}</li></ol>
+      {/* G1 (audit 19.10.2026): één tokenbron — deze pagina én de GitHub-instrumenten van de AI-koppelingen lezen dezelfde kluissleutel (doel «github»). */}
+      <p className="gh-sub">{tr('Той самий ключ використовують і інструменти GitHub у підключеннях ШІ (мій простір → Підключені ШІ): окремого токена для них немає.', 'Dezelfde sleutel gebruiken ook de GitHub-instrumenten van de AI-koppelingen: er is geen aparte token voor.')}</p>
+      <div className="gh-actions"><button className="gh-btn gh-primary" onClick={openVault}><KeyRound size={14} />{tr('Відкрити сховище ключів', 'Sleutelkluis openen')}</button><button className="gh-btn" onClick={status.reload}><RefreshCw size={14} />{tr('Перевірити', 'Controleren')}</button>
+        <a className="gh-btn" href={canonicalNavigationUrl('github', 'accounts', tr('uk', 'nl') === 'uk' ? 'uk' : 'nl')}><Plug size={14} />{tr('Картка підключення', 'Koppelkaart')}</a></div>
+    </section>
+  </div>;
 
   const s = status.data as Status;
   const Header = <header className="gh-me">{s.avatar ? <img src={s.avatar} alt="" width={40} height={40} /> : <Github size={40} />}<div><strong>{s.name || s.login}</strong><span className="gh-sub">@{s.login} · {s.publicRepos} {tr('публічних', 'publiek')} · {s.privateRepos} {tr('приватних', 'privé')}</span></div>
@@ -506,20 +840,81 @@ export default function GitHubView({ tab, tr }: { tab: string; tr: Tr }) {
 
   const repoList = <>
     <label className="gh-search"><Search size={14} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr('Фільтр репозиторіїв…', 'Repositories filteren…')} aria-label={tr('Фільтр репозиторіїв', 'Repositories filteren')} /></label>
-    {repos.error ? <Notice kind="error">{repos.error}</Notice> : repos.loading && !repos.data ? <Busy tr={tr} /> : filtered.length ? <div className="gh-repos">{filtered.map((r) => <RepoRow key={r.fullName} r={r} active={selected === r.fullName} onPick={() => pick(r.fullName)} tr={tr} />)}</div> : <Empty>{tr('Репозиторіїв не знайдено.', 'Geen repositories gevonden.')}</Empty>}
+    {repos.error ? <Notice kind="error">{repos.error}</Notice> : repos.loading && !repos.data ? <Busy tr={tr} /> : filtered.length ? <div className="gh-repos">{filtered.map((r) => <RepoRow key={r.fullName} r={r} active={selected === r.fullName} onPick={() => { pick(r.fullName); setSplitMobielPaneel('detail'); }} tr={tr} />)}</div> : <Empty>{tr('Репозиторіїв не знайдено.', 'Geen repositories gevonden.')}</Empty>}
   </>;
+
+  const geenRepoKaart = repos.loading && !repos.data
+    ? <section className="gh-card"><Busy tr={tr} /></section>
+    : <section className="gh-card"><Empty>{tr('Оберіть сховище у верхній панелі або створіть перше натиском на «Нове сховище».', 'Kies een opslagplaats in de bovenbalk of maak uw eerste aan met «Nieuwe opslagplaats».')}</Empty></section>;
 
   return <div className="gh-root">
     {Header}
+    {WERKRUIMTE_TABS.has(tab) ? (
+      <RepoWerkbalk
+        repos={alleRepos}
+        actieveRepo={selected}
+        tab={tab}
+        tr={tr}
+        onKiesRepo={pick}
+        onVernieuwRepos={repos.reload}
+        onGaNaarTab={gaNaarTab}
+      />
+    ) : (
+      <section className="gh-card gh-repo-balk"><GhAfdelingNav tab={tab} tr={tr} onGaNaarTab={gaNaarTab} /></section>
+    )}
     {tab === 'overview' && <div className="gh-grid">
-      <section className="gh-card"><h3>{tr('Останні репозиторії', 'Recente repositories')}</h3>{repos.loading && !repos.data ? <Busy tr={tr} /> : <div className="gh-repos">{(repos.data?.repos ?? []).slice(0, 6).map((r) => <RepoRow key={r.fullName} r={r} active={selected === r.fullName} onPick={() => pick(r.fullName)} tr={tr} />)}</div>}</section>
+      <section className="gh-card"><h3>{tr('Останні репозиторії', 'Recente repositories')}</h3>{repos.loading && !repos.data ? <Busy tr={tr} /> : <div className="gh-repos">{alleRepos.slice(0, 6).map((r) => <RepoRow key={r.fullName} r={r} active={selected === r.fullName} onPick={() => pick(r.fullName)} tr={tr} />)}</div>}</section>
       <ActivityCard tr={tr} limit={6} />
       {selected && <section className="gh-card gh-wide"><RepoDetail repo={selected} tr={tr} /></section>}
     </div>}
-    {tab === 'repositories' && <div className="gh-split"><section className="gh-card">{repoList}</section><section className="gh-card">{selected ? <RepoDetail repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій зліва.', 'Kies links een repository.')}</Empty>}</section></div>}
+    {tab === 'repositories' && <>
+      <div className="gh-mobiel-wissel">
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'lijst' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('lijst')}>
+          <FolderGit2 size={14} /> {tr('Список сховищ', 'Opslagplaatsen')} ({filtered.length})
+        </button>
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'detail' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('detail')}>
+          <Github size={14} /> {selected ? selected.split('/').pop() : tr('Деталі сховища', 'Details')}
+        </button>
+      </div>
+      <div className="gh-split" data-mobiel-paneel={splitMobielPaneel}>
+        <section className={`gh-card gh-split-lijst${splitMobielPaneel !== 'lijst' ? ' is-verborgen-mobiel' : ''}`}>{repoList}</section>
+        <section className={`gh-card gh-split-detail${splitMobielPaneel !== 'detail' ? ' is-verborgen-mobiel' : ''}`}>
+          <div className="gh-mobiel-terug-rij">
+            <button type="button" className="gh-btn" onClick={() => setSplitMobielPaneel('lijst')}>
+              <FolderGit2 size={14} /> {tr('← До списку сховищ', '← Naar lijst van opslagplaatsen')}
+            </button>
+          </div>
+          {selected ? <RepoDetail repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій зліва.', 'Kies links een repository.')}</Empty>}
+        </section>
+      </div>
+    </>}
+    {tab === 'code' && (selected ? <CodeEnEditorPaneel repo={selected} tr={tr} onOpenPulls={() => gaNaarTab('pulls')} /> : geenRepoKaart)}
+    {(tab === 'issues' || tab === 'pulls') && (selected ? <ZakenEnSamenvoegingenPaneel tab={tab} repo={selected} tr={tr} /> : geenRepoKaart)}
+    {(tab === 'actions' || tab === 'releases') && (selected ? <ActiesEnUitgavenPaneel tab={tab} repo={selected} tr={tr} /> : geenRepoKaart)}
+    {tab === 'sync' && <SpiegelEnBrugPaneel repo={selected} tr={tr} onKiesRepo={pick} />}
     {tab === 'projects' && <ProjectsCard tr={tr} />}
-    {tab === 'documentation' && <div className="gh-split"><section className="gh-card">{repoList}</section><section className="gh-card">{selected ? <Readme repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій, щоб прочитати README.', 'Kies een repository om de README te lezen.')}</Empty>}</section></div>}
-    {tab === 'research' && <SearchCard tr={tr} onPick={pick} />}
+    {tab === 'documentation' && <>
+      <div className="gh-mobiel-wissel">
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'lijst' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('lijst')}>
+          <FolderGit2 size={14} /> {tr('Список сховищ', 'Opslagplaatsen')} ({filtered.length})
+        </button>
+        <button type="button" className={`gh-btn${splitMobielPaneel === 'detail' ? ' gh-primary' : ''}`} onClick={() => setSplitMobielPaneel('detail')}>
+          <BookOpen size={14} /> {selected ? `${selected.split('/').pop()} · README` : 'README'}
+        </button>
+      </div>
+      <div className="gh-split" data-mobiel-paneel={splitMobielPaneel}>
+        <section className={`gh-card gh-split-lijst${splitMobielPaneel !== 'lijst' ? ' is-verborgen-mobiel' : ''}`}>{repoList}</section>
+        <section className={`gh-card gh-split-detail${splitMobielPaneel !== 'detail' ? ' is-verborgen-mobiel' : ''}`}>
+          <div className="gh-mobiel-terug-rij">
+            <button type="button" className="gh-btn" onClick={() => setSplitMobielPaneel('lijst')}>
+              <FolderGit2 size={14} /> {tr('← До списку сховищ', '← Naar lijst van opslagplaatsen')}
+            </button>
+          </div>
+          {selected ? <Readme repo={selected} tr={tr} /> : <Empty>{tr('Оберіть репозиторій, щоб прочитати README.', 'Kies een repository om de README te lezen.')}</Empty>}
+        </section>
+      </div>
+    </>}
+    {tab === 'research' && <SearchCard tr={tr} onPick={(full) => { pick(full); gaNaarTab('overview'); }} />}
     {tab === 'activity' && <ActivityCard tr={tr} limit={30} />}
   </div>;
 }
@@ -537,7 +932,7 @@ function ProjectsCard({ tr }: { tr: Tr }) {
 
 function Readme({ repo, tr }: { repo: string; tr: Tr }) {
   const r = useCall<{ name: string; text: string; truncated: boolean; url: string }>('readme', { repo }, tr, [repo]);
-  return <section><header className="gh-detail-head"><h3>{repo} · README</h3>{r.data && <a href={r.data.url} className="gh-btn" target="_blank" rel="noopener noreferrer"><ExternalLink size={14} />GitHub</a>}</header>{r.error ? <Notice kind="error">{r.error}</Notice> : r.loading ? <Busy tr={tr} /> : <pre className="gh-readme">{r.data?.text}{r.data?.truncated ? `\n\n… ${tr('(скорочено)', '(ingekort)')}` : ''}</pre>}</section>;
+  return <section><header className="gh-detail-head"><h3>{repo} · README</h3>{r.data && <a href={r.data.url} className="gh-btn" target="_blank" rel="noopener noreferrer"><ExternalLink size={14} />GitHub</a>}</header>{r.error ? <Notice kind="error">{r.error}</Notice> : r.loading ? <Busy tr={tr} /> : <pre className="gh-readme" data-no-edge-swipe>{r.data?.text}{r.data?.truncated ? `\n\n… ${tr('(скорочено)', '(ingekort)')}` : ''}</pre>}</section>;
 }
 
 function SearchCard({ tr, onPick }: { tr: Tr; onPick: (full: string) => void }) {

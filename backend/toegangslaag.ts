@@ -1,17 +1,20 @@
 import {createHash,createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
+import {limietSleutel} from '../shared/ip-limiet';
 import {db,clearLoginFailures,envKey32,isOwnerEmail,openWithEnvKey,pepperedHash,pogingReserveren,sealWithEnvKey} from '../server/platform';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
-import {STAP_OP_MS,STAP_OP_ONTHOUD_MS,onthoudMagVoorActie,onthoudVastleggen,onthoudenSessies,onthoudSessieId,passkeyStapOpGeldig,stapOpFout,stapOpGeldig,stapOpGeldigTot,totpStapOpVastleggen,codewoordStapOpVastleggen,type StapOpAuth} from './stap-op';
+import {STAP_OP_MS,STAP_OP_ONTHOUD_MS,onthoudMagVoorActie,onthoudVastleggen,onthoudenSessies,onthoudSessieId,passkeyStapOpGeldig,stapOpFout,stapOpGeldig,stapOpGeldigTot,stapOpSessieId,totpStapOpVastleggen,codewoordStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {passkeyAantal} from './toegangssleutels';
 import {codewoordHeeft, codewoordControleren} from './codewoord';
 import {meld} from './melder';
+import {meldBeveiligingsWijziging} from './beveiliging-meldingen'; /* SEC-002 privacy-logboek-03 */
 import {herstelcodeGebruiktMelden} from './nieuw-apparaat';
 import {apparaat} from '../server/platform/audit';
 import {huidigeContext} from '../server/platform/context';
 import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStapOpFout} from './toegang-context';
 import {kritiekeActie} from '../shared/kritieke-acties';
 import {stapOpKanalen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
+import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
 
 const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
@@ -23,7 +26,7 @@ type Ontkoppeld={ontkoppeldAt?:number;herstelTot?:number;ontkoppeldDoor?:string;
 type Door={userId:string;beheer:boolean};
 type Binding={id:string;userId:string;method:LoginMethodId;providerSubject:string;email:string;status:'active'|'disabled'|'pending';lastUsedAt:number;createdAt:number;updatedAt:number}&Ontkoppeld;
 type PasswordRecord={id:string;userId:string;algorithm:'scrypt';n:number;r:number;p:number;salt:string;hash:string;mustChange:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
-type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number;/** audit-fix 2: nieuw geheim tijdens vervangen; het oude blijft geldig tot dit bevestigd is */pendingSecretEnc?:string;pendingAt?:number};
+type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confirmed:boolean;createdAt:number;updatedAt:number;/** fase 3: laatst gebruikt tijdvak (replaybescherming) */lastStep?:number;/** audit-fix 2: nieuw geheim tijdens vervangen; het oude blijft geldig tot dit bevestigd is */pendingSecretEnc?:string;pendingAt?:number;/** SEC-002 (aanmelden-01): sessie die de eerste inschrijving (met step-up) begon; alleen zij mag bevestigen */startSessie?:string};
 /** bekekenOp: de gebruiker bevestigde «Я зберіг коди» (de codes zelf worden maar één keer getoond). */
 // Herstelcodes (GitHub-achtig): de codes zelf alleen gehasht (HMAC + pepper). Voor het overzicht per code: volgnummer en de
 // laatste 2 tekens (hint, 8 bits van 48: raden blijft 2^40 per code, met lockout), wanneer gebruikt, en of de set is ingetrokken.
@@ -252,16 +255,16 @@ async function zetTerug(userId:string,items:Awaited<ReturnType<typeof herstelbaa
   }
 }
 /** TOTP-code of ongebruikte herstelcode controleren, met atomische lockout (audit-fix 7). */
-async function codeControleren(userId:string,row:TotpRecord|null,code:string,herstelcodeActie:string|false='bevestigen'):Promise<'ok'|'ongeldig'|'hergebruikt'|'sleutel'|'geblokkeerd'>{
+async function codeControleren(userId:string,row:TotpRecord|null,code:string,herstelcodeActie:string|false='bevestigen'):Promise<{uitkomst:'ok'|'ongeldig'|'hergebruikt'|'sleutel'|'geblokkeerd';wachtSeconden:number}>{
   const subject=`stap-op:${userId}`;
   const poging=await pogingReserveren(subject);
-  if(!poging.toegestaan)return'geblokkeerd';
+  if(!poging.toegestaan)return{uitkomst:'geblokkeerd',wachtSeconden:poging.wachtSeconden};
   const uitkomst=row?await totpGebruiken(row,code):'ongeldig';
-  if(uitkomst==='sleutel')return'sleutel';
-  if(uitkomst==='ok'||(herstelcodeActie!==false&&await herstelcodeGebruiken(userId,code,herstelcodeActie))){await clearLoginFailures(subject);return'ok';}
-  return uitkomst;
+  if(uitkomst==='sleutel')return{uitkomst:'sleutel',wachtSeconden:0};
+  if(uitkomst==='ok'||(herstelcodeActie!==false&&await herstelcodeGebruiken(userId,code,herstelcodeActie))){await clearLoginFailures(subject);return{uitkomst:'ok',wachtSeconden:0};}
+  return{uitkomst,wachtSeconden:0};
 }
-const codeFout=(uitkomst:string)=>uitkomst==='geblokkeerd'?{code:'ACCESS_LOCKED_TEMPORARILY',http:429}:uitkomst==='sleutel'?{code:'ACCESS_TOTP_KEY_MISSING',http:503}:uitkomst==='hergebruikt'?{code:'ACCESS_TOTP_REUSED',http:400}:{code:'ACCESS_TOTP_CODE_REQUIRED',http:400};
+const codeFout=(uitkomst:string,wachtSeconden=0)=>uitkomst==='geblokkeerd'?{code:'ACCESS_LOCKED_TEMPORARILY',http:429,extra:wachtSeconden>0?{retryAfter:wachtSeconden}:undefined}:uitkomst==='sleutel'?{code:'ACCESS_TOTP_KEY_MISSING',http:503,extra:undefined}:uitkomst==='hergebruikt'?{code:'ACCESS_TOTP_REUSED',http:400,extra:undefined}:{code:'ACCESS_TOTP_CODE_REQUIRED',http:400,extra:undefined};
 const meldOntkoppeld=(userId:string,method:string,doorBeheer=false)=>meld(userId,'access_method_unlinked',
   'Спосіб входу від’єднано / Aanmeldmethode ontkoppeld',
   `${doorBeheer?'Адміністратор від’єднав':'Від’єднано'} спосіб входу «${method}». Протягом 7 днів його можна відновити на сторінці безпеки. Якщо це були не ви — відновіть і змініть доступ. / ${doorBeheer?'Een beheerder heeft':'Er is'} aanmeldmethode "${method}" ontkoppeld. Binnen 7 dagen kunt u die terugzetten op de beveiligingspagina. Was u dit niet: zet hem terug en controleer uw toegang.`);
@@ -392,7 +395,10 @@ export const accessPlanePolicySelfTest=()=>[
 ];
 
 /** Lockout-onderwerp per (e-mail, IP) (audit-fix 10): een aanvaller kan zo niet iemands account wereldwijd blokkeren. */
-const wachtwoordOnderwerp=(email:string,ip:string)=>`wachtwoord:${email}:${createHash('sha256').update(`lockout-ip:${ip||'onbekend'}`).digest('hex').slice(0,24)}`;
+/** SEC-002 (aanmelden-08): vaste nep-rij voor de scrypt-ronde bij een onbekend adres (zelfde kosten als een echte controle; klopt nooit). */
+const LEEG_WACHTWOORD={salt:'c2VjLTAwMi1nZWVuLWFjY291bnQ',hash:'',n:16384,r:8,p:1} as unknown as PasswordRecord;
+/* SEC-002 (http-rand-05): bij IPv6 het /64-net in plaats van het losse adres (shared/ip-limiet.ts) — anders gaf elk volgend adres uit het eigen net van de aanvaller een verse teller en een verse blokkade. IPv4: ongewijzigd (zelfde onderwerp als voorheen). */
+const wachtwoordOnderwerp=(email:string,ip:string)=>`wachtwoord:${email}:${createHash('sha256').update(`lockout-ip:${limietSleutel(ip)||'onbekend'}`).digest('hex').slice(0,24)}`;
 export async function verifyPasswordLogin(email:string,password:string,totp='',ip='',dienst=''){
   const clean=String(email||'').trim().toLowerCase();
   if(!clean||!password)return{status:'invalid' as const,code:'ACCESS_CREDENTIALS_INVALID',http:400};
@@ -401,18 +407,22 @@ export async function verifyPasswordLogin(email:string,password:string,totp='',i
   const users=await db.list<{id:string;email:string;status:string;role:string;name?:string}>('users',{filter:{email:clean},limit:5});
   const user=users.items[0];
   const totpRow=user?await totpFor(user.id):null;
-  // Geen MFA-orakel: heeft het account TOTP en is er geen code meegestuurd, dan vragen we de code VÓÓR de
-  // wachtwoordcontrole. Of het wachtwoord klopt, blijkt pas samen met een geldige code.
-  if(totpRow?.confirmed&&!totp)return{status:'mfa' as const,code:'MFA_REQUIRED',http:200,user:undefined};
+  // SEC-002 (aanmelden-08): geen aparte toestand «MFA_REQUIRED» meer vóór de wachtwoordcontrole. Die verried aan een anonieme
+  // beller welke adressen een account met TOTP hebben (200 'mfa' tegenover 401) en telde niet mee voor de lockout.
+  // Nu: de poging wordt gereserveerd vóór elke vertakking; e-mail, wachtwoord en code komen in één verzoek, en elk ander geval
+  // (onbekend adres, fout wachtwoord, code ontbreekt of is fout) geeft hetzelfde antwoord ACCESS_CREDENTIALS_INVALID.
   // Atomische lockout per (e-mail, IP), ook voor onbekende adressen (gedrag verraadt niets).
   const subject=wachtwoordOnderwerp(clean,ip);
   const poging=await pogingReserveren(subject);
   if(!poging.toegestaan)return{status:'locked' as const,code:'ACCESS_LOCKED_TEMPORARILY',http:429,retryAfter:poging.wachtSeconden};
   const failed=async(code:string)=>({status:'invalid' as const,code,http:401,retryAfter:0});
-  if(!user||user.status==='blocked'||user.status==='deleted')return failed('ACCESS_CREDENTIALS_INVALID');
-  const record=await passwordFor(user.id);
-  if(!record||!await verifyPassword(record,password))return failed('ACCESS_CREDENTIALS_INVALID');
+  const record=user&&user.status!=='blocked'&&user.status!=='deleted'?await passwordFor(user.id):null;
+  // Zonder account of wachtwoordrij toch één scrypt-ronde: de antwoordtijd verraadt dan niet of het adres bestaat.
+  if(!record){await verifyPassword(LEEG_WACHTWOORD,password).catch(()=>false);return failed('ACCESS_CREDENTIALS_INVALID');}
+  if(!user||!await verifyPassword(record,password))return failed('ACCESS_CREDENTIALS_INVALID');
   if(totpRow?.confirmed){
+    // Of het wachtwoord klopt, blijkt pas samen met een geldige code (geen wachtwoord-orakel zonder tweede factor).
+    if(!totp)return failed('ACCESS_CREDENTIALS_INVALID');
     const uitkomst=await totpGebruiken(totpRow,totp);
     if(uitkomst==='sleutel')return{status:'unavailable' as const,code:'ACCESS_TOTP_KEY_MISSING',http:503};
     if(uitkomst!=='ok'){
@@ -449,13 +459,14 @@ const ipVan=(event:Record<string,unknown>)=>{const h=(event.headers||{}) as Reco
 export function createAccessPlaneRoutes(deps:{
   requireSession:(event:Record<string,unknown>,body:unknown)=>Promise<SessionAuth>;
   respond:(data:unknown,status?:number)=>any;
-  fail:(message:string,status?:number)=>any;
+  fail:(message:string,status?:number,extra?:{retryAfter?:number;maxAttempts?:number;windowSec?:number})=>any;
   audit:(userId:string,action:string,result:string,details?:Record<string,unknown>)=>Promise<unknown>;
   body:(body:unknown)=>Record<string,unknown>;
 }){
   const gate=async(event:Record<string,unknown>,body:unknown)=>{
     const auth=await deps.requireSession(event,body);
-    if('errorCode'in auth||auth.user.status!=='approved')return null;
+    /* IDENTITEIT-012: та сама умова, що в ключах доступу й сховищі ключів (shared/eigen-toegang.ts). */
+    if('errorCode'in auth||!magEigenToegang(auth.user))return null;
     return auth;
   };
   const ownerGate=async(event:Record<string,unknown>,body:unknown)=>{
@@ -482,7 +493,7 @@ export function createAccessPlaneRoutes(deps:{
         if(!herstel||herstel.remaining<=0)return deps.fail('STEP_UP_RECOVERY_NOT_ENROLLED',400);
         if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
         const poging=await pogingReserveren(`stap-op:${auth.user.id}`);
-        if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+        if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429,{retryAfter:poging.wachtSeconden});
         // actie: label uit de vaste lijst (toegang-context ACTIES); onbekend → 'onbekend'. Host = dienst van de sessie.
         const actie=actieVan(body.actie);
         const sleutel=await herstelcodeGebruiken(auth.user.id,String(body.code||''),actie,auth.service,false);
@@ -499,8 +510,8 @@ export function createAccessPlaneRoutes(deps:{
       const row=await totpFor(auth.user.id);
       if(!row?.confirmed)return deps.fail('STEP_UP_TOTP_NOT_ENROLLED',400);
       // Audit-fix 7: poging atomisch gereserveerd vóór de controle (geen race rond de lockout); alleen TOTP, geen herstelcode.
-      const uitkomst=await codeControleren(auth.user.id,row,String(body.code||''),false);
-      if(uitkomst==='geblokkeerd')return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+      const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,row,String(body.code||''),false);
+      if(uitkomst==='geblokkeerd')return deps.fail('ACCESS_LOCKED_TEMPORARILY',429,{retryAfter:wachtSeconden});
       if(uitkomst==='sleutel')return deps.fail('ACCESS_TOTP_KEY_MISSING',503);
       if(uitkomst!=='ok'){await deps.audit(auth.user.id,'access.step-up','failure',{reden:uitkomst});return deps.fail(uitkomst==='hergebruikt'?'ACCESS_TOTP_REUSED':'ACCESS_TOTP_INVALID',400);}
       await totpStapOpVastleggen(auth as unknown as StapOpAuth);
@@ -551,6 +562,7 @@ export function createAccessPlaneRoutes(deps:{
       const onthoudTot=await onthoudVastleggen(auth as unknown as StapOpAuth);
       if(!onthoudTot)return deps.fail('STEP_UP_SESSIE_VEREIST',403);
       await deps.audit(auth.user.id,'access.step-up.onthouden','success',{actie,onthoudTot});
+      await meldBeveiligingsWijziging(auth.user.id,'stap-op-onthouden',{tot:new Date(Number(onthoudTot)).toISOString().slice(0,16).replace('T',' ')+' UTC'});
       return deps.respond({ok:true,onthouden:true,onthoudTot});
     }],
     'POST /api/owner/access/catalog':[async()=>{
@@ -565,14 +577,15 @@ export function createAccessPlaneRoutes(deps:{
     'POST /api/owner/access/password/login':[async(ctx: any)=>{
       const body=deps.body(ctx.body);
       const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event),String(body.service||''));
-      if(result.status==='ok'||result.status==='mfa')return deps.respond({ok:result.status==='ok',status:result.status,code:result.code,user:result.user,sessionIssued:false});
-      return deps.fail(result.code,result.http);
+      // SEC-002 (aanmelden-08): geen tussenstand 'mfa' meer; alles behalve 'ok' is een gewone weigering.
+      if(result.status==='ok')return deps.respond({ok:true,status:result.status,code:result.code,user:result.user,sessionIssued:false});
+      return deps.fail(result.code,result.http,'retryAfter'in result&&result.retryAfter?{retryAfter:result.retryAfter}:undefined);
     }],
     'POST /api/owner/auth/password/login':[async(ctx: any)=>{
       const body=deps.body(ctx.body);
       const result=await verifyPasswordLogin(String(body.email||''),String(body.password||''),String(body.totp||body.code||''),ipVan(ctx.event),String(body.service||''));
-      if(result.status==='mfa')return deps.respond({ok:false,mfaRequired:true,error:result.code,reasonCode:result.code,sessionIssued:false,sessionCreated:false});
-      if(result.status!=='ok'||!result.user)return deps.fail(result.code,result.http||401);
+      // SEC-002 (aanmelden-08): geen aparte 'mfa'-antwoord meer — dat verraadde welke adressen TOTP hebben.
+      if(result.status!=='ok'||!result.user)return deps.fail(result.code,result.http||401,'retryAfter'in result&&result.retryAfter?{retryAfter:result.retryAfter}:undefined);
       return deps.respond({ok:true,reasonCode:'ACCESS_PASSWORD_VERIFIED',sessionIssued:false,sessionCreated:false,user:result.user});
     }],
     'POST /api/owner/access/password/set':[async(ctx: any)=>{
@@ -580,6 +593,8 @@ export function createAccessPlaneRoutes(deps:{
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
       const password=String(deps.body(ctx.body).password||'');
       if(password.length<10)return deps.fail('ACCESS_PASSWORD_TOO_SHORT',400);
+      /* IDENTITEIT-012: верхня межа на сервері (раніше лише в інтерфейсі) — довгий рядок не йде в KDF. */
+      if(password.length>1024)return deps.fail('ACCESS_PASSWORD_TOO_LONG',400);
       const stap=await stapOp(auth,'aanmeldmethode');if(stap)return stap;
       const envelope=await hashPassword(password);
       const existing=await passwordRecordAny(auth.user.id);
@@ -589,6 +604,7 @@ export function createAccessPlaneRoutes(deps:{
       else await db.add(PASSWORDS,[record]);
       await upsertLoginBinding(auth.user.id,'password',auth.user.id,auth.user.email);
       await deps.audit(auth.user.id,'access.password.set','success',{});
+      await meldBeveiligingsWijziging(auth.user.id,'wachtwoord-gezet');
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/password/remove':[async(ctx: any)=>{
@@ -668,15 +684,9 @@ export function createAccessPlaneRoutes(deps:{
     // De oude routes registreerden alleen een credentialId zonder enige cryptografische controle.
     'POST /api/owner/access/webauthn/options':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
     'POST /api/owner/access/webauthn/register':[async()=>deps.fail('ACCESS_WEBAUTHN_DISABLED',503)],
-    'POST /api/owner/access/webauthn/remove':[async(ctx: any)=>{
-      const auth=await gate(ctx.event,ctx.body);
-      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
-      const id=String(deps.body(ctx.body).id||'');
-      const row=(await webauthnFor(auth.user.id)).find(item=>item.id===id);
-      if(row)await db.delete(WEBAUTHN,[row.id]);
-      await deps.audit(auth.user.id,'access.webauthn.remove','success',{});
-      return deps.respond({ok:true,...await accessSnapshot(auth.user)});
-    }],
+    /* IDENTITEIT-012: застарілий маршрут видаляв рядок без підтвердження доступу й писав «успіх», навіть коли рядка не було.
+       Жодна сторінка його не кличе; ключі доступу вилучаються лише через /api/owner/access/passkeys/verwijderen (з підтвердженням). */
+    'POST /api/owner/access/webauthn/remove':[async()=>deps.respond({ok:false,error:'LEGACY_ROUTE_GONE',reasonCode:'LEGACY_ROUTE_GONE'},410)],
     'POST /api/owner/access/totp/start':[async(ctx: any)=>{
       const auth=await gate(ctx.event,ctx.body);
       if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
@@ -689,12 +699,15 @@ export function createAccessPlaneRoutes(deps:{
         // Audit-fix 2: een bevestigde TOTP vervangen vraagt step-up ÉN de huidige code (of een herstelcode).
         // Het oude geheim blijft geldig tot het nieuwe bevestigd is (pendingSecretEnc).
         const stap=await stapOp(auth);if(stap)return stap;
-        const uitkomst=await codeControleren(auth.user.id,existing,String(deps.body(ctx.body).currentCode||deps.body(ctx.body).code||''),'totp-wijzigen');
-        if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.replace.start','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
+        const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,existing,String(deps.body(ctx.body).currentCode||deps.body(ctx.body).code||''),'totp-wijzigen');
+        if(uitkomst!=='ok'){const f=codeFout(uitkomst,wachtSeconden);await deps.audit(auth.user.id,'access.totp.replace.start','failure',{reden:uitkomst});return deps.fail(f.code,f.http,f.extra);}
         await db.update(TOTP,[{id:existing.id,record:{...withoutId(existing),pendingSecretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),pendingAt:now,updatedAt:now}}]);
         await deps.audit(auth.user.id,'access.totp.replace.start','success',{});
       }else{
-        const record={userId:auth.user.id,secretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),confirmed:false,createdAt:existing?.createdAt||now,updatedAt:now};
+        // SEC-002 (aanmelden-01): ook de EERSTE inschrijving vraagt step-up. Zonder dit gaf een gestolen sessie zichzelf een
+        // «sterke» bevestiging: TOTP inschrijven → eigen herstelcodes → stap-op. De inschrijving hangt aan de sessie die haar begon.
+        const stap=await stapOp(auth);if(stap)return stap;
+        const record={userId:auth.user.id,secretEnc:sealWithEnvKey(TOTP_KEY,encoded,totpAad(auth.user.id)),confirmed:false,startSessie:stapOpSessieId(auth as unknown as StapOpAuth),createdAt:existing?.createdAt||now,updatedAt:now};
         if(existing?.id)await db.update(TOTP,[{id:existing.id,record}]);
         else await db.add(TOTP,[record]);
       }
@@ -710,16 +723,19 @@ export function createAccessPlaneRoutes(deps:{
       const vervangen=Boolean(row.confirmed);
       // Audit-fix 2: bevestigd zonder lopende vervanging → niets te bevestigen (geen nieuwe herstelcodes via deze route).
       if(vervangen&&!row.pendingSecretEnc)return deps.fail('ACCESS_TOTP_ALREADY_ENROLLED',409);
+      // SEC-002 (aanmelden-01): een eerste inschrijving rondt alleen de sessie af die haar met step-up begon (totp/start).
+      // Een rij zonder startSessie (van vóór deze controle) of van een andere sessie: opnieuw beginnen.
+      if(!vervangen&&(!row.startSessie||row.startSessie!==stapOpSessieId(auth as unknown as StapOpAuth)))return deps.fail('ACCESS_TOTP_NOT_STARTED',400);
       const secret=vervangen?totpPendingOf(row):totpSecretOf(row);
       if(!secret)return deps.fail(vervangen?'ACCESS_TOTP_REPLACE_EXPIRED':'ACCESS_TOTP_KEY_MISSING',vervangen?400:503);
       if(!recoveryPepperConfigured())return deps.fail('ACCESS_RECOVERY_PEPPER_MISSING',503);
       const poging=await pogingReserveren(`stap-op:${auth.user.id}`);
-      if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429);
+      if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429,{retryAfter:poging.wachtSeconden});
       const stapNr=totpStap(fromBase32(secret),code);
       if(stapNr<0)return deps.fail('ACCESS_TOTP_INVALID',400);
       await clearLoginFailures(`stap-op:${auth.user.id}`);
       const{codes,rec}=nieuweHerstelSet(auth.user.id);
-      const basis=zonder(withoutId(row) as Record<string,unknown>,'pendingSecretEnc','pendingAt','secret');
+      const basis=zonder(withoutId(row) as Record<string,unknown>,'pendingSecretEnc','pendingAt','secret','startSessie');
       await db.update(TOTP,[{id:row.id,record:{...basis,...(vervangen?{secretEnc:row.pendingSecretEnc}:{}),confirmed:true,lastStep:stapNr,updatedAt:Date.now()}}]);
       const recovery=await recoveryFor(auth.user.id);
       if(recovery?.id)await db.update(RECOVERY,[{id:recovery.id,record:rec}]);
@@ -737,11 +753,12 @@ export function createAccessPlaneRoutes(deps:{
       // Fase 3: uitschakelen vereist de huidige TOTP-code (of een ongebruikte herstelcode bij verlies van het toestel).
       if(row?.confirmed){
         const code=String(deps.body(ctx.body).code||'');
-        const uitkomst=await codeControleren(auth.user.id,row,code,'totp-uitschakelen');
-        if(uitkomst!=='ok'){const f=codeFout(uitkomst);await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(f.code,f.http);}
+        const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,row,code,'totp-uitschakelen');
+        if(uitkomst!=='ok'){const f=codeFout(uitkomst,wachtSeconden);await deps.audit(auth.user.id,'access.totp.disable','failure',{reden:uitkomst});return deps.fail(f.code,f.http,f.extra);}
       }
       if(row?.id)await db.delete(TOTP,[row.id]);
       await deps.audit(auth.user.id,'access.totp.disable','success',{});
+      if(row?.id)await meldBeveiligingsWijziging(auth.user.id,'totp-uit');
       return deps.respond({ok:true,...await accessSnapshot(auth.user)});
     }],
     'POST /api/owner/access/recovery/rotate':[async(ctx: any)=>{
@@ -754,8 +771,8 @@ export function createAccessPlaneRoutes(deps:{
       if(totpRij?.confirmed){
         const metPasskey=!String(deps.body(ctx.body).code||'')&&await passkeyStapOpGeldig(auth as unknown as StapOpAuth);
         if(!metPasskey){
-          const uitkomst=await codeControleren(auth.user.id,totpRij,String(deps.body(ctx.body).code||''),false);
-          if(uitkomst!=='ok'){const f=codeFout(uitkomst);return deps.fail(f.code,f.http);}
+          const{uitkomst,wachtSeconden}=await codeControleren(auth.user.id,totpRij,String(deps.body(ctx.body).code||''),false);
+          if(uitkomst!=='ok'){const f=codeFout(uitkomst,wachtSeconden);return deps.fail(f.code,f.http,f.extra);}
         }
       }else{const stap=await stapOp(auth,'herstelcodes');if(stap)return stap;}
       // «Створити нові»: de oude set vervalt meteen (het record wordt vervangen).
@@ -858,6 +875,8 @@ export function createAccessPlaneRoutes(deps:{
       if(existing?.id)await db.update(PASSWORDS,[{id:existing.id,record}]);
       else await db.add(PASSWORDS,[record]);
       await deps.audit(auth.user.id,'access.user.reset-password','success',{userId:ctx.params.id});
+      /* SEC-002 (privacy-logboek-03): ook in het logboek en de bel van wie het wachtwoord kreeg, niet alleen in dat van de beheerder */
+      if(ctx.params.id!==auth.user.id){await deps.audit(ctx.params.id,'access.password.reset-door-beheer','success',{door:auth.user.id});await meldBeveiligingsWijziging(ctx.params.id,'wachtwoord-door-beheer');}
       return deps.respond({ok:true,temporaryPassword:temp,mustChange:true,plaintextReturned:true});
     }]
   };

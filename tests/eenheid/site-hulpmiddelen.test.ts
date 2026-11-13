@@ -32,9 +32,9 @@ export async function main(): Promise<number> {
     // 20.10.2026: +6 agenda-hulpmiddelen die ECHT in Google Calendar schrijven (aanmaken, wijzigen, verplaatsen,
     // verwijderen, deelnemers, RSVP) — allemaal write: true en dus standaard op «vragen».
     // 21.10.2026: +7 ontwikkel-/mediahulpmiddelen (github_ci_logs, github_pr, app_domain, image_generate, diagram_generate,
-    // screenshot_design, payments_list) — alleen via connector v2, dus NIET in de oude /mcp-lijst en niet in describeTools.
-    check('catalogus: 58 site-hulpmiddelen (incl. get_admin_view, audit K1, agenda-schrijven, 7 v2-ontwikkelhulpmiddelen), unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
-      SITE_TOOLS.length === 58 && new Set(namen).size === 58 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
+    // screenshot_design, payments_list) + 4 ecosysteem + 7 GitHub-werkruimtehulpmiddelen — alleen via connector v2.
+    check('catalogus: 69 site-hulpmiddelen (incl. get_admin_view, audit K1, agenda-schrijven, v2-ontwikkel-, ecosysteem- en GitHub-werkruimtehulpmiddelen), unieke namen, elk met titel en annotaties; lezen is readOnly, wijzigen niet',
+      SITE_TOOLS.length === 69 && new Set(namen).size === 69 && SITE_TOOLS.every((s) => !!s.tool.title && !!s.tool.annotations)
       && SITE_TOOLS.filter((s) => !s.write).every((s) => s.tool.annotations?.readOnlyHint === true) && SITE_TOOLS.filter((s) => s.write).every((s) => s.tool.annotations?.readOnlyHint === false), namen.join(','));
     const voorbeeld = (schema: any) => {
       const args: Record<string, unknown> = {};

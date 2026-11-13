@@ -18,7 +18,7 @@ export default function Assistent({ lang, woningId, ov, vernieuw, toon }: Onderd
   const [besluit, setBesluit] = useState<Record<string, string>>({});
   const bedienbaar = useMemo(() => ov.apparaten.filter((a) => !a.kritiek && a.mogelijkheden.some((m) => m.schrijven && SCHRIJFBAAR.includes(m.soort) && !KRITIEKE_SOORTEN.includes(m.soort))), [ov.apparaten]);
   const [nieuw, setNieuw] = useState<{ samenvatting: string; apparaatId: string; mogelijkheid: MogelijkheidSoort; waarde: Record<string, unknown> } | null>(null);
-  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'));
+  const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout');
   const laad = async () => { try { setLijst(await huisClient.voorstellen(woningId)); } catch (e) { fout(e); setLijst([]); } };
   useEffect(() => { void laad(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [woningId, ov.voorstellenWacht]);
   const naam = (id: string) => ov.apparaten.find((a) => a.id === id)?.naam ?? '?';

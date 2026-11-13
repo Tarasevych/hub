@@ -18,6 +18,7 @@ import { error, json } from '../server/platform';
 import { getPool } from '../server/platform/pg';
 import { denyMutation, rejectForeignOwnerUserId } from './rbac';
 import { gegevensRuimteVeilig } from './ruimte-scheiding';
+import { jsonbTekst } from '../shared/tekst-veilig';
 import {
   LEGE_VENSTERSTAND, normaliseerVensterStand, standHeeftGeheim, type VensterStand,
 } from '../shared/vensters-onthouden-model';
@@ -61,7 +62,7 @@ export async function vensterStandSchrijven(userId: string, ruimte: AiRuimte, ru
   await sys().query(
     `INSERT INTO app.venster_stand (user_id, ruimte, vensters, vensters_versleuteld, bijgewerkt_op) VALUES ($1,$2,$3::jsonb,NULL,now())
      ON CONFLICT (user_id, ruimte) DO UPDATE SET vensters = EXCLUDED.vensters, vensters_versleuteld = NULL, bijgewerkt_op = now()`,
-    [userId, ruimte, JSON.stringify(stand.vensters)],
+    [userId, ruimte, jsonbTekst(stand.vensters)],
   );
   return vensterStandLezen(userId, ruimte);
 }

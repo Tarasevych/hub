@@ -10,3 +10,14 @@ ConditionPathExists=|/srv/mijn-ruimte/goedkeur-inbox/rook-verzoek
 Type=oneshot
 TimeoutStartSec=900
 ExecStart=/usr/local/sbin/mijn-ruimte-nazorg
+# SEC-002 (server-uitrol-11): deze unit had geen enkele beperking. Zelfde basis als mijn-ruimte-besluit.service, die hetzelfde
+# `mijn-ruimte-installeer terugdraaien` uitvoert: eigen /tmp, geen thuismappen, geen nieuwe rechten via setuid-bestanden, en de
+# kerninstellingen, kernmodules en cgroups alleen-lezen. BEWUST geen ProtectSystem: terugdraaien moet de symlink in
+# /srv/mijn-ruimte omzetten en zo nodig de unit van de MCP-deur in /etc/systemd/system terugzetten; de rendercontrole
+# zelf draait al apart en afgeschermd via systemd-run (ProtectSystem=strict, als de app-gebruiker).
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes

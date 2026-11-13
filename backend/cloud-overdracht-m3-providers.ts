@@ -64,7 +64,7 @@ export class NextcloudTransport implements CloudTransport{
   const res=await this.request(url+path,{method:'PROPFIND',headers:{Authorization:auth,Depth:'0','Content-Type':'application/xml'},body:'<?xml version="1.0"?><d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns"><d:prop><d:displayname/><d:getetag/><d:getcontentlength/><d:getcontenttype/><d:resourcetype/><oc:permissions/></d:prop></d:propfind>',redirect:'error'});
   checkResp(res,'CLOUD_NEXTCLOUD_METADATA_FAILED',[207]);const bytes=await bounded(res,65536);const xml=new TextDecoder().decode(bytes);
   if(/<!DOCTYPE|<!ENTITY/i.test(xml))throw new CloudTransportError('CLOUD_NEXTCLOUD_UNSAFE_XML');
-  const val=(name:string)=>{const m=xml.match(new RegExp('<(?:[A-Za-z_][\\w.-]*:)?'+name+'(?:\\s[^>]*)?>([^<]*)<\\/(?:[A-Za-z_][\\w.-]*:)?'+name+'>','i'));return m?.[1]||'';};
+  /* SEC-002 (toetsen/g08.md, afwerking A): attributen en inhoud begrensd ({0,256} / {0,4096}) — anders kostte elke onafgesloten «<getetag » een scan tot het einde (kwadratisch op 64 KB van een vreemde server). */const val=(name:string)=>{const m=xml.match(new RegExp('<(?:[A-Za-z_][\\w.-]{0,64}:)?'+name+'(?:\\s[^>]{0,256})?>([^<]{0,4096})<\\/(?:[A-Za-z_][\\w.-]{0,64}:)?'+name+'>','i'));return m?.[1]||'';};
   const folder=/<(?:[a-z][\w.-]*:)?collection\s*\/?\s*>/i.test(xml);
   const lengthText=val('getcontentlength');
   const size=folder?0:Number(lengthText);
