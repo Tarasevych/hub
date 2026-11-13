@@ -4,6 +4,7 @@
 import { Suspense, lazy } from 'react';
 import { useCloudVnext } from './cloud-vnext/cloud-vlag';
 import { useVerbindingenV2 } from './verbindingen/verbindingen-vlag';
+import './cloud-klassiek-maquette.css';
 
 // UI-003: vlag verbindingen-centrum-v2 AAN → op «Акаунти» het nieuwe verbindingencentrum, los van cloud-vnext. UIT = ongewijzigd.
 const Verbindingen = lazy(() => import('./verbindingen/VerbindingenCentrum'));
@@ -14,7 +15,7 @@ const Nieuw = lazy(() => import('./cloud-vnext/CloudPagina'));
 type Props = { lang: 'uk' | 'nl'; tab: string; userEmail: string; sourceOrigin: string; tabContext: string; onFocusChange: (aan: boolean) => void; onNavigateTab: (id: string) => void };
 export default function CloudVnextWissel(props: Props) {
   const vnext = useCloudVnext();
-  const wachten = <p role='status' aria-busy='true' style={{ margin: 16 }}>…</p>;
+  const wachten = <p className='cloud-wissel-wachten' role='status' aria-busy='true' style={{ margin: 16 }}>…</p>;
   const v2 = useVerbindingenV2();
   if (v2 && props.tab === 'accounts') { // «Керувати» gaat naar 'google': daar blijft het bestaande beheer (kiezen, loskoppelen)
     return <Suspense fallback={wachten}><Verbindingen lang={props.lang} naarTab={props.onNavigateTab} /></Suspense>;

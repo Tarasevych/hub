@@ -1,0 +1,570 @@
+/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2Б) для центру хмарних постачальників (Integraties)
+   та огляду зовнішніх джерел (Bron: Google Drive, OneDrive, Dropbox) піддомену cloud.tarasevych.com.
+   Працює в нічній студії та у світлому режимі «Ранковий туман» виключно через змінні палітри Макета.
+   Stijlblad «Maquette» voor het integratiecentrum en externe opslagbronnen van de cloud. */
+
+/* ── 1. Узгодження студійних змінних для поверхонь інтеграцій та портального вікна BronLaag ── */
+
+html.palet-maquette body :is(.cvi, .cvi-laag) {
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.14);
+  --focus: var(--mq-accent);
+  --overlay: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+}
+
+/* ── 2. Загальні блоки, кнопки та елементи керування центру інтеграцій ([data-cvi-centrum] і [data-cvi-bron]) ── */
+
+html.palet-maquette body .cvi {
+  gap: 20px;
+}
+
+html.palet-maquette body :is(.cvi > .cvn-blok, section.cvn-blok.cvi) {
+  padding: 22px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-oppervlak-2)),
+    var(--mq-oppervlak)
+  );
+  box-shadow:
+    inset 0 1px 0 var(--mq-oppervlak-zacht),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cvi > .cvn-blok > h3 {
+  font-size: 1.08rem;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvi > .cvn-blok > h3 svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body section.cvn-leeg.cvi {
+  padding: 36px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px dashed var(--mq-rand-sterk);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(var(--mq-accent-rgb), 0.10), transparent 62%),
+    var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body section.cvn-leeg.cvi > svg {
+  width: 34px;
+  height: 34px;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body :is(.cvi, .cvi-laag) .cvn-knop {
+  border-radius: var(--mq-straal-knop);
+  border-color: var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-weight: 560;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.16s ease;
+}
+
+html.palet-maquette body :is(.cvi, .cvi-laag) .cvn-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body :is(.cvi, .cvi-laag) .cvn-knop.is-klein {
+  border-radius: 999px;
+  padding-inline: 12px;
+}
+
+html.palet-maquette body :is(.cvi, .cvi-laag) .cvn-knop.is-hoofd {
+  border-color: rgba(var(--mq-accent-rgb), 0.44);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 680;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.34),
+    0 10px 26px var(--mq-gloed);
+}
+
+html.palet-maquette body :is(.cvi, .cvi-laag) .cvn-knop.is-hoofd:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.46),
+    0 14px 32px var(--mq-gloed);
+}
+
+html.palet-maquette body :is(.cvi, .cvi-laag) .cvn-icoonknop {
+  border-radius: 12px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body :is(.cvi, .cvi-laag) .cvn-icoonknop:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+/* ── 3. Зведення фактів (.cvi-samenvatting) і картки хмарних постачальників без зображень ── */
+
+html.palet-maquette body .cvi > .cvn-blok.cvi-samenvatting {
+  padding: 16px 20px;
+  background:
+    radial-gradient(circle at 0% 50%, rgba(var(--mq-accent-rgb), 0.12), transparent 52%),
+    var(--mq-oppervlak);
+}
+
+html.palet-maquette body .cvi-chip {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette body .cvi-chip svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cvi-chip.is-ok {
+  border-color: color-mix(in srgb, var(--ok) 34%, transparent);
+  background: color-mix(in srgb, var(--ok) 15%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette body .cvi-chip.is-ok svg {
+  color: var(--ok);
+}
+
+html.palet-maquette body .cvi-chip.is-stil {
+  border-style: dashed;
+  border-color: var(--mq-rand-sterk);
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+/* Сітка та картки постачальників (Google Drive, Google Photos, OneDrive, Dropbox та ін.) */
+html.palet-maquette body .cvi-kaarten {
+  gap: 14px;
+}
+
+html.palet-maquette body .cvi-kaart {
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+html.palet-maquette body .cvi-kaart:hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .cvi-kaart.is-open {
+  padding: 18px 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--mq-accent-rgb), 0.09), transparent 56%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 66%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body details.cvi-kaart > summary {
+  padding: 14px 16px;
+  border-radius: 20px;
+  transition: background-color 0.16s ease;
+}
+
+html.palet-maquette body details.cvi-kaart > summary:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body details.cvi-kaart[open] {
+  border-color: rgba(var(--mq-accent-rgb), 0.34);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body details.cvi-kaart[open] > summary {
+  border-bottom: 1px solid var(--mq-rand);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: rgba(var(--mq-accent-rgb), 0.06);
+}
+
+html.palet-maquette body .cvi-kaart-inhoud {
+  padding: 16px 18px 18px;
+  gap: 12px;
+}
+
+/* Ювелірна студійна монограма постачальника (замість будь-яких зображень) */
+html.palet-maquette body .cvi-monogram {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.32);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.22),
+    color-mix(in srgb, var(--mq-oppervlak) 88%, rgba(var(--mq-accent-rgb), 0.06))
+  );
+  color: var(--mq-accent);
+  font-size: 0.82rem;
+  font-weight: 760;
+  letter-spacing: 0.03em;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.22),
+    0 6px 16px rgba(var(--mq-accent-rgb), 0.10);
+}
+
+html.palet-maquette body [data-cvi-aanbieder="onedrive"] .cvi-monogram,
+html.palet-maquette body [data-cvi-bron="onedrive"] .cvi-monogram {
+  border-color: color-mix(in srgb, var(--info) 38%, var(--mq-rand));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--info) 22%, var(--mq-oppervlak-2)),
+    var(--mq-oppervlak)
+  );
+  color: var(--info);
+}
+
+html.palet-maquette body [data-cvi-aanbieder="dropbox"] .cvi-monogram,
+html.palet-maquette body [data-cvi-bron="dropbox"] .cvi-monogram {
+  border-color: color-mix(in srgb, var(--mq-accent-2) 48%, var(--mq-rand));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--mq-accent) 20%, var(--mq-oppervlak-2)),
+    var(--mq-oppervlak)
+  );
+}
+
+/* Пігулки стану підключення постачальника */
+html.palet-maquette body .cvi-stand {
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body :is(.cvi-stand.is-werkt, .cvi-stand.is-levend) {
+  border-color: color-mix(in srgb, var(--ok) 34%, transparent);
+  background: color-mix(in srgb, var(--ok) 15%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette body .cvi-stand.is-sleutels-nodig {
+  border-color: color-mix(in srgb, var(--warn) 36%, transparent);
+  background: color-mix(in srgb, var(--warn) 15%, var(--mq-oppervlak-2));
+  color: var(--warn);
+}
+
+html.palet-maquette body .cvi-stand.is-gepland {
+  border-color: color-mix(in srgb, var(--info) 34%, transparent);
+  background: color-mix(in srgb, var(--info) 15%, var(--mq-oppervlak-2));
+  color: var(--info);
+}
+
+html.palet-maquette body .cvi-stand.is-niet-mogelijk {
+  border-color: color-mix(in srgb, var(--fout) 34%, transparent);
+  background: color-mix(in srgb, var(--fout) 15%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette body .cvi-stand.is-register {
+  border-style: dashed;
+  border-color: var(--mq-rand-sterk);
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .cvi-omweg {
+  padding: 10px 14px;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--info) 28%, var(--mq-rand));
+  border-inline-start: 3px solid var(--info);
+  background: color-mix(in srgb, var(--info) 11%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvi-site {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cvi-site:hover {
+  color: var(--mq-tekst);
+}
+
+/* ── 4. Облікові записи, контрольний список ключів (SleutelsChecklist) та правила синхронізації ── */
+
+html.palet-maquette body .cvi-accounts {
+  gap: 6px;
+}
+
+html.palet-maquette body .cvi-accounts li {
+  padding: 10px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-bg));
+}
+
+html.palet-maquette body .cvi-stip.is-ok {
+  background: var(--ok);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ok) 55%, transparent);
+}
+
+html.palet-maquette body .cvi-stip.is-uit {
+  background: var(--warn);
+}
+
+html.palet-maquette body .cvi-checklist {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg) 32%, var(--mq-oppervlak));
+  gap: 10px;
+}
+
+html.palet-maquette body .cvi-checklist > strong {
+  font-size: 0.86rem;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvi-checklist ul {
+  gap: 6px;
+}
+
+html.palet-maquette body .cvi-check {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette body .cvi-check code {
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvi-check.is-ja {
+  border-color: color-mix(in srgb, var(--ok) 30%, var(--mq-rand));
+}
+
+html.palet-maquette body .cvi-check.is-nee {
+  border-color: color-mix(in srgb, var(--fout) 30%, var(--mq-rand));
+}
+
+html.palet-maquette body .cvi-sync {
+  gap: 10px;
+}
+
+html.palet-maquette body .cvi-sync li {
+  padding: 10px 14px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, var(--mq-oppervlak));
+  line-height: 1.55;
+}
+
+html.palet-maquette body .cvi-sync li.is-stil {
+  border-style: dashed;
+  background: transparent;
+}
+
+/* ── 5. Оглядач зовнішнього джерела (Bron.tsx: Google Drive) та вікно перегляду BronLaag ── */
+
+html.palet-maquette body .cvi-accountkeuze select {
+  border-radius: var(--mq-straal-veld);
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvi-zoek {
+  padding: 3px 6px 3px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg) 34%, var(--mq-oppervlak-2));
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body .cvi-zoek:focus-within {
+  outline: none;
+  border-color: rgba(var(--mq-accent-rgb), 0.56);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+}
+
+html.palet-maquette body .cvi-zoek input,
+html.palet-maquette body .cvi-zoek input:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 5px 8px;
+}
+
+html.palet-maquette body .cvi-kruimels {
+  padding: 6px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette body .cvi-kruimel button {
+  border-radius: 10px;
+  color: var(--mq-accent);
+  font-weight: 540;
+}
+
+html.palet-maquette body .cvi-kruimel button:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .cvi-kruimel button:disabled {
+  color: var(--mq-tekst);
+  font-weight: 660;
+}
+
+html.palet-maquette body .cvi-bestanden {
+  gap: 12px;
+}
+
+html.palet-maquette body .cvi-bestand-rij {
+  gap: 4px;
+}
+
+html.palet-maquette body .cvi-bestand {
+  padding: 16px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak)),
+    var(--mq-oppervlak)
+  );
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+html.palet-maquette body .cvi-bestand:hover:not(:disabled) {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: var(--mq-oppervlak-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cvi-bestand-icoon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .cvi-bestand.is-map .cvi-bestand-icoon {
+  border-color: rgba(var(--mq-accent-rgb), 0.30);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.20),
+    rgba(var(--mq-accent-rgb), 0.06)
+  );
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cvi-naar-eigen {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette body .cvi-naar-eigen:hover:not(:disabled) {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  color: var(--mq-accent);
+}
+
+/* Портальне вікно безпечного перегляду в Bron.tsx (BronLaag) */
+html.palet-maquette body .cvn-laag.cvi-laag {
+  background: color-mix(in srgb, var(--mq-bg) 64%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.palet-maquette body .cvi-laag .cvi-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(26px) saturate(1.25);
+  backdrop-filter: blur(26px) saturate(1.25);
+}
+
+html.palet-maquette body .cvi-laag .cvn-laag-kop {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--mq-accent-rgb), 0.06) 0%,
+    transparent 100%
+  );
+}
+
+html.palet-maquette body .cvi-laag-inhoud {
+  padding: 18px 20px 22px;
+}
+
+html.palet-maquette body .cvi-voorbeeld pre {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-bg) 48%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cvi-voorbeeld iframe {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+/* ── 6. Адаптивний мобільний шар (суворо наприкінці файла — правило mobiel-cascade-20261105) ── */
+
+@media (max-width: 760px) {
+  html.palet-maquette body :is(.cvi > .cvn-blok, section.cvn-blok.cvi) {
+    padding: 16px;
+  }
+
+  html.palet-maquette body .cvi-kaart.is-open {
+    padding: 14px 16px;
+  }
+
+  html.palet-maquette body .cvi-laag-inhoud {
+    padding: 14px 14px 18px;
+  }
+}

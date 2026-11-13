@@ -17,6 +17,7 @@ import { cloudClient, type DelenVoorbereidenBestandUit, type DelenVoorbereidenMa
 import { cloudFoutTekst } from './hulp';
 import Laag from './Laag';
 import { bytesTekst, datumTekst, geledenTekst, tr, type Lang } from './tekst';
+import './cloud-delen-maquette.css';
 
 export type DeelVensterDoel =
   | { soort: 'bestand'; bestand: CloudBestand; beginModus?: 'heel' | 'deel' | 'archief'; beginDeelSoort?: CloudDeelDeelSoort; beginArchiefPaden?: string[] }

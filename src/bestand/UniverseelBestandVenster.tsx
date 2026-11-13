@@ -1,7 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Download, FilePlus2, LoaderCircle, ShieldCheck, Info } from 'lucide-react';
-import { Venster } from '../platform/vensters';
+import { Venster, useVensters } from '../platform/vensters';
 import { CANONICAL_AUTH_CHANGE } from '../canoniek-gebeurtenissen';
 import { MailAttachmentPreviewContent, loadMailAttachmentPreviewFromBlob, revokeMailAttachmentPreview,
   type MailAttachmentPreview } from '../MailBijlageVoorbeeld';
@@ -9,6 +9,7 @@ import { formaatVan } from '../../shared/bestandsformaten';
 import { verbindUniverseelBestand, wisWachtendeBestanden, VOORBEELD_MAX_BYTES,
   MAX_OPEN_VENSTERS, openUniverseelBestand, type OpenBestand } from './universeel-bestand';
 import './universeel-bestand.css';
+import './universeel-bestand-maquette.css';
 
 type OpenVenster = OpenBestand & { id: string };
 const huidigeTaal = (): 'uk'|'nl' => document.documentElement.lang.toLowerCase().startsWith('nl') ? 'nl' : 'uk';
@@ -26,17 +27,29 @@ export function startUniverseelBestandVenster(): void {
 function UniverseleBestandsvensters() {
   const [items,setItems] = useState<OpenVenster[]>([]);
   const [lang,setLang] = useState<'uk'|'nl'>(huidigeTaal);
+  const openVensters = useVensters();
+  const heeftZichtbaarVenster = items.some((it) => !(openVensters.find((v) => v.id === it.id)?.klein));
   useEffect(() => {
     const los = verbindUniverseelBestand((intent) => {
       const id = `ub-${Date.now().toString(36)}-${crypto.randomUUID().slice(0,8)}`;
       setItems(old => [...old.slice(-(MAX_OPEN_VENSTERS-1)),{...intent,id}]);
     });
-    // Clear all Blob references on session or account change. Never persist file bytes here.
+    // Очищуємо всі посилання на файлові об'єкти при зміні сеансу чи облікового запису; вміст файлів тут ніколи не зберігається.
     const wis = () => { wisWachtendeBestanden(); setItems([]); };
     window.addEventListener(CANONICAL_AUTH_CHANGE,wis);
     const observeer = new MutationObserver(()=>setLang(huidigeTaal()));
     observeer.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
     return () => { los(); observeer.disconnect(); window.removeEventListener(CANONICAL_AUTH_CHANGE,wis); };
+  }, []);
+  useEffect(() => {
+    const html = document.documentElement;
+    if (heeftZichtbaarVenster) html.setAttribute('data-universeel-bestand-open', '1');
+    else html.removeAttribute('data-universeel-bestand-open');
+    window.dispatchEvent(new Event('tsv:universeel-bestand-open'));
+  }, [heeftZichtbaarVenster]);
+  useEffect(() => () => {
+    document.documentElement.removeAttribute('data-universeel-bestand-open');
+    window.dispatchEvent(new Event('tsv:universeel-bestand-open'));
   }, []);
   return <>{items.map(item => <UniverseelVenster key={item.id} item={item} lang={lang}
     onSluit={()=>setItems(current=>current.filter(x=>x.id!==item.id))}/>)}</>;
@@ -69,9 +82,10 @@ function UniverseelVenster({item,lang,onSluit}:{item:OpenVenster;lang:'uk'|'nl';
     window.setTimeout(()=>URL.revokeObjectURL(url),30000);
   }
   const label = item.bronLabel || ({'mail':'Mail','microsoft-mail':'Outlook','google-drive':'Google Drive','onedrive':'OneDrive','dropbox':'Dropbox','private-cloud':'Cloud','github':'GitHub','gitlab':'GitLab','browser-file':'ПК','device-agent':'Локальний агент','notes':'Нотатки','tasks':'Завдання','ai':'ШІ','plugin':'Інтеграція'} satisfies Record<OpenBestand['bron'],string>)[item.bron];
+  const soort = preview ? (preview.embeddedPdf ? 'pdf' : preview.descriptor.kind) : undefined;
   return <Venster id={item.id} titel={item.bestandsnaam} lang={lang} breedte={920} hoogte={690}
     modaal={false} onSluit={onSluit} className='universeel-bestand-venster'>
-    <section className='universeel-bestand' data-universele-bron={item.bron}>
+    <section className='universeel-bestand' data-universele-bron={item.bron} data-voorvertoning-soort={soort}>
       <div className='universeel-bestand-balk'>
         <span className='universeel-bron'>{label}</span><span className='universeel-type'>{formaat.label}</span>
         <span className='universeel-grootte'>{(item.bestand.size/1024).toLocaleString(lang==='uk'?'uk-UA':'nl-BE',{maximumFractionDigits:0})} KB</span>

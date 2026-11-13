@@ -15,6 +15,7 @@ import type { OnderdeelProps } from '../CloudPagina';
 import { bytesTekst, foutTekst, tr, type Lang } from '../tekst';
 import { Monogram, SleutelsChecklist, accountStatusTekst } from './Integraties';
 import { sessieLees, sessieZet } from '../hulp';
+import '../cloud-integraties-maquette.css';
 
 /**
  * ZOEKDIEP-001 (05.11.2026): overdracht uit «Пошук» of een diepe link (CloudPagina → 'cvn-drive-open' = { bestand, principal }).

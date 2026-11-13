@@ -1,0 +1,410 @@
+/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2В) для спільного вікна перегляду файлів.
+   Оформлює вікно перегляду документа, зображення, таблиці, архіву та медіа як преміальну студійну скляну залу.
+   Працює в нічній студії та у світлому режимі через токени var(--mq-*) і приховує якірну рейку за відкритого вікна.
+   Stijlblad «Maquette» voor het universele bestandsvenster over alle subdomeinen van Mijn Ruimte. */
+
+/* ── 1. Приховування якірної рейки, коли відкрито незгорнуте універсальне вікно перегляду ── */
+
+html.palet-maquette[data-universeel-bestand-open='1'] :is(
+  .mq-anker-rail,
+  .mq-anker-onderbalk,
+  .mq-rail-popover,
+  .mq-anker-sluier
+) {
+  display: none;
+}
+
+/* ── 2. Узгодження студійних змінних і скляного корпусу вікна ── */
+
+html.palet-maquette body .venster.universeel-bestand-venster {
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface-secondary: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-tekst) 8%);
+  --line: var(--mq-rand);
+  --border: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --text-primary: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.14);
+
+  border-radius: 22px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-bg)) 0%,
+    color-mix(in srgb, var(--mq-bg-2) 96%, var(--mq-bg)) 100%
+  );
+  color: var(--mq-tekst);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mq-tekst) 9%, transparent),
+    var(--mq-schaduw-held);
+  backdrop-filter: blur(22px) saturate(135%);
+  overflow: hidden;
+}
+
+html.palet-maquette body .venster.universeel-bestand-venster.is-boven {
+  border-color: color-mix(in srgb, var(--mq-accent) 42%, var(--mq-rand-sterk));
+  box-shadow:
+    0 0 0 1px rgba(var(--mq-accent-rgb), 0.16),
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.18),
+    var(--mq-schaduw-held);
+}
+
+html.palet-maquette body .venster.universeel-bestand-venster.is-max {
+  border-radius: 0;
+}
+
+/* ── 3. Шапка студійного вікна (відступ праворуч суворо в безпечній межі до 16px) ── */
+
+html.palet-maquette body .venster.universeel-bestand-venster > .venster-kop {
+  padding: 8px 12px 8px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak)) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-bg)) 100%
+  );
+}
+
+html.palet-maquette body .venster.universeel-bestand-venster > .venster-kop .venster-titel {
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette body .venster.universeel-bestand-venster > .venster-kop .venster-knoppen {
+  gap: 5px;
+}
+
+html.palet-maquette body .venster.universeel-bestand-venster > .venster-kop .venster-knoppen button {
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+html.palet-maquette body .venster.universeel-bestand-venster > .venster-kop .venster-knoppen button:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .venster.universeel-bestand-venster > .venster-kop .venster-knoppen button:focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* ── 4. Ювелірна смуга метаданих і дій файла ── */
+
+html.palet-maquette body .venster.universeel-bestand-venster .venster-inhoud {
+  padding: 0;
+  background: transparent;
+}
+
+html.palet-maquette body .universeel-bestand {
+  color: var(--mq-tekst);
+  background: transparent;
+}
+
+html.palet-maquette body .universeel-bestand-balk {
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 86%, var(--mq-bg));
+}
+
+html.palet-maquette body .universeel-bron {
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.34);
+  background: rgba(var(--mq-accent-rgb), 0.14);
+  color: color-mix(in srgb, var(--mq-accent) 78%, var(--mq-tekst));
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+html.palet-maquette body .universeel-type {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+html.palet-maquette body .universeel-grootte {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 1;
+}
+
+html.palet-maquette body .universeel-bestand-balk button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition:
+    transform 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body .universeel-bestand-balk button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .universeel-bestand-balk button[aria-expanded='true'] {
+  border-color: rgba(var(--mq-accent-rgb), 0.44);
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .universeel-bestand-balk button:last-of-type {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 90%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow: 0 8px 22px var(--mq-gloed);
+}
+
+html.palet-maquette body .universeel-bestand-balk button:last-of-type:hover:not(:disabled) {
+  filter: brightness(1.04);
+  border-color: rgba(var(--mq-accent-rgb), 0.58);
+}
+
+html.palet-maquette body .universeel-bestand-balk button:focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* ── 5. Додаткові інформаційні смуги імпорту та перевіреного походження ── */
+
+html.palet-maquette body :is(.universeel-kies, .universeel-bestand-info) {
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 64%, var(--mq-bg));
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+html.palet-maquette body .universeel-bestand-info svg {
+  flex-shrink: 0;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .universeel-bestand-info span:last-child {
+  margin-left: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  font-size: 0.76rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html.palet-maquette body .universeel-kies input[type='file'] {
+  padding: 5px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-size: 0.8rem;
+}
+
+/* ── 6. Студійна скляна зала перегляду документа, зображення, таблиці й архіву ── */
+
+html.palet-maquette body .universeel-bestand-werkvlak {
+  padding: 18px;
+  background:
+    radial-gradient(circle at 16% 12%, var(--mq-werk-gloed-a), transparent 54%),
+    radial-gradient(circle at 86% 88%, var(--mq-werk-gloed-b), transparent 58%),
+    color-mix(in srgb, var(--mq-bg) 88%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .universeel-bestand-inhoud {
+  border-radius: 18px;
+}
+
+html.palet-maquette body .universeel-bestand-inhoud .mail-viewer-cache-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+html.palet-maquette body .universeel-bestand-inhoud .mail-viewer-scaled-content {
+  width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+/* Зображення в окремій музейній підсвіченій рамі */
+html.palet-maquette body .universeel-bestand[data-voorvertoning-soort='image'] .universeel-bestand-inhoud .mail-viewer-scaled-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 12px;
+}
+
+html.palet-maquette body .universeel-bestand-inhoud img {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak) 74%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw);
+}
+
+/* Документи, аркуші PDF, текстові полотна та презентації */
+html.palet-maquette body .universeel-bestand-inhoud :is(
+  .kind-pdf,
+  .kind-document,
+  .kind-presentation,
+  .kind-text,
+  .kind-code
+) {
+  max-width: 64rem;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Таблиці, архіви та електронні видання */
+html.palet-maquette body .universeel-bestand-inhoud :is(
+  .kind-sheet,
+  .kind-spreadsheet,
+  .kind-archive,
+  .kind-ebook
+) {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .universeel-bestand-inhoud :is(table, .mail-sheet-table) {
+  border-collapse: collapse;
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+}
+
+html.palet-maquette body .universeel-bestand-inhoud :is(th, td) {
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette body .universeel-bestand-inhoud th {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-bg));
+  color: var(--mq-tekst);
+  font-weight: 650;
+}
+
+html.palet-maquette body .universeel-bestand-inhoud :is(pre, code) {
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+}
+
+html.palet-maquette body .universeel-bestand-inhoud :is(audio, video) {
+  display: block;
+  margin: 12px auto;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Стани підготовки перегляду та спокійного пояснення відмови */
+html.palet-maquette body :is(.universeel-bestand-laden, .universeel-bestand-fallback) {
+  margin: 12px auto;
+  max-width: 38rem;
+  padding: 28px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg));
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .universeel-bestand-laden svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .universeel-bestand-fallback[role='alert'] {
+  border-color: rgba(var(--mq-tech-markering-rgb), 0.38);
+  background: color-mix(
+    in srgb,
+    rgba(var(--mq-tech-markering-rgb), 0.12) 45%,
+    var(--mq-oppervlak)
+  );
+}
+
+/* ── 7. Адаптивні мобільні правила (суворо в кінці файла) ── */
+
+@media (max-width: 760px) {
+  html.palet-maquette body .universeel-bestand-werkvlak {
+    padding: 12px;
+  }
+
+  html.palet-maquette body .universeel-bestand-inhoud :is(
+    .kind-pdf,
+    .kind-document,
+    .kind-presentation,
+    .kind-text,
+    .kind-code
+  ) {
+    padding: 14px;
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  html.palet-maquette body .universeel-bestand-balk {
+    gap: 6px;
+    padding: 9px 12px;
+  }
+
+  html.palet-maquette body .universeel-bestand-balk button {
+    min-height: 42px;
+    padding: 7px 11px;
+  }
+
+  html.palet-maquette body :is(.universeel-kies, .universeel-bestand-info) {
+    padding: 10px 12px;
+  }
+
+  html.palet-maquette body .universeel-bestand-info span:last-child {
+    margin-left: 0;
+  }
+
+  html.palet-maquette body .universeel-bestand-werkvlak {
+    padding: 8px;
+  }
+}

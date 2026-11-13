@@ -4,10 +4,12 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useIsMaquette } from '../thema/useThema';
 import { tr, type Lang } from './tekst';
 
 type Props = { lang: Lang; soort: 'paneel' | 'scherm' | 'venster'; titel: string; onSluit: () => void; children: ReactNode; data?: Record<string, string> };
 export default function Laag({ lang, soort, titel, onSluit, children, data = {} }: Props) {
+  const isMaquette = useIsMaquette();
   const vak = useRef<HTMLDivElement | null>(null);
   const terug = useRef<HTMLElement | null>(typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null);
   useEffect(() => {
@@ -34,8 +36,17 @@ export default function Laag({ lang, soort, titel, onSluit, children, data = {} 
     if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
   };
   const dataAttr = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data-${k}`, v]));
+  const isLicht = isMaquette && typeof document !== 'undefined' && Boolean(
+    document.documentElement.classList.contains('theme-light')
+    || document.documentElement.classList.contains('theme-plum-light')
+    || document.querySelector('.canonical-chrome.theme-light, .canonical-chrome.theme-plum-light'),
+  );
   return createPortal(
-    <div className={`cvn-laag is-${soort}`} onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
+    <div
+      className={`cvn-laag is-${soort}${isLicht ? ' theme-light' : ''}`}
+      data-mq-dienst={isMaquette ? 'cloud' : undefined}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}
+    >
       <div ref={vak} className='cvn-laag-vak' role='dialog' aria-modal='true' aria-label={titel} tabIndex={-1} onKeyDown={toets} {...dataAttr}>
         <header className='cvn-laag-kop'><h2>{titel}</h2><button type='button' className='cvn-icoonknop cvn-laag-sluit' onClick={onSluit} aria-label={tr(lang, 'Закрити', 'Sluiten')} title='Esc'><X aria-hidden='true' /></button></header>
         <div className='cvn-laag-inhoud'>{children}</div>

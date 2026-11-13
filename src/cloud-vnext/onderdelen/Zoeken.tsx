@@ -11,6 +11,7 @@ import { ExternalLink, File, FileArchive, FileCode, FileImage, FileMusic, FileSp
 import { bronStand, isAfgebroken, zoeken, type Gesloten, type ZoekBron, type ZoekBronStand, type ZoekTreffer, type ZoekUitkomst } from '../../zoek/zoek-api';
 import { highlightParts, stukkenUitPosities } from '../../zoek/zoek-kern';
 import { canonicalNavigationUrl } from '../../canoniek-navigatie';
+import { useIsMaquette } from '../../thema/useThema';
 import { BRON_STAND_NAAM } from '../../../shared/zoek-model';
 import { DIEPE_PARAMS, diepeRoute } from '../../../shared/zoek-diepe-link';
 import { CLOUD_VNEXT_LIMIETEN, cloudSoort, type CloudSoort } from '../../../shared/cloud-vnext-model';
@@ -40,9 +41,9 @@ const S: Record<string, CSSProperties> = {
 };
 
 /** Posities van de server (of de zoektermen als terugval) → tekstknopen met <mark>: geen innerHTML, geen HTML-opbouw. */
-function Stuk({ tekst, posities, terms }: { tekst: string; posities: ReadonlyArray<[number, number]>; terms: readonly string[] }): ReactNode {
+function Stuk({ tekst, posities, terms, maquette = false }: { tekst: string; posities: ReadonlyArray<[number, number]>; terms: readonly string[]; maquette?: boolean }): ReactNode {
   const stukken = posities.length ? stukkenUitPosities(tekst, posities) : highlightParts(tekst, terms);
-  return <>{stukken.map((p, i) => (p.hit ? <mark key={i} style={S.markering}>{p.t}</mark> : <Fragment key={i}>{p.t}</Fragment>))}</>;
+  return <>{stukken.map((p, i) => (p.hit ? <mark key={i} className={maquette ? 'cvn-zoek-mark' : undefined} style={maquette ? undefined : S.markering}>{p.t}</mark> : <Fragment key={i}>{p.t}</Fragment>))}</>;
 }
 
 const bronLabel = (lang: Lang, bron: ZoekBron) => (bron === 'drive' ? 'Google Drive' : tr(lang, 'Мої файли', 'Mijn bestanden'));
@@ -53,6 +54,7 @@ function hubZoekUrl(lang: Lang, q: string): string {
 }
 
 export default function Zoeken({ lang, naarTab }: OnderdeelProps) {
+  const isMaquette = useIsMaquette();
   const [q, setQ] = useState('');
   const [aan, setAan] = useState<Record<CloudBron, boolean>>({ cloud: true, drive: true });
   const [uit, setUit] = useState<ZoekUitkomst | null>(null);
@@ -132,11 +134,12 @@ export default function Zoeken({ lang, naarTab }: OnderdeelProps) {
   return (
     <>
       <section className='cvn-blok' aria-label={tr(lang, 'Пошук у хмарі', 'Zoeken in de cloud')}>
-        <form role='search' style={S.balk} data-cvn-zoek-balk='' onSubmit={(e) => { e.preventDefault(); if (schoon.length >= 2) void voer(schoon, 1, false); }}>
-          <div style={S.veldWrap}>
+        <form role='search' className={isMaquette ? 'cvn-zoek-balk' : undefined} style={isMaquette ? undefined : S.balk} data-cvn-zoek-balk='' onSubmit={(e) => { e.preventDefault(); if (schoon.length >= 2) void voer(schoon, 1, false); }}>
+          <div className={isMaquette ? 'cvn-zoek-veld-wrap' : undefined} style={isMaquette ? undefined : S.veldWrap}>
             <input
               ref={veldRef} type='search' enterKeyHint='search' autoComplete='off' value={q} maxLength={CLOUD_VNEXT_LIMIETEN.zoekMax}
-              style={{ flex: 1, minWidth: 0 }} data-cvn-zoek-veld=''
+              className={isMaquette ? 'cvn-zoek-veld' : undefined}
+              style={isMaquette ? undefined : { flex: 1, minWidth: 0 }} data-cvn-zoek-veld=''
               aria-label={tr(lang, 'Пошук у файлах', 'Zoeken in bestanden')}
               placeholder={tr(lang, 'Знайти файл, текст, фото…', 'Zoek een bestand, tekst, foto…')}
               onChange={(e) => setQ(e.target.value)}
@@ -192,7 +195,7 @@ export default function Zoeken({ lang, naarTab }: OnderdeelProps) {
             'Шукає у назвах, тексті та розпізнаному вмісті (OCR) ваших файлів і у файлах Google Drive. Індекс оновлюється приблизно кожні 5 хвилин, тому щойно додані файли з’являються з невеликою затримкою.',
             'Zoekt in namen, tekst en herkende inhoud (OCR) van uw bestanden en in Google Drive. De index wordt ongeveer elke 5 minuten ververst; net toegevoegde bestanden verschijnen dus met een kleine vertraging.')}</p>
           {standen.length > 0 ? (
-            <ul style={S.standen}>
+            <ul className={isMaquette ? 'cvn-zoek-standen' : undefined} style={isMaquette ? undefined : S.standen}>
               {standen.map((s) => (
                 <li key={s.bron} className='cvn-hint'>
                   {bronLabel(lang, s.bron)}: {tr(lang, BRON_STAND_NAAM[s.stand].uk, BRON_STAND_NAAM[s.stand].nl)}
@@ -220,7 +223,7 @@ export default function Zoeken({ lang, naarTab }: OnderdeelProps) {
 
       {items.length > 0 ? (
         <section className='cvn-blok' aria-label={tr(lang, 'Результати пошуку', 'Zoekresultaten')}>
-          <ul style={S.lijst}>
+          <ul className={isMaquette ? 'cvn-zoek-lijst' : undefined} style={isMaquette ? undefined : S.lijst}>
             {items.map((r) => {
               const mime = typeof r.extra.mime === 'string' ? r.extra.mime : '';
               const naam = typeof r.extra.bestandsnaam === 'string' && r.extra.bestandsnaam ? r.extra.bestandsnaam : r.titel;
@@ -230,17 +233,17 @@ export default function Zoeken({ lang, naarTab }: OnderdeelProps) {
               const datum = datumTekstMs(lang, r.bijgewerktOp);
               return (
                 <li key={`${r.bron}:${r.id}`}>
-                  <button type='button' style={S.rij} data-cvn-zoek-resultaat={`${r.bron}:${r.id}`} onClick={() => openTreffer(r)}>
-                    <span style={S.ikoon} aria-hidden='true'><Ikoon /></span>
-                    <span style={S.rijTekst}>
-                      <strong style={{ overflowWrap: 'anywhere' }}><Stuk tekst={titel} posities={r.fragment.bron === 'titel' ? r.fragment.posities : []} terms={terms} /></strong>
-                      {snippet ? <span style={S.fragment}><Stuk tekst={snippet.tekst} posities={snippet.posities} terms={terms} /></span>
-                        : r.omschrijving ? <span style={S.fragment}><Stuk tekst={r.omschrijving} posities={[]} terms={terms} /></span> : null}
-                      <span style={S.meta}>
+                  <button type='button' className={isMaquette ? 'cvn-zoek-rij' : undefined} style={isMaquette ? undefined : S.rij} data-cvn-zoek-resultaat={`${r.bron}:${r.id}`} onClick={() => openTreffer(r)}>
+                    <span className={isMaquette ? 'cvn-zoek-ikoon' : undefined} style={isMaquette ? undefined : S.ikoon} aria-hidden='true'><Ikoon /></span>
+                    <span className={isMaquette ? 'cvn-zoek-rij-tekst' : undefined} style={isMaquette ? undefined : S.rijTekst}>
+                      <strong className={isMaquette ? 'cvn-zoek-titel' : undefined} style={isMaquette ? undefined : { overflowWrap: 'anywhere' }}><Stuk tekst={titel} posities={r.fragment.bron === 'titel' ? r.fragment.posities : []} terms={terms} maquette={isMaquette} /></strong>
+                      {snippet ? <span className={isMaquette ? 'cvn-zoek-fragment' : undefined} style={isMaquette ? undefined : S.fragment}><Stuk tekst={snippet.tekst} posities={snippet.posities} terms={terms} maquette={isMaquette} /></span>
+                        : r.omschrijving ? <span className={isMaquette ? 'cvn-zoek-fragment' : undefined} style={isMaquette ? undefined : S.fragment}><Stuk tekst={r.omschrijving} posities={[]} terms={terms} maquette={isMaquette} /></span> : null}
+                      <span className={isMaquette ? 'cvn-zoek-meta' : undefined} style={isMaquette ? undefined : S.meta}>
                         {bronLabel(lang, r.bron)}{r.pad ? ` · ${r.pad}` : ''}{datum ? ` · ${datum}` : ''}
                       </span>
                     </span>
-                    <span style={S.pct} title={tr(lang, 'Відповідність запиту (0–100) відносно найкращого результату цього пошуку', 'Overeenkomst met de vraag (0–100) t.o.v. het beste resultaat van deze zoekopdracht')}>{r.percent}%</span>
+                    <span className={isMaquette ? 'cvn-zoek-pct' : undefined} style={isMaquette ? undefined : S.pct} title={tr(lang, 'Відповідність запиту (0–100) відносно найкращого результату цього пошуку', 'Overeenkomst met de vraag (0–100) t.o.v. het beste resultaat van deze zoekopdracht')}>{r.percent}%</span>
                   </button>
                 </li>
               );

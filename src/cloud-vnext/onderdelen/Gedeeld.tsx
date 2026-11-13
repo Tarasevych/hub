@@ -19,6 +19,7 @@ import { DeelQrSvg, isoNaarLokaalInvoer, kopieerNaarKlembord, lokaalInvoerNaarIs
 import { cloudFoutTekst } from '../hulp';
 import Laag from '../Laag';
 import { datumTekst, geledenTekst, tr, type Lang } from '../tekst';
+import '../cloud-delen-maquette.css';
 
 type SubTab = 'mijn' | 'met-mij';
 type FilterStand = 'alle' | 'actief' | 'accounts' | 'termijn' | 'gepauzeerd' | 'ingetrokken';

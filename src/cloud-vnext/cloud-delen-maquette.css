@@ -1,0 +1,981 @@
+/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2Б) для піддомену cloud.tarasevych.com.
+   Охоплює автономний та вбудований екран спільного посилання (GedeeldWeergave), вкладку спільного доступу (Gedeeld),
+   розділ робочих просторів (Werkruimtes), бічну інспекторську панель властивостей файла (DetailPaneel)
+   і вікно налаштування спільного доступу та прав учасників (DeelVenster).
+   Працює в нічній студії та у світлому режимі «Ранковий туман» виключно через змінні палітри Макета.
+   Stijlblad «Maquette» voor gedeelde weergave, deeltabblad, werkruimtes, detailpaneel en deelvenster van de cloud. */
+
+/* ── 1. Узгодження студійних змінних для робочих поверхонь і портальних шарів у body ── */
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) {
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.14);
+  --focus: var(--mq-accent);
+  --overlay: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+}
+
+/* Автономна підтримка студійної вітрини .mq-held, коли GedeeldWeergave відкривається поза канонічною оболонкою */
+:where(html.palet-maquette) .mq-schil[data-mq-dienst="cloud"] .mq-held {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  width: 100%;
+  border-radius: var(--mq-straal-held);
+  border: 1px solid var(--mq-held-lijn);
+  background: var(--mq-held-bg);
+  color: var(--mq-held-tekst);
+  box-shadow: var(--mq-schaduw-held);
+}
+
+:where(html.palet-maquette) .mq-schil[data-mq-dienst="cloud"] .mq-held.is-compact {
+  min-height: 68px;
+  padding: 12px 20px;
+  border-radius: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+:where(html.palet-maquette) .mq-schil[data-mq-dienst="cloud"] .mq-held:not(.is-compact) {
+  display: grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(280px, 0.84fr);
+  align-items: stretch;
+}
+
+/* ── 2. Спільні студійні кнопки, поля та пігулки в межах екранів поширення й шарів ── */
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop {
+  border-radius: var(--mq-straal-knop);
+  border-color: var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-weight: 560;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.16s ease;
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-klein {
+  border-radius: 999px;
+  padding-inline: 12px;
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-stil:hover:not(:disabled) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-actief {
+  border-color: rgba(var(--mq-accent-rgb), 0.38);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.20),
+    rgba(var(--mq-accent-rgb), 0.08)
+  );
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.22);
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-hoofd {
+  border-color: rgba(var(--mq-accent-rgb), 0.44);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 680;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.34),
+    0 10px 26px var(--mq-gloed);
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-hoofd:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.46),
+    0 14px 32px var(--mq-gloed);
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-icoonknop {
+  border-radius: 12px;
+  color: var(--mq-gedempt);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-icoonknop:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) :is(input:not([type="checkbox"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border-color: var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-bg-2));
+  color: var(--mq-tekst);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+html.palet-maquette body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) :is(input:not([type="checkbox"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: rgba(var(--mq-accent-rgb), 0.56);
+  box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.18);
+}
+
+/* Пігулки спільного доступу на картках файлів, рядках та теках у всій хмарі */
+html.palet-maquette body :is(.cvn-kaart-deelpil, .cvn-map-deelpil) {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  background: rgba(var(--mq-accent-rgb), 0.14);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cvn-map-deelknop {
+  border-radius: 12px;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette body .cvn-map-deelknop:hover {
+  border-color: rgba(var(--mq-accent-rgb), 0.44);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-accent);
+}
+
+/* ── 3. Автономний та гостьовий маршрут спільного посилання (GedeeldWeergave) ── */
+
+html.palet-maquette body .cvn-gedeeld-scherm.mq-schil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 26px;
+  min-height: 64vh;
+  padding: 16px 24px 48px;
+}
+
+html.palet-maquette body .cvn-gedeeld-scherm.mq-schil[aria-busy="true"] {
+  justify-content: center;
+}
+
+html.palet-maquette body .cvn-gedeeld-scherm > .mq-held,
+html.palet-maquette body .cvn-gedeeld-weergave > .mq-held {
+  width: 100%;
+}
+
+html.palet-maquette body .cvn-gedeeld-poortkaart {
+  padding: 32px 28px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand-sterk);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(var(--mq-accent-rgb), 0.12), transparent 62%),
+    linear-gradient(165deg, color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-oppervlak-2)), var(--mq-oppervlak));
+  box-shadow:
+    inset 0 1px 0 var(--mq-oppervlak-hover),
+    var(--mq-schaduw);
+}
+
+html.palet-maquette body .cvn-gedeeld-poorticoon {
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.32);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.22),
+    rgba(var(--mq-accent-rgb), 0.07)
+  );
+  color: var(--mq-accent);
+  box-shadow: 0 12px 28px var(--mq-gloed);
+}
+
+html.palet-maquette body .cvn-gedeeld-poorticoon.is-waarschuwing {
+  border-color: color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 15%, var(--mq-oppervlak-2));
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette body .cvn-gedeeld-poortkaart h2 {
+  font-size: 1.35rem;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-gedeeld-poortkaart p {
+  line-height: 1.62;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .cvn-gedeeld-poortkaart input {
+  border-radius: var(--mq-straal-veld);
+  border-color: var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-bg) 42%, var(--mq-oppervlak-2));
+  font-weight: 540;
+}
+
+/* Відкритий перегляд вмісту спільного посилання */
+html.palet-maquette body .cvn-gedeeld-weergave {
+  gap: 20px;
+  padding: 14px 24px 44px;
+}
+
+html.palet-maquette body .cvn-gedeeld-held {
+  padding: 22px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(var(--mq-accent-rgb), 0.10), transparent 54%),
+    linear-gradient(160deg, color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-oppervlak-2)), var(--mq-oppervlak));
+  box-shadow:
+    inset 0 1px 0 var(--mq-oppervlak-zacht),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cvn-gedeeld-held-icoon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.20),
+    rgba(var(--mq-accent-rgb), 0.06)
+  );
+  color: var(--mq-accent);
+  box-shadow: 0 8px 22px rgba(var(--mq-accent-rgb), 0.14);
+}
+
+html.palet-maquette body .cvn-gedeeld-held h2 {
+  font-size: 1.4rem;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-gedeeld-held-notitie {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  border-inline-start: 3px solid var(--mq-accent);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-gedeeld-kolom,
+html.palet-maquette body .cvn-gedeeld-voorbeeldpaneel {
+  padding: 20px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+@media (min-width: 980px) {
+  html.palet-maquette body .cvn-gedeeld-werkruimte:has(.cvn-gedeeld-voorbeeldpaneel) {
+    grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+  }
+}
+
+html.palet-maquette body .cvn-gedeeld-voorbeeldkop {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette body .cvn-gedeeld-bestandrij {
+  padding: 6px 10px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body .cvn-gedeeld-bestandrij:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .cvn-gedeeld-bestandrij.is-actief {
+  border-color: rgba(var(--mq-accent-rgb), 0.40);
+  background: linear-gradient(
+    90deg,
+    rgba(var(--mq-accent-rgb), 0.16) 0%,
+    rgba(var(--mq-accent-rgb), 0.05) 100%
+  );
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette body .cvn-deel-code-voorbeeld {
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-bg) 54%, var(--mq-oppervlak));
+  padding: 10px 0;
+}
+
+html.palet-maquette body .cvn-deel-code-regel {
+  padding: 2px 14px;
+  border-radius: 6px;
+}
+
+html.palet-maquette body .cvn-deel-code-regel:hover {
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette body .cvn-deel-code-regel i {
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-stil);
+}
+
+/* ── 4. Вкладка спільного доступу (onderdelen/Gedeeld.tsx) та Робочі простори (Werkruimtes) ── */
+
+html.palet-maquette body .cvn-gedeeld-pagina {
+  gap: 20px;
+}
+
+html.palet-maquette body .cvn-gedeeld-statgrid {
+  gap: 14px;
+}
+
+html.palet-maquette body .cvn-gedeeld-statkaart {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--mq-accent-rgb), 0.10), transparent 58%),
+    linear-gradient(165deg, color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-oppervlak-2)), var(--mq-oppervlak));
+  box-shadow:
+    inset 0 1px 0 var(--mq-oppervlak-zacht),
+    var(--mq-schaduw-zacht);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+html.palet-maquette body .cvn-gedeeld-statkaart:hover {
+  border-color: var(--mq-rand-sterk);
+  transform: translateY(-2px);
+}
+
+html.palet-maquette body .cvn-gedeeld-staticoon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.20),
+    rgba(var(--mq-accent-rgb), 0.06)
+  );
+  color: var(--mq-accent);
+  box-shadow: 0 8px 20px rgba(var(--mq-accent-rgb), 0.12);
+}
+
+html.palet-maquette body .cvn-gedeeld-statkaart strong {
+  font-size: 1.65rem;
+  font-weight: 640;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-tekst);
+}
+
+/* Капсульний перемикач «Мої посилання» / «Відкриті для мене» */
+html.palet-maquette body .cvn-gedeeld-werkbalk [role="tablist"] {
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cvn-gedeeld-werkbalk [role="tablist"] .cvn-knop {
+  border-radius: 999px;
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 16px;
+}
+
+html.palet-maquette body .cvn-gedeeld-werkbalk [role="tablist"] .cvn-knop.is-actief {
+  border-color: rgba(var(--mq-accent-rgb), 0.36);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--mq-accent-rgb), 0.22),
+    rgba(var(--mq-accent-rgb), 0.09)
+  );
+  color: var(--mq-tekst);
+}
+
+/* Картки посилань (мої посилання та відкриті для мене) */
+html.palet-maquette body .cvn-gedeeld-kaart {
+  padding: 20px 22px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-oppervlak-2)),
+    var(--mq-oppervlak)
+  );
+  box-shadow:
+    inset 0 1px 0 var(--mq-oppervlak-zacht),
+    var(--mq-schaduw-zacht);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+html.palet-maquette body .cvn-gedeeld-kaart:hover {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .cvn-gedeeld-doelicoon {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.24);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.16),
+    var(--mq-oppervlak-2)
+  );
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cvn-gedeeld-titelrij strong {
+  font-size: 1.04rem;
+  font-weight: 630;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-gedeeld-tellers {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cvn-gedeeld-tellers b {
+  font-variant-numeric: tabular-nums;
+  font-weight: 640;
+}
+
+/* 14-денний графік переглядів і завантажень */
+html.palet-maquette body .cvn-gedeeld-grafiek {
+  height: 156px;
+  padding: 14px 12px 10px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg) 34%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette body .cvn-gedeeld-staafwaarde {
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-gedeeld-staafspoor {
+  background: color-mix(in srgb, var(--mq-rand) 55%, transparent);
+}
+
+html.palet-maquette body .cvn-gedeeld-staaf {
+  background: var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .cvn-gedeeld-staaf.is-gevuld {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 68%, var(--mq-accent-2)) 100%
+  );
+  box-shadow: 0 4px 12px var(--mq-gloed);
+}
+
+/* Журнал звернень за посиланням */
+html.palet-maquette body .cvn-gedeeld-logrij {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cvn-gedeeld-logrij.is-geweigerd {
+  border-color: color-mix(in srgb, var(--fout) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 12%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+/* Розділ «Робочі простори» (Werkruimtes) */
+html.palet-maquette body .cvn-werkruimtes > .cvn-blok {
+  padding: 22px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cvn-werkruimtes > .cvn-blok > h3 {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+html.palet-maquette body .cvn-ws-kaarten {
+  gap: 14px;
+}
+
+html.palet-maquette body .cvn-ws-kaart {
+  gap: 8px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--mq-accent-rgb), 0.09), transparent 62%),
+    color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak));
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+html.palet-maquette body .cvn-ws-kaart:hover {
+  border-color: rgba(var(--mq-accent-rgb), 0.38);
+  transform: translateY(-2px);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* ── 5. Портальна оболонка шарів (.cvn-laag), інспектор файла (DetailPaneel) та вікно поширення (DeelVenster) ── */
+
+html.palet-maquette body .cvn-laag {
+  background: color-mix(in srgb, var(--mq-bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.palet-maquette body .cvn-laag-vak {
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(26px) saturate(1.25);
+  backdrop-filter: blur(26px) saturate(1.25);
+}
+
+html.palet-maquette body .cvn-laag.is-paneel .cvn-laag-vak {
+  border-left: 1px solid var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .cvn-laag.is-venster .cvn-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette body .cvn-laag-kop {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--mq-accent-rgb), 0.06) 0%,
+    transparent 100%
+  );
+}
+
+html.palet-maquette body .cvn-laag-kop h2 {
+  font-size: 1.06rem;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-laag-inhoud {
+  padding: 18px 20px 24px;
+  gap: 16px;
+}
+
+/* Бічна інспекторська панель властивостей файла (DetailPaneel.tsx) */
+html.palet-maquette body .cvn-detail-acties {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 66%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cvn-detail-hernoem {
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.34);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette body .cvn-detail-archief,
+html.palet-maquette body .cvn-detail-voorbeeld,
+html.palet-maquette body .cvn-detail-meta,
+html.palet-maquette body .cvn-detail-tags,
+html.palet-maquette body .cvn-detail-versies {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-oppervlak-2));
+  box-shadow: inset 0 1px 0 var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette body .cvn-detail-meta h3 svg,
+html.palet-maquette body .cvn-detail-archief-kop h3 svg,
+html.palet-maquette body .cvn-detail-versies h3 svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cvn-detail-meta dl {
+  gap: 8px 16px;
+}
+
+html.palet-maquette body .cvn-detail-meta dt {
+  font-weight: 560;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .cvn-detail-meta dd {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-detail-meta dd code {
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cvn-tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  background: rgba(var(--mq-accent-rgb), 0.11);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-versie-rijen li {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+/* Вікно налаштування спільного доступу й прав учасників (DeelVenster.tsx) */
+html.palet-maquette body .cvn-deel-kaart {
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid var(--mq-rand);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-oppervlak-2)),
+    var(--mq-oppervlak)
+  );
+  box-shadow:
+    inset 0 1px 0 var(--mq-oppervlak-zacht),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cvn-deel-tegel {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak));
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.15s ease;
+}
+
+html.palet-maquette body .cvn-deel-tegel:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  transform: translateY(-1px);
+}
+
+html.palet-maquette body .cvn-deel-tegel.is-actief {
+  border-color: rgba(var(--mq-accent-rgb), 0.44);
+  background: linear-gradient(
+    145deg,
+    rgba(var(--mq-accent-rgb), 0.18),
+    rgba(var(--mq-accent-rgb), 0.06)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(var(--mq-accent-rgb), 0.24),
+    0 8px 22px rgba(var(--mq-accent-rgb), 0.10);
+}
+
+html.palet-maquette body .cvn-deel-subvak {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg) 28%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette body .cvn-deel-boomrij {
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette body .cvn-deel-boomrij:hover {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette body .cvn-deel-boomrij.is-aan {
+  border-color: rgba(var(--mq-accent-rgb), 0.40);
+  background: rgba(var(--mq-accent-rgb), 0.14);
+}
+
+html.palet-maquette body .cvn-deel-ontvangers li {
+  border-radius: 13px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cvn-deel-succes {
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.42);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(var(--mq-accent-rgb), 0.18), transparent 64%),
+    color-mix(in srgb, var(--mq-oppervlak) 90%, rgba(var(--mq-accent-rgb), 0.08));
+  box-shadow: 0 14px 36px var(--mq-gloed);
+}
+
+html.palet-maquette body .cvn-deel-url-balk {
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-bg) 42%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cvn-deel-url-balk input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette body .cvn-deel-url-balk input:focus-visible {
+  box-shadow: none;
+}
+
+html.palet-maquette body .cvn-deel-qr-vak {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+}
+
+/* Світла контрастна підкладка для надійного зчитування QR-коду камерою в нічній студії */
+html.palet-maquette body .cvn-deel-qr-svg {
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-wit);
+}
+
+html.palet-maquette body .cvn-deel-pil {
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cvn-deel-status {
+  border: 1px solid transparent;
+}
+
+html.palet-maquette body .cvn-deel-status.is-actief {
+  border-color: color-mix(in srgb, var(--ok) 32%, transparent);
+  background: color-mix(in srgb, var(--ok) 14%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette body .cvn-deel-status.is-gepland {
+  border-color: color-mix(in srgb, var(--info) 32%, transparent);
+  background: color-mix(in srgb, var(--info) 14%, var(--mq-oppervlak-2));
+  color: var(--info);
+}
+
+html.palet-maquette body .cvn-deel-status.is-gepauzeerd {
+  border-color: color-mix(in srgb, var(--warn) 32%, transparent);
+  background: color-mix(in srgb, var(--warn) 14%, var(--mq-oppervlak-2));
+  color: var(--warn);
+}
+
+html.palet-maquette body :is(
+  .cvn-deel-status.is-verlopen,
+  .cvn-deel-status.is-limiet_bereikt,
+  .cvn-deel-status.is-ingetrokken
+) {
+  border-color: color-mix(in srgb, var(--fout) 32%, transparent);
+  background: color-mix(in srgb, var(--fout) 14%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette body .cvn-deel-bestaande-rij {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+}
+
+/* ── 6. Адаптивний мобільний шар (суворо наприкінці файла — правило mobiel-cascade-20261105) ── */
+
+@media (max-width: 960px) {
+  :where(html.palet-maquette) .mq-schil[data-mq-dienst="cloud"] .mq-held:not(.is-compact) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  html.palet-maquette body .cvn-gedeeld-scherm.mq-schil {
+    padding: 12px 14px 36px;
+    gap: 18px;
+  }
+
+  html.palet-maquette body .cvn-gedeeld-weergave {
+    padding: 10px 12px 36px;
+    gap: 16px;
+  }
+
+  html.palet-maquette body .cvn-gedeeld-werkbalk [role="tablist"] {
+    width: 100%;
+    border-radius: 18px;
+  }
+
+  html.palet-maquette body .cvn-laag-inhoud {
+    padding: 14px 14px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  html.palet-maquette body .cvn-gedeeld-poortkaart {
+    padding: 24px 18px;
+  }
+
+  html.palet-maquette body .cvn-gedeeld-held,
+  html.palet-maquette body .cvn-gedeeld-kaart,
+  html.palet-maquette body .cvn-deel-kaart,
+  html.palet-maquette body .cvn-gedeeld-kolom,
+  html.palet-maquette body .cvn-gedeeld-voorbeeldpaneel {
+    padding: 16px;
+  }
+}

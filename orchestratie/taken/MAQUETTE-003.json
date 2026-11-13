@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAQUETTE-003",
+  "agent": "antigravity",
+  "tak": "feature/maquette-003-20261113-195600",
+  "basisCommit": "5c181e68df3740aff6f21b6656ae70447938aabd",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T19:55:30.004Z",
+  "bijgewerkt": "2026-11-13T19:55:30.004Z",
+  "omschrijving": "Хвиля 2 теми «Макет»: повне студійне перевтілення хмарного сховища cloud.tarasevych.com (усі 14 канонічних вкладок, новий простір CloudPagina, публічне поширення GedeeldWeergave, класичний режим та універсальний переглядач файлів).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

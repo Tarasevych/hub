@@ -15,6 +15,7 @@ import { CloudFout, cloudClient } from './cloud-client';
 import { SOORT_ICOON, bewaarBlob, cloudFoutTekst, vanB64 } from './hulp';
 import Laag from './Laag';
 import { bytesTekst, datumTekst, soortTekst, tr, type Lang } from './tekst';
+import './cloud-delen-maquette.css';
 
 const PreviewBody = lazy(() => import('../MailBijlageVoorbeeld').then((m) => ({ default: m.MailAttachmentPreviewBody })));
 const voorbeeldMotor = () => import('../MailBijlageVoorbeeld');

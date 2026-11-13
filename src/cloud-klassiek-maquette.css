@@ -1,0 +1,845 @@
+/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2В) для хмарного піддомену cloud.tarasevych.com.
+   Охоплює класичну поверхню хмари, перемикач поверхні, переглядач Google Диску з повноекранною залою файлів,
+   медіаповерхні календаря і світлин, центр підключень хмари та передпускові панелі M4, M5 і M10.
+   Використовує виключно студійні змінні var(--mq-*) та color-mix(in srgb, ...) для нічної і світлої сфери.
+   Stijlblad «Maquette» voor de klassieke cloudweergave, Google Drive-verkenner, agenda, beeldkeuze en koppelingen. */
+
+/* ── 1. Приховування якірної рейки за відкритих повноекранних переглядачів і діалогів ── */
+
+html.palet-maquette[data-universeel-bestand-open='1'] :is(
+  .mq-anker-rail,
+  .mq-anker-onderbalk,
+  .mq-rail-popover,
+  .mq-anker-sluier
+),
+html.palet-maquette[data-drive-viewer-open='1'] :is(
+  .mq-anker-rail,
+  .mq-anker-onderbalk,
+  .mq-rail-popover,
+  .mq-anker-sluier
+),
+html.palet-maquette body:has(.drive-viewer-backdrop, .cloud-dialog-backdrop) :is(
+  .mq-anker-rail,
+  .mq-anker-onderbalk,
+  .mq-rail-popover,
+  .mq-anker-sluier
+) {
+  display: none;
+}
+
+/* ── 2. Прокидання студійних змінних для хмарних поверхонь та портальних переглядачів ── */
+
+html.palet-maquette body :is(
+  .cloud-functional,
+  .cloud-functional-loading,
+  .cloud-wissel-wachten,
+  .drive-browser,
+  .drive-browser-empty,
+  .drive-viewer-backdrop,
+  .suite-calendar,
+  .suite-photos,
+  .suite-media-connect,
+  .vbc,
+  .cloud-m5,
+  .tsv-cloud-m10,
+  .tsv-cloud-accounts
+) {
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 8%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --canonical-accent: var(--mq-accent);
+  --text-on-accent: var(--mq-accent-op);
+  --nav-hover: var(--mq-oppervlak-hover);
+  --nav-active: rgba(var(--mq-accent-rgb), 0.16);
+  --focus: var(--mq-accent);
+}
+
+html.palet-maquette body .cloud-wissel-wachten {
+  max-width: 76rem;
+  margin: 20px auto;
+  padding: 20px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg));
+  color: var(--mq-gedempt);
+  font-size: 0.9rem;
+}
+
+/* ── 3. Оболонка класичної хмари (.cloud-functional.mq-schil) та смуга стану енергії ── */
+
+html.palet-maquette body .cloud-functional {
+  --cf-border: var(--mq-rand);
+  --cf-soft: color-mix(in srgb, var(--mq-oppervlak-2) 78%, rgba(var(--mq-accent-rgb), 0.22));
+  --cf-accent: var(--mq-accent);
+  --cf-ink: var(--mq-tekst);
+  max-width: 78rem;
+  gap: 20px;
+  padding: 22px 28px 64px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cloud-functional-loading {
+  max-width: 78rem;
+  margin: 24px auto;
+  padding: 36px 24px;
+  border-radius: var(--mq-straal-held);
+  border: 1px solid var(--mq-rand);
+  background:
+    radial-gradient(circle at 20% 20%, var(--mq-werk-gloed-a), transparent 55%),
+    color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-bg));
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cloud-functional-loading svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cloud-functional .cloud-ruimte-melding {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cloud-functional .cloud-ruimte-melding[data-cloud-ruimte='gesloten'] {
+  border-color: rgba(var(--mq-tech-markering-rgb), 0.38);
+  background: color-mix(in srgb, rgba(var(--mq-tech-markering-rgb), 0.12) 45%, var(--mq-oppervlak));
+}
+
+/* Коли змонтована вітрина MaquetteHeld, класична шапка стає компактною студійною панеллю облікового запису, пошуку й енергії */
+html.palet-maquette body .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 12px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 86%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero > div {
+  display: none;
+}
+
+html.palet-maquette body .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero > aside {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+html.palet-maquette body .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero > aside small {
+  margin: 0;
+  color: var(--mq-stil);
+  font-size: 0.75rem;
+}
+
+html.palet-maquette body .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero > aside strong {
+  margin: 0 auto 0 0;
+  max-width: 18rem;
+  color: var(--mq-tekst);
+  font-size: 0.88rem;
+}
+
+/* Кнопки та поля вводу класичної хмари */
+html.palet-maquette body .cloud-functional button {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition:
+    transform 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body .cloud-functional button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .cloud-functional :is(button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+html.palet-maquette body .cloud-functional :is(.cloud-primary, .global-search-trigger) {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 700;
+  box-shadow: 0 10px 26px var(--mq-gloed);
+}
+
+html.palet-maquette body .cloud-functional :is(.cloud-primary, .global-search-trigger):hover:not(:disabled) {
+  filter: brightness(1.04);
+  border-color: rgba(var(--mq-accent-rgb), 0.58);
+}
+
+html.palet-maquette body .cloud-functional .cloud-energy {
+  gap: 5px;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 82%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cloud-functional .cloud-energy button {
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette body .cloud-functional .cloud-energy button.active {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: rgba(var(--mq-accent-rgb), 0.18);
+  color: var(--mq-tekst);
+}
+
+/* ── 4. Картки огляду, просторів, швидкого збереження, швидкого входу, пошуку й акаунтів ── */
+
+html.palet-maquette body .cloud-functional .cloud-next-action {
+  padding: 24px 26px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  background:
+    radial-gradient(circle at 12% 18%, var(--mq-held-gloed-a), transparent 54%),
+    radial-gradient(circle at 88% 82%, var(--mq-held-gloed-b), transparent 58%),
+    var(--mq-held-bg);
+  color: var(--mq-held-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette body .cloud-functional .cloud-next-action span {
+  color: var(--mq-held-boven);
+}
+
+html.palet-maquette body .cloud-functional .cloud-next-action p {
+  color: var(--mq-held-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette body .cloud-functional .cloud-next-action button {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.44);
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: 0 12px 28px var(--mq-gloed);
+}
+
+html.palet-maquette body .cloud-functional :is(
+  .cloud-summary-row article,
+  .cloud-workspace-preview,
+  .cloud-workspaces-page,
+  .cloud-workspace-detail,
+  .cloud-inbox-page,
+  .cloud-capture-card,
+  .cloud-search-box,
+  .cloud-account-section,
+  .cloud-other-services,
+  .cloud-suite-onboarding
+) {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cloud-functional .cloud-summary-row article svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cloud-functional .cloud-connection-overview {
+  border-radius: 22px;
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, rgba(var(--mq-accent-rgb), 0.12) 60%, var(--mq-oppervlak)) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-bg)) 100%
+  );
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cloud-functional .cloud-connection-overview > svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .cloud-functional :is(
+  .cloud-workspace-card,
+  .cloud-inbox-item,
+  .cloud-item-list > article,
+  .cloud-human-card,
+  .cloud-account-list article,
+  .cloud-other-services > article
+) {
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .cloud-functional .cloud-workspace-card:hover:not(:disabled) {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: color-mix(in srgb, var(--mq-oppervlak-hover) 65%, var(--mq-oppervlak-2));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .cloud-functional :is(.cloud-empty-calm, .cloud-calm-empty) {
+  border-radius: 18px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .cloud-functional :is(
+  .cloud-capture-card textarea,
+  .cloud-capture-card input,
+  .cloud-capture-card select,
+  .cloud-workspace-dialog textarea,
+  .cloud-workspace-dialog input,
+  .cloud-search-box input,
+  .cloud-search-box select,
+  .cloud-inbox-actions select,
+  .cloud-status-select select
+) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 84%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cloud-functional :is(.cloud-kind-switch button.active, .cloud-focus-toggle.active) {
+  border-color: rgba(var(--mq-accent-rgb), 0.46);
+  background: rgba(var(--mq-accent-rgb), 0.18);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cloud-functional .cloud-human-status {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette body .cloud-functional .cloud-human-status.connected {
+  border-color: rgba(var(--mq-accent-rgb), 0.38);
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: color-mix(in srgb, var(--mq-accent) 82%, var(--mq-tekst));
+}
+
+html.palet-maquette body .cloud-functional .cloud-human-status.access {
+  border-color: rgba(var(--mq-tech-markering-rgb), 0.36);
+  background: rgba(var(--mq-tech-markering-rgb), 0.14);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .cloud-functional .cloud-provider-account-disconnect {
+  border-color: rgba(var(--mq-tech-markering-rgb), 0.34);
+  color: color-mix(in srgb, var(--mq-tech-markering) 76%, var(--mq-tekst));
+}
+
+html.palet-maquette body .cloud-functional a[data-zoek-link='cloud'] {
+  justify-self: start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+html.palet-maquette body .cloud-functional a[data-zoek-link='cloud']:hover {
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+/* Діалоги створення простору, підтвердження переходу та перегляду нотатки */
+html.palet-maquette body .cloud-dialog-backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 72%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+html.palet-maquette body :is(.cloud-workspace-dialog, .cloud-note-dialog) {
+  border-radius: 24px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-bg)) 0%,
+    color-mix(in srgb, var(--mq-bg-2) 96%, var(--mq-bg)) 100%
+  );
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette body .cloud-note-dialog pre {
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 86%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+/* ── 5. Переглядач Google Диску (.drive-browser) та повноекранна зала файлів (.drive-viewer) ── */
+
+html.palet-maquette body .drive-browser {
+  border-radius: 22px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .drive-browser-empty {
+  border-radius: 20px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body :is(.drive-browser-head, .drive-toolbar, .drive-breadcrumbs) {
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 56%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .drive-browser :is(select, input) {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 84%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .drive-browser :is(
+  .drive-toolbar > button,
+  .drive-search button,
+  .drive-view-switch button,
+  .drive-breadcrumbs button,
+  .drive-load-more
+) {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+}
+
+html.palet-maquette body .drive-browser .drive-toolbar > button:first-of-type {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 90%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 700;
+  box-shadow: 0 8px 22px var(--mq-gloed);
+}
+
+html.palet-maquette body .drive-browser .drive-view-switch button.active {
+  border-color: rgba(var(--mq-accent-rgb), 0.44);
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .drive-browser .drive-files article {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, var(--mq-oppervlak));
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette body .drive-browser .drive-files article:hover {
+  transform: translateY(-1px);
+  border-color: var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-hover) 55%, var(--mq-oppervlak-2));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .drive-browser .drive-file-icon {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .drive-browser .folder .drive-file-icon {
+  border-color: rgba(var(--mq-accent-rgb), 0.34);
+  background: rgba(var(--mq-accent-rgb), 0.15);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .drive-browser .drive-file-actions button {
+  border-radius: 10px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-bg));
+  color: var(--mq-tekst);
+}
+
+/* Повноекранна зала перегляду файлів Диску та класичної хмари (відступ шапки праворуч суворо до 16px) */
+html.palet-maquette body .drive-viewer-backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 76%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+html.palet-maquette body .drive-viewer {
+  border-radius: 22px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-bg)) 0%,
+    color-mix(in srgb, var(--mq-bg-2) 96%, var(--mq-bg)) 100%
+  );
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette body .drive-viewer > header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .drive-viewer > header :is(a, button) {
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg));
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+html.palet-maquette body .drive-viewer > header :is(a, button):hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .drive-viewer .mail-viewer-stage {
+  background:
+    radial-gradient(circle at 18% 14%, var(--mq-werk-gloed-a), transparent 54%),
+    radial-gradient(circle at 84% 86%, var(--mq-werk-gloed-b), transparent 58%),
+    color-mix(in srgb, var(--mq-bg) 88%, var(--mq-oppervlak));
+}
+
+/* ── 6. Календар і світлини Google (.suite-calendar, .suite-photos та обгортка AgendaFotos) ── */
+
+html.palet-maquette body :is(.suite-calendar, .suite-photos, .suite-media-connect) {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 92%, var(--mq-bg));
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body :is(.suite-calendar > header, .suite-photos > header, .suite-calendar-search) {
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 58%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body :is(.suite-calendar header > div > svg, .suite-photos header > div > svg, .suite-media-connect > svg) {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body :is(
+  .suite-calendar select,
+  .suite-calendar input,
+  .suite-calendar button,
+  .suite-photos select,
+  .suite-picker-progress a
+) {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 84%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+}
+
+html.palet-maquette body :is(
+  .suite-media-connect button,
+  .suite-photos > header button,
+  .suite-photo-import button,
+  .suite-picker-progress button,
+  .suite-calendar-search button
+) {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.42);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  font-weight: 700;
+  box-shadow: 0 8px 22px var(--mq-gloed);
+}
+
+html.palet-maquette body .suite-event-list article {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body :is(.suite-picker-progress, .suite-photo-import) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .suite-photo-grid article {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .suite-photo-thumb {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mq-bg-2) 86%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .suite-photo-thumb span {
+  border: 1px solid rgba(var(--mq-accent-rgb), 0.42);
+  background: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg));
+  color: var(--mq-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+html.palet-maquette body :is(.cvn-blok[data-cvn-google], .cvn-leeg[data-cvn-google]) {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* ── 7. Центр підключень хмари (.vbc) ── */
+
+html.palet-maquette body .vbc.mq-schil {
+  max-width: 74rem;
+  gap: 18px;
+  padding: 20px 24px 56px;
+}
+
+html.palet-maquette body .vbc.mq-schil > .mq-held ~ .vbc-kop {
+  padding: 12px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 86%, var(--mq-bg));
+}
+
+html.palet-maquette body .vbc .vbc-tegel {
+  padding: 15px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .vbc .vbc-tegel svg.is-ok {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .vbc .vbc-tegel.is-aandacht {
+  border-color: rgba(var(--mq-tech-markering-rgb), 0.36);
+}
+
+html.palet-maquette body .vbc .vbc-tegel.is-aandacht svg {
+  color: var(--mq-tech-markering);
+}
+
+html.palet-maquette body .vbc .vbc-blok {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-bg));
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .vbc .vbc-kaart {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-oppervlak));
+}
+
+html.palet-maquette body .vbc .vbc-kaart.is-aandacht {
+  border-color: rgba(var(--mq-tech-markering-rgb), 0.42);
+}
+
+html.palet-maquette body .vbc .vbc-knop {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .vbc .vbc-knop:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .vbc .vbc-knop.is-hoofd {
+  border-color: rgba(var(--mq-accent-rgb), 0.42);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit)) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow: 0 8px 22px var(--mq-gloed);
+}
+
+html.palet-maquette body .vbc .vbc-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .vbc .vbc-badge {
+  font-size: 0.75rem;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette body .vbc :is(.vbc-badge.is-ok, .vbc-badge.is-verbonden) {
+  border-color: rgba(var(--mq-accent-rgb), 0.36);
+  background: rgba(var(--mq-accent-rgb), 0.16);
+  color: color-mix(in srgb, var(--mq-accent) 82%, var(--mq-tekst));
+}
+
+html.palet-maquette body .vbc .vbc-badge.is-beschikbaar {
+  border-color: var(--mq-rand-sterk);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 6%);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .vbc .vbc-badge.is-aandacht {
+  border-color: rgba(var(--mq-tech-markering-rgb), 0.42);
+  background: rgba(var(--mq-tech-markering-rgb), 0.14);
+  color: var(--mq-tekst);
+}
+
+/* ── 8. Передпускові панелі M4, M5 та M10 (.tsv-cloud-accounts, .cloud-m5, .tsv-cloud-m10) ── */
+
+html.palet-maquette body :is(.cloud-m5, .tsv-cloud-m10, .tsv-cloud-accounts) {
+  padding: 22px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak) 90%, var(--mq-bg));
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body :is(
+  .cloud-m5__card,
+  .tsv-cloud-panel,
+  .tsv-cloud-provider,
+  .tsv-cloud-connected,
+  .tsv-cloud-m10-item
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.cloud-m5, .tsv-cloud-m10, .tsv-cloud-accounts) :is(input, select) {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-bg-2) 84%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body :is(.cloud-m5, .tsv-cloud-m10, .tsv-cloud-accounts) button {
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+}
+
+html.palet-maquette body :is(.cloud-m5__stage, .tsv-cloud-m10-stage, .tsv-cloud-counter) {
+  border-radius: 999px;
+  border: 1px solid rgba(var(--mq-tech-markering-rgb), 0.38);
+  background: rgba(var(--mq-tech-markering-rgb), 0.14);
+  color: var(--mq-tekst);
+  font-size: 0.76rem;
+}
+
+/* ── 9. Адаптивні мобільні правила (суворо в кінці файла у спадному порядку) ── */
+
+@media (max-width: 960px) {
+  html.palet-maquette body .cloud-functional {
+    padding: 18px 18px 52px;
+  }
+
+  html.palet-maquette body .vbc.mq-schil {
+    padding: 16px 16px 48px;
+  }
+}
+
+@media (max-width: 720px) {
+  html.palet-maquette body .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero > aside {
+    align-items: stretch;
+  }
+
+  html.palet-maquette body .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero > aside strong {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  html.palet-maquette body .cloud-functional .cloud-energy {
+    width: 100%;
+  }
+
+  html.palet-maquette body .drive-viewer > header {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  html.palet-maquette body .cloud-functional {
+    padding: 14px 12px 44px;
+    gap: 14px;
+  }
+
+  html.palet-maquette body .cloud-functional .cloud-energy button {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+  }
+
+  html.palet-maquette body .cloud-functional .cloud-next-action {
+    padding: 18px;
+  }
+
+  html.palet-maquette body .vbc.mq-schil {
+    padding: 12px 12px 40px;
+  }
+
+  html.palet-maquette body :is(.cloud-m5, .tsv-cloud-m10, .tsv-cloud-accounts) {
+    padding: 16px;
+  }
+}

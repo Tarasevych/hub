@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-003",
+  "titel": "Хвиля 2 теми оформлення «Макет»: повне студійне перевтілення хмарного сховища cloud.tarasevych.com",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх 14 канонічних вкладок і робочих поверхонь піддомену cloud.tarasevych.com поруч з усіма чинними темами без видалення наявних можливостей. Охопити новий простір CloudPagina (огляд, мої файли, спільний доступ, робочі простори, швидке збереження, швидкий вхід, пошук, останні, календар, фото, інтеграції та зовнішні джерела Google Drive, OneDrive, Dropbox), публічну сторінку поширення GedeeldWeergave, класичний режим CloudFunctioneelWeergave та універсальний переглядач файлів UniverseelBestandVenster у нічній студії та світлому режимі.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-003-20261113-195600",
+    "basis": "5c181e68df3740aff6f21b6656ae70447938aabd",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі доступу, маркери сеансів, особисті файли чи посилання користувачів, внутрішні мережеві адреси та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T19:55:30Z",
+      "stap": "Створено кумулятивну гілку feature/maquette-003-20261113-195600 поверх перевіреної Хвилі 1 (5c181e68df3740aff6f21b6656ae70447938aabd) та зареєстровано завдання MAQUETTE-003."
+    },
+    {
+      "tijd": "2026-11-13T20:10:00Z",
+      "stap": "Вбудовано студійну вітрину MaquetteHeld (повну на оглядових вкладках overview, workspaces, accounts та компактну на робочих вкладках) і перетягувану якірну рейку MaquetteAnkerRail у CloudPagina.tsx з автоматичним приховуванням при відкритих шарах і на вузьких екранах з нижньою смугою; створено src/cloud-vnext/cloud-kern-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T20:18:00Z",
+      "stap": "Оформлено панелі спільного доступу, подробиць файла, портальних діалогів, публічної вітрини поширення GedeeldWeergave та інтеграцій хмари у src/cloud-vnext/cloud-delen-maquette.css і src/cloud-vnext/cloud-integraties-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T20:25:00Z",
+      "stap": "Оформлено класичний режим CloudFunctioneelWeergave, DriveBrowser, GoogleSuiteMediaWeergave, провідник CloudM10Verkenner та універсальний переглядач файлів UniverseelBestandVenster у src/cloud-klassiek-maquette.css та src/bestand/universeel-bestand-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T20:41:00Z",
+      "stap": "Виконано повне виробниче складання, перевірку типів, модульні випробування хмари та візуальну перевірку cloud.tarasevych.com у безголовому Chromium у нічній студії та світлому режимі; узгоджено специфічність полів пошуку з піктограмою лупи та мобільну навігацію."
+    }
+  ],
+  "keuzes": [
+    "Для морського лазуритового акценту піддомену cloud застосовано автоматичне темне контрастне змішування у світлому режимі «ранковий туман», тоді як вітрина .mq-held зберігає власну глибоку студійну атмосферу.",
+    "На вузьких екранах у CloudPagina збережено єдину студійну нижню навігацію .cvn-onderbalk без дублювання другою мобільною смугою MaquetteAnkerRail.",
+    "Усі п'ять нових таблиць стилів хмари побудовано виключно на змінних var(--mq-*) та color-mix без жодного сирого кольору, !important чи нового position: fixed."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-003-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-003.json",
+    "orchestratie/taken/MAQUETTE-003.json",
+    "src/CloudFunctioneelWeergave.tsx",
+    "src/CloudVnextWissel.tsx",
+    "src/DriveBrowser.tsx",
+    "src/GoogleSuiteMediaWeergave.tsx",
+    "src/bestand/UniverseelBestandVenster.tsx",
+    "src/bestand/universeel-bestand-maquette.css",
+    "src/cloud-klassiek-maquette.css",
+    "src/cloud-vnext/CloudPagina.tsx",
+    "src/cloud-vnext/DeelVenster.tsx",
+    "src/cloud-vnext/DetailPaneel.tsx",
+    "src/cloud-vnext/GedeeldWeergave.tsx",
+    "src/cloud-vnext/Laag.tsx",
+    "src/cloud-vnext/cloud-delen-maquette.css",
+    "src/cloud-vnext/cloud-integraties-maquette.css",
+    "src/cloud-vnext/cloud-kern-maquette.css",
+    "src/cloud-vnext/onderdelen/AgendaFotos.tsx",
+    "src/cloud-vnext/onderdelen/Bron.tsx",
+    "src/cloud-vnext/onderdelen/Gedeeld.tsx",
+    "src/cloud-vnext/onderdelen/Integraties.tsx",
+    "src/cloud-vnext/onderdelen/Zoeken.tsx",
+    "src/cloud/CloudAanbiedersM5.tsx",
+    "src/cloud/CloudM10Verkenner.tsx",
+    "src/cloud/CloudVerbindingCentrum.tsx",
+    "src/verbindingen/VerbindingenCentrum.tsx"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (kaart-controle, plaatsing-controle, hulp-vraagtekens-controle, zoek-ui-catalogus, l002-audit, mail-slimme-inbox-audit, kleur-contrast-controle, vite build, huis-maquette, tech-bundels-controle, bouw-extensie, build:server) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, plaatsing-20261025, cloud-vnext-ui-20261029, cloud-vnext-catalogus-20261029, cloud-001-ui-contract, sec-002-afwerking-b-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка cloud.tarasevych.com (/overzicht, /bestanden та класичний режим) у безголовому оглядачі Chromium через локальний HTTPS у темному й світлому режимах на 1440x900 та 390x844 — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/maquette-kern/index.ts",
+    "src/cloud-vnext/CloudPagina.tsx",
+    "src/CloudFunctioneelWeergave.tsx"
+  ],
+  "beperkingen": [
+    "Кумулятивний пакет Хвилі 2 (MAQUETTE-003) охоплює ядро теми, id.tarasevych.com, екрани входу, mail.tarasevych.com та всі 14 канонічних вкладок хмарного сховища cloud.tarasevych.com; піддомени github, hub, ai, huis, mcp, api та admin послідовно перевтілюються у Хвилях 3–9 (MAQUETTE-004 — MAQUETTE-010)."
+  ]
+}

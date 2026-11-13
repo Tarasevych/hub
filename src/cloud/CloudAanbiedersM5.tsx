@@ -1,9 +1,10 @@
-/** M5 staging-only provider overview. CanonicalChrome navigation remains untouched.
- * This component NEVER enables permissions based on a provider name alone.
- * Server-side catalogue intentionally reports all unverified first-wave providers as not ready.
+/** Огляд постачальників хмарних інтеграцій у передпусковому режимі (M5).
+ * Навігація спільного каркаса залишається незмінною; жодні права не вмикаються лише за назвою служби.
+ * Серверний каталог чесно позначає неперевірених постачальників першої хвилі як іще не готових.
  */
 import {useEffect,useState} from 'react';
 import './cloud-aanbieders-m5.css';
+import '../cloud-klassiek-maquette.css';
 type State={id:string;title:string;authentication:string;ready:boolean;status:string;missing:string[];constraints:string[]};
 type Envelope={schema:string;release:string;providers:State[];allReady:boolean};
 export function CloudAanbiedersM5(){

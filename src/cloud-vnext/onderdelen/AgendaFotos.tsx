@@ -11,6 +11,7 @@ import { GoogleCalendarView, GooglePhotosView } from '../../GoogleSuiteMediaWeer
 import { cloudClient } from '../cloud-client';
 import { tr } from '../tekst';
 import type { OnderdeelProps } from '../CloudPagina';
+import '../../cloud-klassiek-maquette.css';
 
 type Dienst = { id: string; status: string; granted: boolean; connectEnabled: boolean };
 type Werkruimte = { id: string; title: string };

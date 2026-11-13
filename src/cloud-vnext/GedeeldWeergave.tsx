@@ -13,9 +13,12 @@ import type { MailAttachmentPreview } from '../MailBijlageVoorbeeld';
 import { CloudFout, cloudClient, type GedeeldInfoUit, type GedeeldInhoudUit } from './cloud-client';
 import { kopieerNaarKlembord } from './DeelVenster';
 import { SOORT_ICOON, bewaarBlob, cloudFoutTekst, vanB64 } from './hulp';
+import { MaquetteHeld, type MaquetteHeldStatistiek } from '../maquette-kern';
+import { useIsMaquette } from '../thema/useThema';
 import { bytesTekst, datumTekst, foutTekst, tr, type Lang } from './tekst';
 import './cloud-vnext.css';
 import './cloud-vnext-delen.css';
+import './cloud-delen-maquette.css';
 
 const PreviewBody = lazy(() => import('../MailBijlageVoorbeeld').then((m) => ({ default: m.MailAttachmentPreviewBody })));
 const voorbeeldMotor = () => import('../MailBijlageVoorbeeld');
@@ -39,6 +42,7 @@ type PoortStaat =
   | { soort: 'open'; info: GedeeldInfoUit };
 
 export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelden, onNaarBestanden, onSluitKoppeling }: Props) {
+  const isMaquette = useIsMaquette();
   const [poort, setPoort] = useState<PoortStaat>({ soort: 'laden' });
   const [wachtwoord, setWachtwoord] = useState('');
   const [wachtwoordInvoer, setWachtwoordInvoer] = useState('');
@@ -197,10 +201,14 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
     return tr(lang, 'Спільний файл', 'Gedeeld bestand');
   }, [poort, lang]);
 
+  const poortSchilKlas = isMaquette ? 'cvn cvn-gedeeld-scherm mq-schil' : 'cvn cvn-gedeeld-scherm';
+  const openSchilKlas = isMaquette ? 'cvn cvn-gedeeld-weergave mq-schil' : 'cvn cvn-gedeeld-weergave';
+  const mqDienstAttr = isMaquette ? ({ 'data-mq-dienst': 'cloud' } as const) : {};
+
   // ---------------- POORTSCHERMEN ----------------
   if (poort.soort === 'laden') {
     return (
-      <section className='cvn cvn-gedeeld-scherm' aria-busy='true'>
+      <section className={poortSchilKlas} aria-busy='true' {...mqDienstAttr}>
         <div className='cvn-gedeeld-poortkaart'>
           <LoaderCircle className='cvn-draai' aria-hidden='true' />
           <h2>{tr(lang, 'Перевіряємо спільне посилання…', 'Gedeelde koppeling controleren…')}</h2>
@@ -211,7 +219,23 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
 
   if (poort.soort === 'wachtwoord') {
     return (
-      <section className='cvn cvn-gedeeld-scherm' data-cvn-gedeeld-poort='wachtwoord'>
+      <section className={poortSchilKlas} data-cvn-gedeeld-poort='wachtwoord' {...mqDienstAttr}>
+        {isMaquette ? (
+          <MaquetteHeld
+            lang={lang}
+            dienst='cloud'
+            modus='volledig'
+            bovenregel={tr(lang, 'ХМАРА · ЗАХИЩЕНЕ ПОСИЛАННЯ', 'CLOUD · BEVEILIGDE KOPPELING')}
+            titelVoor={tr(lang, 'Спільний простір.', 'Gedeelde ruimte.')}
+            titelCursief={poort.naam || tr(lang, 'Вхід за паролем', 'Toegang met wachtwoord')}
+            beschrijving={tr(
+              lang,
+              'Матеріал передано через захищене хмарне посилання. Підтвердьте пароль нижче, щоб переглянути дозволений власником обсяг.',
+              'Dit onderdeel wordt gedeeld via een beveiligde cloudkoppeling. Bevestig hieronder het wachtwoord om de vrijgegeven inhoud te openen.',
+            )}
+            secundair={{ label: tr(lang, 'До хмарного сховища', 'Naar cloudopslag'), onClick: onSluitKoppeling }}
+          />
+        ) : null}
         <form className='cvn-gedeeld-poortkaart' onSubmit={(e) => { e.preventDefault(); if (wachtwoordInvoer.trim()) void laadInfo(wachtwoordInvoer.trim(), true); }}>
           <span className='cvn-gedeeld-poorticoon'><KeyRound aria-hidden='true' /></span>
           <h2>{poort.naam || tr(lang, 'Захищене посилання', 'Beveiligde koppeling')}</h2>
@@ -236,7 +260,26 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
 
   if (poort.soort === 'account_vereist' || poort.soort === 'account_geweigerd') {
     return (
-      <section className='cvn cvn-gedeeld-scherm' data-cvn-gedeeld-poort={poort.soort}>
+      <section className={poortSchilKlas} data-cvn-gedeeld-poort={poort.soort} {...mqDienstAttr}>
+        {isMaquette ? (
+          <MaquetteHeld
+            lang={lang}
+            dienst='cloud'
+            modus='volledig'
+            bovenregel={tr(lang, 'ХМАРА · ПЕРСОНАЛЬНИЙ ДОСТУП', 'CLOUD · ACCOUNTTOEGANG')}
+            titelVoor={tr(lang, 'Іменний доступ.', 'Persoonlijke toegang.')}
+            titelCursief={poort.soort === 'account_vereist' && poort.naam ? poort.naam : tr(lang, 'Перевірка профілю', 'Accountcontrole')}
+            beschrijving={tr(
+              lang,
+              'Власник відкрив цей матеріал лише для визначених зареєстрованих облікових записів.',
+              'De eigenaar heeft dit onderdeel uitsluitend vrijgegeven voor aangewezen geregistreerde accounts.',
+            )}
+            primair={{
+              label: poort.soort === 'account_vereist' ? tr(lang, 'Увійти в обліковий запис', 'Aanmelden') : tr(lang, 'Змінити обліковий запис', 'Ander account kiezen'),
+              onClick: onAanmelden,
+            }}
+          />
+        ) : null}
         <div className='cvn-gedeeld-poortkaart'>
           <span className='cvn-gedeeld-poorticoon'><UserCheck aria-hidden='true' /></span>
           <h2>{poort.soort === 'account_vereist' && poort.naam ? poort.naam : tr(lang, 'Доступ за зареєстрованим обліковим записом', 'Toegang op geregistreerd account')}</h2>
@@ -258,7 +301,23 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
 
   if (poort.soort === 'nog_niet_actief') {
     return (
-      <section className='cvn cvn-gedeeld-scherm' data-cvn-gedeeld-poort='gepland'>
+      <section className={poortSchilKlas} data-cvn-gedeeld-poort='gepland' {...mqDienstAttr}>
+        {isMaquette ? (
+          <MaquetteHeld
+            lang={lang}
+            dienst='cloud'
+            modus='compact'
+            opslagSleutel='cloud-gedeeld-poort'
+            bovenregel={tr(lang, 'ХМАРА · ВІДКЛАДЕНИЙ СТАРТ', 'CLOUD · GEPLANDE START')}
+            titelVoor={tr(lang, 'Спільний доступ:', 'Gedeelde toegang:')}
+            titelCursief={poort.naam || tr(lang, 'очікує часу відкриття', 'wacht op starttijd')}
+            beschrijving={tr(
+              lang,
+              'Посилання створено власником із відкладеним початком дії.',
+              'Deze koppeling is door de eigenaar aangemaakt met een geplande starttijd.',
+            )}
+          />
+        ) : null}
         <div className='cvn-gedeeld-poortkaart'>
           <span className='cvn-gedeeld-poorticoon'><CalendarClock aria-hidden='true' /></span>
           <h2>{poort.naam || tr(lang, 'Доступ заплановано на пізніший час', 'Toegang staat gepland')}</h2>
@@ -278,7 +337,19 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
 
   if (poort.soort === 'gesloten') {
     return (
-      <section className='cvn cvn-gedeeld-scherm' data-cvn-gedeeld-poort={poort.code}>
+      <section className={poortSchilKlas} data-cvn-gedeeld-poort={poort.code} {...mqDienstAttr}>
+        {isMaquette ? (
+          <MaquetteHeld
+            lang={lang}
+            dienst='cloud'
+            modus='compact'
+            opslagSleutel='cloud-gedeeld-poort'
+            bovenregel={tr(lang, 'ХМАРА · СТАН ПОСИЛАННЯ', 'CLOUD · KOPPELINGSSTATUS')}
+            titelVoor={tr(lang, 'Спільне посилання', 'Gedeelde koppeling')}
+            titelCursief={tr(lang, 'завершено', 'gesloten')}
+            beschrijving={poort.melding}
+          />
+        ) : null}
         <div className='cvn-gedeeld-poortkaart'>
           <span className='cvn-gedeeld-poorticoon is-waarschuwing'><ShieldAlert aria-hidden='true' /></span>
           <h2>{tr(lang, 'Посилання недоступне', 'Koppeling niet beschikbaar')}</h2>
@@ -320,9 +391,46 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
     : [];
 
   const regelStartNr = deelInfo?.deelSoort === 'regels' && deelInfo.vanRegel ? deelInfo.vanRegel : 1;
+  const heldStatistieken: MaquetteHeldStatistiek[] = [
+    {
+      waarde: koppeling.rechten === 'bekijken' ? tr(lang, 'Лише перегляд', 'Alleen bekijken') : tr(lang, 'Завантаження', 'Downloaden'),
+      label: tr(lang, 'права', 'rechten'),
+    },
+    {
+      waarde: koppeling.maxWeergaven ? `${koppeling.weergavenAantal}/${koppeling.maxWeergaven}` : koppeling.weergavenAantal,
+      label: tr(lang, 'переглядів', 'weergaven'),
+    },
+    ...(isBoom
+      ? [{ waarde: bestanden.length, label: tr(lang, 'файлів', 'bestanden') }]
+      : isArchief
+        ? [{ waarde: zichtbareArchief.length, label: tr(lang, 'елементів', 'onderdelen') }]
+        : bestand
+          ? [{ waarde: bytesTekst(lang, bestand.bytes), label: tr(lang, 'обсяг', 'grootte') }]
+          : []),
+  ];
 
   return (
-    <section className='cvn cvn-gedeeld-weergave' data-cvn-gedeeld-open={koppeling.doelSoort}>
+    <section className={openSchilKlas} data-cvn-gedeeld-open={koppeling.doelSoort} {...mqDienstAttr}>
+      {isMaquette ? (
+        <MaquetteHeld
+          lang={lang}
+          dienst='cloud'
+          modus='compact'
+          opslagSleutel='cloud-gedeeld'
+          bovenregel={`${tr(lang, 'ХМАРА', 'CLOUD')} · ${deelBereikOmschrijving}`}
+          titelVoor={tr(lang, 'Спільний матеріал:', 'Gedeeld onderdeel:')}
+          titelCursief={koppeling.naam}
+          beschrijving={
+            koppeling.notitie
+            || tr(
+              lang,
+              `Надав(ла): ${koppeling.eigenaarNaam}. Відкрито виключно дозволений власником обсяг.`,
+              `Gedeeld door ${koppeling.eigenaarNaam}. Uitsluitend de door de eigenaar vrijgegeven omvang wordt getoond.`,
+            )
+          }
+          statistieken={heldStatistieken}
+        />
+      ) : null}
       {/* BOVENBALK VAN DE GEDEELDE KOPPELING */}
       <header className='cvn-gedeeld-held'>
         <div className='cvn-gedeeld-held-links'>

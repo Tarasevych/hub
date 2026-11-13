@@ -1,13 +1,15 @@
 import { api } from './platform/client';
 import { Brain, Check, ChevronRight, Cloud, File, FileText, FolderKanban, Inbox, Link2, LoaderCircle, Pause, Play, Plus, Search, ShieldCheck, Sparkles, Unplug, Upload, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DriveBrowser,{CloudFileWorkbench,loadCloudFilePreview,type CloudRawFile} from './DriveBrowser';import{revokeMailAttachmentPreview,type MailAttachmentPreview}from'./MailBijlageVoorbeeld';
 import {GoogleCalendarView,GooglePhotosView} from './GoogleSuiteMediaWeergave';
 import GlobalSearchPanel from './GlobaalZoekPaneel';
 import { zoekPaginaUrl } from './zoek/ZoekGlobaal'; // Z4 22.10.2026: de kapotte SearchPage (403 zonder service) is weg; knop → hub /zoek?bron=cloud
 import{emitCanonicalNotice}from'./canoniek-meldingen';
+import { MaquetteHeld, MaquetteAnkerRail, type MaquetteAnkerItem } from './maquette-kern';
+import { useIsMaquette } from './thema/useThema';
 import './cloud-functioneel.css';
-import {lazy,Suspense} from 'react';
+import './cloud-klassiek-maquette.css';
 const CloudM10Verkenner=lazy(()=>import('./cloud/CloudM10Verkenner'));
 const CloudVerbindingCentrumM4=lazy(()=>import('./cloud/CloudVerbindingCentrum').then(m=>({default:m.CloudVerbindingCentrum})));
 const CloudAanbiedersM5=lazy(()=>import('./cloud/CloudAanbiedersM5').then(m=>({default:m.CloudAanbiedersM5})));
@@ -94,7 +96,158 @@ const WEIGERING_MET_UITLEG = /^(RBAC_FORBIDDEN|RBAC_PENDING_CANNOT_MUTATE|CLOUD_
 const weigeringTekst = (lang: 'uk' | 'nl', caught: unknown) => { const code = errorCode(caught); return WEIGERING_MET_UITLEG.test(code) ? cloudFoutTekst(lang, code) : ''; };
 const suiteServiceId = (value: string | null): SuiteService['id'] | '' => value && ['mail', 'drive', 'calendar', 'photos'].includes(value) ? value as SuiteService['id'] : '';
 
+const MAQUETTE_CLOUD_TEKSTEN = {
+  uk: {
+    railTitel: 'Розділи хмари',
+    railOndertitel: 'Перетягніть до зручного краю',
+    ankerVolgendeStap: 'Наступний крок',
+    ankerDriveStatus: 'Стан підключення',
+    ankerDriveMaterialen: 'Останні матеріали',
+    ankerSamenvatting: 'Підсумок простору',
+    ankerWerkruimtes: 'Робочі простори',
+    ankerHoofdAccount: 'Основний запис',
+    ankerExtraAccounts: 'Додаткові записи',
+    ankerAndereDiensten: 'Інші сховища',
+    ankerOverzicht: 'Огляд хмари',
+    ankerSnelOpslaan: 'Швидке збереження',
+    ankerSnelleInvoer: 'Швидкий вхід',
+    ankerZoeken: 'Пошук за змістом',
+    ankerRecent: 'Нещодавні',
+    ankerAgenda: 'Календар',
+    ankerFotos: 'Світлини',
+    statSnelleInvoer: 'У швидкому вході',
+    statWerkruimtes: 'Робочих просторів',
+    statAandacht: 'Потребують уваги',
+    statAfgerond: 'Завершено',
+    statVerbonden: 'Підключених записів',
+    overviewBoven: 'ХМАРА · ОГЛЯД ПРОСТОРУ',
+    overviewVoor: 'Зберігайте зараз.',
+    overviewCursief: 'Впорядковуйте спокійно.',
+    overviewBeschrijving: 'Єдина студійна зала для ваших файлів, робочих контекстів, нотаток і перевірених підключень без примусу до негайного сортування.',
+    overviewPrimair: 'Швидко зберегти',
+    overviewSecundair: 'Новий простір',
+    accountsBoven: 'ХМАРА · КЕРУВАННЯ ПІДКЛЮЧЕННЯМИ',
+    accountsVoor: 'Хмарні сховища.',
+    accountsCursief: 'Прозорі межі доступу.',
+    accountsBeschrijving: 'Керуйте основним і додатковими підключеннями, переглядайте теки наживо та перевіряйте стан згоди для кожної служби окремо.',
+    accountsPrimair: 'До підключень',
+    accountsSecundair: 'До огляду хмари',
+    workspacesBoven: 'ХМАРА · РОБОЧІ ПРОСТОРИ',
+    workspacesVoor: 'Ваші контексти.',
+    workspacesCursief: 'Без глибоких дерев тек.',
+    workspacesBeschrijving: 'Один простір об’єднує файли, посилання й нотатки навколо спільної справи та зберігає місце зупинки.',
+    workspacesPrimair: 'Новий простір',
+    workspacesSecundair: 'Швидко зберегти',
+    captureBoven: 'ХМАРА · ШВИДКЕ ЗБЕРЕЖЕННЯ',
+    captureVoor: 'Зафіксуйте думку чи файл.',
+    captureCursief: 'Організація зачекає.',
+    captureBeschrijving: 'Додайте нотатку, посилання або документ одним рухом — назву та відповідний простір можна підтвердити пізніше.',
+    captureSecundair: 'До швидкого входу',
+    inboxBoven: 'ХМАРА · ШВИДКИЙ ВХІД',
+    inboxVoor: 'Збережене без поспіху.',
+    inboxCursief: 'Розбирайте за власним ритмом.',
+    inboxBeschrijving: 'Усе, що ви відклали без негайного рішення, спокійно чекає тут до зручної нагоди.',
+    inboxPrimair: 'Додати ще',
+    inboxSecundair: 'Робочі простори',
+    searchBoven: 'ХМАРА · ПОШУК ЗА ЗМІСТОМ',
+    searchVoor: 'Шукайте за спогадом.',
+    searchCursief: 'А не за точною назвою.',
+    searchBeschrijving: 'Пошук охоплює заголовки, вміст нотаток, мітки, згаданих людей і вибраний робочий контекст.',
+    searchSecundair: 'Усі простори',
+    recentBoven: 'ХМАРА · НЕЩОДАВНІ МАТЕРІАЛИ',
+    recentVoor: 'Останні збереження.',
+    recentCursief: 'Одразу під рукою.',
+    recentBeschrijving: 'Швидке повернення до файлів, посилань і нотаток, з якими ви працювали останнім часом.',
+    recentPrimair: 'Швидко зберегти',
+    calendarBoven: 'ХМАРА · РОЗКЛАД І ПОДІЇ',
+    calendarVoor: 'Ваш календар.',
+    calendarCursief: 'Усередині власного простору.',
+    calendarBeschrijving: 'Переглядайте зустрічі й шукайте події напряму з підключеного облікового запису в спокійному студійному вигляді.',
+    calendarSecundair: 'Підключення',
+    photosBoven: 'ХМАРА · ВИБРАНІ СВІТЛИНИ',
+    photosVoor: 'Світлини за вибором.',
+    photosCursief: 'Без фонового збору зайвого.',
+    photosBeschrijving: 'Обирайте лише потрібні кадри в захищеному вікні та зберігайте їх у власному робочому просторі.',
+    photosSecundair: 'Підключення',
+  },
+  nl: {
+    railTitel: 'Onderdelen',
+    railOndertitel: 'Sleep naar een gewenste rand',
+    ankerVolgendeStap: 'Volgende stap',
+    ankerDriveStatus: 'Koppelingsstatus',
+    ankerDriveMaterialen: 'Recente materialen',
+    ankerSamenvatting: 'Overzicht',
+    ankerWerkruimtes: 'Werkruimtes',
+    ankerHoofdAccount: 'Hoofdkoppeling',
+    ankerExtraAccounts: 'Extra koppelingen',
+    ankerAndereDiensten: 'Andere opslag',
+    ankerOverzicht: 'Overzicht',
+    ankerSnelOpslaan: 'Snel opslaan',
+    ankerSnelleInvoer: 'Snelle invoer',
+    ankerZoeken: 'Inhoudelijk zoeken',
+    ankerRecent: 'Recent bewaard',
+    ankerAgenda: 'Agenda',
+    ankerFotos: 'Beeldmateriaal',
+    statSnelleInvoer: 'In snelle invoer',
+    statWerkruimtes: 'Werkruimtes',
+    statAandacht: 'Vragen aandacht',
+    statAfgerond: 'Afgerond',
+    statVerbonden: 'Actieve koppelingen',
+    overviewBoven: 'OPSLAG · OVERZICHT VAN DE RUIMTE',
+    overviewVoor: 'Bewaar direct.',
+    overviewCursief: 'Orden in alle rust.',
+    overviewBeschrijving: 'Eén rustige studioruimte voor uw bestanden, werkcontexten, notities en gecontroleerde koppelingen zonder dwang om meteen te sorteren.',
+    overviewPrimair: 'Snel opslaan',
+    overviewSecundair: 'Nieuwe werkruimte',
+    accountsBoven: 'OPSLAG · BEHEER VAN KOPPELINGEN',
+    accountsVoor: 'Opslagdiensten.',
+    accountsCursief: 'Heldere grenzen per dienst.',
+    accountsBeschrijving: 'Beheer uw primaire en aanvullende koppelingen, blader rechtstreeks door mappen en controleer de toestemming per onderdeel.',
+    accountsPrimair: 'Naar koppelingen',
+    accountsSecundair: 'Naar overzicht',
+    workspacesBoven: 'OPSLAG · WERKRUIMTES',
+    workspacesVoor: 'Uw contexten.',
+    workspacesCursief: 'Zonder diepe mappenbomen.',
+    workspacesBeschrijving: 'Eén werkruimte bundelt bestanden, verwijzingen en notities rond één onderwerp en bewaart waar u gebleven bent.',
+    workspacesPrimair: 'Nieuwe werkruimte',
+    workspacesSecundair: 'Snel opslaan',
+    captureBoven: 'OPSLAG · SNEL OPSLAAN',
+    captureVoor: 'Leg direct vast.',
+    captureCursief: 'Ordenen kan altijd later.',
+    captureBeschrijving: 'Voeg in één handeling een notitie, verwijzing of document toe — naam en passende werkruimte kunt u later bevestigen.',
+    captureSecundair: 'Naar snelle invoer',
+    inboxBoven: 'OPSLAG · SNELLE INVOER',
+    inboxVoor: 'Rustig bewaard.',
+    inboxCursief: 'Verwerk op uw eigen tempo.',
+    inboxBeschrijving: 'Alles wat u zonder onmiddellijke keuze hebt vastgelegd, wacht hier overzichtelijk tot u er ruimte voor hebt.',
+    inboxPrimair: 'Nieuw vastleggen',
+    inboxSecundair: 'Werkruimtes',
+    searchBoven: 'OPSLAG · INHOUDELIJK ZOEKEN',
+    searchVoor: 'Zoek op herinnering.',
+    searchCursief: 'Niet op exacte bestandsnaam.',
+    searchBeschrijving: 'De zoekopdracht doorzoekt titels, notitie-inhoud, trefwoorden, genoemde personen en de gekozen werkruimte.',
+    searchSecundair: 'Alle werkruimtes',
+    recentBoven: 'OPSLAG · RECENT BEWAARD',
+    recentVoor: 'Laatste toevoegingen.',
+    recentCursief: 'Meteen binnen handbereik.',
+    recentBeschrijving: 'Keer snel terug naar de bestanden, verwijzingen en notities waarmee u onlangs hebt gewerkt.',
+    recentPrimair: 'Snel opslaan',
+    calendarBoven: 'OPSLAG · PLANNING EN AFSPRAKEN',
+    calendarVoor: 'Uw agenda.',
+    calendarCursief: 'Binnen uw eigen ruimte.',
+    calendarBeschrijving: 'Bekijk afspraken en doorzoek uw planning rechtstreeks vanuit de gekoppelde dienst in een rustige studioweergave.',
+    calendarSecundair: 'Koppelingen',
+    photosBoven: 'OPSLAG · GEKOZEN BEELDMATERIAAL',
+    photosVoor: 'Beelden op eigen keuze.',
+    photosCursief: 'Zonder ongevraagde synchronisatie.',
+    photosBeschrijving: 'Kies uitsluitend de gewenste opnamen in een afgeschermd keuzevenster en bewaar ze in uw eigen werkruimte.',
+    photosSecundair: 'Koppelingen',
+  },
+} as const;
+
 export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin, tabContext, onFocusChange, onNavigateTab }: Props) {
+  const isMaquette = useIsMaquette();
+  const mqTekst = MAQUETTE_CLOUD_TEKSTEN[lang];
   const t = (uk: string, nl: string) => lang === 'uk' ? uk : nl;
   const notify=(text:string,kind:'info'|'success'|'warning'|'error'='info')=>emitCanonicalNotice({text,kind,source:'cloud'});
   const effectiveTab = ['google', 'onedrive', 'dropbox'].includes(tab) ? 'accounts' : tab;
@@ -329,9 +482,197 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     setProviderBusy('');
   };
 
-  if (loading) return <section className='cloud-functional-loading' aria-busy='true'><LoaderCircle className='spin'/><strong>{t('Відновлюємо ваш контекст…', 'Uw context wordt hersteld…')}</strong></section>;
+  const [actiefAnker, setActiefAnker] = useState('cloud-sectie-volgende');
+  const [externeViewerOpen, setExterneViewerOpen] = useState(() => typeof document !== 'undefined' && Boolean(document.documentElement.dataset.universeelBestandOpen || document.documentElement.dataset.driveViewerOpen || document.querySelector('.drive-viewer-backdrop, .cloud-dialog-backdrop')));
 
-  return <div className={`cloud-functional energy-${energy}${focus ? ' is-focus' : ''}`} data-cloud-architecture='workspace-functional-v1'>
+  useEffect(() => {
+    const controleerViewer = () => {
+      const html = document.documentElement;
+      const open = Boolean(
+        html.dataset.universeelBestandOpen ||
+        html.dataset.driveViewerOpen ||
+        document.querySelector('.drive-viewer-backdrop, .cloud-dialog-backdrop')
+      );
+      setExterneViewerOpen(prev => (prev === open ? prev : open));
+    };
+    controleerViewer();
+    window.addEventListener('tsv:universeel-bestand-open', controleerViewer);
+    window.addEventListener('tsv:cloud-viewer-open', controleerViewer);
+    const observeer = new MutationObserver(controleerViewer);
+    observeer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-universeel-bestand-open', 'data-drive-viewer-open'] });
+    observeer.observe(document.body, { childList: true });
+    return () => {
+      window.removeEventListener('tsv:universeel-bestand-open', controleerViewer);
+      window.removeEventListener('tsv:cloud-viewer-open', controleerViewer);
+      observeer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (effectiveTab === 'overview') setActiefAnker('cloud-sectie-volgende');
+    else if (effectiveTab === 'accounts') setActiefAnker('cloud-sectie-hoofdaccount');
+    else setActiefAnker(`tab:${effectiveTab}`);
+  }, [effectiveTab]);
+
+  const kiesAnker = useCallback((id: string) => {
+    if (id.startsWith('tab:')) {
+      const doelTab = id.slice(4);
+      setActiefAnker(id);
+      onNavigateTab(doelTab);
+      const held = document.getElementById('mq-cloud-klassiek-held');
+      if (held) held.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    setActiefAnker(id);
+    const sectie = document.getElementById(id);
+    if (sectie) sectie.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [onNavigateTab]);
+
+  const verbondenGoogleAantal = useMemo(() => (googleProvider?.accounts || []).filter(acc => acc.status === 'connected').length + (driveAccess && !(googleProvider?.accounts || []).some(acc => acc.status === 'connected') ? 1 : 0), [googleProvider, driveAccess]);
+
+  const ankerItems = useMemo<MaquetteAnkerItem[]>(() => {
+    if (effectiveTab === 'overview') {
+      return [
+        { id: 'cloud-sectie-volgende', label: mqTekst.ankerVolgendeStap, badge: data.summary.inbox || undefined },
+        { id: 'cloud-sectie-drive-status', label: mqTekst.ankerDriveStatus },
+        { id: 'cloud-sectie-drive-materialen', label: mqTekst.ankerDriveMaterialen },
+        { id: 'cloud-sectie-samenvatting', label: mqTekst.ankerSamenvatting },
+        { id: 'cloud-sectie-werkruimtes', label: mqTekst.ankerWerkruimtes, badge: data.summary.workspaces || undefined },
+      ];
+    }
+    if (effectiveTab === 'accounts') {
+      return [
+        { id: 'cloud-sectie-hoofdaccount', label: mqTekst.ankerHoofdAccount, badge: verbondenGoogleAantal || undefined },
+        { id: 'cloud-sectie-extra-accounts', label: mqTekst.ankerExtraAccounts },
+        { id: 'cloud-sectie-andere-diensten', label: mqTekst.ankerAndereDiensten },
+      ];
+    }
+    return [
+      { id: 'tab:overview', label: mqTekst.ankerOverzicht },
+      { id: 'tab:workspaces', label: mqTekst.ankerWerkruimtes, badge: data.summary.workspaces || undefined },
+      { id: 'tab:capture', label: mqTekst.ankerSnelOpslaan },
+      { id: 'tab:inbox', label: mqTekst.ankerSnelleInvoer, badge: data.summary.inbox || undefined },
+      { id: 'tab:search', label: mqTekst.ankerZoeken },
+      { id: 'tab:recent', label: mqTekst.ankerRecent },
+      { id: 'tab:calendar', label: mqTekst.ankerAgenda },
+      { id: 'tab:photos', label: mqTekst.ankerFotos },
+      { id: 'tab:accounts', label: mqTekst.ankerDriveStatus },
+    ];
+  }, [effectiveTab, mqTekst, data.summary.inbox, data.summary.workspaces, verbondenGoogleAantal]);
+
+  const dialoogOfViewerOpen = createOpen || Boolean(connectVraag) || Boolean(openedNote) || Boolean(openedFile) || Boolean(openedSchema) || globalSearchOpen || externeViewerOpen;
+
+  const maquetteHeldProps = useMemo(() => {
+    if (effectiveTab === 'accounts') {
+      return {
+        bovenregel: mqTekst.accountsBoven,
+        titelVoor: mqTekst.accountsVoor,
+        titelCursief: mqTekst.accountsCursief,
+        beschrijving: mqTekst.accountsBeschrijving,
+        primair: { label: mqTekst.accountsPrimair, onClick: () => kiesAnker('cloud-sectie-hoofdaccount') },
+        secundair: { label: mqTekst.accountsSecundair, onClick: () => onNavigateTab('overview') },
+        statistieken: [
+          { waarde: verbondenGoogleAantal, label: mqTekst.statVerbonden },
+          { waarde: data.summary.workspaces, label: mqTekst.statWerkruimtes },
+        ],
+      };
+    }
+    if (effectiveTab === 'workspaces') {
+      return {
+        bovenregel: mqTekst.workspacesBoven,
+        titelVoor: mqTekst.workspacesVoor,
+        titelCursief: mqTekst.workspacesCursief,
+        beschrijving: mqTekst.workspacesBeschrijving,
+        primair: { label: mqTekst.workspacesPrimair, onClick: () => setCreateOpen(true), icoon: '+' },
+        secundair: { label: mqTekst.workspacesSecundair, onClick: () => onNavigateTab('capture') },
+        statistieken: [
+          { waarde: data.summary.workspaces, label: mqTekst.statWerkruimtes },
+          { waarde: data.summary.active, label: mqTekst.statAandacht },
+        ],
+      };
+    }
+    if (effectiveTab === 'capture') {
+      return {
+        bovenregel: mqTekst.captureBoven,
+        titelVoor: mqTekst.captureVoor,
+        titelCursief: mqTekst.captureCursief,
+        beschrijving: mqTekst.captureBeschrijving,
+        secundair: { label: mqTekst.captureSecundair, onClick: () => onNavigateTab('inbox') },
+        statistieken: [
+          { waarde: data.summary.inbox, label: mqTekst.statSnelleInvoer },
+          { waarde: data.summary.workspaces, label: mqTekst.statWerkruimtes },
+        ],
+      };
+    }
+    if (effectiveTab === 'inbox') {
+      return {
+        bovenregel: mqTekst.inboxBoven,
+        titelVoor: mqTekst.inboxVoor,
+        titelCursief: mqTekst.inboxCursief,
+        beschrijving: mqTekst.inboxBeschrijving,
+        primair: { label: mqTekst.inboxPrimair, onClick: () => onNavigateTab('capture'), icoon: '+' },
+        secundair: { label: mqTekst.inboxSecundair, onClick: () => onNavigateTab('workspaces') },
+        statistieken: [
+          { waarde: data.inbox.length, label: mqTekst.statSnelleInvoer },
+          { waarde: data.summary.active, label: mqTekst.statAandacht },
+        ],
+      };
+    }
+    if (effectiveTab === 'search') {
+      return {
+        bovenregel: mqTekst.searchBoven,
+        titelVoor: mqTekst.searchVoor,
+        titelCursief: mqTekst.searchCursief,
+        beschrijving: mqTekst.searchBeschrijving,
+        secundair: { label: mqTekst.searchSecundair, onClick: () => onNavigateTab('workspaces') },
+      };
+    }
+    if (effectiveTab === 'recent') {
+      return {
+        bovenregel: mqTekst.recentBoven,
+        titelVoor: mqTekst.recentVoor,
+        titelCursief: mqTekst.recentCursief,
+        beschrijving: mqTekst.recentBeschrijving,
+        primair: { label: mqTekst.recentPrimair, onClick: () => onNavigateTab('capture'), icoon: '+' },
+      };
+    }
+    if (effectiveTab === 'calendar') {
+      return {
+        bovenregel: mqTekst.calendarBoven,
+        titelVoor: mqTekst.calendarVoor,
+        titelCursief: mqTekst.calendarCursief,
+        beschrijving: mqTekst.calendarBeschrijving,
+        secundair: { label: mqTekst.calendarSecundair, onClick: () => onNavigateTab('accounts') },
+      };
+    }
+    if (effectiveTab === 'photos') {
+      return {
+        bovenregel: mqTekst.photosBoven,
+        titelVoor: mqTekst.photosVoor,
+        titelCursief: mqTekst.photosCursief,
+        beschrijving: mqTekst.photosBeschrijving,
+        secundair: { label: mqTekst.photosSecundair, onClick: () => onNavigateTab('accounts') },
+      };
+    }
+    return {
+      bovenregel: mqTekst.overviewBoven,
+      titelVoor: mqTekst.overviewVoor,
+      titelCursief: mqTekst.overviewCursief,
+      beschrijving: mqTekst.overviewBeschrijving,
+      primair: { label: mqTekst.overviewPrimair, onClick: () => onNavigateTab('capture'), icoon: '+' },
+      secundair: { label: mqTekst.overviewSecundair, onClick: () => setCreateOpen(true) },
+      statistieken: [
+        { waarde: data.summary.inbox, label: mqTekst.statSnelleInvoer },
+        { waarde: data.summary.workspaces, label: mqTekst.statWerkruimtes },
+        { waarde: data.summary.active, label: mqTekst.statAandacht },
+        { waarde: data.summary.done, label: mqTekst.statAfgerond },
+      ],
+    };
+  }, [effectiveTab, mqTekst, verbondenGoogleAantal, data.summary.inbox, data.summary.workspaces, data.summary.active, data.summary.done, data.inbox.length, kiesAnker, onNavigateTab]);
+
+  if (loading) return <section className={`cloud-functional-loading${isMaquette ? ' mq-schil' : ''}`} data-mq-dienst={isMaquette ? 'cloud' : undefined} aria-busy='true'><LoaderCircle className='spin'/><strong>{t('Відновлюємо ваш контекст…', 'Uw context wordt hersteld…')}</strong></section>;
+
+  return <div className={`cloud-functional energy-${energy}${focus ? ' is-focus' : ''}${isMaquette ? ' mq-schil' : ''}`} data-cloud-architecture='workspace-functional-v1' data-mq-dienst={isMaquette ? 'cloud' : undefined}>
     {/* Gesloten lade: een VOLLE uitleg met de volgende stap, in de werkruimte — en de pagina blijft een pagina (menu, shapka
         en tabbladen staan erbuiten, in CanonicalChrome). Klacht 3 van de eigenaar, 20.10.2026. */}
     {gesloten ? (
@@ -343,6 +684,29 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
       <p className='cloud-ruimte-melding' role='status' data-cloud-ruimte={data.ruimte.gedeeld ? 'gedeeld' : 'technisch'}>
         {data.ruimte.ruimte === 'technisch' ? t('Технічний простір: ', 'Technische ruimte: ') : ''}{t(data.ruimte.uitleg.uk, data.ruimte.uitleg.nl)}
       </p>
+    ) : null}
+    {isMaquette && !gesloten ? (
+      <>
+        <MaquetteHeld
+          id='mq-cloud-klassiek-held'
+          dienst='cloud'
+          modus={effectiveTab === 'overview' || effectiveTab === 'accounts' ? 'volledig' : 'compact'}
+          lang={lang}
+          opslagSleutel={`cloud-klassiek-${effectiveTab}`}
+          {...maquetteHeldProps}
+        />
+        {!dialoogOfViewerOpen && !focus ? (
+          <MaquetteAnkerRail
+            lang={lang}
+            titel={mqTekst.railTitel}
+            ondertitel={mqTekst.railOndertitel}
+            items={ankerItems}
+            actief={actiefAnker}
+            onKies={kiesAnker}
+            opslagSleutel='cloud-klassiek'
+          />
+        ) : null}
+      </>
     ) : null}
     <header className='cloud-functional-hero'>
       <div><span><Cloud/>{t('Ваш простір файлів', 'Uw bestandsruimte')}</span><h1>{t('Розумне хмарне сховище', 'Slimme cloudopslag')}</h1><p>{t('Зберігайте зараз. Організувати можна пізніше — система збереже контекст і запропонує наступний крок.', 'Sla nu op. Ordenen kan later — het systeem bewaart de context en stelt een volgende stap voor.')}</p></div>
@@ -374,11 +738,11 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
 
 function Overview({ t, data, drivePreview, previewLoading, onCapture, onAccounts, onWorkspace, onCreate }: { t: (uk: string, nl: string) => string; data: Bootstrap; drivePreview: DrivePreviewFile[] | null; previewLoading: boolean; onCapture: () => void; onAccounts: () => void; onWorkspace: (id: string) => void; onCreate: () => void }) {
   return <main className='cloud-overview'>
-    <section className='cloud-next-action'><div><Sparkles/><span>{t('Найменший наступний крок', 'Kleinste volgende stap')}</span><h2>{data.summary.inbox ? t('Розберіть один елемент — не весь список', 'Plaats één item — niet de hele lijst') : t('Збережіть те, що зараз перед вами', 'Sla op wat nu voor u ligt')}</h2><p>{data.summary.inbox ? t(`У швидкому вході ${data.summary.inbox}. Можна почати лише з одного.`, `Er staan ${data.summary.inbox} items in de snelle invoer. Eén is genoeg om te beginnen.`) : t('Назву й робочий простір можна не вигадувати.', 'U hoeft geen naam of werkruimte te bedenken.')}</p></div><button onClick={onCapture}><Upload/>{t('Швидко зберегти', 'Snel opslaan')}</button></section>
-    <DriveConnectionOverview t={t} onboarding={data.onboarding} providers={data.providers} onOpen={onAccounts}/><section className='cloud-account-section' data-cloud-drive-materials='overview'><header><div><span>{t('Google Drive','Google Drive')}</span><h3>{t('Останні матеріали','Recente materialen')}</h3><p>{t('Матеріали з підключеного акаунта показуються тут без пошуку.','Materiaal van het gekoppelde account wordt hier zonder zoeken getoond.')}</p></div><button onClick={onAccounts}>{t('Переглянути всі файли','Alle bestanden bekijken')}</button></header>{previewLoading?<div className='cloud-calm-empty' aria-busy='true'><LoaderCircle className='spin'/><strong>{t('Завантажуємо матеріали…','Materialen laden…')}</strong></div>:drivePreview?.length?<div className='cloud-account-list'>{drivePreview.slice(0,6).map(file=><article key={file.id}><div><strong>{file.name||t('Файл без назви','Naamloos bestand')}</strong><small>{file.modifiedAt?new Date(file.modifiedAt).toLocaleString():file.mimeType}</small></div></article>)}</div>:<div className='cloud-calm-empty'><File/><strong>{t('У підключеному Google Drive поки немає матеріалів для цього огляду.','Er zijn nog geen materialen beschikbaar in het gekoppelde Google Drive-overzicht.')}</strong><button onClick={onAccounts}>{t('Відкрити Google Drive','Google Drive openen')}</button></div>}</section>
+    <section id='cloud-sectie-volgende' className='cloud-next-action'><div><Sparkles/><span>{t('Найменший наступний крок', 'Kleinste volgende stap')}</span><h2>{data.summary.inbox ? t('Розберіть один елемент — не весь список', 'Plaats één item — niet de hele lijst') : t('Збережіть те, що зараз перед вами', 'Sla op wat nu voor u ligt')}</h2><p>{data.summary.inbox ? t(`У швидкому вході ${data.summary.inbox}. Можна почати лише з одного.`, `Er staan ${data.summary.inbox} items in de snelle invoer. Eén is genoeg om te beginnen.`) : t('Назву й робочий простір можна не вигадувати.', 'U hoeft geen naam of werkruimte te bedenken.')}</p></div><button onClick={onCapture}><Upload/>{t('Швидко зберегти', 'Snel opslaan')}</button></section>
+    <DriveConnectionOverview t={t} onboarding={data.onboarding} providers={data.providers} onOpen={onAccounts}/><section id='cloud-sectie-drive-materialen' className='cloud-account-section' data-cloud-drive-materials='overview'><header><div><span>{t('Google Drive','Google Drive')}</span><h3>{t('Останні матеріали','Recente materialen')}</h3><p>{t('Матеріали з підключеного акаунта показуються тут без пошуку.','Materiaal van het gekoppelde account wordt hier zonder zoeken getoond.')}</p></div><button onClick={onAccounts}>{t('Переглянути всі файли','Alle bestanden bekijken')}</button></header>{previewLoading?<div className='cloud-calm-empty' aria-busy='true'><LoaderCircle className='spin'/><strong>{t('Завантажуємо матеріали…','Materialen laden…')}</strong></div>:drivePreview?.length?<div className='cloud-account-list'>{drivePreview.slice(0,6).map(file=><article key={file.id}><div><strong>{file.name||t('Файл без назви','Naamloos bestand')}</strong><small>{file.modifiedAt?new Date(file.modifiedAt).toLocaleString():file.mimeType}</small></div></article>)}</div>:<div className='cloud-calm-empty'><File/><strong>{t('У підключеному Google Drive поки немає матеріалів для цього огляду.','Er zijn nog geen materialen beschikbaar in het gekoppelde Google Drive-overzicht.')}</strong><button onClick={onAccounts}>{t('Відкрити Google Drive','Google Drive openen')}</button></div>}</section>
 
-    <section className='cloud-summary-row'><article><Inbox/><strong>{data.summary.inbox}</strong><span>{t('у швидкому вході', 'in snelle invoer')}</span></article><article><FolderKanban/><strong>{data.summary.workspaces}</strong><span>{t('робочих просторів', 'werkruimtes')}</span></article><article><Brain/><strong>{data.summary.active}</strong><span>{t('потребують уваги', 'vragen aandacht')}</span></article><article><Check/><strong>{data.summary.done}</strong><span>{t('завершено', 'afgerond')}</span></article></section>
-    <section className='cloud-workspace-preview'><header><div><span>{t('Ваші контексти', 'Uw contexten')}</span><h2>{t('Робочі простори', 'Werkruimtes')}</h2></div><button onClick={onCreate}><Plus/>{t('Новий простір', 'Nieuwe werkruimte')}</button></header>{data.workspaces.length ? <div className='cloud-workspace-grid'>{data.workspaces.slice(0, 6).map(workspace => <button key={workspace.id} className='cloud-workspace-card' onClick={() => onWorkspace(workspace.id)}><FolderKanban/><span><strong>{workspace.title}</strong><small>{workspace.itemCount} · {workspace.sections.length} {t('орієнтири', 'ankers')}</small></span><ChevronRight/></button>)}</div> : <div className='cloud-empty-calm'><FolderKanban/><strong>{t('Просторів ще немає — це нормально', 'Er zijn nog geen werkruimtes — dat is prima')}</strong><p>{t('Створіть один, коли з’явиться конкретний проєкт або тема.', 'Maak er één zodra er een concreet project of onderwerp is.')}</p><button onClick={onCreate}><Plus/>{t('Створити перший', 'Eerste maken')}</button></div>}</section>
+    <section id='cloud-sectie-samenvatting' className='cloud-summary-row'><article><Inbox/><strong>{data.summary.inbox}</strong><span>{t('у швидкому вході', 'in snelle invoer')}</span></article><article><FolderKanban/><strong>{data.summary.workspaces}</strong><span>{t('робочих просторів', 'werkruimtes')}</span></article><article><Brain/><strong>{data.summary.active}</strong><span>{t('потребують уваги', 'vragen aandacht')}</span></article><article><Check/><strong>{data.summary.done}</strong><span>{t('завершено', 'afgerond')}</span></article></section>
+    <section id='cloud-sectie-werkruimtes' className='cloud-workspace-preview'><header><div><span>{t('Ваші контексти', 'Uw contexten')}</span><h2>{t('Робочі простори', 'Werkruimtes')}</h2></div><button onClick={onCreate}><Plus/>{t('Новий простір', 'Nieuwe werkruimte')}</button></header>{data.workspaces.length ? <div className='cloud-workspace-grid'>{data.workspaces.slice(0, 6).map(workspace => <button key={workspace.id} className='cloud-workspace-card' onClick={() => onWorkspace(workspace.id)}><FolderKanban/><span><strong>{workspace.title}</strong><small>{workspace.itemCount} · {workspace.sections.length} {t('орієнтири', 'ankers')}</small></span><ChevronRight/></button>)}</div> : <div className='cloud-empty-calm'><FolderKanban/><strong>{t('Просторів ще немає — це нормально', 'Er zijn nog geen werkruimtes — dat is prima')}</strong><p>{t('Створіть один, коли з’явиться конкретний проєкт або тема.', 'Maak er één zodra er een concreet project of onderwerp is.')}</p><button onClick={onCreate}><Plus/>{t('Створити перший', 'Eerste maken')}</button></div>}</section>
   </main>;
 }
 
@@ -405,7 +769,7 @@ function DriveConnectionOverview({ t, onboarding, providers, onOpen }: { t: (uk:
   const primary = google?.primaryAccount || google?.accounts.find(account => account.accountRole === 'primary') || null;
   const connected = primary?.status === 'connected';
   const access = connected || Boolean(drive?.granted);
-  return <section className='cloud-connection-overview' data-cloud-drive-state={connected ? 'connected' : access ? 'access' : 'not-connected'}><Cloud/><div><span>{t('Google Drive', 'Google Drive')}</span><strong>{connected ? t('Підключено', 'Gekoppeld') : access ? t('Доступ надано', 'Toegang verleend') : t('Підключити Google Drive', 'Google Drive koppelen')}</strong><p>{connected ? t('Файли доступні через підключений акаунт.', 'Bestanden zijn beschikbaar via het gekoppelde account.') : access ? t('Синхронізація файлів ще не запущена.', 'De synchronisatie van bestanden is nog niet gestart.') : t('Підключіть свій основний Google-акаунт, коли будете готові.', 'Koppel uw primaire Google-account wanneer u klaar bent.')}</p></div><button onClick={onOpen}>{access ? t('Переглянути акаунт', 'Account bekijken') : t('Підключити', 'Koppelen')}</button></section>;
+  return <section id='cloud-sectie-drive-status' className='cloud-connection-overview' data-cloud-drive-state={connected ? 'connected' : access ? 'access' : 'not-connected'}><Cloud/><div><span>{t('Google Drive', 'Google Drive')}</span><strong>{connected ? t('Підключено', 'Gekoppeld') : access ? t('Доступ надано', 'Toegang verleend') : t('Підключити Google Drive', 'Google Drive koppelen')}</strong><p>{connected ? t('Файли доступні через підключений акаунт.', 'Bestanden zijn beschikbaar via het gekoppelde account.') : access ? t('Синхронізація файлів ще не запущена.', 'De synchronisatie van bestanden is nog niet gestart.') : t('Підключіть свій основний Google-акаунт, коли будете готові.', 'Koppel uw primaire Google-account wanneer u klaar bent.')}</p></div><button onClick={onOpen}>{access ? t('Переглянути акаунт', 'Account bekijken') : t('Підключити', 'Koppelen')}</button></section>;
 }
 
 function CloudAccountsPanel({ lang, sourceOrigin, tabContext, onboarding, providers, busyProvider, drivePreview, previewLoading, onPreview, onStart, onConnect, onSelect, onDisconnect }: { lang: Lang; sourceOrigin: string; tabContext: string; onboarding: SuiteOnboarding; providers: Provider[]; busyProvider: string; drivePreview: DrivePreviewFile[] | null; previewLoading: boolean; onPreview: () => void; onStart: (service: SuiteService) => void; onConnect: (provider: Provider, accountRole?: 'primary' | 'additional') => void; onSelect: (provider: Provider, account: ProviderAccount) => Promise<void> | void; onDisconnect: (provider: Provider, account: ProviderAccount) => void }) {
@@ -419,7 +783,7 @@ function CloudAccountsPanel({ lang, sourceOrigin, tabContext, onboarding, provid
   const state = connected ? 'connected' : access ? 'access' : 'not-connected';
   const busy = busyProvider === 'suite:drive';
   const openMail = () => location.assign('https://mail.tarasevych.com/accounts');
-  return <main className='cloud-account-layout' data-cloud-human-accounts='v1'><header><div><span>{t('Підключення','Koppelingen')}</span><h2>{t('Акаунти хмарного сховища','Accounts voor cloudopslag')}</h2><p>{t('Основний акаунт і додаткові сховища керуються окремо.','Het primaire account en extra opslagaccounts worden afzonderlijk beheerd.')}</p></div></header><section className='cloud-account-section'><header><div><span>{t('Основний акаунт','Primair account')}</span><h3>{state === 'not-connected' ? t('Підключити Google Drive','Google Drive koppelen') : onboarding.primaryAccount.email || primary?.email || 'Google Drive'}</h3></div><span className={`cloud-human-status ${state}`}>{connected ? t('Підключено','Gekoppeld') : access ? t('Доступ надано','Toegang verleend') : t('Не підключено','Niet gekoppeld')}</span></header><article className='cloud-human-card'><Cloud/><div><strong>{onboarding.primaryAccount.email || primary?.email || t('Ваш Google-акаунт','Uw Google-account')}</strong><p>{connected ? t('Файли доступні через цей акаунт.','Bestanden zijn beschikbaar via dit account.') : access ? t('Синхронізація файлів ще не запущена.','De synchronisatie van bestanden is nog niet gestart.') : drive?.status === 'waiting_previous_consent' ? t('Спочатку надайте доступ до Gmail у розділі Пошта → Акаунти.','Verleen eerst toegang tot Gmail via E-mail → Accounts.') : t('Надайте доступ, щоб бачити файли у вашому приватному просторі.','Verleen toegang om bestanden in uw privéruimte te bekijken.')}</p>{state === 'not-connected' && drive?.status === 'configuration_missing' && <small>{t('Підключення тимчасово недоступне. Адміністратор завершує налаштування.','Koppelen is tijdelijk niet beschikbaar. De beheerder rondt de configuratie af.')}</small>}</div>{state === 'not-connected' && drive?.status === 'waiting_previous_consent' ? <button onClick={openMail}>{t('Відкрити Пошту','E-mail openen')}</button> : state === 'not-connected' ? <button className='cloud-primary' disabled={!drive?.connectEnabled || onboarding.nextService !== 'drive' || busy} onClick={() => drive && onStart(drive)}>{busy ? <LoaderCircle className='spin'/> : <ShieldCheck/>}{t('Надати доступ','Toegang verlenen')}</button> : primary && connected ? <button className='cloud-provider-account-disconnect' disabled={Boolean(busyProvider)} aria-label={t('Відключити','Loskoppelen')} onClick={() => google && onDisconnect(google, primary)}><Unplug/>{t('Відключити','Loskoppelen')}</button> : null}</article>{access&&google&&<DriveBrowser lang={lang} sourceOrigin={sourceOrigin} tabContext={tabContext} provider={google} ownerKey={google?.account?.email||google?.primaryAccount?.email||''} startAtRoot onSelect={account=>onSelect(google,account as unknown as Parameters<typeof onSelect>[1])}/>} {access&&drivePreview!==null&&<div className='cloud-account-list' data-cloud-live-preview='on-demand'><header><div><strong>{t('Останні файли з Google Drive','Recente Google Drive-bestanden')}</strong><small>{t('Показано напряму з Google. Індексацію та фонову синхронізацію не запущено.','Rechtstreeks van Google getoond. Indexering en achtergrondsynchronisatie zijn niet gestart.')}</small></div><button disabled={previewLoading} onClick={onPreview}>{previewLoading?t('Завантажуємо…','Laden…'):t('Оновити список','Lijst vernieuwen')}</button></header>{drivePreview.length?drivePreview.map(file=><article key={file.id}><File/><div><strong>{file.name||t('Файл без назви','Naamloos bestand')}</strong><small>{file.modifiedAt?new Date(file.modifiedAt).toLocaleString(lang==='uk'?'uk-UA':'nl-BE'):t('Дата не вказана','Datum niet vermeld')}</small></div>{file.webViewLink&&<button onClick={()=>window.open(file.webViewLink,'_blank','noopener,noreferrer')}>{t('Відкрити','Openen')}</button>}</article>):<p className='cloud-calm-empty'>{t('Google не повернув файлів для цього перегляду.','Google heeft geen bestanden voor dit overzicht teruggegeven.')}</p>}</div>}</section><section className='cloud-account-section'><header><div><span>{t('За потреби','Indien nodig')}</span><h3>{t('Додаткові акаунти','Extra accounts')}</h3></div>{google && <button disabled={!google.connectEnabled || Boolean(busyProvider)} onClick={() => onConnect(google, 'additional')}><Plus/>{t('Додати акаунт','Account toevoegen')}</button>}</header>{additional.length ? <div className='cloud-account-list'>{additional.map(account => <article key={account.id} className={google?.activeAccountId === account.id ? 'active' : ''}><button disabled={account.status !== 'connected' || Boolean(busyProvider)} onClick={() => google && onSelect(google, account)}><Cloud/><span><strong>{account.displayName || account.email}</strong><small>{account.email}</small></span>{google?.activeAccountId === account.id && <em><Check/>{t('Активний','Actief')}</em>}</button><button className='cloud-provider-account-disconnect' disabled={Boolean(busyProvider)} aria-label={t('Відключити','Loskoppelen')} onClick={() => google && onDisconnect(google, account)}><Unplug/></button></article>)}</div> : <p className='cloud-calm-empty'>{t('Додаткових акаунтів ще немає.','Er zijn nog geen extra accounts.')}</p>}<small className='cloud-privacy-note'><ShieldCheck/>{t('Паролі не зберігаються. Відключення не видаляє локальні копії файлів.','Wachtwoorden worden niet opgeslagen. Loskoppelen verwijdert geen lokale bestandskopieën.')}</small></section><section className='cloud-other-services'><h3>{t('Інші сховища','Andere opslagdiensten')}</h3>{providers.filter(provider => provider.id !== 'google').map(provider => <article key={provider.id}><span className={`cloud-provider-mark provider-${provider.id}`}>{provider.id === 'onedrive' ? '1D' : 'DB'}</span><div><strong>{provider.name}</strong><small>{t('Ще не доступно','Nog niet beschikbaar')}</small></div><button disabled>{t('Підключити','Koppelen')}</button></article>)}</section></main>;
+  return <main className='cloud-account-layout' data-cloud-human-accounts='v1'><header><div><span>{t('Підключення','Koppelingen')}</span><h2>{t('Акаунти хмарного сховища','Accounts voor cloudopslag')}</h2><p>{t('Основний акаунт і додаткові сховища керуються окремо.','Het primaire account en extra opslagaccounts worden afzonderlijk beheerd.')}</p></div></header><section id='cloud-sectie-hoofdaccount' className='cloud-account-section'><header><div><span>{t('Основний акаунт','Primair account')}</span><h3>{state === 'not-connected' ? t('Підключити Google Drive','Google Drive koppelen') : onboarding.primaryAccount.email || primary?.email || 'Google Drive'}</h3></div><span className={`cloud-human-status ${state}`}>{connected ? t('Підключено','Gekoppeld') : access ? t('Доступ надано','Toegang verleend') : t('Не підключено','Niet gekoppeld')}</span></header><article className='cloud-human-card'><Cloud/><div><strong>{onboarding.primaryAccount.email || primary?.email || t('Ваш Google-акаунт','Uw Google-account')}</strong><p>{connected ? t('Файли доступні через цей акаунт.','Bestanden zijn beschikbaar via dit account.') : access ? t('Синхронізація файлів ще не запущена.','De synchronisatie van bestanden is nog niet gestart.') : drive?.status === 'waiting_previous_consent' ? t('Спочатку надайте доступ до Gmail у розділі Пошта → Акаунти.','Verleen eerst toegang tot Gmail via E-mail → Accounts.') : t('Надайте доступ, щоб бачити файли у вашому приватному просторі.','Verleen toegang om bestanden in uw privéruimte te bekijken.')}</p>{state === 'not-connected' && drive?.status === 'configuration_missing' && <small>{t('Підключення тимчасово недоступне. Адміністратор завершує налаштування.','Koppelen is tijdelijk niet beschikbaar. De beheerder rondt de configuratie af.')}</small>}</div>{state === 'not-connected' && drive?.status === 'waiting_previous_consent' ? <button onClick={openMail}>{t('Відкрити Пошту','E-mail openen')}</button> : state === 'not-connected' ? <button className='cloud-primary' disabled={!drive?.connectEnabled || onboarding.nextService !== 'drive' || busy} onClick={() => drive && onStart(drive)}>{busy ? <LoaderCircle className='spin'/> : <ShieldCheck/>}{t('Надати доступ','Toegang verlenen')}</button> : primary && connected ? <button className='cloud-provider-account-disconnect' disabled={Boolean(busyProvider)} aria-label={t('Відключити','Loskoppelen')} onClick={() => google && onDisconnect(google, primary)}><Unplug/>{t('Відключити','Loskoppelen')}</button> : null}</article>{access&&google&&<DriveBrowser lang={lang} sourceOrigin={sourceOrigin} tabContext={tabContext} provider={google} ownerKey={google?.account?.email||google?.primaryAccount?.email||''} startAtRoot onSelect={account=>onSelect(google,account as unknown as Parameters<typeof onSelect>[1])}/>} {access&&drivePreview!==null&&<div className='cloud-account-list' data-cloud-live-preview='on-demand'><header><div><strong>{t('Останні файли з Google Drive','Recente Google Drive-bestanden')}</strong><small>{t('Показано напряму з Google. Індексацію та фонову синхронізацію не запущено.','Rechtstreeks van Google getoond. Indexering en achtergrondsynchronisatie zijn niet gestart.')}</small></div><button disabled={previewLoading} onClick={onPreview}>{previewLoading?t('Завантажуємо…','Laden…'):t('Оновити список','Lijst vernieuwen')}</button></header>{drivePreview.length?drivePreview.map(file=><article key={file.id}><File/><div><strong>{file.name||t('Файл без назви','Naamloos bestand')}</strong><small>{file.modifiedAt?new Date(file.modifiedAt).toLocaleString(lang==='uk'?'uk-UA':'nl-BE'):t('Дата не вказана','Datum niet vermeld')}</small></div>{file.webViewLink&&<button onClick={()=>window.open(file.webViewLink,'_blank','noopener,noreferrer')}>{t('Відкрити','Openen')}</button>}</article>):<p className='cloud-calm-empty'>{t('Google не повернув файлів для цього перегляду.','Google heeft geen bestanden voor dit overzicht teruggegeven.')}</p>}</div>}</section><section id='cloud-sectie-extra-accounts' className='cloud-account-section'><header><div><span>{t('За потреби','Indien nodig')}</span><h3>{t('Додаткові акаунти','Extra accounts')}</h3></div>{google && <button disabled={!google.connectEnabled || Boolean(busyProvider)} onClick={() => onConnect(google, 'additional')}><Plus/>{t('Додати акаунт','Account toevoegen')}</button>}</header>{additional.length ? <div className='cloud-account-list'>{additional.map(account => <article key={account.id} className={google?.activeAccountId === account.id ? 'active' : ''}><button disabled={account.status !== 'connected' || Boolean(busyProvider)} onClick={() => google && onSelect(google, account)}><Cloud/><span><strong>{account.displayName || account.email}</strong><small>{account.email}</small></span>{google?.activeAccountId === account.id && <em><Check/>{t('Активний','Actief')}</em>}</button><button className='cloud-provider-account-disconnect' disabled={Boolean(busyProvider)} aria-label={t('Відключити','Loskoppelen')} onClick={() => google && onDisconnect(google, account)}><Unplug/></button></article>)}</div> : <p className='cloud-calm-empty'>{t('Додаткових акаунтів ще немає.','Er zijn nog geen extra accounts.')}</p>}<small className='cloud-privacy-note'><ShieldCheck/>{t('Паролі не зберігаються. Відключення не видаляє локальні копії файлів.','Wachtwoorden worden niet opgeslagen. Loskoppelen verwijdert geen lokale bestandskopieën.')}</small></section><section id='cloud-sectie-andere-diensten' className='cloud-other-services'><h3>{t('Інші сховища','Andere opslagdiensten')}</h3>{providers.filter(provider => provider.id !== 'google').map(provider => <article key={provider.id}><span className={`cloud-provider-mark provider-${provider.id}`}>{provider.id === 'onedrive' ? '1D' : 'DB'}</span><div><strong>{provider.name}</strong><small>{t('Ще не доступно','Nog niet beschikbaar')}</small></div><button disabled>{t('Підключити','Koppelen')}</button></article>)}</section></main>;
 }
 
 function ItemList({ t, items, workspaces, empty, onOpen, onStatus }: { t: (uk: string, nl: string) => string; items: CloudItem[]; workspaces: Workspace[]; empty: string; onOpen: (item: CloudItem) => void; onStatus?: (id: string, status: CloudItem['status']) => void }) {
