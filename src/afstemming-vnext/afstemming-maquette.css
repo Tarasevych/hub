@@ -1,0 +1,1566 @@
+/* Студійне оформлення розділу звірки продукту api.tarasevych.com/afstemming у системі «Макет» (MAQUETTE-009, Група 8Б).
+   Охоплює обидва втілення звірки: нову картотеку Afstemming vNext разом із портальними шарами у тілі документа
+   та класичну Матрицю фактичної реалізації — для нічної студії й світлого режиму «Ранковий туман».
+   Studio-opmaak voor productafstemming op api.tarasevych.com/afstemming in donkere en lichte sfeer. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ОБОЛОНКА РОЗДІЛУ ЗВІРКИ, ПОХІДНІ ЗМІННІ ПАЛІТРИ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .afv-mq-schil {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .afv-mq-schil,
+html.palet-maquette .afv,
+html.palet-maquette .afv-laag,
+html.palet-maquette .implementation-truth {
+  --afv-mq-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --afv-mq-glas: color-mix(in srgb, var(--mq-oppervlak) 93%, var(--mq-accent) 7%);
+  --afv-mq-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 97%, var(--mq-bg) 3%);
+  --afv-mq-glas-zacht: color-mix(in srgb, var(--mq-oppervlak-2) 89%, var(--mq-accent) 7%);
+  --afv-mq-glans: color-mix(in srgb, var(--mq-tekst) 8%, transparent);
+  --afv-mq-halo: color-mix(in srgb, var(--mq-accent) 16%, transparent);
+  --afv-mq-halo-zacht: color-mix(in srgb, var(--mq-accent) 9%, transparent);
+  --afv-mq-rand: color-mix(in srgb, var(--mq-tekst) 12%, var(--mq-rand));
+  --afv-mq-rand-sterk: color-mix(in srgb, var(--mq-tekst) 20%, var(--mq-rand-sterk));
+  --afv-mq-rand-accent: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand));
+  --afv-mq-veld-bg: color-mix(in srgb, var(--mq-bg) 42%, var(--mq-oppervlak-2) 58%);
+  --afv-mq-sluier: color-mix(in srgb, var(--mq-bol-diep) 72%, transparent);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 85%, var(--mq-tekst) 8%);
+  --line: var(--afv-mq-rand);
+  --border: var(--afv-mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: var(--afv-mq-halo);
+  --focus: var(--mq-accent);
+  --overlay: var(--afv-mq-sluier);
+  --straal-s: 11px;
+  --straal-m: var(--mq-straal-veld);
+  --straal-l: 22px;
+  --straal-xl: var(--mq-straal-kaart);
+  --schaduw-1: var(--mq-schaduw-zacht);
+  --schaduw-2: var(--mq-schaduw-zacht);
+  --schaduw-3: var(--mq-schaduw);
+}
+
+/* Підтримка явного атрибута світлої теми, коли світлий клас на корені відсутній */
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.afv-mq-schil, .afv, .afv-laag, .implementation-truth),
+html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .afv-laag {
+  --mq-bg: color-mix(in srgb, var(--mq-wit) 76%, var(--mq-held-gedempt) 24%);
+  --mq-oppervlak: var(--mq-wit);
+  --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 86%, var(--mq-satelliet-tekst) 14%);
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bol-diep) 4.5%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--mq-bol-diep) 8.5%, transparent);
+  --mq-tekst: var(--mq-bol-diep);
+  --mq-gedempt: color-mix(in srgb, var(--mq-bol-diep) 68%, var(--mq-wit) 32%);
+  --mq-stil: color-mix(in srgb, var(--mq-bol-diep) 52%, var(--mq-wit) 48%);
+  --mq-rand: color-mix(in srgb, var(--mq-bol-diep) 12%, transparent);
+  --mq-rand-sterk: color-mix(in srgb, var(--mq-bol-diep) 24%, transparent);
+  --mq-rail-glas: color-mix(in srgb, var(--mq-wit) 92%, var(--mq-satelliet-tekst) 8%);
+  --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 97%, var(--mq-satelliet-tekst) 3%);
+}
+
+/* Контрастний рубіновий акцент у світлому режимі «Ранковий туман» (вітрина .mq-held зберігає власне нічне склепіння) */
+html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.afv-mq-schil[data-mq-dienst="api"], .afv, .afv-laag, .implementation-truth),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.afv-mq-schil[data-mq-dienst="api"], .afv, .implementation-truth),
+html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .afv-laag {
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 64%, var(--mq-bol-diep) 36%);
+  --mq-accent-op: var(--mq-wit);
+  --afv-mq-glas: color-mix(in srgb, var(--mq-oppervlak) 96%, var(--mq-accent) 4%);
+  --afv-mq-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 98%, var(--mq-bg) 2%);
+  --afv-mq-glas-zacht: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-accent) 5%);
+  --afv-mq-glans: color-mix(in srgb, var(--mq-wit) 82%, transparent);
+  --afv-mq-halo: color-mix(in srgb, var(--mq-accent) 12%, transparent);
+  --afv-mq-halo-zacht: color-mix(in srgb, var(--mq-accent) 6.5%, transparent);
+  --afv-mq-rand: color-mix(in srgb, var(--mq-tekst) 11%, var(--mq-rand));
+  --afv-mq-rand-sterk: color-mix(in srgb, var(--mq-tekst) 19%, var(--mq-rand-sterk));
+  --afv-mq-rand-accent: color-mix(in srgb, var(--mq-accent) 36%, var(--mq-rand));
+  --afv-mq-veld-bg: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-wit) 28%);
+  --afv-mq-sluier: color-mix(in srgb, var(--mq-bol-diep) 44%, transparent);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --line: var(--afv-mq-rand);
+  --border: var(--afv-mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-wit);
+  --text-on-accent: var(--mq-wit);
+  --accent-soft: var(--afv-mq-halo);
+}
+
+html.palet-maquette .afv-mq-schil > .mq-held.is-compact {
+  border-color: var(--mq-held-lijn);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .afv-mq-schil > .mq-held:not(.is-compact) {
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette :is(.afv, .afv-laag, .implementation-truth) :focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. НОВА ЗВІРКА AFSTEMMING VNEXT: ШАПКА, ПОЛЯ, ПОШУКОВА КАПСУЛА, КНОПКИ Й СПОВІЩЕННЯ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .afv {
+  gap: 20px;
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) code {
+  font-family: var(--afv-mq-font-mono);
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+/* Загальні поля форм через :where(...) без порушення відступів пошукових капсул */
+html.palet-maquette :is(.afv, .afv-laag) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  min-height: var(--tik-hoogte);
+  padding: 8px 13px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: var(--afv-mq-veld-bg);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea)::placeholder {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus {
+  border-color: var(--afv-mq-rand-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px var(--afv-mq-halo);
+  outline: none;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) input[type="checkbox"],
+html.palet-maquette :is(.afv, .afv-laag) input[type="range"] {
+  accent-color: var(--mq-accent);
+}
+
+/* Шапка розділу та пошукова капсула */
+html.palet-maquette .afv .afv-kop {
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 92% 12%, var(--afv-mq-halo), transparent 52%),
+    linear-gradient(158deg, var(--afv-mq-glas) 0%, var(--afv-mq-glas-diep) 100%);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .afv .afv-kop-titel {
+  display: grid;
+  gap: 4px;
+}
+
+html.palet-maquette .afv .afv-kop h2 {
+  font-size: clamp(1.25rem, 1.9vw, 1.55rem);
+  font-weight: 630;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-hint {
+  color: var(--mq-gedempt);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .afv .afv-kop-acties {
+  gap: 10px;
+}
+
+html.palet-maquette .afv .afv-zoek svg {
+  left: 13px;
+  width: 16px;
+  height: 16px;
+  color: var(--mq-gedempt);
+  transition: color 0.2s ease;
+}
+
+html.palet-maquette .afv .afv-zoek:focus-within svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .afv .afv-zoek input {
+  padding: 8px 16px 8px 38px;
+  border-radius: 999px;
+  border: 1px solid var(--afv-mq-rand);
+  background: var(--afv-mq-veld-bg);
+}
+
+html.palet-maquette .afv .afv-zoek input:focus {
+  border-color: var(--afv-mq-rand-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px var(--afv-mq-halo);
+}
+
+/* Кнопки та іконкові дії */
+html.palet-maquette :is(.afv, .afv-laag) :is(.afv-knop, .afv-icoonknop) {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--afv-mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-tekst) 4%);
+  color: var(--mq-tekst);
+  font-weight: 600;
+  padding: 7px 14px;
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-knop.is-hoofd {
+  border-color: color-mix(in srgb, var(--mq-accent) 72%, var(--mq-wit) 28%);
+  background: linear-gradient(142deg, var(--mq-accent) 0%, color-mix(in srgb, var(--mq-accent) 76%, var(--mq-accent-2) 24%) 100%);
+  color: var(--mq-accent-op);
+  font-weight: 650;
+  box-shadow:
+    0 12px 26px color-mix(in srgb, var(--mq-accent) 26%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 28%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-knop.is-stil {
+  background: transparent;
+  border-color: transparent;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-knop.is-klein {
+  min-height: 34px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-knop.is-actief {
+  border-color: var(--afv-mq-rand-accent);
+  background: var(--afv-mq-halo);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-accent) 26%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-icoonknop {
+  width: var(--tik-hoogte);
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+/* Повідомлення та спливні сповіщення */
+html.palet-maquette :is(.afv, .afv-laag) .afv-melding {
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--afv-mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--afv-mq-glas-zacht);
+  color: var(--mq-tekst);
+  font-size: 0.8125rem;
+  line-height: 1.48;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-melding.is-info {
+  border-color: var(--afv-mq-rand-accent);
+  background: color-mix(in srgb, var(--mq-oppervlak) 84%, var(--mq-accent) 12%);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-melding.is-ok {
+  border-color: color-mix(in srgb, var(--ok) 44%, var(--afv-mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--ok-zacht));
+  color: var(--ok);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-melding.is-fout {
+  border-color: color-mix(in srgb, var(--fout) 46%, var(--afv-mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--fout-zacht));
+  color: var(--fout);
+}
+
+html.palet-maquette .afv .afv-toost {
+  padding: 9px 16px;
+  border: 1px solid var(--afv-mq-rand-accent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-oppervlak) 78%, var(--mq-accent) 18%);
+  color: var(--mq-tekst);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. БІЧНА СКЛЯНА НАВІГАЦІЯ (.afv-zijnav), КАРТКИ БЛОКІВ (.afv-blok) І ПОРОЖНІ СТАНИ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .afv .afv-romp {
+  grid-template-columns: 224px minmax(0, 1fr);
+  gap: 20px;
+}
+
+html.palet-maquette .afv.is-smal .afv-romp {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html.palet-maquette .afv .afv-zijnav {
+  top: 12px;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: var(--mq-straal-rail);
+  background: var(--mq-rail-glas);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+
+html.palet-maquette .afv .afv-zijnav button {
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  color: var(--mq-gedempt);
+  font-size: 0.84375rem;
+  font-weight: 580;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette .afv .afv-zijnav button svg {
+  width: 17px;
+  height: 17px;
+  color: var(--mq-stil);
+  transition: color 0.18s ease;
+}
+
+html.palet-maquette .afv .afv-zijnav button.is-actief {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mq-accent) 22%, transparent) 0%, color-mix(in srgb, var(--mq-accent) 8%, transparent) 100%);
+  color: var(--mq-tekst);
+  font-weight: 650;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--mq-accent) 34%, transparent),
+    0 8px 18px color-mix(in srgb, var(--mq-accent) 12%, transparent);
+}
+
+html.palet-maquette .afv .afv-zijnav button.is-actief svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .afv .afv-inhoud {
+  gap: 18px;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-blok,
+html.palet-maquette .canonical-content .afv section.afv-blok {
+  gap: 14px;
+  padding: 22px 24px;
+  border: 1px solid var(--afv-mq-rand);
+  border-inline: 1px solid var(--afv-mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: linear-gradient(165deg, var(--afv-mq-glas) 0%, var(--afv-mq-glas-diep) 100%);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-blok > h3 {
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 1.02rem;
+  font-weight: 630;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-blok > h3 > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-leeg,
+html.palet-maquette .canonical-content .afv section.afv-leeg {
+  gap: 10px;
+  padding: 36px 24px;
+  border: 1px dashed var(--afv-mq-rand-sterk);
+  border-inline: 1px dashed var(--afv-mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 50% 0%, var(--afv-mq-halo-zacht), transparent 68%),
+    var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. ОГЛЯД ТА КАРТОТЕКА: КОНВЕЄР, ПЛИТКИ, РЯДКИ УВАГИ, КАРТКИ ІДЕЙ І ІНДИКАТОРИ СТАНУ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .afv .afv-overzicht,
+html.palet-maquette .afv .afv-kartotheek,
+html.palet-maquette .afv .afv-geschiedenis {
+  gap: 18px;
+}
+
+/* Конвеєр життєвого циклу картки */
+html.palet-maquette .afv .afv-pijplijn {
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: linear-gradient(135deg, var(--afv-mq-glas) 0%, var(--afv-mq-glas-zacht) 100%);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .afv .afv-pijplijn li {
+  flex: 1 1 138px;
+  gap: 2px;
+  padding: 10px 12px 10px 40px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--afv-mq-rand) 75%, transparent);
+  background: color-mix(in srgb, var(--mq-oppervlak) 74%, transparent);
+}
+
+html.palet-maquette .afv .afv-pijplijn li::before {
+  left: 10px;
+  top: 11px;
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--afv-mq-halo);
+  color: var(--mq-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-accent) 32%, transparent);
+}
+
+html.palet-maquette .afv .afv-pijplijn li strong {
+  font-size: 0.875rem;
+  font-weight: 630;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .afv .afv-pijplijn li small {
+  font-size: 0.75rem;
+  color: var(--mq-gedempt);
+}
+
+/* Лічильні плитки огляду */
+html.palet-maquette .afv .afv-tegels {
+  gap: 14px;
+}
+
+html.palet-maquette .afv .afv-tegel {
+  gap: 6px;
+  padding: 18px 20px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0%, var(--afv-mq-halo-zacht), transparent 58%),
+    linear-gradient(160deg, var(--afv-mq-glas) 0%, var(--afv-mq-glas-diep) 100%);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .afv .afv-tegel strong {
+  font-size: 1.75rem;
+  font-weight: 660;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .afv .afv-tegel[data-afv-tegel="aandacht"] strong {
+  color: var(--warn);
+}
+
+html.palet-maquette .afv .afv-tegel[data-afv-tegel="conflicten"] strong {
+  color: var(--fout);
+}
+
+html.palet-maquette .afv .afv-tegel[data-afv-tegel="kaarten"] strong {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .afv .afv-tegel span {
+  font-size: 0.78rem;
+  font-weight: 560;
+  color: var(--mq-gedempt);
+}
+
+/* Рядки уваги та кандидатів зв'язків */
+html.palet-maquette .afv .afv-overzicht-kolommen {
+  gap: 18px;
+}
+
+html.palet-maquette .afv .afv-lijst-rij {
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, var(--mq-oppervlak) 18%);
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+html.palet-maquette .afv .afv-lijst-rij code {
+  padding: 2px 8px;
+  border-radius: 7px;
+  background: var(--afv-mq-halo-zacht);
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 26%, transparent);
+  color: var(--mq-accent);
+  font-weight: 700;
+}
+
+/* Чіпи та індикатори здоров'я (крапка .afv-stip + текстовий підпис поряд) */
+html.palet-maquette :is(.afv, .afv-laag) .afv-chip {
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 28%, transparent);
+  background: var(--afv-mq-halo);
+  color: var(--mq-tekst);
+  font-size: 0.75rem;
+  font-weight: 620;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-chip.is-stil {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, transparent);
+  color: var(--mq-gedempt);
+  border-color: var(--afv-mq-rand);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-chip.is-ok {
+  background: color-mix(in srgb, var(--ok-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 36%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-chip.is-conflict {
+  background: color-mix(in srgb, var(--fout-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--fout);
+  border-color: color-mix(in srgb, var(--fout) 38%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-stip {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: none;
+  background: var(--mq-stil);
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 18%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) [data-afv-gezondheid="working"] {
+  background: color-mix(in srgb, var(--ok-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 36%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) [data-afv-gezondheid="working"] .afv-stip {
+  background: var(--ok);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) [data-afv-gezondheid="partially_working"] {
+  background: color-mix(in srgb, var(--warn-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 38%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) [data-afv-gezondheid="partially_working"] .afv-stip {
+  background: var(--warn);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) :is([data-afv-gezondheid="regressed"], [data-afv-gezondheid="blocked"]) {
+  background: color-mix(in srgb, var(--fout-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--fout);
+  border-color: color-mix(in srgb, var(--fout) 38%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) :is([data-afv-gezondheid="regressed"], [data-afv-gezondheid="blocked"]) .afv-stip {
+  background: var(--fout);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) :is([data-afv-gezondheid="unknown"], [data-afv-gezondheid="not_implemented"], [data-afv-gezondheid="obsolete"]) {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, transparent);
+  color: var(--mq-gedempt);
+  border-color: var(--afv-mq-rand);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) :is([data-afv-gezondheid="unknown"], [data-afv-gezondheid="not_implemented"], [data-afv-gezondheid="obsolete"]) .afv-stip {
+  background: var(--mq-stil);
+}
+
+/* Картки ідей у картотеці та смужка виконання критеріїв */
+html.palet-maquette .afv .afv-filters {
+  gap: 12px;
+}
+
+html.palet-maquette .afv .afv-kaartjes {
+  gap: 16px;
+}
+
+html.palet-maquette .afv .afv-kaartje {
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0%, var(--afv-mq-halo-zacht), transparent 56%),
+    linear-gradient(162deg, var(--afv-mq-glas) 0%, var(--afv-mq-glas-diep) 100%);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .afv .afv-kaartje-kop code {
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--afv-mq-halo-zacht);
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 26%, transparent);
+  color: var(--mq-accent);
+  font-weight: 700;
+}
+
+html.palet-maquette .afv .afv-kaartje-titel {
+  font-size: 1rem;
+  font-weight: 630;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .afv .afv-kaartje-samenvatting {
+  color: var(--mq-gedempt);
+  font-size: 0.84375rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .afv .afv-kaartje-voet {
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--afv-mq-rand) 72%, transparent);
+  font-size: 0.75rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .afv .afv-vooruitgang {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-tekst) 9%, var(--mq-oppervlak-2));
+  border: 1px solid color-mix(in srgb, var(--afv-mq-rand) 80%, transparent);
+}
+
+html.palet-maquette .afv .afv-vooruitgang i {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mq-accent-2) 0%, var(--mq-accent) 100%);
+  transition: width 0.25s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. МАПА ЗВ'ЯЗКІВ (ГРАФ), ПЕРЕВІРКИ, ВИПУСКИ, МОЖЛИВОСТІ, ІСТОРІЯ ТА ДЖЕРЕЛА
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .afv .afv-graaf-romp > div:first-child {
+  box-shadow: inset 0 0 0 1px var(--afv-mq-rand), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .afv :is([data-afv-graaf] svg, svg[data-afv-graaf]) {
+  background-image:
+    radial-gradient(circle at 50% 50%, var(--afv-mq-halo), transparent 68%),
+    radial-gradient(color-mix(in srgb, var(--mq-tekst) 14%, transparent) 0.75px, transparent 0.75px);
+  background-size: 100% 100%, 22px 22px;
+}
+
+html.palet-maquette .afv [data-afv-graaf] path[data-afv-rand] {
+  transition: opacity 0.18s ease, stroke-width 0.18s ease;
+}
+
+html.palet-maquette .afv [data-afv-graaf] g[data-afv-knoop] circle {
+  filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--mq-bol-diep) 30%, transparent));
+  transition: stroke-width 0.18s ease, filter 0.18s ease;
+}
+
+html.palet-maquette .afv [data-afv-graaf] g[data-afv-knoop] text {
+  font-weight: 620;
+}
+
+html.palet-maquette .afv [data-afv-zoom] {
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--afv-mq-rand);
+  background: var(--mq-rail-glas);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+html.palet-maquette .afv [data-afv-zoom] .afv-icoonknop {
+  width: 36px;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--afv-mq-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .afv aside[data-afv-graaf-mini] {
+  border-color: var(--afv-mq-rand-accent);
+  background: linear-gradient(160deg, var(--afv-mq-glas-zacht) 0%, var(--afv-mq-glas-diep) 100%);
+}
+
+/* Перевірки */
+html.palet-maquette .afv [data-afv-eerlijk] {
+  box-shadow: inset 3px 0 0 var(--mq-accent), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .afv [data-afv-controle-groep="regressies"] {
+  border-color: color-mix(in srgb, var(--fout) 34%, var(--afv-mq-rand));
+}
+
+html.palet-maquette .afv [data-afv-controle-groep="zonder-bewijs"] {
+  border-color: color-mix(in srgb, var(--warn) 32%, var(--afv-mq-rand));
+}
+
+html.palet-maquette .afv [data-afv-controle-kaart],
+html.palet-maquette .afv [data-afv-bevinding] {
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Випуски */
+html.palet-maquette .afv details[data-afv-release] > summary::-webkit-details-marker {
+  display: none;
+}
+
+html.palet-maquette .afv details[data-afv-release] > summary svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .afv details[data-afv-release] > summary strong {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette .afv details[data-afv-release][open] {
+  border-color: var(--afv-mq-rand-accent);
+  box-shadow: var(--mq-schaduw), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .afv [data-afv-postflight-stand] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 28%, transparent);
+}
+
+/* Можливості */
+html.palet-maquette .afv [data-afv-mogelijkheden-rubriek] > h3 {
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .afv article[data-afv-mogelijkheid] {
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+html.palet-maquette .afv article[data-afv-mogelijkheid] code {
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: var(--afv-mq-halo-zacht);
+  color: var(--mq-accent);
+}
+
+/* Часова шкала подій (Огляд, Історія та картка деталей) */
+html.palet-maquette :is(.afv, .afv-laag) .afv-tijdlijn {
+  list-style: none;
+  padding: 2px 0 2px 20px;
+  border-left: 2px solid color-mix(in srgb, var(--mq-accent) 32%, var(--afv-mq-rand));
+  gap: 8px;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-tijdlijn > li {
+  position: relative;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--mq-oppervlak-zacht);
+  border: 1px solid color-mix(in srgb, var(--afv-mq-rand) 65%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-tijdlijn > li::before {
+  content: "";
+  position: absolute;
+  left: -26px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--mq-accent);
+  box-shadow: 0 0 0 3px var(--mq-oppervlak);
+}
+
+/* Джерела та звіт на вимогу */
+html.palet-maquette .afv [data-afv-bron] {
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .afv [data-afv-bron][data-afv-bron-stand="werkt"] {
+  box-shadow: inset 3px 0 0 var(--ok), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .afv [data-afv-bron][data-afv-bron-stand="gepland"] {
+  box-shadow: inset 3px 0 0 var(--info), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .afv [data-afv-bron] code {
+  font-size: 0.75rem;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .afv [data-afv-rapport-uit] strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. МОБІЛЬНА НИЖНЯ ПАНЕЛЬ (.afv-onderbalk) І ПОРТАЛЬНІ ШАРИ (.afv-laag, ДЕТАЛІ, ІМПОРТ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .afv .afv-onderbalk {
+  padding: 6px 6px calc(6px + var(--veilig-onder));
+  border-top: 1px solid var(--afv-mq-rand-sterk);
+  background: var(--mq-rail-glas);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  backdrop-filter: blur(24px) saturate(1.3);
+}
+
+html.palet-maquette .afv .afv-onderbalk > button,
+html.palet-maquette .afv .afv-onderbalk summary {
+  border-radius: 14px;
+  color: var(--mq-gedempt);
+  font-size: 0.75rem;
+  font-weight: 620;
+}
+
+html.palet-maquette .afv .afv-onderbalk > button.is-actief {
+  color: var(--mq-tekst);
+  background: var(--afv-mq-halo);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-accent) 30%, transparent);
+}
+
+html.palet-maquette .afv .afv-onderbalk > button.is-actief svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .afv .afv-onderbalk .afv-plus {
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 72%, var(--mq-wit) 28%);
+  background: linear-gradient(142deg, var(--mq-accent) 0%, color-mix(in srgb, var(--mq-accent) 76%, var(--mq-accent-2) 24%) 100%);
+  color: var(--mq-accent-op);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--mq-accent) 32%, transparent);
+}
+
+html.palet-maquette .afv .afv-onderbalk-menu {
+  padding: 8px;
+  border: 1px solid var(--afv-mq-rand-sterk);
+  border-radius: 20px;
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(26px) saturate(1.3);
+  backdrop-filter: blur(26px) saturate(1.3);
+}
+
+html.palet-maquette .afv .afv-onderbalk-menu button {
+  border-radius: 12px;
+  color: var(--mq-tekst);
+  font-size: 0.84375rem;
+  font-weight: 580;
+}
+
+/* Портальний шар картки чи діалогу (.afv-laag у тілі документа) */
+html.palet-maquette .afv-laag {
+  background: var(--afv-mq-sluier);
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.palet-maquette .afv-laag .afv-laag-vak {
+  background: linear-gradient(170deg, var(--mq-popover-glas) 0%, var(--mq-oppervlak) 100%);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .afv-laag.is-paneel .afv-laag-vak {
+  width: min(650px, 100%);
+  border-left: 1px solid var(--afv-mq-rand-sterk);
+  border-radius: 26px 0 0 26px;
+}
+
+html.palet-maquette .afv-laag.is-venster .afv-laag-vak {
+  border: 1px solid var(--afv-mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .afv-laag .afv-laag-kop {
+  padding: 16px 22px 14px;
+  border-bottom: 1px solid var(--afv-mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 55%, transparent);
+}
+
+html.palet-maquette .afv-laag .afv-laag-kop h2 {
+  font-size: 1.1rem;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .afv-laag .afv-laag-inhoud {
+  padding: 20px 22px;
+  gap: 16px;
+}
+
+html.palet-maquette .afv-laag .afv-detail-kop {
+  gap: 8px;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-dtabs {
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-bg) 45%, var(--mq-oppervlak-2) 55%);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-dtabs button {
+  min-height: 36px;
+  padding: 6px 13px;
+  border-radius: 11px;
+  color: var(--mq-gedempt);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-dtabs button.is-actief {
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 0 0 1px var(--afv-mq-rand-accent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-dblad {
+  gap: 14px;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-veld > small {
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+  font-weight: 640;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-vorm {
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, transparent);
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-vorm h4 {
+  font-size: 0.875rem;
+  font-weight: 640;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-criterium {
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-criterium-kop code {
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: var(--afv-mq-halo-zacht);
+  color: var(--mq-accent);
+  font-weight: 700;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) :is(.afv-koppeling, .afv-bewijsstuk) {
+  padding: 10px 12px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, transparent);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-diff-tabel {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 14px;
+  overflow: hidden;
+  font-size: 0.8125rem;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-diff-tabel th,
+html.palet-maquette :is(.afv, .afv-laag) .afv-diff-tabel td {
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--afv-mq-rand);
+  border-right: 1px solid var(--afv-mq-rand);
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-diff-tabel tr > :last-child {
+  border-right: 0;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-diff-tabel tbody tr:last-child > td {
+  border-bottom: 0;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-diff-tabel th {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-accent) 6%);
+  color: var(--mq-tekst);
+  font-weight: 650;
+}
+
+html.palet-maquette :is(.afv, .afv-laag) .afv-dropvlak {
+  gap: 10px;
+  padding: 28px 20px;
+  border: 2px dashed var(--afv-mq-rand-accent);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 0%, var(--afv-mq-halo), transparent 72%),
+    var(--mq-oppervlak-zacht);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. КЛАСИЧНА «МАТРИЦЯ ФАКТИЧНОЇ РЕАЛІЗАЦІЇ» (.implementation-truth)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .implementation-truth {
+  gap: 18px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .implementation-truth .implementation-hero {
+  gap: 18px;
+  padding: 22px 24px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  background:
+    radial-gradient(circle at 88% 12%, var(--afv-mq-halo), transparent 54%),
+    linear-gradient(155deg, var(--afv-mq-glas) 0%, var(--afv-mq-glas-diep) 100%);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .implementation-truth .implementation-hero > div > span {
+  display: inline-flex;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--afv-mq-rand-accent);
+  background: var(--afv-mq-halo-zacht);
+  color: var(--mq-accent);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+html.palet-maquette .implementation-truth .implementation-hero h1 {
+  margin: 10px 0 6px;
+  font-size: clamp(1.3rem, 2.1vw, 1.65rem);
+  font-weight: 630;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .implementation-truth .implementation-hero p {
+  color: var(--mq-gedempt);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+html.palet-maquette .implementation-truth .implementation-hero aside {
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-accent) 6%);
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .implementation-truth .implementation-hero aside strong {
+  font-size: 0.8125rem;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .implementation-truth .implementation-hero aside a {
+  color: var(--mq-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+html.palet-maquette .implementation-truth .implementation-hero aside small {
+  color: var(--mq-gedempt);
+  font-family: var(--afv-mq-font-mono);
+  font-size: 0.75rem;
+}
+
+/* Пігулки фільтрів класичної матриці */
+html.palet-maquette .implementation-truth .implementation-filters {
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 20px;
+  background: var(--mq-rail-glas);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+html.palet-maquette .implementation-truth .implementation-filters > svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .implementation-truth .implementation-filters button {
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 82%, transparent);
+  color: var(--mq-gedempt);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+html.palet-maquette .implementation-truth .implementation-filters button.active {
+  border-color: color-mix(in srgb, var(--mq-accent) 72%, var(--mq-wit) 28%);
+  background: linear-gradient(142deg, var(--mq-accent) 0%, color-mix(in srgb, var(--mq-accent) 76%, var(--mq-accent-2) 24%) 100%);
+  color: var(--mq-accent-op);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--mq-accent) 24%, transparent);
+}
+
+/* Поле пошуку класичної матриці (піктограма в сусідній колонці сітки — ввід без власної рамки й бічного зсуву) */
+html.palet-maquette .implementation-truth .implementation-search {
+  max-width: 640px;
+  padding: 10px 16px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 999px;
+  background: var(--afv-mq-veld-bg);
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .implementation-truth .implementation-search:focus-within {
+  border-color: var(--afv-mq-rand-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 3px var(--afv-mq-halo);
+}
+
+html.palet-maquette .implementation-truth .implementation-search svg {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .implementation-truth .implementation-search input {
+  border: 0;
+  outline: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+  box-shadow: none;
+}
+
+html.palet-maquette .implementation-truth .implementation-search input::placeholder {
+  color: var(--mq-stil);
+}
+
+/* Перелік та картки тверджень зі шістьма статусами */
+html.palet-maquette .implementation-truth .implementation-list {
+  gap: 16px;
+}
+
+html.palet-maquette .implementation-truth .implementation-empty {
+  padding: 28px 20px;
+  border: 1px dashed var(--afv-mq-rand-sterk);
+  border-radius: 20px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette .implementation-truth .implementation-claim {
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 22px;
+  background: linear-gradient(165deg, var(--afv-mq-glas) 0%, var(--afv-mq-glas-diep) 100%);
+  box-shadow: var(--mq-schaduw-zacht), inset 0 1px 0 var(--afv-mq-glans);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+html.palet-maquette .implementation-truth .implementation-claim > header {
+  gap: 14px;
+  padding: 18px 20px 14px;
+}
+
+html.palet-maquette .implementation-truth .implementation-claim > header > span {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  border: 1px solid var(--afv-mq-rand);
+  background: var(--afv-mq-halo-zacht);
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .implementation-truth .implementation-claim > header code {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 7px;
+  background: var(--afv-mq-halo-zacht);
+  border: 1px solid color-mix(in srgb, var(--mq-accent) 26%, transparent);
+  color: var(--mq-accent);
+  font-family: var(--afv-mq-font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+html.palet-maquette .implementation-truth .implementation-claim h2 {
+  margin: 5px 0 4px;
+  font-size: 1.02rem;
+  font-weight: 630;
+  line-height: 1.35;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .implementation-truth .implementation-claim header small {
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+  opacity: 1;
+}
+
+html.palet-maquette .implementation-truth .implementation-claim header b {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--afv-mq-rand);
+  background: var(--afv-mq-halo);
+  color: var(--mq-tekst);
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* Статус 1: підтверджено в канонічному коді */
+html.palet-maquette .implementation-truth .implementation-claim.confirmed_in_canonical {
+  box-shadow: inset 3px 0 0 var(--ok), var(--mq-schaduw-zacht);
+}
+html.palet-maquette .implementation-truth .implementation-claim.confirmed_in_canonical > header > span,
+html.palet-maquette .implementation-truth .implementation-claim.confirmed_in_canonical header b {
+  background: color-mix(in srgb, var(--ok-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 36%, transparent);
+}
+
+/* Статус 2: частково */
+html.palet-maquette .implementation-truth .implementation-claim.partial {
+  box-shadow: inset 3px 0 0 var(--warn), var(--mq-schaduw-zacht);
+}
+html.palet-maquette .implementation-truth .implementation-claim.partial > header > span,
+html.palet-maquette .implementation-truth .implementation-claim.partial header b {
+  background: color-mix(in srgb, var(--warn-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 38%, transparent);
+}
+
+/* Статуси 3–4: регресія та відсутнє */
+html.palet-maquette .implementation-truth .implementation-claim:is(.regressed, .missing) {
+  box-shadow: inset 3px 0 0 var(--fout), var(--mq-schaduw-zacht);
+}
+html.palet-maquette .implementation-truth .implementation-claim:is(.regressed, .missing) > header > span,
+html.palet-maquette .implementation-truth .implementation-claim:is(.regressed, .missing) header b {
+  background: color-mix(in srgb, var(--fout-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--fout);
+  border-color: color-mix(in srgb, var(--fout) 38%, transparent);
+}
+
+/* Статус 5: лише в архіві */
+html.palet-maquette .implementation-truth .implementation-claim.present_only_in_archive {
+  box-shadow: inset 3px 0 0 var(--info), var(--mq-schaduw-zacht);
+}
+html.palet-maquette .implementation-truth .implementation-claim.present_only_in_archive > header > span,
+html.palet-maquette .implementation-truth .implementation-claim.present_only_in_archive header b {
+  background: color-mix(in srgb, var(--info-zacht) 74%, var(--mq-oppervlak) 26%);
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 36%, transparent);
+}
+
+/* Статус 6: застаріле */
+html.palet-maquette .implementation-truth .implementation-claim.deprecated {
+  box-shadow: inset 3px 0 0 var(--mq-stil), var(--mq-schaduw-zacht);
+}
+html.palet-maquette .implementation-truth .implementation-claim.deprecated > header > span,
+html.palet-maquette .implementation-truth .implementation-claim.deprecated header b {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, transparent);
+  color: var(--mq-gedempt);
+  border-color: var(--afv-mq-rand);
+}
+
+/* Внутрішні панелі картки твердження та підвал матриці */
+html.palet-maquette .implementation-truth .implementation-body {
+  gap: 14px;
+  padding: 0 20px 20px;
+}
+
+html.palet-maquette .implementation-truth .implementation-body section,
+html.palet-maquette .implementation-truth .implementation-body dl {
+  padding: 14px 16px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-bg) 24%);
+  box-shadow: inset 0 1px 0 var(--afv-mq-glans);
+}
+
+html.palet-maquette .implementation-truth .implementation-body h3 {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  font-weight: 660;
+  letter-spacing: 0.02em;
+  color: var(--mq-accent);
+}
+
+html.palet-maquette .implementation-truth .implementation-body p {
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+html.palet-maquette .implementation-truth .implementation-body dl div {
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--afv-mq-rand) 62%, transparent);
+}
+
+html.palet-maquette .implementation-truth .implementation-body dl div:first-child {
+  padding-top: 0;
+}
+
+html.palet-maquette .implementation-truth .implementation-body dl div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+html.palet-maquette .implementation-truth .implementation-body dt {
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+  font-weight: 640;
+}
+
+html.palet-maquette .implementation-truth .implementation-body dd {
+  color: var(--mq-tekst);
+  font-size: 0.84375rem;
+  line-height: 1.45;
+}
+
+html.palet-maquette .implementation-truth .implementation-foot {
+  padding: 12px 16px;
+  border: 1px solid var(--afv-mq-rand);
+  border-radius: 14px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.8125rem;
+  opacity: 1;
+}
+
+html.palet-maquette .implementation-truth .implementation-foot svg {
+  color: var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. МЕДІАЗАПИТИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (hover: hover) and (pointer: fine) {
+  html.palet-maquette :is(.afv, .afv-laag) .afv-knop:not(:disabled):not(.is-hoofd):not(.is-stil):hover {
+    border-color: var(--afv-mq-rand-sterk);
+    background: var(--mq-oppervlak-hover);
+    transform: translateY(-1px);
+  }
+
+  html.palet-maquette :is(.afv, .afv-laag) .afv-knop.is-hoofd:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 15px 30px color-mix(in srgb, var(--mq-accent) 34%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 34%, transparent);
+  }
+
+  html.palet-maquette :is(.afv, .afv-laag) :is(.afv-knop.is-stil, .afv-icoonknop):not(:disabled):hover {
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+  }
+
+  html.palet-maquette .afv .afv-zijnav button:not(.is-actief):hover {
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+  }
+
+  html.palet-maquette .afv .afv-zijnav button:not(.is-actief):hover svg {
+    color: var(--mq-accent);
+  }
+
+  html.palet-maquette .afv .afv-tegel:not(:disabled):hover,
+  html.palet-maquette .afv .afv-kaartje:hover {
+    border-color: var(--afv-mq-rand-accent);
+    transform: translateY(-2px);
+    box-shadow: var(--mq-schaduw), inset 0 1px 0 var(--afv-mq-glans);
+  }
+
+  html.palet-maquette .afv button.afv-lijst-rij:hover,
+  html.palet-maquette .afv [data-afv-controle-kaart]:hover,
+  html.palet-maquette .afv article[data-afv-mogelijkheid]:hover {
+    border-color: var(--afv-mq-rand-accent);
+    transform: translateY(-1px);
+  }
+
+  html.palet-maquette .afv .afv-onderbalk-menu button:hover {
+    background: var(--mq-oppervlak-hover);
+  }
+
+  html.palet-maquette :is(.afv, .afv-laag) .afv-dtabs button:not(.is-actief):hover {
+    color: var(--mq-tekst);
+    background: var(--mq-oppervlak-hover);
+  }
+
+  html.palet-maquette :is(.afv, .afv-laag) .afv-dropvlak:hover {
+    border-color: var(--mq-accent);
+    background:
+      radial-gradient(circle at 50% 0%, var(--afv-mq-halo), transparent 64%),
+      var(--mq-oppervlak-hover);
+  }
+
+  html.palet-maquette .implementation-truth .implementation-filters button:not(.active):hover {
+    border-color: var(--afv-mq-rand-accent);
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+    transform: translateY(-1px);
+  }
+
+  html.palet-maquette .implementation-truth .implementation-claim:hover {
+    border-color: var(--afv-mq-rand-sterk);
+    transform: translateY(-1px);
+  }
+
+  html.palet-maquette .implementation-truth .implementation-hero aside a:hover {
+    text-decoration: underline;
+  }
+}
+
+@media (pointer: coarse) {
+  html.palet-maquette :is(.afv, .afv-laag) :is(button, select),
+  html.palet-maquette :is(.afv, .afv-laag) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])),
+  html.palet-maquette .implementation-truth .implementation-filters button,
+  html.palet-maquette .implementation-truth .implementation-hero aside a {
+    min-height: var(--tik-hoogte-mobiel);
+  }
+}
+
+@media (max-width: 960px) {
+  html.palet-maquette .afv .afv-romp {
+    grid-template-columns: 196px minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  html.palet-maquette .afv.is-smal .afv-romp {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  html.palet-maquette .afv-mq-schil {
+    gap: 16px;
+  }
+
+  html.palet-maquette .afv {
+    gap: 16px;
+  }
+
+  html.palet-maquette .afv .afv-kop,
+  html.palet-maquette :is(.afv, .afv-laag) .afv-blok,
+  html.palet-maquette .canonical-content .afv section.afv-blok {
+    padding: 16px 18px;
+    border-radius: 22px;
+  }
+
+  html.palet-maquette .afv .afv-tegel strong {
+    font-size: 1.45rem;
+  }
+
+  html.palet-maquette .afv-laag.is-paneel .afv-laag-vak,
+  html.palet-maquette .afv-laag.is-scherm .afv-laag-vak {
+    border-radius: 0;
+    border-left: 0;
+  }
+
+  html.palet-maquette .afv-laag .afv-laag-kop {
+    padding: 14px 16px 12px;
+  }
+
+  html.palet-maquette .afv-laag .afv-laag-inhoud {
+    padding: 16px;
+  }
+
+  html.palet-maquette .implementation-truth .implementation-hero,
+  html.palet-maquette .implementation-truth .implementation-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette .implementation-truth .implementation-hero {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  html.palet-maquette .implementation-truth .implementation-claim > header {
+    padding: 16px 16px 12px;
+  }
+
+  html.palet-maquette .implementation-truth .implementation-body {
+    padding: 0 16px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette .afv-mq-schil *,
+  html.palet-maquette .afv-laag * {
+    transition: none;
+  }
+}

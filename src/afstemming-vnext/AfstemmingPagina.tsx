@@ -8,6 +8,7 @@ import { AFSTEMMING_SECTIES, SECTIE_LABEL, afstemmingTekst, type AfstemmingSecti
 import { afstemmingClient, AfstemmingFout, type Overzicht as OverzichtUit } from './afstemming-client';
 import { foutTekst, tr, useSmal, type Lang } from './tekst';
 import './afstemming.css';
+import './afstemming-maquette.css';
 
 const Overzicht = lazy(() => import('./onderdelen/Overzicht'));
 const Kartotheek = lazy(() => import('./onderdelen/Kartotheek'));

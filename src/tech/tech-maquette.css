@@ -1,0 +1,1360 @@
+/* Студійне оформлення технічної брами TechPoort та наскрізного технічного контуру tech-laag
+   у художній системі «Макет» (MAQUETTE-009, Хвиля 8, Група 8В).
+   Охоплює розгорнуту й згорнуту інженерну смугу, спадне меню дій з пошуком, панель налаштувань смуги,
+   швидке контекстне меню кнопки, спливну довідку, діалогові вікна технічного профілю, картку збою модулів
+   та обидва стани захищеної технічної брами.
+   Діє виключно за умови html.palet-maquette у нічній студії та у світлому режимі «Ранковий туман».
+   Studio-opmaak voor de technische poort en de doorlopende technische laag onder html.palet-maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПОХІДНІ СТУДІЙНІ ЗМІННІ ДЛЯ ПОЗАОБОЛОНКОВОГО ШАРУ ТА СВІТЛОГО РЕЖИМУ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(
+  .tech-band,
+  .tech-band-extra,
+  .tech-strook-paneel,
+  .tech-strook-menu,
+  .tech-vraag-uitleg,
+  .tech-poort,
+  .rw-dok-melding,
+  .venster:has(.tech-venster)
+) {
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accent-tekst: var(--mq-accent-op);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --text-on-vlak: var(--mq-tekst);
+  --info: var(--mq-accent);
+  --info-vlak: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  --focus: var(--mq-accent);
+  --venster-actief: var(--mq-accent);
+
+  --rw-spoor: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-bg) 16%);
+  --rw-tekst: var(--mq-tekst);
+  --rw-rand: var(--mq-rand-sterk);
+  --rw-prive: var(--mq-accent);
+  --rw-prive-fg: var(--mq-accent-op);
+  --rw-tech: var(--tech-band-bg);
+  --rw-tech-fg: var(--tech-band-fg);
+
+  --mq-tech-kaart: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-oppervlak) 26%) 0%,
+    color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-bg) 6%) 100%
+  );
+  --mq-tech-menu-vlak: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--mq-popover-glas) 92%, var(--mq-oppervlak-2) 8%) 0%,
+    var(--mq-popover-glas) 100%
+  );
+  --mq-tech-invoer: color-mix(in srgb, var(--mq-oppervlak-2) 74%, var(--mq-bg) 26%);
+  --mq-tech-glans: color-mix(in srgb, var(--mq-tekst) 8%, transparent);
+  --mq-tech-knop-glas: color-mix(in srgb, var(--mq-oppervlak-2) 74%, transparent);
+}
+
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
+  .tech-band,
+  .tech-band-extra,
+  .tech-strook-paneel,
+  .tech-strook-menu,
+  .tech-vraag-uitleg,
+  .tech-poort,
+  .rw-dok-melding,
+  .venster:has(.tech-venster)
+),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .tech-poort {
+  --mq-accent-op: var(--mq-wit);
+  --accent-tekst: var(--mq-wit);
+  --accentText: var(--mq-wit);
+  --text-on-accent: var(--mq-wit);
+  --rw-prive-fg: var(--mq-wit);
+  --info-vlak: color-mix(in srgb, var(--mq-accent) 12%, var(--mq-oppervlak-2));
+
+  --mq-tech-kaart: linear-gradient(
+    160deg,
+    var(--mq-oppervlak) 0%,
+    color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-oppervlak) 22%) 100%
+  );
+  --mq-tech-menu-vlak: linear-gradient(
+    168deg,
+    var(--mq-popover-glas) 0%,
+    color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak) 28%) 100%
+  );
+  --mq-tech-invoer: color-mix(in srgb, var(--mq-oppervlak-2) 80%, var(--mq-oppervlak) 20%);
+  --mq-tech-glans: color-mix(in srgb, var(--mq-wit) 82%, transparent);
+  --mq-tech-knop-glas: color-mix(in srgb, var(--mq-oppervlak) 84%, var(--mq-oppervlak-2) 16%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. РОЗГОРНУТА ІНЖЕНЕРНА СМУГА .tech-band:not(.is-ingeklapt)
+   Геометрія висоти та відступів збережена незмінною для точного вимірювання data-pas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) {
+  background-color: var(--mq-bovenbalk-glas);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tech-band-bg) 8%, transparent) 0%,
+    transparent 100%
+  );
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  color: var(--mq-tekst);
+  border-bottom: 1px solid color-mix(in srgb, var(--tech-band-bg) 38%, var(--mq-rand-sterk));
+  box-shadow:
+    0 10px 28px color-mix(in srgb, var(--mq-bg) 22%, transparent),
+    inset 0 -1px 0 var(--mq-tech-glans);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band.is-piek:not(.is-ingeklapt) {
+  box-shadow:
+    var(--mq-schaduw-zacht),
+    inset 0 -1px 0 var(--mq-tech-glans);
+}
+
+/* Яскрава верхня лінія кольору технічного профілю з підтримкою візерунків */
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt)::before {
+  height: 3.5px;
+  background-color: var(--tech-band-bg);
+  box-shadow: 0 1px 10px color-mix(in srgb, var(--tech-band-bg) 42%, transparent);
+}
+
+html.palet-maquette[data-tech="aan"][data-tech-patroon="strepen"] .tech-band:not(.is-ingeklapt)::before {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--tech-band-fg) 22%, transparent) 6px 12px
+  );
+}
+
+html.palet-maquette[data-tech="aan"][data-tech-patroon="stippen"] .tech-band:not(.is-ingeklapt)::before {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--tech-band-fg) 24%, transparent) 1px,
+    transparent 1.2px
+  );
+  background-size: 6px 4px;
+}
+
+/* Висококонтрастна інженерна позначка профілю */
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-merk {
+  background: var(--tech-band-bg);
+  color: var(--tech-band-fg);
+  border: 1px solid color-mix(in srgb, var(--tech-band-fg) 28%, transparent);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 12px color-mix(in srgb, var(--tech-band-bg) 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 26%, transparent);
+}
+
+/* Ролі, лічильник часу, причина активації та позначка віддаленого сеансу */
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-id {
+  color: var(--mq-tekst);
+  font-weight: 600;
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd {
+  color: var(--mq-tekst);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd svg {
+  color: color-mix(in srgb, var(--tech-band-bg) 72%, var(--mq-tekst));
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd.is-bijna {
+  color: var(--mq-tech-markering);
+  text-decoration-color: var(--tech-band-bg);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-reden {
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-reden-label {
+  color: var(--mq-stil);
+  font-weight: 650;
+  opacity: 1;
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-reden-tekst {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band .tech-remote-actief {
+  background: color-mix(in srgb, var(--fout) 18%, var(--mq-oppervlak-2));
+  color: var(--fout);
+  border: 1px solid color-mix(in srgb, var(--fout) 46%, var(--mq-rand-sterk));
+  font-size: 0.75rem;
+}
+
+/* Студійні скляні кнопки на розгорнутій смузі (без зміни ширини й горизонтальних полів) */
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button,
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop {
+  border: 1px solid var(--mq-rand);
+  border-radius: 10px;
+  background: var(--mq-tech-knop-glas);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-tech-glans);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button:hover,
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: color-mix(in srgb, var(--mq-accent) 46%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-hier {
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--mq-accent) 22%, var(--mq-oppervlak-2)) 0%,
+    color-mix(in srgb, var(--mq-accent) 12%, var(--mq-oppervlak)) 100%
+  );
+  border-color: color-mix(in srgb, var(--mq-accent) 56%, var(--mq-rand-sterk));
+  color: var(--mq-tekst);
+  box-shadow:
+    inset 0 -2px 0 var(--mq-accent),
+    inset 0 1px 0 var(--mq-tech-glans);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-uit {
+  background: color-mix(in srgb, var(--fout) 10%, var(--mq-oppervlak));
+  border-color: color-mix(in srgb, var(--fout) 42%, var(--mq-rand-sterk));
+  color: var(--fout);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-uit:hover {
+  background: color-mix(in srgb, var(--fout) 18%, var(--mq-oppervlak-2));
+  border-color: color-mix(in srgb, var(--fout) 62%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band .tech-band-knoppen > .tech-strook-item > button:focus-visible,
+html.palet-maquette[data-tech="aan"] .tech-band .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop:focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* Перемикач просторів на площині розгорнутої смуги */
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel {
+  border-color: var(--mq-rand);
+  background: var(--mq-tech-knop-glas);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: color-mix(in srgb, var(--mq-accent) 42%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-spoor {
+  background: var(--rw-spoor);
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-bol {
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--mq-bg) 30%, transparent);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-spoor {
+  background: color-mix(in srgb, var(--tech-band-bg) 28%, var(--rw-spoor));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tech-band-bg) 62%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-bol {
+  background: var(--tech-band-bg);
+  color: var(--tech-band-fg);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-compact .rw-aanuit {
+  font-size: 0.75rem;
+}
+
+/* Хмаринка назви кнопки при наведенні */
+html.palet-maquette .tech-band .tech-strook-item::after {
+  border-radius: 9px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  font-size: 0.75rem;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .tech-band .tech-strook-item.is-doel-voor {
+  box-shadow: -4px 0 0 -1px var(--mq-accent);
+}
+
+html.palet-maquette .tech-band .tech-strook-item.is-doel-na {
+  box-shadow: 4px 0 0 -1px var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. ЗГОРНУТА ТОНКА СМУЖКА .tech-band.is-ingeklapt ТА МЕЖА ТЕХНІЧНОГО ПРОСТОРУ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-tech="aan"] .tech-band.is-ingeklapt {
+  background-color: var(--tech-band-bg);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mq-wit) 20%, var(--tech-band-bg)) 0%,
+    var(--tech-band-bg) 56%,
+    color-mix(in srgb, var(--tech-band-fg) 10%, var(--tech-band-bg)) 100%
+  );
+  color: var(--tech-band-fg);
+  border-bottom: 1px solid color-mix(in srgb, var(--tech-band-fg) 26%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--mq-bg) 22%, transparent);
+}
+
+html.palet-maquette[data-tech="aan"][data-tech-patroon="strepen"] .tech-band.is-ingeklapt {
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 14px,
+      color-mix(in srgb, var(--tech-band-fg) 11%, transparent) 14px 28px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mq-wit) 18%, var(--tech-band-bg)) 0%,
+      var(--tech-band-bg) 100%
+    );
+}
+
+html.palet-maquette[data-tech="aan"][data-tech-patroon="stippen"] .tech-band.is-ingeklapt {
+  background-image:
+    radial-gradient(color-mix(in srgb, var(--tech-band-fg) 15%, transparent) 1.5px, transparent 1.6px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mq-wit) 18%, var(--tech-band-bg)) 0%,
+      var(--tech-band-bg) 100%
+    );
+  background-size: 10px 10px, 100% 100%;
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band.is-ingeklapt .tech-band-merk {
+  background: var(--tech-band-fg);
+  color: var(--tech-band-bg);
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band.is-ingeklapt .tech-band-knoppen > .tech-strook-vast-modus > button {
+  border-radius: 999px;
+  border-color: color-mix(in srgb, var(--tech-band-fg) 42%, transparent);
+  background: color-mix(in srgb, var(--tech-band-fg) 8%, transparent);
+  color: var(--tech-band-fg);
+}
+
+html.palet-maquette[data-tech="aan"] .tech-band.is-ingeklapt .tech-band-knoppen > .tech-strook-vast-modus > button:hover {
+  background: color-mix(in srgb, var(--tech-band-fg) 16%, transparent);
+}
+
+html.palet-maquette[data-ruimte="technisch"][data-tech="aan"] body::after {
+  border: 2px solid color-mix(in srgb, var(--tech-band-bg) 68%, transparent);
+  border-top-width: 0;
+}
+
+html.palet-maquette .rw-dok-melding {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-popover-glas);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .rw-dok-melding.is-fout {
+  border-color: color-mix(in srgb, var(--fout) 46%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 16%, var(--mq-popover-glas));
+  color: var(--fout);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. ВІДКРИТЕ СПАДНЕ МЕНЮ ДІЙ .tech-band-extra.is-open ТА ПОШУК .tech-menu-zoek
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .tech-band .tech-band-extra.is-open,
+html.palet-maquette .tech-band[data-pas="3"] .tech-band-extra.is-open {
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-menu-vlak);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-groep + .tech-menu-groep {
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-kop {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--mq-stil);
+  opacity: 1;
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-zoek {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-zoek svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-zoek input {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-zoek input::placeholder {
+  color: var(--mq-stil);
+  opacity: 1;
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-zoek:focus-within {
+  border-color: color-mix(in srgb, var(--mq-accent) 64%, var(--mq-rand-sterk));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent) 16%, transparent);
+  outline: none;
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open button {
+  border-radius: 11px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open button:hover,
+html.palet-maquette .tech-band .tech-band-extra.is-open button:focus-visible {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open button.is-hier {
+  background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-uitleg {
+  font-size: 0.75rem;
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-leeg {
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel {
+  border-radius: 14px;
+  border-color: var(--mq-rand);
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-onder button.is-uit {
+  color: var(--fout);
+}
+
+html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-onder button.is-uit:hover {
+  background: color-mix(in srgb, var(--fout) 12%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ПАНЕЛЬ НАЛАШТУВАНЬ СМУГИ .tech-strook-paneel ТА ШВИДКЕ МЕНЮ .tech-strook-menu
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .tech-strook-paneel {
+  border-radius: var(--mq-straal-rail);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-menu-vlak);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .tech-strook-kop {
+  padding: 6px 8px 6px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 66%, transparent);
+}
+
+html.palet-maquette .tech-strook-titel {
+  color: var(--mq-tekst);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette .tech-strook-sluit {
+  border-radius: 10px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .tech-strook-sluit:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-strook-groep {
+  padding: 10px 12px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .tech-strook-groep legend {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .tech-strook-rij-kop {
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .tech-strook-uitleg,
+html.palet-maquette .tech-strook-voet small {
+  font-size: 0.75rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .tech-strook-optie {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .tech-strook-optie:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: color-mix(in srgb, var(--mq-accent) 46%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .tech-strook-optie.is-gekozen {
+  background: linear-gradient(
+    135deg,
+    var(--mq-accent) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  border-color: transparent;
+  color: var(--mq-accent-op);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--mq-accent) 26%, transparent);
+}
+
+html.palet-maquette .tech-strook-lijst li {
+  border-radius: 11px;
+  padding: 0 6px;
+}
+
+html.palet-maquette .tech-strook-lijst li:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .tech-strook-lijst li.is-doel-voor {
+  box-shadow: inset 0 3px 0 var(--mq-accent);
+}
+
+html.palet-maquette .tech-strook-lijst li.is-doel-na {
+  box-shadow: inset 0 -3px 0 var(--mq-accent);
+}
+
+html.palet-maquette .tech-strook-greep {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .tech-strook-vink input {
+  accent-color: var(--mq-accent);
+}
+
+html.palet-maquette .tech-strook-pijlen button {
+  border-radius: 10px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-strook-pijlen button:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: color-mix(in srgb, var(--mq-accent) 42%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .tech-strook-reset {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+html.palet-maquette .tech-strook-reset:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand-sterk));
+}
+
+/* Швидке контекстне меню окремої кнопки смуги */
+html.palet-maquette .tech-strook-menu {
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-menu-vlak);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .tech-strook-menu-groep + .tech-strook-menu-groep {
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .tech-strook-menu-kop {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .tech-strook-menu button {
+  border-radius: 10px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-strook-menu button:hover,
+html.palet-maquette .tech-strook-menu button:focus-visible {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .tech-strook-menu button:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--mq-accent);
+}
+
+html.palet-maquette .tech-strook-menu button.is-gekozen {
+  color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 12%, transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. СПЛИВНА ДОВІДКА «?» (.tech-vraag-knop ТА .tech-vraag-uitleg)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(.tech-vraag-knop, .tech-venster .tech-vraag-knop, .tech-band .tech-vraag-knop) {
+  border-color: color-mix(in srgb, currentColor 48%, var(--mq-rand-sterk));
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette :is(.tech-vraag-knop, .tech-venster .tech-vraag-knop, .tech-band .tech-vraag-knop):is(:hover, [aria-expanded="true"]) {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 16%, transparent);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette body .tech-vraag-uitleg {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-menu-vlak);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette body .tech-vraag-uitleg .tech-vraag-laag b {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette body .tech-vraag-uitleg .tech-vraag-laag.is-risico b {
+  color: var(--fout);
+}
+
+html.palet-maquette body .tech-vraag-uitleg .tech-vraag-laag.is-dev {
+  border-top: 1px dashed var(--mq-rand-sterk);
+}
+
+html.palet-maquette body .tech-vraag-uitleg .tech-vraag-laag.is-dev b {
+  color: var(--mq-accent);
+}
+
+html.palet-maquette body .tech-vraag-uitleg .tech-vraag-bron code {
+  font-size: 0.75rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-accent) 12%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. ПЛАТФОРМНІ ВІКНА ТЕХНІЧНОГО КОНТУРУ ТА ФОРМИ .tech-venster
+   (Activeren, BandKeuze, Profielen, RuimteStart, RuimteToegang, RuimteUitloggen)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .venster:has(.tech-venster) {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-kaart);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .venster.is-boven:has(.tech-venster) {
+  box-shadow:
+    var(--mq-schaduw),
+    0 0 0 2px color-mix(in srgb, var(--mq-accent) 62%, transparent);
+}
+
+html.palet-maquette .venster:has(.tech-venster) .venster-kop {
+  border-bottom: 1px solid var(--mq-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, transparent);
+}
+
+html.palet-maquette .venster:has(.tech-venster) .venster-knoppen button:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette .tech-venster {
+  gap: 16px;
+  padding: 18px 20px 20px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-venster :is(h3, legend) {
+  color: var(--mq-tekst);
+  letter-spacing: -0.01em;
+}
+
+html.palet-maquette .tech-venster :is(.tech-lead, .tech-meta, .tech-veld-aanvink > small) {
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette .tech-venster .tech-veld-aanvink > small {
+  font-size: 0.78rem;
+}
+
+/* Єдине студійне оформлення полів вводу без зачіпання прапорців, перемикачів, повзунків чи файлів */
+html.palet-maquette .tech-venster :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+html.palet-maquette .tech-venster :is(.tech-veld, .tech-geven) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-tech-glans);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .tech-venster .tech-veld :where(textarea) {
+  min-height: 78px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
+html.palet-maquette .tech-venster :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible,
+html.palet-maquette .tech-venster :is(.tech-veld, .tech-geven) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  border-color: color-mix(in srgb, var(--mq-accent) 64%, var(--mq-rand-sterk));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mq-accent) 16%, transparent);
+  outline: none;
+}
+
+html.palet-maquette .tech-venster :is(.tech-aanvink, .tech-rolkeuze) input[type="checkbox"] {
+  accent-color: var(--mq-accent);
+}
+
+/* Кнопки діалогів технічного профілю (крім кольорових зразків BandKeuze та кружечків довідки) */
+html.palet-maquette .tech-venster button:not(.tech-kleur):not(.tech-vraag-knop) {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-tech-glans);
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .tech-venster button:not(.tech-kleur):not(.tech-vraag-knop):hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .tech-venster button.is-hoofd:not(.tech-kleur):not(.tech-vraag-knop) {
+  background: linear-gradient(
+    135deg,
+    var(--mq-accent) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  border-color: transparent;
+  color: var(--mq-accent-op);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--mq-accent) 26%, transparent);
+}
+
+html.palet-maquette .tech-venster button.is-hoofd:not(.tech-kleur):not(.tech-vraag-knop):hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit) 8%) 0%,
+    color-mix(in srgb, var(--mq-accent) 72%, var(--mq-accent-2)) 100%
+  );
+}
+
+html.palet-maquette .tech-venster button.is-gevaar:not(.tech-kleur):not(.tech-vraag-knop) {
+  background: color-mix(in srgb, var(--fout) 10%, var(--mq-oppervlak));
+  border-color: color-mix(in srgb, var(--fout) 46%, var(--mq-rand-sterk));
+  color: var(--fout);
+}
+
+html.palet-maquette .tech-venster button.is-gevaar:not(.tech-kleur):not(.tech-vraag-knop):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fout) 18%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .tech-venster .tech-patronen button[aria-checked="true"] {
+  background: color-mix(in srgb, var(--mq-accent) 18%, var(--mq-oppervlak-2));
+  border-color: var(--mq-accent);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tech-venster button.tech-kleur {
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 24%, transparent);
+}
+
+html.palet-maquette .tech-venster .tech-band-voorbeeld {
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 22%, transparent);
+}
+
+html.palet-maquette .tech-venster .tech-band-voorbeeld[data-patroon="strepen"] {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 14px,
+    color-mix(in srgb, var(--tech-band-fg) 12%, transparent) 14px 28px
+  );
+}
+
+html.palet-maquette .tech-venster .tech-band-voorbeeld[data-patroon="stippen"] {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--tech-band-fg) 16%, transparent) 1.5px,
+    transparent 1.6px
+  );
+  background-size: 10px 10px;
+}
+
+html.palet-maquette .tech-venster .tech-melding {
+  padding: 10px 12px;
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid color-mix(in srgb, var(--fout) 38%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--fout) 12%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette .tech-venster .tech-melding.is-ok {
+  border-color: color-mix(in srgb, var(--ok) 38%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--ok) 12%, var(--mq-oppervlak-2));
+  color: var(--ok);
+}
+
+html.palet-maquette .tech-venster .tech-geven,
+html.palet-maquette .tech-venster .tech-lijst li {
+  padding: 12px 14px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 15px;
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .tech-venster .tech-lijst-wie small {
+  font-size: 0.78rem;
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette .tech-venster :is(.rs-chip, .rs-kaart, .rt-lijst li, .ru-knop, .rs-sjabloon) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .tech-venster :is(.rs-chip.is-gekozen, .rs-kaart.is-gekozen) {
+  border-color: var(--mq-accent);
+  background: color-mix(in srgb, var(--mq-accent) 14%, var(--mq-oppervlak-2));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. ЗАХИЩЕНА ТЕХНІЧНА БРАМА .tech-poort / .mq-tech-poort ТА КАРТКА ЗБОЮ МОДУЛІВ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Захист оправ, скруглень і центрованої ширини брами від плоского режиму вмісту оболонки */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+  width: min(58rem, 100%);
+  max-width: 58rem;
+  margin-inline: auto;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 26%, var(--mq-rand-sterk));
+  border-radius: var(--mq-straal-held);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort.tech-poort-stil:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+  width: min(44rem, 100%);
+  max-width: 44rem;
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort[data-tech-bundel="fout"]:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+  width: min(40rem, 100%);
+  max-width: 40rem;
+  border-color: color-mix(in srgb, var(--fout) 40%, var(--mq-rand-sterk));
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort[data-tech-poort="wacht"]:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+  width: min(34rem, 100%);
+  max-width: 34rem;
+  border-color: var(--mq-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Загальна студійна основа для всіх станів .tech-poort */
+html.palet-maquette .tech-poort {
+  position: relative;
+  box-sizing: border-box;
+  width: min(58rem, 100%);
+  max-width: 58rem;
+  margin: clamp(24px, 5vh, 56px) auto;
+  padding: clamp(24px, 3.4vw, 38px);
+  border-radius: var(--mq-straal-held);
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 26%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(circle at 12% 0%, var(--mq-werk-gloed-a), transparent 56%),
+    radial-gradient(circle at 92% 100%, color-mix(in srgb, var(--mq-tech-markering) 12%, transparent), transparent 52%),
+    var(--mq-tech-kaart);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  overflow: hidden;
+}
+
+/* Верхня інженерна позначка технічного контуру */
+html.palet-maquette .mq-tech-poort-boven {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-tech-markering) 10%, var(--mq-oppervlak-2));
+  color: var(--mq-tech-markering);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+html.palet-maquette .mq-tech-poort-lijn {
+  flex: none;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mq-tech-markering) 0%, var(--mq-accent) 100%);
+}
+
+/* Повна двоколонкова студійна брама (.mq-tech-poort-vol) */
+html.palet-maquette .tech-poort.mq-tech-poort-vol {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(250px, 0.85fr);
+  align-items: center;
+  gap: clamp(22px, 3vw, 36px);
+}
+
+html.palet-maquette .mq-tech-poort-inhoud {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+html.palet-maquette .tech-poort h1 {
+  margin: 0;
+  color: var(--mq-tekst);
+  font-size: clamp(1.58rem, 2.5vw, 2.12rem);
+  font-weight: 750;
+  line-height: 1.16;
+  letter-spacing: -0.025em;
+}
+
+html.palet-maquette .tech-poort h2 {
+  margin: 0;
+  color: var(--mq-tekst);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 720;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+}
+
+html.palet-maquette .tech-poort p {
+  margin: 0;
+  color: var(--mq-gedempt);
+  font-size: 0.96rem;
+  line-height: 1.62;
+  max-width: 54ch;
+}
+
+html.palet-maquette .tech-poort p[data-tech-poort="geen-profiel"],
+html.palet-maquette .mq-tech-poort-geen {
+  padding: 12px 14px;
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 38%, var(--mq-rand-sterk));
+  background: color-mix(in srgb, var(--mq-tech-markering) 10%, var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  font-weight: 560;
+  line-height: 1.5;
+}
+
+html.palet-maquette .mq-tech-poort-kunst {
+  min-width: 0;
+  width: 100%;
+}
+
+html.palet-maquette .tech-poort-knoppen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+html.palet-maquette .tech-poort button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-tech-invoer);
+  color: var(--mq-tekst);
+  font-size: 0.92rem;
+  font-weight: 650;
+  box-shadow: inset 0 1px 0 var(--mq-tech-glans);
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+html.palet-maquette .tech-poort button:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: color-mix(in srgb, var(--mq-accent) 46%, var(--mq-rand-sterk));
+}
+
+html.palet-maquette .tech-poort button.is-hoofd {
+  background: linear-gradient(
+    135deg,
+    var(--mq-accent) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  border-color: transparent;
+  color: var(--mq-accent-op);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-accent) 28%, transparent);
+}
+
+html.palet-maquette .tech-poort button.is-hoofd:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit) 8%) 0%,
+    color-mix(in srgb, var(--mq-accent) 72%, var(--mq-accent-2)) 100%
+  );
+}
+
+html.palet-maquette .tech-poort button:focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* Тиха камерна скляна капсула (.tech-poort-stil при v2 && heeftProfiel) */
+html.palet-maquette .tech-poort.tech-poort-stil {
+  width: min(44rem, 100%);
+  max-width: 44rem;
+  margin: clamp(32px, 7vh, 72px) auto;
+  padding: clamp(20px, 2.6vw, 28px);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+  gap: 16px;
+  justify-items: stretch;
+}
+
+html.palet-maquette .mq-tech-poort-stil-kern {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 16px;
+}
+
+html.palet-maquette .mq-tech-poort-medaillon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--mq-tech-markering) 38%, var(--mq-rand-sterk));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--mq-tech-markering) 18%, var(--mq-oppervlak-2)) 0%,
+    color-mix(in srgb, var(--mq-accent) 14%, var(--mq-oppervlak)) 100%
+  );
+  color: var(--mq-tech-markering);
+  box-shadow: inset 0 1px 0 var(--mq-tech-glans);
+}
+
+html.palet-maquette .mq-tech-poort-medaillon svg {
+  width: 20px;
+  height: 20px;
+}
+
+html.palet-maquette .mq-tech-poort-stil-tekst {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+html.palet-maquette .tech-poort.tech-poort-stil p {
+  color: var(--mq-tekst);
+  font-size: 0.98rem;
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+html.palet-maquette .tech-poort button.tech-poort-naar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--mq-straal-knop);
+  border-color: transparent;
+  background: linear-gradient(
+    135deg,
+    var(--mq-accent) 0%,
+    color-mix(in srgb, var(--mq-accent) 78%, var(--mq-accent-2)) 100%
+  );
+  color: var(--mq-accent-op);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-accent) 26%, transparent);
+  white-space: nowrap;
+}
+
+html.palet-maquette .tech-poort button.tech-poort-naar:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--mq-accent) 92%, var(--mq-wit) 8%) 0%,
+    color-mix(in srgb, var(--mq-accent) 72%, var(--mq-accent-2)) 100%
+  );
+}
+
+html.palet-maquette .tech-poort-fout {
+  font-size: 0.82rem;
+  font-weight: 560;
+  color: var(--fout);
+}
+
+/* Картка збою завантаження технічних модулів [data-tech-bundel="fout"] та стан очікування [data-tech-poort="wacht"] */
+html.palet-maquette .tech-poort[data-tech-bundel="fout"] {
+  width: min(40rem, 100%);
+  max-width: 40rem;
+  margin: clamp(28px, 6vh, 64px) auto;
+  padding: clamp(22px, 3vw, 30px);
+  border-radius: var(--mq-straal-kaart);
+  border-color: color-mix(in srgb, var(--fout) 40%, var(--mq-rand-sterk));
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--fout) 14%, transparent), transparent 56%),
+    var(--mq-tech-kaart);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .tech-poort[data-tech-poort="wacht"] {
+  width: min(34rem, 100%);
+  max-width: 34rem;
+  margin: clamp(32px, 7vh, 72px) auto;
+  padding: 22px 26px;
+  border-radius: var(--mq-straal-kaart);
+  border-color: var(--mq-rand);
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. МЕДІАЗАПИТИ — СУВОРО В САМОМУ КІНЦІ ФАЙЛА (ПРАВИЛО mobiel-cascade-20261105)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 769px) {
+  html.palet-maquette .tech-band .tech-band-extra.is-open {
+    border-radius: 18px;
+    border: 1px solid var(--mq-rand-sterk);
+    background: var(--mq-tech-menu-vlak);
+    color: var(--mq-tekst);
+    box-shadow: var(--mq-schaduw);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open button:hover,
+  html.palet-maquette .tech-band .tech-band-extra.is-open button:focus-visible {
+    background: var(--mq-oppervlak-hover);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open button.is-hier {
+    background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+    color: var(--mq-tekst);
+    box-shadow: inset 3px 0 0 var(--mq-accent);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-kop {
+    color: var(--mq-stil);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-groep + .tech-menu-groep {
+    border-top-color: var(--mq-rand);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-zoek {
+    border: 1px solid var(--mq-rand);
+    background: var(--mq-tech-invoer);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-wissel.is-nodig {
+    border-bottom: 1px solid var(--mq-rand);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-onder.is-nodig {
+    border-top: 1px solid var(--mq-rand);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-onder button.is-uit {
+    color: var(--fout);
+  }
+}
+
+@media (max-width: 920px) {
+  html.palet-maquette .tech-poort.mq-tech-poort-vol {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  html.palet-maquette .tech-band .tech-band-extra.is-open {
+    border-radius: 0 0 20px 20px;
+    border: 0;
+    border-top: 1px solid var(--mq-rand);
+    border-bottom: 1px solid var(--mq-rand-sterk);
+    background: var(--mq-tech-menu-vlak);
+    color: var(--mq-tekst);
+    box-shadow: var(--mq-schaduw);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-kop {
+    font-size: 0.75rem;
+    color: var(--mq-gedempt);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-groep + .tech-menu-groep {
+    border-top: 1px solid var(--mq-rand);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-menu-zoek {
+    border: 1px solid var(--mq-rand);
+    border-radius: var(--mq-straal-veld);
+    background: var(--mq-tech-invoer);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open button:hover {
+    background: var(--mq-oppervlak-hover);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open button.is-hier {
+    background: color-mix(in srgb, var(--mq-accent) 16%, var(--mq-oppervlak-2));
+    color: var(--mq-accent);
+    box-shadow: none;
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-wissel {
+    border-bottom-color: var(--mq-rand);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-onder {
+    border-top-color: var(--mq-rand);
+  }
+
+  html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-onder button.is-uit {
+    color: var(--fout);
+  }
+
+  html.palet-maquette .mq-tech-poort-stil-kern {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  html.palet-maquette .tech-poort.tech-poort-stil button.tech-poort-naar {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  html.palet-maquette .tech-poort {
+    margin: 16px auto;
+    padding: 20px 18px 22px;
+  }
+
+  html.palet-maquette .tech-poort.tech-poort-stil {
+    margin: 20px auto;
+    padding: 18px;
+  }
+
+  html.palet-maquette .tech-poort-knoppen button {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button,
+  html.palet-maquette[data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop,
+  html.palet-maquette .tech-strook-optie,
+  html.palet-maquette :is(.tech-vraag-knop, .tech-venster .tech-vraag-knop, .tech-band .tech-vraag-knop),
+  html.palet-maquette .tech-venster :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+  html.palet-maquette .tech-venster button:not(.tech-kleur):not(.tech-vraag-knop),
+  html.palet-maquette .tech-poort button {
+    transition: none;
+  }
+}

@@ -47,6 +47,7 @@ import { bewaarVoorkeur, dropPlek, leesVoorkeur, metModus, STROOK_KNOP_IDS, STRO
 import { knopMenu, type KnopMenuItem } from './strook-menu';
 import { StrookInstelPaneel, StrookKnopMenu } from './StrookPaneel';
 import './strook.css';
+import './tech-maquette.css';
 import { zetTabbladMerk } from './ruimtes/tabblad-pictogram';
 
 const fout = (e: unknown) => String((e as Error)?.message || 'FOUT');
