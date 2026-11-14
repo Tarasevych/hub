@@ -23,9 +23,9 @@ html.palet-maquette .cvn.mq-schil {
 
 /* У світлому режимі «Ранковий туман» локальний атрибут data-mq-dienst="cloud" зберігає контрастний морський лазурит,
    тоді як вітрина .mq-held має власний data-mq-dienst="cloud" і лишається у своєму нічному склепінні */
-html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.cvn.mq-schil[data-mq-dienst="cloud"], .cvn-laag[data-mq-dienst="cloud"]),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .cvn.mq-schil[data-mq-dienst="cloud"],
-html.palet-maquette .cvn-laag.theme-light[data-mq-dienst="cloud"] {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) :is(.cvn.mq-schil[data-mq-dienst="cloud"], .cvn-laag[data-mq-dienst="cloud"]),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .cvn.mq-schil[data-mq-dienst="cloud"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .cvn-laag.theme-light[data-mq-dienst="cloud"] {
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 84%, var(--mq-tekst) 16%);
   --mq-accent-rgb: 12, 108, 144;
   --mq-accent-op: var(--mq-wit);
@@ -36,7 +36,7 @@ html.palet-maquette .cvn-laag.theme-light[data-mq-dienst="cloud"] {
 }
 
 /* Прокидання світлих поверхонь для порталу .cvn-laag у document.body, коли світлу тему ввімкнено на .canonical-chrome */
-html.palet-maquette:not(.theme-light):not(.theme-plum-light) .cvn-laag.theme-light {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light) .cvn-laag.theme-light {
   --mq-oppervlak: var(--panel);
   --mq-oppervlak-2: var(--surface);
   --mq-rand: var(--line);
@@ -950,7 +950,7 @@ html.palet-maquette .cvn-laag {
   backdrop-filter: blur(8px);
 }
 
-html.palet-maquette .cvn-laag.theme-light {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .cvn-laag.theme-light {
   background: rgba(20, 32, 58, 0.34);
 }
 
@@ -1352,7 +1352,589 @@ html.palet-maquette .cvn.mq-schil mark.cvn-zoek-mark {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   8. МОБІЛЬНИЙ КАСКАД — СУВОРО В САМОМУ КІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   8. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ («Біла класика» та «Чорна класика» — KLASSIEK-003A)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Оболонка .cvn.mq-schil та портальний шар .cvn-laag: робоча щільність без кольорових ореолів і туманів */
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil {
+  --mq-straal-kaart: 16px;
+  --mq-straal-knop: 11px;
+  --mq-straal-veld: 11px;
+  --mq-gloed: transparent;
+  --mq-werk-gloed-a: transparent;
+  --mq-werk-gloed-b: transparent;
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.08);
+  gap: 14px;
+  background-image: none;
+  font-family: var(--mq-font-ui);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-inhoud, .cvn-overzicht, .cvn-bestanden, .cvn-werkruimtes, .cvn-recent, .cvn-vastleggen) {
+  gap: 14px;
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn-laag {
+  --mq-straal-kaart: 16px;
+  --mq-straal-knop: 11px;
+  --mq-straal-veld: 11px;
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(var(--mq-accent-rgb), 0.08);
+  background-color: var(--mq-sluier-glas);
+  background-image: none;
+  font-family: var(--mq-font-ui);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn-laag-vak {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn-laag.is-venster .cvn-laag-vak {
+  border-radius: var(--mq-straal-kaart, 16px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn-laag-kop {
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn-laag-inhoud {
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+/* Беззасічкова ділова типографіка заголовків та табличні цифри для розмірів, лічильників, дат і відсотків */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) :is(h1, h2, h3, h4),
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.mq-held-titel, .mq-held-titel-nadruk, .mq-held-titel em) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) :is(
+  .cvn-tegel strong,
+  .cvn-balk-cijfer,
+  .cvn-mini-meta,
+  .cvn-map-aantal,
+  .cvn-map-deelpil,
+  .cvn-kaart-meta,
+  .cvn-kaart-deelpil,
+  .cvn-tabel td,
+  .cvn-upload-info,
+  .cvn-ov-route,
+  .cvn-versie-rijen li,
+  .cvn-detail-meta dd,
+  .cvn-ws-kaart .cvn-hint,
+  .cvn-zoek-meta,
+  .cvn-zoek-pct,
+  .cvn-zoek-standen > li,
+  [data-cvn-zoek-bron],
+  .cvn-selectie-balk strong,
+  .cvn-volgende,
+  [data-cvn-prullenbak="schakel"]
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Плоскі матові картки розділів, огляду, провідника файлів, передач, просторів, пошуку, останніх файлів і порожніх сцен */
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-blok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-content .cvn.mq-schil section.cvn-blok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-uploads {
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-blok > h3 > svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-leeg,
+html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-content .cvn.mq-schil section.cvn-leeg {
+  padding: 28px 20px;
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-content .cvn.mq-schil :is(
+  .cvn-blok,
+  section.cvn-blok,
+  .cvn-uploads,
+  .cvn-werkbalk,
+  .cvn-filters
+) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-content .cvn.mq-schil :is(.cvn-leeg, section.cvn-leeg) {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart, 16px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-leeg > svg {
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-melding {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-melding.is-info {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-toost {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil .cvn-tegel {
+  padding: 14px 16px;
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil .cvn-tegel:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-balk {
+  height: 8px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-balk > i,
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-voortgang > i {
+  background: var(--mq-accent);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-voortgang {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-balk-naam svg, .cvn-mini-lijst button svg, .cvn-postvak-open svg, .cvn-map > svg, .cvn-cel-naam svg) {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-mini-lijst button, .cvn-postvak-open) {
+  border-radius: var(--mq-straal-knop, 11px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-werkbalk,
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-filters {
+  padding: 10px 14px;
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil .cvn-selectie-balk {
+  border: 1px solid var(--mq-rand-sterk);
+  border-inline: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil :is(.cvn-map, .cvn-kaart, .cvn-bestand) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil :is(.cvn-map, .cvn-kaart, .cvn-bestand):hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil :is(.cvn-kaart, .cvn-bestand).is-gekozen {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 0 0 0 1px var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-kaart-icoon, .cvn-zoek-ikoon) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-kaart-deelpil, .cvn-map-deelpil) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil .cvn-tabel {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-tabel th {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+  font-family: var(--mq-font-ui);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-tabel td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-tabel tbody tr.is-gekozen {
+  background: var(--mq-oppervlak-2);
+  box-shadow: inset 2px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-ctx, .cvn-onderbalk-menu) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-ctx button, .cvn-onderbalk-menu button) {
+  border-radius: var(--mq-straal-knop, 11px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil :is(.cvn-upload-rij, .cvn-ov-taak) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil .cvn-upload-rij.is-hervatbaar {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil :is(.cvn-ws-kaart, .cvn-postvak-rijen > li, .cvn-zoek-rij) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .cvn.mq-schil :is(.cvn-ws-kaart, .cvn-postvak-rijen > li, .cvn-zoek-rij):hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-zoek-pct, .cvn-zoek-standen > li) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil mark.cvn-zoek-mark {
+  background: var(--mq-oppervlak-hover);
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-mapkiezer ul {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-kaart, 16px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) :is(.cvn-mapkiezer-rij, .cvn-versie-rijen li) {
+  border-radius: var(--mq-straal-knop, 11px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-mapkiezer-rij.is-doel {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+/* Кнопки .cvn-knop, головна дія .is-hoofd, перемикачі вигляду, хлібні крихти, вкладки відбору та поля введення */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop.is-klein {
+  border-radius: var(--mq-straal-knop, 11px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop.is-actief {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  font-weight: 620;
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop.is-stil:hover:not(:disabled) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop.is-hoofd {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-knop-primair-bg);
+  border-radius: var(--mq-straal-knop, 11px);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-knop.is-hoofd:hover:not(:disabled) {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-knop-primair-bg);
+  box-shadow: none;
+  transform: none;
+  opacity: 0.92;
+  filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) .cvn-icoonknop {
+  border-radius: var(--mq-straal-knop, 11px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is([data-cvn-weergave], .cvn-map-deelknop) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is([data-cvn-weergave], .cvn-map-deelknop):hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-kruimel {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-kruimel:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-kruimel.is-hier {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-weight: 630;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):hover {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):focus {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px rgba(var(--mq-accent-rgb), 0.14);
+  outline: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.cvn.mq-schil, .cvn-laag) input[type="file"] {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-tagfilter, .cvn-sorteer select) {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-zoekveld input {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak);
+  padding-left: 38px;
+  padding-inline-start: 38px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-zoek-veld-wrap {
+  border: 1px solid var(--mq-rand);
+  border-radius: var(--mq-straal-knop, 11px);
+  background: var(--mq-oppervlak);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-zoek-veld-wrap:focus-within {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px rgba(var(--mq-accent-rgb), 0.14);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-zoek-veld-wrap input.cvn-zoek-veld,
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-zoek-veld-wrap input.cvn-zoek-veld:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-onderbalk {
+  border-top: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-onderbalk > button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-onderbalk summary {
+  border-radius: var(--mq-straal-knop, 11px);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-onderbalk > button.is-actief {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-onderbalk .cvn-plus {
+  border-radius: var(--mq-straal-knop, 11px);
+  border: 1px solid var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. МОБІЛЬНИЙ КАСКАД — СУВОРО В САМОМУ КІНЦІ ФАЙЛА (mobiel-cascade-20261105)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 960px) {
@@ -1414,6 +1996,35 @@ html.palet-maquette .cvn.mq-schil mark.cvn-zoek-mark {
   }
 
   html.palet-maquette .cvn-laag-inhoud {
+    padding: 14px 14px calc(14px + var(--veilig-onder));
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil :is(.cvn-inhoud, .cvn-overzicht, .cvn-bestanden, .cvn-werkruimtes, .cvn-recent, .cvn-vastleggen) {
+    gap: 12px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-blok,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-content .cvn.mq-schil section.cvn-blok,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-uploads {
+    padding: 14px 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-leeg,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-content .cvn.mq-schil section.cvn-leeg {
+    padding: 24px 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-werkbalk,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn.mq-schil .cvn-filters {
+    padding: 10px 12px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn-laag.is-venster .cvn-laag-vak {
+    border-radius: var(--mq-straal-kaart, 16px) var(--mq-straal-kaart, 16px) 0 0;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .cvn-laag-inhoud {
     padding: 14px 14px calc(14px + var(--veilig-onder));
   }
 }

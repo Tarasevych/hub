@@ -13,8 +13,9 @@ import type { MailAttachmentPreview } from '../MailBijlageVoorbeeld';
 import { CloudFout, cloudClient, type GedeeldInfoUit, type GedeeldInhoudUit } from './cloud-client';
 import { kopieerNaarKlembord } from './DeelVenster';
 import { SOORT_ICOON, bewaarBlob, cloudFoutTekst, vanB64 } from './hulp';
-import { MaquetteHeld, type MaquetteHeldStatistiek } from '../maquette-kern';
-import { useIsMaquette } from '../thema/useThema';
+import { MaquetteHeld, useIsKlassiekMaquette, type MaquetteHeldStatistiek } from '../maquette-kern';
+import { isKlassiekPalet, leesKeuze } from '../thema/kern';
+import { useIsMaquette, useThemaStand } from '../thema/useThema';
 import { bytesTekst, datumTekst, foutTekst, tr, type Lang } from './tekst';
 import './cloud-vnext.css';
 import './cloud-vnext-delen.css';
@@ -43,7 +44,27 @@ type PoortStaat =
 
 export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelden, onNaarBestanden, onSluitKoppeling }: Props) {
   const isMaquette = useIsMaquette();
+  const isKlassiek = useIsKlassiekMaquette();
+  const themaStand = useThemaStand();
+  const toonStudioHeld = isMaquette && !isKlassiek;
   const [poort, setPoort] = useState<PoortStaat>({ soort: 'laden' });
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || document.documentElement.dataset.maquetteStijl) return;
+    const wortel = document.documentElement;
+    const gekozenPalet = leesKeuze(themaStand.theme, themaStand.palet).palet;
+    if (isKlassiekPalet(gekozenPalet)) {
+      wortel.classList.remove('palet-klassiek-wit', 'palet-klassiek-zwart');
+      wortel.classList.add(`palet-${gekozenPalet}`, 'palet-maquette');
+      wortel.dataset.maquetteStijl = 'klassiek';
+    } else if (wortel.classList.contains('palet-klassiek-wit') || wortel.classList.contains('palet-klassiek-zwart')) {
+      wortel.classList.add('palet-maquette');
+      wortel.dataset.maquetteStijl = 'klassiek';
+    } else if (gekozenPalet === 'maquette' || wortel.classList.contains('palet-maquette')) {
+      wortel.classList.add('palet-maquette');
+      wortel.dataset.maquetteStijl = 'studio';
+    }
+  }, [themaStand.theme, themaStand.palet]);
   const [wachtwoord, setWachtwoord] = useState('');
   const [wachtwoordInvoer, setWachtwoordInvoer] = useState('');
 
@@ -220,7 +241,7 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
   if (poort.soort === 'wachtwoord') {
     return (
       <section className={poortSchilKlas} data-cvn-gedeeld-poort='wachtwoord' {...mqDienstAttr}>
-        {isMaquette ? (
+        {toonStudioHeld ? (
           <MaquetteHeld
             lang={lang}
             dienst='cloud'
@@ -261,7 +282,7 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
   if (poort.soort === 'account_vereist' || poort.soort === 'account_geweigerd') {
     return (
       <section className={poortSchilKlas} data-cvn-gedeeld-poort={poort.soort} {...mqDienstAttr}>
-        {isMaquette ? (
+        {toonStudioHeld ? (
           <MaquetteHeld
             lang={lang}
             dienst='cloud'
@@ -302,7 +323,7 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
   if (poort.soort === 'nog_niet_actief') {
     return (
       <section className={poortSchilKlas} data-cvn-gedeeld-poort='gepland' {...mqDienstAttr}>
-        {isMaquette ? (
+        {toonStudioHeld ? (
           <MaquetteHeld
             lang={lang}
             dienst='cloud'
@@ -338,7 +359,7 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
   if (poort.soort === 'gesloten') {
     return (
       <section className={poortSchilKlas} data-cvn-gedeeld-poort={poort.code} {...mqDienstAttr}>
-        {isMaquette ? (
+        {toonStudioHeld ? (
           <MaquetteHeld
             lang={lang}
             dienst='cloud'
@@ -411,7 +432,7 @@ export default function GedeeldWeergave({ code, lang, aangemeldEmail, onAanmelde
 
   return (
     <section className={openSchilKlas} data-cvn-gedeeld-open={koppeling.doelSoort} {...mqDienstAttr}>
-      {isMaquette ? (
+      {toonStudioHeld ? (
         <MaquetteHeld
           lang={lang}
           dienst='cloud'

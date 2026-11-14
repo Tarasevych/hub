@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-003",
+  "titel": "Хвиля 2 тем оформлення «Біла класика» та «Чорна класика»: ділове хмарне сховище cloud.tarasevych.com",
+  "opdracht": "Оформити всі 14 канонічних вкладок і робочих поверхонь хмарного сховища cloud.tarasevych.com (огляд сховища, провідник файлів, спільний доступ, гостьовий перегляд GedeeldWeergave, робочі простори, зовнішні підключення, календар, світлини та вікно перегляду файлів) у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч із кольоровим студійним «Макетом» та іншими темами платформи.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-003-20261114-062607",
+    "basis": "0b34e1f778430b033bb6a4efa1f1919cbfdb8d7f",
+    "geinstalleerdeBasis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі доступу, маркери сеансів, вміст приватних файлів і бесід, внутрішні мережеві адреси, службові шляхи середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T06:26:07Z",
+      "stap": "Створено робочу гілку feature/klassiek-003-20261114-062607 від базової фіксації 0b34e1f778430b033bb6a4efa1f1919cbfdb8d7f та зареєстровано завдання KLASSIEK-003."
+    },
+    {
+      "tijd": "2026-11-14T06:42:00Z",
+      "stap": "Відсічено студійний морський лазурит від класичних палітр у src/cloud-vnext/cloud-kern-maquette.css, оформлено огляд сховища, провідник файлів, чергу передач, простори та пошук на матових картках із заокругленнями 16px і кнопках 11px."
+    },
+    {
+      "tijd": "2026-11-14T06:51:00Z",
+      "stap": "Узгоджено автономну синхронізацію палітр та компактну шапку без подвійної вітрини у src/cloud-vnext/GedeeldWeergave.tsx, а також додано прагматичний класичний шар до cloud-delen-maquette.css, cloud-integraties-maquette.css, cloud-klassiek-maquette.css та universeel-bestand-maquette.css."
+    },
+    {
+      "tijd": "2026-11-14T07:05:00Z",
+      "stap": "Додано наскрізне монохромне вирівнювання бічної навігації у src/maquette-kern/maquette-klassiek.css, узгоджено заокруглення 16px поверх режиму плоского вмісту зі збереженням мобільного каскаду відступів, виконано повне складання, 14 тестових наборів і живі знімки в оглядачі Chromium (0 винятків під час виконання)."
+    }
+  ],
+  "keuzes": [
+    "Студійний морський відтінок обмежено селектором :not([data-maquette-stijl=\"klassiek\"]), щоб «Біла класика» зберігала антрацитовий наголос, а «Чорна класика» — сріблясто-білий наголос на оніксовому полотні.",
+    "У GedeeldWeergave запроваджено ознаку toonStudioHeld = isMaquette && !isKlassiek та автономну синхронізацію класів палітри на кореневому вузлі документа для прямих посилань спільного доступу.",
+    "На всіх картках розділів, файлів і підключень хмари захищено сучасні плавні заокруглення 16px поверх глобального правила плоского вмісту без порушення пріоритету мобільних відступів."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-003.json",
+    "orchestratie/taken/KLASSIEK-003.json",
+    "src/bestand/universeel-bestand-maquette.css",
+    "src/cloud-klassiek-maquette.css",
+    "src/cloud-vnext/GedeeldWeergave.tsx",
+    "src/cloud-vnext/cloud-delen-maquette.css",
+    "src/cloud-vnext/cloud-integraties-maquette.css",
+    "src/cloud-vnext/cloud-kern-maquette.css",
+    "src/maquette-kern/maquette-klassiek.css",
+    "tests/eenheid/klassiek-003a-opslag-kern.test.ts",
+    "tests/eenheid/klassiek-003b-delen-werkruimtes.test.ts",
+    "tests/eenheid/klassiek-003c-koppelingen-media.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-003 --fase overdracht — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: klassiek-001-kern (8/8), klassiek-003a-opslag-kern (9/9), klassiek-003b-delen-werkruimtes (10/10), klassiek-003c-koppelingen-media (10/10), contrast-knoppen-logos-20261021, mobiel-cascade-20261105 (22/22), plaatsing-20261025, cloud-vnext-ui-20261029, cloud-vnext-catalogus-20261029 (84/84), cloud-001-ui-contract (23/23), sec-002-afwerking-b-20261112 (43/43), zoek-ui-tabblad-20261105 (46/46).",
+    "Жива візуальна перевірка 9 кадрів cloud.tarasevych.com (огляд сховища, провідник файлів, мобільний вигляд, базовий режим та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/cloud-vnext/CloudPagina.tsx",
+    "src/cloud-vnext/GedeeldWeergave.tsx"
+  ],
+  "beperkingen": [
+    "Хвиля 2 (KLASSIEK-003) охоплює хмарне сховище cloud.tarasevych.com; решта сім піддоменів (github, hub, ai, huis, mcp, api, admin) послідовно оформлюються у Хвилях 3–9 (KLASSIEK-004 — KLASSIEK-010)."
+  ]
+}

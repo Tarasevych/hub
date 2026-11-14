@@ -1,7 +1,7 @@
-/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2В) для спільного вікна перегляду файлів.
-   Оформлює вікно перегляду документа, зображення, таблиці, архіву та медіа як преміальну студійну скляну залу.
-   Працює в нічній студії та у світлому режимі через токени var(--mq-*) і приховує якірну рейку за відкритого вікна.
-   Stijlblad «Maquette» voor het universele bestandsvenster over alle subdomeinen van Mijn Ruimte. */
+/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2В) та прагматичні класичні теми (KLASSIEK-003C)
+   для спільного вікна перегляду файлів документа, зображення, таблиці, архіву та медіа.
+   Працює через змінні палітри var(--mq-*) і приховує якірну рейку за відкритого вікна.
+   Stijlblad «Maquette» en klassieke thema's voor het universele bestandsvenster over alle subdomeinen van Mijn Ruimte. */
 
 /* ── 1. Приховування якірної рейки, коли відкрито незгорнуте універсальне вікно перегляду ── */
 
@@ -14,7 +14,7 @@ html.palet-maquette[data-universeel-bestand-open='1'] :is(
   display: none;
 }
 
-/* ── 2. Узгодження студійних змінних і скляного корпусу вікна ── */
+/* ── 2. Узгодження студійних і класичних змінних та корпусу вікна ── */
 
 html.palet-maquette body .venster.universeel-bestand-venster {
   --bg: var(--mq-bg);
@@ -42,6 +42,22 @@ html.palet-maquette body .venster.universeel-bestand-venster {
     var(--mq-schaduw-held);
   backdrop-filter: blur(22px) saturate(135%);
   overflow: hidden;
+}
+
+html.palet-klassiek-wit[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster {
+  color-scheme: light;
+  --surface-secondary: #e7ebf0;
+  --accent-soft: rgba(24, 28, 36, 0.075);
+  --mq-knop-primair-bg: var(--mq-accent);
+  --mq-knop-primair-tekst: var(--mq-accent-op);
+}
+
+html.palet-klassiek-zwart[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster {
+  color-scheme: dark;
+  --surface-secondary: #232833;
+  --accent-soft: rgba(243, 244, 246, 0.11);
+  --mq-knop-primair-bg: var(--mq-accent);
+  --mq-knop-primair-tekst: var(--mq-accent-op);
 }
 
 html.palet-maquette body .venster.universeel-bestand-venster.is-boven {
@@ -366,7 +382,168 @@ html.palet-maquette body .universeel-bestand-fallback[role='alert'] {
   );
 }
 
-/* ── 7. Адаптивні мобільні правила (суворо в кінці файла) ── */
+/* ── 7. Прагматичні теми «Біла класика» та «Чорна класика» (KLASSIEK-003C) ── */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster.is-boven {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster.is-max {
+  border-radius: 0;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster > .venster-kop {
+  padding: 8px 12px 8px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster > .venster-kop .venster-titel {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster > .venster-kop .venster-knoppen button {
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster > .venster-kop .venster-knoppen button:hover {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-balk {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster :is(
+  .universeel-bron,
+  .universeel-type
+) {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster :is(
+  .universeel-bestand-balk button,
+  .universeel-kies input[type='file']
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-balk button:hover:not(:disabled) {
+  transform: none;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-balk button[aria-expanded='true'] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-balk button:last-of-type {
+  border-radius: 11px;
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-knop-primair-bg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-balk button:last-of-type:hover:not(:disabled) {
+  transform: none;
+  filter: none;
+  background: var(--mq-accent-2);
+  border-color: var(--mq-accent-2);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster :is(
+  .universeel-kies,
+  .universeel-bestand-info
+) {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-werkvlak {
+  background: var(--mq-bg);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster :is(
+  .universeel-bestand-inhoud,
+  .universeel-bestand-inhoud img,
+  .universeel-bestand-inhoud .kind-pdf,
+  .universeel-bestand-inhoud .kind-document,
+  .universeel-bestand-inhoud .kind-presentation,
+  .universeel-bestand-inhoud .kind-text,
+  .universeel-bestand-inhoud .kind-code,
+  .universeel-bestand-inhoud .kind-sheet,
+  .universeel-bestand-inhoud .kind-spreadsheet,
+  .universeel-bestand-inhoud .kind-archive,
+  .universeel-bestand-inhoud .kind-ebook,
+  .universeel-bestand-laden,
+  .universeel-bestand-fallback
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster :is(
+  .universeel-bestand-inhoud img,
+  .universeel-bestand-fallback[role='alert']
+) {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-fallback[role='alert'] {
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster .universeel-bestand-inhoud th {
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .venster.universeel-bestand-venster :is(
+  .universeel-grootte,
+  .universeel-type,
+  .universeel-bron,
+  .universeel-bestand-info span:last-child,
+  .universeel-bestand-inhoud td
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 8. Адаптивні мобільні правила (суворо в кінці файла) ── */
 
 @media (max-width: 760px) {
   html.palet-maquette body .universeel-bestand-werkvlak {

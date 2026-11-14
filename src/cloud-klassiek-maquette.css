@@ -1,8 +1,8 @@
-/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2В) для хмарного піддомену cloud.tarasevych.com.
+/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2В) та прагматичні класичні теми (KLASSIEK-003C)
+   для хмарного піддомену cloud.tarasevych.com.
    Охоплює класичну поверхню хмари, перемикач поверхні, переглядач Google Диску з повноекранною залою файлів,
    медіаповерхні календаря і світлин, центр підключень хмари та передпускові панелі M4, M5 і M10.
-   Використовує виключно студійні змінні var(--mq-*) та color-mix(in srgb, ...) для нічної і світлої сфери.
-   Stijlblad «Maquette» voor de klassieke cloudweergave, Google Drive-verkenner, agenda, beeldkeuze en koppelingen. */
+   Stijlblad «Maquette» en klassieke thema's voor de klassieke cloudweergave, Google Drive-verkenner, agenda, beeldkeuze en koppelingen. */
 
 /* ── 1. Приховування якірної рейки за відкритих повноекранних переглядачів і діалогів ── */
 
@@ -27,12 +27,13 @@ html.palet-maquette body:has(.drive-viewer-backdrop, .cloud-dialog-backdrop) :is
   display: none;
 }
 
-/* ── 2. Прокидання студійних змінних для хмарних поверхонь та портальних переглядачів ── */
+/* ── 2. Прокидання студійних і класичних змінних для хмарних поверхонь та портальних переглядачів ── */
 
-html.palet-maquette body :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) body :is(
   .cloud-functional,
   .cloud-functional-loading,
   .cloud-wissel-wachten,
+  .cloud-dialog-backdrop,
   .drive-browser,
   .drive-browser-empty,
   .drive-viewer-backdrop,
@@ -57,6 +58,76 @@ html.palet-maquette body :is(
   --text-on-accent: var(--mq-accent-op);
   --nav-hover: var(--mq-oppervlak-hover);
   --nav-active: rgba(var(--mq-accent-rgb), 0.16);
+  --focus: var(--mq-accent);
+}
+
+html.palet-klassiek-wit[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional,
+  .cloud-functional-loading,
+  .cloud-wissel-wachten,
+  .cloud-dialog-backdrop,
+  .drive-browser,
+  .drive-browser-empty,
+  .drive-viewer-backdrop,
+  .suite-calendar,
+  .suite-photos,
+  .suite-media-connect,
+  .vbc,
+  .cloud-m5,
+  .tsv-cloud-m10,
+  .tsv-cloud-accounts
+) {
+  color-scheme: light;
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: #e7ebf0;
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --canonical-accent: var(--mq-accent);
+  --text-on-accent: var(--mq-accent-op);
+  --mq-knop-primair-bg: var(--mq-accent);
+  --mq-knop-primair-tekst: var(--mq-accent-op);
+  --nav-hover: var(--mq-oppervlak-hover);
+  --nav-active: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+}
+
+html.palet-klassiek-zwart[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional,
+  .cloud-functional-loading,
+  .cloud-wissel-wachten,
+  .cloud-dialog-backdrop,
+  .drive-browser,
+  .drive-browser-empty,
+  .drive-viewer-backdrop,
+  .suite-calendar,
+  .suite-photos,
+  .suite-media-connect,
+  .vbc,
+  .cloud-m5,
+  .tsv-cloud-m10,
+  .tsv-cloud-accounts
+) {
+  color-scheme: dark;
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: #232833;
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --canonical-accent: var(--mq-accent);
+  --text-on-accent: var(--mq-accent-op);
+  --mq-knop-primair-bg: var(--mq-accent);
+  --mq-knop-primair-tekst: var(--mq-accent-op);
+  --nav-hover: var(--mq-oppervlak-hover);
+  --nav-active: var(--mq-oppervlak-hover);
   --focus: var(--mq-accent);
 }
 
@@ -789,7 +860,349 @@ html.palet-maquette body :is(.cloud-m5__stage, .tsv-cloud-m10-stage, .tsv-cloud-
   font-size: 0.76rem;
 }
 
-/* ── 9. Адаптивні мобільні правила (суворо в кінці файла у спадному порядку) ── */
+/* ── 9. Прагматичні теми «Біла класика» та «Чорна класика» (KLASSIEK-003C) ── */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cloud-functional {
+  --cf-border: var(--mq-rand);
+  --cf-soft: var(--mq-oppervlak-2);
+  --cf-accent: var(--mq-accent);
+  --cf-ink: var(--mq-tekst);
+}
+
+/* 9.1. Чисті матові картки без кольорових прожекторів та радіальних підсвічувань */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) body :is(
+  .cloud-wissel-wachten,
+  .cloud-functional-loading,
+  .cloud-functional .cloud-ruimte-melding,
+  .cloud-functional.mq-schil > .mq-held ~ .cloud-functional-hero,
+  .cloud-functional .cloud-next-action,
+  .cloud-functional .cloud-summary-row article,
+  .cloud-functional .cloud-workspace-preview,
+  .cloud-functional .cloud-workspaces-page,
+  .cloud-functional .cloud-workspace-detail,
+  .cloud-functional .cloud-inbox-page,
+  .cloud-functional .cloud-capture-card,
+  .cloud-functional .cloud-search-box,
+  .cloud-functional .cloud-account-section,
+  .cloud-functional .cloud-other-services,
+  .cloud-functional .cloud-suite-onboarding,
+  .cloud-functional .cloud-connection-overview,
+  .cloud-functional .cloud-workspace-card,
+  .cloud-functional .cloud-inbox-item,
+  .cloud-functional .cloud-item-list > article,
+  .cloud-functional .cloud-human-card,
+  .cloud-functional .cloud-account-list article,
+  .cloud-functional .cloud-other-services > article,
+  .cloud-functional .cloud-empty-calm,
+  .cloud-functional .cloud-calm-empty,
+  .drive-browser,
+  .drive-browser-empty,
+  .drive-browser .drive-files article,
+  .suite-calendar,
+  .suite-photos,
+  .suite-media-connect,
+  .suite-event-list article,
+  .suite-picker-progress,
+  .suite-photo-import,
+  .suite-photo-grid article,
+  .cvn-blok[data-cvn-google],
+  .cvn-leeg[data-cvn-google],
+  .vbc.mq-schil > .mq-held ~ .vbc-kop,
+  .vbc .vbc-tegel,
+  .vbc .vbc-blok,
+  .vbc .vbc-kaart,
+  .cloud-m5,
+  .tsv-cloud-m10,
+  .tsv-cloud-accounts,
+  .cloud-m5__card,
+  .tsv-cloud-panel,
+  .tsv-cloud-provider,
+  .tsv-cloud-connected,
+  .tsv-cloud-m10-item
+) {
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) body .cloud-functional .cloud-ruimte-melding[data-cloud-ruimte='gesloten'] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cloud-functional .cloud-next-action span {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cloud-functional .cloud-next-action p {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) body :is(
+  .cloud-functional .cloud-workspace-card:hover:not(:disabled),
+  .drive-browser .drive-files article:hover
+) {
+  transform: none;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .drive-browser-head,
+  .drive-toolbar,
+  .drive-breadcrumbs,
+  .suite-calendar > header,
+  .suite-photos > header,
+  .suite-calendar-search
+) {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+/* 9.2. Портальні діалоги та повноекранна зала перегляду файлів Диску без розмиття й світіння */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-dialog-backdrop,
+  .drive-viewer-backdrop
+) {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-workspace-dialog,
+  .cloud-note-dialog,
+  .drive-viewer
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .drive-viewer > header {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .drive-viewer .drive-viewer-body,
+  .drive-viewer .mail-viewer-stage
+) {
+  background: var(--mq-bg);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cloud-note-dialog pre {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+/* 9.3. Кнопки, поля введення та суцільні акцентні дії (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional button,
+  .cloud-functional a[data-zoek-link='cloud'],
+  .cloud-functional .cloud-capture-card textarea,
+  .cloud-functional .cloud-capture-card input,
+  .cloud-functional .cloud-capture-card select,
+  .cloud-functional .cloud-workspace-dialog textarea,
+  .cloud-functional .cloud-workspace-dialog input,
+  .cloud-functional .cloud-search-box input,
+  .cloud-functional .cloud-search-box select,
+  .cloud-functional .cloud-inbox-actions select,
+  .cloud-functional .cloud-status-select select,
+  .drive-browser select,
+  .drive-browser input,
+  .drive-browser .drive-toolbar > button,
+  .drive-browser .drive-search button,
+  .drive-browser .drive-view-switch button,
+  .drive-browser .drive-breadcrumbs button,
+  .drive-browser .drive-load-more,
+  .drive-browser .drive-file-actions button,
+  .drive-viewer > header a,
+  .drive-viewer > header button,
+  .suite-calendar select,
+  .suite-calendar input,
+  .suite-calendar button,
+  .suite-photos select,
+  .suite-picker-progress a,
+  .vbc .vbc-knop,
+  .cloud-m5 input,
+  .cloud-m5 select,
+  .cloud-m5 button,
+  .tsv-cloud-m10 input,
+  .tsv-cloud-m10 select,
+  .tsv-cloud-m10 button,
+  .tsv-cloud-accounts input,
+  .tsv-cloud-accounts select,
+  .tsv-cloud-accounts button
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional button:hover:not(:disabled),
+  .drive-viewer > header a:hover,
+  .drive-viewer > header button:hover:not(:disabled),
+  .vbc .vbc-knop:hover:not(:disabled)
+) {
+  transform: none;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .vbc .vbc-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional .cloud-primary,
+  .cloud-functional .global-search-trigger,
+  .cloud-functional .cloud-next-action button,
+  .drive-browser .drive-toolbar > button:first-of-type,
+  .suite-media-connect button,
+  .suite-photos > header button,
+  .suite-photo-import button,
+  .suite-picker-progress button,
+  .suite-calendar-search button,
+  .vbc .vbc-knop.is-hoofd
+) {
+  border-radius: 11px;
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-knop-primair-bg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional .cloud-primary,
+  .cloud-functional .global-search-trigger,
+  .cloud-functional .cloud-next-action button,
+  .drive-browser .drive-toolbar > button:first-of-type,
+  .suite-media-connect button,
+  .suite-photos > header button,
+  .suite-photo-import button,
+  .suite-picker-progress button,
+  .suite-calendar-search button,
+  .vbc .vbc-knop.is-hoofd
+):hover:not(:disabled) {
+  transform: none;
+  filter: none;
+  background: var(--mq-accent-2);
+  border-color: var(--mq-accent-2);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* 9.4. Перемикач енергії, значки тек, мініатюри світлин і спокійні мітки станів */
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cloud-functional .cloud-energy {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cloud-functional .cloud-energy button {
+  border-radius: 9px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional .cloud-energy button.active,
+  .cloud-functional .cloud-kind-switch button.active,
+  .cloud-functional .cloud-focus-toggle.active,
+  .drive-browser .drive-view-switch button.active
+) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .drive-browser .drive-file-icon,
+  .drive-browser .folder .drive-file-icon,
+  .suite-photo-thumb
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional .cloud-human-status,
+  .cloud-functional .cloud-human-status.connected,
+  .cloud-functional .cloud-human-status.access,
+  .suite-photo-thumb span,
+  .vbc .vbc-badge,
+  .vbc .vbc-badge.is-ok,
+  .vbc .vbc-badge.is-verbonden,
+  .vbc .vbc-badge.is-beschikbaar,
+  .vbc .vbc-badge.is-aandacht,
+  .cloud-m5__stage,
+  .tsv-cloud-m10-stage,
+  .tsv-cloud-counter
+) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .vbc :is(.vbc-tegel.is-aandacht, .vbc-kaart.is-aandacht) {
+  border-color: var(--mq-rand-sterk);
+}
+
+/* 9.5. Діловий гротеск без засічок та табличні цифри для лічильників, дат і обсягів файлів */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional,
+  .drive-browser,
+  .drive-viewer,
+  .suite-calendar,
+  .suite-photos,
+  .suite-media-connect,
+  .vbc,
+  .cloud-m5,
+  .tsv-cloud-m10,
+  .tsv-cloud-accounts
+) :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cloud-functional .cloud-energy button,
+  .cloud-functional .cloud-summary-row article strong,
+  .cloud-functional .cloud-account-section small,
+  .drive-browser .drive-file-copy small,
+  .drive-browser .drive-file-copy em,
+  .drive-viewer header small,
+  .suite-event-list time,
+  .suite-photo-grid small,
+  .vbc .vbc-tegel strong,
+  .vbc .vbc-tel,
+  .vbc [data-vbc-laatst],
+  .tsv-cloud-counter,
+  .tsv-cloud-m10-details small
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 10. Адаптивні мобільні правила (суворо в кінці файла у спадному порядку) ── */
 
 @media (max-width: 960px) {
   html.palet-maquette body .cloud-functional {

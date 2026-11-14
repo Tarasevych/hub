@@ -937,7 +937,500 @@ html.palet-maquette body .cvn-deel-bestaande-rij {
   background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
 }
 
-/* ── 6. Адаптивний мобільний шар (суворо наприкінці файла — правило mobiel-cascade-20261105) ── */
+/* ── 6. Прагматичний класичний шар («Біла класика» та «Чорна класика» — KLASSIEK-003B) ── */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) {
+  --mq-straal-kaart: 16px;
+  --mq-straal-knop: 11px;
+  --mq-straal-veld: 11px;
+  --mq-gloed: transparent;
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-knop-primair-bg);
+  --accentText: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+  --overlay: var(--mq-sluier-glas);
+  background-image: none;
+}
+
+/* Ділова типографіка без засічок у всіх заголовках спільного доступу, просторів та діалогових шарів */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+/* Табличні цифри для лічильників переглядів, завантажень, обсягів байтів, термінів дії та номерів рядків коду */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-held-meta,
+  .cvn-gedeeld-bestandknop small,
+  .cvn-gedeeld-codekop,
+  .cvn-deel-code-regel i,
+  .cvn-gedeeld-statkaart strong,
+  .cvn-gedeeld-statkaart span,
+  .cvn-gedeeld-tellers,
+  .cvn-gedeeld-tellers b,
+  .cvn-gedeeld-sub,
+  .cvn-gedeeld-staafwaarde,
+  .cvn-gedeeld-staafkolom small,
+  .cvn-gedeeld-logmeta,
+  .cvn-gedeeld-logmeta time,
+  .cvn-deel-bestaande-cijfers,
+  .cvn-deel-boomrij small,
+  .cvn-ws-kaart .cvn-hint,
+  .cvn-detail-meta dd,
+  .cvn-versie-rijen li
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Чисті матові картки, полиці робочих просторів та панелі із заокругленням 16px без кольорових ореолів */
+html.palet-maquette[data-maquette-stijl="klassiek"] body:not(#_mqk) :is(
+  .cvn-gedeeld-poortkaart,
+  .cvn-gedeeld-held,
+  .cvn-gedeeld-kolom,
+  .cvn-gedeeld-voorbeeldpaneel,
+  .cvn-gedeeld-statkaart,
+  .cvn-gedeeld-kaart,
+  .cvn-gedeeld-grafiek,
+  .cvn-werkruimtes > .cvn-blok,
+  .cvn-ws-kaart,
+  .cvn-leeg,
+  .cvn-laag.is-venster .cvn-laag-vak,
+  .cvn-laag-venster,
+  .cvn-laag-paneel,
+  .cvn-detail-acties,
+  .cvn-detail-archief,
+  .cvn-detail-voorbeeld,
+  .cvn-detail-meta,
+  .cvn-detail-tags,
+  .cvn-detail-versies,
+  .cvn-deel-kaart,
+  .cvn-deel-succes,
+  .cvn-deel-qr-vak,
+  .cvn-deel-bestaande-rij
+) {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+/* Другорядні вкладені поверхні на матовому тлі var(--mq-oppervlak-2) без тіней */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-grafiek,
+  .cvn-ws-kaart,
+  .cvn-detail-acties,
+  .cvn-detail-archief,
+  .cvn-detail-voorbeeld,
+  .cvn-detail-meta,
+  .cvn-detail-tags,
+  .cvn-detail-versies,
+  .cvn-deel-succes,
+  .cvn-deel-qr-vak,
+  .cvn-deel-bestaande-rij
+) {
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-leeg {
+  border-style: dashed;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-statkaart:hover,
+  .cvn-gedeeld-kaart:hover,
+  .cvn-ws-kaart:hover
+) {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-ws-kaart:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+/* Портальний шар .cvn-laag (Laag.tsx, DetailPaneel.tsx, DeelVenster.tsx) без розмиття скла та кольорових градієнтів */
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-laag {
+  background: var(--mq-sluier-glas);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-laag-vak {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-laag.is-paneel .cvn-laag-vak {
+  border-left: 1px solid var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-laag.is-venster .cvn-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-laag-kop {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+/* Кнопки, поля вводу, пігулки, значки та перемикачі з плавним заокругленням 11px (var(--mq-straal-knop)) */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) :is(.cvn-knop, .cvn-knop.is-klein, .cvn-icoonknop) {
+  border-radius: var(--mq-straal-knop);
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) :is(.cvn-knop, .cvn-icoonknop):hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-actief {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Суцільні контрастні головні кнопки .cvn-knop.is-hoofd без градієнтів та сяйва */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-hoofd {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-knop-primair-bg);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) .cvn-knop.is-hoofd:hover:not(:disabled) {
+  background: var(--mq-accent-2);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-accent-2);
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+/* Поля вводу, випадальні списки та текстові поля в Класиці */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) :is(input:not([type="checkbox"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-poortkaart input {
+  border-radius: var(--mq-straal-knop);
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-scherm,
+  .cvn-gedeeld-weergave,
+  .cvn-gedeeld-pagina,
+  .cvn-werkruimtes,
+  .cvn-laag
+) :is(input:not([type="checkbox"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-url-balk {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-url-balk input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Пігулки, значки, перемикачі та рядки вибору з радіусом 11px */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-deel-pil,
+  .cvn-kaart-deelpil,
+  .cvn-map-deelpil,
+  .cvn-map-deelknop,
+  .cvn-tag,
+  .cvn-deel-badge
+) {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-status {
+  border-radius: var(--mq-straal-knop);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-poorticoon,
+  .cvn-gedeeld-held-icoon,
+  .cvn-gedeeld-staticoon,
+  .cvn-gedeeld-doelicoon
+) {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-poorticoon.is-waarschuwing {
+  border-color: color-mix(in srgb, var(--fout) 38%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 14%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-werkbalk [role="tablist"] {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-werkbalk [role="tablist"] .cvn-knop {
+  border-radius: 8px;
+  border-color: transparent;
+  background: transparent;
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-werkbalk [role="tablist"] .cvn-knop.is-actief {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-held-notitie,
+  .cvn-gedeeld-bestandrij,
+  .cvn-gedeeld-tellers,
+  .cvn-gedeeld-logrij,
+  .cvn-detail-hernoem,
+  .cvn-versie-rijen li,
+  .cvn-deel-tegel,
+  .cvn-deel-subvak,
+  .cvn-deel-boomrij,
+  .cvn-deel-ontvangers li
+) {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-held-notitie {
+  border-inline-start: 3px solid var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-bestandrij:hover,
+  .cvn-deel-tegel:hover,
+  .cvn-deel-boomrij:hover
+) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvn-gedeeld-bestandrij.is-actief,
+  .cvn-deel-tegel.is-actief,
+  .cvn-deel-boomrij.is-aan
+) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-staaf.is-gevuld {
+  background: var(--mq-accent);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-logrij.is-geweigerd {
+  border-color: color-mix(in srgb, var(--fout) 36%, var(--mq-rand));
+  background: color-mix(in srgb, var(--fout) 12%, var(--mq-oppervlak-2));
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-detail-meta dd code {
+  border-radius: 7px;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-qr-svg {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-wit);
+}
+
+/* Світлочутливий блок перегляду коду та текстових вирізок без примусового темного прямокутника у Білій класиці */
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-codeblok {
+  padding: 12px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-codekop {
+  padding: 2px 4px 10px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-code-voorbeeld {
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-code-regel {
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-code-regel:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-code-regel i {
+  padding-inline-end: 8px;
+  border-inline-end: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-stil);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-deel-code-regel code {
+  background: transparent;
+  color: var(--mq-tekst);
+}
+
+/* ── 7. Адаптивний мобільний шар (суворо наприкінці файла — правило mobiel-cascade-20261105) ── */
 
 @media (max-width: 960px) {
   :where(html.palet-maquette) .mq-schil[data-mq-dienst="cloud"] .mq-held:not(.is-compact) {
@@ -959,6 +1452,11 @@ html.palet-maquette body .cvn-deel-bestaande-rij {
   html.palet-maquette body .cvn-gedeeld-werkbalk [role="tablist"] {
     width: 100%;
     border-radius: 18px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-gedeeld-werkbalk [role="tablist"] {
+    width: 100%;
+    border-radius: var(--mq-straal-knop);
   }
 
   html.palet-maquette body .cvn-laag-inhoud {

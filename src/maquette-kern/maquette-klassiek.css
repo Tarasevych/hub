@@ -380,7 +380,12 @@ html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassi
   box-shadow: inset 0 2px 0 var(--mq-tech-lijn);
 }
 
-/* Стримане виділення активних пунктів бічного меню та легка тінь при наведенні */
+/* Стримане безколірне виділення активних пунктів бічного меню та легка тінь при наведенні */
+html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassiek"]):not([data-identiteit-maquette="aan"]) :is(.canonical-chrome, .zijbalk-voorbeeld) [data-accent]:not(#_mq) {
+  --a: var(--mq-accent);
+  --a2: var(--mq-gedempt);
+}
+
 html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassiek"]):not([data-identiteit-maquette="aan"]) .canonical-chrome:not(.sidebar-drawer-mode).sidebar-hover:not(#_mq) .canonical-sidebar {
   box-shadow: var(--mq-schaduw);
 }

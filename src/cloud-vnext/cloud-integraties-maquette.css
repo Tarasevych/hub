@@ -1,11 +1,11 @@
-/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2Б) для центру хмарних постачальників (Integraties)
-   та огляду зовнішніх джерел (Bron: Google Drive, OneDrive, Dropbox) піддомену cloud.tarasevych.com.
-   Працює в нічній студії та у світлому режимі «Ранковий туман» виключно через змінні палітри Макета.
-   Stijlblad «Maquette» voor het integratiecentrum en externe opslagbronnen van de cloud. */
+/* Художнє оформлення «Макет» (MAQUETTE-003, Група 2Б) та прагматичні класичні теми (KLASSIEK-003C)
+   для центру хмарних постачальників (Integraties) та огляду зовнішніх джерел (Bron: Google Drive, OneDrive, Dropbox)
+   піддомену cloud.tarasevych.com.
+   Stijlblad «Maquette» en klassieke thema's voor het integratiecentrum en externe opslagbronnen van de cloud. */
 
-/* ── 1. Узгодження студійних змінних для поверхонь інтеграцій та портального вікна BronLaag ── */
+/* ── 1. Узгодження студійних і класичних змінних для поверхонь інтеграцій та портального вікна BronLaag ── */
 
-html.palet-maquette body :is(.cvi, .cvi-laag) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) body :is(.cvi, .cvi-laag) {
   --bg: var(--mq-bg);
   --panel: var(--mq-oppervlak);
   --surface: var(--mq-oppervlak-2);
@@ -19,6 +19,40 @@ html.palet-maquette body :is(.cvi, .cvi-laag) {
   --accent-soft: rgba(var(--mq-accent-rgb), 0.14);
   --focus: var(--mq-accent);
   --overlay: color-mix(in srgb, var(--mq-bg) 68%, transparent);
+}
+
+html.palet-klassiek-wit[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) {
+  color-scheme: light;
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: #e7ebf0;
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(24, 28, 36, 0.075);
+  --focus: var(--mq-accent);
+  --overlay: var(--mq-sluier-glas);
+}
+
+html.palet-klassiek-zwart[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) {
+  color-scheme: dark;
+  --bg: var(--mq-bg);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: #232833;
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --accent-soft: rgba(243, 244, 246, 0.11);
+  --focus: var(--mq-accent);
+  --overlay: var(--mq-sluier-glas);
 }
 
 /* ── 2. Загальні блоки, кнопки та елементи керування центру інтеграцій ([data-cvi-centrum] і [data-cvi-bron]) ── */
@@ -553,7 +587,192 @@ html.palet-maquette body .cvi-voorbeeld iframe {
   background: var(--mq-oppervlak);
 }
 
-/* ── 6. Адаптивний мобільний шар (суворо наприкінці файла — правило mobiel-cascade-20261105) ── */
+/* ── 6. Прагматичні теми «Біла класика» та «Чорна класика» (KLASSIEK-003C) ── */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body:not(#_mqk) :is(
+  .cvi > .cvn-blok,
+  section.cvn-blok.cvi,
+  .cvi > .cvn-blok.cvi-samenvatting,
+  section.cvn-leeg.cvi,
+  .cvi section.cvn-leeg,
+  .cvi-kaart,
+  .cvi-kaart.is-open,
+  details.cvi-kaart[open],
+  .cvi-checklist,
+  .cvi-bestand,
+  .cvi table,
+  .cvi-voorbeeld table,
+  .cvi-voorbeeld pre,
+  .cvi-voorbeeld iframe,
+  .cvi-laag .cvi-laag-vak
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvi-kaart:hover,
+  details.cvi-kaart[open],
+  .cvi-bestand:hover:not(:disabled),
+  .cvi-laag .cvi-laag-vak
+) {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvi-bestand:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  transform: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body details.cvi-kaart > summary {
+  border-radius: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body details.cvi-kaart[open] > summary {
+  border-bottom: 1px solid var(--mq-rand);
+  border-radius: 16px 16px 0 0;
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvi-monogram,
+  [data-cvi-aanbieder="onedrive"] .cvi-monogram,
+  [data-cvi-bron="onedrive"] .cvi-monogram,
+  [data-cvi-aanbieder="dropbox"] .cvi-monogram,
+  [data-cvi-bron="dropbox"] .cvi-monogram,
+  .cvi-bestand-icoon,
+  .cvi-bestand.is-map .cvi-bestand-icoon
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvi-accounts li,
+  .cvi-check,
+  .cvi-sync li,
+  .cvi-omweg
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvi-sync li.is-stil {
+  border-style: dashed;
+  background: transparent;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvi-stip.is-ok {
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) :is(
+  .cvn-knop,
+  .cvn-knop.is-klein,
+  .cvn-icoonknop,
+  .cvi-kruimel button
+) {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) :is(.cvn-knop, .cvn-knop.is-klein) {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) .cvn-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  transform: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) .cvn-knop.is-hoofd {
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-knop-primair-bg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) .cvn-knop.is-hoofd:hover:not(:disabled) {
+  transform: none;
+  filter: none;
+  background: var(--mq-accent-2);
+  border-color: var(--mq-accent-2);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .cvi-accountkeuze select,
+  .cvi-zoek,
+  .cvi-kruimels
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvi-zoek:focus-within {
+  border-color: var(--mq-rand-sterk);
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvn-laag.cvi-laag {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvi-laag .cvi-laag-vak {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .cvi-laag .cvn-laag-kop {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) :is(
+  h2,
+  h3,
+  h4,
+  .cvi-kaart-naam strong,
+  .cvn-laag-kop h2
+) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.cvi, .cvi-laag) :is(
+  .cvi-chip,
+  .cvi-stand,
+  .cvi-bestand small,
+  .cvi-laag-inhoud .cvn-hint,
+  [data-cvi-grens],
+  time,
+  td
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 7. Адаптивний мобільний шар (суворо наприкінці файла — правило mobiel-cascade-20261105) ── */
 
 @media (max-width: 760px) {
   html.palet-maquette body :is(.cvi > .cvn-blok, section.cvn-blok.cvi) {
