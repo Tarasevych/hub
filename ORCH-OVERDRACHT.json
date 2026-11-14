@@ -58,7 +58,10 @@
     "24e16821f09b4bc846b02733dd6b216f3e8f7003",
     "038c44786b60c07acff93c47eaef02f50a55e75e",
     "56ca132d0b34effb8ae5bcb725bda4d3589f332b",
-    "545c3215e31400d1169b520341393fc9b1d37518"
+    "545c3215e31400d1169b520341393fc9b1d37518",
+    "2e40e2368ccc75bd4bd2324766ac5a6bec29edb9",
+    "b8c481611e92df6526fa9742b14c4bc93703d889",
+    "e6cebfa48b77ee91de1949e3cc69d30c8c0aa429"
   ],
   "bestanden": {
     "gewijzigd": [
@@ -283,11 +286,11 @@
     "nl": "Accountcentrum in het goedgekeurde ontwerp v49: 153 posities gecontroleerd, bestaande functies aangesloten, ontbrekende gebouwd en vanuit elke betrokken persoon getest. Bovenop 20261114-111234."
   },
   "tests": {
-    "geslaagd": 74,
+    "geslaagd": 75,
     "mislukt": 0,
     "uitleg": {
-      "uk": "модульні набори зелені; e2e: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ 80/80, запасні коди 20/20",
-      "nl": "unitsuites groen; e2e: menu 59/59, thema 48/48, blokken en profiel 78/78, delen 80/80, herstelcodes 20/20"
+      "uk": "модульні набори зелені; e2e: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ 80/80, запасні коди 20/20, два пристрої (sessies)",
+      "nl": "unitsuites groen; e2e: menu, thema, blokken, delen, herstelcodes, sessies"
     },
     "falend": []
   },
@@ -296,5 +299,5 @@
     "nl": "Sleutels van externe diensten en e-mail/sms-verzending — instelling van de eigenaar. Niet geïnstalleerd."
   },
   "conflicten": [],
-  "aangemaakt": "2026-11-14T16:56:48.633Z"
+  "aangemaakt": "2026-11-14T17:02:36.633Z"
 }
