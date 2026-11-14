@@ -1,0 +1,829 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-015",
+  "titel": "Повна звірка й завершення центру облікового запису в погодженому оформленні v49",
+  "opdracht": "Власник попросив звірити кожну з 153 позицій погодженого оформлення v49 з тим, що людина може зробити на сайті, під’єднати чинне, реалізувати відсутнє, перевірити результат із боку кожної людини, якої стосується дія, і дати відомість, знімки та архів для встановлення поверх фактично встановленої версії.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/identiteit-015-uitrol-20261114-162503",
+    "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeBasis": "6e7dac3a783988848991a2e0af9e0ac2998a997a",
+    "geinstalleerdeVersie": "20261114-111234",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "voorganger": {
+      "taak": "IDENTITEIT-014",
+      "pr": "https://github.com/Tarasevych/hub/pull/81",
+      "commit": "6d430e15349aef559be340961d6d6c35b8afedbe"
+    },
+    "samengevoegd": [
+      {
+        "taak": "KLASSIEK-010 (antigravity)",
+        "commit": "6e7dac3a783988848991a2e0af9e0ac2998a997a",
+        "reden": "встановлена на сайті версія 20261114-111234; влито звичайним злиттям, щоб архів не перекрив роботу інших агентів"
+      }
+    ]
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Тести — лише з вигаданими адресами @example.test, тестовим сертифікатом і одноразовими локальними базами; знімки знеособлені (адреси, коди, QR приховано)."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T08:00:23Z",
+      "stap": "Гілка від голови #81; orch taak-start, versheid start — свіжо."
+    },
+    {
+      "tijd": "2026-11-14T09:00:00Z",
+      "stap": "Етап 0: 12 аудиторів розклали 153 позиції v49 (+3/4 живої карти) на 301 дію з доказами; критик підтвердив покриття."
+    },
+    {
+      "tijd": "2026-11-14T13:00:00Z",
+      "stap": "Етапи 1–3: ризики, вигляд в обліковому записі, спільний доступ (0273), профіль і блоки, пристрої й вивантаження, нові способи входу, ключі й гостьові коди, тихі години; рецензія з трьох поглядів і виправлення."
+    },
+    {
+      "tijd": "2026-11-14T16:00:00Z",
+      "stap": "Етапи 4–5: приймальні e2e з боку кожної людини в Chromium; злиття з живим випуском 20261114-111234 (6e7dac3a)."
+    }
+  ],
+  "keuzes": [
+    "Архів збирається поверх фактично встановленої версії 20261114-111234 (6e7dac3a, KLASSIEK-010), звіреної з /api/version безпосередньо перед збиранням.",
+    "Зовнішні служби (пошта, SMS, Microsoft/Discord/Apple/Telegram) — справжній код із підробленим провайдером у тестах; без ключів власника дія чесно показує точну передумову.",
+    "Грант «запам’ятаного браузера» не видається посеред сеансу (крадіжка cookie) — діє з наступного входу."
+  ],
+  "wijzigingen": [
+    {
+      "soort": "toegevoegd",
+      "bestand": "\"docs/ontwerp/identiteit-account/\\320\\222\\320\\206\\320\\224\\320\\236\\320\\234\\320\\206\\320\\241\\320\\242\\320\\254-\\320\\224\\320\\206\\320\\231.json\""
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "\"docs/ontwerp/identiteit-account/\\320\\222\\320\\206\\320\\224\\320\\236\\320\\234\\320\\206\\320\\241\\320\\242\\320\\254-\\320\\224\\320\\206\\320\\231.uk.md\""
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/aanmeld-wegen.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/aanmelden-methoden.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/bekende-apparaten.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/profielfoto-link.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/tweede-factor-poort.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "backend/werkruimte-overdracht.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/KRITIEK-ETAP-0.uk.md"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-account.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-identities.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-languages.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-menu.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-methods.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-personalization.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-recovery.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-security.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-sessions.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-sharing.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-themes.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "docs/ontwerp/identiteit-account/verantwoording/rijen-widgets.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0273_uitnodigingen_werkruimte_index_rls.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0274_sleutels_vertrouwen_gastcodes.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "migrations/0275_aanmelden_methoden.sql"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/ontwikkelarchieven/IDENTITEIT-015.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "orchestratie/taken/IDENTITEIT-015.json"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "scripts/identiteit-maquette/verantwoording.mjs"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "server/platform/sms.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/deel-links.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "shared/stille-uren.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/BekendeApparaten.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/aanmelden/AanmeldWegenExtra.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/aanmelden/AanmeldZonderGoogle.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/aanmelden/aanmelden-zonder-google.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/bekende-apparaten.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/delen/LinksLijst.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/geheim/TweedeFactorPoort.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/geheim/tweede-factor-poort-brug.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/herstel/ReserveHerinnering.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/herstel/ReserveHerinneringKoppeling.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/herstel/naar-anker.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/identiteit/ProfielRuimteKaart.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/identiteit/WerkruimteOverdragen.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/meldingen/stille-uren-opslag.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/open-in-ruimte.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/platform/melding-na-herladen.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/sessies/methode-naam.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/thema/WeergaveVoorkeuren.tsx"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/thema/weergave-stijl.css"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "src/thema/weergave-stijl.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/e2e/hulp/sessie-015.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/e2e/identiteit-015-blokken-profiel.e2e.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/e2e/identiteit-015-delen.e2e.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/e2e/identiteit-015-menu.e2e.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/e2e/identiteit-015-thema.e2e.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-aanmelden.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-delen.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-herstel.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-profiel-blokken.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-risico.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-stille-uren.test.ts"
+    },
+    {
+      "soort": "toegevoegd",
+      "bestand": "tests/eenheid/identiteit-015-vormgeving.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "\"docs/ontwerp/identiteit-account/maquette-bron/\\321\\200\\320\\265\\321\\224\\321\\201\\321\\202\\321\\200.js\""
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/aanmeld-koppel.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/beveiliging-meldingen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/index.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/kijker-alleen-lezen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/nieuw-apparaat.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/privacy.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/sleutelkluis-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/sleutelkluis.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/stap-op.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/telegram-aanmelden/plaatsing.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/telegram-aanmelden/routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/toegang-context.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/toegangscodes-routes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/toegangscodes.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/toegangslaag.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/toegangssleutels.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "backend/werkruimte-delen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "orchestratie/taken/IDENTITEIT-014.json"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/identiteit-maquette/motor-aanpassingen.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "scripts/identiteit-maquette/sjabloon.mjs"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "server/platform/auth-poort.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "server/platform/uitnodigingen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "server/start.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/aanmeld-plaatsing/plaatsing.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/aanmeld-vnext-model.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/blok-invoer.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/melding-soorten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/meldingen-soorten.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/meldingen-v2/uitleg-register.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/menu-indeling.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/menu-meldingen-voorkeuren.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/menu-meldingen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/sleutelkluis.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/stap-op-acties.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/stap-op-beschrijving.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/uiterlijk.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/vlaggen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "shared/zoek-ui-knoppen.generated.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/AanmeldAndereOpties.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/App.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/BeveiligingSessiesPaneel.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/CanoniekMeldingencentrum.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/CanoniekOmlijsting.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/InstellingencentrumWeergave.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/MenuAanpasser.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/SessiesOverzicht.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/SleutelkluisSectie.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/SnelleToegangBewerker.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ToegangContext.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/Toegangscodes.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ToegangssleutelsSectie.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/VerenigdDienstApp.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ZijbalkInstellingen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/aanmeld-vnext/onderdelen/AanbiederCatalogus.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/aanmelden-onthouden.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/apparaat-bevestiging/StapOpKanaal.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/canoniek-meldingen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/delen/LedenLijst.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/delen/delen-logica.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/delen/delen.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/delen/useDelen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/ecosysteem-productie.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/gedeelde-voorkeuren.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/herstel/Scenarios.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/IdentiteitAccountPagina.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/Profielfoto.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/VormgevingKiezer.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/identiteit-account.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/identiteit-vormgeving.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/IdentiteitMaquette.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-motor.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-omlijsting.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/identiteit/maquette/maquette-sjabloon.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/instellingen/Gegevensuitvoer.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/instellingen/gegevensuitvoer.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/instellingencentrum.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/meldingen/sessie-context.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/menu-voorkeuren.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/platform/bevestig-toegang.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/platform/client.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/telegram-aanmelden/PlaatsingBeheer.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/telegram-aanmelden/aanmeld-config.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/ThemaInstellingen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/kern.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/thema-instellingen.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/thema/useThema.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/toegangslaag-panelen.tsx"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/toegangslaag.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/verenigd-dienst-inhoud.css"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "src/weigeringen.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/aanmeld-plaatsing-20261109.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/aanmelden-integ-20261103.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/account-wissen-20261026.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/audit-account.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/audit-rls.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/hulp/nep-google.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-009-mobiel-veiligheid.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-012-server-veiligheid.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-013-bevestigen.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-014-herstel-recensie.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-014-kaart.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/identiteit-maquette.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/melding-soorten.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/menu-per-profiel-20261019.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/profiel-isolatie-20261019.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/rest-20261026.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-g10b-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-g10f-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/sec-002-g11-20261112.test.ts"
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "tests/eenheid/thema.test.ts"
+    }
+  ],
+  "verantwoording": {
+    "posities": 157,
+    "acties": 302,
+    "працює в цьому оформленні": 251,
+    "працює в іншому місці": 21,
+    "недоступно за задумом": 6,
+    "потребує налаштування власника": 21,
+    "частково працює": 2,
+    "є лише в макеті": 1
+  },
+  "controles": [
+    "Звірено /api/version перед збиранням: 20261114-111234 @ 6e7dac3a (KLASSIEK-010); архів зібрано поверх неї.",
+    "Модульні набори на злитому коді: 72/72 зелені (identiteit-009…015, menu-*, zoek-*, aanmeld-ui, thema, klassiek-001…010 усі).",
+    "Нові модульні тести IDENTITEIT-015: risico 46/46, vormgeving 53/53, delen 66/66, profiel-blokken 55/55, apparaten-uitvoer 42/42, aanmelden 50/50, sleutels-gasten 33/33, stille-uren 42/42, herstel 27/27.",
+    "e2e у Chromium з боку людини: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ (власник + другий пробний обліковий запис) 47/47.",
+    "Ще йдуть після збирання (результати — в гілці й PR): два пристрої, входи й ключі, запасні коди, шифрування й відновлення, гостьові коди, вигляд на пристроях і звірка v49.",
+    "npm run build на злитому коді — успішно; міграції 0273–0275 повторювані (двічі без помилок)."
+  ],
+  "bronnen": [
+    {
+      "soort": "встановлена версія",
+      "omschrijving": "https://id.tarasevych.com/api/version — 20261114-111234, 6e7dac3a7839",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "погоджене оформлення",
+      "omschrijving": "src/identiteit/atelier-v49-gegevens.json (12 розділів, 43 групи, 153 позиції)",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "відомість",
+      "omschrijving": "docs/ontwerp/identiteit-account/ВІДОМІСТЬ-ДІЙ.uk.md",
+      "inhoudGepubliceerd": true
+    }
+  ],
+  "beperkingen": [
+    "Встановлення на сайт — лише з погодження власника, після резервної копії на R:\\ і перевірки накладання."
+  ],
+  "commits": [
+    "6be77a2749eb45d8a44dde70d764c0550105550d",
+    "5efa7f264b3d55935c36274ab31f3f372d293fbd",
+    "ee25e8be36f0196c48573d8e0829b64ae83cb2ca",
+    "abbecd3fef1159e3af077f206a64c0ca696f56aa",
+    "48e7127947468cffae2172f37cb70e16aadbae1a",
+    "12c48f2082213b70071e82177f2e3785b715dc80",
+    "329d87e2b5bd179d160d053d8a08cf741317e6ad",
+    "1dae0b2541529900de3ca5c9d5b52422d50b16a9",
+    "33680d6f0cda907a74442d76d341dd3ec66276e7",
+    "ab27fdd68b04e6f4e4d667305b49cfb40aada709",
+    "231ec81dd0204511246f017f1485d75251896d7a",
+    "239bef740eb281da22442cd51a469eddd50fff3b",
+    "4dfb747a994bf17d4ac43bc3fb7be3f1221b8df4",
+    "12531310c722cdba25f7514099dd9601098b3e70",
+    "88addc17fc4eeb5fcc5aaab7c66578e1061e020d",
+    "899c96ad7c51bf24d8b64ab76c224069f28b6268",
+    "73a10b0d707292dc350349aef7c4a356bd36dfb7",
+    "ca15a75627267b9de64053cc8ffda2dd152d0f20",
+    "ddb6c74c25139cd20b6f0afca5a8cacc99f4d89c",
+    "3f7319ed248604ac4331e768be8e15eaad46847c",
+    "e730aa4c6d0c0c725bd32f7519028c2a0138b649",
+    "a9d3452f7cbf66d53be881d9f55df7c2ccc27fe5",
+    "e593bd16416d34ef198b54c53b338893f497c3d2",
+    "0f6becae48d55454178daa9c85b075a19d900e95",
+    "f240f11b5d69bb96680e82e3c8b2a9479772e86a",
+    "d090cc65b9b5bf452ecc4c4d4109dc1dbbcdbe90",
+    "f00c41eea93ea7b3c271184252802daddcf884fd",
+    "da3bbfbc13bcb9a89a3097cf3209c703913e2124",
+    "4e4134521ff07cea13ba13dfd8a57dcf44502e93",
+    "b3137ebc00c36cc080d33cabbedfeae909dbf916",
+    "b27f79fac96f87a9a1416dc841b6b39ed4574575"
+  ]
+}
