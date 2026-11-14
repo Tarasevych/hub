@@ -37,6 +37,7 @@ export const ACTIE_TEKST:Record<string,[string,string]>={
   agenten:['Агенти й токени','Agents en tokens'],
   export:['Експорт даних','Gegevens exporteren'],
   'account-verwijderen':['Видалення акаунта','Account verwijderen'],
+  'deel-beheerder':['Надання ролі адміністратора простору','Beheerdersrol voor een werkruimte geven'],
   onbekend:['Інша дія','Andere actie'],
 };
 export const actieTekst=(lang:Lang,a:string)=>{const t=ACTIE_TEKST[a]||ACTIE_TEKST.onbekend;return tr(lang,t[0],t[1]);};

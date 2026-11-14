@@ -317,6 +317,7 @@ export const ACTIE_LABELS: Readonly<Record<string, readonly [string, string]>> =
   'workspace_share_joined': ['Приєднано за посиланням', 'Via deellink toegetreden'],
   'workspace_member_revoked': ['Вилучено учасника простору', 'Lid uit werkruimte verwijderd'],
   'workspace_member_role_changed': ['Змінено роль учасника простору', 'Rol van lid gewijzigd'],
+  'workspace_invite_accepted': ['Прийнято запрошення до простору', 'Uitnodiging voor werkruimte aangenomen'],
   'gast_actie': ['Дія гостя', 'Actie van gast'],
   'gast_geweigerd': ['Дію гостя відхилено', 'Actie van gast geweigerd'],
   'gast_sessie_ingetrokken': ['Відкликано гостьову сесію', 'Gastsessie ingetrokken'],

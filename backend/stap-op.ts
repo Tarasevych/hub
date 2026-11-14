@@ -316,6 +316,8 @@ export const NOOIT_ONTHOUDEN: readonly string[] = Object.freeze([
   'totp-wijzigen', 'totp-uitschakelen', 'wachtwoord', 'aanmeldmethode',
   'account-verwijderen', 'wijziging-terugdraaien', 'export', 'beheer',
   'toegangscode-maken', 'toegangscode-verlengen',
+  // IDENTITEIT-014: een ander rechten op een gedeelde ruimte geven (rol «beheerder») — altijd opnieuw vragen.
+  'deel-beheerder',
   // Gescheiden gegevensruimtes (0082): de technische ruimte met de persoonlijke verbinden, de eenmalige keuze, en elk besluit
   // van de servereigenaar over bevroren gegevens. Hier vragen we ALTIJD opnieuw: een onthouden browser is nooit genoeg om
   // persoonlijke gegevens in de technische ruimte te laten zien.

@@ -12,6 +12,7 @@ import { MELDING_CATEGORIEEN, type MeldingCategorie, type MeldingVoorkeuren } fr
 const HOST_DIENST: Record<string, DienstId> = { hub: 'hub', ai: 'ai', mail: 'mail', cloud: 'cloud', github: 'github', huis: 'huis', id: 'identity', api: 'api', admin: 'admin', mcp: 'mcp' };
 const SOORT_DOEL: Record<string, [string, MeldingCategorie]> = {
   access_request: ['pg:admin/access', 'toegang'], access_decision: ['svc:hub', 'toegang'], workspace_share: ['pg:hub/overview', 'delen'],
+  workspace_role_changed: ['pg:hub/overview', 'delen'], workspace_access_revoked: ['pg:hub/overview', 'delen'], workspace_invite_accepted: ['pg:hub/overview', 'delen'], // IDENTITEIT-014
   account_email_conflict: ['pg:identity/account', 'beveiliging'], google_login_config: ['pg:admin/contour', 'systeem'],
 };
 function categorieVanSoort(soort: string): MeldingCategorie {

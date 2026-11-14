@@ -82,6 +82,23 @@ export const REGISTER: UitlegSoort[] = [
       { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
     ],
   },
+  // IDENTITEIT-014: rechten in een gedeelde ruimte. Vóór «beveiliging»: «workspace_access_revoked» bevat «access_» en zou anders
+  // als accountbeveiliging (met «Це був я») worden uitgelegd — het gaat om een ruimte van iemand anders, niet om uw aanmelding.
+  {
+    id: 'delen-rechten',
+    past: (m) => /^workspace_(role_changed|access_revoked|invite_accepted)$/.test(m.soort || ''),
+    risico: 'midden',
+    wat: ['Змінилися права в спільному просторі: ваша роль, ваш доступ або хтось прийняв ваше запрошення.', 'De rechten in een gedeelde werkruimte zijn gewijzigd: uw rol, uw toegang, of iemand nam uw uitnodiging aan.'],
+    waarom: ['Власник або адміністратор простору змінив учасників, або людина скористалася запрошенням.', 'De eigenaar of een beheerder van de werkruimte wijzigde de leden, of iemand gebruikte een uitnodiging.'],
+    gevolg: ['Від ролі залежить, чи можна лише переглядати, редагувати або запрошувати інших; після відкликання простір зникає зі списку.', 'De rol bepaalt of u alleen kunt bekijken, kunt bewerken of anderen kunt uitnodigen; na intrekken verdwijnt de werkruimte uit de lijst.'],
+    doen: ['Якщо зміна несподівана — зверніться до власника простору. Якщо до вас приєднався незнайомець — змініть його роль або відкличте доступ у списку учасників.', 'Komt de wijziging onverwacht, neem contact op met de eigenaar. Sloot een onbekende aan, wijzig dan zijn rol of trek de toegang in via de ledenlijst.'],
+    rechten: ['Адміністратор може запрошувати, змінювати ролі й відкликати доступ; редагування — змінювати блоки; перегляд — лише читати.', 'Een beheerder kan uitnodigen, rollen wijzigen en toegang intrekken; bewerken = blokken wijzigen; lezen = alleen bekijken.'],
+    deeplink: viaLink('https://hub.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити простір', 'Werkruimte openen'], href: viaLink('https://hub.tarasevych.com/') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
   {
     id: 'mail-wachtrij',
     past: (m) => /^mail_queue_(refused|cancelled)$/.test(m.soort || ''),

@@ -44,6 +44,7 @@ export const ACTIES = Object.freeze({
   agenten: ['Агенти й токени', 'Agents en tokens'],
   export: ['Експорт даних', 'Gegevens exporteren'],
   'account-verwijderen': ['Видалення акаунта', 'Account verwijderen'],
+  'deel-beheerder': ['Надання ролі адміністратора простору', 'Beheerdersrol voor een werkruimte geven'],
   sleutelkluis: ['Шифрування моїх даних', 'Versleuteling van mijn gegevens'],
   // APPARAAT-001: de toegangssleutel op apparaat B bekrachtigt een verzoek van apparaat A; en de instellingen van de methode zelf.
   'apparaat-bevestigen': ['Підтвердження дії для іншого пристрою', 'Handeling voor een ander apparaat bevestigen'],

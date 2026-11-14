@@ -52,6 +52,7 @@ const PER_ACTIE: Record<string, readonly [string, string, string, string, boolea
   'totp-wijzigen': ['Змінити застосунок-автентифікатор', 'De authenticator-app wijzigen', 'Старі коди перестануть діяти.', 'De oude codes werken niet meer.', true],
   wachtwoord: ['Змінити кодове слово', 'Het codewoord wijzigen', 'Старе кодове слово перестане діяти.', 'Het oude codewoord werkt niet meer.', true],
   export: ['Експортувати ваші дані', 'Uw gegevens exporteren', 'Буде створено файл з вашими даними.', 'Er wordt een bestand met uw gegevens gemaakt.', true],
+  'deel-beheerder': ['Зробити людину адміністратором спільного простору', 'Iemand beheerder van een gedeelde werkruimte maken', 'Вона зможе запрошувати інших, змінювати їхні ролі й відкликати доступ у цьому просторі.', 'Die persoon kan in deze werkruimte anderen uitnodigen, hun rol wijzigen en toegang intrekken.', true],
   'account-verwijderen': ['Видалити обліковий запис', 'Het account verwijderen', 'Обліковий запис і дані буде видалено.', 'Het account en de gegevens worden verwijderd.', true],
   beheer: ['Дія адміністратора', 'Een beheeractie', 'Змінює налаштування сайту або інших користувачів.', 'Wijzigt instellingen van de site of van andere gebruikers.', true],
   agenten: ['Зміна в розділі «Агенти» (пристрої, ШІ-підключення)', 'Een wijziging onder «Agenten» (apparaten, AI-verbindingen)', 'Може змінити, що ШІ або пристрої можуть робити.', 'Kan wijzigen wat AI of apparaten mogen doen.', true],

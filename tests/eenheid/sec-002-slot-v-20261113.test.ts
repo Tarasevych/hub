@@ -218,6 +218,9 @@ export async function main(): Promise<number> {
     const cO = await sessie(O.id), cV = await sessie(V.id), cM = await sessie(M.id);
     ws = String((await roep(cO, '/api/workspace/load')).data.workspace?.id || '');
     await roep(cV, '/api/workspace/load'); await roep(cM, '/api/workspace/load');
+    // IDENTITEIT-014: роль «адміністратор» тепер вимагає свіжого підтвердження (step-up) на сервері — O підтверджує на своєму сеансі,
+    // як це робить вікно «Підтвердіть доступ». Перевірка «лише перегляд» нижче від цього не змінюється.
+    await (await import('../../backend/stap-op')).googleStapOpVastleggen(O.id, [cO.split('.')[0]], Date.now());
     const sV = await roep(cO, '/api/share/email', { workspaceId: ws, email: V.email, workspaceRole: 'admin' });
     const sM = await roep(cO, '/api/share/email', { workspaceId: ws, email: M.email, workspaceRole: 'member' });
     const leden = async () => ((await roep(cO, '/api/share/members', { workspaceId: ws })).data.members || []) as Array<{ id: string; userId: string; status: string; workspaceRole: string }>;

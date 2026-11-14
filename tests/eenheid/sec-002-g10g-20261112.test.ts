@@ -242,6 +242,8 @@ export async function main(): Promise<number> {
       const W = await maak('w');
       const wsW = (await hub(W.b, '/api/workspace/load')).data.workspace?.id as string;
       const laterMail = `g10g-later-${T}@example.test`;
+      // IDENTITEIT-014: запрошення з роллю «адміністратор» тепер вимагає свіжого підтвердження (step-up) — W підтверджує через Google.
+      await W.b.aanmelden(W.sub, W.email, { intent: 'step-up' });
       const uitn = await hub(W.b, '/api/share/email', { workspaceId: wsW, email: laterMail, workspaceRole: 'admin' });
       await pool.query("update app.records set data = jsonb_set(data, '{verlooptOp}', to_jsonb(1)) where tbl='workspace_members' and data->>'workspaceId'=$1 and data->>'email'=$2", [wsW, laterMail]);
       const L = await maak('later');
