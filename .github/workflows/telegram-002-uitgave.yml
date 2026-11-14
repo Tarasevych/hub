@@ -54,7 +54,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U migratie" --health-interval 5s --health-timeout 5s --health-retries 20
+          --health-cmd "pg_isready -U migratie -d mijnruimte_schoon" --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - name: Отримати вихідні коди сховища
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
