@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-015",
+  "titel": "Повна звірка центру облікового запису з v49 — пакет для встановлення (лінія C2 «коди відновлення» включно)",
+  "opdracht": "Власник доручив повну звірку 153 позицій погодженого оформлення v49 з тим, що людина справді може зробити на сайті: під’єднати чинне, доробити відсутнє, перевірити з боку кожної людини, скласти відомість дій зі знімками і зібрати архів для встановлення. Лінія C2 — коди відновлення облікового запису з боку людини (створення зі step-up, завантаження, копіювання, друк, нотатки, одноразовість, заміна, нагадування, відкликання).",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/identiteit-015-lijn-c2-20261114-164500",
+    "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "voorganger": { "taak": "IDENTITEIT-014", "pr": "https://github.com/Tarasevych/hub/pull/81", "commit": "6d430e1" },
+    "samengevoegd": [
+      { "taak": "IDENTITEIT-015 (кроки risico … blokken-profiel, звіт)", "tak": "feature/identiteit-015-verantwoording-20261114-080023", "reden": "лінія C2 відгалужена від голови цієї гілки (786d66d)" }
+    ]
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Тести — лише з вигаданими даними (@example.test), тестовим сертифікатом і одноразовою локальною базою. Коди відновлення не потрапляють у журнали; знімки знеособлені. Без облікових даних, вмісту листів і прихованих міркувань моделі."
+  },
+  "tijdlijn": [
+    { "tijd": "2026-11-14T08:00:23Z", "stap": "Реєстрація задачі IDENTITEIT-015 і кроки звірки (risico, vormgeving, profiel-blokken, apparaten-uitvoer, aanmelden, sleutels-gasten, kaart-stille-uren, herstel, delen, menu, thema, blokken-profiel) — див. коміти 6be77a2…786d66d." },
+    { "tijd": "2026-11-14T16:45:00Z", "stap": "Лінія C2: гілка від 786d66d; середовище — локальна PostgreSQL 16, тестовий TLS, справжній Chromium." },
+    { "tijd": "2026-11-14T17:10:00Z", "stap": "Наявний herstelcodes.e2e.ts на живій версії 2/4 — з’ясовано причину збою «download» (вада продукту), виправлено." },
+    { "tijd": "2026-11-14T17:40:00Z", "stap": "Новий e2e identiteit-015-herstelcodes 20/20, herstelcodes 16/16, модульні набори зелені; коміти 2b51d78, d386d9a." }
+  ],
+  "keuzes": [
+    "Вада hervat виправлена в клієнті (лише екземпляр із секцією кодів підхоплює дію), а не на сервері: сервер поводиться правильно, губився лише показ.",
+    "Застарілі очікування herstelcodes.e2e.ts оновлено за чинними правилами (/aanmeldmethoden, сильне підтвердження після passkey), перевірки не послаблено.",
+    "Запит прапорця tech-ruimtes-v2 на сторінці повернення Google пропускається (там ще немає контексту вкладки), без зміни сервера."
+  ],
+  "wijzigingen": [
+    "src/herstel/hervat-plek.ts, src/ToegangslaagWeergave.tsx — нові коди після step-up через Google більше не губляться.",
+    "src/platform/google-terugkeer.ts, src/tech/ruimtes/ruimtes-vlag.ts — без зайвої 401 на сторінці повернення Google.",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts (новий), tests/e2e/herstelcodes.e2e.ts (оновлено), tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts (новий).",
+    "tests/e2e/знімки-015/herstelcodes-*.png (6 знеособлених знімків), docs/ontwerp/identiteit-account/verantwoording/aanvulling-c2.json (18 рядків)."
+  ],
+  "controles": [
+    "e2e identiteit-015-herstelcodes 20/20 (тричі), e2e herstelcodes 16/16.",
+    "Модульні: identiteit-015-herstelcodes-hervat 6/6, aanmeld-ui-20261030 105/105, identiteit-009-mobiel-veiligheid 14/14, identiteit-014-aanmelden 35/35, identiteit-014-herstel 43/43, identiteit-atelier 37/37, toegangssleutels 88/88, identiteit-015-herstel 27/27.",
+    "npx tsc --noEmit і npm run typecheck:server — без помилок; npm run build — успішно."
+  ],
+  "bronnen": [
+    { "soort": "встановлена версія", "omschrijving": "20261113-121403 @ 5f2325d788e2 (як у задачі IDENTITEIT-015 і журналі IDENTITEIT-014)", "inhoudGepubliceerd": true },
+    { "soort": "правила пакета", "omschrijving": "deploy/REGELS-UITROLPAKKET.nl.md", "inhoudGepubliceerd": true }
+  ],
+  "beperkingen": [
+    "Встановлення на сайт — лише з погодження власника, після резервної копії на R:\\ і перевірки накладання.",
+    "Пакет містить лише те, що є в історії цієї гілки; роботи інших паралельних ліній IDENTITEIT-015, ще не влиті сюди, у пакет не входять.",
+    "Посилання release в ONTWIKKELARCHIEF.json вказує на GitHub Release з тегом версії пакета — його має створити власник (агент не публікує випусків)."
+  ]
+}
