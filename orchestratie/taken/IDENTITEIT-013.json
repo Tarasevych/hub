@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-013",
+  "agent": "claude",
+  "tak": "feature/identiteit-013-bevestigen-teksten-20261114-031200",
+  "basisCommit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T03:12:00.800Z",
+  "bijgewerkt": "2026-11-14T03:12:00.800Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}
