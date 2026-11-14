@@ -26,7 +26,8 @@ function inhoudVan(id: string) {
     case 'account': return <div className='settings-danger'>Видалення</div>;
     case 'methods': return <><section id='aanmeldmethoden-google'>Вхід</section><div data-access-method='password'>Пароль</div></>;
     case 'security': return <><section id='aanmeldmethoden-sleutels'>Ключі</section><section id='aanmeldmethoden-2fa'>2FA</section><section id='aanmeldmethoden-sleutelkluis'>Сховище</section><section id='toegangscodes'>Коди</section></>;
-    case 'recovery': return <section id='aanmeldmethoden-herstel'>Коди відновлення</section>;
+    // IDENTITEIT-014: справжній розділ має ще огляд резерву, сценарії й наслідки втрати ключа (на них веде жива карта).
+    case 'recovery': return <><section id='herstel-overzicht'>Огляд резерву</section><section id='aanmeldmethoden-herstel'>Коди відновлення</section><section id='herstel-scenarios'>Що робити, якщо…</section><section id='herstel-sleutelverlies'>Наслідки втрати ключа</section></>;
     default: return <p>{id}</p>;
   }
 }

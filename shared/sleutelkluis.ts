@@ -122,6 +122,16 @@ export const KLUIS_TEKST = Object.freeze({
     uk: 'Шифрування позначене як увімкнене, але ключ не має жодного способу відкриття (збій під час увімкнення). Під цим ключем ще немає даних, тож нічого не втрачається: скиньте цей стан і ввімкніть шифрування заново. Доки цього не зроблено, нові підключення пошти, календаря й хмари в цьому просторі не зберігаються.',
     nl: 'Versleuteling staat als ingeschakeld, maar de sleutel heeft geen enkele manier om open te gaan (storing tijdens het inschakelen). Onder deze sleutel staan nog geen gegevens, dus er gaat niets verloren: zet deze toestand terug en schakel de versleuteling opnieuw in. Tot dan worden nieuwe koppelingen van post, agenda en cloud in deze ruimte niet bewaard.',
   },
+  // IDENTITEIT-014 (herstel): наслідки втрати ключа і різниця між двома кодами — один текст для розділу «Відновлення».
+  // Gevolgen van sleutelverlies en het verschil tussen de twee codes — één tekst voor het onderdeel «Herstel».
+  verlies: {
+    uk: 'Втрата коду відновлення сховища й усіх passkey, що відкривають ключ, означає втрату зашифрованих даних: ніхто не зможе їх відновити — ні ви, ні власник сайту. Вхід в обліковий запис при цьому можна повернути, а дані під цим ключем — ні.',
+    nl: 'Wie de herstelcode van de kluis én alle passkeys die de sleutel openen kwijt is, verliest de versleutelde gegevens: niemand kan ze terughalen — u niet en de eigenaar van de site niet. De toegang tot het account komt wel terug, de gegevens onder deze sleutel niet.',
+  },
+  tweeCodes: {
+    uk: 'Це два різні коди. Коди відновлення облікового запису (10 штук, вигляд XXXX-XXXX-XXXX) підтверджують дії й вимикають автентифікатор, але не відкривають зашифровані дані. Код відновлення сховища ключів (один, 5 груп по 4 символи) відкриває лише ключ даних і не підходить для входу.',
+    nl: 'Dit zijn twee verschillende codes. De herstelcodes van het account (10 stuks, vorm XXXX-XXXX-XXXX) bevestigen handelingen en zetten de authenticator uit, maar openen geen versleutelde gegevens. De herstelcode van de sleutelkluis (één, 5 groepen van 4 tekens) opent alleen de gegevenssleutel en werkt niet om aan te melden.',
+  },
 });
 export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = Object.freeze({
   SLEUTELKLUIS_GESLOTEN: { uk: 'Ключ даних закритий. Розблокуйте його passkey або кодом відновлення.', nl: 'De gegevenssleutel is gesloten. Ontgrendel hem met een passkey of de herstelcode.' },

@@ -11,7 +11,7 @@ import { AANMELD_GROEPEN, type AanmeldGroep, type MethodeStaat, type MethodeUi }
 
 // Structureel dezelfde vormen als in src/ToegangslaagWeergave.tsx (de controller exporteert zijn Snapshot-type niet).
 export type MethodeRij = { id: string; enabled: boolean; configured: boolean; bound?: boolean; status: string };
-export type FactorRij = { id: string; enabled: boolean; enrolled: boolean; status: string; remaining?: number; count?: number };
+export type FactorRij = { id: string; enabled: boolean; enrolled: boolean; status: string; remaining?: number; count?: number; createdAt?: number; bekekenOp?: number };
 export type BindingRij = { id: string; method: string; email: string; status: string };
 export type SnapshotLike = {
   methods: MethodeRij[];
@@ -85,13 +85,16 @@ export function snapshotNaarKaarten(data: SnapshotLike): MethodeUi[] {
 
   const herstel = factor('recovery');
   if (herstel) {
-    const leeg = herstel.enrolled && Number(herstel.remaining) === 0;
+    // IDENTITEIT-014 (давня вада): сервер ставить enrolled:false, щойно remaining===0 (backend/toegangslaag.ts, snapshot), тож «коди
+    // закінчилися» ніколи не показувалось — використаний набір виглядав як «не налаштовано». Набір був, якщо є createdAt.
+    // De server zet enrolled:false zodra remaining 0 is; een opgebruikte set herken je aan createdAt.
+    const leeg = Number(herstel.remaining) === 0 && (herstel.enrolled || Number(herstel.createdAt) > 0);
     const staat: MethodeStaat = herstel.status === 'loading' ? 'loading' : leeg ? 'attention' : stilleStaat(herstel.status, herstel.enrolled ? 'active' : 'not-configured');
     uit.push({
       id: 'recovery', titel: T('Коди відновлення', 'Herstelcodes'),
       ondertitel: T('Резервний доступ, коли інші засоби недоступні', 'Reservetoegang wanneer andere middelen niet werken'),
-      icoon: 'recovery', staat, hoofdActie: staat === 'unknown' ? 'retry' : herstel.enrolled ? 'manage' : 'setup', vermogen: 'recovery',
-      ...(herstel.enrolled && typeof herstel.remaining === 'number' ? { teller: herstel.remaining } : {}),
+      icoon: 'recovery', staat, hoofdActie: staat === 'unknown' ? 'retry' : herstel.enrolled || leeg ? 'manage' : 'setup', vermogen: 'recovery',
+      ...((herstel.enrolled || leeg) && typeof herstel.remaining === 'number' ? { teller: herstel.remaining } : {}),
       ...(leeg ? { staatReden: T('Коди закінчилися — створіть нові', 'De codes zijn op — maak nieuwe'), waarschuwingCode: 'RECOVERY_EMPTY' } : {}),
     });
   }

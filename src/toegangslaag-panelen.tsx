@@ -20,6 +20,9 @@ import {ToegangWijziging,wijzigingUitUrl} from './ToegangWijziging';
 import {Toegangscodes} from './Toegangscodes';
 import GeheimInvoer from './geheim/GeheimInvoer';
 import {Qr} from './platform/Qr'; // IDENTITEIT-014: спільний QR (data-ai-verborgen всередині)
+import {ReserveOverzicht} from './herstel/ReserveOverzicht'; // IDENTITEIT-014: огляд резерву (herstel-overzicht)
+import {Scenarios} from './herstel/Scenarios'; // IDENTITEIT-014: сценарії й наслідки втрати ключа (herstel-scenarios, herstel-sleutelverlies)
+import type {HerstelSectie} from './herstel/reserve';
 const AanbiederCatalogus=lazy(()=>import('./aanmeld-vnext/onderdelen/CatalogusMetStijl')); /* IDENTITEIT-014: лише в розділі «Вхід» */
 const AndereMethoden=lazy(()=>import('./AndereAanmeldMethodenLaden')); /* IDENTITEIT-014: Telegram і розміщення; модуль конфігу читає window під час завантаження */
 
@@ -67,6 +70,8 @@ type Props={
   /** De volledige TelegramSectie staat op deze pagina → hier alleen een verwijzing ernaar, geen tweede stand. */
   telegramSectie?:boolean;
   recoverySaved:()=>Promise<void>;
+  /** IDENTITEIT-014: перехід до іншого розділу облікового запису (огляд і сценарії відновлення). Немає → прокрутка в межах панелі. */
+  onKies?:(sectie:HerstelSectie)=>void;
 };
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
@@ -111,6 +116,8 @@ export function AccessPlanePanels(p:Props){
   const toonMethoden=!p.alleen||p.alleen==='methods';
   const toonBeveiliging=!p.alleen||p.alleen==='security';
   const toonHerstel=!p.alleen||p.alleen==='recovery';
+  // IDENTITEIT-014: перехід з огляду/сценаріїв. Без onKies (окрема сторінка налаштувань) — прокрутка до розділу на цій же сторінці.
+  const kies=(sectie:HerstelSectie)=>{if(p.onKies)p.onKies(sectie);else naarSectie(sectie);};
 
   const geladen=!!(data as {loaded?:boolean}).loaded||data.factors.some(f=>f.status!=='loading');
   useEffect(()=>{const t1=window.setTimeout(()=>naarSectie(tab),60),t2=window.setTimeout(()=>naarSectie(tab),450);return()=>{window.clearTimeout(t1);window.clearTimeout(t2)};},[tab,geladen]);
@@ -230,7 +237,10 @@ export function AccessPlanePanels(p:Props){
     </section>}
 
     {/* IDENTITEIT-011: нові коди після налаштування автентифікатора видно й у «Безпеці» — раніше вони губилися, бо там немає розділу відновлення. */}
+    {/* IDENTITEIT-014: «Відновлення доступу» — огляд резерву перед кодами, сценарії й наслідки втрати ключа після них (лише в цьому розділі). */}
+    {toonHerstel&&<ReserveOverzicht lang={lang} context={p.context} data={data} onKies={kies}/>}
     {(toonHerstel||(toonBeveiliging&&recovery.length>0))&&<HerstelcodesSectie lang={lang} context={p.context} codes={recovery} busy={busy} nieuweHerstelcodes={p.nieuweHerstelcodes} recoverySaved={p.recoverySaved} onChange={()=>void p.load()}/>}
+    {toonHerstel&&<Scenarios lang={lang} context={p.context} data={data} busy={busy} onKies={kies} totpUitschakelen={p.totpUitschakelen} nieuweHerstelcodes={p.nieuweHerstelcodes}/>}
     {toonBeveiliging&&<SleutelkluisSectie lang={lang} context={p.context}/>}
     {toonBeveiliging&&<Toegangscodes lang={lang} context={p.context}/>}
     {toonHerstel&&p.tempPassword&&<div className='access-plane-subrow access-plane-recovery-codes' {...verborgenVoorAi}><strong>{tr(lang,'Тимчасовий пароль','Tijdelijk wachtwoord')}</strong><code className='access-plane-mono'>{p.tempPassword}</code></div>}

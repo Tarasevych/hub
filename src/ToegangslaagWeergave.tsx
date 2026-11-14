@@ -71,7 +71,8 @@ const pending=():Snapshot=>{
 };
 
 const sessionBody=()=>({service:new URLSearchParams(location.search).get('service')||'identity',tabContext:ecosystemTabContext(),sourceOrigin:location.origin});
-export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;lang:Lang;mode?:'identity'|'admin'}){
+// IDENTITEIT-014: onKies — перехід до іншого розділу облікового запису з огляду й сценаріїв відновлення (onNavigate центру налаштувань).
+export default function AccessPlaneView({tab,lang,mode='identity',onKies}:{tab:string;lang:Lang;mode?:'identity'|'admin';onKies?:(sectie:string)=>void}){
   const inAtelier=useContext(AtelierInhoud)&&mode==='identity';
   const alleen=inAtelier&&['methods','security','recovery'].includes(tab)?tab as 'methods'|'security'|'recovery':undefined;
   const telegramAan=useTelegramVlag();
@@ -194,7 +195,7 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
     if(neemHervat('herstelcodes-maken'))void nieuweHerstelcodes();
   },[data]);// eslint-disable-line react-hooks/exhaustive-deps
   const recoverySaved=async()=>{await write('/api/owner/access/recovery/bekeken');setRecovery([]);};
-  const panelen=<AccessPlanePanels alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={context} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved} totpVervangen={totpVervangen} totpVervangenStoppen={totpVervangenStoppen} telegramSectie={telegramAan&&tab==='methods'&&mode==='identity'}/>;
+  const panelen=<AccessPlanePanels alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={context} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved} totpVervangen={totpVervangen} totpVervangenStoppen={totpVervangenStoppen} telegramSectie={telegramAan&&tab==='methods'&&mode==='identity'} onKies={onKies}/>;
   const telegram=tab==='methods'&&mode==='identity'&&(telegramAan||apparaatAan)?<Suspense fallback={null}>{telegramAan&&<TelegramSectie lang={lang}/>}{apparaatAan&&<ApparaatSectie lang={lang}/>}</Suspense>:null;
   if(tab==='methods'&&aanmeldVnext&&mode==='identity')return <>{<Suspense fallback={panelen}><AanmeldVnextPanelen alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={context} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/></Suspense>}{telegram}</>;
   return telegram?<>{panelen}{telegram}</>:panelen;
