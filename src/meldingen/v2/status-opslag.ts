@@ -3,6 +3,7 @@
 // en het paneel zegt dat. Andere tabbladen volgen via BroadcastChannel; terug naar het tabblad = opnieuw lezen.
 import { useEffect, useState } from 'react';
 import { api } from '../../platform/client';
+import { meldingLichaam } from '../sessie-context';
 import { legeStatus, normaliseerStatus, zetStatus, type StatusStand, type StatusWijziging } from '../../../shared/meldingen-v2/status';
 
 let stand: StatusStand = legeStatus();
@@ -15,17 +16,17 @@ let geladen: Promise<void> | null = null;
 export const statusNu = () => stand;
 export function laadStatus(opnieuw = false): Promise<void> {
   if (geladen && !opnieuw) return geladen;
-  geladen = api.post('/api/owner/meldingen/status', {}).then((r) => { if (r.data?.stand) zet(normaliseerStatus(r.data.stand)); }, () => { geladen = null; });
+  geladen = api.post('/api/owner/meldingen/status', meldingLichaam()).then((r) => { if (r.data?.stand) zet(normaliseerStatus(r.data.stand)); }, () => { geladen = null; });
   return geladen;
 }
 export async function wijzigStatus(w: StatusWijziging): Promise<boolean> {
   const vorige = stand; zet(zetStatus(stand, w, 'eigenaar'));
-  try { const r = await api.post('/api/owner/meldingen/status/zetten', w); if (!r.data?.stand) throw new Error('geen antwoord'); zet(normaliseerStatus(r.data.stand)); return true; }
+  try { const r = await api.post('/api/owner/meldingen/status/zetten', meldingLichaam({ ...w })); if (!r.data?.stand) throw new Error('geen antwoord'); zet(normaliseerStatus(r.data.stand)); return true; }
   catch { zet(vorige); return false; }
 }
 export async function zetBewaarDagen(dagen: number): Promise<boolean> {
   const vorige = stand; zet({ ...stand, bewaarDagen: dagen });
-  try { const r = await api.post('/api/owner/meldingen/status/zetten', { bewaarDagen: dagen }); if (!r.data?.stand) throw new Error('geen antwoord'); zet(normaliseerStatus(r.data.stand)); return true; }
+  try { const r = await api.post('/api/owner/meldingen/status/zetten', meldingLichaam({ bewaarDagen: dagen })); if (!r.data?.stand) throw new Error('geen antwoord'); zet(normaliseerStatus(r.data.stand)); return true; }
   catch { zet(vorige); return false; }
 }
 export function useStatusStand(actief: boolean): StatusStand {

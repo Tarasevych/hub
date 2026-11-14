@@ -70,11 +70,13 @@ export function BevestigDialoog(p: BevestigDialoogProps) {
     <Venster id={p.id || 'bevestig-dialoog'} titel={p.titel} breedte={440} onSluit={bezig ? undefined : p.onAnnuleer} sluitenUit={bezig}
       labelledBy={titelId} describedBy={p.uitleg ? uitlegId : undefined} lang={p.lang} className='bevestig-dialoog-venster'>
       <div className={`bevestig-dialoog${p.gevaarlijk ? ' is-gevaarlijk' : ''}`} data-bevestig={p.id || 'bevestig-dialoog'} onKeyDown={toets}>
-        <h2 id={titelId} className='bevestig-dialoog-titel'>
-          {p.gevaarlijk && <span className='bevestig-dialoog-teken' aria-hidden='true'><AlertTriangle /></span>}
-          {p.titel}
-        </h2>
-        {p.uitleg && <p id={uitlegId} className='bevestig-dialoog-uitleg'>{p.uitleg}</p>}
+        <h2 id={titelId} className='bevestig-dialoog-titel'>{p.titel}</h2>
+        {(p.gevaarlijk || p.uitleg) && (
+          <div className='bevestig-dialoog-kop'>
+            {p.gevaarlijk && <span className='bevestig-dialoog-teken' aria-hidden='true'><AlertTriangle /></span>}
+            {p.uitleg && <p id={uitlegId} className='bevestig-dialoog-uitleg'>{p.uitleg}</p>}
+          </div>
+        )}
         {!!p.gevolgen?.length && (
           <div className='bevestig-dialoog-gevolgen' role='note'>
             <strong>{tr(p.lang, 'Що станеться', 'Wat er gebeurt')}</strong>
