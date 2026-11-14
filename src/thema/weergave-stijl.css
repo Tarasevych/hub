@@ -7,7 +7,7 @@
 :root[data-dichtheid="compact"] { --ruimte-1:3px; --ruimte-2:6px; --ruimte-3:9px; --ruimte-4:12px; --ruimte-5:18px; --ruimte-6:24px; }
 :root[data-dichtheid="ruim"] { --ruimte-1:5px; --ruimte-2:10px; --ruimte-3:15px; --ruimte-4:20px; --ruimte-5:30px; --ruimte-6:40px; }
 
-/* Менше руху — вибір людини поверх пристрою (системне prefers-reduced-motion і далі діє само). Анімації й переходи майже миттєві,
+/* Менше руху — вибір людини поверх пристрою (системне prefers-reduced-motion — окреме правило нижче). Анімації й переходи майже миттєві,
    плавна прокрутка вимкнена; зміст і стан не змінюються, лише рух. */
 :root[data-beweging="minder"] { --ruimte-beweging: 0ms; scroll-behavior: auto !important; }
 :root[data-beweging="minder"] *, :root[data-beweging="minder"] *::before, :root[data-beweging="minder"] *::after {
@@ -61,3 +61,15 @@
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-1040) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .72), 1); }
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731.bp-max-900) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .22), 1); }
 .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-730) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .45), 1); }
+
+/* IDENTITEIT-015 (приймання D2 «пристрої й доступність»): системне «зменшити рух» (prefers-reduced-motion) для оболонки сайту.
+   Спільного правила не було (лише точкові), тож піктограми меню (.menu-lucide-glyph — .14 с з !important) і шар сповіщень (.2 с)
+   рухалися попри налаштування пристрою. Загальне правило — як «менше руху» (0,2,0). «Макет» має власні сильніші правила — їх
+   виправляє лінія D1. Ook de omlijsting van de site volgt nu de systeeminstelling «minder beweging». */
+@media (prefers-reduced-motion: reduce) {
+  :root:root { scroll-behavior: auto !important; }
+  :root:root *, :root:root *::before, :root:root *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+    transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+  }
+}

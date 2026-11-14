@@ -1555,6 +1555,21 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const balk=byId("mqSectieBalk");
     if(balk)balk.dataset.zijde=preferences.position==="right"?"right":"left";
   }
+  // САЙТ (IDENTITEIT-015, D2): смуга розділів на вузькому екрані показує активний розділ; назва — і в aria-label кнопки.
+  let actieveSectie="intro";
+  function zetSectieBalk(){
+    const nl=preferences.lang==="nl";
+    const s=actieveSectie==="intro"?null:localizedSections().find(x=>x.id===actieveSectie);
+    const naam=s?s.name:(nl?"Onderdelen":"Розділи");
+    const el=root.querySelector("#mqSectieNaam");
+    if(el&&el.textContent!==naam)el.textContent=naam;
+    const knop=root.querySelector("#adaptiveNavToggle");
+    if(!knop)return;
+    const open=knop.getAttribute("aria-expanded")==="true";
+    const basis=nl?(open?"Pagina-onderdelen sluiten":"Pagina-onderdelen openen"):(open?"Закрити розділи сторінки":"Відкрити розділи сторінки");
+    const label=s?basis+" — "+(nl?"nu: ":"зараз: ")+naam:basis;
+    if(knop.getAttribute("aria-label")!==label){knop.setAttribute("aria-label",label);knop.title=label;}
+  }
   function setAdaptiveNavOpen(open,{explicit=false}={}){
     const visible=Boolean(open&&body.classList.contains("rail-smart-condensed"));
     if(!visible)drawerOpenedByControl=false;
@@ -1563,8 +1578,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     adaptiveNavScrim.hidden=!visible;
     byId("anchorRail").setAttribute("aria-hidden",String(!visible&&body.classList.contains("rail-smart-condensed")));
     adaptiveNavToggle.setAttribute("aria-expanded",String(visible));
-    adaptiveNavToggle.setAttribute("aria-label",preferences.lang==="nl"?(visible?"Pagina-onderdelen sluiten":"Pagina-onderdelen openen"):(visible?"Закрити розділи сторінки":"Відкрити розділи сторінки"));
-    adaptiveNavToggle.title=adaptiveNavToggle.getAttribute("aria-label");
+    zetSectieBalk();
     const edgeLabel=preferences.lang==="nl"?"Zijmenu openen":"Відкрити бічне меню";
     adaptiveNavEdge.setAttribute("aria-label",edgeLabel);
     adaptiveNavEdge.title=edgeLabel;
@@ -1754,7 +1768,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     write(".breadcrumbs strong",t.settings);
     write(".concept-pill",'<span class="concept-dot"></span>'+t.concept,true);
     write(".search-action span",preferences.lang==="nl"?"Zoeken in «Mijn Ruimte»…":"Пошук у «Мій простір»…");
-    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");
+    zetSectieBalk();
     write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden ook voor het menu van de site en worden in uw account bewaard. Stijl en inhoud van de knoppen gelden alleen voor de navigatie van deze pagina op dit apparaat.":"Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.");
     write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");
     const zoekKnop=byId("openSearch");if(zoekKnop){const zl=preferences.lang==="nl"?"Zoeken in «Mijn Ruimte» (Ctrl K)":"Пошук у «Мій простір» (Ctrl K)";zoekKnop.setAttribute("aria-label",zl);zoekKnop.title=zl;}
@@ -2013,6 +2027,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     let active="intro";
     for(const el of els){if(el.getBoundingClientRect().top < innerHeight*.48) active=el.id;}
     const highlight=demoValues["menu-0"]!==false;
+    if(actieveSectie!==active){actieveSectie=active;zetSectieBalk();}
     root.querySelectorAll(".anchor-link").forEach(b=>{let on=b.dataset.jump===active;b.classList.toggle("active",on&&highlight); b.setAttribute("aria-current",on?"location":"false");});
     const currentGroup=sections.find(s=>s.id===active)?.group;
     root.querySelectorAll(".nav-group-toggle").forEach(b=>{
