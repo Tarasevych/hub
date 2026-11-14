@@ -54,7 +54,7 @@ html.palet-maquette :is(.gm-root, .gh-pagina, .venster.gm-venster) {
   --vm-rand: var(--mq-gm-rand);
 }
 
-html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.gm-root, .gh-pagina, .venster.gm-venster) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"])[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.gm-root, .gh-pagina, .venster.gm-venster) {
   --mq-bg: color-mix(in srgb, var(--mq-wit) 74%, var(--mq-held-gedempt) 26%);
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 86%, var(--mq-satelliet-tekst) 14%);
@@ -68,8 +68,8 @@ html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light)
   --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 97%, var(--mq-satelliet-tekst) 3%);
 }
 
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.gm-root, .gh-pagina, .venster.gm-venster),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gm-root, .gh-pagina) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) :is(.gm-root, .gh-pagina, .venster.gm-venster),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gm-root, .gh-pagina) {
   --mq-gm-accent: color-mix(in srgb, var(--mq-accent) 82%, var(--mq-knop-primair-tekst) 18%);
   --mq-gm-accent-diep: color-mix(in srgb, var(--mq-knop-primair-tekst) 72%, var(--mq-accent-2) 28%);
   --mq-gm-accent-op: var(--mq-wit);
@@ -639,7 +639,327 @@ html.palet-maquette .venster.gm-venster .gm-github-urls {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   6. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО НАПРИКІНЦІ ФАЙЛА
+   6. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-010B)
+   Матові поверхні сховища таємниць без градієнтів і розмиття у «Білій класиці»
+   та «Чорній класиці», чисті змінні --gm-* і --vm-*, суцільні первинні кнопки,
+   кути 16px / 11px / 999px, табличний таймер 30 с та захист :not(#_mqk).
+   Zakelijke klassieke opmaak voor de geheimenkluis onder data-maquette-stijl="klassiek".
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) {
+  --mq-gm-accent: var(--mq-accent);
+  --mq-gm-accent-diep: var(--mq-accent-2);
+  --mq-gm-accent-op: var(--mq-knop-primair-tekst);
+  --mq-gm-halo: var(--mq-oppervlak-zacht);
+  --mq-gm-halo-zacht: transparent;
+  --mq-gm-halo-koel: transparent;
+  --mq-gm-rand: var(--mq-rand);
+  --mq-gm-rand-sterk: var(--mq-rand-sterk);
+  --mq-gm-rand-accent: var(--mq-rand-sterk);
+  --mq-gm-glas-diep: var(--mq-oppervlak);
+  --mq-gm-glas-verhoogd: var(--mq-oppervlak);
+  --mq-gm-glas-glans: transparent;
+  --mq-gm-put: var(--mq-oppervlak-2);
+
+  --mq-gm-goed: var(--ok);
+  --mq-gm-goed-zacht: var(--ok-zacht);
+  --mq-gm-waarsch: var(--warn);
+  --mq-gm-waarsch-zacht: var(--warn-zacht);
+  --mq-gm-gevaar: var(--fout);
+  --mq-gm-gevaar-zacht: var(--fout-zacht);
+  --mq-gm-info: var(--info);
+  --mq-gm-info-zacht: var(--info-zacht);
+
+  --gm-bg: var(--mq-oppervlak);
+  --gm-bg2: var(--mq-oppervlak-2);
+  --gm-line: var(--mq-rand);
+  --gm-text: var(--mq-tekst);
+  --gm-muted: var(--mq-gedempt);
+  --gm-accent: var(--mq-accent);
+  --gm-ok: var(--ok);
+  --gm-warn: var(--warn);
+  --gm-bad: var(--fout);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+
+  --vm-ok: var(--ok);
+  --vm-ok-bg: var(--mq-gm-goed-zacht);
+  --vm-bijna: var(--warn);
+  --vm-bijna-bg: var(--mq-gm-waarsch-zacht);
+  --vm-op: var(--fout);
+  --vm-op-bg: var(--mq-gm-gevaar-zacht);
+  --vm-zacht: var(--mq-gedempt);
+  --vm-rand: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) {
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) :is(.gm-tegels > article, .gm-tegel-knop, .gm-kaart) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-kaart[data-aandacht] {
+  border-color: var(--warn);
+  border-left: 4px solid var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-kaart:is([data-gm-staat="verlopen"], [data-gm-staat="ontbreekt"]) {
+  border-color: var(--fout);
+  border-left: 4px solid var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-veilig {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-leeg {
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-banner {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-banner.is-ok {
+  border-color: var(--ok);
+  border-left: 4px solid var(--ok);
+  background: var(--mq-gm-goed-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-banner:is(.is-fout, .is-bad) {
+  border-color: var(--fout);
+  border-left: 4px solid var(--fout);
+  background: var(--mq-gm-gevaar-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-banner.is-info {
+  border-color: var(--info);
+  border-left: 4px solid var(--info);
+  background: var(--mq-gm-info-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-knop {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-knop[aria-pressed="true"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :is(.gm-knop.is-primair, .gm-knop-primair, .gm-knop-hoofd) {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-knop.is-gevaar {
+  border-color: var(--fout);
+  background: var(--mq-gm-gevaar-zacht);
+  background-image: none;
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-tabs {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-tabs button {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-tabs button.is-actief {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-waarde {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-waarde.is-zichtbaar {
+  border: 1px dashed var(--warn);
+  background: var(--mq-gm-waarsch-zacht);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-teller > span {
+  border-radius: 999px;
+  background: var(--warn);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :is(.gm-chip, .gm-chips button, .gm-tabs i, .gm-chips i, .gm-groep h3 i) {
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-chips button.is-actief {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-chips button.is-actief i {
+  border-color: transparent;
+  background: var(--mq-oppervlak-zacht);
+  color: inherit;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-chip[data-toon="ok"] {
+  border-color: var(--ok);
+  background: var(--mq-gm-goed-zacht);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-chip[data-toon="warn"] {
+  border-color: var(--warn);
+  background: var(--mq-gm-waarsch-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-chip[data-toon="bad"] {
+  border-color: var(--fout);
+  background: var(--mq-gm-gevaar-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :is(.gm-historie li, .gm-historie-icoon, .gm-historie code) {
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-historie li[data-mislukt] {
+  border-color: var(--fout);
+  border-left: 4px solid var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster.gm-venster {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster.gm-venster .venster-kop {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster.gm-venster .gm-detail-meta {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster.gm-venster :is(.gm-feiten > div, .vault-meta-velden, .vault-meta-snel button, .vault-meta-bewerker button, .vault-meta-knoppen button, .gm-vaste-kop, .gm-extra, .gm-github-urls) {
+  border-radius: 11px;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :is(.gm-kop h2, .gm-groep h3, .venster-titel) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :is(.gm-tegels b, .gm-teller, .gm-teller small, .gm-datum, .gm-tabs i, .gm-chips i, .gm-groep h3 i, .gm-historie-tekst small) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Захист рамок класичних секцій і карток таємниць поверх flat-content (нуль padding і нуль gap) */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(section.gm-root, .gm-root, .gh-pagina),
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(.gm-root, .gh-pagina) :is(.gm-tegels > article, .gm-tegel-knop, article.gm-kaart, .gm-kaart, .gm-veilig) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(.gm-root, .gh-pagina) .gm-kaart[data-aandacht] {
+  border: 1px solid var(--warn);
+  border-left: 4px solid var(--warn);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(.gm-root, .gh-pagina) .gm-kaart:is([data-gm-staat="verlopen"], [data-gm-staat="ontbreekt"]) {
+  border: 1px solid var(--fout);
+  border-left: 4px solid var(--fout);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-leeg {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО НАПРИКІНЦІ ФАЙЛА
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (hover: hover) and (pointer: fine) {
@@ -671,6 +991,39 @@ html.palet-maquette .venster.gm-venster .gm-github-urls {
   html.palet-maquette :is(.gm-root, .gh-pagina) .gm-chips button:hover {
     border-color: var(--mq-gm-rand-accent);
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-knop:hover:not(:disabled) {
+    border-color: var(--mq-rand-sterk);
+    background: var(--mq-oppervlak-hover);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) :is(.gm-knop.is-primair, .gm-knop-primair, .gm-knop-hoofd):hover:not(:disabled) {
+    border-color: var(--mq-knop-primair-hover);
+    background: var(--mq-knop-primair-hover);
+    background-image: none;
+    color: var(--mq-knop-primair-tekst);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-knop.is-gevaar:hover:not(:disabled) {
+    border-color: var(--fout);
+    background: var(--mq-gm-gevaar-zacht);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-tegel-knop:hover {
+    border-color: var(--mq-rand-sterk);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-kaart:hover {
+    border-color: var(--mq-rand-sterk);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-chips button:hover {
+    border-color: var(--mq-rand-sterk);
+  }
 }
 
 @media (max-width: 700px) {
@@ -682,6 +1035,19 @@ html.palet-maquette .venster.gm-venster .gm-github-urls {
     padding: 16px 14px;
     border-radius: 20px;
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina, .venster.gm-venster) .gm-knop {
+    min-height: var(--tik-hoogte, 44px);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .venster.gm-venster .venster-kop {
+    padding: 8px 14px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -692,6 +1058,16 @@ html.palet-maquette .venster.gm-venster .gm-github-urls {
 
   html.palet-maquette :is(.gm-root, .gh-pagina) :is(.gm-tegels > article, .gm-tegel-knop) {
     padding: 12px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) .gm-kaart {
+    padding: 13px 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gm-root, .gh-pagina) :is(.gm-tegels > article, .gm-tegel-knop) {
+    padding: 12px 14px;
+    border-radius: 16px;
   }
 }
 

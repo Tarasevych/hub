@@ -1,8 +1,8 @@
-/* Студійне оформлення консолі керування admin.tarasevych.com у художній системі «Макет» (MAQUETTE-010, Група 9А).
+/* Оформлення консолі керування admin.tarasevych.com у художній системі «Макет» (MAQUETTE-010 та KLASSIEK-010A, Група 9А).
    Охоплює кореневу оболонку BeheerConsoleWeergave, граничні стани доступу, службову смугу технічних кодів,
-   секції керування користувачами, додатками, пристроями, єдиним входом, каталогами й ролями,
-   а також панель політик штучного інтелекту BeheerAiBeleidWeergave у темному режимі та світлому режимі «Ранковий туман».
-   Studio-opmaak voor de beheerconsole en het toegangsbeleid voor kunstmatige intelligentie onder Maquette. */
+   секції керування користувачами, застосунками, пристроями, єдиним входом, каталогами й ролями,
+   а також панель політик штучного інтелекту BeheerAiBeleidWeergave у студійних і класичних монохромних палітрах.
+   Opmaak voor de beheerconsole en het toegangsbeleid voor kunstmatige intelligentie in studio- en klassieke modus. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1. ПОХІДНІ ЗМІННІ РУБІНОВО-КОРАЛОВОГО КОНТУРУ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
@@ -49,7 +49,7 @@ html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag {
 }
 
 /* Підтримка явного атрибута data-theme="light", коли світлий клас на корені відсутній */
-html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog) {
+html.palet-maquette[data-theme="light"]:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog) {
   --mq-bg: color-mix(in srgb, var(--mq-wit) 76%, var(--mq-held-gedempt) 24%);
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 88%, var(--mq-satelliet-tekst) 12%);
@@ -64,9 +64,9 @@ html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light)
 }
 
 /* Світлий режим «Ранковий туман» для консолі керування та панелі політик ШІ */
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog),
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light)[data-presentation-service="admin"] .aib-venster-laag,
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light)[data-presentation-service="admin"] .aib-venster-laag,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog) {
   --mq-accent-adm: color-mix(in srgb, var(--mq-accent) 88%, var(--mq-knop-primair-tekst) 12%);
   --mq-accent-adm-diep: color-mix(in srgb, var(--mq-accent) 72%, var(--mq-bol-diep) 28%);
   --mq-accent-adm-op: var(--mq-wit);
@@ -102,14 +102,14 @@ html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.a
   --danger: var(--mq-adm-gevaar);
 }
 
-/* Недоторканність нічного рубіново-коралового склепіння студійної вітрини .mq-held у будь-якому світловому режимі */
-html.palet-maquette .admin-console.mq-schil > .mq-held {
+/* Недоторканність нічного рубіново-коралового склепіння студійної вітрини .mq-held у студійних режимах */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .admin-console.mq-schil > .mq-held {
   color-scheme: dark;
   --mq-accent: var(--mq-nacht-accent);
   box-shadow: var(--mq-schaduw-held);
 }
 
-html.palet-maquette .admin-console.mq-schil > .mq-held.is-compact {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .admin-console.mq-schil > .mq-held.is-compact {
   border-color: var(--mq-held-lijn);
   box-shadow: var(--mq-schaduw-zacht);
 }
@@ -137,7 +137,7 @@ html.palet-maquette .admin-console.mq-schil .mq-admin-held-status svg {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   2. ОБОЛОНКА КОНСОЛІ (.admin-console.mq-schil), ГРАНИЦІ ДОСТУПУ ТА FLAT-CONTENT
+   2. ОБОЛОНКА КОНСОЛІ (.admin-console.mq-schil), ГРАНИЦІ ДОСТУПУ ТА РАМКИ ПОВЕРХОНЬ
    ═══════════════════════════════════════════════════════════════════════════ */
 
 html.palet-maquette .admin-console.mq-schil {
@@ -155,8 +155,8 @@ html.palet-maquette .admin-key-dialog :focus-visible {
   outline-offset: 2px;
 }
 
-/* Відновлення студійних рамок, скруглень і тіней поверх правила плоского вмісту канонічної оболонки */
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-detail, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+/* Відновлення студійних рамок, заокруглень і тіней поверх правила плаского вмісту канонічної оболонки */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-detail, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
   border: 1px solid var(--mq-adm-rand);
   border-radius: var(--mq-straal-kaart);
   box-shadow:
@@ -164,11 +164,11 @@ html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canoni
     var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
   border-radius: 18px;
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] .admin-notice:not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] .admin-notice:not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
   border-left: 4px solid var(--mq-accent-adm);
 }
 
@@ -565,7 +565,7 @@ html.palet-maquette .admin-console .admin-directory-grid h3 {
   color: var(--mq-tekst);
 }
 
-/* Керування користувачами, правами й історією акаунтів (.admin-access-users, .admin-retired-accounts) */
+/* Керування користувачами, правами й історією облікових записів (.admin-access-users, .admin-retired-accounts) */
 html.palet-maquette .admin-console .admin-access-users {
   gap: 10px;
 }
@@ -754,7 +754,7 @@ html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag .aib .a
   color: var(--mq-accent-adm-op);
 }
 
-/* Статус політики, попередження та живий стан підключених ШІ */
+/* Стан політики, попередження та поточний стан підключених помічників ШІ */
 html.palet-maquette .admin-console .aib-stand,
 html.palet-maquette .admin-console .aib-waarschuwing,
 html.palet-maquette .admin-console section.aiz-stand {
@@ -784,7 +784,7 @@ html.palet-maquette .admin-console .aiz-stand-rij {
   background: var(--mq-oppervlak-zacht);
 }
 
-/* Пошук, фільтри та чіпи груп (.aiz-balk, .aiz-chips, .aiz-bulk-algemeen) */
+/* Пошук, відбори та жетони груп (.aiz-balk, .aiz-chips, .aiz-bulk-algemeen) */
 html.palet-maquette .admin-console .aiz .aiz-chip,
 html.palet-maquette .admin-console .aib .aib-chip {
   border-radius: 999px;
@@ -948,7 +948,7 @@ html.palet-maquette .admin-console .aiz .aiz-seg[aria-pressed="true"].is-always 
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-adm-goed) 44%, transparent);
 }
 
-/* Таймери тимчасових дозволів (.aib-timer, .aib-balk) та вікно вибору строку (.aib-keuze) */
+/* Лічильники часу тимчасових дозволів (.aib-timer, .aib-balk) та вікно вибору строку (.aib-keuze) */
 html.palet-maquette .admin-console .aib-balk {
   height: 7px;
   border-radius: 999px;
@@ -1004,7 +1004,790 @@ html.palet-maquette .admin-console .ns {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   6. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА ЗГІДНО З ПРАВИЛОМ КАСКАДУ ПРОЄКТУ)
+   6. ДІЛОВЕ МОНОХРОМНЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-010A: БІЛА ТА ЧОРНА КЛАСИКА)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-klassiek-wit :is(.admin-console, .mq-admin-boundary, .admin-key-dialog),
+html.palet-klassiek-wit[data-presentation-service="admin"] .aib-venster-laag,
+html.palet-maquette.palet-klassiek-wit[data-maquette-stijl="klassiek"] :is(.admin-console, .mq-admin-boundary, .admin-key-dialog),
+html.palet-maquette.palet-klassiek-wit[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag {
+  color-scheme: light;
+}
+
+html.palet-klassiek-zwart :is(.admin-console, .mq-admin-boundary, .admin-key-dialog),
+html.palet-klassiek-zwart[data-presentation-service="admin"] .aib-venster-laag,
+html.palet-maquette.palet-klassiek-zwart[data-maquette-stijl="klassiek"] :is(.admin-console, .mq-admin-boundary, .admin-key-dialog),
+html.palet-maquette.palet-klassiek-zwart[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag {
+  color-scheme: dark;
+}
+
+/* Повне скидання похідних змінних ядра керування на чисті матові поверхні та семантичні стани */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mq-admin-boundary,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag {
+  --mq-accent-adm: var(--mq-accent);
+  --mq-accent-adm-diep: var(--mq-accent);
+  --mq-accent-adm-op: var(--mq-accent-op);
+  --mq-adm-halo: transparent;
+  --mq-adm-halo-warm: transparent;
+  --mq-adm-halo-zacht: transparent;
+  --mq-adm-rand: var(--mq-rand);
+  --mq-adm-rand-sterk: var(--mq-rand-sterk);
+  --mq-adm-rand-accent: var(--mq-accent);
+  --mq-adm-glas-diep: var(--mq-oppervlak);
+  --mq-adm-glas-verhoogd: var(--mq-oppervlak-2);
+  --mq-adm-glas-glans: transparent;
+  --mq-adm-code-put: var(--mq-oppervlak-2);
+
+  --mq-adm-goed: var(--ok);
+  --mq-adm-goed-zacht: var(--ok-zacht);
+  --mq-adm-wacht: var(--warn);
+  --mq-adm-wacht-zacht: var(--warn-zacht);
+  --mq-adm-gevaar: var(--fout);
+  --mq-adm-gevaar-zacht: var(--fout-zacht);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-2);
+  --border: var(--mq-rand);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: var(--mq-oppervlak-zacht);
+  --danger: var(--fout);
+  --focus: var(--mq-accent);
+}
+
+/* Чисті змінні мініпалітр політики доступу ШІ без шістнадцяткових кольорів, rgb() чи color-mix() */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag .aib,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz {
+  --aib-ok: var(--ok);
+  --aib-ok-bg: var(--ok-zacht);
+  --aib-ask: var(--warn);
+  --aib-ask-bg: var(--warn-zacht);
+  --aib-off: var(--fout);
+  --aib-off-bg: var(--fout-zacht);
+  --aib-hoofd: var(--mq-accent);
+  --aib-hoofd-tekst: var(--mq-accent-op);
+  --aib-rand: var(--mq-rand);
+  --aib-zacht: var(--mq-gedempt);
+  --aib-vlak: var(--mq-oppervlak-2);
+  --aib-paneel: var(--mq-oppervlak);
+
+  --aiz-kaart: var(--mq-oppervlak);
+  --aiz-hoog: var(--mq-oppervlak-2);
+  --aiz-laag: var(--ok);
+  --aiz-midden: var(--warn);
+  --aiz-hoogrood: var(--fout);
+}
+
+/* Захист рамок, заокруглень 16px і тіней поверх плаского вмісту канонічної оболонки (суворо без padding і gap) */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-cards > article, .admin-table > article, .admin-directory-grid > article, .admin-access-users > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-bulk-algemeen, .aiz-kaart, .aiz-detail, .aiz-groep, .aiz-toevoegen, .aiz-controle, .aib-keuze, .aib-wachtrij, .ns, .tga-sectie, .tga-blok, .tga-kaart, .apb-beheer, .apb-kaart):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-honest-state, .admin-retired-accounts > article, .aib-allen, .aiz-leeg):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Оболонка консолі, беззасічковий гротеск заголовків та табличне вирівнювання цифр і кодів */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console.mq-schil {
+  gap: 16px;
+  padding-top: 10px;
+  padding-bottom: 40px;
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(h1, h2, h3, h4),
+html.palet-maquette[data-maquette-stijl="klassiek"] .mq-admin-boundary :is(h1, h2),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog :is(h2, h3),
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag :is(h2, h3) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(code, pre, time, .admin-term-code, .admin-key-mask, .admin-key-plain, .aib-teller, .aib-timer dd, .aiz-cijfers li, .aiz .aiz-chip b, .aiz-gchip b, .aiz-groep-telling, .aiz-stand .v2-kant-teller, .tga-tegel strong, .tga-aftel, .apb-cijfer strong, .apb-aftel),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog :is(code, pre, .admin-key-plain),
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag :is(code, time, .aib-timer dd) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Охайна монохромна пігулка стану у компактній діловій шапці MaquetteHeld */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console.mq-schil .mq-admin-held-status {
+  min-height: 34px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console.mq-schil .mq-admin-held-status svg {
+  color: var(--mq-accent);
+}
+
+/* Граничні стани доступу та завантаження (.mq-admin-boundary) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-boundary.mq-admin-boundary {
+  padding: 32px 28px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-boundary.mq-admin-boundary svg {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-accent);
+  box-shadow: none;
+}
+
+/* Ущільнена однорядкова ділова смуга .admin-title під MaquetteHeld зі збереженням усіх робочих кнопок */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-title {
+  min-height: 46px;
+  padding: 8px 14px;
+  gap: 8px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-title > div:first-child {
+  align-items: center;
+  gap: 6px 10px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-title span {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-title h1 {
+  font-size: 0.92rem;
+  font-weight: 680;
+  line-height: 1.3;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-title p {
+  font-size: 0.81rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-codes-toggle {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-codes-toggle[aria-pressed="true"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Повідомлення зворотного зв'язку та чесні порожні стани */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-notice {
+  padding: 12px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-left: 3px solid var(--mq-accent);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-honest-state,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-limitation {
+  padding: 12px 15px;
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+/* Секції консолі, картки користувачів, пристроїв, додатків, каталогів та ролей (border-radius: 16px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section {
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section > header {
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section > header > svg {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-accent);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-cards article,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-table article,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-directory-grid article,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-cards article:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article[data-admin-owner-protected="true"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-retired-accounts article {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-diagnostics-grid > article,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-diagnostic-services > article,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-key-health,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-key-add {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-key-health.is-ready {
+  border-color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-key-health.is-warn {
+  border-color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-table-head,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-checks label {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* Політики доступу ШІ (BeheerAiBeleidWeergave), сеанси від імені власника (.ns) та підсекції єдиного входу */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console > .aib {
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib-kop {
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib-stand, section.aiz-stand, .aiz-bulk-algemeen, .aiz-toevoegen, .aiz-detail, .aiz-controle),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ns,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-sectie,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .apb-beheer {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-detail,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ns {
+  padding: 16px 18px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.tga-blok, .tga-kaart, .apb-kaart) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib-waarschuwing {
+  border-radius: 16px;
+  border: 1px solid var(--warn);
+  background: var(--warn-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib-stand[data-ok="false"] {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib-allen, .aiz-leeg) {
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-kaart {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-kaart:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-kaart.is-gekozen,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-kaart.is-gekozen:hover {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 0 0 0 1px var(--mq-accent);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-nieuw-kaart {
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-avatar {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-groep {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-groep.is-aan {
+  border-left-color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-groep.is-deels {
+  border-left-color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-groep.is-uit {
+  border-left-color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib-keuze {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib-wachtrij {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--warn);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Внутрішні рядки, плитки показників та трипозиційний перемикач (border-radius: 11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib-rij, .aiz-stand-rij, .aiz-agent-snel, .aiz .aiz-preset, .ns-kaart, .ns-spoken, .ns-agent, .tga-tegel, .tga-nood, .apb-cijfer, .apb-nood, .apb-veld, .apb-vinkje, .apb-tegel) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .apb-tegel-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib-melding, .ns-melding) {
+  border-radius: 11px;
+  border: 1px solid var(--ok);
+  background: var(--ok-zacht);
+  background-image: none;
+  color: var(--ok);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib-melding[data-ok="false"], .ns-melding[data-ok="false"]) {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-segment {
+  padding: 2px;
+  gap: 2px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-seg {
+  min-height: 34px;
+  padding: 4px 11px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-seg:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-seg[aria-pressed="true"].is-off {
+  background: var(--fout-zacht);
+  color: var(--fout);
+  box-shadow: inset 0 0 0 1px var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-seg[aria-pressed="true"].is-ask {
+  background: var(--warn-zacht);
+  color: var(--warn);
+  box-shadow: inset 0 0 0 1px var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-seg[aria-pressed="true"].is-always {
+  background: var(--ok-zacht);
+  color: var(--ok);
+  box-shadow: inset 0 0 0 1px var(--ok);
+}
+
+/* Узгодження всіх полів введення, пошуку, вибору та блоків коду (border-radius: 11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib input:not([type="checkbox"]):not([type="radio"]), .aib select, .aiz .aiz-zoek input, .aiz .aiz-sorteer select, .tga-veld input, .tga-veld select, .tga-blok input:not([type="checkbox"]), .tga-blok select, .apb-veld input, .apb-veld select),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag :is(.aib input:not([type="checkbox"]):not([type="radio"]), .aib select) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+  border-color: var(--mq-accent);
+  box-shadow: none;
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 1px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-wis {
+  border-radius: 11px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-cards code, .admin-table code, .admin-term-code, .admin-person-ref code, .admin-retired-accounts article code, .admin-diagnostics code, .admin-diagnostic-raw pre, .admin-key-mask, .admin-key-plain, .aib-ssh, .aiz-detail-titel code, .aib-tools span, .aiz-treffer),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog :is(.admin-key-plain, .admin-key-mask) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Вторинні та первинні кнопки без градієнтів, ореолів, #fff і var(--mq-wit) (border-radius: 11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-title button, .admin-section button, .admin-key-actions button, .aib button, .ns button, .tga-knop, .apb-knop),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog :is(header button, .admin-key-actions button),
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag .aib button {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-title button, .admin-section button, .admin-key-actions button, .aib button, .ns button, .tga-knop, .apb-knop):hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog :is(header button, .admin-key-actions button):hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag .aib button:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-groep-toggle,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-link {
+  border: 0;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-groep-toggle:hover:not(:disabled) {
+  background: var(--mq-oppervlak-zacht);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.tga-knop.tga-knop-gevaar, .apb-knop.apb-knop-gevaar) {
+  border: 1px solid var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section > button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-role-form > button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-directory-grid article > button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article > button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib .aib-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag .aib .aib-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ns .ns-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-knop.tga-knop-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-sectie .tga-aanmeld-knop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .apb-knop.apb-knop-hoofd {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section > button:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-role-form > button:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-directory-grid article > button:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article > button:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib .aib-hoofd:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag .aib .aib-hoofd:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ns .ns-hoofd:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-knop.tga-knop-hoofd:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-sectie .tga-aanmeld-knop:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-sectie .tga-aanmeld-knop:active:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .apb-knop.apb-knop-hoofd:hover:not(:disabled) {
+  background: var(--mq-accent-2);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-accent-2);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-sectie .tga-aanmeld-knop:hover:not(:disabled) .tga-aanmeld-eind {
+  transform: none;
+}
+
+/* Пігулки станів, жетони груп та індивідуальні права (border-radius: 999px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-cards b, .admin-recht, .aib .aib-agent, .aib .aib-chip, .aiz-cijfers li, .aiz .aiz-chip, .aiz .aiz-chip b, .aiz-pil, .aiz-gchip, .aiz-stand .v2-kant-teller, .ns-chip, .tga-stand, .tga-pil, .apb-stand) {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib-teller, .aib-status, .aib-balk, .aib-nieuw, .aiz-kaart-kop > span.aiz-stand, .aiz-risico, .ns-balk) {
+  border-radius: 999px;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib-nieuw {
+  border: 1px solid var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-chip[aria-pressed="true"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib .aib-agent.is-gekozen {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-gchip.is-aan {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-gchip.is-deels,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ns-chip[data-ruimte="technisch"] {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-gchip.is-uit {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+/* Модальні та спільні вікна консолі керування без розмиття й із правим відступом шапки суворо <= 20px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .venster-achter {
+  background: var(--mq-sluier-glas);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog > article,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .venster,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib-venster {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog > article {
+  padding: 18px 20px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-key-dialog > article > header {
+  padding: 0 0 12px 0;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .venster > .venster-kop {
+  padding: 6px 12px 6px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .venster-knoppen button {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag .aib.aib-venster {
+  padding: 16px 18px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА ЗГІДНО З ПРАВИЛОМ КАСКАДУ ПРОЄКТУ)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1014,6 +1797,27 @@ html.palet-maquette .admin-console .ns {
   html.palet-maquette .admin-console .admin-cards article,
   html.palet-maquette .admin-console .aib button {
     transition: none;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section > button:hover:not(:disabled),
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-role-form > button:hover:not(:disabled),
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-directory-grid article > button:hover:not(:disabled),
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article > button:hover:not(:disabled),
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aib .aib-hoofd:hover:not(:disabled),
+  html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="admin"] .aib-venster-laag .aib .aib-hoofd:hover:not(:disabled) {
+    background: var(--mq-accent-2);
+    background-image: none;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+@media (pointer: coarse) {
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-title button, .admin-section button, .aib button, .ns button, .tga-knop, .apb-knop),
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-seg {
+    min-height: var(--tik-hoogte, 44px);
   }
 }
 
@@ -1027,6 +1831,18 @@ html.palet-maquette .admin-console .ns {
   html.palet-maquette .admin-console .admin-role-form > button,
   html.palet-maquette .admin-console .admin-directory-grid article > button,
   html.palet-maquette .admin-console .admin-access-users article > button {
+    justify-self: stretch;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console > .aib {
+    padding: 16px 18px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section > button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-role-form > button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-directory-grid article > button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article > button {
     justify-self: stretch;
   }
 }
@@ -1053,5 +1869,36 @@ html.palet-maquette .admin-console .ns {
 
   html.palet-maquette .admin-console .aiz-detail {
     padding: 12px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console.mq-schil {
+    gap: 12px;
+    padding-bottom: 28px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-boundary.mq-admin-boundary {
+    margin: 20px auto;
+    padding: 22px 18px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-title {
+    padding: 10px 12px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console > .aib {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-cards article,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-table article,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-directory-grid article,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article {
+    padding: 12px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz-detail,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ns {
+    padding: 12px 14px;
   }
 }

@@ -13,7 +13,7 @@
    1. ПОХІДНІ СТУДІЙНІ ЗМІННІ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading) {
   --mq-diag-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
   --mq-diag-glas-hoofd: linear-gradient(
@@ -80,7 +80,7 @@ html.palet-maquette :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loadin
   --ut-text: var(--mq-tekst);
 }
 
-html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"])[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading) {
   --mq-bg: color-mix(in srgb, var(--mq-wit) 74%, var(--mq-held-gedempt) 26%);
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 86%, var(--mq-satelliet-tekst) 14%);
@@ -93,8 +93,8 @@ html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light)
   --mq-rand-sterk: color-mix(in srgb, var(--mq-bol-diep) 24%, transparent);
 }
 
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading) {
   --mq-accent-op: var(--mq-wit);
   --accentText: var(--mq-wit);
   --text-on-accent: var(--mq-wit);
@@ -145,7 +145,7 @@ html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.a
    2. ВІДНОВЛЕННЯ СТУДІЙНИХ ОПРАВ ПОВЕРХ ПРАВИЛА ПЛОСКОГО ВМІСТУ ОБОЛОНКИ
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
   section.adg-root,
   section.admin-diagnostics:not(.adg-root),
   section.admin-diagnostics-loading
@@ -157,7 +157,7 @@ html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canoni
     var(--mq-schaduw);
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
   section.adg-aandacht,
   section.adg-cat,
   section.adg-trend,
@@ -174,7 +174,7 @@ html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canoni
     var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
   article.adg-kaart,
   article.bvs-kaart,
   article.bev-kaart,
@@ -2176,7 +2176,486 @@ html.palet-maquette .admin-diagnostic-raw pre {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   11. АДАПТИВНІ ПРАВИЛА — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   11. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-010C — VÓÓR ALLE @MEDIA)
+   Klassieke opmaak voor «Біла класика» en «Чорна класика» in systeemdiagnostiek
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-klassiek-wit :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading, .bvs, .bev) {
+  color-scheme: light;
+}
+
+html.palet-klassiek-zwart :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading, .bvs, .bev) {
+  color-scheme: dark;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-root, .admin-diagnostics, .admin-diagnostics-loading, .bvs, .bev) {
+  --mq-diag-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  --mq-diag-glas-hoofd: var(--mq-oppervlak);
+  --mq-diag-glas-kaart: var(--mq-oppervlak);
+  --mq-diag-glas-verhoogd: var(--mq-oppervlak-2);
+  --mq-diag-glans: transparent;
+  --mq-diag-invoer: var(--mq-oppervlak-2);
+  --mq-diag-code-put: var(--mq-oppervlak-2);
+
+  --mq-diag-rand: var(--mq-rand);
+  --mq-diag-rand-sterk: var(--mq-rand-sterk);
+  --mq-diag-rand-accent: var(--mq-rand-sterk);
+  --mq-diag-halo: transparent;
+
+  --mq-diag-goed: var(--ok);
+  --mq-diag-goed-zacht: var(--ok-zacht);
+  --mq-diag-goed-rand: var(--ok);
+
+  --mq-diag-letop: var(--warn);
+  --mq-diag-letop-zacht: var(--warn-zacht);
+  --mq-diag-letop-rand: var(--warn);
+
+  --mq-diag-fout: var(--fout);
+  --mq-diag-fout-zacht: var(--fout-zacht);
+  --mq-diag-fout-rand: var(--fout);
+
+  --mq-diag-neutraal: var(--mq-gedempt);
+  --mq-diag-neutraal-zacht: var(--mq-oppervlak-2);
+  --mq-diag-neutraal-rand: var(--mq-rand);
+
+  --mq-diag-koud: var(--info);
+  --mq-diag-koud-zacht: var(--info-zacht);
+
+  --adg-ok: var(--ok);
+  --adg-warn: var(--warn);
+  --adg-err: var(--fout);
+  --adg-unk: var(--mq-stil);
+  --adg-r: var(--mq-straal-kaart);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --warning: var(--warn);
+  --danger: var(--fout);
+  --warning-bg: var(--warn-zacht);
+  --danger-bg: var(--fout-zacht);
+  --ut-bg: var(--mq-oppervlak);
+  --ut-line: var(--mq-rand);
+  --ut-text: var(--mq-tekst);
+}
+
+/* Захист рамок поверхонь поверх flat-content суворо без внутрішніх відступів і проміжків */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(
+  section.adg-root,
+  section.admin-diagnostics:not(.adg-root),
+  section.admin-diagnostics-loading,
+  section.adg-aandacht,
+  section.adg-cat,
+  section.adg-trend,
+  section.adg-historie,
+  section.adg-gebruiker,
+  section.mdt-sectie,
+  section.bvs,
+  section.bev,
+  article.adg-kaart,
+  article.bvs-kaart,
+  article.bev-kaart,
+  .admin-diagnostics-grid > article,
+  .admin-diagnostic-services > article,
+  .adg-gb-detail,
+  .adg-gb-lijst
+):not([role="dialog"]):not(.auth-card):not([data-mq-d1]):not([data-mq-d2]):not([data-mq-d3]):not([data-mq-d4]):not([data-mq-d5]):not([data-mq-d6]):not([data-mq-d7]):not([data-mq-d8]):not([data-mq-d9]):not([data-mq-d10]):not([data-mq-d11]):not([data-mq-d12]):not([data-mq-d13]):not([data-mq-d14]) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Коренева секція та компактна ділова смуга шапки (.adg-kop) без приховування елементів керування */
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-root {
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background-color: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kop {
+  gap: 12px 14px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kop-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kop h2 {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-size: clamp(1.1rem, 1.55vw, 1.28rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kop p {
+  margin: 3px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--mq-gedempt);
+}
+
+/* Беззасічковий гротеск заголовків та табличні цифри лічильників і часових позначок */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .adg-aandacht h3,
+  .adg-cat > header h3,
+  .adg-details h4,
+  .adg-trend h3,
+  .adg-historie h3,
+  .adg-gb-kop h3,
+  .adg-gb-persoon h4,
+  .adg-gb-bevindingen h5,
+  .adg-gb-blok h5,
+  .adg-root .mdt-sectie > header h3,
+  .bvs-kop h3,
+  .bev-kop h3,
+  .admin-diagnostics:not(.adg-root) > header h2,
+  .admin-diagnostics-grid h3
+) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .adg-samenvatting b,
+  .adg-aandacht h3 b,
+  .adg-tabs button small,
+  .adg-trend-balken b,
+  .adg-hist-lijst time,
+  .adg-gb-kpi b,
+  .adg-kaart-voet,
+  .adg-meta
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Суцільні матові секції та картки діагностики із заокругленням 16px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .adg-samenvatting > div,
+  .adg-melding,
+  .adg-aandacht,
+  .adg-aandacht li,
+  .adg-root .ut-tabs-wrap,
+  .adg-gereedschap,
+  .adg-cat,
+  .adg-kaart,
+  .adg-details,
+  .adg-fix,
+  .adg-trend,
+  .adg-trend-balken,
+  .adg-historie,
+  .adg-gebruiker,
+  .adg-gb-lijst,
+  .adg-gb-detail,
+  .adg-gb-bevindingen,
+  .adg-root .mdt-sectie,
+  .adg-root .mdt-wrap,
+  .adg-root .mdt-conclusies,
+  .adg-root .mdt-hist,
+  .bvs,
+  .bev,
+  .bvs-stapop,
+  .bev-stapop,
+  .bvs-kaart,
+  .bev-kaart,
+  .bvs-controles,
+  .bev-controles,
+  .bvs-lijst > details,
+  .bev-lijst > details,
+  .admin-diagnostics-loading,
+  .admin-diagnostics:not(.adg-root),
+  .admin-diagnostics-grid > article,
+  .admin-diagnostic-services > article,
+  .admin-diagnostic-raw
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .adg-root .ut-tabs-wrap,
+  .adg-gereedschap,
+  .adg-details,
+  .adg-trend-balken,
+  .adg-gb-lijst,
+  .adg-gb-bevindingen
+) {
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-cat, .adg-trend, .adg-historie, .adg-gebruiker, .adg-root .mdt-sectie, .bvs, .bev, .admin-diagnostics:not(.adg-root)) {
+  padding: 16px 18px;
+}
+
+/* Семантичні стани перевірок без градієнтів і рубінових домішок */
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-melding[data-soort="ok"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-samenvatting > div[data-stand="ok"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-aandacht[data-leeg="1"] {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-melding[data-soort="let-op"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-samenvatting > div[data-stand="let-op"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-fix[data-prominent="1"] {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-melding[data-soort="fout"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-samenvatting > div[data-stand="fout"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-aandacht:not([data-leeg="1"]) {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-aandacht h3 b {
+  border: 1px solid var(--fout);
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-aandacht li[data-stand="fout"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-hist-lijst li[data-stand="fout"] {
+  border-left: 3px solid var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-aandacht li[data-stand="let-op"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-hist-lijst li[data-stand="let-op"] {
+  border-left: 3px solid var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-aandacht li[data-stand="hersteld"] {
+  border-left: 3px solid var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kaart:hover {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kaart[data-stand="ok"],
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.bvs-kaart, .bev-kaart)[data-stand="aan"] {
+  border-color: var(--ok);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kaart[data-stand="let-op"],
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.bvs-kaart, .bev-kaart)[data-stand="schaduw"] {
+  border-color: var(--warn);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kaart[data-stand="fout"],
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.bvs-kaart, .bev-kaart)[data-stand="uit"] {
+  border-color: var(--fout);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kaart[data-open="1"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kaart-voet,
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-root table.mdt td {
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-root table.mdt th {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-av-letters {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+/* Інженерні поля коду та сирого виводу (.admin-diagnostic-raw pre) з контрастом > 12:1 */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .admin-diagnostic-raw pre,
+  .adg-detail,
+  .adg-code,
+  .admin-diagnostics-grid code,
+  .admin-diagnostic-services code
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-diag-code-put);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Єдиний радіус 11px на кнопках, полях пошуку/фільтрів, значках та вкладених рядках */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .adg-knop,
+  .admin-diagnostics:not(.adg-root) > header button,
+  .adg-melding button,
+  .adg-zoek button,
+  .adg-cat-ico,
+  .adg-cat-waarom,
+  .adg-kaart-kop,
+  .adg-logo,
+  .adg-logo-groot,
+  .adg-details > div,
+  .adg-rendering-lijst li,
+  .adg-trend-stapel,
+  .adg-hist-lijst li,
+  .adg-gb-lijst li button,
+  .adg-gb-bevindingen li,
+  .adg-gb-kpi > div,
+  .adg-gb-diensten li,
+  .adg-root .mdt-fout,
+  .bvs-ico,
+  .bev-ico
+) {
+  border-radius: 11px;
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-cat-waarom, .adg-details > div, .adg-logo, .adg-logo[data-merk="1"], .bvs-ico, .bev-ico) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-cat-waarom {
+  border-left: 3px solid var(--mq-accent);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-root, .admin-diagnostics) :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background-color: var(--mq-diag-invoer);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-root, .admin-diagnostics) :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 1px;
+  border-color: var(--mq-accent);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-knop:not(.adg-knop-hoofd):not(.adg-knop-stil), .admin-diagnostics:not(.adg-root) > header button) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-knop:not(.adg-knop-hoofd), .admin-diagnostics:not(.adg-root) > header button):hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Первинні кнопки та активні вибори на var(--mq-knop-primair-bg) / var(--mq-knop-primair-tekst) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-knop-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-knop-hoofd:hover:not(:disabled) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-tabs button.actief, .adg-chips button.actief, .adg-gb-lijst li button.actief) {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-tabs button.actief svg,
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-gb-lijst li button.actief :is(strong, small) {
+  color: currentColor;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-tabs button.actief small {
+  border: 1px solid currentColor;
+  background: transparent;
+  color: currentColor;
+}
+
+/* Пігулки станів, фільтрів та вкладки категорій із радіусом 999px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .adg-tabs button,
+  .adg-tabs button small,
+  .adg-chips button,
+  .adg-pil,
+  .adg-balk,
+  .adg-balk u,
+  .adg-punt,
+  .adg-av,
+  .adg-trend-top span,
+  .adg-root .mdt-stand,
+  .admin-diagnostic-services > article > header span,
+  .adg-aandacht h3 b,
+  .adg-aandacht h3 em.adg-aandacht-hersteld
+) {
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .adg-punt[data-stand] {
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   12. АДАПТИВНІ ПРАВИЛА — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -2200,8 +2679,16 @@ html.palet-maquette .admin-diagnostic-raw pre {
     padding: 18px;
   }
 
+  html.palet-maquette[data-maquette-stijl="klassiek"] .adg-root {
+    padding: 14px 16px;
+  }
+
   html.palet-maquette .adg-kop {
     grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .adg-kop {
+    padding: 12px 14px;
   }
 
   html.palet-maquette .adg-kop-knoppen {
@@ -2251,6 +2738,11 @@ html.palet-maquette .admin-diagnostic-raw pre {
     gap: 16px;
   }
 
+  html.palet-maquette[data-maquette-stijl="klassiek"] .adg-root {
+    padding: 12px;
+    gap: 12px;
+  }
+
   html.palet-maquette .adg-rooster,
   html.palet-maquette :is(.bvs-kaarten, .bev-kaarten) {
     grid-template-columns: 1fr;
@@ -2261,5 +2753,9 @@ html.palet-maquette .admin-diagnostic-raw pre {
   html.palet-maquette .adg-historie,
   html.palet-maquette .adg-gebruiker {
     padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.adg-cat, .adg-trend, .adg-historie, .adg-gebruiker, .adg-root .mdt-sectie, .bvs, .bev, .admin-diagnostics:not(.adg-root)) {
+    padding: 12px 14px;
   }
 }

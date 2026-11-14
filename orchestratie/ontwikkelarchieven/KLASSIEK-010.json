@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-010",
+  "titel": "Фінальна хвиля 9 тем оформлення «Біла класика» та «Чорна класика»: консоль керування admin.tarasevych.com та завершення 10-піддоменної системи",
+  "opdracht": "Оформити всі дванадцять канонічних вкладок захищеної консолі керування admin.tarasevych.com (/overzicht, /toegang, /ai, /apps, /devices, /sso, /directories, /roles, /diagnostiek, /audit, /contour, /updates) у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) із сучасною діловою геометрією 16px / 11px, табличними цифрами та ізоляцією у /assets/tech/, і сформувати кумулятивний перевірений випуск для всіх десяти піддоменів платформи Mijn Ruimte поруч зі студійним «Макетом» та іншими темами.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-010-20261114-102358",
+    "basis": "eccce6ad8fcc815c78d013235a44a1cf668f4fe3",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Особисті ключі власника, одноразові значення сховища таємниць, маркери доступу, внутрішні адреси середовища розробки, приватні записи користувачів та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T10:23:58Z",
+      "stap": "Створено фінальну кумулятивну гілку feature/klassiek-010-20261114-102358 від базової фіксації Хвилі 8 (eccce6ad8fcc815c78d013235a44a1cf668f4fe3) та зареєстровано завдання KLASSIEK-010."
+    },
+    {
+      "tijd": "2026-11-14T10:25:00Z",
+      "stap": "Запущено три паралельні бригади виконавців із нульовим перетином файлів для семи захищених технічних таблиць стилів консолі керування admin.tarasevych.com та трьох наборів модульних випробувань."
+    },
+    {
+      "tijd": "2026-11-14T10:33:00Z",
+      "stap": "Оформлено прагматичні монохромні правила «Білої класики» та «Чорної класики» у beheer-kern-maquette.css, overzicht-maquette.css, geheimen-maquette.css, uitrol-maquette.css, integraties-maquette.css, diagnostiek-maquette.css і audit-maquette.css, створено безпечний конвеєр випуску klassiek-010-uitgave.yml та виконано повний комплекс перевірок і знімків."
+    }
+  ],
+  "keuzes": [
+    "Усі сім технічних таблиць стилів консолі керування розширено ізольованими блоками html.palet-maquette[data-maquette-stijl=\"klassiek\"] (та html.palet-klassiek-wit / html.palet-klassiek-zwart) суворо перед медіазапитами @media для повної сумісності з мобільним каскадом і відокремленням пакунків у /assets/tech/.",
+    "Усунено всі рожево-рубінові студійні ореоли, фонові градієнти та декоративні тіні на користь чистих монохромних поверхонь, контрастних первинних кнопок var(--mq-knop-primair-tekst), заокруглень 16px / 11px і табличних цифр.",
+    "Збережено всі захисні інваріанти вкладок оновлень .ut-*, криптографічної перевірки ланцюжка подій SHA-256, знаків довідки та мобільних відступів проти стилів flat-content."
+  ],
+  "wijzigingen": [
+    ".github/workflows/klassiek-010-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/KLASSIEK-010.json",
+    "orchestratie/taken/KLASSIEK-010.json",
+    "src/audit/audit-maquette.css",
+    "src/beheer-kern-maquette.css",
+    "src/diagnostiek/diagnostiek-maquette.css",
+    "src/geheimen/geheimen-maquette.css",
+    "src/integraties/integraties-maquette.css",
+    "src/overzicht/overzicht-maquette.css",
+    "src/uitrol/uitrol-maquette.css",
+    "tests/eenheid/klassiek-010a-beheer-kern.test.ts",
+    "tests/eenheid/klassiek-010b-beheer-kluis-uitrol.test.ts",
+    "tests/eenheid/klassiek-010c-beheer-diagnostiek-journaal.test.ts"
+  ],
+  "controles": [
+    "Перевірка правил координації та свіжості основи: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-010 --fase overdracht — успішно.",
+    "Статичні перевірки карти файлів, розміщення, довідок і пошукового каталогу — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build з підтвердженням ізоляції технічних пакунків у /assets/tech/ — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, klassiek-001-kern, klassiek-008a..010c, contrast-knoppen-logos-20261021, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, ut-tabs-pijlen-20261019, hulp-vraagtekens, integraties-catalogus-v2-20261029, uitrol-codes, uitrol-manifest, uitrol-weergave-v2, audit-filters, gebruiker-audit-2026-10-19, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105, trace-001-ontwikkelarchief.",
+    "Жива візуальна перевірка одинадцяти кадрів admin.tarasevych.com (/overzicht, /toegang, /updates, /contour, /diagnostiek, /audit, /sso, мобільні екрани та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "shared/tech-bundels.ts",
+    "src/BeheerConsoleWeergave.tsx",
+    "src/overzicht/Dashboard.tsx",
+    "src/BeheerUitrolWeergave.tsx",
+    "src/geheimen/Geheimen.tsx",
+    "src/integraties/Integraties.tsx",
+    "src/diagnostiek/Diagnostiek.tsx",
+    "src/audit/AuditPagina.tsx"
+  ],
+  "beperkingen": [
+    "Автоматичне встановлення на робочий сервер вимкнене за правилами платформи: кумулятивний пакунок містить повну реалізацію тем оформлення «Біла класика», «Чорна класика» та «Макет» для всіх десяти піддоменів і встановлюється власником через майстер оновлень із підтвердженням ключем доступу."
+  ]
+}

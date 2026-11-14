@@ -58,7 +58,7 @@ html.palet-maquette .ov-root {
   color: var(--mq-tekst);
 }
 
-html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .ov-root {
+html.palet-maquette:not([data-maquette-stijl="klassiek"])[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .ov-root {
   --mq-bg: color-mix(in srgb, var(--mq-wit) 74%, var(--mq-held-gedempt) 26%);
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 86%, var(--mq-satelliet-tekst) 14%);
@@ -72,8 +72,8 @@ html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light)
   --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 97%, var(--mq-satelliet-tekst) 3%);
 }
 
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) .ov-root,
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .ov-root {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) .ov-root,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .ov-root {
   --mq-ov-accent: color-mix(in srgb, var(--mq-accent) 82%, var(--mq-knop-primair-tekst) 18%);
   --mq-ov-accent-diep: color-mix(in srgb, var(--mq-knop-primair-tekst) 72%, var(--mq-accent-2) 28%);
   --mq-ov-accent-op: var(--mq-wit);
@@ -729,7 +729,249 @@ html.palet-maquette .ov-root .ov-dag li small {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   7. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО НАПРИКІНЦІ ФАЙЛА
+   7. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-010B)
+   Матові поверхні «Білої класики» та «Чорної класики» без градієнтів і розмиття,
+   чиста семантика мініпалітр --ov-* (зокрема серій --ov-s1..--ov-s5),
+   суцільна кнопка .ov-knop-hoofd, кути 16px / 11px / 999px і захист :not(#_mqk).
+   Zakelijke klassieke opmaak voor het beheeroverzicht onder data-maquette-stijl="klassiek".
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root {
+  --mq-ov-accent: var(--mq-accent);
+  --mq-ov-accent-diep: var(--mq-accent-2);
+  --mq-ov-accent-op: var(--mq-knop-primair-tekst);
+  --mq-ov-halo: var(--mq-oppervlak-zacht);
+  --mq-ov-halo-zacht: transparent;
+  --mq-ov-halo-koel: transparent;
+  --mq-ov-rand: var(--mq-rand);
+  --mq-ov-rand-sterk: var(--mq-rand-sterk);
+  --mq-ov-rand-accent: var(--mq-rand-sterk);
+  --mq-ov-glas-diep: var(--mq-oppervlak);
+  --mq-ov-glas-verhoogd: var(--mq-oppervlak);
+  --mq-ov-glas-glans: transparent;
+  --mq-ov-put: var(--mq-oppervlak-2);
+  --mq-ov-sluiting: var(--mq-sluier-glas);
+
+  --mq-ov-goed: var(--ok);
+  --mq-ov-goed-zacht: var(--ok-zacht);
+  --mq-ov-waarsch: var(--warn);
+  --mq-ov-waarsch-zacht: var(--warn-zacht);
+  --mq-ov-gevaar: var(--fout);
+  --mq-ov-gevaar-zacht: var(--fout-zacht);
+  --mq-ov-info: var(--info);
+
+  --ov-bg: var(--mq-oppervlak);
+  --ov-bg2: var(--mq-oppervlak-2);
+  --ov-line: var(--mq-rand);
+  --ov-text: var(--mq-tekst);
+  --ov-muted: var(--mq-gedempt);
+  --ov-accent: var(--mq-accent);
+  --ov-ok: var(--ok);
+  --ov-warn: var(--warn);
+  --ov-bad: var(--fout);
+  --ov-info: var(--info);
+
+  --ov-s1: var(--mq-accent);
+  --ov-s2: var(--mq-gedempt);
+  --ov-s3: var(--ok);
+  --ov-s4: var(--info);
+  --ov-s5: var(--warn);
+
+  --accentText: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :is(.ov-balk, .ov-lade, .ov-noodkaarten article, .ov-w) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root[data-bewerken="ja"] .ov-w {
+  border: 1px dashed var(--mq-rand-sterk);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :is(.ov-leeg-groot, .ov-hint) {
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-fout {
+  border-radius: 16px;
+  border: 1px solid var(--fout);
+  border-left: 4px solid var(--fout);
+  background: var(--mq-ov-gevaar-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :is(.ov-knop, .ov-sluit, .ov-lade-ic, .ov-w-ic, .ov-greep, .ov-icoonknop, .ov-maat) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop[aria-pressed="true"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-seg button[aria-pressed="true"] {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop-gevaar {
+  border-color: var(--fout);
+  background: var(--mq-ov-gevaar-zacht);
+  background-image: none;
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :is(.ov-lade li, .ov-plot, .ov-tabel-wrap, .ov-lijst li, .ov-stroom li, .ov-toegang, .ov-privacy, .ov-kaart-kpi > div) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-tip {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-banner {
+  border-radius: 11px;
+  border: 1px solid var(--warn);
+  background: var(--mq-ov-waarsch-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-stroom li.ov-mislukt {
+  border-color: var(--fout);
+  border-left: 3px solid var(--fout);
+  background: var(--mq-ov-gevaar-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-toegang[data-toegangsfouten="alarm"] {
+  border-color: var(--fout);
+  background: var(--mq-ov-gevaar-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :is(.ov-live, .ov-seg button, .ov-chips li, .ov-stroom-wat em, .ov-dag em, .ov-staven-baan, .ov-staven-vul, .ov-teller) {
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-live {
+  border-color: var(--ok);
+  background: var(--mq-ov-goed-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-live.ov-live-uit {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-staven-baan {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-teller {
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-modal-schaduw {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-modal {
+  border-left: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px 0 0 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-modal-kop {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :is(.ov-w-kop h3, .ov-modal-kop h2, .ov-modal-body h3, .ov-tweekol h3, .ov-tweekol h4) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root :is(.ov-balk-status small, .ov-noodkaarten b, .ov-groot strong, .ov-maat b, .ov-seg-info, .ov-yas, .ov-xas, .ov-kaart-kpi dd, .ov-teller) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Захист рамок класичних секцій і карток поверх flat-content (нуль padding і нуль gap) */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ov-root :is(.ov-balk, .ov-lade, .ov-noodkaarten article, section.ov-w, .ov-w) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ov-root[data-bewerken="ja"] .ov-w,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ov-root :is(.ov-leeg-groot, .ov-hint) {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ov-root .ov-fout {
+  border: 1px solid var(--fout);
+  border-left: 4px solid var(--fout);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО НАПРИКІНЦІ ФАЙЛА
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (hover: hover) and (pointer: fine) {
@@ -757,6 +999,36 @@ html.palet-maquette .ov-root .ov-dag li small {
     border-color: var(--mq-ov-accent);
     background: var(--mq-oppervlak-hover);
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop:hover:not(:disabled) {
+    border-color: var(--mq-rand-sterk);
+    background: var(--mq-oppervlak-hover);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop-hoofd:hover:not(:disabled) {
+    border-color: var(--mq-knop-primair-hover);
+    background: var(--mq-knop-primair-hover);
+    background-image: none;
+    color: var(--mq-knop-primair-tekst);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop-gevaar:hover:not(:disabled) {
+    border-color: var(--fout);
+    background: var(--mq-ov-gevaar-zacht);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-w:hover {
+    border-color: var(--mq-rand-sterk);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-sluit:hover {
+    border-color: var(--mq-rand-sterk);
+    background: var(--mq-oppervlak-hover);
+  }
 }
 
 @media (max-width: 700px) {
@@ -776,6 +1048,25 @@ html.palet-maquette .ov-root .ov-dag li small {
 
   html.palet-maquette .ov-root .ov-modal-kop,
   html.palet-maquette .ov-root .ov-modal-body {
+    padding: 14px 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-balk {
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-knop {
+    min-height: var(--tik-hoogte, 44px);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-w {
+    padding: 13px 14px 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-modal-kop,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ov-root .ov-modal-body {
     padding: 14px 16px;
   }
 }

@@ -1,13 +1,14 @@
-/* Студійне оформлення каталогу інтеграцій у консолі керування admin.tarasevych.com під системою «Макет» (MAQUETTE-010, Група 9А).
+/* Оформлення каталогу інтеграцій у консолі керування admin.tarasevych.com під системою «Макет» (MAQUETTE-010)
+   та у класичних темах «Біла класика» і «Чорна класика» (KLASSIEK-010C).
    Усі правила суворо обмежені селектором html.palet-maquette .admin-console, тому не впливають на смугу інтеграцій інших піддоменів.
    Охоплює каталог .il-*, оновлений каталог .ic2-*, вікно подробиць .il-modal / .il-d-* / .id-* та майстри підключень .il-w-* / .iw-* / .iw2-*.
-   Studio-opmaak voor de integratiecatalogus binnen de beheerconsole in donkere modus en lichte modus Ochtendnevel. */
+   Opmaak voor de integratiecatalogus binnen de beheerconsole in studio- en klassieke modus. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1. ПОХІДНІ ЗМІННІ КАТАЛОГУ ІНТЕГРАЦІЙ У ТЕМНОМУ РЕЖИМІ ТА «РАНКОВОМУ ТУМАНІ»
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette .admin-console .il {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .admin-console .il {
   --ok: var(--mq-adm-goed);
   --ok-vlak: var(--mq-adm-goed);
   --ok-zacht: var(--mq-adm-goed-zacht);
@@ -29,13 +30,13 @@ html.palet-maquette .admin-console .il {
   color: var(--mq-tekst);
 }
 
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) .admin-console .il,
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .admin-console .il {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) .admin-console .il,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .admin-console .il {
   --il-soon-bg: color-mix(in srgb, var(--mq-tekst) 6%, var(--mq-oppervlak-2));
 }
 
-/* Захист карток інтеграцій від плоского скидання поверхонь канонічної оболонки flat-content */
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(
+/* Захист карток інтеграцій від плоского скидання поверхонь канонічної оболонки flat-content у студійному стилі */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(
   .il-hero,
   .il-cijfers > div,
   .il-melding,
@@ -1023,11 +1024,518 @@ html.palet-maquette .admin-console .iw2-uitslag[data-ok="false"] svg {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   7. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА ЗГІДНО З ПРАВИЛОМ КАСКАДУ ПРОЄКТУ)
+   7. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-010C — VÓÓR ALLE @MEDIA)
+   Klassieke opmaak voor «Біла класика» en «Чорна класика» in de integratiecatalogus
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-klassiek-wit .admin-console :is(.il, .il-modal) {
+  color-scheme: light;
+}
+
+html.palet-klassiek-zwart .admin-console :is(.il, .il-modal) {
+  color-scheme: dark;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il, .il-modal) {
+  --mq-accent-adm: var(--mq-accent);
+  --mq-accent-adm-diep: var(--mq-accent-2);
+  --mq-accent-adm-op: var(--mq-accent-op);
+  --mq-adm-halo: transparent;
+  --mq-adm-halo-warm: transparent;
+  --mq-adm-halo-zacht: transparent;
+  --mq-adm-rand: var(--mq-rand);
+  --mq-adm-rand-sterk: var(--mq-rand-sterk);
+  --mq-adm-rand-accent: var(--mq-rand-sterk);
+  --mq-adm-glas-diep: var(--mq-oppervlak);
+  --mq-adm-glas-verhoogd: var(--mq-oppervlak-2);
+  --mq-adm-glas-glans: transparent;
+  --mq-adm-code-put: var(--mq-oppervlak-2);
+
+  --mq-adm-goed: var(--ok);
+  --mq-adm-goed-zacht: var(--ok-zacht);
+  --mq-adm-wacht: var(--warn);
+  --mq-adm-wacht-zacht: var(--warn-zacht);
+  --mq-adm-gevaar: var(--fout);
+  --mq-adm-gevaar-zacht: var(--fout-zacht);
+
+  --il-ok: var(--ok);
+  --il-ok-bg: var(--ok-zacht);
+  --il-warn: var(--warn);
+  --il-warn-bg: var(--warn-zacht);
+  --il-soon: var(--mq-gedempt);
+  --il-soon-bg: var(--mq-oppervlak-2);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --danger: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il {
+  gap: 16px;
+  color: var(--mq-tekst);
+}
+
+/* Захист рамок поверхонь поверх flat-content суворо без внутрішніх відступів і проміжків */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(
+  .il-hero,
+  .il-cijfers > div,
+  .il-melding,
+  .il-kaart,
+  .il-leeg,
+  .il-w-kaart,
+  .il-d-sectie,
+  .il-sectie[data-merk-bron-beheer],
+  .il-sectie[data-merk-eigen-beheer],
+  .il-sectie[data-lokale-generator],
+  .ic2-kaart,
+  .ic2-fouten,
+  .iw2,
+  section.is2
+):not([role="dialog"]):not(.auth-card):not([data-mq-il1]):not([data-mq-il2]):not([data-mq-il3]):not([data-mq-il4]):not([data-mq-il5]):not([data-mq-il6]):not([data-mq-il7]):not([data-mq-il8]):not([data-mq-il9]):not([data-mq-il10]):not([data-mq-il11]):not([data-mq-il12]) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Ущільнена ділова смуга шапки каталогу (.il-hero) зі збереженням усіх лічильників та елементів керування */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-hero {
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-over {
+  color: var(--mq-gedempt);
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-hero h2 {
+  margin: 2px 0 4px;
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-size: clamp(1.12rem, 1.6vw, 1.32rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-hero p {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-cijfers {
+  gap: 8px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-cijfers > div {
+  min-width: 92px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-cijfers dd {
+  margin-top: 2px;
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-size: 1.28rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-tekst);
+}
+
+/* Беззасічковий гротеск заголовків та табличні цифри лічильників і часових міток */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-sectiekop,
+  .ic2-kopblok h3,
+  .il-d-titel h3,
+  .iw2-kop h3,
+  .il-titel h3,
+  .ic2-titel h4,
+  .is2-kop h3
+) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-tabs b,
+  .il-groep b,
+  .il-wens b,
+  .il-teller,
+  .ic2-samen,
+  .ic2-tijd,
+  .iw2-stappen li b
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Суцільні матові картки, секції майстра та діалог подробиць із заокругленням 16px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-melding,
+  .il-kaart,
+  .il-leeg,
+  .il-w-kaart,
+  .il-d-sectie,
+  .il-sectie[data-merk-bron-beheer],
+  .il-sectie[data-merk-eigen-beheer],
+  .il-sectie[data-lokale-generator],
+  .ic2-kaart,
+  .ic2-fouten,
+  .iw2,
+  section.is2
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator], .iw2) {
+  padding: 16px 18px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-d-sectie {
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-leeg {
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-kaart, .ic2-kaart):hover {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-kaart[data-status="klaar"] {
+  border-color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-kaart[data-status="binnenkort"] {
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ic2-fouten {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-w-sleutels[data-sleutels-missen]:not([data-sleutels-missen="0"]) {
+  border-color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-modal {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-dialoog {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-d-kop {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-d-voet {
+  border-top: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+/* Єдиний радіус 11px для кнопок, полів пошуку й фільтрів та блоків коду */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-knop,
+  .ic2-knop,
+  .il-ververs,
+  .il-sluit,
+  .il-wis,
+  .il-ster,
+  .ic2-ster,
+  .il-w-kopieer,
+  .ic2-wissel,
+  .ic2-blokkop,
+  .ic2-groepkop,
+  .ic2-plan,
+  .il-d-bericht,
+  .iw2-keuzes button,
+  .iw2-wijzen button,
+  .il-sectie[data-merk-eigen-beheer] button,
+  .il-sectie[data-merk-eigen-beheer] input[type="file"],
+  .il-w code,
+  .il-w-opdracht code,
+  .il-sectie code
+) {
+  border-radius: 11px;
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-zoek :where(input:not([type="checkbox"]):not([type="radio"])),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ic2-zoek {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus-visible,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ic2-zoek:focus-within {
+  border-color: var(--mq-accent);
+  box-shadow: none;
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 1px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ic2-zoek :where(input:not([type="checkbox"]):not([type="radio"])),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ic2-zoek :where(input:not([type="checkbox"]):not([type="radio"])):focus-visible {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-w code, .il-w-opdracht code, .il-sectie code) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-adm-code-put);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-knop:not(.is-primair):not(.is-gevaar):not(.is-stil):not(.is-tekst),
+  .ic2-knop:not(.is-primair):not(.is-icoon),
+  .il-ververs,
+  .il-sluit,
+  .il-w-kopieer,
+  .iw2-keuzes button,
+  .iw2-wijzen button
+) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-knop:not(.is-primair):not(.is-gevaar):not(.is-stil):not(.is-tekst),
+  .ic2-knop:not(.is-primair):not(.is-icoon),
+  .il-ververs,
+  .il-sluit,
+  .il-w-kopieer,
+  .iw2-keuzes button,
+  .iw2-wijzen button
+):hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-knop.is-gevaar {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-d-bericht {
+  border: 1px solid var(--ok);
+  background: var(--ok-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-d-bericht[data-soort="fout"] {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+}
+
+/* Первинні кнопки та активні вибори на var(--mq-knop-primair-bg) / var(--mq-knop-primair-tekst) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-knop.is-primair, .ic2-knop.is-primair),
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-knop.is-primair, .ic2-knop.is-primair):hover:not(:disabled) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .iw2-keuzes button[aria-pressed="true"],
+  .iw2-wijzen button[aria-checked="true"],
+  .ic2-wissel button[aria-pressed="true"]
+) {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+/* Вкладки, пігулки категорій і чисті семантичні стани із заокругленням 999px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-tabs > button[role="tab"],
+  .il-groep button,
+  .il-wens,
+  .il-reset,
+  .il-tabs b,
+  .il-groep b,
+  .il-wens b,
+  .il-status,
+  .il-levend,
+  .il-methode,
+  .il-beschikbaar,
+  .ic2-blokkop em,
+  .iw2-stappen li b,
+  .il-schakel input,
+  .il-schakel input::after,
+  .is2-lijst > li
+) {
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-tabs, .il-groep, .il-wens) b {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-tabs > button[role="tab"].is-actief,
+  .il-groep button.is-actief,
+  .il-wens.is-actief,
+  .iw2-stappen li[data-stand="nu"] b
+) {
+  border: 1px solid var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(
+  .il-tabs > button[role="tab"].is-actief,
+  .il-groep button.is-actief,
+  .il-wens.is-actief
+) :is(svg, b) {
+  background: transparent;
+  color: var(--mq-knop-primair-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .iw2-stappen li[data-stand="klaar"] b {
+  border: 1px solid var(--ok);
+  background: var(--ok-zacht);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-schakel input {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-schakel input::after {
+  background: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-schakel input:checked {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-schakel input:checked::after {
+  background: var(--mq-knop-primair-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-status[data-status="klaar"], .ic2-blokkop em) {
+  border: 1px solid var(--ok);
+  background: var(--ok-zacht);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-status[data-status="instellen"] {
+  border: 1px solid var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-status[data-status="binnenkort"] {
+  border: 1px solid var(--mq-rand);
+  background: var(--il-soon-bg);
+  color: var(--il-soon);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-beschikbaar {
+  border: 1px solid var(--info);
+  background: var(--info-zacht);
+  color: var(--info);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-levend[data-levend="verbonden"] i {
+  background: var(--ok);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-levend[data-levend="ingesteld"] i {
+  background: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-levend[data-levend="fout"] i {
+  background: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ic2-stand[data-groep="beschikbaar"] i {
+  background: var(--info);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА ЗГІДНО З ПРАВИЛОМ КАСКАДУ ПРОЄКТУ)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: no-preference) {
-  html.palet-maquette .admin-console .il-kaart:hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .admin-console .il-kaart:hover {
     transform: translateY(-2px);
   }
 }
@@ -1047,6 +1555,14 @@ html.palet-maquette .admin-console .iw2-uitslag[data-ok="false"] svg {
   html.palet-maquette .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator], .iw2) {
     padding: 16px;
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-hero {
+    padding: 12px 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator], .iw2) {
+    padding: 14px 16px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1060,5 +1576,21 @@ html.palet-maquette .admin-console .iw2-uitslag[data-ok="false"] svg {
 
   html.palet-maquette .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator], .iw2) {
     padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-hero {
+    padding: 12px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-dialoog {
+    border-radius: 16px 16px 0 0;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-d-kop {
+    padding: 12px 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator], .iw2) {
+    padding: 12px 14px;
   }
 }
