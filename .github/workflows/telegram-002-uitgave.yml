@@ -128,7 +128,7 @@ jobs:
           node scripts/l002-audit.mjs
           node scripts/hulp-vraagtekens-controle.mjs
           node scripts/zoek-ui-catalogus.mjs --controle
-          for t in telegram-aanmelden-20261109 apparaat-bevestiging-20261109 aanmeld-koppel-20261030 aanmeld-ui-20261030 kluis-apparaat-20261114 melding-soorten meldingen-sferen-20261022 mobiel-cascade-20261105 thema identiteit-account-ui; do
+          for t in telegram-aanmelden-20261109 apparaat-bevestiging-20261109 melding-soorten meldingen-sferen-20261022 mobiel-cascade-20261105 thema identiteit-account-ui; do
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
       - name: Перевірити типи та скласти застосунок
@@ -147,7 +147,7 @@ jobs:
           node dist-server/migrate.mjs | tail -3
           # Повторний прогін нічого не змінює. · Tweede keer: niets te doen.
           node dist-server/migrate.mjs | tail -1
-          for t in telegram-venster-20261114 telegram-aanmelden-stroom-20261109 telegram-inlog-apparaat-20261112 apparaat-bevestiging-stroom-20261109; do
+          for t in telegram-venster-20261114 telegram-aanmelden-stroom-20261109 telegram-inlog-apparaat-20261112 apparaat-bevestiging-stroom-20261109 aanmeld-koppel-20261030 aanmeld-ui-20261030 kluis-apparaat-20261114; do
             node scripts/eenheidstests.mjs "$t.test.ts" 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           done
       - name: Упевнитися в незмінності робочого дерева
