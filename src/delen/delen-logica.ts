@@ -9,6 +9,15 @@ type Lang = 'uk' | 'nl';
 export type Paar = readonly [string, string];
 const kies = (lang: Lang, p: Paar) => (lang === 'uk' ? p[0] : p[1]);
 
+/** IDENTITEIT-015 (приймання delen): простори, куди людина може додати блок у формі центру: власні активні + спільні з роллю
+ *  «Редагування» або «Адміністратор» (та сама межа, що на сервері: POST /api/blocks/add пускає owner|editor). Глядача немає.
+ *  Без повторів; власні — першими. / Werkruimtes waarin u een blok mag toevoegen: eigen + gedeeld als lid of beheerder. */
+export function blokWerkruimtes(eigen: ReadonlyArray<{ id: string; name: string }>, gedeeld: ReadonlyArray<{ id: string; name: string; rol: WerkruimteRol }>): Array<{ id: string; name: string; rol: WerkruimteRol }> {
+  const uit: Array<{ id: string; name: string; rol: WerkruimteRol }> = eigen.map((w) => ({ id: w.id, name: w.name, rol: 'owner' as const }));
+  for (const w of gedeeld) if ((w.rol === 'member' || w.rol === 'admin') && !uit.some((x) => x.id === w.id)) uit.push({ id: w.id, name: w.name, rol: w.rol });
+  return uit;
+}
+
 /** Een lid zoals /api/share/members het geeft (e-mail kan voor een kijker gemaskeerd zijn). */
 export type Lid = { id: string; email: string; userId?: string; permission: string; workspaceRole?: string; status: string; expired?: boolean; /** Alleen voor wie deelt: de blokken waartoe de uitnodiging beperkt is (leeg/afwezig = de hele ruimte). */ scopeBlockIds?: string[] };
 export type LidStaat = 'actief' | 'uitgenodigd' | 'verlopen';

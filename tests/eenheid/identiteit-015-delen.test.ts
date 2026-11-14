@@ -339,7 +339,7 @@ export async function main(): Promise<number> {
       eerst?.[0] === VERTROKKEN[0] && eerst?.[1] === VERTROKKEN[1] && tweede === null && oudM === null && kapot === null && geenFout && /Власник отримає сповіщення/.test(VERTROKKEN[0]));
     const vd = lees('src/VerenigdDienstApp.tsx');
     check('вихід: хук зберігає підсумок перед перезавантаженням; hub і центр показують його після входу (state authorized)',
-      /const gelukt = \(paar: Paar\) => \{ melding\(paar\); bewaarMeldingNaHerladen\(paar\)/.test(hook) && app.includes('haalMeldingNaHerladen()') && vd.includes('haalMeldingNaHerladen()'));
+      /const gelukt = \(paar: Paar\) => \{ bewaarMeldingNaHerladen\(paar\); return true; \}/.test(hook) && app.includes('haalMeldingNaHerladen()') && vd.includes('haalMeldingNaHerladen()'));
     check('вихід у центрі: спільні простори учасника/глядача передаються як lidWerkruimtes і потрапляють у вибір простору (форма там вимкнена)',
       vd.includes('lidWerkruimtes={') && centrum.includes('...(p.lidWerkruimtes||[])') && centrum.includes("ваша роль — ${rolNaam('uk',item.rol)}"));
   }
