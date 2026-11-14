@@ -1403,6 +1403,1099 @@ html.palet-maquette .venster.ctv-melding-venster {
   backdrop-filter: blur(24px) saturate(1.25);
 }
 
+/* Студійний світлий режим («Ранковий туман») — ізольовано від Класики */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) :is(.mail-dialog-backdrop, .afz-laag),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .mail-dialog-backdrop {
+  background: rgba(15, 23, 42, 0.34);
+}
+
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .mail-accounts-kaart-icoon {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .mail-orbit-kern-brief {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.72), transparent 55%),
+    linear-gradient(145deg, var(--mq-oppervlak), var(--mq-oppervlak-2));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. ПРАГМАТИЧНІ БЕЗКОЛІРНІ ТЕМИ «БІЛА КЛАСИКА» ТА «ЧОРНА КЛАСИКА» (KLASSIEK-002C)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette.palet-klassiek-wit[data-maquette-stijl="klassiek"],
+html.palet-maquette.palet-klassiek-wit[data-maquette-stijl="klassiek"] .canonical-chrome:is(.theme-light, .theme-plum-light),
+html.palet-maquette.palet-klassiek-wit[data-maquette-stijl="klassiek"] body {
+  --mq-accent: var(--mq-kl-wit-accent, #181c24);
+  --mq-accent-rgb: 24, 28, 36;
+  --mq-accent-2: var(--mq-kl-wit-accent-2, #2d3340);
+  --mq-accent-op: var(--mq-kl-wit-accent-op, #ffffff);
+  --mq-tech-markering: var(--mq-kl-wit-accent-2, #2d3340);
+  --mq-tech-markering-rgb: 45, 51, 64;
+  --mq-gloed: transparent;
+  --mq-werk-gloed-a: transparent;
+  --mq-werk-gloed-b: transparent;
+  --mq-held-gloed-a: transparent;
+  --mq-held-gloed-b: transparent;
+}
+
+html.palet-maquette.palet-klassiek-zwart[data-maquette-stijl="klassiek"],
+html.palet-maquette.palet-klassiek-zwart[data-maquette-stijl="klassiek"] .canonical-chrome,
+html.palet-maquette.palet-klassiek-zwart[data-maquette-stijl="klassiek"] body {
+  --mq-accent: var(--mq-kl-zwart-accent, #f3f4f6);
+  --mq-accent-rgb: 243, 244, 246;
+  --mq-accent-2: var(--mq-kl-zwart-accent-2, #c9d1dc);
+  --mq-accent-op: var(--mq-kl-zwart-accent-op, #0c0e12);
+  --mq-tech-markering: var(--mq-kl-zwart-accent-2, #c9d1dc);
+  --mq-tech-markering-rgb: 201, 209, 220;
+  --mq-gloed: transparent;
+  --mq-werk-gloed-a: transparent;
+  --mq-werk-gloed-b: transparent;
+  --mq-held-gloed-a: transparent;
+  --mq-held-gloed-b: transparent;
+}
+
+/* 8.1. Бічне дерево навігації пошти, мітки та їхні діалоги керування */
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) {
+  gap: 2px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-compose-pill {
+  height: 40px;
+  margin: 2px 0 8px;
+  padding: 0 14px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-compose-pill:hover:not(:disabled) {
+  transform: none;
+  filter: none;
+  border-color: var(--mq-accent-2);
+  background: var(--mq-accent-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(.mail-sidebar-nav-button, .mail-sidebar-label-main) {
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(.mail-sidebar-nav-button, .mail-sidebar-label-main):hover:not(:disabled) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(
+  .mail-sidebar-nav-button.active,
+  .mail-sidebar-nav-button[aria-current="page"],
+  .mail-sidebar-label-main.active
+) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  font-weight: 650;
+  box-shadow: inset 2px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-sidebar-navigation, .mail-zijbalk-navigatie) :is(
+  .mail-sidebar-nav-button.active,
+  .mail-sidebar-nav-button[aria-current="page"]
+) .mail-sidebar-icon-state > svg {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-sidebar-edit-menu {
+  border-radius: 11px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-sidebar-activity-dot {
+  border-color: var(--mq-oppervlak);
+  background: var(--mq-accent);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .mail-sidebar-unread-count,
+  .mail-sidebar-new-count,
+  .mail-sidebar-parent-update
+) {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .mail-sidebar-divider {
+  background: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .mail-sidebar-section-head button,
+  .mail-sidebar-section-head .mail-sidebar-label-toggle,
+  .mail-label-more
+) {
+  border-radius: 11px;
+  background: transparent;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .mail-sidebar-section-head button:hover,
+  .mail-sidebar-section-head .mail-sidebar-label-toggle:hover,
+  .mail-label-more:hover
+) {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-label-editor-backdrop, .mail-navigation-editor-backdrop) {
+  background: rgba(12, 14, 18, 0.44);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-label-editor, .mail-navigation-editor) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-label-editor, .mail-navigation-editor) :is(input, select),
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .mail-label-color-grid button,
+  .mail-label-icon-grid button,
+  .mail-label-editor-actions button,
+  .mail-navigation-editor > header button,
+  .mail-navigation-editor > footer button,
+  .mail-navigation-visibility,
+  .mail-navigation-order-actions button
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.mail-navigation-updates-first, .mail-navigation-editor-list article) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .mail-label-editor-actions button.primary,
+  .mail-navigation-editor > footer button.primary
+) {
+  border-radius: 11px;
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+/* 8.2. Діловий хаб скриньок (accounts), порожній вступ орбіти та вікно підключення */
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-functional.mq-schil {
+  gap: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-provider-view {
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-kicker {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-account-intro, .mail-accounts-hero, .mail-accounts-welkom) {
+  display: grid;
+  gap: 6px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-account-intro, .mail-accounts-hero, .mail-accounts-welkom) h1 {
+  margin: 2px 0 4px;
+  color: var(--mq-tekst);
+  font-size: clamp(1.2rem, 2.2vw, 1.48rem);
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-account-intro, .mail-accounts-hero, .mail-accounts-welkom) p,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-accounts-begroeting {
+  margin: 0;
+  color: var(--mq-gedempt);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-accounts-kaart,
+  .mail-provider-card,
+  .mail-notification-card,
+  .mail-accounts-kant-info,
+  .mail-gmail-beheer,
+  .mail-accounts-leeg-uitleg
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-accounts-leeg-uitleg {
+  border-style: dashed;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-accounts-kaart-icoon {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-accounts-teller,
+  .mail-koppeling-groep-kop b,
+  .mail-koppeling-groep-kop h3 > span,
+  .mail-koppeling-hoofd
+) {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-koppeling-meta,
+  .mail-koppeling-laatste,
+  .mail-koppeling-sub
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-provider-tegel {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-provider-tegel:hover:not(:disabled) {
+  transform: none;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-provider-tegel.is-uit {
+  border-style: dashed;
+  background: var(--mq-oppervlak);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-provider-wijze {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-koppeling {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-koppeling.is-actief {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 2px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-koppeling-icoon,
+  .mail-koppeling-knop,
+  .mail-provider-card button,
+  .mail-notification-card select
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-koppeling-knop:hover:not(:disabled), .mail-provider-card button:hover:not(:disabled)) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-koppeling-knop.is-hoofd {
+  border-radius: 11px;
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-ontkoppel-vraag {
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-koppeling-melding,
+  .mail-melding-venster,
+  .venster.mail-melding-venster
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Порожній вступний екран підключення скриньок у діловому класичному режимі */
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-orbit-intro {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-orbit-kicker {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-orbit-lichtpunten, .mail-orbit-kern-schaduw) {
+  display: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-orbit-baan {
+  border-color: var(--mq-rand);
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-orbit-kern-brief,
+  .mail-orbit-envelop,
+  .mail-orbit-informatie,
+  .mail-orbit-catalogus,
+  .mail-orbit-catalogus-item,
+  .mail-orbit-onbeschikbaar details
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-orbit-envelop:hover:not(:disabled), .mail-orbit-catalogus-item:hover:not(:disabled)) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-orbit-desktop-hoofdknop,
+  .mail-orbit-mobiel-hoofdknop,
+  .mail-orbit-cta
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-orbit-desktop-hoofdknop:hover:not(:disabled),
+  .mail-orbit-mobiel-hoofdknop:hover:not(:disabled),
+  .mail-orbit-cta:hover:not(:disabled)
+) {
+  filter: none;
+  border-color: var(--mq-accent-2);
+  background: var(--mq-accent-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-orbit-catalogus-knop,
+  .mail-orbit-beheer-knop,
+  .mail-orbit-mobiel-snel button
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Вікно підключення поштової скриньки (MailKoppelVenster) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster.mail-koppel-mobile-sheet {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster.mail-koppel-mobile-sheet .venster-kop {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-koppel-hero,
+  .mail-koppel-vertrouwen,
+  .mail-koppel-imap-vak,
+  .mail-koppel-klaar,
+  .mail-koppel-nog-niet,
+  .mail-koppel-elders,
+  .mail-koppel-fout
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-koppel-merk {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-koppel-hoofdactie, .mail-koppel-actie-knop.is-hoofd) {
+  border-radius: 11px;
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-koppel-andere-account,
+  .mail-koppel-actie-knop:not(.is-hoofd),
+  .mail-koppel-terug,
+  .mail-koppel-veld,
+  .mail-koppel-ervaring .geheim-invoer input
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* 8.3. Локальна черга пошти (local у MailFunctioneelWeergave) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-onboarding,
+  .mail-front,
+  .mail-focus-card,
+  .mail-soft-empty,
+  .mail-metrics,
+  .mail-cited-summary,
+  .mail-action-panel,
+  .mail-import-dialog,
+  .mail-original pre
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-onboarding li,
+  .mail-control-row,
+  .mail-metrics span,
+  .mail-cited-summary dl div
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-row {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-row:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-row.selected {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 2px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-triage-pill {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-row-index,
+  .mail-row-meta time,
+  .mail-message-head time,
+  .mail-metrics b
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-onboarding-actions button,
+  .mail-add,
+  .mail-primary-actions button,
+  .mail-action-panel > button,
+  .mail-enough,
+  .mail-noise-toggle,
+  .mail-soft-empty button,
+  .mail-triage-control button,
+  .mail-reply-styles button,
+  .mail-snooze-options button,
+  .mail-control-row select,
+  .mail-action-panel :is(input, textarea),
+  .mail-import-dialog :is(input, textarea, select)
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-triage-control button[aria-pressed="true"],
+  .mail-reply-styles button[aria-pressed="true"]
+) {
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-primary,
+  .mail-onboarding-actions .mail-primary,
+  .mail-primary-actions .mail-primary,
+  .mail-action-panel > .mail-primary
+) {
+  border-radius: 11px;
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-dialog-backdrop {
+  background: rgba(12, 14, 18, 0.44);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* 8.4. Підписки та швидкі й повні налаштування пошти */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-subscriptions-view, .mail-abonnementen) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-subscriptions-empty, .mail-abonnementen-leeg) {
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-subscriptions-view > header button,
+  .mail-abonnementen > header button,
+  .mail-subscription-row button,
+  .mail-abonnement-rij button
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-subscriptions-view > header button:hover:not(:disabled),
+  .mail-abonnementen > header button:hover:not(:disabled),
+  .mail-subscription-row button:hover:not(:disabled),
+  .mail-abonnement-rij button:hover:not(:disabled)
+) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-subscriptions-view > header small,
+  .mail-abonnementen > header small,
+  .mail-subscription-row :is(small, time),
+  .mail-abonnement-rij :is(small, time)
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-settings-scaffold > header,
+  .mail-instellingen-geraamte > header,
+  .mail-settings-scaffold nav,
+  .mail-instellingen-geraamte nav,
+  .mail-settings-scaffold main,
+  .mail-instellingen-geraamte main
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-settings-scaffold, .mail-instellingen-geraamte) > header > button {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-settings-scaffold, .mail-instellingen-geraamte) nav a {
+  border-radius: 11px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-settings-scaffold, .mail-instellingen-geraamte) nav a:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-settings-scaffold, .mail-instellingen-geraamte) nav a:focus-visible {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-quick-settings, .mail-snelle-instellingen):not(.page) {
+  border-left: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-quick-settings-header {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-settings-header-mark, .mail-settings-section-icon) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-density-choice,
+  .mail-compact-density-card,
+  .mail-priority-time,
+  .mail-priority-rule,
+  .mail-list-paging-control,
+  .mail-reading-options > label,
+  .mail-compact-reading-option,
+  .mail-settings-switch,
+  .mail-theme-color,
+  .mail-sender-rule,
+  .mail-sender-rule-add,
+  .mail-compact-phone
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-sender-rule-add {
+  border-style: dashed;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-density-choice.active,
+  .mail-compact-density-card.active,
+  .mail-priority-rule.active,
+  .mail-reading-options > label.active,
+  .mail-compact-reading-option.active
+) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 0 0 0 1px var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-density-active-pill {
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-settings-device-tabs button,
+  .mail-settings-mobile-state button,
+  .mail-priority-time button,
+  .mail-priority-move button,
+  .mail-list-paging-presets button,
+  .mail-compact-segments > button,
+  .mail-compact-toggle,
+  .mail-bijlage-maat button,
+  .mail-theme-reset,
+  .mail-view-all-settings,
+  .mail-sender-rule-add input[type="email"],
+  .mail-list-paging-custom input,
+  .mail-compact-custom-value input
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-settings-device-tabs button[aria-pressed="true"],
+  .mail-priority-time button.active,
+  .mail-list-paging-presets button.active,
+  .mail-compact-segments > button[aria-pressed="true"],
+  .mail-bijlage-maat button[aria-pressed="true"],
+  .mail-sender-rule-add > button,
+  .mail-compact-all
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mail-priority-rank {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 8.5. Смуга простору, діалог відправника (SEC-002) та поверхня контактів (contacts) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .ruimte-band,
+  .ruimte-band--eigen,
+  .ruimte-band--gedeeld,
+  .ruimte-band--dicht
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ruimte-band--dicht {
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .afz-laag,
+html.palet-maquette[data-maquette-stijl="klassiek"] body .afz-laag {
+  background: rgba(12, 14, 18, 0.44);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.afz-tip, .afz-dialoog),
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.afz-tip, .afz-dialoog) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .afz-sluit,
+  .afz-knop,
+  .afz-alle-contacten,
+  .afz-veld input,
+  .afz-veld textarea,
+  .afz-zoek,
+  .afz-chips button
+),
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(
+  .afz-sluit,
+  .afz-knop,
+  .afz-alle-contacten,
+  .afz-veld input,
+  .afz-veld textarea
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.afz-knop-hoofd, .afz-tip-knop),
+html.palet-maquette[data-maquette-stijl="klassiek"] body :is(.afz-knop-hoofd, .afz-tip-knop),
+html.palet-maquette[data-maquette-stijl="klassiek"] .afz-chips button[aria-pressed="true"] {
+  border-radius: 11px;
+  border: 1px solid var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .afz-audit,
+  .afz-lijst > li,
+  .afz-leeg,
+  .afz-beelden-keuze[data-afzender-onbekend-keuze],
+  .ctv-kop,
+  .cnt-kop,
+  .ctv-scan,
+  .cnt-scan,
+  .ctv-scan-beleid,
+  .cnt-scan-beleid,
+  .ctv-scan-skrinka,
+  .cnt-scan-skrinka,
+  .ctv-rij,
+  .cnt-rij,
+  .ctv-kaart,
+  .cnt-kaart,
+  .ctv-detail,
+  .cnt-detail,
+  .ctv-melding,
+  .cnt-melding,
+  .ctv-scan-korte-melding,
+  .cnt-scan-korte-melding,
+  .venster.ctv-melding-venster
+) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .afz-lijst > li,
+  .ctv-scan-beleid,
+  .cnt-scan-beleid,
+  .ctv-scan-skrinka,
+  .cnt-scan-skrinka
+) {
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.ctv-rij, .cnt-rij):hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.ctv-kaart, .cnt-kaart):hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.ctv-rij, .cnt-rij)[aria-current="true"],
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.ctv-kaart, .cnt-kaart)[aria-current="true"] {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 2px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .ctv-scan-keuzen select,
+  .cnt-scan-keuzen select,
+  .ctv-sorteer select,
+  .cnt-sorteer select,
+  .ctv-weergave button,
+  .cnt-weergave button,
+  .ctv-beeld-keuze button,
+  .cnt-beeld-keuze button,
+  .ctv-verwant-knop,
+  .cnt-verwant-knop
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .ctv-weergave button[aria-pressed="true"],
+  .cnt-weergave button[aria-pressed="true"],
+  .ctv-beeld-keuze button[aria-pressed="true"],
+  .cnt-beeld-keuze button[aria-pressed="true"]
+) {
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .afz-chips button,
+  .afz-audit :is(strong, b, small, time),
+  .ctv-kop :is(small, b, strong),
+  .cnt-kop :is(small, b, strong),
+  .ctv-scan :is(small, b, strong, time),
+  .cnt-scan :is(small, b, strong, time),
+  .ctv-rij :is(small, time),
+  .cnt-rij :is(small, time),
+  .ctv-kaart :is(small, time),
+  .cnt-kaart :is(small, time),
+  .ctv-detail :is(small, time, dd),
+  .cnt-detail :is(small, time, dd)
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ділова типографіка без засічок у всіх панелях пошти Класики */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .mail-functional,
+  .mail-provider-view,
+  .mail-settings-scaffold,
+  .mail-instellingen-geraamte,
+  .mail-koppel-ervaring,
+  .ctv-kop,
+  .cnt-kop
+) :is(h1, h2, h3) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
 /* Повага до вимкненого руху */
 @media (prefers-reduced-motion: reduce) {
   html.palet-maquette .mail-provider-tegel,
@@ -1420,7 +2513,7 @@ html.palet-maquette .venster.ctv-melding-venster {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   8. АДАПТИВНИЙ МОБІЛЬНИЙ ШАР — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   9. АДАПТИВНИЙ МОБІЛЬНИЙ ШАР — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1023px) {
@@ -1434,7 +2527,12 @@ html.palet-maquette .venster.ctv-melding-venster {
     gap: 14px;
   }
 
-  html.palet-maquette .mail-account-intro {
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mail-provider-view {
+    padding: 14px 16px;
+  }
+
+  html.palet-maquette .mail-account-intro,
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-account-intro, .mail-accounts-hero, .mail-accounts-welkom) {
     padding: 14px 16px;
   }
 
@@ -1474,8 +2572,13 @@ html.palet-maquette .venster.ctv-melding-venster {
 }
 
 @media (max-width: 560px) {
-  html.palet-maquette .mail-accounts-welkom {
+  html.palet-maquette .mail-accounts-welkom,
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mail-account-intro, .mail-accounts-hero, .mail-accounts-welkom) {
     padding: 12px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mail-provider-view {
+    padding: 12px;
   }
 
   html.palet-maquette .mail-accounts-kaart,

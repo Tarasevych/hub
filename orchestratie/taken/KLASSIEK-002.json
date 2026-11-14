@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLASSIEK-002",
+  "agent": "antigravity",
+  "tak": "feature/klassiek-002-20261114-054300",
+  "basisCommit": "4ec0f168f5459a27944275b078791189434c4f3e",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T05:42:29.882Z",
+  "bijgewerkt": "2026-11-14T05:42:29.882Z",
+  "omschrijving": "Хвиля 1 прагматичних тем Біла класика та Чорна класика: ділова поштова робоча область mail.tarasevych.com (18 вкладок, список листів, читач, написання листа та панелі скриньок).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

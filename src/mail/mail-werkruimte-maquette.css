@@ -1,20 +1,19 @@
 /* Студійне оформлення робочого простору Пошти у системі «Макет» (MAQUETTE-002).
-   Працює виключно за умови html.palet-maquette для нічної студії та світлого режиму «Ранковий туман».
-   Studio-opmaak voor de e-mailwerkruimte onder html.palet-maquette in donkere en lichte sfeer. */
+   Працює виключно за умови html.palet-maquette для нічної студії та світлого режиму «Ранковий туман»
+   із відсіканням студійних градієнтів і ореолів для прагматичних класичних тем (KLASSIEK-002A).
+   Studio-opmaak voor de e-mailwerkruimte onder html.palet-maquette met uitsluiting van klassieke thema's. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1. ГОЛОВНА ОБОЛОНКА РОБОЧОГО ПРОСТОРУ, ПІДКЛАДКА ШАПКИ ТА ВІТРИНА (.mq-held)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) body .canonical-chrome:has(.mail-top-command-bar) .canonical-workspace::before {
   background: var(--mq-bovenbalk-glas);
   -webkit-backdrop-filter: blur(22px) saturate(1.26);
   backdrop-filter: blur(22px) saturate(1.26);
 }
 
 html.palet-maquette .google-mail-workspace.mq-schil {
-  --mail-read-surface: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg) 12%);
-  --mail-unread-surface: color-mix(in srgb, var(--mq-oppervlak-2) 78%, rgba(var(--mq-accent-rgb), 0.14));
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -24,6 +23,11 @@ html.palet-maquette .google-mail-workspace.mq-schil {
   box-shadow: none;
   overflow: visible;
   color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil {
+  --mail-read-surface: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg) 12%);
+  --mail-unread-surface: color-mix(in srgb, var(--mq-oppervlak-2) 78%, rgba(var(--mq-accent-rgb), 0.14));
 }
 
 /* Коли поруч змонтовано студійну вітрину .mq-held, основний заголовок залишається в дереві для доступності без зорового повторення */
@@ -58,7 +62,7 @@ html.palet-maquette .google-mail-workspace.mq-schil > .mq-held:not(.is-compact) 
   box-shadow: var(--mq-schaduw-held);
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil > .mail-trash-note {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil > .mail-trash-note {
   margin: 0;
   padding: 11px 16px;
   border: 1px solid var(--mq-rand);
@@ -74,7 +78,7 @@ html.palet-maquette .google-mail-workspace.mq-schil > .mail-trash-note {
    2. ВЕРХНЯ СМУГА КОМАНД, ПОШУКОВЕ ПОЛЕ ТА ПОШУКОВИЙ ВЕРСТАТ
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette .mail-top-command-bar .mail-top-search-shell {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar .mail-top-search-shell {
   border: 1px solid var(--mq-rand);
   border-radius: 999px;
   background: color-mix(in srgb, var(--mq-oppervlak) 82%, var(--mq-bovenbalk-glas));
@@ -88,7 +92,7 @@ html.palet-maquette .mail-top-command-bar .mail-top-search-shell:hover {
   border-color: var(--mq-rand-sterk);
 }
 
-html.palet-maquette .mail-top-command-bar .mail-top-search-shell:focus-within {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-command-bar .mail-top-search-shell:focus-within {
   border-color: rgba(var(--mq-accent-rgb), 0.54);
   background: color-mix(in srgb, var(--mq-oppervlak) 94%, var(--mq-bovenbalk-glas));
   box-shadow:
@@ -105,7 +109,7 @@ html.palet-maquette .mail-top-command-bar .mail-top-search-shell input::placehol
   color: var(--mq-stil);
 }
 
-html.palet-maquette .mail-top-interface-actions {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-interface-actions {
   padding: 3px 5px;
   border: 1px solid var(--mq-rand);
   border-radius: 999px;
@@ -150,8 +154,8 @@ html.palet-maquette :is(
   outline-offset: 2px;
 }
 
-html.palet-maquette .mail-top-search-tune[aria-expanded="true"],
-html.palet-maquette .mail-top-settings[aria-expanded="true"] {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-search-tune[aria-expanded="true"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-top-settings[aria-expanded="true"] {
   background: rgba(var(--mq-accent-rgb), 0.16);
   color: var(--mq-accent);
 }
@@ -166,7 +170,7 @@ html.palet-maquette :is(.mail-top-refresh, .mail-top-settings)[data-tooltip]::af
 }
 
 /* Живі підказки пошуку, панель умов та стан пошуку */
-html.palet-maquette :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
   .mail-live-search,
   .mail-search-filter-popover,
   .mail-condition-menu
@@ -203,14 +207,14 @@ html.palet-maquette :is(
   color: var(--mq-tekst);
 }
 
-html.palet-maquette .mail-search-hit {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-search-hit {
   padding: 0 3px;
   border-radius: 4px;
   background: rgba(var(--mq-accent-rgb), 0.22);
   color: var(--mq-tekst);
 }
 
-html.palet-maquette :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
   .mail-search-filter-surface,
   .mail-advanced-search,
   .mzv2,
@@ -245,7 +249,7 @@ html.palet-maquette :is(.mail-search-chip, .mzv2-pil):hover {
   background: var(--mq-oppervlak-hover);
 }
 
-html.palet-maquette :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
   .mail-search-chip.active,
   .mail-search-chip[aria-expanded="true"],
   .mzv2-pil[aria-pressed="true"]
@@ -270,7 +274,7 @@ html.palet-maquette :is(
   color: var(--mq-tekst);
 }
 
-html.palet-maquette :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
   .mzv2-zoek:focus-within,
   .mzv2-veld input:focus-visible,
   .mzv2-veld select:focus-visible,
@@ -289,8 +293,8 @@ html.palet-maquette :is(.mzv2-segment, .google-mail-search-scope) {
   background: var(--mq-oppervlak-zacht);
 }
 
-html.palet-maquette .mzv2-segment button[aria-pressed="true"],
-html.palet-maquette .google-mail-search-scope label.active {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mzv2-segment button[aria-pressed="true"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-search-scope label.active {
   background: rgba(var(--mq-accent-rgb), 0.18);
   color: var(--mq-tekst);
   box-shadow: inset 0 0 0 1px rgba(var(--mq-accent-rgb), 0.34);
@@ -315,7 +319,7 @@ html.palet-maquette .mzv2-knop:hover {
   background: var(--mq-oppervlak-hover);
 }
 
-html.palet-maquette .mzv2-knop-primair {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mzv2-knop-primair {
   border-color: transparent;
   background: var(--mq-accent);
   color: var(--mq-accent-op);
@@ -328,7 +332,7 @@ html.palet-maquette .mzv2-knop-primair:hover {
   color: var(--mq-accent-op);
 }
 
-html.palet-maquette .mail-search-status {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-search-status {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -342,8 +346,8 @@ html.palet-maquette .mail-search-status {
   font-size: 12px;
 }
 
-html.palet-maquette .mail-search-stop,
-html.palet-maquette .mail-search-status-suggestions button {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-search-stop,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-search-status-suggestions button {
   padding: 5px 11px;
   border: 1px solid rgba(var(--mq-accent-rgb), 0.36);
   border-radius: 999px;
@@ -353,8 +357,8 @@ html.palet-maquette .mail-search-status-suggestions button {
   font-weight: 650;
 }
 
-html.palet-maquette .mail-search-stop:hover,
-html.palet-maquette .mail-search-status-suggestions button:hover {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-search-stop:hover,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-search-status-suggestions button:hover {
   background: rgba(var(--mq-accent-rgb), 0.2);
   border-color: rgba(var(--mq-accent-rgb), 0.52);
 }
@@ -413,7 +417,7 @@ html.palet-maquette .mail-category-pager-selection-status {
   font-variant-numeric: tabular-nums;
 }
 
-html.palet-maquette :is(.mail-selection-popover, .mail-selection-action-menu > div) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(.mail-selection-popover, .mail-selection-action-menu > div) {
   border: 1px solid var(--mq-rand-sterk);
   border-radius: 16px;
   background: var(--mq-popover-glas);
@@ -450,7 +454,7 @@ html.palet-maquette .google-mail-workspace.mq-schil > .mail-list-viewport:not(:h
   transition: border-color 0.22s ease, box-shadow 0.24s ease;
 }
 
-html.palet-maquette .canonical-chrome[data-oppervlak="technisch"] .google-mail-workspace.mq-schil > .mail-list-viewport:not(:has(> .google-mail-orbit[data-mail-account-resolution-empty="true"])) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-oppervlak="technisch"] .google-mail-workspace.mq-schil > .mail-list-viewport:not(:has(> .google-mail-orbit[data-mail-account-resolution-empty="true"])) {
   border-color: var(--mq-tech-lijn);
   box-shadow:
     0 0 0 1px rgba(var(--mq-tech-markering-rgb), 0.12),
@@ -483,15 +487,15 @@ html.palet-maquette .google-mail-workspace.mq-schil:not([data-mail-read-custom="
   background: color-mix(in srgb, var(--mq-oppervlak-2) 72%, var(--mq-oppervlak));
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected) {
   box-shadow: inset 3px 0 0 rgba(var(--mq-accent-rgb), 0.72);
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected):hover {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil:not([data-mail-unread-custom="true"]) .google-mail-row.unread:not(.selected):hover {
   background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, rgba(var(--mq-accent-rgb), 0.18));
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .google-mail-row.selected {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .google-mail-row.selected {
   background: linear-gradient(
     90deg,
     rgba(var(--mq-accent-rgb), 0.18),
@@ -500,7 +504,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .google-mail-row.selected {
   box-shadow: inset 3px 0 0 var(--mq-accent);
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .mail-row-avatar {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .mail-row-avatar {
   background: rgba(var(--mq-accent-rgb), 0.15);
   color: var(--mq-accent);
   box-shadow: inset 0 0 0 1px rgba(var(--mq-accent-rgb), 0.24);
@@ -518,7 +522,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .mail-attachment:hover {
   background: var(--mq-oppervlak-hover);
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .mail-search-relevance-score {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .mail-search-relevance-score {
   border-color: rgba(var(--mq-accent-rgb), 0.36);
   background: rgba(var(--mq-accent-rgb), 0.14);
   color: var(--mq-accent);
@@ -526,7 +530,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .mail-search-relevance-score
 }
 
 /* Вкладки розумних секцій скриньки, групи уваги та мітки */
-html.palet-maquette .mail-layered-controls {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-layered-controls {
   padding: 12px 16px;
   border-bottom: 1px solid var(--mq-rand);
   background: linear-gradient(
@@ -557,7 +561,7 @@ html.palet-maquette :is(
   color: var(--mq-tekst);
 }
 
-html.palet-maquette :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
   .mail-layered-view-chips button[aria-pressed="true"],
   .mail-layered-filter-chips button[aria-pressed="true"]
 ) {
@@ -612,7 +616,7 @@ html.palet-maquette .mail-section-menu[open] > .mail-section-menu-trigger {
   color: var(--mq-tekst);
 }
 
-html.palet-maquette .mail-section-menu-popover {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-section-menu-popover {
   border: 1px solid var(--mq-rand-sterk);
   border-radius: 18px;
   background: var(--mq-popover-glas);
@@ -630,7 +634,7 @@ html.palet-maquette .mail-section-size-grid button {
   font-size: 12px;
 }
 
-html.palet-maquette .mail-section-size-grid button[aria-pressed="true"] {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-section-size-grid button[aria-pressed="true"] {
   border-color: rgba(var(--mq-accent-rgb), 0.48);
   background: rgba(var(--mq-accent-rgb), 0.16);
   color: var(--mq-accent);
@@ -665,13 +669,13 @@ html.palet-maquette .google-mail-labels button:hover {
   color: var(--mq-tekst);
 }
 
-html.palet-maquette .google-mail-labels button.active {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-labels button.active {
   border-color: rgba(var(--mq-accent-rgb), 0.46);
   background: rgba(var(--mq-accent-rgb), 0.16);
   color: var(--mq-tekst);
 }
 
-html.palet-maquette .google-mail-labels em {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-labels em {
   background: rgba(var(--mq-accent-rgb), 0.16);
   color: var(--mq-accent);
   font-size: 12px;
@@ -689,13 +693,13 @@ html.palet-maquette .mail-account-badge-trigger {
   transition: border-color 0.18s ease, box-shadow 0.2s ease, transform 0.18s ease;
 }
 
-html.palet-maquette .mail-account-badge-trigger:hover,
-html.palet-maquette .mail-account-badge-trigger[aria-expanded="true"] {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-account-badge-trigger:hover,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-account-badge-trigger[aria-expanded="true"] {
   border-color: rgba(var(--mq-accent-rgb), 0.56);
   box-shadow: 0 0 0 3px rgba(var(--mq-accent-rgb), 0.16);
 }
 
-html.palet-maquette :is(.mail-account-badge-menu, .mail-account-switcher-menu) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(.mail-account-badge-menu, .mail-account-switcher-menu) {
   border: 1px solid var(--mq-rand-sterk);
   border-radius: 20px;
   background: var(--mq-popover-glas);
@@ -705,7 +709,7 @@ html.palet-maquette :is(.mail-account-badge-menu, .mail-account-switcher-menu) {
   backdrop-filter: blur(26px) saturate(1.3);
 }
 
-html.palet-maquette :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(
   .mail-account-badge-list button.active,
   .mail-account-switcher-list button.active
 ) {
@@ -720,7 +724,7 @@ html.palet-maquette .mail-account-switcher-trigger {
   color: var(--mq-tekst);
 }
 
-html.palet-maquette .mail-account-switch-status {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-account-switch-status {
   border: 1px solid var(--mq-rand);
   border-radius: 16px;
   background: color-mix(in srgb, var(--mq-oppervlak) 88%, rgba(var(--mq-accent-rgb), 0.1));
@@ -729,7 +733,7 @@ html.palet-maquette .mail-account-switch-status {
   box-shadow: var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .mail-account-switch-veil {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .mail-account-switch-veil {
   border-radius: var(--mq-straal-kaart);
   background: color-mix(in srgb, var(--mq-oppervlak) 92%, transparent);
   -webkit-backdrop-filter: blur(8px);
@@ -760,7 +764,7 @@ html.palet-maquette .google-mail-accounts article {
   background: var(--mq-oppervlak-2);
 }
 
-html.palet-maquette .google-mail-accounts article.active {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-accounts article.active {
   border-color: rgba(var(--mq-accent-rgb), 0.42);
   background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, rgba(var(--mq-accent-rgb), 0.14));
 }
@@ -783,7 +787,7 @@ html.palet-maquette .google-mail-accounts button.mail-primary {
    6. МЕНЮ ВІДКЛАДАННЯ, ПОРОЖНІ СТАНИ ТА КНОПКИ ДОВАНТАЖЕННЯ
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette :is(.mail-snooze-popover, [class*="mail-uitstel-"]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :is(.mail-snooze-popover, [class*="mail-uitstel-"]) {
   border: 1px solid var(--mq-rand-sterk);
   border-radius: 20px;
   background: var(--mq-popover-glas);
@@ -817,7 +821,7 @@ html.palet-maquette .mail-snooze-local-note {
   font-size: 12px;
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .google-mail-empty {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .google-mail-empty {
   padding: 42px 24px;
   background: radial-gradient(
     circle at 50% 28%,
@@ -827,7 +831,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .google-mail-empty {
   color: var(--mq-tekst);
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .google-mail-empty > svg {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .google-mail-empty > svg {
   padding: 12px;
   border: 1px solid rgba(var(--mq-accent-rgb), 0.28);
   border-radius: 18px;
@@ -850,7 +854,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .mail-category-empty > span 
   font-size: 13px;
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .mail-category-empty > button {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .mail-category-empty > button {
   max-width: min(100%, 312px);
   border: 1px solid rgba(var(--mq-accent-rgb), 0.38);
   border-radius: 999px;
@@ -860,7 +864,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .mail-category-empty > butto
   font-weight: 680;
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .mail-category-empty > button:hover {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .mail-category-empty > button:hover {
   border-color: rgba(var(--mq-accent-rgb), 0.56);
   background: rgba(var(--mq-accent-rgb), 0.2);
 }
@@ -871,7 +875,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .google-mail-load-more {
   font-size: 12px;
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .mail-category-load-more {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .mail-category-load-more {
   padding: 8px 16px;
   border: 1px solid rgba(var(--mq-accent-rgb), 0.32);
   border-radius: 999px;
@@ -883,7 +887,7 @@ html.palet-maquette .google-mail-workspace.mq-schil .mail-category-load-more {
   transition: background-color 0.18s ease, border-color 0.18s ease;
 }
 
-html.palet-maquette .google-mail-workspace.mq-schil .mail-category-load-more:hover:not(:disabled) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .google-mail-workspace.mq-schil .mail-category-load-more:hover:not(:disabled) {
   border-color: rgba(var(--mq-accent-rgb), 0.52);
   background: rgba(var(--mq-accent-rgb), 0.18);
   text-decoration: none;

@@ -6,6 +6,7 @@ import { Pause, PenLine, Play, Settings2, X, ZoomIn } from 'lucide-react';
 import { MAIL_AANBIEDERS } from '../../shared/mail-aanbieders';
 import { officieelMerk, laadOfficieel } from '../merk/merk-register';
 import { dagSleutel, golfImpuls, schrijfDoel, vloeibaarDoel, type LogoPunt, type VloeiPunt } from './mail-vloeistof';
+import { useIsKlassiekMaquette } from '../maquette-kern';
 import './mail-achtergrond.css';
 
 type Taal = 'uk' | 'nl';
@@ -137,6 +138,7 @@ function maakTekens(palet: Palet, vormen: Readonly<Record<string, readonly [stri
 }
 
 export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 'aanmelden' | 'accounts' }) {
+  const isKlassiek = useIsKlassiekMaquette();
   const [voorkeuren, zetVoorkeuren] = useState<Voorkeuren>(leesVoorkeuren);
   const [instellingen, zetInstellingen] = useState(false);
   const [instellingenTop, zetInstellingenTop] = useState(60);
@@ -149,7 +151,7 @@ export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 
   const t = (uk: string, nl: string) => lang === 'uk' ? uk : nl;
 
   useEffect(() => {
-    if (!instellingen) return;
+    if (isKlassiek || !instellingen) return;
     const plaatsPaneel = () => {
       const onder = tandwiel.current?.getBoundingClientRect().bottom ?? 48;
       zetInstellingenTop(Math.max(8, Math.min(onder + 8, window.innerHeight - 110)));
@@ -158,19 +160,25 @@ export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 
     window.addEventListener('resize', plaatsPaneel);
     window.addEventListener('scroll', plaatsPaneel, true);
     return () => { window.removeEventListener('resize', plaatsPaneel); window.removeEventListener('scroll', plaatsPaneel, true); };
-  }, [instellingen]);
+  }, [instellingen, isKlassiek]);
 
-  useEffect(() => { voorkeurRef.current = voorkeuren; try { localStorage.setItem(SLEUTEL, JSON.stringify(voorkeuren)); } catch { /* Privémodus. */ } }, [voorkeuren]);
   useEffect(() => {
+    if (isKlassiek) return;
+    voorkeurRef.current = voorkeuren;
+    try { localStorage.setItem(SLEUTEL, JSON.stringify(voorkeuren)); } catch { /* Privémodus. */ }
+  }, [voorkeuren, isKlassiek]);
+  useEffect(() => {
+    if (isKlassiek) return;
     lensRef.current = lens;
     if (!lens || aanwijzer.current.binnen) return;
     const houder = doek.current?.parentElement?.parentElement;
     if (!houder) return;
     const rect = houder.getBoundingClientRect();
     aanwijzer.current = { x: rect.width / 2, y: rect.height / 2, dx: 0, dy: 0, binnen: true };
-  }, [lens]);
+  }, [lens, isKlassiek]);
 
   useEffect(() => {
+    if (isKlassiek) return;
     const canvas = doek.current;
     const houder = canvas?.parentElement?.parentElement;
     const k = canvas?.getContext('2d', { alpha: true });
@@ -369,9 +377,10 @@ export default function MailAchtergrond({ lang, plaats }: { lang: Taal; plaats: 
       houder.removeEventListener('pointerleave', uit);
       houder.removeEventListener('contextmenu', rechts);
     };
-  }, []);
+  }, [isKlassiek]);
 
   const verander = (waarde: Partial<Voorkeuren>) => zetVoorkeuren((vorig) => ({ ...vorig, ...waarde }));
+  if (isKlassiek) return null;
   return (
     <div className={'mail-achtergrond mail-achtergrond-' + plaats} data-mail-achtergrond={plaats} data-tekenen={voorkeuren.tekenen ? 'ja' : 'nee'}>
       <canvas ref={doek} aria-hidden='true' className='mail-achtergrond-doek' />

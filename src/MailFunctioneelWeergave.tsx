@@ -4,7 +4,7 @@ import {api} from './platform/client';
 import {Bell,Check,Clock3,FileText,Inbox,ListChecks,Pencil,ShieldCheck,Sparkles,Star,Upload,UserCheck,X} from 'lucide-react';
 import MailAccountsHub from './MailAccountsHub';import{mailKoppelenOpenen}from'./platform/VensterHerstel';import{mailAanbieder}from'../shared/mail-aanbieders';
 import GoogleMailWorkspace from './GoogleMailWerkruimte';const ContactenWeergave=lazy(()=>import('./afzenders/ContactenWeergave'));const ContactenScanMelding=lazy(()=>import('./afzenders/ContactenScanMelding'));import{emitCanonicalNotice}from'./canoniek-meldingen';
-import {MaquetteHeld,MaquetteAnkerRail,type MaquetteAnkerItem} from './maquette-kern';
+import {MaquetteHeld,MaquetteAnkerRail,useIsKlassiekMaquette,type MaquetteAnkerItem} from './maquette-kern';
 import {useIsMaquette} from './thema/useThema';
 import {useVensters} from './platform/vensters';
 import {useOnthoudenVensters} from './platform/vensters-onthouden';
@@ -118,6 +118,7 @@ const replyTemplate=(item:MailItem,style:ReplyStyle,lang:Lang)=>{
 
 export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigin,tabContext,homeSignal,sessionReady,onFocusChange}:Props){
  const isMaquette=useIsMaquette();
+ const isKlassiek=useIsKlassiekMaquette();
  const taal:'uk'|'nl'=lang==='nl'?'nl':'uk';
  const mqTekst=MAQUETTE_MAIL_TEKSTEN[taal];
  const onthoudenStand=useOnthoudenVensters();
@@ -344,7 +345,7 @@ export default function MailFunctionalView({lang,tab,userId,userName,sourceOrigi
  else body=listView;
 
  const maquetteSpeciaal=isMaquette&&!standardMailSurface;
- const maquetteBoven=!maquetteSpeciaal||modaalOpen?null:tab==='accounts'?(
+ const maquetteBoven=!maquetteSpeciaal||isKlassiek||modaalOpen?null:tab==='accounts'?(
   accountsEmpty?null:(
    <>
     <MaquetteHeld

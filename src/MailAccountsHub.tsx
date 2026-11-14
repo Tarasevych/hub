@@ -45,6 +45,7 @@ import {
 // kolom («Вікна, які не губляться») lag over de tegels heen — Playwright: «<div>…</div> intercepts pointer events».
 import { laatsteRegel, zojuist, type LaatsteBrief } from './mail/laatste-brief';
 import { useIsMaquette } from './thema/useThema';
+import { useIsKlassiekMaquette } from './maquette-kern';
 
 type Lang = 'uk' | 'nl';
 type GoogleRij = { id: string; email: string; accountRole?: string; status: string; displayName?: string };
@@ -78,6 +79,7 @@ const kaart: React.CSSProperties = { background: 'var(--panel,#fff)', borderRadi
 export default function MailAccountsHub({ lang, userName = '', accounts = [], onConnect, onVeranderd, onLeegVeranderd, onAantalVeranderd, dienst = 'mail', tabContext, sourceOrigin }: Props) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);
   const isMaquette = useIsMaquette();
+  const isKlassiek = useIsKlassiekMaquette();
   const [imap, setImap] = useState<MailImapKoppelingPubliek[]>([]);
   const [google, setGoogle] = useState<GoogleRij[]>(() => accounts.map((a) => ({ id: a.id, email: a.email, accountRole: a.accountRole, status: a.status })));
   const [microsoft, setMicrosoft] = useState<MicrosoftRij[]>([]);
@@ -384,15 +386,17 @@ export default function MailAccountsHub({ lang, userName = '', accounts = [], on
 
   return (
     <div className='mail-accounts-hub'>
-      <MailAchtergrond lang={lang} plaats='accounts' />
+      {!isKlassiek ? <MailAchtergrond lang={lang} plaats='accounts' /> : null}
       <div className='mail-accounts-hoofd'>
-        <div className='mail-accounts-welkom' style={isMaquette ? undefined : { marginBottom: 24 }}>
-          <div className='mail-accounts-begroeting' style={isMaquette ? undefined : { color: 'var(--muted,#64748b)', fontSize: 14 }}>{userName ? `${t('Вітаємо, ', 'Welkom, ')}${userName}!` : t('Вітаємо', 'Welkom')}</div>
-          <h1 style={isMaquette ? undefined : { fontSize: 28, fontWeight: 700, margin: '4px 0 8px' }}>{t('Підключіть свої поштові акаунти', 'Koppel uw e-mailaccounts')}</h1>
-          <p style={isMaquette ? undefined : { color: 'var(--muted,#64748b)', margin: 0 }}>{t(
-            'Кожна плитка нижче веде до справжньої дії: або вхід у постачальника, або IMAP/SMTP з паролем застосунку. Де підключення ще немає — там немає й кнопки, зате написано, чого бракує.',
-            'Elke tegel hieronder leidt tot een echte handeling: aanmelden bij de aanbieder, of IMAP/SMTP met een app-wachtwoord. Waar de koppeling nog niet bestaat, staat geen knop maar wel wat er ontbreekt.')}</p>
-        </div>
+        {(!isMaquette || isKlassiek) ? (
+          <header className='mail-accounts-hero mail-accounts-welkom' style={isMaquette ? undefined : { marginBottom: 24 }}>
+            <div className='mail-accounts-begroeting' style={isMaquette ? undefined : { color: 'var(--muted,#64748b)', fontSize: 14 }}>{userName ? `${t('Вітаємо, ', 'Welkom, ')}${userName}!` : t('Вітаємо', 'Welkom')}</div>
+            <h1 style={isMaquette ? undefined : { fontSize: 28, fontWeight: 700, margin: '4px 0 8px' }}>{t('Підключіть свої поштові акаунти', 'Koppel uw e-mailaccounts')}</h1>
+            <p style={isMaquette ? undefined : { color: 'var(--muted,#64748b)', margin: 0 }}>{t(
+              'Кожна плитка нижче веде до справжньої дії: або вхід у постачальника, або IMAP/SMTP з паролем застосунку. Де підключення ще немає — там немає й кнопки, зате написано, чого бракує.',
+              'Elke tegel hieronder leidt tot een echte handeling: aanmelden bij de aanbieder, of IMAP/SMTP met een app-wachtwoord. Waar de koppeling nog niet bestaat, staat geen knop maar wel wat er ontbreekt.')}</p>
+          </header>
+        ) : null}
 
         <div id='mail-sectie-aanbieders' className='mail-accounts-kaart mail-accounts-aanbieders-kaart' style={isMaquette ? undefined : { ...kaart, marginBottom: 20 }}>
           <div className='mail-accounts-kaart-kop' style={isMaquette ? undefined : { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
