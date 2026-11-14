@@ -2,7 +2,7 @@
 // sorteren, statistiek, detailpaneel, export en een eerlijke ketenindicator. Alle gegevens komen van /api/owner/journaal/beheer/*.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowDownUp, ArrowRight, Ban, Bot, CircleCheck, CircleDot, CircleX, Clock, Copy, Download, EyeOff, Fingerprint, Plug, Radio, RefreshCw, Rocket, Search,
+  ArrowDownUp, ArrowRight, Ban, Bot, Check, ChevronRight, CircleCheck, CircleDot, CircleX, Clock, Copy, Download, EyeOff, Fingerprint, Plug, Radio, RefreshCw, Rocket, Search,
   ShieldAlert, ShieldCheck, Stethoscope, TriangleAlert, UserCog, LogIn, Mail, KeyRound, MonitorSmartphone, Wrench, X, FileJson, FileSpreadsheet, ListFilter,
 } from 'lucide-react';
 import { api } from '../platform/client';
@@ -14,7 +14,7 @@ import { Doelwit, Wie } from './Mensen';
 import './audit.css';
 import './audit-maquette.css';
 import {
-  LEEG, bewaarFilters, leesFilters, dagKop, datumLang, filtersActief, korteHash, naarBody, relatief, tijdKort, tr,
+  LEEG, bewaarFilters, leesFilters, dagKop, datumLang, filtersActief, korteHash, naarBody, periodeLabel, relatief, tijdKort, tr,
   type KetenUitslag, type Lang, type Lijst, type Periode, type Persoon, type Rij, type Staat, type Statistiek,
 } from './types';
 
@@ -128,6 +128,46 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
     return uit;
   }, [rijen, lang]);
 
+  const laadRef = useRef(laad);
+  laadRef.current = laad;
+  const controleRef = useRef(controle);
+  controleRef.current = controle;
+  const broadcastAuditStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:audit-stand', {
+      detail: {
+        periode: s.periode,
+        live,
+        totaal: stat?.totaal ?? 0,
+      },
+    }));
+  }, [s.periode, live, stat?.totaal]);
+
+  useEffect(() => {
+    broadcastAuditStand();
+  }, [broadcastAuditStand]);
+
+  useEffect(() => {
+    const onNav = (ev: Event) => {
+      const d = (ev as CustomEvent<{ periode?: Periode; actie?: 'controle' | 'vernieuw' | 'live' | 'reset'; selector?: string }>).detail;
+      if (!d) return;
+      if (d.actie === 'vernieuw') { void laadRef.current(); return; }
+      if (d.actie === 'controle') { void controleRef.current(); return; }
+      if (d.actie === 'live') { setLive((v) => !v); return; }
+      if (d.actie === 'reset') { reset(); return; }
+      if (d.periode) zet({ periode: d.periode });
+      if (d.selector) {
+        const sel = d.selector;
+        window.setTimeout(() => document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 70);
+      }
+    };
+    const onVraag = () => broadcastAuditStand();
+    window.addEventListener('tsv:audit-nav', onNav);
+    window.addEventListener('tsv:audit-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:audit-nav', onNav);
+      window.removeEventListener('tsv:audit-vraag-stand', onVraag);
+    };
+  }, [broadcastAuditStand]);
 
   return <section className='aj-root mq-accent-emerald' data-admin-audit data-aj-root>
     <header className='aj-kop'>
@@ -162,13 +202,29 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
         <span>{tr(lang, 'По днях', 'Per dag')}</span>
         <div className='aj-balken'>{(stat?.perDag || []).map((d) => <i key={d.dag} title={`${d.dag}: ${d.n}${d.geweigerd ? ` (${d.geweigerd} ⚠)` : ''}`} style={{ height: `${Math.max(6, Math.round((d.n / maxDag) * 100))}%` }} data-warn={d.geweigerd ? '' : undefined} />)}</div>
       </article>
-      <article className='aj-kaart aj-ketting' data-toon={keten ? (keten.geldig ? 'ok' : 'err') : undefined}>
+      <article className='aj-kaart aj-ketting' data-toon={keten ? (keten.geldig ? 'ok' : 'err') : (stat?.laatsteControle && !stat.laatsteControle.geldig ? 'warn' : undefined)}>
         <span>{tr(lang, 'Цілісність ланцюжка', 'Integriteit van de keten')}</span>
-        <strong>{keten ? (keten.geldig ? tr(lang, 'Підтверджено', 'Bevestigd') : tr(lang, 'Порушено!', 'Verstoord!')) : tr(lang, 'Не перевірено', 'Niet gecontroleerd')}</strong>
+        {keten ? (
+          <strong>{keten.geldig ? tr(lang, 'Підтверджено', 'Bevestigd') : tr(lang, 'Порушено!', 'Verstoord!')}</strong>
+        ) : stat?.laatsteControle ? (
+          <strong className='aj-ketting-stand'>
+            {stat.laatsteControle.geldig
+              ? tr(lang, `Звірка ${relatief(stat.laatsteControle.tijd, lang)}`, `Controle ${relatief(stat.laatsteControle.tijd, lang)}`)
+              : tr(lang, 'Потрібна повторна звірка', 'Opnieuw controleren')}
+          </strong>
+        ) : (
+          <strong className='aj-ketting-stand'>{tr(lang, 'Готово до перевірки', 'Klaar voor controle')}</strong>
+        )}
         <small>{keten
           ? tr(lang, `Перевірено ${keten.totaal} записів у ${keten.gecontroleerd} ланцюжках за ${Math.max(1, Math.round(keten.duurMs / 1000))} с${keten.afgekapt ? ' (обмежено)' : ''}.`, `${keten.totaal} regels in ${keten.gecontroleerd} ketens gecontroleerd in ${Math.max(1, Math.round(keten.duurMs / 1000))} s${keten.afgekapt ? ' (begrensd)' : ''}.`)
-          : tr(lang, 'Повна перевірка хешів по всій базі, а не лише по показаних рядках.', 'Volledige hashcontrole over de hele database, niet alleen de getoonde regels.')}</small>
-        <button type='button' className='aj-knop aj-knop-klein' disabled={ketenBezig} onClick={() => void controle()}>{ketenBezig ? <RefreshCw size={13} className='aj-spin' aria-hidden='true' /> : <ShieldCheck size={13} aria-hidden='true' />}{tr(lang, 'Перевірити весь журнал', 'Controleer hele logboek')}</button>
+          : stat?.laatsteControle
+            ? tr(
+                lang,
+                `Остання повна перевірка: ${stat.laatsteControle.totaal} зап. у ${stat.laatsteControle.ketens} ланцюжках · ${stat.laatsteControle.geldig ? 'порушень не виявлено' : 'виявлено розбіжності'}. Натисніть для свіжої звірки.`,
+                `Laatste volledige controle: ${stat.laatsteControle.totaal} regels in ${stat.laatsteControle.ketens} ketens · ${stat.laatsteControle.geldig ? 'geen afwijkingen gevonden' : 'afwijkingen gevonden'}. Klik voor een nieuwe controle.`,
+              )
+            : tr(lang, 'Запустіть звірку підписів SHA-256 по всій базі, щоб підтвердити незмінність усіх записів.', 'Start een SHA-256-hashcontrole over de hele database om de onveranderlijkheid te bevestigen.')}</small>
+        <button type='button' className='aj-knop aj-knop-klein' disabled={ketenBezig} onClick={() => void controle()}>{ketenBezig ? <RefreshCw size={13} className='aj-spin' aria-hidden='true' /> : <ShieldCheck size={13} aria-hidden='true' />}{keten || stat?.laatsteControle ? tr(lang, 'Перевірити ще раз', 'Opnieuw controleren') : tr(lang, 'Перевірити весь журнал', 'Controleer hele logboek')}</button>
         {keten && !keten.geldig ? <ul className='aj-keten-fouten'>{keten.ongeldig.map((o) => <li key={o.eigenaar}><TriangleAlert size={13} aria-hidden='true' />{o.eigenaar.slice(0, 12)}: {o.hashFout} hash · {o.schakelFout} {tr(lang, 'розрив', 'schakel')} · {o.gaten} {tr(lang, 'пропуск', 'gat')}</li>)}</ul> : null}
       </article>
     </div>
@@ -178,55 +234,104 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
         <input type='search' value={zoek} onChange={(e) => setZoek(e.target.value)} placeholder={tr(lang, 'Пошук: дія, людина, агент, текст…', 'Zoeken: actie, persoon, agent, tekst…')} aria-label={tr(lang, 'Пошук у журналі', 'Zoeken in het logboek')} />
         {zoek ? <button type='button' className='aj-x' onClick={() => setZoek('')} aria-label={tr(lang, 'Очистити пошук', 'Zoekveld wissen')}><X size={14} /></button> : null}
       </label>
-      <div className='aj-groep' role='group' aria-label={tr(lang, 'Період', 'Periode')}>
-        {PERIODEN.map(([id, uk, nl]) => <button key={id} type='button' className='aj-chip' aria-pressed={s.periode === id} onClick={() => zet({ periode: id })}>{tr(lang, uk, nl)}</button>)}
-      </div>
-      {s.periode === 'eigen' ? <div className='aj-datums'>
-        <label>{tr(lang, 'Від', 'Van')}<input type='date' value={s.van} onChange={(e) => zet({ van: e.target.value })} /></label>
-        <label>{tr(lang, 'До', 'Tot')}<input type='date' value={s.tot} onChange={(e) => zet({ tot: e.target.value })} /></label>
-      </div> : null}
-      <div className='aj-groep aj-cats' role='group' aria-label={tr(lang, 'Категорії', 'Categorieën')}>
-        {ALLE_CATEGORIEEN.map((c) => { const I = ICONEN[c.id]; const n = telCat.get(c.id) || 0; return <button key={c.id} type='button' className='aj-chip aj-chip-cat' data-cat={c.id} aria-pressed={s.categorieen.includes(c.id)} onClick={() => zet({ categorieen: wissel(s.categorieen, c.id) })} disabled={!n && !s.categorieen.includes(c.id)}><I size={14} aria-hidden='true' />{c[lang]}<em>{n}</em></button>; })}
-      </div>
-      <div className='aj-rij-filters'>
-        <div className='aj-groep' role='group' aria-label={tr(lang, 'Результат', 'Resultaat')}>
-          {(['ok', 'geweigerd', 'fout'] as const).map((r) => { const I = RES_ICOON[r]; return <button key={r} type='button' className='aj-chip' data-res={r} aria-pressed={s.resultaten.includes(r)} onClick={() => zet({ resultaten: wissel(s.resultaten, r) })}><I size={14} aria-hidden='true' />{RESULTAAT_NAMEN[r][lang]}<em>{telRes.get(r) || 0}</em></button>; })}
+
+      <div className='aj-filter-sectie' data-sectie='periode'>
+        <div className='aj-filter-kop'>
+          <span>{tr(lang, 'Період вибірки', 'Periode')}</span>
+          <small>{periodeLabel(s.periode, lang)}</small>
         </div>
-        <label className='aj-select'>
-          <span>{tr(lang, 'Хто', 'Wie')}</span>
-          <select data-hulp-vrij='filter' value={s.actorId} onChange={(e) => zet({ actorId: e.target.value })}>
-            <option value=''>{tr(lang, 'Усі користувачі', 'Alle gebruikers')}</option>
-            {(stat?.actoren || []).map((a) => <option key={a.id} value={a.id}>{(personen[a.id]?.naam || personen[a.id]?.email || `${a.id.slice(0, 8)}…`)} ({a.n})</option>)}
-          </select>
-        </label>
-        <label className='aj-select'>
-          <span>{tr(lang, 'Сервіс', 'Dienst')}</span>
-          <select data-hulp-vrij='filter' value={s.dienst} onChange={(e) => zet({ dienst: e.target.value })}>
-            <option value=''>{tr(lang, 'Усі сервіси', 'Alle diensten')}</option>
-            {(stat?.perDienst || []).map((d) => <option key={d.id} value={d.id}>{d.id} ({d.n})</option>)}
-          </select>
-        </label>
-        <label className='aj-select'>
-          <span>{tr(lang, 'Джерело', 'Bron')}</span>
-          <select data-hulp-vrij='filter' value={s.bron} onChange={(e) => zet({ bron: e.target.value as Staat['bron'] })}>
-            <option value='nieuw'>{tr(lang, 'Журнал безпеки (ланцюжок)', 'Beveiligingslogboek (keten)')}</option>
-            <option value='oud'>{tr(lang, 'Старий архів (до ланцюжка)', 'Oud archief (vóór de keten)')}</option>
-          </select>
-        </label>
-        <label className='aj-schakel'><input data-hulp-vrij='filter' type='checkbox' checked={s.verbergRuis} onChange={(e) => zet({ verbergRuis: e.target.checked })} /><EyeOff size={14} aria-hidden='true' />{tr(lang, 'Сховати службові події', 'Technische ruis verbergen')}</label>
-        <button type='button' className='aj-knop' onClick={() => zet({ volgorde: s.volgorde === 'nieuw' ? 'oud' : 'nieuw' })}><ArrowDownUp size={14} aria-hidden='true' />{s.volgorde === 'nieuw' ? tr(lang, 'Спочатку нові', 'Nieuwste eerst') : tr(lang, 'Спочатку старі', 'Oudste eerst')}</button>
+        <div className='aj-seg' role='group' aria-label={tr(lang, 'Період', 'Periode')}>
+          {PERIODEN.map(([id, uk, nl]) => {
+            const aan = s.periode === id;
+            return (
+              <button key={id} type='button' className='aj-seg-knop' aria-pressed={aan} onClick={() => zet({ periode: id })}>
+                {aan ? <Check size={13} aria-hidden='true' /> : null}
+                <span>{tr(lang, uk, nl)}</span>
+              </button>
+            );
+          })}
+        </div>
+        {s.periode === 'eigen' ? <div className='aj-datums'>
+          <label>{tr(lang, 'Від', 'Van')}<input type='date' value={s.van} onChange={(e) => zet({ van: e.target.value })} /></label>
+          <label>{tr(lang, 'До', 'Tot')}<input type='date' value={s.tot} onChange={(e) => zet({ tot: e.target.value })} /></label>
+        </div> : null}
+      </div>
+
+      <div className='aj-filter-sectie' data-sectie='categorieen'>
+        <div className='aj-filter-kop'>
+          <span>{tr(lang, 'Вид подій', 'Gebeurtenistype')}</span>
+          <small>{s.categorieen.length ? tr(lang, `Вибрано: ${s.categorieen.length}`, `Gekozen: ${s.categorieen.length}`) : tr(lang, 'Усі види', 'Alle typen')}</small>
+        </div>
+        <div className='aj-groep aj-cats' role='group' aria-label={tr(lang, 'Категорії', 'Categorieën')}>
+          {ALLE_CATEGORIEEN.map((c) => { const I = ICONEN[c.id]; const n = telCat.get(c.id) || 0; return <button key={c.id} type='button' className='aj-chip aj-chip-cat' data-cat={c.id} aria-pressed={s.categorieen.includes(c.id)} onClick={() => zet({ categorieen: wissel(s.categorieen, c.id) })} disabled={!n && !s.categorieen.includes(c.id)}><I size={14} aria-hidden='true' />{c[lang]}<em>{n}</em></button>; })}
+        </div>
+      </div>
+
+      <div className='aj-filter-twee'>
+        <div className='aj-filter-sectie' data-sectie='resultaat'>
+          <div className='aj-filter-kop'>
+            <span>{tr(lang, 'Результат', 'Resultaat')}</span>
+            <small>{s.resultaten.length ? tr(lang, `Вибрано: ${s.resultaten.length}`, `Gekozen: ${s.resultaten.length}`) : tr(lang, 'Будь-який', 'Alle')}</small>
+          </div>
+          <div className='aj-groep' role='group' aria-label={tr(lang, 'Результат', 'Resultaat')}>
+            {(['ok', 'geweigerd', 'fout'] as const).map((r) => { const I = RES_ICOON[r]; return <button key={r} type='button' className='aj-chip aj-chip-res' data-res={r} aria-pressed={s.resultaten.includes(r)} onClick={() => zet({ resultaten: wissel(s.resultaten, r) })}><I size={14} aria-hidden='true' />{RESULTAAT_NAMEN[r][lang]}<em>{telRes.get(r) || 0}</em></button>; })}
+          </div>
+        </div>
+
+        <div className='aj-filter-sectie' data-sectie='overig'>
+          <div className='aj-filter-kop'>
+            <span>{tr(lang, 'Особа, служба, джерело і порядок', 'Persoon, dienst, bron en volgorde')}</span>
+          </div>
+          <div className='aj-rij-filters'>
+            <label className='aj-select'>
+              <span>{tr(lang, 'Хто', 'Wie')}</span>
+              <select data-hulp-vrij='filter' value={s.actorId} onChange={(e) => zet({ actorId: e.target.value })}>
+                <option value=''>{tr(lang, 'Усі користувачі', 'Alle gebruikers')}</option>
+                {(stat?.actoren || []).map((a) => <option key={a.id} value={a.id}>{(personen[a.id]?.naam || personen[a.id]?.email || `${a.id.slice(0, 8)}…`)} ({a.n})</option>)}
+              </select>
+            </label>
+            <label className='aj-select'>
+              <span>{tr(lang, 'Сервіс', 'Dienst')}</span>
+              <select data-hulp-vrij='filter' value={s.dienst} onChange={(e) => zet({ dienst: e.target.value })}>
+                <option value=''>{tr(lang, 'Усі сервіси', 'Alle diensten')}</option>
+                {(stat?.perDienst || []).map((d) => <option key={d.id} value={d.id}>{d.id} ({d.n})</option>)}
+              </select>
+            </label>
+            <label className='aj-select'>
+              <span>{tr(lang, 'Джерело', 'Bron')}</span>
+              <select data-hulp-vrij='filter' value={s.bron} onChange={(e) => zet({ bron: e.target.value as Staat['bron'] })}>
+                <option value='nieuw'>{tr(lang, 'Журнал безпеки (ланцюжок)', 'Beveiligingslogboek (keten)')}</option>
+                <option value='oud'>{tr(lang, 'Старий архів (до ланцюжка)', 'Oud archief (vóór de keten)')}</option>
+              </select>
+            </label>
+            <label className='aj-schakel'><input data-hulp-vrij='filter' type='checkbox' checked={s.verbergRuis} onChange={(e) => zet({ verbergRuis: e.target.checked })} /><EyeOff size={14} aria-hidden='true' />{tr(lang, 'Сховати службові події', 'Technische ruis verbergen')}</label>
+            <button type='button' className='aj-knop' onClick={() => zet({ volgorde: s.volgorde === 'nieuw' ? 'oud' : 'nieuw' })}><ArrowDownUp size={14} aria-hidden='true' />{s.volgorde === 'nieuw' ? tr(lang, 'Спочатку нові', 'Nieuwste eerst') : tr(lang, 'Спочатку старі', 'Oudste eerst')}</button>
+          </div>
+        </div>
+      </div>
+
+      <div className='aj-filter-voet'>
+        <span className='aj-filter-samenvatting'>
+          {nFilters
+            ? tr(lang, `Увімкнено фільтрів: ${nFilters} (період: ${periodeLabel(s.periode, lang)})`, `Actieve filters: ${nFilters} (periode: ${periodeLabel(s.periode, lang)})`)
+            : tr(lang, `Базова вибірка: період «${periodeLabel(s.periode, lang)}», службові події приховано`, `Standaardselectie: periode «${periodeLabel(s.periode, lang)}», ruis verborgen`)}
+        </span>
         {nFilters ? <button type='button' className='aj-knop aj-knop-zacht' onClick={reset}><X size={14} aria-hidden='true' />{tr(lang, `Скинути (${nFilters})`, `Wissen (${nFilters})`)}</button> : null}
       </div>
     </div>
 
     {nFilters ? <div className='aj-actief' aria-label={tr(lang, 'Активні фільтри', 'Actieve filters')}>
+      <span className='aj-actief-kop'>{tr(lang, 'Активні фільтри:', 'Actieve filters:')}</span>
       {s.q.trim() ? <button type='button' className='aj-tag' onClick={() => setZoek('')}>{tr(lang, 'Текст', 'Tekst')}: «{s.q.trim()}»<X size={12} aria-hidden='true' /></button> : null}
+      {s.periode !== '7d' ? <button type='button' className='aj-tag' onClick={() => zet({ periode: '7d', van: '', tot: '' })}>{tr(lang, 'Період', 'Periode')}: {periodeLabel(s.periode, lang)}<X size={12} aria-hidden='true' /></button> : null}
       {s.categorieen.map((c) => <button key={c} type='button' className='aj-tag' onClick={() => zet({ categorieen: wissel(s.categorieen, c) })}>{categorieNaam(c, lang)}<X size={12} aria-hidden='true' /></button>)}
       {s.resultaten.map((c) => <button key={c} type='button' className='aj-tag' onClick={() => zet({ resultaten: wissel(s.resultaten, c) })}>{RESULTAAT_NAMEN[c as 'ok'][lang]}<X size={12} aria-hidden='true' /></button>)}
       {s.actorId ? <button type='button' className='aj-tag' onClick={() => zet({ actorId: '' })}>{tr(lang, 'Хто', 'Wie')}: {personen[s.actorId]?.naam || personen[s.actorId]?.email || `${s.actorId.slice(0, 8)}…`}<X size={12} aria-hidden='true' /></button> : null}
       {s.doelId ? <button type='button' className='aj-tag' onClick={() => zet({ doelId: '', doelNaam: '' })}>{tr(lang, 'Кому / що', 'Voor wie / wat')}: {s.doelNaam || `${s.doelId.slice(0, 8)}…`}<X size={12} aria-hidden='true' /></button> : null}
       {s.actie ? <button type='button' className='aj-tag' onClick={() => zet({ actie: '' })}>{tr(lang, 'Дія', 'Actie')}: {actieLabel(s.actie, lang)}<X size={12} aria-hidden='true' /></button> : null}
       {s.dienst ? <button type='button' className='aj-tag' onClick={() => zet({ dienst: '' })}>{tr(lang, 'Сервіс', 'Dienst')}: {s.dienst}<X size={12} aria-hidden='true' /></button> : null}
+      {s.bron !== 'nieuw' ? <button type='button' className='aj-tag' onClick={() => zet({ bron: 'nieuw' })}>{tr(lang, 'Джерело', 'Bron')}: {tr(lang, 'Старий архів', 'Oud archief')}<X size={12} aria-hidden='true' /></button> : null}
+      {!s.verbergRuis ? <button type='button' className='aj-tag' onClick={() => zet({ verbergRuis: true })}>{tr(lang, 'Службові події: показано', 'Technische ruis: zichtbaar')}<X size={12} aria-hidden='true' /></button> : null}
     </div> : null}
 
     {fout ? <p className='aj-fout' role='alert'><TriangleAlert size={16} aria-hidden='true' />{fout}</p> : null}
@@ -245,12 +350,21 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
         <ul>
           {g.rijen.map((r) => { const I = ICONEN[r.categorie]; const RI = RES_ICOON[r.resultaatKlasse]; const w = wijzigingTekst(r.wijziging); return <li key={r.id}>
             <button type='button' className='aj-regel' data-res={r.resultaatKlasse} data-ruis={r.ruis ? '' : undefined} aria-label={`${actieLabel(r.action, lang)} — ${tijdKort(r.createdAt, lang)}`} onClick={() => setOpen(r)}>
-              <span className='aj-tijd'><time dateTime={new Date(r.createdAt).toISOString()}>{tijdKort(r.createdAt, lang)}</time></span>
-              <span className='aj-wie-cel'><Wie id={r.actorId || r.ownerId} personen={personen} agent={r.agent} systeem={systeem} lang={lang} /></span>
-              <span className='aj-wat'><span className='aj-cat-ico' data-cat={r.categorie} title={categorieNaam(r.categorie, lang)}><I size={15} aria-hidden='true' /></span><span><b>{actieLabel(r.action, lang)}</b><small>{categorieNaam(r.categorie, lang)}{r.service ? ` · ${r.service}` : ''}</small></span></span>
-              <span className='aj-kom'><ArrowRight size={13} aria-hidden='true' className='aj-pijl' /><Doelwit doel={r.doel} personen={personen} agent={r.agent} /></span>
-              <span className='aj-wijz'>{w ? <code>{w}</code> : r.reden ? <em>{r.reden}</em> : null}</span>
-              <span className='aj-res' data-res={r.resultaatKlasse}><RI size={14} aria-hidden='true' />{r.result ? (RESULTAAT_NAMEN[r.resultaatKlasse][lang] + (r.resultaatKlasse === 'info' ? ` · ${r.result}` : '')) : RESULTAAT_NAMEN.info[lang]}</span>
+              <span className='aj-regel-hoofd'>
+                <span className='aj-tijd'><time dateTime={new Date(r.createdAt).toISOString()}>{tijdKort(r.createdAt, lang)}</time></span>
+                <span className='aj-wat'><span className='aj-cat-ico' data-cat={r.categorie} title={categorieNaam(r.categorie, lang)}><I size={15} aria-hidden='true' /></span><span><b>{actieLabel(r.action, lang)}</b><small>{categorieNaam(r.categorie, lang)}{r.service ? ` · ${r.service}` : ''}</small></span></span>
+                <span className='aj-wie-cel'><Wie id={r.actorId || r.ownerId} personen={personen} agent={r.agent} systeem={systeem} lang={lang} /></span>
+                <span className='aj-regel-status'>
+                  <span className='aj-res' data-res={r.resultaatKlasse}><RI size={14} aria-hidden='true' />{r.result ? (RESULTAAT_NAMEN[r.resultaatKlasse][lang] + (r.resultaatKlasse === 'info' ? ` · ${r.result}` : '')) : RESULTAAT_NAMEN.info[lang]}</span>
+                  <ChevronRight size={15} aria-hidden='true' className='aj-regel-pijl' />
+                </span>
+              </span>
+              {(r.doel || w || r.reden) ? (
+                <span className='aj-regel-meta'>
+                  {r.doel ? <span className='aj-kom'><ArrowRight size={13} aria-hidden='true' className='aj-pijl' /><Doelwit doel={r.doel} personen={personen} agent={r.agent} /></span> : null}
+                  {(w || r.reden) ? <span className='aj-wijz'>{w ? <code>{w}</code> : <em>{r.reden}</em>}</span> : null}
+                </span>
+              ) : null}
             </button>
           </li>; })}
         </ul>

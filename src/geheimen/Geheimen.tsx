@@ -93,6 +93,46 @@ export default function Geheimen({ lang, sourceOrigin, tabContext }: Props) {
   const journaalZicht = useMemo(() => filterJournaal(journaal, jFilter), [journaal, jFilter]);
   const detail = items.find((g) => g.id === detailId) || null;
 
+  const laadRef = useRef(laad);
+  laadRef.current = laad;
+  const zendGeheimenStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:geheimen-stand', {
+      detail: {
+        weergave,
+        staat: filters.staat,
+        totaal: items.length,
+        aandacht: standen.aandacht,
+        journaalAantal: journaal.length,
+      },
+    }));
+  }, [weergave, filters.staat, items.length, standen.aandacht, journaal.length]);
+
+  useEffect(() => {
+    zendGeheimenStand();
+  }, [zendGeheimenStand]);
+
+  useEffect(() => {
+    const onNav = (ev: Event) => {
+      const d = (ev as CustomEvent<{ weergave?: 'lijst' | 'journaal'; staat?: Filters['staat']; actie?: 'toevoegen' | 'vernieuw'; selector?: string }>).detail;
+      if (!d) return;
+      if (d.actie === 'vernieuw') { void laadRef.current(); return; }
+      if (d.actie === 'toevoegen') { if (vaultKlaar) setToevoegen({ doel: 'github' }); return; }
+      if (d.weergave) setWeergave(d.weergave);
+      if (d.staat) setFilters((f) => ({ ...f, staat: d.staat! }));
+      if (d.selector) {
+        const sel = d.selector;
+        window.setTimeout(() => document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 70);
+      }
+    };
+    const onVraag = () => zendGeheimenStand();
+    window.addEventListener('tsv:geheimen-nav', onNav);
+    window.addEventListener('tsv:geheimen-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:geheimen-nav', onNav);
+      window.removeEventListener('tsv:geheimen-vraag-stand', onVraag);
+    };
+  }, [vaultKlaar, zendGeheimenStand]);
+
   // ---------------------------------------------------------------------------------------------- acties
   const toon = async (g: Geheim) => {
     if (bezig) return;

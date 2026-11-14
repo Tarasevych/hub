@@ -262,17 +262,19 @@ export async function journaalOud(f: JournaalFilter, opties: ZoekOpties = {}): P
 }
 
 // ------------------------------------------------------------------------------------------------ facetten en statistiek
+export type JournaalLaatsteControle = { tijd: number; geldig: boolean; totaal: number; ketens: number };
 export type JournaalStatistiek = {
   totaal: number; perCategorie: Array<{ id: string; n: number }>; perResultaat: Array<{ id: string; n: number }>;
   actoren: Array<{ id: string; n: number }>; acties: Array<{ id: string; n: number }>; perDag: Array<{ dag: string; n: number; geweigerd: number }>;
   /** per dienst (kolom service: admin/mcp/hub/mail/…) — zonder het dienstfilter zelf, zodat de keuzelijst alle diensten blijft tonen */ perDienst: Array<{ id: string; n: number }>;
   eerste: number; laatste: number;
+  laatsteControle: JournaalLaatsteControle | null;
 };
 export async function journaalStatistiek(f: JournaalFilter, opties: ZoekOpties = {}): Promise<JournaalStatistiek> {
   const { waar, p } = bouwWaar({ ...f, cursor: undefined }, opties, false);
   const zonderDienst = bouwWaar({ ...f, cursor: undefined, dienst: undefined }, opties, false);
   const pool = getPool('systeem');
-  const [tot, cat, res, act, ac2, dag, dienst] = await Promise.all([
+  const [tot, cat, res, act, ac2, dag, dienst, controleRij] = await Promise.all([
     pool.query(`SELECT count(*)::bigint AS n, (extract(epoch FROM min(created_at)) * 1000)::bigint AS eerste, (extract(epoch FROM max(created_at)) * 1000)::bigint AS laatste FROM app.audit ${waar}`, p),
     pool.query(`SELECT ${categorieSql('action')} AS id, count(*)::bigint AS n FROM app.audit ${waar} GROUP BY 1 ORDER BY 2 DESC`, p),
     pool.query(`SELECT ${resultaatSql('result')} AS id, count(*)::bigint AS n FROM app.audit ${waar} GROUP BY 1 ORDER BY 2 DESC`, p),
@@ -282,12 +284,30 @@ export async function journaalStatistiek(f: JournaalFilter, opties: ZoekOpties =
                        count(*) FILTER (WHERE ${resultaatSql('result')} IN ('geweigerd','fout'))::bigint AS geweigerd
                   FROM app.audit ${waar} GROUP BY 1 ORDER BY 1 DESC LIMIT 31`, p),
     pool.query(`SELECT service AS id, count(*)::bigint AS n FROM app.audit ${zonderDienst.waar ? `${zonderDienst.waar} AND` : 'WHERE'} service IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 20`, zonderDienst.p),
+    pool.query(
+      `SELECT result, details, (extract(epoch FROM created_at) * 1000)::bigint AS ms
+         FROM app.audit
+        WHERE action = 'owner.admin.audit.chain_checked'
+        ORDER BY id DESC
+        LIMIT 1`,
+    ).catch(() => ({ rows: [] as Array<Record<string, unknown>> })),
   ]);
   const num = (r: Array<Record<string, unknown>>) => r.map((x) => ({ id: String(x.id), n: Number(x.n) }));
+  const lc = controleRij.rows[0] as { result?: string; details?: Record<string, unknown>; ms?: number } | undefined;
+  const lcDetails = lc?.details && typeof lc.details === 'object' ? lc.details : {};
+  const laatsteControle: JournaalLaatsteControle | null = lc
+    ? {
+        tijd: Number(lc.ms || 0),
+        geldig: lc.result === 'success' || lc.result === 'ok',
+        totaal: Number(lcDetails.totaal || 0),
+        ketens: Number(lcDetails.ketens || 0),
+      }
+    : null;
   return {
     totaal: Number(tot.rows[0]?.n || 0), eerste: Number(tot.rows[0]?.eerste || 0), laatste: Number(tot.rows[0]?.laatste || 0),
     perCategorie: num(cat.rows), perResultaat: num(res.rows), actoren: num(act.rows), acties: num(ac2.rows), perDienst: num(dienst.rows),
     perDag: dag.rows.map((x) => ({ dag: String(x.dag), n: Number(x.n), geweigerd: Number(x.geweigerd) })).reverse(),
+    laatsteControle,
   };
 }
 

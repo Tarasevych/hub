@@ -131,7 +131,7 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 .canonical-signed-out.mr-sign-in :is(h1,h2,h3){font-family:inherit}
 .mr-sign-in-content{grid-row:2;align-self:center;width:min(440px,100%);display:grid;justify-items:center;gap:0;transition:opacity .2s ease}
 /* Het menu van de bovenhoek staat open: de aanmeldtekst blijft op zijn plek (gecentreerd) maar wordt wat zachter. */
-.canonical-chrome:has(.mr-sign-in-content):has(.canonical-account-panel) .mr-sign-in-content{opacity:.38;pointer-events:none}
+.canonical-chrome:has(.mr-sign-in-content):is(:has(.canonical-account-panel),[data-account-menu-open='1']) .mr-sign-in-content{opacity:.38;pointer-events:none}
 .mr-sign-in h1{margin:0!important;font-size:clamp(1.75rem,3vw,2.55rem)!important;line-height:1.14;letter-spacing:-.035em;font-weight:700!important;color:var(--mr-login-ink)!important;text-wrap:balance}
 .mr-sign-in-subtitle{margin:14px 0 28px!important;max-width:410px;color:var(--mr-login-muted);font-size:clamp(.92rem,1.15vw,1.03rem);line-height:1.55;text-wrap:balance}
 
@@ -448,6 +448,27 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']:not([data-account-menu-v3]) .canonical-add-account-control{border-color:var(--mr-login-border);border-radius:13px;background:transparent}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']:not([data-account-menu-v3]) :where(.canonical-preference-strip,.am2-weergave){margin-top:16px;padding-top:12px;border-top:1px solid var(--mr-login-border)}
 .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']:not([data-account-menu-v3]) .canonical-account-legal{font-size:.71rem}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-panel{
+ --canonical-text:var(--mr-login-ink);--canonical-muted:var(--mr-login-muted);--canonical-line:var(--mr-login-border);--canonical-panel:var(--mr-login-card);
+ width:min(370px,calc(100vw - 28px));max-height:min(650px,calc(100dvh - 90px));
+ padding:20px!important;border:1px solid var(--mr-login-border);border-radius:22px;
+ background:color-mix(in srgb,var(--mr-login-sheet) 90%,white);color:var(--mr-login-ink);
+ box-shadow:0 20px 56px rgba(31,43,65,.16);backdrop-filter:blur(24px)
+}
+.canonical-account-portal:is(.theme-dark,.theme-plum-dark)[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-panel{
+ background:color-mix(in srgb,var(--mr-login-sheet) 94%,#43536b)!important
+}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-heading{padding:3px 2px 15px;gap:9px}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-heading>svg{display:none}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-heading h2{font-family:inherit;font-size:1.08rem;font-weight:680;letter-spacing:-.025em}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-heading p{font-size:.8rem;line-height:1.35}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-row{border-color:transparent;border-radius:13px;background:transparent}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-row:hover,
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-row:focus-within{background:rgba(123,144,175,.12)}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-select{min-height:58px}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-add-account-control{border-color:var(--mr-login-border);border-radius:13px;background:transparent}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) :where(.canonical-preference-strip,.am2-weergave){margin-top:16px;padding-top:12px;border-top:1px solid var(--mr-login-border)}
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-legal{font-size:.71rem}
 
 @media(max-width:700px){
  .canonical-signed-out.mr-sign-in .mr-sign-in-optie{min-height:60px;grid-template-columns:34px minmax(0,1fr)}
@@ -490,6 +511,7 @@ html.palet-puur .canonical-chrome[data-surface-model='flat-content'] .canonical-
   right:max(24px,calc(16px + env(safe-area-inset-right,0px)));
  }
  .canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true']:not([data-account-menu-v3]) .canonical-account-panel{position:absolute;top:50px;right:0;left:auto;max-height:calc(100dvh - 91px);width:min(370px,calc(100vw - 32px));padding:16px!important}
+ .canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] > .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-panel{width:100%;max-height:calc(100dvh - 91px);padding:16px!important}
 }
 @media(max-width:380px){
  .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in{padding-inline:14px}

@@ -12,6 +12,17 @@
 .canonical-account-gewisseld em{color:var(--canonical-accent);font-size:.75rem;font-style:normal;font-weight:750}
 .canonical-account-gewisseld p{margin:2px 0 0;color:var(--canonical-muted);font-size:.76rem;line-height:1.4}
 .canonical-account-gewisseld .canonical-menu-action{margin-top:7px;width:100%}
+.canonical-account-portal{position:fixed;z-index:420;margin:0;pointer-events:auto}
+.canonical-account-portal .canonical-account-menu{position:static;display:block;width:100%;height:auto;z-index:auto}
+.canonical-account-portal .canonical-account-panel{position:static;top:auto;right:auto;left:auto;bottom:auto;max-height:inherit;box-sizing:border-box}
+.canonical-account-portal .canonical-account-menu:not([data-account-menu-v3]) .canonical-account-panel{transform:none}
+.canonical-account-portal .canonical-account-menu[data-portaal-volbreed='1'] .canonical-account-panel{width:100%;max-width:100%}
+.canonical-account-portal.theme-dark .canonical-profile-camera{--canonical-camera-bg:#d7efec;--canonical-camera-fg:#102426;--canonical-camera-focus:#8dbab7}
+.canonical-account-portal.theme-plum-light .canonical-profile-camera{--canonical-camera-bg:#633052;--canonical-camera-fg:#fff;--canonical-camera-focus:#6f355f}
+.canonical-account-portal.theme-plum-dark .canonical-profile-camera{--canonical-camera-bg:#f0cce3;--canonical-camera-fg:#2b1725;--canonical-camera-focus:#d8a4c7}
+.canonical-account-portal.theme-dark .canonical-menu-action.primary{background:var(--accent);border-color:var(--accent);color:var(--text-on-accent)}
+.canonical-account-portal.theme-dark .canonical-menu-action.primary>svg{color:var(--text-on-accent)}
+.canonical-account-portal.theme-dark .canonical-menu-action.primary:focus-visible{outline-color:var(--focus)}
 /* MOBIEL 21.10.2026 (stand «kleine-knop» < 40/44 px, «kleine-letter» < 12 px): tikvlak via min-height/padding = var(--tik-hoogte), geen opgeblazen iconen. */
 @media (max-width:700px){
   /* камера на фото: 30×44 (овал) → тикова зона 44×44, видиме коло лишається 30 px (прозора рамка + background-clip) */

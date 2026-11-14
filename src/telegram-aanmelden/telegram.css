@@ -56,7 +56,7 @@
 @keyframes tga-draai{to{transform:rotate(360deg)}}
 
 /* Картки, смуга прив’язки та двоколонкове порівняння профілю на сайті й даних із Telegram. */
-.tga-aanmeld-wacht,.tga-blok,.tga-kaart,.tga-wijziging{border:1px solid var(--line,rgba(128,128,128,.24));border-radius:var(--straal-l,14px);padding:14px 16px;background:var(--surface,rgba(128,128,128,.04));display:flex;flex-direction:column;gap:10px}
+.tga-aanmeld-wacht,.tga-blok,.tga-kaart,.tga-wijziging{border:1px solid var(--line,rgba(128,128,128,.24));border-radius:var(--straal-l,14px);padding:14px 16px;background:var(--surface,rgba(128,128,128,.04));display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;overflow-wrap:anywhere}
 .tga-kaart{background:var(--panel,transparent)}
 .tga-kaart header,.tga-kaart-kop{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .tga-kaart-titel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
@@ -82,7 +82,7 @@
 .tga-identiteit{display:flex;gap:12px;align-items:flex-start;min-width:0}
 .tga-identiteit img,.tga-foto-rond,.tga-geen-foto{width:56px;height:56px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;flex:0 0 56px}
 .tga-geen-foto{display:grid;place-items:center;background:#2AABEE;color:#fff;font-weight:700;font-size:1.35rem}
-.tga-identiteit dl,.tga-dl{display:grid;grid-template-columns:minmax(130px,auto) minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px;min-width:0;flex:1 1 200px}
+.tga-identiteit dl,.tga-dl{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px;min-width:0;flex:1 1 200px}
 .tga-identiteit dt,.tga-dl dt{color:var(--muted)}
 .tga-identiteit dd,.tga-dl dd{margin:0;min-width:0}
 .tga-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;word-break:break-word;overflow-wrap:anywhere}
@@ -138,7 +138,7 @@
 .tga-verschil,.tga-matrix table,.tga-blok table,.tga-beheer table{width:100%;border-collapse:collapse;font-size:13px}
 .tga-verschil td,.tga-verschil th,.tga-matrix td,.tga-matrix th,.tga-blok td,.tga-blok th,.tga-beheer td,.tga-beheer th{padding:7px 6px;border-bottom:1px solid var(--line,rgba(128,128,128,.16));text-align:left;vertical-align:top}
 .tga-nieuw{font-weight:700}
-.tga-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tga-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:10px}
 .tga-tegel{border:1px solid var(--line,rgba(128,128,128,.22));border-radius:10px;padding:10px 12px;background:var(--panel,transparent);display:grid;gap:2px}
 .tga-tegel strong{font-size:1.3rem}
 .tga-tegel span{font-size:12px;color:var(--muted)}
@@ -146,7 +146,7 @@
 .tga-reeks span{flex:1;max-width:6px;border-radius:2px;background:rgba(128,128,128,.25)}
 .tga-reeks .ok{background:#16a34a}
 .tga-reeks .nee{background:#dc2626}
-.tga-nood{border-radius:12px;padding:12px 14px;border:1px solid rgba(22,163,74,.38);background:rgba(22,163,74,.07);display:grid;gap:6px}
+.tga-nood{border-radius:12px;padding:12px 14px;border:1px solid rgba(22,163,74,.38);background:rgba(22,163,74,.07);display:grid;gap:6px;min-width:0;max-width:100%;overflow-wrap:anywhere}
 .tga-nood-uit{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.1)}
 .tga-stap-lijst,.tga-geblokkeerd{list-style:none;padding:0;margin:0;font-size:13px;display:grid;gap:6px}
 .tga-geblokkeerd li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel)}
@@ -156,15 +156,21 @@
 .tga-venster{background:var(--panel,#fff);color:var(--text,#111);border:1px solid var(--line);border-radius:16px;max-width:460px;width:100%;padding:20px;display:grid;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .tga-venster h2{display:flex;gap:10px;align-items:center;margin:0;font-size:1.1rem}
 .tga-talen input{width:100%}
+.tga-actie-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));align-items:stretch;gap:8px}
+.tga-actie-form .tga-vinkje{grid-column:1 / -1}
 .tga-matrix select{display:block;width:100%;min-width:12rem;min-height:38px;padding:6px 10px;border-radius:8px;border:1px solid var(--line,rgba(128,128,128,.3));background:var(--panel,transparent);color:inherit;font:inherit;font-size:13px}
 .tga-plaatsing-lijst{list-style:none;margin:8px 0;padding:0;display:grid;gap:8px}
-.tga-plaatsing-lijst li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,21rem) auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line,rgba(128,128,128,.22));border-radius:10px}
+.tga-plaatsing-lijst li{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,21rem) auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line,rgba(128,128,128,.22));border-radius:10px;background:var(--panel,transparent);transition:border-color .15s ease,background-color .15s ease,opacity .15s ease}
+.tga-plaatsing-lijst li[data-sleep-actief='true']{opacity:.58;border-style:dashed}
+.tga-plaatsing-lijst li[data-sleep-doel='true']{border-color:var(--accent,#2563eb);background:var(--accent-soft,rgba(37,99,235,.08));box-shadow:0 0 0 1px var(--accent,#2563eb)}
+.tga-plaatsing-greep{display:inline-flex;align-items:center;justify-content:center;width:28px;height:36px;color:var(--muted);cursor:grab;border-radius:6px;touch-action:none}
+.tga-plaatsing-greep:hover{color:var(--text);background:var(--surface2,rgba(128,128,128,.12))}
 .tga-plaatsing-naam{display:flex;flex-direction:column;gap:2px;min-width:0}
 .tga-plaatsing-naam small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
 .tga-plaatsing-lijst select{width:100%;max-width:100%;min-width:0;min-height:38px;padding:6px 10px;border-radius:8px;border:1px solid var(--line,rgba(128,128,128,.3));background:var(--panel,transparent);color:inherit;font:inherit;font-size:13px}
 .tga-plaatsing-lijst select option{color:#17212b;background:#fff}
 .tga-plaatsing-pijlen{display:flex;gap:4px}
-.tga-plaatsing-voorbeeld{margin:8px 0;padding:12px 14px;border-radius:12px;border:1px dashed var(--line,rgba(128,128,128,.35));display:grid;gap:8px;max-width:380px}
+.tga-plaatsing-voorbeeld{margin:8px 0;padding:12px 14px;border-radius:12px;border:1px dashed var(--line,rgba(128,128,128,.35));display:grid;gap:8px;max-width:min(100%,380px);width:100%}
 .tga-voorbeeld-hoofd{display:grid;gap:6px}
 .tga-voorbeeld-knop{display:block;padding:8px 12px;border-radius:10px;border:1px solid var(--line,rgba(128,128,128,.3));font-size:13px;font-weight:600;text-align:center}
 .tga-voorbeeld-schakel{font-size:12.5px;font-weight:600;color:var(--muted)}
@@ -178,6 +184,7 @@
   .tga-sectie{max-width:100%}
   .tga-sectie.tga-gebruiker{padding:14px;border-radius:var(--straal-l,14px)}
   .tga-sectie *{min-width:0}
+  .tga-sectie .tga-naam input[type='text']{min-width:0;width:100%}
   .tga-sectie .tga-mono,.tga-sectie dd,.tga-sectie td{overflow-wrap:anywhere}
   .tga-sectie table.tga-lijst,.tga-sectie table.tga-verschil{display:block;overflow-x:auto;max-width:100%}
   .tga-raster{grid-template-columns:minmax(0,1fr)!important}
@@ -190,7 +197,19 @@
   .tga-matrix table,.tga-matrix tbody,.tga-matrix tr,.tga-matrix td{display:block;width:100%}
   .tga-matrix thead{display:none}
   .tga-matrix tr{padding:7px 0;border-bottom:1px solid var(--line,rgba(128,128,128,.16))}
-  .tga-plaatsing-lijst li{grid-template-columns:minmax(0,1fr) auto}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel),
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) tbody,
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) tr,
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) td{display:block;width:100%}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) thead{display:none}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) tbody{display:grid;gap:8px}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) tr{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line,rgba(128,128,128,.22));border-radius:10px;background:var(--panel,transparent)}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) td{padding:0;border-bottom:0;display:grid;gap:3px}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) td[data-label]::before{content:attr(data-label);font-size:12px;font-weight:650;color:var(--muted)}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) td.tga-talen-naam{font-weight:700;font-size:13.5px}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) td.tga-tabel-actie:empty{display:none}
+  :is(.tga-talen,.tga-acties-tabel,.tga-koppelingen-tabel,.tga-journaal-tabel) td.tga-tabel-actie .tga-knop{width:100%}
+  .tga-plaatsing-lijst li{grid-template-columns:auto minmax(0,1fr) auto}
   .tga-plaatsing-lijst select{grid-column:1/-1;grid-row:2}
   .tga-knop,.tga-veld input,.tga-veld select{min-height:42px}
 }

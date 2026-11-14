@@ -259,7 +259,8 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   font-size: 0.78rem;
   color: var(--am3-muted);
   margin-top: 2px;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 [data-account-menu-v3] .am3-manage-pill {
@@ -1471,7 +1472,9 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
 }
 
 /* Єдиний незмінний вигляд панелі AccountMenuV3 на екрані входу (перекриває спадкові правила aanmeld-herontwerp.css) */
-.canonical-chrome:has(.mr-sign-in) [data-account-menu-v3][data-account-menu-v3] .canonical-account-panel.canonical-account-panel {
+.canonical-chrome:has(.mr-sign-in) [data-account-menu-v3][data-account-menu-v3] .canonical-account-panel.canonical-account-panel,
+.canonical-account-portal[data-aanmeld-scherm='ja'] [data-account-menu-v3][data-account-menu-v3] .canonical-account-panel.canonical-account-panel,
+.am3-mobiel-laag[data-aanmeld-scherm='ja'][data-account-menu-v3] .canonical-account-panel.canonical-account-panel {
   --canonical-panel: var(--panel, #ffffff);
   --canonical-surface: var(--surface, #f3f5f8);
   --canonical-line: var(--line, #dce2ea);
@@ -1485,26 +1488,35 @@ html.theme-dark [data-account-menu-v3] .canonical-account-panel {
   backdrop-filter: none;
 }
 
-.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .canonical-account-panel.canonical-account-panel {
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .canonical-account-panel.canonical-account-panel,
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] [data-account-menu-v3].canonical-account-menu .canonical-account-panel.canonical-account-panel {
   width: min(392px, calc(100vw - 24px));
   max-height: min(86dvh, calc(100dvh - 86px));
 }
 
-.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-row {
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-row,
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] [data-account-menu-v3] .am3-account-row,
+.am3-mobiel-laag[data-aanmeld-scherm='ja'][data-signed-out='true'][data-account-menu-v3] .am3-account-row {
   background: var(--am3-bg);
   border: 1px solid var(--am3-line);
   border-radius: 12px;
 }
 
-.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-row:hover {
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-row:hover,
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] [data-account-menu-v3] .am3-account-row:hover,
+.am3-mobiel-laag[data-aanmeld-scherm='ja'][data-signed-out='true'][data-account-menu-v3] .am3-account-row:hover {
   background: var(--am3-surface);
 }
 
-.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-main {
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-account-main,
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] [data-account-menu-v3] .am3-account-main,
+.am3-mobiel-laag[data-aanmeld-scherm='ja'][data-signed-out='true'][data-account-menu-v3] .am3-account-main {
   min-height: 0;
 }
 
-.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-footer {
+.canonical-chrome:has(.mr-sign-in) .canonical-account-menu[data-signed-out='true'][data-account-menu-v3] .am3-footer,
+.canonical-account-portal[data-aanmeld-scherm='ja'][data-signed-out='true'] [data-account-menu-v3] .am3-footer,
+.am3-mobiel-laag[data-aanmeld-scherm='ja'][data-signed-out='true'][data-account-menu-v3] .am3-footer {
   font-size: 0.67rem;
 }
 

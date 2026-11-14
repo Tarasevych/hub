@@ -602,7 +602,8 @@ html.palet-maquette .admin-console .ic2-kaart {
   box-shadow: var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .admin-console .ic2-kaart:hover {
+html.palet-maquette .admin-console .ic2-kaart:hover,
+html.palet-maquette .admin-console .ic2-kaart[data-wizard-open="ja"] {
   border-color: var(--mq-adm-rand-accent);
   box-shadow: var(--mq-schaduw);
 }
@@ -1228,6 +1229,11 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.il-kaart
   border-color: var(--mq-rand-sterk);
   box-shadow: var(--mq-schaduw-zacht);
   transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .ic2-kaart[data-wizard-open="ja"] {
+  border-color: var(--mq-accent);
+  box-shadow: none;
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .il-kaart[data-status="klaar"] {

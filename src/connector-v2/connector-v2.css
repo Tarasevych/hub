@@ -100,7 +100,7 @@
 .v2-optie-uitleg dd{margin:2px 0 0;line-height:1.45}
 .v2-uitleg-let{border-left:3px solid var(--v2-hoog);padding-left:8px}
 .v2-uitleg-let dt{color:var(--v2-hoog)}
-.v2-adres{display:inline-flex;flex-wrap:wrap;word-break:break-all;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--line);max-width:100%}
+.v2-adres{display:inline-flex;flex-wrap:wrap;overflow-wrap:anywhere;word-break:normal;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--line);max-width:100%}
 .v2-kopieer{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px;display:grid;place-items:center}
 .v2-kopieer:hover{color:var(--text)}
 

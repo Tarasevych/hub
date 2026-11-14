@@ -51,7 +51,41 @@ function SmartHomeOud({ lang }: { lang: 'uk' | 'nl' }) {
   );
 
   const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(
-    () => sections.map((item) => ({ id: item.id, label: lang === 'uk' ? item.titleUk : item.titleNl })),
+    () => [
+      {
+        id: 'groep-huis-ruimte',
+        label: t('Простір і пристрої', 'Ruimte en apparaten'),
+        icoon: Home,
+        soort: 'groep',
+        openStandaard: true,
+        kiesbaar: false,
+        kinderen: sections.slice(0, 2).map((item) => ({
+          id: item.id,
+          label: lang === 'uk' ? item.titleUk : item.titleNl,
+          icoon: item.icon,
+        })),
+      },
+      {
+        id: 'groep-huis-regels',
+        label: t('Сценарії та безпека', 'Scènes en beveiliging'),
+        icoon: Workflow,
+        soort: 'groep',
+        openStandaard: true,
+        kiesbaar: false,
+        kinderen: sections.slice(2).map((item) => ({
+          id: item.id,
+          label: lang === 'uk' ? item.titleUk : item.titleNl,
+          icoon: item.icon,
+        })),
+      },
+      {
+        id: 'domotica-actie-maquette',
+        label: t('Відкрити макет «Живий дім»', 'Maquette «Levend huis» openen'),
+        icoon: Sparkles,
+        soort: 'actie',
+        onActie: () => window.open('/huis-maquette/', '_blank', 'noopener'),
+      },
+    ],
     [lang],
   );
 

@@ -61,12 +61,20 @@
   border: 1px solid var(--line);
   background: var(--panel);
   box-shadow: var(--schaduw-1);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .cvn-deel-kaart-kop {
   display: flex;
   align-items: flex-start;
   gap: var(--ruimte-3);
+  min-width: 0;
+}
+.cvn-deel-kaart-kop > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .cvn-deel-kaart-kop > svg {
   flex: 0 0 auto;
@@ -89,7 +97,7 @@
 
 .cvn-deel-keuze-rij {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
   gap: var(--ruimte-2);
 }
 
@@ -237,7 +245,7 @@
 /* ---- Formuliervelden & accounts ---- */
 .cvn-deel-velden-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: var(--ruimte-3);
 }
 .cvn-deel-veld {
@@ -291,6 +299,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .cvn-deel-ontvanger-kern strong { font-size: var(--tekst-klein); }
 .cvn-deel-ontvanger-kern small { font-size: var(--tekst-mini); color: var(--muted); }
@@ -532,7 +541,7 @@
 
 .cvn-gedeeld-statgrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: var(--ruimte-3);
 }
 .cvn-gedeeld-statkaart {
@@ -582,6 +591,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--ruimte-3);
+  min-width: 0;
+  max-width: 100%;
   padding: var(--ruimte-4);
   border-radius: var(--straal-l);
   border: 1px solid var(--line);
@@ -610,7 +621,7 @@
   align-items: center;
   gap: var(--ruimte-2);
 }
-.cvn-gedeeld-titelrij strong { font-size: var(--tekst-basis); }
+.cvn-gedeeld-titelrij strong { font-size: var(--tekst-basis); overflow-wrap: anywhere; }
 .cvn-gedeeld-sub {
   margin: 4px 0 0;
   display: flex;
@@ -859,7 +870,7 @@
 }
 @media (min-width: 980px) {
   .cvn-gedeeld-werkruimte:has(.cvn-gedeeld-voorbeeldpaneel) {
-    grid-template-columns: minmax(0, 1fr) minmax(340px, 46%);
+    grid-template-columns: minmax(0, 1fr) minmax(min(100%, 340px), 46%);
   }
 }
 .cvn-gedeeld-kolom,

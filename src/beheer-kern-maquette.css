@@ -156,7 +156,7 @@ html.palet-maquette .admin-key-dialog :focus-visible {
 }
 
 /* Відновлення студійних рамок, заокруглень і тіней поверх правила плаского вмісту канонічної оболонки */
-html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-detail, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-groups-banner, .admin-access-filters, .admin-user-group, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-detail, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
   border: 1px solid var(--mq-adm-rand);
   border-radius: var(--mq-straal-kaart);
   box-shadow:
@@ -164,7 +164,7 @@ html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data
     var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-groups-banner, .admin-access-filters, .admin-user-group, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
   border-radius: 18px;
 }
 
@@ -566,12 +566,60 @@ html.palet-maquette .admin-console .admin-directory-grid h3 {
 }
 
 /* Керування користувачами, правами й історією облікових записів (.admin-access-users, .admin-retired-accounts) */
+html.palet-maquette .admin-console .admin-groups-banner {
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo-zacht), transparent 46%),
+    var(--mq-adm-glas-verhoogd);
+}
+
+html.palet-maquette .admin-console .admin-groep-chip {
+  border-color: var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .admin-groep-chip[aria-pressed="true"],
+html.palet-maquette .admin-console .admin-access-filter-knop[aria-pressed="true"],
+html.palet-maquette .admin-console .admin-access-weergave button[aria-pressed="true"] {
+  border-color: var(--mq-accent-adm);
+  background: var(--mq-adm-halo);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .admin-access-filters,
+html.palet-maquette .admin-console .admin-user-group {
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .admin-user-group {
+  border-color: var(--mq-adm-rand-accent);
+}
+
+html.palet-maquette .admin-console .admin-user-group-head {
+  border-bottom: 1px solid var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .admin-access-zoek-wis {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette .admin-console .admin-access-weergave {
+  border-color: var(--mq-adm-rand);
+  background: var(--mq-adm-glas-verhoogd);
+}
+
 html.palet-maquette .admin-console .admin-access-users {
-  gap: 10px;
+  gap: 12px;
 }
 
 html.palet-maquette .admin-console .admin-access-users article {
-  gap: 10px;
+  gap: 14px 16px;
   padding: 14px 16px;
   border-radius: 16px;
   border: 1px solid var(--mq-adm-rand);
@@ -585,19 +633,79 @@ html.palet-maquette .admin-console .admin-access-users article[data-admin-owner-
     var(--mq-adm-glas-diep);
 }
 
+html.palet-maquette .admin-console .admin-user-avatar {
+  border: 1px solid var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .admin-owner-badge {
+  border-color: var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .admin-groep-badge,
+html.palet-maquette .admin-console .admin-groep-teller,
+html.palet-maquette .admin-console .admin-user-group-redenen > span,
+html.palet-maquette .admin-console .admin-user-redenen > span {
+  border-color: var(--mq-adm-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .admin-user-veld[data-vergrendeld="true"],
+html.palet-maquette .admin-console .admin-user-lock-note {
+  border-color: var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .admin-console .admin-access-users article > button:disabled,
+html.palet-maquette .admin-console .admin-access-users article > button:disabled:hover {
+  border-color: var(--mq-adm-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  box-shadow: none;
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
 html.palet-maquette .admin-console .admin-inline-actions {
   flex-wrap: wrap;
   gap: 8px;
 }
 
 html.palet-maquette .admin-console .admin-recht {
-  padding: 5px 10px;
+  padding: 6px 12px 6px 8px;
   border-radius: 999px;
   border: 1px solid var(--mq-adm-rand);
   background: var(--mq-oppervlak-zacht);
   color: var(--mq-tekst);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   cursor: pointer;
+}
+
+html.palet-maquette .admin-console .admin-recht[data-actief="true"] {
+  border-color: var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo);
+}
+
+html.palet-maquette .admin-console .admin-recht-schakelaar {
+  border-color: var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .admin-console .admin-recht-schakelaar::before {
+  background: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .admin-recht input:checked + .admin-recht-schakelaar {
+  border-color: var(--mq-accent-adm);
+  background: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .admin-recht input:checked + .admin-recht-schakelaar::before {
+  background: var(--mq-accent-adm-op);
 }
 
 html.palet-maquette .admin-console .admin-person-ref,
@@ -1088,7 +1196,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz {
 }
 
 /* Захист рамок, заокруглень 16px і тіней поверх плаского вмісту канонічної оболонки (суворо без padding і gap) */
-html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-cards > article, .admin-table > article, .admin-directory-grid > article, .admin-access-users > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-bulk-algemeen, .aiz-kaart, .aiz-detail, .aiz-groep, .aiz-toevoegen, .aiz-controle, .aib-keuze, .aib-wachtrij, .ns, .tga-sectie, .tga-blok, .tga-kaart, .apb-beheer, .apb-kaart):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-groups-banner, .admin-access-filters, .admin-user-group, .admin-cards > article, .admin-table > article, .admin-directory-grid > article, .admin-access-users > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-bulk-algemeen, .aiz-kaart, .aiz-detail, .aiz-groep, .aiz-toevoegen, .aiz-controle, .aib-keuze, .aib-wachtrij, .ns, .tga-sectie, .tga-blok, .tga-kaart, .apb-beheer, .apb-kaart):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
   border: 1px solid var(--mq-rand);
   border-inline: 1px solid var(--mq-rand);
   border-radius: 16px;
@@ -1293,6 +1401,55 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access
   background: var(--mq-oppervlak);
   background-image: none;
   box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-groups-banner {
+  border-radius: 16px;
+  border: 1px solid var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-access-filters, .admin-user-group) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-user-group-head {
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-weergave {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-user-veld[data-vergrendeld="true"] {
+  border-radius: 11px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-user-lock-note {
+  border-radius: 11px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-user-lock-note svg {
+  color: var(--warn);
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-retired-accounts article {
@@ -1634,12 +1791,30 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-gro
   box-shadow: none;
 }
 
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section .admin-access-zoek-wis,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-section .admin-access-zoek-wis:hover:not(:disabled) {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
 html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.tga-knop.tga-knop-gevaar, .apb-knop.apb-knop-gevaar) {
   border: 1px solid var(--fout);
   background: var(--fout-zacht);
   background-image: none;
   color: var(--fout);
   border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-groep-chip, .admin-access-filter-knop, .admin-access-weergave button)[aria-pressed="true"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-groep-chip, .admin-access-filter-knop, .admin-access-weergave button)[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
   box-shadow: none;
 }
 
@@ -1683,18 +1858,68 @@ html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .apb-knop.apb
   transform: none;
 }
 
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article > button:disabled,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-access-users article > button:disabled:hover {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
 html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .tga-sectie .tga-aanmeld-knop:hover:not(:disabled) .tga-aanmeld-eind {
   transform: none;
 }
 
 /* Пігулки станів, жетони груп та індивідуальні права (border-radius: 999px) */
-html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-cards b, .admin-recht, .aib .aib-agent, .aib .aib-chip, .aiz-cijfers li, .aiz .aiz-chip, .aiz .aiz-chip b, .aiz-pil, .aiz-gchip, .aiz-stand .v2-kant-teller, .ns-chip, .tga-stand, .tga-pil, .apb-stand) {
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-cards b, .admin-recht, .admin-user-avatar, .admin-owner-badge, .admin-groep-badge, .admin-groep-chip, .admin-groep-teller, .admin-user-group-redenen > span, .admin-user-redenen > span, .aib .aib-agent, .aib .aib-chip, .aiz-cijfers li, .aiz .aiz-chip, .aiz .aiz-chip b, .aiz-pil, .aiz-gchip, .aiz-stand .v2-kant-teller, .ns-chip, .tga-stand, .tga-pil, .apb-stand) {
   border-radius: 999px;
   border: 1px solid var(--mq-rand);
   background: var(--mq-oppervlak-2);
   background-image: none;
   color: var(--mq-tekst);
   box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-owner-badge {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-recht[data-actief="true"] {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-recht-schakelaar,
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-recht-schakelaar::before {
+  border-radius: 999px;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-recht-schakelaar {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-recht-schakelaar::before {
+  border: 0;
+  background: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-recht input:checked + .admin-recht-schakelaar {
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .admin-recht input:checked + .admin-recht-schakelaar::before {
+  background: var(--mq-accent-op);
 }
 
 html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.aib-teller, .aib-status, .aib-balk, .aib-nieuw, .aiz-kaart-kop > span.aiz-stand, .aiz-risico, .ns-balk) {
@@ -1815,7 +2040,7 @@ html.palet-maquette[data-maquette-stijl="klassiek"][data-presentation-service="a
 }
 
 @media (pointer: coarse) {
-  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-title button, .admin-section button, .aib button, .ns button, .tga-knop, .apb-knop),
+  html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console :is(.admin-title button, .admin-section button, .admin-recht, .aib button, .ns button, .tga-knop, .apb-knop),
   html.palet-maquette[data-maquette-stijl="klassiek"] .admin-console .aiz .aiz-seg {
     min-height: var(--tik-hoogte, 44px);
   }

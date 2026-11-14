@@ -51,6 +51,51 @@ export default function AfstemmingPagina({ lang, sourceOrigin, tabContext }: { l
   const openKaart = useCallback((id: string) => { setOpenKaartId(id); naarSectie('kartotheek'); }, [naarSectie]);
   const props: OnderdeelProps = useMemo(() => ({ lang, smal, sourceOrigin, tabContext, ov, vernieuw, toon, naarSectie, openKaart, openKaartId, zoek }), [lang, smal, sourceOrigin, tabContext, ov, vernieuw, toon, naarSectie, openKaart, openKaartId, zoek]);
 
+  const stuurStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:afstemming-stand', {
+      detail: {
+        sectie,
+        kaarten: ov?.tellers.kaarten ?? undefined,
+        aandacht: ov?.tellers.aandacht ?? undefined,
+        conflicten: ov?.tellers.conflicten ?? undefined,
+        kandidaten: ov?.tellers.kandidaten ?? undefined,
+      },
+    }));
+  }, [sectie, ov]);
+
+  useEffect(() => {
+    stuurStand();
+  }, [stuurStand]);
+
+  useEffect(() => {
+    const bijNav = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ sectie?: AfstemmingSectie; actie?: 'toevoegen' | 'vernieuw' | 'zoek' }>).detail;
+      if (!detail) return;
+      if (detail.actie === 'toevoegen') {
+        setToevoegen(true);
+        return;
+      }
+      if (detail.actie === 'vernieuw') {
+        void vernieuw();
+        return;
+      }
+      if (detail.actie === 'zoek') {
+        document.querySelector<HTMLInputElement>('[data-afv-zoek]')?.focus();
+        return;
+      }
+      if (detail.sectie && (AFSTEMMING_SECTIES as readonly string[]).includes(detail.sectie)) {
+        naarSectie(detail.sectie);
+        document.querySelector<HTMLElement>('.afv-inhoud')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    window.addEventListener('tsv:afstemming-nav', bijNav);
+    window.addEventListener('tsv:afstemming-vraag-stand', stuurStand);
+    return () => {
+      window.removeEventListener('tsv:afstemming-nav', bijNav);
+      window.removeEventListener('tsv:afstemming-vraag-stand', stuurStand);
+    };
+  }, [naarSectie, stuurStand, vernieuw]);
+
   const onderdeel = () => {
     switch (sectie) {
       case 'kartotheek': return <Kartotheek {...props} />;

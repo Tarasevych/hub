@@ -3,7 +3,7 @@
 // zonder integratie een eerlijke lege toestand met één knop. Alles via /api/huis/*; toestanden alleen zoals waargenomen.
 import IntegratieStrook from '../integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Activity, AlertCircle, Bot, Calculator, ChevronDown, CloudOff, Eye, Gauge, Home, LayoutGrid, Lightbulb, MoreHorizontal, Plug, RefreshCw, Settings, ShieldCheck, Sparkles, Store, Workflow } from 'lucide-react';
+import { Activity, AlertCircle, ArrowUp, Bot, Calculator, ChevronDown, CloudOff, Eye, Gauge, Home, LayoutGrid, Lightbulb, MoreHorizontal, Plug, RefreshCw, Settings, ShieldCheck, SlidersHorizontal, Sparkles, Store, Workflow } from 'lucide-react';
 import { HUIS_TABS, HUIS_TAB_LABEL, type HuisTab } from '../../shared/huis-model';
 import { HuisFout, gekozenWoning, huisClient, kiesWoning, type Overzicht as OverzichtUit } from './huis-client';
 import { foutTekst, geledenTekst, serverFout, tr, useSmal, type Lang } from './tekst';
@@ -253,8 +253,40 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
     }
   };
   const Titel = ICOON[huidig];
+  const [actiefAnker, setActiefAnker] = useState('hv-ov-tegels');
   const publiek = huidig === 'showroom' || huidig === 'planner';
   const zonderWoning = !publiek && Boolean(woningen && !woningen.length);
+
+  useEffect(() => {
+    if (zonderWoning) setActiefAnker('hv-start');
+    else if (huidig === 'overview') setActiefAnker('hv-ov-tegels');
+    else if (huidig === 'settings') setActiefAnker('hv-inst-woning');
+    else setActiefAnker('hv-inhoud');
+  }, [huidig, zonderWoning]);
+
+  const springNaarSectie = useCallback(
+    (id: string) => {
+      if (id.startsWith('tab:')) {
+        const doel = id.slice(4) as HuisTab;
+        naarTab(doel);
+        document.querySelector<HTMLElement>('.canonical-workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (id === 'actie:vernieuw') {
+        void vernieuw();
+        return;
+      }
+      setActiefAnker(id);
+      if (id === 'hv-boven') {
+        document.querySelector<HTMLElement>('.canonical-workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (typeof document !== 'undefined') {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    },
+    [naarTab, vernieuw],
+  );
 
   useEffect(() => {
     if (!isMaquette || typeof document === 'undefined') {
@@ -287,20 +319,121 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
     [ov, kanaal.tekst, lang],
   );
 
-  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(
-    () =>
-      HUIS_TABS.map((t) => ({
-        id: t,
-        label: tr(lang, HUIS_TAB_LABEL[t][0], HUIS_TAB_LABEL[t][1]),
-        badge:
-          t === 'devices' && ov
-            ? ov.apparaten.length
-            : t === 'rooms' && ov
-              ? ov.ruimtes.length
-              : undefined,
-      })),
-    [lang, ov],
-  );
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
+    if (zonderWoning) {
+      return [
+        {
+          id: 'hv-groep-start',
+          label: tr(lang, 'Початок оселі', 'Startstappen'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+            { id: 'hv-kop', label: tr(lang, 'Заголовок', 'Kop'), icoon: <Home size={15} /> },
+            { id: 'hv-start', label: tr(lang, 'Створення оселі', 'Woning aanmaken'), icoon: <Sparkles size={15} /> },
+          ],
+        },
+        {
+          id: 'hv-groep-verken',
+          label: tr(lang, 'Огляд можливостей', 'Mogelijkheden'),
+          kinderen: [
+            { id: 'tab:showroom', label: tr(lang, 'Демонстраційна вітрина', 'Toonzaal bekijken'), icoon: <Store size={15} /> },
+            { id: 'tab:planner', label: tr(lang, 'Планувальник системи', 'Structuurplanner'), icoon: <Calculator size={15} /> },
+          ],
+        },
+      ];
+    }
+
+    if (huidig === 'overview') {
+      return [
+        {
+          id: 'hv-groep-secties',
+          label: tr(lang, 'Секції огляду', 'Overzichtsblokken'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+            { id: 'hv-ov-tegels', label: tr(lang, 'Показники дому', 'Kerncijfers'), icoon: <Gauge size={15} /> },
+            { id: 'hv-ov-plan', label: tr(lang, 'План оселі', 'Plattegrond'), badge: ov?.ruimtes.length || undefined, icoon: <LayoutGrid size={15} /> },
+            { id: 'hv-ov-scenes', label: tr(lang, 'Швидкі сцени', 'Snelle scènes'), badge: ov?.scenes.length || undefined, icoon: <Sparkles size={15} /> },
+            { id: 'hv-ov-recent', label: tr(lang, 'Останні події', 'Recente gebeurtenissen'), badge: ov?.gebeurtenissen.length || undefined, icoon: <Activity size={15} /> },
+          ],
+        },
+        {
+          id: 'hv-groep-acties',
+          label: tr(lang, 'Швидкі дії', 'Snelle acties'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'actie:vernieuw', label: tr(lang, 'Оновити спостереження', 'Waarnemingen verversen'), icoon: <RefreshCw size={15} /> },
+            { id: 'tab:devices', label: tr(lang, 'Усі пристрої', 'Alle apparaten'), badge: ov?.apparaten.length || undefined, icoon: <Lightbulb size={15} /> },
+            { id: 'tab:integrations', label: tr(lang, 'Шлюз та інтеграції', 'Gateway en koppelingen'), icoon: <Plug size={15} /> },
+            { id: 'tab:settings', label: tr(lang, 'Налаштування оселі', 'Woninginstellingen'), icoon: <Settings size={15} /> },
+          ],
+        },
+      ];
+    }
+
+    if (huidig === 'settings') {
+      return [
+        {
+          id: 'hv-groep-inst',
+          label: tr(lang, 'Розділи налаштувань', 'Instellingsblokken'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+            { id: 'hv-inst-woning', label: tr(lang, 'Назва і поверхи', 'Woning en verdiepingen'), icoon: <Home size={15} /> },
+            { id: 'hv-inst-leden', label: tr(lang, 'Учасники й запрошення', 'Leden en uitnodigingen'), icoon: <SlidersHorizontal size={15} /> },
+            { id: 'hv-inst-nieuw', label: tr(lang, 'Ще одна оселя', 'Nog een woning'), icoon: <Sparkles size={15} /> },
+          ],
+        },
+        {
+          id: 'hv-groep-acties',
+          label: tr(lang, 'Дії сторінки', 'Acties'),
+          standaardOpen: true,
+          kinderen: [
+            { id: 'actie:vernieuw', label: tr(lang, 'Оновити стан', 'Status verversen'), icoon: <RefreshCw size={15} /> },
+            { id: 'tab:overview', label: tr(lang, 'До огляду оселі', 'Naar huisoverzicht'), icoon: <Home size={15} /> },
+            { id: 'tab:integrations', label: tr(lang, 'Шлюз оселі', 'Thuisgateway'), icoon: <Plug size={15} /> },
+          ],
+        },
+      ];
+    }
+
+    const ActiefIcoon = ICOON[huidig];
+    const acties: MaquetteAnkerItem[] = [];
+    if (!publiek) {
+      acties.push({ id: 'actie:vernieuw', label: tr(lang, 'Оновити спостереження', 'Waarnemingen verversen'), icoon: <RefreshCw size={15} /> });
+    }
+    acties.push({ id: 'tab:overview', label: tr(lang, 'До огляду оселі', 'Naar huisoverzicht'), icoon: <Home size={15} /> });
+    if (!publiek && huidig !== 'devices') {
+      acties.push({ id: 'tab:devices', label: tr(lang, 'Пристрої', 'Apparaten'), badge: ov?.apparaten.length || undefined, icoon: <Lightbulb size={15} /> });
+    }
+    if (!publiek && huidig !== 'integrations') {
+      acties.push({ id: 'tab:integrations', label: tr(lang, 'Шлюз та інтеграції', 'Gateway en koppelingen'), icoon: <Plug size={15} /> });
+    }
+    if (huidig === 'showroom') {
+      acties.push({ id: 'tab:planner', label: tr(lang, 'Планувальник системи', 'Structuurplanner'), icoon: <Calculator size={15} /> });
+    } else if (huidig === 'planner') {
+      acties.push({ id: 'tab:showroom', label: tr(lang, 'Демонстраційна вітрина', 'Toonzaal bekijken'), icoon: <Store size={15} /> });
+    }
+
+    return [
+      {
+        id: 'hv-groep-secties',
+        label: tr(lang, 'На цій сторінці', 'Op deze pagina'),
+        standaardOpen: true,
+        kinderen: [
+          { id: 'hv-boven', label: tr(lang, 'На початок', 'Bovenaan'), icoon: <ArrowUp size={15} /> },
+          { id: 'hv-kop', label: tr(lang, 'Заголовок і шлюз', 'Kop en gateway'), icoon: <SlidersHorizontal size={15} /> },
+          { id: 'hv-inhoud', label: tr(lang, HUIS_TAB_LABEL[huidig][0], HUIS_TAB_LABEL[huidig][1]), icoon: <ActiefIcoon size={15} /> },
+        ],
+      },
+      {
+        id: 'hv-groep-acties',
+        label: tr(lang, 'Супутні дії', 'Verwante acties'),
+        standaardOpen: true,
+        kinderen: acties,
+      },
+    ];
+  }, [huidig, lang, ov?.apparaten.length, ov?.gebeurtenissen.length, ov?.ruimtes.length, ov?.scenes.length, publiek, zonderWoning]);
 
   const heldTekst = zonderWoning ? HUIS_HELD_START : HUIS_HELD_TEKSTEN[huidig];
   const heldPrimair = zonderWoning
@@ -325,6 +458,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
 
   return (
     <section
+      id='hv-boven'
       className={`hv${smal ? ' is-smal' : ''}${isMaquette ? ' mq-schil huis-maquette-wikkel' : ''}`}
       data-hv-pagina={huidig}
       data-mq-dienst={isMaquette ? 'huis' : undefined}
@@ -381,7 +515,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
       {!publiek && !lijstFout && woningen === null ? <p className='hv-hint' role='status' aria-busy='true' data-hv-laden='1'>{tr(lang, 'Завантаження…', 'Laden…')}</p> : null}
 
       {!publiek && woningen && !woningen.length ? (
-        <section className='hv-start' data-hv-start='1' aria-labelledby='hv-start-kop'>
+        <section id='hv-start' className='hv-start' data-hv-start='1' aria-labelledby='hv-start-kop'>
           <div className='hv-start-kop'>
             <h3 id='hv-start-kop'>{tr(lang, 'Ваш розумний будинок — в одному місці', 'Uw slimme huis — op één plek')}</h3>
             <p>{tr(lang, 'Кімнати, пристрої, сцени й події. Показуємо лише те, що справді повідомив ваш шлюз, — без вигаданих станів.', 'Kamers, apparaten, scènes en gebeurtenissen. We tonen alleen wat uw gateway echt meldt — geen verzonnen toestanden.')}</p>
@@ -421,7 +555,7 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
         </section>
       ) : null}
 
-      <div className='hv-inhoud'>
+      <div id='hv-inhoud' className='hv-inhoud'>
         <Suspense fallback={<p className='hv-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>}>
           {publiek || (woningen && woningen.length && !ov) ? (publiek ? onderdeel() : <p className='hv-hint' role='status' aria-busy='true'>{tr(lang, 'Завантаження…', 'Laden…')}</p>) : onderdeel()}
         </Suspense>
@@ -443,11 +577,11 @@ export default function HuisPagina({ lang, tab, onNavigateTab }: { lang: Lang; t
         <MaquetteAnkerRail
           lang={lang}
           opslagSleutel='huis-anker'
-          titel={tr(lang, 'Розділи оселі', 'Onderdelen van het huis')}
+          titel={tr(lang, 'На цій сторінці', 'Op deze pagina')}
           ondertitel={tr(lang, 'Перетягніть до зручного краю', 'Sleep naar een gewenste rand')}
           items={ankerItems}
-          actief={huidig}
-          onKies={(id) => naarTab(id as HuisTab)}
+          actief={actiefAnker}
+          onKies={springNaarSectie}
         />
       ) : null}
     </section>

@@ -1,5 +1,5 @@
 import { api } from './platform/client';
-import { Brain, Check, ChevronRight, Cloud, File, FileText, FolderKanban, Inbox, Link2, LoaderCircle, Pause, Play, Plus, Search, ShieldCheck, Sparkles, Unplug, Upload, X } from 'lucide-react';
+import { Brain, Check, ChevronRight, Cloud, File, FileText, FolderKanban, Inbox, Link2, LoaderCircle, Pause, Play, Plus, RefreshCw, Search, Settings2, ShieldCheck, Sparkles, Unplug, Upload, X, Zap } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DriveBrowser,{CloudFileWorkbench,loadCloudFilePreview,type CloudRawFile} from './DriveBrowser';import{revokeMailAttachmentPreview,type MailAttachmentPreview}from'./MailBijlageVoorbeeld';
 import {GoogleCalendarView,GooglePhotosView} from './GoogleSuiteMediaWeergave';
@@ -511,54 +511,138 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
   useEffect(() => {
     if (effectiveTab === 'overview') setActiefAnker('cloud-sectie-volgende');
     else if (effectiveTab === 'accounts') setActiefAnker('cloud-sectie-hoofdaccount');
-    else setActiefAnker(`tab:${effectiveTab}`);
+    else if (effectiveTab === 'capture') setActiefAnker('cloud-quick-capture');
+    else setActiefAnker('cloud-werkvlak');
   }, [effectiveTab]);
 
   const kiesAnker = useCallback((id: string) => {
-    if (id.startsWith('tab:')) {
-      const doelTab = id.slice(4);
+    if (id === 'cloud-boven') {
       setActiefAnker(id);
-      onNavigateTab(doelTab);
-      const held = document.getElementById('mq-cloud-klassiek-held');
-      if (held) held.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelector<HTMLElement>('.canonical-workspace')?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setActiefAnker(id);
-    const sectie = document.getElementById(id);
+    const sectie = document.getElementById(id) ?? document.querySelector<HTMLElement>(`[data-cloud-anker="${id}"]`);
     if (sectie) sectie.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [onNavigateTab]);
+  }, []);
 
   const verbondenGoogleAantal = useMemo(() => (googleProvider?.accounts || []).filter(acc => acc.status === 'connected').length + (driveAccess && !(googleProvider?.accounts || []).some(acc => acc.status === 'connected') ? 1 : 0), [googleProvider, driveAccess]);
 
   const ankerItems = useMemo<MaquetteAnkerItem[]>(() => {
+    const energieGroep: MaquetteAnkerItem = {
+      id: 'groep-cloud-energie',
+      label: t('Енергія та пошук', 'Energie en zoeken'),
+      soort: 'groep',
+      openStandaard: true,
+      kiesbaar: false,
+      icoon: Zap,
+      kinderen: [
+        { id: 'cloud-actie-energie-low', label: `${t('Мінімум', 'Minimum')}${energy === 'low' ? ' ✓' : ''}`, soort: 'actie', icoon: Zap, onActie: () => changeEnergy('low') },
+        { id: 'cloud-actie-energie-med', label: `${t('Звично', 'Normaal')}${energy === 'medium' ? ' ✓' : ''}`, soort: 'actie', icoon: Zap, onActie: () => changeEnergy('medium') },
+        { id: 'cloud-actie-energie-high', label: `${t('Більше', 'Meer')}${energy === 'high' ? ' ✓' : ''}`, soort: 'actie', icoon: Zap, onActie: () => changeEnergy('high') },
+        { id: 'cloud-actie-globaal-zoek', label: t('Пошук усюди', 'Overal zoeken'), soort: 'actie', icoon: Search, onActie: () => setGlobalSearchOpen(true) },
+      ],
+    };
+
     if (effectiveTab === 'overview') {
       return [
-        { id: 'cloud-sectie-volgende', label: mqTekst.ankerVolgendeStap, badge: data.summary.inbox || undefined },
-        { id: 'cloud-sectie-drive-status', label: mqTekst.ankerDriveStatus },
-        { id: 'cloud-sectie-drive-materialen', label: mqTekst.ankerDriveMaterialen },
-        { id: 'cloud-sectie-samenvatting', label: mqTekst.ankerSamenvatting },
-        { id: 'cloud-sectie-werkruimtes', label: mqTekst.ankerWerkruimtes, badge: data.summary.workspaces || undefined },
+        {
+          id: 'groep-cloud-fn-drive',
+          label: t('Поточний хід і Drive', 'Voortgang en Drive'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: Cloud,
+          kinderen: [
+            { id: 'cloud-sectie-volgende', label: mqTekst.ankerVolgendeStap, badge: data.summary.inbox || undefined, icoon: Sparkles },
+            { id: 'cloud-sectie-drive-status', label: mqTekst.ankerDriveStatus, icoon: Link2 },
+            { id: 'cloud-sectie-drive-materialen', label: mqTekst.ankerDriveMaterialen, icoon: File },
+          ],
+        },
+        {
+          id: 'groep-cloud-fn-overzicht',
+          label: t('Простори й підсумок', 'Ruimtes en overzicht'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: FolderKanban,
+          kinderen: [
+            { id: 'cloud-sectie-samenvatting', label: mqTekst.ankerSamenvatting, icoon: Brain },
+            { id: 'cloud-sectie-werkruimtes', label: mqTekst.ankerWerkruimtes, badge: data.summary.workspaces || undefined, icoon: FolderKanban },
+          ],
+        },
+        {
+          id: 'groep-cloud-fn-acties',
+          label: t('Дії огляду', 'Overzichtsacties'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: Settings2,
+          kinderen: [
+            { id: 'cloud-actie-capture', label: t('Швидко зберегти', 'Snel opslaan'), soort: 'actie', icoon: Upload, onActie: () => onNavigateTab('capture') },
+            { id: 'cloud-actie-nieuw-ws', label: t('Новий простір', 'Nieuwe werkruimte'), soort: 'actie', icoon: Plus, onActie: () => setCreateOpen(true) },
+          ],
+        },
+        energieGroep,
       ];
     }
     if (effectiveTab === 'accounts') {
       return [
-        { id: 'cloud-sectie-hoofdaccount', label: mqTekst.ankerHoofdAccount, badge: verbondenGoogleAantal || undefined },
-        { id: 'cloud-sectie-extra-accounts', label: mqTekst.ankerExtraAccounts },
-        { id: 'cloud-sectie-andere-diensten', label: mqTekst.ankerAndereDiensten },
+        {
+          id: 'groep-cloud-fn-accounts',
+          label: t('Підключення хмари', 'Cloudkoppelingen'),
+          soort: 'groep',
+          openStandaard: true,
+          kiesbaar: false,
+          icoon: Link2,
+          kinderen: [
+            { id: 'cloud-sectie-hoofdaccount', label: mqTekst.ankerHoofdAccount, badge: verbondenGoogleAantal || undefined, icoon: Cloud },
+            { id: 'cloud-sectie-extra-accounts', label: mqTekst.ankerExtraAccounts, icoon: Plus },
+            { id: 'cloud-sectie-andere-diensten', label: mqTekst.ankerAndereDiensten, icoon: Unplug },
+          ],
+        },
+        energieGroep,
       ];
     }
+    const tabAnchors: MaquetteAnkerItem[] =
+      effectiveTab === 'capture'
+        ? [
+            { id: 'cloud-boven', label: t('Початок сторінки', 'Bovenaan pagina'), icoon: Cloud },
+            { id: 'cloud-quick-capture', label: t('Форма швидкого запису', 'Invoerformulier'), icoon: Upload },
+          ]
+        : [
+            { id: 'cloud-boven', label: t('Початок сторінки', 'Bovenaan pagina'), icoon: Cloud },
+            { id: 'cloud-werkvlak', label: t('Основна секція', 'Hoofdsectie'), icoon: effectiveTab === 'workspaces' ? FolderKanban : effectiveTab === 'inbox' ? Inbox : FileText },
+          ];
     return [
-      { id: 'tab:overview', label: mqTekst.ankerOverzicht },
-      { id: 'tab:workspaces', label: mqTekst.ankerWerkruimtes, badge: data.summary.workspaces || undefined },
-      { id: 'tab:capture', label: mqTekst.ankerSnelOpslaan },
-      { id: 'tab:inbox', label: mqTekst.ankerSnelleInvoer, badge: data.summary.inbox || undefined },
-      { id: 'tab:search', label: mqTekst.ankerZoeken },
-      { id: 'tab:recent', label: mqTekst.ankerRecent },
-      { id: 'tab:calendar', label: mqTekst.ankerAgenda },
-      { id: 'tab:photos', label: mqTekst.ankerFotos },
-      { id: 'tab:accounts', label: mqTekst.ankerDriveStatus },
+      {
+        id: `groep-cloud-fn-${effectiveTab}`,
+        label: t('На цій сторінці', 'Op deze pagina'),
+        soort: 'groep',
+        openStandaard: true,
+        kiesbaar: false,
+        icoon: FolderKanban,
+        kinderen: tabAnchors,
+      },
+      {
+        id: 'groep-cloud-fn-tabacties',
+        label: t('Дії розділу', 'Onderdeelacties'),
+        soort: 'groep',
+        openStandaard: true,
+        kiesbaar: false,
+        icoon: Settings2,
+        kinderen: [
+          ...(effectiveTab === 'workspaces' ? [
+            { id: 'cloud-actie-ws-create', label: t('Новий простір', 'Nieuwe werkruimte'), soort: 'actie' as const, icoon: Plus, onActie: () => setCreateOpen(true) },
+            ...(activeWorkspace ? [{ id: 'cloud-actie-ws-focus', label: focus ? t('Вийти з фокусу', 'Focus verlaten') : t('Режим фокусу', 'Focusmodus'), soort: 'actie' as const, icoon: Play, onActie: toggleFocus }] : []),
+          ] : []),
+          ...(effectiveTab === 'inbox' ? [{ id: 'cloud-actie-inbox-cap', label: t('Швидко зберегти', 'Snel opslaan'), soort: 'actie' as const, icoon: Upload, onActie: () => onNavigateTab('capture') }] : []),
+          { id: 'cloud-actie-reload-tab', label: t('Поновити дані', 'Gegevens bijwerken'), soort: 'actie' as const, icoon: RefreshCw, onActie: () => { void load(true); } },
+        ],
+      },
+      energieGroep,
     ];
-  }, [effectiveTab, mqTekst, data.summary.inbox, data.summary.workspaces, verbondenGoogleAantal]);
+  }, [effectiveTab, mqTekst, data.summary.inbox, data.summary.workspaces, verbondenGoogleAantal, energy, activeWorkspace, focus, onNavigateTab]);
 
   const dialoogOfViewerOpen = createOpen || Boolean(connectVraag) || Boolean(openedNote) || Boolean(openedFile) || Boolean(openedSchema) || globalSearchOpen || externeViewerOpen;
 
@@ -698,7 +782,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
         {!dialoogOfViewerOpen && !focus ? (
           <MaquetteAnkerRail
             lang={lang}
-            titel={mqTekst.railTitel}
+            titel={t('На цій сторінці', 'Op deze pagina')}
             ondertitel={mqTekst.railOndertitel}
             items={ankerItems}
             actief={actiefAnker}
@@ -713,6 +797,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
       <aside><small>{t('Обліковий запис', 'Account')}</small><strong>{userEmail}</strong><button className='global-search-trigger' onClick={()=>setGlobalSearchOpen(true)}><Search/>{t('Пошук усюди','Overal zoeken')}</button><div className='cloud-energy' role='group' aria-label={t('Рівень енергії', 'Energieniveau')}>{(['low', 'medium', 'high'] as Energy[]).map(value => <button key={value} className={energy === value ? 'active' : ''} onClick={() => changeEnergy(value)}>{value === 'low' ? t('Мінімум', 'Minimum') : value === 'medium' ? t('Звично', 'Normaal') : t('Більше', 'Meer')}</button>)}</div></aside>
     </header>
     {effectiveTab === 'overview' && <Overview t={t} data={data} drivePreview={drivePreview} previewLoading={previewLoading} onCapture={() => onNavigateTab('capture')} onAccounts={() => onNavigateTab('accounts')} onWorkspace={id => { setActiveWorkspaceId(id); void saveResume({ currentWorkspaceId: id, currentItemId: '' }); onNavigateTab('workspaces'); }} onCreate={() => setCreateOpen(true)} />}
+    <div id={effectiveTab !== 'overview' && effectiveTab !== 'accounts' && effectiveTab !== 'capture' ? 'cloud-werkvlak' : undefined} className='cloud-werkvlak-doel'>
     {effectiveTab === 'workspaces' && <WorkspacePanel t={t} lang={lang} workspaces={data.workspaces} activeWorkspace={activeWorkspace} items={workspaceItems} focus={focus} onFocus={toggleFocus} onSelect={id => { setActiveWorkspaceId(id); void saveResume({ currentWorkspaceId: id, currentItemId: '' }); }} onCreate={() => setCreateOpen(true)} onOpen={openItem} onStatus={updateStatus} />}
     {effectiveTab === 'capture' && <CapturePanel t={t} id='cloud-quick-capture' error={captureError} kind={captureKind} setKind={setCaptureKind} text={captureText} setText={setCaptureText} url={captureUrl} setUrl={setCaptureUrl} file={captureFile} setFile={setCaptureFile} workspaceId={captureWorkspaceId} setWorkspaceId={setCaptureWorkspaceId} workspaces={data.workspaces} busy={busy} onCapture={capture} />}
     {effectiveTab === 'inbox' && <InboxPanel t={t} items={data.inbox} workspaces={data.workspaces} busy={busy} onPlace={placeItem} onOpen={openItem} onStatus={updateStatus} />}
@@ -723,6 +808,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     {effectiveTab === 'accounts' && <CloudAccountsPanel lang={lang} sourceOrigin={sourceOrigin} tabContext={tabContext} onboarding={data.onboarding} providers={data.providers} busyProvider={providerBusy} drivePreview={drivePreview} previewLoading={previewLoading} onPreview={loadDrivePreview} onStart={startSuiteService} onConnect={connectProvider} onSelect={selectProviderAccount} onDisconnect={disconnectProvider}/>} 
     {CLOUD_M10_STAGE&&effectiveTab === 'accounts'&&<Suspense fallback={<p>Cloud integrations…</p>}><CloudVerbindingCentrumM4/><CloudAanbiedersM5/></Suspense>}
     {CLOUD_M10_STAGE&&effectiveTab === 'files'&&<Suspense fallback={<p>Cloud file workspace…</p>}><CloudM10Verkenner lang={lang} sourceOrigin={sourceOrigin} tabContext={tabContext} googleAccounts={(googleProvider?.accounts||[]).map(a=>({id:a.id,provider:'google-drive',displayName:a.displayName||a.email,email:a.email,status:a.status}))}/></Suspense>}
+    </div>
     <a className='knop knop-stil is-klein' href={zoekPaginaUrl(lang, '', { bron: 'cloud' })} data-zoek-link='cloud'>{t('Пошук у файлах', 'Zoeken in bestanden')}</a>
       <GlobalSearchPanel lang={lang} sourceOrigin={sourceOrigin} tabContext={tabContext} service='cloud' tab={effectiveTab} open={globalSearchOpen} onClose={()=>setGlobalSearchOpen(false)}/>
     {createOpen && <WorkspaceDialog t={t} error={workspaceError} title={workspaceTitle} setTitle={setWorkspaceTitle} description={workspaceDescription} setDescription={setWorkspaceDescription} template={workspaceTemplate} setTemplate={setWorkspaceTemplate} busy={busy} onClose={() => setCreateOpen(false)} onCreate={createWorkspace} />}

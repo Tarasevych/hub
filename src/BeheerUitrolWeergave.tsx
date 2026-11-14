@@ -135,6 +135,50 @@ export default function AdminUitrolView({ lang, sourceOrigin, tabContext }: Prop
   const naarLive = useCallback(() => { document.getElementById('ut-live-titel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, []);
   const onRunVerandert = useCallback((r: Run | null) => { lopendeRun.current = r?.id || ''; }, []);
 
+  // Контекстна навігація з правої панелі якорями всередині сторінки оновлень.
+  const broadcastUitrolStand = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('tsv:uitrol-tab', {
+      detail: {
+        tab,
+        wachtend: data?.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring').length ?? 0,
+        recentAantal: recent.length,
+      },
+    }));
+  }, [tab, data, recent.length]);
+
+  useEffect(() => {
+    broadcastUitrolStand();
+  }, [broadcastUitrolStand]);
+
+  useEffect(() => {
+    const onNav = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ tab?: Tab; anker?: string; actie?: 'vernieuw' }>).detail;
+      if (!detail) return;
+      if (detail.actie === 'vernieuw') {
+        void laden();
+        void recenteLaden(tab === 'log' ? 50 : 5);
+        return;
+      }
+      if (detail.tab && ['overzicht', 'historie', 'log', 'diagnose', 'instellen'].includes(detail.tab)) {
+        if (detail.tab === 'log' && recent.some((r) => r.staat === 'bezig')) setLogRun('');
+        setTab(detail.tab);
+      }
+      if (detail.anker) {
+        const target = detail.anker;
+        window.setTimeout(() => {
+          document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 70);
+      }
+    };
+    const onVraag = () => broadcastUitrolStand();
+    window.addEventListener('tsv:uitrol-nav', onNav);
+    window.addEventListener('tsv:uitrol-vraag-stand', onVraag);
+    return () => {
+      window.removeEventListener('tsv:uitrol-nav', onNav);
+      window.removeEventListener('tsv:uitrol-vraag-stand', onVraag);
+    };
+  }, [broadcastUitrolStand, laden, recenteLaden, recent, tab]);
+
   if (!data) return <section className='admin-section ut-root' data-admin-uitrol><header><PackageCheck /><div><h2>{tr(lang, 'Оновлення сервера', 'Serverupdates')}</h2><p role='status'>{notice?.text || tr(lang, 'Завантаження…', 'Laden…')}</p></div></header></section>;
 
   const wachtend = data.voorstellen.filter((v) => v.status === 'wacht-op-goedkeuring').length;

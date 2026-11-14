@@ -1,7 +1,7 @@
 /* Хвиля 11.10 (UI/UX): меню й вікна. */
 @media (min-width:701px){
   /* 5.3: розгорнуте меню не перекриває рядок пошуку — пошук починається за меню */
-  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']):not([data-dock='rechts']){--canonical-command-inline-start:calc(min(286px,calc(100vw - var(--zijbalk-rail,60px))) + 12px)}
+  .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']):not([data-dock='rechts']){--canonical-command-inline-start:calc(min(316px,calc(100vw - var(--zijbalk-rail,60px))) + 12px)}
   /* безшовне «Завжди розгорнута»: меню без власного тла — тло сторінки під ним і під робочою областю одне */
   .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']){background:var(--bg)}
   .canonical-chrome.sidebar-pinned:not(.sidebar-drawer-mode):not([data-dock='boven']):not([data-dock='onder']) .canonical-sidebar{border-color:transparent!important}

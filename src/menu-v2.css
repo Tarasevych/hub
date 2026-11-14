@@ -39,7 +39,7 @@
 /* --------------------------------------------------------------- rail: breed genoeg, geen scrollbalk over iconen */
 @media(min-width:701px){
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar{width:var(--zijbalk-rail);padding:8px 0 10px}
-  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-expanded .canonical-sidebar{width:min(286px,calc(100vw - var(--zijbalk-rail)));padding:8px 6px 10px}
+  .canonical-chrome:not(.sidebar-drawer-mode).sidebar-expanded .canonical-sidebar{width:min(316px,calc(100vw - var(--zijbalk-rail)));padding:8px 6px 10px}
   .canonical-chrome:not(.sidebar-expanded):not(.sidebar-pinned):not(.sidebar-drawer):not(.sidebar-drawer-mode):not([data-focus-mode='mail']) .canonical-workspace{padding-left:var(--zijbalk-rail)}
   .canonical-chrome:not(.sidebar-drawer-mode) .canonical-sidebar-edge-zone{width:calc(var(--zijbalk-rail) - 36px)}
   .canonical-chrome:not(.sidebar-expanded):not(.sidebar-drawer-mode) .google-mail-reader-backdrop{left:var(--zijbalk-rail)}
@@ -67,9 +67,10 @@
 .canonical-chrome:not(.sidebar-drawer-mode) .canonical-menu-toggle{display:none}
 .zijbalk-werkbalk{flex:none;margin:0 0 8px}
 .zijbalk-werkbalk.smal{display:grid;place-items:center}
-.zijbalk-werkbalk.breed{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 2px 8px 12px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
-.zijbalk-werkbalk-titel{color:var(--faint);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-.zijbalk-werkbalk-knoppen{display:flex;gap:2px;padding:2px;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:999px;background:var(--surface)}
+.zijbalk-werkbalk.breed{display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:6px;min-width:0;padding:2px 2px 8px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.zijbalk-werkbalk-titel{display:inline-flex;align-items:center;gap:5px;flex:none;white-space:nowrap;color:var(--faint);font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.zijbalk-werkbalk-knoppen{display:flex;flex:none;flex-wrap:nowrap;align-items:center;gap:2px;padding:2px;white-space:nowrap;border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:999px;background:var(--surface)}
+.zijbalk-werkbalk-knoppen>*{flex:none}
 .zijbalk-modus-huidig,.zijbalk-werkbalk-knoppen button{display:grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:pointer;transition:color .14s ease,background-color .14s ease}
 .zijbalk-werkbalk-knoppen button{width:30px;height:30px}
 .zijbalk-modus-huidig svg,.zijbalk-werkbalk-knoppen svg{width:18px;height:18px;stroke-width:1.9}
@@ -353,12 +354,12 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome[data-dock='rechts']:is(.sidebar-hover,[data-menu-bewerken='ja']:not(.sidebar-pinned)) .canonical-sidebar{box-shadow:-18px 0 46px var(--shadow)}
   .canonical-chrome[data-dock='rechts'] .canonical-sidebar-edge-zone{inset:0 0 0 auto}
   .canonical-chrome[data-dock='rechts'] .canonical-workspace{padding-left:24px!important;padding-right:var(--zijbalk-rail)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-workspace{padding-right:310px}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-workspace{padding-right:340px}
   .canonical-chrome[data-dock='rechts'][data-focus-mode='mail'] .canonical-workspace{padding-right:24px}
   .canonical-chrome[data-dock='rechts'] .canonical-account-anchor{right:calc(var(--zijbalk-rail) + 12px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-account-anchor{right:300px}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-account-anchor{right:330px}
   .canonical-chrome[data-dock='rechts'] .canonical-notification-toast{right:calc(var(--zijbalk-rail) + 18px)}
-  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-notification-toast{right:328px}
+  .canonical-chrome[data-dock='rechts']:is(.sidebar-pinned,.sidebar-hover) .canonical-notification-toast{right:358px}
   .canonical-chrome[data-dock='rechts'] .zijbalk-werkbalk-paneel{left:auto;right:calc(var(--zijbalk-rail) + 6px)}
   .canonical-chrome[data-dock='rechts'] .google-mail-reader-backdrop{left:0;right:var(--zijbalk-rail)}
   .canonical-chrome[data-dock='rechts'].sidebar-expanded :is(.canonical-local-pages:not(.canonical-local-navigation-slot),.canonical-local-navigation-slot){margin:0 22px 6px 0;padding-left:0;padding-right:8px;border-left:0;border-right:2px solid color-mix(in srgb,var(--a,var(--accent)) 28%,var(--line))}
@@ -382,8 +383,8 @@ html.menu-sleept,html.menu-sleept *{cursor:grabbing!important}
   .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .zijbalk-werkbalk.dock{order:3;display:flex;align-items:center;margin:0 0 0 2px;padding-left:6px;border-left:1px solid color-mix(in srgb,var(--line) 80%,transparent)}
   .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .zijbalk-werkbalk.dock .zijbalk-werkbalk-knoppen{border:0;background:transparent}
   .canonical-chrome:is([data-dock='boven'],[data-dock='onder']) .canonical-service-list .menu-leeg{width:36px;height:36px;margin:0;padding:0;border-radius:50%;font-size:0}
-  .canonical-chrome[data-dock='onder'] .canonical-workspace{padding:70px 24px calc(var(--dock-hoogte) + 30px)!important}
-  .canonical-chrome[data-dock='boven'] .canonical-workspace{padding:calc(var(--dock-hoogte) + 30px) 24px 24px!important}
+  .canonical-chrome[data-dock='onder'] .canonical-workspace{padding:max(76px,calc(var(--plaats-boven-onder,62px) + 14px)) 24px calc(var(--dock-hoogte) + 30px)!important}
+  .canonical-chrome[data-dock='boven'] .canonical-workspace{padding:max(calc(var(--dock-hoogte) + 30px),calc(var(--plaats-boven-onder,62px) + 14px)) 24px 24px!important}
   .canonical-chrome[data-dock='boven'] .mail-top-command-bar{top:calc(var(--dock-hoogte) + 16px)}
   .canonical-chrome[data-dock='boven'] :is(.mail-search-filter-surface,.mail-advanced-search){top:calc(var(--dock-hoogte) + 66px)}
   .canonical-chrome[data-dock='onder'] .canonical-connection-banner{bottom:calc(var(--dock-hoogte) + 26px)}

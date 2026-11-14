@@ -256,19 +256,89 @@ export function IdentiteitKlassiekMaquette({
     [secties, sectieMetaMap],
   );
 
-  // Позиції для бічної якірної панелі MaquetteAnkerRail (згорнутої за замовчуванням у Класиці).
-  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(
-    () =>
-      secties.map((sectie, idx) => {
-        const meta = sectieMetaMap.get(sectie.id);
-        return {
-          id: sectie.id,
+  // Позиції для бічної якірної панелі MaquetteAnkerRail (розкривні змістові групи, значки та швидкі дії подання).
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(() => {
+    const GROEP_ICONEN: Record<(typeof ATELIER_GROEPEN)[number]['id'], LucideIcon> = {
+      personal: Palette,
+      social: UsersRound,
+      account: Settings2,
+      security: ShieldCheck,
+    };
+    const actieveGroepId = sectieMetaMap.get(huidigActief)?.groepId ?? ATELIER_GROEPEN[0].id;
+    const groepen: MaquetteAnkerItem[] = ATELIER_GROEPEN.map((groep) => {
+      const kinderen: MaquetteAnkerItem[] = [];
+      for (const atelierId of groep.ids) {
+        const id = atelierId === 'identities' ? 'identity' : atelierId;
+        const sectie = secties.find((s) => s.id === id);
+        if (!sectie) continue;
+        const meta = sectieMetaMap.get(id);
+        kinderen.push({
+          id,
           label: sectie.titel,
-          badge: meta?.volgnummer ?? String(idx + 1).padStart(2, '0'),
-        };
-      }),
-    [secties, sectieMetaMap],
-  );
+          icoon: ATELIER_SYMBOLEN[atelierId] ?? Settings2,
+          badge: meta?.volgnummer,
+        });
+      }
+      return {
+        id: `groep-${groep.id}`,
+        label: uk ? groep.ukKort : groep.nlKort,
+        icoon: GROEP_ICONEN[groep.id],
+        soort: 'groep',
+        badge: groep.bereik,
+        openStandaard: groep.id === actieveGroepId,
+        kiesbaar: false,
+        kinderen,
+      };
+    });
+
+    const acties: MaquetteAnkerItem = {
+      id: 'groep-acties',
+      label: uk ? 'Дії та подання' : 'Acties en weergave',
+      icoon: Sparkles,
+      soort: 'groep',
+      openStandaard: false,
+      kiesbaar: false,
+      kinderen: [
+        {
+          id: 'actie-snel-naar',
+          label: uk ? 'Швидкий перехід (Ctrl+K)' : 'Snel naar (Ctrl+K)',
+          icoon: Search,
+          soort: 'actie',
+          onActie: () => setSnelNaarOpen(true),
+        },
+        {
+          id: 'actie-modus',
+          label:
+            modus === 'stroom'
+              ? uk
+                ? 'Показати один розділ'
+                : 'Eén onderdeel tonen'
+              : uk
+                ? 'Показати всі поспіль'
+                : 'Alle achter elkaar',
+          icoon: LayoutGrid,
+          soort: 'actie',
+          onActie: () => wisselModus(modus === 'stroom' ? 'enkel' : 'stroom'),
+        },
+        ...(groepFilter !== 'alle' || zoekvraag.trim()
+          ? [
+              {
+                id: 'actie-reset-filter',
+                label: uk ? 'Скинути фільтр' : 'Filter wissen',
+                icoon: X,
+                soort: 'actie' as const,
+                onActie: () => {
+                  setGroepFilter('alle');
+                  setZoekvraag('');
+                },
+              },
+            ]
+          : []),
+      ],
+    };
+
+    return [...groepen, acties];
+  }, [secties, sectieMetaMap, uk, modus, groepFilter, zoekvraag, actief, inBeeld]);
 
   // Відфільтрований список карток для поточного режиму подання.
   const zichtbareSecties = useMemo(() => {

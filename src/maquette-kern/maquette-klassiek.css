@@ -749,18 +749,127 @@ html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassi
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   6. ЗГОРНУТА КАПСУЛА ЯКІРНОЇ РЕЙКИ (.mq-anker-ingeklapt-pil) ТА МОДАЛЬНИЙ ШВИДКИЙ ПЕРЕХІД
+   6. РОЗГОРНУТА ТА ЗГОРНУТА КАПСУЛА ЯКІРНОЇ РЕЙКИ В КЛАСИЦІ (.mq-anker-rail.is-klassiek)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.mq-anker-rail.is-klassiek {
-  border-radius: var(--mq-straal-rail);
+.mq-anker-rail.is-klassiek :is(.mq-rail-compact-knop, .mq-rail-tandwiel, .mq-rail-progress-help) {
   border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
   box-shadow: var(--mq-schaduw);
+}
+
+.mq-anker-rail.is-klassiek :is(.mq-rail-compact-knop, .mq-rail-tandwiel, .mq-rail-progress-help):hover {
+  background: var(--mq-oppervlak-2);
+  border-color: var(--mq-tekst);
+  color: var(--mq-tekst);
+}
+
+.mq-anker-rail.is-klassiek :is(.mq-anker-knop, .mq-anker-groep-toggle) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+.mq-anker-rail.is-klassiek :is(.mq-anker-knop, .mq-anker-groep-toggle):hover {
+  border-color: var(--mq-tekst);
+  background: var(--mq-oppervlak-2);
+  box-shadow: var(--mq-schaduw);
+}
+
+.mq-anker-rail.is-klassiek .mq-anker-groep-toggle.is-tak-actief:not(.is-actief),
+.mq-anker-rail.is-klassiek .mq-anker-groep.is-open > .mq-anker-groep-toggle:not(.is-actief) {
+  background: var(--mq-oppervlak-2);
+  border-color: var(--mq-tekst);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+.mq-anker-rail.is-klassiek :is(.mq-anker-knop, .mq-anker-groep-toggle).is-actief,
+.mq-anker-rail.is-klassiek :is(.mq-anker-knop, .mq-anker-groep-toggle).is-actief:hover {
+  background: var(--mq-accent);
+  border-color: var(--mq-accent);
+  color: var(--mq-accent-op);
+  box-shadow: var(--mq-schaduw);
+}
+
+.mq-anker-rail.is-klassiek :is(.mq-anker-icoon, .mq-anker-nummer) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+.mq-anker-rail.is-klassiek .mq-anker-groep-toggle.is-tak-actief:not(.is-actief) :is(.mq-anker-icoon, .mq-anker-nummer) {
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+.mq-anker-rail.is-klassiek .is-actief :is(.mq-anker-icoon, .mq-anker-nummer) {
+  border-color: rgba(128, 128, 128, 0.35);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-accent-op);
+}
+
+.mq-anker-rail.is-klassiek .mq-anker-badge {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+.mq-anker-rail.is-klassiek .is-actief .mq-anker-badge {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-accent-op);
+}
+
+.mq-anker-rail.is-klassiek .mq-anker-groep.is-open > .mq-anker-groep-toggle .mq-anker-chevron {
+  color: var(--mq-tekst);
+}
+
+.mq-anker-rail.is-klassiek .mq-rail-progress-gauge {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  box-shadow: var(--mq-schaduw);
+}
+
+.mq-anker-rail.is-klassiek .mq-rail-progress-base {
+  stroke: var(--mq-rand);
+}
+
+.mq-anker-rail.is-klassiek .mq-rail-progress-ring {
+  stroke: var(--mq-tekst);
+}
+
+/* Кнопка згортання розгорнутої класичної рейки в капсулу */
+.mq-rail-inklap-knop {
+  min-height: 31px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mq-rail-inklap-knop:hover {
+  background: var(--mq-oppervlak-2);
+  border-color: var(--mq-tekst);
+}
+
+.mq-anker-rail.is-klassiek[data-compact="ja"] .mq-rail-inklap-knop,
+.mq-anker-rail.is-klassiek:is([data-zijde="boven"], [data-zijde="onder"]) .mq-rail-inklap-knop {
+  display: none;
 }
 
 /* У згорнутому стані контейнер рейки стає легкою оболонкою капсули біля обраного краю */
 .mq-anker-rail.is-klassiek[data-ingeklapt="ja"] {
   width: auto;
+  min-width: 0;
+  max-width: none;
   height: auto;
   padding: 0;
   border: 0;
@@ -852,43 +961,6 @@ html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassi
   font-variant-numeric: tabular-nums;
 }
 
-/* Права група кнопок розгорнутої шапки класичної рейки */
-.mq-rail-kop-rechts {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex: none;
-}
-
-.mq-rail-inklap-knop {
-  min-height: 28px;
-  padding: 0 9px;
-  border-radius: 8px;
-  border: 1px solid var(--mq-rand);
-  background: var(--mq-oppervlak-2);
-  color: var(--mq-tekst);
-  font-family: Inter, "Segoe UI", system-ui, sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.mq-rail-inklap-knop:hover {
-  background: var(--mq-oppervlak-hover);
-  border-color: var(--mq-rand-sterk);
-}
-
-.mq-anker-rail.is-klassiek[data-compact="ja"]:is([data-zijde="links"], [data-zijde="rechts"]) .mq-rail-kop-rechts {
-  flex-direction: column;
-  gap: 4px;
-}
-
-.mq-anker-rail.is-klassiek[data-compact="ja"]:is([data-zijde="links"], [data-zijde="rechts"]) .mq-rail-inklap-knop {
-  padding: 0 6px;
-  font-size: 10px;
-}
-
 .mq-rail-popover.is-klassiek {
   border-radius: var(--mq-straal-kaart);
   border-color: var(--mq-rand-sterk);
@@ -931,26 +1003,31 @@ html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassi
   background: var(--mq-oppervlak-hover);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО В КІНЦІ ФАЙЛА (klassiek-001 + mobiel-cascade)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @media (prefers-reduced-motion: reduce) {
   .mq-anker-ingeklapt-pil {
     transition: none;
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   7. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО В КІНЦІ ФАЙЛА (mobiel-cascade-20261105)
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 @media (max-width: 960px) {
   .mq-anker-rail.is-klassiek[data-ingeklapt="ja"] {
     display: none;
   }
 
-  .mq-anker-rail.is-klassiek[data-mobiel-open="ja"] {
+  .mq-anker-rail.is-klassiek.is-klassiek[data-mobiel-open="ja"] {
     display: flex;
     border: 1px solid var(--mq-rand-sterk);
+    border-radius: var(--mq-straal-kaart);
     background: var(--mq-rail-glas);
     box-shadow: var(--mq-schaduw);
+  }
+
+  .mq-anker-rail.is-klassiek.is-klassiek[data-mobiel-open="ja"] .mq-rail-inklap-knop {
+    display: none;
   }
 
   html:is(.palet-klassiek-wit, .palet-klassiek-zwart, [data-maquette-stijl="klassiek"]) .mq-anker-onderbalk {

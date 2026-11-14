@@ -4,6 +4,7 @@
 // Versleepbare ankernavigatie voor 4 zijden met echte werkgebiedmeting en mobiele sectiebalk.
 
 import {
+  isValidElement,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -11,16 +12,26 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronRight, Settings, type LucideIcon } from 'lucide-react';
 import { useIsKlassiekMaquette } from './klassiek-hulp';
 
 export type MaquetteRailZijde = 'rechts' | 'links' | 'boven' | 'onder';
+export type MaquetteAnkerSoort = 'item' | 'groep' | 'actie';
 
 export interface MaquetteAnkerItem {
   id: string;
   label: string;
   badge?: string | number;
+  icoon?: LucideIcon | ReactNode;
+  soort?: MaquetteAnkerSoort;
+  actiefBij?: ReadonlyArray<string>;
+  kinderen?: ReadonlyArray<MaquetteAnkerItem>;
+  openStandaard?: boolean;
+  kiesbaar?: boolean;
+  onActie?: () => void;
 }
 
 export interface MaquetteAnkerRailProps {
@@ -35,6 +46,7 @@ export interface MaquetteAnkerRailProps {
 
 const OPSLAG_SLEUTEL = 'mr-maquette-rail-v1';
 const OPSLAG_SLEUTEL_KLASSIEK = 'mr-klassiek-rail-v1';
+const CIRKEL_OMTREK = 113.097;
 
 interface OpgeslagenRailStaat {
   zijde: MaquetteRailZijde;
@@ -178,6 +190,65 @@ function schrijfKlassiekRailStaat(
   }
 }
 
+function heeftExactActief(item: MaquetteAnkerItem, actief: string): boolean {
+  if (item.id === actief) return true;
+  if (item.actiefBij?.includes(actief)) return true;
+  return false;
+}
+
+function heeftActiefInTak(item: MaquetteAnkerItem, actief: string): boolean {
+  if (heeftExactActief(item, actief)) return true;
+  return Boolean(item.kinderen?.some((kind) => heeftActiefInTak(kind, actief)));
+}
+
+function vindActiefItem(items: ReadonlyArray<MaquetteAnkerItem>, actief: string): MaquetteAnkerItem | null {
+  for (const item of items) {
+    if (item.kinderen?.length) {
+      const diep = vindActiefItem(item.kinderen, actief);
+      if (diep) return diep;
+    }
+    if (heeftExactActief(item, actief)) return item;
+  }
+  return items[0] ?? null;
+}
+
+function verzamelOpenGroepen(
+  items: ReadonlyArray<MaquetteAnkerItem>,
+  actief: string,
+  doel: Set<string>,
+): void {
+  for (const item of items) {
+    if (item.kinderen && item.kinderen.length > 0) {
+      if (item.openStandaard || heeftActiefInTak(item, actief)) {
+        doel.add(item.id);
+      }
+      verzamelOpenGroepen(item.kinderen, actief, doel);
+    }
+  }
+}
+
+function renderIcoon(icoon: MaquetteAnkerItem['icoon'], volgnummer: string): ReactNode {
+  if (!icoon) {
+    return <span className="mq-anker-nummer">{volgnummer}</span>;
+  }
+  if (isValidElement(icoon)) {
+    return (
+      <span className="mq-anker-icoon" aria-hidden="true">
+        {icoon}
+      </span>
+    );
+  }
+  if (typeof icoon === 'function' || typeof icoon === 'object') {
+    const IcoonComp = icoon as LucideIcon;
+    return (
+      <span className="mq-anker-icoon" aria-hidden="true">
+        <IcoonComp size={17} strokeWidth={1.85} />
+      </span>
+    );
+  }
+  return <span className="mq-anker-nummer">{volgnummer}</span>;
+}
+
 const RAIL_TEKSTEN = {
   uk: {
     sleepSub: 'Перетягніть до краю',
@@ -185,6 +256,8 @@ const RAIL_TEKSTEN = {
     instellingenKnop: 'Налаштувати положення панелі',
     navAria: 'Навігація за розділами',
     voortgang: 'Переглянуто',
+    helpAria: 'Що показує колова шкала?',
+    helpTitel: 'Показує, яку частину сторінки вже переглянуто.',
     popoverBoven: 'ПОЛОЖЕННЯ ЯКОРІВ',
     popoverTitel: 'Розташуйте як зручно',
     sluiten: 'Закрити',
@@ -210,6 +283,8 @@ const RAIL_TEKSTEN = {
     instellingenKnop: 'Paneelpositie instellen',
     navAria: 'Sectienavigatie',
     voortgang: 'Gelezen',
+    helpAria: 'Wat geeft deze cirkel aan?',
+    helpTitel: 'Geeft aan welk deel van de pagina is bekeken.',
     popoverBoven: 'ANKERPOSITIE',
     popoverTitel: 'Plaats zoals gewenst',
     sluiten: 'Sluiten',
@@ -261,13 +336,37 @@ export function MaquetteAnkerRail({
   const [klassiekStaat, setKlassiekStaat] = useState(() => leesKlassiekRailStaat(opslagSleutel));
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
   const [mobielOpen, setMobielOpen] = useState<boolean>(false);
+  const [uitlegOpen, setUitlegOpen] = useState<boolean>(false);
   const [voortgang, setVoortgang] = useState<number>(0);
   const [sleepDoel, setSleepDoel] = useState<MaquetteRailZijde | null>(null);
+  const [openGroepen, setOpenGroepen] = useState<ReadonlySet<string>>(() => {
+    const begin = new Set<string>();
+    verzamelOpenGroepen(items, actief, begin);
+    return begin;
+  });
 
   useEffect(() => {
     setMaquetteStaat(leesRailStaat(opslagSleutel));
     setKlassiekStaat(leesKlassiekRailStaat(opslagSleutel));
   }, [opslagSleutel]);
+
+  // Автоматично розкриваємо батьківські групи для активного елемента або позначки openStandaard.
+  useEffect(() => {
+    const nodig = new Set<string>();
+    verzamelOpenGroepen(items, actief, nodig);
+    if (nodig.size === 0) return;
+    setOpenGroepen((oud) => {
+      let gewijzigd = false;
+      const nieuw = new Set(oud);
+      nodig.forEach((id) => {
+        if (!nieuw.has(id)) {
+          nieuw.add(id);
+          gewijzigd = true;
+        }
+      });
+      return gewijzigd ? nieuw : oud;
+    });
+  }, [items, actief]);
 
   const zijde = isKlassiek ? klassiekStaat.zijde : maquetteStaat.zijde;
   const compact = isKlassiek ? klassiekStaat.compact : maquetteStaat.compact;
@@ -286,7 +385,7 @@ export function MaquetteAnkerRail({
   } | null>(null);
 
   const actiefItem = useMemo(
-    () => items.find((it) => it.id === actief) ?? items[0] ?? null,
+    () => vindActiefItem(items, actief),
     [items, actief],
   );
 
@@ -332,6 +431,18 @@ export function MaquetteAnkerRail({
     },
     [opslagSleutel],
   );
+
+  const wisselGroep = useCallback((id: string) => {
+    setOpenGroepen((oud) => {
+      const nieuw = new Set(oud);
+      if (nieuw.has(id)) {
+        nieuw.delete(id);
+      } else {
+        nieuw.add(id);
+      }
+      return nieuw;
+    });
+  }, []);
 
   // Синхронізуємо ознаки відступу на найближчій оболонці .mq-schil (у Класиці при згорнутій капсулі не звужуємо робочу область!)
   useLayoutEffect(() => {
@@ -492,21 +603,26 @@ export function MaquetteAnkerRail({
 
   // Закриття спливного вікна та мобільного списку клавішею Escape або кліком зовні
   useEffect(() => {
-    if (!popoverOpen && !mobielOpen) return;
+    if (!popoverOpen && !mobielOpen && !uitlegOpen) return;
     const bijToets = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setPopoverOpen(false);
         setMobielOpen(false);
+        setUitlegOpen(false);
       }
     };
     const bijKlikBuiten = (e: MouseEvent) => {
-      if (!popoverOpen) return;
       const doel = e.target as Node | null;
       if (!doel) return;
-      if (popoverRef.current?.contains(doel)) return;
-      if (railRef.current?.contains(doel)) return;
-      if (ankerPlekRef.current?.contains(doel)) return;
-      setPopoverOpen(false);
+      if (popoverOpen) {
+        if (popoverRef.current?.contains(doel)) return;
+        if (railRef.current?.contains(doel)) return;
+        if (ankerPlekRef.current?.contains(doel)) return;
+        setPopoverOpen(false);
+      }
+      if (uitlegOpen && !railRef.current?.contains(doel)) {
+        setUitlegOpen(false);
+      }
     };
     window.addEventListener('keydown', bijToets);
     window.addEventListener('mousedown', bijKlikBuiten);
@@ -514,7 +630,7 @@ export function MaquetteAnkerRail({
       window.removeEventListener('keydown', bijToets);
       window.removeEventListener('mousedown', bijKlikBuiten);
     };
-  }, [popoverOpen, mobielOpen]);
+  }, [popoverOpen, mobielOpen, uitlegOpen]);
 
   // Перетягування шапки рейки або згорнутої капсули до будь-якого з 4 країв
   const startSlepen = (e: ReactPointerEvent<HTMLElement>) => {
@@ -562,9 +678,28 @@ export function MaquetteAnkerRail({
     setSleepDoel(null);
   };
 
-  const kiesOnderdeel = (id: string) => {
-    onKies(id);
+  const kiesOnderdeel = (item: MaquetteAnkerItem) => {
+    if (item.onActie) {
+      item.onActie();
+    } else {
+      onKies(item.id);
+    }
     setMobielOpen(false);
+  };
+
+  const klikGroep = (item: MaquetteAnkerItem) => {
+    const isKiesbaar = item.kiesbaar ?? item.soort !== 'groep';
+    if (!isKiesbaar) {
+      wisselGroep(item.id);
+      return;
+    }
+    setOpenGroepen((oud) => {
+      if (oud.has(item.id)) return oud;
+      const nieuw = new Set(oud);
+      nieuw.add(item.id);
+      return nieuw;
+    });
+    kiesOnderdeel(item);
   };
 
   const openVanuitPil = () => {
@@ -579,6 +714,77 @@ export function MaquetteAnkerRail({
     setPopoverOpen(false);
     setMobielOpen(false);
     pasIngeklaptToe(true);
+  };
+
+  const dashOffset = useMemo(
+    () => Number((CIRKEL_OMTREK * (1 - Math.min(100, Math.max(0, voortgang)) / 100)).toFixed(2)),
+    [voortgang],
+  );
+
+  const renderItem = (item: MaquetteAnkerItem, index: number, diepte = 0): ReactNode => {
+    const volgnummer = String(index + 1).padStart(2, '0');
+    const heeftKinderen = Boolean(item.kinderen && item.kinderen.length > 0);
+    const isExactActief = heeftExactActief(item, actief);
+    const isTakActief = heeftActiefInTak(item, actief);
+
+    if (heeftKinderen && item.kinderen) {
+      const isOpen = openGroepen.has(item.id);
+      return (
+        <div
+          key={item.id}
+          className={`mq-anker-groep${isOpen ? ' is-open' : ''}${isTakActief ? ' is-huidige-groep' : ''}`}
+          data-diepte={diepte}
+        >
+          <button
+            type="button"
+            className={`mq-anker-groep-toggle${isExactActief ? ' is-actief' : ''}${isTakActief ? ' is-tak-actief' : ''}`}
+            aria-expanded={isOpen}
+            aria-current={isExactActief ? 'true' : undefined}
+            title={compact ? item.label : undefined}
+            onClick={() => klikGroep(item)}
+          >
+            {renderIcoon(item.icoon, volgnummer)}
+            <span className="mq-anker-naam">{item.label}</span>
+            {item.badge !== undefined && item.badge !== '' ? (
+              <span className="mq-anker-badge">{item.badge}</span>
+            ) : null}
+            <span
+              className="mq-anker-chevron"
+              aria-hidden="true"
+              onClick={(e) => {
+                e.stopPropagation();
+                wisselGroep(item.id);
+              }}
+            >
+              <ChevronRight size={14} strokeWidth={2.2} />
+            </span>
+          </button>
+
+          {isOpen ? (
+            <div className="mq-anker-sublijst">
+              {item.kinderen.map((kind, kindIdx) => renderItem(kind, kindIdx, diepte + 1))}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        className={`mq-anker-knop${isExactActief ? ' is-actief' : ''}${diepte > 0 ? ' is-sub' : ''}`}
+        aria-current={isExactActief ? 'true' : undefined}
+        title={compact ? item.label : undefined}
+        onClick={() => kiesOnderdeel(item)}
+      >
+        {renderIcoon(item.icoon, volgnummer)}
+        <span className="mq-anker-naam">{item.label}</span>
+        {item.badge !== undefined && item.badge !== '' ? (
+          <span className="mq-anker-badge">{item.badge}</span>
+        ) : null}
+      </button>
+    );
   };
 
   if (items.length === 0) return null;
@@ -653,28 +859,76 @@ export function MaquetteAnkerRail({
               onPointerUp={eindigSlepen}
               onPointerCancel={annuleerSlepen}
             >
-              <div className="mq-rail-kop-links">
-                <button
-                  type="button"
-                  className="mq-rail-compact-knop"
-                  aria-pressed={compact}
-                  aria-label={t.compactKnop}
-                  title={t.compactKnop}
-                  onClick={wisselCompact}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="3.5" y="3.5" width="17" height="17" rx="2.8" />
-                    <path d="M9 4v16m7-11-3 3 3 3" />
-                  </svg>
-                </button>
-                <div className="mq-rail-titels">
-                  <strong>{titel}</strong>
-                  <small>{ondertitel || t.sleepSub}</small>
-                </div>
+              <button
+                type="button"
+                className="mq-rail-compact-knop"
+                aria-pressed={compact}
+                aria-label={t.compactKnop}
+                title={t.compactKnop}
+                onClick={wisselCompact}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3.5" y="3.5" width="17" height="17" rx="2.7" />
+                  <path d="M9 4v16m7-11-3 3 3 3" />
+                </svg>
+              </button>
+
+              <div className="mq-rail-titels">
+                <strong>{titel}</strong>
+                <small>{ondertitel || t.sleepSub}</small>
               </div>
 
-              {isKlassiek ? (
-                <div className="mq-rail-kop-rechts">
+              <button
+                type="button"
+                className="mq-rail-tandwiel"
+                aria-label={t.instellingenKnop}
+                aria-expanded={popoverOpen}
+                title={t.instellingenKnop}
+                onClick={() => setPopoverOpen((v) => !v)}
+              >
+                <Settings size={16} strokeWidth={1.9} aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="mq-rail-lijst">
+              {items.map((item, index) => renderItem(item, index, 0))}
+            </div>
+
+            <div className="mq-rail-voet">
+              <div className="mq-rail-voet-rij">
+                <div
+                  className="mq-rail-progress-gauge"
+                  role="progressbar"
+                  aria-label={t.voortgang}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={voortgang}
+                >
+                  <svg viewBox="0 0 44 44" aria-hidden="true">
+                    <circle className="mq-rail-progress-base" cx="22" cy="22" r="18" />
+                    <circle
+                      className="mq-rail-progress-ring"
+                      cx="22"
+                      cy="22"
+                      r="18"
+                      style={{ strokeDashoffset: dashOffset }}
+                    />
+                  </svg>
+                  <strong>{voortgang}%</strong>
+                </div>
+
+                <button
+                  type="button"
+                  className="mq-rail-progress-help"
+                  aria-label={t.helpAria}
+                  aria-expanded={uitlegOpen}
+                  title={t.helpTitel}
+                  onClick={() => setUitlegOpen((v) => !v)}
+                >
+                  ?
+                </button>
+
+                {isKlassiek ? (
                   <button
                     type="button"
                     className="mq-rail-inklap-knop"
@@ -684,71 +938,10 @@ export function MaquetteAnkerRail({
                   >
                     <span>{t.inklapKnop}</span>
                   </button>
-                  <button
-                    type="button"
-                    className="mq-rail-tandwiel"
-                    aria-label={t.instellingenKnop}
-                    aria-expanded={popoverOpen}
-                    title={t.instellingenKnop}
-                    onClick={() => setPopoverOpen((v) => !v)}
-                  >
-                    ⚙
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="mq-rail-tandwiel"
-                  aria-label={t.instellingenKnop}
-                  aria-expanded={popoverOpen}
-                  title={t.instellingenKnop}
-                  onClick={() => setPopoverOpen((v) => !v)}
-                >
-                  ⚙
-                </button>
-              )}
-            </div>
-
-            <div className="mq-rail-lijst">
-              {items.map((item, index) => {
-                const isActief = item.id === actief;
-                const volgnummer = String(index + 1).padStart(2, '0');
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`mq-anker-knop${isActief ? ' is-actief' : ''}`}
-                    aria-current={isActief ? 'true' : undefined}
-                    title={compact ? item.label : undefined}
-                    onClick={() => kiesOnderdeel(item.id)}
-                  >
-                    <span className="mq-anker-nummer">{volgnummer}</span>
-                    <span className="mq-anker-naam">{item.label}</span>
-                    {item.badge !== undefined && item.badge !== '' ? (
-                      <span className="mq-anker-badge">{item.badge}</span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mq-rail-voet">
-              <div
-                className="mq-rail-voortgang-wikkel"
-                role="progressbar"
-                aria-label={t.voortgang}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={voortgang}
-              >
-                <div className="mq-rail-voortgang-kop">
-                  <span>{t.voortgang}</span>
-                  <strong>{voortgang}%</strong>
-                </div>
-                <div className="mq-rail-voortgang-spoor">
-                  <span style={{ width: `${voortgang}%` }} />
-                </div>
+                ) : null}
               </div>
+
+              {uitlegOpen ? <p className="mq-rail-progress-uitleg">{t.helpTitel}</p> : null}
             </div>
           </>
         )}
@@ -853,7 +1046,7 @@ export function MaquetteAnkerRail({
             aria-expanded={popoverOpen}
             onClick={() => setPopoverOpen((v) => !v)}
           >
-            ⚙
+            <Settings size={16} strokeWidth={1.9} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -13,17 +13,19 @@ html[data-identiteit-maquette='aan'] body .canonical-chrome[data-focus-mode='mai
 html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not([data-dock]):not(.sidebar-pinned) .canonical-workspace,
 html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='links']:not(.sidebar-pinned) .canonical-workspace{padding:0 0 0 var(--zijbalk-rail,60px)!important}
 html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not([data-dock]).sidebar-pinned .canonical-workspace,
-html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='links'].sidebar-pinned .canonical-workspace{padding:0 0 0 min(286px,calc(100vw - var(--zijbalk-rail,60px)))!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='links'].sidebar-pinned .canonical-workspace{padding:0 0 0 min(316px,calc(100vw - var(--zijbalk-rail,60px)))!important}
 html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='rechts']:not(.sidebar-pinned) .canonical-workspace{padding:0 var(--zijbalk-rail,60px) 0 0!important}
-html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='rechts'].sidebar-pinned .canonical-workspace{padding:0 min(286px,calc(100vw - var(--zijbalk-rail,60px))) 0 0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='rechts'].sidebar-pinned .canonical-workspace{padding:0 min(316px,calc(100vw - var(--zijbalk-rail,60px))) 0 0!important}
 html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='boven'] .canonical-workspace{padding:calc(var(--dock-hoogte,62px) + 16px) 0 0 0!important}
 html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='onder'] .canonical-workspace{padding:0 0 calc(var(--dock-hoogte,62px) + 18px) 0!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-scroll-top{display:none!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar{visibility:hidden;background:transparent;border:0;box-shadow:none;pointer-events:none}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar :is(.canonical-account-panel,.canonical-notification-toast){visibility:visible;pointer-events:auto}
+html[data-identiteit-maquette='aan'] :is(.canonical-account-portal,.am3-mobiel-laag){visibility:visible;pointer-events:auto}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-content{min-height:0}
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical-sidebar{display:flex!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer:has(.am3-mobiel-laag) :is(.canonical-sidebar,.canonical-sidebar-scrim){visibility:hidden;pointer-events:none}
+html[data-identiteit-maquette='aan']:has(.am3-mobiel-laag) .canonical-chrome.sidebar-drawer :is(.canonical-sidebar,.canonical-sidebar-scrim){visibility:hidden;pointer-events:none}
 /* Канонічний гамбургер головного меню сайту (☰) у верхньому лівому куті шапки .topbar у режимі шухляди */
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar{width:64px;height:77px;max-height:77px;padding:0 0 0 14px;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;border:0;background:transparent}
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-menu-toggle{width:44px;height:44px;margin:0;color:#dce5f7}

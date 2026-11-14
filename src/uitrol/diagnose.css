@@ -86,7 +86,7 @@
 .ud-regel:first-child{border-top:0}
 .ud-mark{text-align:center;font-family:system-ui,sans-serif}
 .ud-tijd{color:var(--ut-muted);font-variant-numeric:tabular-nums}
-.ud-eenheid{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px;border-radius:6px;background:var(--ut-bg2);color:var(--ut-muted);font-size:.75rem}
+.ud-eenheid{max-width:min(100%,180px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px;border-radius:6px;background:var(--ut-bg2);color:var(--ut-muted);font-size:.75rem}
 .ud-tekst{overflow-wrap:anywhere;white-space:pre-wrap}
 .ud-regel:not(:has(.ud-eenheid)){grid-template-columns:22px 62px minmax(0,1fr)}
 .ud-regel[data-niveau="fout"]{border-left-color:var(--ut-err);background:var(--ut-err-bg)}
@@ -108,18 +108,18 @@ html.theme-dark .ud-root mark{background:var(--warn-vlak);color:var(--text-on-vl
 .ud-categorie h4{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:.95rem}
 .ud-categorie h4 svg{width:17px;height:17px;color:var(--ut-accent)}
 .ud-categorie h4 small{color:var(--ut-muted);font-weight:400;font-size:.8rem}
-.ud-kaarten{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));align-items:start}
-.ud-kaart{display:grid;gap:8px;padding:12px;border:1px solid var(--ut-line);border-radius:var(--ud-r);background:var(--ut-bg);min-width:0;border-left:4px solid var(--ut-line)}
+.ud-kaarten{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));align-items:start}
+.ud-kaart{display:grid;gap:8px;padding:12px;border:1px solid var(--ut-line);border-radius:var(--ud-r);background:var(--ut-bg);min-width:0;max-width:100%;border-left:4px solid var(--ut-line)}
 .ud-kaart[data-open="true"]{grid-column:1/-1}
 .ud-kaart[data-status="ok"]{border-left-color:var(--ut-ok)}
 .ud-kaart[data-status="let-op"]{border-left-color:var(--ut-warn)}
 .ud-kaart[data-status="fout"]{border-left-color:var(--ut-err)}
 .ud-kaart[data-status="info"]{border-left-color:var(--ut-info)}
-.ud-kaart-kop{display:flex;gap:10px;align-items:center}
+.ud-kaart-kop{display:flex;gap:10px;align-items:center;min-width:0}
 .ud-kaart-ico{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--ut-bg2);color:var(--ut-accent);flex:none}
 .ud-kaart-ico svg{width:19px;height:19px}
 .ud-kaart-tekst{display:grid;min-width:0;flex:1}
-.ud-kaart-tekst b{font-size:.92rem}
+.ud-kaart-tekst b{font-size:.92rem;overflow-wrap:anywhere}
 .ud-kaart-tekst small{color:var(--ut-muted);font-size:.78rem;overflow-wrap:anywhere}
 .ud-stand{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:.75rem;font-weight:700;white-space:nowrap}
 .ud-stand svg{width:14px;height:14px}
