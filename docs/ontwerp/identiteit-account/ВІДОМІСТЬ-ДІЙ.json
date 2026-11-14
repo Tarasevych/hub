@@ -1126,14 +1126,18 @@
    "testen": [
     "tests/eenheid/identiteit-account-ui.test.ts",
     "tests/eenheid/identiteit-maquette.test.ts",
-    "tests/e2e/identiteit-maquette-kaart.e2e.ts"
+    "tests/e2e/identiteit-maquette-kaart.e2e.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: після входу на картці профілю — фото з Google (та сама адреса, зображення завантажилося), смітничка немає",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: після оновлення сторінки — фото Google",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: новий вхід (телефон) — фото Google, власного немає (сервер: customPicture=false)"
    ],
    "herkomst": "Позиція v49; у «Макеті» показана самим оформленням (вжеОформленіРядки.account), тому з карти розвитку прибрана.",
    "maquetteLabel": "прихована група (рядок у вжеОформленіРядки, група «особа» вся «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-account-ui.test.ts 6/6; identiteit-maquette.test.ts 56/56. E2E (identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Після входу (Google передає фото) картка профілю розділу «Акаунт» показує саме цю світлину (зображення завантажилося); після оновлення й нового входу на телефоні — так само. Шапку «Макета» цією групою не перевіряли.",
+   "schermafdruk": "015-blokken-profiel-profiel-google-computer.png"
   },
   {
    "id": "account.особа.0.z-prystroiu",
@@ -1159,14 +1163,16 @@
    "testen": [
     "tests/eenheid/identiteit-account-ui.test.ts",
     "tests/eenheid/sec-002-g07-20261112.test.ts",
-    "tests/eenheid/ruimte-aanvallen-20261022.test.ts"
+    "tests/eenheid/ruimte-aanvallen-20261022.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: власну світлину збережено (на картці — завантажене фото, є смітничок; на сервері customPicture)"
    ],
    "herkomst": "Позиція v49; дія живе у вбудованій справжній панелі Profielfoto.",
    "maquetteLabel": "прихована група (рядок у вжеОформленіРядки)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-account-ui.test.ts 6/6; sec-002-g07-20261112.test.ts 62/62; ruimte-aanvallen-20261022.test.ts 31/31."
+   "resultaat": "Аватар → «Пристрій» → файл PNG → попередній перегляд → «Застосувати»: на картці JPEG 512×512 (data:image/jpeg), з'явився смітничок, на сервері customPicture=true.",
+   "schermafdruk": "015-blokken-profiel-profiel-prullenbak-dialoog-computer.png"
   },
   {
    "id": "account.особа.0.za-posylanniam",
@@ -1253,14 +1259,20 @@
    "testen": [
     "tests/eenheid/identiteit-013-bevestigen.test.ts",
     "tests/eenheid/identiteit-account-ui.test.ts",
-    "tests/eenheid/sec-002-g07-20261112.test.ts"
+    "tests/eenheid/sec-002-g07-20261112.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: діалог «Прибрати власне фото?» пояснює наслідки (файл не зберігається, повернеться фото сервісу входу)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: «Скасувати» — власне фото лишилося (на сторінці й на сервері)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: після «Так, прибрати» знову фото Google, смітничок зник",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: після оновлення сторінки — фото Google",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: новий вхід (телефон) — фото Google, власного немає (сервер: customPicture=false)"
    ],
    "herkomst": "Позиція v49; виправлено в IDENTITEIT-013 (окрема серверна дія reset).",
    "maquetteLabel": "прихована група (стан групи «в-чинних» переважає власний «частково» рядка → «Працює», уся група прихована)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-013-bevestigen.test.ts 65/65; identiteit-account-ui.test.ts 6/6; sec-002-g07-20261112.test.ts 62/62."
+   "resultaat": "Смітничок → діалог із наслідками; «Скасувати» лишає власне фото; «Так, прибрати» — знову фото Google, смітничок зник; після оновлення й нового входу (телефон) — фото Google, customPicture=false.",
+   "schermafdruk": "015-blokken-profiel-profiel-prullenbak-dialoog-computer.png"
   },
   {
    "id": "account.особа.1.povernuty-servisne",
@@ -1283,14 +1295,16 @@
    "wijziging": "Не потрібно.",
    "gereedAls": "Після підтвердження відображається фото провайдера входу; вкладка «Сервіс» показує «Зараз використовується фото з вашого сервісу входу».",
    "testen": [
-    "tests/eenheid/identiteit-013-bevestigen.test.ts"
+    "tests/eenheid/identiteit-013-bevestigen.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: «Повернути сервісне фото» — знову фото Google (сторінка й сервер), «Без фото» знято"
    ],
    "herkomst": "Друга кнопка тієї ж дії (IDENTITEIT-013).",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-013-bevestigen.test.ts 65/65."
+   "resultaat": "Із «Без фото»: «Сервіс» → «Повернути сервісне фото» → підтвердження — знову фото Google на сторінці й на сервері (picture = адреса Google, geenFoto=false).",
+   "schermafdruk": "015-blokken-profiel-profiel-geen-foto-heraanmelden-computer.png"
   },
   {
    "id": "account.особа.1.bez-foto",
@@ -1311,14 +1325,19 @@
    "wijziging": "Етап 3.2: geenFoto у POST /api/owner/profile/photo + варіант у діалозі з підтвердженням; залежить від clearCachedAvatar і broadcastCanonicalAuthChange.",
    "gereedAls": "Людина обирає «Без фото» — у шапці «Макета», меню облікового запису й на інших піддоменах лише ініціали; після повторного входу Google не повертає фото самовільно.",
    "testen": [
-    "tests/eenheid/identiteit-015-profiel-blokken.test.ts"
+    "tests/eenheid/identiteit-015-profiel-blokken.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: «Без фото» — на картці ініціали (від показаного імені) замість фото; сервер: geenFoto, picture порожнє",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: після оновлення — ініціали лишилися",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: новий вхід через Google (з фото в токені) — «Без фото» лишається: ініціали, сервер picture порожнє",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: ніде на сторінці (шапка, бічна смуга) фото Google не з'являється"
    ],
    "herkomst": "План «Прогалини»: «варіант «без фото»»; зміст позиції v49 «Прибрати власну світлину».",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "1dae0b25",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Вкладка «Без фото» в діалозі «Фото профілю» з підтвердженням (BevestigDialoog) → POST /api/owner/profile/photo {geenFoto:true}: picture і providerPicture порожні, users.geenFoto=true (поле в JSON-записі users — міграція не потрібна; старі записи без поля працюють як раніше). Відповідь і hub віддають порожнє picture → усі аватари показують ініціали (кеш аватара очищується, broadcastCanonicalAuthChange). Повторний вхід Google з фото в токені фото не повертає. «Сервіс → Повернути сервісне фото» і нове завантаження знімають вибір. Повторне натискання — той самий стан; аудит owner.profile.photo.none."
+   "resultaat": "«Без фото» → «Показувати лише ініціали» → підтвердження: на картці ініціали, сервер geenFoto=true і picture порожнє; після оновлення й після нового входу через Google (фото є в токені) — далі ініціали, фото Google ніде на сторінці.",
+   "schermafdruk": "015-blokken-profiel-profiel-geen-foto-dialoog-telefoon.png"
   },
   {
    "id": "account.стан.0.poshta-kalendar",
@@ -1342,14 +1361,17 @@
    "gereedAls": "У таблиці видно рядки пошти й календаря зі станом і часом останньої перевірки; на 390 px — картки без горизонтального прокручування.",
    "testen": [
     "tests/eenheid/diagnostiek-account.test.ts",
-    "tests/e2e/tech-bundels.e2e.ts"
+    "tests/e2e/tech-bundels.e2e.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#C: рядок «Пошта» чесно «Невідомо» з поясненням, що Google не налаштовано на сервері (не вина облікового запису)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#C: «потрібен повторний вхід» (підроблена відповідь лише для пошти): «Збій» і порада «увійдіть ще раз»"
    ],
    "herkomst": "Позиція v49 → компонент MijnDiensten.",
    "maquetteLabel": "прихована група (група «стан» уся «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: diagnostiek-account.test.ts 46/46. E2E (tech-bundels.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Справжній рядок «Пошта» у випробувальному середовищі — «Невідомо» з поясненням, що Google не налаштоване на сервері (не вина облікового запису). Стан «потрібен повторний вхід» справжнім створити не можна (потрібне підключення Google) — підроблена відповідь лише для пошти показує «Збій» і пораду «Відкрийте «Пошта» → «Скриньки» і увійдіть ще раз».",
+   "schermafdruk": "015-blokken-profiel-diensten-drie-standen-computer.png"
   },
   {
    "id": "account.стан.1.skhovyshche-github",
@@ -1401,14 +1423,18 @@
    "wijziging": "Не потрібно.",
    "gereedAls": "Рядки ШІ й пристроїв показують кількість і стан для власного облікового запису.",
    "testen": [
-    "tests/eenheid/diagnostiek-account.test.ts"
+    "tests/eenheid/diagnostiek-account.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#C: «Перевірити зараз» — пристрій на зв'язку: «Пристрої» — «Справно» (чинне), «Налаштування» — «Справно»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#C: пристрій не на зв'язку (недоступна служба): «Збій» з поясненням і порадою, що робити",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#C: телефон 380 — таблиця служб без горизонтальної прокрутки"
    ],
    "herkomst": "Позиція v49 → MijnDiensten.",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: diagnostiek-account.test.ts 46/46."
+   "resultaat": "Справжній агент у базі: на зв'язку — «Пристрої (агенти)» «Справно»; не на зв'язку — «Збій» з поясненням «Жоден ваш пристрій зараз не на зв’язку» і порадою перевірити агента. Телефон 380 — без горизонтальної прокрутки.",
+   "schermafdruk": "015-blokken-profiel-diensten-ok-computer.png"
   },
   {
    "id": "account.стан.3.pereviryty-zaraz",
@@ -1433,14 +1459,17 @@
    "gereedAls": "Після натиску кнопка показує обертання, далі «Остання перевірка: <час>» із новим часом.",
    "testen": [
     "tests/eenheid/diagnostiek-account.test.ts",
-    "tests/e2e/tech-bundels.e2e.ts"
+    "tests/e2e/tech-bundels.e2e.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#C: «Перевірити зараз» — пристрій на зв'язку: «Пристрої» — «Справно» (чинне), «Налаштування» — «Справно»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#C: пристрій не на зв'язку (недоступна служба): «Збій» з поясненням і порадою, що робити"
    ],
    "herkomst": "Позиція v49 → MijnDiensten.",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: diagnostiek-account.test.ts 46/46. E2E (tech-bundels.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Перевірити зараз» запускає перевірку (uitvoeren=true) і оновлює таблицю: після зміни стану агента в базі друге натискання показує новий стан.",
+   "schermafdruk": "015-blokken-profiel-diensten-ok-computer.png"
   },
   {
    "id": "account.простори.0.perelik",
@@ -1462,14 +1491,20 @@
    "wijziging": "Не потрібно в межах етапів 1–3.",
    "gereedAls": "Усі неархівовані простори людини видно за назвами з позначкою «Активний».",
    "testen": [
-    "tests/eenheid/ruimte-aanvallen-20261022.test.ts"
+    "tests/eenheid/ruimte-aanvallen-20261022.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: у «Ваших робочих просторах» архівний простір із причиною «архівовано під час видалення облікового запису» й кнопкою «Відновити»; новий порожній — «Активний»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: після підтвердження простір активний (позначка «Активний», кнопки «Відновити» немає)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: після оновлення сторінки — так само «Активний»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: hub — відновлений простір є у виборі просторів бічної панелі",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: hub (сервер) — відновлений простір у переліку власника з роллю «owner» і ownerUserId цього облікового запису"
    ],
    "herkomst": "Позиція v49.",
    "maquetteLabel": "прихована група (група «простори» уся «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: ruimte-aanvallen-20261022.test.ts 31/31."
+   "resultaat": "Новий порожній простір і відновлений — обидва «Активний»; у hub відновлений є у виборі бічної панелі, сервер віддає його з роллю owner і ownerUserId цього облікового запису.",
+   "schermafdruk": "015-blokken-profiel-ruimte-hub-keuze-computer.png"
   },
   {
    "id": "account.простори.1.vidnovyty",
@@ -1493,14 +1528,23 @@
    "gereedAls": "Після підтвердження простір зникає з архівних і з'являється серед активних; чужий простір відновити неможливо (4xx).",
    "testen": [
     "tests/eenheid/ruimte-aanvallen-20261022.test.ts",
-    "tests/eenheid/identiteit-013-bevestigen.test.ts"
+    "tests/eenheid/identiteit-013-bevestigen.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: підготовка — старий простір в архіві (видалення + новий початок), обліковий запис знову активний",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: у «Ваших робочих просторах» архівний простір із причиною «архівовано під час видалення облікового запису» й кнопкою «Відновити»; новий порожній — «Активний»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: діалог «Відновити простір «…»?» з поясненням",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: «Скасувати» — простір лишився в архіві",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: після підтвердження простір активний (позначка «Активний», кнопки «Відновити» немає)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: на сервері простір не архівний і належить саме цьому обліковому запису",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: після оновлення сторінки — так само «Активний»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#D: інша особа (власниця сайту) цього простору не бачить (403/404)"
    ],
    "herkomst": "Позиція v49.",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: ruimte-aanvallen-20261022.test.ts 31/31; identiteit-013-bevestigen.test.ts 65/65."
+   "resultaat": "Архівний простір (видалення + «Створити новий простір») із причиною «архівовано під час видалення облікового запису» → «Відновити» → діалог; «Скасувати» лишає архів; підтвердження — 200, простір активний (після оновлення теж), належить цьому обліковому запису; інша особа його не бачить (403). Примітка: причина fresh_start («архівовано для нового початку») сервер ніде не ставить — після «нового початку» лишається account_deleted; текст правдивий, гілка інтерфейсу невикористана.",
+   "schermafdruk": "015-blokken-profiel-ruimte-herstellen-dialoog-computer.png"
   },
   {
    "id": "account.простори.1.staryi-marshrut",
@@ -1553,14 +1597,17 @@
    "gereedAls": "Текст збігається з поведінкою: людина після видалення входить і бачить кнопку відновлення, яка працює.",
    "testen": [
     "tests/eenheid/identiteit-013-bevestigen.test.ts",
-    "tests/eenheid/account-wissen-20261026.test.ts"
+    "tests/eenheid/account-wissen-20261026.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: пояснення — 30 днів на відновлення, потім остаточне стирання; порада вивантажити дані",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: діалог перелічує наслідки: вимкнення одразу, 30 днів, завершення входів, архів просторів, остаточне стирання, порада вивантажити"
    ],
    "herkomst": "Позиція v49.",
    "maquetteLabel": "Частково реалізовано (кнопка переходу до .settings-danger)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-013-bevestigen.test.ts 65/65; account-wissen-20261026.test.ts 30/30."
+   "resultaat": "Розділ каже про 30 днів на відновлення й остаточне стирання, радить вивантажити дані; діалог перелічує: вимкнення одразу, усі входи завершено, простори в архів, остаточне стирання, порада вивантажити.",
+   "schermafdruk": "015-blokken-profiel-wissen-dialoog-computer.png"
   },
   {
    "id": "account.видалення.0.vidnovlennia-oblikovoho",
@@ -1588,14 +1635,20 @@
     "tests/eenheid/audit-account.test.ts",
     "tests/eenheid/sec-002-g10b-20261112.test.ts",
     "tests/eenheid/account-wissen-20261026.test.ts",
-    "tests/eenheid/rest-20261026.test.ts"
+    "tests/eenheid/rest-20261026.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: новий вхід — екран «Акаунт потребує відновлення» з датою кінця строку й двома варіантами",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: телефон 380 — екран відновлення без горизонтальної прокрутки",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: «Відновити старий простір» (/recover) — обліковий запис знову схвалений, простір не архівний і належить цьому обліковому запису",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: людина бачить «Обліковий запис і простори відновлено»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: у hub простір повернувся разом із блоком"
    ],
    "herkomst": "Наслідок, обіцяний текстом позиції v49; теперішнє місце — старий hub.",
    "maquetteLabel": "Частково реалізовано (стан групи «видалення»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "abbecd3f",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Новий маршрут POST /api/owner/identity/account/recover (id.* і hub). Після входу на id.* екран «Акаунт потребує відновлення» показує дату, до якої зберігаються дані, і кнопки «Відновити старий простір» / «Створити новий простір»; restore повертає approved і простори, fresh — новий простір, старий в архіві. Повторне натискання — 200 без змін; після 30 днів — 400 RECOVERY_WINDOW_EXPIRED із поясненням; видалений адміністратором — 403 RECOVERY_ADMIN_DELETED. Аудит owner.identity.account.recovered і сповіщення «Обліковий запис відновлено»."
+   "resultaat": "Новий вхід видаленого облікового запису — екран «Акаунт потребує відновлення» з датою кінця строку; «Відновити старий простір» (/api/owner/identity/account/recover) — обліковий запис approved, простір не архівний і належить йому, у hub повернувся разом із блоком.",
+   "schermafdruk": "015-blokken-profiel-herstel-poort-telefoon.png"
   },
   {
    "id": "account.видалення.0.peredaty-volodinnia",
@@ -1653,14 +1706,31 @@
     "tests/eenheid/account-wissen-20261026.test.ts",
     "tests/eenheid/identiteit-013-bevestigen.test.ts",
     "tests/eenheid/sec-002-g10f-20261112.test.ts",
-    "tests/eenheid/stap-op-onthouden-20261020.test.ts"
+    "tests/eenheid/stap-op-onthouden-20261020.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: «Підтвердити видалення» недоступна, доки не введено свою адресу",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: після введення адреси (регістр не важить) кнопка доступна",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: «Скасувати» — діалог закрито, обліковий запис активний (сервер), запиту на видалення не було",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: є другий пристрій — вікно спершу пропонує підтвердити з нього (запит «Це ви?» надіслано на 1 пристрій)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: сервер вимагає підтвердити особу — відкрито вікно «Підтвердіть доступ»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: вікно чесно каже, що після входу Google видалення треба повторити (автоматично воно не продовжиться)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: після повернення від Google — повідомлення «Доступ підтверджено. Тепер повторіть дію (діє 5 хвилин)», обліковий запис ще не видалено",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: запит «Це ви?» відкликано, щойно людина обрала Google: ні цей браузер після повернення, ні другий пристрій його не показують",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: повторене видалення після підтвердження через Google — сервер 200, обліковий запис видалено (deleted), Google відвідано один раз",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: людина бачить підсумок про 30 днів на відновлення",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: сеанс закрито — сторінка без входу, сервер не пускає з цими cookie",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: на другому пристрої вхід теж завершено (bootstrap → signed_out)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#F: простір архівовано під час видалення",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#без помилок у консолі й HTTP (окрім очікуваних відмов)",
+    "tests/eenheid/identiteit-015-profiel-blokken.test.ts#«Підтвердіть доступ» → Google: без автоматичного продовження вікно каже повторити дію (uk/nl), «продовжиться автоматично» — лише з hervat",
+    "tests/eenheid/identiteit-015-profiel-blokken.test.ts#«Підтвердити з іншого пристрою»: при виході з вкладки (Google, код, закриття) відкритий запит відкликається; завершений — ні"
    ],
    "herkomst": "Позиція v49.",
    "maquetteLabel": "Частково реалізовано (кнопка переходу до .settings-danger)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: account-wissen-20261026.test.ts 30/30; identiteit-013-bevestigen.test.ts 65/65; sec-002-g10f-20261112.test.ts 70/70; stap-op-onthouden-20261020.test.ts 27/27."
+   "resultaat": "Окремий одноразовий обліковий запис (вхід годину тому, другий пристрій). Кнопка доступна лише після своєї адреси; «Скасувати» нічого не змінює; підтвердження → «Підтвердіть доступ» (спершу «з іншого пристрою», людина обирає Google) → повернення → «повторіть дію» → видалення 200, deleted, сеанс закрито на цьому й на другому пристрої, простір в архіві. Знайдено й виправлено: (1) вікно обіцяло «дія продовжиться автоматично», хоча видалення після Google треба повторити — тепер текст чесний (src/platform/bevestig-toegang.tsx); (2) запит «Це ви?» лишався відкритим після вибору Google — після повернення той самий браузер показував «Це ви?» поверх форми видалення (і другий пристрій) — тепер відкликається (src/apparaat-bevestiging/StapOpKanaal.tsx). Давня вада поза кроком (не виправлялася): після видалення (вкладка без входу) і на екрані відновлення шапка й меню далі опитують tech/status, menu/tellers, meldingen/status|gelezen, flags → 401/403 (8–10 запитів за прогін).",
+   "schermafdruk": "015-blokken-profiel-wissen-na-google-computer.png"
   },
   {
    "id": "account.видалення.1.vlasnyk-saitu",
@@ -1748,14 +1818,18 @@
    "gereedAls": "У секції є вибір «Структурований / Табличний»; вибір «Структурований» дає .json.",
    "testen": [
     "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts",
-    "tests/eenheid/identiteit-014-uitvoer.test.ts"
+    "tests/eenheid/identiteit-014-uitvoer.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: JSON — файл mijn-ruimte-export-<дата>.json відкривається як JSON формату mijn-ruimte-export-v1",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: JSON містить дані пробної особи (адреса, id, назва блоку)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: JSON без секретів (хеші, ключі, токени)"
    ],
    "herkomst": "Позиція v49 («макет» у атласі).",
    "maquetteLabel": "Частково реалізовано (кнопка переходу до #gegevensuitvoer)",
-   "versie": "ab27fdd6",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
-   "resultaat": "У #gegevensuitvoer є вибір «Формат файлу»: «Структурований (JSON)» — типовий, дає mijn-ruimte-export-<дата>.json (поведінка й тіло запиту без змін)."
+   "resultaat": "Формат «Структурований»: файл mijn-ruimte-export-<дата>.json — JSON формату mijn-ruimte-export-v1 з адресою, id і блоком пробної особи; без хешів, ключів і токенів.",
+   "schermafdruk": "015-blokken-profiel-uitvoer-json-klaar-computer.png"
   },
   {
    "id": "account.експорт.0.tablychnyi",
@@ -1776,14 +1850,18 @@
    "wijziging": "Етап 3.3: backend/privacy.ts — CSV на таблицю без секретів, ZIP; стан «готую → готово → файл»; ліміт 5/год спільний.",
    "gereedAls": "Вибір «Табличний» дає .zip, у якому по CSV на таблицю, без totpSecret/хешів/токенів.",
    "testen": [
-    "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts"
+    "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: ZIP — файл .zip розпаковується в Node; є LEESMIJ і CSV-таблиці",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: CSV містять дані пробної особи (адреса й назва блоку)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: ZIP без секретів"
    ],
    "herkomst": "Позиція v49; план «Прогалини»: «CSV-вивантаження».",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "ab27fdd6",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
-   "resultaat": "«Табличний (ZIP із CSV)»: POST /api/owner/privacy/export {formaat:\"zip\"} — ті самі дані без секретів (zonderGeheimen), по CSV на таблицю (tabellen/<таблиця>.csv), bestanden.csv, beveiligingslog.csv, LEESMIJ.txt; CSV з BOM і CRLF, вкладені поля — стовпці «батько.поле», формули знешкоджено апострофом; ZIP — fflate (наявна залежність), base64 у JSON. Файл mijn-ruimte-export-<дата>.zip. Step-up, ліміт 5/год (спільний із JSON), аудит із formaat=zip і сповіщення — як для JSON."
+   "resultaat": "Формат «Табличний»: .zip розпаковано в Node (fflate) — LEESMIJ.txt і CSV по таблицях (tabellen/*.csv) з адресою й назвою блоку пробної особи; без секретів.",
+   "schermafdruk": "015-blokken-profiel-uitvoer-zip-klaar-telefoon.png"
   },
   {
    "id": "account.експорт.1.vyvantazhyty",
@@ -1808,14 +1886,21 @@
    "gereedAls": "Після натиску й підтвердження доступу завантажується mijn-ruimte-export-<дата>.json без секретів; у сповіщеннях безпеки з'являється запис.",
    "testen": [
     "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts",
-    "tests/eenheid/identiteit-014-uitvoer.test.ts"
+    "tests/eenheid/identiteit-014-uitvoer.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: JSON — файл mijn-ruimte-export-<дата>.json відкривається як JSON формату mijn-ruimte-export-v1",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: стан «Готово. Файл … збережено» і кнопка «Зберегти файл ще раз»",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: ZIP — файл .zip розпаковується в Node; є LEESMIJ і CSV-таблиці",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: про вивантаження прийшли сповіщення (два вивантаження)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: телефон 380 — «Ваші дані» без горизонтальної прокрутки",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#E: сторінка «Акаунт» не перезапитує кандидатів «Передати простір» після кожної дії (два вивантаження, зміна ширини — жодного нового запиту)"
    ],
    "herkomst": "Позиція v49 → компонент Gegevensuitvoer (IDENTITEIT-014).",
    "maquetteLabel": "Працює (кнопка переходу до #gegevensuitvoer)",
-   "versie": "ab27fdd6",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
-   "resultaat": "Стан «Готую файл… (не закривайте сторінку) → Готово: файл «…» (розмір, кількість таблиць) → Зберегти файл ще раз» (той самий файл без нового запиту й без витрати ліміту); повторне натискання під час підготовки нічого не надсилає вдруге."
+   "resultaat": "Кнопка «Вивантажити мої дані» (свіжий вхід — без окремого вікна підтвердження) — браузер зберігає файл; стан «Готово. Файл … збережено» і «Зберегти файл ще раз»; два вивантаження — два сповіщення. Знайдено й виправлено поруч: сторінка «Акаунт» перезапитувала кандидатів «Передати простір» при кожному рендері (src/identiteit/WerkruimteOverdragen.tsx) — разом з іншими запитами це доводило спільний ліміт до 429.",
+   "schermafdruk": "015-blokken-profiel-uitvoer-json-klaar-computer.png"
   },
   {
    "id": "account.експорт.1.kompaktna-knopka",
@@ -10184,14 +10269,18 @@
    "gereedAls": "У «Макеті» людина відкриває «Чинні налаштування» картки «Віджети», бачить свій простір у списку й новий блок з'являється саме в ньому на hub.tarasevych.com",
    "testen": [
     "tests/eenheid/identiteit-014-kaart.test.ts",
-    "tests/eenheid/sec-002-g07-20261112.test.ts"
+    "tests/eenheid/sec-002-g07-20261112.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: у виборі «Робочий простір» — власний простір",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: сервер зберіг обидва блоки в просторі власниці: зовнішній з тим самим посиланням, внутрішній — «Нотатки» зі стандартною адресою",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#без помилок у консолі й HTTP (окрім очікуваних відмов)"
    ],
    "herkomst": "Позиція v49 без змін; варіант «Мій простір» = власні активні простори",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-kaart.test.ts 27/27; sec-002-g07-20261112.test.ts 62/62."
+   "resultaat": "У виборі «Робочий простір» — власний простір власниці; обидва збережені блоки лягли саме в нього (workspaceId у записах сервера).",
+   "schermafdruk": "015-blokken-profiel-blok-toegevoegd-computer.png"
   },
   {
    "id": "widgets.створення.1.vibir-dzherela",
@@ -10213,14 +10302,18 @@
    "wijziging": "Не потрібна",
    "gereedAls": "Після вибору «Зовнішнє посилання» зникає список сервісів, а назва й посилання стають обов'язковими; збережений блок має sourceType=external",
    "testen": [
-    "tests/eenheid/identiteit-012-server-veiligheid.test.ts"
+    "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: для зовнішнього джерела «Сервіс або сторінка» сховано, назва й посилання обов'язкові",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: для внутрішнього джерела посилання необов'язкове, під полем — пояснення про стандартну адресу",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: після збереження назва, опис і посилання очищені (джерело лишилося «Зовнішнє»)"
    ],
    "herkomst": "Позиція v49 без змін",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-012-server-veiligheid.test.ts 21/21."
+   "resultaat": "«Зовнішнє посилання» ховає «Сервіс або сторінка» і робить назву й посилання обов'язковими; «Внутрішній сервіс» — посилання необов'язкове з поясненням під полем. Після збереження вибране джерело лишається.",
+   "schermafdruk": "015-blokken-profiel-blok-fout-computer.png"
   },
   {
    "id": "widgets.створення.2.vibir-servisu",
@@ -10241,13 +10334,17 @@
    "ontbreekt": "Підпис «Сховище» в макеті, на сайті — «Хмарне сховище» (суть та сама). Невідомий target сервер не відхиляє явно — блок без шаблону вимагає назви",
    "wijziging": "Не потрібна (за бажанням — вирівняти підпис із макетом)",
    "gereedAls": "Блок «Календар», доданий без назви, з'являється в просторі з назвою «Календар» і посиланням на ?tab=calendar",
-   "testen": [],
+   "testen": [
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: сервер зберіг обидва блоки в просторі власниці: зовнішній з тим самим посиланням, внутрішній — «Нотатки» зі стандартною адресою",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: «Відкрити в просторі» веде в hub до цього блоку (вкладка «Нотатки», блок видно й коротко підсвічено), параметри прибрано з адреси"
+   ],
    "herkomst": "Позиція v49 без змін; «Сховище» = cloud (Хмарне сховище)",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Наявної автоматичної перевірки немає — рядок отримає e2e на етапі 4."
+   "resultaat": "Вибір «Нотатки» без посилання — сервер підставив стандартну адресу https://hub.tarasevych.com/?tab=notes і вид custom; у hub блок на вкладці «Нотатки».",
+   "schermafdruk": "015-blokken-profiel-hub-blok-gevonden-computer.png"
   },
   {
    "id": "widgets.створення.3.nazva",
@@ -10270,14 +10367,19 @@
    "wijziging": "Не потрібна",
    "gereedAls": "Назва довша за 120 символів не вводиться; сервер повертає BLOK_TITEL_TE_LANG на обхідний запит; збережений блок має введену назву",
    "testen": [
-    "tests/eenheid/identiteit-012-server-veiligheid.test.ts"
+    "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: порожня зовнішня форма не надсилається; браузер пояснює помилку біля поля «Назва» і ставить туди фокус",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: сервер відмовляє посиланню з логіном і паролем (400 BLOK_URL_ONGELDIG), людина бачить зрозуміле пояснення, назва й посилання не очищено",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: внутрішній блок із власною https-адресою й розміром «Власний» 500×300 — сервер зберіг адресу замість стандартної і розмір",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: після повторного входу й відкриття hub обидва блоки на місці з назвами"
    ],
    "herkomst": "Позиція v49 без змін",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-012-server-veiligheid.test.ts 21/21."
+   "resultaat": "Для зовнішнього джерела порожня назва — форма не надсилається, фокус на полі «Назва», браузер показує повідомлення (мовою самого браузера; у випробувальному Chromium — англійською, це не текст сайту). Назви внутрішнього й зовнішнього блоків збережено й показано в hub після нового входу.",
+   "schermafdruk": "015-blokken-profiel-blok-fout-computer.png"
   },
   {
    "id": "widgets.створення.4.opys",
@@ -10300,14 +10402,17 @@
    "wijziging": "Не потрібна",
    "gereedAls": "Опис видно на картці блоку в просторі; понад 500 символів сервер відхиляє",
    "testen": [
-    "tests/eenheid/identiteit-012-server-veiligheid.test.ts"
+    "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: «Скасувати» повертає форму до початку (назва й опис порожні, «Завдання», звичайний розмір) і ставить фокус на вибір простору",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: після збереження назва, опис і посилання очищені (джерело лишилося «Зовнішнє»)"
    ],
    "herkomst": "Позиція v49 без змін",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-012-server-veiligheid.test.ts 21/21."
+   "resultaat": "Опис «Зовнішній сайт проби» збережено й показано на картці в hub; після збереження й після «Скасувати» поле порожнє.",
+   "schermafdruk": "015-blokken-profiel-hub-blokken-telefoon.png"
   },
   {
    "id": "widgets.створення.5.posylannia-zovnishnie",
@@ -10331,14 +10436,18 @@
    "gereedAls": "Запит POST /api/blocks/add із sourceType=external і порожнім url повертає 400 з кодом помилки, а в інтерфейсі людина бачить зрозумілий текст українською/нідерландською",
    "testen": [
     "tests/eenheid/identiteit-015-risico.test.ts",
-    "tests/eenheid/identiteit-012-server-veiligheid.test.ts"
+    "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: адреса http:// не проходить; пояснення каже, що потрібна https:// без логіна й пароля",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: сервер відмовляє посиланню з логіном і паролем (400 BLOK_URL_ONGELDIG), людина бачить зрозуміле пояснення, назва й посилання не очищено",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: зовнішній блок у hub відкриває саме введену адресу (href, нова вкладка, rel=noreferrer)"
    ],
    "herkomst": "Позиція v49 без змін",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "abbecd3f",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Сервер (shared/blok-invoer.ts blokUrlVereistFout) відхиляє зовнішній блок без https-посилання під час додавання (400 BLOK_URL_VEREIST) і не дає стерти посилання під час зміни; внутрішній блок без посилання приймається; старі блоки без sourceType змінюються як раніше. Причина відмови показується двома мовами (src/weigeringen.ts)."
+   "resultaat": "http:// браузер не пропускає (пояснення title: «Лише адреса, що починається з https://, без логіна й пароля»); https:// з логіном і паролем сервер відкидає 400 BLOK_URL_ONGELDIG, людина бачить пояснення, поля не очищено; збережена адреса https://…/pad?x=1 — той самий href у hub (target=_blank, rel=noreferrer).",
+   "schermafdruk": "015-blokken-profiel-blok-serverweigering-computer.png"
   },
   {
    "id": "widgets.створення.5.posylannia-vnutrishnie",
@@ -10361,14 +10470,19 @@
    "gereedAls": "Для внутрішнього джерела поле або приховане, або має пояснення; блок без введеної адреси веде на стандартну сторінку сервісу",
    "testen": [
     "tests/eenheid/identiteit-015-profiel-blokken.test.ts",
-    "tests/eenheid/identiteit-015-risico.test.ts"
+    "tests/eenheid/identiteit-015-risico.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: для внутрішнього джерела посилання необов'язкове, під полем — пояснення про стандартну адресу",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: внутрішній блок із власною https-адресою й розміром «Власний» 500×300 — сервер зберіг адресу замість стандартної і розмір",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: у hub внутрішній блок із власною адресою відкриває саме її, картка має власний розмір (size-custom, ≈500×300)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: сервер зберіг обидва блоки в просторі власниці: зовнішній з тим самим посиланням, внутрішній — «Нотатки» зі стандартною адресою"
    ],
    "herkomst": "Позиція v49 без змін; дія виявлена в коді сайту",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "1dae0b25",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Для внутрішнього джерела поле має підказку «Порожнє — стандартна адреса сервісу» і пояснення під полем (aria-describedby): порожнє поле відкриває стандартну сторінку сервісу, введена https-адреса замінює її для всіх учасників простору."
+   "resultaat": "Порожнє посилання внутрішнього блоку — стандартна адреса сервісу; введена https-адреса замінює її: сервер зберіг https://voorbeeld.example.test/notities, у hub «Відкрити» веде саме туди.",
+   "schermafdruk": "015-blokken-profiel-hub-blok-gevonden-computer.png"
   },
   {
    "id": "widgets.створення.6.rozmir",
@@ -10389,13 +10503,18 @@
    "ontbreekt": "Немає",
    "wijziging": "Не потрібна",
    "gereedAls": "Блок «Широкий» займає ширшу клітинку на полотні простору",
-   "testen": [],
+   "testen": [
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: «Власний» розмір показує поля ширини й висоти",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: внутрішній блок із власною https-адресою й розміром «Власний» 500×300 — сервер зберіг адресу замість стандартної і розмір",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: у hub внутрішній блок із власною адресою відкриває саме її, картка має власний розмір (size-custom, ≈500×300)"
+   ],
    "herkomst": "Позиція v49 без змін",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Наявної автоматичної перевірки немає — рядок отримає e2e на етапі 4."
+   "resultaat": "Вибір «Власний» показує поля ширини й висоти, «Звичайний» їх прибирає; блок «Власний» 500×300 — у записі сервера size=custom, у hub картка size-custom 500×300 px.",
+   "schermafdruk": "015-blokken-profiel-hub-blok-gevonden-computer.png"
   },
   {
    "id": "widgets.створення.6.vlasnyi-rozmir",
@@ -10416,13 +10535,18 @@
    "ontbreekt": "Немає",
    "wijziging": "Не потрібна",
    "gereedAls": "Блок із шириною 600 і висотою 300 має саме такий розмір на полотні; значення поза межами сервер обрізає",
-   "testen": [],
+   "testen": [
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: «Власний» розмір показує поля ширини й висоти",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: внутрішній блок із власною https-адресою й розміром «Власний» 500×300 — сервер зберіг адресу замість стандартної і розмір",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: у hub внутрішній блок із власною адресою відкриває саме її, картка має власний розмір (size-custom, ≈500×300)"
+   ],
    "herkomst": "Позиція v49 без змін; поля розміру — доповнення сайту до варіанта «Власний»",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Наявної автоматичної перевірки немає — рядок отримає e2e на етапі 4."
+   "resultaat": "Поля «Ширина, px» = 500 і «Висота, px» = 300 збережено (customWidth/customHeight на сервері); картка в hub має саме цей розмір (500×300).",
+   "schermafdruk": "015-blokken-profiel-hub-blok-gevonden-computer.png"
   },
   {
    "id": "widgets.створення.7.dodaty",
@@ -10448,14 +10572,21 @@
     "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
     "tests/eenheid/identiteit-013-bevestigen.test.ts",
     "tests/eenheid/sec-002-g07-20261112.test.ts",
-    "tests/eenheid/sec-002-afwerking-a-20261112.test.ts"
+    "tests/eenheid/sec-002-afwerking-a-20261112.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: зовнішній блок збережено: «Блок додано до простору» і посилання «Відкрити в просторі» на цей простір і цей блок",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: після збереження назва, опис і посилання очищені (джерело лишилося «Зовнішнє»)",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: внутрішній блок із власною https-адресою й розміром «Власний» 500×300 — сервер зберіг адресу замість стандартної і розмір",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: сервер зберіг обидва блоки в просторі власниці: зовнішній з тим самим посиланням, внутрішній — «Нотатки» зі стандартною адресою",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: після повторного входу й відкриття hub обидва блоки на місці з назвами",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#без помилок у консолі й HTTP (окрім очікуваних відмов)"
    ],
    "herkomst": "Позиція v49 без змін",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-012-server-veiligheid.test.ts 21/21; identiteit-013-bevestigen.test.ts 65/65; sec-002-g07-20261112.test.ts 62/62; sec-002-afwerking-a-20261112.test.ts 68/68."
+   "resultaat": "«Додати свій сервіс»: зовнішній і два внутрішні блоки збережено (200), показано «Блок додано до простору», назва/опис/посилання очищено; після нового входу на іншому пристрої блоки в hub. Давня вада поза кроком (не виправлялася, зміна задуму «Огляду»): на «Огляді» hub (робочий стіл, Zone F) блоки, додані ПІСЛЯ першого створення робочого столу, не з'являються — робочий стіл переносить старі блоки лише раз (shared/werkblad-indeling.ts eersteWerkblad), а каталог показує тільки приховані; окремі картки видно на вкладках «Нотатки»/«Завдання»/«Календар». Тому «Відкрити в просторі» тепер веде на ту вкладку.",
+   "schermafdruk": "015-blokken-profiel-blok-toegevoegd-computer.png"
   },
   {
    "id": "widgets.створення.7.vidmova-servera",
@@ -10477,14 +10608,16 @@
    "wijziging": "Не потрібна",
    "gereedAls": "На посилання http://… людина бачить пояснення, а введені назва й опис лишаються у формі",
    "testen": [
-    "tests/eenheid/identiteit-013-bevestigen.test.ts"
+    "tests/eenheid/identiteit-013-bevestigen.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: сервер відмовляє посиланню з логіном і паролем (400 BLOK_URL_ONGELDIG), людина бачить зрозуміле пояснення, назва й посилання не очищено"
    ],
    "herkomst": "Позиція v49 без змін; поведінка помилки з IDENTITEIT-013",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-013-bevestigen.test.ts 65/65."
+   "resultaat": "Відмова 400 BLOK_URL_ONGELDIG (посилання з логіном і паролем): повідомлення «Посилання має починатися з https:// і не містити логіна чи пароля.», назва й посилання лишилися у формі.",
+   "schermafdruk": "015-blokken-profiel-blok-serverweigering-computer.png"
   },
   {
    "id": "widgets.створення.7.skasuvaty",
@@ -10503,14 +10636,17 @@
    "wijziging": "Етап 2.3: додати кнопку «Скасувати», що скидає widget-стан до початкового й повертає фокус на перше поле; залежить лише від src/InstellingencentrumWeergave.tsx",
    "gereedAls": "Після «Скасувати» усі поля порожні/типові, фокус на «Робочий простір», жодного запиту до сервера",
    "testen": [
-    "tests/eenheid/identiteit-015-profiel-blokken.test.ts"
+    "tests/eenheid/identiteit-015-profiel-blokken.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: «Скасувати» повертає форму до початку (назва й опис порожні, «Завдання», звичайний розмір) і ставить фокус на вибір простору",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: «Скасувати» нічого не надсилає на сервер"
    ],
    "herkomst": "Нова дія: джерело вимоги — план IDENTITEIT-015, «Прогалини» (кнопка «Скасувати» у формі блоку) і етап 2.3",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "1dae0b25",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "«Скасувати» (type=button, жодного запиту) скидає всі поля до початкового стану (LEGE_WIDGET), прибирає повідомлення про доданий блок і повертає фокус на «Робочий простір»."
+   "resultaat": "«Скасувати» після заповнення («Нотатки», назва, опис, «Власний» розмір) — усі поля до початкових («Завдання», «Звичайний», порожні), фокус на «Робочий простір», жодного запиту /api/blocks/add.",
+   "schermafdruk": "015-blokken-profiel-blok-formulier-telefoon.png"
   },
   {
    "id": "widgets.створення.7.vidkryty-v-prostori",
@@ -10529,14 +10665,19 @@
    "wijziging": "Етап 2.3: після успіху показати посилання на hub.tarasevych.com з id простору (canonicalNavigationUrl('hub')); залежить від src/VerenigdDienstApp.tsx (повертати id блоку) і src/InstellingencentrumWeergave.tsx",
    "gereedAls": "Після додавання видно «Відкрити в просторі», клік відкриває hub у вибраному просторі, де видно новий блок",
    "testen": [
-    "tests/eenheid/identiteit-015-profiel-blokken.test.ts"
+    "tests/eenheid/identiteit-015-profiel-blokken.test.ts",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: зовнішній блок збережено: «Блок додано до простору» і посилання «Відкрити в просторі» на цей простір і цей блок",
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#A: «Відкрити в просторі» веде в hub до цього блоку (вкладка «Нотатки», блок видно й коротко підсвічено), параметри прибрано з адреси",
+    "tests/eenheid/identiteit-015-profiel-blokken.test.ts#hub: «Відкрити в просторі» відкриває вкладку, де блок видно (Нотатки/зовнішній — «Нотатки», Завдання — «Завдання», Календар — «Календар»)",
+    "tests/eenheid/identiteit-015-profiel-blokken.test.ts#hub: фільтр карток на вкладках і перехід «Відкрити в просторі» — одна функція (blokOpTab), без власної копії правил у App.tsx"
    ],
    "herkomst": "Нова дія: джерело вимоги — план IDENTITEIT-015, етап 2.3",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "1dae0b25",
+   "versie": "da3bbfbc",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Після успіху сервер повертає id блоку; під формою з'являється «Відкрити в просторі» → hub.tarasevych.com/?werkruimte=<id>&blok=<id>. Hub (src/open-in-ruimte.ts) вибирає простір лише якщо він є в списку людини, прокручує до блоку (data-blok-id) і коротко підсвічує його, потім прибирає параметри з адреси."
+   "resultaat": "Посилання веде на hub/?werkruimte=<простір>&blok=<блок>. Знайдено й виправлено: hub лишав людину на «Огляді» (робочий стіл), де щойно доданого блоку немає — перехід нікуди. Тепер hub вибирає простір, перемикається на вкладку, де блок показано окремою карткою (src/open-in-ruimte.ts tabVoorBlok; той самий blokOpTab фільтрує вкладки), прокручує й підсвічує блок, прибирає параметри з адреси.",
+   "schermafdruk": "015-blokken-profiel-hub-blok-gevonden-computer.png"
   },
   {
    "id": "widgets.створення.7.lyshe-perehliad",
