@@ -410,14 +410,15 @@
     "gereedAls": "Людина в сповіщенні тисне «Це був я» → картка позначається, повторний вхід з цього пристрою не сповіщає; «Це не я» відкриває «Сесії та пристрої».",
     "testen": [
       "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts",
-      "tests/eenheid/nieuw-apparaat-20261030.test.ts"
+      "tests/eenheid/nieuw-apparaat-20261030.test.ts",
+      "tests/eenheid/identiteit-015-herstel.test.ts"
     ],
     "herkomst": "Теперішнє місце — центр сповіщень (UI-014), не розділ «Сесії».",
     "maquetteLabel": "Частково реалізовано",
-    "versie": "ab27fdd6",
+    "versie": "HEAD кроку herstel",
     "omgeving": "випробувальне середовище",
     "staatNa": "працює в цьому оформленні",
-    "resultaat": "Крім картки сповіщення, «Це був я» тепер є в переліку відомих пристроїв у «Сесіях» (POST /api/owner/identity/apparaten/bevestigen: лише власні рядки, аудит owner.apparaat.bevestigd один раз); позначка «Підтверджено вами <дата>». Посилання зі сповіщення (/sessions?apparaat=<id>) підсвічує саме цей пристрій."
+    "resultaat": "Крім картки сповіщення, «Це був я» тепер є в переліку відомих пристроїв у «Сесіях» (POST /api/owner/identity/apparaten/bevestigen: лише власні рядки, аудит owner.apparaat.bevestigd один раз); позначка «Підтверджено вами <дата>». Посилання зі сповіщення (/sessions?apparaat=<id>) підсвічує саме цей пристрій. Крок herstel: «Це був я» (у «Сесіях» і з картки сповіщення) тепер дає запис у центрі сповіщень (security «Пристрій позначено як ваш») і аудит лише для першої позначки — подвійне чи повторне натискання не дублює (рядок блокується FOR UPDATE)."
   },
   {
     "id": "sessions.сповіщення.0.відомі-пристрої",
@@ -439,13 +440,14 @@
     "wijziging": "Етап 2.4: маршрут переліку й «Забути пристрій» з посиленим підтвердженням і аудитом, блок у SessiesOverzicht; ціль картки на цей блок.",
     "gereedAls": "Людина бачить у «Сесії та пристрої» перелік відомих пристроїв із датами; тисне «Забути пристрій» → наступний вхід із нього знову дає сповіщення про новий пристрій.",
     "testen": [
-      "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts"
+      "tests/eenheid/identiteit-015-apparaten-uitvoer.test.ts",
+      "tests/eenheid/identiteit-015-herstel.test.ts"
     ],
     "herkomst": "Нова вимога плану (етап 2.4, «Прогалини»: перелік відомих пристроїв).",
     "maquetteLabel": "Частково реалізовано",
-    "versie": "ab27fdd6",
+    "versie": "HEAD кроку herstel",
     "omgeving": "випробувальне середовище",
     "staatNa": "працює в цьому оформленні",
-    "resultaat": "POST /api/owner/identity/apparaten/lijst — власні рядки app.bekende_apparaten (до 100), «Цей пристрій» за хешем cookie пристрою, дати першого й останнього входу, підтвердження. «Забути пристрій»: BevestigDialoog → POST …/apparaten/vergeten зі step-up «apparaat-vergeten» (ніколи не запам’ятовується), аудит owner.apparaat.vergeten, сповіщення безпеки; чужий id нічого не видаляє; повтор — vergeten:false без нового сповіщення; ліміт 30/год. Наступний вхід із забутого пристрою знову дає попередження."
+    "resultaat": "POST /api/owner/identity/apparaten/lijst — власні рядки app.bekende_apparaten (до 100), «Цей пристрій» за хешем cookie пристрою, дати першого й останнього входу, підтвердження. «Забути пристрій»: BevestigDialoog → POST …/apparaten/vergeten зі step-up «apparaat-vergeten» (ніколи не запам’ятовується), аудит owner.apparaat.vergeten, сповіщення безпеки; чужий id нічого не видаляє; повтор — vergeten:false без нового сповіщення; ліміт 30/год. Наступний вхід із забутого пристрою знову дає попередження. Крок herstel: невдале перше завантаження переліку показує «Спробувати ще» (раніше — вічне «Завантаження…»); пристрій із посилання сповіщення прокручується в центр, отримує фокус і aria-current."
   }
 ]

@@ -32,5 +32,6 @@ export async function extraAanmeldWegen(userId: string, zonder?: string): Promis
 /** '' — можна; інакше код відмови (LAST_LOGIN_METHOD_PROTECTED). */
 export async function laatsteWegFout(user: Gebruiker, zonder: string): Promise<string> {
   if (!controle || !user?.id) return '';
-  try { return await controle(user, zonder); } catch { return ''; }
+  // IDENTITEIT-015 (herstel): помилка перевірки (БД, контур Google…) — «не можна» (безпечний бік, як aanmeldVlagVoor), а не «можна».
+  try { return await controle(user, zonder); } catch { return 'LAST_LOGIN_METHOD_PROTECTED'; }
 }

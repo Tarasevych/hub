@@ -68,9 +68,9 @@ export function AccentEnEffecten({ tr }: { tr: Tr }) {
       <h3 id='thema-effecten-kop'>{tr('Виразність декоративних ефектів', 'Sterkte van decoratieve effecten')}</h3>
       <p className='thema-uitleg'>{tr('Сяйво ілюстрацій центру облікового запису: 0 % — без сяйва, 45 % — як задумано, 100 % — насиченіше. На текст і кнопки не впливає.', 'De gloed van de illustraties in het accountcentrum: 0 % — geen gloed, 45 % — zoals bedoeld, 100 % — voller. Tekst en knoppen veranderen niet.')}</p>
       <label className='thema-veld thema-effecten'>
-        <input type='range' min={0} max={100} step={5} value={effecten} aria-describedby='thema-effecten-kop' data-thema-effecten
+        <input type='range' min={0} max={100} step={5} value={effecten} aria-labelledby='thema-effecten-kop' aria-valuetext={`${effecten}%`} data-thema-effecten
           onChange={(e) => zetWeergaveStijl({ effecten: Number(e.target.value) === UITERLIJK_EFFECTEN_STANDAARD ? undefined : Number(e.target.value) })} />
-        <output>{effecten}%</output>
+        <output aria-hidden='true'>{effecten}%</output>
       </label>
     </section>
   </>;

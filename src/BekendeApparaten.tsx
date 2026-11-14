@@ -80,6 +80,14 @@ export default function BekendeApparaten({ lang, beginStand = null, post = (u, b
   const keuze = stand?.keuze || 'altijd';
   // Посилання зі сповіщення (…/sessions?apparaat=<id>) підсвічує саме той пристрій. Link uit de melding markeert dat apparaat.
   const uitMelding = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('apparaat') || '' : '';
+  // IDENTITEIT-015 (herstel): блок стоїть після переліку сесій — прокручуємо до пристрою зі сповіщення й ставимо на нього фокус.
+  const uitMeldingGedaan = useRef(false);
+  useEffect(() => {
+    if (!uitMelding || uitMeldingGedaan.current || !stand?.apparaten.some((a) => a.id === uitMelding) || typeof document === 'undefined') return;
+    uitMeldingGedaan.current = true;
+    const el = document.querySelector<HTMLElement>(`[data-bekend-apparaat="${CSS.escape(uitMelding)}"]`);
+    if (el) { el.scrollIntoView?.({ block: 'center' }); el.focus?.({ preventScroll: true }); }
+  }, [stand, uitMelding]);
   const kies = (k: ApparaatKeuze) => {
     if (k === keuze || bezig) return;
     if (k === 'uit') { setVraagUit(true); return; }
@@ -100,8 +108,10 @@ export default function BekendeApparaten({ lang, beginStand = null, post = (u, b
     {melding && <p className='sessies-melding' role='status'>{melding}</p>}
     {fout && <p className='settings-honest-note' role='alert' data-nieuw-apparaat-fout>{tr(fout[0], fout[1])}</p>}
     <h4>{tr('Відомі пристрої', 'Bekende apparaten')}</h4>
-    {!stand ? <div className='security-empty'>{tr('Завантаження…', 'Laden…')}</div>
-      : stand.apparaten.length ? <ul className='bekende-apparaten-lijst' data-bekende-apparaten={stand.apparaten.length}>{stand.apparaten.map((a) => <li key={a.id} data-bekend-apparaat={a.id} data-dit-apparaat={a.ditApparaat ? '1' : undefined} data-uit-melding={uitMelding === a.id ? '1' : undefined}>
+    {!stand ? (fout && !bezig
+      ? <div className='security-empty' data-bekende-apparaten-fout>{tr('Перелік не завантажився.', 'De lijst is niet geladen.')} <button type='button' className='sessies-secundair' data-apparaten-opnieuw onClick={() => void doe(() => acties.lijst())}>{tr('Спробувати ще', 'Opnieuw proberen')}</button></div>
+      : <div className='security-empty'>{tr('Завантаження…', 'Laden…')}</div>)
+      : stand.apparaten.length ? <ul className='bekende-apparaten-lijst' data-bekende-apparaten={stand.apparaten.length}>{stand.apparaten.map((a) => <li key={a.id} data-bekend-apparaat={a.id} data-dit-apparaat={a.ditApparaat ? '1' : undefined} data-uit-melding={uitMelding === a.id ? '1' : undefined} aria-current={uitMelding === a.id ? 'true' : undefined} tabIndex={uitMelding === a.id ? -1 : undefined}>
         <span className='security-device-icon'><Laptop aria-hidden='true' /></span>
         <div className='bekend-apparaat-tekst'>
           <strong>{apparaatTekst(lang, a.apparaat || null)}{a.ditApparaat && <em className='bekend-apparaat-dit'>{tr('Цей пристрій', 'Dit apparaat')}</em>}</strong>
@@ -109,7 +119,7 @@ export default function BekendeApparaten({ lang, beginStand = null, post = (u, b
           <small data-bevestigd={a.bevestigdOp ? '1' : '0'}>{a.bevestigdOp ? <><CheckCircle2 aria-hidden='true' />{tr(`Підтверджено вами ${tijd(a.bevestigdOp)}`, `Door u bevestigd ${tijd(a.bevestigdOp)}`)}</> : tr('Ще не підтверджено', 'Nog niet bevestigd')}</small>
         </div>
         <div className='bekend-apparaat-acties'>
-          {!a.bevestigdOp && <button type='button' className='sessies-secundair' data-apparaat-bevestigen={a.id} disabled={bezig} {...geenAi} onClick={alleenMens(() => void doe(() => acties.bevestigen(a.id), () => tr('Позначено: це були ви.', 'Gemarkeerd: dit was u.')))}
+          {!a.bevestigdOp && <button type='button' className='sessies-secundair' data-apparaat-bevestigen={a.id} disabled={bezig} {...geenAi} onClick={alleenMens(() => void doe(() => acties.bevestigen(a.id), () => tr('Позначено: це були ви. Запис додано до центру сповіщень.', 'Gemarkeerd: dit was u. Er staat een melding in het meldingencentrum.')))}
             title={tr('Позначити цей пристрій як ваш. Нічого не завершує й не видаляє.', 'Dit apparaat als het uwe markeren. Beëindigt en verwijdert niets.')}>{tr('Це був я', 'Dit was ik')}</button>}
           <button type='button' className='security-revoke' data-apparaat-vergeten={a.id} disabled={bezig} {...geenAi} onClick={alleenMens(() => setVergeetVraag(a))}
             title={tr('Пристрій зникне з відомих: наступний вхід із нього знову дасть попередження. Сеанси на ньому не завершуються.', 'Het apparaat verdwijnt uit de bekende: de volgende aanmelding ermee geeft weer een waarschuwing. Sessies erop worden niet beëindigd.')}><Trash2 aria-hidden='true' />{tr('Забути пристрій', 'Apparaat vergeten')}</button>

@@ -317,9 +317,11 @@ export async function verwijderen(auth: PasskeyAuth, input: Record<string, unkno
   const rij = await eigenRij(auth.user.id, input.id);
   // IDENTITEIT-015 (aanmelden): тепер ключем доступу можна ВХОДИТИ. Останній ключ, коли він — єдиний робочий шлях входу, не прибирається
   // (той самий захист від блокування, що й для Google і пароля). Інші ключі цієї людини лишаються — тоді прибрати можна.
+  let gecontroleerd = false;
   if ((await passkeyAantal(auth.user.id)) <= 1) {
     const blok = await laatsteWegFout(auth.user, 'passkey');
     if (blok) fout(blok, 409);
+    gecontroleerd = true;
   }
   let wijziging = '';
   if (isEigenaarGebruiker(auth.user)) {
@@ -333,7 +335,20 @@ export async function verwijderen(auth: PasskeyAuth, input: Record<string, unkno
     }
     await aanmeldingIntrekken({ id: auth.user.id, email: auth.user.email }, rij.vingerafdruk).catch(() => undefined);
   }
-  await alsGebruiker(auth.user.id, (q) => q('DELETE FROM app.passkeys WHERE id = $1 AND user_id = $2', [rij.id, auth.user.id]));
+  // IDENTITEIT-015 (herstel): підрахунок і DELETE — під одним замком на людину. Два одночасні видалення РІЗНИХ ключів раніше обидва
+  // бачили «2» і обидва проходили; тепер другий бачить «1» і проходить захист від втрати останнього способу входу. / Telling + DELETE onder één slot.
+  const wis = (gecontroleerdNu: boolean) => alsGebruiker(auth.user.id, async (q) => {
+    await q('SELECT pg_advisory_xact_lock(hashtext($1))', [`passkey-weg:${auth.user.id}`]);
+    const n = Number((await q('SELECT count(*)::int AS n FROM app.passkeys WHERE user_id = $1', [auth.user.id])).rows[0]?.n || 0);
+    if (n <= 1 && !gecontroleerdNu) return 'opnieuw' as const;
+    await q('DELETE FROM app.passkeys WHERE id = $1 AND user_id = $2', [rij.id, auth.user.id]);
+    return 'weg' as const;
+  });
+  if ((await wis(gecontroleerd)) === 'opnieuw') {
+    const blok = await laatsteWegFout(auth.user, 'passkey');
+    if (blok) fout(blok, 409);
+    await wis(true);
+  }
   // SEC-002 geheimen-05: een verwijderde passkey mag de gegevenssleutel niet meer kunnen openen — zijn omslag in beide ruimtes weg.
   await passkeyOmslagenWeg(auth.user.id, String(rij.id));
   await auditeer(auth.user.id, wijziging ? 'goedkeur_passkey_verwijderd' : 'passkey_verwijderd', 'success', { vingerafdruk: rij.vingerafdruk.slice(0, 16), label: rij.naam, ...(wijziging ? { wijziging, reden: String(input.reden || '').slice(0, 500), sessie: sessieInfo(auth).sessieId.slice(0, 8) } : {}) }, auth.service);

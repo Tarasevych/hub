@@ -256,7 +256,10 @@ export async function main(): Promise<number> {
     // повторне натискання
     const weer = await idv(O, pad, { nieuweEigenaarId: A.id });
     check('повторне натискання: 200 alOverdragen=true, без нових сповіщень і без дубля рядка O', weer.status === 200 && weer.data.alOverdragen === true && (await meldingen(A.id)).length === 1 && (await meldingen(O.id)).length === 1 && (await leden(wsId, O.id)).length === 1);
-    // перервана спроба: доведення не відбулося (рядок A повернувся, блок знову в O)
+    // перервана спроба: доведення не відбулося (рядок A повернувся, блок знову в O).
+    // IDENTITEIT-015 (herstel): справжня перерва означає, що позначку «доведено» (overdrachtAfgerondOp) не записано — прибираємо її;
+    // без цього повтор після завершеної передачі навмисно нічого не змінює (див. identiteit-015-herstel.test.ts).
+    await pool.query("update app.records set data = data - 'overdrachtAfgerondOp' where tbl='workspaces' and id=$1", [wsId]);
     await lidMaken(wsId, A, 'admin');
     await pool.query("update app.records set data = data || jsonb_build_object('ownerUserId', $2::text) where tbl='workspace_blocks' and id=$1", [blokken.find((b) => b.o === A.id)!.id, O.id]);
     const herstel = await idv(O, pad, { nieuweEigenaarId: A.id });

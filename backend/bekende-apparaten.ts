@@ -18,7 +18,7 @@ import { magEigenToegang } from '../shared/eigen-toegang';
 import { apparaatCookieHash } from './apparaat-cookie';
 import { meldBeveiligingsWijziging } from './beveiliging-meldingen';
 import { gebruikerVeldenZetten } from './gebruiker-schrijven';
-import { alsBekendMarkeren, apparaatCookieSleutel } from './nieuw-apparaat';
+import { apparaatCookieSleutel, bekendBevestigen } from './nieuw-apparaat';
 
 export type ApparaatKeuze = 'altijd' | 'uit';
 /** Veldnaam in het accountrecord. Ontbreekt het veld (oude records), dan geldt «altijd». */
@@ -119,8 +119,12 @@ export function bekendeApparatenRoutes(requireSession: RequireSession, deps: App
     'POST /api/owner/identity/apparaten/bevestigen': route(async (ctx, auth, d) => {
       const al = (await bekendeApparatenLijst(auth.user.id)).find((a) => a.id === String(d.id || ''));
       if (!al) return error('APPARAAT_ONBEKEND', 404);
-      const ok = await alsBekendMarkeren(auth.user.id, d.id);
-      if (ok && !al.bevestigdOp) await deps.audit(auth.user.id, 'owner.apparaat.bevestigd', 'success', { id: al.id, apparaat: al.apparaat });
+      const { ok, nieuw } = await bekendBevestigen(auth.user.id, d.id);
+      // IDENTITEIT-015 (herstel): позначка «Це був я» — і в центр сповіщень (на інших пристроях видно, що пристрій назвали своїм). Повтор — без нового запису.
+      if (ok && nieuw) {
+        await deps.audit(auth.user.id, 'owner.apparaat.bevestigd', 'success', { id: al.id, apparaat: al.apparaat });
+        await meldBeveiligingsWijziging(auth.user.id, 'apparaat-bevestigd', { apparaat: al.apparaat || '—' });
+      }
       return json({ ...(await stand(ctx, auth.user.id)), bevestigd: ok });
     }),
   };

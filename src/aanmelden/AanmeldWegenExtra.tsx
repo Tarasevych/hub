@@ -71,8 +71,8 @@ export function AanmeldWegenExtra({ lang, herstelbaar = [], telefoon, context, w
           {telefoon?.pending && sms?.klaar && <button type='button' disabled={bezig} onClick={() => void roep('/api/owner/access/phone/code/versturen', {}, (d) => { setCodeVerstuurd(Number(d.geldigTot || 0)); setMelding(d.alBevestigd ? tr(lang, 'Номер уже підтверджено.', 'Het nummer is al bevestigd.') : tr(lang, `Код надіслано на ${String(d.naar || '')}. Він діє 10 хвилин.`, `Code verstuurd naar ${String(d.naar || '')}. Hij geldt 10 minuten.`)); })}><Send />{wachtOpCode ? tr(lang, 'Надіслати ще раз', 'Opnieuw versturen') : tr(lang, 'Надіслати код', 'Code versturen')}</button>}
         </div>}
         {!telefoon?.verified && wachtOpCode && <div className='access-plane-inline-form'>
-          <input inputMode='numeric' autoComplete='one-time-code' maxLength={6} placeholder={tr(lang, '6 цифр із SMS', '6 cijfers uit de sms')} value={code} onChange={(e) => setCode(e.target.value.replace(/\D+/g, '').slice(0, 6))} />
-          <button type='button' disabled={bezig || code.length !== 6} onClick={() => void roep('/api/owner/access/phone/code/bevestigen', { code }, () => { setCode(''); setMelding(tr(lang, 'Номер підтверджено.', 'Nummer bevestigd.')); })}>{tr(lang, 'Підтвердити', 'Bevestigen')}</button>
+          <input inputMode='numeric' autoComplete='one-time-code' maxLength={6} aria-label={tr(lang, 'Код із SMS для підтвердження номера (6 цифр)', 'Sms-code om het nummer te bevestigen (6 cijfers)')} placeholder={tr(lang, '6 цифр із SMS', '6 cijfers uit de sms')} value={code} onChange={(e) => setCode(e.target.value.replace(/\D+/g, '').slice(0, 6))} />
+          <button type='button' disabled={bezig || code.length !== 6} onClick={() => void roep('/api/owner/access/phone/code/bevestigen', { code }, () => { setCode(''); setMelding(tr(lang, 'Номер підтверджено.', 'Nummer bevestigd.')); })}>{tr(lang, 'Підтвердити номер', 'Nummer bevestigen')}</button>
         </div>}
         {melding && <small role='status' aria-live='polite' data-telefoon-melding>{melding}</small>}
       </div>

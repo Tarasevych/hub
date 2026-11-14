@@ -68,7 +68,8 @@ export default function TweedeFactorPoort() {
     <dialog ref={dialoog} className='codewoord-poort' data-tweede-factor-poort aria-labelledby={titel} onCancel={(e) => e.preventDefault()}>
       <form onSubmit={(e) => { e.preventDefault(); if (!bezig) void bevestig(); }}>
         <h2 id={titel}>{t('Другий крок входу', 'Tweede aanmeldstap')}</h2>
-        <p>{t('Google-вхід уже є. Правило цього сайту вимагає ще другий чинник: код із застосунку-автентифікатора або ключ доступу. Якщо їх немає під рукою — підійде невикористаний код відновлення (після цього він перестане діяти).', 'Google-aanmelding is gelukt. De regel van deze site vraagt nog een tweede factor: een code uit de authenticator-app of een passkey. Hebt u die niet bij de hand, dan werkt een ongebruikte herstelcode (die vervalt daarna).')}</p>
+        {/* IDENTITEIT-015 (herstel): ворота закриваються після будь-якого входу без другого чинника (Google, Microsoft, Discord, Apple, пароль без коду) — текст не називає Google */}
+        <p>{t('Перший крок входу виконано. Правило цього сайту вимагає ще другий чинник: код із застосунку-автентифікатора або ключ доступу. Якщо їх немає під рукою — підійде невикористаний код відновлення (після цього він перестане діяти).', 'De eerste aanmeldstap is gelukt. De regel van deze site vraagt nog een tweede factor: een code uit de authenticator-app of een passkey. Hebt u die niet bij de hand, dan werkt een ongebruikte herstelcode (die vervalt daarna).')}</p>
         <p>{t('До підтвердження сайт не показує ваших даних.', 'Tot de bevestiging toont de site geen gegevens van u.')}</p>
         {fout ? <p role='alert'>{fout}</p> : null}
         <div className='codewoord-poort-knoppen'>

@@ -344,7 +344,8 @@ async function usableLoginMethods(
     }
     /* IDENTITEIT-015 (aanmelden): пароль — шлях входу лише тоді, коли вхід паролем увімкнено цій людині (прапорець aanmelden-wachtwoord).
        Раніше пароль рахувався завжди, хоча сеансу не давав: людина могла «спертися» на нього й відв'язати Google — і лишитися без входу. */
-    if(method==='password'){if(nextPassword&&await aanmeldVlagVoor(userId,'aanmelden-wachtwoord'))usable.push({id:'password',bound:true});continue;}
+    /* IDENTITEIT-015 (herstel): тимчасовий пароль від адміністратора (mustChange) сеансу теж не дає (ACCESS_PASSWORD_MUST_CHANGE) — він не рятує від блокування. */
+    if(method==='password'){if(nextPassword&&!nextPassword.mustChange&&await aanmeldVlagVoor(userId,'aanmelden-wachtwoord'))usable.push({id:'password',bound:true});continue;}
     /* IDENTITEIT-015 (aanmelden): підтверджений номер — лише другий канал (код із SMS), входу за номером немає. Тому НЕ рахується як шлях входу
        (раніше рахувався й «рятував» від захисту останнього способу, хоча увійти ним не можна). */
     if(method==='phone')continue;
@@ -429,7 +430,9 @@ export const accessPlanePolicySelfTest=()=>[
 const LEEG_WACHTWOORD={salt:'c2VjLTAwMi1nZWVuLWFjY291bnQ',hash:'',n:16384,r:8,p:1} as unknown as PasswordRecord;
 /* SEC-002 (http-rand-05): bij IPv6 het /64-net in plaats van het losse adres (shared/ip-limiet.ts) — anders gaf elk volgend adres uit het eigen net van de aanvaller een verse teller en een verse blokkade. IPv4: ongewijzigd (zelfde onderwerp als voorheen). */
 const wachtwoordOnderwerp=(email:string,ip:string)=>`wachtwoord:${email}:${createHash('sha256').update(`lockout-ip:${limietSleutel(ip)||'onbekend'}`).digest('hex').slice(0,24)}`;
-export async function verifyPasswordLogin(email:string,password:string,totp='',ip='',dienst=''){
+/* IDENTITEIT-015 (herstel): opties.tijdelijkWeigeren — для шляху, що видає сеанс: тимчасовий пароль (mustChange) відхиляється ДО коду
+   (код відновлення не витрачається, прив'язка не оновлюється, невдача лишається в лічильнику блокування). Тимчасовий пароль сеансу не дає ніде. */
+export async function verifyPasswordLogin(email:string,password:string,totp='',ip='',dienst='',opties:{tijdelijkWeigeren?:boolean}={}){
   const clean=String(email||'').trim().toLowerCase();
   if(!clean||!password)return{status:'invalid' as const,code:'ACCESS_CREDENTIALS_INVALID',http:400};
   const policy=await policyOf();
@@ -450,6 +453,7 @@ export async function verifyPasswordLogin(email:string,password:string,totp='',i
   // Zonder account of wachtwoordrij toch één scrypt-ronde: de antwoordtijd verraadt dan niet of het adres bestaat.
   if(!record){await verifyPassword(LEEG_WACHTWOORD,password).catch(()=>false);return failed('ACCESS_CREDENTIALS_INVALID');}
   if(!user||!await verifyPassword(record,password))return failed('ACCESS_CREDENTIALS_INVALID');
+  if(opties.tijdelijkWeigeren&&record.mustChange)return{status:'must_change' as const,code:'ACCESS_PASSWORD_MUST_CHANGE',http:403,retryAfter:0,userId:user.id};
   if(totpRow?.confirmed){
     // Of het wachtwoord klopt, blijkt pas samen met een geldige code (geen wachtwoord-orakel zonder tweede factor).
     if(!totp)return failed('ACCESS_CREDENTIALS_INVALID');
@@ -711,7 +715,8 @@ export function createAccessPlaneRoutes(deps:{
       const now=Date.now();
       /* IDENTITEIT-015 (aanmelden): той самий уже підтверджений номер ще раз — нічого не скидаємо (повторне натискання безпечне). */
       if(existing&&!existing.ontkoppeldAt&&existing.phone===phone&&existing.verified)return deps.respond({ok:true,gewijzigd:false,...await accessSnapshot(auth.user)});
-      const record={userId:auth.user.id,phone,verified:false,createdAt:existing?.createdAt||now,updatedAt:now};
+      /* IDENTITEIT-015 (herstel): момент останнього SMS переходить у новий запис — повторне збереження номера більше не обнуляє межу «раз на 60 с». */
+      const record={userId:auth.user.id,phone,verified:false,createdAt:existing?.createdAt||now,updatedAt:now,...(Number(existing?.smsVerzondenOp||0)>0?{smsVerzondenOp:Number(existing?.smsVerzondenOp)}:{})};
       if(existing?.id)await db.update(PHONES,[{id:existing.id,record}]);
       else await db.add(PHONES,[record]);
       // Fase 3: onbevestigd nummer = 'pending'; telt niet als aanmeldmethode tot het geverifieerd is.
@@ -768,9 +773,14 @@ export function createAccessPlaneRoutes(deps:{
       if(pogingen>=5)return deps.fail('SMS_CODE_TE_VEEL',400);
       const a=Buffer.from(smsCodeHash(auth.user.id,rec.phone,code)),b=Buffer.from(String(rec.smsCodeHash));
       if(a.length!==b.length||!timingSafeEqual(a,b)){
-        await db.update(PHONES,[{id:rec.id,record:{...zonder(rec as unknown as Record<string,unknown>),smsPogingen:pogingen+1,updatedAt:Date.now()}}]);
-        await deps.audit(auth.user.id,'access.phone.verify','denied',{pogingen:pogingen+1});
-        return deps.respond({ok:false,error:'SMS_CODE_ONJUIST',reasonCode:'SMS_CODE_ONJUIST',over:Math.max(0,4-pogingen)},400);
+        /* IDENTITEIT-015 (herstel): атомарний приріст лічильника (лише поки рядок має ТОЙ САМИЙ код і не підтверджений). Раніше тут
+           записувався весь знімок, прочитаний до перевірки: одночасний правильний код (verified=true) відкочувався, а приріст губився. */
+        const telling=await alsSysteem(()=>getSysPool().query(`UPDATE app.records SET data=data||jsonb_build_object('smsPogingen',COALESCE((data->>'smsPogingen')::int,0)+1,'updatedAt',$3::bigint),updated_at=now()
+          WHERE tbl=$1 AND id=$2 AND data->>'smsCodeHash'=$4 AND COALESCE((data->>'verified')::boolean,false)=false RETURNING (data->>'smsPogingen')::int AS n`,[PHONES,rec.id,Date.now(),String(rec.smsCodeHash)]));
+        if(!telling.rowCount){const nu2=await phoneFor(auth.user.id);if(nu2?.verified)return deps.respond({ok:true,alBevestigd:true,...await accessSnapshot(auth.user)});return deps.fail('SMS_CODE_VERLOPEN',400);}
+        const n=Number(telling.rows[0].n||pogingen+1);
+        await deps.audit(auth.user.id,'access.phone.verify','denied',{pogingen:n});
+        return deps.respond({ok:false,error:'SMS_CODE_ONJUIST',reasonCode:'SMS_CODE_ONJUIST',over:Math.max(0,5-n)},400);
       }
       // Atomisch: alleen als de rij nog dezelfde code draagt (twee gelijktijdige juiste codes → één melding).
       const claim=await alsSysteem(()=>getSysPool().query(`UPDATE app.records SET data=(data-'smsCodeHash'-'smsCodeTot'-'smsPogingen')||jsonb_build_object('verified',true,'verifiedAt',$3::bigint,'updatedAt',$3::bigint),updated_at=now()

@@ -138,9 +138,17 @@ export async function naAanmelding(o: { userId: string; email: string; ua?: stri
 
 /** «Це був я»: apparaat als bevestigd markeren (alleen eigen rij). */
 export async function alsBekendMarkeren(userId: string, id: unknown): Promise<boolean> {
-  if (!userId || !UUID.test(String(id || ''))) return false;
-  const r = await sys().query('UPDATE app.bekende_apparaten SET bevestigd_op = coalesce(bevestigd_op, now()) WHERE id = $1 AND user_id = $2 RETURNING id', [String(id), userId]);
-  return r.rows.length > 0;
+  return (await bekendBevestigen(userId, id)).ok;
+}
+/**
+ * IDENTITEIT-015 (herstel): те саме, але каже, чи позначка НОВА (раніше пристрій не був підтверджений). Рядок блокується (FOR UPDATE):
+ * два одночасні «Це був я» дають рівно одне nieuw=true — отже один запис аудиту й одне сповіщення. / Precies één keer «nieuw».
+ */
+export async function bekendBevestigen(userId: string, id: unknown): Promise<{ ok: boolean; nieuw: boolean }> {
+  if (!userId || !UUID.test(String(id || ''))) return { ok: false, nieuw: false };
+  const r = await sys().query(`WITH oud AS (SELECT id, bevestigd_op FROM app.bekende_apparaten WHERE id = $1 AND user_id = $2 FOR UPDATE)
+    UPDATE app.bekende_apparaten b SET bevestigd_op = coalesce(b.bevestigd_op, now()) FROM oud WHERE b.id = oud.id RETURNING (oud.bevestigd_op IS NULL) AS nieuw`, [String(id), userId]);
+  return { ok: r.rows.length > 0, nieuw: r.rows[0]?.nieuw === true };
 }
 
 /** Vlag `meldingen-uitleg-v3` voor een account (lui geïmporteerd: geen importcyclus met vlaggen/tech-profiel). Fout = uit. */

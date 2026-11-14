@@ -78,7 +78,8 @@ export async function main(): Promise<number> {
     const ankers = [...html.matchAll(/data-ga-anker="([^"]+)"/g)].map((m) => m[1]);
     check('сценарії: кнопки переходу до точного місця — ключі доступу, автентифікатор, сховище ключів (коли ввімкнене)',
       ['aanmeldmethoden-passkeys', 'aanmeldmethoden-2fa', 'aanmeldmethoden-sleutelkluis'].every((a) => ankers.includes(a)), ankers.join(','));
-    check('сценарії: «Додати новий passkey» і «Налаштувати автентифікатор» — кнопками, а не лише текстом', html.includes('Додати новий passkey') && html.includes('Налаштувати автентифікатор'));
+    // IDENTITEIT-015 (herstel): напис перейменовано — в UA-інтерфейсі «ключ доступу», не англійське «passkey» (NL лишає «passkey»).
+    check('сценарії: «Додати новий ключ доступу» і «Налаштувати автентифікатор» — кнопками, а не лише текстом', html.includes('Додати новий ключ доступу') && !html.includes('Додати новий passkey') && html.includes('Налаштувати автентифікатор'));
     const zonderKluis = r('uk', kluis('uit'));
     check('сценарії: при вимкненому сховищі переходу до сховища немає (немає що відкривати)', !zonderKluis.includes('data-ga-anker="aanmeldmethoden-sleutelkluis"') && zonderKluis.includes('data-ga-anker="aanmeldmethoden-2fa"'));
     check('«Відновлення»: перемикач «Нагадувати про резервний доступ» прямо тут, типово увімкнено, вимкнення — через вікно (закрите до натискання)',

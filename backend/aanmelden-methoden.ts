@@ -11,7 +11,8 @@
 //     METHODE_NIET_VOOR_U без сеансу, з аудитом;
 //   • одноразовість: виклик (challenge) / state живе 5–10 хв у app.aanmeld_uitdagingen (міграція 0275) і забирається атомарно;
 //     повторне «Завершити» з тим самим викликом — UITDAGING_ONGELDIG, другого сеансу немає;
-//   • ліміти: на IP (rateLimit) і на обліковий запис (pogingReserveren для пароля — в verifyPasswordLogin);
+//   • ліміти: на IP (rateLimit); блокування спроб на пару «адреса + IP» (pogingReserveren у verifyPasswordLogin) і, для пароля,
+//     ЗАГАЛЬНА межа на адресу незалежно від IP (WACHTWOORD_PER_ADRES за годину) — пул адрес більше не дає необмежених вгадувань;
 //   • аудит (aanmelden.<шлях>) і сповіщення людині (access_method_login) про кожен успішний вхід без Google;
 //   • другий чинник: ключ доступу з перевіркою користувача (UV) сам є двома чинниками; пароль із TOTP чи кодом відновлення —
 //     також. Тоді ворота «другий чинник обов'язковий» (backend/tweede-factor-poort.ts) для цього входу одразу відчинені.
@@ -43,6 +44,8 @@ export const WEG_VLAG: Readonly<Record<Weg, string>> = Object.freeze({ passkey: 
 const WEG_NAAM: Readonly<Record<Weg, readonly [string, string]>> = Object.freeze({ passkey: ['ключ доступу', 'toegangssleutel'], password: ['пароль', 'wachtwoord'], microsoft: ['Microsoft', 'Microsoft'], discord: ['Discord', 'Discord'], apple: ['Apple', 'Apple'] });
 /** Скільки живе виклик/state. Hoelang een uitdaging of state geldt. */
 export const UITDAGING_MS = 5 * 60 * 1000;
+/** IDENTITEIT-015 (herstel): спроб входу паролем на одну адресу за годину з усіх IP разом. / Pogingen per e-mailadres per uur. */
+export const WACHTWOORD_PER_ADRES = 20;
 export const EXTERN_STATE_MS = 10 * 60 * 1000;
 
 export type AanmeldWegDeps = {
@@ -224,14 +227,28 @@ export function aanmeldMethodenRoutes(deps: AanmeldWegDeps): Record<string, Rout
       if (!rij) return fout('UITDAGING_ONGELDIG', 403);
       if (!(await deps.bindingKlopt(rc, rij.transactie_id, 'password'))) { await audit(null, 'aanmelden.password', 'denied', { reden: 'LOGIN_BINDING_MISMATCH' }); return fout('LOGIN_BINDING_MISMATCH', 403); }
       const code = str(d.code || d.totp, 40).replace(/\s+/g, '');
-      const uit = await verifyPasswordLogin(str(d.email, 254), str(d.password, 1024), code, ipVan(rc), 'identity');
+      // IDENTITEIT-015 (herstel): межа на АДРЕСУ, а не лише на IP — цей шлях видає повний сеанс. Рахуються всі спроби з усіх адрес
+      // (і для неіснуючих адрес — відповідь нічого не розкриває). Наслідок для власника: при атаці вхід паролем на годину зачиняється,
+      // інші способи (Google, ключ доступу) працюють. / Grens per e-mailadres over alle IP's heen.
+      const adres = str(d.email, 254).trim().toLowerCase();
+      if (adres) {
+        const l = await rateLimit(`aanmelden-wachtwoord-adres:${sha(adres)}`, WACHTWOORD_PER_ADRES, 3600, { failClosed: true });
+        if (!l.ok) { await audit(null, 'aanmelden.password', 'denied', { reden: 'ADRES_LIMIET' }); await deps.afbreken?.(rij.transactie_id).catch(() => undefined); return fout('RATE_LIMITED', 429, { retryAfter: l.retryAfter }); }
+      }
+      const uit = await verifyPasswordLogin(str(d.email, 254), str(d.password, 1024), code, ipVan(rc), 'identity', { tijdelijkWeigeren: true });
+      if (uit.status === 'must_change') {
+        // Тимчасовий пароль: відмова ДО коду — код відновлення не витрачено; транзакцію входу закрито.
+        await audit(uit.userId, 'aanmelden.password', 'denied', { reden: 'ACCESS_PASSWORD_MUST_CHANGE' });
+        await deps.afbreken?.(rij.transactie_id).catch(() => undefined);
+        return fout('ACCESS_PASSWORD_MUST_CHANGE', 403);
+      }
       if (uit.status !== 'ok' || !('user' in uit) || !uit.user) {
         await audit(null, 'aanmelden.password', 'denied', { reden: uit.code });
         return fout(uit.code, uit.http || 401, 'retryAfter' in uit && uit.retryAfter ? { retryAfter: uit.retryAfter } : {});
       }
       // IDENTITEIT-015 (давня вада): тимчасовий пароль (mustChange) відомий тому, хто його видав, — сеансу він не дає. Людина входить іншим
       // способом і задає власний пароль у «Способах входу». Перевірка ПІСЛЯ пароля й коду: відповідь не розкриває нічого стороннім.
-      if (uit.mustChange) { await audit(uit.user.id, 'aanmelden.password', 'denied', { reden: 'ACCESS_PASSWORD_MUST_CHANGE' }); return fout('ACCESS_PASSWORD_MUST_CHANGE', 403); }
+      if (uit.mustChange) { await audit(uit.user.id, 'aanmelden.password', 'denied', { reden: 'ACCESS_PASSWORD_MUST_CHANGE' }); await deps.afbreken?.(rij.transactie_id).catch(() => undefined); return fout('ACCESS_PASSWORD_MUST_CHANGE', 403); }
       return afronden(deps, rc, { transactieId: rij.transactie_id, userId: uit.user.id, methode: 'password', tweedeFactor: uit.tweedeFactor === true });
     }),
 

@@ -15,7 +15,7 @@ import { getPool } from '../server/platform/pg';
 import { werkruimteRol, type WerkruimteRol } from '../shared/werkruimte-rechten';
 
 export type OverdrachtLid = { id: string; workspaceId: string; userId: string; email: string; permission: string; workspaceRole?: string; status: string };
-export type OverdrachtWerkruimte = { id: string; ownerUserId: string; name: string; ruimte?: string; archivedAt?: number; overgedragenVan?: string; overgedragenAan?: string };
+export type OverdrachtWerkruimte = { id: string; ownerUserId: string; name: string; ruimte?: string; archivedAt?: number; overgedragenVan?: string; overgedragenAan?: string; overgedragenOp?: number; overdrachtAfgerondOp?: number };
 export type OverdrachtKandidaat = { userId: string; naam: string; email: string; rol: WerkruimteRol };
 
 /** Welke rollen mogen eigenaar worden: alleen wie de ruimte al mee beheert of bewerkt. / Ролі, яким можна передати простір. */
@@ -113,14 +113,36 @@ async function afronden(w: OverdrachtWerkruimte, vanId: string, naarId: string, 
   return blok.rowCount ?? 0;
 }
 
+/** Скільки часу після фіксації перервану передачу ще можна довести повтором (далі повтор нічого не змінює). */
+export const OVERDRACHT_HERSTEL_MS = 15 * 60 * 1000;
 /**
- * Передає простір. Повторне натискання після успіху (або після перерваної спроби) дає ok з alOverdragen=true і доводить
- * незавершені кроки; простір, переданий КОМУСЬ ІНШОМУ одночасно, — 409 OVERDRACHT_GELIJKTIJDIG.
+ * Чи треба доводити передачу на повторі: позначки «доведено» немає І фіксація свіжа. Старі записи без позначки (передані до цього
+ * виправлення) після вікна вважаються завершеними. / Alleen onderbroken én recent: anders is een herhaling een no-op.
+ */
+export function overdrachtHerstelNodig(w: Pick<OverdrachtWerkruimte, 'overgedragenVan'> & { overgedragenOp?: unknown; overdrachtAfgerondOp?: unknown }, nu = Date.now()): boolean {
+  if (!w.overgedragenVan || Number(w.overdrachtAfgerondOp || 0) > 0) return false;
+  const op = Number(w.overgedragenOp || 0);
+  return op > 0 && nu - op >= 0 && nu - op <= OVERDRACHT_HERSTEL_MS;
+}
+/** Позначка «доведено» — лише поки простір і далі в нового власника від того самого старого. */
+async function afgerondMarkeren(id: string, vanId: string, naarId: string, nu: number): Promise<void> {
+  await sys().query(`UPDATE app.records SET data = data || jsonb_build_object('overdrachtAfgerondOp', $4::bigint), updated_at = now()
+    WHERE tbl = 'workspaces' AND id = $1 AND data->>'ownerUserId' = $3 AND data->>'overgedragenVan' = $2`, [id, vanId, naarId, nu]);
+}
+
+/**
+ * Передає простір. Повторне натискання після успіху дає ok з alOverdragen=true і НІЧОГО не змінює; повтор після ПЕРЕРВАНОЇ спроби
+ * (у межах OVERDRACHT_HERSTEL_MS) доводить незавершені кроки; простір, переданий КОМУСЬ ІНШОМУ одночасно, — 409 OVERDRACHT_GELIJKTIJDIG.
  */
 export async function werkruimteOverdragen(input: { eigenaarId: string; eigenaarEmail: string; workspaceId: string; doelId: string }, nu = Date.now()): Promise<OverdrachtUitslag> {
   const w = await werkruimteLezen(input.workspaceId);
   if (w && w.ownerUserId === input.doelId && w.overgedragenVan === input.eigenaarId) {
+    // IDENTITEIT-015 (herstel): доведення лише для ПЕРЕРВАНОЇ передачі (позначки «доведено» немає) і лише у вікні OVERDRACHT_HERSTEL_MS.
+    // Раніше кожен повтор знову робив колишнього власника адміністратором — він міг повернути собі права після того, як новий
+    // власник його прибрав чи понизив. Тепер повтор після завершення — нічого не змінює. / Alleen een onderbroken overdracht afronden.
+    if (!overdrachtHerstelNodig(w, nu)) return { ok: true, alOverdragen: true, werkruimte: w, vanId: input.eigenaarId, naarId: input.doelId, blokken: 0 };
     const blokken = await afronden(w, input.eigenaarId, input.doelId, input.eigenaarEmail, nu);
+    await afgerondMarkeren(w.id, input.eigenaarId, input.doelId, nu);
     return { ok: true, alOverdragen: true, werkruimte: w, vanId: input.eigenaarId, naarId: input.doelId, blokken };
   }
   const leden = w ? (await actieveLeden(w.id)).filter((l) => l.userId === input.doelId) : [];
@@ -130,10 +152,11 @@ export async function werkruimteOverdragen(input: { eigenaarId: string; eigenaar
   if (fout || !w) return { ok: false, code: fout || 'WERKRUIMTE_NIET_GEVONDEN' };
   // Точка фіксації: лише якщо власник у базі ДОСІ той, хто просить.
   const r = await sys().query(
-    `UPDATE app.records SET data = data || jsonb_build_object('ownerUserId', $3::text, 'ruimte', 'prive', 'overgedragenVan', $2::text, 'overgedragenOp', $4::bigint, 'updatedAt', $4::bigint), updated_at = now()
+    `UPDATE app.records SET data = (data - 'overdrachtAfgerondOp') || jsonb_build_object('ownerUserId', $3::text, 'ruimte', 'prive', 'overgedragenVan', $2::text, 'overgedragenOp', $4::bigint, 'updatedAt', $4::bigint), updated_at = now()
       WHERE tbl = 'workspaces' AND id = $1 AND data->>'ownerUserId' = $2 RETURNING id`, [w.id, input.eigenaarId, input.doelId, nu]);
   if (!r.rowCount) return { ok: false, code: 'OVERDRACHT_GELIJKTIJDIG' };
   const blokken = await afronden(w, input.eigenaarId, input.doelId, input.eigenaarEmail, nu);
+  await afgerondMarkeren(w.id, input.eigenaarId, input.doelId, nu);
   return { ok: true, alOverdragen: false, werkruimte: { ...w, ownerUserId: input.doelId, overgedragenVan: input.eigenaarId }, vanId: input.eigenaarId, naarId: input.doelId, blokken };
 }
 
