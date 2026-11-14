@@ -7,7 +7,8 @@ import { meld } from './melder';
 export type BeveiligingsWijziging =
   | 'wachtwoord-gezet' | 'totp-uit' | 'passkey-weg' | 'stap-op-onthouden' | 'wachtwoord-door-beheer'
   | 'ai-token' | 'ai-token-ingetrokken' | 'kluis' | 'account-bekeken' | 'github-webhook-uit'
-  | 'consent-andere-browser' | 'json-vereist';
+  | 'consent-andere-browser' | 'json-vereist'
+  | 'aanmeldmethode-gekoppeld' | 'aanmeldmethode-ontkoppeld'; // IDENTITEIT-012
 
 const NIET_JIJ = 'Якщо це були не ви — одразу завершіть інші сеанси на сторінці безпеки й змініть доступ. / Was u dit niet? Beëindig meteen de andere sessies op de beveiligingspagina en wijzig uw toegang.';
 
@@ -26,6 +27,9 @@ const TEKSTEN: Record<BeveiligingsWijziging, (x: Record<string, string>) => [str
   'consent-andere-browser': () => ['Запит на підключення ШІ відкрито в іншому браузері — доступ не видано / Verzoek voor een AI-koppeling geopend in een andere browser — geen toegang gegeven', `Хтось відкрив вікно згоди на підключення ШІ не в тому браузері, де почалося підключення (наприклад, за надісланим посиланням). Доступ не видано. Якщо ви самі підключаєте ШІ — почніть підключення заново в цьому браузері. / Iemand opende het toestemmingsvenster voor een AI-koppeling in een andere browser dan waarin de koppeling begon (bijvoorbeeld via een toegestuurde link). Er is geen toegang gegeven. Koppelt u zelf een AI? Begin de koppeling dan opnieuw in deze browser. ${NIET_JIJ}`],
   // SEC-002 (slot s, eind-interface 3): een formulier (geen JSON) met uw cookie probeerde iets te wijzigen — geweigerd (415).
   'json-vereist': (x) => ['Відхилено запит-форму з вашим сеансом / Formulierverzoek met uw sessie geweigerd', `Сторінка поза сайтом (або застаріла вкладка) надіслала дію «${x.route || '—'}» як звичайну форму з вашим сеансом. Сервер приймає дії лише як JSON, тому нічого не змінено. Оновіть вкладки сайту; якщо ви нічого не робили — закрийте незнайомі сторінки й перевірте сеанси на сторінці безпеки. / Een pagina buiten de site (of een verouderd tabblad) stuurde de actie «${x.route || '—'}» als gewoon formulier met uw sessie. De server neemt acties alleen als JSON aan, dus er is niets gewijzigd. Ververs de tabbladen van de site; deed u niets, sluit dan onbekende pagina's en controleer de sessies op de beveiligingspagina.`],
+  // IDENTITEIT-012: зовнішній спосіб входу (Microsoft, Discord, Apple, Telegram) прив'язано або відв'язано.
+  'aanmeldmethode-gekoppeld': (x) => ['Прив’язано зовнішній спосіб входу / Externe aanmeldmethode gekoppeld', `До облікового запису прив’язано ${x.aanbieder || '—'}${x.label ? ` (${x.label})` : ''}. / ${x.aanbieder || '—'}${x.label ? ` (${x.label})` : ''} is aan uw account gekoppeld. ${NIET_JIJ}`],
+  'aanmeldmethode-ontkoppeld': (x) => ['Відв’язано зовнішній спосіб входу / Externe aanmeldmethode ontkoppeld', `Від облікового запису відв’язано ${x.aanbieder || '—'}. / ${x.aanbieder || '—'} is van uw account ontkoppeld. ${NIET_JIJ}`],
   'account-bekeken': (x) => ['Ваш обліковий запис переглянуто для діагностики / Uw account is bekeken voor diagnose', `Адміністратор (${x.wie || '—'}) переглянув ${x.wat || 'дані вашого облікового запису'} у технічній діагностиці. / Een beheerder (${x.wie || '—'}) bekeek ${x.watNl || 'gegevens van uw account'} in de technische diagnose.`],
 };
 

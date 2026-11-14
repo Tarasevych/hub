@@ -28,6 +28,7 @@ import {
 import {
   herstelcodeBevestigen, herstelcodeVernieuwenVeilig, herstelcodeWacht, kluisZonderOmslag, ontgrendelMetHerstelcodeVeilig, weesKluisHerstellen,
 } from './sleutelkluis-herstel';
+import { magEigenToegang } from '../shared/eigen-toegang'; // IDENTITEIT-012
 
 type Gebruiker = { id: string; email?: string; name?: string; role?: string; status?: string };
 type Auth = StapOpAuth & { user: Gebruiker; service: string };
@@ -93,7 +94,7 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
     const ctx = raw as unknown as Ctx;
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
-    if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
+    if (!magEigenToegang(auth.user)) return error('ACCOUNT_NOT_APPROVED', 403); // IDENTITEIT-012: спільна умова
     if (opts.sterk) { const su = await deps.sterkeStapOp(ctx, auth); if (su) return su; }
     const b = lichaam(ctx.body);
     const ruimte = await gegevensRuimteVeilig(auth.user.id, { tabContext: typeof b.tabContext === 'string' ? b.tabContext : null });

@@ -458,7 +458,8 @@ export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMidd
     [`POST ${P}/lijst`]: [route({}, (a) => lijst(a))],
     [`POST ${P}/registreren/opties`]: [route({ stepUp: true }, (a) => registratieOpties(a))],
     [`POST ${P}/registreren`]: [route({}, (a, b) => registreren(a, b))],
-    [`POST ${P}/hernoemen`]: [route({}, (a, b) => hernoemen(a, b))],
+    // IDENTITEIT-012: перейменування теж із підтвердженням доступу — назва допомагає впізнати чужий ключ, її не можна тихо змінити.
+    [`POST ${P}/hernoemen`]: [route({ stepUp: true }, (a, b) => hernoemen(a, b))],
     // Een goedkeur-passkey verwijderen = een recht intrekken: met reden (anders PASSKEY_KAN_GOEDKEUREN) en sterke step-up.
     [`POST ${P}/verwijderen`]: [route({ stepUp: true, sterkAls: async (a, b) => !!b.reden && await isGoedkeurSleutel(a, b.id) }, (a, b) => verwijderen(a, b))],
     // Step-up met een passkey: onder /stap-op/ zodat de client bij een 403 niet opnieuw om step-up vraagt.

@@ -31,6 +31,8 @@ import { auditToevoegen } from '../server/platform/audit';
 import { getPool } from '../server/platform/pg';
 import type { RouterContext, RouterMiddleware, RouterResponse } from '../server/platform/router';
 import { AANMELD_AANBIEDERS, aanmeldAanbieder, type AanmeldAanbieder } from '../shared/aanmeld-vnext-model';
+import { magEigenToegang } from '../shared/eigen-toegang';
+import { meldBeveiligingsWijziging } from './beveiliging-meldingen';
 import { koppelBindingKlopt, koppelBindingVoorAanmaken, koppelBindingWissen, metBindingCookie } from './koppel-binding';
 import { botSleutel as kluisBotSleutel } from './telegram-aanmelden/sleutels';
 import { instellingen as tgInstellingen, koppelingenVanGebruiker as tgKoppelingenVan, vlagHoofdschakelaar as tgVlagAan } from './telegram-aanmelden/opslag';
@@ -331,13 +333,16 @@ async function oauthTerug(id: 'microsoft' | 'discord' | 'apple', query: Record<s
 }
 
 // ------------------------------------------------------------------------------------------------ routes
-export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<string, RouterMiddleware[]> {
+/** IDENTITEIT-012: stepUp — повторне підтвердження доступу (у сайті stapOpVereist); без нього прив'язка й відв'язка відмовляють. */
+export type KoppelOpties = { stepUp?: (ctx: unknown, auth: unknown) => Promise<Resp | null> };
+export function aanmeldKoppelRoutes(requireSession: RequireSession, opties: KoppelOpties = {}): Record<string, RouterMiddleware[]> {
+  const stapOp = async (c: Ctx, auth: SessionOk): Promise<Resp | null> => (opties.stepUp ? opties.stepUp(c, auth) : error('STEP_UP_REQUIRED', 403));
   const route = (run: (ctx: Ctx, auth: SessionOk, d: Record<string, unknown>) => Promise<Resp>): RouterMiddleware[] => [(async (raw: unknown) => {
     const ctx = raw as unknown as Ctx;
     const auth = await requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return error(auth.errorCode, auth.errorCode.includes('FORBIDDEN') ? 403 : 401);
     if (!(DIENSTEN as readonly string[]).includes(auth.service)) return error('OWNER_CLOUD_SESSION_REQUIRED', 403);
-    if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
+    if (!magEigenToegang(auth.user)) return error('ACCOUNT_NOT_APPROVED', 403);
     try { return await run(ctx, auth, (ctx.body && typeof ctx.body === 'object' ? ctx.body : {}) as Record<string, unknown>); }
     catch (err) {
       const code = String((err as Error)?.message || 'AANMELD_FOUT').slice(0, 80);
@@ -403,6 +408,7 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       const record: KoppelRecord = { ownerUserId: rij.ownerUserId, aanbieder: id, subject: uit.subject, label: uit.label, op: nu() };
       await db.add(KOPPELINGEN, [record as unknown as Record<string, unknown>]);
       await auditToevoegen({ ownerId: rij.ownerUserId, actorId: rij.ownerUserId, action: 'aanmeld.koppeling', type: 'identity', result: 'ok', details: { aanbieder: id, label: uit.label } }).catch(() => undefined);
+      await meldBeveiligingsWijziging(rij.ownerUserId, 'aanmeldmethode-gekoppeld', { aanbieder: id, label: uit.label });
       return stuurTerug(paginaUrl(`${id}-ok`));
     } catch (err) {
       const code = String((err as Error)?.message || 'AANMELD_FOUT').replace(/[^A-Z_]/g, '').slice(0, 40) || 'AANMELD_FOUT';
@@ -418,6 +424,8 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
     })),
     // -------------------------------------------------------------- zelftest van de eigen contour (read-only + audit)
     'POST /api/owner/aanmeld/vnext/zelftest': route(async (_c, auth, d) => {
+      // IDENTITEIT-012: результат самоперевірки спільний для всіх (вмикає чи вимикає провайдера), тож запускати її може лише власник або адміністратор.
+      if (auth.user.role !== 'owner' && auth.user.role !== 'admin') return error('ZELFTEST_ALLEEN_BEHEER', 403);
       const a = aanmeldAanbieder(str(d.id)) ?? fout('AANBIEDER_ONBEKEND');
       if (a.stand !== 'sleutels-nodig') fout('AANBIEDER_ONBEKEND');
       const uit = await zelftestUitvoeren(a);
@@ -426,8 +434,10 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       return json({ id: a.id, ...uit });
     }),
     // -------------------------------------------------------------- start: geauthenticeerd, geeft de authorize-URL terug
-    'POST /api/owner/aanmeld/vnext/start': route(async (_c, auth, d) => {
+    'POST /api/owner/aanmeld/vnext/start': route(async (c, auth, d) => {
       const a = aanmeldAanbieder(str(d.id)) ?? fout('AANBIEDER_ONBEKEND');
+      // IDENTITEIT-012: прив'язка чужої особи до облікового запису — лише після повторного підтвердження доступу.
+      { const stap = await stapOp(c, auth); if (stap) return stap; }
       if (a.stand !== 'sleutels-nodig') fout('AANBIEDER_ONBEKEND');
       if ((await sleutelsOntbrekenVoor(a)).length) fout('SLEUTELS_ONTBREKEN');
       const tg = a.id === 'telegram' ? await telegramEffectieveSleutels() : null;
@@ -448,11 +458,13 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession): Record<stri
       return metBindingCookie(json({ id: a.id, url }), setCookie);
     }),
     // -------------------------------------------------------------- ontkoppelen (eigen koppeling; dit is nooit de laatste aanmeldweg)
-    'POST /api/owner/aanmeld/vnext/ontkoppel': route(async (_c, auth, d) => {
+    'POST /api/owner/aanmeld/vnext/ontkoppel': route(async (c, auth, d) => {
       const a = aanmeldAanbieder(str(d.id)) ?? fout('AANBIEDER_ONBEKEND');
       const koppeling = (await koppelingVan(auth.user.id, a.id)) ?? fout('KOPPELING_ONBEKEND');
+      { const stap = await stapOp(c, auth); if (stap) return stap; }
       await db.delete(KOPPELINGEN, [koppeling.id]);
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: 'aanmeld.ontkoppeling', type: 'identity', result: 'ok', details: { aanbieder: a.id, label: koppeling.label } }).catch(() => undefined);
+      await meldBeveiligingsWijziging(auth.user.id, 'aanmeldmethode-ontkoppeld', { aanbieder: a.naam || a.id });
       return json({ ok: true });
     }),
     // -------------------------------------------------------------- de publieke callback (GET; state = de enige sleutel)
