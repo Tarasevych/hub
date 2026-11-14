@@ -1,8 +1,8 @@
-/* Студійне оформлення простору штучного інтелекту ai.tarasevych.com у художній системі «Макет» (MAQUETTE-006, Група 5А).
+/* Оформлення простору штучного інтелекту ai.tarasevych.com у художній системі «Макет» (MAQUETTE-006, Група 5А)
+   та прагматичний класичний шар «Біла класика» / «Чорна класика» (KLASSIEK-006A).
    Охоплює оболонку піддомену AIDienstWeergave, стрічку напрямку .ai-richting, картки швидкого підключення агентів .ag-ai-ingangen,
    робочий простір AiWerkruimte, стартові запитання, бічну панель інструментів та робочу бесіду AiWerkruimteChat.
-   Працює виключно за умови html.palet-maquette для нічної студії та світлого режиму «Ранковий туман».
-   Studio-opmaak voor de AI-werkruimte, richtingsband, agent-ingangen en het werkgesprek onder html.palet-maquette. */
+   Opmaak voor de AI-werkruimte, richtingsband, agent-ingangen en het werkgesprek onder html.palet-maquette en klassieke thema's. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1. ПОХІДНІ СТУДІЙНІ ЗМІННІ АМЕТИСТОВОГО КОНТУРУ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
@@ -39,10 +39,10 @@ html.palet-maquette .aiw {
   --focus: var(--mq-accent-ai);
 }
 
-html.palet-maquette:is(.theme-light, .theme-plum-light) .ai-maquette-wikkel[data-mq-dienst="ai"],
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .ai-maquette-wikkel[data-mq-dienst="ai"],
-html.palet-maquette:is(.theme-light, .theme-plum-light) .aiw,
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .aiw {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) .ai-maquette-wikkel[data-mq-dienst="ai"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .ai-maquette-wikkel[data-mq-dienst="ai"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) .aiw,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .aiw {
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 72%, var(--mq-tekst) 28%);
   --mq-accent-op: var(--mq-wit);
   --mq-accent-ai: var(--mq-accent);
@@ -74,14 +74,14 @@ html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .aiw {
   --focus: var(--mq-accent-ai);
 }
 
-/* Недоторканність нічного склепіння студійної вітрини .mq-held у будь-якому світловому режимі */
-html.palet-maquette .ai-maquette-wikkel > .mq-held {
+/* Недоторканність нічного склепіння студійної вітрини .mq-held поза класичним режимом */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .ai-maquette-wikkel > .mq-held {
   color-scheme: dark;
   --mq-accent: var(--mq-nacht-accent);
   box-shadow: var(--mq-schaduw-held);
 }
 
-html.palet-maquette .ai-maquette-wikkel > .mq-held.is-compact {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .ai-maquette-wikkel > .mq-held.is-compact {
   border-color: var(--mq-held-lijn);
   box-shadow: var(--mq-schaduw-zacht);
 }
@@ -1132,43 +1132,668 @@ html.palet-maquette .chat-panel[data-aiw-chat="true"] button[disabled] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   9. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА)
+   9. ПРАГМАТИЧНИЙ КЛАСИЧНИЙ ШАР «БІЛА КЛАСИКА» ТА «ЧОРНА КЛАСИКА» (KLASSIEK-006A)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Двоколонкова студійна композиція на широких екранах: бесіда в центрі + бічна панель запитань і двоколонкові інструменти */
+/* Скидання студійних аметистових змінних на чисті монохромні змінні ядра */
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw,
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] {
+  --mq-invoer: var(--mq-bg);
+  --mq-accent-zacht: var(--mq-oppervlak-hover);
+  --mq-schaduw-kaart: var(--mq-schaduw-zacht);
+
+  --mq-accent-ai: var(--mq-accent);
+  --mq-accent-ai-diep: var(--mq-accent-2);
+  --mq-accent-ai-op: var(--mq-accent-op);
+  --mq-ai-halo: transparent;
+  --mq-ai-halo-zacht: transparent;
+  --mq-ai-glas-glans: transparent;
+  --mq-ai-rand: var(--mq-rand);
+  --mq-ai-rand-sterk: var(--mq-rand-sterk);
+  --mq-ai-rand-accent: var(--mq-rand-sterk);
+  --mq-ai-glas-diep: var(--mq-oppervlak);
+  --mq-ai-glas-verhoogd: var(--mq-oppervlak-2);
+  --mq-ai-chat-put: var(--mq-invoer);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-3, var(--mq-oppervlak-2));
+  --soft: var(--mq-accent-zacht);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: var(--mq-accent-zacht);
+  --focus: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel {
+  gap: 12px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-inhoud {
+  gap: 12px;
+  padding: 0 0 20px;
+}
+
+/* Приховування дубльованої смуги напрямку, коли зверху вже є ділова шапка MaquetteHeld */
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .ai-richting {
+  display: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .weergave-richting.is-ai {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Прибирання декоративних зірочок «✦» у заголовках підказок та індикаторі очікування */
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kaart[data-aiw-vragen="1"] > h2::before,
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-busy::before {
+  content: none;
+  display: none;
+  animation: none;
+}
+
+/* Діловий гнучкий стовпчик робочої області: головна дія та вікно бесіди на першому екрані */
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw,
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] > .aiw-schakel {
+  order: 1;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] > .aie-chat-koppeling {
+  order: 2;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] > .chat-panel,
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] > .aiw-kaart[data-aiw-klaar] {
+  order: 3;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] > .aiw-kaart[data-aiw-vragen="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] > .aiw-kaart[data-aiw-ontbreekt] {
+  order: 4;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] section.aiw[data-aiw="1"] > .aiw-kop {
+  order: 5;
+}
+
+/* Компактна однорядкова ділова смуга стану .aiw-kop без приховування фактів про інструменти й модель */
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kop {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kop h1 {
+  flex: 0 0 auto;
+  margin: 0;
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+  font-size: 0.92rem;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kop p {
+  flex: 1 1 280px;
+  max-width: none;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--mq-gedempt);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Компактний сегментний перемикач розділу (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-schakel {
+  gap: 4px;
+  padding: 4px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-schakel button {
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-schakel button:not([aria-pressed="true"]):hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+/* Матові поверхні основних карток, вікна бесіди, смуги екосистеми та підключень агентів (16px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .ag.ag-ai-ingangen,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kaart[data-aiw-vragen="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] {
+  padding: 16px 18px;
+  gap: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw .aie-chat-koppeling {
+  padding: 14px 16px;
+  gap: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .ag-ai-ingangen .ag-kaart.ag-agent-ingang {
+  min-height: 50px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .ag-ai-ingangen .ag-kaart.ag-agent-ingang:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .ag-ai-ingangen .ag-agent-ingang:hover::after {
+  color: var(--mq-tekst);
+  transform: none;
+}
+
+/* Порожні стани, перенаправлення та завантаження (16px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] p.aiw-nog-niet[aria-busy="true"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .aiw[data-aiw-geen-recht="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .aiw:has(> .product-empty-state):not([data-aiw="1"]):not([data-aiw-leeg="1"]),
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .aiw[data-aiw-leeg="1"] > .product-empty-state,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-naar-hub {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .product-empty-icon {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+/* Окремий захист специфічності проти flat-content (0, 19, 0) — винятково рамка, кути 16px і тінь, нуль padding та gap */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .aiw-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .chat-panel,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) section.ag-ai-ingangen,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ag-ai-ingangen .ag-agent-ingang,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .aiw-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .aiw .aie-chat-koppeling,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ai-maquette-wikkel .aiw[data-aiw-geen-recht="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .ai-maquette-wikkel .aiw[data-aiw-leeg="1"] > .product-empty-state {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-kaart);
+}
+
+/* Готові підказки (.aiw-vraagrij) як компактні ділові пігулки (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vragen {
+  gap: 10px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vraaggroep {
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vraaggroep > span {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vraagrij button {
+  min-height: 36px;
+  padding: 7px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vraagrij button:not(:disabled):hover {
+  border-color: var(--mq-tekst);
+  background: var(--mq-oppervlak-hover);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vraagrij .aiw-vraag-uit {
+  border-style: dashed;
+  border-color: var(--mq-rand);
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+/* Перелік інструментів та чіткі монохромні позначки станів (.aiw-middel, .aiw-vlag) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-middel {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-middel[data-aiw-staat="aan"] {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-middel a {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vlag,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-staat-koppelen,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-staat-niet-in-chat,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-staat-geen-recht {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-staat-aan {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Вікно бесіди: шапка моделі, історія повідомлень, бульбашки, блоки коду, підтвердження й форма */
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .aiw-model {
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .aiw-model > span {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .aiw-model > span[data-aiw-apparaatkeuze="nog-niet"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-log {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-invoer);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-empty {
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-msg {
+  padding: 12px 15px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-user {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-assistant {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-user > b,
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-assistant > b {
+  color: var(--mq-gedempt);
+}
+
+/* Блоки коду pre та плашки code у повідомленнях і картках підтвердження (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.chat-panel, .aiw) pre {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.chat-panel, .aiw) pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.chat-panel, .aiw) :not(pre) > code {
+  padding: 2px 7px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-steps li {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-steps li.chat-step-err {
+  border-color: var(--fout);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-busy {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-approvals {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-approvals > b {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-approval {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* Поля введення, форма введення запиту та пігулки екосистеми (11px / 16px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.ai-maquette-wikkel, .aiw) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.ai-maquette-wikkel, .aiw) :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):focus {
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-form {
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-form:focus-within {
+  border-color: var(--mq-accent);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-form :where(input:not([type="checkbox"]):not([type="file"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-form :where(input:not([type="checkbox"]):not([type="file"]), select, textarea):focus {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw .aie-chat-koppeling .aie-ruimte-pil,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw .aie-chat-koppeling .aie-vink {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw .aie-chat-koppeling .aie-vink:has(input:checked) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-fout {
+  border-radius: 11px;
+  border: 1px solid var(--fout);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--fout);
+}
+
+/* Суцільні первинні та вторинні кнопки дії (11px, виключно змінні без сирого білого кольору) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw button.aiw-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-schakel button[aria-pressed="true"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .product-empty-state button {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw button.aiw-hoofd:not(:disabled):hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] button:not(.chat-secondary):not(:disabled):hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .product-empty-state button:not(:disabled):hover {
+  background: var(--mq-knop-primair-bg);
+  border-color: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  opacity: 0.92;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw button.aiw-tweede,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw .aie-chat-koppeling .aie-knop-tweede,
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] button.chat-secondary {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw button.aiw-tweede:not(:disabled):hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw .aie-chat-koppeling .aie-knop-tweede:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] button.chat-secondary:not([data-aiw-stop="1"]):not(:disabled):hover {
+  border-color: var(--mq-tekst);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] button.chat-secondary[data-aiw-stop="1"] {
+  border: 1px solid var(--fout);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--fout);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+/* Ділова беззасічкова типографіка заголовків і табличні цифри для числових показників */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.ai-maquette-wikkel, .aiw) :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .mq-held-stat-pil,
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw [data-aiw-klaar],
+html.palet-maquette[data-maquette-stijl="klassiek"] .aiw [data-aiw-ontbreekt] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Двоколонкова студійна композиція на широких екранах (виключно поза класичним режимом) */
 @media (min-width: 1080px) {
-  html.palet-maquette .aiw[data-aiw="1"] {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] {
     display: grid;
     grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.95fr);
     align-items: start;
     gap: 18px 20px;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aiw-kop {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aiw-kop {
     grid-column: 1;
     align-self: center;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aiw-schakel {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aiw-schakel {
     grid-column: 2;
     justify-self: end;
     align-self: center;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aie-chat-koppeling {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aie-chat-koppeling {
     grid-column: 1 / -1;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .chat-panel[data-aiw-chat="true"] {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .chat-panel[data-aiw-chat="true"] {
     grid-column: 1;
     grid-row: 3;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"]:has(> .aie-chat-koppeling) > .chat-panel[data-aiw-chat="true"] {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"]:has(> .aie-chat-koppeling) > .chat-panel[data-aiw-chat="true"] {
     grid-row: 4;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-vragen="1"] {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-vragen="1"] {
     grid-column: 2;
     grid-row: 3;
     position: sticky;
@@ -1178,35 +1803,35 @@ html.palet-maquette .chat-panel[data-aiw-chat="true"] button[disabled] {
     scrollbar-width: thin;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"]:has(> .aie-chat-koppeling) > .aiw-kaart[data-aiw-vragen="1"] {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"]:has(> .aie-chat-koppeling) > .aiw-kaart[data-aiw-vragen="1"] {
     grid-row: 4;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-vragen="1"] .aiw-vraagrij {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-vragen="1"] .aiw-vraagrij {
     flex-direction: column;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-vragen="1"] .aiw-vraagrij button {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-vragen="1"] .aiw-vraagrij button {
     width: 100%;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-klaar] {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-klaar] {
     grid-column: 1;
   }
 
-  html.palet-maquette .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-ontbreekt] {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw[data-aiw="1"] > .aiw-kaart[data-aiw-ontbreekt] {
     grid-column: 2;
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  html.palet-maquette .ai-maquette-wikkel .weergave-richting-ander a:hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .ai-maquette-wikkel .weergave-richting-ander a:hover {
     border-color: var(--mq-accent-ai);
     background: color-mix(in srgb, var(--mq-accent-ai) 22%, var(--mq-oppervlak-2));
     transform: translateY(-1px);
   }
 
-  html.palet-maquette .ai-maquette-wikkel .ag-ai-ingangen .ag-kaart.ag-agent-ingang:hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .ai-maquette-wikkel .ag-ai-ingangen .ag-kaart.ag-agent-ingang:hover {
     border-color: var(--mq-ai-rand-accent);
     background: linear-gradient(
       155deg,
@@ -1219,34 +1844,34 @@ html.palet-maquette .chat-panel[data-aiw-chat="true"] button[disabled] {
     transform: translateY(-2px);
   }
 
-  html.palet-maquette .ai-maquette-wikkel .ag-ai-ingangen .ag-agent-ingang:hover::after {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .ai-maquette-wikkel .ag-ai-ingangen .ag-agent-ingang:hover::after {
     color: var(--mq-accent-ai);
     transform: translate(2px, -2px);
   }
 
-  html.palet-maquette .aiw-schakel button:not([aria-pressed="true"]):hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw-schakel button:not([aria-pressed="true"]):hover {
     color: var(--mq-tekst);
     background: var(--mq-oppervlak-hover);
   }
 
-  html.palet-maquette .aiw .aie-chat-koppeling .aie-knop-tweede:hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw .aie-chat-koppeling .aie-knop-tweede:hover {
     border-color: var(--mq-ai-rand-accent);
     background: color-mix(in srgb, var(--mq-accent-ai) 14%, var(--mq-oppervlak-2));
     transform: translateY(-1px);
   }
 
-  html.palet-maquette .aiw-vraagrij button:not(:disabled):hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw-vraagrij button:not(:disabled):hover {
     border-color: var(--mq-ai-rand-accent);
     background: color-mix(in srgb, var(--mq-accent-ai) 14%, var(--mq-oppervlak-2));
     transform: translateY(-1px);
   }
 
-  html.palet-maquette .aiw button.aiw-tweede:not(:disabled):hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .aiw button.aiw-tweede:not(:disabled):hover {
     border-color: var(--mq-ai-rand-accent);
     background: color-mix(in srgb, var(--mq-accent-ai) 14%, var(--mq-oppervlak-2));
   }
 
-  html.palet-maquette .chat-panel[data-aiw-chat="true"] button:not(:disabled):hover {
+  html.palet-maquette:not([data-maquette-stijl="klassiek"]) .chat-panel[data-aiw-chat="true"] button:not(:disabled):hover {
     filter: brightness(1.05);
     transform: translateY(-1px);
   }
@@ -1298,6 +1923,44 @@ html.palet-maquette .chat-panel[data-aiw-chat="true"] button[disabled] {
   html.palet-maquette .chat-panel[data-aiw-chat="true"] .chat-form button {
     width: 100%;
     min-height: 44px;
+  }
+
+  /* Мобільна щільність та зони натискання для класичного шару */
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-inhoud {
+    gap: 10px;
+    padding: 0 0 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ai-maquette-wikkel .ag.ag-ai-ingangen,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .aiw .aie-chat-koppeling,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kaart,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kaart[data-aiw-vragen="1"],
+  html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-kop {
+    padding: 10px 12px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-schakel {
+    width: 100%;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-schakel button {
+    flex: 1 1 auto;
+    min-height: 44px;
+    text-align: center;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .aiw-vraagrij button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-form button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .chat-panel[data-aiw-chat="true"] .chat-log {
+    padding: 12px;
   }
 }
 
