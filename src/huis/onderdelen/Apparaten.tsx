@@ -1,5 +1,5 @@
-// Apparaten: zoeken, filters (soort, kamer, versheid), kaarten met echte waarde + versheid, inspector (mogelijkheden, bron,
-// bediening met ACK, hernoemen, kamer, verbergen). Geen waarde zonder meting.
+// Пристрої: пошук, відбір за родом, кімнатою й актуальністю, картки зі справжніми значеннями та оглядова панель пристрою.
+// Apparaten: zoeken, selectie op soort, kamer en versheid, kaarten met gemeten waarden en het detailpaneel met bediening.
 import { useMemo, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { MOGELIJKHEID_LABEL, VERSHEID_LABEL, versheid } from '../../../shared/huis-model';
@@ -8,6 +8,7 @@ import ApparaatBediening from '../ApparaatBediening';
 import HuisLaag from '../HuisLaag';
 import { HuisFout, huisClient } from '../huis-client';
 import { datumTekst, foutTekst, hoofdTekst, soortTekst, tr } from '../tekst';
+import '../huis-ruimtes-maquette.css';
 
 export default function Apparaten({ lang, smal, woningId, ov, vernieuw, toon, naarTab }: OnderdeelProps) {
   const [vraag, setVraag] = useState('');
@@ -27,7 +28,7 @@ export default function Apparaten({ lang, smal, woningId, ov, vernieuw, toon, na
   const doe = async (f: () => Promise<unknown>, ok?: string) => { setBezig(true); try { await f(); await vernieuw(); if (ok) toon(ok); } catch (e) { toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout'); } finally { setBezig(false); } };
   if (!ov.apparaten.length) return <section className='hv-leeg'><h3>{tr(lang, 'Пристроїв ще немає', 'Nog geen apparaten')}</h3><p>{tr(lang, ov.integraties.length ? 'Інтеграцію підключено, але нічого не імпортовано. Відкрийте Інтеграції → Знайти пристрої.' : 'Підключіть Home Assistant — пристрої з’являться з реальними станами.', ov.integraties.length ? 'De integratie is gekoppeld, maar er is niets geïmporteerd. Open Integraties → Apparaten zoeken.' : 'Koppel Home Assistant — apparaten verschijnen met echte toestanden.')}</p><button type='button' className='hv-knop is-hoofd' onClick={() => naarTab('integrations')}>{tr(lang, 'До інтеграцій', 'Naar integraties')}</button></section>;
   return (
-    <div className='hv-apparaten'>
+    <div className='hv-apparaten' data-mq-sectie='apparaten'>
       <div className='hv-werkbalk' role='search'>
         <label className='hv-zoekveld'><Search aria-hidden='true' /><input type='search' value={vraag} placeholder={tr(lang, 'Пошук пристрою…', 'Apparaat zoeken…')} aria-label={tr(lang, 'Пошук пристрою', 'Apparaat zoeken')} onChange={(e) => setVraag(e.target.value)} data-hv-zoek='1' /></label>
         <select value={soort} onChange={(e) => setSoort(e.target.value)} aria-label={tr(lang, 'Тип', 'Soort')}><option value=''>{tr(lang, 'усі типи', 'alle soorten')}</option>{soorten.map((s) => <option key={s} value={s}>{soortTekst(lang, s)}</option>)}</select>
@@ -37,14 +38,19 @@ export default function Apparaten({ lang, smal, woningId, ov, vernieuw, toon, na
       </div>
       <p className='hv-hint'>{lijst.length} / {ov.apparaten.length}</p>
       <div className='hv-raster' data-hv-apparaten={lijst.length}>
-        {lijst.map((a) => { const h = hoofdTekst(lang, a); const r = ov.ruimtes.find((x) => x.id === a.ruimteId); return (
-          <button key={a.id} type='button' className={`hv-kaart is-${h.vers}`} onClick={() => { setOpenId(a.id); setNaam(a.naam); }} data-hv-apparaat-kaart={a.id} data-hv-versheid={h.vers}>
-            <small>{soortTekst(lang, a.soort)}{r ? ` · ${r.naam}` : ''}</small>
-            <strong>{a.naam}</strong>
-            <span className='hv-waarde'>{h.tekst}</span>
-            <em>{tr(lang, VERSHEID_LABEL[h.vers][0], VERSHEID_LABEL[h.vers][1])}{a.kritiek ? ` · ${tr(lang, 'критично', 'kritiek')}` : ''}</em>
-          </button>
-        ); })}
+        {lijst.map((a) => {
+          const h = hoofdTekst(lang, a);
+          const r = ov.ruimtes.find((x) => x.id === a.ruimteId);
+          const verbinding = a.online === false || h.vers === 'onbeschikbaar' ? 'onbeschikbaar' : a.online === true && h.vers === 'vers' ? 'online' : 'onbekend';
+          return (
+            <button key={a.id} type='button' className={`hv-kaart is-${h.vers}${a.kritiek ? ' is-kritiek' : ''}`} onClick={() => { setOpenId(a.id); setNaam(a.naam); }} data-hv-apparaat-kaart={a.id} data-hv-versheid={h.vers} data-mq-verbinding={verbinding} data-mq-kritiek={a.kritiek ? 'ja' : undefined} data-mq-soort={a.soort}>
+              <small>{soortTekst(lang, a.soort)}{r ? ` · ${r.naam}` : ''}</small>
+              <strong>{a.naam}</strong>
+              <span className='hv-waarde'>{h.tekst}</span>
+              <em>{tr(lang, VERSHEID_LABEL[h.vers][0], VERSHEID_LABEL[h.vers][1])}{a.kritiek ? ` · ${tr(lang, 'критично', 'kritiek')}` : ''}</em>
+            </button>
+          );
+        })}
       </div>
       {open ? (
         <HuisLaag lang={lang} soort={smal ? 'scherm' : 'paneel'} titel={open.naam} onSluit={() => setOpenId('')} data={{ 'hv-inspector': open.id }}>

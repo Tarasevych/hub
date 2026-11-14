@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-004",
+  "titel": "Хвиля 3 тем оформлення «Біла класика» та «Чорна класика»: інженерний простір github.tarasevych.com",
+  "opdracht": "Оформити всі 13 вкладок і робочих поверхонь інженерного простору github.tarasevych.com (огляд, смугу профілю, каталог сховищ, проєкти, дошку, пошук, панель приєднання, провідник коду, вебредактор, порівняння змін, задачі, запити на злиття, конвеєри дій, випуски, двосторонній міст та вікно діалогів) у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч зі студійним «Макетом» та іншими темами платформи.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-004-20261114-070945",
+    "basis": "d58955c26e64eae4ef75f222221fdc1662a0161d",
+    "geinstalleerdeBasis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу до GitHub, вміст приватних сховищ, внутрішні адреси середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T07:09:45Z",
+      "stap": "Створено робочу гілку feature/klassiek-004-20261114-070945 від базової фіксації d58955c26e64eae4ef75f222221fdc1662a0161d та зареєстровано завдання KLASSIEK-004."
+    },
+    {
+      "tijd": "2026-11-14T07:27:36Z",
+      "stap": "Доповнено src/github/github-werkstroom-maquette.css прагматичним класичним шаром для задач, запитів на злиття, випусків і двостороннього мосту зі світлочутливим терміналом журналів дій у Білій та Чорній класиці без кольорових кульок."
+    },
+    {
+      "tijd": "2026-11-14T07:32:48Z",
+      "stap": "Відсічено індигове підсвічування у src/github/github-overzicht-maquette.css та оформлено компактну смугу профілю, каталог сховищ, дошку, пошук і панель приєднання на матових картках 16px і кнопках 11px."
+    },
+    {
+      "tijd": "2026-11-14T07:36:27Z",
+      "stap": "Оформлено провідник коду, спільне діалогове вікно dialog.gh-dialoog та висококонтрастну таблицю порівняння змін у src/github/github-brontekst-maquette.css, прогнано 16 тестових наборів і повне складання npm run build з кодом 0."
+    }
+  ],
+  "keuzes": [
+    "Студійні індигово-фіолетові блоки світлого режиму у всіх трьох таблицях стилів GitHub обмежено селектором :not([data-maquette-stijl=\"klassiek\"]), щоб зберегти монохромну чистоту обох класичних тем.",
+    "Таблицю порівняння змін (.gh-diff-rij.is-erbij / .is-eraf / .is-kop) налаштовано з контрастом не нижче ніж 7.38:1 для обох класичних палітр, а поле термінала журналів дій зроблено світлим у Білій класиці та оніксовим у Чорній.",
+    "Для збереження плавних кутів 16px поверх глобального режиму плоского вмісту та студійних селекторів високої специфічності застосовано окремі правила рамок без відступів, завдяки чому мобільний каскад залишається непорушним."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-004.json",
+    "orchestratie/taken/KLASSIEK-004.json",
+    "src/github/github-brontekst-maquette.css",
+    "src/github/github-overzicht-maquette.css",
+    "src/github/github-werkstroom-maquette.css",
+    "tests/eenheid/klassiek-004a-github-overzicht.test.ts",
+    "tests/eenheid/klassiek-004b-github-brontekst.test.ts",
+    "tests/eenheid/klassiek-004c-github-werkstroom.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-004 --fase overdracht — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: klassiek-001-kern (8/8), klassiek-004a-github-overzicht (9/9), klassiek-004b-github-brontekst (10/10), klassiek-004c-github-werkstroom (10/10), contrast-knoppen-logos-20261021 (38/38), mobiel-cascade-20261105 (22/22), mobiel-geometrie-20261021, plaatsing-20261025 (68/68), github-koppelkaart-20261019, github-werkruimte-tak-20261112, github-012-mobiele-weergave, github-volledige-werkruimte, sec-002-afwerking-b-20261112 (43/43), zoek-ui-tabblad-20261105 (46/46).",
+    "Жива візуальна перевірка кадрів github.tarasevych.com (огляд сховищ, провідник коду, задачі й запити на злиття, мобільний вигляд та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/GitHubWeergave.tsx",
+    "src/github/github-overzicht-maquette.css",
+    "src/github/github-brontekst-maquette.css",
+    "src/github/github-werkstroom-maquette.css"
+  ],
+  "beperkingen": [
+    "Хвиля 3 (KLASSIEK-004) охоплює інженерний простір github.tarasevych.com; решта шість піддоменів (hub, ai, huis, mcp, api, admin) послідовно оформлюються у Хвилях 4–9 (KLASSIEK-005 — KLASSIEK-010)."
+  ]
+}

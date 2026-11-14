@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Calculator, ExternalLink, Pause, Play, RotateCcw, Sparkles } from 'lucide-react';
 import type { HuisTab } from '../../../shared/huis-model';
+import { useIsMaquette } from '../../thema/useThema';
 import { tr, type Lang } from '../tekst';
 
 type Stap = { t: [string, string]; bron: [string, string]; kamer: string; uitkomst: [string, string] };
@@ -36,17 +37,19 @@ const KAMERS: Array<{ id: string; naam: [string, string]; x: number; y: number; 
 ];
 
 export default function Showroom({ lang, naarTab }: { lang: Lang; smal: boolean; naarTab: (t: HuisTab) => void }) {
+  const isMaquette = useIsMaquette();
   const [sc, setSc] = useState(SCENARIOS[0]);
   const [stap, setStap] = useState(-1);
   const [speelt, setSpeelt] = useState(false);
   useEffect(() => { if (!speelt) return; if (stap >= sc.stappen.length - 1) { setSpeelt(false); return; } const t = window.setTimeout(() => setStap((s) => s + 1), 1800); return () => window.clearTimeout(t); }, [speelt, stap, sc]);
   const actief = stap >= 0 ? sc.stappen[stap] : null; const S = 26;
   return (
-    <div className='hv-showroom' data-hv-showroom={sc.id}>
+    <div className={`hv-showroom${isMaquette ? ' is-maquette' : ''}`} data-hv-showroom={sc.id}>
       <p className='hv-melding is-info' data-hv-demo='1'><Sparkles aria-hidden='true' />{tr(lang, 'Демонстрація на вигаданих даних. Це не ваша оселя, тут немає реальних пристроїв, команд чи токенів. Показуємо, як виглядає чесний ланцюжок: датчик → правило/людина → команда → підтвердження.', 'Demonstratie met verzonnen gegevens. Dit is niet uw woning; er zijn geen echte apparaten, opdrachten of tokens. We tonen hoe de eerlijke keten eruitziet: sensor → regel/mens → opdracht → bevestiging.')}</p>
       {/* HUIS-001 (етап 0): клікабельний макет майбутнього хабу «Живий дім» — окрема статична сторінка сайту (dist/huis-maquette/,
           складає scripts/huis-maquette.mjs --site). Вигадані дані вбудованого симулятора, жодного зв’язку з пристроями. */}
       <section className='hv-blok hv-maquette-kaart' data-hv-maquette='1'>
+        {isMaquette ? <span className='hv-mq-bovenlijn'>{tr(lang, 'ІНТЕРАКТИВНИЙ МАКЕТ · 13 ВИДІВ ЕКРАНІВ', 'INTERACTIEVE MAQUETTE · 13 SCHERMVORMEN')}</span> : null}
         <h3>{tr(lang, 'Макет «Живий дім» — яким стане розумний будинок', 'Maquette «Levend huis» — zo wordt het slimme huis')}</h3>
         <p className='hv-hint'>{tr(lang, 'Повний клікабельний макет нового хабу: дім із небом за часом доби, кімнати й план, аркуші керування для кожного типу пристрою, енергія, безпека, гараж із транспортом і безпілотниками, автоматика, ШІ-агенти з дозволами та 13 видів екранів — від годинника до телевізора. Усе працює на вбудованому симуляторі з вигаданими даними.', 'De volledige klikbare maquette van de nieuwe hub: het huis met een hemel naar het tijdstip, kamers en plattegrond, bedieningsbladen voor elk soort apparaat, energie, beveiliging, de garage met voertuigen en drones, automatisering, AI-agenten met toestemmingen en 13 soorten schermen — van horloge tot televisie. Alles draait op de ingebouwde simulator met verzonnen gegevens.')}</p>
         <div className='hv-knoppen'>
@@ -55,6 +58,7 @@ export default function Showroom({ lang, naarTab }: { lang: Lang; smal: boolean;
       </section>
       <div className='hv-kolommen'>
         <section className='hv-blok'>
+          {isMaquette ? <span className='hv-mq-bovenlijn'>{tr(lang, '01 · ПРОСТОРОВА СЦЕНА', '01 · RUIMTELIJK TONEEL')}</span> : null}
           <h3>{tr(lang, 'Демо-план', 'Demoplattegrond')}</h3>
           <svg className='hv-plan' viewBox={`0 0 ${10 * S + 8} ${6 * S + 8}`} role='img' aria-label={tr(lang, 'Демонстраційний план з п’ятьма кімнатами', 'Demoplattegrond met vijf kamers')}>
             {KAMERS.map((k) => <g key={k.id} className={`hv-plan-kamer${actief?.kamer === k.id ? ' is-gekozen heeft-licht' : ''}`}><rect x={k.x * S + 4} y={k.y * S + 4} width={k.w * S} height={k.h * S} rx={6} /><text x={k.x * S + 12} y={k.y * S + 22} className='hv-plan-naam'>{tr(lang, k.naam[0], k.naam[1])}</text></g>)}
@@ -62,6 +66,7 @@ export default function Showroom({ lang, naarTab }: { lang: Lang; smal: boolean;
           <p className='hv-hint'>{tr(lang, 'Підсвічена кімната — та, де відбувається поточний крок.', 'De oplichtende kamer is waar de huidige stap plaatsvindt.')}</p>
         </section>
         <section className='hv-blok'>
+          {isMaquette ? <span className='hv-mq-bovenlijn'>{tr(lang, '02 · ПОКРОКОВЕ ВІДТВОРЕННЯ', '02 · STAPSGEWIJZE WEERGAVE')}</span> : null}
           <h3>{tr(lang, 'Сценарії', 'Scenario’s')}</h3>
           <div className='hv-chips' role='tablist'>{SCENARIOS.map((s) => <button key={s.id} type='button' role='tab' aria-selected={sc.id === s.id} className={`hv-chip${sc.id === s.id ? ' is-actief' : ''}`} onClick={() => { setSc(s); setStap(-1); setSpeelt(false); }} data-hv-scenario={s.id}>{tr(lang, s.naam[0], s.naam[1])}</button>)}</div>
           <p className='hv-hint'>{tr(lang, sc.uitleg[0], sc.uitleg[1])}</p>
@@ -76,6 +81,7 @@ export default function Showroom({ lang, naarTab }: { lang: Lang; smal: boolean;
         </section>
       </div>
       <section className='hv-blok'>
+        {isMaquette ? <span className='hv-mq-bovenlijn'>{tr(lang, '03 · ЗАСАДИ ЧЕСНОЇ ОСЕЛІ', '03 · BEGINSELEN VAN HET HUIS')}</span> : null}
         <h3>{tr(lang, 'Що відрізняє цей підхід', 'Wat deze aanpak anders maakt')}</h3>
         <ul className='hv-lijst is-dicht'>
           <li><span>{tr(lang, 'Жодного вигаданого стану: немає виміру — немає значення, лише «невідомо» з часом останнього контакту.', 'Geen verzonnen toestand: geen meting, geen waarde — alleen «onbekend» met de tijd van het laatste contact.')}</span></li>

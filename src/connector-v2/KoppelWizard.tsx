@@ -25,6 +25,7 @@ import { MET_BEVESTIGING } from '../../shared/ai-bevestiging';
 import RechtenKiezer from './RechtenKiezer';
 import './connector-v2.css';
 import './koppel-wizard-plaats.css'; // 21.10.2026: knoppen in een vaste onderste rij van het venster (telefoon: altijd zichtbaar)
+import '../agenten/agenten-kern-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 export type V2ConsentInfo = {
@@ -119,7 +120,7 @@ export default function KoppelWizard({ tr, rid, info, onKlaar }: { tr: Tr; rid: 
 
   return (
     <Venster id='mcp-toestemming' titel={tr(`Підключення ${agent.naam}`, `${agent.naam} koppelen`)} breedte={760} labelledBy='v2-wizard-titel' className='mcp-consent-venster v2-wizard-venster'>
-      <div className='v2-wizard' data-v2-wizard={info.agent} data-v2-stap={stap}>
+      <div className='v2-wizard' data-v2-wizard={info.agent} data-v2-stap={stap} data-mq-laag-open='1'>
         <header className='v2-wizard-kop'>
           <h2 id='v2-wizard-titel'>{tr(`${agent.naam} просить доступ до «Мого простору»`, `${agent.naam} vraagt toegang tot Mijn Ruimte`)}</h2>
           <ol className='v2-stappen' aria-label={tr('Кроки', 'Stappen')}>

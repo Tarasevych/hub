@@ -17,6 +17,7 @@ import { besluitFoutCode, besluitOndertekenen, besluitStarten, besluitVolgen, ty
 import type { OrchOverzicht, OrchRegelsOverzicht, OrchTaak, OrchVoorstel, OrchZaak } from '../../shared/orch-model';
 import { orchFoutTekst, orchInleveren, orchOverzicht, orchRegels, orchToepassen, orchVoorstelIntrekken, orchVoorstelMaken, type InleverUitkomst, type ToepassenUitkomst } from '../orch/orch-client';
 import '../orch/orch.css';
+import './agenten-inspectie-maquette.css';
 
 const STATUS_TOON: Record<string, Toon> = { in_progress: 'info', integrated: 'ok', released: 'ok', installed: 'ok', bevroren: 'warn', geannuleerd: 'off' };
 const kort = (s: string | null | undefined, n = 12) => (s ? s.slice(0, n) : '—');

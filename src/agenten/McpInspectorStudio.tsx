@@ -13,6 +13,7 @@ import { api } from '../platform/client';
 import { sessionBody } from '../agenten-gegevens';
 import type { Tr } from '../mcp-ui';
 import { Badge, Knop, Segment, Tech } from './ui';
+import './agenten-inspectie-maquette.css';
 
 type EraModus = 'auto' | 'modern' | 'legacy';
 
@@ -299,7 +300,7 @@ export default function McpInspectorStudio({ tr }: { tr: Tr }) {
             />
           </div>
 
-          <label className='ag-veld ag-veld-vol'>
+          <label className='ag-veld-vol ag-veld'>
             <span>{tr('Метод JSON-RPC', 'JSON-RPC-methode')}</span>
             <select value={methode} onChange={(e) => kiesMethode(e.target.value)} data-inspector-veld='methode'>
               {METHODEN.map((m) => (
@@ -310,14 +311,14 @@ export default function McpInspectorStudio({ tr }: { tr: Tr }) {
             </select>
           </label>
 
-          <label className='ag-veld ag-veld-vol'>
+          <label className='ag-veld-vol ag-veld'>
             <span>{tr('Параметри запиту (JSON)', 'Verzoekparameters (JSON)')}</span>
             <textarea
               rows={3}
               value={paramsTekst}
               onChange={(e) => setParamsTekst(e.target.value)}
               data-inspector-veld='params'
-              style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '.82rem' }}
+              style={{ fontFamily: 'var(--mq-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace)', fontSize: '.82rem' }}
             />
           </label>
         </div>

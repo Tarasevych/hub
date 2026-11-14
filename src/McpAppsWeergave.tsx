@@ -14,6 +14,7 @@ import { sessionBody } from './agenten-gegevens';
 import { foutCode, foutTekst } from './agenten/fouten';
 import ServerKoppelen from './ServerKoppelen';
 import './mcp-apps.css';
+import './mcp-uitrol-maquette.css';
 import GeheimInvoer from './geheim/GeheimInvoer';
 
 type Lang = 'uk' | 'nl';
@@ -155,7 +156,7 @@ export default function McpAppsView({ lang }: { lang: Lang }) {
       {geheimId && verzoeken.length && !huidig ? <p className='mapps-melding mapps-fout' role='alert'>{tr('Цей запит на секрет не знайдено або він уже недійсний (після перезапуску сервера запит треба повторити).', 'Dit verzoek om een geheim bestaat niet of is niet meer geldig (na een herstart van de server moet het opnieuw).')}</p> : null}
       {huidig ? (
         <Venster id='apps-geheim' titel={tr('Секрет для додатка', 'Geheim voor de app')} breedte={560} onSluit={sluitGeheim} sluitenUit={bezig === 'geheim'} lang={lang}>
-          <div className='mapps-geheim' data-geheim={huidig.id}>
+          <div className='mapps-geheim' data-geheim={huidig.id} data-mq-laag-open='1'>
             <p className='mapps-geheim-kop'><KeyRound aria-hidden='true' />{tr('Введіть секрет для додатка', 'Voer een geheim in voor de app')}</p>
             <dl className='mapps-feiten'>
               <div><dt>{tr('Додаток', 'App')}</dt><dd>{huidig.app}</dd></div>

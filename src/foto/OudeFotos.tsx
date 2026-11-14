@@ -4,6 +4,7 @@ import { Images } from 'lucide-react';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import type { Lang } from '../cloud-vnext/tekst';
 import './foto.css';
+import './foto-maquette.css';
 export const kiezerUrl = (lang: Lang) => { const u = new URL(canonicalNavigationUrl('cloud', 'photos', lang)); u.searchParams.set('kiezer', '1'); return u.toString(); };
 export default function OudeFotos({ lang }: { lang: Lang }) {
   const t = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);

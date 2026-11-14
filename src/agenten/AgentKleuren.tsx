@@ -17,6 +17,7 @@ import AgentLogo from './AgentLogo';
 import { ACCENTEN, ACCENT_KLEUREN, type Accent } from '../../shared/menu-model';
 import { V2_AGENTEN, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { AGENT_ACCENT, MARKERING_STAART_MS } from '../../shared/markering-agenten';
+import './agenten-kern-maquette.css';
 
 type Rij = { agent: AgentSlug; accent: Accent; standaard: boolean };
 const naamVan = (slug: AgentSlug) => V2_AGENTEN.find((a) => a.slug === slug)?.naam ?? slug;

@@ -16,6 +16,7 @@ import { foutTekst } from './fouten';
 import AiToegangTab from './AiToegangTab';
 import { Knop } from './ui';
 import './agenten.css';
+import './agenten-kern-maquette.css';
 // SEC-002 extensie-02/-09 (g10a-2/-3): toegang en tokens van het bord geeft alleen de mens; een vers token leest de AI niet.
 import { alleenMens, geenAi, verborgenVoorAi } from '../menselijke-actie';
 

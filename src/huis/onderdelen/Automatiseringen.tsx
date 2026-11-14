@@ -1,6 +1,5 @@
-// Automatiseringen: bewerker Wanneer/Als/Dan + droogloop (simulatie zonder I/O tegen de laatste waarnemingen). In deze release
-// voert de site GEEN regels uit: stand is «concept» of «simulatie»; «aan» weigert de server (NOG_NIET_UITVOERBAAR). Kritieke
-// apparaten zijn in «Dan» niet kiesbaar; de droogloop toont expliciet mogelijke lussen en ontbrekende afkoeltijd.
+// Автоматизації: конструктор «Коли / Якщо / Тоді» та пробний прогін без зовнішніх дій за останніми спостереженнями.
+// Automatiseringen: bewerker Wanneer/Als/Dan en droogloop zonder externe aanroepen op de laatste waarnemingen; kritieke apparaten uitgesloten.
 import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Check, FlaskConical, Pencil, Plus, Trash2, Workflow, X } from 'lucide-react';
 import { KRITIEKE_SOORTEN, MOGELIJKHEID_LABEL, legeRegel, type Als, type Automatisering, type Dan, type Droogloop, type MogelijkheidSoort, type Regel, type Wanneer } from '../../../shared/huis-model';
@@ -9,6 +8,7 @@ import HuisLaag from '../HuisLaag';
 import { HuisFout, huisClient } from '../huis-client';
 import { datumTekst, foutTekst, tr, type Lang } from '../tekst';
 import { SCHRIJFBAAR, StapWaarde } from './Scenes';
+import '../huis-ruimtes-maquette.css';
 
 const STAND_LABEL: Record<Automatisering['stand'], [string, string]> = { concept: ['чернетка', 'concept'], simulatie: ['симуляція', 'simulatie'], aan: ['увімкнено', 'aan'], gepauzeerd: ['пауза', 'gepauzeerd'], fout: ['помилка', 'fout'] };
 const OPMERKING: Record<string, [string, string]> = { KRITIEK_IN_DAN: ['У «Тоді» є критичний пристрій — сервер таке не збереже.', 'In «Dan» staat een kritiek apparaat — de server slaat dit niet op.'], GEEN_AFKOELTIJD: ['Без часу охолодження правило може спрацьовувати безперервно.', 'Zonder afkoeltijd kan de regel onophoudelijk afgaan.'], MOGELIJKE_LUS: ['Можлива петля: «Тоді» змінює пристрій, за яким стежить «Коли».', 'Mogelijke lus: «Dan» verandert het apparaat waarop «Wanneer» let.'] };
@@ -23,7 +23,7 @@ export default function Automatiseringen({ lang, smal, woningId, ov, toon }: Ond
   const mag = ov.lid.magSchrijven;
   const fout = (e: unknown) => toon(foutTekst(lang, e instanceof HuisFout ? e.code : 'FOUT'), 'fout');
   const laad = async () => { try { setLijst(await huisClient.automatiseringen(woningId)); } catch (e) { fout(e); setLijst([]); } };
-  useEffect(() => { void laad(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [woningId]);
+  useEffect(() => { void laad(); }, [woningId]);
   const bedienbaar = useMemo(() => ov.apparaten.filter((a) => !a.kritiek && a.mogelijkheden.some((m) => m.schrijven && SCHRIJFBAAR.includes(m.soort) && !KRITIEKE_SOORTEN.includes(m.soort))), [ov.apparaten]);
   const kenmerken = (id: string) => ov.apparaten.find((a) => a.id === id)?.toestanden.map((t) => t.kenmerk) ?? [];
   const eersteApparaat = ov.apparaten[0]?.id ?? '';
@@ -47,13 +47,13 @@ export default function Automatiseringen({ lang, smal, woningId, ov, toon }: Ond
   const parseWaarde = (s: string): unknown => (s === 'true' ? true : s === 'false' ? false : /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : s);
 
   return (
-    <div className='hv-automatiseringen'>
+    <div className='hv-automatiseringen' data-mq-sectie='automatiseringen'>
       <p className='hv-melding is-info'><FlaskConical aria-hidden='true' />{tr(lang, 'У цьому випуску сайт не виконує правила самостійно: ви можете створити чернетку та прогнати симуляцію на останніх спостереженнях. Виконання з’явиться після перевірки двигуна; критичні пристрої ніколи не будуть у «Тоді».', 'In deze release voert de site regels niet zelf uit: u kunt een concept maken en een simulatie draaien op de laatste waarnemingen. Uitvoering komt na toetsing van de engine; kritieke apparaten komen nooit in «Dan».')}</p>
       {mag ? <div className='hv-werkbalk'><button type='button' className='hv-knop is-hoofd' onClick={() => { setDroog(null); setOpen({ id: null, naam: '', regel: { ...legeRegel(), wanneer: [nieuweWanneer('tijd')], dan: ov.scenes.length ? [nieuweDan('scene')] : bedienbaar.length ? [nieuweDan('opdracht')] : [nieuweDan('melding')] }, stand: 'concept' }); }} data-hv-auto-nieuw='1'><Plus aria-hidden='true' />{tr(lang, 'Нове правило', 'Nieuwe regel')}</button></div> : null}
       {lijst && !lijst.length ? <section className='hv-leeg'><Workflow aria-hidden='true' /><h3>{tr(lang, 'Правил ще немає', 'Nog geen regels')}</h3><p>{tr(lang, 'Наприклад: «Коли датчик руху у коридорі спрацьовує, Якщо 22:00–06:00, Тоді сцена Нічне світло».', 'Bijvoorbeeld: «Wanneer de bewegingssensor in de gang afgaat, Als 22:00–06:00, Dan scène Nachtlicht».')}</p></section> : null}
-      <ul className='hv-lijst'>
+      <ul className='hv-lijst' data-mq-regels-lijst='1'>
         {(lijst ?? []).map((a) => (
-          <li key={a.id} data-hv-auto={a.id}>
+          <li key={a.id} data-hv-auto={a.id} data-mq-auto-stand={a.stand}>
             <div className='hv-lijst-knop'><strong>{a.naam} <em className={`hv-chip is-passief is-${a.stand}`}>{tr(lang, STAND_LABEL[a.stand][0], STAND_LABEL[a.stand][1])}</em></strong><small>{a.regel.wanneer.length} {tr(lang, 'коли', 'wanneer')} · {a.regel.als.length} {tr(lang, 'якщо', 'als')} · {a.regel.dan.length} {tr(lang, 'тоді', 'dan')} · v{a.versie} · {datumTekst(lang, a.bijgewerktOp)}</small></div>
             <span className='hv-knoppen'>
               <button type='button' className='hv-knop is-klein' disabled={bezig} onClick={() => { setOpen({ id: a.id, naam: a.naam, regel: a.regel, stand: a.stand === 'simulatie' ? 'simulatie' : 'concept' }); void simuleer(a.regel); }} data-hv-auto-sim={a.id}><FlaskConical aria-hidden='true' />{tr(lang, 'Симуляція', 'Simulatie')}</button>
@@ -101,7 +101,7 @@ export default function Automatiseringen({ lang, smal, woningId, ov, toon }: Ond
             ); })}
           </Blok>
           <h3 className='hv-sub'>{tr(lang, 'Запобіжники', 'Veiligheidsmarges')}</h3>
-          <div className='hv-rij is-wrap'>
+          <div className='hv-rij is-wrap' data-mq-veiligheidsmarges='1'>
             <label className='hv-veld'><span>{tr(lang, 'Охолодження, хв', 'Afkoeltijd, min')}</span><input type='number' min={0} max={1440} value={open.regel.instellingen.afkoelMinuten} onChange={(e) => zet((r) => ({ ...r, instellingen: { ...r.instellingen, afkoelMinuten: Number(e.target.value) } }))} /></label>
             <label className='hv-veld'><span>{tr(lang, 'Макс. на день', 'Max. per dag')}</span><input type='number' min={1} max={1000} value={open.regel.instellingen.maxPerDag} onChange={(e) => zet((r) => ({ ...r, instellingen: { ...r.instellingen, maxPerDag: Number(e.target.value) } }))} /></label>
             <label className='hv-veld'><span>{tr(lang, 'Затримка, с', 'Vertraging, s')}</span><input type='number' min={0} max={3600} value={open.regel.instellingen.vertragingSeconden} onChange={(e) => zet((r) => ({ ...r, instellingen: { ...r.instellingen, vertragingSeconden: Number(e.target.value) } }))} /></label>

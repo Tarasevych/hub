@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-008",
+  "titel": "Хвиля 7 тем оформлення «Біла класика» та «Чорна класика»: інженерний міст, застосунки та осередок агентів mcp.tarasevych.com",
+  "opdracht": "Оформити всі тринадцять канонічних вкладок інженерного мосту mcp.tarasevych.com і всі дванадцять розділів осередку агентів AgentenPagina (з’єднувачі другого покоління, розширення оглядача, пристрої ПК, прямі ключі доступу, права користувачів, розмежування приватного й технічного просторів, студію інспектора протоколу, зовнішні сервери, центр багатоагентної координації, власні застосунки, дошку завдань, випробувальне середовище та збирання повного архіву) у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч зі студійним «Макетом» та іншими темами платформи.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-008-20261114-091248",
+    "basis": "1394fa5631884d155a822bcd9ddc694fdace5b03",
+    "geinstalleerdeBasis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Особисті ключі власника, маркери доступу OAuth, прямі ключі агентів, внутрішні адреси середовища розробки, приватні записи користувачів та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T09:12:48Z",
+      "stap": "Створено робочу гілку feature/klassiek-008-20261114-091248 від базової фіксації 1394fa5631884d155a822bcd9ddc694fdace5b03 та зареєстровано завдання KLASSIEK-008."
+    },
+    {
+      "tijd": "2026-11-14T09:15:07Z",
+      "stap": "Запущено три паралельні бригади виконавців із нульовим перетином файлів для п’яти таблиць стилів інженерного мосту та осередку агентів mcp.tarasevych.com."
+    },
+    {
+      "tijd": "2026-11-14T09:24:00Z",
+      "stap": "Доповнено src/mcp-kern-maquette.css, src/mcp-uitrol-maquette.css, src/agenten/agenten-kern-maquette.css, src/agenten/agenten-inspectie-maquette.css та src/agenten/agenten-toegang-maquette.css прагматичним монохромним шаром із плавними заокругленнями 16px/11px, збереженням кнопок дій і кнопки аварійної зупинки агентів, чистими змінними мініпалітр та табличними цифрами."
+    }
+  ],
+  "keuzes": [
+    "Усі класичні перетворення піддомену mcp.tarasevych.com реалізовано суто в п’яти таблицях стилів макета без втручання у вихідний код компонентів TSX та згенерований каталог елементів пошуку.",
+    "На сторінках мосту з живими кнопками дій та у внутрішній шапці осередку агентів збережено всі робочі кнопки (зокрема кнопку екстреної зупинки агентів), ущільнивши ці панелі до однорядкових ділових смуг висотою близько 48–52px без декоративних значків і прожекторів.",
+    "Усі змінні мініпалітр агентів і з’єднувачів переведено на чисті посилання var(--ok), var(--warn), var(--fout), var(--info) та var(--mq-*) без змішування кольорів."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-008.json",
+    "orchestratie/taken/KLASSIEK-008.json",
+    "src/agenten/agenten-inspectie-maquette.css",
+    "src/agenten/agenten-kern-maquette.css",
+    "src/agenten/agenten-toegang-maquette.css",
+    "src/mcp-kern-maquette.css",
+    "src/mcp-uitrol-maquette.css",
+    "tests/eenheid/klassiek-008a-mcp-kern-uitrol.test.ts",
+    "tests/eenheid/klassiek-008b-agenten-kern-inspectie.test.ts",
+    "tests/eenheid/klassiek-008c-agenten-toegang.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-008 --fase overdracht — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, klassiek-001-kern, klassiek-008a-mcp-kern-uitrol, klassiek-008b-agenten-kern-inspectie, klassiek-008c-agenten-toegang, contrast-knoppen-logos-20261021 (38/38), mobiel-cascade-20261105 (22/22), mobiel-geometrie-20261021, plaatsing-20261025, agenten-pagina-blokken-20261103, agenten-blokken-agpag2-20261103, mcp-r1-beveiliging-20261112, mcp-een-klik, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка кадрів mcp.tarasevych.com (осередок агентів, панель мосту, дошка завдань, випробувальне середовище, збирання архіву, мобільні вигляди та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/mcp-kern-maquette.css",
+    "src/mcp-uitrol-maquette.css",
+    "src/agenten/agenten-kern-maquette.css",
+    "src/agenten/agenten-inspectie-maquette.css",
+    "src/agenten/agenten-toegang-maquette.css"
+  ],
+  "beperkingen": [
+    "Хвиля 7 (KLASSIEK-008) охоплює інженерний міст і осередок агентів mcp.tarasevych.com; заключні два піддомени (api та admin) послідовно оформлюються у Хвилях 8–9 (KLASSIEK-009 — KLASSIEK-010)."
+  ]
+}

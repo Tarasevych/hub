@@ -7,6 +7,8 @@
 import { useEffect, useState } from 'react';
 import { useVlag } from '../functievlag-lezen';
 import { readSharedPreferences, watchSharedPreferences, writeSharedPreferences } from '../gedeelde-voorkeuren';
+import { leesKeuze } from '../thema/kern';
+import { useThemaStand } from '../thema/useThema';
 
 /** Прапорець вигляду «Макет» (IDENTITEIT-007). Zonder deze vlag blijven alleen de Studio en de klassieke weergave over. */
 export const VLAG_MAQUETTE = 'identiteit-account-maquette';
@@ -58,10 +60,18 @@ export function leesVormgeving(beschikbaar: readonly Vormgeving[] = VORMGEVINGEN
   return beschikbaar[0] ?? 'studio';
 }
 
-/** Доступні вигляди за прапорцем «Макет». */
+export function isKlassiekMaquettePalet(palet: string): boolean {
+  return palet === 'klassiek-wit' || palet === 'klassiek-zwart';
+}
+
+/** Доступні вигляди за прапорцем «Макет» або загальносайтовою палітрою «Макет» чи «Класика». */
 export function useBeschikbareVormgevingen(): readonly Vormgeving[] {
   const maquette = useVlag(VLAG_MAQUETTE, false);
-  return maquette ? VORMGEVINGEN : VORMGEVINGEN.filter((v) => v !== 'maquette');
+  const stand = useThemaStand();
+  const huidigPalet = String(leesKeuze(stand.theme, stand.palet).palet);
+  const isThemaMaquette = huidigPalet === 'maquette';
+  const isKlassiekPalet = isKlassiekMaquettePalet(huidigPalet);
+  return maquette || isThemaMaquette || isKlassiekPalet ? VORMGEVINGEN : VORMGEVINGEN.filter((v) => v !== 'maquette');
 }
 
 /** Вибір людини: в обліковий запис (сервер отримає його разом із рештою вигляду, з пакуванням 350 мс) і в кеш пристрою.
@@ -75,6 +85,7 @@ export function bewaarVormgeving(v: Vormgeving) {
 /** Поточний вибір; оновлюється одразу в усіх відкритих частинах сторінки й інших вкладках. */
 export function useVormgeving(): [Vormgeving, (v: Vormgeving) => void] {
   const beschikbaar = useBeschikbareVormgevingen();
+  const stand = useThemaStand();
   const [waarde, setWaarde] = useState<Vormgeving>(() => leesVormgeving(beschikbaar));
   useEffect(() => {
     const opnieuw = () => {
@@ -99,6 +110,6 @@ export function useVormgeving(): [Vormgeving, (v: Vormgeving) => void] {
     window.addEventListener('storage', opslag);
     const af = watchSharedPreferences(() => opnieuw());
     return () => { window.removeEventListener(melding, opnieuw); window.removeEventListener('storage', opslag); af(); };
-  }, [beschikbaar.length]);
+  }, [beschikbaar.length, stand.palet]);
   return [waarde, bewaarVormgeving];
 }

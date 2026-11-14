@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-002",
+  "titel": "Хвиля 1 тем оформлення «Біла класика» та «Чорна класика»: ділова поштова робоча область mail.tarasevych.com",
+  "opdracht": "Оформити поштову робочу область mail.tarasevych.com (усі 18 поштових вкладок, список листів, вікно читання, вікно написання листа, налаштування, контакти, облікові записи та розумні панелі) у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч із кольоровим студійним «Макетом» та іншими темами платформи, без жодного видалення наявних можливостей.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-002-20261114-054300",
+    "basis": "4ec0f168f5459a27944275b078791189434c4f3e",
+    "geinstalleerdeBasis": "f3f3fabba7f7c9248a09d9d5b1a0c7f5b4e2f300",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "f07883bfa1a890f3e71b726ccdb9e8a570e3d6e6",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, ключі доступу, маркери сеансів, вміст приватних листів і бесід, внутрішні мережеві адреси, службові шляхи середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T05:42:29Z",
+      "stap": "Створено робочу гілку feature/klassiek-002-20261114-054300 від базової фіксації 4ec0f168f5459a27944275b078791189434c4f3e та зареєстровано завдання KLASSIEK-002."
+    },
+    {
+      "tijd": "2026-11-14T05:56:00Z",
+      "stap": "Оформлено прагматичну оболонку GoogleMailWerkruimte, MailFunctioneelWeergave, MailAccountsHub та MailAchtergrond без кольорового ореола, тривимірної прикраси у порожньому стані та зайвих врізок, зі створенням таблиці стилів src/mail/mail-lijst-klassiek.css і доповненням src/mail/mail-werkruimte-maquette.css."
+    },
+    {
+      "tijd": "2026-11-14T06:05:00Z",
+      "stap": "Доповнено src/mail/mail-lezer-opstel-maquette.css та src/mail/mail-panelen-maquette.css для вікна читання, вікна написання листа та поштових панелей у темах «Біла класика» і «Чорна класика» з єдиним беззасічковим шрифтом var(--mq-font-ui), табличними цифрами та плавними заокругленнями 16px і 11px."
+    },
+    {
+      "tijd": "2026-11-14T06:15:00Z",
+      "stap": "Окремо виправлено відсутність ознаки сповіщення про помилку у MailKoppelVenster при зачиненому сховищі ключів, прогнано повне складання, 15 модульних перевірок і живі знімки у безголовому оглядачі Chromium (0 винятків під час виконання)."
+    }
+  ],
+  "keuzes": [
+    "У темах «Біла класика» та «Чорна класика» поштова оболонка зберігає ту саму композиційну структуру макета без кольорових ореолів, фіолетових підсвічувань і художніх композицій у порожньому стані.",
+    "Для рядків листів застосовано чітку ділову ієрархію (жирний відправник і тема для непрочитаних листів, тонкі монохромні розділювачі, табличні цифри часу й лічильників та плавні кути 16px / 11px).",
+    "Заголовки всіх додаткових поштових панелей (облікові записи, контакти, налаштування, розумна пошта) уніфіковано беззасічковим шрифтом інтерфейсу var(--mq-font-ui) без засічкового курсиву."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-002.json",
+    "orchestratie/taken/KLASSIEK-002.json",
+    "src/GoogleMailWerkruimte.tsx",
+    "src/MailAccountsHub.tsx",
+    "src/MailFunctioneelWeergave.tsx",
+    "src/mail/MailAchtergrond.tsx",
+    "src/mail/MailKoppelVenster.tsx",
+    "src/mail/mail-lezer-opstel-maquette.css",
+    "src/mail/mail-lijst-klassiek.css",
+    "src/mail/mail-panelen-maquette.css",
+    "src/mail/mail-werkruimte-maquette.css",
+    "tests/eenheid/klassiek-002a-werkruimte.test.ts",
+    "tests/eenheid/klassiek-002b-lezer-opstel.test.ts",
+    "tests/eenheid/klassiek-002c-panelen.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-002 --fase overdracht — успішно.",
+    "Перевірка типів: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: klassiek-002a-werkruimte (8/8), klassiek-002b-lezer-opstel (8/8), klassiek-002c-panelen (9/9), toegankelijk-mail-20261021 (53/53), contrast-knoppen-logos-20261021 (38/38), mobiel-cascade-20261105 (22/22), zoek-ui-tabblad-20261105 (46/46).",
+    "Жива візуальна перевірка 11 кадрів mail.tarasevych.com (вхідні листи, мобільний вигляд, облікові записи, контакти, налаштування у Білій та Чорній класиці) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/GoogleMailWerkruimte.tsx",
+    "src/mail/mail-werkruimte-maquette.css"
+  ],
+  "beperkingen": [
+    "Хвиля 1 (KLASSIEK-002) охоплює поштову робочу область mail.tarasevych.com; решта вісім піддоменів (cloud, github, hub, ai, huis, mcp, api, admin) послідовно оформлюються у Хвилях 2–9 (KLASSIEK-003 — KLASSIEK-010)."
+  ]
+}

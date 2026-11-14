@@ -19,6 +19,7 @@ import { combineer, slotVan, useExtensieLiveToestand, type Slot } from './extens
 // 0.6: slot «як користувач» (step-up, geen technisch profiel nodig).
 import ExtensiePrive, { toestemmingId } from './extensie/ExtensiePrive';
 import './agenten-paneel.css';
+import './agenten/agenten-toegang-maquette.css';
 import { alleenMens, geenAi } from './menselijke-actie'; // SEC-002 extensie-02 (g10a-2)
 
 type Tr = (uk: string, nl: string) => string;

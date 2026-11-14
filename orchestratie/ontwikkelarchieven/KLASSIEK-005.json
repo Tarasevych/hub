@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-005",
+  "titel": "Хвиля 4 тем оформлення «Біла класика» та «Чорна класика»: головний простір hub.tarasevych.com",
+  "opdracht": "Оформити всі сім розділів головного вузла hub.tarasevych.com (робочий стіл, недавні події, завдання, нотатки, календар, наскрізний пошук та галерею світлин) у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч зі студійним «Макетом» та іншими темами платформи.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-005-20261114-074035",
+    "basis": "323690cb41ecc7556b3315623fe50b1a667580a3",
+    "geinstalleerdeBasis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, вміст особистих нотаток, подій календаря чи світлин, внутрішні адреси середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T07:40:35Z",
+      "stap": "Створено робочу гілку feature/klassiek-005-20261114-074035 від базової фіксації 323690cb41ecc7556b3315623fe50b1a667580a3 та зареєстровано завдання KLASSIEK-005."
+    },
+    {
+      "tijd": "2026-11-14T07:55:10Z",
+      "stap": "Доповнено src/hub-overzicht-maquette.css та src/werkblad/werkblad-maquette.css прагматичним класичним шаром без ореолів, градієнтних смуг поступу та жовтих прикрас у привітанні, з компактною смугою керування й оправами 16px / 11px."
+    },
+    {
+      "tijd": "2026-11-14T07:59:40Z",
+      "stap": "Узгоджено src/notities/notities-maquette.css та src/agenda/agenda-maquette.css із білою та чорною класичними палітрами включно з перенесеними діалоговими шарами в document.body, компактними діловими шапками та суцільними кнопками дії."
+    },
+    {
+      "tijd": "2026-11-14T08:05:30Z",
+      "stap": "Оформлено src/zoek/zoek-maquette.css та src/foto/foto-maquette.css із монохромними позначками джерел, нейтральним підсвічуванням збігів та темним висококонтрастним повноекранним оглядачем світлин в обох класичних темах; прогнано 21 тестовий набір і повне складання npm run build з кодом 0."
+    }
+  ],
+  "keuzes": [
+    "Перевизначення світлого режиму у всіх шести таблицях стилів головного простору обмежено селектором :not([data-maquette-stijl=\"klassiek\"]), щоб зберегти строгу монохромну палітру без блакитних чи смарагдових домішок.",
+    "Повноекранний переглядач світлин (.foto-viewer) та накладні позначки поверх зображень залишено на глибокому темному тлі з білим текстом в обох класичних темах задля незмінної читабельності поверх будь-яких світлин.",
+    "Плавні заокруглення 16px поверх глобального плоского режиму оболонки закріплено в окремих правилах рамок без відступів, завдяки чому мобільний каскад залишається непорушним."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-005.json",
+    "orchestratie/taken/KLASSIEK-005.json",
+    "src/agenda/agenda-maquette.css",
+    "src/foto/foto-maquette.css",
+    "src/hub-overzicht-maquette.css",
+    "src/notities/notities-maquette.css",
+    "src/werkblad/werkblad-maquette.css",
+    "src/zoek/zoek-maquette.css",
+    "tests/eenheid/klassiek-005a-werkblad.test.ts",
+    "tests/eenheid/klassiek-005b-notities-agenda.test.ts",
+    "tests/eenheid/klassiek-005c-zoek-foto.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-005 --fase overdracht — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, klassiek-001-kern, klassiek-005a-werkblad (10/10), klassiek-005b-notities-agenda (10/10), klassiek-005c-zoek-foto (12/12), contrast-knoppen-logos-20261021, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, schil-achtergrond-20261026, werkblad-indeling-20261022, werkblad-v3-normalisatie, werkblad-canvas-kern, werkblad-register-20261027, agenda-v3-20261028, hub-agenda-notities-20261019, zoek-diepe-link-20261105, zoek-in-menu-20261024, sec-002-afwerking-b-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка 12 кадрів hub.tarasevych.com (робочий стіл, недавнє, нотатки, пошук, календар, світлини, мобільні вигляди та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/hub-overzicht-maquette.css",
+    "src/werkblad/werkblad-maquette.css",
+    "src/notities/notities-maquette.css",
+    "src/agenda/agenda-maquette.css",
+    "src/zoek/zoek-maquette.css",
+    "src/foto/foto-maquette.css"
+  ],
+  "beperkingen": [
+    "Хвиля 4 (KLASSIEK-005) охоплює всі 7 вкладок головного вузла hub.tarasevych.com; вільне полотно Werkblad v3 та піддомен штучного інтелекту ai.tarasevych.com оформлюються на наступному кроці у Хвилі 5 (KLASSIEK-006)."
+  ]
+}

@@ -15,6 +15,7 @@ import { v2Agent, type AgentSlug } from '../../shared/connector-v2/agenten';
 import { BEVESTIGING_BADGE, MET_BEVESTIGING } from '../../shared/ai-bevestiging';
 import './connector-v2.css';
 import '../ai-bevestiging/bevestigingen.css';
+import '../agenten/agenten-kern-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 

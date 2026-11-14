@@ -1,14 +1,16 @@
-// Kamers: verdiepingen, schematische plattegrond (SVG) + lijst, kamer toevoegen/hernoemen/verplaatsen (geometrie met knoppen,
-// toegankelijk), kamerpaneel met apparaten en bediening, apparaat naar een kamer verplaatsen. Alleen leden met schrijfrecht bewerken.
+// Кімнати: поверхи, схематичний план поверху (SVG) та картковий перелік, додавання, перейменування й переміщення кімнати,
+// бічна панель кімнати з пристроями й керуванням. Редагують лише учасники з правом запису.
+// Kamers: verdiepingen, schematische plattegrond (SVG) en lijst, kamer toevoegen/hernoemen/verplaatsen en kamerpaneel met apparaten.
 import { useMemo, useState } from 'react';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize2, Minimize2, Pencil, Plus, Trash2 } from 'lucide-react';
-import type { Ruimte } from '../../../shared/huis-model';
+import { versheid, type Ruimte } from '../../../shared/huis-model';
 import type { OnderdeelProps } from '../HuisPagina';
 import ApparaatBediening from '../ApparaatBediening';
 import HuisLaag from '../HuisLaag';
 import { HuisFout, huisClient } from '../huis-client';
-import { foutTekst, hoofdTekst, soortTekst, tr } from '../tekst';
+import { foutTekst, hoofdTekst, soortTekst, toestandVan, tr } from '../tekst';
 import Plattegrond from './Plattegrond';
+import '../huis-ruimtes-maquette.css';
 
 export default function Kamers({ lang, smal, woningId, ov, vernieuw, toon }: OnderdeelProps) {
   const [verdieping, setVerdieping] = useState(ov.woning.verdiepingen[0]?.id ?? '0');
@@ -26,14 +28,14 @@ export default function Kamers({ lang, smal, woningId, ov, vernieuw, toon }: Ond
   const maak = () => { const n = nieuw.trim(); if (!n) return; void doe(() => huisClient.ruimteNieuw(woningId, { naam: n, verdieping }), tr(lang, 'Кімнату додано.', 'Kamer toegevoegd.')); setNieuw(''); };
   const schuif = (r: Ruimte, dx: number, dy: number, dw = 0, dh = 0) => doe(() => huisClient.ruimteWijzig(woningId, r.id, { geometrie: { x: Math.max(0, r.geometrie.x + dx), y: Math.max(0, r.geometrie.y + dy), w: Math.max(1, r.geometrie.w + dw), h: Math.max(1, r.geometrie.h + dh) } }));
   return (
-    <div className='hv-kamers'>
-      <div className='hv-werkbalk'>
+    <div className='hv-kamers' data-mq-sectie='kamers'>
+      <div className='hv-werkbalk' data-mq-werkbalk='verdiepingen'>
         <div className='hv-chips' role='tablist' aria-label={tr(lang, 'Поверхи', 'Verdiepingen')}>
           {ov.woning.verdiepingen.map((v) => <button key={v.id} type='button' role='tab' aria-selected={verdieping === v.id} className={`hv-chip${verdieping === v.id ? ' is-actief' : ''}`} onClick={() => setVerdieping(v.id)} data-hv-verdieping={v.id}>{v.naam}</button>)}
         </div>
         {mag ? <button type='button' className={`hv-knop is-klein${bewerk ? ' is-actief' : ''}`} aria-pressed={bewerk} onClick={() => setBewerk((b) => !b)} data-hv-plan-bewerk='1'><Pencil aria-hidden='true' />{bewerk ? tr(lang, 'Готово', 'Klaar') : tr(lang, 'Редагувати план', 'Plattegrond bewerken')}</button> : null}
       </div>
-      <section className='hv-blok'>
+      <section className='hv-blok' data-mq-blok='plattegrond'>
         <Plattegrond lang={lang} ruimtes={ov.ruimtes} apparaten={ov.apparaten} verdieping={verdieping} gekozen={kamer?.id} onKies={(r) => setOpen(r)} />
       </section>
       {mag ? (
@@ -42,12 +44,15 @@ export default function Kamers({ lang, smal, woningId, ov, vernieuw, toon }: Ond
           <button type='submit' className='hv-knop' disabled={!nieuw.trim() || bezig} data-hv-kamer-maak='1'><Plus aria-hidden='true' />{tr(lang, 'Додати', 'Toevoegen')}</button>
         </form>
       ) : null}
-      <ul className='hv-lijst' aria-label={tr(lang, 'Кімнати (список)', 'Kamers (lijst)')}>
+      <ul className='hv-lijst' data-mq-kamer-raster='1' aria-label={tr(lang, 'Кімнати (список)', 'Kamers (lijst)')}>
         {ov.ruimtes.filter((r) => r.verdieping === verdieping).map((r) => {
-          const n = ov.apparaten.filter((a) => a.ruimteId === r.id).length;
+          const inR = ov.apparaten.filter((a) => a.ruimteId === r.id);
+          const n = inR.length;
+          const lichtAan = inR.filter((a) => a.soort === 'light' && toestandVan(a, 'aan')?.waarde === true && versheid(toestandVan(a, 'aan')) === 'vers').length;
+          const kamerTemp = inR.map((a) => toestandVan(a, 'temperatuur')).find((t) => t && typeof t.waarde === 'number' && versheid(t) === 'vers');
           return (
-            <li key={r.id} data-hv-kamer={r.id}>
-              <button type='button' className='hv-lijst-knop' onClick={() => setOpen(r)}><strong>{r.naam}</strong><small>{n} {tr(lang, 'пристроїв', 'apparaten')} · {r.geometrie.w}×{r.geometrie.h}</small></button>
+            <li key={r.id} data-hv-kamer={r.id} data-mq-kamer-kaart={kamer?.id === r.id ? 'actief' : 'standaard'} data-mq-heeft-licht={lichtAan > 0 ? 'ja' : 'nee'}>
+              <button type='button' className='hv-lijst-knop' onClick={() => setOpen(r)}><strong>{r.naam}</strong><small>{n} {tr(lang, 'пристроїв', 'apparaten')} · {r.geometrie.w}×{r.geometrie.h}{kamerTemp ? ` · ${kamerTemp.waarde}${kamerTemp.eenheid}` : ''}{lichtAan ? ` · ${lichtAan} 💡` : ''}</small></button>
               {bewerk ? (
                 <span className='hv-plan-knoppen' role='group' aria-label={tr(lang, `Положення «${r.naam}»`, `Positie «${r.naam}»`)}>
                   <button type='button' className='hv-icoonknop' disabled={bezig} onClick={() => void schuif(r, -1, 0)} aria-label={tr(lang, 'Ліворуч', 'Naar links')}><ArrowLeft /></button>

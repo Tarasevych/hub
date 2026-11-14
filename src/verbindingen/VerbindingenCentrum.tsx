@@ -13,11 +13,51 @@ import type { CloudTaak } from '../../shared/cloud-overdracht-model';
 import { cloudClient, CloudFout, type IntegratiesUit } from '../cloud-vnext/cloud-client';
 import Logo from '../merk/MerkLogo';
 import { accountStand, probleemUitleg, soortVan, wanneer, type AccountStand, type Soort } from './verbindingen-logica';
+import { MaquetteHeld, MaquetteAnkerRail, type MaquetteAnkerItem } from '../maquette-kern';
+import { useIsMaquette } from '../thema/useThema';
 import './verbindingen.css';
+import '../cloud-klassiek-maquette.css';
 
 type Lang = 'uk' | 'nl';
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'uk' ? uk : nl);
 const POLL_MS = 3000, POLL_MAX_MS = 4 * 60_000;
+
+const MAQUETTE_VBC_TEKSTEN = {
+  uk: {
+    boven: 'ХМАРА · ЄДИНИЙ ЦЕНТР ПІДКЛЮЧЕНЬ',
+    voor: 'Ваші сховища.',
+    cursief: 'Прозорий контроль доступу.',
+    beschrijving: 'Переглядайте живий стан підключених облікових записів, фонову синхронізацію та перевірений каталог служб у єдиному студійному просторі.',
+    primair: 'Додати підключення',
+    secundair: 'До огляду хмари',
+    statWerkend: 'Працюють зараз',
+    statAandacht: 'Потребують уваги',
+    statBeschikbaar: 'Доступні до входу',
+    railTitel: 'Розділи підключень',
+    railOndertitel: 'Перетягніть до зручного краю',
+    ankerMijn: 'Мої підключення',
+    ankerCatalogus: 'Каталог служб',
+    ankerSync: 'Синхронізація',
+    ankerHistorie: 'Історія перенесень',
+  },
+  nl: {
+    boven: 'OPSLAG · CENTRUM VOOR KOPPELINGEN',
+    voor: 'Uw opslagruimtes.',
+    cursief: 'Helder overzicht en beheer.',
+    beschrijving: 'Bekijk de actuele staat van uw koppelingen, achtergrondsynchronisatie en de gecontroleerde dienstencatalogus in één studioruimte.',
+    primair: 'Koppeling toevoegen',
+    secundair: 'Naar opslagoverzicht',
+    statWerkend: 'Actief gekoppeld',
+    statAandacht: 'Vragen aandacht',
+    statBeschikbaar: 'Direct te koppelen',
+    railTitel: 'Onderdelen',
+    railOndertitel: 'Sleep naar een gewenste rand',
+    ankerMijn: 'Mijn koppelingen',
+    ankerCatalogus: 'Catalogus van diensten',
+    ankerSync: 'Synchronisatie',
+    ankerHistorie: 'Geschiedenis',
+  },
+} as const;
 
 /** Echte merkvormen uit src/merk (niets verzonnen); zonder sleutel tekent Logo een monogram. */
 export const MERK: Record<string, string> = {
@@ -51,15 +91,33 @@ function Uitleg({ lang, id, children }: { lang: Lang; id: string; children: stri
 const Badge = ({ soort, tekst }: { soort: string; tekst: string }) => <span className={`vbc-badge is-${soort}`}>{tekst}</span>;
 
 export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naarTab: (t: string) => void }) {
+  const isMaquette = useIsMaquette();
+  const mqTekst = MAQUETTE_VBC_TEKSTEN[lang];
   const [data, setData] = useState<IntegratiesUit | null>(null);
   const [taken, setTaken] = useState<CloudTaak[] | null>(null);
   const [fout, setFout] = useState('');
   const [laden, setLaden] = useState(true);
   const [bezig, setBezig] = useState(false);
   const [wachten, setWachten] = useState(false);
+  const [actiefAnker, setActiefAnker] = useState('vbc-mijn');
+  const [viewerOpen, setViewerOpen] = useState(() => typeof document !== 'undefined' && Boolean(document.documentElement.dataset.universeelBestandOpen || document.documentElement.dataset.driveViewerOpen));
   const poll = useRef<{ timer: number; tot: number; was: number } | null>(null);
   const catalogusRef = useRef<HTMLElement | null>(null);
   const foutTekst = (code: string) => code === 'NETWERK' || code === 'FOUT' ? tr(lang, 'Не вдалося отримати стан підключень. Перевірте зʼєднання і спробуйте ще раз.', 'De status van de koppelingen kon niet worden opgehaald. Controleer de verbinding en probeer opnieuw.') : tr(lang, 'Не вдалося отримати стан підключень.', 'De status van de koppelingen kon niet worden opgehaald.');
+
+  useEffect(() => {
+    const controleer = () => {
+      const html = document.documentElement;
+      setViewerOpen(Boolean(html.dataset.universeelBestandOpen || html.dataset.driveViewerOpen || document.querySelector('.drive-viewer-backdrop, .cloud-dialog-backdrop')));
+    };
+    controleer();
+    window.addEventListener('tsv:universeel-bestand-open', controleer);
+    window.addEventListener('tsv:cloud-viewer-open', controleer);
+    return () => {
+      window.removeEventListener('tsv:universeel-bestand-open', controleer);
+      window.removeEventListener('tsv:cloud-viewer-open', controleer);
+    };
+  }, []);
 
   const laad = useCallback(async (): Promise<IntegratiesUit | null> => {
     try { const v = await cloudClient.integraties(); setData(v); setFout(''); return v; }
@@ -109,17 +167,63 @@ export default function VerbindingenCentrum({ lang, naarTab }: { lang: Lang; naa
     return { ok, aandacht, beschikbaar, laatste };
   }, [data, gAccounts, m4Accounts]);
 
-  const naarCatalogus = () => { const el = catalogusRef.current; if (!el) return; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); (el.querySelector('h3') as HTMLElement | null)?.focus(); };
+  const springNaarSectie = useCallback((id: string) => {
+    setActiefAnker(id);
+    const doel = document.getElementById(id);
+    if (doel) doel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  const ankerItems = useMemo<MaquetteAnkerItem[]>(() => [
+    { id: 'vbc-mijn', label: mqTekst.ankerMijn, badge: telling.ok || undefined },
+    { id: 'vbc-catalogus', label: mqTekst.ankerCatalogus, badge: telling.beschikbaar || undefined },
+    { id: 'vbc-sync', label: mqTekst.ankerSync },
+    { id: 'vbc-historie', label: mqTekst.ankerHistorie },
+  ], [mqTekst, telling.ok, telling.beschikbaar]);
+
+  const naarCatalogus = () => { setActiefAnker('vbc-catalogus'); const el = catalogusRef.current; if (!el) return; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); (el.querySelector('h3') as HTMLElement | null)?.focus(); };
   const aanbieder = (id: string) => CLOUD_VNEXT_AANBIEDERS.find((a) => a.id === id);
   const naamFamilie = (id: string) => aanbieder(id)?.naam || id;
 
-  if (laden) return <div className='vbc' data-vbc-centrum='laden'><p className='vbc-hint' role='status' aria-busy='true'><LoaderCircle className='vbc-draai' aria-hidden='true' />{tr(lang, 'Перевіряємо підключення…', 'Koppelingen controleren…')}</p></div>;
+  if (laden) return <div className={`vbc${isMaquette ? ' mq-schil' : ''}`} data-mq-dienst={isMaquette ? 'cloud' : undefined} data-vbc-centrum='laden'><p className='vbc-hint' role='status' aria-busy='true'><LoaderCircle className='vbc-draai' aria-hidden='true' />{tr(lang, 'Перевіряємо підключення…', 'Koppelingen controleren…')}</p></div>;
 
   const groepen: Array<[Soort, CloudVnextAanbieder[]]> = (['verbonden', 'beschikbaar', 'beperkt', 'gepland', 'onmogelijk'] as Soort[]).map((s) => [s, CLOUD_VNEXT_AANBIEDERS.filter((a) => soortVan(a, data) === s)]);
   const heeftIets = gAccounts.length > 0 || m4Accounts.length > 0 || Boolean(data?.photos.gekoppeld);
 
   return (
-    <div className='vbc' data-vbc-centrum=''>
+    <div className={`vbc${isMaquette ? ' mq-schil' : ''}`} data-mq-dienst={isMaquette ? 'cloud' : undefined} data-vbc-centrum=''>
+      {isMaquette ? (
+        <>
+          <MaquetteHeld
+            id='mq-vbc-held'
+            dienst='cloud'
+            modus='volledig'
+            lang={lang}
+            opslagSleutel='cloud-verbindingen-v2'
+            bovenregel={mqTekst.boven}
+            titelVoor={mqTekst.voor}
+            titelCursief={mqTekst.cursief}
+            beschrijving={mqTekst.beschrijving}
+            primair={{ label: mqTekst.primair, onClick: naarCatalogus, icoon: '+' }}
+            secundair={{ label: mqTekst.secundair, onClick: () => naarTab('overview') }}
+            statistieken={[
+              { waarde: telling.ok, label: mqTekst.statWerkend },
+              { waarde: telling.aandacht, label: mqTekst.statAandacht },
+              { waarde: telling.beschikbaar, label: mqTekst.statBeschikbaar },
+            ]}
+          />
+          {!viewerOpen ? (
+            <MaquetteAnkerRail
+              lang={lang}
+              titel={mqTekst.railTitel}
+              ondertitel={mqTekst.railOndertitel}
+              items={ankerItems}
+              actief={actiefAnker}
+              onKies={springNaarSectie}
+              opslagSleutel='cloud-verbindingen-v2'
+            />
+          ) : null}
+        </>
+      ) : null}
       <header className='vbc-kop'>
         <div><h2 id='vbc-titel'>{tr(lang, 'Підключення', 'Koppelingen')}</h2><p className='vbc-hint'>{tr(lang, 'Ваші хмарні акаунти та сервіси в одному місці.', 'Uw cloudaccounts en diensten op één plek.')}</p></div>
         <button type='button' className='vbc-knop is-hoofd' onClick={naarCatalogus} data-vbc-actie='toevoegen'><Plus aria-hidden='true' />{tr(lang, 'Додати підключення', 'Koppeling toevoegen')}</button>

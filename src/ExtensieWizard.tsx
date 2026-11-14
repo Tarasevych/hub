@@ -6,6 +6,7 @@ import { Logo, type LogoKind, type Tr } from './mcp-ui';
 import { extensionInstallCommands } from './installeer-opdrachten';
 import { folderPickerSupported, installExtensionToPickedFolder, PickerFailure, SUBFOLDER } from './extensie-map-installeer';
 import './extensie-wizard.css';
+import './agenten/agenten-toegang-maquette.css';
 
 type BrowserKey = 'chrome' | 'edge' | 'opera' | 'brave' | 'vivaldi' | 'firefox' | 'safari';
 type OsKey = 'windows' | 'macos' | 'linux';

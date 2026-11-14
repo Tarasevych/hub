@@ -9,6 +9,7 @@ import { Knop, Melding, type Uitkomst } from '../ui';
 import { beperken, heropenen, intrekken, laadMijn, rijenVan, useMijnToegang } from './bron';
 import { Aftellen, Chips, RuimteBadge, tgFout } from './delen';
 import { METHODE_TEKST, METHODEN, PRIVE_DAGEN, PRIVE_HOSTS_STANDAARD, TECH_MINUTEN, nietKorter, type Methode, type Recht, type Ruimte, type ToegangRij } from './model';
+import '../agenten-toegang-maquette.css';
 
 const ICOON: Record<Methode, ReactNode> = { connector: <Plug />, token: <KeyRound />, apparaat: <Monitor />, extensie: <Globe />, lokaal: <Bot /> };
 /** Duurkeuzes technisch: nooit voorbij de lopende activering (servertijd), ≤ 480 min. */

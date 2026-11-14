@@ -23,6 +23,7 @@ import { klantVan } from '../../shared/ai-verbinding';
 import type { Tr } from '../mcp-ui';
 // SEC-002 extensie-02 (g10a-2): scopes geven en bewaren doet alleen de mens (zone + alleen een echte klik).
 import { alleenMens, geenAi } from '../menselijke-actie';
+import './agenten-toegang-maquette.css';
 
 export type ToegangVerbinding = { soort: 'oauth' | 'token'; id: string; naam: string };
 type T2 = (uk: string, nl: string) => string;

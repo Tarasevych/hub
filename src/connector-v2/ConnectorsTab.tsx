@@ -24,6 +24,7 @@ import { useTech, techActief } from '../tech/tech-opslag';
 import RechtenKiezer, { Schakelaar, groepIcoon } from './RechtenKiezer';
 import './connector-v2.css';
 import './beheer.css';
+import '../agenten/agenten-kern-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Keuze = { kanten: Kant[]; sleutels: string[] };
@@ -341,7 +342,7 @@ function MassaVenster({ tr, uk, voorbeeld, bezig, melding, klaar, onAnnuleer, on
   const herverbinden = voorbeeld.filter((v) => v.uitbreiding && v.verbonden).length;
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape' && !bezig) onAnnuleer(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [bezig, onAnnuleer]);
   return (
-    <div className='v2b-overlay' role='presentation' onMouseDown={(e) => { if (e.target === e.currentTarget && !bezig) onAnnuleer(); }}>
+    <div className='v2b-overlay' data-mq-laag-open='1' role='presentation' onMouseDown={(e) => { if (e.target === e.currentTarget && !bezig) onAnnuleer(); }}>
       <div className='v2b-venster' role='dialog' aria-modal='true' aria-labelledby='v2b-venster-titel'>
         <header>
           <h3 id='v2b-venster-titel'>{klaar ? tr('Готово', 'Klaar') : tr('Перевірте зміни перед застосуванням', 'Controleer de wijzigingen voor het toepassen')}</h3>

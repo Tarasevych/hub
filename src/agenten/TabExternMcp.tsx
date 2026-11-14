@@ -24,6 +24,7 @@ import { foutTekst } from './fouten';
 import ExterneHosts from '../besluit/ExterneHosts'; // witte lijst beheren met een passkey-besluit (zone B 22.10.2026, RUNBOOK §15)
 import GeheimInvoer from '../geheim/GeheimInvoer';
 import McpInspectorStudio from './McpInspectorStudio';
+import './agenten-inspectie-maquette.css';
 
 type Hulpmiddel = {
   naam: string; titel: string; beschrijving: string; alleenLezen: boolean; destructief: boolean; aan: boolean;

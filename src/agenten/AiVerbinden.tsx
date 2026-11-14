@@ -18,6 +18,7 @@ import { adressen, EenKlikFout, verbindInEenKlik, type Doel } from './een-klik';
 import { Knop, Melding, Segment, useActies } from './ui';
 // SEC-002 extensie-02/-09 (g10a-2/-3): een AI geeft zichzelf geen token (zone + alleen een echte klik) en leest het verse token niet.
 import { alleenMens, geenAi, verborgenVoorAi } from '../menselijke-actie';
+import './agenten-toegang-maquette.css';
 
 type Resultaat = { soort: 'oauth' | 'token'; token: string; refresh?: string; verloopt: number | null; endpoint: string; naam: string };
 

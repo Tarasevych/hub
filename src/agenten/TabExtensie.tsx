@@ -16,6 +16,7 @@ import AgentKleuren from './AgentKleuren';
 import LokaleAiPaneel from '../extensie/LokaleAiPaneel';
 import '../extensie/BrowserEnAgenten.css';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 type PanelAgents = Parameters<typeof BrowserExtensionPanel>[0]['agentsExtern'];
 

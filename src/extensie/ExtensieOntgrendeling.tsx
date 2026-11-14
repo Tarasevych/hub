@@ -21,6 +21,7 @@ import { eindeWeergave } from '../../shared/extensie-matrix';
 import { weigeringZin } from '../../shared/weigering-tekst';
 import { extensieLive, restTekst, useExtensieLive, type ExtensieLive, type ExtensieLiveStore, type Slot } from './extensie-live';
 import './ExtensieOntgrendeling.css';
+import '../agenten/agenten-toegang-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 type Tekst2 = { uk: string; nl: string };
