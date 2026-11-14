@@ -52,9 +52,9 @@ html.palet-maquette :is(.ag-pagina, .ag, .v2b, .v2-tab, .v2-kiezer, .v2-wizard, 
   --ag-r: 16px;
 
   --v2-g: var(--mq-ag-accent);
-  --v2-g-zacht: color-mix(in srgb, var(--mq-ag-accent) 14%, transparent);
-  --v2-b: var(--mq-tech-markering);
-  --v2-b-zacht: color-mix(in srgb, var(--mq-tech-markering) 14%, transparent);
+  --v2-g-zacht: var(--mq-ag-gloed-zacht);
+  --v2-b: var(--warn);
+  --v2-b-zacht: var(--warn-zacht);
   --v2-uit: var(--mq-stil);
   --v2-laag: var(--ok);
   --v2-midden: var(--warn);
