@@ -171,6 +171,23 @@
 .tga-voorbeeld-andere ul{margin:4px 0 0;padding-left:18px;font-size:12.5px}
 
 /* Усі медіа-правила зосереджено в кінці файла, щоб жодне базове правило не перебивало мобільний каскад. */
+.tg2-wie{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .8rem;padding:.5rem .7rem;border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:12px}
+.tg2-persoon{display:inline-flex;align-items:center;gap:.5rem;min-width:0}.tg2-persoon img,.tg2-letter{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
+.tg2-letter{display:grid;place-items:center;background:var(--info-vlak,#1d77b5);color:var(--text-on-vlak,#fff);font-weight:700}
+.tg2-persoon strong{display:block;overflow-wrap:anywhere}.tg2-persoon small{display:block;opacity:.75}
+/* TELEGRAM-002: wachten op het pictogram, stappen, geschiedenis van het Telegram-profiel */
+.tg2-wacht{display:grid;gap:.6rem;justify-items:stretch}
+.tg2-vraag{font-weight:650;text-align:center;margin:0;font-size:1.05rem}
+.tg2-stappen{margin:0 0 0 1.3rem;padding:0;display:grid;gap:.3rem}
+.tg2-stappen li.is-klaar{color:color-mix(in srgb,currentColor 60%,transparent)}.tg2-stappen li.is-klaar::marker{content:'✓  '}
+.tg2-stappen li.is-nu{font-weight:600}
+.tg2-waarom{margin:0;padding:.6rem .8rem;border-radius:10px;background:color-mix(in srgb,#2AABEE 10%,transparent);font-size:.9rem}
+.tg2-geschiedenis{margin:.4rem 0;border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:10px;padding:.4rem .7rem}
+.tg2-geschiedenis summary{cursor:pointer;font-weight:600}
+.tg2-fotos{list-style:none;margin:.5rem 0;padding:0;display:flex;flex-wrap:wrap;gap:.6rem}
+.tg2-fotos li{display:grid;justify-items:center;gap:.2rem;max-width:7rem;text-align:center}.tg2-fotos img{border-radius:50%;object-fit:cover}
+.tg2-fotos li.is-huidig img{outline:3px solid #229ED9;outline-offset:2px}
+.tg2-velden{width:100%;border-collapse:collapse;font-size:.88rem}.tg2-velden th,.tg2-velden td{text-align:left;padding:.25rem .4rem;border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent);overflow-wrap:anywhere}
 @media (max-width:720px){
   .tga-vergelijk{grid-template-columns:minmax(0,1fr)}
 }

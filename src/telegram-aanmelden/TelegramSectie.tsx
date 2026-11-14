@@ -289,8 +289,29 @@ function IdentiteitVergelijking({ lang, site, tg, fotoUrl }: { lang: Lang; site:
   </div>;
 }
 
+// TELEGRAM-002: alle foto's en wijzigingen van naam/nummer blijven bewaard (eis van de eigenaar) — hier zichtbaar, niets verwijderd.
+type FotoItem = { foto: string; eerstGezien: string; laatstGezien: string; huidig: boolean };
+type VeldItem = { veld: string; oud: string; nieuw: string; op: string; uitkomst: string };
+const VELD_NAAM: Record<string, [string, string]> = { telefoon: ['Телефон', 'Telefoon'], gebruikersnaam: ['Ім’я користувача', 'Gebruikersnaam'], voornaam: ['Ім’я', 'Voornaam'],
+  achternaam: ['Прізвище', 'Achternaam'], telegramId: ['Ідентифікатор Telegram', 'Telegram-ID'], apparaat: ['Пристрій', 'Apparaat'] };
+function Geschiedenis({ lang, fotos, velden }: { lang: Lang; fotos: FotoItem[]; velden: VeldItem[] }) {
+  if (fotos.length <= 1 && !velden.length) return null;
+  return <details className='tg2-geschiedenis'>
+    <summary>{tr(lang, `Історія профілю Telegram (${fotos.length} фото, ${velden.length} змін)`, `Geschiedenis van het Telegram-profiel (${fotos.length} foto's, ${velden.length} wijzigingen)`)}</summary>
+    <p className='tga-klein'>{tr(lang, 'Ми зберігаємо кожне фото й кожну зміну імені чи номера, щоб ви могли простежити, хто й коли користувався цим Telegram. Нічого не видаляється.', 'We bewaren elke foto en elke wijziging van naam of nummer, zodat u kunt nagaan wie deze Telegram wanneer gebruikte. Er wordt niets verwijderd.')}</p>
+    {fotos.length > 0 && <ul className='tg2-fotos'>{fotos.map((f, i) => <li key={i} className={f.huidig ? 'is-huidig' : ''}>
+      {f.foto ? <img src={f.foto} alt={tr(lang, 'Фото профілю', 'Profielfoto')} width={56} height={56} /> : <span className='tga-geen-foto' aria-hidden='true'>?</span>}
+      <span className='tga-klein'>{f.huidig ? tr(lang, 'зараз', 'nu') : `${tijd(f.eerstGezien, lang)} – ${tijd(f.laatstGezien, lang)}`}</span>
+    </li>)}</ul>}
+    {velden.length > 0 && <table className='tg2-velden'><thead><tr><th>{tr(lang, 'Коли', 'Wanneer')}</th><th>{tr(lang, 'Що', 'Wat')}</th><th>{tr(lang, 'Було', 'Was')}</th><th>{tr(lang, 'Стало', 'Werd')}</th></tr></thead>
+      <tbody>{velden.map((v, i) => <tr key={i}><td>{tijd(v.op, lang)}</td><td>{tr(lang, VELD_NAAM[v.veld]?.[0] ?? v.veld, VELD_NAAM[v.veld]?.[1] ?? v.veld)}</td><td>{v.oud || '—'}</td><td>{v.nieuw || '—'}</td></tr>)}</tbody></table>}
+  </details>;
+}
+
 function KoppelingKaart({ ctx, lang, k, site, opslaan, ontkoppelen, opnieuw }: { ctx: Ctx; lang: Lang; k: Koppeling; site: SiteProfiel; opslaan: (naam: string, rechten: KoppelRecht[]) => Promise<void>; ontkoppelen: () => Promise<void>; opnieuw: () => void }) {
   const [foto, setFoto] = useState('');
+  const [fotos, setFotos] = useState<FotoItem[]>([]);
+  const [velden, setVelden] = useState<VeldItem[]>([]);
   const [naam, setNaam] = useState(k.naam);
   const [naamOpen, setNaamOpen] = useState(false);
   const [rechten, setRechten] = useState<KoppelRecht[]>(k.rechten);
@@ -299,7 +320,9 @@ function KoppelingKaart({ ctx, lang, k, site, opslaan, ontkoppelen, opnieuw }: {
   useEffect(() => { setNaam(k.naam); setRechten(k.rechten); }, [k.naam, k.rechten]);
   const heeftFoto = Boolean(k.vingerafdruk?.fotoId || k.fotoId || k.heeftFoto);
   useEffect(() => {
-    if (heeftFoto) void tgPost<{ foto: string }>(ctx, '/api/owner/telegram/foto', { koppelingId: k.id }).then((r) => setFoto(r.foto)).catch(() => undefined);
+    // TELEGRAM-002: ook zonder huidige foto ophalen — de geschiedenis (eerdere foto's, wijzigingen van naam/nummer) blijft bewaard.
+    void tgPost<{ foto: string; geschiedenis?: FotoItem[]; velden?: VeldItem[] }>(ctx, '/api/owner/telegram/foto', { koppelingId: k.id })
+      .then((r) => { setFoto(r.foto); setFotos(r.geschiedenis ?? []); setVelden(r.velden ?? []); }).catch(() => undefined);
   }, [ctx, k.id, heeftFoto]);
 
   const tgGegevens: TgIdentiteitGegevens = {
@@ -342,6 +365,7 @@ function KoppelingKaart({ ctx, lang, k, site, opslaan, ontkoppelen, opnieuw }: {
     {toelichting && <p className={k.stand === 'geblokkeerd' ? 'tga-fout' : 'tga-let'}>{lang === 'nl' ? toelichting[1] : toelichting[0]}</p>}
 
     <IdentiteitVergelijking lang={lang} site={site} tg={tgGegevens} fotoUrl={foto} />
+    <Geschiedenis lang={lang} fotos={fotos} velden={velden} />
 
     {k.stand !== 'uitgeschakeld' && <>
       <fieldset className='tga-rechten'><legend>{tr(lang, 'Дозволи цієї прив’язки', 'Rechten van deze koppeling')}</legend>
