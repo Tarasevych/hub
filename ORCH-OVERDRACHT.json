@@ -64,7 +64,10 @@
     "e6cebfa48b77ee91de1949e3cc69d30c8c0aa429",
     "c130d0b3dd77f9250adf2812957aed0064923dc4",
     "baf9a7f1a12e80a270317489fed1bded9d954c42",
-    "62ec9079ece698fd64e07621ea964bf9b7b3b28c"
+    "62ec9079ece698fd64e07621ea964bf9b7b3b28c",
+    "d219a21e456d180d68b0f43693f9c6c6eaa013ac",
+    "fff902985f03ecd41cd914a6239d8ed66a71c69f",
+    "2790539b7e4734dc87e4b595d0bebd5fdce28f35"
   ],
   "bestanden": {
     "gewijzigd": [
@@ -289,11 +292,11 @@
     "nl": "Accountcentrum in het goedgekeurde ontwerp v49: 153 posities gecontroleerd, bestaande functies aangesloten, ontbrekende gebouwd en vanuit elke betrokken persoon getest. Bovenop 20261114-111234."
   },
   "tests": {
-    "geslaagd": 78,
+    "geslaagd": 52,
     "mislukt": 0,
     "uitleg": {
-      "uk": "модульні набори зелені; e2e: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ 80/80, запасні коди 20/20, два пристрої, шифрування/гостьові коди/відновлення 63/63",
-      "nl": "unitsuites groen; e2e: menu, thema, blokken, delen, herstelcodes, sessies, kluis 63/63"
+      "uk": "модульні набори зелені (злитий код); e2e: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ 80/80, запасні коди 20/20, два пристрої, шифрування/гостьові/відновлення 63/63, гостьові коди 43/43, входи й ключі 68/68, звірка v49 (D1), знімки 12 розділів (D3)",
+      "nl": "unitsuites groen; e2e: menu, thema, blokken, delen, herstelcodes, sessies, kluis, gastcodes, aanmelden, v49, schermen"
     },
     "falend": []
   },
@@ -302,5 +305,5 @@
     "nl": "Sleutels van externe diensten en e-mail/sms-verzending — instelling van de eigenaar. Niet geïnstalleerd."
   },
   "conflicten": [],
-  "aangemaakt": "2026-11-14T17:11:49.760Z"
+  "aangemaakt": "2026-11-14T17:21:33.427Z"
 }
