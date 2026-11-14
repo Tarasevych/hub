@@ -22,13 +22,14 @@ import { gegevensRuimteVeilig } from './ruimte-scheiding';
 import { stapOpSessieId, stapOpVerbruiken, type StapOpAuth } from './stap-op';
 import { KEK_INFO, KLUIS_TEKST, omslagAad } from '../shared/sleutelkluis';
 import {
-  SleutelkluisFout, dekVoorBrowser, herversleutelen, inschakelen, ontgrendelMetPasskey,
-  overzicht, passkeyOmslagOpslaan, passkeyOmslagWeg, passkeyOmslagen, sleutelSluitenVoorHouder, type KluisLade,
+  SleutelkluisFout, apparaatLabel, apparaatOnthouden, apparaatVergeten, dekVoorBrowser, herversleutelen, inschakelen, ontgrendelMetApparaat,
+  ontgrendelMetPasskey, overzicht, passkeyOmslagOpslaan, passkeyOmslagWeg, passkeyOmslagen, sleutelSluitenVoorHouder, type KluisLade,
 } from './sleutelkluis';
 import {
   herstelcodeBevestigen, herstelcodeVernieuwenVeilig, herstelcodeWacht, kluisZonderOmslag, ontgrendelMetHerstelcodeVeilig, weesKluisHerstellen,
 } from './sleutelkluis-herstel';
 import { magEigenToegang } from '../shared/eigen-toegang'; // IDENTITEIT-012
+import { huidigeContext } from '../server/platform/context';
 
 type Gebruiker = { id: string; email?: string; name?: string; role?: string; status?: string };
 type Auth = StapOpAuth & { user: Gebruiker; service: string };
@@ -203,6 +204,23 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       const rij = await assertieControleren(a, b);
       await ontgrendelMetPasskey(lade, String(rij.id), b.dek, houder(a));
       return { ok: true, stand: 'open' };
+    })],
+    // KLUIS-APPARAAT-001 (0277): dit apparaat onthouden / er mee ontgrendelen / het vergeten. Agents komen hier nooit (agent-namens.ts).
+    // Onthouden: alleen een sessie die de sleutel ZELF open houdt; terug gaat X = DEK ⊕ S, dat de browser onder een niet-exporteerbare
+    // sleutel bewaart. Ontgrendelen: X terug, de server rekent DEK = X ⊕ S en controleert hem. Geen step-up nodig: wie X heeft, heeft het
+    // apparaat waar de mens al ontgrendelde, en de sessie zelf is de aanmelding. Grenzen per mens (begrens, failClosed).
+    [`POST ${P}/apparaat/onthouden`]: [route({}, async (a, lade) => {
+      await begrens(a, 'apparaat-onthouden', 10, 3600);
+      return { ok: true, ...(await apparaatOnthouden(lade, houder(a), apparaatLabel(huidigeContext()?.ua))) };
+    })],
+    [`POST ${P}/apparaat/ontgrendelen`]: [route({}, async (a, lade, b) => {
+      await begrens(a, 'apparaat', 30, 600);
+      await ontgrendelMetApparaat(lade, b.apparaatId, b.deel, houder(a));
+      return { ok: true, stand: 'open' };
+    })],
+    [`POST ${P}/apparaat/vergeten`]: [route({}, async (a, lade, b) => {
+      await begrens(a, 'apparaat-vergeten', 30, 600);
+      return { ok: await apparaatVergeten(lade, b.apparaatId) };
     })],
     // IDENTITEIT-015 (етап 1.3): старт скидає перебіг; maxTabellen — скільки таблиць за цей запит (сторінка робить кроки по одній
     // й показує «оброблено N з M»). Без maxTabellen — усе одразу, як раніше.

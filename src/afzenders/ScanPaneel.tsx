@@ -21,7 +21,7 @@ const I = { width: 16, height: 16 } as const;
 export const getal = (lang: Lang, n: number) => n.toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE');
 export const datumTijd = (lang: Lang, v: string | number | null | undefined) => (v ? new Date(v).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
 const FOUT: Record<string, [string, string]> = {
-  SLEUTELKLUIS_GESLOTEN: ['Ключ даних закритий. Розблокуйте його в розділі «Способи входу → Шифрування моїх даних», перш ніж перевіряти скриньку.', 'De gegevenssleutel is gesloten. Ontgrendel hem bij Aanmeldmethoden → Versleuteling van mijn gegevens voordat u de mailbox controleert.'],
+  SLEUTELKLUIS_GESLOTEN: ['Ваші дані зараз зашифровані. Натисніть «Розшифрувати» в картці вгорі сторінки, потім перевірте скриньку знову.', 'Uw gegevens zijn nu versleuteld. Klik op «Ontsleutelen» in de kaart bovenaan de pagina en controleer de mailbox daarna opnieuw.'],
   GOOGLE_MAIL_ACCOUNT_NOT_CONNECTED: ['Поштовий акаунт Google не підключено.', 'Geen Google-mailaccount gekoppeld.'],
   GOOGLE_MAIL_RATE_LIMITED: ['Gmail тимчасово обмежив запити. Продовжіть пізніше — перевірка почнеться з місця зупинки.', 'Gmail beperkt tijdelijk de verzoeken. Ga later verder — de controle hervat waar hij stopte.'],
   GOOGLE_MAIL_REAUTH_REQUIRED: ['Потрібно знову підключити Gmail.', 'Gmail moet opnieuw gekoppeld worden.'],
