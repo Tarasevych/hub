@@ -415,9 +415,11 @@ export const invitesClient = {
     try { sessionStorage.removeItem(INVITE_STORAGE_KEY); } catch { /* negeren */ }
   },
   /** Bouw een absolute uitnodigingslink, bijv. path '#/join' of '/join' of '?join=1'. */
-  buildJoinUrl(code: string, options: { path?: string } = {}): string {
+  // IDENTITEIT-014: `origin` — op welke host de link opent. Een link die op id.* wordt gemaakt moet naar de hub (alleen die leest
+  // de code, slaat hem op en sluit aan); sessionStorage hoort bij één host. / Посилання з id.* має вести на hub.
+  buildJoinUrl(code: string, options: { path?: string; origin?: string } = {}): string {
     const target = options.path || '/';
-    const base = `${location.origin}/`;
+    const base = `${options.origin || location.origin}/`;
     if (target.startsWith('#')) {
       const [hashPath, hashQuery = ''] = target.split('?', 2);
       const params = new URLSearchParams(hashQuery);

@@ -28,6 +28,14 @@ export function deelWeigering(e: unknown): Paar | null {
   if (code === 'RBAC_ROLE_FORBIDDEN') return ['Ви не можете надати таку роль: вона вища за вашу власну. Виберіть нижчу роль.', 'U kunt deze rol niet geven: hij is hoger dan uw eigen rol. Kies een lagere rol.'];
   if (code === 'SCOPE_BLOCKS_INVALID') return ['Вибрані блоки більше не належать до цього простору. Оновіть сторінку й виберіть їх знову.', 'De gekozen blokken horen niet meer bij deze ruimte. Ververs de pagina en kies ze opnieuw.'];
   if (code === 'Valid email required') return ['Перевірте адресу пошти: вона не схожа на справжню.', 'Controleer het e-mailadres: het lijkt niet echt.'];
+  // IDENTITEIT-014: відмови під час вступу за запрошенням (POST /api/share/join) — що сталося і що робити далі.
+  // Weigeringen bij aansluiten via een uitnodiging: wat er gebeurde en wat de mens nu kan doen.
+  if (code === 'invite_expired') return ['Запрошення прострочене: воно діяло 7 днів. Попросіть того, хто вас запросив, надіслати нове.', 'De uitnodiging is verlopen: ze was 7 dagen geldig. Vraag wie u uitnodigde om een nieuwe te sturen.'];
+  if (code === 'invite_used') return ['Це посилання вже використано: воно одноразове. Попросіть нове посилання.', 'Deze link is al gebruikt: hij werkt maar één keer. Vraag om een nieuwe link.'];
+  if (code === 'invite_revoked') return ['Запрошення відкликали — доступу за ним немає. Якщо це помилка, зверніться до того, хто вас запросив.', 'De uitnodiging is ingetrokken — ze geeft geen toegang. Is dat een vergissing, neem dan contact op met wie u uitnodigde.'];
+  if (code === 'invite_not_found') return ['Запрошення не знайдено: посилання неповне або неправильне. Перевірте, чи скопійовано його повністю.', 'Uitnodiging niet gevonden: de link is onvolledig of fout. Controleer of hij helemaal is gekopieerd.'];
+  if (code === 'invite_not_allowed') return ['Це запрошення призначене для іншої адреси. Увійдіть з тією адресою, на яку його надіслали.', 'Deze uitnodiging is voor een ander adres. Meld u aan met het adres waarnaar ze is gestuurd.'];
+  if (code === 'INVITE_INVITER_NOT_ALLOWED') return ['Той, хто вас запросив, більше не може надавати доступ до цього простору, тож запрошення не діє. Попросіть власника простору.', 'Wie u uitnodigde, mag geen toegang tot deze werkruimte meer geven, dus de uitnodiging werkt niet. Vraag het de eigenaar van de werkruimte.'];
   return null;
 }
 

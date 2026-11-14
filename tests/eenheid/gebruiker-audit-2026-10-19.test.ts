@@ -197,7 +197,10 @@ export async function main(): Promise<number> {
   // ---------------------------------------------------------------- U-05 / U-06 / TOK-01
   {
     const scv = bron('src/InstellingencentrumWeergave.tsx');
-    check('U-05 delen: Учасник ziet «Надати доступ»/«Приватне посилання» uit, met uitleg; eigenaar/beheerder niet', scv.includes("const magDelen=p.user.role==='owner'||p.user.role==='admin';") && scv.includes("data-delen-uitleg='1'") && scv.includes("disabled={!magDelen||!workspaceId||p.busy}><Share2/>") && scv.includes("onClick={()=>void createLink()} disabled={!magDelen||!workspaceId||p.busy}"));
+    // IDENTITEIT-014: «mag delen» kijkt sinds fase 3 naar de rol in de GEKOZEN ruimte (useDelen → shared/werkruimte-rechten.ts), niet naar
+    // de rol op de site (p.user.role): een beheerder van een gedeelde ruimte mag daar delen, een sitebeheerder die er kijker is niet.
+    // Dezelfde garantie als U-05 (knoppen uit + uitleg), op de nieuwe plek; het gedrag zelf test tests/eenheid/identiteit-014-delen.test.ts.
+    check('U-05 delen: wie in de gekozen ruimte geen eigenaar/beheerder is, ziet «Надати доступ»/«Приватне посилання» uit, met uitleg', scv.includes("const magDelenHier=delen.mag;") && scv.includes("data-delen-uitleg='1'") && scv.includes("{waaromNiet(p.lang,delen.rol)}") && scv.includes("disabled={!magDelenHier||!deelGekozen||p.busy}><Share2/>") && scv.includes("onClick={()=>void createLink()} disabled={!magDelenHier||!deelGekozen||p.busy}") && !scv.includes("p.user.role==='owner'||p.user.role==='admin';body="));
     check('U-06 profielkaart toont de rolnaam (Власник/Адміністратор/Учасник/Глядач), niet «Повний доступ» voor iedereen', scv.includes("<small data-rol={p.user.role}>") && scv.includes("tr('Учасник','Deelnemer')}{p.user.accessLevel==='limited'") && !scv.includes("tr('Повний доступ','Volledige toegang')"));
     const ai = bron('src/agenten/AiVerbinden.tsx');
     check('TOK-01 #tokens: naamveld voor het token; `klant` blijft het bord-id', ai.includes("data-token-naam='1'") && ai.includes("name: tokenNaam.trim().slice(0, 80) || (k.id === 'overig' ? 'agent' : k.id), klant: k.id,"));

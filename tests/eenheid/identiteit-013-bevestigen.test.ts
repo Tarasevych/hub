@@ -37,7 +37,11 @@ export async function main(): Promise<number> {
     ['src/toegangslaag-panelen.tsx', 'wachtwoord-verwijderen', 'прибрати пароль (стара панель)'],
     ['src/aanmeld-vnext/onderdelen/MethodeDetail.tsx', 'wachtwoord-verwijderen', 'прибрати пароль (нова панель)'],
     ['src/ZijbalkInstellingen.tsx', 'concepten-uit', 'вимкнути чернетки'],
-    ['src/App.tsx', 'deel-intrekken', 'відкликати учасника'],
+    // IDENTITEIT-014: список учасників (і діалог відкликання) переїхав у спільний src/delen/LedenLijst.tsx — його рендерять і hub, і центр налаштувань.
+    ['src/delen/LedenLijst.tsx', 'deel-intrekken', 'відкликати учасника'],
+    ['src/delen/LedenLijst.tsx', 'deel-rol-beheerder', 'зробити учасника адміністратором'],
+    ['src/App.tsx', 'deel-toegang-geven', 'надати доступ (hub)'],
+    ['src/InstellingencentrumWeergave.tsx', 'deel-toegang-geven', 'надати доступ (центр налаштувань)'],
     ['src/InstellingencentrumWeergave.tsx', 'ruimte-herstellen', 'відновити простір'],
     ['src/InstellingencentrumWeergave.tsx', 'account-verwijderen', 'видалити обліковий запис'],
   ];
@@ -48,8 +52,9 @@ export async function main(): Promise<number> {
   const zijbalk = lees('src/ZijbalkInstellingen.tsx');
   check('чернетки: у діалозі видно, скільки буде видалено', zijbalk.includes('conceptAantal()') && /aantal=\{/.test(zijbalk));
   check('concepten.ts віддає публічний лічильник', /export const conceptAantal/.test(lees('src/concepten.ts')));
-  const app = lees('src/App.tsx');
-  check('відкликання учасника не відбувається одразу після кліку', /intrekDoel/.test(app) && !/onClick=\{\(\)=>\s*void revokeShare/.test(plat(app)));
+  // IDENTITEIT-014: intrekDoel живе тепер у src/delen/LedenLijst.tsx; у src/App.tsx прямого виклику відкликання теж немає.
+  const app = lees('src/App.tsx'), ledenLijst = lees('src/delen/LedenLijst.tsx');
+  check('відкликання учасника не відбувається одразу після кліку', /intrekDoel/.test(ledenLijst) && !/onClick=\{\(\)=>\s*void (revokeShare|p\.onIntrekken|delen\.intrekken)/.test(plat(ledenLijst) + plat(app)));
 
   // ------------------------------------------------------------------ 3. правдиві тексти видалення
   const centrum = lees('src/InstellingencentrumWeergave.tsx');
@@ -97,7 +102,9 @@ export async function main(): Promise<number> {
     g.document = docOud;
   }
   check('текст невдалого копіювання — двома мовами', kyr.test(KOPIEER_MISLUKT[0]) && !kyr.test(KOPIEER_MISLUKT[1]));
-  for (const b of ['src/App.tsx', 'src/InstellingencentrumWeergave.tsx', 'src/McpDienstWeergave.tsx']) {
+  // IDENTITEIT-014: копіювання посилання в hub робить спільний хук src/delen/useDelen.ts (App.tsx лише викликає delen.kopieren).
+  check('src/App.tsx: без прямого navigator.clipboard.writeText', !/navigator\.clipboard\.writeText/.test(lees('src/App.tsx')));
+  for (const b of ['src/delen/useDelen.ts', 'src/InstellingencentrumWeergave.tsx', 'src/McpDienstWeergave.tsx']) {
     check(`${b}: копіювання через kopieerTekst, не напряму`, lees(b).includes('kopieerTekst') && !/navigator\.clipboard\.writeText/.test(lees(b)));
   }
 

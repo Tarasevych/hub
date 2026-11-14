@@ -101,9 +101,12 @@ export async function main(): Promise<number> {
       !!bw && beheerCodes.every((c) => !!bw({ message: c })) && bw({ message: 'HTTP_500' }) === null);
     if (dw) for (const c of ['RATE_LIMITED', 'SHARE_SELF', 'RBAC_ROLE_FORBIDDEN', 'SCOPE_BLOCKS_INVALID']) { const p = dw({ message: c }); if (p) paar(`delen ${c}`, p[0], p[1]); }
     if (bw) for (const c of beheerCodes) { const p = bw({ message: c }); if (p) paar(`beheer ${c}`, p[0], p[1]); }
-    const vd = lees('src/VerenigdDienstApp.tsx'), app = lees('src/App.tsx');
-    check('delen en beheer: de drie schermen gebruiken de uitleg (App.tsx, VerenigdDienstApp: delen + runAdmin)',
-      app.includes('const w = deelWeigering(e); if (w) { setMessage(') && vd.includes('const w=deelWeigering(e);if(w){say(w[0],w[1]);return}') && vd.includes('const w=beheerWeigering(e);if(w){say(w[0],w[1])'));
+    // IDENTITEIT-014: per adres uitnodigen in de hub gebeurt nu in de gedeelde hook src/delen/useDelen.ts (zelfde uitleg via deelWeigering);
+    // App.tsx gebruikt deelWeigering nog bij aansluiten via een uitnodiging (verlopen/gebruikt/ingetrokken).
+    // shareSettingsEmail (VerenigdDienstApp) geeft sinds IDENTITEIT-014 false terug bij een weigering (het adres blijft dan staan): «return false}».
+    const vd = lees('src/VerenigdDienstApp.tsx'), app = lees('src/App.tsx'), hook = lees('src/delen/useDelen.ts');
+    check('delen en beheer: de drie schermen gebruiken de uitleg (App.tsx + useDelen, VerenigdDienstApp: delen + runAdmin)',
+      app.includes('const w = deelWeigering(e); if (w) { setMessage(') && hook.includes('const w = deelWeigering(e); if (w) { melding(w); return false; }') && vd.includes('const w=deelWeigering(e);if(w){say(w[0],w[1]);return false}') && vd.includes('const w=beheerWeigering(e);if(w){say(w[0],w[1])'));
     const agf = lees('src/agenten/fouten.ts');
     check('MCP-console (toets-g10d №5): TOOL_FAILED toont het incidentnummer (alleen een veilig nummer) en zegt wat te doen', agf.includes("if (code === 'TOOL_FAILED')") && agf.includes('/^[A-Za-z0-9-]{1,40}$/.test(nr)') && /номер для власника/.test(agf));
     const huisInt = lees('src/huis/onderdelen/Integraties.tsx');
