@@ -3,10 +3,11 @@
 // накласти на чисту гілку від базового commit → виявити зміни → перевірити конфлікти з integratie → тести → запис → черга.
 // Нічого не перезаписується тихо: кожна передача — власна гілка; integratie змінює лише «wachtrij klaar» після явного злиття.
 // Inleveren van agentresultaten uit elk kanaal via één pijplijn; niets wordt stil overschreven.
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { KANALEN, SHA40, TAR_NAAM, herkenKanaal, padVeilig, valideerOverdracht, vergelijkBestanden, versheid, wachtrijVoegToe } from './kern.mjs';
 import { MAX_UITGEPAKT_BYTES, controleerTarGzVooraf, controleerZipVooraf, leesOverdrachtZip, omvangVanMap } from './pakket.mjs';
@@ -276,4 +277,48 @@ export function registreerInlevering(wortel, record) {
   const r = wachtrijVoegToe(w, { taakId: record.taakId, agent: record.agent, tak: record.tak, basisCommit: record.basisCommit, commit: record.commit, ingediend: record.aangemaakt, kanaal: record.kanaal, inleveringId: record.id });
   if (r.fout) uit.wachtrij = r.fout; else { writeFileSync(wPad, `${JSON.stringify(r.w, null, 2)}\n`); uit.wachtrij = 'toegevoegd'; }
   return uit;
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
+// SEC-002 (ai-mcp-09, afwerking A): asynchrone variant voor de server (orch_inleveren_klaar, POST …/inlevering/klaar). inleveren()
+// draait unzip/tar, git am/apply, git merge-tree en de controle synchroon (tot minuten): in het serverproces stond daarmee de hele
+// site stil. inleverenA() voert DEZELFDE pijplijn uit in een eigen Node-proces (dit bestand met --kind; opties via stdin, het record
+// via stdout) en wacht daar asynchroon op, met een tijdslimiet. Асинхронна версія: той самий конвеєр в окремому процесі.
+const DIT_BESTAND = (() => { try { return fileURLToPath(import.meta.url); } catch { return ''; } })();
+/** Pad van dit script voor het kindproces: in de werkkopie (wortel), anders dit bestand zelf (CLI, tests). */
+export function inleverScript(wortel) {
+  const inWortel = wortel ? join(wortel, 'scripts/orch/inleveren.mjs') : '';
+  if (inWortel && existsSync(inWortel)) return inWortel;
+  return DIT_BESTAND && /inleveren\.mjs$/.test(DIT_BESTAND) ? DIT_BESTAND : '';
+}
+export function inleverenA(o, { tijdslimietMs = 15 * 60_000 } = {}) {
+  return new Promise((klaar, mislukt) => {
+    const script = inleverScript(o.wortel);
+    if (!script) { mislukt(new Error('ORCH_INLEVEREN_SCRIPT_ONTBREEKT')); return; }
+    const kind = spawn(process.execPath, [script, '--kind'], { cwd: o.wortel || process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], env: process.env });
+    let uit = '', fouttekst = '', klaarGemeld = false;
+    const eens = (f) => (...a) => { if (klaarGemeld) return; klaarGemeld = true; clearTimeout(wekker); f(...a); };
+    const ok = eens(klaar), nee = eens(mislukt);
+    const wekker = setTimeout(() => { try { kind.kill('SIGKILL'); } catch { /* al weg */ } nee(new Error('ORCH_INLEVEREN_TIJDSLIMIET')); }, tijdslimietMs);
+    kind.stdout.setEncoding('utf8'); kind.stderr.setEncoding('utf8');
+    kind.stdout.on('data', (d) => { if (uit.length < 16 * 1024 * 1024) uit += d; });
+    kind.stderr.on('data', (d) => { if (fouttekst.length < 64 * 1024) fouttekst += d; });
+    kind.on('error', (e) => nee(e));
+    kind.on('close', (code) => {
+      const regel = uit.split('\n').reverse().find((r) => r.startsWith('{"orchRecord":'));
+      if (code !== 0 || !regel) { nee(new Error(`ORCH_INLEVEREN_KIND_MISLUKT:${code}:${fouttekst.trim().split('\n').slice(-2).join(' | ').slice(0, 300)}`)); return; }
+      try { ok(JSON.parse(regel).orchRecord); } catch (e) { nee(e); }
+    });
+    kind.stdin.end(JSON.stringify(o));
+  });
+}
+// Kindproces: node scripts/orch/inleveren.mjs --kind  (opties als JSON op stdin, record als één JSON-regel op stdout).
+if (DIT_BESTAND && process.argv[1] && resolve(process.argv[1]) === DIT_BESTAND && process.argv.includes('--kind')) {
+  let invoer = '';
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (d) => { invoer += d; });
+  process.stdin.on('end', () => {
+    try { const record = inleveren(JSON.parse(invoer || '{}')); process.stdout.write(`${JSON.stringify({ orchRecord: record })}\n`); process.exitCode = 0; }
+    catch (e) { process.stderr.write(`${(e && e.message) || e}\n`); process.exitCode = 1; }
+  });
 }

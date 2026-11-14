@@ -21,6 +21,8 @@ import { isBordKlant } from '../../shared/ai-agent-bord';
 import { agentPaginaUrl, isAgentSlug, v2Agent } from '../../shared/connector-v2/agenten';
 import { klantVan } from '../../shared/ai-verbinding';
 import type { Tr } from '../mcp-ui';
+// SEC-002 extensie-02 (g10a-2): scopes geven en bewaren doet alleen de mens (zone + alleen een echte klik).
+import { alleenMens, geenAi } from '../menselijke-actie';
 
 export type ToegangVerbinding = { soort: 'oauth' | 'token'; id: string; naam: string };
 type T2 = (uk: string, nl: string) => string;
@@ -174,7 +176,7 @@ export default function AiToegangTab({ verbinding, tr, metBeheer }: { verbinding
         : t('Зберігає доступи лише цього підключення; діє з наступного виклику ШІ, перепідключати не треба. Інші підключення не змінюються.',
           'Bewaart de toegang van alleen deze verbinding; geldt vanaf de volgende aanroep van de AI, opnieuw verbinden is niet nodig. Andere verbindingen veranderen niet.');
   return (
-    <div className='at' data-toegang={verbinding.id} data-ruimte={ruimte}>
+    <div className='at' data-toegang={verbinding.id} data-ruimte={ruimte} {...geenAi}>
       <p className='at-ondertitel'>
         {technisch
           ? t(`Що саме цей ШІ («${verbinding.naam}») може робити в технічному просторі через це підключення. Діє лише для нього і застосовується з наступного виклику.`,
@@ -224,7 +226,7 @@ export default function AiToegangTab({ verbinding, tr, metBeheer }: { verbinding
                     <button
                       type='button' role='switch' aria-checked={aan} disabled={adminUit}
                       className='at-schakelaar' data-scope-schakelaar={s.id}
-                      onClick={() => schakel(s.id)}
+                      onClick={alleenMens(() => schakel(s.id))}
                       aria-label={`${naamVan(t, s)}: ${regelVan(t, s, technisch)}`}
                     >
                       <span className='at-knop' aria-hidden='true' />
@@ -249,13 +251,13 @@ export default function AiToegangTab({ verbinding, tr, metBeheer }: { verbinding
           <p><Lock size={14} aria-hidden='true' /> <strong>{toegangScope(bevest) ? naamVan(t, toegangScope(bevest)!) : bevest}</strong></p>
           <p>{t('Це чутливі дані. ШІ зможе їх читати, доки ви не вимкнете доступ. Надати доступ?', 'Dit zijn gevoelige gegevens. De AI kan ze lezen tot u de toegang uitzet. Toegang geven?')}</p>
           <div className='at-bevest-knoppen'>
-            <button type='button' className='at-knop-prim' data-bevest-ja='1' onClick={bevestigJa}>{t('Так, надати', 'Ja, geven')}</button>
+            <button type='button' className='at-knop-prim' data-bevest-ja='1' onClick={alleenMens(bevestigJa)}>{t('Так, надати', 'Ja, geven')}</button>
             <button type='button' className='at-knop-twee' data-bevest-nee='1' onClick={() => setBevest(null)}>{t('Скасувати', 'Annuleren')}</button>
           </div>
         </div>
       ) : null}
       <div className='at-voet'>
-        <button type='button' className='at-knop-prim' data-bewaar='1' disabled={bezig} onClick={() => void bewaar()} title={bewaarUitleg}>
+        <button type='button' className='at-knop-prim' data-bewaar='1' disabled={bezig} onClick={alleenMens(() => void bewaar())} title={bewaarUitleg}>
           <ShieldCheck size={14} aria-hidden='true' />{bezig ? t('Збереження…', 'Opslaan…') : t('Зберегти доступи', 'Toegang opslaan')}
         </button>
         {technisch ? (

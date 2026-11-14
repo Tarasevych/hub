@@ -32,6 +32,15 @@ function binnenLimiet(sleutel: string, max: number, nuMs = Date.now()): boolean 
   if (lijst.length >= max) { mcpTellers.set(sleutel, lijst); return false; }
   lijst.push(nuMs); mcpTellers.set(sleutel, lijst); return true;
 }
+/**
+ * SEC-002 (ai-mcp-09): ook de LEES-hulpmiddelen en taak_start hebben een grens per eigenaar (zelfde venster van een uur, over al zijn
+ * MCP-verbindingen). orch_overzicht en orch_context vragen geen bevestiging; een model in een lus (ook na een injectie) kon ze
+ * onbeperkt aanroepen. Ze zijn nu niet-blokkerend (opslag.overzichtA/contextA), maar elke aanroep start nog git-processen; taak_start
+ * legt per aanroep een commit vast (HTTP had al 60 per uur, MCP niets). Ruim genoeg voor acht agenten die gewoon werken.
+ * Межа й для читання: огляд і контекст — 240 на годину на власника; реєстрація задач — 60 на годину, як у HTTP.
+ */
+const MCP_LEZEN_PER_UUR = 240;
+const MCP_TAKEN_PER_UUR = 60;
 /** Alleen voor tests: tellers leegmaken. */
 export const _mcpLimietenLeeg = () => mcpTellers.clear();
 
@@ -68,7 +77,7 @@ function testsVoorAgent(t: unknown): unknown {
   if (!Array.isArray(tests.uitvoer)) return t;
   return { ...tests, uitvoer: tests.uitvoer.map((u) => ({ ...u, laatste: String(u?.laatste ?? '').split('\n').map(maskeerRegel).join('\n') })) };
 }
-function overzichtVoorAgent(o: ReturnType<typeof opslag.overzicht>, door: string) {
+function overzichtVoorAgent(o: Awaited<ReturnType<typeof opslag.overzichtA>>, door: string) {
   return {
     ...o,
     regels: o.regels ? { ...o.regels, eigenaar: eigenaarVoorAgent(o.regels.eigenaar) as typeof o.regels.eigenaar } : o.regels,
@@ -93,9 +102,16 @@ export async function voerOrchToolUit(who: OrchWie, name: string, args: Record<s
   const door = `${who.clientName}${eigenAgent ? ` (${eigenAgent})` : ''} via mcp${verbinding ? ` [${verbinding}]` : ''}`;
   try {
     switch (name) {
-      case ORCH_OVERZICHT: { const o = overzichtVoorAgent(opslag.overzicht(), door); return uit({ notice: DATA, ...o, controleer: o.controleer ? { code: o.controleer.code, regels: o.controleer.regels.slice(-12) } : null }); }
-      case ORCH_CONTEXT: return uit({ notice: DATA, ...opslag.context() });
+      case ORCH_OVERZICHT: {
+        if (!binnenLimiet(`overzicht:${who.userId}`, MCP_LEZEN_PER_UUR)) throw new OrchFout('RATE_LIMITED', 429);
+        // Niet-blokkerend (SEC-002 ai-mcp-09): de synchrone opslag.overzicht() hield de hele site vast zolang git en controleer liepen.
+        const o = overzichtVoorAgent(await opslag.overzichtA(), door); return uit({ notice: DATA, ...o, controleer: o.controleer ? { code: o.controleer.code, regels: o.controleer.regels.slice(-12) } : null });
+      }
+      case ORCH_CONTEXT:
+        if (!binnenLimiet(`context:${who.userId}`, MCP_LEZEN_PER_UUR)) throw new OrchFout('RATE_LIMITED', 429);
+        return uit({ notice: DATA, ...(await opslag.contextA()) });
       case ORCH_TAAK_START: {
+        if (!binnenLimiet(`taak:${who.userId}`, MCP_TAKEN_PER_UUR)) throw new OrchFout('RATE_LIMITED', 429);
         // Підключення, прив'язане до агента, реєструє задачі лише на себе (інакше Grok міг би записати задачу на Claude).
         // Voor Connector v2 /gpt ('gpt' → 'chatgpt') mogen zowel 'chatgpt', 'gpt' als een leeg agent-veld alleen naar 'chatgpt' leiden.
         const gevraagd = args.agent !== undefined && args.agent !== null ? orchAgentVan(String(args.agent)) : null;
@@ -106,7 +122,7 @@ export async function voerOrchToolUit(who: OrchWie, name: string, args: Record<s
         if (!binnenLimiet(`begin:${who.userId}`, ORCH_LIMIETEN.uploadsPerUur)) throw new OrchFout('RATE_LIMITED', 429);
         return uit(opslag.uploadBegin({ ...args, kanaal: 'mcp' }, door, 'mcp', eigenAgent));
       case ORCH_INLEVEREN_STUK: { const u = opslag.uploadStuk(args, door); return uit({ id: u.id, ontvangen: u.ontvangen, grootte: u.grootte, klaarVoorAfronden: u.ontvangen === u.grootte }); }
-      case ORCH_INLEVEREN_KLAAR: { if (!binnenLimiet(`klaar:${who.userId}`, ORCH_LIMIETEN.uploadsPerUur)) throw new OrchFout('RATE_LIMITED', 429); const r = opslag.uploadKlaar(args, door); const rec = r.record as Record<string, unknown>; return uit({ uitkomst: rec.uitkomst, id: rec.id, taakId: rec.taakId, tak: rec.tak, commit: rec.commit, bestanden: Array.isArray(rec.bestanden) ? (rec.bestanden as unknown[]).length : 0, tests: testsVoorAgent(rec.tests), zaken: rec.zaken, registratie: r.registratie, staatCommit: r.staatCommit }); }
+      case ORCH_INLEVEREN_KLAAR: { if (!binnenLimiet(`klaar:${who.userId}`, ORCH_LIMIETEN.uploadsPerUur)) throw new OrchFout('RATE_LIMITED', 429); const r = await opslag.uploadKlaarA(args, door); const rec = r.record as Record<string, unknown>; return uit({ uitkomst: rec.uitkomst, id: rec.id, taakId: rec.taakId, tak: rec.tak, commit: rec.commit, bestanden: Array.isArray(rec.bestanden) ? (rec.bestanden as unknown[]).length : 0, tests: testsVoorAgent(rec.tests), zaken: rec.zaken, registratie: r.registratie, staatCommit: r.staatCommit }); }
       default: return fout(`UNKNOWN_TOOL: ${name.slice(0, 80)}`);
     }
   } catch (e) {

@@ -20,6 +20,7 @@ import { RuimteGeslotenVlak } from './RuimteStrook';
 import { ruimteGeslotenUit } from '../shared/ruimte-weergave';
 import { isLeesfout, leesBase64 } from '../shared/bestand-lezen';
 import { bestandLeesUitleg, bestandLeesfoutCode } from '../shared/foutuitleg';
+import { foutTekst as cloudFoutTekst } from './cloud-vnext/tekst';
 
 type Lang = 'uk' | 'nl';
 type Energy = 'low' | 'medium' | 'high';
@@ -87,6 +88,10 @@ const statusOrder: CloudItem['status'][] = ['captured', 'waiting_review', 'in_pr
 // kale code «read» bij de gebruiker terecht. Eigenaar 20.10.2026.
 const fileBase64 = (file: File) => leesBase64(file);
 const errorCode = (caught: unknown) => String((caught as { response?: { data?: { error?: string } } })?.response?.data?.error || (caught as Error)?.message || 'UNKNOWN');
+// SEC-002 (g03): weigeringen met een eigen uitleg (rol alleen-lezen, account nog niet goedgekeurd, bestand te groot om te openen)
+// krijgen die uitleg in plaats van «Спробуйте ще раз» — opnieuw proberen verandert daar niets aan. Anders: ''.
+const WEIGERING_MET_UITLEG = /^(RBAC_FORBIDDEN|RBAC_PENDING_CANNOT_MUTATE|CLOUD_ITEM_TE_GROOT)$/;
+const weigeringTekst = (lang: 'uk' | 'nl', caught: unknown) => { const code = errorCode(caught); return WEIGERING_MET_UITLEG.test(code) ? cloudFoutTekst(lang, code) : ''; };
 const suiteServiceId = (value: string | null): SuiteService['id'] | '' => value && ['mail', 'drive', 'calendar', 'photos'].includes(value) ? value as SuiteService['id'] : '';
 
 export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin, tabContext, onFocusChange, onNavigateTab }: Props) {
@@ -196,7 +201,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
       setWorkspaceTitle(''); setWorkspaceDescription(''); setCreateOpen(false); setActiveWorkspaceId(response.data.workspace.id);
       notify(t('Робочий простір готовий. Базову структуру вже створено.', 'De werkruimte is klaar. De basisstructuur is al aangemaakt.'),'success');
       await load(true);
-    } catch (caught) { setWorkspaceError(t(`Не вдалося створити простір (${errorCode(caught)}).`, `De werkruimte kon niet worden gemaakt (${errorCode(caught)}).`)); }
+    } catch (caught) { setWorkspaceError(weigeringTekst(lang, caught) || t(`Не вдалося створити простір (${errorCode(caught)}).`, `De werkruimte kon niet worden gemaakt (${errorCode(caught)}).`)); }
     setBusy(false);
   };
 
@@ -222,7 +227,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
       const code = errorCode(caught);
       // Een leesfout van de schijf is geen serverfout: oorzaak en handeling komen uit shared/foutuitleg.ts.
       if (isLeesfout(caught)) { const u = bestandLeesUitleg(lang, bestandLeesfoutCode(caught)); setCaptureError(`${u.waarom} ${u.doen}`); setBusy(false); return; }
-      setCaptureError(code === 'FILE_TOO_LARGE' ? t('На першому етапі файл має бути не більшим за 6 МБ.', 'In deze eerste fase mag een bestand niet groter zijn dan 6 MB.') : t(`Не вдалося зберегти (${code}). Ваш вибір залишився у формі.`, `Opslaan lukte niet (${code}). Uw invoer blijft in het formulier staan.`));
+      setCaptureError(weigeringTekst(lang, caught) || (code === 'FILE_TOO_LARGE' ? t('На першому етапі файл має бути не більшим за 6 МБ.', 'In deze eerste fase mag een bestand niet groter zijn dan 6 MB.') : t(`Не вдалося зберегти (${code}). Ваш вибір залишився у формі.`, `Opslaan lukte niet (${code}). Uw invoer blijft in het formulier staan.`)));
     }
     setBusy(false);
   };
@@ -230,13 +235,13 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
   const placeItem = async (itemId: string, workspaceId: string) => {
     setBusy(true);
     try { await post(`/api/owner/cloud/items/${itemId}/place`, { workspaceId }); notify(t('Готово. Елемент тепер у робочому просторі.', 'Klaar. Het item staat nu in de werkruimte.'),'success'); await load(true); }
-    catch (caught) { notify(t(`Не вдалося перемістити (${errorCode(caught)}).`, `Verplaatsen lukte niet (${errorCode(caught)}).`),'error'); }
+    catch (caught) { notify(weigeringTekst(lang, caught) || t(`Не вдалося перемістити (${errorCode(caught)}).`, `Verplaatsen lukte niet (${errorCode(caught)}).`),'error'); }
     setBusy(false);
   };
 
   const updateStatus = async (itemId: string, status: CloudItem['status']) => {
     try { await post(`/api/owner/cloud/items/${itemId}/status`, { status }); setData(current => ({ ...current, items: current.items.map(item => item.id === itemId ? { ...item, status } : item), inbox: current.inbox.map(item => item.id === itemId ? { ...item, status } : item), recent: current.recent.map(item => item.id === itemId ? { ...item, status } : item) })); }
-    catch (caught) { notify(t(`Статус не збережено (${errorCode(caught)}).`, `De status is niet opgeslagen (${errorCode(caught)}).`),'error'); }
+    catch (caught) { notify(weigeringTekst(lang, caught) || t(`Статус не збережено (${errorCode(caught)}).`, `De status is niet opgeslagen (${errorCode(caught)}).`),'error'); }
   };
 
   // ZOEKDIEP-001: uitZoek = een diepe link naar een item dat niet in de bootstrap zat (grote bibliotheek). Dan komen titel en
@@ -251,7 +256,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
       else if(response.data.kind==='file'&&response.data.data){const raw:CloudRawFile={name:response.data.name||item.originalName||item.title,mimeType:response.data.mimeType||item.mimeType||'application/octet-stream',sizeBytes:Number(response.data.sizeBytes||item.sizeBytes||0),data:response.data.data};setOpenedFile(await loadCloudFilePreview(raw))}else if (response.data.url) window.open(response.data.url, '_blank', 'noopener,noreferrer');
     } catch (caught) {
       if (uitZoek && /NOT_FOUND|ANDERE_RUIMTE/.test(errorCode(caught))) notify(t('Елемент із пошуку не знайдено в хмарі: можливо, його вже видалено або переміщено.', 'Het item uit de zoekresultaten staat niet in de cloud: misschien is het verwijderd of verplaatst.'),'error');
-      else notify(t(`Не вдалося відкрити (${errorCode(caught)}).`, `Openen lukte niet (${errorCode(caught)}).`),'error');
+      else notify(weigeringTekst(lang, caught) || t(`Не вдалося відкрити (${errorCode(caught)}).`, `Openen lukte niet (${errorCode(caught)}).`),'error');
     }
   };
 
@@ -290,7 +295,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     if (!service.connectEnabled || data.onboarding.nextService !== service.id) return;
     setProviderBusy(`suite:${service.id}`);
     try { const response = await post<{ authUrl?: string; alreadyGranted?: boolean }>('/api/owner/cloud/google-suite/onboarding/start', { locale: lang, returnTo: location.href, suiteService: service.id }); if (response.data.alreadyGranted) { await load(true); return; } if (!response.data.authUrl) throw new Error('GOOGLE_SUITE_AUTH_URL_MISSING'); location.assign(response.data.authUrl); }
-    catch { notify(t('Не вдалося розпочати підключення Google Drive. Спробуйте ще раз.', 'Google Drive koppelen kon niet worden gestart. Probeer het opnieuw.'),'error'); setProviderBusy(''); }
+    catch (caught) { notify(weigeringTekst(lang, caught) || t('Не вдалося розпочати підключення Google Drive. Спробуйте ще раз.', 'Google Drive koppelen kon niet worden gestart. Probeer het opnieuw.'),'error'); setProviderBusy(''); }
   };
 
   // Live-audit 19.10 (F16): «Додати акаунт» stuurde zonder uitleg meteen naar Google. Eerst een korte bevestiging: wat er gebeurt en waarom.
@@ -304,14 +309,14 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     if (provider.id !== 'google' || !provider.connectEnabled) return;
     setProviderBusy(`${provider.id}:${accountRole}`);
     try { const response = await post<{ authUrl: string }>('/api/owner/cloud/providers/google/connect/start', { locale: lang, returnTo: location.href, accountRole }); if (!response.data.authUrl) throw new Error('CLOUD_GOOGLE_AUTH_URL_MISSING'); location.assign(response.data.authUrl); }
-    catch { notify(t('Не вдалося розпочати підключення акаунта. Спробуйте ще раз.', 'Het koppelen van het account kon niet worden gestart. Probeer het opnieuw.'),'error'); setProviderBusy(''); }
+    catch (caught) { notify(weigeringTekst(lang, caught) || t('Не вдалося розпочати підключення акаунта. Спробуйте ще раз.', 'Het koppelen van het account kon niet worden gestart. Probeer het opnieuw.'),'error'); setProviderBusy(''); }
   };
 
   const selectProviderAccount = async (provider: Provider, account: ProviderAccount) => {
     if (provider.id !== 'google' || account.status !== 'connected') return;
     setProviderBusy(`${provider.id}:${account.id}`);
     try { await post('/api/owner/cloud/providers/google/account/select', { accountId: account.id }); notify(t('Активний акаунт змінено.', 'Het actieve account is gewijzigd.'),'success'); await load(true); }
-    catch { notify(t('Не вдалося змінити активний акаунт.', 'Het actieve account kon niet worden gewijzigd.'),'error'); }
+    catch (caught) { notify(weigeringTekst(lang, caught) || t('Не вдалося змінити активний акаунт.', 'Het actieve account kon niet worden gewijzigd.'),'error'); }
     setProviderBusy('');
   };
 
@@ -320,7 +325,7 @@ export default function CloudFunctionalView({ lang, tab, userEmail, sourceOrigin
     if (!window.confirm(t('Відключити цей акаунт? Локальні копії буде збережено.', 'Dit account loskoppelen? Lokale kopieën blijven bewaard.'))) return;
     setProviderBusy(`${provider.id}:${account.id}`);
     try { await post('/api/owner/cloud/providers/google/disconnect', { accountId: account.id, confirmation: 'DISCONNECT_GOOGLE_DRIVE', retainLocalCopies: true }); notify(t('Акаунт відключено. Локальні копії збережено.', 'Het account is losgekoppeld. Lokale kopieën zijn bewaard.'),'success'); await load(true); }
-    catch { notify(t('Не вдалося відключити акаунт.', 'Het account kon niet worden losgekoppeld.'),'error'); }
+    catch (caught) { notify(weigeringTekst(lang, caught) || t('Не вдалося відключити акаунт.', 'Het account kon niet worden losgekoppeld.'),'error'); }
     setProviderBusy('');
   };
 

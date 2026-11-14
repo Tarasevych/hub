@@ -16,8 +16,9 @@ import { ArrowUpRight, Loader2, Search, Trash2 } from 'lucide-react';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
 import { focusTerug } from '../platform/toegankelijk';
 import type { ZoekSuggestie } from '../../shared/zoek-model';
+import { IDENTITEIT_TABS, type IdentiteitTab } from '../identiteit/identiteit-tabs';
 import { isAfgebroken, suggesties as haalSuggesties, zoeken, type ZoekUitkomst } from './zoek-api';
-import { routeUrl, type Lang } from './zoek-kern';
+import { norm, routeUrl, type Lang } from './zoek-kern';
 import { LEEG_FILTER, bouwVraag, filterLokaal, parseQuery, type Categorie } from './zoek-logica';
 import { bewaarRecent, leesRecent, recentRuimteVoor, wisRecent, type RecentRuimte, type RecenteZoekopdracht } from './zoek-recent';
 import { profielVan, techToestand, useTech } from '../tech/tech-opslag';
@@ -54,6 +55,22 @@ const TERUG_ALS_KNOP_WEG = '[data-zoek-trigger], .canonical-menu-toggle[data-sid
 
 // Het zoeken hoort bij de dienst waarin je staat: mail zoekt in de mail, cloud in de bestanden, enz. (alleen de standaardkeuze).
 const sectieVan = (dienst: string): Categorie => (dienst === 'mail' ? 'mail' : dienst === 'cloud' ? 'files' : dienst === 'github' ? 'github' : 'all');
+
+// Додаткові ключові слова для миттєвого пошуку 12 розділів центру облікового запису (uk + nl) з пріоритетом поточної сторінки.
+const IDENTITEIT_SLEUTELWOORDEN: Readonly<Record<IdentiteitTab, string>> = {
+  personalization: 'огляд вигляд оформлення початкова overzicht uiterlijk sfeer start',
+  menu: 'бічна панель навігація док швидкий доступ zijbalk navigatie dock snelkoppelingen',
+  themes: 'тема світла темна сливова палітра контраст licht donker pruim kleur contrast',
+  languages: 'мова українська нідерландська переклад oekraiens nederlands vertaling',
+  widgets: 'віджети блоки картки головна blokken kaarten startpagina',
+  sharing: 'спільний доступ запрошення гості ролі посилання uitnodiging gasten rollen delen',
+  identity: 'ідентичність технічний профіль звичайний простір псевдонім technisch profiel ruimte',
+  account: 'обліковий запис фото світлина пошта видалення дані profielfoto gegevens verwijderen',
+  sessions: 'сесії пристрої активні входи вийти оглядач apparaten aanmeldingen afmelden',
+  methods: 'способи входу ключ доступу google телеграм пароль sleutel telegram aanmelden',
+  security: 'безпека захист двофакторна підтвердження сповіщення журналювання bescherming bevestiging',
+  recovery: 'відновлення запасні коди доступ порятунок herstelcodes noodtoegang',
+};
 
 /** De zoekknop IN HET MENU (alleen op de post, 24.10.2026): rond icoon dat hetzelfde uitklapvenster opent als ⌘K. `voorOpenen` sluit
  *  bijvoorbeeld eerst de lade, zodat het venster niet boven een open lade ligt. `tooltip` = de tooltiplaag van de zijbalk (data-tooltip). */
@@ -93,8 +110,10 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
   const meet = useCallback(() => {
     const vw = document.documentElement.clientWidth;
     const breed = Math.min(UITKLAP_MAX_PX, vw - 16);
-    const r = anker.current?.getBoundingClientRect();
-    // Telefoon of zonder eigen knop (de knop staat in het menu): midden bovenaan, de volle breedte die past.
+    const eigen = anker.current && getComputedStyle(anker.current).visibility !== 'hidden' ? anker.current.getBoundingClientRect() : null;
+    const mqKnop = !mobiel && (!eigen || eigen.width === 0) ? document.querySelector<HTMLElement>('[data-zoek-trigger="maquette"]') : null;
+    const r = eigen && eigen.width > 0 ? eigen : mqKnop?.getBoundingClientRect();
+    // Telefoon of zonder zichtbare veldknop (de knop staat in het menu): midden bovenaan, de volle breedte die past.
     if (mobiel || zonderKnop || !r || r.width === 0) { setPos({ top: 8, left: Math.max(8, (vw - breed) / 2), width: mobiel ? vw - 16 : breed }); return; }
     const width = Math.max(r.width, breed);
     const left = Math.min(Math.max(8, r.left), Math.max(8, vw - width - 8));
@@ -150,9 +169,22 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
     return () => { window.clearTimeout(id); ac.abort(); };
   }, [q, open, sectie, vers]);
 
-  // De rijen van het menu: bij leeg veld de recente zoekopdrachten; bij typen suggesties, het resultaat en de recente die erbij passen.
-  const treffers = useMemo(() => (uitkomst ? filterLokaal(uitkomst.a.items, LEEG_FILTER, uitkomst.uitsluit) : []), [uitkomst]);
-  const rijen: VeldSuggestie[] = useMemo(() => bouwMenuRijen({ q, lang, nu: Date.now(), recent, suggesties: server, treffers, groepen: t.groepen }), [q, lang, recent, server, treffers, t]);
+  // Op id.tarasevych.com krijgen onderdelen en instellingen van deze pagina direct voorrang, gevolgd door alle treffers van de hele site.
+  const treffers = useMemo(() => {
+    if (!uitkomst) return [];
+    const lijst = filterLokaal(uitkomst.a.items, LEEG_FILTER, uitkomst.uitsluit);
+    if (dienst !== 'identity') return lijst;
+    return [...lijst.filter(x => x.bron === 'instelling'), ...lijst.filter(x => x.bron !== 'instelling')];
+  }, [uitkomst, dienst]);
+  const suggesties = useMemo(() => {
+    const woorden = dienst === 'identity' ? norm(q).split(' ').filter(Boolean) : [];
+    if (!woorden.length) return server;
+    const lokaal: ZoekSuggestie[] = IDENTITEIT_TABS
+      .filter(tab => { const hooi = norm(`${tab.uk} ${tab.nl} ${IDENTITEIT_SLEUTELWOORDEN[tab.id]}`); return woorden.every(w => hooi.includes(w)); })
+      .map(tab => ({ soort: 'functie', bron: 'instelling', tekst: tab[lang], route: { host: 'id', pad: `/${tab.id}` } }));
+    return [...lokaal, ...server];
+  }, [dienst, q, lang, server]);
+  const rijen: VeldSuggestie[] = useMemo(() => bouwMenuRijen({ q, lang, nu: Date.now(), recent, suggesties, treffers, groepen: t.groepen }), [q, lang, recent, suggesties, treffers, t]);
 
   // ENTER (en een recente zoekopdracht kiezen): zoeken in het menu zelf — bewaren op dit apparaat, meteen het resultaat tonen. Geen navigatie.
   const zoekNu = (tekst: string) => {
@@ -167,7 +199,17 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
     const url = a.extern || routeUrl(a.route, lang);
     if (!url) return false;
     if (a.bewaar) bewaarRecent(a.bewaar.tekst, a.bewaar.sectie, Date.now(), undefined, undefined, { soort: a.bewaar.soort, route: a.bewaar.route }, ruimte.current);
-    if (a.extern) { window.open(url, '_blank', 'noopener,noreferrer'); doClose(); } else location.assign(url);
+    if (a.extern) { window.open(url, '_blank', 'noopener,noreferrer'); doClose(); return true; }
+    try {
+      const doelUrl = new URL(url);
+      if (dienst === 'identity' && doelUrl.origin === location.origin && !doelUrl.searchParams.has('focus') && !doelUrl.searchParams.has('doel')) {
+        history.pushState(history.state, '', `${doelUrl.pathname}${doelUrl.search}${doelUrl.hash}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        doClose();
+        return true;
+      }
+    } catch { /* terugval op gewone navigatie */ }
+    location.assign(url);
     return true;
   };
   // «Перейти до пошуку»: de zoekpagina met het HUIDIGE resultaat. Leeg veld → de laatste zoekopdracht (paginaDoel); staat de pagina al open → zonder herladen.

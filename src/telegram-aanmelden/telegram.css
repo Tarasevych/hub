@@ -1,71 +1,208 @@
-/* TELEGRAM-AANMELDEN v1 — eigen klassen (tga-*), niets globaals. Kleuren: officieel Telegram-blauw #2AABEE / #229ED9. */
-.tga-aanmeld{display:grid;gap:.6rem;margin-top:.75rem;width:100%;box-sizing:border-box}
+/* TELEGRAM-AANMELDEN v1 — єдина мова карток, перемикачів, порівняння профілів і кнопки входу для всіх 26 палітр (світла, темна, сливова, кольорові). */
+.tga-aanmeld{display:grid;gap:8px;margin-top:10px;width:100%;box-sizing:border-box}
 .tga-aanmeld *,.tga-sectie *,.tga-venster *{box-sizing:border-box}
-.tga-aanmeld-open{text-align:left}
-.tga-aanmeld-open{padding:1rem;border:1px solid color-mix(in srgb,#2AABEE 35%,transparent);border-radius:14px;background:color-mix(in srgb,#2AABEE 6%,transparent)}
-.tga-aanmeld-knop{display:inline-flex;align-items:center;justify-content:center;gap:.6rem;min-height:44px;padding:.6rem 1.1rem;border:0;border-radius:999px;background:linear-gradient(180deg,#2AABEE,#229ED9);color:#fff;font-weight:600;text-decoration:none;cursor:pointer;width:100%}
-.tga-aanmeld-knop:hover{filter:brightness(1.05)}.tga-aanmeld-knop:focus-visible{outline:3px solid #229ED9;outline-offset:2px}
-.tga-aanmeld-knop[disabled],.tga-aanmeld-knop[aria-disabled=true]{opacity:.55;cursor:not-allowed}
-.tga-aanmeld-knop svg{background:#fff;border-radius:50%}
-.tga-kop{display:flex;align-items:center;gap:.5rem;font-size:1.05rem;margin:0}
-.tga-stappen{margin:.25rem 0 .25rem 1.2rem;padding:0;display:grid;gap:.25rem}
-.tga-link{font-size:.85rem;color:#229ED9}
-.tga-wacht{display:flex;align-items:center;gap:.5rem;font-size:.9rem}
-.tga-klein{font-size:.8rem;opacity:.8;margin:0}
-.tga-waarom{font-size:.85rem;padding:.5rem .7rem;border-left:3px solid #2AABEE;background:color-mix(in srgb,#2AABEE 7%,transparent);border-radius:0 8px 8px 0;margin:.25rem 0}
-.tga-fout{color:#c62828;font-size:.9rem;margin:.25rem 0}.tga-ok{color:#1b7f45;font-size:.9rem;margin:.25rem 0}
-.tga-let{background:color-mix(in srgb,#F2B01E 15%,transparent);border-radius:8px;padding:.5rem .7rem;font-size:.88rem}
-.tga-knop{display:inline-flex;align-items:center;gap:.4rem;min-height:38px;padding:.45rem .9rem;border-radius:10px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit;cursor:pointer}
-.tga-knop[disabled]{opacity:.5;cursor:not-allowed}
-.tga-knop-hoofd{background:#229ED9;border-color:#229ED9;color:#fff}.tga-knop-gevaar{border-color:#E5484D;color:#E5484D}
-.tga-aftel{font-variant-numeric:tabular-nums;opacity:.85}
+.tga-aanmeld-open{text-align:left;padding:16px;border:1px solid color-mix(in srgb,#2AABEE 34%,var(--line,rgba(128,128,128,.28)));border-radius:16px;background:color-mix(in srgb,#2AABEE 7%,var(--panel,transparent));display:grid;gap:10px}
+
+/* Триколонкова симетрична геометрія кнопки входу через Telegram [логотип · підпис · індикатор/стрілка]. */
+.tga-aanmeld-knop{display:flex;align-items:center;justify-content:center;gap:11px;min-height:48px;padding:12px 16px;border:1px solid #1e96c8;border-radius:14px;background:linear-gradient(180deg,#2AABEE,#229ED9);color:#fff;font:600 15px/1.2 inherit;font-variant-numeric:tabular-nums;text-decoration:none;cursor:pointer;width:100%;transition:filter .16s ease,border-color .16s ease,transform .12s ease}
+.tga-aanmeld-knop:hover:not(:disabled){filter:brightness(1.05)}
+.tga-aanmeld-knop:active:not(:disabled){transform:translateY(1px)}
+.tga-aanmeld-knop:focus-visible{outline:2px solid var(--focus,#229ED9);outline-offset:2px}
+.tga-aanmeld-knop[disabled],.tga-aanmeld-knop[aria-disabled='true']{opacity:.6;cursor:not-allowed}
+.tga-aanmeld-logo{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px}
+.tga-aanmeld-logo svg{display:block;border-radius:50%}
+.tga-aanmeld-tekst{flex:1 1 auto;min-width:0;text-align:center;line-height:1.25}
+.tga-aanmeld-eind{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;font-size:.98rem;opacity:.82;transition:transform .16s ease,opacity .16s ease}
+.tga-aanmeld-knop:hover:not(:disabled) .tga-aanmeld-eind{transform:translateX(2px);opacity:1}
+
+/* Контрастні блоки повідомлень та пояснень для світлої, темної та сливової тем. */
+.tga-kop{display:flex;align-items:center;gap:8px;font-size:1.05rem;margin:0}
+.tga-stappen{margin:4px 0;padding-left:20px;display:grid;gap:5px;font-size:13.5px}
+.tga-link{background:none;border:0;padding:4px 0;color:var(--accent,#229ED9);text-decoration:underline;cursor:pointer;font:inherit;font-size:13px;text-align:left}
+.tga-wacht{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;margin:0}
+.tga-klein{font-size:12.5px;color:var(--muted,inherit);opacity:.88;margin:0;line-height:1.45}
+.tga-waarom{font-size:13px;line-height:1.45;padding:9px 12px;border-left:3px solid #2AABEE;background:color-mix(in srgb,#2AABEE 8%,var(--surface,transparent));border-radius:0 10px 10px 0;margin:0}
+.tga-storing,.tga-let{padding:10px 12px;border-radius:var(--straal-m,10px);background:var(--warn-zacht,rgba(217,119,6,.12));border:1px solid color-mix(in srgb,var(--warn,#d97706) 38%,var(--line,rgba(128,128,128,.25)));color:var(--warn,#b45309);margin:0;font-size:13px;line-height:1.45;font-variant-numeric:tabular-nums}
+.tga-fout{padding:10px 12px;border-radius:var(--straal-m,10px);background:var(--fout-zacht,rgba(220,38,38,.12));border:1px solid color-mix(in srgb,var(--fout,#dc2626) 38%,var(--line,rgba(128,128,128,.25)));color:var(--fout,#b91c1c);margin:0;font-size:13px;line-height:1.45}
+.tga-ok{padding:10px 12px;border-radius:var(--straal-m,10px);background:var(--ok-zacht,rgba(22,163,74,.12));border:1px solid color-mix(in srgb,var(--ok,#16a34a) 38%,var(--line,rgba(128,128,128,.25)));color:var(--ok,#15803d);margin:0;font-size:13px;line-height:1.45;font-variant-numeric:tabular-nums}
+
+/* Секція Telegram на сторінці «Способи входу» та в панелі адміністрування. */
+.tga-sectie{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;border:1px solid var(--line,rgba(128,128,128,.22));margin-top:16px;min-width:0}
+.tga-sectie.tga-gebruiker{margin-top:0;padding:var(--ruimte-4,16px);border:1px solid var(--line);border-radius:var(--straal-xl,18px);background:var(--panel);box-shadow:var(--schaduw-1)}
+.tga-sectie-kop{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px}
+.tga-sectie-icoon{flex:0 0 auto;display:grid;place-items:center;width:44px;height:44px;border-radius:var(--straal-m,12px);background:color-mix(in srgb,#2AABEE 12%,var(--surface));border:1px solid color-mix(in srgb,#2AABEE 28%,var(--line))}
+.tga-sectie-titel{flex:1 1 200px;min-width:0;display:grid;gap:3px}
+.tga-sectie-kop h2{margin:0;font-size:1.08rem;line-height:1.25}
+.tga-sectie-kop p{margin:0;color:var(--muted);font-size:var(--tekst-klein,13px);line-height:1.4}
+.tga-stand{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:650;border:1px solid var(--line,rgba(128,128,128,.25));background:var(--surface,rgba(128,128,128,.08));color:var(--muted)}
+.tga-stand::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.tga-stand-werkt,.tga-stand-actief{background:var(--ok-zacht,rgba(22,163,74,.14));color:var(--ok,#15803d);border-color:color-mix(in srgb,var(--ok,#15803d) 32%,var(--line))}
+.tga-stand-traag,.tga-stand-gepauzeerd{background:var(--warn-zacht,rgba(217,119,6,.16));color:var(--warn,#b45309);border-color:color-mix(in srgb,var(--warn,#b45309) 32%,var(--line))}
+.tga-stand-storing,.tga-stand-niet-ingesteld,.tga-stand-geblokkeerd,.tga-stand-uitgeschakeld{background:var(--fout-zacht,rgba(220,38,38,.14));color:var(--fout,#b91c1c);border-color:color-mix(in srgb,var(--fout,#b91c1c) 32%,var(--line))}
+
+/* Кнопки керування в налаштуваннях (стримана кнопка прив’язки замість заливки на всю ширину). */
+.tga-rij{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0}
+.tga-knop{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:var(--tik-hoogte,40px);padding:7px 14px;border-radius:var(--straal-m,10px);border:1px solid var(--line,rgba(128,128,128,.32));background:var(--panel,transparent);color:var(--text,inherit);font:650 13px/1.2 inherit;cursor:pointer;text-decoration:none;transition:border-color .15s,background-color .15s}
+.tga-knop:hover:not(:disabled){border-color:var(--accent,#229ED9)}
+.tga-knop-hoofd{background:var(--accent,#2563eb);color:var(--accentText,var(--text-on-accent));border-color:var(--accent,#2563eb)}
+.tga-knop-telegram{border-color:color-mix(in srgb,#2AABEE 46%,var(--line));background:color-mix(in srgb,#2AABEE 12%,var(--surface));color:var(--text)}
+.tga-knop-telegram:hover:not(:disabled){border-color:#2AABEE;background:color-mix(in srgb,#2AABEE 20%,var(--surface))}
+.tga-knop-gevaar{background:var(--fout-zacht,rgba(220,38,38,.12));color:var(--fout,#b91c1c);border-color:color-mix(in srgb,var(--fout,#dc2626) 38%,var(--line))}
+.tga-knop-gevaar:hover:not(:disabled){border-color:var(--fout,#dc2626)}
+.tga-knop-klein{min-width:36px;min-height:36px;padding:5px 11px;font-size:12.5px}
+.tga-knop:disabled,.tga-knop[aria-disabled='true']{opacity:.5;cursor:not-allowed}
+.tga-aftel{font-variant-numeric:tabular-nums;opacity:.88}
 .tga-draai{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:tga-draai .8s linear infinite}
 @keyframes tga-draai{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.tga-draai{animation:none;border-right-color:currentColor;opacity:.6}}
-.tga-rij{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.4rem 0}
-.tga-blok{display:grid;gap:.5rem;margin:.75rem 0}
-.tga-veld{display:grid;gap:.25rem;font-size:.9rem}.tga-veld input,.tga-veld select,.tga-blok input,.tga-blok select{min-height:36px;padding:.35rem .55rem;border-radius:8px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit}
-.tga-vinkje{display:flex;gap:.5rem;align-items:flex-start;font-size:.9rem}
-.tga-sectie{display:grid;gap:.6rem;padding:1rem;border-radius:16px;border:1px solid color-mix(in srgb,currentColor 12%,transparent);margin-top:1rem}
-.tga-sectie-kop{display:flex;gap:.75rem;align-items:center}.tga-sectie-kop h2{margin:0;font-size:1.15rem}.tga-sectie-kop p{margin:0;font-size:.85rem;opacity:.8}.tga-sectie-kop .tga-stand{margin-left:auto}
-.tga-stand{font-size:.75rem;padding:.15rem .5rem;border-radius:999px;background:color-mix(in srgb,currentColor 10%,transparent)}
-.tga-stand-werkt,.tga-stand-actief{background:#2FB36B22;color:#1b7f45}.tga-stand-traag,.tga-stand-gepauzeerd{background:#F2B01E22;color:#8a6100}
-.tga-stand-storing,.tga-stand-geblokkeerd,.tga-stand-uitgeschakeld{background:#E5484D22;color:#b3262b}
-.tga-kaart{border:1px solid color-mix(in srgb,currentColor 14%,transparent);border-radius:12px;padding:.8rem;display:grid;gap:.45rem}
-.tga-kaart header{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-.tga-wijziging{border-color:#F2B01E}.tga-ernst-ernstig{border-color:#E5484D}.tga-ernst-vervalsing{border-color:#E5484D;background:#E5484D0d}
-.tga-identiteit{display:flex;gap:.8rem;align-items:center}.tga-identiteit img,.tga-geen-foto{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none}
-.tga-geen-foto{display:grid;place-items:center;background:#2AABEE;color:#fff;font-weight:700;font-size:1.4rem}
-.tga-identiteit dl,.tga-dl{display:grid;grid-template-columns:auto 1fr;gap:.15rem .8rem;margin:0;font-size:.9rem}.tga-identiteit dt,.tga-dl dt{opacity:.7}.tga-identiteit dd,.tga-dl dd{margin:0}
-.tga-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
-.tga-rechten{border:0;padding:0;margin:0;display:grid;gap:.3rem;font-size:.88rem}.tga-rechten legend{font-weight:600;margin-bottom:.2rem}
-.tga-wizard{border:1px solid #2AABEE55;border-radius:12px;padding:.9rem;display:grid;gap:.5rem}
-.tga-wizard-stappen{display:flex;gap:.75rem;list-style:none;margin:0;padding:0;font-size:.82rem;flex-wrap:wrap}.tga-wizard-stappen li{opacity:.55}.tga-wizard-stappen li[aria-current=step]{opacity:1;font-weight:700;color:#229ED9}.tga-wizard-stappen li.klaar{opacity:.85}
-.tga-verschil,.tga-matrix table,.tga-blok table{width:100%;border-collapse:collapse;font-size:.88rem}.tga-verschil td,.tga-verschil th,.tga-matrix td,.tga-matrix th,.tga-blok td,.tga-blok th{padding:.35rem .4rem;border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent);text-align:left;vertical-align:top}
-.tga-nieuw{font-weight:700}
-.tga-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.5rem}
-.tga-tegel{border-radius:10px;padding:.6rem;background:color-mix(in srgb,#2AABEE 7%,transparent);display:grid}.tga-tegel strong{font-size:1.3rem}.tga-tegel span{font-size:.78rem;opacity:.8}
-.tga-reeks{display:flex;gap:2px;height:18px;align-items:stretch}.tga-reeks span{flex:1;max-width:6px;border-radius:2px}.tga-reeks .ok{background:#2FB36B}.tga-reeks .nee{background:#E5484D}
-.tga-nood{border-radius:12px;padding:.8rem;border:1px solid #2FB36B66;display:grid;gap:.35rem}.tga-nood-uit{border-color:#E5484D;background:#E5484D0d}
-.tga-stap-lijst{list-style:none;padding:0;margin:0;font-size:.88rem;display:grid;gap:.2rem}.tga-stap-lijst .ok{color:#1b7f45}.tga-stap-lijst .nee{color:#b3262b}
-.tga-scherm{position:fixed;inset:0;background:#0007;display:grid;place-items:center;z-index:1000;padding:1rem}
-.tga-venster{background:var(--surface,#fff);color:var(--text,#111);border-radius:16px;max-width:460px;width:100%;padding:1.2rem;display:grid;gap:.6rem;box-shadow:0 20px 60px #0004}
-.tga-venster h2{display:flex;gap:.5rem;align-items:center;margin:0;font-size:1.1rem}
-.tga-talen input{width:100%}
+
+/* Картки, смуга прив’язки та двоколонкове порівняння профілю на сайті й даних із Telegram. */
+.tga-aanmeld-wacht,.tga-blok,.tga-kaart,.tga-wijziging{border:1px solid var(--line,rgba(128,128,128,.24));border-radius:var(--straal-l,14px);padding:14px 16px;background:var(--surface,rgba(128,128,128,.04));display:flex;flex-direction:column;gap:10px}
+.tga-kaart{background:var(--panel,transparent)}
+.tga-kaart header,.tga-kaart-kop{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tga-kaart-titel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.tga-kaart-voet{padding-top:6px;border-top:1px solid var(--line,rgba(128,128,128,.18))}
+.tga-wijziging{border-color:color-mix(in srgb,var(--warn,#d97706) 55%,var(--line));background:var(--warn-zacht,rgba(217,119,6,.08))}
+.tga-ernst-ernstig,.tga-ernst-vervalsing{border-color:color-mix(in srgb,var(--fout,#dc2626) 55%,var(--line));background:var(--fout-zacht,rgba(220,38,38,.08))}
+.tga-koppel-balk{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--straal-l,14px);background:var(--surface)}
+.tga-koppel-info{display:grid;gap:2px;flex:1 1 220px;min-width:0}
+.tga-koppel-info strong{font-size:14px;line-height:1.3}
+.tga-koppel-info small{font-size:12.5px;color:var(--muted);line-height:1.4}
+.tga-lijst{display:grid;gap:10px}
+.tga-bevestig-inline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 10px;border-radius:var(--straal-m,10px);background:var(--fout-zacht,rgba(220,38,38,.1));border:1px solid color-mix(in srgb,var(--fout,#dc2626) 35%,var(--line));font-size:13px}
+.tga-pil{display:inline-flex;align-items:center;font-size:11.5px;font-weight:650;padding:2px 9px;border-radius:999px;background:var(--surface2,rgba(128,128,128,.15));color:var(--muted)}
+.tga-pil-actief{background:var(--ok-zacht,rgba(22,163,74,.14));color:var(--ok,#15803d)}
+.tga-pil-gepauzeerd{background:var(--warn-zacht,rgba(217,119,6,.16));color:var(--warn,#b45309)}
+.tga-pil-geblokkeerd,.tga-pil-uitgeschakeld{background:var(--fout-zacht,rgba(220,38,38,.14));color:var(--fout,#b91c1c)}
+.tga-pil-sleutel{background:var(--accent-soft,rgba(37,99,235,.14));color:var(--accent,#2563eb)}
+
+.tga-vergelijk{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tga-bron-kaart{border-radius:12px;padding:12px;display:grid;gap:8px;align-content:start;border:1px solid var(--line,rgba(128,128,128,.22));background:var(--surface,rgba(128,128,128,.04));min-width:0}
+.tga-bron-tg{border-color:color-mix(in srgb,#2AABEE 40%,var(--line));background:color-mix(in srgb,#2AABEE 6%,var(--surface,transparent))}
+.tga-bron-label{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.01em;color:var(--text)}
+.tga-identiteit{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.tga-identiteit img,.tga-foto-rond,.tga-geen-foto{width:56px;height:56px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;flex:0 0 56px}
+.tga-geen-foto{display:grid;place-items:center;background:#2AABEE;color:#fff;font-weight:700;font-size:1.35rem}
+.tga-identiteit dl,.tga-dl{display:grid;grid-template-columns:minmax(130px,auto) minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px;min-width:0;flex:1 1 200px}
+.tga-identiteit dt,.tga-dl dt{color:var(--muted)}
+.tga-identiteit dd,.tga-dl dd{margin:0;min-width:0}
+.tga-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;word-break:break-word;overflow-wrap:anywhere}
+.tga-naam{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tga-sectie .tga-naam input[type='text']{width:auto;min-width:170px;min-height:36px;padding:5px 10px}
+
+/* Права та тактильні перемикачі: специфічність (0,2,1) перемагає .settings-center label / input (0,1,1). */
+.tga-rechten{border:1px solid var(--line,rgba(128,128,128,.22));border-radius:var(--straal-m,10px);padding:10px;display:grid;gap:6px;margin:0;min-width:0}
+.tga-rechten legend{padding:0 6px;font-size:12px;font-weight:650;color:var(--muted)}
+.tga-vinkje{display:flex;gap:8px;align-items:flex-start;font-size:13.5px}
+.tga-sectie label.tga-schakel-rij,.tga-sectie label.tga-vinkje{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--panel);font-weight:400;cursor:pointer;min-width:0}
+.tga-schakel-tekst{display:grid;gap:2px;flex:1 1 auto;min-width:0}
+.tga-schakel-tekst strong{font-size:13.5px;font-weight:650;line-height:1.25}
+.tga-schakel-tekst small{font-size:12px;color:var(--muted);font-weight:400;line-height:1.35}
+.tga-sectie input[type='checkbox'].tga-schakel-invoer,.tga-sectie label.tga-vinkje input[type='checkbox']{appearance:none;-webkit-appearance:none;position:relative;flex:0 0 40px;width:40px;min-width:40px;height:22px;min-height:22px;margin:0;padding:0;border-radius:999px;border:1px solid var(--line);background:var(--surface2);cursor:pointer;transition:background-color .16s ease,border-color .16s ease}
+.tga-sectie input[type='checkbox'].tga-schakel-invoer::after,.tga-sectie label.tga-vinkje input[type='checkbox']::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.22);transition:transform .16s ease,background-color .16s ease}
+.tga-sectie input[type='checkbox'].tga-schakel-invoer:checked,.tga-sectie label.tga-vinkje input[type='checkbox']:checked{background:var(--accent);border-color:var(--accent)}
+.tga-sectie input[type='checkbox'].tga-schakel-invoer:checked::after,.tga-sectie label.tga-vinkje input[type='checkbox']:checked::after{transform:translateX(18px);background:var(--accentText,var(--text-on-accent))}
+.tga-sectie input[type='checkbox'].tga-schakel-invoer:focus-visible,.tga-sectie label.tga-vinkje input[type='checkbox']:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* Блоки таємного коду, згрупованої матриці з єдиним векторним шевроном та журналу останніх входів. */
+.tga-blok-kop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.tga-blok-titel{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.tga-blok h3{margin:0;font-size:15px;line-height:1.3}
+.tga-veld{display:grid;gap:4px;font-size:13px;min-width:0}
+.tga-veld input,.tga-veld select,.tga-blok input:not([type='checkbox']),.tga-blok select{width:100%;max-width:100%;min-width:0;min-height:38px;padding:6px 10px;border-radius:8px;border:1px solid var(--line,rgba(128,128,128,.3));background:var(--panel,transparent);color:inherit;font:inherit}
+.tga-code-form{display:grid;gap:8px;padding-top:4px}
 .tga-code meter{width:100%;height:10px}
-.tga-matrix select{display:block;width:100%;min-width:12rem;min-height:36px;padding:.35rem .55rem;border-radius:8px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit;font:inherit;font-size:.88rem}
-@media (max-width:640px){.tga-matrix td{max-width:100%;overflow:hidden}.tga-matrix select{max-width:100%}.tga-matrix table,.tga-matrix tbody,.tga-matrix tr,.tga-matrix td{display:block;width:100%}.tga-matrix thead{display:none}.tga-matrix td{border-bottom:0;padding:.2rem 0}.tga-matrix tr{padding:.45rem 0;border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent)}.tga-matrix select{min-width:0}}
-/* AANMELD-PLAATSING v1 — beheer van de plaats van de aanmeldmethoden + voorbeeld. */
-.tga-plaatsing-lijst{list-style:none;margin:.5rem 0;padding:0;display:grid;gap:.4rem}
-.tga-plaatsing-lijst li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,16rem) auto;gap:.5rem;align-items:center;padding:.45rem .55rem;border:1px solid color-mix(in srgb,currentColor 12%,transparent);border-radius:10px}
-.tga-plaatsing-naam{display:flex;flex-direction:column;min-width:0}.tga-plaatsing-naam small{opacity:.75;font-size:.8rem;overflow-wrap:anywhere}
-.tga-plaatsing-lijst select{width:100%;max-width:100%;min-width:0;min-height:36px;padding:.35rem .55rem;border-radius:8px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);background:transparent;color:inherit;font:inherit;font-size:.88rem}
+.tga-matrix-groepen{display:grid;gap:8px;padding-top:4px}
+.tga-matrix-groep{border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--panel);overflow:hidden}
+.tga-matrix-groep-kop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;font-size:13.5px;font-weight:650;cursor:pointer;list-style:none;user-select:none}
+.tga-matrix-groep-kop::-webkit-details-marker{display:none}
+.tga-matrix-groep-kop::marker{content:''}
+.tga-matrix-groep-titel{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.tga-matrix-groep-pijl{width:16px;height:16px;flex:0 0 16px;color:var(--muted);transition:transform .16s ease}
+.tga-matrix-groep-pijl.is-open,.tga-matrix-groep[open]>.tga-matrix-groep-kop .tga-matrix-groep-pijl{transform:rotate(180deg)}
+.tga-matrix-groep[open]>.tga-matrix-groep-kop{border-bottom:1px solid var(--line);background:var(--surface)}
+.tga-matrix-lijst{display:grid}
+.tga-matrix-rij{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;padding:10px 12px}
+.tga-matrix-rij+.tga-matrix-rij{border-top:1px solid var(--line)}
+.tga-matrix-info{display:grid;gap:2px;flex:1 1 220px;min-width:0}
+.tga-matrix-naam{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13.5px}
+.tga-sectie .tga-matrix-rij select{flex:0 1 270px;width:auto;min-width:190px;min-height:38px;padding:6px 10px;border-radius:var(--straal-s,8px);font-size:13px}
+.tga-inlog-lijst{display:grid;gap:6px}
+.tga-inlog-rij{border:1px solid var(--line,rgba(128,128,128,.2));border-radius:10px;padding:9px 12px;display:grid;gap:3px;font-size:13px;background:var(--panel,transparent)}
+
+/* Кроки майстра, таблиці адміністрування, діалогові вікна та керування розміщенням способів входу. */
+.tga-wizard{border-color:color-mix(in srgb,#2AABEE 42%,var(--line))}
+.tga-wizard-stappen{display:flex;gap:12px;list-style:none;margin:0;padding:0;font-size:12.5px;flex-wrap:wrap}
+.tga-wizard-stappen li{opacity:.55}
+.tga-wizard-stappen li[aria-current='step']{opacity:1;font-weight:700;color:var(--accent,#229ED9)}
+.tga-wizard-stappen li.klaar{opacity:.85}
+.tga-verschil,.tga-matrix table,.tga-blok table,.tga-beheer table{width:100%;border-collapse:collapse;font-size:13px}
+.tga-verschil td,.tga-verschil th,.tga-matrix td,.tga-matrix th,.tga-blok td,.tga-blok th,.tga-beheer td,.tga-beheer th{padding:7px 6px;border-bottom:1px solid var(--line,rgba(128,128,128,.16));text-align:left;vertical-align:top}
+.tga-nieuw{font-weight:700}
+.tga-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tga-tegel{border:1px solid var(--line,rgba(128,128,128,.22));border-radius:10px;padding:10px 12px;background:var(--panel,transparent);display:grid;gap:2px}
+.tga-tegel strong{font-size:1.3rem}
+.tga-tegel span{font-size:12px;color:var(--muted)}
+.tga-reeks{display:flex;gap:2px;height:16px;align-items:stretch}
+.tga-reeks span{flex:1;max-width:6px;border-radius:2px;background:rgba(128,128,128,.25)}
+.tga-reeks .ok{background:#16a34a}
+.tga-reeks .nee{background:#dc2626}
+.tga-nood{border-radius:12px;padding:12px 14px;border:1px solid rgba(22,163,74,.38);background:rgba(22,163,74,.07);display:grid;gap:6px}
+.tga-nood-uit{border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.1)}
+.tga-stap-lijst,.tga-geblokkeerd{list-style:none;padding:0;margin:0;font-size:13px;display:grid;gap:6px}
+.tga-geblokkeerd li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--straal-s,8px);background:var(--panel)}
+.tga-stap-lijst .ok{color:var(--ok,#1b7f45)}
+.tga-stap-lijst .nee{color:var(--fout,#b3262b)}
+.tga-scherm{position:fixed;inset:0;background:rgba(0,0,0,.52);display:grid;place-items:center;z-index:1200;padding:16px}
+.tga-venster{background:var(--panel,#fff);color:var(--text,#111);border:1px solid var(--line);border-radius:16px;max-width:460px;width:100%;padding:20px;display:grid;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.tga-venster h2{display:flex;gap:10px;align-items:center;margin:0;font-size:1.1rem}
+.tga-talen input{width:100%}
+.tga-matrix select{display:block;width:100%;min-width:12rem;min-height:38px;padding:6px 10px;border-radius:8px;border:1px solid var(--line,rgba(128,128,128,.3));background:var(--panel,transparent);color:inherit;font:inherit;font-size:13px}
+.tga-plaatsing-lijst{list-style:none;margin:8px 0;padding:0;display:grid;gap:8px}
+.tga-plaatsing-lijst li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,21rem) auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line,rgba(128,128,128,.22));border-radius:10px}
+.tga-plaatsing-naam{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tga-plaatsing-naam small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.tga-plaatsing-lijst select{width:100%;max-width:100%;min-width:0;min-height:38px;padding:6px 10px;border-radius:8px;border:1px solid var(--line,rgba(128,128,128,.3));background:var(--panel,transparent);color:inherit;font:inherit;font-size:13px}
 .tga-plaatsing-lijst select option{color:#17212b;background:#fff}
-.tga-plaatsing-pijlen{display:flex;gap:.25rem}.tga-knop-klein{min-width:36px;min-height:36px;padding:.25rem;display:inline-flex;align-items:center;justify-content:center}
-.tga-plaatsing-voorbeeld{margin:.6rem 0;padding:.75rem;border-radius:12px;border:1px dashed color-mix(in srgb,currentColor 30%,transparent);display:grid;gap:.45rem}
-.tga-voorbeeld-hoofd{display:grid;gap:.35rem}.tga-voorbeeld-knop{display:block;padding:.5rem .75rem;border-radius:999px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);font-size:.9rem}
-.tga-voorbeeld-schakel{font-size:.88rem;opacity:.85}.tga-voorbeeld-andere ul{margin:.25rem 0 0;padding-left:1.1rem;font-size:.85rem}
-@media (max-width:640px){.tga-plaatsing-lijst li{grid-template-columns:minmax(0,1fr) auto}.tga-plaatsing-lijst select{grid-column:1/-1;grid-row:2}}
-/* Smalle schermen: niets mag breder worden dan het venster (lange adressen, sleutelmaskers, tabellen). */
-@media (max-width:640px){.tga-sectie{min-width:0;max-width:100%;box-sizing:border-box}.tga-sectie *{min-width:0}.tga-sectie .tga-mono,.tga-sectie dd,.tga-sectie td{overflow-wrap:anywhere}.tga-sectie table.tga-lijst{display:block;overflow-x:auto;max-width:100%}.tga-raster{grid-template-columns:minmax(0,1fr)!important}}
-.tga-plaatsing-lijst li{grid-template-columns:minmax(0,1fr) minmax(0,21rem) auto}
+.tga-plaatsing-pijlen{display:flex;gap:4px}
+.tga-plaatsing-voorbeeld{margin:8px 0;padding:12px 14px;border-radius:12px;border:1px dashed var(--line,rgba(128,128,128,.35));display:grid;gap:8px;max-width:380px}
+.tga-voorbeeld-hoofd{display:grid;gap:6px}
+.tga-voorbeeld-knop{display:block;padding:8px 12px;border-radius:10px;border:1px solid var(--line,rgba(128,128,128,.3));font-size:13px;font-weight:600;text-align:center}
+.tga-voorbeeld-schakel{font-size:12.5px;font-weight:600;color:var(--muted)}
+.tga-voorbeeld-andere ul{margin:4px 0 0;padding-left:18px;font-size:12.5px}
+
+/* Усі медіа-правила зосереджено в кінці файла, щоб жодне базове правило не перебивало мобільний каскад. */
+@media (max-width:720px){
+  .tga-vergelijk{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .tga-sectie{max-width:100%}
+  .tga-sectie.tga-gebruiker{padding:14px;border-radius:var(--straal-l,14px)}
+  .tga-sectie *{min-width:0}
+  .tga-sectie .tga-mono,.tga-sectie dd,.tga-sectie td{overflow-wrap:anywhere}
+  .tga-sectie table.tga-lijst,.tga-sectie table.tga-verschil{display:block;overflow-x:auto;max-width:100%}
+  .tga-raster{grid-template-columns:minmax(0,1fr)!important}
+  .tga-identiteit{flex-wrap:wrap}
+  .tga-identiteit dl,.tga-dl{grid-template-columns:minmax(0,1fr)}
+  .tga-koppel-balk>.tga-knop{width:100%}
+  .tga-sectie .tga-matrix-rij select{flex:1 1 100%;width:100%;min-width:0;min-height:var(--tik-hoogte,44px)}
+  .tga-matrix td{max-width:100%;overflow:hidden;border-bottom:0;padding:3px 0}
+  .tga-matrix select{max-width:100%;min-width:0;min-height:42px}
+  .tga-matrix table,.tga-matrix tbody,.tga-matrix tr,.tga-matrix td{display:block;width:100%}
+  .tga-matrix thead{display:none}
+  .tga-matrix tr{padding:7px 0;border-bottom:1px solid var(--line,rgba(128,128,128,.16))}
+  .tga-plaatsing-lijst li{grid-template-columns:minmax(0,1fr) auto}
+  .tga-plaatsing-lijst select{grid-column:1/-1;grid-row:2}
+  .tga-knop,.tga-veld input,.tga-veld select{min-height:42px}
+}
+@media (max-width:440px){
+  .tga-sectie-kop .tga-stand{margin-left:0}
+  .tga-blok-kop>.tga-knop{width:100%}
+}
+@media (max-width:380px){
+  .tga-aanmeld-knop{font-size:14px;gap:8px;padding:10px 12px}
+  .tga-aanmeld-logo,.tga-aanmeld-eind{width:24px;height:24px;flex-basis:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tga-draai{animation:none;border-right-color:currentColor;opacity:.6}
+  .tga-sectie *{transition:none!important}
+}

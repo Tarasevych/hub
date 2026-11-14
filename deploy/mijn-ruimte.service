@@ -28,6 +28,12 @@ RestartSec=5
 TimeoutStopSec=15
 LimitNOFILE=65536
 UMask=0027
+# SEC-002 (http-rand-06, keten-config-05): laatste grens voor het geheugen van de app. Vroeger geen enkele: bij een vloed van
+# verzoeken kon de OOM-killer van de kern ook PostgreSQL treffen. Nu remt systemd boven 60 % van het fysieke geheugen af en stopt
+# de app boven 75 % (Restart=on-failure start haar opnieuw); PostgreSQL houdt zo altijd ruimte. Percentages: geldt voor elke VM-grootte.
+MemoryAccounting=yes
+MemoryHigh=60%
+MemoryMax=75%
 
 # --- Hardening ---
 NoNewPrivileges=yes

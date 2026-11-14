@@ -3,7 +3,8 @@
 // Wordt aangeroepen NA het aanmaken van de sessie (backend/index.ts) en nooit afgewacht door de inlogflow: elke fout wordt
 // gelogd en ingeslikt, zodat aanmelden nooit kan mislukken door deze module. Alleen actief met vlag `meldingen-uitleg-v3`.
 //
-// Dedupe: sleutel = HMAC-vrij sha256(account + grof apparaatlabel «Browser/Systeem»). Bekend apparaat → alleen laatst_gezien bij.
+// Dedupe: sleutel = sha256(account + hash van de eigen apparaatcookie van de browser) — SEC-002, zie backend/apparaat-cookie.ts;
+// vroeger sha256(account + grof apparaatlabel «Browser/Systeem»), na te bootsen met elke User-Agent. Bekend apparaat → alleen laatst_gezien bij.
 // Eerste apparaat ooit van een account (nog geen enkele rij) → stil als basis opgeslagen, geen melding (anders krijgt iedereen
 // bij het aanzetten van de vlag een melding voor zijn eigen apparaat).
 // «Це був я» → POST /api/meldingen/apparaat-bekend (markeert bevestigd). «Це не я» → id.tarasevych.com/sessions (bestaande
@@ -21,7 +22,11 @@ export type Locatie = { city?: string; region?: string; country?: string } | und
 export const MELDING_SOORT_NIEUW_APPARAAT = 'security_warning';
 const UUID = /^[0-9a-f-]{36}$/i;
 
+/** OUD (alleen nog voor aanroepers zonder apparaatcookie): sleutel op het grove label — door elke User-Agent na te bootsen. */
 export const apparaatSleutel = (userId: string, label: string) => createHash('sha256').update(`bekend-apparaat\u0000${userId}\u0000${label}`).digest('hex').slice(0, 32);
+/** SEC-002 (integraties-04 / aanmelden-05): sleutel op de hash van de eigen apparaatcookie van de browser (backend/apparaat-cookie.ts).
+ *  Andere invoer dan in apparaatSleutel (voorvoegsel v2), zodat een oude labelrij nooit een cookie-browser «bekend» maakt. */
+export const apparaatCookieSleutel = (userId: string, cookieHash: string) => createHash('sha256').update(`bekend-apparaat-v2\u0000${userId}\u0000${cookieHash}`).digest('hex').slice(0, 32);
 
 const METHODE: Record<AanmeldMethode, readonly [string, string]> = { google: ['Google', 'Google'], passkey: ['ключ доступу', 'toegangssleutel'], code: ['код доступу', 'toegangscode'], telegram: ['Telegram', 'Telegram'] };
 const regioTekst = (l: Locatie) => [l?.city, l?.region, l?.country].map((v) => String(v || '').replace(/[^\p{L}\p{N} .'-]/gu, '').slice(0, 40)).filter(Boolean).join(', ');
@@ -39,11 +44,41 @@ export function nieuwApparaatTekst(o: { email: string; label: string; methode: A
 
 type Deps = { vlagAan: () => Promise<boolean>; nu?: () => number };
 /** Na een geslaagde aanmelding. Faalt nooit naar buiten. Geeft terug wat er gebeurde (voor tests/logs). */
-export async function naAanmelding(o: { userId: string; email: string; ua?: string; locatie?: Locatie; methode: AanmeldMethode }, deps: Deps): Promise<'uit' | 'basis' | 'bekend' | 'gemeld' | 'fout'> {
+/**
+ * `apparaatCookie` (SEC-002): de hash van de apparaatcookie van de browser die zich net aanmeldde (backend/index.ts geeft hem
+ * altijd mee — een browser zonder cookie krijgt er in hetzelfde antwoord één, en is dus nieuw). Dan telt alleen DIE browser als
+ * bekend; het label is enkel tekst. Zonder dit veld (oude aanroepers) blijft het oude gedrag op het label.
+ */
+/**
+ * SEC-002 (slot s, eind-regressie midden-2): neutrale melding voor een browser die het systeem VÓÓR de beveiligingsupdate al kende
+ * (oude rij op het label «Browser/Systeem»), maar die nog geen apparaatcookie had. Geen alarm («новий пристрій»), wel een spoor.
+ * De bescherming blijft: zo'n browser is voor Telegram nog altijd nieuw (één keer bevestigen), en de oude labelrij wordt hierbij
+ * VERBRUIKT — een tweede browser met hetzelfde label krijgt dus wél de gewone waarschuwing.
+ * Нейтральне сповіщення: перший вхід на цьому пристрої після оновлення безпеки; стара позначка використовується один раз.
+ */
+export const OVERGANG_SOORT = 'security';
+export function overgangTekst(o: { label: string; tijd: number }) {
+  const titel = 'Перший вхід на цьому пристрої після оновлення безпеки / Eerste aanmelding op dit apparaat na de beveiligingsupdate';
+  const uk = `Пристрій «${o.label}» ви вже використовували раніше. Після оновлення безпеки система впізнає браузери за власною позначкою, тому цей вхід — перший за новим правилом · ${brusselsTijd(o.tijd, 'uk')} (Брюссель). Нічого робити не треба; якщо сайт попросить — один раз підтвердіть ключем доступу. Якщо ви не входили — завершіть сеанс на сторінці безпеки.`;
+  const nl = `Apparaat «${o.label}» gebruikte u al eerder. Na de beveiligingsupdate herkent het systeem browsers aan een eigen markering, dus deze aanmelding is de eerste volgens de nieuwe regel · ${brusselsTijd(o.tijd, 'nl')} (Brussel). U hoeft niets te doen; vraagt de site erom, bevestig dan één keer met uw toegangssleutel. Meldde u zich niet aan, beëindig dan de sessie op de beveiligingspagina.`;
+  return { titel, tekst: `${uk} / ${nl}` };
+}
+export async function naAanmelding(o: { userId: string; email: string; ua?: string; locatie?: Locatie; methode: AanmeldMethode; apparaatCookie?: string }, deps: Deps): Promise<'uit' | 'basis' | 'bekend' | 'gemeld' | 'overgang' | 'fout'> {
   try {
-    if (!o.userId || !(await deps.vlagAan())) return 'uit';
+    if (!o.userId) return 'uit';
+    const vlag = await deps.vlagAan();
+    // Oude aanroepers (zonder apparaatcookie): zonder vlag niets, zoals vroeger.
+    if (!vlag && o.apparaatCookie === undefined) return 'uit';
     const label = apparaatLabel(o.ua) || 'onbekend/onbekend';
-    const sleutel = apparaatSleutel(o.userId, label);
+    if (o.apparaatCookie !== undefined && !/^[a-f0-9]{64}$/.test(o.apparaatCookie)) throw new Error('APPARAAT_COOKIE_ONGELDIG');
+    const sleutel = o.apparaatCookie !== undefined ? apparaatCookieSleutel(o.userId, o.apparaatCookie) : apparaatSleutel(o.userId, label);
+    // SEC-002 (g10h-toets-3): de vlag regelt alleen de MELDING. Welke browser bekend is, wordt ook zonder vlag onthouden — anders
+    // was voor Telegram elke browser «nieuw» (ook de eigen) en kreeg de mens bij elke aanmelding een onware waarschuwing.
+    if (!vlag) {
+      await sys().query('INSERT INTO app.bekende_apparaten (user_id, sleutel, apparaat) VALUES ($1, $2, $3) ON CONFLICT (user_id, sleutel) DO UPDATE SET laatst_gezien = now()',
+        [o.userId, sleutel, label.slice(0, 40)]);
+      return 'uit';
+    }
     const bij = await sys().query('UPDATE app.bekende_apparaten SET laatst_gezien = now() WHERE user_id = $1 AND sleutel = $2 RETURNING id', [o.userId, sleutel]);
     if (bij.rows.length) return 'bekend';
     const n = Number((await sys().query('SELECT count(*)::int AS n FROM app.bekende_apparaten WHERE user_id = $1', [o.userId])).rows[0]?.n || 0);
@@ -51,6 +86,16 @@ export async function naAanmelding(o: { userId: string; email: string; ua?: stri
       [o.userId, sleutel, label.slice(0, 40), n === 0 ? new Date() : null]);
     if (!ins.rows.length) return 'bekend'; // gelijktijdige aanmelding legde hem net vast
     if (n === 0) return 'basis';
+    // SEC-002 (slot s, midden-2): bestond er een OUDE rij op het label van deze browser? Dan kende het systeem hem vóór de update:
+    // die rij verbruiken (DELETE … RETURNING: hoogstens één keer) en een neutrale melding in plaats van de waarschuwing.
+    if (o.apparaatCookie !== undefined) {
+      const oud = await sys().query('DELETE FROM app.bekende_apparaten WHERE user_id = $1 AND sleutel = $2 RETURNING id', [o.userId, apparaatSleutel(o.userId, label)]);
+      if (oud.rows.length) {
+        const { titel, tekst } = overgangTekst({ label, tijd: (deps.nu || Date.now)() });
+        await meld(o.userId, OVERGANG_SOORT, titel, tekst, `https://id.tarasevych.com/sessions?apparaat=${ins.rows[0].id}`);
+        return 'overgang';
+      }
+    }
     const { titel, tekst } = nieuwApparaatTekst({ email: o.email, label, methode: o.methode, locatie: o.locatie, tijd: (deps.nu || Date.now)() });
     await meld(o.userId, MELDING_SOORT_NIEUW_APPARAAT, titel, tekst, `https://id.tarasevych.com/sessions?apparaat=${ins.rows[0].id}`);
     return 'gemeld';
@@ -96,6 +141,6 @@ export async function herstelcodeGebruiktMelden(userId: string, actie: string, l
     const l = label || 'невідомий пристрій';
     await meld(userId, 'access_recovery_code_used', 'Використано код відновлення / Herstelcode gebruikt',
       `Один код відновлення щойно використано (дія: ${actie.slice(0, 40)}) на пристрої «${l}» · ${brusselsTijd(Date.now(), 'uk')} (Брюссель). Цей код більше не діє. Якщо це були не ви — завершіть чужі сеанси й створіть нові коди. / Er is net een herstelcode gebruikt (actie: ${actie.slice(0, 40)}) op apparaat «${label || 'onbekend apparaat'}» · ${brusselsTijd(Date.now(), 'nl')} (Brussel). Die code werkt niet meer. Was u dit niet: beëindig vreemde sessies en maak nieuwe codes.`,
-      'https://id.tarasevych.com/methods#herstel');
+      'https://id.tarasevych.com/recovery#aanmeldmethoden-herstel'); /* IDENTITEIT-014: #herstel bestond niet */
   } catch (err) { console.error('[nieuw-apparaat] herstelcode-melding mislukt:', (err as Error).message); }
 }

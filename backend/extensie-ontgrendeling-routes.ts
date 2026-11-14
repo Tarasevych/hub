@@ -7,13 +7,15 @@ import type { RouterMiddleware } from '../server/platform/router';
 import * as beheer from './extensie-beheer';
 import * as eo from './extensie-ontgrendeling';
 import * as matrix from './extensie-matrix';
-import { stapOpGeldig } from './stap-op';
+import { STAP_OP_MS, stapOpGeldig, stapOpGeldigTot, stapOpUit, stapOpVerbruiken, sterkeStapOpGeldig, type StapOpAuth } from './stap-op';
+import { sterkeMethoden } from './toegang-context';
 import { capsUnie, extensieFoutUitleg, ONTGRENDEL_TERMIJNEN, SNEL_SETS, wordtRuimer, type MatrixStand, type MatrixWeigering } from '../shared/extensie-matrix';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { isAiRuimte } from '../shared/ai-ruimte';
 import { ACCENTEN } from '../shared/menu-model';
 import * as kleuren from './agent-kleuren';
 import { isEigenaar, TechFout } from './tech-profiel';
+import { KijkerWeigering } from './kijker-alleen-lezen';
 
 type SessionOk = { user: { id: string; email?: string; role?: string; status?: string; name?: string }; service: string; session?: { id: string; createdAt: number } | null; tabSession?: { id: string; createdAt?: number } | null };
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
@@ -45,10 +47,38 @@ export function extensieOntgrendelingRoutes(requireSession: RequireSession): Rec
     catch (err) {
       if (err instanceof eo.Weigering) return weigering(err);
       if (err instanceof TechFout) return error(err.code, err.status);
+      if (err instanceof KijkerWeigering) throw err; // SEC-002 (slot v): kijkerWacht antwoordt 403 RBAC_FORBIDDEN met audit en melding
       console.error('[extensie-ontgrendeling]', (err as Error).message);
       return error('EXTENSIE_ONTGRENDELING_FOUT', 500);
     }
   }) as RouterMiddleware;
+
+  // ---------------------------------------------------------------- SEC-002 (extensie-05): bevestiging voor «Усі користувачі»
+  // Verlengen en ruimer beleid vragen een verse bevestiging van DEZE sessie (venster «Підтвердіть доступ»; src/platform/client.ts
+  // opent het bij 403 STEP_UP_REQUIRED / STEP_UP_STRONG_REQUIRED en herhaalt het verzoek één keer). Een onthouden browser telt niet
+  // (stapOpGeldigTot kijkt alleen naar de bevestiging van de sessie zelf), een bevestiging van vóór `sinds` ook niet, en na één
+  // verruiming is ze verbruikt. Zo blijft de termijn die een mens met passkey/step-up bevestigde de grens, ook als een AI of een
+  // voorbijganger in dit tabblad op «Продовжити» klikt.
+  const stapOpAuthVan = (a: eo.Aanroep): StapOpAuth => ({
+    user: { id: a.user.id }, session: a.session?.id ? { id: String(a.session.id), createdAt: Number(a.session.createdAt) || 0 } : null,
+    tabSession: a.tabSession?.id ? { id: String(a.tabSession.id), createdAt: Number(a.tabSession.createdAt) || 0 } : null,
+  });
+  const bevestiging: beheer.Bevestiging = {
+    eis: async (a, { sterk, sinds }) => {
+      if (stapOpUit()) return '';
+      const auth = stapOpAuthVan(a);
+      // Technisch slot: de sterke regel van het platform (passkey/app-code/herstelcode voor wie er een heeft, anders gewoon).
+      // De STERKE bevestiging zelf moet van ná `sinds` zijn (g06-1): sterk vóór het openen + gewoon erna is samen niet genoeg.
+      // sterkeStapOpGeldig(auth, sinds + STAP_OP_MS) ⇔ het tijdstip van de sterke bevestiging ligt ná `sinds`.
+      const m = sterk ? await sterkeMethoden(a.user.id) : null;
+      if (m && (m.passkey || m.totp || m.herstelcode)) {
+        return (await sterkeStapOpGeldig(auth)) && (await sterkeStapOpGeldig(auth, sinds + STAP_OP_MS)) ? '' : 'STEP_UP_STRONG_REQUIRED';
+      }
+      const tot = await stapOpGeldigTot(auth).catch(() => 0);
+      return tot > 0 && tot - STAP_OP_MS > sinds ? '' : 'STEP_UP_REQUIRED';
+    },
+    verbruik: (a) => stapOpVerbruiken(stapOpAuthVan(a)),
+  };
 
   const status = (a: eo.Aanroep) => eo.extensieStatus(a.user, a.tabContext, a.session?.id ? { id: String(a.session.id), createdAt: Number(a.session.createdAt) || 0, tabSessieId: a.tabSession?.id ? String(a.tabSession.id) : null } : null);
   const P = '/api/owner/agents/ontgrendeling';
@@ -131,11 +161,13 @@ export function extensieOntgrendelingRoutes(requireSession: RequireSession): Rec
     'GET /api/owner/agents/extensie-beheer': [route((a) => beheer.lijst(a), { get: true })],
     'POST /api/owner/agents/extensie-beheer': [route((a) => beheer.lijst(a))],
     // {userId, priveAan?, technischAan?, priveCaps?, technischCaps?, priveMaxDagen?, technischMaxMinuten?, lokaalAan?, notitie?} → {ok, beleid, ingetrokken}
-    'POST /api/owner/agents/extensie-beheer/beleid': [route((a, b) => beheer.beleidZetten(a, b))],
+    // | 403 STEP_UP_REQUIRED / STEP_UP_STRONG_REQUIRED als het beleid ruimer wordt (strenger en de notitie vragen niets)
+    'POST /api/owner/agents/extensie-beheer/beleid': [route((a, b) => beheer.beleidZetten(a, b, bevestiging))],
     // {userId, agentId?, ruimte?} → {ok, ingetrokken}; de gebruiker krijgt een melding
     'POST /api/owner/agents/extensie-beheer/intrekken': [route((a, b) => beheer.intrekkenVoor(a, b))],
     // {gid, minuten | dagen} → {ok, ontgrendeling, verzonden, gekapt}; alleen binnen beleid, technisch nooit voorbij de activering
-    'POST /api/owner/agents/extensie-beheer/verlengen': [route((a, b) => beheer.verlengen(a, b))],
+    // | 403 STEP_UP_REQUIRED (privé) / STEP_UP_STRONG_REQUIRED (technisch): altijd een verse bevestiging, één per verlenging
+    'POST /api/owner/agents/extensie-beheer/verlengen': [route((a, b) => beheer.verlengen(a, b, bevestiging))],
     // 0110: matrix «Браузер і агенти» (MatrixStand). Lezen op elke eigen dienst; zetten alleen op mcp.*/admin.*.
     'GET /api/owner/agents/extensie-matrix': [route((a) => stand(a), { get: true, alleDiensten: true })],
     'POST /api/owner/agents/extensie-matrix': [route((a) => stand(a), { alleDiensten: true })],

@@ -3,7 +3,7 @@
 // de vlag UIT volledig bestaan; beide lezen dezelfde records. Agenda en Foto's hergebruiken de bestaande Google-weergaven.
 import IntegratieStrook from '../integraties/IntegratieStrook'; // UI-013 fase 2: gedeelde verbindingenstrook (vlag integraties-catalogus-v2)
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, Cloud, FolderOpen, Images, Inbox, Link2, LayoutDashboard, MoreHorizontal, Plus, Search, Upload, Users } from 'lucide-react';
+import { CalendarDays, Cloud, FolderOpen, Images, Inbox, Link2, LayoutDashboard, MoreHorizontal, Plus, Search, Share2, Upload, Users } from 'lucide-react';
 import { cloudClient, CloudFout, type Overzicht as OverzichtUit } from './cloud-client';
 import { foutTekst, tr, useSmal, type Lang } from './tekst';
 import { paginaVerborgen } from '../foto/foto-vlaggen';
@@ -11,10 +11,12 @@ import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-die
 import { sessieZet } from './hulp';
 import './cloud-vnext.css';
 import './cloud-vnext-integraties.css';
+import './cloud-vnext-delen.css';
 import './cloud-vnext-mobiel.css';
 
 const Overzicht = lazy(() => import('./onderdelen/Overzicht'));
 const Bestanden = lazy(() => import('./onderdelen/Bestanden'));
+const Gedeeld = lazy(() => import('./onderdelen/Gedeeld'));
 const Werkruimtes = lazy(() => import('./onderdelen/Werkruimtes'));
 const Vastleggen = lazy(() => import('./onderdelen/Vastleggen'));
 const PostvakIn = lazy(() => import('./onderdelen/PostvakIn'));
@@ -24,14 +26,15 @@ const Integraties = lazy(() => import('./onderdelen/Integraties'));
 const Bron = lazy(() => import('./onderdelen/Bron'));
 const AgendaFotos = lazy(() => import('./onderdelen/AgendaFotos'));
 
-export type CloudTab = 'overview' | 'files' | 'workspaces' | 'capture' | 'inbox' | 'search' | 'recent' | 'calendar' | 'photos' | 'accounts' | 'google' | 'onedrive' | 'dropbox';
-const TABS: readonly CloudTab[] = ['overview', 'files', 'workspaces', 'capture', 'inbox', 'search', 'recent', 'calendar', 'photos', 'accounts', 'google', 'onedrive', 'dropbox'];
+export type CloudTab = 'overview' | 'files' | 'shared' | 'workspaces' | 'capture' | 'inbox' | 'search' | 'recent' | 'calendar' | 'photos' | 'accounts' | 'google' | 'onedrive' | 'dropbox';
+const TABS: readonly CloudTab[] = ['overview', 'files', 'shared', 'workspaces', 'capture', 'inbox', 'search', 'recent', 'calendar', 'photos', 'accounts', 'google', 'onedrive', 'dropbox'];
 export type OnderdeelProps = {
   lang: Lang; smal: boolean; userEmail: string; sourceOrigin: string; tabContext: string;
   ov: OverzichtUit | null; vernieuw: () => Promise<void>; toon: (t: string) => void; naarTab: (t: CloudTab) => void;
 };
 const LABEL: Record<CloudTab, [string, string]> = {
-  overview: ['Огляд', 'Overzicht'], files: ['Мої файли', 'Mijn bestanden'], workspaces: ['Робочі простори', 'Werkruimtes'], capture: ['Швидко зберегти', 'Snel opslaan'],
+  overview: ['Огляд', 'Overzicht'], files: ['Мої файли', 'Mijn bestanden'], shared: ['Спільний доступ', 'Gedeeld'],
+  workspaces: ['Робочі простори', 'Werkruimtes'], capture: ['Швидко зберегти', 'Snel opslaan'],
   inbox: ['Швидкий вхід', 'Snelle invoer'], search: ['Пошук', 'Zoeken'], recent: ['Останні', 'Recent'], calendar: ['Календар', 'Agenda'], photos: ['Фото', 'Foto’s'],
   accounts: ['Інтеграції', 'Integraties'], google: ['Google Drive', 'Google Drive'], onedrive: ['OneDrive', 'OneDrive'], dropbox: ['Dropbox', 'Dropbox'],
 };
@@ -53,7 +56,7 @@ function neemDiepeLink(): CloudTab | '' {
   }
   return diepWachtend;
 }
-const ICOON: Record<CloudTab, typeof Cloud> = { overview: LayoutDashboard, files: FolderOpen, workspaces: Users, capture: Upload, inbox: Inbox, search: Search, recent: CalendarDays, calendar: CalendarDays, photos: Images, accounts: Link2, google: Cloud, onedrive: Cloud, dropbox: Cloud };
+const ICOON: Record<CloudTab, typeof Cloud> = { overview: LayoutDashboard, files: FolderOpen, shared: Share2, workspaces: Users, capture: Upload, inbox: Inbox, search: Search, recent: CalendarDays, calendar: CalendarDays, photos: Images, accounts: Link2, google: Cloud, onedrive: Cloud, dropbox: Cloud };
 
 export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabContext, onNavigateTab }: { lang: Lang; tab: string; userEmail: string; sourceOrigin: string; tabContext: string; onNavigateTab: (id: string) => void }) {
   const smal = useSmal();
@@ -77,6 +80,7 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
   const onderdeel = () => {
     switch (huidig) {
       case 'files': return <Bestanden {...props} />;
+      case 'shared': return <Gedeeld {...props} />;
       case 'workspaces': return <Werkruimtes {...props} />;
       case 'capture': return <Vastleggen {...props} />;
       case 'inbox': return <PostvakIn {...props} />;
@@ -104,12 +108,12 @@ export default function CloudPagina({ lang, tab, userEmail, sourceOrigin, tabCon
       </div>
       {smal ? (
         <nav className='cvn-onderbalk' aria-label={tr(lang, 'Розділи', 'Onderdelen')}>
-          {(['overview', 'files', 'search', 'accounts'] as CloudTab[]).map((t) => { const I = ICOON[t]; return <button key={t} type='button' className={huidig === t ? 'is-actief' : ''} aria-current={huidig === t ? 'page' : undefined} onClick={() => naarTab(t)} data-cvn-onderbalk={t}><I aria-hidden='true' /><span>{tr(lang, LABEL[t][0], LABEL[t][1])}</span></button>; })}
+          {(['overview', 'files', 'shared', 'search'] as CloudTab[]).map((t) => { const I = ICOON[t]; return <button key={t} type='button' className={huidig === t ? 'is-actief' : ''} aria-current={huidig === t ? 'page' : undefined} onClick={() => naarTab(t)} data-cvn-onderbalk={t}><I aria-hidden='true' /><span>{tr(lang, LABEL[t][0], LABEL[t][1])}</span></button>; })}
           <button type='button' className='cvn-plus' onClick={() => naarTab('capture')} aria-label={tr(lang, 'Швидко зберегти', 'Snel opslaan')} data-cvn-onderbalk='capture'><Plus aria-hidden='true' /></button>
           <details className='cvn-onderbalk-meer'>
             <summary aria-label={tr(lang, 'Інші розділи', 'Meer onderdelen')}><MoreHorizontal aria-hidden='true' /><span>{tr(lang, 'Ще', 'Meer')}</span></summary>
             <div className='cvn-onderbalk-menu'>
-              {(['workspaces', 'inbox', 'recent', 'calendar', 'photos', 'google'] as CloudTab[]).filter((t) => !paginaVerborgen('cloud', t)/* UI-002 */).map((t) => { const I = ICOON[t]; return <button key={t} type='button' onClick={(e) => { naarTab(t); (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; }}><I aria-hidden='true' />{tr(lang, LABEL[t][0], LABEL[t][1])}</button>; })}
+              {(['accounts', 'workspaces', 'inbox', 'recent', 'calendar', 'photos', 'google'] as CloudTab[]).filter((t) => !paginaVerborgen('cloud', t)/* UI-002 */).map((t) => { const I = ICOON[t]; return <button key={t} type='button' onClick={(e) => { naarTab(t); (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; }}><I aria-hidden='true' />{tr(lang, LABEL[t][0], LABEL[t][1])}</button>; })}
             </div>
           </details>
         </nav>

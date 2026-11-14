@@ -1395,3 +1395,76 @@ Bij privétoegang gebruikt de site het bestaande, afgeschermde GitHub-token van 
 Controle bij weigering: juiste taak-commit, `orchestratie/ontwikkelarchieven/<TAAK-ID>.json` op die commit, branch-geschiedenis, Release-tag die gelijk is aan `UITROL-VERSIE`, assetnaam en assetdigest. Een ontbrekende of ontoegankelijke GitHub Release is geen toestemming om door te gaan. De eigenaar blijft de installatie met Passkey goedkeuren; TRACE-001 verleent geen automatische installatierechten.
 
 Canon: `AGENTS.md` §5, `orchestratie/beleid.json` v1.4.1, `orchestratie/BESLUITEN.md` B-007 en `deploy/REGELS-UITROLPAKKET.nl.md` §7.
+
+## 20. SEC-002 — afscherming van diensten en van de bouw, noodschakelaar voor de step-up, toeleveringsketen (12.11.2026)
+
+### 20.1 Afscherming van de root-hulpdiensten (systemd)
+
+De diensten die als root draaien, kregen alleen wat ze echt nodig hebben:
+
+| Unit | Nieuwe afscherming | Waarom zo |
+|---|---|---|
+| `mijn-ruimte-diagnose.service` | `NoNewPrivileges`, `ProtectSystem=strict` + schrijven alleen in `/var/lib/mijn-ruimte-uitrol-status`, `PrivateDevices`, `ProtectKernelTunables/Modules`, `ProtectControlGroups`, `RestrictAddressFamilies=AF_UNIX` | de diagnose leest alleen en schrijft één statusbestand |
+| `mijn-ruimte-opdracht@.service` | `NoNewPrivileges`, `ProtectSystem=full`, schrijven in `/etc/systemd/system`, `ProtectKernel*`, `ProtectControlGroups` | «terugdraaien» zet de unit van de MCP-deur terug |
+| `mijn-ruimte-proef.service` | `NoNewPrivileges`, `ProtectSystem=strict` + precies 4 schrijfbare paden (`/var/lib/mijn-ruimte-proef`, `/var/lib/mijn-ruimte-uitrol-status`, `/srv/mijn-ruimte/proef-inbox`, `/run/lock`), `ProtectKernel*`, `ProtectControlGroups` | de migratieproef werkt alleen in de eigen wegwerpmappen |
+| `mijn-ruimte-nazorg.service` | `NoNewPrivileges`, `PrivateTmp`, `ProtectHome`, `ProtectKernel*`, `ProtectControlGroups` — bewust ZONDER `ProtectSystem` | terugdraaien verzet de koppeling in `/srv` en kan een unit in `/etc/systemd/system` terugzetten (zoals `mijn-ruimte-besluit.service`) |
+
+Na de eerste installatie met deze release (eenmalig, als root):
+
+```bash
+systemd-analyze security mijn-ruimte-diagnose.service mijn-ruimte-nazorg.service mijn-ruimte-proef.service mijn-ruimte-opdracht@status.service
+```
+
+en één proefuitrol met terugdraaien (§8). Meldt een dienst «Read-only file system» of «Permission denied», dan mist er een pad:
+niet de afscherming uitzetten, maar het pad melden (de dienst heeft het blijkbaar nodig).
+
+### 20.2 Afgeschermde bouw (`installeer-app.sh`, keten-config-06)
+
+De bouw voert code van honderden afhankelijkheden uit. Die draait nu:
+
+- als eigen systeemgebruiker `mijnruimte-bouw` (geen login, geen sudo; de installatie stopt als hij in `sudo`, `wheel`, `docker`, `adm`,
+  `mijnruimte` of de back-upgroep zit), met eigen cache `/var/cache/mijn-ruimte-bouw`;
+- in een afgeschermde unit: hele bestandssysteem alleen-lezen, van `/srv/mijn-ruimte` alleen de eigen releasemap zichtbaar
+  (`TemporaryFileSystem` + `BindPaths`), `ProtectProc=invisible`, `RestrictSUIDSGID`, en geen toegang tot `/srv/data`, `/srv/backups`,
+  `/etc/mijn-ruimte`, `/var/lib/mijn-ruimte*` en `/var/log/mijn-ruimte`;
+- met `npm ci --ignore-scripts`; alleen esbuild krijgt daarna zijn script (`npm rebuild esbuild`).
+
+De eerste afgeschermde bouw haalt alle pakketten één keer opnieuw op (de oude cache van de dienstgebruiker wordt bewust niet overgenomen).
+
+**! Noodrem** (alleen root): `touch /etc/mijn-ruimte/bouw-afscherming.uit` laat weer bouwen zoals vroeger. Risico: code van
+afhankelijkheden kan dan de geheimen van de draaiende dienst (`/proc/<pid>/environ`: databasewachtwoorden, sleutels) en alle
+gebruikersbestanden lezen. Alleen als de afgeschermde bouw op deze machine aantoonbaar niet werkt, en het bestand daarna meteen weghalen.
+
+### 20.3 Noodschakelaar voor de step-up: alleen met een einde
+
+`STAP_OP_UIT_TOT=<ISO-tijdstip>` in `geheimen.env` (hoogstens 24 uur vooruit; daarna vanzelf weer aan). Zolang hij geldt, meldt de
+server dat bij de start en elke 24 uur (logboek, beheerjournaal, melding aan de eigenaar, rode balk in «Захист», diepe
+gezondheidscontrole). De oude vorm `STAP_OP_UIT=1` heeft geen einde: niet meer gebruiken. Zie `OMGEVINGSVARIABELEN.nl.md` en
+`deploy/DRAAIBOEK-AUDITHERSTEL.nl.md` §10.
+
+### 20.4 Toeleveringsketen vóór een uitgave (`scripts/keten-controle.mjs`)
+
+`node scripts/keten-controle.mjs` stopt de uitgave bij (1) kwetsbaarheden «hoog» of «kritiek» volgens `npm audit --audit-level=high`,
+of als de audit geen antwoord geeft; (2) een pakket in `package-lock.json` dat niet van `https://registry.npmjs.org/` komt, niet de exacte
+tarball van zijn naam en versie is of geen sha512-integriteit heeft; (3) een git-, bestands- of URL-afhankelijkheid in `package.json`.
+Eén bewuste uitzondering: `xlsx` 0.20.3 van `cdn.sheetjs.com`, alleen met precies die URL en integriteit (de npm-versie 0.18.5 heeft
+bekende kwetsbaarheden). Een nieuwe xlsx-versie vraagt eerst een besluit van de eigenaar; `--streng` staat geen uitzonderingen toe.
+
+### 20.5 Herstel op een nieuwe machine: vastgezette cloudflared
+
+`deploy/archief-herstellen.sh` (in het archief `vidnovyty.sh`) installeert cloudflared alleen nog met een vastgezette versie en SHA-256.
+Meegeleverd: 2026.10.7 (amd64 en arm64; som op 12.11.2026 nagekeken bij GitHub en in het pakketarchief van Cloudflare). Een andere
+versie: `--cloudflared-versie V --cloudflared-sha256 HEX`. **!** `--tunnel-ongecontroleerd` haalt de nieuwste versie zonder controle en
+installeert die als root — alleen als u die bron bewust vertrouwt.
+
+### 20.6 SSH-certificaten alleen met een passkey van de eigenaar (server-uitrol-06)
+
+Root tekent een SSH-certificaat (`mijn-ruimte-ssh-ca`) alleen nog met een passkey van de eigenaar over precies dat certificaat. **Na deze
+installatie** geeft de site dus geen certificaat meer zolang `/etc/mijn-ruimte/goedkeur-passkeys.json` geen passkey van de eigenaar
+bevat (melding `GEEN_PASSKEY`). Toevoegen: zoals in §13.2 («Може схвалювати оновлення сервера» aanvinken, dan op de server
+`sudo mijn-ruimte-passkey wachtend` en `sudo mijn-ruimte-passkey toevoegen <vingerafdruk>`); een passkey die al updates goedkeurt, telt
+ook hier. Aanvragen kan alleen op `admin.tarasevych.com` of `id.tarasevych.com`. Volledige uitleg: `deploy/SSH-CA.nl.md`.
+
+**!** De schakelaar `"ssh-ca-teken-passkey": false` in `/etc/mijn-ruimte/mcp-rechten.json` (alleen root) zet de passkey-eis uit.
+Risico: wie de app overneemt, krijgt dan een shell op de server als `beheer`. Laat dit veld weg (standaard: verplicht) of zet `true`;
+`false` alleen tijdelijk vanaf de console als de passkey kwijt is, en daarna meteen terug.

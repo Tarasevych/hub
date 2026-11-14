@@ -7,6 +7,8 @@ import { api } from './platform/client';
 import { ecosystemTabContext } from './tab-context';
 import { Help, IconButton, type Tr } from './mcp-ui';
 import { foutTekst } from './agenten/fouten';
+// SEC-002 extensie-02 (g10a-2): rechten geven mag alleen de mens — zone voor de brug van de extensie + alleen een echte klik.
+import { alleenMens, geenAi } from './menselijke-actie';
 
 type Capability = 'browser.read' | 'browser.navigate' | 'browser.interact' | 'browser.screenshot' | 'browser.console' | 'browser.debug' | 'browser.script' | 'machine.read' | 'machine.write' | 'machine.exec' | 'machine.docker';
 type Grant = { id: string; agentId: string; capability: Capability; domains: string[]; always: boolean; preset: string | null; grantedAt: number; expiresAt: number; revokedAt: number | null };
@@ -111,7 +113,7 @@ export default function AiToestemmingen({ tr, agentId, platform, onChange, versi
     <div className='ai-grants' data-ai-grants={agentId}>
       {geblokkeerd ? <p className='hub-note is-warn' role='alert'><Ban size={14} /> {tr('Доступ ШІ для вашого облікового запису заблоковано. Дозволи не діють.', 'AI-toegang voor uw account is geblokkeerd. Toestemmingen werken niet.')}</p> : null}
 
-      <div className='ai-blok'>
+      <div className='ai-blok' {...geenAi}>
         <div className='ai-blok-kop'><h4>{tr('Набір дозволів', 'Set toestemmingen')}</h4><small className='hub-meta'>{tr('Застосування набору замінює чинні дозволи цього пристрою.', 'Een set toepassen vervangt de huidige toestemmingen van dit apparaat.')}</small></div>
         <div className='ag-segment ai-presets' role='radiogroup' aria-label={tr('Набір дозволів', 'Set toestemmingen')}>
           {presets.map(([id, p]) => {
@@ -120,9 +122,9 @@ export default function AiToestemmingen({ tr, agentId, platform, onChange, versi
             return (
               <span key={id} className='ag-segment-optie'>
                 <button type='button' role='radio' aria-checked={huidig === id} disabled={!!busy || geblokkeerd} data-preset={id}
-                  onClick={() => void act(`preset:${id}`, () => api.post('/api/owner/ai/grants/preset', { ...body(), agentId, preset: id }),
+                  onClick={alleenMens(() => void act(`preset:${id}`, () => api.post('/api/owner/ai/grants/preset', { ...body(), agentId, preset: id }),
                     () => tr(`Набір «${p.uk}» застосовано: ${list.length} дозв. на ${duur(p.minutes)}; попередні дозволи цього пристрою замінено.`, `Set "${p.nl}" toegepast: ${list.length} toest. voor ${duur(p.minutes)}; eerdere toestemmingen van dit apparaat vervangen.`),
-                    ['Не вдалося застосувати набір', 'Set toepassen mislukt'])}>
+                    ['Не вдалося застосувати набір', 'Set toepassen mislukt']))}>
                   {busy === `preset:${id}` ? <Loader2 className='ag-spin' aria-hidden='true' /> : id === 'spostericach' ? <Eye aria-hidden='true' /> : id === 'razovo' ? <Clock aria-hidden='true' /> : <ShieldCheck aria-hidden='true' />}
                   <span>{tr(p.uk, p.nl)}</span>
                 </button>
@@ -155,9 +157,9 @@ export default function AiToestemmingen({ tr, agentId, platform, onChange, versi
         ) : <p className='hub-meta'>{tr('Немає дозволів: ШІ нічого не може робити на цьому пристрої.', 'Geen toestemmingen: de AI kan niets op dit apparaat.')}</p>}
       </div>
 
-      <div className='ai-blok'>
+      <div className='ai-blok' {...geenAi}>
         <div className='ai-blok-kop'><h4>{tr('Окремий дозвіл', 'Losse toestemming')}</h4></div>
-        <form className='ai-grant-form' onSubmit={(e) => { e.preventDefault(); void act('add', () => api.post('/api/owner/ai/grants/add', { ...body(), agentId, capability: cap, minutes: always && minutes > maxDays * 1440 ? maxDays * 1440 : minutes, always, ...(platform === 'browser' && domainList.length ? { domains: domainList } : {}) }), () => tr(`Дозвіл «${capNaam(cap)}» додано на ${duur(minutes)}.`, `Toestemming "${capNaam(cap)}" toegevoegd voor ${duur(minutes)}.`), ['Не вдалося додати дозвіл', 'Toevoegen mislukt']); }}>
+        <form className='ai-grant-form' onSubmit={alleenMens((e: { preventDefault: () => void }) => { e.preventDefault(); void act('add', () => api.post('/api/owner/ai/grants/add', { ...body(), agentId, capability: cap, minutes: always && minutes > maxDays * 1440 ? maxDays * 1440 : minutes, always, ...(platform === 'browser' && domainList.length ? { domains: domainList } : {}) }), () => tr(`Дозвіл «${capNaam(cap)}» додано на ${duur(minutes)}.`, `Toestemming "${capNaam(cap)}" toegevoegd voor ${duur(minutes)}.`), ['Не вдалося додати дозвіл', 'Toevoegen mislukt']);})}>
           <label className='ai-veld'><span>{tr('Що', 'Wat')}</span>
             <select value={cap} onChange={(e) => setCap(e.target.value as Capability)} disabled={!!busy}>
               {caps.map((c) => <option key={c} value={c}>{capNaam(c)}</option>)}

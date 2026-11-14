@@ -11,6 +11,7 @@ import type { OnderdeelProps } from '../CloudPagina';
 import Laag from '../Laag';
 import { sessieZet } from '../hulp';
 import { tr } from '../tekst';
+import { weigeringZin } from '../../../shared/weigering-tekst';
 
 // Dezelfde envelop als src/cloud-vnext/cloud-client.ts meegeeft (dat bestand blijft onaangeroerd).
 const envelop = (extra: Record<string, unknown> = {}) => ({ service: sessieDienst(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin, ...extra });
@@ -42,7 +43,7 @@ export default function Werkruimtes({ lang, ov, vernieuw, toon, naarTab }: Onder
       setMis(code === 'CLOUD_WORKSPACE_ALREADY_EXISTS' ? tr(lang, 'Простір із такою назвою вже є.', 'Een werkruimte met deze titel bestaat al.')
         : code === 'CLOUD_WORKSPACE_LIMIT_REACHED' ? tr(lang, 'Досягнуто ліміт просторів.', 'De grens aan werkruimtes is bereikt.')
         : code === 'CLOUD_WORKSPACE_TITLE_REQUIRED' ? tr(lang, 'Назва закоротка (від 2 символів).', 'De titel is te kort (vanaf 2 tekens).')
-        : tr(lang, `Не вдалося (${code}).`, `Mislukt (${code}).`));
+        : weigeringZin(lang, code) ?? tr(lang, `Не вдалося (${code}).`, `Mislukt (${code}).`));
     } finally { setBesig(false); }
   };
 

@@ -5,6 +5,7 @@
 import { createHmac } from 'node:crypto';
 import { getPool } from './pg';
 import { huidigeContext, type VerzoekContext } from './context';
+import { jsonbVeilig, knipTekst, tekstVeilig } from './json-veilig';
 
 export type AuditGebeurtenis = {
   ownerId: string | null;
@@ -80,9 +81,17 @@ export function apparaat(ua: string | undefined | null): string | null {
   return `${browser}/${os}`;
 }
 
-const tekst = (v: unknown, max: number) => String(v ?? '').slice(0, max);
+// SEC-002 (privacy-logboek-02): U+0000 of een halve emoji in een tekstkolom/jsonb liet de hele INSERT mislukken — de actie was
+// dan al gebeurd, de regel niet geschreven. Alles wat naar de database gaat, loopt daarom door tekstVeilig/jsonbVeilig.
+const tekst = (v: unknown, max: number) => tekstVeilig(knipTekst(String(v ?? ''), max));
+/** Postgres-klassen «data exception» (22…: ongeldige json/tekst) en «program limit exceeded» (54…: te diep/te groot). */
+const DETAILS_FOUT = /^(22|54)/;
 
-/** Voeg een gebeurtenis toe. Faalt de database, dan gooit dit (beveiligingsacties horen niet stil te verdwijnen). */
+/**
+ * Voeg een gebeurtenis toe. Faalt de database, dan gooit dit (beveiligingsacties horen niet stil te verdwijnen).
+ * Zijn alleen de DETAILS onbruikbaar (niet te serialiseren, of door jsonb geweigerd), dan komt de regel er toch — met dezelfde
+ * eigenaar, actor, actie en uitkomst en met `_detailsVerloren` in plaats van de details: een lege regel is beter dan geen regel.
+ */
 export async function auditToevoegen(g: AuditGebeurtenis): Promise<{ id: string; seq: number; hash: string }> {
   const c = huidigeContext();
   // «Подивитися як користувач» (0068): de mens achter de aanroep is de beheerder, nooit de gebruiker zelf.
@@ -94,11 +103,22 @@ export async function auditToevoegen(g: AuditGebeurtenis): Promise<{ id: string;
   const ruimte = typeof details.workspaceId === 'string' ? details.workspaceId : typeof details.ruimte === 'string' ? details.ruimte : undefined;
   const ctx = { ...(ruimte ? ctxSchoon({ ruimte }) : {}), ...(await contextVoor(c, actor)), ...ctxSchoon(details._ctx) };
   if (Object.keys(ctx).length) details._ctx = ctx; else delete details._ctx;
-  const r = await getPool('systeem').query(
+  const verloren = (fout: string) => JSON.stringify({ _detailsVerloren: true, fout, ...(Object.keys(ctx).length ? { _ctx: ctx } : {}), ...(typeof details.actorType === 'string' ? { actorType: tekst(details.actorType, 40) } : {}) });
+  let json: string;
+  try { json = jsonbVeilig(JSON.stringify(details)); } catch { json = verloren('SERIALISATIE'); }
+  const schrijf = (detailsJson: string) => getPool('systeem').query(
     'SELECT id, seq, hash FROM app.audit_toevoegen($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)',
     [g.ownerId || null, actor, tekst(g.action, 120), tekst(g.type || 'beveiliging', 40), tekst(g.result ?? '', 40),
-      JSON.stringify(details), ipHash(c?.ip), apparaat(c?.ua), tekst(g.service ?? c?.service ?? '', 40) || null],
+      detailsJson, ipHash(c?.ip), apparaat(c?.ua), tekst(g.service ?? c?.service ?? '', 40) || null],
   );
+  let r;
+  try { r = await schrijf(json); } catch (e) {
+    const code = String((e as { code?: unknown })?.code || '');
+    if (!DETAILS_FOUT.test(code)) throw e;
+    // Eén herhaling zonder de details; mislukt ook die, dan gooit dit zoals altijd.
+    console.error(`[audit] details geweigerd door de database (${code}) bij «${tekst(g.action, 120)}»: regel geschreven zonder details`);
+    r = await schrijf(verloren(code));
+  }
   const rij = r.rows[0];
   return { id: String(rij.id), seq: Number(rij.seq), hash: String(rij.hash) };
 }

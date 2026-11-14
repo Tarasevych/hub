@@ -252,6 +252,9 @@ export class SseVervoer implements Vervoer {
       .then((kop) => {
         // De stroom is dicht: iedereen die nog wacht, krijgt een eerlijke fout (nooit stil blijven hangen).
         const fout = this.fout ?? new McpFout(this.eindpunt ? MCP_FOUT.sessieWeg : MCP_FOUT.geenVervoer);
+        // SEC-002 (integraties-06): ook onthouden. Anders registreerde een volgende verstuur() een nieuwe wachtende
+        // op een stroom die al dicht is, en die bleef hangen tot de klok van 20 s.
+        this.fout = fout;
         mislukt?.(fout);
         for (const [, wachter] of this.wachtenden) wachter.mis(fout);
         this.wachtenden.clear();
@@ -272,10 +275,25 @@ export class SseVervoer implements Vervoer {
     if (this.fout) throw this.fout;
     if (!this.eindpunt) throw new McpFout(MCP_FOUT.geenVervoer);
     const sleutel = String(verzoek.id);
-    const antwoord = new Promise<RpcAntwoord>((los, mis) => { this.wachtenden.set(sleutel, { los, mis }); });
-    const tijd = new Promise<never>((_, mis) => { setTimeout(() => { this.wachtenden.delete(sleutel); mis(new McpFout(MCP_FOUT.tijd)); }, MCP_GRENZEN.timeoutMs).unref?.(); });
-    await this.postNaarEindpunt(JSON.stringify(verzoek)).catch((err) => { this.wachtenden.delete(sleutel); throw err; });
-    return Promise.race([antwoord, tijd]);
+    // SEC-002 (ai-mcp-04, integraties-06): één belofte voor «antwoord óf tijd op», met METEEN een afhandelaar eraan.
+    // Vroeger stonden hier twee losse beloften die pas ná de POST in Promise.race kwamen. Mislukte de POST
+    // (4xx/5xx/3xx, netwerkfout) of sloot de server intussen de GET-stroom, dan werd een belofte zonder afhandelaar
+    // afgewezen: «unhandledRejection» — en dat stopt het hele proces van de site, voor alle gebruikers.
+    let klok: ReturnType<typeof setTimeout> | null = null;
+    const antwoord = new Promise<RpcAntwoord>((los, mis) => {
+      this.wachtenden.set(sleutel, { los, mis });
+      klok = setTimeout(() => { this.wachtenden.delete(sleutel); mis(new McpFout(MCP_FOUT.tijd)); }, MCP_GRENZEN.timeoutMs);
+      (klok as { unref?: () => void }).unref?.();
+    });
+    antwoord.catch(() => undefined);
+    try {
+      await this.postNaarEindpunt(JSON.stringify(verzoek));
+      return await antwoord;
+    } finally {
+      // Hoe het ook afloopt: de klok en de wachtende gaan weg (geen klok die 20 s later nog afgaat).
+      if (klok) clearTimeout(klok);
+      this.wachtenden.delete(sleutel);
+    }
   }
 
   async meld(melding: RpcMelding): Promise<void> {

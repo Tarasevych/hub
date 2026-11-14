@@ -2,23 +2,40 @@
    De aansluiting van het ontwerp op de omlijsting van de site: het ontwerp vult de hele werkruimte en brengt zijn eigen bovenbalk en dienstenbalk mee,
    de omlijsting van de site is verborgen zolang de weergave open is. Чотири класи, як і в згенерованих стилях (0,4,0). */
 
-/* Поки вигляд відкритий, оболонка сайту захована: бічне меню, його край і кнопка «нагору» — зовсім; верхня смуга — невидима, але
-   меню облікового запису (інші акаунти, вихід) і сповіщення сайту з неї лишаються видимими, бо з макета немає іншого шляху до них. */
-html[data-identiteit-maquette='aan'] body .canonical-chrome .canonical-workspace{padding:0!important;scrollbar-gutter:auto} /* сильніше за mobiel-ux (html body …) */
-/* Прокручує робоча область сайту, а не html: правило html макета (плавна прокрутка, відступ 110px під липкою планкою) переносимо сюди. */
+/* Головне меню всього сайту (.canonical-sidebar, гамбургер у шухляді та док на чотири сторони) лишається доступним і єдиним для платформи;
+   ховаємо лише дубльовану кнопку «нагору» сайту та демонстраційну смужку .app-rail макета. Верхня смуга сайту невидима (макет має власну .topbar),
+   проте панель облікового запису й сповіщення лишаються видимими. */
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{scroll-behavior:smooth;scroll-padding-top:110px}
-html[data-identiteit-maquette='aan'] .canonical-chrome :is(.canonical-sidebar,.canonical-sidebar-edge-zone,.canonical-scroll-top){display:none!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-workspace{max-width:none!important;scrollbar-gutter:auto;background:#090e1b}
+html[data-identiteit-maquette='aan'] .canonical-chrome:is(.theme-light,.theme-plum-light) .canonical-workspace{background:#edf0f6}
+html[data-identiteit-maquette='aan'] body .canonical-chrome.sidebar-drawer-mode .canonical-workspace,
+html[data-identiteit-maquette='aan'] body .canonical-chrome[data-focus-mode='mail'] .canonical-workspace{padding:0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not([data-dock]):not(.sidebar-pinned) .canonical-workspace,
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='links']:not(.sidebar-pinned) .canonical-workspace{padding:0 0 0 var(--zijbalk-rail,60px)!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail']):not([data-dock]).sidebar-pinned .canonical-workspace,
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='links'].sidebar-pinned .canonical-workspace{padding:0 0 0 min(286px,calc(100vw - var(--zijbalk-rail,60px)))!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='rechts']:not(.sidebar-pinned) .canonical-workspace{padding:0 var(--zijbalk-rail,60px) 0 0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='rechts'].sidebar-pinned .canonical-workspace{padding:0 min(286px,calc(100vw - var(--zijbalk-rail,60px))) 0 0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='boven'] .canonical-workspace{padding:calc(var(--dock-hoogte,62px) + 16px) 0 0 0!important}
+html[data-identiteit-maquette='aan'] body .canonical-chrome:not(.sidebar-drawer-mode):not([data-focus-mode='mail'])[data-dock='onder'] .canonical-workspace{padding:0 0 calc(var(--dock-hoogte,62px) + 18px) 0!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-scroll-top{display:none!important}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar{visibility:hidden;background:transparent;border:0;box-shadow:none;pointer-events:none}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-topbar :is(.canonical-account-panel,.canonical-notification-toast){visibility:visible;pointer-events:auto}
 html[data-identiteit-maquette='aan'] .canonical-chrome .canonical-content{min-height:0}
-/* На телефоні меню облікового запису живе в шухляді бічного меню: поки шухляду відчинено на прохання з діалогу світлини, її видно. */
 html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical-sidebar{display:flex!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer:has(.am3-mobiel-laag) :is(.canonical-sidebar,.canonical-sidebar-scrim){visibility:hidden;pointer-events:none}
+/* Канонічний гамбургер головного меню сайту (☰) у верхньому лівому куті шапки .topbar у режимі шухляди */
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar{width:64px;height:77px;max-height:77px;padding:0 0 0 14px;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;border:0;background:transparent}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-menu-toggle{width:44px;height:44px;margin:0;color:#dce5f7}
+html[data-identiteit-maquette='aan'] .canonical-chrome:is(.theme-light,.theme-plum-light).sidebar-drawer-mode:not(.sidebar-drawer) .canonical-menu-toggle{color:#192640}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq .topbar{padding-left:68px!important}
 
-/* Корінь займає всю робочу область сайту (її відступи, якщо є, знімаємо від'ємними полями, виміряними двигуном: --mq-site/-site-links/-rechts/-onder);
-   смугу сервісів макета враховує сам макет (.main-content{margin-left:var(--mq-links)}). */
+/* Корінь займає робочу область сайту, а відступ від головного меню сайту враховує сама робоча область і змінні --mq-links/-rechts/-site/-onder. */
+.mr-mq.mr-mq.mr-mq.mr-mq .app-rail{display:none!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .main-content{margin-left:0!important}
 .mr-mq.mr-mq.mr-mq.mr-mq{
-  margin:calc(-1 * var(--mq-site,0px)) calc(-1 * var(--mq-rechts,0px)) calc(-1 * var(--mq-onder,0px)) calc(-1 * var(--mq-site-links,0px));
-  padding:var(--mq-site,0px) 0 0 var(--mq-site-links,0px);
+  margin:0;
+  padding:0;
   min-height:100vh;
   overflow-x:clip;
   isolation:isolate;
@@ -78,7 +95,7 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical
   font-family:'Trebuchet MS',Verdana,sans-serif;font-size:14px;line-height:1.35;color:var(--text);
 }
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud :where(h1,h2,h3){font-family:Georgia,'Times New Roman',serif}
-.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud svg{width:1rem;height:1rem;stroke-width:1.9}
+:where(.mr-mq .mq-echt-inhoud svg){width:1rem;height:1rem;stroke-width:1.9}
 /* Панель сайту всередині блоку без власної рамки: рамка й тло — від картки або розгорнутої панелі макета. */
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud>.settings-center{padding:0;margin:0;border:0;background:transparent;box-shadow:none}
 /* Блок «Чинні налаштування» у стилі «Можливостей для доопрацювання»; у вкладеній панелі він іде після робочої області. */
@@ -97,11 +114,108 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer .canonical
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button:hover{border-color:rgba(var(--global-rgb),.55)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button.is-actief{background:rgba(var(--global-rgb),.18);border-color:rgba(var(--global-rgb),.6);color:var(--text)}
 
-/* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів. */
+/* Зсуви внутрішнього якірного дороговказу макета відносно правого або нижнього дока головного меню сайту */
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731).rail-right:not(.rail-smart-condensed) .anchor-rail{right:calc(var(--mq-rechts,0px) + 19px)!important}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-right .anchor-rail{right:calc(var(--mq-rechts,0px) + 15px)!important}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-730).rail-smart-condensed.rail-right .anchor-rail{right:12px!important}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731).rail-bottom .anchor-rail{bottom:calc(var(--mq-onder,0px) + 19px)!important}
+html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq.rail-left .adaptive-nav-edge{display:none!important}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed:is(.rail-left,.rail-right) .anchor-rail{
+  height:auto!important;
+  max-height:calc(100dvh - var(--mq-boven) - var(--mq-onder,0px) - 20px)!important;
+  bottom:calc(var(--mq-onder,0px) + 12px)!important;
+}
+
+/* Липка підсмуга внутрішнього дороговказу розділів сторінки (.mq-sectie-balk): чітко відокремлена від шапки та головного гамбургера сайту */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk{display:none}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk{
+  position:sticky;top:var(--mq-topbar,64px);z-index:425;
+  display:flex;align-items:center;justify-content:flex-start;gap:8px;
+  padding:8px 20px;
+  background:rgba(9,14,27,.76);border-bottom:1px solid var(--card-border);
+  -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq.light.rail-smart-condensed .mq-sectie-balk{background:rgba(239,243,249,.86)}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-420).rail-smart-condensed .mq-sectie-balk{padding:7px 12px}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk[data-zijde='right']{justify-content:flex-end}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  flex:0 1 auto;width:auto;min-width:0;height:40px;min-height:40px;padding:0 14px;
+  border-radius:999px;border:1px solid rgba(var(--global-rgb),.32);
+  background:rgba(var(--global-rgb),.12);color:var(--text);
+  font-size:13px;font-weight:600;line-height:1;
+}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle:hover,
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle[aria-expanded='true']{
+  background:rgba(var(--global-rgb),.22);border-color:rgba(var(--global-rgb),.56);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-icoon{width:18px;height:18px;flex:none;color:var(--global)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-naam{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-pijl{width:15px;height:15px;flex:none;color:var(--muted);transition:transform .18s ease!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .adaptive-nav-toggle[aria-expanded='true'] .mq-sectie-pijl{transform:rotate(180deg)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie{
+  display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;padding:0;
+  border-radius:50%;border:1px solid var(--card-border);background:var(--card-bg);color:var(--muted);
+}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie:hover{color:var(--text);border-color:rgba(var(--global-rgb),.42)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie svg{width:17px;height:17px}
+
+/* Чіткі пропорції та вирівнювання всіх стрілок розгортання у вигляді «Макет» (без сплющення й обрізання). */
+.mr-mq.mr-mq.mr-mq.mr-mq .anchor-rail .nav-chevron{flex:0 0 18px;width:18px;height:18px;display:inline-grid;place-items:center}
+.mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed.rail-smart-open .anchor-rail .nav-chevron{display:inline-grid!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .text-link>span{display:inline-grid;place-items:center;flex:0 0 auto;line-height:1}
+.mr-mq.mr-mq.mr-mq.mr-mq .text-link.open-detail:hover>span{transform:none}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button .inline-close-chevron{display:inline-grid;place-items:center;flex:0 0 18px;width:18px;height:18px;font-size:0;line-height:1;transform:rotate(180deg);transition:transform .2s ease!important}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button:hover .inline-close-chevron{transform:rotate(180deg) translateY(2px)}
+.mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button .inline-close-chevron svg{display:block;width:18px;height:18px;flex:none}
+.mr-mq.mr-mq.mr-mq.mr-mq .register-chevron{display:inline-grid;place-items:center;flex:0 0 20px;width:20px;height:20px;font-size:0;line-height:1}
+.mr-mq.mr-mq.mr-mq.mr-mq .register-chevron svg{display:block;width:18px;height:18px;flex:none}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-chevron{flex:0 0 20px;width:20px;height:20px}
+@media(prefers-reduced-motion:reduce){
+  .mr-mq.mr-mq.mr-mq.mr-mq .inline-close-button .inline-close-chevron,
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-pijl{transition:none!important}
+}
+
+/* Мобільний шар наприкінці файла (правило mobiel-cascade-20261105): перемикач у підвалі в стовпчик, панелі без бічних відступів, вирівнювання ☰ під 64px шапку. */
 @media(max-width:730px){
+  html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode:not(.sidebar-drawer) .canonical-sidebar{width:56px;height:64px;max-height:64px;padding:0 0 0 10px}
+  html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-mq.mr-mq.mr-mq.mr-mq .topbar{padding-left:60px!important}
+  .mr-mq.mr-mq.mr-mq.mr-mq.rail-smart-condensed .mq-sectie-balk .adaptive-nav-toggle{min-height:44px;height:44px}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-sectie-balk .mq-sectie-positie{flex:0 0 44px;width:44px;height:44px}
   /* Вікно навігації на телефоні прив'язане знизу; з перемикачем вигляду воно вище за екран 844 px — тож прокручується всередині. */
   .mr-mq.mr-mq.mr-mq.mr-mq.bp-max-730 .popover-panel{max-height:calc(100dvh - var(--mq-site,0px) - 97px);overflow:auto;overscroll-behavior:contain}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-blok{padding-inline:12px}
+  .mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-inhoud{overflow-wrap:anywhere}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-vormgeving-voet{padding:0 14px 110px}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer{justify-content:center}
   .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button{min-height:var(--tik-hoogte,40px)}
 }
+
+/* IDENTITEIT-011: жива карта розвитку. Мітки станів мають власний колір і текст (не лише колір), рядок «Працює» — кнопка переходу.
+   De levende ontwikkelkaart: statuslabels met kleur én tekst; «Werkt» is een knop naar de echte instelling. */
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-go{width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-go:hover{border-color:rgba(var(--global-rgb),.45)}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-go:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-open{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--a,var(--global));padding:4px 9px;border-radius:50px;border:1px solid rgba(var(--global-rgb),.35)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-werkt{color:#1f7a4a;background:rgba(46,160,96,.12);border-color:rgba(46,160,96,.32)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-deels{color:#9a6512;background:rgba(243,166,61,.12);border-color:rgba(234,169,75,.3)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-gepland{color:#5b5bb5;background:rgba(110,110,220,.11);border-color:rgba(110,110,220,.3)}
+.mr-mq.mr-mq.mr-mq.mr-mq :is(.future-option-status,.future-status).future-stand-nee{color:#7a7f8c;background:rgba(122,127,140,.12);border-color:rgba(122,127,140,.3)}
+.mr-mq.mr-mq.mr-mq.mr-mq .future-option-status[class*=future-stand-]{border:1px solid;border-radius:50px;padding:3px 7px;font-weight:700}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-werkt{color:#6fd39b}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-deels{color:#f0bb6a}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-gepland{color:#a9a9f2}
+.mr-mq.mr-mq.mr-mq.mr-mq:not(.light) :is(.future-option-status,.future-status).future-stand-nee{color:#b4b8c2}
+/* Ціль переходу: коротке підсвічування, щоб людина бачила, куди її привело (без руху, якщо рух вимкнено). */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{outline:2px solid rgba(var(--global-rgb),.7);outline-offset:4px;border-radius:12px;transition:outline-color 1.6s ease}
+@media (prefers-reduced-motion:reduce){.mr-mq.mr-mq.mr-mq.mr-mq .mq-kaart-doel{transition:none}}
+/* Вузька робоча область: макет переносить мітку на другий рядок на всю ширину (100% + відступ виходив за картку).
+   Тут мітка займає лише свою ширину, а «Відкрити» стає праворуч у тому самому рядку. */
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option{flex-wrap:wrap}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option-status[class*=future-stand-]{flex:0 1 auto;max-width:calc(100% - 51px - 88px);margin:0 0 0 51px;text-align:left}
+.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-600) .future-option-go .future-option-open{margin-left:auto}
+/* IDENTITEIT-011: макетний елемент у розділах облікового запису — позначка «Приклад вигляду» й кнопка до справжнього налаштування. */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-label{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:50px;font-size:9.5px;font-weight:700;vertical-align:middle;color:var(--muted,#7a7f8c);border:1px dashed rgba(var(--global-rgb),.35)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{cursor:pointer;background:transparent;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+@media (max-width:520px){.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-eerlijk .drawer-control-top{flex-wrap:wrap}.mr-mq.mr-mq.mr-mq.mr-mq .mq-demo-open{margin-left:auto}}

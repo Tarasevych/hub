@@ -2,7 +2,7 @@
 // de server), waar (host), met welk apparaat («Chrome · Windows») en een korte IP-hash; privénotities (≤ 500 tekens, alleen
 // voor uzelf, potloodje) en een uitklapbare «Історія». Teksten alleen UA + NL.
 import {useEffect,useState} from 'react';
-import {Check,ChevronDown,ChevronRight,History,Pencil,StickyNote,X} from 'lucide-react';
+import {Check,ChevronDown,History,Pencil,StickyNote,X} from 'lucide-react';
 import {api} from './platform/client';
 import {foutCode} from './platform/webauthn';
 import type {Lang} from './toegangslaag-teksten';
@@ -37,6 +37,7 @@ export const ACTIE_TEKST:Record<string,[string,string]>={
   agenten:['Агенти й токени','Agents en tokens'],
   export:['Експорт даних','Gegevens exporteren'],
   'account-verwijderen':['Видалення акаунта','Account verwijderen'],
+  'deel-beheerder':['Надання ролі адміністратора простору','Beheerdersrol voor een werkruimte geven'],
   onbekend:['Інша дія','Andere actie'],
 };
 export const actieTekst=(lang:Lang,a:string)=>{const t=ACTIE_TEKST[a]||ACTIE_TEKST.onbekend;return tr(lang,t[0],t[1]);};
@@ -63,7 +64,7 @@ export function GebruikLijst({lang,gebruik,id}:{lang:Lang;gebruik:Gebruik[];id:s
   if(!gebruik.length)return null;
   return <div className='toegang-gebruik' data-gebruik={id}>
     <div className='toegang-gebruik-laatste'><small>{tr(lang,'Останнє використання:','Laatst gebruikt:')}</small> <GebruikRegel lang={lang} g={gebruik[0]}/></div>
-    {gebruik.length>1&&<button type='button' className='toegang-uitklap' aria-expanded={open} onClick={()=>setOpen(!open)}>{open?<ChevronDown/>:<ChevronRight/>}{tr(lang,`Усі використання (${gebruik.length})`,`Alle keren gebruikt (${gebruik.length})`)}</button>}
+    {gebruik.length>1&&<button type='button' className='toegang-uitklap' aria-expanded={open} onClick={()=>setOpen(!open)}><ChevronDown className='toegang-uitklap-pijl' aria-hidden='true'/>{tr(lang,`Усі використання (${gebruik.length})`,`Alle keren gebruikt (${gebruik.length})`)}</button>}
     {open&&<ol className='toegang-gebruik-lijst'>{gebruik.map((g,i)=><li key={`${g.op}-${i}`}><GebruikRegel lang={lang} g={g}/></li>)}</ol>}
   </div>;
 }
@@ -150,7 +151,7 @@ export function GeschiedenisLijst({lang,items,id}:{lang:Lang;items:GeschiedenisI
   const[open,setOpen]=useState(false);
   if(!items.length)return null;
   return <div className='toegang-geschiedenis' data-geschiedenis={id}>
-    <button type='button' className='toegang-uitklap' aria-expanded={open} onClick={()=>setOpen(!open)}>{open?<ChevronDown/>:<ChevronRight/>}<History/>{tr(lang,`Історія (${items.length})`,`Geschiedenis (${items.length})`)}</button>
+    <button type='button' className='toegang-uitklap' aria-expanded={open} onClick={()=>setOpen(!open)}><ChevronDown className='toegang-uitklap-pijl' aria-hidden='true'/><History/>{tr(lang,`Історія (${items.length})`,`Geschiedenis (${items.length})`)}</button>
     {open&&<ol className='toegang-geschiedenis-lijst'>{items.map((g,i)=>{const t=WIJZIGING_TEKST[g.soort];return <li key={`${g.op}-${i}`} data-soort={g.soort}>
       <strong>{t?tr(lang,t[0],t[1]):g.soort}</strong>{g.wijziging?.ongedaanOp&&<span className='access-plane-badge tone-info'>{tr(lang,'Скасовано','Teruggedraaid')}</span>}
       {g.wijziging?<WijzigingDetails lang={lang} w={g.wijziging}/>:<small>{tijdTekst(lang,g.op)}{g.door?` · ${g.door==='ssh'?tr(lang,'через SSH','via SSH'):g.door}`:''}</small>}

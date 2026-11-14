@@ -61,11 +61,11 @@ export async function main(): Promise<number> {
   const na = losOpEerdere(oud, 'mail|x');
   check('een latere gelukte stap lost de eerdere fout met hetzelfde onderwerp op; andere onderwerpen en de gelukte stap zelf niet',
     na[0].opgelost === true && na[1].opgelost === undefined && na[2].opgelost === undefined);
-  check('levensduur: vast → blijft staan (null); anders de seconden, plus extra tijd voor een lange tekst en een uitleg',
-    popupLevensduurMs({ vast: true, seconden: 10 }, 'x') === null
-    && popupLevensduurMs({ vast: false, seconden: 10 }, 'kort') === 10_000
-    && popupLevensduurMs({ vast: false, seconden: 3 }, 'x'.repeat(130)) === 5_000
-    && popupLevensduurMs({ vast: false, seconden: 10 }, 'kort', 'y'.repeat(300)) === 14_000
-    && popupLevensduurMs({ vast: false, seconden: 1 }, 'kort') === 3_000);
+  check('levensduur: standaard precies 2000 ms (2 s, ongeacht tekstlengte of uitleg); vast → null; eigen seconden (minstens 2 s)',
+    popupLevensduurMs({ vast: false, seconden: 0 }, 'kort') === 2_000
+    && popupLevensduurMs({ vast: false, seconden: 0 }, 'x'.repeat(300), 'y'.repeat(300), 'error') === 2_000
+    && popupLevensduurMs({ vast: true, seconden: 10 }, 'x') === null
+    && popupLevensduurMs({ vast: false, seconden: 10 }, 'kort', 'y'.repeat(300)) === 10_000
+    && popupLevensduurMs({ vast: false, seconden: 1 }, 'kort') === 2_000);
   return einde();
 }

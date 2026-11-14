@@ -17,7 +17,7 @@ on:
       - 'orchestratie/ontwikkelarchieven/IDENTITEIT-007.json'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: identiteit-007-uitgave-3
@@ -36,15 +36,14 @@ jobs:
   controle-en-uitgave:
     runs-on: ubuntu-latest
     timeout-minutes: 55
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Bronbestanden ophalen
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Node voorbereiden
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -76,18 +75,19 @@ jobs:
           fi
       - name: Правила і джерела
         run: |
+          set -o pipefail
           node scripts/orch.mjs controleer
           node scripts/orch.mjs versheid --taak "$TAAK" --fase overdracht
           node scripts/identiteit-maquette/bouw.mjs
           git diff --exit-code -- src/identiteit/maquette
-          node scripts/eenheidstests.mjs identiteit-maquette
-          node scripts/eenheidstests.mjs identiteit-atelier
-          node scripts/eenheidstests.mjs mobiel-cascade-20261105
-          node scripts/eenheidstests.mjs mobiel-geometrie
-          node scripts/eenheidstests.mjs identiteit-account-ui
-          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief
-          node scripts/eenheidstests.mjs uitrol-voorcontrole
-          node scripts/eenheidstests.mjs plaatsing-20261025
+          node scripts/eenheidstests.mjs identiteit-maquette 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs identiteit-atelier 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs mobiel-cascade-20261105 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs mobiel-geometrie 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs identiteit-account-ui 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs trace-001-ontwikkelarchief 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs uitrol-voorcontrole 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
+          node scripts/eenheidstests.mjs plaatsing-20261025 2>&1 | tee -a "$RUNNER_TEMP/eenheidstests.log"
           node scripts/plaatsing-controle.mjs
       - name: Справжні вузькі екрани у браузері
         shell: bash
@@ -119,18 +119,19 @@ jobs:
           VERSIE="$(date -u +%Y%m%d-%H%M%S)"
           echo "versie=$VERSIE" >> "$GITHUB_OUTPUT"
           echo "VERSIE=$VERSIE" >> "$GITHUB_ENV"
-          if gh release view "$VERSIE" >/dev/null 2>&1; then
-            echo 'Версія вже існує.' >&2
-            exit 1
-          fi
           node --input-type=module <<'JS'
-          import {writeFileSync} from 'node:fs';
+          import { readFileSync, writeFileSync } from 'node:fs';
           const e=process.env;
           const uk={titel:'Вигляд «Макет» — дизайн власника в центрі облікового запису',samenvatting:'Сторінка облікового запису за макетом власника один в один: власна шапка та смуга сервісів, герой, картки чотирьох груп з елементами макета, якірне меню з будь-якого краю і швидкий пошук Ctrl+K. Справжні налаштування — у згортаному блоці «Чинні налаштування» кожного розділу.',wijzigingen:['Новий вигляд «Макет» за прапорцем identiteit-account-maquette: оболонка сайту на час вигляду схована, тема й мова беруться із сайту.','Смуга сервісів макета веде на справжні сервіси; аватар шапки відкриває перехід до розділу «Акаунт» і до меню облікового запису (інші акаунти, вихід).','У кожній картці та панелі — елементи макета плюс блок «Чинні налаштування» зі справжньою панеллю, правами й діями.','Перемикач вигляду («Макет», «Студія», класичний) у вікні налаштувань навігації та під підвалом.','«Макет» тепер завжди в списку виглядів: доки перемикач функції вимкнено або не створено, пункт неактивний із поясненням, де його ввімкнути.','Міграція створює перемикач функції identiteit-account-maquette (вимкнений) під час встановлення — його не треба додавати вручну.'],fixes:['Правило плаского вмісту оболонки більше не знімає радіуси й тіні з вкладених макетів.','У класичному вигляді перемикач виглядів тепер видно завжди: компактна кнопка «Вигляд» у липкому меню розділів і перемикач під розділами; зміна вигляду відкриває сторінку згори.'],beperkingen:['Сторінки поза центром облікового запису не змінювались; «Студія» і класичний вигляд лишаються.','Вигляд «Макет» вмикається перемикачем функції identiteit-account-maquette (потрібен також identiteit-account-atelier): технічний профіль → «Перемикачі функцій», спершу режим «Тільки я».'],instructies:'Установіть архів через admin.tarasevych.com із підтвердженням ключем доступу. Спершу ввімкніть вигляд лише для себе.'};
           const nl={titel:'Weergave «Ontwerp» — het ontwerp van de eigenaar in het accountcentrum',samenvatting:'De accountpagina volgens het ontwerp van de eigenaar, één op één: eigen kopbalk en dienstenbalk, hero, kaarten in vier groepen met de onderdelen van het ontwerp, een ankermenu aan elke rand en snel zoeken met Ctrl+K. De echte instellingen staan in het inklapbare blok «Huidige instellingen» van elk onderdeel.',wijzigingen:['Nieuwe weergave «Ontwerp» achter de vlag identiteit-account-maquette: de site-omlijsting is tijdens de weergave verborgen, thema en taal komen van de site.','De dienstenbalk van het ontwerp leidt naar de echte diensten; de avatar opent de weg naar het onderdeel «Account» en naar het accountmenu (andere accounts, afmelden).','In elke kaart en elk paneel: de onderdelen van het ontwerp plus het blok «Huidige instellingen» met het echte paneel, rechten en handelingen.','Keuze van weergave («Ontwerp», «Studio», klassiek) in het navigatievenster en onder de voettekst.','«Ontwerp» staat nu altijd in de lijst van weergaven: zolang de functieschakelaar uit staat of ontbreekt, is de keuze inactief met uitleg waar hij aan te zetten is.','Een migratie maakt de functieschakelaar identiteit-account-maquette (uit) aan bij de installatie — handmatig toevoegen is niet meer nodig.'],fixes:['De regel voor platte inhoud van de omlijsting haalt geen hoeken en schaduwen meer weg uit ingebedde ontwerpen.','In de klassieke weergave is de weergavekiezer nu altijd zichtbaar: een compacte knop «Weergave» in het klevende menu en een kiezer onder de onderdelen; een andere weergave opent bovenaan.'],beperkingen:['Pagina’s buiten het accountcentrum zijn niet gewijzigd; «Studio» en de klassieke weergave blijven.','De weergave «Ontwerp» gaat aan met de functieschakelaar identiteit-account-maquette (ook identiteit-account-atelier is nodig): technisch profiel → «Functieschakelaars», eerst «Alleen ik».'],instructies:'Installeer het archief via admin.tarasevych.com met een passkey. Zet de weergave eerst alleen voor jezelf aan.'};
           const m={schema:1,versie:e.VERSIE,aangemaakt:new Date().toISOString(),herkomst:`git: commit ${e.GITHUB_SHA} (basis ${e.BASIS_VERSIE} ${e.BASIS_COMMIT})`,auteur:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',zonderAi:false,deelnemers:[{soort:'mens',naam:'Павло Тарасевич (tarasevych.pavlo@gmail.com)',rollen:['auteur']},{soort:'ai',naam:'claude',platform:'Claude Code',tool:'Claude Code',model:{id:e.MODEL_ID,versie:null,bron:'auteur'},rollen:['ontwikkeling','controle','testen','verpakken']}],beschrijving:{uk,nl}};
           writeFileSync(e.RUNNER_TEMP+'/UITROL-MANIFEST.json',JSON.stringify(m,null,2)+'\n');
-          const tests={geslaagd:288,mislukt:0,falend:[],uitleg:{uk:'Перевірки вигляду «Макет» (42), «Студії» (36), мобільного каскаду (22), геометрії (56), облікового запису (6), журналу розробки (16), передперевірки випуску (42) і розміщення (68), складання, перевірки типів і браузерні перевірки екранів пройдено в цьому запуску.',nl:'De tests van de weergave «Ontwerp» (42), de Studio (36), de mobiele cascade (22), geometrie (56), account (6), ontwikkeldossier (16), uitrolvoorcontrole (42) en plaatsing (68), de bouw, de typecontroles en de browserproeven voor schermen zijn in deze uitvoering geslaagd.'}};
+          // SEC-002: cijfers uit de echte uitvoer van scripts/eenheidstests.mjs («N/M geslaagd (…)» per testbestand), geen letterlijke getallen.
+          // Кількість перевірок береться з фактичного виводу тестів цього запуску, а не з наперед записаного числа.
+          const gemeten = { geslaagd: 0, mislukt: 0 };
+          const perTest = new Map(); for (const r of readFileSync(e.RUNNER_TEMP + '/eenheidstests.log', 'utf8').matchAll(/^(\d+)\/(\d+) geslaagd \(([^)\n]+)\)/gm)) perTest.set(r[3], [Number(r[1]), Number(r[2])]); for (const [g, n] of perTest.values()) { gemeten.geslaagd += g; gemeten.mislukt += n - g; } const gemetenLijst = [...perTest].map(([b, [g, n]]) => b + ' ' + g + '/' + n).join('; ');
+          if (!gemeten.geslaagd || gemeten.mislukt) throw Error('Немає виміряних результатів тестів або є невдалі перевірки — випуск зупинено.');
+          const tests={geslaagd: gemeten.geslaagd,mislukt: gemeten.mislukt,falend:[],uitleg:{uk:'Перевірки вигляду «Макет», «Студії», мобільного каскаду, геометрії, облікового запису, журналу розробки, передперевірки випуску і розміщення, складання, перевірки типів і браузерні перевірки екранів пройдено в цьому запуску.' + ' Виміряно в цьому запуску — файл тестів і пройдено з усього: ' + gemetenLijst + '.',nl:'De tests van de weergave «Ontwerp», de Studio, de mobiele cascade, geometrie, account, ontwikkeldossier, uitrolvoorcontrole en plaatsing, de bouw, de typecontroles en de browserproeven voor schermen zijn in deze uitvoering geslaagd.' + ' Gemeten in deze uitvoering — testbestand en geslaagd van totaal: ' + gemetenLijst + '.'}};
           writeFileSync(e.RUNNER_TEMP+'/TESTRESULTATEN.json',JSON.stringify(tests,null,2)+'\n');
           writeFileSync('orchestratie/geinstalleerd.json',JSON.stringify({versie:e.BASIS_VERSIE,bronCommit:e.BASIS_COMMIT,bron:'geverifieerd_productie_api'},null,2)+'\n');
           JS
@@ -145,6 +146,75 @@ jobs:
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
           printf 'IDENTITEIT-007 · Перевірена пропозиція (вигляд «Макет»). Встановлення лише власником через ключ доступу.\nBRON-COMMIT: %s\nОснова: %s @ %s\n' "$GITHUB_SHA" "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/opis.md"
+      - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/overdracht/uitvoer"
+          cp -R uitvoer/. "$RUNNER_TEMP/overdracht/uitvoer/"
+          cp "$RUNNER_TEMP/opis.md" "$RUNNER_TEMP/overdracht/opis.md"
+          printf '%s\n' "$VERSIE" > "$RUNNER_TEMP/overdracht/VERSIE"
+          printf '%s\n%s\n' "$BASIS_VERSIE" "$BASIS_COMMIT" > "$RUNNER_TEMP/overdracht/BASIS"
+      - name: Зберегти пакунки для завдання оприлюднення · artefact voor de publicatietaak
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: identiteit-007-overdracht
+          path: ${{ runner.temp }}/overdracht/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Зберегти звіт виконання
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: identiteit-007-controle
+          path: |
+            rapporten/identiteit-mobiel/
+            uitvoer/
+          if-no-files-found: ignore
+  uitgave:
+    # SEC-002: єдине завдання з правом запису у сховище. Воно нічого не встановлює через npm, не збирає й не тестує:
+    # отримує вже перевірені пакунки як артефакт, звіряє контрольну суму й лише тоді оприлюднює випуск.
+    # Enige taak met schrijfrecht. Installeert, bouwt en test niets: haalt de gecontroleerde pakketten als artefact op en publiceert.
+    name: Оприлюднення перевірених пакунків · publicatie van de gecontroleerde pakketten
+    needs: controle-en-uitgave
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Отримати перевірені пакунки · gecontroleerde pakketten ophalen
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: identiteit-007-overdracht
+          path: ${{ runner.temp }}/overdracht
+      - name: Відновити пакунки й звірити контрольну суму · pakketten terugzetten en controlesom vergelijken
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSIE="$(tr -d '\r\n' < "$RUNNER_TEMP/overdracht/VERSIE")"
+          # SEC-002 (g01-3): de basis komt uit het artefact van de bouwtaak (zonder schrijfrecht, maar met npm en tests) — alleen aanvaarden
+          # als ze in de vertrouwde env van deze werkstroom staat (vaste basis of lijst van toegestane bases).
+          VERTROUWD=" ${TOEGESTANE_BASES:-} ${BEKENDE_BASISSEN:-} ${BASIS_VERSIE:+${BASIS_VERSIE}=${BASIS_COMMIT:-}} "
+          BASIS_VERSIE="$(sed -n 1p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          BASIS_COMMIT="$(sed -n 2p "$RUNNER_TEMP/overdracht/BASIS" | tr -d '\r')"
+          [[ "$VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_VERSIE" =~ ^[0-9]{8}-[0-9]{6}$ && "$BASIS_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'Передані дані випуску мають неправильний вигляд — оприлюднення зупинено.' >&2; exit 1; }
+          case "$VERTROUWD" in *" ${BASIS_VERSIE}=${BASIS_COMMIT} "*) ;; *) echo 'Основа з артефакту збірки не входить до довірених значень цього процесу — оприлюднення зупинено. · De basis uit het bouwartefact staat niet in de vertrouwde waarden van deze werkstroom — publicatie gestopt.' >&2; exit 1 ;; esac
+          { echo "VERSIE=$VERSIE"; echo "BASIS_VERSIE=$BASIS_VERSIE"; echo "BASIS_COMMIT=$BASIS_COMMIT"; } >> "$GITHUB_ENV"
+          mkdir -p uitvoer
+          cp -R "$RUNNER_TEMP/overdracht/uitvoer/." uitvoer/
+          cp "$RUNNER_TEMP/overdracht/opis.md" "$RUNNER_TEMP/opis.md"
+          sha256sum --check "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Упевнитися, що такого випуску ще немає · deze uitgave mag nog niet bestaan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSIE" >/dev/null 2>&1; then
+            echo 'Випуск з таким позначенням уже існує.' >&2
+            exit 1
+          fi
       - name: Повторна перевірка чинного сервера
         shell: bash
         run: |
@@ -158,6 +228,9 @@ jobs:
       - name: Оприлюднити архів без встановлення
         id: release
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh release create "$VERSIE" \
@@ -179,13 +252,7 @@ jobs:
           JS
       - name: У разі збою приховати непридатний випуск
         if: failure() && steps.release.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh release edit "$VERSIE" --draft=true --notes 'Перевірка випуску не завершилася. Не встановлювати.'
-      - name: Зберегти звіт виконання
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: identiteit-007-controle
-          path: |
-            rapporten/identiteit-mobiel/
-            uitvoer/
-          if-no-files-found: ignore

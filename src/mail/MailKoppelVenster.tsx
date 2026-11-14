@@ -28,7 +28,7 @@ import './mail-koppel-mobiel-sheet.css';
 import { api } from '../platform/client';
 import { geldigMailAdres, mailAanbieder, mailImapFoutTekst } from '../../shared/mail-aanbieders';
 import type { VensterStap } from '../../shared/vensters-onthouden-model';
-import { googleRolVoor, googleStartFoutTekst, googleStartLichaam, huidigTabblad, mailAccountsAdres, type GoogleRol } from './mail-koppel-model';
+import { googleRolVoor, googleStartFoutTekst, googleStartLichaam, huidigTabblad, mailAccountsAdres, sleutelkluisAdres, type GoogleRol } from './mail-koppel-model';
 
 type Lang = 'uk' | 'nl';
 type Props = {
@@ -55,7 +55,10 @@ const knop = (hoofd: boolean): React.CSSProperties => ({
 const veld: React.CSSProperties = { width: '100%', minHeight: 40, padding: '8px 10px', borderRadius: 10, border: '1px solid var(--line,#d7dee8)', background: 'var(--panel,#fff)', color: 'inherit' };
 /** De poort van de gescheiden gegevensruimtes kiest de lade met tabContext: zonder dat zou een technisch tabblad persoonlijk koppelen. */
 const context = () => ({ service: 'mail', tabContext: huidigTabblad(), sourceOrigin: location.origin });
-const codeVan = (gevangen: unknown) => String((gevangen as { message?: string } | null)?.message || '');
+const codeVan = (gevangen: unknown) => {
+  const obj = gevangen as { response?: { data?: { error?: string; reasonCode?: string } }; message?: string } | null;
+  return String(obj?.response?.data?.reasonCode || obj?.response?.data?.error || obj?.message || '');
+};
 type GoogleStand = { accounts: Array<{ email: string; accountRole: string }>; sessionEmail: string; connectEnabled: boolean } | null;
 
 export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, klein, onStap, onSluit, huidigeDienst }: Props) {
@@ -66,6 +69,7 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
   const [wachtwoord, setWachtwoord] = useState('');
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState('');
+  const [foutCode, setFoutCode] = useState('');
   const [klaar, setKlaar] = useState<{ mappen: number; smtpGoed: boolean } | null>(null);
   const [opnieuwNodig, setOpnieuwNodig] = useState(stap === 'wachtwoord-opnieuw');
   const [alGekoppeld, setAlGekoppeld] = useState(false);
@@ -98,6 +102,7 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
     if (klein && !wasKlein.current) {
       setWachtwoord('');
       setFout('');
+      setFoutCode('');
       setOpnieuwNodig(true);
     }
     wasKlein.current = klein;
@@ -105,11 +110,11 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
 
   if (!dienst) return null;
   const titel = `${tr(lang, 'Підключення', 'Koppelen')}: ${dienst.naam}`;
-  const melden = (code: string) => setFout(mailImapFoutTekst(code, lang));
+  const melden = (code: string) => { setFoutCode(code); setFout(mailImapFoutTekst(code, lang)); };
 
   const googleStarten = async (gevraagd?: GoogleRol) => {
     if (!googleStand || googleStand.connectEnabled === false) return;
-    setBezig(true); setFout(''); setGoogleKlaar('');
+    setBezig(true); setFout(''); setFoutCode(''); setGoogleKlaar('');
     try {
       const rol = googleRolVoor(googleStand, gevraagd);
       const c = context();
@@ -121,7 +126,9 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
       if (!url) throw new Error('GEEN_URL');
       location.assign(url);
     } catch (gevangen) {
-      setFout(googleStartFoutTekst(codeVan(gevangen), lang));
+      const code = codeVan(gevangen);
+      setFoutCode(code);
+      setFout(googleStartFoutTekst(code, lang));
       setBezig(false);
     }
   };
@@ -339,7 +346,20 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
             : tr(lang, 'Ваша скринька у спільному поштовому просторі', 'Uw mailbox in één e-mailruimte')}</p>
         </header>
         {inhoud()}
-        {fout ? <p className='mail-koppel-fout' role='alert'>{fout}</p> : null}
+        {fout ? (
+          <div className='mail-koppel-fout' role='alert' style={{ display: 'grid', gap: 10 }}>
+            <span>{fout}</span>
+            {foutCode === 'SLEUTELKLUIS_GESLOTEN' ? (
+              <a
+                href={sleutelkluisAdres(location.origin)}
+                style={{ ...knop(true), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none' }}
+              >
+                <LockKeyhole size={17} aria-hidden='true' />
+                <span>{tr(lang, 'Відкрити сховище ключів', 'Sleutelkluis ontgrendelen')}</span>
+              </a>
+            ) : null}
+          </div>
+        ) : null}
         <footer className='mail-koppel-voet'>
           <p><ShieldCheck size={17} strokeWidth={1.7} aria-hidden='true' /> {tr(lang,
             'Підключення пошти не змінює ваш вхід до Mijn Ruimte.',

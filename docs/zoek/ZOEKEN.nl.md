@@ -85,7 +85,7 @@ Bijbehorende tabellen: `app.zoek_bron_stand` (bronstatus per lade: `niet_gekoppe
 exponentiële herhalingen), `app.zoek_ocr_tekst` (0102: OCR-cache **per gebruiker en ruimte**), `app.zoek_geschiedenis` (0103: geschiedenis per
 lade — alleen `(bron,id)` van het gevondene, zonder titels/tekst), `app.zoek_synoniemen_eigenaar` (eigen woordenboek van de eigenaar, zonder UI op 22-10-2026).
 
-## 4. API (contract `scratchpad/zoek-API.md` → code `shared/zoek-model.ts`)
+## 4. API (contract — code `shared/zoek-model.ts`)
 
 Alle routes gebruiken POST, JSON en een eigenaarssessie; in de aanvraag zijn `service` en `tabContext` verplicht (zoals bij alle eigenaarsroutes; zonder deze velden volgt 403
 `OWNER_SESSION_CONTEXT_REQUIRED`).

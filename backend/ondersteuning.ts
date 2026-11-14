@@ -8,6 +8,7 @@
 import { getPool } from '../server/platform/pg';
 import { auditToevoegen } from '../server/platform/audit';
 import { actieveActivatie, isEigenaar, tabHash, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
+import { isEmailAdres } from '../shared/adres-controle';
 import { modusVan } from './weergave';
 
 const sys = () => getPool('systeem');
@@ -27,7 +28,7 @@ async function vereisTech(u: Gebruiker, tab: string) {
 
 async function gebruikerOpEmail(email: string) {
   const e = String(email || '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) || e.length > 200) fout('EMAIL_ONGELDIG');
+  if (!isEmailAdres(e, 200)) /* SEC-002 (aanv-gat-c-02): lengte eerst, lineair */ fout('EMAIL_ONGELDIG');
   const r = (await sys().query(`SELECT id, data->>'email' AS email, data->>'role' AS role, data->>'status' AS status FROM app.records
      WHERE tbl = 'users' AND lower(data->>'email') = $1 AND COALESCE((data->>'deletedAt')::numeric, 0) = 0 LIMIT 2`, [e])).rows;
   if (r.length !== 1) fout('GEBRUIKER_NIET_GEVONDEN', 404);

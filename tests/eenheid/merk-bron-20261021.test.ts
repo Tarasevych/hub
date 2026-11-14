@@ -172,6 +172,8 @@ export async function main(): Promise<number> {
 
     // ================================================================ 4. afzenders: domein, gratis mailbox, personen
     await sys().query(`INSERT INTO app.merk_beeld (sleutel, bron, mime, data, sha256, geldig_tot) VALUES ('gmail.com', 'favicon', 'image/png', $1, $2, now() + interval '1 day') ON CONFLICT (sleutel) DO NOTHING`, [PNG_SITE, createHash('sha256').update(PNG_SITE).digest('hex')]);
+    // SEC-002 (afwerking A): standaard geen logo voor onbekende afzenders; dit deel test de stand «Завжди».
+    await mb.voorkeurZetten(P, { onbekendeAfzenders: true });
     const a1 = await mb.afzenderBeelden(P, ['Info <info@mail.orgbedrijf.test>', 'anna@gmail.com', 'geen-adres', 'x@site.voorbeeld.test']);
     await mb.wachtrijLeeg();
     const a2 = await mb.afzenderBeelden(P, ['info@mail.orgbedrijf.test', 'anna@gmail.com', 'x@site.voorbeeld.test']);

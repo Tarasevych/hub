@@ -18,7 +18,7 @@ type Ctx = { event: Record<string, unknown>; body: unknown };
 export type ToegangRouteDeps = { requireSession: RequireSession; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 const DIENSTEN = new Set(['identity', 'admin', 'hub']);
-const fout = (code: string, status = 400): never => { throw new ToegangFout(code, status); };
+const fout = (code: string, status = 400, retryAfter?: number): never => { throw new ToegangFout(code, status, retryAfter); };
 
 /** Huidige stand van een goedkeur-sleutel (voor de pagina met de wijziging). */
 async function stand(userId: string, fp: string) {
@@ -78,7 +78,8 @@ export function toegangRoutes(deps: ToegangRouteDeps): Record<string, RouterMidd
     }
     try { return json(await run(auth, lichaam(ctx.body))); }
     catch (err) {
-      if (err instanceof ToegangFout || err instanceof UitrolFout) return error(err.code, err.status);
+      if (err instanceof ToegangFout) return error(err.code, err.status, err.retryAfter ? { retryAfter: err.retryAfter } : undefined);
+      if (err instanceof UitrolFout) return error(err.code, err.status);
       console.error('[toegang]', (err as Error).message);
       return error('TOEGANG_FOUT', 500);
     }
@@ -88,7 +89,7 @@ export function toegangRoutes(deps: ToegangRouteDeps): Record<string, RouterMidd
     [`POST ${A}/notities/lijst`]: [route({}, async (a) => ({ notities: await notitiesLijst(a.user.id) }))],
     [`POST ${A}/notities/opslaan`]: [route({}, async (a, b) => {
       const limiet = await rateLimit(`toegang-notitie:${a.user.id}`, 60, 600);
-      if (!limiet.ok) fout('RATE_LIMITED', 429);
+      if (!limiet.ok) fout('RATE_LIMITED', 429, limiet.retryAfter);
       return { notitie: await notitieOpslaan(a.user.id, b) };
     })],
     [`POST ${A}/toegang/wijzigingen`]: [route({}, async (a) => ({ wijzigingen: await wijzigingenVoor(a.user.id) }))],
@@ -98,7 +99,7 @@ export function toegangRoutes(deps: ToegangRouteDeps): Record<string, RouterMidd
     })],
     [`POST ${A}/toegang/wijziging/terugdraaien`]: [route({ sterk: true }, async (a, b) => {
       const limiet = await rateLimit(`toegang-terug:${a.user.id}`, 10, 600);
-      if (!limiet.ok) fout('RATE_LIMITED', 429);
+      if (!limiet.ok) fout('RATE_LIMITED', 429, limiet.retryAfter);
       return wijzigingTerugdraaien(a, b.id);
     })],
   };

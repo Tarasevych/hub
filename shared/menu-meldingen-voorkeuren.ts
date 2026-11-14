@@ -24,6 +24,9 @@ export type MeldingVoorkeuren = {
   bellen: boolean;             // bij aanwijzen een lijstje «sms-bellen» naast het item
   categorieen: Record<MeldingCategorie, boolean>;
   stil: { aan: boolean; van: string; tot: string }; // stille uren: geen knipperen/herinneren (badges blijven)
+  /** IDENTITEIT-014: serverwaarschuwing (access_recovery_low) als er na gebruik nog ≤2 herstelcodes over zijn. Beveiligingswaarschuwing → standaard AAN.
+   *  Попередження сервера, коли після використання лишилося ≤2 кодів відновлення; за замовчуванням увімкнено. */
+  reserveHerinnering: boolean;
   /** Per type (18.10.2026): geluid, opduiken (toast), tonen. Kritieke types altijd getoond (shared/melding-typen.ts). */
   soorten: Record<MeldingType, TypeVoorkeur>;
 };
@@ -31,6 +34,7 @@ export const standaardMeldingen = (): MeldingVoorkeuren => ({
   aan: true, stijl: 'getal', knipperen: true, herinneren: 0, bellen: true,
   categorieen: { post: true, beveiliging: true, toegang: true, delen: true, ai: true, systeem: true },
   stil: { aan: false, van: '22:00', tot: '07:00' },
+  reserveHerinnering: true,
   soorten: normaliseerTypeVoorkeuren(null),
 });
 const TIJD = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -47,6 +51,7 @@ export function normaliseerMeldingen(raw: unknown): MeldingVoorkeuren {
     bellen: bool(r.bellen, s.bellen),
     categorieen: Object.fromEntries(MELDING_CATEGORIEEN.map((k) => [k, bool(c[k], true)])) as Record<MeldingCategorie, boolean>,
     stil: { aan: bool(st.aan, false), van: TIJD.test(String(st.van)) ? String(st.van) : s.stil.van, tot: TIJD.test(String(st.tot)) ? String(st.tot) : s.stil.tot },
+    reserveHerinnering: bool(r.reserveHerinnering, s.reserveHerinnering),
     soorten: normaliseerTypeVoorkeuren(r.soorten),
   };
 }

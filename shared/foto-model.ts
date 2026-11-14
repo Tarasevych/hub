@@ -11,8 +11,15 @@
 
 export const FOTO_VLAG = 'foto-dienst';
 export const FOTO_LIMIETEN = Object.freeze({
-  itemMaxBytes: 256 * 1024 * 1024,   // één foto/video via de upload-weg (heel bestand in het geheugen bij opslaan) — eerlijk begrensd
+  itemMaxBytes: 256 * 1024 * 1024,   // één foto/video via de upload-weg (sinds SEC-002 stromend opgeslagen, niet meer heel in het geheugen)
   stukMaxBytes: 4 * 1024 * 1024,
+  // SEC-002 (wolk-02 / privacy-logboek-04, 12.11.2026): open uploadsessies per mens en hun aangekondigde bytes samen; daarboven
+  // UPLOAD_TE_VEEL. Ruim genoeg voor een import die een paar bestanden tegelijk stuurt, te krap om schijf of geheugen te vullen.
+  sessiesPerMens: 4,
+  sessieBytesPerMens: 512 * 1024 * 1024,
+  sessiesTotaal: 64,                  // alle mensen samen
+  klaarTegelijk: 2,                   // «klaar»/«kopieer» die tegelijk bytes verwerken (de rest wacht in de rij)
+  sessieMinuten: 30,
   inhoudMaxBytes: 64 * 1024 * 1024,  // één weergave-/download-antwoord
   miniatuurMaxBytes: 24 * 1024,
   pagina: 120,
@@ -73,7 +80,12 @@ export function mediaSoort(naam: string, mime = ''): FotoSoort | null {
   return null;
 }
 const MIME: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', avif: 'image/avif', bmp: 'image/bmp', tif: 'image/tiff', tiff: 'image/tiff', dng: 'image/x-adobe-dng', cr2: 'image/x-canon-cr2', nef: 'image/x-nikon-nef', arw: 'image/x-sony-arw', mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v', '3gp': 'video/3gpp', avi: 'video/x-msvideo', mkv: 'video/x-matroska', webm: 'video/webm', mts: 'video/mp2t' };
-export const mimeVoor = (naam: string, mime = '') => (mime && /^(image|video)\//.test(mime) && !mime.includes('svg') ? mime.toLowerCase().split(';')[0] : MIME[extVan(naam)] || 'application/octet-stream');
+// SEC-002 (wolk-09): EERST normaliseren (kleine letters, zonder parameters), DAN keuren — «image/SVG+xml» glipte vroeger langs
+// de svg-controle (die keek vóór toLowerCase). SVG en alles buiten image/* en video/* valt terug op de extensie of octet-stream.
+export const mimeVoor = (naam: string, mime = '') => {
+  const m = String(mime || '').split(';')[0].trim().toLowerCase();
+  return /^(image|video)\/[a-z0-9.+-]{1,100}$/.test(m) && !m.includes('svg') ? m : MIME[extVan(naam)] || 'application/octet-stream';
+};
 
 export const schoneTag = (t: unknown): string => String(t ?? '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_-]/gu, '').slice(0, FOTO_LIMIETEN.tagMax);
 export const schoneTekst = (t: unknown, max: number): string => String(t ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
@@ -260,17 +272,45 @@ export function duplicaatGroepen(items: readonly GroepItem[]): Array<{ soort: 'e
   const waarsch = per((i) => (i.bytes && i.genomenOp ? `${i.bytes}|${i.genomenOp}` : null)).map((g) => g.filter((id) => !inExact.has(id))).filter((g) => g.length > 1);
   return [...exact.map((ids) => ({ soort: 'exact' as const, ids })), ...waarsch.map((ids) => ({ soort: 'waarschijnlijk' as const, ids }))];
 }
+// SEC-002 (aanv-ronde1-05, 12.11.2026): «Упорядкувати» vergeleek ALLE paren (6000 foto's = 18 miljoen paren, met twee regex-tests
+// en 16 parseInt per paar) en hield het enige serverproces ~17-20 s bezig. Nu: elke afdruk één keer keuren en als twee 32-bit
+// getallen lezen; vergelijken met XOR + popcount; en alleen paren vergelijken die in minstens één BAND gelijk zijn. Duivenhok:
+// twee afdrukken met afstand ≤ drempel verschillen op hoogstens drempel bits, dus van drempel+1 disjuncte banden is er minstens
+// één helemaal gelijk — er gaat geen enkel paar verloren (zelfde uitkomst als alle paren, zie de eenheidstest).
+const HASH16 = /^[0-9a-f]{16}$/;
+const popcount32 = (x: number): number => { x -= (x >>> 1) & 0x55555555; x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; };
+/** dHash → [hoog, laag] (32 bit elk), of null als het geen geldige afdruk is. */
+const hashDelen = (h: string): [number, number] | null => (HASH16.test(h) ? [parseInt(h.slice(0, 8), 16) >>> 0, parseInt(h.slice(8), 16) >>> 0] : null);
+const afstand = (a: readonly [number, number], b: readonly [number, number]): number => popcount32((a[0] ^ b[0]) >>> 0) + popcount32((a[1] ^ b[1]) >>> 0);
 export function hamming(a: string, b: string): number {
-  if (!/^[0-9a-f]{16}$/.test(a) || !/^[0-9a-f]{16}$/.test(b)) return 64;
-  let d = 0; for (let k = 0; k < 16; k++) { let x = parseInt(a[k], 16) ^ parseInt(b[k], 16); while (x) { d += x & 1; x >>= 1; } } return d;
+  const x = hashDelen(a), y = hashDelen(b);
+  return x && y ? afstand(x, y) : 64;
 }
+/** Bit i (0 = hoogste) van een 64-bit afdruk. */
+const bit = (h: readonly [number, number], i: number): number => (i < 32 ? (h[0] >>> (31 - i)) & 1 : (h[1] >>> (63 - i)) & 1);
 /** Gelijkende foto's: beeldafdruk (dHash, 64 bit) met afstand ≤ drempel, of een reeks van dezelfde camera binnen 3 s. */
 export function gelijkendeGroepen(items: readonly GroepItem[], drempel = 6, max = 6000): string[][] {
   const lijst = items.slice(0, max); const ouder = lijst.map((_, k) => k);
-  const wortel = (k: number): number => (ouder[k] === k ? k : (ouder[k] = wortel(ouder[k])));
+  const wortel = (k: number): number => { let r = k; while (ouder[r] !== r) r = ouder[r]; while (ouder[k] !== r) { const v = ouder[k]; ouder[k] = r; k = v; } return r; };
   const een = (a: number, b: number) => { ouder[wortel(a)] = wortel(b); };
-  const metHash = lijst.map((i, k) => [i, k] as const).filter(([i]) => i.dhash);
-  for (let x = 0; x < metHash.length; x++) for (let y = x + 1; y < metHash.length; y++) if (hamming(metHash[x][0].dhash!, metHash[y][0].dhash!) <= drempel) een(metHash[x][1], metHash[y][1]);
+  const d = Math.max(0, Math.min(16, Math.floor(Number(drempel) || 0)));
+  const metHash: Array<{ k: number; h: [number, number] }> = [];
+  lijst.forEach((i, k) => { const h = i.dhash ? hashDelen(i.dhash) : null; if (h) metHash.push({ k, h }); });
+  const banden = d + 1;
+  for (let band = 0; band < banden; band++) {
+    const van = Math.floor((band * 64) / banden), tot = Math.floor(((band + 1) * 64) / banden);
+    const emmers = new Map<string, number[]>();
+    for (let x = 0; x < metHash.length; x++) {
+      let sleutel = ''; for (let i = van; i < tot; i++) sleutel += bit(metHash[x].h, i);
+      const e = emmers.get(sleutel); if (e) e.push(x); else emmers.set(sleutel, [x]);
+    }
+    for (const e of emmers.values()) {
+      for (let x = 0; x < e.length; x++) for (let y = x + 1; y < e.length; y++) {
+        const a = metHash[e[x]], b = metHash[e[y]];
+        if (wortel(a.k) !== wortel(b.k) && afstand(a.h, b.h) <= d) een(a.k, b.k);
+      }
+    }
+  }
   const opTijd = lijst.map((i, k) => [i, k] as const).filter(([i]) => i.genomenOp && i.camera).sort((a, b) => a[0].genomenOp!.localeCompare(b[0].genomenOp!));
   for (let x = 1; x < opTijd.length; x++) { const [a] = opTijd[x - 1], [b] = opTijd[x]; if (a.camera === b.camera && Math.abs(Date.parse(b.genomenOp!) - Date.parse(a.genomenOp!)) <= 3000) een(opTijd[x - 1][1], opTijd[x][1]); }
   const groepen = new Map<number, string[]>(); lijst.forEach((i, k) => (groepen.get(wortel(k)) || groepen.set(wortel(k), []).get(wortel(k))!).push(i.id));

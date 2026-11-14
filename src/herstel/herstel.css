@@ -1,0 +1,35 @@
+/* IDENTITEIT-014: розділ «Відновлення доступу» — огляд, сценарії, наслідки втрати ключа. Лише токени теми (світла/темна). */
+.herstel-eerste{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.herstel-eerste>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.herstel-eerste small{color:var(--muted);font-size:.82rem}
+.herstel-eerste button,.herstel-controles button,.herstel-ga{display:inline-flex;align-items:center;gap:6px}
+.herstel-eerste button svg,.herstel-controles button svg,.herstel-ga svg{width:14px;height:14px}
+.herstel-controles{list-style:none;margin:0;padding:0}
+.herstel-controles li{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.herstel-controles li:last-child{border-bottom:0}
+.herstel-controle-icoon{flex:0 0 auto;width:18px;height:18px;margin-top:2px;color:var(--muted)}
+.herstel-controles li[data-toon=goed] .herstel-controle-icoon{color:var(--ok)}
+.herstel-controles li[data-toon=slecht] .herstel-controle-icoon{color:var(--fout,var(--warn))}
+.herstel-controles li[data-toon=aandacht] .herstel-controle-icoon{color:var(--warn)}
+.herstel-controle-tekst{display:flex;flex-direction:column;gap:2px;flex:1 1 220px;min-width:0}
+.herstel-controle-tekst small{color:var(--muted);font-size:.83rem;line-height:1.4}
+.herstel-banier{display:grid;gap:6px;margin:0 0 10px;padding:10px 12px;border:1px solid var(--warn);border-radius:var(--straal-m,10px);background:var(--warn-zacht)}
+.herstel-banier button{justify-self:start;display:inline-flex;align-items:center;gap:6px}
+.herstel-banier button svg{width:14px;height:14px}
+.herstel-kaarten{display:grid;gap:8px}
+.herstel-kaart{border:1px solid var(--line);border-radius:var(--straal-m,10px);background:var(--surface)}
+.herstel-kaart>summary{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-weight:600;list-style:none}
+.herstel-kaart>summary::-webkit-details-marker{display:none}
+.herstel-kaart>summary svg{width:18px;height:18px;flex:0 0 auto;color:var(--accent)}
+.herstel-kaart[open]>summary{border-bottom:1px solid var(--line)}
+.herstel-kaart-inhoud{padding:10px 12px;display:grid;gap:8px}
+.herstel-kaart-inhoud ol{margin:0;padding-left:1.3em;display:grid;gap:8px}
+.herstel-kaart-inhoud li small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}
+.herstel-kaart-inhoud .herstel-ga{margin-top:4px}
+.herstel-kaart-inhoud>button{justify-self:start;display:inline-flex;align-items:center;gap:6px}
+.herstel-kaart-inhoud>button svg{width:14px;height:14px}
+.herstel-tekst{padding:10px 12px;display:grid;gap:8px}
+.herstel-tekst p{margin:0;line-height:1.45;font-size:.9rem}
+@media (max-width:560px){
+  .herstel-eerste button,.herstel-controles button{width:100%;justify-content:center}
+}

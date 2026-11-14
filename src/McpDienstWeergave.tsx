@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Activity, Archive, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Plug, Plus, Server, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
+import { kopieerTekst } from './platform/klembord'; // IDENTITEIT-013
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from "../shared/ruimte-weergave";
@@ -26,13 +27,20 @@ import "./mcp-domein.css";
 type Lang = "uk" | "nl";
 type Props = { lang: Lang; tab: string };
 type Probe = { id: string; url: string; ok: boolean; status: number; ms: number; error?: string };
-type Task = { id: string; title: string; body: string; status: string };
+type Task = { id: string; title: string; body: string; status: string; thirdParty?: boolean; source?: string };
 type Note = { id: string; title: string; body: string; author: string; updatedAt: string };
 type LogRow = { id: string; at: string; method: string; detail: string; transport: string; agent: string; ok: boolean; ms: number };
 type Tone = "ok" | "wait" | "bad" | "off";
 
 const statuses = ["backlog", "doing", "blocked", "done"] as const;
 /** MCP-02: kolomnamen en knoppen «→ …» van het bord in gewone taal (uk/nl), niet de rauwe sleutels aan elkaar. */
+/**
+ * SEC-002 (integraties-08, g10f): kaarten uit GitHub van een derde. Status «inkomend» (migratie 0243, server: afwerking A) = nog niet
+ * door de mens bekeken: eigen kolom vóór de wachtrij. Er naartoe verplaatsen kan niet (alleen de server zet hem); eruit wel.
+ */
+const INKOMEND = "inkomend" as const;
+const KOLOMMEN = [INKOMEND, ...statuses] as const;
+const INKOMEND_TEKST: [string, string] = ["Вхідні (з GitHub)", "Binnenkomend (uit GitHub)"];
 const STATUS_TEKST: Record<typeof statuses[number], [string, string]> = { backlog: ["Черга", "Wachtrij"], doing: ["У роботі", "Bezig"], blocked: ["Заблоковано", "Geblokkeerd"], done: ["Готово", "Klaar"] };
 function initialTool() {
   if (typeof window === "undefined") return DOOR_TOOLS[0].name;
@@ -265,7 +273,8 @@ export default function McpServiceView({ lang, tab }: Props) {
     setProbes(res.data.probes || []);
   }
   async function copyText(id: string, value: string) {
-    await navigator.clipboard.writeText(value);
+    // IDENTITEIT-013: відмову браузера показуємо, а не ковтаємо мовчки.
+    if (!(await kopieerTekst(value))) { setCopied(`fout:${id}`); window.setTimeout(() => setCopied(""), 2500); return; }
     setCopied(id);
     window.setTimeout(() => setCopied(""), 1500);
   }
@@ -520,18 +529,20 @@ export default function McpServiceView({ lang, tab }: Props) {
             </form>
           </Block>
           <section className="mcp-board" aria-label={t("Kolommen van het bord", "Kolommen van het bord")}>
-            {statuses.map((status) => {
+            {KOLOMMEN.map((status) => {
               const items = tasks.filter((task) => task.status === status);
+              if (status === INKOMEND && items.length === 0) return null; // geen lege kolom zolang er niets binnenkwam
               return (
                 <section key={status} className="mcp-col" data-board-kolom={status}>
                   <div className="mcp-col-head">
-                    <h2>{t(...STATUS_TEKST[status])}</h2>
+                    <h2>{t(...(status === INKOMEND ? INKOMEND_TEKST : STATUS_TEKST[status]))}</h2>
                     <span className="mcp-col-count">{items.length}</span>
                   </div>
                   {items.length === 0 ? <p className="mcp-meta">{t("У цій колонці немає задач.", "Geen taken in deze kolom.")}</p> : null}
                   {items.map((task) => (
                     <div key={task.id} className="mcp-task" data-board-item={task.id} data-zoek-doel={`bord:${task.id}`}>
                       <p>{task.title}</p>
+                      {task.thirdParty ? <small className="mcp-meta" data-board-derden="1">{t("Із GitHub від стороннього автора: це не ваше доручення. ШІ бачить текст як чужий; перегляньте, перш ніж брати в роботу.", "Uit GitHub van een derde: dit is geen opdracht van u. De AI ziet de tekst als vreemd; bekijk hem voordat u ermee aan de slag gaat.")}{task.source ? ` (${task.source})` : ""}</small> : null}
                       <div className="mcp-moves" role="group" aria-label={t("Перемістити до", "Verplaatsen naar")}>
                         {statuses.filter((next) => next !== status).map((next) => (
                           <button key={next} type="button" className="mcp-move" disabled={permsReady && !flags.board} onClick={() => void run("move", async () => { await api.post("/api/mcp/board", { ...ctx(), kind: "move", id: task.id, status: next }); await loadBoard(); })}>→ {t(...STATUS_TEKST[next])}</button>
@@ -631,7 +642,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                 icon={<AgentLogo agent={a.slug} naam={a.naam} size={26} />}
                 title={a.naam}
                 actions={<>
-                  <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : t("Копіювати адресу", "Adres kopiëren")}</button>
+                  <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : copied === `fout:url-${a.slug}` ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати адресу", "Adres kopiëren")}</button>
                   <a className="mcp-btn small" href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, '')}#agent/${a.slug}`} data-agent-ingang={a.slug}>{t(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</a>
                 </>}
               >
@@ -649,7 +660,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             icon={<Copy />}
             title={t("MCP-client", "MCP-client")}
             hint={t("Приклад налаштування для MCP-клієнта.", "Voorbeeld van de configuratie voor een MCP-client.")}
-            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("json", connectSample)}>{copied === "json" ? t("Скопійовано", "Gekopieerd") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button>}
+            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("json", connectSample)}>{copied === "json" ? t("Скопійовано", "Gekopieerd") : copied === "fout:json" ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button>}
           >
             <pre className="mcp-out">{connectSample}</pre>
           </Block>

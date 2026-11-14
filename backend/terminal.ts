@@ -17,6 +17,8 @@ import * as store from './connectors-opslag';
 import { agentOnline, registreerTerminal, stuurNaarAgent, stuurTerminalOpen } from './connectors-gateway';
 import { actieveActivatie, TAB_RE, TechFout, type Gebruiker } from './tech-profiel';
 import { SERVICE_HOSTS } from './deployment-identiteit';
+import { geldigeSleutelsVan, gebruikerVanSleutel, sleutelUitCookie } from './tech-bundels';
+import { meld } from './melder';
 import { magApparaat } from '../shared/terminal';
 import * as opdr from './terminal-opdrachten';
 
@@ -32,6 +34,28 @@ type Sessie = {
 };
 const sessies = new Map<string, Sessie>();
 export const _sessies = sessies;
+
+/**
+ * SEC-002 (slot x, NAUWK-01 — zoals slot t voor de tunnel van het externe bureaublad): de tech-cookies (SHA-256 → gebruiker) van wie
+ * een terminal opende, staan IN HET GEHEUGEN, geladen bij het openen en hoogstens tot het ticket verloopt. Zo herkent terminalUpgrade()
+ * de eigen browser zonder databasevraag en buiten de gedeelde opzoekplaatsen. Vergeten zodra de laatste sessie van die gebruiker sluit.
+ * Tech-cookies того, хто відкрив термінал, — у пам'яті (не довше за квиток): браузер власника не стоїть у черзі пошуків разом з анонімами.
+ */
+type CookieLader = (userId: string) => Promise<Array<{ hash: string; tot: number }>>;
+let cookieLader: CookieLader = geldigeSleutelsVan;
+export function _zetCookieLader(f: CookieLader | null) { cookieLader = f ?? geldigeSleutelsVan; }
+const bekendeCookies = new Map<string, { userId: string; tot: number }>();
+function vergeetEigenCookies(userId: string) { for (const [h, c] of bekendeCookies) if (c.userId === userId) bekendeCookies.delete(h); }
+/** De geldige tech-cookies van deze gebruiker (opnieuw) in het geheugen; een fout laat de vorige stand staan (dan: gewone opzoeking). */
+async function eigenCookiesLaden(userId: string): Promise<void> {
+  let lijst: Array<{ hash: string; tot: number }>;
+  try { lijst = await cookieLader(userId); } catch { return; }
+  if (![...sessies.values()].some((x) => x.open && x.userId === userId)) return; // intussen dicht: niets onthouden
+  vergeetEigenCookies(userId);
+  const grens = Date.now() + TICKET_MS + 2_000; // na het ticket heeft niemand de cookie hier nog nodig
+  for (const c of lijst) if (/^[0-9a-f]{64}$/.test(c.hash) && c.tot > Date.now()) bekendeCookies.set(c.hash, { userId, tot: Math.min(c.tot, grens) });
+}
+export const _eigenCookiesLaden = eigenCookiesLaden;
 
 const audit = (ownerId: string, action: string, details: Record<string, unknown>) =>
   auditToevoegen({ ownerId, actorId: ownerId, action, type: 'beveiliging', result: 'success', details }).catch(() => undefined);
@@ -66,6 +90,7 @@ function afsluiten(s: Sessie, reden: string, code: number | null = null) {
   s.open = false;
   clearTimeout(s.timer);
   sessies.delete(s.sid);
+  if (![...sessies.values()].some((x) => x.open && x.userId === s.userId)) vergeetEigenCookies(s.userId); // SEC-002 (slot x)
   stuurNaarAgent(s.agentId, { t: 'term.close', sid: s.sid });
   try { s.browser?.send(JSON.stringify({ t: 'exit', code, reden })); s.browser?.close(1000, reden.slice(0, 60)); } catch { /* al dicht */ }
   const kop = JSON.stringify({ version: 2, width: 100, height: 30, timestamp: Math.floor(s.begin / 1000), env: { TERM: 'xterm-256color' } });
@@ -103,6 +128,7 @@ export async function openen(u: Gebruiker, tab: string, input: { agentId: unknow
     timer: setTimeout(() => { const x = sessies.get(sid); if (x) afsluiten(x, 'tijd'); }, minuten * 60_000) };
   s.timer.unref?.();
   sessies.set(sid, s);
+  await eigenCookiesLaden(u.id); // SEC-002 (slot x): de eigen browser herkennen zonder databasevraag in terminalUpgrade()
   // Zonder browser binnen 30 s: sluiten (een ticket dat niemand gebruikt, laat geen container draaien).
   setTimeout(() => { const x = sessies.get(sid); if (x && !x.browser) afsluiten(x, 'geen-browser'); }, TICKET_MS + 2_000).unref?.();
   const ok = await stuurTerminalOpen(agentId, u.id, sid, { sid, root, schrijven, minuten, cols: Number(input.cols) || 100, rows: Number(input.rows) || 30 });
@@ -143,16 +169,36 @@ function stuurBrowser(s: Sessie, obj: Record<string, unknown>) {
 
 // ---- browserkant: WSS /terminal/ws, eerste bericht {t:'auth', ticket} binnen 5 s ----
 const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
-function browserVerbinding(ws: WebSocket) {
+// SEC-002 (toetsen/g01.md №6, afwerking A): dezelfde opbouw als de tunnel van het externe bureaublad na de patch — een grens op
+// verbindingen tegelijk zonder geldig ticket (sinds slot x: de eigen pool hieronder), en na een weigering wordt NIETS meer verwerkt (vlag «dicht») en de socket
+// na 1 s hard afgebroken (terminate), in plaats van berichten tot 256 KiB te blijven ontleden tot de sluithanddruk klaar is.
+// SEC-002 (slot x, NAUWK-01): alleen nog de eigen browser (tech-cookie van wie de wachtende sessie opende) komt tot de handdruk; die
+// verbindingen tellen in een EIGEN pool (MAX_EIGENAAR_WACHTEND), die een anoniem niet kan vullen. Лише браузер власника; окремий пул місць.
+const MAX_EIGENAAR_WACHTEND = 8;
+let eigenaarWachtend = 0;
+export const _terminalEigenaarWachtend = () => eigenaarWachtend;
+/** `eigenaar`: user-id uit de tech-cookie — mag alleen het ticket van een EIGEN sessie gebruiken. */
+function browserVerbinding(ws: WebSocket, eigenaar: string) {
   let s: Sessie | null = null;
-  const t = setTimeout(() => { if (!s) ws.close(4401, 'auth timeout'); }, 5_000);
+  let dicht = false, geteld = true;
+  eigenaarWachtend += 1;
+  const vrij = () => { if (geteld) { geteld = false; eigenaarWachtend -= 1; } };
+  const sluit = (code: number, reden: string) => {
+    if (dicht) return;
+    dicht = true; vrij();
+    try { ws.close(code, reden); } catch { /* al dicht */ }
+    setTimeout(() => { try { ws.terminate(); } catch { /* al weg */ } }, 1_000).unref?.();
+  };
+  const t = setTimeout(() => { if (!s) sluit(4401, 'auth timeout'); }, 5_000);
   ws.on('message', (raw) => {
-    let msg: any; try { msg = JSON.parse(raw.toString()); } catch { ws.close(4400, 'bad json'); return; }
+    if (dicht) return;
+    let msg: any; try { msg = JSON.parse(raw.toString()); } catch { sluit(4400, 'bad json'); return; }
     if (!s) {
-      if (msg?.t !== 'auth' || typeof msg.ticket !== 'string' || msg.ticket.length > 200) { ws.close(4401, 'auth required'); return; }
+      if (msg?.t !== 'auth' || typeof msg.ticket !== 'string' || msg.ticket.length > 200) { sluit(4401, 'auth required'); return; }
       const h = sha256(msg.ticket);
       const x = [...sessies.values()].find((y) => y.ticketHash === h);
-      if (!x || x.browser || x.ticketExp < Date.now()) { ws.close(4403, 'invalid ticket'); return; }
+      if (!x || x.browser || x.ticketExp < Date.now() || x.userId !== eigenaar) { sluit(4403, 'invalid ticket'); return; }
+      vrij();
       clearTimeout(t);
       x.ticketHash = ''; // eenmalig
       x.browser = ws; s = x;
@@ -163,7 +209,7 @@ function browserVerbinding(ws: WebSocket) {
     if (msg?.t === 'in' && typeof msg.d === 'string' && msg.d.length <= 64 * 1024) stuurNaarAgent(s.agentId, { t: 'term.in', sid: s.sid, d: msg.d });
     else if (msg?.t === 'close') afsluiten(s, 'gesloten');
   });
-  ws.on('close', () => { clearTimeout(t); if (s && s.open) afsluiten(s, 'browser-weg'); });
+  ws.on('close', () => { dicht = true; clearTimeout(t); vrij(); if (s && s.open) afsluiten(s, 'browser-weg'); });
   ws.on('error', () => undefined);
 }
 const TOEGESTANE_TERMINAL_ORIGINS = new Set<string>(Object.values(SERVICE_HOSTS).map((h) => `https://${h}`));
@@ -177,13 +223,93 @@ export function terminalOriginToegestaan(originHeader: unknown, hostHeader?: unk
     return (u.hostname === '127.0.0.1' || u.hostname === 'localhost') && !!host && u.host.toLowerCase() === host;
   } catch { return false; }
 }
-export function terminalUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer) {
-  if (!terminalOriginToegestaan(req.headers.origin, req.headers.host)) {
-    socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-    socket.destroy();
-    return;
+/** Wacht er een sessie van deze gebruiker op haar browser (ticket uitgegeven, nog niet gebruikt, niet verlopen)? */
+const wachtOpBrowser = (userId: string) => {
+  const nu = Date.now();
+  for (const x of sessies.values()) if (x.open && x.userId === userId && x.ticketHash && !x.browser && x.ticketExp >= nu) return true;
+  return false;
+};
+
+/**
+ * SEC-002 (slot x, g01-4 zoals de tunnel): een weigering van wie zich niet als eigenaar toonde → auditregel + beveiligingsmelding voor
+ * elke gebruiker met een open terminal — gebundeld, hoogstens één per minuut per gebruiker, met het aantal en de redenen.
+ * Відмова невідомому — запис аудиту й сповіщення власникові відкритого термінала (не частіше разу на хвилину).
+ */
+const weigeringen = new Map<string, { aantal: number; redenen: Set<string>; laatste: number }>();
+export const _terminalWeigeringenLeeg = () => weigeringen.clear();
+function meldGeweigerd(waarom: string) {
+  const nu = Date.now();
+  const gebruikers = new Set<string>();
+  for (const x of sessies.values()) if (x.open) gebruikers.add(x.userId);
+  for (const uid of gebruikers) {
+    const st = weigeringen.get(uid) ?? { aantal: 0, redenen: new Set<string>(), laatste: 0 };
+    weigeringen.set(uid, st);
+    st.aantal += 1;
+    if (st.redenen.size < 8) st.redenen.add(waarom);
+    if (nu - st.laatste < 60_000) continue;
+    const aantal = st.aantal, reden = [...st.redenen].join('; ');
+    st.laatste = nu; st.aantal = 0; st.redenen.clear();
+    void auditToevoegen({ ownerId: uid, actorId: uid, action: 'owner.terminal.geweigerd', type: 'beveiliging', result: 'denied', details: { aantal, reden } }).catch(() => undefined);
+    void meld(uid, 'security',
+      'Термінал: відхилено з’єднання без входу / Terminal: verbinding zonder aanmelding geweigerd',
+      `Хтось без вашого входу в технічний профіль намагався під’єднатися до термінала, поки у вас відкритий сеанс (спроб: ${aantal}). З’єднання відхилено. Якщо це були не ви — закрийте термінал і перевірте пристрої та сеанси входу. / `
+      + `Iemand zonder uw aanmelding in het technisch profiel probeerde verbinding te maken met de terminal terwijl u een sessie open hebt (pogingen: ${aantal}). De verbinding is geweigerd. Was u dit niet, sluit dan de terminal en controleer uw apparaten en aanmeldsessies.`,
+    ).catch(() => undefined);
   }
-  wss.handleUpgrade(req, socket, head, browserVerbinding);
+}
+
+/** Vervangbaar in tests: wie hoort bij deze tech-cookie (zelfde regel als /assets/tech/*, backend/tech-bundels.ts)? */
+type CookieEigenaar = (sleutel: string) => Promise<string | null>;
+let eigenaarVanSleutel: CookieEigenaar = gebruikerVanSleutel;
+export function _zetCookieEigenaar(f: CookieEigenaar | null) { eigenaarVanSleutel = f ?? gebruikerVanSleutel; }
+
+/**
+ * WS-upgrade van /terminal/ws.
+ * SEC-002 (slot x, NAUWK-01; dezelfde opbouw als de tunnel na slot t, backend/remote-bureaublad.ts upgrade()):
+ * Vroeger keek terminalUpgrade() EERST naar de stand: geen sessie die op haar browser wacht → meteen 403; wel zo'n sessie → 101, of 503
+ * als 8 onaangemelde verbindingen open stonden. Zo zag een anoniem (Origin is buiten een browser vrij te kiezen) of er een terminal
+ * openging, en met 8 verbindingen sloot hij de browser van de eigenaar met 503 buiten. Nu:
+ *  - de stand wordt pas gelezen NA de tech-cookie; zonder cookie van de juiste vorm meteen 403, met zo'n cookie altijd precies één
+ *    opzoeking — met of zonder sessie: zelfde werk, zelfde tijd;
+ *  - wie zich niet als eigenaar van een wachtende sessie toont, krijgt altijd EXACT dezelfde bytes (403), ook als de opzoekplaatsen vol
+ *    zijn (geen 503 voor onbekenden); audit + melding pas NA het antwoord (setImmediate);
+ *  - de cookies van wie een terminal opende staan in het geheugen: die browser gaat zonder opzoeking en buiten de gedeelde plaatsen
+ *    door, in een eigen pool. Een 503 bestaat alleen nog voor de eigenaar zelf (eigen pool vol).
+ * Анонім завжди отримує той самий 403 за той самий час, незалежно від того, чи відкривається термінал; власник має окремі місця.
+ */
+const MAX_COOKIE_OPZOEKINGEN = 16; // gelijktijdige databasevragen voor cookies die (nog) niet als die van de eigenaar bekend zijn
+let cookieOpzoekingen = 0;
+const WEIGER_403 = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n';
+export function terminalUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer) {
+  /** Elke weigering van wie zich niet als eigenaar toonde: dezelfde bytes; audit + melding pas na het antwoord. */
+  const onbekend = (waarom: string) => {
+    if (socket.destroyed) return;
+    socket.write(WEIGER_403); socket.destroy();
+    setImmediate(() => meldGeweigerd(waarom));
+  };
+  const eigenaarDoor = (uid: string) => {
+    if (eigenaarWachtend >= MAX_EIGENAAR_WACHTEND) { socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n'); socket.destroy(); return; }
+    wss.handleUpgrade(req, socket, head, (ws) => browserVerbinding(ws, uid));
+  };
+  if (!terminalOriginToegestaan(req.headers.origin, req.headers.host)) { socket.write(WEIGER_403); socket.destroy(); return; }
+  const sleutel = sleutelUitCookie(typeof req.headers.cookie === 'string' ? req.headers.cookie : undefined);
+  if (!sleutel) { onbekend('geen geldige tech-cookie'); return; }
+  const hash = sha256(sleutel);
+  // De eigen browser van wie net een terminal opende: geen opzoeking, niet in de gedeelde rij.
+  const bekend = bekendeCookies.get(hash);
+  if (bekend && bekend.tot <= Date.now()) bekendeCookies.delete(hash);
+  else if (bekend && wachtOpBrowser(bekend.userId)) { eigenaarDoor(bekend.userId); return; }
+  // Alle andere cookies van de juiste vorm: altijd één opzoeking, wat de stand ook is.
+  if (cookieOpzoekingen >= MAX_COOKIE_OPZOEKINGEN) { onbekend('te veel cookie-opzoekingen tegelijk'); return; }
+  socket.on('error', () => undefined); // tijdens het opzoeken: een verbroken verbinding mag het proces niet laten vallen
+  cookieOpzoekingen += 1;
+  void eigenaarVanSleutel(sleutel).catch(() => null).then((uid) => {
+    cookieOpzoekingen -= 1;
+    if (socket.destroyed) return;
+    if (!uid || !wachtOpBrowser(uid)) { onbekend('tech-cookie zonder eigen wachtende sessie'); return; }
+    bekendeCookies.set(hash, { userId: uid, tot: Date.now() + TICKET_MS });
+    eigenaarDoor(uid);
+  });
 }
 registreerTerminal({ vanAgent, upgrade: terminalUpgrade });
 

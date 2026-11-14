@@ -18,14 +18,17 @@ import { randomInt } from 'node:crypto';
 
 export type Aangevraagd = { id: string; verlooptOp: string; verstuurd: number; soort?: VasteSoort; kandidaten?: number[]; juist?: number };
 
-export async function bevestigingAanvragen(userId: string, sessieId: string, actie: string, opties: { apparaat?: string } = {}): Promise<Aangevraagd> {
+export async function bevestigingAanvragen(userId: string, sessieId: string, actie: string, opties: { apparaat?: string; ip?: string; locatie?: string } = {}): Promise<Aangevraagd> {
   if (!sessieId) throw new Error('SESSIE_ONBEKEND');
   const soort = await soortVan(actie);
   if (!soort) throw new Error('ONBEKENDE_ACTIE');
   const e = await eisVoor(userId, actie);
   if (!e || !e.eis.some((a) => a.includes('telegram'))) throw new Error('TELEGRAM_NIET_GEVRAAGD');
-  const [{ n }] = await sql<{ n: number }>("SELECT count(*)::int AS n FROM app.tg_bevestigingen WHERE user_id = $1 AND aangemaakt_op > now() - interval '10 minutes'", [userId]);
-  if (n >= 10) throw new Error('RATE_LIMITED');
+  const [{ n, wacht }] = await sql<{ n: number; wacht: number | null }>(
+    "SELECT count(*)::int AS n, CEIL(EXTRACT(EPOCH FROM (min(aangemaakt_op) + interval '10 minutes' - now())))::int AS wacht FROM app.tg_bevestigingen WHERE user_id = $1 AND aangemaakt_op > now() - interval '10 minutes'",
+    [userId],
+  );
+  if (n >= 10) throw Object.assign(new Error('RATE_LIMITED'), { retryAfter: Math.max(1, Number(wacht || 60)) });
   // Eerdere open aanvragen voor dezelfde handeling in deze sessie vervallen (geen stapel kaarten).
   await sql("UPDATE app.tg_bevestigingen SET stand = 'verlopen' WHERE user_id = $1 AND sessie_id = $2 AND actie = $3 AND stand = 'wacht'", [userId, sessieId, actie]);
   const id = nieuweId();
@@ -43,13 +46,14 @@ export async function bevestigingAanvragen(userId: string, sessieId: string, act
     [id, userId, sessieId, actie, verloopt, trekking?.soort ?? null, trekking?.kandidaten ?? null, trekking?.juist ?? null]);
   const naam = await accountNaam(userId);
   const apparaat = String(opties.apparaat || '').slice(0, 80) || 'onbekend/onbekend';
+  const netwerk = [String(opties.ip || '').trim(), String(opties.locatie || '').trim()].filter(Boolean).join(' · ') || '—';
   let verstuurd = 0;
   for (const k of await koppelingenVanGebruiker(userId)) {
     if (k.stand !== 'actief' || !k.rechten.includes('bevestigen')) continue;
     try {
       const { taal } = await taalVoor(k.telegram_id);
       const tl: 'uk' | 'nl' = taal === 'nl' ? 'nl' : 'uk';
-      const een = (x: 'uk' | 'nl') => invullen((trekking ? TEKST.bevestigVraagSymbool : TEKST.bevestigVraag)[x], { account: naam, actie: tekstIn(soort.naam, x), tijd: tijdTekst(x), apparaat });
+      const een = (x: 'uk' | 'nl') => invullen((trekking ? TEKST.bevestigVraagSymbool : TEKST.bevestigVraag)[x], { account: naam, actie: tekstIn(soort.naam, x), tijd: tijdTekst(x), apparaat, netwerk });
       const knoppen = trekking
         ? [trekking.kandidaten.map((_, pos) => ({ letter: 's' as const, doel: `${id}:${k.id}:${pos}`, tekst: telegramKnopTekst(trekking!.soort, trekking!.kandidaten[pos], tl) })), [{ letter: 'n' as const, doel: `b:${id}:${k.id}`, tekst: t(TEKST.knopNietIk, tl) }]]
         : [[{ letter: 'b' as const, doel: `${id}:${k.id}`, tekst: t(TEKST.knopBevestigen, tl) }], [{ letter: 'n' as const, doel: `b:${id}:${k.id}`, tekst: t(TEKST.knopNietIk, tl) }]];

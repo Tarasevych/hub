@@ -3,15 +3,17 @@
 // 1 день / 7 днів / 30 днів / eigen datum en tijd), eenmalig of herbruikbaar met optioneel maximum. De code verschijnt één keer
 // (kopiëren, QR, deellink). Lijst met status, verloop, gebruik, laatste gebruik en uitklapbare geschiedenis van elk gebruik en elke
 // actie. Intrekken met reden (gastsessies meteen weg), verloop korter (vrij) of langer (sterke bevestiging). Alleen UA + NL.
-import {useEffect,useMemo,useState} from 'react';
-import {Check,ChevronDown,ChevronRight,Clock,Copy,History,KeyRound,Link2,Plus,Share2,Ticket,Users,X} from 'lucide-react';
-import qrcode from 'qrcode-generator';
+import {useEffect,useState} from 'react';
+import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
+import {Check,ChevronDown,Clock,Copy,History,KeyRound,Link2,Plus,Share2,Ticket,Users,X} from 'lucide-react';
+import {Qr} from './platform/Qr'; // IDENTITEIT-014: спільний QR (той самий і для ключа автентифікатора)
 import {api} from './platform/client';
 import {swrPost} from './lees-cache';
 import {foutCode} from './platform/webauthn';
 import {InfoTip} from './InfoTip';
 import {NotitieVeld,RedenVeld,apparaatTekst,redenOk,tijdTekst,useNotities} from './ToegangContext';
 import type {Lang} from './toegangslaag-teksten';
+import {weigeringZin} from '../shared/weigering-tekst';
 
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
 type Scope={id:string;uk:string;nl:string};
@@ -42,23 +44,17 @@ const FOUT:Record<string,[string,string]>={
   STEP_UP_REQUIRED:['Потрібне додаткове підтвердження.','Extra bevestiging is nodig.'],REDEN_TE_KORT:['Причина: щонайменше 10 символів.','Reden: minstens 10 tekens.'],
   AL_INGETROKKEN:['Код уже відкликано.','De code is al ingetrokken.'],RATE_LIMITED:['Забагато спроб. Зачекайте.','Te veel pogingen. Even wachten.'],
 };
-const foutTekst=(lang:Lang,c:string)=>FOUT[c]?tr(lang,FOUT[c][0],FOUT[c][1]):tr(lang,`Не вдалося (${c||'немає зв’язку'}).`,`Mislukt (${c||'geen verbinding'}).`);
+const foutTekst=(lang:Lang,c:string)=>FOUT[c]?tr(lang,FOUT[c][0],FOUT[c][1]):weigeringZin(lang,c)??tr(lang,`Не вдалося (${c||'немає зв’язку'}).`,`Mislukt (${c||'geen verbinding'}).`);
 const lokaal=(d:Date)=>{const p=(n:number)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;};
 const scopeTekst=(lang:Lang,scopes:Scope[],id:string)=>{const s=scopes.find(x=>x.id===id);return s?tr(lang,s.uk,s.nl):id;};
 const gebruikTekst=(lang:Lang,c:Code)=>{const max=c.eenmalig?1:c.maxGebruik;return max?tr(lang,`${c.gebruikt} з ${max}`,`${c.gebruikt} van ${max}`):tr(lang,`${c.gebruikt} раз(и)`,`${c.gebruikt}×`);};
 
-/** QR als SVG-paden (geen innerHTML). */
-function Qr({tekst,label}:{tekst:string;label:string}){
-  const pad=useMemo(()=>{const q=qrcode(0,'M');q.addData(tekst);q.make();const n=q.getModuleCount();let d='';for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+=`M${c+4} ${r+4}h1v1h-1z`;return{d,n:n+8};},[tekst]);
-  return <svg className='toegangscode-qr' viewBox={`0 0 ${pad.n} ${pad.n}`} role='img' aria-label={label} shapeRendering='crispEdges'><rect width={pad.n} height={pad.n} fill='#fff'/><path d={pad.d} fill='#000'/></svg>;
-}
-
 function VerloopKiezer({lang,waarde,zet,presets,metNooit=true,groep='verloop'}:{lang:Lang;waarde:Verloop;zet:(v:Verloop)=>void;presets:string[];metNooit?:boolean;groep?:string}){
   const min=lokaal(new Date(Date.now()+6*60000)),max=lokaal(new Date(Date.now()+365*86400000));
   return <div className='toegangscode-verloop' role='radiogroup' aria-label={tr(lang,'Строк дії','Geldigheid')}>
-    {metNooit&&<label><input type='radio' name={groep} checked={waarde.soort==='nooit'} onChange={()=>zet({soort:'nooit'})}/>{tr(lang,'Безстроково','Onbeperkt')}</label>}
-    {presets.map(p=><label key={p}><input type='radio' name={groep} checked={waarde.soort==='preset'&&waarde.preset===p} onChange={()=>zet({soort:'preset',preset:p})}/>{PRESET[p]?tr(lang,PRESET[p][0],PRESET[p][1]):p}</label>)}
-    <label><input type='radio' name={groep} checked={waarde.soort==='datum'} onChange={()=>zet({soort:'datum',tot:lokaal(new Date(Date.now()+86400000))})}/>{tr(lang,'Своя дата й час','Eigen datum en tijd')}</label>
+    {metNooit&&<label className='toegangscode-keuze'><input type='radio' name={groep} checked={waarde.soort==='nooit'} onChange={()=>zet({soort:'nooit'})}/><span>{tr(lang,'Безстроково','Onbeperkt')}</span></label>}
+    {presets.map(p=><label key={p} className='toegangscode-keuze'><input type='radio' name={groep} checked={waarde.soort==='preset'&&waarde.preset===p} onChange={()=>zet({soort:'preset',preset:p})}/><span>{PRESET[p]?tr(lang,PRESET[p][0],PRESET[p][1]):p}</span></label>)}
+    <label className='toegangscode-keuze'><input type='radio' name={groep} checked={waarde.soort==='datum'} onChange={()=>zet({soort:'datum',tot:lokaal(new Date(Date.now()+86400000))})}/><span>{tr(lang,'Своя дата й час','Eigen datum en tijd')}</span></label>
     {waarde.soort==='datum'&&<input type='datetime-local' data-verloop-datum min={min} max={max} value={waarde.tot} onChange={e=>zet({soort:'datum',tot:e.target.value})} aria-label={tr(lang,'Діє до','Geldig tot')}/>}
   </div>;
 }
@@ -74,7 +70,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
   const[melding,setMelding]=useState('');
   const notities=useNotities(context);
   // Fase B1: bewaarde lijst meteen tonen, dan vers ophalen (alleen geheugen, per account); afbreken als de pagina verdwijnt.
-  const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<Lijst&{beschikbaar?:boolean}>('/api/owner/access/toegangscodes/lijst',context,d=>{if(d.beschikbaar===false){setGeenToegang(true);return;}setData(d);},o);}catch(c){if(foutCode(c)==='OWNER_REQUIRED')setGeenToegang(true);else setFout(foutTekst(lang,foutCode(c)));}};
+  const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<Lijst&{beschikbaar?:boolean}>('/api/owner/access/toegangscodes/lijst',context,d=>{if(!d||typeof d!=='object')return;if(d.beschikbaar===false){setGeenToegang(true);return;}if(Array.isArray(d.codes))setData({...d,scopes:Array.isArray(d.scopes)?d.scopes:[],nooit:Array.isArray(d.nooit)?d.nooit:[],presets:Array.isArray(d.presets)?d.presets:[]});},o);}catch(c){if(foutCode(c)==='OWNER_REQUIRED')setGeenToegang(true);else setFout(foutTekst(lang,foutCode(c)));}};
   useEffect(()=>{const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(location.hash==='#toegangscodes'&&data)window.setTimeout(()=>document.getElementById('toegangscodes')?.scrollIntoView({block:'start'}),80);},[!!data]);// eslint-disable-line react-hooks/exhaustive-deps
   if(geenToegang)return null;
@@ -96,7 +92,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
     <div className='access-plane-box'>
       {fout&&<p className='access-plane-warn' role='alert'>{fout}</p>}
       {melding&&<p className='access-plane-notice' role='status'>{melding}</p>}
-      {getoond&&<div className='access-plane-subrow toegangscode-getoond' data-code-getoond>
+      {getoond&&<div className='access-plane-subrow toegangscode-getoond' data-code-getoond {...verborgenVoorAi}>
         <strong>{tr(lang,`Код для «${getoond.naam}» — показано лише один раз`,`Code voor «${getoond.naam}» — wordt maar één keer getoond`)}</strong>
         <div className='toegangscode-getoond-inhoud'>
           <Qr tekst={getoond.link} label={tr(lang,'QR-код із посиланням','QR-code met de link')}/>
@@ -120,17 +116,17 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
       </div>}
       {nieuw&&data&&<form className='access-plane-subrow toegangscode-form' data-code-form onSubmit={e=>{e.preventDefault();void maken();}}>
         <label htmlFor='toegangscode-naam'>{tr(lang,'Назва','Naam')}</label>
-        <input id='toegangscode-naam' autoFocus maxLength={80} value={nieuw.naam} placeholder={tr(lang,'Наприклад: Для Олени','Bijvoorbeeld: Voor Olena')} onChange={e=>setNieuw({...nieuw,naam:e.target.value})}/>
+        <input id='toegangscode-naam' type='text' autoFocus maxLength={80} value={nieuw.naam} placeholder={tr(lang,'Наприклад: Для Олени','Bijvoorbeeld: Voor Olena')} onChange={e=>setNieuw({...nieuw,naam:e.target.value})}/>
         <label htmlFor='toegangscode-notitie'>{tr(lang,'Приватна нотатка (бачите лише ви)','Privénotitie (alleen u ziet dit)')}</label>
         <textarea id='toegangscode-notitie' data-concept='toegangscode-notitie' rows={2} maxLength={500} value={nieuw.notitie} onChange={e=>setNieuw({...nieuw,notitie:e.target.value})}/>
-        <fieldset><legend>{tr(lang,'Що людина зможе переглядати','Wat de persoon mag bekijken')}</legend>
-          {data.scopes.map(s=><label key={s.id} className='toegangscode-scope'><input type='checkbox' data-scope={s.id} checked={nieuw.scopes.includes(s.id)} onChange={e=>setNieuw({...nieuw,scopes:e.target.checked?[...nieuw.scopes,s.id]:nieuw.scopes.filter(x=>x!==s.id)})}/>{tr(lang,s.uk,s.nl)}</label>)}
+        <fieldset className='toegangscode-scopes-kiezer'><legend>{tr(lang,'Що людина зможе переглядати','Wat de persoon mag bekijken')}</legend>
+          {data.scopes.map(s=><label key={s.id} className='toegangscode-scope'><input type='checkbox' data-scope={s.id} checked={nieuw.scopes.includes(s.id)} onChange={e=>setNieuw({...nieuw,scopes:e.target.checked?[...nieuw.scopes,s.id]:nieuw.scopes.filter(x=>x!==s.id)})}/><span>{tr(lang,s.uk,s.nl)}</span></label>)}
           <small className='toegangscode-nooit'><strong>{tr(lang,'Ніколи не доступно гостю:','Nooit beschikbaar voor een gast:')}</strong> {data.nooit.map(n=>tr(lang,n.uk,n.nl)).join(' · ')}</small>
         </fieldset>
         <fieldset><legend>{tr(lang,'Строк дії','Geldigheid')}</legend><VerloopKiezer lang={lang} waarde={nieuw.verloop} zet={v=>setNieuw({...nieuw,verloop:v})} presets={data.presets}/></fieldset>
-        <fieldset><legend>{tr(lang,'Використання','Gebruik')}</legend>
-          <label><input type='radio' name='gebruik' checked={nieuw.gebruik==='eenmalig'} onChange={()=>setNieuw({...nieuw,gebruik:'eenmalig'})}/>{tr(lang,'Одноразовий','Eenmalig')}</label>
-          <label><input type='radio' name='gebruik' checked={nieuw.gebruik==='herbruikbaar'} onChange={()=>setNieuw({...nieuw,gebruik:'herbruikbaar'})}/>{tr(lang,'Багаторазовий до закінчення строку','Herbruikbaar tot het verloopt')}</label>
+        <fieldset className='toegangscode-gebruik'><legend>{tr(lang,'Використання','Gebruik')}</legend>
+          <label className='toegangscode-keuze'><input type='radio' name='gebruik' checked={nieuw.gebruik==='eenmalig'} onChange={()=>setNieuw({...nieuw,gebruik:'eenmalig'})}/><span>{tr(lang,'Одноразовий','Eenmalig')}</span></label>
+          <label className='toegangscode-keuze'><input type='radio' name='gebruik' checked={nieuw.gebruik==='herbruikbaar'} onChange={()=>setNieuw({...nieuw,gebruik:'herbruikbaar'})}/><span>{tr(lang,'Багаторазовий до закінчення строку','Herbruikbaar tot het verloopt')}</span></label>
           {nieuw.gebruik==='herbruikbaar'&&<label className='toegangscode-max'>{tr(lang,'Не більше ніж (необов’язково):','Maximaal (optioneel):')}<input type='number' min={1} max={1000} inputMode='numeric' value={nieuw.max} onChange={e=>setNieuw({...nieuw,max:e.target.value})}/>{tr(lang,'разів','keer')}</label>}
         </fieldset>
         <small className='access-plane-hint-line'>{tr(lang,'Далі потрібне підтвердження passkey, кодом із застосунку або кодом відновлення.','Daarna is bevestiging met passkey, app-code of herstelcode nodig.')}</small>
@@ -163,7 +159,7 @@ function CodeRij({lang,c,scopes,presets,context,notities,onChange}:{lang:Lang;c:
     <div className='access-plane-row-main'>
       <span className='access-plane-row-title'><strong>{c.naam}</strong><span className={`access-plane-badge tone-${st[2]}`} data-code-status>{tr(lang,st[0],st[1])}</span>
         <small className='access-plane-mono'>••••-{c.codeHint}</small></span>
-      <small>{c.scopes.map(s=>scopeTekst(lang,scopes,s)).join(' · ')}</small>
+      <span className='toegangscode-scope-rij'>{c.scopes.map(s=><span key={s} className='toegangscode-scope-pil'>{scopeTekst(lang,scopes,s)}</span>)}</span>
       <small data-code-info><Clock aria-hidden='true'/>{c.verlooptOp?tr(lang,`Діє до ${tijdTekst(lang,c.verlooptOp)}`,`Geldig tot ${tijdTekst(lang,c.verlooptOp)}`):tr(lang,'Безстроково','Onbeperkt')}
         {' · '}{c.eenmalig?tr(lang,'одноразовий','eenmalig'):tr(lang,'багаторазовий','herbruikbaar')}{' · '}{tr(lang,'використано ','gebruikt ')}{gebruikTekst(lang,c)}
         {actieveSessies>0&&<> · <Users aria-hidden='true'/>{tr(lang,`активних гостьових сесій: ${actieveSessies}`,`actieve gastsessies: ${actieveSessies}`)}</>}</small>
@@ -188,7 +184,7 @@ function CodeRij({lang,c,scopes,presets,context,notities,onChange}:{lang:Lang;c:
       </div>}
       {fout&&<small className='toegang-fout' role='alert'>{fout}</small>}
       {c.geschiedenis.length>0&&<div className='toegang-geschiedenis' data-code-geschiedenis={c.id}>
-        <button type='button' className='toegang-uitklap' aria-expanded={open} onClick={()=>setOpen(!open)}>{open?<ChevronDown/>:<ChevronRight/>}<History/>{tr(lang,`Історія (${c.geschiedenis.length})`,`Geschiedenis (${c.geschiedenis.length})`)}</button>
+        <button type='button' className='toegang-uitklap' aria-expanded={open} onClick={()=>setOpen(!open)}><History aria-hidden='true'/><span>{tr(lang,`Історія (${c.geschiedenis.length})`,`Geschiedenis (${c.geschiedenis.length})`)}</span><ChevronDown className='toegang-chevron' aria-hidden='true'/></button>
         {open&&<ol className='toegang-geschiedenis-lijst'>{c.geschiedenis.map((g,i)=>{const t=LOG[g.soort];const d=g.detail||{};return <li key={`${g.op}-${i}`} data-soort={g.soort==='ingetrokken'||g.soort==='geweigerd'?`code-${g.soort}`:g.soort}>
           <strong>{t?tr(lang,t[0],t[1]):g.soort}</strong>
           {g.soort==='actie'&&typeof d.scope==='string'?<span>: {scopeTekst(lang,scopes,d.scope)}</span>:null}

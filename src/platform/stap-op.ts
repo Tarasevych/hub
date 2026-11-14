@@ -180,7 +180,24 @@ export type BevestigOpties = {
   actie?: string;
   /** true: Google alleen telt niet (intrekken van rechten, «Це був не я»): alleen passkey, app-code of herstelcode. */
   sterk?: boolean;
+  /** SEC-002 interface-07: het adres van het verzoek dat om bevestiging vroeg — het venster zegt WAT er bevestigd wordt. */
+  pad?: string;
+  /** SEC-002 interface-07: false = het verzoek kwam niet uit een klik van de mens in dit tabblad → geen «Запам’ятати» aanbieden. */
+  onthoudAanbieden?: boolean;
 };
+/**
+ * SEC-002 interface-07: komt dit verzoek NU uit een gebaar van de mens in dit tabblad? Zichtbaar, met focus, en (waar de browser
+ * het kent) met een actieve gebruikersactivering — een klik vanuit een script of de browserextensie geeft die nooit. Bij twijfel nee:
+ * dan biedt het venster alleen «Запам’ятати» niet aan; bevestigen zelf blijft mogelijk.
+ */
+export function directGebaar(): boolean {
+  try {
+    if (typeof document === 'undefined') return false;
+    if (document.visibilityState === 'hidden' || (typeof document.hasFocus === 'function' && !document.hasFocus())) return false;
+    const ua = typeof navigator !== 'undefined' ? (navigator as unknown as { userActivation?: { isActive?: boolean } }).userActivation : undefined;
+    return ua ? ua.isActive === true : true;
+  } catch { return false; }
+}
 /** Toon «Підтвердіть доступ». Kiest de gebruiker Google, dan verlaat de pagina zich en is de uitkomst {ok:false, reden:'google'}. */
 export async function bevestigToegang(opties: BevestigOpties): Promise<StapOpUitkomst> {
   if (typeof window === 'undefined' || typeof document === 'undefined') return { ok: false };
@@ -194,7 +211,7 @@ export async function stapOpVragen(body: unknown, post: Post, url = '', sterk = 
   const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
   const service = String(b.service || ''), tabContext = String(b.tabContext || '');
   if (!SERVICES.has(service) || !tabContext) return false;
-  const uit = await bevestigToegang({ service, tabContext, post, hervat: lopende, actie: actieVoorUrl(url), sterk });
+  const uit = await bevestigToegang({ service, tabContext, post, hervat: lopende, actie: actieVoorUrl(url), sterk, pad: url, onthoudAanbieden: directGebaar() });
   if (!uit.ok && uit.reden === 'VENSTER_FOUT') throw new Error('VENSTER_FOUT');
   return uit.ok;
 }

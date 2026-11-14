@@ -52,6 +52,171 @@ export const ALGEMENE_ACTIES: UitlegActie[] = [
 ];
 
 export const REGISTER: UitlegSoort[] = [
+  // ---- SEC-002 (afwerking): weigeringen, grenzen en zekeringen die de server sinds het audit meldt. Vooraan, want ze passen
+  //      alleen op hun eigen soort of tekst; anders zouden ze in de algemene «beveiliging»/«пошта»/«algemeen» vallen.
+  {
+    id: 'beveiliging-zekering',
+    past: (m) => /^beveiliging\.zekering$/.test(m.soort || ''),
+    titel: ['Захист сайту змінив стан', 'Een beveiliging van de site veranderde van stand'],
+    risico: 'hoog',
+    wat: ['Захист сайту (RLS, перевірка входу, політики доступу або повторне підтвердження входу) увімкнено, вимкнено чи він не діє.', 'Een beveiliging van de site (RLS, aanmeldpoort, toegangsbeleid of herbevestiging van de aanmelding) is aan- of uitgezet of werkt niet.'],
+    waarom: ['Сервер побачив збої після ввімкнення або змінну аварійного вимкнення (STAP_OP_UIT_TOT / STAP_OP_UIT) у налаштуваннях сервера.', 'De server zag storingen na het aanzetten of een noodschakelaar (STAP_OP_UIT_TOT / STAP_OP_UIT) in de serverinstellingen.'],
+    gevolg: ['Поки захист вимкнено, відповідні дії виконуються з самим лише сеансом — сайт менш захищений.', 'Zolang de beveiliging uit staat, gaan die handelingen met alleen een sessie — de site is minder beschermd.'],
+    doen: ['Відкрийте «Захист», перевірте причину й увімкніть захист знову, щойно це безпечно.', 'Open «Bescherming», bekijk de oorzaak en zet de beveiliging weer aan zodra dat veilig is.'],
+    deeplink: viaLink('https://admin.tarasevych.com/diagnostiek'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити «Захист»', '«Bescherming» openen'], href: viaLink('https://admin.tarasevych.com/diagnostiek') },
+    ],
+  },
+  {
+    id: 'notities-zoeken-te-zwaar',
+    past: (m) => /(пошук у нотатках зупинено|zoeken in notities gestopt)/.test(tekst(m)),
+    risico: 'midden',
+    wat: ['Пошук у ваших нотатках зупинено, бо він тривав довше за 5 секунд.', 'Een zoekopdracht in uw notities is gestopt omdat ze langer dan 5 seconden duurde.'],
+    waarom: ['Дуже довгі чи численні слова змушують базу даних перебирати весь текст. Так буває при випадковому вставленні великого тексту в поле пошуку — або коли хтось навмисно навантажує сайт вашим обліковим записом чи агентом ШІ.', 'Heel lange of veel woorden laten de database alle tekst doorlopen. Dat gebeurt als er per ongeluk veel tekst in het zoekveld staat — of als iemand de site met uw account of een AI-agent bewust belast.'],
+    gevolg: ['Нотатки не змінено; список і звичайний пошук працюють далі. Запис про це є в журналі (без тексту запиту).', 'Er is niets aan de notities gewijzigd; de lijst en gewoon zoeken werken verder. Er staat een regel in het journaal (zonder de zoektekst).'],
+    doen: ['Якщо це не ви — перегляньте сеанси й доступи агентів ШІ у «Способах входу» та «Агентах».', 'Was u het niet, bekijk dan de sessies en de toegang van AI-agenten bij «Aanmeldmethoden» en «Agenten».'],
+    deeplink: viaLink('https://hub.tarasevych.com/notities'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити нотатки', 'Notities openen'], href: viaLink('https://hub.tarasevych.com/notities') },
+      { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
+    ],
+  },
+  // IDENTITEIT-014: rechten in een gedeelde ruimte. Vóór «beveiliging»: «workspace_access_revoked» bevat «access_» en zou anders
+  // als accountbeveiliging (met «Це був я») worden uitgelegd — het gaat om een ruimte van iemand anders, niet om uw aanmelding.
+  // IDENTITEIT-014 (herstel): de maker van een privélink krijgt een spoor in het meldingencentrum — de link is een geheim.
+  {
+    id: 'delen-link',
+    past: (m) => m.soort === 'workspace_share_link_created',
+    risico: 'midden',
+    wat: ['Ви створили посилання-запрошення до спільного простору.', 'U maakte een uitnodigingslink voor een gedeelde werkruimte.'],
+    waarom: ['Посилання дає вибрану роль першому, хто його відкриє й увійде; воно одноразове й діє 7 днів.', 'De link geeft de gekozen rol aan wie hem als eerste opent en zich aanmeldt; hij is eenmalig en 7 dagen geldig.'],
+    gevolg: ['Будь-хто, до кого потрапить посилання, може ним скористатися — навіть не та людина, якій ви його надіслали.', 'Iedereen die de link in handen krijgt, kan hem gebruiken — ook iemand anders dan aan wie u hem stuurde.'],
+    doen: ['Надсилайте посилання лише особисто. Якщо його створили не ви — захистіть вхід і перевірте учасників простору.', 'Stuur de link alleen persoonlijk. Maakte u hem niet, beveilig dan uw aanmelding en controleer de leden.'],
+    deeplink: viaLink('https://hub.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити простір', 'Werkruimte openen'], href: viaLink('https://hub.tarasevych.com/') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+  {
+    id: 'delen-rechten',
+    past: (m) => /^workspace_(role_changed|access_revoked|invite_accepted)$/.test(m.soort || ''),
+    risico: 'midden',
+    wat: ['Змінилися права в спільному просторі: ваша роль, ваш доступ або хтось прийняв ваше запрошення.', 'De rechten in een gedeelde werkruimte zijn gewijzigd: uw rol, uw toegang, of iemand nam uw uitnodiging aan.'],
+    waarom: ['Власник або адміністратор простору змінив учасників, або людина скористалася запрошенням.', 'De eigenaar of een beheerder van de werkruimte wijzigde de leden, of iemand gebruikte een uitnodiging.'],
+    gevolg: ['Від ролі залежить, чи можна лише переглядати, редагувати або запрошувати інших; після відкликання простір зникає зі списку.', 'De rol bepaalt of u alleen kunt bekijken, kunt bewerken of anderen kunt uitnodigen; na intrekken verdwijnt de werkruimte uit de lijst.'],
+    doen: ['Якщо зміна несподівана — зверніться до власника простору. Якщо до вас приєднався незнайомець — змініть його роль або відкличте доступ у списку учасників.', 'Komt de wijziging onverwacht, neem contact op met de eigenaar. Sloot een onbekende aan, wijzig dan zijn rol of trek de toegang in via de ledenlijst.'],
+    rechten: ['Адміністратор може запрошувати, змінювати ролі й відкликати доступ; редагування — змінювати блоки; перегляд — лише читати.', 'Een beheerder kan uitnodigen, rollen wijzigen en toegang intrekken; bewerken = blokken wijzigen; lezen = alleen bekijken.'],
+    deeplink: viaLink('https://hub.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити простір', 'Werkruimte openen'], href: viaLink('https://hub.tarasevych.com/') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+  {
+    id: 'mail-wachtrij',
+    past: (m) => /^mail_queue_(refused|cancelled)$/.test(m.soort || ''),
+    risico: 'midden',
+    wat: ['Запланований лист не надіслано або заплановані листи скасовано.', 'Een gepland bericht is niet verzonden of geplande berichten zijn geannuleerd.'],
+    waarom: ['На момент надсилання цей простір більше не мав права надсилати з цієї скриньки (наприклад, скриньку відключено чи доступ змінено).', 'Op het moment van verzenden mocht deze ruimte niet meer vanuit deze mailbox verzenden (bijvoorbeeld de mailbox is losgekoppeld of de toegang is gewijzigd).'],
+    gevolg: ['Лист лишився неотриманим — адресат його не бачив.', 'Het bericht is niet aangekomen — de ontvanger heeft het niet gezien.'],
+    doen: ['Відкрийте пошту, перевірте підключення скриньки й надішліть лист знову.', 'Open de mail, controleer de koppeling van de mailbox en verstuur het bericht opnieuw.'],
+    deeplink: viaLink('https://mail.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити пошту', 'Mail openen'], href: viaLink('https://mail.tarasevych.com/') },
+    ],
+  },
+  {
+    id: 'cloud-alleen-lezen',
+    past: (m) => /^cloud_alleen_lezen$/.test(m.soort || ''),
+    risico: 'laag',
+    wat: ['Спробу змінити файл у хмарі відхилено: ваша роль — лише перегляд.', 'Een poging om iets in de cloud te wijzigen is geweigerd: uw rol is alleen-lezen.'],
+    waarom: ['Власник простору надав вам доступ лише для перегляду; спробу записано в журнал.', 'De eigenaar van de ruimte gaf u alleen leestoegang; de poging staat in het journaal.'],
+    gevolg: ['Нічого не змінено. Переглядати й завантажувати файли ви можете як і раніше.', 'Er is niets gewijzigd. Bekijken en downloaden kan gewoon verder.'],
+    doen: ['Якщо вам потрібен запис — попросіть власника простору змінити вашу роль. Якщо це не ви — перегляньте сеанси.', 'Hebt u schrijfrecht nodig, vraag de eigenaar van de ruimte dan uw rol aan te passen. Was u het niet, bekijk dan uw sessies.'],
+    deeplink: viaLink('https://cloud.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити хмару', 'Cloud openen'], href: viaLink('https://cloud.tarasevych.com/') },
+    ],
+  },
+  {
+    // SEC-002 (slot «u»): dezelfde weigering buiten de hmara (notities, woning, agenda, toegang, werkblad …). De server stuurt soort
+    // toegang_alleen_lezen (hoogstens één per uur per account, zoals cloud_alleen_lezen); de route staat in de tekst van de melding.
+    id: 'rol-alleen-lezen',
+    past: (m) => /^toegang_alleen_lezen$/.test(m.soort || '') || (/alleen_lezen$/.test(m.soort || '') && !/^cloud_/.test(m.soort || '')),
+    titel: ['Зміну відхилено: ваша роль — лише перегляд', 'Wijziging geweigerd: uw rol is alleen-lezen'],
+    risico: 'laag',
+    wat: ['Спробу щось змінити (нотатку, оселю, календар, налаштування тощо) відхилено: ваша роль — лише перегляд.', 'Een poging om iets te wijzigen (een notitie, de woning, de agenda, instellingen enzovoort) is geweigerd: uw rol is alleen-lezen.'],
+    waarom: ['Власник або адміністратор сайту надав вашому обліковому запису роль «лише перегляд»: ви бачите й читаєте все, що вам відкрито, але змінювати можуть лише учасники з повним доступом, адміністратори й власник. Спробу записано в журнал.', 'De eigenaar of een beheerder van de site gaf uw account de rol «alleen-lezen»: u ziet en leest alles wat voor u openstaat, maar wijzigen kunnen alleen leden met volledige toegang, beheerders en de eigenaar. De poging staat in het journaal.'],
+    gevolg: ['Нічого не змінено. Переглядати й читати ви можете як і раніше.', 'Er is niets gewijzigd. Bekijken en lezen kan gewoon verder.'],
+    doen: ['Якщо вам потрібно змінювати — попросіть власника або адміністратора сайту змінити вашу роль (Адміністрування → Користувачі). Якщо ви нічого не змінювали — перегляньте свої сеанси й доступи агентів ШІ.', 'Moet u kunnen wijzigen, vraag dan de eigenaar of een beheerder van de site uw rol aan te passen (Beheer → Gebruikers). Hebt u niets geprobeerd te wijzigen, bekijk dan uw sessies en de toegang van AI-agenten.'],
+    rechten: ['Роль «лише перегляд»: читання — так, будь-які зміни — ні.', 'Rol «alleen-lezen»: lezen — ja, wijzigingen — nee.'],
+    deeplink: viaLink(`${ID}/`),
+    acties: [
+      { soort: 'openen', label: ['Перевірити сеанси', 'Sessies bekijken'], href: viaLink(`${ID}/`) },
+      { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
+    ],
+  },
+  {
+    // SEC-002 (slot «u»): melding van backend/beveiliging-meldingen.ts «json-vereist» (soort security, hoogstens één per uur).
+    id: 'json-vereist',
+    past: (m) => /(запит-форму з вашим сеансом|formulierverzoek met uw sessie)/.test(tekst(m)),
+    risico: 'midden',
+    wat: ['Сайт відхилив дію, яку надіслали як звичайну форму з вашим сеансом (а не як запит самої сторінки сайту).', 'De site weigerde een actie die als gewoon formulier met uw sessie werd verstuurd (niet als verzoek van een pagina van de site zelf).'],
+    waarom: ['Так виглядає підроблена форма на чужій сторінці, яка намагається діяти від вашого імені. Буває й безпечна причина — дуже стара вкладка сайту.', 'Zo ziet een nagemaakt formulier op een andere pagina eruit dat uit uw naam probeert te handelen. Een onschuldige oorzaak kan ook: een heel oud tabblad van de site.'],
+    gevolg: ['Нічого не змінено: сервер приймає дії лише від сторінок сайту. Запис є в журналі.', 'Er is niets gewijzigd: de server neemt acties alleen aan van pagina’s van de site. Er staat een regel in het journaal.'],
+    doen: ['Оновіть відкриті вкладки сайту. Якщо ви нічого не робили — закрийте незнайомі сторінки й перегляньте свої сеанси.', 'Ververs de open tabbladen van de site. Deed u niets, sluit dan onbekende pagina’s en bekijk uw sessies.'],
+    deeplink: viaLink(`${ID}/`),
+    acties: [
+      { soort: 'openen', label: ['Перевірити сеанси', 'Sessies bekijken'], href: viaLink(`${ID}/`) },
+      { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
+    ],
+  },
+  {
+    // SEC-002 (slot «u»): melding «consent-andere-browser» (soort security): toestemming voor een AI-koppeling in een andere browser.
+    id: 'consent-andere-browser',
+    past: (m) => /(в іншому браузері — доступ не видано|in een andere browser — geen toegang)/.test(tekst(m)),
+    risico: 'hoog',
+    wat: ['Вікно згоди на підключення ШІ відкрили не в тому браузері, де підключення почалося. Доступ не видано.', 'Het toestemmingsvenster voor een AI-koppeling werd geopend in een andere browser dan waarin de koppeling begon. Er is geen toegang gegeven.'],
+    waarom: ['Так буває, коли хтось надсилає вам посилання на підключення свого ШІ, щоб ви підтвердили йому доступ до свого облікового запису. Згода діє лише в тому браузері, де підключення почали.', 'Dat gebeurt als iemand u een koppellink van zijn eigen AI stuurt, zodat u hem toegang tot uw account geeft. De toestemming geldt alleen in de browser waarin de koppeling begon.'],
+    gevolg: ['Жодного доступу не видано; наявні підключення ШІ не змінено.', 'Er is geen toegang gegeven; bestaande AI-koppelingen zijn niet gewijzigd.'],
+    doen: ['Якщо ви самі підключаєте ШІ — почніть заново в цьому браузері. Якщо посилання вам надіслали — не відкривайте його й перегляньте підключені ШІ.', 'Koppelt u zelf een AI, begin dan opnieuw in deze browser. Kreeg u de link toegestuurd, open hem dan niet en bekijk de gekoppelde AI’s.'],
+    rechten: ['Згода дала б ШІ доступ до вашого простору з правами, що були в запиті.', 'De toestemming zou de AI toegang tot uw ruimte geven met de rechten uit het verzoek.'],
+    deeplink: viaLink(MCP),
+    acties: [
+      { soort: 'openen', label: ['Підключені ШІ', 'Gekoppelde AI’s'], href: viaLink(MCP) },
+      { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
+    ],
+  },
+  {
+    id: 'agenda-grens',
+    past: (m) => (m.dienst === 'agenda' || /agenda|calendar/.test(s(m))) && /(забагато|завеликий|te veel|te groot)/.test(tekst(m)),
+    risico: 'laag',
+    wat: ['Календар упирається в межу: забагато оновлень поспіль або забагато подій для збереження.', 'De agenda loopt tegen een grens aan: te veel verversingen na elkaar of te veel afspraken om te bewaren.'],
+    waarom: ['Межі захищають сервер і сторонні календарі від перевантаження (наприклад, коли агент ШІ «застряг у циклі»).', 'De grenzen beschermen de server en de externe agenda’s tegen overbelasting (bijvoorbeeld als een AI-agent «in een lus vastzit»).'],
+    gevolg: ['Частину подій не збережено або оновлення відкладено; наявні дані не зіпсовано.', 'Een deel van de afspraken is niet bewaard of de verversing is uitgesteld; bestaande gegevens zijn niet beschadigd.'],
+    doen: ['Зачекайте кілька хвилин перед новим оновленням; завеликий календар приховайте або вилучіть зайві календарі.', 'Wacht enkele minuten voor een nieuwe verversing; verberg een te grote agenda of verwijder overbodige agenda’s.'],
+    deeplink: viaLink('https://hub.tarasevych.com/agenda'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити календар', 'Agenda openen'], href: viaLink('https://hub.tarasevych.com/agenda') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
+  {
+    id: 'grens-uitnodigingen',
+    past: (m) => /(ліміт запрошень|limiet voor uitnodigingen|забагато запрошень|te veel uitnodigingen)/.test(tekst(m)),
+    risico: 'midden',
+    wat: ['Вичерпано межу запрошень за годину: нові запрошення тимчасово не надсилаються.', 'De grens voor uitnodigingen per uur is bereikt: nieuwe uitnodigingen gaan tijdelijk niet uit.'],
+    waarom: ['Межа не дає перебирати адреси пошти (щоб дізнатися, хто має обліковий запис) і розсилати спам від вашого імені.', 'De grens voorkomt dat e-mailadressen worden afgetast (wie heeft een account) en dat er spam uit uw naam vertrekt.'],
+    gevolg: ['Уже надіслані запрошення діють; нові можна надіслати через годину.', 'Al verstuurde uitnodigingen gelden; nieuwe kunnen over een uur.'],
+    doen: ['Якщо ви не надсилали стільки запрошень — перегляньте сеанси й доступи агентів ШІ.', 'Hebt u niet zoveel uitnodigingen verstuurd, bekijk dan uw sessies en de toegang van AI-agenten.'],
+    deeplink: viaLink(`${ID}/`),
+    acties: [
+      { soort: 'openen', label: ['Перевірити сеанси', 'Sessies bekijken'], href: viaLink(`${ID}/`) },
+      { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
+    ],
+  },
   // ---- UI-014 fase 2A: aanmeldingen en aanmeldmethoden (vóór «beveiliging», want de eerste passende soort wint)
   {
     id: 'nieuw-apparaat',
@@ -84,6 +249,21 @@ export const REGISTER: UitlegSoort[] = [
     acties: [
       { soort: 'openen', label: ['Відкрити код', 'Code openen'], href: viaLink(`${ID}/methods#toegangscodes`) },
       { soort: 'intrekken', label: ['Відкликати код…', 'Code intrekken…'], href: viaLink(`${ID}/methods#toegangscodes`), gevaarlijk: true },
+    ],
+  },
+  {
+    // IDENTITEIT-014: geen «Це були ви?» — dit is een herinnering, geen verdachte handeling. Moet vóór 'herstelcode' staan (eerste die past wint).
+    id: 'herstelcodes-bijna-op',
+    past: (m) => m.soort === 'access_recovery_low',
+    titel: ['Залишилося мало кодів відновлення', 'Weinig herstelcodes over'],
+    risico: 'midden',
+    wat: ['Після останнього використання залишилося 2 коди відновлення або менше.', 'Na het laatste gebruik zijn er nog 2 of minder herstelcodes over.'],
+    waarom: ['Кожен код діє лише один раз. Ви підтверджували вхід чи важливі дії кодами замість телефона або ключа доступу.', 'Elke code werkt maar één keer. U bevestigde aanmelden of belangrijke handelingen met codes in plaats van telefoon of passkey.'],
+    gevolg: ['Коли коди закінчаться, після втрати телефона чи ключа доступу увійти буде неможливо. Нове сповіщення для цього набору не прийде.', 'Zijn de codes op, dan kunt u na verlies van telefoon of passkey niet meer aanmelden. Voor deze set komt geen nieuwe melding.'],
+    doen: ['Створіть новий набір кодів (з підтвердженням) і збережіть його поза цим пристроєм. Старі коди тоді перестануть діяти. Вимкнути це нагадування можна в Меню → Сповіщення в меню.', 'Maak een nieuwe set codes (met bevestiging) en bewaar die buiten dit apparaat; de oude codes werken dan niet meer. Deze herinnering zet u uit via Menu → Meldingen in het menu.'],
+    deeplink: viaLink(`${ID}/recovery#aanmeldmethoden-herstel`),
+    acties: [
+      { soort: 'wijziging', label: ['Створити нові коди', 'Nieuwe codes maken'], href: () => `${ID}/recovery#aanmeldmethoden-herstel` },
     ],
   },
   {

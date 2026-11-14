@@ -16,10 +16,13 @@
 //   7. VEILIGE WEERGAVE. markdownNaarHtml ontsnapt alles, laat alleen https-koppelingen door, geen javascript:/data:, geen ruwe HTML.
 //   8. CATALOGUS. Elke bron heeft een eerlijke stand; «beschikbaar» alleen voor wat deze release doet (bestanden); geen bron
 //      belooft tweerichtingssynchronisatie.
+//   9. SEC-002 (12.11.2026). wolk-01: het model blijft lineair op vijandige invoer (kop met spaties, regeleinden, haken) — de
+//      volledige proef staat in sec-002-g04-20261112.test.ts; wolk-11: de lijst werkt onder impersonatie «alleen lezen».
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getPool } from '../../server/platform/pg';
+import { metImpersonatie } from '../../server/platform/context';
 import * as vn from '../../backend/notities-vnext';
 import {
   BRON_STAND_LABEL, NOTITIE_BRONNEN, SPIEGEL_ETIKET, VN_MAX_TITEL, invoerUitBord, lijstRegelOmzetten, lijstRegels, markdownNaarHtml, markeerDubbelen,
@@ -174,6 +177,14 @@ export async function main(): Promise<number> {
     await vn.notitieActie(prive, bak!.id, 'definitief');
     check('definitief verwijderen haalt de notitie, haar revisies en de spiegel weg', (await vn.notitieLezen(prive, bak!.id)) === null && (await pool.query(`SELECT 1 FROM app.notities_revisies WHERE notitie_id = $1`, [bak!.id])).rows.length === 0);
 
+    // ================================================================ 9. SEC-002 wolk-11: de lijst onder «alleen lezen»
+    // Een beheerder die met toestemming meekijkt zonder acties heeft een read-only transactie. Het opruimen van de prullenbak
+    // (een DELETE) brak die vroeger af: de lijst gaf dan altijd 500 (25P02). Nu ruimt alleen de eigenaar zelf op.
+    const verlopen = String((await pool.query(`INSERT INTO app.notities (user_id, ruimte, titel, inhoud_md, inhoud_plat, verwijderd_op) VALUES ($1, 'prive', 'Verlopen', 'oud', 'oud', now() - interval '40 days') RETURNING id`, [a])).rows[0].id);
+    const kijk = await metImpersonatie({ id: a, door: b }, true, () => vn.notitiesLijst(prive, {})).catch((err) => ({ fout: String((err as { code?: string }).code ?? (err as Error).message) }));
+    check('de lijst onder impersonatie «alleen lezen» komt terug (geen 500) en ruimt daarbij niets op', !('fout' in kijk) && kijk.waarde.telling.alle > 0 && !kijk.geblokkeerd && (await pool.query(`SELECT 1 FROM app.notities WHERE id = $1`, [verlopen])).rows.length === 1, 'fout' in kijk ? kijk.fout : '');
+    check('de eigenaar zelf ruimt met de lijst de verlopen prullenbak (30 dagen) nog steeds op', (await vn.notitiesLijst(prive, {})).telling.prullenbak === 0 && (await pool.query(`SELECT 1 FROM app.notities WHERE id = $1`, [verlopen])).rows.length === 0);
+
     // ================================================================ 7. model: veilige weergave
     const h = markdownNaarHtml('# T\n\n<script>alert(1)</script> **vet** [x](javascript:alert(1)) [ok](https://ok.nl/a?b=1&c=2) https://los.nl/.\n\n- [ ] melk\n- [x] brood\n\n```html\n<b>code</b>\n```\n\n> citaat\n\n1. een\n2. twee\n\n---\n');
     check('markdownNaarHtml: ruwe HTML wordt tekst, javascript: wordt geen koppeling, https wel (met rel=noopener)', /&lt;script&gt;/.test(h) && !/<script/.test(h) && !/href="javascript/.test(h) && !/<a [^>]*javascript/.test(h) && /href="https:\/\/ok.nl\/a\?b=1&amp;c=2"/.test(h) && /rel="noopener noreferrer"/.test(h) && /href="https:\/\/los.nl\/"/.test(h));
@@ -183,6 +194,13 @@ export async function main(): Promise<number> {
     check('platteTekst haalt opmaak weg en houdt woorden en koppelingen', platteTekst('# Kop\n- [ ] **melk** [site](https://a.b)') === 'Kop\nmelk site https://a.b');
     check('titelUitInhoud neemt de eerste zinvolle regel zonder Markdown-tekens', titelUitInhoud('\n\n## Eerste *kop*\nrest') === 'Eerste kop' && titelUitInhoud('- [ ] punt') === 'punt');
     check('zoekWoorden houdt Oekraïense letters (й/ї) intact en verkleint', zoekWoorden('Їжак Й').join() === 'їжак,й');
+    // SEC-002 wolk-01: deze drie invoeren hielden vroeger de hele server vast (kubische/kwadratische regexen). Trapsgewijs,
+    // zodat de test zelf niet hangt als zo'n regex terugkomt: de kleine maat faalt dan al binnen een paar seconden.
+    const traag = (maten: number[], doe: (n: number) => unknown) => { for (const n of maten) { const t = Date.now(); doe(n); const ms = Date.now() - t; if (ms > 300) return `n=${n}: ${ms} ms`; } return ''; };
+    const t1 = traag([1500, 200_000], (n) => { const s = `# a${' '.repeat(n)}b`; parseerImport({ naam: 'a.md', tekst: s }); markdownNaarHtml(s); });
+    const t2 = traag([20_000, 200_000], (n) => platteTekst('\n'.repeat(n)));
+    const t3 = traag([20_000, 200_000], (n) => { platteTekst('['.repeat(n)); platteTekst('!['.repeat(n / 2)); markdownNaarHtml(`\`\`\`${' '.repeat(n)}!`); });
+    check('SEC-002 wolk-01: kop met 200 000 spaties, 200 000 regeleinden en 200 000 haken kosten elk minder dan 300 ms', !t1 && !t2 && !t3, [t1, t2, t3].filter(Boolean).join('; '));
 
     // ================================================================ model: etiketten, invoer, spiegel
     check('vnSchoonEtiket: Oekraïens mag, spaties → -, # weg, systeem-etiketten geweigerd, hoogstens 40 tekens', vnSchoonEtiket(' #Проєкт Дім ') === 'проєкт-дім' && vnSchoonEtiket('hub') === '' && vnSchoonEtiket('soort:code') === '' && vnSchoonEtiket('archief') === '' && vnSchoonEtiket('a'.repeat(60)).length === 40);

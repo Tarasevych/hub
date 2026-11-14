@@ -12,14 +12,8 @@ export function vanB64(data: string): Uint8Array {
   return uit;
 }
 
-/** Blob als download aan de gebruiker geven (a[download], geen navigatie). */
-export function bewaarBlob(naam: string, blob: Blob): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = naam || 'bestand'; a.rel = 'noopener';
-  document.body.appendChild(a); a.click(); a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
+/** Blob als download aan de gebruiker geven — IDENTITEIT-014: één helper voor de hele site (src/platform/bestand-opslaan.ts). */
+export { bewaarBlob } from '../platform/bestand-opslaan';
 
 export const SOORT_ICOON: Record<CloudSoort, typeof File> = {
   afbeelding: FileImage, video: FileVideo2, audio: FileAudio2, document: FileText, werkblad: FileSpreadsheet,
@@ -33,7 +27,8 @@ export const isBouwFout = (e: unknown): boolean => e instanceof CloudFout && e.c
 export function cloudFoutTekst(lang: Lang, e: unknown): string {
   if (isBouwFout(e)) return tr(lang, 'Серверна частина цього розділу ще збирається.', 'De serverkant van dit onderdeel is nog in aanbouw.');
   const code = e instanceof CloudFout ? e.code : String((e as Error)?.message || 'FOUT');
-  return foutTekst(lang, code);
+  // SEC-002: het antwoordlichaam gaat mee (quota-getallen, incidentnummer van een interne fout).
+  return foutTekst(lang, code, e instanceof CloudFout ? e.data : undefined);
 }
 
 /** Lees-en-wis van een sessiesleutel (overdracht tussen tabbladen zoals 'cvn-open'). */

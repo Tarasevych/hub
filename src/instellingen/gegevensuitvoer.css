@@ -1,0 +1,11 @@
+/* IDENTITEIT-014: «Ваші дані» / «Uw gegevens» — вивантаження даних облікового запису. Лише токени теми. */
+[data-gegevensuitvoer] .gegevensuitvoer-draai{animation:gegevensuitvoer-draai 1s linear infinite}
+@keyframes gegevensuitvoer-draai{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){[data-gegevensuitvoer] .gegevensuitvoer-draai{animation:none}}
+[data-gegevensuitvoer] .settings-primary{justify-self:start;max-width:100%}
+/* Значок попередження в одному рядку з текстом (без окремого «!» у тексті). */
+[data-gegevensuitvoer] [data-gegevensuitvoer-waarschuwing]{display:flex;align-items:flex-start;gap:8px}
+[data-gegevensuitvoer] [data-gegevensuitvoer-waarschuwing] svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--danger)}
+.gegevensuitvoer-compact{display:grid;gap:6px;justify-items:start}
+.gegevensuitvoer-knop{display:inline-flex;align-items:center;gap:6px;min-height:var(--tik-hoogte,44px);padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-weight:700;max-width:100%}
+.gegevensuitvoer-knop svg{width:17px;height:17px;flex:none}

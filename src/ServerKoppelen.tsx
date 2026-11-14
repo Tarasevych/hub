@@ -9,6 +9,7 @@ import { api } from './platform/client';
 import { sessionBody } from './agenten-gegevens';
 import { foutTekst } from './agenten/fouten';
 import './mcp-apps.css';
+import { alleenMens, geenAi, verborgenVoorAi } from './menselijke-actie';
 
 type Lang = 'uk' | 'nl';
 type Apparaat = { id: string; name: string; online: boolean; apps: boolean };
@@ -136,14 +137,14 @@ export default function ServerKoppelen({ lang, apparaten, onGekoppeld }: { lang:
       </fieldset>
 
       <div className='mapps-knoppen'>
-        <button type='button' disabled={bezig || ongeldig} onClick={() => void maakCodes()} data-maak-codes=''><ShieldCheck aria-hidden='true' />{codes ? tr('Нові коди', 'Nieuwe codes') : tr('Створити код і команду', 'Code en commando maken')}</button>
+        <button type='button' disabled={bezig || ongeldig} {...geenAi} onClick={alleenMens(() => void maakCodes())} data-maak-codes=''><ShieldCheck aria-hidden='true' />{codes ? tr('Нові коди', 'Nieuwe codes') : tr('Створити код і команду', 'Code en commando maken')}</button>
       </div>
       {fout ? <p className='mapps-melding mapps-fout' role='alert'>{fout}</p> : null}
 
       {codes ? (
         <div className='mapps-commando' data-commando=''>
           <p>{tr('Увійдіть на сервер як beheer і вставте одну команду (коди діють ще ', 'Log op de server in als beheer en plak één commando (de codes gelden nog ')}<b data-resterend=''>{Math.floor(resterend / 60)}:{String(resterend % 60).padStart(2, '0')}</b>):</p>
-          <pre><code>{commando}</code></pre>
+          {/* SEC-002 extensie-09: koppelcodes leest/fotografeert de browserextensie niet */}<pre {...verborgenVoorAi}><code>{commando}</code></pre>
           <div className='mapps-knoppen'>
             <button type='button' className='secondary' onClick={() => void kopieer()} data-kopieer=''>{gekopieerd ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}{gekopieerd ? tr('Скопійовано', 'Gekopieerd') : tr('Скопіювати команду', 'Commando kopiëren')}</button>
           </div>
@@ -152,10 +153,10 @@ export default function ServerKoppelen({ lang, apparaten, onGekoppeld }: { lang:
             <div key={a.id} className='mapps-melding mapps-ok' data-gekoppeld={a.name} role='status'>
               <span>{tr(`Підключено: «${a.name}».`, `Gekoppeld: «${a.name}».`)} {tr('Тепер вирішіть, що дозволено (30 днів; змінити чи відкликати — «Агенти»):', 'Beslis nu wat mag (30 dagen; wijzigen of intrekken: «Agenten»):')}</span>
               <div className='mapps-knoppen'>
-                <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} onClick={() => void geef(a.id, ['machine.read'], 'lezen')}>{toestemming === 'ok:lezen' ? <Check aria-hidden='true' /> : null}{tr('Читати', 'Lezen')}</button>
-                {!a.apps ? <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} onClick={() => void geef(a.id, ['machine.read', 'machine.write'], 'schrijven')}>{toestemming === 'ok:schrijven' ? <Check aria-hidden='true' /> : null}{tr('Читати й записувати', 'Lezen en schrijven')}</button> : null}
-                {!a.apps ? <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} onClick={() => void geef(a.id, ['machine.exec'], 'uitvoeren')}>{toestemming === 'ok:uitvoeren' ? <Check aria-hidden='true' /> : null}{tr('Виконувати дозволені програми', 'Toegestane programma\'s uitvoeren')}</button> : null}
-                {a.apps ? <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} onClick={() => void geef(a.id, ['machine.read', 'machine.docker'], 'apps')}>{toestemming === 'ok:apps' ? <Check aria-hidden='true' /> : null}{tr('Бачити й керувати додатками', 'Apps zien en beheren')}</button> : null}
+                <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} {...geenAi} onClick={alleenMens(() => void geef(a.id, ['machine.read'], 'lezen'))}>{toestemming === 'ok:lezen' ? <Check aria-hidden='true' /> : null}{tr('Читати', 'Lezen')}</button>
+                {!a.apps ? <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} {...geenAi} onClick={alleenMens(() => void geef(a.id, ['machine.read', 'machine.write'], 'schrijven'))}>{toestemming === 'ok:schrijven' ? <Check aria-hidden='true' /> : null}{tr('Читати й записувати', 'Lezen en schrijven')}</button> : null}
+                {!a.apps ? <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} {...geenAi} onClick={alleenMens(() => void geef(a.id, ['machine.exec'], 'uitvoeren'))}>{toestemming === 'ok:uitvoeren' ? <Check aria-hidden='true' /> : null}{tr('Виконувати дозволені програми', 'Toegestane programma\'s uitvoeren')}</button> : null}
+                {a.apps ? <button type='button' disabled={!!toestemming && !toestemming.startsWith('ok:')} {...geenAi} onClick={alleenMens(() => void geef(a.id, ['machine.read', 'machine.docker'], 'apps'))}>{toestemming === 'ok:apps' ? <Check aria-hidden='true' /> : null}{tr('Бачити й керувати додатками', 'Apps zien en beheren')}</button> : null}
               </div>
             </div>
           ))}

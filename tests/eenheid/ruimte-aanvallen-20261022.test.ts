@@ -55,21 +55,23 @@ export async function main(): Promise<number> {
     const rolO = (await pool.query(`SELECT data->>'role' AS r, data->>'status' AS s FROM app.records WHERE tbl='users' AND id=$1`, [O])).rows[0];
     check('voorwaarde: eigenaar (owner, approved), A en B approved, C nieuw — vier accounts in vier browsers', rolO?.r === 'owner' && rolO?.s === 'approved' && !!A && !!B && !!C);
 
-    // ------------------------------------------------------------------ 1. bootstrap: tabblad-account ≠ anker-account
-    // In browser A meldt zich in een TWEEDE tabblad ook B aan (replace-tab): het anker blijft A, het tabblad is van B.
+    // ------------------------------------------------------------------ 1. bootstrap & wisselen tussen twee accounts in één browser
+    // In browser A meldt zich in een TWEEDE tabblad ook B aan (replace-tab): B wordt het nieuwe anker van browser bA, A blijft als bewaard profiel staan.
     const tabB = randomBytes(24).toString('hex');
     await bA.aanmelden(`sub-b-${T}`, mailB, { tabContext: tabB, intent: 'replace-tab', remember: true });
     const wie = async (b: ReturnType<typeof google.browser>, tab: string) => { const r = await b.verzoek('hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: tab }); return { status: r.status, email: String(r.data.user?.email || ''), id: String(r.data.user?.id || ''), onthouden: r.data.sessionPolicy?.rememberedBrowser, body: r.body }; };
     const inTabB = await wie(bA, tabB), inTabA = await wie(bA, bA.tab);
-    check('1. zelfde browser: tabblad B = account B, tabblad A = account A (anker)', inTabB.status === 200 && inTabB.email === mailB && inTabA.status === 200 && inTabA.email === mailA, JSON.stringify([inTabB.email, inTabA.email]));
+    check('1. zelfde browser: na de aanmelding van B volgen zowel tabblad B als tabblad A het actieve anker B', inTabB.status === 200 && inTabB.email === mailB && inTabA.status === 200 && inTabA.email === mailB, JSON.stringify([inTabB.email, inTabA.email]));
     const grantsA = (await pool.query(`SELECT id, data FROM app.records WHERE tbl='owner_browser_grants_v1' AND data->>'userId'=$1`, [A])).rows;
-    check('1. het antwoord van het tabblad van B bevat geen enkele toestemming-id of tokenhash van A', grantsA.length > 0 && !grantsA.some((g) => inTabB.body.includes(String(g.id)) || inTabB.body.includes(String(g.data.tokenHash))));
+    check('1. het antwoord onder B bevat geen enkele toestemming-id of tokenhash van A', grantsA.length > 0 && !grantsA.some((g) => inTabB.body.includes(String(g.id)) || inTabB.body.includes(String(g.data.tokenHash))));
     for (let i = 0; i < 3; i++) await wie(bA, tabB);
+    // Schakel browser bA via replace-tab-remembered weer terug naar account A voor de vervolgstappen (en toets dat ook de wissel 0 RLS-overtredingen geeft).
+    const terugNaarA = await bA.verzoek('hub.tarasevych.com', '/api/owner/session/replace-tab-remembered', { service: 'hub', tabContext: bA.tab, sourceOrigin: 'https://hub.tarasevych.com', grantId: String(grantsA[0].id) });
     const naBoot = await rlsStand();
-    check('1. звірка: na 4× bootstrap in het tabblad van B telt de audit voor «bootstrap · owner_browser_grants_v1» NIETS meer (was 74×)',
-      naBoot['POST /api/owner/session/bootstrap|owner_browser_grants_v1'] === nul['POST /api/owner/session/bootstrap|owner_browser_grants_v1'], JSON.stringify([nul, naBoot]));
+    check('1. звірка: na 4× bootstrap onder B én terugwisselen naar A telt de audit voor «bootstrap · owner_browser_grants_v1» NIETS (was 74×)',
+      terugNaarA.status === 200 && String(terugNaarA.data.user?.email) === mailA && naBoot['POST /api/owner/session/bootstrap|owner_browser_grants_v1'] === nul['POST /api/owner/session/bootstrap|owner_browser_grants_v1'], JSON.stringify([terugNaarA.status, nul, naBoot]));
     // Aanval: een ankersessie van B die (vervalst) naar de toestemming van A wijst → de systeemstap weigert (userId ≠ anker) → geen cookie.
-    const ankerB = (await pool.query(`SELECT id FROM app.records WHERE tbl='owner_service_sessions_v1' AND data->>'userId'=$1 AND data->>'scope'='ecosystem' ORDER BY seq DESC LIMIT 1`, [B])).rows[0]?.id;
+    const ankerB = (await pool.query(`SELECT id FROM app.records WHERE tbl='owner_service_sessions_v1' AND data->>'userId'=$1 AND data->>'scope'='ecosystem' AND COALESCE((data->>'revokedAt')::bigint, 0) = 0 ORDER BY seq DESC LIMIT 1`, [B])).rows[0]?.id;
     const grantA = grantsA[0];
     await pool.query(`UPDATE app.records SET data = data || jsonb_build_object('grantId', $2::text) WHERE id=$1`, [ankerB, String(grantA.id)]);
     const vervalst = await bB.verzoek('hub.tarasevych.com', '/api/owner/session/bootstrap', { service: 'hub', tabContext: bB.tab });

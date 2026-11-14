@@ -28,7 +28,11 @@ export type ApparaatDeps = {
 export const ALLEEN_SESSIE = Symbol.for('apparaat-bevestiging.alleen-sessie');
 export const MET_SLEUTEL = Symbol.for('apparaat-bevestiging.met-sleutel');
 
-const fout = (code: string, status = 400, extra: Record<string, unknown> = {}): RouterResponse => json({ error: code, reasonCode: code, ...extra }, status);
+const fout = (code: string, status = 400, extra: Record<string, unknown> = {}): RouterResponse => {
+  const basis = json({ error: code, reasonCode: code, ...extra }, status);
+  const sec = Number(extra.retryAfter || 0);
+  return Number.isFinite(sec) && sec > 0 ? { ...basis, headers: { ...basis.headers, 'Retry-After': String(Math.max(1, Math.ceil(sec))) } } : basis;
+};
 const STATUS: Record<string, number> = {
   VLAG_UIT: 404, VERZOEK_ONBEKEND: 404, ONBEKENDE_ACTIE: 400, RATE_LIMITED: 429, NIET_TOEGESTAAN: 403, UITGESCHAKELD: 409, METHODE_UIT: 409, METHODE_PAUZE: 429,
   GEEN_ANDER_APPARAAT: 409, VERLOPEN: 410, AL_AFGEROND: 409, ZELFDE_APPARAAT: 409, TE_SNEL: 425, KEUZE_ONGELDIG: 400, STEP_UP_PASSKEY_REQUIRED: 403, BEHEERDER_NODIG: 403, SESSIE_ONBEKEND: 401,
@@ -45,7 +49,13 @@ function vangen(run: () => Promise<RouterResponse>): Promise<RouterResponse> {
     const code = String((e as Error)?.message || 'APPARAAT_FOUT').replace(/[^A-Z0-9_]/g, '').slice(0, 60) || 'APPARAAT_FOUT';
     const bekend = /^[A-Z][A-Z0-9_]+$/.test(code) && code !== 'APPARAAT_FOUT';
     if (!bekend) console.error('[apparaat-bevestiging] route mislukt:', (e as Error)?.message);
-    return fout(bekend ? code : 'APPARAAT_FOUT', STATUS[code] ?? (bekend ? 400 : 500));
+    const meta = e as { retryAfter?: unknown; pauzeTot?: unknown; maxAttempts?: unknown; windowSec?: unknown };
+    const extra: Record<string, unknown> = {};
+    if (typeof meta?.retryAfter === 'number' && meta.retryAfter > 0) extra.retryAfter = Math.ceil(meta.retryAfter);
+    if (typeof meta?.pauzeTot === 'string' && meta.pauzeTot) extra.pauzeTot = meta.pauzeTot;
+    if (typeof meta?.maxAttempts === 'number' && meta.maxAttempts > 0) extra.maxAttempts = Math.ceil(meta.maxAttempts);
+    if (typeof meta?.windowSec === 'number' && meta.windowSec > 0) extra.windowSec = Math.ceil(meta.windowSec);
+    return fout(bekend ? code : 'APPARAAT_FOUT', STATUS[code] ?? (bekend ? 400 : 500), extra);
   });
 }
 

@@ -34,7 +34,8 @@ import { CALDAV_AANBIEDERS } from '../../shared/agenda-caldav-model';
 import AgendaVenster, { foutTekst, nieuweVorm, type VensterBedoeling } from './AgendaVenster';
 import ICloudVenster from './ICloudVenster';
 import * as client from './agenda-client';
-import { foutCodeTekst } from './abonnement-fouten';
+import { agendaFoutCode, foutCodeTekst } from './abonnement-fouten';
+import { weigeringZinUitFout } from '../../shared/weigering-tekst';
 import './agenda.css';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
@@ -221,7 +222,7 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
   const nuSynchroniseren = async () => {
     setBezig(true); setMelding('');
     try { await client.synchroniseer(true); setMelding(tr(lang, 'Синхронізовано.', 'Gesynchroniseerd.')); }
-    catch (gevangen) { setMelding(tr(lang, `Синхронізація не вдалася (${(gevangen as Error)?.message}).`, `Synchroniseren lukte niet (${(gevangen as Error)?.message}).`)); }
+    catch (gevangen) { const code = agendaFoutCode(gevangen, 'SYNC_MISLUKT'); setMelding(code === 'AGENDA_TE_VAAK' ? foutCodeTekst(code, lang) : tr(lang, `Синхронізація не вдалася (${code}).`, `Synchroniseren lukte niet (${code}).`)); }
     finally { laad(); }
   };
   const uitbreiden = async () => {
@@ -231,7 +232,7 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
       if (uitslag.authUrl) { location.assign(uitslag.authUrl); return; }
       setMelding(uitslag.alGegeven ? tr(lang, 'Доступ уже є.', 'De toegang is er al.') : tr(lang, 'Не вдалося розпочати розширення доступу.', 'Het uitbreiden van de toegang kon niet worden gestart.'));
       laad();
-    } catch (gevangen) { setMelding(tr(lang, `Не вдалося (${(gevangen as Error)?.message}).`, `Het lukte niet (${(gevangen as Error)?.message}).`)); }
+    } catch (gevangen) { setMelding(weigeringZinUitFout(lang, gevangen) ?? tr(lang, `Не вдалося (${(gevangen as Error)?.message}).`, `Het lukte niet (${(gevangen as Error)?.message}).`)); }
     finally { setSchrijfBezig(false); }
   };
 
@@ -246,8 +247,20 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
       if (uitslag.haal && uitslag.haal.staat === 'fout') setIcsFout(uitslag.haal.fout);
       else { setIcsAdres(''); setIcsNaam(''); }
       laad();
-    } catch (gevangen) { setIcsFout(String((gevangen as Error)?.message || 'ICS_OPSLAAN_MISLUKT')); }
+    } catch (gevangen) { setIcsFout(agendaFoutCode(gevangen, 'ICS_OPSLAAN_MISLUKT')); }
     finally { setSchrijfBezig(false); }
+  };
+  // SEC-002 (g08): «Оновити» liet een weigering (429 AGENDA_TE_VAAK) of «al bezig» (CALDAV_AL_BEZIG, staat niet in de rij) stil vallen.
+  const vernieuw = (soort: 'ics' | 'caldav', id: string) => {
+    const zet = soort === 'ics' ? setIcsFout : setDavFout;
+    zet('');
+    void (soort === 'ics' ? client.icsVernieuwen(id) : client.caldavVernieuwen(id))
+      .then((r) => {
+        const haal = (r as { haal?: { staat?: string; fout?: string } } | null)?.haal;
+        if (haal && haal.staat === 'fout' && haal.fout === 'CALDAV_AL_BEZIG') zet(haal.fout);
+        laad();
+      })
+      .catch((e: unknown) => zet(agendaFoutCode(e, soort === 'ics' ? 'ICS_OPSLAAN_MISLUKT' : 'CALDAV_OPSLAAN_MISLUKT')));
   };
   const davKoppelen = async () => {
     setDavFout(''); setSchrijfBezig(true);
@@ -256,7 +269,7 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
       if (!uitslag.ok) { setDavFout(uitslag.fout || 'CALDAV_OPSLAAN_MISLUKT'); return; }
       setDav({ adres: '', gebruikersnaam: '', wachtwoord: '', naam: '' });
       laad();
-    } catch (gevangen) { setDavFout(String((gevangen as Error)?.message || 'CALDAV_OPSLAAN_MISLUKT')); }
+    } catch (gevangen) { setDavFout(agendaFoutCode(gevangen, 'CALDAV_OPSLAAN_MISLUKT')); }
     finally { setSchrijfBezig(false); }
   };
 
@@ -503,7 +516,7 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
                       {rij.fout ? <small className='agenda-fout-klein'>{foutCodeTekst(rij.fout, lang)}</small> : null}
                     </div>
                     <div className='agenda-abonnement-acties'>
-                      <button type='button' className='ghost' onClick={() => void client.icsVernieuwen(rij.id).then(laad)}><RefreshCw aria-hidden='true' />{tr(lang, 'Оновити', 'Verversen')}</button>
+                      <button type='button' className='ghost' onClick={() => vernieuw('ics', rij.id)}><RefreshCw aria-hidden='true' />{tr(lang, 'Оновити', 'Verversen')}</button>
                       <button type='button' className='ghost' onClick={() => void client.icsSchakelen(rij.id, !rij.actief).then(laad)}>{rij.actief ? tr(lang, 'Вимкнути', 'Uitzetten') : tr(lang, 'Увімкнути', 'Aanzetten')}</button>
                       <button type='button' className='ghost agenda-gevaar' data-agenda-ics-verwijderen={rij.id} onClick={() => void client.icsVerwijderen(rij.id).then(laad)}><Trash2 aria-hidden='true' /></button>
                     </div>
@@ -549,7 +562,7 @@ function AgendaOud({ lang, ownerUserId }: { lang: Lang; ownerUserId: string }) {
                       {rij.fout ? <small className='agenda-fout-klein'>{foutCodeTekst(rij.fout, lang)}</small> : null}
                     </div>
                     <div className='agenda-abonnement-acties'>
-                      <button type='button' className='ghost' onClick={() => void client.caldavVernieuwen(rij.id).then(laad)}><RefreshCw aria-hidden='true' />{tr(lang, 'Оновити', 'Verversen')}</button>
+                      <button type='button' className='ghost' onClick={() => vernieuw('caldav', rij.id)}><RefreshCw aria-hidden='true' />{tr(lang, 'Оновити', 'Verversen')}</button>
                       <button type='button' className='ghost agenda-gevaar' data-agenda-caldav-verwijderen={rij.id} onClick={() => void client.caldavVerwijderen(rij.id).then(laad)}><Trash2 aria-hidden='true' /></button>
                     </div>
                   </li>

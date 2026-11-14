@@ -1,5 +1,6 @@
-import {useContext,useEffect,useRef,useState} from 'react';
+import {useContext,useEffect,useMemo,useRef,useState} from 'react';
 import {api} from './platform/client';
+import {leesVergeten,swrPost} from './lees-cache';
 import {ecosystemTabContext} from './tab-context';
 import './toegangslaag.css';
 
@@ -14,6 +15,8 @@ const ApparaatSectie=lazy(()=>import('./apparaat-bevestiging/InstellingenSectie'
 import {useTelegramVlag} from './telegram-aanmelden/vlag';
 import {useApparaatVlag} from './apparaat-bevestiging/vlag'; /* APPARAAT-001 */
 import {bevestigToegang,metHervat,neemHervat,stapOpUitleg} from './platform/stap-op';
+import {aanmeldPauzeBericht,leesAanmeldPauze} from './aanmeld-pauze';
+import {foutNaarTekst} from './weigeringen'; /* IDENTITEIT-014: зрозумілі відмови замість одного загального тексту */
 type Method={id:string;enabled:boolean;configured:boolean;bound?:boolean;status:string;honest?:string};
 type Factor={id:string;enabled:boolean;enrolled:boolean;status:string;honest?:string;remaining?:number;phone?:string;count?:number;createdAt?:number;bekekenOp?:number};
 type Binding={id:string;method:string;email:string;status:string;providerSubject?:string};
@@ -68,7 +71,8 @@ const pending=():Snapshot=>{
 };
 
 const sessionBody=()=>({service:new URLSearchParams(location.search).get('service')||'identity',tabContext:ecosystemTabContext(),sourceOrigin:location.origin});
-export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;lang:Lang;mode?:'identity'|'admin'}){
+// IDENTITEIT-014: onKies — перехід до іншого розділу облікового запису з огляду й сценаріїв відновлення (onNavigate центру налаштувань).
+export default function AccessPlaneView({tab,lang,mode='identity',onKies}:{tab:string;lang:Lang;mode?:'identity'|'admin';onKies?:(sectie:string)=>void}){
   const inAtelier=useContext(AtelierInhoud)&&mode==='identity';
   const alleen=inAtelier&&['methods','security','recovery'].includes(tab)?tab as 'methods'|'security'|'recovery':undefined;
   const telegramAan=useTelegramVlag();
@@ -83,16 +87,32 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
   const[code,setCode]=useState('');
   const[recovery,setRecovery]=useState<string[]>([]);
   const[tempPassword,setTempPassword]=useState('');
+  // IDENTITEIT-014: один і той самий об'єкт контексту між рендерами — інакше каталог способів входу перезапитував стан на кожен клік.
+  const context=useMemo(()=>sessionBody(),[tab,mode]);
 
-  const load=async()=>{
+  const actiefRef=useRef(true);
+  useEffect(()=>{actiefRef.current=true;return()=>{actiefRef.current=false;};},[]);
+
+  const load=async(alleenVers=false)=>{
     try{
+      if(mode==='identity'){
+        await swrPost<Partial<Snapshot>>(
+          '/api/owner/access/snapshot',
+          sessionBody(),
+          vers=>{if(actiefRef.current&&vers){setData({...blank(),...vers});setNotice('');}},
+          {alleenVers}
+        );
+        return;
+      }
       const[snap,contour]=await Promise.all([
         api.post('/api/owner/access/snapshot',sessionBody()),
-        mode==='admin'?api.post('/api/owner/google-contour',sessionBody()).catch(()=>null):Promise.resolve(null)
+        api.post('/api/owner/google-contour',sessionBody()).catch(()=>null)
       ]);
+      if(!actiefRef.current)return;
       if(snap?.data)setData({...blank(),...snap.data,contour:contour?.data?.contour||snap.data.contour});
       setNotice('');
     }catch{
+      if(!actiefRef.current)return;
       setData(current=>current.methods.some(item=>item.status==='loading')?blank():current);
       setNotice(t(lang,'t13'));
     }
@@ -107,21 +127,31 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
       const response=await api.post(route,{...sessionBody(),...payload});
       if(response?.data?.otpauth){setOtpauth(String(response.data.otpauth));setSecret(String(response.data.secret||''));}
       if(Array.isArray(response?.data?.recoveryCodes))setRecovery(response.data.recoveryCodes);
+      /* IDENTITEIT-014 (давня вада): ключ і otpauth лишалися в пам'яті й на екрані після підтвердження чи вимкнення. */
+      if(/\/totp\/(confirm|disable)$/.test(route)){setOtpauth('');setSecret('');}
       if(response?.data?.temporaryPassword)setTempPassword(String(response.data.temporaryPassword));
       if(response?.data?.methods||response?.data?.contour)setData(current=>({...current,...response.data,contour:response.data.contour||current.contour}));
-      await load();
+      leesVergeten('/api/owner/access/snapshot');
+      leesVergeten('/api/owner/access/recovery/overzicht');
+      await load(true);
       setPassword('');
       setCode('');
     }catch(caught){
-      const message=String((caught as{response?:{data?:{error?:string}}})?.response?.data?.error||'');
-      setNotice(
-        message==='LAST_LOGIN_METHOD_PROTECTED'?t(lang,'t14'):
-        message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
-        /TOTP|CODE/.test(message)?t(lang,'t20'):
-        message==='RATE_LIMITED'||message==='LOGIN_RATE_LIMITED'?t(lang,'t21'):
-        message==='STEP_UP_REQUIRED'?stapOpUitleg():
-        t(lang,'t16')
-      );
+      const pauze=leesAanmeldPauze(caught);
+      if(pauze.isPauze){
+        setNotice(aanmeldPauzeBericht(pauze.seconden,lang,'bevestig',{maxAttempts:pauze.maxAttempts,windowSec:pauze.windowSec}).melding);
+      }else{
+        const message=String((caught as{response?:{data?:{error?:string}}})?.response?.data?.error||'');
+        const paar=foutNaarTekst(caught);
+        setNotice(
+          message==='LAST_LOGIN_METHOD_PROTECTED'?t(lang,'t14'):
+          message==='GOOGLE_CONTOUR_LAST_SECRET_PROTECTED'?t(lang,'t15'):
+          message==='STEP_UP_REQUIRED'?stapOpUitleg():
+          paar?(lang==='nl'?paar[1]:paar[0]):
+          /TOTP|CODE/.test(message)?t(lang,'t20'):
+          t(lang,'t16')
+        );
+      }
     }
     setBusy(false);
   };
@@ -147,6 +177,17 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
     const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['totp','herstelcode'],codeTerug:true,actie:'totp-uitschakelen'});
     if(uit.ok&&uit.code)await write('/api/owner/access/totp/disable',{code:uit.code});
   };
+  // IDENTITEIT-014: автентифікатор замінити (новий телефон). Маршрут сам перевіряє чинний код або код відновлення, тож вікно лише
+  // повертає код; сильне підтвердження доступу client.ts попросить окремо (403 STEP_UP_STRONG_REQUIRED) і повторить запит із тим самим тілом.
+  // Authenticator vervangen: eerst de huidige code (de route controleert hem zelf), daarna vraagt client.ts de sterke bevestiging.
+  const totpVervangen=async()=>{
+    setNotice('');
+    const ctx=sessionBody();
+    const uit=await bevestigToegang({service:ctx.service,tabContext:ctx.tabContext,post:(url,body)=>api.post(url,body),toegestaan:['totp','herstelcode'],codeTerug:true,actie:'totp-wijzigen'});
+    if(uit.ok&&uit.code)await write('/api/owner/access/totp/start',{currentCode:uit.code});
+  };
+  // Заміну не підтверджено: прибрати новий ключ з екрана; старий автентифікатор діє далі, недороблений новий сервер забуде за 15 хв.
+  const totpVervangenStoppen=()=>{setOtpauth('');setSecret('');setCode('');};
   const hervat=useRef(false);
   useEffect(()=>{
     if(hervat.current||data.factors.some(item=>item.status==='loading'))return;
@@ -154,8 +195,8 @@ export default function AccessPlaneView({tab,lang,mode='identity'}:{tab:string;l
     if(neemHervat('herstelcodes-maken'))void nieuweHerstelcodes();
   },[data]);// eslint-disable-line react-hooks/exhaustive-deps
   const recoverySaved=async()=>{await write('/api/owner/access/recovery/bekeken');setRecovery([]);};
-  const panelen=<AccessPlanePanels alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/>;
+  const panelen=<AccessPlanePanels alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={context} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved} totpVervangen={totpVervangen} totpVervangenStoppen={totpVervangenStoppen} telegramSectie={telegramAan&&tab==='methods'&&mode==='identity'} onKies={onKies}/>;
   const telegram=tab==='methods'&&mode==='identity'&&(telegramAan||apparaatAan)?<Suspense fallback={null}>{telegramAan&&<TelegramSectie lang={lang}/>}{apparaatAan&&<ApparaatSectie lang={lang}/>}</Suspense>:null;
-  if(tab==='methods'&&aanmeldVnext&&mode==='identity')return <>{<Suspense fallback={panelen}><AanmeldVnextPanelen alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={sessionBody()} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/></Suspense>}{telegram}</>;
+  if(tab==='methods'&&aanmeldVnext&&mode==='identity')return <>{<Suspense fallback={panelen}><AanmeldVnextPanelen alleen={alleen} tab={tab} lang={lang} data={data} busy={busy} notice={notice} password={password} setPassword={setPassword} otpauth={otpauth} secret={secret} code={code} setCode={setCode} recovery={recovery} tempPassword={tempPassword} context={context} load={load} write={write} nieuweHerstelcodes={nieuweHerstelcodes} totpUitschakelen={totpUitschakelen} recoverySaved={recoverySaved}/></Suspense>}{telegram}</>;
   return telegram?<>{panelen}{telegram}</>:panelen;
 }

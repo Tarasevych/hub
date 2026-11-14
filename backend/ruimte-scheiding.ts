@@ -38,6 +38,7 @@ import {
 } from '../shared/ruimte-scheiding';
 import type { AiRuimte } from '../shared/ai-ruimte';
 import { journaalSchrijf } from './beheer-journaal';
+import { grantsSluitenVoorGebruiker } from './sleutelkluis-opruimen';
 import { actieveActivatie, bijTechRechtenVerlies, lopendeActivatie, TAB_RE } from './tech-profiel';
 
 const sys = () => getPool('systeem');
@@ -334,6 +335,8 @@ export async function technischeVerbindingenIntrekken(userId: string, actorId = 
   aantal += (await q(`UPDATE app.mcp_oauth_tokens SET revoked_at = now() WHERE user_id = $1 AND ruimte = 'technisch' AND revoked_at IS NULL`, [userId])).rowCount ?? 0;
   aantal += (await q(`UPDATE app.mcp_console_tokens SET revoked_at = now() WHERE user_id = $1 AND ruimte = 'technisch' AND revoked_at IS NULL`, [userId])).rowCount ?? 0;
   aantal += (await q(`UPDATE app.externe_mcp_verbinding SET actief = false, bijgewerkt_op = now() WHERE user_id = $1 AND ruimte = 'technisch' AND actief`, [userId])).rowCount ?? 0;
+  // SEC-002 geheimen-05: de zojuist ingetrokken technische verbindingen verliezen ook hun omslag van de gegevenssleutel.
+  await grantsSluitenVoorGebruiker(userId, 'technisch');
   if (aantal) console.warn(`[ruimte-scheiding] technische verbindingen ingetrokken (${reden}) voor ${userId}: ${aantal}`);
   return aantal;
 }

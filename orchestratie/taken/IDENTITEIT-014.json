@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "IDENTITEIT-014",
+  "agent": "claude",
+  "tak": "feature/identiteit-014-aansluiten-20261114-042516",
+  "basisCommit": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T04:25:16.990Z",
+  "bijgewerkt": "2026-11-14T04:25:16.990Z",
+  "omschrijving": "Фаза 3 плану «Макета»: спільний доступ за роллю в просторі, «Хто має доступ», запрошення на hub, вивантаження даних, типи сповіщень, способи входу (каталог, пароль, QR, заміна автентифікатора), огляд і сценарії відновлення, нагадування про коди, жива карта. Попередник — IDENTITEIT-013 (PR #80); влито IDENTITEIT-011 (#78) і IDENTITEIT-012 (#79).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

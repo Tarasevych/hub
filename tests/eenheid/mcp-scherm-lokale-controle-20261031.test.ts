@@ -312,6 +312,24 @@ export async function main(): Promise<number> {
       throw new Error(`Time-out wachtend op ${omschrijving} (url=${await evalJs('location.href').catch(() => '?')} tekst=${debugTekst})`);
     };
 
+    // SEC-002 (extensie-02, g10a-2): knoppen die een AI rechten geven (scopes, «Зберегти», «Дозволити») reageren alleen op een ECHTE
+    // klik (isTrusted, src/menselijke-actie.ts). element.click() uit een script telt bewust niet meer — precies wat een AI in de
+    // browser zou doen. De test klikt daarom zoals een mens: via CDP Input.dispatchMouseEvent op het midden van het element.
+    // Кнопки, що дають права ШІ, реагують лише на справжній клік — тест клікає через CDP, як людина.
+    const klik = async (elementExpr: string): Promise<boolean> => {
+      // Een pagina die net opnieuw tekent (React) kan één evaluatie laten mislukken: tot 5 keer proberen.
+      let p: { x: number; y: number } | null = null;
+      for (let poging = 0; ; poging++) {
+        try { p = await evalJs<{ x: number; y: number } | null>(`(() => { const el = (${elementExpr}); if (!el) return null; el.scrollIntoView({ block: 'center', inline: 'center' }); const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`); break; }
+        catch (e) { if (poging >= 4) throw e; await slaap(300); }
+      }
+      if (!p) return false;
+      await cdp!.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: p.x, y: p.y, button: 'none' }, s);
+      await cdp!.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: p.x, y: p.y, button: 'left', clickCount: 1 }, s);
+      await cdp!.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: p.x, y: p.y, button: 'left', clickCount: 1 }, s);
+      return true;
+    };
+
     // Activeer technisch profiel vanuit Chrome zelf (zodat ook _beheer en admin/ai werken)
     await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents' }, s);
     await wachtOp('mcp agentspagina geladen', `Boolean(document.querySelector('[data-ag-tab]'))`);
@@ -324,19 +342,19 @@ export async function main(): Promise<number> {
     // ============================================================== 1. Tabblad «Доступ ШІ» (AiToegangTab op /agents#ai én admin/ai)
     await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents#ai' }, s);
     await wachtOp('AgentBord met Cursor-kaart op #ai', `Boolean(document.querySelector('[data-agent-bord="1"] [data-agent="cursor"]'))`);
-    await evalJs(`document.querySelector('[data-agent="cursor"]').click()`);
+    await klik(`document.querySelector('[data-agent="cursor"]')`);
     await wachtOp('paneel van Cursor met tabblad «Доступ ШІ»', `Boolean(document.querySelector('[data-agent-paneel="cursor"] [data-tab="toegang"]'))`);
-    await evalJs(`document.querySelector('[data-agent-paneel="cursor"] [data-tab="toegang"]').click()`);
+    await klik(`document.querySelector('[data-agent-paneel="cursor"] [data-tab="toegang"]')`);
     await wachtOp('AiToegangTab voor bord:cursor geladen', `Boolean(document.querySelector('[data-toegang="bord:cursor"] [data-scope-schakelaar="github.read"]'))`);
 
     const voorGithub = await evalJs<string>(`document.querySelector('[data-toegang="bord:cursor"] [data-scope-schakelaar="github.read"]').getAttribute('aria-checked')`);
     if (voorGithub !== 'true') {
-      await evalJs(`document.querySelector('[data-toegang="bord:cursor"] [data-scope-schakelaar="github.read"]').click()`);
+      await klik(`document.querySelector('[data-toegang="bord:cursor"] [data-scope-schakelaar="github.read"]')`);
     } else {
       // Schakel even om en weer aan zodat de bewaaractie een echte UI-interactie toetst
-      await evalJs(`document.querySelector('[data-toegang="bord:cursor"] [data-scope-schakelaar="board.write"]').click()`);
+      await klik(`document.querySelector('[data-toegang="bord:cursor"] [data-scope-schakelaar="board.write"]')`);
     }
-    await evalJs(`document.querySelector('[data-toegang="bord:cursor"] [data-bewaar="1"]').click()`);
+    await klik(`document.querySelector('[data-toegang="bord:cursor"] [data-bewaar="1"]')`);
     const bewaarMelding = await wachtOp<string>('bevestiging «Збережено» in AiToegangTab',
       `document.querySelector('[data-toegang="bord:cursor"] .at-ok')?.textContent || ''`);
     check('Chrome tabblad «Доступ ШІ» (AiToegangTab): Cursor-scopes geladen, geschakeld en opgeslagen',
@@ -378,22 +396,32 @@ export async function main(): Promise<number> {
     const reg = JSON.parse(regResp.body);
     clients.push(reg.client_id);
 
+    // SEC-002 (ai-mcp-14): het toestemmingsvenster werkt alleen in de browser die de autorisatie BEGON (bindingscookie __Host-mr_mcpb_…
+    // van /oauth2/authorize). Deze test doet /oauth2/authorize als klant via HTTPS en opent het venster daarna in Chrome — dat is dezelfde
+    // mens in dezelfde browser, dus het bindingscookie uit dat antwoord gaat mee naar Chrome (anders: 409 CONSENT_ANDERE_BROWSER, juist).
+    // Cookie прив'язки з відповіді authorize переносимо в Chrome: це той самий браузер людини.
+    const bindingNaarChrome = async (setCookieKop: string) => {
+      for (const deel of setCookieKop.split(/,(?=\s*__Host-mr_mcpb_)/)) {
+        const m = /^\s*(__Host-mr_mcpb_[A-Za-z0-9_-]+)=([^;]+)/.exec(deel);
+        if (m) await cdp!.send('Network.setCookie', { name: m[1], value: m[2], url: 'https://mcp.tarasevych.com/', path: '/', secure: true, httpOnly: true, sameSite: 'Lax' }, s);
+      }
+    };
     const doorloopWizardInChrome = async (consentUrl: string, zetExtraRechten: boolean) => {
       opgevangenCallback = '';
       await cdp!.send('Page.navigate', { url: consentUrl }, s);
       await wachtOp('v2-wizard voor cursor (stap bevestigen)',
         `document.querySelector('[data-v2-wizard="cursor"]')?.getAttribute('data-v2-stap') === 'bevestigen'`);
-      await evalJs(`[...document.querySelectorAll('[data-v2-wizard="cursor"] button')].find(b => /Далі/.test(b.textContent || ''))?.click()`);
+      await klik(`[...document.querySelectorAll('[data-v2-wizard="cursor"] button')].find(b => /Далі/.test(b.textContent || ''))`);
       await wachtOp('stap account',
         `document.querySelector('[data-v2-wizard="cursor"]')?.getAttribute('data-v2-stap') === 'account'`);
-      await evalJs(`[...document.querySelectorAll('[data-v2-wizard="cursor"] button')].find(b => /Далі/.test(b.textContent || ''))?.click()`);
+      await klik(`[...document.querySelectorAll('[data-v2-wizard="cursor"] button')].find(b => /Далі/.test(b.textContent || ''))`);
       await wachtOp('stap ruimte',
         `document.querySelector('[data-v2-wizard="cursor"]')?.getAttribute('data-v2-stap') === 'ruimte'`);
-      await evalJs(`(() => {
+      await klik(`(() => {
         const cb = document.querySelector('[data-v2-wizard="cursor"] .v2-ruimte-kaart.kant-beheer input');
-        if (cb && !cb.checked) cb.click();
+        return cb && !cb.checked ? cb : null;
       })()`);
-      await evalJs(`[...document.querySelectorAll('[data-v2-wizard="cursor"] button')].find(b => /Далі/.test(b.textContent || ''))?.click()`);
+      await klik(`[...document.querySelectorAll('[data-v2-wizard="cursor"] button')].find(b => /Далі/.test(b.textContent || ''))`);
       await wachtOp('stap rechten',
         `document.querySelector('[data-v2-wizard="cursor"]')?.getAttribute('data-v2-stap') === 'rechten'`);
       if (zetExtraRechten) {
@@ -405,15 +433,15 @@ export async function main(): Promise<number> {
           'get_live_release:beheer',
           'orch_overzicht:beheer',
         ]) {
-          await evalJs(`(() => {
+          await klik(`(() => {
             const rij = document.querySelector('[data-v2-wizard="cursor"] [data-v2-optie="${key}"]');
-            if (rij && !rij.classList.contains('is-aan')) rij.querySelector('[role="switch"]')?.click();
+            return rij && !rij.classList.contains('is-aan') ? rij.querySelector('[role="switch"]') : null;
           })()`);
           await wachtOp(`optie ${key} ingeschakeld in wizard`,
             `Boolean(document.querySelector('[data-v2-wizard="cursor"] [data-v2-optie="${key}"].is-aan'))`);
         }
       }
-      await evalJs(`document.querySelector('[data-v2-wizard="cursor"] [data-v2-toestaan]')?.click()`);
+      await klik(`document.querySelector('[data-v2-wizard="cursor"] [data-v2-toestaan]')`);
     };
 
     const p1 = pkce();
@@ -426,6 +454,7 @@ export async function main(): Promise<number> {
     check('OAuth authorize voor Anysphere/cursor.com verwijst naar toestemmingsvenster op /agents?consent=…',
       consentUrl1.startsWith('https://mcp.tarasevych.com/agents?consent='), consentUrl1);
 
+    await bindingNaarChrome(auth1.kop('set-cookie'));
     await doorloopWizardInChrome(consentUrl1, true);
     for (let i = 0; i < 80 && !opgevangenCallback; i++) await slaap(100);
     const cbUrl1 = opgevangenCallback ? new URL(opgevangenCallback) : null;
@@ -468,10 +497,10 @@ export async function main(): Promise<number> {
     await cdp.send('Page.navigate', { url: 'https://mcp.tarasevych.com/agents#agent/cursor' }, s);
     await wachtOp('actieve koppeling Anysphere met create_task aan zichtbaar op #agent/cursor',
       `(document.querySelector('[data-agent-pagina="cursor"]')?.innerText || '').includes('Anysphere') && Boolean(document.querySelector('[data-agent-pagina="cursor"] [data-v2-optie="create_task:gebruiker"].is-aan'))`);
-    await evalJs(`document.querySelector('[data-agent-pagina="cursor"] [data-v2-optie="create_task:gebruiker"] [role="switch"]')?.click()`);
+    await klik(`document.querySelector('[data-agent-pagina="cursor"] [data-v2-optie="create_task:gebruiker"] [role="switch"]')`);
     await wachtOp('create_task uitgeschakeld en Зберегти actief',
       `!document.querySelector('[data-agent-pagina="cursor"] [data-v2-optie="create_task:gebruiker"]')?.classList.contains('is-aan') && !document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]')?.disabled`);
-    await evalJs(`document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]')?.click()`);
+    await klik(`document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]')`);
     await wachtOp('wijziging opgeslagen op #agent/cursor (melding zichtbaar en bezig=false)',
       `(document.querySelector('[data-agent-pagina="cursor"] .v2-melding')?.textContent || '').includes('Збережено') && ![...document.querySelectorAll('[data-agent-pagina="cursor"] .v2b-adresrij button')].find(b => /Перепідключити/.test(b.textContent || ''))?.disabled`);
 
@@ -487,13 +516,16 @@ export async function main(): Promise<number> {
 
     // ============================================================== 6. Directe 1-actie uitbreiding (UX-AI-VAULT-001) + herautorisatie («Перепідключити» in Chrome)
     // Zet create_task:gebruiker weer aan in de UI: 1-actie activering past de uitbreiding direct toe op het levende token én bewaart de voorkeur
+    await klik(`(() => {
+      const rij = document.querySelector('[data-agent-pagina="cursor"] [data-v2-optie="create_task:gebruiker"]');
+      return rij && !rij.classList.contains('is-aan') ? rij.querySelector('[role="switch"]') : null;
+    })()`);
     await wachtOp('create_task weer ingeschakeld en Зберегти actief', `(() => {
       const rij = document.querySelector('[data-agent-pagina="cursor"] [data-v2-optie="create_task:gebruiker"]');
       const btn = document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]');
-      if (rij && !rij.classList.contains('is-aan')) rij.querySelector('[role="switch"]')?.click();
       return Boolean(rij?.classList.contains('is-aan')) && Boolean(btn && !btn.disabled);
     })()`);
-    await evalJs(`document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]')?.click()`);
+    await klik(`document.querySelector('[data-agent-pagina="cursor"] [data-v2-bewaar="cursor"]')`);
     await wachtOp('uitbreiding direct toegepast op actieve koppeling en knop Перепідключити vrijgegeven',
       `(document.querySelector('[data-agent-pagina="cursor"] .v2-melding')?.textContent || '').includes('застосовано') && ![...document.querySelectorAll('[data-agent-pagina="cursor"] .v2b-adresrij button')].find(b => /Перепідключити/.test(b.textContent || ''))?.disabled`);
     const lijstNaUitbreiden = JSON.parse((await httpsVerzoek(poort, 'POST', '/cursor', JSON.stringify({
@@ -502,7 +534,7 @@ export async function main(): Promise<number> {
     const namenNaUitbreiden: string[] = (lijstNaUitbreiden?.result?.tools ?? []).map((t: { name: string }) => t.name);
     check('1-actie uitbreiding op #agent/cursor activeert create_task direct op het bestaande OAuth-token zonder herverbinden',
       namenNaUitbreiden.some((n) => n.startsWith('creeren_nieuwe_taak_cursor_')), `aantal=${namenNaUitbreiden.length}`);
-    await evalJs(`[...document.querySelectorAll('[data-agent-pagina="cursor"] .v2b-adresrij button')].find(b => /Перепідключити/.test(b.textContent || ''))?.click()`);
+    await klik(`[...document.querySelectorAll('[data-agent-pagina="cursor"] .v2b-adresrij button')].find(b => /Перепідключити/.test(b.textContent || ''))`);
     for (let i = 0; i < 30; i++) {
       const st = (await httpsVerzoek(poort, 'POST', '/cursor', JSON.stringify({ jsonrpc: '2.0', id: 4, method: 'tools/list' }), {
         authorization: `Bearer ${tok1.access_token}`,
@@ -522,6 +554,7 @@ export async function main(): Promise<number> {
       code_challenge: p2.challenge, code_challenge_method: 'S256', state: 'chrome-oauth-2',
       resource: 'https://mcp.tarasevych.com/cursor',
     }).toString()}`);
+    await bindingNaarChrome(auth2.kop('set-cookie'));
     await doorloopWizardInChrome(auth2.kop('location'), false);
     for (let i = 0; i < 80 && !opgevangenCallback; i++) await slaap(100);
     const cbUrl2 = opgevangenCallback ? new URL(opgevangenCallback) : null;

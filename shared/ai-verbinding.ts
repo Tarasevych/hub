@@ -25,13 +25,14 @@ export const accessSeconden = (d: Duur) => (d.accessSec > 0 ? d.accessSec : NOOI
 export const refreshSeconden = (d: Duur) => (d.refreshDagen > 0 ? d.refreshDagen * 86400 : NOOIT_SEC);
 
 // ---------------------------------------------------------------- welke AI-klant
-export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw' | 'overig';
+export type KlantId = 'grok' | 'claude' | 'chatgpt' | 'codex' | 'gemini' | 'copilot' | 'cursor' | 'antigravity' | 'autoclaw' | 'overig';
 export type Klant = { id: KlantId; naam: string; deur: string | null };
 /** deur = pad van de MCP-deur op mcp.* (zoals in de tunnelregel); null = alleen via de connector /mcp. */
 export const KLANTEN: readonly Klant[] = Object.freeze([
   { id: 'grok', naam: 'Grok', deur: 'Grok' },
   { id: 'claude', naam: 'Claude', deur: 'claude' },
   { id: 'chatgpt', naam: 'ChatGPT', deur: 'chatgpt' },
+  { id: 'codex', naam: 'Codex', deur: null },
   { id: 'gemini', naam: 'Gemini', deur: 'gemini' },
   { id: 'copilot', naam: 'Copilot', deur: 'copilot' },
   { id: 'cursor', naam: 'Cursor', deur: null },
@@ -45,6 +46,7 @@ export function klantVan(naam: string | null | undefined): KlantId {
   const n = normaal(String(naam || ''));
   if (!n) return 'overig';
   for (const k of KLANTEN) if (k.id !== 'overig' && (n === k.id || n.split(' ').includes(k.id))) return k.id;
+  if (/\bcodex\b/.test(n)) return 'codex';
   if (/\b(openai|gpt)\b/.test(n)) return 'chatgpt';
   if (/\b(xai|x ai)\b/.test(n)) return 'grok';
   if (/\b(anthropic)\b/.test(n)) return 'claude';
@@ -103,3 +105,14 @@ export function redirectPast(geregistreerd: readonly string[], gevraagd: string)
 
 /** Eigen terugkeeradres van de site voor «Підключити автоматично» in de browser (PKCE in de pagina zelf). */
 export const SITE_TERUG_PAD = '/oauth-terug';
+
+/**
+ * SEC-002 (g10a-4, afwerking A; slot m): gereserveerde namen van een AI-klant — «site:…» (zo heet de site zelf als aanvrager), «?»
+ * (onbekende klant) en namen die zich als de site of de gebruiker voordoen («Ви (з сайту)», «You (site)», «Jij (van de site)»), ook na
+ * NFKC-vereenvoudiging (volle breedte, ligaturen). Gedeeld door DCR, CIMD (backend/mcp-connector.ts) en aanvragerNu (connectors-opslag).
+ */
+export const GERESERVEERDE_NAAM = /^(?:\s*site\s*:|\s*\?+\s*$|\s*(?:ви|you|u|jij)\s*\(\s*(?:з сайту|сайт|site|van de site)\s*\))/iu;
+// SEC-002 (slot m2): vóór de controle onzichtbare opmaaktekens (\p{Cf}: nulbreedte, richtingstekens, woordverbinder) weghalen en
+// witruimte samenpersen — anders glippen «Ви<U+200B> (з сайту)» en «Ви (з  сайту)» erdoor. Geldt voor DCR, CIMD en aanvragerNu.
+export const naamVoorControle = (naam: string): string => String(naam ?? '').normalize('NFKC').replace(/\p{Cf}/gu, '').replace(/\s+/gu, ' ');
+export const gereserveerdeKlantNaam = (naam: string): boolean => GERESERVEERDE_NAAM.test(naamVoorControle(naam));

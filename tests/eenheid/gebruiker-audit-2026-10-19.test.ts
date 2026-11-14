@@ -170,8 +170,8 @@ export async function main(): Promise<number> {
   // ---------------------------------------------------------------- R-05: technisch profiel bij accountwissel
   {
     const idx = bron('backend/index.ts');
-    const i1 = idx.indexOf('const techBeeindigd=vorigeUserId&&vorigeUserId!==grant.userId?await techBeeindigenBijUitloggen(vorigeUserId,anchor.tab):0;'), i2 = idx.indexOf('const overlay=await ownerUpsertTabSession(anchor.session,user,anchor.service,sourceOrigin,anchor.tab,grantId', i1);
-    check('R-05 replace-tab-remembered beëindigt de activering van het vorige account in dit tabblad vóór de wissel en meldt techBeeindigd', i1 > 0 && i2 > i1 && idx.includes("return ownerResponse({ok:true,replaceScope:'tab',techBeeindigd,"));
+    const i1 = idx.indexOf('techBeeindigenBijUitloggen(vorigeUserId,tab)'), i2 = idx.indexOf('db.add(OWNER_SESSION_TABLE,[sessionRecord])', i1);
+    check('R-05 replace-tab-remembered beëindigt via ownerActivateBrowserAccount de activering van het vorige account vóór de nieuwe sessie en meldt techBeeindigd', i1 > 0 && i2 > i1 && idx.includes("const activated=await ownerActivateBrowserAccount(anchor.session,user,service,sourceOrigin,tab,grantId,ctx.event,") && idx.includes("return ownerCookieResponse({ok:true,replaceScope:'browser',techBeeindigd,"));
     check('R-05 front toont de melding en haalt de technische status opnieuw', bron('src/App.tsx').includes('Технічний профіль попереднього акаунта завершено') && bron('src/VerenigdDienstApp.tsx').includes('Технічний профіль попереднього акаунта завершено') && bron('src/VerenigdDienstApp.tsx').includes('void techVernieuwen()'));
     if (process.env.DATABASE_URL || process.env.DATABASE_URL_SYSTEM) {
       // de bouwsteen zelf: beëindigen per (gebruiker, tabblad) raakt een ander tabblad en een andere gebruiker niet
@@ -197,7 +197,11 @@ export async function main(): Promise<number> {
   // ---------------------------------------------------------------- U-05 / U-06 / TOK-01
   {
     const scv = bron('src/InstellingencentrumWeergave.tsx');
-    check('U-05 delen: Учасник ziet «Надати доступ»/«Приватне посилання» uit, met uitleg; eigenaar/beheerder niet', scv.includes("const magDelen=p.user.role==='owner'||p.user.role==='admin';") && scv.includes("data-delen-uitleg='1'") && scv.includes("disabled={!magDelen||!workspaceId||p.busy}><Share2/>") && scv.includes("onClick={()=>void createLink()} disabled={!magDelen||!workspaceId||p.busy}"));
+    // IDENTITEIT-014: «mag delen» kijkt sinds fase 3 naar de rol in de GEKOZEN ruimte (useDelen → shared/werkruimte-rechten.ts), niet naar
+    // de rol op de site (p.user.role): een beheerder van een gedeelde ruimte mag daar delen, een sitebeheerder die er kijker is niet.
+    // Dezelfde garantie als U-05 (knoppen uit + uitleg), op de nieuwe plek; het gedrag zelf test tests/eenheid/identiteit-014-delen.test.ts.
+    // IDENTITEIT-014 (herstel): «Створити» посилання спершу відкриває вікно deel-link-maken (рецензія) — умова disabled та сама, змінився лише onClick.
+    check('U-05 delen: wie in de gekozen ruimte geen eigenaar/beheerder is, ziet «Надати доступ»/«Приватне посилання» uit, met uitleg', scv.includes("const magDelenHier=delen.mag;") && scv.includes("data-delen-uitleg='1'") && scv.includes("{waaromNiet(p.lang,delen.rol)}") && scv.includes("disabled={!magDelenHier||!deelGekozen||p.busy}><Share2/>") && scv.includes("onClick={()=>setLinkVraag(true)} disabled={!magDelenHier||!deelGekozen||p.busy}") && !scv.includes("p.user.role==='owner'||p.user.role==='admin';body="));
     check('U-06 profielkaart toont de rolnaam (Власник/Адміністратор/Учасник/Глядач), niet «Повний доступ» voor iedereen', scv.includes("<small data-rol={p.user.role}>") && scv.includes("tr('Учасник','Deelnemer')}{p.user.accessLevel==='limited'") && !scv.includes("tr('Повний доступ','Volledige toegang')"));
     const ai = bron('src/agenten/AiVerbinden.tsx');
     check('TOK-01 #tokens: naamveld voor het token; `klant` blijft het bord-id', ai.includes("data-token-naam='1'") && ai.includes("name: tokenNaam.trim().slice(0, 80) || (k.id === 'overig' ? 'agent' : k.id), klant: k.id,"));

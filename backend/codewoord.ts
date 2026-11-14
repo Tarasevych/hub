@@ -1,5 +1,5 @@
 // Кодове слово: scrypt + перець з середовища. Значення в журнал не пишеться.
-import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { getPool } from '../server/platform/pg';
 import { CODEWOORD_BLOK_MS, CODEWOORD_MAX_MISLUKT, codewoordSterk, normaliseerCodewoord, pogingToegestaan } from '../shared/codewoord';
@@ -50,19 +50,48 @@ export async function codewoordZetten(userId: string, woord: string, email: stri
 }
 
 export async function codewoordControleren(userId: string, woord: string): Promise<{ ok: true } | { ok: false; code: 'ONJUIST' | 'GEBLOKKEERD' | 'NIET_INGESTELD'; wachtMs?: number }> {
-  const rij = await lees(userId);
-  if (!rij) return { ok: false, code: 'NIET_INGESTELD' };
   const nu = Date.now();
-  const poort = pogingToegestaan(rij.mislukt, rij.geblokkeerdTot, nu);
-  if (!poort.ok) return { ok: false, code: 'GEBLOKKEERD', wachtMs: poort.wachtMs };
-  const mislukt = rij.geblokkeerdTot > 0 && rij.geblokkeerdTot <= nu ? 0 : rij.mislukt;
+  // SEC-002 (aanmelden-03): спробу резервуємо АТОМАРНО, одним UPDATE, ще до scrypt. Раніше рядок читали, рахували хеш (десятки мс)
+  // і перезаписували цілком значенням mislukt+1 зі старого читання: K одночасних спроб рахувалися як одна, і блок 5/15 хв не діяв.
+  // Тепер кожна спроба збільшує лічильник під блокуванням рядка; п'ята вмикає блок, решта одразу отримують GEBLOKKEERD.
+  const rij = await reserveerPoging(userId, nu);
+  if (!rij) {
+    const staat = await lees(userId);
+    if (!staat) return { ok: false, code: 'NIET_INGESTELD' };
+    const poort = pogingToegestaan(staat.mislukt, staat.geblokkeerdTot, nu);
+    return { ok: false, code: 'GEBLOKKEERD', wachtMs: poort.ok ? CODEWOORD_BLOK_MS : poort.wachtMs };
+  }
   const hash = await scryptAsync(materiaal(woord), Buffer.from(rij.salt, 'base64url'), 32, { N: rij.n || N, r: rij.r || R, p: rij.p || P });
   const verwacht = Buffer.from(rij.hash, 'base64url');
   const gelijk = hash.length === verwacht.length && timingSafeEqual(hash, verwacht);
-  if (gelijk) { await schrijf({ ...rij, mislukt: 0, geblokkeerdTot: 0, updatedAt: nu }); return { ok: true }; }
-  const volgende = mislukt + 1;
-  await schrijf({ ...rij, mislukt: volgende, geblokkeerdTot: volgende >= CODEWOORD_MAX_MISLUKT ? nu + CODEWOORD_BLOK_MS : 0, updatedAt: nu });
-  return { ok: false, code: 'ONJUIST' };
+  if (!gelijk) return { ok: false, code: 'ONJUIST' }; // спробу вже пораховано вище
+  // Успіх скидає лише лічильник (решта рядка, зокрема loginSessies, лишається) і лише якщо слово тим часом не змінили.
+  await getPool().query(
+    `UPDATE app.records SET data = data || jsonb_build_object('mislukt', 0, 'geblokkeerdTot', 0, 'updatedAt', $3::bigint), updated_at = now()
+      WHERE tbl = $1 AND id = $2 AND data->>'hash' = $4`,
+    [TBL, idVan(userId), nu, rij.hash],
+  );
+  return { ok: true };
+}
+
+/**
+ * SEC-002 (aanmelden-03): одна атомарна спроба. Повертає рядок (для перевірки хеша), якщо спробу дозволено й пораховано;
+ * null — рядка немає або діє блок. Правила ті самі, що в shared/codewoord.ts: блок = 5 помилок і час блоку ще не минув;
+ * коли блок минув, лічильник починається знову.
+ */
+async function reserveerPoging(userId: string, nu: number): Promise<Rij | null> {
+  const mislukt = `COALESCE((data->>'mislukt')::numeric, 0)`, tot = `COALESCE((data->>'geblokkeerdTot')::numeric, 0)`;
+  const volgende = `((CASE WHEN ${tot} > 0 AND ${tot} <= $3::bigint THEN 0 ELSE ${mislukt} END) + 1)`;
+  const r = await getPool().query(
+    `UPDATE app.records SET data = data || jsonb_build_object(
+        'mislukt', ${volgende},
+        'geblokkeerdTot', CASE WHEN ${volgende} >= $4::int THEN $3::bigint + $5::bigint ELSE 0 END,
+        'updatedAt', $3::bigint), updated_at = now()
+      WHERE tbl = $1 AND id = $2 AND COALESCE(data->>'hash', '') <> '' AND NOT (${mislukt} >= $4::int AND ${tot} > $3::bigint)
+      RETURNING data`,
+    [TBL, idVan(userId), nu, CODEWOORD_MAX_MISLUKT, CODEWOORD_BLOK_MS],
+  );
+  return (r.rows[0]?.data as Rij | undefined) || null;
 }
 
 /** null = кодового слова немає, стирати можна. Інакше код помилки для відповіді 403. */
@@ -83,21 +112,53 @@ export async function codewoordPoortOpen(userId: string, sessieId: string): Prom
 }
 
 /** Після правильного слова на цьому вході. Старі сесії відпадають самі. */
-export async function codewoordLoginVastleggen(userId: string, sessieId: string): Promise<void> {
-  if (!sessieId) return;
+export async function codewoordLoginVastleggen(userId: string, sessieId: string, extraSessieId = ''): Promise<void> {
+  const ids = [sessieId, extraSessieId].filter(Boolean);
+  if (!ids.length) return;
   const rij = await lees(userId);
   if (!rij) return;
   const nu = Date.now();
+  const bijgewerkt: Record<string, number> = { ...(rij.loginSessies || {}) };
+  for (const id of ids) bijgewerkt[id] = nu;
   const loginSessies = Object.fromEntries(
-    Object.entries({ ...(rij.loginSessies || {}), [sessieId]: nu }).filter(([, at]) => loginVers(Number(at), nu)).slice(-40),
+    Object.entries(bijgewerkt).filter(([, at]) => loginVers(Number(at), nu)).slice(-40),
   );
-  await schrijf({ ...rij, loginSessies, updatedAt: nu });
+  // SEC-002 (aanmelden-03): лише поле loginSessies, не весь рядок — інакше одночасна спроба губила б лічильник помилок (і навпаки).
+  await getPool().query(
+    `UPDATE app.records SET data = jsonb_set(data, '{loginSessies}', $3::jsonb, true) || jsonb_build_object('updatedAt', $4::bigint), updated_at = now()
+      WHERE tbl = $1 AND id = $2`,
+    [TBL, idVan(userId), JSON.stringify(loginSessies), nu],
+  );
+}
+
+/** Живий віртуальний запис профілю цього ж облікового запису в поточному оглядачі (для збереження пройдених воріт під час перемикання профілів). */
+async function browserProfielSessieId(userId: string, anchorId?: string): Promise<string> {
+  if (!userId || !anchorId) return '';
+  try {
+    const tabHash = createHash('sha256').update(`owner-browser-account-v1:${userId}`).digest('hex');
+    const r = await getPool().query(
+      `SELECT id FROM app.records
+        WHERE tbl = 'owner_tab_sessions_v1'
+          AND data->>'anchorSessionId' = $1
+          AND data->>'userId' = $2
+          AND data->>'tabHash' = $3
+          AND data->>'status' = 'active'
+          AND coalesce(nullif(data->>'revokedAt', '')::bigint, 0) = 0
+          AND coalesce(nullif(data->>'idleExpiresAt', '')::bigint, 0) > $4
+          AND coalesce(nullif(data->>'absoluteExpiresAt', '')::bigint, 0) > $4
+        LIMIT 1`,
+      [anchorId, userId, tabHash, Date.now()],
+    );
+    return String(r.rows[0]?.id || '');
+  } catch {
+    return '';
+  }
 }
 
 export { codewoordRouteVrij, codewoordSessieId } from '../shared/codewoord-poort';
 
 type Ctx = { event: unknown; body: unknown };
-type Auth = { user: { id: string; email: string } } | { errorCode: string };
+type Auth = { user: { id: string; email: string; status?: string } } | { errorCode: string };
 type VolAuth = { user: { id: string; email: string }; session?: { id: string; userId: string }; tabSession?: { id: string; userId: string } | null };
 export function codewoordRoutes(deps: {
   requireSession: (event: unknown, body: unknown) => Promise<Auth>;
@@ -109,6 +170,9 @@ export function codewoordRoutes(deps: {
   const metSessie = (run: (user: { id: string; email: string }, body: Record<string, unknown>, ctx: Ctx, auth: VolAuth) => Promise<RouterResponse>): RouterMiddleware => async (ctx) => {
     const auth = await deps.requireSession(ctx.event, ctx.body);
     if ('errorCode' in auth) return deps.fail(auth.errorCode, 401);
+    // SEC-002 (autorisatie-09): несхвалений обліковий запис (new/pending) кодове слово не задає й не перевіряє — шлюз сеансу
+    // (ownerRequireSession) свідомо пропускає такі записи до екрана очікування, тож схвалення перевіряємо тут.
+    if (auth.user.status !== 'approved') return deps.fail('ACCOUNT_NOT_APPROVED', 403);
     const stap = await deps.stepUp(ctx, auth);
     if (stap) return stap;
     return run(auth.user, deps.body(ctx.body), ctx, auth as VolAuth);
@@ -120,7 +184,8 @@ export function codewoordRoutes(deps: {
     'POST /api/owner/identity/codewoord/zetten': [metSessie(async (user, body, _ctx, auth) => {
       const uit = await codewoordZetten(user.id, String(body.woord || ''), user.email, typeof body.huidig === 'string' ? body.huidig : '');
       if (uit !== 'OK') return deps.fail(uit === 'ZWAK' ? 'CODEWOORD_ZWAK' : uit === 'GEBLOKKEERD' ? 'CODEWOORD_GEBLOKKEERD' : 'CODEWOORD_ONJUIST', 400);
-      await codewoordLoginVastleggen(user.id, sessieVan(auth));
+      const profielSid = await browserProfielSessieId(user.id, auth.session?.id);
+      await codewoordLoginVastleggen(user.id, sessieVan(auth), profielSid);
       return deps.ok({ ok: true, codewoordPoort: false });
     })],
     'POST /api/owner/identity/codewoord/controleren': [metSessie(async (user, body) => {
@@ -135,7 +200,8 @@ export function codewoordRoutes(deps: {
       const c = await codewoordControleren(vol.user.id, String(deps.body(ctx.body).woord || ''));
       if (!c.ok) return deps.fail(c.code === 'NIET_INGESTELD' ? 'CODEWOORD_NIET_INGESTELD' : c.code === 'GEBLOKKEERD' ? 'CODEWOORD_GEBLOKKEERD' : 'CODEWOORD_ONJUIST', 403);
       const sid = sessieVan(vol);
-      await codewoordLoginVastleggen(vol.user.id, sid);
+      const profielSid = await browserProfielSessieId(vol.user.id, vol.session?.id);
+      await codewoordLoginVastleggen(vol.user.id, sid, profielSid);
       await codewoordStapOpVastleggen({ user: { id: vol.user.id }, session: vol.session, tabSession: vol.tabSession } as StapOpAuth);
       return deps.ok({ ok: true, codewoordPoort: false });
     }],

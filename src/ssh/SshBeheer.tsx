@@ -12,6 +12,10 @@ import { zijbalkServerDienst } from '../zijbalk-voorkeuren';
 import HulpVraag from '../hulp/HulpVraag';
 import { publiekeSleutel, SSH_CA_DUREN, SSH_CA_MINUTEN, type SshCaCertRij, type SshCaStand } from '../../shared/ssh-ca';
 import './ssh-beheer.css';
+import { FOUTEN as UITGIFTE_FOUTEN, sshCertificaatAanvragen } from './SshCertificaat';
+/** SEC-002 (g10f): root aanvaardt de passkey voor een SSH-certificaat alleen op deze adressen (SSH_CA_ORIGIN elders). */
+export const SSH_PASSKEY_ADRESSEN = ['https://admin.tarasevych.com', 'https://id.tarasevych.com'] as const;
+const opPasskeyAdres = () => { try { return (SSH_PASSKEY_ADRESSEN as readonly string[]).includes(location.origin); } catch { return true; } };
 
 const basis = () => ({ service: zijbalkServerDienst() || serviceFromLocation(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 type T = readonly [string, string];
@@ -37,7 +41,8 @@ export const SSH_FOUTEN: Readonly<Record<string, T>> = Object.freeze({
 });
 const tekst = (code: string, uk: boolean, root?: { uk?: string; nl?: string }) => {
   if (root && (uk ? root.uk : root.nl)) return String(uk ? root.uk : root.nl);
-  const f = SSH_FOUTEN[code];
+  // De teksten van de uitgifte (SSH_CA_ORIGIN, PASSKEY_ORIGIN_ONJUIST …) komen uit SshCertificaat; de eigen kaart-teksten gaan voor.
+  const f = SSH_FOUTEN[code] ?? UITGIFTE_FOUTEN[code];
   if (f) return uk ? f[0] : f[1];
   if (/STEP_UP|STAP_OP/.test(code)) return uk ? 'Вхід не підтверджено — нічого не змінено.' : 'Aanmelding niet bevestigd — niets gewijzigd.';
   if (/^PASSKEY_|NotAllowedError|AbortError/.test(code)) return uk ? 'Passkey не підтверджено — нічого не змінено.' : 'Passkey niet bevestigd — niets gewijzigd.';
@@ -94,7 +99,9 @@ export default function SshBeheer({ sluit }: { sluit: () => void }) {
   };
   const uitgeven = async () => {
     setBezig('uitgifte'); setMelding(null);
-    try { setUit((await api.post('/api/ssh-ca/uitgifte', { ...basis(), publiek: publiek.trim(), minuten })).data as Uit); void laad(false); }
+    // SEC-002 (geheimen-03, g10f): uitgeven gaat in twee stappen — uitdaging → passkey van de eigenaar in de browser → uitgifte.
+    // De oude rechtstreekse POST /api/ssh-ca/uitgifte kreeg SSH_CA_PASSKEY_VEREIST zodra root een passkey eist.
+    try { const r = await sshCertificaatAanvragen(basis(), publiek.trim(), minuten); setUit({ ...r, serie: r.serie ?? null }); void laad(false); }
     catch (e) { setMelding({ ok: false, tekst: tekst(foutCode(e) || String((e as Error).message), uk) }); }
     finally { setBezig(''); }
   };
@@ -171,6 +178,7 @@ export default function SshBeheer({ sluit }: { sluit: () => void }) {
             </>
           ) : (
             <form className='ssh-uitgifte' onSubmit={(e) => { e.preventDefault(); if (!bezig && geldig) void uitgeven(); }}>
+              {!opPasskeyAdres() ? <p className='tech-meta' role='note' data-ssh-elders='1'>{uk ? 'Якщо сервер вимагає passkey (типово так), сертифікат видається лише на ' : 'Vraagt de server een passkey (standaard wel), dan wordt het certificaat alleen uitgegeven op '}<a href={SSH_PASSKEY_ADRESSEN[0]}>admin.tarasevych.com</a>{uk ? ' або id.tarasevych.com. Відкрийте технічний шар там і повторіть; переглядати й відкликати сертифікати можна й тут.' : ' of id.tarasevych.com. Open de technische laag daar en probeer opnieuw; bekijken en intrekken kan ook hier.'}</p> : null}
               <label className='tech-veld'><span>{uk ? 'Публічний ключ' : 'Publieke sleutel'}</span>
                 <textarea rows={3} value={publiek} onChange={(e) => setPubliek(e.target.value)} spellCheck={false} autoComplete='off' placeholder='ssh-ed25519 AAAA…' data-ssh-publiek='1' /></label>
               <label className='tech-veld'><span>{uk ? 'Термін дії' : 'Geldigheid'}</span>
