@@ -84,6 +84,21 @@ export const REGISTER: UitlegSoort[] = [
   },
   // IDENTITEIT-014: rechten in een gedeelde ruimte. Vóór «beveiliging»: «workspace_access_revoked» bevat «access_» en zou anders
   // als accountbeveiliging (met «Це був я») worden uitgelegd — het gaat om een ruimte van iemand anders, niet om uw aanmelding.
+  // IDENTITEIT-014 (herstel): de maker van een privélink krijgt een spoor in het meldingencentrum — de link is een geheim.
+  {
+    id: 'delen-link',
+    past: (m) => m.soort === 'workspace_share_link_created',
+    risico: 'midden',
+    wat: ['Ви створили посилання-запрошення до спільного простору.', 'U maakte een uitnodigingslink voor een gedeelde werkruimte.'],
+    waarom: ['Посилання дає вибрану роль першому, хто його відкриє й увійде; воно одноразове й діє 7 днів.', 'De link geeft de gekozen rol aan wie hem als eerste opent en zich aanmeldt; hij is eenmalig en 7 dagen geldig.'],
+    gevolg: ['Будь-хто, до кого потрапить посилання, може ним скористатися — навіть не та людина, якій ви його надіслали.', 'Iedereen die de link in handen krijgt, kan hem gebruiken — ook iemand anders dan aan wie u hem stuurde.'],
+    doen: ['Надсилайте посилання лише особисто. Якщо його створили не ви — захистіть вхід і перевірте учасників простору.', 'Stuur de link alleen persoonlijk. Maakte u hem niet, beveilig dan uw aanmelding en controleer de leden.'],
+    deeplink: viaLink('https://hub.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити простір', 'Werkruimte openen'], href: viaLink('https://hub.tarasevych.com/') },
+      { soort: 'type-stil', label: ['Тихо для цього типу', 'Stil voor dit soort'] },
+    ],
+  },
   {
     id: 'delen-rechten',
     past: (m) => /^workspace_(role_changed|access_revoked|invite_accepted)$/.test(m.soort || ''),
@@ -246,9 +261,9 @@ export const REGISTER: UitlegSoort[] = [
     waarom: ['Кожен код діє лише один раз. Ви підтверджували вхід чи важливі дії кодами замість телефона або ключа доступу.', 'Elke code werkt maar één keer. U bevestigde aanmelden of belangrijke handelingen met codes in plaats van telefoon of passkey.'],
     gevolg: ['Коли коди закінчаться, після втрати телефона чи ключа доступу увійти буде неможливо. Нове сповіщення для цього набору не прийде.', 'Zijn de codes op, dan kunt u na verlies van telefoon of passkey niet meer aanmelden. Voor deze set komt geen nieuwe melding.'],
     doen: ['Створіть новий набір кодів (з підтвердженням) і збережіть його поза цим пристроєм. Старі коди тоді перестануть діяти. Вимкнути це нагадування можна в Меню → Сповіщення в меню.', 'Maak een nieuwe set codes (met bevestiging) en bewaar die buiten dit apparaat; de oude codes werken dan niet meer. Deze herinnering zet u uit via Menu → Meldingen in het menu.'],
-    deeplink: viaLink(`${ID}/methods#herstel`),
+    deeplink: viaLink(`${ID}/recovery#aanmeldmethoden-herstel`),
     acties: [
-      { soort: 'wijziging', label: ['Створити нові коди', 'Nieuwe codes maken'], href: () => `${ID}/methods#herstel` },
+      { soort: 'wijziging', label: ['Створити нові коди', 'Nieuwe codes maken'], href: () => `${ID}/recovery#aanmeldmethoden-herstel` },
     ],
   },
   {

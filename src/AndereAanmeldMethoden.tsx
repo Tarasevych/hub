@@ -15,15 +15,17 @@ type Props=AndereMethodenProps;
 /** Стан входу через Telegram і (для власника) перехід до розміщення. cfg: undefined — вантажиться, null — недоступно. */
 export function AndereMethodenWeergave({lang,admin,telegramSectie,cfg}:Props&{cfg:AanmeldConfig|null|undefined}){
   const stand=cfg?.status?.stand||cfg?.stand||'';
-  const badge=cfg===undefined?tr(lang,'Завантаження…','Laden…'):cfg===null?tr(lang,'Стан недоступний','Stand niet beschikbaar'):!cfg.zichtbaar?tr(lang,'Не ввімкнено','Niet ingeschakeld'):statusNaam(lang,stand);
+  // IDENTITEIT-014 (herstel): є повний розділ «Telegram» нижче — там і стан; тут лише перехід, без другого бейджа. / Geen tweede stand.
+  const badge=telegramSectie?null:cfg===undefined?tr(lang,'Завантаження…','Laden…'):cfg===null?tr(lang,'Стан недоступний','Stand niet beschikbaar'):!cfg.zichtbaar?tr(lang,'Не ввімкнено','Niet ingeschakeld'):statusNaam(lang,stand);
   const toon=cfg&&cfg.zichtbaar?TG_TOON[stand]||'muted':'muted';
   const naarSectieTelegram=()=>{const s=document.querySelector<HTMLElement>('[data-telegram-sectie]');if(!s)return;try{s.scrollIntoView({behavior:'smooth',block:'start'})}catch{/* geen scroll */}s.querySelector<HTMLElement>('button:not(:disabled)')?.focus();};
   return <div className='access-plane-box' data-andere-methoden>
     <div className='access-plane-row' data-access-method='telegram'>
       <Send className='access-plane-row-icon'/>
       <div className='access-plane-row-main'>
-        <span className='access-plane-row-title'><strong>Telegram</strong><span className={`access-plane-badge tone-${toon}`} data-telegram-stand={stand||undefined}>{badge}</span></span>
-        {cfg!==undefined&&<small>{cfg===null?tr(lang,'Стан не вдалося перевірити — оновіть сторінку пізніше. Інші способи входу це не зачіпає.','De stand kon niet worden gecontroleerd — vernieuw de pagina later. Andere aanmeldmethoden merken hier niets van.')
+        <span className='access-plane-row-title'><strong>Telegram</strong>{badge!==null&&<span className={`access-plane-badge tone-${toon}`} data-telegram-stand={stand||undefined}>{badge}</span>}</span>
+        {telegramSectie?<small data-telegram-verwijzing>{tr(lang,'Стан і налаштування входу через Telegram — у розділі «Telegram» нижче на цій сторінці.','Stand en instellingen van aanmelden met Telegram staan in de sectie «Telegram» verderop op deze pagina.')}</small>
+        :cfg!==undefined&&<small>{cfg===null?tr(lang,'Стан не вдалося перевірити — оновіть сторінку пізніше. Інші способи входу це не зачіпає.','De stand kon niet worden gecontroleerd — vernieuw de pagina later. Andere aanmeldmethoden merken hier niets van.')
           :cfg.zichtbaar?tr(lang,'На сторінці входу є кнопка «Увійти через Telegram»: вхід підтверджується в самому Telegram.','Op de aanmeldpagina staat de knop «Aanmelden met Telegram»: u bevestigt in Telegram zelf.')
           :tr(lang,'Кнопки «Увійти через Telegram» на сторінці входу зараз немає.','Op de aanmeldpagina staat nu geen knop «Aanmelden met Telegram».')}</small>}
       </div>

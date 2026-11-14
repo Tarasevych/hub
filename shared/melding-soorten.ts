@@ -34,6 +34,7 @@ export const MELDING_SOORTEN: Readonly<Record<string, SoortInfo>> = Object.freez
   workspace_role_changed: { type: 'delen', ernst: 'belangrijk' },       // IDENTITEIT-014: mijn rol in een gedeelde ruimte is gewijzigd
   workspace_access_revoked: { type: 'delen', ernst: 'belangrijk' },     // IDENTITEIT-014: mijn toegang tot een gedeelde ruimte is ingetrokken
   workspace_invite_accepted: { type: 'delen', ernst: 'info' },          // IDENTITEIT-014: iemand nam mijn uitnodiging/koppeling aan
+  workspace_share_link_created: { type: 'delen', ernst: 'info' },       // IDENTITEIT-014: ik maakte een privélink (geheim dat een rol geeft)
   cloud_alleen_lezen: { type: 'cloud', ernst: 'info' },                     // SEC-002 (g03, afwerking A): schrijven geweigerd — rol «лише перегляд»
   toegang_alleen_lezen: { type: 'toegang', ernst: 'info' },               // SEC-002 (slot «u»): schrijven buiten de hmara geweigerd — rol «лише перегляд»
   agenda: { type: 'agenda', ernst: 'info' },                             // agenda: grens bereikt, CalDAV afgekapt (backend/agenda-routes.ts, agenda-caldav.ts) — nu expliciet

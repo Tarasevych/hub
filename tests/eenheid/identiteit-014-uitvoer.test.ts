@@ -46,7 +46,11 @@ function nepBrowser(host = 'https://id.tarasevych.com/'): () => void {
 export async function main(): Promise<number> {
   const { check, einde } = checker('identiteit-014-uitvoer');
   const browserWeg = nepBrowser();
-  const { default: Gegevensuitvoer, UITVOER_ROUTE, gegevensUitvoeren, uitvoerAanvraag, uitvoerBestandsnaam } = await import('../../src/instellingen/Gegevensuitvoer');
+  const { default: Gegevensuitvoer, UITVOER_ROUTE, gegevensUitvoeren, uitvoerAanvraag, uitvoerBestandsnaam, grootte } = await import('../../src/instellingen/Gegevensuitvoer');
+  // IDENTITEIT-014 (herstel, дрібне з рецензії): в uk-тексті одиниці були змішані — «B»/«MB» латиницею поруч із «КБ».
+  check('розмір файла: «Б/КБ/МБ» в uk, «B/kB/MB» в nl, десяткова кома',
+    grootte('uk', 12) === '12 Б' && grootte('uk', 2048) === '2 КБ' && grootte('uk', 3 * 1048576 + 104858) === '3,1 МБ' && grootte('nl', 12) === '12 B' && grootte('nl', 3 * 1048576 + 104858) === '3,1 MB',
+    [grootte('uk', 12), grootte('uk', 2048), grootte('uk', 3 * 1048576 + 104858), grootte('nl', 12)].join('|'));
 
   // ================================================================ (б) uitvoerWeigering
   {

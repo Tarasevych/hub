@@ -141,6 +141,6 @@ export async function herstelcodeGebruiktMelden(userId: string, actie: string, l
     const l = label || 'невідомий пристрій';
     await meld(userId, 'access_recovery_code_used', 'Використано код відновлення / Herstelcode gebruikt',
       `Один код відновлення щойно використано (дія: ${actie.slice(0, 40)}) на пристрої «${l}» · ${brusselsTijd(Date.now(), 'uk')} (Брюссель). Цей код більше не діє. Якщо це були не ви — завершіть чужі сеанси й створіть нові коди. / Er is net een herstelcode gebruikt (actie: ${actie.slice(0, 40)}) op apparaat «${label || 'onbekend apparaat'}» · ${brusselsTijd(Date.now(), 'nl')} (Brussel). Die code werkt niet meer. Was u dit niet: beëindig vreemde sessies en maak nieuwe codes.`,
-      'https://id.tarasevych.com/methods#herstel');
+      'https://id.tarasevych.com/recovery#aanmeldmethoden-herstel'); /* IDENTITEIT-014: #herstel bestond niet */
   } catch (err) { console.error('[nieuw-apparaat] herstelcode-melding mislukt:', (err as Error).message); }
 }

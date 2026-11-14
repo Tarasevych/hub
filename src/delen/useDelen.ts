@@ -7,7 +7,7 @@ import { invitesClient } from '../platform/client';
 import { KOPIEER_MISLUKT, kopieerTekst } from '../platform/klembord';
 import { deelWeigering, foutNaarTekst } from '../weigeringen';
 import { magDelen, werkruimteRol, type WerkruimteRol } from '../../shared/werkruimte-rechten';
-import { keuzeNaarRol, type KeuzeRol, type Lid, type Paar } from './delen-logica';
+import { LINK_GEMAAKT, PER_ADRES_GELUKT, keuzeNaarRol, lidStaat, rolGewijzigdTekst, type KeuzeRol, type Lid, type Paar } from './delen-logica';
 
 /** POST naar de server met het juiste lichaam voor deze client; geeft response.data terug. */
 export type DelenPost = (pad: string, lichaam: Record<string, unknown>) => Promise<Record<string, unknown>>;
@@ -26,6 +26,7 @@ export function useDelen(o: { werkruimteId: string; rol: WerkruimteRol | null | 
   const [bezig, setBezig] = useState(false);
   // Laatste waarden zonder de callbacks bij elke render opnieuw te maken (post/melding zijn vaak inline functies).
   const ref = useRef(o); ref.current = o;
+  const ledenRef = useRef<Lid[]>([]); ledenRef.current = leden;
   const id = o.werkruimteId;
 
   const laden = useCallback(async () => {
@@ -50,7 +51,8 @@ export function useDelen(o: { werkruimteId: string; rol: WerkruimteRol | null | 
     setBezig(true);
     try {
       await post('/api/share/email', { workspaceId: werkruimteId, email: v.email.trim(), permission: v.keuze, workspaceRole: keuzeNaarRol(v.keuze), scopeBlockIds: v.scopeBlockIds || [] });
-      melding(['Доступ надано. Людина отримає сповіщення.', 'Toegang gegeven. Deze persoon krijgt een melding.']);
+      // IDENTITEIT-014 (herstel): сервер сповіщає лише наявний обліковий запис і лише при новому/зміненому доступі — не обіцяємо більшого.
+      melding(PER_ADRES_GELUKT);
       await laden();
       return true;
     } catch (e) {
@@ -64,7 +66,9 @@ export function useDelen(o: { werkruimteId: string; rol: WerkruimteRol | null | 
   const rolWijzigen = useCallback(async (lidId: string, rol: WerkruimteRol): Promise<boolean> => {
     const { werkruimteId, post, melding } = ref.current;
     setBezig(true);
-    try { await post('/api/share/role', { workspaceId: werkruimteId, memberId: lidId, workspaceRole: rol }); melding(['Роль змінено. Людина отримає сповіщення.', 'Rol gewijzigd. Deze persoon krijgt een melding.']); await laden(); return true; }
+    // Сповіщення сервер шле лише активному учаснику (POST /api/share/role) — запрошений про зміну не дізнається.
+    const actief = ledenRef.current.some((l) => l.id === lidId && lidStaat(l) === 'actief');
+    try { await post('/api/share/role', { workspaceId: werkruimteId, memberId: lidId, workspaceRole: rol }); melding(rolGewijzigdTekst(actief)); await laden(); return true; }
     catch (e) { melding(foutNaarTekst(e) || ['Роль не змінено. Оновіть список і спробуйте ще раз.', 'De rol is niet gewijzigd. Vernieuw de lijst en probeer het opnieuw.']); await laden(); return false; }
     finally { setBezig(false); }
   }, [laden]);
@@ -83,7 +87,9 @@ export function useDelen(o: { werkruimteId: string; rol: WerkruimteRol | null | 
     setBezig(true);
     try {
       const data = await post('/api/share/link', { workspaceId: werkruimteId, permission: v.keuze, workspaceRole: keuzeNaarRol(v.keuze), scopeBlockIds: v.scopeBlockIds || [] });
-      const url = uitnodigingsLink(String(data.code || ''), hubOrigin); setLink(url); setGekopieerd(false); return url;
+      const url = uitnodigingsLink(String(data.code || ''), hubOrigin); setLink(url); setGekopieerd(false);
+      melding(LINK_GEMAAKT); // IDENTITEIT-014 (herstel): ook een spoor voor de mens, niet alleen een veld met de link
+      return url;
     } catch (e) { melding(foutNaarTekst(e) || ['Посилання не створено. Спробуйте ще раз.', 'De link is niet gemaakt. Probeer het opnieuw.']); return ''; }
     finally { setBezig(false); }
   }, []);

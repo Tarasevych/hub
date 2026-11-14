@@ -364,7 +364,7 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
   });
   const factors=[
     {id:'totp',enabled:policy.enabled.totp!==false,enrolled:Boolean(totp?.confirmed),status:totp?.confirmed?'active':'not_enrolled'},
-    {id:'recovery',enabled:true,enrolled:Boolean(recovery&&recovery.remaining>0),status:recovery&&recovery.remaining>0?'active':'not_enrolled',remaining:recovery?.remaining||0,createdAt:recovery?.createdAt||0,bekekenOp:recovery?.bekekenOp||0},
+    {id:'recovery',enabled:true,enrolled:Boolean(recovery&&recovery.remaining>0),status:recovery&&recovery.remaining>0?'active':'not_enrolled',remaining:recovery?.remaining||0,createdAt:recovery?.createdAt||0,bekekenOp:recovery?.bekekenOp||0,ingetrokken:Boolean(recovery?.ingetrokkenOp)/* IDENTITEIT-014: відкликаний набір ≠ «закінчився» */},
     {id:'passkey',enabled:true,enrolled:passkeys>0,status:passkeys>0?'active':'not_enrolled',count:passkeys},
     {id:'sms',enabled:false,enrolled:Boolean(phone),status:phone?'pending_sms_contour':'not_configured',honest:'needs_sms_contour',phone:phone?.phone||''},
     {id:'push',enabled:false,enrolled:false,status:'not_configured',honest:'needs_push_channel'},

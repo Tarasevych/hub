@@ -189,7 +189,9 @@ export function AccessPlanePanels(p:Props){
       {/* IDENTITEIT-014: інші способи входу — стан Telegram, перехід власника до розміщення і чесний каталог провайдерів. */}
       <div className='access-plane-catalogus' id='aanmeldmethoden-catalogus' data-aanmeld-catalogus tabIndex={-1}>
         <Suspense fallback={null}><AndereMethoden lang={lang} admin={!!data.admin} telegramSectie={!!p.telegramSectie}/></Suspense>
-        <div className='amv'><Suspense fallback={null}><AanbiederCatalogus lang={lang} context={p.context}/></Suspense></div>
+        {/* IDENTITEIT-014 (herstel): каталог з назвами серверних ключів і самотестом — лише власнику сайту (data.admin); Telegram у ньому
+            не повторюємо — його живий стан уже є в рядку вище і в розділі «Telegram» (інакше статична плитка «Потрібні ключі» суперечила «Працює»). */}
+        {data.admin&&<div className='amv'><Suspense fallback={null}><AanbiederCatalogus lang={lang} context={p.context} zonder={['telegram']}/></Suspense></div>}
       </div>
       {!toonBeveiliging&&<p className='access-plane-hint-line' data-passkeys-verwijzing><Fingerprint/>{tr(lang,'Ключі доступу (passkey) — у розділі «Безпека».','Toegangssleutels (passkeys) staan bij «Beveiliging».')}</p>}
     </section>}

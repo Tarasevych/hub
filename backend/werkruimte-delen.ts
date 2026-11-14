@@ -41,8 +41,20 @@ export function ledenVoorWeergave<T extends { email: string; userId: string }>(l
 //   workspace_access_revoked → het lid dat is verwijderd;
 //   workspace_invite_accepted → wie de koppeling of de e-mailuitnodiging maakte.
 // Тексти пояснюють наслідок (що людина тепер може чи не може), а не лише назву дії. Формат «uk / nl», як решта сповіщень безпеки.
-export type DeelMeldingSoort = 'workspace_role_changed' | 'workspace_access_revoked' | 'workspace_invite_accepted';
-const kort = (v: unknown, fallback: string) => { const s = String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 80); return s || fallback; };
+//   workspace_share          → wie per adres toegang kreeg (herstel: vroeger alleen Oekraïens);
+//   workspace_share_link_created → de maker van een privélink (een geheim dat de rol geeft aan wie hem als eerste opent).
+export type DeelMeldingSoort = 'workspace_role_changed' | 'workspace_access_revoked' | 'workspace_invite_accepted' | 'workspace_share' | 'workspace_share_link_created';
+// «/» мінімізуємо: центр сповіщень ділить текст за першим « / » (src/canoniek-meldingen.ts, taalDeel). / Geen « / » in namen.
+const kort = (v: unknown, fallback: string) => { const s = String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s\/\s/g, ' – ').trim().slice(0, 80); return s || fallback; };
+/**
+ * Хто діяв — для тексту сповіщення: ім'я, а без імені — адреса. Людині, яка після цієї дії лише переглядає простір або вже не має
+ * доступу, повна адреса не показується (так само, як у списку учасників для «Перегляду»: ledenVoorWeergave).
+ * Wie handelde: naam, anders het adres; gemaskeerd voor wie nu alleen kijkt of geen toegang meer heeft.
+ */
+export const deelWie = (u: { name?: unknown; email?: unknown } | null | undefined, maskeren = false): string => {
+  const naam = String(u?.name || '').trim(); if (naam) return naam;
+  const email = String(u?.email || ''); return maskeren ? emailMaskeren(email) : email;
+};
 const GEVOLG: Record<WerkruimteRol, readonly [string, string]> = {
   owner: ['Ви керуєте простором.', 'U beheert de werkruimte.'],
   admin: ['Тепер ви можете запрошувати інших, змінювати їхні ролі й відкликати доступ.', 'U kunt nu anderen uitnodigen, hun rol wijzigen en toegang intrekken.'],
@@ -57,19 +69,33 @@ export function deelMeldingTekst(soort: DeelMeldingSoort, d: { wie: unknown; rui
     const vanUk = oud ? `«${ROL_TEKST[oud][0]}» → «${nUk}»` : `«${nUk}»`; const vanNl = oud ? `«${ROL_TEKST[oud][1]}» → «${nNl}»` : `«${nNl}»`;
     return {
       titel: 'Вашу роль у спільному просторі змінено / Uw rol in een gedeelde werkruimte is gewijzigd',
-      tekst: `${wie} змінює вашу роль у просторі «${ruimte}»: ${vanUk}. ${GEVOLG[nieuw][0]} Якщо це несподівано — зверніться до власника простору. / ${wie} wijzigt uw rol in de werkruimte «${ruimte}»: ${vanNl}. ${GEVOLG[nieuw][1]} Komt dit onverwacht, neem dan contact op met de eigenaar van de werkruimte.`,
+      tekst: `${wie} змінює вашу роль у просторі «${ruimte}»: ${vanUk}. ${GEVOLG[nieuw][0]} Якщо це несподівано — зверніться до власника простору. / «${wie}» wijzigt uw rol in de werkruimte «${ruimte}»: ${vanNl}. ${GEVOLG[nieuw][1]} Komt dit onverwacht, neem dan contact op met de eigenaar van de werkruimte.`,
     };
   }
   if (soort === 'workspace_access_revoked') {
     return {
       titel: 'Ваш доступ до спільного простору відкликано / Uw toegang tot een gedeelde werkruimte is ingetrokken',
-      tekst: `${wie} відкликає ваш доступ до простору «${ruimte}». Простір зникне з вашого списку; блоки, які ви додали, лишаються у власника. / ${wie} trekt uw toegang tot de werkruimte «${ruimte}» in. De werkruimte verdwijnt uit uw lijst; blokken die u toevoegde, blijven bij de eigenaar.`,
+      tekst: `${wie} відкликає ваш доступ до простору «${ruimte}». Простір зникне з вашого списку; блоки, які ви додали, лишаються у власника. / «${wie}» trekt uw toegang tot de werkruimte «${ruimte}» in. De werkruimte verdwijnt uit uw lijst; blokken die u toevoegde, blijven bij de eigenaar.`,
+    };
+  }
+  if (soort === 'workspace_share') {
+    const rol = d.nieuw || 'viewer';
+    return {
+      titel: 'Новий спільний простір / Nieuwe gedeelde werkruimte',
+      tekst: `${wie} надав вам доступ до простору «${ruimte}» з роллю «${ROL_TEKST[rol][0]}». ${GEVOLG[rol][0]} Якщо ви не чекали запрошення — просто не відкривайте простір або вийдіть із нього. / «${wie}» gaf u toegang tot de werkruimte «${ruimte}» als «${ROL_TEKST[rol][1]}». ${GEVOLG[rol][1]} Verwachtte u geen uitnodiging, open de werkruimte dan niet of verlaat haar.`,
+    };
+  }
+  if (soort === 'workspace_share_link_created') {
+    const rol = d.nieuw || 'viewer';
+    return {
+      titel: 'Створено посилання-запрошення / Uitnodigingslink gemaakt',
+      tekst: `Ви створили одноразове посилання до простору «${ruimte}» з роллю «${ROL_TEKST[rol][0]}». Хто першим відкриє його й увійде, отримає цю роль; посилання діє 7 днів. Якщо це були не ви — захистіть вхід і перевірте учасників простору. / U maakte een eenmalige link naar de werkruimte «${ruimte}» met de rol «${ROL_TEKST[rol][1]}». Wie hem als eerste opent en zich aanmeldt, krijgt die rol; de link is 7 dagen geldig. Was u dit niet, beveilig dan uw aanmelding en controleer de leden van de werkruimte.`,
     };
   }
   const rol = d.nieuw || 'viewer';
   return {
     titel: 'Запрошення до простору прийнято / Uitnodiging voor een werkruimte aangenomen',
-    tekst: `${wie} тепер має доступ до простору «${ruimte}» з роллю «${ROL_TEKST[rol][0]}». Змінити роль чи відкликати доступ можна в списку учасників простору. / ${wie} heeft nu toegang tot de werkruimte «${ruimte}» als «${ROL_TEKST[rol][1]}». Rol wijzigen of toegang intrekken kan in de ledenlijst van de werkruimte.`,
+    tekst: `${wie} тепер має доступ до простору «${ruimte}» з роллю «${ROL_TEKST[rol][0]}». Змінити роль чи відкликати доступ можна в списку учасників простору. / «${wie}» heeft nu toegang tot de werkruimte «${ruimte}» als «${ROL_TEKST[rol][1]}». Rol wijzigen of toegang intrekken kan in de ledenlijst van de werkruimte.`,
   };
 }
 

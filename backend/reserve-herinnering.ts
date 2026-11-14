@@ -8,7 +8,8 @@ import { meld, meldingVoorkeurenVan } from './melder';
 
 export const RESERVE_DREMPEL = 2;
 export const RESERVE_SOORT = 'access_recovery_low';
-export const RESERVE_LINK = 'https://id.tarasevych.com/methods#herstel';
+// IDENTITEIT-014 (herstel): #herstel bestond nergens en /methods heeft (op de accountpagina) geen codes — het doel is «Відновлення доступу».
+export const RESERVE_LINK = 'https://id.tarasevych.com/recovery#aanmeldmethoden-herstel';
 
 /** Is er na gebruik «bijna niets» over? Ingetrokken sets tellen niet (daarvoor is er al een eigen melding). */
 export function reserveOnderDrempel(over: number, ingetrokken = false): boolean {
@@ -19,11 +20,11 @@ export function reserveOnderDrempel(over: number, ingetrokken = false): boolean 
 export function reserveTekst(over: number): { titel: string; tekst: string } {
   const n = Math.max(0, Math.floor(over));
   const uk = n === 0
-    ? 'Кодів відновлення більше немає. Якщо ви втратите телефон чи ключ доступу, увійти без них не вийде. Створіть новий набір кодів у «Способах входу» і збережіть його поза цим пристроєм.'
-    : `Залишилося кодів відновлення: ${n}. Коли вони закінчаться, без телефона чи ключа доступу увійти не вийде. Створіть новий набір кодів у «Способах входу» — старі коди тоді перестануть діяти.`;
+    ? 'Кодів відновлення більше немає. Якщо ви втратите телефон чи ключ доступу, увійти без них не вийде. Створіть новий набір кодів у розділі «Відновлення» і збережіть його поза цим пристроєм.'
+    : `Залишилося кодів відновлення: ${n}. Коли вони закінчаться, без телефона чи ключа доступу увійти не вийде. Створіть новий набір кодів у розділі «Відновлення» — старі коди тоді перестануть діяти.`;
   const nl = n === 0
-    ? 'Er zijn geen herstelcodes meer. Raakt u uw telefoon of passkey kwijt, dan kunt u zonder codes niet meer aanmelden. Maak een nieuwe set bij «Aanmeldmethoden» en bewaar die buiten dit apparaat.'
-    : `Nog ${n} herstelcode(s) over. Zijn ze op, dan kunt u zonder telefoon of passkey niet meer aanmelden. Maak een nieuwe set bij «Aanmeldmethoden»; de oude codes werken dan niet meer.`;
+    ? 'Er zijn geen herstelcodes meer. Raakt u uw telefoon of passkey kwijt, dan kunt u zonder codes niet meer aanmelden. Maak een nieuwe set bij «Herstel» en bewaar die buiten dit apparaat.'
+    : `Nog ${n} herstelcode(s) over. Zijn ze op, dan kunt u zonder telefoon of passkey niet meer aanmelden. Maak een nieuwe set bij «Herstel»; de oude codes werken dan niet meer.`;
   return { titel: 'Залишилося мало кодів відновлення / Weinig herstelcodes over', tekst: `${uk} / ${nl}` };
 }
 

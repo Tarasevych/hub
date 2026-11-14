@@ -13,7 +13,8 @@ const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 
 type Levend = { id: string; stand: string; sleutels: Array<{ naam: string; aanwezig: boolean }>; zelftest: 'ok' | 'niet-uitgevoerd' | 'fout'; klaarVoorKoppeling: boolean; gekoppeld?: { label: string; op: string } | null };
 
-export default function AanbiederCatalogus({ lang, context }: { lang: Lang; context: Record<string, unknown> }) {
+/** `zonder` — aanbieders die elders op dezelfde pagina al met hun LEVENDE stand staan (oude paneel: Telegram), zodat er geen tweede, tegenstrijdige stand komt. */
+export default function AanbiederCatalogus({ lang, context, zonder = [] }: { lang: Lang; context: Record<string, unknown>; zonder?: readonly string[] }) {
   const [levend, setLevend] = useState<Levend[] | null>(null);
   const [fout, setFout] = useState(false);
   const [melding, setMelding] = useState('');
@@ -74,7 +75,7 @@ export default function AanbiederCatalogus({ lang, context }: { lang: Lang; cont
         </p>
       ) : null}
       <div className='amv-tegels' role='list'>
-        {AANMELD_AANBIEDERS.map((a) => {
+        {AANMELD_AANBIEDERS.filter((a) => !zonder.includes(a.id)).map((a) => {
           const live = levend?.find((l) => l.id === a.id) || null;
           const klaar = Boolean(live?.klaarVoorKoppeling);
           const opPauze = pauze.actief && (!pauzeId || pauzeId === a.id);

@@ -43,8 +43,10 @@ export async function main(): Promise<number> {
     check('тип access_recovery_low: у MELDING_SOORTEN (безпека, важливе) і в SFEER_PER_SOORT (приватне)',
       MELDING_SOORTEN[RESERVE_SOORT]?.type === 'beveiliging' && MELDING_SOORTEN[RESERVE_SOORT]?.ernst === 'belangrijk' && SFEER_PER_SOORT[RESERVE_SOORT] === 'prive');
     const u = uitlegVoor({ id: 'x', soort: RESERVE_SOORT, titel: 'Залишилося мало кодів відновлення', tekst: '', bron: 'site', tijd: Date.now() } as never);
+    // IDENTITEIT-014 (herstel): рецензія знайшла мертвий якір methods#herstel — посилання законно переїхало на розділ, де коди є
+    // (/recovery#aanmeldmethoden-herstel); перевіряємо нове місце (див. також identiteit-014-herstel-recensie.test.ts).
     check('пояснення: окремий вид «herstelcodes-bijna-op» — каже, що станеться, і веде до створення нових кодів, без «Це був я / не я»',
-      u.id === 'herstelcodes-bijna-op' && /увійти буде неможливо/.test(u.gevolg[0]) && u.acties.some((a) => a.soort === 'wijziging' && /methods#herstel/.test(a.href!({} as never) || '')) && !u.acties.some((a) => a.soort === 'niet-ik' || a.soort === 'dit-was-ik'), u.id);
+      u.id === 'herstelcodes-bijna-op' && /увійти буде неможливо/.test(u.gevolg[0]) && u.acties.some((a) => a.soort === 'wijziging' && /recovery#aanmeldmethoden-herstel/.test(a.href!({} as never) || '')) && !u.acties.some((a) => a.soort === 'niet-ik' || a.soort === 'dit-was-ik'), u.id);
     const gebruikt = uitlegVoor({ id: 'y', soort: 'access_recovery_code_used', titel: 'Використано код відновлення', tekst: '', bron: 'site', tijd: Date.now() } as never);
     check('пояснення: «код використано» і далі має свій вид herstelcode', gebruikt.id === 'herstelcode');
   }

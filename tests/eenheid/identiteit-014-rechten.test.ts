@@ -221,8 +221,10 @@ export async function main(): Promise<number> {
     const zonderNaam = await hub(B, '/api/share/email', { workspaceId: wsB, email: V.email, workspaceRole: 'viewer' });
     await wacht();
     const vanB = (await meldingen(V.id, 'workspace_share')).at(-1);
-    check('давня вада: власник без імені → «<адреса> надав вам доступ.», без «undefined»',
-      zonderNaam.status === 200 && !!vanB && vanB.message === `${B.email} надав вам доступ.` && !/undefined/.test(vanB.message), JSON.stringify(vanB));
+    // IDENTITEIT-014 (herstel): workspace_share тепер «uk / nl» з простором і роллю (рецензія: було лише українською) — текст
+    // починається тією самою фразою з адресою, тож перевірка лишається тією ж (адреса замість «undefined»), але не на рівність.
+    check('давня вада: власник без імені → «<адреса> надав вам доступ…», без «undefined»',
+      zonderNaam.status === 200 && !!vanB && vanB.message.startsWith(`${B.email} надав вам доступ до простору «`) && / \/ «/.test(vanB.message) && vanB.message.includes(`«${B.email}» gaf u toegang`) && !/undefined/.test(vanB.message), JSON.stringify(vanB));
 
     // ---- межі не змінилися: учасник без права ділитися; чужий простір
     const lidDeelt = await hub(B, '/api/share/email', { workspaceId: ws, email: `i014-x-${T}@example.test`, workspaceRole: 'admin' });

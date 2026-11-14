@@ -44,7 +44,11 @@ export async function gegevensUitvoeren(a: UitvoerAfh): Promise<UitvoerUitkomst>
   return { ok: true, naam, bytes: new TextEncoder().encode(inhoud).length };
 }
 
-const grootte = (lang: Lang, b: number) => (b < 1024 ? `${b} B` : b < 1048576 ? `${Math.round(b / 1024)} ${lang === 'uk' ? 'КБ' : 'kB'}` : `${(b / 1048576).toFixed(1)} MB`);
+/** Розмір файла людською мовою; для uk — «Б/КБ/МБ» (раніше змішано «B»/«MB» латиницею). / Bestandsgrootte per taal. */
+export const grootte = (lang: Lang, b: number) => {
+  const [B, KB, MB] = lang === 'uk' ? ['Б', 'КБ', 'МБ'] : ['B', 'kB', 'MB'];
+  return b < 1024 ? `${b} ${B}` : b < 1048576 ? `${Math.round(b / 1024)} ${KB}` : `${(b / 1048576).toFixed(1).replace('.', ',')} ${MB}`; // uk і nl — десяткова кома
+};
 
 export default function Gegevensuitvoer({ lang, compact = false }: { lang: Lang; compact?: boolean }) {
   const tr = (uk: string, nl: string) => (lang === 'uk' ? uk : nl);

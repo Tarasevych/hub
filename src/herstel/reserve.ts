@@ -60,10 +60,10 @@ export function onafhankelijkeMethoden(snapshot: SnapshotLike, methoden: Reserve
 
 export const methodeNaam = (id: string): Paar => NAMEN[id] || P(id, id);
 
-/** Набір кодів облікового запису був, але жодного чинного не лишилось (використано або відкликано). */
+/** Набір кодів облікового запису був, але всі коди використано. Відкликаний набір сюди не належить (IDENTITEIT-014, herstel). */
 export function codesOp(snapshot: SnapshotLike): boolean {
   const r = snapshot.factors.find((x) => x.id === 'recovery');
-  return !!r && r.status !== 'loading' && Number(r.remaining) === 0 && Number(r.createdAt) > 0;
+  return !!r && r.status !== 'loading' && Number(r.remaining) === 0 && Number(r.createdAt) > 0 && !r.ingetrokken;
 }
 
 /** Три перевірки огляду. `kluis === undefined` — ще завантажується, `null` — не вдалося прочитати. */
