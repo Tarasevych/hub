@@ -4,7 +4,9 @@
 // як було (Google і Telegram на головній, решта в «Інші способи входу»). Захист від блокування: завжди лишається хоча б один
 // робочий спосіб; якщо жодного не видно, сторінка входу сама показує Google.
 
-export const METHODEN = ['google', 'telegram', 'github', 'apple', 'microsoft', 'passkey'] as const;
+// IDENTITEIT-015 (aanmelden): 'discord' en 'wachtwoord' achteraan — een opgeslagen plaatsing zonder deze twee krijgt ze bij het
+// normaliseren gewoon achteraan met hun standaardplek (oude rijen blijven geldig).
+export const METHODEN = ['google', 'telegram', 'github', 'apple', 'microsoft', 'passkey', 'discord', 'wachtwoord'] as const;
 export type MethodeId = typeof METHODEN[number];
 export const PLEKKEN = ['hoofd', 'andere', 'verborgen'] as const;
 export type Plek = typeof PLEKKEN[number];
@@ -17,6 +19,8 @@ export const METHODE_NAMEN: Record<MethodeId, [string, string]> = {
   apple: ['Apple', 'Apple'],
   microsoft: ['Microsoft', 'Microsoft'],
   passkey: ['Ключ доступу', 'Toegangssleutel'],
+  discord: ['Discord', 'Discord'],
+  wachtwoord: ['Пароль', 'Wachtwoord'],
 };
 export const PLEK_NAMEN: Record<Plek, [string, string]> = {
   hoofd: ['На головній (поруч з іншими головними)', 'Op het hoofdscherm (naast de andere hoofdknoppen)'],
@@ -27,7 +31,7 @@ export const PLEK_NAMEN: Record<Plek, [string, string]> = {
 /** Gedrag van vóór deze functie: Google en Telegram op het hoofdscherm, de rest onder «Інші способи входу». */
 export const STANDAARD_PLAATSING: Plaatsing = Object.freeze({
   volgorde: [...METHODEN],
-  plek: { google: 'hoofd', telegram: 'hoofd', github: 'andere', apple: 'andere', microsoft: 'andere', passkey: 'andere' },
+  plek: { google: 'hoofd', telegram: 'hoofd', github: 'andere', apple: 'andere', microsoft: 'andere', passkey: 'andere', discord: 'andere', wachtwoord: 'andere' },
 }) as Plaatsing;
 
 const isMethode = (v: unknown): v is MethodeId => typeof v === 'string' && (METHODEN as readonly string[]).includes(v);
@@ -56,7 +60,8 @@ export function plaatsingControleren(p: Plaatsing, werkend: readonly MethodeId[]
 }
 
 /** Methoden zonder eerlijke «niet beschikbaar»-regel: werken ze niet (bv. geen botsleutel), dan zijn ze gewoon onzichtbaar. */
-export const STIL_ALS_ONBESCHIKBAAR: readonly MethodeId[] = ['telegram'];
+// IDENTITEIT-015 (aanmelden): Discord en wachtwoord hebben geen vaste «недоступно»-regel op het aanmeldscherm — onzichtbaar tot ze werken.
+export const STIL_ALS_ONBESCHIKBAAR: readonly MethodeId[] = ['telegram', 'discord', 'wachtwoord'];
 
 export type Indeling = { hoofd: MethodeId[]; andere: MethodeId[]; noodGoogle: boolean };
 
@@ -91,7 +96,13 @@ export function verschuiven(p: Plaatsing, m: MethodeId, richting: -1 | 1): Plaat
  * Het aanmeldscherm. cfg = antwoord van /api/aanmelden/telegram/config (of null/undefined bij laden, fout of vlag uit).
  * Zonder plaatsing: exact het scherm van vóór deze functie — Google, Telegram (als die zichtbaar is), dan alle vier onder «Інші».
  */
-export function aanmeldIndeling(cfg: { zichtbaar?: boolean; plaatsing?: Plaatsing | null } | null | undefined): Indeling {
-  if (!cfg?.plaatsing) return { hoofd: ['google', 'telegram'], andere: ['github', 'apple', 'microsoft', 'passkey'], noodGoogle: false };
-  return indelen(plaatsingNormaliseren(cfg.plaatsing), cfg.zichtbaar ? ['google', 'telegram'] : ['google']);
+export function aanmeldIndeling(cfg: { zichtbaar?: boolean; plaatsing?: Plaatsing | null; methoden?: readonly string[] | null } | null | undefined): Indeling {
+  // IDENTITEIT-015 (aanmelden): `methoden` = wat de server NU als werkend opgeeft (passkey, wachtwoord, microsoft, discord, apple).
+  const extra = (Array.isArray(cfg?.methoden) ? cfg!.methoden : []).filter(isMethode).filter((m) => m !== 'google' && m !== 'telegram');
+  if (!cfg?.plaatsing) {
+    const andere: MethodeId[] = ['github', 'apple', 'microsoft', 'passkey'];
+    for (const m of extra) if (!andere.includes(m)) andere.push(m);
+    return { hoofd: ['google', 'telegram'], andere, noodGoogle: false };
+  }
+  return indelen(plaatsingNormaliseren(cfg.plaatsing), [...(cfg.zichtbaar ? ['google', 'telegram'] as MethodeId[] : ['google'] as MethodeId[]), ...extra]);
 }

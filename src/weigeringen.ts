@@ -156,3 +156,41 @@ export function fotoLinkWeigering(e: unknown): Paar {
   const v = foutNaarTekst(e);
   return v || [`Не вдалося завантажити зображення за посиланням. ${bewaar[0]}`, `De afbeelding kon niet via de link worden opgehaald. ${bewaar[1]}`];
 }
+
+// IDENTITEIT-015 (крок «aanmelden»): вхід без Google (ключ доступу, пароль, Microsoft/Discord/Apple), повернення способу входу й
+// підтвердження номера кодом із SMS. Кожен текст каже, що сталося й що робити далі; «нічого не змінено», де це так.
+// Aanmelden zonder Google, een methode terugzetten en het telefoonnummer bevestigen met een sms-code.
+const AANMELDEN: Record<string, Paar> = {
+  METHODE_UIT: ['Цей спосіб входу зараз вимкнено на сайті. Увійдіть через Google або іншим способом.', 'Deze aanmeldmethode staat nu uit op de site. Meld u aan met Google of op een andere manier.'],
+  METHODE_NIET_VOOR_U: ['Для вашого облікового запису цей спосіб входу ще не ввімкнено — вхід не виконано. Увійдіть через Google; власник сайту може ввімкнути його вам у «Функціях».', 'Deze aanmeldmethode staat voor uw account nog niet aan — u bent niet aangemeld. Meld u aan met Google; de site-eigenaar kan hem voor u aanzetten bij «Functies».'],
+  UITDAGING_ONGELDIG: ['Запит на вхід застарів або вже використаний. Почніть вхід знову — це безпечно.', 'Het aanmeldverzoek is verlopen of al gebruikt. Begin opnieuw — dat is veilig.'],
+  LOGIN_BINDING_MISMATCH: ['Цей вхід почато в іншій вкладці чи браузері, тому тут його не завершено. Почніть вхід у цій вкладці.', 'Deze aanmelding is in een ander tabblad of andere browser begonnen en is hier niet afgerond. Begin opnieuw in dit tabblad.'],
+  ANDERE_BROWSER: ['Вхід почато в іншому браузері, тому тут його не завершено (нічого не змінено). Почніть вхід у цьому браузері.', 'De aanmelding begon in een andere browser en is hier niet afgerond (niets gewijzigd). Begin opnieuw in deze browser.'],
+  PASSKEY_ONBEKEND: ['Цей ключ доступу не належить жодному обліковому запису сайту. Увійдіть через Google і додайте ключ у «Безпеці».', 'Deze toegangssleutel hoort bij geen enkel account van de site. Meld u aan met Google en voeg de sleutel toe bij «Beveiliging».'],
+  PASSKEY_TELLER_TERUG: ['Ключ доступу повернув старий лічильник — можливо, це копія. Вхід не виконано; перевірте ключ у «Безпеці».', 'De toegangssleutel gaf een oude teller — mogelijk een kopie. Niet aangemeld; controleer de sleutel bij «Beveiliging».'],
+  NotAllowedError: ['Вхід ключем доступу скасовано або час вийшов. Спробуйте ще раз.', 'Aanmelden met de toegangssleutel is geannuleerd of de tijd is om. Probeer het opnieuw.'],
+  ACCESS_CREDENTIALS_INVALID: ['Адреса, пароль або код не підходять. Якщо ви налаштували застосунок-автентифікатор, введіть і його код (або код відновлення).', 'Adres, wachtwoord of code klopt niet. Hebt u een authenticator-app ingesteld, vul dan ook die code in (of een herstelcode).'],
+  ACCESS_PASSWORD_DISABLED: ['Вхід паролем вимкнув власник сайту.', 'De site-eigenaar heeft aanmelden met wachtwoord uitgezet.'],
+  NIET_GEKOPPELD: ['Цей обліковий запис не прив’язано до жодного облікового запису сайту. Увійдіть через Google і прив’яжіть його в «Способах входу».', 'Dit account is aan geen enkel account van de site gekoppeld. Meld u aan met Google en koppel het bij «Aanmeldmethoden».'],
+  TOKEN_ONGELDIG: ['Провайдер не підтвердив вхід. Спробуйте ще раз або іншим способом.', 'De aanbieder bevestigde de aanmelding niet. Probeer opnieuw of op een andere manier.'],
+  HANDTEKENING_ONGELDIG: ['Підпис відповіді провайдера не пройшов перевірку — вхід не виконано.', 'De handtekening van de aanbieder klopte niet — niet aangemeld.'],
+  VERLOPEN: ['Час вийшов. Почніть вхід знову.', 'De tijd is om. Begin opnieuw.'],
+  ACCOUNT_NOT_APPROVED: ['Обліковий запис ще не схвалено власником сайту, тож вхід поки неможливий.', 'Het account is nog niet goedgekeurd door de site-eigenaar; aanmelden kan nog niet.'],
+  ACCESS_RESTORE_NOT_FOUND: ['Повертати нічого: 7 днів минули або спосіб уже повернуто.', 'Er is niets terug te zetten: de 7 dagen zijn voorbij of de methode is al teruggezet.'],
+  ACCESS_RESTORE_ADMIN_ONLY: ['Цей спосіб від’єднав адміністратор — повернути його може лише він.', 'Deze methode is door een beheerder ontkoppeld — alleen die kan hem terugzetten.'],
+  SMS_VLAG_UIT: ['Підтвердження номера кодом із SMS для вашого облікового запису ще не ввімкнено.', 'Het nummer bevestigen met een sms-code staat voor uw account nog niet aan.'],
+  SMS_NIET_INGESTELD: ['Надсилання SMS ще не налаштовано власником сайту — код не надіслано.', 'Sms versturen is nog niet ingesteld door de site-eigenaar — er is geen code verstuurd.'],
+  SMS_VERZENDEN_MISLUKT: ['SMS-провайдер не прийняв повідомлення. Перевірте номер і спробуйте пізніше — код не діє.', 'De sms-aanbieder weigerde het bericht. Controleer het nummer en probeer later — de code geldt niet.'],
+  SMS_CODE_ONJUIST: ['Код не підходить. Перевірте SMS і введіть 6 цифр.', 'De code klopt niet. Controleer de sms en vul de 6 cijfers in.'],
+  SMS_CODE_VERLOPEN: ['Код застарів (діє 10 хвилин). Надішліть новий.', 'De code is verlopen (geldt 10 minuten). Verstuur een nieuwe.'],
+  SMS_CODE_TE_VEEL: ['Забагато помилок із цим кодом — він більше не діє. Надішліть новий.', 'Te veel fouten met deze code — hij geldt niet meer. Verstuur een nieuwe.'],
+  ACCESS_PHONE_E164_REQUIRED: ['Введіть номер у міжнародному форматі: +, код країни й номер (наприклад, +31612345678).', 'Vul het nummer internationaal in: +, landcode en nummer (bijvoorbeeld +31612345678).'],
+  ACCESS_PHONE_INVALID: ['Номер закороткий або містить зайві символи.', 'Het nummer is te kort of bevat ongeldige tekens.'],
+};
+/** Текст відмови для входу без Google, повернення способу й SMS [uk, nl]; решта — foutNaarTekst. */
+export function aanmeldWeigering(e: unknown): Paar | null {
+  const code = volleCode(e).replace(/^PASSKEY_(?!ONBEKEND|TELLER_TERUG).*/, 'PASSKEY_ONGELDIG');
+  if (code === 'PASSKEY_ONGELDIG') return ['Ключ доступу не пройшов перевірку (підпис, сайт або перевірка користувача). Вхід не виконано — спробуйте ще раз.', 'De toegangssleutel kwam niet door de controle (handtekening, site of gebruikerscontrole). Niet aangemeld — probeer opnieuw.'];
+  if (code === 'RATE_LIMITED' || code === 'ACCESS_LOCKED_TEMPORARILY') { const m = minuten(e); return [`Забагато спроб. Спробуйте ${m ? `через ~${m} хв` : 'за кілька хвилин'} — обліковий запис не заблоковано назавжди.`, `Te veel pogingen. Probeer het ${m ? `over ~${m} min` : 'over een paar minuten'} — het account is niet blijvend geblokkeerd.`]; }
+  return AANMELDEN[code] || foutNaarTekst(e);
+}

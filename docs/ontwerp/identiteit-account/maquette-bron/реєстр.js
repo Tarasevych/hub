@@ -385,7 +385,9 @@ const станНаСайті={
     "основні":{стан:"частково",ціль:"#aanmeldmethoden-google",рядки:{0:"в-чинних",1:"частково",2:"в-чинних"},цілі:{1:"security|#aanmeldmethoden-sleutels",2:"security|#aanmeldmethoden-2fa"}},
     "пароль":{стан:"в-чинних",ціль:"#aanmeldmethoden-wachtwoord"},
     "захист":{стан:"в-чинних",цілі:{0:"recovery|#aanmeldmethoden-herstel",1:"security|#aanmeldmethoden-sleutelkluis",2:"security|#toegangscodes"}},
-    "додаткові":{стан:"частково",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"частково",1:"частково",2:"частково",3:"частково",4:"недоступно",5:"заплановано"}}
+    // IDENTITEIT-015 (крок «aanmelden»): Microsoft/Discord/Apple — прив'язка для схвалених не-власників і вхід за прив'язкою (потрібні ключі
+    // власника й самоперевірка — тому «частково»); SMS — номер і код pending → verified (#aanmeldmethoden-telefoon), потрібен провайдер власника.
+    "додаткові":{стан:"частково",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"частково",1:"частково",2:"частково",3:"частково",4:"недоступно",5:"частково"},цілі:{5:"#aanmeldmethoden-telefoon"}}
   },
   security:{
     "ключі":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutels",рядки:{5:"заплановано"}},

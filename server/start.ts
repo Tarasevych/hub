@@ -414,6 +414,9 @@ const STRIKTE_LIMIETEN: Array<[RegExp, string, number, boolean]> = [
   // TELEGRAM-AANMELDEN v1: starten, code en inwisselen strikt per IP (de webhook en het pollen vallen onder de algemene limiet).
   [/^\/api\/aanmelden\/telegram\/start$/, 'telegram-start', 20, true],
   [/^\/api\/aanmelden\/telegram\/(code|voltooien|widget-terug)$/, 'telegram-code', 30, true],
+  // IDENTITEIT-015 (aanmelden): aanmelden zonder Google — strikt per IP, faalt dicht (daarbovenop lockout per account voor het wachtwoord).
+  [/^\/api\/aanmelden\/(passkey\/(opties|voltooien)|extern\/start|wachtwoord\/start)$/, 'aanmelden-zonder-google', 30, true],
+  [/^\/api\/aanmelden\/wachtwoord\/voltooien$/, 'wachtwoord', 10, true],
   // SEC-002 (aanmelden-09): de geheime code bij het bevestigen van een actie (met sessie) viel alleen onder de algemene 600/min.
   [/^\/api\/owner\/telegram\/bevestiging\/code$/, 'telegram-bevestig-code', 20, true],
   [/^\/api\/owner\/identity\/transactions\/(create|attach)$/, 'login-start', 20, true],

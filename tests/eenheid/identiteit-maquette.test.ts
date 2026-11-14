@@ -129,8 +129,10 @@ export async function main(): Promise<number> {
   check('жива карта: кожен рядок і група має кольорову мітку з текстом стану', (uk.match(/class="future-option /g) || []).length + (uk.match(/class="future-option"/g) || []).length === (uk.match(/future-option-status future-stand-/g) || []).length);
   // IDENTITEIT-014: QR і «Замінити автентифікатор» тепер працюють у старій панелі → уся група «Двофакторна автентифікація» в-чинних і зникає.
   const tweede = (kaartUk.станНаСайті.security['другий-чинник'] as unknown as { додати?: { uk: string; стан: string }[] }).додати || [];
-  check('жива карта: WhatsApp — «Недоступно», SMS — «Потребує розробки», нові рядки автентифікатора — працюють (групи на карті немає)',
-    /WhatsApp[^<]*<\/span><small class="future-option-status future-stand-nee">Недоступно/.test(uk) && /SMS[^<]*<\/span><small class="future-option-status future-stand-gepland">/.test(uk) && tweede.length === 2 && tweede.every((r) => r.стан === 'в-чинних') && !uk.includes('QR-код для застосунку-автентифікатора') && !uk.includes('Замінити автентифікатор'));
+  // IDENTITEIT-015 (aanmelden): SMS-підтвердження номера тепер у коді (server/platform/sms.ts, рядок #aanmeldmethoden-telefoon), але потребує
+  // провайдера власника — тому «Частково реалізовано» (future-stand-deels), а не «Потребує розробки».
+  check('жива карта: WhatsApp — «Недоступно», SMS — «Частково реалізовано», нові рядки автентифікатора — працюють (групи на карті немає)',
+    /WhatsApp[^<]*<\/span><small class="future-option-status future-stand-nee">Недоступно/.test(uk) && /SMS[^<]*<\/span><small class="future-option-status future-stand-deels">/.test(uk) && tweede.length === 2 && tweede.every((r) => r.стан === 'в-чинних') && !uk.includes('QR-код для застосунку-автентифікатора') && !uk.includes('Замінити автентифікатор'));
   const zonderIcoon: string[] = [];
   for (const [sectie, groepen] of Object.entries(kaartUk.реєстрНалаштувань)) for (const g of groepen) g.рядки.forEach((_, i) => { if (!kaartUk.піктограмиДій[sectie]?.[g.id]?.[i]) zonderIcoon.push(`${sectie}/${g.id}/${i}`); });
   check('кожен рядок реєстру має змістовну піктограму (запасний знак лише для захисту від збою)', zonderIcoon.length === 0 && register.includes('if(!назва)return піктограмаЗаСуттю("інструмент")'), zonderIcoon.join(', '));

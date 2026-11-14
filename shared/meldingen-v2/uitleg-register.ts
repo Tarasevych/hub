@@ -231,6 +231,38 @@ export const REGISTER: UitlegSoort[] = [
       { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
     ],
   },
+  // ---- IDENTITEIT-015 (aanmelden): aanmelding zonder Google en een bevestigd telefoonnummer (vóór «beveiliging»: «access_» zou daar ook passen)
+  {
+    id: 'aanmelding-zonder-google',
+    past: (m) => m.soort === 'access_method_login',
+    titel: ['Вхід без Google', 'Aanmelding zonder Google'],
+    risico: 'midden',
+    wat: ['У ваш обліковий запис увійшли ключем доступу, паролем або прив’язаним Microsoft, Discord чи Apple (спосіб — у тексті).', 'Er is aangemeld op uw account met een toegangssleutel, wachtwoord of gekoppelde Microsoft, Discord of Apple (methode in de tekst).'],
+    waarom: ['Власник сайту ввімкнув вам цей спосіб входу, і вхід пройшов перевірку. Сповіщення приходить після кожного такого входу.', 'De site-eigenaar zette deze aanmeldmethode voor u aan en de aanmelding is gecontroleerd. De melding komt na elke zulke aanmelding.'],
+    gevolg: ['Новий сеанс має повний доступ вашого облікового запису, доки його не завершити.', 'De nieuwe sessie heeft de volledige toegang van uw account tot ze wordt beëindigd.'],
+    doen: ['Якщо це ви — нічого. Якщо ні — завершіть чужий сеанс і приберіть або замініть цей спосіб входу (з підтвердженням).', 'Was u het: niets. Zo niet: beëindig de vreemde sessie en verwijder of vervang deze aanmeldmethode (met bevestiging).'],
+    deeplink: viaLink(`${ID}/sessions`),
+    acties: [
+      { soort: 'dit-was-ik', label: ['Це був я', 'Dit was ik'] },
+      { soort: 'niet-ik', label: ['Це не я — сеанси…', 'Dit was ik niet — sessies…'], href: viaLink(`${ID}/sessions`), gevaarlijk: true },
+      { soort: 'wijziging', label: ['Способи входу', 'Aanmeldmethoden'], href: () => `${ID}/methods` },
+    ],
+  },
+  {
+    id: 'telefoon-bevestigd',
+    past: (m) => m.soort === 'access_method_telefoon',
+    titel: ['Номер телефону підтверджено', 'Telefoonnummer bevestigd'],
+    risico: 'midden',
+    wat: ['Номер у «Способах входу» підтверджено кодом, надісланим у SMS.', 'Het nummer bij «Aanmeldmethoden» is bevestigd met een code per sms.'],
+    waarom: ['Хтось із доступом до вашого облікового запису ввів правильний код із SMS.', 'Iemand met toegang tot uw account voerde de juiste sms-code in.'],
+    gevolg: ['Номер позначено як підтверджений. Входу за номером немає — це другий канал для зв’язку й підтвердження.', 'Het nummer staat als bevestigd. Aanmelden met het nummer kan niet — het is een tweede kanaal.'],
+    doen: ['Якщо це ви — нічого. Якщо ні — приберіть номер і перевірте сеанси.', 'Was u het: niets. Zo niet: verwijder het nummer en controleer de sessies.'],
+    deeplink: viaLink(`${ID}/methods`),
+    acties: [
+      { soort: 'dit-was-ik', label: ['Це був я', 'Dit was ik'] },
+      { soort: 'wijziging', label: ['Способи входу', 'Aanmeldmethoden'], href: () => `${ID}/methods` },
+    ],
+  },
   // ---- UI-014 fase 2A: aanmeldingen en aanmeldmethoden (vóór «beveiliging», want de eerste passende soort wint)
   {
     id: 'nieuw-apparaat',

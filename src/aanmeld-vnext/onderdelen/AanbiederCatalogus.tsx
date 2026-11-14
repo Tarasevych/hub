@@ -11,10 +11,11 @@ import type { Lang } from '../../toegangslaag-teksten';
 
 const tr = (lang: Lang, uk: string, nl: string) => (lang === 'nl' ? nl : uk);
 
-type Levend = { id: string; stand: string; sleutels: Array<{ naam: string; aanwezig: boolean }>; zelftest: 'ok' | 'niet-uitgevoerd' | 'fout'; klaarVoorKoppeling: boolean; gekoppeld?: { label: string; op: string } | null };
+type Levend = { id: string; stand: string; sleutels: Array<{ naam: string; aanwezig: boolean }>; zelftest: 'ok' | 'niet-uitgevoerd' | 'fout'; klaarVoorKoppeling: boolean; gekoppeld?: { label: string; op: string } | null; sleutelsCompleet?: boolean };
 
 /** `zonder` — aanbieders die elders op dezelfde pagina al met hun LEVENDE stand staan (oude paneel: Telegram), zodat er geen tweede, tegenstrijdige stand komt. */
-export default function AanbiederCatalogus({ lang, context, zonder = [] }: { lang: Lang; context: Record<string, unknown>; zonder?: readonly string[] }) {
+/** `beheer` — IDENTITEIT-015 (aanmelden): власник/адміністратор бачить назви ключів і самоперевірку; схвалений не-власник — лише «готово / ще не налаштовано власником» і кнопку прив'язки (сервер тоді назв ключів і не надсилає). */
+export default function AanbiederCatalogus({ lang, context, zonder = [], beheer = true }: { lang: Lang; context: Record<string, unknown>; zonder?: readonly string[]; beheer?: boolean }) {
   const [levend, setLevend] = useState<Levend[] | null>(null);
   const [fout, setFout] = useState(false);
   const [melding, setMelding] = useState('');
@@ -88,7 +89,7 @@ export default function AanbiederCatalogus({ lang, context, zonder = [] }: { lan
               </span>
               <small>{aanmeldTekst(a.uitleg, lang)}</small>
               {a.omweg ? <small className='amv-hint'>{aanmeldTekst(a.omweg, lang)}</small> : null}
-              {a.vereist?.length ? (
+              {beheer && a.vereist?.length ? (
                 <ul className='amv-sleutels' aria-label={tr(lang, 'Потрібні ключі власника', 'Vereiste sleutels van de eigenaar')}>
                   {a.vereist.map((naam) => {
                     const aanwezig = Boolean(Array.isArray(live?.sleutels) && live.sleutels.find((s) => s.naam === naam)?.aanwezig);
@@ -96,7 +97,8 @@ export default function AanbiederCatalogus({ lang, context, zonder = [] }: { lan
                   })}
                 </ul>
               ) : null}
-              {live && a.vereist?.length ? <small className='amv-hint'>{tr(lang, 'Самотест:', 'Zelftest:')} {live.zelftest === 'ok' ? tr(lang, 'пройдено', 'geslaagd') : live.zelftest === 'fout' ? tr(lang, 'не пройдено', 'mislukt') : tr(lang, 'ще не виконувався', 'nog niet uitgevoerd')}</small> : null}
+              {!beheer && live && a.vereist?.length && !klaar ? <small className='amv-hint' data-amv-niet-ingesteld={a.id}>{tr(lang, 'Ще не налаштовано власником сайту — прив’язати поки не можна.', 'Nog niet ingesteld door de site-eigenaar — koppelen kan nog niet.')}</small> : null}
+              {beheer && live && a.vereist?.length ? <small className='amv-hint'>{tr(lang, 'Самотест:', 'Zelftest:')} {live.zelftest === 'ok' ? tr(lang, 'пройдено', 'geslaagd') : live.zelftest === 'fout' ? tr(lang, 'не пройдено', 'mislukt') : tr(lang, 'ще не виконувався', 'nog niet uitgevoerd')}</small> : null}
               {klaar ? <button type='button' className='amv-knop is-hoofd is-klein' data-amv-koppelknop={a.id} disabled={pauze.actief} onClick={() => void koppel(a.id)}>{opPauze && pauzeTekst ? pauzeTekst.knop : tr(lang, 'Підключити', 'Koppelen')}</button> : null}
               {live?.gekoppeld ? <small className='amv-hint' data-amv-gekoppeld={a.id}>{tr(lang, 'Прив’язано:', 'Gekoppeld:')} <code>{live.gekoppeld.label}</code></small> : null}
             </article>

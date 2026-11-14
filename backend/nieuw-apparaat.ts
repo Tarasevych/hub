@@ -15,7 +15,8 @@ import { getPool } from '../server/platform/pg';
 import { meld } from './melder';
 
 const sys = () => getPool('systeem');
-export type AanmeldMethode = 'google' | 'passkey' | 'code' | 'telegram';
+// IDENTITEIT-015 (aanmelden): ook wachtwoord en een gekoppelde Microsoft/Discord/Apple geven nu een sessie.
+export type AanmeldMethode = 'google' | 'passkey' | 'code' | 'telegram' | 'password' | 'microsoft' | 'discord' | 'apple';
 export type Locatie = { city?: string; region?: string; country?: string } | undefined;
 // Bestaande soorten hergebruikt (security_warning / security): geen wijziging aan het sfeer-register en migratie 0107 nodig.
 // Het uitlegregister herkent de kaart aan de titel («Новий вхід / новий пристрій», «… з іншого пристрою»).
@@ -28,7 +29,7 @@ export const apparaatSleutel = (userId: string, label: string) => createHash('sh
  *  Andere invoer dan in apparaatSleutel (voorvoegsel v2), zodat een oude labelrij nooit een cookie-browser «bekend» maakt. */
 export const apparaatCookieSleutel = (userId: string, cookieHash: string) => createHash('sha256').update(`bekend-apparaat-v2\u0000${userId}\u0000${cookieHash}`).digest('hex').slice(0, 32);
 
-const METHODE: Record<AanmeldMethode, readonly [string, string]> = { google: ['Google', 'Google'], passkey: ['ключ доступу', 'toegangssleutel'], code: ['код доступу', 'toegangscode'], telegram: ['Telegram', 'Telegram'] };
+const METHODE: Record<AanmeldMethode, readonly [string, string]> = { google: ['Google', 'Google'], passkey: ['ключ доступу', 'toegangssleutel'], code: ['код доступу', 'toegangscode'], telegram: ['Telegram', 'Telegram'], password: ['пароль', 'wachtwoord'], microsoft: ['Microsoft', 'Microsoft'], discord: ['Discord', 'Discord'], apple: ['Apple', 'Apple'] };
 const regioTekst = (l: Locatie) => [l?.city, l?.region, l?.country].map((v) => String(v || '').replace(/[^\p{L}\p{N} .'-]/gu, '').slice(0, 40)).filter(Boolean).join(', ');
 export const brusselsTijd = (t: number, lang: 'uk' | 'nl') => new Date(t).toLocaleString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Brussels' });
 

@@ -14,7 +14,7 @@ import { inlogCode, inlogGeluktMelden, inlogInwisselen, inlogSessieVastleggen, i
 import { bevestigingAanvragen, bevestigingStatus, codeVoorActie } from './bevestigen';
 import { codeHerstellen, codeInstellen, codeStand, codeVerwijderen } from './code';
 import { ontkoppelen, koppelingAanpassen } from './ontkoppelen';
-import { plaatsingLezen, plaatsingOpslaan, werkendeMethoden } from './plaatsing';
+import { extraWerkendeMethoden, plaatsingLezen, plaatsingOpslaan, werkendeMethoden } from './plaatsing';
 import { wijzigingBeantwoorden, wijzigingGetoond, registreerSessieIntrekker, type SessieIntrekker } from './wijzigingen';
 import { kopKlopt, updateVerwerken, type Update } from './webhook';
 import { publiekeStand } from './status';
@@ -213,8 +213,9 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
   return {
     // ================================================================================ OPENBAAR
     // plaatsing: alleen met de vlag aan; anders null → het aanmeldscherm blijft exact zoals vóór deze functie.
+    // IDENTITEIT-015 (aanmelden): methoden = нові способи, що ЗАРАЗ видають сеанс (ключ доступу, пароль, Microsoft/Discord/Apple).
     'GET /api/aanmelden/telegram/config': openbaar(async () => json({ ...(await publiekeConfig()), status: await publiekeStand(),
-      plaatsing: (await vlagHoofdschakelaar()) ? await plaatsingLezen() : null })),
+      plaatsing: (await vlagHoofdschakelaar()) ? await plaatsingLezen() : null, methoden: await extraWerkendeMethoden() })),
     'POST /api/aanmelden/telegram/start': openbaar(async (rc) => {
       const d = lichaam(rc);
       const taal = d.locale === 'nl' ? 'nl' : 'uk';

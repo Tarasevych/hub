@@ -2,7 +2,8 @@
 //
 // Elke goedgekeurde gebruiker kan hier eigen passkeys registreren, hernoemen en verwijderen (verwijderen en registreren vragen
 // een recente herbevestiging). Een passkey bevestigt gevoelige acties ("step-up") in plaats van een TOTP-code of opnieuw
-// inloggen met Google. Inloggen zonder Google met alleen een passkey kan (nog) NIET: zie RUNBOOK-VEILIGE-UITROL.md §13.
+// inloggen met Google. IDENTITEIT-015: aanmelden zonder Google met alleen een passkey kan nu ook — achter de vlag
+// aanmelden-passkey, via backend/aanmelden-methoden.ts (discoverable credential, eenmalige uitdaging, zelfde sessie-uitgifte).
 //
 // rpId: tarasevych.com (PASSKEY_RP_ID). Origins die de app accepteert: id/admin/hub (PASSKEY_ORIGINS). Root (goedkeur-hulp)
 // controleert zelf opnieuw, met zijn eigen bestand /etc/mijn-ruimte/goedkeur-passkeys.json (alleen admin + id).
@@ -24,6 +25,7 @@ import { passkeyOmslagenWeg } from './sleutelkluis-opruimen';
 import { meld } from './melder';
 import { onthoudMagVoorActie, onthoudVastleggen, passkeyStapOpVastleggen, stapOpSessieId, type StapOpAuth } from './stap-op';
 import { ToegangFout, gebruikVastleggen, gebruikVoor, redenVan, sessieInfo, sterkeStapOpFout, viaAppIngetrokken, wijzigingVastleggen, wijzigingenVoor, type Gebruik, type WijzigingRij } from './toegang-context';
+import { laatsteWegFout } from './aanmeld-wegen';
 import { UitrolFout, aanmeldingIntrekken, aanmeldingSchrijven, intrekkenLopend, leesSleutels, schakelaarAan, sleutelIntrekkenAanvragen, sleutelUitdaging, sleutelVerzoek, sshOpdracht, wachtendeAanmeldingen } from './uitrol-goedkeuring';
 
 export const PASSKEY_LIMIETEN = { perGebruiker: 10, uitdagingMs: 5 * 60 * 1000, naam: 60 } as const;
@@ -274,6 +276,12 @@ const linkWijziging = (id: string) => `https://id.tarasevych.com/methods?wijzigi
 
 export async function verwijderen(auth: PasskeyAuth, input: Record<string, unknown>) {
   const rij = await eigenRij(auth.user.id, input.id);
+  // IDENTITEIT-015 (aanmelden): тепер ключем доступу можна ВХОДИТИ. Останній ключ, коли він — єдиний робочий шлях входу, не прибирається
+  // (той самий захист від блокування, що й для Google і пароля). Інші ключі цієї людини лишаються — тоді прибрати можна.
+  if ((await passkeyAantal(auth.user.id)) <= 1) {
+    const blok = await laatsteWegFout(auth.user, 'passkey');
+    if (blok) fout(blok, 409);
+  }
   let wijziging = '';
   if (isEigenaarGebruiker(auth.user)) {
     // Een sleutel die updates mag goedkeuren: alleen met een reden (de route eist dan ook een sterke step-up). Root krijgt eerst

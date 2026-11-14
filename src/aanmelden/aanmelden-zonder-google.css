@@ -1,0 +1,8 @@
+/* IDENTITEIT-015 (крок «aanmelden»): форма «Увійти паролем» на сторінці входу. Лише токени теми, без власних кольорів. */
+.canonical-signed-out.mr-sign-in .mr-sign-in-wachtwoord-form{display:grid;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--mr-login-border);border-radius:16px;background:var(--mr-login-card);color:var(--mr-login-ink)}
+.canonical-signed-out.mr-sign-in .mr-sign-in-wachtwoord-form label{display:grid;gap:4px;font-size:.92rem}
+.canonical-signed-out.mr-sign-in .mr-sign-in-wachtwoord-form input{min-height:40px;box-sizing:border-box;padding:8px 10px;border:1px solid var(--mr-login-border);border-radius:10px;background:transparent;color:inherit;font:inherit}
+.canonical-signed-out.mr-sign-in .mr-sign-in-hint{opacity:.8;font-size:.85rem}
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie-actie{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;border-radius:12px;border:1px solid var(--mr-login-border);background:var(--mr-login-ink);color:var(--mr-login-card);font:inherit;font-weight:600;cursor:pointer}
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie-actie:disabled{opacity:.55;cursor:default}
+.canonical-signed-out.mr-sign-in .mr-sign-in-optie small{display:block;opacity:.8}

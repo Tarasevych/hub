@@ -21,10 +21,20 @@ export async function plaatsingLezen(): Promise<Plaatsing> {
   return p;
 }
 
+// IDENTITEIT-015 (aanmelden): ключ доступу, пароль, Microsoft/Discord/Apple — їх реєструє backend/aanmelden-methoden.ts
+// (прапорці читає лише backend/index.ts, тому тут лише гачок). Без реєстрації — як раніше: Google і Telegram.
+let extraWerkend: (() => Promise<MethodeId[]>) | null = null;
+export function registreerExtraWerkend(fn: () => Promise<MethodeId[]>): void { extraWerkend = fn; }
+/** Лише нові способи (без Google і Telegram) — для сторінки входу (GET /api/aanmelden/telegram/config → methoden). */
+export async function extraWerkendeMethoden(): Promise<MethodeId[]> {
+  try { return extraWerkend ? await extraWerkend() : []; } catch { return []; }
+}
+
 /** Methoden die NU een sessie kunnen geven. Google: altijd (de bestaande hoofdweg). Telegram: als de knop publiek zichtbaar is. */
 export async function werkendeMethoden(): Promise<MethodeId[]> {
   const uit: MethodeId[] = ['google'];
   try { if ((await publiekeConfig()).zichtbaar) uit.push('telegram'); } catch { /* telegram telt dan niet mee */ }
+  for (const m of await extraWerkendeMethoden()) if (!uit.includes(m)) uit.push(m);
   return uit;
 }
 

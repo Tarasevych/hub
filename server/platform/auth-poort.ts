@@ -31,6 +31,12 @@ export const PUBLIEKE_ROUTES: Readonly<Record<string, string>> = {
   'POST /api/owner/auth/google/callback': 'OAuth-terugkeer van Google (state + bindingscookie)',
   'POST /api/owner/google-suite/callback': 'OAuth-terugkeer Google Suite (state + browserbindingscookie)',
   'GET /api/aanmeld/koppel/:aanbieder/terug': 'OAuth-terugkeer externe aanmeldmethode (eenmalige state + browserbindingscookie)',
+  // IDENTITEIT-015 (aanmelden): zelfde lijst als AANMELD_METHODEN_PUBLIEKE_ROUTES in backend/aanmelden-methoden.ts (achter vlaggen aanmelden-*).
+  'POST /api/aanmelden/passkey/opties': 'aanmelden met toegangssleutel: eenmalige uitdaging + transactie en bindingscookie (vóór de sessie)',
+  'POST /api/aanmelden/passkey/voltooien': 'aanmelden met toegangssleutel: handtekening, origin/rpId, UV, teller → sessie (bindingscookie, eenmalig)',
+  'POST /api/aanmelden/wachtwoord/start': 'aanmelden met wachtwoord: transactie en bindingscookie (zonder wachtwoord)',
+  'POST /api/aanmelden/wachtwoord/voltooien': 'aanmelden met wachtwoord: adres, wachtwoord en tweede factor in één verzoek; lockout',
+  'POST /api/aanmelden/extern/start': 'aanmelden met gekoppelde Microsoft/Discord/Apple: state + PKCE + nonce, transactie en bindingscookie',
   // TELEGRAM-AANMELDEN v1 (achter vlag telegram-aanmelden-v1): zelfde lijst als TELEGRAM_PUBLIEKE_ROUTES in backend/telegram-aanmelden/routes.ts.
   'GET /api/aanmelden/telegram/config': 'Telegram-knop op het aanmeldscherm: zichtbaar ja/nee, botnaam, stand (geen geheimen)',
   'POST /api/aanmelden/telegram/start': 'Telegram-aanmelding starten (vóór de sessie; transactie + bindingscookie)',

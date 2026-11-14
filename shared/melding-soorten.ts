@@ -21,6 +21,8 @@ export const MELDING_SOORTEN: Readonly<Record<string, SoortInfo>> = Object.freez
   security_warning: { type: 'beveiliging', ernst: 'kritiek' },             // nieuw apparaat, sessies ingetrokken, «Це були ви?»
   access_method_unlinked: { type: 'beveiliging', ernst: 'kritiek' },
   access_method_restored: { type: 'beveiliging', ernst: 'belangrijk' },
+  access_method_login: { type: 'beveiliging', ernst: 'belangrijk' },      // IDENTITEIT-015 (aanmelden): вхід без Google (ключ доступу, пароль, Microsoft/Discord/Apple)
+  access_method_telefoon: { type: 'beveiliging', ernst: 'belangrijk' },   // IDENTITEIT-015 (aanmelden): номер телефону підтверджено кодом із SMS
   access_recovery_code_used: { type: 'beveiliging', ernst: 'kritiek' },
   access_recovery_rotated: { type: 'beveiliging', ernst: 'belangrijk' },
   access_recovery_revoked: { type: 'beveiliging', ernst: 'belangrijk' },

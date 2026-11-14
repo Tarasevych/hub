@@ -130,10 +130,13 @@ export async function main(): Promise<number> {
   check('4. volgorde van de eigenaar: GitHub, Apple, Microsoft, passkey — Google niet dubbel', ids === 'github,apple,microsoft,passkey');
   // TELEGRAM-001 (09.11.2026): власник вимагає жодної англійської — «passkey» → «ключ доступу».
   check('4. passkey met de woorden van de eigenaar (zonder Engels sinds 09.11)', andere.AANMELD_INGANGEN[3].titel[0] === 'Підтвердіть відбитком, обличчям, PIN-кодом або телефоном, на якому збережено ключ доступу');
-  // Eerlijkheid tegen de echte backend: zolang deze zinnen in de bron staan, kan geen van de vier een sessie geven.
-  const koppel = lees('backend/aanmeld-koppel.ts'), sleutels = lees('backend/toegangssleutels.ts'), gh = lees('backend/github-oauth.ts');
-  const backendKanGeenAndereAanmelding = koppel.includes('het geeft GEEN sessies uit') && sleutels.includes('Inloggen zonder Google met alleen een passkey kan (nog) NIET') && gh.includes('Echte OAuth-koppeling met GitHub');
-  check('4. eerlijk: de backend geeft vandaag alleen via Google een sessie → alle vier uitgeschakeld met reden', backendKanGeenAndereAanmelding && andere.AANMELD_INGANGEN.every((x) => !x.beschikbaar && x.reden[0].length > 30 && x.reden[1].length > 30));
+  // IDENTITEIT-015 (aanmelden, 14.11.2026): ключ доступу, Apple й Microsoft ТЕПЕР можуть дати сеанс — але лише за прапорцями власника
+  // (backend/aanmelden-methoden.ts). Тому перевірка змінилася законно: статичний список і далі — вимкнені рядки з причиною; робочий спосіб
+  // з'являється лише як справжня кнопка через `extra`, коли сервер назвав його в /config → methoden (src/CanoniekOmlijsting.tsx).
+  // Eerlijkheid: GitHub blijft een dienst; de andere drie geven pas een sessie via de vlaggen, nooit via deze statische lijst.
+  const koppel = lees('backend/aanmeld-koppel.ts'), methoden = lees('backend/aanmelden-methoden.ts'), schilBron = lees('src/CanoniekOmlijsting.tsx'), gh = lees('backend/github-oauth.ts');
+  const alleenViaServer = koppel.includes('het geeft zelf GEEN sessies uit') && methoden.includes("vlagPubliek(WEG_VLAG.passkey)") && schilBron.includes('werkendZonderGoogle') && gh.includes('Echte OAuth-koppeling met GitHub');
+  check('4. eerlijk: zonder bericht van de server zijn alle vier uitgeschakeld met reden; werkende wegen komen alleen via de server (methoden)', alleenViaServer && andere.AANMELD_INGANGEN.every((x) => !x.beschikbaar && x.reden[0].length > 30 && x.reden[1].length > 30));
   // Het merkregister laadt lui (in de browser direct na het openklappen); hier eerst laden, zoals de pagina het doet.
   const reg = await import('../../src/merk/merk-register');
   await reg.laadMerken(); await reg.laadOfficieel();

@@ -38,6 +38,10 @@ export default function PlaatsingBeheer({ ctx, lang, uitvoeren }: { ctx: Ctx; la
   const stand = (m: MethodeId) => werkend.includes(m)
     ? tr(lang, 'працює', 'werkt')
     : m === 'telegram' ? tr(lang, 'ще не працює (немає ключа бота) — не показується, доки не запрацює', 'werkt nog niet (geen botsleutel) — niet getoond tot hij werkt')
+      // IDENTITEIT-015 (aanmelden): точна передумова для нових способів входу.
+      : m === 'passkey' ? tr(lang, 'ще не працює — увімкніть прапорець «Вхід лише ключем доступу» у «Функціях» (хоча б для себе)', 'werkt nog niet — zet de vlag «Aanmelden met alleen een toegangssleutel» aan bij «Functies» (minstens voor uzelf)')
+      : m === 'wachtwoord' ? tr(lang, 'ще не працює — увімкніть прапорець «Вхід паролем» у «Функціях»; доти не показується', 'werkt nog niet — zet de vlag «Aanmelden met wachtwoord» aan bij «Functies»; tot dan niet getoond')
+      : m === 'microsoft' || m === 'apple' || m === 'discord' ? tr(lang, 'ще не працює — потрібні ключі AANMELD_* і пройдена самоперевірка (розділ «Інші способи — чесно») та прапорець «Вхід через Microsoft, Discord або Apple»', 'werkt nog niet — AANMELD_*-sleutels, een geslaagde zelftest («Andere methoden — eerlijk») en de vlag «Aanmelden met Microsoft, Discord of Apple» zijn nodig')
       : tr(lang, 'ще не працює — на головній не показується; в «Інші способи входу» видно як недоступний з причиною', 'werkt nog niet — nooit op het hoofdscherm; onder «Andere aanmeldmethoden» als niet beschikbaar met reden');
 
   return <div className='tga-blok tga-plaatsing' data-aanmeld-plaatsing>

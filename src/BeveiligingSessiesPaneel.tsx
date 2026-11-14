@@ -12,6 +12,7 @@ import {ecosystemTabContext} from './tab-context';
 import {groepeerPerApparaat,intrekbaarOpApparaat,landCode,type Apparaat} from './sessies/groeperen';
 import {BrowserIcoon,GoogleIcoon,OsIcoon,SoortIcoon,Vlag} from './sessies/SessieIconen';
 import './sessies/sessies.css';
+import {methodeNaam} from './sessies/methode-naam'; // IDENTITEIT-015 (aanmelden)
 export type SecuritySession={id:string;fingerprint:string;kind:'service'|'tab'|'remembered';service:string;createdAt:number;lastSeenAt:number;expiresAt:number;ip:string;userAgent:string;deviceLabel:string;browser:string;browserVersion:string;os:string;osVersion:string;deviceType:string;approximateLocation?:{city?:string;region?:string;country?:string};authMethod:string;current:boolean;/** Запам'ятаний для підтверджень: до якого часу (мс); 0/відсутнє — не запам'ятано. */onthoudTot?:number;tech?:SessieTech|null};
 /** Lopend technisch profiel van deze aanmelding (migratie 0060): zo ziet de gebruiker welke aanmelding alleen «користувацький» is en welke ook technisch. */
 export type SessieTech={activatie:string;modus:'tijd'|'tot-uitloggen'|'tot-verlaten';begin:number;eind:number;reden:string};
@@ -36,7 +37,11 @@ const techContext=()=>({service:'identity',tabContext:ecosystemTabContext(),sour
 const soortToestel=(s:string,tr:Tr)=>{const v=s.toLowerCase();return v==='mobile'?tr('Телефон','Telefoon'):v==='tablet'?tr('Планшет','Tablet'):tr('Комп’ютер','Computer')};
 /** Бейдж способу входу. Лише ті способи, що реально є в системі: Google, passkey, пароль, код автентифікатора. */
 function Methode({m,tr}:{m:string;tr:Tr}){
-  const[ic,uk,nl]=m==='passkey'?[<Fingerprint key='i' aria-hidden/>,'Passkey','Passkey']:m==='password'?[<LockKeyhole key='i' aria-hidden/>,'Лише пароль','Alleen wachtwoord']:m==='totp'?[<Smartphone key='i' aria-hidden/>,'Автентифікатор (2FA)','Authenticator (2FA)']:[<GoogleIcoon key='i'/>,'Google SSO','Google SSO'];
+  /* IDENTITEIT-015 (aanmelden, давня вада): сеанс, відкритий через Telegram, показувався як «Google SSO» — тепер кожен спосіб має свою назву
+     (також нові: ключ доступу, пароль, Microsoft, Discord, Apple; src/sessies/methode-naam.ts). Elke aanmeldweg zijn eigen badge. */
+  const n=methodeNaam(m);
+  const ic=n.icoon==='passkey'?<Fingerprint aria-hidden/>:n.icoon==='password'?<LockKeyhole aria-hidden/>:n.icoon==='totp'?<Smartphone aria-hidden/>:n.icoon==='ander'?<KeyRound aria-hidden/>:<GoogleIcoon/>;
+  const uk=n.uk,nl=n.nl;
   return <span className={`sessie-methode m-${m||'google'}`} data-sessie-methode={m||'google'}>{ic}{tr(uk,nl)}</span>;
 }
 function IpRegel({label,ips,tr}:{label:string;ips:string[];tr:Tr}){const[toon,setToon]=useState(false);return <div className='sessie-ip'><dt>{label}</dt><dd>{ips.length?<>{ips.map(ip=><code key={ip}>{toon?ip:maskIp(ip)}</code>)}<button type='button' className='security-inline-action' aria-pressed={toon} onClick={()=>setToon(v=>!v)}>{toon?tr('Приховати','Verbergen'):tr('Показати','Tonen')}</button></>:<span className='sessie-leeg'>{tr('не спостерігалась','niet gezien')}</span>}</dd></div>}

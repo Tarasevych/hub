@@ -1,7 +1,8 @@
 import {createHash,createHmac,randomBytes,scrypt,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
 import {limietSleutel} from '../shared/ip-limiet';
-import {db,clearLoginFailures,envKey32,isOwnerEmail,openWithEnvKey,pepperedHash,pogingReserveren,sealWithEnvKey} from '../server/platform';
+import {db,clearLoginFailures,envKey32,isOwnerEmail,openWithEnvKey,pepperedHash,pogingReserveren,rateLimit,sealWithEnvKey} from '../server/platform';
+import {getPool} from '../server/platform/pg';
 import {publicGoogleContour,resolveGoogleContour,type GoogleContour} from './google-contour';
 import {STAP_OP_MS,STAP_OP_ONTHOUD_MS,onthoudMagVoorActie,onthoudVastleggen,onthoudenSessies,onthoudSessieId,passkeyStapOpGeldig,stapOpFout,stapOpGeldig,stapOpGeldigTot,stapOpSessieId,totpStapOpVastleggen,codewoordStapOpVastleggen,type StapOpAuth} from './stap-op';
 import {passkeyAantal} from './toegangssleutels';
@@ -18,6 +19,14 @@ import {stapOpKanalen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
 import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
 import {registreerTweedeFactorBeleid,tweedeFactorBeleidVergeten,tweedeFactorBevestigdOp,tweedeFactorVers} from './tweede-factor-poort';
 import {codewoordSessieId} from '../shared/codewoord-poort'; /* IDENTITEIT-015: правило mfa діє під час входу */
+import {aanmeldVlagVoor,extraAanmeldWegen,registreerLaatsteWegControle} from './aanmeld-wegen'; /* IDENTITEIT-015 (aanmelden): нові шляхи входу в захисті від блокування */
+import {SMS_KLUIS_NAAM,SMS_VOORWAARDE,isTelefoonnummer,nummerMasker,registreerSmsSleutelLezer,smsAanbieder} from '../server/platform/sms'; /* IDENTITEIT-015 (aanmelden): SMS */
+import {randomInt} from 'node:crypto';
+import {alsSysteem} from '../server/platform/context';
+import {eigenaarUserId} from './integraties-kluis';
+const getSysPool=()=>getPool('systeem');
+/** IDENTITEIT-015 (aanmelden): SMS-код зберігається лише як HMAC (перець RECOVERY_CODE_PEPPER), прив'язаний до людини й номера. */
+const smsCodeHash=(userId:string,phone:string,code:string)=>createHmac('sha256',String(process.env.RECOVERY_CODE_PEPPER||'sms-v1')).update(`sms:v1:${userId}:${phone}:${code}`).digest('hex');
 
 const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
@@ -35,7 +44,8 @@ type TotpRecord={id:string;userId:string;secret?:string;secretEnc?:string;confir
 // laatste 2 tekens (hint, 8 bits van 48: raden blijft 2^40 per code, met lockout), wanneer gebruikt, en of de set is ingetrokken.
 type HerstelRegel={nr:number;hint:string;hash:string};
 type RecoveryRecord={id:string;userId:string;hashes:string[];hashVersion?:number;createdAt:number;remaining:number;bekekenOp?:number;totaal?:number;overzicht?:HerstelRegel[];gebruikt?:Record<string,number>;ingetrokkenOp?:number};
-type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number}&Ontkoppeld;
+/* IDENTITEIT-015 (aanmelden): smsCode* — одноразовий код підтвердження (лише HMAC), строк, кількість помилок і час надсилання; старі записи без цих полів працюють як раніше. */
+type PhoneRecord={id:string;userId:string;phone:string;verified:boolean;createdAt:number;updatedAt:number;smsCodeHash?:string;smsCodeTot?:number;smsPogingen?:number;smsVerzondenOp?:number;verifiedAt?:number}&Ontkoppeld;
 type WebauthnRecord={id:string;userId:string;credentialId:string;label:string;createdAt:number};
 type PolicyRecord={id:string;tenantKey:string;enabled:Partial<Record<MethodId,boolean>>;mfa:'optional'|'required';updatedAt:number};
 type GoogleIdentity={id:string;accountId:string;provider:string;subject:string;email:string;status:string;lastUsedAt:number;createdAt:number}&Ontkoppeld;
@@ -310,7 +320,7 @@ export async function upsertLoginBinding(userId:string,method:LoginMethodId,prov
 }
 
 async function usableLoginMethods(
-  _userId:string,
+  userId:string,
   _email:string,
   contour:GoogleContour,
   policy:Awaited<ReturnType<typeof policyOf>>,
@@ -318,13 +328,13 @@ async function usableLoginMethods(
   bindings:Binding[],
   phone:PhoneRecord|null,
   identities:GoogleIdentity[],
-  skip?:{bindingId?:string;method?:LoginMethodId;identityId?:string}
+  skip?:{bindingId?:string;method?:string;identityId?:string}
 ){
   const nextBindings=bindings.filter(item=>item.id!==skip?.bindingId&&item.method!==skip?.method);
   const nextIdentities=identities.filter(item=>item.id!==skip?.identityId&&skip?.method!=='google');
   const nextPassword=skip?.method==='password'?null:password;
   const nextPhone=skip?.method==='phone'?null:phone;
-  const usable:Array<{id:LoginMethodId;bound:boolean}>=[];
+  const usable:Array<{id:string;bound:boolean}>=[];
   for(const method of LOGIN_METHODS){
     if(policy.enabled[method]===false)continue;
     if(method==='google'&&contour.credentialsConfigured){
@@ -332,10 +342,16 @@ async function usableLoginMethods(
       if(bound)usable.push({id:'google',bound:true});
       continue;
     }
-    if(method==='password'&&nextPassword){usable.push({id:'password',bound:true});continue;}
-    if(method==='phone'){if(nextPhone?.verified)usable.push({id:'phone',bound:true});continue;}
+    /* IDENTITEIT-015 (aanmelden): пароль — шлях входу лише тоді, коли вхід паролем увімкнено цій людині (прапорець aanmelden-wachtwoord).
+       Раніше пароль рахувався завжди, хоча сеансу не давав: людина могла «спертися» на нього й відв'язати Google — і лишитися без входу. */
+    if(method==='password'){if(nextPassword&&await aanmeldVlagVoor(userId,'aanmelden-wachtwoord'))usable.push({id:'password',bound:true});continue;}
+    /* IDENTITEIT-015 (aanmelden): підтверджений номер — лише другий канал (код із SMS), входу за номером немає. Тому НЕ рахується як шлях входу
+       (раніше рахувався й «рятував» від захисту останнього способу, хоча увійти ним не можна). */
+    if(method==='phone')continue;
     if(nextBindings.some(item=>item.method===method&&item.status==='active'&&methodConfigured(method,contour,nextPassword,nextPhone)))usable.push({id:method,bound:true});
   }
+  /* IDENTITEIT-015 (aanmelden): ключ доступу і прив'язані Microsoft/Discord/Apple — коли вхід ними справді працює для цієї людини. */
+  for(const id of await extraAanmeldWegen(userId,skip?.method))if(!usable.some(u=>u.id===id))usable.push({id,bound:true});
   return usable;
 }
 
@@ -358,6 +374,8 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
   ]);
   const usable=await usableLoginMethods(user.id,user.email,contour,policy,password,bindings,phone,identities);
   const passkeys=await passkeyAantal(user.id);
+  const smsVlag=await aanmeldVlagVoor(user.id,'aanmelden-sms');
+  const smsKlaar=smsVlag&&Boolean(await smsAanbieder().catch(()=>null));
   const googleBound=identities.length>0||usable.some(item=>item.id==='google');
   const catalog=LOGIN_METHODS.map(id=>{
     const bound=id==='google'?googleBound:id==='password'?Boolean(password):id==='phone'?Boolean(phone?.verified):bindings.some(item=>item.method===id&&item.status==='active');
@@ -370,7 +388,8 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
     {id:'totp',enabled:policy.enabled.totp!==false,enrolled:Boolean(totp?.confirmed),status:totp?.confirmed?'active':'not_enrolled'},
     {id:'recovery',enabled:true,enrolled:Boolean(recovery&&recovery.remaining>0),status:recovery&&recovery.remaining>0?'active':'not_enrolled',remaining:recovery?.remaining||0,createdAt:recovery?.createdAt||0,bekekenOp:recovery?.bekekenOp||0,ingetrokken:Boolean(recovery?.ingetrokkenOp)/* IDENTITEIT-014: відкликаний набір ≠ «закінчився» */},
     {id:'passkey',enabled:true,enrolled:passkeys>0,status:passkeys>0?'active':'not_enrolled',count:passkeys},
-    {id:'sms',enabled:false,enrolled:Boolean(phone),status:phone?'pending_sms_contour':'not_configured',honest:'needs_sms_contour',phone:phone?.phone||''},
+    /* IDENTITEIT-015 (aanmelden): справжній стан — номер підтверджено кодом із SMS або чекає підтвердження; без провайдера — чесно needs_sms_contour. */
+    {id:'sms',enabled:smsVlag,enrolled:Boolean(phone?.verified),status:phone?.verified?'active':phone?(smsKlaar?'pending':'pending_sms_contour'):'not_configured',honest:smsKlaar?'':'needs_sms_contour',phone:phone?.phone||''},
     {id:'push',enabled:false,enrolled:false,status:'not_configured',honest:'needs_push_channel'},
     {id:'webauthn',enabled:false,enrolled:false,status:'disabled_until_verified',count:0,honest:'webauthn_verification_not_implemented',legacyUnverified:keys.length}
   ];
@@ -385,8 +404,12 @@ export async function accessSnapshot(user:{id:string;email:string;role:string},a
     usableCount:usable.length,
     lockout:{protected:usable.length<=1,reason:usable.length<=1?'LAST_LOGIN_METHOD_PROTECTED':''},
     password:{configured:Boolean(password),mustChange:Boolean(password?.mustChange)},
-    phone:{configured:Boolean(phone),verified:Boolean(phone?.verified),pending:Boolean(phone&&!phone.verified),value:phone?.phone||''},
+    phone:{configured:Boolean(phone),verified:Boolean(phone?.verified),pending:Boolean(phone&&!phone.verified),value:phone?.phone||'',
+      /* IDENTITEIT-015 (aanmelden): чи можна зараз надіслати код (прапорець + провайдер власника), точна передумова й чи код уже надіслано. */
+      sms:{vlag:smsVlag,klaar:smsKlaar,voorwaarde:smsKlaar?null:SMS_VOORWAARDE,codeTot:phone&&!phone.verified&&Number(phone.smsCodeTot||0)>Date.now()?Number(phone.smsCodeTot):0}},
     herstelbaar:await herstelbaar(user.id),
+    /* IDENTITEIT-015 (aanmelden): які шляхи входу без Google власник увімкнув САМЕ цій людині (для чесних текстів у «Способах входу»). */
+    aanmeldWegen:{passkey:await aanmeldVlagVoor(user.id,'aanmelden-passkey'),wachtwoord:await aanmeldVlagVoor(user.id,'aanmelden-wachtwoord'),extern:await aanmeldVlagVoor(user.id,'aanmelden-extern')},
     totp:{enrolled:Boolean(totp?.confirmed)},
     admin,
     selfTests:accessPlanePolicySelfTest()
@@ -440,7 +463,8 @@ export async function verifyPasswordLogin(email:string,password:string,totp='',i
   }
   await clearLoginFailures(subject);
   await upsertLoginBinding(user.id,'password',user.id,user.email);
-  return{status:'ok' as const,code:'OK',http:200,user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
+  /* IDENTITEIT-015 (aanmelden): tweedeFactor — код із застосунку/відновлення справді перевірено (є підтверджений TOTP); тоді вхід паролем двофакторний. */
+  return{status:'ok' as const,code:'OK',http:200,tweedeFactor:Boolean(totpRow?.confirmed),user:{id:user.id,email:user.email,name:user.name,role:user.role,status:user.status}};
 }
 
 async function writePolicy(enabled:Partial<Record<MethodId,boolean>>,mfa:'optional'|'required'){
@@ -452,7 +476,12 @@ async function writePolicy(enabled:Partial<Record<MethodId,boolean>>,mfa:'option
   return policyOf();
 }
 
-async function assertNotLastMethod(user:{id:string;email:string;role:string},skip:{bindingId?:string;method?:LoginMethodId;identityId?:string}){
+/* IDENTITEIT-015 (aanmelden): ключ доступу (toegangssleutels.ts) і зовнішня прив'язка (aanmeld-koppel.ts) питають ту саму перевірку. */
+registreerLaatsteWegControle(async(user,zonder)=>assertNotLastMethod({id:user.id,email:String(user.email||''),role:String(user.role||'')},{method:zonder}));
+/* IDENTITEIT-015 (aanmelden): ключ SMS-провайдера — зі сховища секретів власника (назва SMS_AANBIEDER, будь-яке призначення). */
+registreerSmsSleutelLezer(async()=>{const eigenaar=await eigenaarUserId();if(!eigenaar)return'';const m=await import('./api-platform-kluis');return String(await alsSysteem(()=>m.readOwnerVaultPlaintext(eigenaar,SMS_KLUIS_NAAM))||'')});
+
+async function assertNotLastMethod(user:{id:string;email:string;role:string},skip:{bindingId?:string;method?:string;identityId?:string}){
   const[contour,policy,bindings,password,phone,identities]=await Promise.all([
     resolveGoogleContour(),policyOf(),bindingsFor(user.id),passwordFor(user.id),phoneFor(user.id),googleIdentities(user.id)
   ]);
@@ -679,13 +708,78 @@ export function createAccessPlaneRoutes(deps:{
       const stap=await stapOp(auth);if(stap)return stap;
       const existing=await phoneRecordAny(auth.user.id);
       const now=Date.now();
+      /* IDENTITEIT-015 (aanmelden): той самий уже підтверджений номер ще раз — нічого не скидаємо (повторне натискання безпечне). */
+      if(existing&&!existing.ontkoppeldAt&&existing.phone===phone&&existing.verified)return deps.respond({ok:true,gewijzigd:false,...await accessSnapshot(auth.user)});
       const record={userId:auth.user.id,phone,verified:false,createdAt:existing?.createdAt||now,updatedAt:now};
       if(existing?.id)await db.update(PHONES,[{id:existing.id,record}]);
       else await db.add(PHONES,[record]);
       // Fase 3: onbevestigd nummer = 'pending'; telt niet als aanmeldmethode tot het geverifieerd is.
       await upsertLoginBinding(auth.user.id,'phone',phone,auth.user.email,'pending');
       await deps.audit(auth.user.id,'access.phone.save','success',{});
-      return deps.respond({ok:true,sms:'needs_sms_contour',...await accessSnapshot(auth.user)});
+      const snap=await accessSnapshot(auth.user);
+      return deps.respond({ok:true,sms:snap.phone.sms.klaar?'code_versturen':'needs_sms_contour',...snap});
+    }],
+    /* IDENTITEIT-015 (aanmelden): код підтвердження номера (pending → verified). Прапорець aanmelden-sms (типово «Тільки я») і
+       провайдер власника (server/platform/sms.ts). Ліміти: 5 SMS на годину на людину, не частіше ніж раз на 60 с; на один код —
+       5 спроб, після них код недійсний; загальне блокування спроб — pogingReserveren. Повтор після успіху — alBevestigd без нового сповіщення. */
+    'POST /api/owner/access/phone/code/versturen':[async(ctx:any)=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      if(!await aanmeldVlagVoor(auth.user.id,'aanmelden-sms'))return deps.respond({ok:false,error:'SMS_VLAG_UIT',reasonCode:'SMS_VLAG_UIT',voorwaarde:SMS_VOORWAARDE},403);
+      const rec=await phoneFor(auth.user.id);
+      if(!rec)return deps.fail('ACCESS_PHONE_MISSING',404);
+      if(rec.verified)return deps.respond({ok:true,alBevestigd:true,...await accessSnapshot(auth.user)});
+      if(!isTelefoonnummer(rec.phone))return deps.fail('ACCESS_PHONE_E164_REQUIRED',400);
+      const aanbieder=await smsAanbieder().catch(()=>null);
+      if(!aanbieder){await deps.audit(auth.user.id,'access.phone.code','denied',{reden:'SMS_NIET_INGESTELD'});return deps.respond({ok:false,error:'SMS_NIET_INGESTELD',reasonCode:'SMS_NIET_INGESTELD',voorwaarde:SMS_VOORWAARDE},503);}
+      const now=Date.now();
+      const wacht=Math.ceil((Number(rec.smsVerzondenOp||0)+60_000-now)/1000);
+      if(wacht>0)return deps.fail('RATE_LIMITED',429,{retryAfter:wacht});
+      const limiet=await rateLimit(`sms-versturen:${auth.user.id}`,5,3600);
+      if(!limiet.ok)return deps.fail('RATE_LIMITED',429,{retryAfter:limiet.retryAfter});
+      const code=String(randomInt(0,1_000_000)).padStart(6,'0');
+      const tot=now+10*60_000;
+      await db.update(PHONES,[{id:rec.id,record:{...zonder(rec as unknown as Record<string,unknown>),smsCodeHash:smsCodeHash(auth.user.id,rec.phone,code),smsCodeTot:tot,smsPogingen:0,smsVerzondenOp:now,updatedAt:now}}]);
+      const uit=await aanbieder.verstuur(rec.phone,`Mijn Ruimte: ${code} — код підтвердження номера / bevestigingscode. Нікому не кажіть / Deel hem met niemand.`);
+      if(!uit.ok){
+        const terug=await phoneFor(auth.user.id);
+        if(terug)await db.update(PHONES,[{id:terug.id,record:{...zonder(terug as unknown as Record<string,unknown>,'smsCodeHash','smsCodeTot','smsPogingen'),smsVerzondenOp:0,updatedAt:Date.now()}}]);
+        await deps.audit(auth.user.id,'access.phone.code','failed',{aanbieder:aanbieder.naam,reden:uit.code});
+        return deps.respond({ok:false,error:'SMS_VERZENDEN_MISLUKT',reasonCode:'SMS_VERZENDEN_MISLUKT',oorzaak:uit.code},502);
+      }
+      await deps.audit(auth.user.id,'access.phone.code','success',{aanbieder:aanbieder.naam,berichtId:uit.id});
+      return deps.respond({ok:true,verzonden:true,geldigTot:tot,naar:nummerMasker(rec.phone)});
+    }],
+    'POST /api/owner/access/phone/code/bevestigen':[async(ctx:any)=>{
+      const auth=await gate(ctx.event,ctx.body);
+      if(!auth)return deps.fail('OWNER_SESSION_REQUIRED',401);
+      if(!await aanmeldVlagVoor(auth.user.id,'aanmelden-sms'))return deps.respond({ok:false,error:'SMS_VLAG_UIT',reasonCode:'SMS_VLAG_UIT',voorwaarde:SMS_VOORWAARDE},403);
+      const rec=await phoneFor(auth.user.id);
+      if(!rec)return deps.fail('ACCESS_PHONE_MISSING',404);
+      if(rec.verified)return deps.respond({ok:true,alBevestigd:true,...await accessSnapshot(auth.user)});
+      const code=String(deps.body(ctx.body).code||'').replace(/\D+/g,'');
+      if(!/^\d{6}$/.test(code))return deps.fail('SMS_CODE_ONJUIST',400);
+      const subject=`sms-code:${auth.user.id}`;
+      const poging=await pogingReserveren(subject);
+      if(!poging.toegestaan)return deps.fail('ACCESS_LOCKED_TEMPORARILY',429,{retryAfter:poging.wachtSeconden});
+      if(!rec.smsCodeHash||Number(rec.smsCodeTot||0)<=Date.now())return deps.fail('SMS_CODE_VERLOPEN',400);
+      const pogingen=Number(rec.smsPogingen||0);
+      if(pogingen>=5)return deps.fail('SMS_CODE_TE_VEEL',400);
+      const a=Buffer.from(smsCodeHash(auth.user.id,rec.phone,code)),b=Buffer.from(String(rec.smsCodeHash));
+      if(a.length!==b.length||!timingSafeEqual(a,b)){
+        await db.update(PHONES,[{id:rec.id,record:{...zonder(rec as unknown as Record<string,unknown>),smsPogingen:pogingen+1,updatedAt:Date.now()}}]);
+        await deps.audit(auth.user.id,'access.phone.verify','denied',{pogingen:pogingen+1});
+        return deps.respond({ok:false,error:'SMS_CODE_ONJUIST',reasonCode:'SMS_CODE_ONJUIST',over:Math.max(0,4-pogingen)},400);
+      }
+      // Atomisch: alleen als de rij nog dezelfde code draagt (twee gelijktijdige juiste codes → één melding).
+      const claim=await alsSysteem(()=>getSysPool().query(`UPDATE app.records SET data=(data-'smsCodeHash'-'smsCodeTot'-'smsPogingen')||jsonb_build_object('verified',true,'verifiedAt',$3::bigint,'updatedAt',$3::bigint),updated_at=now()
+        WHERE tbl=$1 AND id=$2 AND data->>'smsCodeHash'=$4 AND COALESCE((data->>'verified')::boolean,false)=false RETURNING id`,[PHONES,rec.id,Date.now(),String(rec.smsCodeHash)]));
+      await clearLoginFailures(subject);
+      if(!claim.rowCount)return deps.respond({ok:true,alBevestigd:true,...await accessSnapshot(auth.user)});
+      await deps.audit(auth.user.id,'access.phone.verified','success',{naar:nummerMasker(rec.phone)});
+      await meld(auth.user.id,'access_method_telefoon','Номер телефону підтверджено / Telefoonnummer bevestigd',
+        `Номер ${nummerMasker(rec.phone)} підтверджено кодом із SMS. Входу за номером немає: це другий канал для зв’язку й підтвердження. Якщо це були не ви — приберіть номер і перевірте сеанси. / Nummer ${nummerMasker(rec.phone)} is bevestigd met een sms-code. Aanmelden met het nummer kan niet: het is een tweede kanaal. Was u dit niet? Verwijder het nummer en controleer de sessies.`);
+      return deps.respond({ok:true,bevestigd:true,...await accessSnapshot(auth.user)});
     }],
     // Passkeys zijn uitgeschakeld tot er echte WebAuthn-verificatie (attestation/assertion) is.
     // De oude routes registreerden alleen een credentialId zonder enige cryptografische controle.

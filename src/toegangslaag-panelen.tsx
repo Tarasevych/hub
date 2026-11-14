@@ -23,6 +23,7 @@ import {Qr} from './platform/Qr'; // IDENTITEIT-014: спільний QR (data-a
 import {ReserveOverzicht} from './herstel/ReserveOverzicht'; // IDENTITEIT-014: огляд резерву (herstel-overzicht)
 import {Scenarios} from './herstel/Scenarios'; // IDENTITEIT-014: сценарії й наслідки втрати ключа (herstel-scenarios, herstel-sleutelverlies)
 import type {HerstelSectie} from './herstel/reserve';
+import {AanmeldWegenExtra} from './aanmelden/AanmeldWegenExtra'; /* IDENTITEIT-015 (aanmelden): «Повернути спосіб входу» і телефон (SMS) */
 const AanbiederCatalogus=lazy(()=>import('./aanmeld-vnext/onderdelen/CatalogusMetStijl')); /* IDENTITEIT-014: лише в розділі «Вхід» */
 const AndereMethoden=lazy(()=>import('./AndereAanmeldMethodenLaden')); /* IDENTITEIT-014: Telegram і розміщення; модуль конфігу читає window під час завантаження */
 
@@ -41,6 +42,10 @@ type Snapshot={
   password:{configured:boolean;mustChange:boolean};
   totp:{enrolled:boolean};
   admin?:boolean;
+  /** IDENTITEIT-015 (aanmelden): шляхи входу без Google, увімкнені цій людині; від'єднані способи (7 днів); телефон і SMS. */
+  aanmeldWegen?:{passkey:boolean;wachtwoord:boolean;extern:boolean};
+  herstelbaar?:Array<{id:string;soort:string;method:string;herstelTot:number;zelf:boolean;doorBeheer:boolean}>;
+  phone?:{configured:boolean;verified:boolean;pending?:boolean;value:string;sms?:{vlag:boolean;klaar:boolean;voorwaarde:[string,string]|null;codeTot:number}};
 };
 
 type Props={
@@ -158,7 +163,7 @@ export function AccessPlanePanels(p:Props){
     {toonMethoden&&<section className='access-plane-section' id='aanmeldmethoden-google' data-access-section='google' tabIndex={-1}>
       <header className='access-plane-section-head'><h2>{tr(lang,'Вхід','Aanmelden')}</h2>
         <InfoTip label={tr(lang,'Про способи входу','Over aanmeldmethoden')}><p>{tr(lang,'Способи, якими ви входите в Mijn Ruimte, і ключі для підтвердження важливих дій.','Manieren waarop je je aanmeldt bij Mijn Ruimte, en sleutels om belangrijke acties te bevestigen.')}</p>
-          {data.lockout.protected&&<p data-google-enige>{tr(lang,'Google — зараз ваш єдиний спосіб входу, тому його не можна вимкнути. Passkey поки що лише підтверджує важливі дії.','Google is nu je enige aanmeldmethode en kan daarom niet worden uitgeschakeld. Een passkey bevestigt voorlopig alleen belangrijke acties.')}</p>}
+          {data.lockout.protected&&<p data-google-enige>{tr(lang,'Google — зараз ваш єдиний робочий спосіб входу, тому його не можна вимкнути.','Google is nu je enige werkende aanmeldmethode en kan daarom niet worden uitgeschakeld.')} {data.aanmeldWegen?.passkey?tr(lang,'Додайте ключ доступу — ним можна буде входити й без Google.','Voeg een toegangssleutel toe — daarmee kun je ook zonder Google aanmelden.'):tr(lang,'Ключ доступу зараз лише підтверджує важливі дії: вхід ним вмикає власник сайту.','Een toegangssleutel bevestigt nu alleen belangrijke acties: aanmelden ermee zet de site-eigenaar aan.')}</p>}
           <p><b>{tr(lang,'Електронна пошта та Google.','E-mail en Google.')}</b> {tr(lang,'Вхід через Google-акаунт. Адресу можна змінити лише в Google.','Aanmelden met je Google-account. Het adres wijzigen kan alleen bij Google.')}</p></InfoTip></header>
       <div className='access-plane-box'>
         {googleMethod&&<div className='access-plane-row' data-access-method='google'>
@@ -179,6 +184,7 @@ export function AccessPlanePanels(p:Props){
           <div className='access-plane-row-main'>
             <span className='access-plane-row-title'><strong>{tr(lang,'Пароль','Wachtwoord')}</strong><span className={`access-plane-badge tone-${statusTone(wachtwoordStatus)}`}>{statusLabel(lang,wachtwoordStatus)}</span></span>
             {data.password.mustChange&&<small className='access-plane-warn'>{tr(lang,'Тимчасовий пароль — потрібно змінити','Tijdelijk wachtwoord — wijzigen vereist')}</small>}
+            {heeftWachtwoord&&data.aanmeldWegen&&<small data-wachtwoord-inloggen={data.aanmeldWegen.wachtwoord?'aan':'uit'}>{data.aanmeldWegen.wachtwoord?tr(lang,'Паролем можна входити на сторінці входу («Увійти паролем»); якщо налаштовано застосунок-автентифікатор, сайт попросить і його код.','U kunt met het wachtwoord aanmelden («Aanmelden met wachtwoord»); is een authenticator-app ingesteld, dan vraagt de site ook die code.'):tr(lang,'Пароль збережено, але вхід паролем для вашого облікового запису ще не ввімкнено власником сайту — увійти ним поки не можна.','Het wachtwoord is bewaard, maar aanmelden met wachtwoord staat voor uw account nog niet aan bij de site-eigenaar — aanmelden ermee kan nog niet.')}</small>}
             {!heeftWachtwoord&&!laden&&<small data-wachtwoord-uitleg>{wachtwoordUit
               ?tr(lang,'Вхід паролем вимкнув власник сайту, тож задати пароль зараз не можна.','De eigenaar van de site heeft aanmelden met een wachtwoord uitgezet; een wachtwoord instellen kan nu niet.')
               :tr(lang,'Пароля немає. Якщо задати його, з’явиться ще один спосіб входу — на випадок, коли Google недоступний.','Er is geen wachtwoord. Stelt u er een in, dan krijgt u een extra manier om aan te melden — voor als Google niet beschikbaar is.')}</small>}
@@ -193,6 +199,7 @@ export function AccessPlanePanels(p:Props){
             {!wachtwoordUit&&<button type='button' className='secondary' disabled={laden} data-wachtwoord-knop onClick={()=>setWachtwoordOpen(v=>!v)}>{wachtwoordOpen?<X/>:heeftWachtwoord?<Pencil/>:<Plus/>}{wachtwoordOpen?tr(lang,'Закрити','Sluiten'):heeftWachtwoord?tr(lang,'Керувати','Beheren'):tr(lang,'Задати пароль','Wachtwoord instellen')}</button>}
           </div>
         </div>
+        <AanmeldWegenExtra lang={lang} herstelbaar={data.herstelbaar} telefoon={data.phone} context={p.context} write={write} load={p.load}/>
       </div>
       {/* IDENTITEIT-011: ключі доступу живуть у «Безпеці» (як у карті розвитку); тут лише перехід, щоб їх не дублювати. */}
       {/* IDENTITEIT-014: інші способи входу — стан Telegram, перехід власника до розміщення і чесний каталог провайдерів. */}
@@ -200,7 +207,7 @@ export function AccessPlanePanels(p:Props){
         <Suspense fallback={null}><AndereMethoden lang={lang} admin={!!data.admin} telegramSectie={!!p.telegramSectie}/></Suspense>
         {/* IDENTITEIT-014 (herstel): каталог з назвами серверних ключів і самотестом — лише власнику сайту (data.admin); Telegram у ньому
             не повторюємо — його живий стан уже є в рядку вище і в розділі «Telegram» (інакше статична плитка «Потрібні ключі» суперечила «Працює»). */}
-        {data.admin&&<div className='amv'><Suspense fallback={null}><AanbiederCatalogus lang={lang} context={p.context} zonder={['telegram']}/></Suspense></div>}
+        <div className='amv'><Suspense fallback={null}><AanbiederCatalogus lang={lang} context={p.context} zonder={['telegram']} beheer={!!data.admin}/></Suspense></div>
       </div>
       {!toonBeveiliging&&<p className='access-plane-hint-line' data-passkeys-verwijzing><Fingerprint/>{tr(lang,'Ключі доступу (passkey) — у розділі «Безпека».','Toegangssleutels (passkeys) staan bij «Beveiliging».')}</p>}
     </section>}

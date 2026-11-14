@@ -5,10 +5,10 @@
 // VASTE BESLISSINGEN (dossier UI-015 §2, directive van de eigenaar):
 //   • klaarVoorKoppeling = álle omgevingssleutels aanwezig ÉN de laatst bewaarde zelftest 'ok' — nooit alleen sleutels, en
 //     de UI toont vóór die serverwaarheid géén koppelknop; niets wordt «Підключено» zonder een rij in aanmeld_koppelingen_v1;
-//   • dit deel KOPPELT een externe identiteit aan het INGELOGDE account als extra aanmeldweg; het geeft GEEN sessies uit.
-//     De sessie-uitgifte van de site (ankersessies + tabsessies + grants + onthouden browser) is met de Google-stroom en de
-//     eigenaarstransacties vervlochten (backend/index.ts); een tweede uitgiftepad zou een parallelle sessie-implementatie
-//     zijn — precies wat het dossier verbiedt. «Inloggen mét zo'n koppeling» is dus eerlijk GEPLAND, niet half nagebouwd;
+//   • dit deel KOPPELT een externe identiteit aan het INGELOGDE account als extra aanmeldweg; het geeft zelf GEEN sessies uit.
+//     IDENTITEIT-015 (крок «aanmelden»): «inloggen mét zo'n koppeling» loopt via backend/aanmelden-methoden.ts — dat gebruikt
+//     dezelfde callback (opties.inloggen, één geregistreerd redirect-adres) en geeft de sessie via HETZELFDE uitgiftepad als
+//     Google en Telegram (eigenaarstransactie + ownerCompletePrimaryRedirect in backend/index.ts), geen parallelle implementatie;
 //   • de start is een POST mét de gewone sessie-envelop (service/tabContext): de geauthenticeerde gebruiker vraagt de
 //     authorize-URL op en de browser navigeert; de callback (GET, veilige methode → geen CSRF-kwestie) herkent de mens via
 //     de EENMALIGE state-rij (zoals de bestaande Google-callback via zijn oauth-state), nooit via raadwerk met cookies;
@@ -33,6 +33,7 @@ import type { RouterContext, RouterMiddleware, RouterResponse } from '../server/
 import { AANMELD_AANBIEDERS, aanmeldAanbieder, type AanmeldAanbieder } from '../shared/aanmeld-vnext-model';
 import { magEigenToegang } from '../shared/eigen-toegang';
 import { meldBeveiligingsWijziging } from './beveiliging-meldingen';
+import { laatsteWegFout } from './aanmeld-wegen';
 import { koppelBindingKlopt, koppelBindingVoorAanmaken, koppelBindingWissen, metBindingCookie } from './koppel-binding';
 import { botSleutel as kluisBotSleutel } from './telegram-aanmelden/sleutels';
 import { instellingen as tgInstellingen, koppelingenVanGebruiker as tgKoppelingenVan, vlagHoofdschakelaar as tgVlagAan } from './telegram-aanmelden/opslag';
@@ -77,7 +78,7 @@ async function telegramEffectieveSleutels(): Promise<{ token: string; naam: stri
   const inst = await tgInstellingen().catch(() => null);
   return { token, naam: inst?.botGebruikersnaam || 'MijnRuimte_Bot', uitKluis: true };
 }
-async function sleutelsOntbrekenVoor(a: AanmeldAanbieder): Promise<string[]> {
+export async function sleutelsOntbrekenVoor(a: AanmeldAanbieder): Promise<string[]> {
   if (a.id === 'telegram') {
     const tg = await telegramEffectieveSleutels();
     const weg: string[] = [];
@@ -100,6 +101,7 @@ export function maskLabel(ruw: string): string {
 /** Terug-/redirectbasis: in productie het echte id-domein; in tests overschrijfbaar. Nooit uit het verzoek afgeleid. */
 const terugBasis = (): string => env('AANMELD_TERUG_BASIS') || 'https://id.tarasevych.com';
 const callbackUrl = (id: string): string => `${terugBasis()}/api/aanmeld/koppel/${id}/terug`;
+export const aanmeldTerugBasis = terugBasis; // IDENTITEIT-015: zelfde basis voor de aanmeld-terugkeer
 const paginaUrl = (q: string): string => `${terugBasis()}/aanmeldmethoden?koppel=${q}`;
 const redirect = (naar: string): RouterResponse => ({ statusCode: 302, headers: { Location: naar, 'Cache-Control': 'no-store' }, body: '' });
 
@@ -213,6 +215,33 @@ async function subjectBestaat(aanbieder: string, subject: string): Promise<boole
   const { items } = await db.list<KoppelRecord>(KOPPELINGEN, { filter: { aanbieder, subject }, limit: 1 });
   return items.length > 0;
 }
+/** IDENTITEIT-015: welk account heeft deze externe identiteit gekoppeld (null = niemand). Alleen voor het aanmelden. */
+export async function koppelingEigenaar(aanbieder: string, subject: string): Promise<string | null> {
+  if (!aanbieder || !subject) return null;
+  const { items } = await db.list<KoppelRecord>(KOPPELINGEN, { filter: { aanbieder, subject }, limit: 2 });
+  const rijen = items as Array<{ id: string } & KoppelRecord>;
+  return rijen.length === 1 && rijen[0].ownerUserId ? rijen[0].ownerUserId : null;
+}
+/** IDENTITEIT-015: kan deze aanbieder NU een aanmelding dragen — alle sleutels aanwezig én de laatst bewaarde zelftest 'ok'. */
+export async function externKlaar(id: 'microsoft' | 'discord' | 'apple'): Promise<boolean> {
+  const a = aanmeldAanbieder(id);
+  if (!a || a.stand !== 'sleutels-nodig') return false;
+  if ((await sleutelsOntbrekenVoor(a)).length) return false;
+  return (await zelftestLaatste(id).catch(() => null))?.zelftest === 'ok';
+}
+/** IDENTITEIT-015: authorize-adres voor aanmelden (zelfde contour en redirect-adres als koppelen). */
+export function externAutoriseerUrl(id: 'microsoft' | 'discord' | 'apple', o: { state: string; challenge: string; nonce: string }): string {
+  const basis: Record<string, string> = { response_type: 'code', client_id: env(`AANMELD_${id.toUpperCase()}_CLIENT_ID`), redirect_uri: callbackUrl(id), state: o.state, code_challenge: o.challenge, code_challenge_method: 'S256' };
+  return id === 'microsoft' ? `${MS().authorize}?${new URLSearchParams({ ...basis, scope: 'openid profile email', nonce: o.nonce, response_mode: 'query' })}`
+    : id === 'discord' ? `${DISCORD().authorize}?${new URLSearchParams({ ...basis, scope: 'identify email', prompt: 'consent' })}`
+    : `${APPLE().authorize}?${new URLSearchParams({ ...basis, nonce: o.nonce, response_mode: 'query' })}`;
+}
+/** IDENTITEIT-015: identiteit uit de terugkeer (code-inwisseling, PKCE, id_token-controle) — dezelfde code als bij koppelen. */
+export async function externIdentiteit(id: 'microsoft' | 'discord' | 'apple', query: Record<string, string>, o: { verifier: string; nonce: string }): Promise<{ subject: string; label: string }> {
+  if (str(query.error)) fout('TOKEN_ONGELDIG');
+  return oauthTerug(id, query, { verifier: o.verifier, nonce: o.nonce } as StateRecord);
+}
+
 async function zelftestLaatste(aanbieder: string): Promise<({ id: string } & ZelftestRecord) | null> {
   const { items } = await db.list<ZelftestRecord>(ZELFTESTS, { filter: { aanbieder }, limit: 5 });
   const rijen = items as Array<{ id: string } & ZelftestRecord>;
@@ -334,7 +363,11 @@ async function oauthTerug(id: 'microsoft' | 'discord' | 'apple', query: Record<s
 
 // ------------------------------------------------------------------------------------------------ routes
 /** IDENTITEIT-012: stepUp — повторне підтвердження доступу (у сайті stapOpVereist); без нього прив'язка й відв'язка відмовляють. */
-export type KoppelOpties = { stepUp?: (ctx: unknown, auth: unknown) => Promise<Resp | null> };
+export type KoppelOpties = {
+  stepUp?: (ctx: unknown, auth: unknown) => Promise<Resp | null>;
+  /** IDENTITEIT-015: de terugkeer van een AANMELDING (backend/aanmelden-methoden.ts) via hetzelfde redirect-adres. null = geen aanmeld-state → gewone koppeling. */
+  inloggen?: (rc: RouterContext, aanbieder: string, query: Record<string, string>) => Promise<RouterResponse | null>;
+};
 export function aanmeldKoppelRoutes(requireSession: RequireSession, opties: KoppelOpties = {}): Record<string, RouterMiddleware[]> {
   const stapOp = async (c: Ctx, auth: SessionOk): Promise<Resp | null> => (opties.stepUp ? opties.stepUp(c, auth) : error('STEP_UP_REQUIRED', 403));
   const route = (run: (ctx: Ctx, auth: SessionOk, d: Record<string, unknown>) => Promise<Resp>): RouterMiddleware[] => [(async (raw: unknown) => {
@@ -352,6 +385,9 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession, opties: Kopp
     }
   }) as unknown as RouterMiddleware];
 
+  // IDENTITEIT-015: een goedgekeurde niet-beheerder koppelt zelf (magEigenToegang), maar ziet GEEN namen van serversleutels of
+  // zelftestdetails — alleen of de aanbieder klaar is. Een gewone gebruiker zegt een sleutelnaam niets en ze verraden de inrichting.
+  const zonderSleutelnamen = <T extends { sleutels: unknown[] }>(s: T, beheer: boolean) => (beheer ? s : { ...s, sleutels: [], sleutelsCompleet: (s.sleutels as Array<{ aanwezig: boolean }>).every((x) => x.aanwezig), zelftestDetails: undefined });
   const statusVan = async (a: AanmeldAanbieder, userId: string) => {
     const tg = a.id === 'telegram' ? await telegramEffectieveSleutels() : null;
     const sleutels = (a.vereist ?? []).map((naam) => ({
@@ -382,6 +418,8 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession, opties: Kopp
     const a = aanmeldAanbieder(id);
     if (!a || a.stand !== 'sleutels-nodig') return redirect(paginaUrl(`${id || 'onbekend'}-fout&reden=AANBIEDER_ONBEKEND`));
     const q = rc.query || {};
+    // IDENTITEIT-015: hoort de state bij een aanmelding (niet bij een koppeling), dan handelt de aanmeldmodule alles af.
+    if (opties.inloggen && id !== 'telegram') { const r = await opties.inloggen(rc, id, q as Record<string, string>).catch(() => null); if (r) return r; }
     let geclaimdeStateHash = '';
     const stuurTerug = (naar: string): RouterResponse =>
       geclaimdeStateHash ? metBindingCookie(redirect(naar), koppelBindingWissen('koppel', geclaimdeStateHash)) : redirect(naar);
@@ -419,7 +457,7 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession, opties: Kopp
   return {
     // -------------------------------------------------------------- levende status (geen verzinsels)
     'POST /api/owner/aanmeld/vnext/aanbieders': route(async (_c, auth) => json({
-      aanbieders: await Promise.all(AANMELD_AANBIEDERS.map((a) => statusVan(a, auth.user.id))),
+      aanbieders: await Promise.all(AANMELD_AANBIEDERS.map(async (a) => zonderSleutelnamen(await statusVan(a, auth.user.id), auth.user.role === 'owner' || auth.user.role === 'admin'))),
       koppelPad: '/api/aanmeld/koppel/:aanbieder/terug',
     })),
     // -------------------------------------------------------------- zelftest van de eigen contour (read-only + audit)
@@ -461,6 +499,8 @@ export function aanmeldKoppelRoutes(requireSession: RequireSession, opties: Kopp
     'POST /api/owner/aanmeld/vnext/ontkoppel': route(async (c, auth, d) => {
       const a = aanmeldAanbieder(str(d.id)) ?? fout('AANBIEDER_ONBEKEND');
       const koppeling = (await koppelingVan(auth.user.id, a.id)) ?? fout('KOPPELING_ONBEKEND');
+      // IDENTITEIT-015 (aanmelden): тепер прив'язкою можна входити — останній робочий шлях входу не відв'язується.
+      { const blok = await laatsteWegFout(auth.user, a.id); if (blok) return error(blok, 409); }
       { const stap = await stapOp(c, auth); if (stap) return stap; }
       await db.delete(KOPPELINGEN, [koppeling.id]);
       await auditToevoegen({ ownerId: auth.user.id, actorId: auth.user.id, action: 'aanmeld.ontkoppeling', type: 'identity', result: 'ok', details: { aanbieder: a.id, label: koppeling.label } }).catch(() => undefined);

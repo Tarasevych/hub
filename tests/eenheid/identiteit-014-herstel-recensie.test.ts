@@ -151,8 +151,8 @@ export async function main(): Promise<number> {
       write: async () => {}, load: async () => {}, nieuweHerstelcodes: async () => {}, totpUitschakelen: async () => {}, recoverySaved: async () => {},
       data: { admin, architecture: 'access-plane-v1', contour: { clientId: '', redirectUri: '', credentialsConfigured: true, source: '', hasVaultOverride: false, hasPlatformSecret: false, missing: [], lockProtected: false, updatedAt: 0 }, policy: { enabled: {}, mfa: 'optional' }, methods: [{ id: 'google', enabled: true, configured: true, status: 'active' }], factors: [], bindings: [], usableCount: 1, lockout: { protected: false, reason: '' }, password: { configured: false, mustChange: false }, totp: { enrolled: false } },
     } as never));
-    check('3: каталог провайдерів (назви ключів сервера, самотест) — лише власнику сайту; звичайний учасник його не отримує',
-      !html(false).includes('class="amv"') && html(true).includes('class="amv"') && html(false).includes('id="aanmeldmethoden-catalogus"'));
+    check('3: каталог провайдерів — для кожного схваленого (прив’язка), але назви ключів сервера й самотест — лише власнику (beheer=admin)',
+      html(false).includes('class="amv"') && html(true).includes('class="amv"') && html(false).includes('id="aanmeldmethoden-catalogus"') && lees('src/toegangslaag-panelen.tsx').includes('beheer={!!data.admin}'));
     check('3: каталог у старій панелі — без плитки Telegram (zonder), бо живий стан Telegram уже на сторінці',
       lees('src/toegangslaag-panelen.tsx').includes("zonder={['telegram']}") && lees('src/aanmeld-vnext/onderdelen/AanbiederCatalogus.tsx').includes('AANMELD_AANBIEDERS.filter((a) => !zonder.includes(a.id))'));
     const aan = { zichtbaar: true, bot: 'x', botId: '1', stand: 'werkt', soort: 'x', status: { stand: 'werkt', soort: 'x' }, plaatsing: null } as never;

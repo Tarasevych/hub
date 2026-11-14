@@ -50,6 +50,7 @@ const writeSubmenuPreferences=(value:SubmenuPreferences)=>{try{sessionStorage.se
 // Google-knop dan draaien zolang het menu open stond).
 import AanmeldAndereOpties from './AanmeldAndereOpties';
 import AanmeldTelegram from './telegram-aanmelden/AanmeldTelegram'; /* TELEGRAM-AANMELDEN v1: toont niets zolang de server zichtbaar=false zegt */
+import AanmeldZonderGoogle, { ZONDER_GOOGLE, useTerugFout, type ZonderGoogleId } from './aanmelden/AanmeldZonderGoogle'; /* IDENTITEIT-015 (aanmelden): ключ доступу, пароль, Microsoft/Discord/Apple */
 import { useAanmeldConfig } from './telegram-aanmelden/aanmeld-config';
 import { aanmeldIndeling } from '../shared/aanmeld-plaatsing/plaatsing';
 import { GOOGLE_G_DATA_URI } from './merk/google-g-officieel';
@@ -97,6 +98,7 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  const[forgettingGrant,setForgettingGrant]=useState('');
  const aanmeldCfg=useAanmeldConfig(); /* AANMELD-PLAATSING v1: hook vóór elke vroege return */
  const pauze=useAanmeldPauze();
+ const terugFout=useTerugFout(lang); /* IDENTITEIT-015: помилка, з якою Microsoft/Discord/Apple повернули на сторінку входу */
  // Terug van Google: alleen bij de EERSTE weergave in 'checking' gelezen (daarna zegt de app zelf of het profiel open is).
  const[terugVanAanmelden]=useState(()=>checking&&aanmeldenBezig());
  const vertrekt=useRef(false);
@@ -147,6 +149,8 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  const pauzeTekst=pauze.actief||pauze.zojuistVrij?aanmeldPauzeBericht(Math.max(1,pauze.resterend),lang,pauze.soort,pauze.limiet):null;
  const postdienst=typeof window!=='undefined'&&(window.location.hostname.startsWith('mail.')||window.location.pathname.startsWith('/mail'));
  const indeling=aanmeldIndeling(aanmeldCfg);
+ /* IDENTITEIT-015 (aanmelden): лише ті способи без Google, які сервер назвав робочими; решта лишається вимкненим рядком із причиною. */
+ const werkendZonderGoogle=(Array.isArray(aanmeldCfg?.methoden)?aanmeldCfg!.methoden:[]).filter(m=>(ZONDER_GOOGLE as readonly string[]).includes(m));
  const googleG=<img src={GOOGLE_G_DATA_URI} alt='' width={18} height={18} draggable={false} data-merk-officieel='google'/>;
  const googleKnop=(
    <button type='button' className='mr-sign-in-main-button' data-activated={draait?'true':'false'} data-pauze={pauze.actief?'true':undefined} disabled={(!checking&&pauze.actief)||undefined} aria-disabled={checking||Boolean(selectingGrant)||pauze.actief||undefined} onClick={google} onBlur={e=>{if(activating&&!vertrekt.current&&e.relatedTarget)stop()}}>
@@ -166,14 +170,16 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
    </div>}
    {/* Focus naar een ander element op de pagina (bv. de accountkeuze die opent) = geen aanmelding meer; het venster verlaten (relatedTarget leeg) niet. */}
    {/* AANMELD-PLAATSING v1: volgorde en plaats per methode komen van de beheerder (met de vlag aan); zonder plaatsing exact zoals vroeger. */}
-   {indeling.hoofd.map(m=>m==='google'?<Fragment key='google'>{googleKnop}</Fragment>:m==='telegram'&&!checking?<AanmeldTelegram key='telegram' lang={lang} remember={rememberBrowser}/>:null)}
+   {indeling.hoofd.map(m=>m==='google'?<Fragment key='google'>{googleKnop}</Fragment>:m==='telegram'&&!checking?<AanmeldTelegram key='telegram' lang={lang} remember={rememberBrowser}/>:werkendZonderGoogle.includes(m)&&!checking?<AanmeldZonderGoogle key={m} id={m as ZonderGoogleId} lang={lang} remember={rememberBrowser} hoofd/>:null)}
    {!checking&&pauzeTekst&&(pauze.actief||pauze.zojuistVrij)&&<div className={`mr-sign-in-pauze${pauze.zojuistVrij?' is-vrij':''}`} role='status' aria-live='polite' data-aanmeld-pauze={pauze.actief?'wacht':'vrij'}>
     {pauze.actief?<><strong>{pauzeTekst.kop}</strong><span>{pauzeTekst.uitleg}</span></>:<span>{pauzeTekst.vrij}</span>}
    </div>}
    {!checking&&foutMelding&&!pauze.actief?<p className='mr-sign-in-fout' role='alert'>{foutMelding}</p>:null}
+   {!checking&&terugFout&&!foutMelding?<p className='mr-sign-in-fout' role='alert' data-aanmeld-terug-fout>{terugFout}</p>:null}
    {!checking&&<AanmeldAndereOpties lang={lang} ids={indeling.andere} extra={{
     ...(indeling.andere.includes('google')?{google:<button type='button' className='mr-sign-in-optie mr-sign-in-optie-google' disabled={pauze.actief||undefined} onClick={google}><span className='mr-sign-in-optie-logo' aria-hidden='true'>{googleG}</span><span className='mr-sign-in-optie-tekst'><strong>{uk?'Увійти через Google':'Aanmelden met Google'}</strong></span></button>}:{}),
     ...(indeling.andere.includes('telegram')?{telegram:<AanmeldTelegram lang={lang} remember={rememberBrowser}/>}:{}),
+    ...Object.fromEntries(werkendZonderGoogle.filter(m=>indeling.andere.includes(m as never)).map(m=>[m,<AanmeldZonderGoogle key={m} id={m as ZonderGoogleId} lang={lang} remember={rememberBrowser}/>])),
    }}/>}
    {!checking&&onRememberBrowser&&<label className='mr-sign-in-remember'>
     <input type='checkbox' checked={rememberBrowser} onChange={event=>onRememberBrowser(event.target.checked)}/>

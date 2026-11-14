@@ -104,6 +104,31 @@ export const VLAG_UITLEG: Record<string, VlagUitleg> = {
     wanneer: ['Спершу тільки для себе: у адмінці введіть ключ бота й натисніть «Налаштувати бота», прив’яжіть свій Telegram і перевірте. Потім — для частини людей або всіх.', 'Eerst alleen voor uzelf: voer in het beheer de botsleutel in en kies «Bot instellen», koppel uw eigen Telegram en test. Daarna voor een deel van de mensen of iedereen.'],
     gevolg: ['Вимкнення одразу ховає кнопку Telegram і зупиняє бота; прив’язки, коди й налаштування зберігаються до наступного вмикання. Інші способи входу не змінюються.', 'Uitschakelen verbergt de Telegram-knop meteen en zet de bot stil; koppelingen, codes en instellingen blijven bewaard tot de volgende inschakeling. Andere aanmeldmethoden veranderen niet.'],
   },
+  // IDENTITEIT-015 (aanmelden): чотири окремі шляхи без Google; міграція 0275 ставить кожен на «Тільки я» (лише власник сайту).
+  'aanmelden-passkey': {
+    naam: ['! Вхід лише ключем доступу (без Google)', '! Aanmelden met alleen een toegangssleutel (zonder Google)'],
+    wat: ['На сторінці входу з’являється «Увійти ключем доступу»: браузер пропонує збережений ключ (відбиток, обличчя, PIN або телефон), і сайт відкриває той самий сеанс, що й після Google. Ключ із перевіркою користувача — одразу два чинники.', 'Op de aanmeldpagina verschijnt «Aanmelden met toegangssleutel»: de browser biedt een bewaarde sleutel aan (vingerafdruk, gezicht, pincode of telefoon) en de site opent dezelfde sessie als na Google. Een sleutel met gebruikerscontrole telt meteen als twee factoren.'],
+    wanneer: ['Спершу тільки для себе: додайте ключ доступу в «Безпеці», вийдіть і увійдіть ним. Ризик: хто має розблокований пристрій із вашим ключем, той увійде без Google — тож давайте іншим лише тоді, коли вони розуміють це.', 'Eerst alleen voor uzelf: voeg een sleutel toe bij «Beveiliging», meld af en meld aan met de sleutel. Risico: wie uw ontgrendelde apparaat met de sleutel heeft, meldt aan zonder Google — geef het anderen pas als ze dat begrijpen.'],
+    gevolg: ['Вимкнення одразу прибирає кнопку і відмовляє новим входам ключем; відкриті сеанси й самі ключі лишаються. Підтвердження дій ключем працює як раніше.', 'Uitschakelen haalt de knop meteen weg en weigert nieuwe aanmeldingen met een sleutel; open sessies en de sleutels zelf blijven. Handelingen bevestigen met een sleutel werkt zoals voorheen.'],
+  },
+  'aanmelden-wachtwoord': {
+    naam: ['! Вхід паролем', '! Aanmelden met wachtwoord'],
+    wat: ['На сторінці входу з’являється форма «Увійти паролем»: адреса, пароль і (якщо налаштовано) код із застосунку або код відновлення — одним запитом. Після кількох помилок спроби тимчасово блокуються.', 'Op de aanmeldpagina verschijnt het formulier «Aanmelden met wachtwoord»: adres, wachtwoord en (als ingesteld) app-code of herstelcode in één verzoek. Na enkele fouten worden pogingen tijdelijk geblokkeerd.'],
+    wanneer: ['Коли комусь потрібен вхід без Google. Ризик: пароль можна вгадати або викрасти — радьте додати код із застосунку.', 'Wanneer iemand zonder Google moet kunnen aanmelden. Risico: een wachtwoord kan geraden of gestolen worden — raad een app-code aan.'],
+    gevolg: ['Вимкнення прибирає форму й відмовляє новим входам паролем; паролі не видаляються. Захист від блокування тоді не рахує пароль як спосіб входу.', 'Uitschakelen haalt het formulier weg en weigert nieuwe wachtwoord-aanmeldingen; wachtwoorden blijven bewaard. De bescherming tegen buitensluiten telt het wachtwoord dan niet als aanmeldweg.'],
+  },
+  'aanmelden-extern': {
+    naam: ['! Вхід через Microsoft, Discord або Apple', '! Aanmelden met Microsoft, Discord of Apple'],
+    wat: ['Людина, яка прив’язала свій Microsoft, Discord чи Apple у «Способах входу», може ним і входити. Кнопка з’являється лише для провайдера, у якого є ключі власника й пройдена самоперевірка.', 'Wie zijn Microsoft, Discord of Apple koppelde bij «Aanmeldmethoden», kan er ook mee aanmelden. De knop verschijnt alleen voor een aanbieder met sleutels van de eigenaar en een geslaagde zelftest.'],
+    wanneer: ['Після того, як ключі AANMELD_* введено й самоперевірку пройдено. Ризик: доступ до облікового запису залежить і від безпеки чужого облікового запису.', 'Nadat de AANMELD_*-sleutels zijn ingevoerd en de zelftest geslaagd is. Risico: de toegang hangt dan ook af van de beveiliging van dat andere account.'],
+    gevolg: ['Вимкнення прибирає кнопки й відмовляє новим входам; прив’язки лишаються.', 'Uitschakelen haalt de knoppen weg en weigert nieuwe aanmeldingen; koppelingen blijven.'],
+  },
+  'aanmelden-sms': {
+    naam: ['Підтвердження номера кодом із SMS', 'Telefoonnummer bevestigen met sms-code'],
+    wat: ['У «Способах входу» людина вводить номер і отримує код у SMS; після правильного коду номер стає «Підтверджено». Входу за номером немає.', 'Bij «Aanmeldmethoden» voert iemand een nummer in en krijgt een sms-code; na de juiste code staat het nummer op «Bevestigd». Aanmelden met het nummer kan niet.'],
+    wanneer: ['Коли в «Сховищі секретів» є ключ SMS_AANBIEDER (Twilio). Кожне SMS коштує грошей власнику — ліміт 5 на годину на людину.', 'Als de geheimenkluis de sleutel SMS_AANBIEDER (Twilio) bevat. Elke sms kost de eigenaar geld — limiet 5 per uur per persoon.'],
+    gevolg: ['Вимкнення приховує надсилання коду; підтверджені номери лишаються.', 'Uitschakelen verbergt het versturen van codes; bevestigde nummers blijven.'],
+  },
   'aanmeldmethoden-vnext': {
     naam: ['Нові «Способи входу» (UI-015)', 'Nieuwe aanmeldmethoden (UI-015)'],
     wat: ['Сучасна сторінка способів входу: банер, зрозумілі картки методів з однією дією, деталі в бокових панелях. Усі чинні механізми (Google, passkeys, TOTP, коди відновлення, шифрування, коди доступу, step-up) — ті самі, лише в новому поданні; плюс чесний каталог майбутніх провайдерів.', 'Moderne aanmeldmethoden-pagina: hero, duidelijke methodekaarten met één hoofdactie, details in zijpanelen. Alle bestaande mechanismen (Google, passkeys, TOTP, herstelcodes, versleuteling, toegangscodes, step-up) blijven dezelfde; plus een eerlijke catalogus van toekomstige aanbieders.'],
