@@ -8,6 +8,8 @@
 // hem niet bij elk verzoek te krijgen). Hij gaat mee naar de aanmelding (redirect-login → `remember`), en de SERVER is daarna
 // de bron van waarheid: de bootstrap meldt `rememberedBrowser` (bestaat er een grant voor deze browser?) en daarmee wordt
 // deze waarde weer gelijkgezet. Dat bepaalt ook of de privé-mailcache na afmelden wordt gewist (src/mail-bijlage-cache.ts).
+// IDENTITEIT-013: een bewust lokaal «uit» gaat vóór — de server kan het onthouden alleen UITzetten, nooit weer aan; en uitzetten
+// in «Сесії» trekt meteen de grant van deze browser in (SessiesOverzicht → security/items/:id/revoke, kind grant).
 const SLEUTEL = 'tsv-aanmelden-onthouden-v1';
 /** Standaard AAN: dat was het gedrag van het vinkje; alleen een bewust «uit» wordt bewaard. */
 export const leesAanmeldenOnthouden = (): boolean => {

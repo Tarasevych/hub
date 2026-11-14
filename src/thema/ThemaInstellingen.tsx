@@ -1,6 +1,6 @@
 // Налаштування → Теми: режим (світлий / темний / як на пристрої / авто) + кольори (палет) + розклад автоперемикання.
 // Режим — це шар поверх кольорів: кожен палет має світлий і темний тон.
-import { Clock, LocateFixed, Monitor, Moon, Pause, Play, Sun, SunMoon } from 'lucide-react';
+import { Clock, LocateFixed, Monitor, Moon, Pause, Play, Sun, SunMoon, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { ThemePreference } from '../gedeelde-voorkeuren';
 import { leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type AutoInstelling, type Palet } from './kern';
@@ -38,7 +38,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
     if (!('geolocation' in navigator)) { setGeoMelding(tr('Браузер не підтримує визначення місця. Оберіть місто зі списку.', 'De browser kan de locatie niet bepalen. Kies een stad uit de lijst.')); return; }
     setGeoMelding(tr('Запитую місце в браузера…', 'Locatie opvragen bij de browser…'));
     navigator.geolocation.getCurrentPosition(
-      (p) => { auto({ soort: 'zon', lat: Math.round(p.coords.latitude * 10) / 10, lon: Math.round(p.coords.longitude * 10) / 10, plaats: tr('Моє місце (приблизно)', 'Mijn plaats (ongeveer)') }); setGeoMelding(tr('Збережено приблизно (до ~10 км). Точне місце не зберігається.', 'Bewaard bij benadering (tot ~10 km). De exacte plaats wordt niet bewaard.')); },
+      (p) => { auto({ soort: 'zon', lat: Math.round(p.coords.latitude * 10) / 10, lon: Math.round(p.coords.longitude * 10) / 10, plaats: tr('Моє місце (приблизно)', 'Mijn plaats (ongeveer)') }); setGeoMelding(tr('Збережено приблизно (до ~10 км) у налаштуваннях облікового запису — так тема перемикається однаково на всіх ваших пристроях і піддоменах. Точне місце не зберігається.', 'Bij benadering bewaard (tot ~10 km) in de accountinstellingen — zo wisselt het thema gelijk op al uw apparaten en subdomeinen. De exacte plaats wordt niet bewaard.')); },
       () => setGeoMelding(tr('Місце не надано. Оберіть місто зі списку — так теж працює.', 'Geen locatie gekregen. Kies een stad uit de lijst — dat werkt ook.')),
       { enableHighAccuracy: false, timeout: 15000, maximumAge: 24 * 3600 * 1000 },
     );
@@ -69,7 +69,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
       <p className='thema-status' role='status' data-thema-status>
         {status.donker ? <Moon aria-hidden /> : <Sun aria-hidden />}
         <span>{status.donker ? tr('Зараз темна', 'Nu donker') : tr('Зараз світла', 'Nu licht')}{status.volgende ? ` · ${tr('наступне перемикання о', 'volgende wissel om')} ${tijd(status.volgende, lang)}` : ''}{status.gepauzeerd ? ` · ${tr('автоперемикання призупинено', 'automatisch wisselen gepauzeerd')}` : ''}</span>
-        <button type='button' className='thema-pauze' onClick={() => (status.gepauzeerd ? hervatAuto() : pauzeerAuto())} data-thema-pauze>{status.gepauzeerd ? <><Play aria-hidden />{tr('Повернути автоперемикання', 'Automatisch wisselen hervatten')}</> : <><Pause aria-hidden />{tr('Скасувати автоперемикання на сьогодні', 'Automatisch wisselen vandaag annuleren')}</>}</button>
+        <button type='button' className='thema-pauze' onClick={() => (status.gepauzeerd ? hervatAuto() : pauzeerAuto())} data-thema-pauze>{status.gepauzeerd ? <><Play aria-hidden />{tr('Повернути автоперемикання', 'Automatisch wisselen hervatten')}</> : <><Pause aria-hidden />{tr('Призупинити до наступного перемикання', 'Pauzeren tot de volgende wissel')}</>}</button>
       </p>
       <div className='thema-soort' role='radiogroup' aria-label={tr('Як перемикати', 'Hoe wisselen')}>
         <label><input type='radio' name='thema-soort' checked={a.soort === 'zon'} onChange={() => auto({ soort: 'zon' })} /> <span><strong>{tr('Коли надворі темно', 'Wanneer het buiten donker is')}</strong><small>{tr('За сходом і заходом сонця (сутінки) у вашому місті', 'Volgens zonsopgang en -ondergang (schemering) in uw stad')}</small></span></label>
@@ -83,11 +83,13 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
           </select>
         </label>
         <button type='button' className='thema-knop' onClick={zoek} data-thema-locatie><LocateFixed aria-hidden />{tr('Визначити за моїм місцем', 'Bepalen via mijn locatie')}</button>
+        {/* IDENTITEIT-013: приблизне місце зберігається в обліковому записі; його можна забути (сутінки рахуються для Брюсселя). */}
+        {a.lat !== undefined && <button type='button' className='thema-knop' onClick={() => { zetAuto({ ...a, lat: undefined, lon: undefined, plaats: undefined }); setGeoMelding(tr('Місце забуто. Сутінки рахуються для Брюсселя, доки ви не оберете місто.', 'Plaats vergeten. De schemering wordt voor Brussel berekend tot u een stad kiest.')); }} data-thema-vergeet title={tr('Прибирає збережені приблизні координати з облікового запису на всіх пристроях', 'Verwijdert de bewaarde benaderde coördinaten uit het account op alle apparaten')}><X aria-hidden />{tr('Забути місце', 'Plaats vergeten')}</button>}
         {geoMelding && <p className='thema-uitleg' role='status'>{geoMelding}</p>}
         <p className='thema-uitleg' data-thema-zon>{typeof zon === 'object' ? tr(`Сьогодні світла з ${tijd(zon.op, lang)} до ${tijd(zon.onder, lang)}, решту часу — темна.`, `Vandaag licht van ${tijd(zon.op, lang)} tot ${tijd(zon.onder, lang)}, de rest van de tijd donker.`) : zon === 'nacht' ? tr('Сьогодні полярна ніч — темна весь день.', 'Vandaag poolnacht — de hele dag donker.') : tr('Сьогодні біла ніч — світла весь день.', 'Vandaag witte nacht — de hele dag licht.')}</p>
       </div> : <div className='thema-interval'>
-        <label className='thema-veld'><Clock aria-hidden />{tr('Темна з', 'Donker vanaf')}<input type='time' value={a.van} onChange={(e) => e.target.value && auto({ soort: 'interval', van: e.target.value })} data-thema-van /></label>
-        <label className='thema-veld'>{tr('до', 'tot')}<input type='time' value={a.tot} onChange={(e) => e.target.value && auto({ soort: 'interval', tot: e.target.value })} data-thema-tot /></label>
+        <label className='thema-veld'><Clock aria-hidden />{tr('Темна тема з', 'Donker thema vanaf')}<input type='time' value={a.van} onChange={(e) => e.target.value && auto({ soort: 'interval', van: e.target.value })} data-thema-van /></label>
+        <label className='thema-veld'>{tr('до (світла з)', 'tot (licht vanaf)')}<input type='time' value={a.tot} onChange={(e) => e.target.value && auto({ soort: 'interval', tot: e.target.value })} data-thema-tot /></label>
       </div>}
     </section>}
 
