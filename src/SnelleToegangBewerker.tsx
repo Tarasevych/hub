@@ -6,11 +6,11 @@
 // Alles geldt alleen voor DIT account en alleen voor DEZE webruimte (gebruikersruimte of technisch profiel): de voorkeuren staan per
 // account én per ruimte op de server (zie src/zijbalk-voorkeuren.ts en shared/menu-model.ts). Elke wijziging gaat via `menuWijzigen`,
 // dus met «Ongedaan maken» en meteen op alle subdomeinen.
-import { useMemo, useState, type KeyboardEvent as RKeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent } from 'react';
 import { ArrowDown, ArrowUp, Palette, Plus, RotateCcw, Trash2, Zap } from 'lucide-react';
 import { ACCENTEN, DIENST_ACCENT, type Accent } from '../shared/menu-model';
 import { isBeheerPagina } from '../shared/beheer-paginas';
-import { itemIcoonZetten, itemKleurZetten, menuWeergave, nieuweKopieId, ontleed, snelKandidaten, snelStap, snelToevoegen, snelWeg, snelbalkTerugzetten, type Basis, type Rij } from '../shared/menu-indeling';
+import { itemIcoonZetten, itemKleurZetten, menuWeergave, nieuweKopieId, ontleed, snelFocusNaStap, snelKandidaten, snelStap, snelToevoegen, snelWeg, snelbalkTerugzetten, type Basis, type Rij } from '../shared/menu-indeling';
 import { dienstToegestaan, type AccountRechten } from './account-rechten';
 import { MENU_CATALOG, MENU_ICON_OPTIONS, MenuGlyph, TECH_MENU, isSiteBeheer, localTabIcon } from './menu-voorkeuren';
 import { itemNaam } from './MenuIndelingInstellingen';
@@ -54,14 +54,28 @@ export default function SnelleToegangEditor({ tr, rechten }: { tr: Tr; rechten?:
   const rijen = weergave.snelbalk.filter((r) => mag(r.item));
   const kandidaten = snelKandidaten(v, basis).filter(mag);
 
-  const doe = (res: ReturnType<typeof snelStap>, tekst: string) => { if (res.ok) menuWijzigen(res.v, tekst, lang); };
+  const doe = (res: ReturnType<typeof snelStap>, tekst: string) => { if (res.ok) menuWijzigen(res.v, tekst, lang); return res.ok; };
   const naam = (item: string) => itemNaam(item, lang);
   const toevoegen = () => { if (!nieuw) return; doe(snelToevoegen(v, basis, nieuw, nieuweKopieId(rnd)), tr(`«${naam(nieuw)}» додано до швидкого доступу`, `«${naam(nieuw)}» toegevoegd aan de snelle toegang`)); setNieuw(''); };
-  const toetsen = (r: Rij) => (e: RKeyboardEvent) => {
+  // IDENTITEIT-015 (приймання menu): після переміщення фокус лишається на рядку (див. snelFocusNaStap) — інакше кнопка на краю
+  // вимикається, фокус падає на <body>, і наступне Alt+стрілка нічого не робить. Focus blijft op de verplaatste rij.
+  const focusNa = useRef<{ sleutel: string; knop: 'omhoog' | 'omlaag' } | null>(null);
+  useEffect(() => {
+    const f = focusNa.current;
+    if (!f) return;
+    focusNa.current = null;
+    document.querySelector<HTMLButtonElement>(`[data-snel-${f.knop}="${CSS.escape(f.sleutel)}"]`)?.focus();
+  });
+  const verplaats = (r: Rij, i: number, d: -1 | 1, tekst: string) => {
+    if (!doe(snelStap(v, basis, r.sleutel, d), tekst)) return;
+    const knop = snelFocusNaStap(i + d, rijen.length, d);
+    if (knop) focusNa.current = { sleutel: r.sleutel, knop };
+  };
+  const toetsen = (r: Rij, i: number) => (e: RKeyboardEvent) => {
     if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
     e.preventDefault();
     const d = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 1;
-    doe(snelStap(v, basis, r.sleutel, d), tr(`«${naam(r.item)}» переміщено`, `«${naam(r.item)}» verplaatst`));
+    verplaats(r, i, d, tr(`«${naam(r.item)}» переміщено`, `«${naam(r.item)}» verplaatst`));
   };
 
   return <fieldset className='zijbalk-meldingen menu-snel-editor' data-snelle-toegang-editor>
@@ -80,8 +94,8 @@ export default function SnelleToegangEditor({ tr, rechten }: { tr: Tr; rechten?:
         <span className='menu-snel-voorbeeld' aria-hidden='true'><MenuGlyph icon={r.icoon || standaardIcoon(r)} /></span>
         <span className='menu-snel-naam'><strong>{naam(r.item)}</strong><small>{tr(`позиція ${i + 1} з ${rijen.length}`, `positie ${i + 1} van ${rijen.length}`)}</small></span>
         <span className='menu-snel-knoppen'>
-          <button type='button' data-snel-omhoog={r.sleutel} disabled={i === 0} aria-label={tr(`Перемістити «${naam(r.item)}» раніше`, `«${naam(r.item)}» eerder zetten`)} onKeyDown={toetsen(r)} onClick={() => doe(snelStap(v, basis, r.sleutel, -1), tr(`«${naam(r.item)}» переміщено раніше`, `«${naam(r.item)}» eerder gezet`))}><ArrowUp aria-hidden='true' /></button>
-          <button type='button' data-snel-omlaag={r.sleutel} disabled={i === rijen.length - 1} aria-label={tr(`Перемістити «${naam(r.item)}» пізніше`, `«${naam(r.item)}» later zetten`)} onKeyDown={toetsen(r)} onClick={() => doe(snelStap(v, basis, r.sleutel, 1), tr(`«${naam(r.item)}» переміщено пізніше`, `«${naam(r.item)}» later gezet`))}><ArrowDown aria-hidden='true' /></button>
+          <button type='button' data-snel-omhoog={r.sleutel} disabled={i === 0} aria-label={tr(`Перемістити «${naam(r.item)}» раніше`, `«${naam(r.item)}» eerder zetten`)} onKeyDown={toetsen(r, i)} onClick={() => verplaats(r, i, -1, tr(`«${naam(r.item)}» переміщено раніше`, `«${naam(r.item)}» eerder gezet`))}><ArrowUp aria-hidden='true' /></button>
+          <button type='button' data-snel-omlaag={r.sleutel} disabled={i === rijen.length - 1} aria-label={tr(`Перемістити «${naam(r.item)}» пізніше`, `«${naam(r.item)}» later zetten`)} onKeyDown={toetsen(r, i)} onClick={() => verplaats(r, i, 1, tr(`«${naam(r.item)}» переміщено пізніше`, `«${naam(r.item)}» later gezet`))}><ArrowDown aria-hidden='true' /></button>
           <select data-snel-icoon={r.sleutel} value={r.icoon || ''} aria-label={tr(`Іконка «${naam(r.item)}»`, `Icoon van «${naam(r.item)}»`)} onChange={(e) => doe(itemIcoonZetten(v, r.sleutel, e.target.value || undefined), tr(`Іконку «${naam(r.item)}» змінено`, `Icoon van «${naam(r.item)}» gewijzigd`))}>
             <option value=''>{tr('Стандартна іконка', 'Standaardicoon')}</option>
             {MENU_ICON_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o[lang]}</option>)}

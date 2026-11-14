@@ -130,7 +130,10 @@ export async function main(): Promise<number> {
 
   // ------------------------------------------------------------------ 9. давня вада: синхронізація сповіщень без контексту (401)
   const ctxBron = lees('src/meldingen/sessie-context.ts');
-  check('meldingLichaam додає service і tabContext', ctxBron.includes('serviceFromLocation') && ctxBron.includes('ecosystemTabContext()'));
+  // IDENTITEIT-015 (приймання menu): запасна служба — служба хоста (sessieDienst, «hub» на hub.*), а не serviceFromLocation («ai» на hub.* → 401).
+  check('meldingLichaam додає service і tabContext; запасна служба — служба хоста (sessieDienst), не serviceFromLocation', /zijbalkServerDienst\(\) \|\| sessieDienst\(\)/.test(ctxBron) && !/import \{[^}]*serviceFromLocation/.test(ctxBron) && ctxBron.includes('ecosystemTabContext()'));
+  const navBron = lees('src/canoniek-navigatie.ts');
+  check('sessieDienst geeft de dienst van de host zelf (geen hub→ai-omzetting)', /export const sessieDienst=\(\):CanonicalService=>resolveCanonicalRoute\(\)\.service;/.test(navBron));
   const syncBronnen = lees('src/meldingen/gelezen-sync.ts') + lees('src/meldingen/v2/status-opslag.ts');
   check('усі запити /api/owner/meldingen/(status|gelezen) несуть контекст сесії', (syncBronnen.match(/api\.post\('\/api\/owner\/meldingen\/[a-z/]+', meldingLichaam\(/g) || []).length === 5 && !/meldingen\/(status|gelezen)[a-z/]*', \{/.test(syncBronnen));
   check('діалог не дублює заголовок шапки Venster (лише для читачів екрана)', /\.bevestig-dialoog-titel\{position:absolute/.test(css));

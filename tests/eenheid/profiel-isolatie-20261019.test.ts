@@ -107,6 +107,10 @@ export async function main(): Promise<number> {
       gebOk.status === 200 && gebOk.data.ruimte === 'gebruiker' && gebOk.data.sidebar?.modus === 'dicht' && gebOk.data.sidebar?.items?.['pg:mail/inbox']?.kleur === 'blauw', `${gebOk.status} ${gebOk.body.slice(0, 180)}`);
     check('bootstrap (/ui/preferences) geeft de GEBRUIKERSruimte', (await bootstrapZijbalk(b))?.modus === 'dicht');
     check('gebruikersruimte lezen via /ui/sidebar: dezelfde indeling', (await lezen(b)).data.sidebar?.modus === 'dicht');
+    // IDENTITEIT-015 (приймання menu): відповідь називає місце збереження — цей обліковий запис і вебзона, на сервері.
+    const plaatsGeb = (await lezen(b)).data.opslag;
+    check('/ui/sidebar noemt de bewaarplaats: dit account + webruimte «gebruiker», op de server',
+      plaatsGeb?.account === eigUser.id && plaatsGeb?.ruimte === 'gebruiker' && plaatsGeb?.plaats === 'server', JSON.stringify(plaatsGeb));
 
     // ---- met een LOPENDE activering in DIT tabblad: eigen technische indeling
     await tp.activeren(eigUser, b.tab, 60, 'eenheidstest profielscheiding');
@@ -115,6 +119,7 @@ export async function main(): Promise<number> {
       techOk.status === 200 && techOk.data.ruimte === 'technisch' && techOk.data.sidebar?.modus === 'open' && techOk.data.sidebar?.items?.['pg:admin/updates']?.kleur === 'rood', `${techOk.status} ${techOk.body.slice(0, 180)}`);
     const techGelezen = await lezen(b, 'technisch');
     check('technische indeling lezen: alleen de technische stand', techGelezen.status === 200 && techGelezen.data.sidebar?.modus === 'open' && !techGelezen.data.sidebar?.items?.['pg:mail/inbox']);
+    check('technische indeling: bewaarplaats noemt hetzelfde account en webruimte «technisch»', techGelezen.data.opslag?.account === eigUser.id && techGelezen.data.opslag?.ruimte === 'technisch', JSON.stringify(techGelezen.data.opslag));
     check('de gebruikersruimte is NIET veranderd door het opslaan van het technische profiel',
       (await bootstrapZijbalk(b))?.modus === 'dicht' && (await bootstrapZijbalk(b))?.items?.['pg:mail/inbox']?.kleur === 'blauw');
     const gebNa = await opslaan(b, { modus: 'auto' });
