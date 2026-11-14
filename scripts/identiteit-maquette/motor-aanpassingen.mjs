@@ -277,5 +277,57 @@ v(`  /** Розділ розгорнуто: сайт монтує справжн
   bijDienst: (id: string) => void;
   /** Діалог світлини: відкрити меню облікового запису сайту (інші акаунти, вихід). */
   bijAccountMenu: () => void;`);
+
+// IDENTITEIT-011. Демо-елементи над справжньою панеллю. У розділах облікового запису (доступ, акаунт, сесії, вхід, безпека, відновлення)
+// макетні перемикачі й кнопки нічого не змінювали, хоча стояли поруч зі справжніми. Тепер кожен такий елемент чесно позначено
+// «Приклад вигляду» і він відкриває справжнє налаштування. Вибір теми й «Додати віджет» теж ведуть до справжніх місць.
+// У візуальних розділах (персоналізація, меню, мови) прев'ю лишається: воно показує вигляд, а не змінює обліковий запис.
+// Demo-elementen boven het echte paneel: in accountonderdelen gemarkeerd als «Voorbeeld» en een knop naar de echte instelling.
+v(`  function drawerControl(control,i,sectionId){
+    const key=sectionId+"-"+i,type=control.type,t=ui();`,
+`  const демоДоСайту={sharing:".settings-sharing",account:"",sessions:"",methods:"#aanmeldmethoden-google",security:"#aanmeldmethoden-2fa",recovery:"#aanmeldmethoden-herstel",identities:""};
+  const демоТипи=new Set(["toggle","action","profile","export","choice","range","info","warning"]);
+  function чеснийЕлемент(control,i,sectionId,ціль){
+    const nl=preferences.lang==="nl";
+    const підказка=nl?"Dit is een voorbeeld uit het ontwerp. De knop opent de echte instelling, waar wijzigingen meteen gelden.":"Це приклад із макета. Кнопка відкриває справжнє налаштування, де зміни діють одразу.";
+    return '<div class="drawer-control-card control-'+control.type+' mq-demo-eerlijk">'+
+      '<div class="drawer-control-top"><span class="drawer-control-glyph">'+optionSvg(sectionId,i)+'</span><div class="drawer-control-copy"><strong>'+control.label+' <span class="mq-demo-label">'+(nl?"Voorbeeld":"Приклад вигляду")+'</span></strong><p>'+control.note+'</p></div>'+
+      '<button type="button" class="future-option-open mq-demo-open" data-kaart-ga="'+escapeMarkup(sectionId+"|"+ціль)+'" title="'+escapeMarkup(підказка)+'">'+(nl?"Echte instelling":"Справжнє налаштування")+'</button></div></div>';
+  }
+  function drawerControl(control,i,sectionId){
+    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)&&демоТипи.has(control.type))return чеснийЕлемент(control,i,sectionId,демоДоСайту[sectionId]);
+    if(sectionId==="themes"&&control.type==="theme")return чеснийЕлемент({...control,type:"theme"},i,sectionId,"#thema-modus-kop");
+    if(sectionId==="widgets"&&control.type==="action")return чеснийЕлемент(control,i,sectionId,".settings-form");
+    const key=sectionId+"-"+i,type=control.type,t=ui();`);
+
+// IDENTITEIT-011. Жива карта: рядок «Працює · Відкрити» розгортає розділ і його «Чинні налаштування», чекає, доки застосунок
+// змонтує справжню панель, і веде до потрібного місця (розгортає вкладені <details>, прокручує, ставить фокус, коротко підсвічує).
+// De levende kaart: «Werkt · Openen» opent het onderdeel en de echte instellingen en gaat naar de juiste plek in het paneel.
+v(`  function gaNaar(id,open){`,
+`  function відкритиНаСайті(розділ,ціль){
+    const id=розділ==="identity"?"identities":розділ;
+    if(!sections.some(s=>s.id===id))return;
+    gaNaar(id,true);
+    opties.bijOpenen(id);
+    if(!ціль)return;
+    const рух=matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth";
+    let спроби=0;
+    const шукати=()=>{
+      const гніздо=root.querySelector('.mq-echt[data-echt="'+id+'"]');
+      let доціль=null;
+      try{доціль=гніздо?гніздо.querySelector(ціль):null;}catch{доціль=null;}
+      // Панель монтується асинхронно (портал React після bijOpenen): чекаємо до ~3 с.
+      if(!доціль){if(++спроби<50)setTimeout(шукати,60);return;}
+      for(let d=доціль.closest("details");d;d=d.parentElement?d.parentElement.closest("details"):null)if(!d.open)d.open=true;
+      доціль.scrollIntoView({behavior:рух,block:"start"});
+      const фокус=доціль.matches("summary,button,a,input,select,textarea")?доціль:(доціль.querySelector(":scope > summary")||доціль);
+      if(фокус===доціль&&!доціль.hasAttribute("tabindex")&&!доціль.matches("summary,button,a,input,select,textarea"))доціль.setAttribute("tabindex","-1");
+      try{фокус.focus({preventScroll:true});}catch{}
+      доціль.classList.add("mq-kaart-doel");
+      setTimeout(()=>доціль.classList.remove("mq-kaart-doel"),1800);
+    };
+    setTimeout(шукати,80);
+  }
+  function gaNaar(id,open){`);
 fs.writeFileSync(f, s);
 console.log('ok');

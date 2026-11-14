@@ -10,6 +10,7 @@ import { MAQUETTE_SJABLOON } from './maquette-sjabloon';
 import { startMaquette, type Maquette, type MaquetteOpties } from './maquette-motor';
 import { VormgevingKiezer } from '../VormgevingKiezer';
 import { GA_NAAR_DIENST } from '../identiteit-vormgeving';
+import { AtelierInhoud } from '../atelier-inhoud';
 
 export type MaquetteGebruiker = { naam: string; foto: string } | null;
 
@@ -72,6 +73,12 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }:
   const motor = useRef<Maquette | null>(null);
   // Гнізда .mq-echt у живій розмітці; картки будуються рядком HTML, тож після кожного перемальовування збираємо їх знову.
   const [gaten, setGaten] = useState<HTMLElement[]>([]);
+  // IDENTITEIT-011: один сталий контейнер на розділ. Двигун перемальовує картки рядком HTML і створює нові гнізда, а контейнер
+  // лише переноситься в нове гніздо — React-стан панелі (введений текст, відкриті форми) не губиться.
+  // Eén vaste houder per onderdeel: bij hertekenen verhuist alleen de houder, de React-toestand van het paneel blijft behouden.
+  const houders = useRef(new Map<string, HTMLDivElement>());
+  // Панель монтується лише після першого відкриття її блоку «Чинні налаштування» й далі лишається (без зайвих запитів до того).
+  const [gemonteerd, setGemonteerd] = useState<ReadonlySet<string>>(() => new Set());
   const onKiesRef = useRef(onKies);
   onKiesRef.current = onKies;
   // Перехід, що почався в самому макеті: зміна адреси у відповідь не має відкривати панель удруге.
@@ -80,7 +87,22 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }:
   const verzamelGaten = () => {
     const root = wortel.current;
     if (!root) return;
-    setGaten(Array.from(root.querySelectorAll<HTMLElement>('.mq-echt[data-echt]')));
+    const lijst = Array.from(root.querySelectorAll<HTMLElement>('.mq-echt[data-echt]'));
+    const open: string[] = [];
+    for (const gat of lijst) {
+      const id = gat.dataset.echt || '';
+      let houder = houders.current.get(id);
+      if (!houder) {
+        houder = document.createElement('div');
+        houder.className = id.startsWith('vormgeving') ? 'mq-echt-houder' : 'mq-echt-houder mq-echt-inhoud';
+        houders.current.set(id, houder);
+      }
+      if (houder.parentNode !== gat) gat.appendChild(houder);
+      const blok = gat.closest('details.mq-echt-blok') as HTMLDetailsElement | null;
+      if (!blok || blok.open) open.push(id);
+    }
+    setGaten(lijst);
+    setGemonteerd((oud) => (open.every((id) => oud.has(id)) ? oud : new Set([...oud, ...open])));
   };
 
   // Оболонка сайту схована, поки вигляд відкритий (правила в maquette-omlijsting.css за цією ознакою).
@@ -132,12 +154,17 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }:
       <div ref={wortel} className='mr-mq' lang={lang} data-vormgeving='maquette'
         // Розмітка макета незмінна й згенерована з його index.html; динамічні частини малює двигун.
         dangerouslySetInnerHTML={{ __html: MAQUETTE_SJABLOON }} />
-      {gaten.map((gat) => {
-        const id = gat.dataset.echt || '';
-        if (id.startsWith('vormgeving')) return createPortal(<VormgevingKiezer lang={lang} className='mq-kiezer' />, gat, id);
-        const sectie = secties.find((s) => s.id === naarSite(id));
-        return sectie ? createPortal(<div className='mq-echt-inhoud'>{sectie.inhoud}</div>, gat, id) : null;
-      })}
+      {/* Межі розділів, як у класичному вигляді: гнізда «Способи входу», «Безпека», «Відновлення» показують лише свій розділ. */}
+      <AtelierInhoud.Provider value={true}>
+        {gaten.map((gat) => {
+          const id = gat.dataset.echt || '';
+          const houder = houders.current.get(id);
+          if (!houder || !gemonteerd.has(id)) return null;
+          if (id.startsWith('vormgeving')) return createPortal(<VormgevingKiezer lang={lang} className='mq-kiezer' />, houder, id);
+          const sectie = secties.find((s) => s.id === naarSite(id));
+          return sectie ? createPortal(sectie.inhoud, houder, id) : null;
+        })}
+      </AtelierInhoud.Provider>
     </>
   );
 }

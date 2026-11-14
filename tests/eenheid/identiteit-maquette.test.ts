@@ -104,5 +104,33 @@ export async function main(): Promise<number> {
   check('жодна міграція не вставляє опис перемикача довший за межу схеми', teLang.length === 0, teLang.join(', '));
   check('перемикач вигляду є у вікні навігації та під підвалом макета', sjabloon.includes('data-echt=\\"vormgeving-venster\\"') && sjabloon.includes('data-echt=\\"vormgeving-voet\\"') && component.includes("id.startsWith('vormgeving')"));
 
+  // IDENTITEIT-011: жива карта розвитку замість «Можливостей для доопрацювання» — рендер реальних джерел макета в ізоляції, обома мовами.
+  const iconen = readFileSync(bron + 'піктограми.js', 'utf8');
+  const register = readFileSync(bron + 'реєстр.js', 'utf8');
+  const stomp = { addEventListener() {}, getElementById() { return null; }, querySelectorAll() { return []; } };
+  type Kaart = { tekenМайбутніМожливості: (s: string) => string; реєстрНалаштувань: Record<string, { id: string; рядки: unknown[] }[]>; піктограмиДій: Record<string, Record<string, string[]>>; станНаСайті: Record<string, Record<string, { стан: string }>> };
+  const laadKaart = (lang: 'uk' | 'nl') => (new Function('document', 'preferences', 'showToast', 'openInlineSettings',
+    `${iconen}\n${register}\n;return {tekenМайбутніМожливості,реєстрНалаштувань,піктограмиДій,станНаСайті};`) as (...a: unknown[]) => Kaart)(stomp, { lang }, () => {}, () => {});
+  const kaartUk = laadKaart('uk'), kaartNl = laadKaart('nl');
+  const htmlVan = (k: Kaart) => Object.keys(k.реєстрНалаштувань).map((s) => k.tekenМайбутніМожливості(s)).join('');
+  const uk = htmlVan(kaartUk), nl = htmlVan(kaartNl);
+  check('жива карта: мітки «Звірити підключення» / «Koppeling controleren» більше немає (джерело, двигун, рендер)',
+    !uk.includes('Звірити підключення') && !nl.includes('Koppeling controleren') && !motor.includes('Звірити підключення') && !register.includes("'Звірити підключення'"));
+  check('жива карта: заголовок «Карта розвитку» / «Ontwikkelkaart» з чесним поясненням', uk.includes('Карта розвитку') && nl.includes('Ontwikkelkaart') && !uk.includes('Ці елементи не змінюють справжній обліковий запис'));
+  check('жива карта: групи, що повністю працюють, зникають (теми; швидкий доступ і швидкодія меню; активні входи)',
+    kaartUk.tekenМайбутніМожливості('themes') === '' && !uk.includes('Керування улюбленими кнопками') && !uk.includes('Параметри завантаження й перемикання') && !uk.includes('Огляд пристроїв і керування завершенням входів'));
+  const knoppen = [...uk.matchAll(/data-kaart-ga="([^"]+)"/g)].map((m) => m[1].replace(/&quot;/g, '"'));
+  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 30 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
+  check('жива карта: кожен рядок і група має кольорову мітку з текстом стану', (uk.match(/class="future-option /g) || []).length + (uk.match(/class="future-option"/g) || []).length === (uk.match(/future-option-status future-stand-/g) || []).length);
+  check('жива карта: WhatsApp — «Недоступно», SMS — «Потребує розробки», нові рядки автентифікатора — частково',
+    /WhatsApp[^<]*<\/span><small class="future-option-status future-stand-nee">Недоступно/.test(uk) && /SMS[^<]*<\/span><small class="future-option-status future-stand-gepland">/.test(uk) && uk.includes('QR-код для застосунку-автентифікатора') && uk.includes('Замінити автентифікатор'));
+  const zonderIcoon: string[] = [];
+  for (const [sectie, groepen] of Object.entries(kaartUk.реєстрНалаштувань)) for (const g of groepen) g.рядки.forEach((_, i) => { if (!kaartUk.піктограмиДій[sectie]?.[g.id]?.[i]) zonderIcoon.push(`${sectie}/${g.id}/${i}`); });
+  check('кожен рядок реєстру має змістовну піктограму (запасний знак лише для захисту від збою)', zonderIcoon.length === 0 && register.includes('if(!назва)return піктограмаЗаСуттю("інструмент")'), zonderIcoon.join(', '));
+  check('стани живої карти посилаються лише на наявні групи реєстру', Object.entries(kaartUk.станНаСайті).every(([s, gs]) => Object.keys(gs).every((g) => kaartUk.реєстрНалаштувань[s]?.some((x) => x.id === g))));
+  check('перехід із карти розгортає розділ, «Чинні налаштування» й ціль у змонтованій панелі', motor.includes('function відкритиНаСайті(розділ,ціль)') && motor.includes("if(typeof відкритиНаСайті==='function')") && motor.includes('mq-kaart-doel'));
+  check('гнізда «Макета» мають межі розділів і сталі контейнери (стан форм не губиться, панель монтується після відкриття)',
+    component.includes('<AtelierInhoud.Provider value={true}>') && component.includes('houders.current.get(id)') && component.includes("gat.closest('details.mq-echt-blok')") && component.includes('gemonteerd.has(id)'));
+
   return einde();
 }
