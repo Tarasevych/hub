@@ -7,7 +7,7 @@
 :root[data-dichtheid="compact"] { --ruimte-1:3px; --ruimte-2:6px; --ruimte-3:9px; --ruimte-4:12px; --ruimte-5:18px; --ruimte-6:24px; }
 :root[data-dichtheid="ruim"] { --ruimte-1:5px; --ruimte-2:10px; --ruimte-3:15px; --ruimte-4:20px; --ruimte-5:30px; --ruimte-6:40px; }
 
-/* Менше руху — вибір людини поверх пристрою (системне prefers-reduced-motion і далі діє само). Анімації й переходи майже миттєві,
+/* Менше руху — вибір людини поверх пристрою (системне prefers-reduced-motion — окреме правило нижче). Анімації й переходи майже миттєві,
    плавна прокрутка вимкнена; зміст і стан не змінюються, лише рух. */
 :root[data-beweging="minder"] { --ruimte-beweging: 0ms; scroll-behavior: auto !important; }
 :root[data-beweging="minder"] *, :root[data-beweging="minder"] *::before, :root[data-beweging="minder"] *::after {
@@ -22,6 +22,27 @@
 :root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::before, :root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::after {
   animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
   transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+}
+/* IDENTITEIT-015 (приймання D2 «пристрої й доступність»): системне «зменшити рух» (prefers-reduced-motion) у «Макеті» так само
+   програвало власним переходам з !important (0,5,0…0,8,0): .page-wrap .35 с, картки .75 с, смуга розділів .16 с тощо — e2e
+   (reducedMotion:'reduce') знайшов понад сто рухомих елементів. Те саме правило (0,10,0) і для системного налаштування.
+   Ook de systeeminstelling «minder beweging» wint nu in het ontwerp.
+   Те саме й для оболонки сайту: спільного правила для системного налаштування не було (лише точкові), тож піктограми меню
+   (.menu-lucide-glyph — .14 с з !important) і шар сповіщень (.2 с) рухалися попри «зменшити рух». Загальне правило — як «менше руху»
+   (0,2,0). Ook de omlijsting van de site volgt nu de systeeminstelling. */
+@media (prefers-reduced-motion: reduce) {
+  :root:root { scroll-behavior: auto !important; }
+  :root:root *, :root:root *::before, :root:root *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+    transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq, :root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *,
+  :root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::before, :root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+    transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+  }
 }
 
 /* Акцент поверх палітри. Специфічність (:root:root + атрибут + клас теми = 0,4,0) вища за палітри (html.palet-kleur[…] .theme-*

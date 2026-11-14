@@ -235,6 +235,11 @@ export async function main(): Promise<number> {
         for (const sel of m[1].split(',')) if (klassen(sel) >= 10) sterker.push(sel.trim().slice(0, 120));
       }
       check('рух: «менше руху» перемагає переходи «Макета» з !important (правило 0,10,0; сильніших правил руху в макеті немає)', regel && sterker.length === 0, sterker.slice(0, 5).join(' | '));
+      // IDENTITEIT-015 (D2): системне prefers-reduced-motion теж має правило (0,10,0) для «Макета» — без нього e2e бачив рух.
+      const systeem = /@media \(prefers-reduced-motion: reduce\) \{\s*:root (\.mr-mq){9}, :root (\.mr-mq){9} \*,[^{]*\{[^}]*animation-duration: \.01ms !important;[^}]*transition-duration: \.01ms !important;/.test(css);
+      check('рух: системне «зменшити рух» (prefers-reduced-motion) теж перемагає переходи «Макета» з !important', systeem);
+      const algemeen = /@media \(prefers-reduced-motion: reduce\) \{[^{]*\{[^}]*\}\s*:root:root \*, :root:root \*::before, :root:root \*::after \{[^}]*animation-duration: \.01ms !important;[^}]*transition-duration: \.01ms !important;/.test(css);
+      check('рух: системне «зменшити рух» вимикає рух на всьому сайті (оболонка, меню, сповіщення) з тією ж силою, що й «менше руху»', algemeen);
     }
     const w = { dataset: {} as Record<string, string>, stijl: new Map<string, string>(), style: { setProperty(k: string, v: string) { w.stijl.set(k, v); }, removeProperty(k: string) { w.stijl.delete(k); } } };
     pasWeergaveStijlToe({ dichtheid: 'compact', beweging: 'minder', accent: 'pink', effecten: 10 }, w as never);
