@@ -4,17 +4,17 @@ name: IDENTITEIT-015 · Центр облікового запису в пого
 # правила координації, типи, модульні випробування консолі керування й тем класичного макета, повне складання та контрольну суму SHA-256.
 # Installeert nooit automatisch. Controleert vooraf de geïnstalleerde basis, coördinatieregels, typen, tests, bouw en controlesom.
 on:
-  push:
-    branches:
-      - 'feature/identiteit-015-uitrol-20261114-162503'
-    paths:
-      - '.github/workflows/identiteit-015-uitgave.yml'
-      - 'orchestratie/ontwikkelarchieven/IDENTITEIT-015.json'
-      - 'orchestratie/taken/IDENTITEIT-015.json'
-      - 'shared/**'
-      - 'src/**'
-      - 'tests/**'
+  # Лише вручну: модель ШІ передається параметром запуску (у файлах сховища її не пишемо). · Alleen handmatig.
   workflow_dispatch:
+    inputs:
+      model_id:
+        description: 'Ідентифікатор моделі ШІ, що виконала роботу (для UITROL-MANIFEST.json)'
+        required: true
+        type: string
+      model_versie:
+        description: 'Версія моделі (необов’язково)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -30,7 +30,8 @@ env:
   INTEGRATIE_BASIS: '3219123ea8b00f27460922ae075ee3c7f32cecda'
   # Ідентифікатор моделі ШІ задає власник змінною сховища (у файлах сховища його не пишемо).
   # De model-id zet de eigenaar als repository-variabele (niet in bestanden van de repository).
-  MODEL_ID: ${{ vars.IDENTITEIT_015_MODEL_ID || vars.SEC_002_MODEL_ID || vars.APPARAAT_001_MODEL_ID || vars.UITROL_001_MODEL_ID || vars.PERF_001_MODEL_ID || vars.IDENTITEIT_007_MODEL_ID || vars.IDENTITEIT_006_MODEL_ID }}
+  MODEL_ID: ${{ inputs.model_id || vars.IDENTITEIT_015_MODEL_ID || vars.SEC_002_MODEL_ID || vars.APPARAAT_001_MODEL_ID || vars.UITROL_001_MODEL_ID || vars.PERF_001_MODEL_ID || vars.IDENTITEIT_007_MODEL_ID || vars.IDENTITEIT_006_MODEL_ID }}
+  MODEL_VERSIE: ${{ inputs.model_versie || '' }}
 
 jobs:
   controle-en-uitgave:
@@ -181,7 +182,7 @@ jobs:
                 naam: 'claude',
                 platform: 'Claude Code',
                 tool: 'Claude Code (хмарний сеанс)',
-                model: { id: e.MODEL_ID, versie: null, bron: 'omgeving' },
+                model: { id: e.MODEL_ID, versie: e.MODEL_VERSIE || null, bron: 'omgeving' },
                 rollen: ['ontwikkeling', 'controle', 'testen', 'verpakken']
               }
             ],
@@ -240,6 +241,26 @@ jobs:
             --manifest "$RUNNER_TEMP/UITROL-MANIFEST.json" --testresultaten "$RUNNER_TEMP/TESTRESULTATEN.json"
           node scripts/orch.mjs pakket-controleer --bron "uitvoer/mijn-ruimte-${VERSIE}-claude-overdracht.zip"
           sha256sum "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" > "uitvoer/mijn-ruimte-${VERSIE}.tar.gz.sha256"
+      - name: Перевірити UITROL-MANIFEST.json усередині архіву валідатором інсталятора · manifest in het archief valideren
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzOf "uitvoer/mijn-ruimte-${VERSIE}.tar.gz" "mijn-ruimte-${VERSIE}/UITROL-MANIFEST.json" > "$RUNNER_TEMP/manifest-in-archief.json"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { valideerManifest } from './shared/uitrol-manifest.ts';
+          const e = process.env;
+          const ruw = readFileSync(e.RUNNER_TEMP + '/manifest-in-archief.json', 'utf8');
+          const { manifest, fouten } = valideerManifest(ruw, e.VERSIE);
+          if (fouten.length || !manifest) {
+            for (const f of fouten) console.error('::error::UITROL-MANIFEST.json · ' + (f.veld || '') + ': ' + (f.uk || JSON.stringify(f)));
+            throw Error('Маніфест в архіві не проходить перевірку інсталятора — випуск зупинено.');
+          }
+          if (!manifest.aangemaakt || !manifest.herkomst || manifest.herkomst.length < 5) throw Error('Немає aangemaakt/herkomst у маніфесті.');
+          const ai = manifest.deelnemers.filter((d) => d.soort === 'ai');
+          if (!ai.length || ai.some((d) => !d.model || !d.model.id)) throw Error('У маніфесті немає моделі ШІ.');
+          console.log('UITROL-MANIFEST.json в архіві: 0 помилок · aangemaakt ' + manifest.aangemaakt + ' · herkomst ' + manifest.herkomst.slice(0, 60) + '…');
+          JS
       - name: Передати перевірені пакунки завданню оприлюднення · overdracht aan de publicatietaak
         shell: bash
         run: |
