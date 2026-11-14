@@ -1,0 +1,227 @@
+[
+ {
+  "id": "security.гостьові-коди.0.stvoryty",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Власник сайту створив коди після passkey (403 STEP_UP_STRONG_REQUIRED → passkey); код показано один раз.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-01-code-qr.png"
+ },
+ {
+  "id": "security.гостьові-коди.0.inshi-oblikovi",
+  "staatNa": "потребує налаштування власника",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
+  ],
+  "resultaat": "Схвалений не-власник без прапорця gastcodes-iedereen: пояснення «вмикає власник сайту» + перехід до «Доступу до простору», сервер — GASTCODES_ALLEEN_EIGENAAR / 403 OWNER_REQUIRED. З прапорцем (передумова власника сайту: увімкнути для цієї людини) — створює код після passkey, бачить лише свої коди, чужий не відкликає (404); гість бачить ЛИШЕ дані власника коду; вимкнення прапорця гасить гостьову сесію (401).",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-05-niet-eigenaar-zonder-vlag.png"
+ },
+ {
+  "id": "security.гостьові-коди.1.nazva",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Назва коду видна у переліку, банері гостя й історії.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "security.гостьові-коди.1.notatka",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts"
+  ],
+  "resultaat": "Приватну нотатку бачить лише власник коду в переліку; гість не бачить її ні на сторінці, ні у відповіді /api/gast/sessie, а /api/owner/access/notities/lijst для гостя → 401.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "security.гостьові-коди.2.vybrani",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "«Лише вибрані» → ручний вибір (без розділів кнопка вимкнена); код лише з профілем — гість бачить одну вкладку, прямі запити до пристроїв/журналу → 403 GAST_GEEN_TOEGANG.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-02-gast-alleen-profiel.png"
+ },
+ {
+  "id": "security.гостьові-коди.2.usi",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts"
+  ],
+  "resultaat": "«Усі дозволені розділи» позначає весь перелік сервера (3 розділи, лише перегляд); гість бачить три вкладки; заборонене («нотатки») — відмова.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-01-code-qr.png"
+ },
+ {
+  "id": "security.гостьові-коди.3.strok",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Своя дата, 1 година, 7 днів; закінчення строку (SQL-зсув) — гість одразу поза (401), стан «Закінчився» без дій.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "security.гостьові-коди.3.maksymum",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "«Не більше 2»: два гості увійшли, третій → «Код недійсний»; перелік «2 з 2», стан «Використано».",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "security.гостьові-коди.4.vykorystannia",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Одноразовий: другий гість → «Код недійсний»; багаторазовий діє до ліміту.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "security.гостьові-коди.5.pokazaty",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Код XXXX-XXXX-XXXX-XXXX + QR показано один раз; на знімку розмито (verberg).",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-01-code-qr.png"
+ },
+ {
+  "id": "security.гостьові-коди.5.vykorystaty",
+  "staatNa": "працює в іншому місці",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Гість у новому контексті без cookie входить кодом на /toegang; лише перегляд (у вмісті немає полів); маршрути власника → 401.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-02-gast-alleen-profiel.png"
+ },
+ {
+  "id": "security.гостьові-коди.6.strok",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Скорочення 7 днів → 1 день без вікна підтвердження; подовження прямим запитом без посиленого підтвердження → 403 STEP_UP_STRONG_REQUIRED (строк не змінено); у інтерфейсі — вікно без кнопки Google → passkey → ≈30 днів.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-03-verlengen-sterk.png"
+ },
+ {
+  "id": "security.гостьові-коди.7.istoriia",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Історія: створено, 2× гість увійшов, гість переглянув (пристрої), відмова; для зміни строку — дві дії «Строк змінено».",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "security.гостьові-коди.8.vidklykaty",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Кнопка вимкнена без причини; після відкликання з причиною — стан «Відкликано» + причина, гості коду одразу 401 і «Гостьову сесію завершено».",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "sessions.гості.0.переглянути-гостьові-входи",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "«Сесії»: власна сесія + 2 гостьові сесії «Вхід за кодом доступу «…»» (gast-toegang, 36/37; єдиний збій — дзвіночок, поза цим рядком).",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": null
+ },
+ {
+  "id": "sessions.гості.0.завершити-гостьову-сесію",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Одну гостьову сесію завершено окремо — гість одразу поза, інший гість лишається; «Завершити всі інші» прибирає й гостьові.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": null
+ },
+ {
+  "id": "methods.захист.2.vlasnyk-kody",
+  "staatNa": "працює в цьому оформленні",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts"
+  ],
+  "resultaat": "Власник сайту: створення (passkey), показ коду/QR, перелік зі станами, зміна строку, історія, відкликання з причиною.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-04-eigenaar-statussen.png"
+ },
+ {
+  "id": "methods.захист.2.nevlasnyk",
+  "staatNa": "потребує налаштування власника",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
+  ],
+  "resultaat": "Без прапорця — чесна відмова з поясненням і переходом (вигляд виправлено: відступ у коробці); з прапорцем gastcodes-iedereen (передумова власника сайту) — власні коди, гість бачить лише дані власника коду.",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-06-gast-van-niet-eigenaar.png"
+ },
+ {
+  "id": "methods.захист.2.gist-vhid",
+  "staatNa": "працює в іншому місці",
+  "testen": [
+   "tests/e2e/identiteit-015-gastcodes.e2e.ts",
+   "tests/e2e/gast-toegang.e2e.ts",
+   "tests/eenheid/identiteit-015-gastcodes-vaden.test.ts"
+  ],
+  "resultaat": "Гість входить кодом, бачить лише дозволені розділи; після відкликання, вичерпання чи закінчення строку — поза. Сторінка гостя більше не питає прапорці без сесії (без 401 у консолі).",
+  "versie": "c1e95d7",
+  "omgeving": "випробувальне середовище",
+  "schermafdruk": "tests/e2e/знімки-015/gastcodes-06-gast-van-niet-eigenaar.png"
+ }
+]

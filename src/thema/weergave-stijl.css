@@ -23,6 +23,18 @@
   animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
   transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
 }
+/* IDENTITEIT-015 (приймання vormgeving): та сама вада для СИСТЕМНОГО «зменшити рух» (prefers-reduced-motion). Правило v49
+   (maquette-stijlen.css: @media(prefers-reduced-motion:reduce) … *:where(:not(.mq-echt *)), 0,4,0) програвало власним переходам
+   «Макета» з !important (0,5,0…0,8,0): у справжньому Chromium із reducedMotion лишалося 95 рухомих елементів (кнопки сервісів 250 мс,
+   знак 300 мс, смуга прогресу…). Тепер — як «менше руху» в обліковому записі, специфічність 0,10,0 (:root:root + 8 класів).
+   Het systeemverzoek «minder beweging» wint nu ook in het ontwerp. */
+@media (prefers-reduced-motion: reduce) {
+  :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq, :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *,
+  :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::before, :root:root .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+    transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+  }
+}
 
 /* Акцент поверх палітри. Специфічність (:root:root + атрибут + клас теми = 0,4,0) вища за палітри (html.palet-kleur[…] .theme-*
    = 0,3,1) і оболонку (.canonical-chrome.theme-* = 0,2,0). Пари перевіряє tests/eenheid/identiteit-015-vormgeving.test.ts:

@@ -2193,8 +2193,16 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   },true);
 
   const popover=byId("navSettings");
+  let navOpener=null; // САЙТ (IDENTITEIT-015): хто відкрив вікно навігації — туди повертається фокус
+  function focusNaarOpener(){
+    const actief=doc.activeElement;
+    if(navOpener&&navOpener.isConnected&&(!actief||actief===doc.body||popover.contains(actief)))navOpener.focus({preventScroll:true});
+    navOpener=null;
+  }
   function toggleNavSettings(){
+    if(popover.hidden){const a=doc.activeElement;navOpener=a&&a!==doc.body&&!popover.contains(a)?a:null;}
     popover.hidden=!popover.hidden;
+    if(popover.hidden)focusNaarOpener();
     if(isAutoRail()){
       if(popover.hidden)scheduleRailAutoCollapse();
       else{
@@ -2203,7 +2211,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       }
     }
   }
-  function closeNavSettings(){popover.hidden=true;scheduleRailAutoCollapse();}
+  function closeNavSettings(){const was=!popover.hidden;popover.hidden=true;if(was)focusNaarOpener();scheduleRailAutoCollapse();}
   byId("railConfig").addEventListener("click",e=>{e.stopPropagation(); toggleNavSettings();});
   byId("heroNavSettings").addEventListener("click",toggleNavSettings);
   byId("mqSectiePositie")?.addEventListener("click",e=>{e.stopPropagation();toggleNavSettings();});

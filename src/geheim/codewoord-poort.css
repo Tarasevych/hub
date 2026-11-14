@@ -11,8 +11,30 @@
 }
 .codewoord-poort h2 { margin: 0 0 8px; font-size: 1.1rem; }
 .codewoord-poort p { margin: 0 0 12px; }
-.codewoord-poort-knoppen { display: flex; gap: 8px; margin-top: 12px; }
-.codewoord-poort-knoppen button { min-height: 40px; }
+.codewoord-poort-knoppen { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+/* IDENTITEIT-015 (приймання aanmelden-sleutels): кнопки воріт мали вигляд простого тексту (глобальне скидання стилю кнопок) —
+   «Вийти» не читалася як кнопка. Тепер: головна дія — кольорова, «Вийти» — обведена; висота з токена дотику.
+   Knoppen van de poort zichtbaar als knoppen: hoofdactie gevuld, «Afmelden» omlijnd. */
+.codewoord-poort-knoppen button {
+  min-height: var(--tik-hoogte, 40px);
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--boot-line, var(--line, #dce1e6));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.codewoord-poort-knoppen button[type='submit'] {
+  flex: 1 1 12rem;
+  border-color: var(--boot-accent, #2f6f73);
+  background: var(--boot-accent, #2f6f73);
+  color: var(--ap-op-accent, #fff);
+}
+.codewoord-poort-knoppen button:hover:not(:disabled) { filter: brightness(1.08); }
+.codewoord-poort-knoppen button:focus-visible { outline: 2px solid var(--focus, Highlight); outline-offset: 2px; }
+.codewoord-poort-knoppen button:disabled { opacity: .6; cursor: progress; }
 @media (prefers-contrast: more) {
   .codewoord-poort { border-width: 2px; }
 }

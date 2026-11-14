@@ -191,7 +191,8 @@ export async function main(): Promise<number> {
     await r1b.scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${UIT}/gast-07-eigenaar-gebruik.png`, fullPage: true });
     await page.locator('button[aria-label^="Непрочитаних сповіщень"], button[aria-label="Центр сповіщень"]').first().click();
-    const melding = page.locator('.cnc-row', { hasText: 'Для Олени' }).first();
+    // IDENTITEIT-015: у дзвіночку два рядки з «Для Олени» («Створено код…» і «…використано вперше») — шукаємо саме другий.
+    const melding = page.locator('.cnc-row', { hasText: /«Для Олени» використано вперше/ }).first();
     await melding.waitFor({ timeout: 10000 }).catch(() => undefined);
     const mt = await melding.innerText().catch(() => '');
     check('bel: «Код доступу «Для Олени» використано вперше»', /використано вперше/.test(mt), mt);

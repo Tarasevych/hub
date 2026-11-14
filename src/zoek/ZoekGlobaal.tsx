@@ -182,7 +182,10 @@ export default function ZoekGlobaal({ lang, mobiel = false, dienst = '', zonderK
     if (!woorden.length) return server;
     const lokaal: ZoekSuggestie[] = IDENTITEIT_TABS
       .filter(tab => { const hooi = norm(`${tab.uk} ${tab.nl} ${IDENTITEIT_SLEUTELWOORDEN[tab.id]}`); return woorden.every(w => hooi.includes(w)); })
-      .map(tab => ({ soort: 'functie', bron: 'instelling', tekst: tab[lang], route: { host: 'id', pad: `/${tab.id}` } }));
+      // IDENTITEIT-015 (vormgeving): pad = id розділу без «/» — routeUrl робить з нього канонічну адресу /<нідерландський slug>
+      // (/beveiliging, /talen, …), як меню й смуга розділів. Раніше «/security» — англійська адреса в рядку (Правило 0).
+      // Het pad is het tabblad-id: routeUrl maakt er het canonieke /<slug> van, net als het menu.
+      .map(tab => ({ soort: 'functie', bron: 'instelling', tekst: tab[lang], route: { host: 'id', pad: tab.id } }));
     return [...lokaal, ...server];
   }, [dienst, q, lang, server]);
   const rijen: VeldSuggestie[] = useMemo(() => bouwMenuRijen({ q, lang, nu: Date.now(), recent, suggesties, treffers, groepen: t.groepen }), [q, lang, recent, suggesties, treffers, t]);
