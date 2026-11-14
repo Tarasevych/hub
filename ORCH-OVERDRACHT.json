@@ -51,13 +51,18 @@
     "da3bbfbc13bcb9a89a3097cf3209c703913e2124",
     "4e4134521ff07cea13ba13dfd8a57dcf44502e93",
     "b3137ebc00c36cc080d33cabbedfeae909dbf916",
-    "b27f79fac96f87a9a1416dc841b6b39ed4574575"
+    "b27f79fac96f87a9a1416dc841b6b39ed4574575",
+    "b4081d884df211d35ab3e0c8734b75ddb4c24e44",
+    "807ef08c22ab9500680c09797587dc8276b23941",
+    "87115463908f928325f4352d552e5619416f2349",
+    "24e16821f09b4bc846b02733dd6b216f3e8f7003"
   ],
   "bestanden": {
     "gewijzigd": [
       "\"docs/ontwerp/identiteit-account/\\320\\222\\320\\206\\320\\224\\320\\236\\320\\234\\320\\206\\320\\241\\320\\242\\320\\254-\\320\\224\\320\\206\\320\\231.json\"",
       "\"docs/ontwerp/identiteit-account/\\320\\222\\320\\206\\320\\224\\320\\236\\320\\234\\320\\206\\320\\241\\320\\242\\320\\254-\\320\\224\\320\\206\\320\\231.uk.md\"",
       "\"docs/ontwerp/identiteit-account/maquette-bron/\\321\\200\\320\\265\\321\\224\\321\\201\\321\\202\\321\\200.js\"",
+      "ORCH-OVERDRACHT.json",
       "backend/aanmeld-koppel.ts",
       "backend/aanmeld-wegen.ts",
       "backend/aanmelden-methoden.ts",
@@ -92,6 +97,7 @@
       "docs/ontwerp/identiteit-account/verantwoording/rijen-themes.json",
       "docs/ontwerp/identiteit-account/verantwoording/rijen-widgets.json",
       "orchestratie/taken/IDENTITEIT-014.json",
+      "orchestratie/taken/IDENTITEIT-015.json",
       "scripts/identiteit-maquette/motor-aanpassingen.mjs",
       "scripts/identiteit-maquette/sjabloon.mjs",
       "server/platform/auth-poort.ts",
@@ -224,6 +230,7 @@
       "migrations/0273_uitnodigingen_werkruimte_index_rls.sql",
       "migrations/0274_sleutels_vertrouwen_gastcodes.sql",
       "migrations/0275_aanmelden_methoden.sql",
+      "orchestratie/geinstalleerd.json",
       "orchestratie/ontwikkelarchieven/IDENTITEIT-015.json",
       "orchestratie/taken/IDENTITEIT-015.json",
       "scripts/identiteit-maquette/verantwoording.mjs",
@@ -272,11 +279,11 @@
     "nl": "Accountcentrum in het goedgekeurde ontwerp v49: 153 posities gecontroleerd, bestaande functies aangesloten, ontbrekende gebouwd en vanuit elke betrokken persoon getest. Bovenop 20261114-111234."
   },
   "tests": {
-    "geslaagd": 72,
+    "geslaagd": 73,
     "mislukt": 0,
     "uitleg": {
-      "uk": "72/72 модульних наборів на злитому з 20261114-111234 коді; e2e у Chromium: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ 47/47 (частина a)",
-      "nl": "72/72 unitsuites op de samengevoegde code; e2e in Chromium: menu 59/59, thema 48/48, blokken en profiel 78/78, delen 47/47"
+      "uk": "72/72 модульних наборів на злитому коді + identiteit-015-delen-acceptatie 18/18; e2e: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ 80/80",
+      "nl": "unitsuites groen; e2e: menu 59/59, thema 48/48, blokken en profiel 78/78, delen 80/80"
     },
     "falend": []
   },
@@ -285,5 +292,5 @@
     "nl": "Sleutels van externe diensten en e-mail/sms-verzending — instelling van de eigenaar. Niet geïnstalleerd."
   },
   "conflicten": [],
-  "aangemaakt": "2026-11-14T16:34:51.286Z"
+  "aangemaakt": "2026-11-14T16:46:49.942Z"
 }

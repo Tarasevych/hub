@@ -152,6 +152,10 @@
     },
     {
       "soort": "toegevoegd",
+      "bestand": "orchestratie/geinstalleerd.json"
+    },
+    {
+      "soort": "toegevoegd",
       "bestand": "orchestratie/ontwikkelarchieven/IDENTITEIT-015.json"
     },
     {
@@ -313,6 +317,10 @@
     {
       "soort": "gewijzigd",
       "bestand": "\"docs/ontwerp/identiteit-account/maquette-bron/\\321\\200\\320\\265\\321\\224\\321\\201\\321\\202\\321\\200.js\""
+    },
+    {
+      "soort": "gewijzigd",
+      "bestand": "ORCH-OVERDRACHT.json"
     },
     {
       "soort": "gewijzigd",
@@ -767,10 +775,9 @@
   },
   "controles": [
     "Звірено /api/version перед збиранням: 20261114-111234 @ 6e7dac3a (KLASSIEK-010); архів зібрано поверх неї.",
-    "Модульні набори на злитому коді: 72/72 зелені (identiteit-009…015, menu-*, zoek-*, aanmeld-ui, thema, klassiek-001…010 усі).",
-    "Нові модульні тести IDENTITEIT-015: risico 46/46, vormgeving 53/53, delen 66/66, profiel-blokken 55/55, apparaten-uitvoer 42/42, aanmelden 50/50, sleutels-gasten 33/33, stille-uren 42/42, herstel 27/27.",
-    "e2e у Chromium з боку людини: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ (власник + другий пробний обліковий запис) 47/47.",
-    "Ще йдуть після збирання (результати — в гілці й PR): два пристрої, входи й ключі, запасні коди, шифрування й відновлення, гостьові коди, вигляд на пристроях і звірка v49.",
+    "Модульні набори на злитому коді: 72/72 зелені (identiteit-009…015, menu-*, zoek-*, aanmeld-ui, thema, klassiek-001…010) + identiteit-015-delen 66/66, delen-acceptatie 18/18.",
+    "e2e у Chromium з боку людини: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ (власник + другий пробний обліковий запис) 80/80 (два прогони поспіль).",
+    "Ще тривають після збирання (результати — в гілці й PR): два пристрої, входи й ключі, запасні коди, шифрування й відновлення, гостьові коди, вигляд на пристроях і звірка v49.",
     "npm run build на злитому коді — успішно; міграції 0273–0275 повторювані (двічі без помилок)."
   ],
   "bronnen": [
@@ -824,6 +831,10 @@
     "da3bbfbc13bcb9a89a3097cf3209c703913e2124",
     "4e4134521ff07cea13ba13dfd8a57dcf44502e93",
     "b3137ebc00c36cc080d33cabbedfeae909dbf916",
-    "b27f79fac96f87a9a1416dc841b6b39ed4574575"
+    "b27f79fac96f87a9a1416dc841b6b39ed4574575",
+    "b4081d884df211d35ab3e0c8734b75ddb4c24e44",
+    "807ef08c22ab9500680c09797587dc8276b23941",
+    "87115463908f928325f4352d552e5619416f2349",
+    "24e16821f09b4bc846b02733dd6b216f3e8f7003"
   ]
 }
