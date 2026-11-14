@@ -1,7 +1,7 @@
 /* Художнє оформлення провідника вихідного коду, інженерного вебредактора, полотна порівняння змін,
-   історії фіксацій змін та спільного діалогового вікна GitHub у системі «Макет» (MAQUETTE-004, Група 3Б).
-   Працює виключно за умови html.palet-maquette у нічній студії та у світлому режимі «Ранковий туман».
-   Studio-opmaak voor codeverkenner, webeditor, verschilweergave, vastleggingsgeschiedenis en GhDialoog. */
+   історії фіксацій змін та спільного діалогового вікна GitHub у системі «Макет» (MAQUETTE-004, Група 3Б)
+   та у прагматичних класичних темах «Біла класика» і «Чорна класика» (KLASSIEK-004B, Хвиля 3).
+   Studio- en klassieke opmaak voor codeverkenner, webeditor, verschilweergave, vastleggingsgeschiedenis en GhDialoog. */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1. ПРИХОВУВАННЯ ЯКІРНОЇ РЕЙКИ ЗА ВІДКРИТОГО ДІАЛОГОВОГО ВІКНА GITHUB
@@ -46,11 +46,11 @@ html.palet-maquette :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialo
   color: var(--mq-tekst);
 }
 
-/* У світлому режимі «Ранковий туман» локальний атрибут data-mq-dienst="github" зберігає насичений індигово-сталевий акцент
-   і світлі інженерні поверхні як у вбудованих панелях, так і в діалогових вікнах верхнього шару */
-html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialoog, .gh-diff-wikkel, .gh-diff-bestand)[data-mq-dienst="github"],
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialoog, .gh-diff-wikkel, .gh-diff-bestand)[data-mq-dienst="github"],
-html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light)) dialog.gh-dialoog[data-mq-dienst="github"] {
+/* У світлому студійному режимі «Ранковий туман» локальний атрибут data-mq-dienst="github" зберігає насичений індигово-сталевий акцент
+   і світлі інженерні поверхні як у вбудованих панелях, так і в діалогових вікнах верхнього шару (без впливу на Класику) */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialoog, .gh-diff-wikkel, .gh-diff-bestand)[data-mq-dienst="github"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gh-werkruimte-code, .gh-code-leeg-repo, dialog.gh-dialoog, .gh-diff-wikkel, .gh-diff-bestand)[data-mq-dienst="github"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) dialog.gh-dialoog[data-mq-dienst="github"] {
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 52%, var(--mq-tekst) 48%);
   --mq-accent-rgb: 54, 74, 122;
   --mq-accent-op: var(--mq-wit);
@@ -65,7 +65,7 @@ html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light)) d
 }
 
 /* Передавання світлих студійних поверхонь на діалогове вікно у разі, коли світлий клас стоїть лише на .canonical-chrome */
-html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) dialog.gh-dialoog {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) dialog.gh-dialoog {
   --mq-bg: var(--bg, var(--mq-oppervlak));
   --mq-oppervlak: color-mix(in srgb, var(--mq-wit) 96%, var(--mq-accent-2) 4%);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 91%, var(--mq-accent-2) 9%);
@@ -82,9 +82,9 @@ html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chro
   --mq-schaduw-zacht: 0 14px 36px rgba(36, 52, 88, 0.08);
 }
 
-/* Також для .gh-diff-wikkel і .gh-diff-bestand без власного data-mq-dienst у світлому режимі */
-html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.gh-diff-wikkel, .gh-diff-bestand),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gh-diff-wikkel, .gh-diff-bestand) {
+/* Також для .gh-diff-wikkel і .gh-diff-bestand без власного data-mq-dienst у світлому студійному режимі */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) :is(.gh-diff-wikkel, .gh-diff-bestand),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.gh-diff-wikkel, .gh-diff-bestand) {
   --gh-mq-code-bg: color-mix(in srgb, var(--mq-oppervlak-2) 62%, var(--mq-oppervlak) 38%);
   --gh-mq-goot-bg: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-tekst) 4%);
 }
@@ -1235,6 +1235,658 @@ html.palet-maquette .gh-werkruimte-code .gh-mobiel-terug-rij {
   border-bottom: 1px solid var(--mq-rand);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   12. ПРАГМАТИЧНИЙ КЛАСИЧНИЙ ШАР («БІЛА КЛАСИКА» ТА «ЧОРНА КЛАСИКА» — KLASSIEK-004B)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Монохромні змінні, геометрія 16px / 11px та прибирання студійних кольорових ореолів */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .gh-werkruimte-code,
+  .gh-code-leeg-repo,
+  dialog.gh-dialoog,
+  .gh-diff-wikkel,
+  .gh-diff-bestand
+) {
+  --mq-straal-kaart: 16px;
+  --mq-straal-knop: 11px;
+  --mq-straal-veld: 11px;
+  --gh-mq-indigo: var(--mq-accent);
+  --gh-mq-kop-gloed: none;
+  --gh-mq-code-bg: var(--mq-oppervlak);
+  --gh-mq-goot-bg: var(--mq-oppervlak-2);
+  --mq-gloed: transparent;
+  --mq-werk-gloed-a: transparent;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --soft: var(--mq-oppervlak-zacht);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --ink: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-knop-primair-bg);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+/* Світлочутливе полотно коду та жолоб номерів рядків у «Білій класиці» й «Чорній класиці» */
+html.palet-klassiek-wit[data-maquette-stijl="klassiek"] :is(
+  .gh-werkruimte-code,
+  .gh-code-leeg-repo,
+  dialog.gh-dialoog,
+  .gh-diff-wikkel,
+  .gh-diff-bestand
+),
+html.palet-klassiek-wit :is(
+  .gh-werkruimte-code,
+  .gh-code-leeg-repo,
+  dialog.gh-dialoog,
+  .gh-diff-wikkel,
+  .gh-diff-bestand
+) {
+  --gh-mq-code-bg: var(--mq-oppervlak);
+  --gh-mq-goot-bg: var(--mq-oppervlak-2);
+}
+
+html.palet-klassiek-zwart[data-maquette-stijl="klassiek"] :is(
+  .gh-werkruimte-code,
+  .gh-code-leeg-repo,
+  dialog.gh-dialoog,
+  .gh-diff-wikkel,
+  .gh-diff-bestand
+),
+html.palet-klassiek-zwart :is(
+  .gh-werkruimte-code,
+  .gh-code-leeg-repo,
+  dialog.gh-dialoog,
+  .gh-diff-wikkel,
+  .gh-diff-bestand
+) {
+  --gh-mq-code-bg: #0e1116;
+  --gh-mq-goot-bg: var(--mq-oppervlak-2);
+}
+
+/* Передавання класичних поверхонь безпосередньо на dialog.gh-dialoog у верхньому шарі оглядача */
+html.palet-klassiek-wit dialog.gh-dialoog:not(#_mqk) {
+  color-scheme: light;
+  --mq-bg: #f6f7f9;
+  --mq-oppervlak: #ffffff;
+  --mq-oppervlak-2: #f6f7f9;
+  --mq-oppervlak-zacht: rgba(17, 24, 39, 0.035);
+  --mq-oppervlak-hover: rgba(17, 24, 39, 0.065);
+  --mq-rand: rgba(17, 24, 39, 0.10);
+  --mq-rand-sterk: rgba(17, 24, 39, 0.20);
+  --mq-popover-glas: #ffffff;
+  --mq-sluier-glas: rgba(17, 20, 24, 0.34);
+  --mq-tekst: #111418;
+  --mq-gedempt: #3f4753;
+  --mq-stil: #525b68;
+  --mq-wit: #ffffff;
+  --mq-accent: #181c24;
+  --mq-accent-rgb: 24, 28, 36;
+  --mq-accent-2: #2d3340;
+  --mq-accent-op: #ffffff;
+  --mq-knop-primair-bg: #181c24;
+  --mq-knop-primair-tekst: #ffffff;
+  --mq-schaduw: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --mq-schaduw-held: 0 16px 40px rgba(15, 23, 42, 0.14);
+  --mq-schaduw-zacht: 0 1px 4px rgba(15, 23, 42, 0.04);
+  --gh-mq-indigo: var(--mq-accent);
+  --gh-mq-code-bg: var(--mq-oppervlak);
+  --gh-mq-goot-bg: var(--mq-oppervlak-2);
+  --gh-mq-kop-gloed: none;
+}
+
+html.palet-klassiek-zwart dialog.gh-dialoog:not(#_mqk) {
+  color-scheme: dark;
+  --mq-bg: #0c0e12;
+  --mq-oppervlak: #14171d;
+  --mq-oppervlak-2: #1b1f27;
+  --mq-oppervlak-zacht: rgba(255, 255, 255, 0.04);
+  --mq-oppervlak-hover: rgba(255, 255, 255, 0.075);
+  --mq-rand: rgba(255, 255, 255, 0.10);
+  --mq-rand-sterk: rgba(255, 255, 255, 0.20);
+  --mq-popover-glas: #14171d;
+  --mq-sluier-glas: rgba(0, 0, 0, 0.58);
+  --mq-tekst: #f3f4f6;
+  --mq-gedempt: #b8c0cc;
+  --mq-stil: #9aa3b2;
+  --mq-wit: #ffffff;
+  --mq-accent: #f3f4f6;
+  --mq-accent-rgb: 243, 244, 246;
+  --mq-accent-2: #c9d1dc;
+  --mq-accent-op: #0c0e12;
+  --mq-knop-primair-bg: #f3f4f6;
+  --mq-knop-primair-tekst: #0c0e12;
+  --mq-schaduw: 0 14px 36px rgba(0, 0, 0, 0.48);
+  --mq-schaduw-held: 0 18px 44px rgba(0, 0, 0, 0.54);
+  --mq-schaduw-zacht: 0 2px 8px rgba(0, 0, 0, 0.26);
+  --gh-mq-indigo: var(--mq-accent);
+  --gh-mq-code-bg: #0e1116;
+  --gh-mq-goot-bg: var(--mq-oppervlak-2);
+  --gh-mq-kop-gloed: none;
+}
+
+/* Ділова беззасічкова типографіка заголовків h1..h4 */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .gh-werkruimte-code,
+  .gh-code-leeg-repo,
+  dialog.gh-dialoog,
+  .gh-werkruimte-code .gh-bestand-lezer > .gh-detail-head
+) :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+/* Табличні цифри для номерів рядків коду, відбитків SHA фіксацій, байтів та лічильників +N / -M */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .gh-werkruimte-code .gh-code-nr,
+  .gh-diff-nr,
+  .gh-werkruimte-code .gh-boom-maat,
+  .gh-werkruimte-code .gh-editor-voet,
+  .gh-diff-bestand > summary .gh-sub,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-chip,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-sub,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-sub code,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-detail-head code,
+  dialog.gh-dialoog .gh-facts,
+  dialog.gh-dialoog .gh-facts code,
+  dialog.gh-dialoog .gh-apparaatcode-waarde,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Чисті матові картки, секції та вікна із заокругленням 16px (висока специфічність :not(#_mqk) без padding і gap) */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  .gh-werkruimte-code .gh-card,
+  .gh-werkruimte-code > .gh-card.gh-werkbalk,
+  .gh-code-leeg-repo.gh-card,
+  .gh-werkruimte-code .gh-code-tabel-wikkel,
+  .gh-werkruimte-code .gh-readme,
+  .gh-werkruimte-code .gh-editor-veld-wikkel,
+  .gh-werkruimte-code .gh-veld,
+  .gh-werkruimte-code .gh-vastleg-kaart,
+  .gh-werkruimte-code .gh-editor-voet,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-subkaart,
+  .gh-diff-wikkel,
+  .gh-diff-bestand,
+  dialog.gh-dialoog,
+  dialog.gh-dialoog .gh-logboek-vak,
+  dialog.gh-dialoog .gh-apparaatcode-doos
+) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+/* Уточнення тла полотен коду, вбудованих підкарток, стикованих підвалів та корпусу діалогового вікна (без padding і gap) */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  .gh-werkruimte-code .gh-code-tabel-wikkel,
+  .gh-werkruimte-code .gh-readme,
+  .gh-werkruimte-code .gh-editor-veld-wikkel,
+  .gh-diff-wikkel,
+  .gh-diff-bestand,
+  dialog.gh-dialoog .gh-logboek-vak
+) {
+  background: var(--gh-mq-code-bg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  .gh-werkruimte-code .gh-veld,
+  .gh-werkruimte-code .gh-vastleg-kaart,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-subkaart
+) {
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) dialog.gh-dialoog .gh-apparaatcode-doos {
+  border-style: dashed;
+  border-color: var(--mq-rand-sterk);
+  border-inline-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .gh-werkruimte-code .gh-editor-veld-wikkel > .gh-editor-voet {
+  border: 0;
+  border-inline: 0;
+  border-top: 1px solid var(--mq-rand);
+  border-radius: 0;
+  background: var(--gh-mq-goot-bg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .gh-diff-bestand .gh-diff-wikkel {
+  border: 0;
+  border-inline: 0;
+  border-top: 1px solid var(--mq-rand);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) dialog.gh-dialoog {
+  border-color: var(--mq-rand-sterk);
+  border-inline-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] dialog.gh-dialoog::backdrop {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] dialog.gh-dialoog .gh-dialoog-kop {
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+/* Безпечний відступ шапки вікна праворуч (18px <= 20px) зі збереженням мобільної специфічності (0, 3, 1) */
+html.palet-maquette:where([data-maquette-stijl="klassiek"]) dialog.gh-dialoog .gh-dialoog-kop {
+  padding: 14px 18px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-code-leeg-repo, .gh-werkruimte-code) .gh-empty {
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+}
+
+/* Дерево тек і файлів та піктограми без синіх або фіолетових підсвічувань */
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-boom-rij {
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-boom-rij :is(.gh-map-icoon, .gh-muted, svg) {
+  color: var(--mq-gedempt);
+  filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-boom-rij:hover {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-boom-rij:hover :is(.gh-map-icoon, .gh-muted, svg) {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-boom-rij.is-actief {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 2px 0 0 var(--mq-tekst);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-boom-rij.is-actief :is(.gh-map-icoon, .gh-muted, svg) {
+  color: var(--mq-tekst);
+  filter: none;
+}
+
+/* Кнопки, перемикач гілок, хлібні крихти, поля пошуку та форми фіксації змін із заокругленням 11px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn:not(.gh-primary) > svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn:not(.gh-primary):hover:not(:disabled) > svg {
+  color: var(--mq-tekst);
+}
+
+/* Суцільні контрастні головні кнопки дії на var(--mq-knop-primair-bg) / var(--mq-knop-primair-tekst) без градієнтів */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn.gh-primary {
+  border-radius: 11px;
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn.gh-primary:hover:not(:disabled) {
+  border-color: var(--mq-accent-2);
+  background: var(--mq-accent-2);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-btn.gh-primary > svg {
+  color: currentColor;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-icon {
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-icon:hover:not(:disabled) {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-select-wikkel {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-select-wikkel:hover {
+  border-color: var(--mq-tekst);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-select-wikkel:focus-within {
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-select-wikkel > svg,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) label.gh-search > svg,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-chip > svg,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-busy > svg,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button {
+  border-radius: 8px;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button:is(.is-on, [aria-selected="true"]) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-segment > button:is(.is-on, [aria-selected="true"]) svg {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-kruimels {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-kruimel {
+  border-radius: 11px;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-kruimel.is-actief {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-chrome .gh-werkruimte-code label.gh-search,
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code label.gh-search,
+html.palet-maquette[data-maquette-stijl="klassiek"] dialog.gh-dialoog label.gh-search {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-chrome .gh-werkruimte-code label.gh-search:focus-within,
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code label.gh-search:focus-within,
+html.palet-maquette[data-maquette-stijl="klassiek"] dialog.gh-dialoog label.gh-search:focus-within {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.gh-search input),
+  textarea:not(.gh-code-invoer),
+  select:not(.gh-select-wikkel select)
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]):not(.gh-search input),
+  textarea:not(.gh-code-invoer),
+  select:not(.gh-select-wikkel select)
+):focus {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+  outline: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-editor-veld-wikkel:focus-within {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-radio:has(input:checked) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-chip:not(.gh-chip-warn),
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-item,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-notice:not(.gh-error):not(.gh-ok),
+  .gh-notice[data-mq-dienst="github"]:not(.gh-error):not(.gh-ok),
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-busy,
+  .gh-werkruimte-code .gh-mobiel-wissel,
+  dialog.gh-dialoog .gh-vergelijk-kop,
+  dialog.gh-dialoog .gh-apparaatcode-waarde
+) {
+  border-radius: 11px;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-chip.gh-chip-warn,
+  :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-notice:is(.gh-error, .gh-ok),
+  .gh-notice[data-mq-dienst="github"]:is(.gh-error, .gh-ok)
+) {
+  border-radius: 11px;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] dialog.gh-dialoog .gh-apparaatcode-waarde {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-item-knop:hover {
+  transform: none;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-item-knop:hover .gh-chip {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) .gh-commit-bericht {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-rand-sterk);
+  background: var(--gh-mq-code-bg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.gh-werkruimte-code, dialog.gh-dialoog) :is(.gh-sub, .gh-detail-head) code {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-chrome .canonical-content .gh-werkruimte-code .gh-code-tabel tbody tr:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-code-tabel tbody tr:hover {
+  background-color: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-werkruimte-code .gh-code-tabel tbody tr:hover .gh-code-nr {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-diff-bestand > summary {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .gh-diff-bestand > summary:hover {
+  background: var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] dialog.gh-dialoog .gh-kleur-knop:is(.is-on, .is-actief) {
+  border-color: var(--mq-tekst);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak), 0 0 0 4px var(--mq-rand-sterk);
+}
+
+/* Класична висококонтрастна таблиця порівняння змін (WCAG AA >= 4.5:1) */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-kop, .is-hunk),
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-kop, .is-hunk) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
+  background-color: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd),
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
+  background-color: #eaf6ee;
+  color: #14532d;
+}
+
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-nr {
+  border-right-color: rgba(20, 83, 45, 0.22);
+  box-shadow: none;
+}
+
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-nr:first-child {
+  box-shadow: inset 2px 0 0 #14532d;
+}
+
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd),
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
+  background-color: #fdeeee;
+  color: #991b1b;
+}
+
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr {
+  border-right-color: rgba(153, 27, 27, 0.22);
+  box-shadow: none;
+}
+
+html.palet-klassiek-wit:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr:first-child {
+  box-shadow: inset 2px 0 0 #991b1b;
+}
+
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd),
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
+  background-color: #11261b;
+  color: #86efac;
+}
+
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-nr {
+  border-right-color: rgba(134, 239, 172, 0.22);
+  box-shadow: none;
+}
+
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-erbij, .is-add, .is-toegevoegd) .gh-diff-nr:first-child {
+  box-shadow: inset 2px 0 0 #86efac;
+}
+
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd),
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) :is(.gh-diff-nr, .gh-diff-teken, .gh-diff-tekst) {
+  background-color: #2a1417;
+  color: #fecaca;
+}
+
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr {
+  border-right-color: rgba(254, 202, 202, 0.22);
+  box-shadow: none;
+}
+
+html.palet-klassiek-zwart:not(#_mqk) table.gh-diff-tabel tbody tr.gh-diff-rij:is(.is-eraf, .is-del, .is-verwijderd) .gh-diff-nr:first-child {
+  box-shadow: inset 2px 0 0 #fecaca;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html.palet-maquette :is(.gh-werkruimte-code, dialog.gh-dialoog) :is(
     .gh-btn,
@@ -1251,7 +1903,7 @@ html.palet-maquette .gh-werkruimte-code .gh-mobiel-terug-rij {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   12. АДАПТИВНІ ТА МОБІЛЬНІ ПРАВИЛА — СУВОРО НАПРИКІНЦІ ЗА СПАДАННЯМ ШИРИНИ
+   13. АДАПТИВНІ ТА МОБІЛЬНІ ПРАВИЛА — СУВОРО НАПРИКІНЦІ ЗА СПАДАННЯМ ШИРИНИ
        (правило mobiel-cascade-20261105.test.ts)
    ═══════════════════════════════════════════════════════════════════════════ */
 
