@@ -1,0 +1,156 @@
+[
+  {
+    "id": "languages.мова.0.kaart-knop-uk",
+    "sectie": "languages",
+    "groep": "мова",
+    "positie": 0,
+    "positieUk": "Мова інтерфейсу",
+    "actie": "Кнопка «Українська» з прапором на самій картці «Мови» (елемент макета data-demo-lang=\"uk\"): перемальовує лише тексти макета українською",
+    "wie": "власник сайту / схвалений користувач",
+    "voorwaarden": "Вхід виконано; вибрано оформлення «Макет»; відкрито /identity?tab=languages (картка «04 / 12 Мови»)",
+    "waar": "Центр облікового запису (id.tarasevych.com, tab=languages) → «Макет» → section#languages → .direct-settings → .drawer-choice.language-illustrated → button[data-demo-lang=\"uk\"]",
+    "code": [
+      "src/identiteit/maquette/maquette-motor.ts:1091-1092 (віджет type=\"language\")",
+      "src/identiteit/maquette/maquette-motor.ts:2245 (обробник кліку data-demo-lang → setLang)",
+      "src/identiteit/maquette/maquette-motor.ts:1839-1847 (setLang: лише preferences.lang макета, persist, renderAll)",
+      "src/identiteit/maquette/maquette-motor.ts:1563 (persist → localStorage)",
+      "src/identiteit/maquette/maquette-motor.ts:1438 (preferences.lang=opties.lang — сайт перезаписує вибір під час запуску)"
+    ],
+    "opslag": "localStorage «identiteit-maquette-voorkeuren» (поле lang), яке під час кожного запуску двигуна перезаписується мовою сайту; сервер — нічого, cookie сайту — нічого",
+    "staatVoor": "є лише в макеті",
+    "ontbreekt": "Кнопка не викликає зміну мови сайту (changeLanguage): не змінює cookie tsv_ecosystem_preferences, document.documentElement.lang і не надсилає POST /api/owner/ui/preferences/save. Наслідок — розбіжність: картка й решта макета українською/нідерландською, а вбудовані справжні панелі та оболонка лишаються в мові сайту; після перезапуску двигуна (зміна мови сайту) вибір губиться. У MaquetteOpties немає зворотного виклику для мови (є лише bijKies, bijOpenen, bijRender, bijDienst, bijAccountMenu)",
+    "wijziging": "Етап 2 «Під'єднати чинне до погодженої картки»: додати в MaquetteOpties виклик bijTaal(lang), у setLang викликати його замість локальної зміни; в IdentiteitMaquette.tsx передати onLanguage сторінки (змінити Props і IdentiteitAccountPagina.tsx/InstellingencentrumWeergave.tsx, щоб прокинути p.onLanguage → changeLanguage із src/VerenigdDienstApp.tsx:73). Двигун уже перезапускається на зміну lang (IdentiteitMaquette.tsx:137), тож окремого перемальовування не потрібно. Залежить лише від клієнта",
+    "gereedAls": "Людина натискає «Українська» на картці, коли сайт нідерландською: уся сторінка (оболонка, картки, вбудовані панелі) стає українською; після оновлення сторінки й на іншому пристрої після входу мова лишається українською",
+    "testen": [
+      "tests/eenheid/identiteit-maquette.test.ts:36 (лише перевіряє, що мова береться із сайту: preferences.lang=opties.lang)",
+      "tests/e2e/identiteit-maquette-kaart.e2e.ts (знімки картки в uk/nl через ?lang=, клік по кнопці не перевіряє)"
+    ],
+    "herkomst": "Позиція v49 «Мова інтерфейсу» (вибір: Українська / Нідерландська); у макеті власника — елемент панелі languages {type:\"language\",label:\"Мова всього інтерфейсу\"} (maquette-motor.ts:103-105)",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "languages.мова.0.kaart-knop-nl",
+    "sectie": "languages",
+    "groep": "мова",
+    "positie": 0,
+    "positieUk": "Мова інтерфейсу",
+    "actie": "Кнопка «Nederlands» з прапором на самій картці «Мови» (елемент макета data-demo-lang=\"nl\"): перемальовує лише тексти макета нідерландською",
+    "wie": "власник сайту / схвалений користувач",
+    "voorwaarden": "Вхід виконано; оформлення «Макет»; картка «Мови» на сторінці облікового запису",
+    "waar": "Центр облікового запису (tab=languages) → «Макет» → section#languages → .direct-settings → .drawer-choice.language-illustrated → button[data-demo-lang=\"nl\"]",
+    "code": [
+      "src/identiteit/maquette/maquette-motor.ts:1092",
+      "src/identiteit/maquette/maquette-motor.ts:2245",
+      "src/identiteit/maquette/maquette-motor.ts:1839-1847",
+      "src/identiteit/maquette/maquette-motor.ts:1563",
+      "src/identiteit/maquette/maquette-motor.ts:1438"
+    ],
+    "opslag": "localStorage «identiteit-maquette-voorkeuren» (перезаписується мовою сайту при запуску); сервер — нічого",
+    "staatVoor": "є лише в макеті",
+    "ontbreekt": "Те саме, що для «Українська»: вибір не доходить до мови сайту й не зберігається в обліковому записі; після вибору «Nederlands» на картці справжній блок «Чинні налаштування» та меню сайту лишаються українською — людина бачить дві мови одночасно",
+    "wijziging": "Етап 2: той самий зворотний виклик bijTaal → changeLanguage, що й для «Українська»",
+    "gereedAls": "Натискання «Nederlands» на картці переводить усю сторінку й інші сервіси (hub, пошта) нідерландською; на іншому пристрої після входу мова теж нідерландська",
+    "testen": [
+      "tests/eenheid/identiteit-maquette.test.ts:36",
+      "tests/e2e/identiteit-maquette-kaart.e2e.ts"
+    ],
+    "herkomst": "Позиція v49 «Мова інтерфейсу», варіант «Нідерландська / Nederlands»",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "languages.мова.0.echt-paneel-uk",
+    "sectie": "languages",
+    "groep": "мова",
+    "positie": 0,
+    "positieUk": "Мова інтерфейсу",
+    "actie": "Кнопка «Українська» у вбудованій справжній панелі «Чинні налаштування» картки «Мови»: змінює мову всього сайту й зберігає її в обліковому записі",
+    "wie": "власник сайту / схвалений користувач",
+    "voorwaarden": "Вхід виконано, статус облікового запису approved (інакше зміна лише в браузері); розгорнуто блок «Чинні налаштування» на картці «Мови»",
+    "waar": "Центр облікового запису (tab=languages) → «Макет» → section#languages → details.mq-echt-blok[data-echt-blok=\"languages\"] «Чинні налаштування» → .mq-echt[data-echt=\"languages\"] → .settings-choice-grid.language → button «Українська»",
+    "code": [
+      "src/identiteit/maquette/maquette-motor.ts:1613-1622 (languages у directSettingsSections; tekenЧинні — гніздо справжньої панелі)",
+      "src/identiteit/maquette/maquette-motor.ts:1644 (блок під елементами картки)",
+      "src/identiteit/maquette/IdentiteitMaquette.tsx:161-172 (портал секції сайту в гніздо)",
+      "src/InstellingencentrumWeergave.tsx:37 (p.tab==='languages' → button onClick p.onLanguage('uk'))",
+      "src/VerenigdDienstApp.tsx:75 (onLanguage={changeLanguage})",
+      "src/VerenigdDienstApp.tsx:73 (changeLanguage: chooseExplicitLanguage, setLang, POST /api/owner/ui/preferences/save лише для approved)",
+      "src/taal-controller.ts:11-12 (persistBrowserLanguage: cookie + documentElement.lang)",
+      "backend/index.ts:1111 (POST /api/owner/ui/preferences/save: ownerRequireSession + status approved, інакше 403)",
+      "backend/index.ts:589 (ownerSaveUiPreferences: language ∈ {uk,nl}, запис у owner_ui_preferences_v1)"
+    ],
+    "opslag": "сервер: POST /api/owner/ui/preferences/save → таблиця owner_ui_preferences_v1 (поле language, по userId); плюс cookie tsv_ecosystem_preferences (lang) як кеш першого кадру для всіх піддоменів",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Помилка збереження на сервері не показується (void api.post без обробки відповіді); у журнал аудиту записується подія «owner.ui.menu.updated» замість окремої події про мову; разом із мовою щоразу перезаписується все меню (menuPreferences). Окремого e2e-тесту натискання в «Макеті» немає",
+    "wijziging": "Не обов'язково для роботи. Етап 2 (за бажанням): повідомлення про невдале збереження й окрема подія аудиту owner.ui.language.updated у backend/index.ts:1111; e2e-перевірка кліку в «Макеті» на етапі 4",
+    "gereedAls": "Після натискання вся сторінка українською; після оновлення сторінки й на іншому пристрої після входу мова лишається українською (GET /api/owner/ui/preferences повертає language:\"uk\")",
+    "testen": [
+      "tests/eenheid/weergave-per-account-20261020.test.ts:176 (збереження language:'nl' через /api/owner/ui/preferences/save → 200)",
+      "tests/eenheid/identiteit-012-server-veiligheid.test.ts:67 (маршрут збереження вимагає сеанс)",
+      "tests/e2e/hulp/identiteit-mobiel-stand/stand.tsx:16 (стенд із панеллю мов, без перевірки збереження)"
+    ],
+    "herkomst": "Позиція v49 «Мова інтерфейсу»; справжня дія — вкладка «Мови» центру налаштувань (InstellingencentrumWeergave), вбудована в «Макет» через гніздо .mq-echt",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "languages.мова.0.echt-paneel-nl",
+    "sectie": "languages",
+    "groep": "мова",
+    "positie": 0,
+    "positieUk": "Мова інтерфейсу",
+    "actie": "Кнопка «Nederlands» у вбудованій справжній панелі «Чинні налаштування» картки «Мови»: змінює мову всього сайту на нідерландську й зберігає в обліковому записі",
+    "wie": "власник сайту / схвалений користувач",
+    "voorwaarden": "Вхід виконано, статус approved; блок «Чинні налаштування» картки «Мови» розгорнуто",
+    "waar": "Центр облікового запису (tab=languages) → «Макет» → section#languages → details.mq-echt-blok «Чинні налаштування» → .settings-choice-grid.language → button «Nederlands»",
+    "code": [
+      "src/InstellingencentrumWeergave.tsx:37 (onClick p.onLanguage('nl'))",
+      "src/VerenigdDienstApp.tsx:73",
+      "src/VerenigdDienstApp.tsx:64 (resolveAccountLanguage — застосування збереженої мови при завантаженні)",
+      "src/taal-controller.ts:10-12",
+      "backend/index.ts:1111",
+      "backend/index.ts:589",
+      "backend/index.ts:1093 (POST /api/owner/ui/preferences — читання)"
+    ],
+    "opslag": "сервер: /api/owner/ui/preferences/save → owner_ui_preferences_v1.language; cookie tsv_ecosystem_preferences",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Те саме, що для «Українська»: немає повідомлення про збій збереження, аудит під назвою події меню. Параметр ?lang= в адресі має перевагу над збереженою мовою облікового запису (hasExplicitTabLanguage) — без пояснення людині",
+    "wijziging": "Не обов'язково. Етап 2 (за бажанням): повідомлення про збій і окрема подія аудиту",
+    "gereedAls": "Після натискання все нідерландською, зокрема картки макета (двигун перезапускається з новою мовою); після входу на іншому пристрої — теж нідерландською",
+    "testen": [
+      "tests/eenheid/weergave-per-account-20261020.test.ts:176",
+      "tests/eenheid/identiteit-012-server-veiligheid.test.ts:67"
+    ],
+    "herkomst": "Позиція v49 «Мова інтерфейсу», варіант «Нідерландська»",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "languages.мова.0.accountmenu-taal",
+    "sectie": "languages",
+    "groep": "мова",
+    "positie": 0,
+    "positieUk": "Мова інтерфейсу",
+    "actie": "Перемикач мови (Українська / Nederlands) у меню облікового запису сайту, яке «Макет» відкриває через діалог світлини → «Меню облікового запису»",
+    "wie": "власник сайту / схвалений користувач",
+    "voorwaarden": "Вхід виконано; на ПК меню у верхній смузі сайту, на телефоні — у шухляді бічного меню",
+    "waar": "Будь-яка сторінка сайту → аватар (.canonical-avatar-trigger) → меню облікового запису → рядок мови → кнопки «Українська» / «Nederlands»; з «Макету»: аватар/світлина → діалог → «Меню облікового запису»",
+    "code": [
+      "src/CanoniekAccountMenu.tsx:637-641 (кнопки onLanguage('uk'/'nl'))",
+      "src/VerenigdDienstApp.tsx:76 (onLanguage={changeLanguage})",
+      "src/App.tsx:201 (onLanguage={changeLanguage}) і src/App.tsx:113 (changeLanguage hub)",
+      "src/identiteit/maquette/maquette-motor.ts:365 (дія account-menu → opties.bijAccountMenu)",
+      "src/identiteit/maquette/IdentiteitMaquette.tsx:43-69 (openAccountMenu)",
+      "backend/index.ts:1111"
+    ],
+    "opslag": "сервер: /api/owner/ui/preferences/save → owner_ui_preferences_v1.language; cookie tsv_ecosystem_preferences",
+    "staatVoor": "працює в іншому місці",
+    "ontbreekt": "Нічого для роботи; це дубль позиції поза карткою «Мови»",
+    "wijziging": "Не потрібна; лишити як другий шлях",
+    "gereedAls": "Вибір мови в меню облікового запису змінює мову всього сайту, а картка «Мови» в «Макеті» показує ту саму вибрану мову",
+    "testen": [
+      "tests/eenheid/accountmenu-v3.test.ts",
+      "tests/eenheid/menu-taal-prapor-20261103.test.ts",
+      "tests/e2e/hulp/accountmenu-stand/stand.tsx"
+    ],
+    "herkomst": "Наявний перемикач мови в меню облікового запису сайту; не є частиною погодженої картки, але досяжний із «Макету»",
+    "maquetteLabel": "прихована група"
+  }
+]

@@ -1,0 +1,387 @@
+[
+  {
+    "id": "sessions.цей-пристрій.0.вимкнути-збереження",
+    "sectie": "sessions",
+    "groep": "цей-пристрій",
+    "positie": 0,
+    "positieUk": "Зберегти обліковий запис",
+    "actie": "Перемикач «Зберегти цей акаунт для наступних сесій» → вимкнути: вибір записується на пристрої, а сервер одразу відкликає грант («запам'ятований браузер») цього браузера",
+    "wie": "схвалений користувач (і власник сайту) на власному пристрої",
+    "voorwaarden": "Вхід виконано, статус облікового запису approved; у переліку входів є запис kind=remembered з current=true (інакше лише локальний запис)",
+    "waar": "id.tarasevych.com/sessions (вигляд «Макет») → картка «Сесії та пристрої» → блок «Чинні налаштування» (details[data-echt-blok=\"sessions\"]) → section.sessies-onthouden[data-sessies-onthouden] → label[data-sessies-onthoud-schakel] input[role=switch]",
+    "code": [
+      "src/SessiesOverzicht.tsx:46-55 (форма-перемикач)",
+      "src/SessiesOverzicht.tsx:36 (wisselOnthouden → POST /api/owner/identity/security/items/:id/revoke, kind=grant)",
+      "src/aanmelden-onthouden.ts:22 (zetAanmeldenOnthouden → localStorage)",
+      "backend/index.ts:1169 (маршрут items/:id/revoke, перевірка auth.service=identity, status=approved, target.userId=auth.user.id)",
+      "backend/sessie-grant-intrekken.ts",
+      "src/InstellingencentrumWeergave.tsx:37 (tab sessions → SessiesOverzicht, embedded у «Макеті»)"
+    ],
+    "opslag": "localStorage «tsv-aanmelden-onthouden-v1»=0 + сервер: POST /api/owner/identity/security/items/:id/revoke → owner_browser_grants_v1 (revokedAt)",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Картка «Збереження акаунта на пристрої» не має цілі переходу (станНаСайті.sessions[\"цей-пристрій\"] без «ціль»), тож рядок не є кнопкою «Відкрити»; дія досяжна лише через розгортання «Чинні налаштування».",
+    "wijziging": "Етап 2: додати в станНаСайті.sessions[\"цей-пристрій\"] ціль \"[data-sessies-onthouden]\" і рядки {0: стан за підсумком рядка ввімкнення, 1:\"в-чинних\"}; від виправлення ввімкнення (наступний рядок) залежить, чи можна ставити групі «в-чинних».",
+    "gereedAls": "Людина в «Макеті» тисне рядок «Зберегти обліковий запис» → відкривається блок із перемикачем; після вимкнення з'являється «Цей браузер забуто…», у переліку входів зникає «Запам'ятований браузер» поточного пристрою, після перезавантаження перемикач лишається вимкненим.",
+    "testen": [
+      "tests/eenheid/identiteit-013-bevestigen.test.ts",
+      "tests/eenheid/sessie-tabbladen-20261020.test.ts",
+      "tests/eenheid/sessies-weergave-20261020.test.ts"
+    ],
+    "herkomst": "Перенесено з екрана входу (вибір «Зберегти цей акаунт») у «Сесії та пристрої»; теперішнє місце — SessiesOverzicht, блок «Збереження акаунта на цьому пристрої».",
+    "maquetteLabel": "Частково реалізовано"
+  },
+  {
+    "id": "sessions.цей-пристрій.0.увімкнути-збереження",
+    "sectie": "sessions",
+    "groep": "цей-пристрій",
+    "positie": 0,
+    "positieUk": "Зберегти обліковий запис",
+    "actie": "Перемикач «Зберегти цей акаунт для наступних сесій» → увімкнути знову: вибір записується лише на пристрої й має діяти з наступного входу (remember=true)",
+    "wie": "схвалений користувач на власному пристрої",
+    "voorwaarden": "Перемикач раніше вимкнено (грант цього браузера відкликано), сеанс триває",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → section.sessies-onthouden → input[role=switch]",
+    "code": [
+      "src/SessiesOverzicht.tsx:36 (wisselOnthouden: при aan=true лише zetAanmeldenOnthouden, без запиту)",
+      "src/aanmelden-onthouden.ts:15-28",
+      "src/VerenigdDienstApp.tsx:64 (applyViewModel: model.rememberedBrowser===false → zetAanmeldenOnthouden(false))"
+    ],
+    "opslag": "лише localStorage «tsv-aanmelden-onthouden-v1»=1; серверного запису немає",
+    "staatVoor": "частково працює",
+    "ontbreekt": "Після ввімкнення сервер не створює грант для поточного браузера; під час наступного bootstrap (перезавантаження сторінки до нового входу) сервер повертає rememberedBrowser=false, і VerenigdDienstApp.tsx:64 примусово скидає локальний вибір назад у «вимкнено». Ввімкнення не тримається до повторного входу, а людині про це не сказано.",
+    "wijziging": "Етап 2 (під'єднання чинного): або серверний маршрут «запам'ятати цей браузер» із посиленим підтвердженням, що видає грант поточному сеансу, або чесний стан «Діятиме після наступного входу» без скидання вибору в applyViewModel. Залежить від рішення щодо видачі гранту без повторного входу.",
+    "gereedAls": "Людина вимикає, потім вмикає перемикач, перезавантажує сторінку — перемикач лишається ввімкненим (або видно пояснення «діятиме після наступного входу»), а після наступного входу в переліку з'являється «Запам'ятований браузер» цього пристрою.",
+    "testen": [
+      "tests/eenheid/sessie-tabbladen-20261020.test.ts"
+    ],
+    "herkomst": "Та сама позиція, друга дія перемикача.",
+    "maquetteLabel": "Частково реалізовано"
+  },
+  {
+    "id": "sessions.цей-пристрій.1.наслідки-після-виходу",
+    "sectie": "sessions",
+    "groep": "цей-пристрій",
+    "positie": 1,
+    "positieUk": "Наслідки для місцевих даних після виходу",
+    "actie": "Відомості під перемикачем: що станеться з приватним локальним кешем пошти, швидким входом і запам'ятованим браузером, якщо вимкнути збереження; очищення кешу пошти після виходу",
+    "wie": "схвалений користувач",
+    "voorwaarden": "Відкрито блок «Збереження акаунта на цьому пристрої»",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → section.sessies-onthouden → small під заголовком перемикача",
+    "code": [
+      "src/SessiesOverzicht.tsx:54 (текст наслідків)",
+      "src/VerenigdDienstApp.tsx:64 (setMailPrivateCacheRemembered за вибором)",
+      "src/mail-bijlage-cache.ts (приватний кеш пошти, очищення після виходу)"
+    ],
+    "opslag": "нічого (відомості); поведінка — Cache Storage «tsv-mail-private-v2» очищується за політикою з localStorage",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Немає цілі на картці (рядок не веде до тексту); окремої перевірки, що текст відповідає фактичному очищенню кешу після виходу, у тестах не знайдено.",
+    "wijziging": "Етап 2: та сама ціль \"[data-sessies-onthouden]\" для рядка 1 у станНаСайті; додати перевірку в e2e (вихід із вимкненим збереженням → кеш пошти порожній).",
+    "gereedAls": "Людина бачить пояснення поруч із перемикачем; після виходу з вимкненим збереженням приватні вкладення пошти на пристрої відсутні, акаунта немає у списку швидкого входу.",
+    "testen": [
+      "tests/eenheid/sessie-tabbladen-20261020.test.ts"
+    ],
+    "herkomst": "",
+    "maquetteLabel": "Частково реалізовано"
+  },
+  {
+    "id": "sessions.активні.0.оновити-список",
+    "sectie": "sessions",
+    "groep": "активні",
+    "positie": 0,
+    "positieUk": "Оновити список входів",
+    "actie": "Кнопка «Оновити»: заново завантажує входи, вкладки, запам'ятовані браузери (згруповані за пристроями) і гостьові сесії",
+    "wie": "схвалений користувач (гостьові сесії — лише власник сайту)",
+    "voorwaarden": "Вхід у службу identity, status=approved",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → .security-sessions → section.security-session-summary → button «Оновити»",
+    "code": [
+      "src/BeveiligingSessiesPaneel.tsx:87 (кнопка «Оновити»)",
+      "src/SessiesOverzicht.tsx:32 (vernieuw: onRefresh + laden гостьових)",
+      "src/VerenigdDienstApp.tsx:74 (loadSessions → POST /api/owner/identity/security/overview)",
+      "backend/index.ts:1168 (overview: ownerRequireSession, service=identity, approved; читання owner_service_sessions_v1, owner_tab_sessions_v1, owner_browser_grants_v1 за userId)",
+      "backend/toegangscodes-routes.ts:103 (gast-sessies/lijst)"
+    ],
+    "opslag": "нічого не змінює; читання з сервера (owner_service_sessions_v1 / owner_tab_sessions_v1 / owner_browser_grants_v1, app.gast_sessies); кеш stableSecurity у пам'яті",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Група «Активні входи й пристрої» в «Макеті» прихована (усі рядки «в-чинних» → фільтр maquette-motor.ts:955), тож на погодженій картці немає видимого рядка й переходу; дія досяжна лише через «Чинні налаштування».",
+    "wijziging": "Етап 2: вирішити, чи показувати приховані «в-чинних» групи як кнопки переходу (ціль \".security-session-summary\"); зараз прихованість — свідоме правило рушія.",
+    "gereedAls": "Людина в «Макеті» розгортає «Чинні налаштування» розділу «Сесії та пристрої», тисне «Оновити» — з'являється новий вхід з іншого пристрою без перезавантаження сторінки.",
+    "testen": [
+      "tests/e2e/sessies-apparaten.e2e.ts",
+      "tests/eenheid/sessies-weergave-20261020.test.ts"
+    ],
+    "herkomst": "",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "sessions.активні.1.завершити-всі-інші",
+    "sectie": "sessions",
+    "groep": "активні",
+    "positie": 1,
+    "positieUk": "Завершити всі інші входи",
+    "actie": "Кнопка «Завершити всі інші» → діалог підтвердження «Так, завершити / Скасувати» → завершує інші входи, вкладки, запам'ятовані браузери й усі гостьові сесії; поточний вхід лишається; потрібне посилене підтвердження (step-up)",
+    "wie": "схвалений користувач",
+    "voorwaarden": "Вхід у службу identity, approved; посилене підтвердження (ключ доступу/автентифікатор; Google лише коли сильнішого немає)",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → section.sessies-acties → button[data-sessies-alle-andere] → div.sessies-bevestig[data-bevestig=alle-andere]",
+    "code": [
+      "src/SessiesOverzicht.tsx:40-43 (кнопка й підтвердження)",
+      "src/SessiesOverzicht.tsx:34 (alleAndere → POST /api/owner/identity/security/revoke-others {gast:true})",
+      "src/platform/client.ts:281 (STEP_UP_STRONG_REQUIRED → вікно підтвердження)",
+      "backend/index.ts:1176 (revoke-others: sterkeStapOpVereist, оновлення owner_service_sessions_v1/owner_tab_sessions_v1/owner_browser_grants_v1 крім anker/grant)",
+      "backend/toegangscodes.ts:229 (gastSessieIntrekken → app.gast_sessies)"
+    ],
+    "opslag": "сервер: POST /api/owner/identity/security/revoke-others → owner_service_sessions_v1, owner_tab_sessions_v1, owner_browser_grants_v1 (revokedAt), app.gast_sessies (ingetrokken_op), журнал аудиту",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Група прихована в «Макеті» (усі рядки «в-чинних»), немає рядка-переходу на погодженій картці.",
+    "wijziging": "Етап 2: за рішенням щодо прихованих груп — ціль \"[data-sessies-alle-andere]\".",
+    "gereedAls": "З двох пристроїв: на першому людина тисне «Завершити всі інші» → підтверджує ключем → на другому пристрої наступний запит веде на вхід; перший лишається в обліковому записі; повідомлення показує кількість завершених входів і гостьових сесій.",
+    "testen": [
+      "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
+      "tests/eenheid/toegangscodes.test.ts",
+      "tests/e2e/gast-toegang.e2e.ts"
+    ],
+    "herkomst": "",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "sessions.активні.1.завершити-окремий-вхід",
+    "sectie": "sessions",
+    "groep": "активні",
+    "positie": 1,
+    "positieUk": "Завершити всі інші входи",
+    "actie": "Кнопки в картці пристрою: «Завершити всі сесії на цьому пристрої» (з підтвердженням), «Завершити вхід / Забути цей браузер» для окремого рядка, «Забути цей браузер (питати знову)», «Завершити технічний профіль»",
+    "wie": "схвалений користувач",
+    "voorwaarden": "Вхід у службу identity, approved; картку пристрою розгорнуто",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → .sessie-apparaten → article[data-sessie-apparaat] → .sessie-rij-acties / button[data-sessie-alle-op-apparaat]",
+    "code": [
+      "src/BeveiligingSessiesPaneel.tsx:48,75-78 (усі на пристрої з підтвердженням)",
+      "src/BeveiligingSessiesPaneel.tsx:73 (окремий рядок, data-sessie-tech-uit, data-sessie-onthoud-vergeten)",
+      "src/VerenigdDienstApp.tsx:74 (revokeSession → POST /api/owner/identity/security/items/:id/revoke)",
+      "backend/index.ts:1169 (revoke: перевірка target.userId=auth.user.id)",
+      "backend/index.ts:1171 (tech-beeindigen)",
+      "backend/index.ts:1173 (stap-op-vergeten)"
+    ],
+    "opslag": "сервер: owner_service_sessions_v1 / owner_tab_sessions_v1 / owner_browser_grants_v1 (revokedAt, status), запам'ятовані підтвердження, журнал аудиту",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Окремої позиції в погодженому оформленні немає; дія належить до тієї самої панелі, але на картці не згадана.",
+    "wijziging": "Не потребує змін коду; у відомості зазначити як супутню дію позиції «Завершити всі інші входи».",
+    "gereedAls": "Людина розгортає картку іншого пристрою, тисне «Завершити всі сесії на цьому пристрої» → «Так, завершити» — пристрій зникає з переліку; на поточному пристрої поточний вхід лишається.",
+    "testen": [
+      "tests/e2e/sessies-apparaten.e2e.ts",
+      "tests/eenheid/stap-op-onthouden-20261020.test.ts",
+      "tests/eenheid/tech-sessies.test.ts"
+    ],
+    "herkomst": "Супутня дія панелі «Керування входами й пристроями» (BeveiligingSessiesPaneel), не окрема позиція v49.",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "sessions.активні.2.вийти-всюди",
+    "sectie": "sessions",
+    "groep": "активні",
+    "positie": 2,
+    "positieUk": "Вийти всюди",
+    "actie": "Кнопка «Вийти всюди» → підтвердження «Так, вийти всюди / Скасувати» → завершує всі входи (зокрема поточний), технічні профілі, запам'ятовані підтвердження й гостьові сесії; потрібне посилене підтвердження",
+    "wie": "схвалений користувач",
+    "voorwaarden": "Вхід у службу identity, approved; посилене підтвердження",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → .security-sessions → section.security-danger-actions → button[data-sessies-overal] → div.sessies-bevestig[data-bevestig=overal]",
+    "code": [
+      "src/BeveiligingSessiesPaneel.tsx:90-92 (кнопка й підтвердження)",
+      "src/VerenigdDienstApp.tsx:74 (revokeAll → POST /api/owner/identity/security/revoke-all; очищення кешів пошти, аватара, підказки сеансу)",
+      "backend/index.ts:1174 (revoke-all: sterkeStapOpVereist, ownerBumpRevocation, ownerAllesIntrekken, gastSessieIntrekken 'alle', techBeeindigenBijIntrekken, onthoudAllesVergeten, аудит)"
+    ],
+    "opslag": "сервер: POST /api/owner/identity/security/revoke-all → лічильник відкликання (epoch), owner_service_sessions_v1, owner_tab_sessions_v1, owner_browser_grants_v1, app.gast_sessies, журнал аудиту; клієнт: очищення Cache Storage пошти й localStorage-підказок",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Група прихована в «Макеті»; немає рядка-переходу на погодженій картці.",
+    "wijziging": "Етап 2: за рішенням щодо прихованих груп — ціль \"[data-sessies-overal]\".",
+    "gereedAls": "Людина тисне «Вийти всюди», підтверджує ключем — бачить екран входу на цьому й іншому пристрої; гостьовий вхід за кодом також завершено; без підтвердження сервер повертає 403 і нічого не завершує.",
+    "testen": [
+      "tests/eenheid/identiteit-012-server-veiligheid.test.ts"
+    ],
+    "herkomst": "",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "sessions.гості.0.переглянути-гостьові-входи",
+    "sectie": "sessions",
+    "groep": "гості",
+    "positie": 0,
+    "positieUk": "Чинні гостьові входи",
+    "actie": "Перелік чинних гостьових сесій за кодами доступу: пристрій, назва коду, початок, остання активність, тривалість, строк дії, IP-хеш",
+    "wie": "власник сайту (гостьові коди — лише його)",
+    "voorwaarden": "Обліковий запис власника сайту (isEigenaarGebruiker), служба identity; є хоча б один чинний код доступу",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → section.sessies-gasten[data-gast-sessies] → .security-session-list → article[data-gast-sessie]",
+    "code": [
+      "src/SessiesOverzicht.tsx:30 (laden → /api/owner/access/gast-sessies/lijst)",
+      "src/SessiesOverzicht.tsx:58-66 (перелік)",
+      "backend/toegangscodes-routes.ts:60,103 (lijst; для не-власника {beschikbaar:false})",
+      "backend/toegangscodes.ts:185 (gastSessiesVan, RLS через alsGebruiker)"
+    ],
+    "opslag": "сервер (читання): app.gast_sessies ⨝ app.toegangscodes (міграція 0025)",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Група прихована в «Макеті» (рядок «в-чинних»), немає переходу на погодженій картці.",
+    "wijziging": "Етап 2: ціль \"[data-gast-sessies]\" за рішенням щодо прихованих груп.",
+    "gereedAls": "Власник сайту видає код доступу, гість входить з іншого браузера → у «Сесії та пристрої» після «Оновити» видно гостьову сесію з назвою коду й строком.",
+    "testen": [
+      "tests/e2e/gast-toegang.e2e.ts",
+      "tests/eenheid/toegangscodes.test.ts"
+    ],
+    "herkomst": "",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "sessions.гості.0.завершити-гостьову-сесію",
+    "sectie": "sessions",
+    "groep": "гості",
+    "positie": 0,
+    "positieUk": "Чинні гостьові входи",
+    "actie": "Кнопка «Завершити гостьову сесію» в картці гостьового входу",
+    "wie": "власник сайту",
+    "voorwaarden": "Обліковий запис власника сайту; гостьова сесія чинна",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → section[data-gast-sessies] → article[data-gast-sessie] → button.security-revoke",
+    "code": [
+      "src/SessiesOverzicht.tsx:33 (gastIntrekken → POST /api/owner/access/gast-sessies/intrekken)",
+      "src/SessiesOverzicht.tsx:64 (кнопка)",
+      "backend/toegangscodes-routes.ts:104",
+      "backend/toegangscodes.ts:229 (gastSessieIntrekken, перевірка user_id, журнал і аудит)"
+    ],
+    "opslag": "сервер: app.gast_sessies (ingetrokken_op, ingetrokken_reden='door-eigenaar'), журнал коду, аудит",
+    "staatVoor": "працює в цьому оформленні",
+    "ontbreekt": "Немає підтвердження перед завершенням (одне натискання); група прихована в «Макеті».",
+    "wijziging": "Етап 2: необов'язково — діалог підтвердження; ціль на картці разом із переліком.",
+    "gereedAls": "Власник тисне «Завершити гостьову сесію» → бачить «Гостьову сесію завершено.»; у браузері гостя наступний запит повертає 401.",
+    "testen": [
+      "tests/eenheid/toegangscodes.test.ts",
+      "tests/e2e/gast-toegang.e2e.ts"
+    ],
+    "herkomst": "",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "sessions.гості.0.гостьові-входи-інших-облікових-записів",
+    "sectie": "sessions",
+    "groep": "гості",
+    "positie": 0,
+    "positieUk": "Чинні гостьові входи",
+    "actie": "Перегляд і завершення гостьових входів для схваленого облікового запису, що не є власником сайту",
+    "wie": "схвалений користувач (не власник сайту)",
+    "voorwaarden": "Обліковий запис approved, не isEigenaarGebruiker",
+    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → блок «Гостьові сесії» не показується (gasten=null)",
+    "code": [
+      "backend/toegangscodes-routes.ts:60 (не-власник: lijst → {beschikbaar:false}, інші → 403 OWNER_REQUIRED)",
+      "src/SessiesOverzicht.tsx:30,58 (beschikbaar=false → блок схований)"
+    ],
+    "opslag": "нічого",
+    "staatVoor": "недоступно за задумом",
+    "ontbreekt": "Причина: коди доступу для гостей видає лише власник сайту (toegangscodes-routes.ts:60), тому в інших облікових записах гостьових сесій немає. Альтернатива: спільний доступ до простору через запрошення (розділ «Доступ», /sharing). Людині блок просто не показано, без пояснення.",
+    "wijziging": "Етап 2.5: прапорець «gastcodes-iedereen» (типово «Лише я»); доки вимкнений — показати в «Сесіях» коротке пояснення замість порожнечі; після ввімкнення той самий перелік для схвалених облікових записів.",
+    "gereedAls": "Схвалений користувач у «Сесії та пристрої» бачить пояснення «Гостьові коди видає лише власник сайту; поділитися простором можна в розділі «Доступ»»; з увімкненим прапорцем — бачить і завершує власні гостьові сесії.",
+    "testen": [
+      "tests/eenheid/toegangscodes.test.ts"
+    ],
+    "herkomst": "Розщеплення позиції за людьми: вимога плану, етап 2.5.",
+    "maquetteLabel": "прихована група"
+  },
+  {
+    "id": "sessions.сповіщення.0.перемикач-попередження",
+    "sectie": "sessions",
+    "groep": "сповіщення",
+    "positie": 0,
+    "positieUk": "Попереджати про новий пристрій",
+    "actie": "Перемикач «Попереджати про новий пристрій»: людина вмикає або вимикає сповіщення про вхід із нового пристрою",
+    "wie": "схвалений користувач",
+    "voorwaarden": "Вхід виконано",
+    "waar": "відсутнє на сайті; у «Макеті» лише показовий перемикач «Сповіщення про новий вхід» (панель розділу, позначка «Приклад вигляду» з кнопкою «Справжнє налаштування» → sessions без цілі)",
+    "code": [
+      "src/identiteit/maquette/maquette-motor.ts:127 (показовий toggle, initial:true)",
+      "src/identiteit/maquette/maquette-motor.ts:1059 (демоДоСайту.sessions = \"\")",
+      "відсутнє: обробник, маршрут і поле налаштування в src/, backend/, shared/ (grep «nieuw apparaat»/«bekende_apparaten» знаходить лише серверне надсилання)"
+    ],
+    "opslag": "нічого",
+    "staatVoor": "є лише в макеті",
+    "ontbreekt": "Немає вибору людини: надсилання вмикається лише прапорцем власника «meldingen-uitleg-v3» для всіх; немає поля налаштування, маршруту збереження, пояснення ризику й підтвердження вимкнення. Підпис картки «Частково реалізовано» (станНаСайті.sessions.сповіщення.стан=частково) перебільшує.",
+    "wijziging": "Етап 2.4: вибір «Завжди / Вимкнено» з «!» і поясненням ризику, вимкнення з посиленим підтвердженням і сповіщенням; запис у журналі безпеки лишається завжди; збереження на сервері (налаштування облікового запису), перевірка в naAanmelding. До того — підпис картки «Потребує розробки» (стан «заплановано»).",
+    "gereedAls": "Людина вимикає перемикач, підтверджує ключем → вхід з нового браузера не дає спливного сповіщення, але подія є в журналі безпеки; повторне ввімкнення відновлює сповіщення; вибір однаковий на всіх пристроях.",
+    "testen": [],
+    "herkomst": "Нова можливість макета v49 (група «стан: макет»).",
+    "maquetteLabel": "Частково реалізовано"
+  },
+  {
+    "id": "sessions.сповіщення.0.сповіщення-про-новий-пристрій",
+    "sectie": "sessions",
+    "groep": "сповіщення",
+    "positie": 0,
+    "positieUk": "Попереджати про новий пристрій",
+    "actie": "Сповіщення «Новий вхід на новому пристрої» після успішного входу з невідомого браузера (Google, ключ доступу, код, Telegram)",
+    "wie": "одержувач — схвалений користувач; вмикає власник сайту",
+    "voorwaarden": "Прапорець «meldingen-uitleg-v3» увімкнено для облікового запису (потребує «Новий центр сповіщень»); у обліковому записі вже є хоча б один відомий пристрій (перший пристрій зберігається тихо)",
+    "waar": "Центр сповіщень сайту (дзвіночок) → картка «Новий вхід на новому пристрої»; не в «Сесії та пристрої»",
+    "code": [
+      "backend/nieuw-apparaat.ts:66 (naAanmelding: ключ за cookie пристрою, запис/порівняння в app.bekende_apparaten)",
+      "backend/nieuw-apparaat.ts:115-117 (перевірка прапорця meldingen-uitleg-v3)",
+      "backend/index.ts:619 (3 виклики void naAanmelding після створення сеансу)",
+      "shared/vlaggen.ts:203 (опис прапорця)",
+      "migrations/0192_bekende_apparaten.sql (таблиця з RLS)"
+    ],
+    "opslag": "сервер: app.bekende_apparaten (laatst_gezien, bevestigd_op) + сповіщення через backend/melder",
+    "staatVoor": "потребує налаштування власника",
+    "ontbreekt": "Прапорець «meldingen-uitleg-v3» типово вимкнений (src/meldingen/v2/vlag-uitleg.ts:1); без нього сповіщення не надходить і таблиця не наповнюється.",
+    "wijziging": "Етап 2.4: після появи вибору людини — надсилання залежить від її вибору, а не лише від прапорця; або ввімкнути прапорець для всіх після приймання. Передумова власника: увімкнути «Новий центр сповіщень» і «meldingen-uitleg-v3» в адмінці (прапорці).",
+    "gereedAls": "Власник вмикає прапорці; людина входить з нового браузера (окремий набір cookie) → у центрі сповіщень з'являється картка з пристроєм, регіоном, часом і способом входу; повторний вхід з того самого браузера сповіщення не дає.",
+    "testen": [
+      "tests/eenheid/nieuw-apparaat-20261030.test.ts",
+      "tests/e2e/meldingen-ui014a.e2e.ts",
+      "tests/eenheid/sec-002-slot-s-20261112.test.ts"
+    ],
+    "herkomst": "Серверна частина UI-014 фаза 2A; працює поза «Сесіями» — у центрі сповіщень.",
+    "maquetteLabel": "Частково реалізовано"
+  },
+  {
+    "id": "sessions.сповіщення.0.це-був-я",
+    "sectie": "sessions",
+    "groep": "сповіщення",
+    "positie": 0,
+    "positieUk": "Попереджати про новий пристрій",
+    "actie": "Кнопки в сповіщенні: «Це був я» (позначити пристрій підтвердженим) і «Це не я» (перехід до id.tarasevych.com/sessions для завершення входу)",
+    "wie": "одержувач сповіщення (схвалений користувач)",
+    "voorwaarden": "Надійшло сповіщення про новий пристрій (прапорець meldingen-uitleg-v3)",
+    "waar": "Центр сповіщень → відкрита картка сповіщення → блок пояснення (MeldingUitleg) → «Це був я» / «Це не я»",
+    "code": [
+      "src/meldingen/v2/MeldingUitleg.tsx:18 (POST /api/meldingen/apparaat-bekend)",
+      "backend/index.ts:893 (маршрут apparaat-bekend, ownerRequireSession)",
+      "backend/nieuw-apparaat.ts:109 (alsBekendMarkeren → bevestigd_op)",
+      "backend/kijker-alleen-lezen.ts:109 (заборонено для глядача в режимі лише читання)"
+    ],
+    "opslag": "сервер: app.bekende_apparaten.bevestigd_op",
+    "staatVoor": "працює в іншому місці",
+    "ontbreekt": "У «Сесії та пристрої» немає жодного сліду підтвердження пристрою; доступно лише з картки сповіщення і лише з прапорцем.",
+    "wijziging": "Етап 2.4: показувати позначку «Підтверджено вами» в переліку відомих пристроїв у «Сесіях».",
+    "gereedAls": "Людина в сповіщенні тисне «Це був я» → картка позначається, повторний вхід з цього пристрою не сповіщає; «Це не я» відкриває «Сесії та пристрої».",
+    "testen": [
+      "tests/eenheid/nieuw-apparaat-20261030.test.ts",
+      "tests/e2e/meldingen-ui014a.e2e.ts"
+    ],
+    "herkomst": "Теперішнє місце — центр сповіщень (UI-014), не розділ «Сесії».",
+    "maquetteLabel": "Частково реалізовано"
+  },
+  {
+    "id": "sessions.сповіщення.0.відомі-пристрої",
+    "sectie": "sessions",
+    "groep": "сповіщення",
+    "positie": 0,
+    "positieUk": "Попереджати про новий пристрій",
+    "actie": "Перелік відомих пристроїв (з app.bekende_apparaten) і кнопка «Забути пристрій»",
+    "wie": "схвалений користувач",
+    "voorwaarden": "Вхід виконано; у таблиці є записи (прапорець meldingen-uitleg-v3 був увімкнений)",
+    "waar": "відсутнє (ні в «Макеті», ні в «Чинних налаштуваннях»)",
+    "code": [
+      "відсутнє: маршрут переліку/видалення й інтерфейс (grep «bekende_apparaten» у src/ — нічого)",
+      "migrations/0192_bekende_apparaten.sql (дані є, RLS за user_id)"
+    ],
+    "opslag": "нічого (таблиця app.bekende_apparaten існує, але людина її не бачить)",
+    "staatVoor": "є лише в макеті",
+    "ontbreekt": "Немає ні в макеті, ні в коді інтерфейсу; немає маршруту переліку й видалення. Людина не може побачити, які пристрої вважаються відомими, і не може «забути» втрачений пристрій.",
+    "wijziging": "Етап 2.4: маршрут переліку й «Забути пристрій» з посиленим підтвердженням і аудитом, блок у SessiesOverzicht; ціль картки на цей блок.",
+    "gereedAls": "Людина бачить у «Сесії та пристрої» перелік відомих пристроїв із датами; тисне «Забути пристрій» → наступний вхід із нього знову дає сповіщення про новий пристрій.",
+    "testen": [],
+    "herkomst": "Нова вимога плану (етап 2.4, «Прогалини»: перелік відомих пристроїв).",
+    "maquetteLabel": "Частково реалізовано"
+  }
+]
