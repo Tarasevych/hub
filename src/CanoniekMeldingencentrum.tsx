@@ -2,7 +2,7 @@ import { AppWindow, Archive, ArrowLeft, Bell, CheckCheck, ChevronDown, CircleChe
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { readSharedPreferences, writeSharedPreferences } from './gedeelde-voorkeuren';
 import {
-  CANONICAL_NOTICE_EVENT, MELDINGEN_OPENEN_EVENT, SAMENVOEG_MS, isBronDuplicaat, losOpEerdere, popupLevensduurMs, registerCanonicalNoticeAction, releaseCanonicalNoticeAction,
+  CANONICAL_NOTICE_EVENT, MELDINGEN_OPENEN_EVENT, SAMENVOEG_MS, isBronDuplicaat, leesBijTonen, losOpEerdere, popupLevensduurMs, registerCanonicalNoticeAction, releaseCanonicalNoticeAction,
   samenvoegDoel, samenvoegSleutel, uniekOpId, voegHerhalingToe, type CanonicalNoticeAction, type CanonicalNoticeDetailIcon, type CanonicalNoticeInput, type CanonicalNoticeKind,
   type CanonicalServerNotification, type RecentePopup,
 } from './canoniek-meldingen';
@@ -72,7 +72,7 @@ type Active = CanonicalNoticeInput & {
   stil?: boolean;
   /** Hoe lang de pop-up staat in ms; null = blijft staan tot u sluit. */
   levensduurMs: number | null;
-  /** Bij een servermelding: die wordt gelezen zodra de pop-up op het scherm staat. */
+  /** Bij een servermelding: die wordt gelezen zodra de pop-up op het scherm staat (behalve beveiliging, zie leesBijTonen). */
   serverId?: string;
 };
 
@@ -227,8 +227,16 @@ export default function CanonicalNotificationCenter(p: Props) {
     leesWachtend.current = null;
     if (!next.transient) markRetainedRead(next.id);
     const serverId = next.serverId || (next.meldingId?.startsWith('s:') ? next.meldingId.slice(2) : '');
-    if (serverId) void propsRef.current.onReadServer?.(serverId);
+    // IDENTITEIT-015: een beveiligingsmelding van de server blijft «нова» tot de eigenaar haar echt bekijkt (leesBijTonen).
+    if (serverId && leesBijTonen(next, isKritiekType)) void propsRef.current.onReadServer?.(serverId);
     if (next.meldingId?.startsWith('a:')) activityRef.current.markRead(next.meldingId.slice(2));
+  };
+  /** × in de pop-up: de gebruiker heeft haar bewust gezien — nu telt ook een beveiligingsmelding van de server als gelezen. */
+  const sluitDoorGebruiker = () => {
+    const huidig = activeRef.current;
+    const serverId = huidig ? huidig.serverId || (huidig.meldingId?.startsWith('s:') ? huidig.meldingId.slice(2) : '') : '';
+    if (huidig && serverId && !leesBijTonen(huidig, isKritiekType)) void propsRef.current.onReadServer?.(serverId);
+    dismiss();
   };
 
   /** Toon de pop-up. Wat op het scherm staat, telt als gelezen (ook zonder klik). */
@@ -319,7 +327,7 @@ export default function CanonicalNotificationCenter(p: Props) {
     }
 
     const next: Active = {
-      ...notice, text: tekst, explain, id, kind, createdAt: nu, expanded: false, origin, stil: !geluid,
+      ...notice, type, text: tekst, explain, id, kind, createdAt: nu, expanded: false, origin, stil: !geluid,
       levensduurMs: popupLevensduurMs(voorkeur, tekst, explain, kind), serverId: opties.serverId,
       meldingId: notice.meldingId ?? (notice.transient ? (opties.serverId ? `s:${opties.serverId}` : undefined) : `l:${id}`),
     };
@@ -1073,7 +1081,7 @@ export default function CanonicalNotificationCenter(p: Props) {
           >
             <ChevronDown aria-hidden='true' />
           </button>
-          <button type='button' className='canonical-notification-icon-button' onClick={dismiss} aria-label={t('Закрити повідомлення', 'Melding sluiten')} title={t('Закрити повідомлення', 'Melding sluiten')}><X /></button>
+          <button type='button' className='canonical-notification-icon-button' onClick={sluitDoorGebruiker} aria-label={t('Закрити повідомлення', 'Melding sluiten')} title={t('Закрити повідомлення', 'Melding sluiten')}><X /></button>
           {active.levensduurMs != null ? (
             <div className='canonical-notification-toast-balk' aria-hidden='true'>
               <i
