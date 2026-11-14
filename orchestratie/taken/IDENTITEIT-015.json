@@ -9,12 +9,12 @@
   "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
   "staat": "in_progress",
   "gestart": "2026-11-14T08:00:23.986Z",
-  "bijgewerkt": "2026-11-14T17:02:36.796Z",
+  "bijgewerkt": "2026-11-14T17:11:49.913Z",
   "omschrijving": "Повна звірка 153 позицій погодженого оформлення v49 з тим, що людина може зробити на сайті, під’єднання чинного, розробка відсутнього, перевірка з боку кожної людини, відомість дій, знімки, архів для встановлення. Попередник — IDENTITEIT-014 (PR #81).",
   "kanaal": "github_pr",
   "overdrachten": [],
-  "releaseVersie": "20261114-170236",
-  "releaseSha256": "48db83de0d9072598d26e77de2ee5fafa74eab1fff897c62d3c041267b02b487",
-  "releaseCommit": "c130d0b3dd77f9250adf2812957aed0064923dc4",
-  "releaseZip": "mijn-ruimte-20261114-170236-claude-overdracht.zip"
+  "releaseVersie": "20261114-171149",
+  "releaseSha256": "febd55472d1d98bb9c3fb6a0de7fbb25c7a34be90b3323682b5dee8ca6cbfd37",
+  "releaseCommit": "d219a21e456d180d68b0f43693f9c6c6eaa013ac",
+  "releaseZip": "mijn-ruimte-20261114-171149-claude-overdracht.zip"
 }
