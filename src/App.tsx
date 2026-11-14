@@ -27,6 +27,7 @@ import TweedeFactorPoort from './geheim/TweedeFactorPoort'; /* IDENTITEIT-015 */
 import GeheimInvoer from './geheim/GeheimInvoer';
 import OwnerIdentityAuthorize from './EigenaarIdentiteitAutoriseer';
 import OwnerIdentityCallback from './EigenaarIdentiteitTerug';
+import {markeerOauthTerug} from './google-terug-markering';
 import useCanonicalHubAuth,{hubAuthBody} from './useCanoniekHubAuth';
 import {zijbalkVanServer} from './zijbalk-voorkeuren';
 import {weergaveVanServer} from './weergave-uiterlijk';
@@ -234,5 +235,5 @@ function HubApp({active=true}:{active?:boolean}) {
   </>);
 }
 function CanonicalRoutedApp(){const[route,setRoute]=useState(resolveCanonicalRoute);useEffect(()=>installVisibleLinkPrefetch(),[]);useEffect(()=>{const sync=()=>setRoute(resolveCanonicalRoute());window.addEventListener('popstate',sync);window.addEventListener('pageshow',sync);return()=>{window.removeEventListener('popstate',sync);window.removeEventListener('pageshow',sync)}},[]);return route.service==='hub'?<HubApp active/>:<UnifiedServiceApp active/>}
-function App(){const query=new URLSearchParams(location.search);const host=location.hostname.toLowerCase();const callbackState=query.get('state')||'';const knownGoogleState=/^(?:v2|mailg\.v1|mailm\.v1|cloudg\.v1|gsuite\.v2)\./.test(callbackState);const googleReturn=host==='id.tarasevych.com'&&knownGoogleState&&(query.has('code')||query.has('error'));const customCallback=googleReturn;const customAuthorize=host==='id.tarasevych.com'&&query.get('tab')==='authorize';const content=customCallback?<OwnerIdentityCallback/>:customAuthorize?<OwnerIdentityAuthorize lang={query.get('lang')==='nl'?'nl':'uk'}/>:<CanonicalRoutedApp/>;return <>{content}<CodewoordPoort /><TweedeFactorPoort /></>}
+function App(){const query=new URLSearchParams(location.search);const host=location.hostname.toLowerCase();const callbackState=query.get('state')||'';const knownGoogleState=/^(?:v2|mailg\.v1|mailm\.v1|cloudg\.v1|gsuite\.v2)\./.test(callbackState);const googleReturn=host==='id.tarasevych.com'&&knownGoogleState&&(query.has('code')||query.has('error'));const customCallback=googleReturn;if(customCallback)markeerOauthTerug();/* IDENTITEIT-015: фонові запити чекають наступної сторінки */const customAuthorize=host==='id.tarasevych.com'&&query.get('tab')==='authorize';const content=customCallback?<OwnerIdentityCallback/>:customAuthorize?<OwnerIdentityAuthorize lang={query.get('lang')==='nl'?'nl':'uk'}/>:<CanonicalRoutedApp/>;return <>{content}<CodewoordPoort /><TweedeFactorPoort /></>}
 export default App;
