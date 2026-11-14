@@ -163,7 +163,8 @@ export async function main(): Promise<number> {
             });
             const themaNaam = taal === 'nl' ? /Thema/i : /Тем/i;
             const adres = new URL(page.url()).pathname;
-            check(`${naam}: «Теми» в навігації — адреса /themes, активний пункт «Теми» видно${smal ? ' (назва на смузі розділів)' : ''}`, adres === '/themes' && actief.railCurrent === 'themes' && (actief.rail === 'themes' || themaNaam.test(actief.balk)), JSON.stringify({ adres, ...actief }));
+            // Сайт показує нідерландську адресу розділу (/themas), як /beveiliging для «Безпеки»; /themes — внутрішній ідентифікатор.
+            check(`${naam}: «Теми» в навігації — адреса /themas, активний пункт «Теми» видно${smal ? ' (назва на смузі розділів)' : ''}`, /^\/them(a|e)s$/.test(adres) &&actief.railCurrent === 'themes' && (actief.rail === 'themes' || themaNaam.test(actief.balk)), JSON.stringify({ adres, ...actief }));
             // Картка «Теми» (елементи прямо на картці): заголовок, кольори, повзунок і перемикач досяжні.
             const doelen = ['#themes h2', '#themes .swatches [data-accent]', '#themes input[data-range-demo]', '.mr-mq .topbar .search-action'];
             const bereik = [];
