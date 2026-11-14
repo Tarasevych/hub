@@ -1,0 +1,210 @@
+{
+  "schema": 1,
+  "taakId": "IDENTITEIT-014",
+  "titel": "Під’єднати те, що вже працює деінде (фаза 3 «Макета»)",
+  "opdracht": "Власник попросив продовжити з місця зупинки після фази 2: спільний доступ із ролями простору, «Хто має доступ», посилання-запрошення на hub, вивантаження даних, типи сповіщень, способи входу (каталог, пароль, QR, заміна автентифікатора), огляд і сценарії відновлення, нагадування про резервний доступ, жива карта.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "claude",
+    "tak": "feature/identiteit-014-aansluiten-20261114-042516",
+    "basis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+    "voorganger": {
+      "taak": "IDENTITEIT-013",
+      "pr": "https://github.com/Tarasevych/hub/pull/80",
+      "commit": "d07ce6e536026ce4045baa767477cbcb2e51b04a"
+    },
+    "samengevoegd": [
+      {
+        "taak": "IDENTITEIT-011",
+        "pr": "https://github.com/Tarasevych/hub/pull/78",
+        "reden": "жива карта фази 3 спирається на шар карти фази 0"
+      },
+      {
+        "taak": "IDENTITEIT-012",
+        "pr": "https://github.com/Tarasevych/hub/pull/79",
+        "reden": "серверні виправлення, на які спирається спільний доступ"
+      }
+    ]
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Тести — лише з вигаданими даними, тестовим сертифікатом і одноразовою локальною базою. Без облікових даних, вмісту листів і прихованих міркувань моделі."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T04:25:16Z",
+      "stap": "Гілка від голови фази 2 (d07ce6e5); orch taak-start, versheid start — свіжо."
+    },
+    {
+      "tijd": "2026-11-14T04:45:00Z",
+      "stap": "Розвідка шести ділянок паралельно + критик повноти: хибних тверджень не знайдено; виявлено відсутність фаз 0 і 1 у гілці."
+    },
+    {
+      "tijd": "2026-11-14T05:05:00Z",
+      "stap": "Влито фази 0 і 1 звичайним злиттям (--no-ff), конфлікти лише в генерованих файлах; разом усі identiteit-тести зелені."
+    },
+    {
+      "tijd": "2026-11-14T06:50:00Z",
+      "stap": "Шість кроків послідовно, кожен із тестом і комітом: права, спільний доступ, способи входу, відновлення, вивантаження й типи сповіщень, нагадування й карта."
+    },
+    {
+      "tijd": "2026-11-14T07:10:00Z",
+      "stap": "Незалежна рецензія з трьох поглядів, спроба спростування, виправлення підтвердженого (8) з тестами."
+    },
+    {
+      "tijd": "2026-11-14T07:40:00Z",
+      "stap": "Власна перевірка: build, e2e нових блоків 135/135 у Chromium за знімками; виправлено вигляд попередження вивантаження; повний набір модульних тестів; два тести SEC-002 узгоджено з фазою 1."
+    }
+  ],
+  "keuzes": [
+    "Гілку відгалужено від голови фази 2 і влито фази 0 і 1: фаза 3 правила ті самі файли й залежить від карти фази 0. PR #80 і #78/#79 лишаються окремими записами.",
+    "Одне джерело прав: shared/werkruimte-rechten.ts; роль у кожному просторі віддає сервер (deelWerkruimtes, workspaceRole, rol у /api/share/members).",
+    "Надання ролі «Адміністратор» вимагає підтвердження доступу на сервері (дія deel-beheerder, ніколи не запам’ятовується) і діалог із наслідками на клієнті.",
+    "Каталог зовнішніх способів входу бачить лише власник сайту; звичайний учасник не бачить назв серверних ключів.",
+    "Нагадування про резервний доступ за замовчуванням увімкнене (попередження безпеки); ліміт вивантаження рахується після підтвердження й повертає retryAfter."
+  ],
+  "wijzigingen": {
+    "toegevoegd": [
+      "\"docs/ontwerp/identiteit-account/\\320\\237\\320\\233\\320\\220\\320\\235-\\320\\234\\320\\220\\320\\232\\320\\225\\320\\242-\\320\\224\\320\\236\\320\\236\\320\\237\\320\\240\\320\\220\\320\\246\\320\\256\\320\\222\\320\\220\\320\\235\\320\\235\\320\\257.uk.md\"",
+      "backend/reserve-herinnering.ts",
+      "orchestratie/ontwikkelarchieven/IDENTITEIT-011.json",
+      "orchestratie/ontwikkelarchieven/IDENTITEIT-012.json",
+      "orchestratie/ontwikkelarchieven/IDENTITEIT-014.json",
+      "orchestratie/taken/IDENTITEIT-011.json",
+      "orchestratie/taken/IDENTITEIT-012.json",
+      "orchestratie/taken/IDENTITEIT-014.json",
+      "shared/blok-invoer.ts",
+      "shared/eigen-toegang.ts",
+      "shared/werkruimte-rechten.ts",
+      "src/AndereAanmeldMethoden.tsx",
+      "src/AndereAanmeldMethodenLaden.tsx",
+      "src/aanmeld-vnext/onderdelen/CatalogusMetStijl.tsx",
+      "src/delen/LedenLijst.tsx",
+      "src/delen/delen-logica.ts",
+      "src/delen/delen.css",
+      "src/delen/useDelen.ts",
+      "src/herstel/ReserveOverzicht.tsx",
+      "src/herstel/Scenarios.tsx",
+      "src/herstel/herstel.css",
+      "src/herstel/reserve.ts",
+      "src/herstel/useKluisKern.ts",
+      "src/instellingen/Gegevensuitvoer.tsx",
+      "src/instellingen/gegevensuitvoer.css",
+      "src/platform/Qr.tsx",
+      "src/platform/bestand-opslaan.ts",
+      "tests/e2e/hulp/identiteit-maquette-stand/stand.tsx",
+      "tests/e2e/identiteit-014-blokken.e2e.ts",
+      "tests/e2e/identiteit-maquette-kaart.e2e.ts",
+      "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
+      "tests/eenheid/identiteit-014-aanmelden.test.ts",
+      "tests/eenheid/identiteit-014-delen.test.ts",
+      "tests/eenheid/identiteit-014-herstel-recensie.test.ts",
+      "tests/eenheid/identiteit-014-herstel.test.ts",
+      "tests/eenheid/identiteit-014-kaart.test.ts",
+      "tests/eenheid/identiteit-014-rechten.test.ts",
+      "tests/eenheid/identiteit-014-uitvoer.test.ts"
+    ],
+    "gewijzigd": [
+      "backend/aanmeld-koppel.ts",
+      "backend/beveiliging-meldingen.ts",
+      "backend/index.ts",
+      "backend/melder.ts",
+      "backend/nieuw-apparaat.ts",
+      "backend/sleutelkluis-routes.ts",
+      "backend/stap-op.ts",
+      "backend/toegang-context.ts",
+      "backend/toegangslaag.ts",
+      "backend/toegangssleutels.ts",
+      "backend/werkruimte-delen.ts",
+      "docs/ontwerp/identiteit-account/maquette-bron/locales.js",
+      "\"docs/ontwerp/identiteit-account/maquette-bron/\\321\\200\\320\\265\\321\\224\\321\\201\\321\\202\\321\\200.js\"",
+      "scripts/identiteit-maquette/motor-aanpassingen.mjs",
+      "shared/beheer-journaal.ts",
+      "shared/melding-soorten.ts",
+      "shared/meldingen-soorten.ts",
+      "shared/meldingen-v2/uitleg-register.ts",
+      "shared/menu-meldingen-voorkeuren.ts",
+      "shared/menu-meldingen.ts",
+      "shared/sleutelkluis.ts",
+      "shared/stap-op-acties.ts",
+      "shared/stap-op-beschrijving.ts",
+      "shared/zoek-ui-knoppen.generated.ts",
+      "src/App.tsx",
+      "src/BeveiligingSessiesPaneel.tsx",
+      "src/HerstelcodesSectie.tsx",
+      "src/InstellingencentrumWeergave.tsx",
+      "src/ToegangContext.tsx",
+      "src/Toegangscodes.tsx",
+      "src/ToegangslaagWeergave.tsx",
+      "src/VerenigdDienstApp.tsx",
+      "src/ZijbalkInstellingen.tsx",
+      "src/aanmeld-vnext/onderdelen/AanbiederCatalogus.tsx",
+      "src/aanmeld-vnext/snapshotNaarKaarten.ts",
+      "src/cloud-vnext/hulp.ts",
+      "src/identiteit/maquette/IdentiteitMaquette.tsx",
+      "src/identiteit/maquette/maquette-motor.ts",
+      "src/identiteit/maquette/maquette-omlijsting.css",
+      "src/platform/client.ts",
+      "src/toegangslaag-panelen.tsx",
+      "src/toegangslaag.css",
+      "src/weigeringen.ts",
+      "src/zijbalk-blokken.css",
+      "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+      "tests/eenheid/gebruiker-audit-2026-10-19.test.ts",
+      "tests/eenheid/identiteit-013-bevestigen.test.ts",
+      "tests/eenheid/identiteit-atelier.test.ts",
+      "tests/eenheid/identiteit-maquette.test.ts",
+      "tests/eenheid/sec-002-afwerking-b-20261112.test.ts",
+      "tests/eenheid/sec-002-g10f-20261112.test.ts",
+      "tests/eenheid/sec-002-g10g-20261112.test.ts",
+      "tests/eenheid/sec-002-slot-v-20261113.test.ts",
+      "tests/eenheid/sleutelkluis-20261020.test.ts",
+      "tests/eenheid/tech-sessies.test.ts"
+    ],
+    "verwijderd": []
+  },
+  "controles": [
+    "Нові модульні тести: identiteit-014-rechten 39/39, identiteit-014-delen 32/32, identiteit-014-aanmelden, identiteit-014-herstel, identiteit-014-uitvoer, identiteit-014-kaart, identiteit-014-herstel-recensie 45/45 — усі зелені.",
+    "e2e у Chromium: identiteit-014-blokken 135/135 (8 нових блоків × 390/1280 × uk-світла/nl-темна; файл вивантаження без секретів; межа пароля 1024), identiteit-maquette-kaart — 0 невдалих, bevestig-dialoog 88/88, menu-v2-snelheid 35/35.",
+    "e2e gast-toegang 34/37 і herstelcodes 2/4 — так само на живій версії 5f2325d7 (давні, окреме завдання).",
+    "Повний набір модульних тестів: 409 груп. Червоні після виправлень — 18 груп із тим самим результатом на 5f2325d7 (давні; uitrol-goedkeuring — умова середовища). tech-sessies у повному прогоні 16/20 через паралельність, окремо 20/20. sec-002-g10f і g10g узгоджено з навмисними змінами фази 1 (70/70, 49/49).",
+    "npx tsc --noEmit, npm run typecheck:server — без помилок; npm run build — успішно.",
+    "Незалежна рецензія (коректність, безпека, інтерфейс): 19 знахідок; 8 вагоміших перевірено спробою спростування — жодну не спростовано; усі 8 виправлено з тестами, разом із дрібними очевидними."
+  ],
+  "bronnen": [
+    {
+      "soort": "встановлена версія",
+      "omschrijving": "https://id.tarasevych.com/api/version — 20261113-121403, 5f2325d788e2",
+      "inhoudGepubliceerd": true
+    },
+    {
+      "soort": "план",
+      "omschrijving": "docs/ontwerp/identiteit-account/ПЛАН-МАКЕТ-ДООПРАЦЮВАННЯ.uk.md, фаза 3",
+      "inhoudGepubliceerd": true
+    }
+  ],
+  "beperkingen": [
+    "Встановлення на сайт — лише з погодження власника, після резервної копії на R:\\ і перевірки накладання.",
+    "Давні збої e2e gast-toegang, herstelcodes і 18 груп модульних тестів — поза межами фази 3; запропоновано окреме завдання."
+  ],
+  "commits": [
+    "604211ab79998bc90b1f942a86933d9131437c95",
+    "e96c6f382fee917ee2d416f2bfb75f55d257d5cc",
+    "1a2ba014816e15fb66ac89851f1f06241df26063",
+    "f947cc25ae23d57262b29febd020cc0a056f2cf7",
+    "c302b94a8011e0c6b34857bde35572bed9507bc9",
+    "cb0c30d77ce060f986efe4c9fd47d4d5f78f225f",
+    "e9c4060d9823152b19c529bdc722b91c73400d70",
+    "8762360310b1e96d6e26403f796d6440305ee217",
+    "2ce0337b5d6864751107aa658af84152ba93b1ad",
+    "6f99bde6fcb16f6c38042daebb860296cc334910",
+    "0d9a8a240e19bde94fff0cf7239874f3e83ad6b4",
+    "51adc13f7c4ef6b3126ce245bd44746f5895907e",
+    "bd4fbc74b0859720e8b0172285cf0213b0b191a4"
+  ]
+}
