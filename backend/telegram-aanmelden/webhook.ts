@@ -2,6 +2,7 @@
 // (tijdconstant vergeleken met het geheim uit de kluis). Elke update wordt één keer verwerkt (app.tg_updates), elke knop één
 // keer (app.tg_knoppen: nieuw → bezig → klaar in één UPDATE), met een snelheidslimiet per Telegram-gebruiker. Antwoord altijd
 // 200 na een geldige kop, zodat Telegram niet eindeloos opnieuw probeert; fouten gaan naar de statusdienst.
+import { fotoBijwerken } from './fotos';
 import { botAanroep } from './bot-api';
 import { botSleutel, webhookGeheim } from './sleutels';
 import { gelijk, knopHandtekeningKlopt, knopLezen, knopSleutel } from './cryptografie';
@@ -35,6 +36,9 @@ export async function updateVerwerken(u: Update): Promise<void> {
     if (!nieuw.length) return; // al verwerkt (Telegram herhaalt bij een trage 200)
     if (u.callback_query) await knopVerwerken(u.callback_query);
     else if (u.message) await berichtVerwerken(u.message);
+    // TELEGRAM-002: bij elke interactie de profielfoto bijwerken (gedempt; nieuwe foto's blijven bewaard, niets verwijderd).
+    const van = u.callback_query?.from ?? u.message?.from;
+    if (van && !van.is_bot) void fotoBijwerken(String(van.id)).catch(() => undefined);
     await statusMelden('webhook', true);
   } catch (e) {
     console.error('[telegram-aanmelden] update mislukt:', (e as Error)?.message);

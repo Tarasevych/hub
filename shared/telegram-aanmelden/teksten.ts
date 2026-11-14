@@ -5,7 +5,8 @@ import type { Taal } from './model';
 export type BotTekst = { uk: string; nl: string };
 export const t = (x: BotTekst, taal: Taal | 'beide'): string => (taal === 'beide' ? `${x.uk}\n\n${x.nl}` : x[taal]);
 
-export const VOETREGEL: BotTekst = { uk: '🔒 Я ніколи не прошу паролів чи кодів.', nl: '🔒 Ik vraag nooit om wachtwoorden of codes.' };
+// TELEGRAM-002: de geheime code kan nu in het beveiligde venster (kop «Мій простір», adres id.tarasevych.com) — nooit in de chat.
+export const VOETREGEL: BotTekst = { uk: '🔒 У чаті я ніколи не прошу паролів чи кодів. Таємний код — лише в захищеному вікні сайту.', nl: '🔒 In de chat vraag ik nooit om wachtwoorden of codes. De geheime code alleen in het beveiligde venster van de site.' };
 
 export const OPDRACHTEN = ['start', 'status', 'aanmeldingen', 'koppelen', 'ontkoppelen', 'taal', 'hulp'] as const;
 export type Opdracht = typeof OPDRACHTEN[number];
@@ -62,6 +63,18 @@ export const TEKST = {
     uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nКоли: {tijd}\nЗвідки: {apparaat}\n\nНа екрані сайту виділено один символ. Натисніть ТОЙ САМИЙ символ нижче. Є лише одна спроба: інший символ скасує дію.\nЯкщо це не ви — натисніть «⛔ Це не я».',
     nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nWanneer: {tijd}\nVanwaar: {apparaat}\n\nOp het scherm van de site is één symbool uitgelicht. Tik HETZELFDE symbool hieronder. U hebt één poging: een ander symbool annuleert de handeling.\nBent u het niet, tik «⛔ Dit ben ik niet».',
   },
+  // TELEGRAM-002: kaart met de knop naar het beveiligde venster (dezelfde pictogrammen als op de site, code daar).
+  inlogVraagVenster: {
+    uk: '🔐 Запит на вхід\n\nХто: {account}\nЩо: вхід на сайт «Мій простір»\nКоли: {tijd}\nЗвідки: {apparaat}\n\nНа екрані сайту показано одну піктограму. Натисніть «Підтвердити вхід» і оберіть у вікні ТУ САМУ піктограму. Є лише одна спроба.\nЯкщо це не ви — натисніть «⛔ Це не я», і вхід буде заблоковано.',
+    nl: '🔐 Aanmeldverzoek\n\nWie: {account}\nWat: aanmelden op «Mijn Ruimte»\nWanneer: {tijd}\nVanwaar: {apparaat}\n\nOp het scherm van de site staat één pictogram. Tik «Aanmelding bevestigen» en kies in het venster HETZELFDE pictogram. U hebt één poging.\nBent u het niet, tik «⛔ Dit ben ik niet» en de aanmelding wordt geblokkeerd.',
+  },
+  bevestigVraagVenster: {
+    uk: '🛡️ Підтвердження дії\n\nХто: {account}\nЩо: {actie}\nКоли: {tijd}\nЗвідки: {apparaat}\n\nНа екрані сайту показано одну піктограму. Натисніть «Перевірити й підтвердити» і оберіть у вікні ТУ САМУ піктограму. Є лише одна спроба.\nЯкщо це не ви — натисніть «⛔ Це не я».',
+    nl: '🛡️ Bevestiging van een handeling\n\nWie: {account}\nWat: {actie}\nWanneer: {tijd}\nVanwaar: {apparaat}\n\nOp het scherm van de site staat één pictogram. Tik «Controleren en bevestigen» en kies in het venster HETZELFDE pictogram. U hebt één poging.\nBent u het niet, tik «⛔ Dit ben ik niet».',
+  },
+  knopVensterInlog: { uk: '🔐 Підтвердити вхід', nl: '🔐 Aanmelding bevestigen' },
+  knopVensterBevestig: { uk: '🛡️ Перевірити й підтвердити', nl: '🛡️ Controleren en bevestigen' },
+  knopVensterBrowser: { uk: '🌐 Вікно не відкривається? Відкрити в браузері', nl: '🌐 Venster opent niet? Openen in de browser' },
   symboolFout: { uk: '⛔ Інший символ — дію скасовано. На сайті можна почати знову.', nl: '⛔ Een ander symbool — de handeling is geannuleerd. Op de site kunt u opnieuw beginnen.' },
   knopJaInloggen: { uk: '✅ Це я, увійти', nl: '✅ Ik ben het, aanmelden' },
   knopBevestigen: { uk: '✅ Підтвердити', nl: '✅ Bevestigen' },
@@ -101,8 +114,8 @@ export const TEKST = {
   ontkoppeld: { uk: '✅ Відв’язано.', nl: '✅ Ontkoppeld.' },
   laatsteMethode: { uk: '⛔ Це ваш останній спосіб входу, тому його не можна відв’язати. Спершу додайте інший.', nl: '⛔ Dit is uw laatste aanmeldmethode en kan dus niet ontkoppeld worden. Voeg eerst een andere toe.' },
   hulp: {
-    uk: 'ℹ️ Довідка\n\n/status — мої прив’язки\n/aanmeldingen — останні входи\n/koppelen — як прив’язати\n/ontkoppelen — відв’язати\n/taal — мова бота\n\nБезпека: я ніколи не прошу паролів, кодів чи номерів карток. Таємний код вводиться лише на сайті. Посилання від мене ведуть тільки на id.tarasevych.com.',
-    nl: 'ℹ️ Hulp\n\n/status — mijn koppelingen\n/aanmeldingen — laatste aanmeldingen\n/koppelen — hoe koppelen\n/ontkoppelen — ontkoppelen\n/taal — taal van de bot\n\nVeiligheid: ik vraag nooit om wachtwoorden, codes of kaartnummers. De geheime code typt u alleen op de site. Mijn links gaan alleen naar id.tarasevych.com.',
+    uk: 'ℹ️ Довідка\n\n/status — мої прив’язки\n/aanmeldingen — останні входи\n/koppelen — як прив’язати\n/ontkoppelen — відв’язати\n/taal — мова бота\n\nБезпека: у чаті я ніколи не прошу паролів, кодів чи номерів карток. Таємний код вводиться лише на сайті або в захищеному вікні сайту. Посилання від мене ведуть тільки на id.tarasevych.com.',
+    nl: 'ℹ️ Hulp\n\n/status — mijn koppelingen\n/aanmeldingen — laatste aanmeldingen\n/koppelen — hoe koppelen\n/ontkoppelen — ontkoppelen\n/taal — taal van de bot\n\nVeiligheid: in de chat vraag ik nooit om wachtwoorden, codes of kaartnummers. De geheime code typt u alleen op de site of in het beveiligde venster van de site. Mijn links gaan alleen naar id.tarasevych.com.',
   },
   onbekend: { uk: 'Я не розумію цього повідомлення. Команда /hulp покаже, що я вмію.', nl: 'Ik begrijp dit bericht niet. /hulp toont wat ik kan.' },
   testBericht: { uk: '✅ Пробне повідомлення: бот налаштовано й він працює.', nl: '✅ Testbericht: de bot is ingesteld en werkt.' },

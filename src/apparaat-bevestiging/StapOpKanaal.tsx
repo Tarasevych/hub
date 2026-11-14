@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, Smartphone } from 'lucide-react';
 import Symbool from './Symbool';
+import PictogramTegel from './PictogramTegel';
 import { abonneer } from './stroom';
 import { aanvragen, foutCode, foutData, intrekken, poort, stand, telegramAanvragen, telegramCode, telegramStatus, type Ctx } from './api';
 import { foutTekst, tr, type Lang } from './teksten';
@@ -35,6 +36,8 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
   const [fase, setFase] = useState<Fase>('start');
   const [id, setId] = useState('');
   const [symbolen, setSymbolen] = useState<Symbolen>(null);
+  // TELEGRAM-002: in het beveiligde Telegram-venster toont de site alleen het JUISTE pictogram, groot (zelfde tegel als in Telegram).
+  const [venster, setVenster] = useState(false);
   const [verlooptOp, setVerlooptOp] = useState('');
   const [rest, setRest] = useState(0);
   const [fout, setFout] = useState('');
@@ -70,7 +73,9 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
         if (!actief.current) return;
         idRef.current = t.id; setId(t.id); setVerlooptOp(t.verlooptOp);
         setSymbolen(t.soort && t.kandidaten && typeof t.juist === 'number' ? { soort: t.soort, kandidaten: t.kandidaten, juist: t.juist } : null);
-        setInfo(tr(lang, `Картку надіслано у ваш Telegram (${t.verstuurd}). Відкрийте чат із ботом.`, `Kaart verstuurd naar uw Telegram (${t.verstuurd}). Open de chat met de bot.`));
+        setVenster(!!t.venster);
+        if (t.venster) setInfo(tr(lang, `Картку надіслано у ваш Telegram (${t.verstuurd}). Натисніть «Перевірити й підтвердити» й оберіть у вікні таку саму піктограму${t.codeNodig ? ', потім введіть таємний код у тому ж вікні' : ''}.`, `Kaart verstuurd naar uw Telegram (${t.verstuurd}). Tik «Controleren en bevestigen» en kies in het venster hetzelfde pictogram${t.codeNodig ? ', vul daarna uw geheime code in hetzelfde venster in' : ''}.`));
+        else setInfo(tr(lang, `Картку надіслано у ваш Telegram (${t.verstuurd}). Відкрийте чат із ботом.`, `Kaart verstuurd naar uw Telegram (${t.verstuurd}). Open de chat met de bot.`));
       }
       setFase('wacht');
     } catch (e) { if (actief.current) { setFase('fout'); setFout(foutTekst(lang, foutCode(e))); } }
@@ -128,7 +133,8 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
         : tr(lang, 'У чаті з ботом @MijnRuimte_Bot з’явиться картка з описом дії. Прочитайте її й натисніть виділений символ (або «Так, це я»).', 'In de chat met de bot @MijnRuimte_Bot verschijnt een kaart met de handeling. Lees hem en tik het uitgelichte symbool (of «Ja, dit ben ik»).')}
     </p>
     {fase === 'start' && <p className='apb-wacht'><span className='apb-draai' aria-hidden='true' /> {tr(lang, 'Надсилаємо запит…', 'Verzoek sturen…')}</p>}
-    {(fase === 'wacht' || fase === 'code') && symbolen && <div className='apb-symbolen' role='group' aria-label={tr(lang, 'Символи; виділений треба натиснути на іншому пристрої', 'Symbolen; het uitgelichte tikt u op het andere apparaat')}>
+    {(fase === 'wacht' || fase === 'code') && symbolen && venster && <div className='tg2-held'><PictogramTegel index={symbolen.kandidaten[symbolen.juist]} lang={lang} groot /></div>}
+    {(fase === 'wacht' || fase === 'code') && symbolen && !venster && <div className='apb-symbolen' role='group' aria-label={tr(lang, 'Символи; виділений треба натиснути на іншому пристрої', 'Symbolen; het uitgelichte tikt u op het andere apparaat')}>
       {symbolen.kandidaten.map((k, pos) => <div key={`${symbolen.soort}-${k}`} className={`apb-tegel${pos === symbolen.juist ? ' is-uitgelicht' : ''}`} aria-current={pos === symbolen.juist ? 'true' : undefined}>
         <Symbool soort={symbolen.soort} index={k} lang={lang} uitgelicht={pos === symbolen.juist} />
         {pos === symbolen.juist && <span className='apb-tegel-label'>{tr(lang, 'цей', 'deze')}</span>}

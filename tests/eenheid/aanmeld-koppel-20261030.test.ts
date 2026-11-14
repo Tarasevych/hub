@@ -7,7 +7,7 @@
 // WAT DEZE TEST VASTHOUDT:
 //   1. DE POORT. Geen sessie → 401; verkeerde dienst → 403; niet-goedgekeurd account → 403; identity én hub mogen.
 //   2. WAARHEID. Zonder omgevingssleutels: aanwezig=false, zelftest 'niet-uitgevoerd', klaarVoorKoppeling=false,
-//      gekoppeld=null; WhatsApp 'niet-mogelijk' en SMS 'gepland' krijgen nooit een koppelwaarheid of contour.
+//      gekoppeld=null; WhatsApp en SMS 'gepland' (TELEGRAM-002) krijgen nooit een koppelwaarheid of contour.
 //   3. ZELFTEST. Ontbrekende sleutels eerlijk benoemd; vormcontroles per aanbieder; één bewaarde rij per aanbieder
 //      (upsert); klaarVoorKoppeling pas na sleutels ÉN zelftest 'ok'; nooit een geheimwaarde in details of rij; audit.
 //   4. START. Poorten in volgorde (sleutels → zelftest → rate-limit); de authorize-URL draagt eenmalige state, PKCE
@@ -139,7 +139,7 @@ export async function main(): Promise<number> {
       && ms0.zelftest === 'niet-uitgevoerd' && ms0.klaarVoorKoppeling === false && ms0.gekoppeld === null);
     const wa0 = await statusVan(rA, 'whatsapp');
     const sms0 = await statusVan(rA, 'sms');
-    check('WhatsApp blijft eerlijk niet-mogelijk en SMS gepland — nooit klaarVoorKoppeling', wa0.stand === 'niet-mogelijk' && sms0.stand === 'gepland' && !wa0.klaarVoorKoppeling && !sms0.klaarVoorKoppeling && wa0.sleutels.length === 0);
+    check('WhatsApp en SMS gepland (TELEGRAM-002) — nooit klaarVoorKoppeling', wa0.stand === 'gepland' && sms0.stand === 'gepland' && !wa0.klaarVoorKoppeling && !sms0.klaarVoorKoppeling && wa0.sleutels.length === 0);
     check('het antwoord noemt het callback-pad', (await roep(rA, 'aanbieders')).uit.koppelPad === '/api/aanmeld/koppel/:aanbieder/terug');
 
     // ================================================================ 3. zelftest

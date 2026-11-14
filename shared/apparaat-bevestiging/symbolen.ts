@@ -4,38 +4,41 @@
 // Waarom eigen pictogrammen mét naam en niet alleen emoji: emoji zien er op iOS, Android en Windows anders uit en zijn in de
 // Telegram-knoppen alleen als tekst mogelijk. Daarom: in de browser een vectorpictogram (lucide, al overal op de site in gebruik)
 // mét zijn naam eronder; in Telegram de emoji mét dezelfde naam. De NAAM is op beide schermen gelijk en maakt de keuze eenduidig,
-// ook voor een schermlezer. Letters: alleen Latijnse letters zonder Cyrillische dubbelganger (A/В/С/Е/Н/К/М/О/Р/Т/Х/У/І vallen af).
+// ook voor een schermlezer. TELEGRAM-002: in het beveiligde Telegram-venster dezelfde tegel (vaste kleur + vectorvorm + naam) als op
+// de site, zie pictogramTegel/pictogramSvg onderaan — de emoji blijft alleen voor de oude knoppen (venster uitgezet door de beheerder). Letters: alleen Latijnse letters zonder Cyrillische dubbelganger (A/В/С/Е/Н/К/М/О/Р/Т/Х/У/І vallen af).
 // Cijfers: 2–9 (0/1 lijken op O/I/l).
 import { SYMBOOL_SOORTEN, type SymboolSoort, type Tekst } from './model';
+import { VORMEN } from './pictogram-vormen';
 
-export type Pictogram = { id: string; icoon: string; naam: Tekst; emoji: string };
+/** `kleur`: vaste achtergrond van de tegel (TELEGRAM-002), onafhankelijk van licht/donker thema; wit pictogram erop, contrast ≥ 4,5:1. */
+export type Pictogram = { id: string; icoon: string; naam: Tekst; emoji: string; kleur: string };
 
 /** 24 pictogrammen die ook klein en in grijs goed uit elkaar te houden zijn. `icoon` = naam van het lucide-pictogram. */
 export const PICTOGRAMMEN: readonly Pictogram[] = Object.freeze([
-  { id: 'anker', icoon: 'Anchor', naam: ['Якір', 'Anker'], emoji: '⚓' },
-  { id: 'fiets', icoon: 'Bike', naam: ['Велосипед', 'Fiets'], emoji: '🚲' },
-  { id: 'camera', icoon: 'Camera', naam: ['Камера', 'Camera'], emoji: '📷' },
-  { id: 'kat', icoon: 'Cat', naam: ['Кіт', 'Kat'], emoji: '🐱' },
-  { id: 'hond', icoon: 'Dog', naam: ['Пес', 'Hond'], emoji: '🐶' },
-  { id: 'vis', icoon: 'Fish', naam: ['Риба', 'Vis'], emoji: '🐟' },
-  { id: 'bloem', icoon: 'Flower2', naam: ['Квітка', 'Bloem'], emoji: '🌸' },
-  { id: 'gitaar', icoon: 'Guitar', naam: ['Гітара', 'Gitaar'], emoji: '🎸' },
-  { id: 'blad', icoon: 'Leaf', naam: ['Листок', 'Blad'], emoji: '🍃' },
-  { id: 'maan', icoon: 'Moon', naam: ['Місяць', 'Maan'], emoji: '🌙' },
-  { id: 'berg', icoon: 'Mountain', naam: ['Гора', 'Berg'], emoji: '⛰️' },
-  { id: 'vliegtuig', icoon: 'Plane', naam: ['Літак', 'Vliegtuig'], emoji: '✈️' },
-  { id: 'raket', icoon: 'Rocket', naam: ['Ракета', 'Raket'], emoji: '🚀' },
-  { id: 'schip', icoon: 'Ship', naam: ['Корабель', 'Schip'], emoji: '🚢' },
-  { id: 'ster', icoon: 'Star', naam: ['Зірка', 'Ster'], emoji: '⭐' },
-  { id: 'zon', icoon: 'Sun', naam: ['Сонце', 'Zon'], emoji: '☀️' },
-  { id: 'tent', icoon: 'Tent', naam: ['Намет', 'Tent'], emoji: '⛺' },
-  { id: 'boom', icoon: 'TreePine', naam: ['Ялинка', 'Dennenboom'], emoji: '🌲' },
-  { id: 'paraplu', icoon: 'Umbrella', naam: ['Парасоля', 'Paraplu'], emoji: '☂️' },
-  { id: 'vogel', icoon: 'Bird', naam: ['Пташка', 'Vogel'], emoji: '🐦' },
-  { id: 'auto', icoon: 'Car', naam: ['Авто', 'Auto'], emoji: '🚗' },
-  { id: 'wolk', icoon: 'Cloud', naam: ['Хмара', 'Wolk'], emoji: '☁️' },
-  { id: 'hart', icoon: 'Heart', naam: ['Серце', 'Hart'], emoji: '❤️' },
-  { id: 'koffie', icoon: 'Coffee', naam: ['Кава', 'Koffie'], emoji: '☕' },
+  { id: 'anker', icoon: 'Anchor', naam: ['Якір', 'Anker'], emoji: '⚓', kleur: '#1f5f9e' },
+  { id: 'fiets', icoon: 'Bike', naam: ['Велосипед', 'Fiets'], emoji: '🚲', kleur: '#2e7d32' },
+  { id: 'camera', icoon: 'Camera', naam: ['Камера', 'Camera'], emoji: '📷', kleur: '#5b4636' },
+  { id: 'kat', icoon: 'Cat', naam: ['Кіт', 'Kat'], emoji: '🐱', kleur: '#8a4b00' },
+  { id: 'hond', icoon: 'Dog', naam: ['Пес', 'Hond'], emoji: '🐶', kleur: '#7a4f2a' },
+  { id: 'vis', icoon: 'Fish', naam: ['Риба', 'Vis'], emoji: '🐟', kleur: '#00727a' },
+  { id: 'bloem', icoon: 'Flower2', naam: ['Квітка', 'Bloem'], emoji: '🌸', kleur: '#b0306a' },
+  { id: 'gitaar', icoon: 'Guitar', naam: ['Гітара', 'Gitaar'], emoji: '🎸', kleur: '#8e3b12' },
+  { id: 'blad', icoon: 'Leaf', naam: ['Листок', 'Blad'], emoji: '🍃', kleur: '#3b7a1e' },
+  { id: 'maan', icoon: 'Moon', naam: ['Місяць', 'Maan'], emoji: '🌙', kleur: '#5b3fa8' },
+  { id: 'berg', icoon: 'Mountain', naam: ['Гора', 'Berg'], emoji: '⛰️', kleur: '#4f5b66' },
+  { id: 'vliegtuig', icoon: 'Plane', naam: ['Літак', 'Vliegtuig'], emoji: '✈️', kleur: '#0a66c2' },
+  { id: 'raket', icoon: 'Rocket', naam: ['Ракета', 'Raket'], emoji: '🚀', kleur: '#b3261e' },
+  { id: 'schip', icoon: 'Ship', naam: ['Корабель', 'Schip'], emoji: '🚢', kleur: '#1e4f8a' },
+  { id: 'ster', icoon: 'Star', naam: ['Зірка', 'Ster'], emoji: '⭐', kleur: '#946200' },
+  { id: 'zon', icoon: 'Sun', naam: ['Сонце', 'Zon'], emoji: '☀️', kleur: '#a85400' },
+  { id: 'tent', icoon: 'Tent', naam: ['Намет', 'Tent'], emoji: '⛺', kleur: '#6d5a00' },
+  { id: 'boom', icoon: 'TreePine', naam: ['Ялинка', 'Dennenboom'], emoji: '🌲', kleur: '#1b6b3a' },
+  { id: 'paraplu', icoon: 'Umbrella', naam: ['Парасоля', 'Paraplu'], emoji: '☂️', kleur: '#7b2fa0' },
+  { id: 'vogel', icoon: 'Bird', naam: ['Пташка', 'Vogel'], emoji: '🐦', kleur: '#00796b' },
+  { id: 'auto', icoon: 'Car', naam: ['Авто', 'Auto'], emoji: '🚗', kleur: '#c62828' },
+  { id: 'wolk', icoon: 'Cloud', naam: ['Хмара', 'Wolk'], emoji: '☁️', kleur: '#3d6a8f' },
+  { id: 'hart', icoon: 'Heart', naam: ['Серце', 'Hart'], emoji: '❤️', kleur: '#c2185b' },
+  { id: 'koffie', icoon: 'Coffee', naam: ['Кава', 'Koffie'], emoji: '☕', kleur: '#6b4423' },
 ] as Pictogram[]);
 
 export const CIJFERS: readonly string[] = Object.freeze(['2', '3', '4', '5', '6', '7', '8', '9']);
@@ -106,3 +109,41 @@ export function trekkingGeldig(soort: unknown, kandidaten: unknown, juist: unkno
 }
 
 export { SYMBOOL_SOORTEN };
+
+// ------------------------------------------------------------------------------------------------ TELEGRAM-002: tegels
+// Eén tegel = vaste kleur + wit vectorpictogram + naam. Dezelfde gegevens tekenen de tegel op de site (React) en in het
+// beveiligde Telegram-venster (svg-tekst), dus beide schermen tonen pixel voor pixel hetzelfde — geen emoji.
+
+export type Tegel = { index: number; id: string; kleur: string; naam: string; vorm: (typeof VORMEN)[string] };
+export function pictogramTegel(index: number, taal: 'uk' | 'nl'): Tegel | null {
+  if (!Number.isInteger(index) || index < 0 || index >= PICTOGRAMMEN.length) return null;
+  const p = PICTOGRAMMEN[index];
+  const vorm = VORMEN[p.icoon];
+  if (!vorm) return null;
+  return { index, id: p.id, kleur: p.kleur, naam: taal === 'nl' ? p.naam[1] : p.naam[0], vorm };
+}
+const attrEsc = (v: string): string => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+/** Het pictogram als svg-tekst (wit, lijn 2), voor pagina's zonder React. Alleen vormen uit de vaste catalogus: geen invoer van buiten. */
+export function pictogramSvg(index: number, stijl = ''): string {
+  const p = PICTOGRAMMEN[index];
+  const vorm = p ? VORMEN[p.icoon] : null;
+  if (!vorm) return '';
+  const delen = vorm.map(([tag, a]) => `<${tag} ${Object.entries(a).map(([k, v]) => `${k}="${attrEsc(v)}"`).join(' ')}/>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${stijl ? ` style="${attrEsc(stijl)}"` : ''}>${delen}</svg>`;
+}
+
+/**
+ * Opmaak van de tegel als gegevens: de site zet ze als `style` (React), het Telegram-venster als `style="…"`-tekst. Zo is er
+ * één bron en kunnen de twee niet uit elkaar lopen. Vaste kleuren: het thema (licht/donker) van site of Telegram verandert niets.
+ */
+export function tegelStijlen(kleur: string, groot = false): { tegel: Record<string, string>; vorm: Record<string, string>; naam: Record<string, string> } {
+  return {
+    tegel: { display: 'grid', placeItems: 'center', alignContent: 'center', gap: '6px', width: '100%', aspectRatio: '1 / 1', boxSizing: 'border-box',
+      borderRadius: groot ? '30px' : '22px', background: /^#[0-9a-f]{6}$/i.test(kleur) ? kleur : '#4f5b66', color: '#fff', position: 'relative',
+      fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', boxShadow: '0 2px 6px rgba(0,0,0,.18)' },
+    vorm: { display: 'block', width: '46%', height: '46%' },
+    naam: { fontSize: groot ? '1.1rem' : '0.9rem', fontWeight: '650', letterSpacing: '0.01em', lineHeight: '1.2', textAlign: 'center', padding: '0 4px' },
+  };
+}
+/** React-stijl → `style`-attribuut («placeItems» → «place-items»). */
+export const stijlTekst = (s: Record<string, string>): string => Object.entries(s).map(([k, v]) => `${k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}:${v}`).join(';');

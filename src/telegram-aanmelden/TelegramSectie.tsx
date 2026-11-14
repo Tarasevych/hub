@@ -108,19 +108,42 @@ function Identiteit({ lang, v, foto }: { lang: Lang; v: Partial<Vinger>; foto?: 
   </div>;
 }
 
+// TELEGRAM-002: alle foto's en wijzigingen van naam/nummer blijven bewaard (eis van de eigenaar) — hier zichtbaar, niets verwijderd.
+type FotoItem = { foto: string; eerstGezien: string; laatstGezien: string; huidig: boolean };
+type VeldItem = { veld: string; oud: string; nieuw: string; op: string; uitkomst: string };
+const VELD_NAAM: Record<string, [string, string]> = { telefoon: ['Телефон', 'Telefoon'], gebruikersnaam: ['Ім’я користувача', 'Gebruikersnaam'], voornaam: ['Ім’я', 'Voornaam'],
+  achternaam: ['Прізвище', 'Achternaam'], telegramId: ['Ідентифікатор Telegram', 'Telegram-ID'], apparaat: ['Пристрій', 'Apparaat'] };
+function Geschiedenis({ lang, fotos, velden }: { lang: Lang; fotos: FotoItem[]; velden: VeldItem[] }) {
+  if (fotos.length <= 1 && !velden.length) return null;
+  return <details className='tg2-geschiedenis'>
+    <summary>{tr(lang, `Історія профілю Telegram (${fotos.length} фото, ${velden.length} змін)`, `Geschiedenis van het Telegram-profiel (${fotos.length} foto's, ${velden.length} wijzigingen)`)}</summary>
+    <p className='tga-klein'>{tr(lang, 'Ми зберігаємо кожне фото й кожну зміну імені чи номера, щоб ви могли простежити, хто й коли користувався цим Telegram. Нічого не видаляється.', 'We bewaren elke foto en elke wijziging van naam of nummer, zodat u kunt nagaan wie deze Telegram wanneer gebruikte. Er wordt niets verwijderd.')}</p>
+    {fotos.length > 0 && <ul className='tg2-fotos'>{fotos.map((f, i) => <li key={i} className={f.huidig ? 'is-huidig' : ''}>
+      {f.foto ? <img src={f.foto} alt={tr(lang, 'Фото профілю', 'Profielfoto')} width={56} height={56} /> : <span className='tga-geen-foto' aria-hidden='true'>?</span>}
+      <span className='tga-klein'>{f.huidig ? tr(lang, 'зараз', 'nu') : `${tijd(f.eerstGezien, lang)} – ${tijd(f.laatstGezien, lang)}`}</span>
+    </li>)}</ul>}
+    {velden.length > 0 && <table className='tg2-velden'><thead><tr><th>{tr(lang, 'Коли', 'Wanneer')}</th><th>{tr(lang, 'Що', 'Wat')}</th><th>{tr(lang, 'Було', 'Was')}</th><th>{tr(lang, 'Стало', 'Werd')}</th></tr></thead>
+      <tbody>{velden.map((v, i) => <tr key={i}><td>{tijd(v.op, lang)}</td><td>{tr(lang, VELD_NAAM[v.veld]?.[0] ?? v.veld, VELD_NAAM[v.veld]?.[1] ?? v.veld)}</td><td>{v.oud || '—'}</td><td>{v.nieuw || '—'}</td></tr>)}</tbody></table>}
+  </details>;
+}
+
 function KoppelingKaart({ ctx, lang, k, opslaan, ontkoppelen }: { ctx: Ctx; lang: Lang; k: Koppeling; opslaan: (naam: string, rechten: KoppelRecht[]) => Promise<void>; ontkoppelen: () => Promise<void> }) {
   const [foto, setFoto] = useState('');
+  const [fotos, setFotos] = useState<FotoItem[]>([]);
+  const [velden, setVelden] = useState<VeldItem[]>([]);
   const [naam, setNaam] = useState(k.naam);
   const [rechten, setRechten] = useState<KoppelRecht[]>(k.rechten);
   const [zeker, setZeker] = useState(false);
   const { bezig, doe } = useEenmalig();
-  useEffect(() => { if (k.vingerafdruk.fotoId) void tgPost<{ foto: string }>(ctx, '/api/owner/telegram/foto', { koppelingId: k.id }).then((r) => setFoto(r.foto)).catch(() => undefined); }, [ctx, k.id, k.vingerafdruk.fotoId]);
+  useEffect(() => { void tgPost<{ foto: string; geschiedenis?: FotoItem[]; velden?: VeldItem[] }>(ctx, '/api/owner/telegram/foto', { koppelingId: k.id })
+    .then((r) => { setFoto(r.foto); setFotos(r.geschiedenis ?? []); setVelden(r.velden ?? []); }).catch(() => undefined); }, [ctx, k.id, k.vingerafdruk.fotoId]);
   const s = STAND_NAMEN[k.stand] ?? [k.stand, k.stand, '', ''];
   const gewijzigd = naam !== k.naam || rechten.join() !== k.rechten.join();
   return <article className={`tga-kaart tga-kaart-${k.stand}`}>
     <header><span aria-hidden='true'>{k.kleur}</span> <strong>{k.naam}</strong> <span className={`tga-stand tga-stand-${k.stand}`}>{lang === 'nl' ? s[1] : s[0]}</span></header>
     {(lang === 'nl' ? s[3] : s[2]) && <p className='tga-let'>{lang === 'nl' ? s[3] : s[2]}</p>}
     <Identiteit lang={lang} v={k.vingerafdruk} foto={foto} />
+    <Geschiedenis lang={lang} fotos={fotos} velden={velden} />
     <p className='tga-klein'>{tr(lang, 'Прив’язано', 'Gekoppeld')}: {tijd(k.aangemaaktOp, lang)} · {tr(lang, 'Востаннє', 'Laatst gebruikt')}: {tijd(k.laatstGebruiktOp, lang)}</p>
     {k.stand !== 'uitgeschakeld' && <>
       <label className='tga-veld'>{tr(lang, 'Назва (бачите лише ви)', 'Naam (alleen voor u)')}<input value={naam} maxLength={40} onChange={(e) => setNaam(e.target.value)} /></label>

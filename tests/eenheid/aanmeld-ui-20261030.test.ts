@@ -187,8 +187,8 @@ export async function main(): Promise<number> {
   check('catalogus: fout → «Стан не вдалося перевірити» + Повторити (data-amv-catalogus-opnieuw)', cat.includes('Стан не вдалося перевірити') && cat.includes('data-amv-catalogus-opnieuw'));
   check('catalogus: zelftest eerlijk drieledig (пройдено/не пройдено/ще не виконувався)', cat.includes('пройдено') && cat.includes('не пройдено') && cat.includes('ще не виконувався'));
   check('catalogus: uitleg + omweg uit het gedeelde contract worden getoond', cat.includes('aanmeldTekst(a.uitleg, lang)') && cat.includes('aanmeldTekst(a.omweg, lang)'));
-  check('gedeeld contract eerlijk: whatsapp niet-mogelijk, sms gepland, 4 aanbieders met sleutellijsten',
-    AANMELD_AANBIEDERS.find((a) => a.id === 'whatsapp')?.stand === 'niet-mogelijk' && AANMELD_AANBIEDERS.find((a) => a.id === 'sms')?.stand === 'gepland'
+  check('gedeeld contract eerlijk: whatsapp gepland (TELEGRAM-002), sms gepland, 4 aanbieders met sleutellijsten',
+    AANMELD_AANBIEDERS.find((a) => a.id === 'whatsapp')?.stand === 'gepland' && AANMELD_AANBIEDERS.find((a) => a.id === 'sms')?.stand === 'gepland'
     && AANMELD_AANBIEDERS.filter((a) => a.stand === 'sleutels-nodig').every((a) => (a.vereist?.length || 0) >= 2));
 
   // ---- css-poorten

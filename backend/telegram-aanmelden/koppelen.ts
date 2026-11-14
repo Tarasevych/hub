@@ -100,7 +100,7 @@ export async function profielFotoId(telegramId: string): Promise<string> {
     return String(r.photos?.[0]?.[0]?.file_unique_id || '').slice(0, 128);
   } catch { return ''; }
 }
-/** Kleine profielfoto als data-URL (alleen voor de eigenaar van het verzoek/de koppeling; niets wordt opgeslagen). */
+/** Kleine profielfoto als data-URL (alleen voor de eigenaar van het verzoek/de koppeling). De geschiedenis van foto's houdt fotos.ts bij. */
 export async function profielFotoData(telegramId: string): Promise<string> {
   try {
     const sleutel = await botSleutel();
