@@ -60,7 +60,7 @@ html.palet-maquette :is(
   --mq-tech-knop-glas: color-mix(in srgb, var(--mq-oppervlak-2) 74%, transparent);
 }
 
-html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) :is(
   .tech-band,
   .tech-band-extra,
   .tech-strook-paneel,
@@ -70,7 +70,7 @@ html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
   .rw-dok-melding,
   .venster:has(.tech-venster)
 ),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .tech-poort {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .tech-poort {
   --mq-accent-op: var(--mq-wit);
   --accent-tekst: var(--mq-wit);
   --accentText: var(--mq-wit);
@@ -920,7 +920,7 @@ html.palet-maquette .tech-venster :is(.rs-chip.is-gekozen, .rs-kaart.is-gekozen)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Захист оправ, скруглень і центрованої ширини брами від плоского режиму вмісту оболонки */
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
   width: min(58rem, 100%);
   max-width: 58rem;
   margin-inline: auto;
@@ -929,14 +929,14 @@ html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canoni
   box-shadow: var(--mq-schaduw);
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort.tech-poort-stil:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort.tech-poort-stil:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
   width: min(44rem, 100%);
   max-width: 44rem;
   border-radius: var(--mq-straal-kaart);
   box-shadow: var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort[data-tech-bundel="fout"]:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort[data-tech-bundel="fout"]:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
   width: min(40rem, 100%);
   max-width: 40rem;
   border-color: color-mix(in srgb, var(--fout) 40%, var(--mq-rand-sterk));
@@ -944,7 +944,7 @@ html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canoni
   box-shadow: var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort[data-tech-poort="wacht"]:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort[data-tech-poort="wacht"]:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]):not([data-mq-o]):not([data-mq-p]) {
   width: min(34rem, 100%);
   max-width: 34rem;
   border-color: var(--mq-rand);
@@ -1217,7 +1217,772 @@ html.palet-maquette .tech-poort[data-tech-poort="wacht"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   9. МЕДІАЗАПИТИ — СУВОРО В САМОМУ КІНЦІ ФАЙЛА (ПРАВИЛО mobiel-cascade-20261105)
+   9. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-009C)
+   Klassieke opmaak voor «Біла класика» en «Чорна класика» — vóór alle @media
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Похідні матові змінні для наскрізного шару #tech-laag та всіх позаоболонкових елементів */
+html.palet-maquette[data-maquette-stijl="klassiek"] #tech-laag,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .tech-band,
+  .tech-band-extra,
+  .tech-strook-paneel,
+  .tech-strook-menu,
+  .tech-vraag-uitleg,
+  .tech-poort,
+  .rw-dok-melding,
+  .venster:has(.tech-venster)
+) {
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accent-tekst: var(--mq-knop-primair-tekst);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --text-on-vlak: var(--mq-tekst);
+  --info: var(--mq-accent);
+  --info-vlak: var(--mq-oppervlak-2);
+  --focus: var(--mq-accent);
+  --venster-actief: var(--mq-accent);
+
+  --rw-spoor: var(--mq-oppervlak-2);
+  --rw-tekst: var(--mq-tekst);
+  --rw-rand: var(--mq-rand-sterk);
+  --rw-prive: var(--mq-knop-primair-bg);
+  --rw-prive-fg: var(--mq-knop-primair-tekst);
+  --rw-tech: var(--tech-band-bg);
+  --rw-tech-fg: var(--tech-band-fg);
+
+  --mq-tech-kaart: var(--mq-oppervlak);
+  --mq-tech-menu-vlak: var(--mq-oppervlak);
+  --mq-tech-invoer: var(--mq-oppervlak-2);
+  --mq-tech-glans: transparent;
+  --mq-tech-knop-glas: var(--mq-oppervlak-2);
+}
+
+/* Розгорнута інженерна смуга: матова поверхня, тонка межа, збереження --tech-band-bg і геометрії --tech-band-h / data-pas */
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) {
+  background-color: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  border-bottom: 1px solid var(--mq-rand);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band.is-piek:not(.is-ingeklapt) {
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt)::before,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"][data-tech-patroon="strepen"] .tech-band:not(.is-ingeklapt)::before,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"][data-tech-patroon="stippen"] .tech-band:not(.is-ingeklapt)::before {
+  height: 3px;
+  background-color: var(--tech-band-bg);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-merk {
+  background: var(--tech-band-bg);
+  background-image: none;
+  color: var(--tech-band-fg);
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-tijd.is-bijna {
+  color: var(--mq-tekst);
+  text-decoration-color: var(--tech-band-bg);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band .tech-remote-actief {
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  color: var(--fout);
+  border: 1px solid var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt):not(.is-slepen) .tech-band-knoppen > .tech-strook-item:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item:has(:focus-visible) {
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > .tech-meldingen-knop:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-hier {
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 -2px 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-uit {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border-color: var(--fout);
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .tech-band-knoppen > .tech-strook-item > button.is-uit:hover {
+  background: var(--mq-oppervlak-2);
+  border-color: var(--fout);
+}
+
+/* Перемикач просторів на розгорнутій смузі (пігулка 999px) */
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-spoor {
+  border-radius: 999px;
+  background: var(--mq-oppervlak);
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-bol {
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-spoor {
+  background: var(--mq-oppervlak);
+  box-shadow: inset 0 0 0 1px var(--tech-band-bg);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band:not(.is-ingeklapt) .rw-schakel[aria-checked="true"] .rw-bol {
+  background: var(--tech-band-bg);
+  color: var(--tech-band-fg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-strook-item::after {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Згорнута смужка язичка: матовий системний індикатор --tech-band-bg / --tech-band-fg без градієнтів і ореолів */
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band.is-ingeklapt,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"][data-tech-patroon="strepen"] .tech-band.is-ingeklapt,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"][data-tech-patroon="stippen"] .tech-band.is-ingeklapt {
+  background-color: var(--tech-band-bg);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--tech-band-fg);
+  border-bottom: 1px solid var(--mq-rand);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band.is-ingeklapt .tech-band-merk {
+  background: var(--tech-band-fg);
+  color: var(--tech-band-bg);
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band.is-ingeklapt .tech-band-knoppen > .tech-strook-vast-modus > button,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band.is-ingeklapt .tech-band-inklap {
+  border-radius: 999px;
+  border: 1px solid var(--tech-band-fg);
+  background: transparent;
+  color: var(--tech-band-fg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band.is-ingeklapt .tech-band-knoppen > .tech-strook-vast-modus > button:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"][data-tech="aan"] .tech-band.is-ingeklapt .tech-band-inklap:hover {
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"][data-ruimte="technisch"][data-tech="aan"] body::after {
+  border: 2px solid var(--tech-band-bg);
+  border-top-width: 0;
+}
+
+/* Спливні позаоболонкові панелі: 16px, матові поверхні без розмиття та градієнтів */
+html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding.is-fout {
+  border-color: var(--fout);
+  background: var(--mq-oppervlak);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .rw-dok-melding .rw-dok-sluit {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band[data-pas="3"] .tech-band-extra.is-open {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open .tech-menu-zoek {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open .tech-menu-zoek:focus-within {
+  border-color: var(--mq-accent);
+  box-shadow: none;
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 1px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open button {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open button.is-hier {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open .tech-mobiel-wissel .rw-schakel {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open .tech-mobiel-onder button.is-uit:hover {
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-paneel {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-kop {
+  padding: 6px 12px 6px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-sluit {
+  border-radius: 11px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-groep {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-optie {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-optie:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-optie.is-gekozen {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  border-color: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-lijst li {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-pijlen button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-reset {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-pijlen button:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-reset:hover {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-menu {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-menu button {
+  border-radius: 11px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-strook-menu button.is-gekozen {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-weight: 650;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.tech-vraag-knop, .tech-venster .tech-vraag-knop, .tech-band .tech-vraag-knop) {
+  border-radius: 999px;
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.tech-vraag-knop, .tech-venster .tech-vraag-knop, .tech-band .tech-vraag-knop):is(:hover, [aria-expanded="true"]) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .tech-vraag-uitleg {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] body .tech-vraag-uitleg .tech-vraag-bron code {
+  border-radius: 6px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+/* Платформні вікна технічного контуру (.venster:has(.tech-venster)) із правим відступом шапки <= 20px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster:has(.tech-venster) {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster.is-boven:has(.tech-venster) {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster:has(.tech-venster) .venster-kop {
+  padding: 6px 12px 6px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster:has(.tech-venster) .venster-knoppen button {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster {
+  gap: 14px;
+  padding: 16px 18px 18px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster :is(.tech-veld, .tech-geven) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster :is(.tech-veld, .tech-geven) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  border-color: var(--mq-accent);
+  box-shadow: none;
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 1px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster button:not(.tech-kleur):not(.tech-vraag-knop) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster button:not(.tech-kleur):not(.tech-vraag-knop):hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster button.is-hoofd:not(.tech-kleur):not(.tech-vraag-knop) {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  border-color: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster button.is-hoofd:not(.tech-kleur):not(.tech-vraag-knop):hover:not(:disabled) {
+  background: var(--mq-accent-2);
+  background-image: none;
+  border-color: var(--mq-accent-2);
+  color: var(--mq-knop-primair-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster button.is-gevaar:not(.tech-kleur):not(.tech-vraag-knop) {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border-color: var(--fout);
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster button.is-gevaar:not(.tech-kleur):not(.tech-vraag-knop):hover:not(:disabled) {
+  background: var(--mq-oppervlak-2);
+  border-color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster button.tech-kleur,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .tech-band-voorbeeld {
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .tech-melding {
+  border-radius: 11px;
+  border: 1px solid var(--fout);
+  background: var(--mq-oppervlak-2);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .tech-melding.is-ok {
+  border-color: var(--ok);
+  background: var(--mq-oppervlak-2);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .tech-geven,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .tech-lijst li,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .rs-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .rt-lijst li {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .ru-knop {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .ru-knop.is-gevaar {
+  border-color: var(--fout);
+  background: var(--mq-oppervlak);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .rs-chip,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster .rs-sjabloon {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster :is(.rs-chip.is-gekozen, .rs-kaart.is-gekozen, .tech-patronen button[aria-checked="true"]) {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Захищена технічна брама .tech-poort / .mq-tech-poort: одноколонкова ділова картка до 560px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .canonical-chrome[data-surface-model="flat-content"] .canonical-content section.tech-poort {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+}
+
+/* Захист рамок, скруглень 16px і тіні брами проти глобального flat-content (0, 19, 0) — суворо без padding і gap */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) section.tech-poort {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) section.tech-poort[data-tech-bundel="fout"] {
+  border: 1px solid var(--fout);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort.mq-tech-poort {
+  width: 100%;
+  max-width: 560px;
+  margin: clamp(24px, 5vh, 48px) auto;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort.mq-tech-poort-vol {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mq-tech-poort-kunst {
+  display: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mq-tech-poort-boven {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mq-tech-poort-lijn {
+  border-radius: 999px;
+  background: var(--mq-gedempt);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort h2 {
+  font-size: 1.25rem;
+  font-weight: 680;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort p[data-tech-poort="geen-profiel"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .mq-tech-poort-geen {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  border-color: var(--mq-accent);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button.is-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button.tech-poort-naar {
+  border-radius: 11px;
+  border: 1px solid var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button.is-hoofd:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort button.tech-poort-naar:hover:not(:disabled) {
+  background: var(--mq-accent-2);
+  background-image: none;
+  border-color: var(--mq-accent-2);
+  color: var(--mq-knop-primair-tekst);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort.tech-poort-stil {
+  width: 100%;
+  max-width: 560px;
+  margin: clamp(28px, 6vh, 56px) auto;
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  gap: 14px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mq-tech-poort-medaillon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort[data-tech-bundel="fout"] {
+  width: 100%;
+  max-width: 560px;
+  margin: clamp(24px, 5vh, 48px) auto;
+  padding: 22px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--fout);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort[data-tech-poort="wacht"] {
+  width: 100%;
+  max-width: 560px;
+  margin: clamp(28px, 6vh, 56px) auto;
+  padding: 20px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* Діловий беззасічковий гротеск заголовків та табличні цифри таймерів технічного сеансу */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .tech-poort h1,
+  .tech-poort h2,
+  .tech-poort h3,
+  .tech-venster h3,
+  .tech-venster legend,
+  .venster:has(.tech-venster) .venster-titel,
+  .tech-strook-titel,
+  .tech-strook-groep legend,
+  .rs-groep legend
+) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .tech-band-tijd,
+  .rw-stand,
+  .rt-feiten dd,
+  .tech-venster .tech-meta
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. МЕДІАЗАПИТИ — СУВОРО В САМОМУ КІНЦІ ФАЙЛА (ПРАВИЛО mobiel-cascade-20261105)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (min-width: 769px) {
@@ -1263,6 +2028,26 @@ html.palet-maquette .tech-poort[data-tech-poort="wacht"] {
 
   html.palet-maquette .tech-band .tech-band-extra.is-open .tech-mobiel-onder button.is-uit {
     color: var(--fout);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open {
+    border-radius: 16px;
+    border: 1px solid var(--mq-rand);
+    background: var(--mq-oppervlak);
+    background-image: none;
+    box-shadow: var(--mq-schaduw);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open button.is-hier {
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+    box-shadow: inset 3px 0 0 var(--mq-accent);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open .tech-menu-zoek {
+    border: 1px solid var(--mq-rand);
+    border-radius: 11px;
+    background: var(--mq-oppervlak-2);
   }
 }
 
@@ -1328,6 +2113,28 @@ html.palet-maquette .tech-poort[data-tech-poort="wacht"] {
     grid-column: 1 / -1;
     width: 100%;
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open {
+    border-radius: 0 0 16px 16px;
+    border: 0;
+    border-top: 1px solid var(--mq-rand);
+    border-bottom: 1px solid var(--mq-rand-sterk);
+    background: var(--mq-oppervlak);
+    background-image: none;
+    box-shadow: var(--mq-schaduw);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open button.is-hier {
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+    box-shadow: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-band .tech-band-extra.is-open .tech-menu-zoek {
+    border: 1px solid var(--mq-rand);
+    border-radius: 11px;
+    background: var(--mq-oppervlak-2);
+  }
 }
 
 @media (max-width: 560px) {
@@ -1344,6 +2151,25 @@ html.palet-maquette .tech-poort[data-tech-poort="wacht"] {
   html.palet-maquette .tech-poort-knoppen button {
     flex: 1 1 100%;
     justify-content: center;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort.mq-tech-poort {
+    margin: 16px auto;
+    padding: 18px 16px 20px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-poort.tech-poort-stil {
+    margin: 20px auto;
+    padding: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .venster:has(.tech-venster) .venster-kop {
+    padding: 6px 10px 6px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tech-venster {
+    padding: 14px 16px 16px;
   }
 }
 

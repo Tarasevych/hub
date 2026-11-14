@@ -9,6 +9,7 @@ import { afstemmingClient, AfstemmingFout, type Overzicht as OverzichtUit } from
 import { foutTekst, tr, useSmal, type Lang } from './tekst';
 import './afstemming.css';
 import './afstemming-maquette.css';
+import './afstemming-klassiek.css';
 
 const Overzicht = lazy(() => import('./onderdelen/Overzicht'));
 const Kartotheek = lazy(() => import('./onderdelen/Kartotheek'));

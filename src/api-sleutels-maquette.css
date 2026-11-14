@@ -48,7 +48,7 @@ html.palet-maquette .api-platform.mq-schil {
 }
 
 /* Підтримка явного атрибута data-theme="light", коли світлий клас на корені відсутній */
-html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .api-platform.mq-schil {
+html.palet-maquette[data-theme="light"]:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light) .api-platform.mq-schil {
   --mq-bg: color-mix(in srgb, var(--mq-wit) 76%, var(--mq-held-gedempt) 24%);
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 88%, var(--mq-satelliet-tekst) 12%);
@@ -63,8 +63,8 @@ html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light)
 }
 
 /* Світлий режим «Ранковий туман» із насиченим рубіново-аметистовим акцентом для високої чіткості */
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) .api-platform.mq-schil,
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .api-platform.mq-schil {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) .api-platform.mq-schil,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .api-platform.mq-schil {
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 70%, var(--mq-knop-primair-tekst) 30%);
   --mq-accent-op: var(--mq-wit);
   --mq-api-accent: color-mix(in srgb, var(--mq-accent-2) 68%, var(--mq-knop-primair-tekst) 32%);
@@ -107,13 +107,13 @@ html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .api-p
 }
 
 /* Недоторканність нічного рожево-рубінового склепіння студійної вітрини у будь-якому світловому режимі */
-html.palet-maquette .api-platform.mq-schil > .mq-held {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .api-platform.mq-schil > .mq-held {
   color-scheme: dark;
   --mq-accent: var(--mq-nacht-accent);
   box-shadow: var(--mq-schaduw-held);
 }
 
-html.palet-maquette .api-platform.mq-schil > .mq-held.is-compact {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .api-platform.mq-schil > .mq-held.is-compact {
   border-color: var(--mq-held-lijn);
   box-shadow: var(--mq-schaduw-zacht);
 }

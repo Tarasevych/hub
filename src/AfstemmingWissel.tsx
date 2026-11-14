@@ -14,6 +14,7 @@ import {
 } from './maquette-kern';
 import { useIsMaquette } from './thema/useThema';
 import './afstemming-vnext/afstemming-maquette.css';
+import './afstemming-vnext/afstemming-klassiek.css';
 
 const Nieuw = lazy(() => import('./afstemming-vnext/AfstemmingPagina'));
 

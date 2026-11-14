@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-009",
+  "titel": "Хвиля 8 тем оформлення «Біла класика» та «Чорна класика»: програмна брама api.tarasevych.com, звірка продукту та технічний контур",
+  "opdracht": "Оформити всі чотири розділи програмного піддомену api.tarasevych.com (машинні ключі доступу /toegang, сховище таємниць власника /kluis, реєстр зовнішніх з’єднань /verbindingen та центр звірки продукту /afstemming включно з портальними шарами й класичною матрицею реалізації), а також захищену технічну браму TechPoort і наскрізний інженерний контур #tech-laag у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч зі студійним «Макетом» та іншими темами платформи.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-009-20261114-095031",
+    "basis": "4ec2cbe6a378b372e868d04881484d0bacc9e21c",
+    "geinstalleerdeBasis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Особисті ключі власника, одноразові значення зі сховища таємниць, маркери доступу, внутрішні адреси середовища розробки, приватні записи користувачів та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T09:50:31Z",
+      "stap": "Створено робочу гілку feature/klassiek-009-20261114-095031 від базової фіксації 4ec2cbe6a378b372e868d04881484d0bacc9e21c та зареєстровано завдання KLASSIEK-009."
+    },
+    {
+      "tijd": "2026-11-14T09:52:24Z",
+      "stap": "Запущено три паралельні бригади виконавців із нульовим перетином файлів для програмної брами ключів і з’єднань, центру звірки продукту та наскрізного технічного контуру."
+    },
+    {
+      "tijd": "2026-11-14T10:02:00Z",
+      "stap": "Створено api-sleutels-klassiek.css і afstemming-klassiek.css, оновлено tech-maquette.css та TechPoort.tsx з вимкненням декоративної сцени в класиці, усунено рожеві домішки й ореоли, вирівняно заокруглення 16px/11px та табличні цифри."
+    }
+  ],
+  "keuzes": [
+    "Для програмної брами api.tarasevych.com та центру звірки продукту створено окремі чисті таблиці стилів api-sleutels-klassiek.css і afstemming-klassiek.css, щоб не змішувати монохромні прагматичні правила з рожево-рубіновою студійною темою.",
+    "У компоненті TechPoort при активній класичній темі вимкнено декоративну ілюстративну сцену MaquetteKunst і двоколонкову розкладку на користь лаконічної одноколонкової ділової картки шириною до 560px.",
+    "Збережено всі захисні інваріанти одноразового показу секретів, червоний попереджувальний колір смуг втілення й обслуговування та геометрію наскрізної технічної смуги."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-009.json",
+    "orchestratie/taken/KLASSIEK-009.json",
+    "src/AfstemmingWissel.tsx",
+    "src/ApiPlatformWeergave.tsx",
+    "src/afstemming-vnext/AfstemmingPagina.tsx",
+    "src/afstemming-vnext/afstemming-klassiek.css",
+    "src/afstemming-vnext/afstemming-maquette.css",
+    "src/api-sleutels-klassiek.css",
+    "src/api-sleutels-maquette.css",
+    "src/tech/TechPoort.tsx",
+    "src/tech/tech-maquette.css",
+    "tests/eenheid/klassiek-009a-sleutelpoort.test.ts",
+    "tests/eenheid/klassiek-009b-afstemming.test.ts",
+    "tests/eenheid/klassiek-009c-technische-laag.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-009 --fase overdracht — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, klassiek-001-kern, klassiek-009a-sleutelpoort, klassiek-009b-afstemming, klassiek-009c-technische-laag, afstemming-zvirka-ui-20261030, afstemming-ui-20261030, afstemming-kern-20261030, tech-ruimtes-ui, tech-ruimte-f5-20261105, gebruiker-audit-2026-10-19, contrast-knoppen-logos-20261021, mobiel-cascade-20261105, plaatsing-20261025, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105, trace-001-ontwikkelarchief.",
+    "Жива візуальна перевірка кадрів api.tarasevych.com (/toegang, /kluis, /verbindingen, /afstemming, мобільні вигляди та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/ApiPlatformWeergave.tsx",
+    "src/AfstemmingWissel.tsx",
+    "src/afstemming-vnext/AfstemmingPagina.tsx",
+    "src/tech/TechPoort.tsx",
+    "src/tech/tech-maquette.css"
+  ],
+  "beperkingen": [
+    "Хвиля 8 (KLASSIEK-009) охоплює піддомен api.tarasevych.com, центр звірки продукту та наскрізний технічний контур; заключний десятий піддомен admin.tarasevych.com та кумулятивний випуск оформлюються у Фінальній Хвилі 9 (KLASSIEK-010)."
+  ]
+}

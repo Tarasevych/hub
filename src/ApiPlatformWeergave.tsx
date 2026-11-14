@@ -15,6 +15,7 @@ import {MaquetteAnkerRail,MaquetteHeld,type MaquetteAnkerItem,type MaquetteHeldS
 import {useIsMaquette} from './thema/useThema';
 import './api-platform-weergave.css';
 import './api-sleutels-maquette.css';
+import './api-sleutels-klassiek.css';
 type Tr=(uk:string,nl:string)=>string;
 type ApiActieveTab='access'|'vault'|'verbindingen';
 type Contract=ReturnType<typeof apiPlatformContractPayload>;

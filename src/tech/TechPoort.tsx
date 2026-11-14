@@ -2,7 +2,7 @@
 // додатки на сервері, архів, підписаний доступ ШІ) не відкриваються, доки в цій вкладці не увімкнено технічний профіль.
 import { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
-import { MaquetteKunst } from '../maquette-kern';
+import { MaquetteKunst, useIsKlassiekMaquette } from '../maquette-kern';
 import { useIsMaquette } from '../thema/useThema';
 import { openTechVenster } from './tech-opslag';
 import { useRuimtesV2 } from './ruimtes/ruimtes-vlag';
@@ -15,6 +15,7 @@ export default function TechPoort({ lang, onAccount, heeftProfiel = true }: { la
   const uk = lang === 'uk';
   const v2 = useRuimtesV2();
   const isMaquette = useIsMaquette();
+  const isKlassiek = useIsKlassiekMaquette();
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState('');
   const naarTech = async () => {
@@ -49,7 +50,7 @@ export default function TechPoort({ lang, onAccount, heeftProfiel = true }: { la
       );
     }
     return (
-      <section className='tech-poort mq-tech-poort mq-tech-poort-vol' data-tech-poort='1'>
+      <section className={isKlassiek ? 'tech-poort mq-tech-poort' : 'tech-poort mq-tech-poort mq-tech-poort-vol'} data-tech-poort='1'>
         <div className='mq-tech-poort-inhoud'>
           <div className='mq-tech-poort-boven'>
             <span className='mq-tech-poort-lijn' aria-hidden='true' />
@@ -65,9 +66,11 @@ export default function TechPoort({ lang, onAccount, heeftProfiel = true }: { la
             <button type='button' className={heeftProfiel ? undefined : 'is-hoofd'} onClick={onAccount} data-tech-poort='account'>{uk ? 'До облікового запису' : 'Naar het account'}</button>
           </div>
         </div>
-        <div className='mq-tech-poort-kunst' aria-hidden='true'>
-          <MaquetteKunst soort='admin' variant='kaart' lang={lang} />
-        </div>
+        {!isKlassiek ? (
+          <div className='mq-tech-poort-kunst' aria-hidden='true'>
+            <MaquetteKunst soort='admin' variant='kaart' lang={lang} />
+          </div>
+        ) : null}
       </section>
     );
   }

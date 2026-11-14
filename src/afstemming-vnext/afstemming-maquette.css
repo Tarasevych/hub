@@ -56,8 +56,8 @@ html.palet-maquette .implementation-truth {
 }
 
 /* Підтримка явного атрибута світлої теми, коли світлий клас на корені відсутній */
-html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.afv-mq-schil, .afv, .afv-laag, .implementation-truth),
-html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .afv-laag {
+html.palet-maquette[data-theme="light"]:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light) :is(.afv-mq-schil, .afv, .afv-laag, .implementation-truth),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .afv-laag {
   --mq-bg: color-mix(in srgb, var(--mq-wit) 76%, var(--mq-held-gedempt) 24%);
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 86%, var(--mq-satelliet-tekst) 14%);
@@ -73,9 +73,9 @@ html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chro
 }
 
 /* Контрастний рубіновий акцент у світлому режимі «Ранковий туман» (вітрина .mq-held зберігає власне нічне склепіння) */
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.afv-mq-schil[data-mq-dienst="api"], .afv, .afv-laag, .implementation-truth),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.afv-mq-schil[data-mq-dienst="api"], .afv, .implementation-truth),
-html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .afv-laag {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) :is(.afv-mq-schil[data-mq-dienst="api"], .afv, .afv-laag, .implementation-truth),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.afv-mq-schil[data-mq-dienst="api"], .afv, .implementation-truth),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .afv-laag {
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 64%, var(--mq-bol-diep) 36%);
   --mq-accent-op: var(--mq-wit);
   --afv-mq-glas: color-mix(in srgb, var(--mq-oppervlak) 96%, var(--mq-accent) 4%);
@@ -103,12 +103,12 @@ html.palet-maquette:has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .
   --accent-soft: var(--afv-mq-halo);
 }
 
-html.palet-maquette .afv-mq-schil > .mq-held.is-compact {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .afv-mq-schil > .mq-held.is-compact {
   border-color: var(--mq-held-lijn);
   box-shadow: var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .afv-mq-schil > .mq-held:not(.is-compact) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .afv-mq-schil > .mq-held:not(.is-compact) {
   box-shadow: var(--mq-schaduw-held);
 }
 
