@@ -2476,14 +2476,16 @@
    "gereedAls": "Вибір «Згорнута» → меню сайту лишається вузьким на всіх сторінках і після перезавантаження.",
    "testen": [
     "tests/e2e/menu-v2.e2e.ts",
-    "tests/e2e/menu-ux.e2e.ts"
+    "tests/e2e/menu-ux.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: 3 режими × 4 положення — у кожному піктограми видимі (≥ 14 px, у межах екрана, нічим не закриті), усі різні, прихований пункт відсутній"
    ],
    "herkomst": "Меню → «Бічна панель» (#menu-modus).",
    "maquetteLabel": "прихована група (вже оформлена в макеті; рядків у карті немає)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (menu-v2.e2e.ts, menu-ux.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Режими «Автоматично / Розгорнута / Згорнута» перемикаються радіокнопками в «Бічна панель» без перезавантаження; у кожному з 4 положень піктограми пунктів видимі (≥ 14 px, у межах екрана, центр не закрито іншим елементом), усі різні, прихований пункт відсутній.",
+   "schermafdruk": "015-menu-iconen-open-links-computer.png, 015-menu-iconen-dicht-links-computer.png"
   },
   {
    "id": "menu.панель.0.поведінка-навігації-макета",
@@ -2601,14 +2603,22 @@
    "gereedAls": "Додати «Пошта» → кнопка з'являється у верхньому ряду меню на всіх піддоменах; в іншому профілі її немає.",
    "testen": [
     "tests/eenheid/menu-per-profiel-20261019.test.ts",
-    "tests/e2e/menu-dock-snelmenu.e2e.ts"
+    "tests/e2e/menu-dock-snelmenu.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: дві кнопки додано в редакторі (у порядку додавання)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: ці дві кнопки одразу видно в бічній панелі (верхній ряд)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: /api/owner/ui/sidebar — 200, вебзона «gebruiker» і цей обліковий запис",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: новий контекст (ті самі cookie, порожнє сховище) — той самий порядок у меню й редакторі",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: інший піддомен (hub.tarasevych.com) — той самий порядок кнопок",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: інший обліковий запис — без цих кнопок; сервер віддає його власне місце збереження",
+    "tests/eenheid/profiel-isolatie-20261019.test.ts#/ui/sidebar noemt de bewaarplaats: dit account + webruimte «gebruiker», op de server"
    ],
    "herkomst": "Меню → «Швидкий доступ» (#menu-snel).",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-per-profiel-20261019.test.ts 40/40. E2E (menu-dock-snelmenu.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Власниця (комп’ютер 1280) додала дві кнопки через «Додати пункт» — обидві одразу у верхньому ряду бічної панелі в порядку додавання. Новий контекст із тими самими cookie (порожнє сховище браузера) і hub.tarasevych.com показують ті самі кнопки в тому ж порядку. /api/owner/ui/sidebar тепер прямо називає місце збереження: opslag {account: цей обліковий запис, ruimte: «gebruiker», plaats: «server»} (поле додано в цьому кроці; раніше було лише ruimte). Інший схвалений обліковий запис цих кнопок не бачить і отримує власне opslag.account.",
+   "schermafdruk": "015-menu-snel-toegevoegd-computer.png, 015-menu-snel-hub-computer.png"
   },
   {
    "id": "menu.швидкий-доступ.1.прибрати-пункт",
@@ -2631,14 +2641,17 @@
    "wijziging": "Не потрібно.",
    "gereedAls": "Після натискання кошика пункт зникає з верхнього ряду меню; «Скасувати» повертає його.",
    "testen": [
-    "tests/eenheid/menu-per-profiel-20261019.test.ts"
+    "tests/eenheid/menu-per-profiel-20261019.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: вилучення — лишилася одна кнопка, у бічній панелі теж одна",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: після вилучення — на іншому піддомені й іншому пристрої (телефон) лише одна кнопка"
    ],
    "herkomst": "#menu-snel.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-per-profiel-20261019.test.ts 40/40."
+   "resultaat": "Кнопка «Прибрати» (кошик) вилучає кнопку: у редакторі й у бічній панелі лишається одна; на hub.tarasevych.com на телефоні 380 (новий контекст) — теж одна.",
+   "schermafdruk": "015-menu-snel-na-weghalen-telefoon.png"
   },
   {
    "id": "menu.швидкий-доступ.1.скинути-до-стандарту",
@@ -2690,14 +2703,20 @@
    "wijziging": "Не потрібно.",
    "gereedAls": "Після ↓ підпис «позиція N з M» змінюється, і в меню порядок такий самий.",
    "testen": [
-    "tests/eenheid/menu-per-profiel-20261019.test.ts"
+    "tests/eenheid/menu-per-profiel-20261019.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: клавіатура — Alt+↑ ставить другу кнопку першою",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: клавіатура — бічна панель показує той самий новий порядок",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: клавіатура — Alt+↓ повертає назад",
+    "tests/eenheid/menu-per-profiel-20261019.test.ts#na verplaatsen naar de rand: focus naar de knop die nog actief is (nooit een uitgeschakelde)",
+    "tests/eenheid/menu-per-profiel-20261019.test.ts#bewerker: na Alt+pijl of klik blijft de focus op dezelfde rij (snelFocusNaStap + focus in useEffect)"
    ],
    "herkomst": "#menu-snel.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-per-profiel-20261019.test.ts 40/40."
+   "resultaat": "Стрілки «раніше/пізніше» в рядку: Alt+↑ на другому рядку ставить його першим (редактор і бічна панель — однаково), Alt+↓ повертає. Знайдено й виправлено: після Alt+↑ на першу позицію натиснута кнопка «раніше» вимикалася, фокус падав на <body>, і наступне Alt+↓ нічого не робило (людина з клавіатурою губила рядок). Тепер фокус лишається на тому самому рядку, на кнопці напрямку, що ще активна (shared/menu-indeling.ts snelFocusNaStap, src/SnelleToegangBewerker.tsx); те саме для натискання мишею на стрілку біля краю. Окреме натискання стрілок мишею в e2e не проганялося — воно викликає ту саму функцію verplaats.",
+   "schermafdruk": "015-menu-snel-toegevoegd-computer.png"
   },
   {
    "id": "menu.швидкий-доступ.2.перетягування-в-меню",
@@ -2722,14 +2741,19 @@
    "gereedAls": "У режимі редагування пункт перетягнуто на нове місце; після перезавантаження воно збережене.",
    "testen": [
     "tests/e2e/menu-v2-indeling.e2e.ts",
-    "tests/e2e/menu-dock-snelmenu.e2e.ts"
+    "tests/e2e/menu-dock-snelmenu.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: миша — перетягування другої кнопки на місце першої міняє порядок",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: миша — редактор «Швидкий доступ» показує той самий порядок",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: новий контекст (ті самі cookie, порожнє сховище) — той самий порядок у меню й редакторі",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: інший піддомен (hub.tarasevych.com) — той самий порядок кнопок"
    ],
    "herkomst": "Режим редагування меню (CanoniekOmlijsting + menu-slepen).",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (menu-v2-indeling.e2e.ts, menu-dock-snelmenu.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Редагувати меню» (#menu-indeling) → режим редагування бічної панелі; перетягування мишею другої кнопки швидкого доступу на першу: під час перетягування видно «привид», порядок змінено, редактор «Швидкий доступ» показує той самий порядок; після закриття контексту й на hub — той самий порядок.",
+   "schermafdruk": "015-menu-snel-na-slepen-computer.png"
   },
   {
    "id": "menu.швидкий-доступ.3.власна-піктограма",
@@ -2811,14 +2835,20 @@
    "wijziging": "Додати перевірку клавіатурного переміщення (етап 4).",
    "gereedAls": "Лише клавіатурою можна додати, перемістити й прибрати пункт.",
    "testen": [
-    "tests/eenheid/menu-per-profiel-20261019.test.ts"
+    "tests/eenheid/menu-per-profiel-20261019.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: клавіатура — Alt+↑ ставить другу кнопку першою",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: клавіатура — бічна панель показує той самий новий порядок",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: клавіатура — Alt+↓ повертає назад",
+    "tests/eenheid/menu-per-profiel-20261019.test.ts#na verplaatsen naar de rand: focus naar de knop die nog actief is (nooit een uitgeschakelde)",
+    "tests/eenheid/menu-per-profiel-20261019.test.ts#bewerker: na Alt+pijl of klik blijft de focus op dezelfde rij (snelFocusNaStap + focus in useEffect)"
    ],
    "herkomst": "#menu-snel.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-per-profiel-20261019.test.ts 40/40."
+   "resultaat": "Alt+↑/Alt+↓ на кнопках рядка переставляють кнопку (редактор і бічна панель однаково, порядок збережено на сервері). Знайдено й виправлено: після Alt+↑ на першу позицію натиснута кнопка «раніше» вимикалася, фокус падав на <body>, і наступне Alt+↓ нічого не робило (людина з клавіатурою губила рядок). Тепер фокус лишається на тому самому рядку, на кнопці напрямку, що ще активна (shared/menu-indeling.ts snelFocusNaStap, src/SnelleToegangBewerker.tsx); те саме для натискання мишею на стрілку біля краю.",
+   "schermafdruk": "015-menu-snel-toegevoegd-computer.png"
   },
   {
    "id": "menu.швидкий-доступ.4.сенсорний-екран",
@@ -2841,14 +2871,18 @@
    "wijziging": "Додати приймання на телефоні (етап 4/5).",
    "gereedAls": "На телефоні пункт додається, переміщується й прибирається без перетягування.",
    "testen": [
-    "tests/e2e/menu-dock-snelmenu.e2e.ts"
+    "tests/e2e/menu-dock-snelmenu.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: дотик — довге натискання починає перетягування, кнопка стає першою",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: після дотику в новому контексті — порядок із телефону (як до перетягування мишею)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: телефон 380 — без горизонтальної прокрутки"
    ],
    "herkomst": "#menu-snel.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (menu-dock-snelmenu.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Телефон 380×800 (hasTouch): шухляда → «Редагувати» → довге натискання (≈650 мс) на другу кнопку швидкого доступу починає перетягування («привид»), перенесення на першу міняє порядок; у новому контексті на комп’ютері редактор показує порядок із телефону. Без горизонтальної прокрутки.",
+   "schermafdruk": "015-menu-snel-aanraken-slepen-telefoon.png"
   },
   {
    "id": "menu.розташування.0.положення-меню-сайту",
@@ -2874,14 +2908,16 @@
    "testen": [
     "tests/e2e/menu-v2-indeling.e2e.ts",
     "tests/e2e/menu-dock-snelmenu.e2e.ts",
-    "tests/eenheid/menu-indeling.test.ts"
+    "tests/eenheid/menu-indeling.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: 3 режими × 4 положення — у кожному піктограми видимі (≥ 14 px, у межах екрана, нічим не закриті), усі різні, прихований пункт відсутній"
    ],
    "herkomst": "Меню → «Розташування й порядок меню» (#menu-indeling).",
    "maquetteLabel": "прихована група (вже оформлена в макеті; рядків у карті немає)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-indeling.test.ts 32/32. E2E (menu-v2-indeling.e2e.ts, menu-dock-snelmenu.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Положення «Ліворуч / Праворуч / Вгорі / Внизу» × три режими (12 поєднань): main[data-dock] відповідає вибору, піктограми видимі, різні, не закриті шапкою чи полем пошуку, у межах екрана 1280.",
+   "schermafdruk": "015-menu-iconen-open-links-computer.png, 015-menu-iconen-open-rechts-computer.png, 015-menu-iconen-open-boven-computer.png, 015-menu-iconen-open-onder-computer.png"
   },
   {
    "id": "menu.розташування.0.положення-навігації-макета",
@@ -3002,14 +3038,17 @@
    "testen": [
     "tests/e2e/menu-v2-indeling.e2e.ts",
     "tests/eenheid/menu-indeling.test.ts",
-    "tests/eenheid/menu-v2.test.ts"
+    "tests/eenheid/menu-v2.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: миша — перетягування другої кнопки на місце першої міняє порядок",
+    "tests/e2e/identiteit-015-menu.e2e.ts#A: дотик — довге натискання починає перетягування, кнопка стає першою"
    ],
    "herkomst": "#menu-indeling + режим редагування в бічній панелі.",
    "maquetteLabel": "прихована група (вже оформлена в макеті; рядків у карті немає)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-indeling.test.ts 32/32; menu-v2.test.ts 35/35. E2E (menu-v2-indeling.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Кнопка «Редагувати меню» в «Розташування й порядок меню» вмикає режим редагування бічної панелі на тій самій сторінці (смуга редагування з «Готово»); мишею й довгим натисканням на телефоні (через шухляду → «Редагувати») пункти перетягуються, «Готово» вимикає режим.",
+   "schermafdruk": "015-menu-snel-na-slepen-computer.png, 015-menu-snel-aanraken-slepen-telefoon.png"
   },
   {
    "id": "menu.розташування.4.скинути-все",
@@ -3095,14 +3134,18 @@
    "gereedAls": "Вимкнено → жодних міток у меню; увімкнено → мітка біля «Пошта» при непрочитаних.",
    "testen": [
     "tests/e2e/menu-v2-meldingen.e2e.ts",
-    "tests/eenheid/menu-meldingen.test.ts"
+    "tests/eenheid/menu-meldingen.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: позначки — «Налаштування» 1 (безпека), «Мій простір» (спільний доступ)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: aria-label пункту називає кількість (без змісту сповіщення)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: дотик (телефон) — позначки видно в меню-шухляді"
    ],
    "herkomst": "#menu-meldingen.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-meldingen.test.ts 40/40. E2E (menu-v2-meldingen.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Два справжні сповіщення сайту (site_notifications) для власниці: позначка «1» на «Налаштування» (категорія безпека) і на «Акаунт», позначка на «Мій простір» (спільний доступ); aria-label пункту — «Налаштування — 1 сповіщення» без змісту; на телефоні 380 ті самі позначки в шухляді.",
+   "schermafdruk": "015-menu-meldingen-bellen-computer.png, 015-menu-meldingen-aanraken-telefoon.png"
   },
   {
    "id": "menu.сповіщення.0.категорії-міток",
@@ -3187,14 +3230,21 @@
    "wijziging": "Не потрібно.",
    "gereedAls": "Наведення на пункт з міткою показує список; × прибирає запис.",
    "testen": [
-    "tests/e2e/menu-v2-meldingen.e2e.ts"
+    "tests/e2e/menu-v2-meldingen.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: наведення мишею — пояснення («бульбашка») зі змістом сповіщення",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: миша пішла — пояснення зникло",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: фокус клавіатурою відкриває пояснення",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: клавіатура — → у пояснення, Esc повертає фокус на пункт і закриває",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: дотик до позначки — пояснення зі змістом, без переходу",
+    "tests/e2e/identiteit-015-menu.e2e.ts#B: телефон 380 — без горизонтальної прокрутки"
    ],
    "herkomst": "#menu-meldingen.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (menu-v2-meldingen.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Миша: наведення на «Налаштування» відкриває пояснення з назвою сповіщення, відведення — закриває. Клавіатура: фокус (Tab) на «Мій простір» відкриває пояснення, → переводить фокус у нього, Esc закриває й повертає фокус на пункт. Телефон 380 (дотик): позначки видно в шухляді; наведення немає, довге натискання на сам пункт нічого не відкриває — пояснення відкриває дотик до самої позначки (20×20 px) без переходу на сторінку. Спостереження поза межами: ціль дотику 20 px менша за рекомендовані 44 px (позначка лежить на кнопці пункту 44 px, тож промах веде на сторінку пункту, а не до пояснення).",
+   "schermafdruk": "015-menu-meldingen-bellen-computer.png, 015-menu-meldingen-aanraken-telefoon.png"
   },
   {
    "id": "menu.сповіщення.3.привертати-увагу",
@@ -3315,15 +3365,22 @@
    "testen": [
     "tests/eenheid/identiteit-015-stille-uren.test.ts",
     "tests/eenheid/menu-meldingen.test.ts",
-    "tests/e2e/menu-v2-meldingen.e2e.ts"
+    "tests/e2e/menu-v2-meldingen.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: тихі години 22:00–07:00 увімкнено в налаштуваннях і збережено на сервері",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: до тиші (21:5x) — подія спливає",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: у тиші (22:30) — дві події не спливають і не звучать",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: у тиші — обидві події є в панелі сповіщень (один рядок «×2»)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: після кінця тиші (07:01) — один підсумок «Поки була тиша: 2»",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: після перезавантаження підсумок не повторюється"
    ],
    "herkomst": "#menu-meldingen.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "resultaat": "Справжній центр сповіщень у Chrome з керованим годинником (Europe/Amsterdam, тиша 22:00–07:00): о 23:00 дві локальні події й одне нове серверне сповіщення не спливають і не звучать (0 вікон, 0 звуків; контроль поза тишею — спливає й звучить), лишаються в панелі, пораховано 3 до 07:00; попередження безпеки в тишу спливає. Після 07:00 — рівно одне «Поки була тиша: 3», за 5 хв другого немає, підсумок лишається в переліку окремим рядком. Перервана дія: вкладку закрито в тишу й відкрито після кінця — один підсумок, повторне перезавантаження — жодного. Пульс і нагадування міток меню вимикаються за таймером (не лише при перемальовуванні). Перемикач більше не залежить від «Показувати мітки» й пояснює наслідки. Збереження через справжні маршрути sidebar/save → sidebar (без сеансу — 403; зіпсований час → 22:00–07:00; повтор — той самий стан, один рядок). Push: каналу push на сайті немає (service worker не підписується на push, сервер нічого не надсилає) — відкладати нічого; кінець тиші дає чиста функція stilTot (shared/stille-uren.ts), якою скористається майбутній канал.",
+   "resultaat": "page.clock (Брюссель, 16.11.2026): тихі години 22:00–07:00 увімкнено в «Сповіщення в меню» й збережено на сервері. О 21:5x контрольна подія спливла й прозвучала (1 AudioContext); о 22:30 дві події не спливли й не прозвучали (лічильник звуку 1→1), обидві лишилися в панелі (один рядок «×2» — однаковий текст об’єднується за задумом); після переведення годинника на 07:01 — один підсумок «Поки була тиша: 2»; після перезавантаження сторінки підсумок не повторився.",
    "reden": "Push-сповіщень на сайті немає взагалі (немає підписки Push API в service-worker.js і серверного надсилача), тому «відкладення push» не застосовне; щойно канал з’явиться, він має брати час доставки зі stilTot(stil, nu).",
-   "versie": "899c96ad",
-   "omgeving": "випробувальне середовище"
+   "versie": "0f6becae",
+   "omgeving": "випробувальне середовище",
+   "schermafdruk": "015-menu-stille-uren-instelling-computer.png, 015-menu-stille-uren-paneel-computer.png, 015-menu-stille-uren-samenvatting-computer.png"
   },
   {
    "id": "menu.сповіщення.7.початок-тихих-годин",
@@ -3346,14 +3403,18 @@
    "wijziging": "Залежить від етапу 3.1.",
    "gereedAls": "Змінений час початку зберігається; проміжок через північ (22:00–07:00) діє.",
    "testen": [
-    "tests/eenheid/menu-meldingen.test.ts"
+    "tests/eenheid/menu-meldingen.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: тихі години 22:00–07:00 увімкнено в налаштуваннях і збережено на сервері",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: до тиші (21:5x) — подія спливає",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: у тиші (22:30) — дві події не спливають і не звучать"
    ],
    "herkomst": "#menu-meldingen.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-meldingen.test.ts 40/40."
+   "resultaat": "Поле «Від» = 22:00 збережено на сервері; подія о 21:5x ще спливає, о 22:30 — уже ні (див. тихі години).",
+   "schermafdruk": "015-menu-stille-uren-instelling-computer.png"
   },
   {
    "id": "menu.сповіщення.8.завершення-тихих-годин",
@@ -3375,14 +3436,18 @@
    "wijziging": "Підказка при однакових значеннях (етап 3.1).",
    "gereedAls": "Змінений час завершення зберігається й діє.",
    "testen": [
-    "tests/eenheid/menu-meldingen.test.ts"
+    "tests/eenheid/menu-meldingen.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: тихі години 22:00–07:00 увімкнено в налаштуваннях і збережено на сервері",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: після кінця тиші (07:01) — один підсумок «Поки була тиша: 2»",
+    "tests/e2e/identiteit-015-menu.e2e.ts#C: після перезавантаження підсумок не повторюється"
    ],
    "herkomst": "#menu-meldingen.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-meldingen.test.ts 40/40."
+   "resultaat": "Поле «До» = 07:00 збережено на сервері; після переведення годинника на 07:01 з’являється один підсумок «Поки була тиша: 2», після перезавантаження не повторюється.",
+   "schermafdruk": "015-menu-stille-uren-samenvatting-computer.png"
   },
   {
    "id": "menu.сповіщення.9.як-показувати-тип",
@@ -3531,14 +3596,19 @@
    "gereedAls": "Перехід між розділами показує смужку; вимкнено — ні.",
    "testen": [
     "tests/e2e/menu-v2-snelheid.e2e.ts",
-    "tests/eenheid/menu-snelheid.test.ts"
+    "tests/eenheid/menu-snelheid.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: смужка й плавність увімкнено — у межах розділу смужка «bezig→klaar→uit» і плавний перехід",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: смужку й плавність вимкнено — у межах розділу ні смужки, ні плавного переходу",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: параметри повернуто (смужка й плавність увімкнено)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: reducedMotion «reduce» (телефон) — плавного переходу немає, смужка завантаження є"
    ],
    "herkomst": "#menu-snelheid.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-snelheid.test.ts 29/29. E2E (menu-v2-snelheid.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Перемикач у «Швидкість переходів» (збережено на сервері): увімкнено — під час переходу в межах розділу (API сповільнено на 500 мс) смужка проходить wacht→bezig→klaar→uit; вимкнено — жодного стану «bezig»; на телефоні з reducedMotion смужка лишається.",
+   "schermafdruk": "015-menu-snelheid-instellingen-computer.png, 015-menu-snelheid-minder-beweging-telefoon.png"
   },
   {
    "id": "menu.швидкодія.1.плавне-перемикання",
@@ -3561,14 +3631,18 @@
    "wijziging": "Не потрібно.",
    "gereedAls": "Перехід між вкладками розділу плавний; при «менше анімацій» — миттєвий.",
    "testen": [
-    "tests/e2e/menu-v2-snelheid.e2e.ts"
+    "tests/e2e/menu-v2-snelheid.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: смужка й плавність увімкнено — у межах розділу смужка «bezig→klaar→uit» і плавний перехід",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: смужку й плавність вимкнено — у межах розділу ні смужки, ні плавного переходу",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: reducedMotion «reduce» (телефон) — плавного переходу немає, смужка завантаження є"
    ],
    "herkomst": "#menu-snelheid.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (menu-v2-snelheid.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Увімкнено — перехід у межах розділу йде через View Transition (1 виклик); вимкнено — 0; з reducedMotion: 'reduce' (телефон 380, параметр увімкнено) — 0, тобто системне «менше руху» має перевагу.",
+   "schermafdruk": "015-menu-snelheid-minder-beweging-telefoon.png"
   },
   {
    "id": "menu.швидкодія.2.попереднє-завантаження",
@@ -3592,14 +3666,20 @@
    "gereedAls": "Наведення на пункт меню запускає prefetch (видно в мережі); вимкнено — ні.",
    "testen": [
     "tests/e2e/menu-v2-snelheid.e2e.ts",
-    "tests/eenheid/menu-snelheid.test.ts"
+    "tests/eenheid/menu-snelheid.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: типові параметри збережено на сервері",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: підвантаження при наведенні — перше відкриття hub прийшло з попереднього завантаження (deliveryType navigational-prefetch)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: повернення кнопкою «Назад» — тип back_forward",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: повторне відкриття теж з підвантаження й не повільніше за перше більш ніж на 1 с",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: підвантаження вимкнено — посилань наперед немає, deliveryType не navigational-prefetch (мережа або кеш)"
    ],
    "herkomst": "#menu-snelheid.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-snelheid.test.ts 29/29. E2E (menu-v2-snelheid.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Увімкнено: наведення на «Мій простір» створює невидиме посилання prefetch, відкриття hub приходить із нього. Вимкнено: посилань наперед немає. Виміри (navigation timing, 1280, hub): типово — перше відкриття deliveryType navigational-prefetch, DCL 291 мс; повернення «Назад» на id — back_forward, DCL 138 мс; повторне відкриття hub — navigational-prefetch, DCL 159 мс; без підвантаження — deliveryType cache (HTTP-кеш, не prefetch), DCL 166 мс; повна підготовка — navigational-prefetch, activationStart 0, DCL 190 мс; телефон з reducedMotion — DCL 184 мс.",
+   "schermafdruk": "015-menu-snelheid-instellingen-computer.png"
   },
   {
    "id": "menu.швидкодія.3.експериментальні-відомість",
@@ -3653,14 +3733,16 @@
    "gereedAls": "Увімкнено → у сторінці з'являються правила prerender; вимкнено «підвантаження» → перемикач недоступний.",
    "testen": [
     "tests/e2e/menu-v2-snelheid.e2e.ts",
-    "tests/eenheid/menu-snelheid.test.ts"
+    "tests/eenheid/menu-snelheid.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#D: повна підготовка — посилання prerender; hub відкрито й увійдено (меню є)"
    ],
    "herkomst": "#menu-snelheid.",
    "maquetteLabel": "прихована група (усі рядки «в-чинних» = Працює; карта групу не показує)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-snelheid.test.ts 29/29. E2E (menu-v2-snelheid.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Перемикач збережено на сервері; наведення створює посилання з data-tsv-vooruit=\"prerender\", hub відкривається з чинним входом (меню є). Але в безголовому Chromium випробувального середовища сторінка прийшла як navigational-prefetch з activationStart 0 — справжню активацію заздалегідь підготовленої сторінки цим прогоном не доведено (браузер міг не виконати prerender).",
+   "schermafdruk": "015-menu-snelheid-instellingen-computer.png"
   },
   {
    "id": "menu.швидкодія.5.увімкнути-чернетки",
@@ -3747,14 +3829,23 @@
    "testen": [
     "tests/e2e/menu-ux.e2e.ts",
     "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
-    "tests/e2e/identiteit-maquette-kaart.e2e.ts"
+    "tests/e2e/identiteit-maquette-kaart.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: «Хмарне сховище» спершу видно в бічній панелі",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: приховано — у налаштуваннях «Прихований», у бічній панелі пункту немає",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: прихований розділ знаходиться пошуком (Ctrl+K → «Хмарне сховище» → результат «Меню»)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: вибір результату відкриває прихований розділ (cloud.tarasevych.com); усередині він показаний як поточний",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: налаштування меню знаходиться пошуком («Налаштувати меню» → сторінка «Налаштування › Меню»)",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: новий вхід (телефон) — «Хмарне сховище» прихований, «Пошта» з ключем",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: повернуто — «Хмарне сховище» знову «Видимий»",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: після повернення (інший піддомен) — «Хмарне сховище» знову в меню"
    ],
    "herkomst": "Меню → «Видимість та іконки пунктів» (#menu-zichtbaarheid).",
    "maquetteLabel": "Працює",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-012-server-veiligheid.test.ts 21/21. E2E (menu-ux.e2e.ts, identiteit-maquette-kaart.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Власниця сховала «Хмарне сховище»: у налаштуваннях «Прихований», у бічній панелі пункту немає; після нового входу з телефона — теж немає. Прихований розділ знаходиться пошуком: Ctrl+K → «Хмарне сховище» → результат «Меню · …», вибір відкриває cloud.tarasevych.com (усередині пункт показано як поточний — за задумом). «Налаштувати меню» знаходиться пошуком як сторінка «Налаштування › Меню». Повернення «Видимий» з телефона — пункт знову в меню на hub. Пошук спирається на індекс облікового запису, який будує фонова задача (runZoekIndex, cron); у випробувальному середовищі її запущено в тесті для цієї особи — без індексу новий обліковий запис бачить «Нічого не знайдено».",
+   "schermafdruk": "015-menu-zichtbaarheid-verborgen-icoon-computer.png, 015-menu-zichtbaarheid-zoeken-computer.png, 015-menu-zichtbaarheid-telefoon.png"
   },
   {
    "id": "menu.видимість.0.зберегти-меню",
@@ -3777,14 +3868,19 @@
    "gereedAls": "Після зміни з'являється «Зміни меню збережено автоматично»; після перезавантаження вибір той самий.",
    "testen": [
     "tests/e2e/menu-ux.e2e.ts",
-    "tests/eenheid/weergave-per-account-20261020.test.ts"
+    "tests/eenheid/weergave-per-account-20261020.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: приховано — у налаштуваннях «Прихований», у бічній панелі пункту немає",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: новий вхід (телефон) — «Хмарне сховище» прихований, «Пошта» з ключем",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: повернуто — «Хмарне сховище» знову «Видимий»",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: після повернення (інший піддомен) — «Хмарне сховище» знову в меню"
    ],
    "herkomst": "#menu-zichtbaarheid.",
    "maquetteLabel": "Працює",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: weergave-per-account-20261020.test.ts 60/60. E2E (menu-ux.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Зберегти меню» зберігає видимість і піктограми на сервері: після нового входу з іншого пристрою (телефон) і на іншому піддомені стан той самий.",
+   "schermafdruk": "015-menu-zichtbaarheid-telefoon.png"
   },
   {
    "id": "menu.видимість.1.змінити-піктограму-пункту",
@@ -3808,14 +3904,18 @@
    "gereedAls": "Обрана іконка показується в меню після перезавантаження й на іншому пристрої.",
    "testen": [
     "tests/e2e/menu-ux.e2e.ts",
-    "tests/eenheid/menu-v2.test.ts"
+    "tests/eenheid/menu-v2.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: піктограму «Пошта» змінено на ключ — у бічній панелі інша піктограма",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: новий вхід (телефон) — «Хмарне сховище» прихований, «Пошта» з ключем",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: 3 режими × 4 положення — у кожному піктограми видимі (≥ 14 px, у межах екрана, нічим не закриті), усі різні, прихований пункт відсутній"
    ],
    "herkomst": "#menu-zichtbaarheid.",
    "maquetteLabel": "Працює",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: menu-v2.test.ts 35/35. E2E (menu-ux.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Піктограма «Пошта» → «Ключ»: у бічній панелі lucide-mail змінилося на lucide-key-round; після нового входу з телефона — той самий ключ; у всіх 12 поєднаннях режиму й положення піктограми різні й видимі. Повернуто стандартну.",
+   "schermafdruk": "015-menu-zichtbaarheid-verborgen-icoon-computer.png, 015-menu-iconen-lade-telefoon.png"
   },
   {
    "id": "menu.видимість.2.обовязковий-пункт-заблоковано",
@@ -3840,14 +3940,18 @@
    "testen": [
     "tests/eenheid/identiteit-015-risico.test.ts",
     "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
-    "tests/e2e/identiteit-maquette-kaart.e2e.ts"
+    "tests/e2e/identiteit-maquette-kaart.e2e.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: обов'язковий пункт «Налаштування» — кнопку заблоковано з поясненням",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: звичайний обліковий запис — «Налаштування» теж заблоковано з поясненням",
+    "tests/e2e/identiteit-015-menu.e2e.ts#E: звичайний обліковий запис — його меню не зачеплено (Хмара на місці)"
    ],
    "herkomst": "#menu-zichtbaarheid.",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "abbecd3f",
+   "versie": "0f6becae",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кнопку-око обов’язкового пункту «Налаштування» заблоковано для всіх облікових записів із поясненням «Завжди видимий: без цього пункту не відкрити налаштувань» — і в «Чинних налаштуваннях», і у вікні «Налаштувати меню»; сервер для не-власника лишає пункт видимим."
+   "resultaat": "У власниці (1280) і в звичайного схваленого облікового запису (телефон 380) кнопка «Налаштування» вимкнена, підпис «Завжди видимий: без цього пункту не відкрити налаштувань…», aria-label пояснює причину; зміни власниці не зачепили меню іншого облікового запису.",
+   "schermafdruk": "015-menu-verplicht-ander-account-telefoon.png"
   },
   {
    "id": "menu.додаткове.0.панель-або-кнопки",
@@ -9384,14 +9488,16 @@
     "tests/e2e/identiteit-015-delen.e2e.ts#глядач: після підтвердження сторінка перезавантажується, а підсумок «Ви вийшли з простору. Власник отримає сповіщення» ВИДНО",
     "tests/e2e/identiteit-015-delen.e2e.ts#учасник (центр): після перезавантаження підсумок «Ви вийшли з простору» ВИДНО",
     "tests/e2e/identiteit-015-delen.e2e.ts#власник: рядка учасника немає; сповіщень workspace_member_left — два (глядач і учасник)",
-    "tests/eenheid/identiteit-015-delen.test.ts#підсумок «Вийти з простору» переживає перезавантаження"
+    "tests/eenheid/identiteit-015-delen.test.ts#підсумок «Вийти з простору» переживає перезавантаження",
+    "tests/eenheid/identiteit-013-bevestigen.test.ts",
+    "tests/e2e/identiteit-015-menu.e2e.ts#без помилок у консолі й HTTP"
    ],
    "herkomst": "Серверна можливість без інтерфейсу",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
    "versie": "a9d3452f",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Глядач у hub (комп'ютер 1280): «⋯» → «Поділитися» → власний рядок «Вийти з простору» → діалог із наслідками → сторінка перезавантажується, підсумок «Ви вийшли з простору. Власник отримає сповіщення…» видно один раз (після ще одного перезавантаження — ні); простору немає у виборі, /api/share/members для нього → 403. Учасник у центрі облікового запису (телефон 380): спільний простір у виборі з «ваша роль — Редагування», форма вимкнена з поясненням, «Вийти з простору» → той самий підсумок після перезавантаження, простору у виборі немає. Власник (nl, друге відкриття): обох рядків у «Wie heeft toegang» немає, у базі — два сповіщення workspace_member_left. Виправлено: підсумок раніше зникав разом із location.reload(); центр показував лише простори, де можна ділитися. Давня вада поза межами кроку: після будь-якого перезавантаження hub сповіщення v2 (src/meldingen/sessie-context.ts) надсилають service «ai» замість «hub» → 401 OWNER_SESSION_CONTEXT_REQUIRED на /api/owner/meldingen/status і /gelezen (у прогоні 4×); на вихід із простору не впливає, у e2e рахується окремо.",
+   "resultaat": "Глядач у hub (комп'ютер 1280): «⋯» → «Поділитися» → власний рядок «Вийти з простору» → діалог із наслідками → сторінка перезавантажується, підсумок «Ви вийшли з простору. Власник отримає сповіщення…» видно один раз (після ще одного перезавантаження — ні); простору немає у виборі, /api/share/members для нього → 403. Учасник у центрі облікового запису (телефон 380): спільний простір у виборі з «ваша роль — Редагування», форма вимкнена з поясненням, «Вийти з простору» → той самий підсумок після перезавантаження, простору у виборі немає. Власник (nl, друге відкриття): обох рядків у «Wie heeft toegang» немає, у базі — два сповіщення workspace_member_left. Виправлено: підсумок раніше зникав разом із location.reload(); центр показував лише простори, де можна ділитися. Давня вада поза межами кроку: після будь-якого перезавантаження hub сповіщення v2 (src/meldingen/sessie-context.ts) надсилають service «ai» замість «hub» → 401 OWNER_SESSION_CONTEXT_REQUIRED на /api/owner/meldingen/status і /gelezen (у прогоні 4×); на вихід із простору не впливає, у e2e рахується окремо. Оновлення (приймання menu, 0f6becae): давню ваду 401 виправлено кроком menu — запасна служба сповіщень тепер sessieDienst() («hub» на hub.*); у прогоні identiteit-015-menu (переходи на hub і назад) жодного 401.",
    "schermafdruk": "015-delen-kijker-hub-na-computer.png, 015-delen-kijker-hub-na-telefoon.png, 015-delen-lid-centrum-voor-telefoon.png, 015-delen-lid-centrum-na-telefoon.png, 015-delen-lid-centrum-na-computer.png, 015-delen-eigenaar-leden-nl-computer.png"
   },
   {
