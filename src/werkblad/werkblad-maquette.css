@@ -18,12 +18,12 @@ html.palet-maquette .eig-paneel {
   --wb-glas-rand: var(--mq-border-outer);
 }
 
-html.palet-maquette:is(.theme-light, .theme-plum-light) .werkblad[data-mq-dienst="hub"],
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .werkblad[data-mq-dienst="hub"],
-html.palet-maquette:is(.theme-light, .theme-plum-light) .vn-laag:has(.wb-catalogus-venster),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .vn-laag:has(.wb-catalogus-venster),
-html.palet-maquette:is(.theme-light, .theme-plum-light) .eig-paneel,
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .eig-paneel {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) .werkblad[data-mq-dienst="hub"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .werkblad[data-mq-dienst="hub"],
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) .vn-laag:has(.wb-catalogus-venster),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .vn-laag:has(.wb-catalogus-venster),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) .eig-paneel,
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .eig-paneel {
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 76%, var(--mq-tekst) 24%);
   --mq-accent-op: var(--mq-wit);
   --mq-accent-hub: var(--mq-accent);
@@ -688,11 +688,520 @@ html.palet-maquette .eig-paneel .eig-knop[aria-pressed="true"] {
   color: color-mix(in srgb, var(--mq-accent-hub) 90%, var(--mq-tekst) 10%);
 }
 
-/* ── 7. Адаптивний каскад (суворо наприкінці файла за правилом mobiel-cascade-20261105) ── */
+/* ── 7. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-005A) ──
+   Компактний робочий стіл, матові поверхні 16px, елементи керування 11px, без ореолів, градієнтів і жовтого сонця.
+   Pragmatische klassieke opmaak voor Werkblad v2, vrij canvas WerkbladV3, taken, catalogus en vensters. */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag:has(.wb-catalogus-venster),
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel {
+  --mq-accent-hub: var(--mq-accent);
+  --mq-border-outer: var(--mq-rand);
+  --mq-wb-glas: var(--mq-oppervlak);
+  --mq-wb-glas-hoog: var(--mq-oppervlak-2);
+  --mq-wb-glans: transparent;
+  --mq-wb-halo: transparent;
+  --wb-glas: var(--mq-oppervlak);
+  --wb-glas-rand: var(--mq-rand);
+  --mq-straal-kaart: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+  --hub-ok: var(--ok);
+  --hub-warn: var(--warn);
+  --hub-bad: var(--fout);
+  --hub-err: var(--fout);
+  --hub-info: var(--info);
+  --hub-off: var(--mq-gedempt);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad:not(.wb-achtergrond-eigen) {
+  --wb-verloop: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad {
+  gap: 12px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-raster {
+  gap: 12px;
+}
+
+/* Компактна однорядкова ділова смуга керування столом і блок привітання (min-height: 52px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-balk {
+  min-height: 52px;
+  padding: 8px 14px;
+  gap: 8px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting {
+  min-height: 52px;
+  padding: 10px 16px;
+  gap: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  animation: none;
+  transform: none;
+}
+
+/* Вимкнення жовтої декоративної піктограми сонця та двоколірних градієнтів смуги поступу */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting-icoon {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  background-image: none;
+  box-shadow: none;
+  filter: none;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting-tekst h2,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-groet-tekst {
+  font-size: 1.06rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting-tekst p,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-groet-sub,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting-datum,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-datum {
+  font-size: 0.82rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting-klok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tijd {
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-voortgang {
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-voortgang > span,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-voortgang span {
+  background: var(--mq-accent);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* Чисті матові поверхні основних карток, колонок, плиток, каталогу та діалогів (16px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel.is-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-kolom,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wb3-map-blok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-paneel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-tegel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .blk-blok {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel.is-kaart:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-kaart:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-tegel:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .blk-tegel:hover {
+  border-color: var(--mq-rand-sterk);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel.is-sleept {
+  border-color: var(--mq-accent);
+  box-shadow: var(--mq-schaduw);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel-kop {
+  padding: 12px 16px 9px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel-inhoud {
+  padding: 12px 16px 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tip,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-uitleg,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-melding,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb3-melding,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-fout-balk {
+  min-height: 52px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-fout-balk {
+  border-color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-leeg-stol {
+  padding: 28px 22px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wb3-instellingen,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wb3-bibliotheek {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+/* Каталог віджетів, діалогові вікна полотна та бічний інспектор (висота і прокрутка каталогу недоторканні) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus-venster,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-map-paneel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-bewerk,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wbc-menu {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel {
+  border-inline-start: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--mq-schaduw);
+  transform: none;
+}
+
+/* Підлеглі картки задач, швидких переходів, рядків, лічильників і позицій каталогу (var(--mq-oppervlak-2)) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-taak,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-snel-tegel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-actie,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-teller-blok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-taak-stand > div,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen > li > a,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen > li > button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen > li > div,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-notitie-rij,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-agenda-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel-kop.is-zwevend,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-achtergrond-tegel:not(.wb-achtergrond-eigen),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wb3-bevestig,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wbc-status,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-rij {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-achtergrond-tegel.wb-achtergrond-eigen {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-achtergrond-tegel.is-actief {
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-bestand-keuze,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wbc.wbc-bewerken {
+  border-radius: 16px;
+  border: 1px dashed var(--mq-rand-sterk);
+  background-color: var(--mq-oppervlak-2);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-taak:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-snel-tegel:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-actie:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen > li > a:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen > li > button:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-notitie-rij:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus-lijst > li:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-rij:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Спокійні монохромні значки віджетів без кольорового сяйва */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel-icoon,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-snel-icoon,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tip-icoon {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  filter: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-teller-blok strong,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-taak-stand strong,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-leeg-stol > svg,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus-lijst > li > svg {
+  color: var(--mq-tekst);
+}
+
+/* Захист специфічності проти flat-content (0, 19, 0) — суворо без padding і gap */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-balk,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-begroeting,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-tegel.is-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-kolom,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-tip,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-leeg-stol,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-uitleg,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-melding,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb3-melding,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .wb3-instellingen,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .wb3-bibliotheek,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .wb3-map-blok,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .bib-paneel,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .bib-tegel,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .blk-blok {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad .wb-taak,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-laag .wb-catalogus-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .wb3-bevestig,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .werkblad.wb3 .bib-rij {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Кнопки, пігулки, перемикачі та поля введення (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad :where(.knop-primair, .knop-secundair, .knop-stil),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus :where(.knop-primair, .knop-secundair, .knop-stil),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-ruimte-pil,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-teller,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-icoonknop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-chips button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .wb-chips button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-taak-stand,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-agenda-vandaag,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-maand button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 :where(.bib-chip, .bib-knop, .bib-ikoonknop),
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel .eig-knop {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .knop-secundair,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .knop-secundair,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-ruimte-pil,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-teller,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-icoonknop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-chips button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .wb-chips button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-chip,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-knop:not(.bib-primair),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-ikoonknop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel .eig-knop {
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .knop-stil,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .knop-stil {
+  border: 1px solid transparent;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .knop-secundair:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .knop-secundair:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .knop-stil:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .knop-stil:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-icoonknop:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-chips button:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .wb-chips button:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-chip:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-knop:not(.bib-primair):hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-ikoonknop:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel .eig-knop:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wbc-menu button:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wbc-menu button:focus-visible {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+/* Суцільні головні кнопки дії та активні перемикачі без градієнтів і без сирого білого кольору */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .knop-primair,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .knop-primair,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-knop.bib-primair,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel .eig-hoofd {
+  border-radius: 11px;
+  border: 1px solid var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .knop-primair:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .knop-primair:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-knop.bib-primair:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel .eig-hoofd:hover:not(:disabled) {
+  background: var(--mq-knop-primair-bg);
+  border-color: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  opacity: 0.92;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-chips button.is-actief,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus .wb-chips button.is-actief,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-chip[aria-pressed="true"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-chip.is-actief,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel .eig-knop[aria-pressed="true"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-maand button.is-gekozen {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-maand button.is-vandaag {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="range"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Беззасічкова ділова типографіка заголовків h1..h4 та табличні цифри tabular-nums */
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad :is(h1, h2, h3, h4),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag .wb-catalogus-venster :is(h1, h2, h3, h4),
+html.palet-maquette[data-maquette-stijl="klassiek"] .eig-paneel :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-teller,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-chip-n,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tellers strong,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-teller-blok strong,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-taak-stand,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-opslag-cijfer,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-opslag-totaal small,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting-klok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting-datum,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tijd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-datum,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-post time,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen time,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-rijen small,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-afspraak-tijd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-aantal,
+html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .bib-badge {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 8. Адаптивний каскад (суворо наприкінці файла за правилом mobiel-cascade-20261105) ── */
 
 @media (max-width: 1100px) {
   html.palet-maquette .werkblad .wb-raster {
     gap: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-raster {
+    gap: 12px;
   }
 }
 
@@ -701,20 +1210,40 @@ html.palet-maquette .eig-paneel .eig-knop[aria-pressed="true"] {
     gap: 12px;
   }
 
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad {
+    gap: 10px;
+  }
+
   html.palet-maquette .werkblad .wb-balk {
     padding: 9px 12px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-balk {
+    padding: 8px 12px;
   }
 
   html.palet-maquette .werkblad .wb-begroeting {
     padding: 15px 16px;
   }
 
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-begroeting {
+    padding: 10px 12px;
+  }
+
   html.palet-maquette .werkblad .wb-tegel-kop {
     padding: 13px 15px 9px;
   }
 
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel-kop {
+    padding: 10px 14px 8px;
+  }
+
   html.palet-maquette .werkblad .wb-tegel-inhoud {
     padding: 12px 15px 15px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-tegel-inhoud {
+    padding: 10px 14px 14px;
   }
 }
 
@@ -723,9 +1252,18 @@ html.palet-maquette .eig-paneel .eig-knop[aria-pressed="true"] {
     padding: 28px 18px;
   }
 
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad .wb-leeg-stol {
+    padding: 20px 16px;
+  }
+
   html.palet-maquette .werkblad.wb3 .wb3-instellingen,
   html.palet-maquette .werkblad.wb3 .wb3-bibliotheek {
     padding: 13px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wb3-instellingen,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .werkblad.wb3 .wb3-bibliotheek {
+    padding: 12px 14px;
   }
 }
 
@@ -735,3 +1273,4 @@ html.palet-maquette .eig-paneel .eig-knop[aria-pressed="true"] {
     min-height: 36px;
   }
 }
+

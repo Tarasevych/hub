@@ -29,8 +29,8 @@ html.palet-maquette :is(.vn, .vn-laag, .hub-notes) {
   color: var(--mq-tekst);
 }
 
-/* Синхронізація порталу .vn-laag у document.body, якщо світлу тему «Ранковий туман» увімкнено на .canonical-chrome */
-html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .vn-laag {
+/* Синхронізація порталу .vn-laag у document.body, якщо світлу студійну тему «Ранковий туман» увімкнено на .canonical-chrome */
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .vn-laag {
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 94%, var(--mq-bg) 6%);
   --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bg) 5%, transparent);
@@ -43,6 +43,75 @@ html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chro
   --mq-stil: color-mix(in srgb, var(--mq-bg) 46%, var(--mq-wit) 54%);
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 82%, var(--mq-bg) 18%);
   --mq-accent-op: var(--mq-wit);
+}
+
+/* Явне закріплення порцелянових та оніксово-графітових поверхонь і наголосу для портального шару .vn-laag поза .canonical-chrome */
+html.palet-klassiek-wit .vn-laag {
+  color-scheme: light;
+  --mq-bg: #f6f7f9;
+  --mq-bg-2: #ffffff;
+  --mq-oppervlak: #ffffff;
+  --mq-oppervlak-2: #f1f3f6;
+  --mq-oppervlak-zacht: rgba(17, 24, 39, 0.035);
+  --mq-oppervlak-hover: rgba(17, 24, 39, 0.065);
+  --mq-popover-glas: #ffffff;
+  --mq-sluier-glas: rgba(17, 20, 24, 0.34);
+  --mq-rand: rgba(17, 24, 39, 0.09);
+  --mq-rand-sterk: rgba(17, 24, 39, 0.20);
+  --mq-tekst: #111418;
+  --mq-gedempt: #3f4753;
+  --mq-stil: #525b68;
+  --mq-accent: #181c24;
+  --mq-accent-2: #2d3340;
+  --mq-accent-op: #ffffff;
+  --mq-knop-primair-bg: #181c24;
+  --mq-knop-primair-tekst: #ffffff;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+}
+
+html.palet-klassiek-zwart .vn-laag {
+  color-scheme: dark;
+  --mq-bg: #0c0e12;
+  --mq-bg-2: #11141a;
+  --mq-oppervlak: #14171d;
+  --mq-oppervlak-2: #1b1f27;
+  --mq-oppervlak-zacht: rgba(255, 255, 255, 0.04);
+  --mq-oppervlak-hover: rgba(255, 255, 255, 0.075);
+  --mq-popover-glas: #14171d;
+  --mq-sluier-glas: rgba(0, 0, 0, 0.56);
+  --mq-rand: rgba(255, 255, 255, 0.09);
+  --mq-rand-sterk: rgba(255, 255, 255, 0.20);
+  --mq-tekst: #f3f4f6;
+  --mq-gedempt: #b8c0cc;
+  --mq-stil: #9aa3b2;
+  --mq-accent: #f3f4f6;
+  --mq-accent-2: #c9d1dc;
+  --mq-accent-op: #0c0e12;
+  --mq-knop-primair-bg: #f3f4f6;
+  --mq-knop-primair-tekst: #0c0e12;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
 }
 
 html.palet-maquette :is(.vn, .vn-laag, .hub-notes) :focus-visible {
@@ -966,7 +1035,435 @@ html.palet-maquette .hub-notes-app-stand.is-beschikbaar {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   7. ПОВАГА ДО СКОРОЧЕНОГО РУХУ ТА МОБІЛЬНИЙ КАСКАД НАПРИКІНЦІ ФАЙЛА
+   7. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-005B)
+   Розташовано суворо перед усіма @media, щоб зберегти мобільний каскад.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag, .hub-notes) {
+  --mq-straal-kaart: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+  --mq-straal-rail: 16px;
+  --mq-gloed: transparent;
+  --mq-werk-gloed-a: transparent;
+  --mq-werk-gloed-b: transparent;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn {
+  gap: 14px;
+}
+
+/* Компактні робочі внутрішні шапки без дублювання прожекторів під MaquetteHeld (padding-right <= 20px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes > header,
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-kop {
+  padding: 12px 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes > header,
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-kop {
+  background: var(--mq-oppervlak-2);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kop h2,
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-kop h2 {
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes {
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+/* Матові картки нотаток, бічний список, права колонка, інтеграції та робочі панелі */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .vn-rail,
+  .vn-kaart,
+  .vn-zijblok,
+  .vn-kalender,
+  .vn-bronnen-lijst > li,
+  .vn-melding,
+  .vn-toost,
+  .vn-onderbalk,
+  .vn-onderbalk-menu
+) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-onderbalk {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--mq-rand-sterk);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kaart {
+  padding: 14px 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-raster.is-lijst .vn-kaart {
+  padding: 12px 16px;
+  border: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kaart.is-vast {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn-kaart:hover, .vn-kaart:focus-within) {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .vn-werkbalk,
+  .vn-revisies li,
+  .vn-import-lijst li,
+  .vn-code,
+  .vn-md pre,
+  .hub-notes-form,
+  .hub-notes-zoek,
+  .hub-notes-lijst > li,
+  .hub-notes-lijst > li.kleur-geel,
+  .hub-notes-lijst > li.kleur-groen,
+  .hub-notes-lijst > li.kleur-blauw,
+  .hub-notes-lijst > li.kleur-roze,
+  .hub-notes-lijst > li.kleur-grijs,
+  .hub-notes-apps-lijst > li,
+  .hub-notes-apps-uitleg,
+  .hub-notes-code
+) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-lijst > li[data-hub-note-vast="1"] {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-voortgang {
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-voortgang > span {
+  background: var(--mq-accent);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn-leeg, .vn-voorbeeld, .vn-sleepvak) {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-sleepvak.is-sleep {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+}
+
+/* Портальний шар Laag і полотно редактора нотатки без розмиття та світіння */
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag {
+  background: var(--mq-sluier-glas);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag-vak {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag.is-venster .vn-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag.is-paneel .vn-laag-vak {
+  border-left: 1px solid var(--mq-rand-sterk);
+  border-radius: 0;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag-kop {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag-inhoud {
+  padding: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag-voet {
+  margin: 0 -16px -16px;
+  padding: 12px 16px calc(12px + var(--veilig-onder));
+  border-top: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kleurstip:hover {
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kleurstip.is-actief {
+  border-color: var(--mq-accent);
+  box-shadow: none;
+}
+
+/* Захист специфічності проти flat-content (0, 19, 0) винятково для рамок, радіуса 16px та тіней без padding і gap */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-rail,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-zijblok,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-kalender,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-bronnen-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .hub-notes,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .hub-notes-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .hub-notes-form,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .hub-notes-zoek,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .hub-notes-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .hub-notes-apps-lijst > li {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-leeg,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-voorbeeld,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .vn-sleepvak {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Кнопки, пігулки міток і поля форм та пошуку — єдиний діловий радіус 11px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag, .hub-notes) :where(
+  input:not([type="checkbox"]):not([type="file"]):not([type="radio"]),
+  select,
+  textarea
+) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag, .hub-notes) :where(
+  input:not([type="checkbox"]):not([type="file"]):not([type="radio"]),
+  select,
+  textarea
+):focus {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn .vn-zoekveld {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn .vn-zoekveld:focus-within {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn .vn-zoekveld input,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn .vn-zoekveld input:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn .vn-zoekveld input:focus {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .vn-knop,
+  .vn-knop.is-klein,
+  .vn-icoonknop,
+  .vn-rail-lijst > li > button:first-child,
+  .vn-chip,
+  .vn-etiket,
+  .vn-telling,
+  .vn-telling-regel small,
+  .vn-soorten label,
+  .vn-monogram,
+  .vn-kalender-dag,
+  .vn-onderbalk .vn-plus,
+  .hub-notes button.primary,
+  .hub-notes button.ghost,
+  .hub-notes .icon-button,
+  .hub-notes-soorten label,
+  .hub-notes-etiket,
+  .hub-notes-app-monogram,
+  .hub-notes-app-stand
+) {
+  border-radius: 11px;
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag) .vn-knop:not(.is-hoofd):not(.is-stil),
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes button.ghost,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-chip:not(.is-actief),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag) .vn-etiket:not(.is-actief),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-soorten label:not(.is-actief),
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-soorten label:not(.is-actief),
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-etiket:not(.is-actief) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag) .vn-knop:not(.is-hoofd):not(.is-stil):hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes button.ghost:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-chip:not(.is-actief):hover {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-rail-lijst > li > button.is-actief,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag) :is(.vn-knop.is-actief, .vn-icoonknop.is-actief, .vn-etiket.is-actief),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-soorten label.is-actief,
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-soorten label.is-actief,
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-etiket.is-actief {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Суцільні головні кнопки дії без сирого білого кольору та без світіння */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag) .vn-knop.is-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-chip.is-actief,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kalender-dag.is-vandaag,
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-onderbalk .vn-plus,
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes button.primary {
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-color: var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag) .vn-knop.is-hoofd:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-chip.is-actief:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .vn-onderbalk .vn-plus:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes button.primary:hover:not(:disabled) {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  opacity: 0.92;
+}
+
+/* Беззасічкова ділова типографіка заголовків h1..h4 та табличні цифри tabular-nums */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.vn, .vn-laag, .hub-notes) :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .vn-telling,
+  .vn-telling-regel,
+  .vn-telling-regel small,
+  .vn-kaart-datum,
+  .vn-voortgang > small,
+  .vn-kalender-dag,
+  .vn-etiket small,
+  .vn-etiketten-kop small,
+  .vn-import-telling,
+  .vn-import-lijst small,
+  .vn-revisies li span,
+  .vn-bewaarstand,
+  .hub-notes-voortgang,
+  .hub-notes-etiketten-kop small,
+  .hub-notes-tekst small
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. ПОВАГА ДО СКОРОЧЕНОГО РУХУ ТА МОБІЛЬНИЙ КАСКАД НАПРИКІНЦІ ФАЙЛА
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -990,6 +1487,28 @@ html.palet-maquette .hub-notes-app-stand.is-beschikbaar {
     margin: 0 -16px -16px;
     padding: 12px 16px calc(12px + var(--veilig-onder));
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kop,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes > header,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes-kop {
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .hub-notes,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .vn-kaart {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag-inhoud {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .vn-laag-voet {
+    margin: 0 -14px -14px;
+    padding: 10px 14px calc(10px + var(--veilig-onder));
+  }
 }
 
 @media (max-width: 620px) {
@@ -997,3 +1516,4 @@ html.palet-maquette .hub-notes-app-stand.is-beschikbaar {
     grid-template-columns: auto minmax(0, 1fr);
   }
 }
+

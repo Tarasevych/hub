@@ -24,8 +24,8 @@ html.palet-maquette :is(.agenda, .agenda-venster-laag, .agv, .agv-laag, .venster
   color: var(--mq-tekst);
 }
 
-html.palet-maquette:is(.theme-light, .theme-plum-light) :is(.agenda, .agenda-venster-laag, .agv, .agv-laag, .venster[data-venster="agenda-icloud"]),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.agenda, .agenda-venster-laag, .agv, .agv-laag) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) :is(.agenda, .agenda-venster-laag, .agv, .agv-laag, .venster[data-venster="agenda-icloud"]),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.agenda, .agenda-venster-laag, .agv, .agv-laag) {
   --mq-accent-op: var(--mq-wit);
   --accentText: var(--mq-wit);
   --text-on-accent: var(--mq-wit);
@@ -33,7 +33,7 @@ html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.a
   --line-zacht: color-mix(in srgb, var(--mq-rand) 78%, transparent);
 }
 
-html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .venster[data-venster="agenda-icloud"] {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) .venster[data-venster="agenda-icloud"] {
   --mq-oppervlak: var(--panel);
   --mq-oppervlak-2: var(--surface);
   --mq-rand: var(--line);
@@ -44,18 +44,89 @@ html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chro
   --mq-popover-glas: color-mix(in srgb, var(--panel) 96%, transparent);
 }
 
+/* Явне закріплення порцелянових та оніксово-графітових поверхонь і наголосу для портальних шарів календаря поза .canonical-chrome */
+html.palet-klassiek-wit :is(.agv-laag, .agenda-venster-laag, .venster[data-venster="agenda-icloud"]) {
+  color-scheme: light;
+  --mq-bg: #f6f7f9;
+  --mq-bg-2: #ffffff;
+  --mq-oppervlak: #ffffff;
+  --mq-oppervlak-2: #f1f3f6;
+  --mq-oppervlak-zacht: rgba(17, 24, 39, 0.035);
+  --mq-oppervlak-hover: rgba(17, 24, 39, 0.065);
+  --mq-popover-glas: #ffffff;
+  --mq-sluier-glas: rgba(17, 20, 24, 0.34);
+  --mq-rand: rgba(17, 24, 39, 0.09);
+  --mq-rand-sterk: rgba(17, 24, 39, 0.20);
+  --mq-tekst: #111418;
+  --mq-gedempt: #3f4753;
+  --mq-stil: #525b68;
+  --mq-accent: #181c24;
+  --mq-accent-2: #2d3340;
+  --mq-accent-op: #ffffff;
+  --mq-knop-primair-bg: #181c24;
+  --mq-knop-primair-tekst: #ffffff;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --line-zacht: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+}
+
+html.palet-klassiek-zwart :is(.agv-laag, .agenda-venster-laag, .venster[data-venster="agenda-icloud"]) {
+  color-scheme: dark;
+  --mq-bg: #0c0e12;
+  --mq-bg-2: #11141a;
+  --mq-oppervlak: #14171d;
+  --mq-oppervlak-2: #1b1f27;
+  --mq-oppervlak-zacht: rgba(255, 255, 255, 0.04);
+  --mq-oppervlak-hover: rgba(255, 255, 255, 0.075);
+  --mq-popover-glas: #14171d;
+  --mq-sluier-glas: rgba(0, 0, 0, 0.56);
+  --mq-rand: rgba(255, 255, 255, 0.09);
+  --mq-rand-sterk: rgba(255, 255, 255, 0.20);
+  --mq-tekst: #f3f4f6;
+  --mq-gedempt: #b8c0cc;
+  --mq-stil: #9aa3b2;
+  --mq-accent: #f3f4f6;
+  --mq-accent-2: #c9d1dc;
+  --mq-accent-op: #0c0e12;
+  --mq-knop-primair-bg: #f3f4f6;
+  --mq-knop-primair-tekst: #0c0e12;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --line-zacht: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+}
+
 /* Захист скруглень та оправ внутрішніх студійних секцій від глобального режиму плоского вмісту */
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(.agenda-uitbreiding, .agenda-raster-blok, .agenda-abonnementen > section, .agv-leeg, .agv-dienst, .agv-kv-detail):not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content :is(.agenda-uitbreiding, .agenda-raster-blok, .agenda-abonnementen > section, .agv-leeg, .agv-dienst, .agv-kv-detail):not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
   border: 1px solid var(--mq-rand);
   border-radius: var(--mq-straal-kaart);
   box-shadow: var(--mq-schaduw-zacht);
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .agenda-uitbreiding:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .agenda-uitbreiding:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
   border-color: color-mix(in srgb, var(--mq-accent) 44%, var(--mq-rand));
 }
 
-html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .agv-leeg:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .agv-leeg:not([role="dialog"]):not(.auth-card):not([data-mq-a]):not([data-mq-b]):not([data-mq-c]):not([data-mq-d]):not([data-mq-e]):not([data-mq-f]):not([data-mq-g]):not([data-mq-h]):not([data-mq-i]):not([data-mq-j]):not([data-mq-k]):not([data-mq-l]):not([data-mq-m]):not([data-mq-n]) {
   border-style: dashed;
   border-color: var(--mq-rand-sterk);
 }
@@ -1113,12 +1184,508 @@ html.palet-maquette .agv-kv-detail {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   5. АДАПТИВНИЙ МОБІЛЬНИЙ ШАР (суворо наприкінці файла)
+   5. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-005B)
+   Розташовано суворо перед усіма @media, щоб зберегти мобільний каскад.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda, .agenda-venster-laag, .agv, .agv-laag, .venster[data-venster="agenda-icloud"]) {
+  --agv-r: 16px;
+  --mq-straal-kaart: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+  --mq-gloed: transparent;
+  --mq-werk-gloed-a: transparent;
+  --mq-werk-gloed-b: transparent;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --line-zacht: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-knop-primair-tekst);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv {
+  --agv-r: 16px;
+  gap: 14px;
+}
+
+/* Компактні робочі шапки календаря без прожекторів під MaquetteHeld та безпечні праві відступи шапок вікон (<= 20px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-kop {
+  padding: 12px 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-kop h2,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-kop-titel h1 {
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-kop h2 svg {
+  filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-venster-kop {
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: transparent;
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-laag-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster[data-venster="agenda-icloud"] .venster-kop {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+/* Матові поверхні сітки місяця/тижня/дня, бічних панелей, карток, магазину та портальних вікон */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda-raster-blok,
+  .agenda-uitbreiding,
+  .agenda-kaart,
+  .agenda-abonnementen > section,
+  .agenda-melding,
+  .agenda > .agenda-fout,
+  .agv-zijbalk,
+  .agv-werkbalk,
+  .agv-maand,
+  .agv-maand.is-smal .agv-maand-rooster,
+  .agv-raster,
+  .agv-kaart,
+  .agv-dagenbalk,
+  .agv-dienst,
+  .agv-dagkaart,
+  .agv-balk,
+  .agv-toast,
+  .agv-meldingen > [role],
+  .agv-onderbalk
+) {
+  --line-zacht: var(--mq-rand);
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-onderbalk {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--mq-rand-sterk);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda-maand-cel,
+  .agenda-week-kolom,
+  .agenda-uitbreiding-lijst li,
+  .agenda-abonnement-lijst > li,
+  .agenda-winkel-uitleg,
+  .agenda-venster-blok,
+  .agenda-gasten li,
+  .agv-mini,
+  .agv-maand-rij:first-child,
+  .agv-raster-kop,
+  .agv-raster-heledag,
+  .agv-lijst-groep > h2,
+  .agv-lijst-groep > h3,
+  .agv-abonnementen li,
+  .agv-code-lijst li,
+  .agv-kv-kaart,
+  .agv-kv-detail,
+  .agv-kolommen > *
+) {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda-maand-cel, .agenda-week-kolom, .agv-mini, .agv-kv-kaart, .agv-kv-detail, .agenda-abonnement-lijst > li, .agenda-venster-blok) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda-maand-cel[data-agenda-dag-buiten="1"], .agv-maand-cel[data-buiten]) {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-maand-cel[data-agenda-dag-vandaag="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-week-kolom[data-agenda-dag-vandaag="1"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-maand-cel[data-agenda-dag-vandaag] {
+  background: var(--mq-oppervlak-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-raster-kolom[data-agenda-dag-vandaag] {
+  background-color: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-nu,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-kleur,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-kleurvak,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-leeg-icoon,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-monogram {
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-kv-kaart.is-gekozen {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: none;
+}
+
+/* Матові картки подій у місяці, тижні, дні та списку без неонових градієнтів і світіння */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda-item-knop,
+  li[data-agenda-item-bron="ics"] .agenda-item-knop,
+  li[data-agenda-item-bron="caldav"] .agenda-item-knop,
+  .agv-item,
+  .agv-tijdlijn-item
+) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--agv-kleur, var(--mq-accent));
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  li[data-agenda-item-bron="ics"] .agenda-item-knop,
+  li[data-agenda-item-bron="caldav"] .agenda-item-knop
+) {
+  border-left-color: var(--mq-stil);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda-item-knop:hover,
+  .agv-item:hover,
+  .agv-tijdlijn-item:hover
+) {
+  border-color: var(--mq-rand-sterk);
+  border-left-color: var(--agv-kleur, var(--mq-accent));
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-item.is-blok {
+  border-radius: 9px;
+  box-shadow: 0 0 0 1px var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-item.is-chip {
+  border-radius: 7px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda > .agenda-leeg, .agv-leeg) {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+/* Портальні вікна та завіси календаря (AgendaVenster, ICloudVenster, agv-laag) без розмиття скла */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda-venster-laag, .agv-laag) {
+  background: var(--mq-sluier-glas);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda-venster,
+  .agv-laag-vak,
+  .venster[data-venster="agenda-icloud"]
+) {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda-venster,
+  .agv-laag.is-venster .agv-laag-vak,
+  .venster[data-venster="agenda-icloud"]
+) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-laag.is-paneel .agv-laag-vak {
+  border-left: 1px solid var(--mq-rand-sterk);
+  border-radius: 0;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-laag.is-blad .agv-laag-vak {
+  border-top: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px 16px 0 0;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-laag-inhoud {
+  padding: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-laag-voet {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border-top: 1px solid var(--mq-rand);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Захист специфічності проти flat-content (0, 19, 0) винятково для рамок, радіуса 16px та тіней без padding і gap */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agenda-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agenda-uitbreiding,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agenda-raster-blok,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agenda-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agenda-abonnementen > section,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agenda-abonnement-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-zijbalk,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-mini,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-kop,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-werkbalk,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-maand,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-raster,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-dagenbalk,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-dienst,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-dagkaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-kv-kaart,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-kv-detail {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agenda > .agenda-leeg,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .agv-leeg {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Кнопки, сегменти режимів «День / Тиждень / Місяць / Розклад», пігулки міток і поля форм — радіус 11px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda,
+  .agenda-venster-laag,
+  .agv,
+  .agv-laag,
+  .venster[data-venster="agenda-icloud"]
+) :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="radio"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-zoek input {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda,
+  .agenda-venster-laag,
+  .agv,
+  .agv-laag,
+  .venster[data-venster="agenda-icloud"]
+) :where(input:not([type="checkbox"]):not([type="file"]):not([type="color"]):not([type="radio"]), select, textarea):focus-visible,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-zoek input:focus-visible {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda button.primary,
+  .agenda button.ghost,
+  .agenda-venster button.primary,
+  .agenda-venster button.ghost,
+  .agenda-weergaven,
+  .agenda-weergaven button.ghost,
+  .agenda-weergaven button.primary,
+  .agenda-dag-knop,
+  .agenda-stand,
+  .agenda-monogram,
+  [data-agenda-icloud="1"] button,
+  .agv-knop,
+  .agv-hoofdknop,
+  .agv-icoonknop,
+  .agv-tekstknop,
+  .agv-segment,
+  .agv-segment button,
+  .agv-dagenbalk button,
+  .agv-pil,
+  .agv-label,
+  .agv-kv-monogram,
+  .agv-dagnummer,
+  .agv-mini-dag,
+  .agv-onderbalk .agv-plus
+) {
+  border-radius: 11px;
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda-weergaven, .agv-segment) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda, .agenda-venster) button.ghost:not(.agenda-gevaar),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agv, .agv-laag) :is(.agv-knop:not(.is-hoofd):not(.is-gevaar):not(.is-stil-gevaar), .agv-icoonknop:not(.is-klein)) {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-weergaven button.ghost,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-segment button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-weergaven button.ghost:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-segment button:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+/* Суцільні головні кнопки дії та активні сегменти на --mq-knop-primair-bg / --mq-knop-primair-tekst без #fff і без світіння */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda, .agenda-venster) button.primary,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agv, .agv-laag) :is(.agv-hoofdknop, .agv-knop.is-hoofd),
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-agenda-icloud="1"] button[data-agenda-icloud-koppelen="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-onderbalk .agv-plus,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-segment :is(button[aria-pressed="true"], button[aria-selected="true"], button[aria-current]),
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-dagenbalk :is(button[aria-pressed="true"], button[aria-selected="true"]),
+html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-maand-cel[data-agenda-dag-vandaag="1"] .agenda-dag-knop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-maand-cel[data-agenda-dag-vandaag] .agv-dagnummer,
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-mini-dag[aria-pressed="true"] {
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-color: var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agenda, .agenda-venster) button.primary:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.agv, .agv-laag) :is(.agv-hoofdknop, .agv-knop.is-hoofd):hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-agenda-icloud="1"] button[data-agenda-icloud-koppelen="1"]:hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-onderbalk .agv-plus:hover:not(:disabled) {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  opacity: 0.92;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .agv-raster-dag[aria-current="date"] :is(strong, b) {
+  border-radius: 11px;
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-accent);
+}
+
+/* Беззасічкова ділова типографіка заголовків h1..h4 та табличні цифри tabular-nums */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda,
+  .agenda-venster-laag,
+  .agv,
+  .agv-laag,
+  .venster[data-venster="agenda-icloud"]
+) :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  .agenda-navigatie strong,
+  .agenda-dag-knop,
+  .agenda-item-knop time,
+  .agv-periode h2,
+  .agv-uren,
+  .agv-uren span,
+  .agv-dagnummer,
+  .agv-mini-dag,
+  .agv-raster-dag strong,
+  .agv-raster-dag b,
+  .agv-dagenbalk button strong,
+  .agv-dagenbalk button b,
+  .agv-item-tijd,
+  .agv-tijdlijn li > time,
+  .agv-pil,
+  .agv-zoek-uitslag,
+  .agv-dagkaart small
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. АДАПТИВНИЙ МОБІЛЬНИЙ ШАР (суворо наприкінці файла)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1180px) {
   html.palet-maquette .agv:not(.is-smal) {
     gap: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .agv:not(.is-smal) {
+    gap: 12px;
   }
 }
 
@@ -1148,4 +1715,18 @@ html.palet-maquette .agv-kv-detail {
     width: 100%;
     min-height: 44px;
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-kop,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .agv-kop {
+    padding: 10px 12px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-raster-blok,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-abonnementen > section,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .agenda-venster {
+    padding: 14px;
+    border-radius: 16px;
+  }
 }
+

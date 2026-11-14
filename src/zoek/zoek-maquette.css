@@ -23,7 +23,7 @@ html.palet-maquette :is(.zk-pagina, .zk-uitklap, .venster.zk-iv, .zk-paneel.is-o
 
 /* Якщо світлий режим «Ранковий туман» увімкнено локально на оболонці .canonical-chrome,
    портали у document.body (.zk-uitklap та .venster.zk-iv) також підхоплюють світлі студійні поверхні */
-html.palet-maquette:not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) :is(.zk-uitklap, .venster.zk-iv) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):not(.theme-light):not(.theme-plum-light):has(.canonical-chrome:is(.theme-light, .theme-plum-light)) :is(.zk-uitklap, .venster.zk-iv) {
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 94%, var(--mq-bg) 6%);
   --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bg) 5%, transparent);
@@ -955,7 +955,393 @@ html.palet-maquette .zk-iv-journaal {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   8. ПОВАГА ДО СКОРОЧЕНОГО РУХУ ТА МОБІЛЬНИЙ КАСКАД НАПРИКІНЦІ ФАЙЛА
+   8. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-005C)
+   Klassieke opmaak voor «Біла класика» en «Чорна класика» — vóór alle @media
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-uitklap, .venster.zk-iv, .zk-paneel.is-onderblad) {
+  --mq-straal-kaart: 16px;
+  --mq-straal-held: 16px;
+  --mq-straal-rail: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+  --mq-gloed: transparent;
+  --mq-werk-gloed-a: transparent;
+  --mq-werk-gloed-b: transparent;
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-hover);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --text-on-accent: var(--mq-knop-primair-tekst);
+  --accent-soft: var(--mq-oppervlak-hover);
+  --focus: var(--mq-accent);
+  color: var(--mq-tekst);
+}
+
+/* Компактна ділова щільність та однорядкова внутрішня шапка .zk-kop без прожекторів */
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-pagina {
+  padding: 16px 20px 44px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kop {
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kop-tekst {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kop-tekst > div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kop-ic {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kop-ic svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-h {
+  font-size: 1.2rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-sub {
+  margin-top: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-raster {
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Захист скруглень 16px та рамок від правила flat-content (0, 19, 0) — суворо без padding і gap */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .zk-pagina :is(.zk-kop, .zk-kaart, .zk-paneel.kaart, .zk-recent.kaart, .zk-wat, .zk-bronnen, .zk-weg, .zk-gesloten-groep, .zk-tech-strook) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .zk-pagina .zk-dym {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .zk-pagina :is(.zk-niets, .zk-tip) {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Матові поверхні всіх карток пошуку, фільтрів, початкової сцени, накладних вікон та порожніх станів */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-kaart, .zk-paneel.kaart, .zk-recent.kaart, .zk-wat, .zk-bronnen, .zk-weg, .zk-gesloten-groep, .zk-tech-strook) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart {
+  padding: 14px 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart:focus-within,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart.is-nieuw {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw-zacht);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-paneel.kaart, .zk-recent.kaart) {
+  padding: 16px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-wat, .zk-bronnen) {
+  padding: 16px 18px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pop, .zk-pop-kader, .zk-paneel.is-onderblad, .venster.zk-iv) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw);
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-pop.zk-pop-in-kader {
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-paneel.is-onderblad :is(.zk-paneel-kop, .zk-paneel-voet) {
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-scrim {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-dym, .zk-iv-groep, .zk-iv-uitkomst, .zk-iv-journaal) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-niets, .zk-tip) {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-iv-cijfers div {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-kaart-skelet .zk-kaart-ic, .zk-sk, .zk-skelet-regel) {
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  border-color: transparent;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-tech-strook svg, .zk-tip svg, .zk-paneel-kop h2 svg, .zk-iv-kop svg, .zk-dym > svg, .zk-trigger svg) {
+  color: var(--mq-gedempt);
+}
+
+/* Монохромні медальйони джерел (.zk-kaart.bron-* .zk-kaart-ic) та спокійне монохромне підсвічування збігів <mark> */
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart .zk-kaart-ic,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart[class*="bron-"] .zk-kaart-ic,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart:is(.bron-mail, .bron-bijlage, .bron-instelling, .bron-ui, .bron-pagina, .bron-hulp, .bron-agenda, .bron-cloud, .bron-drive, .bron-bord, .bron-github, .bron-contact, .bron-apparaat) .zk-kaart-ic {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart[class*="bron-"] .zk-kaart-ic:is(.is-afzender, .is-merk),
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart .zk-kaart-ic:is(.is-afzender, .is-merk) {
+  border-color: transparent;
+  background: transparent;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-groep-ic,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-groep-sectie[class*="cat-"] .zk-groep-ic,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-groep-sectie:is(.cat-mail, .cat-paginas, .cat-instellingen, .cat-agenda, .cat-github, .cat-bord) .zk-groep-ic {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-pagina mark,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-uitklap mark {
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+  border-radius: 4px;
+}
+
+/* Поля вводу, пошукова коробка зі збереженням лівого відступу під лупу, кнопки та вкладки джерел (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-uitklap, .venster.zk-iv, .zk-paneel.is-onderblad) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-uitklap, .venster.zk-iv, .zk-paneel.is-onderblad) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):hover {
+  border-color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-uitklap, .venster.zk-iv, .zk-paneel.is-onderblad) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mq-accent) 18%, transparent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-box, .zk-veld.is-groot .zk-box, .zk-uitklap .zk-box) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-box, .zk-veld.is-groot .zk-box, .zk-uitklap .zk-box):hover {
+  border-color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-box, .zk-veld.is-groot .zk-box, .zk-uitklap .zk-box):focus-within {
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mq-accent) 18%, transparent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-box input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 8px 10px 8px 40px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-veld.is-groot .zk-box input {
+  padding: 9px 12px 9px 46px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-box input:hover,
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-box input:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-tab, .zk-filterknop, .zk-indexknop, .zk-chip, .zk-actie, .zk-naar-pagina, .zk-trigger, .zk-trigger-mobiel) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-tab, .zk-filterknop, .zk-indexknop, .zk-chip, .zk-actie, .zk-naar-pagina, .zk-trigger, .zk-trigger-mobiel):hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-weergave-knoppen {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  padding: 2px;
+  gap: 2px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-weergave-knoppen .knop-icoon, .zk-wis, .zk-optie, .zk-vink, .zk-recent-knop, .zk-recent-wis, .zk-pop-wis, .zk-dym-knop),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-paneel.is-onderblad, .venster.zk-iv) :is(.knop, .knop-primair, .knop-secundair, .knop-stil, .knop-tekst) {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .zk-optie.is-actief {
+  background: var(--mq-oppervlak-hover);
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+/* Суцільні головні кнопки дії на var(--mq-knop-primair-bg) / var(--mq-knop-primair-tekst) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-go, .zk-tab.is-aan, .zk-indexknop[aria-pressed="true"], .zk-weergave-knoppen .knop-icoon[aria-pressed="true"]),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-paneel.is-onderblad, .venster.zk-iv) .knop-primair {
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-go, .zk-tab.is-aan, .zk-indexknop[aria-pressed="true"], .zk-weergave-knoppen .knop-icoon[aria-pressed="true"]):hover:not(:disabled),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-paneel.is-onderblad, .venster.zk-iv) .knop-primair:hover:not(:disabled) {
+  border-color: var(--mq-knop-primair-bg);
+  background: var(--mq-knop-primair-bg);
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  filter: none;
+  opacity: 0.92;
+}
+
+/* Ділова беззасічкова типографіка h1..h4 та табличні цифри tabular-nums */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-pagina, .zk-uitklap, .venster.zk-iv, .zk-paneel.is-onderblad) :is(h1, h2, h3, h4) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-tab-n, .zk-filter-n, .zk-vink-n, .zk-pct, .zk-kaart-datum, .zk-stand-meta, .zk-meer-n, .zk-status, .zk-recent-meta, .zk-optie-soort, .zk-pop-status, .zk-iv-pct, .zk-iv-cijfers dd, .zk-iv-som, .zk-iv-tellers, .zk-iv-tabel td) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. ПОВАГА ДО СКОРОЧЕНОГО РУХУ ТА МОБІЛЬНИЙ КАСКАД НАПРИКІНЦІ ФАЙЛА
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -985,5 +1371,23 @@ html.palet-maquette .zk-iv-journaal {
 
   html.palet-maquette .zk-naar-pagina {
     padding-inline: 0;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .zk-pagina {
+    padding: 12px 12px 40px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kop {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .zk-kaart {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(.zk-paneel.kaart, .zk-recent.kaart) {
+    padding: 14px;
   }
 }
