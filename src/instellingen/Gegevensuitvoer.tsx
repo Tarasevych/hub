@@ -83,8 +83,8 @@ export default function Gegevensuitvoer({ lang, compact = false }: { lang: Lang;
         'Один файл JSON з усім, що сайт зберігає про ваш обліковий запис: профіль, робочі простори, блоки, сповіщення, налаштування й перелік файлів (без їхнього вмісту — його можна завантажити в хмарі). Паролі, ключі, токени й зашифровані поля у файл не потрапляють.',
         'Eén JSON-bestand met alles wat de site over uw account bewaart: profiel, werkruimtes, blokken, meldingen, instellingen en de lijst van bestanden (zonder inhoud — die downloadt u in de cloud). Wachtwoorden, sleutels, tokens en versleutelde velden komen er niet in.')}</p>
       <p className='settings-honest-note' data-gegevensuitvoer-waarschuwing='1'><ShieldAlert aria-hidden='true' /> {tr(
-        '! У файл входить журнал безпеки: входи, IP-адреси, пристрої та дії з доступом. Хто отримає файл, побачить, звідки й коли ви входите. Зберігайте його як пароль і не пересилайте.',
-        '! Het bestand bevat het beveiligingslogboek: aanmeldingen, IP-adressen, apparaten en handelingen met toegang. Wie het bestand krijgt, ziet waar en wanneer u zich aanmeldt. Bewaar het als een wachtwoord en stuur het niet door.')}</p>
+        'У файл входить журнал безпеки: входи, IP-адреси, пристрої та дії з доступом. Хто отримає файл, побачить, звідки й коли ви входите. Зберігайте його як пароль і не пересилайте.',
+        'Het bestand bevat het beveiligingslogboek: aanmeldingen, IP-adressen, apparaten en handelingen met toegang. Wie het bestand krijgt, ziet waar en wanneer u zich aanmeldt. Bewaar het als een wachtwoord en stuur het niet door.')}</p>
       <p className='settings-muted'>{tr(
         `Перед вивантаженням сайт попросить підтвердити, що це ви. Можна до ${UITVOER_PER_UUR} разів на годину; про кожне вивантаження прийде сповіщення в центр сповіщень.`,
         `Vóór het exporteren vraagt de site te bevestigen dat u het bent. Tot ${UITVOER_PER_UUR} keer per uur; bij elke export komt een melding in het meldingencentrum.`)}</p>
