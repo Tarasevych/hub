@@ -187,6 +187,13 @@ async function request(method: string, url: string, data?: unknown, opnieuw = fa
   } finally { meldActiviteit(-1); }
 }
 
+/** Dienst en tabblad uit het lichaam van een verzoek: de sleutelkluis-routes hebben dezelfde sessiegegevens nodig. */
+function kluisContextUit(data: unknown): { service?: string; tabContext?: string; sourceOrigin?: string } {
+  const b = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+  const t = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
+  return { service: t(b.service), tabContext: t(b.tabContext), sourceOrigin: t(b.sourceOrigin) };
+}
+
 async function requestKern(method: string, url: string, data: unknown, opnieuw: boolean, opties: ApiOpties): Promise<ApiResponse> {
   const hasBody = method !== 'GET' && method !== 'DELETE';
   const target = hasBody ? url : withQuery(url, data);
@@ -220,6 +227,10 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
   const poortVlag = parsed && typeof parsed === 'object' && typeof (parsed as { codewoordPoort?: unknown }).codewoordPoort === 'boolean' ? (parsed as { codewoordPoort: boolean }).codewoordPoort : undefined;
   if (poortVlag !== undefined && typeof window !== 'undefined') void import('../geheim/codewoord-poort-brug').then((m) => m.zetCodewoordPoort(poortVlag));
   meldServerAntwoord(response.status, { route, code: antwoordCode || `HTTP_${response.status}`, lichaam: response.ok ? '' : text });
+  // Routes die «dicht» melden in een gewoon antwoord ({ ok:false, fout:'SLEUTELKLUIS_GESLOTEN' }): geen herhaling mogelijk, wel de kaart.
+  if (response.ok && typeof window !== 'undefined' && parsed && typeof parsed === 'object' && (parsed as { fout?: unknown }).fout === 'SLEUTELKLUIS_GESLOTEN') {
+    void import('./kluis-poort').then((m) => m.kluisGeslotenGezien(kluisContextUit(data))).catch(() => undefined);
+  }
   // Ruimtes-scheiding: elk antwoord met kop X-Ruimte of een 401/403 gaat als gebeurtenis naar src/tech/ruimtes/ruimtes-opslag.ts,
   // die dan de controle-route vraagt en de uitleg toont. Zonder vlag stuurt de server geen kop en blijft alleen 401/403 over (onschuldig).
   if (typeof window !== 'undefined' && (response.headers.get('X-Ruimte') || response.status === 401 || response.status === 403)) {
@@ -234,6 +245,14 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
     // antwoord langskomt, wordt die 403 één keer omgezet in een gewone melding met een knop. De pagina blijft onaangeraakt:
     // de fout wordt niet opgegeten maar gewoon doorgegeven.
     if (response.status === 403) void ruimteWeigeringMelden(parsed);
+    // KLUIS-APPARAAT-001 (14.11.2026): de gegevenssleutel is dicht (afgemeld, of de server herstartte na een update). Niet stil «leeg»
+    // tonen: het verzoek wacht, kluis-poort.tsx probeert eerst stil het onthouden apparaat en anders een kaart met één knop op de
+    // pagina zelf; daarna gaat dit verzoek één keer opnieuw. «Пізніше» → de fout gaat door zoals vroeger.
+    if (fout.message === 'SLEUTELKLUIS_GESLOTEN' && !opnieuw && typeof window !== 'undefined' && !url.startsWith('/api/owner/sleutelkluis/')) {
+      let open = false;
+      try { open = await (await import('./kluis-poort')).kluisGesloten(kluisContextUit(data)); } catch { open = false; }
+      if (open) return request(method, url, data, true, opties);
+    }
     // Audit-fix 5/7: extra bevestiging gevraagd → venster «Підтвердіть доступ» (passkey, app-code, herstelcode of Google); daarna één herhaling.
     // STEP_UP_STRONG_REQUIRED (§13.10): rechten intrekken / «Це був не я» — Google alleen telt dan niet.
     if (response.status === 403 && (fout.message === 'STEP_UP_REQUIRED' || fout.message === 'STEP_UP_STRONG_REQUIRED') && hasBody && !opnieuw && !url.includes('/api/owner/access/stap-op')) {

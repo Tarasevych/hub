@@ -15,13 +15,15 @@ import {metHervat,stapOpUitleg} from './platform/stap-op';
 import {foutCode} from './platform/webauthn';
 import {kanPrf,kekUitPrf,omslaan,omslagOpenen,passkeyMetPrf,type PrfAssertieOpties} from './platform/sleutelkluis-client';
 import {InfoTip} from './InfoTip';
+import {apparaatRecords,apparaatVergetenLokaal} from './platform/kluis-apparaat';
+import {MonitorSmartphone} from 'lucide-react';
 import type {Lang} from './toegangslaag-teksten';
 import {KLUIS_FOUT,KLUIS_TEKST,opmaakHerstelcode,type KluisStand,type RegisterRegel} from '../shared/sleutelkluis';
 
 type Overzicht={
   ruimte:'prive'|'technisch';stand:KluisStand;ingeschakeldOp:number;herversleuteldOp:number;
   houders:Array<{soort:'sessie'|'grant'|'intern';tot:number}>;
-  omslagen:{herstelcode:{aangemaaktOp:number;laatstGebruiktOp:number}|null;passkeys:Array<{passkeyId:string;prf:boolean;aangemaaktOp:number;laatstGebruiktOp:number}>;grants:Array<{grantId:string;aangemaaktOp:number;laatstGebruiktOp:number}>};
+  omslagen:{herstelcode:{aangemaaktOp:number;laatstGebruiktOp:number}|null;passkeys:Array<{passkeyId:string;prf:boolean;aangemaaktOp:number;laatstGebruiktOp:number}>;grants:Array<{grantId:string;aangemaaktOp:number;laatstGebruiktOp:number}>;apparaten?:Array<{id:string;label:string;aangemaaktOp:number;laatstGebruiktOp:number;verlooptOp:number}>};
   journaal:Array<{tabel:string;soort:string;aantal:number;laatstOp:number}>;
   register:RegisterRegel[];passkeys:Array<{id:string;naam:string;gekoppeld:boolean}>;pepperAanwezig:boolean;
 };
@@ -43,7 +45,8 @@ export function SleutelkluisSectie({lang,context}:Props){
   const[uitslag,setUitslag]=useState<Array<{tabel:string;gevonden:number;herversleuteld:number;fout?:string}>|null>(null);
   const[toonRegister,setToonRegister]=useState(false);
 
-  const laden=async()=>{try{setO((await api.post(`${P}/stand`,context)).data as Overzicht);}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
+  const[lokaal,setLokaal]=useState<string[]>([]);
+  const laden=async()=>{try{setO((await api.post(`${P}/stand`,context)).data as Overzicht);setLokaal((await apparaatRecords()).map(r=>r.apparaatId));}catch(c){setMelding({ok:false,tekst:foutTekst(lang,foutCode(c))});}};
   useEffect(()=>{void laden();},[]);// eslint-disable-line react-hooks/exhaustive-deps
   const doe=async(naam:string,fn:()=>Promise<void>)=>{setBezig(naam);setMelding(null);try{await fn();await laden();}catch(c){const code=foutCode(c);console.error('[sleutelkluis]',naam,code);setMelding({ok:false,tekst:foutTekst(lang,code)});}finally{setBezig('');}};
 
@@ -77,6 +80,8 @@ export function SleutelkluisSectie({lang,context}:Props){
     setMelding({ok:true,tekst:tr(lang,`Passkey «${pk.naam}» тепер відкриває ваш ключ.`,`Passkey «${pk.naam}» opent nu uw sleutel.`)});
   });
   const ontkoppelen=(passkeyId:string)=>doe('ontkoppelen',async()=>{await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/passkey/ontkoppelen`,{...context,passkeyId}));});
+  // KLUIS-APPARAAT-001: een onthouden apparaat vergeten — de serverhelft weg (de browserhelft wordt waardeloos), op dit apparaat ook lokaal.
+  const apparaatVergeten=(id:string)=>doe('apparaat',async()=>{await api.post(`${P}/apparaat/vergeten`,{...context,apparaatId:id});if(lokaal.includes(id))await apparaatVergetenLokaal(id);setMelding({ok:true,tekst:tr(lang,'Пристрій забуто: там дані знову розшифровуватимуться лише passkey або кодом.','Apparaat vergeten: daar worden de gegevens weer alleen met passkey of code ontsleuteld.')});});
   const herversleutelen=()=>doe('herversleutelen',async()=>{const r=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/herversleutelen`,context))).data as {tabellen:Array<{tabel:string;gevonden:number;herversleuteld:number;fout?:string}>};setUitslag(r.tabellen);});
 
   const downloaden=()=>{const tekst=[tr(lang,'Mijn Ruimte — код відновлення ключа даних','Mijn Ruimte — herstelcode van de gegevenssleutel'),tr(lang,`Простір: ${o?.ruimte==='technisch'?'технічний':'особистий'} · ${new Date().toLocaleString('uk-UA')}`,`Ruimte: ${o?.ruimte==='technisch'?'technisch':'persoonlijk'} · ${new Date().toLocaleString('nl-BE')}`),tr(lang,'Без цього коду (або passkey з PRF) ваші зашифровані дані НЕ відновити — навіть адміністратор сервера не зможе.','Zonder deze code (of een passkey met PRF) zijn uw versleutelde gegevens NIET te herstellen — ook de serverbeheerder niet.'),'',opmaakHerstelcode(nieuweCode),''].join('\r\n');
@@ -143,6 +148,8 @@ export function SleutelkluisSectie({lang,context}:Props){
             {gekoppeld.map(p=><li key={p.id} data-omslag='passkey'><span>Passkey «{p.naam}»</span><small>{tr(lang,'відкриває ключ (PRF)','opent de sleutel (PRF)')}</small>
               {stand==='open'&&<button type='button' className='secondary' disabled={!!bezig} onClick={()=>void ontkoppelen(p.id)}><Unplug/>{tr(lang,'Відʼєднати','Loskoppelen')}</button>}</li>)}
             {nietGekoppeld.map(p=><li key={p.id} data-omslag='passkey-los'><span>Passkey «{p.naam}»</span><small>{tr(lang,'ще не відкриває ключ','opent de sleutel nog niet')}</small></li>)}
+            {(o.omslagen.apparaten||[]).map(d=><li key={d.id} data-omslag='apparaat'><span><MonitorSmartphone aria-hidden='true' style={{width:16,height:16,verticalAlign:'-3px',marginRight:6}}/>{d.label||tr(lang,'Пристрій','Apparaat')}{lokaal.includes(d.id)?` · ${tr(lang,'цей пристрій','dit apparaat')}`:''}</span><small>{tr(lang,'розшифровує сам після входу та оновлень','ontsleutelt vanzelf na aanmelden en updates')} · {tr(lang,'до','tot')} {datum(lang,d.verlooptOp)}{d.laatstGebruiktOp?` · ${tr(lang,'востаннє','laatst')} ${datum(lang,d.laatstGebruiktOp)}`:''}</small>
+              <button type='button' className='secondary' disabled={!!bezig} onClick={()=>void apparaatVergeten(d.id)} title={tr(lang,'Сервер стирає свою половину ключа для цього пристрою. Там знадобиться passkey або код відновлення. На ваші дані це не впливає.','De server wist zijn helft van de sleutel voor dit apparaat. Daar is dan een passkey of de herstelcode nodig. Uw gegevens blijven onaangeroerd.')}><Unplug/>{tr(lang,'Забути','Vergeten')}</button></li>)}
             {o.omslagen.grants.map(g=><li key={g.grantId} data-omslag='grant'><span>{tr(lang,'Підключення ШІ','AI-verbinding')} {g.grantId.slice(0,8)}…</span><small>{tr(lang,'працює без сесії, поки дійсне','werkt zonder sessie zolang het geldig is')}{g.laatstGebruiktOp?` · ${datum(lang,g.laatstGebruiktOp)}`:''}</small></li>)}
           </ul>
           {stand==='open'&&nietGekoppeld.length>0&&<div className='access-plane-actions'><button type='button' className='secondary' disabled={!!bezig||!kanPrf()} onClick={()=>void passkeyKoppelen()}><Plus/>{tr(lang,'Додати passkey як ключ','Passkey als sleutel toevoegen')}</button></div>}

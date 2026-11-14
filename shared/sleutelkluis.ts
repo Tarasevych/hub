@@ -110,6 +110,8 @@ export const KLUIS_TEKST = Object.freeze({
 });
 export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = Object.freeze({
   SLEUTELKLUIS_GESLOTEN: { uk: 'Ключ даних закритий. Розблокуйте його passkey або кодом відновлення.', nl: 'De gegevenssleutel is gesloten. Ontgrendel hem met een passkey of de herstelcode.' },
+  SLEUTELKLUIS_APPARAAT_ONBEKEND: { uk: 'Цей пристрій більше не запам’ятано. Розшифруйте passkey або кодом відновлення.', nl: 'Dit apparaat is niet meer onthouden. Ontsleutel met een passkey of de herstelcode.' },
+  SLEUTELKLUIS_APPARAAT_VERLOPEN: { uk: 'Пам’ять цього пристрою закінчилася (30 днів без використання). Розшифруйте ще раз, і пристрій запам’ятається знову.', nl: 'Het geheugen van dit apparaat is verlopen (30 dagen ongebruikt). Ontsleutel opnieuw en het apparaat wordt weer onthouden.' },
   SLEUTELKLUIS_UIT: { uk: 'Шифрування ще не ввімкнено.', nl: 'Versleuteling staat nog niet aan.' },
   SLEUTELKLUIS_AL_AAN: { uk: 'Шифрування вже ввімкнено для цього простору.', nl: 'Versleuteling staat al aan voor deze ruimte.' },
   SLEUTELKLUIS_HERSTELCODE_ONGELDIG: { uk: 'Код відновлення не підійшов.', nl: 'De herstelcode klopt niet.' },

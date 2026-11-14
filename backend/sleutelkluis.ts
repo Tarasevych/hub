@@ -478,11 +478,113 @@ export const herversleutelEnvelop = (dek: Buffer, envelop: string, aad: string, 
 export const registerZonderHerversleutelaar = (): string[] =>
   SLEUTELKLUIS_REGISTER.filter((r) => r.stand === 'dek' && !herversleutelaars.has(r.tabel)).map((r) => r.tabel);
 
+// ------------------------------------------------------------------------------------------------ onthouden apparaat (0206)
+// Пам'ять ключа на знайомому пристрої · geheugen van de sleutel op een bekend apparaat. Zie migrations/0206_sleutelkluis_apparaat.sql.
+// De server bewaart S (verzegeld met een omgevingssleutel); de browser X = DEK ⊕ S onder een niet-exporteerbare sleutel.
+export const APPARAAT_ONGEBRUIKT_MS = 30 * 24 * 60 * 60 * 1000;
+export const APPARAAT_MAX_MS = 90 * 24 * 60 * 60 * 1000;
+export const APPARAAT_MAX_PER_LADE = 20;
+const APPARAAT_SLEUTELS = ['SLEUTELKLUIS_SLEUTEL_V1', 'TOTP_ENCRYPTION_KEY_V1'] as const;
+const apparaatAad = (lade: KluisLade, id: string) => `sleutelkluis-apparaat|${lade.userId}|${ruimteOf(lade.ruimte)}|${id}`;
+const xorBuf = (a: Buffer, b: Buffer): Buffer => { const u = Buffer.alloc(32); for (let i = 0; i < 32; i++) u[i] = a[i] ^ b[i]; return u; };
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Label voor de mens uit de User-Agent: alleen browser + systeem, nooit de volledige tekst. */
+export function apparaatLabel(ua: unknown): string {
+  const t = String(ua || '');
+  const browser = /Edg\//.test(t) ? 'Edge' : /OPR\//.test(t) ? 'Opera' : /Firefox\//.test(t) ? 'Firefox' : /Chrome\//.test(t) ? 'Chrome' : /Safari\//.test(t) ? 'Safari' : '';
+  const os = /Android/.test(t) ? 'Android' : /iPhone|iPad|iPod/.test(t) ? 'iOS' : /Windows/.test(t) ? 'Windows' : /Mac OS X|Macintosh/.test(t) ? 'macOS' : /Linux/.test(t) ? 'Linux' : '';
+  return [browser, os].filter(Boolean).join(' · ').slice(0, 120);
+}
+/** Is deze sessie zelf een houder van de open sleutel? (Onthouden mag alleen de sessie die net ontgrendelde of al houder is.) */
+export function isHouder(lade: KluisLade, soort: HouderSoort, id: string): boolean {
+  if (!sleutelOpen(lade)) return false;
+  const o = geheugen.get(sleutelVan(lade));
+  const h = o?.houders.get(houderId(soort, id));
+  return !!h && h.tot > Date.now();
+}
+/**
+ * Dit apparaat onthouden: nieuwe S, verzegeld bewaard; terug gaat X = DEK ⊕ S (hex) voor de browser, die het onder zijn eigen
+ * niet-exporteerbare sleutel opslaat. Vereist: de sleutel staat open voor DEZE sessie.
+ */
+export async function apparaatOnthouden(lade: KluisLade, houder: { soort: HouderSoort; id: string }, label: string): Promise<{ apparaatId: string; deel: string; verlooptOp: number }> {
+  if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
+  if (!isHouder(lade, houder.soort, houder.id)) fout(SLEUTEL_GESLOTEN_CODE, 423);
+  const sleutelNaam = APPARAAT_SLEUTELS.find((n) => envKey32(n));
+  if (!sleutelNaam) fout('SLEUTELKLUIS_PEPPER_ONTBREEKT', 503);
+  const dek = sleutelOpen(lade)!;
+  // Oude en verlopen rijen van deze lade opruimen; hoogstens APPARAAT_MAX_PER_LADE actieve apparaten (de oudste valt weg).
+  await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE user_id = $1 AND ruimte = $2 AND (ingetrokken_op IS NOT NULL OR verloopt_op < now() OR COALESCE(laatst_gebruikt_op, aangemaakt_op) < now() - make_interval(secs => $3))`,
+    [lade.userId, ruimteOf(lade.ruimte), APPARAAT_ONGEBRUIKT_MS / 1000]);
+  await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE id IN (SELECT id FROM app.sleutelkluis_apparaat WHERE user_id = $1 AND ruimte = $2 ORDER BY COALESCE(laatst_gebruikt_op, aangemaakt_op) DESC OFFSET $3)`,
+    [lade.userId, ruimteOf(lade.ruimte), APPARAAT_MAX_PER_LADE - 1]);
+  const s = randomBytes(32);
+  const idRij = await sys().query(`SELECT gen_random_uuid()::text AS id`);
+  const id = String(idRij.rows[0].id);
+  const verlooptOp = Date.now() + APPARAAT_MAX_MS;
+  const verzegeld = sealWithEnvKey(sleutelNaam!, s.toString('hex'), apparaatAad(lade, id));
+  await sys().query(`INSERT INTO app.sleutelkluis_apparaat (id, user_id, ruimte, deel_verzegeld, label, verloopt_op) VALUES ($1::uuid, $2, $3, $4, $5, to_timestamp($6 / 1000.0))`,
+    [id, lade.userId, ruimteOf(lade.ruimte), verzegeld, String(label || '').slice(0, 120), verlooptOp]);
+  const x = xorBuf(dek, s);
+  const deel = x.toString('hex');
+  nul(x); nul(s);
+  await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.apparaat_onthouden', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), apparaat: id.slice(0, 8), label: String(label || '').slice(0, 60) } }).catch(() => undefined);
+  return { apparaatId: id, deel, verlooptOp };
+}
+/** Ontgrendelen met een onthouden apparaat: X van de browser ⊕ S van de server = DEK, gecontroleerd tegen `controle`. */
+export async function ontgrendelMetApparaat(lade: KluisLade, apparaatId: unknown, deelHex: unknown, houder: { soort: HouderSoort; id: string }): Promise<void> {
+  if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
+  const id = String(apparaatId || '');
+  if (!UUID_RE.test(id) || !/^[0-9a-f]{64}$/i.test(String(deelHex || ''))) fout('SLEUTELKLUIS_APPARAAT_ONBEKEND', 404);
+  const r = await sys().query(`SELECT deel_verzegeld, verloopt_op, laatst_gebruikt_op, aangemaakt_op, ingetrokken_op FROM app.sleutelkluis_apparaat WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`,
+    [id, lade.userId, ruimteOf(lade.ruimte)]);
+  const rij = r.rows[0] as { deel_verzegeld: string; verloopt_op: Date; laatst_gebruikt_op: Date | null; aangemaakt_op: Date; ingetrokken_op: Date | null } | undefined;
+  if (!rij || rij.ingetrokken_op) fout('SLEUTELKLUIS_APPARAAT_ONBEKEND', 404);
+  const nu = Date.now();
+  const laatst = new Date(rij!.laatst_gebruikt_op || rij!.aangemaakt_op).getTime();
+  if (new Date(rij!.verloopt_op).getTime() < nu || laatst + APPARAAT_ONGEBRUIKT_MS < nu) {
+    await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE id = $1::uuid`, [id]).catch(() => undefined);
+    fout('SLEUTELKLUIS_APPARAAT_VERLOPEN', 410);
+  }
+  let sHex = '';
+  for (const naam of APPARAAT_SLEUTELS) { if (!envKey32(naam)) continue; try { sHex = openWithEnvKey(naam, rij!.deel_verzegeld, apparaatAad(lade, id)); break; } catch { /* volgende sleutel */ } }
+  if (!/^[0-9a-f]{64}$/.test(sHex)) fout('SLEUTELKLUIS_APPARAAT_ONBEKEND', 404);
+  const s = Buffer.from(sHex, 'hex'), x = Buffer.from(String(deelHex), 'hex');
+  const dek = xorBuf(x, s);
+  nul(s); nul(x);
+  try { await sleutelOpenen(lade, dek, houder); }
+  finally { nul(dek); }
+  await sys().query(`UPDATE app.sleutelkluis_apparaat SET laatst_gebruikt_op = now() WHERE id = $1::uuid`, [id]).catch(() => undefined);
+  await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.ontgrendeld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), methode: 'apparaat', apparaat: id.slice(0, 8) } }).catch(() => undefined);
+}
+export type OnthoudenApparaat = { id: string; label: string; aangemaaktOp: number; laatstGebruiktOp: number; verlooptOp: number };
+/** Actieve onthouden apparaten (nooit S). `verlooptOp` = het vroegste van «90 dagen» en «30 dagen niet gebruikt». */
+export async function apparatenVan(lade: KluisLade): Promise<OnthoudenApparaat[]> {
+  const r = await sys().query(`SELECT id::text AS id, label, aangemaakt_op, laatst_gebruikt_op, verloopt_op FROM app.sleutelkluis_apparaat WHERE user_id = $1 AND ruimte = $2 AND ingetrokken_op IS NULL AND verloopt_op > now() ORDER BY COALESCE(laatst_gebruikt_op, aangemaakt_op) DESC`,
+    [lade.userId, ruimteOf(lade.ruimte)]);
+  return r.rows.map((x) => {
+    const aangemaaktOp = new Date(x.aangemaakt_op).getTime(), laatstGebruiktOp = x.laatst_gebruikt_op ? new Date(x.laatst_gebruikt_op).getTime() : 0;
+    return { id: String(x.id), label: String(x.label || ''), aangemaaktOp, laatstGebruiktOp, verlooptOp: Math.min(new Date(x.verloopt_op).getTime(), (laatstGebruiktOp || aangemaaktOp) + APPARAAT_ONGEBRUIKT_MS) };
+  }).filter((x) => x.verlooptOp > Date.now());
+}
+/** Eén onthouden apparaat vergeten (de browserhelft wordt daarmee waardeloos). */
+export async function apparaatVergeten(lade: KluisLade, apparaatId: unknown): Promise<boolean> {
+  const id = String(apparaatId || '');
+  if (!UUID_RE.test(id)) return false;
+  const r = await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE id = $1::uuid AND user_id = $2 AND ruimte = $3`, [id, lade.userId, ruimteOf(lade.ruimte)]);
+  if ((r.rowCount ?? 0) > 0) await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.apparaat_vergeten', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), apparaat: id.slice(0, 8) } }).catch(() => undefined);
+  return (r.rowCount ?? 0) > 0;
+}
+/** «Overal afmelden», blokkeren, verwijderen: alle onthouden apparaten van deze mens weg (beide ruimtes). */
+export async function apparatenVergetenVoorGebruiker(userId: string): Promise<number> {
+  const r = await sys().query(`DELETE FROM app.sleutelkluis_apparaat WHERE user_id = $1`, [userId]);
+  return r.rowCount ?? 0;
+}
+
 /** Samenvatting voor de pagina (nooit geheimen). */
 export async function overzicht(lade: KluisLade) {
   const kluis = await kluisVan(lade);
   const stand: KluisStand = !kluis ? 'uit' : sleutelIsOpen(lade) ? 'open' : 'gesloten';
-  const [pk, gr, journaal] = kluis ? await Promise.all([passkeyOmslagen(lade), grantOmslagen(lade), journaalVan(lade)]) : [[], [], []];
+  const [pk, gr, journaal, apparaten] = kluis ? await Promise.all([passkeyOmslagen(lade), grantOmslagen(lade), journaalVan(lade), apparatenVan(lade).catch(() => [] as OnthoudenApparaat[])]) : [[], [], [], [] as OnthoudenApparaat[]];
   const herstel = kluis ? (await omslagen(lade, 'herstelcode'))[0] : undefined;
   return {
     ruimte: ruimteOf(lade.ruimte), stand, ingeschakeldOp: kluis?.ingeschakeldOp || 0, herversleuteldOp: kluis?.herversleuteldOp || 0,
@@ -491,6 +593,7 @@ export async function overzicht(lade: KluisLade) {
       herstelcode: herstel ? { aangemaaktOp: new Date(herstel.aangemaakt_op).getTime(), laatstGebruiktOp: herstel.laatst_gebruikt_op ? new Date(herstel.laatst_gebruikt_op).getTime() : 0 } : null,
       passkeys: pk.map(({ envelop: _e, salt: _s, ...rest }) => rest),
       grants: gr,
+      apparaten,
     },
     journaal,
     register: SLEUTELKLUIS_REGISTER,

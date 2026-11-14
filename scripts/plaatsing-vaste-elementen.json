@@ -345,6 +345,10 @@
   {
    "sleutel": "src/telegram-aanmelden/telegram.css :: .tga-scherm",
    "reden": "TELEGRAM-AANMELDEN v1: achtergrondlaag van het bevestigingsvenster «Підтвердіть, що це ви» (Telegram/geheime code), modaal over het hele scherm zoals .bevestig-toegang-achter. Geen zwevende knop."
+  },
+  {
+   "sleutel": "src/platform/kluis-poort.css :: .kluis-poort-host",
+   "reden": "KLUIS-APPARAAT-001: kaart «Ваші дані зараз зашифровані» bovenaan de pagina (ingeklapt: strook onderaan) — een meldingspaneel met uitleg en knoppen, zoals .canonical-connection-banner; pointer-events alleen op de kaart zelf. Geen losse zwevende knop."
   }
  ],
  "kopReserves": [

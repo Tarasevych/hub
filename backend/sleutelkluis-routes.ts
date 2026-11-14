@@ -21,9 +21,11 @@ import { gegevensRuimteVeilig } from './ruimte-scheiding';
 import { stapOpSessieId, type StapOpAuth } from './stap-op';
 import { KEK_INFO, KLUIS_TEKST, omslagAad } from '../shared/sleutelkluis';
 import {
-  SleutelkluisFout, dekVoorBrowser, herstelcodeVernieuwen, herversleutelen, inschakelen, ontgrendelMetHerstelcode, ontgrendelMetPasskey,
-  overzicht, passkeyOmslagOpslaan, passkeyOmslagWeg, passkeyOmslagen, sleutelSluitenVoorHouder, type KluisLade,
+  SleutelkluisFout, apparaatLabel, apparaatOnthouden, apparaatVergeten, dekVoorBrowser, herstelcodeVernieuwen, herversleutelen, inschakelen,
+  ontgrendelMetApparaat, ontgrendelMetHerstelcode, ontgrendelMetPasskey, overzicht, passkeyOmslagOpslaan, passkeyOmslagWeg, passkeyOmslagen,
+  sleutelSluitenVoorHouder, type KluisLade,
 } from './sleutelkluis';
+import { huidigeContext } from '../server/platform/context';
 
 type Gebruiker = { id: string; email?: string; name?: string; role?: string; status?: string };
 type Auth = StapOpAuth & { user: Gebruiker; service: string };
@@ -150,6 +152,22 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       await ontgrendelMetPasskey(lade, String(rij.id), b.dek, houder(a));
       return { ok: true, stand: 'open' };
     })],
+    // KLUIS-APPARAAT-001 (0206): dit apparaat onthouden / er mee ontgrendelen / het vergeten. Agents komen hier nooit (agent-namens.ts).
+    // Onthouden: alleen een sessie die de sleutel ZELF open houdt; terug gaat X = DEK ⊕ S, dat de browser onder een niet-exporteerbare
+    // sleutel bewaart. Ontgrendelen: X terug, de server rekent DEK = X ⊕ S en controleert hem. Geen step-up nodig: wie X heeft, heeft het
+    // apparaat waar de mens al ontgrendelde, en de sessie zelf is de aanmelding.
+    [`POST ${P}/apparaat/onthouden`]: [route({}, async (a, lade) => {
+      const limiet = await rateLimit(`sleutelkluis-apparaat-onthouden:${a.user.id}`, 10, 3600);
+      if (!limiet.ok) throw new SleutelkluisFout('RATE_LIMITED', 429);
+      return { ok: true, ...(await apparaatOnthouden(lade, houder(a), apparaatLabel(huidigeContext()?.ua))) };
+    })],
+    [`POST ${P}/apparaat/ontgrendelen`]: [route({}, async (a, lade, b) => {
+      const limiet = await rateLimit(`sleutelkluis-apparaat:${a.user.id}`, 30, 600);
+      if (!limiet.ok) throw new SleutelkluisFout('RATE_LIMITED', 429);
+      await ontgrendelMetApparaat(lade, b.apparaatId, b.deel, houder(a));
+      return { ok: true, stand: 'open' };
+    })],
+    [`POST ${P}/apparaat/vergeten`]: [route({}, async (_a, lade, b) => ({ ok: await apparaatVergeten(lade, b.apparaatId) }))],
     [`POST ${P}/herversleutelen`]: [route({ sterk: true }, async (_a, lade) => ({ ok: true, ...(await herversleutelen(lade)) }))],
   };
 }

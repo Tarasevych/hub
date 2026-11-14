@@ -135,9 +135,13 @@ export function openWithEnvKey(keyName: string, envelope: string, aad: string): 
   if (!key) throw new Error(`SLEUTEL_ONTBREEKT:${keyName}`);
   const [version, iv, ct, tag] = String(envelope || '').split('.');
   if (version !== 'v1' || !iv || !ct || !tag) throw new Error('ENVELOP_ONGELDIG');
-  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'));
+  // KLUIS-APPARAAT-001: een ingekorte GCM-tag (Node aanvaardt 4..16 bytes) of een afwijkende IV nooit aanvaarden — anders zakt de
+  // vervalsingsweerstand van 2^-128 naar hooguit 2^-32. Скорочений тег GCM або інший IV завжди відхиляємо.
+  const ivBuf = Buffer.from(iv, 'base64url'), tagBuf = Buffer.from(tag, 'base64url');
+  if (ivBuf.length !== 12 || tagBuf.length !== 16) throw new Error('ENVELOP_ONGELDIG');
+  const decipher = createDecipheriv('aes-256-gcm', key, ivBuf, { authTagLength: 16 });
   decipher.setAAD(Buffer.from(aad, 'utf8'));
-  decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+  decipher.setAuthTag(tagBuf);
   return Buffer.concat([decipher.update(Buffer.from(ct, 'base64url')), decipher.final()]).toString('utf8');
 }
 
