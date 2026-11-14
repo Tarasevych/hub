@@ -333,7 +333,9 @@ export async function main(): Promise<number> {
       check('http-rand-08: sluitStromenVan(користувач, якір) закриває одразу; потік старший за граничний вік закривається (оглядач під’єднається знову)',
         nVan === 1 && a2.dicht && max > 0 && max <= 30 * 60_000 && oudGesloten === 1 && b1.dicht && stroom.openStromen() === 0, `van=${nVan} max=${max} oud=${oudGesloten} b1=${b1.dicht} open=${stroom.openStromen()}`);
       // Інтеграція з backend/index.ts: «вийти всюди» (revoke-all → ownerAllesIntrekken) закриває потік ОДРАЗУ, без очікування серцебиття.
-      const R = await maak('stroom');
+      // IDENTITEIT-012 (фаза 1): «вийти всюди» вимагає посиленого підтвердження; без іншого сильного способу його дає свіжий вхід
+      // через Google (vers=true). Перевірка самого закриття потоків не змінилась.
+      const R = await maak('stroom', true, true);
       stroom.registreerStroomAuth(async () => ({ userId: R.id, anker: 'anker-r' }));
       const r1 = await open('r');
       const ra = await id(R.b, '/api/owner/identity/security/revoke-all');

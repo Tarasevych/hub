@@ -364,7 +364,12 @@ async function beveiligingsMeldingen(check: Check) {
   const tl = lees('backend/toegangslaag.ts');
   const na = (actie: string, soort: string) => { const i = tl.indexOf(`'${actie}'`); return i > 0 && tl.slice(i, i + 400).includes(`meldBeveiligingsWijziging(`) && tl.slice(i, i + 400).includes(`'${soort}'`); };
   check('privacy-logboek-03: toegangslaag meldt wachtwoord gezet, TOTP uit, passkey weg en «onthouden» aan de mens zelf',
-    na('access.password.set', 'wachtwoord-gezet') && na('access.totp.disable', 'totp-uit') && na('access.webauthn.remove', 'passkey-weg') && na('access.step-up.onthouden', 'stap-op-onthouden'));
+    na('access.password.set', 'wachtwoord-gezet') && na('access.totp.disable', 'totp-uit') && na('access.step-up.onthouden', 'stap-op-onthouden'));
+  // IDENTITEIT-012 (фаза 1): застарілий /api/owner/access/webauthn/remove закрито (410 LEGACY_ROUTE_GONE). Passkey тепер видаляють лише
+  // через backend/toegangssleutels.ts, і саме там людина отримує сповіщення «Passkey видалено» (або «Це були ви?» для ключа схвалення).
+  const ts = lees('backend/toegangssleutels.ts');
+  check('privacy-logboek-03: passkey weg — melding aan de mens zelf (toegangssleutels), oude route gesloten',
+    /'passkey_verwijderd'[\s\S]{0,400}meld\(auth\.user\.id, 'security', 'Passkey видалено/.test(ts) && /meldWasDitU\(auth, wijziging, rij\.naam, 'verwijderd'\)/.test(ts) && /'POST \/api\/owner\/access\/webauthn\/remove':\[async\(\)=>deps\.respond\(\{ok:false,error:'LEGACY_ROUTE_GONE'[^]*?410\)/.test(tl));
   check('privacy-logboek-03: reset-password door een beheerder: regel in het logboek én melding van de DOELgebruiker',
     /deps\.audit\(ctx\.params\.id,'access\.password\.reset-door-beheer'[\s\S]{0,120}meldBeveiligingsWijziging\(ctx\.params\.id,'wachtwoord-door-beheer'\)/.test(tl));
   const mc = lees('backend/mcp-console.ts');
