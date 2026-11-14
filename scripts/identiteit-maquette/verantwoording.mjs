@@ -36,7 +36,19 @@ export function posities() {
 
 export function rijen() {
   if (!existsSync(MAP)) return [];
-  return readdirSync(MAP).filter((n) => /^rijen-.+\.json$/.test(n)).sort().flatMap((n) => JSON.parse(readFileSync(join(MAP, n), 'utf8')));
+  const rs = readdirSync(MAP).filter((n) => /^rijen-.+\.json$/.test(n)).sort().flatMap((n) => JSON.parse(readFileSync(join(MAP, n), 'utf8')));
+  // Доповнення паралельних ліній приймання (aanvulling-<лінія>.json): поля перевірки для рядків за id. Так лінії не правлять
+  // одні й ті самі rijen-*.json і не конфліктують при злитті. testen об'єднуються, решта полів — з доповнення.
+  const perId = new Map(rs.map((r) => [r.id, r]));
+  for (const n of readdirSync(MAP).filter((x) => /^aanvulling-.+\.json$/.test(x)).sort()) {
+    for (const a of JSON.parse(readFileSync(join(MAP, n), 'utf8'))) {
+      const r = a && perId.get(a.id);
+      if (!r) continue; // записи без id (напр. перелік знімків за розділом) — для звіту, не для рядків
+      const { id: _id, testen, ...rest } = a;
+      Object.assign(r, rest, { testen: [...new Set([...(r.testen || []), ...(testen || [])])], aanvullingVan: n });
+    }
+  }
+  return rs;
 }
 
 /** Перевірка: кожна позиція має дію, кожен стан — з дозволеного переліку, «працює…» — з перевіркою. */
