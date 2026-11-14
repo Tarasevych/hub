@@ -46,7 +46,7 @@ html.palet-maquette .mcp-block.mbk {
   --accentText: var(--mq-accent-mcp-op);
 }
 
-html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.mapps, .mapps-geheim, [data-venster="apps-geheim"], .mcp-block.mbk) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"])[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.mapps, .mapps-geheim, [data-venster="apps-geheim"], .mcp-block.mbk) {
   --mq-bg: color-mix(in srgb, var(--mq-wit) 74%, var(--mq-held-gedempt) 26%);
   --mq-oppervlak: var(--mq-wit);
   --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 86%, var(--mq-satelliet-tekst) 14%);
@@ -60,8 +60,8 @@ html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light)
   --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 97%, var(--mq-satelliet-tekst) 3%);
 }
 
-html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.mapps, .mapps-geheim, [data-venster="apps-geheim"], .mcp-block.mbk),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.mapps, .mcp-block.mbk) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is([data-theme="light"], .theme-light, .theme-plum-light) :is(.mapps, .mapps-geheim, [data-venster="apps-geheim"], .mcp-block.mbk),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.mapps, .mcp-block.mbk) {
   --mq-accent: color-mix(in srgb, var(--mq-accent-2) 68%, var(--mq-knop-primair-tekst) 32%);
   --mq-accent-op: var(--mq-wit);
   --mq-accent-mcp: color-mix(in srgb, var(--mq-accent-2) 62%, var(--mq-knop-primair-tekst) 38%);
@@ -538,7 +538,342 @@ html.palet-maquette .mcp-block.mbk .mbk-busy {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   5. МЕДІАЗАПИТИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   5. ПРАГМАТИЧНИЙ КЛАСИЧНИЙ ШАР «БІЛА КЛАСИКА» ТА «ЧОРНА КЛАСИКА» (KLASSIEK-008A)
+   Zakelijke klassieke opmaak voor McpAppsWeergave, ServerKoppelen, McpBackupsKaart en McpServerBeheerKaart — vóór alle @media
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-geheim,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-venster="apps-geheim"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-block.mbk {
+  --mq-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --mq-accent-mcp: var(--mq-accent);
+  --mq-accent-mcp-diep: var(--mq-accent-2);
+  --mq-accent-mcp-op: var(--mq-accent-op);
+  --mq-mcp-indigo: var(--mq-accent);
+  --mq-mcp-kobalt: var(--mq-gedempt);
+  --mq-mcp-halo: transparent;
+  --mq-mcp-halo-kobalt: transparent;
+  --mq-mcp-halo-zacht: transparent;
+  --mq-mcp-rand: var(--mq-rand);
+  --mq-mcp-rand-sterk: var(--mq-rand-sterk);
+  --mq-mcp-rand-accent: var(--mq-rand-sterk);
+  --mq-mcp-glas-diep: var(--mq-oppervlak);
+  --mq-mcp-glas-verhoogd: var(--mq-oppervlak);
+  --mq-mcp-glas-glans: transparent;
+  --mq-mcp-code-put: var(--mq-oppervlak-2);
+  --mq-mcp-goed: var(--ok);
+  --mq-mcp-goed-zacht: var(--ok-zacht);
+  --mq-mcp-wacht: var(--warn);
+  --mq-mcp-wacht-zacht: var(--warn-zacht);
+  --mq-mcp-gevaar: var(--fout);
+  --mq-mcp-gevaar-zacht: var(--fout-zacht);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-2);
+  --soft: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: var(--mq-oppervlak-zacht);
+  --focus: var(--mq-accent);
+  --mq-straal-kaart: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+  font-family: var(--mq-font-ui);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps {
+  gap: 16px;
+  font-family: var(--mq-font-ui);
+  color: var(--mq-tekst);
+}
+
+/* Беззасічковий шрифт для всіх заголовків та табличні цифри для числових показників */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.mapps, .mapps-geheim, [data-venster="apps-geheim"], .mcp-block.mbk) :is(h1, h2, h3, .mapps-geheim-kop),
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-keuze legend {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-meta dd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-block.mbk .mbk-meta,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-feiten dd {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Захист рамок 1px, заокруглень 16px і відсутності тіней від flat-content (0, 19, 0) — суворо без padding і gap */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .mcp-maquette-wikkel[data-mq-dienst="mcp"] :is(.mapps-kop, .mapps-kaart, .mapps-melding, .mapps-apps > li, .mapps-keuze, .mapps-commando, .mbk-list > li):not([role="dialog"]):not(.auth-card):not([data-mq-u1]):not([data-mq-u2]):not([data-mq-u3]):not([data-mq-u4]):not([data-mq-u5]):not([data-mq-u6]):not([data-mq-u7]):not([data-mq-u8]):not([data-mq-u9]):not([data-mq-u10]):not([data-mq-u11]):not([data-mq-u12]) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .mcp-maquette-wikkel[data-mq-dienst="mcp"] .mapps-melding.mapps-ok:not([role="dialog"]):not(.auth-card):not([data-mq-u1]):not([data-mq-u2]):not([data-mq-u3]):not([data-mq-u4]):not([data-mq-u5]):not([data-mq-u6]):not([data-mq-u7]):not([data-mq-u8]):not([data-mq-u9]):not([data-mq-u10]):not([data-mq-u11]):not([data-mq-u12]) {
+  border: 1px solid color-mix(in srgb, var(--ok) 42%, var(--mq-rand));
+  border-inline: 1px solid color-mix(in srgb, var(--ok) 42%, var(--mq-rand));
+  border-left: 3px solid var(--ok);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .mcp-maquette-wikkel[data-mq-dienst="mcp"] .mapps-melding.mapps-fout:not([role="dialog"]):not(.auth-card):not([data-mq-u1]):not([data-mq-u2]):not([data-mq-u3]):not([data-mq-u4]):not([data-mq-u5]):not([data-mq-u6]):not([data-mq-u7]):not([data-mq-u8]):not([data-mq-u9]):not([data-mq-u10]):not([data-mq-u11]):not([data-mq-u12]) {
+  border: 1px solid color-mix(in srgb, var(--fout) 44%, var(--mq-rand));
+  border-inline: 1px solid color-mix(in srgb, var(--fout) 44%, var(--mq-rand));
+  border-left: 3px solid var(--fout);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .mcp-maquette-wikkel[data-mq-dienst="mcp"] .mbk-list > li.is-partial:not([role="dialog"]):not(.auth-card):not([data-mq-u1]):not([data-mq-u2]):not([data-mq-u3]):not([data-mq-u4]):not([data-mq-u5]):not([data-mq-u6]):not([data-mq-u7]):not([data-mq-u8]):not([data-mq-u9]):not([data-mq-u10]):not([data-mq-u11]):not([data-mq-u12]) {
+  border: 1px solid color-mix(in srgb, var(--warn) 48%, var(--mq-rand));
+  border-inline: 1px solid color-mix(in srgb, var(--warn) 48%, var(--mq-rand));
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Усунення дубльованої шапки під MaquetteHeld та ущільнення панелі .mapps-kop */
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-maquette-wikkel .mapps > .mapps-kop:not(:has(button, a, input, select)) {
+  display: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-kop {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Великі картки, елементи списку застосунків, сповіщення й діалогові вікна — 16px, суцільне матове тло */
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-kaart {
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-melding {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-ok {
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--mq-rand));
+  border-left: 3px solid var(--ok);
+  background: var(--ok-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-fout {
+  border-color: color-mix(in srgb, var(--fout) 44%, var(--mq-rand));
+  border-left: 3px solid var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-apps > li {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster[data-venster="apps-geheim"] {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .venster[data-venster="apps-geheim"] .venster-kop {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-keuze,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-commando {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-block.mbk .mbk-list > li {
+  padding: 12px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-block.mbk .mbk-list > li.is-partial {
+  border-color: color-mix(in srgb, var(--warn) 48%, var(--mq-rand));
+}
+
+/* Вкладені елементи, кнопки, поля вводу та блоки журналів — єдине заокруглення 11px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps button {
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps button:not(.secondary):not(.mapps-gevaar),
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-geheim button[type="submit"] {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps button.secondary {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps .mapps-gevaar {
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+  border: 1px solid color-mix(in srgb, var(--fout) 52%, var(--mq-rand));
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-geheim :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-geheim :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus {
+  outline: none;
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-meta {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-bevestig,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-block.mbk .mbk-error {
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--fout) 44%, var(--mq-rand));
+  background: var(--fout-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-log,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-stappen pre,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-commando pre {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-sub {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-waarschuwing {
+  border-radius: 11px;
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, var(--mq-rand));
+  background: var(--warn-zacht);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-block.mbk .mbk-files li {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+/* Пігулки станів та перемикачі профілів сервера — 999px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-badge,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-gezond,
+html.palet-maquette[data-maquette-stijl="klassiek"] .mcp-block.mbk .mbk-badge {
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps .mapps-chips button:not(.secondary) {
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .mapps .mapps-chips button.is-aan:not(.secondary) {
+  border-radius: 999px;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-hover);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. МЕДІАЗАПИТИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (hover: hover) and (pointer: fine) {
@@ -560,6 +895,25 @@ html.palet-maquette .mcp-block.mbk .mbk-busy {
   html.palet-maquette .mapps-apps > li:hover {
     border-color: var(--mq-mcp-rand-sterk);
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps button:not([disabled]):hover {
+    transform: none;
+    box-shadow: none;
+    filter: brightness(0.96);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps button.secondary:not([disabled]):hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps .mapps-chips button:not(.is-aan):not([disabled]):hover {
+    transform: none;
+    border-color: var(--mq-rand-sterk);
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+    filter: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-apps > li:hover {
+    border-color: var(--mq-rand-sterk);
+  }
 }
 
 @media (max-width: 640px) {
@@ -578,6 +932,20 @@ html.palet-maquette .mcp-block.mbk .mbk-busy {
 
   html.palet-maquette .mcp-block.mbk .mbk-files li .mcp-btn {
     width: 100%;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-kop {
+    padding: 10px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-kaart {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-apps > li,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-keuze,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .mapps-commando {
+    padding: 12px 14px;
   }
 }
 

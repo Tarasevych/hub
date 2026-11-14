@@ -7,14 +7,14 @@
    1. СТУДІЙНІ ЗМІННІ ІНСПЕКЦІЇ, ПРОТОКОЛУ ТА КООРДИНАЦІЇ
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette:where(:root) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):where(:root) {
   --mq-font-display: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
   --mq-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --mq-accent-mcp: color-mix(in srgb, var(--info, var(--mq-accent)) 62%, var(--mq-vonk-kleur, var(--mq-tekst)) 38%);
 }
 
-html.palet-maquette:where([data-theme="light"], .theme-light, .theme-plum-light),
-html.palet-maquette :where(.canonical-chrome.theme-light, .canonical-chrome.theme-plum-light) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):where([data-theme="light"], .theme-light, .theme-plum-light),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) :where(.canonical-chrome.theme-light, .canonical-chrome.theme-plum-light) {
   --mq-accent-mcp: color-mix(in srgb, var(--info, var(--mq-accent)) 76%, var(--mq-bol-diep, var(--mq-tekst)) 24%);
 }
 
@@ -42,10 +42,10 @@ html.palet-maquette :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"],
   --focus: var(--mq-insp-accent);
 }
 
-html.palet-maquette[data-theme="light"] :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]),
-html.palet-maquette.theme-light :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]),
-html.palet-maquette.theme-plum-light :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]) {
+html.palet-maquette:not([data-maquette-stijl="klassiek"])[data-theme="light"] :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]).theme-light :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]).theme-plum-light :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]),
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]) {
   --mq-insp-accent-diep: color-mix(in srgb, var(--mq-accent-mcp) 84%, var(--mq-tekst) 16%);
   --mq-insp-accent-op: var(--mq-wit);
   --mq-insp-gloed: color-mix(in srgb, var(--mq-accent-mcp) 14%, transparent);
@@ -576,13 +576,314 @@ html.palet-maquette [data-orch] .ag-groep[data-groep="bevestigingen"] .ag-rij-st
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   5. ТОНКІ ЕФЕКТИ НАВЕДЕННЯ ТА АДАПТИВНІ ШАРИ (СУВОРО НАПРИКІНЦІ ФАЙЛА)
+   5. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-008B)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:where(:root) {
+  --mq-accent-mcp: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]) {
+  --mq-insp-accent: var(--mq-accent);
+  --mq-insp-accent-diep: var(--mq-accent-2);
+  --mq-insp-accent-op: var(--mq-accent-op);
+  --mq-insp-gloed: transparent;
+  --mq-insp-gloed-zacht: var(--mq-oppervlak-zacht);
+  --mq-insp-glas: var(--mq-oppervlak);
+  --mq-insp-binnen: var(--mq-oppervlak-2);
+  --mq-insp-code-bg: var(--mq-oppervlak-2);
+  --mq-insp-rand: var(--mq-rand);
+  --mq-insp-rand-sterk: var(--mq-rand-sterk);
+
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: var(--mq-oppervlak-zacht);
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --focus: var(--mq-accent);
+
+  --mq-straal-kaart: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+}
+
+/* Матові картки, секції та панелі інспектора, зовнішніх серверів і координації (16px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-mcp-inspector-studio="1"] {
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-mcp-inspector-studio="1"] [data-inspector-console="1"] {
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extern"] > section.ag-blok,
+  [data-orch] > section.ag-blok,
+  section.ag-blok[data-orch]
+) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-inspector-recepten="1"],
+  details.ag-blok.ag-blok-uitklap,
+  [data-orch] .orch-kv,
+  [data-orch] .ag-formrij,
+  [data-orch] .orch-bestand
+) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-inspector-uitkomst="ok"],
+  [data-inspector-oauth-uitkomst="ok"]
+) {
+  border-color: var(--ok);
+  border-radius: 16px;
+  background: var(--ok-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-inspector-uitkomst="fout"],
+  [data-inspector-oauth-uitkomst="fout"]
+) {
+  border-color: var(--fout);
+  border-radius: 16px;
+  background: var(--fout-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-waarsch {
+  border: 1px solid var(--warn);
+  border-radius: 16px;
+  background: var(--warn-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* Захист рамок 16px проти flat-content (винятково border, border-inline, border-radius: 16px та box-shadow) */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  section[data-mcp-inspector-studio="1"],
+  [data-tab-inhoud="extern"] > section.ag-blok,
+  [data-orch] > section.ag-blok,
+  section.ag-blok[data-orch]
+) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* Поля вводу, сегменти, блоки коду JSON-RPC, кнопки та редактори правил у TabOrch (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-bg);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is([data-mcp-inspector-studio], [data-tab-inhoud="extern"], [data-orch]) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--mq-accent);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-mcp-inspector-studio="1"] .ag-segment,
+  [data-mcp-inspector-studio="1"] textarea[data-inspector-veld="params"],
+  [data-mcp-inspector-studio] .ag-ruw,
+  [data-tab-inhoud="extern"] .ag-ruw,
+  [data-tab-inhoud="extern"] .ag-tech,
+  [data-mcp-inspector-studio] .ag-tech,
+  [data-orch] .ag-tech,
+  [data-tab-inhoud="extern"] .ag-subrij,
+  [data-mcp-inspector-studio] .ag-subrij,
+  [data-orch] .orch-zaken > li,
+  [data-orch] .orch-regel-uit,
+  [data-orch] .orch-bestand textarea,
+  [data-orch] .bsl-veld input[type="file"]
+) {
+  border-radius: 11px;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-mcp-inspector-studio="1"] .ag-segment button[role="radio"] {
+  border-radius: 11px;
+  font-family: var(--mq-font-ui);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-bestand textarea.is-gewijzigd {
+  border-color: var(--mq-accent);
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-zaken > li[data-ernst="fout"] {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-zaken > li[data-ernst="waarschuwing"] {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is([data-tab-inhoud="extern"], [data-mcp-inspector-studio], [data-orch]) .ag-tech dt {
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is([data-tab-inhoud="extern"], [data-mcp-inspector-studio]) .ag-subrij code {
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-kv code {
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .bsl-knop {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-knop-secundair-bg);
+  background-image: none;
+  color: var(--mq-knop-secundair-tekst);
+  font-family: var(--mq-font-ui);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .bsl-knop:hover:not(:disabled) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-knop-secundair-hover);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* Первинні кнопки та активні радіокнопки на монохромному наголосі */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-orch] .bsl-knop.bsl-knop-primair,
+  [data-mcp-inspector-studio="1"] .ag-segment button[role="radio"][aria-checked="true"]
+) {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border-color: var(--mq-knop-primair-bg);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .bsl-knop.bsl-knop-primair:hover:not(:disabled) {
+  background: var(--mq-accent-2);
+  background-image: none;
+  color: var(--mq-accent-op);
+  border-color: var(--mq-accent-2);
+  box-shadow: none;
+}
+
+/* Пігулки та смуга поступу (999px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-chips > li {
+  border-radius: 999px;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-balk {
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  border-color: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .orch-balk > i {
+  border-radius: 999px;
+  background: var(--mq-accent);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .ag-groep[data-groep="wachtrij"] {
+  border-color: var(--mq-rand-sterk);
+}
+
+/* Ділова беззасічкова типографіка заголовків та табличні цифри для протокольних кодів і часів */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-mcp-inspector-studio="1"] .ag-kaart-kop h4,
+  [data-tab-inhoud="extern"] .ag-veld,
+  [data-mcp-inspector-studio] .ag-veld,
+  details.ag-blok.ag-blok-uitklap > h4,
+  [data-tab-inhoud="extern"] .ag-uitklap > summary,
+  [data-orch] .orch-kv > small:first-child,
+  [data-orch] .orch-kv > b,
+  [data-orch] .orch-chips > li b,
+  [data-orch] .bsl-veld
+) {
+  font-family: var(--mq-font-ui);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-mcp-inspector-studio="1"] [data-badge="rpc-duur"],
+  [data-mcp-inspector-studio="1"] [data-badge="rpc-era"],
+  [data-mcp-inspector-studio="1"] .ag-badge,
+  [data-orch] .orch-kv > b,
+  [data-orch] .orch-kv code,
+  [data-orch] .orch-chips > li,
+  [data-orch] .ag-rij-status,
+  [data-tab-inhoud="extern"] .ag-tech dd,
+  [data-mcp-inspector-studio] .ag-tech dd,
+  [data-orch] .ag-tech dd
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ТОНКІ ЕФЕКТИ НАВЕДЕННЯ ТА АДАПТИВНІ ШАРИ (СУВОРО НАПРИКІНЦІ ФАЙЛА)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (hover: hover) and (pointer: fine) {
   html.palet-maquette :is([data-tab-inhoud="extern"], [data-mcp-inspector-studio]) .ag-subrij:hover {
     border-color: var(--mq-insp-rand-sterk);
     background: color-mix(in srgb, var(--mq-oppervlak-2) 60%, var(--mq-oppervlak) 40%);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is([data-tab-inhoud="extern"], [data-mcp-inspector-studio]) .ag-subrij:hover {
+    border-color: var(--mq-rand-sterk);
+    background: var(--mq-oppervlak-hover);
   }
 }
 
@@ -593,6 +894,14 @@ html.palet-maquette [data-orch] .ag-groep[data-groep="bevestigingen"] .ag-rij-st
 
   html.palet-maquette [data-mcp-inspector-studio="1"] [data-inspector-console="1"] {
     padding: 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-mcp-inspector-studio="1"] {
+    padding: 14px 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-mcp-inspector-studio="1"] [data-inspector-console="1"] {
+    padding: 14px;
   }
 }
 
@@ -615,6 +924,11 @@ html.palet-maquette [data-orch] .ag-groep[data-groep="bevestigingen"] .ag-rij-st
     min-height: var(--tik-hoogte);
     width: 100%;
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-orch] .bsl-knop {
+    min-height: var(--tik-hoogte);
+    width: 100%;
+  }
 }
 
 @media (max-width: 560px) {
@@ -629,6 +943,12 @@ html.palet-maquette [data-orch] .ag-groep[data-groep="bevestigingen"] .ag-rij-st
   }
 
   html.palet-maquette [data-mcp-inspector-studio="1"] .ag-segment button[role="radio"] {
+    width: 100%;
+    justify-content: center;
+    min-height: var(--tik-hoogte);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-mcp-inspector-studio="1"] .ag-segment button[role="radio"] {
     width: 100%;
     justify-content: center;
     min-height: var(--tik-hoogte);

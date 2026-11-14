@@ -75,7 +75,7 @@ html.palet-maquette :is(
   --ag-info: var(--mq-mcp-info);
 }
 
-html.palet-maquette[data-theme="light"] :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"])[data-theme="light"] :is(
   [data-tab-inhoud="extensie"],
   [data-tab-inhoud="browser"],
   [data-tab-inhoud="apparaten"],
@@ -97,7 +97,7 @@ html.palet-maquette[data-theme="light"] :is(
   [data-lijst="deur-verbindingen"],
   .tg-venster-achter
 ),
-html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]):is(.theme-light, .theme-plum-light) :is(
   [data-tab-inhoud="extensie"],
   [data-tab-inhoud="browser"],
   [data-tab-inhoud="apparaten"],
@@ -119,7 +119,7 @@ html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
   [data-lijst="deur-verbindingen"],
   .tg-venster-achter
 ),
-html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+html.palet-maquette:not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
   [data-tab-inhoud="extensie"],
   [data-tab-inhoud="browser"],
   [data-tab-inhoud="apparaten"],
@@ -2083,7 +2083,1524 @@ html.palet-maquette [data-tab-inhoud="journaal"] .ag-meer {
 }
 
 /* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-   7. АДАПТИВНІСТЬ, НАВЕДЕННЯ ТА ДОСТУПНІСТЬ РУХУ (УСІ МЕДІА-БЛОКИ ЗІБРАНО СУВОРО НАПРИКІНЦІ ФАЙЛА)
+   7. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-008C — «БІЛА КЛАСИКА» ТА «ЧОРНА КЛАСИКА»)
+   Zakelijke monochrome opmaak voor browserextensie, apparaten, toegangstokens, rechten, ruimtescheiding, technisch profiel
+   en journaal onder html.palet-maquette[data-maquette-stijl="klassiek"] op mcp.tarasevych.com.
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* 7.1. Монохромні змінні поверхонь та чисті семантичні посилання мініпалітр */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-tech-verbindingen="1"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"],
+  [data-lijst="server-agenten"],
+  .tg-venster-achter
+) {
+  --mq-accent-mcp: var(--mq-accent);
+  --mq-accent-mcp-diep: var(--mq-accent-2);
+  --mq-accent-mcp-op: var(--mq-accent-op);
+
+  --mq-mcp-halo: transparent;
+  --mq-mcp-halo-zacht: transparent;
+  --mq-mcp-glas: var(--mq-oppervlak);
+  --mq-mcp-glas-verhoogd: var(--mq-oppervlak-2);
+  --mq-mcp-put: var(--mq-bg);
+  --mq-mcp-glans: transparent;
+  --mq-mcp-rand: var(--mq-rand);
+  --mq-mcp-rand-sterk: var(--mq-rand-sterk);
+
+  --mq-mcp-ok: var(--ok);
+  --mq-mcp-ok-zacht: var(--ok-zacht);
+  --mq-mcp-warn: var(--warn);
+  --mq-mcp-warn-zacht: var(--warn-zacht);
+  --mq-mcp-fout: var(--fout);
+  --mq-mcp-fout-zacht: var(--fout-zacht);
+  --mq-mcp-info: var(--info);
+  --mq-mcp-info-zacht: var(--info-zacht);
+
+  --mq-mcp-prive: var(--mq-accent);
+  --mq-mcp-tech: var(--mq-gedempt);
+
+  --panel: var(--mq-oppervlak);
+  --panel-2: var(--mq-bg);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent);
+  --accent-soft: var(--mq-oppervlak-zacht);
+  --text-on-accent: var(--mq-accent-op);
+  --accentText: var(--mq-accent-op);
+  --focus: var(--mq-accent);
+
+  --mq-straal-kaart: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+
+  --ag-ok: var(--ok);
+  --ag-warn: var(--warn);
+  --ag-bad: var(--fout);
+  --ag-info: var(--info);
+  --eo-ok: var(--ok);
+  --eo-ok-bg: var(--ok-zacht);
+  --eo-warn: var(--warn);
+  --eo-warn-bg: var(--warn-zacht);
+  --eo-bad: var(--fout);
+  --eo-bad-bg: var(--fout-zacht);
+  --eo-agent: var(--mq-accent);
+  --eo-agent-bg: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(.eo, .eo.theme-dark) {
+  --eo-ok: var(--ok);
+  --eo-ok-bg: var(--ok-zacht);
+  --eo-warn: var(--warn);
+  --eo-warn-bg: var(--warn-zacht);
+  --eo-bad: var(--fout);
+  --eo-bad-bg: var(--fout-zacht);
+  --eo-agent: var(--mq-accent);
+  --eo-agent-bg: var(--mq-oppervlak-zacht);
+}
+
+/* 7.2. Беззасічковий діловий шрифт заголовків та прибирання свічіння піктограм */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-tech-verbindingen="1"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"],
+  [data-lijst="server-agenten"],
+  .tg-venster-achter
+) :is(h2, h3, h4, .ag-blok-titel),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+) .ag-blok-titel {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+  color: var(--mq-tekst);
+  letter-spacing: -0.012em;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok-titel > svg,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+) .ag-blok-titel > svg {
+  color: var(--mq-gedempt);
+  filter: none;
+}
+
+/* 7.3. Головні картки, блоки, майстри, слоти оглядача та модальні вікна — матові поверхні 16px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+) {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="extensie"] [data-ag-blok="extensie-gebruiker"],
+html.palet-maquette[data-maquette-stijl="klassiek"] [id="extension-lokaal"][data-ext-sectie="gebruiker"],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="extensie"] [data-ag-blok="extensie-technisch"][data-tech-actief="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] section.ag-verbind[data-ai-verbinden="1"][data-ruimte="technisch"],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="technisch"] [data-ag-blok="technisch-poort"] {
+  border-color: var(--mq-rand-sterk);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="extensie"] [data-ag-blok="extensie-technisch"][data-tech-actief="0"] {
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tech-verbindingen="1"] [data-ag-blok="tech-regels"] {
+  border-left: 3px solid var(--mq-rand-sterk);
+}
+
+/* Вкладені картки .ag-blok .ag-blok — суцільна поверхня з радіусом 11px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok .ag-blok {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo {
+  padding: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart {
+  padding: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart.is-vergrendeld {
+  border-left: 4px solid var(--mq-gedempt);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart.is-ontgrendeld {
+  border-color: var(--ok);
+  border-left: 4px solid var(--ok);
+  background: var(--ok-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart.is-agent {
+  border-color: var(--mq-rand-sterk);
+  border-left: 4px solid var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart.is-niet-gekoppeld {
+  border-color: var(--warn);
+  border-left: 4px solid var(--warn);
+  background: var(--warn-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-icoon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-rand);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart.is-ontgrendeld .eo-icoon {
+  background: var(--mq-oppervlak);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart.is-agent .eo-icoon {
+  background: var(--mq-oppervlak);
+  border-color: var(--mq-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-kaart.is-niet-gekoppeld .eo-icoon {
+  background: var(--mq-oppervlak);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-form,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-domeinen {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-weigering {
+  background: var(--warn-zacht);
+  background-image: none;
+  border: 1px solid var(--warn);
+  border-left: 4px solid var(--warn);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz {
+  padding: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > [data-bea-slot],
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-prive"], [data-bea-slot="prive"]),
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-technisch"], [data-bea-slot="technisch"]) {
+  padding: 16px 18px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-prive"], [data-bea-slot="prive"]) {
+  border-top: 2px solid var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-technisch"], [data-bea-slot="technisch"]) {
+  border-top: 2px solid var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-prive"], [data-bea-slot="prive"]) > h3 svg {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-technisch"], [data-bea-slot="technisch"]) > h3 svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ext-koppel[data-ext-koppel] {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ext-mismatch[data-ext-mismatch="1"] {
+  background: var(--warn-zacht);
+  background-image: none;
+  border: 1px solid var(--warn);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] article.hub-agent.mcp-browser[data-browser-agents="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] article.hub-agent[data-agent-status],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="server-agenten"] article.hub-agent[data-agent-status] {
+  padding: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] article.hub-agent.mcp-browser[data-browser-state="on"],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] article.hub-agent[data-agent-status="online"],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="server-agenten"] article.hub-agent[data-agent-status="online"] {
+  border-color: var(--ok);
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] article.hub-agent.mcp-browser[data-browser-state="wait"] {
+  border-color: var(--warn);
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-tabel-wrap,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag2-matrix-groepen > fieldset,
+html.palet-maquette[data-maquette-stijl="klassiek"] details.ag-ext-lai[data-lai-details="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] .ag2-paneel.is-open,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"]
+) details.ag-groep,
+html.palet-maquette[data-maquette-stijl="klassiek"] section.ag-site[data-ag-blok="site-schakelaars"] fieldset.ag-bord-groep {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-klant {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-klant[aria-checked="true"] {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border-color: var(--mq-accent);
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-weg {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-weg.is-aan {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border-color: var(--mq-accent);
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-weg-kop > svg {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-paneel {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-vers[data-vers-token="1"] {
+  background: var(--ok-zacht);
+  background-image: none;
+  border: 1px solid var(--ok);
+  border-left: 4px solid var(--ok);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] {
+  padding: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-beheer {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-bevest {
+  background: var(--warn-zacht);
+  background-image: none;
+  border: 1px solid var(--warn);
+  border-left: 4px solid var(--warn);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] li.tg-kaart {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] li.tg-kaart[data-ruimte="prive"] {
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] li.tg-kaart[data-ruimte="technisch"] {
+  box-shadow: inset 3px 0 0 var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-venster-achter {
+  background: var(--mq-sluier-glas);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-venster {
+  padding: 18px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-held);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-venster > :is(header, h3, .venster-kop) {
+  margin: 0;
+  padding: 0 16px 10px 0;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuze,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze {
+  padding: 18px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-top: 2px solid var(--mq-accent);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze[data-keuze="gedeeld"] {
+  border-top: 2px solid var(--warn);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze[data-keuze="beide"] {
+  border-top: 2px solid var(--ok);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] ul.ag2-diensten[data-ruimte-tabel="1"] {
+  display: grid;
+  gap: 10px;
+  background: transparent;
+  background-image: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] li.ag2-dienst {
+  padding: 14px 18px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="eigen"] {
+  border-left: 4px solid var(--mq-accent);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="gedeeld"] {
+  border-color: var(--warn);
+  border-left: 4px solid var(--warn);
+  background: var(--warn-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="uit"] {
+  border-left: 4px solid var(--mq-gedempt);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="bevroren"] {
+  border-color: var(--info);
+  border-left: 4px solid var(--info);
+  background: var(--info-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [id="ag-deuren"] {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+/* 7.4. Поля введення, кнопки, панелі фільтрів, рядки списків і блоки коду/маркерів — радіус 11px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg :is(select, input[type="search"], textarea),
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-veld select,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-field :is(input, textarea) {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 1px;
+  border-color: var(--mq-accent);
+  box-shadow: none;
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  [data-ai-verbinden="1"],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) .ag-knop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-knop,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-actie,
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-knop-twee,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-browsers button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-tabs button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-os button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-allow button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-copy button {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* 7.5. Первинні кнопки на var(--mq-knop-primair-bg) / var(--mq-knop-primair-tekst) без тіней і без білого на світлому акценті */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  [data-ai-verbinden="1"],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) .ag-knop-primair,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-knop.is-hoofd,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-primary,
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-knop-prim,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-venster .ag-knop-primair {
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-color: var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  [data-ai-verbinden="1"],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) .ag-knop-gevaar,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-knop.is-gevaar {
+  background: var(--fout-zacht);
+  background-image: none;
+  border: 1px solid var(--fout);
+  border-radius: 11px;
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-browsers button:is(.active, [aria-pressed="true"]) {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border-color: var(--mq-accent);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-tabs button:is(.active, [aria-selected="true"]),
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-os button:is(.active, [aria-pressed="true"]),
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-allow button.on {
+  background: var(--mq-accent);
+  background-image: none;
+  border-color: var(--mq-accent);
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+/* Панелі фільтрів, робочі панелі, сегментні перемикачі, списки та допоміжні плашки (11px) */
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="journaal"] .ag2-filters,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag2-filters,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-werkbalk,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] .ag2-werkbalk {
+  padding: 12px 14px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"]
+) .ag-segment {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"]
+) .ag-segment > button {
+  border-radius: 8px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"]
+) .ag-segment > button[aria-checked="true"] {
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-lijst,
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-groep ul {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-rij-toggle {
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-rij:has(> .ag-rij-details) {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: inset 3px 0 0 var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-rij-details {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border-top: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-rij.is-aan {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-bevestig {
+  background: var(--fout-zacht);
+  background-image: none;
+  border: 1px solid var(--fout);
+  border-radius: 11px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-melding,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-melding,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-vink,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-ext-regel,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ext-diag],
+html.palet-maquette[data-maquette-stijl="klassiek"] .ext-state[data-ext-state],
+html.palet-maquette[data-maquette-stijl="klassiek"] .ext-test[data-ext-test],
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-schakel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-keten-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-step,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-debug,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-debug-explain,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-allow,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-unsupported,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] .hub-switch[data-policy],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="server-agenten"] .hub-switch[data-policy],
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-ruimte[data-ruimte-uitleg],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="toegang"] [data-tg-intro],
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-legenda,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-paneel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-slot,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-veldset,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-leeg,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tech-verbindingen="1"] ul.ag2-regels > li,
+html.palet-maquette[data-maquette-stijl="klassiek"] section.ag-site[data-ag-blok="site-schakelaars"] .ag-site-regel,
+html.palet-maquette[data-maquette-stijl="klassiek"] section.ag-site[data-ag-blok="site-schakelaars"] label.ag-bord-cap[data-site-sleutel] {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-ext-regel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-leeg {
+  border-style: dashed;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ext-diag="aan"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-melding.is-ok {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  background-image: none;
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-ext-diag="uit"],
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-waarschuwing,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-weig-lijst > li,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="apparaten"] .ag-waarschuwing[data-update] {
+  border: 1px solid var(--warn);
+  border-left: 3px solid var(--warn);
+  border-radius: 11px;
+  background: var(--warn-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-erfenis {
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-accent);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-vink:has(input:checked),
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] .hub-switch[data-policy]:has(input:checked),
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="server-agenten"] .hub-switch[data-policy]:has(input:checked),
+html.palet-maquette[data-maquette-stijl="klassiek"] section.ag-site[data-ag-blok="site-schakelaars"] label.ag-bord-cap[data-site-sleutel]:has(input:checked) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-ruimte[data-ruimte-uitleg],
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="toegang"] [data-tg-intro],
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-debug {
+  border-left: 3px solid var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] section.ag-verbind[data-ruimte="technisch"] .ag-verbind-ruimte[data-ruimte-uitleg] {
+  border-left: 3px solid var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-keten-lijst > li.is-klaar {
+  border-color: var(--ok);
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-tabel thead th.is-verbonden span::after {
+  background: var(--ok);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-tabel thead th.is-gekozen,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-tabel td.is-gekozen,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-cel:has(.bea-vink:checked) {
+  background: var(--mq-oppervlak-zacht);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="apparaten"] > li.ag-rij[data-online="1"] {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="apparaten"] > li.ag-rij[data-online="0"] .ag-rij-titel {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="ok"] {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="bad"] {
+  background: var(--fout-zacht);
+  background-image: none;
+  box-shadow: inset 3px 0 0 var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] > li.ag-rij[data-soort="noodstop"] {
+  background: var(--fout-zacht);
+  background-image: none;
+  box-shadow: inset 4px 0 0 var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] .ag-journaal-icoon,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-icoon {
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="ok"] .ag-journaal-icoon {
+  background: var(--ok-zacht);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="bad"] .ag-journaal-icoon {
+  background: var(--fout-zacht);
+  border-color: var(--fout);
+  color: var(--fout);
+}
+
+/* Блоки коду, префікси маркерів tvh_... та адреси серверної брами (11px + табличні цифри) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) dl.ag-tech dd code,
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) pre.ag-ruw,
+html.palet-maquette[data-maquette-stijl="klassiek"] pre.ag-ext-lai-uit,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-copy pre,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-copy code,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="tokens"] li.ag-rij[data-rij^="tok:"] .ag-rij-titel code,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tech-verbindingen="1"] li.ag-rij[data-rij^="tok:"] .ag-rij-titel code,
+html.palet-maquette[data-maquette-stijl="klassiek"] details.ag-groep[data-groep="tokens-historie"] .ag-rij-titel code,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-adres code,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-vers-rij code,
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-snippet pre,
+html.palet-maquette[data-maquette-stijl="klassiek"] [id="ag-deuren"] code,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="deur-verbindingen"] li.ag-rij[data-deurverbinding] .ag-rij-titel code,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] article.hub-agent code,
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="server-agenten"] article.hub-agent code {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 7.6. Контраст покрокового майстра (.wiz), векторних схем (.wiz-mock), перемикачів та пігулок 999px */
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-progress {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-progress > span {
+  background: var(--mq-accent);
+  background-image: none;
+  opacity: 1;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-step.now {
+  background: var(--mq-oppervlak);
+  background-image: none;
+  border-color: var(--mq-accent);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-step.done {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border-color: var(--mq-rand-sterk);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-step:is(.now, .active, .done) .wiz-num {
+  background: var(--mq-accent);
+  background-image: none;
+  border-color: var(--mq-accent);
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock text {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  fill: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock :is(.m-small, text.muted) {
+  fill: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-win {
+  fill: var(--mq-oppervlak);
+  stroke: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-bar,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-ghost {
+  fill: var(--mq-oppervlak-2);
+  stroke: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock :is(.m-url, .m-card, .m-field) {
+  fill: var(--mq-bg);
+  stroke: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-dot {
+  fill: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-ring {
+  fill: none;
+  stroke: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-hl {
+  fill: var(--mq-accent);
+  stroke: var(--mq-accent);
+  stroke-dasharray: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-btn {
+  fill: var(--mq-accent-op);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock :is(.m-toggle, .m-toggle.on) {
+  fill: var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-mock .m-knob {
+  fill: var(--mq-accent-op);
+}
+
+/* Пігулки станів та швидкі перемикачі профілів з радіусом 999px */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-rest,
+html.palet-maquette[data-maquette-stijl="klassiek"] .eo-chip,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-badge,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-chip,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-snel button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-keten-stap,
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-gevoelig,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-chip,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-badge-tech,
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] :is(.ag-chip, .ag-chip-tech, .ag-chip-namens) {
+  border-radius: 999px;
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-ok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-badge.ok,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-step.done .wiz-chip,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-keten-stap.is-ok {
+  background: var(--ok-zacht);
+  border: 1px solid var(--ok);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-warn,
+html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-badge.wait,
+html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-gevoelig,
+html.palet-maquette[data-maquette-stijl="klassiek"] .tg-badge-tech {
+  background: var(--warn-zacht);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-bad,
+html.palet-maquette[data-maquette-stijl="klassiek"] .bea-snel button[data-bea-snel="uit"] {
+  background: var(--fout-zacht);
+  border: 1px solid var(--fout);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-info,
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] .ag-chip-namens {
+  background: var(--info-zacht);
+  border: 1px solid var(--info);
+  color: var(--info);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] [data-lijst="apparaten"] [data-badge="ruimte-technisch"],
+html.palet-maquette[data-maquette-stijl="klassiek"] ul.ag-journaal[data-journaal] .ag-chip-tech {
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-rand-sterk);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag2-slotkeuze {
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag2-slotkeuze > button {
+  border-radius: 999px;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .ag2-slotkeuze > button:is([aria-selected="true"], [aria-checked="true"]) {
+  background: var(--mq-accent);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+/* Перемикачі role="switch", .hub-toggle, .at-schakelaar та .eo-schakel із контрастною кулькою var(--mq-accent-op) */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .at[data-toegang]
+) :is(.hub-toggle, .at-schakelaar, .eo-schakel, button[role="switch"]) {
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  background-color: var(--mq-oppervlak-2);
+  background-image: none;
+  border: 1px solid var(--mq-rand-sterk);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .at[data-toegang]
+) :is(.hub-toggle::after, .at-schakelaar .at-knop, .eo-schakel::after, .eo-schakel .eo-schakel-knop) {
+  border-radius: 999px;
+  background: var(--mq-gedempt);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .at[data-toegang]
+) :is(
+  .hub-toggle:is(:checked, [aria-checked="true"], .is-aan),
+  .at-schakelaar:is(.is-aan, [aria-checked="true"]),
+  .eo-schakel:is(:checked, [aria-checked="true"], .is-aan),
+  button[role="switch"]:is([aria-checked="true"], .is-aan)
+) {
+  background: var(--mq-accent);
+  background-color: var(--mq-accent);
+  background-image: none;
+  border-color: var(--mq-accent);
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .at[data-toegang]
+) .hub-toggle:is(:checked, [aria-checked="true"], .is-aan)::before {
+  content: none;
+  color: var(--mq-accent-op);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .at[data-toegang]
+) :is(
+  .hub-toggle:is(:checked, [aria-checked="true"], .is-aan)::after,
+  .at-schakelaar:is(.is-aan, [aria-checked="true"]) .at-knop,
+  .eo-schakel:is(:checked, [aria-checked="true"], .is-aan)::after,
+  .eo-schakel:is(:checked, [aria-checked="true"], .is-aan) .eo-schakel-knop
+) {
+  background: var(--mq-accent-op);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* 7.7. Табличні цифри для лічильників, портів серверної брами, відбитків маркерів та часових позначок журналу */
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-apparaten-telling],
+  [data-tokens-telling],
+  .eo-rest,
+  .tg-feiten dd,
+  .tg-tijd,
+  [id="ag-deuren"] table.ag-deuren,
+  ul.ag-journaal[data-journaal] time,
+  ul.ag-journaal[data-journaal] ol.ag-werkstappen time
+),
+html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) :is(.ag2-samenvatting, dl.ag-tech dd) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 7.8. Захист специфічності :not(#_mqk) проти обрамлення винятково з border, border-inline, border-radius: 16px та box-shadow */
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) section.ag-blok:not(.ag-blok .ag-blok),
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+),
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .eo,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .wiz,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .bea-sloten > [data-bea-slot],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .at[data-toegang],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [id="ag-deuren"] {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .at[data-toegang] .at-beheer,
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) article.hub-agent.mcp-browser[data-browser-agents="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-tab-inhoud="apparaten"] article.hub-agent[data-agent-status],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-lijst="server-agenten"] article.hub-agent[data-agent-status] {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-tab-inhoud="extensie"] section.ag-blok[data-ag-blok="extensie-gebruiker"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [id="extension-lokaal"][data-ext-sectie="gebruiker"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-tab-inhoud="extensie"] section.ag-blok[data-ag-blok="extensie-technisch"][data-tech-actief="1"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) section.ag-verbind[data-ai-verbinden="1"][data-ruimte="technisch"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-tab-inhoud="technisch"] section.ag-blok[data-ag-blok="technisch-poort"] {
+  border: 1px solid var(--mq-rand-sterk);
+  border-inline: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-tab-inhoud="extensie"] section.ag-blok[data-ag-blok="extensie-technisch"][data-tech-actief="0"] {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) article.hub-agent.mcp-browser[data-browser-state="on"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-tab-inhoud="apparaten"] article.hub-agent[data-agent-status="online"],
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) [data-lijst="server-agenten"] article.hub-agent[data-agent-status="online"] {
+  border: 1px solid var(--ok);
+  border-inline: 1px solid var(--ok);
+  border-radius: 16px;
+  box-shadow: inset 3px 0 0 var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) article.hub-agent.mcp-browser[data-browser-state="wait"] {
+  border: 1px solid var(--warn);
+  border-inline: 1px solid var(--warn);
+  border-radius: 16px;
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   8. АДАПТИВНІСТЬ, НАВЕДЕННЯ ТА ДОСТУПНІСТЬ РУХУ (УСІ МЕДІА-БЛОКИ ЗІБРАНО СУВОРО НАПРИКІНЦІ ФАЙЛА)
    ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 
 @media (hover: hover) and (pointer: fine) {
@@ -2154,51 +3671,154 @@ html.palet-maquette [data-tab-inhoud="journaal"] .ag-meer {
   ) .ag-rij-toggle:hover {
     background: color-mix(in srgb, var(--mq-accent-mcp) 6%, transparent);
   }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+    [data-tab-inhoud="extensie"],
+    [data-tab-inhoud="browser"],
+    [data-tab-inhoud="apparaten"],
+    [data-tab-inhoud="tokens"],
+    [data-tab-inhoud="toegang"],
+    [data-tab-inhoud="technisch"],
+    [data-tab-inhoud="journaal"],
+    [data-tech-verbindingen="1"],
+    [data-paneel="extensie"],
+    [data-paneel="extensie-technisch"],
+    [data-ai-verbinden="1"],
+    [data-ag-blok="ruimte-scheiding"],
+    [data-ag-blok="site-schakelaars"],
+    [data-lijst="deur-verbindingen"],
+    .tg-venster-achter
+  ) .ag-knop:not(:disabled):hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .eo-knop:not(:disabled):hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-knop-twee:not(:disabled):hover {
+    border-color: var(--mq-rand-sterk);
+    background: var(--mq-oppervlak-hover);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+    [data-tab-inhoud="extensie"],
+    [data-tab-inhoud="browser"],
+    [data-tab-inhoud="apparaten"],
+    [data-tab-inhoud="tokens"],
+    [data-tab-inhoud="toegang"],
+    [data-tab-inhoud="technisch"],
+    [data-tab-inhoud="journaal"],
+    [data-tech-verbindingen="1"],
+    [data-paneel="extensie"],
+    [data-paneel="extensie-technisch"],
+    [data-ai-verbinden="1"],
+    [data-ag-blok="ruimte-scheiding"],
+    [data-ag-blok="site-schakelaars"],
+    [data-lijst="deur-verbindingen"],
+    .tg-venster-achter
+  ) .ag-knop-primair:not(:disabled):hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .eo-knop.is-hoofd:not(:disabled):hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-primary:not(:disabled):hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] .at-knop-prim:not(:disabled):hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tg-venster .ag-knop-primair:not(:disabled):hover {
+    filter: none;
+    background: var(--mq-accent-2);
+    border-color: var(--mq-accent-2);
+    color: var(--mq-knop-primair-tekst);
+    box-shadow: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze:hover {
+    border-color: var(--mq-rand-sterk);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is(
+    [data-tab-inhoud="apparaten"],
+    [data-tab-inhoud="tokens"],
+    [data-tab-inhoud="technisch"],
+    [data-tab-inhoud="journaal"],
+    [data-tech-verbindingen="1"],
+    [data-lijst="deur-verbindingen"]
+  ) .ag-rij-toggle:hover {
+    background: var(--mq-oppervlak-hover);
+  }
 }
 
 @media (max-width: 900px) {
-  html.palet-maquette .bea-sloten {
+  html.palet-maquette .bea-sloten,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  html.palet-maquette .ag-verbind-wegen {
+  html.palet-maquette .ag-verbind-wegen,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ag-verbind-wegen {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 700px) {
-  html.palet-maquette .bea-sloten > [data-bea-slot] {
+  html.palet-maquette .bea-sloten > [data-bea-slot],
+  html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > [data-bea-slot],
+  html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-prive"], [data-bea-slot="prive"]),
+  html.palet-maquette[data-maquette-stijl="klassiek"] .bea-sloten > :is([id="bea-slot-technisch"], [data-bea-slot="technisch"]) {
     padding: 14px;
   }
 
   html.palet-maquette [data-tab-inhoud="journaal"] .ag2-filters,
-  html.palet-maquette .tg-werkbalk {
+  html.palet-maquette .tg-werkbalk,
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="journaal"] .ag2-filters,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .ag2-filters,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tg-werkbalk,
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-tab-inhoud="apparaten"] .ag2-werkbalk {
     padding: 10px 12px;
   }
 
-  html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst {
+  html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst,
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] li.ag2-dienst {
     padding: 12px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuze,
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze {
+    padding: 14px;
   }
 }
 
 @media (max-width: 520px) {
-  html.palet-maquette .eo-actie .eo-knop {
+  html.palet-maquette .eo-actie .eo-knop,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .eo-actie .eo-knop {
     width: 100%;
     justify-content: center;
   }
 
-  html.palet-maquette [data-ag-blok="ruimte-scheiding"] .ag-keuzes {
+  html.palet-maquette [data-ag-blok="ruimte-scheiding"] .ag-keuzes,
+  html.palet-maquette[data-maquette-stijl="klassiek"] [data-ag-blok="ruimte-scheiding"] .ag-keuzes {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .eo,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .wiz,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tg-venster {
+    padding: 14px 16px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .tg-venster > :is(header, h3, .venster-kop) {
+    padding: 0 12px 8px 0;
   }
 }
 
 @media (pointer: coarse) {
-  html.palet-maquette :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle {
+  html.palet-maquette :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle,
+  html.palet-maquette[data-maquette-stijl="klassiek"] :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle {
     min-width: 44px;
     min-height: 26px;
   }
 
-  html.palet-maquette .bea-snel button {
+  html.palet-maquette .bea-snel button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .bea-snel button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .eo-knop,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .wiz-primary,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .at[data-toegang] :is(.at-knop-prim, .at-knop-twee) {
     min-height: 44px;
   }
 }
@@ -2228,3 +3848,4 @@ html.palet-maquette [data-tab-inhoud="journaal"] .ag-meer {
     transition: none;
   }
 }
+
