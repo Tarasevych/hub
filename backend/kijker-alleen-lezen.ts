@@ -106,7 +106,9 @@ export const KIJKER_EIGEN: ReadonlySet<string> = new Set<string>([
   ...[
     // meldingen van zichzelf als gelezen markeren, eigen meldingsregels
     'notifications/read', 'owner/notifications/read', 'service/notifications/read', 'owner/meldingen/gelezen', 'owner/meldingen/gelezen/toevoegen',
-    'owner/meldingen/status/zetten', 'owner/meldingen/regels/opslaan', 'meldingen/apparaat-bekend', 'diagnose/melden', 'diagnose/gelezen',
+    'owner/meldingen/status/zetten', 'owner/meldingen/regels/opslaan', 'meldingen/apparaat-bekend',
+    // IDENTITEIT-015 (apparaten-uitvoer): eigen bekende apparaten en de eigen keuze voor de waarschuwing
+    'owner/identity/apparaten/melding', 'owner/identity/apparaten/vergeten', 'owner/identity/apparaten/bevestigen','diagnose/melden', 'diagnose/gelezen',
     // eigen weergave en voorkeuren
     'owner/weergave/zet', 'owner/ruimte/keuze', 'owner/ruimte/dienst', 'owner/menu/tellers/weg', 'owner/menu/tellers/zet', 'owner/profile/photo', 'owner/profile/photo/link',
     'owner/mail/view-preferences/save', 'owner/mail/view-preferences/section-display', 'owner/mail/notification-preferences/save',

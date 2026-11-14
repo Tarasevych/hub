@@ -9,6 +9,7 @@ import {foutCode} from './platform/webauthn';
 import {ecosystemTabContext} from './tab-context';
 import {leesAanmeldenOnthouden,leesOnthoudenVanafVolgende,zetAanmeldenOnthouden,zetOnthoudenVanafVolgende} from './aanmelden-onthouden';
 import SecuritySessionsPanel,{type SecuritySession} from './BeveiligingSessiesPaneel';
+import BekendeApparaten from './BekendeApparaten'; // IDENTITEIT-015 (apparaten-uitvoer)
 import './toegangslaag.css';
 
 type Tr=(uk:string,nl:string)=>string;
@@ -60,6 +61,8 @@ export default function SessiesOverzicht(p:Props){
       {onthouden&&vanafVolgende&&<small className='settings-honest-note' data-sessies-onthoud-volgende>{tr('Діятиме з наступного входу: зараз цей браузер ще не запам’ятовано.','Geldt vanaf de volgende aanmelding: deze browser wordt nu nog niet onthouden.')}</small>}
     </section>
     <SecuritySessionsPanel tr={tr} sessions={p.sessions} loading={p.loading} busy={p.busy||bezig} onRefresh={vernieuw} onRevoke={p.onRevoke} onRevokeAll={p.onRevokeAll} onShareLocation={()=>{}}/>
+    {/* IDENTITEIT-015: «Попереджати про новий пристрій» + відомі пристрої (вибір у обліковому записі, однаковий на всіх пристроях). */}
+    <BekendeApparaten lang={p.lang}/>
     {gasten&&<section className='sessies-gasten' data-gast-sessies>
       <h3><Ticket/>{tr('Гостьові сесії','Gastsessies')}</h3>
       <p className='settings-honest-note'>{tr('Входи за кодами доступу для інших. Гість бачить лише дозволене кодом і лише для читання; це не ваш обліковий запис.','Aanmeldingen met toegangscodes voor anderen. Een gast ziet alleen wat de code toestaat en alleen-lezen; dit is niet uw account.')}</p>

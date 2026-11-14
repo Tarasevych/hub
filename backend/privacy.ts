@@ -7,6 +7,7 @@
 //    herstelbaar). De opruimjob rondt verlopen verwijderingen af met het VOLLEDIGE wissen (accountMeteenWissen:
 //    alle tabellen met een accountkolom + records + bestanden; SEC-002 privacy-logboek-01). Onomkeerbaar; standaard
 //    aan, uitzetten met ACCOUNT_DEFINITIEF_WISSEN=0 — dan rapporteert de job alleen (droog).
+import { strToU8, zipSync } from 'fflate';
 import { getPool } from '../server/platform/pg';
 import { storage } from '../server/platform';
 import { auditToevoegen } from '../server/platform/audit';
@@ -121,6 +122,81 @@ export async function persoonsgegevensExport(userId: string) {
     bestanden: bestanden.rows,
     beveiligingslog,
   };
+}
+
+// ------------------------------------------------------------------------------------------------ IDENTITEIT-015: ZIP із CSV
+// «Табличний» формат вивантаження: ті самі дані, що й у JSON (уже без секретів — zonderGeheimen), по одному CSV на таблицю в ZIP
+// (fflate, уже залежність проєкту). Вкладені об'єкти — стовпці «батько.поле» на один рівень, глибше й масиви — JSON у клітинці.
+// Захист від формул у табличних програмах: клітинка, що починається з = + - @ або табуляції, отримує апостроф спереду.
+// Tabelvorm van de export: per tabel één CSV in een ZIP, zonder geheimen, met bescherming tegen formules.
+export const ZIP_FORMAAT = 'mijn-ruimte-export-v1-zip';
+type Export = Awaited<ReturnType<typeof persoonsgegevensExport>>;
+const FORMULE = /^[=+\-@\t\r]/;
+function celTekst(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  let s: string;
+  if (v instanceof Date) s = v.toISOString();
+  else if (typeof v === 'object') s = JSON.stringify(v);
+  else s = String(v);
+  if (FORMULE.test(s)) s = `'${s}`;
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+const gewoonObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date) && !Buffer.isBuffer(v);
+/** Een rij plat maken: één niveau «ouder.veld», dieper blijft JSON in de cel. */
+function plat(rij: unknown): Record<string, unknown> {
+  if (!gewoonObject(rij)) return { waarde: rij };
+  const uit: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rij)) {
+    if (gewoonObject(v) && Object.keys(v).length) for (const [k2, v2] of Object.entries(v)) uit[`${k}.${k2}`] = v2;
+    else uit[k] = v;
+  }
+  return uit;
+}
+/** CSV (RFC 4180, CRLF, UTF-8 met BOM voor spreadsheetprogramma's) uit een lijst rijen; kolommen = vereniging van alle sleutels. */
+export function naarCsv(rijen: unknown[]): string {
+  const platte = rijen.map(plat);
+  const kolommen: string[] = [];
+  const gezien = new Set<string>();
+  for (const r of platte) for (const k of Object.keys(r)) if (!gezien.has(k)) { gezien.add(k); kolommen.push(k); }
+  const regels = [kolommen.map(celTekst).join(','), ...platte.map((r) => kolommen.map((k) => celTekst(r[k])).join(','))];
+  return `﻿${regels.join('\r\n')}\r\n`;
+}
+const bestandVoor = (naam: string, gebruikt: Set<string>) => {
+  const basis = naam.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^[._]+/, '').slice(0, 80) || 'tabel';
+  let n = `${basis}.csv`, i = 2;
+  while (gebruikt.has(n.toLowerCase())) n = `${basis}-${i++}.csv`;
+  gebruikt.add(n.toLowerCase());
+  return n;
+};
+/** ZIP met één CSV per tabel + bestanden.csv + beveiligingslog.csv + LEESMIJ.txt. Geen netwerk, geen schijf. */
+export async function persoonsgegevensZip(data: Export): Promise<{ bytes: Buffer; tabellen: Array<{ naam: string; bestand: string; rijen: number }> }> {
+  const gebruikt = new Set<string>(['leesmij.txt']);
+  const tabellen: Array<{ naam: string; bestand: string; rijen: number }> = [];
+  const inhoud: Record<string, Uint8Array> = {};
+  const voeg = (naam: string, rijen: unknown[], map = '') => {
+    const bestand = bestandVoor(naam, gebruikt);
+    inhoud[`${map}${bestand}`] = strToU8(naarCsv(rijen));
+    tabellen.push({ naam, bestand: `${map}${bestand}`, rijen: rijen.length });
+  };
+  for (const [naam, rijen] of Object.entries(data.gegevens)) voeg(naam, rijen as unknown[], 'tabellen/');
+  voeg('bestanden', data.bestanden as unknown[]);
+  voeg('beveiligingslog', data.beveiligingslog);
+  const lijst = tabellen.map((t) => `- ${t.bestand}: ${t.rijen}`).join('\n');
+  inhoud['LEESMIJ.txt'] = strToU8([
+    `Mijn Ruimte — вивантаження даних / export van gegevens (${data.gemaaktOp}), обліковий запис / account ${data.accountId}`,
+    '',
+    'Один CSV-файл на таблицю (UTF-8, кома як роздільник). Вкладені поля — стовпці «батько.поле»; глибші — JSON у клітинці.',
+    'Паролі, ключі, токени й зашифровані поля не включено. Файли — лише перелік (bestanden.csv); вміст завантажте в хмарі.',
+    'beveiligingslog.csv — журнал безпеки: входи, пристрої, дії з доступом. Зберігайте архів як пароль і не пересилайте.',
+    '',
+    'Eén CSV-bestand per tabel (UTF-8, komma als scheidingsteken). Geneste velden: kolommen «ouder.veld»; dieper: JSON in de cel.',
+    'Wachtwoorden, sleutels, tokens en versleutelde velden zijn niet opgenomen. Bestanden: alleen de lijst (bestanden.csv).',
+    'beveiligingslog.csv is het beveiligingslogboek. Bewaar het archief als een wachtwoord en stuur het niet door.',
+    '',
+    lijst,
+    '',
+  ].join('\r\n'));
+  return { bytes: Buffer.from(zipSync(inhoud, { level: 6 })), tabellen };
 }
 
 /** Стерти записи й файли одного акаунта і лишити надгробок без персональних даних. Власника сервера не чіпає. */

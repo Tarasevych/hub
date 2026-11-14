@@ -10,7 +10,8 @@ export type BeveiligingsWijziging =
   | 'consent-andere-browser' | 'json-vereist'
   | 'aanmeldmethode-gekoppeld' | 'aanmeldmethode-ontkoppeld' // IDENTITEIT-012
   | 'gegevens-uitgevoerd' // IDENTITEIT-014
-  | 'account-hersteld' | 'tweede-factor-verplicht' | 'tweede-factor-vrij'; // IDENTITEIT-015
+  | 'account-hersteld' | 'tweede-factor-verplicht' | 'tweede-factor-vrij' // IDENTITEIT-015
+  | 'apparaat-melding-uit' | 'apparaat-melding-aan' | 'apparaat-vergeten'; // IDENTITEIT-015 (apparaten-uitvoer)
 
 const NIET_JIJ = 'Якщо це були не ви — одразу завершіть інші сеанси на сторінці безпеки й змініть доступ. / Was u dit niet? Beëindig meteen de andere sessies op de beveiligingspagina en wijzig uw toegang.';
 
@@ -39,6 +40,10 @@ const TEKSTEN: Record<BeveiligingsWijziging, (x: Record<string, string>) => [str
   // IDENTITEIT-015: власник сайту змінив правило «другий чинник обов'язковий» (POST /api/owner/access/policy/save).
   'tweede-factor-verplicht': () => ['Другий крок входу тепер обов’язковий / Tweede aanmeldstap is nu verplicht', `Після Google кожен, хто має код із застосунку або ключ доступу, підтверджує вхід ним (запасний шлях — код відновлення). Хто не має другого чинника, входить як раніше. / Na Google bevestigt iedereen met een app-code of passkey de aanmelding daarmee (reserve: een herstelcode). Wie geen tweede factor heeft, meldt aan zoals voorheen. ${NIET_JIJ}`],
   'tweede-factor-vrij': () => ['Другий крок входу більше не обов’язковий / Tweede aanmeldstap niet meer verplicht', `Після Google сеанс знову відкривається без коду. Другий чинник і далі потрібен для важливих дій. / Na Google opent de sessie weer zonder code. De tweede factor blijft nodig voor belangrijke acties. ${NIET_JIJ}`],
+  // IDENTITEIT-015 (apparaten-uitvoer): вибір «Попереджати про новий пристрій» і «Забути пристрій» (backend/bekende-apparaten.ts).
+  'apparaat-melding-uit': () => ['Попередження про новий пристрій вимкнено / Waarschuwing voor een nieuw apparaat uitgezet', `Вхід із нового пристрою більше не дає спливного сповіщення; запис у журналі безпеки лишається. Увімкнути знову: «Сесії та пристрої» → «Попереджати про новий пристрій» → «Завжди». / Een aanmelding vanaf een nieuw apparaat geeft geen melding meer; de regel in het beveiligingslogboek blijft. Weer aanzetten: «Sessies en apparaten» → «Waarschuwen bij een nieuw apparaat» → «Altijd». ${NIET_JIJ}`],
+  'apparaat-melding-aan': () => ['Попередження про новий пристрій увімкнено / Waarschuwing voor een nieuw apparaat aangezet', 'Після входу з невідомого пристрою тут з’явиться сповіщення з пристроєм, регіоном і часом. / Na een aanmelding vanaf een onbekend apparaat verschijnt hier een melding met apparaat, regio en tijd.'],
+  'apparaat-vergeten': (x) => ['Пристрій забуто / Apparaat vergeten', `Пристрій «${x.apparaat || '—'}» вилучено з відомих: наступний вхід із нього знову вважатиметься входом з нового пристрою. / Apparaat «${x.apparaat || '—'}» staat niet meer bij de bekende apparaten: de volgende aanmelding ermee geldt weer als nieuw apparaat. ${NIET_JIJ}`],
   'account-bekeken': (x) => ['Ваш обліковий запис переглянуто для діагностики / Uw account is bekeken voor diagnose', `Адміністратор (${x.wie || '—'}) переглянув ${x.wat || 'дані вашого облікового запису'} у технічній діагностиці. / Een beheerder (${x.wie || '—'}) bekeek ${x.watNl || 'gegevens van uw account'} in de technische diagnose.`],
 };
 

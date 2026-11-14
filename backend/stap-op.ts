@@ -324,6 +324,8 @@ export const NOOIT_ONTHOUDEN: readonly string[] = Object.freeze([
   'deel-beheerder',
   // IDENTITEIT-015 (profiel-blokken): eigendom van een werkruimte overdragen — altijd opnieuw vragen.
   'werkruimte-overdragen',
+  // IDENTITEIT-015 (apparaten-uitvoer): waarschuwing voor een nieuw apparaat uitzetten en een bekend apparaat vergeten — altijd opnieuw vragen.
+  'apparaat-melding-uit', 'apparaat-vergeten',
   // Gescheiden gegevensruimtes (0082): de technische ruimte met de persoonlijke verbinden, de eenmalige keuze, en elk besluit
   // van de servereigenaar over bevroren gegevens. Hier vragen we ALTIJD opnieuw: een onthouden browser is nooit genoeg om
   // persoonlijke gegevens in de technische ruimte te laten zien.

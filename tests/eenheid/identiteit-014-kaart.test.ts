@@ -157,8 +157,10 @@ export async function main(): Promise<number> {
     check('карта: цілі розділів «Вхід», «Безпека» й «Відновлення» є в справжньому рендері панелі саме цього розділу', nietGerenderd.length === 0, nietGerenderd.join(', '));
     check('карта: «Відновлення», «Пароль», «Запрошення», «Чинні», «Сповіщення в меню» й автентифікатор працюють повністю — на карті їх немає',
       kaart.tekenМайбутніМожливості('recovery') === '' && !html.includes('Пароль і тимчасовий доступ') && !html.includes('Доступ за обліковим записом') && !html.includes('Чинні запрошення та дозволи') && !html.includes('Сповіщення в меню') && !html.includes('Двофакторна автентифікація'));
-    check('карта: частково готове лишається чесно частковим (строк посилання, формат вивантаження, інші способи входу)',
-      /Строк дії посилання<\/span><small class="future-option-status future-stand-deels">/.test(html) && /Формат вивантаження<\/span><small class="future-option-status future-stand-deels">/.test(html) && /Microsoft[^<]*<\/span><small class="future-option-status future-stand-deels">/.test(html));
+    // IDENTITEIT-015 (apparaten-uitvoer): формат вивантаження (JSON / ZIP із CSV) тепер працює повністю — група «Керування вивантаженням
+    // даних» зникла з карти (як і інші повністю робочі); перевірку перенесено в identiteit-015-apparaten-uitvoer.
+    check('карта: частково готове лишається чесно частковим (строк посилання, інші способи входу); формат вивантаження — працює, на карті його немає',
+      /Строк дії посилання<\/span><small class="future-option-status future-stand-deels">/.test(html) && !html.includes('Формат вивантаження') && /Microsoft[^<]*<\/span><small class="future-option-status future-stand-deels">/.test(html));
   }
 
   // ================================================================ сервер: справжні маршрути проти бази

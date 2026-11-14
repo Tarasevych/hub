@@ -42,7 +42,26 @@ export function nieuwApparaatTekst(o: { email: string; label: string; methode: A
   return { titel, tekst: `${uk} / ${nl}` };
 }
 
-type Deps = { vlagAan: () => Promise<boolean>; nu?: () => number };
+/**
+ * IDENTITEIT-015 (apparaten-uitvoer): `keuze` — вибір людини «Завжди / Вимкнено» (backend/bekende-apparaten.ts; без нього читається з
+ * облікового запису, старі записи без поля = «Завжди»). `audit` — журнал безпеки (типово app.audit); запис про вхід з нового пристрою
+ * робиться ЗАВЖДИ — і з вимкненим попередженням, і без прапорця. Keuze van de mens; de auditregel komt er altijd.
+ */
+type Deps = { vlagAan: () => Promise<boolean>; nu?: () => number; keuze?: () => Promise<'altijd' | 'uit'>; audit?: (userId: string, details: Record<string, unknown>) => Promise<unknown> };
+const standaardAudit = async (userId: string, details: Record<string, unknown>) => {
+  const { auditToevoegen } = await import('../server/platform/audit');
+  return auditToevoegen({ ownerId: userId, action: 'owner.apparaat.nieuw', result: 'success', details });
+};
+/** Spoor in het beveiligingslogboek; faalt stil (de aanmelding gaat altijd door, de melding ook). */
+async function nieuwSpoor(deps: Deps, userId: string, details: Record<string, unknown>): Promise<void> {
+  try { await (deps.audit || standaardAudit)(userId, details); }
+  catch (err) { console.error('[nieuw-apparaat] auditregel mislukt:', (err as Error).message); }
+}
+const keuzeLezen = async (deps: Deps, userId: string): Promise<'altijd' | 'uit'> => {
+  if (deps.keuze) return (await deps.keuze().catch(() => 'altijd')) === 'uit' ? 'uit' : 'altijd';
+  const { apparaatKeuzeLezen } = await import('./bekende-apparaten');
+  return apparaatKeuzeLezen(userId);
+};
 /** Na een geslaagde aanmelding. Faalt nooit naar buiten. Geeft terug wat er gebeurde (voor tests/logs). */
 /**
  * `apparaatCookie` (SEC-002): de hash van de apparaatcookie van de browser die zich net aanmeldde (backend/index.ts geeft hem
@@ -63,7 +82,7 @@ export function overgangTekst(o: { label: string; tijd: number }) {
   const nl = `Apparaat «${o.label}» gebruikte u al eerder. Na de beveiligingsupdate herkent het systeem browsers aan een eigen markering, dus deze aanmelding is de eerste volgens de nieuwe regel · ${brusselsTijd(o.tijd, 'nl')} (Brussel). U hoeft niets te doen; vraagt de site erom, bevestig dan één keer met uw toegangssleutel. Meldde u zich niet aan, beëindig dan de sessie op de beveiligingspagina.`;
   return { titel, tekst: `${uk} / ${nl}` };
 }
-export async function naAanmelding(o: { userId: string; email: string; ua?: string; locatie?: Locatie; methode: AanmeldMethode; apparaatCookie?: string }, deps: Deps): Promise<'uit' | 'basis' | 'bekend' | 'gemeld' | 'overgang' | 'fout'> {
+export async function naAanmelding(o: { userId: string; email: string; ua?: string; locatie?: Locatie; methode: AanmeldMethode; apparaatCookie?: string }, deps: Deps): Promise<'uit' | 'basis' | 'bekend' | 'gemeld' | 'overgang' | 'stil' | 'fout'> {
   try {
     if (!o.userId) return 'uit';
     const vlag = await deps.vlagAan();
@@ -75,10 +94,16 @@ export async function naAanmelding(o: { userId: string; email: string; ua?: stri
     // SEC-002 (g10h-toets-3): de vlag regelt alleen de MELDING. Welke browser bekend is, wordt ook zonder vlag onthouden — anders
     // was voor Telegram elke browser «nieuw» (ook de eigen) en kreeg de mens bij elke aanmelding een onware waarschuwing.
     if (!vlag) {
-      await sys().query('INSERT INTO app.bekende_apparaten (user_id, sleutel, apparaat) VALUES ($1, $2, $3) ON CONFLICT (user_id, sleutel) DO UPDATE SET laatst_gezien = now()',
+      // IDENTITEIT-015: (xmax = 0) = rij is nieuw ingevoegd → auditregel (niet voor het allereerste apparaat van het account).
+      const r = await sys().query('INSERT INTO app.bekende_apparaten (user_id, sleutel, apparaat) VALUES ($1, $2, $3) ON CONFLICT (user_id, sleutel) DO UPDATE SET laatst_gezien = now() RETURNING (xmax = 0) AS nieuw',
         [o.userId, sleutel, label.slice(0, 40)]);
+      if (r.rows[0]?.nieuw) {
+        const n = Number((await sys().query('SELECT count(*)::int AS n FROM app.bekende_apparaten WHERE user_id = $1', [o.userId])).rows[0]?.n || 0);
+        if (n > 1) await nieuwSpoor(deps, o.userId, { apparaat: label.slice(0, 40), methode: o.methode, melding: 'geen-vlag' });
+      }
       return 'uit';
     }
+    const keuze = await keuzeLezen(deps, o.userId);
     const bij = await sys().query('UPDATE app.bekende_apparaten SET laatst_gezien = now() WHERE user_id = $1 AND sleutel = $2 RETURNING id', [o.userId, sleutel]);
     if (bij.rows.length) return 'bekend';
     const n = Number((await sys().query('SELECT count(*)::int AS n FROM app.bekende_apparaten WHERE user_id = $1', [o.userId])).rows[0]?.n || 0);
@@ -91,11 +116,16 @@ export async function naAanmelding(o: { userId: string; email: string; ua?: stri
     if (o.apparaatCookie !== undefined) {
       const oud = await sys().query('DELETE FROM app.bekende_apparaten WHERE user_id = $1 AND sleutel = $2 RETURNING id', [o.userId, apparaatSleutel(o.userId, label)]);
       if (oud.rows.length) {
+        await nieuwSpoor(deps, o.userId, { apparaat: label.slice(0, 40), methode: o.methode, id: ins.rows[0].id, melding: keuze === 'uit' ? 'uit-door-keuze' : 'overgang' });
+        if (keuze === 'uit') return 'stil';
         const { titel, tekst } = overgangTekst({ label, tijd: (deps.nu || Date.now)() });
         await meld(o.userId, OVERGANG_SOORT, titel, tekst, `https://id.tarasevych.com/sessions?apparaat=${ins.rows[0].id}`);
         return 'overgang';
       }
     }
+    // IDENTITEIT-015: het spoor in het beveiligingslogboek komt er altijd; de melding alleen bij keuze «Завжди».
+    await nieuwSpoor(deps, o.userId, { apparaat: label.slice(0, 40), methode: o.methode, id: ins.rows[0].id, melding: keuze === 'uit' ? 'uit-door-keuze' : 'gemeld' });
+    if (keuze === 'uit') return 'stil';
     const { titel, tekst } = nieuwApparaatTekst({ email: o.email, label, methode: o.methode, locatie: o.locatie, tijd: (deps.nu || Date.now)() });
     await meld(o.userId, MELDING_SOORT_NIEUW_APPARAAT, titel, tekst, `https://id.tarasevych.com/sessions?apparaat=${ins.rows[0].id}`);
     return 'gemeld';

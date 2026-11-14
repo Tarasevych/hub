@@ -9,6 +9,8 @@ export const ACTIE_PER_PAD: ReadonlyArray<readonly [RegExp, string]> = [
   [/\/api\/share\/(email|link|role)$/, 'deel-beheerder'],
   // IDENTITEIT-015 (profiel-blokken): простір передати іншому учасникові — той отримає повне керування.
   [/\/api\/owner\/identity\/workspaces\/[^/]+\/overdragen$/, 'werkruimte-overdragen'],
+  // IDENTITEIT-015 (apparaten-uitvoer): попередження про новий пристрій вимкнути (сервер просить лише для «Вимкнено») і забути пристрій.
+  [/\/api\/owner\/identity\/apparaten\/melding$/, 'apparaat-melding-uit'], [/\/api\/owner\/identity\/apparaten\/vergeten$/, 'apparaat-vergeten'],
   [/\/recovery\/rotate/, 'herstelcodes-nieuw'], [/\/recovery\/intrekken/, 'herstelcodes-intrekken'],
   [/\/toegangscodes\/maken/, 'toegangscode-maken'], [/\/toegangscodes\/wijzigen/, 'toegangscode-verlengen'],
   [/\/ruimte\/keuze/, 'ruimte-keuze'], [/\/ruimte\/besluit/, 'ruimte-besluit'], [/\/ruimte\/dienst/, 'ruimte-verbinden'],

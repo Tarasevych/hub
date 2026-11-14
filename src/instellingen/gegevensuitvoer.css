@@ -9,3 +9,13 @@
 .gegevensuitvoer-compact{display:grid;gap:6px;justify-items:start}
 .gegevensuitvoer-knop{display:inline-flex;align-items:center;gap:6px;min-height:var(--tik-hoogte,44px);padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-weight:700;max-width:100%}
 .gegevensuitvoer-knop svg{width:17px;height:17px;flex:none}
+/* IDENTITEIT-015: вибір формату й стан «готово». Keuze van het formaat en de stand «klaar». */
+.gegevensuitvoer-formaat{display:grid;gap:8px;margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;min-width:0}
+.gegevensuitvoer-formaat legend{padding:0 4px;font-weight:700}
+.gegevensuitvoer-formaat label{display:flex;align-items:flex-start;gap:8px;min-height:var(--tik-hoogte,44px);cursor:pointer}
+.gegevensuitvoer-formaat label input{margin-top:4px;flex:none}
+.gegevensuitvoer-formaat label span{display:grid;gap:2px;min-width:0}
+.gegevensuitvoer-formaat small{color:var(--muted);overflow-wrap:anywhere}
+.gegevensuitvoer-stand{display:grid;gap:6px;justify-items:start}
+.gegevensuitvoer-stand p{display:flex;align-items:flex-start;gap:6px}
+.gegevensuitvoer-stand p svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--success,var(--accent))}

@@ -371,13 +371,15 @@ const станНаСайті={
     "стан":{стан:"в-чинних"},
     "простори":{стан:"в-чинних"},
     "видалення":{стан:"в-чинних",ціль:".settings-danger",цілі:{0:".settings-overdracht"}},
-    "експорт":{стан:"частково",ціль:"#gegevensuitvoer",рядки:{0:"частково",1:"в-чинних"}}
+    // IDENTITEIT-015 (крок «apparaten-uitvoer»): вибір формату JSON / ZIP із CSV (.gegevensuitvoer-formaat), стан «готую → готово → файл».
+    "експорт":{стан:"в-чинних",ціль:"#gegevensuitvoer",цілі:{0:".gegevensuitvoer-formaat"}}
   },
   sessions:{
     "цей-пристрій":{стан:"в-чинних",ціль:".sessies-onthouden"},
     "активні":{стан:"в-чинних"},
     "гості":{стан:"в-чинних"},
-    "сповіщення":{стан:"частково"}
+    // IDENTITEIT-015 (крок «apparaten-uitvoer»): вибір «Завжди / Вимкнено», відомі пристрої, «Це був я», «Забути пристрій».
+    "сповіщення":{стан:"в-чинних",ціль:"#sessies-nieuw-apparaat"}
   },
   methods:{
     "основні":{стан:"частково",ціль:"#aanmeldmethoden-google",рядки:{0:"в-чинних",1:"частково",2:"в-чинних"},цілі:{1:"security|#aanmeldmethoden-sleutels",2:"security|#aanmeldmethoden-2fa"}},
