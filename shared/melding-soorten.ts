@@ -24,6 +24,7 @@ export const MELDING_SOORTEN: Readonly<Record<string, SoortInfo>> = Object.freez
   access_recovery_code_used: { type: 'beveiliging', ernst: 'kritiek' },
   access_recovery_rotated: { type: 'beveiliging', ernst: 'belangrijk' },
   access_recovery_revoked: { type: 'beveiliging', ernst: 'belangrijk' },
+  access_recovery_low: { type: 'beveiliging', ernst: 'belangrijk' },      // IDENTITEIT-014: ≤2 herstelcodes over (backend/reserve-herinnering.ts)
   access_totp_enrolled: { type: 'beveiliging', ernst: 'belangrijk' },
   access_totp_replaced: { type: 'beveiliging', ernst: 'kritiek' },
   account_email_conflict: { type: 'beveiliging', ernst: 'kritiek' },

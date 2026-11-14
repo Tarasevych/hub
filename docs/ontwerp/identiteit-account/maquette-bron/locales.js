@@ -101,7 +101,7 @@ const locales = {
       ],
       recovery:[
         {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
-        {type:"toggle",label:"Нагадування про резервний доступ",note:"Попередження про ризик втрати всіх способів входу",initial:true},
+        {type:"info",label:"Нагадування про резервний доступ",note:"Справжній перемикач — у Меню → «Сповіщення в меню». Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
         {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх passkey означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
       ]
     }
@@ -221,7 +221,7 @@ const locales = {
       ],
       recovery:[
         {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
-        {type:"toggle",label:"Herinnering over herstel",note:"Waarschuw voor verlies van alle inlogmethoden",initial:true},
+        {type:"info",label:"Herinnering aan reservetoegang",note:"De echte schakelaar staat bij Menu → «Meldingen in het menu». Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
         {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
       ]
     }

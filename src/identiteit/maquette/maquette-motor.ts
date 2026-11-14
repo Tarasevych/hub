@@ -139,7 +139,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
-          {type:"toggle",label:"Нагадування про резервний доступ",note:"Попередження про ризик втрати всіх способів входу",initial:true},
+          {type:"info",label:"Нагадування про резервний доступ",note:"Справжній перемикач — у Меню → «Сповіщення в меню». Типово ввімкнено: коли залишиться 2 коди відновлення або менше, прийде одне сповіщення."},
           {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх passkey означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
         ]
       }
@@ -259,7 +259,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         ],
         recovery:[
           {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
-          {type:"toggle",label:"Herinnering over herstel",note:"Waarschuw voor verlies van alle inlogmethoden",initial:true},
+          {type:"info",label:"Herinnering aan reservetoegang",note:"De echte schakelaar staat bij Menu → «Meldingen in het menu». Standaard aan: bij 2 of minder resterende herstelcodes komt er één melding."},
           {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
         ]
       }
@@ -826,6 +826,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   };
   const вжеОформленіРядки={account:["Світлина з облікового запису"]};
   // САЙТ (IDENTITEIT-011): жива карта. Стан кожної групи й рядка звірено з кодом живої версії 20261113-121403.
+  // IDENTITEIT-014 (фаза 3): звірено ще раз після під'єднання спільного доступу, вивантаження, способів входу й відновлення;
+  // кожна ціль — справжній id/селектор у коді (перевіряє tests/eenheid/identiteit-014-kaart.test.ts).
   // «в-чинних» — працює в блоці «Чинні налаштування» цього розділу; рядок стає кнопкою переходу до потрібного місця.
   // «частково» — є на сайті, але бракує частини; «заплановано» — потребує розробки; «недоступно» — свідомо не передбачено.
   // ціль: "розділ|селектор" усередині гнізда .mq-echt розділу (без розділу — той самий розділ). Група, усі рядки якої «в-чинних», зникає з карти.
@@ -833,7 +835,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
   const станНаСайті={
     menu:{
       "швидкий-доступ":{стан:"в-чинних",ціль:"#menu-snel"},
-      "сповіщення":{стан:"в-чинних",ціль:"#menu-meldingen",рядки:{9:"частково"}},
+      "сповіщення":{стан:"в-чинних",ціль:"#menu-meldingen",цілі:{9:"#menu-meldingtypen"},додати:[
+        {uk:"Нагадування про резервний доступ",nl:"Herinnering aan reservetoegang",стан:"в-чинних",ціль:"[data-meld-schakel=\"reserve\"]",іконка:"нагадування"}
+      ]},
       "швидкодія":{стан:"в-чинних",ціль:"#menu-snelheid"},
       "видимість":{стан:"в-чинних",ціль:"#menu-zichtbaarheid",рядки:{2:"частково"}}
     },
@@ -843,16 +847,16 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     },
     widgets:{"створення":{стан:"частково",ціль:".settings-form"}},
     sharing:{
-      "запрошення":{стан:"частково",ціль:".settings-sharing"},
-      "посилання":{стан:"частково",ціль:".settings-sharing"},
-      "чинні":{стан:"заплановано"}
+      "запрошення":{стан:"в-чинних",ціль:"#delen-uitnodigen"},
+      "посилання":{стан:"частково",ціль:"#delen-uitnodigen",рядки:{0:"частково",1:"в-чинних"}},
+      "чинні":{стан:"в-чинних",ціль:"#delen-leden"}
     },
     account:{
       "особа":{стан:"в-чинних"},
       "стан":{стан:"в-чинних"},
       "простори":{стан:"в-чинних"},
       "видалення":{стан:"частково",ціль:".settings-danger"},
-      "експорт":{стан:"частково"}
+      "експорт":{стан:"частково",ціль:"#gegevensuitvoer",рядки:{0:"частково",1:"в-чинних"}}
     },
     sessions:{
       "цей-пристрій":{стан:"частково"},
@@ -862,24 +866,24 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     },
     methods:{
       "основні":{стан:"частково",ціль:"#aanmeldmethoden-google",рядки:{0:"в-чинних",1:"частково",2:"в-чинних"},цілі:{1:"security|#aanmeldmethoden-sleutels",2:"security|#aanmeldmethoden-2fa"}},
-      "пароль":{стан:"частково",ціль:"[data-access-method=\"password\"]"},
+      "пароль":{стан:"в-чинних",ціль:"#aanmeldmethoden-wachtwoord"},
       "захист":{стан:"в-чинних",цілі:{0:"recovery|#aanmeldmethoden-herstel",1:"security|#aanmeldmethoden-sleutelkluis",2:"security|#toegangscodes"}},
-      "додаткові":{стан:"частково",рядки:{0:"частково",1:"частково",2:"частково",3:"частково",4:"недоступно",5:"заплановано"}}
+      "додаткові":{стан:"частково",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"частково",1:"частково",2:"частково",3:"частково",4:"недоступно",5:"заплановано"}}
     },
     security:{
       "ключі":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutels",рядки:{5:"заплановано"}},
       "другий-чинник":{стан:"в-чинних",ціль:"#aanmeldmethoden-2fa",додати:[
-        {uk:"QR-код для застосунку-автентифікатора",nl:"QR-code voor de authenticator-app",стан:"частково",іконка:"зчитування"},
-        {uk:"Замінити автентифікатор",nl:"Authenticator vervangen",стан:"частково",іконка:"повернути"}
+        {uk:"QR-код для застосунку-автентифікатора",nl:"QR-code voor de authenticator-app",стан:"в-чинних",іконка:"зчитування"},
+        {uk:"Замінити автентифікатор",nl:"Authenticator vervangen",стан:"в-чинних",іконка:"повернути"}
       ]},
       "резервні-коди":{стан:"в-чинних",ціль:"recovery|#aanmeldmethoden-herstel"},
       "шифрування":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutelkluis"},
       "гостьові-коди":{стан:"в-чинних",ціль:"#toegangscodes"}
     },
     recovery:{
-      "засоби":{стан:"частково",ціль:"#aanmeldmethoden-herstel",рядки:{0:"в-чинних",1:"частково"}},
-      "сценарії":{стан:"заплановано"},
-      "поради":{стан:"заплановано"}
+      "засоби":{стан:"в-чинних",ціль:"#aanmeldmethoden-herstel",цілі:{1:"#herstel-overzicht"}},
+      "сценарії":{стан:"в-чинних",ціль:"#herstel-scenarios",цілі:{0:"#herstel-scenarios [data-scenario=\"apparaat\"]",1:"#herstel-scenarios [data-scenario=\"passkey\"]",2:"#herstel-scenarios [data-scenario=\"authenticator\"]",3:"#herstel-scenarios [data-scenario=\"codes-op\"]"}},
+      "поради":{стан:"в-чинних",цілі:{0:"#herstel-overzicht",1:"#herstel-sleutelverlies"}}
     }
   };
   // Кожна з 43 груп і 153 дій має власне, перевірене за змістом призначення.

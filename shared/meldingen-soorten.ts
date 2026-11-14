@@ -37,7 +37,7 @@ export const SFEER_PER_SOORT: Readonly<Record<string, MeldingSfeer>> = Object.fr
   // ------------------------------------------------------------ prive: de mens zelf
   security: 'prive', security_warning: 'prive',
   access_method_unlinked: 'prive', access_method_restored: 'prive', access_recovery_code_used: 'prive', access_recovery_rotated: 'prive',
-  access_recovery_revoked: 'prive', access_totp_enrolled: 'prive', access_totp_replaced: 'prive',
+  access_recovery_revoked: 'prive', access_recovery_low: 'prive' /* IDENTITEIT-014, na 0107: voorvoegsel access_recovery → prive */, access_totp_enrolled: 'prive', access_totp_replaced: 'prive',
   account_email_conflict: 'prive', owner_identity_mismatch: 'prive',
   access_decision: 'prive', workspace_share: 'prive', impersonatie: 'prive', ondersteuning: 'prive', ai_bevestiging: 'prive',
   // SEC-002 (g10c): geplande brieven geweigerd/geannuleerd — na 0107 toegevoegd; zie NA_0107_VIA_VOORVOEGSEL.
@@ -163,7 +163,7 @@ export function activiteitenVanSfeer<T extends ActiviteitVoorSfeer>(items: reado
  * migratie verandert niet), en een nieuwe migratie is niet nodig: de database geeft via het voorvoegsel dezelfde sfeer. De test
  * (meldingen-sferen) eist dat de voorvoegselregel voor elk van hen precies de geregistreerde sfeer geeft.
  */
-export const NA_0107_VIA_VOORVOEGSEL: ReadonlySet<string> = new Set(['mail_queue_refused', 'mail_queue_cancelled', 'cloud_alleen_lezen', 'toegang_alleen_lezen', 'agenda', 'workspace_role_changed', 'workspace_access_revoked', 'workspace_invite_accepted']);
+export const NA_0107_VIA_VOORVOEGSEL: ReadonlySet<string> = new Set(['mail_queue_refused', 'mail_queue_cancelled', 'cloud_alleen_lezen', 'toegang_alleen_lezen', 'agenda', 'workspace_role_changed', 'workspace_access_revoked', 'workspace_invite_accepted', 'access_recovery_low']);
 /** Sfeer volgens alleen de voorvoegsels (de regel van 0107 voor een soort die niet in haar lijsten staat). */
 export const sfeerVolgensVoorvoegsel = (kind: unknown): MeldingSfeer => {
   const k = String(kind || '').toLowerCase().slice(0, 80);

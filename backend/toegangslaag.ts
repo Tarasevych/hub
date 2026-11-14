@@ -9,6 +9,7 @@ import {codewoordHeeft, codewoordControleren} from './codewoord';
 import {meld} from './melder';
 import {meldBeveiligingsWijziging} from './beveiliging-meldingen'; /* SEC-002 privacy-logboek-03 */
 import {herstelcodeGebruiktMelden} from './nieuw-apparaat';
+import {reserveBijnaOpMelden} from './reserve-herinnering'; /* IDENTITEIT-014 */
 import {apparaat} from '../server/platform/audit';
 import {huidigeContext} from '../server/platform/context';
 import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStapOpFout} from './toegang-context';
@@ -142,6 +143,8 @@ async function herstelcodeGebruiken(userId:string,code:string,actie:unknown='bev
   await gebruikVastleggen(userId,'herstelcode',sleutel,actie,dienst?{dienst}:{});
   /* UI-014 fase 2A (vlag v3): melding bij inloggen/TOTP-wijzigen met herstelcode; de step-up-route meldt al zelf (melden=false) */
   if(melden)void herstelcodeGebruiktMelden(userId,String(actie||''),apparaat(huidigeContext()?.ua));
+  /* IDENTITEIT-014: ≤2 codes over → één keer per set access_recovery_low (alle drie de wegen komen hier langs; fouten worden afgevangen) */
+  await reserveBijnaOpMelden(userId,async()=>{const r=await recoveryFor(userId);return r?{over:Number(r.remaining||0),ingetrokken:!!r.ingetrokkenOp}:null},()=>db.zetEenmaligInMap(RECOVERY,recovery.id,'laagGemeld',herstelSetSleutel(recovery),Date.now()).catch(()=>false));
   return sleutel;
 }
 async function hashPassword(password:string){

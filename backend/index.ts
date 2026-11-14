@@ -21,7 +21,7 @@ import { createGithubRoutes } from './github-platform'
 import { gedelegeerdeSessie } from './site-aanroep'
 import { registreerSessieControle, requireAuth } from '../server/platform/auth-poort'
 import { googleAuthTijdVers, googleStapOpVastleggen, googleUitgifteVoorStapOpVers, metStapOpEenmalig, onthoudAllesVergeten, onthoudMagVoorPad, onthoudVergeten, onthoudenSessies, stapOpFout, stapOpUit, sterkeStapOpGeldig } from './stap-op'
-import { meldLink, registreerMelder, registreerMeldingenSluiter } from './melder'
+import { meldLink, registreerMelder, registreerMeldingenSluiter, registreerMeldingVoorkeurLezer } from './melder'
 import { meldBeveiligingsWijziging } from './beveiliging-meldingen'; // IDENTITEIT-014: сповіщення про вивантаження даних
 // Meldingen per gegevensruimte (20.10.2026): elke melding draagt haar lade; lezen/tellen/gelezen alleen in de live ruimte van het tabblad.
 import { meldingenLade, meldingenVanLade, ruimteVoorNieuweMelding, sfeerVoorNieuweMelding } from './meldingen-ruimte'
@@ -641,6 +641,8 @@ type AdminRole='super_admin'|'security_admin'|'apps_admin'|'directory_admin'|'su
 const VEROUDERDE_ROUTE_WEG = [async () => ownerResponse({ ok: false, error: 'LEGACY_ROUTE_GONE', reasonCode: 'LEGACY_ROUTE_GONE' }, 410)];
 
 registreerMelder((u, e, k, t, m, l) => notify(u, e, k, t, m, l))
+// IDENTITEIT-014: menuvoorkeuren (ruimte gebruiker) voor serverwaarschuwingen, bv. «weinig herstelcodes». Systeemstap: ook tijdens het aanmelden, nog zonder sessie.
+registreerMeldingVoorkeurLezer(async (u) => (await alsSysteem(() => ownerZijbalk(u, 'gebruiker')))?.meldingen)
 // UITROL-001: verouderde meldingen («чекає схвалення» van een versie die al geïnstalleerd/afgewezen/gestopt is) gelezen zetten.
 registreerMeldingenSluiter(async (kind, zoek) => alsSysteem(async () => {
   const { items } = await db.list<Record<string, unknown>>('site_notifications', { filter: { kind, read: false }, limit: 200, nieuwsteEerst: true });

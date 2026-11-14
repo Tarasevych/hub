@@ -120,10 +120,14 @@ export async function main(): Promise<number> {
   check('жива карта: групи, що повністю працюють, зникають (теми; швидкий доступ і швидкодія меню; активні входи)',
     kaartUk.tekenМайбутніМожливості('themes') === '' && !uk.includes('Керування улюбленими кнопками') && !uk.includes('Параметри завантаження й перемикання') && !uk.includes('Огляд пристроїв і керування завершенням входів'));
   const knoppen = [...uk.matchAll(/data-kaart-ga="([^"]+)"/g)].map((m) => m[1].replace(/&quot;/g, '"'));
-  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 30 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
+  // IDENTITEIT-014: після фази 3 групи «Запрошення», «Чинні», «Пароль», «Другий чинник» і весь «Відновлення» працюють повністю й зникають
+  // з карти — тому кнопок стало менше (було ≥30). Що кожна ціль існує в коді, перевіряє identiteit-014-kaart.test.ts.
+  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 20 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
   check('жива карта: кожен рядок і група має кольорову мітку з текстом стану', (uk.match(/class="future-option /g) || []).length + (uk.match(/class="future-option"/g) || []).length === (uk.match(/future-option-status future-stand-/g) || []).length);
-  check('жива карта: WhatsApp — «Недоступно», SMS — «Потребує розробки», нові рядки автентифікатора — частково',
-    /WhatsApp[^<]*<\/span><small class="future-option-status future-stand-nee">Недоступно/.test(uk) && /SMS[^<]*<\/span><small class="future-option-status future-stand-gepland">/.test(uk) && uk.includes('QR-код для застосунку-автентифікатора') && uk.includes('Замінити автентифікатор'));
+  // IDENTITEIT-014: QR і «Замінити автентифікатор» тепер працюють у старій панелі → уся група «Двофакторна автентифікація» в-чинних і зникає.
+  const tweede = (kaartUk.станНаСайті.security['другий-чинник'] as unknown as { додати?: { uk: string; стан: string }[] }).додати || [];
+  check('жива карта: WhatsApp — «Недоступно», SMS — «Потребує розробки», нові рядки автентифікатора — працюють (групи на карті немає)',
+    /WhatsApp[^<]*<\/span><small class="future-option-status future-stand-nee">Недоступно/.test(uk) && /SMS[^<]*<\/span><small class="future-option-status future-stand-gepland">/.test(uk) && tweede.length === 2 && tweede.every((r) => r.стан === 'в-чинних') && !uk.includes('QR-код для застосунку-автентифікатора') && !uk.includes('Замінити автентифікатор'));
   const zonderIcoon: string[] = [];
   for (const [sectie, groepen] of Object.entries(kaartUk.реєстрНалаштувань)) for (const g of groepen) g.рядки.forEach((_, i) => { if (!kaartUk.піктограмиДій[sectie]?.[g.id]?.[i]) zonderIcoon.push(`${sectie}/${g.id}/${i}`); });
   check('кожен рядок реєстру має змістовну піктограму (запасний знак лише для захисту від збою)', zonderIcoon.length === 0 && register.includes('if(!назва)return піктограмаЗаСуттю("інструмент")'), zonderIcoon.join(', '));

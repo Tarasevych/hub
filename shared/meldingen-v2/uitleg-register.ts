@@ -237,6 +237,21 @@ export const REGISTER: UitlegSoort[] = [
     ],
   },
   {
+    // IDENTITEIT-014: geen «Це були ви?» — dit is een herinnering, geen verdachte handeling. Moet vóór 'herstelcode' staan (eerste die past wint).
+    id: 'herstelcodes-bijna-op',
+    past: (m) => m.soort === 'access_recovery_low',
+    titel: ['Залишилося мало кодів відновлення', 'Weinig herstelcodes over'],
+    risico: 'midden',
+    wat: ['Після останнього використання залишилося 2 коди відновлення або менше.', 'Na het laatste gebruik zijn er nog 2 of minder herstelcodes over.'],
+    waarom: ['Кожен код діє лише один раз. Ви підтверджували вхід чи важливі дії кодами замість телефона або ключа доступу.', 'Elke code werkt maar één keer. U bevestigde aanmelden of belangrijke handelingen met codes in plaats van telefoon of passkey.'],
+    gevolg: ['Коли коди закінчаться, після втрати телефона чи ключа доступу увійти буде неможливо. Нове сповіщення для цього набору не прийде.', 'Zijn de codes op, dan kunt u na verlies van telefoon of passkey niet meer aanmelden. Voor deze set komt geen nieuwe melding.'],
+    doen: ['Створіть новий набір кодів (з підтвердженням) і збережіть його поза цим пристроєм. Старі коди тоді перестануть діяти. Вимкнути це нагадування можна в Меню → Сповіщення в меню.', 'Maak een nieuwe set codes (met bevestiging) en bewaar die buiten dit apparaat; de oude codes werken dan niet meer. Deze herinnering zet u uit via Menu → Meldingen in het menu.'],
+    deeplink: viaLink(`${ID}/methods#herstel`),
+    acties: [
+      { soort: 'wijziging', label: ['Створити нові коди', 'Nieuwe codes maken'], href: () => `${ID}/methods#herstel` },
+    ],
+  },
+  {
     id: 'herstelcode',
     past: (m) => /access_recovery/.test(m.soort || '') || /(код відновлення|коди відновлення|herstelcode)/.test(tekst(m)),
     titel: ['Коди відновлення', 'Herstelcodes'],

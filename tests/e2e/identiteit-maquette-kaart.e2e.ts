@@ -63,20 +63,23 @@ export async function main(): Promise<number> {
       const montagesVooraf = await pagina.evaluate(() => Object.keys((window as unknown as { mqMontages?: object }).mqMontages || {}).length);
       controleer(`${naam}: панелі не монтуються до відкриття блоку`, montagesVooraf === 0, montagesVooraf);
 
-      // 2. Жива карта меню: мітки без «Звірити підключення», кнопка «Відкрити» веде до #menu-meldingen.
+      // 2. Жива карта меню: мітки без «Звірити підключення», кнопка «Відкрити» веде до справжнього блоку.
+      // IDENTITEIT-014: «Сповіщення в меню» (з «Типами сповіщень» і нагадуванням про резервний доступ) працює повністю → групи на карті немає;
+      // перехід перевіряємо через «Видимість» (рядок 2 ще частковий, група лишається).
       const kaart = pagina.locator('details[data-future-section="menu"]');
       controleer(`${naam}: карта розвитку меню є`, await kaart.count() === 1);
       const tekst = await pagina.evaluate(() => document.querySelector('.mr-mq')?.textContent || '');
       controleer(`${naam}: немає «Звірити підключення» / «Koppeling controleren»`, !tekst.includes('Звірити підключення') && !tekst.includes('Koppeling controleren'));
-      // Як людина: розгорнути карту й групу «Сповіщення в меню» (групи з понад трьома рядками згорнуті).
+      controleer(`${naam}: групи «Сповіщення в меню» на карті немає (усе працює), розділу «Відновлення» — теж`, await kaart.locator('[data-kaart-ga="menu|#menu-meldingen"]').count() === 0 && await pagina.locator('details[data-future-section="recovery"]').count() === 0);
+      // Як людина: розгорнути карту й групи (групи з понад трьома рядками згорнуті).
       await kaart.evaluate((d) => { (d as HTMLDetailsElement).open = true; for (const g of d.querySelectorAll('details.future-group')) (g as HTMLDetailsElement).open = true; });
-      const knop = kaart.locator('[data-kaart-ga="menu|#menu-meldingen"]').first();
+      const knop = kaart.locator('[data-kaart-ga="menu|#menu-zichtbaarheid"]').first();
       await knop.scrollIntoViewIfNeeded();
       await knop.click();
-      await pagina.waitForFunction(() => { const d = document.querySelector('#menu-meldingen') as HTMLDetailsElement | null; return !!d && d.open; }, null, { timeout: 5000 }).catch(() => {});
+      await pagina.waitForFunction(() => { const d = document.querySelector('#menu-zichtbaarheid') as HTMLDetailsElement | null; return !!d && d.open; }, null, { timeout: 5000 }).catch(() => {});
       const naMenu = await pagina.evaluate(() => ({
         blokOpen: (document.querySelector('.mq-echt-blok[data-echt-blok="menu"]') as HTMLDetailsElement | null)?.open,
-        doelOpen: (document.querySelector('#menu-meldingen') as HTMLDetailsElement | null)?.open,
+        doelOpen: (document.querySelector('#menu-zichtbaarheid') as HTMLDetailsElement | null)?.open,
         grens: document.querySelector('[data-grens="menu"]')?.getAttribute('data-atelier'),
       }));
       controleer(`${naam}: «Відкрити» розгортає «Чинні налаштування» й потрібне місце`, naMenu.blokOpen === true && naMenu.doelOpen === true, naMenu);
@@ -91,6 +94,11 @@ export async function main(): Promise<number> {
       await pagina.waitForSelector('.mq-echt[data-echt="recovery"] #aanmeldmethoden-herstel', { timeout: 6000 }).catch(() => {});
       const herstel = await pagina.evaluate(() => ({ bestaat: !!document.querySelector('.mq-echt[data-echt="recovery"] #aanmeldmethoden-herstel'), blok: (document.querySelector('.mq-echt-blok[data-echt-blok="recovery"]') as HTMLDetailsElement | null)?.open }));
       controleer(`${naam}: перехід до іншого розділу відкриває його справжню панель`, kruis && herstel.bestaat && herstel.blok === true, herstel);
+
+      // 3б. Ціль усередині блоку: перемикач нагадування розгортає «Сповіщення в меню» і отримує фокус-підсвітку.
+      await pagina.evaluate(() => { const r = document.querySelector('.mr-mq') as HTMLElement; const b = document.createElement('button'); b.dataset.kaartGa = 'menu|[data-meld-schakel="reserve"]'; r.appendChild(b); b.click(); b.remove(); });
+      await pagina.waitForFunction(() => (document.querySelector('#menu-meldingen') as HTMLDetailsElement | null)?.open === true, null, { timeout: 5000 }).catch(() => {});
+      controleer(`${naam}: ціль [data-meld-schakel="reserve"] розгортає «Сповіщення в меню»`, await pagina.evaluate(() => (document.querySelector('#menu-meldingen') as HTMLDetailsElement | null)?.open === true && !!document.querySelector('.mq-echt[data-echt="menu"] [data-meld-schakel="reserve"]')));
 
       // 4. Введене в «Спільному доступі» лишається після закриття й повторного відкриття (сталий контейнер порталу).
       await pagina.evaluate(() => { const r = document.querySelector('.mr-mq') as HTMLElement; const b = document.createElement('button'); b.dataset.kaartGa = 'sharing|.settings-sharing'; r.appendChild(b); b.click(); b.remove(); });

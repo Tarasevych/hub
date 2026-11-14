@@ -19,15 +19,16 @@ const Blok = ({ id, kop }: { id: string; kop: string }) => <details id={id}><sum
 
 function inhoudVan(id: string) {
   switch (id) {
-    case 'menu': return <><Blok id='menu-snel' kop='Швидкий доступ' /><Blok id='menu-meldingen' kop='Сповіщення' /><Blok id='menu-snelheid' kop='Швидкодія' /><Blok id='menu-zichtbaarheid' kop='Видимість' /></>;
+    // IDENTITEIT-014: перемикач нагадування про резервний доступ і блок «Типи сповіщень» — як у ZijbalkInstellingen.
+    case 'menu': return <><Blok id='menu-snel' kop='Швидкий доступ' /><details id='menu-meldingen'><summary>Сповіщення</summary><label data-meld-schakel='reserve'><input type='checkbox' role='switch' defaultChecked />Нагадувати про резервний доступ</label></details><Blok id='menu-meldingtypen' kop='Типи сповіщень' /><Blok id='menu-snelheid' kop='Швидкодія' /><Blok id='menu-zichtbaarheid' kop='Видимість' /></>;
     case 'themes': return <><h3 id='thema-modus-kop'>Режим</h3><h3 id='thema-auto-kop'>Автоматично</h3><h3 id='thema-kleur-kop'>Палітра</h3></>;
     case 'widgets': return <form className='settings-form' onSubmit={(e) => e.preventDefault()}><input aria-label='Назва' /></form>;
-    case 'sharing': return <div className='settings-sharing'><input type='email' aria-label='Адреса' data-proef-invoer /></div>;
-    case 'account': return <div className='settings-danger'>Видалення</div>;
-    case 'methods': return <><section id='aanmeldmethoden-google'>Вхід</section><div data-access-method='password'>Пароль</div></>;
+    case 'sharing': return <div className='settings-sharing'><section id='delen-uitnodigen'><input type='email' aria-label='Адреса' data-proef-invoer /></section><section id='delen-leden'>Хто має доступ</section></div>;
+    case 'account': return <><section id='gegevensuitvoer'>Вивантаження</section><div className='settings-danger'>Видалення</div></>;
+    case 'methods': return <><section id='aanmeldmethoden-google'>Вхід</section><div id='aanmeldmethoden-wachtwoord' data-access-method='password'>Пароль</div><section id='aanmeldmethoden-catalogus'>Інші способи</section></>;
     case 'security': return <><section id='aanmeldmethoden-sleutels'>Ключі</section><section id='aanmeldmethoden-2fa'>2FA</section><section id='aanmeldmethoden-sleutelkluis'>Сховище</section><section id='toegangscodes'>Коди</section></>;
     // IDENTITEIT-014: справжній розділ має ще огляд резерву, сценарії й наслідки втрати ключа (на них веде жива карта).
-    case 'recovery': return <><section id='herstel-overzicht'>Огляд резерву</section><section id='aanmeldmethoden-herstel'>Коди відновлення</section><section id='herstel-scenarios'>Що робити, якщо…</section><section id='herstel-sleutelverlies'>Наслідки втрати ключа</section></>;
+    case 'recovery': return <><section id='herstel-overzicht'>Огляд резерву</section><section id='aanmeldmethoden-herstel'>Коди відновлення</section><section id='herstel-scenarios'>Що робити, якщо…<details data-scenario='apparaat'><summary>Пристрій</summary></details><details data-scenario='codes-op'><summary>Коди закінчилися</summary></details></section><section id='herstel-sleutelverlies'>Наслідки втрати ключа</section></>;
     default: return <p>{id}</p>;
   }
 }
