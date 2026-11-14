@@ -21,6 +21,7 @@ import {
 import { foutTekst } from './fouten';
 import './agenten.css';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 type DienstRij = { dienst: DeelbareDienst; stand: DienstStand; vorigeStand: DienstStand; gewijzigdOp: number; bevestigdDoor: string; bevrorenOp: number | null; bevrorenOorzaak: Oorzaak | '' };
 type Verslag = { besluit: string; uitvoerders: number; rijen: number; volledig: boolean; regels: Array<{ tabel: string; rijen: number; door: string }> };

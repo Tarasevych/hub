@@ -54,6 +54,7 @@ import '../mcp-hub.css';
 import './agenten.css';
 // INTEG-001: рамка сторінки й контракт класів — ПІСЛЯ agenten.css, щоб її правила (у межах .ag-pagina) мали останнє слово.
 import './agenten-pagina.css';
+import './agenten-kern-maquette.css';
 import TabsRij from '../ontwerp/TabsRij';
 import { TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs, type TabId } from './agenten-hash';
 export { ALLEEN_TECHNISCH, OUDE_HASH, PLEKKEN, TABS, isBeleidHash, koppelVraag, leesHash, ontgrendelDoel, zichtbareTabs } from './agenten-hash';

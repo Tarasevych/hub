@@ -22,6 +22,7 @@ import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Melding, Rij, T
 import '../mcp-hub.css';
 import './agenten.css';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 type Item = { sleutel: string; soort: 'oauth' | 'token'; naam: string; laatst: number | null; sinds: number | null; actief: boolean; oauth?: OauthVerbinding; token?: DeurToken };
 

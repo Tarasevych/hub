@@ -7,6 +7,7 @@ import { sessionBody, type Agent } from './agenten-gegevens';
 import { buildAgentCommands, buildRunnerScript, looksLikePlaceholder, type Os, type Shell } from './agent-opdrachten';
 import { guessArch, nodeInstallMethods, type Arch } from './installeer-opdrachten';
 import './extensie-wizard.css';
+import './agenten/agenten-toegang-maquette.css';
 import { alleenMens, geenAi, verborgenVoorAi } from './menselijke-actie';
 
 const ALLOW_CHOICES = ['git', 'node', 'npm', 'python', 'docker'];

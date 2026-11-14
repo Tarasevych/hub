@@ -1,0 +1,2230 @@
+/* =============================================================================================================================
+   Студійне оформлення розділів керування розширенням оглядача, пристроями ПК, маркерами доступу, правами користувачів,
+   розмежуванням просторів, технічним контуром та журналом подій у художній системі «Макет» (MAQUETTE-008, Група 7В).
+   Працює виключно за умови html.palet-maquette для глибокої нічної студії та світлого режиму «Ранковий туман».
+   Studio-opmaak voor browserextensie, apparaten, toegangstokens, rechten, ruimtescheiding, technisch profiel en journaal
+   onder html.palet-maquette (nachtstudio en lichte ochtendnevel) op mcp.tarasevych.com.
+   ============================================================================================================================= */
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   1. ПОХІДНІ СТУДІЙНІ ЗМІННІ ІНДИГО-КОБАЛЬТОВОГО КОНТУРУ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-tech-verbindingen="1"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) {
+  --mq-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --mq-accent-mcp: color-mix(in srgb, var(--mq-accent) 64%, var(--mq-held-boven) 36%);
+  --mq-accent-mcp-diep: color-mix(in srgb, var(--mq-accent-2) 72%, var(--mq-held-boven) 28%);
+  --mq-accent-mcp-op: var(--mq-accent-op);
+
+  --mq-mcp-halo: color-mix(in srgb, var(--mq-accent-mcp) 18%, transparent);
+  --mq-mcp-halo-zacht: color-mix(in srgb, var(--mq-accent-mcp) 9%, transparent);
+  --mq-mcp-glas: color-mix(in srgb, var(--mq-oppervlak) 88%, var(--mq-bg) 12%);
+  --mq-mcp-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 5%);
+  --mq-mcp-put: color-mix(in srgb, var(--mq-bg) 56%, var(--mq-oppervlak) 44%);
+  --mq-mcp-glans: color-mix(in srgb, var(--mq-tekst) 9%, transparent);
+  --mq-mcp-rand: color-mix(in srgb, var(--mq-tekst) 13%, var(--mq-rand));
+  --mq-mcp-rand-sterk: color-mix(in srgb, var(--mq-accent-mcp) 44%, var(--mq-rand-sterk));
+
+  --mq-mcp-ok: color-mix(in srgb, var(--ok) 84%, var(--mq-tekst) 16%);
+  --mq-mcp-ok-zacht: color-mix(in srgb, var(--mq-mcp-ok) 14%, transparent);
+  --mq-mcp-warn: color-mix(in srgb, var(--warn) 86%, var(--mq-tekst) 14%);
+  --mq-mcp-warn-zacht: color-mix(in srgb, var(--mq-mcp-warn) 14%, transparent);
+  --mq-mcp-fout: color-mix(in srgb, var(--fout) 86%, var(--mq-tekst) 14%);
+  --mq-mcp-fout-zacht: color-mix(in srgb, var(--mq-mcp-fout) 14%, transparent);
+  --mq-mcp-info: color-mix(in srgb, var(--info) 74%, var(--mq-accent-mcp) 26%);
+  --mq-mcp-info-zacht: color-mix(in srgb, var(--mq-mcp-info) 14%, transparent);
+
+  --mq-mcp-prive: var(--mq-accent-mcp);
+  --mq-mcp-tech: color-mix(in srgb, var(--mq-accent-mcp) 48%, var(--mq-mcp-warn) 52%);
+
+  --panel: var(--mq-oppervlak);
+  --panel-2: var(--mq-mcp-put);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-mcp-glas-verhoogd);
+  --line: var(--mq-mcp-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --accent: var(--mq-accent-mcp);
+  --accent-soft: var(--mq-mcp-halo-zacht);
+  --text-on-accent: var(--mq-accent-mcp-op);
+  --focus: var(--mq-accent-mcp);
+  --ag-ok: var(--mq-mcp-ok);
+  --ag-warn: var(--mq-mcp-warn);
+  --ag-bad: var(--mq-mcp-fout);
+  --ag-info: var(--mq-mcp-info);
+}
+
+html.palet-maquette[data-theme="light"] :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-tech-verbindingen="1"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+),
+html.palet-maquette:is(.theme-light, .theme-plum-light) :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-tech-verbindingen="1"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-tech-verbindingen="1"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) {
+  --mq-accent-mcp: color-mix(in srgb, var(--mq-knop-primair-tekst) 72%, var(--mq-accent) 28%);
+  --mq-accent-mcp-diep: color-mix(in srgb, var(--mq-knop-primair-tekst) 86%, var(--mq-accent-2) 14%);
+  --mq-accent-mcp-op: var(--mq-wit);
+
+  --mq-mcp-halo: color-mix(in srgb, var(--mq-accent-mcp) 12%, transparent);
+  --mq-mcp-halo-zacht: color-mix(in srgb, var(--mq-accent-mcp) 6%, transparent);
+  --mq-mcp-glas: color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-wit) 5%);
+  --mq-mcp-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-accent-mcp) 4%);
+  --mq-mcp-put: color-mix(in srgb, var(--mq-bg) 60%, var(--mq-oppervlak) 40%);
+  --mq-mcp-glans: color-mix(in srgb, var(--mq-wit) 84%, transparent);
+  --mq-mcp-rand: color-mix(in srgb, var(--mq-tekst) 11%, var(--mq-rand));
+  --mq-mcp-rand-sterk: color-mix(in srgb, var(--mq-accent-mcp) 36%, var(--mq-rand-sterk));
+
+  --mq-mcp-ok: color-mix(in srgb, var(--ok) 88%, var(--mq-tekst) 12%);
+  --mq-mcp-warn: color-mix(in srgb, var(--warn) 88%, var(--mq-tekst) 12%);
+  --mq-mcp-fout: color-mix(in srgb, var(--fout) 88%, var(--mq-tekst) 12%);
+  --mq-mcp-info: color-mix(in srgb, var(--info) 78%, var(--mq-accent-mcp) 22%);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   2. СПІЛЬНІ КАРТКИ БЛОКІВ, РЯДКИ СПИСКІВ, КНОПКИ, ПОЗНАЧКИ ТА ПОЛЯ ВВЕДЕННЯ НАШИХ КОНТУРІВ
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok,
+html.palet-maquette :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+) {
+  background: linear-gradient(165deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans), var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok .ag-blok {
+  background: var(--mq-mcp-put);
+  border-color: var(--mq-mcp-rand);
+  border-radius: calc(var(--mq-straal-kaart) - 4px);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok-titel,
+html.palet-maquette :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+) .ag-blok-titel {
+  color: var(--mq-tekst);
+  letter-spacing: -0.012em;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok-titel > svg,
+html.palet-maquette :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+) .ag-blok-titel > svg {
+  color: var(--mq-accent-mcp);
+  filter: drop-shadow(0 0 8px var(--mq-mcp-halo));
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"]
+) .ag-blok-uitleg,
+html.palet-maquette :is(
+  section.ag-blok[data-ag-blok="ruimte-scheiding"],
+  section.ag-blok[data-ag-blok="site-schakelaars"],
+  section.ag-blok[data-ai-verbinden="1"]
+) .ag-blok-uitleg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--mq-bg) 42%, transparent);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  .eo,
+  .wiz[data-browser-extension="true"],
+  .wiz[data-agents-pairing],
+  [data-ai-verbinden="1"],
+  .at[data-toegang],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [id="ag-deuren"]
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--mq-accent-mcp);
+  box-shadow: 0 0 0 3px var(--mq-mcp-halo);
+  background: var(--mq-oppervlak);
+}
+
+/* Студійні кнопки, сегментні перемикачі, позначки та рядки списків */
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  [data-ai-verbinden="1"],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) .ag-knop {
+  background: var(--mq-mcp-glas-verhoogd);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-knop);
+  color: var(--mq-tekst);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  [data-ai-verbinden="1"],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-ag-blok="site-schakelaars"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) .ag-knop-primair {
+  background: linear-gradient(135deg, var(--mq-accent-mcp) 0%, var(--mq-accent-mcp-diep) 100%);
+  border-color: color-mix(in srgb, var(--mq-accent-mcp) 76%, var(--mq-tekst) 24%);
+  color: var(--mq-accent-mcp-op);
+  box-shadow: 0 4px 14px var(--mq-mcp-halo), inset 0 1px 0 color-mix(in srgb, var(--mq-wit) 24%, transparent);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-paneel="extensie"],
+  [data-paneel="extensie-technisch"],
+  [data-ai-verbinden="1"],
+  [data-ag-blok="ruimte-scheiding"],
+  [data-lijst="deur-verbindingen"],
+  .tg-venster-achter
+) .ag-knop-gevaar {
+  background: color-mix(in srgb, var(--mq-mcp-fout) 11%, var(--mq-oppervlak));
+  border-color: color-mix(in srgb, var(--mq-mcp-fout) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-fout);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-lijst {
+  background: var(--mq-mcp-glas);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+  overflow: hidden;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-rij + .ag-rij {
+  border-top: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-rij:has(> .ag-rij-details) {
+  background: linear-gradient(90deg, var(--mq-mcp-halo-zacht) 0%, transparent 45%);
+  box-shadow: inset 3px 0 0 var(--mq-accent-mcp);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-rij-details {
+  background: var(--mq-mcp-put);
+  border-top: 1px solid var(--mq-mcp-rand);
+  padding: 14px 16px 16px;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) dl.ag-tech dt {
+  color: var(--mq-gedempt);
+  font-size: 0.8125rem;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) dl.ag-tech dd {
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) dl.ag-tech dd code,
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) pre.ag-ruw {
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+  background: color-mix(in srgb, var(--mq-bg) 72%, var(--mq-oppervlak) 28%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: calc(var(--mq-straal-veld) - 2px);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge {
+  font-size: 0.75rem;
+  font-weight: 650;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-ok {
+  background: var(--mq-mcp-ok-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 40%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-ok);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-warn {
+  background: var(--mq-mcp-warn-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-warn) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-warn);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-bad {
+  background: var(--mq-mcp-fout-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-fout) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-fout);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tab-inhoud="journaal"],
+  [data-tech-verbindingen="1"],
+  [id="ag-deuren"],
+  [data-lijst="deur-verbindingen"]
+) .ag-badge.is-info {
+  background: var(--mq-mcp-info-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-info) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-info);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"]
+) .ag-segment {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-knop);
+  padding: 3px;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"]
+) .ag-segment > button {
+  font-size: 0.84rem;
+  border-radius: calc(var(--mq-straal-knop) - 3px);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"]
+) .ag-segment > button[aria-checked="true"] {
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--mq-bg) 45%, transparent), inset 0 0 0 1px var(--mq-mcp-rand-sterk);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-bevestig {
+  background: color-mix(in srgb, var(--mq-mcp-fout) 10%, var(--mq-mcp-put));
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-fout) 42%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="extensie"],
+  [data-tab-inhoud="browser"],
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="toegang"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"],
+  [data-ai-verbinden="1"],
+  [data-lijst="deur-verbindingen"]
+) .ag-melding {
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-mcp-glas-verhoogd);
+  border: 1px solid var(--mq-mcp-rand);
+  font-size: 0.86rem;
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"]
+) details.ag-groep {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette :is(
+  [data-tab-inhoud="apparaten"],
+  [data-tab-inhoud="tokens"],
+  [data-tab-inhoud="technisch"],
+  [data-tech-verbindingen="1"]
+) details.ag-groep > summary {
+  font-size: 0.875rem;
+  color: var(--mq-gedempt);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   3. РОЗШИРЕННЯ ОГЛЯДАЧА ТА «ОГЛЯДАЧ І АГЕНТИ» (КОНТУРИ ПРОФІЛІВ, КРИПТОГРАФІЧНЕ СХОВИЩЕ, МАТРИЦЯ ДОЗВОЛІВ, МАЙСТЕР)
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Студійні картки особистого й технічного контурів розширення */
+html.palet-maquette [data-tab-inhoud="extensie"] [data-ag-blok="extensie-gebruiker"],
+html.palet-maquette [id="extension-lokaal"][data-ext-sectie="gebruiker"] {
+  box-shadow:
+    inset 0 2px 0 color-mix(in srgb, var(--mq-mcp-prive) 72%, transparent),
+    inset 0 1px 0 var(--mq-mcp-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette [data-tab-inhoud="extensie"] [data-ag-blok="extensie-technisch"][data-tech-actief="1"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-tech) 46%, var(--mq-mcp-rand));
+  box-shadow:
+    inset 0 2px 0 color-mix(in srgb, var(--mq-mcp-tech) 78%, transparent),
+    inset 0 1px 0 var(--mq-mcp-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette [data-tab-inhoud="extensie"] [data-ag-blok="extensie-technisch"][data-tech-actief="0"] {
+  border-style: dashed;
+  background: linear-gradient(165deg, var(--mq-mcp-put) 0%, var(--mq-mcp-glas) 100%);
+}
+
+html.palet-maquette .bea-sloten > :is([id="bea-slot-prive"], [data-bea-slot="prive"]) {
+  background: linear-gradient(165deg, color-mix(in srgb, var(--mq-mcp-prive) 8%, var(--mq-mcp-glas-verhoogd)) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-prive) 34%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-kaart);
+  padding: 16px 18px;
+  box-shadow: inset 0 2px 0 var(--mq-mcp-prive), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .bea-sloten > :is([id="bea-slot-technisch"], [data-bea-slot="technisch"]) {
+  background: linear-gradient(165deg, color-mix(in srgb, var(--mq-mcp-tech) 8%, var(--mq-mcp-glas-verhoogd)) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-tech) 36%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-kaart);
+  padding: 16px 18px;
+  box-shadow: inset 0 2px 0 var(--mq-mcp-tech), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .bea-sloten > [data-bea-slot] > h3 {
+  color: var(--mq-tekst);
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+html.palet-maquette .bea-sloten > :is([id="bea-slot-prive"], [data-bea-slot="prive"]) > h3 svg {
+  color: var(--mq-mcp-prive);
+}
+
+html.palet-maquette .bea-sloten > :is([id="bea-slot-technisch"], [data-bea-slot="technisch"]) > h3 svg {
+  color: var(--mq-mcp-tech);
+}
+
+html.palet-maquette .ag-ext-regel {
+  background: var(--mq-mcp-put);
+  border: 1px dashed color-mix(in srgb, var(--mq-accent-mcp) 36%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette [data-ext-diag] {
+  padding: 10px 12px;
+  border-radius: var(--mq-straal-veld);
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette [data-ext-diag="aan"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 40%, var(--mq-mcp-rand));
+  background: color-mix(in srgb, var(--mq-mcp-ok) 8%, var(--mq-mcp-put));
+}
+
+html.palet-maquette [data-ext-diag="uit"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-warn) 42%, var(--mq-mcp-rand));
+}
+
+/* Криптографічне розблокування розширення (ExtensieOntgrendeling та ExtensiePrive) */
+html.palet-maquette .eo-kaart {
+  background: linear-gradient(160deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-put) 100%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  padding: 16px;
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette .eo-kaart.is-vergrendeld {
+  border-left: 4px solid var(--mq-gedempt);
+}
+
+html.palet-maquette .eo-kaart.is-ontgrendeld {
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 44%, var(--mq-mcp-rand));
+  border-left: 4px solid var(--mq-mcp-ok);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-mcp-ok) 10%, var(--mq-mcp-glas-verhoogd)) 0%, var(--mq-mcp-glas) 100%);
+}
+
+html.palet-maquette .eo-kaart.is-agent {
+  border-color: var(--mq-mcp-rand-sterk);
+  border-left: 4px solid var(--mq-accent-mcp);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-accent-mcp) 14%, var(--mq-mcp-glas-verhoogd)) 0%, var(--mq-mcp-glas) 100%);
+  box-shadow: 0 8px 22px var(--mq-mcp-halo-zacht), inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette .eo-kaart.is-niet-gekoppeld {
+  border-color: color-mix(in srgb, var(--mq-mcp-warn) 44%, var(--mq-mcp-rand));
+  border-left: 4px solid var(--mq-mcp-warn);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-mcp-warn) 10%, var(--mq-mcp-glas-verhoogd)) 0%, var(--mq-mcp-glas) 100%);
+}
+
+html.palet-maquette .eo-icoon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .eo-kaart.is-ontgrendeld .eo-icoon {
+  background: var(--mq-mcp-ok-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-ok);
+}
+
+html.palet-maquette .eo-kaart.is-agent .eo-icoon {
+  background: var(--mq-mcp-halo);
+  border-color: var(--mq-mcp-rand-sterk);
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .eo-kaart.is-niet-gekoppeld .eo-icoon {
+  background: var(--mq-mcp-warn-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-warn) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-warn);
+}
+
+html.palet-maquette .eo-rest {
+  font-family: var(--mq-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--mq-mcp-halo);
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .eo-chip {
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .eo-chip code,
+html.palet-maquette .eo-vink code,
+html.palet-maquette .eo-weigering-kop code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette .eo-form {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  padding: 16px;
+}
+
+html.palet-maquette .eo-vink {
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+html.palet-maquette .eo-vink input[type="checkbox"] {
+  accent-color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .eo-vink:has(input:checked) {
+  border-color: var(--mq-mcp-rand-sterk);
+  background: color-mix(in srgb, var(--mq-accent-mcp) 11%, var(--mq-oppervlak));
+}
+
+html.palet-maquette .eo-knop {
+  background: var(--mq-mcp-glas-verhoogd);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-knop);
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+html.palet-maquette .eo-knop.is-hoofd {
+  background: linear-gradient(135deg, var(--mq-accent-mcp) 0%, var(--mq-accent-mcp-diep) 100%);
+  border-color: color-mix(in srgb, var(--mq-accent-mcp) 75%, var(--mq-tekst) 25%);
+  color: var(--mq-accent-mcp-op);
+  box-shadow: 0 5px 16px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .eo-knop.is-gevaar {
+  background: color-mix(in srgb, var(--mq-mcp-fout) 11%, var(--mq-oppervlak));
+  border-color: color-mix(in srgb, var(--mq-mcp-fout) 44%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-fout);
+}
+
+html.palet-maquette .eo-weigering {
+  background: color-mix(in srgb, var(--mq-mcp-warn) 10%, var(--mq-mcp-put));
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-warn) 46%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .eo-melding {
+  background: var(--mq-mcp-glas-verhoogd);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .eo-melding.is-ok {
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 46%, var(--mq-mcp-rand));
+  background: color-mix(in srgb, var(--mq-mcp-ok) 10%, var(--mq-oppervlak));
+  color: var(--mq-mcp-ok);
+}
+
+/* Жива панель розширення оглядача (BrowserExtensiePaneel) та Вбудований локальний ШІ (LokaleAiPaneel) */
+html.palet-maquette [data-paneel="extensie"],
+html.palet-maquette [data-paneel="extensie-technisch"] {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ext-koppel[data-ext-koppel] {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-accent-mcp) 12%, var(--mq-mcp-glas-verhoogd)) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: 0 8px 22px var(--mq-mcp-halo-zacht);
+}
+
+html.palet-maquette .ext-mismatch[data-ext-mismatch="1"] {
+  background: color-mix(in srgb, var(--mq-mcp-warn) 12%, var(--mq-mcp-put));
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-warn) 48%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette article.hub-agent.mcp-browser[data-browser-agents="1"] {
+  background: var(--mq-mcp-glas);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  padding: 16px;
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette article.hub-agent.mcp-browser[data-browser-state="on"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 44%, var(--mq-mcp-rand));
+  box-shadow: inset 3px 0 0 var(--mq-mcp-ok), inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette article.hub-agent.mcp-browser[data-browser-state="wait"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-warn) 44%, var(--mq-mcp-rand));
+  box-shadow: inset 3px 0 0 var(--mq-mcp-warn), inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette .ext-state[data-ext-state] {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  padding: 12px 14px;
+}
+
+html.palet-maquette .ext-state[data-ext-state] code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.8rem;
+}
+
+html.palet-maquette .ext-test[data-ext-test] {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  padding: 12px 14px;
+}
+
+html.palet-maquette .ext-test li.ok {
+  color: var(--mq-mcp-ok);
+}
+
+html.palet-maquette .ext-test li.bad {
+  color: var(--mq-mcp-fout);
+}
+
+html.palet-maquette [data-ag-blok="extensie-lokale-ai"] [data-lai-samenvatting] {
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette details.ag-ext-lai[data-lai-details="1"] {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  padding: 10px 14px;
+}
+
+html.palet-maquette [data-lijst="lokale-ai"] > li[data-lai-stand="ja"] {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-ok);
+}
+
+html.palet-maquette [data-lijst="lokale-ai"] > li[data-lai-stand="laden"] {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-warn);
+}
+
+html.palet-maquette .ag-ext-lai-site {
+  border-top: 1px solid var(--mq-mcp-rand);
+  padding-top: 14px;
+}
+
+html.palet-maquette pre.ag-ext-lai-uit {
+  font-family: var(--mq-font-mono);
+  font-size: 0.84rem;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  border-radius: var(--mq-straal-veld);
+  padding: 12px 14px;
+  color: var(--mq-tekst);
+}
+
+/* Матриця дозволів сайтів та ШІ-агентів ([data-ag-blok="browser-matrix"]) */
+html.palet-maquette .ag2-slotkeuze {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+html.palet-maquette .ag2-slotkeuze > button {
+  font-size: 0.84rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .ag2-slotkeuze > button[data-bea-slotkeuze="prive"][aria-selected="true"] {
+  background: linear-gradient(135deg, var(--mq-mcp-prive) 0%, var(--mq-accent-mcp-diep) 100%);
+  color: var(--mq-accent-mcp-op);
+  box-shadow: 0 3px 10px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .ag2-slotkeuze > button[data-bea-slotkeuze="technisch"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--mq-mcp-tech) 22%, var(--mq-oppervlak));
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-mcp-tech) 58%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .bea-erfenis {
+  background: color-mix(in srgb, var(--mq-accent-mcp) 8%, var(--mq-mcp-put));
+  border-left: 3px solid var(--mq-accent-mcp);
+  border-radius: 0 var(--mq-straal-veld) var(--mq-straal-veld) 0;
+  color: var(--mq-gedempt);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .bea-snel button {
+  background: var(--mq-mcp-glas-verhoogd);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: 999px;
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+html.palet-maquette .bea-snel button[data-bea-snel="uit"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-fout) 34%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-fout);
+}
+
+html.palet-maquette .bea-waarschuwing {
+  background: color-mix(in srgb, var(--mq-mcp-warn) 11%, var(--mq-mcp-put));
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-warn) 46%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .bea-waarschuwing svg {
+  color: var(--mq-mcp-warn);
+}
+
+html.palet-maquette .bea-tabel-wrap {
+  background: var(--mq-mcp-glas);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette .bea-tabel {
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .bea-tabel th,
+html.palet-maquette .bea-tabel td {
+  border-bottom: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette .bea-tabel thead th {
+  background: var(--mq-mcp-put);
+  color: var(--mq-tekst);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+html.palet-maquette .bea-tabel tbody th {
+  background: var(--mq-oppervlak);
+  border-right: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette .bea-tabel thead th:first-child {
+  background: var(--mq-mcp-put);
+  border-right: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette .bea-tabel thead th.is-verbonden span::after {
+  background: var(--mq-mcp-ok);
+  box-shadow: 0 0 8px var(--mq-mcp-ok);
+}
+
+html.palet-maquette .bea-tabel thead th.is-gekozen,
+html.palet-maquette .bea-tabel td.is-gekozen {
+  background: color-mix(in srgb, var(--mq-accent-mcp) 11%, var(--mq-oppervlak));
+}
+
+html.palet-maquette .bea-tabel tr.is-gevaarlijk tbody th,
+html.palet-maquette .bea-tabel tr.is-gevaarlijk > th {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-warn);
+}
+
+html.palet-maquette .bea-cap-naam code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .bea-vink {
+  accent-color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .bea-cel:has(.bea-vink:checked) {
+  background: radial-gradient(circle, var(--mq-mcp-halo) 0%, transparent 72%);
+}
+
+html.palet-maquette .ag2-matrix-groepen > fieldset {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .ag2-matrix-groepen > fieldset > legend {
+  color: var(--mq-accent-mcp);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .ag2-legenda {
+  color: var(--mq-gedempt);
+  font-size: 0.8125rem;
+}
+
+html.palet-maquette .bea-instellingen {
+  border-top: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette .bea-schakel {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  padding: 12px 14px;
+}
+
+/* Тактильний студійний перемикач .hub-toggle */
+html.palet-maquette :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle {
+  appearance: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-mcp-rand);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+html.palet-maquette :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--mq-gedempt);
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+html.palet-maquette :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle:checked {
+  background: var(--mq-accent-mcp);
+  border-color: color-mix(in srgb, var(--mq-accent-mcp) 76%, var(--mq-tekst) 24%);
+  box-shadow: 0 0 12px var(--mq-mcp-halo);
+}
+
+html.palet-maquette :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle:checked::after {
+  transform: translateX(18px);
+  background: var(--mq-accent-mcp-op);
+}
+
+html.palet-maquette .bea-opslaan {
+  border-top: 1px solid var(--mq-mcp-rand);
+}
+
+/* Ланцюг готовності агентів, останні відмови та пояснення */
+html.palet-maquette .bea-keten-lijst > li {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette .bea-keten-lijst > li.is-klaar {
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 46%, var(--mq-mcp-rand));
+  box-shadow: inset 3px 0 0 var(--mq-mcp-ok);
+}
+
+html.palet-maquette .bea-keten-stap.is-ok {
+  background: var(--mq-mcp-ok-zacht);
+  color: var(--mq-mcp-ok);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette .bea-keten-stap.is-mist {
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette .bea-weig-lijst > li {
+  background: var(--mq-mcp-put);
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-warn) 38%, var(--mq-mcp-rand));
+  border-left: 3px solid var(--mq-mcp-warn);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette .bea-weig-kop code,
+html.palet-maquette [data-ag-blok="browser-uitleg"] code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+}
+
+/* Покроковий майстер встановлення розширення та налаштування агента ПК (.wiz) */
+html.palet-maquette .wiz {
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-mcp-halo) 0%, transparent 48%),
+    linear-gradient(168deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans), var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .wiz-badge {
+  font-size: 0.75rem;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-mcp-put);
+}
+
+html.palet-maquette .wiz-badge.ok {
+  background: var(--mq-mcp-ok-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 44%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-ok);
+}
+
+html.palet-maquette .wiz-badge.wait {
+  background: var(--mq-mcp-warn-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-warn) 44%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-warn);
+}
+
+html.palet-maquette .wiz-badge.idle {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .wiz-progress {
+  background: var(--mq-mcp-put);
+  height: 7px;
+}
+
+html.palet-maquette .wiz-progress > span {
+  background: linear-gradient(90deg, var(--mq-accent-mcp) 0%, var(--mq-mcp-ok) 100%);
+}
+
+html.palet-maquette .wiz-browsers button {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+}
+
+html.palet-maquette .wiz-browsers button.active {
+  background: color-mix(in srgb, var(--mq-accent-mcp) 14%, var(--mq-oppervlak));
+  border-color: var(--mq-accent-mcp);
+  box-shadow: 0 0 0 2px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .wiz-step {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .wiz-step.now {
+  background: linear-gradient(165deg, var(--mq-oppervlak) 0%, var(--mq-mcp-glas) 100%);
+  border-color: var(--mq-accent-mcp);
+  box-shadow: 0 0 0 3px var(--mq-mcp-halo), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .wiz-step.done {
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 36%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .wiz-num {
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-tekst);
+  font-size: 0.8125rem;
+}
+
+html.palet-maquette .wiz-step.now .wiz-num {
+  background: var(--mq-accent-mcp);
+  border-color: var(--mq-accent-mcp);
+  color: var(--mq-accent-mcp-op);
+}
+
+html.palet-maquette .wiz-step.done .wiz-num {
+  background: var(--mq-mcp-ok);
+  border-color: var(--mq-mcp-ok);
+  color: var(--mq-wit);
+}
+
+html.palet-maquette .wiz-chip {
+  font-size: 0.75rem;
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .wiz-step.now .wiz-chip {
+  background: var(--mq-mcp-halo);
+  border-color: var(--mq-mcp-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .wiz-step.done .wiz-chip {
+  background: var(--mq-mcp-ok-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 40%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-ok);
+}
+
+html.palet-maquette .wiz-tabs button,
+html.palet-maquette .wiz-os button,
+html.palet-maquette .wiz-allow button {
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-tekst);
+  font-size: 0.8125rem;
+}
+
+html.palet-maquette .wiz-tabs button.active,
+html.palet-maquette .wiz-os button.active,
+html.palet-maquette .wiz-allow button.on {
+  background: linear-gradient(135deg, var(--mq-accent-mcp) 0%, var(--mq-accent-mcp-diep) 100%);
+  border-color: var(--mq-accent-mcp);
+  color: var(--mq-accent-mcp-op);
+}
+
+html.palet-maquette .wiz-primary {
+  background: linear-gradient(135deg, var(--mq-accent-mcp) 0%, var(--mq-accent-mcp-diep) 100%);
+  color: var(--mq-accent-mcp-op);
+  border-radius: var(--mq-straal-knop);
+  box-shadow: 0 5px 16px var(--mq-mcp-halo);
+  font-size: 0.9rem;
+}
+
+html.palet-maquette .wiz-copy pre,
+html.palet-maquette .wiz-step-body code,
+html.palet-maquette .wiz-foot code {
+  font-family: var(--mq-font-mono);
+}
+
+html.palet-maquette .wiz-copy pre {
+  background: color-mix(in srgb, var(--mq-bg) 76%, var(--mq-oppervlak) 24%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+  font-size: 0.8125rem;
+}
+
+html.palet-maquette .wiz-copy button {
+  background: var(--mq-oppervlak-2);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-tekst);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette .wiz-debug {
+  background: color-mix(in srgb, var(--mq-accent-mcp) 10%, var(--mq-mcp-put));
+  border-left: 3px solid var(--mq-accent-mcp);
+  color: var(--mq-tekst);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .wiz-debug-explain {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette .wiz-foot {
+  border-top: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette .wiz-mock {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette .wiz-mock text {
+  fill: var(--mq-tekst);
+  font-size: 12px;
+}
+
+html.palet-maquette .wiz-mock text.muted {
+  fill: var(--mq-gedempt);
+}
+
+html.palet-maquette .wiz-mock .m-win {
+  fill: var(--mq-oppervlak);
+  stroke: var(--mq-mcp-rand);
+}
+
+html.palet-maquette .wiz-mock .m-bar {
+  fill: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette .wiz-mock .m-url,
+html.palet-maquette .wiz-mock .m-card,
+html.palet-maquette .wiz-mock .m-field {
+  fill: var(--mq-mcp-put);
+  stroke: var(--mq-mcp-rand);
+}
+
+html.palet-maquette .wiz-mock .m-hl {
+  fill: var(--mq-mcp-halo);
+  stroke: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .wiz-mock .m-ring {
+  stroke: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .wiz-mock .m-toggle {
+  fill: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .wiz-mock .m-knob {
+  fill: var(--mq-wit);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   4. ПРИСТРОЇ ПК, РОБОЧІ СТАНЦІЇ У МЕРЕЖІ Й ПОЗА МЕРЕЖЕЮ ТА ПОЛІТИКИ АВТОСХВАЛЕННЯ
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette [data-tab-inhoud="apparaten"] .ag2-werkbalk {
+  padding: 10px 14px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette [data-apparaten-telling] {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [data-tab-inhoud="apparaten"] .ag2-paneel.is-open {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: 0 8px 24px var(--mq-mcp-halo-zacht);
+}
+
+html.palet-maquette [data-lijst="apparaten"] > li.ag-rij[data-online="1"] {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-ok);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mq-mcp-ok) 7%, transparent) 0%, transparent 40%);
+}
+
+html.palet-maquette [data-lijst="apparaten"] > li.ag-rij[data-online="0"] .ag-rij-titel {
+  color: color-mix(in srgb, var(--mq-tekst) 82%, var(--mq-gedempt) 18%);
+}
+
+html.palet-maquette [data-lijst="apparaten"] [data-badge="ruimte-technisch"] {
+  background: color-mix(in srgb, var(--mq-mcp-tech) 16%, transparent);
+  border-color: color-mix(in srgb, var(--mq-mcp-tech) 46%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-tech);
+}
+
+html.palet-maquette [data-lijst="apparaten"] .ag-waarschuwing[data-update] {
+  background: color-mix(in srgb, var(--mq-mcp-warn) 10%, var(--mq-oppervlak));
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-warn) 44%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-veld);
+  padding: 12px 14px;
+}
+
+html.palet-maquette [data-lijst="apparaten"] .ag-waarschuwing[data-update] code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette [data-tab-inhoud="apparaten"] article.hub-agent[data-agent-status],
+html.palet-maquette [data-lijst="server-agenten"] article.hub-agent[data-agent-status] {
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  padding: 16px;
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette [data-tab-inhoud="apparaten"] article.hub-agent[data-agent-status="online"],
+html.palet-maquette [data-lijst="server-agenten"] article.hub-agent[data-agent-status="online"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 42%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette [data-tab-inhoud="apparaten"] article.hub-agent code,
+html.palet-maquette [data-lijst="server-agenten"] article.hub-agent code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette [data-tab-inhoud="apparaten"] .hub-switch[data-policy],
+html.palet-maquette [data-lijst="server-agenten"] .hub-switch[data-policy] {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+html.palet-maquette [data-tab-inhoud="apparaten"] .hub-switch[data-policy] input[type="checkbox"],
+html.palet-maquette [data-lijst="server-agenten"] .hub-switch[data-policy] input[type="checkbox"] {
+  accent-color: var(--mq-accent-mcp);
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+html.palet-maquette [data-tab-inhoud="apparaten"] .hub-switch[data-policy]:has(input:checked),
+html.palet-maquette [data-lijst="server-agenten"] .hub-switch[data-policy]:has(input:checked) {
+  border-color: var(--mq-mcp-rand-sterk);
+  background: color-mix(in srgb, var(--mq-accent-mcp) 10%, var(--mq-mcp-put));
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   5. МАРКЕРИ ДОСТУПУ, ПІДКЛЮЧЕННЯ ШІ, ПРАВА КОРИСТУВАЧІВ ТА ІЗОЛЯЦІЯ ПРОСТОРІВ
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Активні маркери доступу з моноширинними префіксами tvh_... */
+html.palet-maquette [data-tokens-telling] {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette [data-lijst="tokens"] li.ag-rij[data-rij^="tok:"] .ag-rij-titel code,
+html.palet-maquette [data-tech-verbindingen="1"] li.ag-rij[data-rij^="tok:"] .ag-rij-titel code,
+html.palet-maquette details.ag-groep[data-groep="tokens-historie"] .ag-rij-titel code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--mq-accent-mcp) 12%, var(--mq-mcp-put));
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+/* Майстер підключення ШІ (AiVerbinden) */
+html.palet-maquette section.ag-verbind[data-ai-verbinden="1"][data-ruimte="technisch"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-tech) 44%, var(--mq-mcp-rand));
+  box-shadow: inset 0 2px 0 var(--mq-mcp-tech), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .ag-verbind-ruimte[data-ruimte-uitleg] {
+  background: color-mix(in srgb, var(--mq-accent-mcp) 10%, var(--mq-mcp-put));
+  border: 1px solid var(--mq-mcp-rand);
+  border-left: 3px solid var(--mq-accent-mcp);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette section.ag-verbind[data-ruimte="technisch"] .ag-verbind-ruimte[data-ruimte-uitleg] {
+  background: color-mix(in srgb, var(--mq-mcp-tech) 11%, var(--mq-mcp-put));
+  border-left-color: var(--mq-mcp-tech);
+}
+
+html.palet-maquette .ag-verbind-klant {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+  font-size: 0.875rem;
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+html.palet-maquette .ag-verbind-klant[aria-checked="true"] {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-accent-mcp) 16%, var(--mq-oppervlak)) 0%, var(--mq-oppervlak) 100%);
+  border-color: var(--mq-accent-mcp);
+  box-shadow: 0 0 0 2px var(--mq-mcp-halo), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .ag-verbind-weg {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  color: var(--mq-tekst);
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+html.palet-maquette .ag-verbind-weg.is-aan {
+  background: linear-gradient(155deg, color-mix(in srgb, var(--mq-accent-mcp) 14%, var(--mq-oppervlak)) 0%, var(--mq-oppervlak) 100%);
+  border-color: var(--mq-accent-mcp);
+  box-shadow: 0 0 0 2px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .ag-verbind-weg-kop > svg {
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .ag-verbind-paneel {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .ag-verbind-adres code,
+html.palet-maquette .ag-vers-rij code,
+html.palet-maquette .ag-verbind-snippet pre {
+  font-family: var(--mq-font-mono);
+  font-size: 0.8125rem;
+  background: color-mix(in srgb, var(--mq-bg) 76%, var(--mq-oppervlak) 24%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .ag-vers[data-vers-token="1"] {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--mq-mcp-ok) 12%, var(--mq-oppervlak)) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-ok) 48%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: 0 8px 22px var(--mq-mcp-ok-zacht);
+}
+
+/* Перемикачі областей доступу одного підключення (AiToegangTab — .at) */
+html.palet-maquette .at[data-toegang] .at-groep h4 {
+  color: var(--mq-tekst);
+  font-size: 0.92rem;
+}
+
+html.palet-maquette .at[data-toegang] .at-groep ul {
+  background: var(--mq-mcp-glas);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette .at[data-toegang] .at-rij {
+  border-top-color: var(--mq-mcp-rand);
+}
+
+html.palet-maquette .at[data-toegang] .at-rij.is-aan {
+  background: linear-gradient(90deg, var(--mq-mcp-halo-zacht) 0%, transparent 52%);
+}
+
+html.palet-maquette .at[data-toegang] .at-schakelaar {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette .at[data-toegang] .at-schakelaar .at-knop {
+  background: var(--mq-gedempt);
+}
+
+html.palet-maquette .at[data-toegang] .at-schakelaar.is-aan,
+html.palet-maquette .at[data-toegang] .at-schakelaar[aria-checked="true"] {
+  background: var(--mq-accent-mcp);
+  border-color: color-mix(in srgb, var(--mq-accent-mcp) 76%, var(--mq-tekst) 24%);
+  box-shadow: 0 0 10px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .at[data-toegang] .at-schakelaar[aria-checked="true"] .at-knop {
+  background: var(--mq-accent-mcp-op);
+}
+
+html.palet-maquette .at[data-toegang] .at-gevoelig {
+  font-size: 0.75rem;
+  background: var(--mq-mcp-warn-zacht);
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-warn) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-warn);
+}
+
+html.palet-maquette .at[data-toegang] .at-bevest {
+  background: color-mix(in srgb, var(--mq-mcp-warn) 9%, var(--mq-mcp-put));
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-warn) 48%, var(--mq-mcp-rand));
+  border-radius: var(--mq-straal-kaart);
+}
+
+html.palet-maquette .at[data-toegang] .at-knop-prim {
+  background: linear-gradient(135deg, var(--mq-accent-mcp) 0%, var(--mq-accent-mcp-diep) 100%);
+  color: var(--mq-accent-mcp-op);
+  border-radius: var(--mq-straal-knop);
+  box-shadow: 0 4px 12px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .at[data-toegang] .at-knop-twee {
+  background: var(--mq-mcp-glas-verhoogd);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-knop);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .at[data-toegang] .at-beheer {
+  border-color: var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  background: var(--mq-mcp-put);
+}
+
+html.palet-maquette .at[data-toegang] .at-beheer-groep-naam {
+  font-size: 0.76rem;
+  color: var(--mq-gedempt);
+}
+
+/* «Мої доступи» та «Усі користувачі» (TabToegang, MijnToegang, AlleGebruikers — .tg) */
+html.palet-maquette [data-tab-inhoud="toegang"] [data-tg-intro] {
+  padding: 12px 16px;
+  background: linear-gradient(90deg, var(--mq-mcp-halo-zacht) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-left: 3px solid var(--mq-accent-mcp);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .tg-legenda {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette .tg-icoon {
+  background: var(--mq-mcp-halo);
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  color: var(--mq-accent-mcp);
+  border-radius: 10px;
+}
+
+html.palet-maquette li.tg-kaart {
+  background: var(--mq-mcp-glas);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette li.tg-kaart[data-ruimte="prive"] {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-prive), inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette li.tg-kaart[data-ruimte="technisch"] {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-tech), inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette .tg-feiten dd {
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .tg-chip {
+  font-size: 0.78rem;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .tg-paneel,
+html.palet-maquette .tg-slot,
+html.palet-maquette .tg-beleid-wrap {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette .tg-werkbalk {
+  padding: 12px 14px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette .tg-beleid input[type="checkbox"] {
+  accent-color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .tg-venster-achter {
+  background: color-mix(in srgb, var(--mq-bg) 70%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+html.palet-maquette .tg-venster {
+  background: linear-gradient(165deg, var(--mq-oppervlak) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: var(--mq-schaduw-held), inset 0 1px 0 var(--mq-mcp-glans);
+  color: var(--mq-tekst);
+}
+
+/* Студійна діаграма ізоляції особистого й технічного просторів (RuimteScheiding) */
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze {
+  background: linear-gradient(165deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-put) 100%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  padding: 18px;
+  box-shadow: inset 0 2px 0 var(--mq-accent-mcp), var(--mq-schaduw-zacht);
+  transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze[data-keuze="gedeeld"] {
+  box-shadow: inset 0 2px 0 var(--mq-mcp-warn), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze[data-keuze="beide"] {
+  box-shadow: inset 0 2px 0 var(--mq-mcp-ok), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] ul.ag2-diensten[data-ruimte-tabel="1"] {
+  background: var(--mq-mcp-glas);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans);
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst {
+  border-top-color: var(--mq-mcp-rand);
+  padding: 14px 18px;
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="eigen"] {
+  box-shadow: inset 4px 0 0 var(--mq-accent-mcp);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mq-accent-mcp) 10%, transparent) 0%, transparent 46%);
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="gedeeld"] {
+  box-shadow: inset 4px 0 0 var(--mq-mcp-warn);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mq-mcp-warn) 10%, transparent) 0%, transparent 46%);
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="uit"] {
+  box-shadow: inset 4px 0 0 var(--mq-gedempt);
+}
+
+html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst[data-stand="bevroren"] {
+  box-shadow: inset 4px 0 0 var(--mq-mcp-info);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mq-mcp-info) 14%, var(--mq-mcp-put)) 0%, var(--mq-mcp-put) 100%);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   6. ТЕХНІЧНИЙ КОНТУР, ПЕРЕМИКАЧІ САЙТУ Й СЕРВЕРНОЇ БРАМИ ТА ЖУРНАЛ ПОДІЙ
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette [data-tab-inhoud="technisch"] [data-ag-blok="technisch-poort"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-tech) 46%, var(--mq-mcp-rand));
+  box-shadow: inset 0 2px 0 var(--mq-mcp-tech), var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette [data-tech-verbindingen="1"] [data-ag-blok="tech-regels"] {
+  border-left: 4px solid var(--mq-mcp-tech);
+}
+
+html.palet-maquette [data-tech-verbindingen="1"] ul.ag2-regels {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette [data-tech-verbindingen="1"] ul.ag2-regels strong {
+  color: var(--mq-tekst);
+}
+
+/* Інженерні перемикачі стелі сайту (SiteSchakelaars) */
+html.palet-maquette section.ag-site[data-ag-blok="site-schakelaars"] .ag-site-regel {
+  background: color-mix(in srgb, var(--mq-accent-mcp) 12%, var(--mq-mcp-put));
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  border-radius: var(--mq-straal-veld);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette section.ag-site[data-ag-blok="site-schakelaars"] fieldset.ag-bord-groep {
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  padding: 12px 16px 16px;
+}
+
+html.palet-maquette section.ag-site[data-ag-blok="site-schakelaars"] fieldset.ag-bord-groep > legend {
+  color: var(--mq-accent-mcp);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+html.palet-maquette section.ag-site[data-ag-blok="site-schakelaars"] label.ag-bord-cap[data-site-sleutel] {
+  padding: 9px 12px;
+  background: var(--mq-oppervlak);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+html.palet-maquette section.ag-site[data-ag-blok="site-schakelaars"] label.ag-bord-cap[data-site-sleutel] input[type="checkbox"] {
+  accent-color: var(--mq-accent-mcp);
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+html.palet-maquette section.ag-site[data-ag-blok="site-schakelaars"] label.ag-bord-cap[data-site-sleutel]:has(input:checked) {
+  border-color: var(--mq-mcp-rand-sterk);
+  background: color-mix(in srgb, var(--mq-accent-mcp) 9%, var(--mq-oppervlak));
+}
+
+html.palet-maquette section.ag-site[data-ag-blok="site-schakelaars"] label.ag-bord-cap small {
+  font-size: 0.8rem;
+  color: var(--mq-gedempt);
+}
+
+/* Перемикачі та з'єднання серверної брами (DeurSchakelaars та DeurVerbindingen) */
+html.palet-maquette [id="ag-deuren"] {
+  background: linear-gradient(165deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas) 100%);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glans), var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette [id="ag-deuren"] table.ag-deuren {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+html.palet-maquette [id="ag-deuren"] table.ag-deuren thead th {
+  background: var(--mq-mcp-put);
+  color: var(--mq-gedempt);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette [id="ag-deuren"] table.ag-deuren tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette [id="ag-deuren"] code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.78rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+}
+
+html.palet-maquette [data-lijst="deur-verbindingen"] li.ag-rij[data-deurverbinding] .ag-rij-titel code {
+  font-family: var(--mq-font-mono);
+  font-size: 0.8rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--mq-mcp-tech) 14%, var(--mq-mcp-put));
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-tech) 42%, var(--mq-mcp-rand));
+}
+
+/* Журнал подій та хронологія викликів (Journaal) */
+html.palet-maquette [data-tab-inhoud="journaal"] .ag2-filters {
+  padding: 12px 14px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-veld);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="ok"] {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-ok);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="bad"] {
+  box-shadow: inset 3px 0 0 var(--mq-mcp-fout);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mq-mcp-fout) 8%, transparent) 0%, transparent 45%);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] > li.ag-rij[data-soort="noodstop"] {
+  box-shadow: inset 4px 0 0 var(--mq-mcp-fout);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mq-mcp-fout) 13%, transparent) 0%, transparent 55%);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] .ag-journaal-icoon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="ok"] .ag-journaal-icoon {
+  background: var(--mq-mcp-ok-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-ok) 40%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-ok);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] > li.ag-rij[data-toon="bad"] .ag-journaal-icoon {
+  background: var(--mq-mcp-fout-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-fout) 42%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-fout);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] .ag-chip {
+  font-family: var(--mq-font-mono);
+  font-size: 0.76rem;
+  background: var(--mq-mcp-put);
+  border: 1px solid var(--mq-mcp-rand);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] .ag-chip-tech {
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 650;
+  background: color-mix(in srgb, var(--mq-mcp-tech) 16%, transparent);
+  border-color: color-mix(in srgb, var(--mq-mcp-tech) 44%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-tech);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] .ag-chip-namens {
+  font-family: inherit;
+  font-size: 0.75rem;
+  background: var(--mq-mcp-info-zacht);
+  border-color: color-mix(in srgb, var(--mq-mcp-info) 40%, var(--mq-mcp-rand));
+  color: var(--mq-mcp-info);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] time {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] ol.ag-werkstappen {
+  margin: 0 0 10px 4px;
+  padding: 6px 0 6px 18px;
+  border-left: 2px solid var(--mq-mcp-rand-sterk);
+}
+
+html.palet-maquette ul.ag-journaal[data-journaal] ol.ag-werkstappen time {
+  font-family: var(--mq-font-mono);
+  font-size: 0.76rem;
+}
+
+html.palet-maquette [data-tab-inhoud="journaal"] .ag-meer {
+  padding-top: 6px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   7. АДАПТИВНІСТЬ, НАВЕДЕННЯ ТА ДОСТУПНІСТЬ РУХУ (УСІ МЕДІА-БЛОКИ ЗІБРАНО СУВОРО НАПРИКІНЦІ ФАЙЛА)
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+@media (hover: hover) and (pointer: fine) {
+  html.palet-maquette :is(
+    [data-tab-inhoud="extensie"],
+    [data-tab-inhoud="browser"],
+    [data-tab-inhoud="apparaten"],
+    [data-tab-inhoud="tokens"],
+    [data-tab-inhoud="toegang"],
+    [data-tab-inhoud="technisch"],
+    [data-tab-inhoud="journaal"],
+    [data-tech-verbindingen="1"],
+    [data-paneel="extensie"],
+    [data-paneel="extensie-technisch"],
+    [data-ai-verbinden="1"],
+    [data-ag-blok="ruimte-scheiding"],
+    [data-ag-blok="site-schakelaars"],
+    [data-lijst="deur-verbindingen"],
+    .tg-venster-achter
+  ) .ag-knop:not(:disabled):hover {
+    border-color: var(--mq-mcp-rand-sterk);
+    background: color-mix(in srgb, var(--mq-accent-mcp) 10%, var(--mq-mcp-glas-verhoogd));
+  }
+
+  html.palet-maquette :is(
+    [data-tab-inhoud="extensie"],
+    [data-tab-inhoud="browser"],
+    [data-tab-inhoud="apparaten"],
+    [data-tab-inhoud="tokens"],
+    [data-tab-inhoud="toegang"],
+    [data-tab-inhoud="technisch"],
+    [data-tab-inhoud="journaal"],
+    [data-tech-verbindingen="1"],
+    [data-paneel="extensie"],
+    [data-paneel="extensie-technisch"],
+    [data-ai-verbinden="1"],
+    [data-ag-blok="ruimte-scheiding"],
+    [data-ag-blok="site-schakelaars"],
+    [data-lijst="deur-verbindingen"],
+    .tg-venster-achter
+  ) .ag-knop-primair:not(:disabled):hover,
+  html.palet-maquette .eo-knop.is-hoofd:not(:disabled):hover,
+  html.palet-maquette .wiz-primary:not(:disabled):hover,
+  html.palet-maquette .at[data-toegang] .at-knop-prim:not(:disabled):hover {
+    filter: brightness(1.06);
+    box-shadow: 0 6px 20px var(--mq-mcp-halo);
+  }
+
+  html.palet-maquette .bea-snel button:not(:disabled):hover,
+  html.palet-maquette .wiz-browsers button:not(:disabled):hover,
+  html.palet-maquette .ag-verbind-klant:not(:disabled):hover,
+  html.palet-maquette .ag-verbind-weg:not(:disabled):hover {
+    border-color: var(--mq-mcp-rand-sterk);
+  }
+
+  html.palet-maquette [data-ag-blok="ruimte-scheiding"] .ag-keuzes > .ag-keuze:hover {
+    border-color: var(--mq-mcp-rand-sterk);
+    transform: translateY(-1px);
+  }
+
+  html.palet-maquette :is(
+    [data-tab-inhoud="apparaten"],
+    [data-tab-inhoud="tokens"],
+    [data-tab-inhoud="technisch"],
+    [data-tab-inhoud="journaal"],
+    [data-tech-verbindingen="1"],
+    [data-lijst="deur-verbindingen"]
+  ) .ag-rij-toggle:hover {
+    background: color-mix(in srgb, var(--mq-accent-mcp) 6%, transparent);
+  }
+}
+
+@media (max-width: 900px) {
+  html.palet-maquette .bea-sloten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html.palet-maquette .ag-verbind-wegen {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  html.palet-maquette .bea-sloten > [data-bea-slot] {
+    padding: 14px;
+  }
+
+  html.palet-maquette [data-tab-inhoud="journaal"] .ag2-filters,
+  html.palet-maquette .tg-werkbalk {
+    padding: 10px 12px;
+  }
+
+  html.palet-maquette [data-ag-blok="ruimte-scheiding"] li.ag2-dienst {
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 520px) {
+  html.palet-maquette .eo-actie .eo-knop {
+    width: 100%;
+    justify-content: center;
+  }
+
+  html.palet-maquette [data-ag-blok="ruimte-scheiding"] .ag-keuzes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (pointer: coarse) {
+  html.palet-maquette :is([data-tab-inhoud="browser"], [data-paneel="extensie"], [data-paneel="extensie-technisch"]) .hub-toggle {
+    min-width: 44px;
+    min-height: 26px;
+  }
+
+  html.palet-maquette .bea-snel button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette :is(
+    [data-tab-inhoud="extensie"],
+    [data-tab-inhoud="browser"],
+    [data-tab-inhoud="apparaten"],
+    [data-tab-inhoud="tokens"],
+    [data-tab-inhoud="toegang"],
+    [data-tab-inhoud="technisch"],
+    [data-tab-inhoud="journaal"],
+    [data-paneel="extensie"],
+    [data-paneel="extensie-technisch"],
+    .eo,
+    .wiz[data-browser-extension="true"],
+    .wiz[data-agents-pairing],
+    [data-ai-verbinden="1"],
+    .at[data-toegang],
+    [data-ag-blok="ruimte-scheiding"],
+    [data-tech-verbindingen="1"],
+    [data-ag-blok="site-schakelaars"],
+    [id="ag-deuren"],
+    [data-lijst="deur-verbindingen"]
+  ) * {
+    transition: none;
+  }
+}

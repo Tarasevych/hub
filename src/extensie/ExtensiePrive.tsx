@@ -15,6 +15,7 @@ import { eindeWeergave } from '../../shared/extensie-matrix';
 import { restTekst, useExtensieLive } from './extensie-live';
 import { CAP_TEKST, intrekken, ontgrendelenPrive, type Weigering } from './ExtensieOntgrendeling';
 import './ExtensieOntgrendeling.css';
+import '../agenten/agenten-toegang-maquette.css';
 import { alleenMens, geenAi } from '../menselijke-actie'; // SEC-002 extensie-02
 
 type Tr = (uk: string, nl: string) => string;

@@ -11,6 +11,7 @@ import { Badge, datum, exact, gebruiktBinnen, GevaarKnop, Groep, Melding, Rij, T
 import AiVerbinden from './AiVerbinden';
 import type { KlantId } from '../../shared/ai-verbinding';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 type Data = { tokens: DeurToken[]; rechten: Record<string, boolean>; catalogus: Array<{ id: string; uk: string; nl: string; group?: string }>; bestand: string };
 

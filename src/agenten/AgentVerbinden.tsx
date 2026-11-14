@@ -7,6 +7,7 @@ import { agentUrl, v2Agent, type AgentSlug } from '../../shared/connector-v2/age
 import type { Tr } from '../mcp-ui';
 import { recept, type ReceptKnop } from './verbind-recepten';
 import { Knop } from './ui';
+import './agenten-kern-maquette.css';
 
 function useKopieer() {
   const [welke, setWelke] = useState('');

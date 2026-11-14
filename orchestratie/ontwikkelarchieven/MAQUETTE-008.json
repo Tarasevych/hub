@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-008",
+  "titel": "Хвиля 7 теми оформлення «Макет»: повне студійне перевтілення інженерного мосту та агентів mcp.tarasevych.com",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх 13 канонічних вкладок простору mcp.tarasevych.com, осередку агентів AgentenPagina, з’єднувачів другого покоління, вбудованого інспектора протоколу контексту, розширення оглядача, пристроїв, маркерів доступу, розмежування просторів та координації агентів поруч з усіма чинними темами без видалення можливостей.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-008-20261113-231805",
+    "basis": "5b4d4d4f9f694726bbe1014ba9ea47300c600a48",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу OAuth, вміст робочих журналів користувачів та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-13T23:18:05Z",
+      "stap": "Створено кумулятивну гілку feature/maquette-008-20261113-231805 поверх перевіреної Хвилі 6 (5b4d4d4f9f694726bbe1014ba9ea47300c600a48) та зареєстровано завдання MAQUETTE-008."
+    },
+    {
+      "tijd": "2026-11-13T23:34:28Z",
+      "stap": "Оформлено розширення оглядача, матрицю дозволів BrowserEnAgenten, пристрої ПК, прямі ключі, права користувачів, розмежування просторів та журнал викликів у src/agenten/agenten-toegang-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T23:40:33Z",
+      "stap": "Оформлено осередок агентів AgentenPagina, сторінку окремого агента, з’єднувачі другого покоління, інспектор протоколу McpInspectorStudio та центр багатоагентної координації TabOrch у src/agenten/agenten-kern-maquette.css та src/agenten/agenten-inspectie-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T23:43:52Z",
+      "stap": "Вбудовано єдину студійну оболонку .mq-schil, індиго-кобальтову вітрину MaquetteHeld (dienst='mcp') та якірну навігацію MaquetteAnkerRail у McpDienstWeergave.tsx для всіх вкладок; створено src/mcp-kern-maquette.css та src/mcp-uitrol-maquette.css."
+    },
+    {
+      "tijd": "2026-11-13T23:52:00Z",
+      "stap": "Виконано повне виробниче складання, перевірку типів клієнта та сервера, набір із 12 модульних випробувань та живу перевірку 9 режимів mcp.tarasevych.com у безголовому Chromium у нічному й світлому режимах."
+    }
+  ],
+  "keuzes": [
+    "Студійну оболонку .mq-schil, вітрину MaquetteHeld та якірну навігацію MaquetteAnkerRail вбудовано в кореневий McpDienstWeergave.tsx, що унеможливлює дублювання шапки у вкладеному AgentenPagina та зберігає незмінною розмітку суворих випробувань статичного відмальовування.",
+    "Вітрину MaquetteHeld подано у повному режимі на огляді, дорожній карті та з’єднанні й у компактному режимі на робочих вкладках пульту стану, дошки, агентів, застосунків, пісочниці та повного архіву.",
+    "П’ять нових таблиць стилів побудовано виключно на змінних var(--mq-*) із індиго-кобальтовим акцентом --mq-accent-mcp без сирих кольорів, !important чи нових position: fixed."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-008-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-008.json",
+    "orchestratie/taken/MAQUETTE-008.json",
+    "src/AgentInrichtingWizard.tsx",
+    "src/BrowserExtensiePaneel.tsx",
+    "src/ExtensieWizard.tsx",
+    "src/McpAgentenHub.tsx",
+    "src/McpAppsWeergave.tsx",
+    "src/McpBackupsKaart.tsx",
+    "src/McpDienstWeergave.tsx",
+    "src/McpHulpmiddelenPaneel.tsx",
+    "src/McpServerBeheerKaart.tsx",
+    "src/McpToestemmingVenster.tsx",
+    "src/ServerKoppelen.tsx",
+    "src/agenten/AgentBord.tsx",
+    "src/agenten/AgentKleuren.tsx",
+    "src/agenten/AgentPagina.tsx",
+    "src/agenten/AgentVerbinden.tsx",
+    "src/agenten/AgentenPagina.tsx",
+    "src/agenten/AiToegangTab.tsx",
+    "src/agenten/AiVerbinden.tsx",
+    "src/agenten/DeurSchakelaars.tsx",
+    "src/agenten/DeurVerbindingen.tsx",
+    "src/agenten/HubMatrix.tsx",
+    "src/agenten/Journaal.tsx",
+    "src/agenten/McpInspectorStudio.tsx",
+    "src/agenten/RuimteScheiding.tsx",
+    "src/agenten/SiteSchakelaars.tsx",
+    "src/agenten/TabAi.tsx",
+    "src/agenten/TabApparaten.tsx",
+    "src/agenten/TabExtensie.tsx",
+    "src/agenten/TabExternMcp.tsx",
+    "src/agenten/TabOrch.tsx",
+    "src/agenten/TabTechnisch.tsx",
+    "src/agenten/TabToegang.tsx",
+    "src/agenten/TabTokens.tsx",
+    "src/agenten/TechVerbindingen.tsx",
+    "src/agenten/agenten-inspectie-maquette.css",
+    "src/agenten/agenten-kern-maquette.css",
+    "src/agenten/agenten-toegang-maquette.css",
+    "src/agenten/toegang/AlleGebruikers.tsx",
+    "src/agenten/toegang/MijnToegang.tsx",
+    "src/connector-v2/ConnectorsTab.tsx",
+    "src/connector-v2/KoppelWizard.tsx",
+    "src/connector-v2/RechtenKiezer.tsx",
+    "src/extensie/BrowserEnAgenten.tsx",
+    "src/extensie/ExtensieOntgrendeling.tsx",
+    "src/extensie/ExtensiePrive.tsx",
+    "src/extensie/LokaleAiPaneel.tsx",
+    "src/mcp-kern-maquette.css",
+    "src/mcp-ui.tsx",
+    "src/mcp-uitrol-maquette.css"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (включно з huis-maquette та ізоляцією tech-bundels-controle) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, agenten-pagina-blokken-20261103, agenten-blokken-agpag2-20261103, mcp-r1-beveiliging-20261112, mcp-een-klik, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка mcp.tarasevych.com (/agenten у темному й світлому режимах, /dashboard, /bord, /zandbak, /downloaden, #inspectie, мобільний 390x844 та контрольна палітра kleur) у безголовому Chromium через локальний HTTPS — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/maquette-kern/index.ts",
+    "src/McpDienstWeergave.tsx",
+    "src/agenten/AgentenPagina.tsx"
+  ],
+  "beperkingen": [
+    "Кумулятивний пакет Хвилі 7 (MAQUETTE-008) охоплює ядро теми, id, mail, cloud, github, hub, ai, huis та mcp.tarasevych.com; заключні піддомени api та admin послідовно перевтілюються у Хвилях 8–9 (MAQUETTE-009 — MAQUETTE-010)."
+  ]
+}

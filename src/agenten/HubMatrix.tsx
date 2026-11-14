@@ -2,6 +2,7 @@
 // INTEG-001 (03.11.2026): een blok .ag-blok met kop + één zin uitleg; de cellen zijn ronde tekens (agenten-pagina.css), geen kale tabel.
 import type { Tr } from '../mcp-ui';
 import { CEL_TEKEN, CEL_TEKST, DOELEN, METHODEN, berekenMatrix, type MatrixInvoer } from './matrix';
+import './agenten-kern-maquette.css';
 
 export default function HubMatrix({ tr, invoer, ga }: { tr: Tr; invoer: MatrixInvoer; ga: (tab: string) => void }) {
   const m = berekenMatrix(invoer);

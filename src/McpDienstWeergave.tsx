@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Activity, Archive, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Plug, Plus, Server, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
@@ -21,7 +21,10 @@ import McpBackupsCard from "./McpBackupsKaart";
 import McpServerBeheerCard from "./McpServerBeheerKaart";
 import DeurSchakelaars from "./agenten/DeurSchakelaars";
 import AgentLogo from "./agenten/AgentLogo";
+import { MaquetteAnkerRail, MaquetteHeld, type MaquetteAnkerItem, type MaquetteHeldStatistiek } from "./maquette-kern";
+import { useIsMaquette } from "./thema/useThema";
 import "./mcp-domein.css";
+import "./mcp-kern-maquette.css";
 
 type Lang = "uk" | "nl";
 type Props = { lang: Lang; tab: string };
@@ -30,6 +33,180 @@ type Task = { id: string; title: string; body: string; status: string; thirdPart
 type Note = { id: string; title: string; body: string; author: string; updatedAt: string };
 type LogRow = { id: string; at: string; method: string; detail: string; transport: string; agent: string; ok: boolean; ms: number };
 type Tone = "ok" | "wait" | "bad" | "off";
+
+const MCP_SECTIES = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download", "verbindingen"] as const;
+type McpSectie = typeof MCP_SECTIES[number];
+
+const MCP_MODAAL_SELECTOR =
+  ".mcp-consent-backdrop, .venster-achter, .venster:not([hidden]), [data-mq-laag-open='1'], dialog[open], [role='dialog'][aria-modal='true']";
+
+const MCP_ANKER_TABS: ReadonlyArray<readonly [McpSectie, string, string]> = [
+  ["overview", "Огляд", "Overzicht"],
+  ["dashboard", "Пульт стану", "Paneel"],
+  ["services", "Служби", "Diensten"],
+  ["tools", "Інструменти", "Hulpmiddelen"],
+  ["board", "Дошка", "Werkbord"],
+  ["agents", "Агенти", "Agenten"],
+  ["apps", "Застосунки", "Toepassingen"],
+  ["playground", "Пісочниця", "Zandbak"],
+  ["traffic", "Журнал руху", "Verkeer"],
+  ["connect", "З’єднання", "Verbinden"],
+  ["roadmap", "Дорожня карта", "Routekaart"],
+  ["download", "Архів і сервер", "Archief"],
+];
+
+const MCP_HELD_TEKSTEN: Record<McpSectie, {
+  boven: readonly [string, string];
+  voor: readonly [string, string];
+  cursief: readonly [string, string];
+  beschrijving: readonly [string, string];
+  primair: { tab: McpSectie; label: readonly [string, string] };
+  secundair: { tab: McpSectie; label: readonly [string, string] };
+}> = {
+  overview: {
+    boven: ["ІНЖЕНЕРНИЙ МІСТ · MCP.TARASEVYCH.COM", "TECHNISCHE BRUG · MCP.TARASEVYCH.COM"],
+    voor: ["Машинний договір", "Machinecontract"],
+    cursief: ["між агентами й маєтком.", "tussen agenten en domein."],
+    beschrijving: [
+      "Єдина захищена брама протоколу контексту для штучного інтелекту: окрема адреса для кожного помічника, чіткі межі повноважень, перевірка служб і повний облік звернень.",
+      "De centrale beveiligde protocolpoort voor kunstmatige intelligentie: een eigen adres per assistent, strikte bevoegdheidsgrenzen, dienstcontrole en volledige verantwoording.",
+    ],
+    primair: { tab: "agents", label: ["Осередок агентів", "Agentencentrum"] },
+    secundair: { tab: "dashboard", label: ["Пульт стану", "Overzichtspaneel"] },
+  },
+  dashboard: {
+    boven: ["ПУЛЬТ СТАНУ · MCP.TARASEVYCH.COM", "OVERZICHTSPANEEL · MCP.TARASEVYCH.COM"],
+    voor: ["Живий пульс", "Levende polsslag"],
+    cursief: ["інженерного мосту.", "van de technische brug."],
+    beschrijving: [
+      "Оперативний зріз стану всіх вузлів маєтку, доступності служб та готовності інструментів серверної брами в одному інженерному вікні.",
+      "Direct inzicht in de actuele staat van alle domeinknooppunten, de bereikbaarheid van diensten en de gereedheid van de serverpoort in één technisch overzicht.",
+    ],
+    primair: { tab: "services", label: ["Перевірити служби", "Diensten controleren"] },
+    secundair: { tab: "traffic", label: ["Журнал руху", "Verkeersjournaal"] },
+  },
+  services: {
+    boven: ["СЛУЖБИ МАЄТКУ · MCP.TARASEVYCH.COM", "DIENSTEN VAN HET DOMEIN · MCP.TARASEVYCH.COM"],
+    voor: ["Вузли та", "Knooppunten en"],
+    cursief: ["піддомени простору.", "subdomeinen van de ruimte."],
+    beschrijving: [
+      "Перевірка зв’язку наживо з усіма службами домашнього сервера, коди відповідей і розподіл призначення кожного піддомену за брамою особи.",
+      "Rechtstreekse verbindingscontrole van alle diensten op de thuisserver, antwoordcodes en de rolverdeling van elk subdomein achter de identiteitspoort.",
+    ],
+    primair: { tab: "tools", label: ["Каталог інструментів", "Hulpmiddelencatalogus"] },
+    secundair: { tab: "dashboard", label: ["До пульта стану", "Naar het overzichtspaneel"] },
+  },
+  tools: {
+    boven: ["ІНСТРУМЕНТИ БРАМИ · MCP.TARASEVYCH.COM", "POORTHULPMIDDELEN · MCP.TARASEVYCH.COM"],
+    voor: ["Дозволені дії", "Vrijgegeven handelingen"],
+    cursief: ["серверної брами.", "van de serverpoort."],
+    beschrijving: [
+      "Повний перелік відкритих можливостей для читання стану, спільної дошки, підготовки пакунків і захищеного обслуговування з поділом за рівнями прав.",
+      "Volledige lijst van beschikbare mogelijkheden voor statusinzage, het gedeelde werkbord, pakketvoorbereiding en beveiligd onderhoud per rechtenniveau.",
+    ],
+    primair: { tab: "playground", label: ["Випробувати у пісочниці", "Testen in de zandbak"] },
+    secundair: { tab: "agents", label: ["Керувати правами", "Rechten beheren"] },
+  },
+  board: {
+    boven: ["СПІЛЬНА ДОШКА · MCP.TARASEVYCH.COM", "GEDEELD WERKBORD · MCP.TARASEVYCH.COM"],
+    voor: ["Завдання та нотатки", "Taken en notities"],
+    cursief: ["людини й агентів.", "van mens en agenten."],
+    beschrijving: [
+      "Узгоджений робочий стіл між власником і підключеними помічниками: черга завдань, відокремлений огляд зовнішніх звернень та спільні робочі записи.",
+      "Afgestemde werktafel voor de eigenaar en gekoppelde assistenten: taakwachtrij, afzonderlijke beoordeling van externe meldingen en gedeelde werknotities.",
+    ],
+    primair: { tab: "agents", label: ["Координація агентів", "Coördinatie van agenten"] },
+    secundair: { tab: "traffic", label: ["Журнал звернень", "Verzoekenjournaal"] },
+  },
+  agents: {
+    boven: ["ОСЕРЕДОК ПІДКЛЮЧЕНЬ · MCP.TARASEVYCH.COM", "KOPPELCENTRUM · MCP.TARASEVYCH.COM"],
+    voor: ["Усі помічники та", "Alle assistenten en"],
+    cursief: ["межі повноважень.", "bevoegdheidsgrenzen."],
+    beschrijving: [
+      "Єдине місце приєднання зовнішніх агентів, пристроїв та оглядача: іменні адреси з’єднання, дозволи по кожному інструменту й черга багатоагентної координації.",
+      "De centrale plek voor het koppelen van externe assistenten, apparaten en browser: eigen verbindingsadressen, rechten per hulpmiddel en de integratiewachtrij.",
+    ],
+    primair: { tab: "apps", label: ["Застосунки на обладнанні", "Toepassingen op apparatuur"] },
+    secundair: { tab: "board", label: ["Спільна дошка", "Gedeeld werkbord"] },
+  },
+  apps: {
+    boven: ["ВЛАСНЕ ОБЛАДНАННЯ · MCP.TARASEVYCH.COM", "EIGEN APPARATUUR · MCP.TARASEVYCH.COM"],
+    voor: ["Ізольовані застосунки", "Geïsoleerde toepassingen"],
+    cursief: ["на вашому сервері.", "op uw eigen server."],
+    beschrijving: [
+      "Керування контейнерами без прав адміністратора на власних пристроях: перевірка стану, журнали, повернення до попередніх знімків і пряме передавання таємниць.",
+      "Beheer van containers zonder beheerdersrechten op uw eigen apparaten: statusbewaking, logboeken, terugzetten naar eerdere opnamen en directe geheimoverdracht.",
+    ],
+    primair: { tab: "agents", label: ["Пристрої та дозволи", "Apparaten en rechten"] },
+    secundair: { tab: "download", label: ["Архіви та випуски", "Archieven en uitgaven"] },
+  },
+  playground: {
+    boven: ["ВИПРОБУВАЛЬНА ПІСОЧНИЦЯ · MCP.TARASEVYCH.COM", "TESTZANDBAK · MCP.TARASEVYCH.COM"],
+    voor: ["Перевірка викликів", "Aanroepen beproeven"],
+    cursief: ["наживо через браму.", "rechtstreeks via de poort."],
+    beschrijving: [
+      "Інтерактивний стенд для ручного виклику інструментів мосту з власними параметрами, миттєвою перевіркою чинних дозволів та оглядом точної відповіді сервера.",
+      "Interactieve proefopstelling voor handmatige aanroepen van brughulpmiddelen met eigen parameters, directe rechtencontrole en weergave van het serverantwoord.",
+    ],
+    primair: { tab: "tools", label: ["Довідник інструментів", "Hulpmiddelengids"] },
+    secundair: { tab: "traffic", label: ["Переглянути рух", "Verkeer bekijken"] },
+  },
+  traffic: {
+    boven: ["ЖУРНАЛ РУХУ · MCP.TARASEVYCH.COM", "VERKEERSJOURNAAL · MCP.TARASEVYCH.COM"],
+    voor: ["Прозорий облік", "Inzichtelijke registratie"],
+    cursief: ["кожного звернення.", "van elke aanroep."],
+    beschrijving: [
+      "Хронологічний запис викликів до інженерного мосту із зазначенням помічника, способу передавання, тривалості виконання та підсумку обробки.",
+      "Chronologisch overzicht van alle aanroepen op de technische brug met vermelding van assistent, overdrachtswijze, uitvoeringsduur en resultaat.",
+    ],
+    primair: { tab: "playground", label: ["Відкрити пісочницю", "Zandbak openen"] },
+    secundair: { tab: "agents", label: ["Перевірити доступи", "Toegangen nakijken"] },
+  },
+  connect: {
+    boven: ["НАЛАШТУВАННЯ З’ЄДНАННЯ · MCP.TARASEVYCH.COM", "VERBINDINGSOPZET · MCP.TARASEVYCH.COM"],
+    voor: ["Іменні адреси", "Persoonlijke adressen"],
+    cursief: ["для кожного агента.", "voor elke agent."],
+    beschrijving: [
+      "Зразки підключення та індивідуальні точки входу другого покоління: кожен зовнішній помічник отримує власне захищене з’єднання з підтвердженням власника.",
+      "Koppelvoorbeelden en individuele toegangspunten van de tweede generatie: elke externe assistent krijgt een eigen beveiligde lijn met bevestiging door de eigenaar.",
+    ],
+    primair: { tab: "agents", label: ["Підключити помічника", "Assistent koppelen"] },
+    secundair: { tab: "tools", label: ["Оглянути інструменти", "Hulpmiddelen bekijken"] },
+  },
+  roadmap: {
+    boven: ["ДОРОЖНЯ КАРТА · MCP.TARASEVYCH.COM", "ROUTEKAART · MCP.TARASEVYCH.COM"],
+    voor: ["Послідовний розвиток", "Stapsgewijze uitbouw"],
+    cursief: ["архітектури мосту.", "van de brugarchitectuur."],
+    beschrijving: [
+      "Інженерні віхи становлення платформи: від першої захищеної брами й повної ізоляції просторів до багатоагентної координації та власного розміщення застосунків.",
+      "Technische mijlpalen van het platform: van de eerste beveiligde poort en volledige ruimte-isolatie tot multi-agentcoördinatie en toepassingen op eigen apparatuur.",
+    ],
+    primair: { tab: "overview", label: ["Огляд мосту", "Brugoverzicht"] },
+    secundair: { tab: "agents", label: ["Осередок агентів", "Agentencentrum"] },
+  },
+  download: {
+    boven: ["АРХІВИ ТА ВИПУСКИ · MCP.TARASEVYCH.COM", "ARCHIEVEN EN UITGAVEN · MCP.TARASEVYCH.COM"],
+    voor: ["Повні зліпки та", "Volledige archieven en"],
+    cursief: ["керування сервером.", "serverbeheer."],
+    beschrijving: [
+      "Зашифроване формування повного архіву відновлення, доступ до нічних запасних копій і захищене керування випусками сервера за підписом власника.",
+      "Versleutelde opbouw van een volledig herstelarchief, toegang tot nachtelijke reservekopieën en beveiligd uitgavebeheer met bevestiging van de eigenaar.",
+    ],
+    primair: { tab: "services", label: ["Стан служб", "Stand van diensten"] },
+    secundair: { tab: "apps", label: ["Застосунки сервера", "Servertoepassingen"] },
+  },
+  verbindingen: {
+    boven: ["ТЕХНІЧНІ З’ЄДНАННЯ · MCP.TARASEVYCH.COM", "TECHNISCHE KOPPELINGEN · MCP.TARASEVYCH.COM"],
+    voor: ["Перехід до єдиного", "Doorgang naar het"],
+    cursief: ["осередку агентів.", "centrale koppelpunt."],
+    beschrijving: [
+      "Усі технічні та особисті з’єднання зібрано в єдиному осередку керування помічниками із збереженням відкритих запитів на підтвердження доступу.",
+      "Alle technische en persoonlijke verbindingen zijn samengebracht in het centrale agentencentrum met behoud van openstaande toestemmingsverzoeken.",
+    ],
+    primair: { tab: "agents", label: ["Відкрити осередок агентів", "Agentencentrum openen"] },
+    secundair: { tab: "overview", label: ["Огляд мосту", "Brugoverzicht"] },
+  },
+};
 
 const statuses = ["backlog", "doing", "blocked", "done"] as const;
 /** MCP-02: kolomnamen en knoppen «→ …» van het bord in gewone taal (uk/nl), niet de rauwe sleutels aan elkaar. */
@@ -187,7 +364,7 @@ export function ingangAdres(basis: string, hash: string, search: string): string
 
 export default function McpServiceView({ lang, tab }: Props) {
   const t = (uk: string, nl: string) => (lang === "uk" ? uk : nl);
-  const section = ["overview", "dashboard", "services", "tools", "board", "agents", "apps", "playground", "traffic", "connect", "roadmap", "download", "verbindingen"].includes(tab) ? tab : "overview";
+  const section: McpSectie = (MCP_SECTIES as readonly string[]).includes(tab) ? (tab as McpSectie) : "overview";
   const tech = useTech();
   const consent = typeof location !== "undefined" && new URLSearchParams(location.search).has("consent");
   // Hub «Підключення ШІ» (19.10.2026): mcp.*/agents is voor iedereen de ene plek (ook #extension, ?extension=welcome); de extensie
@@ -358,6 +535,92 @@ export default function McpServiceView({ lang, tab }: Props) {
     return () => { window.clearInterval(id); window.clearInterval(poll); };
   }, [archive.state]);
 
+  const isMaquette = useIsMaquette();
+  const [laagOpen, setLaagOpen] = useState(false);
+  const [isAgentDetail, setIsAgentDetail] = useState(() =>
+    typeof window !== "undefined" && location.hash.startsWith("#agent/"),
+  );
+
+  const gaNaarMcpTab = useCallback(
+    (doelTab: string) => {
+      location.assign(canonicalNavigationUrl("mcp", doelTab, lang === "nl" ? "nl" : "uk"));
+    },
+    [lang],
+  );
+
+  useEffect(() => {
+    if (!isMaquette || typeof document === "undefined") {
+      setLaagOpen(false);
+      return;
+    }
+    const controleer = () => {
+      setLaagOpen(Boolean(document.querySelector(MCP_MODAAL_SELECTOR)));
+      if (typeof location !== "undefined") {
+        setIsAgentDetail(location.hash.startsWith("#agent/"));
+      }
+    };
+    controleer();
+    const wortel = document.documentElement ?? document.body;
+    if (!wortel || typeof MutationObserver !== "function") return;
+    const waarnemer = new MutationObserver(controleer);
+    waarnemer.observe(wortel, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["open", "hidden", "class", "aria-modal", "data-mq-laag-open"],
+    });
+    return () => waarnemer.disconnect();
+  }, [isMaquette, section]);
+
+  useEffect(() => {
+    if (!isMaquette || typeof window === "undefined") {
+      setIsAgentDetail(false);
+      return;
+    }
+    const werkHashBij = () => {
+      setIsAgentDetail(location.hash.startsWith("#agent/"));
+    };
+    werkHashBij();
+    window.addEventListener("hashchange", werkHashBij);
+    window.addEventListener("popstate", werkHashBij);
+    return () => {
+      window.removeEventListener("hashchange", werkHashBij);
+      window.removeEventListener("popstate", werkHashBij);
+    };
+  }, [isMaquette, section]);
+
+  const bevestigd = probes.filter((p) => p.ok).length;
+  const techAan = techActief(tech);
+
+  const statistieken = useMemo<ReadonlyArray<MaquetteHeldStatistiek>>(
+    () => [
+      { waarde: ESTATE.length, label: lang === "uk" ? "Служб маєтку" : "Domeindiensten" },
+      { waarde: V2_AGENTEN.length, label: lang === "uk" ? "Агентних мостів" : "Agentbruggen" },
+      { waarde: DOOR_TOOLS.length, label: lang === "uk" ? "Інструментів брами" : "Poorthulpmiddelen" },
+      {
+        waarde: probes.length
+          ? `${bevestigd}/${probes.length}`
+          : techAan
+            ? (lang === "uk" ? "Увімкнено" : "Actief")
+            : (lang === "uk" ? "Звичайний" : "Standaard"),
+        label: probes.length
+          ? (lang === "uk" ? "Вузлів на зв’язку" : "Bereikbare knopen")
+          : (lang === "uk" ? "Технічний профіль" : "Technisch profiel"),
+      },
+    ],
+    [bevestigd, lang, probes.length, techAan],
+  );
+
+  const ankerItems = useMemo<ReadonlyArray<MaquetteAnkerItem>>(
+    () =>
+      MCP_ANKER_TABS.map(([id, ukLabel, nlLabel]) => ({
+        id,
+        label: lang === "uk" ? ukLabel : nlLabel,
+        badge: id === "agents" ? V2_AGENTEN.length : id === "tools" ? DOOR_TOOLS.length : undefined,
+      })),
+    [lang],
+  );
+
   // Etap 3: «простий/розширений» (alleen weergave). Een onderdeel uit «розширений» via een link: uitleg + één klik, geen inhoud.
   // Beheerpagina's (technische ruimte) volgen de modus простий/розширений niet: die modus is van de accountruimte.
   const verborgen = weergave.modus === "eenvoudig" && isExpertTab("mcp", section) && !isBeheerPagina("mcp", section);
@@ -390,14 +653,42 @@ export default function McpServiceView({ lang, tab }: Props) {
       })}
     </ul>
   );
-  const bevestigd = probes.filter((p) => p.ok).length;
+  const held = MCP_HELD_TEKSTEN[section];
 
   return (
-    <div className="mcp-estate" data-mcp-tab={section} data-weergave-modus={weergave.modus ?? "onbekend"}>
+    <div
+      className={isMaquette ? "mcp-estate mq-schil mcp-maquette-wikkel" : "mcp-estate"}
+      data-mcp-tab={section}
+      data-weergave-modus={weergave.modus ?? "onbekend"}
+      data-mq-dienst={isMaquette ? "mcp" : undefined}
+    >
       {/* De ruimte van het toestemmingsvenster komt NIET van de pagina maar van de levende staat van het technisch profiel
           (src/McpToestemmingVenster.tsx). Een pagina-afhankelijke ruimte liet het venster rondlopen zodra «Технічні підключення»
           een tab van de hub werd in plaats van een eigen adres. */}
       <McpConsentModal tr={t} />
+      {isMaquette && !verborgen ? (
+        <MaquetteHeld
+          key={`mcp-held-${section}`}
+          id="mcp-maquette-held"
+          dienst="mcp"
+          lang={lang}
+          modus={section === "overview" || section === "roadmap" || section === "connect" ? "volledig" : "compact"}
+          opslagSleutel={`mcp-${section}`}
+          bovenregel={t(held.boven[0], held.boven[1])}
+          titelVoor={t(held.voor[0], held.voor[1])}
+          titelCursief={t(held.cursief[0], held.cursief[1])}
+          beschrijving={t(held.beschrijving[0], held.beschrijving[1])}
+          statistieken={statistieken}
+          primair={{
+            label: t(held.primair.label[0], held.primair.label[1]),
+            onClick: () => gaNaarMcpTab(held.primair.tab),
+          }}
+          secundair={{
+            label: t(held.secundair.label[0], held.secundair.label[1]),
+            onClick: () => gaNaarMcpTab(held.secundair.tab),
+          }}
+        />
+      ) : null}
       {section === "overview" || verborgen ? <RichtingBand richting="mcp" uk={lang === "uk"} metModus /> : null}
       {verborgen ? <ExpertMelding uk={lang === "uk"} /> : <>
       {error && section !== "agents" && section !== "apps" ? <p className="mcp-error" role="alert">{error}</p> : null}
@@ -755,6 +1046,17 @@ export default function McpServiceView({ lang, tab }: Props) {
         </>
       )}
       </>}
+      {isMaquette && !verborgen && !consent && !laagOpen && !(section === "agents" && isAgentDetail) ? (
+        <MaquetteAnkerRail
+          lang={lang}
+          opslagSleutel="mcp-anker"
+          titel={t("Розділи мосту MCP", "Onderdelen van de MCP-brug")}
+          ondertitel={t("Перетягніть до зручного краю", "Sleep naar een gewenste rand")}
+          items={ankerItems}
+          actief={section}
+          onKies={gaNaarMcpTab}
+        />
+      ) : null}
     </div>
   );
 }

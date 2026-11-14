@@ -1,0 +1,1349 @@
+/* Студійне оформлення інженерного мосту mcp.tarasevych.com у художній системі «Макет» (MAQUETTE-008, Група 7А).
+   Охоплює батьківську оболонку McpDienstWeergave, шапки сторінок, картки, показники, канбан-дошку, випробувальну пісочницю,
+   покроковий збір повного архіву, вікно підтвердження доступу McpToestemmingVenster, панель інструментів McpHulpmiddelenPaneel
+   та спільні складові інтерфейсу mcp-ui.
+   Studio-opmaak voor de technische MCP-brug, het werkbord, de zandbak, het toestemmingsvenster en het hulpmiddelenpaneel. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПОХІДНІ ЗМІННІ ІНДИГО-КОБАЛЬТОВОГО КОНТУРУ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .mcp-maquette-wikkel,
+html.palet-maquette .mcp-estate,
+html.palet-maquette .mcp-consent-venster,
+html.palet-maquette .mcp-consent-dialog,
+html.palet-maquette .mcp-consent-backdrop,
+html.palet-maquette [data-mcp-tools-panel="true"],
+html.palet-maquette [data-mcp-approvals],
+html.palet-maquette .hub-section,
+html.palet-maquette .hub-help {
+  --mq-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --mq-accent-mcp: color-mix(in srgb, var(--mq-accent) 68%, var(--mq-held-boven) 32%);
+  --mq-accent-mcp-diep: color-mix(in srgb, var(--mq-accent-2) 62%, var(--mq-schild-diep) 38%);
+  --mq-accent-mcp-op: var(--mq-accent-op);
+  --mq-mcp-indigo: color-mix(in srgb, var(--mq-held-boven) 64%, var(--mq-schild-diep) 36%);
+  --mq-mcp-kobalt: color-mix(in srgb, var(--mq-satelliet-tekst) 38%, var(--mq-schild-diep) 62%);
+  --mq-mcp-halo: color-mix(in srgb, var(--mq-accent-mcp) 17%, transparent);
+  --mq-mcp-halo-kobalt: color-mix(in srgb, var(--mq-held-boven) 13%, transparent);
+  --mq-mcp-halo-zacht: color-mix(in srgb, var(--mq-accent-mcp) 8%, transparent);
+  --mq-mcp-rand: color-mix(in srgb, var(--mq-tekst) 14%, var(--mq-rand));
+  --mq-mcp-rand-sterk: color-mix(in srgb, var(--mq-tekst) 22%, var(--mq-rand-sterk));
+  --mq-mcp-rand-accent: color-mix(in srgb, var(--mq-accent-mcp) 42%, var(--mq-rand));
+  --mq-mcp-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 84%, var(--mq-bol-diep) 16%);
+  --mq-mcp-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-held-boven) 6%);
+  --mq-mcp-glas-glans: color-mix(in srgb, var(--mq-tekst) 9%, transparent);
+  --mq-mcp-code-put: color-mix(in srgb, var(--mq-bg) 66%, var(--mq-bol-diep) 34%);
+
+  --mq-mcp-goed: color-mix(in srgb, var(--mq-accent) 86%, var(--mq-wit) 14%);
+  --mq-mcp-goed-zacht: color-mix(in srgb, var(--mq-mcp-goed) 16%, transparent);
+  --mq-mcp-wacht: var(--mq-tech-markering);
+  --mq-mcp-wacht-zacht: color-mix(in srgb, var(--mq-tech-markering) 17%, transparent);
+  --mq-mcp-gevaar: color-mix(in srgb, var(--mq-tech-markering) 62%, var(--mq-vonk-kleur) 38%);
+  --mq-mcp-gevaar-zacht: color-mix(in srgb, var(--mq-mcp-gevaar) 16%, transparent);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --soft: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-accent-mcp) 8%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent-mcp);
+  --accentText: var(--mq-accent-mcp-op);
+  --text-on-accent: var(--mq-accent-mcp-op);
+  --accent-soft: color-mix(in srgb, var(--mq-accent-mcp) 15%, transparent);
+  --focus: var(--mq-accent-mcp);
+}
+
+/* Підтримка явного атрибута data-theme="light", коли світлий клас на корені відсутній */
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .mcp-maquette-wikkel,
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .mcp-estate,
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .mcp-consent-venster,
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .mcp-consent-dialog,
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .mcp-consent-backdrop,
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) [data-mcp-tools-panel="true"],
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) [data-mcp-approvals],
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .hub-section,
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) .hub-help {
+  --mq-bg: color-mix(in srgb, var(--mq-wit) 74%, var(--mq-held-gedempt) 26%);
+  --mq-oppervlak: var(--mq-wit);
+  --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 86%, var(--mq-satelliet-tekst) 14%);
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bol-diep) 4.5%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--mq-bol-diep) 8.5%, transparent);
+  --mq-tekst: var(--mq-bol-diep);
+  --mq-gedempt: color-mix(in srgb, var(--mq-bol-diep) 68%, var(--mq-wit) 32%);
+  --mq-stil: color-mix(in srgb, var(--mq-bol-diep) 52%, var(--mq-wit) 48%);
+  --mq-rand: color-mix(in srgb, var(--mq-bol-diep) 12%, transparent);
+  --mq-rand-sterk: color-mix(in srgb, var(--mq-bol-diep) 24%, transparent);
+  --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 97%, var(--mq-satelliet-tekst) 3%);
+}
+
+/* Світлий режим «Ранковий туман» для всіх селекторів світлої теми */
+html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.mcp-maquette-wikkel, .mcp-estate, .mcp-consent-venster, .mcp-consent-dialog, .mcp-consent-backdrop, [data-mcp-tools-panel="true"], [data-mcp-approvals], .hub-section, .hub-help),
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.mcp-maquette-wikkel, .mcp-estate, [data-mcp-tools-panel="true"], [data-mcp-approvals], .hub-section, .hub-help) {
+  --mq-accent: color-mix(in srgb, var(--mq-accent-2) 68%, var(--mq-knop-primair-tekst) 32%);
+  --mq-accent-op: var(--mq-wit);
+  --mq-accent-mcp: color-mix(in srgb, var(--mq-accent-2) 62%, var(--mq-knop-primair-tekst) 38%);
+  --mq-accent-mcp-diep: color-mix(in srgb, var(--mq-knop-primair-tekst) 76%, var(--mq-accent-2) 24%);
+  --mq-accent-mcp-op: var(--mq-wit);
+  --mq-mcp-indigo: color-mix(in srgb, var(--mq-knop-primair-tekst) 78%, var(--mq-schild-diep) 22%);
+  --mq-mcp-kobalt: color-mix(in srgb, var(--mq-schild-diep) 82%, var(--mq-accent-2) 18%);
+  --mq-mcp-halo: color-mix(in srgb, var(--mq-accent-mcp) 11%, transparent);
+  --mq-mcp-halo-kobalt: color-mix(in srgb, var(--mq-knop-primair-tekst) 7%, transparent);
+  --mq-mcp-halo-zacht: color-mix(in srgb, var(--mq-accent-mcp) 5%, transparent);
+  --mq-mcp-rand: color-mix(in srgb, var(--mq-tekst) 12%, var(--mq-rand));
+  --mq-mcp-rand-sterk: color-mix(in srgb, var(--mq-tekst) 20%, var(--mq-rand-sterk));
+  --mq-mcp-rand-accent: color-mix(in srgb, var(--mq-accent-mcp) 34%, var(--mq-rand));
+  --mq-mcp-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 95%, var(--mq-bg) 5%);
+  --mq-mcp-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-accent-mcp) 4%);
+  --mq-mcp-glas-glans: color-mix(in srgb, var(--mq-wit) 82%, transparent);
+  --mq-mcp-code-put: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-bol-diep) 12%);
+
+  --mq-mcp-goed: color-mix(in srgb, var(--mq-accent-2) 82%, var(--mq-tekst) 18%);
+  --mq-mcp-goed-zacht: color-mix(in srgb, var(--mq-mcp-goed) 12%, transparent);
+  --mq-mcp-wacht: color-mix(in srgb, var(--mq-tech-markering) 84%, var(--mq-tekst) 16%);
+  --mq-mcp-wacht-zacht: color-mix(in srgb, var(--mq-mcp-wacht) 13%, transparent);
+  --mq-mcp-gevaar: color-mix(in srgb, var(--mq-tech-markering) 68%, var(--mq-knop-primair-tekst) 32%);
+  --mq-mcp-gevaar-zacht: color-mix(in srgb, var(--mq-mcp-gevaar) 12%, transparent);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 6%);
+  --soft: color-mix(in srgb, var(--mq-oppervlak-2) 90%, var(--mq-accent-mcp) 6%);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent-mcp);
+  --accentText: var(--mq-wit);
+  --text-on-accent: var(--mq-wit);
+  --accent-soft: color-mix(in srgb, var(--mq-accent-mcp) 12%, transparent);
+  --focus: var(--mq-accent-mcp);
+}
+
+/* Недоторканність нічного індиго-кобальтового склепіння студійної вітрини .mq-held у будь-якому світловому режимі */
+html.palet-maquette .mcp-maquette-wikkel > .mq-held {
+  color-scheme: dark;
+  --mq-accent: var(--mq-nacht-accent);
+  --mq-held-gloed-b: color-mix(in srgb, var(--mq-held-boven) 30%, transparent);
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette .mcp-maquette-wikkel > .mq-held.is-compact {
+  border-color: var(--mq-held-lijn);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ОБОЛОНКА ПІДДОМЕНУ (.mcp-maquette-wikkel) ТА УЗГОДЖЕННЯ З FLAT-CONTENT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .mcp-estate.mcp-maquette-wikkel {
+  max-width: 1460px;
+  gap: 20px;
+  padding-top: 16px;
+  padding-bottom: 44px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-maquette-wikkel :focus-visible,
+html.palet-maquette .mcp-consent-dialog :focus-visible,
+html.palet-maquette [data-mcp-tools-panel="true"] :focus-visible {
+  outline: 2px solid var(--mq-accent-mcp);
+  outline-offset: 2px;
+}
+
+/* Відновлення студійних рамок, скруглень і тіней поверх правила flat-content канонічної оболонки */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .mcp-maquette-wikkel[data-mq-dienst="mcp"] :is(.weergave-richting, .mcp-block, .mcp-stat, .mcp-col, .mcp-task, .hub-section, .hub-card, .hub-tool, .hub-switch, .hub-feed-item):not([role="dialog"]):not(.auth-card):not([data-mq-m1]):not([data-mq-m2]):not([data-mq-m3]):not([data-mq-m4]):not([data-mq-m5]):not([data-mq-m6]):not([data-mq-m7]):not([data-mq-m8]):not([data-mq-m9]):not([data-mq-m10]):not([data-mq-m11]):not([data-mq-m12]) {
+  border: 1px solid var(--mq-mcp-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow:
+    inset 0 1px 0 var(--mq-mcp-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .mcp-maquette-wikkel[data-mq-dienst="mcp"] :is(.mcp-col, .mcp-task, .hub-card, .hub-tool, .hub-switch, .hub-feed-item):not([role="dialog"]):not(.auth-card):not([data-mq-m1]):not([data-mq-m2]):not([data-mq-m3]):not([data-mq-m4]):not([data-mq-m5]):not([data-mq-m6]):not([data-mq-m7]):not([data-mq-m8]):not([data-mq-m9]):not([data-mq-m10]):not([data-mq-m11]):not([data-mq-m12]) {
+  border-radius: 18px;
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .mcp-maquette-wikkel[data-mq-dienst="mcp"] .weergave-richting:not([role="dialog"]):not(.auth-card):not([data-mq-m1]):not([data-mq-m2]):not([data-mq-m3]):not([data-mq-m4]):not([data-mq-m5]):not([data-mq-m6]):not([data-mq-m7]):not([data-mq-m8]):not([data-mq-m9]):not([data-mq-m10]):not([data-mq-m11]):not([data-mq-m12]) {
+  border-left: 4px solid var(--mq-accent-mcp);
+}
+
+/* Стрічка напрямку служби (.weergave-richting) на мосту */
+html.palet-maquette .mcp-maquette-wikkel .weergave-richting {
+  display: grid;
+  gap: 10px;
+  padding: 16px 20px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-mcp-rand);
+  border-left: 4px solid var(--mq-accent-mcp);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-mcp-halo), transparent 50%),
+    radial-gradient(circle at 100% 100%, var(--mq-mcp-halo-kobalt), transparent 55%),
+    linear-gradient(165deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-mcp-glas-glans),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-maquette-wikkel .weergave-pijl li span {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-mcp) 28%, var(--mq-rand));
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-accent-mcp) 12%);
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+  font-weight: 620;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. ШАПКИ РОЗДІЛІВ (.mcp-page-head), КАРТКИ (.mcp-block) ТА ПОКАЗНИКИ (.mcp-stat)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .mcp-estate .mcp-kicker {
+  color: var(--mq-accent-mcp);
+  font-size: 12px;
+  font-weight: 720;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+html.palet-maquette .mcp-estate .mcp-lead {
+  color: var(--mq-gedempt);
+  font-size: 0.96rem;
+  line-height: 1.62;
+  max-width: 74ch;
+}
+
+html.palet-maquette .mcp-estate .mcp-meta {
+  color: var(--mq-gedempt);
+  font-size: 0.85rem;
+  line-height: 1.48;
+}
+
+html.palet-maquette .mcp-estate .mcp-code,
+html.palet-maquette .mcp-estate .mcp-url {
+  font-family: var(--mq-font-mono);
+  font-size: 0.84rem;
+}
+
+html.palet-maquette .mcp-estate .mcp-url {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--mq-oppervlak-zacht);
+  border: 1px solid var(--mq-rand);
+  color: var(--mq-accent-mcp);
+  text-decoration: none;
+}
+
+html.palet-maquette .mcp-estate .mcp-page-head {
+  padding: 18px 22px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-mcp-rand);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-mcp-halo-kobalt), transparent 46%),
+    linear-gradient(165deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-mcp-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .mcp-estate .mcp-page-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-mcp-rand-accent);
+  background: linear-gradient(145deg, var(--mq-mcp-halo), var(--mq-mcp-halo-kobalt));
+  color: var(--mq-accent-mcp);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+}
+
+html.palet-maquette .mcp-estate .mcp-page-head h1 {
+  font-size: clamp(1.38rem, 2.3vw, 1.82rem);
+  font-weight: 660;
+  letter-spacing: -0.03em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-estate .mcp-block {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-mcp-rand);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-mcp-halo-zacht), transparent 52%),
+    linear-gradient(168deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-mcp-glas-glans),
+    var(--mq-schaduw-zacht);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.22s ease;
+}
+
+html.palet-maquette .mcp-estate .mcp-block.tone-ok {
+  border-color: color-mix(in srgb, var(--mq-mcp-goed) 44%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .mcp-estate .mcp-block.tone-warn {
+  border-color: color-mix(in srgb, var(--mq-mcp-wacht) 50%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .mcp-estate .mcp-block.tone-bad {
+  border-color: color-mix(in srgb, var(--mq-mcp-gevaar) 52%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .mcp-estate .mcp-block-head {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: linear-gradient(180deg, var(--mq-oppervlak-zacht), transparent);
+}
+
+html.palet-maquette .mcp-estate .mcp-block-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-mcp) 28%, var(--mq-rand));
+  background: linear-gradient(145deg, var(--mq-mcp-halo), var(--mq-oppervlak-zacht));
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .mcp-estate .mcp-block-title h2 {
+  font-size: 1.05rem;
+  font-weight: 660;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-estate .mcp-block-body {
+  padding: 18px 22px 22px;
+  gap: 14px;
+}
+
+html.palet-maquette .mcp-estate .mcp-stats {
+  gap: 14px;
+}
+
+html.palet-maquette .mcp-estate .mcp-stat {
+  padding: 18px 20px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-mcp-rand);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-mcp-halo), transparent 58%),
+    linear-gradient(160deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-mcp-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .mcp-estate .mcp-stat strong {
+  font-size: 1.78rem;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-estate .mcp-stat span {
+  font-size: 0.86rem;
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. СПИСКИ (.mcp-list), ПОЗНАЧКИ (.mcp-badge), КНОПКИ (.mcp-btn) ТА ПОЛЯ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .mcp-estate .mcp-item {
+  padding: 13px 6px;
+  border-top-color: var(--mq-rand);
+  border-radius: 12px;
+  transition: background-color 0.16s ease;
+}
+
+html.palet-maquette .mcp-estate .mcp-item-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .mcp-estate .mcp-item-icon.ok {
+  border-color: color-mix(in srgb, var(--mq-mcp-goed) 38%, var(--mq-rand));
+  background: var(--mq-mcp-goed-zacht);
+  color: var(--mq-mcp-goed);
+}
+
+html.palet-maquette .mcp-estate .mcp-item-icon.bad {
+  border-color: color-mix(in srgb, var(--mq-mcp-gevaar) 42%, var(--mq-rand));
+  background: var(--mq-mcp-gevaar-zacht);
+  color: var(--mq-mcp-gevaar);
+}
+
+html.palet-maquette .mcp-estate .mcp-badge {
+  padding: 4px 11px 4px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-goed) 34%, var(--mq-rand));
+  background: var(--mq-mcp-goed-zacht);
+  color: var(--mq-mcp-goed);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+html.palet-maquette .mcp-estate .mcp-badge.ok {
+  border-color: color-mix(in srgb, var(--mq-mcp-goed) 34%, var(--mq-rand));
+  background: var(--mq-mcp-goed-zacht);
+  color: var(--mq-mcp-goed);
+}
+
+html.palet-maquette .mcp-estate .mcp-badge.wait {
+  border-color: color-mix(in srgb, var(--mq-mcp-wacht) 38%, var(--mq-rand));
+  background: var(--mq-mcp-wacht-zacht);
+  color: var(--mq-mcp-wacht);
+}
+
+html.palet-maquette .mcp-estate .mcp-badge.bad {
+  border-color: color-mix(in srgb, var(--mq-mcp-gevaar) 40%, var(--mq-rand));
+  background: var(--mq-mcp-gevaar-zacht);
+  color: var(--mq-mcp-gevaar);
+}
+
+html.palet-maquette .mcp-estate .mcp-badge.off {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .mcp-estate .mcp-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid color-mix(in srgb, var(--mq-accent-mcp) 72%, var(--mq-wit) 14%);
+  background: linear-gradient(155deg, var(--mq-accent-mcp) 0%, color-mix(in srgb, var(--mq-accent-mcp) 82%, var(--mq-accent-mcp-diep) 18%) 100%);
+  color: var(--mq-accent-mcp-op);
+  font-size: 0.9rem;
+  font-weight: 650;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mq-accent-mcp) 22%, transparent);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+html.palet-maquette .mcp-estate .mcp-btn.ghost,
+html.palet-maquette .mcp-estate .mcp-ghost {
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+}
+
+html.palet-maquette .mcp-estate .mcp-btn.small {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 11px;
+  font-size: 0.84rem;
+}
+
+html.palet-maquette .mcp-estate :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
+html.palet-maquette .mcp-estate .mcp-input {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-mcp-code-put);
+  color: var(--mq-tekst);
+  font-size: 0.94rem;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .mcp-estate :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus,
+html.palet-maquette .mcp-estate .mcp-input:focus {
+  outline: none;
+  border-color: var(--mq-accent-mcp);
+  box-shadow: 0 0 0 3px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .mcp-estate .mcp-choice {
+  padding: 3px;
+  gap: 3px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-mcp-code-put);
+}
+
+html.palet-maquette .mcp-estate .mcp-choice button {
+  min-height: 36px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--mq-gedempt);
+  font-size: 0.88rem;
+  font-weight: 640;
+}
+
+html.palet-maquette .mcp-estate .mcp-choice button + button {
+  border-left: 0;
+}
+
+html.palet-maquette .mcp-estate .mcp-choice button[aria-pressed="true"] {
+  background: var(--mq-mcp-halo);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-mcp-rand-accent);
+}
+
+html.palet-maquette .mcp-estate .mcp-note {
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-mcp-rand);
+  border-left: 4px solid var(--mq-accent-mcp);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+}
+
+html.palet-maquette .mcp-estate .mcp-note.ok {
+  border-left-color: var(--mq-mcp-goed);
+}
+
+html.palet-maquette .mcp-estate .mcp-note.wait {
+  border-left-color: var(--mq-mcp-wacht);
+}
+
+html.palet-maquette .mcp-estate .mcp-note.bad {
+  border-left-color: var(--mq-mcp-gevaar);
+}
+
+html.palet-maquette .mcp-estate .mcp-error {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-gevaar) 42%, var(--mq-rand));
+  background: var(--mq-mcp-gevaar-zacht);
+  color: var(--mq-mcp-gevaar);
+  font-size: 0.88rem;
+}
+
+html.palet-maquette .mcp-estate .mcp-live {
+  color: var(--mq-accent-mcp);
+  font-size: 0.88rem;
+}
+
+html.palet-maquette .mcp-estate .mcp-empty {
+  padding: 28px 20px;
+  border-radius: 18px;
+  border: 1px dashed var(--mq-mcp-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .mcp-estate .mcp-empty svg {
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .mcp-estate .mcp-chips span {
+  font-size: 12.5px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette .mcp-estate .mcp-q {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+  box-shadow: 0 0 0 1px var(--mq-mcp-rand);
+}
+
+html.palet-maquette .mcp-estate .mcp-tip {
+  border-radius: 14px;
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+  box-shadow: var(--mq-schaduw-zacht), 0 0 0 1px var(--mq-mcp-rand-sterk);
+}
+
+html.palet-maquette .mcp-estate .mcp-toggle {
+  background: var(--mq-oppervlak-2);
+  box-shadow: inset 0 0 0 1px var(--mq-mcp-rand-sterk);
+}
+
+html.palet-maquette .mcp-estate .mcp-toggle[aria-checked="true"] {
+  background: var(--mq-accent-mcp);
+  box-shadow: 0 0 14px var(--mq-mcp-halo);
+}
+
+html.palet-maquette .mcp-estate .mcp-toggle i {
+  background: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-estate .mcp-toggle[aria-checked="true"] i {
+  background: var(--mq-accent-mcp-op);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. КАНБАН-ДОШКА (.mcp-board), ПІСОЧНИЦЯ (.mcp-play) ТА ШКАЛА АРХІВУ (.mcp-track)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .mcp-estate .mcp-board {
+  gap: 14px;
+}
+
+html.palet-maquette .mcp-estate .mcp-col {
+  padding: 14px;
+  gap: 10px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-mcp-rand);
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-mcp-halo-kobalt), transparent 62%),
+    linear-gradient(180deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-mcp-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .mcp-estate .mcp-col[data-board-kolom="inkomend"] {
+  border-color: color-mix(in srgb, var(--mq-mcp-wacht) 44%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .mcp-estate .mcp-col[data-board-kolom="doing"] {
+  border-color: var(--mq-mcp-rand-accent);
+}
+
+html.palet-maquette .mcp-estate .mcp-col-head {
+  padding: 2px 4px 8px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette .mcp-estate .mcp-col-count {
+  min-width: 28px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-accent-mcp);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+html.palet-maquette .mcp-estate .mcp-task {
+  padding: 13px 14px;
+  gap: 10px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+
+html.palet-maquette .mcp-estate .mcp-task [data-board-derden="1"] {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-wacht) 36%, var(--mq-rand));
+  background: var(--mq-mcp-wacht-zacht);
+  color: var(--mq-tekst);
+  font-size: 12px;
+}
+
+html.palet-maquette .mcp-estate .mcp-move {
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 12px;
+  font-weight: 620;
+  transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+/* Випробувальна пісочниця (.mcp-play, .mcp-toolnav, .mcp-out) */
+html.palet-maquette .mcp-estate .mcp-play {
+  gap: 16px;
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+}
+
+html.palet-maquette .mcp-estate .mcp-toolnav {
+  gap: 6px;
+  padding: 4px;
+}
+
+html.palet-maquette .mcp-estate .mcp-toolnav button {
+  padding: 10px 12px;
+  border-radius: 13px;
+  border: 1px solid transparent;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .mcp-estate .mcp-toolnav button b {
+  font-family: var(--mq-font-mono);
+  font-size: 0.84rem;
+}
+
+html.palet-maquette .mcp-estate .mcp-toolnav button small {
+  font-size: 0.8rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .mcp-estate .mcp-toolnav button.on {
+  border-color: var(--mq-mcp-rand-accent);
+  background: linear-gradient(135deg, var(--mq-mcp-halo), var(--mq-mcp-halo-kobalt));
+  box-shadow: inset 3px 0 0 var(--mq-accent-mcp);
+}
+
+html.palet-maquette .mcp-estate .mcp-out {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-mcp-code-put);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.83rem;
+  line-height: 1.56;
+  box-shadow: inset 0 2px 8px color-mix(in srgb, var(--mq-bg) 32%, transparent);
+}
+
+/* Покрокова шкала збирання повного архіву (.mcp-track, .mcp-ring, .mcp-bar) */
+html.palet-maquette .mcp-estate .mcp-bar {
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-mcp-code-put);
+}
+
+html.palet-maquette .mcp-estate .mcp-bar i {
+  background: linear-gradient(90deg, var(--mq-mcp-indigo), var(--mq-accent-mcp));
+}
+
+html.palet-maquette .mcp-estate .mcp-track {
+  gap: 6px;
+}
+
+html.palet-maquette .mcp-estate .mcp-track-step {
+  padding: 10px 12px;
+  border-radius: 15px;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+html.palet-maquette .mcp-estate .mcp-track-step.on {
+  border-color: var(--mq-mcp-rand-accent);
+  background: linear-gradient(135deg, var(--mq-mcp-halo), var(--mq-mcp-halo-kobalt));
+}
+
+html.palet-maquette .mcp-estate .mcp-track-step .mcp-rail {
+  left: 33px;
+  top: 54px;
+  background: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .mcp-estate .mcp-track-step.done .mcp-rail {
+  background: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .mcp-estate .mcp-ring {
+  background: var(--mq-oppervlak-2);
+  box-shadow: inset 0 0 0 1px var(--mq-mcp-rand);
+}
+
+html.palet-maquette .mcp-estate .mcp-ring circle {
+  stroke: var(--mq-rand-sterk);
+}
+
+html.palet-maquette .mcp-estate .mcp-ring circle:last-of-type {
+  stroke: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .mcp-estate .mcp-ring b {
+  font-size: 12px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .mcp-estate .mcp-ring.on b,
+html.palet-maquette .mcp-estate .mcp-ring.done b {
+  color: var(--mq-accent-mcp);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ВІКНО ПІДТВЕРДЖЕННЯ ДОСТУПУ OAUTH (McpToestemmingVenster.tsx — .mcp-consent*)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .venster.mcp-consent-venster {
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  border-radius: 24px;
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .venster.mcp-consent-venster .venster-kop {
+  border-bottom: 1px solid var(--mq-rand);
+  background: linear-gradient(180deg, var(--mq-mcp-halo-kobalt), transparent);
+}
+
+html.palet-maquette .mcp-consent-backdrop {
+  background: color-mix(in srgb, var(--mq-bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+html.palet-maquette .mcp-consent-dialog {
+  background: linear-gradient(170deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-consent-venster .mcp-consent-dialog {
+  background: transparent;
+}
+
+html.palet-maquette .mcp-consent-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-mcp-rand-accent);
+  background: linear-gradient(145deg, var(--mq-mcp-halo), var(--mq-mcp-halo-kobalt));
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .mcp-consent-head h2 {
+  font-size: 1.22rem;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-consent-sub,
+html.palet-maquette .mcp-consent-meta,
+html.palet-maquette .mcp-consent-msg {
+  color: var(--mq-gedempt);
+  font-size: 0.9rem;
+}
+
+html.palet-maquette .mcp-consent-adres code {
+  font-family: var(--mq-font-mono);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--mq-mcp-code-put);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-consent-ruimte {
+  padding: 12px 14px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-mcp-rand-accent);
+  background: linear-gradient(145deg, var(--mq-mcp-halo), var(--mq-oppervlak-2));
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+}
+
+html.palet-maquette .mcp-consent-ruimte.is-technisch {
+  border-color: color-mix(in srgb, var(--mq-mcp-wacht) 44%, var(--mq-rand));
+  background: linear-gradient(145deg, var(--mq-mcp-wacht-zacht), var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .mcp-consent-ruimte-knop {
+  color: var(--mq-accent-mcp);
+  font-size: 0.86rem;
+}
+
+html.palet-maquette .mcp-consent-group {
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+}
+
+html.palet-maquette .mcp-consent-group-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .mcp-consent-write .mcp-consent-group-icon {
+  color: var(--mq-mcp-wacht);
+}
+
+html.palet-maquette .mcp-consent-run .mcp-consent-group-icon {
+  color: var(--mq-mcp-gevaar);
+}
+
+html.palet-maquette .mcp-consent-note {
+  font-size: 12.5px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .mcp-consent-warn {
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-wacht) 44%, var(--mq-rand));
+  background: var(--mq-mcp-wacht-zacht);
+  color: var(--mq-tekst);
+  font-size: 0.88rem;
+}
+
+html.palet-maquette .mcp-consent-warn svg {
+  color: var(--mq-mcp-wacht);
+}
+
+html.palet-maquette .mcp-consent-duur :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-mcp-code-put);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .mcp-consent-primary {
+  border-radius: var(--mq-straal-knop);
+  border-color: color-mix(in srgb, var(--mq-accent-mcp) 74%, var(--mq-wit) 14%);
+  background: linear-gradient(155deg, var(--mq-accent-mcp) 0%, color-mix(in srgb, var(--mq-accent-mcp) 80%, var(--mq-accent-mcp-diep) 20%) 100%);
+  color: var(--mq-accent-mcp-op);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--mq-accent-mcp) 24%, transparent);
+}
+
+html.palet-maquette .mcp-consent-actions button.mcp-consent-secondary {
+  border-radius: var(--mq-straal-knop);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. СПІЛЬНІ ПРИМІТИВИ MCP-UI ТА ПАНЕЛЬ ІНСТРУМЕНТІВ (McpHulpmiddelenPaneel.tsx)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .hub-section {
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-mcp-rand);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-mcp-halo-zacht), transparent 52%),
+    linear-gradient(168deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-mcp-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .hub-section.tone-warn {
+  border-color: color-mix(in srgb, var(--mq-mcp-wacht) 52%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .hub-section.tone-danger {
+  border-color: color-mix(in srgb, var(--mq-mcp-gevaar) 54%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .hub-section.tone-ok {
+  border-color: color-mix(in srgb, var(--mq-mcp-goed) 48%, var(--mq-mcp-rand));
+}
+
+html.palet-maquette .hub-section-toggle {
+  border-radius: var(--mq-straal-kaart);
+  padding: 12px 18px;
+}
+
+html.palet-maquette .hub-section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--mq-accent-mcp) 28%, var(--mq-rand));
+  background: linear-gradient(145deg, var(--mq-mcp-halo), var(--mq-mcp-halo-kobalt));
+  color: var(--mq-accent-mcp);
+}
+
+html.palet-maquette .hub-section-titles b {
+  font-size: 1.04rem;
+  font-weight: 660;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-section-titles small {
+  color: var(--mq-gedempt);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .hub-section-body {
+  padding: 6px 18px 18px;
+  gap: 14px;
+}
+
+html.palet-maquette .hub-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+}
+
+html.palet-maquette .hub-note {
+  padding: 12px 15px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-mcp-rand);
+  border-left: 4px solid var(--mq-accent-mcp);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  line-height: 1.54;
+}
+
+html.palet-maquette .hub-note.warn {
+  border-left-color: var(--mq-mcp-wacht);
+  background: var(--mq-mcp-wacht-zacht);
+}
+
+html.palet-maquette .hub-note.bad {
+  border-left-color: var(--mq-mcp-gevaar);
+  background: var(--mq-mcp-gevaar-zacht);
+}
+
+html.palet-maquette .hub-pill {
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+html.palet-maquette .hub-pill.ok {
+  border-color: color-mix(in srgb, var(--mq-mcp-goed) 42%, var(--mq-rand));
+  background: var(--mq-mcp-goed-zacht);
+  color: var(--mq-mcp-goed);
+}
+
+html.palet-maquette .hub-pill.warn {
+  border-color: color-mix(in srgb, var(--mq-mcp-wacht) 44%, var(--mq-rand));
+  background: var(--mq-mcp-wacht-zacht);
+  color: var(--mq-mcp-wacht);
+}
+
+html.palet-maquette .hub-pill.bad {
+  border-color: color-mix(in srgb, var(--mq-mcp-gevaar) 44%, var(--mq-rand));
+  background: var(--mq-mcp-gevaar-zacht);
+  color: var(--mq-mcp-gevaar);
+}
+
+html.palet-maquette .hub-pill.off {
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-dot-on {
+  background: var(--mq-mcp-goed);
+  box-shadow: 0 0 0 3px var(--mq-mcp-goed-zacht);
+}
+
+html.palet-maquette .hub-dot-wait {
+  background: var(--mq-mcp-wacht);
+}
+
+html.palet-maquette .hub-dot-bad {
+  background: var(--mq-mcp-gevaar);
+}
+
+html.palet-maquette .hub-dot-off {
+  background: var(--mq-stil);
+}
+
+html.palet-maquette .hub-btn {
+  min-height: 40px;
+  padding: 6px 15px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.88rem;
+  font-weight: 640;
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .hub-btn.tone-primary {
+  border-color: color-mix(in srgb, var(--mq-accent-mcp) 74%, var(--mq-wit) 14%);
+  background: linear-gradient(155deg, var(--mq-accent-mcp) 0%, color-mix(in srgb, var(--mq-accent-mcp) 80%, var(--mq-accent-mcp-diep) 20%) 100%);
+  color: var(--mq-accent-mcp-op);
+}
+
+html.palet-maquette .hub-btn.tone-danger {
+  border-color: color-mix(in srgb, var(--mq-mcp-gevaar) 52%, var(--mq-rand));
+  background: var(--mq-mcp-gevaar-zacht);
+  color: var(--mq-mcp-gevaar);
+}
+
+/* Довідкова спливна бульбашка (.hub-help) */
+html.palet-maquette .hub-help-btn {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-help.tone-warn .hub-help-btn {
+  background: var(--mq-mcp-wacht-zacht);
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-wacht) 46%, var(--mq-rand));
+  color: var(--mq-mcp-wacht);
+  font-size: 12px;
+}
+
+html.palet-maquette .hub-help-pop {
+  border-radius: 18px;
+  border: 1px solid var(--mq-mcp-rand-sterk);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  font-size: 0.85rem;
+}
+
+html.palet-maquette .hub-help-row {
+  border-left-color: var(--mq-mcp-rand-sterk);
+}
+
+html.palet-maquette .hub-help-row i {
+  font-size: 12px;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-help-row.on {
+  border-left-color: var(--mq-mcp-goed);
+}
+
+html.palet-maquette .hub-help-row.off {
+  border-left-color: var(--mq-stil);
+}
+
+html.palet-maquette .hub-help-row.risk {
+  border-left-color: var(--mq-mcp-gevaar);
+}
+
+/* Панель інструментів і дозволів ([data-mcp-tools-panel="true"]) та черга запитів ([data-mcp-approvals]) */
+html.palet-maquette .hub-tools-wrap {
+  display: grid;
+  gap: 14px;
+}
+
+html.palet-maquette .hub-tabs {
+  gap: 8px;
+  padding: 4px 2px 6px;
+}
+
+html.palet-maquette .hub-tab {
+  min-height: 42px;
+  padding: 6px 15px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.88rem;
+  font-weight: 620;
+  transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+html.palet-maquette .hub-tab[aria-selected="true"] {
+  border-color: var(--mq-mcp-rand-accent);
+  background: linear-gradient(140deg, var(--mq-mcp-halo), var(--mq-mcp-halo-kobalt));
+  color: var(--mq-tekst);
+  font-weight: 680;
+}
+
+html.palet-maquette .hub-tab .hub-count {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-accent-mcp);
+  font-size: 12px;
+  font-weight: 680;
+}
+
+html.palet-maquette .hub-tools {
+  gap: 10px;
+}
+
+html.palet-maquette .hub-tool {
+  padding: 13px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: linear-gradient(165deg, var(--mq-mcp-glas-verhoogd) 0%, var(--mq-mcp-glas-diep) 100%);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+}
+
+html.palet-maquette .hub-tool-name code {
+  font-family: var(--mq-font-mono);
+  font-size: 12px;
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: var(--mq-mcp-code-put);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .hub-seg {
+  padding: 3px;
+  gap: 3px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-mcp-code-put);
+}
+
+html.palet-maquette .hub-seg button {
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--mq-gedempt);
+  font-size: 0.84rem;
+  font-weight: 640;
+}
+
+html.palet-maquette .hub-seg button + button {
+  border-left: 0;
+}
+
+html.palet-maquette .hub-seg button[aria-checked="true"][data-mode="always"] {
+  background: var(--mq-mcp-goed-zacht);
+  color: var(--mq-mcp-goed);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-mcp-goed) 44%, var(--mq-rand));
+}
+
+html.palet-maquette .hub-seg button[aria-checked="true"][data-mode="ask"] {
+  background: var(--mq-mcp-wacht-zacht);
+  color: var(--mq-mcp-wacht);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-mcp-wacht) 46%, var(--mq-rand));
+}
+
+html.palet-maquette .hub-seg button[aria-checked="true"][data-mode="off"] {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px var(--mq-mcp-rand-sterk);
+}
+
+html.palet-maquette .hub-confirm {
+  padding: 12px 15px;
+  border-radius: 15px;
+  border: 1px solid color-mix(in srgb, var(--mq-mcp-gevaar) 52%, var(--mq-rand));
+  background: var(--mq-mcp-gevaar-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .hub-feed {
+  gap: 10px;
+}
+
+html.palet-maquette .hub-feed-item {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-mcp-rand);
+  background: var(--mq-oppervlak-2);
+  box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+}
+
+html.palet-maquette .hub-empty {
+  padding: 26px 18px;
+  border-radius: 18px;
+  border: 1px dashed var(--mq-mcp-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. МЕДІАЗАПИТИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (hover: hover) and (pointer: fine) {
+  html.palet-maquette .mcp-estate .mcp-block:hover {
+    border-color: var(--mq-mcp-rand-sterk);
+  }
+
+  html.palet-maquette .mcp-estate .mcp-item:hover {
+    background: var(--mq-oppervlak-zacht);
+  }
+
+  html.palet-maquette .mcp-estate .mcp-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--mq-accent-mcp) 28%, transparent);
+  }
+
+  html.palet-maquette .mcp-estate .mcp-btn.ghost:not(:disabled):hover,
+  html.palet-maquette .mcp-estate .mcp-ghost:not(:disabled):hover {
+    border-color: var(--mq-mcp-rand-accent);
+    background: color-mix(in srgb, var(--mq-accent-mcp) 12%, var(--mq-oppervlak-2));
+    box-shadow: inset 0 1px 0 var(--mq-mcp-glas-glans);
+  }
+
+  html.palet-maquette .mcp-estate .mcp-task:hover {
+    border-color: var(--mq-mcp-rand-sterk);
+    transform: translateY(-1px);
+  }
+
+  html.palet-maquette .mcp-estate .mcp-move:not(:disabled):hover {
+    border-color: var(--mq-accent-mcp);
+    background: var(--mq-mcp-halo);
+    color: var(--mq-tekst);
+  }
+
+  html.palet-maquette .mcp-estate .mcp-toolnav button:not(.on):hover {
+    border-color: var(--mq-mcp-rand);
+    background: var(--mq-oppervlak-hover);
+  }
+
+  html.palet-maquette .hub-btn:not([disabled]):hover {
+    border-color: var(--mq-mcp-rand-accent);
+    transform: translateY(-1px);
+  }
+
+  html.palet-maquette .hub-tab:not([aria-selected="true"]):hover {
+    border-color: var(--mq-mcp-rand-sterk);
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+  }
+}
+
+@media (max-width: 900px) {
+  html.palet-maquette .mcp-estate .mcp-play {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  html.palet-maquette .mcp-estate.mcp-maquette-wikkel {
+    gap: 15px;
+    padding-top: 10px;
+    padding-bottom: 28px;
+  }
+
+  html.palet-maquette .mcp-estate .mcp-page-head {
+    padding: 15px 16px;
+  }
+
+  html.palet-maquette .mcp-estate .mcp-block-head {
+    padding: 13px 16px;
+  }
+
+  html.palet-maquette .mcp-estate .mcp-block-body {
+    padding: 15px 16px 16px;
+  }
+
+  html.palet-maquette .hub-section-toggle {
+    padding: 11px 14px;
+  }
+
+  html.palet-maquette .hub-section-body {
+    padding: 4px 14px 14px;
+  }
+
+  html.palet-maquette .hub-seg {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  html.palet-maquette .hub-seg button {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette .mcp-maquette-wikkel *,
+  html.palet-maquette .mcp-consent-dialog *,
+  html.palet-maquette [data-mcp-tools-panel="true"] * {
+    transition: none;
+  }
+}

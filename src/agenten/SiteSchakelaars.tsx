@@ -7,6 +7,7 @@ import type { Tr } from '../mcp-ui';
 import { foutTekst } from './fouten';
 // SEC-002 extensie-02 (g10a-2): de sitebrede plafonds van de AI zet alleen de mens (zone + alleen een echte klik).
 import { alleenMens, geenAi } from '../menselijke-actie';
+import './agenten-toegang-maquette.css';
 
 type Rij = { sleutel: string; naam: string; groep: string; aan: boolean };
 

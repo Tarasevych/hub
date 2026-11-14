@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "MAQUETTE-008",
+  "agent": "antigravity",
+  "tak": "feature/maquette-008-20261113-231805",
+  "basisCommit": "5b4d4d4f9f694726bbe1014ba9ea47300c600a48",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-13T23:18:05.875Z",
+  "bijgewerkt": "2026-11-13T23:18:05.875Z",
+  "omschrijving": "Хвиля 7 теми «Макет»: повне студійне перевтілення простору інженерного мосту та підключень агентів mcp.tarasevych.com.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

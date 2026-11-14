@@ -44,6 +44,7 @@ import { inRuimte, isoMs, useDeurTokens, useJournaal } from './gegevens';
 import { foutTekst } from './fouten';
 import { GevaarKnop, Melding, useActies } from './ui';
 import BevestigingenPaneel from '../ai-bevestiging/BevestigingenPaneel';
+import './agenten-kern-maquette.css';
 
 const wanneer = (ms: number | null | undefined, uk: boolean) => (ms ? new Date(ms).toLocaleString(uk ? 'uk-UA' : 'nl-BE', { dateStyle: 'short', timeStyle: 'short' }) : (uk ? 'ще не було' : 'nog niet'));
 

@@ -6,6 +6,7 @@ import { ecosystemTabContext } from './tab-context';
 import { Venster, vensterBeheer } from './platform/vensters';
 import { openTechVenster, techActief, useTech } from './tech/tech-opslag';
 import './mcp-toestemming-venster.css';
+import './mcp-kern-maquette.css';
 import { DUREN, duur as duurVan, isDuurId, type DuurId } from '../shared/ai-verbinding';
 import { RUIMTE_NAAM, RUIMTE_UITLEG, type AiRuimte } from '../shared/ai-ruimte';
 import KoppelWizard, { type V2ConsentInfo } from './connector-v2/KoppelWizard';
@@ -246,7 +247,7 @@ export default function McpConsentModal({ tr }: { tr: Tr }) {
   return (
     <Venster id='mcp-toestemming' titel={tr(`Доступ для ${name}`, `Toegang voor ${name}`)} breedte={560} labelledBy='mcp-consent-title' describedBy='mcp-consent-desc' className='mcp-consent-venster'>
       {/* SEC-002 extensie-02: alleen de mens beslist hier (de browserextensie bedient deze zone niet; «Дозволити» telt alleen een echte klik). */}
-      <div className='mcp-consent-dialog' data-mcp-consent-modal='true' {...geenAi}>
+      <div className='mcp-consent-dialog' data-mcp-consent-modal='true' data-mq-laag-open='1' {...geenAi}>
         <div className='mcp-consent-head'>
           <span className='mcp-consent-icon' aria-hidden='true'>{isDeur ? <DoorOpen size={26} /> : technisch ? <Wrench size={26} /> : <ShieldCheck size={26} />}</span>
           <div>

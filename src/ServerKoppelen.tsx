@@ -9,6 +9,7 @@ import { api } from './platform/client';
 import { sessionBody } from './agenten-gegevens';
 import { foutTekst } from './agenten/fouten';
 import './mcp-apps.css';
+import './mcp-uitrol-maquette.css';
 import { alleenMens, geenAi, verborgenVoorAi } from './menselijke-actie';
 
 type Lang = 'uk' | 'nl';
