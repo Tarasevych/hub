@@ -5,6 +5,7 @@ import { api } from './platform/client';
 import { sessieDienst } from './canoniek-navigatie';
 import { ecosystemSessionHint, ecosystemTabContext } from './tab-context';
 import type { Uitkomst } from '../shared/vlaggen';
+import { geenSessieVerwacht } from './vlaggen/sessie-verwacht';
 
 const body = () => ({ service: sessieDienst(), tabContext: ecosystemTabContext(), sourceOrigin: location.origin });
 let cache: Map<string, Uitkomst> | null = null;
@@ -16,7 +17,7 @@ const meldLuisteraars = () => { luisteraars.forEach((f) => f()); };
 
 /** Alle vlaggen voor deze gebruiker. Bij een fout of zonder sessie: leeg (alles «uit»), nooit een kapotte pagina of verzoeklus. */
 export function laadVlaggen(opnieuw = false): Promise<Map<string, Uitkomst>> {
-  if (gebruikerId === null || (gebruikerId === undefined && typeof window !== 'undefined' && ecosystemSessionHint() === 'out')) {
+  if (gebruikerId === null || (gebruikerId === undefined && typeof window !== 'undefined' && geenSessieVerwacht(location.pathname, ecosystemSessionHint()))) {
     if (!cache) { cache = new Map(); meldLuisteraars(); }
     return Promise.resolve(cache);
   }

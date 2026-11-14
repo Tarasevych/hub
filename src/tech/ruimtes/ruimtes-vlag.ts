@@ -7,6 +7,7 @@ import { RUIMTES_VLAG } from '../ruimtes-api';
 import { techBody } from '../tech-opslag';
 import { sessieDienst } from '../../canoniek-navigatie';
 import { vlagDienst } from '../ruimtes-contract';
+import { oauthTerugBezig } from '../../google-terug-markering';
 
 // Integratiefix 27.10: techBody() valt vóór het laden van de zijbalk terug op serviceFromLocation(), dat op hub.* 'ai' geeft → 401
 // OWNER_SESSION_CONTEXT_REQUIRED → vlag stil «uit». Hier altijd de sessiedienst van deze host (zoals hubAuthBody/ruimtes-api).
@@ -21,6 +22,8 @@ const luisteraars = new Set<(v: boolean) => void>();
 export const ruimtesV2Nu = () => waarde === true;
 export function laadRuimtesVlag(opnieuw = false): Promise<boolean> {
   if (bezig && !opnieuw) return bezig;
+  // IDENTITEIT-015: op de terugkeerpagina van Google is de tab nog niet aangemeld (401 OWNER_TAB_SIGNED_OUT) — «uit», niet onthouden.
+  if (oauthTerugBezig()) return Promise.resolve(waarde === true);
   bezig = api.post(`/api/ofrep/v1/evaluate/flags/${RUIMTES_VLAG}`, vlagBody()).then((r) => r.data?.value === true, () => null).then((x) => {
     // Fout (netwerk/401): voor deze weergave «uit», maar niet onthouden en de volgende aanroep vraagt opnieuw.
     const v = x === true;

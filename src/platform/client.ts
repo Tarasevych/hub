@@ -159,6 +159,8 @@ function metEigenSignaal<T>(p: Promise<T>, signal?: AbortSignal): Promise<T> {
 }
 
 const VLAG_PAD = /^\/api\/ofrep\/v1\/evaluate\/flags\/([a-z0-9][a-z0-9._-]{0,79})$/i;
+/** Запит прапорців (OFREP або спільний /api/flags). Een vlaggenverzoek (OFREP of de bundel /api/flags). */
+export const vlagVerzoek = (url: string): boolean => url === '/api/flags' || url === '/api/ofrep/v1/evaluate/flags' || VLAG_PAD.test(url);
 type VlagWacht = { sleutel: string; ok: (r: ApiResponse) => void; nee: (e: unknown) => void };
 const vlagRijen = new Map<string, { lichaam: unknown; wacht: VlagWacht[] }>();
 const ofrepVorm = (x: Record<string, unknown>) => ({ key: x.key, value: x.value, reason: x.reason, variant: x.variant, ...(x.errorCode ? { errorCode: x.errorCode, errorDetails: 'flag not found' } : {}), metadata: x.metadata ?? {} });
@@ -202,6 +204,13 @@ function vlagInBundel(sleutel: string, lichaam: unknown): Promise<ApiResponse> {
 async function request(method: string, url: string, data?: unknown, opnieuw = false, opties: ApiOpties = {}): Promise<ApiResponse> {
   meldActiviteit(1);
   try {
+    // IDENTITEIT-015 (gastcodes e2e): прапорці потребують сесії. Поки не відомо, чи вона є (перше відкриття, bootstrap ще йде), чекаємо
+    // відповіді (не довше 4 с); «out» — відмова тут же, без запиту й без 401 у консолі відвідувача чи гостя.
+    // Vlaggen vragen een sessie: eerst wachten tot bekend is of er een is; zonder sessie meteen weigeren, zonder netwerkverzoek.
+    if (method === 'POST' && typeof window !== 'undefined' && vlagVerzoek(url) && (await (await import('../tab-context')).wachtOpSessieHint()) === 'out') {
+      const weiger = { error: 'OWNER_SESSION_REQUIRED' };
+      throw new ApiError(401, 'Unauthorized', weiger, JSON.stringify(weiger));
+    }
     const vlag = method === 'POST' && !opnieuw && !opties.signal && typeof window !== 'undefined' ? VLAG_PAD.exec(url) : null;
     if (vlag) return await vlagInBundel(vlag[1], data);
     if (magSamenvoegen(method, url, opnieuw)) {
