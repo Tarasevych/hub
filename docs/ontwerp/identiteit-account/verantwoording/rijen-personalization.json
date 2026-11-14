@@ -379,7 +379,7 @@
   "testen": ["tests/eenheid/identiteit-015-vormgeving.test.ts", "tests/eenheid/identiteit-maquette.test.ts"],
   "herkomst": "У v49 — «Щільність інтерфейсу» у групі «Додаткові вподобання» (стан «макет»); у «Макеті» — демо-елемент панелі персоналізації (src/identiteit/maquette/maquette-motor.ts:90), ключ personalization-1.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку vormgeving",
+  "versie": "12c48f20",
   "omgeving": "випробувальне середовище",
   "resultaat": "Вибір «Звичайна / Компактна / Простора» на картці «Персоналізація» змінює справжню щільність сайту (POST /api/owner/ui/weergave/save, поле dichtheid) і показує поточне значення облікового запису; зміна в справжній панелі нижче або на іншому пристрої оновлює картку."
  },
@@ -403,7 +403,7 @@
   "testen": ["tests/eenheid/identiteit-015-vormgeving.test.ts"],
   "herkomst": "Нова вимога з v49 (група «Додаткові вподобання»).",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку vormgeving",
+  "versie": "12c48f20",
   "omgeving": "випробувальне середовище",
   "resultaat": "Поле dichtheid в обліковому записі (shared/uiterlijk.ts, нормалізація на сервері, «звичайна» не зберігається); html[data-dichtheid] масштабує --ruimte-1…6 на всіх сервісах; на другому пристрої після входу — те саме; справжній блок #weergave-dichtheid у «Персоналізації» (усі три вигляди)."
  },
@@ -427,7 +427,7 @@
   "testen": ["tests/eenheid/identiteit-015-vormgeving.test.ts", "tests/eenheid/identiteit-maquette.test.ts"],
   "herkomst": "У v49 — «Делікатна поява блоків» у групі «Додаткові вподобання» (стан «макет»); у «Макеті» — демо-елемент панелі персоналізації (src/identiteit/maquette/maquette-motor.ts:90), ключ personalization-2.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку vormgeving",
+  "versie": "12c48f20",
   "omgeving": "випробувальне середовище",
   "resultaat": "Перемикач «Плавна поява блоків» на картці змінює справжнє налаштування руху (beweging: «систем» / «менше») і показує стан облікового запису."
  },
@@ -451,7 +451,7 @@
   "testen": ["tests/eenheid/identiteit-015-vormgeving.test.ts"],
   "herkomst": "Нова вимога з v49 (група «Додаткові вподобання»).",
   "staatNa": "працює в цьому оформленні",
-  "versie": "HEAD кроку vormgeving",
+  "versie": "12c48f20",
   "omgeving": "випробувальне середовище",
   "resultaat": "Поле beweging в обліковому записі; html[data-beweging=\"minder\"] вимикає анімації й переходи на всьому сайті поверх prefers-reduced-motion (системне налаштування й далі діє само); справжній блок #weergave-beweging у «Персоналізації»."
  }
