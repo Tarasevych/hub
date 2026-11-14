@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Activity, Archive, Check, Compass, Copy, FileArchive, Globe, History, Layers, LayoutDashboard, Link2, ListChecks, Plug, Plus, Server, ShieldCheck, StickyNote, Terminal, Wrench, X } from "lucide-react";
+import { kopieerTekst } from './platform/klembord'; // IDENTITEIT-013
 import { api, ApiError } from "./platform/client";
 import { RuimteGeslotenVlak, RuimteStrook } from "./RuimteStrook";
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from "../shared/ruimte-weergave";
@@ -272,7 +273,8 @@ export default function McpServiceView({ lang, tab }: Props) {
     setProbes(res.data.probes || []);
   }
   async function copyText(id: string, value: string) {
-    await navigator.clipboard.writeText(value);
+    // IDENTITEIT-013: відмову браузера показуємо, а не ковтаємо мовчки.
+    if (!(await kopieerTekst(value))) { setCopied(`fout:${id}`); window.setTimeout(() => setCopied(""), 2500); return; }
     setCopied(id);
     window.setTimeout(() => setCopied(""), 1500);
   }
@@ -640,7 +642,7 @@ export default function McpServiceView({ lang, tab }: Props) {
                 icon={<AgentLogo agent={a.slug} naam={a.naam} size={26} />}
                 title={a.naam}
                 actions={<>
-                  <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : t("Копіювати адресу", "Adres kopiëren")}</button>
+                  <button type="button" className="mcp-btn ghost small" onClick={() => void copyText(`url-${a.slug}`, agentUrl(a.slug))}>{copied === `url-${a.slug}` ? t("Скопійовано", "Gekopieerd") : copied === `fout:url-${a.slug}` ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати адресу", "Adres kopiëren")}</button>
                   <a className="mcp-btn small" href={`${canonicalNavigationUrl("mcp", "agents", lang === "nl" ? "nl" : "uk").replace(/#.*$/, '')}#agent/${a.slug}`} data-agent-ingang={a.slug}>{t(`Підключити ${a.naam}`, `${a.naam} koppelen`)}</a>
                 </>}
               >
@@ -658,7 +660,7 @@ export default function McpServiceView({ lang, tab }: Props) {
             icon={<Copy />}
             title={t("MCP-client", "MCP-client")}
             hint={t("Приклад налаштування для MCP-клієнта.", "Voorbeeld van de configuratie voor een MCP-client.")}
-            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("json", connectSample)}>{copied === "json" ? t("Скопійовано", "Gekopieerd") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button>}
+            actions={<button type="button" className="mcp-btn ghost small" onClick={() => void copyText("json", connectSample)}>{copied === "json" ? t("Скопійовано", "Gekopieerd") : copied === "fout:json" ? t("Не скопійовано — виділіть вручну", "Niet gekopieerd — selecteer zelf") : t("Копіювати приклад", "Voorbeeld kopiëren")}</button>}
           >
             <pre className="mcp-out">{connectSample}</pre>
           </Block>

@@ -140,7 +140,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         recovery:[
           {type:"info",label:"Коди відновлення",note:"Секретні значення ніколи не показуються в демонстрації."},
           {type:"toggle",label:"Нагадування про резервний доступ",note:"Попередження про ризик втрати всіх способів входу",initial:true},
-          {type:"warning",label:"Важливе застереження",note:"Втрата всіх ключів і кодів може означати втрату зашифрованих даних."}
+          {type:"warning",label:"Важливе застереження",note:"Втрата коду відновлення сховища й усіх passkey означає втрату зашифрованих даних: ніхто не зможе їх відновити."}
         ]
       }
     },
@@ -260,7 +260,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         recovery:[
           {type:"info",label:"Herstelcodes",note:"Geheime waarden worden nooit in deze demo getoond."},
           {type:"toggle",label:"Herinnering over herstel",note:"Waarschuw voor verlies van alle inlogmethoden",initial:true},
-          {type:"warning",label:"Belangrijk",note:"Als alle sleutels en codes verloren gaan, kunnen versleutelde gegevens onbereikbaar worden."}
+          {type:"warning",label:"Belangrijk",note:"Verlies van de herstelcode van de kluis én alle passkeys betekent verlies van de versleutelde gegevens: niemand kan ze terughalen."}
         ]
       }
     }

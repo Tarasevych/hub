@@ -3,3 +3,6 @@
 .settings-center h1,.settings-center h2,.settings-center h3{font-family:inherit;letter-spacing:-.01em}
 .settings-center>header h1{font-size:1.3rem;font-weight:800;line-height:1.25}
 .settings-center>header p{margin-top:4px;line-height:1.4}
+/* IDENTITEIT-013: поля власного розміру блоку — два стовпчики, на вузькому екрані один під одним. */
+.settings-widget-maat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.settings-widget-maat{grid-template-columns:1fr}}
