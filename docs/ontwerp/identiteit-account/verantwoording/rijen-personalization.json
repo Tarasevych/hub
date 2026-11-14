@@ -23,13 +23,14 @@
   "wijziging": "Змін у поведінці не потрібно. Додати в етапі 4 (приймання) e2e-крок: натискання [data-jump] → адреса /menu і видима картка #menu. Не залежить від етапів 1–3.",
   "gereedAls": "Людина натискає «Меню» у смузі розділів — сторінка прокручується до картки «Меню», адреса стає /menu, кнопка в смузі підсвічена (aria-current=\"location\").",
   "testen": [
-   "tests/eenheid/identiteit-maquette.test.ts"
+   "tests/eenheid/identiteit-maquette.test.ts",
+   "tests/e2e/identiteit-015-vormgeving.e2e.ts"
   ],
   "herkomst": "У v49 — пункт «Меню й піктограми» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #menu і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "899c96ad",
+  "versie": "b2c7f8a6",
   "omgeving": "випробувальне середовище",
-  "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
+  "resultaat": "Справжній Chromium («Макет», 1440×900, uk): натискання пункту «Меню» у смузі розділів — картка в полі зору, адреса /menu (канонічний нідерландський slug), пункт позначено aria-current=\"location\"; пошук розділу з кнопки «Макета» веде так само (перевірено на «Безпеці» → /beveiliging). Знайдено й виправлено: пошук розділу на id вів на англійську адресу /security замість /beveiliging — src/zoek/ZoekGlobaal.tsx (маршрут — id розділу), модульний тест tests/eenheid/identiteit-015-vormgeving-toegang.test.ts. Звіт: docs/ontwerp/identiteit-account/ЗВІРКА-V49-ВИГЛЯД.uk.md."
  },
  {
   "id": "personalization.переходи.0.kartka-chynni-menu",
@@ -91,13 +92,14 @@
   "wijziging": "Змін у поведінці не потрібно. Додати в етапі 4 (приймання) e2e-крок: натискання [data-jump] → адреса /themes і видима картка #themes. Не залежить від етапів 1–3.",
   "gereedAls": "Людина натискає «Теми» у смузі розділів — сторінка прокручується до картки «Теми», адреса стає /themes, кнопка в смузі підсвічена (aria-current=\"location\").",
   "testen": [
-   "tests/eenheid/identiteit-maquette.test.ts"
+   "tests/eenheid/identiteit-maquette.test.ts",
+   "tests/e2e/identiteit-015-vormgeving.e2e.ts"
   ],
   "herkomst": "У v49 — пункт «Теми та кольори» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #themes і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "899c96ad",
+  "versie": "b2c7f8a6",
   "omgeving": "випробувальне середовище",
-  "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
+  "resultaat": "Справжній Chromium («Макет», 1440×900, uk): натискання пункту «Теми» у смузі розділів — картка в полі зору, адреса /themas (канонічний нідерландський slug), пункт позначено aria-current=\"location\"; пошук розділу з кнопки «Макета» веде так само (перевірено на «Безпеці» → /beveiliging). Знайдено й виправлено: пошук розділу на id вів на англійську адресу /security замість /beveiliging — src/zoek/ZoekGlobaal.tsx (маршрут — id розділу), модульний тест tests/eenheid/identiteit-015-vormgeving-toegang.test.ts. Звіт: docs/ontwerp/identiteit-account/ЗВІРКА-V49-ВИГЛЯД.uk.md."
  },
  {
   "id": "personalization.переходи.1.kartka-chynni-themes",
@@ -159,13 +161,14 @@
   "wijziging": "Змін у поведінці не потрібно. Додати в етапі 4 (приймання) e2e-крок: натискання [data-jump] → адреса /languages і видима картка #languages. Не залежить від етапів 1–3.",
   "gereedAls": "Людина натискає «Мови» у смузі розділів — сторінка прокручується до картки «Мови», адреса стає /languages, кнопка в смузі підсвічена (aria-current=\"location\").",
   "testen": [
-   "tests/eenheid/identiteit-maquette.test.ts"
+   "tests/eenheid/identiteit-maquette.test.ts",
+   "tests/e2e/identiteit-015-vormgeving.e2e.ts"
   ],
   "herkomst": "У v49 — пункт «Мова інтерфейсу» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #languages і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "899c96ad",
+  "versie": "b2c7f8a6",
   "omgeving": "випробувальне середовище",
-  "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
+  "resultaat": "Справжній Chromium («Макет», 1440×900, uk): натискання пункту «Мови» у смузі розділів — картка в полі зору, адреса /talen (канонічний нідерландський slug), пункт позначено aria-current=\"location\"; пошук розділу з кнопки «Макета» веде так само (перевірено на «Безпеці» → /beveiliging). Знайдено й виправлено: пошук розділу на id вів на англійську адресу /security замість /beveiliging — src/zoek/ZoekGlobaal.tsx (маршрут — id розділу), модульний тест tests/eenheid/identiteit-015-vormgeving-toegang.test.ts. Звіт: docs/ontwerp/identiteit-account/ЗВІРКА-V49-ВИГЛЯД.uk.md."
  },
  {
   "id": "personalization.переходи.2.kartka-chynni-languages",
@@ -227,13 +230,14 @@
   "wijziging": "Змін у поведінці не потрібно. Додати в етапі 4 (приймання) e2e-крок: натискання [data-jump] → адреса /widgets і видима картка #widgets. Не залежить від етапів 1–3.",
   "gereedAls": "Людина натискає «Віджети» у смузі розділів — сторінка прокручується до картки «Віджети», адреса стає /widgets, кнопка в смузі підсвічена (aria-current=\"location\").",
   "testen": [
-   "tests/eenheid/identiteit-maquette.test.ts"
+   "tests/eenheid/identiteit-maquette.test.ts",
+   "tests/e2e/identiteit-015-vormgeving.e2e.ts"
   ],
   "herkomst": "У v49 — пункт «Віджети й блоки» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #widgets і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "899c96ad",
+  "versie": "b2c7f8a6",
   "omgeving": "випробувальне середовище",
-  "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
+  "resultaat": "Справжній Chromium («Макет», 1440×900, uk): натискання пункту «Віджети» у смузі розділів — картка в полі зору, адреса /blokken (канонічний нідерландський slug), пункт позначено aria-current=\"location\"; пошук розділу з кнопки «Макета» веде так само (перевірено на «Безпеці» → /beveiliging). Знайдено й виправлено: пошук розділу на id вів на англійську адресу /security замість /beveiliging — src/zoek/ZoekGlobaal.tsx (маршрут — id розділу), модульний тест tests/eenheid/identiteit-015-vormgeving-toegang.test.ts. Звіт: docs/ontwerp/identiteit-account/ЗВІРКА-V49-ВИГЛЯД.uk.md."
  },
  {
   "id": "personalization.переходи.3.kartka-chynni-widgets",
@@ -295,13 +299,14 @@
   "wijziging": "Змін у поведінці не потрібно. Додати в етапі 4 (приймання) e2e-крок: натискання [data-jump] → адреса /sharing і видима картка #sharing. Не залежить від етапів 1–3.",
   "gereedAls": "Людина натискає «Спільний доступ» у смузі розділів — сторінка прокручується до картки «Спільний доступ», адреса стає /sharing, кнопка в смузі підсвічена (aria-current=\"location\").",
   "testen": [
-   "tests/eenheid/identiteit-maquette.test.ts"
+   "tests/eenheid/identiteit-maquette.test.ts",
+   "tests/e2e/identiteit-015-vormgeving.e2e.ts"
   ],
   "herkomst": "У v49 — пункт «Спільний доступ» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #sharing і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "899c96ad",
+  "versie": "b2c7f8a6",
   "omgeving": "випробувальне середовище",
-  "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
+  "resultaat": "Справжній Chromium («Макет», 1440×900, uk): натискання пункту «Спільний доступ» у смузі розділів — картка в полі зору, адреса /delen (канонічний нідерландський slug), пункт позначено aria-current=\"location\"; пошук розділу з кнопки «Макета» веде так само (перевірено на «Безпеці» → /beveiliging). Знайдено й виправлено: пошук розділу на id вів на англійську адресу /security замість /beveiliging — src/zoek/ZoekGlobaal.tsx (маршрут — id розділу), модульний тест tests/eenheid/identiteit-015-vormgeving-toegang.test.ts. Звіт: docs/ontwerp/identiteit-account/ЗВІРКА-V49-ВИГЛЯД.uk.md."
  },
  {
   "id": "personalization.переходи.4.kartka-chynni-sharing",
@@ -363,13 +368,14 @@
   "wijziging": "Змін у поведінці не потрібно. Додати в етапі 4 (приймання) e2e-крок: натискання [data-jump] → адреса /identity і видима картка #identities. Не залежить від етапів 1–3.",
   "gereedAls": "Людина натискає «Ідентичності» у смузі розділів — сторінка прокручується до картки «Ідентичності», адреса стає /identity, кнопка в смузі підсвічена (aria-current=\"location\").",
   "testen": [
-   "tests/eenheid/identiteit-maquette.test.ts"
+   "tests/eenheid/identiteit-maquette.test.ts",
+   "tests/e2e/identiteit-015-vormgeving.e2e.ts"
   ],
   "herkomst": "У v49 — пункт «Ідентичності й захист» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #identities і пункт у смузі розділів.",
   "staatNa": "працює в цьому оформленні",
-  "versie": "899c96ad",
+  "versie": "b2c7f8a6",
   "omgeving": "випробувальне середовище",
-  "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-maquette.test.ts 56/56."
+  "resultaat": "Справжній Chromium («Макет», 1440×900, uk): натискання пункту «Ідентичності» у смузі розділів — картка в полі зору, адреса /identiteit (канонічний нідерландський slug), пункт позначено aria-current=\"location\"; пошук розділу з кнопки «Макета» веде так само (перевірено на «Безпеці» → /beveiliging). Знайдено й виправлено: пошук розділу на id вів на англійську адресу /security замість /beveiliging — src/zoek/ZoekGlobaal.tsx (маршрут — id розділу), модульний тест tests/eenheid/identiteit-015-vormgeving-toegang.test.ts. Звіт: docs/ontwerp/identiteit-account/ЗВІРКА-V49-ВИГЛЯД.uk.md."
  },
  {
   "id": "personalization.переходи.5.kartka-chynni-identities",
