@@ -39,6 +39,8 @@ const T = {
   codewoordLabel: ['Кодове слово', 'Codewoord'],
   codewoordUitleg: ['Введіть кодове слово цього акаунта.', 'Voer het codewoord van dit account in.'],
   googleUitleg: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди, і дія продовжиться автоматично.', 'De aanmeldpagina van Google opent. Daarna kom je hier terug en gaat de actie automatisch verder.'],
+  /* IDENTITEIT-015 (приймання blokken-profiel): дія без автоматичного продовження (немає hervat) — після повернення її треба повторити */
+  googleUitlegHerhalen: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди — тоді повторіть дію: протягом 5 хвилин нового підтвердження вона не вимагатиме.', 'De aanmeldpagina van Google opent. Daarna kom je hier terug — voer de actie dan opnieuw uit: binnen 5 minuten vraagt ze geen nieuwe bevestiging.'],
   alleenGoogle: ['У вас ще немає passkey чи застосунку-автентифікатора, тому підтвердьте доступ повторним входом у Google.', 'Je hebt nog geen passkey of authenticator-app. Bevestig daarom je toegang door opnieuw in te loggen bij Google.'],
   problemen: ['Виникли проблеми?', 'Problemen?'],
   altPasskey: ['Використати passkey', 'Passkey gebruiken'],
@@ -289,7 +291,7 @@ function Venster({ opties, klaar }: { opties: BevestigOpties; klaar: (u: StapOpU
         {weergave === 'google' && <>
           {alleenGoogle && <p className='bevestig-toegang-uitleg'>{t('alleenGoogle')}</p>}
           <button type='button' className='bevestig-toegang-primair' autoFocus disabled={!!bezig || pauze.actief} onClick={() => void metGoogle()}><LogIn />{bezig === 'google' ? t('doorsturen') : pauze.actief && pauzeTekst ? pauzeTekst.knop : t('googleKnop')}</button>
-          <p className='bevestig-toegang-uitleg'>{t('googleUitleg')}</p>
+          <p className='bevestig-toegang-uitleg' data-google-hervat={opties.hervat?.actie ? 'automatisch' : 'herhalen'}>{opties.hervat?.actie ? t('googleUitleg') : t('googleUitlegHerhalen')}</p>
         </>}
 
         {(weergave === 'apparaat' || weergave === 'telegram') && <Suspense fallback={<p className='bevestig-toegang-uitleg'>{t('laden')}</p>}>

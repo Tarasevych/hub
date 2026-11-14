@@ -4,7 +4,7 @@
 // Кандидатів і права перевіряє сервер (POST /api/owner/identity/workspaces/overdracht/kandidaten і …/:id/overdragen);
 // інтерфейс лише показує. Перед передачею — вікно підтвердження з наслідками; далі сервер просить «Підтвердіть доступ»
 // (step-up, src/platform/client.ts повторює запит сам). Повторне натискання після успіху сервер приймає без змін.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 import { BevestigDialoog } from '../platform/BevestigDialoog';
 import { foutNaarTekst } from '../weigeringen';
@@ -22,9 +22,14 @@ export function WerkruimteOverdragen({ lang, post, onMelding }: { lang: 'uk' | '
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState('');
 
+  /* IDENTITEIT-015 (приймання blokken-profiel): `post` (delenPost) створюється наново при кожному рендері застосунку, і перелік
+     кандидатів завантажувався знову щоразу (у прогоні e2e — 13–64 запити за хвилину з однієї сторінки «Акаунт»). Тепер — з ref:
+     перелік завантажується при відкритті й після передачі. Laatste `post` via ref: laden niet bij elke render opnieuw. */
+  const postRef = useRef(post);
+  postRef.current = post;
   const laden = useCallback(async () => {
     try {
-      const d = await post('/api/owner/identity/workspaces/overdracht/kandidaten', {});
+      const d = await postRef.current('/api/owner/identity/workspaces/overdracht/kandidaten', {});
       setRuimtes(Array.isArray(d.werkruimtes) ? (d.werkruimtes as Ruimte[]) : []);
       setFout('');
     } catch (e) {
@@ -32,8 +37,8 @@ export function WerkruimteOverdragen({ lang, post, onMelding }: { lang: 'uk' | '
       setFout(w ? tr(w[0], w[1]) : tr('Не вдалося завантажити список просторів. Оновіть сторінку.', 'De lijst met werkruimtes kon niet worden geladen. Vernieuw de pagina.'));
       setRuimtes([]);
     }
-  }, [post, lang]);
-  useEffect(() => { void laden(); }, [laden]);
+  }, [lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void laden(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const overdragen = async () => {
     const v = vraag;

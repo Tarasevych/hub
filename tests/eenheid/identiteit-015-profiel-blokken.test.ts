@@ -20,7 +20,7 @@ import { MELDING_SOORTEN, isBekendeSoort } from '../../shared/melding-soorten';
 import { NA_0107_VIA_VOORVOEGSEL, SFEER_PER_SOORT, sfeerVanSoort } from '../../shared/meldingen-soorten';
 import { uitlegVoor } from '../../shared/meldingen-v2/uitleg-register';
 import { meldingDoel } from '../../shared/menu-meldingen';
-import { leesOpenDoel, zonderOpenDoel } from '../../src/open-in-ruimte';
+import { blokOpTab, leesOpenDoel, tabVoorBlok, zonderOpenDoel } from '../../src/open-in-ruimte';
 import { fotoLinkWeigering, foutNaarTekst } from '../../src/weigeringen';
 import { KIJKER_EIGEN } from '../../backend/kijker-alleen-lezen';
 
@@ -113,7 +113,32 @@ export async function main(): Promise<number> {
       && JSON.stringify(leesOpenDoel('?werkruimte=ab&blok=<x>')) === '{"werkruimte":"ab","blok":""}');
     check('hub: після переходу параметри прибираються, інші й хеш лишаються', zonderOpenDoel('https://hub.tarasevych.com/tasks?werkruimte=a&blok=b&x=1#k') === '/tasks?x=1#k');
     const app = lees('src/App.tsx');
-    check('hub: хук викликається безумовно поруч із selectedSpace, блоки мають data-blok-id', app.includes('useOpenInRuimte({ spaces, spaceId, setSpaceId, blocks })') && app.includes('data-blok-id={block.id}'));
+    check('hub: хук викликається безумовно поруч із selectedSpace і може перемкнути вкладку; блоки мають data-blok-id', app.includes('useOpenInRuimte({ spaces, spaceId, setSpaceId, blocks, hubTab, setHubTab:') && app.includes('data-blok-id={block.id}'));
+    // Приймання blokken-profiel (e2e): «Відкрити в просторі» лишало людину на «Огляді» (робочий стіл), де щойно доданого блоку немає.
+    // Тепер hub перемикається на вкладку, де блок показано окремою карткою; вкладку вибирає та сама функція, що й фільтр hub.
+    check('hub: «Відкрити в просторі» відкриває вкладку, де блок видно (Нотатки/зовнішній — «Нотатки», Завдання — «Завдання», Календар — «Календар»)',
+      tabVoorBlok('custom') === 'notes' && tabVoorBlok('focus') === 'tasks' && tabVoorBlok('projects') === 'tasks' && tabVoorBlok('automation') === 'tasks' && tabVoorBlok('calendar') === 'calendar' && tabVoorBlok('mail') === null && tabVoorBlok('') === null
+      && blokOpTab('custom', 'notes') && !blokOpTab('custom', 'overview') && !blokOpTab('focus', 'notes') && !blokOpTab('mail', 'overview'));
+    check('hub: фільтр карток на вкладках і перехід «Відкрити в просторі» — одна функція (blokOpTab), без власної копії правил у App.tsx',
+      app.includes('blokOpTab(block.kind, hubTab)') && !app.includes("(hubTab === 'notes' && block.kind === 'custom')"));
+    // Приймання blokken-profiel (e2e, видалення облікового запису): вікно обіцяло «дія продовжиться автоматично», а після Google
+    // сторінка каже «повторіть дію» (видалення не має hervat). Тепер текст залежить від того, чи дія справді продовжиться.
+    const bt = lees('src/platform/bevestig-toegang.tsx');
+    check('«Підтвердіть доступ» → Google: без автоматичного продовження вікно каже повторити дію (uk/nl), «продовжиться автоматично» — лише з hervat',
+      bt.includes("googleUitlegHerhalen: ['Відкриється сторінка входу Google. Після входу ви повернетеся сюди — тоді повторіть дію") && bt.includes('voer de actie dan opnieuw uit')
+      && bt.includes("{opties.hervat?.actie ? t('googleUitleg') : t('googleUitlegHerhalen')}") && !/\{t\('googleUitleg'\)\}/.test(bt));
+    // Приймання blokken-profiel (e2e): людина з другим пристроєм обрала «Увійти повторно через Google» замість «Це ви?» — запит лишався
+    // відкритим, і після повернення від Google той самий браузер показував «Це ви?» про видалення, закриваючи форму.
+    const kanaal = lees('src/apparaat-bevestiging/StapOpKanaal.tsx');
+    check('«Підтвердити з іншого пристрою»: при виході з вкладки (Google, код, закриття) відкритий запит відкликається; завершений — ні',
+      /useEffect\(\(\) => \(\) => \{\s*actief\.current = false;\s*if \(wachtend\.current && idRef\.current\) void intrekken\(ctxRef\.current, idRef\.current\)/.test(kanaal)
+      && kanaal.includes("if (s !== 'wacht') wachtend.current = false;") && /wachtend\.current = true;/.test(kanaal) && /intrekken\(ctx, idRef\.current\)[^;]*;\s*wachtend\.current = false; onAnnuleer/.test(kanaal));
+    // Приймання blokken-profiel (e2e): delenPost створюється наново при кожному рендері застосунку, а laden залежав від нього —
+    // сторінка «Акаунт» запитувала кандидатів передачі 13–64 рази за хвилину (разом із рештою — 429 на спільному IP).
+    const wo = lees('src/identiteit/WerkruimteOverdragen.tsx');
+    check('«Передати простір»: кандидати завантажуються при відкритті й після передачі, а не при кожному новому `post`',
+      wo.includes('const postRef = useRef(post);') && wo.includes("await postRef.current('/api/owner/identity/workspaces/overdracht/kandidaten'")
+      && !/\}, \[post, lang\]\);/.test(wo) && /useEffect\(\(\) => \{ void laden\(\); \}, \[\]\);/.test(wo));
     const c = lees('src/InstellingencentrumWeergave.tsx');
     // Центр налаштувань у node не рендериться (import.meta.glob у SessieIconen) — перевірка коду, як у identiteit-014-uitvoer.
     check('форма блоку: «Скасувати» — type=button (не надсилає), скидає ВСІ поля до початкових і повертає фокус на «Робочий простір»',

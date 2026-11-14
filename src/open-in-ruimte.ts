@@ -9,6 +9,16 @@ import { useEffect, useRef } from 'react';
 export type OpenDoel = { werkruimte: string; blok: string };
 const ID = /^[A-Za-z0-9_-]{1,120}$/;
 
+/** Вкладки hub (src/App.tsx HubTab). */
+export type HubBlokTab = 'overview' | 'recent' | 'tasks' | 'calendar' | 'notes' | 'zoek' | 'photos';
+/** Блоки якого виду hub показує окремими картками на вкладці (src/App.tsx filteredVisible; на «Огляді» — робочий стіл, без окремих блоків).
+ *  Op welk tabblad toont de hub een blok van deze soort als losse kaart (op «Overzicht» staat het werkblad). */
+const BLOK_TAB: Readonly<Record<string, HubBlokTab>> = { focus: 'tasks', projects: 'tasks', automation: 'tasks', calendar: 'calendar', custom: 'notes' };
+export const blokOpTab = (kind: string, tab: string): boolean => BLOK_TAB[kind] === tab;
+/** IDENTITEIT-015 (приймання blokken-profiel): вкладка, де блок справді видно; null — окремої картки немає ніде.
+ *  Раніше «Відкрити в просторі» лишало людину на «Огляді» (робочий стіл), де щойно доданого блоку немає, — посилання вело в нікуди. */
+export const tabVoorBlok = (kind: string): HubBlokTab | null => BLOK_TAB[kind] ?? null;
+
 /** Чисте читання параметрів адреси; null — переходу немає або id некоректний. */
 export function leesOpenDoel(search: string): OpenDoel | null {
   const q = new URLSearchParams(search || '');
@@ -27,7 +37,7 @@ export function zonderOpenDoel(href: string): string {
   } catch { return ''; }
 }
 
-export function useOpenInRuimte(p: { spaces: ReadonlyArray<{ id: string }>; spaceId: string; setSpaceId: (id: string) => void; blocks: ReadonlyArray<{ id: string }> }) {
+export function useOpenInRuimte(p: { spaces: ReadonlyArray<{ id: string }>; spaceId: string; setSpaceId: (id: string) => void; blocks: ReadonlyArray<{ id: string; kind?: string }>; hubTab?: string; setHubTab?: (tab: HubBlokTab) => void }) {
   const doel = useRef<OpenDoel | null>(typeof location === 'undefined' ? null : leesOpenDoel(location.search));
   useEffect(() => {
     const d = doel.current;
@@ -39,7 +49,11 @@ export function useOpenInRuimte(p: { spaces: ReadonlyArray<{ id: string }>; spac
     if (!p.spaces.some((s) => s.id === d.werkruimte)) { klaar(); return; }
     if (p.spaceId !== d.werkruimte) { p.setSpaceId(d.werkruimte); return; }
     if (!d.blok) { klaar(); return; }
-    if (!p.blocks.some((b) => b.id === d.blok)) return; // blokken van deze ruimte nog niet geladen
+    const blok = p.blocks.find((b) => b.id === d.blok);
+    if (!blok) return; // blokken van deze ruimte nog niet geladen
+    // спершу вкладка, де цей блок показано окремою карткою (на «Огляді» його немає) / eerst het tabblad waar het blok staat
+    const tab = tabVoorBlok(String(blok.kind || ''));
+    if (tab && p.setHubTab && p.hubTab !== tab) { p.setHubTab(tab); return; }
     klaar();
     requestAnimationFrame(() => {
       const el = document.querySelector<HTMLElement>(`[data-blok-id="${d.blok}"]`);
@@ -48,5 +62,5 @@ export function useOpenInRuimte(p: { spaces: ReadonlyArray<{ id: string }>; spac
       el.classList.add('is-gevonden');
       window.setTimeout(() => el.classList.remove('is-gevonden'), 2400);
     });
-  }, [p.spaces, p.spaceId, p.blocks]);
+  }, [p.spaces, p.spaceId, p.blocks, p.hubTab]); // eslint-disable-line react-hooks/exhaustive-deps
 }

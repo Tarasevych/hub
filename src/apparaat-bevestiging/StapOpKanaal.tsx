@@ -48,7 +48,18 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
     : null;
   const actief = useRef(true);
   const idRef = useRef('');
-  useEffect(() => () => { actief.current = false; }, []);
+  /* IDENTITEIT-015 (приймання blokken-profiel): запит «Це ви?» ще чекає. Якщо людина пішла з цієї вкладки вікна (обрала Google,
+     код чи закрила вікно), запит відкликаємо: інакше після повернення від Google цей самий браузер (уже з новим сеансом) і другий
+     пристрій показували «Це ви?» про дію, яку людина вже підтвердила іншим способом, — і вікно закривало форму видалення.
+     Verzoek nog open en de mens kiest een andere weg: intrekken, anders verschijnt «Bent u het?» na de terugkeer van Google. */
+  const wachtend = useRef(false);
+  const ctxRef = useRef(ctx);
+  ctxRef.current = ctx;
+  useEffect(() => () => {
+    actief.current = false;
+    if (wachtend.current && idRef.current) void intrekken(ctxRef.current, idRef.current).catch(() => undefined);
+    wachtend.current = false;
+  }, []);
 
   const afronden = useCallback(async () => {
     if (!naPoort) { wisPauze(); onKlaar(kanaal); return; }
@@ -72,6 +83,7 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
         idRef.current = v.id; setId(v.id); setVerlooptOp(v.verlooptOp);
         setSymbolen(typeof v.juist === 'number' ? { soort: v.soort, kandidaten: v.kandidaten, juist: v.juist } : null);
         setInfo(tr(lang, `Запит надіслано на ${v.apparaten ?? apparaten ?? 1} інш. пристр. — там з’явилося вікно «Це ви?».`, `Verzoek gestuurd naar ${v.apparaten ?? apparaten ?? 1} ander(e) apparaat(en) — daar staat nu «Bent u het?».`));
+        wachtend.current = true;
       } else {
         const t = await telegramAanvragen(ctx, matrixActie);
         if (!actief.current) return;
@@ -99,6 +111,7 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
       try {
         const s = kanaal === 'apparaat' ? (await stand(ctx, id)).stand : (await telegramStatus(ctx, id)).stand;
         if (weg) return;
+        if (s !== 'wacht') wachtend.current = false; // afgerond (ja, nee, verlopen, ingetrokken): niets meer in te trekken
         if (s === 'bevestigd' || s === 'gebruikt') { weg = true; await afronden(); return; }
         if (s === 'geweigerd') { weg = true; setFase('fout'); setFout(tr(lang, 'На іншому пристрої обрано інший символ або натиснуто «Це не я». Дію скасовано, нічого не змінено.', 'Op het andere apparaat is een ander symbool gekozen of «Dit ben ik niet» getikt. De handeling is geannuleerd, er is niets gewijzigd.')); return; }
         if (s === 'verlopen' || s === 'ingetrokken') { weg = true; setFase('fout'); setFout(tr(lang, 'Час на підтвердження вийшов. Спробуйте ще раз.', 'De tijd om te bevestigen is om. Probeer het opnieuw.')); return; }
@@ -135,7 +148,7 @@ export default function StapOpKanaal({ kanaal, ctx, lang, matrixActie, label, ge
     }
     finally { setBezig(false); }
   };
-  const annuleren = () => { if (kanaal === 'apparaat' && idRef.current) void intrekken(ctx, idRef.current).catch(() => undefined); onAnnuleer?.(); };
+  const annuleren = () => { if (kanaal === 'apparaat' && idRef.current) void intrekken(ctx, idRef.current).catch(() => undefined); wachtend.current = false; onAnnuleer?.(); };
 
   const Icoon = kanaal === 'apparaat' ? Smartphone : Send;
   return <div className='apb-kanaal' data-kanaal={kanaal} data-fase={fase}>
