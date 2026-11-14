@@ -77,10 +77,11 @@ export async function api(page: Page, pad: string, body: Record<string, unknown>
 /** Горизонтальна прокрутка сторінки (має бути 0). */
 export const horizontaal = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-/** Маскує пробні адреси, коди й QR на знімку (знеособлення). */
+/** Маскує пробні адреси, коди й QR на знімку (знеособлення). Також поля, куди людина вводить код (вікно «Підтвердіть доступ»,
+ *  код сховища, гостьовий код) — IDENTITEIT-015 (kluis): введений код відновлення інакше потрапляв на знімок. */
 export async function verberg(page: Page) {
   /* IDENTITEIT-015 (delen): CSP сайту (style-src-elem 'self') блокує вставлений <style> — розмиваємо через CSSOM (el.style), яке CSP не зачіпає */
-  await page.evaluate(() => { for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-ai-verborgen], canvas, svg[data-qr], .toegangscode-code, .herstelcode'))) el.style.setProperty('filter', 'blur(7px)', 'important'); }).catch(() => undefined);
+  await page.evaluate(() => { for (const el of Array.from(document.querySelectorAll<HTMLElement>('[data-ai-verborgen], canvas, svg[data-qr], .toegangscode-code, .herstelcode, #bevestig-toegang-code, [data-sleutelkluis-code] input, #gast-code'))) el.style.setProperty('filter', 'blur(7px)', 'important'); }).catch(() => undefined);
   await page.evaluate(() => {
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let n = w.nextNode(); n; n = w.nextNode()) if (/@example\.test/.test(n.nodeValue || '')) n.nodeValue = (n.nodeValue || '').replace(/[\w.+-]+@example\.test/g, 'proef•••@example.test');
