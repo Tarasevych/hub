@@ -8,6 +8,7 @@ import { ALGEMEEN_RISICO, bulkAltijdToegestaan, isGevaarlijk } from '../shared/m
 import { ago, sessionBody, type ToolCall } from './agenten-gegevens';
 import { AanvragerPill, GoedkeuringInhoud, MensKnop } from './GoedkeuringInhoud'; // SEC-002 interface-01/02, extensie-02
 import { geenAi } from './menselijke-actie';
+import './mcp-kern-maquette.css';
 
 type Mode = 'always' | 'ask' | 'off';
 // Een groep die de server kent maar deze pagina nog niet (nieuwe hulpmiddelen) krijgt automatisch een eigen tabblad (zie groepMeta).

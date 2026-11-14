@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLASSIEK-009",
+  "agent": "antigravity",
+  "tak": "feature/klassiek-009-20261114-095031",
+  "basisCommit": "4ec2cbe6a378b372e868d04881484d0bacc9e21c",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T09:50:32.061Z",
+  "bijgewerkt": "2026-11-14T09:50:32.061Z",
+  "omschrijving": "",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

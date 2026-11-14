@@ -6,9 +6,11 @@ import { VERSHEID_LABEL, versheid, type Apparaat } from '../../../shared/huis-mo
 import type { OnderdeelProps } from '../HuisPagina';
 import { HuisFout, huisClient, idem } from '../huis-client';
 import { foutTekst, geledenTekst, hoofdTekst, toestandVan, tr } from '../tekst';
+import { useIsMaquette } from '../../thema/useThema';
 import Plattegrond from './Plattegrond';
 
 export default function Overzicht({ lang, smal, woningId, ov, vernieuw, toon, naarTab }: OnderdeelProps) {
+  const isMaquette = useIsMaquette();
   const [bezig, setBezig] = useState('');
   const aparaten = ov.apparaten;
   const temp = useMemo(() => aparaten.map((a) => ({ a, t: toestandVan(a, 'temperatuur') })).filter((x) => x.t && typeof x.t.waarde === 'number'), [aparaten]);
@@ -29,7 +31,7 @@ export default function Overzicht({ lang, smal, woningId, ov, vernieuw, toon, na
   useEffect(() => { let actief = true; huisClient.uitnodigingenVoorMij().then((l) => { if (actief) setUitnodigingen(l.length); }).catch(() => undefined); return () => { actief = false; }; }, [woningId]);
   const geenIntegratie = !ov.integraties.length;
   return (
-    <div className='hv-overzicht'>
+    <div className={`hv-overzicht${isMaquette ? ' is-maquette' : ''}`}>
       {uitnodigingen > 0 ? (
         <p className='hv-hint' role='status' data-hv-uitnodigingen-herinnering={uitnodigingen}>
           <MailOpen aria-hidden='true' /> {tr(lang, `Для вас є запрошення до іншої оселі (${uitnodigingen}). Прийняти чи відхилити можна в «Налаштування» → «Запрошення для вас»; доти ви не учасник.`, `Er ${uitnodigingen === 1 ? 'is een uitnodiging' : 'zijn uitnodigingen'} voor een andere woning voor u (${uitnodigingen}). Aanvaarden of afwijzen kan bij «Instellingen» → «Uitnodigingen voor u»; tot dan bent u geen lid.`)}
@@ -45,30 +47,32 @@ export default function Overzicht({ lang, smal, woningId, ov, vernieuw, toon, na
         </section>
       ) : null}
       <div className='hv-tegels'>
-        <button type='button' className='hv-tegel' onClick={() => naarTab('devices')} data-hv-tegel='temperatuur'>
+        <button type='button' className={`hv-tegel${isMaquette ? ' mq-accent-coral' : ''}`} onClick={() => naarTab('devices')} data-hv-tegel='temperatuur'>
           <Thermometer aria-hidden='true' /><strong>{temp.length ? `${temp[0].t!.waarde} ${temp[0].t!.eenheid}` : '—'}</strong>
           <span>{temp.length ? `${temp[0].a.naam} · ${geledenTekst(lang, temp[0].t!.waargenomenOp || temp[0].t!.ontvangenOp)}` : tr(lang, 'температура: немає вимірів', 'temperatuur: geen meting')}</span>
         </button>
-        <button type='button' className='hv-tegel' onClick={() => naarTab('devices')} data-hv-tegel='licht'>
+        <button type='button' className={`hv-tegel${isMaquette ? ' mq-accent-amber' : ''}`} onClick={() => naarTab('devices')} data-hv-tegel='licht'>
           <Lightbulb aria-hidden='true' /><strong>{lichten.length ? `${lichtAan.length}/${lichten.length}` : '—'}</strong>
           <span>{lichten.length ? tr(lang, 'світильників увімкнено (підтверджено)', 'lampen aan (bevestigd)') : tr(lang, 'світло: немає пристроїв', 'licht: geen apparaten')}</span>
         </button>
-        <button type='button' className='hv-tegel' onClick={() => naarTab('energy')} data-hv-tegel='energie'>
+        <button type='button' className={`hv-tegel${isMaquette ? ' mq-accent-emerald' : ''}`} onClick={() => naarTab('energy')} data-hv-tegel='energie'>
           <Gauge aria-hidden='true' /><strong>{vermogen.length ? `${vermogen.reduce((s, t) => s + Number(t!.waarde), 0).toFixed(0)} W` : energie.length ? `${energie[0]!.waarde} ${energie[0]!.eenheid || 'kWh'}` : '—'}</strong>
           <span>{vermogen.length ? tr(lang, 'виміряна потужність зараз', 'gemeten vermogen nu') : energie.length ? tr(lang, 'лічильник енергії (сумарно)', 'energiemeter (totaal)') : meters ? tr(lang, 'лічильник є, актуального виміру немає', 'meter aanwezig, geen actuele meting') : tr(lang, 'енергія: немає лічильника', 'energie: geen meter')}</span>
         </button>
-        <button type='button' className='hv-tegel' onClick={() => naarTab('security')} data-hv-tegel='beveiliging'>
+        <button type='button' className={`hv-tegel${isMaquette ? ' mq-accent-blue' : ''}`} onClick={() => naarTab('security')} data-hv-tegel='beveiliging'>
           <ShieldCheck aria-hidden='true' /><strong>{alarmT && alarmT.waarde && versheid(alarmT) === 'vers' ? String(alarmT.waarde) : tr(lang, 'невідомо', 'onbekend')}</strong>
           <span>{alarm ? tr(lang, `охорона · ${geledenTekst(lang, alarmT?.waargenomenOp || alarmT?.ontvangenOp || null)}`, `alarm · ${geledenTekst(lang, alarmT?.waargenomenOp || alarmT?.ontvangenOp || null)}`) : tr(lang, 'охорона: офіційного статусу немає', 'alarm: geen officiële status')}</span>
         </button>
       </div>
       <div className={`hv-kolommen${smal ? ' is-een' : ''}`}>
         <section className='hv-blok' aria-labelledby='hv-ov-plan'>
+          {isMaquette ? <span className='hv-mq-bovenlijn'>{tr(lang, '01 · ПРОСТОРОВЕ КРЕСЛЕННЯ', '01 · RUIMTELIJK PLAN')}</span> : null}
           <h3 id='hv-ov-plan'>{tr(lang, 'План', 'Plattegrond')}</h3>
           {ov.ruimtes.length ? <Plattegrond lang={lang} ruimtes={ov.ruimtes} apparaten={aparaten} verdieping={ov.woning.verdiepingen[0]?.id ?? '0'} onKies={() => naarTab('rooms')} compact />
             : <p className='hv-hint'>{tr(lang, 'Кімнат ще немає.', 'Nog geen kamers.')} <button type='button' className='hv-knop is-klein' onClick={() => naarTab('rooms')}>{tr(lang, 'Додати кімнати', 'Kamers toevoegen')}<ArrowRight aria-hidden='true' /></button></p>}
         </section>
         <section className='hv-blok' aria-labelledby='hv-ov-scenes'>
+          {isMaquette ? <span className='hv-mq-bovenlijn'>{tr(lang, '02 · ШВИДКІ СЦЕНАРІЇ', '02 · SNELLE SCÈNES')}</span> : null}
           <h3 id='hv-ov-scenes'>{tr(lang, 'Сцени', 'Scènes')}</h3>
           {ov.scenes.length ? (
             <div className='hv-scenes-rij'>{ov.scenes.slice(0, 6).map((s) => (
@@ -80,6 +84,7 @@ export default function Overzicht({ lang, smal, woningId, ov, vernieuw, toon, na
         </section>
       </div>
       <section className='hv-blok' aria-labelledby='hv-ov-recent'>
+        {isMaquette ? <span className='hv-mq-bovenlijn'>{tr(lang, '03 · ХРОНІКА ОСЕЛІ', '03 · HUISKRONIEK')}</span> : null}
         <h3 id='hv-ov-recent'>{tr(lang, 'Останні події', 'Recente gebeurtenissen')}</h3>
         {ov.gebeurtenissen.length ? <ul className='hv-gebeurtenissen is-klein'>{ov.gebeurtenissen.slice(0, 3).map((g) => <li key={g.id} className={`is-${g.ernst}`}><span>{geledenTekst(lang, g.ontvangenOp)}</span><strong>{g.bericht}</strong><small>{g.bron}</small></li>)}</ul> : <p className='hv-hint'>{tr(lang, 'Подій ще немає.', 'Nog geen gebeurtenissen.')}</p>}
         <button type='button' className='hv-knop is-klein is-stil' onClick={() => naarTab('activity')}>{tr(lang, 'Усі події', 'Alle gebeurtenissen')}<ArrowRight aria-hidden='true' /></button>

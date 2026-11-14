@@ -3,10 +3,12 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useIsMaquette } from '../thema/useThema';
 import { tr, type Lang } from './tekst';
 
 type Props = { lang: Lang; soort: 'paneel' | 'scherm' | 'venster'; titel: string; onSluit: () => void; children: ReactNode; data?: Record<string, string> };
 export default function HuisLaag({ lang, soort, titel, onSluit, children, data = {} }: Props) {
+  const isMaquette = useIsMaquette();
   const vak = useRef<HTMLDivElement | null>(null);
   const terug = useRef<HTMLElement | null>(typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null);
   useEffect(() => {
@@ -34,7 +36,12 @@ export default function HuisLaag({ lang, soort, titel, onSluit, children, data =
   };
   const dataAttr = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data-${k}`, v]));
   return createPortal(
-    <div className={`hv-laag is-${soort}`} onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}>
+    <div
+      className={`hv-laag is-${soort}${isMaquette ? ' is-maquette' : ''}`}
+      data-mq-laag-open={isMaquette ? '1' : undefined}
+      data-mq-dienst={isMaquette ? 'huis' : undefined}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onSluit(); }}
+    >
       <div ref={vak} className='hv-laag-vak' role='dialog' aria-modal='true' aria-label={titel} tabIndex={-1} onKeyDown={toets} {...dataAttr}>
         <header className='hv-laag-kop'><h2>{titel}</h2><button type='button' className='hv-icoonknop hv-laag-sluit' onClick={onSluit} aria-label={tr(lang, 'Закрити', 'Sluiten')} title='Esc'><X aria-hidden='true' /></button></header>
         <div className='hv-laag-inhoud'>{children}</div>

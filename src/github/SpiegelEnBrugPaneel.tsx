@@ -1,16 +1,20 @@
-// Geïsoleerde tweerichtingsspiegel (1-op-1 tussen GitHub en Mijn Ruimte), ondertekende webhooks,
-// brug met het Takenbord, gedeelde AI-context en directe samenwerking met verbonden apparaten (agent.mjs).
+// Ізольоване двостороннє дзеркало (1-в-1 між GitHub та Моїм простором), підписані перехоплювачі подій,
+// міст із Дошкою завдань (зі стовпцем «Вхідні» для сторонніх авторів), спільний контекст ШІ та підключені пристрої.
+// Geïsoleerde tweerichtingsspiegel, ondertekende gebeurteniskoppelingen, bordbrug en verbonden apparaten.
 import { useEffect, useState } from 'react';
 import {
-  ArrowDownLeft, ArrowUpRight, Bot, CheckCircle2, CloudDownload, CloudUpload, FolderGit2,
-  GitBranch, KanbanSquare, Laptop, Loader2, Radio, RefreshCw, Rocket, ShieldCheck, Sparkles, Terminal,
+  ArrowDownLeft, ArrowRight, ArrowUpRight, Bot, CheckCircle2, CloudDownload, CloudUpload, FolderGit2,
+  GitBranch, KanbanSquare, Laptop, Loader2, Radio, RefreshCw, Rocket, ShieldAlert, ShieldCheck,
+  Sparkles, Terminal,
 } from 'lucide-react';
 import { emitCanonicalNotice } from '../canoniek-meldingen';
 import { canonicalNavigationUrl } from '../canoniek-navigatie';
+import { useIsMaquette } from '../thema/useThema';
 import type { GithubSpiegelGebeurtenis, GithubSpiegelRepo } from '../../shared/github-werkruimte';
 import {
   GhBezig, GhMelding, ghFoutTekst, ghGeleden, ghPost, useGhVraag, type Tr,
 } from './github-client';
+import './github-werkstroom-maquette.css';
 
 export default function SpiegelEnBrugPaneel({
   repo,
@@ -21,6 +25,7 @@ export default function SpiegelEnBrugPaneel({
   tr: Tr;
   onKiesRepo?: (fullName: string) => void;
 }) {
+  const isMaquette = useIsMaquette();
   const taal: 'uk' | 'nl' = tr('uk', 'nl') === 'uk' ? 'uk' : 'nl';
   const overzicht = useGhVraag<{
     repos: GithubSpiegelRepo[];
@@ -150,13 +155,14 @@ export default function SpiegelEnBrugPaneel({
   const gebeurtenissen = overzicht.data?.gebeurtenissen ?? [];
   const apparaten = overzicht.data?.apparaten ?? [];
   const actieveHooks = spiegelRepos.filter((r) => r.webhookActief).length;
+  const actieveBordKoppelingen = spiegelRepos.filter((r) => r.bordSync).length;
 
   return (
-    <div className="gh-werkruimte-spiegel">
-      {/* Samenvattingsstrook van de geïsoleerde ruimte */}
-      <section className="gh-card gh-eenklik-held">
+    <div className={`gh-werkruimte-spiegel${isMaquette ? ' is-maquette' : ''}`} data-mq-paneel="spiegel">
+      {/* Архітектурна шапка ізольованого простору та швидких дій запуску звірки */}
+      <section className="gh-card gh-eenklik-held gh-mq-spiegel-held">
         <div className="gh-detail-head">
-          <div>
+          <div className="gh-mq-spiegel-koptekst">
             <h3><ShieldCheck size={18} className="gh-ok" /> {tr('Двостороннє дзеркало та екосистема простору', 'Tweerichtingsspiegel en ecosysteem van uw ruimte')}</h3>
             <p className="gh-sub">
               {tr(
@@ -166,6 +172,17 @@ export default function SpiegelEnBrugPaneel({
             </p>
           </div>
           <div className="gh-actions">
+            {repo ? (
+              <button
+                type="button"
+                className="gh-btn"
+                disabled={Boolean(bezigActie)}
+                onClick={() => void synchroniseerNu(repo)}
+              >
+                {bezigActie === 'sync-enkel' ? <Loader2 size={14} className="gh-spin" /> : <RefreshCw size={14} />}
+                {tr('Звірити поточне сховище', 'Gekozen opslagplaats afstemmen')}
+              </button>
+            ) : null}
             <button
               type="button"
               className="gh-btn gh-primary"
@@ -201,10 +218,10 @@ export default function SpiegelEnBrugPaneel({
       {fout ? <GhMelding soort="error">{fout}</GhMelding> : null}
       {overzicht.fout ? <GhMelding soort="error">{overzicht.fout}</GhMelding> : null}
 
-      {/* Instellingen voor de huidig geselecteerde opslagplaats */}
+      {/* Налаштування перехоплювачів подій та пристроїв для обраного сховища */}
       {repo ? (
         <div className="gh-grid">
-          <section className="gh-card">
+          <section className="gh-card gh-mq-webhook-kaart" data-webhook-actief={huidigSpiegel?.webhookActief ? 'ja' : 'nee'}>
             <header className="gh-detail-head">
               <h3><Radio size={16} /> {repo} · {tr('Синхронізація 1-в-1', '1-op-1 synchronisatie')}</h3>
               <button
@@ -218,14 +235,22 @@ export default function SpiegelEnBrugPaneel({
               </button>
             </header>
 
-            <div className="gh-subkaart">
+            <div className="gh-subkaart gh-mq-webhook-doos">
               <div className="gh-detail-head">
-                <div>
-                  <strong>{tr('Миттєві події з GitHub (HMAC-SHA256)', 'Directe meldingen van GitHub (HMAC-SHA256)')}</strong>
+                <div className="gh-mq-webhook-kop">
+                  <div className="gh-mq-webhook-titelrij">
+                    <strong>{tr('Миттєві події з GitHub (SHA-256)', 'Directe meldingen vanaf GitHub (SHA-256)')}</strong>
+                    <span className={`gh-staat ${huidigSpiegel?.webhookActief ? 'tone-ok' : 'tone-neutraal'}`}>
+                      <CheckCircle2 size={13} />
+                      {huidigSpiegel?.webhookActief
+                        ? tr('Підписаний канал активний', 'Ondertekend kanaal actief')
+                        : tr('Вимкнено', 'Uitgeschakeld')}
+                    </span>
+                  </div>
                   <p className="gh-sub">
                     {tr(
                       'Будь-яка фіксація змін, задача, запит на злиття чи випуск на GitHub одразу оновлює стан на сайті.',
-                      'Elke vastlegging, wijziging, beoordeling of uitgave op GitHub werkt direct de staat op de site bij.',
+                      'Elke vastlegging, beoordeling of uitgave op GitHub werkt direct de staat op de site bij.',
                     )}
                   </p>
                 </div>
@@ -242,13 +267,13 @@ export default function SpiegelEnBrugPaneel({
                 </button>
               </div>
               {huidigSpiegel?.webhookActief && huidigSpiegel.webhookUrl ? (
-                <p className="gh-sub">
+                <div className="gh-mq-endpoint-rij">
                   <code>{huidigSpiegel.webhookUrl}</code>
-                </p>
+                </div>
               ) : null}
             </div>
 
-            <label className="gh-radio">
+            <label className="gh-radio gh-mq-optie-kaart">
               <input
                 type="checkbox"
                 checked={Boolean(huidigSpiegel?.bordSync)}
@@ -261,7 +286,7 @@ export default function SpiegelEnBrugPaneel({
               </span>
             </label>
 
-            <label className="gh-radio">
+            <label className="gh-radio gh-mq-optie-kaart">
               <input
                 type="checkbox"
                 checked={Boolean(huidigSpiegel?.aiContextSync)}
@@ -288,7 +313,7 @@ export default function SpiegelEnBrugPaneel({
             </div>
           </section>
 
-          {/* Samenwerking met verbonden apparaten (agent.mjs) */}
+          {/* Співпраця з підключеними пристроями */}
           <section className="gh-card">
             <header className="gh-detail-head">
               <h3><Laptop size={16} /> {tr('Співпраця з підключеними пристроями', 'Samenwerking met verbonden apparaten')}</h3>
@@ -314,6 +339,7 @@ export default function SpiegelEnBrugPaneel({
               </label>
 
               <input
+                className="gh-mq-mono-veld"
                 value={lokaalPad}
                 onChange={(e) => setLokaalPad(e.target.value)}
                 placeholder={tr('Шлях до робочої теки на пристрої (наприклад, /srv/projecten/app)', 'Map op het apparaat (bijv. /srv/projecten/app)')}
@@ -322,7 +348,7 @@ export default function SpiegelEnBrugPaneel({
 
               <label className="gh-veld-inline">
                 <span><GitBranch size={14} /> {tr('Робоча гілка:', 'Werktak:')}</span>
-                <input value={actieTak} onChange={(e) => setActieTak(e.target.value)} style={{ maxWidth: 200 }} />
+                <input className="gh-mq-mono-veld" value={actieTak} onChange={(e) => setActieTak(e.target.value)} style={{ maxWidth: 200 }} />
               </label>
 
               <div className="gh-actions">
@@ -361,29 +387,108 @@ export default function SpiegelEnBrugPaneel({
         </div>
       ) : null}
 
-      {/* Gespiegelde opslagplaatsen & Tweerichtings-gebeurtenissenstroom */}
+      {/* Архітектурна картка зіставлення стовпців Дошки завдань і захисту від сторонніх авторів */}
+      <section className="gh-card gh-mq-bord-kaart">
+        <header className="gh-detail-head">
+          <div>
+            <h3><KanbanSquare size={17} /> {tr('Зіставлення стовпців Дошки завдань і карантин зовнішніх карток', 'Kolomkoppeling van het Takenbord en quarantaine voor derden')}</h3>
+            <p className="gh-sub">
+              {tr(
+                `Активних мостів із Дошкою завдань у цьому просторі: ${actieveBordKoppelingen}. Кожен стан задачі GitHub зіставляється з визначеним стовпцем Дошки.`,
+                `Actieve bordbruggen in deze ruimte: ${actieveBordKoppelingen}. Elke staat op GitHub correspondeert met een vaste kolom op het Takenbord.`,
+              )}
+            </p>
+          </div>
+          <a className="gh-btn" href={canonicalNavigationUrl('mcp', 'board', taal)}>
+            <KanbanSquare size={14} /> {tr('Відкрити Дошку завдань', 'Takenbord openen')}
+          </a>
+        </header>
+
+        <div className="gh-mq-kolom-koppeling">
+          <div className="gh-subkaart gh-mq-kolom-tegel is-inkomend">
+            <div className="gh-mq-kolom-stroom">
+              <code className="gh-chip">GitHub: open</code>
+              <ArrowRight size={14} aria-hidden="true" />
+              <span className="gh-staat tone-waarschuwing">{tr('Вхідні', 'Inkomend')}</span>
+            </div>
+            <p className="gh-sub">
+              {tr(
+                'Нові задачі з перехоплювача подій спершу потрапляють у карантинний стовпець «Вхідні» з позначкою зовнішнього джерела.',
+                'Nieuwe vraagstukken vanuit de gebeurteniskoppeling belanden eerst in de aparte kolom «Inkomend» met herkomstmarkering.',
+              )}
+            </p>
+          </div>
+
+          <div className="gh-subkaart gh-mq-kolom-tegel is-actief">
+            <div className="gh-mq-kolom-stroom">
+              <code className="gh-chip">GitHub: open</code>
+              <ArrowRight size={14} aria-hidden="true" />
+              <span className="gh-staat tone-ok">{tr('У роботі', 'In uitvoering')}</span>
+            </div>
+            <p className="gh-sub">
+              {tr(
+                'Після того як власник бере картку в роботу або переносить задачу вручну, зміни назви й відкритого стану синхронізуються двосторонньо.',
+                'Zodra de eigenaar een kaart oppakt of handmatig koppelt, blijven titel en open staat tweerichtings afgestemd.',
+              )}
+            </p>
+          </div>
+
+          <div className="gh-subkaart gh-mq-kolom-tegel is-afgerond">
+            <div className="gh-mq-kolom-stroom">
+              <code className="gh-chip">GitHub: closed</code>
+              <ArrowRight size={14} aria-hidden="true" />
+              <span className="gh-staat tone-neutraal">{tr('Виконано', 'Afgerond')}</span>
+            </div>
+            <p className="gh-sub">
+              {tr(
+                'Закриття задачі у сховищі автоматично переводить пов’язану картку Дошки до стовпця завершених завдань.',
+                'Het sluiten van het vraagstuk in de opslagplaats verplaatst de gekoppelde bordkaart naar de afgeronde kolom.',
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="gh-mq-derden-waarschuwing" role="note">
+          <ShieldAlert size={17} />
+          <div>
+            <strong>{tr('Захисний бар’єр для вхідних карток від сторонніх авторів', 'Beveiligingsgrens bij inkomende kaarten van externe auteurs')}</strong>
+            <p className="gh-sub">
+              {tr(
+                'Зовнішні звернення з GitHub ніколи не переходять до робочої черги самовільно й позначаються як текст третьої сторони. Від авторів без прав запису у сховищі імпортуються лише заголовок і пряме посилання, щоб унеможливити підміну вказівок для агентів ШІ.',
+                'Externe meldingen vanaf GitHub schuiven nooit zelfstandig door naar uw werkwachtrij en dragen een derdenmarkering. Van auteurs zonder schrijfrechten in de opslagplaats worden uitsluitend titel en koppeling overgenomen.',
+              )}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Віддзеркалені сховища простору та живий журнал двостороннього обміну */}
       <div className="gh-grid">
         <section className="gh-card">
-          <h3>{tr('Віддзеркалені сховища простору', 'Gespiegelde opslagplaatsen in deze ruimte')}</h3>
+          <header className="gh-detail-head">
+            <h3>{tr('Віддзеркалені сховища простору', 'Gespiegelde opslagplaatsen in deze ruimte')}</h3>
+            <span className="gh-chip gh-mq-mono-pil">{spiegelRepos.length}</span>
+          </header>
           {overzicht.laden && !overzicht.data ? (
             <GhBezig tr={tr} />
           ) : spiegelRepos.length === 0 ? (
             <p className="gh-empty">{tr('Натисніть «Синхронізувати всі сховища», щоб наповнити локальне дзеркало вашого простору.', 'Klik op «Alle opslagplaatsen synchroniseren» om de spiegel van uw ruimte te vullen.')}</p>
           ) : (
-            <ul className="gh-list">
+            <ul className="gh-list gh-mq-spiegel-lijst">
               {spiegelRepos.map((sr) => (
                 <li key={sr.id}>
                   <button
                     type="button"
-                    className={`gh-item gh-item-knop${sr.fullName === repo ? ' is-actief' : ''}`}
+                    className={`gh-item gh-item-knop gh-mq-spiegel-rij${sr.fullName === repo ? ' is-actief' : ''}`}
                     onClick={() => onKiesRepo?.(sr.fullName)}
                   >
                     <FolderGit2 size={16} className={sr.webhookActief ? 'gh-ok' : 'gh-muted'} />
                     <span className="gh-item-main">
-                      <strong>
-                        {sr.fullName}{' '}
-                        {sr.webhookActief ? <span className="gh-chip">{tr('живий міст', 'actieve brug')}</span> : null}
-                      </strong>
+                      <span className="gh-mq-rij-boven">
+                        <strong>{sr.fullName}</strong>
+                        {sr.webhookActief ? <span className="gh-chip gh-mq-chip-ok">{tr('живий міст', 'actieve brug')}</span> : null}
+                        {sr.bordSync ? <span className="gh-chip">{tr('дошка', 'bord')}</span> : null}
+                      </span>
                       <span className="gh-sub">
                         <code>{sr.standaardTak}</code>
                         {sr.laatstGesynchroniseerd ? ` · ${ghGeleden(sr.laatstGesynchroniseerd, tr)}` : ''}
@@ -397,20 +502,28 @@ export default function SpiegelEnBrugPaneel({
         </section>
 
         <section className="gh-card">
-          <h3>{tr('Живий журнал обміну GitHub ↔ Мій простір', 'Uitwisselingslogboek GitHub ↔ Mijn Ruimte')}</h3>
+          <header className="gh-detail-head">
+            <h3>{tr('Живий журнал обміну GitHub ↔ Мій простір', 'Uitwisselingslogboek GitHub ↔ Mijn Ruimte')}</h3>
+            <span className="gh-chip gh-mq-mono-pil">{gebeurtenissen.length}</span>
+          </header>
           {gebeurtenissen.length === 0 ? (
             <p className="gh-empty">{tr('Подій двостороннього обміну ще немає.', 'Nog geen tweerichtingsgebeurtenissen geregistreerd.')}</p>
           ) : (
-            <ul className="gh-list">
+            <ul className="gh-list gh-mq-gebeurtenis-lijst">
               {gebeurtenissen.map((ev) => (
-                <li key={ev.id} className="gh-item">
-                  {ev.richting === 'inkomend' ? (
-                    <ArrowDownLeft size={16} className="gh-ok" aria-label={tr('З GitHub на сайт', 'Van GitHub naar site')} />
-                  ) : (
-                    <ArrowUpRight size={16} className="gh-muted" aria-label={tr('Із сайту на GitHub', 'Van site naar GitHub')} />
-                  )}
+                <li key={ev.id} className="gh-item gh-mq-gebeurtenis-rij" data-richting={ev.richting}>
+                  <span className={`gh-mq-richting-icoon is-${ev.richting}`}>
+                    {ev.richting === 'inkomend' ? (
+                      <ArrowDownLeft size={15} className="gh-ok" aria-label={tr('З GitHub на сайт', 'Van GitHub naar site')} />
+                    ) : (
+                      <ArrowUpRight size={15} className="gh-mq-accent-icoon" aria-label={tr('Із сайту на GitHub', 'Van site naar GitHub')} />
+                    )}
+                  </span>
                   <span className="gh-item-main">
-                    <strong>{ev.samenvatting}</strong>
+                    <span className="gh-mq-rij-boven">
+                      <strong>{ev.samenvatting}</strong>
+                      {ev.soort ? <code className="gh-chip gh-mq-mono-pil">{ev.soort}</code> : null}
+                    </span>
                     <span className="gh-sub">
                       {ev.fullName} · {ev.richting === 'inkomend' ? tr('Вхідна з GitHub', 'Inkomend van GitHub') : tr('Вихідна дія', 'Uitgaande actie')} · {ghGeleden(ev.aangemaaktOp, tr)}
                     </span>

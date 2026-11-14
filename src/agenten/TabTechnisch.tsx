@@ -9,6 +9,7 @@ import { openTechVenster, techActief, techVernieuwen, useTech } from '../tech/te
 import TechVerbindingen from './TechVerbindingen';
 import RuimteScheiding from './RuimteScheiding';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 export default function TabTechnisch({ tr }: { tr: Tr }) {
   const tech = useTech();

@@ -12,6 +12,7 @@ import { datum, Knop, Rij, Tech, Tijd, exact } from './ui';
 import { foutTekst } from './fouten';
 import { useJournaal, type JournaalItem } from './gegevens';
 import './agenten-tabs-2.css';
+import './agenten-toegang-maquette.css';
 
 export const SOORTEN: Array<[string, string, string]> = [
   ['', 'Усі події', 'Alle gebeurtenissen'], ['werk', 'Дії ШІ (що робив агент)', 'Acties van AI (wat de agent deed)'], ['ai', 'Підключення ШІ', 'AI-verbindingen'], ['token', 'Токени', 'Tokens'], ['apparaat', 'Пристрої', 'Apparaten'],

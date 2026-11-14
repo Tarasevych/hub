@@ -34,6 +34,7 @@ import { datum, methodeTekst, runDuur, staatTekst, tr, type Flow, type Grant, ty
 import './beheer-uitrol.css';
 import './uitrol/uitrol.css';
 import './uitrol/weergave-v2.css';
+import './uitrol/uitrol-maquette.css';
 
 // Punt 3 van de audit 19.10.2026: een mislukte actie noemt de route, de code, het tijdstip en het pogingnummer. De teller zit in
 // shared/foutuitleg.ts en loopt alleen op bij een ECHTE mislukte poging (dit catch-blok), nooit bij hertekenen.

@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "taakId": "MAQUETTE-010",
+  "titel": "Фінальна хвиля 9 теми оформлення «Макет»: повне студійне перевтілення консолі керування admin.tarasevych.com та завершення 10-піддоменної системи",
+  "opdracht": "Запровадити наскрізну студійну тему оформлення «Макет» (palet: maquette) для всіх дванадцяти канонічних вкладок консолі керування admin.tarasevych.com (/overzicht, /toegang, /ai, /apps, /devices, /sso, /directories, /roles, /diagnostiek, /audit, /contour, /updates) і сформувати підсумковий кумулятивний випуск теми для всіх десяти піддоменів платформи Mijn Ruimte поруч з усіма чинними темами без видалення можливостей.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/maquette-010-20261114-004225",
+    "basis": "fb350476dff3836c80b901e4203ecbee729754b5",
+    "geinstalleerdeBasis": "5f2325d788e29c5126f9ede6975afbbac7e5aae2",
+    "geinstalleerdeVersie": "20261113-121403",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Облікові дані, особисті ключі, маркери доступу, відкриті значення сховища таємниць та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T00:42:25Z",
+      "stap": "Після оприлюднення випуску Хвилі 8 (20261114-004058) створено фінальну кумулятивну гілку feature/maquette-010-20261114-004225 поверх fb350476dff3836c80b901e4203ecbee729754b5 та зареєстровано завдання MAQUETTE-010."
+    },
+    {
+      "tijd": "2026-11-14T01:03:47Z",
+      "stap": "Оформлено живу панель огляду Dashboard, сховище таємниць платформи Geheimen та майстер оновлень випусків BeheerUitrolWeergave у трьох ізольованих технічних таблицях стилів overzicht-maquette.css, geheimen-maquette.css та uitrol-maquette.css."
+    },
+    {
+      "tijd": "2026-11-14T01:06:39Z",
+      "stap": "Оформлено діагностику системи Diagnostiek та криптографічний журнал подій AuditPagina з перевіркою ланцюжка SHA-256 у технічних таблицях стилів diagnostiek-maquette.css та audit-maquette.css."
+    },
+    {
+      "tijd": "2026-11-14T01:06:53Z",
+      "stap": "Вбудовано студійну оболонку .mq-schil, рубіново-коралову вітрину MaquetteHeld (dienst='admin') та чотиристоронню якірну навігацію MaquetteAnkerRail у BeheerConsoleWeergave.tsx і створено beheer-kern-maquette.css та integraties-maquette.css для всіх дванадцяти вкладок консолі."
+    },
+    {
+      "tijd": "2026-11-14T01:09:15Z",
+      "stap": "Виконано перевірку типів клієнта й сервера, повне виробниче складання з підтвердженням суворої ізоляції технічних пакунків /assets/tech/, 16 модульних випробувань та живу візуальну перевірку 10 режимів admin.tarasevych.com у безголовому Chromium."
+    }
+  ],
+  "keuzes": [
+    "Єдину рубіново-коралову вітрину MaquetteHeld та чотиристоронню якірну навігацію MaquetteAnkerRail змонтовано один раз у кореневому BeheerConsoleWeergave.tsx для всіх дванадцяти канонічних вкладок без дублювання у вкладених розділах.",
+    "Усі сім нових таблиць стилів консолі керування розміщено у технічних контурах (beheer-kern-maquette.css, overzicht/, geheimen/, uitrol/, integraties/, diagnostiek/, audit/), щоб вони потрапляли виключно до захищеного каталогу /assets/tech/ без жодного статичного посилання з публічних пакунків.",
+    "У таблиці стилів uitrol-maquette.css використано виключно класові селектори .ut-* без голих селекторів елементів усередині .admin-uitrol зі збереженням стрілок прокручування вкладок."
+  ],
+  "wijzigingen": [
+    ".github/workflows/maquette-010-uitgave.yml",
+    "orchestratie/ontwikkelarchieven/MAQUETTE-010.json",
+    "orchestratie/taken/MAQUETTE-010.json",
+    "src/BeheerConsoleWeergave.tsx",
+    "src/BeheerUitrolWeergave.tsx",
+    "src/audit/AuditPagina.tsx",
+    "src/audit/audit-maquette.css",
+    "src/beheer-kern-maquette.css",
+    "src/diagnostiek/Diagnostiek.tsx",
+    "src/diagnostiek/diagnostiek-maquette.css",
+    "src/geheimen/Geheimen.tsx",
+    "src/geheimen/geheimen-maquette.css",
+    "src/integraties/Integraties.tsx",
+    "src/integraties/integraties-maquette.css",
+    "src/overzicht/Dashboard.tsx",
+    "src/overzicht/overzicht-maquette.css",
+    "src/uitrol/uitrol-maquette.css"
+  ],
+  "controles": [
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне виробниче складання npm run build (включно з huis-maquette та ізоляцією tech-bundels-controle) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, mobiel-cascade-20261105, mobiel-geometrie-20261021, plaatsing-20261025, ut-tabs-pijlen-20261019, hulp-vraagtekens, integraties-catalogus-v2-20261029, uitrol-codes, uitrol-manifest, uitrol-weergave-v2, audit-filters, gebruiker-audit-2026-10-19, sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка admin.tarasevych.com (/overzicht у темному й світлому режимах, /toegang, /updates, /contour, /diagnostiek, /audit, /sso, мобільний 390x844 та контрольна палітра kleur) у безголовому Chromium через локальний HTTPS — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "https://mcp.tarasevych.com/api/version",
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "shared/tech-bundels.ts",
+    "src/BeheerConsoleWeergave.tsx",
+    "src/overzicht/Dashboard.tsx",
+    "src/BeheerUitrolWeergave.tsx",
+    "src/geheimen/Geheimen.tsx",
+    "src/diagnostiek/Diagnostiek.tsx",
+    "src/audit/AuditPagina.tsx"
+  ],
+  "beperkingen": [
+    "Автоматичне встановлення на робочий сервер вимкнене за правилами платформи: кумулятивний пакунок містить повну реалізацію теми оформлення «Макет» для всіх десяти піддоменів і встановлюється власником через майстер оновлень із підтвердженням ключем доступу."
+  ]
+}

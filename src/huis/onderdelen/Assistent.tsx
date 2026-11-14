@@ -9,8 +9,16 @@ import type { OnderdeelProps } from '../HuisPagina';
 import { HuisFout, huisClient } from '../huis-client';
 import { datumTekst, foutTekst, tr } from '../tekst';
 import { SCHRIJFBAAR, StapWaarde } from './Scenes';
+import '../huis-beheer-maquette.css';
 
 const STAND: Record<Voorstel['stand'], [string, string]> = { wacht: ['чекає', 'wacht'], goedgekeurd: ['схвалено', 'goedgekeurd'], afgewezen: ['відхилено', 'afgewezen'], verlopen: ['прострочено', 'verlopen'] };
+
+function voorstelAccent(stand: Voorstel['stand']): string {
+  if (stand === 'goedgekeurd') return 'mq-accent-emerald';
+  if (stand === 'afgewezen') return 'mq-accent-coral';
+  if (stand === 'verlopen') return 'mq-accent-amber';
+  return 'mq-accent-violet';
+}
 
 export default function Assistent({ lang, woningId, ov, vernieuw, toon }: OnderdeelProps) {
   const [lijst, setLijst] = useState<Voorstel[] | null>(null);
@@ -39,22 +47,22 @@ export default function Assistent({ lang, woningId, ov, vernieuw, toon }: Onderd
   };
   const wacht = (lijst ?? []).filter((v) => v.stand === 'wacht'); const rest = (lijst ?? []).filter((v) => v.stand !== 'wacht');
   return (
-    <div className='hv-assistent'>
-      <section className='hv-blok'>
+    <div className='hv-assistent' data-mq-beheer='assistent'>
+      <section className='hv-blok mq-accent-violet' data-mq-assistent-blok='handvest' data-mq-handvest-kop={tr(lang, 'ЛИШЕ ПРОПОЗИЦІЯ · КРИТИЧНІ ПРИСТРОЇ КЕРУЮТЬСЯ ТІЛЬКИ ЛЮДИНОЮ', 'ALLEEN VOORSTEL · KRITIEKE APPARATEN ENKEL DOOR EEN MENS')}>
         <h3><Bot aria-hidden='true' /> {tr(lang, 'Як працює помічник', 'Hoe de assistent werkt')}</h3>
         <ol className='hv-uitleg'>
           <li>{tr(lang, 'ШІ (через MCP-конектор або цю сторінку) бачить стани й може лише запропонувати команду зі стислим поясненням.', 'De AI (via de MCP-connector of deze pagina) ziet toestanden en mag alleen een opdracht voorstellen met een korte uitleg.')}</li>
           <li>{tr(lang, 'Людина схвалює або відхиляє. Схвалена пропозиція стає звичайною командою з очікуванням підтвердження від пристрою.', 'Een mens keurt goed of wijst af. Een goedgekeurd voorstel wordt een gewone opdracht die op bevestiging van het apparaat wacht.')}</li>
-          <li><ShieldCheck aria-hidden='true' /> {tr(lang, 'Замки, охорона, сирени, дим/газ — ніколи не в пропозиціях: сервер відхиляє їх ще на етапі створення.', 'Sloten, alarm, sirenes, rook/gas: nooit in een voorstel — de server weigert ze al bij het maken.')}</li>
+          <li className='mq-accent-amber' data-mq-mens-grens='1'><ShieldCheck aria-hidden='true' /> {tr(lang, 'Замки, охорона, сирени, дим/газ — ніколи не в пропозиціях: сервер відхиляє їх ще на етапі створення.', 'Sloten, alarm, sirenes, rook/gas: nooit in een voorstel — de server weigert ze al bij het maken.')}</li>
         </ol>
         <p className='hv-hint'>{tr(lang, 'У цьому випуску немає вбудованого чат-бота для оселі: пропозиції надходять від зовнішнього ШІ через конектор або створюються вручну нижче для перевірки ланцюжка схвалення.', 'In deze release zit geen ingebouwde chatbot voor de woning: voorstellen komen van een externe AI via de connector of maakt u hieronder handmatig om de goedkeuringsketen te testen.')}</p>
       </section>
-      <section className='hv-blok' aria-labelledby='hv-vs-wacht'>
+      <section className='hv-blok mq-accent-amber' aria-labelledby='hv-vs-wacht' data-mq-assistent-blok='wacht'>
         <h3 id='hv-vs-wacht'>{tr(lang, 'Чекають рішення', 'Wachten op besluit')} <small>{wacht.length}</small></h3>
         {lijst && !wacht.length ? <p className='hv-hint'>{tr(lang, 'Немає пропозицій, що чекають.', 'Geen wachtende voorstellen.')}</p> : null}
         <ul className='hv-lijst'>
           {wacht.map((v) => (
-            <li key={v.id} data-hv-voorstel={v.id} data-hv-voorstel-stand={v.stand}>
+            <li key={v.id} className='mq-accent-violet' data-hv-voorstel={v.id} data-hv-voorstel-stand={v.stand}>
               <div className='hv-lijst-knop'><strong>{v.samenvatting}</strong><small>{naam(v.opdracht.apparaatId)} → {tr(lang, MOGELIJKHEID_LABEL[v.opdracht.mogelijkheid]?.[0] ?? v.opdracht.mogelijkheid, MOGELIJKHEID_LABEL[v.opdracht.mogelijkheid]?.[1] ?? v.opdracht.mogelijkheid)} {JSON.stringify(v.opdracht.waarde)} · {v.door} · {tr(lang, 'до', 'tot')} {datumTekst(lang, v.verlooptOp)}</small></div>
               {ov.lid.magSchrijven ? <span className='hv-knoppen'>
                 <button type='button' className='hv-knop is-klein is-hoofd' disabled={Boolean(bezig)} onClick={() => void beslis(v, true)} data-hv-goedkeuren={v.id}><Check aria-hidden='true' />{tr(lang, 'Схвалити', 'Goedkeuren')}</button>
@@ -65,7 +73,7 @@ export default function Assistent({ lang, woningId, ov, vernieuw, toon }: Onderd
         </ul>
       </section>
       {ov.lid.magSchrijven ? (
-        <section className='hv-blok' aria-labelledby='hv-vs-nieuw'>
+        <section className='hv-blok mq-accent-cyan' aria-labelledby='hv-vs-nieuw' data-mq-assistent-blok='nieuw'>
           <h3 id='hv-vs-nieuw'>{tr(lang, 'Створити пропозицію вручну (тест ланцюжка)', 'Handmatig een voorstel maken (keten testen)')}</h3>
           {!bedienbaar.length ? <p className='hv-hint'>{tr(lang, 'Немає керованих пристроїв.', 'Geen bedienbare apparaten.')}</p> : !nieuw ? <button type='button' className='hv-knop' onClick={() => { const a = bedienbaar[0]; const m = a.mogelijkheden.find((x) => x.schrijven && SCHRIJFBAAR.includes(x.soort))!; setNieuw({ samenvatting: '', apparaatId: a.id, mogelijkheid: m.soort, waarde: m.soort === 'aan_uit' ? { aan: true } : m.soort === 'open_dicht' ? { actie: 'open' } : { waarde: m.bereik?.[1] ?? 100 } }); }} data-hv-voorstel-nieuw='1'>{tr(lang, 'Нова пропозиція', 'Nieuw voorstel')}</button> : (
             <form className='hv-rij is-wrap' onSubmit={(e) => { e.preventDefault(); void maak(); }}>
@@ -80,9 +88,9 @@ export default function Assistent({ lang, woningId, ov, vernieuw, toon }: Onderd
         </section>
       ) : null}
       {rest.length ? (
-        <section className='hv-blok' aria-labelledby='hv-vs-hist'>
+        <section className='hv-blok' aria-labelledby='hv-vs-hist' data-mq-assistent-blok='historie'>
           <h3 id='hv-vs-hist'>{tr(lang, 'Історія', 'Geschiedenis')}</h3>
-          <ul className='hv-lijst is-dicht'>{rest.map((v) => <li key={v.id} data-hv-voorstel={v.id} data-hv-voorstel-stand={v.stand}><span><strong>{v.samenvatting}</strong> <small>{tr(lang, STAND[v.stand][0], STAND[v.stand][1])} · {datumTekst(lang, v.besluitOp ?? v.verlooptOp)}{besluit[v.id] ? ` · ${besluit[v.id]}` : ''}</small></span></li>)}</ul>
+          <ul className='hv-lijst is-dicht'>{rest.map((v) => <li key={v.id} className={voorstelAccent(v.stand)} data-hv-voorstel={v.id} data-hv-voorstel-stand={v.stand}><span><strong>{v.samenvatting}</strong> <small>{tr(lang, STAND[v.stand][0], STAND[v.stand][1])} · {datumTekst(lang, v.besluitOp ?? v.verlooptOp)}{besluit[v.id] ? ` · ${besluit[v.id]}` : ''}</small></span></li>)}</ul>
         </section>
       ) : null}
     </div>

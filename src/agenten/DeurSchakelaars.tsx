@@ -7,6 +7,7 @@ import { SWITCHES } from './deur';
 import { Badge } from './ui';
 import '../mcp-hub.css';
 import './agenten.css';
+import './agenten-toegang-maquette.css';
 
 export default function DeurSchakelaars({ tr }: { tr: Tr }) {
   const { data } = useDeurTokens();

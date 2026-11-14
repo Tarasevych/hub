@@ -101,7 +101,7 @@ export default function ZoekIndexVenster({ lang, onSluit, onKlaar }: IndexVenste
   return (
     <Venster id={INDEX_VENSTER_ID} titel={actief ? `${t.titel} — ${pct}%` : t.titel} modaal={false} breedte={520} onSluit={onSluit} lang={lang} className='zk-iv' describedBy={`${uid}-intro`}
       kop={<span className='zk-iv-kop'><RefreshCw aria-hidden='true' className={actief ? 'zk-spin' : undefined} /><strong>{t.titel}</strong>{run && <span className={`pil ${statusKlasse(run.status)} zk-iv-kop-pil`}>{t.status[run.status]}</span>}</span>}>
-      <div className='zk-iv-inhoud' data-zoek-index-venster={run ? run.status : stand ? 'kiezen' : 'laden'} data-zoek-index-run={run?.id || ''}>
+      <div className='zk-iv-inhoud' data-mq-laag-open='1' data-zoek-index-venster={run ? run.status : stand ? 'kiezen' : 'laden'} data-zoek-index-run={run?.id || ''}>
         <p id={`${uid}-intro`} className='zk-iv-intro'>{t.intro}</p>
         {stand && stand.laden.length > 0 && <p className='zk-iv-laden'><span className='zk-iv-label'>{t.laden}:</span> {stand.laden.map((l) => <span key={l.ruimte} className='pil pil-stil'>{ruimteNaam(l.ruimte)} · {l.bronnen.length}</span>)} <small>{t.ruimteUitleg}</small></p>}
         {foutTekst && <p className='melding melding-warn' role='alert'><AlertTriangle aria-hidden='true' /><span>{foutTekst}</span></p>}

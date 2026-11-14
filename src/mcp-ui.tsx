@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, CircleHelp, Container, KeyRound, Globe, HardDrive, Laptop, Mail, Monitor, Puzzle, Search, Server, Github, Terminal, Calendar, Sparkles } from 'lucide-react';
 import Merk from './merk/Merk';
 import './mcp-hub.css';
+import './mcp-kern-maquette.css';
 
 export type Tr = (uk: string, nl: string) => string;
 

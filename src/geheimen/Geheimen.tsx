@@ -16,6 +16,7 @@ import { aandacht, datum, datumTijd, filterGeheimen, filterJournaal, foutTekst, 
 // Invoer en rotatie lopen via het canonieke GeheimFormulier (met GeheimInvoer soort='kluis' en verborgen).
 import { GeheimFormulier } from './GeheimFormulier';
 import './geheimen.css';
+import './geheimen-maquette.css';
 
 type Props = { lang: Lang; sourceOrigin: string; tabContext: string };
 type Bericht = { soort: 'ok' | 'fout' | 'info'; tekst: string } | null;

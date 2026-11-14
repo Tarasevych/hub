@@ -30,6 +30,7 @@ import './ExtensieOntgrendeling.css';
 import './BrowserEnAgenten.css';
 import { alleenMens, geenAi } from '../menselijke-actie';
 import '../agenten/agenten-tabs-2.css';
+import '../agenten/agenten-toegang-maquette.css';
 
 type Tr = (uk: string, nl: string) => string;
 const RUIMTES: AiRuimte[] = ['prive', 'technisch'];

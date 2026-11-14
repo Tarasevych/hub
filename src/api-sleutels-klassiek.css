@@ -1,0 +1,874 @@
+/* Прагматичне ділове оформлення програмної брами api.tarasevych.com у монохромних темах «Біла класика» та «Чорна класика» (KLASSIEK-009A).
+   Охоплює машинні ключі доступу (/toegang), зашифроване сховище таємниць власника (/kluis) та реєстр зовнішніх з’єднань (/verbindingen).
+   Zakelijke monochrome opmaak voor de programmatische sleutelpoort, versleutelde eigenaarskluis en het koppelingenregister. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. КОЛІРНІ СХЕМИ ТА ПОХІДНІ ЗМІННІ ПОВЕРХОНЬ У БІЛІЙ І ЧОРНІЙ КЛАСИЦІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-klassiek-wit .api-platform.mq-schil,
+html.palet-maquette.palet-klassiek-wit[data-maquette-stijl="klassiek"] .api-platform.mq-schil {
+  color-scheme: light;
+}
+
+html.palet-klassiek-zwart .api-platform.mq-schil,
+html.palet-maquette.palet-klassiek-zwart[data-maquette-stijl="klassiek"] .api-platform.mq-schil {
+  color-scheme: dark;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil {
+  --mq-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --mq-api-accent: var(--mq-accent);
+  --mq-api-robijn: var(--mq-accent-2);
+  --mq-api-accent-op: var(--mq-accent-op);
+
+  --mq-api-halo: transparent;
+  --mq-api-halo-diep: transparent;
+  --mq-api-halo-zacht: transparent;
+
+  --mq-api-rand: var(--mq-rand);
+  --mq-api-rand-sterk: var(--mq-rand-sterk);
+  --mq-api-rand-actief: var(--mq-rand-sterk);
+
+  --mq-api-glas-verhoogd: var(--mq-oppervlak);
+  --mq-api-glas-diep: var(--mq-oppervlak);
+  --mq-api-glas-glans: transparent;
+  --mq-api-veld-put: var(--mq-oppervlak-2);
+
+  --mq-api-goed: var(--ok);
+  --mq-api-goed-zacht: var(--ok-zacht);
+  --mq-api-wacht: var(--warn);
+  --mq-api-wacht-zacht: var(--warn-zacht);
+  --mq-api-gevaar: var(--fout);
+  --mq-api-gevaar-zacht: var(--fout-zacht);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: var(--mq-oppervlak-2);
+  --soft: var(--mq-oppervlak-2);
+  --line: var(--mq-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent);
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+  --accent-soft: var(--mq-oppervlak-zacht);
+  --focus: var(--mq-accent);
+
+  gap: 14px;
+  padding-top: 12px;
+  padding-bottom: 32px;
+  padding-inline: clamp(14px, 2.2vw, 24px);
+  background: transparent;
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :focus-visible {
+  outline: 2px solid var(--mq-accent);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ЗАХИСТ РАМОК І КУТІВ 16PX ВІД ПЛОСКОГО СКИДАННЯ ОБОЛОНКИ (:not(#_mqk))
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .api-platform.mq-schil[data-mq-dienst="api"] :is(
+  .api-platform-panel,
+  .api-platform-table,
+  .api-platform-forbidden,
+  .is2
+):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"]:not(#_mqk) .canonical-chrome[data-surface-model="flat-content"] .canonical-content .api-platform.mq-schil[data-mq-dienst="api"] .api-platform-forbidden:not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-inline: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. УСУНЕННЯ ДУБЛЬОВАНОЇ ШАПКИ ПІД MAQUETTEHELD І ДІЛОВА ТИПОГРАФІКА
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil > header:not(:has(button, a, input, select)),
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil > .mq-held + .api-platform-header:not(:has(button, a, input, select)),
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-header:not(:has(button, a, input, select)) {
+  display: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil > header:has(button, a, input, select),
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-header:has(button, a, input, select) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(
+  h1,
+  h2,
+  h3,
+  h4,
+  .api-platform-panel > strong,
+  .api-platform-table > strong,
+  .api-platform-forbidden > strong,
+  .is2-kop h3
+) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(
+  .api-platform-meta span,
+  [data-api-token-count-value],
+  [data-api-connections-count],
+  [data-api-vault-count],
+  .api-platform-secret > code,
+  .api-platform-tokens > li code,
+  .api-platform-tokens > li > small,
+  .api-platform-tokens > li > div:first-child,
+  .api-platform-table tbody td,
+  .api-platform-table code,
+  .vault-meta,
+  .vault-meta-termijn,
+  .vault-meta-van-tot,
+  .gm-extra-samenvatting
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. ПЕРЕМИКАЧ ВКЛАДОК ПРОГРАМНОЇ БРАМИ (.api-platform-tabs)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tabs {
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tabs a {
+  min-height: 38px;
+  padding: 6px 15px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] section.api-platform.mq-schil[data-api-tab="access"] .api-platform-tabs a[data-api-tab-link="access"],
+html.palet-maquette[data-maquette-stijl="klassiek"] section.api-platform.mq-schil:not([data-api-tab="vault"]):not([data-api-tab="verbindingen"]) .api-platform-tabs a[data-api-tab-link="access"],
+html.palet-maquette[data-maquette-stijl="klassiek"] section.api-platform.mq-schil[data-api-tab="vault"] .api-platform-tabs a[data-api-tab-link="vault"],
+html.palet-maquette[data-maquette-stijl="klassiek"] section.api-platform.mq-schil[data-api-tab="verbindingen"] .api-platform-tabs a[data-api-tab-link="verbindingen"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  font-weight: 680;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. МАТОВІ КАРТКИ, ПАНЕЛІ, ПІГУЛКИ МЕТАДАНИХ ТА ПОВІДОМЛЕННЯ ЗВОРОТНОГО ЗВ’ЯЗКУ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-panel,
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-table,
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-forbidden {
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-forbidden {
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.api-platform-panel, .api-platform-table, .api-platform-forbidden) > strong {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mq-rand);
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.api-platform-panel, .api-platform-table, .api-platform-forbidden) > strong::before {
+  background: var(--mq-accent);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-forbidden > strong::before {
+  background: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-meta span {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-meta span:is([data-api-token-count-value], [data-api-connections-count], [data-api-vault-count]) {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-meta span[data-api-vault-ready="yes"] {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  background-image: none;
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-meta span[data-api-vault-ready="no"] {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil p[data-api-notice="true"] {
+  padding: 12px 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-left: 4px solid var(--mq-accent);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. ПОЛЯ ВВЕДЕННЯ, ПЕРВИННІ КНОПКИ ТА ОДНОРАЗОВИЙ СЕКРЕТ (.api-platform-secret)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea
+) {
+  min-height: 40px;
+  padding: 7px 12px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea
+):focus {
+  outline: none;
+  border-color: var(--mq-accent);
+  background: var(--mq-oppervlak);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(
+  button[data-api-create-token-button="enabled"],
+  .api-platform-secret .api-platform-secret-actions button:first-child,
+  .api-platform-connections a[data-api-connection-next],
+  .gm-kluis-formulier .gm-knop.is-primair,
+  .vault-meta-knoppen button[type="submit"],
+  .is2 .ic2-knop.is-primair
+) {
+  border: 1px solid var(--mq-knop-primair-bg);
+  border-radius: 11px;
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret {
+  color-scheme: inherit;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-klassiek-wit[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret {
+  color-scheme: light;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-klassiek-zwart[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret {
+  color-scheme: dark;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret > code {
+  padding: 11px 14px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-klassiek-zwart[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret > code {
+  background: var(--mq-bg);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret .api-platform-secret-actions button:not(:first-child) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret > small {
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. КАРТКИ МАШИННИХ КЛЮЧІВ І ЗАПИСІВ СХОВИЩА (.api-platform-tokens)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li {
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li[data-api-token-status="active"] {
+  border-color: var(--mq-rand-sterk);
+  border-left: 4px solid var(--mq-accent);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li[data-api-token-status="revoked"] {
+  border-color: var(--mq-rand);
+  border-left: 4px solid var(--fout);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  opacity: 0.9;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li[data-api-token-status="expired"] {
+  border-color: var(--mq-rand);
+  border-left: 4px solid var(--mq-stil);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  opacity: 0.88;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens[data-api-vault-list="true"] > li {
+  border-left: 4px solid var(--mq-accent);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li code {
+  padding: 3px 9px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li > .api-platform-secret-actions > button {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li > button,
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li > .api-platform-secret-actions > button:last-child {
+  border: 1px solid var(--fout);
+  border-radius: 11px;
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+  box-shadow: none;
+  transform: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   8. РЕЄСТР ЗОВНІШНІХ З’ЄДНАНЬ (.api-platform-connections) І СМУГА (.is2)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections > li {
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections > li[data-api-connection-status="configured"] {
+  border-left: 4px solid var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections > li[data-api-connection-status="error"] {
+  border-color: var(--fout);
+  border-left: 4px solid var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections > li[data-api-connection-status="revoked"] {
+  border-color: var(--warn);
+  border-left: 4px solid var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections > li[data-api-connection-status="not_connected"] {
+  border-left: 4px solid var(--mq-stil);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil [data-api-connection-badge] {
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil [data-api-connection-badge="configured"] {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  color: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil [data-api-connection-badge="error"] {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil [data-api-connection-badge="revoked"] {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil [data-api-connection-badge="not_connected"] {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections .api-platform-secret-actions button {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil section.is2 {
+  --il-ok: var(--ok);
+  --il-ok-bg: var(--ok-zacht);
+  --il-warn: var(--warn);
+  --il-warn-bg: var(--warn-zacht);
+  --il-soon: var(--mq-gedempt);
+  --il-soon-bg: var(--mq-oppervlak-zacht);
+  padding: 14px 18px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .is2 .ic2-knop:not(.is-primair) {
+  min-height: 36px;
+  padding: 6px 13px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .is2-lijst > li {
+  border: 1px solid var(--mq-rand);
+  border-radius: 999px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .is2-lijst > li > i {
+  border-radius: 999px;
+  background: var(--mq-stil);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .is2-lijst > li[data-groep="verbonden"] > i {
+  background: var(--ok);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .is2-lijst > li[data-groep="aandacht"] > i {
+  background: var(--fout);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .is2-lijst > li[data-groep="instellen"] > i {
+  background: var(--warn);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .is2-lijst > li[data-groep="beschikbaar"] > i {
+  background: var(--mq-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   9. ТАБЛИЦЯ МОЖЛИВОСТЕЙ І КАПСУЛИ ЗАБОРОНЕНИХ ПРАВ (.api-platform-forbidden)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-table tbody td:first-child code {
+  padding: 3px 9px;
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-forbidden ul > li {
+  border: 1px solid var(--fout);
+  border-radius: 999px;
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-forbidden ul > li > code {
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. КАНОНІЧНА ФОРМА СХОВИЩА (.gm-kluis-formulier), МЕТАДАНІ Й ДІАЛОГОВІ ВІКНА
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier {
+  --gm-ok: var(--ok);
+  --gm-bad: var(--fout);
+  --gm-warn: var(--warn);
+  --gm-bg: var(--mq-oppervlak);
+  --gm-bg2: var(--mq-oppervlak-2);
+  --gm-line: var(--mq-rand);
+  --gm-text: var(--mq-tekst);
+  --gm-muted: var(--mq-gedempt);
+  --gm-accent: var(--mq-accent);
+  padding: 16px 18px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier :is(select, input, textarea) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier .gm-knop:not(.is-primair) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier :is(.gm-extra, .gm-github-urls, .gm-vaste-kop, .gm-banner, .gm-waarde) {
+  border: 1px solid var(--mq-rand);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier .gm-banner.is-ok {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier :is(.gm-banner.is-fout, .gm-banner.is-bad) {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier .gm-chip {
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.vault-meta, .vault-meta-velden, .vault-meta-bewerker) {
+  --vm-ok: var(--ok);
+  --vm-ok-bg: var(--ok-zacht);
+  --vm-bijna: var(--warn);
+  --vm-bijna-bg: var(--warn-zacht);
+  --vm-op: var(--fout);
+  --vm-op-bg: var(--fout-zacht);
+  --vm-zacht: var(--mq-gedempt);
+  --vm-rand: var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .vault-meta .vault-meta-termijn {
+  border-radius: 999px;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .vault-meta-velden {
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .vault-meta-velden.vault-meta-velden :is(input, select) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.vault-meta-snel button, .vault-meta-bewerker > button, .vault-meta-knoppen button:not([type="submit"])) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+  transform: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.venster, dialog[open], [role="dialog"], .il-dialoog) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.venster .venster-kop, .il-dialoog .il-d-kop) {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--mq-rand);
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.venster-achter, .il-modal) {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.ic2-zoek, .iw2-zoek, .iw2-veld input, .il-zoek input) {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 11px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   11. МЕДІАЗАПИТИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (hover: hover) and (pointer: fine) {
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tabs a:hover {
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.api-platform-panel, .api-platform-table, .api-platform-forbidden):hover {
+    border-color: var(--mq-rand-sterk);
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(
+    button[data-api-create-token-button="enabled"],
+    .api-platform-secret .api-platform-secret-actions button:first-child,
+    .api-platform-connections a[data-api-connection-next],
+    .gm-kluis-formulier .gm-knop.is-primair,
+    .vault-meta-knoppen button[type="submit"],
+    .is2 .ic2-knop.is-primair
+  ):not(:disabled):hover {
+    border-color: var(--mq-accent-2);
+    background: var(--mq-accent-2);
+    color: var(--mq-accent-op);
+    box-shadow: none;
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li:hover,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections > li:hover {
+    border-color: var(--mq-rand-sterk);
+    box-shadow: none;
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(
+    .api-platform-secret .api-platform-secret-actions button:not(:first-child),
+    .api-platform-tokens > li > .api-platform-secret-actions > button:not(:last-child),
+    .api-platform-connections .api-platform-secret-actions button,
+    .gm-kluis-formulier .gm-knop:not(.is-primair),
+    .vault-meta-snel button,
+    .vault-meta-bewerker > button,
+    .vault-meta-knoppen button:not([type="submit"]),
+    .is2 .ic2-knop:not(.is-primair)
+  ):not(:disabled):hover {
+    border-color: var(--mq-tekst);
+    background: var(--mq-oppervlak-hover);
+    color: var(--mq-tekst);
+    box-shadow: none;
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(
+    .api-platform-tokens > li > button,
+    .api-platform-tokens > li > .api-platform-secret-actions > button:last-child
+  ):not(:disabled):hover {
+    border-color: var(--fout);
+    background: var(--fout-zacht);
+    color: var(--fout);
+    box-shadow: none;
+    transform: none;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-table tbody tr:hover td {
+    background: var(--mq-oppervlak-zacht);
+  }
+}
+
+@media (max-width: 900px) {
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tabs {
+    width: 100%;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tabs a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil {
+    gap: 12px;
+    padding-top: 8px;
+    padding-bottom: 24px;
+    padding-inline: 12px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-panel,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-table,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-forbidden {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-secret {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil section.is2 {
+    padding: 12px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .gm-kluis-formulier {
+    padding: 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-connections > li {
+    padding: 12px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.venster .venster-kop, .il-dialoog .il-d-kop) {
+    padding: 10px 14px;
+  }
+
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tabs a,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li > button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil .api-platform-tokens > li > .api-platform-secret-actions > button,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil :is(.vault-meta-snel button, .vault-meta-bewerker > button, .vault-meta-knoppen button) {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil *,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil *::before,
+  html.palet-maquette[data-maquette-stijl="klassiek"] .api-platform.mq-schil *::after {
+    transition: none;
+  }
+}

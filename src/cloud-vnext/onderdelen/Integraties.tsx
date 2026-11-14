@@ -14,6 +14,7 @@ import { foutTekst, tr, type Lang } from '../tekst';
 
 import { registerGroep } from '../register-koppeling';
 import { useCatalogusV2 } from '../../integraties/catalogus-vlag';
+import '../cloud-integraties-maquette.css';
 
 const POLL_MS = 3000, POLL_MAX_MS = 4 * 60_000;
 

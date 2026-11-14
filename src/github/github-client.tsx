@@ -6,6 +6,8 @@ import { ecosystemTabContext } from '../tab-context';
 import { GITHUB_OAUTH_FOUTEN } from '../../shared/github-koppeling';
 import { ontleedDiffPatch, type DiffRegel } from '../../shared/github-werkruimte';
 import { ruimteFeitenUit, ruimteGeslotenUit, type RuimteFeiten, type RuimteGesloten } from '../../shared/ruimte-weergave';
+import { useIsMaquette } from '../thema/useThema';
+import './github-brontekst-maquette.css';
 
 export type Tr = (uk: string, nl: string) => string;
 
@@ -284,8 +286,13 @@ export function useGhVraag<T>(pad: string, lichaam: Record<string, unknown> | nu
 }
 
 export function GhMelding({ soort, children }: { soort: 'error' | 'info' | 'ok'; children: ReactNode }) {
+  const isMaquette = useIsMaquette();
   return (
-    <div className={`gh-notice gh-${soort}`} role={soort === 'error' ? 'alert' : 'status'}>
+    <div
+      className={`gh-notice gh-${soort}`}
+      role={soort === 'error' ? 'alert' : 'status'}
+      data-mq-dienst={isMaquette ? 'github' : undefined}
+    >
       {soort === 'error' ? <AlertTriangle size={16} /> : soort === 'ok' ? <CheckCircle2 size={16} /> : <Loader2 size={16} />}
       <span>{children}</span>
     </div>
@@ -322,6 +329,7 @@ export function GhDialoog({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement | null>(null);
+  const isMaquette = useIsMaquette();
 
   useEffect(() => {
     const el = ref.current;
@@ -337,12 +345,29 @@ export function GhDialoog({
     }
   }, [open]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const wortel = document.documentElement;
+    if (open && isMaquette) {
+      wortel.setAttribute('data-gh-dialoog-open', '1');
+    } else if (!document.querySelector('dialog[data-gh-dialoog-open="1"]')) {
+      wortel.removeAttribute('data-gh-dialoog-open');
+    }
+    return () => {
+      if (typeof document !== 'undefined' && !document.querySelector('dialog[data-gh-dialoog-open="1"]')) {
+        document.documentElement.removeAttribute('data-gh-dialoog-open');
+      }
+    };
+  }, [open, isMaquette]);
+
   if (!open) return null;
 
   return (
     <dialog
       ref={ref}
-      className={`gh-dialoog${breed ? ' gh-dialoog-breed' : ''}`}
+      className={`gh-dialoog${breed ? ' gh-dialoog-breed' : ''}${isMaquette ? ' gh-mq-dialoog' : ''}`}
+      data-mq-dienst={isMaquette ? 'github' : undefined}
+      data-gh-dialoog-open={isMaquette ? '1' : undefined}
       aria-label={titel}
       onCancel={(e) => {
         e.preventDefault();
@@ -367,12 +392,13 @@ export function GhDialoog({
 
 /** Tweekleurige regel-voor-regel verschilweergave voor patches en voorvertoningen in de webeditor. */
 export function DiffWeergave({ patch, regels, tr, terugloop = false }: { patch?: string; regels?: DiffRegel[]; tr: Tr; terugloop?: boolean }) {
+  const isMaquette = useIsMaquette();
   const lijst = regels ?? ontleedDiffPatch(patch || '');
   if (!lijst.length) {
     return <p className="gh-sub">{tr('Текстова різниця змін відсутня (двійковий файл або без змін).', 'Geen tekstverschil beschikbaar (binair bestand of ongewijzigd).')}</p>;
   }
   return (
-    <div className="gh-diff-wikkel" data-no-edge-swipe role="region" aria-label={tr('Різниця змін за рядками', 'Regel-voor-regel verschil')}>
+    <div className="gh-diff-wikkel" data-no-edge-swipe data-mq-dienst={isMaquette ? 'github' : undefined} role="region" aria-label={tr('Різниця змін за рядками', 'Regel-voor-regel verschil')}>
       <table className={`gh-diff-tabel${terugloop ? ' is-terugloop' : ''}`}>
         <tbody>
           {lijst.map((r, idx) => (

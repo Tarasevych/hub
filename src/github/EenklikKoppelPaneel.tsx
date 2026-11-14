@@ -163,7 +163,13 @@ export default function EenklikKoppelPaneel({
       );
 
   return (
-    <section className="gh-card gh-eenklik-held" aria-label={tr('Швидке підключення GitHub', 'Snel koppelen met GitHub')}>
+    <section
+      className="gh-card gh-eenklik-held"
+      aria-label={tr('Швидке підключення GitHub', 'Snel koppelen met GitHub')}
+      data-mq-oppervlak="eenklik"
+      data-mq-gekoppeld={gekoppeld ? 'ja' : 'nee'}
+      data-gh-dialoog-open={apparaatOpen ? '1' : undefined}
+    >
       <div className="gh-eenklik-kop">
         <span className="gh-eenklik-tegel" aria-hidden="true">
           <Github size={26} />
@@ -186,14 +192,14 @@ export default function EenklikKoppelPaneel({
       </div>
 
       <div className="gh-eenklik-pijlers">
-        <div className="gh-pijler">
+        <div className="gh-pijler" data-mq-pijler="kluis">
           <ShieldCheck size={16} className="gh-ok" />
           <div>
             <strong>{tr('Ізольований простір', 'Geïsoleerde ruimte')}</strong>
             <span className="gh-sub">{tr('Кожен обліковий запис і технічний контур має власне шифроване сховище й окреме дзеркало.', 'Elk account en technisch profiel heeft een eigen versleutelde kluis en eigen spiegel.')}</span>
           </div>
         </div>
-        <div className="gh-pijler">
+        <div className="gh-pijler" data-mq-pijler="spiegel">
           <Laptop size={16} className="gh-ok" />
           <div>
             <strong>{tr('Синхронізація та пристрої', 'Synchronisatie en apparaten')}</strong>
@@ -213,7 +219,14 @@ export default function EenklikKoppelPaneel({
       ) : null}
 
       <div className="gh-eenklik-rij">
-        <button type="button" className="gh-btn gh-primary gh-btn-groot" disabled={bezig} onClick={() => void startEenklik()}>
+        <button
+          type="button"
+          className="gh-btn gh-primary gh-btn-groot"
+          data-gh-eenklik-start="1"
+          data-mq-actie="primair"
+          disabled={bezig}
+          onClick={() => void startEenklik()}
+        >
           {bezig ? <Loader2 size={16} className="gh-spin" /> : <Github size={16} />}
           {gekoppeld
             ? tr('Перепідключити GitHub в 1 натиск', 'GitHub in 1 klik opnieuw koppelen')
@@ -221,7 +234,13 @@ export default function EenklikKoppelPaneel({
         </button>
 
         {(eenklik?.apparaatCodeKlaar || gekoppeld) ? (
-          <button type="button" className="gh-btn" disabled={apparaatBezig || bezig} onClick={() => void startApparaatCode()}>
+          <button
+            type="button"
+            className="gh-btn"
+            data-mq-actie="apparaat"
+            disabled={apparaatBezig || bezig}
+            onClick={() => void startApparaatCode()}
+          >
             {apparaatBezig ? <Loader2 size={15} className="gh-spin" /> : <Smartphone size={15} />}
             {tr('Увійти за кодом пристрою', 'Aanmelden met apparaatcode')}
           </button>

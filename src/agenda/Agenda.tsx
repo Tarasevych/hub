@@ -37,6 +37,7 @@ import * as client from './agenda-client';
 import { agendaFoutCode, foutCodeTekst } from './abonnement-fouten';
 import { weigeringZinUitFout } from '../../shared/weigering-tekst';
 import './agenda.css';
+import './agenda-maquette.css';
 import { DIEPE_PARAMS, diepeWaarde, wisDiepeParams } from '../../shared/zoek-diepe-link';
 
 type Lang = 'uk' | 'nl';

@@ -17,6 +17,7 @@ import {
   BEVESTIG_FOUT, RISICO_TEKST, STATUS_TEKST, type BevestigKeuze, type BevestigingWeergave,
 } from '../../shared/ai-bevestiging';
 import './bevestigingen.css';
+import './ai-bevestigingen-maquette.css';
 // SEC-002 extensie-02 (g10a-2): bevestigen of weigeren doet alleen de mens (zone voor de extensie + alleen een echte klik).
 import { alleenMens, geenAi } from '../menselijke-actie';
 import { weigeringZinUitFout } from '../../shared/weigering-tekst';

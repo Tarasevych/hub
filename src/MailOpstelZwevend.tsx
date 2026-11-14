@@ -7,6 +7,8 @@ import { registerZone, queueRecompute, bindAvoidanceListeners } from './zwevend-
 const MailNewMessageDialog = lazy(() => import('./MailNieuwBerichtDialoog'));
 import { Plek } from './plaatsing/Plek';
 import './toegankelijk.css'; // focusrand in twee tinten boven willekeurige inhoud
+import './mail/mail-lezer-opstel-maquette.css';
+import { useIsMaquette } from './thema/useThema';
 
 type Props = {
   lang: 'uk' | 'nl';
@@ -17,6 +19,7 @@ type Props = {
 };
 
 export default function MailComposeFloat(p: Props) {
+  const isMaquette = useIsMaquette();
   const t = (uk: string, nl: string) => (p.lang === 'uk' ? uk : nl);
   const [accountId, setAccountId] = useState('');
   const [composeOpen, setComposeOpen] = useState(false);
@@ -86,6 +89,7 @@ export default function MailComposeFloat(p: Props) {
             type="button"
             ref={composeRef}
             className='mail-compose-float'
+            data-maquette={isMaquette ? 'ja' : undefined}
             data-mail-compose-float='1'
             data-vorm={vorm}
             disabled={!accountId}
