@@ -349,8 +349,8 @@ export default function MailKoppelVenster({ lang, id, aanbieder, adres, stap, kl
         </header>
         {inhoud()}
         {fout ? (
-          <div className='mail-koppel-fout' role='alert' style={{ display: 'grid', gap: 10 }}>
-            <span>{fout}</span>
+          <div className='mail-koppel-fout' style={{ display: 'grid', gap: 10 }}>
+            <p style={{ margin: 0 }} role='alert'>{fout}</p>
             {foutCode === 'SLEUTELKLUIS_GESLOTEN' ? (
               <a
                 className='mail-koppel-actie-knop is-hoofd'
