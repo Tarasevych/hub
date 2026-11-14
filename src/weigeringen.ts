@@ -106,3 +106,20 @@ export function foutNaarTekst(e: unknown): Paar | null {
   if (code === 'RATE_LIMITED') { const m = minuten(e); return [`Забагато спроб. Спробуйте ${m ? `через ~${m} хв` : 'пізніше'}.`, `Te veel pogingen. Probeer het ${m ? `over ~${m} min.` : 'later'} opnieuw.`]; }
   return ALGEMEEN[code] || null;
 }
+
+// IDENTITEIT-014: вивантаження даних (POST /api/owner/privacy/export). Власні тексти для ліміту й сеансу: deelWeigering відповів би
+// на RATE_LIMITED текстом про запрошення, а OWNER_IDENTITY_SESSION_REQUIRED загальна таблиця не знає. Решта — через foutNaarTekst.
+// Export van gegevens: eigen tekst voor de limiet (5 per uur, met wachttijd) en voor een ontbrekende sessie; de rest via foutNaarTekst.
+export const UITVOER_PER_UUR = 5;
+export function uitvoerWeigering(e: unknown): Paar | null {
+  const code = volleCode(e);
+  if (code === 'RATE_LIMITED') {
+    const m = minuten(e);
+    return [
+      `Вивантажувати дані можна до ${UITVOER_PER_UUR} разів на годину — цей файл не створено. Спробуйте ${m ? `через ~${m} хв` : 'пізніше'}.`,
+      `U kunt tot ${UITVOER_PER_UUR} keer per uur exporteren — dit bestand is niet gemaakt. Probeer het ${m ? `over ~${m} min.` : 'later'} opnieuw.`,
+    ];
+  }
+  if (code === 'OWNER_IDENTITY_SESSION_REQUIRED') return ['Сеанс налаштувань закінчився або обліковий запис ще не схвалено. Увійдіть знову — після цього дані можна буде вивантажити.', 'De sessie van de instellingen is verlopen of het account is nog niet goedgekeurd. Meld u opnieuw aan — daarna kunt u de gegevens exporteren.'];
+  return foutNaarTekst(e);
+}

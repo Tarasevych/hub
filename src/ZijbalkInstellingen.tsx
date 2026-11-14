@@ -3,12 +3,14 @@
 import {useState,type ReactElement,type ReactNode} from 'react';
 import {BevestigDialoog} from './platform/BevestigDialoog'; // IDENTITEIT-013
 import {conceptAantal} from './concepten';
-import {BellRing,ChevronDown,Eye,Gauge,Move,MousePointer2,Palette,PanelLeftClose,PanelLeftOpen,Zap} from 'lucide-react';
+import {BellRing,ChevronDown,SlidersHorizontal,Eye,Gauge,Move,MousePointer2,Palette,PanelLeftClose,PanelLeftOpen,Zap} from 'lucide-react';
 import type {SnelheidVoorkeuren} from '../shared/menu-snelheid';
 import {CATEGORIE_TEKST,HERINNER_MINUTEN,MELDING_CATEGORIEEN,type MeldingVoorkeuren} from '../shared/menu-meldingen-voorkeuren';
 import {DIENST_ACCENT,type IcoonStijl,type ZijbalkModus} from '../shared/menu-model';
 import {MenuGlyph} from './menu-voorkeuren';
 import {useZijbalkVoorkeuren,zetZijbalk} from './zijbalk-voorkeuren';
+import MeldingVoorkeurenPaneel from './meldingen/MeldingVoorkeurenPaneel'; // IDENTITEIT-014: «Типи сповіщень» і тут, не лише в дзвонику
+import {useTech} from './tech/tech-opslag';
 import MenuIndelingInstellingen from './MenuIndelingInstellingen';
 import SnelleToegangEditor from './SnelleToegangBewerker';
 import type {AccountRechten} from './account-rechten';
@@ -22,6 +24,7 @@ const VOORBEELD=[['hub','home'],['mail','mail'],['cloud','cloud'],['identity','s
 
 export default function ZijbalkInstellingen({tr,zichtbaarheid,rechten}:{tr:Tr;zichtbaarheid?:ReactNode;rechten?:AccountRechten}){
   const v=useZijbalkVoorkeuren(),m=v.meldingen;
+  const tech=useTech(); // технічні типи сповіщень — лише з технічним профілем (як у дзвонику)
   const sn=v.snelheid,zetS=(patch:Partial<SnelheidVoorkeuren>)=>zetZijbalk(cur=>({...cur,snelheid:{...cur.snelheid,...patch}}));
   // IDENTITEIT-013: вимкнення «Чернеток» одразу стирає всі збережені чернетки цього браузера — тому спершу підтвердження з їхньою кількістю.
   const lang=tr('uk','nl') as 'uk'|'nl';
@@ -86,11 +89,15 @@ export default function ZijbalkInstellingen({tr,zichtbaarheid,rechten}:{tr:Tr;zi
           <span className='zijbalk-meldingen-tijden'><input type='time' aria-label={tr('Від','Van')} value={m.stil.van} disabled={!m.aan||!m.stil.aan} onChange={e=>zetM({stil:{...m.stil,van:e.target.value}})}/>–<input type='time' aria-label={tr('До','Tot')} value={m.stil.tot} disabled={!m.aan||!m.stil.aan} onChange={e=>zetM({stil:{...m.stil,tot:e.target.value}})}/></span>
         </div>
         <fieldset className='zijbalk-meldingen-cat'>
-          <legend>{tr('Типи сповіщень','Soorten meldingen')}</legend>
+          <legend>{tr('Категорії міток у меню','Categorieën van menubadges')}</legend>
           {MELDING_CATEGORIEEN.map(c=><label key={c} className='zijbalk-cat' data-meld-categorie={c}><input type='checkbox' checked={m.categorieen[c]} disabled={!m.aan} onChange={e=>zetM({categorieen:{...m.categorieen,[c]:e.target.checked}})}/><span className='menu-badge punt' data-categorie={c} aria-hidden='true'/>{tr(...CATEGORIE_TEKST[c])}</label>)}
         </fieldset>
       </div>
     </fieldset>
+    </Blok>
+    {/* IDENTITEIT-014: як показувати кожен тип сповіщення (звук, спливне вікно, тривалість) — те саме сховище, що в дзвонику. */}
+    <Blok id='menu-meldingtypen' icoon={<SlidersHorizontal/>} titel={tr('Типи сповіщень','Soorten meldingen')} uitleg={tr('Для кожного типу: зі звуком, лише спливне вікно чи лише в панелі, і скільки висить','Per soort: met geluid, alleen pop-up of alleen in het paneel, en hoe lang hij blijft staan')}>
+      <MeldingVoorkeurenPaneel lang={lang} techTypen={!!tech.profiel}/>
     </Blok>
     <Blok id='menu-snelheid' icoon={<Gauge/>} titel={tr('Швидкість переходів і чернетки','Snelheid van overgangen en concepten')} uitleg={tr('Смужка завантаження, плавні переходи, підвантаження','Laadbalk, vloeiende overgangen, vooraf laden')}>
     <fieldset className='zijbalk-meldingen zijbalk-snelheid' data-menu-snelheid-instellingen>

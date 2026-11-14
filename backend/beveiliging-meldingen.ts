@@ -8,7 +8,8 @@ export type BeveiligingsWijziging =
   | 'wachtwoord-gezet' | 'totp-uit' | 'passkey-weg' | 'stap-op-onthouden' | 'wachtwoord-door-beheer'
   | 'ai-token' | 'ai-token-ingetrokken' | 'kluis' | 'account-bekeken' | 'github-webhook-uit'
   | 'consent-andere-browser' | 'json-vereist'
-  | 'aanmeldmethode-gekoppeld' | 'aanmeldmethode-ontkoppeld'; // IDENTITEIT-012
+  | 'aanmeldmethode-gekoppeld' | 'aanmeldmethode-ontkoppeld' // IDENTITEIT-012
+  | 'gegevens-uitgevoerd'; // IDENTITEIT-014
 
 const NIET_JIJ = 'Якщо це були не ви — одразу завершіть інші сеанси на сторінці безпеки й змініть доступ. / Was u dit niet? Beëindig meteen de andere sessies op de beveiligingspagina en wijzig uw toegang.';
 
@@ -30,6 +31,8 @@ const TEKSTEN: Record<BeveiligingsWijziging, (x: Record<string, string>) => [str
   // IDENTITEIT-012: зовнішній спосіб входу (Microsoft, Discord, Apple, Telegram) прив'язано або відв'язано.
   'aanmeldmethode-gekoppeld': (x) => ['Прив’язано зовнішній спосіб входу / Externe aanmeldmethode gekoppeld', `До облікового запису прив’язано ${x.aanbieder || '—'}${x.label ? ` (${x.label})` : ''}. / ${x.aanbieder || '—'}${x.label ? ` (${x.label})` : ''} is aan uw account gekoppeld. ${NIET_JIJ}`],
   'aanmeldmethode-ontkoppeld': (x) => ['Відв’язано зовнішній спосіб входу / Externe aanmeldmethode ontkoppeld', `Від облікового запису відв’язано ${x.aanbieder || '—'}. / ${x.aanbieder || '—'} is van uw account ontkoppeld. ${NIET_JIJ}`],
+  // IDENTITEIT-014: вивантажено всі дані облікового запису (POST /api/owner/privacy/export). Alle gegevens van het account geëxporteerd.
+  'gegevens-uitgevoerd': () => ['Ваші дані вивантажено у файл / Uw gegevens zijn geëxporteerd', `Після підтвердження доступу завантажено файл з усіма даними облікового запису, зокрема з журналом безпеки. / Na bevestiging van toegang is een bestand met alle gegevens van het account gedownload, ook het beveiligingslogboek. ${NIET_JIJ}`],
   'account-bekeken': (x) => ['Ваш обліковий запис переглянуто для діагностики / Uw account is bekeken voor diagnose', `Адміністратор (${x.wie || '—'}) переглянув ${x.wat || 'дані вашого облікового запису'} у технічній діагностиці. / Een beheerder (${x.wie || '—'}) bekeek ${x.watNl || 'gegevens van uw account'} in de technische diagnose.`],
 };
 
