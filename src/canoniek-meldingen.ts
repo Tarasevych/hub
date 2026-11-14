@@ -204,6 +204,20 @@ export const AUTO_SECONDEN: Record<CanonicalNoticeKind, number> = {
   warning: STANDAARD_POPUP_SECONDEN,
   error: STANDAARD_POPUP_SECONDEN,
 };
+/**
+ * IDENTITEIT-015 (bel): telt een pop-up als «gelezen» zodra hij op het scherm staat?
+ * Ja voor alles — behalve een BEVEILIGINGSmelding van de SERVER (`s:…`, kritiek type: «Код доступу «…» використано вперше»,
+ * «Новий passkey», «Це були ви?»). Die gebeurde elders (een gast, een ander apparaat) en vraagt mogelijk een handeling
+ * («якщо це не та людина — відкличте код»). Vroeger maakte de pop-up van 3–8 s haar meteen gelezen: in de bel stond ze dan in
+ * «Прочитані», terwijl het paneel op «Нові» opent — de eigenaar vond de melding niet. Nu blijft zij «нова» tot de eigenaar haar
+ * in het paneel ziet, de pop-up zelf sluit (×) of «Очистити» kiest.
+ * Безпекове сповіщення сервера не стає прочитаним лише від того, що спливне вікно промайнуло: воно лишається в «Нові».
+ */
+export function leesBijTonen(m: { type?: MeldingType; meldingId?: string; serverId?: string }, isKritiek: (t: MeldingType) => boolean): boolean {
+  const server = !!m.serverId || !!m.meldingId?.startsWith('s:');
+  return !(server && m.type && isKritiek(m.type));
+}
+
 export function popupLevensduurMs(voorkeur: PopupVoorkeur, _text?: string, _explain?: string, kind: CanonicalNoticeKind = 'info'): number | null {
   if (voorkeur.vast) return null;
   const seconden = voorkeur.seconden > 0 ? Math.max(STANDAARD_POPUP_SECONDEN, voorkeur.seconden) : (AUTO_SECONDEN[kind] ?? STANDAARD_POPUP_SECONDEN);
