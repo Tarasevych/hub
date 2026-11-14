@@ -309,7 +309,7 @@
     ],
     "herkomst": "Нова можливість макета v49 (група «стан: макет»).",
     "maquetteLabel": "Частково реалізовано",
-    "versie": "HEAD кроку apparaten-uitvoer",
+    "versie": "ab27fdd6",
     "omgeving": "випробувальне середовище",
     "staatNa": "працює в цьому оформленні",
     "resultaat": "«Сесії та пристрої» → блок #sessies-nieuw-apparaat: вибір «Завжди» (типово) / «! Вимкнено» з поясненням ризику. Вибір — поле nieuwApparaatMelding облікового запису (старі записи без поля = «Завжди»), однаковий на всіх пристроях. Вимкнення: BevestigDialoog → POST /api/owner/identity/apparaten/melding зі step-up «apparaat-melding-uit» (ніколи не запам’ятовується), аудит owner.apparaat.melding, сповіщення безпеки; повторне натискання — gewijzigd:false без нового сповіщення; ліміт 20 змін/год. Увімкнення — без step-up, з аудитом і сповіщенням. backend/nieuw-apparaat.ts при «Вимкнено» не надсилає спливного сповіщення (результат «stil»), але пише owner.apparaat.nieuw у журнал безпеки."
@@ -343,7 +343,7 @@
     ],
     "herkomst": "Серверна частина UI-014 фаза 2A; працює поза «Сесіями» — у центрі сповіщень.",
     "maquetteLabel": "Частково реалізовано",
-    "versie": "HEAD кроку apparaten-uitvoer",
+    "versie": "ab27fdd6",
     "omgeving": "випробувальне середовище",
     "staatNa": "потребує налаштування власника",
     "resultaat": "З увімкненими прапорцями й вибором «Завжди» другий новий пристрій дає сповіщення «Новий вхід на новому пристрої» і запис owner.apparaat.nieuw (melding=gemeld); з вибором «Вимкнено» — лише запис (uit-door-keuze); без прапорця — лише запис (geen-vlag). Перший пристрій облікового запису — тиха база.",
@@ -376,7 +376,7 @@
     ],
     "herkomst": "Теперішнє місце — центр сповіщень (UI-014), не розділ «Сесії».",
     "maquetteLabel": "Частково реалізовано",
-    "versie": "HEAD кроку apparaten-uitvoer",
+    "versie": "ab27fdd6",
     "omgeving": "випробувальне середовище",
     "staatNa": "працює в цьому оформленні",
     "resultaat": "Крім картки сповіщення, «Це був я» тепер є в переліку відомих пристроїв у «Сесіях» (POST /api/owner/identity/apparaten/bevestigen: лише власні рядки, аудит owner.apparaat.bevestigd один раз); позначка «Підтверджено вами <дата>». Посилання зі сповіщення (/sessions?apparaat=<id>) підсвічує саме цей пристрій."
@@ -405,7 +405,7 @@
     ],
     "herkomst": "Нова вимога плану (етап 2.4, «Прогалини»: перелік відомих пристроїв).",
     "maquetteLabel": "Частково реалізовано",
-    "versie": "HEAD кроку apparaten-uitvoer",
+    "versie": "ab27fdd6",
     "omgeving": "випробувальне середовище",
     "staatNa": "працює в цьому оформленні",
     "resultaat": "POST /api/owner/identity/apparaten/lijst — власні рядки app.bekende_apparaten (до 100), «Цей пристрій» за хешем cookie пристрою, дати першого й останнього входу, підтвердження. «Забути пристрій»: BevestigDialoog → POST …/apparaten/vergeten зі step-up «apparaat-vergeten» (ніколи не запам’ятовується), аудит owner.apparaat.vergeten, сповіщення безпеки; чужий id нічого не видаляє; повтор — vergeten:false без нового сповіщення; ліміт 30/год. Наступний вхід із забутого пристрою знову дає попередження."

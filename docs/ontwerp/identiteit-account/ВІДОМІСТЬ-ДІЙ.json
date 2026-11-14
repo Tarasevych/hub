@@ -1692,7 +1692,7 @@
    ],
    "herkomst": "Позиція v49 («макет» у атласі).",
    "maquetteLabel": "Частково реалізовано (кнопка переходу до #gegevensuitvoer)",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
    "resultaat": "У #gegevensuitvoer є вибір «Формат файлу»: «Структурований (JSON)» — типовий, дає mijn-ruimte-export-<дата>.json (поведінка й тіло запиту без змін)."
@@ -1720,7 +1720,7 @@
    ],
    "herkomst": "Позиція v49; план «Прогалини»: «CSV-вивантаження».",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
    "resultaat": "«Табличний (ZIP із CSV)»: POST /api/owner/privacy/export {formaat:\"zip\"} — ті самі дані без секретів (zonderGeheimen), по CSV на таблицю (tabellen/<таблиця>.csv), bestanden.csv, beveiligingslog.csv, LEESMIJ.txt; CSV з BOM і CRLF, вкладені поля — стовпці «батько.поле», формули знешкоджено апострофом; ZIP — fflate (наявна залежність), base64 у JSON. Файл mijn-ruimte-export-<дата>.zip. Step-up, ліміт 5/год (спільний із JSON), аудит із formaat=zip і сповіщення — як для JSON."
@@ -1752,7 +1752,7 @@
    ],
    "herkomst": "Позиція v49 → компонент Gegevensuitvoer (IDENTITEIT-014).",
    "maquetteLabel": "Працює (кнопка переходу до #gegevensuitvoer)",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
    "resultaat": "Стан «Готую файл… (не закривайте сторінку) → Готово: файл «…» (розмір, кількість таблиць) → Зберегти файл ще раз» (той самий файл без нового запиту й без витрати ліміту); повторне натискання під час підготовки нічого не надсилає вдруге."
@@ -1783,7 +1783,7 @@
    ],
    "herkomst": "Додаткове місце тієї ж дії (IDENTITEIT-014).",
    "maquetteLabel": "Працює",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
    "resultaat": "Компактна кнопка в зоні видалення лишилася JSON-only (без вибору формату), той самий маршрут, step-up і ліміт."
@@ -7634,7 +7634,7 @@
    ],
    "herkomst": "Нова можливість макета v49 (група «стан: макет»).",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
    "resultaat": "«Сесії та пристрої» → блок #sessies-nieuw-apparaat: вибір «Завжди» (типово) / «! Вимкнено» з поясненням ризику. Вибір — поле nieuwApparaatMelding облікового запису (старі записи без поля = «Завжди»), однаковий на всіх пристроях. Вимкнення: BevestigDialoog → POST /api/owner/identity/apparaten/melding зі step-up «apparaat-melding-uit» (ніколи не запам’ятовується), аудит owner.apparaat.melding, сповіщення безпеки; повторне натискання — gewijzigd:false без нового сповіщення; ліміт 20 змін/год. Увімкнення — без step-up, з аудитом і сповіщенням. backend/nieuw-apparaat.ts при «Вимкнено» не надсилає спливного сповіщення (результат «stil»), але пише owner.apparaat.nieuw у журнал безпеки."
@@ -7668,7 +7668,7 @@
    ],
    "herkomst": "Серверна частина UI-014 фаза 2A; працює поза «Сесіями» — у центрі сповіщень.",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "потребує налаштування власника",
    "resultaat": "З увімкненими прапорцями й вибором «Завжди» другий новий пристрій дає сповіщення «Новий вхід на новому пристрої» і запис owner.apparaat.nieuw (melding=gemeld); з вибором «Вимкнено» — лише запис (uit-door-keuze); без прапорця — лише запис (geen-vlag). Перший пристрій облікового запису — тиха база.",
@@ -7701,7 +7701,7 @@
    ],
    "herkomst": "Теперішнє місце — центр сповіщень (UI-014), не розділ «Сесії».",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
    "resultaat": "Крім картки сповіщення, «Це був я» тепер є в переліку відомих пристроїв у «Сесіях» (POST /api/owner/identity/apparaten/bevestigen: лише власні рядки, аудит owner.apparaat.bevestigd один раз); позначка «Підтверджено вами <дата>». Посилання зі сповіщення (/sessions?apparaat=<id>) підсвічує саме цей пристрій."
@@ -7730,7 +7730,7 @@
    ],
    "herkomst": "Нова вимога плану (етап 2.4, «Прогалини»: перелік відомих пристроїв).",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "HEAD кроку apparaten-uitvoer",
+   "versie": "ab27fdd6",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
    "resultaat": "POST /api/owner/identity/apparaten/lijst — власні рядки app.bekende_apparaten (до 100), «Цей пристрій» за хешем cookie пристрою, дати першого й останнього входу, підтвердження. «Забути пристрій»: BevestigDialoog → POST …/apparaten/vergeten зі step-up «apparaat-vergeten» (ніколи не запам’ятовується), аудит owner.apparaat.vergeten, сповіщення безпеки; чужий id нічого не видаляє; повтор — vergeten:false без нового сповіщення; ліміт 30/год. Наступний вхід із забутого пристрою знову дає попередження."
