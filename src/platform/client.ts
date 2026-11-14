@@ -253,6 +253,9 @@ async function requestKern(method: string, url: string, data: unknown, opnieuw: 
   const antwoordCode = parsed && typeof parsed === 'object' ? String((parsed as { error?: unknown }).error || (parsed as { reasonCode?: unknown }).reasonCode || '') : '';
   const poortVlag = parsed && typeof parsed === 'object' && typeof (parsed as { codewoordPoort?: unknown }).codewoordPoort === 'boolean' ? (parsed as { codewoordPoort: boolean }).codewoordPoort : undefined;
   if (poortVlag !== undefined && typeof window !== 'undefined') void import('../geheim/codewoord-poort-brug').then((m) => m.zetCodewoordPoort(poortVlag));
+  // IDENTITEIT-015: ворота «другий чинник обов'язковий» — той самий шлях, що й для кодового слова (поле bootstrap).
+  const tweedeVlag = parsed && typeof parsed === 'object' && typeof (parsed as { tweedeFactorPoort?: unknown }).tweedeFactorPoort === 'boolean' ? (parsed as { tweedeFactorPoort: boolean }).tweedeFactorPoort : undefined;
+  if (tweedeVlag !== undefined && typeof window !== 'undefined') void import('../geheim/tweede-factor-poort-brug').then((m) => m.zetTweedeFactorPoort(tweedeVlag));
   meldServerAntwoord(response.status, { route, code: antwoordCode || `HTTP_${response.status}`, lichaam: response.ok ? '' : text });
   // Ruimtes-scheiding: elk antwoord met kop X-Ruimte of een 401/403 gaat als gebeurtenis naar src/tech/ruimtes/ruimtes-opslag.ts,
   // die dan de controle-route vraagt en de uitleg toont. Zonder vlag stuurt de server geen kop en blijft alleen 401/403 over (onschuldig).

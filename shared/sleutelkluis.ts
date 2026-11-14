@@ -145,6 +145,9 @@ export const KLUIS_FOUT: Readonly<Record<string, { uk: string; nl: string }>> = 
   SLEUTELKLUIS_TE_VAAK: { uk: 'Цю дію виконано забагато разів за короткий час. Спробуйте пізніше.', nl: 'Deze actie is te vaak uitgevoerd in korte tijd. Probeer het later opnieuw.' },
   SLEUTELKLUIS_BEZET: { uk: 'Сервер зараз зайнятий обчисленням ключів. Спробуйте за хвилину.', nl: 'De server is nu bezet met het berekenen van sleutels. Probeer het over een minuut opnieuw.' },
   SLEUTELKLUIS_HEEFT_OMSLAGEN: { uk: 'Скинути можна лише ключ без жодного способу відкриття. У цього ключа вони є — розблокуйте його passkey або кодом відновлення.', nl: 'Terugzetten kan alleen voor een sleutel zonder enige manier om hem te openen. Deze sleutel heeft die wel — ontgrendel hem met een passkey of de herstelcode.' },
+  // IDENTITEIT-015: повторне шифрування кроками з продовженням.
+  HERVERSLEUTELEN_BEZIG: { uk: 'Повторне шифрування вже триває в іншій вкладці. Дочекайтеся завершення — перебіг оновиться тут.', nl: 'Het herversleutelen loopt al in een ander tabblad. Wacht tot het klaar is — de voortgang verschijnt hier.' },
+  HERVERSLEUTELEN_NIETS_TE_HERVATTEN: { uk: 'Незавершеного повторного шифрування немає. Щоб почати знову, натисніть «Перешифрувати мої дані зараз».', nl: 'Er is geen onafgemaakt herversleutelen. Kies «Mijn gegevens nu herversleutelen» om opnieuw te beginnen.' },
   STEP_UP_REQUIRED: { uk: '', nl: '' },
   STEP_UP_STRONG_REQUIRED: { uk: '', nl: '' },
 });

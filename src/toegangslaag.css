@@ -292,3 +292,5 @@ p.access-plane-notice.access-plane-subrow,p.access-plane-lockout.access-plane-su
   :is(.access-plane,.access-plane-section) label.toegangscode-scope,:is(.access-plane,.access-plane-section) label.toegangscode-keuze{width:100%;border-radius:var(--straal-m,10px)}
   :is(.access-plane,.access-plane-section) .toegangscode-verloop input[type=datetime-local]{max-width:100%;width:100%}
 }
+/* IDENTITEIT-015: перебіг повторного шифрування «оброблено N з M» */
+.sleutelkluis-voortgang{display:grid;gap:.3rem;margin:.4rem 0}.sleutelkluis-voortgang progress{width:100%;height:.6rem;accent-color:var(--accent)}

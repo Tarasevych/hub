@@ -204,9 +204,17 @@ export function sleutelkluisRoutes(deps: SleutelkluisRouteDeps): Record<string, 
       await ontgrendelMetPasskey(lade, String(rij.id), b.dek, houder(a));
       return { ok: true, stand: 'open' };
     })],
-    [`POST ${P}/herversleutelen`]: [route({ sterk: true }, async (a, lade) => {
+    // IDENTITEIT-015 (етап 1.3): старт скидає перебіг; maxTabellen — скільки таблиць за цей запит (сторінка робить кроки по одній
+    // й показує «оброблено N з M»). Без maxTabellen — усе одразу, як раніше.
+    [`POST ${P}/herversleutelen`]: [route({ sterk: true }, async (a, lade, b) => {
       await begrens(a, 'herversleutelen', 6, 3600);
-      return { ok: true, ...(await herversleutelen(lade)) };
+      return { ok: true, ...(await herversleutelen(lade, { maxTabellen: Number(b.maxTabellen) || undefined })) };
+    })],
+    // «Продовжити»: лише ще не оброблені таблиці роботи, яку вже підтвердили сильним step-up на старті (перериванням вважається
+    // закритий ключ або закрита вкладка). Потрібні відкритий ключ і незавершений стан; власний ліміт, бо одна робота = M кроків.
+    [`POST ${P}/herversleutelen/verder`]: [route({}, async (a, lade, b) => {
+      await begrens(a, 'herversleutelen-verder', 240, 3600);
+      return { ok: true, ...(await herversleutelen(lade, { verder: true, maxTabellen: Number(b.maxTabellen) || undefined })) };
     })],
   };
 }

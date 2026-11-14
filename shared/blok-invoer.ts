@@ -4,7 +4,7 @@
 
 export const BLOK_GRENZEN = { titel: 120, omschrijving: 500, url: 2048 } as const;
 
-export type BlokInvoerFout = 'BLOK_URL_ONGELDIG' | 'BLOK_TITEL_TE_LANG' | 'BLOK_OMSCHRIJVING_TE_LANG';
+export type BlokInvoerFout = 'BLOK_URL_ONGELDIG' | 'BLOK_TITEL_TE_LANG' | 'BLOK_OMSCHRIJVING_TE_LANG' | 'BLOK_URL_VEREIST';
 
 /** Порожнє посилання дозволене (внутрішній блок); інакше лише https:, без user:pass@, без пробілів і керівних символів. */
 export function veiligeBlokUrl(waarde: unknown): { ok: true; url: string } | { ok: false; fout: BlokInvoerFout } {
@@ -15,6 +15,16 @@ export function veiligeBlokUrl(waarde: unknown): { ok: true; url: string } | { o
   try { adres = new URL(tekst); } catch { return { ok: false, fout: 'BLOK_URL_ONGELDIG' }; }
   if (adres.protocol !== 'https:' || adres.username || adres.password || !adres.hostname) return { ok: false, fout: 'BLOK_URL_ONGELDIG' };
   return { ok: true, url: adres.href };
+}
+
+/**
+ * IDENTITEIT-015 (етап 1.2): зовнішній блок (sourceType ≠ 'internal') без посилання нічого не відкриває — сервер вимагає url під час
+ * додавання й не дає стерти його під час зміни. Внутрішній блок бере адресу сервісу сам, посилання йому не потрібне.
+ * Een extern blok zonder link opent niets: de server eist een url.
+ */
+export function blokUrlVereistFout(sourceType: unknown, url: unknown): 'BLOK_URL_VEREIST' | null {
+  if (sourceType === 'internal') return null;
+  return typeof url === 'string' && url.trim() ? null : 'BLOK_URL_VEREIST';
 }
 
 /** Перевіряє назву, опис і посилання блоку. Повертає перший код помилки або null. */

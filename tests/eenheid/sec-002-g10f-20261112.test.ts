@@ -375,7 +375,8 @@ async function beveiligingsMeldingen(check: Check) {
   const mc = lees('backend/mcp-console.ts');
   check('privacy-logboek-03: een AI-token uitgeven en intrekken geeft een melding', /meldBeveiligingsWijziging\(auth\.user\.id, "ai-token"/.test(mc) && /meldBeveiligingsWijziging\(auth\.user\.id, "ai-token-ingetrokken"/.test(mc));
   const sk = lees('backend/sleutelkluis.ts');
-  check('privacy-logboek-03: sleutelkluis (aan, herstelcode vernieuwd, geopend met herstelcode, passkey gekoppeld) meldt het', (sk.match(/meldBeveiligingsWijziging\(lade\.userId, 'kluis'/g) || []).length === 4);
+  // IDENTITEIT-015: п'ята подія — завершене повторне шифрування (herversleutelen, етап 1.3) теж надходить у центр сповіщень.
+  check('privacy-logboek-03: sleutelkluis (aan, herstelcode vernieuwd, geopend met herstelcode, passkey gekoppeld, herversleuteld) meldt het', (sk.match(/meldBeveiligingsWijziging\(lade\.userId, 'kluis'/g) || []).length === 5);
   const bd = lees('backend/beheer-diagnostiek.ts');
   check('privacy-logboek-03: beide inzage-routes van de diagnose roepen meldInzage aan', (bd.match(/await meldInzage\(/g) || []).length === 2);
 }

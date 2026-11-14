@@ -102,8 +102,12 @@ const deel = (bron: string, van: string, tot: string) => {
 
 export async function main() {
   const index = lees('backend/index.ts');
-  const zelf = deel(index, "'POST /api/account/delete'", "'POST /api/account/recover'");
-  const ident = deel(index, "'POST /api/owner/identity/account/delete'", "'POST /api/owner/identity/account/workspaces");
+  // IDENTITEIT-015 (етап 1.1): старий /api/account/delete закрито (410, VEROUDERDE_ROUTE_WEG) — hub і id.* ходять на
+  // /api/owner/identity/account/delete. Тому всі вимоги нижче тепер перевіряються на ЄДИНОМУ маршруті видалення (ident), а для
+  // старого — що він справді 410. Фрагмент законно переїхав; перевірки не послаблено.
+  const zelf = deel(index, "'POST /api/owner/identity/account/delete'", "'POST /api/owner/identity/account/workspaces");
+  const ident = zelf;
+  check('IDENTITEIT-015: старі /api/account/{delete,recover,workspaces/:id/restore} → 410', /'POST \/api\/account\/delete': VEROUDERDE_ROUTE_WEG/.test(index) && /'POST \/api\/account\/recover': VEROUDERDE_ROUTE_WEG/.test(index) && /'POST \/api\/account\/workspaces\/:id\/restore': VEROUDERDE_ROUTE_WEG/.test(index));
   // INTEG-001 (03.11.2026, besluit eigenaar): zelf verwijderen = 30 dagen herstelbaar, daarna automatisch definitief (opruimen-timer).
   check('zelf verwijderen (account en identiteit) loopt via deleteRecoverably (30 dagen)', zelf.includes('deleteRecoverably') && ident.includes('deleteRecoverably'));
   check('zelf verwijderen wist niet meteen (geen accountMeteenWissen in de routes)', !zelf.includes('accountMeteenWissen') && !ident.includes('accountMeteenWissen'));
@@ -118,7 +122,8 @@ export async function main() {
   check('na 30 dagen: afronden via accountMeteenWissen (volledig), droog via accountWisTelling, één fout stopt de rest niet',
     afronden.includes('accountMeteenWissen(k.id, email, nu)') && afronden.includes('accountWisTelling(k.id)') && afronden.includes('catch (e)')
     && !/await wisRecordsVanAccount\(/.test(afronden) && lees('backend/opruimen.ts').includes('verlopenVerwijderingenAfronden()'));
-  check('deleteRecoverably: 3 aanroepen (zelf, identiteit, beheerder)', (index.match(/await deleteRecoverably\(/g) || []).length === 3);
+  // IDENTITEIT-015: два виклики — самостійне видалення (один маршрут для hub і id.*) і адміністратор; старий маршрут — 410.
+  check('deleteRecoverably: 2 aanroepen (zelf via identiteit/hub, beheerder)', (index.match(/await deleteRecoverably\(/g) || []).length === 2);
   check('ворота кодового слова не знято', index.includes('CODEWOORD_POORT'));
   check('зворотний Google імпортує googleSuiteStateParts', index.includes("from './google-suite-inrichting'") && index.includes('googleSuiteStateParts') && index.includes('googleSuiteCallbackPost'));
 

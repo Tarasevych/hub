@@ -16,6 +16,8 @@ import {actieVan,gebruikVastleggen,gebruikVoor,registreerMethodenBron,sterkeStap
 import {kritiekeActie} from '../shared/kritieke-acties';
 import {stapOpKanalen} from './apparaat-bevestiging/kanalen'; /* APPARAAT-001 */
 import {magEigenToegang} from '../shared/eigen-toegang'; /* IDENTITEIT-012 */
+import {registreerTweedeFactorBeleid,tweedeFactorBeleidVergeten,tweedeFactorBevestigdOp,tweedeFactorVers} from './tweede-factor-poort';
+import {codewoordSessieId} from '../shared/codewoord-poort'; /* IDENTITEIT-015: правило mfa діє під час входу */
 
 const scryptAsync=promisify(scrypt) as (password:string,salt:Buffer|string,keylen:number,options?:import('node:crypto').ScryptOptions)=>Promise<Buffer>;
 export const METHOD_IDS=['google','password','microsoft','apple','facebook','phone','totp','recovery','webauthn','push'] as const;
@@ -193,6 +195,8 @@ async function recoveryFor(userId:string){
   const rows=await db.list<Omit<RecoveryRecord,'id'>>(RECOVERY,{filter:{userId},limit:5});
   return(rows.items as RecoveryRecord[])[0]||null;
 }
+// IDENTITEIT-015: ворота входу (backend/tweede-factor-poort.ts) читають правило звідси, без циклу імпортів.
+registreerTweedeFactorBeleid(async()=>(await policyOf()).mfa);
 // §13.10: welke «sterke» methoden heeft iemand? Dan telt Google alleen niet als step-up voor het intrekken van rechten.
 registreerMethodenBron(async(userId)=>{
   const[p,t,h]=await Promise.all([passkeyAantal(userId).catch(()=>0),totpFor(userId),recoveryFor(userId)]);
@@ -823,9 +827,21 @@ export function createAccessPlaneRoutes(deps:{
       const stap=await stapOp(auth);if(stap)return stap;
       const body=deps.body(ctx.body);
       const enabled=(body.enabled&&typeof body.enabled==='object'?body.enabled:{}) as Partial<Record<MethodId,boolean>>;
-      const next=await writePolicy(enabled,body.mfa==='required'?'required':'optional');
-      await deps.audit(auth.user.id,'access.policy.save','success',{mfa:next.mfa});
-      return deps.respond({ok:true,...await accessSnapshot(auth.user,true)}); // de momentopname bevat het beleid al (en overschreef het eerder opgegeven beleid ook al)
+      const mfa=body.mfa==='required'?'required':'optional';
+      /* IDENTITEIT-015: правило «другий чинник обов'язковий» діє під час входу. Вмикає його лише той, хто сам має другий чинник
+         (TOTP або ключ доступу): інакше власник одразу втратив би перевірку, яку вимагає від інших. Is.: alleen met een eigen tweede factor. */
+      const vorig=(await policyOf()).mfa;
+      if(mfa==='required'&&vorig!=='required'){const[t,p]=await Promise.all([totpFor(auth.user.id),passkeyAantal(auth.user.id).catch(()=>0)]);if(!t?.confirmed&&p<=0){await deps.audit(auth.user.id,'access.policy.save','denied',{mfa,reden:'geen-eigen-tweede-factor'});return deps.fail('ACCESS_MFA_EIGEN_FACTOR_VEREIST',409);}}
+      const next=await writePolicy(enabled,mfa);
+      tweedeFactorBeleidVergeten();
+      await deps.audit(auth.user.id,'access.policy.save','success',{mfa:next.mfa,vorig});
+      if(next.mfa!==vorig)await meldBeveiligingsWijziging(auth.user.id,next.mfa==='required'?'tweede-factor-verplicht':'tweede-factor-vrij');
+      /* IDENTITEIT-015: якщо власник підтвердив збереження не другим чинником (наприклад, Google), його поточний вхід тепер теж
+         за воротами — відповідь одразу каже про це клієнту (src/platform/client.ts → вікно «Другий крок входу»), а не лише після перезавантаження. */
+      const s=auth as unknown as {session?:{id?:string;userId?:string}|null;tabSession?:{id?:string;userId?:string}|null};
+      const sid=codewoordSessieId({userId:auth.user.id,anchorUserId:s.session?.userId,anchorId:s.session?.id,tabUserId:s.tabSession?.userId,tabId:s.tabSession?.id});
+      const tweedeFactorPoort=next.mfa==='required'&&!!((await totpFor(auth.user.id))?.confirmed||(await passkeyAantal(auth.user.id).catch(()=>0))>0)&&!tweedeFactorVers(await tweedeFactorBevestigdOp(auth.user.id,sid));
+      return deps.respond({ok:true,...await accessSnapshot(auth.user,true),tweedeFactorPoort}); // de momentopname bevat het beleid al (en overschreef het eerder opgegeven beleid ook al)
     }],
     'POST /api/owner/access/user/:id/method':[async(ctx: any)=>{
       const auth=await ownerGate(ctx.event,ctx.body);

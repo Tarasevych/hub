@@ -30,7 +30,11 @@ type Overzicht={
   register:RegisterRegel[];passkeys:Array<{id:string;naam:string;gekoppeld:boolean}>;pepperAanwezig:boolean;
   /** SEC-002 (geheimen-04): er wacht een nieuwe herstelcode op bevestiging / de kluis heeft geen enkele omslag. */
   herstelcodeWacht?:boolean;zonderOmslag?:boolean;
+  /** IDENTITEIT-015: перебіг повторного шифрування (стан у app.records) — «оброблено N з M», «Продовжити» після переривання. */
+  herversleutelVoortgang?:Voortgang|null;
 };
+type Uitkomst={tabel:string;gevonden:number;herversleuteld:number;fout?:string};
+type Voortgang={status:'geen'|'bezig'|'onderbroken'|'klaar';totaal:number;gedaan:number;tabellen:Uitkomst[];gestartOp:number;bijgewerktOp:number;klaarOp:number;reden?:string};
 type Props={lang:Lang;context:Record<string,unknown>};
 const P='/api/owner/sleutelkluis';
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
@@ -46,7 +50,8 @@ export function SleutelkluisSectie({lang,context}:Props){
   const[bewaard,setBewaard]=useState(false);
   const[codeInvoer,setCodeInvoer]=useState('');
   const[toonCode,setToonCode]=useState(false);
-  const[uitslag,setUitslag]=useState<Array<{tabel:string;gevonden:number;herversleuteld:number;fout?:string}>|null>(null);
+  const[uitslag,setUitslag]=useState<Uitkomst[]|null>(null);
+  const[loopt,setLoopt]=useState<{gedaan:number;totaal:number}|null>(null); /* IDENTITEIT-015: живий перебіг у цій вкладці */
   const[toonRegister,setToonRegister]=useState(false);
   /* De getoonde code komt van «ontgrendelen met de herstelcode»: «Готово» bevestigt dan eerst bij de server (pas daarna vervalt de oude code). */
   const[moetBevestigen,setMoetBevestigen]=useState(false);
@@ -89,7 +94,14 @@ export function SleutelkluisSectie({lang,context}:Props){
     setMelding({ok:true,tekst:tr(lang,`Passkey «${pk.naam}» тепер відкриває ваш ключ.`,`Passkey «${pk.naam}» opent nu uw sleutel.`)});
   });
   const ontkoppelen=(passkeyId:string)=>doe('ontkoppelen',async()=>{await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/passkey/ontkoppelen`,{...context,passkeyId}));});
-  const herversleutelen=()=>doe('herversleutelen',async()=>{const r=(await metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/herversleutelen`,context))).data as {tabellen:Array<{tabel:string;gevonden:number;herversleuteld:number;fout?:string}>};setUitslag(r.tabellen);});
+  // IDENTITEIT-015 (етап 1.3): кроками по одній таблиці — видно «оброблено N з M»; закрили ключ або вкладку — стан лишається на сервері,
+  // і «Продовжити» доводить роботу до кінця (уже оброблені таблиці не повторюються). Старт — із сильним підтвердженням, продовження — ні.
+  const kroky=async(eerste:()=>Promise<{data:unknown}>)=>{let r=(await eerste()).data as {tabellen:Uitkomst[];voortgang:Voortgang};const alle=[...r.tabellen];setLoopt({gedaan:r.voortgang.gedaan,totaal:r.voortgang.totaal});setUitslag([...alle]);
+    try{while(r.voortgang.status==='bezig'&&r.voortgang.gedaan<r.voortgang.totaal){r=(await api.post(`${P}/herversleutelen/verder`,{...context,maxTabellen:1})).data as {tabellen:Uitkomst[];voortgang:Voortgang};alle.push(...r.tabellen);setLoopt({gedaan:r.voortgang.gedaan,totaal:r.voortgang.totaal});setUitslag([...alle]);}}
+    finally{setLoopt(null);}
+    if(r.voortgang.status==='klaar')setMelding({ok:true,tekst:tr(lang,`Готово: оброблено ${r.voortgang.totaal} з ${r.voortgang.totaal}.`,`Klaar: ${r.voortgang.totaal} van ${r.voortgang.totaal} verwerkt.`)});};
+  const herversleutelen=()=>doe('herversleutelen',()=>kroky(()=>metHervat({actie:'sleutelkluis'},()=>api.post(`${P}/herversleutelen`,{...context,maxTabellen:1}))));
+  const herversleutelenVerder=()=>doe('herversleutelen',()=>kroky(()=>api.post(`${P}/herversleutelen/verder`,{...context,maxTabellen:1})));
 
   const downloaden=()=>{const tekst=[tr(lang,'Mijn Ruimte — код відновлення ключа даних','Mijn Ruimte — herstelcode van de gegevenssleutel'),tr(lang,`Простір: ${o?.ruimte==='technisch'?'технічний':'особистий'} · ${new Date().toLocaleString('uk-UA')}`,`Ruimte: ${o?.ruimte==='technisch'?'technisch':'persoonlijk'} · ${new Date().toLocaleString('nl-BE')}`),tr(lang,'Без цього коду (або passkey з PRF) ваші зашифровані дані НЕ відновити — навіть адміністратор сервера не зможе.','Zonder deze code (of een passkey met PRF) zijn uw versleutelde gegevens NIET te herstellen — ook de serverbeheerder niet.'),'',opmaakHerstelcode(nieuweCode),''].join('\r\n');
     const url=URL.createObjectURL(new Blob([tekst],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='mijn-ruimte-sleutel-herstelcode.txt';document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);};
@@ -100,6 +112,8 @@ export function SleutelkluisSectie({lang,context}:Props){
   const houders=Array.isArray(o?.houders)?o.houders:[];
   const omslagGrants=Array.isArray(o?.omslagen?.grants)?o.omslagen.grants:[];
   const register=Array.isArray(o?.register)?o.register:[];
+  /* IDENTITEIT-015: незавершене повторне шифрування (перервано ключем або закритою вкладкою) */
+  const onaf=o?.herversleutelVoortgang&&(o.herversleutelVoortgang.status==='bezig'||o.herversleutelVoortgang.status==='onderbroken')?o.herversleutelVoortgang:null;
   const serverGelezen=(Array.isArray(o?.journaal)?o.journaal:[]).filter(j=>j.soort==='serversleutel-gelezen'&&j.aantal>0);
   const overgeslagen=(Array.isArray(o?.journaal)?o.journaal:[]).filter(j=>j.soort==='gesloten-overgeslagen'&&j.aantal>0);
   const nietGekoppeld=(Array.isArray(o?.passkeys)?o.passkeys:[]).filter(p=>!p.gekoppeld);
@@ -179,7 +193,9 @@ export function SleutelkluisSectie({lang,context}:Props){
         <div className='access-plane-subrow' data-sleutelkluis-herversleutelen>
           <strong>{tr(lang,'Старі записи','Oude rijen')}</strong>
           <small>{serverGelezen.length?tr(lang,`Ще серверним ключем читалося: ${serverGelezen.map(j=>`${j.tabel} (${j.aantal})`).join(', ')}.`,`Nog met de serversleutel gelezen: ${serverGelezen.map(j=>`${j.tabel} (${j.aantal})`).join(', ')}.`):tr(lang,'Записів, прочитаних серверним ключем, не зафіксовано.','Geen rijen met de serversleutel gelezen.')}{o.herversleuteldOp?` ${tr(lang,'Перешифровано','Herversleuteld')} ${datum(lang,o.herversleuteldOp)}.`:''}</small>
-          {stand==='open'&&<div className='access-plane-actions'><button type='button' className='secondary' disabled={!!bezig} onClick={()=>void herversleutelen()}><RefreshCw/>{tr(lang,'Перешифрувати мої дані зараз','Mijn gegevens nu herversleutelen')}</button></div>}
+          {loopt&&<div className='sleutelkluis-voortgang' role='status' data-sleutelkluis-voortgang={`${loopt.gedaan}/${loopt.totaal}`}><progress max={Math.max(1,loopt.totaal)} value={loopt.gedaan}/><small>{tr(lang,`Оброблено ${loopt.gedaan} з ${loopt.totaal}. Не закривайте ключ; якщо вкладку закрити, роботу можна буде продовжити.`,`${loopt.gedaan} van ${loopt.totaal} verwerkt. Sluit de sleutel niet; sluit u het tabblad, dan kunt u later verdergaan.`)}</small></div>}
+          {!loopt&&onaf&&<small className='access-plane-warn' data-sleutelkluis-onderbroken={`${onaf.gedaan}/${onaf.totaal}`}>{tr(lang,`Повторне шифрування не завершено: оброблено ${onaf.gedaan} з ${onaf.totaal}${onaf.reden==='sleutel-gesloten'?' (ключ закрили під час роботи)':''}.`,`Het herversleutelen is niet afgemaakt: ${onaf.gedaan} van ${onaf.totaal} verwerkt${onaf.reden==='sleutel-gesloten'?' (de sleutel ging dicht tijdens het werk)':''}.`)} {stand==='open'?tr(lang,'Натисніть «Продовжити» — уже оброблене не повторюватиметься.','Kies «Doorgaan» — wat al verwerkt is, wordt niet herhaald.'):tr(lang,'Розблокуйте ключ і натисніть «Продовжити».','Ontgrendel de sleutel en kies «Doorgaan».')}</small>}
+          {stand==='open'&&<div className='access-plane-actions'>{onaf&&!loopt&&<button type='button' disabled={!!bezig} data-sleutelkluis-verder onClick={()=>void herversleutelenVerder()}><RefreshCw/>{tr(lang,'Продовжити','Doorgaan')}</button>}<button type='button' className='secondary' disabled={!!bezig} onClick={()=>void herversleutelen()}><RefreshCw/>{onaf?tr(lang,'Почати заново','Opnieuw beginnen'):tr(lang,'Перешифрувати мої дані зараз','Mijn gegevens nu herversleutelen')}</button></div>}
           {uitslag&&<ul className='herstel-lijst sleutelkluis-lijst' data-sleutelkluis-uitslag>{uitslag.map(u=><li key={u.tabel}><span className='access-plane-mono'>{u.tabel}</span><small>{u.fout?`${tr(lang,'помилка','fout')}: ${u.fout}`:`${u.herversleuteld}/${u.gevonden}`}</small></li>)}</ul>}
         </div>
       </>}

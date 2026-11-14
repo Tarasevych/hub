@@ -493,36 +493,115 @@ const herversleutelaars = new Map<string, Herversleutelaar>();
 /** Elke module met een gevoelige tabel meldt zich hier (bij import). De naam = de tabel in shared/sleutelkluis.ts → register. */
 export function registreerHerversleutelaar(tabel: string, fn: Herversleutelaar): void { herversleutelaars.set(tabel, fn); }
 export const geregistreerdeHerversleutelaars = (): string[] => [...herversleutelaars.keys()].sort();
-/** «Перешифрувати мої дані зараз»: alle oude v1-rijen van deze lade onder de DEK zetten. Alleen met een open sleutel. */
-export async function herversleutelen(lade: KluisLade): Promise<{ tabellen: Array<{ tabel: string; gevonden: number; herversleuteld: number; fout?: string }> }> {
+// IDENTITEIT-015 (етап 1.3): перебіг «оброблено N з M», стан у app.records і продовження після переривання.
+// Раніше повторне шифрування йшло одним запитом без стану: закрили ключ або вкладку — робота обривалася з 423, людина не знала,
+// скільки зроблено, і могла лише почати все спочатку (з лімітом 6 на годину). Тепер:
+//   • одиниця перебігу — зареєстрована таблиця (M = кількість herversleutelaars); стан — запис app.records
+//     tbl='sleutelkluis_herversleutel_v1', id='<userId>:<ruimte>' (owner_id = userId → RLS як для інших записів людини);
+//   • старт (sterke step-up, 6/год) скидає стан і обробляє стільки таблиць, скільки попросили (maxTabellen; без нього — усі);
+//   • «Продовжити» (/herversleutelen/verder) бере лише ще не оброблені таблиці; кожен herversleutelaar ідемпотентний (переводить
+//     лише v1-обгортки), тож повтор уже обробленої таблиці нічого не псує;
+//   • ключ закрито посеред роботи → стан «onderbroken» (reden 'sleutel-gesloten'), 423; вкладку закрито → стан лишається «bezig»
+//     з часом останнього кроку, і сторінка показує «Продовжити»;
+//   • одночасний другий запуск для тієї ж шухляди → 409 HERVERSLEUTELEN_BEZIG (у цьому процесі).
+// Herversleutelen in stappen: voortgang N van M in app.records, hervatten na onderbreking, idempotent.
+export const HERVERSLEUTEL_TABEL = 'sleutelkluis_herversleutel_v1';
+export type HerversleutelUitkomst = { tabel: string; gevonden: number; herversleuteld: number; fout?: string };
+export type HerversleutelVoortgang = {
+  status: 'geen' | 'bezig' | 'onderbroken' | 'klaar'; totaal: number; gedaan: number; tabellen: HerversleutelUitkomst[];
+  gestartOp: number; bijgewerktOp: number; klaarOp: number; reden?: string;
+};
+type HerversleutelStand = { userId: string; ruimte: string; status: HerversleutelVoortgang['status']; gedaan: string[]; tabellen: HerversleutelUitkomst[]; gestartOp: number; bijgewerktOp: number; klaarOp: number; reden?: string };
+const herversleutelId = (lade: KluisLade) => `${lade.userId}:${ruimteOf(lade.ruimte)}`;
+const lopend = new Set<string>();
+async function herversleutelStandLezen(lade: KluisLade): Promise<HerversleutelStand | null> {
+  const r = await sys().query('SELECT data FROM app.records WHERE tbl = $1 AND id = $2', [HERVERSLEUTEL_TABEL, herversleutelId(lade)]);
+  const d = r.rows[0]?.data as HerversleutelStand | undefined;
+  return d && Array.isArray(d.gedaan) ? d : null;
+}
+async function herversleutelStandSchrijven(lade: KluisLade, stand: HerversleutelStand): Promise<void> {
+  await sys().query(
+    `INSERT INTO app.records (tbl, id, data) VALUES ($1, $2, $3::jsonb) ON CONFLICT (tbl, id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
+    [HERVERSLEUTEL_TABEL, herversleutelId(lade), JSON.stringify(stand)]);
+}
+const voortgangVan = (stand: HerversleutelStand | null): HerversleutelVoortgang => {
+  const totaal = Math.max(herversleutelaars.size, stand?.gedaan.length || 0);
+  if (!stand) return { status: 'geen', totaal, gedaan: 0, tabellen: [], gestartOp: 0, bijgewerktOp: 0, klaarOp: 0 };
+  const gedaan = stand.gedaan.filter((t) => herversleutelaars.has(t)).length;
+  return { status: stand.status, totaal, gedaan: stand.status === 'klaar' ? totaal : gedaan, tabellen: stand.tabellen || [], gestartOp: stand.gestartOp, bijgewerktOp: stand.bijgewerktOp, klaarOp: stand.klaarOp || 0, ...(stand.reden ? { reden: stand.reden } : {}) };
+};
+/** Стан перебігу для сторінки (без секретів). */
+export async function herversleutelVoortgang(lade: KluisLade): Promise<HerversleutelVoortgang> {
+  return voortgangVan(await herversleutelStandLezen(lade).catch(() => null));
+}
+/**
+ * «Перешифрувати мої дані зараз» (verder=false) або «Продовжити» (verder=true): старі v1-рядки цієї шухляди під DEK, таблиця за
+ * таблицею, зі станом після кожної. Лише з відкритим ключем. maxTabellen обмежує роботу одного запиту (сторінка показує перебіг).
+ */
+export async function herversleutelen(lade: KluisLade, opties: { verder?: boolean; maxTabellen?: number } = {}): Promise<{ tabellen: HerversleutelUitkomst[]; voortgang: HerversleutelVoortgang }> {
   if (!(await isIngeschakeld(lade))) fout('SLEUTELKLUIS_UIT', 409);
   const open = sleutelOpen(lade);
   if (!open) fout(SLEUTEL_GESLOTEN_CODE, 423);
-  // SEC-002 (geheimen-01): een EIGEN kopie, niet de levende buffer uit het geheugen. Dit werk loopt over veel await-grenzen; sluit
-  // de mens intussen zijn sleutel (afmelden, «Заблокувати», verlopen sessie), dan wordt de levende buffer genuld en zouden de
-  // resterende rijen onder de NUL-sleutel verzegeld worden: verloren voor de echte sleutel en leesbaar voor wie de database heeft.
-  const dek = Buffer.from(open!);
-  const tabellen: Array<{ tabel: string; gevonden: number; herversleuteld: number; fout?: string }> = [];
-  let afgebroken = false;
+  const sleutel = herversleutelId(lade);
+  if (lopend.has(sleutel)) fout('HERVERSLEUTELEN_BEZIG', 409);
+  lopend.add(sleutel);
   try {
-    for (const [tabel, fn] of herversleutelaars) {
-      // De sleutel ging dicht tijdens de vorige tabel: niet verder werken met de kopie (dicht is dicht) en geen succes melden.
-      if (!sleutelIsOpen(lade)) { afgebroken = true; break; }
-      try {
-        const u = await fn(lade, dek);
-        tabellen.push({ tabel, ...u });
-        if (u.herversleuteld > 0) journaalTellen(lade, tabel, 'herversleuteld', u.herversleuteld);
-      } catch (e) { tabellen.push({ tabel, gevonden: 0, herversleuteld: 0, fout: String((e as Error).message || e).slice(0, 80) }); }
+    const nu = Date.now();
+    const vorige = await herversleutelStandLezen(lade);
+    if (opties.verder && (!vorige || vorige.status === 'klaar')) fout('HERVERSLEUTELEN_NIETS_TE_HERVATTEN', 409);
+    const stand: HerversleutelStand = opties.verder && vorige
+      ? { ...vorige, status: 'bezig', reden: undefined, bijgewerktOp: nu }
+      : { userId: lade.userId, ruimte: ruimteOf(lade.ruimte), status: 'bezig', gedaan: [], tabellen: [], gestartOp: nu, bijgewerktOp: nu, klaarOp: 0 };
+    await herversleutelStandSchrijven(lade, stand);
+    const max = Number.isFinite(opties.maxTabellen) && Number(opties.maxTabellen) > 0 ? Math.floor(Number(opties.maxTabellen)) : Infinity;
+    // SEC-002 (geheimen-01): een EIGEN kopie, niet de levende buffer uit het geheugen. Dit werk loopt over veel await-grenzen; sluit
+    // de mens intussen zijn sleutel (afmelden, «Заблокувати», verlopen sessie), dan wordt de levende buffer genuld en zouden de
+    // resterende rijen onder de NUL-sleutel verzegeld worden: verloren voor de echte sleutel en leesbaar voor wie de database heeft.
+    const dek = Buffer.from(open!);
+    const dezeKeer: HerversleutelUitkomst[] = [];
+    let afgebroken = false, verwerkt = 0;
+    try {
+      for (const [tabel, fn] of herversleutelaars) {
+        if (stand.gedaan.includes(tabel)) continue;
+        if (verwerkt >= max) break;
+        // De sleutel ging dicht tijdens de vorige tabel: niet verder werken met de kopie (dicht is dicht) en geen succes melden.
+        if (!sleutelIsOpen(lade)) { afgebroken = true; break; }
+        let u: HerversleutelUitkomst;
+        try {
+          const r = await fn(lade, dek);
+          u = { tabel, ...r };
+          if (r.herversleuteld > 0) journaalTellen(lade, tabel, 'herversleuteld', r.herversleuteld);
+        } catch (e) { u = { tabel, gevonden: 0, herversleuteld: 0, fout: String((e as Error).message || e).slice(0, 80) }; }
+        // Ключ закрили ПІД ЧАС цієї таблиці: її не зараховуємо — «Продовжити» пройде її ще раз (ідемпотентно).
+        if (!sleutelIsOpen(lade)) { afgebroken = true; break; }
+        dezeKeer.push(u); verwerkt++;
+        stand.gedaan = [...stand.gedaan, tabel];
+        stand.tabellen = [...stand.tabellen.filter((x) => x.tabel !== tabel), u];
+        stand.bijgewerktOp = Date.now();
+        await herversleutelStandSchrijven(lade, stand);
+      }
+    } finally { nul(dek); }
+    const tabellenUitkomst = stand.tabellen.map((x) => `${x.tabel}:${x.herversleuteld}/${x.gevonden}`);
+    if (afgebroken) {
+      stand.status = 'onderbroken'; stand.reden = 'sleutel-gesloten'; stand.bijgewerktOp = Date.now();
+      await herversleutelStandSchrijven(lade, stand).catch(() => undefined);
+      await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'failure', details: { ruimte: ruimteOf(lade.ruimte), reden: 'sleutel-gesloten', gedaan: stand.gedaan.length, totaal: herversleutelaars.size, tabellen: tabellenUitkomst } }).catch(() => undefined);
+      fout(SLEUTEL_GESLOTEN_CODE, 423);
     }
-  } finally { nul(dek); }
-  if (afgebroken) {
-    await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'failure', details: { ruimte: ruimteOf(lade.ruimte), reden: 'sleutel-gesloten', tabellen: tabellen.map((t) => `${t.tabel}:${t.herversleuteld}/${t.gevonden}`) } }).catch(() => undefined);
-    fout(SLEUTEL_GESLOTEN_CODE, 423);
-  }
-  await sys().query('UPDATE app.sleutelkluis SET herversleuteld_op = now() WHERE user_id = $1 AND ruimte = $2', [lade.userId, ruimteOf(lade.ruimte)]);
-  standCacheLeeg(lade);
-  await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), tabellen: tabellen.map((t) => `${t.tabel}:${t.herversleuteld}/${t.gevonden}`) } }).catch(() => undefined);
-  return { tabellen };
+    const alles = [...herversleutelaars.keys()].every((t) => stand.gedaan.includes(t));
+    if (alles) {
+      stand.status = 'klaar'; stand.klaarOp = Date.now(); stand.bijgewerktOp = stand.klaarOp;
+      await herversleutelStandSchrijven(lade, stand);
+      await sys().query('UPDATE app.sleutelkluis SET herversleuteld_op = now() WHERE user_id = $1 AND ruimte = $2', [lade.userId, ruimteOf(lade.ruimte)]);
+      standCacheLeeg(lade);
+      await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'success', details: { ruimte: ruimteOf(lade.ruimte), hervat: !!opties.verder, tabellen: tabellenUitkomst } }).catch(() => undefined);
+      const aantal = stand.tabellen.reduce((s, x) => s + (x.herversleuteld || 0), 0);
+      await meldBeveiligingsWijziging(lade.userId, 'kluis', { wat: `herversleuteld: ${aantal} / перешифровано записів: ${aantal}` });
+    } else {
+      await auditToevoegen({ ownerId: lade.userId, actorId: lade.userId, action: 'sleutelkluis.herversleuteld', type: 'beveiliging', result: 'partial', details: { ruimte: ruimteOf(lade.ruimte), hervat: !!opties.verder, gedaan: stand.gedaan.length, totaal: herversleutelaars.size } }).catch(() => undefined);
+    }
+    return { tabellen: dezeKeer, voortgang: voortgangVan(stand) };
+  } finally { lopend.delete(sleutel); }
 }
 /** Hulp voor herversleutelaars: één v1-envelop → dek1-envelop (zelfde AAD). */
 export const herversleutelEnvelop = (dek: Buffer, envelop: string, aad: string, serverSleutel: string): string =>
@@ -540,6 +619,7 @@ export async function overzicht(lade: KluisLade) {
   const herstel = kluis ? (await omslagen(lade, 'herstelcode'))[0] : undefined;
   return {
     ruimte: ruimteOf(lade.ruimte), stand, ingeschakeldOp: kluis?.ingeschakeldOp || 0, herversleuteldOp: kluis?.herversleuteldOp || 0,
+    herversleutelVoortgang: kluis ? await herversleutelVoortgang(lade) : null, // IDENTITEIT-015: перебіг N з M і «Продовжити»
     houders: houdersVan(lade),
     omslagen: {
       herstelcode: herstel ? { aangemaaktOp: new Date(herstel.aangemaakt_op).getTime(), laatstGebruiktOp: herstel.laatst_gebruikt_op ? new Date(herstel.laatst_gebruikt_op).getTime() : 0 } : null,

@@ -131,7 +131,7 @@ export const KIJKER_EIGEN: ReadonlySet<string> = new Set<string>([
     'owner/bevestiging/apparaat/herstellen',
     // om meer toegang vragen, ondersteuning vragen of beëindigen, eigen gegevens en eigen account
     'owner/access/request', 'access/request', 'ondersteuning/aanvragen', 'ondersteuning/beeindigen',
-    'owner/identity/account/delete', 'identity/account/delete', 'account/delete', 'service/account/delete', 'account/recover',
+    'owner/identity/account/delete', 'identity/account/delete', 'account/delete', 'service/account/delete', 'account/recover', 'owner/identity/account/recover', // IDENTITEIT-015: нове відновлення
     'auth/logout', 'service/auth/logout',
     // een uitnodiging aannemen: het eigen lidmaatschap (de rol in die ruimte bepaalt de uitnodiger)
     'share/join',

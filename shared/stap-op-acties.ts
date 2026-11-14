@@ -1,6 +1,8 @@
 // MAILMOB-001 · Één veilige route→actie-mapping voor de client EN de server.
 // Een onbekende route kan nooit als «bevestigen» worden onthouden.
 export const ACTIE_PER_PAD: ReadonlyArray<readonly [RegExp, string]> = [
+  // IDENTITEIT-015: псевдоадреса вікна воріт «другий чинник обов'язковий» (src/geheim/TweedeFactorPoort.tsx); такий маршрут не змінює даних.
+  [/\/access\/tweede-factor$/, 'tweede-factor'],
   [/\/passkeys\/registreren/, 'passkey-toevoegen'], [/\/passkeys\/verwijderen/, 'passkey-verwijderen'],
   [/\/passkeys\/goedkeuring\/recht-intrekken/, 'goedkeur-recht-intrekken'], [/\/passkeys\/goedkeuring\/(aanvragen|bevestigen)/, 'goedkeur-recht-aanvragen'],
   // IDENTITEIT-014: iemand «beheerder» van een gedeelde ruimte maken (e-mail, koppeling, rol wijzigen). Alleen deze drie paden; /link/revoke niet.

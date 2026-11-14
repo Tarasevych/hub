@@ -9,7 +9,8 @@ export type BeveiligingsWijziging =
   | 'ai-token' | 'ai-token-ingetrokken' | 'kluis' | 'account-bekeken' | 'github-webhook-uit'
   | 'consent-andere-browser' | 'json-vereist'
   | 'aanmeldmethode-gekoppeld' | 'aanmeldmethode-ontkoppeld' // IDENTITEIT-012
-  | 'gegevens-uitgevoerd'; // IDENTITEIT-014
+  | 'gegevens-uitgevoerd' // IDENTITEIT-014
+  | 'account-hersteld' | 'tweede-factor-verplicht' | 'tweede-factor-vrij'; // IDENTITEIT-015
 
 const NIET_JIJ = 'Якщо це були не ви — одразу завершіть інші сеанси на сторінці безпеки й змініть доступ. / Was u dit niet? Beëindig meteen de andere sessies op de beveiligingspagina en wijzig uw toegang.';
 
@@ -33,6 +34,11 @@ const TEKSTEN: Record<BeveiligingsWijziging, (x: Record<string, string>) => [str
   'aanmeldmethode-ontkoppeld': (x) => ['Відв’язано зовнішній спосіб входу / Externe aanmeldmethode ontkoppeld', `Від облікового запису відв’язано ${x.aanbieder || '—'}. / ${x.aanbieder || '—'} is van uw account ontkoppeld. ${NIET_JIJ}`],
   // IDENTITEIT-014: вивантажено всі дані облікового запису (POST /api/owner/privacy/export). Alle gegevens van het account geëxporteerd.
   'gegevens-uitgevoerd': () => ['Ваші дані вивантажено у файл / Uw gegevens zijn geëxporteerd', `Після підтвердження доступу завантажено файл з усіма даними облікового запису, зокрема з журналом безпеки. / Na bevestiging van toegang is een bestand met alle gegevens van het account gedownload, ook het beveiligingslogboek. ${NIET_JIJ}`],
+  // IDENTITEIT-015: видалений обліковий запис відновлено самим власником протягом 30 днів (POST /api/owner/identity/account/recover).
+  'account-hersteld': (x) => ['Обліковий запис відновлено / Account hersteld', `${x.mode === 'fresh' ? 'Обліковий запис відновлено з новим порожнім простором; старі простори лишилися в архіві й їх можна відновити окремо.' : 'Обліковий запис і всі простори відновлено.'} / ${x.mode === 'fresh' ? 'Het account is hersteld met een nieuwe, lege ruimte; de oude ruimtes blijven in het archief en zijn apart te herstellen.' : 'Het account en alle ruimtes zijn hersteld.'} ${NIET_JIJ}`],
+  // IDENTITEIT-015: власник сайту змінив правило «другий чинник обов'язковий» (POST /api/owner/access/policy/save).
+  'tweede-factor-verplicht': () => ['Другий крок входу тепер обов’язковий / Tweede aanmeldstap is nu verplicht', `Після Google кожен, хто має код із застосунку або ключ доступу, підтверджує вхід ним (запасний шлях — код відновлення). Хто не має другого чинника, входить як раніше. / Na Google bevestigt iedereen met een app-code of passkey de aanmelding daarmee (reserve: een herstelcode). Wie geen tweede factor heeft, meldt aan zoals voorheen. ${NIET_JIJ}`],
+  'tweede-factor-vrij': () => ['Другий крок входу більше не обов’язковий / Tweede aanmeldstap niet meer verplicht', `Після Google сеанс знову відкривається без коду. Другий чинник і далі потрібен для важливих дій. / Na Google opent de sessie weer zonder code. De tweede factor blijft nodig voor belangrijke acties. ${NIET_JIJ}`],
   'account-bekeken': (x) => ['Ваш обліковий запис переглянуто для діагностики / Uw account is bekeken voor diagnose', `Адміністратор (${x.wie || '—'}) переглянув ${x.wat || 'дані вашого облікового запису'} у технічній діагностиці. / Een beheerder (${x.wie || '—'}) bekeek ${x.watNl || 'gegevens van uw account'} in de technische diagnose.`],
 };
 

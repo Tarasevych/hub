@@ -110,10 +110,15 @@ export async function main(): Promise<number> {
     await pool.query(`DELETE FROM app.toegangscodes WHERE user_id=$1`, [uid]).catch(() => undefined);
   }
 
-  // ---------------------------------------------------------------- 4. застарілі маршрути, які ще кличе hub, мають ті самі наслідки
-  check('застаріле видалення облікового запису: нова епоха, завершення всіх входів і гостей, аудит — як у новому маршруті',
-    index.includes("await deleteRecoverably(auth.user, 'self'); /* IDENTITEIT-012") && index.includes("await ownerAllesIntrekken(auth.user.id, nu); await gastSessieIntrekken(") && index.includes("'owner.identity.account.delete', 'success', { epoch, route: 'verouderd' }"));
-  check('застаріле відновлення простору пише аудит', index.includes("'owner.identity.workspace.restored', 'success', { workspaceId: ctx.params.id, route: 'verouderd' }"));
+  // ---------------------------------------------------------------- 4. застарілі маршрути, які кликав hub
+  // IDENTITEIT-015 (етап 1.1): hub перейшов на /api/owner/identity/account/*, а /api/account/{delete,workspaces/:id/restore} → 410.
+  // Тому ті самі наслідки тепер перевіряються на ЄДИНОМУ маршруті видалення (нова епоха, усі входи, сховище ключів, гостьові входи,
+  // аудит) і на маршруті відновлення простору. Фрагмент законно переїхав; вимоги не послаблено.
+  const delNieuw = index.slice(index.indexOf("'POST /api/owner/identity/account/delete'"), index.indexOf("'POST /api/owner/identity/account/workspaces/:id/restore'"));
+  check('видалення облікового запису (hub і id.*): нова епоха, завершення всіх входів і гостей, аудит; старий маршрут — 410',
+    delNieuw.includes("await deleteRecoverably(auth.user, 'self')") && delNieuw.includes("ownerBumpRevocation(auth.user.id,'account-delete')") && delNieuw.includes('await ownerAllesIntrekken(auth.user.id,now);await gastSessieIntrekken(')
+    && delNieuw.includes("'owner.identity.account.delete','success'") && index.includes("'POST /api/account/delete': VEROUDERDE_ROUTE_WEG"));
+  check('відновлення простору (hub і id.*) пише аудит; старий маршрут — 410', index.includes("await ownerAudit(auth.user.id,'owner.identity.workspace.restored','success',{workspaceId:ctx.params.id})") && index.includes("'POST /api/account/workspaces/:id/restore': VEROUDERDE_ROUTE_WEG"));
   check('інтерфейс: кнопка «Вийти всюди» блокується, поки дія виконується', lees('src/BeveiligingSessiesPaneel.tsx').includes("data-sessies-overal disabled={busy}"));
   return einde();
 }

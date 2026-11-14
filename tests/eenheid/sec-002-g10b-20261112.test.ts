@@ -389,7 +389,8 @@ export async function main(): Promise<number> {
       await zet(A.id, { ...weg, deletionSource: 'admin', statusVoorVerwijdering: 'approved' });
       const A2 = await opnieuw(A, 'admweg');
       const oudVerzoek = await hub(A2, '/api/access/request');
-      const herstel = await hub(A2, '/api/account/recover', { mode: 'restore' });
+      // IDENTITEIT-015: /api/account/recover закрито (410); той самий шлях — новий маршрут /api/owner/identity/account/recover (теж із hub).
+      const herstel = await hub(A2, '/api/owner/identity/account/recover', { mode: 'restore' });
       const naA = await stand(A.id);
       check('aanv-gat-a-02: видалений адміністратором не скасовує видалення застарілим POST /api/access/request (403, status лишається deleted)',
         oudVerzoek.status === 403 && herstel.status === 403 && naA.s === 'deleted' && naA.d === 'admin', JSON.stringify({ oud: oudVerzoek.status, herstel: herstel.status, na: naA }));
@@ -405,7 +406,7 @@ export async function main(): Promise<number> {
       // C: поведінку не зламано — сам видалений (був схвалений) відновлюється; новий акаунт і далі просить доступ
       const C = await maak('zelfweg');
       await zet(C.id, { ...weg, deletionSource: 'self', statusVoorVerwijdering: 'approved' });
-      const terug = await hub(await opnieuw(C, 'zelfweg'), '/api/account/recover', { mode: 'restore' });
+      const terug = await hub(await opnieuw(C, 'zelfweg'), '/api/owner/identity/account/recover', { mode: 'restore' });
       const N = await maak('nieuwkomer');
       await zet(N.id, { status: 'new' });
       const vraagN = await hub(N, '/api/access/request');

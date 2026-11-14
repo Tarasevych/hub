@@ -839,7 +839,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
         {uk:"Нагадування про резервний доступ",nl:"Herinnering aan reservetoegang",стан:"в-чинних",ціль:"[data-meld-schakel=\"reserve\"]",іконка:"нагадування"}
       ]},
       "швидкодія":{стан:"в-чинних",ціль:"#menu-snelheid"},
-      "видимість":{стан:"в-чинних",ціль:"#menu-zichtbaarheid",рядки:{2:"частково"}}
+      "видимість":{стан:"в-чинних",ціль:"#menu-zichtbaarheid"}
     },
     themes:{
       "розклад":{стан:"в-чинних",ціль:"#thema-auto-kop"},
@@ -859,7 +859,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "експорт":{стан:"частково",ціль:"#gegevensuitvoer",рядки:{0:"частково",1:"в-чинних"}}
     },
     sessions:{
-      "цей-пристрій":{стан:"частково"},
+      "цей-пристрій":{стан:"в-чинних",ціль:".sessies-onthouden"},
       "активні":{стан:"в-чинних"},
       "гості":{стан:"в-чинних"},
       "сповіщення":{стан:"частково"}

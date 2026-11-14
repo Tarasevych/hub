@@ -7,7 +7,7 @@ import {api} from './platform/client';
 import {swrPost} from './lees-cache';
 import {foutCode} from './platform/webauthn';
 import {ecosystemTabContext} from './tab-context';
-import {leesAanmeldenOnthouden,zetAanmeldenOnthouden} from './aanmelden-onthouden';
+import {leesAanmeldenOnthouden,leesOnthoudenVanafVolgende,zetAanmeldenOnthouden,zetOnthoudenVanafVolgende} from './aanmelden-onthouden';
 import SecuritySessionsPanel,{type SecuritySession} from './BeveiligingSessiesPaneel';
 import './toegangslaag.css';
 
@@ -25,6 +25,8 @@ export default function SessiesOverzicht(p:Props){
   const[bevestig,setBevestig]=useState(false);
   // «Зберегти цей акаунт для наступних сесій» — de keuze van het aanmeldscherm, nu ook HIER zichtbaar en te wijzigen (per apparaat).
   const[onthouden,setOnthouden]=useState(leesAanmeldenOnthouden);
+  /* IDENTITEIT-015: увімкнено, але діятиме лише з наступного входу (цей вхід не запам'ятовано) */
+  const[vanafVolgende,setVanafVolgende]=useState(leesOnthoudenVanafVolgende);
   const eersteLading=useRef(false);
   // Fase B1: bewaarde lijst meteen, dan vers (alleen geheugen, per account); afbreken als de pagina verdwijnt.
   const laden=useCallback(async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<{beschikbaar?:boolean;sessies?:GastSessie[]}>('/api/owner/access/gast-sessies/lijst',context(),d=>setGasten(d.beschikbaar===false?null:(d.sessies||[])),o);}catch(e){if(foutCode(e)==='OWNER_REQUIRED')setGasten(null);}},[]);
@@ -33,7 +35,9 @@ export default function SessiesOverzicht(p:Props){
   const gastIntrekken=async(id:string)=>{setBezig(true);setMelding('');try{await api.post('/api/owner/access/gast-sessies/intrekken',{...context(),id});await laden();setMelding(tr('Гостьову сесію завершено.','De gastsessie is beëindigd.'));}catch{setMelding(tr('Не вдалося завершити гостьову сесію.','De gastsessie kon niet worden beëindigd.'));}finally{setBezig(false);}};
   const alleAndere=async()=>{setBezig(true);setMelding('');try{const r=(await api.post('/api/owner/identity/security/revoke-others',{...context(),gast:true})).data as {sessions:number;tabs:number;grants:number;gast:number};setBevestig(false);p.onRefresh();await laden();setMelding(tr(`Завершено інших входів: ${r.sessions+r.tabs}, забутих браузерів: ${r.grants}, гостьових сесій: ${r.gast}. Цей вхід залишився.`,`Andere aanmeldingen beëindigd: ${r.sessions+r.tabs}, vergeten browsers: ${r.grants}, gastsessies: ${r.gast}. Deze aanmelding blijft actief.`));}catch{setMelding(tr('Не вдалося завершити інші сесії. Дані не втрачено.','De andere sessies konden niet worden beëindigd. Er zijn geen gegevens verloren.'));}finally{setBezig(false);}};
   // IDENTITEIT-013: вимкнення одразу забуває цей браузер на сервері (відкликає його грант), а не лише «з наступного входу».
-  const wisselOnthouden=async(aan:boolean)=>{setOnthouden(zetAanmeldenOnthouden(aan));if(aan)return;const g=p.sessions.find(s=>s.kind==='remembered'&&s.current);if(!g)return;setBezig(true);setMelding('');try{await api.post(`/api/owner/identity/security/items/${encodeURIComponent(g.id)}/revoke`,{...context(),kind:'grant'});setMelding(tr('Цей браузер забуто: наступного разу потрібно буде увійти знову.','Deze browser is vergeten: de volgende keer moet u opnieuw aanmelden.'));p.onRefresh();}catch{setMelding(tr('Не вдалося забути цей браузер на сервері. Вибір збережено локально; спробуйте ще раз.','Deze browser kon op de server niet worden vergeten. De keuze is lokaal bewaard; probeer het opnieuw.'));}finally{setBezig(false);}};
+  // IDENTITEIT-015 (етап 1.7): увімкнення НЕ видає грант посеред сеансу (безпечніше: викрадена cookie не стає «запам'ятованим браузером»).
+  // Якщо цей вхід уже запам'ятовано — просто «увімкнено»; інакше чесно «діятиме з наступного входу», і bootstrap цей вибір не скидає.
+  const wisselOnthouden=async(aan:boolean)=>{if(aan){const huidig=p.sessions.some(s=>s.kind==='remembered'&&s.current);if(huidig){setOnthouden(zetAanmeldenOnthouden(true));setVanafVolgende(false);return;}setOnthouden(zetOnthoudenVanafVolgende());setVanafVolgende(true);setMelding(tr('Увімкнено з наступного входу: цей вхід почався без запам’ятовування, тож сервер запам’ятає цей браузер, коли ви ввійдете знову через Google. До того після виходу знадобиться повний вхід.','Aan vanaf de volgende aanmelding: deze aanmelding begon zonder onthouden, dus de server onthoudt deze browser wanneer u opnieuw via Google aanmeldt. Tot dan is na afmelden een volledige aanmelding nodig.'));return;}setVanafVolgende(false);setOnthouden(zetAanmeldenOnthouden(false));const g=p.sessions.find(s=>s.kind==='remembered'&&s.current);if(!g)return;setBezig(true);setMelding('');try{await api.post(`/api/owner/identity/security/items/${encodeURIComponent(g.id)}/revoke`,{...context(),kind:'grant'});setMelding(tr('Цей браузер забуто: наступного разу потрібно буде увійти знову.','Deze browser is vergeten: de volgende keer moet u opnieuw aanmelden.'));p.onRefresh();}catch{setMelding(tr('Не вдалося забути цей браузер на сервері. Вибір збережено локально; спробуйте ще раз.','Deze browser kon op de server niet worden vergeten. De keuze is lokaal bewaard; probeer het opnieuw.'));}finally{setBezig(false);}};
   const tijd=(v:string)=>new Date(v).toLocaleString(p.lang==='uk'?'uk-UA':'nl-BE');
   return <div className='sessies-overzicht' data-sessies-overzicht>
     <section className='sessies-acties'>
@@ -53,6 +57,7 @@ export default function SessiesOverzicht(p:Props){
         <span><strong>{tr('Зберегти цей акаунт для наступних сесій','Dit account bewaren voor volgende sessies')}</strong>
         <small>{tr('Цей вибір діє на цьому пристрої й показується на екрані входу. Якщо вимкнути, сервер одразу забуде цей браузер: наступного разу потрібно буде увійти знову, приватний локальний кеш пошти буде видалено після виходу, а акаунт не залишиться у списку для швидкого входу.','Deze keuze geldt op dit apparaat en is zichtbaar op het aanmeldscherm. Uitzetten laat de server deze browser meteen vergeten: de volgende keer meldt u opnieuw aan, de privé lokale mailcache wordt na afmelden gewist en het account blijft niet in de lijst voor snel aanmelden.')}</small></span>
       </label>
+      {onthouden&&vanafVolgende&&<small className='settings-honest-note' data-sessies-onthoud-volgende>{tr('Діятиме з наступного входу: зараз цей браузер ще не запам’ятовано.','Geldt vanaf de volgende aanmelding: deze browser wordt nu nog niet onthouden.')}</small>}
     </section>
     <SecuritySessionsPanel tr={tr} sessions={p.sessions} loading={p.loading} busy={p.busy||bezig} onRefresh={vernieuw} onRevoke={p.onRevoke} onRevokeAll={p.onRevokeAll} onShareLocation={()=>{}}/>
     {gasten&&<section className='sessies-gasten' data-gast-sessies>

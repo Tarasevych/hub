@@ -97,6 +97,7 @@ export function AccessPlanePanels(p:Props){
   const[wachtwoordOpen,setWachtwoordOpen]=useState(false);
   const[wachtwoordWeg,setWachtwoordWeg]=useState(false); /* IDENTITEIT-013: прибирання пароля — через діалог підтвердження */
   const[vervangVraag,setVervangVraag]=useState(false); /* IDENTITEIT-014: заміна автентифікатора — спершу діалог із наслідками */
+  const[mfaVraag,setMfaVraag]=useState<''|'required'|'optional'>(''); /* IDENTITEIT-015: правило «другий крок під час входу» — спершу діалог із наслідками */
   const totp=data.factors.find(item=>item.id==='totp');
   const passwordMethod=data.methods.find(item=>item.id==='password');
   const googleMethod=data.methods.find(item=>item.id==='google');
@@ -132,6 +133,14 @@ export function AccessPlanePanels(p:Props){
       bevestigTekst={tr(lang,'Так, прибрати','Ja, verwijderen')}
       onAnnuleer={()=>setWachtwoordWeg(false)}
       onBevestig={async()=>{setWachtwoordWeg(false);await write('/api/owner/access/password/remove');}}/>
+    {/* IDENTITEIT-015 (етап 1.4): власник сайту вмикає або вимикає правило; сервер застосовує його під час кожного входу. */}
+    <BevestigDialoog open={!!mfaVraag} id='mfa-beleid' lang={lang} gevaarlijk={mfaVraag==='optional'} bezig={busy}
+      titel={mfaVraag==='required'?tr(lang,'Зробити другий крок входу обов’язковим?','De tweede aanmeldstap verplicht maken?'):tr(lang,'Скасувати обов’язковий другий крок?','De verplichte tweede stap uitzetten?')}
+      uitleg={mfaVraag==='required'?tr(lang,'Після Google кожен, хто має код із застосунку або ключ доступу, підтверджуватиме вхід ним. Без підтвердження сайт не покаже жодних даних.','Na Google bevestigt iedereen met een app-code of passkey de aanmelding daarmee. Zonder bevestiging toont de site geen gegevens.'):tr(lang,'Після Google сеанс знову відкриватиметься без коду. Вхід стане слабшим: викрадений пароль Google знову дасть повний доступ.','Na Google opent de sessie weer zonder code. Aanmelden wordt zwakker: een gestolen Google-wachtwoord geeft weer volledige toegang.')}
+      gevolgen={mfaVraag==='required'?[tr(lang,'Ваш поточний вхід теж попросить код або ключ одразу після збереження.','Ook uw huidige aanmelding vraagt meteen na het opslaan om een code of sleutel.'),tr(lang,'Запасний шлях — невикористаний код відновлення.','Reserve: een ongebruikte herstelcode.'),tr(lang,'Хто ще не має другого чинника, входить як раніше, доки його не додасть.','Wie nog geen tweede factor heeft, meldt aan zoals voorheen tot hij er een toevoegt.')]:[tr(lang,'Другий чинник і далі потрібен для важливих дій.','De tweede factor blijft nodig voor belangrijke acties.')]}
+      bevestigTekst={mfaVraag==='required'?tr(lang,'Так, увімкнути','Ja, inschakelen'):tr(lang,'Так, вимкнути','Ja, uitschakelen')}
+      onAnnuleer={()=>setMfaVraag('')}
+      onBevestig={async()=>{const mfa=mfaVraag;setMfaVraag('');await write('/api/owner/access/policy/save',{mfa,enabled:{}});}}/>
     <BevestigDialoog open={vervangVraag} id='totp-vervangen' lang={lang} gevaarlijk bezig={busy}
       titel={tr(lang,'Замінити автентифікатор?','Authenticator vervangen?')}
       uitleg={tr(lang,'Ви додасте новий ключ у застосунок-автентифікатор, наприклад на новому телефоні. Спершу сайт попросить чинний код зі старого застосунку або код відновлення, потім — ще одне сильне підтвердження доступу.','U voegt een nieuwe sleutel toe in de authenticator-app, bijvoorbeeld op een nieuwe telefoon. Eerst vraagt de site een geldige code uit de oude app of een herstelcode, daarna nog een sterke bevestiging van toegang.')}
@@ -234,6 +243,15 @@ export function AccessPlanePanels(p:Props){
             <button type='button' disabled={busy||code.length!==6} onClick={()=>void write('/api/owner/access/totp/confirm',{code})}><Check/>{tr(lang,'Підтвердити','Bevestigen')}</button>
             {vervanging&&p.totpVervangenStoppen&&<button type='button' className='secondary' disabled={busy} onClick={()=>p.totpVervangenStoppen?.()}><X/>{tr(lang,'Скасувати заміну','Vervangen annuleren')}</button>}
           </div>
+        </div>}
+        {/* IDENTITEIT-015 (етап 1.4): правило «другий крок під час входу». Перемикач — лише власнику сайту; інші бачать, що правило діє. */}
+        {(data.admin||data.policy?.mfa==='required')&&<div className='access-plane-subrow' data-mfa-beleid={data.policy?.mfa==='required'?'verplicht':'vrij'}>
+          {data.admin?<label className='zijbalk-schakel' data-mfa-beleid-schakel='1'>
+            <input type='checkbox' role='switch' checked={data.policy?.mfa==='required'} disabled={busy||laden} onChange={event=>setMfaVraag(event.target.checked?'required':'optional')}/>
+            <span className='zijbalk-schakel-spoor' aria-hidden='true'><i/></span>
+            <span><strong>{tr(lang,'Обов’язковий другий крок під час входу','Verplichte tweede stap bij aanmelden')}</strong>
+            <small>{tr(lang,'Для всіх облікових записів сайту: після Google потрібен код із застосунку або ключ доступу (запасний шлях — код відновлення). Хто не має другого чинника, входить як раніше. Увімкнути можна, лише маючи власний другий чинник.','Voor alle accounts van de site: na Google is een app-code of passkey nodig (reserve: een herstelcode). Wie geen tweede factor heeft, meldt aan zoals voorheen. Inschakelen kan alleen met een eigen tweede factor.')}</small></span>
+          </label>:<small>{tr(lang,'Правило сайту: після Google вхід підтверджується кодом із застосунку або ключем доступу.','Regel van de site: na Google wordt de aanmelding bevestigd met een app-code of passkey.')}{!data.factors.some(f=>['totp','passkey'].includes(f.id)&&f.enrolled)?` ${tr(lang,'У вас другого чинника ще немає — додайте автентифікатор, щоб правило захищало й ваш вхід.','U hebt nog geen tweede factor — voeg een authenticator toe zodat de regel ook uw aanmelding beschermt.')}`:''}</small>}
         </div>}
       </div>
     </section>}

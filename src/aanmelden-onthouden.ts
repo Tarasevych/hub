@@ -27,4 +27,27 @@ export const zetAanmeldenOnthouden = (waarde: boolean): boolean => {
   }
   return waarde;
 };
+/**
+ * IDENTITEIT-015 (етап 1.7): «увімкнено — діятиме з наступного входу». Якщо людина вмикає збереження, коли поточний вхід уже
+ * почався БЕЗ запам'ятовування (грант цього браузера відкликано чи вхід був без «Зберегти»), сервер НЕ видає новий грант
+ * посеред сеансу: так викрадена cookie сеансу не перетворюється на довготривалий «запам'ятований браузер». Вибір чекає на
+ * наступний вхід (redirect-login бере remember=true) і більше не скидається в «вимкнено» під час bootstrap.
+ * Значення 'volgende' читається як «увімкнено» (leesAanmeldenOnthouden), а після входу із запам'ятовуванням стає '1'.
+ * Aan vanaf de volgende aanmelding: de server geeft midden in een sessie geen nieuwe grant (veiliger).
+ */
+export const leesOnthoudenVanafVolgende = (): boolean => {
+  try {
+    return localStorage.getItem(SLEUTEL) === 'volgende';
+  } catch {
+    return false;
+  }
+};
+export const zetOnthoudenVanafVolgende = (): boolean => {
+  try {
+    localStorage.setItem(SLEUTEL, 'volgende');
+  } catch {
+    /* privémodus: dan geldt de keuze alleen voor dit beeld */
+  }
+  return true;
+};
 export { SLEUTEL as AANMELDEN_ONTHOUDEN_SLEUTEL };

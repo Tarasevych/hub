@@ -21,6 +21,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { db } from '../server/platform';
 import { getPool } from '../server/platform/pg';
 import { actieVoorPad } from '../shared/stap-op-acties';
+import { tweedeFactorVastleggen } from './tweede-factor-poort'; // IDENTITEIT-015: другий чинник під час входу
 export { actieVoorPad } from '../shared/stap-op-acties';
 
 export const STAP_OP_TABEL = 'owner_step_up_v1';
@@ -181,6 +182,8 @@ export async function totpStapOpVastleggen(auth: StapOpAuth, methode: 'totp' | '
   if (!s) return;
   const nu = Date.now();
   await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: nu }, sterkSessies: { ...(r.sterkSessies || {}), [s.id]: nu }, methodes: { ...(r.methodes || {}), [s.id]: methode } }));
+  // IDENTITEIT-015: код із застосунку або код відновлення = другий чинник цього входу (правило mfa='required', backend/tweede-factor-poort.ts).
+  await tweedeFactorVastleggen(auth.user.id, [s.id, onthoudSessie(auth)?.id]);
 }
 
 /** Aanroepen na een geldig codewoord op deze sessie. Telt als gewone én sterke step-up. */
@@ -197,6 +200,7 @@ export async function passkeyStapOpVastleggen(auth: StapOpAuth): Promise<boolean
   if (!s) return false;
   const nu = Date.now();
   await schrijf(auth.user.id, (r) => ({ ...r, sessies: { ...(r.sessies || {}), [s.id]: nu }, passkeySessies: { ...(r.passkeySessies || {}), [s.id]: nu }, sterkSessies: { ...(r.sterkSessies || {}), [s.id]: nu }, methodes: { ...(r.methodes || {}), [s.id]: 'passkey' } }));
+  await tweedeFactorVastleggen(auth.user.id, [s.id, onthoudSessie(auth)?.id]); // IDENTITEIT-015: ключ доступу = другий чинник цього входу
   return true;
 }
 /**
