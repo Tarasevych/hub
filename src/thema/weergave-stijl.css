@@ -1,0 +1,36 @@
+/* IDENTITEIT-015 (крок «vormgeving»): щільність, рух, акцент і виразність ефектів — налаштування облікового запису для всього
+   сайту (src/thema/weergave-stijl.ts ставить атрибути на <html>). Типові значення атрибутів не мають — тоді діє те, що й раніше.
+   Dichtheid, beweging, accent en effecten: accountinstellingen voor de hele site. Zonder attribuut blijft alles zoals vroeger. */
+
+/* Щільність: масштаб ритму відступів (src/ontwerp/tokens.css, --ruimte-1…6 — понад 900 використань). Розмір тексту й висота
+   дотику не змінюються: компактний вигляд не робить кнопки дрібнішими за 40/44 px. */
+:root[data-dichtheid="compact"] { --ruimte-1:3px; --ruimte-2:6px; --ruimte-3:9px; --ruimte-4:12px; --ruimte-5:18px; --ruimte-6:24px; }
+:root[data-dichtheid="ruim"] { --ruimte-1:5px; --ruimte-2:10px; --ruimte-3:15px; --ruimte-4:20px; --ruimte-5:30px; --ruimte-6:40px; }
+
+/* Менше руху — вибір людини поверх пристрою (системне prefers-reduced-motion і далі діє само). Анімації й переходи майже миттєві,
+   плавна прокрутка вимкнена; зміст і стан не змінюються, лише рух. */
+:root[data-beweging="minder"] { --ruimte-beweging: 0ms; scroll-behavior: auto !important; }
+:root[data-beweging="minder"] *, :root[data-beweging="minder"] *::before, :root[data-beweging="minder"] *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+  transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+}
+
+/* Акцент поверх палітри. Специфічність (:root:root + атрибут + клас теми = 0,4,0) вища за палітри (html.palet-kleur[…] .theme-*
+   = 0,3,1) і оболонку (.canonical-chrome.theme-* = 0,2,0). Пари перевіряє tests/eenheid/identiteit-015-vormgeving.test.ts:
+   текст на заливці ≥ 4,5:1, заливка на тлі кожної палітри ≥ 3:1. Значення — ACCENT_TONEN у weergave-stijl.ts. */
+:root:root[data-accent="violet"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="violet"] :is(.theme-light,.theme-plum-light) { --accent:#6d28d9; --accentText:#ffffff; --accent-soft:#ede9fe; }
+:root:root[data-accent="violet"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="violet"] :is(.theme-dark,.theme-plum-dark) { --accent:#c4b5fd; --accentText:#10161c; --accent-soft:#3b3160; }
+:root:root[data-accent="cyan"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="cyan"] :is(.theme-light,.theme-plum-light) { --accent:#155e75; --accentText:#ffffff; --accent-soft:#cffafe; }
+:root:root[data-accent="cyan"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="cyan"] :is(.theme-dark,.theme-plum-dark) { --accent:#67e8f9; --accentText:#10161c; --accent-soft:#164e63; }
+:root:root[data-accent="pink"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="pink"] :is(.theme-light,.theme-plum-light) { --accent:#be185d; --accentText:#ffffff; --accent-soft:#fce7f3; }
+:root:root[data-accent="pink"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="pink"] :is(.theme-dark,.theme-plum-dark) { --accent:#f9a8d4; --accentText:#10161c; --accent-soft:#50223a; }
+:root:root[data-accent="amber"]:is(.theme-light,.theme-plum-light), :root:root[data-accent="amber"] :is(.theme-light,.theme-plum-light) { --accent:#92400e; --accentText:#ffffff; --accent-soft:#fef3c7; }
+:root:root[data-accent="amber"]:is(.theme-dark,.theme-plum-dark), :root:root[data-accent="amber"] :is(.theme-dark,.theme-plum-dark) { --accent:#fcd34d; --accentText:#10161c; --accent-soft:#4a3410; }
+
+/* Виразність декоративних ефектів: сяйво ілюстрацій центру облікового запису («Макет» і «Студія»). 0 % — без сяйва,
+   45 % — як задумано в макеті, 100 % — насиченіше. На текст, кнопки й контраст не впливає. */
+:root { --effect-sterkte: .45; }
+:is(.mr-mq, .mr-kunst, .mr-kunst-raam) :is(.art-halo, .hero-orb, .art-spark, .orb-star) {
+  opacity: clamp(0, calc(var(--effect-sterkte) * 2.2), 1);
+  filter: saturate(calc(.55 + var(--effect-sterkte)));
+}

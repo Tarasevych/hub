@@ -23,6 +23,8 @@ type Props = {
   onKies: (id: string) => void;
   /** Ім'я та світлина облікового запису для аватарів у вигляді «Макет». */
   gebruiker?: MaquetteGebruiker;
+  /** IDENTITEIT-015: справжня зміна мови сайту (cookie + обліковий запис) — для мовних кнопок картки «Мови» в «Макеті». */
+  onTaal?: (lang: 'uk' | 'nl') => void;
 };
 
 const sectieId = (id: string) => `identity-sectie-${id}`;
@@ -35,7 +37,7 @@ class MaquetteGrens extends Component<{ terugval: ReactNode; children: ReactNode
   render() { return this.state.fout ? this.props.terugval : this.props.children; }
 }
 
-export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker }: Props) {
+export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, gebruiker, onTaal }: Props) {
   const [inBeeld, setInBeeld] = useState(actief);
   const tocRef = useRef<HTMLElement>(null);
   // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
@@ -149,7 +151,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   );
   // Типовий вигляд — макет власника (IDENTITEIT-007); «Студія» і класичний лишаються на вибір. Збій макета повертає класичну сторінку.
   if (atelier && vormgeving === 'maquette') {
-    return <MaquetteGrens terugval={klassiek}><IdentiteitMaquette lang={lang} actief={actief} secties={secties} onKies={onKies} gebruiker={gebruiker} /></MaquetteGrens>;
+    return <MaquetteGrens terugval={klassiek}><IdentiteitMaquette lang={lang} actief={actief} secties={secties} onKies={onKies} gebruiker={gebruiker} onTaal={onTaal} /></MaquetteGrens>;
   }
   return klassiek;
 }

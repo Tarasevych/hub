@@ -5,12 +5,16 @@ import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'reac
 import { readSharedPreferences, watchSharedPreferences, writeSharedPreferences, type ThemePreference } from '../gedeelde-voorkeuren';
 import { hervat, normaalAuto, pauzeer, resolveer, STANDAARD_AUTO, type AutoInstelling, type Palet, type Presentatie } from './kern';
 import './paletten.css';
+import './weergave-stijl.css';
+import { pasWeergaveStijlToe, type WeergaveStijl } from './weergave-stijl';
 
 const GEBEURTENIS = 'tsv:thema';
-type Stand = { palet: Palet | undefined; auto: AutoInstelling | undefined; theme: unknown };
-let stand: Stand = (() => { try { const p = readSharedPreferences(); return { palet: p.palet, auto: p.auto, theme: p.theme }; } catch { return { palet: undefined, auto: undefined, theme: undefined }; } })();
+// IDENTITEIT-015: у стані ще щільність, рух, акцент і виразність ефектів (shared/uiterlijk.ts) — для <html> і для вигляду «Макет».
+type Stand = { palet: Palet | undefined; auto: AutoInstelling | undefined; theme: unknown; stijl: WeergaveStijl };
+const uitVoorkeuren = (p: ReturnType<typeof readSharedPreferences>): Stand => ({ palet: p.palet, auto: p.auto, theme: p.theme, stijl: { dichtheid: p.dichtheid, beweging: p.beweging, accent: p.accent, effecten: p.effecten } });
+let stand: Stand = (() => { try { return uitVoorkeuren(readSharedPreferences()); } catch { return { palet: undefined, auto: undefined, theme: undefined, stijl: {} }; } })();
 const luisteraars = new Set<() => void>();
-const ververs = () => { const p = readSharedPreferences(); const n = { palet: p.palet, auto: p.auto, theme: p.theme }; if (JSON.stringify(n) !== JSON.stringify(stand)) { stand = n; luisteraars.forEach((l) => l()); } };
+const ververs = () => { const n = uitVoorkeuren(readSharedPreferences()); if (JSON.stringify(n) !== JSON.stringify(stand)) { stand = n; luisteraars.forEach((l) => l()); } };
 let gestart = false;
 const abonneer = (l: () => void) => {
   luisteraars.add(l);
@@ -22,6 +26,9 @@ export const useThemaStand = () => useSyncExternalStore(abonneer, lees, lees);
 
 /** Palet kiezen (opgeslagen in de gedeelde voorkeuren van alle subdomeinen). */
 export function zetPalet(palet: Palet) { writeSharedPreferences({ palet }); window.dispatchEvent(new Event(GEBEURTENIS)); }
+/** IDENTITEIT-015: щільність, рух, акцент, ефекти — у спільних уподобаннях (сервер — джерело правди, src/weergave-uiterlijk.ts).
+ *  undefined повертає типове значення (поле зникає із запису). Dichtheid, beweging, accent, effecten: undefined = standaard. */
+export function zetWeergaveStijl(patch: WeergaveStijl) { writeSharedPreferences(patch); window.dispatchEvent(new Event(GEBEURTENIS)); }
 export function zetAuto(auto: AutoInstelling) { writeSharedPreferences({ auto: normaalAuto(auto) }); window.dispatchEvent(new Event(GEBEURTENIS)); }
 export function huidigeAuto(): AutoInstelling { return normaalAuto(stand.auto || STANDAARD_AUTO); }
 export function pauzeerAuto() { zetAuto(pauzeer(huidigeAuto(), Date.now())); }
@@ -49,6 +56,9 @@ export function useThemaPresentatie(theme: ThemePreference, apparaatDonker: bool
     const root = document.documentElement;
     if (!root.classList.contains(`palet-${r.palet}`)) { root.classList.remove(...KLASSEN); root.classList.add(`palet-${r.palet}`); }
   }, [r.palet]);
+  // IDENTITEIT-015: щільність, рух, акцент і ефекти облікового запису — на <html> кожного сервісу (оболонка викликає цей хук).
+  const st = s.stijl;
+  useLayoutEffect(() => { pasWeergaveStijlToe(st); }, [st.dichtheid, st.beweging, st.accent, st.effecten]);
   return r.presentatie;
 }
 

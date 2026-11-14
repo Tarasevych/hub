@@ -329,5 +329,165 @@ v(`  function gaNaar(id,open){`,
     setTimeout(шукати,80);
   }
   function gaNaar(id,open){`);
+
+// IDENTITEIT-015 (крок «vormgeving»). Демо-елементи «Макета», що виглядали справжніми, під'єднано до СПРАВЖНІХ налаштувань сайту
+// (обліковий запис): стиль піктограм, щільність, рух, акцент, виразність ефектів, положення й поведінка меню, мова. Там, де налаштування
+// сайту не має сенсу (підсвічування активного розділу, підказки, загальний вимикач віджетів), — «Приклад вигляду» з поясненням і
+// переходом до справжнього місця; «Активний профіль» отримав справжній тумблер технічного простору.
+// De demo-elementen zijn gekoppeld aan de echte instellingen van de site; waar dat geen zin heeft: «Voorbeeld» met uitleg en een knop.
+v(`  bijAccountMenu: () => void;`,
+`  bijAccountMenu: () => void;
+  /** IDENTITEIT-015: справжні налаштування сайту для елементів макета (обліковий запис). Echte instellingen van de site. */
+  weergave?: MaquetteWeergave;
+  /** Зміна в макеті → справжнє налаштування сайту (зберігається в обліковому записі). Wijziging → echte instelling. */
+  bijWeergave?: (patch: Partial<MaquetteWeergave>) => void;
+  /** Мовні кнопки картки «Мови» → справжня зміна мови сайту (cookie + обліковий запис). Taalknoppen → echte taal van de site. */
+  bijTaal?: (lang: 'uk' | 'nl') => void;`);
+v(`export type Maquette = { stop: () => void; direct: string[];`,
+`export type MaquetteWeergave = {
+  dichtheid: 'compact' | 'normaal' | 'ruim'; beweging: 'systeem' | 'minder'; accent?: 'violet' | 'cyan' | 'pink' | 'amber'; effecten: number;
+  icoonStijl: 'klassiek' | 'kleur'; positie: 'links' | 'rechts' | 'boven' | 'onder'; modus: 'auto' | 'open' | 'dicht';
+};
+export type Maquette = { stop: () => void; direct: string[]; zetWeergave: (w: MaquetteWeergave) => void;`);
+// Щільність: три рівні сайту (індекс 1 = «Компактна», як і раніше, тож клас demo-dense лишається тим самим).
+v(`options:["Комфортна","Компактна"]}`, `options:["Звичайна","Компактна","Простора"]}`);
+v(`options:["Comfortabel","Compact"]}`, `options:["Normaal","Compact","Ruim"]}`);
+
+// Стан сайту → елементи макета; зміна в макеті → сайт. Початкові значення беремо із сайту, а не з демо-значень.
+v(`  preferences.compact=preferences.railMode!=="expanded";
+  const expandedNavGroups`,
+`  preferences.compact=preferences.railMode!=="expanded";
+  // САЙТ (IDENTITEIT-015): елементи макета показують і змінюють справжні налаштування сайту (обліковий запис), не демо-значення.
+  const ПОЗ_САЙТ={left:"links",right:"rechts",top:"boven",bottom:"onder"},ПОЗ_МАКЕТ={links:"left",rechts:"right",boven:"top",onder:"bottom"};
+  const РЕЖИМ_САЙТ={expanded:"open",collapsed:"dicht",auto:"auto"},РЕЖИМ_МАКЕТ={open:"expanded",dicht:"collapsed",auto:"auto"};
+  const ЩІЛЬНІСТЬ=["normaal","compact","ruim"];
+  let сайтАкцент=opties.weergave?opties.weergave.accent:preferences.accent;
+  let сайтГотовий=false;
+  const обранийАкцент=()=>opties.weergave?сайтАкцент:preferences.accent;
+  function демоЗСайту(w){
+    if(!w)return;
+    demoValues["personalization-0"]=w.icoonStijl==="kleur"?1:0;
+    demoValues["personalization-1"]=Math.max(0,ЩІЛЬНІСТЬ.indexOf(w.dichtheid||"normaal"));
+    demoValues["personalization-2"]=w.beweging!=="minder";
+    demoValues["themes-2"]=typeof w.effecten==="number"?w.effecten:45;
+    сайтАкцент=w.accent;
+    if(w.accent)preferences.accent=w.accent;
+    if(ПОЗ_МАКЕТ[w.positie])preferences.position=ПОЗ_МАКЕТ[w.positie];
+    if(РЕЖИМ_МАКЕТ[w.modus]){preferences.railMode=РЕЖИМ_МАКЕТ[w.modus];preferences.compact=preferences.railMode!=="expanded";}
+  }
+  демоЗСайту(opties.weergave);
+  function доСайту(patch){if(сайтГотовий&&typeof opties.bijWeergave==="function")opties.bijWeergave(patch);}
+  // Вже намальовані елементи підлаштовуються без перемальовування карток (справжні панелі під ними не перемонтовуються).
+  function синхронізуватиДемо(){
+    root.querySelectorAll("[data-choice-group]").forEach(b=>{const k=b.dataset.choiceGroup;if(k in demoValues)b.classList.toggle("selected",Number(b.dataset.choiceIndex)===demoValues[k]);});
+    root.querySelectorAll("[data-toggle-demo]").forEach(b=>{const k=b.dataset.toggleDemo;if(k in demoValues){b.setAttribute("aria-pressed",String(demoValues[k]));b.classList.toggle("on",demoValues[k]);}});
+    root.querySelectorAll("[data-range-demo]").forEach(r=>{const k=r.dataset.rangeDemo;if(k in demoValues&&doc.activeElement!==r){r.value=String(demoValues[k]);const o=r.parentElement?.querySelector("output");if(o)o.textContent=demoValues[k]+"%";}});
+    syncDirectVisuals();syncControlStates();refreshLivePreview();
+  }
+  const expandedNavGroups`);
+// Акцент: вибраний лише той, що справді діє на сайті (без вибору — акцент палітри, жоден кружок не позначено).
+v(`widget='<div class="swatches drawer-swatches">'+["violet","cyan","pink","amber"].map(c=>'<button data-accent="'+c+'" class="'+(preferences.accent===c?"selected":"")+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';`,
+  `widget='<div class="swatches drawer-swatches">'+["violet","cyan","pink","amber"].map(c=>'<button data-accent="'+c+'" class="'+(обранийАкцент()===c?"selected":"")+'" aria-pressed="'+(обранийАкцент()===c)+'" aria-label="'+t.colors[c]+'"></button>').join("")+'</div>';`);
+v(`    root.querySelectorAll(".swatches [data-accent]").forEach(b=>b.classList.toggle("selected",b.dataset.accent===preferences.accent));
+    root.querySelectorAll("[data-demo-lang]")`,
+  `    root.querySelectorAll(".swatches [data-accent]").forEach(b=>{const on=b.dataset.accent===обранийАкцент();b.classList.toggle("selected",on);b.setAttribute("aria-pressed",String(on));});
+    root.querySelectorAll("[data-demo-lang]")`);
+// Перемикачі, вибір і повзунок картки → сайт.
+v(`if(key==="menu-0")syncActive();if(key==="menu-1"&&!demoValues[key])hideAnchorTooltip();return;}`,
+  `if(key==="menu-0")syncActive();if(key==="menu-1"&&!demoValues[key])hideAnchorTooltip();if(key==="personalization-2")доСайту({beweging:demoValues[key]?"systeem":"minder"});return;}`);
+v(`if(choice){demoValues[choice.dataset.choiceGroup]=Number(choice.dataset.choiceIndex);root.querySelectorAll('[data-choice-group="'+choice.dataset.choiceGroup+'"]').forEach(button=>button.classList.toggle("selected",button===choice));refreshLivePreview();syncDirectVisuals();return;}`,
+  `if(choice){demoValues[choice.dataset.choiceGroup]=Number(choice.dataset.choiceIndex);root.querySelectorAll('[data-choice-group="'+choice.dataset.choiceGroup+'"]').forEach(button=>button.classList.toggle("selected",button===choice));refreshLivePreview();syncDirectVisuals();const ck=choice.dataset.choiceGroup;if(ck==="personalization-0")доСайту({icoonStijl:demoValues[ck]===1?"kleur":"klassiek"});if(ck==="personalization-1")доСайту({dichtheid:ЩІЛЬНІСТЬ[demoValues[ck]]||"normaal"});return;}`);
+v(`      root.style.setProperty("--effect-intensity",String(range.value/100));`,
+  `      root.style.setProperty("--effect-intensity",String(range.value/100));
+      if(range.dataset.rangeDemo==="themes-2")доСайту({effecten:Number(range.value)});`);
+// Положення й поведінка меню макета = положення (dock.positie) і режим (zijbalk modus) меню сайту; перетягування теж.
+v(`    preferences.position=position;
+    syncRailCompactButton();`,
+  `    preferences.position=position;
+    доСайту({positie:ПОЗ_САЙТ[position]}); // САЙТ (IDENTITEIT-015): положення меню сайту
+    syncRailCompactButton();`);
+v(`    preferences.railMode=mode;
+    preferences.compact=mode!=="expanded";`,
+  `    preferences.railMode=mode;
+    preferences.compact=mode!=="expanded";
+    доСайту({modus:РЕЖИМ_САЙТ[mode]}); // САЙТ (IDENTITEIT-015): режим меню сайту`);
+v(`    if(target.dataset.accent){setAccent(target.dataset.accent);syncControlStates();return;}
+    if(target.dataset.demoLang){setLang(target.dataset.demoLang);return;}`,
+  `    if(target.dataset.accent){сайтАкцент=target.dataset.accent;setAccent(target.dataset.accent);доСайту({accent:target.dataset.accent});syncControlStates();return;}
+    // САЙТ (IDENTITEIT-015): мова сайту (cookie, <html lang>, обліковий запис); двигун перезапускається з новою мовою сам.
+    if(target.dataset.demoLang){if(typeof opties.bijTaal==="function"){if(target.dataset.demoLang!==preferences.lang)opties.bijTaal(target.dataset.demoLang);}else setLang(target.dataset.demoLang);return;}`);
+v(`  setTheme(preferences.theme);
+  setAccent(preferences.accent);`,
+  `  setTheme(preferences.theme);
+  setAccent(preferences.accent);
+  сайтГотовий=true; // САЙТ: далі кожна зміна людини йде на сайт; початкове малювання — ні`);
+v(`    zetProfiel(p) { прийнятиФотоПрофілю(p); },`,
+  `    zetProfiel(p) { прийнятиФотоПрофілю(p); },
+    // САЙТ (IDENTITEIT-015): налаштування змінилося на сайті (справжня панель, інший пристрій) — макет показує те саме, без луни назад.
+    zetWeergave(w) {
+      const колишні={positie:preferences.position,modus:preferences.railMode,accent:preferences.accent};
+      демоЗСайту(w);
+      сайтГотовий=false;
+      try{
+        if(preferences.position!==колишні.positie)setPosition(preferences.position);
+        if(preferences.railMode!==колишні.modus)setRailMode(preferences.railMode);
+        if(сайтАкцент&&сайтАкцент!==колишні.accent)setAccent(сайтАкцент);
+      }finally{сайтГотовий=true;}
+      синхронізуватиДемо();
+    },`);
+
+// Картки: «Активний профіль» — справжній тумблер технічного простору; інші — чесне пояснення з переходом до справжнього місця.
+v(`  function чеснийЕлемент(control,i,sectionId,ціль){
+    const nl=preferences.lang==="nl";`,
+`  function чеснийЕлемент(control,i,sectionId,ціль,пояснення,кнопка){
+    const nl=preferences.lang==="nl";
+    if(пояснення)control={...control,note:escapeMarkup(nl?пояснення.nl:пояснення.uk)};`);
+v(`'+(nl?"Echte instelling":"Справжнє налаштування")+'</button></div></div>';
+  }`,
+`'+(кнопка?escapeMarkup(nl?кнопка.nl:кнопка.uk):(nl?"Echte instelling":"Справжнє налаштування"))+'</button></div></div>';
+  }
+  // САЙТ (IDENTITEIT-015): пояснення там, де справжнього вимикача на сайті свідомо немає.
+  const ЧЕСНО={
+    "menu-0":[{uk:"У меню сайту активний розділ підсвічується завжди: так видно, де ви зараз, і це потрібно програмам читання з екрана. Тому окремого вимикача немає. Вигляд і поведінку меню змінюють у «Налаштування меню».",nl:"In het menu van de site is het actieve onderdeel altijd gemarkeerd: zo ziet u waar u bent, en schermlezers hebben het nodig. Daarom is er geen aparte schakelaar. Het uiterlijk en gedrag van het menu stelt u in bij «Menu-instellingen»."},{uk:"Налаштування меню",nl:"Menu-instellingen"},"#menu-modus"],
+    "menu-1":[{uk:"У меню сайту назва пункту з'являється підказкою завжди, коли меню згорнуте до піктограм: без неї піктограма нічого не каже. Тому окремого вимикача немає. Згорнуте, розгорнуте чи автоматичне меню обирають у «Налаштування меню».",nl:"In het menu van de site verschijnt de naam altijd als hint wanneer het menu tot pictogrammen is ingeklapt: zonder hint zegt een pictogram niets. Daarom is er geen aparte schakelaar. Ingeklapt, uitgeklapt of automatisch kiest u bij «Menu-instellingen»."},{uk:"Налаштування меню",nl:"Menu-instellingen"},"#menu-modus"],
+    "widgets-0":[{uk:"Загального вимикача блоків немає, щоб випадково не сховати весь простір. Блоки ховають і показують по одному в самому просторі: «Мій простір» → кнопка «Налаштувати».",nl:"Er is geen algemene schakelaar voor blokken, zodat u niet per ongeluk de hele werkruimte verbergt. Blokken verbergt en toont u één voor één in de werkruimte zelf: «Mijn ruimte» → knop «Aanpassen»."},{uk:"Відкрити простір",nl:"Werkruimte openen"},"dienst:hub"],
+    "widgets-1":[{uk:"Тут лише зразок. Розмір і порядок ваших справжніх блоків змінюють у самому просторі: «Мій простір» → кнопка «Налаштувати»; там же видно справжні блоки.",nl:"Hier staat alleen een voorbeeld. Grootte en volgorde van uw echte blokken wijzigt u in de werkruimte zelf: «Mijn ruimte» → knop «Aanpassen»; daar ziet u ook uw echte blokken."},{uk:"Відкрити простір",nl:"Werkruimte openen"},"dienst:hub"],
+    "identities-1":[{uk:"Позначку технічного режиму вимкнути не можна: вона не дає виконати дію керування сайтом, думаючи, що ви у звичайному просторі. Колір і згортання технічної смуги налаштовуються на самій смузі (значок налаштувань), коли технічний простір увімкнено — через меню облікового запису.",nl:"De markering van de technische modus kan niet uit: ze voorkomt dat u een beheeractie uitvoert terwijl u denkt in de gewone ruimte te zijn. Kleur en inklappen van de technische band stelt u op de band zelf in (instellingenpictogram) wanneer de technische ruimte aan staat — via het accountmenu."},{uk:"Меню облікового запису",nl:"Accountmenu"},"accountmenu:"],
+  };
+  function карткаПростору(control,i,sectionId){
+    const nl=preferences.lang==="nl";
+    const uitleg=nl?"Gewone of technische ruimte van dit account. De schakelaar is echt: de server controleert uw rechten; zonder toestemming ziet u waarom.":"Звичайний чи технічний простір цього облікового запису. Тумблер справжній: права перевіряє сервер; без дозволу ви побачите причину.";
+    return '<div class="drawer-control-card control-wide mq-echt-kaart" data-echt-kaart="'+sectionId+'-'+i+'">'+
+      '<div class="drawer-control-top"><span class="drawer-control-glyph">'+optionSvg(sectionId,i)+'</span><div class="drawer-control-copy"><strong>'+control.label+'</strong><p>'+escapeMarkup(uitleg)+'</p></div></div>'+
+      '<div class="drawer-control-widget"><div class="mq-echt mq-ruimtewissel" data-echt="ruimtewissel"></div></div></div>';
+  }`);
+v(`  function drawerControl(control,i,sectionId){
+    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)`,
+`  function drawerControl(control,i,sectionId){
+    if(sectionId==="identities"&&i===0)return карткаПростору(control,i,sectionId); // САЙТ (IDENTITEIT-015)
+    const чесно=ЧЕСНО[sectionId+"-"+i];
+    if(чесно)return чеснийЕлемент(control,i,sectionId,чесно[2],чесно[0],чесно[1]);
+    if(Object.prototype.hasOwnProperty.call(демоДоСайту,sectionId)`);
+// Цілі поза гніздом розділу: справжній сервіс (dienst:hub) або меню облікового запису сайту (accountmenu:).
+v(`  function відкритиНаСайті(розділ,ціль){
+    const id=розділ==="identity"?"identities":розділ;`,
+`  function відкритиНаСайті(розділ,ціль){
+    if(typeof ціль==="string"&&ціль.startsWith("dienst:")){opties.bijDienst(ціль.slice(7));return;} // САЙТ (IDENTITEIT-015)
+    if(ціль==="accountmenu:"){opties.bijAccountMenu();return;}
+    const id=розділ==="identity"?"identities":розділ;`);
+// Давня вада (з макета): корінь сторінки сам несе data-accent (setAccent пише body.dataset.accent), тому будь-яке натискання всередині
+// сторінки, навіть у справжній панелі, знаходило «кнопку акценту» в корені: акцент обирався повторно (тепер це пішло б на сайт —
+// людина «вибирала б» акцент, якого не обирала), а вікно навігації не закривалося кліком поза ним. Корінь — не кнопка.
+// Oude fout: de wortel draagt zelf data-accent, dus elke klik kwam bij «de accentknop» uit; de wortel is geen knop.
+v(`    const target=e.target.closest("[data-jump],[data-pos],[data-nav-style],[data-icon-display],[data-rail-mode],[data-theme],[data-accent],[data-demo-lang],.open-detail,.demo-action");
+    if(!target){`,
+`    let target=e.target.closest("[data-jump],[data-pos],[data-nav-style],[data-icon-display],[data-rail-mode],[data-theme],[data-accent],[data-demo-lang],.open-detail,.demo-action");
+    if(target===body)target=null; // САЙТ (IDENTITEIT-015): корінь із data-accent — не кнопка акценту
+    if(!target){`);
+// Вікно навігації: що діє на меню сайту, а що лише на навігацію цієї сторінки (переклад; сам абзац додає sjabloon.mjs).
+v(`    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");`,
+`    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");
+    write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden ook voor het menu van de site en worden in uw account bewaard. Stijl en inhoud van de knoppen gelden alleen voor de navigatie van deze pagina op dit apparaat.":"Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.");
+    write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");`);
 fs.writeFileSync(f, s);
 console.log('ok');

@@ -7,6 +7,7 @@ import { leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type AutoInstelling, 
 import { hervatAuto, pauzeerAuto, useAutoStatus, zetAuto, zetPalet } from './useThema';
 import { kleurWaarden, PUUR, SECTIES, type Sectie } from './paletten';
 import './thema-instellingen.css';
+import { AccentEnEffecten } from './WeergaveVoorkeuren';
 
 type Tr = (uk: string, nl: string) => string;
 type Props = { tr: Tr; lang: 'uk' | 'nl'; theme: ThemePreference; onTheme: (t: ThemePreference) => void; violetToegestaan: boolean };
@@ -105,5 +106,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
       </div>
       {!violetToegestaan && <p className='settings-honest-note'>{tr('Фіолетова тема не дозволена для цього акаунта.', 'Het violette thema is niet toegestaan voor dit account.')}</p>}
     </section>
+    {/* IDENTITEIT-015: акцент поверх палітри й виразність ефектів — справжні налаштування облікового запису (були лише в «Макеті»). */}
+    <AccentEnEffecten tr={tr} />
   </div>;
 }

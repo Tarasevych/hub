@@ -22,7 +22,7 @@ export function VormgevingKiezer({ lang, className = '', compact = false }: { la
         const t = VORMGEVING_TEKST[v];
         const kan = beschikbaar.includes(v);
         const uitleg = kan
-          ? (lang === 'uk' ? t.ukUitleg : t.nlUitleg) + ' ' + (lang === 'uk' ? 'Вибір зберігається на цьому пристрої.' : 'De keuze wordt op dit apparaat bewaard.')
+          ? (lang === 'uk' ? t.ukUitleg : t.nlUitleg) + ' ' + (lang === 'uk' ? 'Вибір зберігається в обліковому записі й діє на всіх ваших пристроях після входу.' : 'De keuze wordt in het account bewaard en geldt na aanmelden op al uw apparaten.')
           : waaromNiet;
         return (
           <button key={v} type='button' role='radio' aria-checked={huidig === v} title={uitleg} data-vormgeving={v}

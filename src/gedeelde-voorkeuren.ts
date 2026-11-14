@@ -24,14 +24,14 @@
 import{defaults,idForTab,serviceForHostname,serviceTabs,type CanonicalService}from'./canoniek-dienst';
 import type{AutoInstelling,Palet}from'./thema/kern';
 import type{MenuRuimte}from'../shared/menu-model';
-import{normaliseerUiterlijkAccount,normaliseerUiterlijkAvatar,normaliseerUiterlijkRuimte,standaardVoorRuimte,uiterlijkLeeg,UITERLIJK_DIENSTEN,type UiterlijkAccount,type UiterlijkRuimte}from'../shared/uiterlijk';
+import{normaliseerUiterlijkAccount,normaliseerUiterlijkAvatar,normaliseerUiterlijkRuimte,standaardVoorRuimte,uiterlijkLeeg,UITERLIJK_DIENSTEN,type UiterlijkAccount,type UiterlijkRuimte,type UiterlijkVormgeving,type UiterlijkDichtheid,type UiterlijkBeweging,type UiterlijkAccent}from'../shared/uiterlijk';
 export type SharedTheme='light'|'dark'|'device'|'auto'|'plum'|'plum-light'|'plum-dark';
 export type ThemePreference='light'|'dark'|'device'|'auto'|'plum-light'|'plum-dark';
 export type PresentationTheme='light'|'dark'|'plum-light'|'plum-dark';
 export type CachedRouteView='signed-out'|'mail-empty'|'github-empty'|'api-empty';
 /** Platte weergave van de voorkeuren van DIT tabblad (dit account, deze ruimte). De vorm blijft zoals hij was, zodat alle
  *  bestaande aanroepen (thema, taal, bel, avatar, laatste paden) ongewijzigd blijven werken — alleen de OPSLAG is nu per scope. */
-export type SharedPreferences={lang?:'uk'|'nl';theme?:SharedTheme;menu?:string[];lastPathByService?:Partial<Record<CanonicalService,string>>;accountKeyByService?:Partial<Record<CanonicalService,string>>;avatarUrl?:string;viewByRoute?:Record<string,CachedRouteView>;notificationSound?:boolean;notificationBellPosition?:{x:number;y:number};palet?:Palet;auto?:AutoInstelling;revision?:number};
+export type SharedPreferences={lang?:'uk'|'nl';theme?:SharedTheme;menu?:string[];lastPathByService?:Partial<Record<CanonicalService,string>>;accountKeyByService?:Partial<Record<CanonicalService,string>>;avatarUrl?:string;viewByRoute?:Record<string,CachedRouteView>;notificationSound?:boolean;notificationBellPosition?:{x:number;y:number};palet?:Palet;auto?:AutoInstelling;revision?:number;/* IDENTITEIT-015: вигляд центру облікового запису, щільність, рух, акцент, виразність ефектів (у обліковому записі, per ruimte) */vormgeving?:UiterlijkVormgeving;dichtheid?:UiterlijkDichtheid;beweging?:UiterlijkBeweging;accent?:UiterlijkAccent;effecten?:number};
 const COOKIE='tsv_ecosystem_preferences',LOCAL='tsv-ecosystem-presentation-v2';export const HUB_LAYOUTS_STORAGE_KEY='tsv-hub-workspace-layouts-v1';const LEGACY_THEME_KEYS=['pavlo-hub-theme','tarasevych-ecosystem-theme','tsv-ecosystem-theme-v1'] as const,LEGACY_LANGUAGE_KEYS=['pavlo-hub-language','tarasevych-ecosystem-language'] as const,LEGACY_LAYOUT_KEYS=['pavlo-hub-workspace-layouts'] as const;
 /** Hints per TABBLAD (sessionStorage is per tabblad, niet per browser): welk account en welke ruimte had dit tabblad als laatste?
  *  Zo toont het eerste beeld na F5 meteen het juiste uiterlijk en nooit dat van een ander account of een ander profiel. */
@@ -153,12 +153,12 @@ export const readSharedPreferences=():SharedPreferences=>{
   for(const service of services){const path=normalizePath(service,ruimte.laatstePad?.[service]);if(path)paths[service]=path}
   const routeViews:Record<string,CachedRouteView>={};
   for(const [sleutel,waarde] of Object.entries(ruimte.routeBeeld||{}))if(views.includes(waarde as CachedRouteView))routeViews[sleutel]=waarde as CachedRouteView;
-  return{lang:persoon.taal,theme:ruimte.modus,palet:ruimte.palet as Palet|undefined,auto:ruimte.auto as AutoInstelling|undefined,menu:ruimte.menu,lastPathByService:paths,accountKeyByService:opslag.accountPerDienst,avatarUrl:persoon.avatar||'',viewByRoute:routeViews,notificationSound:ruimte.geluid,notificationBellPosition:ruimte.belPositie,revision:opslag.revisie};
+  return{lang:persoon.taal,theme:ruimte.modus,palet:ruimte.palet as Palet|undefined,auto:ruimte.auto as AutoInstelling|undefined,menu:ruimte.menu,lastPathByService:paths,accountKeyByService:opslag.accountPerDienst,avatarUrl:persoon.avatar||'',viewByRoute:routeViews,notificationSound:ruimte.geluid,notificationBellPosition:ruimte.belPositie,revision:opslag.revisie,vormgeving:ruimte.vormgeving,dichtheid:ruimte.dichtheid,beweging:ruimte.beweging,accent:ruimte.accent,effecten:ruimte.effecten};
 };
 
 // ---------------------------------------------------------------------------------------- schrijven
 /** Velden die het EERSTE BEELD niet nodig heeft: die vallen als eerste uit de cookie als hij te groot wordt. */
-const SNIJ_VELDEN=['routeBeeld','laatstePad','menu','belPositie','geluid'] as const;
+const SNIJ_VELDEN=['routeBeeld','laatstePad','menu','belPositie','geluid','vormgeving'] as const;
 const zonder=(record:UiterlijkRuimte,velden:readonly string[]):UiterlijkRuimte=>Object.fromEntries(Object.entries(record).filter(([k])=>!velden.includes(k)))as UiterlijkRuimte;
 const deel=(opslag:Opslag,sleutels:string[],snij:readonly string[]):Opslag=>{
   const uit:Opslag={versie:3,revisie:opslag.revisie,...(opslag.kaartOp?{kaartOp:opslag.kaartOp}:{}),accountPerDienst:opslag.accountPerDienst,accounts:{},ruimtes:{}};
@@ -182,7 +182,7 @@ const bewaren=(opslag:Opslag)=>{
   cookieKopie=null;try{document.cookie=`${COOKIE}=${snijden(opslag,sleutel)}; Path=/; Max-Age=31536000; SameSite=Lax; Secure${shared?'; Domain=.tarasevych.com':''}`}catch{/* geen document */}
   vorigeBron='';
 };
-const RUIMTE_VELDEN=['theme','palet','auto','menu','notificationSound','notificationBellPosition','lastPathByService','viewByRoute'] as const;
+const RUIMTE_VELDEN=['theme','palet','auto','menu','notificationSound','notificationBellPosition','lastPathByService','viewByRoute','vormgeving','dichtheid','beweging','accent','effecten'] as const;
 /** Schrijven gaat altijd naar de scope van DIT tabblad (dit account, deze ruimte) — nooit naar die van een ander account of profiel.
  *  `accountKeyByService` is de enige globale waarde: die zegt juist WELK account bij welke dienst hoort. */
 export const writeSharedPreferences=(patch:SharedPreferences)=>{
@@ -195,6 +195,7 @@ export const writeSharedPreferences=(patch:SharedPreferences)=>{
     const samengevoegd=normaliseerUiterlijkRuimte({...vorigeRuimte,
       ...('theme' in patch?{modus:patch.theme}:{}),...('palet' in patch?{palet:patch.palet}:{}),...('auto' in patch?{auto:patch.auto}:{}),...('menu' in patch?{menu:patch.menu}:{}),
       ...('notificationSound' in patch?{geluid:patch.notificationSound}:{}),...('notificationBellPosition' in patch?{belPositie:patch.notificationBellPosition}:{}),
+      ...('vormgeving' in patch?{vormgeving:patch.vormgeving}:{}),...('dichtheid' in patch?{dichtheid:patch.dichtheid}:{}),...('beweging' in patch?{beweging:patch.beweging}:{}),...('accent' in patch?{accent:patch.accent}:{}),...('effecten' in patch?{effecten:patch.effecten}:{}),
       laatstePad:{...vorigeRuimte.laatstePad,...patch.lastPathByService},routeBeeld:{...vorigeRuimte.routeBeeld,...patch.viewByRoute},op:rev});
     volgende.ruimtes[sleutel]=samengevoegd;
     if(uiterlijkLeeg(samengevoegd))delete volgende.ruimtes[sleutel];

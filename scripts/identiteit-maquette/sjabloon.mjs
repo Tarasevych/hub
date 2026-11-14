@@ -31,6 +31,13 @@ if (html.includes('profilePhotoFile') || !html.includes('data-echt-actie="accoun
 html = html.replace(/(<p>Можна також перетягнути заголовок панелі[^<]*<\/p>\s*<\/div>)/, '<div class="mq-echt mq-vormgeving" data-echt="vormgeving-venster"></div>\n    $1');
 html = html.replace(/(<\/footer>)/, '$1\n        <div class="mq-echt mq-vormgeving mq-vormgeving-voet" data-echt="vormgeving-voet"></div>');
 if (!html.includes('vormgeving-venster') || !html.includes('vormgeving-voet')) throw new Error('гнізда перемикача не вставлено');
+// САЙТ (IDENTITEIT-015): чесне пояснення у вікні навігації — положення й поведінка діють і на меню сайту (обліковий запис), стиль і вміст
+// кнопок — лише навігація цієї сторінки; кнопка веде до справжніх налаштувань меню. Переклад ставить двигун (renderStatic).
+// Саме <div>, не <p>: двигун пише підказку перетягування в перший прямий <p> вікна (:scope > p) і стер би це пояснення.
+html = html.replace(/(<div class="mq-echt mq-vormgeving" data-echt="vormgeving-venster">)/,
+  '<div class="mq-pagina-nav-noot"><span id="mqPaginaNavNoot">Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.</span> ' +
+  '<button type="button" id="mqPaginaNavKnop" class="mq-pagina-nav-knop" data-kaart-ga="menu|#menu-modus">Налаштування меню сайту</button></div>\n    $1');
+if (!html.includes('id="mqPaginaNavNoot"')) throw new Error('пояснення вікна навігації не вставлено');
 
 // САЙТ: відокремлення внутрішнього дороговказу розділів сторінки від головного гамбургера сайту в шапці .topbar.
 // Переносимо #adaptiveNavToggle із .topbar-start в окрему липку підсмугу змісту сторінки під шапкою зі списковою піктограмою та векторним шевроном.

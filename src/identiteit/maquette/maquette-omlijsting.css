@@ -113,6 +113,12 @@ html[data-identiteit-maquette='aan'] .canonical-chrome.sidebar-drawer-mode .mr-m
 }
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button:hover{border-color:rgba(var(--global-rgb),.55)}
 .mr-mq.mr-mq.mr-mq.mr-mq .mq-kiezer button.is-actief{background:rgba(var(--global-rgb),.18);border-color:rgba(var(--global-rgb),.6);color:var(--text)}
+/* IDENTITEIT-015: пояснення у вікні навігації (що діє на меню сайту) і справжній тумблер простору в картці «Активний профіль». */
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-pagina-nav-noot{margin:12px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-pagina-nav-knop{display:inline-flex;align-items:center;min-height:30px;margin-top:6px;padding:4px 11px;border-radius:999px;border:1px solid var(--card-border);background:var(--surface);color:var(--text);font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-pagina-nav-knop:focus-visible{outline:2px solid rgba(var(--global-rgb),.75);outline-offset:2px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-ruimtewissel{min-height:44px}
+.mr-mq.mr-mq.mr-mq.mr-mq .mq-echt-noot{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
 
 /* Зсуви внутрішнього якірного дороговказу макета відносно правого або нижнього дока головного меню сайту */
 .mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731).rail-right:not(.rail-smart-condensed) .anchor-rail{right:calc(var(--mq-rechts,0px) + 19px)!important}

@@ -7,7 +7,12 @@ import { createPortal } from 'react-dom';
 import './maquette-stijlen.css';
 import './maquette-omlijsting.css';
 import { MAQUETTE_SJABLOON } from './maquette-sjabloon';
-import { startMaquette, type Maquette, type MaquetteOpties } from './maquette-motor';
+import { startMaquette, type Maquette, type MaquetteOpties, type MaquetteWeergave } from './maquette-motor';
+import { useThemaStand, zetWeergaveStijl } from '../../thema/useThema';
+import type { WeergaveStijl } from '../../thema/weergave-stijl';
+import { useZijbalkVoorkeuren, zetZijbalk } from '../../zijbalk-voorkeuren';
+import { UITERLIJK_EFFECTEN_STANDAARD } from '../../../shared/uiterlijk';
+import { ProfielRuimteKaart } from '../ProfielRuimteKaart';
 import { VormgevingKiezer } from '../VormgevingKiezer';
 import { GA_NAAR_DIENST } from '../identiteit-vormgeving';
 import { AtelierInhoud } from '../atelier-inhoud';
@@ -27,7 +32,24 @@ type Props = {
   onKies: (id: string) => void;
   /** Ім'я та світлина облікового запису — для аватарів макета (файл тут не обирають; це робить розділ «Акаунт»). */
   gebruiker?: MaquetteGebruiker;
+  /** IDENTITEIT-015: справжня зміна мови сайту (changeLanguage: cookie, <html lang>, обліковий запис). Echte taalwissel. */
+  onTaal?: (lang: 'uk' | 'nl') => void;
 };
+
+/** IDENTITEIT-015: зміна в елементі макета → справжнє налаштування сайту. Вигляд (щільність, рух, акцент, ефекти) — у спільних
+ *  уподобаннях облікового запису; меню (стиль піктограм, положення, режим) — у налаштуваннях меню. Обидва зберігає сервер.
+ *  Wijziging in het ontwerp → echte instelling: weergave via de gedeelde voorkeuren, menu via de zijbalkvoorkeuren. */
+export function weergaveNaarSite(patch: Partial<MaquetteWeergave>) {
+  const stijl: WeergaveStijl = {};
+  if ('dichtheid' in patch) stijl.dichtheid = patch.dichtheid === 'normaal' ? undefined : patch.dichtheid;
+  if ('beweging' in patch) stijl.beweging = patch.beweging === 'minder' ? 'minder' : undefined;
+  if ('accent' in patch) stijl.accent = patch.accent;
+  if ('effecten' in patch) stijl.effecten = patch.effecten === UITERLIJK_EFFECTEN_STANDAARD ? undefined : patch.effecten;
+  if (Object.keys(stijl).length) zetWeergaveStijl(stijl);
+  if (patch.icoonStijl || patch.positie || patch.modus) {
+    zetZijbalk((z) => ({ ...z, ...(patch.icoonStijl ? { icoonStijl: patch.icoonStijl } : {}), ...(patch.modus ? { modus: patch.modus } : {}), ...(patch.positie ? { dock: { ...z.dock, positie: patch.positie } } : {}) }));
+  }
+}
 
 /** Ідентифікатори макета ↔ сайту: лише «identities» ↔ «identity» відрізняються. */
 export const naarSite = (id: string) => (id === 'identities' ? 'identity' : id);
@@ -68,7 +90,18 @@ const openAccountMenu = () => {
   });
 };
 
-export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }: Props) {
+export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker, onTaal }: Props) {
+  // IDENTITEIT-015: справжній стан сайту для елементів макета (вигляд облікового запису + меню).
+  const { stijl } = useThemaStand();
+  const zijbalk = useZijbalkVoorkeuren();
+  const weergave: MaquetteWeergave = {
+    dichtheid: stijl.dichtheid || 'normaal', beweging: stijl.beweging || 'systeem', accent: stijl.accent, effecten: stijl.effecten ?? UITERLIJK_EFFECTEN_STANDAARD,
+    icoonStijl: zijbalk.icoonStijl, positie: zijbalk.dock.positie, modus: zijbalk.modus,
+  };
+  const weergaveRef = useRef(weergave);
+  weergaveRef.current = weergave;
+  const onTaalRef = useRef(onTaal);
+  onTaalRef.current = onTaal;
   const wortel = useRef<HTMLDivElement>(null);
   const motor = useRef<Maquette | null>(null);
   // Гнізда .mq-echt у живій розмітці; картки будуються рядком HTML, тож після кожного перемальовування збираємо їх знову.
@@ -94,7 +127,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }:
       let houder = houders.current.get(id);
       if (!houder) {
         houder = document.createElement('div');
-        houder.className = id.startsWith('vormgeving') ? 'mq-echt-houder' : 'mq-echt-houder mq-echt-inhoud';
+        houder.className = id.startsWith('vormgeving') || id === 'ruimtewissel' ? 'mq-echt-houder' : 'mq-echt-houder mq-echt-inhoud';
         houders.current.set(id, houder);
       }
       if (houder.parentNode !== gat) gat.appendChild(houder);
@@ -123,6 +156,10 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }:
       bijRender: verzamelGaten,
       bijDienst: (id) => window.dispatchEvent(new CustomEvent(GA_NAAR_DIENST, { detail: id })),
       bijAccountMenu: openAccountMenu,
+      weergave: weergaveRef.current,
+      bijWeergave: weergaveNaarSite,
+      // Без обробника мови (старі виклики) — кнопки змінюють лише тексти макета, як раніше.
+      ...(onTaalRef.current ? { bijTaal: (l: 'uk' | 'nl') => onTaalRef.current?.(l) } : {}),
     });
     motor.current = m;
     verzamelGaten();
@@ -149,6 +186,15 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }:
 
   useEffect(() => { motor.current?.zetProfiel(profiel(gebruiker)); }, [gebruiker?.naam, gebruiker?.foto]);
 
+  // IDENTITEIT-015: налаштування змінилося на сайті (справжня панель нижче, інший пристрій, меню) — макет показує те саме.
+  const weergaveSleutel = JSON.stringify(weergave);
+  const vorigeWeergave = useRef(weergaveSleutel);
+  useEffect(() => {
+    if (vorigeWeergave.current === weergaveSleutel) return;
+    vorigeWeergave.current = weergaveSleutel;
+    motor.current?.zetWeergave(weergaveRef.current);
+  }, [weergaveSleutel]);
+
   return (
     <>
       <div ref={wortel} className='mr-mq' lang={lang} data-vormgeving='maquette'
@@ -161,6 +207,7 @@ export function IdentiteitMaquette({ lang, actief, secties, onKies, gebruiker }:
           const houder = houders.current.get(id);
           if (!houder || !gemonteerd.has(id)) return null;
           if (id.startsWith('vormgeving')) return createPortal(<VormgevingKiezer lang={lang} className='mq-kiezer' />, houder, id);
+          if (id === 'ruimtewissel') return createPortal(<ProfielRuimteKaart lang={lang} />, houder, id);
           const sectie = secties.find((s) => s.id === naarSite(id));
           return sectie ? createPortal(sectie.inhoud, houder, id) : null;
         })}
