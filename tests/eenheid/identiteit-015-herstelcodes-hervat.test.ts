@@ -40,10 +40,16 @@ export async function main(): Promise<number> {
     effect.includes('!magHerstelcodesHervatten(alleen)') && effect.indexOf('magHerstelcodesHervatten(alleen)') < effect.indexOf("neemHervat('herstelcodes-maken')"));
 
   // Супутня вада з того самого e2e: на сторінці повернення від Google оболонка питала прапорець tech-ruimtes-v2 ще без контексту вкладки → 401.
-  const { opGoogleTerugkeer } = await import('../../src/platform/google-terugkeer');
+  const { opGoogleTerugkeer, markeerGoogleTerugkeer } = await import('../../src/platform/google-terugkeer');
   check('сторінку повернення Google розпізнано (state v2./gsuite.v2. + code або error), звичайні сторінки — ні',
     opGoogleTerugkeer('?state=v2.uk.abc&code=xyz') && opGoogleTerugkeer('?state=gsuite.v2.nl.q&error=access_denied')
     && !opGoogleTerugkeer('?lang=uk') && !opGoogleTerugkeer('?state=v2.uk.abc') && !opGoogleTerugkeer('?state=iets&code=1'));
+  (globalThis as Record<string, unknown>).location = { pathname: '/', search: '', origin: 'https://id.tarasevych.com' };
+  const voor = opGoogleTerugkeer();
+  markeerGoogleTerugkeer();
+  check('після очищення адреси обробником позначка все одно розпізнає сторінку повернення', voor === false && opGoogleTerugkeer() === true && opGoogleTerugkeer('?lang=uk') === false);
+  const terugBron = readFileSync('src/EigenaarIdentiteitTerug.tsx', 'utf8');
+  check('EigenaarIdentiteitTerug ставить позначку ДО history.replaceState', terugBron.indexOf('markeerGoogleTerugkeer();') > 0 && terugBron.indexOf('markeerGoogleTerugkeer();') < terugBron.indexOf("history.replaceState({},'',current.pathname||'/')"));
   const vlagBron = readFileSync('src/tech/ruimtes/ruimtes-vlag.ts', 'utf8');
   check('laadRuimtesVlag на сторінці повернення не робить запиту', /laadRuimtesVlag\(opnieuw = false\): Promise<boolean> \{\n  if \(opGoogleTerugkeer\(\)\) return Promise\.resolve/.test(vlagBron));
   return einde();
