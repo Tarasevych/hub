@@ -214,6 +214,28 @@ export async function main(): Promise<number> {
       /data-dichtheid="compact"\] \{ --ruimte-1:3px;[^}]*--ruimte-6:24px; \}/.test(css) && /data-dichtheid="ruim"\] \{ --ruimte-1:5px;[^}]*--ruimte-6:40px; \}/.test(css) && !/--tekst-|--tik-hoogte/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')));
     check('рух: «менше руху» вимикає анімації й переходи на всьому сайті поверх пристрою', /:root\[data-beweging="minder"\] \*[^{]*\{[^}]*animation-duration: \.01ms !important;[^}]*transition-duration: \.01ms !important;/.test(css));
     check('ефекти: --effect-sterkte керує сяйвом ілюстрацій «Макета» і «Студії» (0 % — без сяйва)', /--effect-sterkte: \.45;/.test(css) && /opacity: clamp\(0, calc\(var\(--effect-sterkte\) \* 2\.2\), 1\)/.test(css) && /\.mr-mq, \.mr-kunst/.test(css));
+    {
+      // IDENTITEIT-015 (приймання thema): кожне власне приглушення кулі вступу в макеті за шириною має правило з тим самим множником ×
+      // виразність ефектів і вищою специфічністю — інакше на телефоні й планшеті повзунок нічого не змінює (знайдено в e2e).
+      const mq = readFileSync('src/identiteit/maquette/maquette-stijlen.css', 'utf8');
+      const eigen = [...mq.matchAll(/\.mr-mq\.mr-mq\.mr-mq\.mr-mq:where\(([^)]+)\) \.hero-orb\{[^}]*?opacity:([.\d]+)/g)].map((m) => [m[1], m[2]] as const);
+      const mis = eigen.filter(([bp, o]) => !css.includes(`.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(${bp}) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * ${o}), 1); }`));
+      check('ефекти: приглушення кулі вступу на вузьких екранах (≤1040, 731–900, ≤730) теж множиться на виразність ефектів', eigen.length >= 3 && mis.length === 0, JSON.stringify({ eigen, mis }));
+    }
+    {
+      // IDENTITEIT-015 (приймання thema): «менше руху» перемагає власні переходи «Макета» з !important. Правило для .mr-mq має
+      // специфічність (0,10,0); жодне правило макета з ненульовим переходом/анімацією й !important не має 10+ класів — знайдено в e2e.
+      const mq = readFileSync('src/identiteit/maquette/maquette-stijlen.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      const regel = /:root\[data-beweging="minder"\] (\.mr-mq){8} \*,[^{]*\{[^}]*animation-duration: \.01ms !important;[^}]*transition-duration: \.01ms !important;/.test(css);
+      const klassen = (sel: string) => (sel.replace(/:where\([^)]*\)/g, '').match(/\.[\w-]+|\[[^\]]+\]|:(?!:)(?!where|before|after|first-line|first-letter)[\w-]+/g) || []).length;
+      const sterker: string[] = [];
+      for (const m of mq.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const body = m[2];
+        if (!/(transition|animation)[^;]*!important/.test(body) || /(transition|animation):\s*none\s*!important/.test(body)) continue;
+        for (const sel of m[1].split(',')) if (klassen(sel) >= 10) sterker.push(sel.trim().slice(0, 120));
+      }
+      check('рух: «менше руху» перемагає переходи «Макета» з !important (правило 0,10,0; сильніших правил руху в макеті немає)', regel && sterker.length === 0, sterker.slice(0, 5).join(' | '));
+    }
     const w = { dataset: {} as Record<string, string>, stijl: new Map<string, string>(), style: { setProperty(k: string, v: string) { w.stijl.set(k, v); }, removeProperty(k: string) { w.stijl.delete(k); } } };
     pasWeergaveStijlToe({ dichtheid: 'compact', beweging: 'minder', accent: 'pink', effecten: 10 }, w as never);
     const een = JSON.stringify(w.dataset) + w.stijl.get('--effect-sterkte');

@@ -93,6 +93,22 @@ export function autoNu(a: AutoInstelling, nu: number): { donker: boolean; volgen
   return { ...autoZonderPauze(a, nu), gepauzeerd: false };
 }
 
+/** IDENTITEIT-015 (приймання thema): мить, коли тема СПРАВДІ зміниться. `volgende` у полярний день/ніч (і в розкладі з однаковими
+ *  годинами) — лише північ для нової перевірки, а не перемикання; статус не має обіцяти перемикання, якого не буде. Йдемо від
+ *  межі до межі (до `maxStappen` діб) і повертаємо першу, де світла/темна стає іншою; null — перемикань не знайдено.
+ *  Het moment waarop het thema ECHT wisselt: bij poolnacht/-dag is `volgende` alleen middernacht (nieuwe controle), geen wissel. */
+export function echteWissel(a: AutoInstelling, nu: number, maxStappen = 400): number | null {
+  const begin = autoNu(a, nu).donker;
+  let t = nu;
+  for (let i = 0; i < maxStappen; i++) {
+    const r = autoNu(a, t);
+    if (r.donker !== begin) return t;
+    if (!(r.volgende > t)) return null;
+    t = r.volgende;
+  }
+  return null;
+}
+
 /** «Призупинити до наступного перемикання»: zet de ANDERE modus vast tot het volgende geplande schakelmoment. */
 export function pauzeer(a: AutoInstelling, nu: number): AutoInstelling {
   const r = autoZonderPauze(a, nu);

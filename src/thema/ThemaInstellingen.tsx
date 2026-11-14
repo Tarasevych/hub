@@ -23,6 +23,15 @@ function Voorbeeld({ w, label }: { w: Mini; label: string }) {
   </span>;
 }
 const tijd = (t: number, lang: 'uk' | 'nl') => new Date(t).toLocaleTimeString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { hour: '2-digit', minute: '2-digit' });
+const datum = (t: number, lang: 'uk' | 'nl') => new Date(t).toLocaleDateString(lang === 'uk' ? 'uk-UA' : 'nl-BE', { day: '2-digit', month: '2-digit' });
+/** IDENTITEIT-015 (приймання thema): статус називає СПРАВЖНЄ перемикання. У полярний день/ніч раніше стояло «наступне перемикання о 00:00»,
+ *  хоча о північ нічого не змінюється. Далі ніж за добу — з датою; не знайдено — чесно «найближчим часом немає».
+ *  De status noemt de echte wissel: bij poolnacht/-dag stond er «om 00:00» terwijl er dan niets wisselt. */
+function wisselTekst(wissel: number | null, nu: number, tr: Tr, lang: 'uk' | 'nl'): string {
+  if (wissel === null) return ` · ${tr('перемикань найближчим часом немає', 'voorlopig geen wissel')}`;
+  if (wissel - nu <= 24 * 3600 * 1000) return ` · ${tr('наступне перемикання о', 'volgende wissel om')} ${tijd(wissel, lang)}`;
+  return ` · ${tr('наступне перемикання', 'volgende wissel')} ${datum(wissel, lang)} ${tr('о', 'om')} ${tijd(wissel, lang)}`;
+}
 
 export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToegestaan }: Props) {
   const status = useAutoStatus(theme);
@@ -69,7 +78,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
       <h3 id='thema-auto-kop'>{tr('Автоперемикання', 'Automatisch wisselen')}</h3>
       <p className='thema-status' role='status' data-thema-status>
         {status.donker ? <Moon aria-hidden /> : <Sun aria-hidden />}
-        <span>{status.donker ? tr('Зараз темна', 'Nu donker') : tr('Зараз світла', 'Nu licht')}{status.volgende ? ` · ${tr('наступне перемикання о', 'volgende wissel om')} ${tijd(status.volgende, lang)}` : ''}{status.gepauzeerd ? ` · ${tr('автоперемикання призупинено', 'automatisch wisselen gepauzeerd')}` : ''}</span>
+        <span>{status.donker ? tr('Зараз темна', 'Nu donker') : tr('Зараз світла', 'Nu licht')}{wisselTekst(status.wissel, status.nu, tr, lang)}{status.gepauzeerd ? ` · ${tr('автоперемикання призупинено', 'automatisch wisselen gepauzeerd')}` : ''}</span>
         <button type='button' className='thema-pauze' onClick={() => (status.gepauzeerd ? hervatAuto() : pauzeerAuto())} data-thema-pauze>{status.gepauzeerd ? <><Play aria-hidden />{tr('Повернути автоперемикання', 'Automatisch wisselen hervatten')}</> : <><Pause aria-hidden />{tr('Призупинити до наступного перемикання', 'Pauzeren tot de volgende wissel')}</>}</button>
       </p>
       <div className='thema-soort' role='radiogroup' aria-label={tr('Як перемикати', 'Hoe wisselen')}>

@@ -14,6 +14,15 @@
   animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
   transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
 }
+/* IDENTITEIT-015 (приймання thema): «Макет» задає власні переходи з !important і специфічністю до 0,8,0 (maquette-stijlen.css, понад 70
+   правил), тож загальне правило вище (0,2,0) їх не перемагало — у «Макеті» лишалося понад сто рухомих елементів. Те саме правило з
+   вищою специфічністю (0,10,0) для самого «Макета» і всього в ньому; тест стежить, щоб макет не мав сильніших правил руху.
+   In het ontwerp wint «minder beweging» nu ook. */
+:root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq, :root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *,
+:root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::before, :root[data-beweging="minder"] .mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important;
+  transition-duration: .01ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important;
+}
 
 /* Акцент поверх палітри. Специфічність (:root:root + атрибут + клас теми = 0,4,0) вища за палітри (html.palet-kleur[…] .theme-*
    = 0,3,1) і оболонку (.canonical-chrome.theme-* = 0,2,0). Пари перевіряє tests/eenheid/identiteit-015-vormgeving.test.ts:
@@ -34,3 +43,9 @@
   opacity: clamp(0, calc(var(--effect-sterkte) * 2.2), 1);
   filter: saturate(calc(.55 + var(--effect-sterkte)));
 }
+/* IDENTITEIT-015 (приймання thema): на вузьких екранах макет приглушує кулю вступу власним opacity (≤1040 — .72, 731–900 — .22,
+   ≤730 — .45; maquette-stijlen.css, специфічність 0,5,0), і повзунок ефектів на телефоні й планшеті її не змінював. Тут той самий
+   множник × виразність ефектів, специфічність вища (0,6,0); за типових 45 % вигляд як у макеті. Op smalle schermen telt de schuif nu ook. */
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-1040) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .72), 1); }
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-min-731.bp-max-900) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .22), 1); }
+.mr-mq.mr-mq.mr-mq.mr-mq.mr-mq:where(.bp-max-730) .hero-orb { opacity: clamp(0, calc(var(--effect-sterkte) * 2.2 * .45), 1); }

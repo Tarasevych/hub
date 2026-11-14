@@ -3,7 +3,7 @@
 // schakelt zelf om op het volgende geplande moment (zonsondergang, einde van het tijdvenster, einde van een pauze).
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { readSharedPreferences, watchSharedPreferences, writeSharedPreferences, type ThemePreference } from '../gedeelde-voorkeuren';
-import { hervat, normaalAuto, pauzeer, resolveer, STANDAARD_AUTO, type AutoInstelling, type Palet, type Presentatie } from './kern';
+import { echteWissel, hervat, normaalAuto, pauzeer, resolveer, STANDAARD_AUTO, type AutoInstelling, type Palet, type Presentatie } from './kern';
 import './paletten.css';
 import './weergave-stijl.css';
 import { pasWeergaveStijlToe, type WeergaveStijl } from './weergave-stijl';
@@ -68,5 +68,7 @@ export function useAutoStatus(theme: ThemePreference) {
   const [nu, setNu] = useState(() => Date.now());
   useEffect(() => { const t = window.setInterval(() => setNu(Date.now()), 30000); return () => window.clearInterval(t); }, []);
   const apparaatDonker = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
-  return { ...resolveer({ theme, palet: s.palet, auto: s.auto, apparaatDonker, nu }), auto: normaalAuto(s.auto || STANDAARD_AUTO), palet: s.palet };
+  const auto = normaalAuto(s.auto || STANDAARD_AUTO);
+  // IDENTITEIT-015: справжнє наступне перемикання (у полярний день/ніч `volgende` — лише північ). Echte volgende wissel.
+  return { ...resolveer({ theme, palet: s.palet, auto: s.auto, apparaatDonker, nu }), auto, palet: s.palet, wissel: echteWissel(auto, nu), nu };
 }

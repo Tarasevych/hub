@@ -2,7 +2,7 @@
 // moet exact hetzelfde beslissen; gegenereerde CSS actueel; contrast van de nieuwe paletten (WCAG AA).
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { autoNu, leesKeuze, normaalAuto, pauzeer, resolveer, zonTijden } from '../../src/thema/kern';
+import { autoNu, echteWissel, leesKeuze, normaalAuto, pauzeer, resolveer, zonTijden } from '../../src/thema/kern';
 import { bootCss, contrast, kleurWaarden, paletCss, PUUR, SECTIES } from '../../src/thema/paletten';
 import { checker } from './hulp/nep-google';
 
@@ -18,6 +18,22 @@ export async function main(): Promise<number> {
   const jun = zonTijden(new Date('2026-06-21T12:00'), 50.8, 4.4);
   check('Brussel 21.06: licht ± 04:45–22:45 (zomertijd)', typeof jun === 'object' && Math.abs(t('2026-06-21T04:47') - jun.op) < 15 * 60e3 && Math.abs(t('2026-06-21T22:40') - jun.onder) < 15 * 60e3, typeof jun === 'object' ? `${uur(jun.op)}–${uur(jun.onder)}` : '');
   check('Spitsbergen: poolnacht/witte nacht', zonTijden(new Date('2026-12-21T12:00'), 78, 15) === 'nacht' && zonTijden(new Date('2026-06-21T12:00'), 78, 15) === 'dag');
+  // IDENTITEIT-015 (приймання thema): у полярний день/ніч `volgende` — лише північ; справжнє перемикання — коли сонце вперше перетне −6°.
+  {
+    const pool = normaalAuto({ soort: 'zon', lat: 78.2, lon: 15.7 });
+    const zomer = t('2026-06-21T12:00'), winter = t('2026-12-21T12:00');
+    const eersteDag = (van: Date, soort: 'dag' | 'nacht') => { for (let i = 1; i < 200; i++) { const d = new Date(van.getFullYear(), van.getMonth(), van.getDate() + i); if (zonTijden(d, 78.2, 15.7) !== soort) return d; } return null; };
+    const ez = echteWissel(pool, zomer), ew = echteWissel(pool, winter);
+    const dz = eersteDag(new Date(zomer), 'dag'), dw = eersteDag(new Date(winter), 'nacht');
+    check('echteWissel: poolzomer — volgende is middernacht, echte wissel pas op de eerste dag zonder witte nacht (donker wordt)', autoNu(pool, zomer).volgende === t('2026-06-22T00:00') && ez !== null && dz !== null && new Date(ez).toDateString() === dz.toDateString() && autoNu(pool, ez).donker && !autoNu(pool, ez - 1).donker, ez ? new Date(ez).toString() : 'null');
+    const zw = dw ? zonTijden(dw, 78.2, 15.7) : null;
+    check('echteWissel: poolnacht — echte wissel = eerste zonsopgang (−6°) na de poolnacht', ew !== null && typeof zw === 'object' && zw !== null && ew === zw.op && !autoNu(pool, ew).donker, ew ? new Date(ew).toString() : 'null');
+    const iv = normaalAuto({ soort: 'interval', van: '22:00', tot: '06:00' });
+    check('echteWissel: venster — gelijk aan volgende (22:00 / 06:00 morgen; zomertijdnacht 29.03 → 06:00 CEST)', echteWissel(iv, t('2026-11-16T12:00')) === t('2026-11-16T22:00') && echteWissel(iv, t('2026-11-16T23:00')) === t('2026-11-17T06:00') && echteWissel(iv, t('2026-03-28T23:00')) === new Date('2026-03-29T06:00:00+02:00').getTime());
+    check('echteWissel: venster met gelijke uren — nooit een wissel (null)', echteWissel(normaalAuto({ soort: 'interval', van: '08:00', tot: '08:00' }), t('2026-11-16T12:00')) === null);
+    const pz = pauzeer(pool, zomer);
+    check('echteWissel: pauze in de poolzomer eindigt om middernacht — dat IS een wissel (donker → licht)', echteWissel(pz, zomer) === t('2026-06-22T00:00'));
+  }
 
   // tijdvenster 20:00–07:00 (over middernacht)
   const a = normaalAuto({ soort: 'interval', van: '20:00', tot: '07:00' });
