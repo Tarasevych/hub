@@ -67,7 +67,10 @@
     "62ec9079ece698fd64e07621ea964bf9b7b3b28c",
     "d219a21e456d180d68b0f43693f9c6c6eaa013ac",
     "fff902985f03ecd41cd914a6239d8ed66a71c69f",
-    "2790539b7e4734dc87e4b595d0bebd5fdce28f35"
+    "2790539b7e4734dc87e4b595d0bebd5fdce28f35",
+    "a5ce2a8460c1dbd5c827e65dc94242f2f9cc4fca",
+    "ef36c41eabdebf7489032f1a5ceb74eb5291c204",
+    "3d710e2a0e4b36c16a877f96d18e9dff24273e6f"
   ],
   "bestanden": {
     "gewijzigd": [
@@ -292,11 +295,11 @@
     "nl": "Accountcentrum in het goedgekeurde ontwerp v49: 153 posities gecontroleerd, bestaande functies aangesloten, ontbrekende gebouwd en vanuit elke betrokken persoon getest. Bovenop 20261114-111234."
   },
   "tests": {
-    "geslaagd": 52,
+    "geslaagd": 58,
     "mislukt": 0,
     "uitleg": {
-      "uk": "модульні набори зелені (злитий код); e2e: меню 59/59, теми 48/48, блоки й профіль 78/78, спільний доступ 80/80, запасні коди 20/20, два пристрої, шифрування/гостьові/відновлення 63/63, гостьові коди 43/43, входи й ключі 68/68, звірка v49 (D1), знімки 12 розділів (D3)",
-      "nl": "unitsuites groen; e2e: menu, thema, blokken, delen, herstelcodes, sessies, kluis, gastcodes, aanmelden, v49, schermen"
+      "uk": "модульні набори зелені; e2e у Chromium по всіх 11 лініях приймання",
+      "nl": "unitsuites groen; e2e in Chromium voor alle 11 acceptatielijnen"
     },
     "falend": []
   },
@@ -305,5 +308,5 @@
     "nl": "Sleutels van externe diensten en e-mail/sms-verzending — instelling van de eigenaar. Niet geïnstalleerd."
   },
   "conflicten": [],
-  "aangemaakt": "2026-11-14T17:21:33.427Z"
+  "aangemaakt": "2026-11-14T17:34:47.131Z"
 }
