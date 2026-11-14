@@ -59,7 +59,7 @@ export function googleStartFoutTekst(code: string, taal: Taal): string {
     case 'RUIMTE_KEUZE_ONTBREEKT': case 'KEUZE_ONTBREEKT': return t(taal, 'Для технічного простору ще не вибрано, як працює пошта (спільна чи окрема). Зробіть вибір у «Простори».', 'Voor de technische ruimte is nog niet gekozen hoe post werkt (gedeeld of eigen). Kies dat eerst bij «Ruimtes».');
     case 'RUIMTE_DIENST_UIT': case 'DIENST_UIT': return t(taal, 'Пошта вимкнена для цього простору.', 'Post staat uit voor deze ruimte.');
     case 'RUIMTE_DIENST_BEVROREN': case 'BEVROREN': return t(taal, 'Пошта цього простору заморожена — підключення нових скриньок неможливе.', 'Post van deze ruimte is bevroren — nieuwe mailboxen koppelen kan niet.');
-    case 'SLEUTELKLUIS_GESLOTEN': return t(taal, 'Ключ ваших даних закритий. Розблокуйте його (Способи входу → Шифрування) і спробуйте знову.', 'Uw gegevenssleutel is gesloten. Ontgrendel hem (Aanmeldmethoden → Versleuteling) en probeer opnieuw.');
+    case 'SLEUTELKLUIS_GESLOTEN': return t(taal, 'Ваші дані зараз зашифровані. Натисніть «Розшифрувати» в картці вгорі сторінки, і дія повториться.', 'Uw gegevens zijn nu versleuteld. Klik op «Ontsleutelen» in de kaart bovenaan de pagina; de actie wordt dan herhaald.');
     case 'NETWORK_ERROR': return t(taal, 'Немає з’єднання з сервером. Перевірте мережу й спробуйте ще раз.', 'Geen verbinding met de server. Controleer het netwerk en probeer opnieuw.');
     case 'GEEN_URL': return t(taal, 'Сервер не повернув адресу входу Google.', 'De server gaf geen Google-aanmeldadres terug.');
     default: return `${t(taal, 'Підключення Gmail не розпочато. Код сервера:', 'De Gmail-koppeling is niet gestart. Servercode:')} ${code || 'HTTP'}`;

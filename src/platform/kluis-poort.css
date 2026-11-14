@@ -1,0 +1,51 @@
+/* KLUIS-APPARAAT-001 — kaart «Ваші дані зараз зашифровані» / «Uw gegevens zijn nu versleuteld», bovenaan de pagina waar de mens is.
+   Kleuren uit de thematokens van de site (zelfde als «Підтвердіть доступ»): elk palet, licht en donker. Geen modaal venster: de
+   pagina blijft bruikbaar, de kaart legt alleen uit en geeft de knop. */
+.kluis-poort-host{position:fixed;inset:auto 0 auto 0;top:max(12px,env(safe-area-inset-top));z-index:950;display:flex;justify-content:center;pointer-events:none;padding:0 16px}
+.kluis-poort{pointer-events:auto;box-sizing:border-box;width:min(100%,560px);display:flex;flex-direction:column;gap:12px;padding:16px 16px 14px;border-radius:16px;border:1px solid var(--boot-line,var(--line,#dce1e6));background:var(--boot-panel,var(--panel,#fff));color:var(--boot-text,var(--text,inherit));box-shadow:0 18px 48px rgba(0,0,0,.28);animation:kluis-poort-in .22s ease-out}
+.kluis-poort button{font:inherit;cursor:pointer}
+.kluis-poort button:disabled{opacity:.55;cursor:default}
+.kluis-poort svg{width:18px;height:18px;flex:0 0 auto}
+.kluis-poort-kop{display:flex;align-items:flex-start;gap:12px}
+.kluis-poort-icoon{display:grid;place-items:center;flex:0 0 auto;width:38px;height:38px;border-radius:12px;background:rgba(214,140,30,.14);color:var(--warning,#b86e00)}
+.kluis-poort-icoon[data-open=true]{background:rgba(40,150,90,.14);color:var(--success,#1f8a52)}
+.kluis-poort-icoon svg{width:20px;height:20px}
+.kluis-poort-tekst{flex:1 1 auto;min-width:0}
+.kluis-poort-tekst h2{margin:2px 0 4px;font-size:1.05rem;font-weight:650;line-height:1.3}
+.kluis-poort-tekst p{margin:0;color:var(--muted,var(--boot-muted,#5f6b76));font-size:.88rem;line-height:1.45}
+.kluis-poort-sluit{display:grid;place-items:center;flex:0 0 auto;width:32px;height:32px;margin:-4px -4px 0 0;border:0;border-radius:8px;background:transparent;color:var(--muted,var(--boot-muted,#5f6b76))}
+.kluis-poort-sluit:hover{background:rgba(127,127,127,.12)}
+.kluis-poort-knoppen{display:flex;flex-wrap:wrap;gap:8px}
+.kluis-poort-primair,.kluis-poort-tweede{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 16px;border-radius:10px;font-weight:600;flex:1 1 auto}
+.kluis-poort-primair{border:1px solid var(--boot-accent,var(--accent,#2f6f73));background:var(--boot-accent,var(--accent,#2f6f73));color:var(--ap-op-accent,var(--text-on-accent,#fff))}
+.kluis-poort-primair:hover:not(:disabled){filter:brightness(1.08)}
+.kluis-poort-tweede{border:1px solid var(--boot-line,var(--line,#dce1e6));background:transparent;color:inherit}
+.kluis-poort-tweede:hover:not(:disabled){background:rgba(127,127,127,.1)}
+.kluis-poort-primair:focus-visible,.kluis-poort-tweede:focus-visible,.kluis-poort-sluit:focus-visible,.kluis-poort-meer:focus-visible{outline:2px solid var(--focus,var(--boot-accent,#2f6f73));outline-offset:2px}
+.kluis-poort-code{display:flex;gap:8px;flex-wrap:wrap}
+.kluis-poort-code input{flex:1 1 220px;min-width:0;box-sizing:border-box;padding:10px 12px;border-radius:9px;border:1px solid var(--boot-line,var(--line,#dce1e6));background:var(--boot-panel,var(--panel,#fff));color:inherit;font-size:1rem;letter-spacing:.1em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.kluis-poort-code .kluis-poort-primair{flex:0 0 auto}
+.kluis-poort-onthoud{display:flex;align-items:flex-start;gap:8px;font-size:.86rem;line-height:1.4;cursor:pointer}
+.kluis-poort-onthoud input{margin:2px 0 0;flex:0 0 auto;width:16px;height:16px;accent-color:var(--boot-accent,var(--accent,#2f6f73))}
+.kluis-poort-onthoud svg{width:16px;height:16px;margin-top:1px;color:var(--muted,var(--boot-muted,#5f6b76))}
+.kluis-poort-meer{display:inline-flex;align-items:center;gap:6px;text-align:left;align-self:flex-start;padding:4px 2px;border:0;background:transparent;color:var(--boot-accent,var(--accent,#2f6f73));font-size:.84rem}
+.kluis-poort-meer svg{width:16px;height:16px;transition:transform .15s}
+.kluis-poort-meer svg[data-open=true]{transform:rotate(180deg)}
+.kluis-poort-uitleg{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.06);font-size:.84rem;line-height:1.45;color:var(--muted,var(--boot-muted,#5f6b76))}
+.kluis-poort-uitleg p{margin:0}
+.kluis-poort-fout{margin:0;padding:8px 10px;border-radius:8px;background:rgba(200,60,40,.09);border:1px solid rgba(200,60,40,.3);font-size:.86rem;line-height:1.4}
+.kluis-poort-nieuw{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px dashed var(--boot-accent,var(--accent,#2f6f73))}
+.kluis-poort-nieuw small{color:var(--muted,var(--boot-muted,#5f6b76));line-height:1.4}
+.kluis-poort-nieuw code{display:block;padding:10px;border-radius:8px;background:rgba(127,127,127,.08);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.05rem;letter-spacing:.06em;text-align:center;word-break:break-all;user-select:all}
+/* Ingeklapt: een kleine strook onderaan, zodat de weg terug altijd zichtbaar blijft. */
+.kluis-poort-chip{flex-direction:row;align-items:center;gap:10px;width:auto;max-width:100%;padding:8px 8px 8px 14px;border-radius:999px;font-size:.9rem}
+.kluis-poort-chip>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kluis-poort-chip .kluis-poort-primair{flex:0 0 auto;min-height:36px;padding:6px 14px;border-radius:999px}
+.kluis-poort-host:has(.kluis-poort-chip){top:auto;bottom:max(16px,env(safe-area-inset-bottom))}
+@keyframes kluis-poort-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.kluis-poort{animation:none}.kluis-poort-meer svg{transition:none}}
+@media (max-width:520px){
+  .kluis-poort{padding:14px 14px 12px;border-radius:14px}
+  .kluis-poort-knoppen>button{flex:1 1 100%}
+  .kluis-poort-chip>span{font-size:.84rem}
+}
