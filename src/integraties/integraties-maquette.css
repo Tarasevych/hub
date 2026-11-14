@@ -1,0 +1,1064 @@
+/* Студійне оформлення каталогу інтеграцій у консолі керування admin.tarasevych.com під системою «Макет» (MAQUETTE-010, Група 9А).
+   Усі правила суворо обмежені селектором html.palet-maquette .admin-console, тому не впливають на смугу інтеграцій інших піддоменів.
+   Охоплює каталог .il-*, оновлений каталог .ic2-*, вікно подробиць .il-modal / .il-d-* / .id-* та майстри підключень .il-w-* / .iw-* / .iw2-*.
+   Studio-opmaak voor de integratiecatalogus binnen de beheerconsole in donkere modus en lichte modus Ochtendnevel. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПОХІДНІ ЗМІННІ КАТАЛОГУ ІНТЕГРАЦІЙ У ТЕМНОМУ РЕЖИМІ ТА «РАНКОВОМУ ТУМАНІ»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .il {
+  --ok: var(--mq-adm-goed);
+  --ok-vlak: var(--mq-adm-goed);
+  --ok-zacht: var(--mq-adm-goed-zacht);
+  --warn: var(--mq-adm-wacht);
+  --warn-vlak: var(--mq-adm-wacht);
+  --warn-zacht: var(--mq-adm-wacht-zacht);
+  --fout: var(--mq-adm-gevaar);
+  --fout-vlak: var(--mq-adm-gevaar);
+  --danger: var(--mq-adm-gevaar);
+
+  --il-ok: var(--mq-adm-goed);
+  --il-ok-bg: var(--mq-adm-goed-zacht);
+  --il-warn: var(--mq-adm-wacht);
+  --il-warn-bg: var(--mq-adm-wacht-zacht);
+  --il-soon: var(--mq-gedempt);
+  --il-soon-bg: color-mix(in srgb, var(--mq-tekst) 8%, var(--mq-oppervlak-2));
+
+  gap: 18px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) .admin-console .il,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) .admin-console .il {
+  --il-soon-bg: color-mix(in srgb, var(--mq-tekst) 6%, var(--mq-oppervlak-2));
+}
+
+/* Захист карток інтеграцій від плоского скидання поверхонь канонічної оболонки flat-content */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(
+  .il-hero,
+  .il-cijfers > div,
+  .il-melding,
+  .il-kaart,
+  .il-leeg,
+  .il-w-kaart,
+  .il-d-sectie,
+  .il-sectie[data-merk-bron-beheer],
+  .il-sectie[data-merk-eigen-beheer],
+  .ic2-kaart,
+  .ic2-fouten,
+  .iw2
+):not([role="dialog"]):not(.auth-card):not([data-mq-il1]):not([data-mq-il2]):not([data-mq-il3]):not([data-mq-il4]):not([data-mq-il5]):not([data-mq-il6]):not([data-mq-il7]):not([data-mq-il8]):not([data-mq-il9]):not([data-mq-il10]):not([data-mq-il11]):not([data-mq-il12]) {
+  border: 1px solid var(--mq-adm-rand);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent 44%),
+    var(--mq-adm-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ЗАГОЛОВОК КАТАЛОГУ (.il-hero), ЛІЧИЛЬНИКИ (.il-cijfers) ТА ВКЛАДКИ (.il-tabs)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .il-hero {
+  padding: 22px 24px;
+  border-radius: 22px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo), transparent 52%),
+    radial-gradient(circle at 100% 100%, var(--mq-adm-halo-warm), transparent 56%),
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent 40%),
+    var(--mq-adm-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .il-over {
+  color: var(--mq-accent-adm);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+html.palet-maquette .admin-console .il-hero h2 {
+  margin: 5px 0 7px;
+  font-family: var(--mq-font-serif);
+  font-size: clamp(1.35rem, 2.3vw, 1.88rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-hero p {
+  color: var(--mq-gedempt);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+html.palet-maquette .admin-console .il-cijfers {
+  gap: 10px;
+}
+
+html.palet-maquette .admin-console .il-cijfers > div {
+  min-width: 104px;
+  padding: 11px 15px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-adm-halo-zacht), transparent 64%),
+    var(--mq-oppervlak-2);
+  box-shadow: inset 0 1px 0 var(--mq-adm-glas-glans);
+}
+
+html.palet-maquette .admin-console .il-cijfers dt {
+  color: var(--mq-gedempt);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+html.palet-maquette .admin-console .il-cijfers dd {
+  margin-top: 4px;
+  font-family: var(--mq-font-serif);
+  font-size: 1.62rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--mq-tekst);
+}
+
+/* Перемикач розділів інтеграцій (.il-tabs) та кнопка оновлення (.il-ververs) */
+html.palet-maquette .admin-console .il-tabs {
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .il-tabs > button[role="tab"] {
+  min-height: 40px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+  font-size: 0.86rem;
+  font-weight: 650;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+html.palet-maquette .admin-console .il-tabs > button[role="tab"]:hover {
+  color: var(--mq-tekst);
+  background: var(--mq-oppervlak-zacht);
+  border-color: var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .il-tabs > button[role="tab"].is-actief {
+  color: var(--mq-tekst);
+  border-color: var(--mq-adm-rand-accent);
+  background:
+    linear-gradient(135deg, var(--mq-adm-halo), var(--mq-adm-halo-warm)),
+    var(--mq-oppervlak-2);
+  box-shadow: inset 0 1px 0 var(--mq-adm-glas-glans);
+}
+
+html.palet-maquette .admin-console :is(.il-tabs, .il-groep, .il-wens) b {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mq-tekst) 10%, transparent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette .admin-console .il-ververs {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background:
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent),
+    var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.84rem;
+  font-weight: 650;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+html.palet-maquette .admin-console .il-ververs:hover:not(:disabled) {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-adm) 12%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .admin-console .il-melding {
+  padding: 11px 15px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background:
+    linear-gradient(90deg, var(--mq-adm-halo), transparent 68%),
+    var(--mq-adm-glas-diep);
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. ПОШУК, ФІЛЬТРИ ТА ПОЛЯ ВВОДУ (:where(...) БЕЗ ПІДВИЩЕННЯ СПЕЦИФІЧНОСТІ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .il :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  border: 1px solid var(--mq-adm-rand-sterk);
+  border-radius: 12px;
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+html.palet-maquette .admin-console .il :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea)::placeholder {
+  color: var(--mq-stil);
+}
+
+html.palet-maquette .admin-console .il :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--mq-accent-adm);
+  box-shadow: 0 0 0 3px var(--mq-adm-halo);
+}
+
+/* Збереження просторих відступів у полі пошуку з піктограмою лупи та кнопкою очищення */
+html.palet-maquette .admin-console .il-zoek > svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .il-zoek :where(input:not([type="checkbox"]):not([type="radio"])) {
+  padding: 10px 40px 10px 40px;
+  border-radius: 14px;
+}
+
+/* У контейнері .ic2-zoek рамку має зовнішня обгортка, тому внутрішнє поле лишається прозорим */
+html.palet-maquette .admin-console .ic2-zoek {
+  border-radius: 12px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+html.palet-maquette .admin-console .ic2-zoek:focus-within {
+  border-color: var(--mq-accent-adm);
+  box-shadow: 0 0 0 3px var(--mq-adm-halo);
+}
+
+html.palet-maquette .admin-console .ic2-zoek :where(input:not([type="checkbox"]):not([type="radio"])) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html.palet-maquette .admin-console .ic2-zoek :where(input:not([type="checkbox"]):not([type="radio"])):focus-visible {
+  border: 0;
+  box-shadow: none;
+}
+
+html.palet-maquette .admin-console .il-wis {
+  color: var(--mq-gedempt);
+  border-radius: 9px;
+}
+
+html.palet-maquette .admin-console .il-wis:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-sorteer,
+html.palet-maquette .admin-console .il-teller {
+  color: var(--mq-gedempt);
+  font-size: 0.84rem;
+}
+
+/* Пігулки фільтрів категорій (.il-groep, .il-wens, .il-reset) */
+html.palet-maquette .admin-console :is(.il-groep button, .il-wens, .il-reset) {
+  min-height: 38px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-size: 0.83rem;
+  font-weight: 600;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+html.palet-maquette .admin-console :is(.il-groep button, .il-wens, .il-reset) svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console :is(.il-groep button, .il-wens, .il-reset):hover {
+  border-color: var(--mq-adm-rand-accent);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette .admin-console :is(.il-groep button.is-actief, .il-wens.is-actief) {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--mq-accent-adm), var(--mq-accent-adm-diep));
+  color: var(--mq-accent-adm-op);
+  box-shadow: 0 6px 16px var(--mq-adm-halo);
+}
+
+html.palet-maquette .admin-console :is(.il-groep button.is-actief, .il-wens.is-actief) svg {
+  color: var(--mq-accent-adm-op);
+}
+
+html.palet-maquette .admin-console :is(.il-groep button.is-actief, .il-wens.is-actief) b {
+  background: color-mix(in srgb, var(--mq-accent-adm-op) 22%, transparent);
+  color: var(--mq-accent-adm-op);
+}
+
+html.palet-maquette .admin-console .il-reset {
+  border-style: dashed;
+  color: var(--mq-gedempt);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. СІТКА ТА КАРТКИ КАТАЛОГУ ІНТЕГРАЦІЙ (.il-sectie, .il-kaart, .ic2-*)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .il-sectiekop {
+  font-family: var(--mq-font-serif);
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-sectiekop svg {
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .il-sectiekop small {
+  font-family: var(--mq-font-ui);
+  color: var(--mq-gedempt);
+  font-size: 0.8rem;
+}
+
+html.palet-maquette .admin-console .il-raster {
+  gap: 14px;
+}
+
+html.palet-maquette .admin-console .il-kaart {
+  padding: 16px 17px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent 45%),
+    var(--mq-adm-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+html.palet-maquette .admin-console .il-kaart:hover {
+  border-color: var(--mq-adm-rand-accent);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .admin-console .il-kaart[data-status="klaar"] {
+  border-color: color-mix(in srgb, var(--mq-adm-goed) 34%, var(--mq-adm-rand));
+}
+
+html.palet-maquette .admin-console .il-kaart[data-status="binnenkort"] {
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 68%, var(--mq-oppervlak));
+}
+
+html.palet-maquette .admin-console .il-titel h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-cat {
+  color: var(--mq-gedempt);
+  font-size: 0.76rem;
+}
+
+html.palet-maquette .admin-console .il-ster,
+html.palet-maquette .admin-console .ic2-ster {
+  border-radius: 11px;
+  color: var(--mq-gedempt);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+html.palet-maquette .admin-console :is(.il-ster, .ic2-ster):hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+  opacity: 1;
+}
+
+html.palet-maquette .admin-console .il-ster[aria-pressed="true"],
+html.palet-maquette .admin-console .ic2-ster[aria-pressed="true"] {
+  color: var(--mq-adm-wacht);
+  opacity: 1;
+}
+
+html.palet-maquette .admin-console .il-uitleg {
+  color: var(--mq-gedempt);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+/* Мітки станів та способів підключення (.il-status, .il-levend, .il-methode, .il-beschikbaar) */
+html.palet-maquette .admin-console :is(.il-status, .il-levend, .il-methode, .il-beschikbaar) {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+html.palet-maquette .admin-console .il-status[data-status="klaar"] {
+  background: var(--mq-adm-goed-zacht);
+  color: var(--mq-adm-goed);
+  border: 1px solid color-mix(in srgb, var(--mq-adm-goed) 32%, transparent);
+}
+
+html.palet-maquette .admin-console .il-status[data-status="instellen"] {
+  background: var(--mq-adm-wacht-zacht);
+  color: var(--mq-adm-wacht);
+  border: 1px solid color-mix(in srgb, var(--mq-adm-wacht) 34%, transparent);
+}
+
+html.palet-maquette .admin-console .il-status[data-status="binnenkort"] {
+  background: var(--il-soon-bg);
+  color: var(--mq-gedempt);
+  border: 1px solid var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .il-levend {
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-levend i {
+  background: var(--mq-stil);
+}
+
+html.palet-maquette .admin-console .il-levend[data-levend="verbonden"] i {
+  background: var(--mq-adm-goed);
+  box-shadow: 0 0 8px var(--mq-adm-goed);
+}
+
+html.palet-maquette .admin-console .il-levend[data-levend="ingesteld"] i {
+  background: var(--mq-adm-wacht);
+}
+
+html.palet-maquette .admin-console .il-levend[data-levend="fout"] i {
+  background: var(--mq-adm-gevaar);
+}
+
+html.palet-maquette .admin-console .il-methode {
+  border: 1px solid var(--mq-adm-rand);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .il-beschikbaar {
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+  border: 1px solid var(--mq-adm-rand-accent);
+}
+
+/* Кнопки дій інтеграцій (.il-knop, .ic2-knop) */
+html.palet-maquette .admin-console :is(.il-knop, .ic2-knop) {
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background:
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent),
+    var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+  font-weight: 650;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+html.palet-maquette .admin-console :is(.il-knop, .ic2-knop):hover:not(:disabled) {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-adm) 11%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .admin-console :is(.il-knop.is-primair, .ic2-knop.is-primair) {
+  border-color: color-mix(in srgb, var(--mq-accent-adm) 70%, var(--mq-adm-rand-sterk));
+  background: linear-gradient(135deg, var(--mq-accent-adm), var(--mq-accent-adm-diep));
+  color: var(--mq-accent-adm-op);
+  box-shadow: 0 8px 20px var(--mq-adm-halo);
+}
+
+html.palet-maquette .admin-console :is(.il-knop.is-primair, .ic2-knop.is-primair):hover:not(:disabled) {
+  filter: brightness(1.06);
+  background: linear-gradient(135deg, var(--mq-accent-adm), var(--mq-accent-adm-diep));
+  color: var(--mq-accent-adm-op);
+}
+
+html.palet-maquette .admin-console .il-knop.is-gevaar {
+  color: var(--mq-adm-gevaar);
+  border-color: color-mix(in srgb, var(--mq-adm-gevaar) 45%, var(--mq-adm-rand));
+  background: var(--mq-adm-gevaar-zacht);
+}
+
+html.palet-maquette .admin-console .il-knop.is-stil,
+html.palet-maquette .admin-console .il-knop.is-tekst {
+  color: var(--mq-gedempt);
+  background: transparent;
+  border-color: var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .ic2-knop.is-icoon {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .ic2-knop.is-icoon:hover:not(:disabled) {
+  border-color: var(--mq-adm-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console :is(.il-knop, .ic2-knop, .il-ster, .ic2-ster, .il-groep button, .il-tabs button, .il-wens, .il-reset, .il-ververs, .il-sluit, .ic2-blokkop, .ic2-groepkop):focus-visible {
+  outline: 2px solid var(--mq-accent-adm);
+  outline-offset: 2px;
+}
+
+html.palet-maquette .admin-console .il-leeg {
+  padding: 36px 20px;
+  border-radius: 18px;
+  border: 1px dashed var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .admin-console .il-leeg svg {
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console :is(.il-leeg p, .il-noot) {
+  color: var(--mq-gedempt);
+}
+
+/* Оновлений каталог інтеграцій (.ic2-*) */
+html.palet-maquette .admin-console .ic2 {
+  gap: 14px;
+}
+
+html.palet-maquette .admin-console .ic2-kopblok h3 {
+  font-family: var(--mq-font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .ic2-samen {
+  color: var(--mq-gedempt);
+  font-size: 0.84rem;
+  opacity: 1;
+}
+
+html.palet-maquette .admin-console .ic2-wissel {
+  border-radius: 12px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette .admin-console .ic2-wissel button {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .ic2-wissel button[aria-pressed="true"] {
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .ic2-blok {
+  border-top: 1px solid var(--mq-adm-rand);
+  padding-top: 8px;
+}
+
+html.palet-maquette .admin-console :is(.ic2-blokkop, .ic2-groepkop) {
+  border-radius: 10px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console :is(.ic2-blokkop, .ic2-groepkop):hover {
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .admin-console .ic2-blokkop em {
+  font-size: 0.75rem;
+  background: var(--mq-adm-goed-zacht);
+  color: var(--mq-adm-goed);
+  border: 1px solid color-mix(in srgb, var(--mq-adm-goed) 30%, transparent);
+}
+
+html.palet-maquette .admin-console .ic2-kaart {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent 46%),
+    var(--mq-adm-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .ic2-kaart:hover {
+  border-color: var(--mq-adm-rand-accent);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .admin-console .ic2-titel h4 {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .ic2-titel span,
+html.palet-maquette .admin-console .ic2-uitleg,
+html.palet-maquette .admin-console .ic2-acc {
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette .admin-console .ic2-stand {
+  font-size: 0.8rem;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .ic2-stand i {
+  background: var(--mq-stil);
+}
+
+html.palet-maquette .admin-console .ic2-stand[data-groep="verbonden"] i {
+  background: var(--mq-adm-goed);
+}
+
+html.palet-maquette .admin-console .ic2-stand[data-groep="aandacht"] i {
+  background: var(--mq-adm-gevaar);
+}
+
+html.palet-maquette .admin-console .ic2-stand[data-groep="instellen"] i {
+  background: var(--mq-adm-wacht);
+}
+
+html.palet-maquette .admin-console .ic2-stand[data-groep="beschikbaar"] i {
+  background: var(--mq-accent-adm);
+}
+
+/* Підняття мінімального кеглю часової позначки до дозволеного порогу 0.75rem */
+html.palet-maquette .admin-console .ic2-tijd {
+  font-size: 0.75rem;
+  color: var(--mq-stil);
+  opacity: 1;
+}
+
+html.palet-maquette .admin-console .ic2-tijd.ic2-verouderd {
+  color: var(--mq-adm-wacht);
+}
+
+html.palet-maquette .admin-console .ic2-plan {
+  font-size: 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .ic2-fouten {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mq-adm-gevaar) 45%, var(--mq-adm-rand));
+  background:
+    linear-gradient(90deg, var(--mq-adm-gevaar-zacht), transparent 72%),
+    var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .ic2-fouten h4 {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .ic2-fouten h4 svg {
+  color: var(--mq-adm-gevaar);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ВІКНО ПОДРОБИЦЬ ІНТЕГРАЦІЇ (.il-modal, .il-dialoog, .il-d-*, .id-*)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .il-modal {
+  background: color-mix(in srgb, var(--mq-bol-diep) 62%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.palet-maquette .admin-console .il-dialoog,
+html.palet-maquette .admin-console [class^="id-"] {
+  border-color: var(--mq-adm-rand-sterk);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-dialoog {
+  border: 1px solid var(--mq-adm-rand-sterk);
+  border-radius: 22px;
+  background: var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .admin-console .il-d-kop {
+  border-bottom: 1px solid var(--mq-adm-rand);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo), transparent 58%),
+    transparent;
+}
+
+html.palet-maquette .admin-console .il-d-titel h3 {
+  font-family: var(--mq-font-serif);
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-d-titel span,
+html.palet-maquette .admin-console .il-d-noot {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .il-d-noot[data-let-op="ja"] {
+  color: var(--mq-adm-wacht);
+}
+
+html.palet-maquette .admin-console .il-sluit {
+  border-radius: 12px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-sluit:hover {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-adm) 12%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .admin-console .il-d-sectie {
+  padding: 13px 15px;
+  border-radius: 15px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette .admin-console .il-d-sectie h4 {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-d-sectie h4 svg {
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .il-d-controle[data-stand="ok"] b {
+  color: var(--mq-adm-goed);
+}
+
+html.palet-maquette .admin-console .il-d-controle[data-stand="let-op"] b {
+  color: var(--mq-adm-wacht);
+}
+
+html.palet-maquette .admin-console .il-d-controle[data-stand="fout"] b {
+  color: var(--mq-adm-gevaar);
+}
+
+html.palet-maquette .admin-console .il-d-bericht {
+  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--mq-adm-goed) 34%, var(--mq-adm-rand));
+  background: var(--mq-adm-goed-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-d-bericht[data-soort="fout"] {
+  border-color: color-mix(in srgb, var(--mq-adm-gevaar) 42%, var(--mq-adm-rand));
+  background: var(--mq-adm-gevaar-zacht);
+}
+
+/* Перемикач стану інтеграції (.il-schakel) */
+html.palet-maquette .admin-console .il-schakel input {
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background: color-mix(in srgb, var(--mq-tekst) 16%, var(--mq-oppervlak));
+}
+
+html.palet-maquette .admin-console .il-schakel input::after {
+  top: 2px;
+  left: 2px;
+  background: var(--mq-wit);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .il-schakel input:checked {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--mq-accent-adm), var(--mq-accent-adm-diep));
+}
+
+html.palet-maquette .admin-console .il-schakel small {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .il-d-voet {
+  border-top: 1px solid var(--mq-adm-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 76%, var(--mq-popover-glas));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. МАЙСТРИ ПІДКЛЮЧЕНЬ (.il-w-*, .iw-*, .iw2-*) ТА СЕКЦІЇ ЗНАЧКІВ СЛУЖБ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .il-w-intro {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .il-w-kaart,
+html.palet-maquette .admin-console [class^="iw-"] {
+  border-color: var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .il-w-kaart {
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent 44%),
+    var(--mq-adm-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .il-w-kaart[data-open="ja"] {
+  border-color: var(--mq-adm-rand-accent);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette .admin-console .il-w-kop {
+  padding: 14px 16px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .il-w-kop:hover {
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .admin-console .il-w-titel small,
+html.palet-maquette .admin-console .il-w-waarden dt,
+html.palet-maquette .admin-console .il-w-waarden dd > small {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .il-w-body {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console :is(.il-w code, .il-w-opdracht code, .il-sectie code) {
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-code-put);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.82rem;
+}
+
+html.palet-maquette .admin-console .il-w-kopieer {
+  min-height: 34px;
+  padding: 5px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.78rem;
+}
+
+html.palet-maquette .admin-console .il-w-kopieer:hover:not(:disabled) {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-adm) 12%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .admin-console .il-w-veld textarea {
+  font-family: var(--mq-font-mono);
+}
+
+html.palet-maquette .admin-console .il-w-sleutels[data-sleutels-missen]:not([data-sleutels-missen="0"]) {
+  border-color: color-mix(in srgb, var(--mq-adm-wacht) 48%, var(--mq-adm-rand));
+}
+
+/* Додаткові секції майстра: власна символіка служб, джерела значків і локальний генератор */
+html.palet-maquette .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator]) {
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent 44%),
+    var(--mq-adm-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .il-sectie[data-merk-bron-beheer] input[type="checkbox"] {
+  accent-color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .il-sectie[data-merk-eigen-beheer] input[type="file"] {
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  border: 1px dashed var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.82rem;
+}
+
+html.palet-maquette .admin-console .il-sectie[data-merk-eigen-beheer] button {
+  padding: 7px 13px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+html.palet-maquette .admin-console .il-sectie[data-merk-eigen-beheer] button:hover:not(:disabled) {
+  border-color: var(--mq-adm-gevaar);
+  background: var(--mq-adm-gevaar-zacht);
+  color: var(--mq-adm-gevaar);
+}
+
+/* Шестикроковий майстер підключень (.iw2, .iw2-*) */
+html.palet-maquette .admin-console .iw2 {
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo), transparent 54%),
+    linear-gradient(180deg, var(--mq-adm-glas-glans), transparent 44%),
+    var(--mq-adm-glas-diep);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .iw2-kop h3 {
+  font-family: var(--mq-font-serif);
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--mq-tekst);
+}
+
+/* Підняття кеглю підписів кроків майстра до мінімально дозволених 0.75rem */
+html.palet-maquette .admin-console .iw2-stappen li {
+  font-size: 0.75rem;
+  color: var(--mq-gedempt);
+  opacity: 0.78;
+}
+
+html.palet-maquette .admin-console .iw2-stappen li b {
+  width: 26px;
+  height: 26px;
+  border-color: var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-size: 0.76rem;
+}
+
+html.palet-maquette .admin-console .iw2-stappen li[data-stand="nu"] {
+  color: var(--mq-tekst);
+  opacity: 1;
+}
+
+html.palet-maquette .admin-console .iw2-stappen li[data-stand="nu"] b {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--mq-accent-adm), var(--mq-accent-adm-diep));
+  color: var(--mq-accent-adm-op);
+  box-shadow: 0 4px 12px var(--mq-adm-halo);
+}
+
+html.palet-maquette .admin-console .iw2-stappen li[data-stand="klaar"] {
+  color: var(--mq-adm-goed);
+  opacity: 0.95;
+}
+
+html.palet-maquette .admin-console .iw2-stappen li[data-stand="klaar"] b {
+  border-color: color-mix(in srgb, var(--mq-adm-goed) 45%, var(--mq-adm-rand));
+  background: var(--mq-adm-goed-zacht);
+  color: var(--mq-adm-goed);
+}
+
+html.palet-maquette .admin-console :is(.iw2-keuzes button, .iw2-wijzen button) {
+  border-radius: 12px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+html.palet-maquette .admin-console :is(.iw2-keuzes button, .iw2-wijzen button):hover {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-accent-adm) 8%, var(--mq-oppervlak-2));
+}
+
+html.palet-maquette .admin-console :is(.iw2-keuzes button[aria-pressed="true"], .iw2-wijzen button[aria-checked="true"]) {
+  border-color: var(--mq-accent-adm);
+  background: color-mix(in srgb, var(--mq-accent-adm) 13%, var(--mq-oppervlak-2));
+  box-shadow: inset 0 0 0 1px var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .iw2-noot {
+  font-size: 0.8rem;
+  color: var(--mq-gedempt);
+  opacity: 1;
+}
+
+html.palet-maquette .admin-console .iw2-uitslag {
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .iw2-uitslag svg {
+  color: var(--mq-adm-goed);
+}
+
+html.palet-maquette .admin-console .iw2-uitslag[data-ok="false"] {
+  color: var(--mq-adm-gevaar);
+}
+
+html.palet-maquette .admin-console .iw2-uitslag[data-ok="false"] svg {
+  color: var(--mq-adm-gevaar);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   7. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА ЗГІДНО З ПРАВИЛОМ КАСКАДУ ПРОЄКТУ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: no-preference) {
+  html.palet-maquette .admin-console .il-kaart:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette .admin-console :is(.il-kaart, .ic2-kaart, .il-knop, .ic2-knop, .il-tabs > button[role="tab"], .il-groep button, .il-wens, .il-reset, .il-ververs, .iw2-keuzes button, .iw2-wijzen button) {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) {
+  html.palet-maquette .admin-console .il-hero {
+    padding: 18px 20px;
+  }
+
+  html.palet-maquette .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator], .iw2) {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  html.palet-maquette .admin-console .il-hero {
+    padding: 15px 16px;
+  }
+
+  html.palet-maquette .admin-console .il-dialoog {
+    border-radius: 20px 20px 0 0;
+  }
+
+  html.palet-maquette .admin-console :is(.il-sectie[data-merk-bron-beheer], .il-sectie[data-merk-eigen-beheer], .il-sectie[data-lokale-generator], .iw2) {
+    padding: 14px;
+  }
+}

@@ -19,6 +19,7 @@ import Beveiliging from '../beveiliging/Beveiliging';
 import TrendBlok from './Trend';
 import './diagnostiek.css';
 import TabsRij from '../ontwerp/TabsRij';
+import './diagnostiek-maquette.css';
 
 const ICONEN: Record<string, typeof Server> = {
   layers: Layers, globe: Globe, plug: Plug, database: Database, server: Server, shield: ShieldCheck, clock: Clock, home: Home, mail: Mail, sparkles: Sparkles,
@@ -105,7 +106,7 @@ export default function Diagnostiek({ lang, sourceOrigin, tabContext, techniek }
   const naarHistorie = (id: string) => { setHistFilter((f) => ({ ...f, controle: id, stand: 'alles' })); setTab('historie'); };
   const [histFilter, setHistFilter] = useState<{ stand: 'problemen' | 'alles'; categorie: string; controle: string }>({ stand: 'problemen', categorie: '', controle: '' });
 
-  if (laden && !data) return <section className='admin-section adg-root' aria-busy='true'><p className='adg-laden'><Loader2 className='adg-spin' />{tr(lang, 'Завантажуємо діагностику…', 'Diagnostiek wordt geladen…')}</p></section>;
+  if (laden && !data) return <section className='admin-section adg-root mq-accent-emerald' aria-busy='true'><p className='adg-laden'><Loader2 className='adg-spin' />{tr(lang, 'Завантажуємо діагностику…', 'Diagnostiek wordt geladen…')}</p></section>;
 
   const aandachtBlok = (
     <section className='adg-aandacht' data-adg-aandacht data-leeg={lijst.length === 0 ? '1' : '0'} aria-labelledby='adg-aandacht-kop'>
@@ -161,7 +162,7 @@ export default function Diagnostiek({ lang, sourceOrigin, tabContext, techniek }
   const toonCats = tab === 'alle' ? CATEGORIEEN : CATEGORIEEN.filter((c) => c.id === tab);
 
   return (
-    <section className='admin-section adg-root' data-adg-root data-admin-diagnostics>
+    <section className='admin-section adg-root mq-accent-emerald' data-adg-root data-admin-diagnostics>
       <header className='adg-kop'>
         <span className='adg-kop-ico'><Activity /></span>
         <div>

@@ -19,6 +19,7 @@ import MerkEigenBeheer from './MerkEigenBeheer';
 import LokaleGenerator from './LokaleGenerator';
 import MerkBronBeheer from './MerkBronBeheer';
 import './integraties.css';
+import './integraties-maquette.css';
 import TabsRij from '../ontwerp/TabsRij';
 // UI-013: vernieuwde catalogus achter vlag `integraties-catalogus-v2` (standaard UIT).
 import CatalogusV2 from './CatalogusV2';

@@ -12,6 +12,7 @@ import {
 } from '../../shared/beheer-journaal';
 import { Doelwit, Wie } from './Mensen';
 import './audit.css';
+import './audit-maquette.css';
 import {
   LEEG, bewaarFilters, leesFilters, dagKop, datumLang, filtersActief, korteHash, naarBody, relatief, tijdKort, tr,
   type KetenUitslag, type Lang, type Lijst, type Periode, type Persoon, type Rij, type Staat, type Statistiek,
@@ -128,7 +129,7 @@ export default function AuditPagina({ lang, sourceOrigin, tabContext }: Props) {
   }, [rijen, lang]);
 
 
-  return <section className='aj-root' data-admin-audit data-aj-root>
+  return <section className='aj-root mq-accent-emerald' data-admin-audit data-aj-root>
     <header className='aj-kop'>
       <div className='aj-titel'>
         <span className='aj-titel-ico'><ShieldCheck aria-hidden='true' /></span>

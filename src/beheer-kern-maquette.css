@@ -1,0 +1,1057 @@
+/* Студійне оформлення консолі керування admin.tarasevych.com у художній системі «Макет» (MAQUETTE-010, Група 9А).
+   Охоплює кореневу оболонку BeheerConsoleWeergave, граничні стани доступу, службову смугу технічних кодів,
+   секції керування користувачами, додатками, пристроями, єдиним входом, каталогами й ролями,
+   а також панель політик штучного інтелекту BeheerAiBeleidWeergave у темному режимі та світлому режимі «Ранковий туман».
+   Studio-opmaak voor de beheerconsole en het toegangsbeleid voor kunstmatige intelligentie onder Maquette. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   1. ПОХІДНІ ЗМІННІ РУБІНОВО-КОРАЛОВОГО КОНТУРУ ТА СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН»
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console,
+html.palet-maquette .mq-admin-boundary,
+html.palet-maquette .admin-key-dialog,
+html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag {
+  --mq-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --mq-accent-adm: color-mix(in srgb, var(--mq-accent) 82%, var(--mq-held-boven) 18%);
+  --mq-accent-adm-diep: color-mix(in srgb, var(--mq-accent-2) 74%, var(--mq-schild-diep) 26%);
+  --mq-accent-adm-op: var(--mq-accent-op);
+  --mq-adm-halo: color-mix(in srgb, var(--mq-accent-adm) 17%, transparent);
+  --mq-adm-halo-warm: color-mix(in srgb, var(--mq-accent-2) 15%, transparent);
+  --mq-adm-halo-zacht: color-mix(in srgb, var(--mq-accent-adm) 8%, transparent);
+  --mq-adm-rand: color-mix(in srgb, var(--mq-tekst) 14%, var(--mq-rand));
+  --mq-adm-rand-sterk: color-mix(in srgb, var(--mq-tekst) 23%, var(--mq-rand-sterk));
+  --mq-adm-rand-accent: color-mix(in srgb, var(--mq-accent-adm) 44%, var(--mq-rand));
+  --mq-adm-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 86%, var(--mq-bol-diep) 14%);
+  --mq-adm-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-accent-adm) 6%);
+  --mq-adm-glas-glans: color-mix(in srgb, var(--mq-tekst) 9%, transparent);
+  --mq-adm-code-put: color-mix(in srgb, var(--mq-bg) 68%, var(--mq-bol-diep) 32%);
+
+  --mq-adm-goed: color-mix(in srgb, var(--mq-satelliet-tekst) 72%, var(--mq-accent) 28%);
+  --mq-adm-goed-zacht: color-mix(in srgb, var(--mq-adm-goed) 15%, transparent);
+  --mq-adm-wacht: var(--mq-tech-markering);
+  --mq-adm-wacht-zacht: color-mix(in srgb, var(--mq-adm-wacht) 16%, transparent);
+  --mq-adm-gevaar: color-mix(in srgb, var(--mq-accent) 82%, var(--mq-tech-markering) 18%);
+  --mq-adm-gevaar-zacht: color-mix(in srgb, var(--mq-adm-gevaar) 16%, transparent);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 84%, var(--mq-tekst) 9%);
+  --line: var(--mq-adm-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent-adm);
+  --accentText: var(--mq-accent-adm-op);
+  --text-on-accent: var(--mq-accent-adm-op);
+  --accent-soft: var(--mq-adm-halo);
+  --danger: var(--mq-adm-gevaar);
+}
+
+/* Підтримка явного атрибута data-theme="light", коли світлий клас на корені відсутній */
+html.palet-maquette[data-theme="light"]:not(.theme-light):not(.theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog) {
+  --mq-bg: color-mix(in srgb, var(--mq-wit) 76%, var(--mq-held-gedempt) 24%);
+  --mq-oppervlak: var(--mq-wit);
+  --mq-oppervlak-2: color-mix(in srgb, var(--mq-wit) 88%, var(--mq-satelliet-tekst) 12%);
+  --mq-oppervlak-zacht: color-mix(in srgb, var(--mq-bol-diep) 4.5%, transparent);
+  --mq-oppervlak-hover: color-mix(in srgb, var(--mq-bol-diep) 8.5%, transparent);
+  --mq-tekst: var(--mq-bol-diep);
+  --mq-gedempt: color-mix(in srgb, var(--mq-bol-diep) 68%, var(--mq-wit) 32%);
+  --mq-stil: color-mix(in srgb, var(--mq-bol-diep) 52%, var(--mq-wit) 48%);
+  --mq-rand: color-mix(in srgb, var(--mq-bol-diep) 12%, transparent);
+  --mq-rand-sterk: color-mix(in srgb, var(--mq-bol-diep) 24%, transparent);
+  --mq-popover-glas: color-mix(in srgb, var(--mq-wit) 97%, var(--mq-satelliet-tekst) 3%);
+}
+
+/* Світлий режим «Ранковий туман» для консолі керування та панелі політик ШІ */
+html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog),
+html.palet-maquette:is([data-theme="light"], .theme-light, .theme-plum-light)[data-presentation-service="admin"] .aib-venster-laag,
+html.palet-maquette .canonical-chrome:is(.theme-light, .theme-plum-light) :is(.admin-console, .mq-admin-boundary, .admin-key-dialog) {
+  --mq-accent-adm: color-mix(in srgb, var(--mq-accent) 88%, var(--mq-knop-primair-tekst) 12%);
+  --mq-accent-adm-diep: color-mix(in srgb, var(--mq-accent) 72%, var(--mq-bol-diep) 28%);
+  --mq-accent-adm-op: var(--mq-wit);
+  --mq-adm-halo: color-mix(in srgb, var(--mq-accent-adm) 11%, transparent);
+  --mq-adm-halo-warm: color-mix(in srgb, var(--mq-accent-2) 8%, transparent);
+  --mq-adm-halo-zacht: color-mix(in srgb, var(--mq-accent-adm) 5.5%, transparent);
+  --mq-adm-rand: color-mix(in srgb, var(--mq-tekst) 12%, var(--mq-rand));
+  --mq-adm-rand-sterk: color-mix(in srgb, var(--mq-tekst) 21%, var(--mq-rand-sterk));
+  --mq-adm-rand-accent: color-mix(in srgb, var(--mq-accent-adm) 36%, var(--mq-rand));
+  --mq-adm-glas-diep: color-mix(in srgb, var(--mq-oppervlak) 96%, var(--mq-bg) 4%);
+  --mq-adm-glas-verhoogd: color-mix(in srgb, var(--mq-oppervlak-2) 92%, var(--mq-accent-adm) 4%);
+  --mq-adm-glas-glans: color-mix(in srgb, var(--mq-wit) 84%, transparent);
+  --mq-adm-code-put: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-bol-diep) 12%);
+
+  --mq-adm-goed: color-mix(in srgb, var(--mq-tekst) 62%, var(--mq-accent-2) 38%);
+  --mq-adm-goed-zacht: color-mix(in srgb, var(--mq-adm-goed) 11%, transparent);
+  --mq-adm-wacht: color-mix(in srgb, var(--mq-tech-markering) 86%, var(--mq-tekst) 14%);
+  --mq-adm-wacht-zacht: color-mix(in srgb, var(--mq-adm-wacht) 12%, transparent);
+  --mq-adm-gevaar: color-mix(in srgb, var(--mq-accent-adm) 84%, var(--mq-tekst) 16%);
+  --mq-adm-gevaar-zacht: color-mix(in srgb, var(--mq-adm-gevaar) 11%, transparent);
+
+  --panel: var(--mq-oppervlak);
+  --surface: var(--mq-oppervlak-2);
+  --surface2: color-mix(in srgb, var(--mq-oppervlak-2) 88%, var(--mq-tekst) 6%);
+  --line: var(--mq-adm-rand);
+  --text: var(--mq-tekst);
+  --muted: var(--mq-gedempt);
+  --faint: var(--mq-stil);
+  --accent: var(--mq-accent-adm);
+  --accentText: var(--mq-wit);
+  --text-on-accent: var(--mq-wit);
+  --accent-soft: var(--mq-adm-halo);
+  --danger: var(--mq-adm-gevaar);
+}
+
+/* Недоторканність нічного рубіново-коралового склепіння студійної вітрини .mq-held у будь-якому світловому режимі */
+html.palet-maquette .admin-console.mq-schil > .mq-held {
+  color-scheme: dark;
+  --mq-accent: var(--mq-nacht-accent);
+  box-shadow: var(--mq-schaduw-held);
+}
+
+html.palet-maquette .admin-console.mq-schil > .mq-held.is-compact {
+  border-color: var(--mq-held-lijn);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console.mq-schil .mq-admin-held-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-held-lijn);
+  background: color-mix(in srgb, var(--mq-held-tekst) 9%, transparent);
+  color: var(--mq-held-pil-tekst);
+  font-size: 0.78rem;
+  font-weight: 640;
+  letter-spacing: 0.01em;
+}
+
+html.palet-maquette .admin-console.mq-schil .mq-admin-held-status svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--mq-nacht-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2. ОБОЛОНКА КОНСОЛІ (.admin-console.mq-schil), ГРАНИЦІ ДОСТУПУ ТА FLAT-CONTENT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console.mq-schil {
+  max-width: 1460px;
+  gap: 20px;
+  padding-top: 14px;
+  padding-bottom: 48px;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console :focus-visible,
+html.palet-maquette .mq-admin-boundary :focus-visible,
+html.palet-maquette .admin-key-dialog :focus-visible {
+  outline: 2px solid var(--mq-accent-adm);
+  outline-offset: 2px;
+}
+
+/* Відновлення студійних рамок, скруглень і тіней поверх правила плоского вмісту канонічної оболонки */
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-section, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .admin-diagnostics-grid > article, .admin-diagnostic-services > article, .admin-key-health, .admin-key-add, .aib, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-detail, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+  border: 1px solid var(--mq-adm-rand);
+  border-radius: var(--mq-straal-kaart);
+  box-shadow:
+    inset 0 1px 0 var(--mq-adm-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] :is(.admin-title, .admin-notice, .admin-cards > article, .admin-table > article, .admin-honest-state, .admin-directory-grid > article, .admin-access-users > article, .admin-retired-accounts > article, .aib-stand, .aib-waarschuwing, section.aiz-stand, .aiz-kaart, .aiz-groep, .aib-rij, .aib-keuze, .aib-wachtrij):not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+  border-radius: 18px;
+}
+
+html.palet-maquette .canonical-chrome[data-surface-model="flat-content"] .canonical-content .admin-console.mq-schil[data-mq-dienst="admin"] .admin-notice:not([role="dialog"]):not(.auth-card):not([data-mq-a1]):not([data-mq-a2]):not([data-mq-a3]):not([data-mq-a4]):not([data-mq-a5]):not([data-mq-a6]):not([data-mq-a7]):not([data-mq-a8]):not([data-mq-a9]):not([data-mq-a10]):not([data-mq-a11]):not([data-mq-a12]) {
+  border-left: 4px solid var(--mq-accent-adm);
+}
+
+/* Три граничні стани доступу та завантаження (.mq-admin-boundary) */
+html.palet-maquette .admin-boundary.mq-admin-boundary {
+  width: min(580px, calc(100% - 32px));
+  min-height: 300px;
+  height: auto;
+  margin: 44px auto;
+  padding: 36px 32px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background:
+    radial-gradient(circle at 50% 0%, var(--mq-adm-halo), transparent 58%),
+    linear-gradient(165deg, var(--mq-adm-glas-verhoogd) 0%, var(--mq-adm-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-adm-glas-glans),
+    var(--mq-schaduw);
+  color: var(--mq-tekst);
+  gap: 14px;
+}
+
+html.palet-maquette .admin-boundary.mq-admin-boundary svg {
+  width: 46px;
+  height: 46px;
+  padding: 11px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+  box-sizing: content-box;
+}
+
+html.palet-maquette .admin-boundary.mq-admin-boundary h1 {
+  margin: 4px 0 0;
+  font-size: clamp(1.25rem, 2.2vw, 1.62rem);
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-boundary.mq-admin-boundary p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--mq-gedempt);
+  font-size: 0.94rem;
+  line-height: 1.56;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3. СЛУЖБОВА ПАНЕЛЬ ПІД ВІТРИНОЮ (.admin-title) ТА ПОВІДОМЛЕННЯ (.admin-notice)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .admin-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 12px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    radial-gradient(circle at 0% 50%, var(--mq-adm-halo-zacht), transparent 46%),
+    linear-gradient(165deg, var(--mq-adm-glas-verhoogd) 0%, var(--mq-adm-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-adm-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .admin-title > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+html.palet-maquette .admin-console .admin-title span {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo-zacht);
+  color: var(--mq-accent-adm);
+  font-size: 0.75rem;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+html.palet-maquette .admin-console .admin-title h1 {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .admin-title p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .admin-title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+html.palet-maquette .admin-console .admin-title button,
+html.palet-maquette .admin-console .admin-section button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--mq-straal-knop);
+  border: 1px solid var(--mq-adm-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-tekst) 4%);
+  color: var(--mq-tekst);
+  font-size: 0.86rem;
+  font-weight: 660;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+html.palet-maquette .admin-console .admin-title button:hover:not(:disabled),
+html.palet-maquette .admin-console .admin-section button:hover:not(:disabled) {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-accent-adm) 14%);
+}
+
+html.palet-maquette .admin-console .admin-title button:disabled,
+html.palet-maquette .admin-console .admin-section button:disabled {
+  opacity: 0.54;
+  cursor: not-allowed;
+}
+
+html.palet-maquette .admin-console .admin-codes-toggle {
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+
+html.palet-maquette .admin-console .admin-codes-toggle[aria-pressed="true"] {
+  border-color: var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-accent-adm) 32%, transparent);
+}
+
+/* Смуга зворотного зв'язку (.admin-notice) */
+html.palet-maquette .admin-console .admin-notice {
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  border-left: 4px solid var(--mq-accent-adm);
+  background:
+    radial-gradient(circle at 0% 50%, var(--mq-adm-halo), transparent 52%),
+    var(--mq-adm-glas-diep);
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4. СЕКЦІЇ КОНСОЛІ (.admin-section), ТАБЛИЦІ, КАРТКИ, КОРИСТУВАЧІ ТА РОЛІ
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .admin-section {
+  gap: 16px;
+  padding: 22px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo-zacht), transparent 44%),
+    linear-gradient(168deg, var(--mq-adm-glas-verhoogd) 0%, var(--mq-adm-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-adm-glas-glans),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .admin-section > header {
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .admin-section > header > svg {
+  width: 22px;
+  height: 22px;
+  padding: 9px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+  box-sizing: content-box;
+}
+
+html.palet-maquette .admin-console .admin-section h2 {
+  font-size: 1.16rem;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .admin-section > header p {
+  margin-top: 4px;
+  color: var(--mq-gedempt);
+  font-size: 0.9rem;
+  line-height: 1.54;
+  max-width: 74ch;
+}
+
+html.palet-maquette .admin-console .admin-section > label,
+html.palet-maquette .admin-console .admin-directory-grid label {
+  gap: 6px;
+  color: var(--mq-gedempt);
+  font-size: 0.84rem;
+  font-weight: 620;
+}
+
+/* Стилізація текстових полів і списків вибору виключно через :where(...) зі збереженням специфічності */
+html.palet-maquette .admin-console :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-radius: var(--mq-straal-veld);
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .admin-console :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):hover:not(:disabled) {
+  border-color: var(--mq-adm-rand-sterk);
+}
+
+html.palet-maquette .admin-console :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+  border-color: var(--mq-accent-adm);
+  box-shadow: 0 0 0 3px var(--mq-adm-halo);
+}
+
+/* Головні кнопки збереження у секціях керування */
+html.palet-maquette .admin-console .admin-section > button,
+html.palet-maquette .admin-console .admin-role-form > button,
+html.palet-maquette .admin-console .admin-directory-grid article > button,
+html.palet-maquette .admin-console .admin-access-users article > button {
+  justify-self: start;
+  border-color: var(--mq-adm-rand-accent);
+  background: linear-gradient(145deg, var(--mq-accent-adm), color-mix(in srgb, var(--mq-accent-adm) 76%, var(--mq-accent-2) 24%));
+  color: var(--mq-accent-adm-op);
+  box-shadow: 0 8px 22px var(--mq-adm-halo);
+}
+
+html.palet-maquette .admin-console .admin-section > button:hover:not(:disabled),
+html.palet-maquette .admin-console .admin-role-form > button:hover:not(:disabled),
+html.palet-maquette .admin-console .admin-directory-grid article > button:hover:not(:disabled),
+html.palet-maquette .admin-console .admin-access-users article > button:hover:not(:disabled) {
+  border-color: var(--mq-accent-adm);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-accent-adm) 90%, var(--mq-wit) 10%), var(--mq-accent-adm));
+  color: var(--mq-accent-adm-op);
+}
+
+/* Картки клієнтів, запитів і ролей (.admin-cards) */
+html.palet-maquette .admin-console .admin-cards {
+  gap: 10px;
+}
+
+html.palet-maquette .admin-console .admin-cards article {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+html.palet-maquette .admin-console .admin-cards article:hover {
+  border-color: var(--mq-adm-rand-sterk);
+  background: color-mix(in srgb, var(--mq-adm-glas-diep) 88%, var(--mq-accent-adm) 6%);
+}
+
+html.palet-maquette .admin-console .admin-cards article > svg {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .admin-cards code,
+html.palet-maquette .admin-console .admin-table code,
+html.palet-maquette .admin-console .admin-term-code,
+html.palet-maquette .admin-console .admin-person-ref code,
+html.palet-maquette .admin-console .admin-retired-accounts article code {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-code-put);
+  color: var(--mq-tekst);
+  font-family: var(--mq-font-mono);
+  font-size: 0.76rem;
+}
+
+html.palet-maquette .admin-console .admin-cards b {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background: var(--mq-adm-halo);
+  color: var(--mq-accent-adm);
+  font-size: 0.75rem;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+/* Таблиця подій пристроїв (.admin-table, .admin-table-head) */
+html.palet-maquette .admin-console .admin-table {
+  gap: 8px;
+}
+
+html.palet-maquette .admin-console .admin-table-head {
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.75rem;
+  font-weight: 760;
+  letter-spacing: 0.06em;
+}
+
+html.palet-maquette .admin-console .admin-table article {
+  padding: 13px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .admin-table article time {
+  color: var(--mq-gedempt);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Прапорці політик та індивідуальних прав (.admin-checks, .admin-recht) */
+html.palet-maquette .admin-console .admin-checks {
+  gap: 10px;
+}
+
+html.palet-maquette .admin-console .admin-checks label {
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  border-radius: 13px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+  color: var(--mq-tekst);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+html.palet-maquette .admin-console .admin-checks input,
+html.palet-maquette .admin-console .admin-recht input {
+  accent-color: var(--mq-accent-adm);
+}
+
+/* Плашка чесного стану (.admin-honest-state) */
+html.palet-maquette .admin-console .admin-honest-state {
+  padding: 12px 15px;
+  border-radius: 14px;
+  border: 1px dashed var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-gedempt);
+  font-size: 0.88rem;
+  line-height: 1.52;
+}
+
+/* Сітка зовнішніх каталогів (.admin-directory-grid) */
+html.palet-maquette .admin-console .admin-directory-grid {
+  gap: 14px;
+}
+
+html.palet-maquette .admin-console .admin-directory-grid article {
+  gap: 11px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .admin-directory-grid h3 {
+  font-size: 1rem;
+  color: var(--mq-tekst);
+}
+
+/* Керування користувачами, правами й історією акаунтів (.admin-access-users, .admin-retired-accounts) */
+html.palet-maquette .admin-console .admin-access-users {
+  gap: 10px;
+}
+
+html.palet-maquette .admin-console .admin-access-users article {
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .admin-access-users article[data-admin-owner-protected="true"] {
+  border-color: var(--mq-adm-rand-accent);
+  background:
+    radial-gradient(circle at 0% 50%, var(--mq-adm-halo-zacht), transparent 46%),
+    var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .admin-inline-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html.palet-maquette .admin-console .admin-recht {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak-zacht);
+  color: var(--mq-tekst);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+html.palet-maquette .admin-console .admin-person-ref,
+html.palet-maquette .admin-console .admin-access-users small,
+html.palet-maquette .admin-console .admin-retired-accounts small {
+  font-size: 0.8rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .admin-retired-accounts {
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .admin-retired-accounts h3 {
+  font-size: 1rem;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .admin-retired-accounts > p {
+  color: var(--mq-gedempt);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+html.palet-maquette .admin-console .admin-retired-accounts article {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed var(--mq-adm-rand-sterk);
+  background: var(--mq-oppervlak-zacht);
+}
+
+/* Форма призначення ролі (.admin-role-form) */
+html.palet-maquette .admin-console .admin-role-form {
+  gap: 10px;
+  align-items: center;
+}
+
+/* Діагностичні й ключові картки у спільному просторі консолі */
+html.palet-maquette .admin-console .admin-diagnostics-grid > article,
+html.palet-maquette .admin-console .admin-diagnostic-services > article,
+html.palet-maquette .admin-console .admin-key-health,
+html.palet-maquette .admin-console .admin-key-add {
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .admin-key-health.is-ready {
+  border-color: color-mix(in srgb, var(--mq-adm-goed) 42%, var(--mq-adm-rand));
+}
+
+html.palet-maquette .admin-console .admin-key-health.is-warn {
+  border-color: color-mix(in srgb, var(--mq-adm-wacht) 44%, var(--mq-adm-rand));
+}
+
+html.palet-maquette .admin-key-dialog {
+  background: color-mix(in srgb, var(--mq-bol-diep) 68%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.palet-maquette .admin-key-dialog > article {
+  border-radius: 22px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5. ПАНЕЛЬ ПОЛІТИК ШТУЧНОГО ІНТЕЛЕКТУ (BeheerAiBeleidWeergave: .aib-*, .aiz-*)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html.palet-maquette .admin-console .aib,
+html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag .aib {
+  --aib-ok: var(--mq-adm-goed);
+  --aib-ok-bg: var(--mq-adm-goed-zacht);
+  --aib-ask: var(--mq-adm-wacht);
+  --aib-ask-bg: var(--mq-adm-wacht-zacht);
+  --aib-off: var(--mq-adm-gevaar);
+  --aib-off-bg: var(--mq-adm-gevaar-zacht);
+  --aib-hoofd: var(--mq-accent-adm);
+  --aib-hoofd-tekst: var(--mq-accent-adm-op);
+  --aib-rand: var(--mq-adm-rand);
+  --aib-zacht: var(--mq-gedempt);
+  --aib-vlak: var(--mq-adm-glas-verhoogd);
+  --aib-paneel: var(--mq-adm-glas-diep);
+
+  --aiz-kaart: var(--mq-adm-glas-diep);
+  --aiz-hoog: var(--mq-adm-halo);
+  --aiz-laag: var(--mq-adm-goed);
+  --aiz-midden: var(--mq-adm-wacht);
+  --aiz-hoogrood: var(--mq-adm-gevaar);
+}
+
+html.palet-maquette .admin-console > .aib {
+  gap: 16px;
+  padding: 22px 24px;
+  border-radius: var(--mq-straal-kaart);
+  border: 1px solid var(--mq-adm-rand);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo-zacht), transparent 42%),
+    linear-gradient(168deg, var(--mq-adm-glas-verhoogd) 0%, var(--mq-adm-glas-diep) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--mq-adm-glas-glans),
+    var(--mq-schaduw-zacht);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .aib-kop {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mq-adm-rand);
+}
+
+html.palet-maquette .admin-console .aib h2 {
+  font-size: 1.18rem;
+  font-weight: 720;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .aib h2 svg {
+  color: var(--mq-accent-adm);
+}
+
+html.palet-maquette .admin-console .aib button,
+html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag .aib button {
+  border-radius: var(--mq-straal-knop);
+  border-color: var(--mq-adm-rand);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 86%, var(--mq-tekst) 4%);
+  color: var(--mq-tekst);
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+html.palet-maquette .admin-console .aib button:hover:not(:disabled),
+html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag .aib button:hover:not(:disabled) {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-oppervlak-2) 78%, var(--mq-accent-adm) 14%);
+}
+
+html.palet-maquette .admin-console .aib .aib-hoofd,
+html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag .aib .aib-hoofd {
+  border-color: var(--mq-accent-adm);
+  background: linear-gradient(145deg, var(--mq-accent-adm), color-mix(in srgb, var(--mq-accent-adm) 76%, var(--mq-accent-2) 24%));
+  color: var(--mq-accent-adm-op);
+  box-shadow: 0 8px 22px var(--mq-adm-halo);
+}
+
+html.palet-maquette .admin-console .aib .aib-hoofd:hover:not(:disabled),
+html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag .aib .aib-hoofd:hover:not(:disabled) {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--mq-accent-adm) 90%, var(--mq-wit) 10%), var(--mq-accent-adm));
+  color: var(--mq-accent-adm-op);
+}
+
+/* Статус політики, попередження та живий стан підключених ШІ */
+html.palet-maquette .admin-console .aib-stand,
+html.palet-maquette .admin-console .aib-waarschuwing,
+html.palet-maquette .admin-console section.aiz-stand {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .aib-waarschuwing {
+  border-color: color-mix(in srgb, var(--mq-adm-wacht) 52%, var(--mq-adm-rand));
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-wacht-zacht), transparent 55%),
+    var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .aiz-cijfers li {
+  border-color: var(--mq-adm-rand);
+  background: var(--mq-oppervlak-zacht);
+  font-size: 0.86rem;
+}
+
+html.palet-maquette .admin-console .aiz-stand-rij {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-oppervlak-zacht);
+}
+
+/* Пошук, фільтри та чіпи груп (.aiz-balk, .aiz-chips, .aiz-bulk-algemeen) */
+html.palet-maquette .admin-console .aiz .aiz-chip,
+html.palet-maquette .admin-console .aib .aib-chip {
+  border-radius: 999px;
+}
+
+html.palet-maquette .admin-console .aiz .aiz-chip[aria-pressed="true"] {
+  border-color: var(--mq-accent-adm);
+  background: var(--mq-adm-halo);
+  color: var(--mq-tekst);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-accent-adm) 42%, transparent);
+}
+
+html.palet-maquette .admin-console .aiz-bulk-algemeen {
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+/* Картки ШІ-агентів (.aiz-kaarten, .aiz-kaart) та пігулка стану span.aiz-stand */
+html.palet-maquette .admin-console .aiz-kaarten {
+  gap: 12px;
+}
+
+html.palet-maquette .admin-console .aiz .aiz-kaart {
+  padding: 15px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+  box-shadow: inset 0 1px 0 var(--mq-adm-glas-glans);
+}
+
+html.palet-maquette .admin-console .aiz .aiz-kaart:hover {
+  border-color: var(--mq-adm-rand-accent);
+  background: color-mix(in srgb, var(--mq-adm-glas-diep) 88%, var(--mq-accent-adm) 7%);
+}
+
+html.palet-maquette .admin-console .aiz .aiz-kaart.is-gekozen {
+  border-color: var(--mq-accent-adm);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo), transparent 58%),
+    var(--mq-adm-glas-diep);
+  box-shadow:
+    0 0 0 1px var(--mq-accent-adm),
+    var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .aiz-kaart-kop > span.aiz-stand {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 720;
+}
+
+html.palet-maquette .admin-console .aiz-avatar {
+  color: var(--mq-wit);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-wit) 20%, transparent);
+}
+
+html.palet-maquette .admin-console .aiz .aiz-nieuw-kaart {
+  border-style: dashed;
+  border-color: var(--mq-adm-rand-sterk);
+  color: var(--mq-accent-adm);
+}
+
+/* Розгорнута панель агента (.aiz-detail), групи прав (.aiz-groep) та рядки можливостей (.aib-rij) */
+html.palet-maquette .admin-console .aiz-detail {
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background:
+    radial-gradient(circle at 100% 0%, var(--mq-adm-halo-zacht), transparent 48%),
+    var(--mq-adm-glas-verhoogd);
+}
+
+html.palet-maquette .admin-console .aiz-agent-snel {
+  border-radius: 14px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .aiz-groep {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand);
+  border-left: 4px solid var(--mq-adm-rand-sterk);
+  background: var(--mq-adm-glas-diep);
+}
+
+html.palet-maquette .admin-console .aiz-groep.is-aan {
+  border-left-color: var(--mq-adm-goed);
+}
+
+html.palet-maquette .admin-console .aiz-groep.is-deels {
+  border-left-color: var(--mq-adm-wacht);
+}
+
+html.palet-maquette .admin-console .aiz-groep.is-uit {
+  border-left-color: var(--mq-adm-gevaar);
+}
+
+html.palet-maquette .admin-console .aiz .aiz-groep-toggle {
+  border: 0;
+  background: transparent;
+}
+
+html.palet-maquette .admin-console .aiz .aiz-groep-toggle:hover:not(:disabled) {
+  background: var(--mq-oppervlak-zacht);
+}
+
+html.palet-maquette .admin-console .aib-rij {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mq-adm-rand);
+  background: color-mix(in srgb, var(--mq-adm-glas-verhoogd) 72%, var(--mq-adm-glas-diep) 28%);
+}
+
+/* Трипозиційний перемикач сегментів «Вимк. / Питати / Завжди» (.aiz-segment, .aiz-seg) */
+html.palet-maquette .admin-console .aiz-segment {
+  border-radius: 12px;
+  border: 1px solid var(--mq-adm-rand-sterk);
+  background: var(--mq-adm-code-put);
+  padding: 2px;
+  gap: 2px;
+}
+
+html.palet-maquette .admin-console .aiz .aiz-seg {
+  min-height: 34px;
+  padding: 4px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--mq-gedempt);
+  font-size: 0.84rem;
+  font-weight: 660;
+}
+
+html.palet-maquette .admin-console .aiz .aiz-seg + .aiz-seg {
+  border-left: 0;
+}
+
+html.palet-maquette .admin-console .aiz .aiz-seg:hover:not(:disabled) {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette .admin-console .aiz .aiz-seg[aria-pressed="true"].is-off {
+  background: var(--mq-adm-gevaar-zacht);
+  color: var(--mq-adm-gevaar);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-adm-gevaar) 44%, transparent);
+}
+
+html.palet-maquette .admin-console .aiz .aiz-seg[aria-pressed="true"].is-ask {
+  background: var(--mq-adm-wacht-zacht);
+  color: var(--mq-adm-wacht);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-adm-wacht) 44%, transparent);
+}
+
+html.palet-maquette .admin-console .aiz .aiz-seg[aria-pressed="true"].is-always {
+  background: var(--mq-adm-goed-zacht);
+  color: var(--mq-adm-goed);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mq-adm-goed) 44%, transparent);
+}
+
+/* Таймери тимчасових дозволів (.aib-timer, .aib-balk) та вікно вибору строку (.aib-keuze) */
+html.palet-maquette .admin-console .aib-balk {
+  height: 7px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-adm-rand);
+  background: var(--mq-adm-code-put);
+}
+
+html.palet-maquette .admin-console .aib-timer dt {
+  font-size: 0.78rem;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette .admin-console .aib-keuze {
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-adm-rand-accent);
+  background:
+    radial-gradient(circle at 0% 0%, var(--mq-adm-halo), transparent 55%),
+    var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette .admin-console .aib-keuze-rij label input,
+html.palet-maquette .admin-console .aiz-doel input {
+  accent-color: var(--mq-accent-adm);
+}
+
+/* Липка черга змін до підпису ключем доступу (.aib-wachtrij) та вікно підпису (.aib-venster) */
+html.palet-maquette .admin-console .aib-wachtrij {
+  padding: 13px 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--mq-adm-wacht) 54%, var(--mq-adm-rand-accent));
+  background:
+    radial-gradient(circle at 0% 50%, var(--mq-adm-wacht-zacht), transparent 48%),
+    var(--mq-popover-glas);
+  box-shadow: var(--mq-schaduw);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  backdrop-filter: blur(20px) saturate(1.25);
+}
+
+html.palet-maquette .admin-console .aib-venster,
+html.palet-maquette[data-presentation-service="admin"] .aib-venster-laag .aib.aib-venster {
+  background: var(--mq-popover-glas);
+  color: var(--mq-tekst);
+}
+
+/* Сеанси від імені власника (.ns) усередині консолі керування */
+html.palet-maquette .admin-console .ns {
+  border-radius: 18px;
+  border-color: var(--mq-adm-rand);
+  background: var(--mq-adm-glas-diep);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   6. МЕДІАЗАПИТИ (СУВОРО НАПРИКІНЦІ ФАЙЛА ЗГІДНО З ПРАВИЛОМ КАСКАДУ ПРОЄКТУ)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html.palet-maquette .admin-console .admin-title button,
+  html.palet-maquette .admin-console .admin-section button,
+  html.palet-maquette .admin-console :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+  html.palet-maquette .admin-console .admin-cards article,
+  html.palet-maquette .admin-console .aib button {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  html.palet-maquette .admin-console .admin-section,
+  html.palet-maquette .admin-console > .aib {
+    padding: 18px;
+  }
+
+  html.palet-maquette .admin-console .admin-section > button,
+  html.palet-maquette .admin-console .admin-role-form > button,
+  html.palet-maquette .admin-console .admin-directory-grid article > button,
+  html.palet-maquette .admin-console .admin-access-users article > button {
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  html.palet-maquette .admin-console.mq-schil {
+    gap: 14px;
+    padding-bottom: 32px;
+  }
+
+  html.palet-maquette .admin-boundary.mq-admin-boundary {
+    margin: 24px auto;
+    padding: 26px 20px;
+  }
+
+  html.palet-maquette .admin-console .admin-title {
+    padding: 12px 14px;
+  }
+
+  html.palet-maquette .admin-console .admin-section,
+  html.palet-maquette .admin-console > .aib {
+    padding: 15px 14px;
+  }
+
+  html.palet-maquette .admin-console .aiz-detail {
+    padding: 12px;
+  }
+}
