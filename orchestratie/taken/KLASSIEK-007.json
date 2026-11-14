@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLASSIEK-007",
+  "agent": "antigravity",
+  "tak": "feature/klassiek-007-20261114-084452",
+  "basisCommit": "e8310fc7140b0d2203092255708e57966b354ce5",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T08:44:52.228Z",
+  "bijgewerkt": "2026-11-14T08:44:52.228Z",
+  "omschrijving": "Хвиля 6 прагматичних тем Біла класика та Чорна класика: розумна оселя huis.tarasevych.com (усі 13 вкладок та DomoticaWeergave).",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

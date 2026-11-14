@@ -1459,7 +1459,7 @@ html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij
    8. СВІТЛИЙ РЕЖИМ «РАНКОВИЙ ТУМАН» (html.palet-maquette[data-theme="light"])
    ═══════════════════════════════════════════════════════════════════════════ */
 
-html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) :is(
   .hv-beveiliging,
   .hv-energie,
   .hv-gebeurtenissen-pagina,
@@ -1470,7 +1470,7 @@ html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
   .hv-laag[data-hv-ha-wizard],
   .hv-laag[data-hv-ontdekt]
 ),
-html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) :is(
   .hv-beveiliging,
   .hv-energie,
   .hv-gebeurtenissen-pagina,
@@ -1481,7 +1481,7 @@ html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
   .hv-laag[data-hv-ha-wizard],
   .hv-laag[data-hv-ontdekt]
 ),
-html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+html.palet-maquette:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
   .hv-beveiliging,
   .hv-energie,
   .hv-gebeurtenissen-pagina,
@@ -1505,7 +1505,7 @@ html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme
   --mq-hb-focus-ring: color-mix(in srgb, var(--mq-hb-accent) 22%, transparent);
 }
 
-html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) :is(
   .hv-beveiliging,
   .hv-energie,
   .hv-gebeurtenissen-pagina,
@@ -1516,7 +1516,7 @@ html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
   .hv-laag[data-hv-ha-wizard],
   .hv-laag[data-hv-ontdekt]
 ) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
-html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) :is(
   .hv-beveiliging,
   .hv-energie,
   .hv-gebeurtenissen-pagina,
@@ -1527,7 +1527,7 @@ html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
   .hv-laag[data-hv-ha-wizard],
   .hv-laag[data-hv-ontdekt]
 ) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea),
-html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
+html.palet-maquette:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) :is(
   .hv-beveiliging,
   .hv-energie,
   .hv-gebeurtenissen-pagina,
@@ -1541,9 +1541,9 @@ html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--mq-tekst) 5%, transparent);
 }
 
-html.palet-maquette[data-theme="light"]:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg,
-html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg,
-html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg {
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg,
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg,
+html.palet-maquette:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg {
   background: linear-gradient(
     145deg,
     color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 22%, var(--mq-oppervlak)) 0%,
@@ -1552,21 +1552,21 @@ html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme
   color: color-mix(in srgb, var(--mq-kaart-accent, var(--mq-hb-accent)) 80%, var(--mq-tekst) 20%);
 }
 
-html.palet-maquette[data-theme="light"]:not([data-mq-uit]) .hv-energie .hv-lijn,
-html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) .hv-energie .hv-lijn,
-html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-energie .hv-lijn {
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .hv-energie .hv-lijn,
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .hv-energie .hv-lijn,
+html.palet-maquette:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-energie .hv-lijn {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--mq-hb-accent) 10%, transparent), transparent),
     var(--mq-oppervlak-2);
 }
 
-html.palet-maquette[data-theme="light"]:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before,
-html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before,
-html.palet-maquette:not([data-mq-uit]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before {
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before,
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before,
+html.palet-maquette:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) .canonical-chrome:is(.theme-light, .theme-plum-light) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before {
   background: var(--mq-oppervlak);
 }
 
-html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
+html.palet-maquette[data-theme="light"]:not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) :is(
   .hv-beveiliging .hv-melding[data-mq-schild-kop]::before,
   .hv-beveiliging section.hv-blok[data-mq-stepup-label] > h3::after,
   .hv-beveiliging article.hv-kaart[data-mq-stepup-pil]::before,
@@ -1578,7 +1578,7 @@ html.palet-maquette[data-theme="light"]:not([data-mq-uit]) :is(
   .hv-instellingen .mq-hb-rol-pil,
   [data-hv-uitnodigingen-mij] .mq-hb-rol-pil
 ),
-html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
+html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]):not([data-maquette-stijl="klassiek"]) :is(
   .hv-beveiliging .hv-melding[data-mq-schild-kop]::before,
   .hv-beveiliging section.hv-blok[data-mq-stepup-label] > h3::after,
   .hv-beveiliging article.hv-kaart[data-mq-stepup-pil]::before,
@@ -1594,16 +1594,1285 @@ html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   9. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
+   9. ПРАГМАТИЧНЕ ДІЛОВЕ ОФОРМЛЕННЯ КЛАСИКИ (KLASSIEK-007C)
+   Klassieke zakelijke weergave voor Beveiliging, Energie, Gebeurtenissen, Integraties, Assistent, Instellingen en Uitnodigingen
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 9.1. Суцільні матові поверхні ядра та геометрія 16px / 11px без кольорових ореолів */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) {
+  --mq-hb-accent: var(--mq-accent);
+  --mq-hb-accent-diep: var(--mq-accent-2);
+  --mq-hb-kaart-bg: var(--mq-oppervlak);
+  --mq-hb-paneel-bg: var(--mq-oppervlak);
+  --mq-hb-glans: transparent;
+  --mq-hb-rand-zacht: var(--mq-rand);
+  --mq-hb-focus-ring: var(--mq-oppervlak-hover);
+  --mq-straal-kaart: 16px;
+  --mq-straal-veld: 11px;
+  --mq-straal-knop: 11px;
+  --accentText: var(--mq-accent-op);
+  --text-on-accent: var(--mq-accent-op);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) {
+  gap: 14px;
+}
+
+/* 9.2. Секції section.hv-blok, порожні стани та беззасічкова типографіка заголовків */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) :is(h2, h3, h4) {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-style: normal;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] section.hv-blok[data-hv-uitnodigingen-mij] {
+  padding: 18px 20px;
+  gap: 12px;
+  border: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok > h3,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] section.hv-blok[data-hv-uitnodigingen-mij] > h3 {
+  font-family: var(--mq-font-ui, Inter, system-ui, sans-serif);
+  font-size: 15.5px;
+  font-weight: 640;
+  letter-spacing: -0.015em;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok > h3 svg,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] section.hv-blok[data-hv-uitnodigingen-mij] > h3 svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok > h3 small {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) section.hv-leeg {
+  padding: 28px 22px;
+  border: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) section.hv-leeg > svg {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  color: var(--mq-gedempt);
+}
+
+/* 9.3. Поля введення, списки вибору, кнопки дій та вкладки із заокругленням 11px */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background-color: var(--mq-oppervlak);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--mq-tekst);
+  box-shadow: 0 0 0 2px var(--mq-oppervlak-hover);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-knop {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-knop:hover:not(:disabled) {
+  transform: none;
+  border-color: var(--mq-tekst);
+  background: var(--mq-oppervlak-hover);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-knop.is-klein {
+  border-radius: 11px;
+  padding: 5px 12px;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-knop.is-stil {
+  border-color: transparent;
+  background: transparent;
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-knop.is-stil:hover:not(:disabled) {
+  transform: none;
+  border-color: var(--mq-rand);
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+/* Суцільні первинні кнопки на var(--mq-knop-primair-bg) / var(--mq-knop-primair-tekst) */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-knop.is-hoofd {
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: var(--mq-knop-primair-bg);
+  background-image: none;
+  color: var(--mq-knop-primair-tekst);
+  font-weight: 640;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen,
+  [data-hv-uitnodigingen-mij],
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-knop.is-hoofd:hover:not(:disabled) {
+  transform: none;
+  filter: none;
+  background: var(--mq-accent-2);
+  background-image: none;
+  color: var(--mq-accent-op);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-integraties,
+  .hv-instellingen,
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-icoonknop {
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties
+) .hv-chips[role="tablist"] {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties
+) .hv-chip {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) .hv-chips[role="tablist"] .hv-chip {
+  border-color: transparent;
+  background: transparent;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) .hv-chips[role="tablist"] .hv-chip:hover {
+  background: var(--mq-oppervlak-hover);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) .hv-chips[role="tablist"] .hv-chip.is-actief {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+/* Повідомлення (.hv-melding) з матовою поверхнею 16px і чистими семантичними станами */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) .hv-melding {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-tekst);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) .hv-melding svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) .hv-melding.is-fout {
+  border-color: var(--fout);
+  border-left: 4px solid var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) .hv-melding.is-fout svg {
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) .hv-melding.is-ok {
+  border-color: var(--ok);
+  border-left: 4px solid var(--ok);
+  background: var(--ok-zacht);
+  background-image: none;
+  color: var(--ok);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties,
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) .hv-melding.is-ok svg {
+  color: var(--ok);
+}
+
+/* 9.4. БЕЗПЕКА (.hv-beveiliging) — чесні сигнали var(--fout), var(--warn), var(--ok) без ореолів */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-melding[data-mq-schild-kop] {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-melding[data-mq-schild-kop]::before {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-melding[data-mq-schild-kop] > svg {
+  clip-path: none;
+  padding: 10px;
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-melding[data-mq-schild-banner="gevaar"] {
+  border: 1px solid var(--fout);
+  border-left: 4px solid var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-melding[data-mq-schild-banner="gevaar"]::before {
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-melding[data-mq-schild-banner="gevaar"] > svg {
+  border-color: var(--fout);
+  background: var(--mq-oppervlak);
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging section.hv-blok[data-mq-stepup-label] > h3::after,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-stepup-pil]::before {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart:hover {
+  transform: none;
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="vers"] {
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="verouderd"] {
+  border-color: var(--warn);
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="onbekend"] {
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="onbeschikbaar"] {
+  opacity: 1;
+  border: 1px dashed var(--fout);
+  background: var(--mq-oppervlak);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-alarm="actief"] {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart.is-kritiek small,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart.is-kritiek strong::after {
+  color: var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-alarm="actief"] :is(small, strong::after) {
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart .hv-waarde {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="vers"] .hv-waarde {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  color: var(--ok);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="verouderd"] .hv-waarde {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="onbekend"] .hv-waarde {
+  border-style: dashed;
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-versheid="onbeschikbaar"] .hv-waarde {
+  border: 1px dashed var(--fout);
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart[data-mq-alarm="actief"] .hv-waarde {
+  border: 1px solid var(--fout);
+  background: var(--mq-oppervlak);
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart em {
+  color: var(--mq-stil);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Перемикачі режимів охорони й замків та кульки на var(--mq-accent-op) */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bediening .hv-kritiek {
+  border-radius: 11px;
+  border: 1px solid var(--fout);
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bediening .hv-schakelaar {
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bediening .hv-schakelaar-knop {
+  background: var(--mq-gedempt);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bediening .hv-schakelaar.is-aan {
+  border-color: var(--mq-accent);
+  background: var(--mq-accent);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bediening .hv-schakelaar.is-aan .hv-schakelaar-knop {
+  background: var(--mq-accent-op);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bediening .hv-schakelaar.is-onbekend {
+  border: 1px dashed var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bediening .hv-schakelaar.is-onbekend .hv-schakelaar-knop {
+  background: var(--mq-stil);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-opdracht-stand {
+  border-radius: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bevestig {
+  border-radius: 16px;
+  border: 1px solid var(--fout);
+  border-left: 4px solid var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+  color: var(--fout);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging .hv-bevestig .hv-knop.is-hoofd {
+  border-color: var(--fout-vlak);
+  background: var(--fout-vlak);
+  background-image: none;
+  color: var(--text-on-vlak);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+/* 9.5. ЕНЕРГІЯ (.hv-energie) — строгий графітово-сріблястий монохром та табличні цифри */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-tegel {
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-tegel[data-mq-boven]::before {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-tegel[data-mq-kwh]::after {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-tegel svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-tegel strong,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-tegel[data-hv-tegel="vermogen-nu"][data-mq-actief="ja"] strong {
+  font-size: 24px;
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie article.hv-kaart[data-hv-meter] {
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie article.hv-kaart[data-hv-meter]:hover {
+  transform: none;
+  border-color: var(--mq-rand-sterk);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie article.hv-kaart[data-hv-meter] strong {
+  font-size: 21px;
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie article.hv-kaart[data-hv-meter] .hv-waarde {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie article.hv-kaart[data-hv-meter] em {
+  color: var(--mq-stil);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Монохромний стовпчик миттєвої потужності та графік лінії споживання без градієнтів */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie article.hv-kaart[data-hv-meter][data-mq-schaal="ja"]::after {
+  width: var(--mq-meter-pct, 0%);
+  max-width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--mq-accent);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-lijn {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-lijn path {
+  stroke: var(--mq-accent);
+  stroke-width: 1.75;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-lijn rect {
+  fill: var(--mq-accent);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-lijn-tekst {
+  fill: var(--mq-gedempt);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 9.6. ЖУРНАЛ ПОДІЙ (.hv-gebeurtenissen-pagina) — чітка хронологія з tabular-nums */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen::before {
+  width: 1px;
+  background: var(--mq-rand-sterk);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li:hover {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li::before {
+  border: 2px solid var(--mq-gedempt);
+  background: var(--mq-oppervlak);
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li.is-belangrijk {
+  border-left: 3px solid var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li.is-belangrijk::before {
+  border-color: var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li.is-kritiek {
+  border-color: var(--fout);
+  border-left: 3px solid var(--fout);
+  background: var(--fout-zacht);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li.is-kritiek::before {
+  border-color: var(--fout);
+  background: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li > span {
+  color: var(--mq-gedempt);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina li[data-mq-cmd-stand] .hv-lijst-knop strong::after,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina :is(.mq-hb-pil-bron, .mq-hb-pil-soort, .mq-hb-pil-ernst) {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina li.is-belangrijk .mq-hb-pil-ernst {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina li.is-kritiek .mq-hb-pil-ernst {
+  border-color: var(--fout);
+  background: var(--mq-oppervlak);
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li > .hv-details {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-details pre {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+/* 9.7. ІНТЕГРАЦІЇ ТА МАЙСТЕР ШЛЮЗУ (.hv-integraties, .hv-laag[data-hv-ha-wizard]) */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie {
+  padding: 16px 18px;
+  gap: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie > header > svg {
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-chip[data-mq-pil="hartslag"] {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-chip[data-mq-pil="hartslag"]::before {
+  background: var(--mq-gedempt);
+  animation: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie.is-verbonden .hv-chip[data-mq-pil="hartslag"] {
+  border-color: var(--ok);
+  background: var(--ok-zacht);
+  color: var(--ok);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie.is-verbonden .hv-chip[data-mq-pil="hartslag"]::before {
+  background: var(--ok);
+  animation: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie:is(.is-verzwakt, .is-geconfigureerd) .hv-chip[data-mq-pil="hartslag"] {
+  border-color: var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie:is(.is-verzwakt, .is-geconfigureerd) .hv-chip[data-mq-pil="hartslag"]::before {
+  background: var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie.is-geweigerd .hv-chip[data-mq-pil="hartslag"] {
+  border-color: var(--fout);
+  background: var(--fout-zacht);
+  color: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie.is-geweigerd .hv-chip[data-mq-pil="hartslag"]::before {
+  background: var(--fout);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-chip[data-mq-pil="schrijven-aan"] {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-chip[data-mq-pil="alleen-lezen"] {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-tabel {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-tabel th {
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-tabel td code {
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-kaart.is-catalogus {
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+  background-image: none;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-kaart.is-catalogus > small.hv-chip {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties a.hv-link {
+  color: var(--mq-tekst);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) {
+  background: var(--mq-sluier-glas);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-laag-vak {
+  border: 1px solid var(--mq-rand-sterk);
+  border-radius: 16px;
+  background: var(--mq-oppervlak);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  color: var(--mq-tekst);
+  box-shadow: var(--mq-schaduw);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-laag-kop {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ha-wizard]),
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-laag-inhoud {
+  padding: 16px 18px 20px;
+  gap: 14px;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) ol.hv-uitleg > li {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ha-wizard],
+  .hv-laag:has([data-hv-ha-wizard])
+) ol.hv-uitleg > li::before {
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ontdekt])
+) p[data-hv-ontdekt-afgekapt] {
+  border-radius: 11px;
+  border: 1px solid var(--warn);
+  background: var(--warn-zacht);
+  color: var(--warn);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ontdekt])
+) ul[data-hv-ontdekt-lijst="1"] > li {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ontdekt])
+) ul[data-hv-ontdekt-lijst="1"] > li.mq-is-gekozen {
+  border-color: var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ontdekt])
+) .hv-keuze input[type="checkbox"] {
+  accent-color: var(--mq-accent);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+  .hv-laag[data-hv-ontdekt],
+  .hv-laag:has([data-hv-ontdekt])
+) ul[data-hv-ontdekt-lijst="1"] code {
+  color: var(--mq-tekst);
+}
+
+/* 9.8. ПОМІЧНИК (.hv-assistent), НАЛАШТУВАННЯ (.hv-instellingen) ТА ЗАПРОШЕННЯ ([data-hv-uitnodigingen-mij]) */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-assistent section.hv-blok[data-mq-handvest-kop]::before {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  color: var(--mq-gedempt);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-assistent ol.hv-uitleg > li {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-assistent ol.hv-uitleg > li::before {
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-assistent ol.hv-uitleg > li[data-mq-mens-grens="1"] {
+  border: 1px solid var(--warn);
+  border-left: 3px solid var(--warn);
+  background: var(--warn-zacht);
+  background-image: none;
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-assistent ol.hv-uitleg > li[data-mq-mens-grens="1"] svg {
+  color: var(--warn);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-assistent .hv-lijst > li[data-hv-voorstel] {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-assistent .hv-lijst > li[data-hv-voorstel] small {
+  color: var(--mq-gedempt);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-instellingen optgroup {
+  color: var(--mq-tekst);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-instellingen option {
+  color: var(--mq-tekst);
+  background: var(--mq-oppervlak);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-instellingen ul[data-mq-verdiepingen="1"] > li {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-instellingen ul[data-mq-verdiepingen="1"] > li::before {
+  border-radius: 8px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-instellingen ul[data-hv-leden] > li,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-instellingen ul[data-hv-uitnodigingen] > li {
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(.hv-instellingen, [data-hv-uitnodigingen-mij]) .mq-hb-rol-pil {
+  border-radius: 11px;
+  border: 1px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak);
+  color: var(--mq-tekst);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-instellingen form[data-mq-uitnodig-vorm="1"] {
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] section.hv-blok[data-hv-uitnodigingen-mij] .hv-lijst > li {
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--mq-rand);
+  border-left: 3px solid var(--mq-rand-sterk);
+  background: var(--mq-oppervlak-2);
+  background-image: none;
+  box-shadow: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 9.9. Захист специфічності :not(#_mqk) проти flat-content (0, 19, 0) винятково для рамок, радіуса 16px та тіней без padding і gap */
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina,
+  .hv-integraties,
+  .hv-assistent,
+  .hv-instellingen
+) section.hv-blok,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) section.hv-blok[data-hv-uitnodigingen-mij],
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-integraties
+) article.hv-kaart,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) .hv-integraties article.hv-integratie {
+  border: 1px solid var(--mq-rand);
+  border-inline: 1px solid var(--mq-rand);
+  border-radius: 16px;
+  box-shadow: var(--mq-schaduw-zacht);
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) :is(
+  .hv-beveiliging,
+  .hv-energie,
+  .hv-gebeurtenissen-pagina
+) section.hv-leeg,
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) .hv-beveiliging article.hv-kaart[data-mq-versheid="onbekend"] {
+  border: 1px dashed var(--mq-rand-sterk);
+  border-inline: 1px dashed var(--mq-rand-sterk);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) .hv-beveiliging article.hv-kaart[data-mq-versheid="verouderd"],
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) .hv-integraties article.hv-integratie:is(.is-verzwakt, .is-geconfigureerd) {
+  border: 1px solid var(--warn);
+  border-inline: 1px solid var(--warn);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) .hv-beveiliging article.hv-kaart[data-mq-versheid="onbeschikbaar"] {
+  border: 1px dashed var(--fout);
+  border-inline: 1px dashed var(--fout);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) .hv-beveiliging article.hv-kaart[data-mq-alarm="actief"],
+html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"]:not(#_mqk) .hv-integraties article.hv-integratie.is-geweigerd {
+  border: 1px solid var(--fout);
+  border-inline: 1px solid var(--fout);
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   10. АДАПТИВНІ ТА МОБІЛЬНІ ШАРИ — СУВОРО НАПРИКІНЦІ ФАЙЛА (mobiel-cascade-20261105)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 920px) {
-  html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li {
+  html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
   }
 
-  html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel th {
+  html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel th,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-tabel th {
     width: 140px;
   }
 }
@@ -1620,6 +2889,28 @@ html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
   html.palet-maquette:not([data-mq-uit]) section.hv-blok[data-hv-uitnodigingen-mij] {
     padding: 18px 16px;
     border-radius: 20px;
+  }
+
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+    .hv-beveiliging,
+    .hv-energie,
+    .hv-gebeurtenissen-pagina,
+    .hv-integraties,
+    .hv-assistent,
+    .hv-instellingen
+  ) section.hv-blok,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] section.hv-blok[data-hv-uitnodigingen-mij] {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-beveiliging article.hv-kaart,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie .hv-tegel,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-energie article.hv-kaart[data-hv-meter],
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-gebeurtenissen-pagina .hv-gebeurtenissen > li,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-integratie,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties article.hv-kaart.is-catalogus {
+    padding: 12px 14px;
   }
 
   html.palet-maquette:not([data-mq-uit]) .hv-beveiliging .hv-melding[data-mq-schild-kop] {
@@ -1641,6 +2932,14 @@ html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
     border-radius: 18px;
   }
 
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+    .hv-energie,
+    .hv-gebeurtenissen-pagina,
+    .hv-integraties
+  ) .hv-chips[role="tablist"] {
+    border-radius: 11px;
+  }
+
   html.palet-maquette:not([data-mq-uit]) .hv-gebeurtenissen-pagina .hv-gebeurtenissen {
     padding-left: 18px;
   }
@@ -1654,13 +2953,39 @@ html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
   }
 
   html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel th,
-  html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel td {
+  html.palet-maquette:not([data-mq-uit]) .hv-integraties .hv-tabel td,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-tabel th,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] .hv-integraties .hv-tabel td {
     display: block;
     width: 100%;
   }
 
-  html.palet-maquette:not([data-mq-uit]) :is(.hv-laag[data-hv-ha-wizard], .hv-laag[data-hv-ontdekt]).is-scherm .hv-laag-vak {
+  html.palet-maquette:not([data-mq-uit]) :is(.hv-laag[data-hv-ha-wizard], .hv-laag[data-hv-ontdekt]).is-scherm .hv-laag-vak,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+    .hv-laag[data-hv-ha-wizard],
+    .hv-laag[data-hv-ontdekt],
+    .hv-laag:has([data-hv-ha-wizard]),
+    .hv-laag:has([data-hv-ontdekt])
+  ).is-scherm .hv-laag-vak {
     border-radius: 0;
+  }
+
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+    .hv-laag[data-hv-ha-wizard],
+    .hv-laag[data-hv-ontdekt],
+    .hv-laag:has([data-hv-ha-wizard]),
+    .hv-laag:has([data-hv-ontdekt])
+  ) .hv-laag-kop {
+    padding: 12px 14px 10px;
+  }
+
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+    .hv-laag[data-hv-ha-wizard],
+    .hv-laag[data-hv-ontdekt],
+    .hv-laag:has([data-hv-ha-wizard]),
+    .hv-laag:has([data-hv-ontdekt])
+  ) .hv-laag-inhoud {
+    padding: 14px 14px 18px;
   }
 }
 
@@ -1675,6 +3000,19 @@ html.palet-maquette:is(.theme-light, .theme-plum-light):not([data-mq-uit]) :is(
     [data-hv-uitnodigingen-mij],
     .hv-laag[data-hv-ha-wizard],
     .hv-laag[data-hv-ontdekt]
+  ) .hv-knop,
+  html.palet-maquette:not([data-mq-uit])[data-maquette-stijl="klassiek"] :is(
+    .hv-beveiliging,
+    .hv-energie,
+    .hv-gebeurtenissen-pagina,
+    .hv-integraties,
+    .hv-assistent,
+    .hv-instellingen,
+    [data-hv-uitnodigingen-mij],
+    .hv-laag[data-hv-ha-wizard],
+    .hv-laag[data-hv-ontdekt],
+    .hv-laag:has([data-hv-ha-wizard]),
+    .hv-laag:has([data-hv-ontdekt])
   ) .hv-knop {
     min-height: 44px;
   }

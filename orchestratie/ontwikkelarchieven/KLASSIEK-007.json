@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "taakId": "KLASSIEK-007",
+  "titel": "Хвиля 6 тем оформлення «Біла класика» та «Чорна класика»: розумна оселя huis.tarasevych.com та класичний міст DomoticaWeergave",
+  "opdracht": "Оформити всі тринадцять робочих розділів піддомену розумної оселі huis.tarasevych.com (огляд оселі, кімнати й інженерний план поверху, пристрої та інспектор керування, сцени, правила автоматизації, безпеку, облік енергії, пропозиції помічника, журнал подій, вузли інтеграцій, мешканців, параметри житла й класичний міст DomoticaWeergave) у прагматичних безколірних темах «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart) поруч зі студійним «Макетом» та іншими темами платформи.",
+  "herkomst": {
+    "eigenaar": "Павло Тарасевич",
+    "agent": "antigravity",
+    "tak": "feature/klassiek-007-20261114-084452",
+    "basis": "e8310fc7140b0d2203092255708e57966b354ce5",
+    "geinstalleerdeBasis": "f3f3fabb2f3b5209b1ee8eba3078e403de831844",
+    "geinstalleerdeVersie": "20261105-061659",
+    "integratieBasis": "3219123ea8b00f27460922ae075ee3c7f32cecda",
+    "regelsVersie": "1.4.14",
+    "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3"
+  },
+  "privacy": {
+    "geheimenUitgesloten": true,
+    "toelichting": "Ключі вузлів розумної оселі, маркери доступу з’єднувачів, приватні адреси домашньої мережі, облікові дані мешканців, внутрішні адреси середовища розробки та приховані ланцюжки міркувань моделі до цього журналу не внесено."
+  },
+  "tijdlijn": [
+    {
+      "tijd": "2026-11-14T08:44:52Z",
+      "stap": "Створено робочу гілку feature/klassiek-007-20261114-084452 від базової фіксації e8310fc7140b0d2203092255708e57966b354ce5 та зареєстровано завдання KLASSIEK-007."
+    },
+    {
+      "tijd": "2026-11-14T09:01:20Z",
+      "stap": "Доповнено src/huis/huis-beheer-maquette.css прагматичним класичним шаром для безпеки, обліку енергії, пропозицій помічника, журналу подій, вузлів інтеграцій, мешканців та параметрів житла з табличними цифрами й монохромними графіками."
+    },
+    {
+      "tijd": "2026-11-14T09:04:10Z",
+      "stap": "Оформлено src/huis/domotica-maquette.css та src/huis/huis-kern-maquette.css із відсіканням бурштиново-піщаних тонів студійного світлого режиму, компактною внутрішньою шапкою оселі, плавними кутами 16px/11px і захистом рамок поверх плаского полотна."
+    },
+    {
+      "tijd": "2026-11-14T09:05:17Z",
+      "stap": "Доповнено src/huis/huis-ruimtes-maquette.css інженерним кресленням плану поверху без бурштинового туману, висококонтрастними перемикачами й монохромними повзунками керування пристроями, суцільними картками кімнат, сцен, автоматизацій та виїзного інспектора."
+    }
+  ],
+  "keuzes": [
+    "Усі класичні перетворення піддомену huis.tarasevych.com та мосту DomoticaWeergave реалізовано суто в чотирьох таблицях стилів макета без втручання у вихідний код компонентів TSX та двомовні тексти інтерфейсу.",
+    "Векторний план поверху Plattegrond у класичних темах переведено на чисте архітектурне креслення в градаціях сірого без розмиття, ореолів і світлових плям задля миттєвого зчитування кімнат та стану датчиків.",
+    "Для увімкнених перемикачів і повзунків пристроїв встановлено контрастну кульку кольору тексту на наголосі (--mq-accent-op) поверх антрацитової чи сріблясто-білої доріжки (--mq-accent) без жодних кольорових градієнтів."
+  ],
+  "wijzigingen": [
+    "orchestratie/ontwikkelarchieven/KLASSIEK-007.json",
+    "orchestratie/taken/KLASSIEK-007.json",
+    "src/huis/domotica-maquette.css",
+    "src/huis/huis-beheer-maquette.css",
+    "src/huis/huis-kern-maquette.css",
+    "src/huis/huis-ruimtes-maquette.css",
+    "tests/eenheid/klassiek-007a-huis-kern.test.ts",
+    "tests/eenheid/klassiek-007b-huis-ruimtes.test.ts",
+    "tests/eenheid/klassiek-007c-huis-beheer.test.ts"
+  ],
+  "controles": [
+    "Перевірка координації: node scripts/orch.mjs controleer та node scripts/orch.mjs versheid --taak KLASSIEK-007 --fase overdracht — успішно.",
+    "Перевірка типів клієнта та сервера: npx tsc --noEmit та npm run typecheck:server — код 0.",
+    "Повне складання npm run build (усі 12 кроків перевірок і складання клієнта, розширення та сервера) — код 0.",
+    "Модульні випробування: thema, maquette-001-kern, klassiek-001-kern, klassiek-007a-huis-kern (14/14), klassiek-007b-huis-ruimtes (12/12), klassiek-007c-huis-beheer (12/12), contrast-knoppen-logos-20261021 (38/38), mobiel-cascade-20261105 (22/22), mobiel-geometrie-20261021, plaatsing-20261025, huis-001-oude-fouten-20261110 (16/16), huis-001-maquette-20261112 (22/22), sec-002-afwerking-b-20261112, sec-002-g01-20261112, zoek-ui-tabblad-20261105.",
+    "Жива візуальна перевірка кадрів huis.tarasevych.com (огляд оселі, кімнати й план поверху, пристрої, безпека, енергія, класичний міст DomoticaWeergave, мобільні вигляди та контрольний кадр студійного макета) у безголовому оглядачі Chromium — 0 винятків під час виконання."
+  ],
+  "bronnen": [
+    "AGENTS.md",
+    "orchestratie/beleid.json",
+    "src/huis/domotica-maquette.css",
+    "src/huis/huis-kern-maquette.css",
+    "src/huis/huis-ruimtes-maquette.css",
+    "src/huis/huis-beheer-maquette.css"
+  ],
+  "beperkingen": [
+    "Хвиля 6 (KLASSIEK-007) охоплює піддомен huis.tarasevych.com та DomoticaWeergave; решта три піддомени (mcp, api, admin) послідовно оформлюються у Хвилях 7–9 (KLASSIEK-008 — KLASSIEK-010)."
+  ]
+}
