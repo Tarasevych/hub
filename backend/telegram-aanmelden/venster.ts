@@ -185,19 +185,19 @@ function document(taal: Taal, inhoud: string): string {
 export const VENSTER_JS = `(()=>{'use strict';
 const q=new URLSearchParams(location.search),t=q.get('t')||'';
 let init='';try{init=new URLSearchParams(location.hash.slice(1)).get('tgWebAppData')||''}catch(e){}
-const meld=(ev,data)=>{try{const p=JSON.stringify(data||{});if(window.TelegramWebviewProxy&&window.TelegramWebviewProxy.postEvent)window.TelegramWebviewProxy.postEvent(ev,p);else if(window.external&&'notify'in window.external)window.external.notify(JSON.stringify({eventType:ev,eventData:data||{}}));else if(window.parent!==window)window.parent.postMessage(JSON.stringify({eventType:ev,eventData:data||{}}),'https://web.telegram.org')}catch(e){}};
-meld('web_app_ready');meld('web_app_expand');
+const tgGebeurtenis=(ev,data)=>{try{const p=JSON.stringify(data||{});if(window.TelegramWebviewProxy&&window.TelegramWebviewProxy.postEvent)window.TelegramWebviewProxy.postEvent(ev,p);else if(window.external&&'notify'in window.external)window.external.notify(JSON.stringify({eventType:ev,eventData:data||{}}));else if(window.parent!==window)window.parent.postMessage(JSON.stringify({eventType:ev,eventData:data||{}}),'https://web.telegram.org')}catch(e){}};
+tgGebeurtenis('web_app_ready');tgGebeurtenis('web_app_expand');
 const $=(id)=>document.getElementById(id);
 const toon=(id)=>{document.querySelectorAll('.uitkomst').forEach(e=>{e.hidden=e.id!=='m-'+id});};
 const api=async(pad,body)=>{try{const r=await fetch('/api/telegram/venster/'+pad,{method:'POST',credentials:'omit',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({t:t,initData:init},body))});return await r.json()}catch(e){return{uitkomst:'netwerk'}}};
-const einde=(id,sluiten)=>{toon(id);$('stap-kiezen').hidden=true;$('stap-code').hidden=true;$('nee').hidden=true;if(sluiten)setTimeout(()=>meld('web_app_close'),2500);};
+const einde=(id,sluiten)=>{toon(id);$('stap-kiezen').hidden=true;$('stap-code').hidden=true;$('nee').hidden=true;if(sluiten)setTimeout(()=>tgGebeurtenis('web_app_close'),2500);};
 let bezig=false;
 document.querySelectorAll('.keuze').forEach(k=>k.addEventListener('click',async()=>{
   if(bezig)return;const acc=document.querySelector('input[name=account]:checked')||document.querySelector('input[type=hidden][name=account]');
   if(!acc||!acc.value){toon('account');return}
   bezig=true;document.querySelectorAll('.keuze').forEach(x=>{x.disabled=true});k.classList.add('gekozen');
   const r=await api('kies',{pos:Number(k.dataset.pos),koppeling:acc.value});bezig=false;
-  if(r.uitkomst==='code'){$('stap-kiezen').hidden=true;$('stap-code').hidden=false;toon('');$('code').focus();meld('web_app_setup_closing_behavior',{need_confirmation:true});return}
+  if(r.uitkomst==='code'){$('stap-kiezen').hidden=true;$('stap-code').hidden=false;toon('');$('code').focus();tgGebeurtenis('web_app_setup_closing_behavior',{need_confirmation:true});return}
   if(r.uitkomst==='ok'){einde('ok',true);return}
   if(r.uitkomst==='netwerk'){document.querySelectorAll('.keuze').forEach(x=>{x.disabled=false});k.classList.remove('gekozen');toon('netwerk');return}
   einde(r.uitkomst||'verlopen',false);
