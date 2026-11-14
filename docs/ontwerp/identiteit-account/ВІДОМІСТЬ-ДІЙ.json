@@ -1129,15 +1129,17 @@
     "tests/e2e/identiteit-maquette-kaart.e2e.ts",
     "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: після входу на картці профілю — фото з Google (та сама адреса, зображення завантажилося), смітничка немає",
     "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: після оновлення сторінки — фото Google",
-    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: новий вхід (телефон) — фото Google, власного немає (сервер: customPicture=false)"
+    "tests/e2e/identiteit-015-blokken-profiel.e2e.ts#B: новий вхід (телефон) — фото Google, власного немає (сервер: customPicture=false)",
+    "tests/e2e/identiteit-015-apparaten.e2e.ts"
    ],
    "herkomst": "Позиція v49; у «Макеті» показана самим оформленням (вжеОформленіРядки.account), тому з карти розвитку прибрана.",
    "maquetteLabel": "прихована група (рядок у вжеОформленіРядки, група «особа» вся «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "da3bbfbc",
+   "versie": "62b7265",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Після входу (Google передає фото) картка профілю розділу «Акаунт» показує саме цю світлину (зображення завантажилося); після оновлення й нового входу на телефоні — так само. Шапку «Макета» цією групою не перевіряли.",
-   "schermafdruk": "015-blokken-profiel-profiel-google-computer.png"
+   "resultaat": "Лінія D2: діалог світлини облікового запису відкривається з кнопки-аватара в шапці «Макета» клавіатурою (Enter) на всіх 20 поєднаннях ширина × мова × тема; Esc закриває його, фокус повертається на кнопку-аватар.",
+   "schermafdruk": "tests/e2e/знімки-015/apparaten-computer-1280-nl-licht.png",
+   "aanvullingVan": "aanvulling-d2.json"
   },
   {
    "id": "account.особа.0.z-prystroiu",
@@ -3030,14 +3032,17 @@
    "testen": [
     "tests/eenheid/identiteit-015-vormgeving.test.ts",
     "tests/e2e/identiteit-015-vormgeving.e2e.ts",
-    "tests/eenheid/identiteit-015-vormgeving-toegang.test.ts"
+    "tests/eenheid/identiteit-015-vormgeving-toegang.test.ts",
+    "tests/e2e/identiteit-015-apparaten.e2e.ts"
    ],
    "herkomst": "Елемент макета v49 (вікно «Налаштування навігації»).",
    "maquetteLabel": "прихована група (вже оформлена в макеті; рядків у карті немає)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "b2c7f8a6",
+   "versie": "62b7265",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Справжній Chromium (1440×900): «Ліворуч / Праворуч / Зверху / Знизу» — меню стає біля відповідного краю робочої області «Макета» в кожному з трьох режимів, піктограми видно; на сервері sidebar.dock.positie links/rechts/boven/onder (меню сайту). Вікно вміщається в екран (1280×900: 96–881 px, 16 кнопок досяжні); Esc, «×» і вибір положення повертають фокус на кнопку ⚙."
+   "resultaat": "Лінія D2 (лише доступність вікна, вибір положення перевіряють інші лінії): вікно «Налаштування навігації» відкривається з клавіатури кнопкою на смузі розділів на всіх 20 поєднаннях; Esc закриває його, фокус повертається на кнопку, що його відкрила.",
+   "schermafdruk": "tests/e2e/знімки-015/apparaten-tablet-768-uk-donker.png",
+   "aanvullingVan": "aanvulling-d2.json"
   },
   {
    "id": "menu.розташування.1.прозорість-дока",
@@ -5821,13 +5826,16 @@
    "gereedAls": "Людина натискає «Теми» у смузі розділів — сторінка прокручується до картки «Теми», адреса стає /themes, кнопка в смузі підсвічена (aria-current=\"location\").",
    "testen": [
     "tests/eenheid/identiteit-maquette.test.ts",
-    "tests/e2e/identiteit-015-vormgeving.e2e.ts"
+    "tests/e2e/identiteit-015-vormgeving.e2e.ts",
+    "tests/e2e/identiteit-015-apparaten.e2e.ts"
    ],
    "herkomst": "У v49 — пункт «Теми та кольори» у групі «Розділи персоналізації»; у «Макеті» група прихована на карті розвитку (вжеОформленіГрупи, src/identiteit/maquette/maquette-motor.ts:820), бо перехід оформлено самою сторінкою: окрема картка #themes і пункт у смузі розділів.",
    "staatNa": "працює в цьому оформленні",
-   "versie": "b2c7f8a6",
+   "versie": "62b7265",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Справжній Chromium («Макет», 1440×900, uk): натискання пункту «Теми» у смузі розділів — картка в полі зору, адреса /themas (канонічний нідерландський slug), пункт позначено aria-current=\"location\"; пошук розділу з кнопки «Макета» веде так само (перевірено на «Безпеці» → /beveiliging). Знайдено й виправлено: пошук розділу на id вів на англійську адресу /security замість /beveiliging — src/zoek/ZoekGlobaal.tsx (маршрут — id розділу), модульний тест tests/eenheid/identiteit-015-vormgeving-toegang.test.ts. Звіт: docs/ontwerp/identiteit-account/ЗВІРКА-V49-ВИГЛЯД.uk.md."
+   "resultaat": "Лінія D2 (пристрої й доступність): у справжньому Chromium на 20 поєднаннях (320×720, 380×800, 768×1024, 1280×860, 1440×900 × uk/nl × світла/темна) натискання «Теми» в навігації розділів «Макета» (клік на ПК, tap на телефоні й планшеті; на вузькому екрані — після розгортання меню розділів) прокручує до картки #themes, адреса стає /themes, пункт має aria-current=\"location\" і його видно. Знайдено й виправлено ваду: на вузькому екрані смуга розділів завжди показувала «Розділи» — тепер показує назву активного розділу (і вона входить у доступну назву кнопки).",
+   "schermafdruk": "tests/e2e/знімки-015/apparaten-telefoon-320-uk-licht.png",
+   "aanvullingVan": "aanvulling-d2.json"
   },
   {
    "id": "personalization.переходи.1.kartka-chynni-themes",
