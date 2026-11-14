@@ -37,7 +37,16 @@ export function zonderOpenDoel(href: string): string {
   } catch { return ''; }
 }
 
-export function useOpenInRuimte(p: { spaces: ReadonlyArray<{ id: string }>; spaceId: string; setSpaceId: (id: string) => void; blocks: ReadonlyArray<{ id: string; kind?: string }>; hubTab?: string; setHubTab?: (tab: HubBlokTab) => void }) {
+/** IDENTITEIT-015 (приймання delen): простору з адреси немає серед доступних (доступ відкликали, людина вийшла, простір архівовано). */
+export const ruimteOntbreekt = (doel: OpenDoel | null, spaces: ReadonlyArray<{ id: string }>): boolean => !!doel && spaces.length > 0 && !spaces.some((s) => s.id === doel.werkruimte);
+
+/** Повідомлення для людини, коли простору з адреси немає (обидві мови). / Melding als de werkruimte uit het adres niet (meer) beschikbaar is. */
+export const RUIMTE_ONTBREEKT: readonly [string, string] = ['Цей простір вам недоступний: доступ до нього відкликали або ви з нього вийшли. Показано ваш простір.', 'Deze werkruimte is niet (meer) voor u beschikbaar: de toegang is ingetrokken of u hebt haar verlaten. Uw eigen werkruimte wordt getoond.'];
+
+/** Відмова сервера «простору для вас немає» (POST /api/workspace/load → 403 Workspace access denied). / De server weigert de werkruimte. */
+export const ruimteGeweigerd = (e: unknown): boolean => { const r = (e as { response?: { status?: number; data?: { error?: unknown } } } | null)?.response; return r?.status === 403 && r.data?.error === 'Workspace access denied'; };
+
+export function useOpenInRuimte(p: { spaces: ReadonlyArray<{ id: string }>; spaceId: string; setSpaceId: (id: string) => void; blocks: ReadonlyArray<{ id: string; kind?: string }>; hubTab?: string; setHubTab?: (tab: HubBlokTab) => void; onNietBeschikbaar?: () => void }) {
   const doel = useRef<OpenDoel | null>(typeof location === 'undefined' ? null : leesOpenDoel(location.search));
   useEffect(() => {
     const d = doel.current;
@@ -46,7 +55,7 @@ export function useOpenInRuimte(p: { spaces: ReadonlyArray<{ id: string }>; spac
       doel.current = null;
       try { const schoon = zonderOpenDoel(location.href); if (schoon) history.replaceState(history.state, '', schoon); } catch { /* adresbalk niet aanpasbaar: niets aan de hand */ }
     };
-    if (!p.spaces.some((s) => s.id === d.werkruimte)) { klaar(); return; }
+    if (ruimteOntbreekt(d, p.spaces)) { klaar(); p.onNietBeschikbaar?.(); return; } // раніше — мовчки
     if (p.spaceId !== d.werkruimte) { p.setSpaceId(d.werkruimte); return; }
     if (!d.blok) { klaar(); return; }
     const blok = p.blocks.find((b) => b.id === d.blok);

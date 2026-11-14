@@ -129,8 +129,11 @@ export function useDelen(o: { werkruimteId: string; rol: WerkruimteRol | null | 
     if (!werkruimteId || !lidId) return false;
     setBezig(true);
     /* IDENTITEIT-015 (рецензія delen): після успіху сторінка перезавантажується (список просторів інший) — підсумок зберігаємо на одне
-       показування після перезавантаження, інакше людина не дізнається, чи вихід удався. */
-    const gelukt = (paar: Paar) => { melding(paar); bewaarMeldingNaHerladen(paar); return true; };
+       показування після перезавантаження, інакше людина не дізнається, чи вихід удався.
+       IDENTITEIT-015 (приймання delen): ДО перезавантаження вже не показуємо — інакше центр сповіщень інколи встигав записати текст в
+       історію, і після перезавантаження той самий підсумок вважався повтором (без спливного вікна). Обидва виклики (hub, центр) одразу
+       перезавантажують сторінку. / Pas na het herladen tonen: anders gold dezelfde tekst soms als herhaling en verscheen hij niet. */
+    const gelukt = (paar: Paar) => { bewaarMeldingNaHerladen(paar); return true; };
     try {
       await post('/api/share/revoke', { workspaceId: werkruimteId, memberId: lidId });
       return gelukt(VERTROKKEN);
