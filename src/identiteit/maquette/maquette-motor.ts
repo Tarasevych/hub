@@ -1555,9 +1555,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
     const balk=byId("mqSectieBalk");
     if(balk)balk.dataset.zijde=preferences.position==="right"?"right":"left";
   }
-  // САЙТ (IDENTITEIT-015, D2): на вузькому екрані смуга над сторінкою показує активний розділ (а не завжди «Розділи»), тож
-  // людина бачить, де вона, не розгортаючи меню. Видима назва входить і в доступну назву кнопки (WCAG 2.5.3 «назва в мітці»).
-  // Smal scherm: de balk toont het actieve onderdeel; de zichtbare naam staat ook in de toegankelijke naam van de knop.
+  // САЙТ (IDENTITEIT-015, D2): смуга розділів на вузькому екрані показує активний розділ; назва — і в aria-label кнопки.
   let actieveSectie="intro";
   function zetSectieBalk(){
     const nl=preferences.lang==="nl";

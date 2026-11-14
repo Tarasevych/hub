@@ -492,5 +492,29 @@ v(`    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділ�
 `    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");
     write("#mqPaginaNavNoot",preferences.lang==="nl"?"Positie en gedrag gelden ook voor het menu van de site en worden in uw account bewaard. Stijl en inhoud van de knoppen gelden alleen voor de navigatie van deze pagina op dit apparaat.":"Положення й поведінка діють і на меню сайту та зберігаються в обліковому записі. Стиль і вміст кнопок — лише навігація цієї сторінки на цьому пристрої.");
     write("#mqPaginaNavKnop",preferences.lang==="nl"?"Menu-instellingen van de site":"Налаштування меню сайту");`);
+// IDENTITEIT-015 (приймання D2 «пристрої й доступність»): на вузькому екрані смуга над сторінкою показує активний розділ (а не
+// завжди «Розділи»), тож людина бачить, де вона, не розгортаючи меню. Видима назва входить і в доступну назву кнопки (WCAG 2.5.3).
+// Smal scherm: de balk toont het actieve onderdeel; de zichtbare naam staat ook in de toegankelijke naam van de knop.
+v(`    write("#mqSectieNaam",preferences.lang==="nl"?"Onderdelen":"Розділи");\n`, `    zetSectieBalk();\n`);
+v(`    adaptiveNavToggle.setAttribute("aria-label",preferences.lang==="nl"?(visible?"Pagina-onderdelen sluiten":"Pagina-onderdelen openen"):(visible?"Закрити розділи сторінки":"Відкрити розділи сторінки"));
+    adaptiveNavToggle.title=adaptiveNavToggle.getAttribute("aria-label");\n`, `    zetSectieBalk();\n`);
+v(`  function setAdaptiveNavOpen(open,{explicit=false}={}){`, `  // САЙТ (IDENTITEIT-015, D2): смуга розділів на вузькому екрані показує активний розділ; назва — і в aria-label кнопки.
+  let actieveSectie="intro";
+  function zetSectieBalk(){
+    const nl=preferences.lang==="nl";
+    const s=actieveSectie==="intro"?null:localizedSections().find(x=>x.id===actieveSectie);
+    const naam=s?s.name:(nl?"Onderdelen":"Розділи");
+    const el=root.querySelector("#mqSectieNaam");
+    if(el&&el.textContent!==naam)el.textContent=naam;
+    const knop=root.querySelector("#adaptiveNavToggle");
+    if(!knop)return;
+    const open=knop.getAttribute("aria-expanded")==="true";
+    const basis=nl?(open?"Pagina-onderdelen sluiten":"Pagina-onderdelen openen"):(open?"Закрити розділи сторінки":"Відкрити розділи сторінки");
+    const label=s?basis+" — "+(nl?"nu: ":"зараз: ")+naam:basis;
+    if(knop.getAttribute("aria-label")!==label){knop.setAttribute("aria-label",label);knop.title=label;}
+  }
+  function setAdaptiveNavOpen(open,{explicit=false}={}){`);
+v(`    root.querySelectorAll(".anchor-link").forEach(b=>{let on=b.dataset.jump===active;`, `    if(actieveSectie!==active){actieveSectie=active;zetSectieBalk();}
+    root.querySelectorAll(".anchor-link").forEach(b=>{let on=b.dataset.jump===active;`);
 fs.writeFileSync(f, s);
 console.log('ok');
