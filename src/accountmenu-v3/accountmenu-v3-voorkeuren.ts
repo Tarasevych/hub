@@ -10,7 +10,7 @@ import type { Palet } from '../thema/kern';
 export const ACCOUNTMENU_V3_INDELINGEN = ['orbita', 'kaart'] as const;
 export type AccountmenuV3Indeling = typeof ACCOUNTMENU_V3_INDELINGEN[number];
 
-export const ACCOUNTMENU_V3_SYSTEEM_PALETTEN = ['kleur', 'maquette', 'grifel', 'puur', 'violet'] as const;
+export const ACCOUNTMENU_V3_SYSTEEM_PALETTEN = ['kleur', 'maquette', 'klassiek-wit', 'klassiek-zwart', 'grifel', 'puur', 'violet'] as const;
 export const ACCOUNTMENU_V3_VASTE_TINTEN = ['blauw', 'hemel', 'teal', 'groen', 'oranje', 'roze', 'indigo', 'bruin'] as const;
 export type AccountmenuV3VasteTint = typeof ACCOUNTMENU_V3_VASTE_TINTEN[number];
 export const ACCOUNTMENU_V3_PALET_KEUZES = [
@@ -36,6 +36,8 @@ export type PaletKeuzeInfo = {
 export const PALET_KEUZES_INFO: readonly PaletKeuzeInfo[] = [
   { id: 'kleur', groep: 'systeem', kleur: '#0f766e', uk: 'Кольоровий (за розділом)', nl: 'Kleurrijk (per onderdeel)', subUk: 'Кожна служба має власний колір', subNl: 'Elke dienst zijn eigen kleur' },
   { id: 'maquette', groep: 'systeem', kleur: '#7c66dc', uk: 'Макет (студійний)', nl: 'Ontwerp (studio)', subUk: 'Нічні вітрини, скло та якірна навігація', subNl: 'Nachtvitrines, glas en ankernavigatie' },
+  { id: 'klassiek-wit', groep: 'systeem', kleur: '#cbd5e1', uk: 'Біла класика', nl: 'Witte klassiek', subUk: 'Завжди світле полотно без розфарбовок', subNl: 'Altijd lichte klassiek zonder opsmuk' },
+  { id: 'klassiek-zwart', groep: 'systeem', kleur: '#14171d', uk: 'Чорна класика', nl: 'Zwarte klassiek', subUk: 'Завжди темний онікс без вітрин', subNl: 'Altijd donkere klassiek zonder etalages' },
   { id: 'grifel', groep: 'systeem', kleur: '#475569', uk: 'Грифельний (класичний)', nl: 'Grafiet (klassiek)', subUk: 'Спокійний темно-грифельний тон', subNl: 'Rustig donker leisteen' },
   { id: 'puur', groep: 'systeem', kleur: '#18181b', uk: 'Чистий (виразний)', nl: 'Puur (hoog contrast)', subUk: 'Чіткий чорно-білий вигляд', subNl: 'Helder zwart-wit uiterlijk' },
   { id: 'violet', groep: 'systeem', kleur: '#9333ea', uk: 'Фіолетовий (лише ШІ)', nl: 'Violet (alleen AI)', subUk: 'Фірмовий тон простору ШІ', subNl: 'Kenmerkende tint voor AI' },
@@ -244,7 +246,7 @@ export function pasVasteTintStijlToe(tint: AccountmenuV3VasteTint | null): void 
   document.documentElement.setAttribute('data-am3-vaste-tint', tint);
 }
 
-/** Визначає поточний вибір палітри (5 системних або 8 фіксованих відтінків). */
+/** Визначає поточний вибір палітри (7 системних або 8 фіксованих відтінків). */
 export function huidigePaletKeuze(systeemPalet: Palet | undefined, voorkeuren: AccountmenuV3Voorkeuren, violetToegestaan: boolean): AccountmenuV3PaletKeuze {
   if (voorkeuren.vasteTint && isVasteTint(voorkeuren.vasteTint)) {
     return voorkeuren.vasteTint;
@@ -301,6 +303,8 @@ export function paletIcoonKleur(keuze: AccountmenuV3PaletKeuze, dienst: string, 
     return ACCENT_KLEUREN[d][donker ? 'donker' : 'licht'].hoofd;
   }
   if (keuze === 'maquette') return donker ? '#b3a0ff' : '#5c46a3';
+  if (keuze === 'klassiek-wit') return donker ? '#e7eaf0' : '#181c24';
+  if (keuze === 'klassiek-zwart') return donker ? '#f3f4f6' : '#14171d';
   if (keuze === 'violet') {
     return ACCENT_KLEUREN.violet[donker ? 'donker' : 'licht'].hoofd;
   }

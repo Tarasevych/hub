@@ -22,7 +22,9 @@ const DIENST_NAAM: Record<string, { uk: string; nl: string }> = {
 export default function NietGevonden({ lang }: { lang: 'uk' | 'nl' }) {
   const route = resolveCanonicalRoute();
   const themaStand = useThemaStand();
-  const isMaquette = (leesKeuze(themaStand.theme, themaStand.palet).palet as string) === 'maquette';
+  const huidigPalet = String(leesKeuze(themaStand.theme, themaStand.palet).palet);
+  const isKlassiekPalet = huidigPalet === 'klassiek-wit' || huidigPalet === 'klassiek-zwart';
+  const isMaquette = huidigPalet === 'maquette' && !isKlassiekPalet;
   const uk = lang === 'uk';
   const start = canonicalServiceUrl(route.service, '', lang, false);
   const hub = canonicalServiceUrl('hub', '', lang, false);

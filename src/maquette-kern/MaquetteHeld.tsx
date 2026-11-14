@@ -4,6 +4,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { MaquetteKunst, type MaquetteKunstSoort } from './MaquetteKunst';
+import { useIsKlassiekMaquette } from './klassiek-hulp';
 
 export interface MaquetteHeldActie {
   label: string;
@@ -76,6 +77,7 @@ export function MaquetteHeld({
   className = '',
 }: MaquetteHeldProps) {
   const taal = lang === 'nl' ? 'nl' : 'uk';
+  const isKlassiek = useIsKlassiekMaquette();
   const sessieSleutel = `mr-mq-held:${opslagSleutel || dienst}`;
   const [uitgeklapt, setUitgeklapt] = useState<boolean>(() =>
     modus === 'compact' ? leesSessieUitgeklapt(sessieSleutel) : true,
@@ -94,6 +96,57 @@ export function MaquetteHeld({
   const uitklapLabel = taal === 'nl' ? 'Etalage uitklappen' : 'Розгорнути вітрину';
   const inklapLabel = taal === 'nl' ? 'Etalage inklappen' : 'Згорнути вітрину';
   const breekNaVoor = titelVoor.trim().endsWith('.');
+
+  if (isKlassiek) {
+    const klassiekKlassen = ['mq-held', 'is-compact', 'is-klassiek', className]
+      .filter(Boolean)
+      .join(' ');
+    const voorTekst = titelVoor.trim();
+    return (
+      <section id={id} className={klassiekKlassen} data-mq-dienst={dienst}>
+        <div className="mq-held-compact-links">
+          <div className="mq-held-compact-kop">
+            <h1 className={kopKlassen}>
+              {voorTekst ? `${voorTekst} ` : ''}
+              <span className="mq-held-titel-nadruk">{titelCursief}</span>
+              {titelNa ? ` ${titelNa}` : ''}
+            </h1>
+            {bovenregel ? (
+              <span className="mq-held-compact-boven">{bovenregel}</span>
+            ) : null}
+          </div>
+        </div>
+
+        {heeftStatistieken ? (
+          <div className="mq-held-compact-stats">
+            {statistieken!.map((stat, idx) => (
+              <span key={`${stat.label}-${idx}`} className="mq-held-stat-pil">
+                <b>{stat.waarde}</b>
+                <span>{stat.label}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {primair || secundair || extraActies ? (
+          <div className="mq-held-compact-acties">
+            {primair ? (
+              <button type="button" className="mq-knop-primair" onClick={primair.onClick}>
+                <span>{primair.label}</span>
+                <span aria-hidden="true">{primair.icoon ?? '↗'}</span>
+              </button>
+            ) : null}
+            {secundair ? (
+              <button type="button" className="mq-knop-secundair" onClick={secundair.onClick}>
+                <span>{secundair.label}</span>
+              </button>
+            ) : null}
+            {extraActies}
+          </div>
+        ) : null}
+      </section>
+    );
+  }
 
   if (toonCompact) {
     const compactKlassen = ['mq-held', 'is-compact', className].filter(Boolean).join(' ');

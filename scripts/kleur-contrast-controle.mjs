@@ -53,8 +53,13 @@ async function paletten() {
   try {
     const uitJs = join(tmp, 'paletten.mjs');
     await build({ entryPoints: ['src/thema/paletten.ts'], outfile: uitJs, bundle: true, platform: 'node', format: 'esm', logLevel: 'warning' });
-    const { PUUR, SECTIES, kleurWaarden } = await import(pathToFileURL(join(process.cwd(), uitJs)).href);
-    const lijst = [{ naam: 'puur licht', donker: false, w: PUUR.licht }, { naam: 'puur donker', donker: true, w: PUUR.donker }];
+    const { PUUR, KLASSIEK_WIT, KLASSIEK_ZWART, SECTIES, kleurWaarden } = await import(pathToFileURL(join(process.cwd(), uitJs)).href);
+    const lijst = [
+      { naam: 'puur licht', donker: false, w: PUUR.licht },
+      { naam: 'puur donker', donker: true, w: PUUR.donker },
+      { naam: 'klassiek-wit', donker: false, w: KLASSIEK_WIT },
+      { naam: 'klassiek-zwart', donker: true, w: KLASSIEK_ZWART },
+    ];
     for (const s of SECTIES) { const k = kleurWaarden(s); lijst.push({ naam: `kleur ${s} licht`, donker: false, w: k.licht }, { naam: `kleur ${s} donker`, donker: true, w: k.donker }); }
     return lijst.map((p) => ({ naam: p.naam, donker: p.donker, w: { '--bg': p.w.bg, '--panel': p.w.panel, '--surface': p.w.surface, '--surface2': p.w.surface2, '--line': p.w.line, '--text': p.w.text, '--muted': p.w.muted, '--faint': p.w.faint, '--accent': p.w.accent, '--accentText': p.w.accentText, '--accent-soft': p.w.accentSoft } }));
   } finally { rmSync(tmp, { recursive: true, force: true }); }

@@ -11,6 +11,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useIsKlassiekMaquette } from './klassiek-hulp';
 
 export interface MaquetteSnelNaarItem {
   id: string;
@@ -63,6 +64,7 @@ export function MaquetteSnelNaar({
   toonGlobaalZoeken = true,
 }: MaquetteSnelNaarProps) {
   const taal = lang === 'nl' ? 'nl' : 'uk';
+  const isKlassiek = useIsKlassiekMaquette();
   const t = SNEL_NAAR_TEKSTEN[taal];
 
   const [zoekterm, setZoekterm] = useState('');
@@ -143,7 +145,7 @@ export function MaquetteSnelNaar({
 
   const inhoud = (
     <div
-      className="mq-snel-naar-laag mq-snel-naar"
+      className={`mq-snel-naar-laag mq-snel-naar${isKlassiek ? ' is-klassiek' : ''}`}
       onClick={bijAchtergrondKlik}
       onKeyDown={behandelToets}
     >

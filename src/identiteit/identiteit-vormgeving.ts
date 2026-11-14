@@ -46,12 +46,18 @@ export function leesVormgeving(beschikbaar: readonly Vormgeving[] = VORMGEVINGEN
   return beschikbaar[0] ?? 'studio';
 }
 
-/** Доступні вигляди за прапорцем «Макет» або загальносайтовою палітрою «Макет». */
+export function isKlassiekMaquettePalet(palet: string): boolean {
+  return palet === 'klassiek-wit' || palet === 'klassiek-zwart';
+}
+
+/** Доступні вигляди за прапорцем «Макет» або загальносайтовою палітрою «Макет» чи «Класика». */
 export function useBeschikbareVormgevingen(): readonly Vormgeving[] {
   const maquette = useVlag(VLAG_MAQUETTE, false);
   const stand = useThemaStand();
-  const isThemaMaquette = (leesKeuze(stand.theme, stand.palet).palet as string) === 'maquette';
-  return maquette || isThemaMaquette ? VORMGEVINGEN : VORMGEVINGEN.filter((v) => v !== 'maquette');
+  const huidigPalet = String(leesKeuze(stand.theme, stand.palet).palet);
+  const isThemaMaquette = huidigPalet === 'maquette';
+  const isKlassiekPalet = isKlassiekMaquettePalet(huidigPalet);
+  return maquette || isThemaMaquette || isKlassiekPalet ? VORMGEVINGEN : VORMGEVINGEN.filter((v) => v !== 'maquette');
 }
 
 export function bewaarVormgeving(v: Vormgeving) {

@@ -3,9 +3,9 @@
 import { Clock, LocateFixed, Monitor, Moon, Pause, Play, Sun, SunMoon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { ThemePreference } from '../gedeelde-voorkeuren';
-import { leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type AutoInstelling, type Palet } from './kern';
+import { isKlassiekPalet, leesKeuze, PLAATSEN, STANDAARD_PLAATS, zonTijden, type AutoInstelling, type Palet } from './kern';
 import { hervatAuto, pauzeerAuto, useAutoStatus, zetAuto, zetPalet } from './useThema';
-import { kleurWaarden, MAQUETTE, PUUR, SECTIES, type Sectie } from './paletten';
+import { KLASSIEK_WIT, KLASSIEK_ZWART, kleurWaarden, MAQUETTE, PUUR, SECTIES, type Sectie } from './paletten';
 import './thema-instellingen.css';
 
 type Tr = (uk: string, nl: string) => string;
@@ -49,12 +49,14 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
     ['device', tr('Як на пристрої', 'Zoals apparaat'), tr('Повторює налаштування Windows / телефону', 'Volgt de instelling van Windows / telefoon'), <Monitor key='i' aria-hidden />],
     ['auto', tr('Автоматично', 'Automatisch'), tr('Темний, коли надворі темно, або за розкладом', 'Donker wanneer het buiten donker is, of volgens schema'), <SunMoon key='i' aria-hidden />],
   ];
-  const kleuren: Array<[Palet, string, string, Mini, Mini]> = [
+  const kleuren: Array<[Palet, string, string, Mini, Mini | null]> = [
     ['kleur', tr('Кольоровий', 'Kleurrijk'), tr('Кожен розділ у своєму кольорі, як у меню', 'Elk onderdeel in zijn eigen kleur, zoals in het menu'), { ...kleurWaarden(sectie).licht }, { ...kleurWaarden(sectie).donker }],
     ['maquette', tr('Макет', 'Ontwerp'), tr('Студійний вигляд: нічні вітрини, скло та якірна навігація', 'Studio-uiterlijk: nachtvitrines, glas en ankernavigatie'), MAQUETTE.licht, MAQUETTE.donker],
+    ['klassiek-wit', tr('Біла класика', 'Witte klassiek'), tr('Сучасна світла класика по суті: без розфарбовок і вітрин, завжди світла', 'Moderne lichte klassiek zonder opsmuk: geen bonte kleuren of etalages, altijd licht'), KLASSIEK_WIT, null],
+    ['klassiek-zwart', tr('Чорна класика', 'Zwarte klassiek'), tr('Сучасна темна класика по суті: оксамитовий онікс без кольорів і вітрин, завжди темна', 'Moderne donkere klassiek zonder opsmuk: fluweelzwart zonder bonte kleuren of etalages, altijd donker'), KLASSIEK_ZWART, null],
     ['grifel', tr('Грифельний', 'Grafiet'), tr('Спокійний темно-грифельний (#2f4f4f)', 'Rustig donker leisteen (#2f4f4f)'), GRIFEL.licht, GRIFEL.donker],
     ['puur', tr('Чистий', 'Puur'), tr('Чистий білий удень, чистий чорний (QLED) уночі', 'Zuiver wit overdag, zuiver zwart (QLED) ’s nachts'), PUUR.licht, PUUR.donker],
-    ...(violetToegestaan ? [['violet', tr('Фіолетовий', 'Violet'), tr('Один фіолетовий; тон — за режимом', 'Eén violet; de toon volgt de modus'), VIOLET.licht, VIOLET.donker] as [Palet, string, string, Mini, Mini]] : []),
+    ...(violetToegestaan ? [['violet', tr('Фіолетовий', 'Violet'), tr('Один фіолетовий; тон — за режимом', 'Eén violet; de toon volgt de modus'), VIOLET.licht, VIOLET.donker] as [Palet, string, string, Mini, Mini | null]] : []),
   ];
   return <div className='thema-instellingen' data-thema-instellingen>
     <section aria-labelledby='thema-modus-kop'>
@@ -63,6 +65,11 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
       <div className='thema-modi' role='radiogroup' aria-labelledby='thema-modus-kop'>
         {modi.map(([id, naam, hint, ic]) => <button key={id} type='button' role='radio' aria-checked={modus === id} className={modus === id ? 'active' : ''} onClick={() => onTheme(id)} data-thema-modus={id}>{ic}<strong>{naam}</strong><small>{hint}</small></button>)}
       </div>
+      {isKlassiekPalet(palet) && <p className='thema-vaste-toon-noot' role='status' data-thema-vaste-toon={palet}>
+        {palet === 'klassiek-wit'
+          ? tr('Обрано тему «Біла класика» — вона завжди утримує сталий світлий тон. Збережений вибір режиму одразу запрацює при переході на інші палітри.', 'U gebruikt «Witte klassiek» — dit thema behoudt altijd een vaste lichte toon. Uw bewaarde moduskeuze werkt meteen zodra u naar een ander palet overschakelt.')
+          : tr('Обрано тему «Чорна класика» — вона завжди утримує сталий темний тон. Збережений вибір режиму одразу запрацює при переході на інші палітри.', 'U gebruikt «Zwarte klassiek» — dit thema behoudt altijd een vaste donkere toon. Uw bewaarde moduskeuze werkt meteen zodra u naar een ander palet overschakelt.')}
+      </p>}
     </section>
 
     {modus === 'auto' && <section className='thema-auto' aria-labelledby='thema-auto-kop' data-thema-auto-instellingen>
@@ -97,7 +104,7 @@ export default function ThemaInstellingen({ tr, lang, theme, onTheme, violetToeg
       <p className='thema-uitleg'>{tr('Кожен варіант має світлий і темний тон — його обирає режим вище.', 'Elke variant heeft een lichte en een donkere toon — die kiest de modus hierboven.')}</p>
       <div className='thema-paletten' role='radiogroup' aria-labelledby='thema-kleur-kop'>
         {kleuren.map(([id, naam, hint, l, d]) => <button key={id} type='button' role='radio' aria-checked={palet === id} className={palet === id ? 'active' : ''} onClick={() => kies(id)} data-thema-palet={id}>
-          <span className='thema-voorbeelden'><Voorbeeld w={l} label='licht' /><Voorbeeld w={d} label='donker' /></span>
+          <span className={`thema-voorbeelden${d ? '' : ' is-enkel'}`}><Voorbeeld w={l} label={id === 'klassiek-zwart' ? 'donker' : 'licht'} />{d && <Voorbeeld w={d} label='donker' />}</span>
           {id === 'kleur' && <span className='thema-sectiekleuren' aria-hidden>{SECTIES.map((s) => <i key={s} style={{ background: kleurWaarden(s).licht.accent }} />)}</span>}
           <strong>{naam}</strong><small>{hint}</small>
         </button>)}

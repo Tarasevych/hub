@@ -3,7 +3,7 @@
 // schakelt zelf om op het volgende geplande moment (zonsondergang, einde van het tijdvenster, einde van een pauze).
 import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { readSharedPreferences, watchSharedPreferences, writeSharedPreferences, type ThemePreference } from '../gedeelde-voorkeuren';
-import { hervat, leesKeuze, normaalAuto, pauzeer, resolveer, STANDAARD_AUTO, type AutoInstelling, type Palet, type Presentatie } from './kern';
+import { hervat, isKlassiekPalet, isMaquetteStelsel, leesKeuze, normaalAuto, pauzeer, resolveer, STANDAARD_AUTO, type AutoInstelling, type Palet, type Presentatie } from './kern';
 import './paletten.css';
 
 const GEBEURTENIS = 'tsv:thema';
@@ -27,7 +27,7 @@ export function huidigeAuto(): AutoInstelling { return normaalAuto(stand.auto ||
 export function pauzeerAuto() { zetAuto(pauzeer(huidigeAuto(), Date.now())); }
 export function hervatAuto() { zetAuto(hervat(huidigeAuto())); }
 
-const KLASSEN = ['palet-grifel', 'palet-puur', 'palet-violet', 'palet-kleur', 'palet-maquette'];
+const KLASSEN = ['palet-grifel', 'palet-puur', 'palet-violet', 'palet-kleur', 'palet-maquette', 'palet-klassiek-wit', 'palet-klassiek-zwart'];
 
 /** Wat de shell toont. `nu` tikt mee tot het volgende schakelmoment (max. 15 min tussen controles, en bij terugkomen). */
 export function useThemaPresentatie(theme: ThemePreference, apparaatDonker: boolean, violetToegestaan: boolean): Presentatie {
@@ -47,7 +47,16 @@ export function useThemaPresentatie(theme: ThemePreference, apparaatDonker: bool
   }, []);
   useLayoutEffect(() => {
     const root = document.documentElement;
-    if (!root.classList.contains(`palet-${r.palet}`)) { root.classList.remove(...KLASSEN); root.classList.add(`palet-${r.palet}`); }
+    root.classList.remove(...KLASSEN);
+    root.classList.add(`palet-${r.palet}`);
+    if (isKlassiekPalet(r.palet)) {
+      root.classList.add('palet-maquette');
+      root.dataset.maquetteStijl = 'klassiek';
+    } else if (r.palet === 'maquette') {
+      root.dataset.maquetteStijl = 'studio';
+    } else {
+      delete root.dataset.maquetteStijl;
+    }
   }, [r.palet]);
   return r.presentatie;
 }
@@ -61,8 +70,25 @@ export function useAutoStatus(theme: ThemePreference) {
   return { ...resolveer({ theme, palet: s.palet, auto: s.auto, apparaatDonker, nu }), auto: normaalAuto(s.auto || STANDAARD_AUTO), palet: s.palet };
 }
 
-/** Чи активна зараз студійна палітра «Макет». */
+export type MaquetteVariant = 'geen' | 'studio' | 'klassiek-wit' | 'klassiek-zwart';
+
+/** Чи увімкнено родину оформлення «Макет» (студійний «Макет», «Біла класика» або «Чорна класика»). */
 export function useIsMaquette(): boolean {
   const s = useThemaStand();
-  return leesKeuze(s.theme, s.palet).palet === 'maquette';
+  return isMaquetteStelsel(leesKeuze(s.theme, s.palet).palet);
+}
+
+/** Чи увімкнено одну з класичних палітр («Біла класика» або «Чорна класика»). */
+export function useIsKlassiek(): boolean {
+  const s = useThemaStand();
+  return isKlassiekPalet(leesKeuze(s.theme, s.palet).palet);
+}
+
+/** Точний різновид у межах родини «Макет» для умовного прибирання студійних вітрин у класиці. */
+export function useMaquetteVariant(): MaquetteVariant {
+  const s = useThemaStand();
+  const p = leesKeuze(s.theme, s.palet).palet;
+  if (p === 'maquette') return 'studio';
+  if (p === 'klassiek-wit' || p === 'klassiek-zwart') return p;
+  return 'geen';
 }

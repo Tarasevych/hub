@@ -26,6 +26,16 @@ export const MAQUETTE: { licht: Waarden; donker: Waarden } = {
   donker: { bg: '#090e1b', panel: '#101728', surface: '#141d30', surface2: '#1b263a', line: '#28354f', text: '#eff4ff', muted: '#98a7bf', faint: '#74849f', accent: '#b3a0ff', accentText: '#100d24', accentSoft: '#1a1f38' },
 };
 
+export const KLASSIEK_WIT: Waarden = {
+  bg: '#f6f7f9', panel: '#ffffff', surface: '#f1f3f6', surface2: '#e7eaf0', line: '#d5dae2',
+  text: '#111418', muted: '#3f4753', faint: '#525b68', accent: '#181c24', accentText: '#ffffff', accentSoft: '#ebedf2',
+};
+
+export const KLASSIEK_ZWART: Waarden = {
+  bg: '#0c0e12', panel: '#14171d', surface: '#1a1e26', surface2: '#222731', line: '#2e3542',
+  text: '#f3f4f6', muted: '#b8c0cc', faint: '#9aa3b2', accent: '#f3f4f6', accentText: '#0c0e12', accentSoft: '#202530',
+};
+
 export function kleurWaarden(s: Sectie): { licht: Waarden; donker: Waarden } {
   const k = ACCENT_KLEUREN[DIENST_ACCENT[s]];
   const L = k.licht.hoofd, D = k.donker.hoofd;
@@ -50,6 +60,8 @@ export function paletCss(): string {
   r.push(`html.palet-puur.theme-dark,html.palet-puur .theme-dark{${vars(PUUR.donker)};--shadow:rgba(255,255,255,.06)}`);
   r.push(`html.palet-maquette.theme-light,html.palet-maquette .theme-light{${vars(MAQUETTE.licht)};--shadow:rgba(40,63,104,.09)}`);
   r.push(`html.palet-maquette.theme-dark,html.palet-maquette .theme-dark{${vars(MAQUETTE.donker)};--shadow:rgba(0,0,0,.28)}`);
+  r.push(`html.palet-klassiek-wit.theme-light,html.palet-klassiek-wit .theme-light{${vars(KLASSIEK_WIT)};--shadow:rgba(15,23,42,.05)}`);
+  r.push(`html.palet-klassiek-zwart.theme-dark,html.palet-klassiek-zwart .theme-dark{${vars(KLASSIEK_ZWART)};--shadow:rgba(0,0,0,.32)}`);
   for (const s of SECTIES) {
     const w = kleurWaarden(s), sel = `html.palet-kleur[data-presentation-service="${s}"]`;
     r.push(`${sel}.theme-light,${sel} .theme-light{${vars(w.licht)}}`);
@@ -64,6 +76,8 @@ export function bootCss(): string {
     `html.palet-puur.theme-dark{${boot(PUUR.donker)}}`,
     `html.palet-maquette.theme-light{${boot(MAQUETTE.licht)}}`,
     `html.palet-maquette.theme-dark{${boot(MAQUETTE.donker)}}`,
+    `html.palet-klassiek-wit.theme-light{${boot(KLASSIEK_WIT)}}`,
+    `html.palet-klassiek-zwart.theme-dark{${boot(KLASSIEK_ZWART)}}`,
   ];
   for (const s of SECTIES) { const w = kleurWaarden(s), sel = `html.palet-kleur[data-presentation-service="${s}"]`; r.push(`${sel}.theme-light{${boot(w.licht)}}`, `${sel}.theme-dark{${boot(w.donker)}}`); }
   return r.join('');

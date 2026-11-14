@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react';
 import { MaquetteKunst, type MaquetteKunstSoort } from './MaquetteKunst';
+import { useIsKlassiekMaquette } from './klassiek-hulp';
 
 export type MaquetteKaartAccent =
   | 'violet'
@@ -57,10 +58,13 @@ export interface MaquetteIntermezzoProps {
 }
 
 export function MaquetteGroepKop({ id, index, titel, className = '' }: MaquetteGroepKopProps) {
-  const klassen = ['mq-sectie-kop', className].filter(Boolean).join(' ');
+  const isKlassiek = useIsKlassiekMaquette();
+  const klassen = ['mq-sectie-kop', isKlassiek ? 'is-klassiek' : '', className]
+    .filter(Boolean)
+    .join(' ');
   return (
     <div id={id} className={klassen}>
-      <span className="mq-sectie-kop-index">{index}</span>
+      {!isKlassiek ? <span className="mq-sectie-kop-index">{index}</span> : null}
       <span className="mq-sectie-kop-tekst">{titel}</span>
       <span className="mq-sectie-kop-lijn" aria-hidden="true" />
     </div>
@@ -75,6 +79,9 @@ export function MaquetteIntermezzo({
   symbool = '✳',
   className = '',
 }: MaquetteIntermezzoProps) {
+  const isKlassiek = useIsKlassiekMaquette();
+  if (isKlassiek) return null;
+
   const klassen = ['mq-intermezzo', className].filter(Boolean).join(' ');
   return (
     <aside className={klassen}>
@@ -108,12 +115,15 @@ export function MaquetteSectieKaart({
   children,
   className = '',
 }: MaquetteSectieKaartProps) {
+  const isKlassiek = useIsKlassiekMaquette();
   const heeftKunst = Boolean(kunst || kunstSoort);
+  const toonKunst = !isKlassiek && heeftKunst;
   const heeftDetails = Boolean(details && details.length > 0);
   const heeftOnder = heeftDetails || Boolean(children);
 
   const kaartKlassen = [
     'mq-kaart',
+    isKlassiek ? 'is-klassiek' : '',
     accent ? `mq-accent-${accent}` : '',
     className,
   ]
@@ -124,35 +134,59 @@ export function MaquetteSectieKaart({
     <article id={id} className={kaartKlassen}>
       <div
         className="mq-kaart-paar"
-        style={!heeftKunst ? { gridTemplateColumns: 'minmax(0, 1fr)', minHeight: 'auto' } : undefined}
+        style={!toonKunst ? { gridTemplateColumns: 'minmax(0, 1fr)', minHeight: 'auto' } : undefined}
       >
         <div className="mq-kaart-hoofd">
-          {index || groep ? (
-            <div className="mq-kaart-bovenlijn">
-              {index ? <span className="mq-kaart-index">{index}</span> : null}
-              {index && groep ? <span className="mq-kaart-streep" aria-hidden="true" /> : null}
-              {groep ? <span>{groep}</span> : null}
-            </div>
-          ) : null}
+          {isKlassiek ? (
+            <>
+              <div className="mq-kaart-klassiek-koprij">
+                <div className="mq-kaart-klassiek-titels">
+                  {groep ? (
+                    <div className="mq-kaart-bovenlijn">
+                      <span>{groep}</span>
+                    </div>
+                  ) : null}
+                  <h2>{titel}</h2>
+                </div>
+                {actie ? (
+                  <button type="button" className="mq-tekst-koppeling" onClick={actie.onClick}>
+                    <span>{actie.label}</span>
+                    <span aria-hidden="true">↗</span>
+                  </button>
+                ) : null}
+              </div>
+              {beschrijving ? <p>{beschrijving}</p> : null}
+            </>
+          ) : (
+            <>
+              {index || groep ? (
+                <div className="mq-kaart-bovenlijn">
+                  {index ? <span className="mq-kaart-index">{index}</span> : null}
+                  {index && groep ? <span className="mq-kaart-streep" aria-hidden="true" /> : null}
+                  {groep ? <span>{groep}</span> : null}
+                </div>
+              ) : null}
 
-          {symbool ? (
-            <div className="mq-kaart-symbool" aria-hidden="true">
-              {symbool}
-            </div>
-          ) : null}
+              {symbool ? (
+                <div className="mq-kaart-symbool" aria-hidden="true">
+                  {symbool}
+                </div>
+              ) : null}
 
-          <h2>{titel}</h2>
-          <p>{beschrijving}</p>
+              <h2>{titel}</h2>
+              <p>{beschrijving}</p>
 
-          {actie ? (
-            <button type="button" className="mq-tekst-koppeling" onClick={actie.onClick}>
-              <span>{actie.label}</span>
-              <span aria-hidden="true">↗</span>
-            </button>
-          ) : null}
+              {actie ? (
+                <button type="button" className="mq-tekst-koppeling" onClick={actie.onClick}>
+                  <span>{actie.label}</span>
+                  <span aria-hidden="true">↗</span>
+                </button>
+              ) : null}
+            </>
+          )}
         </div>
 
-        {heeftKunst ? (
+        {toonKunst ? (
           <div className="mq-kaart-kunst">
             {kunst ?? <MaquetteKunst soort={kunstSoort!} lang={lang} variant="kaart" />}
           </div>
@@ -209,7 +243,7 @@ export function MaquetteSectieKaart({
           {children ? (
             <div
               className="mq-kaart-inhoud"
-              style={heeftDetails ? { marginTop: '18px' } : undefined}
+              style={heeftDetails ? { marginTop: isKlassiek ? '12px' : '18px' } : undefined}
             >
               {children}
             </div>

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "KLASSIEK-001",
+  "agent": "antigravity",
+  "tak": "feature/klassiek-001-20261114-044130",
+  "basisCommit": "f07883bfa1a890f3e71b726ccdb9e8a570e3d6e6",
+  "basisVersie": "20261105-061659",
+  "regelsVersie": "1.4.14",
+  "regelsHash": "568ee500104c2c628d9e26dc6941a61575f5543f3c1fe5a2f3fae4b0063ae3a3",
+  "staat": "in_progress",
+  "gestart": "2026-11-14T04:41:24.455Z",
+  "bijgewerkt": "2026-11-14T04:41:24.455Z",
+  "omschrijving": "Хвиля 0 прагматичних тем «Біла класика» (klassiek-wit) та «Чорна класика» (klassiek-zwart): ядро тем, прагматичний режим maquette-kern та ділове оформлення id.tarasevych.com і екранів входу.",
+  "kanaal": "github_pr",
+  "overdrachten": []
+}

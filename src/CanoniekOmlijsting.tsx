@@ -100,7 +100,9 @@ export function SignedOutCenter({lang,checking=false,onOpenAccount,rememberBrows
  const aanmeldCfg=useAanmeldConfig(); /* AANMELD-PLAATSING v1: hook vóór elke vroege return */
  const pauze=useAanmeldPauze();
  const themaStand=useThemaStand();
- const isMaquette=(leesKeuze(themaStand.theme,themaStand.palet).palet as string)==='maquette';
+ const huidigPalet=String(leesKeuze(themaStand.theme,themaStand.palet).palet);
+ const isKlassiekPalet=huidigPalet==='klassiek-wit'||huidigPalet==='klassiek-zwart';
+ const isMaquette=huidigPalet==='maquette'&&!isKlassiekPalet;
  // Terug van Google: alleen bij de EERSTE weergave in 'checking' gelezen (daarna zegt de app zelf of het profiel open is).
  const[terugVanAanmelden]=useState(()=>checking&&aanmeldenBezig());
  const vertrekt=useRef(false);

@@ -6,9 +6,10 @@ import { IDENTITEIT_TABS } from './identiteit-tabs';
 import { useVlag, vlaggenBekend } from '../functievlag-lezen';
 import { IdentiteitAtelier } from './IdentiteitAtelier';
 import { AtelierInhoud } from './atelier-inhoud';
-import { useVormgeving } from './identiteit-vormgeving';
+import { isKlassiekMaquettePalet, useVormgeving } from './identiteit-vormgeving';
 import { VormgevingKiezer } from './VormgevingKiezer';
 import { IdentiteitMaquette, type MaquetteGebruiker } from './maquette/IdentiteitMaquette';
+import { IdentiteitKlassiekMaquette } from './IdentiteitKlassiekMaquette';
 import { leesKeuze } from '../thema/kern';
 import { useThemaStand } from '../thema/useThema';
 
@@ -43,8 +44,10 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
   // Alleen de weergave wisselt. Dezelfde twaalf bestaande onderdelen en hun handelingen blijven bestaan.
   const atelierVlag = useVlag('identiteit-account-atelier', false);
   const themaStand = useThemaStand();
-  const isThemaMaquette = (leesKeuze(themaStand.theme, themaStand.palet).palet as string) === 'maquette';
-  const atelier = atelierVlag || isThemaMaquette;
+  const huidigPalet = String(leesKeuze(themaStand.theme, themaStand.palet).palet);
+  const isThemaMaquette = huidigPalet === 'maquette';
+  const isKlassiekPalet = isKlassiekMaquettePalet(huidigPalet);
+  const atelier = atelierVlag || isThemaMaquette || isKlassiekPalet;
   // Прапорець або палітра «Макет» відкриває вибір вигляду; сам вигляд обирає користувач (IDENTITEIT-007). Zonder vlag of maquette-palet: altijd de klassieke weergave.
   const [vormgeving] = useVormgeving();
   // Зміна вигляду користувачем: робоча область прокручується вгору, інакше новий вигляд відкривається на випадковій глибині
@@ -58,18 +61,23 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
     else window.scrollTo({ top: 0 });
   }, [vormgeving]);
 
+  const eigenWeergaveActief =
+    isKlassiekPalet ||
+    (atelier && (vormgeving === 'studio' || vormgeving === 'maquette'));
+
   // Адреса змінилася (наприклад, натискання в бічному меню або пряме посилання) — показуємо цей розділ.
   useEffect(() => {
     setInBeeld(actief);
+    if (eigenWeergaveActief) return;
     const doel = document.getElementById(sectieId(actief));
     if (doel && typeof doel.scrollIntoView === 'function') {
       doel.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
-  }, [actief]);
+  }, [actief, eigenWeergaveActief]);
 
   // Підсвічування під час прокрутки: визначаємо розділ, який зараз найбільше видно. Без спостережника перетинів — тихо лишаємо як є.
   useEffect(() => {
-    if (typeof IntersectionObserver !== 'function') return;
+    if (eigenWeergaveActief || typeof IntersectionObserver !== 'function') return;
     const waarnemer = new IntersectionObserver(
       (entries) => {
         const beste = entries
@@ -85,7 +93,7 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
       if (el) waarnemer.observe(el);
     }
     return () => waarnemer.disconnect();
-  }, [secties]);
+  }, [secties, eigenWeergaveActief]);
 
   // На вузьких екранах липка смуга розділів прокручується горизонтально: тримаємо активну пігулку видимою по центру.
   useEffect(() => {
@@ -152,6 +160,10 @@ export function IdentiteitAccountPagina({ lang, actief, kop, secties, onKies, ge
     </div>
     </AtelierInhoud.Provider>
   );
+  // Для тем «Біла класика» та «Чорна класика» вмикаємо прагматичний класичний центр облікового запису.
+  if (isKlassiekPalet) {
+    return <MaquetteGrens terugval={klassiek}><IdentiteitKlassiekMaquette lang={lang} actief={actief} inBeeld={inBeeld} secties={secties} onKies={kies} gebruiker={gebruiker} /></MaquetteGrens>;
+  }
   // Типовий вигляд — макет власника (IDENTITEIT-007); «Студія» і класичний лишаються на вибір. Збій макета повертає класичну сторінку.
   if (atelier && vormgeving === 'maquette') {
     return <MaquetteGrens terugval={klassiek}><IdentiteitMaquette lang={lang} actief={actief} secties={secties} onKies={onKies} gebruiker={gebruiker} /></MaquetteGrens>;

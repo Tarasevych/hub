@@ -772,6 +772,120 @@ html.palet-maquette .gast-laden {
   z-index: 1;
 }
 
+/* ── 4. Чисті монохромні поверхні для тем «Біла класика» та «Чорна класика» (KLASSIEK-001) ─────────────────── */
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) {
+  --mq-am-bg: var(--mq-bg, var(--bg));
+  --mq-am-bg-diep: var(--mq-bg, var(--bg));
+  --mq-am-oppervlak: var(--mq-oppervlak, var(--panel));
+  --mq-am-oppervlak-2: var(--mq-oppervlak-2, var(--surface));
+  --mq-am-kaart: var(--mq-oppervlak, var(--panel));
+  --mq-am-kaart-zweef: var(--mq-oppervlak-hover, color-mix(in srgb, var(--text) 6%, var(--panel)));
+  --mq-am-kaart-actief: var(--mq-oppervlak-2, var(--surface));
+  --mq-am-rand: var(--mq-rand, var(--line));
+  --mq-am-rand-sterk: var(--mq-rand-sterk, color-mix(in srgb, var(--text) 24%, var(--line)));
+  --mq-am-glans: transparent;
+  --mq-am-tekst: var(--mq-tekst, var(--text));
+  --mq-am-gedempt: var(--mq-gedempt, var(--muted));
+  --mq-am-stil: var(--mq-stil, var(--faint));
+  --mq-am-accent: var(--mq-accent, var(--accent));
+  --mq-am-accent-tekst: var(--mq-accent-op, var(--accentText));
+  --mq-am-accent-2: var(--mq-accent, var(--accent));
+  --mq-am-accent-3: var(--mq-accent, var(--accent));
+  --mq-am-knop-bg: var(--mq-accent, var(--accent));
+  --mq-am-knop-tekst: var(--mq-accent-op, var(--accentText));
+  --mq-am-hoofdknop-kern: var(--mq-accent, var(--accent));
+  --mq-am-hoofdknop-tekst: var(--mq-accent-op, var(--accentText));
+  --mq-am-baan-1: transparent;
+  --mq-am-baan-2: transparent;
+  --mq-am-gloed-a: transparent;
+  --mq-am-gloed-b: transparent;
+  --mq-am-schaduw: var(--mq-schaduw-zacht, var(--schaduw-1));
+  --mq-am-banner: var(--mq-oppervlak, var(--panel));
+  --mq-am-banner-rand: var(--mq-rand-sterk, var(--line));
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) :is(
+  .mq-aanmeld-sfeer,
+  .mq-aanmeld-bovenregel,
+  .mq-niet-gevonden-sfeer,
+  .mq-niet-gevonden-bovenregel,
+  .mq-niet-gevonden-vitrine,
+  .mq-gast-sfeer,
+  .mq-gast-bovenregel
+) {
+  display: none;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .canonical-chrome[data-surface-model='flat-content'] .canonical-content .canonical-signed-out.mr-sign-in,
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast {
+  background: var(--mq-am-bg);
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .canonical-signed-out.mr-sign-in .mr-sign-in-content {
+  border-radius: 20px;
+  padding: 32px 30px 28px;
+  background: var(--mq-am-oppervlak);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .canonical-signed-out.mr-sign-in .mr-sign-in-content::before {
+  display: none;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .canonical-signed-out.mr-sign-in .mr-sign-in-legal {
+  background: var(--mq-am-oppervlak);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .canonical-chrome[data-surface-model='flat-content'] .canonical-content section.niet-gevonden,
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) section.niet-gevonden {
+  border-radius: 20px;
+  padding: 36px 32px 34px;
+  background: var(--mq-am-oppervlak);
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) section.niet-gevonden > svg {
+  width: 34px;
+  height: 34px;
+  padding: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--mq-am-rand);
+  background: var(--mq-am-oppervlak-2);
+  color: var(--mq-am-tekst);
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .niet-gevonden-acties a {
+  border-radius: 999px;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast-kaart {
+  border-radius: 20px;
+  background: var(--mq-am-oppervlak);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast form button[type='submit'] {
+  border-radius: 999px;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast-banner {
+  border-radius: 16px;
+  background: var(--mq-am-oppervlak);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast-inhoud {
+  border-radius: 18px;
+  background: var(--mq-am-oppervlak);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mq-aanmeld-orb {
     animation: none;
@@ -791,6 +905,10 @@ html.palet-maquette .gast-laden {
   html.palet-maquette .canonical-signed-out.mr-sign-in .mr-sign-in-content {
     padding: 26px 20px 22px;
     border-radius: 24px;
+  }
+
+  html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .canonical-signed-out.mr-sign-in .mr-sign-in-content {
+    border-radius: 18px;
   }
 
   .mq-aanmeld-orb {
@@ -819,6 +937,11 @@ html.palet-maquette .gast-laden {
     margin: 20px 12px;
     padding: 32px 20px 28px;
     border-radius: 22px;
+  }
+
+  html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .canonical-chrome[data-surface-model='flat-content'] .canonical-content section.niet-gevonden,
+  html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) section.niet-gevonden {
+    border-radius: 18px;
   }
 
   .mq-niet-gevonden-vitrine {
@@ -860,6 +983,10 @@ html.palet-maquette .gast-laden {
     border-radius: 22px;
   }
 
+  html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast-kaart {
+    border-radius: 18px;
+  }
+
   html.palet-maquette .gast-banner {
     flex-wrap: wrap;
     padding: 12px 14px;
@@ -869,6 +996,10 @@ html.palet-maquette .gast-laden {
   html.palet-maquette .gast-inhoud {
     padding: 18px 16px;
     border-radius: 20px;
+  }
+
+  html.palet-maquette:is(.palet-klassiek-wit, .palet-klassiek-zwart) .gast-inhoud {
+    border-radius: 16px;
   }
 }
 

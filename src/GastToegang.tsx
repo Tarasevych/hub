@@ -13,9 +13,9 @@ import { resolveer } from './thema/kern';
 
 type Lang='uk'|'nl';
 type PresentatieHint={uiterlijk?:{modus?:unknown;palet?:unknown;auto?:unknown};theme?:string};
-const PALET_KLASSEN=['palet-grifel','palet-puur','palet-violet','palet-kleur','palet-maquette'] as const;
+const PALET_KLASSEN=['palet-grifel','palet-puur','palet-violet','palet-kleur','palet-maquette','palet-klassiek-wit','palet-klassiek-zwart'] as const;
 const THEMA_KLASSEN=['theme-light','theme-dark','theme-plum-light','theme-plum-dark'] as const;
-const leesGastMaquette=():boolean=>typeof document!=='undefined'&&document.documentElement.classList.contains('palet-maquette');
+const leesGastMaquette=():boolean=>typeof document!=='undefined'&&document.documentElement.classList.contains('palet-maquette')&&!document.documentElement.classList.contains('palet-klassiek-wit')&&!document.documentElement.classList.contains('palet-klassiek-zwart');
 const tr=(lang:Lang,uk:string,nl:string)=>lang==='nl'?nl:uk;
 type Sessie={eigenaar:string;code:string;scopes:string[];sinds?:string;tot:string};
 type Apparaat={naam:string;platform:string;laatstGezien:string|null;actief:boolean;sinds:string|null};
@@ -71,9 +71,16 @@ export default function GastToegang(){
       const ruwModus=prefs.theme??pres?.uiterlijk?.modus;
       const ruwAuto=prefs.auto??pres?.uiterlijk?.auto;
       const apparaatDonker=typeof matchMedia==='function'&&matchMedia('(prefers-color-scheme: dark)').matches;
-      const r=resolveer({theme:ruwModus,palet:ruwPalet,auto:ruwAuto,apparaatDonker,nu:Date.now()});
-      const palet=String(ruwPalet||'')==='maquette'?'maquette':ruwPalet?String(r.palet):(root.classList.contains('palet-maquette')?'maquette':String(r.palet));
-      if(!root.classList.contains(`palet-${palet}`)){root.classList.remove(...PALET_KLASSEN);root.classList.add(`palet-${palet}`);}
+      const domPalet=root.classList.contains('palet-klassiek-wit')?'klassiek-wit':root.classList.contains('palet-klassiek-zwart')?'klassiek-zwart':root.classList.contains('palet-maquette')?'maquette':undefined;
+      const gekozenPalet=ruwPalet??domPalet;
+      const r=resolveer({theme:ruwModus,palet:gekozenPalet,auto:ruwAuto,apparaatDonker,nu:Date.now()});
+      const palet=String(r.palet);
+      const isKlassiek=palet==='klassiek-wit'||palet==='klassiek-zwart';
+      root.classList.remove(...PALET_KLASSEN);
+      root.classList.add(`palet-${palet}`);
+      if(isKlassiek){root.classList.add('palet-maquette');root.setAttribute('data-maquette-stijl','klassiek');}
+      else if(palet==='maquette'){root.setAttribute('data-maquette-stijl','studio');}
+      else{root.removeAttribute('data-maquette-stijl');}
       if(!root.classList.contains(`theme-${r.presentatie}`)){root.classList.remove(...THEMA_KLASSEN);root.classList.add(`theme-${r.presentatie}`);}
       root.style.colorScheme=r.donker?'dark':'light';
       setIsMaquette(palet==='maquette');

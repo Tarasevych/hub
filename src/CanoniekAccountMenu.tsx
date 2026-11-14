@@ -148,6 +148,12 @@ const copy = {
     maquette: 'Вигляд: Макет',
     maquetteAan: 'Вигляд: Макет ✓',
     maquetteHint: 'Увімкнути або вимкнути студійну палітру «Макет»',
+    klassiekWit: 'Біла класика',
+    klassiekWitAan: 'Біла класика ✓',
+    klassiekWitHint: 'Увімкнути або вимкнути прагматичну тему «Біла класика»',
+    klassiekZwart: 'Чорна класика',
+    klassiekZwartAan: 'Чорна класика ✓',
+    klassiekZwartHint: 'Увімкнути або вимкнути прагматичну тему «Чорна класика»',
     privacy: 'Конфіденційність',
     terms: 'Умови',
     loading: 'Оновлюємо список…',
@@ -196,6 +202,12 @@ const copy = {
     maquette: 'Uiterlijk: Ontwerp',
     maquetteAan: 'Uiterlijk: Ontwerp ✓',
     maquetteHint: 'Studiopalet «Ontwerp» in- of uitschakelen',
+    klassiekWit: 'Witte klassiek',
+    klassiekWitAan: 'Witte klassiek ✓',
+    klassiekWitHint: 'Pragmatisch thema «Witte klassiek» in- of uitschakelen',
+    klassiekZwart: 'Zwarte klassiek',
+    klassiekZwartAan: 'Zwarte klassiek ✓',
+    klassiekZwartHint: 'Pragmatisch thema «Zwarte klassiek» in- of uitschakelen',
     privacy: 'Privacy',
     terms: 'Voorwaarden',
     loading: 'Accountlijst bijwerken…',
@@ -583,12 +595,13 @@ export default function CanonicalAccountMenu({
   const auto = theme === 'auto';
   const autoStatus = useAutoStatus(theme);
   const huidigPalet = leesKeuze(theme, autoStatus.palet).palet;
-  const wisselMaquette = () => {
-    zetPalet(huidigPalet === 'maquette' ? 'kleur' : 'maquette');
+  const wisselSysteemPalet = (doel: 'maquette' | 'klassiek-wit' | 'klassiek-zwart') => {
+    zetPalet(huidigPalet === doel ? 'kleur' : doel);
     if (theme === 'plum-light' || theme === 'plum-dark') {
       onTheme(theme === 'plum-dark' ? 'dark' : 'light');
     }
   };
+  const wisselMaquette = () => wisselSysteemPalet('maquette');
   const showLogoutAll = Boolean(onLogoutAll) && model.shouldShowLogoutAll;
   const visibleRows = displayUser ? model.visibleExpandedAccounts : model.knownAccounts;
 
@@ -691,6 +704,24 @@ export default function CanonicalAccountMenu({
         >
           {huidigPalet === 'maquette' ? t.maquetteAan : t.maquette}
         </button>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'klassiek-wit'}
+          title={t.klassiekWitHint}
+          onClick={() => wisselSysteemPalet('klassiek-wit')}
+          data-thema-klassiek-wit={huidigPalet === 'klassiek-wit' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'klassiek-wit' ? t.klassiekWitAan : t.klassiekWit}
+        </button>
+        <button
+          type='button'
+          aria-pressed={huidigPalet === 'klassiek-zwart'}
+          title={t.klassiekZwartHint}
+          onClick={() => wisselSysteemPalet('klassiek-zwart')}
+          data-thema-klassiek-zwart={huidigPalet === 'klassiek-zwart' ? 'aan' : 'uit'}
+        >
+          {huidigPalet === 'klassiek-zwart' ? t.klassiekZwartAan : t.klassiekZwart}
+        </button>
         <button type='button' onClick={() => { close(); onThemeColors?.(); }} data-thema-kleuren>{t.kleuren}</button>
       </div>
     </div>
@@ -746,6 +777,34 @@ export default function CanonicalAccountMenu({
         <span>{t.maquette}</span>
         <em className={`am2-stand${huidigPalet === 'maquette' ? ' is-aan' : ''}`}>
           {huidigPalet === 'maquette' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'klassiek-wit'}
+        title={t.klassiekWitHint}
+        onClick={() => wisselSysteemPalet('klassiek-wit')}
+        data-thema-klassiek-wit={huidigPalet === 'klassiek-wit' ? 'aan' : 'uit'}
+      >
+        <Sun aria-hidden='true' />
+        <span>{t.klassiekWit}</span>
+        <em className={`am2-stand${huidigPalet === 'klassiek-wit' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'klassiek-wit' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
+        </em>
+      </button>
+      <button
+        type='button'
+        className='canonical-menu-action'
+        aria-pressed={huidigPalet === 'klassiek-zwart'}
+        title={t.klassiekZwartHint}
+        onClick={() => wisselSysteemPalet('klassiek-zwart')}
+        data-thema-klassiek-zwart={huidigPalet === 'klassiek-zwart' ? 'aan' : 'uit'}
+      >
+        <Moon aria-hidden='true' />
+        <span>{t.klassiekZwart}</span>
+        <em className={`am2-stand${huidigPalet === 'klassiek-zwart' ? ' is-aan' : ''}`}>
+          {huidigPalet === 'klassiek-zwart' ? (lang === 'uk' ? 'увімкнено' : 'aan') : (lang === 'uk' ? 'вимкнено' : 'uit')}
         </em>
       </button>
     </div>

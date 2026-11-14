@@ -4,6 +4,9 @@
 
 import './maquette-tokens.css';
 import './maquette-oppervlakken.css';
+import './maquette-klassiek.css';
+
+export { useIsKlassiekMaquette } from './klassiek-hulp';
 
 export {
   MaquetteKunst,

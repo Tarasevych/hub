@@ -9,12 +9,12 @@
 // beeld zonder flits; een eenheidstest vergelijkt beide.
 
 export type Modus = 'light' | 'dark' | 'device' | 'auto';
-export type Palet = 'grifel' | 'puur' | 'violet' | 'kleur' | 'maquette';
+export type Palet = 'grifel' | 'puur' | 'violet' | 'kleur' | 'maquette' | 'klassiek-wit' | 'klassiek-zwart';
 export type AutoSoort = 'interval' | 'zon';
 export type AutoInstelling = { soort: AutoSoort; van: string; tot: string; lat?: number; lon?: number; plaats?: string; pauzeTot?: number; pauzeModus?: 'light' | 'dark' };
 export type Presentatie = 'light' | 'dark' | 'plum-light' | 'plum-dark';
 
-export const PALETTEN: readonly Palet[] = ['kleur', 'maquette', 'grifel', 'puur', 'violet'];
+export const PALETTEN: readonly Palet[] = ['kleur', 'maquette', 'klassiek-wit', 'klassiek-zwart', 'grifel', 'puur', 'violet'];
 /** Standaard: de kleur van de sectie (zoals het menu), gevraagd door de eigenaar. */
 export const STANDAARD_PALET: Palet = 'kleur';
 export const STANDAARD_AUTO: AutoInstelling = { soort: 'zon', van: '20:00', tot: '07:00' };
@@ -23,7 +23,9 @@ export const STANDAARD_PLAATS = { lat: 50.8, lon: 4.4, plaats: 'Brussel' };
 
 const UUR = /^([01]\d|2[0-3]):([0-5]\d)$/;
 export const isModus = (v: unknown): v is Modus => v === 'light' || v === 'dark' || v === 'device' || v === 'auto';
-export const isPalet = (v: unknown): v is Palet => v === 'grifel' || v === 'puur' || v === 'violet' || v === 'kleur' || v === 'maquette';
+export const isPalet = (v: unknown): v is Palet => v === 'grifel' || v === 'puur' || v === 'violet' || v === 'kleur' || v === 'maquette' || v === 'klassiek-wit' || v === 'klassiek-zwart';
+export const isKlassiekPalet = (v: unknown): v is 'klassiek-wit' | 'klassiek-zwart' => v === 'klassiek-wit' || v === 'klassiek-zwart';
+export const isMaquetteStelsel = (v: unknown): v is 'maquette' | 'klassiek-wit' | 'klassiek-zwart' => v === 'maquette' || v === 'klassiek-wit' || v === 'klassiek-zwart';
 const getal = (v: unknown, min: number, max: number) => { const n = Number(v); return Number.isFinite(n) && n >= min && n <= max ? Math.round(n * 10) / 10 : undefined; };
 
 export function normaalAuto(raw: unknown): AutoInstelling {
@@ -110,6 +112,8 @@ export function leesKeuze(theme: unknown, palet: unknown): { modus: Modus; palet
 export function resolveer(o: { theme: unknown; palet: unknown; auto: unknown; apparaatDonker: boolean; nu: number; violetToegestaan?: boolean }): { donker: boolean; palet: Palet; presentatie: Presentatie; volgende: number | null; gepauzeerd: boolean } {
   const k = leesKeuze(o.theme, o.palet);
   const palet: Palet = k.palet === 'violet' && o.violetToegestaan === false ? 'grifel' : k.palet;
+  if (palet === 'klassiek-wit') return { donker: false, palet, presentatie: 'light', volgende: null, gepauzeerd: false };
+  if (palet === 'klassiek-zwart') return { donker: true, palet, presentatie: 'dark', volgende: null, gepauzeerd: false };
   let donker = false, volgende: number | null = null, gepauzeerd = false;
   if (k.modus === 'dark') donker = true;
   else if (k.modus === 'device') donker = o.apparaatDonker;
