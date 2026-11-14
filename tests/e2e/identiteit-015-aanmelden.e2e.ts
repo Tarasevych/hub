@@ -251,6 +251,9 @@ export async function main(): Promise<number> {
       await d1.page.goto(`${ID}/security?lang=uk`, { waitUntil: 'networkidle' });
       await openBlok(d1.page, '[data-access-section="passkeys"]');
       await sectie().locator('[data-passkey-stand]').waitFor({ timeout: 15000 });
+      const keruvaty = d1.page.locator('[data-access-method="google"] a', { hasText: 'Керувати' });
+      check('«Електронна пошта та Google» → «Керувати»: посилання на myaccount.google.com/security у новій вкладці (noopener)',
+        (await keruvaty.getAttribute('href')) === 'https://myaccount.google.com/security' && (await keruvaty.getAttribute('target')) === '_blank' && /noopener/.test(String(await keruvaty.getAttribute('rel'))));
       check('ключі: початковий стан «Ще не додано» і рядок стану «відкривають вхід без Google» (прапорець для цієї особи)',
         /Ще не додано/.test(await sectie().innerText()) && (await sectie().locator('[data-passkey-stand]').getAttribute('data-passkey-stand')) === 'aanmelden');
       await sectie().getByRole('button', { name: 'Додати passkey' }).click();

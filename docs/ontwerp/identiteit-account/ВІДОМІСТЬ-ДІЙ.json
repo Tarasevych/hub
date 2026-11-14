@@ -4208,13 +4208,15 @@
    "ontbreekt": "Нічого: адресу змінюють лише в Google, це сказано в підказці (src/toegangslaag-panelen.tsx:153).",
    "wijziging": "Не потрібна.",
    "gereedAls": "Натиск «Керувати» відкриває myaccount.google.com/security у новій вкладці.",
-   "testen": [],
+   "testen": [
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#«Електронна пошта та Google» → «Керувати»: посилання на myaccount.google.com/security у новій вкладці (noopener)"
+   ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Працює",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "1fa62be",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Наявної автоматичної перевірки немає — рядок отримає e2e на етапі 4."
+   "resultaat": "«Керувати» в рядку «Електронна пошта та Google» — посилання https://myaccount.google.com/security, target _blank, rel noopener. E2E identiteit-015-aanmelden (частини G,S 19/19; повний прогін 68/68 на f8f6c26)."
   },
   {
    "id": "methods.основні.0.google-vhid",
@@ -4238,14 +4240,16 @@
    "gereedAls": "Людина входить через Google і бачить свою адресу в рядку «Електронна пошта та Google».",
    "testen": [
     "tests/eenheid/aanmelden.test.ts",
-    "tests/eenheid/identiteit-010-aanmelden-ecosysteem.test.ts"
+    "tests/eenheid/identiteit-010-aanmelden-ecosysteem.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вхід через Google кліком: сеанс для тієї самої особи (bootstrap), кнопки входу більше немає, authMethod «google»"
    ],
    "herkomst": "Сторінка входу (поза центром облікового запису)",
    "maquetteLabel": "Працює",
    "staatNa": "працює в іншому місці",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: aanmelden.test.ts 23/23; identiteit-010-aanmelden-ecosysteem.test.ts 23/23."
+   "resultaat": "Сторінка входу без сеансу (1280): «Увійти через Google» → сторінка Google (підроблена) → повернення → сеанс для тієї самої особи (bootstrap, authMethod «google»); людина опиняється в hub, кнопки входу більше немає. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
+   "schermafdruk": "tests/e2e/знімки-015/aanmelden-vhid-storinka-computer.png"
   },
   {
    "id": "methods.основні.0.email-vhid",
@@ -4297,14 +4301,16 @@
    "wijziging": "Не потрібна.",
    "gereedAls": "Після «Додати passkey» новий ключ з'являється в переліку з назвою, а в журналі безпеки — запис.",
    "testen": [
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#ключі: «Додати passkey» → ключ «Проба ноутбук» у переліку з позначкою «Вхід і підтвердження» і в базі"
    ],
    "herkomst": "Погоджена позиція v49; жива ціль security|#aanmeldmethoden-sleutels",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку)."
+   "resultaat": "«Додати passkey» → назва «Проба ноутбук» → «Продовжити» → системне вікно WebAuthn (віртуальний автентифікатор) → ключ у переліку й у базі з позначкою «Вхід і підтвердження»; «Passkey додано». E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
+   "schermafdruk": "tests/e2e/знімки-015/aanmelden-kliuchi-computer.png"
   },
   {
    "id": "methods.основні.1.pereimenuvaty-prybraty",
@@ -4330,14 +4336,18 @@
    "testen": [
     "tests/eenheid/toegangssleutels.test.ts",
     "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
-    "tests/eenheid/identiteit-015-herstel.test.ts"
+    "tests/eenheid/identiteit-015-herstel.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#ключі: перейменування (Enter) зберігається після оновлення сторінки",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вилучення: «Скасувати»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вилучення: ключа немає в переліку й у базі, «Passkey видалено»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вилучений ключ: вхід ним на іншому пристрої"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "ca15a756",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку); identiteit-012-server-veiligheid.test.ts 21/21. Крок herstel: прибирання ключа: захист останнього способу входу тримається й за одночасних запитів (замок на людину)."
+   "resultaat": "Перейменування Enter зберігається після оновлення сторінки; «Видалити» → «Скасувати» лишає ключ; «Видалити» → ключа немає в переліку й у базі; вхід вилученим ключем на іншому пристрої — чесна відмова без сеансу. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.основні.1.pidtverdzhennia",
@@ -4361,14 +4371,17 @@
    "gereedAls": "Збереження пароля просить ключ; після підтвердження ключем дія виконується без повторного запиту.",
    "testen": [
     "tests/e2e/bevestig-toegang.e2e.ts",
-    "tests/eenheid/identiteit-013-bevestigen.test.ts"
+    "tests/eenheid/identiteit-013-bevestigen.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#ключ як підтвердження важливої дії: вікно «Підтвердіть доступ» (лише сильні способи) → ключ → дію виконано",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#пароль: «Зберегти» → посилене підтвердження (свіже підтвердження ключем) → пароль задано, «Паролем можна входити…»"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-013-bevestigen.test.ts 65/65. E2E (bevestig-toegang.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Довіра до ключа (дія з посиленим підтвердженням): вікно «Підтвердіть доступ» лише зі сильними способами → «Використати passkey» → дію виконано. «Зберегти» пароль після цього не просить ще раз: свіже (≤ 5 хв) підтвердження ключем діє — це задумана поведінка. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
+   "schermafdruk": "tests/e2e/знімки-015/aanmelden-dovira-dialoog-computer.png"
   },
   {
    "id": "methods.основні.1.stan-vhid-vs-pidtverdzhennia",
@@ -4394,14 +4407,17 @@
    "gereedAls": "Біля кожного ключа видно «Лише підтвердження» або «Вхід і підтвердження» та, окремо, «Довірений».",
    "testen": [
     "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
-    "tests/eenheid/identiteit-015-aanmelden.test.ts"
+    "tests/eenheid/identiteit-015-aanmelden.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#ключі: початковий стан «Ще не додано» і рядок стану «відкривають вхід без Google» (прапорець для цієї особи)",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#ключі: «Додати passkey» → ключ «Проба ноутбук» у переліку з позначкою «Вхід і підтвердження» і в базі",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#довіра: «Довірений» лишається після оновлення; у базі записано коли й хто"
    ],
    "herkomst": "Пояснення позиції v49 («Показувати справжній стан ключів і відокремлювати вхід від підтвердження»)",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "12531310",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
-   "resultaat": "Перелік ключів отримує від сервера aanmelden (прапорець aanmelden-passkey саме для цієї людини): постійний рядок стану в #aanmeldmethoden-passkeys і біля кожного ключа «Вхід і підтвердження» або «Лише підтвердження», окремо — «Довірений». Підказка «Що таке passkey?» узгоджена з кроком aanmelden: ключ підтверджує дії, а входити ним можна, коли власник сайту ввімкнув вхід ключем; рядок у «Двофакторній автентифікації» більше не відсилає до «Входу»."
+   "resultaat": "Рядок стану «Ваші ключі відкривають вхід без Google…» (прапорець для цієї особи), біля ключа «Вхід і підтвердження» і окремо «Довірений» після довіри (лишається після оновлення). E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.основні.1.vhid-kliuchem",
@@ -4423,14 +4439,18 @@
    "gereedAls": "Людина без Google входить ключем на іншому пристрої; сеанс видно в «Сесіях».",
    "testen": [
     "tests/eenheid/identiteit-015-aanmelden.test.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#сторінка входу (380): «Увійти через Google» і в «Інших способах» робочі «Увійти ключем доступу» та «Увійти паролем»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вхід ключем (новий пристрій без cookie, синхронізований ключ): «Увійти ключем доступу» → сеанс тієї самої особи, authMethod «passkey»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вилучений ключ: вхід ним на іншому пристрої"
    ],
    "herkomst": "Прогалина плану: «вхід ключем доступу відсутній»",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в іншому місці",
-   "resultaat": "Сторінка входу: «Увійти ключем доступу» (на головній або в «Інші способи входу» — за розміщенням). POST /api/aanmelden/passkey/opties створює ту саму транзакцію входу, що й Google (бінд-кукі вкладки), і одноразовий виклик у app.aanmeld_uitdagingen (5 хв) без allowCredentials — discoverable; /voltooien перевіряє бінд-кукі, підпис, origin (лише власні служби *.tarasevych.com), rpId tarasevych.com, UV, лічильник і видає сеанс ownerCompletePrimaryRedirect (authMethod «passkey», ворота «другий чинник» для цього входу відчинені). Повтор виклику — 403 UITDAGING_ONGELDIG; чужий браузер — LOGIN_BINDING_MISMATCH; чужий origin/rpId, без UV, невідомий ключ — 403 без сеансу; людина без прапорця — 403 METHODE_NIET_VOOR_U. Аудит aanmelden.passkey, сповіщення «Вхід без Google» (access_method_login), запис у «Сесіях». Кнопка є лише коли прапорець комусь увімкнено (config.methoden); werkendeMethoden і PlaatsingBeheer рахують ключ як робочий спосіб. Типово прапорець «Вхід лише ключем доступу» (aanmelden-passkey) стоїть на «Тільки я» (міграція 0275: лише власник сайту); іншим людям його вмикає власник у «Функціях» (технічний профіль → «Прапорці»: Вибрані / Частина / Усі)."
+   "resultaat": "Новий пристрій без cookie (телефон 380) із синхронізованим ключем: «Інші способи входу» → «Увійти ключем доступу» → сеанс тієї самої особи, authMethod «passkey». Після вилучення ключа той самий вхід — чесна відмова, сеансу немає. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
+   "schermafdruk": "tests/e2e/знімки-015/aanmelden-vhid-kliuchem-telefoon.png"
   },
   {
    "id": "methods.основні.2.nalashtuvaty",
@@ -4457,14 +4477,19 @@
    "testen": [
     "tests/eenheid/identiteit-014-aanmelden.test.ts",
     "tests/eenheid/aanmeld-ui-20261030.test.ts",
-    "tests/e2e/aanmeldmethoden-vnext.e2e.ts"
+    "tests/e2e/aanmeldmethoden-vnext.e2e.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#TOTP: початковий стан «Не налаштовано»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#TOTP: «Налаштувати» → QR-код і ключ для ручного введення (ключ прихований від ШІ-розширення)",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#TOTP: неправильний код відхилено",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#TOTP: перший код → «Налаштовано»; одразу показано новий набір кодів відновлення"
    ],
    "herkomst": "Погоджена позиція v49; жива ціль security|#aanmeldmethoden-2fa",
    "maquetteLabel": "Працює",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-aanmelden.test.ts 35/35; aanmeld-ui-20261030.test.ts 105/105. E2E (aanmeldmethoden-vnext.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Не налаштовано» → «Налаштувати» (підтвердження ключем) → QR і ключ (приховані від ШІ) → неправильний код відхилено → перший код → «Налаштовано» і одразу 10 нових кодів відновлення. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
+   "schermafdruk": "tests/e2e/знімки-015/aanmelden-totp-qr-computer.png"
   },
   {
    "id": "methods.основні.2.zaminyty",
@@ -4550,14 +4575,24 @@
    "gereedAls": "З увімкненим правилом людина після Google бачить запит коду й не отримує сеанс без нього.",
    "testen": [
     "tests/eenheid/identiteit-015-risico.test.ts",
-    "tests/eenheid/identiteit-015-herstel.test.ts"
+    "tests/eenheid/identiteit-015-herstel.test.ts",
+    "tests/eenheid/identiteit-015-aanmelden-sleutels.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#правило: перемикач лише власниці, за замовчуванням вимкнено",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#правило: діалог із наслідками («Ваш поточний вхід теж…», «Запасний шлях",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#правило: після підтвердження ключем збережено mfa=required",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#наступний вхід Google з правилом: вікно «Другий крок входу», дані закриті (сервер відмовляє)",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#другий крок ключем → сторінка перезавантажилась, вікна немає, дані відкриті",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вікно «Другий крок входу» (380): обидві кнопки видно як кнопки (рамка), висота ≥ 40 px; за вікном немає хибного «Не вдалося завантажити сесії»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#другий крок кодом застосунку (телефон 380) → дані відкриті",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#власниця вимикає правило (діалог, підтвердження) → mfa=optional"
    ],
    "herkomst": "Прогалина плану: «застосування правила другий чинник обов'язковий під час входу»",
    "maquetteLabel": "Працює",
    "staatNa": "працює в цьому оформленні",
-   "versie": "ca15a756",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Власник сайту вмикає «Обов’язковий другий крок під час входу» (Способи входу → «Двофакторна автентифікація», перемикач за замовчуванням вимкнено, діалог із наслідками, сильний step-up, аудит, сповіщення). Без власного TOTP/ключа — 409 ACCESS_MFA_EIGEN_FACTOR_VEREIST. Після Google людина з TOTP або ключем отримує неповний сеанс: bootstrap без даних і вікно «Другий крок входу», дані — відмова; код із застосунку, ключ або код відновлення відчиняють цей вхід. Людина без другого чинника входить як раніше; аварійний вимикач STAP_OP_UIT_TOT відчиняє ворота. Крок herstel: вікно «Другий крок входу», підпис правила й сповіщення більше не кажуть «після Google»: ворота закриваються після будь-якого входу без другого чинника (Google, Microsoft, Discord, Apple, пароль без коду), і текст це називає."
+   "resultaat": "Власниця: перемикач (типово вимкнено) → діалог із наслідками → ключ → mfa=required. Наступний вхід Google: вікно «Другий крок входу», дані закриті; ключем (1280) і кодом застосунку (380) → дані відкриті. Вимкнення — так само. Знайдено й виправлено дві вади: кнопки вікна мали вигляд тексту; за вікном центр показував хибне «Не вдалося завантажити сесії» (tests/eenheid/identiteit-015-aanmelden-sleutels.test.ts). Відкрите спостереження: поки ворота зачинені, оболонка hub/id ще запитує дані (сервер відмовляє 401/403, даних не видає). E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
+   "schermafdruk": "tests/e2e/знімки-015/aanmelden-druhyi-krok-telefoon.png"
   },
   {
    "id": "methods.пароль.0.stan",
@@ -4582,14 +4617,16 @@
    "gereedAls": "Рядок показує «Активний» після збереження пароля й «Тимчасовий пароль» після скидання власником.",
    "testen": [
     "tests/e2e/identiteit-014-blokken.e2e.ts",
-    "tests/eenheid/identiteit-014-kaart.test.ts"
+    "tests/eenheid/identiteit-014-kaart.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#пароль: початковий стан",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#пароль: «Зберегти» → посилене підтвердження (свіже підтвердження ключем) → пароль задано, «Паролем можна входити…»"
    ],
    "herkomst": "Погоджена позиція v49; жива ціль #aanmeldmethoden-wachtwoord",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-kaart.test.ts 27/27. E2E (identiteit-014-blokken.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Рядок «Пароль»: без пароля — data-wachtwoord «geen»; після збереження — «ingesteld» і текст «Паролем можна входити…» (прапорець для цієї особи). E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.пароль.0.vymoha-zaminy",
@@ -4646,14 +4683,15 @@
    "gereedAls": "Кнопка «Зберегти» неактивна для 9 символів і активна для 10.",
    "testen": [
     "tests/eenheid/identiteit-014-aanmelden.test.ts",
-    "tests/e2e/identiteit-014-blokken.e2e.ts"
+    "tests/e2e/identiteit-014-blokken.e2e.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#пароль: форма"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-aanmelden.test.ts 35/35. E2E (identiteit-014-blokken.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Задати пароль» відкриває форму; «Зберегти» неактивне для 9 символів і активне для 10. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.пароль.2.zberehty",
@@ -4680,14 +4718,15 @@
    "testen": [
     "tests/eenheid/identiteit-014-aanmelden.test.ts",
     "tests/eenheid/identiteit-012-server-veiligheid.test.ts",
-    "tests/e2e/identiteit-014-blokken.e2e.ts"
+    "tests/e2e/identiteit-014-blokken.e2e.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#пароль: «Зберегти» → посилене підтвердження (свіже підтвердження ключем) → пароль задано, «Паролем можна входити…»"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-aanmelden.test.ts 35/35; identiteit-012-server-veiligheid.test.ts 21/21. E2E (identiteit-014-blokken.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Зберегти» → посилене підтвердження (ключем; свіже підтвердження діє 5 хв) → пароль задано, рядок оновився без перезавантаження. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.пароль.2.vhid-parolem",
@@ -4713,14 +4752,18 @@
    "testen": [
     "tests/eenheid/identiteit-015-aanmelden.test.ts",
     "tests/eenheid/sec-002-g10g-20261112.test.ts",
-    "tests/eenheid/identiteit-015-herstel.test.ts"
+    "tests/eenheid/identiteit-015-herstel.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#«Вийти» з меню облікового запису → сторінка входу, сеансу немає",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вхід паролем без коду (є застосунок-автентифікатор) → чесна відмова, сеансу немає",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вхід паролем + код застосунку → сеанс для тієї самої особи, authMethod «password»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#код відновлення замість коду застосунку (малі літери): вхід паролем + код → сеанс"
    ],
    "herkomst": "Прогалина плану: «сеанс після перевірки пароля відсутній»",
    "maquetteLabel": "прихована група",
-   "versie": "ca15a756",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в іншому місці",
-   "resultaat": "Сторінка входу: «Увійти паролем» → адреса, пароль і (якщо налаштовано) код із застосунку або код відновлення ОДНИМ запитом (без проміжного «потрібен код» — не видно, у кого є TOTP). /api/aanmelden/wachtwoord/start — транзакція й бінд-кукі; /voltooien — verifyPasswordLogin (блокування після 5 помилок на адресу+IP, 429 навіть із правильним паролем) і сеанс тим самим механізмом (authMethod «password»; з TOTP ворота «другий чинник» відчинені). Повтор спроби — UITDAGING_ONGELDIG; без прапорця — METHODE_NIET_VOOR_U. Старі /password/login лишилися лише перевіркою (сумісність). Пароль рахується як спосіб входу в захисті від блокування лише з увімкненим прапорцем. Текст у рядку пароля: «Паролем можна входити…» або «вхід паролем для вашого облікового запису ще не ввімкнено». Типово прапорець «Вхід паролем» (aanmelden-wachtwoord) стоїть на «Тільки я» (міграція 0275: лише власник сайту); іншим людям його вмикає власник у «Функціях» (технічний профіль → «Прапорці»: Вибрані / Частина / Усі). Крок herstel: додано загальну межу 20 спроб на годину на адресу з усіх IP (раніше лише межа на IP і блокування пари «адреса+IP» — пул адрес давав необмежені вгадування); при спрацюванні — 429 RATE_LIMITED, аудит ADRES_LIMIET без адреси, транзакцію закрито; тимчасовий пароль — 403 ACCESS_PASSWORD_MUST_CHANGE до коду."
+   "resultaat": "«Вийти» з меню облікового запису → сторінка входу → «Увійти паролем»: без коду (є TOTP) — чесна відмова «Адреса, пароль або код не підходять…»; з кодом застосунку — сеанс, authMethod «password»; з кодом відновлення (малі літери) — теж сеанс. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.пароль.3.prybraty",
@@ -4840,6 +4883,9 @@
    "testen": [
     "tests/eenheid/identiteit-014-herstel.test.ts",
     "tests/eenheid/identiteit-014-herstel-recensie.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#TOTP: перший код → «Налаштовано»; одразу показано новий набір кодів відновлення",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#заміна з автентифікатором: «Створити нові» просить підтвердження (ключ або код застосунку)",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#заміна: «Створити нові» → 10 нових кодів, інших за старі; лічильник «Залишилося 10 з 10»",
     "tests/e2e/herstelcodes.e2e.ts",
     "tests/e2e/identiteit-015-herstelcodes.e2e.ts",
     "tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts"
@@ -4876,6 +4922,9 @@
    "gereedAls": "Після натиску коди зникають з екрана й не показуються після оновлення.",
    "testen": [
     "tests/eenheid/identiteit-014-herstel.test.ts",
+    "tests/eenheid/identiteit-015-aanmelden-sleutels.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#«Готово» неактивне без позначки «Я зберіг коди»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#після «Готово»: коди сховано (на сторінці їх немає), лічильник «Залишилося 10 з 10», замаскований перелік, «збережено»",
     "tests/e2e/herstelcodes.e2e.ts",
     "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
@@ -4913,6 +4962,8 @@
    "gereedAls": "Після відкликання рядок показує «Відкликано», код не приймається.",
    "testen": [
     "tests/eenheid/identiteit-014-herstel-recensie.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#«Відкликати всі»: «Залишилося 0 з 10», позначка «Відкликано»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#після відкликання раніше чинний код відмовляє, сеансу немає",
     "tests/e2e/herstelcodes.e2e.ts",
     "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
@@ -5211,15 +5262,17 @@
    "wijziging": "Передумова власника (етап 3.7): ключі AANMELD_MICROSOFT_* і самоперевірка в admin.tarasevych.com/sso.",
    "gereedAls": "У каталозі Microsoft має «ключі є» і «самоперевірка: ок».",
    "testen": [
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#власниця: самоперевірка Microsoft (підроблений провайдер) зелена",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#з ключами й самоперевіркою в каталозі з’являється «Підключити» лише для Microsoft"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "потребує налаштування власника",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "reden": "Передумова власника: ключі AANMELD_MICROSOFT_CLIENT_ID і AANMELD_MICROSOFT_CLIENT_SECRET у налаштуваннях ключів сервера і зелена самоперевірка в «Способах входу» → «Інші способи — чесно» → Microsoft (або admin.tarasevych.com/sso → «Розміщення»).",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Код є; діє після кроку власника, описаного в reden."
+   "resultaat": "Із ключами власника (підроблений провайдер на 127.0.0.1) самоперевірка зелена, і лише тоді в каталозі з’являється «Підключити» для Microsoft. Самоперевірку запущено запитом власниці (не кнопкою). На сайті ключів немає — стан лишається «потребує налаштування власника». E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.додаткові.0.pryviazka",
@@ -5246,14 +5299,17 @@
    "gereedAls": "Схвалений користувач бачить Microsoft зі станом; після налаштування власником — прив'язує й бачить мітку акаунта.",
    "testen": [
     "tests/eenheid/identiteit-015-aanmelden.test.ts",
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#каталог без ключів: Microsoft, Discord, Apple і Telegram названо, кнопки «Підключити» немає, назв серверних ключів не-власниці не показано",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#з ключами й самоперевіркою в каталозі з’являється «Підключити» лише для Microsoft",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#прив’язка Microsoft: провайдер → повернення → «Прив’язано: …» (мітка замаскована)"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "потребує налаштування власника",
-   "resultaat": "Каталог «Інші способи — чесно» тепер бачить кожен схвалений обліковий запис (не лише власник): кнопка «Підключити», коли провайдер готовий; сервер для не-власника не надсилає назв ключів AANMELD_* і деталей самоперевірки (лише «готово» або «Ще не налаштовано власником сайту»). Відв’язка останнього робочого шляху входу заборонена (LAST_LOGIN_METHOD_PROTECTED).",
+   "resultaat": "Без ключів — у каталозі немає «Підключити». З ключами й самоперевіркою: «Підключити» → провайдер (state+PKCE) → повернення → «Прив’язано: …» з маскою. На сайті ключів немає — стан лишається «потребує налаштування власника». E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
    "reden": "Передумова власника: ключі AANMELD_MICROSOFT_CLIENT_ID і AANMELD_MICROSOFT_CLIENT_SECRET у налаштуваннях ключів сервера (той самий контур, що й для прив'язки), пройдена самоперевірка власника в «Способах входу» → «Інші способи — чесно» → Microsoft (або admin.tarasevych.com/sso → «Розміщення» показує «працює»), і прапорець «Вхід через Microsoft, Discord або Apple» (aanmelden-extern)."
   },
   {
@@ -5273,15 +5329,20 @@
    "wijziging": "Етап 3.7: видача сеансу за прив'язаною особою (backend/aanmeld-koppel.ts), тест із підробленим провайдером; передумова — ключі власника.",
    "gereedAls": "Людина входить кнопкою Microsoft і отримує сеанс свого облікового запису; неприв'язана особа — відмова.",
    "testen": [
-    "tests/eenheid/identiteit-015-aanmelden.test.ts"
+    "tests/eenheid/identiteit-015-aanmelden.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#без ключів власника Apple і Microsoft",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#сторінка входу: робоча кнопка «Увійти через Microsoft» (а не вимкнена з передумовою)",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#вхід через Microsoft (підроблений провайдер, PKCE): сеанс для прив’язаної особи, authMethod «microsoft»",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#провайдер бачив обмін коду з PKCE (code_verifier)"
    ],
    "herkomst": "Прогалина плану: «вхід через Microsoft, Discord, Apple (є лише прив'язка)»",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "потребує налаштування власника",
-   "resultaat": "З ключами й зеленою самоперевіркою на сторінці входу з’являється «Увійти через Microsoft»: /api/aanmelden/extern/start — транзакція, state + PKCE S256 + nonce (app.aanmeld_uitdagingen, 10 хв), той самий redirect_uri, що й для прив’язки; зворотний виклик забирає state одноразово, перевіряє бінд-кукі, обмінює код (підпис id_token через JWKS, nonce) і видає сеанс особі, прив’язаній рівно до одного облікового запису (authMethod «microsoft»), 302 на адресу повернення. Перевірено з підробленим провайдером: вхід A; повтор state — UITDAGING_ONGELDIG; неприв’язана особа — NIET_GEKOPPELD; чужий nonce і інший браузер — без сеансу; невідомий state іде далі як звичайна прив’язка.",
-   "reden": "Передумова власника: ключі AANMELD_MICROSOFT_CLIENT_ID і AANMELD_MICROSOFT_CLIENT_SECRET у налаштуваннях ключів сервера (той самий контур, що й для прив'язки), пройдена самоперевірка власника в «Способах входу» → «Інші способи — чесно» → Microsoft (або admin.tarasevych.com/sso → «Розміщення» показує «працює»), і прапорець «Вхід через Microsoft, Discord або Apple» (aanmelden-extern)."
+   "resultaat": "Без ключів — на сторінці входу вимкнена кнопка з точною передумовою (ключі, самоперевірка, прапорець, прив’язка). З підробленим провайдером і прив’язкою: робоча «Увійти через Microsoft» → провайдер → сеанс прив’язаної особи (authMethod «microsoft»), обмін коду з PKCE. На сайті ключів немає — стан лишається «потребує налаштування власника». E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
+   "reden": "Передумова власника: ключі AANMELD_MICROSOFT_CLIENT_ID і AANMELD_MICROSOFT_CLIENT_SECRET у налаштуваннях ключів сервера (той самий контур, що й для прив'язки), пройдена самоперевірка власника в «Способах входу» → «Інші способи — чесно» → Microsoft (або admin.tarasevych.com/sso → «Розміщення» показує «працює»), і прапорець «Вхід через Microsoft, Discord або Apple» (aanmelden-extern).",
+   "schermafdruk": "tests/e2e/знімки-015/aanmelden-vhid-microsoft-telefoon.png"
   },
   {
    "id": "methods.додаткові.1.vlasnyk-kliuchi",
@@ -5304,15 +5365,16 @@
    "wijziging": "Передумова власника (етап 3.7).",
    "gereedAls": "У каталозі Discord — «самоперевірка: ок».",
    "testen": [
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#каталог без ключів: Microsoft, Discord, Apple і Telegram названо, кнопки «Підключити» немає, назв серверних ключів не-власниці не показано"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "потребує налаштування власника",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "reden": "Передумова власника: ключі AANMELD_DISCORD_CLIENT_ID і AANMELD_DISCORD_CLIENT_SECRET у налаштуваннях ключів сервера і зелена самоперевірка в «Способах входу» → «Інші способи — чесно» → Discord (або admin.tarasevych.com/sso → «Розміщення»).",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Код є; діє після кроку власника, описаного в reden."
+   "resultaat": "E2E: без ключів Discord названо в каталозі без «Підключити» й без назв серверних ключів для не-власниці. Контур Discord (прив’язка з підробленим провайдером) доведено модульним тестом aanmeld-koppel-20261030; в e2e із ключами Discord не проганяли. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.додаткові.1.pryviazka",
@@ -5336,14 +5398,15 @@
    "gereedAls": "Схвалений користувач прив'язує Discord після налаштування власником.",
    "testen": [
     "tests/eenheid/identiteit-015-aanmelden.test.ts",
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#каталог без ключів: Microsoft, Discord, Apple і Telegram названо, кнопки «Підключити» немає, назв серверних ключів не-власниці не показано"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "потребує налаштування власника",
-   "resultaat": "Як для Microsoft: каталог і прив’язка для кожного схваленого обліковий запису, без назв серверних ключів; відв’язка останнього шляху входу заборонена.",
+   "resultaat": "E2E: без ключів кнопки «Підключити» для Discord немає. Прив’язку з підробленим провайдером доведено модульним тестом aanmeld-koppel-20261030. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
    "reden": "Передумова власника: ключі AANMELD_DISCORD_CLIENT_ID і AANMELD_DISCORD_CLIENT_SECRET у налаштуваннях ключів сервера (той самий контур, що й для прив'язки), пройдена самоперевірка власника в «Способах входу» → «Інші способи — чесно» → Discord (або admin.tarasevych.com/sso → «Розміщення» показує «працює»), і прапорець «Вхід через Microsoft, Discord або Apple» (aanmelden-extern)."
   },
   {
@@ -5364,14 +5427,15 @@
    "gereedAls": "Вхід кнопкою Discord дає сеанс свого облікового запису.",
    "testen": [
     "tests/eenheid/identiteit-015-aanmelden.test.ts",
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#без ключів Discord на сторінці входу не показано взагалі (кнопки, що нічого не робить, немає)"
    ],
    "herkomst": "Прогалина плану",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "потребує налаштування власника",
-   "resultaat": "Той самий код входу, що для Microsoft (backend/aanmelden-methoden.ts → externTerugVoor): особу Discord підтверджує /users/@me зі щойно отриманим токеном (код прив’язки, перевірений у aanmeld-koppel-20261030 з підробленим провайдером); сеанс — authMethod «discord». Кнопка лише з ключами й зеленою самоперевіркою.",
+   "resultaat": "E2E: без ключів Discord на сторінці входу не показано взагалі (немає кнопки, що нічого не робить). Вхід через прив’язаний провайдер доведено модульним тестом identiteit-015-aanmelden (той самий шлях extern/start → koppel/<id>/terug, на прикладі Microsoft). E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
    "reden": "Передумова власника: ключі AANMELD_DISCORD_CLIENT_ID і AANMELD_DISCORD_CLIENT_SECRET у налаштуваннях ключів сервера (той самий контур, що й для прив'язки), пройдена самоперевірка власника в «Способах входу» → «Інші способи — чесно» → Discord (або admin.tarasevych.com/sso → «Розміщення» показує «працює»), і прапорець «Вхід через Microsoft, Discord або Apple» (aanmelden-extern)."
   },
   {
@@ -5398,15 +5462,16 @@
    "testen": [
     "tests/eenheid/telegram-aanmelden-20261109.test.ts",
     "tests/eenheid/aanmeld-plaatsing-20261109.test.ts",
-    "tests/e2e/aanmeld-plaatsing.e2e.ts"
+    "tests/e2e/aanmeld-plaatsing.e2e.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#каталог без ключів: Microsoft, Discord, Apple і Telegram названо, кнопки «Підключити» немає, назв серверних ключів не-власниці не показано"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "потребує налаштування власника",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "reden": "Передумова власника: ключ бота Telegram (формат 123456:ABC…) — в адмініструванні admin.tarasevych.com/sso → Telegram → «Налаштувати бота» (сховище ключів власника; запасний шлях — змінна AANMELD_TELEGRAM_BOT_TOKEN), і прапорець «Вхід і підтвердження через Telegram» (telegram-aanmelden-v1: технічний профіль → смуга технічного режиму → «Перемикачі функцій»).",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Код є; діє після кроку власника, описаного в reden."
+   "resultaat": "E2E: без токена бота Telegram у каталозі — посилання на розділ «Telegram» і «Налаштувати Telegram», без кнопки входу на сторінці входу. Увімкнення власником доведено модульними тестами telegram-aanmelden-*. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.додаткові.2.pryviazka",
@@ -5430,15 +5495,16 @@
    "wijziging": "Передумова власника.",
    "gereedAls": "Після прив'язки рядок Telegram показує прив'язаний акаунт.",
    "testen": [
-    "tests/eenheid/telegram-aanmelden-stroom-20261109.test.ts"
+    "tests/eenheid/telegram-aanmelden-stroom-20261109.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#каталог без ключів: Microsoft, Discord, Apple і Telegram названо, кнопки «Підключити» немає, назв серверних ключів не-власниці не показано"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "потребує налаштування власника",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "reden": "Передумова власника: ключ бота Telegram і прапорець telegram-aanmelden-v1 (див. рядок methods.додаткові.2.vlasnyk). Без прапорця людина в #aanmeldmethoden-telegram бачить «Не ввімкнено».",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Код є; діє після кроку власника, описаного в reden."
+   "resultaat": "E2E: стан Telegram у каталозі показано чесно (не налаштовано). Прив’язку доведено модульним тестом telegram-aanmelden-stroom-20261109. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.додаткові.2.vhid",
@@ -5461,15 +5527,16 @@
    "wijziging": "Не потрібна в коді.",
    "gereedAls": "Людина входить через Telegram і бачить сеанс у «Сесіях».",
    "testen": [
-    "tests/eenheid/telegram-aanmelden-stroom-20261109.test.ts"
+    "tests/eenheid/telegram-aanmelden-stroom-20261109.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#сторінка входу (380): «Увійти через Google» і в «Інших способах» робочі «Увійти ключем доступу» та «Увійти паролем»"
    ],
    "herkomst": "Сторінка входу",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "потребує налаштування власника",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "reden": "Передумова власника: ключ бота Telegram і прапорець telegram-aanmelden-v1 (див. рядок methods.додаткові.2.vlasnyk); тоді на сторінці входу з’являється «Увійти через Telegram».",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Код є; діє після кроку власника, описаного в reden."
+   "resultaat": "E2E: без бота кнопки «Увійти через Telegram» на сторінці входу немає. Вхід доведено модульним тестом telegram-aanmelden-stroom-20261109. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.додаткові.3.vlasnyk-kliuchi",
@@ -5492,15 +5559,16 @@
    "wijziging": "Передумова власника (етап 3.7).",
    "gereedAls": "У каталозі Apple — «самоперевірка: ок».",
    "testen": [
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#каталог без ключів: Microsoft, Discord, Apple і Telegram названо, кнопки «Підключити» немає, назв серверних ключів не-власниці не показано"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
    "staatNa": "потребує налаштування власника",
-   "versie": "899c96ad",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "reden": "Передумова власника: ключі AANMELD_APPLE_CLIENT_ID, AANMELD_APPLE_TEAM_ID, AANMELD_APPLE_KEY_ID і AANMELD_APPLE_PRIVATE_KEY у налаштуваннях ключів сервера і зелена самоперевірка в «Способах входу» → «Інші способи — чесно» → Apple (або admin.tarasevych.com/sso → «Розміщення»).",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перевірено за кодом на HEAD кроку. Код є; діє після кроку власника, описаного в reden."
+   "resultaat": "E2E: без ключів Apple названо в каталозі без «Підключити». Контур Apple (ES256-секрет, form_post) доведено модульним тестом aanmeld-koppel-20261030. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft)."
   },
   {
    "id": "methods.додаткові.3.pryviazka",
@@ -5524,14 +5592,15 @@
    "gereedAls": "Схвалений користувач прив'язує Apple після налаштування власником.",
    "testen": [
     "tests/eenheid/identiteit-015-aanmelden.test.ts",
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#каталог без ключів: Microsoft, Discord, Apple і Telegram названо, кнопки «Підключити» немає, назв серверних ключів не-власниці не показано"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "потребує налаштування власника",
-   "resultaat": "Як для Microsoft: каталог і прив’язка для кожного схваленого облікового запису, без назв серверних ключів.",
+   "resultaat": "E2E: без ключів кнопки «Підключити» для Apple немає. Прив’язку доведено модульним тестом aanmeld-koppel-20261030. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
    "reden": "Передумова власника: ключі AANMELD_APPLE_CLIENT_ID, AANMELD_APPLE_TEAM_ID, AANMELD_APPLE_KEY_ID і AANMELD_APPLE_PRIVATE_KEY у налаштуваннях ключів сервера (той самий контур, що й для прив'язки), пройдена самоперевірка власника в «Способах входу» → «Інші способи — чесно» → Apple (або admin.tarasevych.com/sso → «Розміщення» показує «працює»), і прапорець «Вхід через Microsoft, Discord або Apple» (aanmelden-extern)."
   },
   {
@@ -5552,14 +5621,15 @@
    "gereedAls": "Вхід кнопкою Apple дає сеанс свого облікового запису.",
    "testen": [
     "tests/eenheid/identiteit-015-aanmelden.test.ts",
-    "tests/eenheid/aanmeld-koppel-20261030.test.ts"
+    "tests/eenheid/aanmeld-koppel-20261030.test.ts",
+    "tests/e2e/identiteit-015-aanmelden.e2e.ts#без ключів власника Apple і Microsoft"
    ],
    "herkomst": "Прогалина плану",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "f8f6c26",
    "omgeving": "випробувальне середовище",
    "staatNa": "потребує налаштування власника",
-   "resultaat": "Той самий код входу, що для Microsoft: id_token Apple (ES256-клієнтський секрет, підпис через JWKS, nonce) — код прив’язки, перевірений у aanmeld-koppel-20261030; сеанс — authMethod «apple». Кнопка лише з ключами й зеленою самоперевіркою.",
+   "resultaat": "E2E: на сторінці входу «Увійти через Apple» — вимкнена кнопка «Недоступно» з точною передумовою (ключі Apple, самоперевірка, прапорець, прив’язка). Шлях входу через прив’язаного провайдера — модульний тест identiteit-015-aanmelden. E2E identiteit-015-aanmelden 68/68 (справжній Chromium, віртуальний автентифікатор CDP, підроблені Google і Microsoft).",
    "reden": "Передумова власника: ключі AANMELD_APPLE_CLIENT_ID, AANMELD_APPLE_TEAM_ID, AANMELD_APPLE_KEY_ID і AANMELD_APPLE_PRIVATE_KEY у налаштуваннях ключів сервера (той самий контур, що й для прив'язки), пройдена самоперевірка власника в «Способах входу» → «Інші способи — чесно» → Apple (або admin.tarasevych.com/sso → «Розміщення» показує «працює»), і прапорець «Вхід через Microsoft, Discord або Apple» (aanmelden-extern)."
   },
   {
