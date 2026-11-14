@@ -2,12 +2,14 @@
 // (tijdconstant vergeleken met het geheim uit de kluis). Elke update wordt één keer verwerkt (app.tg_updates), elke knop één
 // keer (app.tg_knoppen: nieuw → bezig → klaar in één UPDATE), met een snelheidslimiet per Telegram-gebruiker. Antwoord altijd
 // 200 na een geldige kop, zodat Telegram niet eindeloos opnieuw probeert; fouten gaan naar de statusdienst.
+import { fotoBijwerken } from './fotos';
+import { accountBeeld } from './account-foto';
 import { botAanroep } from './bot-api';
 import { botSleutel, webhookGeheim } from './sleutels';
 import { gelijk, knopHandtekeningKlopt, knopLezen, knopSleutel } from './cryptografie';
 import { instellingen, koppelingenVanTelegram, sql, vlagHoofdschakelaar, gebeurtenis } from './opslag';
 import { aftelRest, JA_LETTERS, bijwerken, knopAntwoord, knoppenMaken, stuur, succesTonen, taalVoor, strook, TAALKNOPPEN, type BotTaal, type Verzonden } from './berichten';
-import { contactVanBot, koppelVanBot, type TgGebruiker } from './koppelen';
+import { contactVanBot, koppelAccountVan, koppelVanBot, type TgGebruiker } from './koppelen';
 import { ANDERE_WEG_UITLEG, inlogGoedkeuren, inlogVanBot, inlogWeigeren } from './inloggen';
 import { bevestigingSymbool, bevestigingVanBot } from './bevestigen';
 import { wijziging, wijzigingBeantwoorden, vingerafdrukControleren } from './wijzigingen';
@@ -36,6 +38,9 @@ export async function updateVerwerken(u: Update): Promise<void> {
     if (!nieuw.length) return; // al verwerkt (Telegram herhaalt bij een trage 200)
     if (u.callback_query) await knopVerwerken(u.callback_query);
     else if (u.message) await berichtVerwerken(u.message);
+    // TELEGRAM-002: bij elke interactie de profielfoto bijwerken (gedempt; nieuwe foto's blijven bewaard, niets verwijderd).
+    const van = u.callback_query?.from ?? u.message?.from;
+    if (van && !van.is_bot) void fotoBijwerken(String(van.id)).catch(() => undefined);
     await statusMelden('webhook', true);
   } catch (e) {
     console.error('[telegram-aanmelden] update mislukt:', (e as Error)?.message);
@@ -84,7 +89,12 @@ async function berichtVerwerken(m: Bericht): Promise<void> {
     if (/^k_[A-Za-z0-9_-]{12}$/.test(arg)) {
       const r = await koppelVanBot(arg.slice(2), van, chatId);
       if (r === 'telefoon') {
-        await stuur(chatId, t(TEKST.telefoonVraag, taal), taal, { kaart: 'gewoon', antwoordToetsenbord: { keyboard: [[{ text: t(TEKST.deelKnop, taal === 'nl' ? 'nl' : 'uk'), request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } });
+        // TELEGRAM-002: eerst WIE vraagt — naam, e-mail (gemaskeerd) en foto van het site-account; daarna pas de vraag om het nummer.
+        const uid = await koppelAccountVan(arg.slice(2)).catch(() => '');
+        const ab = uid ? await accountBeeld(uid).catch(() => null) : null;
+        const wie = (x: 'uk' | 'nl') => (ab ? invullen(TEKST.koppelWie[x], { account: ab.naam, email: ab.email || '—' }) : '');
+        const wieTekst = ab ? `${taal === 'beide' ? `${wie('uk')}\n\n${wie('nl')}` : wie(taal)}\n\n` : '';
+        await stuur(chatId, `${wieTekst}${t(TEKST.telefoonVraag, taal)}`, taal, { accountFoto: ab?.foto || undefined, kaart: 'gewoon', antwoordToetsenbord: { keyboard: [[{ text: t(TEKST.deelKnop, taal === 'nl' ? 'nl' : 'uk'), request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } });
       } else if (r === 'al-gekoppeld') await stuur(chatId, taal === 'nl' ? 'ℹ️ Deze Telegram is al aan dit account gekoppeld.' : taal === 'uk' ? 'ℹ️ Цей Telegram уже прив’язано до цього облікового запису.' : 'ℹ️ Цей Telegram уже прив’язано до цього облікового запису.\n\nℹ️ Deze Telegram is al aan dit account gekoppeld.', taal);
       else if (r === 'te-veel') await stuur(chatId, taal === 'nl' ? '⛔ Deze Telegram is al aan het maximum aantal accounts gekoppeld.' : '⛔ Цей Telegram уже прив’язано до максимальної кількості облікових записів.', taal);
       else await stuur(chatId, t(TEKST.koppelVerlopen, taal), taal);

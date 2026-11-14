@@ -41,6 +41,10 @@ export async function main(): Promise<number> {
   await pool.query('DELETE FROM app.tg_koppelingen WHERE user_id = $1', [eigenaar]);
   await pool.query('DELETE FROM app.tg_matrix WHERE user_id = $1', [eigenaar]);
   await pool.query("UPDATE app.feature_flags SET aan = true, standaard = true WHERE sleutel = 'telegram-aanmelden-v1'");
+  // Deze test dekt de KLASSIEKE weg (knop «Так, це я»). Het beveiligde venster van TELEGRAM-002 staat hier uit; zijn eigen stroom
+  // test tests/eenheid/telegram-venster-20261114.test.ts.
+  await pool.query("UPDATE app.feature_flags SET aan = false WHERE sleutel = 'telegram-v2'");
+  (await import('../../backend/telegram-aanmelden/venster-sleutel')).vensterCacheWissen();
   await pool.query('DELETE FROM app.tg_koppelingen WHERE telegram_id = $1', ['777']);
   await pool.query("DELETE FROM app.tg_chats WHERE telegram_id IN ('777','778')");
 

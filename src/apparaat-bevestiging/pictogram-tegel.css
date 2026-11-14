@@ -1,0 +1,5 @@
+/* TELEGRAM-002: groot pictogram (zelfde tegel als in het beveiligde Telegram-venster) met een rustige pulsring */
+.tg2-held{width:min(160px,46vw);justify-self:center;margin:12px auto;position:relative}
+.tg2-held::before{content:'';position:absolute;inset:-10px;border-radius:38px;border:2px solid color-mix(in srgb,#229ED9 35%,transparent);animation:tg2-puls 2.2s ease-out infinite;pointer-events:none}
+@keyframes tg2-puls{0%{opacity:1;transform:scale(.96)}100%{opacity:0;transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.tg2-held::before{animation:none}}

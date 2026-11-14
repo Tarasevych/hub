@@ -25,6 +25,9 @@ import { KOPPEL_STANDEN, STROOK_KLEUREN } from '../../shared/telegram-aanmelden/
 import { beoordeel, keuzeToegestaan, voorinstellingToepassen, werkelijkeEis, type KeuzeId, type Voorinstelling } from '../../shared/telegram-aanmelden/beleid';
 import { apparaat as apparaatLabel } from '../../server/platform/audit';
 import { apparaatCookieHash } from '../apparaat-cookie';
+import { herkenning } from './herkenning';
+import { vensterRoutes } from './venster';
+import { fotoBijwerken, fotoGeschiedenis } from './fotos';
 
 type Sessie = PoortAuth & { user: { id: string; email?: string; role?: string; status?: string }; service: string };
 type SessieFout = { errorCode: string };
@@ -239,6 +242,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
         terugAdres: tx.meta?.terugAdres || txTerug || undefined,
         // SEC-002 (integraties-04 / aanmelden-05): «bekend apparaat» = de eigen apparaatcookie van DEZE browser, niet de User-Agent.
         apparaatCookie: apparaatCookieHash(rc.event as unknown as Record<string, unknown>),
+        // TELEGRAM-002: browser/systeem met versie, plaats en land voor het venster en de kaart.
+        herkenning: herkenning(ctxMeta.ua, rc.event.headers as Record<string, unknown>),
       };
       let r: Awaited<ReturnType<typeof inlogStart>>;
       try {
@@ -303,6 +308,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
       if (r.fout) doel.searchParams.set('tg_fout', r.fout);
       return { statusCode: 302, headers: { Location: doel.toString(), 'Cache-Control': 'no-store' }, body: '' };
     }),
+    // TELEGRAM-002: beveiligd venster (pagina, eigen script, keuze, code, «Це не я»)
+    ...(vensterRoutes(openbaar) as Record<string, RouterMiddleware[]>),
     'POST /api/telegram/webhook': openbaar(async (rc) => {
       const kop = String(Object.entries(rc.event.headers || {}).find(([k]) => k.toLowerCase() === 'x-telegram-bot-api-secret-token')?.[1] || '');
       if (!(await kopKlopt(kop))) return fout('NIET_TOEGESTAAN', 401);
@@ -322,7 +329,12 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
     'POST /api/owner/telegram/foto': alleenSessie(async (_rc, a, d) => {
       const k = (await koppelingenVanGebruiker(a.user.id)).find((x) => x.id === str(d.koppelingId, 40));
       if (!k) return fout('KOPPELING_ONBEKEND', 404);
-      return json({ foto: await profielFotoData(k.telegram_id) });
+      // TELEGRAM-002: meteen bijwerken en de volledige geschiedenis meegeven (vorige foto's blijven altijd zichtbaar).
+      await fotoBijwerken(k.telegram_id, { nu: true });
+      const actueel = (await koppelingenVanGebruiker(a.user.id)).find((x) => x.id === k.id) ?? k;
+      return json({ foto: await profielFotoData(k.telegram_id), geschiedenis: await fotoGeschiedenis(k.telegram_id, actueel.foto_id),
+        velden: (await sql<{ veld: string; oud: string; nieuw: string; op: Date; uitkomst: string }>("SELECT veld, oud, nieuw, op, uitkomst FROM app.tg_vingerafdruk_historie WHERE koppeling_id = $1 AND veld <> 'fotoId' ORDER BY op DESC LIMIT 100", [k.id]))
+          .map((h) => ({ veld: h.veld, oud: h.oud, nieuw: h.nieuw, op: new Date(h.op).toISOString(), uitkomst: h.uitkomst })) });
     }),
     'POST /api/owner/telegram/ontkoppelen': bewaakt('ontkoppelen', async (_rc, a, d) => {
       const r = await ontkoppelen(str(d.koppelingId, 40), { userId: a.user.id }, 'site');
@@ -375,7 +387,8 @@ export function telegramRoutes(deps: TelegramDeps): Record<string, RouterMiddlew
     }),
     'POST /api/owner/telegram/bevestiging/aanvragen': alleenSessie(async (rc, a, d) => {
       const m = contextMetaVan(rc);
-      return json(await bevestigingAanvragen(a.user.id, stapOpSessieId(a), str(d.actie, 41), { apparaat: m.apparaatLabel, ip: m.ip, locatie: m.locatie }));
+      return json(await bevestigingAanvragen(a.user.id, stapOpSessieId(a), str(d.actie, 41), { apparaat: m.apparaatLabel, ip: m.ip, locatie: m.locatie,
+        herkenning: herkenning(m.ua, rc.event.headers as Record<string, unknown>) }));
     }),
     'POST /api/owner/telegram/bevestiging/status': alleenSessie(async (_rc, a, d) => json(await bevestigingStatus(a.user.id, stapOpSessieId(a), str(d.id, 12)))),
     'POST /api/owner/telegram/bevestiging/code': alleenSessie(async (_rc, a, d) => json(await codeVoorActie(a.user.id, stapOpSessieId(a), str(d.actie, 41), str(d.code, 64)))),
@@ -414,6 +427,11 @@ export const TELEGRAM_PUBLIEKE_ROUTES: Readonly<Record<string, string>> = Object
   'GET /api/aanmelden/telegram/widget': 'mini-pagina met het officiële aanmeldvenster van Telegram (eigen smalle CSP)',
   'GET /api/aanmelden/telegram/widget-terug': 'terugkeer uit het aanmeldvenster van Telegram (HMAC-handtekening, 5 min, eenmalig)',
   'POST /api/telegram/webhook': 'terugroepadres voor Telegram (geheime kop X-Telegram-Bot-Api-Secret-Token)',
+  'GET /api/telegram/venster': 'beveiligd Telegram-venster (ondertekende verwijzing; eigen smalle CSP, alleen in Telegram Web als frame)',
+  'GET /api/telegram/venster.js': 'het ene script van het beveiligde Telegram-venster (geen gegevens)',
+  'POST /api/telegram/venster/kies': 'pictogram kiezen in het Telegram-venster (ondertekende verwijzing + initData van Telegram; één poging)',
+  'POST /api/telegram/venster/code': 'geheime code in het Telegram-venster (ondertekende verwijzing + initData; tellers en pauzes)',
+  'POST /api/telegram/venster/weigeren': '«Це не я» in het Telegram-venster (ondertekende verwijzing + initData)',
 });
 
 /** SEC-002 / aanmelden-04: wat een andere browser ziet als hij het aanmeldvenster van een vreemde aanmelding opent. */

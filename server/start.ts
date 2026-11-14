@@ -138,7 +138,11 @@ const splitSetCookie = (value: string) => value.split(/,\s*(?=[!#$%&'*+\-.^_`|~0
 
 function send(res: http.ServerResponse, status: number, headers: Record<string, string | string[]>, body?: string | Buffer) {
   if (res.headersSent) return;
-  res.writeHead(status, { ...BASE_HEADERS, ...headers });
+  const alle: Record<string, string | string[]> = { ...BASE_HEADERS, ...headers };
+  // TELEGRAM-002: een route mag X-Frame-Options weglaten (lege waarde) als haar eigen CSP frame-ancestors zet (Telegram-venster).
+  if (alle['X-Frame-Options'] === '' && /frame-ancestors https:\/\//.test(String(alle['Content-Security-Policy'] || ''))) delete alle['X-Frame-Options'];
+  else if (alle['X-Frame-Options'] === '') alle['X-Frame-Options'] = 'DENY';
+  res.writeHead(status, alle);
   res.end(body);
 }
 const sendText = (res: http.ServerResponse, status: number, text: string) =>
