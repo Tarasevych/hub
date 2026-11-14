@@ -4839,14 +4839,21 @@
    "gereedAls": "Показано новий набір кодів; старий код більше не приймається у вікні підтвердження.",
    "testen": [
     "tests/eenheid/identiteit-014-herstel.test.ts",
-    "tests/eenheid/identiteit-014-herstel-recensie.test.ts"
+    "tests/eenheid/identiteit-014-herstel-recensie.test.ts",
+    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts",
+    "tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-herstel.test.ts 43/43; identiteit-014-herstel-recensie.test.ts 45/45."
+   "resultaat": "«Створити коди» на сторінці «Способи входу» (/methods → /aanmeldmethoden) зі step-up через Google: після повернення дія продовжується й 10 кодів видно. Знайдено й виправлено ваду: після step-up через Google дію «Створити коди» підхоплював екземпляр «Способи входу» без секції кодів — сервер створював новий набір (старий знищено), а людина нових кодів не бачила (це й був збій «download» у tests/e2e/herstelcodes.e2e.ts); тепер дію підхоплює лише екземпляр із секцією кодів (src/herstel/hervat-plek.ts), модульний tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts 6/6. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-02-nieuwe-set.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "methods.захист.0.zberig",
@@ -4868,14 +4875,20 @@
    "wijziging": "Не потрібна.",
    "gereedAls": "Після натиску коди зникають з екрана й не показуються після оновлення.",
    "testen": [
-    "tests/eenheid/identiteit-014-herstel.test.ts"
+    "tests/eenheid/identiteit-014-herstel.test.ts",
+    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-herstel.test.ts 43/43."
+   "resultaat": "«Я зберіг коди» ховає коди (жодного в HTML) і позначає набір переглянутим; «Готово» неактивне до позначки. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-03-lijst-notities.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "methods.захист.0.vidklykaty",
@@ -4899,14 +4912,20 @@
    "wijziging": "Не потрібна.",
    "gereedAls": "Після відкликання рядок показує «Відкликано», код не приймається.",
    "testen": [
-    "tests/eenheid/identiteit-014-herstel-recensie.test.ts"
+    "tests/eenheid/identiteit-014-herstel-recensie.test.ts",
+    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "Погоджена позиція v49",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-herstel-recensie.test.ts 45/45."
+   "resultaat": "«Відкликати» → «Відкликати / Скасувати» → після додавання passkey Google вже не рахується (сильне підтвердження за §13.10), тож вікно просить код; після коду відновлення невикористані коди відкликано, старий код відхилено. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-06-intrekken-bevestigen.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "methods.захист.1.perekhid",
@@ -6194,14 +6213,21 @@
    "testen": [
     "tests/e2e/herstelcodes.e2e.ts",
     "tests/eenheid/identiteit-014-herstel.test.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "",
    "maquetteLabel": "прихована група (усі рядки «в-чинних», maquette-motor.ts:884,956; tests/e2e/identiteit-maquette-kaart.e2e.ts:73 перевіряє, що карти «Відновлення» немає)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-herstel.test.ts 43/43; toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку). E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "У «Відновленні доступу» лічильник, позначки «Мало кодів»/«Відкликано» й замаскований перелік відповідають серверу на кожному кроці (10 → 9 → 1 → 0); одноразовість: той самий код удруге відхилено. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-01-begin.png",
+    "tests/e2e/знімки-015/herstelcodes-04-gebruikt.png",
+    "tests/e2e/знімки-015/herstelcodes-05-melding.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "recovery.засоби.0.stvoryty-kody",
@@ -6226,14 +6252,20 @@
    "gereedAls": "після натискання й підтвердження з'являються 10 кодів XXXX-XXXX-XXXX; старі коди відхиляються сервером",
    "testen": [
     "tests/e2e/herstelcodes.e2e.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts",
+    "tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts"
    ],
    "herkomst": "",
    "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку). E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Створення з TOTP — лише passkey/код застосунку; без TOTP — Google step-up з продовженням дії. Знайдено й виправлено ваду: після step-up через Google дію «Створити коди» підхоплював екземпляр «Способи входу» без секції кодів — сервер створював новий набір (старий знищено), а людина нових кодів не бачила (це й був збій «download» у tests/e2e/herstelcodes.e2e.ts); тепер дію підхоплює лише екземпляр із секцією кодів (src/herstel/hervat-plek.ts), модульний tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts 6/6. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-02-nieuwe-set.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "recovery.засоби.0.zberehty-odnorazovo",
@@ -6255,14 +6287,19 @@
    "wijziging": "не потрібно",
    "gereedAls": "завантажено mijn-ruimte-herstelcodes.txt з усіма 10 кодами; буфер містить коди; відкривається діалог друку",
    "testen": [
-    "tests/e2e/herstelcodes.e2e.ts"
+    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "",
    "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Одноразовий показ: «Завантажити» (рівно 10 кодів у файлі), «Копіювати» (рівно 10 у буфері), «Друкувати» (лише блок кодів); після «Готово» кодів на сторінці немає. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-02-nieuwe-set.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "recovery.засоби.0.pozn-zberezheno",
@@ -6287,14 +6324,19 @@
    "gereedAls": "після «Готово» відкритих кодів на сторінці немає, статус «Створено … · збережено», огляд резерву зелений за пунктом кодів",
    "testen": [
     "tests/e2e/herstelcodes.e2e.ts",
-    "tests/eenheid/identiteit-014-herstel.test.ts"
+    "tests/eenheid/identiteit-014-herstel.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "",
    "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-herstel.test.ts 43/43. E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Я зберіг коди» + «Готово»: набір позначено збереженим (видно «збережено»), відкриті коди сховано, далі лише замаскований перелік. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-03-lijst-notities.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "recovery.засоби.0.vidklykaty-vsi",
@@ -6318,14 +6360,19 @@
    "wijziging": "за бажанням уніфікувати з BevestigDialoog (етап 4 — приймання поведінки), не блокує",
    "gereedAls": "після підтвердження лічильник «Залишилося 0 з 10», бейдж «Відкликано», раніше чинний код сервер відхиляє",
    "testen": [
-    "tests/e2e/herstelcodes.e2e.ts"
+    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "",
    "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Відкликати всі» вимагає підтвердження у вікні «Підтвердіть доступ»; після коду застосунку — 9 «використано», 1 «відкликано», останній невикористаний код відхилено. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-06-intrekken-bevestigen.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "recovery.засоби.0.notatky",
@@ -6350,14 +6397,19 @@
    "wijziging": "не потрібно",
    "gereedAls": "нотатку видно після перезавантаження сторінки; інший обліковий запис її не бачить",
    "testen": [
-    "tests/eenheid/toegang-context.test.ts"
+    "tests/eenheid/toegang-context.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "",
    "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegang-context.test.ts 27/29 (червоний набір — див. звіт кроку)."
+   "resultaat": "Олівець: нотатка до набору й до коду №1 зберігається на сервері, лишається після перезавантаження й не з’являється в інших кодів. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-03-lijst-notities.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "recovery.засоби.1.nezalezhni-sposoby",
@@ -6805,14 +6857,19 @@
    "testen": [
     "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/identiteit-014-kaart.test.ts",
-    "tests/eenheid/identiteit-015-herstel.test.ts"
+    "tests/eenheid/identiteit-015-herstel.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "демо-перемикач «Нагадування про резервний доступ» шухляди «Відновлення» перенесено в Меню → «Сповіщення в меню»",
    "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
-   "versie": "ca15a756",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
    "staatNa": "працює в цьому оформленні",
-   "resultaat": "Перемикач «Нагадувати про резервний доступ» тепер і прямо в «Відновленні» (та сама настройка облікового запису, що в Меню → «Сповіщення в меню»; сервер читає її перед сповіщенням access_recovery_low). Типово увімкнено; вимкнення — через BevestigDialoog із наслідками, вимкнений стан позначено «!». Крок herstel: вимкнення й увімкнення «Нагадувати про резервний доступ» (тут і в Меню → «Сповіщення в меню») сервер записує в аудит (owner.melding.reserve-herinnering) і центр сповіщень (security); повторне збереження без зміни — нічого; на екрані — підтвердження."
+   "resultaat": "З увімкненим (типово) нагадуванням: при 3 залишених кодах сповіщень access_recovery_low немає, при 2 — рівно одне, при 1 — повтору немає; у центрі сповіщень «Залишилося мало кодів відновлення» видно один раз. Сам перемикач (вимкнення) цим e2e не перевірявся — див. модульні тести рядка. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-05-melding.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "recovery.сценарії.4.nahaduvannia-tut",
@@ -7470,14 +7527,20 @@
    "gereedAls": "У картці «Відновлення» видно точну кількість невикористаних кодів і використаний код перекреслено з датою",
    "testen": [
     "tests/e2e/herstelcodes.e2e.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "Перенесено: ціль станНаСайті 'recovery|#aanmeldmethoden-herstel'",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку). E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Лічильник «Кодів ще немає» → «Залишилося 10 з 10» → «9 з 10» → «1 з 10» з позначкою «Мало кодів» → «0 з 10» з «Відкликано»; замаскований перелік (••••-••••-••xx), використаний код перекреслено з «Використано <дата>» і місцем використання. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-01-begin.png",
+    "tests/e2e/знімки-015/herstelcodes-04-gebruikt.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.резервні-коди.1.stvoryty",
@@ -7501,14 +7564,20 @@
    "gereedAls": "Після підтвердження показано 10 кодів формату XXXX-XXXX-XXXX, лічильник «Залишилося 10 з 10»",
    "testen": [
     "tests/e2e/herstelcodes.e2e.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts",
+    "tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts"
    ],
    "herkomst": "Перенесено до картки «Відновлення»",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку). E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "З автентифікатором «Створити нові» відкриває «Підтвердіть доступ» лише з passkey/кодом застосунку (без Google і без кодів відновлення); після коду — 10 різних кодів XXXX-XXXX-XXXX, показаних один раз. Без автентифікатора — step-up через Google із автоматичним продовженням дії. Знайдено й виправлено ваду: після step-up через Google дію «Створити коди» підхоплював екземпляр «Способи входу» без секції кодів — сервер створював новий набір (старий знищено), а людина нових кодів не бачила (це й був збій «download» у tests/e2e/herstelcodes.e2e.ts); тепер дію підхоплює лише екземпляр із секцією кодів (src/herstel/hervat-plek.ts), модульний tests/eenheid/identiteit-015-herstelcodes-hervat.test.ts 6/6. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-02-nieuwe-set.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.резервні-коди.2.zavantazhyty",
@@ -7530,14 +7599,19 @@
    "wijziging": "Нічого",
    "gereedAls": "Завантажений файл містить усі 10 кодів",
    "testen": [
-    "tests/e2e/herstelcodes.e2e.ts"
+    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "Перенесено до картки «Відновлення» (і показ у «Безпеці» після створення)",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Файл mijn-ruimte-herstelcodes.txt: рівно ті 10 кодів по одному на рядок і 3 рядки пояснення (назва, дата, «діє один раз»); без адреси, otpauth чи секрету. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-02-nieuwe-set.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.резервні-коди.2.kopiiuvaty",
@@ -7559,14 +7633,19 @@
    "wijziging": "Нічого",
    "gereedAls": "Вставлений текст містить 10 кодів; при відмові буфера — зрозуміле повідомлення",
    "testen": [
-    "tests/e2e/herstelcodes.e2e.ts"
+    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "Перенесено до картки «Відновлення»",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Буфер обміну (контекст із дозволом clipboard) містить рівно 10 кодів по рядку, нічого зайвого; видно повідомлення «Коди скопійовано.». Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-02-nieuwe-set.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.резервні-коди.2.drukuvaty",
@@ -7587,13 +7666,20 @@
    "ontbreekt": "Немає перевірки, що у вигляді «Макет» друкується лише блок кодів (стилі herstel-afdruk для оболонки макета не перевірено)",
    "wijziging": "Етап 4/5: перевірити друк у «Макеті»",
    "gereedAls": "Попередній перегляд друку показує лише коди без оболонки макета",
-   "testen": [],
+   "testen": [
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts",
+    "tests/e2e/herstelcodes.e2e.ts"
+   ],
    "herkomst": "Перенесено до картки «Відновлення»",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Наявної автоматичної перевірки немає — рядок отримає e2e на етапі 4."
+   "resultaat": "window.print (перехоплений) викликано один раз, під час виклику на body клас herstel-afdruk; у стилі друку (emulateMedia print) видно блок кодів і жодного заголовка, меню чи кнопки поза ним — оболонка макета не друкується. Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-02-nieuwe-set.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.резервні-коди.3.zberezheno",
@@ -7618,14 +7704,20 @@
    "gereedAls": "«Готово» неактивне без позначки; після нього коди не показуються повторно, у огляді резерву стан «збережено»",
    "testen": [
     "tests/eenheid/identiteit-014-herstel.test.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts",
+    "tests/e2e/herstelcodes.e2e.ts"
    ],
    "herkomst": "Перенесено до картки «Відновлення»",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: identiteit-014-herstel.test.ts 43/43; toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку)."
+   "resultaat": "«Готово» неактивне до «Я зберіг коди»; після — коди зникають зі сторінки (жодного в HTML), лишається замаскований перелік із 10 рядків, у стані «збережено». Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-03-lijst-notities.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.резервні-коди.4.vidklykaty",
@@ -7650,14 +7742,19 @@
    "gereedAls": "Після відкликання лічильник 0, позначка «Відкликано», раніше чинний код відхиляється",
    "testen": [
     "tests/e2e/herstelcodes.e2e.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "Перенесено до картки «Відновлення»",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку). E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "«Відкликати всі» → «Відкликати» → вікно «Підтвердіть доступ» (сильний спосіб: код застосунку або код відновлення; Google недостатньо) → невикористані коди «Відкликано», «Залишилося 0 з 10»; раніше чинний код відхилено (400 STEP_UP_RECOVERY_NOT_ENROLLED). Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-06-intrekken-bevestigen.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.резервні-коди.4.zaminyty",
@@ -7680,14 +7777,19 @@
    "gereedAls": "Після заміни старий код відхиляється, новий приймається",
    "testen": [
     "tests/e2e/herstelcodes.e2e.ts",
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/toegangssleutels.test.ts",
+    "tests/e2e/identiteit-015-herstelcodes.e2e.ts"
    ],
    "herkomst": "Перенесено до картки «Відновлення»",
    "maquetteLabel": "прихована група",
    "staatNa": "працює в цьому оформленні",
-   "versie": "899c96ad",
+   "versie": "2b51d78",
    "omgeving": "випробувальне середовище",
-   "resultaat": "Кроками IDENTITEIT-015 (1–8) не змінювалося; стан перенесено зі staatVoor. Прогін наявних модульних тестів рядка на HEAD кроку kaart-stille-uren: toegangssleutels.test.ts 74/80 (червоний набір — див. звіт кроку). E2E (herstelcodes.e2e.ts) на цьому кроці не прогнано — етап 4."
+   "resultaat": "Заміна набору: новий набір не перетинається зі старим; старий ще невикористаний код відхилено (400 ACCESS_RECOVERY_INVALID), новий код діє («залишилося 9»). Прогін на 2b51d78: tests/e2e/identiteit-015-herstelcodes.e2e.ts 20/20, tests/e2e/herstelcodes.e2e.ts 16/16 (справжній Chromium, пробний власник @example.test).",
+   "schermafdruk": [
+    "tests/e2e/знімки-015/herstelcodes-04-gebruikt.png"
+   ],
+   "aanvullingVan": "aanvulling-c2.json"
   },
   {
    "id": "security.шифрування.0.stan",
