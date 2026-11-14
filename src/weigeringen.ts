@@ -100,6 +100,16 @@ const ALGEMEEN: Record<string, Paar> = {
   'Title is required': ['Вкажіть назву блоку.', 'Geef het blok een naam.'],
   'Write access required': ['У цьому просторі у вас лише перегляд — додавати блоки не можна.', 'In deze werkruimte kunt u alleen kijken — blokken toevoegen kan niet.'],
   'Approval required': ['Обліковий запис ще не схвалено, тож змінювати простір не можна.', 'Het account is nog niet goedgekeurd, dus de werkruimte wijzigen kan niet.'],
+  // IDENTITEIT-015 (profiel-blokken): передача простору (POST /api/owner/identity/workspaces/:id/overdragen).
+  WERKRUIMTE_NIET_GEVONDEN: ['Простір не знайдено — можливо, його вже видалено. Оновіть сторінку.', 'De werkruimte is niet gevonden — misschien is ze al verwijderd. Vernieuw de pagina.'],
+  WERKRUIMTE_NIET_EIGENAAR: ['Передати простір може лише його власник. Нічого не змінено.', 'Alleen de eigenaar kan de werkruimte overdragen. Er is niets gewijzigd.'],
+  WERKRUIMTE_GEARCHIVEERD: ['Простір в архіві. Спершу відновіть його, потім передайте.', 'De werkruimte staat in het archief. Herstel haar eerst en draag haar dan over.'],
+  WERKRUIMTE_TECHNISCH: ['Технічний простір передати не можна: у ньому немає учасників.', 'Een technische werkruimte kan niet worden overgedragen: er zijn geen leden.'],
+  OVERDRACHT_ZELF: ['Оберіть іншу людину — собі передати простір не можна.', 'Kies iemand anders — aan uzelf overdragen kan niet.'],
+  OVERDRACHT_GEEN_LID: ['Ця людина більше не учасник простору. Оновіть список і оберіть іншого.', 'Deze persoon is geen lid meer van de werkruimte. Vernieuw de lijst en kies iemand anders.'],
+  OVERDRACHT_ROL: ['Передати можна лише учасникові з роллю «Адміністратор» або «Редагування». Спершу змініть роль у «Доступ до простору».', 'Overdragen kan alleen aan een lid met de rol «Beheerder» of «Bewerken». Wijzig eerst de rol onder «Toegang tot werkruimte».'],
+  OVERDRACHT_ACCOUNT: ['Обліковий запис цієї людини зараз не активний (не схвалений, заблокований або видалений). Оберіть іншого.', 'Het account van deze persoon is nu niet actief (niet goedgekeurd, geblokkeerd of verwijderd). Kies iemand anders.'],
+  OVERDRACHT_GELIJKTIJDIG: ['Простір щойно передано іншим запитом. Оновіть сторінку, щоб побачити нового власника.', 'De werkruimte is net via een ander verzoek overgedragen. Vernieuw de pagina om de nieuwe eigenaar te zien.'],
   ZELFTEST_ALLEEN_BEHEER: ['Самоперевірку способу входу запускає лише власник або адміністратор.', 'Alleen de eigenaar of een beheerder voert de zelftest van een aanmeldmethode uit.'],
   NETWORK_ERROR: ['Немає зв’язку з сервером. Перевірте інтернет і спробуйте ще раз — нічого не змінено.', 'Geen verbinding met de server. Controleer het internet en probeer het opnieuw — er is niets gewijzigd.'],
   ABORTED: ['Запит перервано. Нічого не змінено.', 'Het verzoek is afgebroken. Er is niets gewijzigd.'],
@@ -128,4 +138,21 @@ export function uitvoerWeigering(e: unknown): Paar | null {
   }
   if (code === 'OWNER_IDENTITY_SESSION_REQUIRED') return ['Сеанс налаштувань закінчився або обліковий запис ще не схвалено. Увійдіть знову — після цього дані можна буде вивантажити.', 'De sessie van de instellingen is verlopen of het account is nog niet goedgekeurd. Meld u opnieuw aan — daarna kunt u de gegevens exporteren.'];
   return foutNaarTekst(e);
+}
+
+// IDENTITEIT-015 (profiel-blokken): світлина за посиланням (POST /api/owner/profile/photo/link) — завжди пара [uk, nl]:
+// що сталося і що зробити (найчастіше — зберегти файл і вибрати «Пристрій»). Власна таблиця: RATE_LIMITED тут — не про запрошення.
+// Foto via een link: altijd een paar; eigen tekst voor de limiet (deelWeigering zou die als «uitnodigingen» uitleggen).
+export function fotoLinkWeigering(e: unknown): Paar {
+  const code = volleCode(e);
+  const bewaar = ['Збережіть зображення на пристрій і оберіть «Пристрій».', 'Bewaar de afbeelding op uw apparaat en kies «Apparaat».'] as const;
+  if (code === 'RATE_LIMITED') { const m = minuten(e); return [`Забагато спроб завантажити фото за посиланням. Спробуйте ${m ? `через ~${m} хв` : 'пізніше'} або оберіть «Пристрій».`, `Te veel pogingen om een foto via een link op te halen. Probeer het ${m ? `over ~${m} min.` : 'later'} opnieuw of kies «Apparaat».`]; }
+  if (code === 'FOTO_LINK_ONGELDIG') return ['Потрібне повне посилання https:// без логіна й пароля.', 'Er is een volledige https://-link nodig, zonder gebruikersnaam en wachtwoord.'];
+  if (code === 'FOTO_LINK_GEWEIGERD') return [`Це посилання веде до внутрішньої або службової адреси — з міркувань безпеки сайт його не відкриває. ${bewaar[0]}`, `Deze link wijst naar een intern of dienstadres — om veiligheidsredenen opent de site hem niet. ${bewaar[1]}`];
+  if (code === 'FOTO_LINK_TE_GROOT') return [`Зображення завелике (понад 8 МБ). ${bewaar[0]}`, `De afbeelding is te groot (meer dan 8 MB). ${bewaar[1]}`];
+  if (code === 'FOTO_LINK_GEEN_AFBEELDING') return ['За посиланням не JPEG, PNG чи WebP (можливо, це сторінка, а не саме зображення). Скопіюйте адресу самого зображення.', 'De link geeft geen JPEG, PNG of WebP (misschien een pagina in plaats van de afbeelding zelf). Kopieer het adres van de afbeelding zelf.'];
+  if (code === 'FOTO_LINK_OMLEIDING') return ['Посилання переадресовує на іншу адресу — сайт не йде за переадресаціями. Відкрийте зображення й скопіюйте його кінцеву адресу.', 'De link verwijst door naar een ander adres — de site volgt geen doorverwijzingen. Open de afbeelding en kopieer het uiteindelijke adres.'];
+  if (code === 'FOTO_LINK_ONBEREIKBAAR') return [`Сайт зображення не відповів або відмовив (за 10 секунд). ${bewaar[0]}`, `De site van de afbeelding antwoordde niet of weigerde (binnen 10 seconden). ${bewaar[1]}`];
+  const v = foutNaarTekst(e);
+  return v || [`Не вдалося завантажити зображення за посиланням. ${bewaar[0]}`, `De afbeelding kon niet via de link worden opgehaald. ${bewaar[1]}`];
 }

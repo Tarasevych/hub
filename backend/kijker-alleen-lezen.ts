@@ -108,7 +108,7 @@ export const KIJKER_EIGEN: ReadonlySet<string> = new Set<string>([
     'notifications/read', 'owner/notifications/read', 'service/notifications/read', 'owner/meldingen/gelezen', 'owner/meldingen/gelezen/toevoegen',
     'owner/meldingen/status/zetten', 'owner/meldingen/regels/opslaan', 'meldingen/apparaat-bekend', 'diagnose/melden', 'diagnose/gelezen',
     // eigen weergave en voorkeuren
-    'owner/weergave/zet', 'owner/ruimte/keuze', 'owner/ruimte/dienst', 'owner/menu/tellers/weg', 'owner/menu/tellers/zet', 'owner/profile/photo',
+    'owner/weergave/zet', 'owner/ruimte/keuze', 'owner/ruimte/dienst', 'owner/menu/tellers/weg', 'owner/menu/tellers/zet', 'owner/profile/photo', 'owner/profile/photo/link',
     'owner/mail/view-preferences/save', 'owner/mail/view-preferences/section-display', 'owner/mail/notification-preferences/save',
     'owner/hub/layouts/save', 'owner/vensters/opslaan', 'owner/hub/bureau/save', 'owner/mail/afzender-beelden/voorkeur',
     'owner/zoek/geschiedenis/open', 'owner/zoek/geschiedenis/bewaren', 'owner/zoek/geschiedenis/wis', 'owner/zoek/geschiedenis/wis-alles',

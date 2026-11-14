@@ -7,6 +7,8 @@ export const ACTIE_PER_PAD: ReadonlyArray<readonly [RegExp, string]> = [
   [/\/passkeys\/goedkeuring\/recht-intrekken/, 'goedkeur-recht-intrekken'], [/\/passkeys\/goedkeuring\/(aanvragen|bevestigen)/, 'goedkeur-recht-aanvragen'],
   // IDENTITEIT-014: iemand «beheerder» van een gedeelde ruimte maken (e-mail, koppeling, rol wijzigen). Alleen deze drie paden; /link/revoke niet.
   [/\/api\/share\/(email|link|role)$/, 'deel-beheerder'],
+  // IDENTITEIT-015 (profiel-blokken): простір передати іншому учасникові — той отримає повне керування.
+  [/\/api\/owner\/identity\/workspaces\/[^/]+\/overdragen$/, 'werkruimte-overdragen'],
   [/\/recovery\/rotate/, 'herstelcodes-nieuw'], [/\/recovery\/intrekken/, 'herstelcodes-intrekken'],
   [/\/toegangscodes\/maken/, 'toegangscode-maken'], [/\/toegangscodes\/wijzigen/, 'toegangscode-verlengen'],
   [/\/ruimte\/keuze/, 'ruimte-keuze'], [/\/ruimte\/besluit/, 'ruimte-besluit'], [/\/ruimte\/dienst/, 'ruimte-verbinden'],

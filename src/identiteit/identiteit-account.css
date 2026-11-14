@@ -175,6 +175,12 @@
   letter-spacing: 0.02em;
 }
 
+/* IDENTITEIT-015 (profiel-blokken): voorbeeld «Без фото» in het venster — geen knop, alleen initialen. */
+.ia-avatar.ia-avatar-klein {
+  cursor: default;
+  margin: 8px 0;
+}
+
 .ia-avatar-camera {
   /* Камера — по центру аватара (так у прототипі); смітничок 24 px сидить у куті й її не перекриває. */
   position: absolute;

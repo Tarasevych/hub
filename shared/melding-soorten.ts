@@ -31,6 +31,7 @@ export const MELDING_SOORTEN: Readonly<Record<string, SoortInfo>> = Object.freez
   owner_identity_mismatch: { type: 'beveiliging', ernst: 'kritiek' },
   access_decision: { type: 'toegang', ernst: 'belangrijk' },               // mijn eigen toegangsverzoek is beslist
   workspace_share: { type: 'delen', ernst: 'info' },
+  workspace_ownership_transferred: { type: 'delen', ernst: 'belangrijk' }, // IDENTITEIT-015: een werkruimte is aan mij overgedragen, of ik droeg er een over
   workspace_role_changed: { type: 'delen', ernst: 'belangrijk' },       // IDENTITEIT-014: mijn rol in een gedeelde ruimte is gewijzigd
   workspace_access_revoked: { type: 'delen', ernst: 'belangrijk' },     // IDENTITEIT-014: mijn toegang tot een gedeelde ruimte is ingetrokken
   workspace_invite_accepted: { type: 'delen', ernst: 'info' },          // IDENTITEIT-014: iemand nam mijn uitnodiging/koppeling aan

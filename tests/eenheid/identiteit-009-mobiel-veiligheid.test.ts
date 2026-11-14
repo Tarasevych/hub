@@ -45,10 +45,11 @@ export async function main(): Promise<number> {
     'обидва кореневі застосунки й центр налаштувань підтримують скидання світлини (File | null → {reset:true}) та ознаку customPicture',
     app.includes('changeProfilePhoto=async(file:File|null)') &&
       app.includes('{reset:true}') &&
-      verenigd.includes('changeProfilePhoto=async(file:File|null)') &&
+      // IDENTITEIT-015 (profiel-blokken): у центрі налаштувань (id.*) до File | null додано 'geen' («Без фото»); скидання {reset:true} лишилося.
+      verenigd.includes("changeProfilePhoto=async(file:File|null|'geen')") &&
       verenigd.includes('{reset:true}') &&
       instellingen.includes('eigenFoto={Boolean(p.user.customPicture)}') &&
-      instellingen.includes('onFoto?:(file:File|null)=>Promise<unknown>'),
+      instellingen.includes("onFoto?:(file:File|null|'geen')=>Promise<unknown>"),
   );
   check(
     'Profielfoto обмежує час очікування (10 с), заголовок переходу (no-referrer), розмір за посиланням (8 МБ) та розмір файла (12 МБ) і викликає onFoto(null) при скиданні',

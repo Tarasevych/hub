@@ -82,6 +82,20 @@ export const REGISTER: UitlegSoort[] = [
       { soort: 'niet-ik', label: ['Це був не я', 'Dit was ik niet'], href: () => `${ID}/`, gevaarlijk: true },
     ],
   },
+  // IDENTITEIT-015 (profiel-blokken): eigendom van een werkruimte overgedragen (aan mij, of door mij). Vóór «beveiliging».
+  {
+    id: 'werkruimte-overdracht',
+    past: (m) => m.soort === 'workspace_ownership_transferred',
+    risico: 'hoog',
+    wat: ['Змінився власник спільного простору: вам передали простір або ви передали свій іншій людині.', 'De eigenaar van een gedeelde werkruimte is gewijzigd: u kreeg een werkruimte, of u droeg de uwe over.'],
+    waarom: ['Власник простору обрав нового власника серед адміністраторів і редакторів і підтвердив дію.', 'De eigenaar koos een nieuwe eigenaar onder de beheerders en bewerkers en bevestigde de handeling.'],
+    gevolg: ['Новий власник керує учасниками й блоками й може видалити простір; попередній лишається адміністратором.', 'De nieuwe eigenaar beheert leden en blokken en kan de werkruimte verwijderen; de vorige blijft beheerder.'],
+    doen: ['Якщо ви цього не робили — змініть спосіб входу й зверніться до нового власника простору.', 'Deed u dit niet, wijzig dan uw aanmelding en neem contact op met de nieuwe eigenaar.'],
+    deeplink: viaLink('https://hub.tarasevych.com/'),
+    acties: [
+      { soort: 'openen', label: ['Відкрити простір', 'Werkruimte openen'], href: viaLink('https://hub.tarasevych.com/') },
+    ],
+  },
   // IDENTITEIT-014: rechten in een gedeelde ruimte. Vóór «beveiliging»: «workspace_access_revoked» bevat «access_» en zou anders
   // als accountbeveiliging (met «Це був я») worden uitgelegd — het gaat om een ruimte van iemand anders, niet om uw aanmelding.
   // IDENTITEIT-014 (herstel): de maker van een privélink krijgt een spoor in het meldingencentrum — de link is een geheim.

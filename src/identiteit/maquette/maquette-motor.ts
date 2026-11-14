@@ -652,9 +652,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       ])
     ],
     account:[
-      група("особа","Профіль і фото","Profiel en foto","Справжня світлина надходить з авторизованого облікового запису. Вилучення фото наразі потребує окремої серверної дії.","De echte foto komt uit het aangemelde account. Verwijderen vereist nog een afzonderlijke serverhandeling.","частково",[
+      група("особа","Профіль і фото","Profiel en foto","Справжня світлина надходить з авторизованого облікового запису; її можна замінити файлом або посиланням, прибрати власну або вибрати «Без фото» (лише ініціали).","De echte foto komt uit het aangemelde account; u kunt ze vervangen door een bestand of een link, de eigen foto verwijderen of «Geen foto» kiezen (alleen initialen).","наявне",[
         рядок("Світлина з облікового запису","Foto uit het account","фото"),
-        рядок("Прибрати власну світлину","Eigen foto verwijderen","обережна-дія",[],"частково",null,{uk:"Виявлена кнопка не вилучає фото, а повторно його передає. Потрібні окрема серверна дія вилучення, підтвердження та оновлення усіх зображень профілю.",nl:"De huidige knop verwijdert de foto niet, maar verstuurt dezelfde foto opnieuw. Een afzonderlijke serverhandeling, bevestiging en verversing van alle profielafbeeldingen zijn nodig."})
+        рядок("Прибрати власну світлину","Eigen foto verwijderen","обережна-дія")
       ]),
       група("стан","Стан підключених служб","Status van verbonden diensten","Перевірка підключення без читання вмісту листів і файлів.","Controle van verbindingen zonder inhoud van berichten of bestanden te lezen.","наявне",[
         рядок("Пошта й календар","Mail en agenda","відомості"),
@@ -866,7 +866,9 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "палітра":{стан:"в-чинних",ціль:"#thema-kleur-kop"},
       "акцент":{стан:"в-чинних",ціль:"#thema-accent",цілі:{1:"#thema-effecten"}}
     },
-    widgets:{"створення":{стан:"частково",ціль:".settings-form"},"вигляд":{стан:"частково",рядки:{0:"недоступно",1:"частково"}}},
+    // IDENTITEIT-015 (крок «profiel-blokken»): форма блоку повна — «Скасувати», «Відкрити в просторі», пояснення адреси внутрішнього блоку,
+    // серверна перевірка посилання (крок «risico»). Передача простору перед видаленням — .settings-overdracht.
+    widgets:{"створення":{стан:"в-чинних",ціль:".settings-form"},"вигляд":{стан:"частково",рядки:{0:"недоступно",1:"частково"}}},
     sharing:{
       "запрошення":{стан:"в-чинних",ціль:"#delen-uitnodigen"},
       "посилання":{стан:"частково",ціль:"#delen-uitnodigen",рядки:{0:"частково",1:"в-чинних"}},
@@ -876,7 +878,7 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "особа":{стан:"в-чинних"},
       "стан":{стан:"в-чинних"},
       "простори":{стан:"в-чинних"},
-      "видалення":{стан:"частково",ціль:".settings-danger"},
+      "видалення":{стан:"в-чинних",ціль:".settings-danger",цілі:{0:".settings-overdracht"}},
       "експорт":{стан:"частково",ціль:"#gegevensuitvoer",рядки:{0:"частково",1:"в-чинних"}}
     },
     sessions:{

@@ -122,7 +122,10 @@ export async function main(): Promise<number> {
   const knoppen = [...uk.matchAll(/data-kaart-ga="([^"]+)"/g)].map((m) => m[1].replace(/&quot;/g, '"'));
   // IDENTITEIT-014: після фази 3 групи «Запрошення», «Чинні», «Пароль», «Другий чинник» і весь «Відновлення» працюють повністю й зникають
   // з карти — тому кнопок стало менше (було ≥30). Що кожна ціль існує в коді, перевіряє identiteit-014-kaart.test.ts.
-  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 20 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
+  // IDENTITEIT-015 (крок «profiel-blokken»): групи «Додати віджет або сервіс» і «Видалення облікового запису» тепер працюють повністю
+  // («Скасувати», «Відкрити в просторі», пояснення адреси, передача простору) і теж зникають з карти — кнопок 16 (з кроком «delen» — 14),
+  // тому нижня межа 12. Що кожна ціль існує в коді, як і раніше перевіряє identiteit-014-kaart.test.ts.
+  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 12 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
   check('жива карта: кожен рядок і група має кольорову мітку з текстом стану', (uk.match(/class="future-option /g) || []).length + (uk.match(/class="future-option"/g) || []).length === (uk.match(/future-option-status future-stand-/g) || []).length);
   // IDENTITEIT-014: QR і «Замінити автентифікатор» тепер працюють у старій панелі → уся група «Двофакторна автентифікація» в-чинних і зникає.
   const tweede = (kaartUk.станНаСайті.security['другий-чинник'] as unknown as { додати?: { uk: string; стан: string }[] }).додати || [];

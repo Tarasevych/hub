@@ -48,6 +48,7 @@ export const SFEER_PER_SOORT: Readonly<Record<string, MeldingSfeer>> = Object.fr
   // beide na 0107 en dus in NA_0107_VIA_VOORVOEGSEL.
   toegang_alleen_lezen: 'prive', agenda: 'prive',
   // IDENTITEIT-014: rechten in een gedeelde ruimte (rol gewijzigd, toegang ingetrokken, uitnodiging aangenomen) — na 0107, voorvoegsel «workspace» → prive.
+  workspace_ownership_transferred: 'prive', // IDENTITEIT-015 (profiel-blokken): eigendom van een werkruimte overgedragen — na 0107, voorvoegsel «workspace» → prive.
   workspace_role_changed: 'prive', workspace_access_revoked: 'prive', workspace_invite_accepted: 'prive', workspace_share_link_created: 'prive',
   // ------------------------------------------------------------ technisch: de site en de server
   access_request: 'technisch', google_login_config: 'technisch', mcp_app_secret: 'technisch', vault_key_expiring: 'technisch',
@@ -163,7 +164,7 @@ export function activiteitenVanSfeer<T extends ActiviteitVoorSfeer>(items: reado
  * migratie verandert niet), en een nieuwe migratie is niet nodig: de database geeft via het voorvoegsel dezelfde sfeer. De test
  * (meldingen-sferen) eist dat de voorvoegselregel voor elk van hen precies de geregistreerde sfeer geeft.
  */
-export const NA_0107_VIA_VOORVOEGSEL: ReadonlySet<string> = new Set(['mail_queue_refused', 'mail_queue_cancelled', 'cloud_alleen_lezen', 'toegang_alleen_lezen', 'agenda', 'workspace_role_changed', 'workspace_access_revoked', 'workspace_invite_accepted', 'access_recovery_low', 'workspace_share_link_created']);
+export const NA_0107_VIA_VOORVOEGSEL: ReadonlySet<string> = new Set(['mail_queue_refused', 'mail_queue_cancelled', 'cloud_alleen_lezen', 'toegang_alleen_lezen', 'agenda', 'workspace_role_changed', 'workspace_ownership_transferred', 'workspace_access_revoked', 'workspace_invite_accepted', 'access_recovery_low', 'workspace_share_link_created']);
 /** Sfeer volgens alleen de voorvoegsels (de regel van 0107 voor een soort die niet in haar lijsten staat). */
 export const sfeerVolgensVoorvoegsel = (kind: unknown): MeldingSfeer => {
   const k = String(kind || '').toLowerCase().slice(0, 80);
