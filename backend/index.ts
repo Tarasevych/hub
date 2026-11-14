@@ -129,7 +129,7 @@ import { aiEcosysteemRoutes } from './ai-ecosysteem';
 import { passkeyRoutes } from './toegangssleutels';
 import { toegangRoutes } from './toegang-routes';
 import { toegangscodeRoutes } from './toegangscodes-routes';
-import { gastSessieIntrekken } from './toegangscodes';
+import { gastSessieIntrekken, registreerGastcodesToestemming } from './toegangscodes';
 import { blokInvoerFout, blokUrlVereistFout, veiligeBlokUrl } from '../shared/blok-invoer';
 import { poortDicht, tweedeFactorBeleid, tweedeFactorBevestigdOp, tweedeFactorRouteVrij } from './tweede-factor-poort'; // IDENTITEIT-015
 import { sterkeMethoden, sterkeStapOpFout, sessieIntrekken as telegramSessieIntrekken } from './toegang-context';
@@ -714,6 +714,7 @@ const telegramAanmeldVoltooien=(rc:any,o:{transactieId:string;userId:string})=>a
 const aanmeldVlagPubliek=async(sleutel:string)=>{try{const r=await aanmeldPool('systeem').query('SELECT aan, standaard, percentage, cardinality(gebruikers) AS n FROM app.feature_flags WHERE sleutel = $1 AND gearchiveerd_op IS NULL',[sleutel]);const v=r.rows[0] as {aan:boolean;standaard:boolean;percentage:number;n:number}|undefined;return!!v&&v.aan&&(v.standaard||v.percentage>0||Number(v.n)>0)}catch{return false}};
 const aanmeldVlagAan=async(userId:string,sleutel:string)=>(await flagsBerekenen({id:userId} as never,[sleutel]))[0]?.value===true;
 registreerAanmeldVlag(aanmeldVlagAan);
+registreerGastcodesToestemming((id) => aanmeldVlagAan(id, 'gastcodes-iedereen')); /* IDENTITEIT-015: гостьові коди не-власників живуть, лише поки прапорець увімкнено */
 const aanmeldWegDeps:AanmeldWegDeps={start:(rc,o,m)=>aanmeldTxStart(rc,o,m) as never,afbreken:telegramAanmeldAfbreken,bindingKlopt:(rc,t,m)=>aanmeldTxBindingKlopt(rc,t,m),voltooien:(rc,o)=>aanmeldTxVoltooien(rc,o) as never,terugAdres:aanmeldTxTerugAdres,vlagAan:aanmeldVlagAan,vlagPubliek:aanmeldVlagPubliek};
 /* «Це не я» / tegenspraak: precies de sessies die via die Telegram-koppeling ontstonden. Vorm van de id: «a:<anker>|t:<tabblad>» of «t:<tabblad>». */
 /* SEC-002 (g10g-T3): «Ні, це не я» trekt ook de «onthouden browser» (grant), zijn andere sessies, sleutels en stromen in — backend/sessie-grant-intrekken.ts */
@@ -820,7 +821,7 @@ export const handler = apparaatCookieNaAanmelding(router(kijkerWacht(metMailRuim
   // Sleutelkluis (0092): «Шифрування моїх даних» — per mens en ruimte een eigen gegevenssleutel (backend/sleutelkluis.ts).
   ...sleutelkluisRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never, stapOpEenmalig: (a, actie) => metStapOpEenmalig(a as never, sterkeStapOpGeldig, actie) }),
   ...toegangRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never }),
-  ...toegangscodeRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never }),
+  ...toegangscodeRoutes({ requireSession: ownerRequireSession as never, sterkeStapOp: sterkeStapOpVereist as never, gastcodesVoor: (id) => aanmeldVlagAan(id, 'gastcodes-iedereen') }), /* IDENTITEIT-015: коди доступу й для схвалених інших (прапорець) */
   ...createApiPlatformRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...createApiPlatformVaultRoutes({requireSession:ownerRequireSession,respond:ownerResponse,fail:error,audit:ownerAudit,body:ownerBody}),
   ...geheimenRoutes({ requireSession: ownerRequireSession as never }),

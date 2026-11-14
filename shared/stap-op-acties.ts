@@ -4,6 +4,8 @@ export const ACTIE_PER_PAD: ReadonlyArray<readonly [RegExp, string]> = [
   // IDENTITEIT-015: псевдоадреса вікна воріт «другий чинник обов'язковий» (src/geheim/TweedeFactorPoort.tsx); такий маршрут не змінює даних.
   [/\/access\/tweede-factor$/, 'tweede-factor'],
   [/\/passkeys\/registreren/, 'passkey-toevoegen'], [/\/passkeys\/verwijderen/, 'passkey-verwijderen'],
+  // IDENTITEIT-015 (sleutels-gasten): довіра до ключа — дати й відкликати (обидва шляхи — одна дія; сервер вимагає посиленого підтвердження).
+  [/\/passkeys\/vertrouwen(-intrekken)?$/, 'passkey-vertrouwen'],
   [/\/passkeys\/goedkeuring\/recht-intrekken/, 'goedkeur-recht-intrekken'], [/\/passkeys\/goedkeuring\/(aanvragen|bevestigen)/, 'goedkeur-recht-aanvragen'],
   // IDENTITEIT-014: iemand «beheerder» van een gedeelde ruimte maken (e-mail, koppeling, rol wijzigen). Alleen deze drie paden; /link/revoke niet.
   [/\/api\/share\/(email|link|role)$/, 'deel-beheerder'],

@@ -12,6 +12,9 @@
 // goedkeur-inbox; root voegt de sleutel pas toe na `sudo mijn-ruimte-passkey toevoegen <prefix>` (eerste sleutel) of na een
 // assertie van een sleutel die root al vertrouwt. Deze module beslist dus nooit zelf wie mag goedkeuren.
 //
+// IDENTITEIT-015 (sleutels-gasten): «Довірений» per sleutel (migratie 0274, vertrouwd_op/-door/-sessie) — een eigen besluit over
+// een concreet apparaat, los van «er is een sleutel»; zetten en intrekken met sterke step-up, audit en melding (vertrouwenZetten).
+//
 // Opslag: app.passkeys en app.passkey_uitdagingen (migratie 0023, RLS per gebruiker via alsGebruiker()).
 import { createHash, randomBytes } from 'node:crypto';
 import * as kern from '../deploy/goedkeuring/webauthn-kern.mjs';
@@ -25,7 +28,7 @@ import { passkeyOmslagenWeg } from './sleutelkluis-opruimen';
 import { meld } from './melder';
 import { onthoudMagVoorActie, onthoudVastleggen, passkeyStapOpVastleggen, stapOpSessieId, type StapOpAuth } from './stap-op';
 import { ToegangFout, gebruikVastleggen, gebruikVoor, redenVan, sessieInfo, sterkeStapOpFout, viaAppIngetrokken, wijzigingVastleggen, wijzigingenVoor, type Gebruik, type WijzigingRij } from './toegang-context';
-import { laatsteWegFout } from './aanmeld-wegen';
+import { aanmeldVlagVoor, laatsteWegFout } from './aanmeld-wegen';
 import { UitrolFout, aanmeldingIntrekken, aanmeldingSchrijven, intrekkenLopend, leesSleutels, schakelaarAan, sleutelIntrekkenAanvragen, sleutelUitdaging, sleutelVerzoek, sshOpdracht, wachtendeAanmeldingen } from './uitrol-goedkeuring';
 
 export const PASSKEY_LIMIETEN = { perGebruiker: 10, uitdagingMs: 5 * 60 * 1000, naam: 60 } as const;
@@ -104,7 +107,9 @@ async function auditeer(userId: string, action: string, result: string, details:
 
 export type PasskeyGebruiker = { id: string; email?: string; name?: string; role?: string; status?: string };
 export type PasskeyAuth = StapOpAuth & { user: PasskeyGebruiker; service: string };
-type Rij = { id: string; user_id: string; credential_id: string; alg: number; jwk: kern.Jwk; vingerafdruk: string; naam: string; aaguid: string; transports: string[]; backup_eligible: boolean; backup_state: boolean; sign_count: string | number; aangemaakt_op: Date; laatst_gebruikt_op: Date | null };
+type Rij = { id: string; user_id: string; credential_id: string; alg: number; jwk: kern.Jwk; vingerafdruk: string; naam: string; aaguid: string; transports: string[]; backup_eligible: boolean; backup_state: boolean; sign_count: string | number; aangemaakt_op: Date; laatst_gebruikt_op: Date | null;
+  /** IDENTITEIT-015 (міграція 0274): довіра людини до цього ключа; старі рядки — NULL (не довірений). */
+  vertrouwd_op?: Date | null; vertrouwd_wie?: string | null };
 
 export const isEigenaarGebruiker = (u: PasskeyGebruiker) => u.role === 'owner' && isOwnerEmail(u.email);
 
@@ -134,6 +139,7 @@ function rijUit(r: Rij, goedkeuring?: { status: Goedkeuring; sshOpdracht?: strin
     soort: passkeySoort(r.aaguid, r.transports || [], !!r.backup_eligible), viaTelefoon: (r.transports || []).includes('hybrid'),
     aangemaaktOp: new Date(r.aangemaakt_op).toISOString(), laatstGebruiktOp: r.laatst_gebruikt_op ? new Date(r.laatst_gebruikt_op).toISOString() : null,
     vingerafdrukKort: kern.vingerafdrukKort(r.vingerafdruk),
+    vertrouwdOp: r.vertrouwd_op ? new Date(r.vertrouwd_op).toISOString() : null,
     ...(goedkeuring ? { goedkeuring: goedkeuring.status, ...(goedkeuring.sshOpdracht ? { sshOpdracht: goedkeuring.sshOpdracht } : {}) } : {}),
   };
 }
@@ -143,7 +149,9 @@ export async function lijst(auth: PasskeyAuth) {
   const rijen = await eigenRijen(auth.user.id);
   const rp = passkeyRp();
   const gebruik = await gebruikVoor(auth.user.id, 'passkey', rijen.map((r) => String(r.id)));
-  if (!isEigenaarGebruiker(auth.user)) return { rpId: rp.rpId, passkeys: rijen.map((r) => rijUit(r, undefined, { gebruik: gebruik.get(String(r.id)) })), limiet: PASSKEY_LIMIETEN.perGebruiker };
+  // IDENTITEIT-015 (sleutels-gasten): чи відкриває ключ ВХІД для цієї людини (прапорець aanmelden-passkey), чи лише підтверджує дії.
+  const aanmelden = await aanmeldVlagVoor(auth.user.id, 'aanmelden-passkey');
+  if (!isEigenaarGebruiker(auth.user)) return { rpId: rp.rpId, aanmelden, passkeys: rijen.map((r) => rijUit(r, undefined, { gebruik: gebruik.get(String(r.id)) })), limiet: PASSKEY_LIMIETEN.perGebruiker };
   const b = await leesSleutels();
   const wacht = new Set((await wachtendeAanmeldingen()).map((w) => w.vingerafdruk));
   const inRoot = new Map(b.sleutels.map((s) => [s.vingerafdruk, s]));
@@ -159,7 +167,7 @@ export async function lijst(auth: PasskeyAuth) {
     return uit.sort((a, c) => Date.parse(c.op) - Date.parse(a.op));
   };
   return {
-    rpId: rp.rpId, limiet: PASSKEY_LIMIETEN.perGebruiker,
+    rpId: rp.rpId, limiet: PASSKEY_LIMIETEN.perGebruiker, aanmelden,
     passkeys: rijen.map((r) => rijUit(r, lopend.has(r.vingerafdruk) ? { status: 'wordt-ingetrokken' } : inRoot.has(r.vingerafdruk) ? { status: 'kan-goedkeuren' }
       : wacht.has(r.vingerafdruk) ? { status: 'wacht', ...(eersteViaSsh || ingetrokken.has(r.vingerafdruk) ? { sshOpdracht: sshOpdracht(r.vingerafdruk) } : {}) } : { status: 'alleen-aanmelden' },
     { gebruik: gebruik.get(String(r.id)), geschiedenis: geschiedenis(r) })),
@@ -261,6 +269,37 @@ export async function hernoemen(auth: PasskeyAuth, input: Record<string, unknown
   const rij = await eigenRij(auth.user.id, input.id);
   await alsGebruiker(auth.user.id, (q) => q('UPDATE app.passkeys SET naam = $3 WHERE id = $1 AND user_id = $2', [rij.id, auth.user.id, naam]));
   return { ok: true, id: rij.id, naam };
+}
+
+/**
+ * IDENTITEIT-015 (sleutels-gasten): «Довірений» — окреме рішення людини про КОНКРЕТНИЙ ключ (свій пристрій чи обладнання).
+ * «Є ключ» = ним можна підтверджувати дії (і входити, якщо ввімкнено вхід ключем); «довіра» нових прав НЕ дає: сайт не перевіряє
+ * виробника обладнання (attestation 'none'), позначка лише фіксує, хто, коли й у якому сеансі підтвердив, що ключ — його.
+ * Маршрут вимагає посиленого підтвердження (ключ/код застосунку/код відновлення). Ідемпотентно: повторне натискання (або
+ * перервана й повторена дія) дає той самий стан без нового запису в журналі й без нового сповіщення — UPDATE змінює рядок лише
+ * тоді, коли стан справді інший, і лише в рядку цієї людини (RLS 0023 + user_id).
+ */
+export async function vertrouwenZetten(auth: PasskeyAuth, input: Record<string, unknown>, aan: boolean) {
+  const rij = await eigenRij(auth.user.id, input.id);
+  const sessie = sessieInfo(auth).sessieId.slice(0, 8);
+  const door = String(auth.user.email || auth.user.id).slice(0, 200);
+  const gewijzigd = await alsGebruiker(auth.user.id, async (q) => (await q(
+    `UPDATE app.passkeys SET vertrouwd_op = CASE WHEN $3 THEN now() ELSE NULL END, vertrouwd_wie = CASE WHEN $3 THEN $4 ELSE NULL END,
+       vertrouwd_sessie = CASE WHEN $3 THEN $5 ELSE NULL END
+     WHERE id = $1 AND user_id = $2 AND (vertrouwd_op IS NULL) = $3 RETURNING vertrouwd_op`,
+    [rij.id, auth.user.id, aan, door, sessie])).rows[0] as { vertrouwd_op: Date | null } | undefined);
+  const nu = await eigenRij(auth.user.id, rij.id);
+  if (gewijzigd) {
+    await auditeer(auth.user.id, aan ? 'passkey_vertrouwd' : 'passkey_vertrouwen_ingetrokken', 'success',
+      { vingerafdruk: rij.vingerafdruk.slice(0, 16), label: rij.naam, sessie }, auth.service);
+    await meld(auth.user.id, aan ? 'passkey_vertrouwd' : 'passkey_vertrouwen_ingetrokken',
+      aan ? `Ключ «${rij.naam}» позначено довіреним / Sleutel «${rij.naam}» als vertrouwd gemarkeerd` : `Довіру до ключа «${rij.naam}» відкликано / Vertrouwen in sleutel «${rij.naam}» ingetrokken`,
+      aan
+        ? `Позначив: ${door}, сеанс ${sessie}. Довіра нових прав не дає — це ваша позначка «це мій пристрій». Якщо це були не ви — відкличте довіру й видаліть ключ. / Door: ${door}, sessie ${sessie}. Vertrouwen geeft geen nieuwe rechten — het is uw label «dit is mijn apparaat». Was u het niet, trek het vertrouwen in en verwijder de sleutel.`
+        : `Відкликав: ${door}, сеанс ${sessie}. Ключ і далі діє, лише без позначки «Довірений». / Door: ${door}, sessie ${sessie}. De sleutel werkt verder, alleen zonder het label «Vertrouwd».`,
+      'https://id.tarasevych.com/security#aanmeldmethoden-passkeys');
+  }
+  return { ok: true, id: String(rij.id), vertrouwd: !!nu.vertrouwd_op, vertrouwdOp: nu.vertrouwd_op ? new Date(nu.vertrouwd_op).toISOString() : null, gewijzigd: !!gewijzigd };
 }
 
 /** Mag deze passkey updates goedkeuren (staat hij in het root-bestand)? Dan is verwijderen ook een recht intrekken (§13.10). */
@@ -468,6 +507,9 @@ export function passkeyRoutes(deps: PasskeyRouteDeps): Record<string, RouterMidd
     [`POST ${P}/registreren`]: [route({}, (a, b) => registreren(a, b))],
     // IDENTITEIT-012: перейменування теж із підтвердженням доступу — назва допомагає впізнати чужий ключ, її не можна тихо змінити.
     [`POST ${P}/hernoemen`]: [route({ stepUp: true }, (a, b) => hernoemen(a, b))],
+    // IDENTITEIT-015 (sleutels-gasten): довіра до ключа — дати й відкликати лише з посиленим підтвердженням (Google сам не годиться).
+    [`POST ${P}/vertrouwen`]: [route({ sterkAls: async () => true }, (a, b) => vertrouwenZetten(a, b, true))],
+    [`POST ${P}/vertrouwen-intrekken`]: [route({ sterkAls: async () => true }, (a, b) => vertrouwenZetten(a, b, false))],
     // Een goedkeur-passkey verwijderen = een recht intrekken: met reden (anders PASSKEY_KAN_GOEDKEUREN) en sterke step-up.
     [`POST ${P}/verwijderen`]: [route({ stepUp: true, sterkAls: async (a, b) => !!b.reden && await isGoedkeurSleutel(a, b.id) }, (a, b) => verwijderen(a, b))],
     // Step-up met een passkey: onder /stap-op/ zodat de client bij een 403 niet opnieuw om step-up vraagt.

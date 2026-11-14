@@ -1,9 +1,10 @@
-// «Коди доступу для інших / Toegangscodes voor anderen» op id.tarasevych.com/methods (RUNBOOK §13.11). Alleen de eigenaar.
+// «Коди доступу для інших / Toegangscodes voor anderen» op id.tarasevych.com/methods (RUNBOOK §13.11). De eigenaar van de site, en
+// (IDENTITEIT-015) een goedgekeurd account met de vlag gastcodes-iedereen — de server beslist; zonder recht een uitleg + weg naar «Delen».
 // Maken (sterke bevestiging): naam, privénotitie, scope uit de allowlist van de server (alleen lezen), verloop (безстроково / 1 год /
 // 1 день / 7 днів / 30 днів / eigen datum en tijd), eenmalig of herbruikbaar met optioneel maximum. De code verschijnt één keer
 // (kopiëren, QR, deellink). Lijst met status, verloop, gebruik, laatste gebruik en uitklapbare geschiedenis van elk gebruik en elke
 // actie. Intrekken met reden (gastsessies meteen weg), verloop korter (vrij) of langer (sterke bevestiging). Alleen UA + NL.
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {verborgenVoorAi} from './menselijke-actie'; // SEC-002 extensie-09 (g10a-3): eenmalige geheimen leest de AI-extensie niet
 import {Check,ChevronDown,Clock,Copy,History,KeyRound,Link2,Plus,Share2,Ticket,Users,X} from 'lucide-react';
 import {Qr} from './platform/Qr'; // IDENTITEIT-014: спільний QR (той самий і для ключа автентифікатора)
@@ -68,12 +69,18 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
   const[nieuw,setNieuw]=useState<null|{naam:string;notitie:string;scopes:string[];verloop:Verloop;gebruik:'eenmalig'|'herbruikbaar';max:string}>(null);
   const[getoond,setGetoond]=useState<null|{code:string;link:string;naam:string}>(null);
   const[melding,setMelding]=useState('');
+  const handmatig=useRef<string[]>([]); /* IDENTITEIT-015: ручний вибір розділів, щоб «Лише вибрані» повертало саме його */
   const notities=useNotities(context);
   // Fase B1: bewaarde lijst meteen tonen, dan vers ophalen (alleen geheugen, per account); afbreken als de pagina verdwijnt.
   const laden=async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<Lijst&{beschikbaar?:boolean}>('/api/owner/access/toegangscodes/lijst',context,d=>{if(!d||typeof d!=='object')return;if(d.beschikbaar===false){setGeenToegang(true);return;}if(Array.isArray(d.codes))setData({...d,scopes:Array.isArray(d.scopes)?d.scopes:[],nooit:Array.isArray(d.nooit)?d.nooit:[],presets:Array.isArray(d.presets)?d.presets:[]});},o);}catch(c){if(foutCode(c)==='OWNER_REQUIRED')setGeenToegang(true);else setFout(foutTekst(lang,foutCode(c)));}};
   useEffect(()=>{const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(location.hash==='#toegangscodes'&&data)window.setTimeout(()=>document.getElementById('toegangscodes')?.scrollIntoView({block:'start'}),80);},[!!data]);// eslint-disable-line react-hooks/exhaustive-deps
-  if(geenToegang)return null;
+  // IDENTITEIT-015 (sleutels-gasten): не мовчки зникати — пояснити, чому блоку немає, і куди піти замість нього.
+  if(geenToegang)return <section className='access-plane-section' id='toegangscodes' data-access-section='toegangscodes' data-toegangscodes-niet-beschikbaar>
+    <header className='access-plane-section-head'><h2>{tr(lang,'Коди доступу для інших','Toegangscodes voor anderen')}</h2></header>
+    <div className='access-plane-box'><p className='access-plane-hint-line'>{tr(lang,'Гостьові коди для вашого облікового запису не ввімкнено: код відкриває перегляд ваших даних без входу, тому цю функцію вмикає власник сайту (перемикач «Коди доступу для гостей — і для інших облікових записів»). Поділитися простором з конкретною людиною можна вже зараз — запрошенням або приватним посиланням.','Gastcodes staan voor uw account niet aan: een code opent het bekijken van uw gegevens zonder aanmelding, daarom zet de site-eigenaar deze functie aan (schakelaar «Gastcodes — ook voor andere accounts»). Een werkruimte met een bepaalde persoon delen kan nu al — met een uitnodiging of een privélink.')}</p>
+      <div className='access-plane-actions'><a className='secondary' href='/sharing' data-naar-delen><Users/>{tr(lang,'До «Доступу до простору»','Naar «Toegang tot werkruimte»')}</a></div></div>
+  </section>;
   const maken=async()=>{
     if(!nieuw)return;
     setBezig('maken');setFout('');
@@ -112,7 +119,7 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
         <Ticket className='access-plane-row-icon'/>
         <div className='access-plane-row-main'><span className='access-plane-row-title'><strong>{tr(lang,'Обмежений доступ для іншої людини','Beperkte toegang voor iemand anders')}</strong></span>
           <small>{tr(lang,'Лише перегляд вибраних розділів. Ніколи: способи входу, ключі, права, адміністрування, токени, оновлення сервера, видалення чи експорт.','Alleen bekijken van gekozen onderdelen. Nooit: aanmeldmethoden, sleutels, rechten, beheer, tokens, serverupdates, verwijderen of exporteren.')}</small></div>
-        <div className='access-plane-row-actions'><button type='button' disabled={!data} onClick={()=>{setFout('');setNieuw({naam:'',notitie:'',scopes:[],verloop:{soort:'preset',preset:'7d'},gebruik:'herbruikbaar',max:''});}}><Plus/>{tr(lang,'Створити код доступу','Toegangscode maken')}</button></div>
+        <div className='access-plane-row-actions'><button type='button' disabled={!data} onClick={()=>{setFout('');handmatig.current=[];setNieuw({naam:'',notitie:'',scopes:[],verloop:{soort:'preset',preset:'7d'},gebruik:'herbruikbaar',max:''});}}><Plus/>{tr(lang,'Створити код доступу','Toegangscode maken')}</button></div>
       </div>}
       {nieuw&&data&&<form className='access-plane-subrow toegangscode-form' data-code-form onSubmit={e=>{e.preventDefault();void maken();}}>
         <label htmlFor='toegangscode-naam'>{tr(lang,'Назва','Naam')}</label>
@@ -120,7 +127,13 @@ export function Toegangscodes({lang,context}:{lang:Lang;context:Record<string,un
         <label htmlFor='toegangscode-notitie'>{tr(lang,'Приватна нотатка (бачите лише ви)','Privénotitie (alleen u ziet dit)')}</label>
         <textarea id='toegangscode-notitie' data-concept='toegangscode-notitie' rows={2} maxLength={500} value={nieuw.notitie} onChange={e=>setNieuw({...nieuw,notitie:e.target.value})}/>
         <fieldset className='toegangscode-scopes-kiezer'><legend>{tr(lang,'Що людина зможе переглядати','Wat de persoon mag bekijken')}</legend>
-          {data.scopes.map(s=><label key={s.id} className='toegangscode-scope'><input type='checkbox' data-scope={s.id} checked={nieuw.scopes.includes(s.id)} onChange={e=>setNieuw({...nieuw,scopes:e.target.checked?[...nieuw.scopes,s.id]:nieuw.scopes.filter(x=>x!==s.id)})}/><span>{tr(lang,s.uk,s.nl)}</span></label>)}
+          {/* IDENTITEIT-015: «Усі дозволені» позначає весь перелік сервера (лише перегляд); «Лише вибрані» лишає ручний вибір. */}
+          <div className='toegangscode-scope-modus' role='radiogroup' aria-label={tr(lang,'Обсяг перегляду','Omvang van het bekijken')}>
+            <label className='toegangscode-keuze'><input type='radio' name='scope-modus' data-scope-modus='alle' checked={data.scopes.length>0&&data.scopes.every(s=>nieuw.scopes.includes(s.id))} onChange={()=>setNieuw({...nieuw,scopes:data.scopes.map(s=>s.id)})}/><span>{tr(lang,'Усі дозволені розділи','Alle toegestane onderdelen')}</span></label>
+            <label className='toegangscode-keuze'><input type='radio' name='scope-modus' data-scope-modus='gekozen' checked={!(data.scopes.length>0&&data.scopes.every(s=>nieuw.scopes.includes(s.id)))} onChange={()=>{const terug=handmatig.current.filter(id=>data.scopes.some(s=>s.id===id));setNieuw({...nieuw,scopes:terug.length<data.scopes.length?terug:[]});}}/><span>{tr(lang,'Лише вибрані','Alleen gekozen')}</span></label>
+            <small className='access-plane-hint-line'>{tr(lang,'«Усі» — це лише перелік нижче, тільки перегляд; заборонене гостю не відкривається ніколи.','«Alle» is alleen de lijst hieronder, alleen bekijken; wat verboden is voor een gast, opent nooit.')}</small>
+          </div>
+          {data.scopes.map(s=><label key={s.id} className='toegangscode-scope'><input type='checkbox' data-scope={s.id} checked={nieuw.scopes.includes(s.id)} onChange={e=>{const scopes=e.target.checked?[...nieuw.scopes,s.id]:nieuw.scopes.filter(x=>x!==s.id);handmatig.current=scopes;setNieuw({...nieuw,scopes});}}/><span>{tr(lang,s.uk,s.nl)}</span></label>)}
           <small className='toegangscode-nooit'><strong>{tr(lang,'Ніколи не доступно гостю:','Nooit beschikbaar voor een gast:')}</strong> {data.nooit.map(n=>tr(lang,n.uk,n.nl)).join(' · ')}</small>
         </fieldset>
         <fieldset><legend>{tr(lang,'Строк дії','Geldigheid')}</legend><VerloopKiezer lang={lang} waarde={nieuw.verloop} zet={v=>setNieuw({...nieuw,verloop:v})} presets={data.presets}/></fieldset>

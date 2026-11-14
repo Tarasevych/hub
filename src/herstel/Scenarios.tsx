@@ -4,9 +4,14 @@
 // закінчилися коди (банер, коли набір був, а чинних кодів 0). Тексти розводять код облікового запису й код сховища ключів
 // (KLUIS_TEKST.tweeCodes). Нових маршрутів немає — лише наявні дії контролера AccessPlaneView.
 // Stapsgewijze kaarten voor herstel; «Geen toegang» gebruikt de bestaande totpUitschakelen (herstelcode van het account).
-import { useState, type ReactNode } from 'react';
-import { ArrowRight, KeyRound, LifeBuoy, RefreshCw, Smartphone, SmartphoneNfc, Unlock } from 'lucide-react';
+// IDENTITEIT-015 (sleutels-gasten): кожен крок, що веде до дії в іншому місці, має кнопку переходу ТОЧНО туди (#aanmeldmethoden-passkeys,
+// -2fa, -sleutelkluis; «Додати новий passkey» одразу відкриває форму). Перемикач «Нагадувати про резервний доступ» — тут же (та сама
+// настройка облікового запису, що й у Меню → «Сповіщення в меню»; типово увімкнено, вимкнення — лише через вікно з наслідками;
+// вигляд — ReserveHerinnering.tsx, прив'язка до сховища — лінива ReserveHerinneringKoppeling.tsx).
+import { Suspense, lazy, useState, type ReactNode } from 'react';
+import { ArrowRight, KeyRound, LifeBuoy, Plus, RefreshCw, Smartphone, SmartphoneNfc, Unlock } from 'lucide-react';
 import { BevestigDialoog } from '../platform/BevestigDialoog';
+import { gaNaarAnker, vraagPasskeyFormulier } from './naar-anker';
 import { InfoTip } from '../InfoTip';
 import { KLUIS_FOUT, KLUIS_TEKST } from '../../shared/sleutelkluis';
 import type { SnapshotLike } from '../aanmeld-vnext/snapshotNaarKaarten';
@@ -26,6 +31,8 @@ type WeergaveProps = {
   onKies: (sectie: HerstelSectie) => void;
   totpUitschakelen: () => Promise<void>;
   nieuweHerstelcodes: () => Promise<void>;
+  /** IDENTITEIT-015: перемикач «Нагадувати про резервний доступ» (ReserveHerinneringWeergave) — обгортка Scenarios дає прив'язаний. */
+  herinnering?: ReactNode;
 };
 
 function Kaart({ id, icoon, titel, open, children }: { id: string; icoon: ReactNode; titel: string; open?: boolean; children: ReactNode }) {
@@ -34,11 +41,15 @@ function Kaart({ id, icoon, titel, open, children }: { id: string; icoon: ReactN
     <div className='herstel-kaart-inhoud'>{children}</div>
   </details>;
 }
-const Ga = ({ lang, sectie, tekst, onKies }: { lang: Lang; sectie: HerstelSectie; tekst: Paar; onKies: (s: HerstelSectie) => void }) =>
-  <button type='button' className='secondary herstel-ga' data-ga={sectie} onClick={() => onKies(sectie)}>{lang === 'nl' ? tekst[1] : tekst[0]}<ArrowRight /></button>;
+/** Перехід до розділу; з `anker` — ще й до точного блоку в ньому (після появи розділу). `voor` — що зробити перед переходом. */
+const Ga = ({ lang, sectie, tekst, onKies, anker, voor, icoon }: { lang: Lang; sectie: HerstelSectie; tekst: Paar; onKies: (s: HerstelSectie) => void; anker?: string; voor?: () => void; icoon?: ReactNode }) =>
+  <button type='button' className='secondary herstel-ga' data-ga={sectie} data-ga-anker={anker} onClick={() => { voor?.(); onKies(sectie); if (anker) gaNaarAnker(anker); }}>{icoon}{lang === 'nl' ? tekst[1] : tekst[0]}{!icoon && <ArrowRight />}</button>;
+
+// Прив'язка перемикача до сховища вподобань — лінива (сховище торкається window під час імпорту).
+const ReserveHerinneringKoppeling = lazy(() => import('./ReserveHerinneringKoppeling'));
 
 /** Вигляд без запитів (його рендерять модульні тести). */
-export function ScenariosWeergave({ lang, data, kluis, busy, onKies, totpUitschakelen, nieuweHerstelcodes }: WeergaveProps) {
+export function ScenariosWeergave({ lang, data, kluis, busy, onKies, totpUitschakelen, nieuweHerstelcodes, herinnering }: WeergaveProps) {
   const [geenToegang, setGeenToegang] = useState(false);
   const totpAan = Boolean(data.totp.enrolled || data.factors.find((f) => f.id === 'totp')?.enrolled);
   const rest = Number(data.factors.find((f) => f.id === 'recovery')?.remaining) || 0;
@@ -76,18 +87,18 @@ export function ScenariosWeergave({ lang, data, kluis, busy, onKies, totpUitscha
         <Kaart id='apparaat' icoon={<Smartphone aria-hidden='true' />} titel={tr(lang, 'Втрачено пристрій', 'Apparaat kwijt')}>
           <ol>
             <li>{tr(lang, 'Завершіть сеанси цього пристрою — той, хто його знайде, не опиниться у вашому обліковому записі.', 'Beëindig de sessies van dit apparaat — wie het vindt, komt dan niet in uw account.')} <Ga lang={lang} sectie='sessions' onKies={onKies} tekst={['До сесій і пристроїв', 'Naar sessies en apparaten']} /></li>
-            <li>{tr(lang, 'Видаліть passkey цього пристрою — ним більше не можна буде підтвердити дії.', 'Verwijder de passkey van dit apparaat — daarmee kan niemand meer iets bevestigen.')} <Ga lang={lang} sectie='security' onKies={onKies} tekst={['До ключів доступу', 'Naar de toegangssleutels']} /></li>
+            <li>{tr(lang, 'Видаліть passkey цього пристрою — ним більше не можна буде підтвердити дії.', 'Verwijder de passkey van dit apparaat — daarmee kan niemand meer iets bevestigen.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-passkeys' onKies={onKies} tekst={['До ключів доступу', 'Naar de toegangssleutels']} /></li>
             <li>{tr(lang, 'Якщо на ньому був застосунок-автентифікатор — див. «Недоступний автентифікатор» нижче.', 'Stond de authenticator-app erop — zie «Authenticator niet bereikbaar» hieronder.')}</li>
-            <li>{kluisRegel}</li>
+            <li>{kluisRegel}{kluisAan && <> <Ga lang={lang} sectie='security' anker='aanmeldmethoden-sleutelkluis' onKies={onKies} tekst={['До сховища ключів', 'Naar de sleutelkluis']} /></>}</li>
           </ol>
         </Kaart>
 
         <Kaart id='passkey' icoon={<KeyRound aria-hidden='true' />} titel={tr(lang, 'Втрачено ключ доступу (passkey)', 'Toegangssleutel (passkey) kwijt')}>
           <ol>
-            <li>{tr(lang, 'Видаліть цей passkey: тоді ним не підтвердить дії ніхто інший.', 'Verwijder deze passkey: dan bevestigt niemand anders er nog iets mee.')} <Ga lang={lang} sectie='security' onKies={onKies} tekst={['До ключів доступу', 'Naar de toegangssleutels']} /></li>
-            <li>{tr(lang, 'Важливі дії підтверджуйте іншим способом: кодом із застосунку, кодом відновлення облікового запису або повторним входом через Google.', 'Bevestig belangrijke handelingen op een andere manier: met de app-code, een herstelcode van het account of opnieuw aanmelden via Google.')}</li>
-            {kluisAan && <li>{tr(lang, 'Якщо цей passkey відкривав ключ даних — відкрийте ключ іншим passkey або кодом відновлення сховища ключів.', 'Opende deze passkey de gegevenssleutel — open de sleutel met een andere passkey of met de herstelcode van de sleutelkluis.')} <small>{t2(lang, KLUIS_TEKST.geenPrf)}</small></li>}
-            <li>{tr(lang, 'Додайте новий passkey на пристрої, яким користуєтеся.', 'Voeg een nieuwe passkey toe op het apparaat dat u gebruikt.')}</li>
+            <li>{tr(lang, 'Видаліть цей passkey: тоді ним не підтвердить дії ніхто інший.', 'Verwijder deze passkey: dan bevestigt niemand anders er nog iets mee.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-passkeys' onKies={onKies} tekst={['До ключів доступу', 'Naar de toegangssleutels']} /></li>
+            <li>{tr(lang, 'Важливі дії підтверджуйте іншим способом: кодом із застосунку, кодом відновлення облікового запису або повторним входом через Google.', 'Bevestig belangrijke handelingen op een andere manier: met de app-code, een herstelcode van het account of opnieuw aanmelden via Google.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-2fa' onKies={onKies} tekst={['До застосунку-автентифікатора', 'Naar de authenticator-app']} /></li>
+            {kluisAan && <li>{tr(lang, 'Якщо цей passkey відкривав ключ даних — відкрийте ключ іншим passkey або кодом відновлення сховища ключів.', 'Opende deze passkey de gegevenssleutel — open de sleutel met een andere passkey of met de herstelcode van de sleutelkluis.')} <small>{t2(lang, KLUIS_TEKST.geenPrf)}</small> <Ga lang={lang} sectie='security' anker='aanmeldmethoden-sleutelkluis' onKies={onKies} tekst={['До сховища ключів', 'Naar de sleutelkluis']} /></li>}
+            <li>{tr(lang, 'Додайте новий passkey на пристрої, яким користуєтеся.', 'Voeg een nieuwe passkey toe op het apparaat dat u gebruikt.')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-passkeys' voor={vraagPasskeyFormulier} icoon={<Plus aria-hidden='true' />} onKies={onKies} tekst={['Додати новий passkey', 'Nieuwe passkey toevoegen']} /></li>
           </ol>
         </Kaart>
 
@@ -96,7 +107,7 @@ export function ScenariosWeergave({ lang, data, kluis, busy, onKies, totpUitscha
             <ol>
               <li>{tr(lang, 'Натисніть «Немає доступу» й введіть один із кодів відновлення облікового запису (XXXX-XXXX-XXXX), не код сховища ключів.', 'Kies «Geen toegang» en voer een herstelcode van het account in (XXXX-XXXX-XXXX), niet de code van de sleutelkluis.')}</li>
               <li>{tr(lang, 'Автентифікатор вимкнеться, а код згорить. Вам прийде сповіщення безпеки.', 'De authenticator gaat uit en de code vervalt. U krijgt een beveiligingsmelding.')}</li>
-              <li>{tr(lang, 'Налаштуйте автентифікатор на новому телефоні в розділі «Безпека».', 'Stel de authenticator op de nieuwe telefoon in bij «Beveiliging».')}</li>
+              <li>{tr(lang, 'Налаштуйте автентифікатор на новому телефоні в розділі «Безпека».', 'Stel de authenticator op de nieuwe telefoon in bij «Beveiliging».')} <Ga lang={lang} sectie='security' anker='aanmeldmethoden-2fa' onKies={onKies} tekst={['Налаштувати автентифікатор', 'Authenticator instellen']} /></li>
             </ol>
             {rest > 0
               ? <button type='button' className='danger' disabled={busy} data-geen-toegang onClick={() => setGeenToegang(true)}><Unlock />{tr(lang, 'Немає доступу', 'Geen toegang')}</button>
@@ -112,6 +123,7 @@ export function ScenariosWeergave({ lang, data, kluis, busy, onKies, totpUitscha
           </ol>
         </Kaart>
       </div>
+      {herinnering}
     </section>
 
     <SleutelverliesBlok lang={lang} kluis={kluis} />
@@ -137,5 +149,5 @@ type Props = Omit<WeergaveProps, 'kluis'> & { context: Record<string, unknown> }
 
 export function Scenarios({ context, ...rest }: Props) {
   const kluis = useKluisKern(context);
-  return <ScenariosWeergave {...rest} kluis={kluis} />;
+  return <ScenariosWeergave {...rest} kluis={kluis} herinnering={<div className='herstel-herinnering-plek' data-herstel-reserve='schakel' tabIndex={-1}><Suspense fallback={null}><ReserveHerinneringKoppeling lang={rest.lang} /></Suspense></div>} />;
 }

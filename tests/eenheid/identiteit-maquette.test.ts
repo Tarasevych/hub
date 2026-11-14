@@ -125,7 +125,10 @@ export async function main(): Promise<number> {
   // IDENTITEIT-015 (крок «profiel-blokken»): групи «Додати віджет або сервіс» і «Видалення облікового запису» тепер працюють повністю
   // («Скасувати», «Відкрити в просторі», пояснення адреси, передача простору) і теж зникають з карти — кнопок 16 (з кроком «delen» — 14),
   // тому нижня межа 12. Що кожна ціль існує в коді, як і раніше перевіряє identiteit-014-kaart.test.ts.
-  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 12 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
+  // IDENTITEIT-015 (крок «sleutels-gasten»): «Основні способи входу» (стан ключа «вхід/підтвердження» і «Довірений») і «Ключі доступу»
+  // (довіра до ключа) тепер працюють повністю й зникають з карти — без кроку «delen» кнопок 7, з ним менше; нижня межа 4. Формат і
+  // існування кожної цілі перевіряються як і раніше (тут і в identiteit-014-kaart.test.ts).
+  check('жива карта: робочі рядки — кнопки переходу «розділ|ціль» до справжньої панелі', knoppen.length >= 4 && knoppen.every((k) => /^[a-z]+\|[#.[]/.test(k)) && uk.includes('Відкрити') && nl.includes('Openen'), String(knoppen.length));
   check('жива карта: кожен рядок і група має кольорову мітку з текстом стану', (uk.match(/class="future-option /g) || []).length + (uk.match(/class="future-option"/g) || []).length === (uk.match(/future-option-status future-stand-/g) || []).length);
   // IDENTITEIT-014: QR і «Замінити автентифікатор» тепер працюють у старій панелі → уся група «Двофакторна автентифікація» в-чинних і зникає.
   const tweede = (kaartUk.станНаСайті.security['другий-чинник'] as unknown as { додати?: { uk: string; стан: string }[] }).додати || [];

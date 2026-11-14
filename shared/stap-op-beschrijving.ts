@@ -36,6 +36,7 @@ const PER_PAD: readonly Regel[] = [
 const PER_ACTIE: Record<string, readonly [string, string, string, string, boolean?]> = {
   'passkey-toevoegen': ['Додати passkey', 'Een passkey toevoegen', 'Новим ключем можна буде входити у ваш акаунт.', 'Met de nieuwe sleutel kan men in uw account inloggen.', true],
   'passkey-verwijderen': ['Видалити passkey', 'Een passkey verwijderen', 'Цим ключем більше не можна буде увійти.', 'Met deze sleutel kan men niet meer inloggen.', true],
+  'passkey-vertrouwen': ['Змінити довіру до ключа доступу', 'Vertrouwen in een toegangssleutel wijzigen', 'Позначка «Довірений» з’явиться або зникне біля ключа; нових прав ключ не отримає.', 'Het label «Vertrouwd» verschijnt of verdwijnt bij de sleutel; de sleutel krijgt geen nieuwe rechten.', true],
   'goedkeur-recht-intrekken': ['Відкликати право схвалювати', 'Het recht om goed te keuren intrekken', 'Пристрій більше не зможе підтверджувати дії.', 'Het apparaat kan geen acties meer bevestigen.'],
   'goedkeur-recht-aanvragen': ['Дати пристрою право схвалювати', 'Een apparaat het recht geven om goed te keuren', 'Цей пристрій зможе підтверджувати важливі дії.', 'Dit apparaat kan belangrijke acties bevestigen.', true],
   'herstelcodes-nieuw': ['Створити нові коди відновлення', 'Nieuwe herstelcodes maken', 'Старі коди перестануть діяти.', 'De oude codes werken niet meer.', true],

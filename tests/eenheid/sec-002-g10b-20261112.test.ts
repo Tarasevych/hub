@@ -422,6 +422,10 @@ export async function main(): Promise<number> {
       opruimIds.push(G6.id);
       await sys.query("INSERT INTO app.records (tbl, id, data) VALUES ('users', $1, $2::jsonb)", [G6.id, JSON.stringify({ email: `${G6.id}@test.invalid`, name: 'G', role: 'member', status: 'approved' })]);
       const scope = Object.keys(tc.GAST_SCOPES)[0];
+      // IDENTITEIT-015 (sleutels-gasten): код не-власника сайту діє лише з прапорцем gastcodes-iedereen для нього (backend/index.ts
+      // реєструє цю перевірку). Тут вмикаємо прапорець саме G6, щоб перевірка #6 і далі стосувалася видалення власника коду; після — назад.
+      const vlagVoor = (await sys.query("SELECT gebruikers FROM app.feature_flags WHERE sleutel = 'gastcodes-iedereen'")).rows[0]?.gebruikers as string[] | undefined;
+      if (vlagVoor) await sys.query("UPDATE app.feature_flags SET gebruikers = array_append(gebruikers, $1) WHERE sleutel = 'gastcodes-iedereen'", [G6.id]);
       const gemaakt = await tc.codeMaken({ id: G6.id }, { naam: 'проба', scopes: [scope], verloop: { soort: 'nooit' } });
       const eerst = await tc.inwisselen({ code: gemaakt.code });
       const vooraf = !!(await tc.gastVanCookie(eerst.token));
@@ -433,6 +437,7 @@ export async function main(): Promise<number> {
       await sys.query('DELETE FROM app.gast_sessies WHERE user_id = $1', [G6.id]).catch(() => undefined);
       await sys.query('DELETE FROM app.toegangscode_log WHERE user_id = $1', [G6.id]).catch(() => undefined);
       await sys.query('DELETE FROM app.toegangscodes WHERE user_id = $1', [G6.id]).catch(() => undefined);
+      if (vlagVoor) await sys.query("UPDATE app.feature_flags SET gebruikers = $1 WHERE sleutel = 'gastcodes-iedereen'", [vlagVoor]).catch(() => undefined);
     }
 
     // ------------------------------------------------------------ http-rand-09: Server-Timing не є часовим оракулом входу

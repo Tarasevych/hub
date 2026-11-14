@@ -21,6 +21,7 @@ export const ACTIE_TEKST:Record<string,[string,string]>={
   'herstelcodes-intrekken':['Відкликання кодів відновлення','Herstelcodes intrekken'],
   'passkey-toevoegen':['Додавання passkey','Passkey toevoegen'],
   'passkey-verwijderen':['Видалення passkey','Passkey verwijderen'],
+  'passkey-vertrouwen':['Зміна довіри до ключа доступу','Vertrouwen in toegangssleutel wijzigen'],
   'goedkeur-recht-aanvragen':['Запит права схвалювати оновлення','Recht om updates goed te keuren aanvragen'],
   'goedkeur-recht-bevestigen':['Надання права схвалювати оновлення','Recht om updates goed te keuren bevestigen'],
   'goedkeur-recht-intrekken':['Відкликання права схвалювати оновлення','Recht om updates goed te keuren intrekken'],

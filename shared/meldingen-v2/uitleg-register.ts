@@ -263,6 +263,22 @@ export const REGISTER: UitlegSoort[] = [
       { soort: 'wijziging', label: ['Способи входу', 'Aanmeldmethoden'], href: () => `${ID}/methods` },
     ],
   },
+  // ---- IDENTITEIT-015 (sleutels-gasten): vertrouwen in een toegangssleutel gegeven of ingetrokken (vóór «beveiliging»)
+  {
+    id: 'sleutel-vertrouwen',
+    past: (m) => /^passkey_vertrouw(d|en_ingetrokken)$/.test(m.soort || ''),
+    titel: ['Довіра до ключа доступу змінилася', 'Vertrouwen in een toegangssleutel gewijzigd'],
+    risico: 'midden',
+    wat: ['Біля одного з ваших ключів доступу з’явилася або зникла позначка «Довірений» (назва ключа — у тексті).', 'Bij een van uw toegangssleutels verscheen of verdween het label «Vertrouwd» (naam van de sleutel in de tekst).'],
+    waarom: ['Хтось у вашому сеансі підтвердив дію посиленим способом (ключем, кодом із застосунку або кодом відновлення).', 'Iemand in uw sessie bevestigde de actie op een sterke manier (sleutel, app-code of herstelcode).'],
+    gevolg: ['Позначка нових прав не дає: ключ і далі лише підтверджує дії (і відкриває вхід, якщо його ввімкнено). Вона показує, що ви визнали цей пристрій своїм.', 'Het label geeft geen nieuwe rechten: de sleutel bevestigt verder alleen handelingen (en opent de aanmelding als die aan staat). Het toont dat u dit apparaat als het uwe erkende.'],
+    doen: ['Якщо це ви — нічого. Якщо ні — відкличте довіру, видаліть незнайомий ключ і завершіть чужі сеанси.', 'Was u het: niets. Zo niet: trek het vertrouwen in, verwijder de onbekende sleutel en beëindig vreemde sessies.'],
+    deeplink: viaLink(`${ID}/security#aanmeldmethoden-passkeys`),
+    acties: [
+      { soort: 'dit-was-ik', label: ['Це був я', 'Dit was ik'] },
+      { soort: 'niet-ik', label: ['Це не я — ключі…', 'Dit was ik niet — sleutels…'], href: viaLink(`${ID}/security#aanmeldmethoden-passkeys`), gevaarlijk: true },
+    ],
+  },
   // ---- UI-014 fase 2A: aanmeldingen en aanmeldmethoden (vóór «beveiliging», want de eerste passende soort wint)
   {
     id: 'nieuw-apparaat',

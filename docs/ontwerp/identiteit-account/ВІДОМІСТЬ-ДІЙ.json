@@ -1092,6 +1092,13 @@
    "groep": "другий-чинник",
    "uk": "Замінити автентифікатор",
    "bron": "жива карта (станНаСайті.додати)"
+  },
+  {
+   "sleutel": "recovery.сценарії.4",
+   "sectie": "recovery",
+   "groep": "сценарії",
+   "uk": "Нагадування про резервний доступ",
+   "bron": "жива карта (станНаСайті.додати)"
   }
  ],
  "acties": [
@@ -3876,8 +3883,11 @@
    "voorwaarden": "Є ключ",
    "waar": "#aanmeldmethoden-google → підказка (?) ; #aanmeldmethoden-sleutels → рядок ключа",
    "code": [
-    "src/toegangslaag-panelen.tsx:152",
-    "src/ToegangssleutelsSectie.tsx:39"
+    "backend/toegangssleutels.ts:153",
+    "src/ToegangssleutelsSectie.tsx:213",
+    "src/ToegangssleutelsSectie.tsx:251",
+    "src/ToegangssleutelsSectie.tsx:252",
+    "src/toegangslaag-panelen.tsx:166"
    ],
    "opslag": "нічого",
    "staatVoor": "частково працює",
@@ -3885,14 +3895,15 @@
    "wijziging": "Етап 3.4 (довіра: міграція 0274 vertrouwd_op, маршрут passkeys/vertrouwen, позначка) і 3.5 (після входу ключем — позначка «Вхід і підтвердження»). До того — постійний рядок стану в #aanmeldmethoden-sleutels.",
    "gereedAls": "Біля кожного ключа видно «Лише підтвердження» або «Вхід і підтвердження» та, окремо, «Довірений».",
    "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/identiteit-015-aanmelden.test.ts"
    ],
    "herkomst": "Пояснення позиції v49 («Показувати справжній стан ключів і відокремлювати вхід від підтвердження»)",
    "maquetteLabel": "Частково реалізовано",
-   "versie": "239bef74",
+   "versie": "HEAD кроку sleutels-gasten",
    "omgeving": "випробувальне середовище",
-   "staatNa": "частково працює",
-   "resultaat": "Підказка (?) у «Вхід» більше не каже «Passkey поки що лише підтверджує важливі дії», коли вхід ключем увімкнено: сервер повертає aanmeldWegen (які шляхи без Google увімкнено саме цій людині), і текст відповідає правді («ним можна буде входити й без Google» або «вхід ним вмикає власник сайту»). Позначки «Лише підтвердження / Вхід і підтвердження» біля кожного ключа та «Довірений» — ще ні: це крок довіри до ключа (етап 3.4, міграція 0274)."
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Перелік ключів отримує від сервера aanmelden (прапорець aanmelden-passkey саме для цієї людини): постійний рядок стану в #aanmeldmethoden-passkeys і біля кожного ключа «Вхід і підтвердження» або «Лише підтвердження», окремо — «Довірений». Підказка «Що таке passkey?» узгоджена з кроком aanmelden: ключ підтверджує дії, а входити ним можна, коли власник сайту ввімкнув вхід ключем; рядок у «Двофакторній автентифікації» більше не відсилає до «Входу»."
   },
   {
    "id": "methods.основні.1.vhid-kliuchem",
@@ -4525,9 +4536,9 @@
    "voorwaarden": "Обліковий запис схвалений, не власник",
    "waar": "Макет → «Безпека» → #toegangscodes (секція не рендериться)",
    "code": [
-    "backend/toegangscodes-routes.ts:60",
-    "src/Toegangscodes.tsx:73",
-    "src/Toegangscodes.tsx:76"
+    "backend/toegangscodes-routes.ts:67",
+    "src/Toegangscodes.tsx:79",
+    "src/SessiesOverzicht.tsx:76"
    ],
    "opslag": "нічого",
    "staatVoor": "недоступно за задумом",
@@ -4535,10 +4546,16 @@
    "wijziging": "Етап 2.5: відкрити для схвалених за прапорцем gastcodes-iedereen (типово «Лише я»); до того показувати пояснення з переходом до «Доступу до простору».",
    "gereedAls": "Не-власник бачить у #toegangscodes пояснення й кнопку переходу до «Доступу до простору»; з прапорцем — може створити код.",
    "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/toegangscodes.test.ts"
    ],
    "herkomst": "Прогалина плану: «гостьові коди доступні лише власнику сайту»",
-   "maquetteLabel": "прихована група"
+   "maquetteLabel": "прихована група",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "потребує налаштування власника",
+   "resultaat": "Секція більше не зникає мовчки: без прапорця — пояснення («цю функцію вмикає власник сайту») і кнопка «До «Доступу до простору»»; з прапорцем gastcodes-iedereen схвалений не-власник створює, бачить і відкликає ВЛАСНІ коди (сервер перевіряє власника коду), гість бачить лише його дані.",
+   "reden": "Передумова власника: прапорець «Коди доступу для гостей — і для інших облікових записів» (gastcodes-iedereen). Міграція 0274 ставить його на «Тільки я» (лише власник сайту) — так само, як було досі. Іншим людям його вмикає власник сайту: технічний профіль → смуга технічного режиму → «Перемикачі функцій» → «! Коди доступу для гостей — і для інших облікових записів» → «Вибрані люди» (додати обліковий запис) або «Усі». Ризик пояснено там же: код відкриває перегляд власних даних людини без входу. Доки прапорець для людини вимкнено, вона бачить у #toegangscodes і в «Сесіях» пояснення й перехід до «Доступу до простору» (запрошення або приватне посилання)."
   },
   {
    "id": "methods.захист.2.gist-vhid",
@@ -5759,9 +5776,8 @@
    "voorwaarden": "сеанс на іншому пристрої",
    "waar": "/recovery → #herstel-scenarios → [data-scenario=\"apparaat\"] → button[data-ga=\"security\"] → /security (Макет)",
    "code": [
-    "src/herstel/Scenarios.tsx:79",
-    "src/toegangslaag-panelen.tsx:120",
-    "src/toegangslaag-panelen.tsx:199"
+    "src/herstel/Scenarios.tsx:90",
+    "src/herstel/naar-anker.ts"
    ],
    "opslag": "нічого (перехід); видалення — сервер POST /api/owner/access/passkeys/verwijderen (з підтвердженням)",
    "staatVoor": "працює в цьому оформленні",
@@ -5769,10 +5785,15 @@
    "wijziging": "передавати якір у onKies — етап 2",
    "gereedAls": "натискання відкриває «Безпека» з видимим переліком ключів доступу",
    "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/identiteit-014-herstel.test.ts"
    ],
    "herkomst": "",
-   "maquetteLabel": "прихована група (усі рядки «в-чинних»)"
+   "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Кнопка «До ключів доступу» тепер веде до самого переліку ключів (#aanmeldmethoden-passkeys: прокрутка й фокус після переходу), а не на початок «Безпеки»."
   },
   {
    "id": "recovery.сценарії.0.vkhid-novyj-prystrij",
@@ -5814,8 +5835,7 @@
    "voorwaarden": "сеанс з magEigenToegang",
    "waar": "/recovery → #herstel-scenarios → details[data-scenario=\"passkey\"] → button[data-ga=\"security\"]",
    "code": [
-    "src/herstel/Scenarios.tsx:85-92",
-    "src/herstel/Scenarios.tsx:87"
+    "src/herstel/Scenarios.tsx:98"
    ],
    "opslag": "нічого (перехід); видалення — сервер POST /api/owner/access/passkeys/verwijderen",
    "staatVoor": "працює в цьому оформленні",
@@ -5823,11 +5843,15 @@
    "wijziging": "якір у onKies — етап 2",
    "gereedAls": "картка розгортається; кнопка відкриває «Безпеку» з переліком ключів",
    "testen": [
-    "tests/eenheid/identiteit-014-herstel.test.ts",
-    "tests/e2e/identiteit-014-blokken.e2e.ts"
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
+    "tests/eenheid/identiteit-014-herstel.test.ts"
    ],
    "herkomst": "",
-   "maquetteLabel": "прихована група (усі рядки «в-чинних»)"
+   "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Кнопка «До ключів доступу» з якорем #aanmeldmethoden-passkeys."
   },
   {
    "id": "recovery.сценарії.1.pidtverdyty-inakshe",
@@ -5840,10 +5864,8 @@
    "voorwaarden": "має хоча б один інший спосіб (TOTP, код, Google)",
    "waar": "/recovery → [data-scenario=\"passkey\"] → крок 2 (текст); саме вікно — будь-яка дія зі step-up (src/platform/bevestig-toegang.tsx)",
    "code": [
-    "src/herstel/Scenarios.tsx:88",
-    "src/platform/bevestig-toegang.tsx:146",
-    "backend/toegangslaag.ts:526-545",
-    "backend/toegangslaag.ts:502"
+    "src/herstel/Scenarios.tsx:99",
+    "src/platform/bevestig-toegang.tsx:146"
    ],
    "opslag": "сервер: свіже підтвердження (stap-op) у сеансі; код відновлення згоряє в app.records",
    "staatVoor": "працює в іншому місці",
@@ -5851,11 +5873,15 @@
    "wijziging": "не потрібно",
    "gereedAls": "без passkey вікно «Підтвердіть доступ» пропонує код застосунку/код відновлення/Google, і дія виконується",
    "testen": [
-    "tests/e2e/herstelcodes.e2e.ts",
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/toegangssleutels.test.ts"
    ],
    "herkomst": "",
-   "maquetteLabel": "прихована група (усі рядки «в-чинних»)"
+   "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в іншому місці",
+   "resultaat": "У кроці тепер кнопка «До застосунку-автентифікатора» (#aanmeldmethoden-2fa); саме підтвердження іншим способом і далі відбувається у вікні «Підтвердіть доступ» будь-якої дії — за задумом, бо воно супроводжує конкретну дію."
   },
   {
    "id": "recovery.сценарії.1.kliuch-dannykh",
@@ -5868,9 +5894,7 @@
    "voorwaarden": "сховище ключів увімкнене; є інший passkey з PRF або код сховища",
    "waar": "/recovery → [data-scenario=\"passkey\"] → крок 3 (текст) → дія сама — /security (Макет) → #aanmeldmethoden-sleutelkluis",
    "code": [
-    "src/herstel/Scenarios.tsx:89",
-    "backend/sleutelkluis-routes.ts:131",
-    "backend/sleutelkluis-herstel.ts:45-53"
+    "src/herstel/Scenarios.tsx:100"
    ],
    "opslag": "сервер: app.sleutelkluis_omslag (обгортки ключа)",
    "staatVoor": "працює в іншому місці",
@@ -5878,10 +5902,14 @@
    "wijziging": "додати <Ga sectie='security'> із якорем сховища — етап 2",
    "gereedAls": "з картки однією кнопкою відкривається блок сховища ключів з полем коду відновлення",
    "testen": [
-    "tests/eenheid/identiteit-014-herstel.test.ts"
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
    ],
    "herkomst": "",
-   "maquetteLabel": "прихована група (усі рядки «в-чинних»)"
+   "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Коли сховище ключів увімкнене, у кроці кнопка «До сховища ключів» (#aanmeldmethoden-sleutelkluis); при вимкненому сховищі кроку й кнопки немає (нема що відкривати)."
   },
   {
    "id": "recovery.сценарії.1.novyj-passkey",
@@ -5894,8 +5922,9 @@
    "voorwaarden": "пристрій із підтримкою WebAuthn; step-up",
    "waar": "/recovery → [data-scenario=\"passkey\"] → крок 4 (лише текст) → дія — /security (Макет) → #aanmeldmethoden-sleutels → «Додати»",
    "code": [
-    "src/herstel/Scenarios.tsx:90",
-    "src/toegangslaag-panelen.tsx:199"
+    "src/herstel/Scenarios.tsx:101",
+    "src/herstel/naar-anker.ts",
+    "src/ToegangssleutelsSectie.tsx"
    ],
    "opslag": "сервер: POST /api/owner/access/passkeys/registreren → ключі доступу користувача",
    "staatVoor": "працює в іншому місці",
@@ -5903,10 +5932,14 @@
    "wijziging": "додати кнопку переходу до #aanmeldmethoden-sleutels — етап 2",
    "gereedAls": "з картки однією кнопкою відкривається форма додавання passkey",
    "testen": [
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
    ],
    "herkomst": "",
-   "maquetteLabel": "прихована група (усі рядки «в-чинних»)"
+   "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Кнопка «Додати новий passkey» відкриває «Безпеку», прокручує до ключів і одразу відкриває рядок назви нового ключа (нічого не надсилається до «Продовжити»)."
   },
   {
    "id": "recovery.сценарії.2.nemaie-dostupu",
@@ -5948,9 +5981,7 @@
    "voorwaarden": "автентифікатор вимкнено; step-up для першого налаштування",
    "waar": "/recovery → [data-scenario=\"authenticator\"] → крок 3 (лише текст) → дія — /security (Макет) → #aanmeldmethoden-2fa → «Налаштувати»",
    "code": [
-    "src/herstel/Scenarios.tsx:99",
-    "src/toegangslaag-panelen.tsx:219",
-    "backend/toegangslaag.ts:693-750"
+    "src/herstel/Scenarios.tsx:110"
    ],
    "opslag": "сервер: POST /api/owner/access/totp/start і /totp/confirm → identity_totp_v1 (app.records)",
    "staatVoor": "працює в іншому місці",
@@ -5958,10 +5989,14 @@
    "wijziging": "додати <Ga> із якорем 2fa — етап 2",
    "gereedAls": "з картки однією кнопкою відкривається налаштування автентифікатора з QR-кодом",
    "testen": [
-    "tests/eenheid/toegangssleutels.test.ts"
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
    ],
    "herkomst": "",
-   "maquetteLabel": "прихована група (усі рядки «в-чинних»)"
+   "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Кнопка «Налаштувати автентифікатор» веде до #aanmeldmethoden-2fa, де «Налаштувати» показує QR-код."
   },
   {
    "id": "recovery.сценарії.3.baner-novi-kody",
@@ -6026,10 +6061,10 @@
    "voorwaarden": "типово ввімкнено; сповіщення один раз на набір кодів",
    "waar": "/menu (Макет) → «Сповіщення в меню» (#menu-meldingen) → перемикач reserve; у шухляді картки «Відновлення» — лише інформаційна картка з поясненням",
    "code": [
-    "src/ZijbalkInstellingen.tsx:76",
-    "backend/reserve-herinnering.ts:39",
-    "backend/toegangslaag.ts:134",
-    "src/identiteit/maquette/maquette-motor.ts:140-144"
+    "src/herstel/Scenarios.tsx:126",
+    "src/herstel/ReserveHerinnering.tsx",
+    "src/herstel/ReserveHerinneringKoppeling.tsx",
+    "backend/reserve-herinnering.ts:39"
    ],
    "opslag": "сервер: налаштування меню користувача (sidebar.meldingen.reserveHerinnering) + одноразова позначка в записі набору identity_recovery_codes_v1; сповіщення в центрі сповіщень",
    "staatVoor": "працює в іншому місці",
@@ -6037,10 +6072,46 @@
    "wijziging": "не потрібно (рішення IDENTITEIT-014: перемикач у меню)",
    "gereedAls": "після використання коду, коли лишилось 2, у центрі сповіщень рівно одне нагадування з посиланням на /recovery#aanmeldmethoden-herstel; вимкнений перемикач — сповіщення немає",
    "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/identiteit-014-kaart.test.ts"
    ],
    "herkomst": "демо-перемикач «Нагадування про резервний доступ» шухляди «Відновлення» перенесено в Меню → «Сповіщення в меню»",
-   "maquetteLabel": "прихована група (усі рядки «в-чинних»)"
+   "maquetteLabel": "прихована група (усі рядки «в-чинних»)",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Перемикач «Нагадувати про резервний доступ» тепер і прямо в «Відновленні» (та сама настройка облікового запису, що в Меню → «Сповіщення в меню»; сервер читає її перед сповіщенням access_recovery_low). Типово увімкнено; вимкнення — через BevestigDialoog із наслідками, вимкнений стан позначено «!»."
+  },
+  {
+   "id": "recovery.сценарії.4.nahaduvannia-tut",
+   "sectie": "recovery",
+   "groep": "сценарії",
+   "positie": 4,
+   "positieUk": "Нагадування про резервний доступ",
+   "actie": "Перемикач «Нагадувати про резервний доступ» прямо в розділі «Відновлення» (додана позиція живої карти)",
+   "wie": "схвалений користувач / власник сайту",
+   "voorwaarden": "Обліковий запис схвалений",
+   "waar": "/recovery (Макет) → «Чинні налаштування» → #herstel-scenarios → [data-herstel-reserve=\"schakel\"] → перемикач",
+   "code": [
+    "src/herstel/Scenarios.tsx:126",
+    "src/herstel/ReserveHerinnering.tsx",
+    "src/herstel/ReserveHerinneringKoppeling.tsx"
+   ],
+   "opslag": "сервер: sidebar.meldingen.reserveHerinnering (ruimte «gebruiker», /api/owner/ui/sidebar/save) — читає backend/reserve-herinnering.ts",
+   "staatVoor": "працює в іншому місці",
+   "staatNa": "працює в цьому оформленні",
+   "ontbreekt": "—",
+   "wijziging": "Крок sleutels-gasten: той самий перемикач у «Відновленні»; вимкнення через вікно з наслідками",
+   "gereedAls": "Перемикач видно в «Відновленні»; вимкнення питає підтвердження; стан однаковий тут і в меню",
+   "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
+    "tests/eenheid/identiteit-014-kaart.test.ts"
+   ],
+   "resultaat": "Перемикач рендериться в «Що робити, якщо…» (типово «увімкнено»), вимкнений стан чесно позначено «!»; ціль карти [data-herstel-reserve=\"schakel\"] є в справжньому рендері панелі «Відновлення».",
+   "herkomst": "Жива карта (станНаСайті.recovery.сценарії.додати), вимога кроку sleutels-gasten",
+   "maquetteLabel": "в-чинних",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище"
   },
   {
    "id": "recovery.поради.0.ohliad",
@@ -6356,15 +6427,28 @@
    "wie": "схвалений користувач / власник сайту",
    "voorwaarden": "Є ключ; посилене підтвердження",
    "waar": "відсутнє (у макеті — рядок картки «Ключі доступу», без переходу)",
-   "code": [],
-   "opslag": "нічого (поля vertrouwd_op немає; attestation:'none' — backend/toegangssleutels.ts:214; AAGUID лише підказка — backend/toegangssleutels.ts:50)",
+   "code": [
+    "backend/toegangssleutels.ts:282",
+    "backend/toegangssleutels.ts:511",
+    "src/ToegangssleutelsSectie.tsx:188",
+    "src/ToegangssleutelsSectie.tsx:252",
+    "src/ToegangssleutelsSectie.tsx:286",
+    "migrations/0274_sleutels_vertrouwen_gastcodes.sql"
+   ],
+   "opslag": "сервер: app.passkeys.vertrouwd_op / vertrouwd_wie / vertrouwd_sessie (міграція 0274; старі рядки — NULL = не довірений) + app.audit (passkey_vertrouwd / passkey_vertrouwen_ingetrokken) + сповіщення тих самих типів",
    "staatVoor": "є лише в макеті",
    "ontbreekt": "Міграція з полем довіри, маршрут passkeys/vertrouwen зі step-up, позначка «Довірений» і пояснення в UI, аудит і сповіщення",
    "wijziging": "Етап 3.4: міграція 0274 vertrouwd_op, маршрут /api/owner/access/passkeys/vertrouwen (sterke step-up), позначка й пояснення; після цього зняти рядки:{5:'заплановано'} у станНаСайті",
    "gereedAls": "Біля ключа є кнопка «Довіряти цьому пристрою»; після сильного підтвердження з’являється позначка «Довірений», яка лишається після перезавантаження; зняття довіри теж працює",
-   "testen": [],
+   "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
+   ],
    "herkomst": "Нова вимога v49 (позиція картки); суміжне «Може схвалювати оновлення сервера» — інша дія, див. наступний рядок",
-   "maquetteLabel": "Потребує розробки"
+   "maquetteLabel": "Потребує розробки",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Біля кожного ключа в #aanmeldmethoden-passkeys кнопка «Довіряти цьому ключу» / «Відкликати довіру» → BevestigDialoog із поясненням різниці «є ключ» / «довіра» і наслідками → POST passkeys/vertrouwen або vertrouwen-intrekken: без посиленого підтвердження 403 STEP_UP_STRONG_REQUIRED; після підтвердження ключем — позначка «Довірений» (лишається після перезавантаження), хто/коли/сеанс записано, аудит і одне сповіщення. Повторне натискання — той самий стан без нового запису й сповіщення; чужий ключ — 404. Дія «passkey-vertrouwen» ніколи не «запам’ятовується». Атестації виробника немає (attestation 'none'): позначка — рішення людини, нових прав не дає; так і сказано в інтерфейсі."
   },
   {
    "id": "security.ключі.5.pravo-skhvalennia",
@@ -6389,12 +6473,15 @@
    "wijziging": "Нічого; у тексті позиції 5 пояснити різницю (етап 3.4)",
    "gereedAls": "Власник бачить «Може схвалювати оновлення сервера» біля ключа після підтвердження",
    "testen": [
-    "tests/e2e/bevestig-toegang.e2e.ts",
-    "tests/e2e/toegang-context.e2e.ts",
-    "tests/eenheid/uitrol-goedkeuring.test.ts"
+    "tests/eenheid/uitrol-goedkeuring.test.ts",
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
    ],
    "herkomst": "Наявна суміжна дія; не є реалізацією позиції 5",
-   "maquetteLabel": "Потребує розробки"
+   "maquetteLabel": "Потребує розробки",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "Без змін у дії; поруч тепер окрема позначка «Довірений» (рядок security.ключі.5.dovira), а підказка «Що таке passkey?» пояснює різницю між наявністю ключа, правом схвалювати оновлення (лише власник сайту, технічний профіль) і довірою до пристрою."
   },
   {
    "id": "security.другий-чинник.0.stan",
@@ -7087,19 +7174,27 @@
    "voorwaarden": "Обліковий запис схвалений, не власник сайту",
    "waar": "#toegangscodes не відображається (компонент повертає null при beschikbaar:false)",
    "code": [
-    "backend/toegangscodes-routes.ts:60",
-    "src/Toegangscodes.tsx:76"
+    "backend/toegangscodes-routes.ts:67",
+    "backend/toegangscodes.ts:34",
+    "backend/index.ts:717",
+    "src/Toegangscodes.tsx:79"
    ],
-   "opslag": "нічого",
+   "opslag": "сервер: app.feature_flags (gastcodes-iedereen, міграція 0274) → app.toegangscodes / app.gast_sessies власника коду",
    "staatVoor": "недоступно за задумом",
    "ontbreekt": "Причина: гостьовий доступ дає перегляд даних без входу, тому зараз дозволено лише власнику сайту (OWNER_REQUIRED). Альтернатива: запросити людину через «Спільний доступ» (/sharing). Розбіжність: картка «Макета» прихована як «в-чинних», хоча схваленому користувачеві блок не показується",
    "wijziging": "Етап 2.5: прапорець gastcodes-iedereen (типово «Лише я»); до ввімкнення — у станНаСайті позначити групу «недоступно» для не-власника або показати пояснення замість порожнього місця",
    "gereedAls": "Схвалений користувач у картці «Безпека» бачить пояснення й посилання на «Спільний доступ»; після ввімкнення прапорця — форму створення",
    "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/toegangscodes.test.ts"
    ],
    "herkomst": "—",
-   "maquetteLabel": "прихована група"
+   "maquetteLabel": "прихована група",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "потребує налаштування власника",
+   "resultaat": "Сервер пускає до кодів власника сайту або схваленого, якому ввімкнено прапорець; кожна дія — лише над власними кодами (чужий код — 404). Перевірено: «Тільки я» → A бачить «недоступно» з причиною, створення OWNER_REQUIRED; з прапорцем A створює код після посиленого підтвердження, гість бачить ЛИШЕ ім’я й пристрої A; вимкнення прапорця гасить гостьовий сеанс (401) і новий вхід кодом A (CODE_ONGELDIG, лічильник не росте); коди власника сайту діють. Замість порожнього місця — пояснення й перехід до «Доступу до простору».",
+   "reden": "Передумова власника: прапорець «Коди доступу для гостей — і для інших облікових записів» (gastcodes-iedereen). Міграція 0274 ставить його на «Тільки я» (лише власник сайту) — так само, як було досі. Іншим людям його вмикає власник сайту: технічний профіль → смуга технічного режиму → «Перемикачі функцій» → «! Коди доступу для гостей — і для інших облікових записів» → «Вибрані люди» (додати обліковий запис) або «Усі». Ризик пояснено там же: код відкриває перегляд власних даних людини без входу. Доки прапорець для людини вимкнено, вона бачить у #toegangscodes і в «Сесіях» пояснення й перехід до «Доступу до простору» (запрошення або приватне посилання)."
   },
   {
    "id": "security.гостьові-коди.1.nazva",
@@ -7190,16 +7285,22 @@
    "voorwaarden": "Відкрито форму",
    "waar": "відсутнє (лише окремі прапорці)",
    "code": [
-    "src/Toegangscodes.tsx:123"
+    "src/Toegangscodes.tsx:132"
    ],
    "opslag": "нічого окремого (результат той самий — перелік scopes)",
    "staatVoor": "частково працює",
    "ontbreekt": "Немає перемикача «Усі дозволені» / «Лише вибрані»; той самий результат досяжний лише позначенням кожного прапорця вручну",
    "wijziging": "Дрібна зміна UI в Toegangscodes.tsx (етап 2): перемикач із двох варіантів, «Усі дозволені» позначає весь data.scopes",
    "gereedAls": "Вибір «Усі дозволені» позначає всі розділи, «Лише вибрані» повертає ручний вибір",
-   "testen": [],
+   "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts"
+   ],
    "herkomst": "—",
-   "maquetteLabel": "прихована група"
+   "maquetteLabel": "прихована група",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "працює в цьому оформленні",
+   "resultaat": "У формі коду перемикач «Усі дозволені розділи» / «Лише вибрані»: «Усі» позначає весь перелік сервера (лише перегляд; заборонене гостю не відкривається), «Лише вибрані» повертає ручний вибір. Сервер і далі перевіряє кожен розділ за переліком GAST_SCOPES."
   },
   {
    "id": "security.гостьові-коди.3.strok",
@@ -7687,8 +7788,8 @@
    "voorwaarden": "Обліковий запис approved, не isEigenaarGebruiker",
    "waar": "id.tarasevych.com/sessions → «Чинні налаштування» → блок «Гостьові сесії» не показується (gasten=null)",
    "code": [
-    "backend/toegangscodes-routes.ts:60 (не-власник: lijst → {beschikbaar:false}, інші → 403 OWNER_REQUIRED)",
-    "src/SessiesOverzicht.tsx:30,58 (beschikbaar=false → блок схований)"
+    "backend/toegangscodes-routes.ts:67",
+    "src/SessiesOverzicht.tsx:76"
    ],
    "opslag": "нічого",
    "staatVoor": "недоступно за задумом",
@@ -7696,10 +7797,16 @@
    "wijziging": "Етап 2.5: прапорець «gastcodes-iedereen» (типово «Лише я»); доки вимкнений — показати в «Сесіях» коротке пояснення замість порожнечі; після ввімкнення той самий перелік для схвалених облікових записів.",
    "gereedAls": "Схвалений користувач у «Сесії та пристрої» бачить пояснення «Гостьові коди видає лише власник сайту; поділитися простором можна в розділі «Доступ»»; з увімкненим прапорцем — бачить і завершує власні гостьові сесії.",
    "testen": [
+    "tests/eenheid/identiteit-015-sleutels-gasten.test.ts",
     "tests/eenheid/toegangscodes.test.ts"
    ],
    "herkomst": "Розщеплення позиції за людьми: вимога плану, етап 2.5.",
-   "maquetteLabel": "прихована група"
+   "maquetteLabel": "прихована група",
+   "versie": "HEAD кроку sleutels-gasten",
+   "omgeving": "випробувальне середовище",
+   "staatNa": "потребує налаштування власника",
+   "resultaat": "Без прапорця схвалений обліковий запис бачить у «Сесіях» блок «Гостьові сесії» з поясненням і переходом до «Доступу до простору» (замість порожнечі); з прапорцем gastcodes-iedereen — той самий перелік власних гостьових сесій із завершенням (перевірено: A бачить свою гостьову сесію).",
+   "reden": "Передумова власника: прапорець «Коди доступу для гостей — і для інших облікових записів» (gastcodes-iedereen). Міграція 0274 ставить його на «Тільки я» (лише власник сайту) — так само, як було досі. Іншим людям його вмикає власник сайту: технічний профіль → смуга технічного режиму → «Перемикачі функцій» → «! Коди доступу для гостей — і для інших облікових записів» → «Вибрані люди» (додати обліковий запис) або «Усі». Ризик пояснено там же: код відкриває перегляд власних даних людини без входу. Доки прапорець для людини вимкнено, вона бачить у #toegangscodes і в «Сесіях» пояснення й перехід до «Доступу до простору» (запрошення або приватне посилання)."
   },
   {
    "id": "sessions.сповіщення.0.перемикач-попередження",

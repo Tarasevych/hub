@@ -314,7 +314,7 @@ export async function stapOpMethode(auth: StapOpAuth): Promise<string> {
  */
 export const NOOIT_ONTHOUDEN: readonly string[] = Object.freeze([
   'onbekend', 'uitrol-goedkeuren', 'voorbereider',
-  'passkey-toevoegen', 'passkey-verwijderen',
+  'passkey-toevoegen', 'passkey-verwijderen', 'passkey-vertrouwen', // IDENTITEIT-015: довіра до ключа — щоразу заново
   'goedkeur-recht-aanvragen', 'goedkeur-recht-bevestigen', 'goedkeur-recht-intrekken',
   'herstelcodes-nieuw', 'herstelcodes-maken', 'herstelcodes-intrekken',
   'totp-wijzigen', 'totp-uitschakelen', 'wachtwoord', 'aanmeldmethode',

@@ -11,9 +11,14 @@
 // §13.10: per passkey waarvoor hij gebruikt is (actie, host, apparaat, IP-hash; laatste 20, uitklapbaar), een privénotitie
 // (potloodje) en «Історія». Het recht om updates goed te keuren intrekken (en zo'n passkey verwijderen) vraagt een reden in de
 // rij en een sterke bevestiging (passkey/app-code/herstelcode — Google alleen telt niet); terugzetten kan daarna alleen via SSH.
+// IDENTITEIT-015 (sleutels-gasten): per sleutel de echte stand — «Вхід і підтвердження» (vlag aanmelden-passkey voor deze persoon) of
+// «Лише підтвердження» — en, apart, «Довірений»: een eigen besluit over dít apparaat (sterke bevestiging + BevestigDialoog; geen nieuwe
+// rechten, geen controle van de fabrikant). «Додати passkey» kan van buitenaf geopend worden (herstelscenario's, vraagPasskeyFormulier).
 import {useEffect,useRef,useState} from 'react';
-import {Check,Cloud,Fingerprint,KeyRound,Laptop,Pencil,Plus,ShieldCheck,Smartphone,Trash2,TriangleAlert,X} from 'lucide-react';
+import {BadgeCheck,Check,Cloud,Fingerprint,KeyRound,Laptop,Pencil,Plus,ShieldCheck,ShieldOff,Smartphone,Trash2,TriangleAlert,X} from 'lucide-react';
 import {InfoTip} from './InfoTip';
+import {BevestigDialoog} from './platform/BevestigDialoog';
+import {abonneerPasskeyFormulier,neemPasskeyFormulierVraag} from './herstel/naar-anker';
 import {api} from './platform/client';
 import {leesVergeten,swrPost} from './lees-cache';
 import {metHervat,neemHervat} from './platform/stap-op';
@@ -23,8 +28,9 @@ import type {Lang} from './toegangslaag-teksten';
 
 type Status='alleen-aanmelden'|'wacht'|'kan-goedkeuren'|'wordt-ingetrokken';
 type Soort='wachtwoordbeheerder'|'telefoon'|'beveiligingssleutel'|'apparaat'|'onbekend';
-type Passkey={id:string;naam:string;aanbieder:string;soort?:Soort;viaTelefoon?:boolean;transports?:string[];synchroniseerbaar:boolean;gesynchroniseerd:boolean;aangemaaktOp:string;laatstGebruiktOp:string|null;vingerafdrukKort:string;goedkeuring?:Status;sshOpdracht?:string;gebruik?:Gebruik[];geschiedenis?:GeschiedenisItem[]};
-type Lijst={rpId:string;limiet:number;passkeys:Passkey[];goedkeuring?:{schakelaar:boolean;rootRpId:string;rpKlopt:boolean;aantalBijRoot:number;onbekendBijRoot:Array<{vingerafdrukKort:string;label:string}>}};
+type Passkey={id:string;naam:string;aanbieder:string;soort?:Soort;viaTelefoon?:boolean;transports?:string[];synchroniseerbaar:boolean;gesynchroniseerd:boolean;aangemaaktOp:string;laatstGebruiktOp:string|null;vingerafdrukKort:string;goedkeuring?:Status;sshOpdracht?:string;gebruik?:Gebruik[];geschiedenis?:GeschiedenisItem[];vertrouwdOp?:string|null};
+/** aanmelden: чи відкриває ключ цій людині ВХІД (прапорець aanmelden-passkey); старий сервер без поля — «лише підтвердження». */
+type Lijst={rpId:string;limiet:number;aanmelden?:boolean;passkeys:Passkey[];goedkeuring?:{schakelaar:boolean;rootRpId:string;rpKlopt:boolean;aantalBijRoot:number;onbekendBijRoot:Array<{vingerafdrukKort:string;label:string}>}};
 /** beheer: toon ook het recht «mag serverupdates goedkeuren» per passkey (sitebeheer; alleen vanuit het technisch profiel, Beheer → Оновлення). */
 type Props={lang:Lang;context:Record<string,unknown>;onChange?:()=>void;beheer?:boolean};
 
@@ -73,7 +79,10 @@ const FOUTEN:Record<string,[string,string]>={
   STEP_UP_REQUIRED:['Потрібне додаткове підтвердження. Спробуйте ще раз.','Extra bevestiging is nodig. Probeer het opnieuw.'],
   RATE_LIMITED:['Забагато спроб. Зачекайте кілька хвилин.','Te veel pogingen. Wacht een paar minuten.'],
   NAAM_ONGELDIG:['Вкажіть назву.','Geef een naam op.'],
+  NIET_GEVONDEN:['Цього ключа вже немає. Оновіть сторінку.','Deze sleutel bestaat niet meer. Vernieuw de pagina.'],
 };
+/** IDENTITEIT-015: «є ключ» проти «довіри» — той самий текст у підказці й у вікні підтвердження. */
+export const VERSCHIL_SLEUTEL_VERTROUWEN:[string,string]=['Є ключ — означає, що ним можна підтверджувати важливі дії (а якщо власник сайту ввімкнув вхід ключем — і входити). Довіра — окреме ваше рішення про конкретний пристрій: «це мій телефон чи ключ безпеки». Довіра нових прав не дає; сайт не перевіряє виробника обладнання — позначка лише фіксує, хто, коли й у якому сеансі її поставив.','Een sleutel hebben betekent dat u er belangrijke handelingen mee kunt bevestigen (en, als de site-eigenaar aanmelden met een sleutel aanzette, ook aanmelden). Vertrouwen is een apart besluit over een concreet apparaat: «dit is mijn telefoon of beveiligingssleutel». Vertrouwen geeft geen nieuwe rechten; de site controleert de fabrikant niet — het label legt alleen vast wie het wanneer en in welke sessie zette.'];
 const foutTekst=(lang:Lang,code:string)=>{const t=FOUTEN[code];return t?tr(lang,t[0],t[1]):tr(lang,'Не вдалося. ','Mislukt. ')+(code||tr(lang,'Немає зв’язку.','Geen verbinding.'));};
 export const QR_HINT:[string,string]=['Щоб зберегти passkey на телефоні, виберіть «Використовувати телефон або планшет» і відскануйте QR-код камерою телефону (Bluetooth має бути увімкнено).','Om de passkey op je telefoon op te slaan, kies je «Een telefoon of tablet gebruiken» en scan je de QR-code met de camera van je telefoon (Bluetooth moet aan staan).'];
 const STATUS:Record<Status,[string,string,string]>={
@@ -92,6 +101,7 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
   const[hernoem,setHernoem]=useState<{id:string;naam:string}|null>(null);
   const[bevestig,setBevestig]=useState<{id:string;wat:'verwijderen'|'intrekken'}|null>(null);
   const[reden,setReden]=useState('');
+  const[vertrouwVraag,setVertrouwVraag]=useState<{p:Passkey;aan:boolean}|null>(null); /* IDENTITEIT-015: довіра — спершу вікно з наслідками */
   const notities=useNotities(context);
   // Safari: WebAuthn soms alleen direct na een tik. Dan een knop om dezelfde stap meteen opnieuw te doen.
   const[herhaal,setHerhaal]=useState<null|(()=>Promise<string|void>)>(null);
@@ -131,6 +141,14 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
     const h=neemHervat('passkey-toevoegen');
     if(h){const naam=String(h.gegevens?.naam||'');setNieuw({naam});void toevoegenMet(naam);}
   },[]);// eslint-disable-line react-hooks/exhaustive-deps
+  // IDENTITEIT-015: «Додати новий passkey» зі сценаріїв відновлення відкриває тут форму назви (нічого не надсилається до «Продовжити»).
+  useEffect(()=>{const open=()=>{if(neemPasskeyFormulierVraag()){setNotice(null);setNieuw(n=>n||{naam:''});}};open();return abonneerPasskeyFormulier(open);},[]);
+
+  // IDENTITEIT-015 (sleutels-gasten): довіра — сервер вимагає посиленого підтвердження; повторне натискання нічого не дублює.
+  const vertrouwen=(p:Passkey,aan:boolean)=>{setVertrouwVraag(null);void doe(`vertrouw-${p.id}`,async()=>{
+    await metHervat({actie:'passkey-vertrouwen'},()=>api.post(`/api/owner/access/passkeys/${aan?'vertrouwen':'vertrouwen-intrekken'}`,{...context,id:p.id}));
+    return aan?tr(lang,`Ключ «${p.naam}» позначено довіреним.`,`Sleutel «${p.naam}» is als vertrouwd gemarkeerd.`):tr(lang,`Довіру до ключа «${p.naam}» відкликано. Ключ і далі діє.`,`Vertrouwen in sleutel «${p.naam}» ingetrokken. De sleutel werkt verder.`);
+  });};
 
   const opslaanNaam=()=>{if(!hernoem)return;const h=hernoem;void doe(`naam-${h.id}`,async()=>{await api.post('/api/owner/access/passkeys/hernoemen',{...context,id:h.id,naam:h.naam});setHernoem(null);});};
   // Een passkey die updates mag goedkeuren: reden verplicht; de server vraagt dan een sterke bevestiging en trekt het recht bij root in.
@@ -164,16 +182,37 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
   const g=beheer?data?.goedkeuring:undefined;
   const aantal=data?.passkeys?.length||0;
   const vol=!!data&&aantal>=data.limiet;
-  return <div className='access-plane-group' id='aanmeldmethoden-passkeys' data-access-section='passkeys'>
+  const metAanmelden=!!data?.aanmelden;
+  const vv=vertrouwVraag;
+  return <div className='access-plane-group' id='aanmeldmethoden-passkeys' data-access-section='passkeys' tabIndex={-1}>
+    <BevestigDialoog open={!!vv} id='passkey-vertrouwen' lang={lang} gevaarlijk={vv?!vv.aan:false} bezig={!!busy}
+      titel={vv?.aan?tr(lang,`Довіряти ключу «${vv?.p.naam||''}»?`,`Sleutel «${vv?.p.naam||''}» vertrouwen?`):tr(lang,`Відкликати довіру до ключа «${vv?.p.naam||''}»?`,`Vertrouwen in sleutel «${vv?.p.naam||''}» intrekken?`)}
+      uitleg={tr(lang,VERSCHIL_SLEUTEL_VERTROUWEN[0],VERSCHIL_SLEUTEL_VERTROUWEN[1])}
+      gevolgen={vv?.aan?[
+        tr(lang,'Біля ключа з’явиться позначка «Довірений» — на всіх ваших пристроях.','Bij de sleutel verschijnt het label «Vertrouwd» — op al uw apparaten.'),
+        tr(lang,'Далі сайт попросить підтвердити дію ключем, кодом із застосунку або кодом відновлення (повторного входу Google недостатньо).','Daarna vraagt de site bevestiging met een sleutel, app-code of herstelcode (opnieuw aanmelden bij Google is niet genoeg).'),
+        tr(lang,'У журналі безпеки й у центрі сповіщень з’явиться запис: хто, коли й у якому сеансі.','In het beveiligingsjournaal en het meldingencentrum komt een regel: wie, wanneer en in welke sessie.'),
+      ]:[
+        tr(lang,'Позначка «Довірений» зникне; ключ і далі підтверджує дії (і відкриває вхід, якщо його ввімкнено).','Het label «Vertrouwd» verdwijnt; de sleutel bevestigt verder handelingen (en opent de aanmelding als die aan staat).'),
+        tr(lang,'Якщо ключ чужий або втрачений — краще видаліть його: відкликання довіри не забирає в нього можливості діяти.','Is de sleutel vreemd of kwijt, verwijder hem dan: vertrouwen intrekken neemt hem niets af.'),
+        tr(lang,'Потрібне посилене підтвердження; запис з’явиться в журналі й у центрі сповіщень.','Sterke bevestiging is nodig; er komt een regel in het journaal en het meldingencentrum.'),
+      ]}
+      bevestigTekst={vv?.aan?tr(lang,'Так, довіряти','Ja, vertrouwen'):tr(lang,'Так, відкликати довіру','Ja, vertrouwen intrekken')}
+      onAnnuleer={()=>setVertrouwVraag(null)} onBevestig={()=>{if(vv)vertrouwen(vv.p,vv.aan);}}/>
     <div className='access-plane-row'>
       <Fingerprint className='access-plane-row-icon'/>
       <div className='access-plane-row-main'>
         <span className='access-plane-row-title'><strong>{tr(lang,'Passkeys','Passkeys')}</strong>
           <InfoTip label={tr(lang,'Що таке passkey?','Wat is een passkey?')}>
-            <p>{tr(lang,'Passkey — це ключ на телефоні чи комп’ютері, який розблоковується відбитком, обличчям або PIN. Ним підтверджують важливі дії замість пароля.','Een passkey is een sleutel op je telefoon of computer die je ontgrendelt met vingerafdruk, gezicht of pincode. Je bevestigt er belangrijke acties mee zonder wachtwoord.')}</p>
+            <p>{tr(lang,'Passkey — це ключ на телефоні чи комп’ютері, який розблоковується відбитком, обличчям або PIN. Ним підтверджують важливі дії замість пароля, а коли власник сайту ввімкне вхід ключем — ним можна й входити без Google.','Een passkey is een sleutel op je telefoon of computer die je ontgrendelt met vingerafdruk, gezicht of pincode. Je bevestigt er belangrijke acties mee zonder wachtwoord, en zodra de site-eigenaar aanmelden met een sleutel aanzet, kun je er ook zonder Google mee aanmelden.')}</p>
+            <p data-verschil-vertrouwen>{tr(lang,VERSCHIL_SLEUTEL_VERTROUWEN[0],VERSCHIL_SLEUTEL_VERTROUWEN[1])}</p>
             <p data-qr-hint>{tr(lang,QR_HINT[0],QR_HINT[1])}</p>
           </InfoTip></span>
         <small>{!data?tr(lang,'Завантаження…','Laden…'):aantal?tr(lang,`Додано: ${aantal}`,`Toegevoegd: ${aantal}`):tr(lang,'Ще не додано','Nog niet toegevoegd')}</small>
+        {/* IDENTITEIT-015: постійний рядок стану (а не лише підказка): що ключ дає саме цій людині зараз. */}
+        {data&&<small data-passkey-stand={metAanmelden?'aanmelden':'bevestigen'}>{metAanmelden
+          ?tr(lang,'Ваші ключі відкривають вхід без Google («Увійти ключем доступу») і підтверджують важливі дії.','Uw sleutels openen de aanmelding zonder Google («Aanmelden met toegangssleutel») en bevestigen belangrijke acties.')
+          :tr(lang,'Ваші ключі зараз лише підтверджують важливі дії; вхід ключем для вашого облікового запису вмикає власник сайту.','Uw sleutels bevestigen nu alleen belangrijke acties; aanmelden met een sleutel zet de site-eigenaar voor uw account aan.')}</small>}
       </div>
       <div className='access-plane-row-actions'>
         {!nieuw&&<button type='button' className='secondary' disabled={!!busy||!ondersteund||vol||!data} onClick={()=>{setNotice(null);setNieuw({naam:''});}}><Plus/>{tr(lang,'Додати passkey','Passkey toevoegen')}</button>}
@@ -208,7 +247,9 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
             ?<div className='access-plane-inline-form'><input value={hernoem.naam} maxLength={60} autoFocus onChange={e=>setHernoem({id:p.id,naam:e.target.value})} onKeyDown={e=>{if(e.key==='Enter')opslaanNaam();if(e.key==='Escape')setHernoem(null);}}/>
               <button type='button' disabled={!!busy||!hernoem.naam.trim()} onClick={opslaanNaam}><Check/>{tr(lang,'Зберегти','Opslaan')}</button>
               <button type='button' className='secondary' onClick={()=>setHernoem(null)}><X/>{tr(lang,'Скасувати','Annuleren')}</button></div>
-            :<span className='access-plane-row-title'><strong>{p.naam}</strong>{p.gesynchroniseerd&&<span className='access-plane-badge tone-info'>{tr(lang,'Синхронізовано','Gesynchroniseerd')}</span>}{!p.synchroniseerbaar&&p.soort!=='telefoon'&&<span className='access-plane-badge tone-muted'>{tr(lang,'Лише на цьому пристрої','Alleen op dit apparaat')}</span>}</span>}
+            :<span className='access-plane-row-title'><strong>{p.naam}</strong>{p.gesynchroniseerd&&<span className='access-plane-badge tone-info'>{tr(lang,'Синхронізовано','Gesynchroniseerd')}</span>}{!p.synchroniseerbaar&&p.soort!=='telefoon'&&<span className='access-plane-badge tone-muted'>{tr(lang,'Лише на цьому пристрої','Alleen op dit apparaat')}</span>}
+              <span className='access-plane-badge tone-muted' data-passkey-gebruik={metAanmelden?'aanmelden':'bevestigen'}>{metAanmelden?tr(lang,'Вхід і підтвердження','Aanmelden en bevestigen'):tr(lang,'Лише підтвердження','Alleen bevestigen')}</span>
+              {p.vertrouwdOp&&<span className='access-plane-badge tone-good' data-passkey-vertrouwd title={tr(lang,`Довірений з ${datum(lang,p.vertrouwdOp)}`,`Vertrouwd sinds ${datum(lang,p.vertrouwdOp)}`)}><BadgeCheck aria-hidden='true'/>{tr(lang,'Довірений','Vertrouwd')}</span>}</span>}
           <small>{soortTekst(lang,p)} · {tr(lang,'Додано ','Toegevoegd op ')}{datum(lang,p.aangemaaktOp)} · {p.laatstGebruiktOp?tr(lang,'Останнє використання ','Laatst gebruikt op ')+datum(lang,p.laatstGebruiktOp):tr(lang,'Ще не використовувався','Nog niet gebruikt')}</small>
           <NotitieVeld lang={lang} soort='passkey' sleutel={p.id} notities={notities}/>
           {bevestig?.id===p.id&&(()=>{const metReden=bevestig.wat==='intrekken'||kanGoedkeuren(p);return <div className='access-plane-confirm' role='group' data-bevestig={bevestig.wat}>
@@ -240,6 +281,9 @@ export function PasskeysSection({lang,context,onChange,beheer=false}:Props){
           <GeschiedenisLijst lang={lang} items={p.geschiedenis||[]} id={p.id}/>
         </div>
         <div className='access-plane-row-actions access-plane-icon-acties'>
+          {p.vertrouwdOp
+            ?<button type='button' className='secondary' data-passkey-vertrouwen='uit' disabled={!!busy} onClick={()=>setVertrouwVraag({p,aan:false})} aria-label={tr(lang,'Відкликати довіру','Vertrouwen intrekken')} title={tr(lang,'Відкликати довіру: позначка зникне, ключ і далі діятиме. Потрібне посилене підтвердження.','Vertrouwen intrekken: het label verdwijnt, de sleutel blijft werken. Sterke bevestiging nodig.')}><ShieldOff/></button>
+            :<button type='button' className='secondary' data-passkey-vertrouwen='aan' disabled={!!busy} onClick={()=>setVertrouwVraag({p,aan:true})} aria-label={tr(lang,'Довіряти цьому ключу','Deze sleutel vertrouwen')} title={tr(lang,'Довіряти цьому ключу: позначка «Довірений» без нових прав. Потрібне посилене підтвердження.','Deze sleutel vertrouwen: label «Vertrouwd» zonder nieuwe rechten. Sterke bevestiging nodig.')}><BadgeCheck/></button>}
           <button type='button' className='secondary' disabled={!!busy} onClick={()=>setHernoem({id:p.id,naam:p.naam})} aria-label={tr(lang,'Перейменувати','Hernoemen')} title={tr(lang,'Перейменувати','Hernoemen')}><Pencil/></button>
           <button type='button' className='secondary' disabled={!!busy} onClick={()=>{setReden('');setBevestig({id:p.id,wat:'verwijderen'});}} aria-label={tr(lang,'Видалити','Verwijderen')} title={tr(lang,'Видалити','Verwijderen')}><Trash2/></button>
         </div>

@@ -1,4 +1,5 @@
 // Routes voor toegangscodes (RUNBOOK §13.11).
+//  IDENTITEIT-015: «Eigenaar» hieronder = eigenaar van de site, of een goedgekeurd account met de vlag gastcodes-iedereen (deps).
 //  Eigenaar (id.tarasevych.com, sessie van de eigenaar):
 //    POST /api/owner/access/toegangscodes/{lijst,maken,wijzigen,intrekken}   maken = sterke step-up; verlengen = sterke step-up
 //    POST /api/owner/access/gast-sessies/{lijst,intrekken}                     voor «Сесії»
@@ -25,7 +26,11 @@ type SessionOk = PasskeyAuth;
 type RequireSession = (event: Record<string, unknown>, body: unknown) => Promise<SessionOk | { errorCode: string }>;
 type Resp = ReturnType<typeof json>;
 type Ctx = { event: Record<string, unknown>; body: unknown };
-export type ToegangscodeRouteDeps = { requireSession: RequireSession; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null> };
+/**
+ * gastcodesVoor (IDENTITEIT-015): чи ввімкнено цій людині прапорець gastcodes-iedereen (читає backend/index.ts). Власник сайту — завжди;
+ * без цієї залежності — як раніше, лише власник сайту.
+ */
+export type ToegangscodeRouteDeps = { requireSession: RequireSession; sterkeStapOp?: (ctx: unknown, auth: SessionOk) => Promise<Resp | null>; gastcodesVoor?: (userId: string) => Promise<boolean> };
 const lichaam = (b: unknown) => (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
 const fout = (code: string, status = 400, retryAfter?: number): never => { throw new ToegangFout(code, status, retryAfter); };
 const ID_HOST = 'id.tarasevych.com', ID_ORIGIN = `https://${ID_HOST}`;
@@ -57,7 +62,11 @@ export function toegangscodeRoutes(deps: ToegangscodeRouteDeps): Record<string, 
     if (auth.service !== 'identity') return error('SERVICE_NOT_ALLOWED', 403);
     if (auth.user.status !== 'approved' && auth.user.role !== 'owner') return error('ACCOUNT_NOT_APPROVED', 403);
     // Lijsten: een ander account krijgt gewoon «niet beschikbaar» (200, geen gegevens) i.p.v. een 403 in de console van elke pagina.
-    if (!isEigenaarGebruiker(auth.user)) return opts.lijst ? json({ beschikbaar: false }) : error('OWNER_REQUIRED', 403);
+    // IDENTITEIT-015: een goedgekeurd account met de vlag gastcodes-iedereen mag het ook — elke handeling blijft op EIGEN codes
+    // (eigenCode/codesLijst filteren op user_id), en een gast ziet alleen gegevens van de eigenaar van de code.
+    let mag = isEigenaarGebruiker(auth.user);
+    if (!mag && deps.gastcodesVoor) { try { mag = (await deps.gastcodesVoor(auth.user.id)) === true; } catch { mag = false; } }
+    if (!mag) return opts.lijst ? json({ beschikbaar: false, reden: 'GASTCODES_ALLEEN_EIGENAAR' }) : error('OWNER_REQUIRED', 403);
     if (opts.sterk) { const su = await sterk(ctx, auth); if (su) return su; }
     try {
       const uit = await run(auth, lichaam(ctx.body), ctx);

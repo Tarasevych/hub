@@ -21,6 +21,7 @@ export const duurTekst=(tr:Tr,ms:number)=>{const m=Math.max(0,Math.round(ms/6000
 export default function SessiesOverzicht(p:Props){
   const{tr}=p;
   const[gasten,setGasten]=useState<GastSessie[]|null>(null);
+  const[gastenUit,setGastenUit]=useState(false); /* IDENTITEIT-015: гостьових кодів цьому обліковому запису не ввімкнено — пояснення замість порожнечі */
   const[bezig,setBezig]=useState(false);
   const[melding,setMelding]=useState('');
   const[bevestig,setBevestig]=useState(false);
@@ -30,7 +31,7 @@ export default function SessiesOverzicht(p:Props){
   const[vanafVolgende,setVanafVolgende]=useState(leesOnthoudenVanafVolgende);
   const eersteLading=useRef(false);
   // Fase B1: bewaarde lijst meteen, dan vers (alleen geheugen, per account); afbreken als de pagina verdwijnt.
-  const laden=useCallback(async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<{beschikbaar?:boolean;sessies?:GastSessie[]}>('/api/owner/access/gast-sessies/lijst',context(),d=>setGasten(d.beschikbaar===false?null:(d.sessies||[])),o);}catch(e){if(foutCode(e)==='OWNER_REQUIRED')setGasten(null);}},[]);
+  const laden=useCallback(async(o:{signal?:AbortSignal;alleenVers?:boolean}={alleenVers:true})=>{try{await swrPost<{beschikbaar?:boolean;sessies?:GastSessie[]}>('/api/owner/access/gast-sessies/lijst',context(),d=>{setGastenUit(d.beschikbaar===false);setGasten(d.beschikbaar===false?null:(d.sessies||[]));},o);}catch(e){if(foutCode(e)==='OWNER_REQUIRED'){setGasten(null);setGastenUit(true);}}},[]);
   useEffect(()=>{if(!eersteLading.current){eersteLading.current=true;if(!p.sessions.length&&!p.loading)p.onRefresh();}const a=new AbortController();void laden({signal:a.signal});return()=>a.abort();},[laden]);// eslint-disable-line react-hooks/exhaustive-deps
   const vernieuw=()=>{p.onRefresh();void laden();};
   const gastIntrekken=async(id:string)=>{setBezig(true);setMelding('');try{await api.post('/api/owner/access/gast-sessies/intrekken',{...context(),id});await laden();setMelding(tr('Гостьову сесію завершено.','De gastsessie is beëindigd.'));}catch{setMelding(tr('Не вдалося завершити гостьову сесію.','De gastsessie kon niet worden beëindigd.'));}finally{setBezig(false);}};
@@ -71,6 +72,10 @@ export default function SessiesOverzicht(p:Props){
         <dl><div><dt>{tr('Почато','Gestart')}</dt><dd>{tijd(g.gestartOp)}</dd></div><div><dt>{tr('Остання активність','Laatste activiteit')}</dt><dd>{tijd(g.laatstActiefOp)}</dd></div><div><dt>{tr('Тривалість','Duur')}</dt><dd>{duurTekst(tr,new Date(g.laatstActiefOp).getTime()-new Date(g.gestartOp).getTime())}</dd></div><div><dt>{tr('Діє до','Geldig tot')}</dt><dd>{tijd(g.verlooptOp)}</dd></div>{g.ipKort&&<div><dt>{tr('IP (хеш)','IP (hash)')}</dt><dd><code>{g.ipKort}</code></dd></div>}</dl>
         <button type='button' className='security-revoke' onClick={()=>void gastIntrekken(g.id)} disabled={bezig}><Trash2/>{tr('Завершити гостьову сесію','Gastsessie beëindigen')}</button>
       </article>)}</div>:<div className='security-empty'>{tr('Активних гостьових сесій немає.','Geen actieve gastsessies.')}</div>}
+    </section>}
+    {!gasten&&gastenUit&&<section className='sessies-gasten' data-gast-sessies-uit>
+      <h3><Ticket/>{tr('Гостьові сесії','Gastsessies')}</h3>
+      <p className='settings-honest-note'>{tr('Гостьових сесій у вашому обліковому записі немає: коди доступу для гостей вам не ввімкнено — цю функцію вмикає власник сайту. Поділитися простором можна в розділі «Доступ до простору» (запрошення або приватне посилання).','Uw account heeft geen gastsessies: gastcodes staan voor u niet aan — deze functie zet de site-eigenaar aan. Een werkruimte delen kan bij «Toegang tot werkruimte» (uitnodiging of privélink).')} <a href='/sharing' data-naar-delen>{tr('До «Доступу до простору»','Naar «Toegang tot werkruimte»')}</a></p>
     </section>}
   </div>;
 }

@@ -890,7 +890,8 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "сповіщення":{стан:"в-чинних",ціль:"#sessies-nieuw-apparaat"}
     },
     methods:{
-      "основні":{стан:"частково",ціль:"#aanmeldmethoden-google",рядки:{0:"в-чинних",1:"частково",2:"в-чинних"},цілі:{1:"security|#aanmeldmethoden-sleutels",2:"security|#aanmeldmethoden-2fa"}},
+      // IDENTITEIT-015 (крок «sleutels-gasten»): біля кожного ключа — «Вхід і підтвердження» / «Лише підтвердження» і окремо «Довірений».
+      "основні":{стан:"в-чинних",ціль:"#aanmeldmethoden-google",цілі:{1:"security|#aanmeldmethoden-passkeys",2:"security|#aanmeldmethoden-2fa"}},
       "пароль":{стан:"в-чинних",ціль:"#aanmeldmethoden-wachtwoord"},
       "захист":{стан:"в-чинних",цілі:{0:"recovery|#aanmeldmethoden-herstel",1:"security|#aanmeldmethoden-sleutelkluis",2:"security|#toegangscodes"}},
       // IDENTITEIT-015 (крок «aanmelden»): Microsoft/Discord/Apple — прив'язка для схвалених не-власників і вхід за прив'язкою (потрібні ключі
@@ -898,18 +899,22 @@ export function startMaquette(root: HTMLElement, opties: MaquetteOpties): Maquet
       "додаткові":{стан:"частково",ціль:"#aanmeldmethoden-catalogus",рядки:{0:"частково",1:"частково",2:"частково",3:"частково",4:"недоступно",5:"частково"},цілі:{5:"#aanmeldmethoden-telefoon"}}
     },
     security:{
-      "ключі":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutels",рядки:{5:"заплановано"}},
+      // IDENTITEIT-015 (крок «sleutels-gasten»): довіра до ключа (міграція 0274, посилене підтвердження) — позначка «Довірений» у переліку ключів.
+      "ключі":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutels",цілі:{5:"#aanmeldmethoden-passkeys"}},
       "другий-чинник":{стан:"в-чинних",ціль:"#aanmeldmethoden-2fa",додати:[
         {uk:"QR-код для застосунку-автентифікатора",nl:"QR-code voor de authenticator-app",стан:"в-чинних",іконка:"зчитування"},
         {uk:"Замінити автентифікатор",nl:"Authenticator vervangen",стан:"в-чинних",іконка:"повернути"}
       ]},
       "резервні-коди":{стан:"в-чинних",ціль:"recovery|#aanmeldmethoden-herstel"},
       "шифрування":{стан:"в-чинних",ціль:"#aanmeldmethoden-sleutelkluis"},
+      // IDENTITEIT-015: для схвалених не-власників — за прапорцем gastcodes-iedereen; без нього в #toegangscodes пояснення й перехід до «Доступу».
       "гостьові-коди":{стан:"в-чинних",ціль:"#toegangscodes"}
     },
     recovery:{
       "засоби":{стан:"в-чинних",ціль:"#aanmeldmethoden-herstel",цілі:{1:"#herstel-overzicht"}},
-      "сценарії":{стан:"в-чинних",ціль:"#herstel-scenarios",цілі:{0:"#herstel-scenarios [data-scenario=\"apparaat\"]",1:"#herstel-scenarios [data-scenario=\"passkey\"]",2:"#herstel-scenarios [data-scenario=\"authenticator\"]",3:"#herstel-scenarios [data-scenario=\"codes-op\"]"}},
+      "сценарії":{стан:"в-чинних",ціль:"#herstel-scenarios",цілі:{0:"#herstel-scenarios [data-scenario=\"apparaat\"]",1:"#herstel-scenarios [data-scenario=\"passkey\"]",2:"#herstel-scenarios [data-scenario=\"authenticator\"]",3:"#herstel-scenarios [data-scenario=\"codes-op\"]"},
+        // IDENTITEIT-015 (крок «sleutels-gasten»): у кожному кроці — кнопка до точного місця; перемикач нагадування — прямо тут.
+        додати:[{uk:"Нагадування про резервний доступ",nl:"Herinnering aan reservetoegang",стан:"в-чинних",ціль:"[data-herstel-reserve=\"schakel\"]",іконка:"нагадування"}]},
       "поради":{стан:"в-чинних",цілі:{0:"#herstel-overzicht",1:"#herstel-sleutelverlies"}}
     }
   };
